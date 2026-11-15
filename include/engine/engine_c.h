@@ -451,6 +451,9 @@ extern "C"
                                    the default camera), else why the surface fell back to the default camera: NOT_FOUND
                                    (the entity was destroyed, or has no engine_camera or no transform) */
         uint64_t camera_entity; /* the entity named with surface_set_camera, 0 for the default camera */
+        uint32_t
+            lights_refused; /* lights of the bound world the last frame could not use (the surface has room for 64) */
+        uint32_t reserved;  /* zero */
     } engine_surface_state;
 
     /* The pixels of a rendered frame: RGBA8, `stride` bytes per row (width * 4), top row first. `data` is the host's to
@@ -507,11 +510,12 @@ extern "C"
         ENGINE_COMPONENT_NAME = 3,            /* text, up to ENGINE_NAME_MAX_BYTES bytes; set and read with
                                                  engine_api.entity_name_set/get */
         ENGINE_COMPONENT_MESH_REFERENCE = 4,  /* engine_mesh_reference: which mesh and material the entity draws */
-        ENGINE_COMPONENT_CAMERA = 5           /* engine_camera: a perspective camera (Phase 24 Day 360) */
+        ENGINE_COMPONENT_CAMERA = 5,          /* engine_camera: a perspective camera (Phase 24 Day 360) */
+        ENGINE_COMPONENT_LIGHT = 6            /* engine_light: a directional or point light (Phase 24 Day 361) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0x1Fu
+#define ENGINE_COMPONENT_MASK_ALL 0x3Fu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -561,6 +565,37 @@ extern "C"
         float far_plane;
         float aspect;
     } engine_camera;
+
+    /* The kinds of engine_light.kind. */
+#define ENGINE_LIGHT_DIRECTIONAL                                                                                       \
+    1u                        /* shines along the entity's -Z, from infinitely far away (the position is ignored) */
+#define ENGINE_LIGHT_POINT 2u /* shines from the entity's position and reaches nothing beyond `radius` */
+
+    /* A light (Phase 24 Day 361). A directional light shines along its entity's world -Z axis (the way a camera looks);
+     * a point light sits at the entity's position. The entity needs ENGINE_COMPONENT_TRANSFORM too. `color` is linear
+     * RGB, `intensity` >= 0 scales it, `radius` (> 0, in metres) is where a point light's contribution reaches exactly
+     * zero (ignored for a directional light). A surface lights its world with up to 64 of them; the rest are counted in
+     * engine_surface_state.lights_refused. */
+    typedef struct engine_light
+    {
+        uint32_t struct_size;
+        uint32_t kind; /* ENGINE_LIGHT_* */
+        float color[3];
+        float intensity;
+        float radius;
+    } engine_light;
+
+    /* What surrounds a world (Phase 24 Day 361): one per world, shared by every surface that shows it. Unset, a world
+     * has an ambient colour of white at intensity 0.2, a black sky, exposure 1, and a default sun when it has no light
+     * entity (the world of Day 359); setting the environment (even with these values) removes the default sun. */
+    typedef struct engine_environment
+    {
+        uint32_t struct_size;
+        float ambient_color[3];  /* linear RGB */
+        float ambient_intensity; /* >= 0 */
+        float sky_color[3];      /* linear RGB behind the scene, before the tone map */
+        float exposure;          /* > 0: the tone map's scale */
+    } engine_environment;
 
     /* A job: called once, on one of the engine's worker threads (never on the thread that submitted it), with the
      * `user` pointer given to jobs_submit. While it runs it may call, through the table it was given: status_name,
@@ -1094,6 +1129,14 @@ extern "C"
          * metres (negative behind the camera, where x and y are not meaningful). Fails with: STALE_HANDLE,
          * INVALID_ARGUMENT, NOT_READY, TYPE_MISMATCH. */
         engine_status (*surface_project)(engine_handle surface, const float* point, float* out);
+
+        /* ---- Phase 24 Day 361: lights and the environment ---- */
+
+        /* Sets the environment of `world` (ambient light, the sky colour behind the scene, the exposure): see
+         * engine_environment. Every surface that shows the world uses it from its next frame. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (a NULL or not finite value, a negative intensity, an exposure that is not
+         * positive), STRUCT_SIZE, TYPE_MISMATCH. */
+        engine_status (*world_set_environment)(engine_handle world, const engine_environment* environment);
     } engine_api;
 
     /* Returns the function table.

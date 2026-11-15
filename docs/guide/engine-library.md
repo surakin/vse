@@ -578,6 +578,15 @@ The aspect follows the surface unless `ENGINE_CAMERA_FIXED_ASPECT` is set. A cam
 `surface_pixel_ray` and `surface_project` turn a surface pixel into a world ray and a world point into a pixel with the camera **of the last frame that drew the surface** (they answer `NOT_READY` before one has). The ray starts at the camera
 position; the projection reports the pixel and the distance along the view direction (negative behind the camera). Orthographic cameras are not built (`KNOWN-ISSUES.md`).
 
+## Lights and the environment (Phase 24 Day 361)
+
+`ENGINE_COMPONENT_LIGHT` (`engine_light`: kind, colour, intensity, radius) makes an entity a light: a **directional** light shines along the entity's world -Z axis (rotate the entity to aim it; the way a camera looks), a
+**point** light sits at the entity's position and reaches nothing beyond `radius`. A surface lights its world with up to 64 lights (the ambient term takes one slot); the rest are counted in `lights_refused` of `surface_state`.
+`world_set_environment(world, &engine_environment)` sets the world's ambient colour and intensity, the sky colour behind the scene (before the tone map) and the exposure; every surface that shows the world uses it.
+
+A world on which the host never calls `world_set_environment` and that has no light entity is drawn with the default sun of Day 359 (and ambient 0.2); once either exists the default sun is gone, so a host that wants a dark scene
+sets an environment with ambient 0. **Not built:** shadows (the renderer has none) and a sky gradient (a flat sky colour only); both are in `KNOWN-ISSUES.md`.
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

@@ -50,13 +50,14 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_NAME: return "name";
     case ENGINE_COMPONENT_MESH_REFERENCE: return "mesh reference";
     case ENGINE_COMPONENT_CAMERA: return "camera";
+    case ENGINE_COMPONENT_LIGHT: return "light";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_CAMERA;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_LIGHT;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -68,6 +69,7 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_NAME: return ecs::ComponentOf<EntityName>();
     case ENGINE_COMPONENT_MESH_REFERENCE: return ecs::ComponentOf<MeshReference>();
     case ENGINE_COMPONENT_CAMERA: return ecs::ComponentOf<CameraComponent>();
+    case ENGINE_COMPONENT_LIGHT: return ecs::ComponentOf<LightComponent>();
     }
     return ecs::kInvalidComponent;
 }
@@ -497,6 +499,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         checked = CheckInStruct(value, sizeof(engine_camera), "engine_camera");
     }
+    else if (kind == ENGINE_COMPONENT_LIGHT)
+    {
+        checked = CheckInStruct(value, sizeof(engine_light), "engine_light");
+    }
     else
     {
         checked = CheckInStruct(value, sizeof(engine_mesh_reference), "engine_mesh_reference");
@@ -509,6 +515,37 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
         world, true, key,
         [&](WorldObject& object, ecs::Entity entity)
         {
+            if (kind == ENGINE_COMPONENT_LIGHT)
+            {
+                const engine_light* in = static_cast<const engine_light*>(value);
+                if (in->kind != ENGINE_LIGHT_DIRECTIONAL && in->kind != ENGINE_LIGHT_POINT)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the light kind is not known");
+                }
+                for (const float c : in->color)
+                {
+                    if (!(Finite(c) && c >= 0.0f))
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the light colour is not finite and >= 0");
+                    }
+                }
+                if (!(Finite(in->intensity) && in->intensity >= 0.0f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the intensity is not finite and >= 0");
+                }
+                if (in->kind == ENGINE_LIGHT_POINT && !(Finite(in->radius) && in->radius > 0.0f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a point light needs radius > 0");
+                }
+                LightComponent light;
+                light.kind = in->kind;
+                light.color[0] = in->color[0];
+                light.color[1] = in->color[1];
+                light.color[2] = in->color[2];
+                light.intensity = in->intensity;
+                light.radius = in->kind == ENGINE_LIGHT_POINT ? in->radius : 1.0f;
+                return SetOrAdd(object.world, entity, light);
+            }
             if (kind == ENGINE_COMPONENT_CAMERA)
             {
                 const engine_camera* in = static_cast<const engine_camera*>(value);
@@ -605,6 +642,60 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
         });
 }
 
+engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environment* environment)
+{
+    const engine_status checked = CheckInStruct(environment, sizeof(engine_environment), "engine_environment");
+    if (checked != ENGINE_OK)
+    {
+        return checked;
+    }
+    for (const float c : environment->ambient_color)
+    {
+        if (!(Finite(c) && c >= 0.0f))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the ambient colour is not finite and >= 0");
+        }
+    }
+    for (const float c : environment->sky_color)
+    {
+        if (!(Finite(c) && c >= 0.0f))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky colour is not finite and >= 0");
+        }
+    }
+    if (!(Finite(environment->ambient_intensity) && environment->ambient_intensity >= 0.0f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the ambient intensity is not finite and >= 0");
+    }
+    if (!(Finite(environment->exposure) && environment->exposure > 0.0f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the exposure is not finite and > 0");
+    }
+    Runtime* runtime = CurrentRuntime();
+    if (runtime == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the world is not an engine's");
+    }
+    LockGuard<Mutex> lock(runtime->world_mutex);
+    engine_status found = ENGINE_OK;
+    WorldObject* object = FindWorld(*runtime, world, &found);
+    if (object == nullptr)
+    {
+        return found;
+    }
+    Environment value;
+    for (int i = 0; i < 3; ++i)
+    {
+        value.ambient_color[i] = environment->ambient_color[i];
+        value.sky_color[i] = environment->sky_color[i];
+    }
+    value.ambient_intensity = environment->ambient_intensity;
+    value.exposure = environment->exposure;
+    object->environment = value;
+    object->environment_set = true;
+    return ENGINE_OK;
+}
+
 engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void* out)
 {
     if (!KnownKind(kind_value))
@@ -619,10 +710,12 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
     const usize wanted = kind == ENGINE_COMPONENT_TRANSFORM         ? sizeof(engine_transform)
                          : kind == ENGINE_COMPONENT_WORLD_TRANSFORM ? sizeof(engine_world_transform)
                          : kind == ENGINE_COMPONENT_CAMERA          ? sizeof(engine_camera)
+                         : kind == ENGINE_COMPONENT_LIGHT           ? sizeof(engine_light)
                                                                     : sizeof(engine_mesh_reference);
     const char* what = kind == ENGINE_COMPONENT_TRANSFORM         ? "engine_transform"
                        : kind == ENGINE_COMPONENT_WORLD_TRANSFORM ? "engine_world_transform"
                        : kind == ENGINE_COMPONENT_CAMERA          ? "engine_camera"
+                       : kind == ENGINE_COMPONENT_LIGHT           ? "engine_light"
                                                                   : "engine_mesh_reference";
     const engine_status checked = CheckInStruct(out, wanted, what);
     if (checked != ENGINE_OK)
@@ -666,6 +759,24 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              engine_world_transform result = {};
                              result.struct_size = sizeof(engine_world_transform);
                              MemCopy(result.matrix, &world_transform->matrix, sizeof(result.matrix));
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_LIGHT)
+                         {
+                             const LightComponent* light = view.Peek<LightComponent>(entity);
+                             if (light == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no light");
+                             }
+                             engine_light result = {};
+                             result.struct_size = sizeof(engine_light);
+                             result.kind = light->kind;
+                             result.color[0] = light->color[0];
+                             result.color[1] = light->color[1];
+                             result.color[2] = light->color[2];
+                             result.intensity = light->intensity;
+                             result.radius = light->radius;
                              MemCopy(out, &result, sizeof(result));
                              return ENGINE_OK;
                          }
@@ -728,6 +839,7 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                              break;
                          case ENGINE_COMPONENT_NAME: status = w.Remove<EntityName>(entity); break;
                          case ENGINE_COMPONENT_CAMERA: status = w.Remove<CameraComponent>(entity); break;
+                         case ENGINE_COMPONENT_LIGHT: status = w.Remove<LightComponent>(entity); break;
                          default: status = w.Remove<MeshReference>(entity); break;
                          }
                          if (status != ecs::Status::Ok)
@@ -824,9 +936,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[5];
+                         ecs::ComponentId wanted[6];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_CAMERA; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_LIGHT; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {

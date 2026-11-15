@@ -406,9 +406,9 @@ void LightingPass::Record(const PassExecuteContext& context, void* user)
     rd.color_count = 1;
     rd.color[0].texture = context.graph->ResolvedTexture(self->accum_);
     rd.color[0].load = rhi::LoadOp::Clear;
-    rd.color[0].clear_color[0] = 0.0f;
-    rd.color[0].clear_color[1] = 0.0f;
-    rd.color[0].clear_color[2] = 0.0f;
+    rd.color[0].clear_color[0] = self->background_.x;
+    rd.color[0].clear_color[1] = self->background_.y;
+    rd.color[0].clear_color[2] = self->background_.z;
     rd.color[0].clear_color[3] = 0.0f;
     list->BeginRendering(rd);
     if (textures.IsValid())

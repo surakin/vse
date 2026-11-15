@@ -3226,6 +3226,21 @@ Point lights outside the frustum, or whose screen rectangle is empty, get no dra
 | Aborts | `view`'s viewport size is below 1 pixel. |
 | Ownership | `scene` and `view` are borrowed for the call. |
 
+### `SetBackground(const Vec3&)` {#renderer-lightingpass-setbackground-const-vec3-amp}
+
+`method renderer::LightingPass::SetBackground` — defined in `engine/renderer/lighting.h`
+
+```cpp
+void SetBackground(const Vec3& color);
+```
+
+Sets the linear colour the accumulation target is cleared to: what shows where no surface was drawn (the sky), before the tone map. Takes effect from the next executed graph.
+
+| Field | Value |
+|---|---|
+| Parameter `color` | linear RGB, not negative. |
+| Fails | never. |
+
 ### `PointDrawsPlanned()` {#renderer-lightingpass-pointdrawsplanned-const}
 
 `method renderer::LightingPass::PointDrawsPlanned` — defined in `engine/renderer/lighting.h`
@@ -11196,6 +11211,22 @@ void SetTime(f32 seconds, f32 delta_seconds);
 ```
 
 Sets the clock the next frame's FrameData carries.
+
+### `SetEnvironment(f32,const Vec3&)` {#renderer-sceneframe-setenvironment-f32-const-vec3-amp}
+
+`method renderer::SceneFrame::SetEnvironment` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+void SetEnvironment(f32 exposure, const Vec3& background);
+```
+
+Sets the exposure of the tone map and the linear colour behind the scene for the next frames.
+
+| Field | Value |
+|---|---|
+| Parameter `exposure` | positive. |
+| Parameter `background` | linear RGB, not negative. |
+| Fails | never. |
 
 ### `Render(const RenderScene*,const Camera*,const FrameTarget*)` {#renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star}
 

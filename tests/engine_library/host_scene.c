@@ -254,6 +254,70 @@ static engine_status SetCamera(engine_handle world, uint64_t entity, float fov, 
     return g_api->component_set(world, entity, ENGINE_COMPONENT_CAMERA, &camera);
 }
 
+static void PlaceRotated(engine_handle world, uint64_t entity, float x, float y, float z, const float* q)
+{
+    engine_transform t;
+    memset(&t, 0, sizeof(t));
+    t.struct_size = sizeof(t);
+    t.position[0] = x;
+    t.position[1] = y;
+    t.position[2] = z;
+    memcpy(t.rotation, q, 4 * sizeof(float));
+    t.scale[0] = t.scale[1] = t.scale[2] = 1.0f;
+    CHECK_STATUS(g_api->component_set(world, entity, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+}
+
+static engine_status SetLight(engine_handle world, uint64_t entity, unsigned kind, float intensity, float radius)
+{
+    engine_light light;
+    memset(&light, 0, sizeof(light));
+    light.struct_size = sizeof(light);
+    light.kind = kind;
+    light.color[0] = light.color[1] = light.color[2] = 1.0f;
+    light.intensity = intensity;
+    light.radius = radius;
+    return g_api->component_set(world, entity, ENGINE_COMPONENT_LIGHT, &light);
+}
+
+static engine_status SetEnvironment(engine_handle world, float ambient, float sky_red, float exposure)
+{
+    engine_environment environment;
+    memset(&environment, 0, sizeof(environment));
+    environment.struct_size = sizeof(environment);
+    environment.ambient_color[0] = environment.ambient_color[1] = environment.ambient_color[2] = 1.0f;
+    environment.ambient_intensity = ambient;
+    environment.sky_color[0] = sky_red;
+    environment.exposure = exposure;
+    return g_api->world_set_environment(world, &environment);
+}
+
+/* The summed brightness of the 3 x 3 pixels around (x, y). */
+static int Brightness(const engine_pixels* pixels, unsigned x, unsigned y)
+{
+    int sum = 0;
+    unsigned dx;
+    unsigned dy;
+    for (dy = 0; dy < 3; ++dy)
+    {
+        for (dx = 0; dx < 3; ++dx)
+        {
+            const unsigned char* p = Pixel(pixels, x - 1 + dx, y - 1 + dy);
+            sum += p[0] + p[1] + p[2];
+        }
+    }
+    return sum;
+}
+
+/* The brightness of the triangle's middle, found with surface_project, after one frame. */
+static int TriangleBrightness(engine_handle engine, engine_handle surface, engine_pixels* pixels)
+{
+    const float middle[3] = {0.0f, -0.2f, 0.0f};
+    float at[3];
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    CHECK_STATUS(g_api->surface_project(surface, middle, at), ENGINE_OK);
+    return Brightness(pixels, (unsigned)at[0], (unsigned)at[1]);
+}
+
 static engine_status SetMeshReference(engine_handle world, uint64_t entity, uint64_t mesh, uint64_t material)
 {
     engine_mesh_reference reference;
@@ -516,6 +580,90 @@ int main(void)
         CHECK_STATUS(g_api->entity_create(world, &cam), ENGINE_OK); /* one for the second surface below */
         PlaceAt(world, cam, 0.0f, 0.0f, 4.0f);
         CHECK_STATUS(SetCamera(world, cam, 1.0471976f, 0, 1.0f), ENGINE_OK);
+    }
+
+    /* Day 361: lights and the environment */
+    {
+        uint64_t lamp;
+        uint64_t many[70];
+        const float turned_around[4] = {0.0f, 1.0f, 0.0f, 0.0f}; /* half a turn about Y: the light shines along +Z */
+        const float upright[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+        int ambient_only;
+        int lit;
+        int unlit;
+        int near_lamp;
+        int far_lamp;
+        int outside;
+        unsigned i;
+        engine_light read_back;
+        engine_surface_state lit_state;
+        CHECK_STATUS(g_api->entity_create(world, &lamp), ENGINE_OK);
+        PlaceAt(world, lamp, 0.0f, 0.0f, 0.0f);
+        CHECK_STATUS(SetLight(world, lamp, 0, 1.0f, 1.0f), ENGINE_ERROR_INVALID_ARGUMENT); /* unknown kind */
+        CHECK_STATUS(SetLight(world, lamp, ENGINE_LIGHT_POINT, 1.0f, 0.0f), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(SetLight(world, lamp, ENGINE_LIGHT_DIRECTIONAL, -1.0f, 1.0f), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(SetEnvironment(world, 0.2f, 0.0f, 0.0f), ENGINE_ERROR_INVALID_ARGUMENT); /* exposure 0 */
+        CHECK_STATUS(SetEnvironment(world, -1.0f, 0.0f, 1.0f), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->world_set_environment(world, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->world_set_environment(none, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(SetEnvironment(world, 0.0f, 0.0f, 1.0f), ENGINE_OK); /* no ambient, no default sun */
+        ambient_only = TriangleBrightness(engine, surface, &pixels);
+        /* a directional light along -Z lights the front of the triangle; turned around, it lights nothing */
+        CHECK_STATUS(SetLight(world, lamp, ENGINE_LIGHT_DIRECTIONAL, 3.0f, 1.0f), ENGINE_OK);
+        memset(&read_back, 0, sizeof(read_back));
+        read_back.struct_size = sizeof(read_back);
+        CHECK_STATUS(g_api->component_get(world, lamp, ENGINE_COMPONENT_LIGHT, &read_back), ENGINE_OK);
+        CHECK(read_back.kind == ENGINE_LIGHT_DIRECTIONAL && read_back.intensity == 3.0f);
+        lit = TriangleBrightness(engine, surface, &pixels);
+        CHECK(lit > ambient_only + 30);
+        PlaceRotated(world, lamp, 0.0f, 0.0f, 0.0f, turned_around);
+        unlit = TriangleBrightness(engine, surface, &pixels);
+        CHECK(unlit < lit - 30);
+        CHECK(abs(unlit - ambient_only) < 12);
+        /* a removed light is gone next frame */
+        PlaceRotated(world, lamp, 0.0f, 0.0f, 0.0f, upright);
+        CHECK(TriangleBrightness(engine, surface, &pixels) > ambient_only + 30);
+        CHECK_STATUS(g_api->component_remove(world, lamp, ENGINE_COMPONENT_LIGHT), ENGINE_OK);
+        CHECK(abs(TriangleBrightness(engine, surface, &pixels) - ambient_only) < 12);
+        /* the ambient term alone lights the scene */
+        CHECK_STATUS(SetEnvironment(world, 1.0f, 0.0f, 1.0f), ENGINE_OK);
+        CHECK(TriangleBrightness(engine, surface, &pixels) > ambient_only + 30);
+        CHECK_STATUS(SetEnvironment(world, 0.0f, 0.0f, 1.0f), ENGINE_OK);
+        /* a point light in front of the triangle: bright near, weaker far, nothing beyond its radius */
+        CHECK_STATUS(SetLight(world, lamp, ENGINE_LIGHT_POINT, 4.0f, 6.0f), ENGINE_OK);
+        PlaceAt(world, lamp, 0.0f, 0.0f, 1.0f);
+        near_lamp = TriangleBrightness(engine, surface, &pixels);
+        PlaceAt(world, lamp, 0.0f, 0.0f, 4.0f);
+        far_lamp = TriangleBrightness(engine, surface, &pixels);
+        PlaceAt(world, lamp, 0.0f, 0.0f, 9.0f);
+        outside = TriangleBrightness(engine, surface, &pixels);
+        CHECK(near_lamp > far_lamp + 10);
+        CHECK(far_lamp > outside + 10);
+        CHECK(abs(outside - ambient_only) < 12);
+        CHECK_STATUS(g_api->component_remove(world, lamp, ENGINE_COMPONENT_LIGHT), ENGINE_OK);
+        /* the sky colour is the background, and the exposure scales what is drawn */
+        CHECK_STATUS(SetEnvironment(world, 0.0f, 0.5f, 1.0f), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(Pixel(&pixels, 2, 2)[0] > 40 && Pixel(&pixels, 2, 2)[1] < 8 && Pixel(&pixels, 2, 2)[2] < 8);
+        CHECK_STATUS(SetEnvironment(world, 0.0f, 0.0f, 1.0f), ENGINE_OK);
+        /* more lights than a surface holds: the rest are counted, nothing crashes */
+        for (i = 0; i < 70; ++i)
+        {
+            CHECK_STATUS(g_api->entity_create(world, &many[i]), ENGINE_OK);
+            PlaceAt(world, many[i], 0.0f, 0.0f, 1.0f);
+            CHECK_STATUS(SetLight(world, many[i], ENGINE_LIGHT_POINT, 0.01f, 2.0f), ENGINE_OK);
+        }
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        memset(&lit_state, 0, sizeof(lit_state));
+        lit_state.struct_size = sizeof(lit_state);
+        CHECK_STATUS(g_api->surface_state(surface, &lit_state), ENGINE_OK);
+        CHECK(lit_state.lights_refused == 7); /* 64 slots: the ambient term and 63 lights */
+        for (i = 0; i < 70; ++i)
+        {
+            CHECK_STATUS(g_api->entity_destroy(world, many[i]), ENGINE_OK);
+        }
+        CHECK_STATUS(g_api->entity_destroy(world, lamp), ENGINE_OK);
+        CHECK_STATUS(SetEnvironment(world, 0.2f, 0.0f, 1.0f), ENGINE_OK);
     }
 
     /* a second surface on the same window size shows the same world through its own scene */

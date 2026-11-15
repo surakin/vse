@@ -155,6 +155,7 @@ struct SurfaceObject
     Vector<PixelsObject*>* frame_by_slot = nullptr;  // during RenderAll: the tickets the before-present hook serves
     u32 objects_drawn = 0;
     u64 entities_unresolved = 0;
+    u32 lights_refused = 0;
     u64 camera_entity = 0;                    // named by surface_set_camera, 0 for the default camera
     engine_status camera_status = ENGINE_OK;  // NOT_FOUND while the named camera is not usable
 };
@@ -941,6 +942,7 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ou
     out->entities_unresolved = s->entities_unresolved;
     out->camera_status = s->camera_status;
     out->camera_entity = s->camera_entity;
+    out->lights_refused = s->lights_refused;
     out->present_mode = s->present_mode;
     if (s->swapchain != nullptr)
     {
@@ -1192,6 +1194,7 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
                 const SceneFrameReport report = s->scene->Render(*world, s->camera_entity, width, height, 0.0f,
                                                                  delta_seconds);
                 s->camera_status = static_cast<engine_status>(report.camera_status);
+                s->lights_refused = report.lights_refused;
                 s->frame_by_slot = nullptr;
                 s->objects_drawn = report.objects_drawn;
                 s->entities_unresolved = report.entities_unresolved;

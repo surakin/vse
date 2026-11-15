@@ -220,6 +220,13 @@ public:
     /// - Ownership: `scene` and `view` are borrowed for the call.
     LightSummary Prepare(const RenderScene& scene, const FrameData& view);
 
+    /// Sets the linear colour the accumulation target is cleared to: what shows where no surface was drawn (the sky),
+    /// before the tone map. Takes effect from the next executed graph.
+    ///
+    /// - Param color: linear RGB, not negative.
+    /// - Fails: never.
+    void SetBackground(const Vec3& color) { background_ = color; }
+
     /// Returns the number of light volume draws planned by the last `Prepare`.
     /// - Fails: never.
     u32 PointDrawsPlanned() const { return static_cast<u32>(point_draws_.Size()); }
@@ -269,6 +276,7 @@ private:
     rhi::BufferHandle object_index_stream_;  // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     BufferRegion lights_;
     Vector<PointDraw> point_draws_;
+    Vec3 background_ = Vec3(0.0f, 0.0f, 0.0f);
     Atomic<u32> point_draws_recorded_{0};
     u32 prepared_width_ = 0;
     u32 prepared_height_ = 0;

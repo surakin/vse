@@ -134,6 +134,19 @@ public:
         time_ = seconds;
         delta_ = delta_seconds;
     }
+    /// Sets the exposure of the tone map and the linear colour behind the scene for the next frames.
+    ///
+    /// - Param exposure: positive.
+    /// - Param background: linear RGB, not negative.
+    /// - Fails: never.
+    void SetEnvironment(f32 exposure, const Vec3& background)
+    {
+        exposure_ = exposure;
+        if (lighting_)
+        {
+            lighting_->SetBackground(background);
+        }
+    }
     /// Renders one frame of `scene` seen by `camera`. See Renderer::RenderFrame.
     FrameStatus Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen);
 

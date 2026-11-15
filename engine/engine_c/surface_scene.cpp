@@ -37,16 +37,7 @@ SurfaceScene::SurfaceScene(rhi::Device* device, rhi::Swapchain* swapchain, Resou
     desc.max_objects = kMaxObjects;
     desc.max_lights = kMaxLights;
     scene_ = MakeUnique<renderer::RenderScene>(desc);
-    // The default environment until lights are components (Day 361): a sun and a little ambient light.
-    renderer::Light sun;
-    sun.type = renderer::LightType::Directional;
-    sun.direction = Vec3(0.3f, 0.8f, 0.5f).Normalized();
-    sun.intensity = 2.0f;
-    scene_->AddLight(sun);
-    renderer::Light ambient;
-    ambient.type = renderer::LightType::Ambient;
-    ambient.intensity = 0.2f;
-    scene_->AddLight(ambient);
+    // The lights are mirrored from the world's light entities and its environment at each frame (SyncLights).
     // A manager of this device's own over the memory backend the host adds content to: allow_fallbacks is off, so a
     // reference that does not resolve draws nothing.
     asset::ManagerConfig config;
@@ -78,6 +69,7 @@ SurfaceScene::~SurfaceScene()
     }
     // Reverse order of creation: what the scene points at (meshes), then the frame, then the manager's backend mount.
     entries_.Clear();
+    light_entries_.Clear();
     scene_ = nullptr;
     meshes_.Clear();
     materials_.Clear();
@@ -152,6 +144,113 @@ bool SurfaceScene::ResolveMaterial(u64 id, u32* index)
     materials_.Push(static_cast<Material&&>(made));
     *index = materials_[materials_.Size() - 1].handle.Get()->material->id.index;
     return true;
+}
+
+void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
+{
+    const Environment& environment = world.environment;
+    // the ambient term from the environment
+    renderer::Light ambient;
+    ambient.type = renderer::LightType::Ambient;
+    ambient.color = Vec3(environment.ambient_color[0], environment.ambient_color[1], environment.ambient_color[2]);
+    ambient.intensity = environment.ambient_intensity;
+    if (ambient_.IsValid())
+    {
+        scene_->SetLight(ambient_, ambient);
+    }
+    else
+    {
+        ambient_ = scene_->AddLight(ambient);
+    }
+    frame_.SetEnvironment(environment.exposure,
+                          Vec3(environment.sky_color[0], environment.sky_color[1], environment.sky_color[2]));
+    for (usize i = 0; i < light_entries_.Size(); ++i)
+    {
+        light_entries_[i].seen = false;
+    }
+    u32 light_entities = 0;
+    auto query = world.world.Query<ecs::Read<LightComponent>, ecs::Read<ecs::WorldTransform>>();
+    query.ForEach(
+        [&](ecs::Entity entity, const LightComponent& component, const ecs::WorldTransform& placed)
+        {
+            ++light_entities;
+            renderer::Light light;
+            light.color = Vec3(component.color[0], component.color[1], component.color[2]);
+            light.intensity = component.intensity;
+            if (component.kind == ENGINE_LIGHT_POINT)
+            {
+                light.type = renderer::LightType::Point;
+                light.position = Vec3(placed.matrix.col[3].x, placed.matrix.col[3].y, placed.matrix.col[3].z);
+                light.radius = component.radius;
+            }
+            else
+            {  // the light shines along the entity's -Z: the direction toward it is +Z
+                const Vec3 back(placed.matrix.col[2].x, placed.matrix.col[2].y, placed.matrix.col[2].z);
+                const f32 length = back.Length();
+                if (!(length > 1e-12f))
+                {
+                    ++report->lights_refused;
+                    return;
+                }
+                light.type = renderer::LightType::Directional;
+                light.direction = back * (1.0f / length);
+            }
+            const u64 key = entity.ToU64();
+            LightEntry* entry = nullptr;
+            for (usize i = 0; i < light_entries_.Size(); ++i)
+            {
+                if (light_entries_[i].entity == key)
+                {
+                    entry = &light_entries_[i];
+                    break;
+                }
+            }
+            if (entry != nullptr)
+            {
+                scene_->SetLight(entry->id, light);
+                entry->seen = true;
+                return;
+            }
+            const renderer::LightId id = scene_->AddLight(light);
+            if (!id.IsValid())
+            {
+                ++report->lights_refused;  // the scene is full
+                return;
+            }
+            LightEntry fresh;
+            fresh.entity = key;
+            fresh.id = id;
+            fresh.seen = true;
+            light_entries_.Push(fresh);
+        });
+    for (usize i = 0; i < light_entries_.Size();)
+    {
+        if (!light_entries_[i].seen)
+        {
+            scene_->RemoveLight(light_entries_[i].id);
+            light_entries_[i] = light_entries_[light_entries_.Size() - 1];
+            light_entries_.Pop();
+        }
+        else
+        {
+            ++i;
+        }
+    }
+    // the default sun of a world that has no light and no environment of its own
+    const bool want_sun = light_entities == 0 && !world.environment_set;
+    if (want_sun && !sun_.IsValid())
+    {
+        renderer::Light sun;
+        sun.type = renderer::LightType::Directional;
+        sun.direction = Vec3(0.3f, 0.8f, 0.5f).Normalized();
+        sun.intensity = 2.0f;
+        sun_ = scene_->AddLight(sun);
+    }
+    else if (!want_sun && sun_.IsValid())
+    {
+        scene_->RemoveLight(sun_);
+        sun_ = renderer::LightId();
+    }
 }
 
 namespace
@@ -280,6 +379,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             ++i;
         }
     }
+    SyncLights(world, &report);
     renderer::Camera camera;  // the default camera unless the host named one that works
     camera.SetLookAt(Vec3(0.0f, 1.5f, 5.0f), Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f));
     camera.aspect = aspect;

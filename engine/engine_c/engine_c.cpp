@@ -745,6 +745,7 @@ extern "C"
             &engine_c::SurfaceSetCameraFn,
             &engine_c::SurfacePixelRayFn,
             &engine_c::SurfaceProjectFn,
+            &engine_c::WorldSetEnvironmentFn,
         };
         *out = &table;
         return ENGINE_OK;

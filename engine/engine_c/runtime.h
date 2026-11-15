@@ -34,9 +34,28 @@ struct CameraComponent
     f32 aspect = 1.0f;        ///< Width over height, used with ENGINE_CAMERA_FIXED_ASPECT.
 };
 
-/// A world and the systems that run on it.
+/// The component of ENGINE_COMPONENT_LIGHT (Phase 24 Day 361).
 ///
-/// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
+/// - Thread-safety: plain data.
+struct LightComponent
+{
+    u32 kind = 1;                       ///< ENGINE_LIGHT_*.
+    f32 color[3] = {1.0f, 1.0f, 1.0f};  ///< Linear RGB.
+    f32 intensity = 1.0f;               ///< Scale of the colour.
+    f32 radius = 10.0f;                 ///< Reach of a point light.
+};
+
+/// What surrounds a world (engine_environment with the defaults of its documentation).
+///
+/// - Thread-safety: plain data; guarded by the world mutex.
+struct Environment
+{
+    f32 ambient_color[3] = {1.0f, 1.0f, 1.0f};
+    f32 ambient_intensity = 0.2f;
+    f32 sky_color[3] = {0.0f, 0.0f, 0.0f};
+    f32 exposure = 1.0f;
+};
+
 /// The component of ENGINE_COMPONENT_MESH_REFERENCE: what an entity draws.
 ///
 /// - Thread-safety: plain data.
@@ -47,11 +66,16 @@ struct MeshReference
     u64 material_resource = 0;  ///< The resource id of the material (0: the surface's default material).
 };
 
+/// A world and the systems that run on it.
+///
+/// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
 struct WorldObject
 {
     WorldObject();
     ecs::World world;
     ecs::Schedule schedule;
+    Environment environment;       ///< What world_set_environment set (the defaults until then).
+    bool environment_set = false;  ///< Whether it was called (no default sun once it was).
 };
 
 /// A count of jobs not yet finished.
@@ -221,6 +245,7 @@ engine_status EntityCreateFn(engine_handle world, u64* out_key);
 engine_status EntityDestroyFn(engine_handle world, u64 key);
 engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind, const void* value);
 engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind, void* out);
+engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environment* environment);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
 engine_status EntityNameSetFn(engine_handle world, u64 key, engine_string name);

@@ -29,6 +29,7 @@ struct SceneFrameReport
     renderer::FrameStatus status = renderer::FrameStatus::Ok;  ///< What the renderer answered.
     u32 objects_drawn = 0;                                     ///< Objects the G-buffer pass drew.
     u32 entities_unresolved = 0;  ///< Entities whose mesh or material did not resolve (they draw nothing).
+    u32 lights_refused = 0;       ///< Lights of the world the scene had no room for, or that point nowhere.
     int32_t camera_status = 0;    ///< ENGINE_OK, or NOT_FOUND when the named camera entity was not usable.
 };
 
@@ -84,6 +85,12 @@ private:
         Mat4 transform;
         bool seen = false;
     };
+    struct LightEntry
+    {
+        u64 entity = 0;
+        renderer::LightId id;
+        bool seen = false;
+    };
     struct Mesh
     {
         u64 id = 0;
@@ -95,6 +102,7 @@ private:
         asset::Handle<asset::GpuMaterialAsset> handle;
     };
 
+    void SyncLights(WorldObject& world, SceneFrameReport* report);
     const renderer::GpuMesh* ResolveMesh(u64 id);
     bool ResolveMaterial(u64 id, u32* index);
 
@@ -106,6 +114,9 @@ private:
     renderer::SceneFrame frame_;
     UniquePtr<renderer::RenderScene> scene_;
     Vector<Entry> entries_;
+    Vector<LightEntry> light_entries_;
+    renderer::LightId ambient_;  // the environment's ambient term
+    renderer::LightId sun_;      // the default sun of a world with no light and no environment
     Vector<Mesh> meshes_;
     Vector<Material> materials_;
     renderer::MaterialId default_material_;
