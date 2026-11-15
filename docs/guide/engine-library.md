@@ -124,3 +124,30 @@ thread exits (see "One of everything").
 changes a setting, destroys the engine, and makes every bad call the API documents (null and wrong-size structs, a stale and a never-issued handle, a version
 too new, a second engine, a bad key and a bad value); each must return its documented status. The same C API is what the shared library exports (Day 347
 loads it with `dlopen`).
+
+## Loading the library (Day 347)
+
+`engine/engine_c/engine_loader.h` is header-only plain C that needs nothing but `engine_c.h`: a host copies the two files. `engine_load(path, major, minor,
+&loader)` opens the library (`dlopen` with `RTLD_NOW | RTLD_LOCAL`; the Windows variant arrives with Day 354), finds `engine_get_api`, asks for the version
+the host was compiled against and checks that the table says the same; `loader.api` is then the function table. Every refusal leaves a sentence in
+`loader.message` and nothing loaded: a file that is missing or not a library (`ENGINE_ERROR_IO`), a library without the entry point
+(`ENGINE_ERROR_UNSUPPORTED`), another major or a newer minor than the library has, or a table that does not say what it should
+(`ENGINE_ERROR_UNSUPPORTED_VERSION`). `engine_unload` closes the library; destroy every engine and release every buffer first.
+
+`tests/engine_library/host_dl.c` (`engine_host_dl`, plain, asan, tsan) is the reference host: it checks each refusal against stand-in libraries
+(`fake_engine.c`) and the real library asked for a newer minor and another major, then loads the real one, creates an engine, runs jobs through the test
+extension (the frame loop arrives on Day 349), destroys it, unloads, and checks that the library left the address space.
+
+### The ABI snapshot and what a binding may rely on
+
+`abi/engine_api.snapshot` records the value of every status and the size and every field's offset of every struct of `engine_c.h`, in order; it is written by
+`abi_snapshot_gen` (compiled against the header) and checked by the test `engine_abi_snapshot`. The test passes when the generated text is identical, or when
+the minor version went up and only appends happened (every status and field line of the snapshot still present unchanged; a new field or struct is
+allowed); anything else fails and names the line. After a legitimate append, run `ninja engine_abi_snapshot_update` and commit the new snapshot. A new
+struct member or table function is also added to the lists in `abi_snapshot_gen.c`; the struct size line catches one that is missed. The layout is that of a
+64-bit target.
+
+A language binding (Phase 26's Lua, any other) binds through this table and may rely on: functions are only ever appended to `engine_api`, and a field
+only to the end of a struct; a status number never changes; a function's meaning never changes within a major version; `struct_size` says how much of a
+struct is real. It may not rely on the text of a message (`last_error`, `loader.message`), on the order of log lines, or on the extensions (`get_extension`
+names other than the ones the guide documents).

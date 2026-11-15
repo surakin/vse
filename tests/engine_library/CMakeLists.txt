@@ -162,3 +162,38 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET engine_c)
     engine_discover_tests(engine_c_tests${suffix} TEST_SUFFIX "${test_suffix}" PROPERTIES LABELS "engine_library;${flavor_label}")
   endforeach()
 endif()
+
+# Day 347: the loader (engine/engine_c/engine_loader.h) and the ABI snapshot.
+# abi/engine_api.snapshot records the statuses' values and the size and field offsets of every struct of engine_c.h, written by abi_snapshot_gen (compiled
+# against the header); the test fails unless the generator's output equals it, or is an append under a higher minor version (abi_snapshot_check.cmake).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_executable(abi_snapshot_gen abi_snapshot_gen.c)
+  target_include_directories(abi_snapshot_gen PRIVATE ${CMAKE_SOURCE_DIR}/engine)
+  add_test(NAME engine_abi_snapshot COMMAND ${CMAKE_COMMAND} -DGENERATOR=$<TARGET_FILE:abi_snapshot_gen> -DSNAPSHOT=${CMAKE_SOURCE_DIR}/abi/engine_api.snapshot
+           -P ${CMAKE_CURRENT_SOURCE_DIR}/abi_snapshot_check.cmake)
+  set_tests_properties(engine_abi_snapshot PROPERTIES LABELS "engine_library")
+  engine_label_tests(engine_abi_snapshot)
+  add_custom_target(engine_abi_snapshot_update COMMAND ${CMAKE_COMMAND} -DGENERATOR=$<TARGET_FILE:abi_snapshot_gen> -DSNAPSHOT=${CMAKE_SOURCE_DIR}/abi/engine_api.snapshot -P ${CMAKE_CURRENT_SOURCE_DIR}/abi_snapshot_update.cmake
+                    DEPENDS abi_snapshot_gen COMMENT "Regenerating abi/engine_api.snapshot" VERBATIM)
+endif()
+
+# The libraries the loader must refuse, and the host that loads the real one (host_dl.c).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENGINE_BUILD_SHARED AND TARGET engine)
+  foreach(mode 1 2 3)
+    add_library(engine_fake_${mode} SHARED fake_engine.c)
+    target_include_directories(engine_fake_${mode} PRIVATE ${CMAKE_SOURCE_DIR}/engine)
+    target_compile_definitions(engine_fake_${mode} PRIVATE FAKE_MODE=${mode})
+    set_target_properties(engine_fake_${mode} PROPERTIES C_VISIBILITY_PRESET default)
+  endforeach()
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/not_a_library.so "this is text, not an ELF file\n")
+endif()
+foreach(suffix "" "_asan" "_tsan")
+  engine_library_c_test(engine_host_dl${suffix} "${suffix}" SOURCE host_dl.c PASS_REGEX "host_dl: ok"
+                        DEFINES "NOT_A_LIBRARY_PATH=\"${CMAKE_CURRENT_BINARY_DIR}/not_a_library.so\""
+                                "FAKE_OTHER_MAJOR_PATH=\"$<TARGET_FILE:engine_fake_1>\""
+                                "FAKE_LYING_TABLE_PATH=\"$<TARGET_FILE:engine_fake_2>\""
+                                "FAKE_NO_ENTRY_PATH=\"$<TARGET_FILE:engine_fake_3>\"")
+  if(TARGET engine_host_dl${suffix})
+    add_dependencies(engine_host_dl${suffix} engine_fake_1 engine_fake_2 engine_fake_3)
+  endif()
+endforeach()

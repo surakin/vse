@@ -385,6 +385,8 @@ test:engine_unload_after_jobs*                  23   # the library leaves the ad
 test:engine_owner_*                             23   # nothing the engine allocated is freed by the host's allocator (Day 345)
 test:engine_crash_across_boundary               23   # the host's handler is restored; a crash inside a job leaves a dump (Day 345)
 test:engine_c_host*                             23   # a C program uses the C API through the function table: create, settings, log callback, destroy, every bad call (Day 346)
+test:engine_host_dl*                            23   # a C host loads the engine with engine_loader.h, refuses six bad libraries, runs, unloads; plain, asan, tsan (Day 347)
+test:engine_abi_snapshot                        23   # the C API's layout equals abi/engine_api.snapshot, or only appends under a higher minor (Day 347)
 tests/engine_library/status_map_test.cpp        23   # the engine's result types map onto the C statuses (Day 346)
 test:shared_state_check*                        23   # the shared-state gate: no mutable static state in a public header (Day 345)
 test:abi_check*                                 23   # the ABI gate: the export list, the version, the library, the C header (Day 344)

@@ -1,0 +1,62 @@
+version 1.0
+status ENGINE_OK 0
+status ENGINE_ERROR_INVALID_ARGUMENT 1
+status ENGINE_ERROR_STRUCT_SIZE 2
+status ENGINE_ERROR_UNSUPPORTED_VERSION 3
+status ENGINE_ERROR_STALE_HANDLE 4
+status ENGINE_ERROR_NOT_FOUND 5
+status ENGINE_ERROR_ALREADY_EXISTS 6
+status ENGINE_ERROR_CORRUPT 7
+status ENGINE_ERROR_UNSUPPORTED 8
+status ENGINE_ERROR_IO 9
+status ENGINE_ERROR_CANCELLED 10
+status ENGINE_ERROR_LIMIT_EXCEEDED 11
+status ENGINE_ERROR_NOT_READY 12
+status ENGINE_ERROR_IN_USE 13
+status ENGINE_ERROR_TYPE_MISMATCH 14
+status ENGINE_ERROR_MISSING_DEPENDENCY 15
+status ENGINE_ERROR_DEPENDENCY_CYCLE 16
+status ENGINE_ERROR_OFFLINE 17
+status ENGINE_ERROR_TOO_LARGE 18
+status ENGINE_ERROR_DENIED 19
+status ENGINE_ERROR_INTERNAL 20
+struct engine_string size=16
+field engine_string.data offset=0 size=8
+field engine_string.length offset=8 size=8
+struct engine_buffer size=32
+field engine_buffer.data offset=0 size=8
+field engine_buffer.size offset=8 size=8
+field engine_buffer.owner offset=16 size=8
+field engine_buffer.release offset=24 size=8
+struct engine_handle size=8
+field engine_handle.value offset=0 size=8
+struct engine_setting_entry size=32
+field engine_setting_entry.key offset=0 size=16
+field engine_setting_entry.value offset=16 size=16
+struct engine_create_info size=72
+field engine_create_info.struct_size offset=0 size=4
+field engine_create_info.flags offset=4 size=4
+field engine_create_info.app_name offset=8 size=16
+field engine_create_info.settings offset=24 size=8
+field engine_create_info.setting_count offset=32 size=8
+field engine_create_info.args offset=40 size=8
+field engine_create_info.arg_count offset=48 size=8
+field engine_create_info.log offset=56 size=8
+field engine_create_info.log_user offset=64 size=8
+struct engine_info size=8
+field engine_info.struct_size offset=0 size=4
+field engine_info.setting_count offset=4 size=4
+struct engine_api size=88
+field engine_api.struct_size offset=0 size=4
+field engine_api.abi_major offset=4 size=4
+field engine_api.abi_minor offset=8 size=4
+field engine_api.sanitizer offset=12 size=4
+field engine_api.status_name offset=16 size=8
+field engine_api.create offset=24 size=8
+field engine_api.destroy offset=32 size=8
+field engine_api.get_info offset=40 size=8
+field engine_api.setting_set offset=48 size=8
+field engine_api.setting_get offset=56 size=8
+field engine_api.last_error offset=64 size=8
+field engine_api.get_extension offset=72 size=8
+field engine_api.thread_detach offset=80 size=8
