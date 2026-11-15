@@ -65,6 +65,7 @@ tools/abi_check 23
 tools/shared_state_check 23
 abi 23
 engine/engine_c 23
+include 23
 engine/asset_import 22
 third_party/yyjson 22
 third_party/zlib 22

@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 
 #define STATUS(name) printf("status " #name " %d\n", (int)name)
 #define VALUE(name) printf("value " #name " %d\n", (int)name)

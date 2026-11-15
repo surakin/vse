@@ -1,0 +1,5 @@
+# EngineConfig.cmake: the engine as a pre-built shared library. find_package(Engine) gives the imported target engine::engine (libengine.so.<major>), whose
+# include path is the installed public headers only (include/engine/*.h: engine_c.h, engine_loader.h, engine_abi_version.h).
+@PACKAGE_INIT@
+include("${CMAKE_CURRENT_LIST_DIR}/EngineTargets.cmake")
+check_required_components(Engine)

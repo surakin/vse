@@ -11,7 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 
 #define TEXTURE_ID 0xd01u
 #define MATERIAL_ID 0xe01u

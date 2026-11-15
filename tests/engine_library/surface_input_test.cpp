@@ -10,7 +10,7 @@
 #include "display_session.h"
 #include "font_support.h"
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "engine_c/surface.h"
 #include "cstr/mem_ops.h"
 #include "cstr/cstr.h"

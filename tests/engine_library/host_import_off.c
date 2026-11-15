@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 
 static int g_failures = 0;
 

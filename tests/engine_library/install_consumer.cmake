@@ -1,0 +1,28 @@
+# The install test (ctest engine_install_consumer): installs the engine to a scratch prefix, checks that only the public headers and the library were
+# installed, then configures, builds and runs tests/engine_library/consumer against that prefix alone (nothing of the source tree on its include path).
+#   cmake -DBUILD_DIR=<build> -DSOURCE_DIR=<repo> -DWORK=<scratch> -P install_consumer.cmake
+file(REMOVE_RECURSE ${WORK})
+execute_process(COMMAND ${CMAKE_COMMAND} --install ${BUILD_DIR} --prefix ${WORK}/prefix --component engine_sdk RESULT_VARIABLE rc OUTPUT_VARIABLE out ERROR_VARIABLE err)
+if(NOT rc EQUAL 0)
+  message(FATAL_ERROR "install failed: ${out}${err}")
+endif()
+file(GLOB_RECURSE headers RELATIVE ${WORK}/prefix/include ${WORK}/prefix/include/*)
+list(SORT headers)
+set(expected engine/engine_abi_version.h engine/engine_c.h engine/engine_loader.h)
+if(NOT headers STREQUAL expected)
+  message(FATAL_ERROR "installed headers are ${headers}, expected ${expected}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} -S ${SOURCE_DIR}/tests/engine_library/consumer -B ${WORK}/consumer -DCMAKE_PREFIX_PATH=${WORK}/prefix -DCMAKE_BUILD_TYPE=Release
+                RESULT_VARIABLE rc OUTPUT_VARIABLE out ERROR_VARIABLE err)
+if(NOT rc EQUAL 0)
+  message(FATAL_ERROR "consumer configure failed: ${out}${err}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build ${WORK}/consumer RESULT_VARIABLE rc OUTPUT_VARIABLE out ERROR_VARIABLE err)
+if(NOT rc EQUAL 0)
+  message(FATAL_ERROR "consumer build failed: ${out}${err}")
+endif()
+execute_process(COMMAND ${WORK}/consumer/consumer RESULT_VARIABLE rc OUTPUT_VARIABLE out ERROR_VARIABLE err)
+message("${out}${err}")
+if(NOT rc EQUAL 0)
+  message(FATAL_ERROR "consumer failed with ${rc}")
+endif()

@@ -2,7 +2,7 @@
    three behaviors: FAKE_MODE 1: a library of another major version (refuses the version the host asks for, as a real
    one would); FAKE_MODE 2: a library that returns a table of another major although it says OK (the loader's own
    check); FAKE_MODE 3: a library with no engine_get_api at all. */
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 
 #if FAKE_MODE == 3
 int engine_not_the_entry_point(void)

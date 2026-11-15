@@ -28,6 +28,7 @@ exclude /generated/
 
 include-dir engine/foundation
 include-dir engine
+include-dir include
 include-dir .
 include-dir game/common
 include-dir game/renderer_demo
@@ -166,6 +167,7 @@ allow asset_import asset
 module engine/animation/ animation 13
 allow animation asset
 module engine/engine_c/ engine_c 14
+module include/engine/ engine_c 14
 target engine_c engine_c
 target engine_c_asan engine_c
 target engine_c_tsan engine_c

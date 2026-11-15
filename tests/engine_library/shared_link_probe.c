@@ -2,7 +2,7 @@
  * library: runs jobs inside it. */
 #include <stdio.h>
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "engine_c/engine_test_extension.h"
 
 int main(void)

@@ -6,7 +6,7 @@
 #include "containers/vector.h"
 #include "ecs/schedule.h"
 #include "ecs/world.h"
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "jobs/job.h"
 #include "string_view.h"
 #include "sync/atomic.h"

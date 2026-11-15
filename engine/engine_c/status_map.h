@@ -2,7 +2,7 @@
 //! The C API's status codes and the one table that maps the engine's own result types onto them (Phase 23 Day 346).
 //! Internal to the module `engine_c`: the C header is `engine_c.h`.
 #include "asset/status.h"
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "settings/settings.h"
 #include "types.h"
 

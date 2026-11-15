@@ -11,9 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #if IMPORT_DYNAMIC
-#include "engine_c/engine_loader.h"
+#include "engine/engine_loader.h"
 #endif
 
 static int g_failures = 0;

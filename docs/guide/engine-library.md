@@ -18,7 +18,7 @@ everywhere else, so a static build is unaffected. Nothing else is exported: no C
 The list that counts is `abi/engine.exports`: the linker's version script is generated from it (`engine_shared.map` in the build tree, a node named
 `ENGINE_<major>`, everything else local), and the gate `abi_check` (`tools/abi_check`, ctest `abi_check*`) compares it with three things:
 
-1. `engine/engine_c/engine_abi_version.h`: the version line of the list and `ENGINE_ABI_VERSION_MAJOR` and `_MINOR` must be the same numbers;
+1. `include/engine/engine_abi_version.h`: the version line of the list and `ENGINE_ABI_VERSION_MAJOR` and `_MINOR` must be the same numbers;
 2. the built library's dynamic symbol table (`nm -D --defined-only`): the library exports every listed symbol and nothing else;
 3. the last commit's list (`git show HEAD:abi/engine.exports`): **a symbol added needs a higher minor version, a symbol removed needs a higher major version**,
    and the version never goes down. A change of the ABI is a decision made in the same diff as the code, not an accident.
@@ -68,7 +68,7 @@ host's `SIGSEGV` handler is restored; a crash inside a job leaves an envelope wi
 
 ## The C API (Day 346)
 
-`engine/engine_c/engine_c.h` is the whole surface a host sees: plain C11, one exported function and a table. The convention comment at the top of the header is
+`include/engine/engine_c.h` is the whole surface a host sees: plain C11, one exported function and a table. The convention comment at the top of the header is
 the specification; this is a summary of the rules and their reasons.
 
 **One entry point, one table.** The library exports `engine_get_api(major, minor, table_size, &table)`. It returns a pointer to a static `engine_api`, a
@@ -127,7 +127,7 @@ loads it with `dlopen`).
 
 ## Loading the library (Day 347)
 
-`engine/engine_c/engine_loader.h` is header-only plain C that needs nothing but `engine_c.h`: a host copies the two files. `engine_load(path, major, minor,
+`include/engine/engine_loader.h` is header-only plain C that needs nothing but `engine_c.h`: a host copies the two files. `engine_load(path, major, minor,
 &loader)` opens the library (`dlopen` with `RTLD_NOW | RTLD_LOCAL`; the Windows variant arrives with Day 354), finds `engine_get_api`, asks for the version
 the host was compiled against and checks that the table says the same; `loader.api` is then the function table. Every refusal leaves a sentence in
 `loader.message` and nothing loaded: a file that is missing or not a library (`ENGINE_ERROR_IO`), a library without the entry point
@@ -393,3 +393,25 @@ for (;;) {                                       /* the host's own event loop */
 field receives text and a paste, the cursor callback fires when the pointer enters a text field, the clipboard callbacks round-trip, the UI frame compared with a
 golden, overflow counted) and `host_surface.c` (argument validation of every event field, queue overflow, present-mode fallback, the callbacks' size check, and
 the count of display connections). They need an unlocked session and skip without a display.
+
+
+## The SDK: linking a pre-built engine (include directory and install)
+
+A host that uses a pre-built engine needs the C API's headers and the library, and nothing of the engine's source tree. The public headers live in their own
+directory, **`include/engine/`**: `engine_c.h`, `engine_loader.h` and `engine_abi_version.h`. They are plain C11, include each other and the C library only, and
+are the only headers a host includes (`#include "engine/engine_c.h"`); the engine's own headers (`engine/engine_c/*.h` and the modules) are not part of the
+interface. Inside the repository `ENGINE_PUBLIC_INCLUDE_DIR` is that directory, and the `engine_c` targets pass it on to what links them.
+
+`cmake --install <build> --prefix <dir> --component engine_sdk` installs `include/engine/*.h` and, in a build with `-DENGINE_BUILD_SHARED=ON`, `lib/libengine.so.1`
+with the package `lib/cmake/Engine` (`EngineConfig.cmake`, `EngineTargets.cmake`, a version file that accepts the same major version). A host's CMake file:
+
+```cmake
+find_package(Engine REQUIRED)               # with -DCMAKE_PREFIX_PATH=<dir>
+add_executable(app main.c)
+target_link_libraries(app PRIVATE engine::engine)
+```
+
+A host that loads the library with `dlopen` needs only the headers (`engine_loader.h`). **Tested** by `engine_install_consumer`: it installs to a scratch prefix,
+checks that exactly the three headers were installed, and builds and runs `tests/engine_library/consumer` (a program outside the tree: `find_package(Engine)`,
+public headers only) against that prefix. Windows and macOS packages follow with Days 354 and 355. A header that is only for the tests
+(`engine_test_extension.h`) stays in `engine/engine_c/` and is not installed.

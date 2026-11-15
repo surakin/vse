@@ -1,5 +1,5 @@
 # Standard-library gate (Phase 16 Day 220; replaces std_container_check). Run as:
-#   cmake -DROOT=<tree> [-DALLOWLIST=<file>] [-DDIRS="engine;game;tools;tests"] -P check.cmake
+#   cmake -DROOT=<tree> [-DALLOWLIST=<file>] [-DDIRS="engine;game;include;tools;tests"] -P check.cmake
 # Nothing in engine/, game/, tools/ or tests/ may use the C++ or C standard library directly: no `#include` of a standard header
 # (<vector>, <cstring>, <stdio.h>, ...), no `std::` name, no unqualified C library call (strlen(, memcpy(, printf(, ...), and no raw
 # `unsigned char`, `signed char` or `(std::)u?int(8|16|32|64)_t` spelling. The engine's own types and wrapper modules replace them
@@ -31,7 +31,7 @@ if(NOT ALLOWLIST)
   set(ALLOWLIST "${ROOT}/tools/std_usage_check/allowlist.txt")
 endif()
 if(NOT DIRS)
-  set(DIRS "engine;game;tools;tests")
+  set(DIRS "engine;game;include;tools;tests")
 endif()
 
 function(read_lines path out)

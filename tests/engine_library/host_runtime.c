@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 
 static int g_failures = 0;
 static const engine_api* g_api = NULL;

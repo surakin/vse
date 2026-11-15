@@ -35,7 +35,7 @@ foreach(suffix "" "_asan" "_tsan")
     continue()
   endif()
   add_library(engine_c${suffix} STATIC ${ENGINE_C_SOURCES})
-  target_include_directories(engine_c${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  target_include_directories(engine_c${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/.. ${ENGINE_PUBLIC_INCLUDE_DIR})
   target_compile_options(engine_c${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
   # ENGINE_BUILDING_LIBRARY: engine_get_api is the one exported function (engine_c.h); ENGINE_TEST_EXTENSION: see the option above.
   target_compile_definitions(engine_c${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE} ENGINE_C_WITH_IMPORTER=${ENGINE_C_WITH_IMPORTER_VALUE})
@@ -48,11 +48,15 @@ endforeach()
 # The same C API compiled without the importer (plain flavor only): the test of a library built with ENGINE_LIBRARY_WITH_IMPORTER=OFF (Day 351).
 if(ENGINE_LIBRARY_WITH_IMPORTER)
   add_library(engine_c_noimport STATIC ${ENGINE_C_SOURCES})
-  target_include_directories(engine_c_noimport PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  target_include_directories(engine_c_noimport PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/.. ${ENGINE_PUBLIC_INCLUDE_DIR})
   target_compile_options(engine_c_noimport PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
   target_compile_definitions(engine_c_noimport PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE} ENGINE_C_WITH_IMPORTER=0)
   target_link_libraries(engine_c_noimport PUBLIC asset ecs jobs platform rhi rhi_backends foundation)
 endif()
+
+# The SDK a host links against a pre-built engine: the public headers (include/engine/, the only headers a host needs; none of the engine's own) go to
+# include/engine/ of the install prefix, with or without the shared library (engine_loader.h needs nothing else).
+install(DIRECTORY ${ENGINE_PUBLIC_INCLUDE_DIR}/engine DESTINATION include COMPONENT engine_sdk FILES_MATCHING PATTERN "*.h")
 
 if(NOT ENGINE_BUILD_SHARED)
   return()
@@ -130,7 +134,7 @@ function(engine_add_shared suffix)
   # The C API's own sources are compiled into the library (the static `engine_c` is for the programs that link the C API directly); every other module comes
   # whole-archived below.
   add_library(engine${suffix} SHARED ${ENGINE_C_SOURCES})
-  target_include_directories(engine${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  target_include_directories(engine${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/.. ${ENGINE_PUBLIC_INCLUDE_DIR})
   target_compile_options(engine${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_compile_definitions(engine${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=1 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE} ENGINE_C_WITH_IMPORTER=${ENGINE_C_WITH_IMPORTER_VALUE})
   # Every module's objects go in whole (nothing is dropped for being unreferenced: the C API reaches them at run time), their third-party libraries
@@ -163,3 +167,12 @@ endif()
 if(ENGINE_HAVE_TSAN)
   engine_add_shared("_tsan")
 endif()
+
+# Install (plain flavor only): libengine.so.<major> and the package config, so a host builds with find_package(Engine) and links engine::engine.
+include(CMakePackageConfigHelpers)
+target_include_directories(engine INTERFACE $<BUILD_INTERFACE:${ENGINE_PUBLIC_INCLUDE_DIR}> $<INSTALL_INTERFACE:include>)
+install(TARGETS engine EXPORT EngineTargets LIBRARY DESTINATION lib COMPONENT engine_sdk NAMELINK_COMPONENT engine_sdk)
+install(EXPORT EngineTargets NAMESPACE engine:: DESTINATION lib/cmake/Engine COMPONENT engine_sdk)
+configure_package_config_file(${CMAKE_SOURCE_DIR}/cmake/EngineConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/EngineConfig.cmake INSTALL_DESTINATION lib/cmake/Engine)
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/EngineConfigVersion.cmake VERSION ${_abi_major}.${_abi_minor}.0 COMPATIBILITY SameMajorVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/EngineConfig.cmake ${CMAKE_CURRENT_BINARY_DIR}/EngineConfigVersion.cmake DESTINATION lib/cmake/Engine COMPONENT engine_sdk)

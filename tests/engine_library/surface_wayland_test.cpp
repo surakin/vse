@@ -7,7 +7,7 @@
 
 #include "display_session.h"
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "os/console.h"
 #include "os/os.h"
 #include "platform/input.h"

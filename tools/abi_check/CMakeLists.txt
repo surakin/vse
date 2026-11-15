@@ -4,11 +4,11 @@ set(F ${CMAKE_CURRENT_SOURCE_DIR}/fixtures)
 
 # The real tree: the export list agrees with the version header and, through git, with the last commit's list; the C API header (Day 346) holds no C++.
 set(_real_header "")
-if(EXISTS ${CMAKE_SOURCE_DIR}/engine/engine_c/engine_c.h)
-  set(_real_header -DC_HEADER=${CMAKE_SOURCE_DIR}/engine/engine_c/engine_c.h -DC_COMPILER=${CMAKE_C_COMPILER})
+if(EXISTS ${CMAKE_SOURCE_DIR}/include/engine/engine_c.h)
+  set(_real_header -DC_HEADER=${CMAKE_SOURCE_DIR}/include/engine/engine_c.h -DC_COMPILER=${CMAKE_C_COMPILER})
 endif()
 add_test(NAME abi_check COMMAND ${CMAKE_COMMAND} -DEXPORTS=${CMAKE_SOURCE_DIR}/abi/engine.exports
-         -DVERSION_HEADER=${CMAKE_SOURCE_DIR}/engine/engine_c/engine_abi_version.h -DGIT_ROOT=${CMAKE_SOURCE_DIR} ${_real_header} -P ${ABI_CHECK_SCRIPT})
+         -DVERSION_HEADER=${CMAKE_SOURCE_DIR}/include/engine/engine_abi_version.h -DGIT_ROOT=${CMAKE_SOURCE_DIR} ${_real_header} -P ${ABI_CHECK_SCRIPT})
 
 # The built library exports exactly the list, in every flavor (ENGINE_BUILD_SHARED, Linux); skipped stubs otherwise.
 foreach(suffix "" "_asan" "_tsan")
@@ -20,7 +20,7 @@ foreach(suffix "" "_asan" "_tsan")
   endif()
   if(ENGINE_BUILD_SHARED AND TARGET engine${suffix} AND CMAKE_NM)
     add_test(NAME abi_check_library${suffix} COMMAND ${CMAKE_COMMAND} -DEXPORTS=${CMAKE_SOURCE_DIR}/abi/engine.exports
-             -DVERSION_HEADER=${CMAKE_SOURCE_DIR}/engine/engine_c/engine_abi_version.h -DLIBRARY=$<TARGET_FILE:engine${suffix}> -DNM=${CMAKE_NM} -P ${ABI_CHECK_SCRIPT})
+             -DVERSION_HEADER=${CMAKE_SOURCE_DIR}/include/engine/engine_abi_version.h -DLIBRARY=$<TARGET_FILE:engine${suffix}> -DNM=${CMAKE_NM} -P ${ABI_CHECK_SCRIPT})
   else()
     add_test(NAME abi_check_library${suffix} COMMAND ${CMAKE_COMMAND} -E echo "skipped: no engine${suffix} library in this configuration (ENGINE_BUILD_SHARED is OFF, or the platform builds it on a later day)")
     set_tests_properties(abi_check_library${suffix} PROPERTIES SKIP_REGULAR_EXPRESSION "skipped: ")

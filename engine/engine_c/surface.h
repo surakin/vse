@@ -4,7 +4,7 @@
 //! host but through `engine_c.h`.
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "sync/mutex.h"
 #include "types.h"
 

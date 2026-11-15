@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "engine_c/engine_c.h"
-#include "engine_c/engine_loader.h"
+#include "engine/engine_c.h"
+#include "engine/engine_loader.h"
 #include "engine_c/engine_test_extension.h"
 
 static int g_failures = 0;

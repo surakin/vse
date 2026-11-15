@@ -4,7 +4,7 @@
 //! process, so the handle of an object of an earlier engine is stale in a later one. Internal to the module `engine_c`.
 #include "containers/vector.h"
 #include "cstr/mem_ops.h"
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "engine_c/engine_internal.h"
 #include "types.h"
 

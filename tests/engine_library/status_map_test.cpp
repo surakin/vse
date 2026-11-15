@@ -3,7 +3,7 @@
 // mapping is the intended one, that every status has a unique name, and that the names follow the enum.
 #include <catch2/catch_test_macros.hpp>
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "engine_c/status_map.h"
 #include "string/string.h"
 

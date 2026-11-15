@@ -6,7 +6,7 @@
 #include "asset/memory_backend.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "settings/registry.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"

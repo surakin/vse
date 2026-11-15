@@ -9,8 +9,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "engine_c/engine_c.h"
-#include "engine_c/engine_loader.h"
+#include "engine/engine_c.h"
+#include "engine/engine_loader.h"
 #include "engine_c/engine_test_extension.h"
 
 #define CYCLES 50

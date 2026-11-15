@@ -5,7 +5,7 @@
 
 #include <dlfcn.h>
 
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "engine_c/engine_test_extension.h"
 
 typedef engine_status (*host_get_api_fn)(uint32_t, uint32_t, size_t, const engine_api**);

@@ -39,6 +39,9 @@ endif()
 
 project(engine_placeholder CXX C)
 
+# The directory a host that links a pre-built engine puts on its include path: only the C API's public headers (include/engine/*.h), none of the engine's own.
+set(ENGINE_PUBLIC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+
 # Phase 23: the engine as one loadable shared library behind the C API (docs/superpowers/specs/2026-11-16-engine-library-design.md). Declared once, before
 # any target, because it changes how every target is compiled: position-independent code (the static libraries are linked into the shared one) and hidden
 # symbols (the version script of the library is the export list). OFF is the default and changes nothing. Linux builds it from Day 343; Windows and macOS

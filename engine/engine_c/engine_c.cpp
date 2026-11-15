@@ -12,7 +12,7 @@
 #include "cstr/mem_ops.h"
 #include "cstr/varargs.h"
 #include "lang/new.h"
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "debug/crash_handler.h"
 #include "debug/stack_trace.h"
 #include "engine_c/engine_internal.h"

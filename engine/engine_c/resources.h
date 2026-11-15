@@ -8,7 +8,7 @@
 #include "asset/resource_manager.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 #include "engine_c/import.h"
 #include "string_view.h"
 #include "sync/atomic.h"

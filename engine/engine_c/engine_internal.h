@@ -2,7 +2,7 @@
 //! What the files of the module `engine_c` share (Phase 23 Day 349): the failure text of the calling thread and the way
 //! from a handle to the engine's runtime. Internal to the module.
 #include "build_defs.h"
-#include "engine_c/engine_c.h"
+#include "engine/engine_c.h"
 
 namespace engine_placeholder::engine_c
 {
