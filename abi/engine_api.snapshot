@@ -58,7 +58,7 @@ field engine_frame_info.struct_size offset=0 size=4
 field engine_frame_info.flags offset=4 size=4
 field engine_frame_info.delta_seconds offset=8 size=8
 field engine_frame_info.budget_us offset=16 size=8
-struct engine_frame_stats size=32
+struct engine_frame_stats size=64
 field engine_frame_stats.struct_size offset=0 size=4
 field engine_frame_stats.worlds_run offset=4 size=4
 field engine_frame_stats.worlds_skipped offset=8 size=4
@@ -220,7 +220,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=632
+struct engine_api size=672
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4

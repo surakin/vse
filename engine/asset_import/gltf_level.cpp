@@ -27,20 +27,6 @@ struct Piece
     Vector<byte> bytes;
 };
 
-// The id of the imported object of a kind and glTF index, or the null id.
-ResourceId FindImported(const ImportManifest& manifest, ImportKind kind, u32 index)
-{
-    const Vector<ImportManifestEntry>& entries = manifest.Entries();
-    for (usize i = 0; i < entries.Size(); ++i)
-    {
-        if (entries[i].kind == kind && entries[i].index == index)
-        {
-            return entries[i].id;
-        }
-    }
-    return ResourceId();
-}
-
 // A node name made valid for a level: other characters become `_`, and the name is cut short.
 void LevelName(StringView name, u32 node, String<HeapAllocator>* out)
 {
@@ -240,6 +226,51 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
 
     LevelData data;
     const JsonValue meshes = document.root.Get("meshes");
+    // What the nodes name, looked up once: the imported id of every glTF mesh and material and the material of each
+    // mesh's first primitive (a hostile file has hundreds of thousands of nodes: no scan per node).
+    Vector<ResourceId> mesh_ids;
+    Vector<ResourceId> material_ids;
+    for (usize m = 0; m < meshes.Size(); ++m)
+    {
+        mesh_ids.Push(ResourceId());
+    }
+    const JsonValue materials_array = document.root.Get("materials");
+    for (usize m = 0; m < materials_array.Size(); ++m)
+    {
+        material_ids.Push(ResourceId());
+    }
+    {
+        const Vector<ImportManifestEntry>& entries = result->manifest.Entries();
+        for (usize e = 0; e < entries.Size(); ++e)
+        {
+            if (entries[e].kind == ImportKind::Mesh && entries[e].index < mesh_ids.Size())
+            {
+                mesh_ids[entries[e].index] = entries[e].id;
+            }
+            else if (entries[e].kind == ImportKind::Material && entries[e].index < material_ids.Size())
+            {
+                material_ids[entries[e].index] = entries[e].id;
+            }
+        }
+    }
+    Vector<ResourceId> material_of_mesh;  // the material of the first primitive, or the null id
+    for (usize m = 0; m < meshes.Size(); ++m)
+    {
+        ResourceId material;
+        const JsonValue primitives = meshes.At(m).Get("primitives");
+        if (primitives.Exists() && primitives.Size() != 0)
+        {
+            u64 material_index = 0;
+            bool present = false;
+            ENGINE_TRY(primitives.At(0).OptionalUnsigned("material", &material_index, 0xFFFFFFFFull, &present, error));
+            if (present && material_index < material_ids.Size())
+            {
+                material = material_ids[static_cast<usize>(material_index)];
+            }
+        }
+        material_of_mesh.Push(material);
+    }
+    Vector<u64> named;  // the ids the entities name
     for (usize i = 0; i < nodes.Size(); ++i)
     {
         const u32 n = nodes[i];
@@ -284,7 +315,7 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
         }
         if (node.mesh != kNoGltfIndex)
         {
-            const ResourceId mesh = FindImported(result->manifest, ImportKind::Mesh, node.mesh);
+            const ResourceId mesh = node.mesh < mesh_ids.Size() ? mesh_ids[node.mesh] : ResourceId();
             if (mesh.IsNone())
             {
                 AddImportWarning(&result->report, StringView(where, CStrLength(where)),
@@ -292,19 +323,11 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
             }
             else
             {
-                ResourceId material;
-                const JsonValue primitives = meshes.At(node.mesh).Get("primitives");
-                if (primitives.Exists() && primitives.Size() != 0)
+                const ResourceId material = material_of_mesh[node.mesh];
+                named.Push(mesh.Value());
+                if (!material.IsNone())
                 {
-                    u64 material_index = 0;
-                    bool present = false;
-                    ENGINE_TRY(
-                        primitives.At(0).OptionalUnsigned("material", &material_index, 0xFFFFFFFFull, &present, error));
-                    if (present)
-                    {
-                        material = FindImported(result->manifest, ImportKind::Material,
-                                                static_cast<u32>(material_index));
-                    }
+                    named.Push(material.Value());
                 }
                 MeshReference reference;
                 reference.mesh.id = mesh.Value();
@@ -327,6 +350,7 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
                 {
                     animation::SkeletonInstance instance;
                     instance.skeleton = skins[node.skin].id.Value();
+                    named.Push(instance.skeleton);
                     Piece skin_piece;
                     skin_piece.id = animation::kSkeletonInstanceId;
                     skin_piece.version = skeleton_component->Version();
@@ -399,61 +423,54 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
             return Refuse(error, scene.Path(), "has two nodes whose entity keys collide", ErrorCode::Invalid);
         }
     }
+    Sort(Span<u64>(named.Data(), named.Size()), [](u64 a, u64 b) { return a < b; });
+    Vector<u32> by_id;  // positions in result->resources, by resource id
     for (usize r = 0; r < result->resources.Size(); ++r)
     {
-        const ImportedResource& resource = result->resources[r];
-        if (resource.type != types::kMesh && resource.type != types::kMaterial && resource.type != types::kSkeleton)
+        by_id.Push(static_cast<u32>(r));
+    }
+    Sort(Span<u32>(by_id.Data(), by_id.Size()),
+         [&](u32 a, u32 b) { return result->resources[a].id.Value() < result->resources[b].id.Value(); });
+    for (usize n = 0; n < named.Size(); ++n)
+    {
+        if (n != 0 && named[n] == named[n - 1])
         {
             continue;
         }
-        // listed only when an entity names it
-        bool named = false;
-        for (usize i = 0; i < nodes.Size() && !named; ++i)
+        // the type of the resource: found in the import's own list (sorted by id once, searched by halving)
+        const ImportedResource* found = nullptr;
         {
-            const GltfNode& node = graph.nodes[nodes[i]];
-            if (resource.type == types::kMesh)
+            usize low = 0;
+            usize high = by_id.Size();
+            while (low < high)
             {
-                named = node.mesh != kNoGltfIndex &&
-                        FindImported(result->manifest, ImportKind::Mesh, node.mesh) == resource.id;
-            }
-            else if (resource.type == types::kSkeleton)
-            {
-                named = node.mesh != kNoGltfIndex && node.skin != kNoGltfIndex && node.skin < skins.Size() &&
-                        skins[node.skin].id == resource.id &&
-                        !FindImported(result->manifest, ImportKind::Mesh, node.mesh).IsNone();
-            }
-            else
-            {
-                if (node.mesh == kNoGltfIndex || FindImported(result->manifest, ImportKind::Mesh, node.mesh).IsNone())
+                const usize mid = low + (high - low) / 2;
+                if (result->resources[by_id[mid]].id.Value() < named[n])
                 {
-                    continue;
+                    low = mid + 1;
                 }
-                const JsonValue primitives = meshes.At(node.mesh).Get("primitives");
-                u64 material_index = 0;
-                bool present = false;
-                if (primitives.Exists() && primitives.Size() != 0 &&
-                    primitives.At(0)
-                        .OptionalUnsigned("material", &material_index, 0xFFFFFFFFull, &present, error)
-                        .Ok() &&
-                    present)
+                else
                 {
-                    named = FindImported(result->manifest, ImportKind::Material, static_cast<u32>(material_index)) ==
-                            resource.id;
+                    high = mid;
                 }
+            }
+            if (low < by_id.Size() && result->resources[by_id[low]].id.Value() == named[n])
+            {
+                found = &result->resources[by_id[low]];
             }
         }
-        if (!named)
+        if (found == nullptr)
         {
-            continue;
+            return Status::Make(ErrorCode::Other, "a level names a resource the import did not make");
         }
         asset::TypeInfo info;
-        if (!types.Find(resource.type, &info))
+        if (!types.Find(found->type, &info))
         {
             return Status::Make(ErrorCode::Other, "a resource type of the import is not registered");
         }
         LevelResource listed;
-        listed.id = resource.id;
-        listed.type = resource.type;
+        listed.id = found->id;
+        listed.type = found->type;
         listed.type_version = info.current_version;
         listed.roles = kLevelRoleReference;
         data.resources.Push(listed);

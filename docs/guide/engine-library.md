@@ -618,6 +618,14 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
   (`"prefix/name"` for a prefixed spawn) and its skeleton instance, mesh reference and transform are ordinary components.
 - **Limits.** The spawn runs on the calling thread under the world lock, in time proportional to the entities; a very large level is better spawned between frames. A mesh with several primitives gets the material of its first. Levels that include other levels are not spawned (`UNSUPPORTED`).
 
+## Host textures (Phase 24 Day 365)
+
+- **What one is.** A host texture is a picture the host keeps painting (a video frame, a canvas, a UI layer): `texture_create(engine, &engine_texture_info, &texture)` makes one of a width and a height (RGBA8, `ENGINE_TEXTURE_SRGB` marks it as colour), `texture_update(texture, pixels, stride, info)` gives it new pixels from any thread, `texture_resize` changes its size, `texture_destroy` ends it. Create and destroy count as engine objects: the engine is not destroyed while one lives.
+- **Latest wins.** An update copies the rows (the stride may be larger than a row; the padding is not read) under a short lock into one kept buffer, so the host's memory is free as soon as the call returns. An update that replaces one no device uploaded yet is counted in `engine_frame_stats.updates_replaced`; a producer faster than the frames costs only the copies.
+- **Resize** drops the pixels until the next update (a surface keeps the material's own value meanwhile); an update that carries another `width` and `height` resizes and updates in one step. `texture_read_pixels` returns a copy (`NOT_READY` before the first update). Sizes above `assets.host_texture.max_size` (8192) are `TOO_LARGE`; strides above 16 MiB too.
+- **Settings.** `assets.host_texture.max_size`, `assets.host_texture.upload_budget` (bytes a surface uploads per frame, default 8 MB; used from Day 366).
+- **Not yet.** Nothing draws a host texture before Day 366 (a material slot that names one); `textures_uploaded` and `bytes_uploaded` stay 0 until then.
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

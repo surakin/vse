@@ -17,6 +17,7 @@
 #include "debug/stack_trace.h"
 #include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
+#include "engine_c/host_texture.h"
 #include "engine_c/import.h"
 #include "engine_c/resources.h"
 #include "engine_c/runtime.h"
@@ -268,6 +269,7 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
     asset::RegisterAssetSettings(&engine->registry);
     asset::RegisterManagerSettings(&engine->registry);
     engine_c::RegisterImporterSettings(&engine->registry);
+    engine_c::RegisterHostTextureSettings(&engine->registry);
     {
         settings::SettingDesc dump = settings::MakeText("crash.dump_directory", "");
         dump.description = "the directory a crash dump goes to (empty: the user's crash directory)";
@@ -353,6 +355,7 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
         config.max_inflight = manager.max_inflight;
         config.max_queued = manager.max_queued;
         engine_c::ReadImporterSettings(engine->registry, &config);
+        engine->runtime->textures.Configure(engine_c::ReadHostTextureSettings(engine->registry));
     }
     for (LogChannel* channel = LogChannel::First(); channel != nullptr; channel = channel->Next())
     {
@@ -439,7 +442,7 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
     out->struct_size = static_cast<u32>(kFirstVersionSize);
     if (host_size >= sizeof(engine_info))
     {
-        out->caps = (engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u) |
+        out->caps = ENGINE_CAP_HOST_TEXTURES | (engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_SURFACE_X11 : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WAYLAND) ? ENGINE_CAP_SURFACE_WAYLAND : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA) ? ENGINE_CAP_SURFACE_COCOA : 0u) |
@@ -760,6 +763,11 @@ extern "C"
             &engine_c::SkeletonJointTransformFn,
             &engine_c::EntityAttachToJointFn,
             &engine_c::LevelSpawnFn,
+            &engine_c::TextureCreateFn,
+            &engine_c::TextureUpdateFn,
+            &engine_c::TextureResizeFn,
+            &engine_c::TextureDestroyFn,
+            &engine_c::TextureReadPixelsFn,
         };
         *out = &table;
         return ENGINE_OK;

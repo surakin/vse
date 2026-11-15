@@ -7,6 +7,7 @@
 #include "animation/components.h"
 #include "animation/pose.h"
 #include "asset/level.h"
+#include "algorithm.h"
 #include "containers/vector.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
@@ -461,6 +462,12 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
     if (SurfaceHost* surfaces = runtime->SurfacesIfCreated())
     {
         surfaces->RenderAll(*runtime, static_cast<f32>(info->delta_seconds));  // after the worlds ran (Day 359)
+    }
+    {
+        TextureCounters& counters = runtime->textures.Counters();
+        result.textures_uploaded = counters.textures_uploaded.Exchange(0, MemoryOrder::Relaxed);
+        result.bytes_uploaded = counters.bytes_uploaded.Exchange(0, MemoryOrder::Relaxed);
+        result.updates_replaced = counters.updates_replaced.Exchange(0, MemoryOrder::Relaxed);
     }
     result.elapsed_us = (os::MonotonicTimeNanos() - start) / 1000;
     if (stats != nullptr)
@@ -1524,18 +1531,37 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                 }
             }
             // The hierarchy: a level entity with a parent in the level follows it, the others hang from the root.
+            Vector<u32> order;  // positions in `source`, by entity key
+            for (usize i = 0; i < source.Size(); ++i)
+            {
+                order.Push(static_cast<u32>(i));
+            }
+            Sort(Span<u32>(order.Data(), order.Size()),
+                 [&](u32 a, u32 b) { return source[a].ToU64() < source[b].ToU64(); });
             for (usize i = 0; i < source.Size(); ++i)
             {
                 ecs::Entity parent = top;
                 if (const ecs::Parent* link = scratch.Peek<ecs::Parent>(source[i]))
                 {
-                    for (usize k = 0; k < source.Size(); ++k)
+                    // the position of the parent in `source`, by halving the keys sorted once above
+                    const u64 wanted = link->entity.ToU64();
+                    usize low = 0;
+                    usize high = order.Size();
+                    while (low < high)
                     {
-                        if (source[k] == link->entity)
+                        const usize mid = low + (high - low) / 2;
+                        if (source[order[mid]].ToU64() < wanted)
                         {
-                            parent = made[k + 1];
-                            break;
+                            low = mid + 1;
                         }
+                        else
+                        {
+                            high = mid;
+                        }
+                    }
+                    if (low < order.Size() && source[order[low]].ToU64() == wanted)
+                    {
+                        parent = made[order[low] + 1];
                     }
                 }
                 if (ecs::SetParent(object.world, made[i + 1], parent) != ecs::HierarchyStatus::Ok)

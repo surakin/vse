@@ -7,6 +7,7 @@
 #include "ecs/schedule.h"
 #include "ecs/world.h"
 #include "engine/engine_c.h"
+#include "engine_c/host_texture.h"
 #include "jobs/job.h"
 #include "string_view.h"
 #include "sync/atomic.h"
@@ -236,6 +237,9 @@ public:
     ///
     /// - Thread-safety: thread-safe.
     JobHost& EnsureJobs();
+
+    /// The host textures of the engine (Phase 24 Day 365).
+    TextureHost textures;
 
     /// What the resource host is made from; set once when the engine is created, before any call.
     ResourceConfig resource_config;

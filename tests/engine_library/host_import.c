@@ -1059,6 +1059,150 @@ static void TestLevel(engine_handle engine, const Bytes* gltf)
     ReleaseResult(&plain);
 }
 
+/* ---- host textures (Phase 24 Day 365) ---- */
+
+typedef struct texture_producer
+{
+    engine_handle texture;
+    int failures;
+} texture_producer;
+
+static void ProduceTexture(void* user)
+{
+    texture_producer* p = (texture_producer*)user;
+    unsigned char pixels[4 * 4 * 4];
+    int i;
+    for (i = 0; i < 200; ++i)
+    {
+        memset(pixels, i & 0xFF, sizeof(pixels));
+        if (g_api->texture_update(p->texture, pixels, 16, NULL) != ENGINE_OK)
+        {
+            ++p->failures;
+        }
+    }
+    g_api->thread_detach();
+}
+
+/* A host texture is made, updated (also from another thread: the latest update wins, the replaced ones are counted),
+   read back, resized, and destroyed; wrong arguments are statuses. */
+static void TestTextures(engine_handle engine)
+{
+    engine_texture_info info;
+    engine_handle texture = NoHandle();
+    engine_handle other = NoHandle();
+    unsigned char pixels[4 * 4 * 4];
+    unsigned char big[8 * 8 * 4];
+    engine_buffer out;
+    uint32_t w = 0;
+    uint32_t h = 0;
+    engine_update_info update;
+    engine_frame_info frame;
+    engine_frame_stats stats;
+    host_thread thread;
+    texture_producer producer;
+    int i;
+    memset(&info, 0, sizeof(info));
+    memset(&out, 0, sizeof(out));
+    info.struct_size = sizeof(info);
+    info.width = 4;
+    info.height = 4;
+    info.name = S("test texture");
+    CHECK_STATUS(g_api->texture_create(engine, NULL, &texture), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->texture_create(engine, &info, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+    info.width = 0;
+    CHECK_STATUS(g_api->texture_create(engine, &info, &texture), ENGINE_ERROR_INVALID_ARGUMENT);
+    info.width = 1u << 20;
+    CHECK_STATUS(g_api->texture_create(engine, &info, &texture), ENGINE_ERROR_TOO_LARGE);
+    info.width = 4;
+    info.flags = 0x80000000u;
+    CHECK_STATUS(g_api->texture_create(engine, &info, &texture), ENGINE_ERROR_INVALID_ARGUMENT);
+    info.flags = ENGINE_TEXTURE_SRGB;
+    CHECK_STATUS(g_api->texture_create(engine, &info, &texture), ENGINE_OK);
+
+    /* no pixels yet */
+    CHECK_STATUS(g_api->texture_read_pixels(texture, &out, &w, &h), ENGINE_ERROR_NOT_READY);
+    memset(pixels, 0x7F, sizeof(pixels));
+    CHECK_STATUS(g_api->texture_update(texture, NULL, 16, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->texture_update(texture, pixels, 8, NULL), ENGINE_ERROR_INVALID_ARGUMENT); /* stride < row */
+    CHECK_STATUS(g_api->texture_update(texture, pixels, 16, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->texture_read_pixels(texture, &out, &w, &h), ENGINE_OK);
+    CHECK(w == 4 && h == 4 && out.size == sizeof(pixels) && memcmp(out.data, pixels, sizeof(pixels)) == 0);
+    engine_buffer_release(&out);
+
+    /* a padded stride copies rows, not the padding */
+    {
+        unsigned char padded[4 * 32];
+        memset(padded, 0xEE, sizeof(padded));
+        for (i = 0; i < 4; ++i)
+        {
+            memset(padded + i * 32, 0x10 + i, 16);
+        }
+        CHECK_STATUS(g_api->texture_update(texture, padded, 32, NULL), ENGINE_OK);
+        CHECK_STATUS(g_api->texture_read_pixels(texture, &out, &w, &h), ENGINE_OK);
+        CHECK(out.size == 64 && ((unsigned char*)out.data)[16] == 0x11 && ((unsigned char*)out.data)[63] == 0x13);
+        engine_buffer_release(&out);
+    }
+
+    /* an update that carries another size resizes; a bad size changes nothing */
+    memset(big, 0x55, sizeof(big));
+    memset(&update, 0, sizeof(update));
+    update.struct_size = sizeof(update);
+    update.width = 8;
+    update.height = 8;
+    CHECK_STATUS(g_api->texture_update(texture, big, 32, &update), ENGINE_OK);
+    CHECK_STATUS(g_api->texture_read_pixels(texture, &out, &w, &h), ENGINE_OK);
+    CHECK(w == 8 && h == 8 && out.size == sizeof(big));
+    engine_buffer_release(&out);
+    update.width = 1u << 20;
+    CHECK_STATUS(g_api->texture_update(texture, big, 32, &update), ENGINE_ERROR_TOO_LARGE);
+    update.width = 8;
+    update.flags = 1;
+    CHECK_STATUS(g_api->texture_update(texture, big, 32, &update), ENGINE_ERROR_INVALID_ARGUMENT);
+
+    /* resize drops the pixels until the next update */
+    CHECK_STATUS(g_api->texture_resize(texture, 0, 4), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->texture_resize(texture, 4, 4), ENGINE_OK);
+    CHECK_STATUS(g_api->texture_read_pixels(texture, &out, &w, &h), ENGINE_ERROR_NOT_READY);
+
+    /* a producer thread and the host's frame thread: the final update is what is read back */
+    memset(&frame, 0, sizeof(frame));
+    frame.struct_size = sizeof(frame);
+    producer.texture = texture;
+    producer.failures = 0;
+    CHECK(host_thread_start(&thread, ProduceTexture, &producer) == 0);
+    memset(&stats, 0, sizeof(stats));
+    stats.struct_size = sizeof(stats);
+    for (i = 0; i < 5; ++i)
+    {
+        CHECK_STATUS(g_api->frame(engine, &frame, &stats), ENGINE_OK);
+    }
+    host_thread_join(&thread);
+    CHECK(producer.failures == 0);
+    CHECK_STATUS(g_api->frame(engine, &frame, &stats), ENGINE_OK);
+    CHECK_STATUS(g_api->texture_read_pixels(texture, &out, &w, &h), ENGINE_OK);
+    CHECK(out.size == 64 && ((unsigned char*)out.data)[0] == 199);
+    engine_buffer_release(&out);
+    /* the counters are read and reset by each frame call: the frame after the last one reports none */
+    CHECK_STATUS(g_api->frame(engine, &frame, &stats), ENGINE_OK);
+    CHECK(stats.updates_replaced == 0 && stats.textures_uploaded == 0 && stats.bytes_uploaded == 0);
+
+    /* destroy: the handle is stale after, a second texture is independent */
+    CHECK_STATUS(g_api->texture_create(engine, &info, &other), ENGINE_OK);
+    CHECK_STATUS(g_api->texture_destroy(texture), ENGINE_OK);
+    CHECK_STATUS(g_api->texture_destroy(texture), ENGINE_ERROR_STALE_HANDLE);
+    CHECK_STATUS(g_api->texture_update(texture, pixels, 16, NULL), ENGINE_ERROR_STALE_HANDLE);
+    CHECK_STATUS(g_api->texture_update(other, pixels, 16, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->texture_destroy(other), ENGINE_OK);
+
+    /* the engine counts a texture as an object: destroy is refused while one lives, and slots are reused */
+    for (i = 0; i < 24; ++i)
+    {
+        CHECK_STATUS(g_api->texture_create(engine, &info, &texture), ENGINE_OK);
+        CHECK_STATUS(g_api->texture_update(texture, pixels, 16, NULL), ENGINE_OK); /* pending, never uploaded */
+        CHECK_STATUS(g_api->texture_destroy(texture), ENGINE_OK);
+    }
+}
+
 /* A hierarchy deeper than a level holds, and more nodes than the limit, are refused with a message, never a crash. */
 static void TestDeepScene(engine_handle engine)
 {
@@ -1137,6 +1281,7 @@ int main(void)
     TestHostile(engine, &gltf);
     TestLevel(engine, &gltf);
     TestDeepScene(engine);
+    TestTextures(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     free(gltf.data);
 #if IMPORT_DYNAMIC

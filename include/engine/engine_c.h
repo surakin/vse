@@ -209,8 +209,9 @@ extern "C"
 #define ENGINE_CAP_SURFACE_WIN32                                                                                       \
     0x20u /* surface_create renders into a Win32 window (HWND) the host owns, with Direct3D 12 or Vulkan (Day 354) */
 #define ENGINE_CAP_WORLD_ON_SURFACE                                                                                    \
-    0x40u /* surface_set_world draws a world's meshes on a surface (Phase 24 Day 359)                                  \
-           */
+    0x40u                              /* surface_set_world draws a world's meshes on a surface (Phase 24 Day 359)     \
+                                        */
+#define ENGINE_CAP_HOST_TEXTURES 0x80u /* texture_create and the host textures (Phase 24 Day 365) */
 
 /* ---- Day 352: rendering into a window the host owns ---- */
 
@@ -497,6 +498,13 @@ extern "C"
         uint32_t entities;       /* entities alive in the worlds that ran */
         uint64_t frame_index;    /* frames run so far, this one included, from 1 */
         uint64_t elapsed_us;     /* wall time of this call */
+        /* Phase 24 Days 365-366: host textures, since the previous frame call */
+        uint64_t textures_uploaded; /* uploads of host textures to surfaces' devices, one per texture and device */
+        uint64_t bytes_uploaded;    /* bytes of those uploads */
+        uint64_t updates_replaced;  /* texture_update calls whose pixels were replaced by a newer update before any
+                                       device uploaded them */
+        uint64_t slots_reverted;    /* material slots that went back to their own value because their host texture was
+                                       destroyed or had no pixels */
     } engine_frame_stats;
 
     /* The components a host can set on an entity. The numbers are part of the ABI. ENGINE_COMPONENT_BIT(kind) is the
@@ -625,6 +633,30 @@ extern "C"
         float start_time;
         float fade_seconds;
     } engine_play_params;
+
+    /* Flags of engine_texture_info. */
+#define ENGINE_TEXTURE_SRGB 0x1u /* the pixels are sRGB encoded (a colour picture); without it they are linear data */
+
+    /* A texture the host fills with its own pixels (Phase 24 Day 365): RGBA8, `width` x `height`, at most
+     * `assets.host_texture.max_size` (default 8192) each way. `name` (optional) is shown in diagnostics. */
+    typedef struct engine_texture_info
+    {
+        uint32_t struct_size;
+        uint32_t flags; /* ENGINE_TEXTURE_* */
+        uint32_t width;
+        uint32_t height;
+        engine_string name;
+    } engine_texture_info;
+
+    /* How texture_update takes its pixels. `width` and `height` of 0 mean the texture's own size; another size resizes
+     * the texture together with the update (a video source that changes resolution). */
+    typedef struct engine_update_info
+    {
+        uint32_t struct_size;
+        uint32_t flags; /* zero */
+        uint32_t width;
+        uint32_t height;
+    } engine_update_info;
 
     /* How level_spawn places a level (Phase 24 Day 364). `position`, `rotation` (x, y, z, w) and `scale` (one factor
      * for the three axes; 0 means 1) are the transform of the root entity the engine makes for the spawn; the level's
@@ -1332,6 +1364,37 @@ extern "C"
          * world refused an entity). */
         engine_status (*level_spawn)(engine_handle world, uint64_t level, const engine_spawn_params* params,
                                      uint64_t* root, uint64_t* keys, size_t capacity, size_t* total);
+
+        /* ---- Phase 24 Day 365: host textures ---- */
+
+        /* Makes a texture with no pixels yet. It counts as an object of the engine until texture_destroy. Needs
+         * ENGINE_CAP_HOST_TEXTURES. Fails with: INVALID_ARGUMENT (NULL, flags, a zero size), STRUCT_SIZE, TOO_LARGE (a
+         * size above `assets.host_texture.max_size`), LIMIT_EXCEEDED (too many textures), STALE_HANDLE (no engine). */
+        engine_status (*texture_create)(engine_handle engine, const engine_texture_info* info, engine_handle* out);
+
+        /* Gives the texture new pixels: `height` rows of `width` RGBA8 pixels (4 bytes each) read from `pixels`,
+         * `stride` bytes apart (at least width * 4, at most 16 MiB). May be called from any thread, also while frames
+         * run: it copies the rows (a short lock, no GPU work, no allocation but the texture's own pixel buffer) and
+         * returns; each surface that draws the texture uploads the newest pixels in its next frame, and an update that
+         * a newer one overtakes before it was uploaded is counted in engine_frame_stats.updates_replaced. `info` may be
+         * NULL (the texture's own size). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL pixels, a stride below the
+         * row), TOO_LARGE (a size or a stride above its limit), STRUCT_SIZE, TYPE_MISMATCH (not a texture). */
+        engine_status (*texture_update)(engine_handle texture, const void* pixels, size_t stride,
+                                        const engine_update_info* info);
+
+        /* Changes the size; the pixels are dropped, and a material slot that shows the texture goes back to its own
+         * value until the next texture_update. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TOO_LARGE, TYPE_MISMATCH. */
+        engine_status (*texture_resize)(engine_handle texture, uint32_t width, uint32_t height);
+
+        /* Destroys the texture. A material slot that showed it goes back to its own value at the next frame. Fails
+         * with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+        engine_status (*texture_destroy)(engine_handle texture);
+
+        /* Copies the newest pixels the engine holds, tightly packed RGBA8, into `*out` (release it with
+         * engine_buffer_release) and writes the size. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL), NOT_READY (no
+         * update yet), TYPE_MISMATCH. */
+        engine_status (*texture_read_pixels)(engine_handle texture, engine_buffer* out, uint32_t* width,
+                                             uint32_t* height);
     } engine_api;
 
     /* Returns the function table.

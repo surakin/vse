@@ -21,7 +21,8 @@ enum HandleKind : u64
     kKindImport = 5,
     kKindSurface = 6,
     kKindPixels = 7,
-    kKindLastIssued = kKindPixels
+    kKindTexture = 8,
+    kKindLastIssued = kKindTexture
 };
 
 /// The `struct_size` a host's struct starts with (the first field of every struct of the API).
