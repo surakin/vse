@@ -117,3 +117,7 @@ There is no LeakSanitizer on macOS (Apple clang): ASan aborts the process when `
 ## Android, iOS, consoles: not yet supported
 
 Phases 28 (Android, iOS) and 25 (consoles, gated on dev-kit and NDA access). Each phase adds its section here when it is broken into days.
+
+## The shared engine library (Phase 23)
+
+`-DENGINE_BUILD_SHARED=ON` (default OFF) will build the whole engine as one loadable library behind the C API (`libengine.so.1`, `engine.dll`, `libengine.1.dylib`) from Day 343; static linking stays the default for games. It needs nothing beyond the toolchain each platform section lists. A sanitized shared engine loads only into a host built with the same sanitizer (`docs/superpowers/specs/2026-11-16-engine-library-design.md`).

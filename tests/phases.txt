@@ -43,6 +43,8 @@ flavors 20  linux: plain,asan,tsan
 flavors 20  windows: plain,asan
 flavors 22  linux: plain,asan,tsan
 flavors 22  windows: plain,asan
+flavors 23  linux: plain # tests/engine_library (Day 342)
+flavors 23  windows: plain
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -86,6 +88,7 @@ flavors 19  macos: plain,asan,tsan # the gates (Day 286), tests/database and tes
 flavors 20  macos: plain,asan,tsan # the gate net_access_check (Day 292), tests/net (Day 310)
 flavors 21  macos: plain,asan,tsan # tests/macos (Day 284)
 flavors 22  macos: plain,asan,tsan # tests/asset (Day 313)
+flavors 23  macos: plain # tests/engine_library (Day 342); the sanitizer flavors arrive with the C hosts (Day 347)
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0
@@ -374,6 +377,7 @@ test:shared_unit_check*                         22   # the shared-ownership gate
 test:cmdline_access_check*                      22   # the command-line gate (out of plan, 2026-11-14)
 test:json_boundary_check*                       22   # the yyjson boundary gate (Day 335)
 test:asset_boundary_check*                      22   # the asset boundary gate (Day 339)
+test:engine_shared_option                       23   # the ENGINE_BUILD_SHARED option exists and defaults off (Day 342)
 test:resource_server_*                           22   # the resource server tool (Day 331)
 test:asset_mint_*                                22   # the minting tool's script tests (Day 333)
 

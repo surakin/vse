@@ -212,6 +212,10 @@ if(ENGINE_PLATFORM STREQUAL "windows")
        FILES_MATCHING PATTERN "*.h")
   include(cmake/EngineTestPhases.cmake)
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
+  option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23; the build itself arrives on Day 343)" OFF)
+  if(ENGINE_BUILD_SHARED)
+    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built from Phase 23 Day 343 on; this configuration still builds the static libraries")
+  endif()
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
   add_subdirectory(engine/foundation)
@@ -272,6 +276,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
   add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
   add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
+  add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
   add_subdirectory(tools/net_probe)  # Phase 20 Day 281
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
@@ -291,6 +296,10 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineSentry.cmake)
   engine_add_sentry(C11)
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
+  option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23; the build itself arrives on Day 343)" OFF)
+  if(ENGINE_BUILD_SHARED)
+    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built from Phase 23 Day 343 on; this configuration still builds the static libraries")
+  endif()
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
   add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_MACOS_COMPILE_OPTIONS})
@@ -359,6 +368,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
   add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
   add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
+  add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
   add_subdirectory(tools/net_probe)  # Phase 21 Day 310
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
@@ -380,6 +390,10 @@ include(cmake/EngineDeathTests.cmake)
 # full-build time. Set after the vendored Catch2 so only our own targets are batched. Turn it off
 # (-DENGINE_UNITY_BUILD=OFF) to check that every source still compiles on its own, or for clearer per-file errors.
 option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
+option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23; the build itself arrives on Day 343)" OFF)
+if(ENGINE_BUILD_SHARED)
+  message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built from Phase 23 Day 343 on; this configuration still builds the static libraries")
+endif()
 set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
 set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
 
@@ -424,6 +438,7 @@ add_subdirectory(tools/shared_unit_check)  # Phase 22: shared units are held by 
 add_subdirectory(tools/cmdline_access_check)  # programs read their command line through os::CommandLine, never by indexing argv
 add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
 add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
+add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
 add_subdirectory(tools/net_probe)  # Phase 20 Day 281
 add_subdirectory(tools/crash_extract)
 add_subdirectory(tests/foundation)

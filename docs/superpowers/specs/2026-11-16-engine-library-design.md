@@ -1,0 +1,85 @@
+# The engine as a loadable library: design and spike results
+
+Phase 23, Day 342 (2026-11-15, Linux). Plan: `plans/phase-23-engine-as-library.md`. The planner's defaults below were confirmed by the user on 2026-11-15; the
+spikes found nothing that revises them, and found six things the later days must handle (the end of "Spike results").
+
+## Decisions
+
+1. **One aggregate shared library** (`libengine.so.1`, `engine.dll`, `libengine.1.dylib`) for distribution; per-module shared targets only as a development
+   option (`ENGINE_BUILD_SHARED_MODULES`, added only if the rebuild time ever hurts). One binary means one copy of every singleton and one export list.
+2. **A hand-written flat C API behind one function table.** The only exported symbol is `engine_get_api(major, minor, table_size, &table)`; the table's `size`
+   field says which functions exist, so a newer host detects an older engine and the reverse. The header carries `ENGINE_ABI_VERSION_MAJOR/MINOR`: a major
+   change breaks (never made after v1 without a plan), a minor change only appends. Hosts load the library themselves (`engine_loader.h`, header-only C): no
+   import library, no link-time dependency.
+3. **Symbols hidden by default, and exported through a version script as well.** `-fvisibility=hidden` is not enough (Spike 1: the C++ standard headers and
+   the vendored C libraries still export); the linker's version script (`abi/engine.exports`, local: `*`) is the export list, checked by `abi_check`.
+4. **Errors:** `engine_status` is a small enum (`OK`, `INVALID`, `NOT_FOUND`, `UNSUPPORTED`, `IN_USE`, `BUSY`, `TOO_LARGE`, `CORRUPT`, `OFFLINE`, `CANCELLED`,
+   `OUT_OF_MEMORY`, `VERSION`, `STALE_HANDLE`, `OTHER`), mapped from `asset::ErrorCode` and the other `Status` codes by one table with a completeness test;
+   `engine_last_error(engine*)` gives the sentence of the last failure on the calling thread.
+5. **Ownership:** strings are `(pointer, length)`, never NUL-required; a buffer the engine returns is an `engine_buffer {data, size, release}` freed through the
+   engine's release function, never with the host's `free`; a buffer the host gives is copied unless the call says "borrowed with a release callback", which is
+   called exactly once, after the last reader, on an engine worker thread named in the header; nothing allocated by one side is freed by the other.
+6. **Callbacks** carry a `void* user`, run on the thread the header names (log: the calling thread; resource release: an engine worker; host requests such as
+   cursor and clipboard: the thread that called `engine_frame`), and must not call back into the engine except the functions marked callback-safe.
+7. **Handles** are 64 bits: 32-bit index and 32-bit generation; a stale handle fails with `STALE_HANDLE`, never crashes.
+8. **Structs** that can grow start with `u32 struct_size` (and `u32 version` where a layout can change); the engine reads only the fields inside the size.
+9. **What v1 covers:** version and caps, create and destroy with settings, logging hook, the frame loop, worlds and entities with the built-in components,
+   jobs, the crash handler, resources and host-provided content, glTF import (a build option), the foreign surface and host-owned input. **Not in v1:**
+   minting entry points (the host adds minted blobs), a game as a plugin loaded and reloaded by the host (the C ABI makes it possible; the work needs a
+   second shutdown/reload path for game code and is left to a later phase), a stable C++ ABI, language bindings beyond the table (Phase 26 binds through it).
+10. **iOS and consoles stay static.** `engine_c.h` compiles there; the loader does not.
+11. **Embedding:** the host owns the window, its size, visibility, DPI and event loop, input and the clipboard. The foreign-surface descriptor is
+    `{u32 struct_size, u32 kind, kind-specific handles, width, height, scale}` with kinds X11 (display and window), Wayland (`wl_display`, `wl_surface`: **the
+    host's connection**, never a second one), Win32 (`HWND`), Cocoa (`NSView` or `CAMetalLayer`). `engine_caps` reports `SURFACE_*`, `READBACK`,
+    `SHARED_TEXTURE`, `IMPORT_GLTF`; a backend that cannot do a mode returns `UNSUPPORTED`. **CPU readback comes first** (screenshots and tests);
+    **shared GPU textures second** (Vulkan external memory, D3D12 shared handle, `IOSurface`), built on Day 356 or filed. The assumption that a host's toolkit
+    exposes the raw native handle was confirmed by the user; if one does not, that toolkit uses readback or a shared texture.
+
+## Spike results (Linux x86-64, Clang, PIC build of the engine's static libraries)
+
+All three spikes used `foundation_*`, `jobs` and their vendored C libraries (sentry, breakpad, libunwind, libbacktrace) linked `--whole-archive` into one `.so`
+with a version script, and tiny C hosts (`dlopen`, `dlsym`, `dlclose`). The code is throwaway (not committed); the results are what the days build on.
+
+**Spike 1, a shared foundation.** It builds and runs: 1,000 jobs on a 4-participant scheduler twice in one process, logging, `settings::Registry`, the crash
+facade linked in. Size 4.8 MiB with debug info (the whole foundation, debug facade and its C libraries). Findings:
+(a) *the engine libraries are not PIC today*: a PIC build needs `CMAKE_POSITION_INDEPENDENT_CODE` for every module (Day 343);
+(b) *`-fvisibility=hidden` leaves about 500 symbols exported* (the standard library's inline templates, `sentry_*`, `unw_*`): the version script is the export
+list (Decision 3);
+(c) *a `.so` that exports C++ standard-library symbols is pinned in memory*: `ld.so` marks libstdc++ NODELETE through a relocation dependency on it; with only the
+version script's symbols exported the dependency is gone (`LD_DEBUG=files` shows it);
+(d) `RTLD_LOCAL` and `RTLD_GLOBAL` behave the same for a library that exports eight C symbols; the loader uses `RTLD_LOCAL | RTLD_NOW`;
+(e) the crash facade's signal handlers and the job scheduler's threads need an explicit shutdown (Day 348).
+
+**Spike 2, one of everything.** A second library that links the static foundation itself ("DUP") and one that calls the engine's exports only ("SHARED"):
+| Singleton | DUP | SHARED |
+|---|---|---|
+| log ring and `LogLinesWritten()` | two (engine 1, plugin 1) | one (2 and 2) |
+| `HeapAllocator::Default()` (a function-local static in a header) | two addresses | one |
+| `jobs::Counter::PathStats()` (a function-local static in a header) | two | one |
+Two libraries that each carry the foundation therefore see two logs, two allocators and two scheduler worlds: the rule is **one engine library; a plugin links
+the C API only**. The survey of `engine/` found the state that must live once: the log (ring, sink, assert handler, ensure-site list, thread-start hook,
+channel list), the crash facade (state entries, providers, context, handler, signal arrays), the debugger state, the module list, `os` command-line state, the
+job system's thread-locals (`tls_current`, `tls_job_depth`, the frame pool's `ThreadCache`), settings' `g_depth`, the Vulkan backend's thread-locals; and
+**in headers** (duplicated per library under hidden visibility): `HeapAllocator::Default()` (stateless, harmless), `jobs::Counter::PathStats()`, the
+`EnsureSite` statics of `ENGINE_ENSURE` (per call site, registered into the log's list), and **`ecs::World`'s `static U tag`** (the component type identity by
+address: a host that instantiated `World::Add<T>` in its own code would get other ids than the engine's; the C API forbids C++ component access across the
+boundary, and the shared-state gate (Day 345) bans new header statics). The settings registry is an object, not a global: one per engine instance.
+
+**Spike 3, sanitizers.** A sanitized engine library loads only into a host built with the same sanitizer (Clang's runtime lives in the executable:
+`undefined symbol: __asan_report_store4` / `__tsan_vptr_read` otherwise) or with the runtime `LD_PRELOAD`ed; the C host tests therefore build the host with
+`-fsanitize=address` or `thread` in those flavors. AddressSanitizer and ThreadSanitizer run the jobs and the log through `dlopen` without reports. Known
+limit: ThreadSanitizer cannot follow libpng's `longjmp` (Phase 22, Day 338), which matters only when the importer is in the library.
+
+**Unload.** The library leaves the address space after `dlclose` when no engine code ran on the host's calling thread; when it did, `ld.so` keeps it mapped
+(it counts the `thread_local` with a non-trivial destructor that was created on that thread: the job system's frame-pool cache and the crash facade's alternate
+stack) until that thread exits. The same calls made from a host thread that was joined first unload cleanly. **Decision:** on a host thread the engine registers
+no thread-local destructor: `thread_local` objects on the engine's API path are trivially destructible and are released by an explicit `engine_thread_detach`
+and by `engine_destroy` for the calling thread; Day 345 converts the two offenders, Day 348 tests unload from the main thread.
+
+## Consequences for the days
+
+- Day 343: PIC for every module and vendored library; the aggregate target links `--whole-archive`.
+- Day 344: version script plus `-fvisibility=hidden`; `abi_check` reads the dynamic symbol table; the export list is tiny (the table's entry point).
+- Day 345: the shared-state gate; convert the non-trivial thread-locals; the dup-singleton test is Spike 2 made permanent.
+- Day 348: the unload test runs on the main thread, under asan and tsan.
+- Days 347 and later: the C hosts of the sanitizer flavors are built with the sanitizer.

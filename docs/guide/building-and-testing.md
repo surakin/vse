@@ -522,3 +522,6 @@ of release builds ("Turning a dump into a trace" and "Keeping symbols for releas
 (`crash-report.sh ...`, `A stripped program resolves through a symbol store...`) skip with a printed reason when `lldb`,
 `objcopy` or `strip` is missing. `-DENGINE_SPLIT_DEBUG_INFO=ON` builds with `-g` and splits the debug information of the demos and benches.
 
+## The shared build option (Phase 23)
+
+`ENGINE_BUILD_SHARED` (default OFF, `cmake -DENGINE_BUILD_SHARED=ON`) is the switch of the engine-as-a-library build: one shared library with hidden symbols and a flat C API instead of the static libraries. It only reports itself until Phase 23 Day 343 adds the build; the design is in `docs/superpowers/specs/2026-11-16-engine-library-design.md`. The ctest `engine_shared_option` checks that the option exists.
