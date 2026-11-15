@@ -52,3 +52,16 @@ TEST_CASE("ENGINE_HAS_BUILTIN is usable in an #if", "[build_defs]")
     CHECK(ENGINE_COMPILER_MSVC == 1);  // only cl answers no
 #endif
 }
+
+// ENGINE_API: this test is not part of the shared library, so it is empty here; the exporting form is compiled into the
+// shared library itself (engine_shared_probe) and checked on the built file by the ctest abi_check_library
+// (ENGINE_BUILD_SHARED). The macros must at least be usable where a declaration puts them.
+ENGINE_API ENGINE_API_CALL int EngineApiProbeFunction()
+{
+    return 7;
+}
+
+TEST_CASE("ENGINE_API and ENGINE_API_CALL are usable in a declaration, and empty outside the library", "[build_defs]")
+{
+    CHECK(EngineApiProbeFunction() == 7);
+}

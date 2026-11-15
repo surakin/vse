@@ -61,6 +61,8 @@ tools/cmdline_access_check 22
 tools/json_boundary_check 22
 tools/asset_boundary_check 22
 tests/engine_library 23
+tools/abi_check 23
+abi 23
 engine/engine_c 23
 engine/asset_import 22
 third_party/yyjson 22

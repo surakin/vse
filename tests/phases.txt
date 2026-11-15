@@ -379,6 +379,7 @@ test:json_boundary_check*                       22   # the yyjson boundary gate 
 test:asset_boundary_check*                      22   # the asset boundary gate (Day 339)
 test:engine_shared_option                       23   # the ENGINE_BUILD_SHARED option exists and defaults off (Day 342)
 test:engine_shared_link_probe*                  23   # a C program links the shared engine library and runs jobs in it (Day 343)
+test:abi_check*                                 23   # the ABI gate: the export list, the version, the library, the C header (Day 344)
 test:resource_server_*                           22   # the resource server tool (Day 331)
 test:asset_mint_*                                22   # the minting tool's script tests (Day 333)
 

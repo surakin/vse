@@ -1,0 +1,6 @@
+# The exported symbols of the shared engine library, one per line (Phase 23 Day 344). `tools/abi_check` compares this list with the built library's dynamic
+# symbol table and, through git, with the last commit's list: adding a symbol needs a bump of the minor version below, removing one a bump of the major
+# version; `engine/engine_c/engine_abi_version.h` must carry the same numbers. The linker's version script is generated from this file (the node is named
+# ENGINE_<major>). Day 346 replaces the probe with `engine_get_api`.
+version 1.0
+engine_shared_probe

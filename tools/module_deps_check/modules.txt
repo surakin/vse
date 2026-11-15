@@ -198,6 +198,7 @@ module tools/net_access_check/ tools/gates 14
 module tools/shared_unit_check/ tools/gates 14
 module tools/cmdline_access_check/ tools/gates 14
 module tools/json_boundary_check/ tools/gates 14
+module tools/abi_check/ tools/gates 14
 module tools/asset_boundary_check/ tools/gates 14
 module tools/sqlite_boundary_check/ tools/gates 14
 module tools/database_sql_check/ tools/gates 14

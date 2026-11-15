@@ -1,8 +1,0 @@
-# The export list of the shared engine library (Phase 23 Day 343): what is not named here is local. Day 344 turns this into the generated, gate-checked
-# abi/engine.exports; until Day 346 the one symbol is a probe that runs a few jobs.
-ENGINE_1 {
-  global:
-    engine_shared_probe;
-  local:
-    *;
-};

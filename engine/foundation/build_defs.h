@@ -156,3 +156,22 @@
 #else
 #define ENGINE_STATIC_ANALYSIS 0
 #endif
+
+// --- the shared library's boundary (Phase 23)
+// ---------------------------------------------------------------------------------------------------------
+// ENGINE_API marks what the shared engine library exports: only the C API's functions (`extern "C" ENGINE_API ...`),
+// never a C++ type. The build defines ENGINE_BUILDING_LIBRARY (to 1) for the sources of the library that define the
+// exports (`engine/engine_c`); everywhere else, and in a static build, ENGINE_API is empty. Hidden visibility is the
+// default of every other symbol (CMake sets it for the shared build), and the linker's version script, generated from
+// `abi/engine.exports`, is the list that counts (`tools/abi_check`). ENGINE_API_CALL is the calling convention of an
+// exported function: none on the 64-bit targets (the C API has no `__stdcall`), kept so that a header states it.
+#if defined(ENGINE_BUILDING_LIBRARY)
+#if ENGINE_COMPILER_MSVC_ABI
+#define ENGINE_API __declspec(dllexport)
+#else
+#define ENGINE_API __attribute__((visibility("default")))
+#endif
+#else
+#define ENGINE_API
+#endif
+#define ENGINE_API_CALL
