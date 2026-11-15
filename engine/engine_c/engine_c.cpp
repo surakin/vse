@@ -17,6 +17,7 @@
 #include "debug/stack_trace.h"
 #include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
+#include "engine_c/import.h"
 #include "engine_c/resources.h"
 #include "engine_c/runtime.h"
 #include "engine_c/status_map.h"
@@ -265,6 +266,7 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
     settings::RegisterLogSettings(&engine->registry);
     asset::RegisterAssetSettings(&engine->registry);
     asset::RegisterManagerSettings(&engine->registry);
+    engine_c::RegisterImporterSettings(&engine->registry);
     {
         settings::SettingDesc dump = settings::MakeText("crash.dump_directory", "");
         dump.description = "the directory a crash dump goes to (empty: the user's crash directory)";
@@ -349,6 +351,7 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
         config.verify_on_load = manager.verify_on_load;
         config.max_inflight = manager.max_inflight;
         config.max_queued = manager.max_queued;
+        engine_c::ReadImporterSettings(engine->registry, &config);
     }
     for (LogChannel* channel = LogChannel::First(); channel != nullptr; channel = channel->Next())
     {
@@ -417,7 +420,7 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out` is NULL");
     }
-    constexpr usize kFirstVersionSize = sizeof(engine_info);
+    constexpr usize kFirstVersionSize = 8;  // struct_size and setting_count; `caps` came with Day 351
     if (out->struct_size < kFirstVersionSize)
     {
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_info.struct_size is smaller than the struct");
@@ -430,8 +433,15 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
     {
         return status;
     }
-    out->struct_size = static_cast<u32>(kFirstVersionSize);
+    const u32 host_size = out->struct_size;
     out->setting_count = engine->registry.Count();
+    out->struct_size = static_cast<u32>(kFirstVersionSize);
+    if (host_size >= sizeof(engine_info))
+    {
+        out->caps = engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u;
+        out->reserved = 0;
+        out->struct_size = static_cast<u32>(sizeof(engine_info));
+    }
     return ENGINE_OK;
 }
 
@@ -704,6 +714,13 @@ extern "C"
             &engine_c::TicketFinishFn,
             &engine_c::TicketCancelFn,
             &engine_c::TicketDestroyFn,
+            &engine_c::ImportGltfFn,
+            &engine_c::ImportGltfAsyncFn,
+            &engine_c::ImportPollFn,
+            &engine_c::ImportWaitFn,
+            &engine_c::ImportFinishFn,
+            &engine_c::ImportCancelFn,
+            &engine_c::ImportDestroyFn,
         };
         *out = &table;
         return ENGINE_OK;

@@ -109,6 +109,7 @@ ResourceHost::ResourceHost(Runtime& runtime) : runtime_(&runtime)
     const asset::Status mounted = manager_->Mount(StringView("/"), memory_.Get(), config.priority);
     ENGINE_VERIFY(mounted.Ok(), "mounting the memory backend cannot fail");
     memory_->SetInUseQuery(manager_->InUseQuery());
+    imports_ = MakeUnique<ImportHost>(runtime, *memory_, &tables_dirty_);
 }
 
 ResourceHost::~ResourceHost()
@@ -722,9 +723,6 @@ engine_status ResourceHost::TicketDestroy(engine_handle ticket)
 
 // ---- the functions of the table
 
-namespace
-{
-
 // The host of the engine a handle names, made on first use.
 engine_status HostOfEngine(engine_handle engine, ResourceHost** out)
 {
@@ -750,8 +748,6 @@ engine_status HostOfCurrent(engine_handle handle, ResourceHost** out)
     }
     return ENGINE_OK;
 }
-
-}  // namespace
 
 engine_status ResourceAddFn(engine_handle engine, const engine_resource_add_info* info)
 {

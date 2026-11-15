@@ -4,3 +4,5 @@
 # exempts its path from every rule of the gate, so keep it to the files that need it.
 game/asset_demo/main.cpp|the demo's whole point is the in-memory import of a glTF (the the host path)
 game/asset_demo/CMakeLists.txt|the demo links the importer
+engine/engine_c/import.cpp|the C API's import_gltf (Phase 23 Day 351): the one file of the engine library that includes the importer, compiled only with ENGINE_LIBRARY_WITH_IMPORTER; no other file of the library may
+engine/engine_c/CMakeLists.txt|links asset_import into the engine library when ENGINE_LIBRARY_WITH_IMPORTER is on (Phase 23 Day 351)

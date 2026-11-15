@@ -244,3 +244,46 @@ A host that has its content in memory (it downloaded it, unpacked it, generated 
 Not here: paks and loose files are not mounted by the C API yet (`assets.mounts` is declared but only the memory mount is made), and GPU resources come
 with the renderer's C functions.
 
+## Importing a glTF at run time: the the host path (Day 351)
+
+A program that fetches a glTF file from somewhere (the host gets 3D room models from a Matrix room) hands the bytes to the engine and gets resources it can
+load: `import_gltf` (synchronous) and `import_gltf_async` with its ticket calls (`import_poll`, `import_wait`, `import_finish`, `import_cancel`,
+`import_destroy`), described in `engine_c.h` ("Day 351"). The importer is `engine/asset_import` (Phase 22); the C API is a thin skin over `ImportGltf`,
+`ImportGltfAsync` and `ImportIntoBackend`. The whole path from a C host, in the order a host makes the calls:
+
+1. **Create the engine** and ask `get_info`: `caps & ENGINE_CAP_IMPORT_GLTF` says the library has the importer. A library built with
+   `-DENGINE_LIBRARY_WITH_IMPORTER=OFF` (the option defaults to ON; it leaves `asset_import`, the vendored zlib, libpng and the JPEG decoder out of the
+   library) has no such bit and answers every import call with `UNSUPPORTED`; nothing else changes.
+2. **Import.** `import_gltf(engine, bytes, size, &options, &result)` reads a `.gltf` or a `.glb` from memory (the call borrows `bytes`) and adds
+   what it made (meshes, skeletons, animation clips, textures, materials) to the engine's memory backend **atomically**: when one resource is refused,
+   none is added. A glTF that names external files (a `.bin`, an image) gets them from the host's `read_file` callback (name, the limit, an
+   `engine_import_file` the engine copies and then releases); without a callback such a file is `NOT_FOUND`. `data:` URIs and the `.glb` chunk need nothing.
+3. **Read the result.** `result.resource_count`, and buffers the host releases: `ids` (`uint64_t` values), `types` (`uint32_t` tags), `paths` (one per line),
+   `warnings` (one line each: features the importer dropped or approximated) and `manifest` (text). The resources load like any others with
+   `resource_load` by id or by path (`/gltf/...`, or the options' `path_prefix`).
+4. **Keep the ids.** The manifest names the id of every object by kind, index and name. Pass it as `options.manifest` on the next import of the file (the file
+   changed, or the room was entered again) and the objects that match keep their ids, so what the host stored about them (a saved reference, an entity's
+   component) stays valid; `id_seed` makes new ids reproducible. An import whose ids or paths are already in the backend fails with `ALREADY_EXISTS` and
+   changes nothing: the host removes the old resources (`resource_remove`, with `ENGINE_RESOURCE_FORCE` when something loaded depends on them) and imports
+   again with the manifest.
+5. **Asynchronously.** `import_gltf_async` copies the bytes and runs the import on an engine worker; `import_poll` reports the steps done of the five, `import_wait`
+   waits, `import_finish` adds the resources and gives the result (once; a second call is `NOT_FOUND`), `import_cancel` stops the job at its next step (the
+   outcome is `CANCELLED`, or the result if the import had finished already), `import_destroy` ends the ticket and waits for its job. Each ticket counts as an
+   object of the engine. The host's `read_file` runs on a worker thread then: it must be thread-safe and live until the ticket is destroyed.
+6. **Hostile files.** The file may come from anywhere. Every count and size is checked against the limits before anything is allocated: the defaults are the
+   `assets.import.*` settings, and each import may set its own (`max_file_bytes`, `max_json_bytes`, `max_buffer_bytes`, `max_output_bytes`, `max_pixels`,
+   `max_nodes`, `max_accessors`, `max_images`; 0 takes the setting). A file that is not valid, or over a limit, comes back as a status
+   (`INVALID_ARGUMENT`, `TOO_LARGE`, `LIMIT_EXCEEDED`, `UNSUPPORTED`, `NOT_FOUND`, ...) and a sentence in `last_error` that names the glTF object
+   (`meshes[0].primitives[0].attributes: ...`); `result` is zeroed and nothing is added. Nothing aborts.
+
+The library reaches the importer only through `engine/engine_c/import.cpp`; the gate `asset_boundary_check` lists that file and the CMake file that links it,
+and fails when any other file of the runtime includes the importer.
+
+**Tested** by `host_import.c` (in the static `engine_c` and, against the shared library through `dlopen`, in `engine_c_import_shared`; every flavor): the
+fixture of `tests/asset` imported from memory, every mesh, skeleton, clip, texture and material loaded by id and by path, the second import refused
+(`ALREADY_EXISTS`, nothing changed), remove and import again with the manifest (same ids), external files served by the host (and each released once), a
+refusing callback, the asynchronous import (poll, wait, finish twice, 24 cancels, destroy while running), every bad argument, and 450 hostile files
+(truncations, changed bytes, a GLB whose header lies, over every limit): each refused with a message or still a valid glTF, none a crash.
+`host_import_off.c` is the library without the importer. ThreadSanitizer cannot follow libpng's `longjmp` (`KNOWN-ISSUES.md`), so its flavor of the hostile
+run leaves the fixture's PNG uncorrupted.
+

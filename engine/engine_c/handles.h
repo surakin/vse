@@ -18,7 +18,8 @@ enum HandleKind : u64
     kKindCounter = 2,
     kKindResource = 3,
     kKindTicket = 4,
-    kKindLastIssued = kKindTicket
+    kKindImport = 5,
+    kKindLastIssued = kKindImport
 };
 
 /// The `struct_size` a host's struct starts with (the first field of every struct of the API).

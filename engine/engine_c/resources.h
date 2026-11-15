@@ -9,6 +9,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "engine_c/engine_c.h"
+#include "engine_c/import.h"
 #include "string_view.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
@@ -72,6 +73,11 @@ public:
     engine_status TicketCancel(engine_handle ticket);
     engine_status TicketDestroy(engine_handle ticket);
 
+    /// The glTF import of this host (its results go to this host's memory backend).
+    ///
+    /// - Thread-safety: thread-safe.
+    ImportHost& Imports() { return *imports_; }
+
     /// Builds what the loader has read (called by every frame).
     ///
     /// - Thread-safety: thread-safe.
@@ -109,6 +115,7 @@ private:
     Atomic<bool> tables_dirty_{false};  // content changed since the mounts' tables were read
 
     UniquePtr<asset::HostMemoryBackend> memory_;
+    UniquePtr<ImportHost> imports_;  // after the backend: destroyed before it
     UniquePtr<asset::ResourceManager> manager_;
     Mutex loader_mutex_;  // the loader belongs to one thread at a time
     UniquePtr<asset::AsyncLoader> loader_;
@@ -127,6 +134,16 @@ private:
     Vector<ResourceSlot> resources_;
     Vector<TicketSlot> tickets_;
 };
+
+/// The host of the engine a handle names, made on first use.
+///
+/// - Returns: OK, or the failure of resolving the engine handle.
+engine_status HostOfEngine(engine_handle engine, ResourceHost** out);
+
+/// The host of the engine that exists, for the calls that have only a handle of an object.
+///
+/// - Returns: OK, or INVALID_ARGUMENT / STALE_HANDLE with the failure text set.
+engine_status HostOfCurrent(engine_handle handle, ResourceHost** out);
 
 // The functions of the table that the resource host serves (engine_c.cpp lists them in the table).
 engine_status ResourceAddFn(engine_handle engine, const engine_resource_add_info* info);

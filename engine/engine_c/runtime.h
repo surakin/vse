@@ -87,6 +87,22 @@ private:
 
 class ResourceHost;
 
+/// The limits of a glTF import, read from the `assets.import.*` settings when the engine is created (all 0 when the
+/// importer is not built in).
+///
+/// - Thread-safety: thread-compatible plain data.
+struct ImportLimitValues
+{
+    u64 max_file_bytes = 0;    ///< `assets.import.max_file_bytes`.
+    u64 max_json_bytes = 0;    ///< `assets.import.max_json_bytes`.
+    u64 max_buffer_bytes = 0;  ///< `assets.import.max_buffer_bytes`.
+    u64 max_output_bytes = 0;  ///< `assets.import.max_output_bytes`.
+    u64 max_pixels = 0;        ///< `assets.import.max_pixels`.
+    u32 max_nodes = 0;         ///< `assets.import.max_nodes`.
+    u32 max_accessors = 0;     ///< `assets.import.max_accessors`.
+    u32 max_images = 0;        ///< `assets.import.max_images`.
+};
+
 /// The settings the resource host is made from (read when the engine is created).
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -100,6 +116,7 @@ struct ResourceConfig
     bool verify_on_load = false;             ///< `assets.verify_on_load`.
     u32 max_inflight = 4;                    ///< `assets.max_inflight`.
     u32 max_queued = 256;                    ///< `assets.max_queued`.
+    ImportLimitValues import_limits;  ///< The limits of a glTF import (`assets.import.*`); all 0 without the importer.
 };
 
 /// What an engine holds of worlds, counters and jobs.

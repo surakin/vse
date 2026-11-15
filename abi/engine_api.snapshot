@@ -48,9 +48,11 @@ field engine_create_info.args offset=40 size=8
 field engine_create_info.arg_count offset=48 size=8
 field engine_create_info.log offset=56 size=8
 field engine_create_info.log_user offset=64 size=8
-struct engine_info size=8
+struct engine_info size=16
 field engine_info.struct_size offset=0 size=4
 field engine_info.setting_count offset=4 size=4
+field engine_info.caps offset=8 size=4
+field engine_info.reserved offset=12 size=4
 struct engine_frame_info size=24
 field engine_frame_info.struct_size offset=0 size=4
 field engine_frame_info.flags offset=4 size=4
@@ -98,7 +100,46 @@ field engine_ticket_info.struct_size offset=0 size=4
 field engine_ticket_info.done offset=4 size=4
 field engine_ticket_info.blobs_read offset=8 size=4
 field engine_ticket_info.blobs_total offset=12 size=4
-struct engine_api size=344
+struct engine_import_file size=32
+field engine_import_file.data offset=0 size=8
+field engine_import_file.size offset=8 size=8
+field engine_import_file.release offset=16 size=8
+field engine_import_file.release_user offset=24 size=8
+struct engine_import_options size=128
+field engine_import_options.struct_size offset=0 size=4
+field engine_import_options.flags offset=4 size=4
+field engine_import_options.scale offset=8 size=4
+field engine_import_options.clip_rate offset=12 size=4
+field engine_import_options.path_prefix offset=16 size=16
+field engine_import_options.manifest offset=32 size=16
+field engine_import_options.id_seed offset=48 size=8
+field engine_import_options.read_file offset=56 size=8
+field engine_import_options.read_user offset=64 size=8
+field engine_import_options.max_file_bytes offset=72 size=8
+field engine_import_options.max_json_bytes offset=80 size=8
+field engine_import_options.max_buffer_bytes offset=88 size=8
+field engine_import_options.max_output_bytes offset=96 size=8
+field engine_import_options.max_pixels offset=104 size=8
+field engine_import_options.max_nodes offset=112 size=4
+field engine_import_options.max_accessors offset=116 size=4
+field engine_import_options.max_images offset=120 size=4
+field engine_import_options.reserved offset=124 size=4
+struct engine_import_result size=176
+field engine_import_result.struct_size offset=0 size=4
+field engine_import_result.resource_count offset=4 size=4
+field engine_import_result.warning_count offset=8 size=4
+field engine_import_result.reserved offset=12 size=4
+field engine_import_result.ids offset=16 size=32
+field engine_import_result.types offset=48 size=32
+field engine_import_result.paths offset=80 size=32
+field engine_import_result.warnings offset=112 size=32
+field engine_import_result.manifest offset=144 size=32
+struct engine_import_info size=16
+field engine_import_info.struct_size offset=0 size=4
+field engine_import_info.done offset=4 size=4
+field engine_import_info.steps_done offset=8 size=4
+field engine_import_info.steps_total offset=12 size=4
+struct engine_api size=400
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -144,3 +185,10 @@ field engine_api.ticket_wait offset=312 size=8
 field engine_api.ticket_finish offset=320 size=8
 field engine_api.ticket_cancel offset=328 size=8
 field engine_api.ticket_destroy offset=336 size=8
+field engine_api.import_gltf offset=344 size=8
+field engine_api.import_gltf_async offset=352 size=8
+field engine_api.import_poll offset=360 size=8
+field engine_api.import_wait offset=368 size=8
+field engine_api.import_finish offset=376 size=8
+field engine_api.import_cancel offset=384 size=8
+field engine_api.import_destroy offset=392 size=8

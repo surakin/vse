@@ -166,7 +166,12 @@ typedef struct engine_info
 {
     uint32_t struct_size;
     uint32_t setting_count; /* how many settings the engine declares */
+    uint32_t caps;          /* ENGINE_CAP_* bits: what this build of the library has (written when struct_size covers it) */
+    uint32_t reserved;
 } engine_info;
+
+/* Bits of engine_info.caps. */
+#define ENGINE_CAP_IMPORT_GLTF 0x1u /* the glTF importer is built in (import_gltf and import_gltf_async work; without it they fail with UNSUPPORTED) */
 
 /* Which sanitizer the library was built with. A sanitized library loads only into a host built with the same one. */
 typedef enum engine_sanitizer
@@ -307,7 +312,85 @@ typedef struct engine_ticket_info
     uint32_t blobs_total;  /* ... the blobs known so far (the total grows as the closure is found) */
 } engine_ticket_info;
 
-/* ---- the function table ------------------------------------------------------------------------------------------------------------------------ */
+/* ---- glTF import (Phase 23 Day 351)
+ * ----------------------------------------------------------------------------------------------------------- */
+
+/* Flags of engine_import_options. */
+#define ENGINE_IMPORT_FLAT_NORMALS 0x1u /* a mesh without normals gets flat ones (default: smooth) */
+#define ENGINE_IMPORT_DROP_MORPH_TARGETS                                                                               \
+    0x2u /* import the base shape of a primitive that has morph targets (a warning) instead of refusing */
+
+    /* What a host's read_file callback fills: the bytes of one external file of a glTF (a `.bin` or an image). The
+     * engine copies them at once, then calls `release` (when not NULL) exactly once with the same data pointer and
+     * size, so the host may free them there. */
+    typedef struct engine_import_file
+    {
+        const void* data;
+        size_t size;
+        void (*release)(void* release_user, const void* data, size_t size);
+        void* release_user;
+    } engine_import_file;
+
+    /* Reads an external file of a glTF for the engine. `name` is a clean relative name (segments joined by '/', no
+     * "..", no scheme, percent-escapes decoded). Return ENGINE_OK and fill `*out`, or an error: ENGINE_ERROR_NOT_FOUND
+     * (no such file), ENGINE_ERROR_IO, or another status the engine reports as the import's failure. A file longer than
+     * `max_bytes` makes the import fail with TOO_LARGE. In engine_api.import_gltf it runs on the calling thread; in
+     * import_gltf_async on an engine worker thread, at any time until the ticket is destroyed, and it must be
+     * thread-safe. It must not call the engine except status_name and last_error, and it never throws or longjmps. */
+    typedef engine_status (*engine_import_read_file_fn)(void* user, engine_string name, uint64_t max_bytes,
+                                                        engine_import_file* out);
+
+    /* How an import is made. A field that is 0 (or empty) takes its default. */
+    typedef struct engine_import_options
+    {
+        uint32_t struct_size;
+        uint32_t flags;            /* ENGINE_IMPORT_* */
+        float scale;               /* positions are multiplied by it (0: 1, glTF is in metres) */
+        float clip_rate;           /* the rate cubic-spline channels are resampled at (0: 30) */
+        engine_string path_prefix; /* the resource paths start with it (empty: "/gltf") */
+        engine_string manifest;    /* the manifest text an earlier import of this file returned: ids are kept for the
+                                      objects that match */
+        uint64_t id_seed; /* not 0: new ids come from a generator seeded with it (the same file and seed give the same
+                             ids); 0: random ids */
+        engine_import_read_file_fn read_file; /* NULL: a glTF that names an external file is refused */
+        void* read_user;
+        /* Limits; 0 takes the setting `assets.import.*` of the engine. A limit the host sets can be lower or higher
+         * than the setting. */
+        uint64_t max_file_bytes;
+        uint64_t max_json_bytes;
+        uint64_t max_buffer_bytes;
+        uint64_t max_output_bytes;
+        uint64_t max_pixels; /* of one decoded image */
+        uint32_t max_nodes;
+        uint32_t max_accessors;
+        uint32_t max_images;
+        uint32_t reserved;
+    } engine_import_options;
+
+    /* What an import made. Every buffer is the host's to release (engine_buffer_release). */
+    typedef struct engine_import_result
+    {
+        uint32_t struct_size;
+        uint32_t resource_count; /* resources made and added to the memory backend, dependencies first */
+        uint32_t warning_count;  /* features dropped or approximated (see `warnings`) */
+        uint32_t reserved;
+        engine_buffer ids;      /* resource_count values of uint64_t: the ids */
+        engine_buffer types;    /* resource_count values of uint32_t: the type tags (ENGINE_RESOURCE_*) */
+        engine_buffer paths;    /* the paths, UTF-8, one per line (each ends with '\n'), in the order of `ids` */
+        engine_buffer warnings; /* UTF-8, one line per warning */
+        engine_buffer manifest; /* UTF-8: pass it to the next import of this file as `manifest` to keep the ids */
+    } engine_import_result;
+
+    /* What import_poll reports. */
+    typedef struct engine_import_info
+    {
+        uint32_t struct_size;
+        int32_t done;         /* 1 once the import ended (with a result, an error or a cancellation) */
+        uint32_t steps_done;  /* of ... */
+        uint32_t steps_total; /* ... the import's steps */
+    } engine_import_info;
+
+    /* ---- the function table ------------------------------------------------------------------------------------------------------------------------ */
 
 typedef struct engine_api
 {
@@ -494,7 +577,52 @@ typedef struct engine_api
 
     /* Destroys a ticket, cancelling a load that has not finished. A resource the ticket would have given is released. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
     engine_status (*ticket_destroy)(engine_handle ticket);
-} engine_api;
+    /* ---- Day 351: glTF import ---- */
+
+        /* Imports a glTF (`.gltf` or `.glb`, in memory) and adds everything it makes (meshes, skeletons, clips,
+         * textures, materials) to the engine's memory backend, atomically: when one resource is refused none is added.
+         * `bytes` is borrowed for the call. The new resources load like any others (resource_load by id or by the paths
+         * in `result`). Ids that are already in the backend are refused (ALREADY_EXISTS): to import a changed file
+         * again with the same ids, resource_remove the old ones, then import with the `manifest` the first import
+         * returned. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL arguments, flags, a manifest that does not parse,
+         * a prefix that is not a path, and a file that is not valid glTF: last_error names the glTF object),
+         * STRUCT_SIZE, UNSUPPORTED (the library was built without the importer, or the file uses a feature the importer
+         * does not handle), TOO_LARGE and LIMIT_EXCEEDED (a limit), NOT_FOUND and IO (read_file), CANCELLED
+         * (read_file), ALREADY_EXISTS. `result` is zeroed on failure. */
+        engine_status (*import_gltf)(engine_handle engine, const void* bytes, size_t size,
+                                     const engine_import_options* options, engine_import_result* result);
+
+        /* Starts the same import on an engine worker and returns a ticket at once. The engine copies `bytes`, the
+         * options' strings and the manifest; the host's read_file (if any) and its user pointer must stay valid until
+         * the ticket is destroyed. The ticket counts as an object of the engine until import_destroy. Fails with: the
+         * argument errors of import_gltf, UNSUPPORTED, LIMIT_EXCEEDED (too many tickets). The import's own errors come
+         * with import_finish. */
+        engine_status (*import_gltf_async)(engine_handle engine, const void* bytes, size_t size,
+                                           const engine_import_options* options, engine_handle* ticket);
+
+        /* Looks at an import ticket without waiting. Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE,
+         * TYPE_MISMATCH. */
+        engine_status (*import_poll)(engine_handle ticket, engine_import_info* out);
+
+        /* Waits until the import is done, at most `timeout_ms` (UINT64_MAX waits for ever). Not from inside a job.
+         * Returns OK when done, NOT_READY on a timeout. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH,
+         * NOT_READY. */
+        engine_status (*import_wait)(engine_handle ticket, uint64_t timeout_ms);
+
+        /* Takes the outcome of a finished import: adds the resources to the memory backend (as import_gltf does) and
+         * fills `result`, or reports the import's error (and zeroes `result`), CANCELLED after import_cancel. Once
+         * only: a second call fails with NOT_FOUND. Fails with: NOT_READY (not done), the errors of import_gltf,
+         * CANCELLED, STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, TYPE_MISMATCH. */
+        engine_status (*import_finish)(engine_handle ticket, engine_import_result* result);
+
+        /* Asks the import to stop at its next step; it then reads as done with CANCELLED. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, TYPE_MISMATCH. */
+        engine_status (*import_cancel)(engine_handle ticket);
+
+        /* Destroys an import ticket, cancelling an import that has not finished and waiting for its job to end. Fails
+         * with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, IN_USE. */
+        engine_status (*import_destroy)(engine_handle ticket);
+    } engine_api;
 
 /* Returns the function table.
  *

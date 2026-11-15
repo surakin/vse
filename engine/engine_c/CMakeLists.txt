@@ -14,7 +14,16 @@ else()
   set(ENGINE_C_TEST_EXTENSION_VALUE 0)
 endif()
 
-set(ENGINE_C_SOURCES engine_c.cpp resources.cpp runtime.cpp status_map.cpp)
+# The glTF importer (engine/asset_import, with the image decoders) is part of the library by default; a library without it answers import_gltf with UNSUPPORTED
+# and reports no ENGINE_CAP_IMPORT_GLTF (Day 351). Only import.cpp reaches the importer (the gate asset_boundary_check lists the file and this one).
+option(ENGINE_LIBRARY_WITH_IMPORTER "Build the glTF importer into the engine library (the C API's import_gltf)" ON)
+if(ENGINE_LIBRARY_WITH_IMPORTER)
+  set(ENGINE_C_WITH_IMPORTER_VALUE 1)
+else()
+  set(ENGINE_C_WITH_IMPORTER_VALUE 0)
+endif()
+
+set(ENGINE_C_SOURCES engine_c.cpp import.cpp resources.cpp runtime.cpp status_map.cpp)
 if(ENGINE_C_TEST_EXTENSION)
   list(APPEND ENGINE_C_SOURCES test_state.cpp)
 endif()
@@ -29,16 +38,31 @@ foreach(suffix "" "_asan" "_tsan")
   target_include_directories(engine_c${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
   target_compile_options(engine_c${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
   # ENGINE_BUILDING_LIBRARY: engine_get_api is the one exported function (engine_c.h); ENGINE_TEST_EXTENSION: see the option above.
-  target_compile_definitions(engine_c${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
+  target_compile_definitions(engine_c${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE} ENGINE_C_WITH_IMPORTER=${ENGINE_C_WITH_IMPORTER_VALUE})
   target_link_libraries(engine_c${suffix} PUBLIC asset${suffix} ecs${suffix} jobs${suffix} foundation${suffix})
+  if(ENGINE_LIBRARY_WITH_IMPORTER)
+    target_link_libraries(engine_c${suffix} PUBLIC asset_import${suffix})
+  endif()
 endforeach()
+
+# The same C API compiled without the importer (plain flavor only): the test of a library built with ENGINE_LIBRARY_WITH_IMPORTER=OFF (Day 351).
+if(ENGINE_LIBRARY_WITH_IMPORTER)
+  add_library(engine_c_noimport STATIC ${ENGINE_C_SOURCES})
+  target_include_directories(engine_c_noimport PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  target_compile_options(engine_c_noimport PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+  target_compile_definitions(engine_c_noimport PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE} ENGINE_C_WITH_IMPORTER=0)
+  target_link_libraries(engine_c_noimport PUBLIC asset ecs jobs foundation)
+endif()
 
 if(NOT ENGINE_BUILD_SHARED)
   return()
 endif()
 
 # The modules whose static libraries make up the engine (the order of the root CMakeLists.txt).
-set(ENGINE_SHARED_MODULE_DIRS foundation platform jobs text ecs spatial database storage net ui ui_window rhi renderer scene asset asset_import animation)
+set(ENGINE_SHARED_MODULE_DIRS foundation platform jobs text ecs spatial database storage net ui ui_window rhi renderer scene asset animation)
+if(ENGINE_LIBRARY_WITH_IMPORTER)
+  list(APPEND ENGINE_SHARED_MODULE_DIRS asset_import)
+endif()
 
 # The static libraries of one flavor ("" plain, _asan, _tsan) under those directories, tests and executables excluded.
 function(engine_shared_collect suffix out)
@@ -108,7 +132,7 @@ function(engine_add_shared suffix)
   add_library(engine${suffix} SHARED ${ENGINE_C_SOURCES})
   target_include_directories(engine${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
   target_compile_options(engine${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_compile_definitions(engine${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=1 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
+  target_compile_definitions(engine${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=1 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE} ENGINE_C_WITH_IMPORTER=${ENGINE_C_WITH_IMPORTER_VALUE})
   # Every module's objects go in whole (nothing is dropped for being unreferenced: the C API reaches them at run time), their third-party libraries
   # (the vendored C libraries, already position independent) come in through the modules' usage requirements.
   target_link_libraries(engine${suffix} PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,${libs}>")
