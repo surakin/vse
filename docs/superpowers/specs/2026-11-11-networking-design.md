@@ -145,7 +145,22 @@ Pass conditions for the engine's layers (planner's defaults, to be confirmed or 
 | Simulated TCP stream throughput, 16 KiB messages | 1,609-1,629 MiB/s of wall time |
 
 Within a few microseconds of Linux on the loopback echoes (the Windows poller is `select`, section 3); the simulated measures are about 10-20 %
-slower. The same conditions as on Linux are not measured (below), and the `select` poller has not been measured at 1,000 sockets.
+slower. The same conditions as on Linux are not measured (below).
+
+**The `select` poller at 1,000 sockets (2026-11-15, the Windows PC, Release MSVC; `net_tests_sockets "[poller-bench]"`, `tests/net/poller_test.cpp`):** 1,000 loopback UDP
+sockets armed for reading, 500 rounds (50 with all ready), each making some ready with one datagram:
+
+| Ready per round | Per wait | Events per wait | Per re-arm |
+|---|---|---|---|
+| 0 (timeout 0) | 53-54 us | 0 | - |
+| 1 | 57-59 us | 1 | 0.29-0.31 us |
+| 16 | 60-62 us | 16 | 0.22 us |
+| 1,000 | 190-198 us | 62.5 (the batch is 64) | 0.22 us |
+
+`select` itself is 52 us of a wait with nothing ready and 187 us with all 1,000 ready (timed around the call in a throwaway build); the poller's own
+work (copying the armed set, matching the results) is under 6 us a wait. Replacing the linear matching with sorted sets and position hints saved about
+8 us of the 198 and was not kept. A wait therefore costs about 0.05 us per armed socket whatever is ready: IOCP, not the poller's code, is the way to
+go faster if a reactor with many idle connections needs it.
 
 ### Results on macOS (2026-11-13, Phase 21 Day 311; Release, Apple clang, loopback, the 2019 MacBook Pro, Intel i5-8257U, 4 cores; one run)
 

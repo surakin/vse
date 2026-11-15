@@ -8,9 +8,11 @@
 
 // Session state on Windows (Phase 13 Day 149; the checklist is os/windows/SESSION.md).
 //   Inactive: the calling process's session is not the connected, active one (fast user switching, a disconnected
-//   remote session). Locked:   the input desktop is not "Default": while the workstation is locked it is Winlogon (and
-//   opening it fails), a screen saver
-//             shows as "Screen-saver".
+//   remote session).
+//   Locked:   the session's own lock flag (`WTSSessionInfoEx`, `WTS_SESSIONSTATE_LOCK`), or an input desktop that is
+//             not "Default" (Winlogon while the lock takes over, which cannot be opened; "Screen-saver"). The flag is
+//             needed: on Windows 11 the lock screen runs on the Default desktop, so a few seconds after Win+L the input
+//             desktop is "Default" again while the session stays locked (logged on the Windows PC, 2026-11-15).
 //   Idle:     Windows has no idle hint of its own (GetLastInputInfo would need a limit the engine does not have), so
 //   never reported. Unknown:  the session query fails (a service session, a container without a desktop).
 
@@ -35,6 +37,18 @@ SessionState QuerySessionState()
     WTSFreeMemory(connect_state);
 
     bool locked = true;  // an input desktop that cannot be opened is Winlogon's
+    WTSINFOEXW* info = nullptr;
+    bool flag_locked = false;
+    if (WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSSessionInfoEx,
+                                    reinterpret_cast<LPWSTR*>(&info), &bytes) &&
+        info != nullptr && bytes >= sizeof(WTSINFOEXW) && info->Level == 1)
+    {
+        flag_locked = info->Data.WTSInfoExLevel1.SessionFlags == WTS_SESSIONSTATE_LOCK;
+    }
+    if (info != nullptr)
+    {
+        WTSFreeMemory(info);
+    }
     if (HDESK desktop = OpenInputDesktop(0, FALSE, DESKTOP_READOBJECTS); desktop != nullptr)
     {
         wchar_t name[64] = {};
@@ -45,7 +59,7 @@ SessionState QuerySessionState()
         }
         CloseDesktop(desktop);
     }
-    return SessionStateFromFlags(true, active, locked, false);
+    return SessionStateFromFlags(true, active, locked || flag_locked, false);
 }
 
 }  // namespace engine_placeholder::os

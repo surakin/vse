@@ -72,6 +72,18 @@ struct InputWindow
     bool Open() { return window.Open("input test", 320, 240, &input); }
     HWND Hwnd() const { return window.NativeHandle(); }
     void Pump() { window.PumpEvents(); }
+    // Only the posted and sent messages. Windows makes a WM_MOUSEMOVE from the real cursor's input whenever it is over
+    // the window (or the window holds the capture), and input messages are dispatched after posted ones, so a full pump
+    // would let a person's mouse overwrite the position a posted move just set.
+    void PumpPosted()
+    {
+        MSG msg;
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE | PM_QS_POSTMESSAGE | PM_QS_SENDMESSAGE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+    }
 };
 
 bool CapsLockOn()
@@ -377,11 +389,12 @@ TEST_CASE("Windows: the mouse fills position, buttons with capture, and the whee
     InputWindow w;
     REQUIRE(w.Open());
     PostMessageW(w.Hwnd(), WM_MOUSEMOVE, 0, Point(10, 20));
-    w.Pump();
+    w.PumpPosted();  // a real mouse over the window must not overwrite the posted position
     CHECK(w.input.mouse_x == 10.0);
     CHECK(w.input.mouse_y == 20.0);
     // The move says inside; asking for WM_MOUSELEAVE then gets one at once if the real cursor is elsewhere (Windows
     // checks it), so the pointer ends up where the real cursor is.
+    w.Pump();
     POINT cursor{};
     GetCursorPos(&cursor);
     CHECK(w.input.pointer_inside == (WindowFromPoint(cursor) == w.Hwnd()));
@@ -398,7 +411,7 @@ TEST_CASE("Windows: the mouse fills position, buttons with capture, and the whee
 
     // Outside the client area while the buttons hold the capture: the position goes on, the pointer is not inside.
     PostMessageW(w.Hwnd(), WM_MOUSEMOVE, MK_LBUTTON, Point(-5, 30));
-    w.Pump();
+    w.PumpPosted();  // the capture sends the real cursor's moves here too
     CHECK(w.input.mouse_x == -5.0);
     CHECK_FALSE(w.input.pointer_inside);
 
