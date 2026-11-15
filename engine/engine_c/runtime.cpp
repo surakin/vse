@@ -12,6 +12,7 @@
 #include "engine_c/resources.h"
 #include "engine_c/engine_objects.h"
 #include "jobs/scheduler.h"
+#include "lang/limits.h"
 #include "jobs/topology.h"
 #include "log/diagnostics_hooks.h"
 #include "math/quaternion.h"
@@ -263,7 +264,8 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
         return resolved;
     }
     const u64 start = os::MonotonicTimeNanos();
-    const u64 budget_ns = info->budget_us * 1000ull;
+    const u64 budget_ns = info->budget_us > Limits<u64>::Max() / 1000ull ? Limits<u64>::Max()
+                                                                         : info->budget_us * 1000ull;
     engine_frame_stats result = {};
     result.struct_size = sizeof(engine_frame_stats);
     if (ResourceHost* resources = runtime->ResourcesIfCreated())

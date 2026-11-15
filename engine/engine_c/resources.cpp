@@ -567,6 +567,10 @@ engine_status ResourceHost::LoadAsync(u64 id, engine_string path, u32 type, u32 
     usize slot = 0;
     if (!FindFreeSlot(tickets_, &slot))
     {
+        {  // a started request leaves the loader under its mutex (TicketDestroy)
+            LockGuard<Mutex> loader_lock(loader_mutex_);
+            object.Reset();
+        }
         EngineObjectRelease();
         return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "too many tickets exist");
     }

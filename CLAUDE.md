@@ -316,7 +316,7 @@ table in `PLAN.md`.
   defined in Phase 4. Vulkan (Phase 4) and Direct3D 12 (Phase 13) are the backends; Metal (Phase 21)
   follows behind the same interface.
 - **Data-oriented ECS**, not an OOP scene graph.
-- **The engine must stay buildable as a loadable library** (Phase 23, planned; `PLAN.md` assumption #27): the same sources build as static libraries (the default) or as one shared library with hidden symbols and a versioned flat C ABI at the boundary. Until Phase 23 exists, do not add global or static state that could not live once inside one library (a second copy per module would be a bug), do not let an owning pointer or an allocation cross a module boundary to be freed by another module, and do not make a module depend on its own static initialization order.
+- **The engine must stay buildable as a loadable library** (Phase 23, built: `-DENGINE_BUILD_SHARED=ON`, `docs/guide/engine-library.md`, `PLAN.md` assumption #27): the same sources build as static libraries (the default) or as one shared library with hidden symbols, a version-script export list (`engine_get_api` only) and a versioned flat C ABI (`include/engine/engine_c.h`, snapshot `abi/engine_api.snapshot`) at the boundary. Do not add global or static state that could not live once inside one library (a second copy per module would be a bug), do not let an owning pointer or an allocation cross a module boundary to be freed by another module, and do not make a module depend on its own static initialization order.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles.
   Windows is Phase 13, right after the renderer core and the layering

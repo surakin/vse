@@ -1,8 +1,8 @@
 # The engine as a loadable library
 
 The engine can be built as one shared library (`libengine.so.1`, `libengine.1.dylib` on macOS) that a host program loads at run time and drives through a flat C API, next to the static
-libraries games link today (Phase 23; design in `docs/superpowers/specs/2026-11-16-engine-library-design.md`). This page grows with the phase; so far it holds
-the rules of what the library exports and the first part of the C API.
+libraries games link today (Phase 23; design in `docs/superpowers/specs/2026-11-16-engine-library-design.md`). The page is the reference for the whole phase: building, what is exported, the C API's conventions, versioning, loading, embedding on each platform, the cost
+of the shared build and the limits. To write a host step by step, start with the [tutorial](../tutorials/loading-the-engine.md).
 
 ## Building it
 
@@ -550,3 +550,27 @@ thread (the frame skips the surface and fails its read-back; the destroy is refu
 the engine and the rebind to a new one, a read-back cancelled by `surface_destroy`, and `destroy` refused while the surface exists. `surface_input_test.cpp`
 runs its UI rig on a Cocoa window there too. The Linux hosts run on the Mac through the POSIX side of `host_os.h`, with the process probes (`process_probe.h`: Mach and dyld in
 place of `/proc`) and the unload limit above.
+
+## Writing a host: the short path (Days 346-357)
+
+1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.
+2. Ask for the table: `engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &api)`; a newer library serves an older host (the table only grows), an older library refuses a newer host with a status.
+3. Zero every struct, set its `struct_size`, and pass it. Handles are generation-checked: a stale handle is `ENGINE_ERROR_INVALID_HANDLE`, never a crash.
+4. Drive the engine from your loop (`frame`), or hand it a window (`surface_create`) and forward your events (`surface_input`); results the engine wants to tell you arrive through the callbacks you registered.
+5. Destroy in reverse order: surfaces and worlds, then the engine; unload the library only after `destroy` (the unload and reload tests prove this works any number of times).
+
+## What the shared build costs (Day 356)
+
+Measured in Release on Linux x86-64 (figures and method: the spec's "Day 356 results"): `libengine.so.1.0` is 7.7 MB; a call through the function table costs 15-100 ns
+(an empty `frame` 90-99 ns, an entity create and destroy about 33-36 ns, a component get or set 15-28 ns), the same whether the host linked the C layer statically
+or loaded the shared library; the static default, which most programs use, is not slower for the option existing. A resource load is dominated by file I/O,
+which the C layer does not change.
+
+## Limits and what is deliberately not here
+
+- **No stable C++ ABI.** Only the flat C table is stable; the C++ headers change with the engine.
+- **No bindings beyond the table.** A binding for another language is written over `engine_c.h` and the ABI snapshot (`abi/engine_api.snapshot`), by the host's author.
+- **No plugin hot reload.** A game as a library reloaded while the engine runs is not in this phase; the C ABI makes it possible (the engine itself unloads and reloads cleanly), and what it needs is listed in the spec.
+- **No shared GPU textures yet.** A host that composites the engine's output itself reads pixels back (`surface_read_pixels`); importing the engine's texture into the host's own device (Vulkan external memory, a D3D12 shared handle, `IOSurface`) is not built (reasons in the spec).
+- **One engine per process is the tested case;** several engines in one process share the allocator and the job system by design (`One of everything`).
+- **Platform notes** are in the sections above: the Linux and POSIX loader, `engine.dll` and the HWND on Windows, the dylib and the `NSView` on macOS; iOS links statically.

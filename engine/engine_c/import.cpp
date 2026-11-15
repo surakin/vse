@@ -85,7 +85,11 @@ public:
             }
         }
         asset::Status result;
-        if (file.size > max_bytes)
+        if (file.data == nullptr && file.size != 0)
+        {
+            result = asset::Status::Make(asset::ErrorCode::Invalid, "an external file has a size but no data");
+        }
+        else if (file.size > max_bytes)
         {
             result = asset::Status::Make(asset::ErrorCode::TooLarge, "an external file is longer than the limit");
         }

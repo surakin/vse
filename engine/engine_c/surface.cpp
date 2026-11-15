@@ -1031,6 +1031,8 @@ void SurfaceHost::RenderAll()
         if (s->lost || s->swapchain == nullptr)
         {
             ++s->skipped;
+            FailWaiting(s, &by_slot,
+                        ENGINE_ERROR_UNSUPPORTED);  // a read-back asked after the loss must not wait for a rebind
             continue;
         }
         if (s->window.IsMinimized())
