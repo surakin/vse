@@ -51,13 +51,14 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_MESH_REFERENCE: return "mesh reference";
     case ENGINE_COMPONENT_CAMERA: return "camera";
     case ENGINE_COMPONENT_LIGHT: return "light";
+    case ENGINE_COMPONENT_VISIBILITY: return "visibility";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_LIGHT;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_VISIBILITY;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -70,6 +71,7 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_MESH_REFERENCE: return ecs::ComponentOf<MeshReference>();
     case ENGINE_COMPONENT_CAMERA: return ecs::ComponentOf<CameraComponent>();
     case ENGINE_COMPONENT_LIGHT: return ecs::ComponentOf<LightComponent>();
+    case ENGINE_COMPONENT_VISIBILITY: return ecs::ComponentOf<VisibilityComponent>();
     }
     return ecs::kInvalidComponent;
 }
@@ -503,6 +505,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         checked = CheckInStruct(value, sizeof(engine_light), "engine_light");
     }
+    else if (kind == ENGINE_COMPONENT_VISIBILITY)
+    {
+        checked = CheckInStruct(value, sizeof(engine_visibility), "engine_visibility");
+    }
     else
     {
         checked = CheckInStruct(value, sizeof(engine_mesh_reference), "engine_mesh_reference");
@@ -515,6 +521,17 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
         world, true, key,
         [&](WorldObject& object, ecs::Entity entity)
         {
+            if (kind == ENGINE_COMPONENT_VISIBILITY)
+            {
+                const engine_visibility* in = static_cast<const engine_visibility*>(value);
+                if (in->hidden > 1)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "hidden is 0 or 1");
+                }
+                VisibilityComponent visibility;
+                visibility.hidden = in->hidden;
+                return SetOrAdd(object.world, entity, visibility);
+            }
             if (kind == ENGINE_COMPONENT_LIGHT)
             {
                 const engine_light* in = static_cast<const engine_light*>(value);
@@ -642,6 +659,283 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
         });
 }
 
+#define TRY_STATUS(expression)                                                                                         \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        const engine_status try_status = (expression);                                                                 \
+        if (try_status != ENGINE_OK)                                                                                   \
+        {                                                                                                              \
+            return try_status;                                                                                         \
+        }                                                                                                              \
+    } while (0)
+
+engine_status EntitySetParentFn(engine_handle world, u64 child_key, u64 parent_key)
+{
+    return WithWorld(
+        world, true, child_key,
+        [&](WorldObject& object, ecs::Entity child)
+        {
+            if (parent_key == 0)
+            {
+                if (object.world.Has<ecs::Parent>(child))
+                {
+                    ecs::ClearParent(object.world, child);
+                }
+                return ENGINE_OK;
+            }
+            ecs::Entity parent;
+            const engine_status found = ResolveEntity(object, parent_key, &parent);
+            if (found != ENGINE_OK)
+            {
+                return found;
+            }
+            switch (ecs::SetParent(object.world, child, parent))
+            {
+            case ecs::HierarchyStatus::Ok: return ENGINE_OK;
+            case ecs::HierarchyStatus::DeadEntity: return Fail(ENGINE_ERROR_STALE_HANDLE, "an entity was destroyed");
+            case ecs::HierarchyStatus::SelfParent:
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "an entity cannot be its own parent");
+            case ecs::HierarchyStatus::Cycle:
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the parent is a descendant of the child: a cycle");
+            case ecs::HierarchyStatus::TooDeep:
+                return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the hierarchy would be deeper than the engine allows");
+            case ecs::HierarchyStatus::Refused: break;
+            }
+            return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the world refused the parent link");
+        });
+}
+
+engine_status EntityGetParentFn(engine_handle world, u64 key, u64* parent_key)
+{
+    if (parent_key == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`parent_key` is NULL");
+    }
+    *parent_key = 0;
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         const ecs::World& view = object.world;
+                         const ecs::Parent* parent = view.Peek<ecs::Parent>(entity);
+                         if (parent != nullptr && view.Exists(parent->entity))
+                         {
+                             *parent_key = parent->entity.ToU64();
+                         }
+                         return ENGINE_OK;
+                     });
+}
+
+namespace
+{
+
+// Calls `fn(key)` for each entity named `name`, until it returns false.
+template <class Fn> void ForEachNamed(ecs::World& world, StringView name, Fn&& fn)
+{
+    bool go = true;
+    auto query = world.Query<ecs::Read<EntityName>>();
+    query.ForEach(
+        [&](ecs::Entity entity, const EntityName& candidate)
+        {
+            if (go && StringView(candidate.text, candidate.length) == name)
+            {
+                go = fn(entity.ToU64());
+            }
+        });
+}
+
+engine_status CheckName(engine_string name)
+{
+    if (name.data == nullptr && name.length != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a string has a NULL pointer and a length");
+    }
+    return ENGINE_OK;
+}
+
+// The kind a slot name takes, or 0 for a name the G-buffer material does not have.
+u32 KindOfSlot(StringView name)
+{
+    if (name == StringView("base_color"))
+    {
+        return ENGINE_SLOT_COLOR;
+    }
+    if (name == StringView("roughness") || name == StringView("metallic") || name == StringView("emissive_scale") ||
+        name == StringView("alpha_cutoff") || name == StringView("occlusion"))
+    {
+        return ENGINE_SLOT_FLOAT;
+    }
+    if (name == StringView("albedo_tex") || name == StringView("normal_tex"))
+    {
+        return ENGINE_SLOT_TEXTURE;
+    }
+    return 0;
+}
+
+}  // namespace
+
+engine_status EntityFindFn(engine_handle world, engine_string name, u64* key)
+{
+    if (key == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`key` is NULL");
+    }
+    *key = 0;
+    TRY_STATUS(CheckName(name));
+    return WithWorld(world, false, 0,
+                     [&](WorldObject& object, ecs::Entity)
+                     {
+                         u64 found = 0;
+                         ForEachNamed(object.world, StringView(name.data, name.length),
+                                      [&](u64 candidate)
+                                      {
+                                          found = candidate;
+                                          return false;
+                                      });
+                         if (found == 0)
+                         {
+                             return Fail(ENGINE_ERROR_NOT_FOUND, "no entity has that name");
+                         }
+                         *key = found;
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status EntityFindAllFn(engine_handle world, engine_string name, u64* keys, size_t capacity, size_t* total)
+{
+    if (total == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`total` is NULL");
+    }
+    *total = 0;
+    if (keys == nullptr && capacity != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`keys` is NULL with a capacity above zero");
+    }
+    TRY_STATUS(CheckName(name));
+    return WithWorld(world, false, 0,
+                     [&](WorldObject& object, ecs::Entity)
+                     {
+                         usize count = 0;
+                         ForEachNamed(object.world, StringView(name.data, name.length),
+                                      [&](u64 candidate)
+                                      {
+                                          if (count < capacity)
+                                          {
+                                              keys[count] = candidate;
+                                          }
+                                          ++count;
+                                          return true;
+                                      });
+                         *total = count;
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_string slot,
+                                      const engine_slot_override* value)
+{
+    TRY_STATUS(CheckName(slot));
+    TRY_STATUS(CheckInStruct(value, sizeof(engine_slot_override), "engine_slot_override"));
+    const StringView name(slot.data, slot.length);
+    const u32 expected = KindOfSlot(name);
+    if (expected == 0)
+    {
+        SetLastError("invalid_argument: the material has no slot '%.*s' (base_color, roughness, metallic, "
+                     "emissive_scale, alpha_cutoff, occlusion, albedo_tex, normal_tex)",
+                     static_cast<int>(slot.length < 40 ? slot.length : 40), slot.data != nullptr ? slot.data : "");
+        return ENGINE_ERROR_INVALID_ARGUMENT;
+    }
+    if (value->kind != expected)
+    {
+        SetLastError("invalid_argument: the slot '%.*s' takes another kind of value", static_cast<int>(slot.length),
+                     slot.data);
+        return ENGINE_ERROR_INVALID_ARGUMENT;
+    }
+    for (const float f : value->value)
+    {
+        if (!Finite(f))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the override value is not finite");
+        }
+    }
+    if (expected == ENGINE_SLOT_TEXTURE && value->texture_resource == 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a texture override needs a texture resource id");
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         SlotOverrides overrides;
+                         if (const SlotOverrides* have = object.world.Peek<SlotOverrides>(entity))
+                         {
+                             overrides = *have;
+                         }
+                         u32 at = overrides.count;
+                         for (u32 i = 0; i < overrides.count; ++i)
+                         {
+                             if (StringView(overrides.items[i].name) == name)
+                             {
+                                 at = i;
+                             }
+                         }
+                         if (at == SlotOverrides::kMax)
+                         {
+                             return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "an entity holds at most 8 slot overrides");
+                         }
+                         SlotOverrides::Item& item = overrides.items[at];
+                         item = SlotOverrides::Item();
+                         MemCopy(item.name, name.Data(), name.Length());
+                         item.kind = value->kind;
+                         MemCopy(item.value, value->value, sizeof(item.value));
+                         item.texture = value->texture_resource;
+                         if (at == overrides.count)
+                         {
+                             ++overrides.count;
+                         }
+                         return SetOrAdd(object.world, entity, overrides);
+                     });
+}
+
+engine_status EntityClearSlotOverrideFn(engine_handle world, u64 key, engine_string slot)
+{
+    TRY_STATUS(CheckName(slot));
+    const StringView name(slot.data, slot.length);
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         const SlotOverrides* have = object.world.Peek<SlotOverrides>(entity);
+                         if (name.Length() == 0)
+                         {
+                             if (have != nullptr)
+                             {
+                                 object.world.Remove<SlotOverrides>(entity);
+                             }
+                             return ENGINE_OK;
+                         }
+                         if (have == nullptr)
+                         {
+                             return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no override of that slot");
+                         }
+                         SlotOverrides overrides = *have;
+                         for (u32 i = 0; i < overrides.count; ++i)
+                         {
+                             if (StringView(overrides.items[i].name) == name)
+                             {
+                                 overrides.items[i] = overrides.items[overrides.count - 1];
+                                 overrides.items[overrides.count - 1] = SlotOverrides::Item();
+                                 --overrides.count;
+                                 if (overrides.count == 0)
+                                 {
+                                     object.world.Remove<SlotOverrides>(entity);
+                                     return ENGINE_OK;
+                                 }
+                                 return SetOrAdd(object.world, entity, overrides);
+                             }
+                         }
+                         return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no override of that slot");
+                     });
+}
+
 engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environment* environment)
 {
     const engine_status checked = CheckInStruct(environment, sizeof(engine_environment), "engine_environment");
@@ -711,11 +1005,13 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_WORLD_TRANSFORM ? sizeof(engine_world_transform)
                          : kind == ENGINE_COMPONENT_CAMERA          ? sizeof(engine_camera)
                          : kind == ENGINE_COMPONENT_LIGHT           ? sizeof(engine_light)
+                         : kind == ENGINE_COMPONENT_VISIBILITY      ? sizeof(engine_visibility)
                                                                     : sizeof(engine_mesh_reference);
     const char* what = kind == ENGINE_COMPONENT_TRANSFORM         ? "engine_transform"
                        : kind == ENGINE_COMPONENT_WORLD_TRANSFORM ? "engine_world_transform"
                        : kind == ENGINE_COMPONENT_CAMERA          ? "engine_camera"
                        : kind == ENGINE_COMPONENT_LIGHT           ? "engine_light"
+                       : kind == ENGINE_COMPONENT_VISIBILITY      ? "engine_visibility"
                                                                   : "engine_mesh_reference";
     const engine_status checked = CheckInStruct(out, wanted, what);
     if (checked != ENGINE_OK)
@@ -759,6 +1055,19 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              engine_world_transform result = {};
                              result.struct_size = sizeof(engine_world_transform);
                              MemCopy(result.matrix, &world_transform->matrix, sizeof(result.matrix));
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_VISIBILITY)
+                         {
+                             const VisibilityComponent* visibility = view.Peek<VisibilityComponent>(entity);
+                             if (visibility == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no visibility component");
+                             }
+                             engine_visibility result = {};
+                             result.struct_size = sizeof(engine_visibility);
+                             result.hidden = visibility->hidden;
                              MemCopy(out, &result, sizeof(result));
                              return ENGINE_OK;
                          }
@@ -840,6 +1149,7 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_NAME: status = w.Remove<EntityName>(entity); break;
                          case ENGINE_COMPONENT_CAMERA: status = w.Remove<CameraComponent>(entity); break;
                          case ENGINE_COMPONENT_LIGHT: status = w.Remove<LightComponent>(entity); break;
+                         case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
                          default: status = w.Remove<MeshReference>(entity); break;
                          }
                          if (status != ecs::Status::Ok)
@@ -936,9 +1246,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[6];
+                         ecs::ComponentId wanted[7];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_LIGHT; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_VISIBILITY; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {

@@ -45,6 +45,31 @@ struct LightComponent
     f32 radius = 10.0f;                 ///< Reach of a point light.
 };
 
+/// The component of ENGINE_COMPONENT_VISIBILITY (Phase 24 Day 362).
+///
+/// - Thread-safety: plain data.
+struct VisibilityComponent
+{
+    u32 hidden = 0;  ///< 1 when the entity (and its children) are not drawn.
+};
+
+/// The slot overrides of one entity (Phase 24 Day 362): at most 8, replaced by slot name.
+///
+/// - Thread-safety: plain data.
+struct SlotOverrides
+{
+    static constexpr u32 kMax = 8;
+    struct Item
+    {
+        char name[24] = {};
+        u32 kind = 0;  ///< ENGINE_SLOT_*.
+        f32 value[4] = {};
+        u64 texture = 0;
+    };
+    u32 count = 0;
+    Item items[kMax];
+};
+
 /// What surrounds a world (engine_environment with the defaults of its documentation).
 ///
 /// - Thread-safety: plain data; guarded by the world mutex.
@@ -246,6 +271,13 @@ engine_status EntityDestroyFn(engine_handle world, u64 key);
 engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind, const void* value);
 engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind, void* out);
 engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environment* environment);
+engine_status EntitySetParentFn(engine_handle world, u64 child_key, u64 parent_key);
+engine_status EntityGetParentFn(engine_handle world, u64 key, u64* parent_key);
+engine_status EntityFindFn(engine_handle world, engine_string name, u64* key);
+engine_status EntityFindAllFn(engine_handle world, engine_string name, u64* keys, size_t capacity, size_t* total);
+engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_string slot,
+                                      const engine_slot_override* value);
+engine_status EntityClearSlotOverrideFn(engine_handle world, u64 key, engine_string slot);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
 engine_status EntityNameSetFn(engine_handle world, u64 key, engine_string name);

@@ -288,6 +288,16 @@ public:
     /// - Ownership: `name` is copied.
     MaterialId CreateMaterial(TemplateId tmpl, PermutationKey key, const char* name);
 
+    /// Makes a new material that starts as a copy of `source`: the same template and permutation, the same parameter
+    /// values, textures (by owner where `source` has one) and samplers. Setting a value on the copy leaves `source`
+    /// alone. Used to give one object its own value of a slot without a new material asset.
+    ///
+    /// - Param source: a live material.
+    /// - Param name: the copy's name, for diagnostics; copied.
+    /// - Returns: the copy, or the invalid id for the reasons of [[renderer::MaterialSystem::CreateMaterial]].
+    /// - Aborts: `source` is invalid or stale.
+    MaterialId CloneMaterial(MaterialId source, const char* name);
+
     /// Destroys a material and its GPU objects (the device defers the release).
     ///
     /// - Param id: a live material.

@@ -16,6 +16,8 @@ namespace
 constexpr u32 kMaxObjects = 4096;
 constexpr u32 kMaxLights = 64;
 
+bool SameOverrides(const SlotOverrides& a, const SlotOverrides& b);
+
 }  // namespace
 
 SurfaceScene::SurfaceScene(rhi::Device* device, rhi::Swapchain* swapchain, ResourceHost* resources,
@@ -70,6 +72,10 @@ SurfaceScene::~SurfaceScene()
     // Reverse order of creation: what the scene points at (meshes), then the frame, then the manager's backend mount.
     entries_.Clear();
     light_entries_.Clear();
+    while (instances_.Size() != 0)
+    {
+        DestroyInstance(instances_.Size() - 1);
+    }
     scene_ = nullptr;
     meshes_.Clear();
     materials_.Clear();
@@ -144,6 +150,99 @@ bool SurfaceScene::ResolveMaterial(u64 id, u32* index)
     materials_.Push(static_cast<Material&&>(made));
     *index = materials_[materials_.Size() - 1].handle.Get()->material->id.index;
     return true;
+}
+
+void SurfaceScene::DestroyInstance(usize index)
+{
+    Instance& instance = instances_[index];
+    if (instance.material.IsValid())
+    {
+        frame_.Materials()->DestroyMaterial(instance.material);
+    }
+    instance.textures.Clear();
+    instances_[index] = static_cast<Instance&&>(instances_[instances_.Size() - 1]);
+    instances_.Pop();
+}
+
+u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 base_index, SceneFrameReport* report)
+{
+    if (overrides.count == 0)
+    {
+        return base_index;
+    }
+    Instance* instance = nullptr;
+    for (usize i = 0; i < instances_.Size(); ++i)
+    {
+        if (instances_[i].entity == entity)
+        {
+            instance = &instances_[i];
+            break;
+        }
+    }
+    if (instance != nullptr && instance->base_index == base_index && SameOverrides(instance->content, overrides) &&
+        instance->material.IsValid())
+    {
+        instance->seen = true;
+        return instance->material.index;
+    }
+    if (instance != nullptr)
+    {
+        // changed: made again (the entry's object follows the new index)
+        for (usize i = 0; i < instances_.Size(); ++i)
+        {
+            if (&instances_[i] == instance)
+            {
+                DestroyInstance(i);
+                break;
+            }
+        }
+    }
+    renderer::MaterialSystem* materials = frame_.Materials();
+    const renderer::MaterialId base = materials->MaterialAtIndex(base_index);
+    Instance made;
+    made.entity = entity;
+    made.base_index = base_index;
+    made.content = overrides;
+    if (!base.IsValid())
+    {
+        return base_index;
+    }
+    made.material = materials->CloneMaterial(base, "slot overrides");
+    if (!made.material.IsValid())
+    {
+        return base_index;
+    }
+    for (u32 i = 0; i < overrides.count; ++i)
+    {
+        const SlotOverrides::Item& item = overrides.items[i];
+        if (item.kind == ENGINE_SLOT_FLOAT)
+        {
+            materials->SetFloat(made.material, item.name, item.value[0]);
+        }
+        else if (item.kind == ENGINE_SLOT_COLOR)
+        {
+            materials->SetVec4(made.material, item.name,
+                               Vec4(item.value[0], item.value[1], item.value[2], item.value[3]));
+        }
+        else
+        {
+            asset::Handle<asset::GpuTextureAsset> texture;
+            if (manager_->Load<asset::GpuTextureAsset>(asset::ResourceId::FromValue(item.texture), &texture).Ok() &&
+                texture.Get()->texture.Get() != nullptr)
+            {
+                materials->SetTexture(made.material, item.name, renderer::GpuTextureConstPtr(texture.Get()->texture));
+                made.textures.Push(static_cast<asset::Handle<asset::GpuTextureAsset>&&>(texture));
+            }
+            else
+            {
+                ++report->entities_unresolved;  // the original texture stays
+            }
+        }
+    }
+    made.seen = true;
+    const u32 index = made.material.index;
+    instances_.Push(static_cast<Instance&&>(made));
+    return index;
 }
 
 void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
@@ -256,6 +355,46 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
 namespace
 {
 
+// Field-wise, because the padding of the structs is not defined.
+bool SameOverrides(const SlotOverrides& a, const SlotOverrides& b)
+{
+    if (a.count != b.count)
+    {
+        return false;
+    }
+    for (u32 i = 0; i < a.count; ++i)
+    {
+        const SlotOverrides::Item& x = a.items[i];
+        const SlotOverrides::Item& y = b.items[i];
+        if (MemCompare(x.name, y.name, sizeof(x.name)) != 0 || x.kind != y.kind || x.texture != y.texture ||
+            MemCompare(x.value, y.value, sizeof(x.value)) != 0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Whether the entity or any of its ancestors is hidden.
+bool IsHidden(const ecs::World& world, ecs::Entity entity)
+{
+    for (u32 depth = 0; depth < 64 && entity.IsValid() && world.Exists(entity); ++depth)
+    {
+        const VisibilityComponent* visibility = world.Peek<VisibilityComponent>(entity);
+        if (visibility != nullptr && visibility->hidden != 0)
+        {
+            return true;
+        }
+        const ecs::Parent* parent = world.Peek<ecs::Parent>(entity);
+        if (parent == nullptr)
+        {
+            return false;
+        }
+        entity = parent->entity;
+    }
+    return false;
+}
+
 // The camera an entity stands for, or false when the entity is not a usable camera (destroyed, no camera component, no
 // world matrix, or a matrix whose axes collapse).
 bool CameraOfEntity(const ecs::World& world, u64 key, f32 aspect_of_surface, renderer::Camera* out)
@@ -308,6 +447,10 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     {
         entries_[i].seen = false;
     }
+    for (usize i = 0; i < instances_.Size(); ++i)
+    {
+        instances_[i].seen = false;
+    }
     auto query = world.world.Query<ecs::Read<MeshReference>, ecs::Read<ecs::WorldTransform>>();
     query.ForEach(
         [&](ecs::Entity entity, const MeshReference& reference, const ecs::WorldTransform& placed)
@@ -322,6 +465,10 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                     break;
                 }
             }
+            if (IsHidden(world.world, entity))
+            {
+                return;  // not drawn: an entry it had stays unseen and is removed below
+            }
             const renderer::GpuMesh* mesh = reference.mesh != 0 ? ResolveMesh(reference.mesh) : nullptr;
             u32 material = 0;
             const bool resolved = mesh != nullptr && ResolveMaterial(reference.material_resource, &material);
@@ -333,7 +480,12 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                 }
                 return;  // an entry it had stays unseen and is removed below
             }
-            if (entry != nullptr && (entry->mesh != reference.mesh || entry->material != reference.material_resource))
+            if (const SlotOverrides* overrides = world.world.Peek<SlotOverrides>(entity))
+            {
+                material = MaterialFor(*overrides, key, material, &report);
+            }
+            if (entry != nullptr && (entry->mesh != reference.mesh || entry->material != reference.material_resource ||
+                                     entry->material_index != material))
             {
                 scene_->RemoveObject(entry->object);  // another mesh or material: made again
                 entry->object = renderer::ObjectId{};
@@ -354,6 +506,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                 entry->object = scene_->AddObject(desc);
                 entry->mesh = reference.mesh;
                 entry->material = reference.material_resource;
+                entry->material_index = material;
                 entry->transform = placed.matrix;
             }
             else if (MemCompare(&entry->transform, &placed.matrix, sizeof(Mat4)) != 0)
@@ -373,6 +526,17 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             }
             entries_[i] = entries_[entries_.Size() - 1];
             entries_.Pop();
+        }
+        else
+        {
+            ++i;
+        }
+    }
+    for (usize i = 0; i < instances_.Size();)
+    {
+        if (!instances_[i].seen)
+        {
+            DestroyInstance(i);  // the last one takes its place
         }
         else
         {

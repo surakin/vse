@@ -318,6 +318,36 @@ static int TriangleBrightness(engine_handle engine, engine_handle surface, engin
     return Brightness(pixels, (unsigned)at[0], (unsigned)at[1]);
 }
 
+static engine_string Str(const char* text)
+{
+    engine_string s;
+    s.data = text;
+    s.length = strlen(text);
+    return s;
+}
+
+/* The colour of the pixel the world point projects to, in the last frame the surface drew. */
+static void ColorAt(engine_handle surface, const engine_pixels* pixels, float x, float y, float z, int* rgb)
+{
+    const float point[3] = {x, y, z};
+    float at[3];
+    const unsigned char* p;
+    CHECK_STATUS(g_api->surface_project(surface, point, at), ENGINE_OK);
+    p = Pixel(pixels, (unsigned)at[0], (unsigned)at[1]);
+    rgb[0] = p[0];
+    rgb[1] = p[1];
+    rgb[2] = p[2];
+}
+
+static engine_status SetVisibility(engine_handle world, uint64_t entity, unsigned hidden)
+{
+    engine_visibility visibility;
+    memset(&visibility, 0, sizeof(visibility));
+    visibility.struct_size = sizeof(visibility);
+    visibility.hidden = hidden;
+    return g_api->component_set(world, entity, ENGINE_COMPONENT_VISIBILITY, &visibility);
+}
+
 static engine_status SetMeshReference(engine_handle world, uint64_t entity, uint64_t mesh, uint64_t material)
 {
     engine_mesh_reference reference;
@@ -663,6 +693,130 @@ int main(void)
             CHECK_STATUS(g_api->entity_destroy(world, many[i]), ENGINE_OK);
         }
         CHECK_STATUS(g_api->entity_destroy(world, lamp), ENGINE_OK);
+        CHECK_STATUS(SetEnvironment(world, 0.2f, 0.0f, 1.0f), ENGINE_OK);
+    }
+
+    /* Day 362: names, a hierarchy, visibility and per-entity material overrides */
+    {
+        uint64_t left;
+        uint64_t right;
+        uint64_t parent;
+        uint64_t child;
+        uint64_t found;
+        uint64_t list[4];
+        uint64_t read_parent;
+        size_t total;
+        int on_left[3];
+        int on_right[3];
+        engine_world_transform placed;
+        engine_slot_override color;
+        engine_slot_override texture;
+        const engine_string nothing = {NULL, 0};
+        CHECK_STATUS(SetEnvironment(world, 3.0f, 0.0f, 1.0f), ENGINE_OK); /* bright ambient light: colours show */
+        CHECK_STATUS(g_api->entity_create(world, &left), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_create(world, &right), ENGINE_OK);
+        PlaceAt(world, left, -2.2f, 0.0f, 0.0f);
+        PlaceAt(world, right, 2.2f, 0.0f, 0.0f);
+        CHECK_STATUS(SetMeshReference(world, left, MESH_ID, 0), ENGINE_OK);
+        CHECK_STATUS(SetMeshReference(world, right, MESH_ID, 0), ENGINE_OK);
+        /* find by name */
+        CHECK_STATUS(g_api->entity_name_set(world, left, Str("robot")), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_name_set(world, right, Str("robot")), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_find(world, Str("robot"), &found), ENGINE_OK);
+        CHECK(found == left || found == right);
+        CHECK_STATUS(g_api->entity_find(world, Str("nobody"), &found), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->entity_find(world, Str("robot"), NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->entity_find_all(world, Str("robot"), list, 4, &total), ENGINE_OK);
+        CHECK(total == 2 && ((list[0] == left && list[1] == right) || (list[0] == right && list[1] == left)));
+        CHECK_STATUS(g_api->entity_find_all(world, Str("robot"), list, 1, &total), ENGINE_OK);
+        CHECK(total == 2);
+        CHECK_STATUS(g_api->entity_find_all(world, Str("robot"), NULL, 1, &total), ENGINE_ERROR_INVALID_ARGUMENT);
+        /* overrides: the left entity turns red, the right one keeps the shared material */
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        ColorAt(surface, &pixels, -2.2f, -0.2f, 0.0f, on_left);
+        ColorAt(surface, &pixels, 2.2f, -0.2f, 0.0f, on_right);
+        CHECK(abs(on_left[0] - on_right[0]) < 6 && abs(on_left[1] - on_right[1]) < 6);
+        memset(&color, 0, sizeof(color));
+        color.struct_size = sizeof(color);
+        color.kind = ENGINE_SLOT_COLOR;
+        color.value[0] = 1.0f;
+        color.value[3] = 1.0f;
+        CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("base_color"), &color), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        ColorAt(surface, &pixels, -2.2f, -0.2f, 0.0f, on_left);
+        ColorAt(surface, &pixels, 2.2f, -0.2f, 0.0f, on_right);
+        CHECK(on_left[0] > 100 && on_left[1] < 20 && on_left[2] < 20);  /* red */
+        CHECK(abs(on_right[0] - on_right[1]) < 12 && on_right[1] > 40); /* the shared material is untouched: grey */
+        CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("no_such_slot"), &color),
+                     ENGINE_ERROR_INVALID_ARGUMENT);
+        {
+            engine_buffer message;
+            memset(&message, 0, sizeof(message));
+            CHECK_STATUS(g_api->last_error(&message), ENGINE_OK);
+            CHECK(message.data != NULL && strstr((const char*)message.data, "no_such_slot") != NULL);
+            engine_buffer_release(&message);
+        }
+        CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("roughness"), &color),
+                     ENGINE_ERROR_INVALID_ARGUMENT); /* a colour for a float slot */
+        memset(&texture, 0, sizeof(texture));
+        texture.struct_size = sizeof(texture);
+        texture.kind = ENGINE_SLOT_TEXTURE;
+        CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_tex"), &texture),
+                     ENGINE_ERROR_INVALID_ARGUMENT); /* no texture id */
+        CHECK_STATUS(g_api->entity_clear_slot_override(world, right, Str("base_color")), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->entity_clear_slot_override(world, left, nothing), ENGINE_OK); /* every override */
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        ColorAt(surface, &pixels, -2.2f, -0.2f, 0.0f, on_left);
+        CHECK(abs(on_left[0] - on_left[1]) < 12);
+        /* a hierarchy: the child follows its parent */
+        CHECK_STATUS(g_api->entity_create(world, &parent), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_create(world, &child), ENGINE_OK);
+        PlaceAt(world, parent, 0.0f, 3.0f, 0.0f);
+        PlaceAt(world, child, 1.0f, 0.0f, 0.0f);
+        CHECK_STATUS(g_api->entity_set_parent(world, child, parent), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_set_parent(world, parent, child), ENGINE_ERROR_INVALID_ARGUMENT); /* a cycle */
+        CHECK_STATUS(g_api->entity_set_parent(world, child, child), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->entity_get_parent(world, child, &read_parent), ENGINE_OK);
+        CHECK(read_parent == parent);
+        CHECK_STATUS(g_api->entity_get_parent(world, parent, &read_parent), ENGINE_OK);
+        CHECK(read_parent == 0);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        memset(&placed, 0, sizeof(placed));
+        placed.struct_size = sizeof(placed);
+        CHECK_STATUS(g_api->component_get(world, child, ENGINE_COMPONENT_WORLD_TRANSFORM, &placed), ENGINE_OK);
+        CHECK(fabsf(placed.matrix[12] - 1.0f) < 0.001f && fabsf(placed.matrix[13] - 3.0f) < 0.001f);
+        PlaceAt(world, parent, 5.0f, 3.0f, 0.0f); /* the parent moves: the child goes with it */
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->component_get(world, child, ENGINE_COMPONENT_WORLD_TRANSFORM, &placed), ENGINE_OK);
+        CHECK(fabsf(placed.matrix[12] - 6.0f) < 0.001f);
+        /* visibility: hiding a parent hides its child */
+        CHECK_STATUS(SetMeshReference(world, child, MESH_ID, 0), ENGINE_OK);
+        PlaceAt(world, parent, 0.0f, 0.0f, -2.0f);
+        PlaceAt(world, child, 0.0f, 0.0f, 0.0f);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.objects_drawn == 4); /* the original, left, right and the child */
+        CHECK_STATUS(SetVisibility(world, parent, 1), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.objects_drawn == 3);
+        CHECK_STATUS(SetVisibility(world, parent, 2), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->component_remove(world, parent, ENGINE_COMPONENT_VISIBILITY), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.objects_drawn == 4);
+        CHECK_STATUS(SetVisibility(world, right, 1), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.objects_drawn == 3);
+        /* destroying a parent leaves the child, a root from the next frame */
+        CHECK_STATUS(g_api->entity_destroy(world, parent), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_get_parent(world, child, &read_parent), ENGINE_OK);
+        CHECK(read_parent == 0);
+        CHECK_STATUS(g_api->entity_destroy(world, child), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_destroy(world, left), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_destroy(world, right), ENGINE_OK);
         CHECK_STATUS(SetEnvironment(world, 0.2f, 0.0f, 1.0f), ENGINE_OK);
     }
 

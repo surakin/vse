@@ -746,6 +746,12 @@ extern "C"
             &engine_c::SurfacePixelRayFn,
             &engine_c::SurfaceProjectFn,
             &engine_c::WorldSetEnvironmentFn,
+            &engine_c::EntitySetParentFn,
+            &engine_c::EntityGetParentFn,
+            &engine_c::EntityFindFn,
+            &engine_c::EntityFindAllFn,
+            &engine_c::EntitySetSlotOverrideFn,
+            &engine_c::EntityClearSlotOverrideFn,
         };
         *out = &table;
         return ENGINE_OK;

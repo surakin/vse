@@ -10,6 +10,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "engine/engine_c.h"
+#include "engine_c/runtime.h"
 #include "renderer/camera.h"
 #include "renderer/render_scene.h"
 #include "renderer/scene_frame.h"
@@ -81,6 +82,7 @@ private:
         u64 entity = 0;
         u64 mesh = 0;
         u64 material = 0;
+        u32 material_index = 0;  // the material in the material system the object was made with
         renderer::ObjectId object;
         Mat4 transform;
         bool seen = false;
@@ -89,6 +91,16 @@ private:
     {
         u64 entity = 0;
         renderer::LightId id;
+        bool seen = false;
+    };
+    // A copy of a material that one entity draws with because it overrides slots of it.
+    struct Instance
+    {
+        u64 entity = 0;
+        u32 base_index = 0;
+        SlotOverrides content;
+        renderer::MaterialId material;
+        Vector<asset::Handle<asset::GpuTextureAsset>> textures;  // keeps the overriding textures resident
         bool seen = false;
     };
     struct Mesh
@@ -103,6 +115,9 @@ private:
     };
 
     void SyncLights(WorldObject& world, SceneFrameReport* report);
+    // The material an entity draws with: the base material, or its own copy with the entity's slot overrides applied.
+    u32 MaterialFor(const SlotOverrides& overrides, u64 entity, u32 base_index, SceneFrameReport* report);
+    void DestroyInstance(usize index);
     const renderer::GpuMesh* ResolveMesh(u64 id);
     bool ResolveMaterial(u64 id, u32* index);
 
@@ -115,6 +130,7 @@ private:
     UniquePtr<renderer::RenderScene> scene_;
     Vector<Entry> entries_;
     Vector<LightEntry> light_entries_;
+    Vector<Instance> instances_;
     renderer::LightId ambient_;  // the environment's ambient term
     renderer::LightId sun_;      // the default sun of a world with no light and no environment
     Vector<Mesh> meshes_;

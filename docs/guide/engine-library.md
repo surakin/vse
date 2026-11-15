@@ -587,6 +587,17 @@ position; the projection reports the pixel and the distance along the view direc
 A world on which the host never calls `world_set_environment` and that has no light entity is drawn with the default sun of Day 359 (and ambient 0.2); once either exists the default sun is gone, so a host that wants a dark scene
 sets an environment with ambient 0. **Not built:** shadows (the renderer has none) and a sky gradient (a flat sky colour only); both are in `KNOWN-ISSUES.md`.
 
+## Hierarchy, names, visibility and material overrides (Phase 24 Day 362)
+
+- **Hierarchy.** `entity_set_parent(world, child, parent)` makes a child's transform relative to its parent's (the frame's transform system composes the world matrices); a parent of 0 makes it a root again; a cycle or the entity itself is
+  refused with `INVALID_ARGUMENT`. Destroying a parent does not destroy its children: they become roots at the next frame. `entity_get_parent` reads the link.
+- **Names.** `entity_find` (the first entity with the name) and `entity_find_all` (into a caller's array, with the total). Names are unique only by the host's discipline; "first" is the order of the world's storage.
+- **Visibility.** `ENGINE_COMPONENT_VISIBILITY` (`engine_visibility.hidden`) hides an entity **and every entity below it**; clearing it (or removing the component) draws them again at the next frame. Nothing else about the entity changes.
+- **Material overrides.** `entity_set_slot_override(world, entity, "base_color", &engine_slot_override)` gives one entity its own value of one slot of its material (a colour, a float or a texture resource): the entity draws with a private
+  copy of the material (`MaterialSystem::CloneMaterial`: same template, permutation, values and textures) and every other entity that shares the material is untouched. Slots are those of the G-buffer material: `base_color`,
+  `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion` and the textures `albedo_tex`, `normal_tex`; an unknown name or a value of the wrong kind is refused at the call with the slot named in `last_error`.
+  An entity holds up to 8 overrides; `entity_clear_slot_override` removes one or all. The copy is a material of the surface's material system, so it counts against its limit, and it is made again when the base material or the overrides change.
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

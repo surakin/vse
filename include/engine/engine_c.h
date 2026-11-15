@@ -511,11 +511,12 @@ extern "C"
                                                  engine_api.entity_name_set/get */
         ENGINE_COMPONENT_MESH_REFERENCE = 4,  /* engine_mesh_reference: which mesh and material the entity draws */
         ENGINE_COMPONENT_CAMERA = 5,          /* engine_camera: a perspective camera (Phase 24 Day 360) */
-        ENGINE_COMPONENT_LIGHT = 6            /* engine_light: a directional or point light (Phase 24 Day 361) */
+        ENGINE_COMPONENT_LIGHT = 6,           /* engine_light: a directional or point light (Phase 24 Day 361) */
+        ENGINE_COMPONENT_VISIBILITY = 7       /* engine_visibility: hides an entity and its children (Day 362) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0x3Fu
+#define ENGINE_COMPONENT_MASK_ALL 0x7Fu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -565,6 +566,34 @@ extern "C"
         float far_plane;
         float aspect;
     } engine_camera;
+
+    /* Whether an entity is drawn (Phase 24 Day 362). An entity without this component is visible. `hidden` is 0 or 1;
+     * a hidden entity and every entity below it in the hierarchy (entity_set_parent) are not drawn, and are drawn again
+     * the frame the flag is cleared (set `hidden` to 0 or remove the component). Hiding changes nothing else: the
+     * entity keeps its transform, its mesh reference and its animation. */
+    typedef struct engine_visibility
+    {
+        uint32_t struct_size;
+        uint32_t hidden;
+    } engine_visibility;
+
+    /* The kinds of engine_slot_override.kind. */
+#define ENGINE_SLOT_FLOAT 1u   /* value[0] */
+#define ENGINE_SLOT_COLOR 2u   /* value[0..3]: linear RGBA */
+#define ENGINE_SLOT_TEXTURE 3u /* texture_resource: the resource id of a texture the host added or loaded */
+
+    /* A per-entity override of one slot of the material its mesh reference names (Phase 24 Day 362): the entity draws
+     * with its own copy of the material in which that slot has this value, and every other entity that uses the
+     * material is untouched. The slots are those of the engine's G-buffer material: ENGINE_SLOT_COLOR for "base_color";
+     * ENGINE_SLOT_FLOAT for "roughness", "metallic", "emissive_scale", "alpha_cutoff" and "occlusion";
+     * ENGINE_SLOT_TEXTURE for "albedo_tex" and "normal_tex". */
+    typedef struct engine_slot_override
+    {
+        uint32_t struct_size;
+        uint32_t kind; /* ENGINE_SLOT_* */
+        float value[4];
+        uint64_t texture_resource;
+    } engine_slot_override;
 
     /* The kinds of engine_light.kind. */
 #define ENGINE_LIGHT_DIRECTIONAL                                                                                       \
@@ -1137,6 +1166,44 @@ extern "C"
          * STALE_HANDLE, INVALID_ARGUMENT (a NULL or not finite value, a negative intensity, an exposure that is not
          * positive), STRUCT_SIZE, TYPE_MISMATCH. */
         engine_status (*world_set_environment)(engine_handle world, const engine_environment* environment);
+
+        /* ---- Phase 24 Day 362: hierarchy, names, visibility and material overrides ---- */
+
+        /* Makes `parent_key` the parent of `child_key` (an entity with ENGINE_COMPONENT_TRANSFORM moves with its
+         * parent: its transform becomes relative to the parent's). A `parent_key` of 0 makes the child a root again.
+         * Destroying a parent does not destroy its children: they become roots at the next frame, keeping their world
+         * place only if the host sets it. Fails with: STALE_HANDLE (either entity), INVALID_ARGUMENT (the same entity,
+         * or a cycle: the parent is a descendant of the child), LIMIT_EXCEEDED (the hierarchy would be too deep),
+         * TYPE_MISMATCH. */
+        engine_status (*entity_set_parent)(engine_handle world, uint64_t child_key, uint64_t parent_key);
+
+        /* Reads the parent of an entity into `*parent_key` (0 for a root). Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * TYPE_MISMATCH. */
+        engine_status (*entity_get_parent)(engine_handle world, uint64_t key, uint64_t* parent_key);
+
+        /* Finds the first entity whose name is exactly `name` (see entity_name_set); names are unique only by the
+         * host's discipline, and "first" is the order of the world's storage, which is not creation order. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT, NOT_FOUND, TYPE_MISMATCH. */
+        engine_status (*entity_find)(engine_handle world, engine_string name, uint64_t* key);
+
+        /* Writes the keys of every entity named `name` into `keys` (up to `capacity`; `keys` may be NULL when
+         * `capacity` is 0) and the number found to `*total`. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * TYPE_MISMATCH. */
+        engine_status (*entity_find_all)(engine_handle world, engine_string name, uint64_t* keys, size_t capacity,
+                                         size_t* total);
+
+        /* Sets an override of the slot named `slot` (see engine_slot_override) on the entity; setting the same slot
+         * again replaces it. An entity holds up to 8 overrides. The override is applied from the next frame a surface
+         * draws the entity; a texture that is not mounted makes the entity draw with the original texture and counts it
+         * in `entities_unresolved`. Fails with: STALE_HANDLE, INVALID_ARGUMENT (an unknown slot, a kind that does not
+         * match the slot, a value that is not finite; `last_error` names the slot), STRUCT_SIZE, LIMIT_EXCEEDED,
+         * TYPE_MISMATCH. */
+        engine_status (*entity_set_slot_override)(engine_handle world, uint64_t key, engine_string slot,
+                                                  const engine_slot_override* value);
+
+        /* Removes the override of `slot`, or every override of the entity when `slot` is empty. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT, NOT_FOUND (a named slot with no override), TYPE_MISMATCH. */
+        engine_status (*entity_clear_slot_override)(engine_handle world, uint64_t key, engine_string slot);
     } engine_api;
 
     /* Returns the function table.

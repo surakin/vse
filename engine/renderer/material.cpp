@@ -1247,6 +1247,40 @@ MaterialId MaterialSystem::CreateMaterial(TemplateId tmpl, PermutationKey key, c
     return id;
 }
 
+MaterialId MaterialSystem::CloneMaterial(MaterialId source, const char* name)
+{
+    const MaterialSlot& from = Get(source);
+    TemplateId tmpl;
+    tmpl.index = from.template_index;
+    tmpl.generation = templates_[from.template_index].generation;
+    PermutationKey key;
+    key.bits = templates_[from.template_index].variants[from.variant_index].key_bits;
+    const MaterialId copy = CreateMaterial(tmpl, key, name);
+    if (!copy.IsValid())
+    {
+        return copy;
+    }
+    MaterialSlot& to = Get(copy);
+    const MaterialSlot& original = Get(source);  // the list does not move: CreateMaterial fills a free slot
+    if (to.shadow_size == original.shadow_size && to.shadow_size != 0)
+    {
+        MemCopy(to.shadow.Data(), original.shadow.Data(), to.shadow_size);
+        to.dirty_slots = (1u << kSlots) - 1;
+    }
+    for (u32 i = 0; i < kMaxMaterialTextures; ++i)
+    {
+        to.textures[i] = original.textures[i];
+        to.texture_owners[i] = original.texture_owners[i];
+    }
+    for (u32 i = 0; i < kMaxMaterialSamplers; ++i)
+    {
+        to.samplers[i] = original.samplers[i];
+        to.sampler_owners[i] = original.sampler_owners[i];
+    }
+    to.groups_dirty = true;
+    return copy;
+}
+
 // Creates (or recreates) the mapped parameter buffer of a material whose size and stride are known.
 bool MaterialSystem::CreateParams(MaterialSlot& m)
 {

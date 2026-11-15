@@ -4211,6 +4211,23 @@ The set-1 bindings of the chosen fragment module and the vertex module are merge
 | Aborts | `tmpl` is invalid or stale. |
 | Ownership | `name` is copied. |
 
+### `CloneMaterial(MaterialId,const char*)` {#renderer-materialsystem-clonematerial-materialid-const-char-star}
+
+`method renderer::MaterialSystem::CloneMaterial` — defined in `engine/renderer/material.h`
+
+```cpp
+MaterialId CloneMaterial(MaterialId source, const char* name);
+```
+
+Makes a new material that starts as a copy of `source`: the same template and permutation, the same parameter values, textures (by owner where `source` has one) and samplers. Setting a value on the copy leaves `source` alone. Used to give one object its own value of a slot without a new material asset.
+
+| Field | Value |
+|---|---|
+| Parameter `source` | a live material. |
+| Parameter `name` | the copy's name, for diagnostics; copied. |
+| Returns | the copy, or the invalid id for the reasons of [`renderer::MaterialSystem::CreateMaterial`](#renderer-materialsystem-creatematerial-templateid-permutationkey-const-char-star). |
+| Aborts | `source` is invalid or stale. |
+
 ### `DestroyMaterial(MaterialId)` {#renderer-materialsystem-destroymaterial-materialid}
 
 `method renderer::MaterialSystem::DestroyMaterial` — defined in `engine/renderer/material.h`
