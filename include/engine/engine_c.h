@@ -175,12 +175,18 @@ typedef struct engine_info
 #define ENGINE_CAP_SURFACE_X11 0x2u /* surface_create renders into an X11 window the host owns (Day 352) */
 #define ENGINE_CAP_SURFACE_WAYLAND 0x4u /* surface_create renders into a Wayland wl_surface the host owns (Day 352) */
 #define ENGINE_CAP_READBACK 0x8u /* surface_read_pixels works (Day 352) */
+#define ENGINE_CAP_SURFACE_COCOA 0x10u /* surface_create renders with Metal into an NSView or CAMetalLayer the host owns (macOS, Day 355) */
 
 /* ---- Day 352: rendering into a window the host owns ---- */
 
 /* Which kind of native window engine_surface_info names. */
 #define ENGINE_SURFACE_X11 1u     /* `display` is the Display*, `window_id` the X11 Window */
 #define ENGINE_SURFACE_WAYLAND 2u /* `display` is the wl_display*, `surface` the wl_surface* (the host's own connection and surface) */
+/* macOS (Day 355): `display` is the host's NSView* (required), `surface` a CAMetalLayer* the host made for it, or NULL. With NULL, the view's own layer is used
+ * when it is a CAMetalLayer, and otherwise the engine adds a CAMetalLayer of its own as a sublayer that fills the view (and removes it at surface_destroy and
+ * surface_rebind). surface_create, surface_rebind, surface_resized and surface_destroy of a Cocoa surface are called on the main thread (INVALID_ARGUMENT
+ * otherwise), and frame draws it only there: a frame on another thread skips it and fails its pending read-backs with INVALID_ARGUMENT. */
+#define ENGINE_SURFACE_COCOA 3u
 
 /* Input forwarded by the host (Day 353). The values of engine_key are those of the engine's own key enumeration (layout-aware keys: the symbol the layout
  * produces), 0 is "unknown". */

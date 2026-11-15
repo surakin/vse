@@ -14,6 +14,11 @@
 #include "rhi/rhi.h"
 #include "rhi/swapchain.h"
 
+#include "build_defs.h"
+#if ENGINE_PLATFORM_MACOS
+#include "engine_c/macos/cocoa_surface.h"
+#endif
+
 #define TRY_SURFACE(expression)                                                                                        \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -121,6 +126,12 @@ struct SurfaceObject
     {
         window.SetHooks(&hooks);
     }
+#if ENGINE_PLATFORM_MACOS
+    // The swapchain is destroyed first (Destroy, ~SurfaceHost); the layer the engine added to the host's view leaves
+    // with the surface.
+    ~SurfaceObject() { macos::DetachLayer(&cocoa); }
+    macos::CocoaLayer cocoa;  // the Metal layer of a Cocoa surface
+#endif
 
     CallbackHooks hooks;  // before the window: the window points at it
     os::ForeignWindow window;
@@ -140,10 +151,17 @@ struct SurfaceObject
 namespace
 {
 
-os::NativeWindowInfo NativeOf(const engine_surface_info& info)
+// `layer` is the resolved CAMetalLayer of a Cocoa surface (the host's, the view's own or the engine's sublayer).
+os::NativeWindowInfo NativeOf(const engine_surface_info& info, void* layer = nullptr)
 {
     os::NativeWindowInfo native;
-    if (info.kind == ENGINE_SURFACE_WAYLAND)
+    if (info.kind == ENGINE_SURFACE_COCOA)
+    {
+        native.kind = os::NativeWindowKind::Cocoa;
+        native.display = info.display;
+        native.surface = layer;
+    }
+    else if (info.kind == ENGINE_SURFACE_WAYLAND)
     {
         native.kind = os::NativeWindowKind::Wayland;
         native.display = info.display;
@@ -177,11 +195,17 @@ engine_status CheckInfo(const engine_surface_info* given, engine_surface_info* o
     {
         return Fail(ENGINE_ERROR_UNSUPPORTED, "this build cannot render into a window of that kind");
     }
-    if (out->display == nullptr ||
-        (out->kind == ENGINE_SURFACE_WAYLAND ? out->surface == nullptr : out->window_id == 0))
+    if (out->display == nullptr || (out->kind == ENGINE_SURFACE_WAYLAND && out->surface == nullptr) ||
+        (out->kind == ENGINE_SURFACE_X11 && out->window_id == 0))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the native handles of the window are missing");
     }
+#if ENGINE_PLATFORM_MACOS
+    if (out->kind == ENGINE_SURFACE_COCOA && !macos::OnMainThread())
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a Cocoa surface is made and rebound on the main thread");
+    }
+#endif
     if (out->width > kMaxDimension || out->height > kMaxDimension || !(out->scale >= 0.0f) || !(out->scale <= 64.0f))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the size or the scale is out of range");
@@ -215,14 +239,15 @@ engine_status Build(SurfaceObject* s)
 {
     rhi::RegisterCompiledBackends();
     rhi::DeviceCreateInfo info;
-    info.backend = rhi::Backend::Vulkan;
+    info.backend = ENGINE_PLATFORM_MACOS ? rhi::Backend::Metal : rhi::Backend::Vulkan;
     info.application_name = "engine";
     info.window = &s->window;
     info.pipeline_cache = false;
     s->device = rhi::CreateDevice(info);
     if (s->device.Get() == nullptr)
     {
-        return Fail(ENGINE_ERROR_UNSUPPORTED, "no Vulkan device can present to this window");
+        return Fail(ENGINE_ERROR_UNSUPPORTED, ENGINE_PLATFORM_MACOS ? "no Metal device can present to this view"
+                                                                    : "no Vulkan device can present to this window");
     }
     s->swapchain = s->device->CreateSwapchain(SwapchainDescOf(s));
     if (s->swapchain == nullptr)
@@ -252,7 +277,9 @@ void FailWaiting(SurfaceObject* s, Vector<PixelsObject*>* tickets_by_slot, engin
 
 bool SurfaceKindSupported(u32 kind)
 {
-#if ENGINE_RHI_HAVE_VULKAN
+#if ENGINE_PLATFORM_MACOS
+    return kind == ENGINE_SURFACE_COCOA;  // Metal, which every macOS build has
+#elif ENGINE_RHI_HAVE_VULKAN
     return kind == ENGINE_SURFACE_X11 || kind == ENGINE_SURFACE_WAYLAND;
 #else
     (void)kind;
@@ -286,8 +313,26 @@ engine_status SurfaceHost::Create(const engine_surface_info* given, engine_handl
     {
         return Fail(ENGINE_ERROR_STALE_HANDLE, "no engine exists");
     }
-    UniquePtr<SurfaceObject> object = MakeUnique<SurfaceObject>(NativeOf(info), info.width, info.height,
+    void* layer = nullptr;
+#if ENGINE_PLATFORM_MACOS
+    macos::CocoaLayer cocoa;
+    if (info.kind == ENGINE_SURFACE_COCOA)
+    {
+        const char* why = nullptr;
+        if (!macos::AttachLayer(info.display, info.surface, static_cast<f32>(info.scale), &cocoa, &why))
+        {
+            EngineObjectRelease();
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, why);
+        }
+        layer = cocoa.layer;
+    }
+#endif
+    UniquePtr<SurfaceObject> object = MakeUnique<SurfaceObject>(NativeOf(info, layer), info.width, info.height,
                                                                 static_cast<f32>(info.scale));
+#if ENGINE_PLATFORM_MACOS
+    object->cocoa = cocoa;        // the object detaches it from here on, also when Build fails below
+    cocoa = macos::CocoaLayer();  // the reference moved: the local owns nothing
+#endif
     object->present_mode = info.present_mode;
     if (info.callbacks != nullptr)
     {
@@ -333,6 +378,12 @@ engine_status SurfaceHost::Destroy(engine_handle surface)
         LockGuard<Mutex> lock(mutex_);
         SurfaceSlot* slot = nullptr;
         TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+#if ENGINE_PLATFORM_MACOS
+        if (slot->object->cocoa.layer != nullptr && !macos::OnMainThread())
+        {  // the engine's sublayer leaves the host's view: AppKit's layer tree, the main thread's
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a Cocoa surface is destroyed on the main thread");
+        }
+#endif
         Vector<PixelsObject*> by_slot;
         for (usize i = 0; i < pixels_.Size(); ++i)
         {
@@ -597,7 +648,18 @@ engine_status SurfaceHost::Resized(engine_handle surface, u32 width, u32 height,
     LockGuard<Mutex> lock(mutex_);
     SurfaceSlot* slot = nullptr;
     TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
-    slot->object->window.SetSize(width, height, scale == 0.0f ? 1.0f : scale);
+    const f32 applied = scale == 0.0f ? 1.0f : scale;
+#if ENGINE_PLATFORM_MACOS
+    if (slot->object->cocoa.layer != nullptr)
+    {
+        if (!macos::OnMainThread())
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a Cocoa surface is resized on the main thread");
+        }
+        macos::ResizeLayer(slot->object->cocoa, applied);
+    }
+#endif
+    slot->object->window.SetSize(width, height, applied);
     return ENGINE_OK;
 }
 
@@ -614,6 +676,19 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a surface keeps the kind of window it was made for");
     }
+    void* layer = nullptr;
+#if ENGINE_PLATFORM_MACOS
+    macos::CocoaLayer cocoa;
+    if (info.kind == ENGINE_SURFACE_COCOA)
+    {  // the new view is checked before anything of the surface changes
+        const char* why = nullptr;
+        if (!macos::AttachLayer(info.display, info.surface, static_cast<f32>(info.scale), &cocoa, &why))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, why);
+        }
+        layer = cocoa.layer;
+    }
+#endif
     s->present_mode = info.present_mode;
     if (info.callbacks != nullptr)
     {
@@ -622,7 +697,12 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
     s->device->DestroySwapchain(s->swapchain);
     s->swapchain = nullptr;
     s->active_touch = 0;
-    s->window.Rebind(NativeOf(info), info.width, info.height, static_cast<f32>(info.scale));
+#if ENGINE_PLATFORM_MACOS
+    macos::DetachLayer(&s->cocoa);  // the old view's layer, after the swapchain that used it
+    s->cocoa = cocoa;
+    cocoa = macos::CocoaLayer();  // the reference moved: the local owns nothing
+#endif
+    s->window.Rebind(NativeOf(info, layer), info.width, info.height, static_cast<f32>(info.scale));
     if (!s->device->RecreateSurface(&s->window))
     {
         s->lost = true;
@@ -895,6 +975,15 @@ void SurfaceHost::RenderAll()
             ++s->skipped;
             continue;
         }
+#if ENGINE_PLATFORM_MACOS
+        if (s->cocoa.layer != nullptr && !macos::OnMainThread())
+        {  // AppKit's thread only (engine_c.h, ENGINE_SURFACE_COCOA): a frame on another thread leaves the surface
+           // alone, and the read-backs waiting on it fail rather than wait for a main-thread frame that may never come
+            ++s->skipped;
+            FailWaiting(s, &by_slot, ENGINE_ERROR_INVALID_ARGUMENT);
+            continue;
+        }
+#endif
         s->device->BeginFrame();
         const rhi::SwapchainStatus acquired = s->swapchain->Acquire();
         if (acquired == rhi::SwapchainStatus::Minimized)

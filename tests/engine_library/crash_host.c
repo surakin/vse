@@ -1,7 +1,8 @@
-/* Phase 23 Day 345: the crash handler across the boundary. (1) The host has its own SIGSEGV handler; the engine
-   installs its handler (through the table) and uninstalls it, and the host's handler is back. (2) A child installs the
-   handler and crashes inside a job of the shared engine: it dies of SIGSEGV and leaves an envelope holding a minidump
-   in the dump directory. Plain flavor only. */
+/* Phase 23 Day 345: the crash handler across the boundary. (1) The host has its own SIGSEGV handler (SIGABRT on macOS,
+   the one signal Breakpad hooks there: process_probe.h); the engine installs its handler (through the table) and
+   uninstalls it, and the host's handler is back. (2) A child installs the handler and crashes inside a job of the
+   shared engine: it dies of SIGSEGV and leaves an envelope holding a minidump in the dump directory. Plain flavor only.
+ */
 #include <dirent.h>
 #include <dlfcn.h>
 #include <signal.h>
@@ -12,6 +13,7 @@
 #include <unistd.h>
 
 #include "host_api.h"
+#include "process_probe.h"
 
 static void HostHandler(int signal_number)
 {
@@ -72,20 +74,20 @@ int main(void)
     struct sigaction host;
     memset(&host, 0, sizeof(host));
     host.sa_handler = HostHandler;
-    sigaction(SIGSEGV, &host, NULL);
+    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, &host, NULL);
     if (table->crash_install(dump_dir) != 1)
     {
         printf("the engine did not install its crash handler\n");
         return 1;
     }
     struct sigaction during;
-    sigaction(SIGSEGV, NULL, &during);
+    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, NULL, &during);
     table->crash_uninstall();
     struct sigaction after;
-    sigaction(SIGSEGV, NULL, &after);
+    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, NULL, &after);
     if (during.sa_handler == HostHandler || after.sa_handler != HostHandler)
     {
-        printf("crash_host: the host's SIGSEGV handler was %s while installed and is %s afterwards\n",
+        printf("crash_host: the host's crash-signal handler was %s while installed and is %s afterwards\n",
                during.sa_handler == HostHandler ? "kept (the engine installed nothing)" : "replaced",
                after.sa_handler == HostHandler ? "restored" : "NOT restored");
         return 1;
@@ -103,9 +105,9 @@ int main(void)
     }
     int status = 0;
     waitpid(child, &status, 0);
-    if (!WIFSIGNALED(status) || WTERMSIG(status) != SIGSEGV)
+    if (!ProbeEndedByFault(status))
     {
-        printf("crash_host: the child did not die of SIGSEGV (status %d)\n", status);
+        printf("crash_host: the child did not end as a fault does with the handler (status %d)\n", status);
         return 1;
     }
     if (CountEnvelopes(dump_dir) < 1)

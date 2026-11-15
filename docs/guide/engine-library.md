@@ -1,6 +1,6 @@
 # The engine as a loadable library
 
-The engine can be built as one shared library (`libengine.so.1`) that a host program loads at run time and drives through a flat C API, next to the static
+The engine can be built as one shared library (`libengine.so.1`, `libengine.1.dylib` on macOS) that a host program loads at run time and drives through a flat C API, next to the static
 libraries games link today (Phase 23; design in `docs/superpowers/specs/2026-11-16-engine-library-design.md`). This page grows with the phase; so far it holds
 the rules of what the library exports and the first part of the C API.
 
@@ -413,5 +413,93 @@ target_link_libraries(app PRIVATE engine::engine)
 
 A host that loads the library with `dlopen` needs only the headers (`engine_loader.h`). **Tested** by `engine_install_consumer`: it installs to a scratch prefix,
 checks that exactly the three headers were installed, and builds and runs `tests/engine_library/consumer` (a program outside the tree: `find_package(Engine)`,
-public headers only) against that prefix. Windows and macOS packages follow with Days 354 and 355. A header that is only for the tests
+public headers only) against that prefix. On macOS (Day 355) the package installs `lib/libengine.1.0.dylib` with the links `libengine.1.dylib` and `libengine.dylib`;
+the install name is `@rpath/libengine.1.dylib`: the host's own rpath says where it lives. The Windows package follows with Day 354. A header that is only for the tests
 (`engine_test_extension.h`) stays in `engine/engine_c/` and is not installed.
+
+
+## macOS: the dylib and embedding into an `NSView` (Day 355)
+
+**The library.** `-DENGINE_BUILD_SHARED=ON` on `macos-clang` builds `libengine.1.dylib` (and `libengine_asan.1.dylib`, `libengine_tsan.1.dylib`): every module whole-archived as on
+Linux, hidden symbols, and in place of the version script an exported-symbols list generated from `abi/engine.exports` (`engine_shared.exported_symbols`
+in the build tree: `_engine_get_api`, with the C symbol prefix). Its install name is `@rpath/libengine.1.dylib`, so a host that links it finds it through
+its own rpath (`-Wl,-rpath,@executable_path/../Frameworks` in an application bundle), and a host that loads it with `engine_load` passes the path. `abi_check`
+reads the dylib's defined external symbols with `nm -gU` and strips the prefix (`NM_STYLE=macho`); the gate's own cases include a Mach-O listing and a
+leaked C++ symbol. The arm64 configuration (`macos-clang-arm64`) is meant to compile and link the same library (nothing runs there); it has not been built yet.
+
+**Hardened runtime and library validation.** A host signed with the hardened runtime and library validation (an application from the App Store, or any
+notarized application that did not opt out) loads only libraries signed by Apple or by its own team: sign `libengine.1.dylib` with the host's identity
+(`codesign --sign "<identity>" --options runtime --timestamp libengine.1.dylib`), or give the host the entitlement
+`com.apple.security.cs.disable-library-validation`. An ad hoc signature (what the linker puts on a development build) is refused by such a host. A hardened
+process also ignores `DYLD_LIBRARY_PATH` and the other `DYLD_*` variables, so the rpath, or the path given to `engine_load`, is the way to find the library.
+The tests run unsigned, unhardened hosts.
+
+**Unloading.** `dlclose` succeeds, but dyld keeps an image that holds Objective-C classes (the Cocoa window, the Metal backend) loaded for the life of the
+process: `libengine.dylib` stays mapped after its last `dlclose`. The library's destructor (`EngineLibraryUnloaded`) therefore does not run, and the
+engine's process-wide state (the frame pool, the log channels) stays and is reused by the next `engine_create`. What the tests check on macOS is what
+still holds: `dlclose` returns 0, the threads the engine started are gone, the resident size stays flat over 50 cycles, and the engine holds no block after
+`destroy`; what they tolerate is the mapping (`tests/engine_library/process_probe.h`, `ENGINE_LIBRARY_UNLOADS`). A host that must get the memory of the
+code back runs the engine in a helper process.
+
+**Autorelease pools.** Every entry of the C API that touches AppKit or Metal drains a pool of its own: the Metal backend's entry points and the Cocoa surface
+code (`engine/engine_c/macos/cocoa_surface.mm`) wrap their bodies in `@autoreleasepool`, so a host may call from a thread, or a part of its main loop,
+that has none (`MetalSwapchain`'s creation, `Apply` and `Acquire` did not until Day 355; the Cocoa host's test found them). The Cocoa host test runs with
+`OBJC_DEBUG_MISSING_POOLS=YES` and fails on a missing pool on the host's main thread, where it calls the engine outside every pool of its own
+(`macos/run_cocoa_host.cmake`); Apple's own queues (Metal's completion queue, Core Animation) report missing pools too, with no engine frame in their
+stacks, and are counted, not failed.
+
+**A Cocoa surface.** `ENGINE_SURFACE_COCOA` (caps `ENGINE_CAP_SURFACE_COCOA` and `ENGINE_CAP_READBACK`) renders with Metal into a view the host owns:
+
+- `display` is the `NSView*` (required); `surface` is a `CAMetalLayer*` the host made for it, or NULL. With NULL, a view whose own layer is a `CAMetalLayer` (an
+  application that draws with Metal set it up so) is drawn into; any other view gets a `CAMetalLayer` of the engine's own as a sublayer that fills the view's
+  bounds by autoresizing (the view is made layer-backed if it was not, and given back as it was), removed again by `surface_destroy` and `surface_rebind`.
+  Nothing else of the view changes.
+- **The main thread.** `surface_create`, `surface_rebind`, `surface_resized` and `surface_destroy` of a Cocoa surface must be called on the main thread
+  (`INVALID_ARGUMENT` otherwise), and `frame` draws a Cocoa surface only on the main thread: a frame on another thread counts it as skipped and fails its
+  pending read-backs with `INVALID_ARGUMENT`. The swapchain reads the screen through AppKit, and the engine's sublayer is part of the view's layer tree.
+- **Sizes are pixels**: the view's bounds times `window.backingScaleFactor`, and `scale` is that factor. Report a change with `surface_resized` from the view's
+  `setFrameSize:` and `viewDidChangeBackingProperties` (moving to a display of another density changes the scale and the pixels, not the points); the engine's
+  sublayer follows the view's bounds by itself and takes the new `contentsScale`, a host's own layer is the host's to size.
+- **The clock.** The host drives frames. With a display link, its callback runs on a CoreVideo thread: dispatch to the main queue and call `frame` there.
+
+```objc
+static CVReturn Tick(CVDisplayLinkRef link, const CVTimeStamp* now, const CVTimeStamp* out, CVOptionFlags in,
+                     CVOptionFlags* flags, void* user)
+{
+    Host* host = user;
+    dispatch_async(dispatch_get_main_queue(), ^{ host->api->frame(host->engine, &host->frame_info, NULL); });
+    return kCVReturnSuccess;
+}
+
+engine_surface_info info = { sizeof info, ENGINE_SURFACE_COCOA };
+NSView* view = window.contentView;
+info.width = view.bounds.size.width * window.backingScaleFactor;
+info.height = view.bounds.size.height * window.backingScaleFactor;
+info.scale = window.backingScaleFactor;
+info.display = (__bridge void*)view;          /* surface NULL: the engine adds its CAMetalLayer */
+info.callbacks = &callbacks;                  /* NSCursor, NSPasteboard */
+api->surface_create(engine, &info, &surface); /* on the main thread */
+CVDisplayLinkCreateWithActiveCGDisplays(&link);
+CVDisplayLinkSetOutputCallback(link, Tick, &host);
+CVDisplayLinkStart(link);
+```
+
+- **Input** is forwarded as everywhere (`surface_input`): positions in pixels from the top left, so a host flips AppKit's `y` (`bounds.height - y`) and
+  multiplies by the scale. The callbacks map to `NSCursor` and `NSPasteboard`.
+- **Recovery.** A closed window does not make the surface lost: the engine holds its layer, which keeps taking drawables, so frames go on into a layer nobody
+  sees. The host calls `surface_rebind` with its new view (a view that is not an `NSView`, or a layer that is not a `CAMetalLayer`, is refused and changes
+  nothing). Metal reports no lost swapchain, and a lost device cannot be forced on Metal, so the `lost` branch is not exercised on the Mac
+  (`KNOWN-ISSUES.md`).
+
+**iOS** (Phase 29) links the engine statically: no application may load a library of its own there. `engine_c.h` compiles for `arm64-apple-ios`
+(`engine_c_header_ios`, as C11 and C++20, freestanding: the Mac has no iOS SDK); `engine_loader.h` is not for iOS.
+
+**Tested** by `tests/engine_library/macos/host_cocoa.m` (Objective-C with ARC; `engine_c_cocoa*`, statically linked in plain, asan and tsan, and
+`engine_c_cocoa_shared*` against the dylib through `engine_loader.h`, under Metal's validation): the caps, the bad arguments (no view, not a view, not a
+Metal layer, off the main thread, another platform's kind), a golden frame and an sRGB grey read back, the engine's sublayer added and removed, the host's
+resize and a change of scale, a hidden window, 30 frames from a display link on the main thread, `NSEvent`s converted and forwarded, the host's cursor and
+pasteboard callbacks (called by the host there; the engine's UI calling them is `surface_input_test.cpp`'s part), a frame and a `surface_destroy` off the main
+thread (the frame skips the surface and fails its read-back; the destroy is refused), the view's `wantsLayer` given back, a rebind to a view with its own `CAMetalLayer` and to an explicit layer, a refused rebind that changes nothing, the window closed under
+the engine and the rebind to a new one, a read-back cancelled by `surface_destroy`, and `destroy` refused while the surface exists. `surface_input_test.cpp`
+runs its UI rig on a Cocoa window there too. The Linux hosts run on the Mac unchanged except for the process probes (`process_probe.h`: Mach and dyld in
+place of `/proc`) and the unload limit above.

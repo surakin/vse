@@ -46,9 +46,10 @@ set(ENGINE_PUBLIC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 # any target, because it changes how every target is compiled: position-independent code (the static libraries are linked into the shared one) and hidden
 # symbols (the version script of the library is the export list). OFF is the default and changes nothing. Linux builds it from Day 343; Windows and macOS
 # from Days 354 and 355.
-option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23: Linux from Day 343)" OFF)
+option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23: Linux from Day 343, macOS from Day 355)" OFF)
 if(ENGINE_BUILD_SHARED)
-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
+    # macOS from Day 355: libengine.<major>.dylib with an exported-symbols list in place of the version script.
     if(CMAKE_VERSION VERSION_LESS 3.24)
       message(FATAL_ERROR "ENGINE_BUILD_SHARED needs CMake 3.24 or newer (whole-archive linking through $<LINK_LIBRARY:WHOLE_ARCHIVE,...>); this is ${CMAKE_VERSION}")
     endif()
@@ -57,12 +58,14 @@ if(ENGINE_BUILD_SHARED)
     set(CMAKE_C_VISIBILITY_PRESET hidden)
     set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
   else()
-    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built on Linux (Day 343); Windows and macOS follow on Days 354 and 355; this configuration still builds the static libraries")
+    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built on Linux (Day 343) and macOS (Day 355); Windows follows on Day 354; this configuration still builds the static libraries")
   endif()
 endif()
 if(APPLE)
-  # Objective-C++ (.mm files with ARC) is how the macOS backends talk to AppKit, Metal and QuartzCore (Phase 21 decision 3).
+  # Objective-C++ (.mm files with ARC) is how the macOS backends talk to AppKit, Metal and QuartzCore (Phase 21 decision 3); Objective-C (.m) is the
+  # language of the Cocoa C host that embeds the engine (Phase 23 Day 355).
   enable_language(OBJCXX)
+  enable_language(OBJC)
 endif()
 
 # Supported targets: x86-64 Linux, x86-64 Windows (Phase 13), and x86-64 macOS (Phase 21, a side phase on the Mac). arm64 macOS has a compile-only
@@ -382,6 +385,9 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
   add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
   add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
+  add_subdirectory(engine/engine_c)  # Phase 23 Day 355: the C API and the shared library (libengine.dylib) on macOS
+  add_subdirectory(tools/abi_check)  # Phase 23 Day 355: the dylib exports exactly abi/engine.exports (nm -gU)
+  add_subdirectory(tools/shared_state_check)  # Phase 23 Day 355: no public header under engine/ defines mutable static state
   add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
   add_subdirectory(tools/net_probe)  # Phase 21 Day 310
   add_subdirectory(tests/phase_labels)

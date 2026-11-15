@@ -41,13 +41,13 @@ if(NOT ENGINE_MSVC_LIKE)
   set(ENGINE_WINDOWS_COMPILE_OPTIONS "")
   set(ENGINE_WINDOWS_DEFINITIONS "")
   # Warnings are errors (CLAUDE.md, "Warnings are errors"): every target of ours, tests and tools included, never the vendored libraries.
-  # OBJCXX is enabled only on macOS; on Linux the generator expression never matches it.
-  set(ENGINE_WARNING_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX,OBJCXX>:-Wall>" "$<$<COMPILE_LANGUAGE:C,CXX,OBJCXX>:-Wextra>"
-      "$<$<COMPILE_LANGUAGE:C,CXX,OBJCXX>:-Werror>")
-  # macOS: Objective-C++ files use ARC (Phase 21 decision 3). __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES is already 0 in the macOS
+  # OBJC and OBJCXX are enabled only on macOS; on Linux the generator expression never matches them.
+  set(ENGINE_WARNING_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX,OBJC,OBJCXX>:-Wall>" "$<$<COMPILE_LANGUAGE:C,CXX,OBJC,OBJCXX>:-Wextra>"
+      "$<$<COMPILE_LANGUAGE:C,CXX,OBJC,OBJCXX>:-Werror>")
+  # macOS: Objective-C++ files use ARC (Phase 21 decision 3), and so do the Objective-C test hosts (Phase 23 Day 355). __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES is already 0 in the macOS
   # 15.5 SDK; pinning it keeps a later SDK from defining check(), verify() and require() as macros in every file that includes a framework
   # (tests/macos: macos_header_planted shows what they break).
-  set(ENGINE_MACOS_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>")
+  set(ENGINE_MACOS_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:OBJC,OBJCXX>:-fobjc-arc>")
   set(ENGINE_MACOS_DEFINITIONS __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
   set(ENGINE_HAVE_ASAN TRUE)
   set(ENGINE_HAVE_TSAN TRUE)

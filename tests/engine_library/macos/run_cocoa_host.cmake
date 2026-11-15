@@ -1,0 +1,27 @@
+# Runs the Cocoa host (host_cocoa.m; the ctests engine_c_cocoa*, Phase 23 Day 355) with OBJC_DEBUG_MISSING_POOLS=YES and fails when any object is
+# autoreleased with no pool on the host's main thread: the host makes the engine's calls there outside every pool of its own, so such a line is an engine
+# entry that touches AppKit or Metal without draining a pool (the host's own AppKit work is inside its pools). Apple's own queues (Metal's completion, Core
+# Animation, frame pacing) report too and are not the engine's: they are counted and not failed, as in tests/rhi/macos/run_autorelease_pools.cmake.
+#   cmake -DPROGRAM=<host_cocoa> -P run_cocoa_host.cmake   (the environment comes from the test's ENVIRONMENT)
+execute_process(COMMAND "${PROGRAM}" RESULT_VARIABLE result OUTPUT_VARIABLE out ERROR_VARIABLE err)
+set(all "${out}${err}")
+if(all MATCHES "host_cocoa: skipped")
+  message("${out}")
+  return()
+endif()
+if(NOT result STREQUAL "0" OR NOT all MATCHES "host_cocoa: ok")
+  message(FATAL_ERROR "host_cocoa failed (${result}):\n${all}")
+endif()
+if(NOT all MATCHES "host_cocoa: main thread (0x[0-9a-f]+)")
+  message(FATAL_ERROR "host_cocoa did not print its main thread:\n${all}")
+endif()
+set(thread "${CMAKE_MATCH_1}")
+string(REGEX MATCHALL "MISSING POOLS: \\(${thread}\\)[^\n]*" hits "${all}")
+list(LENGTH hits count)
+if(count GREATER 0)
+  list(GET hits 0 first)
+  message(FATAL_ERROR "${count} object(s) autoreleased with no pool on the host's main thread, the first: ${first}")
+endif()
+string(REGEX MATCHALL "MISSING POOLS: " others "${all}")
+list(LENGTH others other_count)
+message("host_cocoa: ok; no object autoreleased without a pool on the main thread ${thread} (${other_count} on Apple's own queues)")

@@ -10,6 +10,7 @@
 #include "engine/engine_c.h"
 #include "engine/engine_loader.h"
 #include "engine_c/engine_test_extension.h"
+#include "process_probe.h"
 
 static int g_failures = 0;
 
@@ -65,8 +66,8 @@ int main(void)
     CHECK(engine_load(ENGINE_LIB_PATH, 1, 0, NULL) == ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK(engine_unload(NULL) == ENGINE_ERROR_INVALID_ARGUMENT);
     /* None of the refusals left a library behind. */
-    CHECK(dlopen(FAKE_OTHER_MAJOR_PATH, RTLD_NOW | RTLD_NOLOAD) == NULL);
-    CHECK(dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_NOLOAD) == NULL);
+    CHECK(!ProbeLibraryLoaded(FAKE_OTHER_MAJOR_PATH)); /* no Objective-C in it: it unloads on macOS too */
+    CHECK(ProbeLibraryGone(ENGINE_LIB_PATH)); /* the refused real library was closed (on macOS dyld keeps it mapped) */
 
     /* The real library. */
     if (engine_load(ENGINE_LIB_PATH, ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, &loader) != ENGINE_OK)
@@ -95,7 +96,7 @@ int main(void)
     loader.api->thread_detach();
     CHECK(engine_unload(&loader) == ENGINE_OK);
     CHECK(loader.api == NULL && loader.library == NULL);
-    CHECK(dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_NOLOAD) == NULL); /* the library left the address space */
+    CHECK(ProbeLibraryGone(ENGINE_LIB_PATH)); /* the library left the address space (where libraries unload) */
 
     if (g_failures != 0)
     {

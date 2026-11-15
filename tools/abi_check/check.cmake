@@ -1,6 +1,6 @@
 # ABI gate for the shared engine library (Phase 23 Day 344). Run as:
 #   cmake -DEXPORTS=<abi/engine.exports> -DVERSION_HEADER=<engine_abi_version.h>
-#         [-DLIBRARY=<libengine.so> -DNM=<nm> | -DNM_OUTPUT=<file of `nm -D --defined-only` text>]
+#         [-DLIBRARY=<libengine.so> -DNM=<nm> | -DNM_OUTPUT=<file of `nm -D --defined-only` text>] [-DNM_STYLE=macho: `nm -gU` of a dylib]
 #         [-DPREVIOUS=<the last list> | -DGIT_ROOT=<repo>]  [-DC_HEADER=<engine_c.h> -DC_COMPILER=<cc>]  -P check.cmake
 # Checks, each failing with a message that names the fix:
 #   1. The version line of the export list and ENGINE_ABI_VERSION_MAJOR/MINOR of the version header are the same.
@@ -86,7 +86,15 @@ endif()
 
 # 2. The library.
 set(have_library FALSE)
-if(LIBRARY AND NM)
+# NM_STYLE=macho (macOS, Day 355): the dylib's exports are its defined external symbols (`nm -gU`), each with the C prefix `_`; there are no version nodes.
+if(LIBRARY AND NM AND NM_STYLE STREQUAL "macho")
+  execute_process(COMMAND "${NM}" -gU "${LIBRARY}" RESULT_VARIABLE nm_rc OUTPUT_VARIABLE nm_text ERROR_VARIABLE nm_err)
+  if(NOT nm_rc EQUAL 0)
+    gate_problem("${NM} -gU failed on ${LIBRARY}: ${nm_err}")
+  else()
+    set(have_library TRUE)
+  endif()
+elseif(LIBRARY AND NM)
   execute_process(COMMAND "${NM}" -D --defined-only "${LIBRARY}" RESULT_VARIABLE nm_rc OUTPUT_VARIABLE nm_text ERROR_VARIABLE nm_err)
   if(NOT nm_rc EQUAL 0)
     gate_problem("${NM} -D failed on ${LIBRARY}: ${nm_err}")
@@ -110,6 +118,13 @@ if(have_library)
         continue()  # version nodes (absolute) and the linker's own boundary symbols are not exports
       endif()
       string(REGEX REPLACE "@.*$" "" name "${name}")
+      if(NM_STYLE STREQUAL "macho")
+        if(NOT name MATCHES "^_")
+          gate_problem("the library exports ${name}, which has no C symbol prefix `_`: not a C function")
+          continue()
+        endif()
+        string(SUBSTRING "${name}" 1 -1 name)
+      endif()
       list(APPEND exported ${name})
     endif()
   endforeach()

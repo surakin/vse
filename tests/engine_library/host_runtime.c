@@ -13,6 +13,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "process_probe.h"
 #include "engine/engine_c.h"
 
 static int g_failures = 0;
@@ -605,14 +606,14 @@ static void TestCrashHandlerRestored(engine_handle engine)
     struct sigaction host, during, after;
     memset(&host, 0, sizeof(host));
     host.sa_handler = HostHandler;
-    sigaction(SIGSEGV, &host, NULL);
+    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, &host, NULL);
     CHECK_STATUS(g_api->crash_handler_uninstall(engine), ENGINE_ERROR_NOT_FOUND);
     CHECK_STATUS(g_api->crash_handler_install(engine), ENGINE_OK);
     CHECK_STATUS(g_api->crash_handler_install(engine), ENGINE_ERROR_ALREADY_EXISTS);
-    sigaction(SIGSEGV, NULL, &during);
+    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, NULL, &during);
     CHECK(during.sa_handler != HostHandler);
     CHECK_STATUS(g_api->crash_handler_uninstall(engine), ENGINE_OK);
-    sigaction(SIGSEGV, NULL, &after);
+    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, NULL, &after);
     CHECK(after.sa_handler == HostHandler);
     CHECK_STATUS(g_api->crash_handler_uninstall(engine), ENGINE_ERROR_NOT_FOUND);
     /* destroy takes the handler away too */
@@ -644,7 +645,13 @@ int main(void)
         CrashChild(dump_dir);
     }
     waitpid(child, &status, 0);
-    CHECK(WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV);
+    if (!ProbeEndedByFault(status))
+    {
+        printf("host_runtime: the crash child ended with status 0x%x (signaled %d, signal %d, exited %d, code %d)\n",
+               status, WIFSIGNALED(status) ? 1 : 0, WIFSIGNALED(status) ? WTERMSIG(status) : 0,
+               WIFEXITED(status) ? 1 : 0, WIFEXITED(status) ? WEXITSTATUS(status) : 0);
+    }
+    CHECK(ProbeEndedByFault(status));
     CHECK(CountEnvelopes(dump_dir) >= 1);
 #else
     (void)child;

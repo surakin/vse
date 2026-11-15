@@ -1,12 +1,13 @@
 /* Phase 23 Day 345: the engine library leaves the address space after its jobs ran. Runs jobs on the calling thread and
    on a host thread that is joined, installs and uninstalls the crash handler (every engine worker registers with it),
-   then dlclose; the library is unloaded when dlopen(RTLD_NOLOAD) no longer finds it. Built with the sanitizer of the
-   engine library it loads. */
+   then dlclose; the library is unloaded when dlopen(RTLD_NOLOAD) no longer finds it (on Linux; macOS keeps it:
+   process_probe.h). Built with the sanitizer of the engine library it loads. */
 #include <dlfcn.h>
 #include <pthread.h>
 #include <stdio.h>
 
 #include "host_api.h"
+#include "process_probe.h"
 
 static const struct engine_test_extension* g_table;
 static int g_thread_ran;
@@ -51,12 +52,20 @@ int main(void)
         return 1;
     }
 
-    dlclose(engine);
-    void* again = dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_NOLOAD);
-    if (again != NULL)
+    if (dlclose(engine) != 0)
+    {
+        printf("unload_host: dlclose failed: %s\n", dlerror());
+        return 1;
+    }
+    if (!ProbeLibraryGone(ENGINE_LIB_PATH))
     {
         printf("unload_host: the engine library is still mapped after dlclose (a thread_local destructor pins it)\n");
         return 1;
+    }
+    if (!ENGINE_LIBRARY_UNLOADS)
+    {
+        printf("unload_host: the engine library was closed (dyld keeps an image with Objective-C classes mapped)\n");
+        return 0;
     }
     printf("unload_host: the engine library left the address space\n");
     return 0;

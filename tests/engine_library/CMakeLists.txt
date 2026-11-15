@@ -1,5 +1,10 @@
 # Phase 23 (the engine as a loadable library): the tests of the shared build and the C API. Day 342 only checks that the option exists and defaults off;
 # the C hosts (host_c.c and the others) arrive with Days 346 and 347.
+# The platforms that build the C API and its hosts: Linux (Days 343-353) and macOS (Day 355); Windows with Day 354.
+set(ENGINE_LIBRARY_HOSTS FALSE)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
+  set(ENGINE_LIBRARY_HOSTS TRUE)
+endif()
 add_test(NAME engine_shared_option COMMAND ${CMAKE_COMMAND} -DCACHE=${CMAKE_BINARY_DIR}/CMakeCache.txt -DROOT=${CMAKE_SOURCE_DIR}
          -P ${CMAKE_CURRENT_SOURCE_DIR}/check_option.cmake)
 set_tests_properties(engine_shared_option PROPERTIES LABELS "engine_library")
@@ -8,7 +13,7 @@ engine_label_tests(engine_shared_option)
 # Day 343: a C program per flavor links the shared library (ENGINE_BUILD_SHARED, Linux) and runs jobs inside it. The sanitized libraries load only into a
 # program built with the same sanitizer (spec, Spike 3). Without the option the three tests exist as skipped stubs, so that the phase has the same flavors in
 # every configuration (test_phase_labels).
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(ENGINE_LIBRARY_HOSTS)
   foreach(suffix "" "_asan" "_tsan")
     set(flavor_label "")
     if(suffix STREQUAL "_asan")
@@ -45,7 +50,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 # The SDK install (include/engine, libengine.so, the Engine package): installs to a scratch prefix and builds a consumer against that prefix alone.
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(ENGINE_LIBRARY_HOSTS)
   if(ENGINE_BUILD_SHARED AND TARGET engine)
     add_test(NAME engine_install_consumer COMMAND ${CMAKE_COMMAND} -DBUILD_DIR=${CMAKE_BINARY_DIR} -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
              -DWORK=${ENGINE_TEST_TMP_DIR}/engine_install_consumer -P ${CMAKE_CURRENT_SOURCE_DIR}/install_consumer.cmake)
@@ -63,15 +68,23 @@ endif()
 # Without ENGINE_BUILD_SHARED every test exists as a skipped stub, so that the phase has the same tests in every configuration.
 function(engine_library_c_test name suffix)
   # engine_library_c_test(<test> <flavor suffix> SOURCE <file> [DEFINES ...] [PLANTED] [PASS_REGEX <re>] [PLUGIN <target>])
-  cmake_parse_arguments(ARG "PLANTED" "SOURCE;PASS_REGEX;PLUGIN" "DEFINES;ENV" ${ARGN})
+  # WRAP <script>: the test runs `cmake -DPROGRAM=<the program> -P <script>` (a check of the program's output) instead of the program itself.
+  cmake_parse_arguments(ARG "PLANTED" "SOURCE;PASS_REGEX;PLUGIN;WRAP" "DEFINES;ENV;LIBS" ${ARGN})
   set(flavor_label "")
   if(suffix STREQUAL "_asan")
     set(flavor_label asan)
   elseif(suffix STREQUAL "_tsan")
     set(flavor_label tsan)
   endif()
-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENGINE_BUILD_SHARED AND TARGET engine${suffix})
-    add_executable(${name} ${ARG_SOURCE})
+  if(ENGINE_LIBRARY_HOSTS AND ENGINE_BUILD_SHARED AND TARGET engine${suffix})
+    # The process probes (process_probe.h) are linked into every host; the hosts that do not ask leave them unused.
+    if(APPLE)
+      set(probe_source macos/process_probe_macos.c)
+    else()
+      set(probe_source linux/process_probe_linux.c)
+    endif()
+    add_executable(${name} ${ARG_SOURCE} ${probe_source})
+    target_include_directories(${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_include_directories(${name} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
     target_compile_definitions(${name} PRIVATE "ENGINE_LIB_PATH=\"$<TARGET_FILE:engine${suffix}>\"" ${ARG_DEFINES})
     if(ARG_PLUGIN)
@@ -79,7 +92,7 @@ function(engine_library_c_test name suffix)
       add_dependencies(${name} ${ARG_PLUGIN})
     endif()
     add_dependencies(${name} engine${suffix})
-    target_link_libraries(${name} PRIVATE ${CMAKE_DL_LIBS} Threads::Threads)
+    target_link_libraries(${name} PRIVATE ${CMAKE_DL_LIBS} Threads::Threads ${ARG_LIBS})
     if(suffix STREQUAL "_asan")
       target_compile_options(${name} PRIVATE ${ENGINE_ASAN_COMPILE_OPTIONS})
       target_link_options(${name} PRIVATE ${ENGINE_ASAN_LINK_OPTIONS})
@@ -87,7 +100,14 @@ function(engine_library_c_test name suffix)
       target_compile_options(${name} PRIVATE ${ENGINE_TSAN_COMPILE_OPTIONS})
       target_link_options(${name} PRIVATE ${ENGINE_TSAN_LINK_OPTIONS})
     endif()
-    add_test(NAME ${name} COMMAND ${name})
+    if(ARG_WRAP)
+      add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DPROGRAM=$<TARGET_FILE:${name}> -P ${ARG_WRAP})
+    else()
+      add_test(NAME ${name} COMMAND ${name})
+    endif()
+    if(ARG_ENV)
+      set_tests_properties(${name} PROPERTIES ENVIRONMENT "${ARG_ENV}")
+    endif()
     if(ARG_PLANTED)
       set_tests_properties(${name} PROPERTIES WILL_FAIL TRUE)
     endif()
@@ -107,10 +127,10 @@ function(engine_library_c_test name suffix)
   engine_label_tests(${name})
 endfunction()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(ENGINE_LIBRARY_HOSTS)
   find_package(Threads REQUIRED)
 endif()
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENGINE_BUILD_SHARED AND TARGET engine)
+if(ENGINE_LIBRARY_HOSTS AND ENGINE_BUILD_SHARED AND TARGET engine)
   # The plugin that links only the C API, and the one that wrongly carries its own copy of the foundation (the planted failure).
   add_library(engine_shared_plugin SHARED shared_plugin.c)
   target_include_directories(engine_shared_plugin PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
@@ -130,7 +150,7 @@ engine_library_c_test(engine_crash_across_boundary "" SOURCE crash_host.c DEFINE
 foreach(suffix "" "_asan" "_tsan")
   engine_library_c_test(engine_unload_after_jobs${suffix} "${suffix}" SOURCE unload_host.c
                         DEFINES "UNLOAD_DUMP_DIR=\"${CMAKE_CURRENT_BINARY_DIR}/unload_dump${suffix}\""
-                        PASS_REGEX "the engine library left the address space")
+                        PASS_REGEX "the engine library (left the address space|was closed \\(dyld keeps)")
 endforeach()
 # Day 351: the same glTF import test against the shared library (the importer is inside the aggregate library).
 foreach(suffix "" "_asan" "_tsan")
@@ -150,12 +170,14 @@ endforeach()
 # Day 346: the C API core. `host_c` is a C program linked statically against `engine_c` (plain, asan, tsan: the C API without the shared library; Day 347 loads it
 # with dlopen): it creates an engine with settings and a log callback, queries the version, destroys the engine and makes every bad call the API documents.
 # `engine_c_status_map_test` checks the table that maps the engine's result types to the C statuses.
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET engine_c)
+if(ENGINE_LIBRARY_HOSTS AND TARGET engine_c)
   include(Catch)
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(EngineTestX11 IMPORTED_TARGET x11)
-  if(EngineTestX11_FOUND)
-    set(ENGINE_LIBRARY_X11_HOST TRUE)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(EngineTestX11 IMPORTED_TARGET x11)
+    if(EngineTestX11_FOUND)
+      set(ENGINE_LIBRARY_X11_HOST TRUE)
+    endif()
   endif()
   # Day 350: the blobs of host_resources.c (a texture and a second version of it, a material that depends on it, a mesh), minted by asset_mint.
   add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/resource_data/done.txt
@@ -234,11 +256,34 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET engine_c)
       endif()
       engine_label_tests(engine_c_surface${suffix})
     endif()
+    # Day 355: an Objective-C program with its own Cocoa window embeds the engine, which renders with Metal into its NSView (every flavor: Metal runs under
+    # the sanitizers on the Mac). Metal's validation stops the test on an error, and a missing autorelease pool on the host's main thread (an entry of the
+    # engine that drains none) fails it (macos/run_cocoa_host.cmake).
+    if(APPLE)
+      add_executable(host_cocoa${suffix} macos/host_cocoa.m)
+      target_include_directories(host_cocoa${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
+      target_compile_definitions(host_cocoa${suffix} PRIVATE HOST_COCOA_DYNAMIC=0)
+      target_link_libraries(host_cocoa${suffix} PRIVATE engine_c${suffix} Threads::Threads "-framework AppKit" "-framework QuartzCore" "-framework CoreVideo")
+      set_target_properties(host_cocoa${suffix} PROPERTIES LINKER_LANGUAGE CXX)
+      if(suffix STREQUAL "_asan")
+        target_compile_options(host_cocoa_asan PRIVATE ${ENGINE_ASAN_COMPILE_OPTIONS})
+        target_link_options(host_cocoa_asan PRIVATE ${ENGINE_ASAN_LINK_OPTIONS})
+      elseif(suffix STREQUAL "_tsan")
+        target_compile_options(host_cocoa_tsan PRIVATE ${ENGINE_TSAN_COMPILE_OPTIONS})
+        target_link_options(host_cocoa_tsan PRIVATE ${ENGINE_TSAN_LINK_OPTIONS})
+      endif()
+      add_test(NAME engine_c_cocoa${suffix} COMMAND ${CMAKE_COMMAND} -DPROGRAM=$<TARGET_FILE:host_cocoa${suffix}> -P ${CMAKE_CURRENT_SOURCE_DIR}/macos/run_cocoa_host.cmake)
+      set_tests_properties(engine_c_cocoa${suffix} PROPERTIES LABELS "engine_library;${flavor_label}" PASS_REGULAR_EXPRESSION "host_cocoa: (ok|skipped)"
+                           ENVIRONMENT "MTL_DEBUG_LAYER=1;MTL_DEBUG_LAYER_ERROR_MODE=assert;MTL_SHADER_VALIDATION=1;OBJC_DEBUG_MISSING_POOLS=YES")
+      engine_label_tests(engine_c_cocoa${suffix})
+    endif()
     # Day 352 (plain flavor only, as the GPU tests are left out of ThreadSanitizer and the driver's allocations out of ASan's leak check): the Wayland host is a Catch
     # test that opens its window with the platform layer.
     set(ENGINE_C_TEST_SOURCES status_map_test.cpp)
-    if(suffix STREQUAL "")
+    if(suffix STREQUAL "" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
       list(APPEND ENGINE_C_TEST_SOURCES surface_wayland_test.cpp surface_input_test.cpp)
+    elseif(suffix STREQUAL "" AND APPLE)
+      list(APPEND ENGINE_C_TEST_SOURCES surface_input_test.cpp)  # Day 355: the same rig on a Cocoa window, through Metal
     endif()
     add_executable(engine_c_tests${suffix} ${ENGINE_C_TEST_SOURCES})
     target_include_directories(engine_c_tests${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/ui)
@@ -290,7 +335,7 @@ endif()
 # Day 347: the loader (include/engine/engine_loader.h) and the ABI snapshot.
 # abi/engine_api.snapshot records the statuses' values and the size and field offsets of every struct of engine_c.h, written by abi_snapshot_gen (compiled
 # against the header); the test fails unless the generator's output equals it, or is an append under a higher minor version (abi_snapshot_check.cmake).
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(ENGINE_LIBRARY_HOSTS)
   add_executable(abi_snapshot_gen abi_snapshot_gen.c)
   target_include_directories(abi_snapshot_gen PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
   add_test(NAME engine_abi_snapshot COMMAND ${CMAKE_COMMAND} -DGENERATOR=$<TARGET_FILE:abi_snapshot_gen> -DSNAPSHOT=${CMAKE_SOURCE_DIR}/abi/engine_api.snapshot
@@ -302,7 +347,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 # The libraries the loader must refuse, and the host that loads the real one (host_dl.c).
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENGINE_BUILD_SHARED AND TARGET engine)
+if(ENGINE_LIBRARY_HOSTS AND ENGINE_BUILD_SHARED AND TARGET engine)
   foreach(mode 1 2 3)
     add_library(engine_fake_${mode} SHARED fake_engine.c)
     target_include_directories(engine_fake_${mode} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
@@ -344,7 +389,7 @@ if(ENGINE_LIBRARY_WITH_IMPORTER)
 else()
   set(import_off_library engine_c)  # this whole build has none
 endif()
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET ${import_off_library})
+if(ENGINE_LIBRARY_HOSTS AND TARGET ${import_off_library})
   add_executable(host_import_off host_import_off.c)
   target_include_directories(host_import_off PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
   target_link_libraries(host_import_off PRIVATE ${import_off_library} Threads::Threads)
@@ -352,4 +397,23 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET ${import_off_library})
   add_test(NAME engine_c_import_off COMMAND host_import_off)
   set_tests_properties(engine_c_import_off PROPERTIES LABELS "engine_library" PASS_REGULAR_EXPRESSION "host_import_off: ok")
   engine_label_tests(engine_c_import_off)
+endif()
+
+# Day 355: the Cocoa host against libengine.dylib through engine_loader.h: the dylib renders into the host's NSView (macOS; skipped stubs elsewhere and
+# without ENGINE_BUILD_SHARED, so the phase has the same tests in every configuration of the Mac).
+if(APPLE)
+  foreach(suffix "" "_asan" "_tsan")
+    engine_library_c_test(engine_c_cocoa_shared${suffix} "${suffix}" SOURCE macos/host_cocoa.m DEFINES HOST_COCOA_DYNAMIC=1 PASS_REGEX "host_cocoa: (ok|skipped)"
+                          WRAP ${CMAKE_CURRENT_SOURCE_DIR}/macos/run_cocoa_host.cmake
+                          LIBS "-framework AppKit" "-framework QuartzCore" "-framework CoreVideo"
+                          ENV "MTL_DEBUG_LAYER=1;MTL_DEBUG_LAYER_ERROR_MODE=assert;MTL_SHADER_VALIDATION=1;OBJC_DEBUG_MISSING_POOLS=YES")
+  endforeach()
+endif()
+
+# Day 355: the C API's header compiles for iOS (static linking only there; a freestanding check, the Mac has no iOS SDK).
+if(APPLE)
+  add_test(NAME engine_c_header_ios COMMAND ${CMAKE_COMMAND} -DCOMPILER=${CMAKE_C_COMPILER} -DINCLUDE=${ENGINE_PUBLIC_INCLUDE_DIR}
+           -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/ios_header_tu.c -P ${CMAKE_CURRENT_SOURCE_DIR}/ios_header_check.cmake)
+  set_tests_properties(engine_c_header_ios PROPERTIES LABELS "engine_library")
+  engine_label_tests(engine_c_header_ios)
 endif()

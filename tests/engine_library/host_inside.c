@@ -12,6 +12,7 @@
 #include "engine/engine_c.h"
 #include "engine/engine_loader.h"
 #include "engine_c/engine_test_extension.h"
+#include "process_probe.h"
 
 static atomic_int g_entered;
 static atomic_int g_release;
@@ -115,7 +116,7 @@ int main(void)
     CHECK(g_loader.api->destroy(other) == ENGINE_OK);
     g_loader.api->thread_detach();
     CHECK(engine_unload(&g_loader) == ENGINE_OK);
-    CHECK(dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_NOLOAD) == NULL);
+    CHECK(ProbeLibraryGone(ENGINE_LIB_PATH));
     if (g_failures != 0)
     {
         printf("host_inside: %d checks failed\n", g_failures);

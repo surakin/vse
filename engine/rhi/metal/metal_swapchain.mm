@@ -38,39 +38,45 @@ MetalSwapchain::~MetalSwapchain()
 
 bool MetalSwapchain::Initialize(const SwapchainDesc& desc)
 {
-    const os::NativeWindowInfo native = window_->GetNativeInfo();
-    if (native.kind != os::NativeWindowKind::Cocoa || native.surface == nullptr)
+    @autoreleasepool
     {
-        RhiLog(LogVerbosity::Error, "CreateSwapchain: the window has no Metal layer");
-        return false;
+        const os::NativeWindowInfo native = window_->GetNativeInfo();
+        if (native.kind != os::NativeWindowKind::Cocoa || native.surface == nullptr)
+        {
+            RhiLog(LogVerbosity::Error, "CreateSwapchain: the window has no Metal layer");
+            return false;
+        }
+        layer_ = (__bridge CAMetalLayer*)native.surface;
+        layer_.device = device_->Mtl();
+        layer_.framebufferOnly = NO;
+        layer_.allowsNextDrawableTimeout = YES;
+        texture_ = device_->RegisterSwapchainTexture();
+        if (!texture_.IsValid())
+        {
+            return false;
+        }
+        Apply(desc);  // Ok, or Minimized for a window with no area yet (applied when it has one)
+        return true;
     }
-    layer_ = (__bridge CAMetalLayer*)native.surface;
-    layer_.device = device_->Mtl();
-    layer_.framebufferOnly = NO;
-    layer_.allowsNextDrawableTimeout = YES;
-    texture_ = device_->RegisterSwapchainTexture();
-    if (!texture_.IsValid())
-    {
-        return false;
-    }
-    Apply(desc);  // Ok, or Minimized for a window with no area yet (applied when it has one)
-    return true;
 }
 
 bool MetalSwapchain::EdrPossible() const
 {
-    // AppKit: called from Apply, on the swapchain's (the main) thread.
-    NSScreen* screen = NSScreen.mainScreen;
-    const os::NativeWindowInfo native = window_->GetNativeInfo();
-    if (native.display != nullptr)
+    @autoreleasepool
     {
-        NSView* view = (__bridge NSView*)native.display;
-        if (view.window.screen != nil)
+        // AppKit: called from Apply, on the swapchain's (the main) thread.
+        NSScreen* screen = NSScreen.mainScreen;
+        const os::NativeWindowInfo native = window_->GetNativeInfo();
+        if (native.display != nullptr)
         {
-            screen = view.window.screen;
+            NSView* view = (__bridge NSView*)native.display;
+            if (view.window.screen != nil)
+            {
+                screen = view.window.screen;
+            }
         }
+        return screen != nil && screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0;
     }
-    return screen != nil && screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0;
 }
 
 SwapchainCaps MetalSwapchain::Capabilities() const
@@ -96,43 +102,44 @@ void MetalSwapchain::SizeFromWindow()
 
 SwapchainStatus MetalSwapchain::Apply(const SwapchainDesc& desc)
 {
-    desc_ = desc;
-    // The format: an 8-bit BGRA (sRGB by default), or 16-bit float for scRGB.
-    Format format = desc.format == Format::Undefined ? Format::BGRA8_SRGB : desc.format;
-    ColorSpace space = ColorSpace::SrgbNonlinear;
-    bool edr = false;
-    edr_possible_ = EdrPossible();
-    if (desc.hdr == HdrMode::ScRgbLinear)
-    {
-        if (edr_possible_)
-        {
-            format = Format::RGBA16_Float;
-            space = ColorSpace::ScRgbLinear;
-            edr = true;
-        }
-        else
-        {
-            RhiLog(LogVerbosity::Info, "Swapchain: this screen has no extended dynamic range; HDR off");
-        }
-    }
-    else if (desc.hdr == HdrMode::Hdr10)
-    {
-        RhiLog(LogVerbosity::Info, "Swapchain: HDR10 needs a 10-bit format the RHI does not have; HDR off");
-    }
-    if (!edr && format != Format::BGRA8_SRGB && format != Format::BGRA8_UNorm)
-    {
-        RhiLog(LogVerbosity::Info, "Swapchain: the layer does not take %s; using bgra8_srgb", FormatInfo(format).name);
-        format = Format::BGRA8_SRGB;
-    }
-    format_ = format;
-    color_space_ = space;
-    present_mode_ = MetalPresentModeFor(desc.present_mode);
-    if (desc.present_mode == PresentMode::Mailbox)
-    {
-        RhiLog(LogVerbosity::Info, "Swapchain: macOS has no mailbox presentation; using fifo");
-    }
     @autoreleasepool
     {
+        desc_ = desc;
+        // The format: an 8-bit BGRA (sRGB by default), or 16-bit float for scRGB.
+        Format format = desc.format == Format::Undefined ? Format::BGRA8_SRGB : desc.format;
+        ColorSpace space = ColorSpace::SrgbNonlinear;
+        bool edr = false;
+        edr_possible_ = EdrPossible();
+        if (desc.hdr == HdrMode::ScRgbLinear)
+        {
+            if (edr_possible_)
+            {
+                format = Format::RGBA16_Float;
+                space = ColorSpace::ScRgbLinear;
+                edr = true;
+            }
+            else
+            {
+                RhiLog(LogVerbosity::Info, "Swapchain: this screen has no extended dynamic range; HDR off");
+            }
+        }
+        else if (desc.hdr == HdrMode::Hdr10)
+        {
+            RhiLog(LogVerbosity::Info, "Swapchain: HDR10 needs a 10-bit format the RHI does not have; HDR off");
+        }
+        if (!edr && format != Format::BGRA8_SRGB && format != Format::BGRA8_UNorm)
+        {
+            RhiLog(LogVerbosity::Info, "Swapchain: the layer does not take %s; using bgra8_srgb",
+                   FormatInfo(format).name);
+            format = Format::BGRA8_SRGB;
+        }
+        format_ = format;
+        color_space_ = space;
+        present_mode_ = MetalPresentModeFor(desc.present_mode);
+        if (desc.present_mode == PresentMode::Mailbox)
+        {
+            RhiLog(LogVerbosity::Info, "Swapchain: macOS has no mailbox presentation; using fifo");
+        }
         layer_.pixelFormat = ToMtlPixelFormat(format_, device_->Mtl());
         layer_.wantsExtendedDynamicRangeContent = edr;
         CGColorSpaceRef cs = CGColorSpaceCreateWithName(edr ? kCGColorSpaceExtendedLinearSRGB : kCGColorSpaceSRGB);
@@ -140,77 +147,80 @@ SwapchainStatus MetalSwapchain::Apply(const SwapchainDesc& desc)
         CGColorSpaceRelease(cs);
         layer_.displaySyncEnabled = present_mode_ == PresentMode::Fifo;
         layer_.maximumDrawableCount = device_->FramesInFlight() >= 3 ? 3 : 2;
+        SizeFromWindow();
+        if (width_ == 0 || height_ == 0 || window_->IsMinimized())
+        {
+            pending_ = true;  // kept: applied when the window has an area again
+            return SwapchainStatus::Minimized;
+        }
+        pending_ = false;
+        layer_.drawableSize = CGSizeMake(width_, height_);
+        return SwapchainStatus::Ok;
     }
-    SizeFromWindow();
-    if (width_ == 0 || height_ == 0 || window_->IsMinimized())
-    {
-        pending_ = true;  // kept: applied when the window has an area again
-        return SwapchainStatus::Minimized;
-    }
-    pending_ = false;
-    layer_.drawableSize = CGSizeMake(width_, height_);
-    return SwapchainStatus::Ok;
 }
 
 SwapchainStatus MetalSwapchain::Acquire()
 {
-    ENGINE_ASSERT(!acquired_, "Acquire: the previous image was not presented");
-    if (device_->DeviceLost())
-    {
-        return SwapchainStatus::Lost;
-    }
-    if (window_->IsMinimized())
-    {
-        return SwapchainStatus::Minimized;
-    }
-    SwapchainStatus status = SwapchainStatus::Ok;
-    if (pending_)
-    {
-        // A request that waited for the window to have an area: applied whole now.
-        const SwapchainStatus applied = Apply(desc_);
-        if (applied != SwapchainStatus::Ok)
-        {
-            return applied;
-        }
-        status = SwapchainStatus::Recreated;
-    }
-    else if (window_->ResizeSerial() != resize_serial_)
-    {
-        // The window changed size: the images follow the window (an explicit Resize size gives way to it, as on the
-        // other backends), and only the drawable size changes.
-        desc_.width = 0;
-        desc_.height = 0;
-        SizeFromWindow();
-        if (width_ == 0 || height_ == 0)
-        {
-            pending_ = true;
-            return SwapchainStatus::Minimized;
-        }
-        layer_.drawableSize = CGSizeMake(width_, height_);
-        status = SwapchainStatus::Recreated;
-    }
     @autoreleasepool
     {
+        ENGINE_ASSERT(!acquired_, "Acquire: the previous image was not presented");
+        if (device_->DeviceLost())
+        {
+            return SwapchainStatus::Lost;
+        }
+        if (window_->IsMinimized())
+        {
+            return SwapchainStatus::Minimized;
+        }
+        SwapchainStatus status = SwapchainStatus::Ok;
+        if (pending_)
+        {
+            // A request that waited for the window to have an area: applied whole now.
+            const SwapchainStatus applied = Apply(desc_);
+            if (applied != SwapchainStatus::Ok)
+            {
+                return applied;
+            }
+            status = SwapchainStatus::Recreated;
+        }
+        else if (window_->ResizeSerial() != resize_serial_)
+        {
+            // The window changed size: the images follow the window (an explicit Resize size gives way to it, as on the
+            // other backends), and only the drawable size changes.
+            desc_.width = 0;
+            desc_.height = 0;
+            SizeFromWindow();
+            if (width_ == 0 || height_ == 0)
+            {
+                pending_ = true;
+                return SwapchainStatus::Minimized;
+            }
+            layer_.drawableSize = CGSizeMake(width_, height_);
+            status = SwapchainStatus::Recreated;
+        }
         drawable_ = [layer_ nextDrawable];
+        if (drawable_ == nil)
+        {
+            return SwapchainStatus::Minimized;  // the layer's timeout: nothing on screen is taking frames
+        }
+        device_->SetSwapchainTexture(texture_, drawable_.texture, format_, width_, height_);
+        acquired_ = true;
+        return status;
     }
-    if (drawable_ == nil)
-    {
-        return SwapchainStatus::Minimized;  // the layer's timeout: nothing on screen is taking frames
-    }
-    device_->SetSwapchainTexture(texture_, drawable_.texture, format_, width_, height_);
-    acquired_ = true;
-    return status;
 }
 
 SwapchainStatus MetalSwapchain::Present()
 {
-    ENGINE_ASSERT(acquired_, "Present: no image has been acquired");
-    acquired_ = false;
-    const bool shown = device_->PresentDrawable(drawable_);
-    device_->SetSwapchainTexture(texture_, nil, format_, width_, height_);
-    drawable_ = nil;  // never kept past its frame
-    // A resize since Acquire is picked up by the next Acquire (which says Recreated once), as on Direct3D 12.
-    return shown ? SwapchainStatus::Ok : SwapchainStatus::Lost;
+    @autoreleasepool
+    {
+        ENGINE_ASSERT(acquired_, "Present: no image has been acquired");
+        acquired_ = false;
+        const bool shown = device_->PresentDrawable(drawable_);
+        device_->SetSwapchainTexture(texture_, nil, format_, width_, height_);
+        drawable_ = nil;  // never kept past its frame
+        // A resize since Acquire is picked up by the next Acquire (which says Recreated once), as on Direct3D 12.
+        return shown ? SwapchainStatus::Ok : SwapchainStatus::Lost;
+    }
 }
 
 SwapchainStatus MetalSwapchain::Reconfigure(const SwapchainDesc& desc)

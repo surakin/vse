@@ -76,7 +76,7 @@ set(stream_re "std::(ifstream|ofstream|fstream|filesystem)|<fstream>|<filesystem
 set(files "")
 foreach(dir engine game tools tests)
   file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp" "${ROOT}/${dir}/*.cpp"
-       "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.mm" "${ROOT}/${dir}/*.c")
+       "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.mm" "${ROOT}/${dir}/*.m" "${ROOT}/${dir}/*.c")
   list(APPEND files ${found})
 endforeach()
 

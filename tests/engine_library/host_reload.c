@@ -1,9 +1,9 @@
 /* Phase 23 Day 348: load, run, destroy, unload, 50 times in one process. After every cycle the library must be gone
-   from /proc/self/maps and from the dynamic linker (RTLD_NOLOAD), the process must have the threads it started with;
+   from the process's mappings and from the dynamic linker (RTLD_NOLOAD; not on macOS, where dyld keeps an image with
+   Objective-C classes: process_probe.h), the process must have the threads it started with;
    after the last, the resident size must be near what it was after the first few cycles (nothing accumulates per cycle)
    and the engine's own live-block count must be zero. Under asan the leak report at exit is the check for what is
    really leaked. */
-#include <dirent.h>
 #include <dlfcn.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,6 +12,7 @@
 #include "engine/engine_c.h"
 #include "engine/engine_loader.h"
 #include "engine_c/engine_test_extension.h"
+#include "process_probe.h"
 
 #define CYCLES 50
 #define WARMUP 5
@@ -37,69 +38,11 @@ static void OnLog(void* user, engine_log_level level, engine_string channel, eng
     ++*(int*)user;
 }
 
-static int ThreadCount(void)
-{
-    int n = 0;
-    DIR* dir = opendir("/proc/self/task");
-    struct dirent* entry;
-    if (dir == NULL)
-    {
-        return -1;
-    }
-    while ((entry = readdir(dir)) != NULL)
-    {
-        if (entry->d_name[0] != '.')
-        {
-            ++n;
-        }
-    }
-    closedir(dir);
-    return n;
-}
-
-static long ResidentBytes(void)
-{
-    long total = 0;
-    long resident = 0;
-    FILE* f = fopen("/proc/self/statm", "r");
-    if (f == NULL)
-    {
-        return -1;
-    }
-    if (fscanf(f, "%ld %ld", &total, &resident) != 2)
-    {
-        resident = -1;
-    }
-    fclose(f);
-    return resident < 0 ? -1 : resident * sysconf(_SC_PAGESIZE);
-}
-
-/* Whether any mapping of this process names the engine library file. */
-static int Mapped(const char* file_name)
-{
-    char line[1024];
-    int found = 0;
-    FILE* f = fopen("/proc/self/maps", "r");
-    if (f == NULL)
-    {
-        return -1;
-    }
-    while (fgets(line, sizeof(line), f) != NULL)
-    {
-        if (strstr(line, file_name) != NULL)
-        {
-            found = 1;
-        }
-    }
-    fclose(f);
-    return found;
-}
-
 static int g_longest_settle_ms = 0;
 
 int main(void)
 {
-    const int threads_before = ThreadCount();
+    const int threads_before = ProbeThreadCount();
     int threads_after_first = 0; /* a sanitizer runtime may start one thread of its own at the first thread the process
                                     creates: it stays, and counts once */
     long resident_after_warmup = 0;
@@ -117,7 +60,7 @@ int main(void)
             printf("host_reload: cycle %d: %s\n", cycle, loader.message);
             return 2;
         }
-        CHECK(Mapped(ENGINE_LIB_FILE) == 1);
+        CHECK(ProbeMapped(ENGINE_LIB_FILE) == 1);
         memset(&info, 0, sizeof(info));
         info.struct_size = sizeof(info);
         info.settings = &entry;
@@ -137,11 +80,17 @@ int main(void)
         CHECK(loader.api->destroy(engine) == ENGINE_OK);
         loader.api->thread_detach();
         CHECK(engine_unload(&loader) == ENGINE_OK);
-        CHECK(dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_NOLOAD) == NULL);
-        CHECK(Mapped(ENGINE_LIB_FILE) == 0);
+        CHECK(ProbeLibraryGone(ENGINE_LIB_PATH));
+        CHECK(!ENGINE_LIBRARY_UNLOADS || ProbeMapped(ENGINE_LIB_FILE) == 0);
+        if (cycle == 0 && !ENGINE_LIBRARY_UNLOADS)
+        {
+            printf(
+                "host_reload: after dlclose the library is %s (macOS keeps an image with Objective-C classes: tolerated)\n",
+                ProbeMapped(ENGINE_LIB_FILE) == 1 ? "still mapped" : "gone");
+        }
         if (cycle == 0)
         {
-            threads_after_first = ThreadCount();
+            threads_after_first = ProbeThreadCount();
             CHECK(threads_after_first >= threads_before && threads_after_first <= threads_before + 1);
         }
         else
@@ -150,7 +99,7 @@ int main(void)
                moment (the kernel removes its task entry just after), so the count settles within a short wait; a thread
                that is really left never goes away. */
             int waited_ms = 0;
-            while (ThreadCount() != threads_after_first && waited_ms < 2000)
+            while (ProbeThreadCount() != threads_after_first && waited_ms < 2000)
             {
                 usleep(1000);
                 ++waited_ms;
@@ -159,15 +108,15 @@ int main(void)
             {
                 g_longest_settle_ms = waited_ms;
             }
-            CHECK(ThreadCount() == threads_after_first);
+            CHECK(ProbeThreadCount() == threads_after_first);
         }
         if (cycle == WARMUP - 1)
         {
-            resident_after_warmup = ResidentBytes();
+            resident_after_warmup = ProbeResidentBytes();
         }
     }
     {
-        const long resident_at_end = ResidentBytes();
+        const long resident_at_end = ProbeResidentBytes();
         const long growth = resident_at_end - resident_after_warmup;
         printf(
             "host_reload: %d cycles, %d log lines, resident %ld KiB after cycle %d, %ld KiB at the end, longest wait for the thread count %d ms\n",

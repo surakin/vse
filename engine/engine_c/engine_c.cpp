@@ -442,7 +442,11 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
         out->caps = (engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_SURFACE_X11 : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WAYLAND) ? ENGINE_CAP_SURFACE_WAYLAND : 0u) |
-                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_READBACK : 0u);
+                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA) ? ENGINE_CAP_SURFACE_COCOA : 0u) |
+                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ||
+                             engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA)
+                         ? ENGINE_CAP_READBACK
+                         : 0u);
         out->reserved = 0;
         out->struct_size = static_cast<u32>(sizeof(engine_info));
     }

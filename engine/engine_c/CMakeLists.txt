@@ -1,7 +1,8 @@
-# Phase 23: the C API (engine_c.h, Day 346) as the static library `engine_c` (plain, asan, tsan; Linux until Days 354 and 355), and the aggregate shared
-# engine library (ENGINE_BUILD_SHARED, Day 343) made of every module's static library, whole-archived, with a version script as the export list. The static
-# `engine_c` is built always, so a C program can link the C API directly (tests/engine_library/host_c.c); the shared library is built only when the option is ON.
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+# Phase 23: the C API (engine_c.h, Day 346) as the static library `engine_c` (plain, asan, tsan; Linux, and macOS from Day 355; Windows with Day 354), and
+# the aggregate shared engine library (ENGINE_BUILD_SHARED, Day 343) made of every module's static library, whole-archived, with the export list given to the
+# linker (a version script on Linux, an exported-symbols list on macOS). The static `engine_c` is built always, so a C program can link the C API directly
+# (tests/engine_library/host_c.c); the shared library is built only when the option is ON.
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT APPLE)
   return()
 endif()
 
@@ -24,6 +25,10 @@ else()
 endif()
 
 set(ENGINE_C_SOURCES engine_c.cpp import.cpp resources.cpp runtime.cpp status_map.cpp surface.cpp)
+if(APPLE)
+  # Day 355: a host's NSView or CAMetalLayer as a surface (AppKit and QuartzCore, inside an autorelease pool).
+  list(APPEND ENGINE_C_SOURCES macos/cocoa_surface.mm)
+endif()
 if(ENGINE_C_TEST_EXTENSION)
   list(APPEND ENGINE_C_SOURCES test_state.cpp)
 endif()
@@ -40,6 +45,9 @@ foreach(suffix "" "_asan" "_tsan")
   # ENGINE_BUILDING_LIBRARY: engine_get_api is the one exported function (engine_c.h); ENGINE_TEST_EXTENSION: see the option above.
   target_compile_definitions(engine_c${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE} ENGINE_C_WITH_IMPORTER=${ENGINE_C_WITH_IMPORTER_VALUE})
   target_link_libraries(engine_c${suffix} PUBLIC asset${suffix} ecs${suffix} jobs${suffix} platform${suffix} rhi${suffix} rhi_backends${suffix} foundation${suffix})
+  if(APPLE)
+    target_link_libraries(engine_c${suffix} PUBLIC "-framework AppKit" "-framework QuartzCore")
+  endif()
   if(ENGINE_LIBRARY_WITH_IMPORTER)
     target_link_libraries(engine_c${suffix} PUBLIC asset_import${suffix})
   endif()
@@ -52,6 +60,9 @@ if(ENGINE_LIBRARY_WITH_IMPORTER)
   target_compile_options(engine_c_noimport PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
   target_compile_definitions(engine_c_noimport PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE} ENGINE_C_WITH_IMPORTER=0)
   target_link_libraries(engine_c_noimport PUBLIC asset ecs jobs platform rhi rhi_backends foundation)
+  if(APPLE)
+    target_link_libraries(engine_c_noimport PUBLIC "-framework AppKit" "-framework QuartzCore")
+  endif()
 endif()
 
 # The SDK a host links against a pre-built engine: the public headers (include/engine/, the only headers a host needs; none of the engine's own) go to
@@ -128,6 +139,11 @@ if(_abi_major STREQUAL "")
 endif()
 set(ENGINE_SHARED_VERSION_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/engine_shared.map)
 file(WRITE ${ENGINE_SHARED_VERSION_SCRIPT} "# Generated from abi/engine.exports (engine/engine_c/CMakeLists.txt): do not edit.\nENGINE_${_abi_major} {\n  global:\n${_exported}  local:\n    *;\n};\n")
+# macOS (Day 355): ld64 takes a list of the exported names, with the C symbol prefix `_`; everything else becomes local (no version nodes on Mach-O: the
+# library's compatibility version is the major).
+string(REGEX REPLACE "    ([A-Za-z_][A-Za-z0-9_]*);\n" "_\\1\n" _exported_macho "${_exported}")
+set(ENGINE_SHARED_EXPORTED_SYMBOLS ${CMAKE_CURRENT_BINARY_DIR}/engine_shared.exported_symbols)
+file(WRITE ${ENGINE_SHARED_EXPORTED_SYMBOLS} "${_exported_macho}")
 
 function(engine_add_shared suffix)
   engine_shared_collect("${suffix}" libs)
@@ -141,8 +157,16 @@ function(engine_add_shared suffix)
   # (the vendored C libraries, already position independent) come in through the modules' usage requirements.
   target_link_libraries(engine${suffix} PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,${libs}>")
   set_target_properties(engine${suffix} PROPERTIES VERSION ${_abi_major}.${_abi_minor} SOVERSION ${_abi_major} OUTPUT_NAME engine${suffix})
-  target_link_options(engine${suffix} PRIVATE "LINKER:--version-script=${ENGINE_SHARED_VERSION_SCRIPT}")
-  set_property(TARGET engine${suffix} APPEND PROPERTY LINK_DEPENDS ${ENGINE_SHARED_VERSION_SCRIPT})
+  if(APPLE)
+    # libengine.<major>.dylib, found by a host through its rpath (install name @rpath/libengine.1.dylib): the host decides where the library lives.
+    target_link_options(engine${suffix} PRIVATE "LINKER:-exported_symbols_list,${ENGINE_SHARED_EXPORTED_SYMBOLS}")
+    set_property(TARGET engine${suffix} APPEND PROPERTY LINK_DEPENDS ${ENGINE_SHARED_EXPORTED_SYMBOLS})
+    set_target_properties(engine${suffix} PROPERTIES MACOSX_RPATH ON INSTALL_NAME_DIR "@rpath")
+    target_link_libraries(engine${suffix} PRIVATE "-framework AppKit" "-framework QuartzCore")
+  else()
+    target_link_options(engine${suffix} PRIVATE "LINKER:--version-script=${ENGINE_SHARED_VERSION_SCRIPT}")
+    set_property(TARGET engine${suffix} APPEND PROPERTY LINK_DEPENDS ${ENGINE_SHARED_VERSION_SCRIPT})
+  endif()
   if(suffix STREQUAL "_asan")
     target_compile_options(engine_asan PRIVATE ${ENGINE_ASAN_COMPILE_OPTIONS})
     target_link_options(engine_asan PRIVATE ${ENGINE_ASAN_LINK_OPTIONS})
@@ -168,7 +192,7 @@ if(ENGINE_HAVE_TSAN)
   engine_add_shared("_tsan")
 endif()
 
-# Install (plain flavor only): libengine.so.<major> and the package config, so a host builds with find_package(Engine) and links engine::engine.
+# Install (plain flavor only): libengine.so.<major> (macOS: libengine.<major>.dylib) and the package config, so a host builds with find_package(Engine) and links engine::engine.
 include(CMakePackageConfigHelpers)
 target_include_directories(engine INTERFACE $<BUILD_INTERFACE:${ENGINE_PUBLIC_INCLUDE_DIR}> $<INSTALL_INTERFACE:include>)
 install(TARGETS engine EXPORT EngineTargets LIBRARY DESTINATION lib COMPONENT engine_sdk NAMELINK_COMPONENT engine_sdk)

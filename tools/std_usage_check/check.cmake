@@ -97,7 +97,7 @@ set(prefilter_re "std::|#[ \t]*(include|import)[ \t]*<|unsigned char|signed char
 set(files "")
 foreach(dir IN LISTS DIRS)
   file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp" "${ROOT}/${dir}/*.cpp"
-       "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.inc" "${ROOT}/${dir}/*.mm" "${ROOT}/${dir}/*.c")
+       "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.inc" "${ROOT}/${dir}/*.mm" "${ROOT}/${dir}/*.m" "${ROOT}/${dir}/*.c")
   list(APPEND files ${found})
 endforeach()
 list(REMOVE_DUPLICATES files)

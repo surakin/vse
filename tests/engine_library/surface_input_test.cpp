@@ -1,11 +1,13 @@
 // Phase 23 Day 353: input the host forwards and requests the engine sends back, on a surface over a window the host
-// owns. The host here is the test: it opens a window with the platform layer (X11, as a host with its own toolkit
-// would), creates the engine and a surface, and forwards its events through `surface_input`. The engine's UI toolkit
-// (ui::Surface with a button and text fields, bound to the surface's window by ui_window's WindowAdapter, the way an
-// application binds it to its own window) reacts as it would to a window of its own: a click changes a counter that the
-// test reads back through the world API, typed text reaches a field, the cursor and the clipboard requests leave
-// through the host's callbacks.
+// owns. The host here is the test: it opens a window with the platform layer (X11 on Linux, Cocoa on macOS from Day
+// 355, as a host with its own toolkit would), creates the engine and a surface, and forwards its events through
+// `surface_input`. The engine's UI toolkit (ui::Surface with a button and text fields, bound to the surface's window by
+// ui_window's WindowAdapter, the way an application binds it to its own window) reacts as it would to a window of its
+// own: a click changes a counter that the test reads back through the world API, typed text reaches a field, the cursor
+// and the clipboard requests leave through the host's callbacks.
 #include <catch2/catch_test_macros.hpp>
+
+#include "build_defs.h"
 
 #include "display_session.h"
 #include "font_support.h"
@@ -29,6 +31,23 @@ using namespace engine_placeholder;
 
 namespace
 {
+
+// The modifier of the edit shortcuts the UI answers: Ctrl, and Command on macOS (the platform's convention).
+constexpr u32 kShortcut = os::kModShortcut;
+static_assert(os::kModCtrl == ENGINE_MOD_CTRL && os::kModSuper == ENGINE_MOD_SUPER,
+              "the modifier bits are the C API's");
+
+// Linux needs an X11 server (DISPLAY); the Mac's window server is there whenever the session is
+// (SKIP_IF_NO_DISPLAY_SESSION).
+bool HaveDisplay()
+{
+#if ENGINE_PLATFORM_MACOS
+    return true;
+#else
+    const char* display = os::GetEnvironment("DISPLAY");
+    return display != nullptr && display[0] != '\0';
+#endif
+}
 
 // What the host records of the engine's requests.
 struct HostLog
@@ -161,7 +180,8 @@ struct Rig
         create.struct_size = sizeof(create);
         create.flags = ENGINE_CREATE_LOG_SUPPRESS_CONSOLE;
         REQUIRE(api->create(&create, &engine) == ENGINE_OK);
-        if (!host.Open(os::WindowBackend::X11, "engine input test", 200, 120, &input))
+        if (!host.Open(ENGINE_PLATFORM_MACOS ? os::WindowBackend::Cocoa : os::WindowBackend::X11, "engine input test",
+                       200, 120, &input))
         {
             return false;
         }
@@ -180,14 +200,28 @@ struct Rig
         callbacks.request_focus = &HostFocus;
         engine_surface_info info = {};
         info.struct_size = sizeof(info);
-        info.kind = ENGINE_SURFACE_X11;
         info.width = 200;
         info.height = 120;
         info.scale = 1.0f;
         info.display = native.display;
+#if ENGINE_PLATFORM_MACOS
+        info.kind = ENGINE_SURFACE_COCOA;  // the window's content NSView and its CAMetalLayer
+        info.surface = native.surface;
+        info.width = host.Get()->Width();  // in pixels: twice the points on a Retina display
+        info.height = host.Get()->Height();
+        info.scale = host.Get()->ContentScale();
+#else
+        info.kind = ENGINE_SURFACE_X11;
         info.window_id = native.window_id;
+#endif
         info.callbacks = &callbacks;
-        if (api->surface_create(engine, &info, &surface) != ENGINE_OK)
+        const engine_status created = api->surface_create(engine, &info, &surface);
+        if (ENGINE_PLATFORM_MACOS)
+        {
+            REQUIRE(created ==
+                    ENGINE_OK);  // every Mac has Metal: a refused Cocoa surface is a defect, not a reason to skip
+        }
+        if (created != ENGINE_OK)
         {
             return false;
         }
@@ -300,15 +334,14 @@ TEST_CASE("Forwarded pointer events click a UI button and the click changes the 
           "[engine_c][surface][input][gpu][window]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
-    const char* display = os::GetEnvironment("DISPLAY");
-    if (display == nullptr || display[0] == '\0')
+    if (!HaveDisplay())
     {
         SKIP("no X11 display");
     }
     Rig rig;
     if (!rig.Start())
     {
-        SKIP("no window or no Vulkan device that can present to it");
+        SKIP("no window or no GPU device that can present to it");
     }
     REQUIRE(rig.Clicks() == 0.0f);
 
@@ -352,15 +385,14 @@ TEST_CASE("Forwarded keys and text reach a UI text field, and the cursor request
           "[engine_c][surface][input][gpu][window]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
-    const char* display = os::GetEnvironment("DISPLAY");
-    if (display == nullptr || display[0] == '\0')
+    if (!HaveDisplay())
     {
         SKIP("no X11 display");
     }
     Rig rig;
     if (!rig.Start())
     {
-        SKIP("no window or no Vulkan device that can present to it");
+        SKIP("no window or no GPU device that can present to it");
     }
     // The pointer enters the field: the UI asks for the text beam, and the request reaches the host's callback.
     rig.Move(60, 70);
@@ -383,20 +415,21 @@ TEST_CASE("Forwarded keys and text reach a UI text field, and the cursor request
     rig.Pump();
     CHECK(rig.field->Text() == StringView("abcd"));
 
-    // Ctrl+A, Ctrl+C: the engine puts the text on the host's clipboard through the callback.
-    rig.Key(ENGINE_KEY_A, true, ENGINE_MOD_CTRL);
-    rig.Key(ENGINE_KEY_A, false, ENGINE_MOD_CTRL);
-    rig.Key(ENGINE_KEY_C, true, ENGINE_MOD_CTRL);
-    rig.Key(ENGINE_KEY_C, false, ENGINE_MOD_CTRL);
+    // Ctrl+A, Ctrl+C (Command on macOS: os::kModShortcut): the engine puts the text on the host's clipboard through the
+    // callback.
+    rig.Key(ENGINE_KEY_A, true, kShortcut);
+    rig.Key(ENGINE_KEY_A, false, kShortcut);
+    rig.Key(ENGINE_KEY_C, true, kShortcut);
+    rig.Key(ENGINE_KEY_C, false, kShortcut);
     rig.Pump();
     CHECK(rig.log.stores == 1);
     CHECK(StringView(rig.log.stored, rig.log.stored_length) == StringView("abcd"));
 
-    // The host's clipboard changes; Ctrl+V reads it through the callback and the text arrives as one paste.
+    // The host's clipboard changes; Ctrl+V (Command+V) reads it through the callback and the text arrives as one paste.
     MemCopy(rig.log.clipboard, "pasted", 6);
     rig.log.clipboard_length = 6;
-    rig.Key(ENGINE_KEY_V, true, ENGINE_MOD_CTRL);
-    rig.Key(ENGINE_KEY_V, false, ENGINE_MOD_CTRL);
+    rig.Key(ENGINE_KEY_V, true, kShortcut);
+    rig.Key(ENGINE_KEY_V, false, kShortcut);
     rig.Pump();
     rig.Pump();
     CHECK(rig.field->Text() == StringView("pasted"));  // it replaced the selection of Ctrl+A

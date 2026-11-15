@@ -191,7 +191,8 @@ static Bytes MakeExternal(const Bytes* json)
             snprintf(g_files[g_file_count].name, sizeof(g_files[0].name), "ext%d.%s", g_file_count,
                      is_png ? "png" : "bin");
             g_files[g_file_count].bytes = Base64Decode(comma + 1, (size_t)(quote - comma - 1));
-            n = sprintf((char*)out.data + out.size, "\"uri\": \"%s\"", g_files[g_file_count].name);
+            n = snprintf((char*)out.data + out.size, json->size + 256 - out.size, "\"uri\": \"%s\"",
+                         g_files[g_file_count].name); /* the data URI it replaces was longer: it fits */
             out.size += (size_t)n;
             ++g_file_count;
             p = quote + 1;

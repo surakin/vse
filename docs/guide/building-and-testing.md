@@ -529,5 +529,7 @@ only the static libraries; the design is in `docs/superpowers/specs/2026-11-16-e
 vendored library position independent, compiles with hidden visibility, and adds the targets `engine`, `engine_asan` and `engine_tsan` (`libengine.so.1` and its
 flavors: every module's static library whole-archived, a version script as the export list, `SONAME libengine.so.1`). A C program per flavor links it and runs jobs
 inside it (`engine_shared_link_probe*`; without the option the three tests are skipped stubs, so the phase has the same flavors in every configuration). A
-sanitized library loads only into a program built with the same sanitizer. With the option OFF nothing changes: no compile command differs. Windows and macOS
-build it on Days 354 and 355. The ctest `engine_shared_option` checks that the option exists and is declared OFF.
+sanitized library loads only into a program built with the same sanitizer. With the option OFF nothing changes: no compile command differs. On macOS (Day 355)
+the same targets build `libengine.1.dylib` (and `libengine_asan.1.dylib`, `libengine_tsan.1.dylib`), with an exported-symbols list in place of the version script
+and the install name `@rpath/libengine.1.dylib`; the shared tree is configured with `cmake --preset macos-clang -B build-macos-shared -DENGINE_BUILD_SHARED=ON`.
+Windows builds it on Day 354. The ctest `engine_shared_option` checks that the option exists and is declared OFF.
