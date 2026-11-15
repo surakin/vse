@@ -640,6 +640,12 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 - **Where it is drawn.** At the entity's world position plus the offset projected through the frame's camera, over the picture after the tonemap, with no depth test (geometry never hides a label), facing the viewer by construction (constant orientation on screen). A hidden entity's label is not drawn; an entity attached to a joint carries its label with it. A label behind the camera or far off the screen is skipped. A surface draws up to 1024 labels per frame (the text renderer's budget is 8192 glyphs); the rest go to `labels_refused`.
 - **Not here.** A background plate, depth-tested labels and billboard quads (later); text above 256 pixels (Phase 28's outline meshes).
 
+## Surviving rebinds, losses and several surfaces (Phase 24 Day 368)
+
+- **What a surface keeps and what it remakes.** A surface's scene (frame object, resident meshes and materials, device textures of host textures, the label font and the text atlas) belongs to the surface's device and is remade by `surface_rebind` from what the engine keeps: the resource host's content, the host textures' newest pixels (kept as the CPU source), the label font's bytes, the world itself. The host recreates nothing: the same world, camera, textures and labels draw on the new window, and the picture is the one before.
+- **Several surfaces.** One world may be bound to several surfaces, each with its own camera (`surface_set_camera`); each uploads the host textures its entities name to its own device (`surface_state.textures_uploaded` per surface), so destroying one surface leaves the others drawing. A world destroyed under a surface leaves it at the background colour with `world_status` `STALE_HANDLE`. A host texture may be destroyed before or after the entities that name it (the slots revert), and the engine refuses to be destroyed while any texture, world or surface lives (`IN_USE`).
+- **Not covered by a test yet.** A fault-injection sweep through the frame path and the 5000-frame flat-count run are closing-pass items (`KNOWN-ISSUES.md`).
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

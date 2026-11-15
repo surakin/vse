@@ -1251,6 +1251,178 @@ int main(void)
         free(font.data);
     }
 
+    /* Day 368: a scene with a host texture and a label survives a rebind to a new window; the same texture shows on two
+       surfaces (each uploads it); a seeded sequence of creates and destroys in every order leaves nothing behind */
+    {
+        engine_handle world5;
+        engine_handle tex;
+        engine_handle other_surface;
+        uint64_t body;
+        engine_texture_info tinfo;
+        engine_slot_override slot;
+        engine_label label;
+        unsigned char solid[4 * 4 * 4];
+        unsigned long long before_picture;
+        Window fresh;
+        Window other;
+        engine_surface_info fresh_info = info;
+        engine_surface_state first_state;
+        engine_surface_state second_state;
+        Blob font = ReadFile(LABEL_FONT_DIR, LABEL_FONT_NAME);
+        unsigned seed = 12345u;
+        int op;
+        int j;
+        memset(&world5, 0, sizeof(world5));
+        memset(&tex, 0, sizeof(tex));
+        memset(&tinfo, 0, sizeof(tinfo));
+        tinfo.struct_size = sizeof(tinfo);
+        tinfo.width = 4;
+        tinfo.height = 4;
+        CHECK_STATUS(g_api->label_font_set(engine, font.data, font.size), ENGINE_OK);
+        CHECK_STATUS(g_api->world_create(engine, &world5), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_create(world5, &body), ENGINE_OK);
+        PlaceAt(world5, body, 0.0f, 0.0f, 0.0f);
+        CHECK_STATUS(SetMeshReference(world5, body, MESH_ID, MATERIAL_ID), ENGINE_OK);
+        CHECK_STATUS(g_api->texture_create(engine, &tinfo, &tex), ENGINE_OK);
+        for (j = 0; j < 16; ++j)
+        {
+            solid[j * 4 + 0] = 255;
+            solid[j * 4 + 1] = 0;
+            solid[j * 4 + 2] = 255;
+            solid[j * 4 + 3] = 255;
+        }
+        CHECK_STATUS(g_api->texture_update(tex, solid, 16, NULL), ENGINE_OK);
+        memset(&slot, 0, sizeof(slot));
+        slot.struct_size = sizeof(slot);
+        slot.kind = ENGINE_SLOT_HOST_TEXTURE;
+        slot.host_texture = tex;
+        CHECK_STATUS(g_api->entity_set_slot_override(world5, body, Str("albedo_tex"), &slot), ENGINE_OK);
+        memset(&label, 0, sizeof(label));
+        label.struct_size = sizeof(label);
+        label.text = Str("body");
+        label.color[0] = label.color[1] = label.color[2] = label.color[3] = 1.0f;
+        label.size = 14.0f;
+        label.offset[1] = 1.5f;
+        CHECK_STATUS(g_api->component_set(world5, body, ENGINE_COMPONENT_LABEL, &label), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_set_world(surface, world5), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        before_picture = Checksum(&pixels);
+        CHECK_STATUS(g_api->surface_state(surface, &first_state), ENGINE_OK);
+        CHECK(first_state.labels_drawn == 1 && first_state.textures_uploaded >= 1);
+        /* rebind to a new window of the same size: the same picture, nothing recreated by the host */
+        fresh = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
+        XMapWindow(display, fresh);
+        XSync(display, False);
+        fresh_info.window_id = (uint64_t)fresh;
+        CHECK_STATUS(g_api->surface_rebind(surface, &fresh_info), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(Checksum(&pixels) == before_picture);
+        CHECK_STATUS(g_api->surface_state(surface, &first_state), ENGINE_OK);
+        CHECK(first_state.labels_drawn == 1 && first_state.world_status == ENGINE_OK &&
+              first_state.textures_uploaded >= 1);
+        /* a second surface shows the same texture: it uploads its own copy, and the first keeps drawing */
+        other = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
+        XMapWindow(display, other);
+        XSync(display, False);
+        fresh_info.window_id = (uint64_t)other;
+        memset(&other_surface, 0, sizeof(other_surface));
+        CHECK_STATUS(g_api->surface_create(engine, &fresh_info, &other_surface), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_set_background(other_surface, background), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_set_world(other_surface, world5), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, other_surface, &pixels), ENGINE_OK);
+        CHECK(Checksum(&pixels) == before_picture);
+        CHECK_STATUS(g_api->surface_state(other_surface, &second_state), ENGINE_OK);
+        CHECK(second_state.textures_uploaded >= 1 && second_state.labels_drawn == 1);
+        /* destroying one surface leaves the other drawing */
+        CHECK_STATUS(g_api->surface_destroy(other_surface), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(Checksum(&pixels) == before_picture);
+        XDestroyWindow(display, other);
+        /* a seeded random sequence: entities with labels and textures are created and destroyed, textures go before and
+           after the entities that name them, worlds are rebound; every frame answers a status */
+        {
+            uint64_t entities[8];
+            engine_handle textures[4];
+            int e;
+            int t;
+            memset(entities, 0, sizeof(entities));
+            memset(textures, 0, sizeof(textures));
+            for (op = 0; op < 200; ++op)
+            {
+                seed = seed * 1103515245u + 12345u;
+                e = (int)((seed >> 16) % 8u);
+                t = (int)((seed >> 8) % 4u);
+                switch ((seed >> 4) % 6u)
+                {
+                case 0:
+                    if (entities[e] == 0)
+                    {
+                        CHECK_STATUS(g_api->entity_create(world5, &entities[e]), ENGINE_OK);
+                        PlaceAt(world5, entities[e], (float)e - 4.0f, 0.0f, 0.0f);
+                        CHECK_STATUS(SetMeshReference(world5, entities[e], MESH_ID, MATERIAL_ID), ENGINE_OK);
+                        CHECK_STATUS(SetLabel(world5, entities[e], "x", 12.0f, 0, 0), ENGINE_OK);
+                    }
+                    break;
+                case 1:
+                    if (entities[e] != 0)
+                    {
+                        CHECK_STATUS(g_api->entity_destroy(world5, entities[e]), ENGINE_OK);
+                        entities[e] = 0;
+                    }
+                    break;
+                case 2:
+                    if (textures[t].value == 0)
+                    {
+                        CHECK_STATUS(g_api->texture_create(engine, &tinfo, &textures[t]), ENGINE_OK);
+                        CHECK_STATUS(g_api->texture_update(textures[t], solid, 16, NULL), ENGINE_OK);
+                    }
+                    break;
+                case 3:
+                    if (textures[t].value != 0)
+                    {
+                        CHECK_STATUS(g_api->texture_destroy(textures[t]), ENGINE_OK);
+                        textures[t].value = 0;
+                    }
+                    break;
+                case 4:
+                    if (entities[e] != 0 && textures[t].value != 0)
+                    {
+                        engine_status result;
+                        slot.host_texture = textures[t];
+                        result = g_api->entity_set_slot_override(world5, entities[e], Str("albedo_tex"), &slot);
+                        CHECK(result == ENGINE_OK);
+                    }
+                    break;
+                default: CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK); break;
+                }
+            }
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            for (e = 0; e < 8; ++e)
+            {
+                if (entities[e] != 0)
+                {
+                    CHECK_STATUS(g_api->entity_destroy(world5, entities[e]), ENGINE_OK);
+                }
+            }
+            for (t = 0; t < 4; ++t)
+            {
+                if (textures[t].value != 0)
+                {
+                    CHECK_STATUS(g_api->texture_destroy(textures[t]), ENGINE_OK);
+                }
+            }
+        }
+        /* the world goes before the surface lets go of it, the texture before the engine: nothing is outstanding */
+        CHECK_STATUS(g_api->world_destroy(world5), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &first_state), ENGINE_OK);
+        CHECK(first_state.world_status == ENGINE_ERROR_STALE_HANDLE);
+        CHECK_STATUS(g_api->texture_destroy(tex), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
+        XDestroyWindow(display, fresh);
+        free(font.data);
+    }
+
     /* unbound: the clear color again; bound to a world destroyed under it: the clear color and the reason */
     CHECK_STATUS(g_api->surface_set_world(surface, none), ENGINE_OK);
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
