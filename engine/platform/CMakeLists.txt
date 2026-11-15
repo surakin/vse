@@ -7,6 +7,7 @@ target_include_directories(platform_input INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/
 
 set(PLATFORM_SOURCES
   window.cpp
+  foreign_window.cpp  # Phase 23 Day 352: a window the host owns
   clipboard.cpp
 )
 

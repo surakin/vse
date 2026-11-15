@@ -172,6 +172,55 @@ typedef struct engine_info
 
 /* Bits of engine_info.caps. */
 #define ENGINE_CAP_IMPORT_GLTF 0x1u /* the glTF importer is built in (import_gltf and import_gltf_async work; without it they fail with UNSUPPORTED) */
+#define ENGINE_CAP_SURFACE_X11 0x2u /* surface_create renders into an X11 window the host owns (Day 352) */
+#define ENGINE_CAP_SURFACE_WAYLAND 0x4u /* surface_create renders into a Wayland wl_surface the host owns (Day 352) */
+#define ENGINE_CAP_READBACK 0x8u /* surface_read_pixels works (Day 352) */
+
+/* ---- Day 352: rendering into a window the host owns ---- */
+
+/* Which kind of native window engine_surface_info names. */
+#define ENGINE_SURFACE_X11 1u     /* `display` is the Display*, `window_id` the X11 Window */
+#define ENGINE_SURFACE_WAYLAND 2u /* `display` is the wl_display*, `surface` the wl_surface* (the host's own connection and surface) */
+
+/* A window the host owns. The engine never creates, moves, resizes or destroys it: the host keeps it alive until surface_destroy returns, and
+ * tells the engine its size and scale with surface_resized. */
+typedef struct engine_surface_info
+{
+    uint32_t struct_size;
+    uint32_t kind;   /* ENGINE_SURFACE_* */
+    uint32_t flags;  /* 0 */
+    uint32_t width;  /* in pixels */
+    uint32_t height;
+    float scale;     /* the DPI scale of the window; 0 means 1 */
+    uint32_t reserved;
+    void* display;
+    void* surface;
+    uint64_t window_id;
+} engine_surface_info;
+
+/* What engine_api.surface_state reports. */
+typedef struct engine_surface_state
+{
+    uint32_t struct_size;
+    uint32_t image_width;  /* of the swapchain, 0 when there is none */
+    uint32_t image_height;
+    uint32_t visible;      /* 1 when the last frame was presented */
+    uint32_t lost;         /* 1 when the window is gone from under the engine: call surface_rebind */
+    uint32_t reserved;
+    uint64_t frames_presented;
+    uint64_t recoveries;   /* how many times surface_rebind rebuilt the swapchain */
+    uint64_t frames_skipped; /* frames that drew nothing (zero size, lost) */
+} engine_surface_state;
+
+/* The pixels of a rendered frame: RGBA8, `stride` bytes per row (width * 4), top row first. `data` is the host's to release. */
+typedef struct engine_pixels
+{
+    uint32_t struct_size;
+    uint32_t width;
+    uint32_t height;
+    uint32_t stride;
+    engine_buffer data;
+} engine_pixels;
 
 /* Which sanitizer the library was built with. A sanitized library loads only into a host built with the same one. */
 typedef enum engine_sanitizer
@@ -622,6 +671,44 @@ typedef struct engine_api
         /* Destroys an import ticket, cancelling an import that has not finished and waiting for its job to end. Fails
          * with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, IN_USE. */
         engine_status (*import_destroy)(engine_handle ticket);
+
+        /* ---- Day 352: rendering into a window the host owns ---- */
+
+        /* Makes a surface: the engine renders into the host's window on every `frame` (a clear to the background color in this version). A device is made for
+         * the window (one per surface). Counts as an object of the engine until surface_destroy. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, flags,
+         * missing handles, a size or scale out of range), STRUCT_SIZE, UNSUPPORTED (the kind is not in engine_info.caps, or no GPU can present to the
+         * window), LIMIT_EXCEEDED (64 surfaces). */
+        engine_status (*surface_create)(engine_handle engine, const engine_surface_info* info, engine_handle* out);
+
+        /* Destroys a surface and its device (read-back tickets of the surface fail with CANCELLED). Call it before the window goes. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, TYPE_MISMATCH. */
+        engine_status (*surface_destroy)(engine_handle surface);
+
+        /* Tells the engine the window's size in pixels and its scale (0 means 1). A size of 0 in either dimension pauses rendering (the window is hidden or
+         * minimized); the next frame after a real size resumes. Call from the host's frame thread, before `frame`. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * TYPE_MISMATCH. */
+        engine_status (*surface_resized)(engine_handle surface, uint32_t width, uint32_t height, float scale);
+
+        /* Rebuilds the swapchain on a window the host re-created or re-mapped (after `lost` in surface_state, or for a new native window of the same kind),
+         * through the device reset path. Fails with: those of surface_create, UNSUPPORTED (the device cannot present to the new window; the surface stays lost). */
+        engine_status (*surface_rebind)(engine_handle surface, const engine_surface_info* info);
+
+        /* Sets the color the surface is cleared to (four values from 0 to 1, RGBA). Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+        engine_status (*surface_set_background)(engine_handle surface, const float* rgba);
+
+        /* Reads the state of a surface (`out->struct_size` set by the host). Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, TYPE_MISMATCH. */
+        engine_status (*surface_state)(engine_handle surface, engine_surface_state* out);
+
+        /* Asks for the pixels of the next frame the surface presents and returns a ticket at once (the frame is rendered by `frame`). The ticket counts as an
+         * object of the engine until pixels_destroy. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, LIMIT_EXCEEDED (256 tickets). */
+        engine_status (*surface_read_pixels)(engine_handle surface, engine_handle* ticket);
+
+        /* Takes the pixels of a finished read-back (once). Fails with: NOT_READY (no frame has been presented since the request), CANCELLED (the surface was
+         * destroyed), UNSUPPORTED (the frame could not be read), NOT_FOUND (taken already), STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, TYPE_MISMATCH. */
+        engine_status (*pixels_finish)(engine_handle ticket, engine_pixels* out);
+
+        /* Destroys a read-back ticket (and the pixels it still holds). Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+        engine_status (*pixels_destroy)(engine_handle ticket);
     } engine_api;
 
 /* Returns the function table.

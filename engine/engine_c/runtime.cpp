@@ -2,6 +2,7 @@
 // Every function checks its handle and its arguments, copies in and out (no pointer into a world escapes) and returns
 // an `engine_status`; nothing of the engine's C++ types, allocations or exceptions crosses the boundary.
 #include "engine_c/runtime.h"
+#include "engine_c/surface.h"
 
 #include "containers/vector.h"
 #include "cstr/mem_ops.h"
@@ -209,6 +210,22 @@ ResourceHost* Runtime::Resources()
     return resources.Get();
 }
 
+SurfaceHost* Runtime::Surfaces()
+{
+    LockGuard<Mutex> lock(table_mutex);
+    if (surfaces.Get() == nullptr)
+    {
+        surfaces = MakeUnique<SurfaceHost>();
+    }
+    return surfaces.Get();
+}
+
+SurfaceHost* Runtime::SurfacesIfCreated()
+{
+    LockGuard<Mutex> lock(table_mutex);
+    return surfaces.Get();
+}
+
 ResourceHost* Runtime::ResourcesIfCreated()
 {
     LockGuard<Mutex> lock(table_mutex);
@@ -252,6 +269,10 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
     if (ResourceHost* resources = runtime->ResourcesIfCreated())
     {
         resources->PumpLoads();  // builds what asynchronous loads have read, within a small budget
+    }
+    if (SurfaceHost* surfaces = runtime->SurfacesIfCreated())
+    {
+        surfaces->RenderAll();  // the host's windows, one frame each, before the worlds step
     }
     LockGuard<Mutex> lock(runtime->world_mutex);
     result.frame_index = ++runtime->frames;

@@ -86,6 +86,7 @@ private:
 };
 
 class ResourceHost;
+class SurfaceHost;
 
 /// The limits of a glTF import, read from the `assets.import.*` settings when the engine is created (all 0 when the
 /// importer is not built in).
@@ -168,6 +169,16 @@ public:
     ///
     /// - Thread-safety: thread-safe.
     ResourceHost* ResourcesIfCreated();
+
+    /// The surfaces of the engine (Day 352): made by the first call that needs them.
+    ///
+    /// - Thread-safety: thread-safe.
+    SurfaceHost* Surfaces();
+
+    /// The surfaces if they exist, else null.
+    ///
+    /// - Thread-safety: thread-safe.
+    SurfaceHost* SurfacesIfCreated();
     /// Jobs submitted and not yet run to their end. The scheduler aborts when its queues are full, so a submit that
     /// would pass `kMaxJobsInFlight` is refused.
     Atomic<u32> jobs_in_flight{0};
@@ -176,6 +187,8 @@ public:
     // Declared last, so it is destroyed first: its lent buffers are handed back on the job system's worker, and its
     // loads read on the job system's scheduler.
     UniquePtr<ResourceHost> resources;  // guarded by table_mutex at creation
+    // After the resources: destroyed before them (a surface holds a device and a swapchain, nothing of the content).
+    UniquePtr<SurfaceHost> surfaces;  // guarded by table_mutex at creation
 };
 
 // The functions of the table that the runtime serves (engine_c.cpp lists them in the table).

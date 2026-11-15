@@ -139,6 +139,11 @@ endforeach()
 # `engine_c_status_map_test` checks the table that maps the engine's result types to the C statuses.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET engine_c)
   include(Catch)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(EngineTestX11 IMPORTED_TARGET x11)
+  if(EngineTestX11_FOUND)
+    set(ENGINE_LIBRARY_X11_HOST TRUE)
+  endif()
   # Day 350: the blobs of host_resources.c (a texture and a second version of it, a material that depends on it, a mesh), minted by asset_mint.
   add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/resource_data/done.txt
                      COMMAND ${CMAKE_COMMAND} -DTOOL=$<TARGET_FILE:asset_mint> -DSAMPLE=${CMAKE_SOURCE_DIR}/tests/asset/mint_sample -DOUT=${CMAKE_CURRENT_BINARY_DIR}/resource_data
@@ -191,7 +196,38 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET engine_c)
       target_link_libraries(host_import${suffix} PRIVATE engine_c${suffix} Threads::Threads m)
       set_target_properties(host_import${suffix} PROPERTIES LINKER_LANGUAGE CXX)
     endif()
-    add_executable(engine_c_tests${suffix} status_map_test.cpp)
+    # Day 352: a C host with its own X11 window (Xlib) that the engine renders into.
+    if(ENGINE_LIBRARY_X11_HOST AND suffix STREQUAL "_tsan")
+      # The GPU tests leave ThreadSanitizer out on Linux (the NVIDIA driver's own threads crash it: tests/rhi/CMakeLists.txt), so the flavor is a skipped stub.
+      add_test(NAME engine_c_surface_tsan COMMAND ${CMAKE_COMMAND} -E echo "skipped: ThreadSanitizer cannot run the GPU driver's threads")
+      set_tests_properties(engine_c_surface_tsan PROPERTIES LABELS "engine_library;tsan" SKIP_REGULAR_EXPRESSION "skipped: ")
+      engine_label_tests(engine_c_surface_tsan)
+    elseif(ENGINE_LIBRARY_X11_HOST)
+      add_executable(host_surface${suffix} host_surface.c)
+      target_include_directories(host_surface${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/engine)
+      target_link_libraries(host_surface${suffix} PRIVATE engine_c${suffix} PkgConfig::EngineTestX11 Threads::Threads m)
+      set_target_properties(host_surface${suffix} PROPERTIES LINKER_LANGUAGE CXX)
+      if(suffix STREQUAL "_asan")
+        target_compile_options(host_surface_asan PRIVATE ${ENGINE_ASAN_COMPILE_OPTIONS})
+        target_link_options(host_surface_asan PRIVATE ${ENGINE_ASAN_LINK_OPTIONS})
+      endif()
+      add_test(NAME engine_c_surface${suffix} COMMAND host_surface${suffix})
+      set_tests_properties(engine_c_surface${suffix} PROPERTIES LABELS "engine_library;${flavor_label}" PASS_REGULAR_EXPRESSION "host_surface: (ok|skipped)")
+      if(suffix STREQUAL "_asan")
+        # The GPU driver's process-lifetime allocations come from frames without a module (the RHI tests' lsan.supp cannot name them, and leave the X11
+        # tests out of asan for it): leak checking is off, the memory errors of ASan stay on (KNOWN-ISSUES.md).
+        set_tests_properties(engine_c_surface_asan PROPERTIES ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0")
+      endif()
+      engine_label_tests(engine_c_surface${suffix})
+    endif()
+    # Day 352 (plain flavor only, as the GPU tests are left out of ThreadSanitizer and the driver's allocations out of ASan's leak check): the Wayland host is a Catch
+    # test that opens its window with the platform layer.
+    set(ENGINE_C_TEST_SOURCES status_map_test.cpp)
+    if(suffix STREQUAL "")
+      list(APPEND ENGINE_C_TEST_SOURCES surface_wayland_test.cpp)
+    endif()
+    add_executable(engine_c_tests${suffix} ${ENGINE_C_TEST_SOURCES})
+    target_include_directories(engine_c_tests${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/tests/support)
     target_link_libraries(engine_c_tests${suffix} PRIVATE engine_c${suffix} Catch2::Catch2WithMain Threads::Threads)
     if(suffix STREQUAL "_asan")
       target_compile_options(host_c_asan PRIVATE ${ENGINE_ASAN_COMPILE_OPTIONS})

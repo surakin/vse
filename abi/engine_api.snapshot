@@ -139,7 +139,40 @@ field engine_import_info.struct_size offset=0 size=4
 field engine_import_info.done offset=4 size=4
 field engine_import_info.steps_done offset=8 size=4
 field engine_import_info.steps_total offset=12 size=4
-struct engine_api size=400
+value ENGINE_CAP_IMPORT_GLTF 1
+value ENGINE_CAP_SURFACE_X11 2
+value ENGINE_CAP_SURFACE_WAYLAND 4
+value ENGINE_CAP_READBACK 8
+value ENGINE_SURFACE_X11 1
+value ENGINE_SURFACE_WAYLAND 2
+struct engine_surface_info size=56
+field engine_surface_info.struct_size offset=0 size=4
+field engine_surface_info.kind offset=4 size=4
+field engine_surface_info.flags offset=8 size=4
+field engine_surface_info.width offset=12 size=4
+field engine_surface_info.height offset=16 size=4
+field engine_surface_info.scale offset=20 size=4
+field engine_surface_info.reserved offset=24 size=4
+field engine_surface_info.display offset=32 size=8
+field engine_surface_info.surface offset=40 size=8
+field engine_surface_info.window_id offset=48 size=8
+struct engine_surface_state size=48
+field engine_surface_state.struct_size offset=0 size=4
+field engine_surface_state.image_width offset=4 size=4
+field engine_surface_state.image_height offset=8 size=4
+field engine_surface_state.visible offset=12 size=4
+field engine_surface_state.lost offset=16 size=4
+field engine_surface_state.reserved offset=20 size=4
+field engine_surface_state.frames_presented offset=24 size=8
+field engine_surface_state.recoveries offset=32 size=8
+field engine_surface_state.frames_skipped offset=40 size=8
+struct engine_pixels size=48
+field engine_pixels.struct_size offset=0 size=4
+field engine_pixels.width offset=4 size=4
+field engine_pixels.height offset=8 size=4
+field engine_pixels.stride offset=12 size=4
+field engine_pixels.data offset=16 size=32
+struct engine_api size=472
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -192,3 +225,12 @@ field engine_api.import_wait offset=368 size=8
 field engine_api.import_finish offset=376 size=8
 field engine_api.import_cancel offset=384 size=8
 field engine_api.import_destroy offset=392 size=8
+field engine_api.surface_create offset=400 size=8
+field engine_api.surface_destroy offset=408 size=8
+field engine_api.surface_resized offset=416 size=8
+field engine_api.surface_rebind offset=424 size=8
+field engine_api.surface_set_background offset=432 size=8
+field engine_api.surface_state offset=440 size=8
+field engine_api.surface_read_pixels offset=448 size=8
+field engine_api.pixels_finish offset=456 size=8
+field engine_api.pixels_destroy offset=464 size=8

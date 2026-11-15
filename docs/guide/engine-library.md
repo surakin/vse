@@ -287,3 +287,48 @@ refusing callback, the asynchronous import (poll, wait, finish twice, 24 cancels
 `host_import_off.c` is the library without the importer. ThreadSanitizer cannot follow libpng's `longjmp` (`KNOWN-ISSUES.md`), so its flavor of the hostile
 run leaves the fixture's PNG uncorrupted.
 
+
+## Rendering into a window the host owns (Day 352)
+
+An application with its own toolkit (a Qt, GTK or Electron shell, or a C program with a bare Xlib window) keeps its window and has the engine draw into it:
+`surface_create`, `surface_resized`, `surface_rebind`, `surface_set_background`, `surface_state`, `surface_read_pixels`, `pixels_finish`, `pixels_destroy` and
+`surface_destroy`, described in `engine_c.h` ("Day 352"). The engine **never creates, resizes, moves or destroys the host's window**; the host owns its size,
+visibility and scale and reports them. In this order:
+
+1. **Ask what the build can do.** `get_info`: `caps & ENGINE_CAP_SURFACE_X11` and `ENGINE_CAP_SURFACE_WAYLAND` say which window kinds `surface_create` accepts
+   (today Linux with the Vulkan backend), `ENGINE_CAP_READBACK` that `surface_read_pixels` works. A build that cannot answers `UNSUPPORTED` with a sentence in
+   `last_error`, never a crash.
+2. **Create the surface** from the window's native handles in an `engine_surface_info`: for X11 the `Display*` (`display`) and the `Window` (`window_id`), for
+   Wayland the host's own `wl_display*` (`display`) and `wl_surface*` (`surface`): the engine makes **no second connection**, it presents on the host's, so the
+   host keeps dispatching its events as it did. The size is in pixels and the scale is the DPI factor (0 means 1). Each surface has a device of its own; the
+   surface counts as an object of the engine until `surface_destroy`, and `destroy` of the engine answers `IN_USE` until it is gone. **Destroy the surface
+   before the window.**
+3. **Draw.** Every `frame` renders one frame into every surface: in this version a clear to the surface's background color (`surface_set_background`; the
+   renderer is not behind the C API yet, so a scene such as the demo's cube has nothing to render it with: `KNOWN-ISSUES.md`). The host calls `frame` from its own
+   thread, as everywhere in the API.
+4. **Follow the window.** The host tells the engine every change of size or scale with `surface_resized` (what a toolkit does on `ConfigureNotify` or when the
+   Wayland surface is configured; **the size reported must be the size the window really has**: on X11 the swapchain takes the server's extent when it is rebuilt).
+   A size of 0 in either dimension means hidden or minimized: the engine draws nothing and keeps the surface (`frames_skipped` of `surface_state` counts the
+   frames); the next real size resumes. Unmapping or covering a window needs no call.
+5. **Recover.** `surface_state` reports `visible` (the last frame was presented), `lost` and `recoveries`. A surface whose window went away from under the
+   engine draws nothing and does not crash the engine: on X11 the server reports the destroyed window as having no drawable area, so the surface reads as
+   hidden (`visible` 0, `frames_skipped` counting up) and a read-back pending on it stays pending; when the swapchain reports the surface itself lost, `lost` is
+   1 and the pending read-backs fail with `UNSUPPORTED`. Either way the host calls `surface_rebind` with the handles of a new window and the engine rebuilds
+   the swapchain on the same device through the reset path of Phase 8 (`RecreateSurface`), `recoveries` goes up and the next frame is drawn there. If the
+   device cannot present to the new window (`UNSUPPORTED`) the surface stays lost, and the host can try again or destroy it.
+6. **Read pixels.** `surface_read_pixels` returns a ticket at once; the next frame that draws the surface fills it; `pixels_finish` takes the RGBA8 image (an
+   `engine_pixels`: width, height, `stride` = width × 4, top row first, in the encoding of the swapchain image, so a clear to 0.5 reads 188 on an sRGB surface)
+   as an `engine_buffer` the host releases with `engine_buffer_release`. Before a frame is drawn `pixels_finish` answers `NOT_READY`; after the surface is
+   destroyed, `CANCELLED`; a second take is `NOT_FOUND`. `pixels_destroy` ends the ticket (256 at most; each counts as an object of the engine). It is the screenshot
+   and test path, and is not meant for every frame.
+
+The engine's own window code is not involved: `os::ForeignWindow` (`engine/platform/foreign_window.h`) is an `os::Window` over the host's handles with no events,
+cursor or clipboard (the host owns input; Day 353 forwards it), so the RHI's swapchain code is the same as for the engine's windows. The Vulkan backend creates its
+surface from the handles on the host's connection.
+
+**Tested** by `host_surface.c` (a C program with an Xlib window; plain and asan, the tsan flavor is a skipped stub because ThreadSanitizer cannot run the GPU
+driver's threads): every bad argument, a frame of a known color read back and compared with the golden pixels, another color (sRGB encoding), a second take of a
+ticket, the host's resize (the image follows), a hidden window and the return, an unmapped window, a window destroyed under the engine (no crash, no X error
+raised by the engine) and `surface_rebind` on a new window, a ticket cancelled by the surface's destruction and `destroy` refused while the surface exists; and by
+`surface_wayland_test.cpp` (the same on a Wayland surface, a window opened with the platform layer and handed to the C API: the golden frame, resize, hidden,
+and rebind to a second window). Both need an unlocked session (`KNOWN-ISSUES.md`) and skip without a display.

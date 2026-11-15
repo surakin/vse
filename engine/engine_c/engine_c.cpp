@@ -21,6 +21,7 @@
 #include "engine_c/resources.h"
 #include "engine_c/runtime.h"
 #include "engine_c/status_map.h"
+#include "engine_c/surface.h"
 #include "log/diagnostics_hooks.h"
 #include "log/log.h"
 #include "mem/heap_allocator.h"
@@ -438,7 +439,10 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
     out->struct_size = static_cast<u32>(kFirstVersionSize);
     if (host_size >= sizeof(engine_info))
     {
-        out->caps = engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u;
+        out->caps = (engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u) |
+                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_SURFACE_X11 : 0u) |
+                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WAYLAND) ? ENGINE_CAP_SURFACE_WAYLAND : 0u) |
+                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_READBACK : 0u);
         out->reserved = 0;
         out->struct_size = static_cast<u32>(sizeof(engine_info));
     }
@@ -721,6 +725,15 @@ extern "C"
             &engine_c::ImportFinishFn,
             &engine_c::ImportCancelFn,
             &engine_c::ImportDestroyFn,
+            &engine_c::SurfaceCreateFn,
+            &engine_c::SurfaceDestroyFn,
+            &engine_c::SurfaceResizedFn,
+            &engine_c::SurfaceRebindFn,
+            &engine_c::SurfaceSetBackgroundFn,
+            &engine_c::SurfaceStateFn,
+            &engine_c::SurfaceReadPixelsFn,
+            &engine_c::PixelsFinishFn,
+            &engine_c::PixelsDestroyFn,
         };
         *out = &table;
         return ENGINE_OK;
