@@ -650,6 +650,19 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 
 `tests/engine_library/walk_around.c` is the phase's driving case as a plain C host: three skinned robots (one walks, two stand), three screens that show a pattern each, painted by a thread of their own through `texture_update`, name tags over the robots, a directional light with an ambient term, and a first-person camera (W A S D, the mouse looks, Escape quits). It builds the scene through the C API alone; `--frames N` makes it a test that draws N frames, stops the painters, rebinds the surface to a new window and checks the picture is the same and that no entity was unresolved. The walk-through is the tutorial [A 3D Scene in Your Window](../tutorials/a-3d-scene-in-your-window.md).
 
+## Scenes: conventions and the host's duties (Phase 24 Day 372)
+
+| What | Convention |
+|---|---|
+| Axes | right-handed, +Y up; a camera and a directional light look along their entity's -Z |
+| Units | metres; angles in radians; `engine_transform.rotation` is a unit quaternion (x, y, z, w) |
+| Matrices | column-major, 16 floats (`engine_world_transform.matrix`) |
+| Colours | linear RGB for lights and material values, RGBA 0..1 as sRGB for labels; host texture pixels are RGBA8 (sRGB when `ENGINE_TEXTURE_SRGB`) |
+| Pixels | origin at the top left of the surface, x right, y down; `surface_project` and `surface_pixel_ray` use the last frame's camera |
+| Sizes | a surface draws up to 4096 objects, 64 lights and 1024 labels; the rest is counted in `surface_state` |
+
+The host's duties: call `frame` from one thread (each call runs the animation system, the transform and attachment systems of every world, then draws every surface with a bound world, in that order); give `resource_add` content before an entity names it (an entity naming a missing resource draws nothing and is counted in `entities_unresolved`); let any thread call `texture_update`, but not `texture_destroy` while a frame is running on another thread without its own care (a destroyed texture only reverts the slot); give the surface's `scale` (the window's DPI scale) so labels and the UI are the size the user expects; destroy things in the order textures, surfaces, worlds, engine (`IN_USE` otherwise). What was built against the plan: no shadows, no orthographic cameras, no zero-copy GPU textures from the host, no per-vertex morph targets; labels have no depth test and no plate (`KNOWN-ISSUES.md`).
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.
