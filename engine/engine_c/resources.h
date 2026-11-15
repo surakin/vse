@@ -3,6 +3,7 @@
 //! manager that loads it, the asynchronous loader, the release of lent bytes on an engine worker, and the handles and
 //! tickets the C API hands out. Internal to the module `engine_c`: nothing here reaches the host but through
 //! `engine_c.h`.
+#include "animation/manager_resolver.h"
 #include "asset/async_loader.h"
 #include "asset/memory_backend.h"
 #include "asset/resource_manager.h"
@@ -86,6 +87,22 @@ public:
     /// See `Types`.
     asset::HostMemoryBackend& Memory() { return *memory_; }
 
+    /// The animation system's view of this host's manager (Phase 24 Day 363): skeletons and clips pinned with
+    /// `PinSkeleton` and `PinClip` are found through it.
+    ///
+    /// - Thread-safety: thread-safe.
+    const animation::AnimationResolver& Animation() const { return *animation_; }
+    /// Loads the skeleton `id` and keeps it loaded until the host is destroyed.
+    ///
+    /// - Returns: ENGINE_OK, NOT_FOUND (not mounted) or TYPE_MISMATCH (not a skeleton), with the text set.
+    engine_status PinSkeleton(u64 id);
+    /// Loads the clip `id`, checks that it was made for the skeleton `skeleton_id` (which must be pinned), and keeps it
+    /// loaded until the host is destroyed.
+    ///
+    /// - Returns: ENGINE_OK, NOT_FOUND (not mounted), TYPE_MISMATCH (not a clip) or INVALID_ARGUMENT (another
+    ///   skeleton's), with the text set.
+    engine_status PinClip(u64 id, u64 skeleton_id);
+
     /// Builds what the loader has read (called by every frame).
     ///
     /// - Thread-safety: thread-safe.
@@ -125,6 +142,10 @@ private:
     UniquePtr<asset::HostMemoryBackend> memory_;
     UniquePtr<ImportHost> imports_;  // after the backend: destroyed before it
     UniquePtr<asset::ResourceManager> manager_;
+    UniquePtr<animation::ManagerResolver> animation_;  // over manager_
+    Mutex pin_mutex_;
+    Vector<asset::Handle<asset::SkeletonView>> skeleton_pins_;
+    Vector<asset::Handle<asset::ClipView>> clip_pins_;
     Mutex loader_mutex_;  // the loader belongs to one thread at a time
     UniquePtr<asset::AsyncLoader> loader_;
 

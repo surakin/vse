@@ -53,6 +53,15 @@ struct VisibilityComponent
     u32 hidden = 0;  ///< 1 when the entity (and its children) are not drawn.
 };
 
+/// An entity that follows a joint of another entity's skeleton (Phase 24 Day 363).
+///
+/// - Thread-safety: plain data.
+struct JointAttachment
+{
+    u64 skeleton_key = 0;  ///< The entity (key) whose skeleton instance holds the joint.
+    u32 joint = 0;
+};
+
 /// The slot overrides of one entity (Phase 24 Day 362): at most 8, replaced by slot name.
 ///
 /// - Thread-safety: plain data.
@@ -278,6 +287,13 @@ engine_status EntityFindAllFn(engine_handle world, engine_string name, u64* keys
 engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_string slot,
                                       const engine_slot_override* value);
 engine_status EntityClearSlotOverrideFn(engine_handle world, u64 key, engine_string slot);
+engine_status AnimationPlayFn(engine_handle world, u64 key, u64 clip, const engine_play_params* params);
+engine_status AnimationSetSpeedFn(engine_handle world, u64 key, float speed);
+engine_status AnimationStopFn(engine_handle world, u64 key);
+engine_status AnimationTimeFn(engine_handle world, u64 key, double* seconds);
+engine_status SkeletonFindJointFn(engine_handle world, u64 key, engine_string name, u32* index);
+engine_status SkeletonJointTransformFn(engine_handle world, u64 key, u32 joint, float* matrix);
+engine_status EntityAttachToJointFn(engine_handle world, u64 key, u64 skeleton_key, u32 joint);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
 engine_status EntityNameSetFn(engine_handle world, u64 key, engine_string name);

@@ -752,6 +752,13 @@ extern "C"
             &engine_c::EntityFindAllFn,
             &engine_c::EntitySetSlotOverrideFn,
             &engine_c::EntityClearSlotOverrideFn,
+            &engine_c::AnimationPlayFn,
+            &engine_c::AnimationSetSpeedFn,
+            &engine_c::AnimationStopFn,
+            &engine_c::AnimationTimeFn,
+            &engine_c::SkeletonFindJointFn,
+            &engine_c::SkeletonJointTransformFn,
+            &engine_c::EntityAttachToJointFn,
         };
         *out = &table;
         return ENGINE_OK;

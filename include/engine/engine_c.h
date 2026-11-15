@@ -512,11 +512,15 @@ extern "C"
         ENGINE_COMPONENT_MESH_REFERENCE = 4,  /* engine_mesh_reference: which mesh and material the entity draws */
         ENGINE_COMPONENT_CAMERA = 5,          /* engine_camera: a perspective camera (Phase 24 Day 360) */
         ENGINE_COMPONENT_LIGHT = 6,           /* engine_light: a directional or point light (Phase 24 Day 361) */
-        ENGINE_COMPONENT_VISIBILITY = 7       /* engine_visibility: hides an entity and its children (Day 362) */
+        ENGINE_COMPONENT_VISIBILITY = 7,      /* engine_visibility: hides an entity and its children (Day 362) */
+        ENGINE_COMPONENT_SKELETON_INSTANCE = 8, /* engine_skeleton_instance: the skeleton a skinned mesh is drawn with
+                                                   (Day 363) */
+        ENGINE_COMPONENT_ANIMATION_PLAYER = 9   /* engine_animation_state: what animation_play started; read only (Day
+                                                   363) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0x7Fu
+#define ENGINE_COMPONENT_MASK_ALL 0x1FFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -576,6 +580,51 @@ extern "C"
         uint32_t struct_size;
         uint32_t hidden;
     } engine_visibility;
+
+    /* The skeleton of a skinned mesh (Phase 24 Day 363). `skeleton` is the resource id of a skeleton the host added or
+     * loaded; setting the component loads it (NOT_FOUND when it is not mounted, TYPE_MISMATCH when it is not a
+     * skeleton) and keeps it loaded until the engine is destroyed. An entity with a skeleton instance and a mesh
+     * reference whose mesh was made for the skeleton is drawn skinned with a skinned material (the surface's default
+     * skinned material when `material_resource` is 0); without a clip it is drawn in its bind pose. */
+    typedef struct engine_skeleton_instance
+    {
+        uint32_t struct_size;
+        uint32_t reserved; /* zero */
+        uint64_t skeleton;
+    } engine_skeleton_instance;
+
+    /* What animation_play started on an entity, as ENGINE_COMPONENT_ANIMATION_PLAYER returns it (read only: use
+     * animation_play, animation_set_speed and animation_stop to change it; removing the component stops the animation).
+     */
+    typedef struct engine_animation_state
+    {
+        uint32_t struct_size;
+        uint32_t playing; /* 1 while time advances */
+        uint32_t looping;
+        uint32_t finished; /* 1 once a clip that does not loop reached its end */
+        uint32_t fading;   /* 1 while a cross-fade from the previous clip is running */
+        uint32_t reserved; /* zero */
+        uint64_t clip;     /* the resource id of the clip played now */
+        float time;        /* seconds into the clip */
+        float speed;
+    } engine_animation_state;
+
+    /* Bits of engine_play_params.flags. */
+#define ENGINE_PLAY_LOOP                                                                                               \
+    0x1u /* wrap at the end of the clip (otherwise the last pose is held and `finished` is set)                        \
+          */
+
+    /* How animation_play starts a clip. `speed` scales the clip's time against the frame's (0 means 1; use
+     * animation_set_speed to pause); `start_time` is where in the clip to start, in seconds; `fade_seconds` > 0 blends
+     * from what was playing to the new clip over that time (the old clip keeps playing while it fades out). */
+    typedef struct engine_play_params
+    {
+        uint32_t struct_size;
+        uint32_t flags; /* ENGINE_PLAY_* bits; an unknown bit is INVALID_ARGUMENT */
+        float speed;
+        float start_time;
+        float fade_seconds;
+    } engine_play_params;
 
     /* The kinds of engine_slot_override.kind. */
 #define ENGINE_SLOT_FLOAT 1u   /* value[0] */
@@ -1204,6 +1253,50 @@ extern "C"
         /* Removes the override of `slot`, or every override of the entity when `slot` is empty. Fails with:
          * STALE_HANDLE, INVALID_ARGUMENT, NOT_FOUND (a named slot with no override), TYPE_MISMATCH. */
         engine_status (*entity_clear_slot_override)(engine_handle world, uint64_t key, engine_string slot);
+
+        /* ---- Phase 24 Day 363: skinned meshes and animation ---- */
+
+        /* Plays the clip `clip` (a resource id the host added or loaded; `params` may be NULL: play once at speed 1) on
+         * an entity that has an ENGINE_COMPONENT_SKELETON_INSTANCE. The clip is loaded and kept loaded. The frame
+         * advances it before the transforms are propagated and the surfaces draw. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT (the entity has no skeleton instance, the clip was not made for its skeleton, a bad
+         * parameter), NOT_FOUND (the clip is not mounted), TYPE_MISMATCH (not a clip, or a handle that is not a world),
+         * STRUCT_SIZE. */
+        engine_status (*animation_play)(engine_handle world, uint64_t key, uint64_t clip,
+                                        const engine_play_params* params);
+
+        /* Changes the speed of what plays now (>= 0; 0 pauses). Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_FOUND
+         * (nothing was started on the entity), TYPE_MISMATCH. */
+        engine_status (*animation_set_speed)(engine_handle world, uint64_t key, float speed);
+
+        /* Stops time: the entity keeps its current pose (play again to move it). Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, NOT_FOUND, TYPE_MISMATCH. */
+        engine_status (*animation_stop)(engine_handle world, uint64_t key);
+
+        /* Reads the play position of the clip playing now, in seconds. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * NOT_FOUND, TYPE_MISMATCH. */
+        engine_status (*animation_time)(engine_handle world, uint64_t key, double* seconds);
+
+        /* Finds the joint named `name` of the entity's skeleton (the skeleton must have been built with names) and
+         * writes its index to `*index`. Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_FOUND, TYPE_MISMATCH. */
+        engine_status (*skeleton_find_joint)(engine_handle world, uint64_t key, engine_string name, uint32_t* index);
+
+        /* Reads where a joint is in the skeleton entity's own space (the skeleton instance's model space), as the last
+         * frame's animation left it: a column-major 4x4 matrix in `matrix` (16 floats). Before any clip has played this
+         * is the bind pose. Multiply by the entity's world matrix (ENGINE_COMPONENT_WORLD_TRANSFORM) for the world.
+         * Fails with: STALE_HANDLE, INVALID_ARGUMENT (a joint index that does not exist, a NULL pointer), NOT_FOUND (no
+         * skeleton instance), TYPE_MISMATCH. */
+        engine_status (*skeleton_joint_transform)(engine_handle world, uint64_t key, uint32_t joint, float* matrix);
+
+        /* Makes `key` follow a joint of the skeleton entity `skeleton_key`: from the next frame its world matrix is the
+         * skeleton entity's world matrix times the joint's model matrix times the entity's own transform (its
+         * ENGINE_COMPONENT_TRANSFORM, now relative to the joint). The entity should not have a parent of its own, and
+         * the entities below it in the hierarchy do not follow until the frame after. A `skeleton_key` of 0 detaches
+         * the entity (its world matrix is then computed from its parent again). Fails with: STALE_HANDLE (either
+         * entity), INVALID_ARGUMENT (the same entity, or a joint that does not exist), NOT_FOUND (the skeleton entity
+         * has no skeleton instance), TYPE_MISMATCH. */
+        engine_status (*entity_attach_to_joint)(engine_handle world, uint64_t key, uint64_t skeleton_key,
+                                                uint32_t joint);
     } engine_api;
 
     /* Returns the function table.

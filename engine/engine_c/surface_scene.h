@@ -119,7 +119,7 @@ private:
     u32 MaterialFor(const SlotOverrides& overrides, u64 entity, u32 base_index, SceneFrameReport* report);
     void DestroyInstance(usize index);
     const renderer::GpuMesh* ResolveMesh(u64 id);
-    bool ResolveMaterial(u64 id, u32* index);
+    bool ResolveMaterial(u64 id, bool skinned, u32* index);
 
     bool valid_ = false;
     rhi::Device* device_ = nullptr;
@@ -136,7 +136,8 @@ private:
     Vector<Mesh> meshes_;
     Vector<Material> materials_;
     renderer::MaterialId default_material_;
-    renderer::Camera last_camera_;  // the camera of the last frame, for PixelRay and Project
+    renderer::MaterialId default_skinned_material_;  // for meshes with a skin stream (Day 363)
+    renderer::Camera last_camera_;                   // the camera of the last frame, for PixelRay and Project
     u32 last_width_ = 0;
     u32 last_height_ = 0;
 };

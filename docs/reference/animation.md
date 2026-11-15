@@ -182,6 +182,56 @@ SamplerState sampler;
 
 Set by the system; the cursors.
 
+### `fade_clip` {#animation-animationplayer-fade-clip}
+
+`variable animation::AnimationPlayer::fade_clip` — defined in `engine/animation/components.h`
+
+```cpp
+u64 fade_clip;
+```
+
+The clip being faded out (a cross-fade to `clip`); 0 when there is none. Not stored.
+
+### `fade_time` {#animation-animationplayer-fade-time}
+
+`variable animation::AnimationPlayer::fade_time` — defined in `engine/animation/components.h`
+
+```cpp
+f32 fade_time;
+```
+
+The play position of the fading clip, in seconds; the system advances it.
+
+### `fade_total` {#animation-animationplayer-fade-total}
+
+`variable animation::AnimationPlayer::fade_total` — defined in `engine/animation/components.h`
+
+```cpp
+f32 fade_total;
+```
+
+The cross-fade's length in seconds; the fade ends when `fade_elapsed` reaches it.
+
+### `fade_elapsed` {#animation-animationplayer-fade-elapsed}
+
+`variable animation::AnimationPlayer::fade_elapsed` — defined in `engine/animation/components.h`
+
+```cpp
+f32 fade_elapsed;
+```
+
+Seconds of the cross-fade done; the system advances it.
+
+### `fade_sampler` {#animation-animationplayer-fade-sampler}
+
+`variable animation::AnimationPlayer::fade_sampler` — defined in `engine/animation/components.h`
+
+```cpp
+SamplerState fade_sampler;
+```
+
+Set by the system; the cursors of the fading clip.
+
 ## `SkeletonInstance` {#animation-skeletoninstance}
 
 `struct animation::SkeletonInstance` — defined in `engine/animation/components.h`

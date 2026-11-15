@@ -1,3 +1,4 @@
+#include "animation/components.h"
 #include "engine_c/surface_scene.h"
 
 #include "cstr/mem_ops.h"
@@ -57,7 +58,12 @@ SurfaceScene::SurfaceScene(rhi::Device* device, rhi::Swapchain* swapchain, Resou
     }
     default_material_ = renderer::CreateGBufferMaterial(frame_.Materials(), frame_.Templates(),
                                                         renderer::GBufferOptions{}, "default material");
-    if (frame_.Materials()->SetVec4(default_material_, "base_color", Vec4(0.7f, 0.7f, 0.7f, 1.0f)))
+    renderer::GBufferOptions skinned_options;
+    skinned_options.skinned = true;
+    default_skinned_material_ = renderer::CreateGBufferMaterial(frame_.Materials(), frame_.Templates(), skinned_options,
+                                                                "default skinned material");
+    if (frame_.Materials()->SetVec4(default_material_, "base_color", Vec4(0.7f, 0.7f, 0.7f, 1.0f)) &&
+        frame_.Materials()->SetVec4(default_skinned_material_, "base_color", Vec4(0.7f, 0.7f, 0.7f, 1.0f)))
     {
         valid_ = true;
     }
@@ -126,11 +132,11 @@ const renderer::GpuMesh* SurfaceScene::ResolveMesh(u64 id)
     return meshes_[meshes_.Size() - 1].handle.Get()->mesh.Get();
 }
 
-bool SurfaceScene::ResolveMaterial(u64 id, u32* index)
+bool SurfaceScene::ResolveMaterial(u64 id, bool skinned, u32* index)
 {
     if (id == 0)
     {
-        *index = default_material_.index;
+        *index = skinned ? default_skinned_material_.index : default_material_.index;
         return true;
     }
     for (usize i = 0; i < materials_.Size(); ++i)
@@ -471,7 +477,11 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             }
             const renderer::GpuMesh* mesh = reference.mesh != 0 ? ResolveMesh(reference.mesh) : nullptr;
             u32 material = 0;
-            const bool resolved = mesh != nullptr && ResolveMaterial(reference.material_resource, &material);
+            const bool skinned = mesh != nullptr && mesh->Layout().skin_stride != 0;
+            const animation::SkeletonInstance* skeleton = world.world.Peek<animation::SkeletonInstance>(entity);
+            const bool posed = skeleton != nullptr && skeleton->palette.Size() > 0;
+            const bool resolved = mesh != nullptr && (!skinned || posed) &&
+                                  ResolveMaterial(reference.material_resource, skinned, &material);
             if (!resolved)
             {
                 if (reference.mesh != 0)
@@ -503,6 +513,12 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                 desc.mesh = mesh;
                 desc.material = material;
                 desc.transform = placed.matrix;
+                if (skinned)
+                {
+                    desc.joint_matrices = skeleton->palette[0].Data();
+                    desc.joint_count = static_cast<u32>(skeleton->palette.Size() < 256 ? skeleton->palette.Size()
+                                                                                       : 256);
+                }
                 entry->object = scene_->AddObject(desc);
                 entry->mesh = reference.mesh;
                 entry->material = reference.material_resource;
@@ -513,6 +529,12 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             {
                 scene_->SetTransform(entry->object, placed.matrix);
                 entry->transform = placed.matrix;
+            }
+            if (skinned && entry->object.IsValid())
+            {  // the palette is rewritten by every animation update
+                scene_->SetJointMatrices(
+                    entry->object, skeleton->palette[0].Data(),
+                    static_cast<u32>(skeleton->palette.Size() < 256 ? skeleton->palette.Size() : 256));
             }
             entry->seen = entry->object.IsValid();
         });

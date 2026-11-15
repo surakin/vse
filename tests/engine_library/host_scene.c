@@ -358,6 +358,51 @@ static engine_status SetMeshReference(engine_handle world, uint64_t entity, uint
     return g_api->component_set(world, entity, ENGINE_COMPONENT_MESH_REFERENCE, &reference);
 }
 
+/* The blobs of the animation block: the engine reads them until it is destroyed, so they are freed at the end. */
+static Blob g_extra[6];
+#define skeleton_blob g_extra[0]
+#define other_skeleton g_extra[1]
+#define idle_blob g_extra[2]
+#define other_clip g_extra[3]
+#define hold_blob g_extra[4]
+#define skinned_blob g_extra[5]
+
+/* The matrix of a joint in the skeleton entity's space (Day 363): the height of the joint is element 13. */
+static float JointHeight(engine_handle world, uint64_t entity, uint32_t joint)
+{
+    float matrix[16];
+    memset(matrix, 0, sizeof(matrix));
+    CHECK_STATUS(g_api->skeleton_joint_transform(world, entity, joint, matrix), ENGINE_OK);
+    return matrix[13];
+}
+
+static float Near(float a, float b)
+{
+    return a > b ? a - b : b - a;
+}
+
+static engine_status Play(engine_handle world, uint64_t entity, uint64_t clip, unsigned flags, float speed, float start,
+                          float fade)
+{
+    engine_play_params params;
+    memset(&params, 0, sizeof(params));
+    params.struct_size = sizeof(params);
+    params.flags = flags;
+    params.speed = speed;
+    params.start_time = start;
+    params.fade_seconds = fade;
+    return g_api->animation_play(world, entity, clip, &params);
+}
+
+static engine_status SetSkeleton(engine_handle world, uint64_t entity, uint64_t skeleton)
+{
+    engine_skeleton_instance instance;
+    memset(&instance, 0, sizeof(instance));
+    instance.struct_size = sizeof(instance);
+    instance.skeleton = skeleton;
+    return g_api->component_set(world, entity, ENGINE_COMPONENT_SKELETON_INSTANCE, &instance);
+}
+
 static void PlaceAt(engine_handle world, uint64_t entity, float x, float y, float z)
 {
     engine_transform t;
@@ -851,6 +896,127 @@ int main(void)
         XDestroyWindow(display, other);
     }
 
+    /* Day 363: skeletons, clips, cross-fades, joints and attachments */
+    {
+        uint64_t hero;
+        uint64_t bolt;
+        uint64_t skinned;
+        uint32_t joint = 99;
+        double t0 = 0.0;
+        double t1 = 0.0;
+        double t2 = 0.0;
+        skeleton_blob = ReadFile(RES_DATA_DIR, "hero.skel.blob");
+        other_skeleton = ReadFile(RES_DATA_DIR, "other.skel.blob");
+        idle_blob = ReadFile(RES_DATA_DIR, "idle.anim.blob");
+        other_clip = ReadFile(RES_DATA_DIR, "other.anim.blob");
+        hold_blob = ReadFile(RES_DATA_DIR, "hold.anim.blob");
+        skinned_blob = ReadFile(RES_DATA_DIR, "skinned.mesh.blob");
+        engine_animation_state state_out;
+        engine_world_transform bolt_world;
+        int i;
+        if (skeleton_blob.data == NULL || other_skeleton.data == NULL || idle_blob.data == NULL ||
+            other_clip.data == NULL || hold_blob.data == NULL || skinned_blob.data == NULL)
+        {
+            return 1;
+        }
+        AddBlob(engine, 0xa01ull, &skeleton_blob);
+        AddBlob(engine, 0xa02ull, &other_skeleton);
+        AddBlob(engine, 0xc01ull, &idle_blob);
+        AddBlob(engine, 0xc02ull, &other_clip);
+        AddBlob(engine, 0xc03ull, &hold_blob);
+        AddBlob(engine, 0xb05ull, &skinned_blob);
+        CHECK_STATUS(g_api->entity_create(world, &hero), ENGINE_OK);
+        PlaceAt(world, hero, 0.0f, 0.0f, 0.0f);
+        /* nothing to play on, nothing to read */
+        CHECK_STATUS(Play(world, hero, 0xc01ull, ENGINE_PLAY_LOOP, 1.0f, 0.0f, 0.0f), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->animation_time(world, hero, &t0), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(SetSkeleton(world, hero, 0), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(SetSkeleton(world, hero, 0xaaaaull), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(SetSkeleton(world, hero, 0xa01ull), ENGINE_OK);
+        /* the bind pose until a clip plays: the arm is one above the root */
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(Near(JointHeight(world, hero, 1), 1.0f) < 0.001f);
+        CHECK_STATUS(g_api->skeleton_find_joint(world, hero, Str("arm"), &joint), ENGINE_OK);
+        CHECK(joint == 1);
+        CHECK_STATUS(g_api->skeleton_find_joint(world, hero, Str("tail"), &joint), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->skeleton_joint_transform(world, hero, 7, (float[16]){0}), ENGINE_ERROR_INVALID_ARGUMENT);
+        /* a clip of another skeleton is refused, an unknown or a wrong-type id too */
+        CHECK_STATUS(Play(world, hero, 0xc02ull, 0, 1.0f, 0.0f, 0.0f), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(Play(world, hero, 0xccccull, 0, 1.0f, 0.0f, 0.0f), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(Play(world, hero, 0xc01ull, 0x80u, 1.0f, 0.0f, 0.0f), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(Play(world, hero, 0xc01ull, 0, -1.0f, 0.0f, 0.0f), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->animation_set_speed(world, hero, 1.0f), ENGINE_ERROR_NOT_FOUND);
+        /* time advances with the frame, at the speed set */
+        CHECK_STATUS(Play(world, hero, 0xc01ull, ENGINE_PLAY_LOOP, 1.0f, 0.0f, 0.0f), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->animation_time(world, hero, &t0), ENGINE_OK);
+        CHECK(t0 > 0.0 && t0 < 0.1);
+        CHECK(Near(JointHeight(world, hero, 1), 1.0f + (float)t0) < 0.01f);
+        CHECK_STATUS(g_api->animation_set_speed(world, hero, 2.0f), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->animation_time(world, hero, &t1), ENGINE_OK);
+        CHECK(Near((float)(t1 - t0), 0.032f) < 0.006f);
+        CHECK_STATUS(g_api->animation_set_speed(world, hero, 0.0f), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->animation_time(world, hero, &t2), ENGINE_OK);
+        CHECK(Near((float)t2, (float)t1) < 0.0001f);
+        CHECK_STATUS(g_api->animation_stop(world, hero), ENGINE_OK);
+        memset(&state_out, 0, sizeof(state_out));
+        state_out.struct_size = sizeof(state_out);
+        CHECK_STATUS(g_api->component_get(world, hero, ENGINE_COMPONENT_ANIMATION_PLAYER, &state_out), ENGINE_OK);
+        CHECK(state_out.playing == 0 && state_out.clip == 0xc01ull && state_out.looping == 1);
+        CHECK_STATUS(g_api->component_set(world, hero, ENGINE_COMPONENT_ANIMATION_PLAYER, &state_out),
+                     ENGINE_ERROR_UNSUPPORTED);
+        /* a cross-fade to a clip that holds the arm at 3: partway between, then there */
+        CHECK_STATUS(Play(world, hero, 0xc01ull, ENGINE_PLAY_LOOP, 1.0f, 0.5f, 0.0f), ENGINE_OK);
+        CHECK_STATUS(g_api->animation_set_speed(world, hero, 0.0f), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(Near(JointHeight(world, hero, 1), 1.5f) < 0.01f);
+        CHECK_STATUS(Play(world, hero, 0xc03ull, ENGINE_PLAY_LOOP, 1.0f, 0.0f, 1.0f), ENGINE_OK);
+        for (i = 0; i < 31; ++i)
+        {
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        }
+        {
+            const float mid = JointHeight(world, hero, 1);
+            CHECK(mid > 1.7f && mid < 2.9f);
+            CHECK_STATUS(g_api->component_get(world, hero, ENGINE_COMPONENT_ANIMATION_PLAYER, &state_out), ENGINE_OK);
+            CHECK(state_out.fading == 1);
+        }
+        for (i = 0; i < 40; ++i)
+        {
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        }
+        CHECK(Near(JointHeight(world, hero, 1), 3.0f) < 0.01f);
+        CHECK_STATUS(g_api->component_get(world, hero, ENGINE_COMPONENT_ANIMATION_PLAYER, &state_out), ENGINE_OK);
+        CHECK(state_out.fading == 0);
+        /* an entity that follows the arm */
+        CHECK_STATUS(g_api->entity_create(world, &bolt), ENGINE_OK);
+        PlaceAt(world, bolt, 0.0f, 0.0f, 0.0f);
+        CHECK_STATUS(g_api->entity_attach_to_joint(world, bolt, bolt, 1), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->entity_attach_to_joint(world, bolt, hero, 99), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->entity_attach_to_joint(world, bolt, entity, 1), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->entity_attach_to_joint(world, bolt, hero, 1), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        memset(&bolt_world, 0, sizeof(bolt_world));
+        bolt_world.struct_size = sizeof(bolt_world);
+        CHECK_STATUS(g_api->component_get(world, bolt, ENGINE_COMPONENT_WORLD_TRANSFORM, &bolt_world), ENGINE_OK);
+        CHECK(Near(bolt_world.matrix[13], 3.0f) < 0.05f);
+        CHECK_STATUS(g_api->entity_attach_to_joint(world, bolt, 0, 0), ENGINE_OK);
+        /* a skinned mesh draws with the skeleton's palette, and is not drawn without one */
+        CHECK_STATUS(g_api->entity_create(world, &skinned), ENGINE_OK);
+        PlaceAt(world, skinned, 0.0f, 0.0f, 0.0f);
+        CHECK_STATUS(SetMeshReference(world, skinned, 0xb05ull, 0), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SetSkeleton(world, skinned, 0xa01ull), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(HasObject(&pixels, clear));
+        CHECK_STATUS(g_api->entity_destroy(world, skinned), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_destroy(world, bolt), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_destroy(world, hero), ENGINE_OK);
+    }
+
     /* unbound: the clear color again; bound to a world destroyed under it: the clear color and the reason */
     CHECK_STATUS(g_api->surface_set_world(surface, none), ENGINE_OK);
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
@@ -872,6 +1038,13 @@ int main(void)
     free(material.data);
     free(mesh.data);
     free(late.data);
+    {
+        int k;
+        for (k = 0; k < 6; ++k)
+        {
+            free(g_extra[k].data);
+        }
+    }
     if (g_failures != 0)
     {
         printf("host_scene: %d checks failed\n", g_failures);

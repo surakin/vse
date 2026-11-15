@@ -4,6 +4,8 @@
 #include "engine_c/runtime.h"
 #include "engine_c/surface.h"
 
+#include "animation/components.h"
+#include "animation/pose.h"
 #include "containers/vector.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
@@ -52,13 +54,15 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_CAMERA: return "camera";
     case ENGINE_COMPONENT_LIGHT: return "light";
     case ENGINE_COMPONENT_VISIBILITY: return "visibility";
+    case ENGINE_COMPONENT_SKELETON_INSTANCE: return "skeleton instance";
+    case ENGINE_COMPONENT_ANIMATION_PLAYER: return "animation player";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_VISIBILITY;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_ANIMATION_PLAYER;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -72,6 +76,8 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_CAMERA: return ecs::ComponentOf<CameraComponent>();
     case ENGINE_COMPONENT_LIGHT: return ecs::ComponentOf<LightComponent>();
     case ENGINE_COMPONENT_VISIBILITY: return ecs::ComponentOf<VisibilityComponent>();
+    case ENGINE_COMPONENT_SKELETON_INSTANCE: return ecs::ComponentOf<animation::SkeletonInstance>();
+    case ENGINE_COMPONENT_ANIMATION_PLAYER: return ecs::ComponentOf<animation::AnimationPlayer>();
     }
     return ecs::kInvalidComponent;
 }
@@ -244,6 +250,144 @@ ResourceHost* Runtime::ResourcesIfCreated()
     return resources.Get();
 }
 
+// ---- animation helpers (Phase 24 Day 363)
+
+namespace
+{
+
+// Row-major 3x4 affine product a * b (b first).
+animation::Mat3x4 MulAffine(const animation::Mat3x4& a, const animation::Mat3x4& b)
+{
+    animation::Mat3x4 r;
+    for (u32 row = 0; row < 3; ++row)
+    {
+        for (u32 col = 0; col < 4; ++col)
+        {
+            f32 sum = col == 3 ? a[row * 4 + 3] : 0.0f;
+            for (u32 k = 0; k < 3; ++k)
+            {
+                sum += a[row * 4 + k] * b[k * 4 + col];
+            }
+            r[row * 4 + col] = sum;
+        }
+    }
+    return r;
+}
+
+Mat4 Mat4FromAffine(const animation::Mat3x4& m)
+{
+    Mat4 r = Mat4::Identity();
+    for (u32 col = 0; col < 4; ++col)
+    {
+        for (u32 row = 0; row < 3; ++row)
+        {
+            r.col[col][row] = m[row * 4 + col];
+        }
+    }
+    return r;
+}
+
+// The joint's matrix in the skeleton's model space as the last frame left it (the bind pose before any clip played).
+bool JointModelMatrix(const animation::AnimationResolver& resolver, const animation::SkeletonInstance& instance,
+                      u32 joint, Mat4* out)
+{
+    const asset::SkeletonView* skeleton = resolver.FindSkeleton(asset::ResourceId::FromValue(instance.skeleton));
+    if (skeleton == nullptr || joint >= skeleton->JointCount() || joint >= animation::kMaxPoseJoints)
+    {
+        return false;
+    }
+    animation::LocalPose local;
+    animation::SetBindPose(*skeleton, &local);
+    animation::ModelPose bind;
+    animation::ModelFromLocal(*skeleton, local, &bind);
+    animation::Mat3x4 model = bind.matrix[joint];
+    if (joint < instance.palette.Size())
+    {
+        model = MulAffine(instance.palette[joint], bind.matrix[joint]);
+    }
+    *out = Mat4FromAffine(model);
+    return true;
+}
+
+// Advances the animation of one world before its transforms are propagated.
+void AnimateWorld(WorldObject& object, ResourceHost* resources, f32 dt)
+{
+    if (resources == nullptr)
+    {
+        return;
+    }
+    animation::AnimationSystem system(&resources->Animation());
+    system.Update(&object.world, nullptr, dt);
+    // A skeleton with no clip yet is drawn in its bind pose.
+    Vector<ecs::Entity> bare;
+    auto query = object.world.Query<ecs::Read<animation::SkeletonInstance>>();
+    query.ForEach(
+        [&](ecs::Entity entity, const animation::SkeletonInstance& instance)
+        {
+            if (instance.palette.Size() == 0)
+            {
+                bare.Push(entity);
+            }
+        });
+    for (usize i = 0; i < bare.Size(); ++i)
+    {
+        animation::SkeletonInstance* instance = object.world.Poke<animation::SkeletonInstance>(bare[i]);
+        const asset::SkeletonView* skeleton = resources->Animation().FindSkeleton(
+            asset::ResourceId::FromValue(instance->skeleton));
+        if (skeleton == nullptr || skeleton->JointCount() == 0 || skeleton->JointCount() > animation::kMaxPoseJoints)
+        {
+            continue;
+        }
+        animation::LocalPose local;
+        animation::SetBindPose(*skeleton, &local);
+        animation::ModelPose model;
+        animation::ModelFromLocal(*skeleton, local, &model);
+        instance->palette.Resize(skeleton->JointCount());
+        animation::SkinningMatrices(*skeleton, model,
+                                    Span<animation::Mat3x4>(instance->palette.Data(), skeleton->JointCount()));
+    }
+}
+
+// Places the entities that follow a joint, after the propagation.
+void AttachWorld(WorldObject& object, ResourceHost* resources)
+{
+    if (resources == nullptr)
+    {
+        return;
+    }
+    struct Pending
+    {
+        ecs::Entity entity;
+        JointAttachment attachment;
+    };
+    Vector<Pending> pending;
+    auto query = object.world.Query<ecs::Read<JointAttachment>>();
+    query.ForEach([&](ecs::Entity entity, const JointAttachment& attachment)
+                  { pending.Push(Pending{entity, attachment}); });
+    for (usize i = 0; i < pending.Size(); ++i)
+    {
+        const ecs::Entity skeleton_entity = ecs::Entity::FromU64(pending[i].attachment.skeleton_key);
+        if (!object.world.Exists(skeleton_entity))
+        {
+            continue;
+        }
+        const animation::SkeletonInstance* instance = object.world.Peek<animation::SkeletonInstance>(skeleton_entity);
+        const ecs::WorldTransform* base = object.world.Peek<ecs::WorldTransform>(skeleton_entity);
+        const ecs::LocalTransform* local = object.world.Peek<ecs::LocalTransform>(pending[i].entity);
+        Mat4 joint;
+        if (instance == nullptr || base == nullptr || local == nullptr ||
+            !JointModelMatrix(resources->Animation(), *instance, pending[i].attachment.joint, &joint))
+        {
+            continue;
+        }
+        ecs::WorldTransform placed;
+        placed.matrix = base->matrix * joint * local->ToMatrix();
+        object.world.Set<ecs::WorldTransform>(pending[i].entity, placed);
+    }
+}
+
+}  // namespace
+
 // ---- the frame
 
 engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engine_frame_stats* stats)
@@ -305,7 +449,10 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
             ++result.worlds_skipped;
             continue;
         }
+        ResourceHost* resources = runtime->ResourcesIfCreated();
+        AnimateWorld(*object, resources, static_cast<f32>(info->delta_seconds));
         object->schedule.Run(object->world, static_cast<f32>(info->delta_seconds));
+        AttachWorld(*object, resources);
         ++result.worlds_run;
         result.entities += object->world.Stats().entities;
     }
@@ -469,9 +616,10 @@ engine_status CheckInStruct(const void* value, usize first_version, const char* 
     return ENGINE_OK;
 }
 
-template <class T> engine_status SetOrAdd(ecs::World& world, ecs::Entity entity, const T& value)
+template <class T> engine_status SetOrAdd(ecs::World& world, ecs::Entity entity, T value)
 {
-    const ecs::Status status = world.Has<T>(entity) ? world.Set<T>(entity, value) : world.Add<T>(entity, value);
+    const ecs::Status status = world.Has<T>(entity) ? world.Set<T>(entity, Move(value))
+                                                    : world.Add<T>(entity, Move(value));
     return status == ecs::Status::Ok ? ENGINE_OK : Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the world refused the component");
 }
 
@@ -492,10 +640,18 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "set a name with entity_name_set");
     }
+    if (kind == ENGINE_COMPONENT_ANIMATION_PLAYER)
+    {
+        return Fail(ENGINE_ERROR_UNSUPPORTED, "the animation player is read only: use animation_play");
+    }
     engine_status checked = ENGINE_OK;
     if (kind == ENGINE_COMPONENT_TRANSFORM)
     {
         checked = CheckInStruct(value, sizeof(engine_transform), "engine_transform");
+    }
+    else if (kind == ENGINE_COMPONENT_SKELETON_INSTANCE)
+    {
+        checked = CheckInStruct(value, sizeof(engine_skeleton_instance), "engine_skeleton_instance");
     }
     else if (kind == ENGINE_COMPONENT_CAMERA)
     {
@@ -521,6 +677,28 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
         world, true, key,
         [&](WorldObject& object, ecs::Entity entity)
         {
+            if (kind == ENGINE_COMPONENT_SKELETON_INSTANCE)
+            {
+                const engine_skeleton_instance* in = static_cast<const engine_skeleton_instance*>(value);
+                if (in->skeleton == 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the skeleton id is zero");
+                }
+                Runtime* runtime = CurrentRuntime();
+                const engine_status pinned = runtime->Resources()->PinSkeleton(in->skeleton);
+                if (pinned != ENGINE_OK)
+                {
+                    return pinned;
+                }
+                const animation::SkeletonInstance* have = object.world.Peek<animation::SkeletonInstance>(entity);
+                if (have != nullptr && have->skeleton == in->skeleton)
+                {
+                    return ENGINE_OK;
+                }
+                animation::SkeletonInstance instance;
+                instance.skeleton = in->skeleton;
+                return SetOrAdd(object.world, entity, Move(instance));
+            }
             if (kind == ENGINE_COMPONENT_VISIBILITY)
             {
                 const engine_visibility* in = static_cast<const engine_visibility*>(value);
@@ -936,6 +1114,222 @@ engine_status EntityClearSlotOverrideFn(engine_handle world, u64 key, engine_str
                      });
 }
 
+engine_status AnimationPlayFn(engine_handle world, u64 key, u64 clip, const engine_play_params* params)
+{
+    engine_play_params play = {};
+    play.struct_size = sizeof(engine_play_params);
+    if (params != nullptr)
+    {
+        TRY_STATUS(CheckInStruct(params, sizeof(engine_play_params), "engine_play_params"));
+        play = *params;
+    }
+    if (clip == 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the clip id is zero");
+    }
+    if ((play.flags & ~ENGINE_PLAY_LOOP) != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_play_params.flags has an unknown bit");
+    }
+    if (!(Finite(play.speed) && play.speed >= 0.0f) || !(Finite(play.start_time) && play.start_time >= 0.0f) ||
+        !(Finite(play.fade_seconds) && play.fade_seconds >= 0.0f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "speed, start_time and fade_seconds are finite and >= 0");
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         const animation::SkeletonInstance* instance = object.world.Peek<animation::SkeletonInstance>(
+                             entity);
+                         if (instance == nullptr)
+                         {
+                             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the entity has no skeleton instance");
+                         }
+                         Runtime* runtime = CurrentRuntime();
+                         TRY_STATUS(runtime->Resources()->PinClip(clip, instance->skeleton));
+                         animation::AnimationPlayer player;
+                         if (animation::AnimationPlayer* old = object.world.Poke<animation::AnimationPlayer>(entity))
+                         {
+                             if (play.fade_seconds > 0.0f && old->clip != 0 && old->clip != clip)
+                             {
+                                 player.fade_clip = old->clip;
+                                 player.fade_time = old->time;
+                                 player.fade_total = play.fade_seconds;
+                                 player.fade_elapsed = 0.0f;
+                                 player.fade_sampler = Move(old->sampler);
+                             }
+                         }
+                         player.clip = clip;
+                         player.time = play.start_time;
+                         player.speed = play.speed == 0.0f ? 1.0f : play.speed;
+                         player.playing = true;
+                         player.looping = (play.flags & ENGINE_PLAY_LOOP) != 0;
+                         return SetOrAdd(object.world, entity, Move(player));
+                     });
+}
+
+engine_status AnimationSetSpeedFn(engine_handle world, u64 key, float speed)
+{
+    if (!(Finite(speed) && speed >= 0.0f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the speed is finite and >= 0");
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         animation::AnimationPlayer* player = object.world.Poke<animation::AnimationPlayer>(entity);
+                         if (player == nullptr)
+                         {
+                             return Fail(ENGINE_ERROR_NOT_FOUND, "no animation was started on the entity");
+                         }
+                         player->speed = speed;
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status AnimationStopFn(engine_handle world, u64 key)
+{
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         animation::AnimationPlayer* player = object.world.Poke<animation::AnimationPlayer>(entity);
+                         if (player == nullptr)
+                         {
+                             return Fail(ENGINE_ERROR_NOT_FOUND, "no animation was started on the entity");
+                         }
+                         player->playing = false;
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status AnimationTimeFn(engine_handle world, u64 key, double* seconds)
+{
+    if (seconds == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`seconds` is NULL");
+    }
+    *seconds = 0.0;
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         const ecs::World& view = object.world;
+                         const animation::AnimationPlayer* player = view.Peek<animation::AnimationPlayer>(entity);
+                         if (player == nullptr)
+                         {
+                             return Fail(ENGINE_ERROR_NOT_FOUND, "no animation was started on the entity");
+                         }
+                         *seconds = static_cast<double>(player->time);
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status SkeletonFindJointFn(engine_handle world, u64 key, engine_string name, u32* index)
+{
+    if (index == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`index` is NULL");
+    }
+    *index = 0;
+    TRY_STATUS(CheckName(name));
+    return WithWorld(
+        world, true, key,
+        [&](WorldObject& object, ecs::Entity entity)
+        {
+            const ecs::World& view = object.world;
+            const animation::SkeletonInstance* instance = view.Peek<animation::SkeletonInstance>(entity);
+            if (instance == nullptr)
+            {
+                return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no skeleton instance");
+            }
+            Runtime* runtime = CurrentRuntime();
+            ResourceHost* resources = runtime->ResourcesIfCreated();
+            const asset::SkeletonView* skeleton = resources == nullptr
+                                                      ? nullptr
+                                                      : resources->Animation().FindSkeleton(
+                                                            asset::ResourceId::FromValue(instance->skeleton));
+            if (skeleton == nullptr || !skeleton->FindJoint(StringView(name.data, name.length), index))
+            {
+                return Fail(ENGINE_ERROR_NOT_FOUND, "the skeleton has no joint of that name");
+            }
+            return ENGINE_OK;
+        });
+}
+
+engine_status SkeletonJointTransformFn(engine_handle world, u64 key, u32 joint, float* matrix)
+{
+    if (matrix == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`matrix` is NULL");
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         const ecs::World& view = object.world;
+                         const animation::SkeletonInstance* instance = view.Peek<animation::SkeletonInstance>(entity);
+                         if (instance == nullptr)
+                         {
+                             return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no skeleton instance");
+                         }
+                         Runtime* runtime = CurrentRuntime();
+                         ResourceHost* resources = runtime->ResourcesIfCreated();
+                         Mat4 model;
+                         if (resources == nullptr ||
+                             !JointModelMatrix(resources->Animation(), *instance, joint, &model))
+                         {
+                             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the joint does not exist");
+                         }
+                         static_assert(sizeof(Mat4) == 16 * sizeof(float), "a Mat4 is sixteen floats");
+                         MemCopy(matrix, &model, sizeof(model));
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status EntityAttachToJointFn(engine_handle world, u64 key, u64 skeleton_key, u32 joint)
+{
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         if (skeleton_key == 0)
+                         {
+                             if (object.world.Has<JointAttachment>(entity))
+                             {
+                                 object.world.Remove<JointAttachment>(entity);
+                                 // the next propagation writes the world matrix again
+                                 if (const ecs::LocalTransform* local = object.world.Peek<ecs::LocalTransform>(entity))
+                                 {
+                                     ecs::LocalTransform again = *local;
+                                     object.world.Set<ecs::LocalTransform>(entity, again);
+                                 }
+                             }
+                             return ENGINE_OK;
+                         }
+                         if (skeleton_key == key)
+                         {
+                             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "an entity cannot follow a joint of itself");
+                         }
+                         ecs::Entity skeleton_entity;
+                         TRY_STATUS(ResolveEntity(object, skeleton_key, &skeleton_entity));
+                         const animation::SkeletonInstance* instance = object.world.Peek<animation::SkeletonInstance>(
+                             skeleton_entity);
+                         if (instance == nullptr)
+                         {
+                             return Fail(ENGINE_ERROR_NOT_FOUND, "the skeleton entity has no skeleton instance");
+                         }
+                         Runtime* runtime = CurrentRuntime();
+                         ResourceHost* resources = runtime->ResourcesIfCreated();
+                         Mat4 unused;
+                         if (resources == nullptr ||
+                             !JointModelMatrix(resources->Animation(), *instance, joint, &unused))
+                         {
+                             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the joint does not exist");
+                         }
+                         JointAttachment attachment;
+                         attachment.skeleton_key = skeleton_key;
+                         attachment.joint = joint;
+                         return SetOrAdd(object.world, entity, attachment);
+                     });
+}
+
 engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environment* environment)
 {
     const engine_status checked = CheckInStruct(environment, sizeof(engine_environment), "engine_environment");
@@ -1001,18 +1395,22 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "read a name with entity_name_get");
     }
-    const usize wanted = kind == ENGINE_COMPONENT_TRANSFORM         ? sizeof(engine_transform)
-                         : kind == ENGINE_COMPONENT_WORLD_TRANSFORM ? sizeof(engine_world_transform)
-                         : kind == ENGINE_COMPONENT_CAMERA          ? sizeof(engine_camera)
-                         : kind == ENGINE_COMPONENT_LIGHT           ? sizeof(engine_light)
-                         : kind == ENGINE_COMPONENT_VISIBILITY      ? sizeof(engine_visibility)
-                                                                    : sizeof(engine_mesh_reference);
-    const char* what = kind == ENGINE_COMPONENT_TRANSFORM         ? "engine_transform"
-                       : kind == ENGINE_COMPONENT_WORLD_TRANSFORM ? "engine_world_transform"
-                       : kind == ENGINE_COMPONENT_CAMERA          ? "engine_camera"
-                       : kind == ENGINE_COMPONENT_LIGHT           ? "engine_light"
-                       : kind == ENGINE_COMPONENT_VISIBILITY      ? "engine_visibility"
-                                                                  : "engine_mesh_reference";
+    const usize wanted = kind == ENGINE_COMPONENT_TRANSFORM           ? sizeof(engine_transform)
+                         : kind == ENGINE_COMPONENT_WORLD_TRANSFORM   ? sizeof(engine_world_transform)
+                         : kind == ENGINE_COMPONENT_CAMERA            ? sizeof(engine_camera)
+                         : kind == ENGINE_COMPONENT_LIGHT             ? sizeof(engine_light)
+                         : kind == ENGINE_COMPONENT_VISIBILITY        ? sizeof(engine_visibility)
+                         : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? sizeof(engine_skeleton_instance)
+                         : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? sizeof(engine_animation_state)
+                                                                      : sizeof(engine_mesh_reference);
+    const char* what = kind == ENGINE_COMPONENT_TRANSFORM           ? "engine_transform"
+                       : kind == ENGINE_COMPONENT_WORLD_TRANSFORM   ? "engine_world_transform"
+                       : kind == ENGINE_COMPONENT_CAMERA            ? "engine_camera"
+                       : kind == ENGINE_COMPONENT_LIGHT             ? "engine_light"
+                       : kind == ENGINE_COMPONENT_VISIBILITY        ? "engine_visibility"
+                       : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? "engine_skeleton_instance"
+                       : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? "engine_animation_state"
+                                                                    : "engine_mesh_reference";
     const engine_status checked = CheckInStruct(out, wanted, what);
     if (checked != ENGINE_OK)
     {
@@ -1055,6 +1453,39 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              engine_world_transform result = {};
                              result.struct_size = sizeof(engine_world_transform);
                              MemCopy(result.matrix, &world_transform->matrix, sizeof(result.matrix));
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_SKELETON_INSTANCE)
+                         {
+                             const animation::SkeletonInstance* instance = view.Peek<animation::SkeletonInstance>(
+                                 entity);
+                             if (instance == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no skeleton instance");
+                             }
+                             engine_skeleton_instance result = {};
+                             result.struct_size = sizeof(engine_skeleton_instance);
+                             result.skeleton = instance->skeleton;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_ANIMATION_PLAYER)
+                         {
+                             const animation::AnimationPlayer* player = view.Peek<animation::AnimationPlayer>(entity);
+                             if (player == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no animation player");
+                             }
+                             engine_animation_state result = {};
+                             result.struct_size = sizeof(engine_animation_state);
+                             result.playing = player->playing ? 1u : 0u;
+                             result.looping = player->looping ? 1u : 0u;
+                             result.finished = player->finished ? 1u : 0u;
+                             result.fading = player->fade_clip != 0 ? 1u : 0u;
+                             result.clip = player->clip;
+                             result.time = player->time;
+                             result.speed = player->speed;
                              MemCopy(out, &result, sizeof(result));
                              return ENGINE_OK;
                          }
@@ -1150,6 +1581,12 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_CAMERA: status = w.Remove<CameraComponent>(entity); break;
                          case ENGINE_COMPONENT_LIGHT: status = w.Remove<LightComponent>(entity); break;
                          case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
+                         case ENGINE_COMPONENT_SKELETON_INSTANCE:
+                             status = w.Remove<animation::SkeletonInstance>(entity);
+                             break;
+                         case ENGINE_COMPONENT_ANIMATION_PLAYER:
+                             status = w.Remove<animation::AnimationPlayer>(entity);
+                             break;
                          default: status = w.Remove<MeshReference>(entity); break;
                          }
                          if (status != ecs::Status::Ok)
@@ -1246,9 +1683,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[7];
+                         ecs::ComponentId wanted[9];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_VISIBILITY; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_ANIMATION_PLAYER; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {

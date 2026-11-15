@@ -110,6 +110,7 @@ ResourceHost::ResourceHost(Runtime& runtime) : runtime_(&runtime)
     ENGINE_VERIFY(mounted.Ok(), "mounting the memory backend cannot fail");
     memory_->SetInUseQuery(manager_->InUseQuery());
     imports_ = MakeUnique<ImportHost>(runtime, *memory_, &tables_dirty_);
+    animation_ = MakeUnique<animation::ManagerResolver>(manager_.Get());
 }
 
 ResourceHost::~ResourceHost()
@@ -118,12 +119,65 @@ ResourceHost::~ResourceHost()
         LockGuard<Mutex> lock(loader_mutex_);
         loader_ = nullptr;  // cancels the loads, waits for the reading jobs
     }
+    skeleton_pins_.Clear();
+    clip_pins_.Clear();
+    animation_ = nullptr;
     // The tickets and handles are gone (the engine refuses to be destroyed while any is out). The backend's entries
     // queue the hand-back of their lent bytes as they are destroyed.
     manager_ = nullptr;
     memory_ = nullptr;
     UniqueLock<Mutex> lock(release_mutex_);
     release_changed_.Wait(lock, [this] { return release_pending_ == 0 && !release_pump_active_; });
+}
+
+engine_status ResourceHost::PinSkeleton(u64 id)
+{
+    LockGuard<Mutex> lock(pin_mutex_);
+    for (usize i = 0; i < skeleton_pins_.Size(); ++i)
+    {
+        if (skeleton_pins_[i].IsValid() && skeleton_pins_[i].Id().Value() == id)
+        {
+            return ENGINE_OK;
+        }
+    }
+    asset::Handle<asset::SkeletonView> handle;
+    const asset::Status loaded = manager_->Load<asset::SkeletonView>(asset::ResourceId::FromValue(id), &handle);
+    if (!loaded.Ok())
+    {
+        return Fail(FromAssetError(loaded.Code()), loaded.Message());
+    }
+    skeleton_pins_.Push(static_cast<asset::Handle<asset::SkeletonView>&&>(handle));
+    return ENGINE_OK;
+}
+
+engine_status ResourceHost::PinClip(u64 id, u64 skeleton_id)
+{
+    LockGuard<Mutex> lock(pin_mutex_);
+    const asset::SkeletonView* skeleton = manager_->Find<asset::SkeletonView>(
+        asset::ResourceId::FromValue(skeleton_id));
+    if (skeleton == nullptr)
+    {
+        return Fail(ENGINE_ERROR_NOT_FOUND, "the skeleton of the entity is not loaded");
+    }
+    asset::Handle<asset::ClipView> handle;
+    const asset::Status loaded = manager_->Load<asset::ClipView>(asset::ResourceId::FromValue(id), &handle);
+    if (!loaded.Ok())
+    {
+        return Fail(FromAssetError(loaded.Code()), loaded.Message());
+    }
+    if (!handle.Get()->Bind(*skeleton).Ok())
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the clip was not made for the entity's skeleton");
+    }
+    for (usize i = 0; i < clip_pins_.Size(); ++i)
+    {
+        if (clip_pins_[i].IsValid() && clip_pins_[i].Id().Value() == id)
+        {
+            return ENGINE_OK;
+        }
+    }
+    clip_pins_.Push(static_cast<asset::Handle<asset::ClipView>&&>(handle));
+    return ENGINE_OK;
 }
 
 // ---- lent bytes

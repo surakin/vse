@@ -5907,31 +5907,36 @@ animation::AnimationPlayer::step_time	variable	animation	animation-animationplay
 animation::AnimationPlayer::step_include	variable	animation	animation-animationplayer-step-include	animation.md	engine/animation/components.h:45
 animation::AnimationPlayer::step_valid	variable	animation	animation-animationplayer-step-valid	animation.md	engine/animation/components.h:46
 animation::AnimationPlayer::sampler	variable	animation	animation-animationplayer-sampler	animation.md	engine/animation/components.h:47
-animation::SkeletonInstance	struct	animation	animation-skeletoninstance	animation.md	engine/animation/components.h:53
-animation::SkeletonInstance::skeleton	variable	animation	animation-skeletoninstance-skeleton	animation.md	engine/animation/components.h:55
-animation::SkeletonInstance::palette	variable	animation	animation-skeletoninstance-palette	animation.md	engine/animation/components.h:56
-animation::RootMotion	struct	animation	animation-rootmotion	animation.md	engine/animation/components.h:63
-animation::RootMotion::delta	variable	animation	animation-rootmotion-delta	animation.md	engine/animation/components.h:65
-animation::AnimationEvent	struct	animation	animation-animationevent	animation.md	engine/animation/components.h:71
-animation::AnimationEvent::entity	variable	animation	animation-animationevent-entity	animation.md	engine/animation/components.h:73
-animation::AnimationEvent::time	variable	animation	animation-animationevent-time	animation.md	engine/animation/components.h:74
-animation::AnimationEvent::name_hash	variable	animation	animation-animationevent-name-hash	animation.md	engine/animation/components.h:75
-animation::AnimationEvent::payload	variable	animation	animation-animationevent-payload	animation.md	engine/animation/components.h:76
-animation::AnimationEvents	struct	animation	animation-animationevents	animation.md	engine/animation/components.h:83
-animation::AnimationEvents::events	variable	animation	animation-animationevents-events	animation.md	engine/animation/components.h:85
-animation::AnimationResolver	class	animation	animation-animationresolver	animation.md	engine/animation/components.h:92
-animation::AnimationResolver::~AnimationResolver()	function	animation	animation-animationresolver-tilde-animationresolver	animation.md	engine/animation/components.h:95
-animation::AnimationResolver::FindSkeleton(asset::ResourceId) const	function	animation	animation-animationresolver-findskeleton-asset-resourceid-const	animation.md	engine/animation/components.h:100
-animation::AnimationResolver::FindClip(asset::ResourceId) const	function	animation	animation-animationresolver-findclip-asset-resourceid-const	animation.md	engine/animation/components.h:105
-animation::AnimationStats	struct	animation	animation-animationstats	animation.md	engine/animation/components.h:111
-animation::AnimationStats::players_updated	variable	animation	animation-animationstats-players-updated	animation.md	engine/animation/components.h:113
-animation::AnimationStats::refused	variable	animation	animation-animationstats-refused	animation.md	engine/animation/components.h:114
-animation::AnimationStats::events	variable	animation	animation-animationstats-events	animation.md	engine/animation/components.h:115
-animation::AnimationStats::events_dropped	variable	animation	animation-animationstats-events-dropped	animation.md	engine/animation/components.h:116
-animation::RegisterAnimationComponents(storage::ComponentRegistry*)	function	animation	animation-registeranimationcomponents-storage-componentregistry-star	animation.md	engine/animation/components.h:123
-animation::AnimationSystem	class	animation	animation-animationsystem	animation.md	engine/animation/components.h:131
-animation::AnimationSystem::AnimationSystem(const AnimationResolver*)	function	animation	animation-animationsystem-animationsystem-const-animationresolver-star	animation.md	engine/animation/components.h:137
-animation::AnimationSystem::Update(ecs::World*,jobs::Scheduler*,f32)	function	animation	animation-animationsystem-update-ecs-world-star-jobs-scheduler-star-f32	animation.md	engine/animation/components.h:147
+animation::AnimationPlayer::fade_clip	variable	animation	animation-animationplayer-fade-clip	animation.md	engine/animation/components.h:48
+animation::AnimationPlayer::fade_time	variable	animation	animation-animationplayer-fade-time	animation.md	engine/animation/components.h:49
+animation::AnimationPlayer::fade_total	variable	animation	animation-animationplayer-fade-total	animation.md	engine/animation/components.h:50
+animation::AnimationPlayer::fade_elapsed	variable	animation	animation-animationplayer-fade-elapsed	animation.md	engine/animation/components.h:51
+animation::AnimationPlayer::fade_sampler	variable	animation	animation-animationplayer-fade-sampler	animation.md	engine/animation/components.h:52
+animation::SkeletonInstance	struct	animation	animation-skeletoninstance	animation.md	engine/animation/components.h:58
+animation::SkeletonInstance::skeleton	variable	animation	animation-skeletoninstance-skeleton	animation.md	engine/animation/components.h:60
+animation::SkeletonInstance::palette	variable	animation	animation-skeletoninstance-palette	animation.md	engine/animation/components.h:61
+animation::RootMotion	struct	animation	animation-rootmotion	animation.md	engine/animation/components.h:68
+animation::RootMotion::delta	variable	animation	animation-rootmotion-delta	animation.md	engine/animation/components.h:70
+animation::AnimationEvent	struct	animation	animation-animationevent	animation.md	engine/animation/components.h:76
+animation::AnimationEvent::entity	variable	animation	animation-animationevent-entity	animation.md	engine/animation/components.h:78
+animation::AnimationEvent::time	variable	animation	animation-animationevent-time	animation.md	engine/animation/components.h:79
+animation::AnimationEvent::name_hash	variable	animation	animation-animationevent-name-hash	animation.md	engine/animation/components.h:80
+animation::AnimationEvent::payload	variable	animation	animation-animationevent-payload	animation.md	engine/animation/components.h:81
+animation::AnimationEvents	struct	animation	animation-animationevents	animation.md	engine/animation/components.h:88
+animation::AnimationEvents::events	variable	animation	animation-animationevents-events	animation.md	engine/animation/components.h:90
+animation::AnimationResolver	class	animation	animation-animationresolver	animation.md	engine/animation/components.h:97
+animation::AnimationResolver::~AnimationResolver()	function	animation	animation-animationresolver-tilde-animationresolver	animation.md	engine/animation/components.h:100
+animation::AnimationResolver::FindSkeleton(asset::ResourceId) const	function	animation	animation-animationresolver-findskeleton-asset-resourceid-const	animation.md	engine/animation/components.h:105
+animation::AnimationResolver::FindClip(asset::ResourceId) const	function	animation	animation-animationresolver-findclip-asset-resourceid-const	animation.md	engine/animation/components.h:110
+animation::AnimationStats	struct	animation	animation-animationstats	animation.md	engine/animation/components.h:116
+animation::AnimationStats::players_updated	variable	animation	animation-animationstats-players-updated	animation.md	engine/animation/components.h:118
+animation::AnimationStats::refused	variable	animation	animation-animationstats-refused	animation.md	engine/animation/components.h:119
+animation::AnimationStats::events	variable	animation	animation-animationstats-events	animation.md	engine/animation/components.h:120
+animation::AnimationStats::events_dropped	variable	animation	animation-animationstats-events-dropped	animation.md	engine/animation/components.h:121
+animation::RegisterAnimationComponents(storage::ComponentRegistry*)	function	animation	animation-registeranimationcomponents-storage-componentregistry-star	animation.md	engine/animation/components.h:128
+animation::AnimationSystem	class	animation	animation-animationsystem	animation.md	engine/animation/components.h:136
+animation::AnimationSystem::AnimationSystem(const AnimationResolver*)	function	animation	animation-animationsystem-animationsystem-const-animationresolver-star	animation.md	engine/animation/components.h:142
+animation::AnimationSystem::Update(ecs::World*,jobs::Scheduler*,f32)	function	animation	animation-animationsystem-update-ecs-world-star-jobs-scheduler-star-f32	animation.md	engine/animation/components.h:152
 animation::ManagerResolver	class	animation	animation-managerresolver	animation.md	engine/animation/manager_resolver.h:17
 animation::ManagerResolver::ManagerResolver(const asset::ResourceManager*)	function	animation	animation-managerresolver-managerresolver-const-asset-resourcemanager-star	animation.md	engine/animation/manager_resolver.h:23
 animation::ManagerResolver::FindSkeleton(asset::ResourceId) const	function	animation	animation-managerresolver-findskeleton-asset-resourceid-const	animation.md	engine/animation/manager_resolver.h:29

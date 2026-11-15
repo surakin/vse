@@ -45,6 +45,11 @@ struct AnimationPlayer
     bool step_include = false;  ///< Set by the system; the last update included events at its start.
     bool step_valid = false;  ///< Set by the system; the last update advanced the clip (events are read from the step).
     SamplerState sampler;     ///< Set by the system; the cursors.
+    u64 fade_clip = 0;        ///< The clip being faded out (a cross-fade to `clip`); 0 when there is none. Not stored.
+    f32 fade_time = 0;        ///< The play position of the fading clip, in seconds; the system advances it.
+    f32 fade_total = 0;       ///< The cross-fade's length in seconds; the fade ends when `fade_elapsed` reaches it.
+    f32 fade_elapsed = 0;     ///< Seconds of the cross-fade done; the system advances it.
+    SamplerState fade_sampler;  ///< Set by the system; the cursors of the fading clip.
 };
 
 /// The skeleton an entity is drawn with and the skinning palette the system fills each update.

@@ -598,6 +598,16 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
   `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion` and the textures `albedo_tex`, `normal_tex`; an unknown name or a value of the wrong kind is refused at the call with the slot named in `last_error`.
   An entity holds up to 8 overrides; `entity_clear_slot_override` removes one or all. The copy is a material of the surface's material system, so it counts against its limit, and it is made again when the base material or the overrides change.
 
+## Skinned meshes and animation (Phase 24 Day 363)
+
+- **Skeleton and player.** `ENGINE_COMPONENT_SKELETON_INSTANCE` (`engine_skeleton_instance.skeleton`, a resource id) makes an entity a skinned model: setting it loads the skeleton (`NOT_FOUND` when it is not mounted) and keeps it loaded. A mesh minted with `quality full` and a skin
+  section, referenced by the same entity, is drawn skinned (with the surface's default skinned material when the reference names no material); an entity with no clip is drawn in the bind pose, and a skinned mesh on an entity with no skeleton instance is not drawn.
+  `ENGINE_COMPONENT_ANIMATION_PLAYER` (`engine_animation_state`) is read only: it shows the clip, the time, the speed and whether a fade or the end is reached.
+- **Playing.** `animation_play(world, entity, clip, &engine_play_params)` (the params may be NULL: play once at speed 1) starts a clip (`ENGINE_PLAY_LOOP`, `speed`, `start_time`, `fade_seconds`); a clip made for another skeleton is `INVALID_ARGUMENT`. With `fade_seconds` above 0 the old clip keeps playing and fades out while the new one fades in.
+  `animation_set_speed` (0 pauses), `animation_stop` and `animation_time` read and steer what plays. The frame advances every player before the transforms are propagated, so a frame's pose and its world matrices agree.
+- **Joints.** `skeleton_find_joint(world, entity, "arm", &index)` and `skeleton_joint_transform(world, entity, index, matrix16)` (column-major, in the skeleton entity's space, as the last frame left it; the bind pose before any clip). `entity_attach_to_joint(world, entity,
+  skeleton_entity, joint)` makes an entity follow a joint (its own transform becomes relative to the joint); the entities below the attached one lag by a frame. A `skeleton_entity` of 0 detaches.
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

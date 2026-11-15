@@ -105,6 +105,30 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                     Blend(&bind, pose, p.weight < 0.0f ? 0.0f : (p.weight > 1.0f ? 1.0f : p.weight));
                     pose = bind;
                 }
+                if (p.fade_clip != 0)
+                {  // a cross-fade: the clip faded out is sampled too and the two poses are blended
+                    const asset::ClipView* fading = resolver->FindClip(asset::ResourceId::FromValue(p.fade_clip));
+                    if (fading == nullptr || !SysBound(*fading, *skeleton) ||
+                        (fading->Flags() & asset::kClipAdditive) != 0 || !(p.fade_total > 0.0f))
+                    {
+                        p.fade_clip = 0;  // gone or not for this skeleton: the fade ends
+                    }
+                    else
+                    {
+                        const f32 step = p.playing ? dt * p.speed : 0.0f;
+                        p.fade_elapsed += dt;
+                        p.fade_time = AdvanceTime(*fading, p.fade_time, step, true).time;
+                        LocalPose old_pose;
+                        SampleClip(*fading, *skeleton, p.fade_time, true, &p.fade_sampler, &old_pose);
+                        const f32 t = p.fade_elapsed >= p.fade_total ? 1.0f : p.fade_elapsed / p.fade_total;
+                        Blend(&old_pose, pose, t);  // old * (1 - t) + new * t
+                        pose = old_pose;
+                        if (p.fade_elapsed >= p.fade_total)
+                        {
+                            p.fade_clip = 0;
+                        }
+                    }
+                }
                 ModelPose model;
                 ModelFromLocal(*skeleton, pose, &model);
                 inst.palette.Resize(pose.joint_count);
