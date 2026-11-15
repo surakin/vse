@@ -22,10 +22,11 @@ namespace
 constexpr usize kSlotWords = (VulkanDevice::kThreadSlots + 63) / 64;
 Atomic<u64> g_slot_words[kSlotWords];
 
-// This thread's slot, or -1. Plain data, not an object with a destructor: a thread_local destructor registered on a host's thread keeps
-// the shared engine library mapped until that thread ends (Phase 23 Day 345). The slot goes back through NotifyThreadEnd, which the
-// job workers call last and which any other thread that recorded commands calls before it ends; a thread that does not keeps its slot
-// (kThreadSlots of them), and the next thread to ask for one may find none.
+// This thread's slot, or -1. Plain data, not an object with a destructor: a thread_local destructor registered on a
+// host's thread keeps the shared engine library mapped until that thread ends (Phase 23 Day 345). The slot goes back
+// through NotifyThreadEnd, which the job workers call last and which any other thread that recorded commands calls
+// before it ends; a thread that does not keeps its slot (kThreadSlots of them), and the next thread to ask for one may
+// find none.
 thread_local i32 t_slot_id = -1;
 
 void ReleaseCurrentThreadSlot()

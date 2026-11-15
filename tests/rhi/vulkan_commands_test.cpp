@@ -381,7 +381,8 @@ TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[r
     device->EndFrame();
     device->WaitIdle();
 
-    // Far more short-lived threads than there are slots: each gives its slot back through NotifyThreadEnd before it ends.
+    // Far more short-lived threads than there are slots: each gives its slot back through NotifyThreadEnd before it
+    // ends.
     device->BeginFrame();
     for (usize i = 0; i < VulkanDevice::kThreadSlots * 2; ++i)
     {

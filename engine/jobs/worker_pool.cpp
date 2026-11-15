@@ -136,7 +136,8 @@ void WorkerPool::ThreadMain(WorkerPool* pool, usize index)
         pool->cv_.Wait(lock, [&] { return pool->stop_.Load(MemoryOrder::Acquire); });
     }
     tls_current = nullptr;
-    NotifyThreadEnd();  // gives back the frame-pool cache, the crash stack and the rest: no thread_local destructor does it
+    NotifyThreadEnd();  // gives back the frame-pool cache, the crash stack and the rest: no thread_local destructor
+                        // does it
 }
 
 void WorkerPool::RequestStop()

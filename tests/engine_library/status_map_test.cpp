@@ -1,6 +1,7 @@
-// Phase 23 Day 346: the table that maps the engine's result types onto the C API's statuses (engine/engine_c/status_map.h). Completeness has two halves: the
-// mapping functions have no default case, so a new asset::ErrorCode or settings::SetError is a -Wswitch error until it is mapped; and these tests check that the
-// mapping is the intended one, that every status has a unique name, and that the names follow the enum.
+// Phase 23 Day 346: the table that maps the engine's result types onto the C API's statuses
+// (engine/engine_c/status_map.h). Completeness has two halves: the mapping functions have no default case, so a new
+// asset::ErrorCode or settings::SetError is a -Wswitch error until it is mapped; and these tests check that the mapping
+// is the intended one, that every status has a unique name, and that the names follow the enum.
 #include <catch2/catch_test_macros.hpp>
 
 #include "engine/engine_c.h"

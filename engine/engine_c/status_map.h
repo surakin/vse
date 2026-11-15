@@ -12,7 +12,8 @@ namespace engine_placeholder::engine_c
 /// The number of statuses: the values `0` through `kStatusCount - 1` of `engine_status` are all defined.
 inline constexpr u32 kStatusCount = 21;
 
-/// Returns the C status for an asset error. `Ok` is `ENGINE_OK`; every other code has a status of its own meaning, and `Other` is `ENGINE_ERROR_INTERNAL`.
+/// Returns the C status for an asset error. `Ok` is `ENGINE_OK`; every other code has a status of its own meaning, and
+/// `Other` is `ENGINE_ERROR_INTERNAL`.
 ///
 /// - Fails: never.
 engine_status FromAssetError(asset::ErrorCode code);

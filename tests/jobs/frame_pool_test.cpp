@@ -180,7 +180,8 @@ TEST_CASE("FramePool global instance: blocks freed on another thread are reusabl
             {
                 pool.Deallocate(blocks[i]);
             }
-            NotifyThreadEnd();  // the cache has no destructor: the thread hands it back (the first use registered the hook)
+            NotifyThreadEnd();  // the cache has no destructor: the thread hands it back (the first use registered the
+                                // hook)
         });
     freer.Join();
 
@@ -354,8 +355,9 @@ TEST_CASE("FramePool does not commit slab memory until blocks are used", "[jobs]
     pool.Deallocate(p);
 }
 
-TEST_CASE("FramePool: the thread cache has no destructor, and ReleaseThreadCache returns every block to the central pool",
-          "[jobs][framepool]")
+TEST_CASE(
+    "FramePool: the thread cache has no destructor, and ReleaseThreadCache returns every block to the central pool",
+    "[jobs][framepool]")
 {
     // A thread_local with a destructor is registered on the host's thread and pins the shared engine library in memory.
     static_assert(IsTriviallyDestructible<FramePool::ThreadCache>);

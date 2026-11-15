@@ -8097,15 +8097,15 @@ jobs::Counter::Value() const	function	jobs	jobs-counter-value-const	jobs.md	engi
 jobs::Counter::PathCounters	struct	jobs	jobs-counter-pathcounters	jobs.md	engine/jobs/counter.h:119
 jobs::Counter::PathCounters::inline_continues	variable	jobs	jobs-counter-pathcounters-inline-continues	jobs.md	engine/jobs/counter.h:122
 jobs::Counter::PathCounters::parked	variable	jobs	jobs-counter-pathcounters-parked	jobs.md	engine/jobs/counter.h:124
-jobs::Counter::PathStats()	function	jobs	jobs-counter-pathstats	jobs.md	engine/jobs/counter.h:130
-jobs::Counter::DecrementThunk(void*)	function	jobs	jobs-counter-decrementthunk-void-star	jobs.md	engine/jobs/counter.h:139
-jobs::Counter::Awaitable	struct	jobs	jobs-counter-awaitable	jobs.md	engine/jobs/counter.h:144
-jobs::Counter::Awaitable::counter	variable	jobs	jobs-counter-awaitable-counter	jobs.md	engine/jobs/counter.h:147
-jobs::Counter::Awaitable::await_ready() const noexcept	function	jobs	jobs-counter-awaitable-await-ready-const-noexcept	jobs.md	engine/jobs/counter.h:152
-jobs::Counter::Awaitable::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-counter-awaitable-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/counter.h:160
-jobs::Counter::Awaitable::await_resume() noexcept	function	jobs	jobs-counter-awaitable-await-resume-noexcept	jobs.md	engine/jobs/counter.h:181
-jobs::Counter::operator co_await()	function	jobs	jobs-counter-operator-co-await	jobs.md	engine/jobs/counter.h:192
-jobs::Spawn(Counter&,Job&&)	function	jobs	jobs-spawn-counter-amp-job-amp-amp	jobs.md	engine/jobs/counter.h:227
+jobs::Counter::PathStats()	function	jobs	jobs-counter-pathstats	jobs.md	engine/jobs/counter.h:131
+jobs::Counter::DecrementThunk(void*)	function	jobs	jobs-counter-decrementthunk-void-star	jobs.md	engine/jobs/counter.h:140
+jobs::Counter::Awaitable	struct	jobs	jobs-counter-awaitable	jobs.md	engine/jobs/counter.h:145
+jobs::Counter::Awaitable::counter	variable	jobs	jobs-counter-awaitable-counter	jobs.md	engine/jobs/counter.h:148
+jobs::Counter::Awaitable::await_ready() const noexcept	function	jobs	jobs-counter-awaitable-await-ready-const-noexcept	jobs.md	engine/jobs/counter.h:153
+jobs::Counter::Awaitable::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-counter-awaitable-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/counter.h:161
+jobs::Counter::Awaitable::await_resume() noexcept	function	jobs	jobs-counter-awaitable-await-resume-noexcept	jobs.md	engine/jobs/counter.h:182
+jobs::Counter::operator co_await()	function	jobs	jobs-counter-operator-co-await	jobs.md	engine/jobs/counter.h:193
+jobs::Spawn(Counter&,Job&&)	function	jobs	jobs-spawn-counter-amp-job-amp-amp	jobs.md	engine/jobs/counter.h:228
 jobs::StealStatus	enum	jobs	jobs-stealstatus	jobs.md	engine/jobs/deque.h:37
 jobs::StealStatus::Success	enumerator	jobs	jobs-stealstatus-success	jobs.md	engine/jobs/deque.h:39
 jobs::StealStatus::Empty	enumerator	jobs	jobs-stealstatus-empty	jobs.md	engine/jobs/deque.h:40

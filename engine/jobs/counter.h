@@ -126,7 +126,8 @@ public:
 
     /// Gives the process-wide await-path tallies.
     ///
-    /// - Returns: a reference to a static defined in `scheduler.cpp` (one per engine library) that lives for the whole process.
+    /// - Returns: a reference to a static defined in `scheduler.cpp` (one per engine library) that lives for the whole
+    /// process.
     static PathCounters& PathStats();
 
     /// Completion-hook adapter that decrements the [[jobs::Counter]] passed as `counter`.

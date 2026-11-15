@@ -22,10 +22,10 @@ typedef struct host_process_facts
 #include "posix/host_os_posix.h"
 #endif
 
-/* 1 where closing the engine library's last reference really unmaps it (Linux, Windows). On macOS dyld keeps an image that
-   holds Objective-C classes (the Cocoa window, the Metal backend) loaded for the life of the process (Day 355): the hosts
-   check everything else there (the close succeeds, the threads and the memory return, the engine holds no block) and
-   tolerate the mapping. */
+/* 1 where closing the engine library's last reference really unmaps it (Linux, Windows). On macOS dyld keeps an image
+   that holds Objective-C classes (the Cocoa window, the Metal backend) loaded for the life of the process (Day 355):
+   the hosts check everything else there (the close succeeds, the threads and the memory return, the engine holds no
+   block) and tolerate the mapping. */
 #define HOST_LIBRARY_UNLOADS (!ENGINE_PLATFORM_MACOS)
 
 /* Whether the library at `path` left as it must on this platform: no longer loaded where libraries unload, anything on

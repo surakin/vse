@@ -1,9 +1,9 @@
 /* Phase 23 Day 348: load, run, destroy, unload, 50 times in one process. After every cycle the library must be gone
-   from the address space (/proc/self/maps and RTLD_NOLOAD; on Windows, Day 354, the module list; not on macOS, where dyld
-   keeps an image with Objective-C classes: host_os.h), the process must have the threads it started with;
-   after the last, the resident size must be near what it was after the first few cycles (nothing accumulates per cycle)
-   and the engine's own live-block count must be zero. Under asan the leak report at exit is the check for what is
-   really leaked. */
+   from the address space (/proc/self/maps and RTLD_NOLOAD; on Windows, Day 354, the module list; not on macOS, where
+   dyld keeps an image with Objective-C classes: host_os.h), the process must have the threads it started with; after
+   the last, the resident size must be near what it was after the first few cycles (nothing accumulates per cycle) and
+   the engine's own live-block count must be zero. Under asan the leak report at exit is the check for what is really
+   leaked. */
 #include <stdio.h>
 #include <string.h>
 

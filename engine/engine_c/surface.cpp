@@ -246,7 +246,8 @@ engine_status CheckInfo(const engine_surface_info* given, engine_surface_info* o
         return Fail(ENGINE_ERROR_UNSUPPORTED,
                     "this build cannot draw into a window of that kind with that graphics API");
     }
-    // Wayland and Win32 name the window by a pointer (`surface`), X11 by an id; a Cocoa surface's CAMetalLayer is optional.
+    // Wayland and Win32 name the window by a pointer (`surface`), X11 by an id; a Cocoa surface's CAMetalLayer is
+    // optional.
     const bool by_pointer = out->kind == ENGINE_SURFACE_WAYLAND || out->kind == ENGINE_SURFACE_WIN32;
     if (out->display == nullptr || (by_pointer && out->surface == nullptr) ||
         (out->kind == ENGINE_SURFACE_X11 && out->window_id == 0))
@@ -299,10 +300,10 @@ engine_status Build(SurfaceObject* s)
     s->device = rhi::CreateDevice(info);
     if (s->device.Get() == nullptr)
     {
-        return Fail(ENGINE_ERROR_UNSUPPORTED, s->backend == rhi::Backend::Metal ? "no Metal device can present to this view"
-                                              : s->backend == rhi::Backend::Dx12
-                                                  ? "no Direct3D 12 device can present to this window"
-                                                  : "no Vulkan device can present to this window");
+        return Fail(ENGINE_ERROR_UNSUPPORTED,
+                    s->backend == rhi::Backend::Metal  ? "no Metal device can present to this view"
+                    : s->backend == rhi::Backend::Dx12 ? "no Direct3D 12 device can present to this window"
+                                                       : "no Vulkan device can present to this window");
     }
     s->swapchain = s->device->CreateSwapchain(SwapchainDescOf(s));
     if (s->swapchain == nullptr)

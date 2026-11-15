@@ -162,10 +162,10 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context)
 }
 
 // SIGNAL-SAFE-END
-// The calling thread's alternate stack, or null. A plain pointer, not an object with a destructor: a thread_local destructor registered on
-// a host's thread would keep the shared engine library mapped until that thread ends (Phase 23 Day 345), so the stack is given back
-// by UnregisterThreadForCrashHandling (every engine thread calls it last; the leak of a thread that does not is 128 KiB of address
-// space, mostly never touched: MAP_NORESERVE).
+// The calling thread's alternate stack, or null. A plain pointer, not an object with a destructor: a thread_local
+// destructor registered on a host's thread would keep the shared engine library mapped until that thread ends (Phase 23
+// Day 345), so the stack is given back by UnregisterThreadForCrashHandling (every engine thread calls it last; the leak
+// of a thread that does not is 128 KiB of address space, mostly never touched: MAP_NORESERVE).
 thread_local void* t_alternate_stack = nullptr;
 
 }  // namespace

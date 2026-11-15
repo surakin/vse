@@ -1,5 +1,5 @@
-/* host_os.h on POSIX (Linux, macOS): pthreads, dlopen, fork, and process_probe.h for the process facts (Phase 23 Day 354; what the hosts called directly
-   from Days 345 to 353). Included by host_os.h only. */
+/* host_os.h on POSIX (Linux, macOS): pthreads, dlopen, fork, and process_probe.h for the process facts (Phase 23 Day
+   354; what the hosts called directly from Days 345 to 353). Included by host_os.h only. */
 #ifndef HOST_OS_POSIX_H
 #define HOST_OS_POSIX_H
 
@@ -170,8 +170,8 @@ static inline int host_run_crash_child(void (*child)(const char*), const char* a
     if (!ProbeEndedByFault(status))
     {
         printf("host_run_crash_child: the child ended with status 0x%x (signaled %d, signal %d, exited %d, code %d)\n",
-               status, WIFSIGNALED(status) ? 1 : 0, WIFSIGNALED(status) ? WTERMSIG(status) : 0, WIFEXITED(status) ? 1 : 0,
-               WIFEXITED(status) ? WEXITSTATUS(status) : 0);
+               status, WIFSIGNALED(status) ? 1 : 0, WIFSIGNALED(status) ? WTERMSIG(status) : 0,
+               WIFEXITED(status) ? 1 : 0, WIFEXITED(status) ? WEXITSTATUS(status) : 0);
         return 0;
     }
     return 1;
