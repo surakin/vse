@@ -18,9 +18,10 @@
 ## Complete code
 
 ```c
-/* The program of docs/tutorials/loading-the-engine.md: a C host with its own Xlib window embeds the engine, clears the window to a color for about two
-   seconds, and checks what the engine drew by reading the pixels back. It uses the engine through `engine_get_api` only. Exit 0 also when there is no
-   display or the build cannot render into a window (it says so). */
+/* The program of docs/tutorials/loading-the-engine.md: a C host with its own Xlib window embeds the engine, clears the
+   window to a color for about two seconds, and checks what the engine drew by reading the pixels back. It uses the
+   engine through `engine_get_api` only. Exit 0 also when there is no display or the build cannot render into a window
+   (it says so). */
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -103,7 +104,8 @@ int main(void)
     }
     api->surface_set_background(surface, color);
 
-    /* 5. The host's own loop: it keeps its event handling (the engine opens no connection of its own) and calls `frame` when it wants one drawn. */
+    /* 5. The host's own loop: it keeps its event handling (the engine opens no connection of its own) and calls `frame`
+     * when it wants one drawn. */
     memset(&frame, 0, sizeof(frame));
     frame.struct_size = sizeof(frame);
     frame.delta_seconds = 0.016;
@@ -126,9 +128,11 @@ int main(void)
     ok = ok && api->pixels_finish(ticket, &pixels) == ENGINE_OK;
     if (ok)
     {
-        const unsigned char* p = (const unsigned char*)pixels.data.data + (size_t)(HEIGHT / 2) * pixels.stride + (size_t)(WIDTH / 2) * 4;
+        const unsigned char* p = (const unsigned char*)pixels.data.data + (size_t)(HEIGHT / 2) * pixels.stride +
+                                 (size_t)(WIDTH / 2) * 4;
         printf("tutorial: the middle pixel is %d %d %d\n", p[0], p[1], p[2]);
-        ok = p[0] == 0 && p[2] == 255 && p[1] > 150 && p[1] < 230; /* 0.5 reads about 188 in the sRGB encoding of the swapchain */
+        ok = p[0] == 0 && p[2] == 255 && p[1] > 150 &&
+             p[1] < 230; /* 0.5 reads about 188 in the sRGB encoding of the swapchain */
         engine_buffer_release(&pixels.data);
     }
     api->pixels_destroy(ticket);
