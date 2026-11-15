@@ -149,6 +149,20 @@ extern LogChannel LogRender;
 /// Channel for platform and windowing messages.
 extern LogChannel LogPlatform;
 
+/// Receives every line [[Log]] emits (after the channel's filter), with the channel name, the level and the message
+/// text (no brackets, no newline), all valid for the call only. Returns true to say the line is handled: it is then not
+/// written to the console. The function runs on the thread that logged, possibly several at once, and must not call
+/// [[SetLogObserver]] or [[Log]].
+using LogObserverFn = bool (*)(void* user, const char* channel, LogVerbosity level, StringView message);
+
+/// Installs the observer of the log (one at a time), or removes it with a null function. Returns once no call to the
+/// previous observer is still running, so its `user` may be freed after the call.
+///
+/// - Param fn: the function, or null to remove the observer.
+/// - Param user: passed to `fn`; borrowed.
+/// - Thread-safety: thread-safe against [[Log]] on other threads; not callable from the observer itself.
+void SetLogObserver(LogObserverFn fn, void* user);
+
 /// Writes `[Channel] LEVEL: message` plus a newline to the write sink (standard
 /// output by default) if the channel allows `level`.
 ///

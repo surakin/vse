@@ -1,16 +1,16 @@
-// The shared engine library's exports before the C API exists (Phase 23 Days 343 and 345).
+// The state table of the boundary tests (Phase 23 Days 343 and 345; Day 346 moves it behind the extension
+// `engine.test_state` of the function table).
 //
-// `engine_shared_probe` runs `count` jobs on a scheduler of four participants and returns how many ran, so a program linked
-// against libengine proves that the job system, the allocator and the log work through the library boundary (Day 343).
-//
-// `engine_shared_state_probe` (Day 345) returns a table of the engine's singletons and of the few operations the boundary tests
-// need: the addresses of the allocator, the await-path counters, the log's channel list and the global frame pool, a log call and
-// the log's line count, an allocation and its release, a job run, a crash handler install and a crash inside a job. A plugin that
-// links only the C API reads these through the table and sees the engine's one copy; a plugin that carries its own copy of the
-// foundation sees another one (tests/engine_library/dup_singletons). Day 346 replaces both exports with `engine_get_api`.
+// A struct of the addresses of the engine's singletons (the allocator, the await-path counters, the log's channel list,
+// the global frame pool) and of the few operations the tests of tests/engine_library need: a log call and the log's
+// line count, an allocation and its release, a job run, a crash handler install and a crash inside a job. A plugin that
+// links only the C API reads these and sees the engine's one copy; a plugin that carries its own copy of the foundation
+// sees another one (tests/engine_library/dup_singletons). Compiled only when ENGINE_C_TEST_EXTENSION is ON (the default
+// while the phase is under way); a release build of the library has no such table.
 #include "build_defs.h"
 #include "debug/crash_handler.h"
-#include "engine_c/engine_state_probe.h"
+#include "engine_c/engine_test_extension.h"
+#include "engine_c/test_state.h"
 #include "debug/stack_trace.h"
 #include "jobs/counter.h"
 #include "jobs/frame_pool.h"
@@ -114,22 +114,28 @@ void CrashInJob()
 
 }  // namespace
 
-extern "C"
+namespace engine_placeholder::engine_c
 {
 
-ENGINE_API int engine_shared_probe(int count)
+const engine_test_extension* TestStateExtension()
 {
-    return RunJobs(count);
-}
-
-ENGINE_API const struct engine_state_probe* engine_shared_state_probe(void)
-{
-    // Filled once (a thread-safe static initialization): every field is an address that never changes after the first call.
-    static const engine_state_probe filled = {sizeof(engine_state_probe), &HeapAllocator::Default(),
-                                              &jobs::Counter::PathStats(), LogChannel::First(),
-                                              &jobs::FramePool::Global(), &LogLines, &LogMessage, &Allocate, &Release,
-                                              &RunJobs, &InstallCrash, &UninstallCrash, &CrashInJob, &LiveBlocks};
+    // Filled once (a thread-safe static initialization): every field is an address that never changes after the first
+    // call.
+    static const engine_test_extension filled = {sizeof(engine_test_extension),
+                                                 &HeapAllocator::Default(),
+                                                 &jobs::Counter::PathStats(),
+                                                 LogChannel::First(),
+                                                 &jobs::FramePool::Global(),
+                                                 &LogLines,
+                                                 &LogMessage,
+                                                 &Allocate,
+                                                 &Release,
+                                                 &RunJobs,
+                                                 &InstallCrash,
+                                                 &UninstallCrash,
+                                                 &CrashInJob,
+                                                 &LiveBlocks};
     return &filled;
 }
 
-}  // extern "C"
+}  // namespace engine_placeholder::engine_c

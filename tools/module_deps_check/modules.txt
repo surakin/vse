@@ -166,6 +166,9 @@ allow asset_import asset
 module engine/animation/ animation 13
 allow animation asset
 module engine/engine_c/ engine_c 14
+target engine_c engine_c
+target engine_c_asan engine_c
+target engine_c_tsan engine_c
 target engine engine_c
 target engine_asan engine_c
 target engine_tsan engine_c

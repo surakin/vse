@@ -14,7 +14,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Strings](foundation-strings.md) | 6 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 85 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 87 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |

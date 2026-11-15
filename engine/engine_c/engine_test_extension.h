@@ -1,15 +1,16 @@
-/* Phase 23 Day 345: the table `engine_shared_state_probe` returns, shared by the engine library, the C hosts and the plugins of the boundary
-   tests (tests/engine_library). Plain C. Day 346 replaces it with the real C API. */
-#ifndef ENGINE_STATE_PROBE_H
-#define ENGINE_STATE_PROBE_H
+/* Phase 23 Day 345 (Day 346: the extension `engine.test_state` of the function table): the struct the engine library
+   hands to the boundary tests, shared by the library, the C hosts and the plugins of tests/engine_library. Plain C.
+   Only a library built with ENGINE_C_TEST_EXTENSION has it. */
+#ifndef ENGINE_TEST_EXTENSION_H
+#define ENGINE_TEST_EXTENSION_H
 
-struct engine_state_probe
+struct engine_test_extension
 {
     unsigned size;
-    const void* heap_default;  /* &HeapAllocator::Default() */
-    const void* path_stats;    /* &jobs::Counter::PathStats() */
-    const void* log_channels;  /* the first LogChannel of the registry */
-    const void* frame_pool;    /* &jobs::FramePool::Global() */
+    const void* heap_default; /* &HeapAllocator::Default() */
+    const void* path_stats;   /* &jobs::Counter::PathStats() */
+    const void* log_channels; /* the first LogChannel of the registry */
+    const void* frame_pool;   /* &jobs::FramePool::Global() */
     unsigned long long (*log_lines)(void);
     void (*log_message)(const char* text);
     void* (*allocate)(unsigned long size);

@@ -971,6 +971,32 @@ extern LogChannel LogPlatform;
 
 Channel for platform and windowing messages.
 
+## `LogObserverFn` {#logobserverfn}
+
+`alias LogObserverFn` — defined in `engine/foundation/log/log.h`
+
+```cpp
+using LogObserverFn = bool (*)(void* user, const char* channel, LogVerbosity level, StringView message);
+```
+
+Receives every line [`Log`](#log-logchannel-amp-logverbosity-stringview) emits (after the channel's filter), with the channel name, the level and the message text (no brackets, no newline), all valid for the call only. Returns true to say the line is handled: it is then not written to the console. The function runs on the thread that logged, possibly several at once, and must not call [`SetLogObserver`](#setlogobserver-logobserverfn-void-star) or [`Log`](#log-logchannel-amp-logverbosity-stringview).
+
+## `SetLogObserver(LogObserverFn,void*)` {#setlogobserver-logobserverfn-void-star}
+
+`function SetLogObserver` — defined in `engine/foundation/log/log.h`
+
+```cpp
+void SetLogObserver(LogObserverFn fn, void* user);
+```
+
+Installs the observer of the log (one at a time), or removes it with a null function. Returns once no call to the previous observer is still running, so its `user` may be freed after the call.
+
+| Field | Value |
+|---|---|
+| Parameter `fn` | the function, or null to remove the observer. |
+| Parameter `user` | passed to `fn`; borrowed. |
+| Thread-safety | thread-safe against [`Log`](#log-logchannel-amp-logverbosity-stringview) on other threads; not callable from the observer itself. |
+
 ## `Log(LogChannel&,LogVerbosity,StringView)` {#log-logchannel-amp-logverbosity-stringview}
 
 `function Log` — defined in `engine/foundation/log/log.h`

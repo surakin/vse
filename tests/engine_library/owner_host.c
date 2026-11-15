@@ -1,20 +1,17 @@
-/* Phase 23 Day 345: nothing allocated by the engine is freed by the host's allocator. A buffer the engine hands out is released through the
-   engine's own function. The planted variant (OWNER_WRONG_FREE) frees it with free(): the engine
-   still counts the block as live. (In the sanitized flavor ASan may also report an allocator mismatch; the engine library binds its own
-   operator new, so the count is the check that does not depend on it.) */
+/* Phase 23 Day 345: nothing allocated by the engine is freed by the host's allocator. A buffer the engine hands out is
+   released through the engine's own function. The planted variant (OWNER_WRONG_FREE) frees it with free(): the engine
+   still counts the block as live. (In the sanitized flavor ASan may also report an allocator mismatch; the engine
+   library binds its own operator new, so the count is the check that does not depend on it.) */
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "engine_c/engine_state_probe.h"
-
-typedef const struct engine_state_probe* (*get_probe_fn)(void);
+#include "host_api.h"
 
 int main(void)
 {
     void* engine = dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
-    get_probe_fn get_probe = engine != NULL ? (get_probe_fn)dlsym(engine, "engine_shared_state_probe") : NULL;
-    const struct engine_state_probe* table = get_probe != NULL ? get_probe() : NULL;
+    const struct engine_test_extension* table = host_test_extension(engine);
     if (table == NULL)
     {
         printf("no state probe: %s\n", dlerror());

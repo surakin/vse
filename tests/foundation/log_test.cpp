@@ -7,6 +7,7 @@
 #include "string/string.h"
 #include "types.h"
 #include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
 
 using engine_placeholder::AssertAction;
 using engine_placeholder::AssertHandler;
@@ -69,6 +70,58 @@ TEST_CASE("Error-level messages emit by default; Info-level is suppressed", "[lo
     StringView captured(g_capture_buffer, g_capture_len);
     REQUIRE(captured.Contains(StringView("error visible by default")));
     REQUIRE_FALSE(captured.Contains(StringView("info hidden by default")));
+}
+
+namespace
+{
+
+struct ObserverState
+{
+    int calls = 0;
+    bool handle = false;
+    char channel[32] = {};
+    LogVerbosity level = LogVerbosity::Trace;
+    char text[64] = {};
+};
+
+bool Observe(void* user, const char* channel, LogVerbosity level, StringView message)
+{
+    auto* state = static_cast<ObserverState*>(user);
+    ++state->calls;
+    state->level = level;
+    engine_placeholder::MemCopy(state->channel, channel, engine_placeholder::CStrLength(channel) + 1);
+    const usize n = message.Length() < sizeof(state->text) - 1 ? message.Length() : sizeof(state->text) - 1;
+    engine_placeholder::MemCopy(state->text, message.Data(), n);
+    state->text[n] = '\0';
+    return state->handle;
+}
+
+}  // namespace
+
+TEST_CASE("The log observer sees each emitted line, may take it from the console, and is gone after removal", "[log]")
+{
+    ObserverState state;
+    g_capture_len = 0;
+    SetWriteSinkForTesting(&CapturingWriteSink);
+
+    engine_placeholder::SetLogObserver(&Observe, &state);
+    Log(LogCore, LogVerbosity::Error, "seen and printed");  // not handled: also on the console
+    state.handle = true;
+    Log(LogCore, LogVerbosity::Error, "seen and taken");  // handled: not on the console
+    Log(LogCore, LogVerbosity::Info, "filtered out");     // the channel's filter comes first
+    engine_placeholder::SetLogObserver(nullptr, nullptr);
+    Log(LogCore, LogVerbosity::Error, "after removal");
+
+    SetWriteSinkForTesting(&Write);
+
+    CHECK(state.calls == 2);
+    CHECK(StringView(state.channel) == StringView("LogCore"));
+    CHECK(state.level == LogVerbosity::Error);
+    CHECK(StringView(state.text) == StringView("seen and taken"));
+    const StringView captured(g_capture_buffer, g_capture_len);
+    CHECK(captured.Contains(StringView("seen and printed")));
+    CHECK_FALSE(captured.Contains(StringView("seen and taken")));
+    CHECK(captured.Contains(StringView("after removal")));
 }
 
 TEST_CASE("ENGINE_ASSERT on a false condition reports through the handler and logs a labeled message", "[log][assert]")

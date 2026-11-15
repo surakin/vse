@@ -1,6 +1,7 @@
-/* Phase 23 Day 345: the crash handler across the boundary. (1) The host has its own SIGSEGV handler; the engine installs its handler
-   (through the table) and uninstalls it, and the host's handler is back. (2) A child installs the handler and crashes inside a job of
-   the shared engine: it dies of SIGSEGV and leaves an envelope holding a minidump in the dump directory. Plain flavor only. */
+/* Phase 23 Day 345: the crash handler across the boundary. (1) The host has its own SIGSEGV handler; the engine
+   installs its handler (through the table) and uninstalls it, and the host's handler is back. (2) A child installs the
+   handler and crashes inside a job of the shared engine: it dies of SIGSEGV and leaves an envelope holding a minidump
+   in the dump directory. Plain flavor only. */
 #include <dirent.h>
 #include <dlfcn.h>
 #include <signal.h>
@@ -10,20 +11,17 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "engine_c/engine_state_probe.h"
-
-typedef const struct engine_state_probe* (*get_probe_fn)(void);
+#include "host_api.h"
 
 static void HostHandler(int signal_number)
 {
     (void)signal_number;
 }
 
-static const struct engine_state_probe* Load(void)
+static const struct engine_test_extension* Load(void)
 {
     void* engine = dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
-    get_probe_fn get_probe = engine != NULL ? (get_probe_fn)dlsym(engine, "engine_shared_state_probe") : NULL;
-    return get_probe != NULL ? get_probe() : NULL;
+    return host_test_extension(engine);
 }
 
 static int CountEnvelopes(const char* path)
@@ -63,7 +61,7 @@ int main(void)
     char dump_dir[1024];
     snprintf(dump_dir, sizeof(dump_dir), "%s.%d", CRASH_DUMP_DIR, (int)getpid());
     mkdir(dump_dir, 0700);
-    const struct engine_state_probe* table = Load();
+    const struct engine_test_extension* table = Load();
     if (table == NULL)
     {
         printf("no state probe\n");

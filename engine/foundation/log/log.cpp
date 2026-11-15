@@ -4,6 +4,7 @@
 #include "os/os.h"
 
 #include "sync/atomic.h"
+#include "sync/thread.h"
 #include "os/console.h"
 #include "cstr/mem_ops.h"
 
@@ -171,12 +172,39 @@ bool LogErrorTraces()
     return g_log_error_traces.Load(MemoryOrder::Relaxed);
 }
 
+namespace
+{
+// The observer is a pair read by every Log call; `g_observer_busy` counts the calls using it so that SetLogObserver can
+// wait them out. Plain statics in this one translation unit (one copy in the engine library).
+Atomic<LogObserverFn> g_observer_fn{nullptr};
+Atomic<void*> g_observer_user{nullptr};
+Atomic<int> g_observer_busy{0};
+}  // namespace
+
+void SetLogObserver(LogObserverFn fn, void* user)
+{
+    g_observer_fn.Store(nullptr, MemoryOrder::SeqCst);  // new calls stop using the old pair
+    while (g_observer_busy.Load(MemoryOrder::SeqCst) != 0)
+    {
+        ThisThread::Yield();
+    }
+    g_observer_user.Store(user, MemoryOrder::SeqCst);
+    g_observer_fn.Store(fn, MemoryOrder::SeqCst);
+}
+
 void Log(LogChannel& channel, LogVerbosity level, StringView message)
 {
     if (!channel.ShouldLog(level))
     {
         return;
     }
+    bool handled = false;
+    g_observer_busy.FetchAdd(1, MemoryOrder::SeqCst);
+    if (LogObserverFn observer = g_observer_fn.Load(MemoryOrder::SeqCst))
+    {
+        handled = observer(g_observer_user.Load(MemoryOrder::SeqCst), channel.Name(), level, message);
+    }
+    g_observer_busy.FetchSub(1, MemoryOrder::SeqCst);
     char buf[512];
     // Everything but the newline goes into the first 511 bytes, so a long message is cut but the line still ends.
     constexpr usize kText = sizeof(buf) - 1;
@@ -189,6 +217,10 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message)
     offset = AppendStrToBuffer(buf, kText, offset, message);
     buf[offset++] = '\n';
     RingAppend(buf, offset);
+    if (handled)
+    {
+        return;
+    }
     if (level == LogVerbosity::Error && g_log_error_traces.Load(MemoryOrder::Relaxed))
     {
         // Where the error came from, under the line, in the same write so another thread's output cannot come between

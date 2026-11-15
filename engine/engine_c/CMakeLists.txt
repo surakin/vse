@@ -1,7 +1,39 @@
-# Phase 23 Day 343: the aggregate shared engine library (ENGINE_BUILD_SHARED, Linux; Windows and macOS follow on Days 354 and 355). One libengine.so per flavor
-# (engine, engine_asan, engine_tsan) made of every module's static library, whole-archived, with a version script as the export list. From Day 346 this
-# directory also holds the C API (engine_c.h) the library exports. Nothing here is built unless ENGINE_BUILD_SHARED is ON; the static libraries stay the default.
-if(NOT ENGINE_BUILD_SHARED OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+# Phase 23: the C API (engine_c.h, Day 346) as the static library `engine_c` (plain, asan, tsan; Linux until Days 354 and 355), and the aggregate shared
+# engine library (ENGINE_BUILD_SHARED, Day 343) made of every module's static library, whole-archived, with a version script as the export list. The static
+# `engine_c` is built always, so a C program can link the C API directly (tests/engine_library/host_c.c); the shared library is built only when the option is ON.
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  return()
+endif()
+
+# The state table of the boundary tests (the extension `engine.test_state`: the singletons' addresses, a job run, a crash inside a job) is compiled in by
+# default while the phase is under way; a release build turns it off, and the library then returns NULL for the extension.
+option(ENGINE_C_TEST_EXTENSION "Compile the engine.test_state extension of the C API (for the tests of tests/engine_library)" ON)
+if(ENGINE_C_TEST_EXTENSION)
+  set(ENGINE_C_TEST_EXTENSION_VALUE 1)
+else()
+  set(ENGINE_C_TEST_EXTENSION_VALUE 0)
+endif()
+
+set(ENGINE_C_SOURCES engine_c.cpp status_map.cpp)
+if(ENGINE_C_TEST_EXTENSION)
+  list(APPEND ENGINE_C_SOURCES test_state.cpp)
+endif()
+foreach(suffix "" "_asan" "_tsan")
+  if(suffix STREQUAL "_asan" AND NOT ENGINE_HAVE_ASAN)
+    continue()
+  endif()
+  if(suffix STREQUAL "_tsan" AND NOT ENGINE_HAVE_TSAN)
+    continue()
+  endif()
+  add_library(engine_c${suffix} STATIC ${ENGINE_C_SOURCES})
+  target_include_directories(engine_c${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  target_compile_options(engine_c${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+  # ENGINE_BUILDING_LIBRARY: engine_get_api is the one exported function (engine_c.h); ENGINE_TEST_EXTENSION: see the option above.
+  target_compile_definitions(engine_c${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
+  target_link_libraries(engine_c${suffix} PUBLIC asset${suffix} jobs${suffix} foundation${suffix})
+endforeach()
+
+if(NOT ENGINE_BUILD_SHARED)
   return()
 endif()
 
@@ -55,6 +87,8 @@ foreach(line IN LISTS _export_lines)
   elseif(line MATCHES "^version ([0-9]+)\\.([0-9]+)$")
     set(_abi_major ${CMAKE_MATCH_1})
     set(_abi_minor ${CMAKE_MATCH_2})
+  elseif(line STREQUAL "status unreleased")
+    continue()
   elseif(line MATCHES "^[A-Za-z_][A-Za-z0-9_]*$")
     string(APPEND _exported "    ${line};\n")
   else()
@@ -69,9 +103,12 @@ file(WRITE ${ENGINE_SHARED_VERSION_SCRIPT} "# Generated from abi/engine.exports 
 
 function(engine_add_shared suffix)
   engine_shared_collect("${suffix}" libs)
-  add_library(engine${suffix} SHARED engine_shared.cpp)
+  # The C API's own sources are compiled into the library (the static `engine_c` is for the programs that link the C API directly); every other module comes
+  # whole-archived below.
+  add_library(engine${suffix} SHARED ${ENGINE_C_SOURCES})
+  target_include_directories(engine${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
   target_compile_options(engine${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_compile_definitions(engine${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1)
+  target_compile_definitions(engine${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
   # Every module's objects go in whole (nothing is dropped for being unreferenced: the C API reaches them at run time), their third-party libraries
   # (the vendored C libraries, already position independent) come in through the modules' usage requirements.
   target_link_libraries(engine${suffix} PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,${libs}>")

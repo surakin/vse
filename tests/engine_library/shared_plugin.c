@@ -1,7 +1,8 @@
-/* Phase 23 Day 345: a plugin that links only the C API: it holds no copy of the foundation and reports what the engine's table shows. */
-#include "engine_c/engine_state_probe.h"
+/* Phase 23 Day 345: a plugin that links only the C API: it holds no copy of the foundation and reports what the
+ * engine's table shows. */
+#include "engine_c/engine_test_extension.h"
 
-void plugin_report(const struct engine_state_probe* engine, struct plugin_report* out)
+void plugin_report(const struct engine_test_extension* engine, struct plugin_report* out)
 {
     out->heap_default = engine->heap_default;
     out->path_stats = engine->path_stats;

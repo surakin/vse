@@ -2,7 +2,7 @@
 
 The engine can be built as one shared library (`libengine.so.1`) that a host program loads at run time and drives through a flat C API, next to the static
 libraries games link today (Phase 23; design in `docs/superpowers/specs/2026-11-16-engine-library-design.md`). This page grows with the phase; so far it holds
-the rules of what the library exports.
+the rules of what the library exports and the first part of the C API.
 
 ## Building it
 
@@ -27,7 +27,8 @@ The C header `engine_c.h` (Day 346) is checked too: it must compile as C11 with 
 
 ### Adding an export
 
-1. Declare and define the function in `engine/engine_c/` as `extern "C" ENGINE_API ...` (and in `engine_c.h` from Day 346).
+1. Declare and define the function in `engine/engine_c/` as `extern "C" ENGINE_API ...` (from Day 346 only `engine_get_api` is exported: a new function is a new member at the end of the `engine_api` table in `engine_c.h`, not a new export; a new
+   export is for a second entry point, which needs a reason).
 2. Add its name to `abi/engine.exports` and raise the minor version there (and in `engine_abi_version.h`); a removal raises the major version.
 3. Build with `-DENGINE_BUILD_SHARED=ON` and run `ctest -R abi_check`: it names every symbol that differs.
 4. Update the ABI snapshot (Day 347) and the guide when the function is part of the C API's documented surface.
@@ -53,7 +54,7 @@ The rules, and what enforces them:
   that is still alive. The three per-thread things on the engine's API path were the frame pool's cache, the crash handler's alternate stack and the Vulkan
   backend's command-pool slot; each is plain data now, handed back through `NotifyThreadEnd()` (`log/diagnostics_hooks.h`), which runs the functions added
   with `AddThreadEndHook` (the first use of each registers its own). The job workers, the I/O thread and the end of the scheduler's pool call it; **any other
-  thread that used the engine must call it before it ends** (the C API gives a host thread `engine_thread_detach`, Day 346). A thread that does not strands at
+  thread that used the engine must call it before it ends** (the C API gives a host thread `engine_api.thread_detach`, Day 346). A thread that does not strands at
   most 64 cached blocks per size class and one 128 KiB, mostly untouched, alternate stack, and keeps its Vulkan slot (there are `kThreadSlots` of them, so a
   program that records on many short-lived threads must call it).
 - **The crash handler is installed once, by the engine, and removed at shutdown;** the host's own handlers are back afterwards.
@@ -62,5 +63,64 @@ The tests (`tests/engine_library`, Linux, `-DENGINE_BUILD_SHARED=ON`) are small 
 links only the C API sees the engine's allocator, counters, log and frame pool) with its planted failure (`engine_dup_singletons_planted*`: a plugin that
 links the static foundation is detected, by name), `engine_unload_after_jobs` (plain, asan, tsan: jobs on the calling thread and on a joined host thread,
 the crash handler installed and removed, then `dlclose`: the library must be gone), `engine_owner_*` (plain, asan) and `engine_crash_across_boundary` (the
-host's `SIGSEGV` handler is restored; a crash inside a job leaves an envelope with a minidump). Until Day 346 they read the library through the table
-`engine_shared_state_probe` returns (`engine/engine_c/engine_state_probe.h`), which `engine_get_api` replaces.
+host's `SIGSEGV` handler is restored; a crash inside a job leaves an envelope with a minidump). Since Day 346 they reach the library through
+`engine_get_api` and read the state table through the extension `engine.test_state` (`engine/engine_c/engine_test_extension.h`, below).
+
+## The C API (Day 346)
+
+`engine/engine_c/engine_c.h` is the whole surface a host sees: plain C11, one exported function and a table. The convention comment at the top of the header is
+the specification; this is a summary of the rules and their reasons.
+
+**One entry point, one table.** The library exports `engine_get_api(major, minor, table_size, &table)`. It returns a pointer to a static `engine_api`, a
+struct of function pointers. The host asks for the version it was compiled against; the library serves the same major and any minor up to its own, and
+refuses anything else with `ENGINE_ERROR_UNSUPPORTED_VERSION` (`*out` is NULL then). New functions are appended to the table in a new minor; a host that
+wants one checks `table->struct_size` before it reads the pointer, so an older library never has its table read past the end. The table names the library's own
+version and the sanitizer it was built with (`sanitizer`: a sanitized library loads only into a host built with the same one).
+
+**Status.** Every function that can fail returns an `engine_status`; zero is success; a failing call changes nothing it was asked to change. The numbers are
+part of the ABI. `status_name` gives the name of a code (`stale_handle`). The text of the most recent failure on the calling thread is `last_error`, a message for
+people (the code is what a program branches on). The codes come from one table (`engine/engine_c/status_map.h`): `asset::ErrorCode` and
+`settings::SetError` each map onto them by a `switch` with no default, so a new engine error is a compile error until it is mapped, and the test
+`engine_c_tests` checks every mapping and that every status has a unique name.
+
+**Strings and ownership.** A string is a pointer and a length (UTF-8, not NUL-terminated). A string the host passes in is borrowed for the call. Memory the
+library produces comes back in an `engine_buffer` with its own `release` function: the host reads it and calls `engine_buffer_release` once, and the
+library's allocator frees it. Nothing allocated by one side is freed by the other.
+
+**Structs that grow.** Every struct that may gain fields starts with `uint32_t struct_size`. In: the host sets its `sizeof`; the library reads that many
+bytes and treats the rest as zero, and refuses a size below the struct's first version (`ENGINE_ERROR_STRUCT_SIZE`). Out: the host sets its `sizeof`, the
+library writes at most that many bytes and reports how many.
+
+**Handles.** An object is an `engine_handle`: 64 bits, the low half a slot and the high half the slot's generation, zero meaning none. A handle of a destroyed
+object is `ENGINE_ERROR_STALE_HANDLE`; one that was never issued is `ENGINE_ERROR_INVALID_ARGUMENT`; neither crashes.
+
+**The engine object.** `create` takes an `engine_create_info`: the host's settings (`key`/`value` text entries), the command line, an optional log
+callback and a flag. The settings go through the engine's settings system and nothing else is read: **not the environment, not the user's own settings
+file, not a policy**. Layers, lowest first: the host's entries, the engine's own writable layer (what `setting_set` changes), the command line (`--set
+key=value` and the declared flags; `args[0]` is the program name and is skipped). A key the engine does not declare is `ENGINE_ERROR_NOT_FOUND`; a value
+of the wrong type, a command-line error or a note from the load (an unknown key on the command line) is `ENGINE_ERROR_INVALID_ARGUMENT`, and either creates
+nothing. `setting_get` returns a setting's current value as text in a buffer.
+
+**The log callback** receives each line the engine emits, after the channel's own filter (the `log.<channel>.verbosity` settings decide what arrives), on the
+thread that logged, possibly from several threads at once. `ENGINE_CREATE_LOG_SUPPRESS_CONSOLE` keeps the lines off the console. It is made with
+`SetLogObserver` (`log/log.h`), which waits for callbacks in flight when it is removed, so `destroy` returns only when none is running. A callback may call
+the other API functions on its own thread, must not call `create` or `destroy`, and must not throw.
+
+**One engine per process.** The engine's singletons are the process's, so a second `create` while one exists is `ENGINE_ERROR_LIMIT_EXCEEDED`. A change to
+`log.*` settings is applied to the process's log channels and is not undone by `destroy` (the next engine starts from the channels as they are).
+
+**Extensions.** `get_extension(name)` returns a static struct of functions beyond the core, or NULL. The one the library has today is `engine.test_state`
+(`engine_test_extension.h`): the addresses of the engine's singletons and a few operations (run jobs, install a crash handler, allocate and release) that the
+boundary tests of Day 345 need. It is compiled in only when `ENGINE_C_TEST_EXTENSION` is ON (the default while the phase is under way); a release build
+returns NULL for it, and the C API never needs it.
+
+**Threads.** Calls are thread-safe unless a comment says otherwise. `thread_detach` is called by a host thread that used the engine, once, just before the
+thread exits (see "One of everything").
+
+### Building and testing it
+
+`engine_c` is a static library (plain, asan, tsan; Linux) built always, so a C program can link the C API without the shared library. `host_c`
+(`tests/engine_library/host_c.c`, ctest `engine_c_host*`) is such a program: it creates an engine with settings, a command line and a log callback, reads and
+changes a setting, destroys the engine, and makes every bad call the API documents (null and wrong-size structs, a stale and a never-issued handle, a version
+too new, a second engine, a bad key and a bad value); each must return its documented status. The same C API is what the shared library exports (Day 347
+loads it with `dlopen`).

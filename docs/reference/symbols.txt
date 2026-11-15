@@ -1107,7 +1107,9 @@ LogErrorTraces()	function	foundation/log	logerrortraces	foundation-log.md	engine
 LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:146
 LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:148
 LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:150
-Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:161
+LogObserverFn	alias	foundation/log	logobserverfn	foundation-log.md	engine/foundation/log/log.h:156
+SetLogObserver(LogObserverFn,void*)	function	foundation/log	setlogobserver-logobserverfn-void-star	foundation-log.md	engine/foundation/log/log.h:164
+Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:175
 ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:46
 ENGINE_INT128_NAMESPACE::detail128::NativeI	variable	foundation/types	engine-int128-namespace-detail128-nativei	foundation-types.md	engine/foundation/int128.h:48
 ENGINE_INT128_NAMESPACE::detail128::Parts	struct	foundation/types	engine-int128-namespace-detail128-parts	foundation-types.md	engine/foundation/int128.h:51

@@ -26,8 +26,11 @@ tests/lang/|<cstdint>,<limits>,<type_traits>,<utility>|Oracle test of the lang w
 tests/sync/|<atomic>,<chrono>,<cstdio>,<mutex>,<thread>,<vector>|Oracle test of the sync wrappers against std::atomic, std::mutex, std::thread, std::chrono.
 tests/cstr/|<cmath>,<cstdint>,<cstdio>,<cstdlib>,<cstring>,<cwchar>|Oracle test of the cstr/os wrappers against the C library functions they forward to.
 tests/windows/discovery/|<cstdio>|Built as a project of its own by the Windows toolchain discovery test, without the engine's include paths: it checks that a program using the C++ library builds and links with each compiler.
-tests/engine_library/shared_link_probe.c|<stdio.h>|a C program standing for a foreign host: it uses no engine header on purpose (Phase 23; the C hosts of Days 346 onward are listed here too)
-tests/engine_library/crash_host.c|<stdio.h>,<string.h>|a C program standing for a foreign host (Phase 23 Day 345): it uses no engine type on purpose, only the C library, as a host in another language would
-tests/engine_library/dup_singletons_host.c|<stdio.h>|a C program standing for a foreign host (Phase 23 Day 345): it uses no engine type on purpose, only the C library, as a host in another language would
-tests/engine_library/owner_host.c|<stdio.h>,<stdlib.h>|a C program standing for a foreign host (Phase 23 Day 345): it uses no engine type on purpose, only the C library, as a host in another language would
-tests/engine_library/unload_host.c|<stdio.h>|a C program standing for a foreign host (Phase 23 Day 345): it uses no engine type on purpose, only the C library, as a host in another language would
+tests/engine_library/shared_link_probe.c|<stdio.h>|a C program standing for a foreign host (Phase 23 Day 343; through the function table since Day 346): it uses only the C API's header and the C library
+tests/engine_library/crash_host.c|<stdio.h>,<string.h>|a C program standing for a foreign host (Phase 23 Day 345): it uses only the C API's header (engine_c.h) and the C library, as a host in another language would
+tests/engine_library/dup_singletons_host.c|<stdio.h>|a C program standing for a foreign host (Phase 23 Day 345): it uses only the C API's header (engine_c.h) and the C library, as a host in another language would
+tests/engine_library/owner_host.c|<stdio.h>,<stdlib.h>|a C program standing for a foreign host (Phase 23 Day 345): it uses only the C API's header (engine_c.h) and the C library, as a host in another language would
+tests/engine_library/unload_host.c|<stdio.h>|a C program standing for a foreign host (Phase 23 Day 345): it uses only the C API's header (engine_c.h) and the C library, as a host in another language would
+tests/engine_library/host_api.h||the C hosts' shared helper (Phase 23 Day 346): plain C that finds the C API in a library it dlopened, spelling the C API's own fixed-width types
+tests/engine_library/host_c.c|<stdio.h>,<string.h>|a C program standing for a foreign host (Phase 23 Day 346): it uses only the C API's header (engine_c.h) and the C library, as a host in another language would
+engine/engine_c/engine_c.h|<stddef.h>,<stdint.h>|the C API's public header (Phase 23 Day 346) is plain C that a host in any language binds to: its types are the C library's size_t and fixed-width integers, not the engine's wrappers

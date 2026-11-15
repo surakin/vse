@@ -1,12 +1,12 @@
-/* Phase 23 Day 345: loads the engine library and one plugin and checks that the plugin sees the engine's one allocator, await counters,
-   log and frame pool. The paths are compiled in (ENGINE_LIB_PATH, PLUGIN_PATH). Exit 0: one of each; exit 1: a singleton seen twice. */
+/* Phase 23 Day 345: loads the engine library and one plugin and checks that the plugin sees the engine's one allocator,
+   await counters, log and frame pool. The paths are compiled in (ENGINE_LIB_PATH, PLUGIN_PATH). Exit 0: one of each;
+   exit 1: a singleton seen twice. */
 #include <dlfcn.h>
 #include <stdio.h>
 
-#include "engine_c/engine_state_probe.h"
+#include "host_api.h"
 
-typedef const struct engine_state_probe* (*get_probe_fn)(void);
-typedef void (*report_fn)(const struct engine_state_probe*, struct plugin_report*);
+typedef void (*report_fn)(const struct engine_test_extension*, struct plugin_report*);
 
 static int Same(const char* what, const void* a, const void* b)
 {
@@ -26,16 +26,15 @@ int main(void)
         printf("dlopen engine: %s\n", dlerror());
         return 2;
     }
-    get_probe_fn get_probe = (get_probe_fn)dlsym(engine, "engine_shared_state_probe");
     void* plugin = dlopen(PLUGIN_PATH, RTLD_NOW | RTLD_LOCAL);
-    if (get_probe == NULL || plugin == NULL)
+    if (plugin == NULL)
     {
         printf("dlopen/dlsym: %s\n", dlerror());
         return 2;
     }
     report_fn report = (report_fn)dlsym(plugin, "plugin_report");
-    const struct engine_state_probe* table = get_probe();
-    if (report == NULL || table == NULL || table->size < sizeof(struct engine_state_probe))
+    const struct engine_test_extension* table = host_test_extension(engine);
+    if (report == NULL || table == NULL || table->size < sizeof(struct engine_test_extension))
     {
         printf("no report function or a short table\n");
         return 2;
@@ -54,8 +53,8 @@ int main(void)
     /* One log: the line the plugin wrote shows in the engine's count, and the plugin's count is the engine's. */
     if (r.log_lines_after != r.log_lines_before + 1 || engine_after != engine_before + 1)
     {
-        printf("singleton seen twice: log ring (engine %llu -> %llu, plugin %llu -> %llu)\n", engine_before, engine_after,
-               r.log_lines_before, r.log_lines_after);
+        printf("singleton seen twice: log ring (engine %llu -> %llu, plugin %llu -> %llu)\n", engine_before,
+               engine_after, r.log_lines_before, r.log_lines_after);
         ++problems;
     }
     if (problems == 0)

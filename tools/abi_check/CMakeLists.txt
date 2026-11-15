@@ -48,6 +48,8 @@ abi_case(clean FALSE "" -DEXPORTS=${F}/good_1_1.exports -DVERSION_HEADER=${F}/ve
 # A comment may hold a semicolon and brackets; a nested conditional inside the C++ block and an `#else` branch are read right.
 abi_case(comment_semicolon FALSE "" -DEXPORTS=${F}/comment_semicolon.exports -DVERSION_HEADER=${F}/version_1_1.h)
 abi_case(header_nested FALSE "" -DEXPORTS=${F}/good_1_1.exports -DVERSION_HEADER=${F}/version_1_1.h -DC_HEADER=${F}/header_nested.h)
+# Before the first release (`status unreleased`) a removal and a lower version are allowed.
+abi_case(unreleased FALSE "" -DEXPORTS=${F}/unreleased_1_0.exports -DVERSION_HEADER=${F}/version_1_0.h -DPREVIOUS=${F}/prev_1_1_two.exports)
 # Planted violations, each reported by name.
 abi_case(bad_symbol_name TRUE "not a version line or a symbol name: bad-name" -DEXPORTS=${F}/bad_name.exports -DVERSION_HEADER=${F}/version_1_0.h)
 abi_case(header_else_branch TRUE "header_else_bad.h:6: a C\\+\\+ token" -DEXPORTS=${F}/good_1_1.exports -DVERSION_HEADER=${F}/version_1_1.h -DC_HEADER=${F}/header_else_bad.h)
