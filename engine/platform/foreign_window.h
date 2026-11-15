@@ -4,11 +4,70 @@
 //! it. The host gives its native handles (an X11 `Display*` and `Window`, a Wayland `wl_display*` and `wl_surface*`)
 //! and tells the engine the size and scale whenever they change; the RHI makes its presentation surface from the
 //! handles, on the host's own connection (the engine opens none of its own).
+#include "containers/vector.h"
+#include "platform/clipboard.h"
+#include "platform/cursor.h"
+#include "platform/input_event.h"
 #include "platform/window.h"
 #include "types.h"
 
 namespace engine_placeholder::os
 {
+
+/// What the host does for the engine's requests on a window the host owns: the cursor, the pointer lock, the clipboard,
+/// the text-input rectangle and the focus. Every method has a refusing default, so a host implements what it can.
+///
+/// - Thread-safety: thread-compatible; called on the thread that drives the window (the host's frame thread).
+/// - Ownership: owned by the caller of `ForeignWindow::SetHooks`, which keeps it alive until it sets another or null.
+class ForeignWindowHooks
+{
+public:
+    virtual ~ForeignWindowHooks() = default;
+    /// Whether `SetCursor` does anything.
+    virtual bool SupportsCursor() const { return false; }
+    /// Sets the cursor shape on the host's window (`Hidden` hides it).
+    ///
+    /// - Returns: false when the host refuses.
+    virtual bool SetCursor(CursorShape shape)
+    {
+        (void)shape;
+        return false;
+    }
+    /// Whether `SetPointerLock` does anything.
+    virtual bool SupportsPointerLock() const { return false; }
+    /// Locks or unlocks the pointer on the host's window.
+    virtual bool SetPointerLock(bool locked)
+    {
+        (void)locked;
+        return false;
+    }
+    /// Whether the host has a text clipboard.
+    virtual bool SupportsClipboard() const { return false; }
+    /// Puts UTF-8 text on the host's clipboard.
+    virtual bool SetClipboardText(StringView text)
+    {
+        (void)text;
+        return false;
+    }
+    /// Reads the host's clipboard text into `out` (UTF-8; replaced).
+    ///
+    /// - Returns: false when the clipboard has no text.
+    virtual bool GetClipboardText(Vector<byte>* out)
+    {
+        (void)out;
+        return false;
+    }
+    /// Tells the host where the text caret is, in window pixels, so it can place its input method's popup.
+    virtual void SetTextInputRect(i32 x, i32 y, i32 width, i32 height)
+    {
+        (void)x;
+        (void)y;
+        (void)width;
+        (void)height;
+    }
+    /// Asks the host to give (true) or take (false) keyboard focus for the engine's view.
+    virtual void RequestFocus(bool focused) { (void)focused; }
+};
 
 /// A [[os::Window]] over native handles the host owns.
 ///
@@ -49,6 +108,35 @@ public:
     /// - Fails: never.
     void Close() { valid_ = false; }
 
+    /// Sets who answers the engine's cursor, pointer lock, clipboard, text-input and focus requests (null: none).
+    ///
+    /// - Param hooks: borrowed.
+    void SetHooks(ForeignWindowHooks* hooks) { hooks_ = hooks; }
+
+    /// Queues an input event the host reported, stamped by the caller; a full queue drops it and counts it.
+    ///
+    /// - Returns: false when the event was dropped.
+    bool PushEvent(const InputEvent& event) { return events_.Push(event); }
+
+    /// Tells the host where the text caret is (forwards to the hooks).
+    void SetTextInputRect(i32 x, i32 y, i32 width, i32 height);
+
+    /// Asks the host to give or take keyboard focus (forwards to the hooks).
+    void RequestFocus(bool focused);
+
+    bool PollEvent(InputEvent* out) override { return events_.Pop(out); }
+    u64 DroppedEvents() const override { return events_.Dropped(); }
+    bool SupportsCursorShape() const override { return hooks_ != nullptr && hooks_->SupportsCursor(); }
+    bool SetCursor(CursorShape shape) override { return hooks_ != nullptr && hooks_->SetCursor(shape); }
+    bool SupportsPointerLock() const override { return hooks_ != nullptr && hooks_->SupportsPointerLock(); }
+    bool SetPointerLock(bool locked) override;
+    bool PointerLocked() const override { return locked_; }
+    bool SupportsClipboard(ClipboardKind kind) const override;
+    bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override;
+    u32 RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) override;
+    bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override { return requests_.Take(request_id, out); }
+    bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override;
+
     bool Valid() const override { return valid_; }
     void PumpEvents() override {}
     bool ShouldClose() const override { return !valid_; }
@@ -67,6 +155,10 @@ private:
     f32 scale_;
     u64 serial_;
     bool valid_ = true;
+    bool locked_ = false;
+    ForeignWindowHooks* hooks_ = nullptr;
+    InputEventQueue events_;
+    ClipboardRequests requests_;
 };
 
 }  // namespace engine_placeholder::os

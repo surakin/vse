@@ -727,6 +727,7 @@ extern "C"
             &engine_c::ImportDestroyFn,
             &engine_c::SurfaceCreateFn,
             &engine_c::SurfaceDestroyFn,
+            &engine_c::SurfaceInputFn,
             &engine_c::SurfaceResizedFn,
             &engine_c::SurfaceRebindFn,
             &engine_c::SurfaceSetBackgroundFn,

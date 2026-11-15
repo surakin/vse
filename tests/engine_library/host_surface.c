@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <dlfcn.h>
 #include <unistd.h>
 
 #include <X11/Xlib.h>
@@ -82,6 +83,26 @@ static void WaitForSize(Display* display, Window window, unsigned width, unsigne
         }
         usleep(10000);
     }
+}
+
+/* The engine opens no connection to the display server of its own: every XOpenDisplay made by code linked into this
+   program (the host's, and the engine's, which is linked statically) comes through this definition, which counts it and
+   passes it on. The host calls it once; the engine's surface code adds none. (The Vulkan driver's own library opens a
+   connection of its own inside vkEnumerateInstanceExtensionProperties: its call comes from the driver, not from this
+   program, and is not counted.) */
+static int g_opens_from_program = 0;
+
+Display* XOpenDisplay(const char* name)
+{
+    Display* (*real)(const char*) = (Display * (*)(const char*)) dlsym(RTLD_NEXT, "XOpenDisplay");
+    Dl_info caller;
+    Dl_info self;
+    if (dladdr(__builtin_return_address(0), &caller) != 0 && dladdr((void*)&XOpenDisplay, &self) != 0 &&
+        caller.dli_fname != NULL && self.dli_fname != NULL && strcmp(caller.dli_fname, self.dli_fname) == 0)
+    {
+        ++g_opens_from_program;
+    }
+    return real(name);
 }
 
 static engine_surface_info InfoOf(Display* display, Window window, unsigned width, unsigned height)
@@ -189,6 +210,17 @@ static void TestArguments(engine_handle engine, Display* display, Window window)
     bad = info;
     bad.width = 1u << 20;
     CHECK_STATUS(g_api->surface_create(engine, &bad, &surface), ENGINE_ERROR_INVALID_ARGUMENT);
+    bad = info;
+    bad.present_mode = 9;
+    CHECK_STATUS(g_api->surface_create(engine, &bad, &surface), ENGINE_ERROR_INVALID_ARGUMENT);
+    {
+        engine_surface_callbacks small;
+        memset(&small, 0, sizeof(small));
+        small.struct_size = 4;
+        bad = info;
+        bad.callbacks = &small;
+        CHECK_STATUS(g_api->surface_create(engine, &bad, &surface), ENGINE_ERROR_STRUCT_SIZE);
+    }
     CHECK(surface.value == 0);
     state.struct_size = sizeof(state);
     CHECK_STATUS(g_api->surface_state(zero, &state), ENGINE_ERROR_INVALID_ARGUMENT);
@@ -196,9 +228,90 @@ static void TestArguments(engine_handle engine, Display* display, Window window)
     CHECK_STATUS(g_api->surface_resized(zero, 1, 1, 1.0f), ENGINE_ERROR_INVALID_ARGUMENT);
 }
 
+static engine_input_event InputOf(uint32_t type)
+{
+    engine_input_event e;
+    memset(&e, 0, sizeof(e));
+    e.struct_size = sizeof(e);
+    e.type = type;
+    return e;
+}
+
+/* The arguments of surface_input, and the queue that fills when nobody drains it. */
+static void TestInput(engine_handle surface)
+{
+    engine_input_event e;
+    engine_surface_state state;
+    int i;
+    engine_handle zero;
+    memset(&zero, 0, sizeof(zero));
+    CHECK_STATUS(g_api->surface_input(surface, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+    e = InputOf(ENGINE_INPUT_KEY);
+    e.struct_size = 8;
+    e.key = ENGINE_KEY_A;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_STRUCT_SIZE);
+    e = InputOf(99);
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT);
+    e = InputOf(ENGINE_INPUT_KEY);
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT); /* key 0 */
+    e.key = ENGINE_KEY_COUNT;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT);
+    e.key = ENGINE_KEY_A;
+    e.modifiers = 0x100;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT);
+    e.modifiers = ENGINE_MOD_SHIFT;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_OK);
+    e = InputOf(ENGINE_INPUT_POINTER_MOVE);
+    e.x = 1.0 / 0.0 * 0.0; /* NaN */
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT);
+    e = InputOf(ENGINE_INPUT_POINTER_BUTTON);
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT); /* no button */
+    e.button = ENGINE_BUTTON_LEFT | ENGINE_BUTTON_RIGHT;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT); /* two buttons */
+    e.button = ENGINE_BUTTON_LEFT;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_OK);
+    e = InputOf(ENGINE_INPUT_TEXT);
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT); /* no text */
+    e.text.data = "\xC3\x28";
+    e.text.length = 2;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT); /* a bad continuation byte */
+    e.text.data = "\xED\xA0\x80";
+    e.text.length = 3;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT); /* a surrogate */
+    e.text.data = "\xC0\x80";
+    e.text.length = 2;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_ERROR_INVALID_ARGUMENT); /* overlong */
+    e.text.data = "ok\xC3\xA9\xE2\x82\xAC\xF0\x9F\x98\x80";
+    e.text.length = 2 + 2 + 3 + 4;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_OK);
+    e.text.data = "\xC3";
+    e.text.length = 1;
+    CHECK_STATUS(g_api->surface_input(surface, &e),
+                 ENGINE_ERROR_INVALID_ARGUMENT); /* cut in the middle of a character */
+    CHECK_STATUS(g_api->surface_input(zero, &e), ENGINE_ERROR_INVALID_ARGUMENT);
+    e = InputOf(ENGINE_INPUT_FOCUS);
+    e.down = 1;
+    CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_OK);
+    /* Nothing drains the queue here (no UI): it holds 1024 events and counts what it drops. */
+    memset(&state, 0, sizeof(state));
+    state.struct_size = sizeof(state);
+    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK(state.input_dropped == 0);
+    e = InputOf(ENGINE_INPUT_POINTER_MOVE);
+    for (i = 0; i < 1100; ++i)
+    {
+        e.x = i;
+        e.y = i;
+        CHECK_STATUS(g_api->surface_input(surface, &e), ENGINE_OK);
+    }
+    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK(state.input_dropped > 0 && state.input_dropped < 1100);
+}
+
 static void TestRendering(engine_handle engine, Display* display, Window window)
 {
     engine_surface_info info = InfoOf(display, window, 200, 120);
+    info.present_mode = ENGINE_PRESENT_MAILBOX;
     engine_surface_state state;
     engine_handle surface;
     engine_handle world;
@@ -210,10 +323,13 @@ static void TestRendering(engine_handle engine, Display* display, Window window)
     memset(&world, 0, sizeof(world));
     CHECK_STATUS(g_api->surface_create(engine, &info, &surface), ENGINE_OK);
     CHECK(surface.value != 0);
+    CHECK(g_opens_from_program == 1); /* the host's own XOpenDisplay, none of the engine's */
     /* An engine with an outstanding surface refuses to be destroyed (checked at the end of main). */
     CHECK_STATUS(g_api->surface_set_background(surface, red), ENGINE_OK);
     CHECK_STATUS(g_api->surface_set_background(surface, bad), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->surface_set_background(surface, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+
+    TestInput(surface);
 
     /* A world next to the surface: the frame still steps it. */
     CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
@@ -241,6 +357,13 @@ static void TestRendering(engine_handle engine, Display* display, Window window)
         CHECK_STATUS(g_api->pixels_destroy(ticket), ENGINE_OK);
         CHECK_STATUS(g_api->pixels_destroy(ticket), ENGINE_ERROR_STALE_HANDLE);
     }
+
+    memset(&state, 0, sizeof(state));
+    state.struct_size = sizeof(state);
+    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK(state.present_mode == ENGINE_PRESENT_MAILBOX ||
+          state.present_mode ==
+              ENGINE_PRESENT_FIFO); /* asked for mailbox: granted, or FIFO when the surface has none */
 
     /* A ticket destroyed before its frame is simply gone: the frame does not serve it, and its slot is reused by the
      * next ticket. */

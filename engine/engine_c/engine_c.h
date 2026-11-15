@@ -182,6 +182,173 @@ typedef struct engine_info
 #define ENGINE_SURFACE_X11 1u     /* `display` is the Display*, `window_id` the X11 Window */
 #define ENGINE_SURFACE_WAYLAND 2u /* `display` is the wl_display*, `surface` the wl_surface* (the host's own connection and surface) */
 
+/* Input forwarded by the host (Day 353). The values of engine_key are those of the engine's own key enumeration (layout-aware keys: the symbol the layout
+ * produces), 0 is "unknown". */
+typedef enum engine_key
+{
+    ENGINE_KEY_UNKNOWN = 0,
+    ENGINE_KEY_A = 1,
+    ENGINE_KEY_B = 2,
+    ENGINE_KEY_C = 3,
+    ENGINE_KEY_D = 4,
+    ENGINE_KEY_E = 5,
+    ENGINE_KEY_F = 6,
+    ENGINE_KEY_G = 7,
+    ENGINE_KEY_H = 8,
+    ENGINE_KEY_I = 9,
+    ENGINE_KEY_J = 10,
+    ENGINE_KEY_K = 11,
+    ENGINE_KEY_L = 12,
+    ENGINE_KEY_M = 13,
+    ENGINE_KEY_N = 14,
+    ENGINE_KEY_O = 15,
+    ENGINE_KEY_P = 16,
+    ENGINE_KEY_Q = 17,
+    ENGINE_KEY_R = 18,
+    ENGINE_KEY_S = 19,
+    ENGINE_KEY_T = 20,
+    ENGINE_KEY_U = 21,
+    ENGINE_KEY_V = 22,
+    ENGINE_KEY_W = 23,
+    ENGINE_KEY_X = 24,
+    ENGINE_KEY_Y = 25,
+    ENGINE_KEY_Z = 26,
+    ENGINE_KEY_NUM0 = 27,
+    ENGINE_KEY_NUM1 = 28,
+    ENGINE_KEY_NUM2 = 29,
+    ENGINE_KEY_NUM3 = 30,
+    ENGINE_KEY_NUM4 = 31,
+    ENGINE_KEY_NUM5 = 32,
+    ENGINE_KEY_NUM6 = 33,
+    ENGINE_KEY_NUM7 = 34,
+    ENGINE_KEY_NUM8 = 35,
+    ENGINE_KEY_NUM9 = 36,
+    ENGINE_KEY_F1 = 37,
+    ENGINE_KEY_F2 = 38,
+    ENGINE_KEY_F3 = 39,
+    ENGINE_KEY_F4 = 40,
+    ENGINE_KEY_F5 = 41,
+    ENGINE_KEY_F6 = 42,
+    ENGINE_KEY_F7 = 43,
+    ENGINE_KEY_F8 = 44,
+    ENGINE_KEY_F9 = 45,
+    ENGINE_KEY_F10 = 46,
+    ENGINE_KEY_F11 = 47,
+    ENGINE_KEY_F12 = 48,
+    ENGINE_KEY_ESCAPE = 49,
+    ENGINE_KEY_ENTER = 50,
+    ENGINE_KEY_TAB = 51,
+    ENGINE_KEY_BACKSPACE = 52,
+    ENGINE_KEY_SPACE = 53,
+    ENGINE_KEY_INSERT = 54,
+    ENGINE_KEY_DELETE = 55,
+    ENGINE_KEY_HOME = 56,
+    ENGINE_KEY_END = 57,
+    ENGINE_KEY_PAGE_UP = 58,
+    ENGINE_KEY_PAGE_DOWN = 59,
+    ENGINE_KEY_LEFT = 60,
+    ENGINE_KEY_RIGHT = 61,
+    ENGINE_KEY_UP = 62,
+    ENGINE_KEY_DOWN = 63,
+    ENGINE_KEY_LEFT_SHIFT = 64,
+    ENGINE_KEY_RIGHT_SHIFT = 65,
+    ENGINE_KEY_LEFT_CTRL = 66,
+    ENGINE_KEY_RIGHT_CTRL = 67,
+    ENGINE_KEY_LEFT_ALT = 68,
+    ENGINE_KEY_RIGHT_ALT = 69,
+    ENGINE_KEY_LEFT_SUPER = 70,
+    ENGINE_KEY_RIGHT_SUPER = 71,
+    ENGINE_KEY_CAPS_LOCK = 72,
+    ENGINE_KEY_MINUS = 73,
+    ENGINE_KEY_EQUALS = 74,
+    ENGINE_KEY_LEFT_BRACKET = 75,
+    ENGINE_KEY_RIGHT_BRACKET = 76,
+    ENGINE_KEY_BACKSLASH = 77,
+    ENGINE_KEY_SEMICOLON = 78,
+    ENGINE_KEY_APOSTROPHE = 79,
+    ENGINE_KEY_GRAVE = 80,
+    ENGINE_KEY_COMMA = 81,
+    ENGINE_KEY_PERIOD = 82,
+    ENGINE_KEY_SLASH = 83,
+    ENGINE_KEY_COUNT
+} engine_key;
+
+/* Modifier bits of engine_input_event.modifiers. */
+#define ENGINE_MOD_SHIFT 0x1u
+#define ENGINE_MOD_CTRL 0x2u
+#define ENGINE_MOD_ALT 0x4u
+#define ENGINE_MOD_SUPER 0x8u
+#define ENGINE_MOD_CAPS_LOCK 0x10u
+#define ENGINE_MOD_NUM_LOCK 0x20u
+
+/* Mouse buttons (engine_input_event.button). */
+#define ENGINE_BUTTON_LEFT 0x1u
+#define ENGINE_BUTTON_RIGHT 0x2u
+#define ENGINE_BUTTON_MIDDLE 0x4u
+#define ENGINE_BUTTON_BACK 0x8u
+#define ENGINE_BUTTON_FORWARD 0x10u
+
+typedef enum engine_input_type
+{
+    ENGINE_INPUT_KEY = 1,            /* `key`, `down`, `repeat`, `modifiers` */
+    ENGINE_INPUT_POINTER_MOVE = 2,   /* `x`, `y` in the window's pixels */
+    ENGINE_INPUT_POINTER_BUTTON = 3, /* `button` (one ENGINE_BUTTON_* bit), `down`, `x`, `y` */
+    ENGINE_INPUT_POINTER_ENTER = 4,  /* `x`, `y` */
+    ENGINE_INPUT_POINTER_LEAVE = 5,
+    ENGINE_INPUT_SCROLL = 6,         /* `x`, `y` are the notches turned (positive is right and down) */
+    ENGINE_INPUT_TEXT = 7,           /* `text`: UTF-8 the keyboard produced (one or more scalars, at most 256 bytes) */
+    ENGINE_INPUT_FOCUS = 8,          /* `down` 1: the host's view got keyboard focus, 0: lost it */
+    ENGINE_INPUT_TOUCH = 9           /* `touch_id`, `down`, `x`, `y`: the first finger down acts as the pointer with the left button; the others are ignored */
+} engine_input_type;
+
+/* One input event. `time_ns` is a monotonic time in nanoseconds (0: the engine stamps it when the call arrives). */
+typedef struct engine_input_event
+{
+    uint32_t struct_size;
+    uint32_t type; /* engine_input_type */
+    uint64_t time_ns;
+    uint32_t modifiers;
+    uint32_t key; /* engine_key */
+    uint32_t button;
+    uint32_t down;
+    uint32_t repeat;
+    uint32_t touch_id;
+    double x;
+    double y;
+    engine_string text;
+} engine_input_event;
+
+/* Cursor shapes the engine asks the host for (callbacks.set_cursor). */
+typedef enum engine_cursor
+{
+    ENGINE_CURSOR_ARROW = 0,
+    ENGINE_CURSOR_I_BEAM = 1,
+    ENGINE_CURSOR_HAND = 2,
+    ENGINE_CURSOR_RESIZE_HORIZONTAL = 3,
+    ENGINE_CURSOR_RESIZE_VERTICAL = 4,
+    ENGINE_CURSOR_RESIZE_DIAGONAL_NWSE = 5,
+    ENGINE_CURSOR_RESIZE_DIAGONAL_NESW = 6,
+    ENGINE_CURSOR_RESIZE_ALL = 7,
+    ENGINE_CURSOR_NOT_ALLOWED = 8,
+    ENGINE_CURSOR_HIDDEN = 9,
+    ENGINE_CURSOR_COUNT
+} engine_cursor;
+
+/* What the host does for the engine's requests on a surface. Every callback may be NULL (the request is refused). They run on the thread that drives the engine's UI
+ * for the surface (the host's frame thread), never from an engine worker, and must not call back into the engine. */
+typedef struct engine_surface_callbacks
+{
+    uint32_t struct_size;
+    uint32_t reserved;
+    void* user;
+    int (*set_cursor)(void* user, uint32_t shape);                        /* engine_cursor; nonzero when applied */
+    int (*set_pointer_lock)(void* user, int locked);                      /* nonzero when done */
+    int (*clipboard_set)(void* user, engine_string text);                 /* UTF-8; nonzero when stored */
+    int (*clipboard_get)(void* user, engine_string* text);                /* fills `*text` (valid until the next callback) and returns nonzero, or returns 0 for no text */
+    void (*text_input_rect)(void* user, int32_t x, int32_t y, int32_t width, int32_t height); /* the caret, in window pixels */
+    void (*request_focus)(void* user, int focused);
+} engine_surface_callbacks;
+
 /* A window the host owns. The engine never creates, moves, resizes or destroys it: the host keeps it alive until surface_destroy returns, and
  * tells the engine its size and scale with surface_resized. */
 typedef struct engine_surface_info
@@ -192,11 +359,16 @@ typedef struct engine_surface_info
     uint32_t width;  /* in pixels */
     uint32_t height;
     float scale;     /* the DPI scale of the window; 0 means 1 */
-    uint32_t reserved;
+    uint32_t present_mode; /* ENGINE_PRESENT_*: what the host wants; the surface falls back to FIFO when it cannot (engine_surface_state.present_mode says what it got) */
     void* display;
     void* surface;
     uint64_t window_id;
+    const engine_surface_callbacks* callbacks; /* or NULL: copied by surface_create and surface_rebind */
 } engine_surface_info;
+
+#define ENGINE_PRESENT_FIFO 0u    /* wait for the display's refresh; always available */
+#define ENGINE_PRESENT_MAILBOX 1u /* replace the queued image with the newest, no tearing */
+#define ENGINE_PRESENT_IMMEDIATE 2u /* present at once, possibly tearing */
 
 /* What engine_api.surface_state reports. */
 typedef struct engine_surface_state
@@ -206,10 +378,11 @@ typedef struct engine_surface_state
     uint32_t image_height;
     uint32_t visible;      /* 1 when the last frame was presented */
     uint32_t lost;         /* 1 when the window is gone from under the engine: call surface_rebind */
-    uint32_t reserved;
+    uint32_t present_mode; /* ENGINE_PRESENT_* in use */
     uint64_t frames_presented;
     uint64_t recoveries;   /* how many times surface_rebind rebuilt the swapchain */
     uint64_t frames_skipped; /* frames that drew nothing (zero size, lost) */
+    uint64_t input_dropped;  /* input events dropped because the queue (1024) was full: the engine's UI did not drain it */
 } engine_surface_state;
 
 /* The pixels of a rendered frame: RGBA8, `stride` bytes per row (width * 4), top row first. `data` is the host's to release. */
@@ -683,6 +856,12 @@ typedef struct engine_api
         /* Destroys a surface and its device (read-back tickets of the surface fail with CANCELLED). Call it before the window goes. Fails with: STALE_HANDLE,
          * INVALID_ARGUMENT, TYPE_MISMATCH. */
         engine_status (*surface_destroy)(engine_handle surface);
+
+        /* Forwards one input event of the host's window to the engine's input stream for the surface (the UI toolkit, the camera controllers and the demos read it as from
+         * a window of their own). Call it from the host's frame thread, in the order the host got the events. A full queue (1024) drops the event and counts it in
+         * surface_state. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, unknown type or key or button, text that is not UTF-8 or longer than 256 bytes), STRUCT_SIZE,
+         * TYPE_MISMATCH. */
+        engine_status (*surface_input)(engine_handle surface, const engine_input_event* event);
 
         /* Tells the engine the window's size in pixels and its scale (0 means 1). A size of 0 in either dimension pauses rendering (the window is hidden or
          * minimized); the next frame after a real size resumes. Call from the host's frame thread, before `frame`. Fails with: STALE_HANDLE, INVALID_ARGUMENT,

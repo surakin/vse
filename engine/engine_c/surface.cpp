@@ -6,6 +6,7 @@
 #include "engine_c/runtime.h"
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
+#include "os/os.h"
 #include "platform/foreign_window.h"
 #include "rhi/backends/backends.h"
 #include "rhi/command_list.h"
@@ -52,13 +53,76 @@ struct PixelsObject
     u64 surface_generation = 0;  // the surface it waits on
 };
 
+// Answers the engine's requests on a surface with the host's callbacks.
+class CallbackHooks final : public os::ForeignWindowHooks
+{
+public:
+    void Set(const engine_surface_callbacks& callbacks) { callbacks_ = callbacks; }
+    bool SupportsCursor() const override { return callbacks_.set_cursor != nullptr; }
+    bool SetCursor(os::CursorShape shape) override
+    {
+        return callbacks_.set_cursor != nullptr && callbacks_.set_cursor(callbacks_.user, static_cast<u32>(shape)) != 0;
+    }
+    bool SupportsPointerLock() const override { return callbacks_.set_pointer_lock != nullptr; }
+    bool SetPointerLock(bool locked) override
+    {
+        return callbacks_.set_pointer_lock != nullptr &&
+               callbacks_.set_pointer_lock(callbacks_.user, locked ? 1 : 0) != 0;
+    }
+    bool SupportsClipboard() const override
+    {
+        return callbacks_.clipboard_get != nullptr || callbacks_.clipboard_set != nullptr;
+    }
+    bool SetClipboardText(StringView text) override
+    {
+        engine_string s;
+        s.data = text.Data();
+        s.length = text.Length();
+        return callbacks_.clipboard_set != nullptr && callbacks_.clipboard_set(callbacks_.user, s) != 0;
+    }
+    bool GetClipboardText(Vector<byte>* out) override
+    {
+        out->Clear();
+        engine_string s = {};
+        if (callbacks_.clipboard_get == nullptr || callbacks_.clipboard_get(callbacks_.user, &s) == 0 ||
+            s.data == nullptr)
+        {
+            return false;
+        }
+        // One byte past the limit is enough for the caller to see "too large" without copying all of a huge text.
+        const usize copied = s.length > os::kMaxClipboardBytes ? os::kMaxClipboardBytes + 1 : s.length;
+        out->Resize(copied);
+        MemCopy(out->Data(), s.data, copied);
+        return true;
+    }
+    void SetTextInputRect(i32 x, i32 y, i32 width, i32 height) override
+    {
+        if (callbacks_.text_input_rect != nullptr)
+        {
+            callbacks_.text_input_rect(callbacks_.user, x, y, width, height);
+        }
+    }
+    void RequestFocus(bool focused) override
+    {
+        if (callbacks_.request_focus != nullptr)
+        {
+            callbacks_.request_focus(callbacks_.user, focused ? 1 : 0);
+        }
+    }
+
+private:
+    engine_surface_callbacks callbacks_ = {};
+};
+
 struct SurfaceObject
 {
     SurfaceObject(const os::NativeWindowInfo& info, u32 width, u32 height, f32 scale)
         : window(info, width, height, scale)
     {
+        window.SetHooks(&hooks);
     }
 
+    CallbackHooks hooks;  // before the window: the window points at it
     os::ForeignWindow window;
     rhi::DevicePtr device;
     rhi::Swapchain* swapchain = nullptr;
@@ -68,6 +132,8 @@ struct SurfaceObject
     u64 skipped = 0;
     bool visible = false;
     bool lost = false;
+    u32 present_mode = 0;
+    u32 active_touch = 0;   // the touch that acts as the pointer, plus one; 0 for none
     Vector<usize> waiting;  // slots of the read-back tickets waiting for a frame
 };
 
@@ -124,7 +190,24 @@ engine_status CheckInfo(const engine_surface_info* given, engine_surface_info* o
     {
         out->scale = 1.0f;
     }
+    if (out->present_mode > ENGINE_PRESENT_IMMEDIATE)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_surface_info.present_mode is not an ENGINE_PRESENT_* value");
+    }
+    if (out->callbacks != nullptr && StructSizeOf(out->callbacks) < sizeof(engine_surface_callbacks))
+    {
+        return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_surface_callbacks.struct_size is smaller than the struct");
+    }
     return ENGINE_OK;
+}
+
+rhi::SwapchainDesc SwapchainDescOf(const SurfaceObject* s)
+{
+    rhi::SwapchainDesc desc;
+    desc.present_mode = s->present_mode == ENGINE_PRESENT_MAILBOX     ? rhi::PresentMode::Mailbox
+                        : s->present_mode == ENGINE_PRESENT_IMMEDIATE ? rhi::PresentMode::Immediate
+                                                                      : rhi::PresentMode::Fifo;
+    return desc;
 }
 
 // Makes the device and the swapchain of a surface from its window.
@@ -141,7 +224,7 @@ engine_status Build(SurfaceObject* s)
     {
         return Fail(ENGINE_ERROR_UNSUPPORTED, "no Vulkan device can present to this window");
     }
-    s->swapchain = s->device->CreateSwapchain(rhi::SwapchainDesc());
+    s->swapchain = s->device->CreateSwapchain(SwapchainDescOf(s));
     if (s->swapchain == nullptr)
     {
         s->device.Reset();
@@ -205,6 +288,11 @@ engine_status SurfaceHost::Create(const engine_surface_info* given, engine_handl
     }
     UniquePtr<SurfaceObject> object = MakeUnique<SurfaceObject>(NativeOf(info), info.width, info.height,
                                                                 static_cast<f32>(info.scale));
+    object->present_mode = info.present_mode;
+    if (info.callbacks != nullptr)
+    {
+        object->hooks.Set(*info.callbacks);
+    }
     {
         LockGuard<Mutex> lock(mutex_);
         const engine_status built = Build(object.Get());
@@ -263,6 +351,243 @@ engine_status SurfaceHost::Destroy(engine_handle surface)
     return ENGINE_OK;
 }
 
+namespace
+{
+
+static_assert(static_cast<u32>(os::Key::Count) == ENGINE_KEY_COUNT, "engine_key mirrors os::Key");
+static_assert(static_cast<u32>(os::CursorShape::Count) == ENGINE_CURSOR_COUNT, "engine_cursor mirrors os::CursorShape");
+static_assert(os::kMouseLeft == ENGINE_BUTTON_LEFT && os::kMouseRight == ENGINE_BUTTON_RIGHT &&
+                  os::kMouseMiddle == ENGINE_BUTTON_MIDDLE && os::kMouseBack == ENGINE_BUTTON_BACK &&
+                  os::kMouseForward == ENGINE_BUTTON_FORWARD,
+              "the button bits are the engine's");
+static_assert(os::kModShift == ENGINE_MOD_SHIFT && os::kModCtrl == ENGINE_MOD_CTRL && os::kModAlt == ENGINE_MOD_ALT &&
+                  os::kModSuper == ENGINE_MOD_SUPER && os::kModCapsLock == ENGINE_MOD_CAPS_LOCK &&
+                  os::kModNumLock == ENGINE_MOD_NUM_LOCK,
+              "the modifier bits are the engine's");
+
+constexpr usize kMaxTextBytes = 256;
+constexpr u32 kAllModifiers = 0x3Fu;
+
+// The length of the UTF-8 scalar that starts at `p` (at most `left` bytes remain), or 0 when it is not well formed
+// (a bad lead or continuation byte, an overlong form, a surrogate, above U+10FFFF).
+usize ScalarLength(const byte* p, usize left)
+{
+    const u32 lead = static_cast<u32>(p[0]);
+    usize length = 0;
+    u32 code = 0;
+    if (lead < 0x80)
+    {
+        return 1;
+    }
+    else if (lead >= 0xC2 && lead <= 0xDF)
+    {
+        length = 2;
+        code = lead & 0x1Fu;
+    }
+    else if (lead >= 0xE0 && lead <= 0xEF)
+    {
+        length = 3;
+        code = lead & 0x0Fu;
+    }
+    else if (lead >= 0xF0 && lead <= 0xF4)
+    {
+        length = 4;
+        code = lead & 0x07u;
+    }
+    else
+    {
+        return 0;
+    }
+    if (left < length)
+    {
+        return 0;
+    }
+    for (usize i = 1; i < length; ++i)
+    {
+        const u32 next = static_cast<u32>(p[i]);
+        if ((next & 0xC0u) != 0x80u)
+        {
+            return 0;
+        }
+        code = (code << 6) | (next & 0x3Fu);
+    }
+    const u32 minimum = length == 2 ? 0x80u : length == 3 ? 0x800u : 0x10000u;
+    if (code < minimum || code > 0x10FFFFu || (code >= 0xD800u && code <= 0xDFFFu))
+    {
+        return 0;
+    }
+    return length;
+}
+
+bool Finite(f64 v)
+{
+    return v == v && v - v == 0.0;
+}
+
+}  // namespace
+
+engine_status SurfaceHost::Input(engine_handle surface, const engine_input_event* event)
+{
+    if (event == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`event` is NULL");
+    }
+    if (StructSizeOf(event) < sizeof(engine_input_event))
+    {
+        return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_input_event.struct_size is smaller than the struct");
+    }
+    const engine_input_event e = *event;
+    if ((e.modifiers & ~kAllModifiers) != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_input_event.modifiers has an unknown bit");
+    }
+    if (!Finite(e.x) || !Finite(e.y))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_input_event.x or y is not a finite number");
+    }
+    os::InputEvent in;
+    in.modifiers = e.modifiers;
+    in.time_ns = e.time_ns != 0 ? e.time_ns : os::MonotonicTimeNanos();
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+    SurfaceObject* s = slot->object.Get();
+    switch (e.type)
+    {
+    case ENGINE_INPUT_KEY:
+        if (e.key == 0 || e.key >= ENGINE_KEY_COUNT)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_input_event.key is not an engine_key");
+        }
+        in.type = e.down != 0 ? os::InputEventType::KeyDown : os::InputEventType::KeyUp;
+        in.key = static_cast<os::Key>(e.key);
+        in.repeat = e.down != 0 && e.repeat != 0;
+        s->window.PushEvent(in);
+        return ENGINE_OK;
+    case ENGINE_INPUT_POINTER_MOVE:
+    case ENGINE_INPUT_POINTER_ENTER:
+        in.type = e.type == ENGINE_INPUT_POINTER_MOVE ? os::InputEventType::PointerMove
+                                                      : os::InputEventType::PointerEnter;
+        in.x = e.x;
+        in.y = e.y;
+        s->window.PushEvent(in);
+        return ENGINE_OK;
+    case ENGINE_INPUT_POINTER_LEAVE:
+        in.type = os::InputEventType::PointerLeave;
+        s->window.PushEvent(in);
+        return ENGINE_OK;
+    case ENGINE_INPUT_POINTER_BUTTON:
+        if (e.button == 0 || (e.button & (e.button - 1)) != 0 || e.button > ENGINE_BUTTON_FORWARD)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_input_event.button is not one ENGINE_BUTTON_* bit");
+        }
+        in.type = os::InputEventType::PointerButton;
+        in.button = e.button;
+        in.down = e.down != 0;
+        in.x = e.x;
+        in.y = e.y;
+        s->window.PushEvent(in);
+        return ENGINE_OK;
+    case ENGINE_INPUT_SCROLL:
+        in.type = os::InputEventType::Wheel;
+        in.x = e.x;
+        in.y = e.y;
+        s->window.PushEvent(in);
+        return ENGINE_OK;
+    case ENGINE_INPUT_FOCUS:
+        in.type = e.down != 0 ? os::InputEventType::FocusGained : os::InputEventType::FocusLost;
+        s->window.PushEvent(in);
+        return ENGINE_OK;
+    case ENGINE_INPUT_TEXT:
+    {
+        if (e.text.data == nullptr || e.text.length == 0 || e.text.length > kMaxTextBytes)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_input_event.text is empty or longer than 256 bytes");
+        }
+        const byte* bytes = reinterpret_cast<const byte*>(e.text.data);
+        for (usize at = 0; at < e.text.length;)
+        {  // checked whole before anything is queued
+            const usize length = ScalarLength(bytes + at, e.text.length - at);
+            if (length == 0)
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_input_event.text is not valid UTF-8");
+            }
+            at += length;
+        }
+        for (usize at = 0; at < e.text.length;)
+        {
+            const usize length = ScalarLength(bytes + at, e.text.length - at);
+            in.type = os::InputEventType::Text;
+            in.text_length = static_cast<u8>(length);
+            MemSet(in.text, 0, sizeof(in.text));
+            MemCopy(in.text, bytes + at, length);
+            s->window.PushEvent(in);
+            at += length;
+        }
+        return ENGINE_OK;
+    }
+    case ENGINE_INPUT_TOUCH:
+    {
+        const u32 id = e.touch_id + 1;  // wraps to 0 only for 0xFFFFFFFF, which is never the active touch below
+        if (e.down != 0 && s->active_touch == 0 && id != 0)
+        {
+            s->active_touch = id;
+            in.type = os::InputEventType::PointerEnter;
+            in.x = e.x;
+            in.y = e.y;
+            s->window.PushEvent(in);
+            in.type = os::InputEventType::PointerButton;
+            in.button = os::kMouseLeft;
+            in.down = true;
+        }
+        else if (id == s->active_touch && id != 0)
+        {
+            in.x = e.x;
+            in.y = e.y;
+            if (e.down != 0)
+            {
+                in.type = os::InputEventType::PointerMove;
+            }
+            else
+            {  // the finger lifted (a lifted touch is `down` 0 at its last position)
+                in.type = os::InputEventType::PointerButton;
+                in.button = os::kMouseLeft;
+                in.down = false;
+                s->active_touch = 0;
+            }
+        }
+        else
+        {
+            return ENGINE_OK;  // another finger: only the first acts as the pointer
+        }
+        in.x = e.x;
+        in.y = e.y;
+        s->window.PushEvent(in);
+        return ENGINE_OK;
+    }
+    default: break;
+    }
+    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_input_event.type is not an engine_input_type");
+}
+
+os::ForeignWindow* SurfaceWindowOf(engine_handle surface)
+{
+    Runtime* runtime = CurrentRuntime();
+    SurfaceHost* host = runtime == nullptr ? nullptr : runtime->SurfacesIfCreated();
+    return host == nullptr ? nullptr : host->WindowOf(surface);
+}
+
+os::ForeignWindow* SurfaceHost::WindowOf(engine_handle surface)
+{
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    if (ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot) != ENGINE_OK)
+    {
+        return nullptr;
+    }
+    return &slot->object->window;
+}
+
 engine_status SurfaceHost::Resized(engine_handle surface, u32 width, u32 height, float scale)
 {
     if (width > kMaxDimension || height > kMaxDimension || !(scale >= 0.0f) || !(scale <= 64.0f))
@@ -289,15 +614,21 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a surface keeps the kind of window it was made for");
     }
+    s->present_mode = info.present_mode;
+    if (info.callbacks != nullptr)
+    {
+        s->hooks.Set(*info.callbacks);
+    }
     s->device->DestroySwapchain(s->swapchain);
     s->swapchain = nullptr;
+    s->active_touch = 0;
     s->window.Rebind(NativeOf(info), info.width, info.height, static_cast<f32>(info.scale));
     if (!s->device->RecreateSurface(&s->window))
     {
         s->lost = true;
         return Fail(ENGINE_ERROR_UNSUPPORTED, "the device cannot present to the new window");
     }
-    s->swapchain = s->device->CreateSwapchain(rhi::SwapchainDesc());
+    s->swapchain = s->device->CreateSwapchain(SwapchainDescOf(s));
     if (s->swapchain == nullptr)
     {
         s->lost = true;
@@ -354,6 +685,15 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ou
     out->frames_presented = s->presented;
     out->recoveries = s->recoveries;
     out->frames_skipped = s->skipped;
+    out->input_dropped = s->window.DroppedEvents();
+    out->present_mode = s->present_mode;
+    if (s->swapchain != nullptr)
+    {
+        const rhi::PresentMode actual = s->swapchain->ActualPresentMode();
+        out->present_mode = actual == rhi::PresentMode::Mailbox     ? ENGINE_PRESENT_MAILBOX
+                            : actual == rhi::PresentMode::Immediate ? ENGINE_PRESENT_IMMEDIATE
+                                                                    : ENGINE_PRESENT_FIFO;
+    }
     return ENGINE_OK;
 }
 
@@ -645,6 +985,13 @@ engine_status SurfaceDestroyFn(engine_handle surface)
     SurfaceHost* host = nullptr;
     TRY_SURFACE(HostOfObject(surface, &host));
     return host->Destroy(surface);
+}
+
+engine_status SurfaceInputFn(engine_handle surface, const engine_input_event* event)
+{
+    SurfaceHost* host = nullptr;
+    TRY_SURFACE(HostOfObject(surface, &host));
+    return host->Input(surface, event);
 }
 
 engine_status SurfaceResizedFn(engine_handle surface, u32 width, u32 height, float scale)

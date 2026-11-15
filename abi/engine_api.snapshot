@@ -145,34 +145,76 @@ value ENGINE_CAP_SURFACE_WAYLAND 4
 value ENGINE_CAP_READBACK 8
 value ENGINE_SURFACE_X11 1
 value ENGINE_SURFACE_WAYLAND 2
-struct engine_surface_info size=56
+value ENGINE_KEY_UNKNOWN 0
+value ENGINE_KEY_A 1
+value ENGINE_KEY_Z 26
+value ENGINE_KEY_ENTER 50
+value ENGINE_KEY_SLASH 83
+value ENGINE_KEY_COUNT 84
+value ENGINE_MOD_SHIFT 1
+value ENGINE_MOD_NUM_LOCK 32
+value ENGINE_BUTTON_LEFT 1
+value ENGINE_BUTTON_FORWARD 16
+value ENGINE_INPUT_KEY 1
+value ENGINE_INPUT_TOUCH 9
+value ENGINE_CURSOR_ARROW 0
+value ENGINE_CURSOR_HIDDEN 9
+value ENGINE_CURSOR_COUNT 10
+value ENGINE_PRESENT_FIFO 0
+value ENGINE_PRESENT_IMMEDIATE 2
+struct engine_input_event size=72
+field engine_input_event.struct_size offset=0 size=4
+field engine_input_event.type offset=4 size=4
+field engine_input_event.time_ns offset=8 size=8
+field engine_input_event.modifiers offset=16 size=4
+field engine_input_event.key offset=20 size=4
+field engine_input_event.button offset=24 size=4
+field engine_input_event.down offset=28 size=4
+field engine_input_event.repeat offset=32 size=4
+field engine_input_event.touch_id offset=36 size=4
+field engine_input_event.x offset=40 size=8
+field engine_input_event.y offset=48 size=8
+field engine_input_event.text offset=56 size=16
+struct engine_surface_callbacks size=64
+field engine_surface_callbacks.struct_size offset=0 size=4
+field engine_surface_callbacks.reserved offset=4 size=4
+field engine_surface_callbacks.user offset=8 size=8
+field engine_surface_callbacks.set_cursor offset=16 size=8
+field engine_surface_callbacks.set_pointer_lock offset=24 size=8
+field engine_surface_callbacks.clipboard_set offset=32 size=8
+field engine_surface_callbacks.clipboard_get offset=40 size=8
+field engine_surface_callbacks.text_input_rect offset=48 size=8
+field engine_surface_callbacks.request_focus offset=56 size=8
+struct engine_surface_info size=64
 field engine_surface_info.struct_size offset=0 size=4
 field engine_surface_info.kind offset=4 size=4
 field engine_surface_info.flags offset=8 size=4
 field engine_surface_info.width offset=12 size=4
 field engine_surface_info.height offset=16 size=4
 field engine_surface_info.scale offset=20 size=4
-field engine_surface_info.reserved offset=24 size=4
+field engine_surface_info.present_mode offset=24 size=4
 field engine_surface_info.display offset=32 size=8
 field engine_surface_info.surface offset=40 size=8
 field engine_surface_info.window_id offset=48 size=8
-struct engine_surface_state size=48
+field engine_surface_info.callbacks offset=56 size=8
+struct engine_surface_state size=56
 field engine_surface_state.struct_size offset=0 size=4
 field engine_surface_state.image_width offset=4 size=4
 field engine_surface_state.image_height offset=8 size=4
 field engine_surface_state.visible offset=12 size=4
 field engine_surface_state.lost offset=16 size=4
-field engine_surface_state.reserved offset=20 size=4
+field engine_surface_state.present_mode offset=20 size=4
 field engine_surface_state.frames_presented offset=24 size=8
 field engine_surface_state.recoveries offset=32 size=8
 field engine_surface_state.frames_skipped offset=40 size=8
+field engine_surface_state.input_dropped offset=48 size=8
 struct engine_pixels size=48
 field engine_pixels.struct_size offset=0 size=4
 field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=472
+struct engine_api size=480
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -227,10 +269,11 @@ field engine_api.import_cancel offset=384 size=8
 field engine_api.import_destroy offset=392 size=8
 field engine_api.surface_create offset=400 size=8
 field engine_api.surface_destroy offset=408 size=8
-field engine_api.surface_resized offset=416 size=8
-field engine_api.surface_rebind offset=424 size=8
-field engine_api.surface_set_background offset=432 size=8
-field engine_api.surface_state offset=440 size=8
-field engine_api.surface_read_pixels offset=448 size=8
-field engine_api.pixels_finish offset=456 size=8
-field engine_api.pixels_destroy offset=464 size=8
+field engine_api.surface_input offset=416 size=8
+field engine_api.surface_resized offset=424 size=8
+field engine_api.surface_rebind offset=432 size=8
+field engine_api.surface_set_background offset=440 size=8
+field engine_api.surface_state offset=448 size=8
+field engine_api.surface_read_pixels offset=456 size=8
+field engine_api.pixels_finish offset=464 size=8
+field engine_api.pixels_destroy offset=472 size=8

@@ -395,6 +395,7 @@ test:engine_reload_cycles*                       23   # 50 load-run-destroy-unlo
 test:engine_destroy_waits_for_callback*         23   # destroy waits for a host thread inside the log callback, the handle is stale meanwhile (Day 348)
 tests/engine_library/status_map_test.cpp        23   # the engine's result types map onto the C statuses (Day 346)
 tests/engine_library/surface_wayland_test.cpp    23   # the engine renders into a Wayland surface the host owns: golden frame read back, resize, hidden surface, rebind (Day 352)
+tests/engine_library/surface_input_test.cpp      23   # forwarded pointer, key, text and touch events drive a UI button and text field on a host surface; cursor, clipboard, text-input and focus requests go back to the host callbacks (Day 353)
 test:shared_state_check*                        23   # the shared-state gate: no mutable static state in a public header (Day 345)
 test:abi_check*                                 23   # the ABI gate: the export list, the version, the library, the C header (Day 344)
 test:resource_server_*                           22   # the resource server tool (Day 331)

@@ -8,6 +8,11 @@
 #include "sync/mutex.h"
 #include "types.h"
 
+namespace engine_placeholder::os
+{
+class ForeignWindow;
+}
+
 namespace engine_placeholder::engine_c
 {
 
@@ -31,6 +36,9 @@ public:
 
     engine_status Create(const engine_surface_info* info, engine_handle* out);
     engine_status Destroy(engine_handle surface);
+    engine_status Input(engine_handle surface, const engine_input_event* event);
+    /// The window of a surface (see `SurfaceWindowOf`), or null.
+    os::ForeignWindow* WindowOf(engine_handle surface);
     engine_status Resized(engine_handle surface, u32 width, u32 height, float scale);
     engine_status Rebind(engine_handle surface, const engine_surface_info* info);
     engine_status SetBackground(engine_handle surface, const float* rgba);
@@ -66,9 +74,19 @@ private:
 /// - Fails: never.
 bool SurfaceKindSupported(u32 kind);
 
+/// The window behind a surface, for the tests that bind the engine's UI to it (the host's input arrives in its event
+/// queue, the UI's cursor and clipboard requests leave through its hooks). Null for a handle that is not a live
+/// surface.
+///
+/// - Thread-safety: the window is thread-compatible: the thread that forwards the input uses it, and the surface must
+/// outlive the pointer.
+/// - Fails: returns null.
+os::ForeignWindow* SurfaceWindowOf(engine_handle surface);
+
 // The functions of the table that serve the surfaces (engine_c.cpp lists them in the table).
 engine_status SurfaceCreateFn(engine_handle engine, const engine_surface_info* info, engine_handle* out);
 engine_status SurfaceDestroyFn(engine_handle surface);
+engine_status SurfaceInputFn(engine_handle surface, const engine_input_event* event);
 engine_status SurfaceResizedFn(engine_handle surface, u32 width, u32 height, float scale);
 engine_status SurfaceRebindFn(engine_handle surface, const engine_surface_info* info);
 engine_status SurfaceSetBackgroundFn(engine_handle surface, const float* rgba);

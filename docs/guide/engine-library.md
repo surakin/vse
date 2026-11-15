@@ -323,7 +323,7 @@ visibility and scale and reports them. In this order:
    and test path, and is not meant for every frame.
 
 The engine's own window code is not involved: `os::ForeignWindow` (`engine/platform/foreign_window.h`) is an `os::Window` over the host's handles with no events,
-cursor or clipboard (the host owns input; Day 353 forwards it), so the RHI's swapchain code is the same as for the engine's windows. The Vulkan backend creates its
+cursor or clipboard of its own (the host owns input; Day 353 forwards it and takes the requests back through callbacks), so the RHI's swapchain code is the same as for the engine's windows. The Vulkan backend creates its
 surface from the handles on the host's connection.
 
 **Tested** by `host_surface.c` (a C program with an Xlib window; plain and asan, the tsan flavor is a skipped stub because ThreadSanitizer cannot run the GPU
@@ -332,3 +332,64 @@ ticket, the host's resize (the image follows), a hidden window and the return, a
 raised by the engine) and `surface_rebind` on a new window, a ticket cancelled by the surface's destruction and `destroy` refused while the surface exists; and by
 `surface_wayland_test.cpp` (the same on a Wayland surface, a window opened with the platform layer and handed to the C API: the golden frame, resize, hidden,
 and rebind to a second window). Both need an unlocked session (`KNOWN-ISSUES.md`) and skip without a display.
+
+
+## Input from the host, requests back, and the host-driven loop (Day 353)
+
+A surface has no window of the engine's own, so the host feeds it input and answers what the engine asks for. Everything is on the surface: `surface_input`
+takes one `engine_input_event` (size-prefixed, with `type`, `time_ns`, `modifiers`, and the fields of its type), and `engine_surface_info.callbacks` points to
+an `engine_surface_callbacks` the surface copies at `surface_create` and `surface_rebind`.
+
+**Events.** Types (`ENGINE_INPUT_*`): key (`engine_key`, `down`, `repeat`), pointer move, enter and leave, pointer button (`ENGINE_BUTTON_*`), scroll, text (UTF-8, at most 256 bytes), focus, and touch (`touch_id`; the first finger acts as the pointer).
+Positions are in window pixels, as the host's toolkit reports them. The key values are the engine's own enumeration (layout-aware: the symbol the layout
+produced), so a toolkit maps its key codes once. An event with a bad size, type, key, button, coordinate or malformed UTF-8 is refused with `INVALID_ARGUMENT`
+and a sentence in `last_error`; nothing reaches the queue. The queue holds 1024 events; `surface_state.input_dropped` counts those lost when the engine's UI did
+not drain it (the UI drains once per frame).
+
+**Requests back.** `set_cursor` (`engine_cursor`: arrow, I-beam, hand, the resize shapes, not-allowed, hidden), `set_pointer_lock`, `clipboard_set`,
+`clipboard_get` (text only: the answer is valid until the next callback), `text_input_rect` (the caret, for an input method) and `request_focus`. Any may be
+NULL, and the request is then refused. They run on the thread that drives the UI of the surface (the host's frame thread), never from an engine worker, and
+**must not call back into the engine**. The engine opens no display, input or clipboard connection of its own for the surface: `host_surface.c` counts the
+`XOpenDisplay` calls made by the program and its statically linked engine, and there is exactly the host's one (the graphics driver's own connection inside
+Vulkan is the driver's, not the engine's).
+
+**Present mode.** `engine_surface_info.present_mode` asks for FIFO, mailbox or immediate; the swapchain takes it when the surface allows it and falls back to
+FIFO otherwise, and `surface_state.present_mode` says what it got.
+
+**The host's duties.**
+- *Threads:* `surface_input` and `frame` are called from one thread, the host's frame thread; the callbacks come back on it. The engine blocks on nothing of the
+  host's loop and runs no frame of its own: the host calls `frame` from its timer or display link, and sets `engine_frame_info.budget_us` if it wants a cap.
+- *Ordering:* forward the events of a tick, then call `frame`; the UI sees them in that frame, and a callback made in the frame answers the events before it.
+  Forward `focus` when the window gains or loses it, and a pointer move on entering a widget so the cursor request follows.
+- *DPI:* positions and sizes are pixels; report the scale with `surface_resized` and `engine_surface_info.scale`; the engine scales its UI, the host does not
+  scale the events.
+- *Lifetime:* the callbacks' `user` pointer stays valid until `surface_destroy` returns.
+
+**A worked example** (the shape of `host_surface.c`, C with Xlib):
+
+```c
+static int SetCursor(void* user, uint32_t shape) { ((Host*)user)->cursor = shape; return 1; }
+
+engine_surface_callbacks cb = { sizeof cb, 0, &host, SetCursor, NULL, ClipSet, ClipGet, NULL, NULL };
+engine_surface_info info = { sizeof info, ENGINE_SURFACE_X11, 0, 640, 360, 1.0f, ENGINE_PRESENT_MAILBOX };
+info.display = host.display; info.window_id = host.window; info.callbacks = &cb;
+api->surface_create(engine, &info, &surface);
+
+for (;;) {                                       /* the host's own event loop */
+    XEvent e;
+    while (XPending(host.display)) {
+        XNextEvent(host.display, &e);
+        engine_input_event ev = { sizeof ev };
+        if (e.type == MotionNotify) { ev.type = ENGINE_INPUT_POINTER_MOVE; ev.x = e.xmotion.x; ev.y = e.xmotion.y;
+                                      api->surface_input(surface, &ev); }
+        else if (e.type == ButtonPress) { ev.type = ENGINE_INPUT_POINTER_BUTTON; ev.button = ENGINE_BUTTON_LEFT; ev.down = 1;
+                                          ev.x = e.xbutton.x; ev.y = e.xbutton.y; api->surface_input(surface, &ev); }
+    }
+    api->frame(engine, &frame_info, NULL);       /* the callbacks run in here */
+}
+```
+
+**Tested** by `surface_input_test.cpp` (Catch, an X11 window: forwarded pointer and keys click a button whose counter is read back through the world API, a text
+field receives text and a paste, the cursor callback fires when the pointer enters a text field, the clipboard callbacks round-trip, the UI frame compared with a
+golden, overflow counted) and `host_surface.c` (argument validation of every event field, queue overflow, present-mode fallback, the callbacks' size check, and
+the count of display connections). They need an unlocked session and skip without a display.
