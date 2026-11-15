@@ -6,6 +6,7 @@ set(SCENE_TEST_SOURCES
   scene_cost_test.cpp
   visibility_test.cpp  # Phase 18 Day 247
   level_spawner_test.cpp  # Phase 22 Day 329
+  scene_spikes_test.cpp  # Phase 24 Day 358: the spikes of the C API's scenes
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 329: the level minter, to make the levels the spawner loads
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_frame.cpp
 )
@@ -25,7 +26,7 @@ function(engine_add_scene_tests target flavor suffix label spec)
   endif()
   target_link_libraries(${target} PRIVATE scene${flavor} renderer_passes${flavor} renderer${flavor} ecs${flavor} rhi_backends${flavor} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/rhi ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tools/asset_mint ${CMAKE_SOURCE_DIR}/shaders)
-  target_compile_definitions(${target} PRIVATE ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp")
+  target_compile_definitions(${target} PRIVATE ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" "SPIKE_FONT_FILE=\"${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf\"")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}" PROPERTIES LABELS "${label}")
 endfunction()
 

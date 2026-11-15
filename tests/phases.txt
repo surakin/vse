@@ -45,6 +45,9 @@ flavors 22  linux: plain,asan,tsan
 flavors 22  windows: plain,asan
 flavors 23  linux: plain,asan,tsan # tests/engine_library (Day 342; Day 343: the shared-library probes, skipped when ENGINE_BUILD_SHARED is OFF)
 flavors 23  windows: plain,asan # Day 345: engine_unload_after_jobs, engine_owner_release and the planted wrong free build asan on Windows (the PC, 2026-11-15)
+flavors 24  linux: plain,asan # tests/scene spikes (Day 358): GPU tests leave tsan out on Linux (KNOWN-ISSUES.md)
+flavors 24  windows: plain,asan
+flavors 24  macos: plain,asan,tsan
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -366,6 +369,7 @@ test:database_sql_check*                      19   # the SQL text gate (Day 252)
 tests/scene/visibility_test.cpp                 18   # Phase 18 Day 247
 tests/scene/scene_sync_test.cpp                     17   # Phase 17 Day 233
 tests/scene/scene_render_test.cpp                   17   # Phase 17 Day 233
+tests/scene/scene_spikes_test.cpp                   24   # Phase 24 Day 358: spikes of the C API scenes (renderer on a window device, ...)
 tests/scene/scene_cost_test.cpp                     17   # Phase 17 Day 233
 tests/scene/level_spawner_test.cpp               22   # Phase 22 Day 329
 tests/scene/CMakeLists.txt                      17

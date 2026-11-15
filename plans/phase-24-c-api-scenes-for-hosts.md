@@ -2,7 +2,7 @@
 
 > Drafted 2026-11-15 from a the host session at the user's request; placed as Phase 24 the same day (every later phase moved up one) and broken into day files (Days 358-372) at the user's request.
 
-**Status: planned (2026-11-15): the day files are written (Days 358-372, `plans/phase-24-c-api-scenes-for-hosts/`), so the phase can start once Phase 23 closes (Day 357); Phase 28 (3D text) moved to Days 373-388 to make room (+15).** Placed right after Phase 23 because it builds on its C ABI, surfaces and host-provided content, and because its first user (the host's 3D call rooms) needs nothing from physics, audio or scripting.
+**Status: started (Day 358, 2026-11-15; `CURRENT_PHASE` 24); the spec and the five spikes are done (`docs/superpowers/specs/2026-11-16-c-api-scenes-design.md`). Before that: planned (2026-11-15): the day files are written (Days 358-372, `plans/phase-24-c-api-scenes-for-hosts/`), so the phase can start once Phase 23 closes (Day 357); Phase 28 (3D text) moved to Days 373-388 to make room (+15).** Placed right after Phase 23 because it builds on its C ABI, surfaces and host-provided content, and because its first user (the host's 3D call rooms) needs nothing from physics, audio or scripting.
 
 **Depends on:** Phase 23 (the C ABI, the function table and its version rules, surfaces in host-owned windows on Linux, Windows and macOS,
 host-owned input and the host-driven frame, host-provided content, glTF import at run time), Phase 22 (resources, the level format and
@@ -110,7 +110,20 @@ The Linux machine does Days 358-368, 371 and 372's Linux half; **Day 369 is for 
   `docs/tutorials/a-3d-scene-in-your-window.md` (import a `.glb`, spawn it, add a camera and a light, play an animation, feed a texture);
   the spec `docs/superpowers/specs/2026-11-NN-c-api-scenes-design.md` written on the first day.
 
-## Notes / open questions (to settle in the spec on Day 358)
+## Decisions of Day 358 (spec `docs/superpowers/specs/2026-11-16-c-api-scenes-design.md`, and the day that builds each)
+
+- Coordinates are the engine's (right-handed, +Y up, camera -Z), no conversion at the boundary (Day 359 header text).
+- `surface_set_world(surface, world)` on Day 359, `surface_set_camera(surface, entity)` on Day 360: the surface names the camera.
+- Per-slot material overrides, no material creation (Days 362, 366).
+- Fixed order inside `engine_frame`: animation, transform, render sync, render of every bound surface; poses are read after `engine_frame` (Day 359, 363).
+- Joint attachment is later; labels follow an entity's origin plus an offset (Day 367).
+- Labels: the text renderer's 2D path projected from the world point (Day 367).
+- ABI version unchanged (unreleased); additions at the end of the table, snapshot and `abi_check` record them (every day).
+- Goldens: no channel off by more than 4, at most 0.5 % of values off by more than 1 (Days 359, 371); cross-GPU figure not measured (`KNOWN-ISSUES.md`).
+- Per surface: a frame object, a `RenderScene`, a `SceneLink`, and a device-resident content cache keyed by resource id and generation (Days 359, 362, 368). The frame object moves from `game/renderer_demo` into the engine and the renderer gets a before-present hook (Day 359).
+- Live textures: latest-wins slot, a ring of three staging buffers, one upload per frame, an 8 MB per-frame budget (Day 365).
+
+## Notes / open questions (settled in the spec on Day 358)
 
 - **Coordinate conventions at the boundary.** glTF is right-handed, `+Y` up, metres; the importer converts to the engine's convention
   (Phase 22 Day 336, "no flip"). Decide whether C API transforms are in the engine's convention or glTF's, once, and state it in the header:

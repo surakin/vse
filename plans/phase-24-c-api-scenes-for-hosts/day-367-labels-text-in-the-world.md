@@ -7,6 +7,8 @@ Name tags: text drawn at a point in the world, facing the camera.
 
 ## Tasks
 
+> Day 358 decision 6 (spec): labels are the text renderer's 2D path projected from the world point: constant pixel size, no depth test, a size in metres rounded to a set of pixel sizes; billboard quads and depth-tested plates are later items. Measured: +0.14 ms per name tag, +1.4 ms for a hundred (1280x720).
+
 - [ ] `ENGINE_COMPONENT_LABEL` (`engine_label`: UTF-8 text up to a bound, color, size mode (constant on screen in pixels or constant in metres), offset, anchor, an optional background plate color, flags): drawn at the entity's world position plus the offset, facing the camera, through Phase 14's glyph atlas and text renderer (or the quad path Day 358 chose); depth-tested against the scene unless the flag says always on top.
 - [ ] A label on a joint (Day 363's attachment) follows it; a label on a hidden entity is hidden; a label count bound is reported (`labels_refused`).
 - [ ] Text: line breaks, grapheme clusters, fonts from the host-provided font resource (the engine ships no font; the host adds one with `resources_add`, or the engine's default if the spec has one); text that needs a missing glyph shows the font's `.notdef` and counts it; bounds on length against hostile input.
