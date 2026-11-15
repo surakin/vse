@@ -362,11 +362,9 @@ public:
     bool TakeStats(QueryStats* out) { return ops_->take_stats != nullptr && ops_->take_stats(Object(), out); }
 
     /// The number of callables too big for the inline buffer, since the program started.
-    static u64& Fallbacks()
-    {
-        static u64 count = 0;
-        return count;
-    }
+    ///
+    /// - Internal: defined in `schedule.cpp`, so that the count exists once in the engine library.
+    static u64& Fallbacks();
 
 private:
     struct Ops

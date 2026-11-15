@@ -17,7 +17,7 @@ Every failure goes to one handler (see [`SetAssertHandler`](#setasserthandler-as
 Two registrations through which the debugging module (layer 7) reaches code below it without being included by it.
 
 - [`FailureReportHooks`](#failurereporthooks): what the default assert handler and the error-log trace add to a bare message (a stack trace, the crash context, a look at the debugger).
-- [`SetThreadStartHook`](#setthreadstarthook-threadstarthook): what a thread does first so a crash on it is reported by name (registration with the crash handler).
+- [`SetThreadStartHook`](#setthreadstarthook-threadstarthook) and [`SetThreadEndHook`](#setthreadendhook-threadendhook): what a thread does first so a crash on it is reported by name (registration with the crash handler), and what it gives back last.
 
 `debug::InstallDiagnosticsHooks` (called by `debug::InitDebugFacilities`) installs both. Until then the base behavior is complete on its own: a failed assert prints its message line and aborts, an ensure prints its line and continues, and a thread starts unregistered.
 
@@ -604,6 +604,46 @@ Called first thing on a new thread (the I/O thread, the job workers) with the th
 | Field | Value |
 |---|---|
 | Parameter `name` | a short name for the thread; borrowed for the call. |
+| Thread-safety | thread-safe. |
+
+## `ThreadEndHook` {#threadendhook}
+
+`alias ThreadEndHook` — defined in `engine/foundation/log/diagnostics_hooks.h`
+
+```cpp
+using ThreadEndHook = void (*)();
+```
+
+The function [`NotifyThreadEnd`](#notifythreadend) calls: what a thread gives back before it ends.
+
+## `SetThreadEndHook(ThreadEndHook)` {#setthreadendhook-threadendhook}
+
+`function SetThreadEndHook` — defined in `engine/foundation/log/diagnostics_hooks.h`
+
+```cpp
+ThreadEndHook SetThreadEndHook(ThreadEndHook hook);
+```
+
+Installs the function [`NotifyThreadEnd`](#notifythreadend) calls.
+
+| Field | Value |
+|---|---|
+| Parameter `hook` | the function, or null to remove it. |
+| Returns | the hook installed before, or null. |
+| Thread-safety | thread-safe. One atomic store. |
+
+## `NotifyThreadEnd()` {#notifythreadend}
+
+`function NotifyThreadEnd` — defined in `engine/foundation/log/diagnostics_hooks.h`
+
+```cpp
+void NotifyThreadEnd();
+```
+
+Called last thing on an engine thread (the I/O thread, the job workers) before it ends: releases what the thread registered at [`NotifyThreadStart`](#notifythreadstart-const-char-star) (the crash handler's alternate stack), because no `thread_local` destructor does it (a destructor registered on a thread pins the shared engine library in memory). Does nothing until a hook is installed.
+
+| Field | Value |
+|---|---|
 | Thread-safety | thread-safe. |
 
 ## `LogVerbosity` {#logverbosity}

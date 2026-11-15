@@ -3,6 +3,7 @@
 #include "cstr/format.h"
 
 #include "jobs/detail/thread_platform.h"
+#include "jobs/frame_pool.h"
 
 #include "log/diagnostics_hooks.h"
 #include "jobs/jobs_log.h"
@@ -96,6 +97,7 @@ WorkerPool::~WorkerPool()
                   "WorkerPool must be destroyed on the thread that constructed it");
     ENGINE_ASSERT(tls_current == &participants_[0], "overlapping WorkerPools must be destroyed in reverse order");
     tls_current = saved_main_identity_;
+    FramePool::ReleaseThreadCache();  // the creating thread's cache: no thread_local destructor will hand it back
 }
 
 void WorkerPool::ThreadMain(WorkerPool* pool, usize index)
@@ -134,6 +136,8 @@ void WorkerPool::ThreadMain(WorkerPool* pool, usize index)
         pool->cv_.Wait(lock, [&] { return pool->stop_.Load(MemoryOrder::Acquire); });
     }
     tls_current = nullptr;
+    FramePool::ReleaseThreadCache();  // no thread_local destructor does it: the engine library must stay unloadable
+    NotifyThreadEnd();
 }
 
 void WorkerPool::RequestStop()

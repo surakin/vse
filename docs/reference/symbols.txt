@@ -1074,6 +1074,9 @@ GetFailureReportHooks()	function	foundation/log	getfailurereporthooks	foundation
 ThreadStartHook	alias	foundation/log	threadstarthook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:55
 SetThreadStartHook(ThreadStartHook)	function	foundation/log	setthreadstarthook-threadstarthook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:65
 NotifyThreadStart(const char*)	function	foundation/log	notifythreadstart-const-char-star	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:72
+ThreadEndHook	alias	foundation/log	threadendhook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:75
+SetThreadEndHook(ThreadEndHook)	function	foundation/log	setthreadendhook-threadendhook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:82
+NotifyThreadEnd()	function	foundation/log	notifythreadend	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:90
 LogVerbosity	enum	foundation/log	logverbosity	foundation-log.md	engine/foundation/log/log.h:17
 LogVerbosity::Error	enumerator	foundation/log	logverbosity-error	foundation-log.md	engine/foundation/log/log.h:19
 LogVerbosity::Warn	enumerator	foundation/log	logverbosity-warn	foundation-log.md	engine/foundation/log/log.h:20
@@ -2600,7 +2603,8 @@ debug::CrashHandlerResult::Unsupported	enumerator	foundation/debug	debug-crashha
 debug::InstallCrashHandler(const CrashHandlerOptions&)	function	foundation/debug	debug-installcrashhandler-const-crashhandleroptions-amp	foundation-debug.md	engine/foundation/debug/crash_handler.h:81
 debug::UninstallCrashHandler()	function	foundation/debug	debug-uninstallcrashhandler	foundation-debug.md	engine/foundation/debug/crash_handler.h:88
 debug::RegisterThreadForCrashHandling(const char*)	function	foundation/debug	debug-registerthreadforcrashhandling-const-char-star	foundation-debug.md	engine/foundation/debug/crash_handler.h:107
-debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:112
+debug::UnregisterThreadForCrashHandling()	function	foundation/debug	debug-unregisterthreadforcrashhandling	foundation-debug.md	engine/foundation/debug/crash_handler.h:116
+debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:121
 debug::CrashReason	enum	foundation/debug	debug-crashreason	foundation-debug.md	engine/foundation/debug/crash_reason.h:18
 debug::CrashReason::None	enumerator	foundation/debug	debug-crashreason-none	foundation-debug.md	engine/foundation/debug/crash_reason.h:20
 debug::CrashReason::AccessViolation	enumerator	foundation/debug	debug-crashreason-accessviolation	foundation-debug.md	engine/foundation/debug/crash_reason.h:21
@@ -3216,59 +3220,59 @@ ecs::SystemContext::RemovedAt(usize) const	function	ecs	ecs-systemcontext-remove
 ecs::SystemContext::Poke(Entity)	function	ecs	ecs-systemcontext-poke-entity	ecs.md	engine/ecs/schedule.h:200
 ecs::SystemContext::Stamp(Entity)	function	ecs	ecs-systemcontext-stamp-entity	ecs.md	engine/ecs/schedule.h:208
 ecs::SystemContext::ParallelFor(usize,usize,F&)	function	ecs	ecs-systemcontext-parallelfor-usize-usize-f-amp	ecs.md	engine/ecs/schedule.h:220
-ecs::SystemDesc	class	ecs	ecs-systemdesc	ecs.md	engine/ecs/schedule.h:504
-ecs::SystemDesc::kMaxConstraints	variable	ecs	ecs-systemdesc-kmaxconstraints	ecs.md	engine/ecs/schedule.h:508
-ecs::SystemDesc::SystemDesc()	function	ecs	ecs-systemdesc-systemdesc	ecs.md	engine/ecs/schedule.h:510
-ecs::SystemDesc::SystemDesc(const char*,detail::SystemFn)	function	ecs	ecs-systemdesc-systemdesc-const-char-star-detail-systemfn	ecs.md	engine/ecs/schedule.h:514
-ecs::SystemDesc::SystemDesc(SystemDesc&&)	function	ecs	ecs-systemdesc-systemdesc-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:515
-ecs::SystemDesc::operator=(SystemDesc&&)	function	ecs	ecs-systemdesc-operator-eq-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:516
-ecs::SystemDesc::DeduceAccess()	function	ecs	ecs-systemdesc-deduceaccess	ecs.md	engine/ecs/schedule.h:520
-ecs::SystemDesc::Reads()	function	ecs	ecs-systemdesc-reads	ecs.md	engine/ecs/schedule.h:523
-ecs::SystemDesc::Writes()	function	ecs	ecs-systemdesc-writes	ecs.md	engine/ecs/schedule.h:530
-ecs::SystemDesc::ReadsResource()	function	ecs	ecs-systemdesc-readsresource	ecs.md	engine/ecs/schedule.h:537
-ecs::SystemDesc::WritesResource()	function	ecs	ecs-systemdesc-writesresource	ecs.md	engine/ecs/schedule.h:544
-ecs::SystemDesc::InStage(StageId)	function	ecs	ecs-systemdesc-instage-stageid	ecs.md	engine/ecs/schedule.h:551
-ecs::SystemDesc::After(const char*)	function	ecs	ecs-systemdesc-after-const-char-star	ecs.md	engine/ecs/schedule.h:558
-ecs::SystemDesc::Before(const char*)	function	ecs	ecs-systemdesc-before-const-char-star	ecs.md	engine/ecs/schedule.h:566
-ecs::SystemDesc::RunIf(bool(*)(SystemContext&))	function	ecs	ecs-systemdesc-runif-bool-star-systemcontext-amp	ecs.md	engine/ecs/schedule.h:574
-ecs::MakeSystem(const char*,Fn)	function	ecs	ecs-makesystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:601
-ecs::MakeQuerySystem(const char*,Fn)	function	ecs	ecs-makequerysystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:612
-ecs::SystemStats	struct	ecs	ecs-systemstats	ecs.md	engine/ecs/schedule.h:623
-ecs::SystemStats::name	variable	ecs	ecs-systemstats-name	ecs.md	engine/ecs/schedule.h:626
-ecs::SystemStats::runs	variable	ecs	ecs-systemstats-runs	ecs.md	engine/ecs/schedule.h:628
-ecs::SystemStats::skipped_runs	variable	ecs	ecs-systemstats-skipped-runs	ecs.md	engine/ecs/schedule.h:630
-ecs::SystemStats::last_ns	variable	ecs	ecs-systemstats-last-ns	ecs.md	engine/ecs/schedule.h:632
-ecs::SystemStats::total_ns	variable	ecs	ecs-systemstats-total-ns	ecs.md	engine/ecs/schedule.h:634
-ecs::SystemStats::entities	variable	ecs	ecs-systemstats-entities	ecs.md	engine/ecs/schedule.h:636
-ecs::SystemStats::chunks_visited	variable	ecs	ecs-systemstats-chunks-visited	ecs.md	engine/ecs/schedule.h:638
-ecs::SystemStats::chunks_skipped	variable	ecs	ecs-systemstats-chunks-skipped	ecs.md	engine/ecs/schedule.h:640
-ecs::SystemStats::AverageNanos() const	function	ecs	ecs-systemstats-averagenanos-const	ecs.md	engine/ecs/schedule.h:642
-ecs::BuildReport	struct	ecs	ecs-buildreport	ecs.md	engine/ecs/schedule.h:649
-ecs::BuildReport::ok	variable	ecs	ecs-buildreport-ok	ecs.md	engine/ecs/schedule.h:652
-ecs::BuildReport::message	variable	ecs	ecs-buildreport-message	ecs.md	engine/ecs/schedule.h:655
-ecs::ScheduleStats	struct	ecs	ecs-schedulestats	ecs.md	engine/ecs/schedule.h:662
-ecs::ScheduleStats::frames	variable	ecs	ecs-schedulestats-frames	ecs.md	engine/ecs/schedule.h:665
-ecs::ScheduleStats::access_violations	variable	ecs	ecs-schedulestats-access-violations	ecs.md	engine/ecs/schedule.h:667
-ecs::ScheduleStats::commands_applied	variable	ecs	ecs-schedulestats-commands-applied	ecs.md	engine/ecs/schedule.h:669
-ecs::ScheduleStats::commands_ignored	variable	ecs	ecs-schedulestats-commands-ignored	ecs.md	engine/ecs/schedule.h:671
-ecs::Schedule	class	ecs	ecs-schedule	ecs.md	engine/ecs/schedule.h:685
-ecs::Schedule::Schedule()	function	ecs	ecs-schedule-schedule	ecs.md	engine/ecs/schedule.h:689
-ecs::Schedule::Schedule(const Schedule&)	function	ecs	ecs-schedule-schedule-const-schedule-amp	ecs.md	engine/ecs/schedule.h:690
-ecs::Schedule::operator=(const Schedule&)	function	ecs	ecs-schedule-operator-eq-const-schedule-amp	ecs.md	engine/ecs/schedule.h:691
-ecs::Schedule::AddStage(const char*,StageId)	function	ecs	ecs-schedule-addstage-const-char-star-stageid	ecs.md	engine/ecs/schedule.h:696
-ecs::Schedule::Add(SystemDesc)	function	ecs	ecs-schedule-add-systemdesc	ecs.md	engine/ecs/schedule.h:699
-ecs::Schedule::Build()	function	ecs	ecs-schedule-build	ecs.md	engine/ecs/schedule.h:702
-ecs::Schedule::UseSettings(const settings::Registry&)	function	ecs	ecs-schedule-usesettings-const-settings-registry-amp	ecs.md	engine/ecs/schedule.h:708
-ecs::Schedule::SetScheduler(jobs::Scheduler*)	function	ecs	ecs-schedule-setscheduler-jobs-scheduler-star	ecs.md	engine/ecs/schedule.h:715
-ecs::Schedule::SetStatsEnabled(bool)	function	ecs	ecs-schedule-setstatsenabled-bool	ecs.md	engine/ecs/schedule.h:717
-ecs::Schedule::Run(World&,f32)	function	ecs	ecs-schedule-run-world-amp-f32	ecs.md	engine/ecs/schedule.h:722
-ecs::Schedule::WaveOf(u32) const	function	ecs	ecs-schedule-waveof-u32-const	ecs.md	engine/ecs/schedule.h:728
-ecs::Schedule::SystemCount() const	function	ecs	ecs-schedule-systemcount-const	ecs.md	engine/ecs/schedule.h:730
-ecs::Schedule::RunOrderName(u32) const	function	ecs	ecs-schedule-runordername-u32-const	ecs.md	engine/ecs/schedule.h:734
-ecs::Schedule::StatsOf(const char*) const	function	ecs	ecs-schedule-statsof-const-char-star-const	ecs.md	engine/ecs/schedule.h:738
-ecs::Schedule::Stats() const	function	ecs	ecs-schedule-stats-const	ecs.md	engine/ecs/schedule.h:740
-ecs::Schedule::ParallelRequested() const	function	ecs	ecs-schedule-parallelrequested-const	ecs.md	engine/ecs/schedule.h:744
-ecs::Schedule::HeapFallbacks()	function	ecs	ecs-schedule-heapfallbacks	ecs.md	engine/ecs/schedule.h:747
+ecs::SystemDesc	class	ecs	ecs-systemdesc	ecs.md	engine/ecs/schedule.h:502
+ecs::SystemDesc::kMaxConstraints	variable	ecs	ecs-systemdesc-kmaxconstraints	ecs.md	engine/ecs/schedule.h:506
+ecs::SystemDesc::SystemDesc()	function	ecs	ecs-systemdesc-systemdesc	ecs.md	engine/ecs/schedule.h:508
+ecs::SystemDesc::SystemDesc(const char*,detail::SystemFn)	function	ecs	ecs-systemdesc-systemdesc-const-char-star-detail-systemfn	ecs.md	engine/ecs/schedule.h:512
+ecs::SystemDesc::SystemDesc(SystemDesc&&)	function	ecs	ecs-systemdesc-systemdesc-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:513
+ecs::SystemDesc::operator=(SystemDesc&&)	function	ecs	ecs-systemdesc-operator-eq-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:514
+ecs::SystemDesc::DeduceAccess()	function	ecs	ecs-systemdesc-deduceaccess	ecs.md	engine/ecs/schedule.h:518
+ecs::SystemDesc::Reads()	function	ecs	ecs-systemdesc-reads	ecs.md	engine/ecs/schedule.h:521
+ecs::SystemDesc::Writes()	function	ecs	ecs-systemdesc-writes	ecs.md	engine/ecs/schedule.h:528
+ecs::SystemDesc::ReadsResource()	function	ecs	ecs-systemdesc-readsresource	ecs.md	engine/ecs/schedule.h:535
+ecs::SystemDesc::WritesResource()	function	ecs	ecs-systemdesc-writesresource	ecs.md	engine/ecs/schedule.h:542
+ecs::SystemDesc::InStage(StageId)	function	ecs	ecs-systemdesc-instage-stageid	ecs.md	engine/ecs/schedule.h:549
+ecs::SystemDesc::After(const char*)	function	ecs	ecs-systemdesc-after-const-char-star	ecs.md	engine/ecs/schedule.h:556
+ecs::SystemDesc::Before(const char*)	function	ecs	ecs-systemdesc-before-const-char-star	ecs.md	engine/ecs/schedule.h:564
+ecs::SystemDesc::RunIf(bool(*)(SystemContext&))	function	ecs	ecs-systemdesc-runif-bool-star-systemcontext-amp	ecs.md	engine/ecs/schedule.h:572
+ecs::MakeSystem(const char*,Fn)	function	ecs	ecs-makesystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:599
+ecs::MakeQuerySystem(const char*,Fn)	function	ecs	ecs-makequerysystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:610
+ecs::SystemStats	struct	ecs	ecs-systemstats	ecs.md	engine/ecs/schedule.h:621
+ecs::SystemStats::name	variable	ecs	ecs-systemstats-name	ecs.md	engine/ecs/schedule.h:624
+ecs::SystemStats::runs	variable	ecs	ecs-systemstats-runs	ecs.md	engine/ecs/schedule.h:626
+ecs::SystemStats::skipped_runs	variable	ecs	ecs-systemstats-skipped-runs	ecs.md	engine/ecs/schedule.h:628
+ecs::SystemStats::last_ns	variable	ecs	ecs-systemstats-last-ns	ecs.md	engine/ecs/schedule.h:630
+ecs::SystemStats::total_ns	variable	ecs	ecs-systemstats-total-ns	ecs.md	engine/ecs/schedule.h:632
+ecs::SystemStats::entities	variable	ecs	ecs-systemstats-entities	ecs.md	engine/ecs/schedule.h:634
+ecs::SystemStats::chunks_visited	variable	ecs	ecs-systemstats-chunks-visited	ecs.md	engine/ecs/schedule.h:636
+ecs::SystemStats::chunks_skipped	variable	ecs	ecs-systemstats-chunks-skipped	ecs.md	engine/ecs/schedule.h:638
+ecs::SystemStats::AverageNanos() const	function	ecs	ecs-systemstats-averagenanos-const	ecs.md	engine/ecs/schedule.h:640
+ecs::BuildReport	struct	ecs	ecs-buildreport	ecs.md	engine/ecs/schedule.h:647
+ecs::BuildReport::ok	variable	ecs	ecs-buildreport-ok	ecs.md	engine/ecs/schedule.h:650
+ecs::BuildReport::message	variable	ecs	ecs-buildreport-message	ecs.md	engine/ecs/schedule.h:653
+ecs::ScheduleStats	struct	ecs	ecs-schedulestats	ecs.md	engine/ecs/schedule.h:660
+ecs::ScheduleStats::frames	variable	ecs	ecs-schedulestats-frames	ecs.md	engine/ecs/schedule.h:663
+ecs::ScheduleStats::access_violations	variable	ecs	ecs-schedulestats-access-violations	ecs.md	engine/ecs/schedule.h:665
+ecs::ScheduleStats::commands_applied	variable	ecs	ecs-schedulestats-commands-applied	ecs.md	engine/ecs/schedule.h:667
+ecs::ScheduleStats::commands_ignored	variable	ecs	ecs-schedulestats-commands-ignored	ecs.md	engine/ecs/schedule.h:669
+ecs::Schedule	class	ecs	ecs-schedule	ecs.md	engine/ecs/schedule.h:683
+ecs::Schedule::Schedule()	function	ecs	ecs-schedule-schedule	ecs.md	engine/ecs/schedule.h:687
+ecs::Schedule::Schedule(const Schedule&)	function	ecs	ecs-schedule-schedule-const-schedule-amp	ecs.md	engine/ecs/schedule.h:688
+ecs::Schedule::operator=(const Schedule&)	function	ecs	ecs-schedule-operator-eq-const-schedule-amp	ecs.md	engine/ecs/schedule.h:689
+ecs::Schedule::AddStage(const char*,StageId)	function	ecs	ecs-schedule-addstage-const-char-star-stageid	ecs.md	engine/ecs/schedule.h:694
+ecs::Schedule::Add(SystemDesc)	function	ecs	ecs-schedule-add-systemdesc	ecs.md	engine/ecs/schedule.h:697
+ecs::Schedule::Build()	function	ecs	ecs-schedule-build	ecs.md	engine/ecs/schedule.h:700
+ecs::Schedule::UseSettings(const settings::Registry&)	function	ecs	ecs-schedule-usesettings-const-settings-registry-amp	ecs.md	engine/ecs/schedule.h:706
+ecs::Schedule::SetScheduler(jobs::Scheduler*)	function	ecs	ecs-schedule-setscheduler-jobs-scheduler-star	ecs.md	engine/ecs/schedule.h:713
+ecs::Schedule::SetStatsEnabled(bool)	function	ecs	ecs-schedule-setstatsenabled-bool	ecs.md	engine/ecs/schedule.h:715
+ecs::Schedule::Run(World&,f32)	function	ecs	ecs-schedule-run-world-amp-f32	ecs.md	engine/ecs/schedule.h:720
+ecs::Schedule::WaveOf(u32) const	function	ecs	ecs-schedule-waveof-u32-const	ecs.md	engine/ecs/schedule.h:726
+ecs::Schedule::SystemCount() const	function	ecs	ecs-schedule-systemcount-const	ecs.md	engine/ecs/schedule.h:728
+ecs::Schedule::RunOrderName(u32) const	function	ecs	ecs-schedule-runordername-u32-const	ecs.md	engine/ecs/schedule.h:732
+ecs::Schedule::StatsOf(const char*) const	function	ecs	ecs-schedule-statsof-const-char-star-const	ecs.md	engine/ecs/schedule.h:736
+ecs::Schedule::Stats() const	function	ecs	ecs-schedule-stats-const	ecs.md	engine/ecs/schedule.h:738
+ecs::Schedule::ParallelRequested() const	function	ecs	ecs-schedule-parallelrequested-const	ecs.md	engine/ecs/schedule.h:742
+ecs::Schedule::HeapFallbacks()	function	ecs	ecs-schedule-heapfallbacks	ecs.md	engine/ecs/schedule.h:745
 ecs::kMaxHierarchyDepth	variable	ecs	ecs-kmaxhierarchydepth	ecs.md	engine/ecs/transform.h:19
 ecs::LocalTransform	struct	ecs	ecs-localtransform	ecs.md	engine/ecs/transform.h:25
 ecs::LocalTransform::position	variable	ecs	ecs-localtransform-position	ecs.md	engine/ecs/transform.h:28
@@ -8088,14 +8092,14 @@ jobs::Counter::PathCounters	struct	jobs	jobs-counter-pathcounters	jobs.md	engine
 jobs::Counter::PathCounters::inline_continues	variable	jobs	jobs-counter-pathcounters-inline-continues	jobs.md	engine/jobs/counter.h:122
 jobs::Counter::PathCounters::parked	variable	jobs	jobs-counter-pathcounters-parked	jobs.md	engine/jobs/counter.h:124
 jobs::Counter::PathStats()	function	jobs	jobs-counter-pathstats	jobs.md	engine/jobs/counter.h:130
-jobs::Counter::DecrementThunk(void*)	function	jobs	jobs-counter-decrementthunk-void-star	jobs.md	engine/jobs/counter.h:143
-jobs::Counter::Awaitable	struct	jobs	jobs-counter-awaitable	jobs.md	engine/jobs/counter.h:148
-jobs::Counter::Awaitable::counter	variable	jobs	jobs-counter-awaitable-counter	jobs.md	engine/jobs/counter.h:151
-jobs::Counter::Awaitable::await_ready() const noexcept	function	jobs	jobs-counter-awaitable-await-ready-const-noexcept	jobs.md	engine/jobs/counter.h:156
-jobs::Counter::Awaitable::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-counter-awaitable-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/counter.h:164
-jobs::Counter::Awaitable::await_resume() noexcept	function	jobs	jobs-counter-awaitable-await-resume-noexcept	jobs.md	engine/jobs/counter.h:185
-jobs::Counter::operator co_await()	function	jobs	jobs-counter-operator-co-await	jobs.md	engine/jobs/counter.h:196
-jobs::Spawn(Counter&,Job&&)	function	jobs	jobs-spawn-counter-amp-job-amp-amp	jobs.md	engine/jobs/counter.h:231
+jobs::Counter::DecrementThunk(void*)	function	jobs	jobs-counter-decrementthunk-void-star	jobs.md	engine/jobs/counter.h:139
+jobs::Counter::Awaitable	struct	jobs	jobs-counter-awaitable	jobs.md	engine/jobs/counter.h:144
+jobs::Counter::Awaitable::counter	variable	jobs	jobs-counter-awaitable-counter	jobs.md	engine/jobs/counter.h:147
+jobs::Counter::Awaitable::await_ready() const noexcept	function	jobs	jobs-counter-awaitable-await-ready-const-noexcept	jobs.md	engine/jobs/counter.h:152
+jobs::Counter::Awaitable::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-counter-awaitable-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/counter.h:160
+jobs::Counter::Awaitable::await_resume() noexcept	function	jobs	jobs-counter-awaitable-await-resume-noexcept	jobs.md	engine/jobs/counter.h:181
+jobs::Counter::operator co_await()	function	jobs	jobs-counter-operator-co-await	jobs.md	engine/jobs/counter.h:192
+jobs::Spawn(Counter&,Job&&)	function	jobs	jobs-spawn-counter-amp-job-amp-amp	jobs.md	engine/jobs/counter.h:227
 jobs::StealStatus	enum	jobs	jobs-stealstatus	jobs.md	engine/jobs/deque.h:37
 jobs::StealStatus::Success	enumerator	jobs	jobs-stealstatus-success	jobs.md	engine/jobs/deque.h:39
 jobs::StealStatus::Empty	enumerator	jobs	jobs-stealstatus-empty	jobs.md	engine/jobs/deque.h:40
@@ -8154,6 +8158,7 @@ jobs::FramePool::Deallocate(void*)	function	jobs	jobs-framepool-deallocate-void-
 jobs::FramePool::GetStats() const	function	jobs	jobs-framepool-getstats-const	jobs.md	engine/jobs/frame_pool.h:161
 jobs::FramePool::CentralAvailableForTesting(usize)	function	jobs	jobs-framepool-centralavailablefortesting-usize	jobs.md	engine/jobs/frame_pool.h:172
 jobs::FramePool::Global()	function	jobs	jobs-framepool-global	jobs.md	engine/jobs/frame_pool.h:182
+jobs::FramePool::ReleaseThreadCache()	function	jobs	jobs-framepool-releasethreadcache	jobs.md	engine/jobs/frame_pool.h:189
 jobs::CompletionFn	alias	jobs	jobs-completionfn	jobs.md	engine/jobs/job.h:38
 jobs::Job	class	jobs	jobs-job	jobs.md	engine/jobs/job.h:56
 jobs::Job::Handle	alias	jobs	jobs-job-handle	jobs.md	engine/jobs/job.h:62

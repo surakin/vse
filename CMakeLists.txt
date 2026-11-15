@@ -447,6 +447,7 @@ add_subdirectory(tools/cmdline_access_check)  # programs read their command line
 add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
 add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
 add_subdirectory(tools/abi_check)  # Phase 23 Day 344: the shared library exports exactly abi/engine.exports; the C header is C
+add_subdirectory(tools/shared_state_check)  # Phase 23 Day 345: no public header under engine/ defines mutable static state
 add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
 add_subdirectory(tools/net_probe)  # Phase 20 Day 281
 add_subdirectory(tools/crash_extract)

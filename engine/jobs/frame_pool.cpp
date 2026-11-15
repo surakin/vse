@@ -1,6 +1,7 @@
 #include "jobs/frame_pool.h"
 
 #include "lang/new.h"
+#include "lang/traits.h"
 
 #include "log/assert.h"
 #include "os/os.h"
@@ -15,12 +16,7 @@ namespace
 {
 
 thread_local FramePool::ThreadCache t_cache;
-// Set when t_cache is destroyed at thread exit. Thread-local destructors run in unspecified order, so another one (or a
-// static destructor on the main thread) may still allocate or free a frame after the cache is gone; those must bypass
-// the cache and go straight to the central pool, or the block would sit in a dead cache forever. Kept outside the
-// cache, in a trivially destructible variable, because a store a destructor makes to its own object is dead and an
-// optimizer removes it (seen at -O2).
-thread_local bool t_cache_destroyed = false;
+static_assert(IsTriviallyDestructible<FramePool::ThreadCache>, "a thread_local with a destructor pins the shared engine library");
 
 // Guards "at most one pool uses thread caches" (a thread_local cache is
 // keyed to a single pool).
@@ -191,7 +187,7 @@ void* FramePool::Allocate(usize size)
 
     void* block = nullptr;
     ThreadCache& cache = t_cache;
-    if (config_.thread_caches && !t_cache_destroyed)
+    if (config_.thread_caches)
     {
         ENGINE_ASSERT(cache.owner == nullptr || cache.owner == this, "FramePool: thread cache belongs to another pool");
         cache.owner = this;
@@ -220,8 +216,7 @@ void* FramePool::Allocate(usize size)
     }
     else
     {
-        // Uncached pool, or a late allocation after this thread's cache
-        // was destroyed: straight to the central pool.
+        // An uncached pool: straight to the central pool.
         LockGuard<Mutex> lock(mutex_);
         block = CentralPopLocked(c);
     }
@@ -258,7 +253,7 @@ void FramePool::Deallocate(void* ptr)
     pooled_frees_[cls].FetchAdd(1, MemoryOrder::Relaxed);
 
     ThreadCache& cache = t_cache;
-    if (!config_.thread_caches || t_cache_destroyed)
+    if (!config_.thread_caches)
     {
         LockGuard<Mutex> lock(mutex_);
         CentralPushLocked(cls, block);
@@ -297,14 +292,13 @@ void FramePool::FlushCache(ThreadCache& cache)
     }
 }
 
-FramePool::ThreadCache::~ThreadCache()
+void FramePool::ReleaseThreadCache()
 {
-    // Thread exit: return cached blocks to the central pool so they
-    // aren't stranded. The Global() pool outlives every thread.
-    t_cache_destroyed = true;  // first: anything FlushCache or a later destructor frees must bypass this cache
-    if (owner != nullptr)
+    ThreadCache& cache = t_cache;
+    if (cache.owner != nullptr)
     {
-        owner->FlushCache(*this);
+        cache.owner->FlushCache(cache);
+        cache.owner = nullptr;
     }
 }
 

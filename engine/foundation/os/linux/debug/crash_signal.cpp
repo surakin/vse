@@ -162,25 +162,11 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context)
 }
 
 // SIGNAL-SAFE-END
-struct AlternateStack
-{
-    void* memory = nullptr;
-    ~AlternateStack()
-    {
-        if (memory != nullptr)
-        {
-            stack_t current;
-            if (::sigaltstack(nullptr, &current) == 0 && current.ss_sp == memory)
-            {  // still ours, not replaced by someone else
-                stack_t disable;
-                MemSet(&disable, 0, sizeof(disable));
-                disable.ss_flags = SS_DISABLE;
-                ::sigaltstack(&disable, nullptr);
-            }
-            ::munmap(memory, kAlternateStackBytes);
-        }
-    }
-};
+// The calling thread's alternate stack, or null. A plain pointer, not an object with a destructor: a thread_local destructor registered on
+// a host's thread would keep the shared engine library mapped until that thread ends (Phase 23 Day 345), so the stack is given back
+// by UnregisterThreadForCrashHandling (every engine thread calls it last; the leak of a thread that does not is 128 KiB of address
+// space, mostly never touched: MAP_NORESERVE).
+thread_local void* t_alternate_stack = nullptr;
 
 }  // namespace
 
@@ -257,8 +243,7 @@ bool RegisterThreadForCrashHandling(const char* name)
     {
         return false;  // nothing handles faults yet: no stack to set up (only the name, above)
     }
-    thread_local AlternateStack stack;
-    if (stack.memory != nullptr)
+    if (t_alternate_stack != nullptr)
     {
         return true;
     }
@@ -283,8 +268,32 @@ bool RegisterThreadForCrashHandling(const char* name)
         ::munmap(memory, kAlternateStackBytes);
         return false;
     }
-    stack.memory = memory;
+    t_alternate_stack = memory;
     return true;
 }
+
+namespace detail
+{
+
+void ReleaseThreadAlternateStack()
+{
+    void* memory = t_alternate_stack;
+    if (memory == nullptr)
+    {
+        return;
+    }
+    t_alternate_stack = nullptr;
+    stack_t current;
+    if (::sigaltstack(nullptr, &current) == 0 && current.ss_sp == memory)
+    {  // still ours, not replaced by someone else
+        stack_t disable;
+        MemSet(&disable, 0, sizeof(disable));
+        disable.ss_flags = SS_DISABLE;
+        ::sigaltstack(&disable, nullptr);
+    }
+    ::munmap(memory, kAlternateStackBytes);
+}
+
+}  // namespace detail
 
 }  // namespace engine_placeholder::debug

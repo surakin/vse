@@ -7,6 +7,17 @@
 namespace engine_placeholder::ecs
 {
 
+namespace detail
+{
+
+u64& SystemFn::Fallbacks()
+{
+    static u64 count = 0;
+    return count;
+}
+
+}  // namespace detail
+
 namespace
 {
 

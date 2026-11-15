@@ -113,9 +113,9 @@ public:
         FramePool* owner = nullptr;
         void* head[kClassCount] = {};
         u32 count[kClassCount] = {};
-        // (Whether this cache was destroyed is kept outside it, in a separate thread_local flag: a store the destructor
-        // makes to the object it is destroying is dead, and optimizers remove it.)
-        ~ThreadCache();
+        // Trivially destructible on purpose (Phase 23 Day 345): a `thread_local` with a destructor registers it on the
+        // host's thread, and then the shared engine library cannot be unloaded while that thread lives. The cache is
+        // handed back by `ReleaseThreadCache`, which every engine thread calls before it ends.
     };
 
     /// Creates a pool and reserves one slab of address space per size class.
@@ -181,9 +181,14 @@ public:
     /// - Thread-safety: thread-safe.
     static FramePool& Global();
 
-private:
-    friend struct ThreadCache;
+    /// Hands the calling thread's cached blocks back to the pool that owns them. A thread that used the global pool
+    /// calls it before it ends (the job system's workers and a scheduler's creating thread do); a thread that ends
+    /// without it strands at most 64 blocks per size class, which the pool never sees again.
+    ///
+    /// - Thread-safety: thread-safe; acts on the calling thread's own cache.
+    static void ReleaseThreadCache();
 
+private:
     static constexpr u32 kFallbackClass = 0xFFFFFFFFu;
     static constexpr u32 kHeaderMagic = 0xF4A3E901u;
     static constexpr u32 kRefillBatch = 16;

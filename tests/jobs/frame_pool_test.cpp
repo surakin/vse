@@ -7,6 +7,7 @@
 #include "containers/vector.h"
 
 #include "jobs/frame_pool.h"
+#include "lang/traits.h"
 #include "os/os.h"
 #include "cstr/mem_ops.h"
 
@@ -178,10 +179,11 @@ TEST_CASE("FramePool global instance: blocks freed on another thread are reusabl
             {
                 pool.Deallocate(blocks[i]);
             }
+            FramePool::ReleaseThreadCache();  // the cache has no destructor: the thread hands it back
         });
     freer.Join();
 
-    // The freeing thread exited and flushed its cache; everything is
+    // The freeing thread released its cache; everything is
     // allocatable again with no fallback.
     Vector<void*> again;
     for (int i = 0; i < 1000; ++i)
@@ -351,39 +353,31 @@ TEST_CASE("FramePool does not commit slab memory until blocks are used", "[jobs]
     pool.Deallocate(p);
 }
 
-TEST_CASE("FramePool: a free after the thread's cache was destroyed still reaches the central pool",
+TEST_CASE("FramePool: the thread cache has no destructor, and ReleaseThreadCache returns every block to the central pool",
           "[jobs][framepool]")
 {
+    // A thread_local with a destructor is registered on the host's thread and pins the shared engine library in memory.
+    static_assert(IsTriviallyDestructible<FramePool::ThreadCache>);
+
     FramePool& pool = FramePool::Global();
     const usize cls = 1;  // 256-byte blocks
-    // Quiesce: other tests' threads have exited and flushed their caches.
+    // Quiesce: other tests' threads have released their caches.
     const usize available_before = pool.CentralAvailableForTesting(cls);
     const FramePool::Stats before = pool.GetStats();
 
+    usize held_by_cache = 0;
     Thread t(
         [&]
         {
-            // Constructed first => destroyed LAST. Its destructor runs after
-            // the FramePool's per-thread cache has already been destroyed.
-            struct LateFree
-            {
-                FramePool* pool;
-                void* block = nullptr;
-                ~LateFree()
-                {
-                    if (block != nullptr)
-                    {
-                        pool->Deallocate(block);  // late free
-                    }
-                    void* again = pool->Allocate(200);  // late alloc
-                    pool->Deallocate(again);
-                }
-            };
-            thread_local LateFree late{&pool};
-            late.block = pool.Allocate(200);  // first pool use => cache constructed after `late`
+            void* block = pool.Allocate(200);  // refills the cache from the central pool
+            pool.Deallocate(block);
+            held_by_cache = available_before - pool.CentralAvailableForTesting(cls);
+            FramePool::ReleaseThreadCache();
+            FramePool::ReleaseThreadCache();  // a second call has nothing to do
         });
     t.Join();
 
+    REQUIRE(held_by_cache > 0);  // the blocks really were in the thread's cache before the release
     const FramePool::Stats after = pool.GetStats();
     REQUIRE(after.Live() == before.Live());
     // Nothing stranded: every block that left the central pool came back.

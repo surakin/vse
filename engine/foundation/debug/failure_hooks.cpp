@@ -2,6 +2,7 @@
 
 #include "debug/compiler.h"
 #include "debug/crash_context.h"
+#include "debug/crash_event_platform.h"
 #include "debug/crash_handler.h"
 #include "debug/crash_report.h"
 #include "debug/debugger.h"
@@ -10,6 +11,11 @@
 
 namespace engine_placeholder::debug
 {
+
+void UnregisterThreadForCrashHandling()
+{
+    detail::ReleaseThreadAlternateStack();
+}
 
 namespace
 {
@@ -47,6 +53,11 @@ void RegisterThread(const char* name)
     RegisterThreadForCrashHandling(name);
 }
 
+void UnregisterThread()
+{
+    UnregisterThreadForCrashHandling();
+}
+
 const FailureReportHooks kHooks = {&AppendTrace, &WriteContext, &DebuggerAttached};
 
 }  // namespace
@@ -55,6 +66,7 @@ void InstallDiagnosticsHooks()
 {
     SetFailureReportHooks(&kHooks);
     SetThreadStartHook(&RegisterThread);
+    SetThreadEndHook(&UnregisterThread);
 }
 
 }  // namespace engine_placeholder::debug

@@ -1,6 +1,7 @@
 #include "jobs/async_io.h"
 
 #include "log/diagnostics_hooks.h"
+#include "jobs/frame_pool.h"
 #include "jobs/jobs_log.h"
 #include "jobs/scheduler.h"
 #include "jobs/worker_pool.h"
@@ -82,7 +83,7 @@ void IoThread::Loop()
             cv_.Wait(lock, [&] { return head_ != nullptr || stopping_; });
             if (head_ == nullptr)
             {
-                return;  // stopping and drained
+                break;  // stopping and drained
             }
             req = head_;
             head_ = req->next;
@@ -93,6 +94,8 @@ void IoThread::Loop()
         }
         req->run(req);  // may free *req (the awaiter's state) once it decrements
     }
+    FramePool::ReleaseThreadCache();  // no thread_local destructor does it (the engine library must stay unloadable)
+    NotifyThreadEnd();
 }
 
 // ---- read request state ---------------------------------------------------

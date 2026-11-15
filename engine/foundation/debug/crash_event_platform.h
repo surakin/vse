@@ -39,6 +39,10 @@ bool InstallCrashEventHook(CrashEventFn fn);
 // it to end.
 bool CrashReportInProgress();
 
+// Gives back the calling thread's alternate signal stack, if this backend set one up (Linux; the other backends keep
+// nothing per thread, so the call there does nothing).
+void ReleaseThreadAlternateStack();
+
 // Removes the recorder if it is still the current handler; if something was installed over it, it stays but passes
 // through.
 void RemoveCrashEventHook();

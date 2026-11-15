@@ -85,7 +85,7 @@ private:
     LogChannel* next_ = nullptr;
 
     // Intrusive registry: every constructed LogChannel links itself in.
-    static inline LogChannel* head_ = nullptr;
+    static LogChannel* head_;
 };
 
 /// Slots in the ring of recent log lines.

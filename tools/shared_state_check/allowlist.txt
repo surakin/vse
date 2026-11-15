@@ -1,0 +1,5 @@
+# Headers that may define mutable static state, one per line: path|reason. A stale entry fails the gate (shared_state_check).
+engine/foundation/mem/heap_allocator.h|HeapAllocator::Default(): the type has no data (the instance is constant-initialized), so a copy per library is the same allocator over the one process heap.
+engine/foundation/log/assert.h|ENGINE_ENSURE's per-call-site EnsureSite: it registers itself into the log's list, which lives once in the engine library; a plugin links only the C API and does not expand the macro.
+engine/ecs/world.h|ecs::World's `static U tag` gives a component type its identity by address; the C API forbids C++ component access across the boundary (spec, Spike 2), so only the engine library instantiates it.
+engine/foundation/debug/death_test.h|ENGINE_DEATH_TEST_FN expands a registrar at namespace scope of a test program's own translation unit (an executable, never the engine library), where the one registry it feeds lives in that executable.

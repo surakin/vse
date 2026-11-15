@@ -7,8 +7,8 @@
 //! - [[FailureReportHooks]]: what the default assert handler and the error-log trace add to a bare message (a stack
 //! trace, the crash
 //!   context, a look at the debugger).
-//! - [[SetThreadStartHook]]: what a thread does first so a crash on it is reported by name (registration with the crash
-//! handler).
+//! - [[SetThreadStartHook]] and [[SetThreadEndHook]]: what a thread does first so a crash on it is reported by name
+//! (registration with the crash handler), and what it gives back last.
 //!
 //! `debug::InstallDiagnosticsHooks` (called by `debug::InitDebugFacilities`) installs both. Until then the base
 //! behavior is complete on its own: a failed assert prints its message line and aborts, an ensure prints its line and
@@ -70,5 +70,23 @@ ThreadStartHook SetThreadStartHook(ThreadStartHook hook);
 /// - Param name: a short name for the thread; borrowed for the call.
 /// - Thread-safety: thread-safe.
 void NotifyThreadStart(const char* name);
+
+/// The function [[NotifyThreadEnd]] calls: what a thread gives back before it ends.
+using ThreadEndHook = void (*)();
+
+/// Installs the function [[NotifyThreadEnd]] calls.
+///
+/// - Param hook: the function, or null to remove it.
+/// - Returns: the hook installed before, or null.
+/// - Thread-safety: thread-safe. One atomic store.
+ThreadEndHook SetThreadEndHook(ThreadEndHook hook);
+
+/// Called last thing on an engine thread (the I/O thread, the job workers) before it ends: releases what the thread
+/// registered at [[NotifyThreadStart]] (the crash handler's alternate stack), because no `thread_local` destructor does
+/// it (a destructor registered on a thread pins the shared engine library in memory). Does nothing until a hook is
+/// installed.
+///
+/// - Thread-safety: thread-safe.
+void NotifyThreadEnd();
 
 }  // namespace engine_placeholder

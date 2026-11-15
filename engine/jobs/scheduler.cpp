@@ -17,6 +17,12 @@ namespace
 thread_local int tls_job_depth = 0;
 }  // namespace
 
+Counter::PathCounters& Counter::PathStats()
+{
+    static PathCounters counters;
+    return counters;
+}
+
 Scheduler::Scheduler(const Config& config)
 {
     usize n = config.participants != 0 ? config.participants : DefaultParticipantCount();

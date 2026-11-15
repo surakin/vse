@@ -14,13 +14,13 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Strings](foundation-strings.md) | 6 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 81 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 84 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
 | [Platform: OS Services](platform-os.md) | 7 | 79 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
-| [Foundation: Debugging](foundation-debug.md) | 15 | 210 |
+| [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
@@ -33,7 +33,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Scene bridge](scene.md) | 3 | 49 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
-| [The Job System](jobs.md) | 13 | 203 |
+| [The Job System](jobs.md) | 13 | 204 |
 | [The Render Hardware Interface](rhi.md) | 21 | 825 |
 | [The renderer](renderer.md) | 25 | 1197 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 441 |

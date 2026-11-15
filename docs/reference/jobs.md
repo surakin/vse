@@ -754,7 +754,7 @@ Gives the process-wide await-path tallies.
 
 | Field | Value |
 |---|---|
-| Returns | a reference to a function-local static that lives for the whole process. |
+| Returns | a reference to a static defined in `scheduler.cpp` (one per engine library) that lives for the whole process. |
 
 ### `DecrementThunk(void*)` {#jobs-counter-decrementthunk-void-star}
 
@@ -1593,6 +1593,20 @@ It uses the default [`jobs::FramePool::Config`](#jobs-framepool-config) with thr
 |---|---|
 | Returns | a reference valid for the rest of the process. |
 | Thread-safety | thread-safe. |
+
+### `ReleaseThreadCache()` {#jobs-framepool-releasethreadcache}
+
+`method jobs::FramePool::ReleaseThreadCache` — defined in `engine/jobs/frame_pool.h`
+
+```cpp
+static void ReleaseThreadCache();
+```
+
+Hands the calling thread's cached blocks back to the pool that owns them. A thread that used the global pool calls it before it ends (the job system's workers and a scheduler's creating thread do); a thread that ends without it strands at most 64 blocks per size class, which the pool never sees again.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe; acts on the calling thread's own cache. |
 
 ## `CompletionFn` {#jobs-completionfn}
 

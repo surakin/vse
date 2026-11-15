@@ -328,6 +328,11 @@ bool InstallCrashEventHook(CrashEventFn fn)
     return g_observer != nullptr;
 }
 
+void ReleaseThreadAlternateStack()
+{
+    // This backend keeps nothing per thread that a thread_local destructor would have to release.
+}
+
 bool CrashReportInProgress()
 {
     return g_reports_in_progress.Load(MemoryOrder::Acquire) != 0;

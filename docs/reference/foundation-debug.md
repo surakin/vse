@@ -585,6 +585,21 @@ A fault handler needs stack to run on, and a thread whose stack is exhausted has
 | Thread-safety | thread-safe; it affects only the calling thread. Not async-signal-safe. |
 | Backend | Windows: SetThreadStackGuarantee so a stack overflow can be handled; macOS: the name only (the library takes Mach exceptions, which need no alternate stack). |
 
+## `UnregisterThreadForCrashHandling()` {#debug-unregisterthreadforcrashhandling}
+
+`function debug::UnregisterThreadForCrashHandling` — defined in `engine/foundation/debug/crash_handler.h`
+
+```cpp
+void UnregisterThreadForCrashHandling();
+```
+
+Gives back what [`debug::RegisterThreadForCrashHandling`](#debug-registerthreadforcrashhandling-const-char-star) set up for the calling thread (the alternate stack of the signal-based backend). Call it before a thread ends: the stack is not released by a `thread_local` destructor, so that the shared engine library can be unloaded while threads that used it still live. A thread that never registered, or whose registration did nothing, is unaffected.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Thread-safety | thread-safe; it affects only the calling thread. Not async-signal-safe. |
+
 ## `CrashHandlerInstalled()` {#debug-crashhandlerinstalled}
 
 `function debug::CrashHandlerInstalled` — defined in `engine/foundation/debug/crash_handler.h`

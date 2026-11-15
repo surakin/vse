@@ -106,6 +106,15 @@ void UninstallCrashHandler();
 /// takes Mach exceptions, which need no alternate stack).
 bool RegisterThreadForCrashHandling(const char* name = nullptr);
 
+/// Gives back what [[debug::RegisterThreadForCrashHandling]] set up for the calling thread (the alternate stack of the
+/// signal-based backend). Call it before a thread ends: the stack is not released by a `thread_local` destructor, so
+/// that the shared engine library can be unloaded while threads that used it still live. A thread that never registered,
+/// or whose registration did nothing, is unaffected.
+///
+/// - Fails: never.
+/// - Thread-safety: thread-safe; it affects only the calling thread. Not async-signal-safe.
+void UnregisterThreadForCrashHandling();
+
 /// Reports whether the crash handler is installed.
 /// - Returns: true between a successful [[debug::InstallCrashHandler]] and [[debug::UninstallCrashHandler]].
 /// - Thread-safety: thread-safe.

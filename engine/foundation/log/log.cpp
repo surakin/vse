@@ -10,6 +10,8 @@
 namespace engine_placeholder
 {
 
+LogChannel* LogChannel::head_ = nullptr;
+
 LogChannel LogCore("LogCore");
 LogChannel LogRender("LogRender");
 LogChannel LogPlatform("LogPlatform");
@@ -391,6 +393,7 @@ namespace
 {
 Atomic<const FailureReportHooks*> g_failure_hooks{nullptr};
 Atomic<ThreadStartHook> g_thread_start_hook{nullptr};
+Atomic<ThreadEndHook> g_thread_end_hook{nullptr};
 }  // namespace
 
 const FailureReportHooks* SetFailureReportHooks(const FailureReportHooks* hooks)
@@ -414,6 +417,20 @@ void NotifyThreadStart(const char* name)
     if (hook != nullptr)
     {
         hook(name);
+    }
+}
+
+ThreadEndHook SetThreadEndHook(ThreadEndHook hook)
+{
+    return g_thread_end_hook.Exchange(hook, MemoryOrder::AcqRel);
+}
+
+void NotifyThreadEnd()
+{
+    ThreadEndHook hook = g_thread_end_hook.Load(MemoryOrder::Acquire);
+    if (hook != nullptr)
+    {
+        hook();
     }
 }
 
