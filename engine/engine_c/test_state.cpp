@@ -9,6 +9,7 @@
 // while the phase is under way); a release build of the library has no such table.
 #include "build_defs.h"
 #include "debug/crash_handler.h"
+#include "engine_c/engine_objects.h"
 #include "engine_c/engine_test_extension.h"
 #include "engine_c/test_state.h"
 #include "debug/stack_trace.h"
@@ -62,6 +63,16 @@ unsigned long long LogLines()
 void LogMessage(const char* text)
 {
     Log(LogCore, LogVerbosity::Warn, StringView(text));
+}
+
+int ObjectAcquire()
+{
+    return engine_c::EngineObjectAcquire() ? 1 : 0;
+}
+
+void ObjectRelease()
+{
+    engine_c::EngineObjectRelease();
 }
 
 Atomic<long> g_live_blocks{0};
@@ -134,7 +145,9 @@ const engine_test_extension* TestStateExtension()
                                                  &InstallCrash,
                                                  &UninstallCrash,
                                                  &CrashInJob,
-                                                 &LiveBlocks};
+                                                 &LiveBlocks,
+                                                 &ObjectAcquire,
+                                                 &ObjectRelease};
     return &filled;
 }
 

@@ -8161,7 +8161,8 @@ jobs::FramePool::Deallocate(void*)	function	jobs	jobs-framepool-deallocate-void-
 jobs::FramePool::GetStats() const	function	jobs	jobs-framepool-getstats-const	jobs.md	engine/jobs/frame_pool.h:161
 jobs::FramePool::CentralAvailableForTesting(usize)	function	jobs	jobs-framepool-centralavailablefortesting-usize	jobs.md	engine/jobs/frame_pool.h:172
 jobs::FramePool::Global()	function	jobs	jobs-framepool-global	jobs.md	engine/jobs/frame_pool.h:182
-jobs::FramePool::ReleaseThreadCache()	function	jobs	jobs-framepool-releasethreadcache	jobs.md	engine/jobs/frame_pool.h:190
+jobs::FramePool::DestroyGlobalAtUnload()	function	jobs	jobs-framepool-destroyglobalatunload	jobs.md	engine/jobs/frame_pool.h:191
+jobs::FramePool::ReleaseThreadCache()	function	jobs	jobs-framepool-releasethreadcache	jobs.md	engine/jobs/frame_pool.h:199
 jobs::CompletionFn	alias	jobs	jobs-completionfn	jobs.md	engine/jobs/job.h:38
 jobs::Job	class	jobs	jobs-job	jobs.md	engine/jobs/job.h:56
 jobs::Job::Handle	alias	jobs	jobs-job-handle	jobs.md	engine/jobs/job.h:62

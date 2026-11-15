@@ -17,7 +17,8 @@ namespace
 {
 
 thread_local FramePool::ThreadCache t_cache;
-static_assert(IsTriviallyDestructible<FramePool::ThreadCache>, "a thread_local with a destructor pins the shared engine library");
+static_assert(IsTriviallyDestructible<FramePool::ThreadCache>,
+              "a thread_local with a destructor pins the shared engine library");
 
 // Guards "at most one pool uses thread caches" (a thread_local cache is
 // keyed to a single pool).
@@ -104,18 +105,33 @@ FramePool::~FramePool()
     }
 }
 
+namespace
+{
+alignas(FramePool) byte g_global_storage[sizeof(FramePool)];
+FramePool* g_global_instance = nullptr;
+}  // namespace
+
 FramePool& FramePool::Global()
 {
-    // Immortal by design: built once in static storage and never destroyed (no heap), so thread-exit cache
-    // flushes and late frees always find it alive.
-    alignas(FramePool) static byte storage[sizeof(FramePool)];
+    // Immortal unless the shared library is unloaded (DestroyGlobalAtUnload): built once in static storage and not
+    // destroyed (no heap), so thread-exit cache flushes and late frees always find it alive.
     static FramePool* instance = []
     {
         Config config;
         config.thread_caches = true;
-        return new (storage) FramePool(config);
+        g_global_instance = new (g_global_storage) FramePool(config);
+        return g_global_instance;
     }();
     return *instance;
+}
+
+void FramePool::DestroyGlobalAtUnload()
+{
+    if (g_global_instance != nullptr)
+    {
+        g_global_instance->~FramePool();
+        g_global_instance = nullptr;
+    }
 }
 
 int FramePool::ClassForRequest(usize size)

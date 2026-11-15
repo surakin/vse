@@ -34,6 +34,8 @@ tests/engine_library/unload_host.c|<stdio.h>|a C program standing for a foreign 
 tests/engine_library/host_api.h||the C hosts' shared helper (Phase 23 Day 346): plain C that finds the C API in a library it dlopened, spelling the C API's own fixed-width types
 tests/engine_library/host_c.c|<stdio.h>,<string.h>|a C program standing for a foreign host (Phase 23 Day 346): it uses only the C API's header (engine_c.h) and the C library, as a host in another language would
 tests/engine_library/host_dl.c|<stdio.h>,<string.h>|a C program standing for a foreign host (Phase 23 Day 347): it loads the engine with engine_loader.h, using only the C API's headers and the C library
+tests/engine_library/host_reload.c|<stdio.h>,<string.h>|a C program standing for a foreign host (Phase 23 Day 348): it loads and unloads the engine 50 times, reading /proc for the maps, threads and resident size, with the C library
+tests/engine_library/host_inside.c|<stdio.h>,<string.h>|a C program standing for a foreign host (Phase 23 Day 348): a host thread blocked in the log callback while another destroys the engine, with C11 atomics and the C library
 tests/engine_library/abi_snapshot_gen.c|<stdio.h>,<stddef.h>|prints the C API's layout (Phase 23 Day 347): plain C compiled against engine_c.h, with the C library's printf and offsetof
 tests/engine_library/fake_engine.c||stands in for an engine library that must be refused (Phase 23 Day 347): plain C that spells the C API's own fixed-width types
 engine/engine_c/engine_loader.h|<string.h>|the host-side loader (Phase 23 Day 347): header-only plain C a host in any language family copies, using the C library's string functions and the C API's fixed-width types

@@ -5,11 +5,13 @@
 #include "build_defs.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
+#include "jobs/frame_pool.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 #include "cstr/varargs.h"
 #include "lang/new.h"
 #include "engine_c/engine_c.h"
+#include "engine_c/engine_objects.h"
 #include "engine_c/status_map.h"
 #include "log/diagnostics_hooks.h"
 #include "log/log.h"
@@ -73,6 +75,17 @@ struct Engine
     engine_log_fn log = nullptr;
     void* log_user = nullptr;
     bool suppress_console = false;
+    // The log channels as they were before the engine applied its `log.*` settings; destroy puts them back.
+    struct ChannelState
+    {
+        LogChannel* channel;
+        LogVerbosity verbosity;
+        bool enabled;
+    };
+    Vector<ChannelState> channels;
+    // Objects the engine's C API has handed out and the host has not given back (worlds, loaded resources, imports;
+    // Days 349 to 351 register theirs here).
+    u32 outstanding = 0;
     UniquePtr<settings::Settings> settings;  // last: destroyed first, before the entries and the registry it reads
 };
 
@@ -301,6 +314,10 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
     {  // an unknown key is a note: a typo in a host's entry must not pass silently
         return FailWithProblem(report.notes[0]);
     }
+    for (LogChannel* channel = LogChannel::First(); channel != nullptr; channel = channel->Next())
+    {
+        engine->channels.Push(Engine::ChannelState{channel, channel->Verbosity(), channel->Enabled()});
+    }
     settings::AttachLogSettings(engine->settings.Get());
 
     ++state.generation;
@@ -326,6 +343,12 @@ engine_status DestroyFn(engine_handle handle)
         {
             return status;
         }
+        if (engine->outstanding != 0)
+        {  // refused, and nothing changed: the host gives its objects back and calls again
+            SetLastError("in_use: %u object(s) of the engine are still outstanding",
+                         static_cast<unsigned>(engine->outstanding));
+            return ENGINE_ERROR_IN_USE;
+        }
         dying = static_cast<UniquePtr<Engine>&&>(state.engine);
         state.destroying = true;
     }
@@ -334,6 +357,11 @@ engine_status DestroyFn(engine_handle handle)
     if (dying->log != nullptr)
     {
         SetLogObserver(nullptr, nullptr);
+    }
+    for (usize i = 0; i < dying->channels.Size(); ++i)
+    {  // the process's log channels are as the host had them before create
+        dying->channels[i].channel->SetVerbosity(dying->channels[i].verbosity);
+        dying->channels[i].channel->SetEnabled(dying->channels[i].enabled);
     }
     dying = nullptr;
     {
@@ -466,6 +494,28 @@ const void* GetExtensionFn(engine_string name)
 
 }  // namespace
 
+bool EngineObjectAcquire()
+{
+    State& state = GetState();
+    LockGuard<RecursiveMutex> lock(state.mutex);
+    if (state.engine.Get() == nullptr)
+    {
+        return false;
+    }
+    ++state.engine->outstanding;
+    return true;
+}
+
+void EngineObjectRelease()
+{
+    State& state = GetState();
+    LockGuard<RecursiveMutex> lock(state.mutex);
+    if (state.engine.Get() != nullptr && state.engine->outstanding > 0)
+    {
+        --state.engine->outstanding;
+    }
+}
+
 }  // namespace engine_placeholder::engine_c
 
 using namespace engine_placeholder;
@@ -510,3 +560,14 @@ extern "C"
     }
 
 }  // extern "C"
+
+#if ENGINE_C_UNLOAD_HOOK
+// Runs when the shared library is unloaded (and at process exit, once the host's own static destructors are done with
+// the engine): the one pool of the job system that is immortal in a program gives its memory back, so a host that loads
+// and unloads the library does not accumulate it. By the contract of the C API every thread that used the engine has
+// ended or called thread_detach, and the engine is destroyed.
+__attribute__((destructor)) static void EngineLibraryUnloaded()
+{
+    engine_placeholder::jobs::FramePool::DestroyGlobalAtUnload();
+}
+#endif

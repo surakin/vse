@@ -197,3 +197,19 @@ foreach(suffix "" "_asan" "_tsan")
     add_dependencies(engine_host_dl${suffix} engine_fake_1 engine_fake_2 engine_fake_3)
   endif()
 endforeach()
+
+# Day 348: shutdown, unload and reload. host_reload: 50 load-run-destroy-unload cycles in one process (the library gone from /proc/self/maps after each, the
+# thread count back, the resident size flat). host_inside: a host thread blocked in the log callback holds destroy until it returns.
+foreach(suffix "" "_asan" "_tsan")
+  # Under asan the allocator's quarantine and shadow memory grow the resident size for a while: the limit is looser.
+  if(suffix STREQUAL "_asan")
+    set(growth_kib 65536)
+  elseif(suffix STREQUAL "_tsan")
+    set(growth_kib 65536)
+  else()
+    set(growth_kib 8192)
+  endif()
+  engine_library_c_test(engine_reload_cycles${suffix} "${suffix}" SOURCE host_reload.c PASS_REGEX "host_reload: ok"
+                        DEFINES "ENGINE_LIB_FILE=\"$<TARGET_FILE_NAME:engine${suffix}>\"" RESIDENT_GROWTH_LIMIT_KIB=${growth_kib})
+  engine_library_c_test(engine_destroy_waits_for_callback${suffix} "${suffix}" SOURCE host_inside.c PASS_REGEX "host_inside: ok")
+endforeach()

@@ -33,7 +33,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Scene bridge](scene.md) | 3 | 49 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
-| [The Job System](jobs.md) | 13 | 204 |
+| [The Job System](jobs.md) | 13 | 205 |
 | [The Render Hardware Interface](rhi.md) | 21 | 825 |
 | [The renderer](renderer.md) | 25 | 1197 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 441 |

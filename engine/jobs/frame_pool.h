@@ -177,14 +177,23 @@ public:
     /// Created on first use and intentionally never destroyed, so thread-exit
     /// cache flushes and late frees always find it alive.
     ///
-    /// - Returns: a reference valid for the rest of the process.
+    /// - Returns: a reference valid for the rest of the process, or until [[jobs::FramePool::DestroyGlobalAtUnload]].
     /// - Thread-safety: thread-safe.
     static FramePool& Global();
 
-    /// Hands the calling thread's cached blocks back to the pool that owns them. [[NotifyThreadEnd]] calls it (the first
-    /// use of a cache registers it), so a thread that calls `NotifyThreadEnd` before it ends needs nothing more; the job
-    /// system's workers, the I/O thread and a scheduler's creating thread do. A thread that ends without either strands at
-    /// most 64 blocks per size class, which the pool never sees again.
+    /// Releases the memory of the process-wide pool when the shared engine library is unloaded (Phase 23 Day 348): the
+    /// pool is otherwise immortal, and its slabs would outlive the library's own image. Does nothing if the pool was
+    /// never used.
+    ///
+    /// - Thread-safety: not-thread-safe. Call only when no thread can use the pool any more: every engine thread has
+    /// ended or called `NotifyThreadEnd`, and nothing calls [[jobs::FramePool::Global]] afterwards.
+    /// - Aborts: never.
+    static void DestroyGlobalAtUnload();
+
+    /// Hands the calling thread's cached blocks back to the pool that owns them. [[NotifyThreadEnd]] calls it (the
+    /// first use of a cache registers it), so a thread that calls `NotifyThreadEnd` before it ends needs nothing more;
+    /// the job system's workers, the I/O thread and a scheduler's creating thread do. A thread that ends without either
+    /// strands at most 64 blocks per size class, which the pool never sees again.
     ///
     /// - Thread-safety: thread-safe; acts on the calling thread's own cache.
     static void ReleaseThreadCache();
@@ -210,7 +219,8 @@ private:
     void CentralPushLocked(usize class_index, void* block);
     void* AllocateFallback(usize size);
     void FlushCache(ThreadCache& cache);
-    // Makes this pool the owner of the calling thread's cache and has NotifyThreadEnd hand the cache back when the thread ends.
+    // Makes this pool the owner of the calling thread's cache and has NotifyThreadEnd hand the cache back when the
+    // thread ends.
     void NoteCacheUse(ThreadCache& cache);
 
     Config config_;

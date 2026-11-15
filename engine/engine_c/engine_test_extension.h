@@ -20,6 +20,8 @@ struct engine_test_extension
     void (*crash_uninstall)(void);
     void (*crash_in_job)(void);
     long (*live_blocks)(void); /* blocks `allocate` returned and `release` has not taken back */
+    int (*object_acquire)(void); /* counts an outstanding object on the engine (1), or 0 when no engine exists: destroy refuses while any is out */
+    void (*object_release)(void);
 };
 
 /* What a plugin reports about the singletons it sees. */

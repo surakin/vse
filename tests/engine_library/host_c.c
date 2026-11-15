@@ -214,13 +214,15 @@ static void TestLifecycle(const engine_api* api)
     memset(&value, 0, sizeof(value));
 
     /* Create with a host setting, a command line and a log callback. */
-    engine_setting_entry entries[] = {{S("rhi.pipeline_cache"), S("true")}, {S("platform.window_backend"), S("x11")}};
+    engine_setting_entry entries[] = {{S("rhi.pipeline_cache"), S("true")},
+                                      {S("platform.window_backend"), S("x11")},
+                                      {S("log.logcore.verbosity"), S("trace")}};
     engine_string args[] = {S("host_c"), S("--set"), S("platform.window_backend=wayland")};
     log_record record;
     memset(&record, 0, sizeof(record));
     engine_create_info info = BaseInfo();
     info.settings = entries;
-    info.setting_count = 2;
+    info.setting_count = 3;
     info.args = args;
     info.arg_count = 3;
     info.flags = ENGINE_CREATE_LOG_SUPPRESS_CONSOLE;
@@ -291,6 +293,20 @@ static void TestLifecycle(const engine_api* api)
     }
     CHECK(api->get_extension(S("engine.no_such_extension")) == NULL);
 
+    /* Destroy refuses while an object of the engine is outstanding, changes nothing, and works once the host gives the
+     * object back. */
+    if (state != NULL)
+    {
+        CHECK(state->object_acquire() == 1);
+        CHECK_STATUS(api->destroy(first), ENGINE_ERROR_IN_USE);
+        CHECK(strstr(LastError(api, text, sizeof(text)), "outstanding") != NULL);
+        CHECK_STATUS(api->get_info(first, &report), ENGINE_OK);
+        state->object_release();
+    }
+    CHECK_STATUS(api->setting_get(first, S("log.logcore.verbosity"), &value), ENGINE_OK);
+    CHECK(BufferIs(&value, "trace"));
+    engine_buffer_release(&value);
+
     /* Destroy: the handle is stale from now on, and no callback runs. */
     CHECK_STATUS(api->destroy(first), ENGINE_OK);
     CHECK_STATUS(api->destroy(first), ENGINE_ERROR_STALE_HANDLE);
@@ -320,6 +336,15 @@ static void TestLifecycle(const engine_api* api)
     CHECK_STATUS(api->get_info(first, &report), ENGINE_ERROR_STALE_HANDLE);
     CHECK_STATUS(api->get_info(second, &report), ENGINE_OK);
     CHECK_STATUS(api->destroy(second), ENGINE_OK);
+    {
+        engine_create_info plain = BaseInfo();
+        engine_handle third;
+        CHECK_STATUS(api->create(&plain, &third), ENGINE_OK);
+        CHECK_STATUS(api->setting_get(third, S("log.logcore.verbosity"), &value), ENGINE_OK);
+        CHECK(BufferIs(&value, "warn")); /* without the restore on destroy this is `trace` */
+        engine_buffer_release(&value);
+        CHECK_STATUS(api->destroy(third), ENGINE_OK);
+    }
 }
 
 int main(void)

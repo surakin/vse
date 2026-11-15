@@ -151,3 +151,22 @@ A language binding (Phase 26's Lua, any other) binds through this table and may 
 only to the end of a struct; a status number never changes; a function's meaning never changes within a major version; `struct_size` says how much of a
 struct is real. It may not rely on the text of a message (`last_error`, `loader.message`), on the order of log lines, or on the extensions (`get_extension`
 names other than the ones the guide documents).
+
+## Shutdown, unload and reload (Day 348)
+
+**What `engine_destroy` guarantees.** When it returns `ENGINE_OK`:
+
+- the engine's handle is stale, and the log callback is gone: it is not running on any thread and will not run again (destroy waits for a callback that is running);
+- the engine's settings service, registry, layers and listeners are destroyed (they belong to the engine object);
+- the process's log channels have the verbosity and enabled state they had before `engine_create` (the `log.*` settings changed them for the engine's life);
+- a new engine may be created.
+
+What a host must do, and what the engine does not do for it:
+
+- **Give objects back first.** The engine counts the objects its API hands out (the worlds, loaded resources and imports of Days 349 to 351 register with `engine_c/engine_objects.h`). `engine_destroy` with one outstanding returns `ENGINE_ERROR_IN_USE` ("n object(s) of the engine are still outstanding"), changes nothing and may be called again once the host has released them. There is no `force`: cancelling a host's loads behind its back would leave it with handles to nothing.
+- **Do not unload while a thread is inside the library.** `engine_destroy` waits for a log callback that is running, but the library cannot stop a host from `dlclose`-ing a library a thread is still executing in. Unload only after destroy has returned and every host thread that called the engine has called `thread_detach` and left it. While destroy waits, the handle is already stale (calls fail with `ENGINE_ERROR_STALE_HANDLE`) and `engine_create` fails with `ENGINE_ERROR_LIMIT_EXCEEDED` until the old engine is gone (`host_inside.c`).
+- **Do not unload while the engine is alive.**
+
+**Unload.** The library is not linked `-z nodelete`: it unloads when its last `dlclose` runs, and the test `engine_reload_cycles*` proves it by loading, creating, running jobs, destroying and unloading 50 times in one process (plain, asan, tsan), checking after every cycle that the library is gone from `/proc/self/maps` and from the dynamic linker, that the process has no thread it did not have, and after the last that the resident size has not grown (plain: within 8 MiB of its size after the fifth cycle; the sanitizers' allocators get 64 MiB). Under asan the leak report at exit is the check for what is really lost. What an unload still has to give back is done by the library's destructor (`EngineLibraryUnloaded`, in the shared library only): the job system's process-wide frame pool, immortal in a program, frees its slabs (`FramePool::DestroyGlobalAtUnload`); without it each cycle kept about 2 MiB.
+
+**Audit.** The things an engine registers, and who removes them: the settings listeners and the `log.*` application (the settings service, at destroy); the log observer (destroy); the log channels' state (destroy restores it); the job scheduler's threads (the scheduler that made them, which joins them when it is destroyed: the engine starts none of its own until Day 349); the crash handler (the host installs and removes it; an engine installs it on Day 349 and removes it at destroy); the per-thread caches (the thread's own `thread_detach`); the global frame pool (the library's destructor). No static destructor touches another static.

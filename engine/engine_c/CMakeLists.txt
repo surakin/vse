@@ -29,7 +29,7 @@ foreach(suffix "" "_asan" "_tsan")
   target_include_directories(engine_c${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
   target_compile_options(engine_c${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
   # ENGINE_BUILDING_LIBRARY: engine_get_api is the one exported function (engine_c.h); ENGINE_TEST_EXTENSION: see the option above.
-  target_compile_definitions(engine_c${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
+  target_compile_definitions(engine_c${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
   target_link_libraries(engine_c${suffix} PUBLIC asset${suffix} jobs${suffix} foundation${suffix})
 endforeach()
 
@@ -108,7 +108,7 @@ function(engine_add_shared suffix)
   add_library(engine${suffix} SHARED ${ENGINE_C_SOURCES})
   target_include_directories(engine${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
   target_compile_options(engine${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_compile_definitions(engine${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
+  target_compile_definitions(engine${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=1 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
   # Every module's objects go in whole (nothing is dropped for being unreferenced: the C API reaches them at run time), their third-party libraries
   # (the vendored C libraries, already position independent) come in through the modules' usage requirements.
   target_link_libraries(engine${suffix} PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,${libs}>")

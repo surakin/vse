@@ -1591,8 +1591,23 @@ It uses the default [`jobs::FramePool::Config`](#jobs-framepool-config) with thr
 
 | Field | Value |
 |---|---|
-| Returns | a reference valid for the rest of the process. |
+| Returns | a reference valid for the rest of the process, or until [`jobs::FramePool::DestroyGlobalAtUnload`](#jobs-framepool-destroyglobalatunload). |
 | Thread-safety | thread-safe. |
+
+### `DestroyGlobalAtUnload()` {#jobs-framepool-destroyglobalatunload}
+
+`method jobs::FramePool::DestroyGlobalAtUnload` — defined in `engine/jobs/frame_pool.h`
+
+```cpp
+static void DestroyGlobalAtUnload();
+```
+
+Releases the memory of the process-wide pool when the shared engine library is unloaded (Phase 23 Day 348): the pool is otherwise immortal, and its slabs would outlive the library's own image. Does nothing if the pool was never used.
+
+| Field | Value |
+|---|---|
+| Aborts | never. |
+| Thread-safety | not-thread-safe. Call only when no thread can use the pool any more: every engine thread has ended or called `NotifyThreadEnd`, and nothing calls [`jobs::FramePool::Global`](#jobs-framepool-global) afterwards. |
 
 ### `ReleaseThreadCache()` {#jobs-framepool-releasethreadcache}
 
