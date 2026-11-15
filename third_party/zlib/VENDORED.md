@@ -7,7 +7,7 @@ The sources are the upstream files, unmodified: `adler32.c compress.c crc32.c de
 and their headers. Not vendored: the `gz*` files (file access: `file_access_check`), the examples, tests and every platform directory.
 
 Per `PLAN.md` assumptions #17 and #19 (amended 2026-11-14) zlib exists for libpng, which decodes PNG for `engine/asset_import` (the glTF importer, Phase 22
-Day 338; its input may be hostile) and then for FreeType's color bitmap strikes (Phase 27 Day 353). Source vendor, not a system library, so builds are
+Day 338; its input may be hostile) and then for FreeType's color bitmap strikes (Phase 27 Day 369). Source vendor, not a system library, so builds are
 offline and the same on Windows, Linux and macOS. Nothing but libpng includes `zlib.h`.
 
 Built by `CMakeLists.txt` as one static C library per flavor (`zlib`, `zlib_asan`, `zlib_tsan`), warnings off for the target (third-party C), with `Z_SOLO`

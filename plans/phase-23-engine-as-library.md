@@ -1,12 +1,33 @@
 # Phase 23 — The Engine as a Loadable Library
 
-**Status: planned at phase level (2026-11-13, the user's request); the day files are not written yet, so the phase cannot start (CLAUDE.md, "Planning policy").** Placed right after Phase 22 so that physics (24), audio (25) and scripting (26) are built knowing the export rules, and after the asset pipeline so the library's surface is known.
+**Status: planned (2026-11-15): the day files are written (Days 342-357, `plans/phase-23-engine-as-library/`), so the phase can start once Phase 22's open items are accepted; Phase 27 (3D text) moved to Days 358-373 to make room.** Placed right after Phase 22 so that physics (24), audio (25) and scripting (26) are built knowing the export rules, and after the asset pipeline so the library's surface is known.
 
 **Depends on:** Phase 22 (the resource system is part of what a host loads), Phase 13 (Windows: DLLs) and Phase 21 (macOS: dylibs), Phase 12 (module layering: the library's shape follows `ARCHITECTURE.md`), Phase 11 (settings: one registry across the boundary), Phase 7 (debugging: crash handling and symbols across libraries), Phase 2 (jobs: one scheduler, thread-locals), Phase 16 (wrappers: no `std` type crosses a boundary by construction).
 **Goal:** the engine can be built as a loadable library (`libengine.so`, `engine.dll`, `libengine.dylib`) that a host program loads at run time, in addition to the static libraries games link today. A host sees a **versioned, flat C ABI** (opaque handles, no C++ type across the boundary); the engine inside stays C++. Static linking stays the default and keeps every optimization it has; the shared build is an option, tested as thoroughly as the static one.
 **Definition of done:** with `-DENGINE_BUILD_SHARED=ON` the whole engine builds as one shared library (and, if the spec says so, per-module libraries for development) on Linux, Windows and macOS with symbols hidden by default and an explicit export list; a header `engine_c.h`, valid C, declares the C API (version negotiation, create/destroy, frame loop, window and renderer, a world, the resource manager, settings and logging); a host can embed the engine in a native window it owns (below); a host program written in C loads the library with `dlopen`/`LoadLibrary`, checks its version, runs a headless frame and shuts it down; a gate fails when the exported symbol list changes without a version bump or when a C++ type appears in the C header; two libraries in one process see one settings registry, one log, one job scheduler and one allocator (no duplicated singletons); unloading and reloading the library works when the host has shut the engine down; the full suite passes in every flavor with the engine built both ways; the guide and a tutorial are written.
 
-## Key deliverables (to be broken into days before the phase starts)
+## Days
+
+342. [Design Spec, Spikes & Phase Setup](phase-23-engine-as-library/day-342-design-spec-spikes-and-setup.md)
+343. [The Shared Build on Linux](phase-23-engine-as-library/day-343-shared-build-on-linux.md)
+344. [Symbol Visibility, the Export List & the `abi_check` Gate](phase-23-engine-as-library/day-344-visibility-export-list-and-abi-gate.md)
+345. [One of Everything Across the Boundary](phase-23-engine-as-library/day-345-one-of-everything-across-the-boundary.md)
+346. [The C API Core: Version, Function Table, Create & Destroy](phase-23-engine-as-library/day-346-c-api-core-and-the-function-table.md)
+347. [The Loader, the ABI Snapshot & the C Host](phase-23-engine-as-library/day-347-the-loader-abi-snapshot-and-the-c-host.md)
+348. [Complete Shutdown, Unload & Reload](phase-23-engine-as-library/day-348-shutdown-unload-and-reload.md)
+349. [C API: the Frame Loop, a World, Jobs & Crash Handling](phase-23-engine-as-library/day-349-c-api-frame-loop-world-jobs-and-crash.md)
+350. [C API: Resources & Host-Provided Content](phase-23-engine-as-library/day-350-c-api-resources-and-host-memory-content.md)
+351. [C API: glTF Import at Run Time](phase-23-engine-as-library/day-351-c-api-gltf-import.md)
+352. [Rendering into a Host Window: the Foreign Surface on Linux](phase-23-engine-as-library/day-352-foreign-surface-linux.md)
+353. [Host-Owned Input & the Host-Driven Frame Loop](phase-23-engine-as-library/day-353-host-owned-input-and-the-host-driven-frame.md)
+354. [Windows: the DLL & Embedding into an `HWND`](phase-23-engine-as-library/day-354-windows-dll-and-hwnd-embedding.md)
+355. [macOS: the dylib & Embedding into an `NSView`](phase-23-engine-as-library/day-355-macos-dylib-and-nsview-embedding.md)
+356. [Shared GPU Textures, Benchmarks & the Whole Suite Against the Shared Build](phase-23-engine-as-library/day-356-shared-gpu-textures-benchmarks-and-the-suite-shared.md)
+357. [Docs, Closing Runs on Three Machines & the Phase Review](phase-23-engine-as-library/day-357-docs-closing-runs-and-phase-review.md)
+
+The Linux machine does Days 342-353, 356 and 357's Linux half; **Day 354 is for the Windows PC and Day 355 for the Mac** (CLAUDE.md, "Three machines"): Linux days write the shared code and the C hosts so the other two machines run and fix.
+
+## Key deliverables (broken into the days above)
 
 - **Build system.** `ENGINE_BUILD_SHARED` (default off); the module targets become object or static libraries that link into one `engine` shared target; position-independent code throughout; the sanitizer flavors work with shared libraries (asan runtime sharing, tsan); the unity builds and the module dependency gate (`module_deps_check`) keep their rules; Windows import libraries and PDBs, macOS install names and `@rpath`, Linux `SONAME` and symbol versioning decided in the spec.
 - **Symbol visibility and the export list.** Hidden by default (`-fvisibility=hidden`, `/GL` and `__declspec` equivalents); one `ENGINE_API` macro in `build_defs.h` for the few things exported; a committed list of exported symbols checked by a gate (`abi_check`) so a change is a decision, not an accident. Everything an application needs goes through the C API; C++ headers keep working for programs that link the static libraries.

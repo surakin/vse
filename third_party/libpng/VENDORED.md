@@ -9,7 +9,7 @@ the examples, tests and build systems.
 
 Per `PLAN.md` assumptions #17 and #19 (amended 2026-11-14) libpng decodes PNG for `engine/asset_import` (the glTF importer, Phase 22 Day 338; its input
 may be hostile, so it fails by return value: `engine/asset_import/image_decode.cpp` keeps the `setjmp` of libpng's error path inside the wrapper and sets
-the size limits before decoding) and then reads the PNG strikes of FreeType's color bitmap fonts (Phase 27 Day 353). Only `image_decode.cpp` includes
+the size limits before decoding) and then reads the PNG strikes of FreeType's color bitmap fonts (Phase 27 Day 369). Only `image_decode.cpp` includes
 `png.h`.
 
 Built by `CMakeLists.txt` as one static C library per flavor (`png`, `png_asan`, `png_tsan`) over the vendored zlib; the SIMD filter paths are switched off
