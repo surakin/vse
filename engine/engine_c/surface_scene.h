@@ -32,6 +32,8 @@ struct SceneFrameReport
     u32 objects_drawn = 0;                                     ///< Objects the G-buffer pass drew.
     u32 entities_unresolved = 0;  ///< Entities whose mesh or material did not resolve (they draw nothing).
     u32 lights_refused = 0;       ///< Lights of the world the scene had no room for, or that point nowhere.
+    u32 labels_drawn = 0;         ///< Labels queued for the frame's text pass.
+    u32 labels_refused = 0;       ///< Labels not drawn: no font, no room, or text the font could not lay out.
     int32_t camera_status = 0;    ///< ENGINE_OK, or NOT_FOUND when the named camera entity was not usable.
 };
 
@@ -68,8 +70,13 @@ public:
     SceneFrameReport Render(WorldObject& world, u64 camera_entity, u32 width, u32 height, f32 seconds,
                             f32 delta_seconds);
 
-    /// Names the host the surface's host textures come from (null: a slot naming one keeps its own value).
-    void AttachTextures(TextureHost* textures) { live_.Attach(device_, textures); }
+    /// Names the runtime the surface's host textures and label font come from (null: a slot naming a host texture
+    /// keeps its own value, and no label is drawn).
+    void AttachRuntime(Runtime* runtime)
+    {
+        runtime_ = runtime;
+        live_.Attach(device_, runtime != nullptr ? &runtime->textures : nullptr);
+    }
     /// Host texture uploads and bytes this surface made.
     u64 TextureUploads() const { return live_.Uploads(); }
     u64 TextureBytes() const { return live_.UploadedBytes(); }
@@ -123,6 +130,9 @@ private:
     };
 
     void SyncLights(WorldObject& world, SceneFrameReport* report);
+    // Projects the world's labels through the frame's camera and queues them for the text pass.
+    void SyncLabels(WorldObject& world, const renderer::Camera& camera, u32 width, u32 height,
+                    SceneFrameReport* report);
     // The material an entity draws with: the base material, or its own copy with the entity's slot overrides applied.
     u32 MaterialFor(const SlotOverrides& overrides, u64 entity, u32 base_index, SceneFrameReport* report);
     void DestroyInstance(usize index);
@@ -143,7 +153,9 @@ private:
     renderer::LightId sun_;      // the default sun of a world with no light and no environment
     Vector<Mesh> meshes_;
     Vector<Material> materials_;
-    LiveTextures live_;  // the device side of the host textures the world's slots name
+    Runtime* runtime_ = nullptr;
+    u64 label_font_version_ = 0;  // of the font this surface's frame opened
+    LiveTextures live_;           // the device side of the host textures the world's slots name
     renderer::MaterialId default_material_;
     renderer::MaterialId default_skinned_material_;  // for meshes with a skin stream (Day 363)
     renderer::Camera last_camera_;                   // the camera of the last frame, for PixelRay and Project

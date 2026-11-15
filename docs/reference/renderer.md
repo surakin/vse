@@ -11317,6 +11317,92 @@ TextStats OverlayStats() const;
 
 What the overlay drew: its renderer's counters.
 
+### `OpenLabelFont(ByteSpan)` {#renderer-sceneframe-openlabelfont-bytespan}
+
+`method renderer::SceneFrame::OpenLabelFont` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+bool OpenLabelFont(ByteSpan data);
+```
+
+Opens the font the labels draw with from the bytes of a font file (copied) and makes the text renderer, when the frame has none yet (a frame made with `font_path` already has).
+
+| Field | Value |
+|---|---|
+| Returns | true when labels can be drawn. |
+| Fails | returns false (logging) for bytes that are no font or a device without the text shaders. |
+
+### `LabelsAvailable()` {#renderer-sceneframe-labelsavailable-const}
+
+`method renderer::SceneFrame::LabelsAvailable` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+bool LabelsAvailable() const;
+```
+
+True when labels can be drawn.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `BeginLabels()` {#renderer-sceneframe-beginlabels}
+
+`method renderer::SceneFrame::BeginLabels` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+void BeginLabels();
+```
+
+Forgets the labels of the previous frame; call it before `AddLabel`.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `AddLabel(StringView,f32,f32,u32,u32,u32)` {#renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32}
+
+`method renderer::SceneFrame::AddLabel` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+bool AddLabel(StringView utf8, f32 x, f32 y, u32 pixel_size, u32 color, u32 anchor);
+```
+
+Adds a label to the frame: `utf8` at `pixel_size` in `color` (packed RGBA, red lowest), its anchor point at pixel (`x`, `y`) of the target; `anchor` 0 centres the text horizontally on x, 1 starts it there, 2 ends it there; the text's vertical middle is on y. Drawn after the tonemap, over the picture.
+
+| Field | Value |
+|---|---|
+| Returns | true when the label was queued. |
+| Fails | returns false when no font is open or 1024 labels are queued already. |
+
+### `LabelsQueued()` {#renderer-sceneframe-labelsqueued-const}
+
+`method renderer::SceneFrame::LabelsQueued` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+u32 LabelsQueued() const;
+```
+
+Labels waiting for the next frame.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `LabelMissingGlyphs()` {#renderer-sceneframe-labelmissingglyphs-const}
+
+`method renderer::SceneFrame::LabelMissingGlyphs` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+u64 LabelMissingGlyphs() const;
+```
+
+Glyphs that were the font's `.notdef` in the labels drawn so far.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `LastError()` {#renderer-sceneframe-lasterror-const}
 
 `method renderer::SceneFrame::LastError` — defined in `engine/renderer/scene_frame.h`

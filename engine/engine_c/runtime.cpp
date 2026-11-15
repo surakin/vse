@@ -59,13 +59,14 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_VISIBILITY: return "visibility";
     case ENGINE_COMPONENT_SKELETON_INSTANCE: return "skeleton instance";
     case ENGINE_COMPONENT_ANIMATION_PLAYER: return "animation player";
+    case ENGINE_COMPONENT_LABEL: return "label";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_ANIMATION_PLAYER;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_LABEL;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -81,6 +82,7 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_VISIBILITY: return ecs::ComponentOf<VisibilityComponent>();
     case ENGINE_COMPONENT_SKELETON_INSTANCE: return ecs::ComponentOf<animation::SkeletonInstance>();
     case ENGINE_COMPONENT_ANIMATION_PLAYER: return ecs::ComponentOf<animation::AnimationPlayer>();
+    case ENGINE_COMPONENT_LABEL: return ecs::ComponentOf<LabelComponent>();
     }
     return ecs::kInvalidComponent;
 }
@@ -675,6 +677,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         checked = CheckInStruct(value, sizeof(engine_visibility), "engine_visibility");
     }
+    else if (kind == ENGINE_COMPONENT_LABEL)
+    {
+        checked = CheckInStruct(value, sizeof(engine_label), "engine_label");
+    }
     else
     {
         checked = CheckInStruct(value, sizeof(engine_mesh_reference), "engine_mesh_reference");
@@ -708,6 +714,48 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 animation::SkeletonInstance instance;
                 instance.skeleton = in->skeleton;
                 return SetOrAdd(object.world, entity, Move(instance));
+            }
+            if (kind == ENGINE_COMPONENT_LABEL)
+            {
+                const engine_label* in = static_cast<const engine_label*>(value);
+                if (in->text.length > ENGINE_LABEL_MAX_BYTES || (in->text.data == nullptr && in->text.length != 0))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the label text is NULL or longer than 256 bytes");
+                }
+                for (const float c : in->color)
+                {
+                    if (!(Finite(c) && c >= 0.0f && c <= 1.0f))
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the label colour is not in 0..1");
+                    }
+                }
+                if (!(Finite(in->size) && in->size > 0.0f && in->size <= 100000.0f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the label size is not finite and > 0");
+                }
+                for (const float o : in->offset)
+                {
+                    if (!Finite(o))
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the label offset is not finite");
+                    }
+                }
+                if (in->anchor > ENGINE_LABEL_ANCHOR_RIGHT || (in->flags & ~ENGINE_LABEL_SIZE_METRES) != 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the label anchor or flags are not known");
+                }
+                LabelComponent label;
+                label.length = static_cast<u32>(in->text.length);
+                if (in->text.length != 0)
+                {
+                    MemCopy(label.text, in->text.data, in->text.length);
+                }
+                MemCopy(label.color, in->color, sizeof(label.color));
+                label.size = in->size;
+                MemCopy(label.offset, in->offset, sizeof(label.offset));
+                label.anchor = in->anchor;
+                label.flags = in->flags;
+                return SetOrAdd(object.world, entity, label);
             }
             if (kind == ENGINE_COMPONENT_VISIBILITY)
             {
@@ -1017,6 +1065,41 @@ engine_status EntityFindAllFn(engine_handle world, engine_string name, u64* keys
                          *total = count;
                          return ENGINE_OK;
                      });
+}
+
+u64 Runtime::CopyLabelFont(Vector<u8>* out)
+{
+    LockGuard<Mutex> lock(label_font_mutex_);
+    out->Resize(label_font_.Size());
+    if (label_font_.Size() != 0)
+    {
+        MemCopy(out->Data(), label_font_.Data(), label_font_.Size());
+    }
+    return label_font_version_;
+}
+
+void Runtime::SetLabelFont(const void* data, usize size)
+{
+    LockGuard<Mutex> lock(label_font_mutex_);
+    label_font_.Resize(size);
+    MemCopy(label_font_.Data(), data, size);
+    ++label_font_version_;
+}
+
+engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size)
+{
+    Runtime* runtime = nullptr;
+    TRY_STATUS(ResolveRuntime(engine, &runtime));
+    if (data == nullptr || size == 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the font data is NULL or empty");
+    }
+    if (size > (usize{32} << 20))
+    {
+        return Fail(ENGINE_ERROR_TOO_LARGE, "the font file is above 32 MiB");
+    }
+    runtime->SetLabelFont(data, size);
+    return ENGINE_OK;
 }
 
 engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_string slot,
@@ -1663,6 +1746,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_WORLD_TRANSFORM   ? sizeof(engine_world_transform)
                          : kind == ENGINE_COMPONENT_CAMERA            ? sizeof(engine_camera)
                          : kind == ENGINE_COMPONENT_LIGHT             ? sizeof(engine_light)
+                         : kind == ENGINE_COMPONENT_LABEL             ? sizeof(engine_label)
                          : kind == ENGINE_COMPONENT_VISIBILITY        ? sizeof(engine_visibility)
                          : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? sizeof(engine_skeleton_instance)
                          : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? sizeof(engine_animation_state)
@@ -1671,6 +1755,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                        : kind == ENGINE_COMPONENT_WORLD_TRANSFORM   ? "engine_world_transform"
                        : kind == ENGINE_COMPONENT_CAMERA            ? "engine_camera"
                        : kind == ENGINE_COMPONENT_LIGHT             ? "engine_light"
+                       : kind == ENGINE_COMPONENT_LABEL             ? "engine_label"
                        : kind == ENGINE_COMPONENT_VISIBILITY        ? "engine_visibility"
                        : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? "engine_skeleton_instance"
                        : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? "engine_animation_state"
@@ -1766,6 +1851,24 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              MemCopy(out, &result, sizeof(result));
                              return ENGINE_OK;
                          }
+                         if (kind == ENGINE_COMPONENT_LABEL)
+                         {
+                             const LabelComponent* label = view.Peek<LabelComponent>(entity);
+                             if (label == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no label");
+                             }
+                             engine_label result = {};
+                             result.struct_size = sizeof(engine_label);
+                             result.text.length = label->length;  // the bytes stay in the engine (data is NULL)
+                             MemCopy(result.color, label->color, sizeof(result.color));
+                             result.size = label->size;
+                             MemCopy(result.offset, label->offset, sizeof(result.offset));
+                             result.anchor = label->anchor;
+                             result.flags = label->flags;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
                          if (kind == ENGINE_COMPONENT_LIGHT)
                          {
                              const LightComponent* light = view.Peek<LightComponent>(entity);
@@ -1844,6 +1947,7 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_NAME: status = w.Remove<EntityName>(entity); break;
                          case ENGINE_COMPONENT_CAMERA: status = w.Remove<CameraComponent>(entity); break;
                          case ENGINE_COMPONENT_LIGHT: status = w.Remove<LightComponent>(entity); break;
+                         case ENGINE_COMPONENT_LABEL: status = w.Remove<LabelComponent>(entity); break;
                          case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
                          case ENGINE_COMPONENT_SKELETON_INSTANCE:
                              status = w.Remove<animation::SkeletonInstance>(entity);

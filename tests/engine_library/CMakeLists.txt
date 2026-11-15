@@ -260,6 +260,7 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
       # Phase 24 Day 359: a world drawn on a surface, with the blobs of host_resources.c and a golden image.
       add_executable(host_scene${suffix} host_scene.c)
       target_include_directories(host_scene${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
+      target_compile_definitions(host_scene${suffix} PRIVATE "LABEL_FONT_DIR=\"${CMAKE_SOURCE_DIR}/assets/fonts\"" "LABEL_FONT_NAME=\"LiberationSans-Regular.ttf\"")
       target_compile_definitions(host_scene${suffix} PRIVATE "RES_DATA_DIR=\"${CMAKE_CURRENT_BINARY_DIR}/resource_data\"" "GOLDEN_FILE=\"${CMAKE_CURRENT_SOURCE_DIR}/golden/scene_rock_160x120.rgba\"")
       target_link_libraries(host_scene${suffix} PRIVATE engine_c${suffix} PkgConfig::EngineTestX11 Threads::Threads ${CMAKE_DL_LIBS} m)
       set_target_properties(host_scene${suffix} PROPERTIES LINKER_LANGUAGE CXX)

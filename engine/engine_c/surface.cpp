@@ -156,6 +156,8 @@ struct SurfaceObject
     u32 objects_drawn = 0;
     u64 entities_unresolved = 0;
     u32 lights_refused = 0;
+    u32 labels_drawn = 0;
+    u32 labels_refused = 0;
     u64 camera_entity = 0;                    // named by surface_set_camera, 0 for the default camera
     engine_status camera_status = ENGINE_OK;  // NOT_FOUND while the named camera is not usable
 };
@@ -302,7 +304,7 @@ engine_status MakeScene(SurfaceObject* s, ResourceHost* resources)
         return Fail(ENGINE_ERROR_UNSUPPORTED, "the device cannot draw a scene on this surface");
     }
     Runtime* runtime = CurrentRuntime();
-    s->scene->AttachTextures(runtime != nullptr ? &runtime->textures : nullptr);
+    s->scene->AttachRuntime(runtime);
     return ENGINE_OK;
 }
 
@@ -945,6 +947,8 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ou
     out->camera_status = s->camera_status;
     out->camera_entity = s->camera_entity;
     out->lights_refused = s->lights_refused;
+    out->labels_drawn = s->labels_drawn;
+    out->labels_refused = s->labels_refused;
     out->textures_uploaded = s->scene != nullptr ? s->scene->TextureUploads() : 0;
     out->texture_bytes_uploaded = s->scene != nullptr ? s->scene->TextureBytes() : 0;
     out->present_mode = s->present_mode;
@@ -1199,6 +1203,8 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
                                                                  delta_seconds);
                 s->camera_status = static_cast<engine_status>(report.camera_status);
                 s->lights_refused = report.lights_refused;
+                s->labels_drawn = report.labels_drawn;
+                s->labels_refused = report.labels_refused;
                 s->frame_by_slot = nullptr;
                 s->objects_drawn = report.objects_drawn;
                 s->entities_unresolved = report.entities_unresolved;

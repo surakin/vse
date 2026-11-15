@@ -170,6 +170,35 @@ public:
     /// What the overlay drew: its renderer's counters.
     TextStats OverlayStats() const { return text_.Stats(); }
 
+    /// Opens the font the labels draw with from the bytes of a font file (copied) and makes the text renderer, when
+    /// the frame has none yet (a frame made with `font_path` already has).
+    ///
+    /// - Returns: true when labels can be drawn.
+    /// - Fails: returns false (logging) for bytes that are no font or a device without the text shaders.
+    bool OpenLabelFont(ByteSpan data);
+    /// True when labels can be drawn.
+    ///
+    /// - Fails: never.
+    bool LabelsAvailable() const { return font_.IsOpen() && text_.Live(); }
+    /// Forgets the labels of the previous frame; call it before `AddLabel`.
+    ///
+    /// - Fails: never.
+    void BeginLabels();
+    /// Adds a label to the frame: `utf8` at `pixel_size` in `color` (packed RGBA, red lowest), its anchor point at
+    /// pixel (`x`, `y`) of the target; `anchor` 0 centres the text horizontally on x, 1 starts it there, 2 ends it
+    /// there; the text's vertical middle is on y. Drawn after the tonemap, over the picture.
+    ///
+    /// - Returns: true when the label was queued.
+    /// - Fails: returns false when no font is open or 1024 labels are queued already.
+    bool AddLabel(StringView utf8, f32 x, f32 y, u32 pixel_size, u32 color, u32 anchor);
+    /// Labels waiting for the next frame.
+    ///
+    /// - Fails: never.
+    u32 LabelsQueued() const { return static_cast<u32>(labels_.Size()); }
+    /// Glyphs that were the font's `.notdef` in the labels drawn so far.
+    ///
+    /// - Fails: never.
+    u64 LabelMissingGlyphs() const { return label_missing_; }
     /// The renderer's last error text, or "not created".
     ///
     /// - Fails: never.
@@ -208,6 +237,21 @@ private:
     text::Font font_;
     text::GlyphAtlas atlas_;
     TextRenderer text_;
+    struct Label
+    {
+        f32 x = 0;
+        f32 y = 0;
+        u32 pixel_size = 16;
+        u32 color = 0xFFFFFFFFu;
+        u32 anchor = 0;
+        u32 text_begin = 0;
+        u32 text_length = 0;
+    };
+    Vector<Label> labels_;
+    Vector<char> label_text_;
+    text::TextLayout label_layout_;
+    u64 label_missing_ = 0;
+    DeviceResources* resources_ = nullptr;
     bool overlay_on_ = false;
     f32 overlay_scale_ = 1.0f;
     Vector<char> greeting_;

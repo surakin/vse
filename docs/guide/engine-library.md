@@ -633,6 +633,13 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 - **Reverting.** A texture that was destroyed, has no pixels (never updated, or just resized) or did not fit the budget on its first frame leaves the slot at the material's own value for that frame; each such slot of each frame is counted in `frame_stats.slots_reverted`.
 - **Resize** makes a new device texture at the next update, after the device is idle; the material of the entity is rebuilt to point at it.
 
+## Labels: text in the world (Phase 24 Day 367)
+
+- **The font.** The engine ships none: give it a font file's bytes once with `label_font_set(engine, data, size)` (TrueType or OpenType, copied, up to 32 MiB). A surface opens it at the first frame that has a label and a font; until then its labels are counted in `surface_state.labels_refused`.
+- **A label** is `ENGINE_COMPONENT_LABEL` (`engine_label`) on an entity with a transform: up to 256 bytes of UTF-8 text (line breaks, combining marks and malformed bytes are laid out by the text layer; a glyph the font lacks shows its `.notdef`), an RGBA colour, a size, an offset in world axes and an anchor (centre, start or end of the text on the point). `size` is pixels, or with `ENGINE_LABEL_SIZE_METRES` the height of the em square in metres, from which the surface computes the pixel size by the distance and the camera's field of view and rounds it to one of 8, 10, 12, 14, 16, 20, 24, 32, 48, 64, 96, 128, 192, 256 (the glyph atlas holds a few rasterizations); every size is clamped to 6..256 pixels.
+- **Where it is drawn.** At the entity's world position plus the offset projected through the frame's camera, over the picture after the tonemap, with no depth test (geometry never hides a label), facing the viewer by construction (constant orientation on screen). A hidden entity's label is not drawn; an entity attached to a joint carries its label with it. A label behind the camera or far off the screen is skipped. A surface draws up to 1024 labels per frame (the text renderer's budget is 8192 glyphs); the rest go to `labels_refused`.
+- **Not here.** A background plate, depth-tested labels and billboard quads (later); text above 256 pixels (Phase 28's outline meshes).
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

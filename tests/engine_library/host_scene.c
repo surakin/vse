@@ -359,6 +359,43 @@ static engine_status SetMeshReference(engine_handle world, uint64_t entity, uint
 }
 
 /* The blobs of the animation block: the engine reads them until it is destroyed, so they are freed at the end. */
+/* Pixels of the frame that are text (white on the blue background) within `radius` pixels of (x, y). */
+static int CountText(const engine_pixels* pixels, int x, int y, int radius)
+{
+    int count = 0;
+    int py;
+    int px;
+    for (py = y - radius; py <= y + radius; ++py)
+    {
+        for (px = x - radius; px <= x + radius; ++px)
+        {
+            if (px >= 0 && py >= 0 && px < (int)WIDTH && py < (int)HEIGHT)
+            {
+                const unsigned char* p = Pixel(pixels, (unsigned)px, (unsigned)py);
+                if (p[0] > 160 && p[1] > 160)
+                {
+                    ++count;
+                }
+            }
+        }
+    }
+    return count;
+}
+
+static engine_status SetLabel(engine_handle world, uint64_t entity, const char* text, float size, unsigned anchor,
+                              unsigned flags)
+{
+    engine_label label;
+    memset(&label, 0, sizeof(label));
+    label.struct_size = sizeof(label);
+    label.text = Str(text);
+    label.color[0] = label.color[1] = label.color[2] = label.color[3] = 1.0f;
+    label.size = size;
+    label.anchor = anchor;
+    label.flags = flags;
+    return g_api->component_set(world, entity, ENGINE_COMPONENT_LABEL, &label);
+}
+
 static Blob g_extra[6];
 #define skeleton_blob g_extra[0]
 #define other_skeleton g_extra[1]
@@ -1126,6 +1163,92 @@ int main(void)
         CHECK_STATUS(g_api->texture_destroy(textures[0]), ENGINE_OK);
         CHECK_STATUS(g_api->texture_destroy(textures[1]), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
+    }
+
+    /* labels (Phase 24 Day 367) */
+    {
+        engine_handle world4;
+        uint64_t tag;
+        engine_label label;
+        Blob font = ReadFile(LABEL_FONT_DIR, LABEL_FONT_NAME);
+        float at[3];
+        const float origin[3] = {0.0f, 0.0f, 0.0f};
+        int near_count;
+        int far_count;
+        char longtext[300];
+        CHECK(font.data != NULL);
+        memset(&world4, 0, sizeof(world4));
+        CHECK_STATUS(g_api->world_create(engine, &world4), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_create(world4, &tag), ENGINE_OK);
+        PlaceAt(world4, tag, 0.0f, 0.0f, 0.0f);
+        /* the component: arguments and the round trip */
+        CHECK_STATUS(SetLabel(world4, tag, "Hello", 16.0f, ENGINE_LABEL_ANCHOR_CENTER, 0), ENGINE_OK);
+        CHECK_STATUS(SetLabel(world4, tag, "Hello", 0.0f, 0, 0), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(SetLabel(world4, tag, "Hello", 16.0f, 9, 0), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(SetLabel(world4, tag, "Hello", 16.0f, 0, 0x80), ENGINE_ERROR_INVALID_ARGUMENT);
+        memset(longtext, 'a', sizeof(longtext) - 1);
+        longtext[sizeof(longtext) - 1] = 0;
+        CHECK_STATUS(SetLabel(world4, tag, longtext, 16.0f, 0, 0), ENGINE_ERROR_INVALID_ARGUMENT);
+        memset(&label, 0, sizeof(label));
+        label.struct_size = sizeof(label);
+        label.size = 16.0f;
+        label.color[0] = 2.0f;
+        CHECK_STATUS(g_api->component_set(world4, tag, ENGINE_COMPONENT_LABEL, &label), ENGINE_ERROR_INVALID_ARGUMENT);
+        memset(&label, 0, sizeof(label));
+        label.struct_size = sizeof(label);
+        CHECK_STATUS(g_api->component_get(world4, tag, ENGINE_COMPONENT_LABEL, &label), ENGINE_OK);
+        CHECK(label.text.length == 5 && label.text.data == NULL && label.size == 16.0f);
+        CHECK_STATUS(g_api->surface_set_world(surface, world4), ENGINE_OK);
+        /* no font yet: counted, nothing drawn */
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.labels_drawn == 0 && state.labels_refused == 1);
+        CHECK_STATUS(g_api->label_font_set(engine, NULL, 10), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->label_font_set(engine, font.data, 0), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->label_font_set(engine, font.data, font.size), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.labels_drawn == 1 && state.labels_refused == 0);
+        CHECK_STATUS(g_api->surface_project(surface, origin, at), ENGINE_OK);
+        near_count = CountText(&pixels, (int)at[0], (int)at[1], 20);
+        CHECK(near_count > 20);
+        CHECK(CountText(&pixels, (int)at[0], (int)at[1], 20) ==
+              CountText(&pixels, (int)at[0], (int)at[1], 60)); /* only there */
+        /* a hidden entity's label is not drawn */
+        CHECK_STATUS(SetVisibility(world4, tag, 1), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(CountText(&pixels, (int)at[0], (int)at[1], 60) == 0);
+        CHECK_STATUS(SetVisibility(world4, tag, 0), ENGINE_OK);
+        /* constant pixel size: the same text when the entity is farther; constant metres: smaller */
+        PlaceAt(world4, tag, 0.0f, 0.0f, -20.0f);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        {
+            const float far_point[3] = {0.0f, 0.0f, -20.0f};
+            CHECK_STATUS(g_api->surface_project(surface, far_point, at), ENGINE_OK);
+            far_count = CountText(&pixels, (int)at[0], (int)at[1], 20);
+            CHECK(far_count > near_count * 8 / 10 && far_count < near_count * 12 / 10);
+            CHECK_STATUS(SetLabel(world4, tag, "Hello", 3.0f, 0, ENGINE_LABEL_SIZE_METRES), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            far_count = CountText(&pixels, (int)at[0], (int)at[1], 40);
+            PlaceAt(world4, tag, 0.0f, 0.0f, -4.0f);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            {
+                const float close_point[3] = {0.0f, 0.0f, -4.0f};
+                CHECK_STATUS(g_api->surface_project(surface, close_point, at), ENGINE_OK);
+                near_count = CountText(&pixels, (int)at[0], (int)at[1], 40);
+            }
+            CHECK(far_count < near_count);
+        }
+        /* UTF-8, combining marks and malformed bytes are laid out, never a crash */
+        CHECK_STATUS(
+            SetLabel(world4, tag, "caf\xC3\xA9 e\xCC\x81 \xE6\x97\xA5 \xFF\xFE", 16.0f, ENGINE_LABEL_ANCHOR_LEFT, 0),
+            ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->component_remove(world4, tag, ENGINE_COMPONENT_LABEL), ENGINE_OK);
+        CHECK_STATUS(g_api->component_remove(world4, tag, ENGINE_COMPONENT_LABEL), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
+        CHECK_STATUS(g_api->world_destroy(world4), ENGINE_OK);
+        free(font.data);
     }
 
     /* unbound: the clear color again; bound to a world destroyed under it: the clear color and the reason */

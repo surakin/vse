@@ -41,8 +41,10 @@ void LiveTextures::Destroy(Live* live)
         live->texture = rhi::TextureHandle{};
     }
     live->uploaded = false;
+    live->copied = false;
     live->state_shader_read = false;
     live->seen = 0;
+    live->ring = 0;
 }
 
 void LiveTextures::Release()
@@ -138,22 +140,33 @@ rhi::TextureHandle LiveTextures::Acquire(u64 handle)
         lives_.Push(static_cast<Live&&>(fresh));
         live = &lives_[lives_.Size() - 1];
     }
+    const bool first_touch = !live->wanted;
     live->wanted = true;
     if (host_->Find(given).Get() == nullptr)
     {
         return rhi::TextureHandle{};  // destroyed since the last frame: EndFrame drops it
     }
-    // The size now, and a staging copy of the newest pixels when there are any and the budget allows.
-    const u32 width = live->source->Width();
-    const u32 height = live->source->Height();
-    if (width == 0 || height == 0)
+    // The size is decided once per frame, at the first slot that names the texture: a later slot (or a resize from
+    // another thread) never destroys what an earlier slot of this frame was given.
+    u32 width = live->width;
+    u32 height = live->height;
+    if (first_touch)
     {
-        return rhi::TextureHandle{};
+        width = live->source->Width();
+        height = live->source->Height();
+        if (width == 0 || height == 0)
+        {
+            return rhi::TextureHandle{};
+        }
+        if (live->texture.IsValid() && (live->width != width || live->height != height))
+        {
+            device_->WaitIdle();  // the old texture may be in use by a frame in flight
+            Destroy(live);
+        }
     }
-    if (live->texture.IsValid() && (live->width != width || live->height != height))
+    else if (!live->texture.IsValid())
     {
-        device_->WaitIdle();  // the old texture may be in use by a frame in flight
-        Destroy(live);
+        return rhi::TextureHandle{};  // this frame's first slot found no pixels or no room: so do the others
     }
     const u64 bytes = static_cast<u64>(width) * height * 4u;
     const bool fits = first_this_frame_ || bytes <= budget_left_;
@@ -210,8 +223,9 @@ void LiveTextures::Flush()
     for (usize i = 0; i < lives_.Size(); ++i)
     {
         Live& live = lives_[i];
-        if (!live.copied)
+        if (!live.copied || !live.texture.IsValid() || !live.staging[(live.ring + kRing - 1) % kRing].IsValid())
         {
+            live.copied = false;
             continue;
         }
         const u32 slot = (live.ring + kRing - 1) % kRing;

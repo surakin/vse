@@ -19,6 +19,7 @@ constexpr u32 kMaxLights = 64;
 
 bool SameOverrides(const SlotOverrides& a, const SlotOverrides& b);
 bool SameHostHandles(const rhi::TextureHandle* a, const rhi::TextureHandle* b, u32 count);
+bool IsHidden(const ecs::World& world, ecs::Entity entity);
 
 }  // namespace
 
@@ -277,6 +278,96 @@ u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 ba
     const u32 index = made.material.index;
     instances_.Push(static_cast<Instance&&>(made));
     return index;
+}
+
+void SurfaceScene::SyncLabels(WorldObject& world, const renderer::Camera& camera, u32 width, u32 height,
+                              SceneFrameReport* report)
+{
+    frame_.BeginLabels();
+    if (runtime_ == nullptr)
+    {
+        return;
+    }
+    if (!frame_.LabelsAvailable())
+    {  // the font is opened at the first frame that has a label and a font to draw it with
+        Vector<u8> font;
+        const u64 version = runtime_->CopyLabelFont(&font);
+        if (version != 0 && version != label_font_version_)
+        {
+            label_font_version_ = version;
+            frame_.OpenLabelFont(ByteSpan(reinterpret_cast<const byte*>(font.Data()), font.Size()));
+        }
+    }
+    const Mat4 view_projection = camera.ViewProjection();
+    const f32 tan_half = Tan(camera.fov_y * 0.5f);
+    auto query = world.world.Query<ecs::Read<LabelComponent>, ecs::Read<ecs::WorldTransform>>();
+    query.ForEach(
+        [&](ecs::Entity entity, const LabelComponent& label, const ecs::WorldTransform& placed)
+        {
+            if (IsHidden(world.world, entity))
+            {
+                return;
+            }
+            if (!frame_.LabelsAvailable() || frame_.LabelsQueued() >= 1024)
+            {
+                ++report->labels_refused;
+                return;
+            }
+            const Vec3 point(placed.matrix.col[3].x + label.offset[0], placed.matrix.col[3].y + label.offset[1],
+                             placed.matrix.col[3].z + label.offset[2]);
+            const Vec4 clip = view_projection * Vec4(point.x, point.y, point.z, 1.0f);
+            if (!(clip.w > 0.0f))
+            {
+                return;  // behind the camera: nothing to draw, nothing refused
+            }
+            const f32 x = (clip.x / clip.w * 0.5f + 0.5f) * static_cast<f32>(width);
+            const f32 y = (clip.y / clip.w * 0.5f + 0.5f) * static_cast<f32>(height);
+            if (x < -512.0f || x > static_cast<f32>(width) + 512.0f || y < -512.0f ||
+                y > static_cast<f32>(height) + 512.0f)
+            {
+                return;  // far off the screen
+            }
+            f32 pixels = label.size;
+            if ((label.flags & ENGINE_LABEL_SIZE_METRES) != 0)
+            {
+                const f32 distance = (point - camera.position).Dot(camera.Forward());
+                pixels = distance > 1e-4f && tan_half > 1e-6f
+                             ? label.size * static_cast<f32>(height) * 0.5f / (distance * tan_half)
+                             : 256.0f;
+                // a set of sizes, so the glyph atlas holds a few rasterizations and not one per distance
+                static const f32 kSizes[] = {8, 10, 12, 14, 16, 20, 24, 32, 48, 64, 96, 128, 192, 256};
+                f32 best = kSizes[0];
+                for (const f32 candidate : kSizes)
+                {
+                    if (Abs(candidate - pixels) < Abs(best - pixels))
+                    {
+                        best = candidate;
+                    }
+                }
+                pixels = best;
+            }
+            if (pixels < 6.0f)
+            {
+                pixels = 6.0f;
+            }
+            if (pixels > 256.0f)
+            {
+                pixels = 256.0f;
+            }
+            const u32 color = static_cast<u32>(label.color[0] * 255.0f + 0.5f) |
+                              (static_cast<u32>(label.color[1] * 255.0f + 0.5f) << 8) |
+                              (static_cast<u32>(label.color[2] * 255.0f + 0.5f) << 16) |
+                              (static_cast<u32>(label.color[3] * 255.0f + 0.5f) << 24);
+            if (frame_.AddLabel(StringView(label.text, label.length), x, y, static_cast<u32>(pixels + 0.5f), color,
+                                label.anchor))
+            {
+                ++report->labels_drawn;
+            }
+            else
+            {
+                ++report->labels_refused;
+            }
+        });
 }
 
 void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
@@ -619,6 +710,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     {
         report.camera_status = ENGINE_ERROR_NOT_FOUND;  // the default camera stays
     }
+    SyncLabels(world, camera, width, height, &report);
     last_camera_ = camera;
     last_width_ = width;
     last_height_ = height;

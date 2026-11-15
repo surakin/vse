@@ -768,6 +768,7 @@ extern "C"
             &engine_c::TextureResizeFn,
             &engine_c::TextureDestroyFn,
             &engine_c::TextureReadPixelsFn,
+            &engine_c::LabelFontSetFn,
         };
         *out = &table;
         return ENGINE_OK;

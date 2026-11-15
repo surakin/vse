@@ -81,6 +81,20 @@ struct SlotOverrides
     Item items[kMax];
 };
 
+/// The component of ENGINE_COMPONENT_LABEL (Phase 24 Day 367).
+///
+/// - Thread-safety: plain data.
+struct LabelComponent
+{
+    u32 length = 0;  ///< Bytes of `text`.
+    char text[ENGINE_LABEL_MAX_BYTES] = {};
+    f32 color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    f32 size = 16.0f;
+    f32 offset[3] = {};
+    u32 anchor = 0;
+    u32 flags = 0;
+};
+
 /// What surrounds a world (engine_environment with the defaults of its documentation).
 ///
 /// - Thread-safety: plain data; guarded by the world mutex.
@@ -242,9 +256,23 @@ public:
     /// The host textures of the engine (Phase 24 Day 365).
     TextureHost textures;
 
+    /// The font file the labels are drawn with, and how many times it was set (Phase 24 Day 367).
+    ///
+    /// - Param out: receives a copy of the bytes (empty when none was set).
+    /// - Returns: the version, 0 while none was set.
+    u64 CopyLabelFont(Vector<u8>* out);
+    /// Replaces the label font.
+    void SetLabelFont(const void* data, usize size);
+
     /// What the resource host is made from; set once when the engine is created, before any call.
     ResourceConfig resource_config;
 
+private:
+    Mutex label_font_mutex_;
+    Vector<u8> label_font_;
+    u64 label_font_version_ = 0;
+
+public:
     /// The resources of the engine: made by the first call that needs them.
     ///
     /// - Thread-safety: thread-safe.
@@ -303,6 +331,7 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                            size_t capacity, size_t* total);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
+engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size);
 engine_status EntityNameSetFn(engine_handle world, u64 key, engine_string name);
 engine_status EntityNameGetFn(engine_handle world, u64 key, engine_buffer* out);
 engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity, size_t* total);

@@ -26,6 +26,8 @@ void SceneFrame::Destroy()
     text_.Destroy();
     font_.Close();
     overlay_on_ = false;
+    labels_.Clear();
+    label_text_.Clear();
     debug_view_.Reset();
     tonemap_.Reset();
     lighting_.Reset();
@@ -48,6 +50,7 @@ bool SceneFrame::Create(const SceneFrameSetup& setup)
         return false;
     }
     device_ = setup.device;
+    resources_ = setup.resources;
     gbuffer_layer_ = setup.gbuffer_layer;
     exposure_ = setup.exposure;
     MaterialSystemDesc md;
@@ -111,6 +114,62 @@ bool SceneFrame::Create(const SceneFrameSetup& setup)
             }
         }
     }
+    return true;
+}
+
+bool SceneFrame::OpenLabelFont(ByteSpan data)
+{
+    if (device_ == nullptr)
+    {
+        return false;
+    }
+    if (font_.IsOpen())
+    {
+        return text_.Live();
+    }
+    if (!font_library_.IsInitialized() && !font_library_.Initialize().Ok())
+    {
+        return false;
+    }
+    const text::Status opened = text::Font::Open(font_library_, data, text::FontOptions{}, &font_);
+    if (!opened.Ok())
+    {
+        rhi::RhiLogV(LogVerbosity::Warn, "scene frame: the label font did not open: %s", opened.message);
+        return false;
+    }
+    if (!text_.Create(device_, &atlas_, TextRendererDesc{rhi::Format::RGBA8_SRGB, 8192}, resources_))
+    {
+        font_.Close();
+        return false;
+    }
+    return true;
+}
+
+void SceneFrame::BeginLabels()
+{
+    labels_.Clear();
+    label_text_.Clear();
+}
+
+bool SceneFrame::AddLabel(StringView utf8, f32 x, f32 y, u32 pixel_size, u32 color, u32 anchor)
+{
+    if (!LabelsAvailable() || labels_.Size() >= 1024)
+    {
+        return false;
+    }
+    Label label;
+    label.x = x;
+    label.y = y;
+    label.pixel_size = pixel_size;
+    label.color = color;
+    label.anchor = anchor;
+    label.text_begin = static_cast<u32>(label_text_.Size());
+    label.text_length = static_cast<u32>(utf8.Length());
+    for (usize i = 0; i < utf8.Length(); ++i)
+    {
+        label_text_.Push(utf8[i]);
+    }
+    labels_.Push(label);
     return true;
 }
 
@@ -196,7 +255,8 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
         const GraphResource accum = self->lighting_->AddToGraph(context.graph, targets, scene_width, scene_height);
         self->tonemap_->AddToGraph(context.graph, accum, scene_target, scene_format, self->exposure_);
     }
-    if (self->overlay_on_ && self->font_.IsOpen() && self->text_.Live())
+    const bool has_labels = self->labels_.Size() != 0;
+    if ((self->overlay_on_ || has_labels) && self->font_.IsOpen() && self->text_.Live())
     {
         // After the passes that wrote the target (the tonemap or the debug view), over their picture.
         // Sizes and margins in logical pixels, times the display scale (TextStyle sizes are device pixels).
@@ -210,10 +270,36 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
         small.pixel_size = px(14);
         small.color = 0xFFC8C8C8u;
         self->text_.BeginFrame();
-        self->text_.Draw(StringView(self->greeting_.Data(), self->greeting_.Size()), big, text::LayoutOptions{},
-                         static_cast<f32>(px(16)), static_cast<f32>(px(12)));
-        self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{},
-                         static_cast<f32>(px(16)), static_cast<f32>(px(52)));
+        if (self->overlay_on_)
+        {
+            self->text_.Draw(StringView(self->greeting_.Data(), self->greeting_.Size()), big, text::LayoutOptions{},
+                             static_cast<f32>(px(16)), static_cast<f32>(px(12)));
+            self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{},
+                             static_cast<f32>(px(16)), static_cast<f32>(px(52)));
+        }
+        for (usize i = 0; i < self->labels_.Size(); ++i)
+        {
+            const Label& label = self->labels_[i];
+            text::TextStyle style = big;
+            style.pixel_size = label.pixel_size;
+            style.color = label.color;
+            const StringView text(self->label_text_.Data() + label.text_begin, label.text_length);
+            if (!text::Layout(text, style, text::LayoutOptions{}, &self->label_layout_).Ok())
+            {
+                continue;
+            }
+            for (usize g = 0; g < self->label_layout_.glyphs.Size(); ++g)
+            {
+                if (self->label_layout_.glyphs[g].glyph == 0)
+                {
+                    ++self->label_missing_;
+                }
+            }
+            const f32 width = self->label_layout_.width;
+            const f32 left = label.anchor == 1 ? label.x : label.anchor == 2 ? label.x - width : label.x - width * 0.5f;
+            self->text_.Add(self->label_layout_, style, Floor(left + 0.5f),
+                            Floor(label.y - self->label_layout_.height * 0.5f + 0.5f));
+        }
         self->text_.AddToGraph(context.graph, context.target, context.format, context.width, context.height);
     }
     if (self->compose_.after_scene != nullptr)

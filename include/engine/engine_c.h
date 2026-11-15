@@ -457,6 +457,9 @@ extern "C"
         uint32_t reserved;  /* zero */
         uint64_t textures_uploaded;      /* uploads of host textures to this surface's device (Phase 24 Day 366) */
         uint64_t texture_bytes_uploaded; /* bytes of those uploads */
+        uint32_t labels_drawn;           /* labels the last frame drew (Phase 24 Day 367) */
+        uint32_t labels_refused; /* labels of the bound world the last frame did not draw: no font, no room, or behind
+                                    the camera counts as not drawn only when the font is missing */
     } engine_surface_state;
 
     /* The pixels of a rendered frame: RGBA8, `stride` bytes per row (width * 4), top row first. `data` is the host's to
@@ -525,12 +528,13 @@ extern "C"
         ENGINE_COMPONENT_VISIBILITY = 7,      /* engine_visibility: hides an entity and its children (Day 362) */
         ENGINE_COMPONENT_SKELETON_INSTANCE = 8, /* engine_skeleton_instance: the skeleton a skinned mesh is drawn with
                                                    (Day 363) */
-        ENGINE_COMPONENT_ANIMATION_PLAYER = 9   /* engine_animation_state: what animation_play started; read only (Day
+        ENGINE_COMPONENT_ANIMATION_PLAYER = 9,  /* engine_animation_state: what animation_play started; read only (Day
                                                    363) */
+        ENGINE_COMPONENT_LABEL = 10             /* engine_label: text drawn at the entity's place (Phase 24 Day 367) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0x1FFu
+#define ENGINE_COMPONENT_MASK_ALL 0x3FFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -698,6 +702,32 @@ extern "C"
         uint64_t texture_resource;
         engine_handle host_texture; /* for ENGINE_SLOT_HOST_TEXTURE */
     } engine_slot_override;
+
+    /* The bounds and options of engine_label. */
+#define ENGINE_LABEL_MAX_BYTES 256u
+#define ENGINE_LABEL_ANCHOR_CENTER 0u /* the text is centred on the label's point */
+#define ENGINE_LABEL_ANCHOR_LEFT 1u   /* the text starts at the point */
+#define ENGINE_LABEL_ANCHOR_RIGHT 2u  /* the text ends at the point */
+#define ENGINE_LABEL_SIZE_METRES 0x1u /* `size` is the height of the text's em square in metres, not pixels */
+
+    /* A label (Phase 24 Day 367): UTF-8 text drawn over the surface at the entity's world position plus `offset`
+     * (world axes, metres), facing the viewer, in the font given with label_font_set. `size` is a pixel size (kept as
+     * the camera moves) or, with ENGINE_LABEL_SIZE_METRES, a height in metres (the pixel size then follows the
+     * distance, rounded to a set of sizes, and 6..256 pixels). `color` is RGBA 0..1 as sRGB. Labels have no depth
+     * test (never hidden by geometry), are hidden with their entity, follow it (and the joint it is attached to), and
+     * a surface draws up to 1024 of them (the rest are counted in engine_surface_state.labels_refused). component_get
+     * returns every field but the text's bytes (text.data is NULL, text.length is its length). The entity needs
+     * ENGINE_COMPONENT_TRANSFORM too. */
+    typedef struct engine_label
+    {
+        uint32_t struct_size;
+        engine_string text; /* at most ENGINE_LABEL_MAX_BYTES bytes, copied */
+        float color[4];
+        float size;
+        float offset[3];
+        uint32_t anchor; /* ENGINE_LABEL_ANCHOR_* */
+        uint32_t flags;  /* ENGINE_LABEL_* options */
+    } engine_label;
 
     /* The kinds of engine_light.kind. */
 #define ENGINE_LIGHT_DIRECTIONAL                                                                                       \
@@ -1402,6 +1432,11 @@ extern "C"
          * update yet), TYPE_MISMATCH. */
         engine_status (*texture_read_pixels)(engine_handle texture, engine_buffer* out, uint32_t* width,
                                              uint32_t* height);
+
+        /* Gives the engine the font its labels are drawn with: the bytes of a font file (TrueType or OpenType), copied.
+         * The engine ships no font. Surfaces use the font at their next frame; a label is drawn only after a font is
+         * set. Fails with: INVALID_ARGUMENT (NULL, zero size), TOO_LARGE (above 32 MiB), STALE_HANDLE. */
+        engine_status (*label_font_set)(engine_handle engine, const void* data, size_t size);
     } engine_api;
 
     /* Returns the function table.

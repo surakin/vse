@@ -10016,13 +10016,19 @@ renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-scenef
 renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:166
 renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:169
 renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:171
-renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:177
-renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:179
-renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:181
-renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:183
-renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:185
-renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:187
-renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:191
+renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:178
+renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:182
+renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:186
+renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:193
+renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:197
+renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:201
+renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:206
+renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:208
+renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:210
+renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:212
+renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:214
+renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:216
+renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:220
 renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:19
 renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:21
 renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:26
