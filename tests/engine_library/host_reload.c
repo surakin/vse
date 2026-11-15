@@ -95,6 +95,8 @@ static int Mapped(const char* file_name)
     return found;
 }
 
+static int g_longest_settle_ms = 0;
+
 int main(void)
 {
     const int threads_before = ThreadCount();
@@ -144,7 +146,20 @@ int main(void)
         }
         else
         {
-            CHECK(ThreadCount() == threads_after_first); /* no thread of the engine outlives its engine */
+            /* No thread of the engine outlives its engine. A thread that has been joined can still be listed for a
+               moment (the kernel removes its task entry just after), so the count settles within a short wait; a thread
+               that is really left never goes away. */
+            int waited_ms = 0;
+            while (ThreadCount() != threads_after_first && waited_ms < 2000)
+            {
+                usleep(1000);
+                ++waited_ms;
+            }
+            if (waited_ms > g_longest_settle_ms)
+            {
+                g_longest_settle_ms = waited_ms;
+            }
+            CHECK(ThreadCount() == threads_after_first);
         }
         if (cycle == WARMUP - 1)
         {
@@ -154,8 +169,9 @@ int main(void)
     {
         const long resident_at_end = ResidentBytes();
         const long growth = resident_at_end - resident_after_warmup;
-        printf("host_reload: %d cycles, %d log lines, resident %ld KiB after cycle %d, %ld KiB at the end\n", CYCLES,
-               g_log_calls, resident_after_warmup / 1024, WARMUP, resident_at_end / 1024);
+        printf(
+            "host_reload: %d cycles, %d log lines, resident %ld KiB after cycle %d, %ld KiB at the end, longest wait for the thread count %d ms\n",
+            CYCLES, g_log_calls, resident_after_warmup / 1024, WARMUP, resident_at_end / 1024, g_longest_settle_ms);
         CHECK(g_log_calls == CYCLES);
         CHECK(resident_after_warmup > 0 && growth < RESIDENT_GROWTH_LIMIT_KIB * 1024L);
     }

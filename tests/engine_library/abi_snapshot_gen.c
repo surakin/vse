@@ -9,6 +9,7 @@
 #include "engine_c/engine_c.h"
 
 #define STATUS(name) printf("status " #name " %d\n", (int)name)
+#define VALUE(name) printf("value " #name " %d\n", (int)name)
 #define STRUCT(type) printf("struct " #type " size=%zu\n", sizeof(type))
 #define FIELD(type, member)                                                                                            \
     do                                                                                                                 \
@@ -42,6 +43,12 @@ int main(void)
     STATUS(ENGINE_ERROR_DENIED);
     STATUS(ENGINE_ERROR_INTERNAL);
 
+    VALUE(ENGINE_COMPONENT_TRANSFORM);
+    VALUE(ENGINE_COMPONENT_WORLD_TRANSFORM);
+    VALUE(ENGINE_COMPONENT_NAME);
+    VALUE(ENGINE_COMPONENT_MESH_REFERENCE);
+    VALUE(ENGINE_NAME_MAX_BYTES);
+
     STRUCT(engine_string);
     FIELD(engine_string, data);
     FIELD(engine_string, length);
@@ -68,6 +75,30 @@ int main(void)
     STRUCT(engine_info);
     FIELD(engine_info, struct_size);
     FIELD(engine_info, setting_count);
+    STRUCT(engine_frame_info);
+    FIELD(engine_frame_info, struct_size);
+    FIELD(engine_frame_info, flags);
+    FIELD(engine_frame_info, delta_seconds);
+    FIELD(engine_frame_info, budget_us);
+    STRUCT(engine_frame_stats);
+    FIELD(engine_frame_stats, struct_size);
+    FIELD(engine_frame_stats, worlds_run);
+    FIELD(engine_frame_stats, worlds_skipped);
+    FIELD(engine_frame_stats, entities);
+    FIELD(engine_frame_stats, frame_index);
+    FIELD(engine_frame_stats, elapsed_us);
+    STRUCT(engine_transform);
+    FIELD(engine_transform, struct_size);
+    FIELD(engine_transform, position);
+    FIELD(engine_transform, rotation);
+    FIELD(engine_transform, scale);
+    STRUCT(engine_world_transform);
+    FIELD(engine_world_transform, struct_size);
+    FIELD(engine_world_transform, matrix);
+    STRUCT(engine_mesh_reference);
+    FIELD(engine_mesh_reference, struct_size);
+    FIELD(engine_mesh_reference, material);
+    FIELD(engine_mesh_reference, mesh);
     STRUCT(engine_api);
     FIELD(engine_api, struct_size);
     FIELD(engine_api, abi_major);
@@ -82,5 +113,24 @@ int main(void)
     FIELD(engine_api, last_error);
     FIELD(engine_api, get_extension);
     FIELD(engine_api, thread_detach);
+    FIELD(engine_api, frame);
+    FIELD(engine_api, world_create);
+    FIELD(engine_api, world_destroy);
+    FIELD(engine_api, entity_create);
+    FIELD(engine_api, entity_destroy);
+    FIELD(engine_api, component_set);
+    FIELD(engine_api, component_get);
+    FIELD(engine_api, component_remove);
+    FIELD(engine_api, component_has);
+    FIELD(engine_api, entity_name_set);
+    FIELD(engine_api, entity_name_get);
+    FIELD(engine_api, query);
+    FIELD(engine_api, counter_create);
+    FIELD(engine_api, counter_destroy);
+    FIELD(engine_api, jobs_submit);
+    FIELD(engine_api, counter_value);
+    FIELD(engine_api, counter_wait);
+    FIELD(engine_api, crash_handler_install);
+    FIELD(engine_api, crash_handler_uninstall);
     return 0;
 }

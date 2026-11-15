@@ -25,4 +25,5 @@ engine/platform/windows/entry_point_windows.cpp|E3: a GUI program started from a
 tests/windows/os_windows_test.cpp|E4: tests the Windows descriptor primitives themselves on an ordinary file, which it names with GetTempPathA and removes with DeleteFileA.
 tests/cstr/os_console_test.cpp|E4: redirects a descriptor to a temporary file (mkstemp, unlink) to compare the os console wrappers with the C library streams.
 tests/engine_library/crash_host.c|a C program standing for a foreign host (Phase 23 Day 345): it makes its own dump directory and counts the envelope files the engine's crash handler leaves in it, with the C library, as a host in another language would.
+tests/engine_library/host_runtime.c|a C program standing for a foreign host (Phase 23 Day 349): it makes its own dump directory and counts the envelope files the engine's crash handler leaves in it, with the C library, as a host in another language would.
 tests/engine_library/host_reload.c|a C program standing for a foreign host (Phase 23 Day 348): it reads /proc/self/maps, /proc/self/statm and /proc/self/task to prove the engine left the address space and returned its memory and threads

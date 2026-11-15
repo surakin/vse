@@ -169,4 +169,44 @@ What a host must do, and what the engine does not do for it:
 
 **Unload.** The library is not linked `-z nodelete`: it unloads when its last `dlclose` runs, and the test `engine_reload_cycles*` proves it by loading, creating, running jobs, destroying and unloading 50 times in one process (plain, asan, tsan), checking after every cycle that the library is gone from `/proc/self/maps` and from the dynamic linker, that the process has no thread it did not have, and after the last that the resident size has not grown (plain: within 8 MiB of its size after the fifth cycle; the sanitizers' allocators get 64 MiB). Under asan the leak report at exit is the check for what is really lost. What an unload still has to give back is done by the library's destructor (`EngineLibraryUnloaded`, in the shared library only): the job system's process-wide frame pool, immortal in a program, frees its slabs (`FramePool::DestroyGlobalAtUnload`); without it each cycle kept about 2 MiB.
 
-**Audit.** The things an engine registers, and who removes them: the settings listeners and the `log.*` application (the settings service, at destroy); the log observer (destroy); the log channels' state (destroy restores it); the job scheduler's threads (the scheduler that made them, which joins them when it is destroyed: the engine starts none of its own until Day 349); the crash handler (the host installs and removes it; an engine installs it on Day 349 and removes it at destroy); the per-thread caches (the thread's own `thread_detach`); the global frame pool (the library's destructor). No static destructor touches another static.
+**Audit.** The things an engine registers, and who removes them: the settings listeners and the `log.*` application (the settings service, at destroy); the log observer (destroy); the log channels' state (destroy restores it); the job scheduler's threads (the scheduler that made them, which joins them when it is destroyed: the engine starts its job system on the first job submitted, Day 349, and the world and counter objects below keep `destroy` from running while any job can still run); the crash handler (`crash_handler_install` and `_uninstall`; destroy removes it if the host did not); the per-thread caches (the thread's own `thread_detach`); the global frame pool (the library's destructor). No static destructor touches another static.
+
+## The frame loop, worlds, jobs and the crash handler (Day 349)
+
+The rest of the runtime surface of version 1.0, all reached through the table (`engine_c.h`; `host_runtime.c` is the C program that drives every function).
+
+**The frame.** The host drives the loop: `frame(engine, &info, &stats)` runs, on the calling thread, one frame of every world's systems (today the transform propagation: it writes
+each entity's world matrix from its local transform) and returns. Nothing in it waits for the host, and no engine thread starts a frame by itself. `info` has the time step
+(`delta_seconds`) and an optional budget in microseconds: when it is spent, a world that has not started is left for the next frame (counted in `stats.worlds_skipped`), and the
+next frame begins with the first world it left, so no world starves. One thread runs frames at a time, the host's frame thread; the other calls may run beside it.
+
+**Worlds and entities.** `world_create` makes an empty world; it is an object of the engine, so `engine_destroy` refuses (`IN_USE`) while one exists, and `world_destroy` gives it back.
+`entity_create` returns a 64-bit key: its generation part makes the key of a destroyed entity fail with `STALE_HANDLE` even after its slot is reused. A world, an entity and a counter
+never expose a pointer: components are read and written by value.
+
+**Components are a typed, size-prefixed property API.** There are four kinds (`engine_component_kind`; the numbers are the ABI): `TRANSFORM` (`engine_transform`: position, a unit rotation
+quaternion that the engine normalizes, scale), `WORLD_TRANSFORM` (`engine_world_transform`: the column-major matrix; read only: the frame writes it, so a transform set on an entity shows
+as a matrix after the next frame), `NAME` (up to 63 bytes, set and read with `entity_name_set/get`) and `MESH_REFERENCE` (`engine_mesh_reference`: a mesh identifier the host chooses,
+which Day 350's loaded resources name, and a material). A struct goes in with its `struct_size` first (a size below the first version is `STRUCT_SIZE`); a struct comes out the same way. Setting a
+transform adds the world transform with it, and removing it takes both. `query(world, mask, keys, capacity, &total)` finds the entities that have every kind of `mask` (`ENGINE_COMPONENT_BIT`),
+writes up to `capacity` keys and reports the total, so a host that is told `total > capacity` calls again with a bigger array; the order is not specified.
+
+**Jobs.** `counter_create` makes a counter (an object of the engine), `jobs_submit(engine, fn, user, counter)` queues `fn(user)` on an engine worker thread and counts it on the counter, and
+`counter_wait(counter, timeout_ms)` sleeps the calling thread until the counter is zero (`NOT_READY` on a timeout, `UINT64_MAX` waits for ever). The engine starts its job system, a scheduler on a thread of its own with
+its workers, on the first submit, and stops it at `engine_destroy`; the host's threads never become participants, so a host thread that waits sleeps and does not run jobs. A counter cannot be
+destroyed while a job submitted with it has not finished or a thread waits on it (`IN_USE`).
+
+**Thread rules** (the same text is at `engine_job_fn` in `engine_c.h`): every function of the table may be called from any host thread. The world, entity, component and query functions and `frame` are serialized with each
+other by one lock, so a call waits for a running frame and a frame waits for a running world call; counters have a lock of their own. A job callback runs on an engine thread, never on the thread that submitted it, and may call
+`status_name`, `last_error`, the world, entity, component and query functions, `counter_value`, `counter_create`, `counter_destroy` and `jobs_submit`. It must not call `frame`, `create`, `destroy`,
+`counter_wait` (refused with `INVALID_ARGUMENT` inside a job: it would sleep a worker the counter may need), `crash_handler_install` or `crash_handler_uninstall`. A job never throws or longjmps, and the host must not destroy the engine while one of
+its own threads is inside a call (the library does not wait for it).
+
+**The crash handler.** `crash_handler_install(engine)` installs the engine's handler for the process: a crash on any thread, a job included, writes a dump (an `.envelope` with a minidump) to the directory of the
+setting `crash.dump_directory` (empty: the user's crash directory). `crash_handler_uninstall` restores the handler that was there before (the test installs its own `SIGSEGV` handler first and finds it again), and `engine_destroy`
+removes the handler if the host did not. The dump the crash test checks is in a directory of the run, so a dump of an earlier run cannot make a failing run pass.
+
+**Tests.** `host_runtime` (ctest `engine_c_runtime*`, plain, asan and tsan; static link) creates a world with a thousand entities with transforms, names and mesh references, queries by every combination, runs frames and reads the
+matrices, runs a frame with a budget over two worlds, submits 500 jobs and waits, runs jobs that create entities through the table, waits with a timeout, destroys a counter with a pending job (refused), makes every bad call (a stale
+world and entity, a counter used as a world, a wrong struct size, a name too long, a non-finite transform), runs two host threads each with a world and a counter beside a third that runs frames (the thread-safe subset, under tsan), and,
+in a child process that starts before any thread exists, crashes inside a job and counts the envelope the handler left.

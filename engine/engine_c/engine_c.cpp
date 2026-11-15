@@ -11,11 +11,16 @@
 #include "cstr/varargs.h"
 #include "lang/new.h"
 #include "engine_c/engine_c.h"
+#include "debug/crash_handler.h"
+#include "debug/stack_trace.h"
+#include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
+#include "engine_c/runtime.h"
 #include "engine_c/status_map.h"
 #include "log/diagnostics_hooks.h"
 #include "log/log.h"
 #include "mem/heap_allocator.h"
+#include "settings/desc.h"
 #include "settings/engine_settings.h"
 #include "settings/env_source.h"
 #include "settings/memory_store.h"
@@ -31,17 +36,14 @@
 namespace engine_placeholder::engine_c
 {
 
-namespace
-{
-
-using Text = String<HeapAllocator>;
-
 // The failure text of the calling thread. Plain bytes, so the thread-local has no destructor (nothing to run at thread
 // exit, Phase 23 Day 345).
+namespace
+{
 constexpr usize kErrorBytes = 256;
 thread_local char t_last_error[kErrorBytes];
+}  // namespace
 
-void SetLastError(const char* format, ...) ENGINE_PRINTF_FORMAT(1, 2);
 void SetLastError(const char* format, ...)
 {
     VarArgs args;
@@ -55,6 +57,40 @@ engine_status Fail(engine_status status, const char* what)
     SetLastError("%s: %s", StatusName(status), what);
     return status;
 }
+
+namespace
+{
+
+void ReleaseTextBuffer(engine_buffer* buffer)
+{
+    if (buffer->owner != nullptr)
+    {
+        HeapAllocator::Default().Free(buffer->owner, buffer->size + 1, 1);
+    }
+    buffer->data = nullptr;
+    buffer->size = 0;
+    buffer->owner = nullptr;
+    buffer->release = nullptr;
+}
+
+}  // namespace
+
+// Fills `out` with a copy of `text` (and a NUL after it, which `size` does not count).
+void MakeTextBuffer(StringView text, engine_buffer* out)
+{
+    char* block = static_cast<char*>(HeapAllocator::Default().Alloc(text.Length() + 1, 1));
+    MemCopy(block, text.Data(), text.Length());
+    block[text.Length()] = '\0';
+    out->data = block;
+    out->size = text.Length();
+    out->owner = block;
+    out->release = &ReleaseTextBuffer;
+}
+
+namespace
+{
+
+using Text = String<HeapAllocator>;
 
 StringView View(engine_string s)
 {
@@ -86,6 +122,8 @@ struct Engine
     // Objects the engine's C API has handed out and the host has not given back (worlds, loaded resources, imports;
     // Days 349 to 351 register theirs here).
     u32 outstanding = 0;
+    bool crash_installed = false;            // the engine's crash handler is installed (destroy takes it away)
+    UniquePtr<Runtime> runtime;              // worlds, counters and the job system (Day 349)
     UniquePtr<settings::Settings> settings;  // last: destroyed first, before the entries and the registry it reads
 };
 
@@ -133,33 +171,6 @@ engine_status Resolve(State& state, engine_handle handle, Engine** out)
     }
     *out = state.engine.Get();
     return ENGINE_OK;
-}
-
-// ---- buffers
-// -----------------------------------------------------------------------------------------------------------------------------------
-
-void ReleaseTextBuffer(engine_buffer* buffer)
-{
-    if (buffer->owner != nullptr)
-    {
-        HeapAllocator::Default().Free(buffer->owner, buffer->size + 1, 1);
-    }
-    buffer->data = nullptr;
-    buffer->size = 0;
-    buffer->owner = nullptr;
-    buffer->release = nullptr;
-}
-
-// Fills `out` with a copy of `text` (and a NUL after it, which `size` does not count).
-void MakeTextBuffer(StringView text, engine_buffer* out)
-{
-    char* block = static_cast<char*>(HeapAllocator::Default().Alloc(text.Length() + 1, 1));
-    MemCopy(block, text.Data(), text.Length());
-    block[text.Length()] = '\0';
-    out->data = block;
-    out->size = text.Length();
-    out->owner = block;
-    out->release = &ReleaseTextBuffer;
 }
 
 // ---- the log
@@ -249,6 +260,14 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
 
     settings::RegisterEngineSettings(&engine->registry);
     settings::RegisterLogSettings(&engine->registry);
+    {
+        settings::SettingDesc dump = settings::MakeText("crash.dump_directory", "");
+        dump.description = "the directory a crash dump goes to (empty: the user's crash directory)";
+        dump.group = "crash";
+        dump.max_text = 255;
+        engine->registry.Register(dump);
+    }
+    engine->runtime = MakeUnique<Runtime>();
     engine->settings = MakeUnique<settings::Settings>(engine->registry);
 
     // The host's entries as NUL-terminated text (the layer borrows them).
@@ -363,6 +382,10 @@ engine_status DestroyFn(engine_handle handle)
         dying->channels[i].channel->SetVerbosity(dying->channels[i].verbosity);
         dying->channels[i].channel->SetEnabled(dying->channels[i].enabled);
     }
+    if (dying->crash_installed)
+    {
+        debug::UninstallCrashHandler();
+    }
     dying = nullptr;
     {
         LockGuard<RecursiveMutex> lock(state.mutex);
@@ -463,6 +486,63 @@ engine_status LastErrorFn(engine_buffer* out)
     return ENGINE_OK;
 }
 
+engine_status CrashHandlerInstallFn(engine_handle handle)
+{
+    State& state = GetState();
+    LockGuard<RecursiveMutex> lock(state.mutex);
+    Engine* engine = nullptr;
+    const engine_status resolved = Resolve(state, handle, &engine);
+    if (resolved != ENGINE_OK)
+    {
+        return resolved;
+    }
+    if (engine->crash_installed)
+    {
+        return Fail(ENGINE_ERROR_ALREADY_EXISTS, "the engine's crash handler is installed");
+    }
+    const settings::SettingId id = engine->registry.Find(StringView("crash.dump_directory"));
+    const settings::Value current = engine->registry.Current(id);  // a copy: the text below views into it
+    const StringView text = current.AsText();
+    char directory[settings::kMaxValueTextBytes];
+    const usize length = text.Length() < sizeof(directory) ? text.Length() : sizeof(directory) - 1;
+    MemCopy(directory, text.Data(), length);
+    directory[length] = '\0';
+    debug::InitDebugFacilities();
+    debug::CrashHandlerOptions options;
+    options.dump_directory = length == 0 ? nullptr : directory;
+    switch (debug::InstallCrashHandler(options))
+    {
+    case debug::CrashHandlerResult::Installed: engine->crash_installed = true; return ENGINE_OK;
+    case debug::CrashHandlerResult::AlreadyInstalled:
+        return Fail(ENGINE_ERROR_ALREADY_EXISTS, "a crash handler of this process is installed already");
+    case debug::CrashHandlerResult::DirectoryFailed: return Fail(ENGINE_ERROR_IO, "the dump directory cannot be used");
+    case debug::CrashHandlerResult::InitFailed:
+        return Fail(ENGINE_ERROR_INTERNAL, "the crash handler library did not start");
+    case debug::CrashHandlerResult::Disabled:
+    case debug::CrashHandlerResult::Unsupported: break;
+    }
+    return Fail(ENGINE_ERROR_UNSUPPORTED, "this platform has no crash handler");
+}
+
+engine_status CrashHandlerUninstallFn(engine_handle handle)
+{
+    State& state = GetState();
+    LockGuard<RecursiveMutex> lock(state.mutex);
+    Engine* engine = nullptr;
+    const engine_status resolved = Resolve(state, handle, &engine);
+    if (resolved != ENGINE_OK)
+    {
+        return resolved;
+    }
+    if (!engine->crash_installed)
+    {
+        return Fail(ENGINE_ERROR_NOT_FOUND, "the engine's crash handler is not installed");
+    }
+    debug::UninstallCrashHandler();
+    engine->crash_installed = false;
+    return ENGINE_OK;
+}
+
 void ThreadDetachFn()
 {
     NotifyThreadEnd();
@@ -516,6 +596,27 @@ void EngineObjectRelease()
     }
 }
 
+engine_status ResolveRuntime(engine_handle engine, Runtime** out)
+{
+    *out = nullptr;
+    State& state = GetState();
+    LockGuard<RecursiveMutex> lock(state.mutex);
+    Engine* resolved = nullptr;
+    const engine_status status = Resolve(state, engine, &resolved);
+    if (status == ENGINE_OK)
+    {
+        *out = resolved->runtime.Get();
+    }
+    return status;
+}
+
+Runtime* CurrentRuntime()
+{
+    State& state = GetState();
+    LockGuard<RecursiveMutex> lock(state.mutex);
+    return state.engine.Get() == nullptr ? nullptr : state.engine->runtime.Get();
+}
+
 }  // namespace engine_placeholder::engine_c
 
 using namespace engine_placeholder;
@@ -554,6 +655,25 @@ extern "C"
             &engine_c::LastErrorFn,
             &engine_c::GetExtensionFn,
             &engine_c::ThreadDetachFn,
+            &engine_c::FrameFn,
+            &engine_c::WorldCreateFn,
+            &engine_c::WorldDestroyFn,
+            &engine_c::EntityCreateFn,
+            &engine_c::EntityDestroyFn,
+            &engine_c::ComponentSetFn,
+            &engine_c::ComponentGetFn,
+            &engine_c::ComponentRemoveFn,
+            &engine_c::ComponentHasFn,
+            &engine_c::EntityNameSetFn,
+            &engine_c::EntityNameGetFn,
+            &engine_c::QueryFn,
+            &engine_c::CounterCreateFn,
+            &engine_c::CounterDestroyFn,
+            &engine_c::JobsSubmitFn,
+            &engine_c::CounterValueFn,
+            &engine_c::CounterWaitFn,
+            &engine_c::CrashHandlerInstallFn,
+            &engine_c::CrashHandlerUninstallFn,
         };
         *out = &table;
         return ENGINE_OK;

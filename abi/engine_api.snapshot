@@ -20,6 +20,11 @@ status ENGINE_ERROR_OFFLINE 17
 status ENGINE_ERROR_TOO_LARGE 18
 status ENGINE_ERROR_DENIED 19
 status ENGINE_ERROR_INTERNAL 20
+value ENGINE_COMPONENT_TRANSFORM 1
+value ENGINE_COMPONENT_WORLD_TRANSFORM 2
+value ENGINE_COMPONENT_NAME 3
+value ENGINE_COMPONENT_MESH_REFERENCE 4
+value ENGINE_NAME_MAX_BYTES 63
 struct engine_string size=16
 field engine_string.data offset=0 size=8
 field engine_string.length offset=8 size=8
@@ -46,7 +51,31 @@ field engine_create_info.log_user offset=64 size=8
 struct engine_info size=8
 field engine_info.struct_size offset=0 size=4
 field engine_info.setting_count offset=4 size=4
-struct engine_api size=88
+struct engine_frame_info size=24
+field engine_frame_info.struct_size offset=0 size=4
+field engine_frame_info.flags offset=4 size=4
+field engine_frame_info.delta_seconds offset=8 size=8
+field engine_frame_info.budget_us offset=16 size=8
+struct engine_frame_stats size=32
+field engine_frame_stats.struct_size offset=0 size=4
+field engine_frame_stats.worlds_run offset=4 size=4
+field engine_frame_stats.worlds_skipped offset=8 size=4
+field engine_frame_stats.entities offset=12 size=4
+field engine_frame_stats.frame_index offset=16 size=8
+field engine_frame_stats.elapsed_us offset=24 size=8
+struct engine_transform size=44
+field engine_transform.struct_size offset=0 size=4
+field engine_transform.position offset=4 size=12
+field engine_transform.rotation offset=16 size=16
+field engine_transform.scale offset=32 size=12
+struct engine_world_transform size=68
+field engine_world_transform.struct_size offset=0 size=4
+field engine_world_transform.matrix offset=4 size=64
+struct engine_mesh_reference size=16
+field engine_mesh_reference.struct_size offset=0 size=4
+field engine_mesh_reference.material offset=4 size=4
+field engine_mesh_reference.mesh offset=8 size=8
+struct engine_api size=240
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -60,3 +89,22 @@ field engine_api.setting_get offset=56 size=8
 field engine_api.last_error offset=64 size=8
 field engine_api.get_extension offset=72 size=8
 field engine_api.thread_detach offset=80 size=8
+field engine_api.frame offset=88 size=8
+field engine_api.world_create offset=96 size=8
+field engine_api.world_destroy offset=104 size=8
+field engine_api.entity_create offset=112 size=8
+field engine_api.entity_destroy offset=120 size=8
+field engine_api.component_set offset=128 size=8
+field engine_api.component_get offset=136 size=8
+field engine_api.component_remove offset=144 size=8
+field engine_api.component_has offset=152 size=8
+field engine_api.entity_name_set offset=160 size=8
+field engine_api.entity_name_get offset=168 size=8
+field engine_api.query offset=176 size=8
+field engine_api.counter_create offset=184 size=8
+field engine_api.counter_destroy offset=192 size=8
+field engine_api.jobs_submit offset=200 size=8
+field engine_api.counter_value offset=208 size=8
+field engine_api.counter_wait offset=216 size=8
+field engine_api.crash_handler_install offset=224 size=8
+field engine_api.crash_handler_uninstall offset=232 size=8

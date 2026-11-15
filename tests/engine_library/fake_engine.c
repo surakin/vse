@@ -10,7 +10,9 @@ int engine_not_the_entry_point(void)
     return 3;
 }
 #else
-static const engine_api g_table = {sizeof(engine_api), 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+/* every function pointer NULL: a table that reports major 2 (designated, so that a function the API gains later needs
+ * no edit here) */
+static const engine_api g_table = {.struct_size = sizeof(engine_api), .abi_major = 2};
 
 engine_status engine_get_api(uint32_t wanted_major, uint32_t wanted_minor, size_t table_size, const engine_api** out)
 {

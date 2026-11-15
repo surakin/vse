@@ -176,6 +176,71 @@ typedef enum engine_sanitizer
     ENGINE_LIB_SANITIZER_THREAD = 2
 } engine_sanitizer;
 
+/* ---- frames, worlds, entities, components, jobs (Phase 23 Day 349) ---------------------------------------------------------------------------- */
+
+/* What engine_api.frame is given. */
+typedef struct engine_frame_info
+{
+    uint32_t struct_size;
+    uint32_t flags;        /* must be 0 */
+    double delta_seconds;  /* the time step the systems see */
+    uint64_t budget_us;    /* microseconds the frame may take before it stops starting new work; 0 means no budget */
+} engine_frame_info;
+
+/* What engine_api.frame reports. */
+typedef struct engine_frame_stats
+{
+    uint32_t struct_size;
+    uint32_t worlds_run;      /* worlds whose systems ran */
+    uint32_t worlds_skipped;  /* worlds left for the next frame because the budget was spent */
+    uint32_t entities;        /* entities alive in the worlds that ran */
+    uint64_t frame_index;     /* frames run so far, this one included, from 1 */
+    uint64_t elapsed_us;      /* wall time of this call */
+} engine_frame_stats;
+
+/* The components a host can set on an entity. The numbers are part of the ABI. ENGINE_COMPONENT_BIT(kind) is the bit of a kind in a query's mask. */
+typedef enum engine_component_kind
+{
+    ENGINE_COMPONENT_TRANSFORM = 1,        /* engine_transform: the entity's place relative to its parent, or to the world */
+    ENGINE_COMPONENT_WORLD_TRANSFORM = 2,  /* engine_world_transform: where the frame's transform system put it; read only */
+    ENGINE_COMPONENT_NAME = 3,             /* text, up to ENGINE_NAME_MAX_BYTES bytes; set and read with engine_api.entity_name_set/get */
+    ENGINE_COMPONENT_MESH_REFERENCE = 4    /* engine_mesh_reference: which mesh and material the entity draws */
+} engine_component_kind;
+
+#define ENGINE_COMPONENT_BIT(kind) (1u << ((kind)-1))
+#define ENGINE_COMPONENT_MASK_ALL 0xFu
+#define ENGINE_NAME_MAX_BYTES 63u
+
+/* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
+typedef struct engine_transform
+{
+    uint32_t struct_size;
+    float position[3];
+    float rotation[4];
+    float scale[3];
+} engine_transform;
+
+/* The matrix from the entity's space to the world's, column-major (element [4 * column + row]). */
+typedef struct engine_world_transform
+{
+    uint32_t struct_size;
+    float matrix[16];
+} engine_world_transform;
+
+/* The mesh an entity draws. `mesh` is an identifier the host chooses (loaded resources name theirs on Day 350); the engine stores it. */
+typedef struct engine_mesh_reference
+{
+    uint32_t struct_size;
+    uint32_t material;
+    uint64_t mesh;
+} engine_mesh_reference;
+
+/* A job: called once, on one of the engine's worker threads (never on the thread that submitted it), with the `user` pointer given to jobs_submit.
+ * While it runs it may call, through the table it was given: status_name, last_error, thread_detach (not needed), the world, entity, component and
+ * query functions (they are serialized with each other), counter_value, counter_create/destroy and jobs_submit. It must not call frame, create,
+ * destroy, counter_wait, crash_handler_install or crash_handler_uninstall: wait for other work from outside the job. It never throws or longjmps. */
+typedef void (*engine_job_fn)(void* user);
+
 /* ---- the function table ------------------------------------------------------------------------------------------------------------------------ */
 
 typedef struct engine_api
@@ -221,6 +286,86 @@ typedef struct engine_api
      * nothing is left behind in a library that may be unloaded afterwards. A host calls it on every thread that called the engine, once, just before the
      * thread exits; the engine's own worker threads do it themselves. Calling it earlier is harmless: the thread may keep using the engine. */
     void (*thread_detach)(void);
+
+    /* ---- Day 349 ---- */
+
+    /* Runs one frame: every world's systems (today the transform propagation) once, in the order the worlds were created, on the calling thread. The
+     * host drives the loop: nothing here waits for the host or blocks on a thread of its own, and no engine thread runs a frame by itself. With a budget,
+     * a world that has not started when the budget is spent is left for the next frame (the first world of a frame always runs, so a budget too small for one world cannot starve it) (counted in `worlds_skipped`), and the next frame begins with the first world it left. `stats` may be NULL.
+     * Thread rule: one thread at a time per engine (the host's frame thread); other API calls may run beside it, world calls wait for it.
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT (flags, a delta that is negative, NaN or above 3600 seconds), STRUCT_SIZE. */
+    engine_status (*frame)(engine_handle engine, const engine_frame_info* info, engine_frame_stats* stats);
+
+    /* Creates an empty world (entities and their components). The world counts as an object of the engine: engine_destroy refuses (IN_USE) while one exists.
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT, LIMIT_EXCEEDED. */
+    engine_status (*world_create)(engine_handle engine, engine_handle* out);
+
+    /* Destroys a world and every entity in it. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH (not a world). */
+    engine_status (*world_destroy)(engine_handle world);
+
+    /* Creates an entity with no components and returns its key: 64 bits whose generation part makes a key of a destroyed entity fail with STALE_HANDLE.
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, LIMIT_EXCEEDED. */
+    engine_status (*entity_create)(engine_handle world, uint64_t* out_key);
+
+    /* Destroys an entity and its components. Fails with: STALE_HANDLE (the world or the entity), INVALID_ARGUMENT, TYPE_MISMATCH. */
+    engine_status (*entity_destroy)(engine_handle world, uint64_t key);
+
+    /* A component's `kind` is an engine_component_kind passed as a uint32_t (a number that is not a kind is INVALID_ARGUMENT, and a C++ enum could not hold it).
+ * Sets a component from a struct (`value` points to the struct of the kind, its struct_size first; a smaller size than the first version is
+     * STRUCT_SIZE). The component is added if the entity has none. Nothing of the world escapes: the engine copies. ENGINE_COMPONENT_WORLD_TRANSFORM is
+     * read only (UNSUPPORTED), ENGINE_COMPONENT_NAME has its own functions (INVALID_ARGUMENT).
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, STRUCT_SIZE, UNSUPPORTED. */
+    engine_status (*component_set)(engine_handle world, uint64_t key, uint32_t kind, const void* value);
+
+    /* Reads a component into `out` (the host sets out->struct_size to its sizeof; the library writes at most that many bytes and sets it to what it wrote).
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, STRUCT_SIZE, NOT_FOUND (the entity has no such component). */
+    engine_status (*component_get)(engine_handle world, uint64_t key, uint32_t kind, void* out);
+
+    /* Removes a component. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, NOT_FOUND (the entity has none), UNSUPPORTED (world transform). */
+    engine_status (*component_remove)(engine_handle world, uint64_t key, uint32_t kind);
+
+    /* Tells whether an entity has a component: `*out` is 1 or 0. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+    engine_status (*component_has)(engine_handle world, uint64_t key, uint32_t kind, int* out);
+
+    /* Gives an entity a name (UTF-8, at most ENGINE_NAME_MAX_BYTES bytes). Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, TOO_LARGE. */
+    engine_status (*entity_name_set)(engine_handle world, uint64_t key, engine_string name);
+
+    /* Reads an entity's name into a buffer the host releases. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, NOT_FOUND (no name). */
+    engine_status (*entity_name_get)(engine_handle world, uint64_t key, engine_buffer* out);
+
+    /* Finds the entities that have every component of `mask` (ENGINE_COMPONENT_BIT bits; 0 matches every entity). Writes up to `capacity` keys to `keys`
+     * (which may be NULL when `capacity` is 0) and the number of matches to `*total`: when it is above `capacity` the host calls again with a bigger
+     * array. The order is not specified and may change when components are added or removed.
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT (an unknown bit, NULL `total`), TYPE_MISMATCH. */
+    engine_status (*query)(engine_handle world, uint32_t mask, uint64_t* keys, size_t capacity, size_t* total);
+
+    /* Creates a counter: a count of jobs not yet finished. It counts as an object of the engine until counter_destroy.
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT, LIMIT_EXCEEDED. */
+    engine_status (*counter_create)(engine_handle engine, engine_handle* out);
+
+    /* Destroys a counter. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, IN_USE (jobs submitted with it have not finished, or a thread waits on it). */
+    engine_status (*counter_destroy)(engine_handle counter);
+
+    /* Queues `fn(user)` to run on an engine worker thread (the engine starts its job system on the first call) and counts it on `counter` until it ends.
+     * Any thread, a job included. At most 2048 jobs may be queued or running at once: past that the call fails and the host waits for some to finish.
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL `fn`), TYPE_MISMATCH, LIMIT_EXCEEDED. */
+    engine_status (*jobs_submit)(engine_handle engine, engine_job_fn fn, void* user, engine_handle counter);
+
+    /* Reads how many jobs submitted with the counter have not finished. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+    engine_status (*counter_value)(engine_handle counter, uint64_t* out);
+
+    /* Waits until the counter reaches zero, at most `timeout_ms` milliseconds (UINT64_MAX waits for ever). The calling thread sleeps; it does not run jobs.
+     * Not from inside a job (INVALID_ARGUMENT).
+     * Returns OK when the count is zero, NOT_READY when the time ran out. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, NOT_READY. */
+    engine_status (*counter_wait)(engine_handle counter, uint64_t timeout_ms);
+
+    /* Installs the engine's crash handler for the process: a crash writes a dump to the directory of the setting `crash.dump_directory` (empty: the
+     * user's crash directory) and the handler that was there before is back after crash_handler_uninstall (or engine_destroy, which uninstalls).
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT, ALREADY_EXISTS (installed), IO (the directory), UNSUPPORTED. */
+    engine_status (*crash_handler_install)(engine_handle engine);
+
+    /* Removes the engine's crash handler and restores the previous one. Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_FOUND (not installed). */
+    engine_status (*crash_handler_uninstall)(engine_handle engine);
 } engine_api;
 
 /* Returns the function table.

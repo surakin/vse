@@ -14,7 +14,7 @@ else()
   set(ENGINE_C_TEST_EXTENSION_VALUE 0)
 endif()
 
-set(ENGINE_C_SOURCES engine_c.cpp status_map.cpp)
+set(ENGINE_C_SOURCES engine_c.cpp runtime.cpp status_map.cpp)
 if(ENGINE_C_TEST_EXTENSION)
   list(APPEND ENGINE_C_SOURCES test_state.cpp)
 endif()
@@ -30,7 +30,7 @@ foreach(suffix "" "_asan" "_tsan")
   target_compile_options(engine_c${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
   # ENGINE_BUILDING_LIBRARY: engine_get_api is the one exported function (engine_c.h); ENGINE_TEST_EXTENSION: see the option above.
   target_compile_definitions(engine_c${suffix} PRIVATE ENGINE_BUILDING_LIBRARY=1 ENGINE_C_UNLOAD_HOOK=0 ENGINE_TEST_EXTENSION=${ENGINE_C_TEST_EXTENSION_VALUE})
-  target_link_libraries(engine_c${suffix} PUBLIC asset${suffix} jobs${suffix} foundation${suffix})
+  target_link_libraries(engine_c${suffix} PUBLIC asset${suffix} ecs${suffix} jobs${suffix} foundation${suffix})
 endforeach()
 
 if(NOT ENGINE_BUILD_SHARED)

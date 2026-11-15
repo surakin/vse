@@ -48,7 +48,7 @@ struct Case
 
 }  // namespace
 
-TEST_CASE("The GPU reads every vertex format from a vertex buffer", "[rhi][vulkan][vertexformat]")
+TEST_CASE("The GPU reads every vertex format from a vertex buffer", "[rhi][vulkan][gpu][vertexformat]")
 {
     gpu_test::GpuFixture fx;
     VulkanDevicePtr device = MakeDevice(fx);
@@ -60,7 +60,7 @@ TEST_CASE("The GPU reads every vertex format from a vertex buffer", "[rhi][vulka
     CHECK_FALSE(device->SupportsVertexFormat(VertexFormat::Count));
 }
 
-TEST_CASE("Packed float-class vertex formats decode to the expected color", "[rhi][vulkan][vertexformat]")
+TEST_CASE("Packed float-class vertex formats decode to the expected color", "[rhi][vulkan][gpu][vertexformat]")
 {
     gpu_test::GpuFixture fx;
     VulkanDevicePtr device = MakeDevice(fx);
