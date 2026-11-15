@@ -2,6 +2,7 @@
 
 #include "asset_import/gltf_container.h"
 #include "asset_import/gltf_clip.h"
+#include "asset_import/gltf_material.h"
 #include "asset_import/gltf_mesh.h"
 #include "asset_import/gltf_names.h"
 #include "asset_import/gltf_skin.h"
@@ -405,12 +406,33 @@ Status ImportManifest::Parse(StringView text, GltfError* error)
 // ---------------------------------------------------------------------------------------------------------------------
 // The import
 
+namespace
+{
+
+// One step of the import is done: counts it and stops when the import was cancelled.
+Status Step(const ImportOptions& options, GltfError* error)
+{
+    if (options.steps_done != nullptr)
+    {
+        options.steps_done->FetchAdd(1, MemoryOrder::Release);
+    }
+    if (options.cancel != nullptr && options.cancel->Load(MemoryOrder::Acquire))
+    {
+        error->Set(StringView(), StringView("the import was cancelled"));
+        return Status::Make(ErrorCode::Cancelled, "the import was cancelled");
+    }
+    return Status::Success();
+}
+
+}  // namespace
+
 Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& options, ImportResult* result,
                   GltfError* error)
 {
     *result = ImportResult();
     GltfDocument document;
     ENGINE_TRY(ParseGltf(file, source, options.limits, &document, error));
+    ENGINE_TRY(Step(options, error));
     ImportReport& report = result->report;
     report.meshes = static_cast<u32>(document.root.Get("meshes").Size());
     report.materials = static_cast<u32>(document.root.Get("materials").Size());
@@ -420,26 +442,16 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
     report.animations = static_cast<u32>(document.root.Get("animations").Size());
     report.nodes = static_cast<u32>(document.root.Get("nodes").Size());
     report.accessors = static_cast<u32>(document.accessors.Size());
-    const struct
-    {
-        const char* name;
-        u32 count;
-    } pending[] = {{"materials", report.materials}, {"textures", report.textures}, {"images", report.images}};
-    for (const auto& kind : pending)
-    {
-        if (kind.count != 0)
-        {
-            char text[64];
-            FormatTo(text, sizeof(text), "%u not imported yet", static_cast<unsigned>(kind.count));
-            AddImportWarning(&report, StringView(kind.name), StringView(text, CStrLength(text)));
-        }
-    }
     const TypeRegistry types;
     GltfNodeGraph graph;
     ENGINE_TRY(ReadNodeGraph(document, &graph, error));
-    // Skeletons first (meshes and clips refer to them), then the meshes skinned to them, then the clips.
+    // Textures and materials first (everything refers to them, nothing to later kinds), then skeletons (meshes and
+    // clips refer to them), then the meshes skinned to them, then the clips.
+    ENGINE_TRY(ImportMaterials(document, graph, source, options, types, result, error));
+    ENGINE_TRY(Step(options, error));
     Vector<ImportedSkin> skins;
     ENGINE_TRY(ImportSkins(document, graph, options, types, result, &skins, error));
+    ENGINE_TRY(Step(options, error));
     Vector<MeshSkeletonBinding> bindings;
     bindings.Resize(report.meshes);
     for (usize n = 0; n < graph.nodes.Size(); ++n)
@@ -464,8 +476,10 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
     }
     ENGINE_TRY(ImportMeshes(document, options, types, Span<const MeshSkeletonBinding>(bindings.Data(), bindings.Size()),
                             result, error));
-    return ImportClips(document, graph, options, types, Span<const ImportedSkin>(skins.Data(), skins.Size()), result,
-                       error);
+    ENGINE_TRY(Step(options, error));
+    ENGINE_TRY(ImportClips(document, graph, options, types, Span<const ImportedSkin>(skins.Data(), skins.Size()),
+                           result, error));
+    return Step(options, error);
 }
 
 Status ImportIntoBackend(HostMemoryBackend& backend, const ImportResult& result)

@@ -1,6 +1,7 @@
 #include "texture_source.h"
 
 #include "asset/block_compress.h"
+#include "asset/texture_mint.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -382,7 +383,6 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
     }
     u32 width = 0;
     u32 height = 0;
-    Vector<Vector<byte>> chains;  // one tight chain per layer
     for (usize layer = 0; layer < images.Size(); ++layer)
     {
         const u32 line = source.sources[layer].line;
@@ -404,110 +404,28 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
         {
             return TxFail(error, line, "the image has a different size from the first one");
         }
-        // A compressed texture is filtered as 8-bit RGBA, then each stored level is compressed.
-        const bool compressed = IsBcFormat(source.format);
-        const bool storage_srgb = source.format == rhi::Format::RGBA8_SRGB || source.format == rhi::Format::BC1_SRGB ||
-                                  source.format == rhi::Format::BC7_SRGB;
-        const rhi::Format work_format = !compressed
-                                            ? source.format
-                                            : (storage_srgb ? rhi::Format::RGBA8_SRGB : rhi::Format::RGBA8_UNorm);
-        const bool source_srgb = source.srgb;
-        Vector<byte> rgba;
-        if (!rgba.TryResize(raw.pixels.Size()))
-        {
-            return Status::Make(ErrorCode::LimitExceeded, "out of memory");
-        }
-        MemCopy(rgba.Data(), raw.pixels.Data(), raw.pixels.Size());
-        if (source.alpha == MipAlpha::Premultiply)
-        {
-            ENGINE_TRY(PremultiplyAlphaRgba8(source_srgb, MutableByteSpan(rgba.Data(), rgba.Size())));
-        }
-        Vector<byte> level0;
-        ENGINE_TRY(ConvertRgba8(work_format, source_srgb || storage_srgb, width, height,
-                                ByteSpan(rgba.Data(), rgba.Size()), &level0));
-        MipOptions options;
-        options.filter = source.filter;
-        options.alpha = source.alpha;
-        Vector<byte> chain;
-        ENGINE_TRY(
-            GenerateMipChain(work_format, width, height, ByteSpan(level0.Data(), level0.Size()), options, &chain));
-        if (!chains.TryReserve(images.Size()))
-        {
-            return Status::Make(ErrorCode::LimitExceeded, "out of memory");
-        }
-        chains.Push(static_cast<Vector<byte>&&>(chain));
     }
-    const u32 full = FullMipCount(width, height);
-    if (source.mips > full)
+    Vector<ByteSpan> layers;
+    for (usize layer = 0; layer < images.Size(); ++layer)
     {
-        return TxFail(error, 0, "the mip count is above the full chain of the image");
-    }
-    const u32 stored = source.mips == 0 ? full : source.mips;
-    if (IsBcFormat(source.format))
-    {
-        // Compress the first `stored` RGBA8 levels of every chain.
-        const rhi::Format work_format = (source.format == rhi::Format::BC1_SRGB ||
-                                         source.format == rhi::Format::BC7_SRGB)
-                                            ? rhi::Format::RGBA8_SRGB
-                                            : rhi::Format::RGBA8_UNorm;
-        BcEncodeOptions encode;
-        encode.punchthrough_alpha = source.alpha != MipAlpha::Ignore;
-        encode.drop_alpha = source.drop_alpha;
-        for (usize layer = 0; layer < chains.Size(); ++layer)
+        RawImage raw;
+        if (ParseRawImage(images[layer], &raw).Failed())
         {
-            Vector<byte> packed;
-            usize offset = 0;
-            u32 w = width;
-            u32 h = height;
-            for (u32 mip = 0; mip < stored; ++mip)
-            {
-                const usize bytes = static_cast<usize>(TightLevelBytes(work_format, w, h));
-                Vector<byte> level;
-                ENGINE_TRY(EncodeImage(BcKindOf(source.format), w, h, ByteSpan(chains[layer].Data() + offset, bytes),
-                                       encode, scheduler, &level));
-                const usize used = packed.Size();
-                if (!packed.TryResize(used + level.Size()))
-                {
-                    return Status::Make(ErrorCode::LimitExceeded, "out of memory");
-                }
-                MemCopy(packed.Data() + used, level.Data(), level.Size());
-                offset += bytes;
-                w = w > 1 ? w / 2 : 1;
-                h = h > 1 ? h / 2 : 1;
-            }
-            chains[layer] = Move(packed);
+            return TxFail(error, 0, "the raw image file is malformed");
         }
+        layers.Push(raw.pixels);
     }
-    Vector<ByteSpan> spans;
-    if (!spans.TryReserve(chains.Size() * stored))
-    {
-        return Status::Make(ErrorCode::LimitExceeded, "out of memory");
-    }
-    for (usize layer = 0; layer < chains.Size(); ++layer)
-    {
-        usize offset = 0;
-        u32 w = width;
-        u32 h = height;
-        for (u32 mip = 0; mip < stored; ++mip)
-        {
-            const usize bytes = static_cast<usize>(TightLevelBytes(source.format, w, h));
-            spans.Push(ByteSpan(chains[layer].Data() + offset, bytes));
-            offset += bytes;
-            w = w > 1 ? w / 2 : 1;
-            h = h > 1 ? h / 2 : 1;
-        }
-    }
-    TextureBuildInput input;
-    input.kind = source.kind;
-    input.format = source.format;
-    input.width = width;
-    input.height = height;
-    input.layers = static_cast<u32>(chains.Size());
-    input.mip_count = stored;
-    input.subresources = Span<const ByteSpan>(spans.Data(), spans.Size());
-    input.filter = source.filter;
-    input.alpha = source.alpha;
-    const Status built = BuildTextureBlob(types, source.id, input, out, target);
+    TextureMintSpec spec;
+    spec.kind = source.kind;
+    spec.format = source.format;
+    spec.drop_alpha = source.drop_alpha;
+    spec.srgb = source.srgb;
+    spec.mips = source.mips;
+    spec.filter = source.filter;
+    spec.alpha = source.alpha;
+    const Status built = MintTextureFromPixels(types, source.id, spec, width, height,
+                                               Span<const ByteSpan>(layers.Data(), layers.Size()), out, target,
+                                               scheduler);
     if (built.Failed())
     {
         TxSetError(error, 0, built.Message());

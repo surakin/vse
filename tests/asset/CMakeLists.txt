@@ -25,7 +25,6 @@ set(ASSET_TEST_SOURCES
   bc_test.cpp  # Day 324
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/texture_source.cpp  # Day 323: the texture minter under test
   material_test.cpp  # Day 326
-  ${CMAKE_SOURCE_DIR}/tools/asset_mint/material_source.cpp  # Day 326: the material minter under test
   level_test.cpp  # Day 327
   manager_test.cpp  # Day 328
   gpu_loader_test.cpp  # Day 329
@@ -39,6 +38,10 @@ set(ASSET_TEST_SOURCES
   gltf_container_test.cpp  # Day 335
   gltf_mesh_test.cpp  # Day 336
   gltf_skin_test.cpp  # Day 337
+  gltf_image_test.cpp  # Day 338
+  gltf_material_test.cpp  # Day 338
+  png_writer.h  # Day 338
+  jpeg_samples.h  # Day 338
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/project.cpp  # Day 333: the project side of the minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/target_transform.cpp  # Day 334
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/upgrade.cpp  # Day 334

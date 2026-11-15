@@ -27,10 +27,15 @@
 #include "mem/heap_allocator.h"
 #include "string/string.h"
 #include "string_view.h"
+#include "sync/atomic.h"
 #include "types.h"
 
 namespace engine_placeholder::asset
 {
+
+/// The steps an import goes through (container, textures and materials, skeletons, meshes, clips);
+/// `ImportOptions::steps_done` counts them.
+inline constexpr u32 kImportSteps = 5;
 
 /// The bounds an import is held to.
 ///
@@ -236,7 +241,11 @@ struct ImportOptions
     bool drop_morph_targets = false;  ///< Import the base shape of a primitive with morph targets (a warning).
     f32 clip_rate = 30.0f;            ///< The rate cubic-spline channels are resampled at, and the clips' rate hint.
     Span<const StringView> looping_clips;  ///< Animations (or clips, `<animation>_<skin>`) with these names loop.
-    f32 scale = 1.0f;                      ///< Positions are multiplied by it (glTF is in metres).
+    const Atomic<bool>*
+        cancel = nullptr;  ///< When set to true the import stops between steps and fails `Cancelled` (null: never).
+    Atomic<u32>* steps_done = nullptr;  ///< Receives the number of the import's steps finished (of `kImportSteps`), for
+                                        ///< progress.
+    f32 scale = 1.0f;                   ///< Positions are multiplied by it (glTF is in metres).
 };
 
 /// One resource an import made.

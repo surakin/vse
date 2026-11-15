@@ -14,6 +14,8 @@
 // pair. The tool's options are its own command line, not engine settings.
 #include "asset/filesystem_backend.h"
 #include "asset/pak.h"
+#include "asset_import/gltf_import.h"
+#include "cstr/number.h"
 #include "containers/vector.h"
 #include "cstr/cstr.h"
 #include "io/file.h"
@@ -47,6 +49,8 @@ int Usage()
         "       asset_mint refs|delete|reid|unmint PROJECT.project ASSET [--with-dependents] [--update-references] [--out=FILE]\n"
         "       asset_mint rename|move|copy PROJECT.project ASSET NEWNAME|NEWFOLDER|NEWPATH\n"
         "       asset_mint remint DIRECTORY\n"
+        "       asset_mint import-gltf FILE.gltf|FILE.glb --out=DIRECTORY [--manifest=FILE] [--prefix=/PATH] [--scale=X]\n"
+        "                  [--clip-rate=HZ] [--flat-normals] [--drop-morph-targets] [--loop=NAME]...\n"
         "       asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
         "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
@@ -96,7 +100,15 @@ constexpr os::CommandLineOption kCliOptions[] = {{"target", true},
                                                  {"with-dependents", false},
                                                  {"update-references", false},
                                                  {"require-current", false},
-                                                 {"out", true}};
+                                                 {"out", true},
+                                                 {"manifest", true},
+                                                 {"prefix", true},
+                                                 {"scale", true},
+                                                 {"clip-rate", true},
+                                                 {"flat-normals", false},
+                                                 {"drop-morph-targets", false},
+                                                 {"loop", true, true}};
+constexpr usize kCliOptionCount = sizeof(kCliOptions) / sizeof(kCliOptions[0]);
 
 // True when the line holds no option outside `allowed`.
 bool OnlyOptions(const Line& line, const char* const* allowed, usize count)
@@ -1068,11 +1080,171 @@ int RemintCommand(const Line& line)
     return status.Ok() ? 0 : 1;
 }
 
+// Reads the files a glTF names from the folder it is in.
+class DirectoryGltfSource final : public asset::GltfSource
+{
+public:
+    explicit DirectoryGltfSource(const io::Path& directory) : directory_(directory) {}
+    asset::Status Read(StringView name, u64 max_bytes, Vector<byte>* out) override
+    {
+        io::Path relative;
+        io::Path full;
+        if (!io::Path::Parse(name, io::NativePathStyle(), &relative) || !directory_.TryJoin(relative, &full))
+        {
+            return asset::Status::Make(asset::ErrorCode::NotFound, "the file name is not a path");
+        }
+        Vector<u8> bytes;
+        if (!ReadWholeFilePath(full, max_bytes, &bytes))
+        {
+            return asset::Status::Make(asset::ErrorCode::NotFound, "the file cannot be read");
+        }
+        *out = static_cast<Vector<byte>&&>(bytes);
+        return asset::Status::Success();
+    }
+
+private:
+    io::Path directory_;
+};
+
+bool ParseFloatOption(const Line& line, const char* name, f32* out)
+{
+    StringView text;
+    if (!line.TryGetOption(StringView(name), text))
+    {
+        return true;
+    }
+    const ParseDoubleResult parsed = ParseDoubleExact(text.Data(), text.Data() + text.Length());
+    if (!parsed.ok || parsed.end != text.Data() + text.Length())
+    {
+        return false;
+    }
+    *out = static_cast<f32>(parsed.value);
+    return true;
+}
+
+// Imports a glTF into blobs: `asset_mint import-gltf FILE --out=DIRECTORY` (Day 338), a thin command over
+// asset::ImportGltf.
+int ImportGltfCommand(const Line& line)
+{
+    static const char* const allowed[] = {"out",          "manifest",           "prefix", "scale", "clip-rate",
+                                          "flat-normals", "drop-morph-targets", "loop"};
+    StringView out_text;
+    if (line.ArgCount() != 2 || !OnlyOptions(line, allowed, 8) || !line.TryGetOption(StringView("out"), out_text))
+    {
+        return Usage();
+    }
+    const char* in_path = line.Arg(1).Data();
+    io::Path file_path;
+    io::Path out_dir;
+    if (!io::Path::Parse(StringView(in_path, CStrLength(in_path)), io::NativePathStyle(), &file_path) ||
+        !io::Path::Parse(out_text, io::NativePathStyle(), &out_dir))
+    {
+        return Usage();
+    }
+    asset::ImportOptions options;
+    if (!ParseFloatOption(line, "scale", &options.scale) || !ParseFloatOption(line, "clip-rate", &options.clip_rate) ||
+        !(options.scale > 0.0f && options.scale < 1e9f) || !(options.clip_rate > 0.0f && options.clip_rate <= 1000.0f))
+    {
+        os::PrintError("asset_mint: --scale takes a number above 0 and --clip-rate one from above 0 to 1000\n");
+        return 64;
+    }
+    StringView prefix;
+    if (line.TryGetOption(StringView("prefix"), prefix))
+    {
+        options.path_prefix = prefix;
+    }
+    options.flat_normals = line.HasFlag("flat-normals");
+    options.drop_morph_targets = line.HasFlag("drop-morph-targets");
+    Vector<StringView> loops;
+    for (usize i = 0; i < line.OptionCount(StringView("loop")); ++i)
+    {
+        loops.Push(line.OptionAt(StringView("loop"), i));
+    }
+    options.looping_clips = Span<const StringView>(loops.Data(), loops.Size());
+    // The manifest of an earlier import keeps the ids: next to the glTF unless --manifest says where.
+    StringView manifest_text;
+    String<HeapAllocator> manifest_name(HeapAllocator::Default(), StringView(in_path, CStrLength(in_path)));
+    manifest_name.Append(StringView(".import"));
+    io::Path manifest_path;
+    const bool have_manifest_option = line.TryGetOption(StringView("manifest"), manifest_text);
+    if (!io::Path::Parse(have_manifest_option ? manifest_text : manifest_name.View(), io::NativePathStyle(),
+                         &manifest_path))
+    {
+        return Usage();
+    }
+    asset::ImportManifest manifest;
+    Vector<u8> manifest_bytes;
+    if (io::Exists(manifest_path) && !ReadWholeFilePath(manifest_path, u64{1} << 26, &manifest_bytes))
+    {
+        os::PrintError("asset_mint: the manifest exists but cannot be read; it is not replaced\n");
+        return 1;
+    }
+    if (manifest_bytes.Size() != 0)
+    {
+        asset::GltfError manifest_error;
+        if (manifest
+                .Parse(StringView(reinterpret_cast<const char*>(manifest_bytes.Data()), manifest_bytes.Size()),
+                       &manifest_error)
+                .Failed())
+        {
+            os::PrintError("asset_mint: %s: %s\n", manifest_name.CStr(), manifest_error.message.Data());
+            return 1;
+        }
+        options.manifest = &manifest;
+    }
+    Vector<u8> file;
+    if (!ReadWholeFilePath(file_path, options.limits.max_file_bytes, &file))
+    {
+        os::PrintError("asset_mint: the glTF file could not be read\n");
+        return 1;
+    }
+    DirectoryGltfSource source(file_path.Parent());
+    asset::ImportResult result;
+    asset::GltfError error;
+    const asset::Status status = asset::ImportGltf(ByteSpan(file.Data(), file.Size()), source, options, &result,
+                                                   &error);
+    for (usize i = 0; i < result.report.notes.Size(); ++i)
+    {
+        os::PrintError("asset_mint: %s: %s\n", in_path, result.report.notes[i].CStr());
+    }
+    if (status.Failed())
+    {
+        os::PrintError("asset_mint: %s: %s\n", in_path, asset::GltfMessage(error, status));
+        return 1;
+    }
+    for (usize i = 0; i < result.resources.Size(); ++i)
+    {
+        const asset::ImportedResource& r = result.resources[i];
+        String<HeapAllocator> relative(HeapAllocator::Default(), r.path.View().Substring(1));
+        relative.Append(StringView(".blob"));
+        io::Path blob_path;
+        io::Path relative_path;
+        if (!io::Path::Parse(relative.View(), io::NativePathStyle(), &relative_path) ||
+            !out_dir.TryJoin(relative_path, &blob_path) || io::CreateDirectories(blob_path.Parent()).Failed() ||
+            io::WriteFileAtomic(blob_path, r.blob.Data(), r.blob.Size()).Failed())
+        {
+            os::PrintError("asset_mint: %s could not be written\n", relative.CStr());
+            return 1;
+        }
+    }
+    String<HeapAllocator> text(HeapAllocator::Default());
+    result.manifest.Format(&text);
+    if (io::WriteFileAtomic(manifest_path, text.CStr(), text.Length()).Failed())
+    {
+        os::PrintError("asset_mint: the manifest could not be written\n");
+        return 1;
+    }
+    os::Print("imported %u resources from %s (%u warnings)\n", static_cast<unsigned>(result.resources.Size()), in_path,
+              static_cast<unsigned>(result.report.warnings));
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv)
 {
-    const Line line(HeapAllocator::Default(), argc, argv, Span<const os::CommandLineOption>(kCliOptions, 13));
+    const Line line(HeapAllocator::Default(), argc, argv,
+                    Span<const os::CommandLineOption>(kCliOptions, kCliOptionCount));
     if (!line.Ok())
     {
         os::PrintError("asset_mint: %s\n", line.Error().Data());
@@ -1102,6 +1274,10 @@ int main(int argc, char** argv)
     if (command == StringView("pack"))
     {
         return Pack(line);
+    }
+    if (command == StringView("import-gltf"))
+    {
+        return ImportGltfCommand(line);
     }
     if (command == StringView("mint-mesh"))
     {

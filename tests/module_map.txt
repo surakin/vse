@@ -61,6 +61,9 @@ tools/cmdline_access_check 22
 tools/json_boundary_check 22
 engine/asset_import 22
 third_party/yyjson 22
+third_party/zlib 22
+third_party/libpng 22
+third_party/stb_image 22
 tools/std_usage_check 10
 tools/settings_fixtures_check 11
 tools/config_access_check 11

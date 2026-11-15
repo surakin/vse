@@ -1,4 +1,4 @@
-#include "material_source.h"
+#include "asset_import/material_source.h"
 
 #include "asset/texture.h"
 #include "cstr/cstr.h"
@@ -8,7 +8,7 @@
 #include "renderer/gbuffer.h"
 #include "renderer/shader_permutation.h"
 #include "renderer/shader_reflection.h"
-#include "source_text.h"
+#include "asset_import/detail/source_text.h"
 
 namespace engine_placeholder::asset
 {

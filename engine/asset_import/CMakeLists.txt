@@ -11,6 +11,10 @@ set(ASSET_IMPORT_SOURCES
   gltf_nodes.cpp  # Day 337
   gltf_skin.cpp  # Day 337
   gltf_clip.cpp  # Day 337
+  image_decode.cpp  # Day 338
+  gltf_async.cpp  # Day 338
+  gltf_material.cpp  # Day 338
+  material_source.cpp  # Day 338: the material minter moved here from tools/asset_mint
 )
 set(ASSET_IMPORT_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -23,8 +27,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(asset_import${suffix} STATIC ${ASSET_IMPORT_SOURCES})
     target_include_directories(asset_import${suffix} PUBLIC ${ASSET_IMPORT_INCLUDE_ROOT})
     target_compile_options(asset_import${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(asset_import${suffix} PUBLIC asset${suffix} jobs${suffix} foundation${suffix})
-    target_link_libraries(asset_import${suffix} PRIVATE yyjson${suffix})
+    target_link_libraries(asset_import${suffix} PUBLIC asset${suffix} jobs${suffix} renderer_passes${suffix} foundation${suffix})
+    target_link_libraries(asset_import${suffix} PRIVATE yyjson${suffix} png${suffix} stb_jpeg${suffix})
   endforeach()
   return()
 endif()
@@ -33,6 +37,6 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(asset_import${suffix} STATIC ${ASSET_IMPORT_SOURCES})
   target_include_directories(asset_import${suffix} PUBLIC ${ASSET_IMPORT_INCLUDE_ROOT})
   target_compile_options(asset_import${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(asset_import${suffix} PUBLIC asset${suffix} jobs${suffix} foundation${suffix})
-  target_link_libraries(asset_import${suffix} PRIVATE yyjson${suffix})
+  target_link_libraries(asset_import${suffix} PUBLIC asset${suffix} jobs${suffix} renderer_passes${suffix} foundation${suffix})
+  target_link_libraries(asset_import${suffix} PRIVATE yyjson${suffix} png${suffix} stb_jpeg${suffix})
 endforeach()

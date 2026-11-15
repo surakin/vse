@@ -173,6 +173,9 @@ add_subdirectory(third_party/catch2)
 # Every platform, macOS since Phase 21 Day 294 (text and the database arrived there that day).
 add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
 add_subdirectory(third_party/sqlite)  # Phase 19 Day 251: SQLite, vendored (PLAN.md assumption #25), used only behind engine/database/sqlite/
+add_subdirectory(third_party/zlib)  # Phase 22 Day 338: zlib, vendored (PLAN.md assumptions #17 and #19)
+add_subdirectory(third_party/libpng)  # Phase 22 Day 338: libpng, vendored over zlib; the PNG decoder of the glTF importer
+add_subdirectory(third_party/stb_image)  # Phase 22 Day 338: stb_image's JPEG decoder, vendored; the JPEG decoder of the glTF importer
 add_subdirectory(third_party/yyjson)  # Phase 22 Day 335: yyjson, vendored (PLAN.md assumption #19), used only by engine/asset_import/json_view.cpp
 # Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.
 if(ENGINE_EXCEPTIONS_COMPILE_OPTIONS)
