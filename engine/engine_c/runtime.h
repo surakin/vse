@@ -294,6 +294,8 @@ engine_status AnimationTimeFn(engine_handle world, u64 key, double* seconds);
 engine_status SkeletonFindJointFn(engine_handle world, u64 key, engine_string name, u32* index);
 engine_status SkeletonJointTransformFn(engine_handle world, u64 key, u32 joint, float* matrix);
 engine_status EntityAttachToJointFn(engine_handle world, u64 key, u64 skeleton_key, u32 joint);
+engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_params* params, u64* root, u64* keys,
+                           size_t capacity, size_t* total);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
 engine_status EntityNameSetFn(engine_handle world, u64 key, engine_string name);

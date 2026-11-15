@@ -1617,6 +1617,8 @@ Phase 22 **plan amended (2026-11-13, the user's request): loading performance is
 
 **Windows PC: Phase 23 Days 349-353 checked (2026-11-15), `master` at `c85e1e6b`.** The four trees build clean; `--affected`: `ran 3099 of 6000 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (MSVC trees), `ran 3129 of 3282 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (clang-cl trees), asan `ran 2619 of 6000 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`; only flakes failed (the DX12 device-removed flake in five tests, `Throughput`, and a new reactor-close flake under asan, filed), each passing 3 of 3 reruns; docs 7 of 7. The C API's hosts and the foreign-window surfaces are POSIX, X11 and Wayland only until Day 354.
 
+**Phase 24 Day 364 done (2026-11-15, Linux): a glTF scene as a level.** `ImportLevel`, `--emit-level`, `ENGINE_IMPORT_EMIT_LEVEL`, `level_spawn`; tests written and built, not run. **Next: Day 365 (host textures I).**
+
 **Phase 24 Day 363 done (2026-11-15, Linux): skinned meshes and animation.** Skeleton instance and player components, `animation_play` with cross-fade, joint read-back and attachment, skinned drawing with the bind pose fallback; tests written and built, not run. **Next: Day 364 (a glTF scene as a level).**
 
 **Phase 24 Day 362 done (2026-11-15, Linux): hierarchy, names, visibility and slot overrides.** `entity_set_parent`, `entity_find`, `ENGINE_COMPONENT_VISIBILITY`, `entity_set_slot_override`, `MaterialSystem::CloneMaterial`; tests written and built, not run. **Next: Day 363 (skinned meshes and animation).**

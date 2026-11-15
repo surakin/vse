@@ -759,6 +759,7 @@ extern "C"
             &engine_c::SkeletonFindJointFn,
             &engine_c::SkeletonJointTransformFn,
             &engine_c::EntityAttachToJointFn,
+            &engine_c::LevelSpawnFn,
         };
         *out = &table;
         return ENGINE_OK;

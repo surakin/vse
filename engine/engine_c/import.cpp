@@ -39,7 +39,7 @@ namespace
 {
 
 constexpr usize kMaxImportTickets = 256;  // each is a job of the engine's scheduler, whose queues are bounded
-constexpr u32 kKnownFlags = ENGINE_IMPORT_FLAT_NORMALS | ENGINE_IMPORT_DROP_MORPH_TARGETS;
+constexpr u32 kKnownFlags = ENGINE_IMPORT_FLAT_NORMALS | ENGINE_IMPORT_DROP_MORPH_TARGETS | ENGINE_IMPORT_EMIT_LEVEL;
 constexpr usize kMaxPrefixBytes = 200;
 
 engine_status FromAsset(const asset::Status& status)
@@ -221,6 +221,7 @@ engine_status Prepare(const engine_import_options* given, const ResourceConfig& 
         out.limits.max_images = o.max_images;
     }
     out.flat_normals = (o.flags & ENGINE_IMPORT_FLAT_NORMALS) != 0;
+    out.emit_level = (o.flags & ENGINE_IMPORT_EMIT_LEVEL) != 0;
     out.drop_morph_targets = (o.flags & ENGINE_IMPORT_DROP_MORPH_TARGETS) != 0;
     if (o.scale != 0.0f)
     {

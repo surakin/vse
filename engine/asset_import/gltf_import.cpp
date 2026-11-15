@@ -1,4 +1,5 @@
 #include "asset_import/gltf_import.h"
+#include "asset_import/gltf_level.h"
 
 #include "asset_import/gltf_container.h"
 #include "asset_import/gltf_clip.h"
@@ -479,6 +480,11 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
     ENGINE_TRY(Step(options, error));
     ENGINE_TRY(ImportClips(document, graph, options, types, Span<const ImportedSkin>(skins.Data(), skins.Size()),
                            result, error));
+    if (options.emit_level)
+    {
+        ENGINE_TRY(ImportLevel(document, graph, options, types, Span<const ImportedSkin>(skins.Data(), skins.Size()),
+                               result, error));
+    }
     return Step(options, error);
 }
 

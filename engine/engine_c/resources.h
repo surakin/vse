@@ -102,6 +102,12 @@ public:
     /// - Returns: ENGINE_OK, NOT_FOUND (not mounted), TYPE_MISMATCH (not a clip) or INVALID_ARGUMENT (another
     ///   skeleton's), with the text set.
     engine_status PinClip(u64 id, u64 skeleton_id);
+    /// Reads the level blob `id` and checks that everything it names is mounted (Phase 24 Day 364).
+    ///
+    /// - Param bytes: replaced by a copy of the blob.
+    /// - Returns: ENGINE_OK, NOT_FOUND (the level or a resource it names is not mounted), TYPE_MISMATCH (not a level),
+    ///   UNSUPPORTED (it includes other levels) or INVALID_ARGUMENT (damaged), with the text set.
+    engine_status ReadLevel(u64 id, Vector<byte>* bytes);
 
     /// Builds what the loader has read (called by every frame).
     ///

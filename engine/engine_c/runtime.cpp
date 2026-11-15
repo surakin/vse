@@ -6,6 +6,7 @@
 
 #include "animation/components.h"
 #include "animation/pose.h"
+#include "asset/level.h"
 #include "containers/vector.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
@@ -20,6 +21,7 @@
 #include "math/quaternion.h"
 #include "mem/heap_allocator.h"
 #include "os/os.h"
+#include "storage/builtin_components.h"
 
 namespace engine_placeholder::engine_c
 {
@@ -1328,6 +1330,231 @@ engine_status EntityAttachToJointFn(engine_handle world, u64 key, u64 skeleton_k
                          attachment.joint = joint;
                          return SetOrAdd(object.world, entity, attachment);
                      });
+}
+
+engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_params* params, u64* root, u64* keys,
+                           size_t capacity, size_t* total)
+{
+    if (root == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`root` is NULL");
+    }
+    *root = 0;
+    if (total != nullptr)
+    {
+        *total = 0;
+    }
+    if (keys == nullptr && capacity != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`keys` is NULL with a capacity above zero");
+    }
+    engine_spawn_params place = {};
+    place.struct_size = sizeof(engine_spawn_params);
+    place.rotation[3] = 1.0f;
+    place.scale = 1.0f;
+    if (params != nullptr)
+    {
+        TRY_STATUS(CheckInStruct(params, sizeof(engine_spawn_params), "engine_spawn_params"));
+        place = *params;
+        if (place.flags != 0)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_spawn_params.flags has an unknown bit");
+        }
+        if (place.rotation[0] == 0.0f && place.rotation[1] == 0.0f && place.rotation[2] == 0.0f &&
+            place.rotation[3] == 0.0f)
+        {
+            place.rotation[3] = 1.0f;
+        }
+        if (place.scale == 0.0f)
+        {
+            place.scale = 1.0f;
+        }
+        for (const float v : place.position)
+        {
+            if (!Finite(v))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position is not finite");
+            }
+        }
+        const float length2 = place.rotation[0] * place.rotation[0] + place.rotation[1] * place.rotation[1] +
+                              place.rotation[2] * place.rotation[2] + place.rotation[3] * place.rotation[3];
+        if (!Finite(length2) || !(length2 > 1e-12f) || !(Finite(place.scale) && place.scale > 0.0f))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                        "the rotation is zero or not finite, or the scale is not above 0");
+        }
+        if ((place.name_prefix.data == nullptr && place.name_prefix.length != 0) || place.name_prefix.length > 15)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "name_prefix is at most 15 bytes");
+        }
+    }
+    Runtime* runtime = CurrentRuntime();
+    if (runtime == nullptr)
+    {
+        return Fail(ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    ResourceHost* resources = runtime->ResourcesIfCreated();
+    if (resources == nullptr)
+    {
+        return Fail(ENGINE_ERROR_NOT_FOUND, "the level is not mounted: no resource was added");
+    }
+    // The level, read and checked before the world is touched.
+    Vector<byte> blob;
+    TRY_STATUS(resources->ReadLevel(level, &blob));
+    storage::ComponentRegistry registry;
+    if (storage::RegisterBuiltinComponents(&registry).Failed() || asset::RegisterLevelComponents(&registry).Failed() ||
+        animation::RegisterAnimationComponents(&registry).Failed())
+    {
+        return Fail(ENGINE_ERROR_UNSUPPORTED, "the level components could not be registered");
+    }
+    ecs::World scratch;
+    storage::KeyIndex index;
+    const asset::Status loaded = asset::LoadLevelBlob(ByteSpan(blob.Data(), blob.Size()), resources->Types(), registry,
+                                                      scratch, index);
+    if (loaded.Failed())
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, loaded.Message());
+    }
+    Vector<ecs::Entity> source;
+    {
+        auto query = scratch.Query<ecs::Read<ecs::LocalTransform>>();
+        query.ForEach([&](ecs::Entity entity, const ecs::LocalTransform&) { source.Push(entity); });
+    }
+    // The skeletons the level names are loaded before anything is made.
+    for (usize i = 0; i < source.Size(); ++i)
+    {
+        if (const animation::SkeletonInstance* instance = scratch.Peek<animation::SkeletonInstance>(source[i]))
+        {
+            TRY_STATUS(resources->PinSkeleton(instance->skeleton));
+        }
+    }
+    const StringView prefix(place.name_prefix.data, place.name_prefix.length);
+    return WithWorld(
+        world, false, 0,
+        [&](WorldObject& object, ecs::Entity)
+        {
+            Vector<ecs::Entity> made;  // the root first, then the level's entities in `source` order
+            auto undo = [&]()
+            {
+                for (usize i = made.Size(); i > 0; --i)
+                {
+                    object.world.Destroy(made[i - 1]);
+                }
+            };
+            auto name_of = [&](StringView own, EntityName* out)
+            {
+                usize length = 0;
+                if (prefix.Length() != 0)
+                {
+                    MemCopy(out->text, prefix.Data(), prefix.Length());
+                    out->text[prefix.Length()] = '/';
+                    length = prefix.Length() + 1;
+                }
+                for (usize i = 0; i < own.Length() && length < ENGINE_NAME_MAX_BYTES; ++i)
+                {
+                    out->text[length++] = own[i];
+                }
+                out->length = static_cast<u8>(length);
+            };
+            const ecs::Entity top = object.world.Create();
+            if (!top.IsValid())
+            {
+                return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the world refused a new entity");
+            }
+            made.Push(top);
+            ecs::LocalTransform at;
+            at.position = Vec3(place.position[0], place.position[1], place.position[2]);
+            at.rotation = Quaternion(place.rotation[0], place.rotation[1], place.rotation[2], place.rotation[3]);
+            at.scale = Vec3(place.scale, place.scale, place.scale);
+            EntityName top_name;
+            name_of(prefix.Length() != 0 ? StringView() : StringView("level"), &top_name);
+            if (prefix.Length() != 0)
+            {
+                top_name.length = static_cast<u8>(prefix.Length());  // the root is called the prefix itself
+            }
+            if (object.world.Add<ecs::LocalTransform>(top, at) != ecs::Status::Ok ||
+                object.world.Add<EntityName>(top, top_name) != ecs::Status::Ok)
+            {
+                undo();
+                return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the world refused a component");
+            }
+            for (usize i = 0; i < source.Size(); ++i)
+            {
+                const ecs::Entity entity = object.world.Create();
+                if (!entity.IsValid())
+                {
+                    undo();
+                    return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the world refused a new entity");
+                }
+                made.Push(entity);
+                ecs::Status status = object.world.Add<ecs::LocalTransform>(
+                    entity, *scratch.Peek<ecs::LocalTransform>(source[i]));
+                if (const asset::EntityName* own = scratch.Peek<asset::EntityName>(source[i]))
+                {
+                    EntityName name;
+                    name_of(own->name.View(), &name);
+                    if (status == ecs::Status::Ok)
+                    {
+                        status = object.world.Add<EntityName>(entity, name);
+                    }
+                }
+                if (const asset::MeshReference* mesh = scratch.Peek<asset::MeshReference>(source[i]))
+                {
+                    MeshReference reference;
+                    reference.mesh = mesh->mesh.id;
+                    reference.material_resource = mesh->material.id;
+                    if (status == ecs::Status::Ok)
+                    {
+                        status = object.world.Add<MeshReference>(entity, reference);
+                    }
+                }
+                if (const animation::SkeletonInstance* skeleton = scratch.Peek<animation::SkeletonInstance>(source[i]))
+                {
+                    animation::SkeletonInstance instance;
+                    instance.skeleton = skeleton->skeleton;
+                    if (status == ecs::Status::Ok)
+                    {
+                        status = object.world.Add<animation::SkeletonInstance>(entity, Move(instance));
+                    }
+                }
+                if (status != ecs::Status::Ok)
+                {
+                    undo();
+                    return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the world refused a component");
+                }
+            }
+            // The hierarchy: a level entity with a parent in the level follows it, the others hang from the root.
+            for (usize i = 0; i < source.Size(); ++i)
+            {
+                ecs::Entity parent = top;
+                if (const ecs::Parent* link = scratch.Peek<ecs::Parent>(source[i]))
+                {
+                    for (usize k = 0; k < source.Size(); ++k)
+                    {
+                        if (source[k] == link->entity)
+                        {
+                            parent = made[k + 1];
+                            break;
+                        }
+                    }
+                }
+                if (ecs::SetParent(object.world, made[i + 1], parent) != ecs::HierarchyStatus::Ok)
+                {
+                    undo();
+                    return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the level's hierarchy is deeper than the engine allows");
+                }
+            }
+            *root = top.ToU64();
+            for (usize i = 0; i < made.Size() && i < capacity; ++i)
+            {
+                keys[i] = made[i].ToU64();
+            }
+            if (total != nullptr)
+            {
+                *total = made.Size();
+            }
+            return ENGINE_OK;
+        });
 }
 
 engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environment* environment)

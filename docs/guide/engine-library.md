@@ -608,6 +608,16 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 - **Joints.** `skeleton_find_joint(world, entity, "arm", &index)` and `skeleton_joint_transform(world, entity, index, matrix16)` (column-major, in the skeleton entity's space, as the last frame left it; the bind pose before any clip). `entity_attach_to_joint(world, entity,
   skeleton_entity, joint)` makes an entity follow a joint (its own transform becomes relative to the joint); the entities below the attached one lag by a frame. A `skeleton_entity` of 0 detaches.
 
+## A glTF scene as a level (Phase 24 Day 364)
+
+- **Making the level.** Import with `ENGINE_IMPORT_EMIT_LEVEL` (the tool: `asset_mint import-gltf --emit-level`) and the default scene's node tree becomes one more resource of the result, of type `ENGINE_RESOURCE_LEVEL`, the last of `ids`: one entity per node reachable from the
+  scene's roots, with its name (made valid, at most 48 bytes, made distinct with `_<index>`), its translation, rotation and scale, its parent, the mesh and the material of the mesh's first primitive and, for a skinned node, the skeleton instance. Nodes that
+  share a glTF mesh give entities that share one mesh resource. A node with a shear in its matrix, a hierarchy deeper than 64, a scene root that is also a child, or more nodes than `max_nodes` is refused with a message that names the node. Without the flag no level is made.
+- **Spawning.** `level_spawn(world, level, &engine_spawn_params, &root, keys, capacity, &total)` makes a root entity at the transform of the params (an uniform scale, a rotation, a position; `name_prefix` puts `prefix/` before every name) and the level's entities below it. The
+  level is read and every resource it names is checked before the world is touched, and a failure part way undoes what was made, so the spawn is whole or nothing. Spawning twice makes two independent copies. Find a node by name with `entity_find`
+  (`"prefix/name"` for a prefixed spawn) and its skeleton instance, mesh reference and transform are ordinary components.
+- **Limits.** The spawn runs on the calling thread under the world lock, in time proportional to the entities; a very large level is better spawned between frames. A mesh with several primitives gets the material of its first. Levels that include other levels are not spawned (`UNSUPPORTED`).
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

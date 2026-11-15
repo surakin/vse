@@ -85,6 +85,22 @@ elseif(MODE STREQUAL "gltf")
   endif()
   # The blobs pack into a pak that verifies.
   run(0 out pack "${WORK}/imported" "${WORK}/imported.pak")
+  # Phase 24 Day 364: --emit-level adds the default scene as a level; with the manifest of the first import the level
+  # is byte-identical.
+  run(0 out import-gltf "${MODEL}" "--out=${WORK}/with_level" "--manifest=${WORK}/model_level.import" --emit-level)
+  expect("imported 6 resources" "${out}")
+  file(GLOB level_blobs "${WORK}/with_level/gltf/levels/*.blob")
+  list(LENGTH level_blobs level_count)
+  if(NOT level_count EQUAL 1)
+    message(FATAL_ERROR "the import with --emit-level wrote ${level_count} levels")
+  endif()
+  file(READ "${level_blobs}" level_first HEX)
+  run(0 out import-gltf "${MODEL}" "--out=${WORK}/with_level_again" "--manifest=${WORK}/model_level.import" --emit-level)
+  file(GLOB level_again "${WORK}/with_level_again/gltf/levels/*.blob")
+  file(READ "${level_again}" level_second HEX)
+  if(NOT level_first STREQUAL level_second)
+    message(FATAL_ERROR "the second import changed the level blob")
+  endif()
   # A refusal exits 1 and names the glTF object.
   file(WRITE "${WORK}/bad.gltf" "{\"asset\":{\"version\":\"2.0\"},\"meshes\":[{\"primitives\":[{\"attributes\":{\"NORMAL\":0}}]}]}")
   run(1 out import-gltf "${WORK}/bad.gltf" "--out=${WORK}/bad_out")

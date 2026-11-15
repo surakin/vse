@@ -50,7 +50,7 @@ int Usage()
         "       asset_mint rename|move|copy PROJECT.project ASSET NEWNAME|NEWFOLDER|NEWPATH\n"
         "       asset_mint remint DIRECTORY\n"
         "       asset_mint import-gltf FILE.gltf|FILE.glb --out=DIRECTORY [--manifest=FILE] [--prefix=/PATH] [--scale=X]\n"
-        "                  [--clip-rate=HZ] [--flat-normals] [--drop-morph-targets] [--loop=NAME]...\n"
+        "                  [--clip-rate=HZ] [--flat-normals] [--drop-morph-targets] [--emit-level] [--loop=NAME]...\n"
         "       asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
         "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
@@ -107,6 +107,7 @@ constexpr os::CommandLineOption kCliOptions[] = {{"target", true},
                                                  {"clip-rate", true},
                                                  {"flat-normals", false},
                                                  {"drop-morph-targets", false},
+                                                 {"emit-level", false},
                                                  {"loop", true, true}};
 constexpr usize kCliOptionCount = sizeof(kCliOptions) / sizeof(kCliOptions[0]);
 
@@ -1126,10 +1127,10 @@ bool ParseFloatOption(const Line& line, const char* name, f32* out)
 // asset::ImportGltf.
 int ImportGltfCommand(const Line& line)
 {
-    static const char* const allowed[] = {"out",          "manifest",           "prefix", "scale", "clip-rate",
-                                          "flat-normals", "drop-morph-targets", "loop"};
+    static const char* const allowed[] = {"out",          "manifest",           "prefix",     "scale", "clip-rate",
+                                          "flat-normals", "drop-morph-targets", "emit-level", "loop"};
     StringView out_text;
-    if (line.ArgCount() != 2 || !OnlyOptions(line, allowed, 8) || !line.TryGetOption(StringView("out"), out_text))
+    if (line.ArgCount() != 2 || !OnlyOptions(line, allowed, 9) || !line.TryGetOption(StringView("out"), out_text))
     {
         return Usage();
     }
@@ -1155,6 +1156,7 @@ int ImportGltfCommand(const Line& line)
     }
     options.flat_normals = line.HasFlag("flat-normals");
     options.drop_morph_targets = line.HasFlag("drop-morph-targets");
+    options.emit_level = line.HasFlag("emit-level");
     Vector<StringView> loops;
     for (usize i = 0; i < line.OptionCount(StringView("loop")); ++i)
     {

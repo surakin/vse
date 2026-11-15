@@ -246,6 +246,8 @@ struct ImportOptions
     Atomic<u32>* steps_done = nullptr;  ///< Receives the number of the import's steps finished (of `kImportSteps`), for
                                         ///< progress.
     f32 scale = 1.0f;                   ///< Positions are multiplied by it (glTF is in metres).
+    bool
+        emit_level = false;  ///< Also make a level of the default scene's node tree ([[asset::ImportLevel]], Phase 24).
 };
 
 /// One resource an import made.

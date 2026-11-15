@@ -2,6 +2,7 @@
 
 #include "asset/cpu_loaders.h"
 #include "asset/content_hash.h"
+#include "asset/level.h"
 #include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
 #include "engine_c/handles.h"
@@ -147,6 +148,53 @@ engine_status ResourceHost::PinSkeleton(u64 id)
         return Fail(FromAssetError(loaded.Code()), loaded.Message());
     }
     skeleton_pins_.Push(static_cast<asset::Handle<asset::SkeletonView>&&>(handle));
+    return ENGINE_OK;
+}
+
+engine_status ResourceHost::ReadLevel(u64 id, Vector<byte>* bytes)
+{
+    bytes->Clear();
+    asset::ResourceInfo info;
+    const asset::Status found = memory_->Stat(asset::ResourceId::FromValue(id), &info);
+    if (found.Failed())
+    {
+        return Fail(FromAssetError(found.Code()), "the level is not mounted");
+    }
+    UniquePtr<asset::ResourceReader> reader;
+    const asset::Status opened = memory_->Open(asset::ResourceId::FromValue(id), &reader);
+    if (opened.Failed())
+    {
+        return Fail(FromAssetError(opened.Code()), opened.Message());
+    }
+    bytes->Resize(static_cast<usize>(reader->Size()));
+    if (bytes->Size() != 0)
+    {
+        const asset::Status read = reader->ReadAt(0, bytes->Data(), bytes->Size());
+        if (read.Failed())
+        {
+            return Fail(FromAssetError(read.Code()), read.Message());
+        }
+    }
+    asset::LevelSummary summary;
+    const asset::Status summarized = asset::ReadLevelSummary(ByteSpan(bytes->Data(), bytes->Size()), types_, &summary);
+    if (summarized.Failed())
+    {
+        return Fail(FromAssetError(summarized.Code()), summarized.Message());
+    }
+    for (usize i = 0; i < summary.resources.Size(); ++i)
+    {
+        if ((summary.resources[i].roles & asset::kLevelRoleInclude) != 0)
+        {
+            return Fail(ENGINE_ERROR_UNSUPPORTED, "a level that includes other levels cannot be spawned");
+        }
+        asset::ResourceInfo named;
+        if (memory_->Stat(summary.resources[i].id, &named).Failed())
+        {
+            SetLastError("not_found: the level names a resource that is not mounted (%016llx)",
+                         static_cast<unsigned long long>(summary.resources[i].id.Value()));
+            return ENGINE_ERROR_NOT_FOUND;
+        }
+    }
     return ENGINE_OK;
 }
 

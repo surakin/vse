@@ -626,6 +626,22 @@ extern "C"
         float fade_seconds;
     } engine_play_params;
 
+    /* How level_spawn places a level (Phase 24 Day 364). `position`, `rotation` (x, y, z, w) and `scale` (one factor
+     * for the three axes; 0 means 1) are the transform of the root entity the engine makes for the spawn; the level's
+     * own entities are its children. An all-zero rotation means no rotation. `name_prefix` (up to 15 bytes) is put
+     * before the name of every entity of the level followed by '/', and names the root entity (empty: the root is
+     * called "level" and the names are the level's own); a name longer than ENGINE_NAME_MAX_BYTES is cut. */
+    typedef struct engine_spawn_params
+    {
+        uint32_t struct_size;
+        uint32_t flags; /* zero */
+        float position[3];
+        float rotation[4];
+        float scale;
+        uint32_t reserved; /* zero */
+        engine_string name_prefix;
+    } engine_spawn_params;
+
     /* The kinds of engine_slot_override.kind. */
 #define ENGINE_SLOT_FLOAT 1u   /* value[0] */
 #define ENGINE_SLOT_COLOR 2u   /* value[0..3]: linear RGBA */
@@ -766,6 +782,9 @@ extern "C"
 #define ENGINE_IMPORT_FLAT_NORMALS 0x1u /* a mesh without normals gets flat ones (default: smooth) */
 #define ENGINE_IMPORT_DROP_MORPH_TARGETS                                                                               \
     0x2u /* import the base shape of a primitive that has morph targets (a warning) instead of refusing */
+#define ENGINE_IMPORT_EMIT_LEVEL                                                                                       \
+    0x4u /* also make a level of the default scene's node tree (resource type ENGINE_RESOURCE_LEVEL, the last of       \
+            `ids`), which level_spawn puts into a world (Phase 24 Day 364) */
 
     /* What a host's read_file callback fills: the bytes of one external file of a glTF (a `.bin` or an image). The
      * engine copies them at once, then calls `release` (when not NULL) exactly once with the same data pointer and
@@ -1297,6 +1316,22 @@ extern "C"
          * has no skeleton instance), TYPE_MISMATCH. */
         engine_status (*entity_attach_to_joint)(engine_handle world, uint64_t key, uint64_t skeleton_key,
                                                 uint32_t joint);
+
+        /* ---- Phase 24 Day 364: a level as a scene ---- */
+
+        /* Puts the level `level` (a resource of type ENGINE_RESOURCE_LEVEL the host added, for example the one an
+         * import with ENGINE_IMPORT_EMIT_LEVEL made) into a world: a root entity with the transform of `params` (NULL:
+         * at the origin), and below it one entity per entity of the level, with its name, transform, parent, mesh
+         * reference and skeleton instance. The level is spawned whole or not at all: when it, or a resource it names,
+         * is not mounted (or a skeleton cannot be loaded), nothing is made and the reason is in last_error. A level
+         * spawned twice makes two independent copies. `*root` receives the root entity's key; `keys` (capacity
+         * `capacity`, may be NULL with 0) receives the keys of every entity of the spawn, the root first, and `*total`
+         * (may be NULL) the number of them. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL `root`, a bad parameter),
+         * STRUCT_SIZE, NOT_FOUND (the level, or a resource it names, is not mounted), TYPE_MISMATCH (not a level,
+         * or a handle that is not a world), UNSUPPORTED (a level that includes other levels), LIMIT_EXCEEDED (the
+         * world refused an entity). */
+        engine_status (*level_spawn)(engine_handle world, uint64_t level, const engine_spawn_params* params,
+                                     uint64_t* root, uint64_t* keys, size_t capacity, size_t* total);
     } engine_api;
 
     /* Returns the function table.

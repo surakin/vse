@@ -163,6 +163,7 @@ module engine/asset/ asset 13
 # 13 asset_import (Phase 22 Day 335): the glTF importer, a library a program opts into; reads asset (below, same layer) and the foundation; yyjson only in json_view.cpp; nothing includes it but programs
 module engine/asset_import/ asset_import 13
 allow asset_import asset
+allow asset_import animation   # Phase 24 Day 364: the level of a glTF scene registers the skeleton instance component
 # 13 animation (Phase 22 Day 321): poses, the clip sampler, skinning matrices and the ECS components and parallel system that play clips; reads asset's skeleton and clip views (allowed below, same layer), ecs, storage, jobs and the foundation; nothing includes it but programs
 module engine/animation/ animation 13
 allow animation asset

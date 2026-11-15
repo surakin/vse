@@ -932,6 +932,174 @@ static void TestHostile(engine_handle engine, const Bytes* gltf)
     free(glb.data);
 }
 
+/* Phase 24 Day 364: the default scene as a level: imported with ENGINE_IMPORT_EMIT_LEVEL, spawned into a world, found
+ * by name. */
+static uint64_t Find(engine_handle world, const char* name)
+{
+    uint64_t key = 0;
+    if (g_api->entity_find(world, S(name), &key) != ENGINE_OK)
+    {
+        return 0;
+    }
+    return key;
+}
+
+static size_t CountEntities(engine_handle world)
+{
+    size_t total = 0;
+    CHECK_STATUS(g_api->query(world, 0, NULL, 0, &total), ENGINE_OK);
+    return total;
+}
+
+static void TestLevel(engine_handle engine, const Bytes* gltf)
+{
+    engine_import_options options = Options("/lvl");
+    engine_import_result result = NewResult();
+    engine_import_result plain = NewResult();
+    engine_handle world;
+    uint64_t level;
+    uint64_t root = 0;
+    uint64_t second_root = 0;
+    uint64_t keys[8];
+    size_t total = 0;
+    engine_spawn_params place;
+    uint64_t body;
+    uint64_t tip;
+    uint64_t parent = 0;
+    uint32_t i;
+    uint64_t mesh_id = 0;
+    int has = 0;
+    options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+    options.id_seed = 777;
+    CHECK_STATUS(g_api->import_gltf(engine, gltf->data, gltf->size, &options, &result), ENGINE_OK);
+    CHECK(result.resource_count == 6); /* the five resources of TestSync and the level, last */
+    level = IdAt(&result, result.resource_count - 1);
+    CHECK(TypeAt(&result, result.resource_count - 1) == ENGINE_RESOURCE_LEVEL);
+    for (i = 0; i < result.resource_count; ++i)
+    {
+        if (TypeAt(&result, i) == ENGINE_RESOURCE_MESH)
+        {
+            mesh_id = IdAt(&result, i);
+        }
+    }
+    /* without the flag no level is made */
+    options.flags = 0;
+    options.id_seed = 778;
+    options.path_prefix = S("/lvl_plain");
+    CHECK_STATUS(g_api->import_gltf(engine, gltf->data, gltf->size, &options, &plain), ENGINE_OK);
+    CHECK(plain.resource_count == 5);
+
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->level_spawn(world, level, NULL, NULL, NULL, 0, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK(CountEntities(world) == 0);
+    /* the root, and the three nodes of the file: root, tip, body */
+    CHECK_STATUS(g_api->level_spawn(world, level, NULL, &root, keys, 8, &total), ENGINE_OK);
+    CHECK(root != 0 && total == 4 && keys[0] == root);
+    CHECK(CountEntities(world) == 4);
+    body = Find(world, "body");
+    tip = Find(world, "tip");
+    CHECK(body != 0 && tip != 0 && Find(world, "root") != 0 && Find(world, "nothing") == 0);
+    CHECK_STATUS(g_api->component_has(world, body, ENGINE_COMPONENT_MESH_REFERENCE, &has), ENGINE_OK);
+    CHECK(has == 1);
+    CHECK_STATUS(g_api->component_has(world, body, ENGINE_COMPONENT_SKELETON_INSTANCE, &has), ENGINE_OK);
+    CHECK(has == 1);
+    CHECK_STATUS(g_api->component_has(world, tip, ENGINE_COMPONENT_MESH_REFERENCE, &has), ENGINE_OK);
+    CHECK(has == 0);
+    CHECK_STATUS(g_api->entity_get_parent(world, tip, &parent), ENGINE_OK);
+    CHECK(parent == Find(world, "root"));
+    CHECK_STATUS(g_api->entity_get_parent(world, parent, &parent), ENGINE_OK);
+    CHECK(parent == root);
+    /* the node's own transform: the tip is one above its parent */
+    {
+        engine_transform t;
+        memset(&t, 0, sizeof(t));
+        t.struct_size = sizeof(t);
+        CHECK_STATUS(g_api->component_get(world, tip, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+        CHECK(fabsf(t.position[1] - 1.0f) < 1e-5f);
+    }
+    /* a second spawn is a second, independent copy: the prefix tells the names apart */
+    memset(&place, 0, sizeof(place));
+    place.struct_size = sizeof(place);
+    place.position[0] = 10.0f;
+    place.name_prefix = S("b");
+    CHECK_STATUS(g_api->level_spawn(world, level, &place, &second_root, NULL, 0, &total), ENGINE_OK);
+    CHECK(second_root != 0 && second_root != root && total == 4 && CountEntities(world) == 8);
+    CHECK(Find(world, "b/body") != 0 && Find(world, "b/body") != body);
+    {
+        engine_frame_info frame;
+        engine_world_transform moved;
+        memset(&frame, 0, sizeof(frame));
+        frame.struct_size = sizeof(frame);
+        frame.delta_seconds = 0.016;
+        CHECK_STATUS(g_api->frame(engine, &frame, NULL), ENGINE_OK);
+        memset(&moved, 0, sizeof(moved));
+        moved.struct_size = sizeof(moved);
+        CHECK_STATUS(g_api->component_get(world, Find(world, "b/tip"), ENGINE_COMPONENT_WORLD_TRANSFORM, &moved),
+                     ENGINE_OK);
+        CHECK(fabsf(moved.matrix[12] - 10.0f) < 1e-4f && fabsf(moved.matrix[13] - 1.0f) < 1e-4f);
+    }
+    /* refusals leave the world as it was */
+    {
+        uint64_t none = 0;
+        const size_t before = CountEntities(world);
+        CHECK_STATUS(g_api->level_spawn(world, 0x1234567ull, NULL, &none, NULL, 0, NULL), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->level_spawn(world, mesh_id, NULL, &none, NULL, 0, NULL), ENGINE_ERROR_TYPE_MISMATCH);
+        place.name_prefix = S("a prefix that is far too long");
+        CHECK_STATUS(g_api->level_spawn(world, level, &place, &none, NULL, 0, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK(CountEntities(world) == before && none == 0);
+        /* a level whose mesh is gone is refused whole */
+        CHECK_STATUS(g_api->resource_remove(engine, mesh_id, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+        CHECK_STATUS(g_api->level_spawn(world, level, NULL, &none, NULL, 0, NULL), ENGINE_ERROR_NOT_FOUND);
+        CHECK(CountEntities(world) == before);
+        LastErrorIsNotEmpty();
+    }
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+    ReleaseResult(&result);
+    ReleaseResult(&plain);
+}
+
+/* A hierarchy deeper than a level holds, and more nodes than the limit, are refused with a message, never a crash. */
+static void TestDeepScene(engine_handle engine)
+{
+    char text[16384];
+    size_t used;
+    int i;
+    engine_import_options options = Options("/deep");
+    engine_import_result result = NewResult();
+    options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+    used = (size_t)snprintf(text, sizeof(text),
+                            "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[");
+    for (i = 0; i < 70; ++i)
+    {
+        if (i + 1 < 70)
+        {
+            used += (size_t)snprintf(text + used, sizeof(text) - used, "%s{\"name\":\"n%d\",\"children\":[%d]}",
+                                     i == 0 ? "" : ",", i, i + 1);
+        }
+        else
+        {
+            used += (size_t)snprintf(text + used, sizeof(text) - used, ",{\"name\":\"n%d\"}", i);
+        }
+    }
+    used += (size_t)snprintf(text + used, sizeof(text) - used, "]}");
+    CHECK_STATUS(g_api->import_gltf(engine, text, used, &options, &result), ENGINE_ERROR_TOO_LARGE);
+    LastErrorIsNotEmpty();
+    ReleaseResult(&result);
+    /* the same file without the level imports (nothing in it needs one) */
+    options.flags = 0;
+    result = NewResult();
+    CHECK_STATUS(g_api->import_gltf(engine, text, used, &options, &result), ENGINE_OK);
+    ReleaseResult(&result);
+    /* fewer nodes than the file has */
+    options = Options("/deep2");
+    options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+    options.max_nodes = 10;
+    result = NewResult();
+    CHECK_STATUS(g_api->import_gltf(engine, text, used, &options, &result), ENGINE_ERROR_TOO_LARGE);
+    ReleaseResult(&result);
+}
+
 int main(void)
 {
     Bytes gltf;
@@ -967,6 +1135,8 @@ int main(void)
     TestAsync(engine, &gltf);
     TestArguments(engine, &gltf);
     TestHostile(engine, &gltf);
+    TestLevel(engine, &gltf);
+    TestDeepScene(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     free(gltf.data);
 #if IMPORT_DYNAMIC
