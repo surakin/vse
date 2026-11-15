@@ -646,6 +646,10 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 - **Several surfaces.** One world may be bound to several surfaces, each with its own camera (`surface_set_camera`); each uploads the host textures its entities name to its own device (`surface_state.textures_uploaded` per surface), so destroying one surface leaves the others drawing. A world destroyed under a surface leaves it at the background colour with `world_status` `STALE_HANDLE`. A host texture may be destroyed before or after the entities that name it (the slots revert), and the engine refuses to be destroyed while any texture, world or surface lives (`IN_USE`).
 - **Not covered by a test yet.** A fault-injection sweep through the frame path and the 5000-frame flat-count run are closing-pass items (`KNOWN-ISSUES.md`).
 
+## The walk-around sample (Phase 24 Day 371)
+
+`tests/engine_library/walk_around.c` is the phase's driving case as a plain C host: three skinned robots (one walks, two stand), three screens that show a pattern each, painted by a thread of their own through `texture_update`, name tags over the robots, a directional light with an ambient term, and a first-person camera (W A S D, the mouse looks, Escape quits). It builds the scene through the C API alone; `--frames N` makes it a test that draws N frames, stops the painters, rebinds the surface to a new window and checks the picture is the same and that no entity was unresolved. The walk-through is the tutorial [A 3D Scene in Your Window](../tutorials/a-3d-scene-in-your-window.md).
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

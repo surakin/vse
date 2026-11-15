@@ -57,3 +57,4 @@ tests/engine_library/abi_snapshot_gen.c|<stdio.h>,<stddef.h>|prints the C API's 
 tests/engine_library/fake_engine.c||stands in for an engine library that must be refused (Phase 23 Day 347): plain C that spells the C API's own fixed-width types
 include/engine/engine_loader.h|<string.h>|the host-side loader (Phase 23 Day 347): header-only plain C a host in any language family copies, using the C library's string functions and the C API's fixed-width types
 include/engine/engine_c.h|<stddef.h>,<stdint.h>|the C API's public header (Phase 23 Day 346) is plain C that a host in any language binds to: its types are the C library's size_t and fixed-width integers, not the engine's wrappers
+tests/engine_library/walk_around.c|<math.h>,<stdint.h>,<stdio.h>,<stdlib.h>,<string.h>|the walk-around sample (Phase 24 Day 371): a C host that uses only the C API's header, the C library and Xlib, as a host in another language would
