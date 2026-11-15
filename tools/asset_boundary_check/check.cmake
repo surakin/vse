@@ -7,7 +7,7 @@
 #      gives the reason (a demo's import mode, a host program).
 #   3. The decoders (png.h, zlib.h, stb_image.h, and the png, zlib and stb_jpeg targets) are reached only from engine/asset_import/image_decode.cpp,
 #      its C helper png_guard.c (libpng's setjmp, which MSVC refuses in C++) and its CMake file, or an allow-list entry (FreeType's color bitmaps,
-#      Phase 27).
+#      Phase 28).
 # Comments are not violations. A stale allow-list entry fails the gate, so the list only shrinks.
 cmake_minimum_required(VERSION 3.20)
 

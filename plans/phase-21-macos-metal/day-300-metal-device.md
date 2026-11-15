@@ -74,7 +74,7 @@ flavors, the adapter's reported properties are recorded, and `ARCHITECTURE.md` h
 
 1. **A second environment variable broke every macOS RHI test's properties** (the Catch2 discovery flattened the list: the tests lost their
    phase labels, `SKIP_RETURN_CODE` and the validation variables). Fixed in the discovery patch; checked with `ctest --show-only=json-v1` in the
-   three flavors (37 phase-26 Metal tests listed).
+   three flavors (37 phase-27 Metal tests listed).
 2. **The device test's validation check passed with the variable missing.** Fixed: `ENGINE_RHI_EXPECT_METAL_VALIDATION=1` under ctest makes it
    required.
 3. **Use after free: a completion handler captured the raw device**, and can run after the device is destroyed (Metal signals the timeline

@@ -1,4 +1,4 @@
-# Phase 24 — Physics
+# Phase 25 — Physics
 
 **Depends on:** Phase 17 (ECS), Phase 18 (spatial partitioning: the broad phase), Phase 22 (asset pipeline: collision meshes and physics materials are minted assets).
 **Goal:** rigid body simulation integrated as ECS components/systems.

@@ -1029,7 +1029,7 @@ shader libraries carry their slots, a pass is a render encoder (so a pass that s
 boundary), and a depth texture is sampled as `depth32_float` itself. The `backend` setting's `auto` on macOS is Metal from Day 309 (from Day 298 it was
 the null backend there, [[renderer::BackendForSetting]]); `renderer_demo`'s scripted and named ctests on macOS run on Metal. The points that shape code are in the [renderer portability
 review](../superpowers/specs/2026-11-04-renderer-portability-review.md); a deferred G-buffer is a poor fit for tile-based mobile GPUs
-unless the passes are merged (Phase 28).
+unless the passes are merged (Phase 29).
 
 **On Direct3D 12** (Phase 13) the renderer runs unchanged; what differs is below it:
 
@@ -1053,7 +1053,7 @@ Culling through a bounding-volume hierarchy (`RenderScene::SetCullMode`): see [S
 - [ECS: Rendering](ecs.md#rendering): entities mirrored into a `RenderScene` by `scene::MakeRenderSyncSystem` (`engine/scene`); the renderer demo's scene is built that way since Phase 17 Day 234 (`DemoScene` keeps its interface), and the renderer's own tests still fill a `RenderScene` directly.
 - Culling 100k objects costs 0.57 ms on one thread in a Release build (5.7 ns an object), 0.08 ms with eight workers as a chunk-parallel frustum test over an ECS bounds component (`scene_tests "[cost]"`); `GBufferPass::Prepare` keeps its single-thread path, and `RenderScene::Cull` can instead walk a bounding-volume hierarchy (see above); a precomputed visible-list overload was not built.
 - [The RHI](rhi.md) and the [renderer design](../superpowers/specs/2026-11-04-renderer-design.md).
-- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13, 21 and 28 add.
+- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13, 21 and 29 add.
 - [Shaders: from Slang to a shader module](rhi-shaders.md) and [Tutorial: From a Scene to a Lit Frame](../tutorials/hello-renderer.md).
 
 ## What the renderer adds to a crash report

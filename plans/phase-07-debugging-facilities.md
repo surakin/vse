@@ -67,7 +67,7 @@ own minidump writer and reader, Mach-O and PE readers, an own crash signal handl
 **Scope (decided 2026-11-06):** this phase implements **Linux only**. It leaves **Windows (Phase 13) and macOS (Phase 21)
 ready**: the libraries already support them, so "ready" means a facade and tests free of Linux assumptions, per-backend
 checklists (`BACKEND.md`) for the few platform-specific functions, a backend conformance list the same test sources
-satisfy, cross-target syntax checks, and a porting guide (Day 101). Android, iOS and the consoles (Phases 28 and 29) are
+satisfy, cross-target syntax checks, and a porting guide (Day 101). Android, iOS and the consoles (Phases 29 and 30) are
 **designed in** (the interfaces do not preclude them and `Unsupported` is a valid answer) and get no work here.
 
 Rules applied in every day file:

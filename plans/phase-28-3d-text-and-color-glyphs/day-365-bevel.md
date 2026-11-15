@@ -1,6 +1,6 @@
-# Phase 27 / Day 365 — Beveled Extrusion
+# Phase 28 / Day 365 — Beveled Extrusion
 
-**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 28 — 3D Text, Large 2D Text & Colored Glyphs](../phase-28-3d-text-and-color-glyphs.md)
 **Depends on:** Day 364.
 
 Optional bevel on the front and back edges: chamfer or rounded profile, correct at concave corners and thin strokes.

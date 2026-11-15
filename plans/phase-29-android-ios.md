@@ -1,4 +1,4 @@
-# Phase 28 — Android and iOS Ports
+# Phase 29 — Android and iOS Ports
 
 **Depends on:** Phase 4 (Vulkan RHI) for Android — reuses the Vulkan
 backend directly; Phase 21 (the Metal backend) for iOS. Neither needs the
@@ -20,10 +20,10 @@ handle each OS's app lifecycle and touch input.
 
 - iOS platform layer: UIKit window, touch input, app lifecycle (moved here
   from the old macOS/iOS phase on 2026-11-05).
-- iOS build config for Phase 26's LuaJIT backend: JIT mode is disallowed
+- iOS build config for Phase 27's LuaJIT backend: JIT mode is disallowed
   on iOS App Store builds, so this is where the interpreter-only fallback
   (root `PLAN.md` assumption #13) actually gets wired up.
-- Audio output backends for the Phase 25 mixer: AAudio on Android and
+- Audio output backends for the Phase 26 mixer: AAudio on Android and
   CoreAudio on iOS (shared with the macOS backend where the API matches),
   plus audio session handling (interruptions, route changes, pausing in the
   background). The mixer itself is unchanged.

@@ -10,7 +10,7 @@ originally scoped the engine's entry point to receive and log raw
 `argc`/`char** argv` directly. The user flagged that engine code should
 never touch `argc`/`argv` directly — it needs a `CommandLine` wrapper
 class, and that wrapper needs to extend cleanly to other platforms later
-(Phases 15-25), the same way `PLAN.md` assumption #11 already requires
+(Phases 15-26), the same way `PLAN.md` assumption #11 already requires
 of the `Window`/input interface Day 26 defines.
 
 Raw `argc`/`argv` isn't actually portable: Linux/console-subsystem

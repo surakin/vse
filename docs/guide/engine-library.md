@@ -147,7 +147,7 @@ allowed); anything else fails and names the line. After a legitimate append, run
 struct member or table function is also added to the lists in `abi_snapshot_gen.c`; the struct size line catches one that is missed. The layout is that of a
 64-bit target.
 
-A language binding (Phase 26's Lua, any other) binds through this table and may rely on: functions are only ever appended to `engine_api`, and a field
+A language binding (Phase 27's Lua, any other) binds through this table and may rely on: functions are only ever appended to `engine_api`, and a field
 only to the end of a struct; a status number never changes; a function's meaning never changes within a major version; `struct_size` says how much of a
 struct is real. It may not rely on the text of a message (`last_error`, `loader.message`), on the order of log lines, or on the extensions (`get_extension`
 names other than the ones the guide documents).

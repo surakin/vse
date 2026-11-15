@@ -23,7 +23,7 @@ using GlyphId = u32;
 using char32 = u32;
 
 /// The largest pixel size the atlas rasterizes (`Font::Render` and the glyph atlas refuse more with `Error::TooLarge`).
-/// Larger text is Phase 27's outline meshes.
+/// Larger text is Phase 28's outline meshes.
 constexpr u32 kMaxAtlasPixelSize = 128;
 
 /// The largest pixel size a [[text::Font]] accepts at all (metrics, layout and outlines work up to it).
@@ -150,7 +150,7 @@ struct GlyphBitmap
     Vector<byte> pixels;  ///< `width * height` coverage values, 0 (empty) to 255 (full).
 };
 
-/// A glyph outline: closed contours of points, unscaled (the Phase 27 mesh builder's input).
+/// A glyph outline: closed contours of points, unscaled (the Phase 28 mesh builder's input).
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its vectors.

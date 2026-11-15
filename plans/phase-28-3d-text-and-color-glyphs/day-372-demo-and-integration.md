@@ -1,6 +1,6 @@
-# Phase 27 / Day 372 — `text3d_demo`, Settings Screen & Integration
+# Phase 28 / Day 372 — `text3d_demo`, Settings Screen & Integration
 
-**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 28 — 3D Text, Large 2D Text & Colored Glyphs](../phase-28-3d-text-and-color-glyphs.md)
 **Depends on:** Days 363, 350, 352 and 355; `game/ui_demo` (Phase 15).
 
 One demo that shows everything the phase adds, usable for the by-eye check and the goldens.

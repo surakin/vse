@@ -20,13 +20,13 @@
 248. [Stats, Debug Draw, Settings, Benchmarks & the Demo](phase-18-spatial-partitioning/day-248-stats-debug-draw-benchmarks-demo.md)
 249. [Docs, Windows PC, Closing Full Run & Phase Review](phase-18-spatial-partitioning/day-249-docs-closing-run-and-review.md)
 
-Order reasoning: the shared shapes come first because both the renderer and the new module need them below `ecs`; the static tree before the dynamic one (it is simpler and gives the dynamic tree a reference); queries once both trees exist so one vocabulary is written once; the set and the optional grid after the queries, then the pair tracker, which needs the set; the ECS tier (components, then the sync system, then entity-facing queries) once the structures are exact; the renderer integration after the entity queries because it reuses the sync; stats, benchmarks and the demo last so they measure the finished design. Storage (Phase 19), networking (Phase 20), the asset pipeline (21) and physics (Phase 24) follow; 3D text (Phase 27) needs nothing from this phase, but its text entities become spatial members for free.
+Order reasoning: the shared shapes come first because both the renderer and the new module need them below `ecs`; the static tree before the dynamic one (it is simpler and gives the dynamic tree a reference); queries once both trees exist so one vocabulary is written once; the set and the optional grid after the queries, then the pair tracker, which needs the set; the ECS tier (components, then the sync system, then entity-facing queries) once the structures are exact; the renderer integration after the entity queries because it reuses the sync; stats, benchmarks and the demo last so they measure the finished design. Storage (Phase 19), networking (Phase 20), the asset pipeline (21) and physics (Phase 25) follow; 3D text (Phase 28) needs nothing from this phase, but its text entities become spatial members for free.
 
-**Status: complete (Days 237-249) on the Linux machine (2026-11-10) and the Windows PC (2026-11-11); three spatial pass conditions are missed or open (design spec section 4.1, for the user); `CURRENT_PHASE` stays 18 until Phase 19's first day.** Inserted after the ECS on 2026-11-10 (the user's request); phases 18-31 became 19-31.
+**Status: complete (Days 237-249) on the Linux machine (2026-11-10) and the Windows PC (2026-11-11); three spatial pass conditions are missed or open (design spec section 4.1, for the user); `CURRENT_PHASE` stays 18 until Phase 19's first day.** Inserted after the ECS on 2026-11-10 (the user's request); phases 18-32 became 19-31.
 
 ## Why a phase of its own
 
-The plan had spatial structures in exactly one place, Phase 24's broad phase ("spatial hashing or a simple BVH to start"), and the renderer culls by scanning a flat list (0.08 us per object). Left alone, physics, the renderer, audio and gameplay would each grow a private structure with its own bugs and its own bounds. One module with exact, tested, deterministic structures, and an ECS tier that keeps them in step with entities, is built once and measured once.
+The plan had spatial structures in exactly one place, Phase 25's broad phase ("spatial hashing or a simple BVH to start"), and the renderer culls by scanning a flat list (0.08 us per object). Left alone, physics, the renderer, audio and gameplay would each grow a private structure with its own bugs and its own bounds. One module with exact, tested, deterministic structures, and an ECS tier that keeps them in step with entities, is built once and measured once.
 
 ## Key deliverables
 
@@ -42,5 +42,5 @@ The plan had spatial structures in exactly one place, Phase 24's broad phase ("s
 ## Notes / open questions
 
 - The planner's defaults are in the Day 237 task list; experiments there may change the structures kept (the grid) and the margin. The pass-condition numbers are the user's to override.
-- Collision shapes and the narrow phase are Phase 24's; this phase deals in boxes and spheres as bounds only.
+- Collision shapes and the narrow phase are Phase 25's; this phase deals in boxes and spheres as bounds only.
 - Tile-based light lists and GPU-side culling are possible follow-ups (Day 247 records which).

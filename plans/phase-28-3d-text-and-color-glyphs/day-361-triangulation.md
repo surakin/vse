@@ -1,6 +1,6 @@
-# Phase 27 / Day 361 — Triangulating Polygons with Holes
+# Phase 28 / Day 361 — Triangulating Polygons with Holes
 
-**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 28 — 3D Text, Large 2D Text & Colored Glyphs](../phase-28-3d-text-and-color-glyphs.md)
 **Depends on:** Day 360.
 
 Own ear-clipping triangulator with hole bridging; the shared core of the large 2D text and the 3D faces. No third-party tessellator.

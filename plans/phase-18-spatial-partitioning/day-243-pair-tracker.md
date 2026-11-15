@@ -3,7 +3,7 @@
 **Phase:** [Phase 18 — Spatial Partitioning](../phase-18-spatial-partitioning.md)
 **Depends on:** Days 240-242.
 
-The contract Phase 24 builds on: which pairs began and which ended overlapping this frame.
+The contract Phase 25 builds on: which pairs began and which ended overlapping this frame.
 
 ## Tasks
 
@@ -17,7 +17,7 @@ The contract Phase 24 builds on: which pairs began and which ended overlapping t
 - [x] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
 - [x] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
 
-**Done:** the broad phase delivers exact, deterministic begin and end events from incremental updates, ready for Phase 24 to consume.
+**Done:** the broad phase delivers exact, deterministic begin and end events from incremental updates, ready for Phase 25 to consume.
 
 ## Notes
 

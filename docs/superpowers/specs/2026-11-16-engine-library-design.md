@@ -26,7 +26,7 @@ spikes found nothing that revises them, and found six things the later days must
 9. **What v1 covers:** version and caps, create and destroy with settings, logging hook, the frame loop, worlds and entities with the built-in components,
    jobs, the crash handler, resources and host-provided content, glTF import (a build option), the foreign surface and host-owned input. **Not in v1:**
    minting entry points (the host adds minted blobs), a game as a plugin loaded and reloaded by the host (the C ABI makes it possible; the work needs a
-   second shutdown/reload path for game code and is left to a later phase), a stable C++ ABI, language bindings beyond the table (Phase 26 binds through it).
+   second shutdown/reload path for game code and is left to a later phase), a stable C++ ABI, language bindings beyond the table (Phase 27 binds through it).
 10. **iOS and consoles stay static.** `engine_c.h` compiles there; the loader does not.
 11. **Embedding:** the host owns the window, its size, visibility, DPI and event loop, input and the clipboard. The foreign-surface descriptor is
     `{u32 struct_size, u32 kind, kind-specific handles, width, height, scale}` with kinds X11 (display and window), Wayland (`wl_display`, `wl_surface`: **the

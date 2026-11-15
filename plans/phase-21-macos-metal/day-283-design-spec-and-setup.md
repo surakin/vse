@@ -54,7 +54,7 @@ Evidence and the full inventory: `docs/superpowers/specs/2026-11-11-macos-port-d
 - **Side phase:** `tests/phases.txt`'s comment names phase 21 as a side phase and its label; the rule is in CLAUDE.md ("Tests run by phase") and in
   `docs/guide/building-and-testing.md` ("Side phases"), both **marked as proposed** until the user confirms. **Changed from the plan:** the
   `flavors 26 macos: plain,asan,tsan` line is not added today: `test_phase_labels` refuses a `flavors` line for a phase with no tests in the map
-  (`tests/phase_labels/check.cmake:110`), so it comes with the first phase-26 test (Day 284 task).
+  (`tests/phase_labels/check.cmake:110`), so it comes with the first phase-27 test (Day 284 task).
 - **Case:** no path or directory in the tree differs from another only in case; no gate or test assumes a case-sensitive file system (the one test
   that cares already avoids it). The volume is APFS, case-insensitive.
 - **Prerequisites:** `slangc` v2026.18.2 installed at `~/tools/slang-2026.18.2` (release archive, SHA-256 recorded in the spec); it mints SPIR-V

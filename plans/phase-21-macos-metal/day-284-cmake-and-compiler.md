@@ -40,7 +40,7 @@ higher layers stay unconfigured on macOS until their day (each listed in the spe
 - [x] **The other stops and lookups Spike A found:** `third_party/libbacktrace/CMakeLists.txt:13`'s stale message ("macOS is Phase 9 and Windows Phase 8")
       names Phase 21 Day 290 until that day builds it; `shaders/CMakeLists.txt:57` gets `~/tools/slang-2026.18.2/bin` as a hint and refuses a `slangc`
       whose `-v` is not a Slang version (kitty's `slangc` comes first on `PATH` on this Mac).
-- [x] **Phase map:** the first phase-26 test (the `build_defs.h` check below) adds its `tests/phases.txt` line and `flavors 26 macos: plain,asan,tsan`
+- [x] **Phase map:** the first phase-27 test (the `build_defs.h` check below) adds its `tests/phases.txt` line and `flavors 26 macos: plain,asan,tsan`
       (`test_phase_labels` refuses a `flavors` line for a phase without tests, `tests/phase_labels/check.cmake:110`).
 - [x] **CMake gates:** `module_deps_check` and `std_usage_check` pass when run by hand on macOS.
 - [x] **Both unity modes:** `cmake --preset macos-clang` and `-DENGINE_UNITY_BUILD=OFF` build clean; record full-build times (8 GB, 4 cores).
@@ -71,7 +71,7 @@ machines.
 - **Sanitizers:** the asan (ASan + UBSan) and tsan flavors build and pass. No options file asks for `detect_leaks=1` (the only setting in the tree is the
   death test's `detect_leaks=0`, which macOS accepts), so there was nothing to drop; the comment in `EngineCompilerOptions.cmake` records the rule.
   UBSan on Objective-C++ is not exercised yet (no `.mm` in a sanitized target; `KNOWN-ISSUES.md`).
-- **`build_defs.h`:** `tests/macos/build_defs_macos_test.cpp` (the first phase-26 test, three flavors) checks platform, processor, compiler,
+- **`build_defs.h`:** `tests/macos/build_defs_macos_test.cpp` (the first phase-27 test, three flavors) checks platform, processor, compiler,
   `ENGINE_HAS_BUILTIN` and each flavor's sanitizer macros; no `ENGINE_COMPILER_APPLE_CLANG` is needed.
 - **`ParseDoubleExact` on Apple's libc++:** `detail::ParseDoubleWithoutFromChars` (`cstr/number.cpp`, POSIX systems) reads `from_chars`' grammar itself and
   converts a normalized copy (780 significant digits and a sticky digit, exponent saturated at 10^15) with `strtod_l` in the C locale.

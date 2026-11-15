@@ -62,7 +62,7 @@ Every `[gpu]` test outside `tests/rhi/macos/`, by how it picks its device:
 
 `/code-review high` on the day's diff: 9 findings, all fixed.
 
-1. **The `ui_demo` Metal screenshot carried phase 15** (the `ui_demo_*` line), so a phase-26 scoped run would leave it out. Fixed: renamed
+1. **The `ui_demo` Metal screenshot carried phase 15** (the `ui_demo_*` line), so a phase-27 scoped run would leave it out. Fixed: renamed
    `metal_ui_demo_screenshot`, phase 21. The scripted Cocoa run stays phase 15, as it was on null.
 2. **`STATUS.md`, `KNOWN-ISSUES.md` and this section were missing.** Added in this commit.
 3. **No `KNOWN-ISSUES.md` entry for the day's pending checks.** Added: the `ui_demo` hand checks and the shared files' checks.

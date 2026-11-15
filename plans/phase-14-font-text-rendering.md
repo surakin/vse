@@ -8,15 +8,15 @@ pass/material machinery, not a separate rendering path.
 the foundation string module's grapheme clustering (Days 10-12) for
 correct cursor/line-break behavior — the shared text layer every later
 UI need (in-game HUD, debug overlays, the Phase 15 UI system and through it
-the Phase 32 editor's widgets)
+the Phase 33 editor's widgets)
 builds on instead of each hand-rolling its own.
 **Scope cut (2026-11-08, developer decision):** "a simple hello world is enough until the UI is implemented". 3D text and colored glyphs (emoji) moved to
-[Phase 27](phase-27-3d-text-and-color-glyphs.md); this phase keeps only the 2D path, plus grapheme-aware cursor placement and hit-testing because the
+[Phase 28](phase-28-3d-text-and-color-glyphs.md); this phase keeps only the 2D path, plus grapheme-aware cursor placement and hit-testing because the
 Phase 15 UI's text fields need them.
 **Definition of done:** the string "Hello, world!" (and arbitrary UTF-8: accents, CJK from a font that has them, a combining mark, an emoji ZWJ sequence
 that renders as its component glyphs or `.notdef`, never a crash) draws on screen from a font file through the RHI at an interactive frame rate, in an
 overlay pass after the tonemap, on Vulkan (Linux, Windows) and Direct3D 12 (Windows), with golden images; kerning and advance widths are right;
-glyphs are rasterized up to a documented maximum pixel size (larger text still draws, scaled from the maximum raster, until Phase 27 draws it as outline meshes); the cursor moves, and a point maps to a byte offset and back, by grapheme cluster (combining marks and ZWJ sequences are one unit); the glyph atlas and
+glyphs are rasterized up to a documented maximum pixel size (larger text still draws, scaled from the maximum raster, until Phase 28 draws it as outline meshes); the cursor moves, and a point maps to a byte offset and back, by grapheme cluster (combining marks and ZWJ sequences are one unit); the glyph atlas and
 the text pipeline survive an RHI reset (CLAUDE.md "RHI can be reset at run time").
 
 **Status: complete on Linux (2026-11-09), Days 175-183.** The Windows PC still has to build and run everything and mint DXIL for the text shaders (`KNOWN-ISSUES.md`).
@@ -55,7 +55,7 @@ the text pipeline survive an RHI reset (CLAUDE.md "RHI can be reset at run time"
 - Cursor placement / hit-testing (byte offset <-> screen position) built
   on grapheme cluster boundaries, not raw codepoints or bytes — needed
   by any future text-input UI (editor, in-game chat/console, etc.).
-- **Seams for Phase 27 (kept, not built):** the font object also exposes outline access; the layout yields glyph ids and pen positions independent of how a
+- **Seams for Phase 28 (kept, not built):** the font object also exposes outline access; the layout yields glyph ids and pen positions independent of how a
   glyph is drawn; the atlas can hold an RGBA page later. The design spec (Day 175) records each.
 
 ## Notes / open questions
@@ -65,7 +65,7 @@ the text pipeline survive an RHI reset (CLAUDE.md "RHI can be reset at run time"
   normal/full autohint, or the font's own bytecode hints) is a
   visual-quality tradeoff to decide empirically against real rendered
   text once this phase starts, not speculatively here.
-- 3D text and colored glyphs: Phase 27 (their open questions moved with them).
+- 3D text and colored glyphs: Phase 28 (their open questions moved with them).
 - Subpixel/LCD-optimized rendering (FreeType supports it) is not a
   Phase 14 goal — this engine targets modern displays where grayscale
   antialiasing is standard; revisit only if a real quality gap shows up.

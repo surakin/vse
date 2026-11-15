@@ -1119,7 +1119,7 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   lacks, or that is not visible to the stage, or two resources at one slot, fail the creation with the reason. Groups hold their resources by
   handle and are resolved when they are bound, and a slot that already holds the resource gets no second call (a new encoder starts empty).
   Push constants are `setVertexBytes:`/`setFragmentBytes:` at the table's push-constant slot. Equal sampler descriptions share one Metal sampler;
-  `ClampToBorder` uses Metal's border colors, which macOS has (iOS before 14 does not: Phase 28).
+  `ClampToBorder` uses Metal's border colors, which macOS has (iOS before 14 does not: Phase 29).
 - **Pipelines.** A shader is an `MTLLibrary` made from the minted bytes and the function its blob names, with a copy of its slot table. A
   render pipeline puts vertex buffer binding `b` at buffer slot `30 - b` (the top of the table, clear of the shader's own buffers, which Slang
   numbers from 0; the creation fails if they would meet). Cull mode, winding, fill mode and the depth-stencil state are set on the encoder when

@@ -17,7 +17,7 @@ A `text::Font` that loads a font file through the file layer and answers every q
 - [x] **Glyph metrics:** advance (horizontal), bearing X/Y, width, height of the bitmap box, per glyph and size; vertical layout is out of scope (recorded).
 - [x] **Kerning:** `f32 Kerning(GlyphId left, GlyphId right)` from the font's kern table / GPOS pair adjustment as far as FreeType exposes it (`FT_Get_Kerning`); a font without kerning gives 0;
       the limits (no GPOS contextual kerning) recorded in the guide.
-- [x] **Outline access (the Phase 27 seam):** `LoadOutline(GlyphId)` returning the contours as points with on/off-curve flags in font units, behind the FreeType boundary; tested by counting contours
+- [x] **Outline access (the Phase 28 seam):** `LoadOutline(GlyphId)` returning the contours as points with on/off-curve flags in font units, behind the FreeType boundary; tested by counting contours
       of `o` (2) and `l` (1) and checking the bounding box against the metrics. Nothing else uses it in this phase.
 - [x] **Lifetime:** a `Font` is movable, not copyable; destroying it frees every FreeType object; a `Font` used from two threads without a lock is a documented non-goal (one `Font` per thread or an
       external lock; `FT_Face` is not thread-safe), checked by a tsan test that uses separate fonts from several jobs.
