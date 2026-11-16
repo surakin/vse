@@ -17,6 +17,7 @@ enum class JointType : u8
     Ball = 0,      ///< The two anchors stay together; the bodies turn freely about them (three rows).
     Distance = 1,  ///< The anchors stay a length apart: rigid, a spring or a rope between limits.
     Fixed = 2,     ///< The anchors stay together and the two frames keep their relative orientation (six rows).
+    Hinge = 3,     ///< The anchors stay together and the bodies turn about the Z axis of the joint frames (five rows).
 };
 
 /// What a joint is made from. Anchors are in the frame of each body (its origin and axes); when `body_b` is null the
@@ -30,9 +31,10 @@ struct JointDesc
 {
     /// The kind.
     JointType type = JointType::Ball;
-    /// The first body (not null).
+    /// The first body, or null for the world (then `anchor_a` and `frame_a` are in the world).
     BodyId body_a;
-    /// The second body, or null for the world.
+    /// The second body, or null for the world (not both null). A motor and an angle spring act on B relative to A, so
+    /// the moving body of a hinge to the world is usually B.
     BodyId body_b;
     /// The anchor on body A, in its frame.
     Vec3 anchor_a = Vec3(0.0f, 0.0f, 0.0f);
@@ -59,6 +61,18 @@ struct JointDesc
     f32 break_torque = 0.0f;
     /// Whether the two bodies still collide with each other.
     bool collide_connected = false;
+    /// Whether a hinge limits its angle to `[lower_angle, upper_angle]`.
+    bool enable_limit = false;
+    /// The lowest angle of a hinge, in radians (beyond plus or minus pi is fine: the angle is tracked across turns).
+    f32 lower_angle = 0.0f;
+    /// The highest angle of a hinge.
+    f32 upper_angle = 0.0f;
+    /// Whether a hinge has a motor.
+    bool enable_motor = false;
+    /// The angular velocity the motor aims for, in radians per second.
+    f32 motor_speed = 0.0f;
+    /// The most torque the motor may apply, in newton metres.
+    f32 max_motor_torque = 0.0f;
 
     /// Checks the numbers.
     ///
@@ -84,6 +98,14 @@ struct JointRecord
     f32 lower_impulse = 0.0f;
     /// The upper limit's impulse.
     f32 upper_impulse = 0.0f;
+    /// The motor's impulse (hinge).
+    f32 motor_impulse = 0.0f;
+    /// The impulse of the angle spring (hinge).
+    f32 spring_impulse = 0.0f;
+    /// The hinge angle in radians, tracked across full turns: zero when the joint was made at rest.
+    f32 angle = 0.0f;
+    /// The last angle from the arc tangent alone, in (-pi, pi], from which the turns are counted.
+    f32 angle_raw = 0.0f;
     /// The force the joint carried in the last step (the impulse of the last substep over its length).
     Vec3 reaction_force = Vec3(0.0f, 0.0f, 0.0f);
     /// The torque it carried.
@@ -91,5 +113,23 @@ struct JointRecord
     /// Set when a threshold was passed; the step removes the joint.
     bool broken = false;
 };
+
+/// The angle of a hinge from the two orientations alone, in (-pi, pi]: the twist of the joint frame of B relative to
+/// that of A about the hinge axis. It uses `Atan2`, so the last bits depend on the C library (the one non-exact
+/// operation of the step; `docs/guide/physics.md`).
+///
+/// - Param desc: the hinge.
+/// - Param orientation_a: the orientation of body A.
+/// - Param orientation_b: the orientation of body B (identity for the world).
+/// - Returns: the angle.
+/// - Fails: never.
+f32 HingeRawAngle(const JointDesc& desc, const Quaternion& orientation_a, const Quaternion& orientation_b);
+
+/// Wraps an angle difference into [-pi, pi).
+///
+/// - Param angle: any finite angle.
+/// - Returns: the equivalent angle in the range.
+/// - Fails: never.
+f32 WrapAngle(f32 angle);
 
 }  // namespace engine_placeholder::physics

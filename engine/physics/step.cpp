@@ -191,7 +191,8 @@ void PhysicsWorld::Step()
     for (u32 slot = 0; slot < joints_.Slots(); ++slot)
     {
         const JointRecord* joint = joints_.Find(slot, joints_.LiveGeneration(slot));
-        if (joint != nullptr && !joint->desc.collide_connected && joint->desc.body_b.IsValid())
+        if (joint != nullptr && !joint->desc.collide_connected && joint->desc.body_a.IsValid() &&
+            joint->desc.body_b.IsValid())
         {
             const u64 x = joint->desc.body_a.ToU64();
             const u64 y = joint->desc.body_b.ToU64();

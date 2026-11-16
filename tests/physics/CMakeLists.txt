@@ -16,6 +16,7 @@ set(PHYSICS_TEST_SOURCES
   solver_test.cpp  # Day 384
   stability_test.cpp  # Day 385
   joint_test.cpp  # Day 386
+  hinge_test.cpp  # Day 387
 )
 
 find_package(Threads REQUIRED)

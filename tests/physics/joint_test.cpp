@@ -312,6 +312,12 @@ TEST_CASE("Joint: creating and destroying", "[physics][joint]")
     // Two bodies that cannot move.
     CHECK(!world.CreateJoint(world.MakeBallJoint(floor, BodyId(), Vec3(0, -5, 0)), &status).IsValid());
     CHECK(status == BodyStatus::Invalid);
+    // Neither body: a joint needs one.
+    JointDesc none = world.MakeBallJoint(a, b, Vec3(1, 0, 0));
+    none.body_a = BodyId();
+    none.body_b = BodyId();
+    CHECK(!world.CreateJoint(none, &status).IsValid());
+    CHECK(status == BodyStatus::Invalid);
     // A stale body.
     JointDesc stale = world.MakeBallJoint(a, b, Vec3(1, 0, 0));
     stale.body_b.generation += 5;

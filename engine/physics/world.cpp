@@ -157,8 +157,8 @@ JointId PhysicsWorld::CreateJoint(const JointDesc& desc, BodyStatus* status)
         }
         return JointId();
     };
-    const Body* a = Find(desc.body_a);
-    if (a == nullptr)
+    const Body* a = desc.body_a.IsValid() ? Find(desc.body_a) : nullptr;
+    if (desc.body_a.IsValid() && a == nullptr)
     {
         return fail(BodyStatus::StaleId);
     }
@@ -171,7 +171,8 @@ JointId PhysicsWorld::CreateJoint(const JointDesc& desc, BodyStatus* status)
     {
         return fail(BodyStatus::Invalid);
     }
-    if (a->settings.type != BodyType::Dynamic && (b == nullptr || b->settings.type != BodyType::Dynamic))
+    if ((a == nullptr || a->settings.type != BodyType::Dynamic) &&
+        (b == nullptr || b->settings.type != BodyType::Dynamic))
     {
         return fail(BodyStatus::Invalid);
     }
@@ -183,6 +184,13 @@ JointId PhysicsWorld::CreateJoint(const JointDesc& desc, BodyStatus* status)
         return fail(BodyStatus::OutOfMemory);
     }
     record->desc = desc;
+    if (desc.type == JointType::Hinge)
+    {
+        // The angle starts from the poses the hinge is made at.
+        record->angle_raw = HingeRawAngle(desc, a != nullptr ? a->orientation : Quaternion::Identity(),
+                                          b != nullptr ? b->orientation : Quaternion::Identity());
+        record->angle = record->angle_raw;
+    }
     if (status != nullptr)
     {
         *status = BodyStatus::Ok;
@@ -238,7 +246,7 @@ JointDesc PhysicsWorld::MakeBallJoint(BodyId a, BodyId b, const Vec3& world_poin
     desc.type = JointType::Ball;
     desc.body_a = a;
     desc.body_b = b;
-    desc.anchor_a = ToLocal(Find(a), world_point);
+    desc.anchor_a = ToLocal(a.IsValid() ? Find(a) : nullptr, world_point);
     desc.anchor_b = ToLocal(b.IsValid() ? Find(b) : nullptr, world_point);
     return desc;
 }
@@ -249,7 +257,7 @@ JointDesc PhysicsWorld::MakeDistanceJoint(BodyId a, BodyId b, const Vec3& point_
     desc.type = JointType::Distance;
     desc.body_a = a;
     desc.body_b = b;
-    desc.anchor_a = ToLocal(Find(a), point_a);
+    desc.anchor_a = ToLocal(a.IsValid() ? Find(a) : nullptr, point_a);
     desc.anchor_b = ToLocal(b.IsValid() ? Find(b) : nullptr, point_b);
     const Vec3 d = point_b - point_a;
     const f32 length = Sqrt(d.LengthSquared());
@@ -259,11 +267,52 @@ JointDesc PhysicsWorld::MakeDistanceJoint(BodyId a, BodyId b, const Vec3& point_
     return desc;
 }
 
+BodyStatus PhysicsWorld::JointAngle(JointId id, f32* angle) const
+{
+    const JointRecord* joint = FindJoint(id);
+    if (joint == nullptr)
+    {
+        return BodyStatus::StaleId;
+    }
+    if (joint->desc.type != JointType::Hinge)
+    {
+        return BodyStatus::WrongType;
+    }
+    *angle = joint->angle;
+    return BodyStatus::Ok;
+}
+
+JointDesc PhysicsWorld::MakeHingeJoint(BodyId a, BodyId b, const Vec3& world_point, const Vec3& world_axis) const
+{
+    JointDesc desc = MakeFixedJoint(a, b, world_point);
+    desc.type = JointType::Hinge;
+    const f32 length2 = world_axis.LengthSquared();
+    const Vec3 axis = length2 > 1e-12f ? world_axis * (1.0f / Sqrt(length2)) : Vec3(0.0f, 1.0f, 0.0f);
+    const Body* body_a = a.IsValid() ? Find(a) : nullptr;
+    const Body* body_b = b.IsValid() ? Find(b) : nullptr;
+    const Quaternion qa = body_a != nullptr ? body_a->orientation : Quaternion::Identity();
+    const Quaternion qb = body_b != nullptr ? body_b->orientation : Quaternion::Identity();
+    // The frame of A has its Z axis along the hinge axis (seen from A); the frame of B is the same frame seen from B.
+    const Vec3 local = qa.Conjugate().RotateVector(axis);
+    Quaternion turn;
+    if (local.z < -0.999999f)
+    {
+        turn = Quaternion::FromAxisAngle(Vec3(1.0f, 0.0f, 0.0f), 3.14159265f);
+    }
+    else
+    {
+        turn = Quaternion(-local.y, local.x, 0.0f, 1.0f + local.z).Normalized();
+    }
+    desc.frame_a = turn;
+    desc.frame_b = qb.Conjugate() * qa * turn;
+    return desc;
+}
+
 JointDesc PhysicsWorld::MakeFixedJoint(BodyId a, BodyId b, const Vec3& world_point) const
 {
     JointDesc desc = MakeBallJoint(a, b, world_point);
     desc.type = JointType::Fixed;
-    const Body* body_a = Find(a);
+    const Body* body_a = a.IsValid() ? Find(a) : nullptr;
     const Body* body_b = b.IsValid() ? Find(b) : nullptr;
     // The frames are chosen so the joint is at rest now: the world frame is body A's, seen from each body.
     const Quaternion qa = body_a != nullptr ? body_a->orientation : Quaternion::Identity();

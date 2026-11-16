@@ -2193,6 +2193,7 @@ The kinds of joint.
 | <a id="physics-jointtype-ball"></a>`Ball` | `0` | The two anchors stay together; the bodies turn freely about them (three rows). |
 | <a id="physics-jointtype-distance"></a>`Distance` | `1` | The anchors stay a length apart: rigid, a spring or a rope between limits. |
 | <a id="physics-jointtype-fixed"></a>`Fixed` | `2` | The anchors stay together and the two frames keep their relative orientation (six rows). |
+| <a id="physics-jointtype-hinge"></a>`Hinge` | `3` | The anchors stay together and the bodies turn about the Z axis of the joint frames (five rows). |
 
 ## `JointDesc` {#physics-jointdesc}
 
@@ -2228,7 +2229,7 @@ The kind.
 BodyId body_a;
 ```
 
-The first body (not null).
+The first body, or null for the world (then `anchor_a` and `frame_a` are in the world).
 
 ### `body_b` {#physics-jointdesc-body-b}
 
@@ -2238,7 +2239,7 @@ The first body (not null).
 BodyId body_b;
 ```
 
-The second body, or null for the world.
+The second body, or null for the world (not both null). A motor and an angle spring act on B relative to A, so the moving body of a hinge to the world is usually B.
 
 ### `anchor_a` {#physics-jointdesc-anchor-a}
 
@@ -2360,6 +2361,66 @@ bool collide_connected;
 
 Whether the two bodies still collide with each other.
 
+### `enable_limit` {#physics-jointdesc-enable-limit}
+
+`variable physics::JointDesc::enable_limit` — defined in `engine/physics/joint.h`
+
+```cpp
+bool enable_limit;
+```
+
+Whether a hinge limits its angle to `[lower_angle, upper_angle]`.
+
+### `lower_angle` {#physics-jointdesc-lower-angle}
+
+`variable physics::JointDesc::lower_angle` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 lower_angle;
+```
+
+The lowest angle of a hinge, in radians (beyond plus or minus pi is fine: the angle is tracked across turns).
+
+### `upper_angle` {#physics-jointdesc-upper-angle}
+
+`variable physics::JointDesc::upper_angle` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 upper_angle;
+```
+
+The highest angle of a hinge.
+
+### `enable_motor` {#physics-jointdesc-enable-motor}
+
+`variable physics::JointDesc::enable_motor` — defined in `engine/physics/joint.h`
+
+```cpp
+bool enable_motor;
+```
+
+Whether a hinge has a motor.
+
+### `motor_speed` {#physics-jointdesc-motor-speed}
+
+`variable physics::JointDesc::motor_speed` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 motor_speed;
+```
+
+The angular velocity the motor aims for, in radians per second.
+
+### `max_motor_torque` {#physics-jointdesc-max-motor-torque}
+
+`variable physics::JointDesc::max_motor_torque` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 max_motor_torque;
+```
+
+The most torque the motor may apply, in newton metres.
+
 ### `Validate()` {#physics-jointdesc-validate-const}
 
 `method physics::JointDesc::Validate` — defined in `engine/physics/joint.h`
@@ -2449,6 +2510,46 @@ f32 upper_impulse;
 
 The upper limit's impulse.
 
+### `motor_impulse` {#physics-jointrecord-motor-impulse}
+
+`variable physics::JointRecord::motor_impulse` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 motor_impulse;
+```
+
+The motor's impulse (hinge).
+
+### `spring_impulse` {#physics-jointrecord-spring-impulse}
+
+`variable physics::JointRecord::spring_impulse` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 spring_impulse;
+```
+
+The impulse of the angle spring (hinge).
+
+### `angle` {#physics-jointrecord-angle}
+
+`variable physics::JointRecord::angle` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 angle;
+```
+
+The hinge angle in radians, tracked across full turns: zero when the joint was made at rest.
+
+### `angle_raw` {#physics-jointrecord-angle-raw}
+
+`variable physics::JointRecord::angle_raw` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 angle_raw;
+```
+
+The last angle from the arc tangent alone, in (-pi, pi], from which the turns are counted.
+
 ### `reaction_force` {#physics-jointrecord-reaction-force}
 
 `variable physics::JointRecord::reaction_force` — defined in `engine/physics/joint.h`
@@ -2478,6 +2579,40 @@ bool broken;
 ```
 
 Set when a threshold was passed; the step removes the joint.
+
+## `HingeRawAngle(const JointDesc&,const Quaternion&,const Quaternion&)` {#physics-hingerawangle-const-jointdesc-amp-const-quaternion-amp-const-quaternion-amp}
+
+`function physics::HingeRawAngle` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 HingeRawAngle(const JointDesc& desc, const Quaternion& orientation_a, const Quaternion& orientation_b);
+```
+
+The angle of a hinge from the two orientations alone, in (-pi, pi]: the twist of the joint frame of B relative to that of A about the hinge axis. It uses `Atan2`, so the last bits depend on the C library (the one non-exact operation of the step; `docs/guide/physics.md`).
+
+| Field | Value |
+|---|---|
+| Parameter `desc` | the hinge. |
+| Parameter `orientation_a` | the orientation of body A. |
+| Parameter `orientation_b` | the orientation of body B (identity for the world). |
+| Returns | the angle. |
+| Fails | never. |
+
+## `WrapAngle(f32)` {#physics-wrapangle-f32}
+
+`function physics::WrapAngle` — defined in `engine/physics/joint.h`
+
+```cpp
+f32 WrapAngle(f32 angle);
+```
+
+Wraps an angle difference into [-pi, pi).
+
+| Field | Value |
+|---|---|
+| Parameter `angle` | any finite angle. |
+| Returns | the equivalent angle in the range. |
+| Fails | never. |
 
 ## `MassProperties` {#physics-massproperties}
 
@@ -5336,6 +5471,43 @@ Describes a fixed joint at a world point that keeps the bodies' orientations rel
 | Parameter `world_point` | where the joint is. |
 | Returns | the description. |
 | Fails | stale bodies leave the anchors at zero. |
+
+### `MakeHingeJoint(BodyId,BodyId,const Vec3&,const Vec3&)` {#physics-physicsworld-makehingejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const}
+
+`method physics::PhysicsWorld::MakeHingeJoint` — defined in `engine/physics/world.h`
+
+```cpp
+JointDesc MakeHingeJoint(BodyId a, BodyId b, const Vec3& world_point, const Vec3& world_axis) const;
+```
+
+Describes a hinge at a world point about a world axis, at rest now (its angle is zero), with no limit, motor or spring: set them in the description.
+
+| Field | Value |
+|---|---|
+| Parameter `a` | the first body. |
+| Parameter `b` | the second body, or null for the world. |
+| Parameter `world_point` | where the hinge is. |
+| Parameter `world_axis` | the axis the bodies turn about, non-zero (normalized here). |
+| Returns | the description. |
+| Fails | stale bodies leave the anchors at zero; a zero axis becomes Y. |
+
+### `JointAngle(JointId,f32*)` {#physics-physicsworld-jointangle-jointid-f32-star-const}
+
+`method physics::PhysicsWorld::JointAngle` — defined in `engine/physics/world.h`
+
+```cpp
+BodyStatus JointAngle(JointId id, f32* angle) const;
+```
+
+The angle of a hinge, in radians, counted across full turns.
+
+| Field | Value |
+|---|---|
+| Parameter `id` | the joint. |
+| Parameter `angle` | receives the angle. |
+| Returns | `StaleId` if there is no such joint, `WrongType` if it is not a hinge. |
+| Fails | as the return says. |
+| Ownership | `angle` is the caller's; nothing is kept. |
 
 ### `SetTransform(BodyId,const Vec3&,const Quaternion&)` {#physics-physicsworld-settransform-bodyid-const-vec3-amp-const-quaternion-amp}
 

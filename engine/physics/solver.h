@@ -146,7 +146,6 @@ private:
     struct Row;
     struct Constraint;
     struct BodyState;
-    struct JointWork;
 
     Vector<CacheEntry> cache_;
     Vector<CacheEntry> next_cache_;

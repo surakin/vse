@@ -68,15 +68,18 @@ struct ContactSolver::Constraint
     Row rows[4];
 };
 
-struct ContactSolver::JointWork
+namespace
+{
+
+// A joint of the step: its record and bodies, and where the hinge angle stood when the step began.
+struct JointWork
 {
     JointRecord* record = nullptr;
     Body* a = nullptr;
     Body* b = nullptr;
+    f32 angle_start = 0.0f;
+    f32 raw_start = 0.0f;
 };
-
-namespace
-{
 
 f32 InverseMassOf(const Body& b)
 {
@@ -255,9 +258,17 @@ Vec3 FrameError(const JointRecord& joint, const Body& a, const Body& b)
     return Vec3(q.x, q.y, q.z) * 2.0f;
 }
 
-// The joint's impulses as velocity changes, before the substep's solve.
-void WarmStartJoint(JointRecord* joint, Body* a, Body* b)
+Vec3 HingeAxis(const JointRecord& joint, const Body& a)
 {
+    return (a.orientation * joint.desc.frame_a).RotateVector(Vec3(0.0f, 0.0f, 1.0f));
+}
+
+// The joint's impulses as velocity changes, before the substep's solve.
+void WarmStartJoint(JointWork* work)
+{
+    JointRecord* joint = work->record;
+    Body* a = work->a;
+    Body* b = work->b;
     const JointAnchors anchors = ComputeAnchors(*joint, *a, *b);
     switch (joint->desc.type)
     {
@@ -266,6 +277,16 @@ void WarmStartJoint(JointRecord* joint, Body* a, Body* b)
         ApplyAngular(a, b, joint->angular_impulse);
         Apply(a, b, anchors.ra, anchors.rb, joint->linear_impulse);
         break;
+    case JointType::Hinge:
+    {
+        const Vec3 axis = HingeAxis(*joint, *a);
+        ApplyAngular(
+            a, b,
+            axis * (joint->spring_impulse + joint->motor_impulse + joint->lower_impulse - joint->upper_impulse) +
+                joint->angular_impulse);
+        Apply(a, b, anchors.ra, anchors.rb, joint->linear_impulse);
+        break;
+    }
     case JointType::Distance:
     {
         f32 length;
@@ -284,8 +305,18 @@ struct JointSoftness
 };
 
 // One pass of a joint's rows: `use_bias` adds the position feedback (soft), the relax pass does not.
-void SolveJoint(JointRecord* joint, Body* a, Body* b, bool use_bias, const JointSoftness& soft, f32 inv_h)
+void SolveHinge(JointWork* work, bool use_bias, const JointSoftness& soft, f32 inv_h);
+
+void SolveJoint(JointWork* work, bool use_bias, const JointSoftness& soft, f32 inv_h)
 {
+    JointRecord* joint = work->record;
+    Body* a = work->a;
+    Body* b = work->b;
+    if (joint->desc.type == JointType::Hinge)
+    {
+        SolveHinge(work, use_bias, soft, inv_h);
+        return;
+    }
     const JointAnchors anchors = ComputeAnchors(*joint, *a, *b);
     const Vec3& ra = anchors.ra;
     const Vec3& rb = anchors.rb;
@@ -391,6 +422,114 @@ void SolveJoint(JointRecord* joint, Body* a, Body* b, bool use_bias, const Joint
         joint->upper_impulse = next;
         Apply(a, b, ra, rb, u * -applied);
     }
+}
+
+// The angle of a hinge now, counted across turns from where the step began.
+f32 CurrentHingeAngle(const JointWork& work)
+{
+    const f32 raw = HingeRawAngle(work.record->desc, work.a->orientation, work.b->orientation);
+    return work.angle_start + WrapAngle(raw - work.raw_start);
+}
+
+// The hinge's rows: spring, motor, limits about the axis, then the two alignment rows and the point.
+void SolveHinge(JointWork* work, bool use_bias, const JointSoftness& soft, f32 inv_h)
+{
+    JointRecord* joint = work->record;
+    Body* a = work->a;
+    Body* b = work->b;
+    const JointDesc& desc = joint->desc;
+    const Vec3 axis = HingeAxis(*joint, *a);
+    const f32 h = 1.0f / inv_h;
+    f32 mass_scale = 1.0f;
+    f32 impulse_scale = 0.0f;
+    if (use_bias)
+    {
+        mass_scale = soft.mass_scale;
+        impulse_scale = soft.impulse_scale;
+    }
+    const f32 axis_inverse = axis.Dot(WorldInertia(*a, axis) + WorldInertia(*b, axis));
+    const f32 axial_mass = axis_inverse > 1e-12f ? 1.0f / axis_inverse : 0.0f;
+    const auto axial_speed = [&]() { return (b->angular_velocity - a->angular_velocity).Dot(axis); };
+    const f32 angle = CurrentHingeAngle(*work);
+    if (desc.hertz > 0.0f)
+    {
+        f32 bias_rate, spring_mass_scale, spring_impulse_scale;
+        MakeSoft(desc.hertz, desc.damping_ratio, h, &bias_rate, &spring_mass_scale, &spring_impulse_scale);
+        const f32 impulse = -spring_mass_scale * axial_mass * (axial_speed() + bias_rate * angle) -
+                            spring_impulse_scale * joint->spring_impulse;
+        joint->spring_impulse += impulse;
+        ApplyAngular(a, b, axis * impulse);
+    }
+    if (desc.enable_motor)
+    {
+        const f32 impulse = -axial_mass * (axial_speed() - desc.motor_speed);
+        const f32 limit = desc.max_motor_torque * h;
+        const f32 next = Clamp(joint->motor_impulse + impulse, -limit, limit);
+        const f32 applied = next - joint->motor_impulse;
+        joint->motor_impulse = next;
+        ApplyAngular(a, b, axis * applied);
+    }
+    if (desc.enable_limit)
+    {
+        const auto limit_row = [&](f32 c, f32 sign, f32* accumulated)
+        {
+            f32 bias = 0.0f;
+            f32 ms = 1.0f;
+            f32 is = 0.0f;
+            if (c > 0.0f)
+            {
+                bias = c * inv_h;
+            }
+            else if (use_bias)
+            {
+                bias = soft.bias_rate * c;
+                ms = soft.mass_scale;
+                is = soft.impulse_scale;
+            }
+            const f32 impulse = -ms * axial_mass * (sign * axial_speed() + bias) - is * *accumulated;
+            const f32 next = Max(*accumulated + impulse, 0.0f);
+            const f32 applied = next - *accumulated;
+            *accumulated = next;
+            ApplyAngular(a, b, axis * (sign * applied));
+        };
+        limit_row(angle - desc.lower_angle, 1.0f, &joint->lower_impulse);
+        limit_row(desc.upper_angle - angle, -1.0f, &joint->upper_impulse);
+    }
+    // The two rows that keep the axes together: about the two directions across the hinge axis.
+    {
+        const Vec3 axis_b = (b->orientation * desc.frame_b).RotateVector(Vec3(0.0f, 0.0f, 1.0f));
+        const Vec3 error = axis.Cross(axis_b);
+        const Vec3 p1 = Perpendicular(axis);
+        const Vec3 p2 = axis.Cross(p1);
+        const Vec3 pa = WorldInertia(*a, p1) + WorldInertia(*b, p1);
+        const Vec3 pb = WorldInertia(*a, p2) + WorldInertia(*b, p2);
+        const f32 k11 = p1.Dot(pa);
+        const f32 k12 = p2.Dot(pa);
+        const f32 k22 = p2.Dot(pb);
+        const f32 det = k11 * k22 - k12 * k12;
+        if (Abs(det) > 1e-24f)
+        {
+            const Vec3 w = b->angular_velocity - a->angular_velocity;
+            const f32 bias1 = use_bias ? soft.bias_rate * error.Dot(p1) : 0.0f;
+            const f32 bias2 = use_bias ? soft.bias_rate * error.Dot(p2) : 0.0f;
+            const f32 c1 = w.Dot(p1) + bias1;
+            const f32 c2 = w.Dot(p2) + bias2;
+            const f32 inv = 1.0f / det;
+            const f32 l1 = -mass_scale * (k22 * c1 - k12 * c2) * inv - impulse_scale * joint->angular_impulse.Dot(p1);
+            const f32 l2 = -mass_scale * (k11 * c2 - k12 * c1) * inv - impulse_scale * joint->angular_impulse.Dot(p2);
+            const Vec3 impulse = p1 * l1 + p2 * l2;
+            joint->angular_impulse = joint->angular_impulse + impulse;
+            ApplyAngular(a, b, impulse);
+        }
+    }
+    // The point.
+    const JointAnchors anchors = ComputeAnchors(*joint, *a, *b);
+    const Vec3 cdot = VelocityAt(*b, anchors.rb) - VelocityAt(*a, anchors.ra);
+    const Vec3 bias = use_bias ? anchors.separation * soft.bias_rate : Vec3(0.0f, 0.0f, 0.0f);
+    const Mat3 k = PointMassMatrix(*a, *b, anchors.ra, anchors.rb);
+    const Vec3 impulse = (k * (cdot + bias)) * -mass_scale - joint->linear_impulse * impulse_scale;
+    joint->linear_impulse = joint->linear_impulse + impulse;
+    Apply(a, b, anchors.ra, anchors.rb, impulse);
 }
 
 }  // namespace
@@ -536,16 +675,26 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
         }
         JointWork work;
         work.record = record;
-        work.a = world->Find(record->desc.body_a);
+        work.a = record->desc.body_a.IsValid() ? world->Find(record->desc.body_a) : &world_body;
         work.b = record->desc.body_b.IsValid() ? world->Find(record->desc.body_b) : &world_body;
         if (work.a == nullptr || work.b == nullptr)
         {
             continue;
         }
-        state_for(work.a);
+        if (work.a != &world_body)
+        {
+            state_for(work.a);
+        }
         if (work.b != &world_body)
         {
             state_for(work.b);
+        }
+        if (record->desc.type == JointType::Hinge)
+        {
+            // The angle at the start of the step, counted across turns from where the last step ended.
+            const f32 raw = HingeRawAngle(record->desc, work.a->orientation, work.b->orientation);
+            work.angle_start = record->angle + WrapAngle(raw - record->angle_raw);
+            work.raw_start = raw;
         }
         joints.Push(work);
     }
@@ -655,14 +804,14 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
     {
         for (usize ji = 0; ji < joints.Size(); ++ji)
         {
-            SolveJoint(joints[ji].record, joints[ji].a, joints[ji].b, use_bias, joint_soft, inv_h);
+            SolveJoint(&joints[ji], use_bias, joint_soft, inv_h);
         }
     };
     const auto warm_start = [&]()
     {
         for (usize ji = 0; ji < joints.Size(); ++ji)
         {
-            WarmStartJoint(joints[ji].record, joints[ji].a, joints[ji].b);
+            WarmStartJoint(&joints[ji]);
         }
         for (usize ci = 0; ci < constraints.Size(); ++ci)
         {
@@ -748,6 +897,16 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
         }
         joint->reaction_force = force;
         joint->reaction_torque = joint->angular_impulse * inv_h;
+        if (joint->desc.type == JointType::Hinge)
+        {
+            const Vec3 axis = HingeAxis(*joint, *joints[ji].a);
+            joint->reaction_torque = joint->reaction_torque + axis * ((joint->spring_impulse + joint->motor_impulse +
+                                                                       joint->lower_impulse - joint->upper_impulse) *
+                                                                      inv_h);
+            const f32 raw = HingeRawAngle(joint->desc, joints[ji].a->orientation, joints[ji].b->orientation);
+            joint->angle = joints[ji].angle_start + WrapAngle(raw - joints[ji].raw_start);
+            joint->angle_raw = raw;
+        }
         if ((joint->desc.break_force > 0.0f && force.Length() > joint->desc.break_force) ||
             (joint->desc.break_torque > 0.0f && joint->reaction_torque.Length() > joint->desc.break_torque))
         {

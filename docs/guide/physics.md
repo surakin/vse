@@ -231,6 +231,15 @@ bodies' poses at creation, so the joint starts at rest; pass a null `BodyId` for
 - **Distance:** the anchors keep `length` apart (one rigid row), or pull toward it as a spring (`hertz`, `damping_ratio`), or
   stay inside `[min_length, max_length]` like a rope (one-sided limit rows).
 - **Fixed:** the point rows of a ball joint plus three angle rows that keep the frames' relative orientation.
+- **Hinge:** the point rows plus two rows that keep the Z axes of the two joint frames together (`MakeHingeJoint` builds
+  the frames from a world point and axis, so the angle is zero where the joint was made). The angle is the twist of body B's
+  frame relative to body A's about the axis; limits (`enable_limit`, `lower_angle`, `upper_angle`) are one-sided rows with
+  the same softness as the contacts, the motor (`enable_motor`, `motor_speed`, `max_motor_torque`) drives B relative to A
+  up to a torque cap, and `hertz` with `damping_ratio` makes an angle spring toward zero. The angle is counted across full
+  turns (`JointAngle`): it is unwrapped against the last step's arc tangent, so limits beyond plus or minus pi and ten
+  revolutions work. A hinge to the world takes the world as body A and the moving body as B, so a positive motor speed
+  turns the body the usual way. The arc tangent (`Atan2`, libm) is the one operation of the step that is not exact; the
+  hinge scene's hash is equal on clang, GCC, unity and not, Debug and Release.
 - **Solving.** Joints are solved in the same substeps as the contacts, before them, in slot order, as soft constraints
   (`physics.joint_hertz` 60, damping ratio 2 in `StepConfig`) with a relax pass; their impulses warm start the next
   substep and step. A body with a joint takes its substeps in the solver.

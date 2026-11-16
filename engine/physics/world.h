@@ -441,6 +441,26 @@ public:
     /// - Fails: stale bodies leave the anchors at zero.
     JointDesc MakeFixedJoint(BodyId a, BodyId b, const Vec3& world_point) const;
 
+    /// Describes a hinge at a world point about a world axis, at rest now (its angle is zero), with no limit, motor or
+    /// spring: set them in the description.
+    ///
+    /// - Param a: the first body.
+    /// - Param b: the second body, or null for the world.
+    /// - Param world_point: where the hinge is.
+    /// - Param world_axis: the axis the bodies turn about, non-zero (normalized here).
+    /// - Returns: the description.
+    /// - Fails: stale bodies leave the anchors at zero; a zero axis becomes Y.
+    JointDesc MakeHingeJoint(BodyId a, BodyId b, const Vec3& world_point, const Vec3& world_axis) const;
+
+    /// The angle of a hinge, in radians, counted across full turns.
+    ///
+    /// - Param id: the joint.
+    /// - Param angle: receives the angle.
+    /// - Ownership: `angle` is the caller's; nothing is kept.
+    /// - Returns: `StaleId` if there is no such joint, `WrongType` if it is not a hinge.
+    /// - Fails: as the return says.
+    BodyStatus JointAngle(JointId id, f32* angle) const;
+
     /// Moves a body to a place without a step between.
     ///
     /// The orientation is set, the velocity is kept, and the teleport count grows so contact caches of the body are
