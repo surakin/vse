@@ -24,6 +24,9 @@ value ENGINE_COMPONENT_TRANSFORM 1
 value ENGINE_COMPONENT_WORLD_TRANSFORM 2
 value ENGINE_COMPONENT_NAME 3
 value ENGINE_COMPONENT_MESH_REFERENCE 4
+value ENGINE_COMPONENT_RIGID_BODY 11
+value ENGINE_COMPONENT_COLLIDER 12
+value ENGINE_COMPONENT_MASK_ALL 4095
 value ENGINE_NAME_MAX_BYTES 63
 struct engine_string size=16
 field engine_string.data offset=0 size=8
@@ -58,18 +61,50 @@ field engine_frame_info.struct_size offset=0 size=4
 field engine_frame_info.flags offset=4 size=4
 field engine_frame_info.delta_seconds offset=8 size=8
 field engine_frame_info.budget_us offset=16 size=8
-struct engine_frame_stats size=64
+struct engine_frame_stats size=80
 field engine_frame_stats.struct_size offset=0 size=4
 field engine_frame_stats.worlds_run offset=4 size=4
 field engine_frame_stats.worlds_skipped offset=8 size=4
 field engine_frame_stats.entities offset=12 size=4
 field engine_frame_stats.frame_index offset=16 size=8
 field engine_frame_stats.elapsed_us offset=24 size=8
+field engine_frame_stats.physics_us offset=64 size=8
+field engine_frame_stats.physics_bodies offset=72 size=4
+field engine_frame_stats.physics_steps offset=76 size=4
 struct engine_transform size=44
 field engine_transform.struct_size offset=0 size=4
 field engine_transform.position offset=4 size=12
 field engine_transform.rotation offset=16 size=16
 field engine_transform.scale offset=32 size=12
+struct engine_rigid_body size=28
+field engine_rigid_body.struct_size offset=0 size=4
+field engine_rigid_body.type offset=4 size=4
+field engine_rigid_body.mass offset=8 size=4
+field engine_rigid_body.linear_damping offset=12 size=4
+field engine_rigid_body.angular_damping offset=16 size=4
+field engine_rigid_body.gravity_scale offset=20 size=4
+field engine_rigid_body.flags offset=24 size=4
+struct engine_collider size=84
+field engine_collider.struct_size offset=0 size=4
+field engine_collider.shape offset=4 size=4
+field engine_collider.radius offset=8 size=4
+field engine_collider.half_height offset=12 size=4
+field engine_collider.half_extents offset=16 size=12
+field engine_collider.offset offset=28 size=12
+field engine_collider.rotation offset=40 size=16
+field engine_collider.friction offset=56 size=4
+field engine_collider.restitution offset=60 size=4
+field engine_collider.density offset=64 size=4
+field engine_collider.layer offset=68 size=4
+field engine_collider.group offset=72 size=4
+field engine_collider.mask offset=76 size=4
+field engine_collider.is_trigger offset=80 size=4
+struct engine_ray_hit size=48
+field engine_ray_hit.struct_size offset=0 size=4
+field engine_ray_hit.entity offset=8 size=8
+field engine_ray_hit.point offset=16 size=12
+field engine_ray_hit.normal offset=28 size=12
+field engine_ray_hit.distance offset=40 size=4
 struct engine_world_transform size=68
 field engine_world_transform.struct_size offset=0 size=4
 field engine_world_transform.matrix offset=4 size=64
@@ -220,7 +255,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=680
+struct engine_api size=752
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -283,3 +318,12 @@ field engine_api.surface_state offset=448 size=8
 field engine_api.surface_read_pixels offset=456 size=8
 field engine_api.pixels_finish offset=464 size=8
 field engine_api.pixels_destroy offset=472 size=8
+field engine_api.physics_set_gravity offset=680 size=8
+field engine_api.body_apply_force offset=688 size=8
+field engine_api.body_apply_impulse offset=696 size=8
+field engine_api.body_set_velocity offset=704 size=8
+field engine_api.body_get_velocity offset=712 size=8
+field engine_api.body_teleport offset=720 size=8
+field engine_api.physics_raycast offset=728 size=8
+field engine_api.physics_overlap_sphere offset=736 size=8
+field engine_api.physics_overlap_box offset=744 size=8

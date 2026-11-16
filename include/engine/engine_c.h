@@ -510,6 +510,11 @@ extern "C"
                                        device uploaded them */
         uint64_t slots_reverted;    /* material slots that went back to their own value because their host texture was
                                        destroyed or had no pixels */
+        /* Phase 25 Day 396: physics */
+        uint64_t physics_us;     /* time spent making the physics bodies follow the entities (the step itself is part of
+                                    the worlds' systems) */
+        uint32_t physics_bodies; /* bodies alive in the worlds that ran */
+        uint32_t physics_steps;  /* fixed steps the worlds that ran made in this frame */
     } engine_frame_stats;
 
     /* The components a host can set on an entity. The numbers are part of the ABI. ENGINE_COMPONENT_BIT(kind) is the
@@ -530,11 +535,13 @@ extern "C"
                                                    (Day 363) */
         ENGINE_COMPONENT_ANIMATION_PLAYER = 9,  /* engine_animation_state: what animation_play started; read only (Day
                                                    363) */
-        ENGINE_COMPONENT_LABEL = 10             /* engine_label: text drawn at the entity's place (Phase 24 Day 367) */
+        ENGINE_COMPONENT_LABEL = 10,            /* engine_label: text drawn at the entity's place (Phase 24 Day 367) */
+        ENGINE_COMPONENT_RIGID_BODY = 11,       /* engine_rigid_body: a physics body (Phase 25 Day 396) */
+        ENGINE_COMPONENT_COLLIDER = 12          /* engine_collider: the shape of a physics body (Phase 25 Day 396) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0x3FFu
+#define ENGINE_COMPONENT_MASK_ALL 0xFFFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -747,6 +754,66 @@ extern "C"
         float intensity;
         float radius;
     } engine_light;
+
+    /* The kinds of engine_rigid_body.type. */
+#define ENGINE_BODY_STATIC 0u    /* never moves */
+#define ENGINE_BODY_KINEMATIC 1u /* moves as its velocity says, pushes dynamic bodies, is not pushed */
+#define ENGINE_BODY_DYNAMIC 2u   /* moved by forces and contacts */
+
+    /* A physics body (Phase 25 Day 396). An entity with ENGINE_COMPONENT_TRANSFORM, this and an
+     * ENGINE_COMPONENT_COLLIDER is simulated by the frame: the body starts at the entity's transform and the frame
+     * writes its pose back to the transform (not for an entity with a parent). `mass` 0 takes the mass from the
+     * collider's volume and density, otherwise it is in kilograms (1e-9 to 1e15). The dampings are >= 0 (per second),
+     * `gravity_scale` multiplies gravity (a magnitude of at most 1e6). `flags` is 0 (reserved). */
+    typedef struct engine_rigid_body
+    {
+        uint32_t struct_size;
+        uint32_t type; /* ENGINE_BODY_* */
+        float mass;
+        float linear_damping;
+        float angular_damping;
+        float gravity_scale;
+        uint32_t flags;
+    } engine_rigid_body;
+
+    /* The kinds of engine_collider.shape. */
+#define ENGINE_SHAPE_SPHERE 0u  /* `radius` */
+#define ENGINE_SHAPE_BOX 1u     /* `half_extents` */
+#define ENGINE_SHAPE_CAPSULE 2u /* `radius` and `half_height` (of the straight part, along Y) */
+
+    /* The shape of a physics body (Phase 25 Day 396), in the entity's space: sizes are in metres (above 0, at most
+     * 1e5), `offset` and `rotation` (a unit quaternion x, y, z, w) place it on the body. `friction` >= 0, `restitution`
+     * in 0..1, `density` in kilograms per cubic metre (1e-3 to 1e9). `layer` is 0..31, `group` and `mask` select which
+     * colliders it meets (a pair collides when each one's group is in the other's mask). A trigger (`is_trigger` 1)
+     * reports overlaps and does not collide. Convex hulls, meshes and compounds from resources need the resource
+     * shapes of Day 397 and are refused for now (UNSUPPORTED). */
+    typedef struct engine_collider
+    {
+        uint32_t struct_size;
+        uint32_t shape; /* ENGINE_SHAPE_* */
+        float radius;
+        float half_height;
+        float half_extents[3];
+        float offset[3];
+        float rotation[4];
+        float friction;
+        float restitution;
+        float density;
+        uint32_t layer;
+        uint32_t group;
+        uint32_t mask;
+        uint32_t is_trigger;
+    } engine_collider;
+
+    /* What a ray cast found. */
+    typedef struct engine_ray_hit
+    {
+        uint32_t struct_size;
+        uint64_t entity; /* the key of the entity whose collider was hit */
+        float point[3];
+        float normal[3]; /* facing against the ray */
+        float distance;  /* along the ray */
+    } engine_ray_hit;
 
     /* What surrounds a world (Phase 24 Day 361): one per world, shared by every surface that shows it. Unset, a world
      * has an ambient colour of white at intensity 0.2, a black sky, exposure 1, and a default sun when it has no light
@@ -1437,6 +1504,48 @@ extern "C"
          * The engine ships no font. Surfaces use the font at their next frame; a label is drawn only after a font is
          * set. Fails with: INVALID_ARGUMENT (NULL, zero size), TOO_LARGE (above 32 MiB), STALE_HANDLE. */
         engine_status (*label_font_set)(engine_handle engine, const void* data, size_t size);
+
+        /* ---- Phase 25 Day 396: physics ---- */
+
+        /* Sets the gravity of a world's physics (metres per second squared; the default is (0, -9.81, 0)). Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (NULL, not finite), TYPE_MISMATCH. */
+        engine_status (*physics_set_gravity)(engine_handle world, const float* gravity);
+
+        /* Applies a force (newtons) to the body of an entity for the next step, at `point` in world space (NULL: its
+         * centre of mass). The entity needs ENGINE_COMPONENT_RIGID_BODY and ENGINE_COMPONENT_COLLIDER, and a frame must
+         * have made its body. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL force, not finite), TYPE_MISMATCH,
+         * NOT_FOUND (no entity, or no body yet), UNSUPPORTED (a static body). */
+        engine_status (*body_apply_force)(engine_handle world, uint64_t key, const float* force, const float* point);
+
+        /* As body_apply_force for an impulse (newton seconds): the velocity changes at once. */
+        engine_status (*body_apply_impulse)(engine_handle world, uint64_t key, const float* impulse,
+                                            const float* point);
+
+        /* Sets the velocity of a body (metres and radians per second; either may be NULL to leave it). */
+        engine_status (*body_set_velocity)(engine_handle world, uint64_t key, const float* linear,
+                                           const float* angular);
+
+        /* Reads the velocity of a body (either pointer may be NULL). */
+        engine_status (*body_get_velocity)(engine_handle world, uint64_t key, float* linear, float* angular);
+
+        /* Moves a body and its entity's transform to a place at once (position x, y, z; rotation a unit quaternion x,
+         * y, z, w; either may be NULL to leave it). */
+        engine_status (*body_teleport)(engine_handle world, uint64_t key, const float* position, const float* rotation);
+
+        /* Casts a ray against the colliders of a world: `direction` need not be unit, `max_distance` > 0. `layer_mask`
+         * selects the layers (0xFFFFFFFF: all); triggers are not hit. `*hit` (struct_size set by the host) receives
+         * the closest hit, and `*found` is 1 when there was one, else 0. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * STRUCT_SIZE, TYPE_MISMATCH. */
+        engine_status (*physics_raycast)(engine_handle world, const float* origin, const float* direction,
+                                         float max_distance, uint32_t layer_mask, engine_ray_hit* hit, int* found);
+
+        /* Finds the entities whose colliders overlap a sphere (`center`, `radius` > 0) or a box (`center`,
+         * `half_extents` > 0, axis aligned); keys to `keys` up to `capacity`, the number to `*total`, as for query.
+         * Triggers are not counted. */
+        engine_status (*physics_overlap_sphere)(engine_handle world, const float* center, float radius,
+                                                uint32_t layer_mask, uint64_t* keys, size_t capacity, size_t* total);
+        engine_status (*physics_overlap_box)(engine_handle world, const float* center, const float* half_extents,
+                                             uint32_t layer_mask, uint64_t* keys, size_t capacity, size_t* total);
     } engine_api;
 
     /* Returns the function table.

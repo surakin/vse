@@ -84,6 +84,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 
 ## Deferred items
 
+- Phase 25 Day 396: C API colliders are spheres, boxes and capsules; hulls, meshes and compounds from resources are refused (UNSUPPORTED) until Day 397; `physics.threads` has no effect through the C API (no scheduler is attached to a world, the step runs inline with the same results); capsule overlap is not offered (sphere and box only); the Windows and macOS runs of host_physics wait for Days 398-399.
 - Phase 25 Day 395: the golden hashes (tests/physics/golden_test.cpp) wait for the Windows PC and Mac runs (Days 398-399); two X11Window tests (pointer grab, Create) failed once in the plain scoped run under load and passed on rerun.
 - Phase 25 Day 394: the snapshot does not hold the event lists, statistics or scheduler; a restored world's `Events()` is empty until the next step. The hull/mesh/compound libraries must be loaded into the target world first. Windows and macOS runs of the snapshot hash wait for Days 398-399.
 - Phase 25 Day 393: contact events are always built each step (cost not measured; no off switch); destroying a body forgets its pairs without an end or exit event; the debug draw draws a hull, mesh or compound as its local box and makes lines only (no renderer pass). Seen in the asan scoped run, and passing alone right after: `engine_c_scene_asan` (phase 24, a Vulkan frame returned 12); in the plain run: `X11: a window opened after another program took the clipboard knows its formats` (phase 15).

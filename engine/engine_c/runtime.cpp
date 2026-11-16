@@ -23,6 +23,10 @@
 #include "math/quaternion.h"
 #include "mem/heap_allocator.h"
 #include "os/os.h"
+#include "physics/components.h"
+#include "physics/query.h"
+#include "physics/sync.h"
+#include "physics/system.h"
 #include "storage/builtin_components.h"
 
 namespace engine_placeholder::engine_c
@@ -61,13 +65,15 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_SKELETON_INSTANCE: return "skeleton instance";
     case ENGINE_COMPONENT_ANIMATION_PLAYER: return "animation player";
     case ENGINE_COMPONENT_LABEL: return "label";
+    case ENGINE_COMPONENT_RIGID_BODY: return "rigid body";
+    case ENGINE_COMPONENT_COLLIDER: return "collider";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_LABEL;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_COLLIDER;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -84,6 +90,8 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_SKELETON_INSTANCE: return ecs::ComponentOf<animation::SkeletonInstance>();
     case ENGINE_COMPONENT_ANIMATION_PLAYER: return ecs::ComponentOf<animation::AnimationPlayer>();
     case ENGINE_COMPONENT_LABEL: return ecs::ComponentOf<LabelComponent>();
+    case ENGINE_COMPONENT_RIGID_BODY: return ecs::ComponentOf<physics::RigidBody>();
+    case ENGINE_COMPONENT_COLLIDER: return ecs::ComponentOf<physics::Collider>();
     }
     return ecs::kInvalidComponent;
 }
@@ -145,6 +153,8 @@ u32 LastGeneration()
 WorldObject::WorldObject()
 {
     world.SetResource(ecs::TransformReport{});
+    world.SetResource(physics::PhysicsWorld());
+    schedule.Add(physics::MakePhysicsStepSystem());  // writes the transforms the transform system then reads
     schedule.Add(ecs::MakeTransformSystem("transform"));
     schedule.Build();
 }
@@ -457,7 +467,19 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
         }
         ResourceHost* resources = runtime->ResourcesIfCreated();
         AnimateWorld(*object, resources, static_cast<f32>(info->delta_seconds));
+        // The physics bodies follow the entities, then the schedule steps them (before the transform system, which
+        // reads what the step wrote back); a world that never had a body component pays nothing (Day 396).
+        physics::PhysicsWorld& physics = object->world.Resource<physics::PhysicsWorld>();
+        const u64 steps_before = physics.GetStepStats().steps;
+        if (object->physics_used)
+        {
+            const u64 physics_start = os::MonotonicTimeNanos();
+            physics::SyncBodies(object->world, physics);
+            result.physics_us += (os::MonotonicTimeNanos() - physics_start) / 1000;
+        }
         object->schedule.Run(object->world, static_cast<f32>(info->delta_seconds));
+        result.physics_steps += static_cast<u32>(physics.GetStepStats().steps - steps_before);
+        result.physics_bodies += physics.Stats().bodies;
         AttachWorld(*object, resources);
         ++result.worlds_run;
         result.entities += object->world.Stats().entities;
@@ -522,6 +544,7 @@ engine_status WorldCreateFn(engine_handle engine, engine_handle* out)
         runtime->worlds.Push(Runtime::WorldSlot());
     }
     runtime->worlds[slot].object = MakeUnique<WorldObject>();
+    runtime->worlds[slot].object->world.Resource<physics::PhysicsWorld>().SetStepConfig(runtime->physics_config);
     runtime->worlds[slot].generation = NextGeneration();
     *out = MakeObjectHandle(kKindWorld, runtime->worlds[slot].generation, slot);
     return ENGINE_OK;
@@ -685,6 +708,14 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         checked = CheckInStruct(value, sizeof(engine_label), "engine_label");
     }
+    else if (kind == ENGINE_COMPONENT_RIGID_BODY)
+    {
+        checked = CheckInStruct(value, sizeof(engine_rigid_body), "engine_rigid_body");
+    }
+    else if (kind == ENGINE_COMPONENT_COLLIDER)
+    {
+        checked = CheckInStruct(value, sizeof(engine_collider), "engine_collider");
+    }
     else
     {
         checked = CheckInStruct(value, kMeshReferenceFirstSize, "engine_mesh_reference");
@@ -697,6 +728,69 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
         world, true, key,
         [&](WorldObject& object, ecs::Entity entity)
         {
+            if (kind == ENGINE_COMPONENT_RIGID_BODY)
+            {
+                const engine_rigid_body* in = static_cast<const engine_rigid_body*>(value);
+                if (in->type > ENGINE_BODY_DYNAMIC)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the body type is not known");
+                }
+                physics::RigidBody body;
+                body.type = static_cast<physics::BodyType>(in->type);
+                body.flags = in->flags;
+                body.mass = in->mass;
+                body.linear_damping = in->linear_damping;
+                body.angular_damping = in->angular_damping;
+                body.gravity_scale = in->gravity_scale;
+                if (body.Validate() != physics::Validation::Ok)
+                {
+                    SetLastError("invalid_argument: the rigid body is refused (%s)",
+                                 physics::ValidationName(body.Validate()));
+                    return ENGINE_ERROR_INVALID_ARGUMENT;
+                }
+                object.physics_used = true;
+                return SetOrAdd(object.world, entity, body);
+            }
+            if (kind == ENGINE_COMPONENT_COLLIDER)
+            {
+                const engine_collider* in = static_cast<const engine_collider*>(value);
+                physics::Collider collider;
+                if (in->shape == ENGINE_SHAPE_SPHERE)
+                {
+                    collider.shape = physics::Shape::MakeSphere(in->radius);
+                }
+                else if (in->shape == ENGINE_SHAPE_BOX)
+                {
+                    collider.shape = physics::Shape::MakeBox(
+                        Vec3(in->half_extents[0], in->half_extents[1], in->half_extents[2]));
+                }
+                else if (in->shape == ENGINE_SHAPE_CAPSULE)
+                {
+                    collider.shape = physics::Shape::MakeCapsule(in->half_height, in->radius);
+                }
+                else
+                {
+                    return Fail(ENGINE_ERROR_UNSUPPORTED, "the collider shape is not one of the primitives");
+                }
+                collider.offset = Vec3(in->offset[0], in->offset[1], in->offset[2]);
+                collider.rotation = Quaternion(in->rotation[0], in->rotation[1], in->rotation[2], in->rotation[3]);
+                collider.material.friction = in->friction;
+                collider.material.restitution = in->restitution;
+                collider.material.density = in->density;
+                collider.layer = in->layer < 32 ? static_cast<u8>(in->layer) : static_cast<u8>(255);
+                collider.is_trigger = in->is_trigger != 0;
+                collider.group = in->group;
+                collider.mask = in->mask;
+                if (in->is_trigger > 1 || in->layer >= 32 || collider.Validate() != physics::Validation::Ok)
+                {
+                    SetLastError("invalid_argument: the collider is refused (%s)",
+                                 in->layer >= 32 || in->is_trigger > 1 ? "out_of_range"
+                                                                       : physics::ValidationName(collider.Validate()));
+                    return ENGINE_ERROR_INVALID_ARGUMENT;
+                }
+                object.physics_used = true;
+                return SetOrAdd(object.world, entity, collider);
+            }
             if (kind == ENGINE_COMPONENT_SKELETON_INSTANCE)
             {
                 const engine_skeleton_instance* in = static_cast<const engine_skeleton_instance*>(value);
@@ -1766,6 +1860,8 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_LIGHT             ? sizeof(engine_light)
                          : kind == ENGINE_COMPONENT_LABEL             ? sizeof(engine_label)
                          : kind == ENGINE_COMPONENT_VISIBILITY        ? sizeof(engine_visibility)
+                         : kind == ENGINE_COMPONENT_RIGID_BODY        ? sizeof(engine_rigid_body)
+                         : kind == ENGINE_COMPONENT_COLLIDER          ? sizeof(engine_collider)
                          : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? sizeof(engine_skeleton_instance)
                          : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? sizeof(engine_animation_state)
                                                                       : kMeshReferenceFirstSize;
@@ -1775,6 +1871,8 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                        : kind == ENGINE_COMPONENT_LIGHT             ? "engine_light"
                        : kind == ENGINE_COMPONENT_LABEL             ? "engine_label"
                        : kind == ENGINE_COMPONENT_VISIBILITY        ? "engine_visibility"
+                       : kind == ENGINE_COMPONENT_RIGID_BODY        ? "engine_rigid_body"
+                       : kind == ENGINE_COMPONENT_COLLIDER          ? "engine_collider"
                        : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? "engine_skeleton_instance"
                        : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? "engine_animation_state"
                                                                     : "engine_mesh_reference";
@@ -1853,6 +1951,58 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              result.clip = player->clip;
                              result.time = player->time;
                              result.speed = player->speed;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_RIGID_BODY)
+                         {
+                             const physics::RigidBody* body = view.Peek<physics::RigidBody>(entity);
+                             if (body == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no rigid body");
+                             }
+                             engine_rigid_body result = {};
+                             result.struct_size = sizeof(engine_rigid_body);
+                             result.type = static_cast<u32>(body->type);
+                             result.mass = body->mass;
+                             result.linear_damping = body->linear_damping;
+                             result.angular_damping = body->angular_damping;
+                             result.gravity_scale = body->gravity_scale;
+                             result.flags = body->flags;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_COLLIDER)
+                         {
+                             const physics::Collider* collider = view.Peek<physics::Collider>(entity);
+                             if (collider == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no collider");
+                             }
+                             engine_collider result = {};
+                             result.struct_size = sizeof(engine_collider);
+                             result.shape = collider->shape.kind == physics::ShapeKind::Sphere ? ENGINE_SHAPE_SPHERE
+                                            : collider->shape.kind == physics::ShapeKind::Box  ? ENGINE_SHAPE_BOX
+                                                                                               : ENGINE_SHAPE_CAPSULE;
+                             result.radius = collider->shape.radius;
+                             result.half_height = collider->shape.half_height;
+                             result.half_extents[0] = collider->shape.half_extents.x;
+                             result.half_extents[1] = collider->shape.half_extents.y;
+                             result.half_extents[2] = collider->shape.half_extents.z;
+                             result.offset[0] = collider->offset.x;
+                             result.offset[1] = collider->offset.y;
+                             result.offset[2] = collider->offset.z;
+                             result.rotation[0] = collider->rotation.x;
+                             result.rotation[1] = collider->rotation.y;
+                             result.rotation[2] = collider->rotation.z;
+                             result.rotation[3] = collider->rotation.w;
+                             result.friction = collider->material.friction;
+                             result.restitution = collider->material.restitution;
+                             result.density = collider->material.density;
+                             result.layer = collider->layer;
+                             result.group = collider->group;
+                             result.mask = collider->mask;
+                             result.is_trigger = collider->is_trigger ? 1u : 0u;
                              MemCopy(out, &result, sizeof(result));
                              return ENGINE_OK;
                          }
@@ -1969,6 +2119,8 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_CAMERA: status = w.Remove<CameraComponent>(entity); break;
                          case ENGINE_COMPONENT_LIGHT: status = w.Remove<LightComponent>(entity); break;
                          case ENGINE_COMPONENT_LABEL: status = w.Remove<LabelComponent>(entity); break;
+                         case ENGINE_COMPONENT_RIGID_BODY: status = w.Remove<physics::RigidBody>(entity); break;
+                         case ENGINE_COMPONENT_COLLIDER: status = w.Remove<physics::Collider>(entity); break;
                          case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
                          case ENGINE_COMPONENT_SKELETON_INSTANCE:
                              status = w.Remove<animation::SkeletonInstance>(entity);
@@ -2072,9 +2224,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[10];
+                         ecs::ComponentId wanted[12];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_LABEL; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_COLLIDER; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {
@@ -2114,6 +2266,350 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
                          }
                          *total = count;
                          return ENGINE_OK;
+                     });
+}
+
+// ---- physics (Phase 25 Day 396)
+
+namespace
+{
+
+bool FiniteArray(const float* values, usize count)
+{
+    for (usize i = 0; i < count; ++i)
+    {
+        if (!Finite(values[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+Vec3 ToVec3(const float* v)
+{
+    return Vec3(v[0], v[1], v[2]);
+}
+
+// The body of an entity, after making the bodies that are due (a body is made by the frame or by the first call that
+// needs it). Null, with the failure set, when the entity has none.
+physics::BodyId BodyOf(WorldObject& object, ecs::Entity entity, engine_status* status)
+{
+    physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+    if (object.physics_used)
+    {
+        physics::SyncBodies(object.world, physics);
+    }
+    const physics::BodyLink* link = object.world.Peek<physics::BodyLink>(entity);
+    if (link == nullptr || physics.Find(link->id) == nullptr)
+    {
+        *status = Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no physics body (it needs a rigid body, a collider and "
+                                               "a transform, and no parent)");
+        return physics::BodyId();
+    }
+    *status = ENGINE_OK;
+    return link->id;
+}
+
+engine_status FromBody(physics::BodyStatus status)
+{
+    switch (status)
+    {
+    case physics::BodyStatus::Ok: return ENGINE_OK;
+    case physics::BodyStatus::StaleId: return Fail(ENGINE_ERROR_NOT_FOUND, "the physics body is gone");
+    case physics::BodyStatus::WrongType: return Fail(ENGINE_ERROR_UNSUPPORTED, "a static body takes no force");
+    case physics::BodyStatus::OutOfMemory: return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "out of memory");
+    case physics::BodyStatus::Unsupported: return Fail(ENGINE_ERROR_UNSUPPORTED, "not supported by the physics");
+    case physics::BodyStatus::Invalid: break;
+    }
+    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the physics refused the numbers");
+}
+
+physics::PhysicsQueryFilter FilterOf(u32 layer_mask)
+{
+    physics::PhysicsQueryFilter filter;
+    filter.layer_mask = layer_mask;
+    return filter;
+}
+
+engine_status OverlapKeys(WorldObject& object, const physics::Shape& shape, const Vec3& center, u32 layer_mask,
+                          u64* keys, size_t capacity, size_t* total)
+{
+    physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+    if (object.physics_used)
+    {
+        physics::SyncBodies(object.world, physics);
+    }
+    Vector<physics::ColliderId> found;
+    physics::Overlap(physics, shape, center, Quaternion::Identity(), FilterOf(layer_mask), &found);
+    size_t count = 0;
+    for (usize i = 0; i < found.Size(); ++i)
+    {
+        const physics::ColliderRecord* record = physics.FindCollider(found[i]);
+        const physics::Body* body = record == nullptr ? nullptr : physics.Find(record->owner);
+        if (body == nullptr)
+        {
+            continue;
+        }
+        if (count < capacity)
+        {
+            keys[count] = body->entity.ToU64();
+        }
+        ++count;
+    }
+    *total = count;
+    return ENGINE_OK;
+}
+
+}  // namespace
+
+engine_status PhysicsSetGravityFn(engine_handle world, const float* gravity)
+{
+    if (gravity == nullptr || !FiniteArray(gravity, 3))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the gravity is NULL or not finite");
+    }
+    return WithWorld(world, false, 0,
+                     [&](WorldObject& object, ecs::Entity)
+                     {
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         physics::StepConfig config = physics.GetStepConfig();
+                         config.gravity = ToVec3(gravity);
+                         return FromBody(physics.SetStepConfig(config));
+                     });
+}
+
+engine_status BodyApplyForceFn(engine_handle world, u64 key, const float* force, const float* point)
+{
+    if (force == nullptr || !FiniteArray(force, 3) || (point != nullptr && !FiniteArray(point, 3)))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the force or the point is NULL or not finite");
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         engine_status status = ENGINE_OK;
+                         const physics::BodyId id = BodyOf(object, entity, &status);
+                         if (status != ENGINE_OK)
+                         {
+                             return status;
+                         }
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         const physics::Body* body = physics.Find(id);
+                         const Vec3 at = point != nullptr
+                                             ? ToVec3(point)
+                                             : body->position + body->orientation.RotateVector(body->mass.center);
+                         return FromBody(physics.ApplyForce(id, ToVec3(force), at));
+                     });
+}
+
+engine_status BodyApplyImpulseFn(engine_handle world, u64 key, const float* impulse, const float* point)
+{
+    if (impulse == nullptr || !FiniteArray(impulse, 3) || (point != nullptr && !FiniteArray(point, 3)))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the impulse or the point is NULL or not finite");
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         engine_status status = ENGINE_OK;
+                         const physics::BodyId id = BodyOf(object, entity, &status);
+                         if (status != ENGINE_OK)
+                         {
+                             return status;
+                         }
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         const physics::Body* body = physics.Find(id);
+                         const Vec3 at = point != nullptr
+                                             ? ToVec3(point)
+                                             : body->position + body->orientation.RotateVector(body->mass.center);
+                         return FromBody(physics.ApplyImpulse(id, ToVec3(impulse), at));
+                     });
+}
+
+engine_status BodySetVelocityFn(engine_handle world, u64 key, const float* linear, const float* angular)
+{
+    if ((linear != nullptr && !FiniteArray(linear, 3)) || (angular != nullptr && !FiniteArray(angular, 3)))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a velocity is not finite");
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         engine_status status = ENGINE_OK;
+                         const physics::BodyId id = BodyOf(object, entity, &status);
+                         if (status != ENGINE_OK)
+                         {
+                             return status;
+                         }
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         const physics::Body* body = physics.Find(id);
+                         physics::Velocity velocity;
+                         velocity.linear = linear != nullptr ? ToVec3(linear) : body->linear_velocity;
+                         velocity.angular = angular != nullptr ? ToVec3(angular) : body->angular_velocity;
+                         return FromBody(physics.SetVelocity(id, velocity));
+                     });
+}
+
+engine_status BodyGetVelocityFn(engine_handle world, u64 key, float* linear, float* angular)
+{
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         engine_status status = ENGINE_OK;
+                         const physics::BodyId id = BodyOf(object, entity, &status);
+                         if (status != ENGINE_OK)
+                         {
+                             return status;
+                         }
+                         const physics::Body* body = object.world.Resource<physics::PhysicsWorld>().Find(id);
+                         if (linear != nullptr)
+                         {
+                             linear[0] = body->linear_velocity.x;
+                             linear[1] = body->linear_velocity.y;
+                             linear[2] = body->linear_velocity.z;
+                         }
+                         if (angular != nullptr)
+                         {
+                             angular[0] = body->angular_velocity.x;
+                             angular[1] = body->angular_velocity.y;
+                             angular[2] = body->angular_velocity.z;
+                         }
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status BodyTeleportFn(engine_handle world, u64 key, const float* position, const float* rotation)
+{
+    if ((position != nullptr && !FiniteArray(position, 3)) || (rotation != nullptr && !FiniteArray(rotation, 4)))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position or the rotation is not finite");
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         engine_status status = ENGINE_OK;
+                         const physics::BodyId id = BodyOf(object, entity, &status);
+                         if (status != ENGINE_OK)
+                         {
+                             return status;
+                         }
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         const physics::Body* body = physics.Find(id);
+                         const Vec3 at = position != nullptr ? ToVec3(position) : body->position;
+                         const Quaternion turn = rotation != nullptr
+                                                     ? Quaternion(rotation[0], rotation[1], rotation[2], rotation[3])
+                                                     : body->orientation;
+                         const physics::BodyStatus moved = physics.SetTransform(id, at, turn);
+                         if (moved != physics::BodyStatus::Ok)
+                         {
+                             return FromBody(moved);
+                         }
+                         // The entity follows at once, so a read before the next frame agrees with the body.
+                         if (const ecs::LocalTransform* local = object.world.Peek<ecs::LocalTransform>(entity))
+                         {
+                             ecs::LocalTransform value = *local;
+                             value.position = at;
+                             value.rotation = turn;
+                             object.world.Set<ecs::LocalTransform>(entity, value);
+                         }
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status PhysicsRaycastFn(engine_handle world, const float* origin, const float* direction, float max_distance,
+                               u32 layer_mask, engine_ray_hit* hit, int* found)
+{
+    if (origin == nullptr || direction == nullptr || hit == nullptr || found == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "an argument is NULL");
+    }
+    *found = 0;
+    if (StructSizeOf(hit) < sizeof(engine_ray_hit))
+    {
+        return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_ray_hit.struct_size is smaller than the struct");
+    }
+    if (!FiniteArray(origin, 3) || !FiniteArray(direction, 3) || !(Finite(max_distance) && max_distance > 0.0f) ||
+        (direction[0] == 0.0f && direction[1] == 0.0f && direction[2] == 0.0f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the ray is not finite, has no direction or no length");
+    }
+    return WithWorld(world, false, 0,
+                     [&](WorldObject& object, ecs::Entity)
+                     {
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         if (object.physics_used)
+                         {
+                             physics::SyncBodies(object.world, physics);
+                         }
+                         physics::PhysicsHit result;
+                         if (!physics::RayCast(physics, ToVec3(origin), ToVec3(direction), max_distance,
+                                               FilterOf(layer_mask), &result))
+                         {
+                             return ENGINE_OK;
+                         }
+                         const physics::Body* body = physics.Find(result.body);
+                         hit->entity = body == nullptr ? 0 : body->entity.ToU64();
+                         hit->point[0] = result.point.x;
+                         hit->point[1] = result.point.y;
+                         hit->point[2] = result.point.z;
+                         hit->normal[0] = result.normal.x;
+                         hit->normal[1] = result.normal.y;
+                         hit->normal[2] = result.normal.z;
+                         hit->distance = result.distance;
+                         *found = 1;
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status PhysicsOverlapSphereFn(engine_handle world, const float* center, float radius, u32 layer_mask, u64* keys,
+                                     size_t capacity, size_t* total)
+{
+    if (total == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`total` is NULL");
+    }
+    *total = 0;
+    if (center == nullptr || !FiniteArray(center, 3) || !(Finite(radius) && radius > 0.0f && radius <= 1.0e5f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the centre or the radius is NULL, not finite or not positive");
+    }
+    if (keys == nullptr && capacity != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`keys` is NULL with a capacity above zero");
+    }
+    return WithWorld(world, false, 0,
+                     [&](WorldObject& object, ecs::Entity)
+                     {
+                         return OverlapKeys(object, physics::Shape::MakeSphere(radius), ToVec3(center), layer_mask,
+                                            keys, capacity, total);
+                     });
+}
+
+engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, const float* half_extents, u32 layer_mask,
+                                  u64* keys, size_t capacity, size_t* total)
+{
+    if (total == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`total` is NULL");
+    }
+    *total = 0;
+    if (center == nullptr || half_extents == nullptr || !FiniteArray(center, 3) || !FiniteArray(half_extents, 3) ||
+        !(half_extents[0] > 0.0f && half_extents[1] > 0.0f && half_extents[2] > 0.0f) || half_extents[0] > 1.0e5f ||
+        half_extents[1] > 1.0e5f || half_extents[2] > 1.0e5f)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                    "the centre or the half extents are NULL, not finite or not positive");
+    }
+    if (keys == nullptr && capacity != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`keys` is NULL with a capacity above zero");
+    }
+    return WithWorld(world, false, 0,
+                     [&](WorldObject& object, ecs::Entity)
+                     {
+                         return OverlapKeys(object, physics::Shape::MakeBox(ToVec3(half_extents)), ToVec3(center),
+                                            layer_mask, keys, capacity, total);
                      });
 }
 

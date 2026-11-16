@@ -26,6 +26,7 @@
 #include "log/diagnostics_hooks.h"
 #include "log/log.h"
 #include "mem/heap_allocator.h"
+#include "physics/physics_settings.h"
 #include "settings/desc.h"
 #include "settings/engine_settings.h"
 #include "settings/env_source.h"
@@ -270,6 +271,7 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
     asset::RegisterManagerSettings(&engine->registry);
     engine_c::RegisterImporterSettings(&engine->registry);
     engine_c::RegisterHostTextureSettings(&engine->registry);
+    physics::RegisterPhysicsSettings(&engine->registry);
     {
         settings::SettingDesc dump = settings::MakeText("crash.dump_directory", "");
         dump.description = "the directory a crash dump goes to (empty: the user's crash directory)";
@@ -356,6 +358,7 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
         config.max_queued = manager.max_queued;
         engine_c::ReadImporterSettings(engine->registry, &config);
         engine->runtime->textures.Configure(engine_c::ReadHostTextureSettings(engine->registry));
+        engine->runtime->physics_config = physics::StepConfigFromSettings(engine->registry);
     }
     for (LogChannel* channel = LogChannel::First(); channel != nullptr; channel = channel->Next())
     {
@@ -769,6 +772,15 @@ extern "C"
             &engine_c::TextureDestroyFn,
             &engine_c::TextureReadPixelsFn,
             &engine_c::LabelFontSetFn,
+            &engine_c::PhysicsSetGravityFn,
+            &engine_c::BodyApplyForceFn,
+            &engine_c::BodyApplyImpulseFn,
+            &engine_c::BodySetVelocityFn,
+            &engine_c::BodyGetVelocityFn,
+            &engine_c::BodyTeleportFn,
+            &engine_c::PhysicsRaycastFn,
+            &engine_c::PhysicsOverlapSphereFn,
+            &engine_c::PhysicsOverlapBoxFn,
         };
         *out = &table;
         return ENGINE_OK;

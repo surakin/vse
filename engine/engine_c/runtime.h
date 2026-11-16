@@ -9,6 +9,7 @@
 #include "engine/engine_c.h"
 #include "engine_c/host_texture.h"
 #include "jobs/job.h"
+#include "physics/world.h"
 #include "string_view.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
@@ -124,6 +125,7 @@ struct WorldObject
     WorldObject();
     ecs::World world;
     ecs::Schedule schedule;
+    bool physics_used = false;     ///< Whether a body component was set: the frame makes bodies only then (Day 396).
     Environment environment;       ///< What world_set_environment set (the defaults until then).
     bool environment_set = false;  ///< Whether it was called (no default sun once it was).
 };
@@ -267,6 +269,10 @@ public:
     /// What the resource host is made from; set once when the engine is created, before any call.
     ResourceConfig resource_config;
 
+    /// The step configuration every new world's physics starts with (`physics.*` settings, read when the engine is
+    /// created).
+    physics::StepConfig physics_config;
+
 private:
     Mutex label_font_mutex_;
     Vector<u8> label_font_;
@@ -329,6 +335,18 @@ engine_status SkeletonJointTransformFn(engine_handle world, u64 key, u32 joint, 
 engine_status EntityAttachToJointFn(engine_handle world, u64 key, u64 skeleton_key, u32 joint);
 engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_params* params, u64* root, u64* keys,
                            size_t capacity, size_t* total);
+engine_status PhysicsSetGravityFn(engine_handle world, const float* gravity);
+engine_status BodyApplyForceFn(engine_handle world, u64 key, const float* force, const float* point);
+engine_status BodyApplyImpulseFn(engine_handle world, u64 key, const float* impulse, const float* point);
+engine_status BodySetVelocityFn(engine_handle world, u64 key, const float* linear, const float* angular);
+engine_status BodyGetVelocityFn(engine_handle world, u64 key, float* linear, float* angular);
+engine_status BodyTeleportFn(engine_handle world, u64 key, const float* position, const float* rotation);
+engine_status PhysicsRaycastFn(engine_handle world, const float* origin, const float* direction, float max_distance,
+                               u32 layer_mask, engine_ray_hit* hit, int* found);
+engine_status PhysicsOverlapSphereFn(engine_handle world, const float* center, float radius, u32 layer_mask, u64* keys,
+                                     size_t capacity, size_t* total);
+engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, const float* half_extents, u32 layer_mask,
+                                  u64* keys, size_t capacity, size_t* total);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
 engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size);
