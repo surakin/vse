@@ -1,6 +1,7 @@
 #include "physics/collide.h"
 
 #include "lang/scalar.h"
+#include "physics/collide_math.h"
 #include "physics/contact.h"
 
 namespace engine_placeholder::physics
@@ -9,25 +10,7 @@ namespace engine_placeholder::physics
 namespace
 {
 
-constexpr f32 kTiny = 1e-12f;
-
-Vec3 Negate(const Vec3& v)
-{
-    return Vec3(-v.x, -v.y, -v.z);
-}
-
-f32 Clamp(f32 value, f32 lo, f32 hi)
-{
-    return FMin(FMax(value, lo), hi);
-}
-
-// A unit vector perpendicular to a unit vector, chosen the same way every time.
-Vec3 Perpendicular(const Vec3& unit)
-{
-    const Vec3 other = Abs(unit.x) < 0.57735f ? Vec3(1.0f, 0.0f, 0.0f) : Vec3(0.0f, 1.0f, 0.0f);
-    const Vec3 p = unit.Cross(other);
-    return p * (1.0f / Sqrt(p.LengthSquared()));
-}
+using namespace collide_math;
 
 // Two balls: the contact between a ball of radius `ra` at `ca` (shape A) and one of radius `rb` at `cb`, when they are
 // within the margin.
@@ -59,84 +42,6 @@ bool BallBall(const Vec3& ca, f32 ra, const Vec3& cb, f32 rb, f32 margin, u32 fe
     out->points[0].depth = ra + rb - distance;
     out->points[0].feature_id = feature;
     return true;
-}
-
-struct Segment
-{
-    Vec3 p;
-    Vec3 q;
-};
-
-Segment CapsuleSegment(const Shape& shape, const Pose& pose)
-{
-    const Vec3 axis = pose.rotation.ToMat3().col[1] * shape.half_height;
-    return Segment{pose.position - axis, pose.position + axis};
-}
-
-Vec3 ClosestOnSegment(const Segment& s, const Vec3& point, f32* t_out)
-{
-    const Vec3 d = s.q - s.p;
-    const f32 len2 = d.LengthSquared();
-    f32 t = 0.0f;
-    if (len2 > kTiny)
-    {
-        t = Clamp((point - s.p).Dot(d) / len2, 0.0f, 1.0f);
-    }
-    if (t_out != nullptr)
-    {
-        *t_out = t;
-    }
-    return s.p + d * t;
-}
-
-// The closest points of two segments (Ericson, Real-Time Collision Detection 5.1.9), degenerate segments included.
-void ClosestSegments(const Segment& s1, const Segment& s2, Vec3* c1, Vec3* c2)
-{
-    const Vec3 d1 = s1.q - s1.p;
-    const Vec3 d2 = s2.q - s2.p;
-    const Vec3 r = s1.p - s2.p;
-    const f32 a = d1.LengthSquared();
-    const f32 e = d2.LengthSquared();
-    const f32 f = d2.Dot(r);
-    f32 s = 0.0f;
-    f32 t = 0.0f;
-    if (a <= kTiny && e <= kTiny)
-    {
-        *c1 = s1.p;
-        *c2 = s2.p;
-        return;
-    }
-    if (a <= kTiny)
-    {
-        t = Clamp(f / e, 0.0f, 1.0f);
-    }
-    else
-    {
-        const f32 c = d1.Dot(r);
-        if (e <= kTiny)
-        {
-            s = Clamp(-c / a, 0.0f, 1.0f);
-        }
-        else
-        {
-            const f32 b = d1.Dot(d2);
-            const f32 denom = a * e - b * b;
-            s = denom > 1e-9f * a * e ? Clamp((b * f - c * e) / denom, 0.0f, 1.0f) : 0.0f;
-            t = (b * s + f) / e;
-            if (t < 0.0f)
-            {
-                t = 0.0f;
-                s = Clamp(-c / a, 0.0f, 1.0f);
-            }
-            else if (t > 1.0f)
-            {
-                t = 1.0f;
-                s = Clamp((b - c) / a, 0.0f, 1.0f);
-            }
-        }
-    }
-    *c1 = s1.p + d1 * s;
-    *c2 = s2.p + d2 * t;
 }
 
 bool SphereSphere(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out)
@@ -350,9 +255,17 @@ CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const 
     {
         hit = CapsuleCapsule(a, pose_a, b, pose_b, margin, manifold);
     }
+    else if (a.kind == ShapeKind::Box && b.kind == ShapeKind::Box)
+    {
+        hit = BoxBox(a, pose_a, b, pose_b, margin, manifold);
+    }
+    else if (a.kind == ShapeKind::Box && b.kind == ShapeKind::Capsule)
+    {
+        hit = BoxCapsule(a, pose_a, b, pose_b, margin, manifold);
+    }
     else
     {
-        return CollideResult::Unsupported;  // box-box and box-capsule: Day 380
+        return CollideResult::Unsupported;
     }
     return hit ? CollideResult::Contact : CollideResult::None;
 }

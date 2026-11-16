@@ -152,8 +152,8 @@ Debug and Release (`Step: the state hash of a 600-step scene...`); the Windows a
 | | sphere | capsule | box | hull |
 |---|---|---|---|---|
 | **sphere** | built (Day 379) | built | built | Day 381 |
-| **capsule** | | built | Day 380 | Day 381 |
-| **box** | | | Day 380 | Day 381 |
+| **capsule** | | built | built (Day 380) | Day 381 |
+| **box** | | | built (Day 380) | Day 381 |
 
 The call is symmetric: swapping the shapes gives the same contact with the normal negated and the two points of each contact swapped (the dispatch runs the
 test in one fixed order and `ContactManifold::Flip`s the result). A manifold has a **unit normal from A toward B**, up to four points, and for each point
@@ -168,4 +168,15 @@ closest point of its axis; two **capsules** take the closest points of their two
 included), and **parallel** axes (sine of the angle below 1e-3) give two points at the ends of the stretch they share, so a capsule lying on another does not
 rock; crossing axes through one point use the common perpendicular. A **sphere against a box** is done in the box's frame: the closest point of the box to
 the centre (the region, face, edge or vertex, is the feature id); a centre inside the box leaves through the face of least penetration. Everything uses
-`+ - * /` and `Sqrt` only: 100,000 random pairs of every kind hash to the same constant under GCC and Clang, unity and not, Debug and Release.
+`+ - * /` and `Sqrt` only: 100,000 random pairs of every kind hash to the same constant (`a37013a6ea09b3fe`) under GCC and Clang, unity and not, Debug and Release.
+
+**Box against box** (Day 380) is the separating axis test over the 15 axes (3 + 3 face normals and the 9 edge cross products; parallel edge pairs are skipped). A
+face axis wins unless an edge axis is better by more than 1e-3, and among the faces the first one wins ties (1e-4), so a resting box does not flicker between
+feature types. A **face contact** clips the incident face (the face of the other box most opposed to the reference normal) against the four side planes of the
+reference face (Sutherland-Hodgman), keeps the vertices within the margin, and reduces more than four to the deepest, the farthest from it, and the two that
+span the most area on either side. Each point's `feature_id` is the reference box (A or B), the reference face, the incident face and the id of the clipped
+vertex (an original corner, or a hash of the two neighbours and the side plane it was cut by), so a box that slides keeps its ids. An **edge contact** is one
+point between the closest points of the two support edges; its id has the top bit set. Identical boxes pick the same axis every time. Near a tie between two axes within the biases, `Collide(a, b)` and `Collide(b, a)` may choose different features (the same deepest depth, different points). **Capsule against box**
+works in the box's frame: the capsule's axis is cut where it crosses the planes of the box's slabs, the distance is minimized in closed form on each piece (the
+nearest point of the box moves linearly there), and the result is a sphere-like contact at the nearest point of the axis, or two points at the ends of the
+stretch where the axis lies flat above a face. An axis that meets the box leaves through the face of least penetration of the whole capsule.

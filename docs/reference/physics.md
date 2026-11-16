@@ -431,7 +431,7 @@ CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const 
 
 Finds the contact between two shapes, the one entry point of the narrow phase.
 
-The table, by the kinds of A and B (either order; the result is the same as for the other order, flipped): sphere-sphere, sphere-capsule, capsule-capsule and sphere-box are built (Day 379); box-box and capsule-box are Day 380; hulls Day 381. A pair without a test returns `Unsupported` and leaves the manifold alone. Only `+ - * /` and `Sqrt` are used, so the result is bit-identical on every machine.
+The table, by the kinds of A and B (either order; the result is the same as for the other order, flipped): every pair of sphere, capsule and box is built (Days 379-380); hulls are Day 381. A pair without a test returns `Unsupported` and leaves the manifold alone. Only `+ - * /` and `Sqrt` are used, so the result is bit-identical on every machine.
 
 | Field | Value |
 |---|---|
