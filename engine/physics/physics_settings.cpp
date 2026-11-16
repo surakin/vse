@@ -71,6 +71,13 @@ void RegisterPhysicsSettings(settings::Registry* registry)
     joint_hertz.group = "physics";
     joint_hertz.flags = settings::kAdvanced;
     registry->Register(joint_hertz);
+    settings::SettingDesc threads = settings::MakeInt("physics.threads", 1, 1, 256);
+    threads.env = "ENGINE_PHYSICS_THREADS";
+    threads.flag = "physics-threads";
+    threads.label = "Physics threads";
+    threads.description = "1 runs the step inline; more lets it use the job scheduler (the results do not change)";
+    threads.group = "physics";
+    registry->Register(threads);
     settings::SettingDesc allow_sleep = settings::MakeBool("physics.allow_sleep", true);
     allow_sleep.env = "ENGINE_PHYSICS_ALLOW_SLEEP";
     allow_sleep.flag = "physics-allow-sleep";
@@ -180,6 +187,11 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     if (max_velocity.IsValid())
     {
         config.max_velocity = static_cast<f32>(settings::Setting<f64>(registry, max_velocity).Get());
+    }
+    const settings::SettingId threads = registry.Find(StringView("physics.threads"));
+    if (threads.IsValid())
+    {
+        config.threads = static_cast<u32>(settings::Setting<i64>(registry, threads).Get());
     }
     const settings::SettingId allow_sleep = registry.Find(StringView("physics.allow_sleep"));
     if (allow_sleep.IsValid())

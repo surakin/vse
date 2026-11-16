@@ -18,6 +18,7 @@ set(PHYSICS_TEST_SOURCES
   joint_test.cpp  # Day 386
   hinge_test.cpp  # Day 387
   sleep_test.cpp  # Day 388
+  parallel_test.cpp  # Day 389
 )
 
 find_package(Threads REQUIRED)

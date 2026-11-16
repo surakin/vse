@@ -18,6 +18,11 @@
 #include "physics/triangle_mesh.h"
 #include "types.h"
 
+namespace engine_placeholder::jobs
+{
+class Scheduler;
+}
+
 namespace engine_placeholder::physics
 {
 
@@ -167,6 +172,9 @@ struct StepConfig
     f32 joint_hertz = 60.0f;
     /// The damping ratio of that spring.
     f32 joint_damping_ratio = 2.0f;
+    /// How many threads the step may use: 1 runs everything inline, more uses the scheduler given to `SetScheduler`
+    /// (its own participant count decides how many run). The results are the same to the bit for every value.
+    u32 threads = 1;
     /// Whether bodies may fall asleep at all (a body can still opt out with `kBodyNoSleep`).
     bool allow_sleep = true;
     /// A body is at rest while its linear speed is below this, in metres per second.
@@ -561,6 +569,16 @@ public:
     /// - Fails: as the return says.
     bool Interpolated(BodyId id, f32 alpha, Vec3* position, Quaternion* orientation) const;
 
+    /// Gives the step a job scheduler for its parallel parts (the narrow phase and the integration of free bodies);
+    /// without one, or with `StepConfig::threads` of 1, the step runs inline. The result does not depend on either.
+    ///
+    /// - Param scheduler: the scheduler, or null; it must outlive its use by the world. `Step` and `Update` must then
+    ///   be called from the scheduler's main thread, outside any job.
+    /// - Thread-safety: owner-thread-only. Call between steps.
+    /// - Ownership: the scheduler is borrowed.
+    /// - Fails: never.
+    void SetScheduler(jobs::Scheduler* scheduler) { scheduler_ = scheduler; }
+
     /// Tells whether a body is asleep.
     ///
     /// - Returns: true if the body exists and sleeps.
@@ -700,6 +718,7 @@ private:
     }
 
     StepConfig step_config_;
+    jobs::Scheduler* scheduler_ = nullptr;
     StepStats step_stats_;
     f64 accumulator_ = 0.0;
     SlotPool<Body> bodies_;

@@ -4094,135 +4094,137 @@ physics::Validation::OutOfRange	enumerator	physics	physics-validation-outofrange
 physics::Validation::UnknownKind	enumerator	physics	physics-validation-unknownkind	physics.md	engine/physics/validation.h:19
 physics::Validation::NotNormalized	enumerator	physics	physics-validation-notnormalized	physics.md	engine/physics/validation.h:20
 physics::ValidationName(Validation)	function	physics	physics-validationname-validation	physics.md	engine/physics/validation.h:30
-physics::BodyStatus	enum	physics	physics-bodystatus	physics.md	engine/physics/world.h:27
-physics::BodyStatus::Ok	enumerator	physics	physics-bodystatus-ok	physics.md	engine/physics/world.h:29
-physics::BodyStatus::StaleId	enumerator	physics	physics-bodystatus-staleid	physics.md	engine/physics/world.h:30
-physics::BodyStatus::Invalid	enumerator	physics	physics-bodystatus-invalid	physics.md	engine/physics/world.h:31
-physics::BodyStatus::WrongType	enumerator	physics	physics-bodystatus-wrongtype	physics.md	engine/physics/world.h:32
-physics::BodyStatus::Unsupported	enumerator	physics	physics-bodystatus-unsupported	physics.md	engine/physics/world.h:33
-physics::BodyStatus::OutOfMemory	enumerator	physics	physics-bodystatus-outofmemory	physics.md	engine/physics/world.h:34
-physics::BodyStatusName(BodyStatus)	function	physics	physics-bodystatusname-bodystatus	physics.md	engine/physics/world.h:44
-physics::BodyDesc	struct	physics	physics-bodydesc	physics.md	engine/physics/world.h:49
-physics::BodyDesc::settings	variable	physics	physics-bodydesc-settings	physics.md	engine/physics/world.h:52
-physics::BodyDesc::position	variable	physics	physics-bodydesc-position	physics.md	engine/physics/world.h:54
-physics::BodyDesc::orientation	variable	physics	physics-bodydesc-orientation	physics.md	engine/physics/world.h:56
-physics::BodyDesc::velocity	variable	physics	physics-bodydesc-velocity	physics.md	engine/physics/world.h:58
-physics::BodyDesc::entity	variable	physics	physics-bodydesc-entity	physics.md	engine/physics/world.h:60
-physics::Body	struct	physics	physics-body	physics.md	engine/physics/world.h:67
-physics::Body::id	variable	physics	physics-body-id	physics.md	engine/physics/world.h:70
-physics::Body::entity	variable	physics	physics-body-entity	physics.md	engine/physics/world.h:72
-physics::Body::settings	variable	physics	physics-body-settings	physics.md	engine/physics/world.h:74
-physics::Body::position	variable	physics	physics-body-position	physics.md	engine/physics/world.h:76
-physics::Body::orientation	variable	physics	physics-body-orientation	physics.md	engine/physics/world.h:78
-physics::Body::previous_position	variable	physics	physics-body-previous-position	physics.md	engine/physics/world.h:81
-physics::Body::previous_orientation	variable	physics	physics-body-previous-orientation	physics.md	engine/physics/world.h:83
-physics::Body::linear_velocity	variable	physics	physics-body-linear-velocity	physics.md	engine/physics/world.h:85
-physics::Body::angular_velocity	variable	physics	physics-body-angular-velocity	physics.md	engine/physics/world.h:87
-physics::Body::force	variable	physics	physics-body-force	physics.md	engine/physics/world.h:89
-physics::Body::torque	variable	physics	physics-body-torque	physics.md	engine/physics/world.h:91
-physics::Body::mass	variable	physics	physics-body-mass	physics.md	engine/physics/world.h:93
-physics::Body::inverse_mass	variable	physics	physics-body-inverse-mass	physics.md	engine/physics/world.h:95
-physics::Body::inverse_inertia_world	variable	physics	physics-body-inverse-inertia-world	physics.md	engine/physics/world.h:97
-physics::Body::first_collider	variable	physics	physics-body-first-collider	physics.md	engine/physics/world.h:99
-physics::Body::collider_count	variable	physics	physics-body-collider-count	physics.md	engine/physics/world.h:101
-physics::Body::sleeping	variable	physics	physics-body-sleeping	physics.md	engine/physics/world.h:103
-physics::Body::sleep_time	variable	physics	physics-body-sleep-time	physics.md	engine/physics/world.h:105
-physics::Body::island	variable	physics	physics-body-island	physics.md	engine/physics/world.h:108
-physics::Body::disturbed	variable	physics	physics-body-disturbed	physics.md	engine/physics/world.h:111
-physics::Body::integrated	variable	physics	physics-body-integrated	physics.md	engine/physics/world.h:113
-physics::Body::teleports	variable	physics	physics-body-teleports	physics.md	engine/physics/world.h:115
-physics::ColliderRecord	struct	physics	physics-colliderrecord	physics.md	engine/physics/world.h:121
-physics::ColliderRecord::value	variable	physics	physics-colliderrecord-value	physics.md	engine/physics/world.h:124
-physics::ColliderRecord::owner	variable	physics	physics-colliderrecord-owner	physics.md	engine/physics/world.h:126
-physics::ColliderRecord::next	variable	physics	physics-colliderrecord-next	physics.md	engine/physics/world.h:128
-physics::StepConfig	struct	physics	physics-stepconfig	physics.md	engine/physics/world.h:134
-physics::StepConfig::step_hz	variable	physics	physics-stepconfig-step-hz	physics.md	engine/physics/world.h:137
-physics::StepConfig::max_substeps	variable	physics	physics-stepconfig-max-substeps	physics.md	engine/physics/world.h:139
-physics::StepConfig::gravity	variable	physics	physics-stepconfig-gravity	physics.md	engine/physics/world.h:141
-physics::StepConfig::contact_margin	variable	physics	physics-stepconfig-contact-margin	physics.md	engine/physics/world.h:144
-physics::StepConfig::interpolate	variable	physics	physics-stepconfig-interpolate	physics.md	engine/physics/world.h:146
-physics::StepConfig::velocity_iterations	variable	physics	physics-stepconfig-velocity-iterations	physics.md	engine/physics/world.h:148
-physics::StepConfig::contact_slop	variable	physics	physics-stepconfig-contact-slop	physics.md	engine/physics/world.h:150
-physics::StepConfig::restitution_threshold	variable	physics	physics-stepconfig-restitution-threshold	physics.md	engine/physics/world.h:152
-physics::StepConfig::substeps	variable	physics	physics-stepconfig-substeps	physics.md	engine/physics/world.h:155
-physics::StepConfig::contact_hertz	variable	physics	physics-stepconfig-contact-hertz	physics.md	engine/physics/world.h:158
-physics::StepConfig::contact_damping_ratio	variable	physics	physics-stepconfig-contact-damping-ratio	physics.md	engine/physics/world.h:160
-physics::StepConfig::contact_push_velocity	variable	physics	physics-stepconfig-contact-push-velocity	physics.md	engine/physics/world.h:162
-physics::StepConfig::max_velocity	variable	physics	physics-stepconfig-max-velocity	physics.md	engine/physics/world.h:165
-physics::StepConfig::joint_hertz	variable	physics	physics-stepconfig-joint-hertz	physics.md	engine/physics/world.h:167
-physics::StepConfig::joint_damping_ratio	variable	physics	physics-stepconfig-joint-damping-ratio	physics.md	engine/physics/world.h:169
-physics::StepConfig::allow_sleep	variable	physics	physics-stepconfig-allow-sleep	physics.md	engine/physics/world.h:171
-physics::StepConfig::sleep_linear	variable	physics	physics-stepconfig-sleep-linear	physics.md	engine/physics/world.h:173
-physics::StepConfig::sleep_angular	variable	physics	physics-stepconfig-sleep-angular	physics.md	engine/physics/world.h:175
-physics::StepConfig::sleep_time	variable	physics	physics-stepconfig-sleep-time	physics.md	engine/physics/world.h:177
-physics::StepStats	struct	physics	physics-stepstats	physics.md	engine/physics/world.h:183
-physics::StepStats::steps	variable	physics	physics-stepstats-steps	physics.md	engine/physics/world.h:186
-physics::StepStats::last_substeps	variable	physics	physics-stepstats-last-substeps	physics.md	engine/physics/world.h:188
-physics::StepStats::dropped_updates	variable	physics	physics-stepstats-dropped-updates	physics.md	engine/physics/world.h:190
-physics::StepStats::dropped_seconds	variable	physics	physics-stepstats-dropped-seconds	physics.md	engine/physics/world.h:192
-physics::StepStats::joints_broken	variable	physics	physics-stepstats-joints-broken	physics.md	engine/physics/world.h:194
-physics::StepStats::denormal_mode_steps	variable	physics	physics-stepstats-denormal-mode-steps	physics.md	engine/physics/world.h:197
-physics::StepStats::islands	variable	physics	physics-stepstats-islands	physics.md	engine/physics/world.h:199
-physics::StepStats::sleeping_bodies	variable	physics	physics-stepstats-sleeping-bodies	physics.md	engine/physics/world.h:201
-physics::StepStats::islands_slept	variable	physics	physics-stepstats-islands-slept	physics.md	engine/physics/world.h:203
-physics::StepStats::bodies_woken	variable	physics	physics-stepstats-bodies-woken	physics.md	engine/physics/world.h:205
-physics::PhysicsWorldStats	struct	physics	physics-physicsworldstats	physics.md	engine/physics/world.h:211
-physics::PhysicsWorldStats::bodies	variable	physics	physics-physicsworldstats-bodies	physics.md	engine/physics/world.h:214
-physics::PhysicsWorldStats::body_slots	variable	physics	physics-physicsworldstats-body-slots	physics.md	engine/physics/world.h:216
-physics::PhysicsWorldStats::colliders	variable	physics	physics-physicsworldstats-colliders	physics.md	engine/physics/world.h:218
-physics::PhysicsWorldStats::collider_slots	variable	physics	physics-physicsworldstats-collider-slots	physics.md	engine/physics/world.h:220
-physics::PhysicsWorld	class	physics	physics-physicsworld	physics.md	engine/physics/world.h:235
-physics::PhysicsWorld::PhysicsWorld()	function	physics	physics-physicsworld-physicsworld	physics.md	engine/physics/world.h:242
-physics::PhysicsWorld::~PhysicsWorld()	function	physics	physics-physicsworld-tilde-physicsworld	physics.md	engine/physics/world.h:246
-physics::PhysicsWorld::PhysicsWorld(PhysicsWorld&&) noexcept	function	physics	physics-physicsworld-physicsworld-physicsworld-amp-amp-noexcept	physics.md	engine/physics/world.h:250
-physics::PhysicsWorld::operator=(PhysicsWorld&&) noexcept	function	physics	physics-physicsworld-operator-eq-physicsworld-amp-amp-noexcept	physics.md	engine/physics/world.h:254
-physics::PhysicsWorld::GetSolverStats() const	function	physics	physics-physicsworld-getsolverstats-const	physics.md	engine/physics/world.h:260
-physics::PhysicsWorld::ContactCacheSize() const	function	physics	physics-physicsworld-contactcachesize-const	physics.md	engine/physics/world.h:266
-physics::PhysicsWorld::CreateBody(const BodyDesc&,BodyStatus*)	function	physics	physics-physicsworld-createbody-const-bodydesc-amp-bodystatus-star	physics.md	engine/physics/world.h:276
-physics::PhysicsWorld::DestroyBody(BodyId)	function	physics	physics-physicsworld-destroybody-bodyid	physics.md	engine/physics/world.h:283
-physics::PhysicsWorld::AddCollider(BodyId,const Collider&,ColliderId*)	function	physics	physics-physicsworld-addcollider-bodyid-const-collider-amp-colliderid-star	physics.md	engine/physics/world.h:295
-physics::PhysicsWorld::SetCollider(BodyId,const Collider&)	function	physics	physics-physicsworld-setcollider-bodyid-const-collider-amp	physics.md	engine/physics/world.h:303
-physics::PhysicsWorld::SetSettings(BodyId,const RigidBody&)	function	physics	physics-physicsworld-setsettings-bodyid-const-rigidbody-amp	physics.md	engine/physics/world.h:313
-physics::PhysicsWorld::Find(BodyId)	function	physics	physics-physicsworld-find-bodyid	physics.md	engine/physics/world.h:321
-physics::PhysicsWorld::Find(BodyId) const	function	physics	physics-physicsworld-find-bodyid-const	physics.md	engine/physics/world.h:329
-physics::PhysicsWorld::FindCollider(ColliderId) const	function	physics	physics-physicsworld-findcollider-colliderid-const	physics.md	engine/physics/world.h:337
-physics::PhysicsWorld::FindCollider(ColliderId)	function	physics	physics-physicsworld-findcollider-colliderid	physics.md	engine/physics/world.h:345
-physics::PhysicsWorld::BodyAtSlot(u32) const	function	physics	physics-physicsworld-bodyatslot-u32-const	physics.md	engine/physics/world.h:352
-physics::PhysicsWorld::ColliderAtSlot(u32) const	function	physics	physics-physicsworld-collideratslot-u32-const	physics.md	engine/physics/world.h:359
-physics::PhysicsWorld::WorldCenter(BodyId) const	function	physics	physics-physicsworld-worldcenter-bodyid-const	physics.md	engine/physics/world.h:366
-physics::PhysicsWorld::SetVelocity(BodyId,const Velocity&)	function	physics	physics-physicsworld-setvelocity-bodyid-const-velocity-amp	physics.md	engine/physics/world.h:375
-physics::PhysicsWorld::ApplyImpulse(BodyId,const Vec3&,const Vec3&)	function	physics	physics-physicsworld-applyimpulse-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/world.h:385
-physics::PhysicsWorld::ApplyForce(BodyId,const Vec3&,const Vec3&)	function	physics	physics-physicsworld-applyforce-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/world.h:394
-physics::PhysicsWorld::CreateJoint(const JointDesc&,BodyStatus*)	function	physics	physics-physicsworld-createjoint-const-jointdesc-amp-bodystatus-star	physics.md	engine/physics/world.h:405
-physics::PhysicsWorld::DestroyJoint(JointId)	function	physics	physics-physicsworld-destroyjoint-jointid	physics.md	engine/physics/world.h:412
-physics::PhysicsWorld::FindJoint(JointId) const	function	physics	physics-physicsworld-findjoint-jointid-const	physics.md	engine/physics/world.h:420
-physics::PhysicsWorld::JointCount() const	function	physics	physics-physicsworld-jointcount-const	physics.md	engine/physics/world.h:424
-physics::PhysicsWorld::JointReaction(JointId,Vec3*,Vec3*) const	function	physics	physics-physicsworld-jointreaction-jointid-vec3-star-vec3-star-const	physics.md	engine/physics/world.h:434
-physics::PhysicsWorld::MakeBallJoint(BodyId,BodyId,const Vec3&) const	function	physics	physics-physicsworld-makeballjoint-bodyid-bodyid-const-vec3-amp-const	physics.md	engine/physics/world.h:443
-physics::PhysicsWorld::MakeDistanceJoint(BodyId,BodyId,const Vec3&,const Vec3&) const	function	physics	physics-physicsworld-makedistancejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const	physics.md	engine/physics/world.h:453
-physics::PhysicsWorld::MakeFixedJoint(BodyId,BodyId,const Vec3&) const	function	physics	physics-physicsworld-makefixedjoint-bodyid-bodyid-const-vec3-amp-const	physics.md	engine/physics/world.h:462
-physics::PhysicsWorld::MakeHingeJoint(BodyId,BodyId,const Vec3&,const Vec3&) const	function	physics	physics-physicsworld-makehingejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const	physics.md	engine/physics/world.h:473
-physics::PhysicsWorld::JointAngle(JointId,f32*) const	function	physics	physics-physicsworld-jointangle-jointid-f32-star-const	physics.md	engine/physics/world.h:482
-physics::PhysicsWorld::SetTransform(BodyId,const Vec3&,const Quaternion&)	function	physics	physics-physicsworld-settransform-bodyid-const-vec3-amp-const-quaternion-amp	physics.md	engine/physics/world.h:494
-physics::PhysicsWorld::RefreshInertia(Body*)	function	physics	physics-physicsworld-refreshinertia-body-star	physics.md	engine/physics/world.h:501
-physics::PhysicsWorld::Stats() const	function	physics	physics-physicsworld-stats-const	physics.md	engine/physics/world.h:507
-physics::PhysicsWorld::SetStepConfig(const StepConfig&)	function	physics	physics-physicsworld-setstepconfig-const-stepconfig-amp	physics.md	engine/physics/world.h:515
-physics::PhysicsWorld::GetStepConfig() const	function	physics	physics-physicsworld-getstepconfig-const	physics.md	engine/physics/world.h:521
-physics::PhysicsWorld::Update(f32)	function	physics	physics-physicsworld-update-f32	physics.md	engine/physics/world.h:532
-physics::PhysicsWorld::Step()	function	physics	physics-physicsworld-step	physics.md	engine/physics/world.h:541
-physics::PhysicsWorld::Alpha() const	function	physics	physics-physicsworld-alpha-const	physics.md	engine/physics/world.h:547
-physics::PhysicsWorld::Interpolated(BodyId,f32,Vec3*,Quaternion*) const	function	physics	physics-physicsworld-interpolated-bodyid-f32-vec3-star-quaternion-star-const	physics.md	engine/physics/world.h:562
-physics::PhysicsWorld::IsSleeping(BodyId) const	function	physics	physics-physicsworld-issleeping-bodyid-const	physics.md	engine/physics/world.h:568
-physics::PhysicsWorld::IslandOf(BodyId,u32*) const	function	physics	physics-physicsworld-islandof-bodyid-u32-star-const	physics.md	engine/physics/world.h:582
-physics::PhysicsWorld::Wake(BodyId)	function	physics	physics-physicsworld-wake-bodyid	physics.md	engine/physics/world.h:588
-physics::PhysicsWorld::GetStepStats() const	function	physics	physics-physicsworld-getstepstats-const	physics.md	engine/physics/world.h:594
-physics::PhysicsWorld::StateHash(bool*) const	function	physics	physics-physicsworld-statehash-bool-star-const	physics.md	engine/physics/world.h:606
-physics::PhysicsWorld::Hulls()	function	physics	physics-physicsworld-hulls	physics.md	engine/physics/world.h:614
-physics::PhysicsWorld::Meshes()	function	physics	physics-physicsworld-meshes	physics.md	engine/physics/world.h:622
-physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-meshes-const	physics.md	engine/physics/world.h:629
-physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:637
-physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:644
-physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:651
+physics::BodyStatus	enum	physics	physics-bodystatus	physics.md	engine/physics/world.h:32
+physics::BodyStatus::Ok	enumerator	physics	physics-bodystatus-ok	physics.md	engine/physics/world.h:34
+physics::BodyStatus::StaleId	enumerator	physics	physics-bodystatus-staleid	physics.md	engine/physics/world.h:35
+physics::BodyStatus::Invalid	enumerator	physics	physics-bodystatus-invalid	physics.md	engine/physics/world.h:36
+physics::BodyStatus::WrongType	enumerator	physics	physics-bodystatus-wrongtype	physics.md	engine/physics/world.h:37
+physics::BodyStatus::Unsupported	enumerator	physics	physics-bodystatus-unsupported	physics.md	engine/physics/world.h:38
+physics::BodyStatus::OutOfMemory	enumerator	physics	physics-bodystatus-outofmemory	physics.md	engine/physics/world.h:39
+physics::BodyStatusName(BodyStatus)	function	physics	physics-bodystatusname-bodystatus	physics.md	engine/physics/world.h:49
+physics::BodyDesc	struct	physics	physics-bodydesc	physics.md	engine/physics/world.h:54
+physics::BodyDesc::settings	variable	physics	physics-bodydesc-settings	physics.md	engine/physics/world.h:57
+physics::BodyDesc::position	variable	physics	physics-bodydesc-position	physics.md	engine/physics/world.h:59
+physics::BodyDesc::orientation	variable	physics	physics-bodydesc-orientation	physics.md	engine/physics/world.h:61
+physics::BodyDesc::velocity	variable	physics	physics-bodydesc-velocity	physics.md	engine/physics/world.h:63
+physics::BodyDesc::entity	variable	physics	physics-bodydesc-entity	physics.md	engine/physics/world.h:65
+physics::Body	struct	physics	physics-body	physics.md	engine/physics/world.h:72
+physics::Body::id	variable	physics	physics-body-id	physics.md	engine/physics/world.h:75
+physics::Body::entity	variable	physics	physics-body-entity	physics.md	engine/physics/world.h:77
+physics::Body::settings	variable	physics	physics-body-settings	physics.md	engine/physics/world.h:79
+physics::Body::position	variable	physics	physics-body-position	physics.md	engine/physics/world.h:81
+physics::Body::orientation	variable	physics	physics-body-orientation	physics.md	engine/physics/world.h:83
+physics::Body::previous_position	variable	physics	physics-body-previous-position	physics.md	engine/physics/world.h:86
+physics::Body::previous_orientation	variable	physics	physics-body-previous-orientation	physics.md	engine/physics/world.h:88
+physics::Body::linear_velocity	variable	physics	physics-body-linear-velocity	physics.md	engine/physics/world.h:90
+physics::Body::angular_velocity	variable	physics	physics-body-angular-velocity	physics.md	engine/physics/world.h:92
+physics::Body::force	variable	physics	physics-body-force	physics.md	engine/physics/world.h:94
+physics::Body::torque	variable	physics	physics-body-torque	physics.md	engine/physics/world.h:96
+physics::Body::mass	variable	physics	physics-body-mass	physics.md	engine/physics/world.h:98
+physics::Body::inverse_mass	variable	physics	physics-body-inverse-mass	physics.md	engine/physics/world.h:100
+physics::Body::inverse_inertia_world	variable	physics	physics-body-inverse-inertia-world	physics.md	engine/physics/world.h:102
+physics::Body::first_collider	variable	physics	physics-body-first-collider	physics.md	engine/physics/world.h:104
+physics::Body::collider_count	variable	physics	physics-body-collider-count	physics.md	engine/physics/world.h:106
+physics::Body::sleeping	variable	physics	physics-body-sleeping	physics.md	engine/physics/world.h:108
+physics::Body::sleep_time	variable	physics	physics-body-sleep-time	physics.md	engine/physics/world.h:110
+physics::Body::island	variable	physics	physics-body-island	physics.md	engine/physics/world.h:113
+physics::Body::disturbed	variable	physics	physics-body-disturbed	physics.md	engine/physics/world.h:116
+physics::Body::integrated	variable	physics	physics-body-integrated	physics.md	engine/physics/world.h:118
+physics::Body::teleports	variable	physics	physics-body-teleports	physics.md	engine/physics/world.h:120
+physics::ColliderRecord	struct	physics	physics-colliderrecord	physics.md	engine/physics/world.h:126
+physics::ColliderRecord::value	variable	physics	physics-colliderrecord-value	physics.md	engine/physics/world.h:129
+physics::ColliderRecord::owner	variable	physics	physics-colliderrecord-owner	physics.md	engine/physics/world.h:131
+physics::ColliderRecord::next	variable	physics	physics-colliderrecord-next	physics.md	engine/physics/world.h:133
+physics::StepConfig	struct	physics	physics-stepconfig	physics.md	engine/physics/world.h:139
+physics::StepConfig::step_hz	variable	physics	physics-stepconfig-step-hz	physics.md	engine/physics/world.h:142
+physics::StepConfig::max_substeps	variable	physics	physics-stepconfig-max-substeps	physics.md	engine/physics/world.h:144
+physics::StepConfig::gravity	variable	physics	physics-stepconfig-gravity	physics.md	engine/physics/world.h:146
+physics::StepConfig::contact_margin	variable	physics	physics-stepconfig-contact-margin	physics.md	engine/physics/world.h:149
+physics::StepConfig::interpolate	variable	physics	physics-stepconfig-interpolate	physics.md	engine/physics/world.h:151
+physics::StepConfig::velocity_iterations	variable	physics	physics-stepconfig-velocity-iterations	physics.md	engine/physics/world.h:153
+physics::StepConfig::contact_slop	variable	physics	physics-stepconfig-contact-slop	physics.md	engine/physics/world.h:155
+physics::StepConfig::restitution_threshold	variable	physics	physics-stepconfig-restitution-threshold	physics.md	engine/physics/world.h:157
+physics::StepConfig::substeps	variable	physics	physics-stepconfig-substeps	physics.md	engine/physics/world.h:160
+physics::StepConfig::contact_hertz	variable	physics	physics-stepconfig-contact-hertz	physics.md	engine/physics/world.h:163
+physics::StepConfig::contact_damping_ratio	variable	physics	physics-stepconfig-contact-damping-ratio	physics.md	engine/physics/world.h:165
+physics::StepConfig::contact_push_velocity	variable	physics	physics-stepconfig-contact-push-velocity	physics.md	engine/physics/world.h:167
+physics::StepConfig::max_velocity	variable	physics	physics-stepconfig-max-velocity	physics.md	engine/physics/world.h:170
+physics::StepConfig::joint_hertz	variable	physics	physics-stepconfig-joint-hertz	physics.md	engine/physics/world.h:172
+physics::StepConfig::joint_damping_ratio	variable	physics	physics-stepconfig-joint-damping-ratio	physics.md	engine/physics/world.h:174
+physics::StepConfig::threads	variable	physics	physics-stepconfig-threads	physics.md	engine/physics/world.h:177
+physics::StepConfig::allow_sleep	variable	physics	physics-stepconfig-allow-sleep	physics.md	engine/physics/world.h:179
+physics::StepConfig::sleep_linear	variable	physics	physics-stepconfig-sleep-linear	physics.md	engine/physics/world.h:181
+physics::StepConfig::sleep_angular	variable	physics	physics-stepconfig-sleep-angular	physics.md	engine/physics/world.h:183
+physics::StepConfig::sleep_time	variable	physics	physics-stepconfig-sleep-time	physics.md	engine/physics/world.h:185
+physics::StepStats	struct	physics	physics-stepstats	physics.md	engine/physics/world.h:191
+physics::StepStats::steps	variable	physics	physics-stepstats-steps	physics.md	engine/physics/world.h:194
+physics::StepStats::last_substeps	variable	physics	physics-stepstats-last-substeps	physics.md	engine/physics/world.h:196
+physics::StepStats::dropped_updates	variable	physics	physics-stepstats-dropped-updates	physics.md	engine/physics/world.h:198
+physics::StepStats::dropped_seconds	variable	physics	physics-stepstats-dropped-seconds	physics.md	engine/physics/world.h:200
+physics::StepStats::joints_broken	variable	physics	physics-stepstats-joints-broken	physics.md	engine/physics/world.h:202
+physics::StepStats::denormal_mode_steps	variable	physics	physics-stepstats-denormal-mode-steps	physics.md	engine/physics/world.h:205
+physics::StepStats::islands	variable	physics	physics-stepstats-islands	physics.md	engine/physics/world.h:207
+physics::StepStats::sleeping_bodies	variable	physics	physics-stepstats-sleeping-bodies	physics.md	engine/physics/world.h:209
+physics::StepStats::islands_slept	variable	physics	physics-stepstats-islands-slept	physics.md	engine/physics/world.h:211
+physics::StepStats::bodies_woken	variable	physics	physics-stepstats-bodies-woken	physics.md	engine/physics/world.h:213
+physics::PhysicsWorldStats	struct	physics	physics-physicsworldstats	physics.md	engine/physics/world.h:219
+physics::PhysicsWorldStats::bodies	variable	physics	physics-physicsworldstats-bodies	physics.md	engine/physics/world.h:222
+physics::PhysicsWorldStats::body_slots	variable	physics	physics-physicsworldstats-body-slots	physics.md	engine/physics/world.h:224
+physics::PhysicsWorldStats::colliders	variable	physics	physics-physicsworldstats-colliders	physics.md	engine/physics/world.h:226
+physics::PhysicsWorldStats::collider_slots	variable	physics	physics-physicsworldstats-collider-slots	physics.md	engine/physics/world.h:228
+physics::PhysicsWorld	class	physics	physics-physicsworld	physics.md	engine/physics/world.h:243
+physics::PhysicsWorld::PhysicsWorld()	function	physics	physics-physicsworld-physicsworld	physics.md	engine/physics/world.h:250
+physics::PhysicsWorld::~PhysicsWorld()	function	physics	physics-physicsworld-tilde-physicsworld	physics.md	engine/physics/world.h:254
+physics::PhysicsWorld::PhysicsWorld(PhysicsWorld&&) noexcept	function	physics	physics-physicsworld-physicsworld-physicsworld-amp-amp-noexcept	physics.md	engine/physics/world.h:258
+physics::PhysicsWorld::operator=(PhysicsWorld&&) noexcept	function	physics	physics-physicsworld-operator-eq-physicsworld-amp-amp-noexcept	physics.md	engine/physics/world.h:262
+physics::PhysicsWorld::GetSolverStats() const	function	physics	physics-physicsworld-getsolverstats-const	physics.md	engine/physics/world.h:268
+physics::PhysicsWorld::ContactCacheSize() const	function	physics	physics-physicsworld-contactcachesize-const	physics.md	engine/physics/world.h:274
+physics::PhysicsWorld::CreateBody(const BodyDesc&,BodyStatus*)	function	physics	physics-physicsworld-createbody-const-bodydesc-amp-bodystatus-star	physics.md	engine/physics/world.h:284
+physics::PhysicsWorld::DestroyBody(BodyId)	function	physics	physics-physicsworld-destroybody-bodyid	physics.md	engine/physics/world.h:291
+physics::PhysicsWorld::AddCollider(BodyId,const Collider&,ColliderId*)	function	physics	physics-physicsworld-addcollider-bodyid-const-collider-amp-colliderid-star	physics.md	engine/physics/world.h:303
+physics::PhysicsWorld::SetCollider(BodyId,const Collider&)	function	physics	physics-physicsworld-setcollider-bodyid-const-collider-amp	physics.md	engine/physics/world.h:311
+physics::PhysicsWorld::SetSettings(BodyId,const RigidBody&)	function	physics	physics-physicsworld-setsettings-bodyid-const-rigidbody-amp	physics.md	engine/physics/world.h:321
+physics::PhysicsWorld::Find(BodyId)	function	physics	physics-physicsworld-find-bodyid	physics.md	engine/physics/world.h:329
+physics::PhysicsWorld::Find(BodyId) const	function	physics	physics-physicsworld-find-bodyid-const	physics.md	engine/physics/world.h:337
+physics::PhysicsWorld::FindCollider(ColliderId) const	function	physics	physics-physicsworld-findcollider-colliderid-const	physics.md	engine/physics/world.h:345
+physics::PhysicsWorld::FindCollider(ColliderId)	function	physics	physics-physicsworld-findcollider-colliderid	physics.md	engine/physics/world.h:353
+physics::PhysicsWorld::BodyAtSlot(u32) const	function	physics	physics-physicsworld-bodyatslot-u32-const	physics.md	engine/physics/world.h:360
+physics::PhysicsWorld::ColliderAtSlot(u32) const	function	physics	physics-physicsworld-collideratslot-u32-const	physics.md	engine/physics/world.h:367
+physics::PhysicsWorld::WorldCenter(BodyId) const	function	physics	physics-physicsworld-worldcenter-bodyid-const	physics.md	engine/physics/world.h:374
+physics::PhysicsWorld::SetVelocity(BodyId,const Velocity&)	function	physics	physics-physicsworld-setvelocity-bodyid-const-velocity-amp	physics.md	engine/physics/world.h:383
+physics::PhysicsWorld::ApplyImpulse(BodyId,const Vec3&,const Vec3&)	function	physics	physics-physicsworld-applyimpulse-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/world.h:393
+physics::PhysicsWorld::ApplyForce(BodyId,const Vec3&,const Vec3&)	function	physics	physics-physicsworld-applyforce-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/world.h:402
+physics::PhysicsWorld::CreateJoint(const JointDesc&,BodyStatus*)	function	physics	physics-physicsworld-createjoint-const-jointdesc-amp-bodystatus-star	physics.md	engine/physics/world.h:413
+physics::PhysicsWorld::DestroyJoint(JointId)	function	physics	physics-physicsworld-destroyjoint-jointid	physics.md	engine/physics/world.h:420
+physics::PhysicsWorld::FindJoint(JointId) const	function	physics	physics-physicsworld-findjoint-jointid-const	physics.md	engine/physics/world.h:428
+physics::PhysicsWorld::JointCount() const	function	physics	physics-physicsworld-jointcount-const	physics.md	engine/physics/world.h:432
+physics::PhysicsWorld::JointReaction(JointId,Vec3*,Vec3*) const	function	physics	physics-physicsworld-jointreaction-jointid-vec3-star-vec3-star-const	physics.md	engine/physics/world.h:442
+physics::PhysicsWorld::MakeBallJoint(BodyId,BodyId,const Vec3&) const	function	physics	physics-physicsworld-makeballjoint-bodyid-bodyid-const-vec3-amp-const	physics.md	engine/physics/world.h:451
+physics::PhysicsWorld::MakeDistanceJoint(BodyId,BodyId,const Vec3&,const Vec3&) const	function	physics	physics-physicsworld-makedistancejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const	physics.md	engine/physics/world.h:461
+physics::PhysicsWorld::MakeFixedJoint(BodyId,BodyId,const Vec3&) const	function	physics	physics-physicsworld-makefixedjoint-bodyid-bodyid-const-vec3-amp-const	physics.md	engine/physics/world.h:470
+physics::PhysicsWorld::MakeHingeJoint(BodyId,BodyId,const Vec3&,const Vec3&) const	function	physics	physics-physicsworld-makehingejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const	physics.md	engine/physics/world.h:481
+physics::PhysicsWorld::JointAngle(JointId,f32*) const	function	physics	physics-physicsworld-jointangle-jointid-f32-star-const	physics.md	engine/physics/world.h:490
+physics::PhysicsWorld::SetTransform(BodyId,const Vec3&,const Quaternion&)	function	physics	physics-physicsworld-settransform-bodyid-const-vec3-amp-const-quaternion-amp	physics.md	engine/physics/world.h:502
+physics::PhysicsWorld::RefreshInertia(Body*)	function	physics	physics-physicsworld-refreshinertia-body-star	physics.md	engine/physics/world.h:509
+physics::PhysicsWorld::Stats() const	function	physics	physics-physicsworld-stats-const	physics.md	engine/physics/world.h:515
+physics::PhysicsWorld::SetStepConfig(const StepConfig&)	function	physics	physics-physicsworld-setstepconfig-const-stepconfig-amp	physics.md	engine/physics/world.h:523
+physics::PhysicsWorld::GetStepConfig() const	function	physics	physics-physicsworld-getstepconfig-const	physics.md	engine/physics/world.h:529
+physics::PhysicsWorld::Update(f32)	function	physics	physics-physicsworld-update-f32	physics.md	engine/physics/world.h:540
+physics::PhysicsWorld::Step()	function	physics	physics-physicsworld-step	physics.md	engine/physics/world.h:549
+physics::PhysicsWorld::Alpha() const	function	physics	physics-physicsworld-alpha-const	physics.md	engine/physics/world.h:555
+physics::PhysicsWorld::Interpolated(BodyId,f32,Vec3*,Quaternion*) const	function	physics	physics-physicsworld-interpolated-bodyid-f32-vec3-star-quaternion-star-const	physics.md	engine/physics/world.h:570
+physics::PhysicsWorld::SetScheduler(jobs::Scheduler*)	function	physics	physics-physicsworld-setscheduler-jobs-scheduler-star	physics.md	engine/physics/world.h:580
+physics::PhysicsWorld::IsSleeping(BodyId) const	function	physics	physics-physicsworld-issleeping-bodyid-const	physics.md	engine/physics/world.h:586
+physics::PhysicsWorld::IslandOf(BodyId,u32*) const	function	physics	physics-physicsworld-islandof-bodyid-u32-star-const	physics.md	engine/physics/world.h:600
+physics::PhysicsWorld::Wake(BodyId)	function	physics	physics-physicsworld-wake-bodyid	physics.md	engine/physics/world.h:606
+physics::PhysicsWorld::GetStepStats() const	function	physics	physics-physicsworld-getstepstats-const	physics.md	engine/physics/world.h:612
+physics::PhysicsWorld::StateHash(bool*) const	function	physics	physics-physicsworld-statehash-bool-star-const	physics.md	engine/physics/world.h:624
+physics::PhysicsWorld::Hulls()	function	physics	physics-physicsworld-hulls	physics.md	engine/physics/world.h:632
+physics::PhysicsWorld::Meshes()	function	physics	physics-physicsworld-meshes	physics.md	engine/physics/world.h:640
+physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-meshes-const	physics.md	engine/physics/world.h:647
+physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:655
+physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:662
+physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:669
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20

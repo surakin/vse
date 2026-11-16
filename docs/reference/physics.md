@@ -4852,6 +4852,16 @@ f32 joint_damping_ratio;
 
 The damping ratio of that spring.
 
+### `threads` {#physics-stepconfig-threads}
+
+`variable physics::StepConfig::threads` — defined in `engine/physics/world.h`
+
+```cpp
+u32 threads;
+```
+
+How many threads the step may use: 1 runs everything inline, more uses the scheduler given to `SetScheduler` (its own participant count decides how many run). The results are the same to the bit for every value.
+
 ### `allow_sleep` {#physics-stepconfig-allow-sleep}
 
 `variable physics::StepConfig::allow_sleep` — defined in `engine/physics/world.h`
@@ -5751,6 +5761,23 @@ Positions are blended linearly, orientations by a normalized one along the short
 | Returns | false for a stale id (the outputs are not written). |
 | Fails | as the return says. |
 | Ownership | the outputs are the caller's; nothing is kept. |
+
+### `SetScheduler(jobs::Scheduler*)` {#physics-physicsworld-setscheduler-jobs-scheduler-star}
+
+`method physics::PhysicsWorld::SetScheduler` — defined in `engine/physics/world.h`
+
+```cpp
+void SetScheduler(jobs::Scheduler* scheduler);
+```
+
+Gives the step a job scheduler for its parallel parts (the narrow phase and the integration of free bodies); without one, or with `StepConfig::threads` of 1, the step runs inline. The result does not depend on either.
+
+| Field | Value |
+|---|---|
+| Parameter `scheduler` | the scheduler, or null; it must outlive its use by the world. `Step` and `Update` must then be called from the scheduler's main thread, outside any job. |
+| Fails | never. |
+| Thread-safety | owner-thread-only. Call between steps. |
+| Ownership | the scheduler is borrowed. |
 
 ### `IsSleeping(BodyId)` {#physics-physicsworld-issleeping-bodyid-const}
 

@@ -281,3 +281,13 @@ A body that rests on a kinematic body that moves, however slowly, never sleeps. 
 so a waking stack starts without warm start impulses.
 
 `StepStats` reports `islands`, `sleeping_bodies`, `islands_slept` and `bodies_woken`.
+
+## The parallel step
+
+`PhysicsWorld::SetScheduler` gives the step a `jobs::Scheduler`; with `StepConfig::threads` (setting `physics.threads`) above 1 the
+narrow phase and the integration of free bodies run as jobs, and `Step` must then be called from the scheduler's main thread,
+outside any job. The narrow phase works on the pair list in blocks of 32 pairs: each block only reads the bodies and writes its own
+slots, and the contacts are then applied on the main thread in pair order, so the manifolds, the wakes and the island edges come out
+in the same order whatever the thread count. Free bodies (those the solver did not integrate) are integrated in blocks of 256, each
+body independent. No sum is made across jobs. The state hash is the same to the bit for 0 (no scheduler), 1, 2, 4, 8 and 32
+participants (`tests/physics/parallel_test.cpp`). The contact solver itself still runs on one thread (`KNOWN-ISSUES.md`).

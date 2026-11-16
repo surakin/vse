@@ -1,5 +1,6 @@
 // The fixed-step driver and the integration (Phase 25 Day 378). Everything here uses only + - * / and Sqrt
 // (docs/guide/physics.md, "The rules of the step").
+#include "jobs/parallel_for.h"
 #include "lang/scalar.h"
 #include "log/assert.h"
 #include "physics/broad_phase.h"
@@ -37,6 +38,21 @@ Quaternion Turn(const Quaternion& q, const Vec3& w, f32 dt)
     return turned.Normalized();
 }
 
+// Runs f(begin, end) over [0, count) in blocks of a fixed size: inline, or as jobs. The blocks are the same either way
+// and each writes only its own range, so the result does not depend on how many threads run them.
+template <class F> void ForBlocks(jobs::Scheduler* scheduler, usize count, usize block, F& f)
+{
+    if (scheduler == nullptr || count <= block)
+    {
+        if (count != 0)
+        {
+            f(usize{0}, count);
+        }
+        return;
+    }
+    jobs::ParallelForBlocking(*scheduler, count, block, f);
+}
+
 }  // namespace
 
 PhysicsWorld::PhysicsWorld() = default;
@@ -60,7 +76,7 @@ BodyStatus PhysicsWorld::SetStepConfig(const StepConfig& config)
         !IsFinite(config.joint_damping_ratio) || config.joint_damping_ratio < 0.0f ||
         config.joint_damping_ratio > 1000.0f || !IsFinite(config.sleep_linear) || config.sleep_linear < 0.0f ||
         !IsFinite(config.sleep_angular) || config.sleep_angular < 0.0f || !IsFinite(config.sleep_time) ||
-        config.sleep_time < 0.0f)
+        config.sleep_time < 0.0f || config.threads < 1 || config.threads > 256)
     {
         return BodyStatus::Invalid;
     }
@@ -230,7 +246,21 @@ void PhysicsWorld::Step()
     Vector<u32> edges;
     Vector<usize> idle;  // pairs of two bodies that rest: a contact wakes one, so they are looked at again after
     const Vector<ColliderPair>& pairs = broad_->Pairs();
-    const auto make_contact = [&](const ColliderPair& pair, bool first, usize index)
+    jobs::Scheduler* scheduler = step_config_.threads > 1 ? scheduler_ : nullptr;
+    // One pair that needs the narrow phase: the narrow phase fills `input` and `touching` from the bodies' poses (a
+    // read-only job), then `apply` below uses the result on the main thread in pair order.
+    struct PairWork
+    {
+        const ColliderRecord* ra;
+        const ColliderRecord* rb;
+        Body* ba;
+        Body* bb;
+        ColliderPair pair;
+        ContactInput input;
+        bool touching;
+    };
+    Vector<PairWork> work;
+    const auto classify = [&](const ColliderPair& pair, bool first, usize index)
     {
         if (pair.trigger)
         {
@@ -268,58 +298,88 @@ void PhysicsWorld::Step()
         {
             return;
         }
-        Pose pose_a;
-        pose_a.position = ba->position + ba->orientation.ToMat3() * ra->value.offset;
-        pose_a.rotation = ba->orientation * ra->value.rotation;
-        Pose pose_b;
-        pose_b.position = bb->position + bb->orientation.ToMat3() * rb->value.offset;
-        pose_b.rotation = bb->orientation * rb->value.rotation;
-        ContactInput input;
-        if (Collide(ra->value.shape, pose_a, rb->value.shape, pose_b, step_config_.contact_margin, &input.manifold,
-                    &hulls_, &meshes_, &compounds_) != CollideResult::Contact)
+        PairWork item;
+        item.ra = ra;
+        item.rb = rb;
+        item.ba = ba;
+        item.bb = bb;
+        item.pair = pair;
+        item.touching = false;
+        work.Push(item);
+    };
+    auto collide_block = [&](usize begin, usize end)
+    {
+        for (usize k = begin; k < end; ++k)
         {
-            return;
+            PairWork& w = work[k];
+            Pose pose_a;
+            pose_a.position = w.ba->position + w.ba->orientation.ToMat3() * w.ra->value.offset;
+            pose_a.rotation = w.ba->orientation * w.ra->value.rotation;
+            Pose pose_b;
+            pose_b.position = w.bb->position + w.bb->orientation.ToMat3() * w.rb->value.offset;
+            pose_b.rotation = w.bb->orientation * w.rb->value.rotation;
+            w.touching = Collide(w.ra->value.shape, pose_a, w.rb->value.shape, pose_b, step_config_.contact_margin,
+                                 &w.input.manifold, &hulls_, &meshes_, &compounds_) == CollideResult::Contact;
         }
-        CombineMaterials(ra->value.material, rb->value.material, &input.manifold);
-        input.a = pair.a;
-        input.b = pair.b;
-        input.body_a = ra->owner;
-        input.body_b = rb->owner;
-        // A touch wakes what sleeps: the other body (or a body changed from outside) moves.
-        const bool both_dynamic = ba->settings.type == BodyType::Dynamic && bb->settings.type == BodyType::Dynamic;
-        if (ba->sleeping)
+    };
+    // Collides the queued pairs (in blocks of 32, whatever the thread count), then applies the contacts in order: a
+    // touch wakes what sleeps and adds the island edge.
+    const auto run_work = [&]
+    {
+        ForBlocks(scheduler, work.Size(), 32, collide_block);
+        for (usize k = 0; k < work.Size(); ++k)
         {
-            WakeIsland(ba);
-        }
-        if (bb->sleeping)
-        {
-            WakeIsland(bb);
-        }
-        if (both_dynamic)
-        {
-            edges.Push(ba->id.index);
-            edges.Push(bb->id.index);
-        }
-        else
-        {
-            const Body* mover = ba->settings.type == BodyType::Dynamic ? bb : ba;
-            const Body* mine = ba->settings.type == BodyType::Dynamic ? ba : bb;
-            if (Disturbing(*mover))
+            PairWork& w = work[k];
+            if (!w.touching)
             {
-                edges.Push(mine->id.index);
-                edges.Push(mine->id.index);
+                continue;
             }
+            ContactInput& input = w.input;
+            CombineMaterials(w.ra->value.material, w.rb->value.material, &input.manifold);
+            input.a = w.pair.a;
+            input.b = w.pair.b;
+            input.body_a = w.ra->owner;
+            input.body_b = w.rb->owner;
+            const bool both_dynamic = w.ba->settings.type == BodyType::Dynamic &&
+                                      w.bb->settings.type == BodyType::Dynamic;
+            if (w.ba->sleeping)
+            {
+                WakeIsland(w.ba);
+            }
+            if (w.bb->sleeping)
+            {
+                WakeIsland(w.bb);
+            }
+            if (both_dynamic)
+            {
+                edges.Push(w.ba->id.index);
+                edges.Push(w.bb->id.index);
+            }
+            else
+            {
+                const Body* mover = w.ba->settings.type == BodyType::Dynamic ? w.bb : w.ba;
+                const Body* mine = w.ba->settings.type == BodyType::Dynamic ? w.ba : w.bb;
+                if (Disturbing(*mover))
+                {
+                    edges.Push(mine->id.index);
+                    edges.Push(mine->id.index);
+                }
+            }
+            inputs.Push(input);
         }
-        inputs.Push(input);
+        work.Clear();
     };
     for (usize i = 0; i < pairs.Size(); ++i)
     {
-        make_contact(pairs[i], true, i);
+        classify(pairs[i], true, i);
     }
+    run_work();
+    // The pairs of bodies that were asleep and have just been woken.
     for (usize i = 0; i < idle.Size(); ++i)
     {
-        make_contact(pairs[idle[i]], false, idle[i]);
+        classify(pairs[idle[i]], false, idle[i]);
     }
+    run_work();
     // The bodies that touch take their substeps in the solver; the rest take one step.
     SolverConfig solver_config;
     solver_config.substeps = step_config_.substeps;
@@ -335,6 +395,9 @@ void PhysicsWorld::Step()
     solver_config.joint_hertz = step_config_.joint_hertz;
     solver_config.joint_damping_ratio = step_config_.joint_damping_ratio;
     solver_.Solve(this, Span<const ContactInput>(inputs.Data(), inputs.Size()), solver_config);
+    // The bodies the solver did not integrate (free bodies, kinematic bodies) take their plain step; they are
+    // independent, so blocks of them run as jobs.
+    Vector<Body*> free_bodies;
     for (u32 slot = 0; slot < slots; ++slot)
     {
         Body* body = bodies_.Find(slot, bodies_.LiveGeneration(slot));
@@ -342,21 +405,34 @@ void PhysicsWorld::Step()
         {
             continue;
         }
-        if (body->sleeping)
+        if (!body->sleeping && !body->integrated)
         {
-            body->force = Vec3(0.0f, 0.0f, 0.0f);
-            body->torque = Vec3(0.0f, 0.0f, 0.0f);
-            continue;
+            free_bodies.Push(body);
         }
-        if (!body->integrated)
+        body->integrated = false;
+    }
+    auto integrate_block = [&](usize begin, usize end)
+    {
+        for (usize k = begin; k < end; ++k)
         {
+            Body* body = free_bodies[k];
             IntegrateVelocity(step_config_.gravity, body, dt);
             LimitVelocity(step_config_.max_velocity, body);
             IntegratePosition(body, dt);
+            body->force = Vec3(0.0f, 0.0f, 0.0f);
+            body->torque = Vec3(0.0f, 0.0f, 0.0f);
         }
-        body->integrated = false;
-        body->force = Vec3(0.0f, 0.0f, 0.0f);
-        body->torque = Vec3(0.0f, 0.0f, 0.0f);
+    };
+    ForBlocks(scheduler, free_bodies.Size(), 256, integrate_block);
+    // The solver's bodies and the sleeping ones only lose the forces applied since the last step.
+    for (u32 slot = 0; slot < slots; ++slot)
+    {
+        Body* body = bodies_.Find(slot, bodies_.LiveGeneration(slot));
+        if (body != nullptr && body->settings.type != BodyType::Static)
+        {
+            body->force = Vec3(0.0f, 0.0f, 0.0f);
+            body->torque = Vec3(0.0f, 0.0f, 0.0f);
+        }
     }
     UpdateSleep(edges, dt);
     for (u32 slot = 0; slot < slots; ++slot)

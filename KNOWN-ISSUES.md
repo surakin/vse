@@ -84,6 +84,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 
 ## Deferred items
 
+- Phase 25 Day 389: the contact solver runs on one thread (the plan's island-parallel solve is open: the constraint list and contact cache are global); a 1500-body pile steps 100.5 ms inline and 94.7 ms with 4 participants. The shuffled job start order test hook does not exist in the scheduler; the thread-count test uses 300 bodies and 120 steps, not 2000 and 600.
 - Phase 25 Day 388: a step of 10000 isolated boxes costs 542 ms awake and 495 ms with one box moving, 0.7 ms with all asleep (release); a perf run of the awake scene showed 70 % of samples in `spatial::Overlaps` called from `PairTracker::Gather` (not examined further). Sleeping contacts lose their warm-start cache, so a woken stack starts cold; `JointReaction` keeps the last awake value while a joint's bodies sleep.
 - Phase 25 Day 387 (2026-11-16, Linux): a hinge whose two axes are exactly opposite (180 degrees, reachable only by teleporting a body) has no alignment error direction, and its angle reads the twist about A's axis only, so a swing error above about 45 degrees gives a wrong limit angle.
 - Phase 25 Day 386 (2026-11-16, Linux): the ECS `Joint` component (a joint naming two entities) is not built, it moves to Day 393; joints are not yet part of an island graph (Day 388); a pendulum loses 1.2 % of its swing energy in 10 s to the soft joint constraint (the plan said 1 %).
