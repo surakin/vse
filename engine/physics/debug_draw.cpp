@@ -1,6 +1,7 @@
 #include "physics/debug_draw.h"
 
 #include "lang/scalar.h"
+#include "math/math_util.h"
 
 namespace engine_placeholder::physics
 {
@@ -9,7 +10,6 @@ namespace
 {
 
 constexpr u32 kSegments = 16;
-constexpr f32 kPi = 3.14159265f;
 
 void Line(Vector<spatial::DebugLine>* lines, const Vec3& a, const Vec3& b, u32 color)
 {

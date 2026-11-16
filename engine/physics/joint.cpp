@@ -1,6 +1,7 @@
 #include "physics/joint.h"
 
 #include "lang/scalar.h"
+#include "math/math_util.h"
 #include "physics/check.h"
 
 namespace engine_placeholder::physics
@@ -76,8 +77,7 @@ f32 HingeRawAngle(const JointDesc& desc, const Quaternion& orientation_a, const 
 
 f32 WrapAngle(f32 angle)
 {
-    constexpr f32 kTwoPi = 6.2831853f;
-    constexpr f32 kPi = 3.14159265f;
+    constexpr f32 kTwoPi = 2.0f * kPi;  // the same float as the literal 6.2831853f it replaces
     return angle - kTwoPi * Floor((angle + kPi) / kTwoPi);
 }
 

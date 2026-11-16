@@ -19,8 +19,9 @@ replay, a rollback and a networked peer can trust it. This page states the rules
    reimplemented), and it is listed here: converting an authored angle to its sine and cosine (a hinge limit, a motor target, a slope limit), building
    a quaternion from an axis and an angle, reporting an angle to the host. The reference scenes use literal constants for these; a scene that does not
    is hashed separately and a disagreement between machines is recorded in `KNOWN-ISSUES.md`, not worked around.
-3. **No contraction, no fast-math.** `-ffp-contract=off -fno-fast-math` on GCC and Clang, `/fp:precise` on cl, `/fp:precise` and
-   `/clang:-ffp-contract=off` on clang-cl (`ENGINE_FP_COMPILE_OPTIONS`, `cmake/EngineCompilerOptions.cmake`), applied to every target of ours. A fused
+3. **No contraction, no fast-math.** `-ffp-contract=off -fno-fast-math` on GCC and Clang, `/fp:precise` on cl, the Clang switches through
+   `/clang:` on clang-cl (not `/fp:precise`, which is Clang's contracting `-ffp-model=precise`; Day 398) (`ENGINE_FP_COMPILE_OPTIONS`,
+   `cmake/EngineCompilerOptions.cmake`), applied to every target of ours. A fused
    multiply-add rounds once where a multiply and an add round twice, so a build for a machine with FMA (`-march=native`, and arm64 by default) would give
    other bits, and GCC and Clang would give others still (Day 373 spike 2). The configure step stops when a fast-math flag, or contraction, is set
    anywhere (`cmake/EngineFpCheck.cmake`; a fast-math flag at link time also sets flush-to-zero for the whole process).
@@ -45,6 +46,12 @@ The hash is the same under GCC and Clang, `-O0` to `-O3`, unity and non-unity bu
 compare it with the committed value; the Windows PC and the Mac compare it on Days 398 and 399 (arm64 can only be compiled, not run). A control probe
 compiled with contraction allowed shows that a fused multiply-add would be seen (`Determinism: the control probe does fuse`; skipped where the machine has no
 FMA instruction).
+
+**On Windows (Day 398)** the probe gives the same line under cl and clang-cl, and every committed hash of the physics tests (the six golden scenes,
+the 600-step scene, the random-pair, hull, compound and mesh contacts, joints, hinges, snapshots) and the C API sample's checksum equal Linux's and the
+Mac's, in unity and non-unity builds, plain and asan. The compound and mesh contact hashes first differed here as on the Mac: their samples were built
+with `Sin` and `Cos`, which the C libraries round differently; Day 399's libm-free samples (`testing::TurnFromHalfCos`, `testing::Wave`) give the same
+constants on Windows. The control probe is skipped under cl and clang-cl.
 
 ## The state hash
 

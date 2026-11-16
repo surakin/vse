@@ -2,6 +2,7 @@
 // property.
 #include <catch2/catch_test_macros.hpp>
 
+#include "lang/limits.h"
 #include "lang/scalar.h"
 #include "math/math_util.h"
 #include "physics/collide.h"
@@ -215,7 +216,7 @@ TEST_CASE("Collide: invalid input is nothing and leaves the manifold alone", "[p
           CollideResult::None);
     const Shape ball = Shape::MakeSphere(1.0f);
     CHECK(Collide(ball, PoseAt(0, 0, 0), ball, PoseAt(50, 0, 0), testing::kNaN, &m) == CollideResult::None);
-    CHECK(Collide(ball, PoseAt(0, 0, 0), ball, PoseAt(50, 0, 0), __builtin_inff(), &m) == CollideResult::None);
+    CHECK(Collide(ball, PoseAt(0, 0, 0), ball, PoseAt(50, 0, 0), Limits<f32>::Infinity(), &m) == CollideResult::None);
 }
 
 TEST_CASE("CombineMaterials: the rule with the larger number, whatever the order", "[physics][collide]")
@@ -788,7 +789,7 @@ TEST_CASE("Collide box-box: a non-finite pose never writes past the clip buffers
 {
     const Shape cube = Shape::MakeBox(Vec3(0.5f, 0.5f, 0.5f));
     ContactManifold m;
-    const f32 inf = __builtin_inff();
+    const f32 inf = Limits<f32>::Infinity();
     for (u32 i = 0; i < 8; ++i)
     {
         Pose b = PoseAt(0.1f * static_cast<f32>(i), (i % 2 == 0) ? testing::kNaN : inf, 0.2f);

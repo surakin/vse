@@ -1,6 +1,7 @@
 // Joints: ball, distance and fixed (Phase 25 Day 386).
 #include <catch2/catch_test_macros.hpp>
 
+#include "lang/limits.h"
 #include "lang/scalar.h"
 #include "physics/world.h"
 
@@ -325,7 +326,7 @@ TEST_CASE("Joint: creating and destroying", "[physics][joint]")
     CHECK(status == BodyStatus::StaleId);
     // Numbers that are not finite, a length that is not positive.
     JointDesc bad = world.MakeBallJoint(a, b, Vec3(1, 0, 0));
-    bad.anchor_a.x = 1.0f / 0.0f;
+    bad.anchor_a.x = Limits<f32>::Infinity();
     CHECK(!world.CreateJoint(bad, &status).IsValid());
     CHECK(status == BodyStatus::Invalid);
     JointDesc distance = world.MakeDistanceJoint(a, b, Vec3(0, 0, 0), Vec3(2, 0, 0));

@@ -84,10 +84,12 @@ set(ENGINE_WINDOWS_COMPILE_OPTIONS
   "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:preprocessor>")
 set(ENGINE_WINDOWS_DEFINITIONS NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)
 set(ENGINE_EXCEPTIONS_COMPILE_OPTIONS /EHsc)
-# cl: /fp:precise (never /fp:fast; contraction is off in precise mode); clang-cl: the same plus clang's own contraction switch through /clang:.
-set(ENGINE_FP_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:/fp:precise>")
+# cl: /fp:precise (never /fp:fast; contraction is off in precise mode). clang-cl: Clang's own switches, as on Linux, and not /fp:precise, which is
+# Clang's -ffp-model=precise, a model that contracts (-ffp-contract=on): overriding it with -ffp-contract=off is a warning, an error under /WX (Day 398).
 if(ENGINE_CLANG_CL)
-  list(APPEND ENGINE_FP_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:/clang:-ffp-contract=off>")
+  set(ENGINE_FP_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:/clang:-ffp-contract=off>" "$<$<COMPILE_LANGUAGE:C,CXX>:/clang:-fno-fast-math>")
+else()
+  set(ENGINE_FP_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:/fp:precise>")
 endif()
 
 # CMake's default C++ flags for MSVC hold /EHsc and /GR. The engine's libraries turn both off, and passing /EHsc and then /EHs-c-
