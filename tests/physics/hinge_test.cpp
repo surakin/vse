@@ -319,5 +319,5 @@ TEST_CASE("Hinge: the state hash of a hinge scene equals the committed constant"
     const u64 first = run(600);
     CHECK(first == run(600));
     CHECK(first != run(599));
-    CHECK(first == 0xf6f62d959b49c4dfull);
+    CHECK(first == 0xf159eb48d1b6d124ull);
 }

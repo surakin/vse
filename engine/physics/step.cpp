@@ -58,7 +58,9 @@ BodyStatus PhysicsWorld::SetStepConfig(const StepConfig& config)
         config.contact_push_velocity < 0.0f || !IsFinite(config.max_velocity) || config.max_velocity < 1.0f ||
         !IsFinite(config.joint_hertz) || config.joint_hertz < 0.0f || config.joint_hertz > 1000.0f ||
         !IsFinite(config.joint_damping_ratio) || config.joint_damping_ratio < 0.0f ||
-        config.joint_damping_ratio > 1000.0f)
+        config.joint_damping_ratio > 1000.0f || !IsFinite(config.sleep_linear) || config.sleep_linear < 0.0f ||
+        !IsFinite(config.sleep_angular) || config.sleep_angular < 0.0f || !IsFinite(config.sleep_time) ||
+        config.sleep_time < 0.0f)
     {
         return BodyStatus::Invalid;
     }
@@ -172,7 +174,7 @@ void PhysicsWorld::Step()
     for (u32 slot = 0; slot < slots; ++slot)
     {
         Body* body = bodies_.Find(slot, bodies_.LiveGeneration(slot));
-        if (body != nullptr && body->settings.type != BodyType::Static)
+        if (body != nullptr && body->settings.type != BodyType::Static && !body->sleeping)
         {
             body->previous_position = body->position;
             body->previous_orientation = body->orientation;
@@ -186,6 +188,28 @@ void PhysicsWorld::Step()
         broad_ = MakeUnique<BroadPhase>(broad_config);
     }
     broad_->Update(*this);
+    // A sleeping body wakes when a joint ties it to something that moves.
+    for (u32 slot = 0; slot < joints_.Slots(); ++slot)
+    {
+        const JointRecord* joint = joints_.Find(slot, joints_.LiveGeneration(slot));
+        if (joint == nullptr)
+        {
+            continue;
+        }
+        Body* ja = joint->desc.body_a.IsValid() ? Find(joint->desc.body_a) : nullptr;
+        Body* jb = joint->desc.body_b.IsValid() ? Find(joint->desc.body_b) : nullptr;
+        if (ja != nullptr && jb != nullptr)
+        {
+            if (ja->sleeping && Disturbing(*jb))
+            {
+                WakeIsland(ja);
+            }
+            if (jb->sleeping && Disturbing(*ja))
+            {
+                WakeIsland(jb);
+            }
+        }
+    }
     // The body pairs of joints that keep their bodies from colliding, as sorted keys.
     Vector<u64> connected;
     for (u32 slot = 0; slot < joints_.Slots(); ++slot)
@@ -201,19 +225,37 @@ void PhysicsWorld::Step()
         }
     }
     Vector<ContactInput> inputs;
+    // The ends of the contacts between bodies that sleep or move, as slot pairs; a body paired with itself touches
+    // something that moves, which keeps its island awake.
+    Vector<u32> edges;
+    Vector<usize> idle;  // pairs of two bodies that rest: a contact wakes one, so they are looked at again after
     const Vector<ColliderPair>& pairs = broad_->Pairs();
-    for (usize i = 0; i < pairs.Size(); ++i)
+    const auto make_contact = [&](const ColliderPair& pair, bool first, usize index)
     {
-        const ColliderPair& pair = pairs[i];
         if (pair.trigger)
         {
-            continue;
+            return;
         }
         const ColliderRecord* ra = FindCollider(pair.a);
         const ColliderRecord* rb = FindCollider(pair.b);
         if (ra == nullptr || rb == nullptr || ra->owner == rb->owner)
         {
-            continue;
+            return;
+        }
+        Body* ba = Find(ra->owner);
+        Body* bb = Find(rb->owner);
+        if (ba == nullptr || bb == nullptr ||
+            (ba->settings.type != BodyType::Dynamic && bb->settings.type != BodyType::Dynamic))
+        {
+            return;
+        }
+        if (!Disturbing(*ba) && !Disturbing(*bb))
+        {
+            if (first)
+            {
+                idle.Push(index);
+            }
+            return;
         }
         bool joined = false;
         for (usize k = 0; k < connected.Size(); k += 2)
@@ -224,14 +266,7 @@ void PhysicsWorld::Step()
         }
         if (joined)
         {
-            continue;
-        }
-        const Body* ba = Find(ra->owner);
-        const Body* bb = Find(rb->owner);
-        if (ba == nullptr || bb == nullptr ||
-            (ba->settings.type != BodyType::Dynamic && bb->settings.type != BodyType::Dynamic))
-        {
-            continue;
+            return;
         }
         Pose pose_a;
         pose_a.position = ba->position + ba->orientation.ToMat3() * ra->value.offset;
@@ -243,14 +278,47 @@ void PhysicsWorld::Step()
         if (Collide(ra->value.shape, pose_a, rb->value.shape, pose_b, step_config_.contact_margin, &input.manifold,
                     &hulls_, &meshes_, &compounds_) != CollideResult::Contact)
         {
-            continue;
+            return;
         }
         CombineMaterials(ra->value.material, rb->value.material, &input.manifold);
         input.a = pair.a;
         input.b = pair.b;
         input.body_a = ra->owner;
         input.body_b = rb->owner;
+        // A touch wakes what sleeps: the other body (or a body changed from outside) moves.
+        const bool both_dynamic = ba->settings.type == BodyType::Dynamic && bb->settings.type == BodyType::Dynamic;
+        if (ba->sleeping)
+        {
+            WakeIsland(ba);
+        }
+        if (bb->sleeping)
+        {
+            WakeIsland(bb);
+        }
+        if (both_dynamic)
+        {
+            edges.Push(ba->id.index);
+            edges.Push(bb->id.index);
+        }
+        else
+        {
+            const Body* mover = ba->settings.type == BodyType::Dynamic ? bb : ba;
+            const Body* mine = ba->settings.type == BodyType::Dynamic ? ba : bb;
+            if (Disturbing(*mover))
+            {
+                edges.Push(mine->id.index);
+                edges.Push(mine->id.index);
+            }
+        }
         inputs.Push(input);
+    };
+    for (usize i = 0; i < pairs.Size(); ++i)
+    {
+        make_contact(pairs[i], true, i);
+    }
+    for (usize i = 0; i < idle.Size(); ++i)
+    {
+        make_contact(pairs[idle[i]], false, idle[i]);
     }
     // The bodies that touch take their substeps in the solver; the rest take one step.
     SolverConfig solver_config;
@@ -274,6 +342,12 @@ void PhysicsWorld::Step()
         {
             continue;
         }
+        if (body->sleeping)
+        {
+            body->force = Vec3(0.0f, 0.0f, 0.0f);
+            body->torque = Vec3(0.0f, 0.0f, 0.0f);
+            continue;
+        }
         if (!body->integrated)
         {
             IntegrateVelocity(step_config_.gravity, body, dt);
@@ -283,6 +357,15 @@ void PhysicsWorld::Step()
         body->integrated = false;
         body->force = Vec3(0.0f, 0.0f, 0.0f);
         body->torque = Vec3(0.0f, 0.0f, 0.0f);
+    }
+    UpdateSleep(edges, dt);
+    for (u32 slot = 0; slot < slots; ++slot)
+    {
+        Body* body = bodies_.Find(slot, bodies_.LiveGeneration(slot));
+        if (body != nullptr)
+        {
+            body->disturbed = false;
+        }
     }
     // A joint that carried more than it can is removed.
     for (u32 slot = 0; slot < joints_.Slots(); ++slot)

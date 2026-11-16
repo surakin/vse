@@ -681,6 +681,12 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
         {
             continue;
         }
+        // A joint whose bodies all sleep or are fixed has nothing to do.
+        const auto live = [](const Body* body) { return body->settings.type == BodyType::Dynamic && !body->sleeping; };
+        if (!live(work.a) && !live(work.b))
+        {
+            continue;
+        }
         if (work.a != &world_body)
         {
             state_for(work.a);

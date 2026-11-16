@@ -124,6 +124,7 @@ BodyStatus PhysicsWorld::DestroyBody(BodyId id)
     {
         return BodyStatus::StaleId;
     }
+    Disturb(body);
     ColliderId next = body->first_collider;
     while (next.IsValid())
     {
@@ -184,6 +185,14 @@ JointId PhysicsWorld::CreateJoint(const JointDesc& desc, BodyStatus* status)
         return fail(BodyStatus::OutOfMemory);
     }
     record->desc = desc;
+    if (a != nullptr)
+    {
+        WakeIsland(Find(desc.body_a));
+    }
+    if (b != nullptr)
+    {
+        WakeIsland(Find(desc.body_b));
+    }
     if (desc.type == JointType::Hinge)
     {
         // The angle starts from the poses the hinge is made at.
@@ -203,7 +212,22 @@ JointId PhysicsWorld::CreateJoint(const JointDesc& desc, BodyStatus* status)
 
 BodyStatus PhysicsWorld::DestroyJoint(JointId id)
 {
-    return joints_.Release(id.index, id.generation) ? BodyStatus::Ok : BodyStatus::StaleId;
+    const JointRecord* joint = joints_.Find(id.index, id.generation);
+    if (joint == nullptr)
+    {
+        return BodyStatus::StaleId;
+    }
+    // The bodies may now move apart, so they leave sleep.
+    if (joint->desc.body_a.IsValid() && Find(joint->desc.body_a) != nullptr)
+    {
+        WakeIsland(Find(joint->desc.body_a));
+    }
+    if (joint->desc.body_b.IsValid() && Find(joint->desc.body_b) != nullptr)
+    {
+        WakeIsland(Find(joint->desc.body_b));
+    }
+    joints_.Release(id.index, id.generation);
+    return BodyStatus::Ok;
 }
 
 const JointRecord* PhysicsWorld::FindJoint(JointId id) const
@@ -345,6 +369,7 @@ BodyStatus PhysicsWorld::AddCollider(BodyId body_id, const Collider& collider, C
         return BodyStatus::OutOfMemory;
     }
     record->value = collider;
+    Disturb(body);
     record->owner = body_id;
     record->next = ColliderId();
     body->first_collider = ColliderId{index, generation};
@@ -373,6 +398,7 @@ BodyStatus PhysicsWorld::SetCollider(BodyId body_id, const Collider& collider)
     {
         return BodyStatus::Invalid;
     }
+    Disturb(body);
     record->value = collider;
     RecomputeMass(body);
     return BodyStatus::Ok;
@@ -394,7 +420,9 @@ BodyStatus PhysicsWorld::SetSettings(BodyId id, const RigidBody& settings)
     {
         return BodyStatus::Invalid;  // a mesh collider stays on a static body
     }
+    Disturb(body);
     body->settings = settings;
+    body->island = 0;
     if (settings.type == BodyType::Static)
     {
         body->linear_velocity = Vec3(0.0f, 0.0f, 0.0f);
@@ -461,6 +489,7 @@ BodyStatus PhysicsWorld::SetVelocity(BodyId id, const Velocity& velocity)
     {
         return BodyStatus::WrongType;
     }
+    WakeIsland(body);
     body->linear_velocity = velocity.linear;
     body->angular_velocity = velocity.angular;
     return BodyStatus::Ok;
@@ -481,6 +510,7 @@ BodyStatus PhysicsWorld::ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3
     {
         return BodyStatus::WrongType;
     }
+    WakeIsland(body);
     body->linear_velocity = body->linear_velocity + impulse * body->inverse_mass;
     const Vec3 arm = point - WorldCenter(id);
     body->angular_velocity = body->angular_velocity + body->inverse_inertia_world * arm.Cross(impulse);
@@ -502,6 +532,7 @@ BodyStatus PhysicsWorld::ApplyForce(BodyId id, const Vec3& force, const Vec3& po
     {
         return BodyStatus::WrongType;
     }
+    WakeIsland(body);
     body->force = body->force + force;
     body->torque = body->torque + (point - WorldCenter(id)).Cross(force);
     return BodyStatus::Ok;
@@ -518,6 +549,7 @@ BodyStatus PhysicsWorld::SetTransform(BodyId id, const Vec3& position, const Qua
     {
         return BodyStatus::Invalid;
     }
+    Disturb(body);
     body->position = position;
     body->orientation = orientation;
     body->previous_position = position;  // a teleport is not interpolated

@@ -252,3 +252,32 @@ bodies' poses at creation, so the joint starts at rest; pass a null `BodyId` for
 
 A pendulum on a ball joint keeps the period of the physical pendulum within 2 % and its energy within 2 % of the swing's
 over 10 s (the soft constraint is slightly dissipative).
+
+## Sleeping and islands
+
+A group of dynamic bodies that touch (contacts) or are tied (joints) is an **island**. Islands are rebuilt every step by a
+union-find over the bodies' slots in which the root is always the lowest slot, so the groups and their numbers do not depend on
+the order bodies were made, visited or paired in: `IslandOf(id, &n)` is the lowest slot of the group plus one (zero for a static or
+kinematic body). Static and kinematic bodies never join an island.
+
+An island **falls asleep** once every body in it has stayed below `sleep_linear` (m/s) and `sleep_angular` (rad/s) for
+`sleep_time` seconds (settings `physics.sleep_linear`, `physics.sleep_angular`, `physics.sleep_time`, `physics.allow_sleep`; a
+body with `kBodyNoSleep` keeps its whole island awake). A sleeping body has zero velocity, is not integrated, and joins no
+constraint: the solver sees no manifold and no joint for a sleeping island, so a scene at rest costs the broad phase's pair
+bookkeeping and almost nothing else (`SolverStats::manifolds` is zero). It stays in the broad phase at its place, so its pairs
+persist without events.
+
+Sleeping bodies **wake**, the whole island at once, when
+
+- a contact is made between a sleeping body and a dynamic body that is awake, a kinematic body that moves, or a body that was
+  changed from outside this step;
+- a joint ties it to such a body, or a joint of it is created or destroyed;
+- `ApplyForce`, `ApplyImpulse`, `SetVelocity`, `SetTransform`, `SetSettings`, `AddCollider`, `SetCollider` or `Wake` is called on a
+  body of the island;
+- a body that is not dynamic (a platform) is moved, changed or destroyed while a sleeping body touches it: the neighbours of the
+  last step's pairs wake.
+
+A body that rests on a kinematic body that moves, however slowly, never sleeps. A contact cache entry of a sleeping contact is dropped,
+so a waking stack starts without warm start impulses.
+
+`StepStats` reports `islands`, `sleeping_bodies`, `islands_slept` and `bodies_woken`.

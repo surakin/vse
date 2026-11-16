@@ -71,6 +71,37 @@ void RegisterPhysicsSettings(settings::Registry* registry)
     joint_hertz.group = "physics";
     joint_hertz.flags = settings::kAdvanced;
     registry->Register(joint_hertz);
+    settings::SettingDesc allow_sleep = settings::MakeBool("physics.allow_sleep", true);
+    allow_sleep.env = "ENGINE_PHYSICS_ALLOW_SLEEP";
+    allow_sleep.flag = "physics-allow-sleep";
+    allow_sleep.label = "Sleeping";
+    allow_sleep.description = "whether islands of resting bodies fall asleep (a sleeping body costs almost nothing)";
+    allow_sleep.group = "physics";
+    registry->Register(allow_sleep);
+    settings::SettingDesc sleep_linear = settings::MakeFloat("physics.sleep_linear", 0.05, 0.0, 10.0);
+    sleep_linear.env = "ENGINE_PHYSICS_SLEEP_LINEAR";
+    sleep_linear.flag = "physics-sleep-linear";
+    sleep_linear.label = "Sleep linear speed";
+    sleep_linear.description = "a body is at rest while it moves slower than this, in metres per second";
+    sleep_linear.group = "physics";
+    sleep_linear.flags = settings::kAdvanced;
+    registry->Register(sleep_linear);
+    settings::SettingDesc sleep_angular = settings::MakeFloat("physics.sleep_angular", 0.05, 0.0, 10.0);
+    sleep_angular.env = "ENGINE_PHYSICS_SLEEP_ANGULAR";
+    sleep_angular.flag = "physics-sleep-angular";
+    sleep_angular.label = "Sleep angular speed";
+    sleep_angular.description = "a body is at rest while it turns slower than this, in radians per second";
+    sleep_angular.group = "physics";
+    sleep_angular.flags = settings::kAdvanced;
+    registry->Register(sleep_angular);
+    settings::SettingDesc sleep_time = settings::MakeFloat("physics.sleep_time", 0.5, 0.0, 60.0);
+    sleep_time.env = "ENGINE_PHYSICS_SLEEP_TIME";
+    sleep_time.flag = "physics-sleep-time";
+    sleep_time.label = "Sleep time";
+    sleep_time.description = "seconds every body of an island must be at rest before the island falls asleep";
+    sleep_time.group = "physics";
+    sleep_time.flags = settings::kAdvanced;
+    registry->Register(sleep_time);
     settings::SettingDesc slop = settings::MakeFloat("physics.penetration_slop", 0.001, 0.0, 0.1);
     slop.env = "ENGINE_PHYSICS_PENETRATION_SLOP";
     slop.flag = "physics-penetration-slop";
@@ -149,6 +180,26 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     if (max_velocity.IsValid())
     {
         config.max_velocity = static_cast<f32>(settings::Setting<f64>(registry, max_velocity).Get());
+    }
+    const settings::SettingId allow_sleep = registry.Find(StringView("physics.allow_sleep"));
+    if (allow_sleep.IsValid())
+    {
+        config.allow_sleep = settings::Setting<bool>(registry, allow_sleep).Get();
+    }
+    const settings::SettingId sleep_linear = registry.Find(StringView("physics.sleep_linear"));
+    if (sleep_linear.IsValid())
+    {
+        config.sleep_linear = static_cast<f32>(settings::Setting<f64>(registry, sleep_linear).Get());
+    }
+    const settings::SettingId sleep_angular = registry.Find(StringView("physics.sleep_angular"));
+    if (sleep_angular.IsValid())
+    {
+        config.sleep_angular = static_cast<f32>(settings::Setting<f64>(registry, sleep_angular).Get());
+    }
+    const settings::SettingId sleep_time = registry.Find(StringView("physics.sleep_time"));
+    if (sleep_time.IsValid())
+    {
+        config.sleep_time = static_cast<f32>(settings::Setting<f64>(registry, sleep_time).Get());
     }
     const settings::SettingId interpolate = registry.Find(StringView("physics.interpolate"));
     if (interpolate.IsValid())

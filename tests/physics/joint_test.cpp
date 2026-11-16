@@ -378,5 +378,5 @@ TEST_CASE("Joint: the state hash of a joint scene equals the committed constant"
     const u64 first = run(600);
     CHECK(first == run(600));
     CHECK(first != run(599));
-    CHECK(first == 0x589c3aec904da8c6ull);
+    CHECK(first == 0xa2253470c556a2d0ull);
 }

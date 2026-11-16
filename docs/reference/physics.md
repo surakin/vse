@@ -4592,7 +4592,7 @@ How many colliders the body has.
 bool sleeping;
 ```
 
-Whether the body is asleep (always false until Day 388).
+Whether the body is asleep: it is neither integrated nor solved until something wakes it.
 
 ### `sleep_time` {#physics-body-sleep-time}
 
@@ -4602,7 +4602,7 @@ Whether the body is asleep (always false until Day 388).
 f32 sleep_time;
 ```
 
-Seconds below the sleep thresholds (Day 388).
+Seconds the body has stayed below the sleep thresholds.
 
 ### `island` {#physics-body-island}
 
@@ -4612,7 +4612,17 @@ Seconds below the sleep thresholds (Day 388).
 u32 island;
 ```
 
-The island the body is in (Day 388).
+The island the body was in at the end of the last step: the slot of the island's lowest body plus one, or zero for a body that is not dynamic. A sleeping island keeps its number.
+
+### `disturbed` {#physics-body-disturbed}
+
+`variable physics::Body::disturbed` — defined in `engine/physics/world.h`
+
+```cpp
+bool disturbed;
+```
+
+Whether the body was changed from outside since the last step (moved, resized, retyped): for a body that is not dynamic this makes it wake what it touches, like a moving one.
 
 ### `integrated` {#physics-body-integrated}
 
@@ -4842,6 +4852,46 @@ f32 joint_damping_ratio;
 
 The damping ratio of that spring.
 
+### `allow_sleep` {#physics-stepconfig-allow-sleep}
+
+`variable physics::StepConfig::allow_sleep` — defined in `engine/physics/world.h`
+
+```cpp
+bool allow_sleep;
+```
+
+Whether bodies may fall asleep at all (a body can still opt out with `kBodyNoSleep`).
+
+### `sleep_linear` {#physics-stepconfig-sleep-linear}
+
+`variable physics::StepConfig::sleep_linear` — defined in `engine/physics/world.h`
+
+```cpp
+f32 sleep_linear;
+```
+
+A body is at rest while its linear speed is below this, in metres per second.
+
+### `sleep_angular` {#physics-stepconfig-sleep-angular}
+
+`variable physics::StepConfig::sleep_angular` — defined in `engine/physics/world.h`
+
+```cpp
+f32 sleep_angular;
+```
+
+A body is at rest while its angular speed is below this, in radians per second.
+
+### `sleep_time` {#physics-stepconfig-sleep-time}
+
+`variable physics::StepConfig::sleep_time` — defined in `engine/physics/world.h`
+
+```cpp
+f32 sleep_time;
+```
+
+An island falls asleep once every body in it has been at rest this many seconds.
+
 ## `StepStats` {#physics-stepstats}
 
 `struct physics::StepStats` — defined in `engine/physics/world.h`
@@ -4915,6 +4965,46 @@ u64 denormal_mode_steps;
 ```
 
 Steps run while the process flushed denormals (the step's results are then not portable): zero in a correct build.
+
+### `islands` {#physics-stepstats-islands}
+
+`variable physics::StepStats::islands` — defined in `engine/physics/world.h`
+
+```cpp
+u32 islands;
+```
+
+Islands (groups of dynamic bodies tied by contacts and joints) after the last step, awake and asleep.
+
+### `sleeping_bodies` {#physics-stepstats-sleeping-bodies}
+
+`variable physics::StepStats::sleeping_bodies` — defined in `engine/physics/world.h`
+
+```cpp
+u32 sleeping_bodies;
+```
+
+Dynamic bodies asleep after the last step.
+
+### `islands_slept` {#physics-stepstats-islands-slept}
+
+`variable physics::StepStats::islands_slept` — defined in `engine/physics/world.h`
+
+```cpp
+u64 islands_slept;
+```
+
+Islands that fell asleep, in all.
+
+### `bodies_woken` {#physics-stepstats-bodies-woken}
+
+`variable physics::StepStats::bodies_woken` — defined in `engine/physics/world.h`
+
+```cpp
+u64 bodies_woken;
+```
+
+Bodies woken, in all (by contact, joint, force, impulse, teleport, change or removal).
 
 ## `PhysicsWorldStats` {#physics-physicsworldstats}
 
@@ -5661,6 +5751,53 @@ Positions are blended linearly, orientations by a normalized one along the short
 | Returns | false for a stale id (the outputs are not written). |
 | Fails | as the return says. |
 | Ownership | the outputs are the caller's; nothing is kept. |
+
+### `IsSleeping(BodyId)` {#physics-physicsworld-issleeping-bodyid-const}
+
+`method physics::PhysicsWorld::IsSleeping` — defined in `engine/physics/world.h`
+
+```cpp
+bool IsSleeping(BodyId id) const;
+```
+
+Tells whether a body is asleep.
+
+| Field | Value |
+|---|---|
+| Returns | true if the body exists and sleeps. |
+| Fails | a stale id returns false. |
+
+### `IslandOf(BodyId,u32*)` {#physics-physicsworld-islandof-bodyid-u32-star-const}
+
+`method physics::PhysicsWorld::IslandOf` — defined in `engine/physics/world.h`
+
+```cpp
+BodyStatus IslandOf(BodyId id, u32* island) const;
+```
+
+Returns the island of a body as of the last step: bodies with the same number touch each other, directly or through other bodies or joints. The number is the slot of the island's lowest body plus one, so it does not depend on the order the bodies were visited.
+
+| Field | Value |
+|---|---|
+| Parameter `island` | receives the number, or zero for a body that is static or kinematic or not yet stepped. |
+| Returns | `Ok`, or `StaleId`. |
+| Fails | as the return says. |
+| Ownership | `island` is the caller's; nothing is kept. |
+
+### `Wake(BodyId)` {#physics-physicsworld-wake-bodyid}
+
+`method physics::PhysicsWorld::Wake` — defined in `engine/physics/world.h`
+
+```cpp
+BodyStatus Wake(BodyId id);
+```
+
+Wakes a body and every body of its island; it also restarts the body's rest timer.
+
+| Field | Value |
+|---|---|
+| Returns | `Ok`, or `StaleId`. |
+| Fails | as the return says. |
 
 ### `GetStepStats()` {#physics-physicsworld-getstepstats-const}
 

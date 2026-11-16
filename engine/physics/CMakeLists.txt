@@ -23,6 +23,7 @@ set(PHYSICS_SOURCES
   collide_compound.cpp  # Day 383
   solver.cpp  # Day 384
   joint.cpp  # Day 386
+  island.cpp  # Day 388
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

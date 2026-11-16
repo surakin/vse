@@ -99,12 +99,16 @@ struct Body
     ColliderId first_collider;
     /// How many colliders the body has.
     u32 collider_count = 0;
-    /// Whether the body is asleep (always false until Day 388).
+    /// Whether the body is asleep: it is neither integrated nor solved until something wakes it.
     bool sleeping = false;
-    /// Seconds below the sleep thresholds (Day 388).
+    /// Seconds the body has stayed below the sleep thresholds.
     f32 sleep_time = 0.0f;
-    /// The island the body is in (Day 388).
+    /// The island the body was in at the end of the last step: the slot of the island's lowest body plus one, or zero
+    /// for a body that is not dynamic. A sleeping island keeps its number.
     u32 island = 0;
+    /// Whether the body was changed from outside since the last step (moved, resized, retyped): for a body that is not
+    /// dynamic this makes it wake what it touches, like a moving one.
+    bool disturbed = false;
     /// Whether the solver already integrated the body in the current step (cleared by the step).
     bool integrated = false;
     /// Counts teleports; a contact cache remembers it to know its points are stale.
@@ -163,6 +167,14 @@ struct StepConfig
     f32 joint_hertz = 60.0f;
     /// The damping ratio of that spring.
     f32 joint_damping_ratio = 2.0f;
+    /// Whether bodies may fall asleep at all (a body can still opt out with `kBodyNoSleep`).
+    bool allow_sleep = true;
+    /// A body is at rest while its linear speed is below this, in metres per second.
+    f32 sleep_linear = 0.05f;
+    /// A body is at rest while its angular speed is below this, in radians per second.
+    f32 sleep_angular = 0.05f;
+    /// An island falls asleep once every body in it has been at rest this many seconds.
+    f32 sleep_time = 0.5f;
 };
 
 /// What stepping did.
@@ -183,6 +195,14 @@ struct StepStats
     /// Steps run while the process flushed denormals (the step's results are then not portable): zero in a correct
     /// build.
     u64 denormal_mode_steps = 0;
+    /// Islands (groups of dynamic bodies tied by contacts and joints) after the last step, awake and asleep.
+    u32 islands = 0;
+    /// Dynamic bodies asleep after the last step.
+    u32 sleeping_bodies = 0;
+    /// Islands that fell asleep, in all.
+    u64 islands_slept = 0;
+    /// Bodies woken, in all (by contact, joint, force, impulse, teleport, change or removal).
+    u64 bodies_woken = 0;
 };
 
 /// What the world holds.
@@ -541,6 +561,32 @@ public:
     /// - Fails: as the return says.
     bool Interpolated(BodyId id, f32 alpha, Vec3* position, Quaternion* orientation) const;
 
+    /// Tells whether a body is asleep.
+    ///
+    /// - Returns: true if the body exists and sleeps.
+    /// - Fails: a stale id returns false.
+    bool IsSleeping(BodyId id) const
+    {
+        const Body* body = Find(id);
+        return body != nullptr && body->sleeping;
+    }
+
+    /// Returns the island of a body as of the last step: bodies with the same number touch each other, directly or
+    /// through other bodies or joints. The number is the slot of the island's lowest body plus one, so it does not
+    /// depend on the order the bodies were visited.
+    ///
+    /// - Param island: receives the number, or zero for a body that is static or kinematic or not yet stepped.
+    /// - Returns: `Ok`, or `StaleId`.
+    /// - Ownership: `island` is the caller's; nothing is kept.
+    /// - Fails: as the return says.
+    BodyStatus IslandOf(BodyId id, u32* island) const;
+
+    /// Wakes a body and every body of its island; it also restarts the body's rest timer.
+    ///
+    /// - Returns: `Ok`, or `StaleId`.
+    /// - Fails: as the return says.
+    BodyStatus Wake(BodyId id);
+
     /// Returns what stepping did.
     ///
     /// - Returns: the counters.
@@ -606,6 +652,19 @@ public:
 
 private:
     void RecomputeMass(Body* body);
+    // Island and sleep work (island.cpp). WakeIsland wakes the body's whole island and restarts its timer;
+    // WakeNeighbours wakes the sleeping bodies the last step's pairs tie to a body that is not dynamic (they are not
+    // in its island); UpdateSleep builds the islands from the contact edges (slot pairs) and the joints, advances the
+    // rest timers and puts the islands that rested long enough to sleep.
+    void WakeIsland(Body* body);
+    void WakeNeighbours(BodyId id);
+    // A change from outside (a move, a new collider, a new class, the body's removal): wakes the body's island, marks
+    // the body disturbed and, for a body that is not dynamic, wakes what sleeps against it.
+    void Disturb(Body* body);
+    void UpdateSleep(const Vector<u32>& edges, f32 dt);
+    // Whether the body moves things it touches this step: a dynamic body that is awake, a kinematic body with a
+    // velocity, and any body changed from outside.
+    static bool Disturbing(const Body& body);
     // The integration the step and the solver share: forces, gravity and damping change the velocity of a dynamic body;
     // the speed limit; and the position moves by the velocity (a dynamic body about its centre of mass, a kinematic one
     // about its origin).
