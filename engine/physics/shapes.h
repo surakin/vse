@@ -1,6 +1,6 @@
 // The collision shapes of the physics module (Phase 25 Day 375): sphere, box and capsule as plain values with their
-// bounds. Convex hulls, triangle meshes and compound shapes join on Days 381-383, each as a new kind at the end of
-// `ShapeKind`.
+// bounds. Convex hulls joined on Day 381; triangle meshes and compound shapes join on Days 382-383, each as a new kind
+// at the end of `ShapeKind`.
 #pragma once
 
 #include "math/geometry.h"
@@ -21,6 +21,7 @@ enum class ShapeKind : u8
     Box = 1,      ///< A box with its centre at the shape's origin: `half_extents`.
     Capsule = 2,  ///< A cylinder with a hemisphere on each end, its axis along the shape's Y axis: `half_height` (of
                   ///< the cylinder part) and `radius`.
+    Hull = 3,     ///< A convex hull from the world's `HullLibrary`: `hull` (its id) and `half_extents` (its bound).
 };
 
 /// A shape as a tagged value: the kind says which fields count. The shape lives in the space of its collider (its
@@ -37,6 +38,8 @@ struct Shape
     f32 half_height = 0.0f;
     /// For a box, the half extents on x, y and z, each above zero.
     Vec3 half_extents = Vec3(0.5f, 0.5f, 0.5f);
+    /// For a hull, its id in the world's `HullLibrary`, at least 1.
+    u32 hull = 0;
 
     /// Makes a sphere.
     ///
@@ -59,6 +62,14 @@ struct Shape
     /// - Returns: the shape (not checked: see `Validate`).
     /// - Fails: never.
     static Shape MakeCapsule(f32 half_height, f32 radius);
+
+    /// Makes a convex hull shape.
+    ///
+    /// - Param hull: the hull's id in the `HullLibrary` (`HullLibrary::Add` returned it).
+    /// - Param extent: the hull's `ConvexHull::Extent()`: its bound about the shape's origin.
+    /// - Returns: the shape (not checked: see `Validate`; the library is not consulted here).
+    /// - Fails: never.
+    static Shape MakeHull(u32 hull, const Vec3& extent);
 
     /// Checks the shape: finite numbers, positive sizes, a known kind. Host data is refused with a result, never
     /// aborted on.

@@ -66,7 +66,9 @@ The components of an entity are `RigidBody` (type static, kinematic or dynamic; 
 override, damping, gravity scale), `Velocity` and `Collider` (shape, offset and rotation in the body, `PhysicsMaterial`, layer 0-31, trigger flag). The
 material holds friction, restitution, density and how two values combine (`CombineRule`); for a pair the rule with the larger number is used, so the
 order of the two colliders never matters. The material is inline in the collider for now: a minted `PMAT` asset is deferred (see `KNOWN-ISSUES.md`).
-Convex hulls, triangle meshes and compound shapes are new `ShapeKind` values on Days 381-383.
+A **convex hull** (Day 381) is the `Hull` kind: `Shape::MakeHull(id, extent)` names a `ConvexHull` held by the world's `HullLibrary` (`PhysicsWorld::Hulls()`; ids count from 1, and a collider that names an unknown hull, or whose extent does not cover the hull, is `BodyStatus::Invalid`). Triangle meshes and compound shapes are new `ShapeKind` values on Days 382-383.
+
+A `ConvexHull` is immutable data shared by `ConvexHullConstPtr`: vertices, polygon faces (outward normal, offset, up to 64 vertices each), the volume, the centroid and the inertia tensor about the centroid, all computed offline by the `HULL` minter (`asset_mint mint-hull`, `docs/guide/assets.md`). `ConvexHull::Create` checks what it is given and refuses anything the narrow phase could not use (`Validation`). The mass of a hull body is the hull's own: its centre of mass is the centroid and its principal axes come from a Jacobi eigen-decomposition of the stored tensor, so a body's `RecomputeMass` places the centre at `offset + rotation * centroid`.
 
 ## The world: bodies, colliders and ids
 
@@ -151,9 +153,10 @@ Debug and Release (`Step: the state hash of a 600-step scene...`); the Windows a
 
 | | sphere | capsule | box | hull |
 |---|---|---|---|---|
-| **sphere** | built (Day 379) | built | built | Day 381 |
-| **capsule** | | built | built (Day 380) | Day 381 |
-| **box** | | | built (Day 380) | Day 381 |
+| **sphere** | built (Day 379) | built | built | built (Day 381) |
+| **capsule** | | built | built (Day 380) | built (Day 381) |
+| **box** | | | built (Day 380) | built (Day 381) |
+| **hull** | | | | built (Day 381) |
 
 The call is symmetric: swapping the shapes gives the same contact with the normal negated and the two points of each contact swapped (the dispatch runs the
 test in one fixed order and `ContactManifold::Flip`s the result). A manifold has a **unit normal from A toward B**, up to four points, and for each point
@@ -180,3 +183,5 @@ point between the closest points of the two support edges; its id has the top bi
 works in the box's frame: the capsule's axis is cut where it crosses the planes of the box's slabs, the distance is minimized in closed form on each piece (the
 nearest point of the box moves linearly there), and the result is a sphere-like contact at the nearest point of the axis, or two points at the ends of the
 stretch where the axis lies flat above a face. An axis that meets the box leaves through the face of least penetration of the whole capsule.
+
+**Hulls** (Day 381) go through one path for every pair that has a hull: **GJK** on the two cores (a point, a segment, a box or a hull, each with the radius of a sphere or capsule), and when the cores overlap or touch, **EPA** on the Minkowski difference for the normal and the depth. The support of a hull is a scan of its vertices (at most 255; a hill-climbing support is deferred). Apart shapes get the distance of the cores minus the radii as a speculative depth; the gap is normalized by its own length, and cores closer than 1e-5 count as touching. When both shapes are box or hull (radius zero) and the best-aligned face of either is within 0.9 of the contact normal, the manifold is a **face contact** exactly as for two boxes (clip the incident polygon against the reference face, reduce to four); otherwise it is **one point**. A capsule against a hull is always one point for now. The `feature_id` of a face contact is the same code as for boxes with the hull's vertex index (its face indices are the hull's own); a one-point contact has `0x40000000` in its id. Because hulls go to the same code as boxes, a hull copy of a box agrees with the box tests to within the margin for shallow overlaps; a deep overlap has several ways out and the closed forms and EPA may pick different ones. 30,000 random hull pairs hash to `172dfbee2611621e` under GCC and Clang, unity and not, Debug and Release.

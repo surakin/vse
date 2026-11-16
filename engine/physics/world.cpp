@@ -46,10 +46,11 @@ void PhysicsWorld::RecomputeMass(Body* body)
         const ColliderRecord* record = FindCollider(body->first_collider);
         if (record != nullptr)
         {
-            props = MassFromDensity(record->value.shape, record->value.material.density);
-            // The shape's centre is the collider's origin; its principal axes are the collider's own.
-            props.center = record->value.offset;
-            props.principal_rotation = record->value.rotation;
+            props = MassFromDensity(record->value.shape, record->value.material.density, &hulls_);
+            // The shape's centre is the collider's origin (a hull's is its centroid, seen through the collider); its
+            // principal axes are the collider's own (a hull's turned by the collider).
+            props.center = record->value.offset + record->value.rotation.RotateVector(props.center);
+            props.principal_rotation = record->value.rotation * props.principal_rotation;
             if (body->settings.mass > 0.0f && props.mass > 0.0f)
             {
                 const f32 scale = body->settings.mass / props.mass;
@@ -138,7 +139,7 @@ BodyStatus PhysicsWorld::AddCollider(BodyId body_id, const Collider& collider, C
     {
         return BodyStatus::StaleId;
     }
-    if (collider.Validate() != Validation::Ok)
+    if (collider.Validate() != Validation::Ok || !HullKnown(collider.shape))
     {
         return BodyStatus::Invalid;
     }
@@ -178,7 +179,7 @@ BodyStatus PhysicsWorld::SetCollider(BodyId body_id, const Collider& collider)
     {
         return AddCollider(body_id, collider);
     }
-    if (collider.Validate() != Validation::Ok)
+    if (collider.Validate() != Validation::Ok || !HullKnown(collider.shape))
     {
         return BodyStatus::Invalid;
     }

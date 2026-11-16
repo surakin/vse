@@ -4,6 +4,7 @@
 #include "math/matrix.h"
 #include "math/quaternion.h"
 #include "math/vector.h"
+#include "physics/hull.h"
 #include "physics/shapes.h"
 #include "types.h"
 
@@ -57,16 +58,21 @@ struct MassProperties
 ///
 /// - Param shape: the shape; must be valid.
 /// - Param density: kilograms per cubic metre, above zero.
-/// - Returns: the properties; all zero when the shape or the density is refused.
+/// - Param hulls: the library a hull shape's id refers to; may be null when the shape is not a hull.
+/// - Returns: the properties; for a hull the centre is the hull's centroid and the principal frame is the one of its
+/// inertia tensor; all zero when the shape or the density is refused or a hull is not in the library.
+/// - Ownership: `hulls` is borrowed for the call.
 /// - Fails: a shape or density that is not valid gives all-zero properties (check `Validate()` first to know why).
-MassProperties MassFromDensity(const Shape& shape, f32 density);
+MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrary* hulls = nullptr);
 
 /// Returns the volume of a shape.
 ///
 /// - Param shape: the shape; must be valid.
-/// - Returns: the volume, or zero for a shape that is not valid.
+/// - Param hulls: the library a hull shape's id refers to; may be null when the shape is not a hull.
+/// - Returns: the volume, or zero for a shape that is not valid or a hull that is not in the library.
+/// - Ownership: `hulls` is borrowed for the call.
 /// - Fails: as the return says.
-f32 ShapeVolume(const Shape& shape);
+f32 ShapeVolume(const Shape& shape, const HullLibrary* hulls = nullptr);
 
 /// Returns the inertia tensor about a point offset from the centre of mass, in the body's space.
 ///

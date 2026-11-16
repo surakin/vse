@@ -219,11 +219,15 @@ bool SphereBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f
 }  // namespace
 
 CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
-                      ContactManifold* manifold)
+                      ContactManifold* manifold, const HullLibrary* hulls)
 {
     if (a.Validate() != Validation::Ok || b.Validate() != Validation::Ok || !IsFinite(margin) || margin < 0.0f)
     {
         return CollideResult::None;
+    }
+    if (a.kind == ShapeKind::Hull || b.kind == ShapeKind::Hull)
+    {
+        return ConvexPair(a, pose_a, b, pose_b, margin, hulls, manifold) ? CollideResult::Contact : CollideResult::None;
     }
     // The table is kept for A <= B in the order sphere, box, capsule... by kind number; the other order is the same
     // test with the result flipped.
@@ -231,7 +235,7 @@ CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const 
     const u8 kb = static_cast<u8>(b.kind);
     if (ka > kb)
     {
-        const CollideResult result = Collide(b, pose_b, a, pose_a, margin, manifold);
+        const CollideResult result = Collide(b, pose_b, a, pose_a, margin, manifold, hulls);
         if (result == CollideResult::Contact)
         {
             manifold->Flip();

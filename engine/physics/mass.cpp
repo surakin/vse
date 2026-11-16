@@ -21,9 +21,77 @@ f32 InverseOrZero(f32 value)
     return IsFinite(inverse) ? inverse : 0.0f;
 }
 
+// The eigenvalues and the right-handed eigenvectors of a symmetric 3x3 matrix by Jacobi rotations (the sweeps use
+// `+ - * /` and `Sqrt` only, so the result is the same on every machine).
+void SymmetricEigen(const Mat3& a, Vec3* values, Mat3* vectors)
+{
+    f64 m[3][3];
+    f64 v[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    for (u32 i = 0; i < 3; ++i)
+    {
+        for (u32 j = 0; j < 3; ++j)
+        {
+            m[i][j] = a.col[j][i];
+        }
+    }
+    for (u32 sweep = 0; sweep < 24; ++sweep)
+    {
+        f64 off = Abs(m[0][1]) + Abs(m[0][2]) + Abs(m[1][2]);
+        f64 diag = Abs(m[0][0]) + Abs(m[1][1]) + Abs(m[2][2]);
+        if (off <= 1e-14 * diag || off == 0.0)
+        {
+            break;
+        }
+        for (u32 p = 0; p < 2; ++p)
+        {
+            for (u32 q = p + 1; q < 3; ++q)
+            {
+                if (Abs(m[p][q]) < 1e-300)
+                {
+                    continue;
+                }
+                const f64 theta = (m[q][q] - m[p][p]) / (2.0 * m[p][q]);
+                const f64 t = (theta >= 0.0 ? 1.0 : -1.0) / (Abs(theta) + Sqrt(theta * theta + 1.0));
+                const f64 c = 1.0 / Sqrt(t * t + 1.0);
+                const f64 s = t * c;
+                for (u32 k = 0; k < 3; ++k)  // columns p and q of m
+                {
+                    const f64 mkp = m[k][p];
+                    const f64 mkq = m[k][q];
+                    m[k][p] = c * mkp - s * mkq;
+                    m[k][q] = s * mkp + c * mkq;
+                }
+                for (u32 k = 0; k < 3; ++k)  // rows p and q of m
+                {
+                    const f64 mpk = m[p][k];
+                    const f64 mqk = m[q][k];
+                    m[p][k] = c * mpk - s * mqk;
+                    m[q][k] = s * mpk + c * mqk;
+                }
+                for (u32 k = 0; k < 3; ++k)
+                {
+                    const f64 vkp = v[k][p];
+                    const f64 vkq = v[k][q];
+                    v[k][p] = c * vkp - s * vkq;
+                    v[k][q] = s * vkp + c * vkq;
+                }
+            }
+        }
+    }
+    *values = Vec3(static_cast<f32>(m[0][0]), static_cast<f32>(m[1][1]), static_cast<f32>(m[2][2]));
+    Vec3 e0(static_cast<f32>(v[0][0]), static_cast<f32>(v[1][0]), static_cast<f32>(v[2][0]));
+    const Vec3 e1(static_cast<f32>(v[0][1]), static_cast<f32>(v[1][1]), static_cast<f32>(v[2][1]));
+    const Vec3 e2(static_cast<f32>(v[0][2]), static_cast<f32>(v[1][2]), static_cast<f32>(v[2][2]));
+    if (e0.Cross(e1).Dot(e2) < 0.0f)  // keep the frame right-handed
+    {
+        e0 = Vec3(-e0.x, -e0.y, -e0.z);
+    }
+    *vectors = Mat3::FromBasis(e0, e1, e2);
+}
+
 }  // namespace
 
-f32 ShapeVolume(const Shape& shape)
+f32 ShapeVolume(const Shape& shape, const HullLibrary* hulls)
 {
     if (shape.Validate() != Validation::Ok)
     {
@@ -38,18 +106,27 @@ f32 ShapeVolume(const Shape& shape)
         const f32 r2 = shape.radius * shape.radius;
         return kPi * r2 * (2.0f * shape.half_height) + (4.0f / 3.0f) * kPi * r2 * shape.radius;
     }
+    case ShapeKind::Hull:
+    {
+        const ConvexHull* hull = hulls != nullptr ? hulls->Find(shape.hull) : nullptr;
+        return hull != nullptr ? hull->Volume() : 0.0f;
+    }
     }
     return 0.0f;
 }
 
-MassProperties MassFromDensity(const Shape& shape, f32 density)
+MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrary* hulls)
 {
     MassProperties out;
     if (shape.Validate() != Validation::Ok || !IsFinite(density) || !(density > 0.0f))
     {
         return out;
     }
-    out.volume = ShapeVolume(shape);
+    out.volume = ShapeVolume(shape, hulls);
+    if (shape.kind == ShapeKind::Hull && !(out.volume > 0.0f))
+    {
+        return MassProperties();  // the hull is not in the library
+    }
     out.mass = density * out.volume;
     const f32 m = out.mass;
     switch (shape.kind)
@@ -86,6 +163,20 @@ MassProperties MassFromDensity(const Shape& shape, f32 density)
         const f32 ix = m_cylinder * (3.0f * r2 + 4.0f * hh * hh) / 12.0f +
                        2.0f * (m_hemisphere * (83.0f / 320.0f) * r2 + m_hemisphere * d * d);
         out.inertia = Vec3(ix, iy, ix);
+        break;
+    }
+    case ShapeKind::Hull:
+    {
+        // The tensor about the centroid at density 1, scaled to this density, then turned to its principal frame.
+        const ConvexHull* hull = hulls->Find(shape.hull);
+        Vec3 values;
+        Mat3 frame;
+        SymmetricEigen(Mat3::FromBasis(hull->Inertia().col[0] * density, hull->Inertia().col[1] * density,
+                                       hull->Inertia().col[2] * density),
+                       &values, &frame);
+        out.inertia = values;
+        out.center = hull->Centroid();
+        out.principal_rotation = Quaternion::FromMat3(frame).Normalized();
         break;
     }
     }

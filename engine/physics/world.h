@@ -7,6 +7,7 @@
 #include "math/quaternion.h"
 #include "math/vector.h"
 #include "physics/components.h"
+#include "physics/hull.h"
 #include "physics/ids.h"
 #include "physics/mass.h"
 #include "physics/slot_pool.h"
@@ -406,14 +407,41 @@ public:
     /// - Fails: a non-finite number is reported through `valid`.
     u64 StateHash(bool* valid = nullptr) const;
 
+    /// Returns the hulls that `Shape::MakeHull` shapes of this world refer to; add a hull here before a collider uses
+    /// it.
+    ///
+    /// - Returns: the library.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    HullLibrary& Hulls() { return hulls_; }
+
+    /// Returns the hull library, read only.
+    ///
+    /// - Returns: the library.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    const HullLibrary& Hulls() const { return hulls_; }
+
 private:
     void RecomputeMass(Body* body);
+    // A hull shape names a hull of the library, and its extent (the broad phase's bound) covers the hull.
+    bool HullKnown(const Shape& shape) const
+    {
+        if (shape.kind != ShapeKind::Hull)
+        {
+            return true;
+        }
+        const ConvexHull* hull = hulls_.Find(shape.hull);
+        return hull != nullptr && shape.half_extents.x >= hull->Extent().x * 0.9999f &&
+               shape.half_extents.y >= hull->Extent().y * 0.9999f && shape.half_extents.z >= hull->Extent().z * 0.9999f;
+    }
 
     StepConfig step_config_;
     StepStats step_stats_;
     f64 accumulator_ = 0.0;
     SlotPool<Body> bodies_;
     SlotPool<ColliderRecord> colliders_;
+    HullLibrary hulls_;
 };
 
 }  // namespace engine_placeholder::physics

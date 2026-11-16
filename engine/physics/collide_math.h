@@ -3,8 +3,10 @@
 #pragma once
 
 #include "lang/scalar.h"
+#include "containers/array.h"
 #include "math/matrix.h"
 #include "math/vector.h"
+#include "physics/hull.h"
 #include "physics/shapes.h"
 #include "physics/contact.h"
 #include "types.h"
@@ -110,8 +112,131 @@ inline void ClosestSegments(const Segment& s1, const Segment& s2, Vec3* c1, Vec3
     *c2 = s2.p + d2 * t;
 }
 
+struct ClipVertex
+{
+    Vec3 p;
+    u32 id = 0;
+};
+
+struct Candidate
+{
+    Vec3 p;
+    f32 depth = 0.0f;
+    u32 id = 0;
+};
+
+inline u32 MixId(u32 a, u32 b, u32 plane)
+{
+    const u32 h = (a * 5u + b * 3u + plane + 1u) * 2654435761u;
+    return 16u + ((h >> 8) % 0xFFC0u);
+}
+
+// Keeps the part of the polygon with `Dot(p, n) <= offset`. `out` holds `capacity` vertices; a convex polygon needs one
+// more than it had, and non-finite input (which breaks the convexity) is cut off at the capacity.
+inline u32 ClipPolygon(const ClipVertex* in, u32 count, const Vec3& n, f32 offset, u32 plane, ClipVertex* out,
+                       u32 capacity)
+{
+    u32 produced = 0;
+    for (u32 i = 0; i < count; ++i)
+    {
+        const ClipVertex& cur = in[i];
+        const ClipVertex& next = in[(i + 1) % count];
+        const f32 dc = cur.p.Dot(n) - offset;
+        const f32 dn = next.p.Dot(n) - offset;
+        const bool cur_in = dc <= 0.0f;
+        const bool next_in = dn <= 0.0f;
+        if (cur_in && produced < capacity)
+        {
+            out[produced++] = cur;
+        }
+        if (cur_in != next_in && produced < capacity)
+        {
+            const f32 t = dc / (dc - dn);
+            out[produced].p = cur.p + (next.p - cur.p) * t;
+            out[produced].id = MixId(cur.id, next.id, plane);
+            ++produced;
+        }
+    }
+    return produced;
+}
+
+// At most four points: the deepest, the one farthest from it, then the two that span the most area on either side.
+// Returns how many were picked (in `pick`).
+inline u32 ReduceCandidates(const Candidate* cand, u32 kept, const Vec3& nr, Array<u32, 4>* pick_out)
+{
+    Array<u32, 4>& pick = *pick_out;
+    u32 picked = 0;
+    if (kept <= 4)
+    {
+        for (u32 v = 0; v < kept; ++v)
+        {
+            pick[v] = v;
+        }
+        picked = kept;
+    }
+    else
+    {
+        u32 i0 = 0;
+        for (u32 v = 1; v < kept; ++v)
+        {
+            if (cand[v].depth > cand[i0].depth)
+            {
+                i0 = v;
+            }
+        }
+        u32 i1 = i0 == 0 ? 1u : 0u;
+        f32 far = -1.0f;
+        for (u32 v = 0; v < kept; ++v)
+        {
+            const f32 l2 = (cand[v].p - cand[i0].p).LengthSquared();
+            if (v != i0 && l2 > far)
+            {
+                far = l2;
+                i1 = v;
+            }
+        }
+        const Vec3 edge = cand[i1].p - cand[i0].p;
+        u32 i2 = kept;
+        u32 i3 = kept;
+        f32 best_pos = 1e-9f;
+        f32 best_neg = -1e-9f;
+        for (u32 v = 0; v < kept; ++v)
+        {
+            if (v == i0 || v == i1)
+            {
+                continue;
+            }
+            const f32 area = edge.Cross(cand[v].p - cand[i0].p).Dot(nr);
+            if (area > best_pos)
+            {
+                best_pos = area;
+                i2 = v;
+            }
+            if (area < best_neg)
+            {
+                best_neg = area;
+                i3 = v;
+            }
+        }
+        pick[picked++] = i0;
+        pick[picked++] = i1;
+        if (i2 != kept)
+        {
+            pick[picked++] = i2;
+        }
+        if (i3 != kept)
+        {
+            pick[picked++] = i3;
+        }
+    }
+    return picked;
+}
+
 // The tests of Day 380 (collide_box.cpp): box-box and box-capsule, the box being shape A in both.
 bool BoxBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out);
+// Any pair with a convex hull (Day 381), by GJK and EPA; the pair may be in either order.
+bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, const HullLibrary* hulls,
+                ContactManifold* out);
 bool BoxCapsule(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out);
 
 }  // namespace engine_placeholder::physics::collide_math

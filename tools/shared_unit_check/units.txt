@@ -9,3 +9,4 @@ BlobBuffer|BlobBufferPtr||engine/asset/resource_manager.h
 SharedBytes||SharedBytesPtr|engine/foundation/containers/shared_bytes.h
 MeshData|MeshDataPtr|MeshDataConstPtr|engine/renderer/mesh.h
 HostTexture|HostTexturePtr|HostTextureConstPtr|engine/engine_c/host_texture.h
+ConvexHull|ConvexHullPtr|ConvexHullConstPtr|engine/physics/hull.h
