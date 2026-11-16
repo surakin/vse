@@ -185,7 +185,8 @@ rhi::TextureHandle LiveTextures::Acquire(u64 handle)
         u32 h = 0;
         const u32 slot = live->ring % kRing;
         if (live->source->CopyIfNewer(&seen, &w, &h, live->mapped[slot], static_cast<usize>(live->pitch) * live->height,
-                                      live->pitch))
+                                      live->pitch) &&
+            w == live->width && h == live->height)  // a resize between the two reads: the next frame remakes it
         {
             live->seen = seen;
             live->ring = slot + 1;
@@ -254,7 +255,10 @@ void LiveTextures::EndFrame()
         {
             device_->WaitIdle();
             Destroy(&lives_[i]);
-            lives_[i] = static_cast<Live&&>(lives_[lives_.Size() - 1]);
+            if (i != lives_.Size() - 1)
+            {
+                lives_[i] = static_cast<Live&&>(lives_[lives_.Size() - 1]);
+            }
             lives_.Pop();
         }
         else

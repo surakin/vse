@@ -17,6 +17,7 @@
 #include "engine_c/engine_objects.h"
 #include "jobs/scheduler.h"
 #include "lang/limits.h"
+#include "lang/scalar.h"
 #include "jobs/topology.h"
 #include "log/diagnostics_hooks.h"
 #include "math/quaternion.h"
@@ -321,8 +322,8 @@ void AnimateWorld(WorldObject& object, ResourceHost* resources, f32 dt)
     {
         return;
     }
-    animation::AnimationSystem system(&resources->Animation());
-    system.Update(&object.world, nullptr, dt);
+    animation::AnimationSystem animator(&resources->Animation());
+    animator.Update(&object.world, nullptr, dt);
     // A skeleton with no clip yet is drawn in its bind pose.
     Vector<ecs::Entity> bare;
     auto query = object.world.Query<ecs::Read<animation::SkeletonInstance>>();
@@ -405,7 +406,7 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
     {
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_frame_info.struct_size is smaller than the struct");
     }
-    if (stats != nullptr && StructSizeOf(stats) < sizeof(engine_frame_stats))
+    if (stats != nullptr && StructSizeOf(stats) < kFrameStatsFirstSize)
     {
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_frame_stats.struct_size is smaller than the struct");
     }
@@ -475,7 +476,10 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
     result.elapsed_us = (os::MonotonicTimeNanos() - start) / 1000;
     if (stats != nullptr)
     {
-        *stats = result;
+        const u32 written = StructSizeOf(stats) < sizeof(result) ? StructSizeOf(stats)
+                                                                 : static_cast<u32>(sizeof(result));
+        result.struct_size = written;  // a host built against an older header gets the fields it knows
+        MemCopy(stats, &result, written);
     }
     return ENGINE_OK;
 }
@@ -683,7 +687,7 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     }
     else
     {
-        checked = CheckInStruct(value, sizeof(engine_mesh_reference), "engine_mesh_reference");
+        checked = CheckInStruct(value, kMeshReferenceFirstSize, "engine_mesh_reference");
     }
     if (checked != ENGINE_OK)
     {
@@ -833,7 +837,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 MeshReference reference;
                 reference.mesh = in->mesh;
                 reference.material = in->material;
-                reference.material_resource = in->material_resource;
+                if (StructSizeOf(value) >= sizeof(engine_mesh_reference))  // an older host has no material_resource
+                {
+                    reference.material_resource = in->material_resource;
+                }
                 return SetOrAdd(object.world, entity, reference);
             }
             const engine_transform* in = static_cast<const engine_transform*>(value);
@@ -1565,7 +1572,13 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
             made.Push(top);
             ecs::LocalTransform at;
             at.position = Vec3(place.position[0], place.position[1], place.position[2]);
-            at.rotation = Quaternion(place.rotation[0], place.rotation[1], place.rotation[2], place.rotation[3]);
+            const float rotation_length2 = place.rotation[0] * place.rotation[0] +
+                                           place.rotation[1] * place.rotation[1] +
+                                           place.rotation[2] * place.rotation[2] +
+                                           place.rotation[3] * place.rotation[3];
+            const float rotation_scale = 1.0f / Sqrt(rotation_length2);  // checked above: above zero and finite
+            at.rotation = Quaternion(place.rotation[0] * rotation_scale, place.rotation[1] * rotation_scale,
+                                     place.rotation[2] * rotation_scale, place.rotation[3] * rotation_scale);
             at.scale = Vec3(place.scale, place.scale, place.scale);
             EntityName top_name;
             name_of(prefix.Length() != 0 ? StringView() : StringView("level"), &top_name);
@@ -1574,6 +1587,7 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                 top_name.length = static_cast<u8>(prefix.Length());  // the root is called the prefix itself
             }
             if (object.world.Add<ecs::LocalTransform>(top, at) != ecs::Status::Ok ||
+                object.world.Add<ecs::WorldTransform>(top, ecs::WorldTransform()) != ecs::Status::Ok ||
                 object.world.Add<EntityName>(top, top_name) != ecs::Status::Ok)
             {
                 undo();
@@ -1590,6 +1604,10 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                 made.Push(entity);
                 ecs::Status status = object.world.Add<ecs::LocalTransform>(
                     entity, *scratch.Peek<ecs::LocalTransform>(source[i]));
+                if (status == ecs::Status::Ok)
+                {  // the frame's transform system writes the world matrix of entities that have both
+                    status = object.world.Add<ecs::WorldTransform>(entity, ecs::WorldTransform());
+                }
                 if (const asset::EntityName* own = scratch.Peek<asset::EntityName>(source[i]))
                 {
                     EntityName name;
@@ -1750,7 +1768,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_VISIBILITY        ? sizeof(engine_visibility)
                          : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? sizeof(engine_skeleton_instance)
                          : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? sizeof(engine_animation_state)
-                                                                      : sizeof(engine_mesh_reference);
+                                                                      : kMeshReferenceFirstSize;
     const char* what = kind == ENGINE_COMPONENT_TRANSFORM           ? "engine_transform"
                        : kind == ENGINE_COMPONENT_WORLD_TRANSFORM   ? "engine_world_transform"
                        : kind == ENGINE_COMPONENT_CAMERA            ? "engine_camera"
@@ -1914,7 +1932,10 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          result.mesh = reference->mesh;
                          result.material = reference->material;
                          result.material_resource = reference->material_resource;
-                         MemCopy(out, &result, sizeof(result));
+                         const u32 written = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out)
+                                                                                : static_cast<u32>(sizeof(result));
+                         result.struct_size = written;  // a host built against an older header gets the fields it knows
+                         MemCopy(out, &result, written);
                          return ENGINE_OK;
                      });
 }
@@ -2051,9 +2072,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[9];
+                         ecs::ComponentId wanted[10];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_ANIMATION_PLAYER; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_LABEL; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {

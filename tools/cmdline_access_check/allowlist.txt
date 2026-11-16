@@ -11,4 +11,3 @@ tests/debug/macos/stack_trace_macos_test.cpp|Builds the argv of a child process 
 tests/settings/layers_test.cpp|Builds a synthetic argv for the settings system's command-line layer and takes its size with sizeof.
 tests/shader_mint/args_probe.cpp|A child program that echoes its raw arguments, to test that shader_mint's process runner passes them through unchanged.
 tests/windows/|Windows test programs that echo or check the raw process arguments (the UTF-8 argv of the entry point).
-tests/engine_library/walk_around.c|A C program standing for a foreign host: it reads its one option (--frames N) from the raw argv, as a host in another language would (no engine command-line class in C).

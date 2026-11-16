@@ -90,6 +90,14 @@ static void AddBlob(engine_handle engine, uint64_t id, const Blob* blob)
     CHECK_STATUS(g_api->resource_add(engine, &info), ENGINE_OK);
 }
 
+/* surface_state with the struct prepared the way the contract asks (size set, the rest zero). */
+static engine_status SurfaceState(engine_handle surface, engine_surface_state* out)
+{
+    memset(out, 0, sizeof(*out));
+    out->struct_size = sizeof(*out);
+    return g_api->surface_state(surface, out);
+}
+
 static engine_status FrameAndRead(engine_handle engine, engine_handle surface, engine_pixels* pixels)
 {
     engine_handle ticket;
@@ -546,6 +554,34 @@ int main(void)
     PlaceAt(world, entity, 0.0f, 0.0f, 0.0f);
     CHECK_STATUS(SetMeshReference(world, entity, MESH_ID, MATERIAL_ID), ENGINE_OK);
 
+    /* review regressions (Phase 24 closing): a query on the label bit alone matches only entities with a label, and a
+     * host built against the Phase 23 header (structs of the old sizes) is still served */
+    {
+        size_t total = 99;
+        engine_mesh_reference old_reference;
+        engine_frame_info old_info;
+        engine_frame_stats old_stats;
+        CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_BIT(ENGINE_COMPONENT_LABEL), NULL, 0, &total), ENGINE_OK);
+        CHECK(total == 0);
+        CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_BIT(ENGINE_COMPONENT_TRANSFORM), NULL, 0, &total), ENGINE_OK);
+        CHECK(total == 1);
+        memset(&old_reference, 0xAB, sizeof(old_reference));
+        old_reference.struct_size = 16; /* engine_mesh_reference as Phase 23 had it */
+        CHECK_STATUS(g_api->component_get(world, entity, ENGINE_COMPONENT_MESH_REFERENCE, &old_reference), ENGINE_OK);
+        CHECK(old_reference.struct_size == 16);
+        CHECK(old_reference.material_resource == 0xABABABABABABABABull); /* untouched: past the host's struct */
+        old_reference.struct_size = 16;
+        CHECK_STATUS(g_api->component_set(world, entity, ENGINE_COMPONENT_MESH_REFERENCE, &old_reference), ENGINE_OK);
+        memset(&old_info, 0, sizeof(old_info));
+        old_info.struct_size = sizeof(old_info);
+        memset(&old_stats, 0xAB, sizeof(old_stats));
+        old_stats.struct_size = 32; /* engine_frame_stats as Phase 23 had it */
+        CHECK_STATUS(g_api->frame(engine, &old_info, &old_stats), ENGINE_OK);
+        CHECK(old_stats.struct_size == 32);
+        CHECK(((const unsigned char*)&old_stats)[32] == 0xAB); /* nothing written past the host's struct */
+        CHECK_STATUS(SetMeshReference(world, entity, MESH_ID, MATERIAL_ID), ENGINE_OK);
+    }
+
     /* the arguments */
     memset(&none, 0, sizeof(none));
     CHECK_STATUS(g_api->surface_set_world(none, world), ENGINE_ERROR_INVALID_ARGUMENT);
@@ -567,7 +603,7 @@ int main(void)
     CompareOrWriteGolden(&pixels);
     memset(&state, 0, sizeof(state));
     state.struct_size = sizeof(state);
-    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
     CHECK(state.world_status == ENGINE_OK);
     CHECK(state.objects_drawn == 1);
     CHECK(state.entities_unresolved == 0);
@@ -578,28 +614,28 @@ int main(void)
     PlaceAt(world, stray, 2.0f, 0.0f, 0.0f);
     CHECK_STATUS(SetMeshReference(world, stray, 0xdeadull, 0), ENGINE_OK);
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
     CHECK(state.objects_drawn == 1);
     CHECK(state.entities_unresolved == 1);
     /* a mesh the host adds after the entity names it: the next frame resolves it (a failed lookup is not remembered) */
     CHECK_STATUS(SetMeshReference(world, stray, LATE_MESH_ID, 0), ENGINE_OK);
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
     CHECK(state.entities_unresolved == 1);
     AddBlob(engine, LATE_MESH_ID, &late);
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
     CHECK(state.objects_drawn == 2);
     CHECK(state.entities_unresolved == 0);
     CHECK_STATUS(SetMeshReference(world, stray, MESH_ID, 0xdeadull),
                  ENGINE_OK); /* a mesh that exists, a material that does not */
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
     CHECK(state.objects_drawn == 1);
     CHECK(state.entities_unresolved == 1);
     CHECK_STATUS(SetMeshReference(world, stray, MESH_ID, 0), ENGINE_OK); /* the default material: it draws */
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
     CHECK(state.objects_drawn == 2);
     CHECK(state.entities_unresolved == 0);
     CHECK_STATUS(g_api->entity_destroy(world, stray), ENGINE_OK);
@@ -633,23 +669,24 @@ int main(void)
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         CHECK(Checksum(&pixels) != before); /* another camera, another picture */
         CHECK(HasObject(&pixels, clear));
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.camera_status == ENGINE_OK && state.camera_entity == cam);
         /* analytic: the camera at (0,0,4) looks at the origin with a 60 degree field and a 4:3 picture */
         CHECK_STATUS(g_api->surface_project(surface, point, out), ENGINE_OK);
-        CHECK(fabsf(out[0] - 109.98f) < 0.5f && fabsf(out[1] - 60.0f) < 0.5f && fabsf(out[2] - 4.0f) < 0.01f);
+        CHECK(fabsf(out[0] - 105.98f) < 0.5f && fabsf(out[1] - 60.0f) < 0.5f && fabsf(out[2] - 4.0f) < 0.01f);
         point[0] = 0.0f;
         CHECK_STATUS(g_api->surface_project(surface, point, out), ENGINE_OK);
         CHECK(fabsf(out[0] - 80.0f) < 0.5f && fabsf(out[1] - 60.0f) < 0.5f);
         /* the ray of a pixel passes through what projects to that pixel */
-        CHECK_STATUS(g_api->surface_pixel_ray(surface, 109.98f, 60.0f, origin, direction), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_pixel_ray(surface, 105.98f, 60.0f, origin, direction), ENGINE_OK);
         CHECK(fabsf(origin[2] - 4.0f) < 0.001f && direction[2] < 0.0f);
-        far_point[0] = origin[0] + direction[0] * 4.0f;
-        far_point[1] = origin[1] + direction[1] * 4.0f;
-        far_point[2] = origin[2] + direction[2] * 4.0f;
+        /* the direction is a unit vector: walk along it to the plane z = 0 */
+        far_point[0] = origin[0] + direction[0] * (4.0f / -direction[2]);
+        far_point[1] = origin[1] + direction[1] * (4.0f / -direction[2]);
+        far_point[2] = origin[2] + direction[2] * (4.0f / -direction[2]);
         CHECK(fabsf(far_point[0] - 1.0f) < 0.02f && fabsf(far_point[1]) < 0.02f && fabsf(far_point[2]) < 0.05f);
         CHECK_STATUS(g_api->surface_project(surface, far_point, again), ENGINE_OK);
-        CHECK(fabsf(again[0] - 109.98f) < 0.1f && fabsf(again[1] - 60.0f) < 0.1f);
+        CHECK(fabsf(again[0] - 105.98f) < 0.1f && fabsf(again[1] - 60.0f) < 0.1f);
         CHECK_STATUS(g_api->surface_pixel_ray(surface, 1.0f, 1.0f, NULL, direction), ENGINE_ERROR_INVALID_ARGUMENT);
         /* a point behind the camera has a negative distance */
         point[2] = 10.0f;
@@ -673,21 +710,21 @@ int main(void)
         CHECK_STATUS(g_api->component_remove(world, cam, ENGINE_COMPONENT_CAMERA), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         CHECK(HasObject(&pixels, clear));
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.camera_status == ENGINE_ERROR_NOT_FOUND && state.camera_entity == cam);
         CHECK_STATUS(SetCamera(world, cam, 1.0471976f, 0, 1.0f), ENGINE_OK); /* it comes back: used again */
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.camera_status == ENGINE_OK);
         /* a destroyed camera entity */
         CHECK_STATUS(g_api->entity_destroy(world, cam), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         CHECK(HasObject(&pixels, clear));
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.camera_status == ENGINE_ERROR_NOT_FOUND);
         CHECK_STATUS(g_api->surface_set_camera(surface, 0), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.camera_status == ENGINE_OK && state.camera_entity == 0);
         CHECK_STATUS(g_api->entity_create(world, &cam), ENGINE_OK); /* one for the second surface below */
         PlaceAt(world, cam, 0.0f, 0.0f, 4.0f);
@@ -768,7 +805,7 @@ int main(void)
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         memset(&lit_state, 0, sizeof(lit_state));
         lit_state.struct_size = sizeof(lit_state);
-        CHECK_STATUS(g_api->surface_state(surface, &lit_state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &lit_state), ENGINE_OK);
         CHECK(lit_state.lights_refused == 7); /* 64 slots: the ambient term and 63 lights */
         for (i = 0; i < 70; ++i)
         {
@@ -876,20 +913,20 @@ int main(void)
         PlaceAt(world, parent, 0.0f, 0.0f, -2.0f);
         PlaceAt(world, child, 0.0f, 0.0f, 0.0f);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.objects_drawn == 4); /* the original, left, right and the child */
         CHECK_STATUS(SetVisibility(world, parent, 1), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.objects_drawn == 3);
         CHECK_STATUS(SetVisibility(world, parent, 2), ENGINE_ERROR_INVALID_ARGUMENT);
         CHECK_STATUS(g_api->component_remove(world, parent, ENGINE_COMPONENT_VISIBILITY), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.objects_drawn == 4);
         CHECK_STATUS(SetVisibility(world, right, 1), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.objects_drawn == 3);
         /* destroying a parent leaves the child, a root from the next frame */
         CHECK_STATUS(g_api->entity_destroy(world, parent), ENGINE_OK);
@@ -1045,7 +1082,7 @@ int main(void)
         PlaceAt(world, skinned, 0.0f, 0.0f, 0.0f);
         CHECK_STATUS(SetMeshReference(world, skinned, 0xb05ull, 0), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK_STATUS(SetSkeleton(world, skinned, 0xa01ull), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         CHECK(HasObject(&pixels, clear));
@@ -1116,7 +1153,7 @@ int main(void)
         CHECK(rgb[0][0] > rgb[0][1] + 30 && rgb[0][0] > rgb[0][2] + 30);
         CHECK(rgb[1][1] > rgb[1][0] + 30 && rgb[1][1] > rgb[1][2] + 30);
         CHECK(rgb[2][2] > rgb[2][0] + 30 && rgb[2][2] > rgb[2][1] + 30);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.textures_uploaded >= 3 && state.texture_bytes_uploaded >= 3 * 64);
         /* a newer update shows in the next frame: the first entity turns blue */
         for (j = 0; j < 16; ++j)
@@ -1201,13 +1238,13 @@ int main(void)
         CHECK_STATUS(g_api->surface_set_world(surface, world4), ENGINE_OK);
         /* no font yet: counted, nothing drawn */
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.labels_drawn == 0 && state.labels_refused == 1);
         CHECK_STATUS(g_api->label_font_set(engine, NULL, 10), ENGINE_ERROR_INVALID_ARGUMENT);
         CHECK_STATUS(g_api->label_font_set(engine, font.data, 0), ENGINE_ERROR_INVALID_ARGUMENT);
         CHECK_STATUS(g_api->label_font_set(engine, font.data, font.size), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.labels_drawn == 1 && state.labels_refused == 0);
         CHECK_STATUS(g_api->surface_project(surface, origin, at), ENGINE_OK);
         near_count = CountText(&pixels, (int)at[0], (int)at[1], 20);
@@ -1307,7 +1344,7 @@ int main(void)
         CHECK_STATUS(g_api->surface_set_world(surface, world5), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         before_picture = Checksum(&pixels);
-        CHECK_STATUS(g_api->surface_state(surface, &first_state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &first_state), ENGINE_OK);
         CHECK(first_state.labels_drawn == 1 && first_state.textures_uploaded >= 1);
         /* rebind to a new window of the same size: the same picture, nothing recreated by the host */
         fresh = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
@@ -1317,7 +1354,7 @@ int main(void)
         CHECK_STATUS(g_api->surface_rebind(surface, &fresh_info), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         CHECK(Checksum(&pixels) == before_picture);
-        CHECK_STATUS(g_api->surface_state(surface, &first_state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &first_state), ENGINE_OK);
         CHECK(first_state.labels_drawn == 1 && first_state.world_status == ENGINE_OK &&
               first_state.textures_uploaded >= 1);
         /* a second surface shows the same texture: it uploads its own copy, and the first keeps drawing */
@@ -1331,7 +1368,7 @@ int main(void)
         CHECK_STATUS(g_api->surface_set_world(other_surface, world5), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, other_surface, &pixels), ENGINE_OK);
         CHECK(Checksum(&pixels) == before_picture);
-        CHECK_STATUS(g_api->surface_state(other_surface, &second_state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(other_surface, &second_state), ENGINE_OK);
         CHECK(second_state.textures_uploaded >= 1 && second_state.labels_drawn == 1);
         /* destroying one surface leaves the other drawing */
         CHECK_STATUS(g_api->surface_destroy(other_surface), ENGINE_OK);
@@ -1415,10 +1452,11 @@ int main(void)
         /* the world goes before the surface lets go of it, the texture before the engine: nothing is outstanding */
         CHECK_STATUS(g_api->world_destroy(world5), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
-        CHECK_STATUS(g_api->surface_state(surface, &first_state), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &first_state), ENGINE_OK);
         CHECK(first_state.world_status == ENGINE_ERROR_STALE_HANDLE);
         CHECK_STATUS(g_api->texture_destroy(tex), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_rebind(surface, &info), ENGINE_OK); /* back on the first window */
         XDestroyWindow(display, fresh);
         free(font.data);
     }
@@ -1431,7 +1469,7 @@ int main(void)
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
     CHECK(AllClear(&pixels, clear));
-    CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+    CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
     CHECK(state.world_status == ENGINE_ERROR_STALE_HANDLE);
     CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_ERROR_STALE_HANDLE);
 

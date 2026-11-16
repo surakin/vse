@@ -60,6 +60,11 @@ Status LoadLevel(const LoadContext& context, LevelSummary* out, void*)
 
 }  // namespace
 
+void RegisterSkeletonLoader(ResourceManager* manager)
+{
+    manager->RegisterLoader<SkeletonView>(&LoadSkeleton);
+}
+
 void RegisterCpuLoaders(ResourceManager* manager)
 {
     manager->RegisterLoader<SkeletonView>(&LoadSkeleton);

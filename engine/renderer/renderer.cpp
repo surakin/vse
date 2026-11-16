@@ -788,7 +788,7 @@ FrameStatus Renderer::RenderFrameImpl(const RenderScene* scene, const Camera* ca
     FrameStatus result = FrameStatus::Ok;
     if (acquired)
     {
-        if (desc_.before_present != nullptr)
+        if (desc_.before_present != nullptr && !device->DeviceLost())  // a lost device has nothing to read back
         {
             desc_.before_present(desc_.swapchain->CurrentTexture(), desc_.before_present_user);
         }

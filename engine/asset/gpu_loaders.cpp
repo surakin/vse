@@ -206,6 +206,7 @@ Status LoadGpuMaterial(const LoadContext& context, GpuMaterialAsset* asset, void
     {
         return DeviceRefused("the material system refused the material");
     }
+    renderer::ApplyGBufferDefaults(gpu->materials, out->id);  // what the blob does not name keeps the template's value
     for (usize i = 0; i < data.params.Size(); ++i)
     {
         const MaterialParam& p = data.params[i];

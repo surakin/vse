@@ -121,11 +121,11 @@ public:
     /// See `texture_update`.
     engine_status Update(engine_handle texture, const void* pixels, size_t stride, const engine_update_info* info);
     /// See `texture_resize`.
-    engine_status Resize(engine_handle texture, uint32_t width, uint32_t height);
+    engine_status Resize(engine_handle texture, u32 width, u32 height);
     /// See `texture_destroy`.
     engine_status Destroy(engine_handle texture);
     /// See `texture_read_pixels`.
-    engine_status ReadPixels(engine_handle texture, engine_buffer* out, uint32_t* width, uint32_t* height);
+    engine_status ReadPixels(engine_handle texture, engine_buffer* out, u32* width, u32* height);
     /// The texture a handle names, for a surface (null for a handle that is stale or not a texture's).
     HostTexturePtr Find(engine_handle texture);
 
@@ -159,8 +159,8 @@ HostTextureLimits ReadHostTextureSettings(const settings::Registry& registry);
 // The functions of the table that the texture host serves (engine_c.cpp lists them in the table).
 engine_status TextureCreateFn(engine_handle engine, const engine_texture_info* info, engine_handle* out);
 engine_status TextureUpdateFn(engine_handle texture, const void* pixels, size_t stride, const engine_update_info* info);
-engine_status TextureResizeFn(engine_handle texture, uint32_t width, uint32_t height);
+engine_status TextureResizeFn(engine_handle texture, u32 width, u32 height);
 engine_status TextureDestroyFn(engine_handle texture);
-engine_status TextureReadPixelsFn(engine_handle texture, engine_buffer* out, uint32_t* width, uint32_t* height);
+engine_status TextureReadPixelsFn(engine_handle texture, engine_buffer* out, u32* width, u32* height);
 
 }  // namespace engine_placeholder::engine_c

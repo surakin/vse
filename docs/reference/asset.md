@@ -3686,6 +3686,21 @@ Registers the loaders of skeletons, clips, meshes, textures, materials and level
 | Parameter `manager` | the manager. |
 | Ownership | borrows `manager` for the call only; nothing is retained. |
 
+## `RegisterSkeletonLoader(ResourceManager*)` {#asset-registerskeletonloader-resourcemanager-star}
+
+`function asset::RegisterSkeletonLoader` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+void RegisterSkeletonLoader(ResourceManager* manager);
+```
+
+Registers only the skeleton loader with `manager`: a manager that makes GPU meshes needs it, since a skinned mesh names its skeleton as a dependency that has to load first.
+
+| Field | Value |
+|---|---|
+| Parameter `manager` | the manager. |
+| Ownership | borrows `manager` for the call only; nothing is retained. |
+
 ## `FaultOp` {#asset-faultop}
 
 `enum asset::FaultOp` — defined in `engine/asset/faulty_backend.h`

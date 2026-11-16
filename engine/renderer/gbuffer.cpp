@@ -352,6 +352,13 @@ MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplat
     {
         return MaterialId{};
     }
+    ApplyGBufferDefaults(materials, id);
+    return id;
+}
+
+void ApplyGBufferDefaults(MaterialSystem* materials, MaterialId id)
+{
+    ENGINE_ASSERT(materials != nullptr, "ApplyGBufferDefaults: materials is null");
     materials->SetVec4(id, "base_color", Vec4(1, 1, 1, 1));
     materials->SetFloat(id, "roughness", 0.5f);
     materials->SetFloat(id, "metallic", 0.0f);
@@ -359,7 +366,6 @@ MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplat
     materials->SetFloat(id, "alpha_cutoff", 0.5f);
     materials->SetFloat(id, "occlusion", 1.0f);
     materials->SetUInt(id, "flags", 0);
-    return id;
 }
 
 // ---- GBufferPass ----

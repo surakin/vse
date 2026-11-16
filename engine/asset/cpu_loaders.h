@@ -71,4 +71,11 @@ template <> struct ResourceTraits<LevelSummary>
 /// - Ownership: borrows `manager` for the call only; nothing is retained.
 void RegisterCpuLoaders(ResourceManager* manager);
 
+/// Registers only the skeleton loader with `manager`: a manager that makes GPU meshes needs it, since a skinned mesh
+/// names its skeleton as a dependency that has to load first.
+///
+/// - Param manager: the manager.
+/// - Ownership: borrows `manager` for the call only; nothing is retained.
+void RegisterSkeletonLoader(ResourceManager* manager);
+
 }  // namespace engine_placeholder::asset

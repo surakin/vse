@@ -917,13 +917,13 @@ engine_status SurfaceHost::SetBackground(engine_handle surface, const float* rgb
     return ENGINE_OK;
 }
 
-engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* out)
+engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* caller)
 {
-    if (out == nullptr)
+    if (caller == nullptr)
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out` is NULL");
     }
-    if (StructSizeOf(out) < sizeof(engine_surface_state))
+    if (StructSizeOf(caller) < kSurfaceStateFirstSize)
     {
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_surface_state.struct_size is smaller than the struct");
     }
@@ -931,7 +931,8 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ou
     SurfaceSlot* slot = nullptr;
     TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
     const SurfaceObject* s = slot->object.Get();
-    *out = engine_surface_state{};
+    engine_surface_state full = {};
+    engine_surface_state* const out = &full;
     out->struct_size = sizeof(engine_surface_state);
     out->image_width = s->swapchain != nullptr ? s->swapchain->Width() : 0;
     out->image_height = s->swapchain != nullptr ? s->swapchain->Height() : 0;
@@ -959,6 +960,9 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ou
                             : actual == rhi::PresentMode::Immediate ? ENGINE_PRESENT_IMMEDIATE
                                                                     : ENGINE_PRESENT_FIFO;
     }
+    const u32 written = StructSizeOf(caller) < sizeof(full) ? StructSizeOf(caller) : static_cast<u32>(sizeof(full));
+    full.struct_size = written;  // a host built against an older header gets the fields it knows
+    MemCopy(caller, &full, written);
     return ENGINE_OK;
 }
 

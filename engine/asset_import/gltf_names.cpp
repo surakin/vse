@@ -11,6 +11,9 @@ namespace
 {
 
 constexpr usize kMaxNotes = 256;
+// Each pass is n log n; a chain of planted names (`a`, `a`, `a_1`, `a_1_2`, ...) settles one link per pass, so the
+// quadratic fallback below is reached only by a chain longer than this.
+constexpr u32 kMaxPasses = 32;
 
 u64 NameHash(StringView name)
 {
@@ -35,11 +38,11 @@ bool HashedNameLess(const HashedName& a, const HashedName& b)
 
 }  // namespace
 
-// A name seen before gets `_<position>` appended, for a few passes (the rare clash with another name needs more); what
-// is left is settled one by one against the names before it, so the result is always distinct.
+// A name seen before gets `_<position>` appended, for up to `kMaxPasses` passes (the rare clash with another name needs
+// more); what is left is settled one by one against the names before it, so the result is always distinct.
 void MakeNamesUnique(Vector<String<HeapAllocator>>* names)
 {
-    for (u32 pass = 0; pass < 4; ++pass)
+    for (u32 pass = 0; pass < kMaxPasses; ++pass)
     {
         Vector<HashedName> keys;
         for (usize i = 0; i < names->Size(); ++i)

@@ -236,6 +236,17 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplates& templates,
                                  const GBufferOptions& options, const char* name);
 
+/// Sets every parameter of a G-buffer material to its default (the ones [[renderer::CreateGBufferMaterial]] starts
+/// with). A material made straight from a template starts with zeros, which would make `occlusion` 0 and the ambient
+/// term black; the asset loader calls this before it applies the parameters a blob names.
+///
+/// - Param materials: the system the material belongs to.
+/// - Param id: a G-buffer material of `materials`.
+/// - Fails: a parameter the material lacks is skipped.
+/// - Ownership: borrows `materials` for the call only.
+/// - Aborts: `materials` is null.
+void ApplyGBufferDefaults(MaterialSystem* materials, MaterialId id);
+
 /// The graph resources of the G-buffer targets.
 ///
 /// - Thread-safety: thread-compatible plain data.

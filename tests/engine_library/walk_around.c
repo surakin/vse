@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "unity/x11_enable.h"
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 
@@ -477,3 +478,5 @@ int main(int argc, char** argv)
     printf("walk_around: ok\n");
     return 0;
 }
+
+#include "unity/x11_disable.h"

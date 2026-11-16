@@ -2128,6 +2128,24 @@ The parameters start as base color white, roughness 0.5, metallic 0, emissive sc
 | Aborts | `materials` is null. |
 | Ownership | the material belongs to `materials`. |
 
+## `ApplyGBufferDefaults(MaterialSystem*,MaterialId)` {#renderer-applygbufferdefaults-materialsystem-star-materialid}
+
+`function renderer::ApplyGBufferDefaults` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+void ApplyGBufferDefaults(MaterialSystem* materials, MaterialId id);
+```
+
+Sets every parameter of a G-buffer material to its default (the ones [`renderer::CreateGBufferMaterial`](#renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star) starts with). A material made straight from a template starts with zeros, which would make `occlusion` 0 and the ambient term black; the asset loader calls this before it applies the parameters a blob names.
+
+| Field | Value |
+|---|---|
+| Parameter `materials` | the system the material belongs to. |
+| Parameter `id` | a G-buffer material of `materials`. |
+| Fails | a parameter the material lacks is skipped. |
+| Aborts | `materials` is null. |
+| Ownership | borrows `materials` for the call only. |
+
 ## `GBufferTargets` {#renderer-gbuffertargets}
 
 `struct renderer::GBufferTargets` — defined in `engine/renderer/gbuffer.h`

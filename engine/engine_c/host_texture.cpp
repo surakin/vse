@@ -259,7 +259,7 @@ engine_status TextureHost::Update(engine_handle texture, const void* pixels, siz
     return found->Update(pixels, stride, width, height);  // outside the table's lock: the copy can take a while
 }
 
-engine_status TextureHost::Resize(engine_handle texture, uint32_t width, uint32_t height)
+engine_status TextureHost::Resize(engine_handle texture, u32 width, u32 height)
 {
     HostTexturePtr found = Find(texture);
     if (found.Get() == nullptr)
@@ -290,7 +290,7 @@ engine_status TextureHost::Destroy(engine_handle texture)
     return ENGINE_OK;
 }
 
-engine_status TextureHost::ReadPixels(engine_handle texture, engine_buffer* out, uint32_t* width, uint32_t* height)
+engine_status TextureHost::ReadPixels(engine_handle texture, engine_buffer* out, u32* width, u32* height)
 {
     if (out == nullptr || width == nullptr || height == nullptr)
     {
@@ -405,7 +405,7 @@ engine_status TextureUpdateFn(engine_handle texture, const void* pixels, size_t 
                                : textures->Update(texture, pixels, stride, info);
 }
 
-engine_status TextureResizeFn(engine_handle texture, uint32_t width, uint32_t height)
+engine_status TextureResizeFn(engine_handle texture, u32 width, u32 height)
 {
     TextureHost* textures = CurrentTextures();
     return textures == nullptr ? Fail(ENGINE_ERROR_STALE_HANDLE, "no engine exists")
@@ -418,7 +418,7 @@ engine_status TextureDestroyFn(engine_handle texture)
     return textures == nullptr ? Fail(ENGINE_ERROR_STALE_HANDLE, "no engine exists") : textures->Destroy(texture);
 }
 
-engine_status TextureReadPixelsFn(engine_handle texture, engine_buffer* out, uint32_t* width, uint32_t* height)
+engine_status TextureReadPixelsFn(engine_handle texture, engine_buffer* out, u32* width, u32* height)
 {
     TextureHost* textures = CurrentTextures();
     return textures == nullptr ? Fail(ENGINE_ERROR_STALE_HANDLE, "no engine exists")

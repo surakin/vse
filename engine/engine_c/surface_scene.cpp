@@ -54,6 +54,7 @@ SurfaceScene::SurfaceScene(rhi::Device* device, rhi::Swapchain* swapchain, Resou
     context_.materials = frame_.Materials();
     context_.templates = frame_.Templates();
     asset::RegisterGpuLoaders(manager_.Get(), &context_);
+    asset::RegisterSkeletonLoader(manager_.Get());  // a skinned mesh loads its skeleton first
     if (!manager_->Mount(StringView("/"), &resources->Memory(), 1000, &mount_).Ok())
     {
         return;

@@ -25,6 +25,13 @@ enum HandleKind : u64
     kKindLastIssued = kKindTexture
 };
 
+/// The sizes of the structs that grew after Phase 23 (`engine_frame_stats`, `engine_surface_state`,
+/// `engine_mesh_reference`) as that version had them: a host built against it passes a `struct_size` of this many
+/// bytes and is served, the library reading or writing only that many (the "Structs" rule of `engine_c.h`).
+constexpr u32 kFrameStatsFirstSize = 32;
+constexpr u32 kSurfaceStateFirstSize = 56;
+constexpr u32 kMeshReferenceFirstSize = 16;
+
 /// The `struct_size` a host's struct starts with (the first field of every struct of the API).
 ///
 /// - Thread-safety: thread-safe.

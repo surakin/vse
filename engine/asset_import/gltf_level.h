@@ -13,8 +13,9 @@
 namespace engine_placeholder::asset
 {
 
-/// The deepest node hierarchy a level holds (the ECS's own bound, `ecs::kMaxHierarchyDepth`).
-inline constexpr u32 kMaxLevelDepth = 64;
+/// The deepest node hierarchy a level holds, a root being depth 0: one below the ECS's own bound
+/// (`ecs::kMaxHierarchyDepth`, 64), because `level_spawn` puts a root entity of its own above the level's roots.
+inline constexpr u32 kMaxLevelDepth = 63;
 
 /// Makes the level of the default scene of a parsed glTF from the resources already imported.
 ///

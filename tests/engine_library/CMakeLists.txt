@@ -282,7 +282,7 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
       engine_label_tests(engine_c_scene${suffix})
       # Phase 24 Day 371: the walk-around sample (an interactive C host; `--frames N` makes it a test): robots, screens fed by threads, labels, a rebind.
       add_executable(walk_around${suffix} walk_around.c)
-      target_include_directories(walk_around${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
+      target_include_directories(walk_around${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine ${CMAKE_SOURCE_DIR}/engine/foundation)
       target_compile_definitions(walk_around${suffix} PRIVATE "LABEL_FONT_DIR=\"${CMAKE_SOURCE_DIR}/assets/fonts\"" "LABEL_FONT_NAME=\"LiberationSans-Regular.ttf\""
                                                               "RES_DATA_DIR=\"${CMAKE_CURRENT_BINARY_DIR}/resource_data\"")
       target_link_libraries(walk_around${suffix} PRIVATE engine_c${suffix} PkgConfig::EngineTestX11 Threads::Threads ${CMAKE_DL_LIBS} m)

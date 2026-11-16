@@ -286,8 +286,18 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
                           ErrorCode::Invalid);
         }
         {
-            ecs::LocalTransform local;
             const f64 scale = static_cast<f64>(options.scale);
+            for (u32 axis = 0; axis < 3; ++axis)  // a double outside f32's range would convert to infinity
+            {
+                const f64 t = trs.translation[axis] * scale;
+                const f64 sc = trs.scale[axis];
+                if (!(t > -3.0e38 && t < 3.0e38 && sc > -3.0e38 && sc < 3.0e38))
+                {
+                    return Refuse(error, StringView(where, CStrLength(where)),
+                                  "has a translation or scale too large for a level", ErrorCode::Invalid);
+                }
+            }
+            ecs::LocalTransform local;
             local.position.x = static_cast<f32>(trs.translation[0] * scale);
             local.position.y = static_cast<f32>(trs.translation[1] * scale);
             local.position.z = static_cast<f32>(trs.translation[2] * scale);

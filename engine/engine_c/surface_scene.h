@@ -4,6 +4,7 @@
 //! resource manager of its own that makes the world's meshes and materials resident on that device. Internal to the
 //! module `engine_c`.
 
+#include "asset/cpu_loaders.h"
 #include "asset/gpu_loaders.h"
 #include "asset/resource_manager.h"
 #include "containers/shared_ptr.h"
@@ -34,7 +35,7 @@ struct SceneFrameReport
     u32 lights_refused = 0;       ///< Lights of the world the scene had no room for, or that point nowhere.
     u32 labels_drawn = 0;         ///< Labels queued for the frame's text pass.
     u32 labels_refused = 0;       ///< Labels not drawn: no font, no room, or text the font could not lay out.
-    int32_t camera_status = 0;    ///< ENGINE_OK, or NOT_FOUND when the named camera entity was not usable.
+    i32 camera_status = 0;        ///< ENGINE_OK, or NOT_FOUND when the named camera entity was not usable.
 };
 
 /// The scene of one surface.

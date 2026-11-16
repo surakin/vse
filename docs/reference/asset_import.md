@@ -1780,7 +1780,7 @@ Adds every resource of an import to a host memory backend under its path, atomic
 inline constexpr u32 kMaxLevelDepth;
 ```
 
-The deepest node hierarchy a level holds (the ECS's own bound, `ecs::kMaxHierarchyDepth`).
+The deepest node hierarchy a level holds, a root being depth 0: one below the ECS's own bound (`ecs::kMaxHierarchyDepth`, 64), because `level_spawn` puts a root entity of its own above the level's roots.
 
 ## `ImportLevel(const GltfDocument&,const GltfNodeGraph&,const ImportOptions&,const TypeRegistry&,Span<const ImportedSkin>,ImportResult*,GltfError*)` {#asset-importlevel-const-gltfdocument-amp-const-gltfnodegraph-amp-const-importoptions-amp-const-typeregistry-amp-span-lt-const-importedskin-gt-importresult-star-gltferror-star}
 
