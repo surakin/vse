@@ -43,6 +43,12 @@ public:
     os::ForeignWindow* WindowOf(engine_handle surface);
     engine_status Resized(engine_handle surface, u32 width, u32 height, float scale);
     engine_status Rebind(engine_handle surface, const engine_surface_info* info);
+    /// Loses the device of a surface on purpose (the RHI's `InjectDeviceLoss`), for the tests of the recovery: the next
+    /// frame finds it lost and the host recovers with `Rebind`, which makes a new device (Phase 24 Day 369). Reached
+    /// only through the test extension `engine.test_state`.
+    ///
+    /// - Fails: `STALE_HANDLE` for a surface that does not exist.
+    engine_status InjectDeviceLoss(engine_handle surface);
     engine_status SetBackground(engine_handle surface, const float* rgba);
     engine_status State(engine_handle surface, engine_surface_state* out);
     engine_status ReadPixels(engine_handle surface, engine_handle* ticket);

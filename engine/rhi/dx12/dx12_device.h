@@ -707,6 +707,7 @@ private:
     ComRef<ID3D12Fence> fence_;
     ComRef<ID3D12InfoQueue1> info_queue_;
     DWORD info_callback_cookie_ = 0;
+    bool device_user_counted_ = false;  // counted among the users of the shared ID3D12Device (dx12_device.cpp)
     bool validation_ = false;
     bool gpu_validation_ = false;
 

@@ -5,6 +5,7 @@
 #include "rhi/dx12/dx12_command_list.h"
 #include "rhi/dx12/dx12_swapchain.h"
 
+#include "containers/array.h"
 #include "cstr/cstr.h"
 #include "os/console.h"
 #include "sync/atomic.h"
@@ -24,6 +25,60 @@ namespace
 
 Atomic<u64> g_leaked_user_objects{0};
 Atomic<u64> g_leaked_d3d12_objects{0};
+
+// D3D12 makes one ID3D12Device per adapter: while it lives, D3D12CreateDevice on the same adapter returns it again, so
+// several Dx12Devices (a surface each, Phase 24) share one. Each counts itself here, and only the last one reports the
+// device's live objects: the others' objects are alive and would read as leaks (Phase 24 Day 369).
+struct SharedDeviceUse
+{
+    const void* device = nullptr;
+    u32 users = 0;
+};
+Mutex g_shared_devices_mutex;
+Array<SharedDeviceUse, 16> g_shared_devices;
+
+// Counts a user of `device`. False when the table is full (the device's live objects are then always reported).
+bool AddDeviceUser(const void* device)
+{
+    LockGuard<Mutex> lock(g_shared_devices_mutex);
+    for (SharedDeviceUse& use : g_shared_devices)
+    {
+        if (use.device == device)
+        {
+            ++use.users;
+            return true;
+        }
+    }
+    for (SharedDeviceUse& use : g_shared_devices)
+    {
+        if (use.users == 0)
+        {
+            use.device = device;
+            use.users = 1;
+            return true;
+        }
+    }
+    return false;
+}
+
+// Removes a user of `device` and returns how many others still use it.
+u32 RemoveDeviceUser(const void* device)
+{
+    LockGuard<Mutex> lock(g_shared_devices_mutex);
+    for (SharedDeviceUse& use : g_shared_devices)
+    {
+        if (use.device == device && use.users != 0)
+        {
+            --use.users;
+            if (use.users == 0)
+            {
+                use.device = nullptr;
+            }
+            return use.users;
+        }
+    }
+    return 0;
+}
 
 // "1" on, "0" off, anything else (or unset) undecided.
 int ParseSwitch(const char* text)
@@ -228,6 +283,7 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info)
                HresultName(hr), static_cast<unsigned long>(hr));
         return false;
     }
+    device_user_counted_ = AddDeviceUser(device_.Get());
     if (validation_)
     {
         if (SUCCEEDED(device_->QueryInterface(__uuidof(ID3D12InfoQueue1), info_queue_.PutVoid())))
@@ -348,7 +404,12 @@ Dx12Device::~Dx12Device()
     ShutdownResources();
     fence_.Reset();
     queue_.Reset();
-    ReportLiveObjects();
+    // Another Dx12Device on the same ID3D12Device keeps its objects alive: only the last user reports.
+    const u32 other_users = device_user_counted_ ? RemoveDeviceUser(device_.Get()) : 0;
+    if (other_users == 0)
+    {
+        ReportLiveObjects();
+    }
     if (removal_injected_)
     {
         g_injected_removals.FetchSub(1, MemoryOrder::Relaxed);  // its removal messages have all been delivered by now

@@ -5,6 +5,7 @@
 // fed by an ECS world through scene::RenderSync, presenting to the window and rendering offscreen on the same device.
 #include <catch2/catch_test_macros.hpp>
 
+#include "build_defs.h"
 #include "cstr/mem_ops.h"
 #include "demo_frame.h"
 #include "display_session.h"
@@ -25,10 +26,18 @@ namespace
 constexpr u32 kWidth = 320;
 constexpr u32 kHeight = 200;
 
+// The platform's window kind: X11 on Linux, Win32 on Windows (Day 369), with Vulkan as Day 358 measured it.
+constexpr os::WindowBackend kWindowBackend = ENGINE_PLATFORM_WINDOWS ? os::WindowBackend::Win32
+                                                                     : os::WindowBackend::X11;
+
 bool HaveDisplay()
 {
+#if ENGINE_PLATFORM_WINDOWS
+    return true;  // the desktop is there (a locked session is skipped by SKIP_IF_NO_DISPLAY_SESSION)
+#else
     const char* display = os::GetEnvironment("DISPLAY");
     return display != nullptr && display[0] != '\0';
+#endif
 }
 
 }  // namespace
@@ -43,9 +52,9 @@ TEST_CASE("Spike 1: a renderer on a window's device and swapchain draws an ECS w
     }
     os::InputState input;
     os::PlatformWindowHost host;
-    if (!host.Open(os::WindowBackend::X11, "scene spike", kWidth, kHeight, &input))
+    if (!host.Open(kWindowBackend, "scene spike", kWidth, kHeight, &input))
     {
-        SKIP("no X11 window");
+        SKIP("no window");
     }
     rhi::DeviceCreateInfo info;
     info.backend = rhi::Backend::Vulkan;
@@ -285,9 +294,9 @@ TEST_CASE("Spike 2: the content of one resource is resident on two devices; the 
     }
     os::InputState input;
     os::PlatformWindowHost host;
-    if (!host.Open(os::WindowBackend::X11, "scene spike 2", kWidth, kHeight, &input))
+    if (!host.Open(kWindowBackend, "scene spike 2", kWidth, kHeight, &input))
     {
-        SKIP("no X11 window");
+        SKIP("no window");
     }
     rhi::DevicePtr surface_device = MakeVulkanDevice(host.Get());
     rhi::DevicePtr resource_device = MakeVulkanDevice(nullptr);

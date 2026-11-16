@@ -218,6 +218,7 @@ int main(int argc, char** argv)
             frames_limit = atoi(argv[i + 1]);
         }
     }
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
     if (!host_windows_begin(&why))
     {
         printf("walk_around: skipped: %s\n", why);
@@ -253,6 +254,8 @@ int main(int argc, char** argv)
     memset(&info, 0, sizeof(info));
     info.struct_size = sizeof(info);
     host_window_describe(window, &info);
+    info.flags = host_window_api_flags(); /* Windows: HOST_SURFACE_API, Direct3D 12 or Vulkan; kept by the later
+                                             describe */
     memset(&surface, 0, sizeof(surface));
     if (g_api->surface_create(engine, &info, &surface) != ENGINE_OK)
     {

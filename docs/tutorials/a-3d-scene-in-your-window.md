@@ -2,7 +2,7 @@
 
 **Goal:** Fill a window your program owns with a 3D scene through the C API: a camera you move, a light, meshes, an animated skinned character, a texture your own thread paints, and a name tag in the world.
 
-**You need:** the program of [Load the Engine and Clear a Window](loading-the-engine.md) working (a built tree, X11 or Xwayland, a Vulkan GPU). The program of this page is `tests/engine_library/walk_around.c`; `cmake --build build --target walk_around` builds it and `./build/tests/engine_library/walk_around` runs it (W A S D move, the mouse looks, Escape quits); `--frames 40` makes it draw 40 frames, rebind to a new window and check the picture is the same. The guide: [The Engine as a Loadable Library](../guide/engine-library.md).
+**You need:** the program of [Load the Engine and Clear a Window](loading-the-engine.md) working (a built tree, X11 or Xwayland, a Vulkan GPU; on Windows, Direct3D 12 or Vulkan: set `HOST_SURFACE_API=vulkan` for Vulkan). The program of this page is `tests/engine_library/walk_around.c`; `cmake --build build --target walk_around` builds it and `./build/tests/engine_library/walk_around` runs it (W A S D move, the mouse looks, Escape quits); `--frames 40` makes it draw 40 frames, rebind to a new window and check the picture is the same. The guide: [The Engine as a Loadable Library](../guide/engine-library.md).
 
 ## Steps
 

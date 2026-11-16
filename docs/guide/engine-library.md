@@ -313,8 +313,10 @@ visibility and scale and reports them. In this order:
    engine draws nothing and does not crash the engine: on X11 the server reports the destroyed window as having no drawable area, so the surface reads as
    hidden (`visible` 0, `frames_skipped` counting up) and a read-back pending on it stays pending; when the swapchain reports the surface itself lost, `lost` is
    1 and the pending read-backs fail with `UNSUPPORTED`. Either way the host calls `surface_rebind` with the handles of a new window and the engine rebuilds
-   the swapchain on the same device through the reset path of Phase 8 (`RecreateSurface`), `recoveries` goes up and the next frame is drawn there. If the
-   device cannot present to the new window (`UNSUPPORTED`) the surface stays lost, and the host can try again or destroy it.
+   the swapchain on the same device through the reset path of Phase 8 (`RecreateSurface`), `recoveries` goes up and the next frame is drawn there. When the
+   device itself was lost (a driver reset, the GPU removed), `surface_rebind` makes a new device on the surface's adapter instead (Day 369, below). If the
+   device cannot present to the new window, or no new device can be made yet (`UNSUPPORTED`), the surface stays lost, and the host can try again or destroy
+   it.
 6. **Read pixels.** `surface_read_pixels` returns a ticket at once; the next frame that draws the surface fills it; `pixels_finish` takes the RGBA8 image (an
    `engine_pixels`: width, height, `stride` = width × 4, top row first, in the encoding of the swapchain image, so a clear to 0.5 reads 188 on an sRGB surface)
    as an `engine_buffer` the host releases with `engine_buffer_release`. Before a frame is drawn `pixels_finish` answers `NOT_READY`; after the surface is
@@ -644,13 +646,36 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 
 - **What a surface keeps and what it remakes.** A surface's scene (frame object, resident meshes and materials, device textures of host textures, the label font and the text atlas) belongs to the surface's device and is remade by `surface_rebind` from what the engine keeps: the resource host's content, the host textures' newest pixels (kept as the CPU source), the label font's bytes, the world itself. The host recreates nothing: the same world, camera, textures and labels draw on the new window, and the picture is the one before.
 - **Several surfaces.** One world may be bound to several surfaces, each with its own camera (`surface_set_camera`); each uploads the host textures its entities name to its own device (`surface_state.textures_uploaded` per surface), so destroying one surface leaves the others drawing. A world destroyed under a surface leaves it at the background colour with `world_status` `STALE_HANDLE`. A host texture may be destroyed before or after the entities that name it (the slots revert), and the engine refuses to be destroyed while any texture, world or surface lives (`IN_USE`).
+- **A lost device** (Day 369). When the device of a surface is lost, the next frame draws nothing on it (`lost` 1, a pending read-back fails with
+  `UNSUPPORTED`), and `surface_rebind` makes a new device and the scene on it, with the same picture as before. The new device is on the adapter the surface
+  started on, never another one. On Direct3D 12 an adapter has one device for the whole process (`D3D12CreateDevice` hands back the one that exists), so
+  every surface on the adapter loses its device at once, and a new device exists only once none of them holds the removed one: the first `surface_rebind`
+  answers `UNSUPPORTED` while another lost surface still holds it (had the adapter been picked anew, the engine would have fallen back to WARP, the software
+  adapter). The host rebinds each lost surface, then again those that were refused. A world bound to the surface stays bound through the refused rebinds
+  (`world_status` is `UNSUPPORTED` meanwhile) and draws again after the rebind that works; `surface_set_world` refuses a lost surface. The test hook is the
+  test extension's `surface_lose_device` (`engine_test_extension.h`); `host_scene.c` loses one surface's device, then one of two surfaces', on both backends.
 - **Not covered by a test yet.** A fault-injection sweep through the frame path and the 5000-frame flat-count run are closing-pass items (`KNOWN-ISSUES.md`).
+
+## Windows: scenes on an `HWND` (Phase 24 Day 369)
+
+The scene features of Days 359-368 run on Windows with Direct3D 12 and with Vulkan. The scene hosts' window (`tests/engine_library/host_window.h`, below) is
+`windows/host_window_win32.c` there: a window class of the host's, borderless windows of the exact client size (a captioned window has a smallest width), a
+message loop turned by the polls, and the walk-around's key posted as a `WM_KEYDOWN` message to the window. `HOST_SURFACE_API` (`d3d12` or `vulkan`, read by
+`host_window_api_flags`) chooses the graphics API, so each scene test runs once per backend (`engine_c_scene_d3d12`, `engine_c_scene_vulkan`,
+`engine_c_walk_around_d3d12`, `engine_c_walk_around_vulkan`, plain and asan).
+
+- **Golden images.** On the PC (AMD Radeon 860M), Direct3D 12 and Vulkan draw the golden scene byte for byte the same, and both differ from the golden image
+  made on Linux (NVIDIA, Vulkan) by at most 2 in a channel, 40 of 76 800 values by more than 1: inside the rule of Day 358.
+- **One device per adapter.** On Direct3D 12 the surfaces of one adapter share one `ID3D12Device`: each surface's device is its own `rhi::Device`, but
+  `D3D12CreateDevice` returns the one that exists. The RHI counts the users of a D3D12 device and only the last one reports the objects still alive at its
+  destruction (before Day 369, destroying a second surface reported the first one's objects as leaks). Losing it loses every surface on the adapter (above).
+- **The walk-around sample** builds and runs on Windows (`walk_around.exe`; `HOST_SURFACE_API=vulkan` for Vulkan).
 
 ## The walk-around sample (Phase 24 Day 371)
 
 `tests/engine_library/walk_around.c` is the phase's driving case as a plain C host: three skinned robots (one walks, two stand), three screens that show a pattern each, painted by a thread of their own through `texture_update`, name tags over the robots, a directional light with an ambient term, and a first-person camera (W A S D, the mouse looks, Escape quits). It builds the scene through the C API alone; `--frames N` makes it a test that draws N frames, stops the painters, rebinds the surface to a new window and checks the picture is the same and that no entity was unresolved. In test mode it also posts a W key press to its own window through the window system (held for ten frames) and checks that the camera moved forward: the host's event loop drives the scene. The walk-through is the tutorial [A 3D Scene in Your Window](../tutorials/a-3d-scene-in-your-window.md).
 
-**Its window, on each platform (Day 370).** The two scene hosts reach their window through `tests/engine_library/host_window.h` (open the window system, open and close a window of a size in pixels, describe it as an `engine_surface_info`, poll and post the few events the walk-around reads): `linux/host_window_x11.c` is Xlib, `macos/host_window_cocoa.m` an `NSWindow` whose plain content `NSView` gets the engine's `CAMetalLayer` (Day 355). On a Retina display the window is half as many points as the pixels asked, so the golden image of `host_scene.c` is the same 160x120 picture on every platform; on the Mac it is within the golden rule with Metal (seen: a largest difference of 2, 96 of 76,800 values off by more than 1). Host textures reach Metal through the RHI as everywhere (`engine_c/live_textures.*`: a ring of three persistently mapped staging buffers per texture and one buffer-to-texture copy per update): nothing Metal-specific was needed (the walk-around's `textures_uploaded` counts every screen on the Mac). Every call is on the main thread there, as a Cocoa surface requires (the screens' painter threads call only `texture_update`).
+**Its window, on each platform (Day 370).** The two scene hosts reach their window through `tests/engine_library/host_window.h` (open the window system, open and close a window of a size in pixels, describe it as an `engine_surface_info`, poll and post the few events the walk-around reads): `linux/host_window_x11.c` is Xlib, `windows/host_window_win32.c` Win32 (Day 369, above), `macos/host_window_cocoa.m` an `NSWindow` whose plain content `NSView` gets the engine's `CAMetalLayer` (Day 355). On a Retina display the window is half as many points as the pixels asked, so the golden image of `host_scene.c` is the same 160x120 picture on every platform; on the Mac it is within the golden rule with Metal (seen: a largest difference of 2, 96 of 76,800 values off by more than 1). Host textures reach Metal through the RHI as everywhere (`engine_c/live_textures.*`: a ring of three persistently mapped staging buffers per texture and one buffer-to-texture copy per update): nothing Metal-specific was needed (the walk-around's `textures_uploaded` counts every screen on the Mac). Every call is on the main thread there, as a Cocoa surface requires (the screens' painter threads call only `texture_update`).
 
 ## Scenes: conventions and the host's duties (Phase 24 Day 372)
 

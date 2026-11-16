@@ -246,6 +246,38 @@ TEST_CASE("A DX12 device is created and destroyed on every suitable adapter with
     CHECK(made >= 1);
 }
 
+// Phase 24 Day 369: D3D12 makes one ID3D12Device per adapter, so two devices of the RHI on one adapter (a surface each)
+// share it. Destroying one must not report the other's live objects as its own leaks.
+TEST_CASE(
+    "Two DX12 devices on one adapter share the D3D12 device, and destroying one reports none of the other's objects",
+    "[rhi][dx12][gpu]")
+{
+    DeviceCreateInfo info = Dx12Info();
+    info.validation = ValidationSetting::On;
+    DevicePtr first = CreateDevice(info);
+    if (!first)
+    {
+        SKIP("no Direct3D 12 device");
+    }
+    DebugLayerSilence silence;
+    BufferDesc bd;
+    bd.size = 256;
+    bd.usage = BufferUsage::Uniform;
+    bd.location = MemoryLocation::CpuToGpu;
+    const BufferHandle kept = first->CreateBuffer(bd);  // alive on the shared D3D12 device while the second goes
+    REQUIRE(kept.IsValid());
+    {
+        DevicePtr second = CreateDevice(info);
+        REQUIRE(second);
+        second->WaitIdle();
+    }
+    CHECK(GetDebugMessageCounts().live_objects == 0);
+    CHECK(Dx12Device::GetLeakCounts().live_d3d12_objects == 0);
+    first->DestroyBuffer(kept);
+    first->WaitIdle();
+    first.Reset();  // the last user: it reports, and finds nothing
+}
+
 TEST_CASE("A DX12 fence wait on a value that is never signaled returns false within its timeout", "[rhi][dx12][gpu]")
 {
     DeviceCreateInfo info = Dx12Info();

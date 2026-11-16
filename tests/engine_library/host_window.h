@@ -2,11 +2,14 @@
    that has one: open the platform's window system, open and close windows of a size in pixels, describe a window to
    the engine (engine_surface_info), and read the few events the walk-around steers with. A foreign host has its own
    toolkit; this stands for it. linux/host_window_x11.c is Xlib (the hosts' own code until Day 370),
-   macos/host_window_cocoa.m is AppKit (an NSWindow whose content NSView the engine draws into with Metal). Plain C. */
+   macos/host_window_cocoa.m is AppKit (an NSWindow whose content NSView the engine draws into with Metal),
+   windows/host_window_win32.c is Win32 (Day 369: an HWND drawn with Direct3D 12 or Vulkan). Plain C. */
 #ifndef HOST_WINDOW_H
 #define HOST_WINDOW_H
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "engine/engine_c.h"
 
@@ -36,6 +39,23 @@ void host_window_close(host_window* window);
    window (a host_window_open that failed) writes kind 0, so the engine refuses the call that uses it (a failed check,
    not a crash). */
 void host_window_describe(const host_window* window, engine_surface_info* info);
+
+/* The graphics API a scene test asks for (Day 369): HOST_SURFACE_API=vulkan or d3d12 gives that ENGINE_SURFACE_FLAG_*,
+   anything else 0 (the platform's own). The hosts write it into engine_surface_info.flags after host_window_describe,
+   so each scene test on Windows runs once with Direct3D 12 and once with Vulkan. */
+static inline uint32_t host_window_api_flags(void)
+{
+    const char* api = getenv("HOST_SURFACE_API");
+    if (api != NULL && strcmp(api, "vulkan") == 0)
+    {
+        return ENGINE_SURFACE_FLAG_VULKAN;
+    }
+    if (api != NULL && strcmp(api, "d3d12") == 0)
+    {
+        return ENGINE_SURFACE_FLAG_D3D12;
+    }
+    return 0;
+}
 
 /* The events the walk-around reads. */
 #define HOST_KEY_W 1

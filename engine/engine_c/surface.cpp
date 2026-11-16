@@ -146,10 +146,12 @@ struct SurfaceObject
     bool visible = false;
     bool lost = false;
     u32 present_mode = 0;
-    rhi::Backend backend = rhi::Backend::Vulkan;     // ENGINE_SURFACE_FLAG_*, or the platform's own (Day 354)
-    u32 active_touch = 0;                            // the touch that acts as the pointer, plus one; 0 for none
-    Vector<usize> waiting;                           // slots of the read-back tickets waiting for a frame
-    engine_handle world = {};                        // the world bound by surface_set_world (value 0: none)
+    rhi::Backend backend = rhi::Backend::Vulkan;  // ENGINE_SURFACE_FLAG_*, or the platform's own (Day 354)
+    char adapter[rhi::kAdapterIdBytes] = {};      // the adapter of the first device: a recovery asks for it (Day 369)
+    engine_handle kept_world = {};  // the world a failed rebind unbound: the next rebind that works binds it again
+    u32 active_touch = 0;           // the touch that acts as the pointer, plus one; 0 for none
+    Vector<usize> waiting;          // slots of the read-back tickets waiting for a frame
+    engine_handle world = {};       // the world bound by surface_set_world (value 0: none)
     engine_status world_status = ENGINE_OK;          // why it was unbound, ENGINE_OK while bound or never bound
     UniquePtr<SurfaceScene> scene;                   // after the swapchain in destruction order: it points at it
     Vector<PixelsObject*>* frame_by_slot = nullptr;  // during RenderAll: the tickets the before-present hook serves
@@ -326,6 +328,10 @@ engine_status Build(SurfaceObject* s)
     info.application_name = "engine";
     info.window = &s->window;
     info.pipeline_cache = false;
+    // A new device after a loss stays on the surface's adapter: picked anew, a Direct3D 12 adapter whose removed device
+    // another surface still holds reads as unsuitable, and the choice would fall to WARP, the software adapter (Day
+    // 369). Asked for by id, the creation fails instead, and the host rebinds again later.
+    info.adapter = s->adapter[0] != '\0' ? s->adapter : nullptr;
     s->device = rhi::CreateDevice(info);
     if (s->device.Get() == nullptr)
     {
@@ -340,6 +346,7 @@ engine_status Build(SurfaceObject* s)
         s->device.Reset();
         return Fail(ENGINE_ERROR_UNSUPPORTED, "the swapchain for this window could not be made");
     }
+    CStrCopyTo(s->adapter, sizeof(s->adapter), s->device->Adapter().id);
     return ENGINE_OK;
 }
 
@@ -752,6 +759,18 @@ engine_status SurfaceHost::Resized(engine_handle surface, u32 width, u32 height,
     return ENGINE_OK;
 }
 
+engine_status SurfaceHost::InjectDeviceLoss(engine_handle surface)
+{
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+    if (slot->object->device != nullptr)  // none after a recovery that could not make one (Rebind)
+    {
+        slot->object->device->InjectDeviceLoss();
+    }
+    return ENGINE_OK;
+}
+
 engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_info* given)
 {
     engine_surface_info info = {};
@@ -787,16 +806,23 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
     {
         s->hooks.Set(*info.callbacks);
     }
-    const engine_handle world = s->world;
-    const bool had_scene = s->scene != nullptr;
+    // The world to draw after the rebind: the bound one, or the one an earlier rebind that failed unbound (a host
+    // retries a rebind until a lost device can be replaced, and cannot bind a world to a lost surface meanwhile: Day
+    // 369).
+    const engine_handle world = s->scene != nullptr ? s->world : s->kept_world;
+    const bool had_scene = world.value != 0;
     s->scene.Reset();  // its renderer points at the swapchain; made again below
     if (had_scene)
-    {  // unbound until the new swapchain exists: a failure below leaves the surface without a scene
+    {  // unbound until the new swapchain exists: a failure below leaves the surface without a scene, the world kept
         s->world = engine_handle{};
         s->world_status = ENGINE_ERROR_UNSUPPORTED;
+        s->kept_world = world;
     }
-    s->device->DestroySwapchain(s->swapchain);
-    s->swapchain = nullptr;
+    if (s->swapchain != nullptr)  // none while the surface is lost without a device
+    {
+        s->device->DestroySwapchain(s->swapchain);
+        s->swapchain = nullptr;
+    }
     s->active_touch = 0;
 #if ENGINE_PLATFORM_MACOS
     macos::DetachLayer(&s->cocoa);  // the old view's layer, after the swapchain that used it
@@ -804,16 +830,32 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
     cocoa = macos::CocoaLayer();  // the reference moved: the local owns nothing
 #endif
     s->window.Rebind(NativeOf(info, layer), info.width, info.height, static_cast<f32>(info.scale));
-    if (!s->device->RecreateSurface(&s->window))
-    {
-        s->lost = true;
-        return Fail(ENGINE_ERROR_UNSUPPORTED, "the device cannot present to the new window");
+    if (s->device == nullptr || s->device->DeviceLost())
+    {  // a lost device makes no swapchain: the surface gets a new device (Day 369). On Direct3D 12 the adapter's device
+       // is new only once every user of the removed one has let it go, so while another surface still holds it this
+       // fails (the surface stays lost, with no device), and the host rebinds again after rebinding or destroying the
+       // other.
+        s->device.Reset();
+        const engine_status built = Build(s);
+        if (built != ENGINE_OK)
+        {
+            s->lost = true;
+            return built;
+        }
     }
-    s->swapchain = s->device->CreateSwapchain(SwapchainDescOf(s));
-    if (s->swapchain == nullptr)
+    else
     {
-        s->lost = true;
-        return Fail(ENGINE_ERROR_UNSUPPORTED, "the swapchain for the new window could not be made");
+        if (!s->device->RecreateSurface(&s->window))
+        {
+            s->lost = true;
+            return Fail(ENGINE_ERROR_UNSUPPORTED, "the device cannot present to the new window");
+        }
+        s->swapchain = s->device->CreateSwapchain(SwapchainDescOf(s));
+        if (s->swapchain == nullptr)
+        {
+            s->lost = true;
+            return Fail(ENGINE_ERROR_UNSUPPORTED, "the swapchain for the new window could not be made");
+        }
     }
     s->lost = false;
     ++s->recoveries;
@@ -826,6 +868,7 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
             s->world_status = ENGINE_OK;
         }  // else unbound: the surface clears, with world_status UNSUPPORTED
     }
+    s->kept_world = engine_handle{};
     return ENGINE_OK;
 }
 
@@ -876,6 +919,7 @@ engine_status SurfaceHost::SetWorld(engine_handle surface, engine_handle world, 
     {
         s->scene.Reset();
         s->world = engine_handle{};
+        s->kept_world = engine_handle{};  // the host's choice replaces what a failed rebind kept
         s->world_status = ENGINE_OK;
         s->objects_drawn = 0;
         s->entities_unresolved = 0;
@@ -890,6 +934,7 @@ engine_status SurfaceHost::SetWorld(engine_handle surface, engine_handle world, 
         TRY_SURFACE(MakeScene(s, resources));
     }
     s->world = world;
+    s->kept_world = engine_handle{};
     s->world_status = ENGINE_OK;
     return ENGINE_OK;
 }

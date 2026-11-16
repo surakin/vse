@@ -23,6 +23,9 @@ struct engine_test_extension
     int (*object_acquire)(void); /* counts an outstanding object on the engine (1), or 0 when no engine exists: destroy
                                     refuses while any is out */
     void (*object_release)(void);
+    /* Phase 24 Day 369: loses the device of the surface whose engine_handle.value this is (1), or 0 when there is no
+       engine or no such surface; the next frame finds it lost, surface_rebind makes a new device */
+    int (*surface_lose_device)(unsigned long long surface);
 };
 
 /* What a plugin reports about the singletons it sees. */

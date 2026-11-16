@@ -9,7 +9,10 @@
 // while the phase is under way); a release build of the library has no such table.
 #include "build_defs.h"
 #include "debug/crash_handler.h"
+#include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
+#include "engine_c/runtime.h"
+#include "engine_c/surface.h"
 #include "engine_c/engine_test_extension.h"
 #include "engine_c/test_state.h"
 #include "debug/stack_trace.h"
@@ -123,6 +126,19 @@ void CrashInJob()
     scheduler.HelpUntil(counter);
 }
 
+int LoseSurfaceDevice(unsigned long long surface)
+{
+    engine_placeholder::engine_c::Runtime* runtime = engine_placeholder::engine_c::CurrentRuntime();
+    engine_placeholder::engine_c::SurfaceHost* host = runtime != nullptr ? runtime->SurfacesIfCreated() : nullptr;
+    if (host == nullptr)
+    {
+        return 0;
+    }
+    engine_handle handle;
+    handle.value = surface;
+    return host->InjectDeviceLoss(handle) == ENGINE_OK ? 1 : 0;
+}
+
 }  // namespace
 
 namespace engine_placeholder::engine_c
@@ -147,7 +163,8 @@ const engine_test_extension* TestStateExtension()
                                                  &CrashInJob,
                                                  &LiveBlocks,
                                                  &ObjectAcquire,
-                                                 &ObjectRelease};
+                                                 &ObjectRelease,
+                                                 &LoseSurfaceDevice};
     return &filled;
 }
 

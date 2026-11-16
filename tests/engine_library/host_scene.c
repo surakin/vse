@@ -1,21 +1,24 @@
-/* Phase 24 Day 359: a C program that owns a window (host_window.h: X11, or from Day 370 a Cocoa NSView drawn with
-   Metal, against the same golden image) embeds the engine, adds a mesh, a material and a texture from
-   memory, puts an entity with a mesh reference in a world, binds the world to its surface and has the engine draw it.
-   It checks the frame against a golden image (the rule of the spec: no channel off by more than 4, at most 0.5 % of the
-   values off by more than 1), a reference that does not resolve (counted, draws nothing), a world destroyed under the
-   surface (back to the background color, with the reason), unbinding, several surfaces on one world, and the arguments.
-   Set ENGINE_UPDATE_GOLDEN=1 to write the golden image instead of comparing. */
+/* Phase 24 Day 359: a C program that owns a window (host_window.h: X11, from Day 369 a Win32 HWND drawn with Direct3D
+   12 or Vulkan, from Day 370 a Cocoa NSView drawn with Metal, against the same golden image) embeds the engine, adds a
+   mesh, a material and a texture from memory, puts an entity with a mesh reference in a world, binds the world to its
+   surface and has the engine draw it. It checks the frame against a golden image (the rule of the spec: no channel off
+   by more than 4, at most 0.5 % of the values off by more than 1), a reference that does not resolve (counted, draws
+   nothing), a world destroyed under the surface (back to the background color, with the reason), unbinding, several
+   surfaces on one world, and the arguments. Set ENGINE_UPDATE_GOLDEN=1 to write the golden image instead of comparing,
+   HOST_SCENE_FRAME_OUT=<file> to write the frame compared with it (to measure one backend against another, Day 369). On
+   Windows HOST_SURFACE_API chooses Direct3D 12 or Vulkan (host_window.h). */
+#include <stddef.h>
 #include <stdint.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <unistd.h>
-
+#include "host_os.h"
 #include "host_window.h"
 
 #include "engine/engine_c.h"
+#include "engine_c/engine_test_extension.h"
 
 #define WIDTH 160u
 #define HEIGHT 120u
@@ -54,7 +57,7 @@ typedef struct Blob
     size_t size;
 } Blob;
 
-static Blob ReadFile(const char* directory, const char* name)
+static Blob ReadWholeFile(const char* directory, const char* name)
 {
     char path[1024];
     Blob blob = {NULL, 0};
@@ -97,6 +100,28 @@ static engine_status SurfaceState(engine_handle surface, engine_surface_state* o
     memset(out, 0, sizeof(*out));
     out->struct_size = sizeof(*out);
     return g_api->surface_state(surface, out);
+}
+
+/* The test extension's table when it is compiled in and has the device-loss hook (Day 369), or NULL. */
+static const struct engine_test_extension* LossHook(void)
+{
+    const engine_string name = {"engine.test_state", sizeof("engine.test_state") - 1};
+    const struct engine_test_extension* table = (const struct engine_test_extension*)g_api->get_extension(name);
+    if (table == NULL || table->size < offsetof(struct engine_test_extension, surface_lose_device) + sizeof(void*))
+    {
+        return NULL;
+    }
+    return table;
+}
+
+/* The graphics API of a surface, for the log. */
+static const char* ApiName(const engine_surface_info* info)
+{
+    if ((info->flags & ENGINE_SURFACE_FLAG_D3D12) != 0 || (info->flags == 0 && info->kind == ENGINE_SURFACE_WIN32))
+    {
+        return "d3d12";
+    }
+    return info->kind == ENGINE_SURFACE_COCOA ? "metal" : "vulkan";
 }
 
 static engine_status FrameAndRead(engine_handle engine, engine_handle surface, engine_pixels* pixels)
@@ -183,6 +208,21 @@ static void CompareOrWriteGolden(const engine_pixels* pixels)
     if (pixels->width != WIDTH || pixels->height != HEIGHT)
     {
         return;
+    }
+    {
+        const char* out_path = getenv("HOST_SCENE_FRAME_OUT");
+        if (out_path != NULL && out_path[0] != '\0')
+        {
+            f = fopen(out_path, "wb");
+            if (f != NULL)
+            {
+                for (y = 0; y < HEIGHT; ++y)
+                {
+                    fwrite(Pixel(pixels, 0, y), 1, (size_t)WIDTH * 4, f);
+                }
+                fclose(f);
+            }
+        }
     }
     if (update != NULL && update[0] == '1')
     {
@@ -485,6 +525,7 @@ int main(void)
     Blob late;
     const float background[4] = {0.0f, 0.0f, 0.4f, 1.0f};
     unsigned char clear[3];
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
     setvbuf(stdout, NULL, _IONBF, 0);
     memset(&pixels, 0, sizeof(pixels));
     if (engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &g_api) != ENGINE_OK)
@@ -524,6 +565,8 @@ int main(void)
     memset(&info, 0, sizeof(info));
     info.struct_size = sizeof(info);
     host_window_describe(window, &info);
+    info.flags = host_window_api_flags();
+    printf("host_scene: drawing with %s\n", ApiName(&info));
     memset(&surface, 0, sizeof(surface));
     if (g_api->surface_create(engine, &info, &surface) != ENGINE_OK)
     {
@@ -538,10 +581,10 @@ int main(void)
     clear[1] = 0;
     clear[2] = 0; /* read from the first, empty frame below: the swapchain's own encoding of the clear color */
 
-    texture = ReadFile(RES_DATA_DIR, "brick.tex.blob");
-    material = ReadFile(RES_DATA_DIR, "brick.mat.blob");
-    mesh = ReadFile(RES_DATA_DIR, "scene.mesh.blob");
-    late = ReadFile(RES_DATA_DIR, "late.mesh.blob");
+    texture = ReadWholeFile(RES_DATA_DIR, "brick.tex.blob");
+    material = ReadWholeFile(RES_DATA_DIR, "brick.mat.blob");
+    mesh = ReadWholeFile(RES_DATA_DIR, "scene.mesh.blob");
+    late = ReadWholeFile(RES_DATA_DIR, "late.mesh.blob");
     if (texture.data == NULL || material.data == NULL || mesh.data == NULL || late.data == NULL)
     {
         return 1;
@@ -831,7 +874,7 @@ int main(void)
         int on_right[3];
         engine_world_transform placed;
         engine_slot_override color;
-        engine_slot_override texture;
+        engine_slot_override texture_slot;
         const engine_string nothing = {NULL, 0};
         CHECK_STATUS(SetEnvironment(world, 3.0f, 0.0f, 1.0f), ENGINE_OK); /* bright ambient light: colours show */
         CHECK_STATUS(g_api->entity_create(world, &left), ENGINE_OK);
@@ -879,11 +922,11 @@ int main(void)
         }
         CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("roughness"), &color),
                      ENGINE_ERROR_INVALID_ARGUMENT); /* a colour for a float slot */
-        memset(&texture, 0, sizeof(texture));
-        texture.struct_size = sizeof(texture);
-        texture.kind = ENGINE_SLOT_TEXTURE;
-        CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_tex"), &texture),
-                     ENGINE_ERROR_INVALID_ARGUMENT); /* no texture id */
+        memset(&texture_slot, 0, sizeof(texture_slot));
+        texture_slot.struct_size = sizeof(texture_slot);
+        texture_slot.kind = ENGINE_SLOT_TEXTURE;
+        CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_tex"), &texture_slot),
+                     ENGINE_ERROR_INVALID_ARGUMENT); /* no texture_slot id */
         CHECK_STATUS(g_api->entity_clear_slot_override(world, right, Str("base_color")), ENGINE_ERROR_NOT_FOUND);
         CHECK_STATUS(g_api->entity_clear_slot_override(world, left, nothing), ENGINE_OK); /* every override */
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
@@ -979,12 +1022,12 @@ int main(void)
         double t0 = 0.0;
         double t1 = 0.0;
         double t2 = 0.0;
-        skeleton_blob = ReadFile(RES_DATA_DIR, "hero.skel.blob");
-        other_skeleton = ReadFile(RES_DATA_DIR, "other.skel.blob");
-        idle_blob = ReadFile(RES_DATA_DIR, "idle.anim.blob");
-        other_clip = ReadFile(RES_DATA_DIR, "other.anim.blob");
-        hold_blob = ReadFile(RES_DATA_DIR, "hold.anim.blob");
-        skinned_blob = ReadFile(RES_DATA_DIR, "skinned.mesh.blob");
+        skeleton_blob = ReadWholeFile(RES_DATA_DIR, "hero.skel.blob");
+        other_skeleton = ReadWholeFile(RES_DATA_DIR, "other.skel.blob");
+        idle_blob = ReadWholeFile(RES_DATA_DIR, "idle.anim.blob");
+        other_clip = ReadWholeFile(RES_DATA_DIR, "other.anim.blob");
+        hold_blob = ReadWholeFile(RES_DATA_DIR, "hold.anim.blob");
+        skinned_blob = ReadWholeFile(RES_DATA_DIR, "skinned.mesh.blob");
         engine_animation_state state_out;
         engine_world_transform bolt_world;
         int i;
@@ -1207,7 +1250,7 @@ int main(void)
         engine_handle world4;
         uint64_t tag;
         engine_label label;
-        Blob font = ReadFile(LABEL_FONT_DIR, LABEL_FONT_NAME);
+        Blob font = ReadWholeFile(LABEL_FONT_DIR, LABEL_FONT_NAME);
         float at[3];
         const float origin[3] = {0.0f, 0.0f, 0.0f};
         int near_count;
@@ -1305,7 +1348,7 @@ int main(void)
         engine_surface_info fresh_info = info;
         engine_surface_state first_state;
         engine_surface_state second_state;
-        Blob font = ReadFile(LABEL_FONT_DIR, LABEL_FONT_NAME);
+        Blob font = ReadWholeFile(LABEL_FONT_DIR, LABEL_FONT_NAME);
         unsigned seed = 12345u;
         int op;
         int j;
@@ -1455,6 +1498,84 @@ int main(void)
         CHECK_STATUS(g_api->surface_rebind(surface, &info), ENGINE_OK); /* back on the first window */
         host_window_close(fresh);
         free(font.data);
+    }
+
+    /* Day 369: a lost device. The test extension loses the surface's device; the next frame finds it lost (nothing is
+       drawn, the read-back fails), surface_rebind makes a new device, and the same picture comes back without the host
+       making anything again. Then with a second surface on the same world: on Direct3D 12 the adapter has one device,
+       so losing it loses both surfaces, and a new device exists only once neither holds the removed one. */
+    {
+        const struct engine_test_extension* hook = LossHook();
+        if (hook == NULL)
+        {
+            printf("host_scene: the device-loss part is skipped: no test extension in this library\n");
+        }
+        else
+        {
+            unsigned long long before;
+            engine_surface_state lost_state;
+            engine_surface_state other_state;
+            uint64_t recoveries;
+            engine_status rebound;
+            engine_status other_frame;
+            engine_string rebound_name;
+            engine_handle other_surface;
+            host_window* other_window = host_window_open(WIDTH, HEIGHT);
+            engine_surface_info other_info = info;
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            before = Checksum(&pixels);
+            CHECK_STATUS(SurfaceState(surface, &lost_state), ENGINE_OK);
+            recoveries = lost_state.recoveries;
+            CHECK(hook->surface_lose_device(surface.value) == 1);
+            CHECK(FrameAndRead(engine, surface, &pixels) != ENGINE_OK);
+            CHECK_STATUS(SurfaceState(surface, &lost_state), ENGINE_OK);
+            CHECK(lost_state.lost == 1);
+            CHECK_STATUS(g_api->surface_rebind(surface, &info), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            CHECK(Checksum(&pixels) == before);
+            CHECK_STATUS(SurfaceState(surface, &lost_state), ENGINE_OK);
+            CHECK(lost_state.lost == 0 && lost_state.recoveries == recoveries + 1 &&
+                  lost_state.world_status == ENGINE_OK);
+
+            /* two surfaces, one lost device */
+            host_window_describe(other_window, &other_info);
+            memset(&other_surface, 0, sizeof(other_surface));
+            CHECK_STATUS(g_api->surface_create(engine, &other_info, &other_surface), ENGINE_OK);
+            CHECK_STATUS(g_api->surface_set_background(other_surface, background), ENGINE_OK);
+            CHECK_STATUS(g_api->surface_set_world(other_surface, world), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, other_surface, &pixels), ENGINE_OK);
+            CHECK(Checksum(&pixels) == before);
+            CHECK(hook->surface_lose_device(surface.value) == 1);
+            CHECK(FrameAndRead(engine, surface, &pixels) != ENGINE_OK);
+            other_frame = FrameAndRead(engine, other_surface, &pixels); /* drawn on Vulkan, lost with it on D3D12 */
+            CHECK_STATUS(SurfaceState(surface, &lost_state), ENGINE_OK);
+            CHECK_STATUS(SurfaceState(other_surface, &other_state), ENGINE_OK);
+            CHECK((other_frame == ENGINE_OK) == (other_state.lost == 0));
+            /* On Direct3D 12 both are lost: the first cannot have a new device on its adapter while the other still
+               holds the removed one (picked anew it would fall to WARP, the software adapter), and gets one once the
+               other has let it go. */
+            rebound = g_api->surface_rebind(surface, &info);
+            rebound_name = g_api->status_name(rebound);
+            printf(
+                "host_scene: %s: one of two surfaces lost its device: the other is %s; the first rebind gives %.*s\n",
+                ApiName(&info), other_state.lost ? "lost too" : "drawing", (int)rebound_name.length, rebound_name.data);
+            CHECK(rebound == (other_state.lost ? ENGINE_ERROR_UNSUPPORTED : ENGINE_OK));
+            if (other_state.lost)
+            {
+                CHECK_STATUS(SurfaceState(surface, &lost_state), ENGINE_OK);
+                CHECK(lost_state.lost == 1 && lost_state.world_status == ENGINE_ERROR_UNSUPPORTED);
+                CHECK_STATUS(g_api->surface_rebind(other_surface, &other_info), ENGINE_OK);
+                CHECK_STATUS(g_api->surface_rebind(surface, &info), ENGINE_OK); /* the world comes back with it */
+                CHECK_STATUS(SurfaceState(surface, &lost_state), ENGINE_OK);
+                CHECK(lost_state.lost == 0 && lost_state.world_status == ENGINE_OK);
+            }
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            CHECK(Checksum(&pixels) == before);
+            CHECK_STATUS(FrameAndRead(engine, other_surface, &pixels), ENGINE_OK);
+            CHECK(Checksum(&pixels) == before);
+            CHECK_STATUS(g_api->surface_destroy(other_surface), ENGINE_OK);
+            host_window_close(other_window);
+        }
     }
 
     /* unbound: the clear color again; bound to a world destroyed under it: the clear color and the reason */
