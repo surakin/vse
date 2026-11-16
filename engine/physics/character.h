@@ -24,7 +24,8 @@ struct CharacterConfig
     /// The steepest slope that counts as ground, as the smallest allowed `y` of its unit normal (the cosine of the
     /// angle; 0.64 is about 50 degrees). A steeper surface is a wall.
     f32 min_ground_y = 0.64f;
-    /// The gap kept between the capsule and what it touches, in metres.
+    /// The gap kept between the capsule and what it touches, in metres; at least 0.0001 (a smaller gap makes the ground
+    /// probe too short to hit anything, and `Create` refuses it).
     f32 skin_width = 0.02f;
     /// Multiplies the world's gravity.
     f32 gravity_scale = 1.0f;

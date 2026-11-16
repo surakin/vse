@@ -1,6 +1,9 @@
 // Recording and replaying the program's inputs to a physics world (Phase 25 Day 394): forces, impulses, velocities,
 // teleports, wake-ups and creations and destructions of bodies, each with the step number it was applied at. A run
-// restored from a snapshot and fed the log from that step on reproduces the original run.
+// restored from a snapshot and fed the log from that step on reproduces the original run when every input the program
+// gave went through the recorder. Only the seven kinds of `InputKind` are recorded: adding a collider alone, changing a
+// body's type or settings, joints, characters, `SetStepConfig` and kinematic targets are not, and a replay of a program
+// that makes them diverges (`KNOWN-ISSUES.md`, Phase 25 closing).
 #pragma once
 
 #include "bytes/byte_writer.h"

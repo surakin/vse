@@ -380,3 +380,24 @@ TEST_CASE("Query: queries run from jobs and agree with the same queries run in o
         CHECK(serial[i] == parallel[i]);
     }
 }
+
+TEST_CASE("ShapeCast: a distance beyond the world is refused and a long one is sampled with a bounded count",
+          "[physics][query]")
+{
+    PhysicsWorld world;
+    BodyDesc desc;
+    desc.settings.type = BodyType::Static;
+    desc.position = Vec3(0, 0, 5);
+    const BodyId wall = world.CreateBody(desc);
+    Collider c;
+    c.shape = Shape::MakeBox(Vec3(5, 5, 0.5f));
+    REQUIRE(world.AddCollider(wall, c) == BodyStatus::Ok);
+    PhysicsHit hit;
+    const Shape ball = Shape::MakeSphere(0.5f);
+    CHECK(!ShapeCast(world, ball, Vec3(0, 0, 0), Quaternion::Identity(), Vec3(0, 0, 1), 3.0e38f, PhysicsQueryFilter(),
+                     &hit));
+    CHECK(!ShapeCast(world, ball, Vec3(0, 0, 0), Quaternion::Identity(), Vec3(0, 0, 1), 1.0e12f, PhysicsQueryFilter(),
+                     &hit));
+    CHECK(ShapeCast(world, ball, Vec3(0, 0, 0), Quaternion::Identity(), Vec3(0, 0, 1), 10.0f, PhysicsQueryFilter(),
+                    &hit));
+}

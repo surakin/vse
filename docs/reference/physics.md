@@ -502,7 +502,7 @@ The steepest slope that counts as ground, as the smallest allowed `y` of its uni
 f32 skin_width;
 ```
 
-The gap kept between the capsule and what it touches, in metres.
+The gap kept between the capsule and what it touches, in metres; at least 0.0001 (a smaller gap makes the ground probe too short to hit anything, and `Create` refuses it).
 
 ### `gravity_scale` {#physics-characterconfig-gravity-scale}
 

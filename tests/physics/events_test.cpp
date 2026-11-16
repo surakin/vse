@@ -424,3 +424,41 @@ TEST_CASE("Kinematic drive: moving the entity carries the body and what stands o
     CHECK(physics.Find(world.Get<BodyLink>(platform)->id)->linear_velocity.x < 0.01f);  // only the rounding left
     CHECK(DriveKinematicBodies(world, physics, 0.0f) == 0);
 }
+
+TEST_CASE("Joint component: a body lost while its entity lives does not break the joint component",
+          "[physics][events][ecs]")
+{
+    ecs::World world;
+    PhysicsWorld physics;
+    RigidBody fixed;
+    fixed.type = BodyType::Static;
+    Collider ball;
+    ball.shape = Shape::MakeSphere(0.3f);
+    ecs::LocalTransform top;
+    top.position = Vec3(0, 10, 0);
+    ecs::LocalTransform low;
+    low.position = Vec3(0, 9, 0);
+    const ecs::Entity a = world.Create(fixed, ball, top);
+    const ecs::Entity b = world.Create(RigidBody(), ball, low);
+    Joint joint;
+    joint.entity_a = a;
+    joint.entity_b = b;
+    joint.type = JointType::Distance;
+    joint.point_a = Vec3(0, 10, 0);
+    joint.point_b = Vec3(0, 9, 0);
+    const ecs::Entity owner = world.Create(joint);
+    SyncBodies(world, physics);
+    REQUIRE(SyncJoints(world, physics).created == 1);
+    world.Remove<Collider>(b);  // the entity lives; its body (and with it the joint) goes
+    CHECK(SyncBodies(world, physics).destroyed == 1);
+    CHECK(physics.JointCount() == 0);
+    JointSyncReport report = SyncJoints(world, physics);
+    CHECK(report.broken == 0);
+    CHECK(world.Has<Joint>(owner));  // not dropped as broken
+    CHECK(!world.Has<JointLink>(owner));
+    world.Add(b, ball);  // the collider comes back: the body and the joint are made again
+    SyncBodies(world, physics);
+    report = SyncJoints(world, physics);
+    CHECK(report.created == 1);
+    CHECK(physics.JointCount() == 1);
+}

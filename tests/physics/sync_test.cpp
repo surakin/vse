@@ -124,6 +124,25 @@ TEST_CASE("Sync: a changed component updates the body", "[physics][sync]")
     CHECK(world.Get<BodyLink>(e)->id == id);
 }
 
+TEST_CASE("Sync: a changed group or mask reaches the body", "[physics][sync]")
+{
+    ecs::World world;
+    PhysicsWorld physics;
+    Collider c = Ball(0.5f);
+    const ecs::Entity e = world.Create(RigidBody(), c, At(0, 0, 0));
+    SyncBodies(world, physics);
+    const BodyId id = world.Get<BodyLink>(e)->id;
+    const ColliderRecord* record = physics.FindCollider(physics.Find(id)->first_collider);
+    REQUIRE(record != nullptr);
+    CHECK(record->value.mask == 0xFFFFFFFFu);
+    world.Get<Collider>(e)->group = 4;
+    world.Get<Collider>(e)->mask = 0x6u;
+    CHECK(SyncBodies(world, physics).updated == 1);
+    record = physics.FindCollider(physics.Find(id)->first_collider);
+    CHECK(record->value.group == 4);
+    CHECK(record->value.mask == 0x6u);
+}
+
 TEST_CASE("Sync: an entity with invalid components is counted and skipped", "[physics][sync]")
 {
     ecs::World world;

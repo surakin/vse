@@ -3767,26 +3767,26 @@ physics::CharacterConfig::radius	variable	physics	physics-characterconfig-radius
 physics::CharacterConfig::height	variable	physics	physics-characterconfig-height	physics.md	engine/physics/character.h:21
 physics::CharacterConfig::step_height	variable	physics	physics-characterconfig-step-height	physics.md	engine/physics/character.h:23
 physics::CharacterConfig::min_ground_y	variable	physics	physics-characterconfig-min-ground-y	physics.md	engine/physics/character.h:26
-physics::CharacterConfig::skin_width	variable	physics	physics-characterconfig-skin-width	physics.md	engine/physics/character.h:28
-physics::CharacterConfig::gravity_scale	variable	physics	physics-characterconfig-gravity-scale	physics.md	engine/physics/character.h:30
-physics::CharacterEvents	struct	physics	physics-characterevents	physics.md	engine/physics/character.h:36
-physics::CharacterEvents::began_ground	variable	physics	physics-characterevents-began-ground	physics.md	engine/physics/character.h:39
-physics::CharacterEvents::ended_ground	variable	physics	physics-characterevents-ended-ground	physics.md	engine/physics/character.h:41
-physics::CharacterEvents::wall_hits	variable	physics	physics-characterevents-wall-hits	physics.md	engine/physics/character.h:43
-physics::CharacterEvents::wall_normal	variable	physics	physics-characterevents-wall-normal	physics.md	engine/physics/character.h:45
-physics::CharacterState	struct	physics	physics-characterstate	physics.md	engine/physics/character.h:51
-physics::CharacterState::on_ground	variable	physics	physics-characterstate-on-ground	physics.md	engine/physics/character.h:54
-physics::CharacterState::ground_body	variable	physics	physics-characterstate-ground-body	physics.md	engine/physics/character.h:56
-physics::CharacterState::ground_normal	variable	physics	physics-characterstate-ground-normal	physics.md	engine/physics/character.h:58
-physics::CharacterState::vertical_speed	variable	physics	physics-characterstate-vertical-speed	physics.md	engine/physics/character.h:60
-physics::CharacterController	class	physics	physics-charactercontroller	physics.md	engine/physics/character.h:72
-physics::CharacterController::Create(PhysicsWorld*,const CharacterConfig&,const Vec3&)	function	physics	physics-charactercontroller-create-physicsworld-star-const-characterconfig-amp-const-vec3-amp	physics.md	engine/physics/character.h:84
-physics::CharacterController::Destroy(PhysicsWorld*)	function	physics	physics-charactercontroller-destroy-physicsworld-star	physics.md	engine/physics/character.h:91
-physics::CharacterController::Stop(PhysicsWorld*)	function	physics	physics-charactercontroller-stop-physicsworld-star	physics.md	engine/physics/character.h:99
-physics::CharacterController::Move(PhysicsWorld*,const Vec3&,f32)	function	physics	physics-charactercontroller-move-physicsworld-star-const-vec3-amp-f32	physics.md	engine/physics/character.h:110
-physics::CharacterController::Jump(f32)	function	physics	physics-charactercontroller-jump-f32	physics.md	engine/physics/character.h:116
-physics::CharacterController::BodyHandle() const	function	physics	physics-charactercontroller-bodyhandle-const	physics.md	engine/physics/character.h:122
-physics::CharacterController::State() const	function	physics	physics-charactercontroller-state-const	physics.md	engine/physics/character.h:128
+physics::CharacterConfig::skin_width	variable	physics	physics-characterconfig-skin-width	physics.md	engine/physics/character.h:29
+physics::CharacterConfig::gravity_scale	variable	physics	physics-characterconfig-gravity-scale	physics.md	engine/physics/character.h:31
+physics::CharacterEvents	struct	physics	physics-characterevents	physics.md	engine/physics/character.h:37
+physics::CharacterEvents::began_ground	variable	physics	physics-characterevents-began-ground	physics.md	engine/physics/character.h:40
+physics::CharacterEvents::ended_ground	variable	physics	physics-characterevents-ended-ground	physics.md	engine/physics/character.h:42
+physics::CharacterEvents::wall_hits	variable	physics	physics-characterevents-wall-hits	physics.md	engine/physics/character.h:44
+physics::CharacterEvents::wall_normal	variable	physics	physics-characterevents-wall-normal	physics.md	engine/physics/character.h:46
+physics::CharacterState	struct	physics	physics-characterstate	physics.md	engine/physics/character.h:52
+physics::CharacterState::on_ground	variable	physics	physics-characterstate-on-ground	physics.md	engine/physics/character.h:55
+physics::CharacterState::ground_body	variable	physics	physics-characterstate-ground-body	physics.md	engine/physics/character.h:57
+physics::CharacterState::ground_normal	variable	physics	physics-characterstate-ground-normal	physics.md	engine/physics/character.h:59
+physics::CharacterState::vertical_speed	variable	physics	physics-characterstate-vertical-speed	physics.md	engine/physics/character.h:61
+physics::CharacterController	class	physics	physics-charactercontroller	physics.md	engine/physics/character.h:73
+physics::CharacterController::Create(PhysicsWorld*,const CharacterConfig&,const Vec3&)	function	physics	physics-charactercontroller-create-physicsworld-star-const-characterconfig-amp-const-vec3-amp	physics.md	engine/physics/character.h:85
+physics::CharacterController::Destroy(PhysicsWorld*)	function	physics	physics-charactercontroller-destroy-physicsworld-star	physics.md	engine/physics/character.h:92
+physics::CharacterController::Stop(PhysicsWorld*)	function	physics	physics-charactercontroller-stop-physicsworld-star	physics.md	engine/physics/character.h:100
+physics::CharacterController::Move(PhysicsWorld*,const Vec3&,f32)	function	physics	physics-charactercontroller-move-physicsworld-star-const-vec3-amp-f32	physics.md	engine/physics/character.h:111
+physics::CharacterController::Jump(f32)	function	physics	physics-charactercontroller-jump-f32	physics.md	engine/physics/character.h:117
+physics::CharacterController::BodyHandle() const	function	physics	physics-charactercontroller-bodyhandle-const	physics.md	engine/physics/character.h:123
+physics::CharacterController::State() const	function	physics	physics-charactercontroller-state-const	physics.md	engine/physics/character.h:129
 physics::FiniteVec3(const Vec3&)	function	physics	physics-finitevec3-const-vec3-amp	physics.md	engine/physics/check.h:15
 physics::kMaxCoordinate	variable	physics	physics-kmaxcoordinate	physics.md	engine/physics/check.h:22
 physics::kMaxExtent	variable	physics	physics-kmaxextent	physics.md	engine/physics/check.h:26
@@ -4004,40 +4004,40 @@ physics::JointId::index	variable	physics	physics-jointid-index	physics.md	engine
 physics::JointId::generation	variable	physics	physics-jointid-generation	physics.md	engine/physics/ids.h:97
 physics::JointId::IsValid() const	function	physics	physics-jointid-isvalid-const	physics.md	engine/physics/ids.h:101
 physics::JointId::operator==(const JointId&) const	function	physics	physics-jointid-operator-eq-eq-const-jointid-amp-const	physics.md	engine/physics/ids.h:105
-physics::InputKind	enum	physics	physics-inputkind	physics.md	engine/physics/input_log.h:18
-physics::InputKind::ApplyForce	enumerator	physics	physics-inputkind-applyforce	physics.md	engine/physics/input_log.h:20
-physics::InputKind::ApplyImpulse	enumerator	physics	physics-inputkind-applyimpulse	physics.md	engine/physics/input_log.h:21
-physics::InputKind::SetVelocity	enumerator	physics	physics-inputkind-setvelocity	physics.md	engine/physics/input_log.h:22
-physics::InputKind::SetTransform	enumerator	physics	physics-inputkind-settransform	physics.md	engine/physics/input_log.h:23
-physics::InputKind::Wake	enumerator	physics	physics-inputkind-wake	physics.md	engine/physics/input_log.h:24
-physics::InputKind::CreateBody	enumerator	physics	physics-inputkind-createbody	physics.md	engine/physics/input_log.h:25
-physics::InputKind::DestroyBody	enumerator	physics	physics-inputkind-destroybody	physics.md	engine/physics/input_log.h:26
-physics::InputEntry	struct	physics	physics-inputentry	physics.md	engine/physics/input_log.h:32
-physics::InputEntry::step	variable	physics	physics-inputentry-step	physics.md	engine/physics/input_log.h:35
-physics::InputEntry::kind	variable	physics	physics-inputentry-kind	physics.md	engine/physics/input_log.h:37
-physics::InputEntry::body	variable	physics	physics-inputentry-body	physics.md	engine/physics/input_log.h:39
-physics::InputEntry::a	variable	physics	physics-inputentry-a	physics.md	engine/physics/input_log.h:41
-physics::InputEntry::b	variable	physics	physics-inputentry-b	physics.md	engine/physics/input_log.h:43
-physics::InputEntry::q	variable	physics	physics-inputentry-q	physics.md	engine/physics/input_log.h:45
-physics::InputEntry::desc	variable	physics	physics-inputentry-desc	physics.md	engine/physics/input_log.h:47
-physics::InputEntry::has_collider	variable	physics	physics-inputentry-has-collider	physics.md	engine/physics/input_log.h:49
-physics::InputEntry::collider	variable	physics	physics-inputentry-collider	physics.md	engine/physics/input_log.h:51
-physics::InputLog	class	physics	physics-inputlog	physics.md	engine/physics/input_log.h:58
-physics::InputLog::Entries() const	function	physics	physics-inputlog-entries-const	physics.md	engine/physics/input_log.h:63
-physics::InputLog::Add(const InputEntry&)	function	physics	physics-inputlog-add-const-inputentry-amp	physics.md	engine/physics/input_log.h:70
-physics::InputLog::Save(bytes::ByteWriter*) const	function	physics	physics-inputlog-save-bytes-bytewriter-star-const	physics.md	engine/physics/input_log.h:77
-physics::InputLog::Load(ByteSpan)	function	physics	physics-inputlog-load-bytespan	physics.md	engine/physics/input_log.h:85
-physics::InputRecorder	class	physics	physics-inputrecorder	physics.md	engine/physics/input_log.h:96
-physics::InputRecorder::InputRecorder(PhysicsWorld*,InputLog*)	function	physics	physics-inputrecorder-inputrecorder-physicsworld-star-inputlog-star	physics.md	engine/physics/input_log.h:104
-physics::InputRecorder::ApplyForce(BodyId,const Vec3&,const Vec3&)	function	physics	physics-inputrecorder-applyforce-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/input_log.h:108
-physics::InputRecorder::ApplyImpulse(BodyId,const Vec3&,const Vec3&)	function	physics	physics-inputrecorder-applyimpulse-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/input_log.h:111
-physics::InputRecorder::SetVelocity(BodyId,const Velocity&)	function	physics	physics-inputrecorder-setvelocity-bodyid-const-velocity-amp	physics.md	engine/physics/input_log.h:114
-physics::InputRecorder::SetTransform(BodyId,const Vec3&,const Quaternion&)	function	physics	physics-inputrecorder-settransform-bodyid-const-vec3-amp-const-quaternion-amp	physics.md	engine/physics/input_log.h:117
-physics::InputRecorder::Wake(BodyId)	function	physics	physics-inputrecorder-wake-bodyid	physics.md	engine/physics/input_log.h:120
-physics::InputRecorder::CreateBody(const BodyDesc&,const Collider&,BodyStatus*)	function	physics	physics-inputrecorder-createbody-const-bodydesc-amp-const-collider-amp-bodystatus-star	physics.md	engine/physics/input_log.h:128
-physics::InputRecorder::DestroyBody(BodyId)	function	physics	physics-inputrecorder-destroybody-bodyid	physics.md	engine/physics/input_log.h:131
-physics::ReplayStep(PhysicsWorld*,const InputLog&,usize*)	function	physics	physics-replaystep-physicsworld-star-const-inputlog-amp-usize-star	physics.md	engine/physics/input_log.h:148
-physics::FirstEntryAt(const InputLog&,u64)	function	physics	physics-firstentryat-const-inputlog-amp-u64	physics.md	engine/physics/input_log.h:156
+physics::InputKind	enum	physics	physics-inputkind	physics.md	engine/physics/input_log.h:21
+physics::InputKind::ApplyForce	enumerator	physics	physics-inputkind-applyforce	physics.md	engine/physics/input_log.h:23
+physics::InputKind::ApplyImpulse	enumerator	physics	physics-inputkind-applyimpulse	physics.md	engine/physics/input_log.h:24
+physics::InputKind::SetVelocity	enumerator	physics	physics-inputkind-setvelocity	physics.md	engine/physics/input_log.h:25
+physics::InputKind::SetTransform	enumerator	physics	physics-inputkind-settransform	physics.md	engine/physics/input_log.h:26
+physics::InputKind::Wake	enumerator	physics	physics-inputkind-wake	physics.md	engine/physics/input_log.h:27
+physics::InputKind::CreateBody	enumerator	physics	physics-inputkind-createbody	physics.md	engine/physics/input_log.h:28
+physics::InputKind::DestroyBody	enumerator	physics	physics-inputkind-destroybody	physics.md	engine/physics/input_log.h:29
+physics::InputEntry	struct	physics	physics-inputentry	physics.md	engine/physics/input_log.h:35
+physics::InputEntry::step	variable	physics	physics-inputentry-step	physics.md	engine/physics/input_log.h:38
+physics::InputEntry::kind	variable	physics	physics-inputentry-kind	physics.md	engine/physics/input_log.h:40
+physics::InputEntry::body	variable	physics	physics-inputentry-body	physics.md	engine/physics/input_log.h:42
+physics::InputEntry::a	variable	physics	physics-inputentry-a	physics.md	engine/physics/input_log.h:44
+physics::InputEntry::b	variable	physics	physics-inputentry-b	physics.md	engine/physics/input_log.h:46
+physics::InputEntry::q	variable	physics	physics-inputentry-q	physics.md	engine/physics/input_log.h:48
+physics::InputEntry::desc	variable	physics	physics-inputentry-desc	physics.md	engine/physics/input_log.h:50
+physics::InputEntry::has_collider	variable	physics	physics-inputentry-has-collider	physics.md	engine/physics/input_log.h:52
+physics::InputEntry::collider	variable	physics	physics-inputentry-collider	physics.md	engine/physics/input_log.h:54
+physics::InputLog	class	physics	physics-inputlog	physics.md	engine/physics/input_log.h:61
+physics::InputLog::Entries() const	function	physics	physics-inputlog-entries-const	physics.md	engine/physics/input_log.h:66
+physics::InputLog::Add(const InputEntry&)	function	physics	physics-inputlog-add-const-inputentry-amp	physics.md	engine/physics/input_log.h:73
+physics::InputLog::Save(bytes::ByteWriter*) const	function	physics	physics-inputlog-save-bytes-bytewriter-star-const	physics.md	engine/physics/input_log.h:80
+physics::InputLog::Load(ByteSpan)	function	physics	physics-inputlog-load-bytespan	physics.md	engine/physics/input_log.h:88
+physics::InputRecorder	class	physics	physics-inputrecorder	physics.md	engine/physics/input_log.h:99
+physics::InputRecorder::InputRecorder(PhysicsWorld*,InputLog*)	function	physics	physics-inputrecorder-inputrecorder-physicsworld-star-inputlog-star	physics.md	engine/physics/input_log.h:107
+physics::InputRecorder::ApplyForce(BodyId,const Vec3&,const Vec3&)	function	physics	physics-inputrecorder-applyforce-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/input_log.h:111
+physics::InputRecorder::ApplyImpulse(BodyId,const Vec3&,const Vec3&)	function	physics	physics-inputrecorder-applyimpulse-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/input_log.h:114
+physics::InputRecorder::SetVelocity(BodyId,const Velocity&)	function	physics	physics-inputrecorder-setvelocity-bodyid-const-velocity-amp	physics.md	engine/physics/input_log.h:117
+physics::InputRecorder::SetTransform(BodyId,const Vec3&,const Quaternion&)	function	physics	physics-inputrecorder-settransform-bodyid-const-vec3-amp-const-quaternion-amp	physics.md	engine/physics/input_log.h:120
+physics::InputRecorder::Wake(BodyId)	function	physics	physics-inputrecorder-wake-bodyid	physics.md	engine/physics/input_log.h:123
+physics::InputRecorder::CreateBody(const BodyDesc&,const Collider&,BodyStatus*)	function	physics	physics-inputrecorder-createbody-const-bodydesc-amp-const-collider-amp-bodystatus-star	physics.md	engine/physics/input_log.h:131
+physics::InputRecorder::DestroyBody(BodyId)	function	physics	physics-inputrecorder-destroybody-bodyid	physics.md	engine/physics/input_log.h:134
+physics::ReplayStep(PhysicsWorld*,const InputLog&,usize*)	function	physics	physics-replaystep-physicsworld-star-const-inputlog-amp-usize-star	physics.md	engine/physics/input_log.h:151
+physics::FirstEntryAt(const InputLog&,u64)	function	physics	physics-firstentryat-const-inputlog-amp-u64	physics.md	engine/physics/input_log.h:159
 physics::JointType	enum	physics	physics-jointtype	physics.md	engine/physics/joint.h:15
 physics::JointType::Ball	enumerator	physics	physics-jointtype-ball	physics.md	engine/physics/joint.h:17
 physics::JointType::Distance	enumerator	physics	physics-jointtype-distance	physics.md	engine/physics/joint.h:18

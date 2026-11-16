@@ -2,6 +2,7 @@
 
 #include "algorithm.h"
 #include "lang/scalar.h"
+#include "physics/check.h"
 #include "physics/collide.h"
 #include "physics/compound.h"
 #include "physics/triangle_mesh.h"
@@ -543,7 +544,8 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
 {
     Vec3 d;
     if (shape.Validate() != Validation::Ok || shape.kind == ShapeKind::Mesh || shape.kind == ShapeKind::Compound ||
-        !Finite(position) || !Unit(direction, &d) || !IsFinite(distance) || !(distance > 0.0f))
+        !Finite(position) || !Unit(direction, &d) || !IsFinite(distance) || !(distance > 0.0f) ||
+        distance > 2.0f * kMaxCoordinate)
     {
         return false;
     }
@@ -551,11 +553,8 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
     const Vec3 half = shape.LocalHalfExtents();
     const f32 smallest = 2.0f * Min(half.x, Min(half.y, half.z));
     const f32 spacing = Max(0.25f * smallest, 1e-3f);
-    u32 samples = static_cast<u32>(distance / spacing) + 1;
-    if (samples > 1024)
-    {
-        samples = 1024;
-    }
+    const f32 wanted = distance / spacing;  // compared as a float: a huge distance must not overflow the integer
+    const u32 samples = wanted >= 1024.0f ? 1024u : static_cast<u32>(wanted) + 1;
     bool found = false;
     PhysicsHit best;
     best.distance = kBig;

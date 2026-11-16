@@ -399,7 +399,7 @@ a snapshot taken at that step.
 
 ## Cost: the benchmark and the smoke test
 
-`game/physics_bench` (`--bodies N --steps N --threads N --scene drop|mesh|joints|rays|characters|all`) measures the step on scenes of the day: a grid of spheres and boxes dropped on a floor (awake while falling and landing, then asleep), a world with a one-million-triangle mesh, chains of joints, ray casts and walking characters. It prints the step's time and its parts from `StepStats` (`broad_ns`, `narrow_ns`, `solve_ns`, `integrate_ns`, `after_ns`: wall-clock, not state, never in a snapshot or a hash). It is not run by ctest; `tests/physics/perf_smoke_test.cpp` runs 500 falling bodies with a bound far above any build's time, so only a gross regression fails.
+`game/physics_bench` (`--bodies N --steps N --threads N --scene drop|mesh|joints|rays|characters|all`) measures the step on scenes of the day: a grid of spheres and boxes dropped on a floor (awake while falling and landing, then asleep), a world with a one-million-triangle mesh, chains of joints, ray casts and walking characters. It prints the step's time and its parts from `StepStats` (`broad_ns`, `narrow_ns`, `solve_ns`, `integrate_ns`, `after_ns`: wall-clock, not state, never in a snapshot or a hash). It is not run by ctest except for the `large` scene (below); `tests/physics/perf_smoke_test.cpp` runs 500 falling bodies with a bound far above any build's time, so only a gross regression fails.
 
 Release build, one thread, Ryzen 9 7950X3D (Linux, clang), milliseconds per step:
 
@@ -414,6 +414,10 @@ A mesh of 1,000,000 triangles builds in 0.43 s; 1,000 bodies on it step in 12.8 
 
 **What the benchmark found and fixed.** The pair tracker's search among the dynamic items reached as far as the largest margin of *any* item, and a single large static item (the floor, margin 10 percent of its 60 m extent) made it six metres: every moving body looked at every body within six metres, quadratic in a dense scene (650 ms for 20,000 falling bodies, with no contact at all). The tracker (`spatial::PairTracker`) now keeps the largest margin of the static items and of the dynamic items apart and searches each side with its own reach (`SpatialSet::ForEachHandleInRegion(static_region, dynamic_region, visit)`): 53 ms became 7.4 ms at 5,000 bodies, and the cost is linear. The pairs, the events and the state hashes are unchanged (the golden hashes pass). The tracker is single-threaded; at 50,000 moving bodies it is 104 ms, so parallelising its gather (disjoint output per chunk, merged in key order) remains the next step of the broad phase and is recorded in `KNOWN-ISSUES.md`.
 
+### The Release-only stress run
+
+`physics_bench --scene large` (ctest `physics_bench_large`, registered only for Release and RelWithDebInfo builds, about three minutes on one thread) drops 50,000 spheres and boxes between four walls and steps them 300 times with the state checked every 50 steps (finite, inside the walls, unit orientations, a valid state hash, no body or collider slot gained or lost), then steps a walled box of 100 bodies 1,000,000 times with a body kicked every 500 steps so the world never sleeps for good, checking every 50,000 steps. The pile of 50,000 bodies steps in 719 ms ( solver 353, broad 225, narrow 74, the rest 65, 135,624 contacts); the long run takes about 25 s per million steps. It exits 1 on a failed check.
+
 ## Limits
 
 What the stress tests (`tests/physics/stress_test.cpp`) and the benchmark found, and what is deliberately not here:
@@ -424,4 +428,9 @@ What the stress tests (`tests/physics/stress_test.cpp`) and the benchmark found,
 - **Joints and the narrow phase.** The step looks for a pair's joint among all joints that forbid collision (a linear scan per pair), which grows with joints times pairs; chains of 5,000 bodies with 5,000 joints step in 2.4 ms asleep, awake scenes of many joints are not measured.
 - **One island, one thread.** The solver parallelises over islands: a single huge pile runs on one thread, and there is no graph colouring.
 - **Static meshes only.** A triangle mesh collider is static; a mesh against a mesh is unsupported; no one-way platforms; no soft bodies, cloth or fluids.
-- **Not measured on this day:** the number of allocations per step after warm-up and the peak memory of 50,000 bodies; 100,000 random bodies and ten million steps of a single body (the tests run 400 bodies and 100,000 steps, which keep the checks inside a sanitizer's time).
+- **The large stress run is Release only.** In a debug build the same code is 6 to 17 times slower (1,000 bodies landing: 1.09 ms against 0.16; 5,000 landing: 466 ms against 40; the solver alone 390 ms against 23), so the tests that run in every flavor use 400 bodies and 100,000 steps (`tests/physics/stress_test.cpp`) and the planned scale runs only where it fits: see "The Release-only stress run" above.
+- **Not measured:** the number of allocations per step after warm-up and the peak memory of 50,000 bodies; 100,000 bodies and ten million steps (the large run uses 50,000 bodies and a million steps).
+
+## The C API
+
+A host reaches all of this through the engine's C ABI (`include/engine/engine_c.h`) with no engine pointer: `ENGINE_COMPONENT_RIGID_BODY`, `_COLLIDER`, `_JOINT` and `_CHARACTER` on an entity make the body, the collider, the joint and the character; `frame` runs the fixed steps; `physics_events`, `physics_raycast`, `physics_overlap_sphere`, `physics_overlap_box`, `body_apply_force`, `body_apply_impulse`, `body_set_velocity`, `body_teleport`, `character_move`, `character_jump`, `joint_reaction`, `physics_snapshot` and `physics_restore` are the table functions. The tutorial [Physics in Your Window](../tutorials/physics-in-your-window.md) walks through them; `tests/engine_library/physics_sample.c` is the program, `physics_fuzz.c` feeds the table thousands of random and hostile calls (no call may crash; the sanitizer flavors check memory), and the sample's checksum is the same on the three machines.

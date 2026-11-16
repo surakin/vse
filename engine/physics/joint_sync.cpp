@@ -35,6 +35,13 @@ bool BodyOf(const ecs::World& ecs, ecs::Entity entity, BodyId* out)
     return true;
 }
 
+// Whether the entities a joint names exist (an invalid entity is the world).
+bool EntitiesAlive(const ecs::World& ecs, const Joint& joint)
+{
+    return (!joint.entity_a.IsValid() || ecs.Exists(joint.entity_a)) &&
+           (!joint.entity_b.IsValid() || ecs.Exists(joint.entity_b));
+}
+
 JointDesc Describe(const PhysicsWorld& physics, const Joint& joint, BodyId a, BodyId b)
 {
     JointDesc desc;
@@ -125,12 +132,15 @@ JointSyncReport SyncJoints(ecs::World& ecs, PhysicsWorld& physics)
                 physics.DestroyJoint(f.link.id);
                 ++report.destroyed;
             }
-            else if (has_joint)
+            else if (has_joint && (ready || !EntitiesAlive(ecs, f.joint)))
             {
-                // The step removed it: it broke. It is not made again.
+                // Both bodies are there and the joint is not: the step removed it, it broke. It is not made again. A
+                // joint whose entity is destroyed is dropped the same way.
                 ecs.Remove<Joint>(f.entity);
                 ++report.broken;
             }
+            // else a body was destroyed while its entity lives (a removed component: its joints went with it): the link
+            // goes and the component stays, so the joint is made again when both bodies exist.
             ecs.Remove<JointLink>(f.entity);
             if (!has_joint || record == nullptr)
             {

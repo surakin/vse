@@ -1,16 +1,21 @@
 // physics_bench: the Phase 25 Day 400 benchmark of the physics module. Prints one line per measurement, with the step's
-// parts (broad phase, narrow phase, solver, integration, the rest) from `StepStats`. Nothing here is asserted: the
-// numbers are recorded in plans/phase-25-physics/day-400-benchmarks-and-stress.md and docs/guide/physics.md ("Cost").
+// parts (broad phase, narrow phase, solver, integration, the rest) from `StepStats`. Nothing is asserted by the
+// measuring scenes: the numbers are recorded in plans/phase-25-physics/day-400-benchmarks-and-stress.md and
+// docs/guide/physics.md ("Cost"). The `large` scene (Phase 25 Day 401) is the Release-only stress run: it checks the
+// state and exits 1 when a check fails (ctest `physics_bench_large`, registered in optimized builds only).
 //
 //   physics_bench [--bodies N]   the body count of the drop scenes (default: 1000, 5000, 20000 and 50000)
 //                 [--steps N]    timed steps per measurement (default 60)
 //                 [--threads N]  the worker count (default: the machine's participant count; 1 runs on the caller)
-//                 [--scene S]    drop, mesh, joints, rays, characters or all (default all)
+//                 [--scene S]    drop, mesh, joints, rays, characters, large or all (default all; `all` leaves out
+//                 `large`)
+//                 [--long-steps N] the steps of the long run of `large` (default 1000000)
 #include "containers/vector.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/number.h"
 #include "debug/program_setup.h"
+#include "lang/scalar.h"
 #include "jobs/scheduler.h"
 #include "mem/heap_allocator.h"
 #include "os/command_line.h"
@@ -307,19 +312,136 @@ void SceneCharacters()
     }
 }
 
+// Whether every body of `bodies` is finite, inside `bound` of the origin and has a unit orientation, and the world's
+// state hash is valid.
+bool Sane(const PhysicsWorld& world, const Vector<BodyId>& bodies, f32 bound)
+{
+    for (usize i = 0; i < bodies.Size(); ++i)
+    {
+        const Body* b = world.Find(bodies[i]);
+        if (b == nullptr || !IsFinite(b->position.x) || !IsFinite(b->position.y) || !IsFinite(b->position.z) ||
+            !IsFinite(b->linear_velocity.x) || !IsFinite(b->linear_velocity.y) || !IsFinite(b->linear_velocity.z) ||
+            Abs(b->position.x) > bound || Abs(b->position.y) > bound || Abs(b->position.z) > bound)
+        {
+            return false;
+        }
+        const Quaternion& q = b->orientation;
+        if (Abs(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w - 1.0f) > 1e-3f)
+        {
+            return false;
+        }
+    }
+    bool valid = false;
+    world.StateHash(&valid);
+    return valid;
+}
+
+// The Release-only stress run: `n` bodies fall on a floor between walls and pile up, then a small world is stepped
+// `long_steps` times with a body kicked now and then, so it never sleeps for good. Both check the state as they go
+// (finite, inside the walls, unit orientations, no collider slots or bodies appearing from nowhere). Returns whether
+// every check held.
+bool SceneLarge(u32 n, u32 long_steps)
+{
+    bool ok = true;
+    {
+        PhysicsWorld world;
+        Configure(world);
+        const f32 half = 30.0f;
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(half + 2.0f, 0.5f, half + 2.0f)), Vec3(0, -0.5f, 0));
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(0.5f, 40, half)), Vec3(half + 0.5f, 20, 0));
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(0.5f, 40, half)), Vec3(-half - 0.5f, 20, 0));
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(half, 40, 0.5f)), Vec3(0, 20, half + 0.5f));
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(half, 40, 0.5f)), Vec3(0, 20, -half - 0.5f));
+        Vector<BodyId> bodies;
+        Rng rng;
+        for (u32 i = 0; i < n; ++i)
+        {
+            const Vec3 at(-24.0f + 1.2f * static_cast<f32>(i % 40) + 0.1f * rng.Next(),
+                          3.0f + 1.2f * static_cast<f32>(i / 1600),
+                          -24.0f + 1.2f * static_cast<f32>((i / 40) % 40) + 0.1f * rng.Next());
+            bodies.Push(Add(world, BodyType::Dynamic,
+                            i % 3 == 0 ? Shape::MakeSphere(0.5f) : Shape::MakeBox(Vec3(0.5f, 0.5f, 0.5f)), at));
+        }
+        const u32 slots = world.Stats().collider_slots;
+        const u32 steps = g_steps < 300 ? 300 : g_steps;
+        for (u32 step = 0; step < steps; ++step)
+        {
+            world.Step();
+            if (step % 50 == 49 && !Sane(world, bodies, 200.0f))
+            {
+                os::PrintError("large: %u bodies insane at step %u\n", n, step);
+                ok = false;
+                break;
+            }
+        }
+        if (world.Stats().bodies != n + 5 || world.Stats().collider_slots != slots)
+        {
+            os::PrintError("large: the body or collider count changed (%u bodies, %u slots)\n", world.Stats().bodies,
+                           world.Stats().collider_slots);
+            ok = false;
+        }
+        Measure("large piled", world, 20);
+    }
+    {
+        PhysicsWorld world;
+        Configure(world);
+        const f32 half = 8.0f;
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(half + 1.0f, 0.5f, half + 1.0f)), Vec3(0, -0.5f, 0));
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(0.5f, 20, half)), Vec3(half + 0.5f, 10, 0));
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(0.5f, 20, half)), Vec3(-half - 0.5f, 10, 0));
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(half, 20, 0.5f)), Vec3(0, 10, half + 0.5f));
+        Add(world, BodyType::Static, Shape::MakeBox(Vec3(half, 20, 0.5f)), Vec3(0, 10, -half - 0.5f));
+        Vector<BodyId> bodies;
+        Rng rng;
+        for (u32 i = 0; i < 100; ++i)
+        {
+            const Vec3 at(-6.0f + 12.0f * rng.Next(), 1.0f + 8.0f * rng.Next(), -6.0f + 12.0f * rng.Next());
+            bodies.Push(Add(world, BodyType::Dynamic,
+                            i % 2 == 0 ? Shape::MakeSphere(0.4f) : Shape::MakeBox(Vec3(0.4f, 0.4f, 0.4f)), at));
+        }
+        const u32 slots = world.Stats().collider_slots;
+        const u64 start = os::MonotonicTimeNanos();
+        for (u32 step = 0; step < long_steps; ++step)
+        {
+            if (step % 500 == 0)
+            {
+                const u32 k = static_cast<u32>(rng.Next() * 99.0f);
+                world.ApplyImpulse(bodies[k], Vec3(3.0f * (rng.Next() - 0.5f), 4.0f, 3.0f * (rng.Next() - 0.5f)),
+                                   world.Find(bodies[k])->position);
+            }
+            world.Step();
+            if (step % 50000 == 49999 && !Sane(world, bodies, 40.0f))
+            {
+                os::PrintError("large: the long run is insane at step %u\n", step);
+                ok = false;
+                break;
+            }
+        }
+        if (!Sane(world, bodies, 40.0f) || world.Stats().bodies != 105 || world.Stats().collider_slots != slots)
+        {
+            os::PrintError("large: the long run ended insane or with changed counts\n");
+            ok = false;
+        }
+        os::PrintError("large: %u steps of 100 bodies in %.1f s\n", long_steps,
+                       static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9);
+    }
+    os::PrintError("large: %s\n", ok ? "ok" : "FAILED");
+    return ok;
+}
+
 }  // namespace
 
 int main(int argc, char** argv)
 {
-    static const os::CommandLineOption kCliOptions[] = {{"bodies", true},           {"steps", true},
-                                                        {"threads", true},          {"scene", true},
-                                                        debug::kCrashHandlerOption, debug::kCrashTestOption};
+    static const os::CommandLineOption kCliOptions[] = {
+        {"bodies", true},           {"steps", true},        {"threads", true}, {"scene", true}, {"long-steps", true},
+        debug::kCrashHandlerOption, debug::kCrashTestOption};
     const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
-                                              Span<const os::CommandLineOption>(kCliOptions, 6));
+                                              Span<const os::CommandLineOption>(kCliOptions, 7));
     if (!line.Ok() || line.ArgCount() != 0)
     {
         os::PrintError(
-            "usage: %s [--bodies N] [--steps N] [--threads N] [--scene drop|mesh|joints|rays|characters|all]\n",
+            "usage: %s [--bodies N] [--steps N] [--threads N] [--scene drop|mesh|joints|rays|characters|large|all] [--long-steps N]\n",
             line.ProgramName().Data());
         return 2;
     }
@@ -342,6 +464,11 @@ int main(int argc, char** argv)
     if (line.TryGetOption("scene", value))
     {
         scene = value.Data();
+    }
+    u32 long_steps = 1000000;
+    if (line.TryGetOption("long-steps", value))
+    {
+        long_steps = static_cast<u32>(CStrToLong(value.Data()));
     }
     g_threads = threads == 0 ? 1 : threads;
     jobs::Scheduler::Config config;
@@ -381,6 +508,10 @@ int main(int argc, char** argv)
     if (all || CStrCompare(scene, "characters") == 0)
     {
         SceneCharacters();
+    }
+    if (CStrCompare(scene, "large") == 0 && !SceneLarge(bodies != 0 ? bodies : 50000, long_steps))
+    {
+        return 1;
     }
     return 0;
 }

@@ -125,7 +125,7 @@ BodyStatus CharacterController::Create(PhysicsWorld* world, const CharacterConfi
     if (!IsFinite(config.radius) || !IsFinite(config.height) || !IsFinite(config.step_height) ||
         !IsFinite(config.min_ground_y) || !IsFinite(config.skin_width) || !IsFinite(config.gravity_scale) ||
         !(config.radius > 0.0f) || !(config.height >= 2.0f * config.radius) || config.step_height < 0.0f ||
-        config.skin_width < 0.0f || config.min_ground_y < 0.0f || config.min_ground_y > 1.0f)
+        !(config.skin_width >= 1e-4f) || config.min_ground_y < 0.0f || config.min_ground_y > 1.0f)
     {
         return BodyStatus::Invalid;
     }
@@ -272,7 +272,12 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
     // 3. The vertical move (gravity, a jump, a lift), sliding down what is too steep to stand on.
     const f32 vertical = (state_.vertical_speed + platform.y) * dt;
     u32 ignored_walls = 0;
+    const f32 y_before = position.y;
     position = mover.Slide(position, Vec3(0.0f, vertical, 0.0f), false, &ignored_walls, &scratch_normal, nullptr);
+    if (state_.vertical_speed > 0.0f && position.y - y_before < 0.5f * vertical)
+    {
+        state_.vertical_speed = 0.0f;  // a ceiling stopped the rise: the jump ends there instead of hanging on it
+    }
     // 4. Walking down a slope or off a small drop keeps the feet on the ground.
     const bool rising = state_.vertical_speed > 0.0f;
     if (was_grounded && !rising)

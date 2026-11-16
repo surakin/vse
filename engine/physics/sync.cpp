@@ -41,8 +41,8 @@ bool SameCollider(const Collider& a, const Collider& b)
            a.rotation.z == b.rotation.z && a.rotation.w == b.rotation.w && a.material.friction == b.material.friction &&
            a.material.restitution == b.material.restitution && a.material.density == b.material.density &&
            a.material.friction_rule == b.material.friction_rule &&
-           a.material.restitution_rule == b.material.restitution_rule && a.layer == b.layer &&
-           a.is_trigger == b.is_trigger;
+           a.material.restitution_rule == b.material.restitution_rule && a.layer == b.layer && a.group == b.group &&
+           a.mask == b.mask && a.is_trigger == b.is_trigger;
 }
 
 }  // namespace

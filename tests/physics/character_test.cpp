@@ -313,3 +313,30 @@ TEST_CASE("Character: a bad config is refused and a stale body moves nothing", "
     c.Destroy(&world);
     CHECK(world.Stats().bodies == 0);
 }
+
+TEST_CASE("Character: a ceiling ends the rise of a jump", "[physics][character]")
+{
+    Walker w(Vec3(0, 2.0f, 0));
+    ChFloor(w.world);
+    ChStatic(w.world, Vec3(0, 3.5f, 0), Vec3(5, 0.5f, 5));  // a ceiling whose underside is 3 m above the floor
+    w.Run(Vec3(0, 0, 0), 60);
+    REQUIRE(w.controller.State().on_ground);
+    w.controller.Jump(8.0f);
+    w.Run(Vec3(0, 0, 0), 12);                            // reaches the ceiling in about six steps
+    CHECK(w.controller.State().vertical_speed <= 0.0f);  // it does not keep the speed it had against the ceiling
+    CHECK(w.Position().y < 3.0f);
+}
+
+TEST_CASE("Character: a skin width too small to probe the ground is refused", "[physics][character]")
+{
+    PhysicsWorld world;
+    ChFloor(world);
+    CharacterController controller;
+    CharacterConfig config;
+    config.skin_width = 0.0f;
+    CHECK(controller.Create(&world, config, Vec3(0, 2, 0)) == BodyStatus::Invalid);
+    config.skin_width = 1e-6f;
+    CHECK(controller.Create(&world, config, Vec3(0, 2, 0)) == BodyStatus::Invalid);
+    config.skin_width = 0.001f;
+    CHECK(controller.Create(&world, config, Vec3(0, 2, 0)) == BodyStatus::Ok);
+}
