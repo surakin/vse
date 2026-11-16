@@ -3727,10 +3727,80 @@ spatial::StaticBvh::FirstItem(u32) const	function	spatial	spatial-staticbvh-firs
 spatial::StaticBvh::SahCost() const	function	spatial	spatial-staticbvh-sahcost-const	spatial.md	engine/spatial/static_bvh.h:141
 spatial::StaticBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:152
 spatial::StaticBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:164
+physics::BodyType	enum	physics	physics-bodytype	physics.md	engine/physics/components.h:17
+physics::BodyType::Static	enumerator	physics	physics-bodytype-static	physics.md	engine/physics/components.h:19
+physics::BodyType::Kinematic	enumerator	physics	physics-bodytype-kinematic	physics.md	engine/physics/components.h:20
+physics::BodyType::Dynamic	enumerator	physics	physics-bodytype-dynamic	physics.md	engine/physics/components.h:21
+physics::BodyFlags	enum	physics	physics-bodyflags	physics.md	engine/physics/components.h:27
+physics::kBodyLockRotation	enumerator	physics	physics-kbodylockrotation	physics.md	engine/physics/components.h:29
+physics::kBodyNoSleep	enumerator	physics	physics-kbodynosleep	physics.md	engine/physics/components.h:30
+physics::kBodyContinuous	enumerator	physics	physics-kbodycontinuous	physics.md	engine/physics/components.h:31
+physics::kBodyKnownFlags	enumerator	physics	physics-kbodyknownflags	physics.md	engine/physics/components.h:32
+physics::CombineRule	enum	physics	physics-combinerule	physics.md	engine/physics/components.h:38
+physics::CombineRule::Average	enumerator	physics	physics-combinerule-average	physics.md	engine/physics/components.h:40
+physics::CombineRule::Minimum	enumerator	physics	physics-combinerule-minimum	physics.md	engine/physics/components.h:41
+physics::CombineRule::Multiply	enumerator	physics	physics-combinerule-multiply	physics.md	engine/physics/components.h:42
+physics::CombineRule::Maximum	enumerator	physics	physics-combinerule-maximum	physics.md	engine/physics/components.h:43
+physics::PhysicsMaterial	struct	physics	physics-physicsmaterial	physics.md	engine/physics/components.h:49
+physics::PhysicsMaterial::friction	variable	physics	physics-physicsmaterial-friction	physics.md	engine/physics/components.h:52
+physics::PhysicsMaterial::restitution	variable	physics	physics-physicsmaterial-restitution	physics.md	engine/physics/components.h:54
+physics::PhysicsMaterial::density	variable	physics	physics-physicsmaterial-density	physics.md	engine/physics/components.h:56
+physics::PhysicsMaterial::friction_rule	variable	physics	physics-physicsmaterial-friction-rule	physics.md	engine/physics/components.h:58
+physics::PhysicsMaterial::restitution_rule	variable	physics	physics-physicsmaterial-restitution-rule	physics.md	engine/physics/components.h:60
+physics::PhysicsMaterial::Validate() const	function	physics	physics-physicsmaterial-validate-const	physics.md	engine/physics/components.h:66
+physics::Combine(CombineRule,f32,f32)	function	physics	physics-combine-combinerule-f32-f32	physics.md	engine/physics/components.h:77
+physics::CombineRuleFor(CombineRule,CombineRule)	function	physics	physics-combinerulefor-combinerule-combinerule	physics.md	engine/physics/components.h:85
+physics::RigidBody	struct	physics	physics-rigidbody	physics.md	engine/physics/components.h:90
+physics::RigidBody::type	variable	physics	physics-rigidbody-type	physics.md	engine/physics/components.h:93
+physics::RigidBody::flags	variable	physics	physics-rigidbody-flags	physics.md	engine/physics/components.h:95
+physics::RigidBody::mass	variable	physics	physics-rigidbody-mass	physics.md	engine/physics/components.h:97
+physics::RigidBody::linear_damping	variable	physics	physics-rigidbody-linear-damping	physics.md	engine/physics/components.h:99
+physics::RigidBody::angular_damping	variable	physics	physics-rigidbody-angular-damping	physics.md	engine/physics/components.h:101
+physics::RigidBody::gravity_scale	variable	physics	physics-rigidbody-gravity-scale	physics.md	engine/physics/components.h:103
+physics::RigidBody::Validate() const	function	physics	physics-rigidbody-validate-const	physics.md	engine/physics/components.h:109
+physics::Velocity	struct	physics	physics-velocity	physics.md	engine/physics/components.h:115
+physics::Velocity::linear	variable	physics	physics-velocity-linear	physics.md	engine/physics/components.h:118
+physics::Velocity::angular	variable	physics	physics-velocity-angular	physics.md	engine/physics/components.h:120
+physics::Velocity::Validate() const	function	physics	physics-velocity-validate-const	physics.md	engine/physics/components.h:126
+physics::Collider	struct	physics	physics-collider	physics.md	engine/physics/components.h:132
+physics::Collider::shape	variable	physics	physics-collider-shape	physics.md	engine/physics/components.h:135
+physics::Collider::offset	variable	physics	physics-collider-offset	physics.md	engine/physics/components.h:137
+physics::Collider::rotation	variable	physics	physics-collider-rotation	physics.md	engine/physics/components.h:139
+physics::Collider::material	variable	physics	physics-collider-material	physics.md	engine/physics/components.h:141
+physics::Collider::layer	variable	physics	physics-collider-layer	physics.md	engine/physics/components.h:143
+physics::Collider::is_trigger	variable	physics	physics-collider-is-trigger	physics.md	engine/physics/components.h:145
+physics::Collider::Validate() const	function	physics	physics-collider-validate-const	physics.md	engine/physics/components.h:151
 physics::ProbeHash()	function	physics	physics-probehash	physics.md	engine/physics/determinism.h:20
 physics::ContractionObserved()	function	physics	physics-contractionobserved	physics.md	engine/physics/determinism.h:29
 physics::DenormalsPreserved()	function	physics	physics-denormalspreserved	physics.md	engine/physics/determinism.h:39
 physics::ModeReport()	function	physics	physics-modereport	physics.md	engine/physics/determinism.h:46
+physics::MassProperties	struct	physics	physics-massproperties	physics.md	engine/physics/mass.h:20
+physics::MassProperties::volume	variable	physics	physics-massproperties-volume	physics.md	engine/physics/mass.h:23
+physics::MassProperties::mass	variable	physics	physics-massproperties-mass	physics.md	engine/physics/mass.h:25
+physics::MassProperties::center	variable	physics	physics-massproperties-center	physics.md	engine/physics/mass.h:27
+physics::MassProperties::inertia	variable	physics	physics-massproperties-inertia	physics.md	engine/physics/mass.h:29
+physics::MassProperties::principal_rotation	variable	physics	physics-massproperties-principal-rotation	physics.md	engine/physics/mass.h:31
+physics::MassProperties::InverseMass() const	function	physics	physics-massproperties-inversemass-const	physics.md	engine/physics/mass.h:37
+physics::MassProperties::InverseInertiaBody() const	function	physics	physics-massproperties-inverseinertiabody-const	physics.md	engine/physics/mass.h:45
+physics::MassProperties::InverseInertiaWorld(const Quaternion&) const	function	physics	physics-massproperties-inverseinertiaworld-const-quaternion-amp-const	physics.md	engine/physics/mass.h:53
+physics::MassFromDensity(const Shape&,f32)	function	physics	physics-massfromdensity-const-shape-amp-f32	physics.md	engine/physics/mass.h:62
+physics::ShapeVolume(const Shape&)	function	physics	physics-shapevolume-const-shape-amp	physics.md	engine/physics/mass.h:69
+physics::InertiaAbout(const MassProperties&,const Vec3&)	function	physics	physics-inertiaabout-const-massproperties-amp-const-vec3-amp	physics.md	engine/physics/mass.h:79
+physics::ShapeKind	enum	physics	physics-shapekind	physics.md	engine/physics/shapes.h:18
+physics::ShapeKind::Sphere	enumerator	physics	physics-shapekind-sphere	physics.md	engine/physics/shapes.h:20
+physics::ShapeKind::Box	enumerator	physics	physics-shapekind-box	physics.md	engine/physics/shapes.h:21
+physics::ShapeKind::Capsule	enumerator	physics	physics-shapekind-capsule	physics.md	engine/physics/shapes.h:22
+physics::Shape	struct	physics	physics-shape	physics.md	engine/physics/shapes.h:30
+physics::Shape::kind	variable	physics	physics-shape-kind	physics.md	engine/physics/shapes.h:33
+physics::Shape::radius	variable	physics	physics-shape-radius	physics.md	engine/physics/shapes.h:35
+physics::Shape::half_height	variable	physics	physics-shape-half-height	physics.md	engine/physics/shapes.h:37
+physics::Shape::half_extents	variable	physics	physics-shape-half-extents	physics.md	engine/physics/shapes.h:39
+physics::Shape::MakeSphere(f32)	function	physics	physics-shape-makesphere-f32	physics.md	engine/physics/shapes.h:46
+physics::Shape::MakeBox(const Vec3&)	function	physics	physics-shape-makebox-const-vec3-amp	physics.md	engine/physics/shapes.h:53
+physics::Shape::MakeCapsule(f32,f32)	function	physics	physics-shape-makecapsule-f32-f32	physics.md	engine/physics/shapes.h:61
+physics::Shape::Validate() const	function	physics	physics-shape-validate-const	physics.md	engine/physics/shapes.h:68
+physics::Shape::Bounds(const Vec3&,const Quaternion&) const	function	physics	physics-shape-bounds-const-vec3-amp-const-quaternion-amp-const	physics.md	engine/physics/shapes.h:76
+physics::Shape::LocalHalfExtents() const	function	physics	physics-shape-localhalfextents-const	physics.md	engine/physics/shapes.h:83
 physics::StateHasher	class	physics	physics-statehasher	physics.md	engine/physics/state_hash.h:23
 physics::StateHasher::StateHasher()	function	physics	physics-statehasher-statehasher	physics.md	engine/physics/state_hash.h:27
 physics::StateHasher::kOffsetBasis	variable	physics	physics-statehasher-koffsetbasis	physics.md	engine/physics/state_hash.h:30
@@ -3742,6 +3812,14 @@ physics::StateHasher::AddF32(f32)	function	physics	physics-statehasher-addf32-f3
 physics::StateHasher::Value() const	function	physics	physics-statehasher-value-const	physics.md	engine/physics/state_hash.h:76
 physics::StateHasher::Valid() const	function	physics	physics-statehasher-valid-const	physics.md	engine/physics/state_hash.h:81
 physics::StateHasher::BitsOf(f32)	function	physics	physics-statehasher-bitsof-f32	physics.md	engine/physics/state_hash.h:86
+physics::Validation	enum	physics	physics-validation	physics.md	engine/physics/validation.h:13
+physics::Validation::Ok	enumerator	physics	physics-validation-ok	physics.md	engine/physics/validation.h:15
+physics::Validation::NotFinite	enumerator	physics	physics-validation-notfinite	physics.md	engine/physics/validation.h:16
+physics::Validation::NotPositive	enumerator	physics	physics-validation-notpositive	physics.md	engine/physics/validation.h:17
+physics::Validation::OutOfRange	enumerator	physics	physics-validation-outofrange	physics.md	engine/physics/validation.h:18
+physics::Validation::UnknownKind	enumerator	physics	physics-validation-unknownkind	physics.md	engine/physics/validation.h:19
+physics::Validation::NotNormalized	enumerator	physics	physics-validation-notnormalized	physics.md	engine/physics/validation.h:20
+physics::ValidationName(Validation)	function	physics	physics-validationname-validation	physics.md	engine/physics/validation.h:30
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20

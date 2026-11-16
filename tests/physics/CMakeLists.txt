@@ -3,6 +3,8 @@
 set(PHYSICS_TEST_SOURCES
   state_hash_test.cpp  # Day 374
   determinism_test.cpp  # Day 374
+  shapes_test.cpp  # Day 375
+  mass_test.cpp  # Day 375
 )
 
 find_package(Threads REQUIRED)

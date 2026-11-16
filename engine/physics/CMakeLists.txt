@@ -4,6 +4,10 @@
 # which the root CMakeLists.txt applies to every target of ours.
 set(PHYSICS_SOURCES
   determinism.cpp  # Day 374
+  validation.cpp  # Day 375
+  shapes.cpp  # Day 375
+  mass.cpp  # Day 375
+  components.cpp  # Day 375
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

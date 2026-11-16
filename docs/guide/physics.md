@@ -51,3 +51,19 @@ FMA instruction).
 `physics::StateHasher` is FNV-1a 64: bytes in the order fed, words least significant byte first, floats by bit pattern with **-0.0 as +0.0**, and
 `Valid()` false once a NaN or an infinity was fed (a simulation that produced one has failed). Nothing but the fed words is hashed: no padding, no
 pointers. The reference scenes hash every body in id order: position, orientation, linear and angular velocity, then a sleep byte.
+
+## Shapes, mass and the components
+
+A `physics::Shape` is a plain tagged value: `Shape::MakeSphere(radius)`, `MakeBox(half_extents)` or `MakeCapsule(half_height, radius)` (a capsule lies
+along its own Y axis). Host data is never aborted on: `Validate()` returns a `Validation` (`NotFinite`, `NotPositive`, ...), and every component has the
+same method. `Bounds(position, rotation)` returns the smallest axis-aligned box around the rotated shape.
+
+`MassFromDensity(shape, density)` gives the volume, mass and the inertia as three moments about the principal axes through the centre of mass, in closed
+form (the capsule's hemispheres are moved to the centre by the parallel axis theorem). `InverseInertiaWorld(orientation)` is the two products
+`Q R diag(1/I) R^T Q^T` the solver needs, and an axis without inertia gets a zero entry. A capsule with no cylinder part has the sphere's numbers.
+
+The components of an entity are `RigidBody` (type static, kinematic or dynamic; flags `kBodyLockRotation`, `kBodyNoSleep`, `kBodyContinuous`; a mass
+override, damping, gravity scale), `Velocity` and `Collider` (shape, offset and rotation in the body, `PhysicsMaterial`, layer 0-31, trigger flag). The
+material holds friction, restitution, density and how two values combine (`CombineRule`); for a pair the rule with the larger number is used, so the
+order of the two colliders never matters. The material is inline in the collider for now: a minted `PMAT` asset is deferred (see `KNOWN-ISSUES.md`).
+Convex hulls, triangle meshes and compound shapes are new `ShapeKind` values on Days 381-383.
