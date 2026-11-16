@@ -58,9 +58,6 @@ public:
     /// Whether the scene was made.
     bool Valid() const { return valid_; }
 
-    /// Points the frame at a swapchain made after the old one went (a rebind).
-    void Rebind(rhi::Device* device, rhi::Swapchain* swapchain);
-
     /// Mirrors the world's entities that have a mesh reference and a world matrix into the render scene, resolving
     /// what they name, then renders and presents one frame.
     ///

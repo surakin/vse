@@ -93,13 +93,6 @@ SurfaceScene::~SurfaceScene()
     manager_ = nullptr;
 }
 
-void SurfaceScene::Rebind(rhi::Device* device, rhi::Swapchain* swapchain)
-{
-    live_.Release();  // made again on the new device from the kept pixels
-    device_ = device;
-    frame_.Rebind(device, swapchain);
-}
-
 const renderer::GpuMesh* SurfaceScene::ResolveMesh(u64 id)
 {
     for (usize i = 0; i < meshes_.Size(); ++i)

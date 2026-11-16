@@ -909,6 +909,18 @@ engine_status SurfaceHost::Project(engine_handle surface, const f32* point, f32*
     return ENGINE_OK;
 }
 
+/// What the last drawn frame reported (counts and the camera's status), put back to "nothing drawn" when the surface
+/// has no scene any more, so `surface_state` does not describe a frame of a world that is gone.
+static void ClearSceneReport(SurfaceObject* s)
+{
+    s->objects_drawn = 0;
+    s->entities_unresolved = 0;
+    s->lights_refused = 0;
+    s->labels_drawn = 0;
+    s->labels_refused = 0;
+    s->camera_status = ENGINE_OK;
+}
+
 engine_status SurfaceHost::SetWorld(engine_handle surface, engine_handle world, ResourceHost* resources)
 {
     LockGuard<Mutex> lock(mutex_);
@@ -921,8 +933,7 @@ engine_status SurfaceHost::SetWorld(engine_handle surface, engine_handle world, 
         s->world = engine_handle{};
         s->kept_world = engine_handle{};  // the host's choice replaces what a failed rebind kept
         s->world_status = ENGINE_OK;
-        s->objects_drawn = 0;
-        s->entities_unresolved = 0;
+        ClearSceneReport(s);
         return ENGINE_OK;
     }
     if (s->lost || s->swapchain == nullptr)
@@ -1242,6 +1253,7 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
                 s->scene.Reset();
                 s->world = engine_handle{};
                 s->world_status = ENGINE_ERROR_STALE_HANDLE;
+                ClearSceneReport(s);
             }
             else
             {

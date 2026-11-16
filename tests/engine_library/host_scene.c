@@ -767,6 +767,12 @@ int main(void)
         CHECK(HasObject(&pixels, clear));
         CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
         CHECK(state.camera_status == ENGINE_ERROR_NOT_FOUND);
+        /* unbinding the world clears what the last frame reported, so the state does not describe a world that is gone
+         */
+        CHECK_STATUS(g_api->surface_set_world(surface, none), ENGINE_OK);
+        CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
+        CHECK(state.camera_status == ENGINE_OK);
+        CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_camera(surface, 0), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
