@@ -6,6 +6,7 @@
 #include "math/matrix.h"
 #include "math/quaternion.h"
 #include "math/vector.h"
+#include "physics/compound.h"
 #include "physics/components.h"
 #include "physics/hull.h"
 #include "physics/ids.h"
@@ -431,6 +432,21 @@ public:
     /// - Fails: never.
     const MeshLibrary& Meshes() const { return meshes_; }
 
+    /// Returns the compounds that `Shape::MakeCompound` shapes of this world refer to; add a compound here before a
+    /// collider uses it.
+    ///
+    /// - Returns: the library.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    CompoundLibrary& Compounds() { return compounds_; }
+
+    /// Returns the compound library, read only.
+    ///
+    /// - Returns: the library.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    const CompoundLibrary& Compounds() const { return compounds_; }
+
     /// Returns the hull library, read only.
     ///
     /// - Returns: the library.
@@ -452,6 +468,13 @@ private:
                    shape.half_extents.y >= mesh->Extent().y * 0.9999f &&
                    shape.half_extents.z >= mesh->Extent().z * 0.9999f;
         }
+        if (shape.kind == ShapeKind::Compound)
+        {
+            const CompoundShape* compound = compounds_.Find(shape.compound);
+            return compound != nullptr && shape.half_extents.x >= compound->Extent().x * 0.9999f &&
+                   shape.half_extents.y >= compound->Extent().y * 0.9999f &&
+                   shape.half_extents.z >= compound->Extent().z * 0.9999f;
+        }
         if (shape.kind != ShapeKind::Hull)
         {
             return true;
@@ -468,6 +491,7 @@ private:
     SlotPool<ColliderRecord> colliders_;
     HullLibrary hulls_;
     MeshLibrary meshes_;
+    CompoundLibrary compounds_;
 };
 
 }  // namespace engine_placeholder::physics

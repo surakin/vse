@@ -57,6 +57,17 @@ Shape Shape::MakeMesh(u32 mesh, const Vec3& extent)
     return shape;
 }
 
+Shape Shape::MakeCompound(u32 compound, const Vec3& extent)
+{
+    Shape shape;
+    shape.kind = ShapeKind::Compound;
+    shape.radius = 0.0f;
+    shape.half_height = 0.0f;
+    shape.half_extents = extent;
+    shape.compound = compound;
+    return shape;
+}
+
 Validation Shape::Validate() const
 {
     switch (kind)
@@ -67,14 +78,12 @@ Validation Shape::Validate() const
             return Validation::NotFinite;
         }
         return radius > 0.0f ? Validation::Ok : Validation::NotPositive;
+    case ShapeKind::Compound:
     case ShapeKind::Mesh:
-        if (mesh == 0)
-        {
-            return Validation::OutOfRange;
-        }
-        [[fallthrough]];
     case ShapeKind::Hull:
-        if (kind == ShapeKind::Hull && hull == 0)
+        // A shape that names an entry of a library needs a non-zero id.
+        if ((kind == ShapeKind::Hull && hull == 0) || (kind == ShapeKind::Mesh && mesh == 0) ||
+            (kind == ShapeKind::Compound && compound == 0))
         {
             return Validation::OutOfRange;
         }
@@ -103,7 +112,8 @@ Vec3 Shape::LocalHalfExtents() const
     case ShapeKind::Sphere: return Vec3(radius, radius, radius);
     case ShapeKind::Box:
     case ShapeKind::Hull:
-    case ShapeKind::Mesh: return half_extents;
+    case ShapeKind::Mesh:
+    case ShapeKind::Compound: return half_extents;
     case ShapeKind::Capsule: return Vec3(radius, half_height + radius, radius);
     }
     return Vec3(0.0f, 0.0f, 0.0f);
@@ -123,6 +133,7 @@ Aabb Shape::Bounds(const Vec3& position, const Quaternion& rotation) const
     case ShapeKind::Box:
     case ShapeKind::Hull:
     case ShapeKind::Mesh:
+    case ShapeKind::Compound:
         // The extent of a rotated box on axis i is the sum over its own axes j of |R(i, j)| * half_extent(j);
         // `r.col[j][i]` is element (i, j).
         extent = Vec3(

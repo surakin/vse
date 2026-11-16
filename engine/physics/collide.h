@@ -2,6 +2,7 @@
 // sphere-capsule, capsule-capsule, sphere-box, box-box and capsule-box.
 #pragma once
 
+#include "physics/compound.h"
 #include "physics/contact.h"
 #include "physics/hull.h"
 #include "physics/shapes.h"
@@ -31,10 +32,13 @@ namespace engine_placeholder::physics
 /// - Returns: `Contact`, `None` or `Unsupported`.
 /// - Param meshes: the library the mesh shapes' ids refer to; may be null when neither shape is a mesh (a mesh that is
 /// not in it gives `None`). A mesh against a mesh is `Unsupported`.
-/// - Ownership: `manifold` is the caller's and `hulls` and `meshes` are borrowed; nothing is kept.
+/// - Param compounds: the library the compound shapes' ids refer to; may be null when neither shape is a compound (a
+/// compound that is not in it gives `None`). A compound is collided child by child and the contacts merge (their
+/// feature ids carry the child indices).
+/// - Ownership: `manifold` is the caller's and the libraries are borrowed; nothing is kept.
 /// - Fails: an invalid shape returns `None`.
 CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
                       ContactManifold* manifold, const HullLibrary* hulls = nullptr,
-                      const MeshLibrary* meshes = nullptr);
+                      const MeshLibrary* meshes = nullptr, const CompoundLibrary* compounds = nullptr);
 
 }  // namespace engine_placeholder::physics

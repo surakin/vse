@@ -67,7 +67,8 @@ Core MakeCore(const Shape& shape, const Pose& pose, const HullLibrary* hulls)
         c.kind = CoreKind::Box;
         c.half = shape.half_extents;
         break;
-    case ShapeKind::Mesh:  // never reached: meshes go through MeshPair
+    case ShapeKind::Compound:  // never reached: composites go through their own pair functions
+    case ShapeKind::Mesh:
     case ShapeKind::Hull:
         c.kind = CoreKind::Hull;
         c.hull = hulls != nullptr ? hulls->Share(shape.hull) : ConvexHullConstPtr();
@@ -936,17 +937,9 @@ bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other
     Vector<u32> triangles;
     mesh->QueryBox(Aabb::FromMinMax(local_centre - local_half, local_centre + local_half), &triangles);
 
-    struct Found
-    {
-        Vec3 normal;
-        Vec3 pa;
-        Vec3 pb;
-        f32 depth = 0.0f;
-        u32 id = 0;
-    };
     constexpr u32 kMaxFound = 64;
     constexpr u32 kMaxTriangles = 256;
-    Array<Found, kMaxFound> found;
+    Array<FoundContact, kMaxFound> found;
     u32 found_count = 0;
     const u32 tested = triangles.Size() < kMaxTriangles ? static_cast<u32>(triangles.Size()) : kMaxTriangles;
     for (u32 k = 0; k < tested && found_count < kMaxFound; ++k)
@@ -1038,7 +1031,7 @@ bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other
         }
         for (u32 j = 0; j < tm.count && found_count < kMaxFound; ++j)
         {
-            Found& f = found[found_count++];
+            FoundContact& f = found[found_count++];
             f.normal = tm.normal;
             f.pa = tm.points[j].position_a;
             f.pb = tm.points[j].position_b;
@@ -1046,49 +1039,7 @@ bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other
             f.id = tm.points[j].feature_id * 2654435761u ^ (t + 1u) * 40503u;
         }
     }
-    if (found_count == 0)
-    {
-        return false;
-    }
-    u32 best = 0;
-    for (u32 k = 1; k < found_count; ++k)
-    {
-        if (found[k].depth > found[best].depth)
-        {
-            best = k;
-        }
-    }
-    const Vec3 n = found[best].normal;
-    Array<Candidate, kMaxFound> cand;
-    u32 kept = 0;
-    for (u32 k = 0; k < found_count; ++k)
-    {
-        bool duplicate = false;  // the same point reached through two triangles (a seam)
-        for (u32 j = 0; j < kept && !duplicate; ++j)
-        {
-            duplicate = (cand[j].p - found[k].pa).LengthSquared() < 1e-8f;
-        }
-        if (found[k].normal.Dot(n) >= 0.98f && !duplicate)
-        {
-            cand[kept].p = found[k].pa;
-            cand[kept].depth = (found[k].pa - found[k].pb).Dot(n);
-            cand[kept].id = k;
-            ++kept;
-        }
-    }
-    Array<u32, 4> pick;
-    const u32 picked = ReduceCandidates(cand.Data(), kept, n, &pick);
-    out->normal = n;
-    out->count = picked;
-    for (u32 k = 0; k < picked; ++k)
-    {
-        const Found& f = found[cand[pick[k]].id];
-        out->points[k].position_a = f.pa;
-        out->points[k].position_b = f.pb;
-        out->points[k].depth = cand[pick[k]].depth;
-        out->points[k].feature_id = f.id;
-    }
-    return picked != 0;
+    return MergeContacts(found.Data(), found_count, out);
 }
 
 }  // namespace engine_placeholder::physics::collide_math

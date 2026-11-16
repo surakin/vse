@@ -6,6 +6,7 @@
 #include "containers/array.h"
 #include "math/matrix.h"
 #include "math/vector.h"
+#include "physics/compound.h"
 #include "physics/hull.h"
 #include "physics/triangle_mesh.h"
 #include "physics/shapes.h"
@@ -233,6 +234,65 @@ inline u32 ReduceCandidates(const Candidate* cand, u32 kept, const Vec3& nr, Arr
     return picked;
 }
 
+// A contact found by one piece of a composite (a mesh triangle, a compound child), before the pieces are merged.
+struct FoundContact
+{
+    Vec3 normal = Vec3(0.0f, 1.0f, 0.0f);
+    Vec3 pa = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3 pb = Vec3(0.0f, 0.0f, 0.0f);
+    f32 depth = 0.0f;
+    u32 id = 0;
+};
+
+// The manifold of the pieces' contacts: the deepest sets the normal, contacts within 11 degrees of it join (a point
+// reached twice is kept once), and more than four reduce as for boxes. False when there is nothing.
+inline bool MergeContacts(const FoundContact* found, u32 count, ContactManifold* out)
+{
+    if (count == 0)
+    {
+        return false;
+    }
+    u32 best = 0;
+    for (u32 k = 1; k < count; ++k)
+    {
+        if (found[k].depth > found[best].depth)
+        {
+            best = k;
+        }
+    }
+    const Vec3 n = found[best].normal;
+    Array<Candidate, 64> cand;
+    u32 kept = 0;
+    for (u32 k = 0; k < count && k < 64; ++k)
+    {
+        bool duplicate = false;
+        for (u32 j = 0; j < kept && !duplicate; ++j)
+        {
+            duplicate = (cand[j].p - found[k].pa).LengthSquared() < 1e-8f;
+        }
+        if (found[k].normal.Dot(n) >= 0.98f && !duplicate)
+        {
+            cand[kept].p = found[k].pa;
+            cand[kept].depth = (found[k].pa - found[k].pb).Dot(n);
+            cand[kept].id = k;
+            ++kept;
+        }
+    }
+    Array<u32, 4> pick;
+    const u32 picked = ReduceCandidates(cand.Data(), kept, n, &pick);
+    out->normal = n;
+    out->count = picked;
+    for (u32 k = 0; k < picked; ++k)
+    {
+        const FoundContact& f = found[cand[pick[k]].id];
+        out->points[k].position_a = f.pa;
+        out->points[k].position_b = f.pb;
+        out->points[k].depth = cand[pick[k]].depth;
+        out->points[k].feature_id = f.id;
+    }
+    return picked != 0;
+}
+
 // The tests of Day 380 (collide_box.cpp): box-box and box-capsule, the box being shape A in both.
 bool BoxBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out);
 // Any pair with a convex hull (Day 381), by GJK and EPA; the pair may be in either order.
@@ -241,6 +301,10 @@ bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, 
 // A static mesh against any other shape (Day 382), the mesh being shape A: the contacts of the triangles near B.
 bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other, const Pose& other_pose, f32 margin,
               const HullLibrary* hulls, const MeshLibrary* meshes, ContactManifold* out);
+// Compounds (Day 383): each child, or pair of children, collided on its own and merged; either shape may be a compound.
+bool CompoundPair(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
+                  const HullLibrary* hulls, const MeshLibrary* meshes, const CompoundLibrary* compounds,
+                  ContactManifold* out);
 bool BoxCapsule(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out);
 
 }  // namespace engine_placeholder::physics::collide_math

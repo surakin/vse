@@ -143,6 +143,10 @@ struct Collider
     u8 layer = 0;
     /// A trigger reports overlaps and does not collide (Day 383).
     bool is_trigger = false;
+    /// The groups the collider is in, one bit each (Day 383).
+    u32 group = 1;
+    /// The groups it collides with, one bit each: a pair collides when each one's group meets the other's mask.
+    u32 mask = 0xFFFFFFFFu;
 
     /// Checks the shape, the material, the offset, the rotation (a unit quaternion within 1e-3) and the layer.
     ///

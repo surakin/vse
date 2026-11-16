@@ -219,11 +219,17 @@ bool SphereBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f
 }  // namespace
 
 CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
-                      ContactManifold* manifold, const HullLibrary* hulls, const MeshLibrary* meshes)
+                      ContactManifold* manifold, const HullLibrary* hulls, const MeshLibrary* meshes,
+                      const CompoundLibrary* compounds)
 {
     if (a.Validate() != Validation::Ok || b.Validate() != Validation::Ok || !IsFinite(margin) || margin < 0.0f)
     {
         return CollideResult::None;
+    }
+    if (a.kind == ShapeKind::Compound || b.kind == ShapeKind::Compound)
+    {
+        return CompoundPair(a, pose_a, b, pose_b, margin, hulls, meshes, compounds, manifold) ? CollideResult::Contact
+                                                                                              : CollideResult::None;
     }
     if (a.kind == ShapeKind::Mesh && b.kind == ShapeKind::Mesh)
     {
@@ -250,7 +256,7 @@ CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const 
     const u8 kb = static_cast<u8>(b.kind);
     if (ka > kb)
     {
-        const CollideResult result = Collide(b, pose_b, a, pose_a, margin, manifold, hulls, meshes);
+        const CollideResult result = Collide(b, pose_b, a, pose_a, margin, manifold, hulls, meshes, compounds);
         if (result == CollideResult::Contact)
         {
             manifold->Flip();

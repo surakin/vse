@@ -184,14 +184,42 @@ void BroadPhase::Update(const PhysicsWorld& world)
     tracker_.Update(set_, &events_);
     begun_.Clear();
     ended_.Clear();
+    // The group and mask words and the trigger rule apply on top of the layer matrix; an event for a collider that is
+    // gone (a pair that ends because a body was destroyed) passes.
+    const auto allowed = [&](const ColliderId a, const ColliderId b, bool* trigger)
+    {
+        const ColliderRecord* ra = world.FindCollider(a);
+        const ColliderRecord* rb = world.FindCollider(b);
+        *trigger = (ra != nullptr && ra->value.is_trigger) || (rb != nullptr && rb->value.is_trigger);
+        if (ra == nullptr || rb == nullptr)
+        {
+            return true;
+        }
+        if (ra->value.is_trigger && rb->value.is_trigger && !config_.trigger_pairs)
+        {
+            return false;
+        }
+        return GroupsCollide(ra->value.group, ra->value.mask, rb->value.group, rb->value.mask);
+    };
     for (usize i = 0; i < events_.begin.Size(); ++i)
     {
-        begun_.Push(
-            ColliderPair{ColliderId::FromKey(events_.begin[i].a), ColliderId::FromKey(events_.begin[i].b), false});
+        const ColliderId a = ColliderId::FromKey(events_.begin[i].a);
+        const ColliderId b = ColliderId::FromKey(events_.begin[i].b);
+        bool trigger = false;
+        if (allowed(a, b, &trigger))
+        {
+            begun_.Push(ColliderPair{a, b, trigger});
+        }
     }
     for (usize i = 0; i < events_.end.Size(); ++i)
     {
-        ended_.Push(ColliderPair{ColliderId::FromKey(events_.end[i].a), ColliderId::FromKey(events_.end[i].b), false});
+        const ColliderId a = ColliderId::FromKey(events_.end[i].a);
+        const ColliderId b = ColliderId::FromKey(events_.end[i].b);
+        bool trigger = false;
+        if (allowed(a, b, &trigger))
+        {
+            ended_.Push(ColliderPair{a, b, trigger});
+        }
     }
     pairs_.Clear();
     tracker_.ForEachPair(
@@ -207,7 +235,11 @@ void BroadPhase::Update(const PhysicsWorld& world)
             }
             const Body* ba = world.Find(ra->owner);
             const Body* bb = world.Find(rb->owner);
-            const bool trigger = ra->value.is_trigger || rb->value.is_trigger;
+            bool trigger = false;
+            if (!allowed(a, b, &trigger))
+            {
+                return;
+            }
             const bool any_dynamic = ba->settings.type == BodyType::Dynamic || bb->settings.type == BodyType::Dynamic;
             const bool both_static = ba->settings.type == BodyType::Static && bb->settings.type == BodyType::Static;
             if (both_static || (!any_dynamic && !trigger))

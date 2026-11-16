@@ -19,6 +19,8 @@ set(PHYSICS_SOURCES
   hull.cpp  # Day 381
   collide_hull.cpp  # Day 381
   triangle_mesh.cpp  # Day 382
+  compound.cpp  # Day 383
+  collide_compound.cpp  # Day 383
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

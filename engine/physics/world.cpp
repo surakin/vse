@@ -46,7 +46,11 @@ void PhysicsWorld::RecomputeMass(Body* body)
         const ColliderRecord* record = FindCollider(body->first_collider);
         if (record != nullptr)
         {
-            props = MassFromDensity(record->value.shape, record->value.material.density, &hulls_);
+            const CompoundShape* compound = record->value.shape.kind == ShapeKind::Compound
+                                                ? compounds_.Find(record->value.shape.compound)
+                                                : nullptr;
+            props = compound != nullptr ? compound->Mass()
+                                        : MassFromDensity(record->value.shape, record->value.material.density, &hulls_);
             // The shape's centre is the collider's origin (a hull's is its centroid, seen through the collider); its
             // principal axes are the collider's own (a hull's turned by the collider).
             props.center = record->value.offset + record->value.rotation.RotateVector(props.center);

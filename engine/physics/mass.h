@@ -74,6 +74,16 @@ MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrar
 /// - Fails: as the return says.
 f32 ShapeVolume(const Shape& shape, const HullLibrary* hulls = nullptr);
 
+/// The principal axes of a symmetric 3x3 matrix (an inertia tensor) by Jacobi rotations in double precision, using
+/// `+ - * /` and `Sqrt` only, so the result is the same on every machine.
+///
+/// - Param symmetric: the matrix; only its symmetric part is meaningful.
+/// - Param values: receives the three eigenvalues.
+/// - Param vectors: receives the right-handed frame whose columns are the eigenvectors, in the order of `values`.
+/// - Ownership: the outputs are the caller's.
+/// - Fails: never; a non-finite matrix gives a non-finite result.
+void PrincipalAxes(const Mat3& symmetric, Vec3* values, Mat3* vectors);
+
 /// Returns the inertia tensor about a point offset from the centre of mass, in the body's space.
 ///
 /// It is the parallel axis theorem: `I + m (|d|^2 E - d d^T)`.

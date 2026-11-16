@@ -17,13 +17,15 @@ namespace engine_placeholder::physics
 /// - Thread-safety: thread-compatible plain data.
 enum class ShapeKind : u8
 {
-    Sphere = 0,   ///< A ball: `radius`.
-    Box = 1,      ///< A box with its centre at the shape's origin: `half_extents`.
-    Capsule = 2,  ///< A cylinder with a hemisphere on each end, its axis along the shape's Y axis: `half_height` (of
-                  ///< the cylinder part) and `radius`.
-    Hull = 3,     ///< A convex hull from the world's `HullLibrary`: `hull` (its id) and `half_extents` (its bound).
-    Mesh = 4,     ///< A triangle mesh from the world's `MeshLibrary`: `mesh` (its id) and `half_extents` (its bound).
-                  ///< Static bodies only.
+    Sphere = 0,    ///< A ball: `radius`.
+    Box = 1,       ///< A box with its centre at the shape's origin: `half_extents`.
+    Capsule = 2,   ///< A cylinder with a hemisphere on each end, its axis along the shape's Y axis: `half_height` (of
+                   ///< the cylinder part) and `radius`.
+    Hull = 3,      ///< A convex hull from the world's `HullLibrary`: `hull` (its id) and `half_extents` (its bound).
+    Mesh = 4,      ///< A triangle mesh from the world's `MeshLibrary`: `mesh` (its id) and `half_extents` (its bound).
+                   ///< Static bodies only.
+    Compound = 5,  ///< Several shapes with local transforms from the world's `CompoundLibrary`: `compound` (its id) and
+                   ///< `half_extents` (its bound).
 };
 
 /// A shape as a tagged value: the kind says which fields count. The shape lives in the space of its collider (its
@@ -44,6 +46,8 @@ struct Shape
     u32 hull = 0;
     /// For a mesh, its id in the world's `MeshLibrary`, at least 1.
     u32 mesh = 0;
+    /// For a compound, its id in the world's `CompoundLibrary`, at least 1.
+    u32 compound = 0;
 
     /// Makes a sphere.
     ///
@@ -82,6 +86,14 @@ struct Shape
     /// - Returns: the shape (not checked: see `Validate`; the library is not consulted here).
     /// - Fails: never.
     static Shape MakeMesh(u32 mesh, const Vec3& extent);
+
+    /// Makes a compound shape.
+    ///
+    /// - Param compound: the compound's id in the `CompoundLibrary` (`CompoundLibrary::Add` returned it).
+    /// - Param extent: the compound's `CompoundShape::Extent()`: its bound about the shape's origin.
+    /// - Returns: the shape (not checked: see `Validate`; the library is not consulted here).
+    /// - Fails: never.
+    static Shape MakeCompound(u32 compound, const Vec3& extent);
 
     /// Checks the shape: finite numbers, positive sizes, a known kind. Host data is refused with a result, never
     /// aborted on.

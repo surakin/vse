@@ -64,6 +64,8 @@ struct BroadPhaseConfig
     f32 step_seconds = 1.0f / 60.0f;
     /// Which layers meet.
     CollisionFilter filter;
+    /// Whether two triggers make a pair (Day 383); off by default.
+    bool trigger_pairs = false;
 };
 
 /// Two colliders whose boxes overlap, the smaller key first.

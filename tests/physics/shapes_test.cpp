@@ -39,7 +39,8 @@ Vec3 SurfacePoint(const Shape& shape, f32 u, f32 v)
         return dir * shape.radius + Vec3(0.0f, dir.y >= 0.0f ? shape.half_height : -shape.half_height, 0.0f);
     case ShapeKind::Box:
     case ShapeKind::Hull:
-    case ShapeKind::Mesh: break;
+    case ShapeKind::Mesh:
+    case ShapeKind::Compound: break;
     }
     // A point of the box's boundary: the direction scaled to the box's faces.
     const f32 m = FMax(Abs(dir.x) / shape.half_extents.x,

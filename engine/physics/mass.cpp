@@ -21,9 +21,11 @@ f32 InverseOrZero(f32 value)
     return IsFinite(inverse) ? inverse : 0.0f;
 }
 
+}  // namespace
+
 // The eigenvalues and the right-handed eigenvectors of a symmetric 3x3 matrix by Jacobi rotations (the sweeps use
 // `+ - * /` and `Sqrt` only, so the result is the same on every machine).
-void SymmetricEigen(const Mat3& a, Vec3* values, Mat3* vectors)
+void PrincipalAxes(const Mat3& a, Vec3* values, Mat3* vectors)
 {
     f64 m[3][3];
     f64 v[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
@@ -89,8 +91,6 @@ void SymmetricEigen(const Mat3& a, Vec3* values, Mat3* vectors)
     *vectors = Mat3::FromBasis(e0, e1, e2);
 }
 
-}  // namespace
-
 f32 ShapeVolume(const Shape& shape, const HullLibrary* hulls)
 {
     if (shape.Validate() != Validation::Ok)
@@ -111,7 +111,8 @@ f32 ShapeVolume(const Shape& shape, const HullLibrary* hulls)
         const ConvexHull* hull = hulls != nullptr ? hulls->Find(shape.hull) : nullptr;
         return hull != nullptr ? hull->Volume() : 0.0f;
     }
-    case ShapeKind::Mesh: return 0.0f;  // a mesh is static: no volume, no mass
+    case ShapeKind::Mesh:
+    case ShapeKind::Compound: return 0.0f;  // a mesh has no mass; a compound's comes from its children
     }
     return 0.0f;
 }
@@ -123,9 +124,9 @@ MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrar
     {
         return out;
     }
-    if (shape.kind == ShapeKind::Mesh)
+    if (shape.kind == ShapeKind::Mesh || shape.kind == ShapeKind::Compound)
     {
-        return out;
+        return out;  // see CompoundShape::Mass
     }
     out.volume = ShapeVolume(shape, hulls);
     if (shape.kind == ShapeKind::Hull && !(out.volume > 0.0f))
@@ -170,16 +171,17 @@ MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrar
         out.inertia = Vec3(ix, iy, ix);
         break;
     }
-    case ShapeKind::Mesh: break;
+    case ShapeKind::Mesh:
+    case ShapeKind::Compound: break;
     case ShapeKind::Hull:
     {
         // The tensor about the centroid at density 1, scaled to this density, then turned to its principal frame.
         const ConvexHull* hull = hulls->Find(shape.hull);
         Vec3 values;
         Mat3 frame;
-        SymmetricEigen(Mat3::FromBasis(hull->Inertia().col[0] * density, hull->Inertia().col[1] * density,
-                                       hull->Inertia().col[2] * density),
-                       &values, &frame);
+        PrincipalAxes(Mat3::FromBasis(hull->Inertia().col[0] * density, hull->Inertia().col[1] * density,
+                                      hull->Inertia().col[2] * density),
+                      &values, &frame);
         out.inertia = values;
         out.center = hull->Centroid();
         out.principal_rotation = Quaternion::FromMat3(frame).Normalized();
