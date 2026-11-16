@@ -144,6 +144,7 @@ BodyStatus PhysicsWorld::DestroyBody(BodyId id)
             joints_.Release(slot, generation);
         }
     }
+    DropEventsOf(id);
     bodies_.Release(id.index, id.generation);
     return BodyStatus::Ok;
 }
@@ -464,6 +465,11 @@ ColliderId PhysicsWorld::ColliderAtSlot(u32 index) const
     return ColliderId{index, colliders_.LiveGeneration(index)};
 }
 
+JointId PhysicsWorld::JointAtSlot(u32 index) const
+{
+    return JointId{index, joints_.LiveGeneration(index)};
+}
+
 Vec3 PhysicsWorld::WorldCenter(BodyId id) const
 {
     const Body* body = Find(id);
@@ -566,6 +572,7 @@ PhysicsWorldStats PhysicsWorld::Stats() const
     stats.body_slots = bodies_.Slots();
     stats.colliders = colliders_.Live();
     stats.collider_slots = colliders_.Slots();
+    stats.joint_slots = joints_.Slots();
     return stats;
 }
 

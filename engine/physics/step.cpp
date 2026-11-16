@@ -157,6 +157,8 @@ u32 PhysicsWorld::Update(f32 real_seconds)
     const f64 step = 1.0 / static_cast<f64>(step_config_.step_hz);
     accumulator_ += static_cast<f64>(real_seconds);
     u32 ran = 0;
+    ClearEvents();
+    keep_events_ = true;
     while (accumulator_ >= step && ran < step_config_.max_substeps)
     {
         Step();
@@ -171,6 +173,7 @@ u32 PhysicsWorld::Update(f32 real_seconds)
         ++step_stats_.dropped_updates;
         accumulator_ = kept;
     }
+    keep_events_ = false;
     step_stats_.last_substeps = ran;
     return ran;
 }
@@ -179,6 +182,10 @@ void PhysicsWorld::Step()
 {
     // The rules of the step hold only if the process keeps denormals; a host that set flush-to-zero gets a report and a
     // counter, not a silent difference.
+    if (!keep_events_)
+    {
+        ClearEvents();
+    }
     const bool denormals_kept = DenormalsPreserved();
     if (!ENGINE_ENSURE(denormals_kept,
                        "the physics step runs with flush-to-zero or denormals-are-zero set: results are not portable"))
@@ -247,6 +254,8 @@ void PhysicsWorld::Step()
     // something that moves, which keeps its island awake.
     Vector<u32> edges;
     Vector<usize> idle;  // pairs of two bodies that rest: a contact wakes one, so they are looked at again after
+    Vector<ColliderPair> carried;  // pairs of bodies that kept resting: their contact state is what it was
+    Vector<ColliderPair> trigger_pairs;
     const Vector<ColliderPair>& pairs = broad_->Pairs();
     jobs::Scheduler* scheduler = step_config_.threads > 1 ? scheduler_ : nullptr;
     // One pair that needs the narrow phase: the narrow phase fills `input` and `touching` from the bodies' poses (a
@@ -266,6 +275,10 @@ void PhysicsWorld::Step()
     {
         if (pair.trigger)
         {
+            if (first)
+            {
+                trigger_pairs.Push(pair);
+            }
             return;
         }
         const ColliderRecord* ra = FindCollider(pair.a);
@@ -286,6 +299,10 @@ void PhysicsWorld::Step()
             if (first)
             {
                 idle.Push(index);
+            }
+            else
+            {
+                carried.Push(pair);
             }
             return;
         }
@@ -382,6 +399,7 @@ void PhysicsWorld::Step()
         classify(pairs[idle[i]], false, idle[i]);
     }
     run_work();
+    UpdateTriggerEvents(trigger_pairs);
     // The bodies that touch take their substeps in the solver; the rest take one step.
     SolverConfig solver_config;
     solver_config.substeps = step_config_.substeps;
@@ -436,6 +454,7 @@ void PhysicsWorld::Step()
             body->torque = Vec3(0.0f, 0.0f, 0.0f);
         }
     }
+    UpdateContactEvents(inputs, carried);
     SweepContinuous();
     UpdateSleep(edges, dt);
     for (u32 slot = 0; slot < slots; ++slot)
@@ -453,6 +472,17 @@ void PhysicsWorld::Step()
         const JointRecord* joint = joints_.Find(slot, generation);
         if (joint != nullptr && joint->broken)
         {
+            JointBreakEvent event;
+            event.joint = JointId{slot, generation};
+            event.body_a = joint->desc.body_a;
+            event.body_b = joint->desc.body_b;
+            const Body* ea = joint->desc.body_a.IsValid() ? Find(joint->desc.body_a) : nullptr;
+            const Body* eb = joint->desc.body_b.IsValid() ? Find(joint->desc.body_b) : nullptr;
+            event.entity_a = ea != nullptr ? ea->entity : ecs::Entity();
+            event.entity_b = eb != nullptr ? eb->entity : ecs::Entity();
+            event.force = joint->reaction_force;
+            event.torque = joint->reaction_torque;
+            events_.joint_breaks.Push(event);
             joints_.Release(slot, generation);
             ++step_stats_.joints_broken;
         }

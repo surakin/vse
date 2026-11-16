@@ -22,6 +22,7 @@ set(PHYSICS_TEST_SOURCES
   ccd_test.cpp  # Day 390
   query_test.cpp  # Day 391
   character_test.cpp  # Day 392
+  events_test.cpp  # Day 393
 )
 
 find_package(Threads REQUIRED)
@@ -44,9 +45,9 @@ target_include_directories(physics_fp_probe_control PRIVATE ${CMAKE_SOURCE_DIR}/
 target_compile_options(physics_fp_probe_control PRIVATE ${_physics_control_options})
 
 function(engine_add_physics_tests target physics_lib suffix label)
-  add_executable(${target} ${PHYSICS_TEST_SOURCES} $<TARGET_OBJECTS:physics_fp_probe_project> $<TARGET_OBJECTS:physics_fp_probe_control>)
+  add_executable(${target} ${PHYSICS_TEST_SOURCES} ../ecs/alloc_counter.cpp $<TARGET_OBJECTS:physics_fp_probe_project> $<TARGET_OBJECTS:physics_fp_probe_control>)
   target_link_libraries(${target} PRIVATE ${physics_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecs)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

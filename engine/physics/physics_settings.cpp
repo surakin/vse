@@ -87,6 +87,20 @@ void RegisterPhysicsSettings(settings::Registry* registry)
     threads.description = "1 runs the step inline; more lets it use the job scheduler (the results do not change)";
     threads.group = "physics";
     registry->Register(threads);
+    settings::SettingDesc stay_events = settings::MakeBool("physics.stay_events", false);
+    stay_events.env = "ENGINE_PHYSICS_STAY_EVENTS";
+    stay_events.flag = "physics-stay-events";
+    stay_events.label = "Contact stay events";
+    stay_events.description = "whether a pair that keeps touching reports a stay event every step";
+    stay_events.group = "physics";
+    registry->Register(stay_events);
+    settings::SettingDesc debug_draw = settings::MakeBool("physics.debug_draw", false);
+    debug_draw.env = "ENGINE_PHYSICS_DEBUG_DRAW";
+    debug_draw.flag = "physics-debug-draw";
+    debug_draw.label = "Draw the physics world";
+    debug_draw.description = "whether the program draws shapes, contacts and joints as debug lines";
+    debug_draw.group = "physics";
+    registry->Register(debug_draw);
     settings::SettingDesc allow_sleep = settings::MakeBool("physics.allow_sleep", true);
     allow_sleep.env = "ENGINE_PHYSICS_ALLOW_SLEEP";
     allow_sleep.flag = "physics-allow-sleep";
@@ -206,6 +220,16 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     if (threads.IsValid())
     {
         config.threads = static_cast<u32>(settings::Setting<i64>(registry, threads).Get());
+    }
+    const settings::SettingId stay_events = registry.Find(StringView("physics.stay_events"));
+    if (stay_events.IsValid())
+    {
+        config.stay_events = settings::Setting<bool>(registry, stay_events).Get();
+    }
+    const settings::SettingId debug_draw = registry.Find(StringView("physics.debug_draw"));
+    if (debug_draw.IsValid())
+    {
+        config.debug_draw = settings::Setting<bool>(registry, debug_draw).Get();
     }
     const settings::SettingId allow_sleep = registry.Find(StringView("physics.allow_sleep"));
     if (allow_sleep.IsValid())

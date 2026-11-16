@@ -979,6 +979,33 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
     }
 }
 
+f32 ContactSolver::PairImpulse(ColliderId a, ColliderId b) const
+{
+    const u64 ka = a.ToKey();
+    const u64 kb = b.ToKey();
+    usize lo = 0;
+    usize hi = cache_.Size();
+    while (lo < hi)
+    {
+        const usize mid = (lo + hi) / 2;
+        const CacheEntry& e = cache_[mid];
+        if (e.key_a != ka ? e.key_a < ka : e.key_b < kb)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+    f32 total = 0.0f;
+    for (; lo < cache_.Size() && cache_[lo].key_a == ka && cache_[lo].key_b == kb; ++lo)
+    {
+        total += cache_[lo].normal_impulse;
+    }
+    return total;
+}
+
 void ContactSolver::ForgetBody(BodyId body)
 {
     next_cache_.Clear();

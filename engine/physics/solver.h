@@ -124,6 +124,14 @@ public:
     /// - Fails: never.
     u32 CacheSize() const { return static_cast<u32>(cache_.Size()); }
 
+    /// The total normal impulse the cache holds for the points of one pair of colliders (the last solve's).
+    ///
+    /// - Param a: the collider with the smaller key.
+    /// - Param b: the other collider.
+    /// - Returns: the sum, 0 for a pair with no cached point.
+    /// - Fails: never.
+    f32 PairImpulse(ColliderId a, ColliderId b) const;
+
     /// What the last `Solve` did.
     /// - Fails: never.
     const SolverStats& Stats() const { return stats_; }

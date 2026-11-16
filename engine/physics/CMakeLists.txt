@@ -27,6 +27,9 @@ set(PHYSICS_SOURCES
   ccd.cpp  # Day 390
   query.cpp  # Day 391
   character.cpp  # Day 392
+  events.cpp  # Day 393
+  debug_draw.cpp  # Day 393
+  joint_sync.cpp  # Day 393
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

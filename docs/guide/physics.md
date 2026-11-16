@@ -329,3 +329,33 @@ vertical speed. The result is not written as a position: it is set as the body's
 character there and the solver pushes dynamic bodies out of its way, while nothing pushes the character. `Move` returns `CharacterEvents`
 (`began_ground`, `ended_ground`, the walls hit and the last wall normal); `State()` has `on_ground`, `ground_body`, `ground_normal`. The
 walk is the same at 60 and 120 steps per second to a few centimetres (`tests/physics/character_test.cpp`).
+
+## Events, joints as components and debug drawing
+
+**Events.** `PhysicsWorld::Events()` holds what happened in the last `Update` (or the last `Step` called by hand; `Update` clears the lists at
+its start and keeps those of all its steps): `contacts` (`ContactEvent`: begin, end and, with `StepConfig::stay_events`, stay, for a pair of
+colliders, with the body and entity of each, the number of points, the deepest point, the normal, the depth and the solver's total normal
+impulse), `triggers` (`TriggerEvent`: enter and exit of a collider that overlaps a trigger collider, tested exactly with the narrow phase and
+not by the broad phase's fat boxes) and `joint_breaks` (`JointBreakEvent`: the joint, its bodies and entities, the force and torque of its last
+step). Each list is in step order and, within a step, in order of the collider keys, so two runs give the same events. A pair of bodies at rest
+keeps its contact (no end event when an island falls asleep); destroying a body removes the events that name it and forgets its pairs without an
+end event. `PhysicsWorld::Contacts()` is the view of every pair that touches now, with the manifold of the last step, and `AllStats()` gathers
+the world's counters in one value.
+
+**Joints as components.** An entity with a `Joint` (`physics/joint_sync.h`) names two entities and the joint's kind, anchors and limits;
+`SyncJoints` (after `SyncBodies`, at a sync point) makes the physics joint when both entities have a body, adds `JointLink` and destroys the
+joint when the component, an entity or a body goes. A joint that broke is noticed on the next call: its `Joint` is removed so it is not made
+again.
+
+**Transform write-back.** The step system and `WriteBackTransforms` write a dynamic body's pose into `LocalTransform` only when it differs,
+and stamp the chunk as written only then (`LazyWrite`), so a sleeping body does not mark its transform changed for `Changed<LocalTransform>`.
+
+**Debug drawing.** `DebugDraw(world, options, &lines)` appends `spatial::DebugLine` segments (a sphere is three circles of 16 segments, a box 12
+edges, a capsule 68; a hull, mesh or compound is drawn as its local box) for the shapes, colored by type, sleeping state and island, the contact
+points with their normals, the joints and the broad phase's boxes; the program turns them into a line pass, as with the spatial module. It reads
+the world as of the last step and allocates only when the vector must grow. `StepConfig::debug_draw` (setting `physics.debug_draw`) is the
+switch a program reads.
+
+**Kinematic bodies and entities.** `DriveKinematicBodies(ecs, physics, dt)` (`physics/system.h`) sets the velocity of every kinematic body so the
+next step carries it to its entity's `LocalTransform` (a platform or door moved by moving its entity); call it before `Update`, not for a body
+whose velocity the program sets itself (a character's).

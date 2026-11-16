@@ -25,6 +25,23 @@ namespace engine_placeholder::physics
 /// - Fails: an entity that is gone or has no `LocalTransform` is skipped.
 u32 WriteBackTransforms(ecs::World& ecs, const PhysicsWorld& physics, f32 alpha);
 
+/// Sets the velocity of every kinematic body that has an entity so the next step carries it to the entity's
+/// `LocalTransform`.
+///
+/// This is how a program moves a platform or a door by moving its entity: the speed is the distance (and the small
+/// rotation, as an angular velocity) over `dt`, so the body pushes what is in its way and carries what stands on it
+/// instead of jumping. A kinematic body whose transform equals its pose gets no change (it stays asleep). Call it
+/// before `PhysicsWorld::Update`, once per update, with the update's `dt`; do not call it for a body whose velocity the
+/// program sets itself (a character controller's).
+///
+/// - Param ecs: the ECS world.
+/// - Param physics: the physics world.
+/// - Param dt: the time the move should take, in seconds, above zero (usually the fixed step).
+/// - Returns: the number of bodies whose velocity was set.
+/// - Aborts: called while the ECS world is being iterated.
+/// - Fails: a non-positive or non-finite `dt` does nothing; an entity that has no body is skipped.
+u32 DriveKinematicBodies(ecs::World& ecs, PhysicsWorld& physics, f32 dt);
+
 /// Makes the system that steps the simulation.
 ///
 /// It calls `PhysicsWorld::Update` on the resource `PhysicsWorld` with the

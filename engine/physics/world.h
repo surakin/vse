@@ -8,6 +8,7 @@
 #include "math/quaternion.h"
 #include "math/vector.h"
 #include "physics/compound.h"
+#include "physics/events.h"
 #include "physics/components.h"
 #include "physics/hull.h"
 #include "physics/ids.h"
@@ -186,6 +187,10 @@ struct StepConfig
     f32 sleep_angular = 0.05f;
     /// An island falls asleep once every body in it has been at rest this many seconds.
     f32 sleep_time = 0.5f;
+    /// Whether a pair that keeps touching reports a `Stay` event every step (off: only begin and end).
+    bool stay_events = false;
+    /// Whether the program draws the world for debugging (`DebugDraw`); the world itself does nothing with it.
+    bool debug_draw = false;
 };
 
 /// What stepping did.
@@ -233,9 +238,33 @@ struct PhysicsWorldStats
     u32 colliders = 0;
     /// Collider slots ever made.
     u32 collider_slots = 0;
+    /// Joint slots ever made.
+    u32 joint_slots = 0;
 };
 
+struct ColliderPair;
 class BroadPhase;
+
+/// Everything a world can say about itself, in one value.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct PhysicsStats
+{
+    /// Bodies and colliders.
+    PhysicsWorldStats world;
+    /// The stepping counters.
+    StepStats step;
+    /// What the last solve did.
+    SolverStats solver;
+    /// Joints alive.
+    u32 joints = 0;
+    /// Pairs of colliders that touch now.
+    u32 contacts = 0;
+    /// Events of the last update.
+    u32 events = 0;
+    /// Pairs of colliders whose boxes overlap (the broad phase's pairs).
+    u32 broad_pairs = 0;
+};
 
 /// The bodies and colliders of a simulation. A pointer to a body or collider stays valid until it is destroyed (they
 /// live in chunks that never move).
@@ -372,6 +401,13 @@ public:
     /// - Returns: the id, or the null id for a free or unknown slot.
     /// - Fails: the null id.
     ColliderId ColliderAtSlot(u32 index) const;
+
+    /// The id of the joint now in a slot (its generation is 0, so it is not valid, when the slot is free).
+    ///
+    /// - Param index: below `Stats().joint_slots`.
+    /// - Returns: the id.
+    /// - Fails: never.
+    JointId JointAtSlot(u32 index) const;
 
     /// Returns the world position of a body's centre of mass.
     ///
@@ -618,6 +654,35 @@ public:
     /// - Fails: never.
     StepStats GetStepStats() const { return step_stats_; }
 
+    /// Everything the world counts, in one value.
+    ///
+    /// - Returns: the counters.
+    /// - Fails: never.
+    PhysicsStats AllStats() const;
+
+    /// The events of the last `Update` (or of the last `Step` called by hand): contact begin, stay and end, trigger
+    /// enter and exit, joint breaks, in the order of the steps and of the collider keys. Destroying a body removes the
+    /// pending events that name it.
+    ///
+    /// - Returns: the lists, valid until the next `Update`, `Step` or `ClearEvents`.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    const PhysicsEvents& Events() const { return events_; }
+
+    /// Empties the event lists. `Update` does it at its start and `Step` at its start (unless `Update` called it), so a
+    /// program that reads the events after each call does not need this.
+    ///
+    /// - Fails: never.
+    void ClearEvents();
+
+    /// The pairs of colliders that touch now, sorted by collider key, with the manifold and impulse of the last step:
+    /// the view a system reads when it wants the contacts and not only the changes.
+    ///
+    /// - Returns: the records, valid until the next step or until a body is destroyed.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    const Vector<ContactRecord>& Contacts() const { return contacts_; }
+
     /// Hashes the state of every body in slot order.
     ///
     /// The words are the position, orientation, linear and angular velocity and the sleep
@@ -739,6 +804,15 @@ private:
     CompoundLibrary compounds_;
     UniquePtr<BroadPhase> broad_;
     ContactSolver solver_;
+    // Events (Day 393): the lists of the last update, the pairs that touch (contacts) and the trigger pairs that
+    // overlap, both sorted by collider key; `keep_events_` is set while `Update` runs its steps.
+    PhysicsEvents events_;
+    Vector<ContactRecord> contacts_;
+    Vector<TriggerEvent> triggers_touching_;
+    bool keep_events_ = false;
+    void UpdateContactEvents(const Vector<ContactInput>& inputs, const Vector<ColliderPair>& carried);
+    void UpdateTriggerEvents(const Vector<ColliderPair>& pairs);
+    void DropEventsOf(BodyId id);
 };
 
 }  // namespace engine_placeholder::physics
