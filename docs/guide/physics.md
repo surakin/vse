@@ -291,3 +291,14 @@ slots, and the contacts are then applied on the main thread in pair order, so th
 in the same order whatever the thread count. Free bodies (those the solver did not integrate) are integrated in blocks of 256, each
 body independent. No sum is made across jobs. The state hash is the same to the bit for 0 (no scheduler), 1, 2, 4, 8 and 32
 participants (`tests/physics/parallel_test.cpp`). The contact solver itself still runs on one thread (`KNOWN-ISSUES.md`).
+
+## Continuous collision
+
+A body with `kBodyContinuous`, or one that travels more than `physics.ccd_threshold` times its collider's smallest extent in a
+step (zero turns this rule off), is swept after its motion against the static and kinematic colliders its swept box meets: the
+path from the step's start pose to its end pose is sampled at a quarter of the smallest extent, the first sample that
+overlaps is bisected 24 times, and the body is moved back to the last pose that does not overlap, keeping its velocity, so the
+next step's speculative contact removes the approach. A body already within the contact margin at the start is left to the contact
+solver. The sweep uses the same `Collide` as the step, so every shape pair works, a mesh included. Only linear motion is swept (the
+orientation is blended), dynamic targets are not swept, and a body is clamped once per step. `StepStats::ccd_queries` and `ccd_hits`
+count the work; both stay zero when no body is continuous.

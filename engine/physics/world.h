@@ -172,6 +172,9 @@ struct StepConfig
     f32 joint_hertz = 60.0f;
     /// The damping ratio of that spring.
     f32 joint_damping_ratio = 2.0f;
+    /// A body that travels more than this fraction of its collider's smallest extent in one step is swept by
+    /// continuous collision against static and kinematic bodies, even without `kBodyContinuous` (0 = only the flag).
+    f32 ccd_threshold = 0.0f;
     /// How many threads the step may use: 1 runs everything inline, more uses the scheduler given to `SetScheduler`
     /// (its own participant count decides how many run). The results are the same to the bit for every value.
     u32 threads = 1;
@@ -203,6 +206,10 @@ struct StepStats
     /// Steps run while the process flushed denormals (the step's results are then not portable): zero in a correct
     /// build.
     u64 denormal_mode_steps = 0;
+    /// Continuous sweeps made against one static or kinematic collider, in all (zero when no body is continuous).
+    u64 ccd_queries = 0;
+    /// Sweeps that found a hit and moved a body back to its time of impact, in all.
+    u64 ccd_hits = 0;
     /// Islands (groups of dynamic bodies tied by contacts and joints) after the last step, awake and asleep.
     u32 islands = 0;
     /// Dynamic bodies asleep after the last step.
@@ -680,6 +687,9 @@ private:
     // the body disturbed and, for a body that is not dynamic, wakes what sleeps against it.
     void Disturb(Body* body);
     void UpdateSleep(const Vector<u32>& edges, f32 dt);
+    // Continuous collision (ccd.cpp): after the step's motion, a continuous body that passed into a static or kinematic
+    // collider goes back to the time of impact.
+    void SweepContinuous();
     // Whether the body moves things it touches this step: a dynamic body that is awake, a kinematic body with a
     // velocity, and any body changed from outside.
     static bool Disturbing(const Body& body);

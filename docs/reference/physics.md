@@ -124,6 +124,16 @@ f32 step_seconds;
 
 The length of a step in seconds: a `kBodyContinuous` body's box also covers its motion over this time.
 
+### `ccd_threshold` {#physics-broadphaseconfig-ccd-threshold}
+
+`variable physics::BroadPhaseConfig::ccd_threshold` — defined in `engine/physics/broad_phase.h`
+
+```cpp
+f32 ccd_threshold;
+```
+
+A body whose travel in one step exceeds this fraction of its collider's smallest extent counts as continuous (its box covers the sweep); zero leaves it to `kBodyContinuous`.
+
 ### `filter` {#physics-broadphaseconfig-filter}
 
 `variable physics::BroadPhaseConfig::filter` — defined in `engine/physics/broad_phase.h`
@@ -143,6 +153,27 @@ bool trigger_pairs;
 ```
 
 Whether two triggers make a pair (Day 383); off by default.
+
+## `IsContinuousBody(const Body&,const Collider&,f32,f32)` {#physics-iscontinuousbody-const-body-amp-const-collider-amp-f32-f32}
+
+`function physics::IsContinuousBody` — defined in `engine/physics/broad_phase.h`
+
+```cpp
+bool IsContinuousBody(const Body& body, const Collider& collider, f32 step_seconds, f32 ccd_threshold);
+```
+
+Tells whether a body is swept by continuous collision this step: a dynamic body that is awake and either has `kBodyContinuous` or travels, in one step, more than `ccd_threshold` times its collider's smallest extent.
+
+| Field | Value |
+|---|---|
+| Parameter `body` | the body. |
+| Parameter `collider` | its collider. |
+| Parameter `step_seconds` | the step length. |
+| Parameter `ccd_threshold` | the fraction, zero for flag-only. |
+| Returns | true if the body is continuous. |
+| Fails | never. |
+| Thread-safety | thread-safe. A pure function. |
+| Ownership | nothing is kept. |
 
 ## `ColliderPair` {#physics-colliderpair}
 
@@ -4852,6 +4883,16 @@ f32 joint_damping_ratio;
 
 The damping ratio of that spring.
 
+### `ccd_threshold` {#physics-stepconfig-ccd-threshold}
+
+`variable physics::StepConfig::ccd_threshold` — defined in `engine/physics/world.h`
+
+```cpp
+f32 ccd_threshold;
+```
+
+A body that travels more than this fraction of its collider's smallest extent in one step is swept by continuous collision against static and kinematic bodies, even without `kBodyContinuous` (0 = only the flag).
+
 ### `threads` {#physics-stepconfig-threads}
 
 `variable physics::StepConfig::threads` — defined in `engine/physics/world.h`
@@ -4975,6 +5016,26 @@ u64 denormal_mode_steps;
 ```
 
 Steps run while the process flushed denormals (the step's results are then not portable): zero in a correct build.
+
+### `ccd_queries` {#physics-stepstats-ccd-queries}
+
+`variable physics::StepStats::ccd_queries` — defined in `engine/physics/world.h`
+
+```cpp
+u64 ccd_queries;
+```
+
+Continuous sweeps made against one static or kinematic collider, in all (zero when no body is continuous).
+
+### `ccd_hits` {#physics-stepstats-ccd-hits}
+
+`variable physics::StepStats::ccd_hits` — defined in `engine/physics/world.h`
+
+```cpp
+u64 ccd_hits;
+```
+
+Sweeps that found a hit and moved a body back to its time of impact, in all.
 
 ### `islands` {#physics-stepstats-islands}
 

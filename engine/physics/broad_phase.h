@@ -62,11 +62,27 @@ struct BroadPhaseConfig
     f32 pair_margin = 0.1f;
     /// The length of a step in seconds: a `kBodyContinuous` body's box also covers its motion over this time.
     f32 step_seconds = 1.0f / 60.0f;
+    /// A body whose travel in one step exceeds this fraction of its collider's smallest extent counts as continuous
+    /// (its box covers the sweep); zero leaves it to `kBodyContinuous`.
+    f32 ccd_threshold = 0.0f;
     /// Which layers meet.
     CollisionFilter filter;
     /// Whether two triggers make a pair (Day 383); off by default.
     bool trigger_pairs = false;
 };
+
+/// Tells whether a body is swept by continuous collision this step: a dynamic body that is awake and either has
+/// `kBodyContinuous` or travels, in one step, more than `ccd_threshold` times its collider's smallest extent.
+///
+/// - Param body: the body.
+/// - Param collider: its collider.
+/// - Param step_seconds: the step length.
+/// - Param ccd_threshold: the fraction, zero for flag-only.
+/// - Returns: true if the body is continuous.
+/// - Thread-safety: thread-safe. A pure function.
+/// - Ownership: nothing is kept.
+/// - Fails: never.
+bool IsContinuousBody(const Body& body, const Collider& collider, f32 step_seconds, f32 ccd_threshold);
 
 /// Two colliders whose boxes overlap, the smaller key first.
 ///

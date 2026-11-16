@@ -24,6 +24,7 @@ set(PHYSICS_SOURCES
   solver.cpp  # Day 384
   joint.cpp  # Day 386
   island.cpp  # Day 388
+  ccd.cpp  # Day 390
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

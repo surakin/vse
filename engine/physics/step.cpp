@@ -76,11 +76,12 @@ BodyStatus PhysicsWorld::SetStepConfig(const StepConfig& config)
         !IsFinite(config.joint_damping_ratio) || config.joint_damping_ratio < 0.0f ||
         config.joint_damping_ratio > 1000.0f || !IsFinite(config.sleep_linear) || config.sleep_linear < 0.0f ||
         !IsFinite(config.sleep_angular) || config.sleep_angular < 0.0f || !IsFinite(config.sleep_time) ||
-        config.sleep_time < 0.0f || config.threads < 1 || config.threads > 256)
+        config.sleep_time < 0.0f || config.threads < 1 || config.threads > 256 || !IsFinite(config.ccd_threshold) ||
+        config.ccd_threshold < 0.0f || config.ccd_threshold > 100.0f)
     {
         return BodyStatus::Invalid;
     }
-    if (config.step_hz != step_config_.step_hz)
+    if (config.step_hz != step_config_.step_hz || config.ccd_threshold != step_config_.ccd_threshold)
     {
         broad_.Reset();  // its prediction time follows the step
     }
@@ -201,6 +202,7 @@ void PhysicsWorld::Step()
     {
         BroadPhaseConfig broad_config;
         broad_config.step_seconds = dt;
+        broad_config.ccd_threshold = step_config_.ccd_threshold;
         broad_ = MakeUnique<BroadPhase>(broad_config);
     }
     broad_->Update(*this);
@@ -434,6 +436,7 @@ void PhysicsWorld::Step()
             body->torque = Vec3(0.0f, 0.0f, 0.0f);
         }
     }
+    SweepContinuous();
     UpdateSleep(edges, dt);
     for (u32 slot = 0; slot < slots; ++slot)
     {

@@ -1,5 +1,7 @@
 #include "physics/broad_phase.h"
 
+#include "algorithm.h"
+
 namespace engine_placeholder::physics
 {
 
@@ -32,12 +34,12 @@ bool SameBox(const Aabb& a, const Aabb& b)
 
 // The world box of a collider: its shape at the body's place, and for a continuous body also where the body goes in one
 // step.
-Aabb WorldBox(const Body& body, const Collider& collider, f32 step_seconds)
+Aabb WorldBox(const Body& body, const Collider& collider, f32 step_seconds, f32 ccd_threshold)
 {
     const Mat3 r = body.orientation.ToMat3();
     const Vec3 origin = body.position + r * collider.offset;
     Aabb box = collider.shape.Bounds(origin, body.orientation * collider.rotation);
-    if ((body.settings.flags & kBodyContinuous) != 0 && body.settings.type != BodyType::Static)
+    if (body.settings.type != BodyType::Static && IsContinuousBody(body, collider, step_seconds, ccd_threshold))
     {
         const Vec3 move = body.linear_velocity * step_seconds;
         box = Union(box, Aabb{box.min + move, box.max + move});
@@ -46,6 +48,27 @@ Aabb WorldBox(const Body& body, const Collider& collider, f32 step_seconds)
 }
 
 }  // namespace
+
+bool IsContinuousBody(const Body& body, const Collider& collider, f32 step_seconds, f32 ccd_threshold)
+{
+    if (body.settings.type != BodyType::Dynamic || body.sleeping)
+    {
+        return false;
+    }
+    if ((body.settings.flags & kBodyContinuous) != 0)
+    {
+        return true;
+    }
+    if (ccd_threshold <= 0.0f)
+    {
+        return false;
+    }
+    const Vec3 half = collider.shape.LocalHalfExtents();
+    const f32 smallest = 2.0f * Min(half.x, Min(half.y, half.z));
+    const f32 travel2 = body.linear_velocity.LengthSquared() * step_seconds * step_seconds;
+    const f32 limit = ccd_threshold * smallest;
+    return travel2 > limit * limit;
+}
 
 void CollisionFilter::SetMeets(u32 a, u32 b, bool value)
 {
@@ -115,7 +138,7 @@ void BroadPhase::Update(const PhysicsWorld& world)
         {
             Remove(slot);  // the slot was reused by another collider
         }
-        const Aabb box = WorldBox(*body, record->value, config_.step_seconds);
+        const Aabb box = WorldBox(*body, record->value, config_.step_seconds, config_.ccd_threshold);
         const bool is_static = body->settings.type == BodyType::Static;
         const u8 layer = record->value.layer;
         if (t.generation == 0)

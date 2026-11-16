@@ -71,6 +71,15 @@ void RegisterPhysicsSettings(settings::Registry* registry)
     joint_hertz.group = "physics";
     joint_hertz.flags = settings::kAdvanced;
     registry->Register(joint_hertz);
+    settings::SettingDesc ccd = settings::MakeFloat("physics.ccd_threshold", 0.0, 0.0, 100.0);
+    ccd.env = "ENGINE_PHYSICS_CCD_THRESHOLD";
+    ccd.flag = "physics-ccd-threshold";
+    ccd.label = "Continuous collision threshold";
+    ccd.description =
+        "a body that moves farther than this fraction of its smallest extent in one step is swept (0: only flagged bodies)";
+    ccd.group = "physics";
+    ccd.flags = settings::kAdvanced;
+    registry->Register(ccd);
     settings::SettingDesc threads = settings::MakeInt("physics.threads", 1, 1, 256);
     threads.env = "ENGINE_PHYSICS_THREADS";
     threads.flag = "physics-threads";
@@ -187,6 +196,11 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     if (max_velocity.IsValid())
     {
         config.max_velocity = static_cast<f32>(settings::Setting<f64>(registry, max_velocity).Get());
+    }
+    const settings::SettingId ccd = registry.Find(StringView("physics.ccd_threshold"));
+    if (ccd.IsValid())
+    {
+        config.ccd_threshold = static_cast<f32>(settings::Setting<f64>(registry, ccd).Get());
     }
     const settings::SettingId threads = registry.Find(StringView("physics.threads"));
     if (threads.IsValid())
