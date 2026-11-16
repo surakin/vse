@@ -86,4 +86,26 @@ struct ColliderId
     }
 };
 
+/// The id of a joint: an index and a generation, like `BodyId`.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct JointId
+{
+    /// The slot.
+    u32 index = 0;
+    /// The generation of the slot; 0 means no joint.
+    u32 generation = 0;
+
+    /// Whether the id names a joint (it may still be stale).
+    /// - Fails: never.
+    constexpr bool IsValid() const { return generation != 0; }
+
+    /// Whether two ids are the same.
+    /// - Fails: never.
+    constexpr bool operator==(const JointId& other) const
+    {
+        return index == other.index && generation == other.generation;
+    }
+};
+
 }  // namespace engine_placeholder::physics

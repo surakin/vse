@@ -15,6 +15,7 @@ set(PHYSICS_TEST_SOURCES
   compound_test.cpp  # Day 383
   solver_test.cpp  # Day 384
   stability_test.cpp  # Day 385
+  joint_test.cpp  # Day 386
 )
 
 find_package(Threads REQUIRED)

@@ -55,7 +55,10 @@ BodyStatus PhysicsWorld::SetStepConfig(const StepConfig& config)
         !IsFinite(config.contact_hertz) || config.contact_hertz < 0.0f || config.contact_hertz > 1000.0f ||
         !IsFinite(config.contact_damping_ratio) || config.contact_damping_ratio < 0.0f ||
         config.contact_damping_ratio > 1000.0f || !IsFinite(config.contact_push_velocity) ||
-        config.contact_push_velocity < 0.0f || !IsFinite(config.max_velocity) || config.max_velocity < 1.0f)
+        config.contact_push_velocity < 0.0f || !IsFinite(config.max_velocity) || config.max_velocity < 1.0f ||
+        !IsFinite(config.joint_hertz) || config.joint_hertz < 0.0f || config.joint_hertz > 1000.0f ||
+        !IsFinite(config.joint_damping_ratio) || config.joint_damping_ratio < 0.0f ||
+        config.joint_damping_ratio > 1000.0f)
     {
         return BodyStatus::Invalid;
     }
@@ -183,6 +186,19 @@ void PhysicsWorld::Step()
         broad_ = MakeUnique<BroadPhase>(broad_config);
     }
     broad_->Update(*this);
+    // The body pairs of joints that keep their bodies from colliding, as sorted keys.
+    Vector<u64> connected;
+    for (u32 slot = 0; slot < joints_.Slots(); ++slot)
+    {
+        const JointRecord* joint = joints_.Find(slot, joints_.LiveGeneration(slot));
+        if (joint != nullptr && !joint->desc.collide_connected && joint->desc.body_b.IsValid())
+        {
+            const u64 x = joint->desc.body_a.ToU64();
+            const u64 y = joint->desc.body_b.ToU64();
+            connected.Push(x < y ? x : y);
+            connected.Push(x < y ? y : x);
+        }
+    }
     Vector<ContactInput> inputs;
     const Vector<ColliderPair>& pairs = broad_->Pairs();
     for (usize i = 0; i < pairs.Size(); ++i)
@@ -195,6 +211,17 @@ void PhysicsWorld::Step()
         const ColliderRecord* ra = FindCollider(pair.a);
         const ColliderRecord* rb = FindCollider(pair.b);
         if (ra == nullptr || rb == nullptr || ra->owner == rb->owner)
+        {
+            continue;
+        }
+        bool joined = false;
+        for (usize k = 0; k < connected.Size(); k += 2)
+        {
+            const u64 x = ra->owner.ToU64();
+            const u64 y = rb->owner.ToU64();
+            joined = joined || (connected[k] == (x < y ? x : y) && connected[k + 1] == (x < y ? y : x));
+        }
+        if (joined)
         {
             continue;
         }
@@ -236,6 +263,8 @@ void PhysicsWorld::Step()
     solver_config.dt = dt;
     solver_config.gravity = step_config_.gravity;
     solver_config.max_velocity = step_config_.max_velocity;
+    solver_config.joint_hertz = step_config_.joint_hertz;
+    solver_config.joint_damping_ratio = step_config_.joint_damping_ratio;
     solver_.Solve(this, Span<const ContactInput>(inputs.Data(), inputs.Size()), solver_config);
     for (u32 slot = 0; slot < slots; ++slot)
     {
@@ -253,6 +282,17 @@ void PhysicsWorld::Step()
         body->integrated = false;
         body->force = Vec3(0.0f, 0.0f, 0.0f);
         body->torque = Vec3(0.0f, 0.0f, 0.0f);
+    }
+    // A joint that carried more than it can is removed.
+    for (u32 slot = 0; slot < joints_.Slots(); ++slot)
+    {
+        const u32 generation = joints_.LiveGeneration(slot);
+        const JointRecord* joint = joints_.Find(slot, generation);
+        if (joint != nullptr && joint->broken)
+        {
+            joints_.Release(slot, generation);
+            ++step_stats_.joints_broken;
+        }
     }
     ++step_stats_.steps;
 }

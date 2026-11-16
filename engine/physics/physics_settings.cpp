@@ -62,6 +62,15 @@ void RegisterPhysicsSettings(settings::Registry* registry)
     hertz.group = "physics";
     hertz.flags = settings::kAdvanced;
     registry->Register(hertz);
+    settings::SettingDesc joint_hertz = settings::MakeFloat("physics.joint_hertz", 60.0, 0.0, 1000.0);
+    joint_hertz.env = "ENGINE_PHYSICS_JOINT_HERTZ";
+    joint_hertz.flag = "physics-joint-hertz";
+    joint_hertz.label = "Joint stiffness";
+    joint_hertz.description =
+        "the frequency of the spring a joint's constraint acts as (capped at a quarter of the substep rate)";
+    joint_hertz.group = "physics";
+    joint_hertz.flags = settings::kAdvanced;
+    registry->Register(joint_hertz);
     settings::SettingDesc slop = settings::MakeFloat("physics.penetration_slop", 0.001, 0.0, 0.1);
     slop.env = "ENGINE_PHYSICS_PENETRATION_SLOP";
     slop.flag = "physics-penetration-slop";
@@ -125,6 +134,11 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     if (hertz.IsValid())
     {
         config.contact_hertz = static_cast<f32>(settings::Setting<f64>(registry, hertz).Get());
+    }
+    const settings::SettingId joint_hertz = registry.Find(StringView("physics.joint_hertz"));
+    if (joint_hertz.IsValid())
+    {
+        config.joint_hertz = static_cast<f32>(settings::Setting<f64>(registry, joint_hertz).Get());
     }
     const settings::SettingId slop = registry.Find(StringView("physics.penetration_slop"));
     if (slop.IsValid())

@@ -132,8 +132,145 @@ BodyStatus PhysicsWorld::DestroyBody(BodyId id)
         colliders_.Release(next.index, next.generation);
         next = following;
     }
+    // The joints of the body go with it.
+    const u32 joint_slots = joints_.Slots();
+    for (u32 slot = 0; slot < joint_slots; ++slot)
+    {
+        const u32 generation = joints_.LiveGeneration(slot);
+        const JointRecord* joint = joints_.Find(slot, generation);
+        if (joint != nullptr && (joint->desc.body_a == id || joint->desc.body_b == id))
+        {
+            joints_.Release(slot, generation);
+        }
+    }
     bodies_.Release(id.index, id.generation);
     return BodyStatus::Ok;
+}
+
+JointId PhysicsWorld::CreateJoint(const JointDesc& desc, BodyStatus* status)
+{
+    const auto fail = [&](BodyStatus s)
+    {
+        if (status != nullptr)
+        {
+            *status = s;
+        }
+        return JointId();
+    };
+    const Body* a = Find(desc.body_a);
+    if (a == nullptr)
+    {
+        return fail(BodyStatus::StaleId);
+    }
+    const Body* b = desc.body_b.IsValid() ? Find(desc.body_b) : nullptr;
+    if (desc.body_b.IsValid() && b == nullptr)
+    {
+        return fail(BodyStatus::StaleId);
+    }
+    if (desc.Validate() != Validation::Ok)
+    {
+        return fail(BodyStatus::Invalid);
+    }
+    if (a->settings.type != BodyType::Dynamic && (b == nullptr || b->settings.type != BodyType::Dynamic))
+    {
+        return fail(BodyStatus::Invalid);
+    }
+    u32 index = 0;
+    u32 generation = 0;
+    JointRecord* record = joints_.Acquire(&index, &generation);
+    if (record == nullptr)
+    {
+        return fail(BodyStatus::OutOfMemory);
+    }
+    record->desc = desc;
+    if (status != nullptr)
+    {
+        *status = BodyStatus::Ok;
+    }
+    JointId id;
+    id.index = index;
+    id.generation = generation;
+    return id;
+}
+
+BodyStatus PhysicsWorld::DestroyJoint(JointId id)
+{
+    return joints_.Release(id.index, id.generation) ? BodyStatus::Ok : BodyStatus::StaleId;
+}
+
+const JointRecord* PhysicsWorld::FindJoint(JointId id) const
+{
+    return joints_.Find(id.index, id.generation);
+}
+
+BodyStatus PhysicsWorld::JointReaction(JointId id, Vec3* force, Vec3* torque) const
+{
+    const JointRecord* joint = FindJoint(id);
+    if (joint == nullptr)
+    {
+        return BodyStatus::StaleId;
+    }
+    if (force != nullptr)
+    {
+        *force = joint->reaction_force;
+    }
+    if (torque != nullptr)
+    {
+        *torque = joint->reaction_torque;
+    }
+    return BodyStatus::Ok;
+}
+
+namespace
+{
+
+// A world point in the frame of a body (the origin and axes of the body), or in the world for no body.
+Vec3 ToLocal(const Body* body, const Vec3& point)
+{
+    return body == nullptr ? point : body->orientation.Conjugate().RotateVector(point - body->position);
+}
+
+}  // namespace
+
+JointDesc PhysicsWorld::MakeBallJoint(BodyId a, BodyId b, const Vec3& world_point) const
+{
+    JointDesc desc;
+    desc.type = JointType::Ball;
+    desc.body_a = a;
+    desc.body_b = b;
+    desc.anchor_a = ToLocal(Find(a), world_point);
+    desc.anchor_b = ToLocal(b.IsValid() ? Find(b) : nullptr, world_point);
+    return desc;
+}
+
+JointDesc PhysicsWorld::MakeDistanceJoint(BodyId a, BodyId b, const Vec3& point_a, const Vec3& point_b) const
+{
+    JointDesc desc;
+    desc.type = JointType::Distance;
+    desc.body_a = a;
+    desc.body_b = b;
+    desc.anchor_a = ToLocal(Find(a), point_a);
+    desc.anchor_b = ToLocal(b.IsValid() ? Find(b) : nullptr, point_b);
+    const Vec3 d = point_b - point_a;
+    const f32 length = Sqrt(d.LengthSquared());
+    desc.length = length > 1e-6f ? length : 1e-6f;
+    desc.min_length = desc.length;
+    desc.max_length = desc.length;
+    return desc;
+}
+
+JointDesc PhysicsWorld::MakeFixedJoint(BodyId a, BodyId b, const Vec3& world_point) const
+{
+    JointDesc desc = MakeBallJoint(a, b, world_point);
+    desc.type = JointType::Fixed;
+    const Body* body_a = Find(a);
+    const Body* body_b = b.IsValid() ? Find(b) : nullptr;
+    // The frames are chosen so the joint is at rest now: the world frame is body A's, seen from each body.
+    const Quaternion qa = body_a != nullptr ? body_a->orientation : Quaternion::Identity();
+    const Quaternion qb = body_b != nullptr ? body_b->orientation : Quaternion::Identity();
+    desc.frame_a = Quaternion::Identity();
+    desc.frame_b = qb.Conjugate() * qa;
+    return desc;
 }
 
 BodyStatus PhysicsWorld::AddCollider(BodyId body_id, const Collider& collider, ColliderId* out)

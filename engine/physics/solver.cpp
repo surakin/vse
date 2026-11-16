@@ -68,6 +68,13 @@ struct ContactSolver::Constraint
     Row rows[4];
 };
 
+struct ContactSolver::JointWork
+{
+    JointRecord* record = nullptr;
+    Body* a = nullptr;
+    Body* b = nullptr;
+};
+
 namespace
 {
 
@@ -133,6 +140,257 @@ void MakeSoft(f32 hertz, f32 ratio, f32 h, f32* bias_rate, f32* mass_scale, f32*
     *bias_rate = omega / a1;
     *mass_scale = a2 * a3;
     *impulse_scale = a3;
+}
+
+// Where a joint's anchors are now: from the centres of mass, and the vector between them.
+struct JointAnchors
+{
+    Vec3 ra = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3 rb = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3 separation = Vec3(0.0f, 0.0f, 0.0f);
+};
+
+JointAnchors ComputeAnchors(const JointRecord& joint, const Body& a, const Body& b)
+{
+    const Mat3 ma = a.orientation.ToMat3();
+    const Mat3 mb = b.orientation.ToMat3();
+    JointAnchors out;
+    out.ra = ma * (joint.desc.anchor_a - a.mass.center);
+    out.rb = mb * (joint.desc.anchor_b - b.mass.center);
+    const Vec3 com_a = a.position + ma * a.mass.center;
+    const Vec3 com_b = b.position + mb * b.mass.center;
+    out.separation = (com_b + out.rb) - (com_a + out.ra);
+    return out;
+}
+
+// The inverse of a 3x3 matrix by cofactors; false (and zero) when it is singular.
+bool Invert3(const Mat3& m, Mat3* out)
+{
+    const Vec3& c0 = m.col[0];
+    const Vec3& c1 = m.col[1];
+    const Vec3& c2 = m.col[2];
+    const Vec3 r0 = c1.Cross(c2);
+    const Vec3 r1 = c2.Cross(c0);
+    const Vec3 r2 = c0.Cross(c1);
+    const f32 det = c0.Dot(r0);
+    if (Abs(det) < 1e-30f)
+    {
+        out->col[0] = Vec3(0.0f, 0.0f, 0.0f);
+        out->col[1] = Vec3(0.0f, 0.0f, 0.0f);
+        out->col[2] = Vec3(0.0f, 0.0f, 0.0f);
+        return false;
+    }
+    const f32 inv = 1.0f / det;
+    // The rows of the inverse are r0, r1, r2 over the determinant; columns are their transpose.
+    out->col[0] = Vec3(r0.x, r1.x, r2.x) * inv;
+    out->col[1] = Vec3(r0.y, r1.y, r2.y) * inv;
+    out->col[2] = Vec3(r0.z, r1.z, r2.z) * inv;
+    return true;
+}
+
+// The inverse of the matrix that turns an impulse at the anchors into the change of their relative velocity.
+Mat3 PointMassMatrix(const Body& a, const Body& b, const Vec3& ra, const Vec3& rb)
+{
+    const f32 m = InverseMassOf(a) + InverseMassOf(b);
+    Mat3 k;
+    const Vec3 axes[3] = {Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f), Vec3(0.0f, 0.0f, 1.0f)};
+    for (u32 j = 0; j < 3; ++j)
+    {
+        k.col[j] = axes[j] * m + WorldInertia(a, ra.Cross(axes[j])).Cross(ra) +
+                   WorldInertia(b, rb.Cross(axes[j])).Cross(rb);
+    }
+    Mat3 inverse;
+    Invert3(k, &inverse);
+    return inverse;
+}
+
+Mat3 AngularMassMatrix(const Body& a, const Body& b)
+{
+    Mat3 k;
+    const Vec3 axes[3] = {Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f), Vec3(0.0f, 0.0f, 1.0f)};
+    for (u32 j = 0; j < 3; ++j)
+    {
+        k.col[j] = WorldInertia(a, axes[j]) + WorldInertia(b, axes[j]);
+    }
+    Mat3 inverse;
+    Invert3(k, &inverse);
+    return inverse;
+}
+
+void ApplyAngular(Body* a, Body* b, const Vec3& impulse)
+{
+    if (a->settings.type == BodyType::Dynamic)
+    {
+        a->angular_velocity = a->angular_velocity - WorldInertia(*a, impulse);
+    }
+    if (b->settings.type == BodyType::Dynamic)
+    {
+        b->angular_velocity = b->angular_velocity + WorldInertia(*b, impulse);
+    }
+}
+
+Vec3 SafeNormal(const Vec3& v, f32* length)
+{
+    const f32 l2 = v.LengthSquared();
+    if (l2 < 1e-24f)
+    {
+        *length = 0.0f;
+        return Vec3(1.0f, 0.0f, 0.0f);
+    }
+    *length = Sqrt(l2);
+    return v * (1.0f / *length);
+}
+
+// The rotation that takes the frame of A to the frame of B, as a vector (twice the vector part, the small-angle
+// rotation vector), in the world.
+Vec3 FrameError(const JointRecord& joint, const Body& a, const Body& b)
+{
+    const Quaternion fa = a.orientation * joint.desc.frame_a;
+    const Quaternion fb = b.orientation * joint.desc.frame_b;
+    Quaternion q = fb * fa.Conjugate();
+    if (q.w < 0.0f)
+    {
+        q = Quaternion(-q.x, -q.y, -q.z, -q.w);
+    }
+    return Vec3(q.x, q.y, q.z) * 2.0f;
+}
+
+// The joint's impulses as velocity changes, before the substep's solve.
+void WarmStartJoint(JointRecord* joint, Body* a, Body* b)
+{
+    const JointAnchors anchors = ComputeAnchors(*joint, *a, *b);
+    switch (joint->desc.type)
+    {
+    case JointType::Ball: Apply(a, b, anchors.ra, anchors.rb, joint->linear_impulse); break;
+    case JointType::Fixed:
+        ApplyAngular(a, b, joint->angular_impulse);
+        Apply(a, b, anchors.ra, anchors.rb, joint->linear_impulse);
+        break;
+    case JointType::Distance:
+    {
+        f32 length;
+        const Vec3 u = SafeNormal(anchors.separation, &length);
+        Apply(a, b, anchors.ra, anchors.rb, u * (joint->axial_impulse + joint->lower_impulse - joint->upper_impulse));
+        break;
+    }
+    }
+}
+
+struct JointSoftness
+{
+    f32 bias_rate = 0.0f;
+    f32 mass_scale = 1.0f;
+    f32 impulse_scale = 0.0f;
+};
+
+// One pass of a joint's rows: `use_bias` adds the position feedback (soft), the relax pass does not.
+void SolveJoint(JointRecord* joint, Body* a, Body* b, bool use_bias, const JointSoftness& soft, f32 inv_h)
+{
+    const JointAnchors anchors = ComputeAnchors(*joint, *a, *b);
+    const Vec3& ra = anchors.ra;
+    const Vec3& rb = anchors.rb;
+    const JointDesc& desc = joint->desc;
+    f32 mass_scale = 1.0f;
+    f32 impulse_scale = 0.0f;
+    if (use_bias)
+    {
+        mass_scale = soft.mass_scale;
+        impulse_scale = soft.impulse_scale;
+    }
+    if (desc.type == JointType::Fixed)
+    {
+        // The angle rows first, then the point.
+        const Vec3 error = FrameError(*joint, *a, *b);
+        const Vec3 cdot = b->angular_velocity - a->angular_velocity;
+        const Vec3 bias = use_bias ? error * soft.bias_rate : Vec3(0.0f, 0.0f, 0.0f);
+        const Mat3 k = AngularMassMatrix(*a, *b);
+        const Vec3 impulse = (k * (cdot + bias)) * -mass_scale - joint->angular_impulse * impulse_scale;
+        joint->angular_impulse = joint->angular_impulse + impulse;
+        ApplyAngular(a, b, impulse);
+    }
+    if (desc.type == JointType::Ball || desc.type == JointType::Fixed)
+    {
+        const Vec3 cdot = VelocityAt(*b, rb) - VelocityAt(*a, ra);
+        const Vec3 bias = use_bias ? anchors.separation * soft.bias_rate : Vec3(0.0f, 0.0f, 0.0f);
+        const Mat3 k = PointMassMatrix(*a, *b, ra, rb);
+        const Vec3 impulse = (k * (cdot + bias)) * -mass_scale - joint->linear_impulse * impulse_scale;
+        joint->linear_impulse = joint->linear_impulse + impulse;
+        Apply(a, b, ra, rb, impulse);
+        return;
+    }
+    // A distance joint: a rigid or spring row along the axis, and the limits of the range.
+    f32 length;
+    const Vec3 u = SafeNormal(anchors.separation, &length);
+    const f32 axial_mass = EffectiveMass(*a, *b, ra, rb, u);
+    const auto relative_speed = [&]() { return (VelocityAt(*b, rb) - VelocityAt(*a, ra)).Dot(u); };
+    const bool has_spring = desc.hertz > 0.0f;
+    const bool rigid = !has_spring && desc.min_length == desc.max_length;
+    if (has_spring)
+    {
+        // The spring pulls toward the rest length; it is never switched off, so the relax pass keeps it.
+        f32 bias_rate, spring_mass_scale, spring_impulse_scale;
+        MakeSoft(desc.hertz, desc.damping_ratio, 1.0f / inv_h, &bias_rate, &spring_mass_scale, &spring_impulse_scale);
+        const f32 c = length - desc.length;
+        const f32 bias = bias_rate * c;
+        const f32 impulse = -spring_mass_scale * axial_mass * (relative_speed() + bias) -
+                            spring_impulse_scale * joint->axial_impulse;
+        joint->axial_impulse += impulse;
+        Apply(a, b, ra, rb, u * impulse);
+    }
+    else if (rigid)
+    {
+        const f32 c = length - desc.length;
+        const f32 bias = use_bias ? soft.bias_rate * c : 0.0f;
+        const f32 impulse = -mass_scale * axial_mass * (relative_speed() + bias) - impulse_scale * joint->axial_impulse;
+        joint->axial_impulse += impulse;
+        Apply(a, b, ra, rb, u * impulse);
+    }
+    if (desc.min_length < desc.max_length)
+    {
+        // Lower limit: the anchors may not come closer than min_length.
+        if (desc.min_length > 0.0f)
+        {
+            const f32 c = length - desc.min_length;
+            f32 bias = 0.0f;
+            f32 ms = 1.0f;
+            f32 is = 0.0f;
+            if (c > 0.0f)
+            {
+                bias = c * inv_h;
+            }
+            else if (use_bias)
+            {
+                bias = soft.bias_rate * c;
+                ms = soft.mass_scale;
+                is = soft.impulse_scale;
+            }
+            const f32 impulse = -ms * axial_mass * (relative_speed() + bias) - is * joint->lower_impulse;
+            const f32 next = Max(joint->lower_impulse + impulse, 0.0f);
+            const f32 applied = next - joint->lower_impulse;
+            joint->lower_impulse = next;
+            Apply(a, b, ra, rb, u * applied);
+        }
+        // Upper limit: the anchors may not get farther than max_length.
+        const f32 c = desc.max_length - length;
+        f32 bias = 0.0f;
+        f32 ms = 1.0f;
+        f32 is = 0.0f;
+        if (c > 0.0f)
+        {
+            bias = c * inv_h;
+        }
+        else if (use_bias)
+        {
+            bias = soft.bias_rate * c;
+            ms = soft.mass_scale;
+            is = soft.impulse_scale;
+        }
+        const f32 impulse = -ms * axial_mass * (-relative_speed() + bias) - is * joint->upper_impulse;
+        const f32 next = Max(joint->upper_impulse + impulse, 0.0f);
+        const f32 applied = next - joint->upper_impulse;
+        joint->upper_impulse = next;
+        Apply(a, b, ra, rb, u * -applied);
+    }
 }
 
 }  // namespace
@@ -264,6 +522,38 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
         ++stats_.manifolds;
         constraints.Push(c);
     }
+    // The joints, in the order of their slots. A body that is not static takes its substeps with the rest.
+    Body world_body;
+    world_body.settings.type = BodyType::Static;
+    Vector<JointWork> joints;
+    const u32 joint_slots = world->joints_.Slots();
+    for (u32 slot = 0; slot < joint_slots; ++slot)
+    {
+        JointRecord* record = world->joints_.Find(slot, world->joints_.LiveGeneration(slot));
+        if (record == nullptr)
+        {
+            continue;
+        }
+        JointWork work;
+        work.record = record;
+        work.a = world->Find(record->desc.body_a);
+        work.b = record->desc.body_b.IsValid() ? world->Find(record->desc.body_b) : &world_body;
+        if (work.a == nullptr || work.b == nullptr)
+        {
+            continue;
+        }
+        state_for(work.a);
+        if (work.b != &world_body)
+        {
+            state_for(work.b);
+        }
+        joints.Push(work);
+    }
+    stats_.joints = static_cast<u32>(joints.Size());
+    const f32 joint_hertz = Min(config.joint_hertz, 0.25f * inv_h);
+    JointSoftness joint_soft;
+    MakeSoft(joint_hertz, config.joint_damping_ratio, h, &joint_soft.bias_rate, &joint_soft.mass_scale,
+             &joint_soft.impulse_scale);
     // The cached impulses of the same points start the rows.
     for (usize ci = 0; ci < constraints.Size(); ++ci)
     {
@@ -361,8 +651,19 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
             }
         }
     };
+    const auto solve_joints = [&](bool use_bias)
+    {
+        for (usize ji = 0; ji < joints.Size(); ++ji)
+        {
+            SolveJoint(joints[ji].record, joints[ji].a, joints[ji].b, use_bias, joint_soft, inv_h);
+        }
+    };
     const auto warm_start = [&]()
     {
+        for (usize ji = 0; ji < joints.Size(); ++ji)
+        {
+            WarmStartJoint(joints[ji].record, joints[ji].a, joints[ji].b);
+        }
         for (usize ci = 0; ci < constraints.Size(); ++ci)
         {
             Constraint& c = constraints[ci];
@@ -387,6 +688,7 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
         warm_start();
         for (u32 it = 0; it < config.iterations; ++it)
         {
+            solve_joints(true);
             solve(true, ((sub + it) & 1u) != 0);
         }
         for (usize i = 0; i < states.Size(); ++i)
@@ -403,6 +705,7 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
         }
         for (u32 it = 0; it < config.iterations; ++it)
         {
+            solve_joints(false);
             solve(false, ((sub + it) & 1u) != 0);
         }
     }
@@ -429,6 +732,26 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
             lambda = next - row.normal_impulse;
             row.normal_impulse = next;
             Apply(a, b, row.ra, row.rb, c.normal * lambda);
+        }
+    }
+    // What each joint carried in the last substep, and the ones that carried too much.
+    for (usize ji = 0; ji < joints.Size(); ++ji)
+    {
+        JointRecord* joint = joints[ji].record;
+        const JointAnchors anchors = ComputeAnchors(*joint, *joints[ji].a, *joints[ji].b);
+        Vec3 force = joint->linear_impulse * inv_h;
+        if (joint->desc.type == JointType::Distance)
+        {
+            f32 length;
+            const Vec3 u = SafeNormal(anchors.separation, &length);
+            force = u * ((joint->axial_impulse + joint->lower_impulse - joint->upper_impulse) * inv_h);
+        }
+        joint->reaction_force = force;
+        joint->reaction_torque = joint->angular_impulse * inv_h;
+        if ((joint->desc.break_force > 0.0f && force.Length() > joint->desc.break_force) ||
+            (joint->desc.break_torque > 0.0f && joint->reaction_torque.Length() > joint->desc.break_torque))
+        {
+            joint->broken = true;
         }
     }
     for (usize i = 0; i < states.Size(); ++i)

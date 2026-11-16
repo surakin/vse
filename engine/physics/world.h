@@ -11,6 +11,7 @@
 #include "physics/components.h"
 #include "physics/hull.h"
 #include "physics/ids.h"
+#include "physics/joint.h"
 #include "physics/mass.h"
 #include "physics/slot_pool.h"
 #include "physics/solver.h"
@@ -158,6 +159,10 @@ struct StepConfig
     /// A body is not allowed to move faster than this, in metres per second (it keeps its direction); it stops a body
     /// squeezed between planes from exploding.
     f32 max_velocity = 100.0f;
+    /// The stiffness of a joint's constraint as a spring, in hertz (capped at a quarter of the substep rate).
+    f32 joint_hertz = 60.0f;
+    /// The damping ratio of that spring.
+    f32 joint_damping_ratio = 2.0f;
 };
 
 /// What stepping did.
@@ -173,6 +178,8 @@ struct StepStats
     u64 dropped_updates = 0;
     /// The seconds dropped in all.
     f64 dropped_seconds = 0.0;
+    /// Joints removed because they carried more than their break force or torque.
+    u64 joints_broken = 0;
     /// Steps run while the process flushed denormals (the step's results are then not portable): zero in a correct
     /// build.
     u64 denormal_mode_steps = 0;
@@ -366,6 +373,74 @@ public:
     /// - Fails: as the return says.
     BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3& point);
 
+    /// Makes a joint between two bodies (or a body and the world).
+    ///
+    /// - Param desc: the joint; `desc.Validate()` must be `Ok`, body A must exist and be a body (not static) and so
+    /// must body B unless it is null (the world); at least one of them must be dynamic.
+    /// - Param status: receives why it failed (may be null).
+    /// - Returns: the id, or the null id when refused.
+    /// - Ownership: the world owns the joint; destroying either body destroys it.
+    /// - Fails: the null id, with `status` (`StaleId` for a body that is gone, `Invalid` for refused numbers or two
+    /// bodies that cannot move).
+    JointId CreateJoint(const JointDesc& desc, BodyStatus* status = nullptr);
+
+    /// Destroys a joint.
+    ///
+    /// - Param id: the joint.
+    /// - Returns: `StaleId` if there is no such joint.
+    /// - Fails: as the return says.
+    BodyStatus DestroyJoint(JointId id);
+
+    /// Finds a joint.
+    ///
+    /// - Param id: the joint.
+    /// - Returns: the record, or null for a stale id.
+    /// - Ownership: owned by the world; valid until the joint is destroyed or the step removes it.
+    /// - Fails: a stale id returns null.
+    const JointRecord* FindJoint(JointId id) const;
+
+    /// The number of joints.
+    /// - Fails: never.
+    u32 JointCount() const { return joints_.Live(); }
+
+    /// The force and torque a joint carried in the last step.
+    ///
+    /// - Param id: the joint.
+    /// - Param force: receives the force on body B in newtons (may be null).
+    /// - Param torque: receives the torque on body B in newton metres (may be null).
+    /// - Ownership: the outputs are the caller's; nothing is kept.
+    /// - Returns: `StaleId` if there is no such joint.
+    /// - Fails: as the return says.
+    BodyStatus JointReaction(JointId id, Vec3* force, Vec3* torque) const;
+
+    /// Describes a ball joint at a world point: the anchors are the point seen from each body.
+    ///
+    /// - Param a: the first body.
+    /// - Param b: the second body, or null for the world.
+    /// - Param world_point: where the joint is.
+    /// - Returns: the description (unchanged defaults when a body is stale).
+    /// - Fails: stale bodies leave the anchors at zero.
+    JointDesc MakeBallJoint(BodyId a, BodyId b, const Vec3& world_point) const;
+
+    /// Describes a rigid distance joint between two world points on the bodies, with the length they have now.
+    ///
+    /// - Param a: the first body.
+    /// - Param b: the second body, or null for the world.
+    /// - Param point_a: the anchor on body A, in the world.
+    /// - Param point_b: the anchor on body B, in the world.
+    /// - Returns: the description.
+    /// - Fails: stale bodies leave the anchors at zero.
+    JointDesc MakeDistanceJoint(BodyId a, BodyId b, const Vec3& point_a, const Vec3& point_b) const;
+
+    /// Describes a fixed joint at a world point that keeps the bodies' orientations relative to each other as they are.
+    ///
+    /// - Param a: the first body.
+    /// - Param b: the second body, or null for the world.
+    /// - Param world_point: where the joint is.
+    /// - Returns: the description.
+    /// - Fails: stale bodies leave the anchors at zero.
+    JointDesc MakeFixedJoint(BodyId a, BodyId b, const Vec3& world_point) const;
+
     /// Moves a body to a place without a step between.
     ///
     /// The orientation is set, the velocity is kept, and the teleport count grows so contact caches of the body are
@@ -550,6 +625,7 @@ private:
     f64 accumulator_ = 0.0;
     SlotPool<Body> bodies_;
     SlotPool<ColliderRecord> colliders_;
+    SlotPool<JointRecord> joints_;
     HullLibrary hulls_;
     MeshLibrary meshes_;
     CompoundLibrary compounds_;

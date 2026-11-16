@@ -220,3 +220,26 @@ that touch. A body that touches nothing takes one plain step (so free fall is th
 
 A resting contact is a stiff spring, so a stack sags a little under its weight: 10 boxes of 1 m settle 3.5 cm at the top
 (`stability_test.cpp` measures the sideways drift, the sag and the speed after 3600 steps).
+
+## Joints
+
+A joint ties two bodies (or a body and the world) together: `PhysicsWorld::CreateJoint(desc)` with a `JointDesc`
+(`engine/physics/joint.h`). `MakeBallJoint`, `MakeDistanceJoint` and `MakeFixedJoint` fill the anchors and frames from the
+bodies' poses at creation, so the joint starts at rest; pass a null `BodyId` for the world.
+
+- **Ball:** the two anchors stay together, three rows, the bodies turn freely about the point.
+- **Distance:** the anchors keep `length` apart (one rigid row), or pull toward it as a spring (`hertz`, `damping_ratio`), or
+  stay inside `[min_length, max_length]` like a rope (one-sided limit rows).
+- **Fixed:** the point rows of a ball joint plus three angle rows that keep the frames' relative orientation.
+- **Solving.** Joints are solved in the same substeps as the contacts, before them, in slot order, as soft constraints
+  (`physics.joint_hertz` 60, damping ratio 2 in `StepConfig`) with a relax pass; their impulses warm start the next
+  substep and step. A body with a joint takes its substeps in the solver.
+- **Reaction:** `JointReaction` returns the force and torque the joint carried in the last step (the impulse of the last
+  substep over its length).
+- **Breaking:** a joint whose force or torque passes `break_force` or `break_torque` (0 is never) is removed at the end of
+  the step; `StepStats::joints_broken` counts them.
+- **Collision:** the two bodies of a joint do not collide with each other unless `collide_connected` is set. Destroying a
+  body destroys its joints.
+
+A pendulum on a ball joint keeps the period of the physical pendulum within 2 % and its energy within 2 % of the swing's
+over 10 s (the soft constraint is slightly dissipative).

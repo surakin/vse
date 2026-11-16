@@ -42,6 +42,10 @@ struct SolverConfig
     Vec3 gravity = Vec3(0.0f, -9.81f, 0.0f);
     /// The speed limit of a body, in metres per second.
     f32 max_velocity = 100.0f;
+    /// The stiffness of a joint's constraint in hertz (capped at a quarter of the substep rate).
+    f32 joint_hertz = 60.0f;
+    /// The damping ratio of the joint spring.
+    f32 joint_damping_ratio = 2.0f;
 };
 
 /// One manifold to solve: the two colliders and bodies and the contact, with the combined friction and restitution in
@@ -69,6 +73,8 @@ struct SolverStats
 {
     /// Manifolds solved.
     u32 manifolds = 0;
+    /// Joints solved.
+    u32 joints = 0;
     /// Contact points solved.
     u32 points = 0;
     /// Points that started from a cached impulse.
@@ -92,10 +98,10 @@ struct SolverStats
 class ContactSolver
 {
 public:
-    /// Solves the contacts and integrates the bodies that touch (each is marked `integrated`): the rows are built from
-    /// the manifolds once, then every substep integrates the velocities, applies the cached impulses, solves with the
-    /// position feedback of a soft constraint, moves the bodies and solves again without it (the relax pass); a last
-    /// pass applies restitution. The cache is replaced by this step's impulses.
+    /// Solves the contacts and the joints of the world and integrates the bodies that touch (each is marked
+    /// `integrated`): the rows are built from the manifolds once, then every substep integrates the velocities, applies
+    /// the cached impulses, solves with the position feedback of a soft constraint, moves the bodies and solves again
+    /// without it (the relax pass); a last pass applies restitution. The cache is replaced by this step's impulses.
     ///
     /// - Param world: the world whose bodies are changed.
     /// - Param inputs: the manifolds, in any order (they are solved in order of their collider ids).
@@ -140,6 +146,7 @@ private:
     struct Row;
     struct Constraint;
     struct BodyState;
+    struct JointWork;
 
     Vector<CacheEntry> cache_;
     Vector<CacheEntry> next_cache_;
