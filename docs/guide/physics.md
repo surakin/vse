@@ -67,3 +67,32 @@ override, damping, gravity scale), `Velocity` and `Collider` (shape, offset and 
 material holds friction, restitution, density and how two values combine (`CombineRule`); for a pair the rule with the larger number is used, so the
 order of the two colliders never matters. The material is inline in the collider for now: a minted `PMAT` asset is deferred (see `KNOWN-ISSUES.md`).
 Convex hulls, triangle meshes and compound shapes are new `ShapeKind` values on Days 381-383.
+
+## The world: bodies, colliders and ids
+
+`physics::PhysicsWorld` holds the bodies and colliders of a simulation. It is an ordinary value (keep it by itself or as an ECS resource with
+`ecs::World::SetResource`). A `BodyId` is a slot index and a generation: a destroyed body's id is **stale** and every call refuses it (`BodyStatus::StaleId`)
+instead of reaching the body that took the slot. Slots are reused last-freed-first, so two worlds built by the same calls hand out the same ids, which the
+state hash relies on. Bodies and colliders live in chunks of 256 that never move: a `Body*` from `Find` stays valid until that body is destroyed, and
+100,000 destroy-and-create cycles do not grow the world (`Stats().body_slots`).
+
+`CreateBody(BodyDesc)` makes a body; `AddCollider` gives it its shape and recomputes the mass (a body takes one collider until compound bodies on Day 383).
+A body's origin and its centre of mass differ when the collider is offset: `WorldCenter(id)` is the centre, and impulses and forces act about it.
+`SetSettings` changes the type at any time (a body made static loses its velocity); `ApplyImpulse` changes the velocity at once, `ApplyForce` is kept until
+the step takes it; `SetTransform` teleports the body and counts it, so contact caches of the body know to drop their points. Bad input (a NaN, a quaternion
+that is not a unit, a refused component) is returned as `BodyStatus::Invalid`, never aborted on.
+
+### From ECS entities: `SyncBodies`
+
+```cpp
+ecs::World world;
+physics::PhysicsWorld bodies;
+world.Create(physics::RigidBody(), collider, ecs::LocalTransform());
+physics::SyncReport report = physics::SyncBodies(world, bodies);  // report.created == 1
+```
+
+An entity with `RigidBody`, `Collider` and `LocalTransform` and no `Parent` gets a body at its transform and `Velocity`, and a `BodyLink` component that
+names it. Each call destroys the bodies of entities that died or lost a component, updates the bodies whose `RigidBody` or `Collider` changed, and creates
+the missing ones **in entity order** (index, then generation), not chunk order, so two worlds holding the same entities in different archetypes get the same
+body ids. An entity with invalid components is counted in `refused` and skipped. The call changes the ECS world's structure, so it runs between iterations.
+Writing the simulated transforms back to `LocalTransform` is Day 378.

@@ -5,14 +5,14 @@
 #include "math/math_util.h"
 #include "physics/components.h"
 #include "physics/shapes.h"
+#include "test_values.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::physics;
+using engine_placeholder::physics::testing::kNaN;
 
 namespace
 {
-
-constexpr f32 kNaN = __builtin_nanf("");
 
 bool Near(f32 a, f32 b, f32 relative)
 {

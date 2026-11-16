@@ -8,6 +8,8 @@ set(PHYSICS_SOURCES
   shapes.cpp  # Day 375
   mass.cpp  # Day 375
   components.cpp  # Day 375
+  world.cpp  # Day 376
+  sync.cpp  # Day 376
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

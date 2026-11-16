@@ -1,17 +1,13 @@
 #include "physics/components.h"
 
 #include "lang/scalar.h"
+#include "physics/check.h"
 
 namespace engine_placeholder::physics
 {
 
 namespace
 {
-
-bool FiniteV(const Vec3& v)
-{
-    return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
-}
 
 bool KnownRule(CombineRule rule)
 {
@@ -69,7 +65,7 @@ Validation RigidBody::Validate() const
 
 Validation Velocity::Validate() const
 {
-    return FiniteV(linear) && FiniteV(angular) ? Validation::Ok : Validation::NotFinite;
+    return FiniteVec3(linear) && FiniteVec3(angular) ? Validation::Ok : Validation::NotFinite;
 }
 
 Validation Collider::Validate() const
@@ -84,7 +80,7 @@ Validation Collider::Validate() const
     {
         return material_result;
     }
-    if (!FiniteV(offset) || !IsFinite(rotation.x) || !IsFinite(rotation.y) || !IsFinite(rotation.z) ||
+    if (!FiniteVec3(offset) || !IsFinite(rotation.x) || !IsFinite(rotation.y) || !IsFinite(rotation.z) ||
         !IsFinite(rotation.w))
     {
         return Validation::NotFinite;
