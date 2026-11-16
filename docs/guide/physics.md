@@ -302,3 +302,16 @@ next step's speculative contact removes the approach. A body already within the 
 solver. The sweep uses the same `Collide` as the step, so every shape pair works, a mesh included. Only linear motion is swept (the
 orientation is blended), dynamic targets are not swept, and a body is clamped once per step. `StepStats::ccd_queries` and `ccd_hits`
 count the work; both stay zero when no body is continuous.
+
+## Queries
+
+`physics/query.h` has free functions over a `const PhysicsWorld&` that read the world as the last step left it: `RayCast` (the closest hit
+with collider, body, point, normal, distance and, for a mesh, the triangle), `RayCastAll` (every collider the ray meets, nearest first,
+ties by collider key), `ShapeCast` (sweeps a sphere, box, capsule or hull and returns the first collider it touches, by the same sampling
+and bisection as continuous collision), `Overlap` (the colliders a shape touches, sorted by id key) and `ClosestPoint` (the nearest
+surface point of any collider within a distance). A `PhysicsQueryFilter` selects colliders by layer mask, group and mask words, triggers
+(`include_triggers`, off by default), the body class (`include_static`, `include_kinematic`, `include_dynamic`) and an ignore list of bodies.
+A ray that starts inside a solid collider hits it at distance zero with the normal against the ray. The exact ray tests are the quadratic
+for a sphere, slabs for a box, the cylinder and the two end spheres for a capsule, the face planes for a hull, the box query and
+Moller-Trumbore for a mesh and the children for a compound. The queries scan the colliders and cull by their boxes (no tree yet), change
+nothing and may run from several threads while no step or change runs; the results are sorted, so they do not depend on the thread.

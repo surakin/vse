@@ -3972,6 +3972,27 @@ physics::PrincipalAxes(const Mat3&,Vec3*,Mat3*)	function	physics	physics-princip
 physics::InertiaAbout(const MassProperties&,const Vec3&)	function	physics	physics-inertiaabout-const-massproperties-amp-const-vec3-amp	physics.md	engine/physics/mass.h:95
 physics::RegisterPhysicsSettings(settings::Registry*)	function	physics	physics-registerphysicssettings-settings-registry-star	physics.md	engine/physics/physics_settings.h:22
 physics::StepConfigFromSettings(const settings::Registry&)	function	physics	physics-stepconfigfromsettings-const-settings-registry-amp	physics.md	engine/physics/physics_settings.h:30
+physics::PhysicsQueryFilter	struct	physics	physics-physicsqueryfilter	physics.md	engine/physics/query.h:21
+physics::PhysicsQueryFilter::layer_mask	variable	physics	physics-physicsqueryfilter-layer-mask	physics.md	engine/physics/query.h:24
+physics::PhysicsQueryFilter::group	variable	physics	physics-physicsqueryfilter-group	physics.md	engine/physics/query.h:26
+physics::PhysicsQueryFilter::mask	variable	physics	physics-physicsqueryfilter-mask	physics.md	engine/physics/query.h:28
+physics::PhysicsQueryFilter::include_triggers	variable	physics	physics-physicsqueryfilter-include-triggers	physics.md	engine/physics/query.h:30
+physics::PhysicsQueryFilter::include_static	variable	physics	physics-physicsqueryfilter-include-static	physics.md	engine/physics/query.h:32
+physics::PhysicsQueryFilter::include_kinematic	variable	physics	physics-physicsqueryfilter-include-kinematic	physics.md	engine/physics/query.h:34
+physics::PhysicsQueryFilter::include_dynamic	variable	physics	physics-physicsqueryfilter-include-dynamic	physics.md	engine/physics/query.h:36
+physics::PhysicsQueryFilter::ignore	variable	physics	physics-physicsqueryfilter-ignore	physics.md	engine/physics/query.h:38
+physics::PhysicsHit	struct	physics	physics-physicshit	physics.md	engine/physics/query.h:44
+physics::PhysicsHit::collider	variable	physics	physics-physicshit-collider	physics.md	engine/physics/query.h:47
+physics::PhysicsHit::body	variable	physics	physics-physicshit-body	physics.md	engine/physics/query.h:49
+physics::PhysicsHit::point	variable	physics	physics-physicshit-point	physics.md	engine/physics/query.h:51
+physics::PhysicsHit::normal	variable	physics	physics-physicshit-normal	physics.md	engine/physics/query.h:53
+physics::PhysicsHit::distance	variable	physics	physics-physicshit-distance	physics.md	engine/physics/query.h:55
+physics::PhysicsHit::triangle	variable	physics	physics-physicshit-triangle	physics.md	engine/physics/query.h:57
+physics::RayCast(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-raycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:75
+physics::RayCastAll(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,Vector<PhysicsHit>*)	function	physics	physics-raycastall-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-vector-lt-physicshit-gt-star	physics.md	engine/physics/query.h:90
+physics::ShapeCast(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-shapecast-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:110
+physics::Overlap(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const PhysicsQueryFilter&,Vector<ColliderId>*)	function	physics	physics-overlap-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-physicsqueryfilter-amp-vector-lt-colliderid-gt-star	physics.md	engine/physics/query.h:125
+physics::ClosestPoint(const PhysicsWorld&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-closestpoint-const-physicsworld-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:140
 physics::ShapeKind	enum	physics	physics-shapekind	physics.md	engine/physics/shapes.h:18
 physics::ShapeKind::Sphere	enumerator	physics	physics-shapekind-sphere	physics.md	engine/physics/shapes.h:20
 physics::ShapeKind::Box	enumerator	physics	physics-shapekind-box	physics.md	engine/physics/shapes.h:21
