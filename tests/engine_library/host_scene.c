@@ -1,4 +1,5 @@
-/* Phase 24 Day 359: a C program that owns an X11 window embeds the engine, adds a mesh, a material and a texture from
+/* Phase 24 Day 359: a C program that owns a window (host_window.h: X11, or from Day 370 a Cocoa NSView drawn with
+   Metal, against the same golden image) embeds the engine, adds a mesh, a material and a texture from
    memory, puts an entity with a mesh reference in a world, binds the world to its surface and has the engine draw it.
    It checks the frame against a golden image (the rule of the spec: no channel off by more than 4, at most 0.5 % of the
    values off by more than 1), a reference that does not resolve (counted, draws nothing), a world destroyed under the
@@ -12,7 +13,7 @@
 
 #include <unistd.h>
 
-#include <X11/Xlib.h>
+#include "host_window.h"
 
 #include "engine/engine_c.h"
 
@@ -463,8 +464,8 @@ static void PlaceAt(engine_handle world, uint64_t entity, float x, float y, floa
 
 int main(void)
 {
-    Display* display;
-    Window window;
+    host_window* window;
+    const char* why = NULL;
     engine_create_info create;
     engine_handle engine;
     engine_handle world;
@@ -491,10 +492,9 @@ int main(void)
         printf("host_scene: engine_get_api failed\n");
         return 2;
     }
-    display = XOpenDisplay(NULL);
-    if (display == NULL)
+    if (!host_windows_begin(&why))
     {
-        printf("host_scene: skipped: no X display\n");
+        printf("host_scene: skipped: %s\n", why);
         return 0;
     }
     memset(&create, 0, sizeof(create));
@@ -505,30 +505,32 @@ int main(void)
     memset(&about, 0, sizeof(about));
     about.struct_size = sizeof(about);
     CHECK_STATUS(g_api->get_info(engine, &about), ENGINE_OK);
-    if ((about.caps & ENGINE_CAP_SURFACE_X11) == 0 || (about.caps & ENGINE_CAP_WORLD_ON_SURFACE) == 0)
+    if ((about.caps & host_window_surface_cap()) == 0 || (about.caps & ENGINE_CAP_WORLD_ON_SURFACE) == 0)
     {
-        printf("host_scene: skipped: the library has no X11 surface or world-on-surface support\n");
+        printf(
+            "host_scene: skipped: the library has no surface of this platform's windows or no world-on-surface support\n");
         CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
-        XCloseDisplay(display);
+        host_windows_end();
         return 0;
     }
-    window = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
-    XMapWindow(display, window);
-    XSync(display, False);
+    window = host_window_open(WIDTH, HEIGHT);
+    if (window == NULL)
+    {
+        printf("host_scene: no window\n");
+        CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
+        host_windows_end();
+        return 1;
+    }
     memset(&info, 0, sizeof(info));
     info.struct_size = sizeof(info);
-    info.kind = ENGINE_SURFACE_X11;
-    info.width = WIDTH;
-    info.height = HEIGHT;
-    info.scale = 1.0f;
-    info.display = display;
-    info.window_id = (uint64_t)window;
+    host_window_describe(window, &info);
     memset(&surface, 0, sizeof(surface));
     if (g_api->surface_create(engine, &info, &surface) != ENGINE_OK)
     {
         printf("host_scene: skipped: no device can present to this window\n");
         CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
-        XCloseDisplay(display);
+        host_window_close(window);
+        host_windows_end();
         return 0;
     }
     CHECK_STATUS(g_api->surface_set_background(surface, background), ENGINE_OK);
@@ -941,11 +943,9 @@ int main(void)
 
     /* a second surface on the same window size shows the same world through its own scene */
     {
-        Window other = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
+        host_window* other = host_window_open(WIDTH, HEIGHT);
         engine_surface_info other_info = info;
-        XMapWindow(display, other);
-        XSync(display, False);
-        other_info.window_id = (uint64_t)other;
+        host_window_describe(other, &other_info);
         memset(&second, 0, sizeof(second));
         CHECK_STATUS(g_api->surface_create(engine, &other_info, &second), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_background(second, background), ENGINE_OK);
@@ -967,7 +967,7 @@ int main(void)
             CHECK(Checksum(&pixels) == first_picture); /* the first surface still looks through the default camera */
         }
         CHECK_STATUS(g_api->surface_destroy(second), ENGINE_OK);
-        XDestroyWindow(display, other);
+        host_window_close(other);
     }
 
     /* Day 363: skeletons, clips, cross-fades, joints and attachments */
@@ -1300,8 +1300,8 @@ int main(void)
         engine_label label;
         unsigned char solid[4 * 4 * 4];
         unsigned long long before_picture;
-        Window fresh;
-        Window other;
+        host_window* fresh;
+        host_window* other;
         engine_surface_info fresh_info = info;
         engine_surface_state first_state;
         engine_surface_state second_state;
@@ -1347,10 +1347,8 @@ int main(void)
         CHECK_STATUS(SurfaceState(surface, &first_state), ENGINE_OK);
         CHECK(first_state.labels_drawn == 1 && first_state.textures_uploaded >= 1);
         /* rebind to a new window of the same size: the same picture, nothing recreated by the host */
-        fresh = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
-        XMapWindow(display, fresh);
-        XSync(display, False);
-        fresh_info.window_id = (uint64_t)fresh;
+        fresh = host_window_open(WIDTH, HEIGHT);
+        host_window_describe(fresh, &fresh_info);
         CHECK_STATUS(g_api->surface_rebind(surface, &fresh_info), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         CHECK(Checksum(&pixels) == before_picture);
@@ -1358,10 +1356,8 @@ int main(void)
         CHECK(first_state.labels_drawn == 1 && first_state.world_status == ENGINE_OK &&
               first_state.textures_uploaded >= 1);
         /* a second surface shows the same texture: it uploads its own copy, and the first keeps drawing */
-        other = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
-        XMapWindow(display, other);
-        XSync(display, False);
-        fresh_info.window_id = (uint64_t)other;
+        other = host_window_open(WIDTH, HEIGHT);
+        host_window_describe(other, &fresh_info);
         memset(&other_surface, 0, sizeof(other_surface));
         CHECK_STATUS(g_api->surface_create(engine, &fresh_info, &other_surface), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_background(other_surface, background), ENGINE_OK);
@@ -1374,7 +1370,7 @@ int main(void)
         CHECK_STATUS(g_api->surface_destroy(other_surface), ENGINE_OK);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         CHECK(Checksum(&pixels) == before_picture);
-        XDestroyWindow(display, other);
+        host_window_close(other);
         /* a seeded random sequence: entities with labels and textures are created and destroyed, textures go before and
            after the entities that name them, worlds are rebound; every frame answers a status */
         {
@@ -1457,7 +1453,7 @@ int main(void)
         CHECK_STATUS(g_api->texture_destroy(tex), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
         CHECK_STATUS(g_api->surface_rebind(surface, &info), ENGINE_OK); /* back on the first window */
-        XDestroyWindow(display, fresh);
+        host_window_close(fresh);
         free(font.data);
     }
 
@@ -1476,8 +1472,8 @@ int main(void)
     engine_buffer_release(&pixels.data);
     CHECK_STATUS(g_api->surface_destroy(surface), ENGINE_OK);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
-    XDestroyWindow(display, window);
-    XCloseDisplay(display);
+    host_window_close(window);
+    host_windows_end();
     free(texture.data);
     free(material.data);
     free(mesh.data);

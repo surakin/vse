@@ -14,11 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "unity/x11_enable.h"
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-
 #include "host_os.h"
+#include "host_window.h"
 #include "engine/engine_c.h"
 
 #define WIDTH 320u
@@ -182,9 +179,9 @@ static int Frame(engine_handle engine, engine_handle surface, engine_pixels* pix
 
 int main(int argc, char** argv)
 {
-    Display* display;
-    Window window;
-    Window other;
+    host_window* window;
+    host_window* other;
+    const char* why = NULL;
     engine_create_info create;
     engine_handle engine;
     engine_handle world;
@@ -209,6 +206,7 @@ int main(int argc, char** argv)
     float eye[3] = {0.0f, 1.6f, 6.0f};
     int frames_limit = -1;
     int frame_count = 0;
+    float eye_before_key = 0.0f;
     int running = 1;
     int keys[4] = {0, 0, 0, 0};
     int last_x = -1;
@@ -220,10 +218,9 @@ int main(int argc, char** argv)
             frames_limit = atoi(argv[i + 1]);
         }
     }
-    display = XOpenDisplay(NULL);
-    if (display == NULL)
+    if (!host_windows_begin(&why))
     {
-        printf("walk_around: skipped: no display\n");
+        printf("walk_around: skipped: %s\n", why);
         return 0;
     }
     if (engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &g_api) != ENGINE_OK)
@@ -238,29 +235,31 @@ int main(int argc, char** argv)
     memset(&about, 0, sizeof(about));
     about.struct_size = sizeof(about);
     g_api->get_info(engine, &about);
-    if ((about.caps & ENGINE_CAP_SURFACE_X11) == 0 || (about.caps & ENGINE_CAP_WORLD_ON_SURFACE) == 0)
+    if ((about.caps & host_window_surface_cap()) == 0 || (about.caps & ENGINE_CAP_WORLD_ON_SURFACE) == 0)
     {
-        printf("walk_around: skipped: this build draws no world into an X11 window\n");
+        printf("walk_around: skipped: this build draws no world into this platform's windows\n");
         g_api->destroy(engine);
+        host_windows_end();
         return 0;
     }
-    window = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
-    XSelectInput(display, window, KeyPressMask | KeyReleaseMask | PointerMotionMask);
-    XMapWindow(display, window);
-    XSync(display, False);
+    window = host_window_open(WIDTH, HEIGHT);
+    if (window == NULL)
+    {
+        printf("walk_around: no window\n");
+        g_api->destroy(engine);
+        host_windows_end();
+        return 1;
+    }
     memset(&info, 0, sizeof(info));
     info.struct_size = sizeof(info);
-    info.kind = ENGINE_SURFACE_X11;
-    info.width = WIDTH;
-    info.height = HEIGHT;
-    info.scale = 1.0f;
-    info.display = display;
-    info.window_id = (uint64_t)window;
+    host_window_describe(window, &info);
     memset(&surface, 0, sizeof(surface));
     if (g_api->surface_create(engine, &info, &surface) != ENGINE_OK)
     {
         printf("walk_around: skipped: no device can present to this window\n");
         g_api->destroy(engine);
+        host_window_close(window);
+        host_windows_end();
         return 0;
     }
 
@@ -379,27 +378,25 @@ int main(int argc, char** argv)
         const float sy = sinf(yaw * 0.5f);
         const float cx = cosf(pitch * 0.5f);
         const float sx = sinf(pitch * 0.5f);
-        while (XPending(display) > 0)
+        host_window_event event;
+        while (host_window_poll(window, &event))
         {
-            XEvent event;
-            XNextEvent(display, &event);
-            if (event.type == KeyPress || event.type == KeyRelease)
+            if (event.type == HOST_EVENT_KEY)
             {
-                const KeySym key = XLookupKeysym(&event.xkey, 0);
-                const int down = event.type == KeyPress;
-                keys[0] = key == XK_w ? down : keys[0];
-                keys[1] = key == XK_s ? down : keys[1];
-                keys[2] = key == XK_a ? down : keys[2];
-                keys[3] = key == XK_d ? down : keys[3];
-                running = running && !(down && key == XK_Escape);
+                keys[0] = event.key == HOST_KEY_W ? event.down : keys[0];
+                keys[1] = event.key == HOST_KEY_S ? event.down : keys[1];
+                keys[2] = event.key == HOST_KEY_A ? event.down : keys[2];
+                keys[3] = event.key == HOST_KEY_D ? event.down : keys[3];
+                running = running && !(event.down && event.key == HOST_KEY_ESCAPE);
             }
-            else if (event.type == MotionNotify)
+            else if (event.type == HOST_EVENT_MOTION &&
+                     frames_limit < 0) /* a test ignores the pointer: its key check needs yaw 0 */
             {
                 if (last_x >= 0)
                 {
-                    yaw -= (float)(event.xmotion.x - last_x) * 0.005f;
+                    yaw -= (float)(event.x - last_x) * 0.005f;
                 }
-                last_x = event.xmotion.x;
+                last_x = event.x;
             }
         }
         forward[0] = -sinf(yaw);
@@ -429,6 +426,26 @@ int main(int argc, char** argv)
         {
             host_sleep_ms(16);
         }
+        else if (frame_count == 5 || frame_count == 15)
+        {
+            /* the test's key: W held from frame 5 to frame 15, through the window system's own queue, as a keyboard
+             * sends it (Day 370) */
+            CHECK(host_window_post_key(window, HOST_KEY_W, frame_count == 5) == 1);
+            if (frame_count == 5)
+            {
+                eye_before_key = eye[2];
+            }
+        }
+    }
+    if (frames_limit > 15) /* the release posted after frame 15 is read by the next frame's poll */
+    {
+        /* the forwarded key moved the camera forward (-z at yaw 0) by about 0.08 per frame it was held */
+        if (!(eye[2] < eye_before_key - 0.3f && keys[0] == 0))
+        {
+            printf("walk_around: the W key did not move the camera (z %.2f before, %.2f after, W %s)\n", eye_before_key,
+                   eye[2], keys[0] ? "still down" : "up");
+            ++g_failures;
+        }
     }
 
     /* 4. Stop the painters; the picture must come back, identical, on a new window. */
@@ -449,17 +466,18 @@ int main(int argc, char** argv)
         CHECK(state.entities_unresolved == 0 && state.objects_drawn >= 6);
         CHECK(state.labels_drawn >= 1 && state.textures_uploaded >= SCREENS);
         engine_buffer_release(&pixels.data);
-        other = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
-        XMapWindow(display, other);
-        XSync(display, False);
-        info.window_id = (uint64_t)other;
+        other = host_window_open(WIDTH, HEIGHT);
+        host_window_describe(other, &info);
         CHECK_STATUS(g_api->surface_rebind(surface, &info), ENGINE_OK);
         CHECK(Frame(engine, surface, &pixels, 0.0));
         CHECK(Checksum(&pixels) == before);
         engine_buffer_release(&pixels.data);
         CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
         CHECK(state.world_status == ENGINE_OK && state.entities_unresolved == 0);
-        XDestroyWindow(display, other);
+        host_window_describe(window, &info);
+        CHECK_STATUS(g_api->surface_rebind(surface, &info),
+                     ENGINE_OK); /* back on the first window before the other goes */
+        host_window_close(other);
     }
     for (i = 0; i < SCREENS; ++i)
     {
@@ -468,8 +486,8 @@ int main(int argc, char** argv)
     CHECK_STATUS(g_api->surface_destroy(surface), ENGINE_OK);
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
-    XDestroyWindow(display, window);
-    XCloseDisplay(display);
+    host_window_close(window);
+    host_windows_end();
     if (g_failures != 0)
     {
         printf("walk_around: %d checks failed\n", g_failures);
@@ -478,5 +496,3 @@ int main(int argc, char** argv)
     printf("walk_around: ok\n");
     return 0;
 }
-
-#include "unity/x11_disable.h"
