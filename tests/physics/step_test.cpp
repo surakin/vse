@@ -183,6 +183,9 @@ TEST_CASE("Update: the rate and the cap come from the config, which is checked",
     bad.max_substeps = 0;
     CHECK(world.SetStepConfig(bad) == BodyStatus::Invalid);
     bad = config;
+    bad.contact_margin = -0.1f;
+    CHECK(world.SetStepConfig(bad) == BodyStatus::Invalid);
+    bad = config;
     bad.gravity.y = testing::kNaN;
     CHECK(world.SetStepConfig(bad) == BodyStatus::Invalid);
     CHECK(world.GetStepConfig().step_hz == 120.0f);
@@ -290,6 +293,7 @@ TEST_CASE("Settings: the step settings are declared and read back", "[physics][s
     CHECK(config.step_hz == 60.0f);
     CHECK(config.max_substeps == 4);
     CHECK(config.gravity.y == -9.81f);
+    CHECK(config.contact_margin == 0.02f);
     CHECK(config.interpolate);
     PhysicsWorld world;
     CHECK(world.SetStepConfig(config) == BodyStatus::Ok);

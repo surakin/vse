@@ -143,3 +143,29 @@ The step rate belongs to the state: the same scene hashes differently at another
 `PhysicsWorld::StateHash()` is the cross-machine check: FNV-1a over every body in slot order (position, orientation, linear and angular velocity, the sleep
 byte). A scene of 100 boxes and capsules with offsets, spins and damping, stepped 600 times, hashes to `238b01a717a849dd` under GCC and Clang, unity and not,
 Debug and Release (`Step: the state hash of a 600-step scene...`); the Windows and macOS machines compare it on Days 398-399.
+
+## The narrow phase: contacts for the shapes with closed forms
+
+`physics::Collide(a, pose_a, b, pose_b, margin, &manifold)` is the one entry point of the narrow phase. It returns `Contact` (and fills a `ContactManifold`),
+`None` (the shapes are apart by more than the margin) or `Unsupported` (no test for the pair yet). The table, with the day that fills each cell:
+
+| | sphere | capsule | box | hull |
+|---|---|---|---|---|
+| **sphere** | built (Day 379) | built | built | Day 381 |
+| **capsule** | | built | Day 380 | Day 381 |
+| **box** | | | Day 380 | Day 381 |
+
+The call is symmetric: swapping the shapes gives the same contact with the normal negated and the two points of each contact swapped (the dispatch runs the
+test in one fixed order and `ContactManifold::Flip`s the result). A manifold has a **unit normal from A toward B**, up to four points, and for each point
+`position_a` and `position_b` (on the two surfaces), a `depth` and a `feature_id`. The depth is `(position_a - position_b) . normal`: positive when the
+shapes overlap, **negative when they are apart by less than the margin** (a speculative contact: the solver lets them approach until the gap closes). The
+margin is `physics.contact_margin` (0.02 m). The `feature_id` names the touching features (a face, an edge or a vertex of the box; the stretch end of two
+parallel capsules) and is the same from step to step while they touch, so a contact cache can warm start. `CombineMaterials` fills the friction and the
+restitution.
+
+The tests: **sphere-sphere** is the distance of the centres; a sphere against a **capsule** is a sphere against the ball of the capsule's radius at the
+closest point of its axis; two **capsules** take the closest points of their two axis segments (the standard clamped solution, degenerate segments
+included), and **parallel** axes (sine of the angle below 1e-3) give two points at the ends of the stretch they share, so a capsule lying on another does not
+rock; crossing axes through one point use the common perpendicular. A **sphere against a box** is done in the box's frame: the closest point of the box to
+the centre (the region, face, edge or vertex, is the feature id); a centre inside the box leaves through the face of least penetration. Everything uses
+`+ - * /` and `Sqrt` only: 100,000 random pairs of every kind hash to the same constant under GCC and Clang, unity and not, Debug and Release.

@@ -29,6 +29,15 @@ void RegisterPhysicsSettings(settings::Registry* registry)
     gravity.description = "the vertical acceleration in metres per second squared (negative is down)";
     gravity.group = "physics";
     registry->Register(gravity);
+    settings::SettingDesc margin = settings::MakeFloat("physics.contact_margin", 0.02, 0.0, 1.0);
+    margin.env = "ENGINE_PHYSICS_CONTACT_MARGIN";
+    margin.flag = "physics-contact-margin";
+    margin.label = "Contact margin";
+    margin.description =
+        "metres: shapes closer than this get a speculative contact, so resting contacts are stable and approaching ones are predicted";
+    margin.group = "physics";
+    margin.flags = settings::kAdvanced;
+    registry->Register(margin);
     settings::SettingDesc interpolate = settings::MakeBool("physics.interpolate", true);
     interpolate.env = "ENGINE_PHYSICS_INTERPOLATE";
     interpolate.flag = "physics-interpolate";
@@ -56,6 +65,11 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     if (gravity.IsValid())
     {
         config.gravity = Vec3(0.0f, static_cast<f32>(settings::Setting<f64>(registry, gravity).Get()), 0.0f);
+    }
+    const settings::SettingId margin = registry.Find(StringView("physics.contact_margin"));
+    if (margin.IsValid())
+    {
+        config.contact_margin = static_cast<f32>(settings::Setting<f64>(registry, margin).Get());
     }
     const settings::SettingId interpolate = registry.Find(StringView("physics.interpolate"));
     if (interpolate.IsValid())

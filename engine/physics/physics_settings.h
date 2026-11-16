@@ -8,8 +8,10 @@
 namespace engine_placeholder::physics
 {
 
-/// Declares `physics.step_hz`, `physics.max_substeps`, `physics.gravity_y` and `physics.interpolate`, each with an
-/// environment variable and a flag.
+/// Declares the step settings, each with an environment variable and a flag.
+///
+/// They are `physics.step_hz`, `physics.max_substeps`, `physics.gravity_y`, `physics.contact_margin` and
+/// `physics.interpolate`.
 ///
 /// The gravity is a vector in `StepConfig`, but only its Y component is a setting (the usual case); a game that wants
 /// sideways gravity sets `StepConfig::gravity` in code.

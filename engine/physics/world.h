@@ -127,6 +127,9 @@ struct StepConfig
     u32 max_substeps = 4;
     /// The gravity in metres per second squared; a body's `gravity_scale` multiplies it.
     Vec3 gravity = Vec3(0.0f, -9.81f, 0.0f);
+    /// The contact margin in metres: shapes closer than this get a speculative contact, so a resting contact is stable
+    /// and an approaching one is predicted.
+    f32 contact_margin = 0.02f;
     /// Whether `Interpolated` blends the last two states (false: it returns the latest).
     bool interpolate = true;
 };

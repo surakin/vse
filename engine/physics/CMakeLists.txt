@@ -14,6 +14,7 @@ set(PHYSICS_SOURCES
   step.cpp  # Day 378
   physics_settings.cpp  # Day 378
   system.cpp  # Day 378
+  collide.cpp  # Day 379
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

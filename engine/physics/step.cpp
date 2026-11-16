@@ -35,7 +35,8 @@ Quaternion Turn(const Quaternion& q, const Vec3& w, f32 dt)
 BodyStatus PhysicsWorld::SetStepConfig(const StepConfig& config)
 {
     if (!IsFinite(config.step_hz) || config.step_hz < 1.0f || config.step_hz > 1000.0f || config.max_substeps < 1 ||
-        config.max_substeps > 32 || !FiniteVec3(config.gravity))
+        config.max_substeps > 32 || !IsFinite(config.contact_margin) || config.contact_margin < 0.0f ||
+        config.contact_margin > 1.0f || !FiniteVec3(config.gravity))
     {
         return BodyStatus::Invalid;
     }
