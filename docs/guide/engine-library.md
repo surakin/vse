@@ -665,6 +665,15 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 
 The host's duties: call `frame` from one thread (each call runs the animation system, the transform and attachment systems of every world, then draws every surface with a bound world, in that order); give `resource_add` content before an entity names it (an entity naming a missing resource draws nothing and is counted in `entities_unresolved`); let any thread call `texture_update`, but not `texture_destroy` while a frame is running on another thread without its own care (a destroyed texture only reverts the slot); give the surface's `scale` (the window's DPI scale) so labels and the UI are the size the user expects; destroy things in the order textures, surfaces, worlds, engine (`IN_USE` otherwise). What was built against the plan: no shadows, no orthographic cameras, no zero-copy GPU textures from the host, no per-vertex morph targets; labels have no depth test and no plate (`KNOWN-ISSUES.md`).
 
+## The C++ layer: `engine.h`
+
+A host written in C++ may include `include/engine/engine.h` beside `engine_c.h` (it includes nothing else: no standard library, no exceptions, no RTTI).
+It is the table's own functions with three guards the C header cannot give: **owners** (`Engine`, `World`, `Counter`: move-only, destroyed once, the
+status of `Destroy()` available, `Release()` hands the handle back), **`Buffer`** (an `engine_buffer` released once; `Fill()` releases what it held
+first) and **`Init<T>()`** (a zeroed struct with its `struct_size` set). `Status` is `[[nodiscard]]` and converts to `true` on success.
+It adds no ABI: any function it does not wrap is called through the table with `owner.Get()`. Declare a world after its engine so it is destroyed first
+(the engine refuses with `IN_USE` while one exists). Test: `host_cpp.cpp` (`engine_c_host_cpp`). Surfaces, textures and resources are not wrapped yet.
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.
