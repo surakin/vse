@@ -145,7 +145,7 @@ int main(void)
     CHECK(loader.api->destroy(engine) == ENGINE_OK);
     loader.api->thread_detach();
     CHECK(engine_unload(&loader) == ENGINE_OK);
-    CHECK(!host_lib_is_loaded(ENGINE_LIB_PATH));
+    CHECK(host_lib_gone(ENGINE_LIB_PATH)); /* unloaded where libraries unload; dyld keeps it on macOS (host_os.h) */
     if (g_failures != 0)
     {
         printf("host_crt: %d checks failed\n", g_failures);

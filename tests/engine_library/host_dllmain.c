@@ -64,7 +64,7 @@ int main(void)
     }
     CHECK(host_read_process_facts().threads <= threads_loaded);
     CHECK(engine_unload(&loader) == ENGINE_OK);
-    CHECK(!host_lib_is_loaded(ENGINE_LIB_PATH));
+    CHECK(host_lib_gone(ENGINE_LIB_PATH)); /* unloaded where libraries unload; dyld keeps it on macOS (host_os.h) */
     printf("host_dllmain: %d threads before the load, %d after it, %d with an engine\n", threads_before, threads_loaded,
            threads_running);
     if (g_failures != 0)
