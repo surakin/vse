@@ -783,3 +783,18 @@ TEST_CASE("Collide capsule-box: the feature ids stay the same while a capsule ly
         REQUIRE(m.points[1].feature_id == first.points[1].feature_id);
     }
 }
+
+TEST_CASE("Collide box-box: a non-finite pose never writes past the clip buffers", "[physics][collide][box]")
+{
+    const Shape cube = Shape::MakeBox(Vec3(0.5f, 0.5f, 0.5f));
+    ContactManifold m;
+    const f32 inf = __builtin_inff();
+    for (u32 i = 0; i < 8; ++i)
+    {
+        Pose b = PoseAt(0.1f * static_cast<f32>(i), (i % 2 == 0) ? testing::kNaN : inf, 0.2f);
+        b.rotation = Rot(1, 1, 0, 0.3f * static_cast<f32>(i));
+        // The result is unspecified; the call must not crash or write past a buffer.
+        CHECK(Collide(cube, PoseAt(0, 0, 0), cube, b, 0.02f, &m) != CollideResult::Unsupported);
+    }
+    CHECK(m.count <= 4);
+}

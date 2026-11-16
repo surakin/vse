@@ -49,8 +49,9 @@ u32 MixId(u32 a, u32 b, u32 plane)
     return 16u + ((h >> 8) % 0xFFC0u);
 }
 
-// Keeps the part of the polygon with `Dot(p, n) <= offset`. `out` holds at least twice the input.
-u32 ClipPolygon(const ClipVertex* in, u32 count, const Vec3& n, f32 offset, u32 plane, ClipVertex* out)
+// Keeps the part of the polygon with `Dot(p, n) <= offset`. `out` holds `capacity` vertices; a convex polygon needs one
+// more than it had, and non-finite input (which breaks the convexity) is cut off at the capacity.
+u32 ClipPolygon(const ClipVertex* in, u32 count, const Vec3& n, f32 offset, u32 plane, ClipVertex* out, u32 capacity)
 {
     u32 produced = 0;
     for (u32 i = 0; i < count; ++i)
@@ -61,11 +62,11 @@ u32 ClipPolygon(const ClipVertex* in, u32 count, const Vec3& n, f32 offset, u32 
         const f32 dn = next.p.Dot(n) - offset;
         const bool cur_in = dc <= 0.0f;
         const bool next_in = dn <= 0.0f;
-        if (cur_in)
+        if (cur_in && produced < capacity)
         {
             out[produced++] = cur;
         }
-        if (cur_in != next_in)
+        if (cur_in != next_in && produced < capacity)
         {
             const f32 t = dc / (dc - dn);
             out[produced].p = cur.p + (next.p - cur.p) * t;
@@ -229,7 +230,7 @@ bool BoxBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 
         const f32 offset = pos_r.Dot(n) + hr[side];
         const ClipVertex* in = (plane % 2 == 0) ? buf0.Data() : buf1.Data();
         ClipVertex* dest = (plane % 2 == 0) ? buf1.Data() : buf0.Data();
-        count = ClipPolygon(in, count, n, offset, plane, dest);
+        count = ClipPolygon(in, count, n, offset, plane, dest, 16);
         if (count == 0)
         {
             break;
