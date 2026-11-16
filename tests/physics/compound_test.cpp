@@ -371,8 +371,8 @@ u64 CompoundHash()
         const f32 y = rng.Range(-0.5f, 1.5f);
         const f32 z = rng.Range(-1.2f, 1.2f);
         pb.position = Vec3(x, y, z);
-        const f32 angle = rng.Range(0, 6.28f);
-        pb.rotation = Quaternion::FromAxisAngle(Vec3(0, 1, 0), angle);
+        const f32 half_cos = rng.Range(-1.0f, 1.0f);
+        pb.rotation = testing::TurnFromHalfCos(Vec3(0, 1, 0), half_cos);
         ContactManifold m;
         const CollideResult r = Collide(shape, pa, other, pb, 0.02f, &m, nullptr, nullptr, &compounds);
         out.AddU8(static_cast<u8>(r));
@@ -400,5 +400,5 @@ u64 CompoundHash()
 TEST_CASE("Collide compound: the contacts of 20000 random shapes hash to the committed constant",
           "[physics][compound][hash]")
 {
-    CHECK(CompoundHash() == 0x33059fc50145b4c9ull);
+    CHECK(CompoundHash() == 0xe7b9f5b6466c8228ull);
 }

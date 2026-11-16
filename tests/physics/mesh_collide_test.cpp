@@ -341,7 +341,8 @@ namespace
 
 u64 MeshHash()
 {
-    const TriangleMeshConstPtr mesh = Grid(12, 0.7f, [](f32 x, f32 z) { return 0.3f * Sin(x) * Cos(z * 1.3f); });
+    const TriangleMeshConstPtr mesh = Grid(12, 0.7f, [](f32 x, f32 z)
+                                           { return 0.3f * testing::Wave(x) * testing::Wave(z * 1.3f + 1.5707964f); });
     MeshWorld world(mesh);
     const ConvexHullConstPtr cube = testing::BoxHull(Vec3(0.4f, 0.3f, 0.5f));
     const Shape hull = Shape::MakeHull(world.hulls.Add(cube), cube->Extent());
@@ -380,9 +381,9 @@ u64 MeshHash()
         const f32 ax = rng.Range(-1, 1);
         const f32 ay = rng.Range(-1, 1);
         const f32 az = rng.Range(-1, 1);
-        const f32 angle = rng.Range(0, 6.28f);
+        const f32 half_cos = rng.Range(-1.0f, 1.0f);
         const Vec3 axis = Vec3(ax, ay, az + 0.01f);
-        pose.rotation = Quaternion::FromAxisAngle(axis * (1.0f / Sqrt(axis.LengthSquared())), angle);
+        pose.rotation = testing::TurnFromHalfCos(axis * (1.0f / Sqrt(axis.LengthSquared())), half_cos);
         ContactManifold m;
         const CollideResult r = world.Collide(world.shape, MPose(0, 0, 0), other, pose, 0.02f, &m);
         out.AddU8(static_cast<u8>(r));
@@ -441,5 +442,5 @@ TEST_CASE("Collide mesh: random contacts are sane (unit normal, depth identity, 
 
 TEST_CASE("Collide mesh: the contacts of 20000 random shapes hash to the committed constant", "[physics][mesh][hash]")
 {
-    CHECK(MeshHash() == 0x716573da705d5b3cull);
+    CHECK(MeshHash() == 0x5168a337e62c12f5ull);
 }
