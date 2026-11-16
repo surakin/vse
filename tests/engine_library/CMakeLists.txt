@@ -190,13 +190,18 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
     endif()
   endif()
   # Day 350: the blobs of host_resources.c (a texture and a second version of it, a material that depends on it, a mesh), minted by asset_mint.
-  add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/resource_data/done.txt
-                     COMMAND ${CMAKE_COMMAND} -DTOOL=$<TARGET_FILE:asset_mint> -DSAMPLE=${CMAKE_SOURCE_DIR}/tests/asset/mint_sample -DOUT=${CMAKE_CURRENT_BINARY_DIR}/resource_data
-                            -P ${CMAKE_CURRENT_SOURCE_DIR}/mint_resources_data.cmake
-                     DEPENDS asset_mint ${CMAKE_CURRENT_SOURCE_DIR}/mint_resources_data.cmake ${CMAKE_SOURCE_DIR}/tests/asset/mint_sample/src/textures/brick.tex.src
-                             ${CMAKE_SOURCE_DIR}/tests/asset/mint_sample/src/meshes/rock.mesh.src
-                     COMMENT "Minting the resource host test's blobs" VERBATIM)
-  add_custom_target(engine_resource_data DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/resource_data/done.txt)
+  # A compile-only tree runs nothing it built (arm64 on an Intel Mac, Day 399): the target is empty there and the hosts only compile.
+  if(ENGINE_COMPILE_ONLY)
+    add_custom_target(engine_resource_data)
+  else()
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/resource_data/done.txt
+                       COMMAND ${CMAKE_COMMAND} -DTOOL=$<TARGET_FILE:asset_mint> -DSAMPLE=${CMAKE_SOURCE_DIR}/tests/asset/mint_sample -DOUT=${CMAKE_CURRENT_BINARY_DIR}/resource_data
+                              -P ${CMAKE_CURRENT_SOURCE_DIR}/mint_resources_data.cmake
+                       DEPENDS asset_mint ${CMAKE_CURRENT_SOURCE_DIR}/mint_resources_data.cmake ${CMAKE_SOURCE_DIR}/tests/asset/mint_sample/src/textures/brick.tex.src
+                               ${CMAKE_SOURCE_DIR}/tests/asset/mint_sample/src/meshes/rock.mesh.src
+                       COMMENT "Minting the resource host test's blobs" VERBATIM)
+    add_custom_target(engine_resource_data DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/resource_data/done.txt)
+  endif()
   foreach(suffix "" "_asan" "_tsan")
     if(NOT TARGET engine_c${suffix})
       continue()

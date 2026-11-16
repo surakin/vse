@@ -77,16 +77,22 @@ endif()
 # configuration (Phase 21 Day 311, preset macos-clang-arm64): everything builds and nothing runs, since the Mac that builds it is Intel. Anything
 # else names the phase that ports it.
 option(ENGINE_COMPILE_ONLY "Build every target and run nothing built (no test discovery, no shader minting): a cross-compiled check" OFF)
+# ENGINE_ARCH is the processor the tree builds for (x64 or arm64), the CMake side of build_defs.h's ENGINE_ARCH_*: read it,
+# not CMAKE_SYSTEM_PROCESSOR, which a macOS arm64 tree on an Intel Mac reports as the host's x86_64 (Phase 25 Day 399).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ENGINE_PLATFORM linux)
+  set(ENGINE_ARCH x64)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
   set(ENGINE_PLATFORM windows)
+  set(ENGINE_ARCH x64)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
   set(ENGINE_PLATFORM macos)
+  set(ENGINE_ARCH x64)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND (CMAKE_OSX_ARCHITECTURES STREQUAL "arm64" OR
        (NOT CMAKE_OSX_ARCHITECTURES AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")))
   # arm64: built and run natively on Apple silicon (not seen yet: no such Mac), compile-only from an Intel Mac (or a CMake under Rosetta).
   set(ENGINE_PLATFORM macos)
+  set(ENGINE_ARCH arm64)
   if(NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64" AND NOT ENGINE_COMPILE_ONLY)
     message(FATAL_ERROR "arm64 macOS on an Intel Mac builds compile-only: configure with -DENGINE_COMPILE_ONLY=ON (preset macos-clang-arm64)")
   endif()

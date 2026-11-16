@@ -333,8 +333,17 @@ TEST_CASE("A compound collider rebuilds its mass and bound when the shape change
 namespace
 {
 
-u64 CompoundHash()
+// The sample (every shape and pose) and the contacts, hashed apart so that a difference in the sample is told from one
+// in the code.
+struct CompoundHashes
 {
+    u64 inputs;
+    u64 outputs;
+};
+
+CompoundHashes CompoundHash()
+{
+    StateHasher in;
     CompoundLibrary compounds;
     const CompoundShapeConstPtr table = Table();
     const Shape shape = Shape::MakeCompound(compounds.Add(table), table->Extent());
@@ -344,14 +353,19 @@ u64 CompoundHash()
     {
         Shape other;
         const u32 kind = rng.Next() % 4;
+        in.AddU32(kind);
         if (kind == 0)
         {
-            other = Shape::MakeSphere(rng.Range(0.2f, 0.7f));
+            const f32 radius = rng.Range(0.2f, 0.7f);
+            in.AddF32(radius);
+            other = Shape::MakeSphere(radius);
         }
         else if (kind == 1)
         {
             const f32 hh = rng.Range(0.0f, 0.8f);
             const f32 rr = rng.Range(0.15f, 0.4f);
+            in.AddF32(hh);
+            in.AddF32(rr);
             other = Shape::MakeCapsule(hh, rr);
         }
         else if (kind == 2)
@@ -359,6 +373,9 @@ u64 CompoundHash()
             const f32 hx = rng.Range(0.2f, 0.8f);
             const f32 hy = rng.Range(0.2f, 0.8f);
             const f32 hz = rng.Range(0.2f, 0.8f);
+            in.AddF32(hx);
+            in.AddF32(hy);
+            in.AddF32(hz);
             other = Shape::MakeBox(Vec3(hx, hy, hz));
         }
         else
@@ -371,8 +388,8 @@ u64 CompoundHash()
         const f32 y = rng.Range(-0.5f, 1.5f);
         const f32 z = rng.Range(-1.2f, 1.2f);
         pb.position = Vec3(x, y, z);
-        const f32 half_cos = rng.Range(-1.0f, 1.0f);
-        pb.rotation = testing::TurnFromHalfCos(Vec3(0, 1, 0), half_cos);
+        pb.rotation = testing::RandomTurnAbout(rng, Vec3(0, 1, 0));
+        testing::HashPose(in, pb);
         ContactManifold m;
         const CollideResult r = Collide(shape, pa, other, pb, 0.02f, &m, nullptr, nullptr, &compounds);
         out.AddU8(static_cast<u8>(r));
@@ -392,7 +409,7 @@ u64 CompoundHash()
             }
         }
     }
-    return out.Value();
+    return {in.Value(), out.Value()};
 }
 
 }  // namespace
@@ -400,5 +417,7 @@ u64 CompoundHash()
 TEST_CASE("Collide compound: the contacts of 20000 random shapes hash to the committed constant",
           "[physics][compound][hash]")
 {
-    CHECK(CompoundHash() == 0xe7b9f5b6466c8228ull);
+    const CompoundHashes h = CompoundHash();
+    CHECK(h.inputs == 0xa9fbbe81c8cac993ull);
+    CHECK(h.outputs == 0xc9a286265fa0bdc1ull);
 }

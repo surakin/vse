@@ -169,14 +169,7 @@ Pose HRandPose(Rng& rng, f32 spread)
 {
     Pose p;
     p.position = HRandVec(rng, -spread, spread);
-    const Vec3 v = HRandVec(rng, -1.0f, 1.0f);
-    const f32 w = rng.Range(-1.0f, 1.0f);
-    Quaternion q(v.x, v.y, v.z, w);
-    if (q.LengthSquared() < 1e-4f)
-    {
-        q = Quaternion::Identity();
-    }
-    p.rotation = q.Normalized();
+    p.rotation = testing::RandomTurn(rng);
     return p;
 }
 

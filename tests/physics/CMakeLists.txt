@@ -36,7 +36,9 @@ include(Catch)
 set(_physics_control_options "")
 if(NOT ENGINE_MSVC_LIKE)
   set(_physics_control_options -O2 -ffp-contract=fast)
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  # -mfma on x86-64 only; arm64 always has the fused instruction (Day 399: ENGINE_ARCH, since a macOS arm64 tree on an
+  # Intel Mac reports the host's CMAKE_SYSTEM_PROCESSOR).
+  if(ENGINE_ARCH STREQUAL "x64")
     list(APPEND _physics_control_options -mfma)
   endif()
 endif()

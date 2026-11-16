@@ -339,10 +339,31 @@ TEST_CASE("Collide mesh: a corner, a wall and a big mesh", "[physics][mesh]")
 namespace
 {
 
-u64 MeshHash()
+// The rolling ground of the random tests, without trigonometry (testing::Wave) so its heights are the same on every
+// machine.
+f32 WavyHeight(f32 x, f32 z)
 {
-    const TriangleMeshConstPtr mesh = Grid(12, 0.7f, [](f32 x, f32 z)
-                                           { return 0.3f * testing::Wave(x) * testing::Wave(z * 1.3f + 1.5707964f); });
+    return 0.3f * testing::Wave(x) * testing::Wave(z * 1.3f + 1.5707964f);
+}
+
+// The sample (the grid's heights, every shape and pose) and the contacts, hashed apart so that a difference in the
+// sample is told from one in the code.
+struct MeshHashes
+{
+    u64 inputs;
+    u64 outputs;
+};
+
+MeshHashes MeshHash()
+{
+    StateHasher in;
+    const TriangleMeshConstPtr mesh = Grid(12, 0.7f,
+                                           [&in](f32 x, f32 z)
+                                           {
+                                               const f32 h = WavyHeight(x, z);
+                                               in.AddF32(h);
+                                               return h;
+                                           });
     MeshWorld world(mesh);
     const ConvexHullConstPtr cube = testing::BoxHull(Vec3(0.4f, 0.3f, 0.5f));
     const Shape hull = Shape::MakeHull(world.hulls.Add(cube), cube->Extent());
@@ -352,14 +373,19 @@ u64 MeshHash()
     {
         Shape other;
         const u32 kind = rng.Next() % 4;
+        in.AddU32(kind);
         if (kind == 0)
         {
-            other = Shape::MakeSphere(rng.Range(0.2f, 0.7f));
+            const f32 radius = rng.Range(0.2f, 0.7f);
+            in.AddF32(radius);
+            other = Shape::MakeSphere(radius);
         }
         else if (kind == 1)
         {
             const f32 hh = rng.Range(0.0f, 0.8f);
             const f32 rr = rng.Range(0.15f, 0.4f);
+            in.AddF32(hh);
+            in.AddF32(rr);
             other = Shape::MakeCapsule(hh, rr);
         }
         else if (kind == 2)
@@ -367,6 +393,9 @@ u64 MeshHash()
             const f32 hx = rng.Range(0.2f, 0.8f);
             const f32 hy = rng.Range(0.2f, 0.8f);
             const f32 hz = rng.Range(0.2f, 0.8f);
+            in.AddF32(hx);
+            in.AddF32(hy);
+            in.AddF32(hz);
             other = Shape::MakeBox(Vec3(hx, hy, hz));
         }
         else
@@ -378,12 +407,8 @@ u64 MeshHash()
         const f32 py = rng.Range(-0.5f, 1.2f);
         const f32 pz = rng.Range(-3, 3);
         pose.position = Vec3(px, py, pz);
-        const f32 ax = rng.Range(-1, 1);
-        const f32 ay = rng.Range(-1, 1);
-        const f32 az = rng.Range(-1, 1);
-        const f32 half_cos = rng.Range(-1.0f, 1.0f);
-        const Vec3 axis = Vec3(ax, ay, az + 0.01f);
-        pose.rotation = testing::TurnFromHalfCos(axis * (1.0f / Sqrt(axis.LengthSquared())), half_cos);
+        pose.rotation = testing::RandomTurn(rng);
+        testing::HashPose(in, pose);
         ContactManifold m;
         const CollideResult r = world.Collide(world.shape, MPose(0, 0, 0), other, pose, 0.02f, &m);
         out.AddU8(static_cast<u8>(r));
@@ -406,14 +431,14 @@ u64 MeshHash()
             }
         }
     }
-    return out.Value();
+    return {in.Value(), out.Value()};
 }
 
 }  // namespace
 
 TEST_CASE("Collide mesh: random contacts are sane (unit normal, depth identity, separable)", "[physics][mesh][random]")
 {
-    const TriangleMeshConstPtr mesh = Grid(12, 0.7f, [](f32 x, f32 z) { return 0.3f * Sin(x) * Cos(z * 1.3f); });
+    const TriangleMeshConstPtr mesh = Grid(12, 0.7f, WavyHeight);
     MeshWorld world(mesh);
     Rng rng(99);
     u32 contacts = 0;
@@ -442,5 +467,7 @@ TEST_CASE("Collide mesh: random contacts are sane (unit normal, depth identity, 
 
 TEST_CASE("Collide mesh: the contacts of 20000 random shapes hash to the committed constant", "[physics][mesh][hash]")
 {
-    CHECK(MeshHash() == 0x5168a337e62c12f5ull);
+    const MeshHashes h = MeshHash();
+    CHECK(h.inputs == 0x437a68043615cd54ull);
+    CHECK(h.outputs == 0x1b49078840a2d8a9ull);
 }
