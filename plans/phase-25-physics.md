@@ -1,6 +1,6 @@
 # Phase 25 — Physics
 
-**Status: planned (2026-11-16, the user's request; day files written, Days 373-401). `CURRENT_PHASE` is 24 until Day 373.**
+**Status: in progress (day files written 2026-11-16; Day 373 done 2026-11-16: the design spec and six spikes; `CURRENT_PHASE` is 25). Next: Day 374.**
 
 **Depends on:** Phase 17 (ECS), Phase 18 (spatial partitioning: the broad phase), Phase 22 (asset pipeline: hulls, collision meshes and physics materials are minted assets), Phases 23-24 (the C API worlds and surfaces), Phase 19 (storage: snapshots), Phase 11 (settings), Phase 2 (jobs).
 **Goal:** rigid body physics integrated as ECS components and systems, deterministic to the bit on Linux, Windows and macOS, usable from a C host.

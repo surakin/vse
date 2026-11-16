@@ -1,0 +1,193 @@
+// Phase 25 Day 373 throwaway spikes (not committed): stacks (SI vs PBD), tilted cube (manifold), step size, determinism.
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <mutex>
+#include <thread>
+#include <vector>
+typedef float f32;
+struct V { f32 x, y, z; };
+static inline V operator+(V a, V b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
+static inline V operator-(V a, V b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }
+static inline V operator*(V a, f32 s) { return {a.x * s, a.y * s, a.z * s}; }
+static inline f32 dot(V a, V b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+static inline V cross(V a, V b) { return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x}; }
+static inline f32 len(V a) { return std::sqrt(dot(a, a)); }
+struct Q { f32 w, x, y, z; };
+static Q qmul(Q a, Q b) { return {a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z, a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y, a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x, a.w*b.z+a.x*b.y-a.y*b.x+a.z*b.w}; }
+static V qrot(Q q, V v) { V u{q.x, q.y, q.z}; V t = cross(u, v) * 2.0f; return v + t * q.w + cross(u, t); }
+static Q qnorm(Q q) { f32 n = std::sqrt(q.w*q.w+q.x*q.x+q.y*q.y+q.z*q.z); f32 i = 1.0f / n; return {q.w*i, q.x*i, q.y*i, q.z*i}; }
+static double now() { return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
+static const f32 G = -9.81f;
+
+// ---------- stacks: translation-only cubes, vertical contacts ----------
+struct Box { V p, v, p0; f32 im; };
+struct Pair { int a, b; f32 lam; };   // a below b; a == -1 ground
+static const f32 H = 0.5f;
+static std::vector<Box> MakeStack(int n) { std::vector<Box> bs; for (int i = 0; i < n; ++i) bs.push_back({{0, H + i * (2 * H) + 0.0f, 0}, {0, 0, 0}, {0,0,0}, 1.0f}); return bs; }
+static std::vector<Box> MakePyramid(int base) {
+    std::vector<Box> bs;
+    for (int l = 0; l < base; ++l) { int n = base - l; for (int i = 0; i < n; ++i) for (int k = 0; k < n; ++k)
+        bs.push_back({{(i - (n - 1) * 0.5f) * (2 * H + 0.002f), H + l * (2 * H), (k - (n - 1) * 0.5f) * (2 * H + 0.002f)}, {0,0,0}, {0,0,0}, 1.0f}); }
+    return bs; }
+static void FindPairs(const std::vector<Box>& bs, std::vector<Pair>& out, f32 margin) {
+    out.clear();
+    for (int b = 0; b < (int)bs.size(); ++b) {
+        if (bs[b].p.y - H < margin) out.push_back({-1, b, 0});
+        for (int a = 0; a < (int)bs.size(); ++a) if (a != b) {
+            f32 dy = bs[b].p.y - bs[a].p.y;
+            if (dy > 0 && dy < 2 * H + margin && std::fabs(bs[b].p.x - bs[a].p.x) < 2 * H && std::fabs(bs[b].p.z - bs[a].p.z) < 2 * H) out.push_back({a, b, 0});
+        } } }
+static f32 Depth(const std::vector<Box>& bs, const Pair& c) { return c.a < 0 ? (H - (bs[c.b].p.y - 0)) : (2 * H - (bs[c.b].p.y - bs[c.a].p.y)); }
+struct Metrics { f32 maxdepth, jitter, drift; double ns; };
+// Sequential impulse, Baumgarte with slop, warm start. Persistent pairs keyed by (a,b).
+static Metrics RunSI(std::vector<Box> bs, int rate_hz, int iters, bool warm, double seconds = 10.0) {
+    f32 dt = 1.0f / rate_hz; int steps = (int)(seconds * rate_hz);
+    std::vector<Pair> prs, prev; f32 maxd = 0; double jit = 0; int jn = 0; double t0 = now();
+    for (int s = 0; s < steps; ++s) {
+        for (auto& b : bs) b.v.y += G * dt;
+        FindPairs(bs, prs, 0.02f);
+        for (auto& p : prs) { p.lam = 0; if (warm) for (auto& q : prev) if (q.a == p.a && q.b == p.b) p.lam = q.lam; }
+        if (warm) for (auto& p : prs) { // warm start
+            if (p.a >= 0) bs[p.a].v.y -= p.lam * bs[p.a].im; bs[p.b].v.y += p.lam * bs[p.b].im; }
+        for (int it = 0; it < iters; ++it) for (auto& p : prs) {
+            f32 imA = p.a >= 0 ? bs[p.a].im : 0, imB = bs[p.b].im;
+            f32 vn = bs[p.b].v.y - (p.a >= 0 ? bs[p.a].v.y : 0);
+            f32 d = Depth(bs, p); f32 bias = d > 0.005f ? 0.2f / dt * (d - 0.005f) : 0.0f;
+            f32 l = -(vn - bias) / (imA + imB); f32 nl = std::max(p.lam + l, 0.0f); l = nl - p.lam; p.lam = nl;
+            if (p.a >= 0) bs[p.a].v.y -= l * imA; bs[p.b].v.y += l * imB; }
+        for (auto& b : bs) b.p = b.p + b.v * dt;
+        prev = prs;
+        FindPairs(bs, prs, 0.0f); for (auto& p : prs) maxd = std::max(maxd, Depth(bs, p));
+        if (s >= steps / 2) { for (auto& b : bs) jit += len(b.v); jn += (int)bs.size(); }
+    }
+    double ns = (now() - t0) / steps * 1e9; f32 drift = 0; for (size_t i = 0; i < bs.size(); ++i) drift = std::max(drift, std::fabs(bs[i].p.y - (H + (bs.size() == 10 ? i : 0) * 2 * H)));
+    return {maxd, (f32)(jit / jn), bs.size() == 10 ? drift : 0.0f, ns};
+}
+// Position based: predict, project contacts (iterations), velocity from positions.
+static Metrics RunPBD(std::vector<Box> bs, int rate_hz, int iters, double seconds = 10.0) {
+    f32 dt = 1.0f / rate_hz; int steps = (int)(seconds * rate_hz);
+    std::vector<Pair> prs; f32 maxd = 0; double jit = 0; int jn = 0; double t0 = now();
+    for (int s = 0; s < steps; ++s) {
+        for (auto& b : bs) { b.p0 = b.p; b.v.y += G * dt; b.p = b.p + b.v * dt; }
+        for (int it = 0; it < iters; ++it) { FindPairs(bs, prs, 0.0f);
+            for (auto& p : prs) { f32 d = Depth(bs, p); if (d <= 0) continue; f32 imA = p.a >= 0 ? bs[p.a].im : 0, imB = bs[p.b].im; f32 c = d / (imA + imB);
+                if (p.a >= 0) bs[p.a].p.y -= c * imA; bs[p.b].p.y += c * imB; } }
+        for (auto& b : bs) b.v = (b.p - b.p0) * (1.0f / dt);
+        FindPairs(bs, prs, 0.0f); for (auto& p : prs) maxd = std::max(maxd, Depth(bs, p));
+        if (s >= steps / 2) { for (auto& b : bs) jit += len(b.v); jn += (int)bs.size(); }
+    }
+    double ns = (now() - t0) / steps * 1e9; f32 drift = 0; for (size_t i = 0; i < bs.size(); ++i) drift = std::max(drift, std::fabs(bs[i].p.y - (H + (bs.size() == 10 ? i : 0) * 2 * H)));
+    return {maxd, (f32)(jit / jn), bs.size() == 10 ? drift : 0.0f, ns};
+}
+static void Print(const char* name, Metrics m) { printf("  %-34s maxdepth %.5f  jitter(|v|) %.6f  top drift %.5f  %.0f ns/step\n", name, m.maxdepth, m.jitter, m.drift, m.ns); }
+
+// ---------- tilted cube on a plane: 4-point vs 1-point manifold ----------
+struct RB { V p, v, w; Q q; f32 im, ii; };
+struct Cp { V r; f32 d; int id; f32 ln, lt1, lt2; };
+static Metrics RunTilt(int points, int rate_hz, int iters, double seconds, f32* rest_tilt) {
+    f32 dt = 1.0f / rate_hz; int steps = (int)(seconds * rate_hz);
+    RB b; f32 a = 0.17453292f; /* 10 degrees about z and x */ b.q = qnorm(qmul(Q{std::cos(a/2),0,0,std::sin(a/2)}, Q{std::cos(a/2),std::sin(a/2),0,0}));
+    b.p = {0, 1.2f, 0}; b.v = {0,0,0}; b.w = {0,0,0}; b.im = 1.0f; b.ii = 1.0f / (1.0f * (2*H) * (2*H) / 6.0f);
+    std::vector<Cp> prev; f32 maxd = 0; double jit = 0; int jn = 0; double t0 = now();
+    for (int s = 0; s < steps; ++s) {
+        b.v.y += G * dt;
+        std::vector<Cp> cs; int id = 0;
+        for (int sx = -1; sx <= 1; sx += 2) for (int sy = -1; sy <= 1; sy += 2) for (int sz = -1; sz <= 1; sz += 2, ++id) {
+            V r = qrot(b.q, {sx * H, sy * H, sz * H}); f32 d = -(b.p.y + r.y); if (d > -0.02f) cs.push_back({r, d, id, 0, 0, 0}); }
+        if (points == 1 && cs.size() > 1) { size_t bi = 0; for (size_t i = 1; i < cs.size(); ++i) if (cs[i].d > cs[bi].d) bi = i; Cp c = cs[bi]; cs.clear(); cs.push_back(c); }
+        for (auto& c : cs) for (auto& q : prev) if (q.id == c.id) { c.ln = q.ln; c.lt1 = q.lt1; c.lt2 = q.lt2; }
+        auto apply = [&](const Cp& c, V imp) { b.v = b.v + imp * b.im; b.w = b.w + cross(c.r, imp) * b.ii; };
+        for (auto& c : cs) apply(c, V{c.lt1, c.ln, c.lt2});
+        for (int it = 0; it < iters; ++it) for (auto& c : cs) {
+            V vel = b.v + cross(b.w, c.r); V n{0,1,0};
+            f32 kn = b.im + b.ii * (dot(c.r, c.r) - c.r.y * c.r.y);
+            f32 bias = c.d > 0.005f ? 0.2f / dt * (c.d - 0.005f) : 0;
+            f32 l = -(vel.y - bias) / kn; f32 nl = std::max(c.ln + l, 0.0f); l = nl - c.ln; c.ln = nl; apply(c, n * l);
+            for (int t = 0; t < 2; ++t) { V tv{t == 0 ? 1.0f : 0, 0, t == 1 ? 1.0f : 0}; vel = b.v + cross(b.w, c.r);
+                f32 vt = dot(vel, tv); V rxt = cross(c.r, tv); f32 kt = b.im + b.ii * dot(rxt, rxt);
+                f32 lm = -vt / kt; f32& acc = t == 0 ? c.lt1 : c.lt2; f32 mx = 0.5f * c.ln; f32 na = std::min(std::max(acc + lm, -mx), mx); lm = na - acc; acc = na; apply(c, tv * lm); } }
+        b.p = b.p + b.v * dt; V wd = b.w * dt; f32 wl = len(wd); if (wl > 1e-9f) { f32 h = wl * 0.5f; f32 sn = std::sin(h) / wl; b.q = qnorm(qmul(Q{std::cos(h), wd.x*sn, wd.y*sn, wd.z*sn}, b.q)); }
+        prev = cs; for (auto& c : cs) maxd = std::max(maxd, std::max(0.0f, -(b.p.y + qrot(b.q, {1*H*(c.id&4?1:-1), 1*H*(c.id&2?1:-1), 1*H*(c.id&1?1:-1)}).y)));
+        if (s >= steps / 2) { jit += len(b.v) + len(b.w) * 0.1; ++jn; }
+    }
+    V up = qrot(b.q, {0,1,0}); *rest_tilt = std::acos(std::min(1.0f, std::fabs(up.y))) * 57.29578f;
+    return {maxd, (f32)(jit / jn), b.p.y - H, (now() - t0) / steps * 1e9};
+}
+
+// ---------- determinism: spheres, grid broad phase, parallel detection, SI with friction ----------
+struct S { V p, v, w; f32 r, im, ii; };
+struct C { int a, b; V n; f32 d; f32 ln, lt1, lt2; };
+static std::vector<S> MakeSpheres(int n) {
+    std::vector<S> s; uint32_t st = 12345; auto rnd = [&]() { st = st * 1664525u + 1013904223u; return (f32)(st >> 8) / 16777216.0f; };
+    for (int i = 0; i < n; ++i) { f32 r = 0.3f + 0.2f * rnd(); f32 m = r * r * r * 8.0f; s.push_back({{rnd() * 20 - 10, 1 + rnd() * 40, rnd() * 20 - 10}, {rnd()-0.5f, 0, rnd()-0.5f}, {0,0,0}, r, 1.0f / m, 1.0f / (0.4f * m * r * r)}); }
+    return s; }
+static uint64_t Hash(const std::vector<S>& s) { uint64_t h = 1469598103934665603ull; for (auto& b : s) { const unsigned char* p = (const unsigned char*)&b.p; for (int k = 0; k < 36; ++k) { h ^= p[k]; h *= 1099511628211ull; } } return h; }
+static uint64_t RunDet(int n, int steps, int threads, bool ordered, int iters = 8) {
+    std::vector<S> bs = MakeSpheres(n); const f32 dt = 1.0f / 60, box = 12.0f;
+    std::vector<C> cs;
+    for (int st = 0; st < steps; ++st) {
+        for (auto& b : bs) b.v.y += G * dt;
+        // grid
+        const f32 cell = 1.0f; const int gx = 28; std::vector<std::vector<int>> grid(gx * gx * 64);
+        auto cidx = [&](V p, int& x, int& y, int& z) { x = std::min(std::max((int)((p.x + 14) / cell), 0), gx - 1); z = std::min(std::max((int)((p.z + 14) / cell), 0), gx - 1); y = std::min(std::max((int)(p.y / cell), 0), 63); };
+        for (int i = 0; i < n; ++i) { int x, y, z; cidx(bs[i].p, x, y, z); grid[(y * gx + z) * gx + x].push_back(i); }
+        std::vector<std::vector<C>> per(threads); std::vector<C> shared; std::mutex mu;
+        auto work = [&](int t) { int lo = n * t / threads, hi = n * (t + 1) / threads; std::vector<C> out;
+            for (int i = lo; i < hi; ++i) { int x, y, z; cidx(bs[i].p, x, y, z); std::vector<int> js;
+                for (int dy = -1; dy <= 1; ++dy) for (int dz = -1; dz <= 1; ++dz) for (int dx = -1; dx <= 1; ++dx) { int X = x + dx, Y = y + dy, Z = z + dz; if (X < 0 || Z < 0 || Y < 0 || X >= gx || Z >= gx || Y >= 64) continue; for (int j : grid[(Y * gx + Z) * gx + X]) if (j > i) js.push_back(j); }
+                std::sort(js.begin(), js.end());
+                for (int j : js) { V d = bs[j].p - bs[i].p; f32 l = len(d); f32 rr = bs[i].r + bs[j].r; if (l < rr && l > 1e-6f) out.push_back({i, j, d * (1.0f / l), rr - l, 0, 0, 0}); } }
+            if (ordered) per[t] = out; else { std::lock_guard<std::mutex> g(mu); shared.insert(shared.end(), out.begin(), out.end()); } };
+        std::vector<std::thread> th; for (int t = 0; t < threads; ++t) th.emplace_back(work, t); for (auto& t : th) t.join();
+        cs.clear(); if (ordered) for (auto& v : per) cs.insert(cs.end(), v.begin(), v.end()); else cs = shared;
+        // walls and floor as contacts with b = -1 (normal from sphere into the wall)
+        for (int i = 0; i < n; ++i) { auto& b = bs[i];
+            if (b.p.y - b.r < 0) cs.push_back({i, -1, {0,-1,0}, b.r - b.p.y, 0,0,0});
+            if (b.p.x - b.r < -box) cs.push_back({i, -1, {-1,0,0}, b.r + box + b.p.x, 0,0,0});
+            if (b.p.x + b.r > box) cs.push_back({i, -1, {1,0,0}, b.r - box + b.p.x + 0 - 0 + 0 - 2*b.p.x + 2*b.p.x, 0,0,0});
+            if (b.p.z - b.r < -box) cs.push_back({i, -1, {0,0,-1}, b.r + box + b.p.z, 0,0,0});
+            if (b.p.z + b.r > box) cs.push_back({i, -1, {0,0,1}, b.r - box + b.p.z, 0,0,0}); }
+        for (auto& c : cs) if (c.b == -1 && c.n.x > 0.5f) c.d = bs[c.a].r + bs[c.a].p.x - box; else if (c.b == -1 && c.n.z > 0.5f) c.d = bs[c.a].r + bs[c.a].p.z - box;
+        for (int it = 0; it < iters; ++it) for (auto& c : cs) {
+            S& A = bs[c.a]; S dummy{{0,0,0},{0,0,0},{0,0,0},0,0,0}; S& B = c.b >= 0 ? bs[c.b] : dummy;
+            V ra = c.n * A.r, rb = c.b >= 0 ? c.n * (-B.r) : V{0,0,0};
+            V rv = (B.v + cross(B.w, rb)) - (A.v + cross(A.w, ra)); f32 vn = dot(rv, c.n);
+            f32 k = A.im + B.im; f32 bias = c.d > 0.005f ? 0.2f / dt * (c.d - 0.005f) : 0; f32 l = -(vn - bias) / k;
+            f32 nl = std::max(c.ln + l, 0.0f); l = nl - c.ln; c.ln = nl; V imp = c.n * l;
+            A.v = A.v - imp * A.im; A.w = A.w - cross(ra, imp) * A.ii; if (c.b >= 0) { B.v = B.v + imp * B.im; B.w = B.w + cross(rb, imp) * B.ii; }
+            rv = (B.v + cross(B.w, rb)) - (A.v + cross(A.w, ra)); V tv = rv - c.n * dot(rv, c.n); f32 tl = len(tv);
+            if (tl > 1e-6f) { V t = tv * (1.0f / tl); f32 lt = tl / (k + 1e-9f + (A.ii * 1.0f) * (A.r * A.r)); f32 mx = 0.5f * c.ln; lt = std::min(lt, mx); V ti = t * lt;
+                A.v = A.v + ti * A.im; A.w = A.w + cross(ra, ti) * A.ii; if (c.b >= 0) { B.v = B.v - ti * B.im; B.w = B.w - cross(rb, ti) * B.ii; } } }
+        for (auto& b : bs) b.p = b.p + b.v * dt;
+    }
+    return Hash(bs);
+}
+int main(int argc, char** argv) {
+    const char* m = argc > 1 ? argv[1] : "all";
+    if (!strcmp(m, "stack") || !strcmp(m, "all")) {
+        printf("SPIKE 1: 10-box stack and 5x5 pyramid, 60 Hz, 10 s, translation-only cubes\n");
+        for (int it : {4, 10, 20}) { char nm[64]; snprintf(nm, 64, "stack SI warm iters=%d", it); Print(nm, RunSI(MakeStack(10), 60, it, true)); }
+        Print("stack SI cold iters=10", RunSI(MakeStack(10), 60, 10, false));
+        for (int it : {4, 10, 20}) { char nm[64]; snprintf(nm, 64, "stack PBD iters=%d", it); Print(nm, RunPBD(MakeStack(10), 60, it)); }
+        for (int it : {4, 10, 20}) { char nm[64]; snprintf(nm, 64, "pyramid SI warm iters=%d", it); Print(nm, RunSI(MakePyramid(5), 60, it, true)); }
+        for (int it : {4, 10, 20}) { char nm[64]; snprintf(nm, 64, "pyramid PBD iters=%d", it); Print(nm, RunPBD(MakePyramid(5), 60, it)); }
+        printf("SPIKE 5: step size, SI warm iters=10, same 10 s of simulated time\n");
+        for (int hz : {30, 60, 120}) { char nm[64]; snprintf(nm, 64, "stack %d Hz", hz); Print(nm, RunSI(MakeStack(10), hz, 10, true)); snprintf(nm, 64, "pyramid %d Hz", hz); Print(nm, RunSI(MakePyramid(5), hz, 10, true)); }
+        printf("  stack at 120 Hz, 4 iters: "); Print("", RunSI(MakeStack(10), 120, 4, true));
+        printf("  stack at 30 Hz, 20 iters: "); Print("", RunSI(MakeStack(10), 30, 20, true));
+    }
+    if (!strcmp(m, "tilt") || !strcmp(m, "all")) {
+        printf("SPIKE 4: cube dropped tilted 10 deg on a plane, 60 Hz, 10 s (jitter = |v| + 0.1|w|, last 5 s)\n");
+        for (int pts : {1, 4}) for (int it : {4, 10, 20}) { f32 tilt; Metrics r = RunTilt(pts, 60, it, 10.0, &tilt); char nm[64]; snprintf(nm, 64, "%d-point iters=%d (rest tilt %.2f deg)", pts, it, tilt); Print(nm, r); }
+    }
+    if (!strcmp(m, "det")) {
+        int n = argc > 2 ? atoi(argv[2]) : 2000; int steps = argc > 3 ? atoi(argv[3]) : 600; int th = argc > 4 ? atoi(argv[4]) : 1; bool ord = argc > 5 ? atoi(argv[5]) != 0 : true;
+        double t0 = now(); uint64_t h = RunDet(n, steps, th, ord); printf("hash %016llx threads %d %s  %.2fs\n", (unsigned long long)h, th, ord ? "ordered" : "unordered", now() - t0);
+    }
+    return 0;
+}

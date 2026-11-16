@@ -1,0 +1,17 @@
+// Spike 6 (Phase 25 Day 373): the pair feed of Phase 18 on 5000 moving boxes and 2000 static boxes. A throwaway Catch2 test appended to
+// tests/spatial/pair_test.cpp (tag [.][spike6]) and run in the Release tree (`build-rel`); reverted after the run. Build and run:
+//   cmake --build build-rel --target spatial_tests && build-rel/tests/spatial/spatial_tests "[spike6]"
+// The first version forgot `set.RebuildStatic()`: the 2000 statics then sat in the pending list and every query scanned them (31 ms a frame,
+// 78 percent in Overlaps); the lesson is recorded in the design spec.
+for (const f32 margin : {0.0f, 0.1f, 0.2f})
+  for (const f32 fat : {0.1f, 0.25f})
+    for (const u32 moving_percent : {100u, 20u})
+    {
+        Rng rng(373);
+        SpatialSetConfig sc; sc.bvh.fat_margin = fat; SpatialSet set(sc);
+        PairTrackerConfig config; config.margin = margin; PairTracker tracker(config); PairEvents events;
+        // 2000 static boxes (0.5 half extent) on a 40 x 40 floor, 5000 dynamic boxes in a 25 x 25 x 25 volume (key i + 1, layer 0)
+        // set.RebuildStatic(); tracker.Update(set, &events);
+        // 60 frames: each dynamic box moves with probability moving_percent by up to 0.05 per axis (set.Move, tracker.Touch),
+        // tracker.Update timed with os::MonotonicTimeNanos, begun and ended counted.
+    }
