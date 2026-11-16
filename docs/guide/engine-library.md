@@ -709,11 +709,21 @@ The sample is `tests/engine_library/physics_sample.c` (a stack of boxes, a pendu
 ## The C++ layer: `engine.h`
 
 A host written in C++ may include `include/engine/engine.h` beside `engine_c.h` (it includes nothing else: no standard library, no exceptions, no RTTI).
-It is the table's own functions with three guards the C header cannot give: **owners** (`Engine`, `World`, `Counter`: move-only, destroyed once, the
-status of `Destroy()` available, `Release()` hands the handle back), **`Buffer`** (an `engine_buffer` released once; `Fill()` releases what it held
-first) and **`Init<T>()`** (a zeroed struct with its `struct_size` set). `Status` is `[[nodiscard]]` and converts to `true` on success.
-It adds no ABI: any function it does not wrap is called through the table with `owner.Get()`. Declare a world after its engine so it is destroyed first
-(the engine refuses with `IN_USE` while one exists). Test: `host_cpp.cpp` (`engine_c_host_cpp`). Surfaces, textures and resources are not wrapped yet.
+It is the table's own functions with three guards the C header cannot give: **owners** (`Engine`, `World`, `Counter`, `Resource`, `Ticket`, `ImportTicket`,
+`Surface`, `PixelsTicket` and `Texture`: move-only, destroyed once, the status of `Destroy()` available, `Release()` hands the handle back), **result and buffer
+holders** (`Buffer`, `ImportResult` and `Pixels` release what the engine handed out, once; `Fill()` releases what the object held first) and **`Init<T>()`** (a
+zeroed struct with its `struct_size` set; the layer also sets it on the out-structs and on every element of the physics-event array it passes). `Status` is
+`[[nodiscard]]` and converts to `true` on success.
+
+**Every function of the table has a member** (or, for `get_extension` and `thread_detach`, a free function) named for what it does, with the table's arguments
+minus the handle the object holds: `Engine` has the settings, `Frame`, the crash handler, jobs, the resource registry, glTF import, surfaces, textures and the
+label font; `World` has entities, components, names, parents, queries, the environment, slot overrides, levels, animation, skeletons and all of physics (gravity,
+forces, impulses, velocities, teleport, ray cast, overlaps, joint reactions, the character, events, snapshot and restore); `Surface`, `Texture`, `Ticket`,
+`ImportTicket` and `Counter` have their own. The ctest `engine_h_covers_table` reads the table in `engine_c.h` and fails when a member is not called by
+`engine.h`, so a function added to the table without a wrapper cannot pass. The layer adds no ABI: `owner.Get()` still gives the raw handle. Declare a world
+after its engine so it is destroyed first (the engine refuses with `IN_USE` while one exists). Test: `host_cpp.cpp` (`engine_c_host_cpp`; it drives components,
+names, parents, queries, physics, a counter and a job through the layer; the surface, texture, import and resource wrappers are compiled by it but not yet run
+through the layer: only the C programs run those functions).
 
 ## Writing a host: the short path (Days 346-357)
 

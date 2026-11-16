@@ -5,8 +5,9 @@
 // It adds three things the C header cannot enforce and nothing else: ownership (a handle is destroyed exactly once, a
 // buffer released exactly once), struct sizing (`Init<T>()` zeroes a struct and sets `struct_size`), and a status that
 // cannot be dropped silently by accident (`[[nodiscard]]`). It adds no ABI: every call is the table's function, called
-// through the pointer you give it, and the C header stays the contract. A function the layer does not wrap is called
-// through `api->function` with the same handles (`handle.Get()`).
+// through the pointer you give it, and the C header stays the contract. Every function of the table has a member or a
+// free function here (the ctest `engine_h_covers_table` fails when one does not), named for what it does; the
+// arguments are the table's, minus the handle the object holds. `handle.Get()` still gives the raw handle.
 //
 //     const engine_api* api = nullptr;
 //     engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &api);   // or
@@ -224,6 +225,13 @@ private:
 
 class World;
 class Counter;
+class Resource;
+class Ticket;
+class ImportTicket;
+class Surface;
+class PixelsTicket;
+class Texture;
+class ImportResult;
 
 /// The engine. At most one exists per process (the C API's rule).
 class Engine : public Owned
@@ -264,6 +272,52 @@ public:
 
     inline Status CreateWorld(World* out) const;
     inline Status CreateCounter(Counter* out) const;
+
+    /// Installs and removes the engine's crash handler (`crash_handler_install`, `crash_handler_uninstall`).
+    Status InstallCrashHandler() const { return Api()->crash_handler_install(Get()); }
+    Status UninstallCrashHandler() const { return Api()->crash_handler_uninstall(Get()); }
+
+    /// Submits `fn(user)` to the job system; `counter` counts it until it has run (`jobs_submit`).
+    inline Status SubmitJob(engine_job_fn fn, void* user, const Counter& counter) const;
+
+    /// The resource registry: mounting, replacing and removing resources, asking what is mounted, loading one now or in
+    /// the background (`resource_*`). A replaced or removed resource's dependents come back in `dependents` (may be
+    /// null).
+    Status AddResource(const engine_resource_add_info& info) const { return Api()->resource_add(Get(), &info); }
+    Status ReplaceResource(const engine_resource_add_info& info, Buffer* dependents = nullptr) const
+    {
+        return Api()->resource_replace(Get(), &info, dependents != nullptr ? dependents->Fill() : nullptr);
+    }
+    Status RemoveResource(uint64_t id, uint32_t flags, Buffer* dependents = nullptr) const
+    {
+        return Api()->resource_remove(Get(), id, flags, dependents != nullptr ? dependents->Fill() : nullptr);
+    }
+    Status MountedResource(uint64_t id, engine_resource_info* out) const
+    {
+        *out = Init<engine_resource_info>();
+        return Api()->resource_mounted(Get(), id, out);
+    }
+    inline Status LoadResource(uint64_t id, const char* path, uint32_t type, Resource* out) const;
+    inline Status LoadResourceAsync(uint64_t id, const char* path, uint32_t type, uint32_t priority, Ticket* out) const;
+
+    /// Imports a glTF file held in memory, at once or in the background (`import_gltf`, `import_gltf_async`).
+    Status ImportGltf(const void* bytes, size_t size, const engine_import_options& options,
+                      engine_import_result* result) const
+    {
+        *result = Init<engine_import_result>();
+        return Api()->import_gltf(Get(), bytes, size, &options, result);
+    }
+    inline Status ImportGltf(const void* bytes, size_t size, const engine_import_options& options,
+                             ImportResult* result) const;
+    inline Status ImportGltfAsync(const void* bytes, size_t size, const engine_import_options& options,
+                                  ImportTicket* out) const;
+
+    /// A surface in a host's window, a host texture (`surface_create`, `texture_create`).
+    inline Status CreateSurface(const engine_surface_info& info, Surface* out) const;
+    inline Status CreateTexture(const engine_texture_info& info, Texture* out) const;
+
+    /// Sets the font the label component draws with, from the bytes of a font file (`label_font_set`).
+    Status SetLabelFont(const void* data, size_t size) const { return Api()->label_font_set(Get(), data, size); }
 };
 
 /// A world: entities and their components.
@@ -273,6 +327,150 @@ public:
     Status Entity(uint64_t* out_key) const { return Api()->entity_create(Get(), out_key); }
     Status DestroyEntity(uint64_t key) const { return Api()->entity_destroy(Get(), key); }
 
+    /// Components: `value` and `out` are the struct of `kind` (`ENGINE_COMPONENT_*`), with `struct_size` set.
+    Status SetComponent(uint64_t key, uint32_t kind, const void* value) const
+    {
+        return Api()->component_set(Get(), key, kind, value);
+    }
+    Status GetComponent(uint64_t key, uint32_t kind, void* out) const
+    {
+        return Api()->component_get(Get(), key, kind, out);
+    }
+    Status RemoveComponent(uint64_t key, uint32_t kind) const { return Api()->component_remove(Get(), key, kind); }
+    Status HasComponent(uint64_t key, uint32_t kind, bool* out) const
+    {
+        int has = 0;
+        const Status status = Api()->component_has(Get(), key, kind, &has);
+        *out = has != 0;
+        return status;
+    }
+
+    /// Names, parents and lookups (`entity_name_*`, `entity_*_parent`, `entity_find*`, `query`). The key-list calls
+    /// return the total in `total` even when `capacity` is smaller (ask with a capacity of 0 for the count).
+    Status SetName(uint64_t key, const char* name) const { return Api()->entity_name_set(Get(), key, Str(name)); }
+    Status GetName(uint64_t key, Buffer* out) const { return Api()->entity_name_get(Get(), key, out->Fill()); }
+    Status Query(uint32_t mask, uint64_t* keys, size_t capacity, size_t* total) const
+    {
+        return Api()->query(Get(), mask, keys, capacity, total);
+    }
+    Status SetParent(uint64_t child, uint64_t parent) const { return Api()->entity_set_parent(Get(), child, parent); }
+    Status GetParent(uint64_t key, uint64_t* parent) const { return Api()->entity_get_parent(Get(), key, parent); }
+    Status Find(const char* name, uint64_t* key) const { return Api()->entity_find(Get(), Str(name), key); }
+    Status FindAll(const char* name, uint64_t* keys, size_t capacity, size_t* total) const
+    {
+        return Api()->entity_find_all(Get(), Str(name), keys, capacity, total);
+    }
+
+    /// The environment (sky, ambient light), material slot overrides and level spawning (`world_set_environment`,
+    /// `entity_*_slot_override`, `level_spawn`).
+    Status SetEnvironment(const engine_environment& environment) const
+    {
+        return Api()->world_set_environment(Get(), &environment);
+    }
+    Status SetSlotOverride(uint64_t key, const char* slot, const engine_slot_override& value) const
+    {
+        return Api()->entity_set_slot_override(Get(), key, Str(slot), &value);
+    }
+    Status ClearSlotOverride(uint64_t key, const char* slot) const
+    {
+        return Api()->entity_clear_slot_override(Get(), key, Str(slot));
+    }
+    Status SpawnLevel(uint64_t level, const engine_spawn_params& params, uint64_t* root, uint64_t* keys,
+                      size_t capacity, size_t* total) const
+    {
+        return Api()->level_spawn(Get(), level, &params, root, keys, capacity, total);
+    }
+
+    /// Animation and skeletons (`animation_*`, `skeleton_*`, `entity_attach_to_joint`).
+    Status PlayAnimation(uint64_t key, uint64_t clip, const engine_play_params& params) const
+    {
+        return Api()->animation_play(Get(), key, clip, &params);
+    }
+    Status SetAnimationSpeed(uint64_t key, float speed) const { return Api()->animation_set_speed(Get(), key, speed); }
+    Status StopAnimation(uint64_t key) const { return Api()->animation_stop(Get(), key); }
+    Status AnimationTime(uint64_t key, double* seconds) const { return Api()->animation_time(Get(), key, seconds); }
+    Status FindJoint(uint64_t key, const char* name, uint32_t* index) const
+    {
+        return Api()->skeleton_find_joint(Get(), key, Str(name), index);
+    }
+    Status JointTransform(uint64_t key, uint32_t joint, float* matrix) const
+    {
+        return Api()->skeleton_joint_transform(Get(), key, joint, matrix);
+    }
+    Status AttachToJoint(uint64_t key, uint64_t skeleton_key, uint32_t joint) const
+    {
+        return Api()->entity_attach_to_joint(Get(), key, skeleton_key, joint);
+    }
+
+    /// Physics (`physics_*`, `body_*`, `joint_reaction`, `character_*`). Vectors are 3 floats, rotations 4 (x, y, z,
+    /// w).
+    Status SetGravity(const float* gravity) const { return Api()->physics_set_gravity(Get(), gravity); }
+    Status ApplyForce(uint64_t key, const float* force, const float* point) const
+    {
+        return Api()->body_apply_force(Get(), key, force, point);
+    }
+    Status ApplyImpulse(uint64_t key, const float* impulse, const float* point) const
+    {
+        return Api()->body_apply_impulse(Get(), key, impulse, point);
+    }
+    Status SetVelocity(uint64_t key, const float* linear, const float* angular) const
+    {
+        return Api()->body_set_velocity(Get(), key, linear, angular);
+    }
+    Status GetVelocity(uint64_t key, float* linear, float* angular) const
+    {
+        return Api()->body_get_velocity(Get(), key, linear, angular);
+    }
+    Status Teleport(uint64_t key, const float* position, const float* rotation) const
+    {
+        return Api()->body_teleport(Get(), key, position, rotation);
+    }
+    Status RayCast(const float* origin, const float* direction, float max_distance, uint32_t layer_mask,
+                   engine_ray_hit* hit, bool* found) const
+    {
+        *hit = Init<engine_ray_hit>();
+        int any = 0;
+        const Status status = Api()->physics_raycast(Get(), origin, direction, max_distance, layer_mask, hit, &any);
+        *found = any != 0;
+        return status;
+    }
+    Status OverlapSphere(const float* center, float radius, uint32_t layer_mask, uint64_t* keys, size_t capacity,
+                         size_t* total) const
+    {
+        return Api()->physics_overlap_sphere(Get(), center, radius, layer_mask, keys, capacity, total);
+    }
+    Status OverlapBox(const float* center, const float* half_extents, uint32_t layer_mask, uint64_t* keys,
+                      size_t capacity, size_t* total) const
+    {
+        return Api()->physics_overlap_box(Get(), center, half_extents, layer_mask, keys, capacity, total);
+    }
+    Status JointReaction(uint64_t key, float* force, float* torque) const
+    {
+        return Api()->joint_reaction(Get(), key, force, torque);
+    }
+    Status MoveCharacter(uint64_t key, const float* velocity, float dt, engine_character_state* state) const
+    {
+        *state = Init<engine_character_state>();
+        return Api()->character_move(Get(), key, velocity, dt, state);
+    }
+    Status JumpCharacter(uint64_t key, float speed, engine_character_state* state) const
+    {
+        *state = Init<engine_character_state>();
+        return Api()->character_jump(Get(), key, speed, state);
+    }
+    /// Copies the events of the last frame to `out[0..capacity)`; every element's `struct_size` is set here (the call
+    /// refuses an element without it). `total` is the count of events, which may exceed `capacity`.
+    Status PhysicsEvents(engine_physics_event* out, size_t capacity, size_t* total) const
+    {
+        for (size_t i = 0; i < capacity; ++i)
+        {
+            out[i] = Init<engine_physics_event>();
+        }
+        return Api()->physics_events(Get(), out, capacity, total);
+    }
+    Status PhysicsSnapshot(Buffer* out) const { return Api()->physics_snapshot(Get(), out->Fill()); }
+    Status PhysicsRestore(const void* data, size_t size) const { return Api()->physics_restore(Get(), data, size); }
+
 private:
     friend class Engine;
 };
@@ -280,6 +478,177 @@ private:
 /// A counter of the job system.
 class Counter : public Owned
 {
+public:
+    /// The number of jobs submitted against the counter that have not finished (`counter_value`).
+    Status Value(uint64_t* out) const { return Api()->counter_value(Get(), out); }
+    /// Waits until the counter is zero or `timeout_ms` passed (`counter_wait`; TIMEOUT when it did not reach zero).
+    Status Wait(uint64_t timeout_ms) const { return Api()->counter_wait(Get(), timeout_ms); }
+
+private:
+    friend class Engine;
+};
+
+/// A mounted resource loaded into memory; releasing it (the destructor) gives the reference back (`resource_release`).
+class Resource : public Owned
+{
+public:
+    Status Info(engine_resource_info* out) const
+    {
+        *out = Init<engine_resource_info>();
+        return Api()->resource_status(Get(), out);
+    }
+
+private:
+    friend class Engine;
+    friend class Ticket;
+};
+
+/// A background resource load (`resource_load_async`); destroying it (the destructor) cancels nothing that finished.
+class Ticket : public Owned
+{
+public:
+    Status Poll(engine_ticket_info* out) const
+    {
+        *out = Init<engine_ticket_info>();
+        return Api()->ticket_poll(Get(), out);
+    }
+    Status Wait(uint64_t timeout_ms) const { return Api()->ticket_wait(Get(), timeout_ms); }
+    /// The loaded resource, owned by `out` from now on.
+    inline Status Finish(Resource* out) const;
+    Status Cancel() const { return Api()->ticket_cancel(Get()); }
+
+private:
+    friend class Engine;
+};
+
+/// What a glTF import made; the five buffers are released with the object.
+class ImportResult
+{
+public:
+    ImportResult() : raw_(Init<engine_import_result>()) {}
+    ~ImportResult() { Reset(); }
+    ImportResult(const ImportResult&) = delete;
+    ImportResult& operator=(const ImportResult&) = delete;
+
+    /// The structure to hand to a function that fills one. Releases what the object held first.
+    engine_import_result* Fill()
+    {
+        Reset();
+        raw_ = Init<engine_import_result>();
+        return &raw_;
+    }
+    const engine_import_result& Raw() const { return raw_; }
+
+    void Reset()
+    {
+        engine_buffer_release(&raw_.ids);
+        engine_buffer_release(&raw_.types);
+        engine_buffer_release(&raw_.paths);
+        engine_buffer_release(&raw_.warnings);
+        engine_buffer_release(&raw_.manifest);
+        raw_ = Init<engine_import_result>();
+    }
+
+private:
+    engine_import_result raw_;
+};
+
+/// A background glTF import (`import_gltf_async`).
+class ImportTicket : public Owned
+{
+public:
+    Status Poll(engine_import_info* out) const
+    {
+        *out = Init<engine_import_info>();
+        return Api()->import_poll(Get(), out);
+    }
+    Status Wait(uint64_t timeout_ms) const { return Api()->import_wait(Get(), timeout_ms); }
+    Status Finish(ImportResult* out) const { return Api()->import_finish(Get(), out->Fill()); }
+    Status Cancel() const { return Api()->import_cancel(Get()); }
+
+private:
+    friend class Engine;
+};
+
+/// The pixels of a surface read back (`surface_read_pixels`, then `pixels_finish`); released with the object.
+class Pixels
+{
+public:
+    Pixels() : raw_(Init<engine_pixels>()) {}
+    ~Pixels() { Reset(); }
+    Pixels(const Pixels&) = delete;
+    Pixels& operator=(const Pixels&) = delete;
+
+    engine_pixels* Fill()
+    {
+        Reset();
+        raw_ = Init<engine_pixels>();
+        return &raw_;
+    }
+    const engine_pixels& Raw() const { return raw_; }
+    void Reset()
+    {
+        engine_buffer_release(&raw_.data);
+        raw_ = Init<engine_pixels>();
+    }
+
+private:
+    engine_pixels raw_;
+};
+
+/// A pending read of a surface's pixels.
+class PixelsTicket : public Owned
+{
+public:
+    Status Finish(Pixels* out) const { return Api()->pixels_finish(Get(), out->Fill()); }
+
+private:
+    friend class Surface;
+};
+
+/// A surface in a host's window: the engine draws a world into it (`surface_*`).
+class Surface : public Owned
+{
+public:
+    Status Input(const engine_input_event& event) const { return Api()->surface_input(Get(), &event); }
+    Status Resized(uint32_t width, uint32_t height, float scale) const
+    {
+        return Api()->surface_resized(Get(), width, height, scale);
+    }
+    Status Rebind(const engine_surface_info& info) const { return Api()->surface_rebind(Get(), &info); }
+    Status SetBackground(const float* rgba) const { return Api()->surface_set_background(Get(), rgba); }
+    Status State(engine_surface_state* out) const
+    {
+        *out = Init<engine_surface_state>();
+        return Api()->surface_state(Get(), out);
+    }
+    inline Status ReadPixels(PixelsTicket* out) const;
+    inline Status SetWorld(const World& world) const;
+    Status SetCamera(uint64_t camera_entity) const { return Api()->surface_set_camera(Get(), camera_entity); }
+    Status PixelRay(float x, float y, float* origin, float* direction) const
+    {
+        return Api()->surface_pixel_ray(Get(), x, y, origin, direction);
+    }
+    Status Project(const float* point, float* out) const { return Api()->surface_project(Get(), point, out); }
+
+private:
+    friend class Engine;
+};
+
+/// A host texture the host fills and the scene draws (`texture_*`).
+class Texture : public Owned
+{
+public:
+    Status Update(const void* pixels, size_t stride, const engine_update_info& info) const
+    {
+        return Api()->texture_update(Get(), pixels, stride, &info);
+    }
+    Status Resize(uint32_t width, uint32_t height) const { return Api()->texture_resize(Get(), width, height); }
+    Status ReadPixels(Buffer* out, uint32_t* width, uint32_t* height) const
+    {
+        return Api()->texture_read_pixels(Get(), out->Fill(), width, height);
+    }
+
 private:
     friend class Engine;
 };
@@ -304,6 +673,112 @@ inline Status Engine::CreateCounter(Counter* out) const
         out->Adopt(Api(), handle, &engine_api::counter_destroy);
     }
     return status;
+}
+
+inline Status Engine::SubmitJob(engine_job_fn fn, void* user, const Counter& counter) const
+{
+    return Api()->jobs_submit(Get(), fn, user, counter.Get());
+}
+
+inline Status Engine::LoadResource(uint64_t id, const char* path, uint32_t type, Resource* out) const
+{
+    engine_handle handle = {0};
+    const Status status = Api()->resource_load(Get(), id, Str(path), type, &handle);
+    if (status)
+    {
+        out->Adopt(Api(), handle, &engine_api::resource_release);
+    }
+    return status;
+}
+
+inline Status Engine::LoadResourceAsync(uint64_t id, const char* path, uint32_t type, uint32_t priority,
+                                        Ticket* out) const
+{
+    engine_handle handle = {0};
+    const Status status = Api()->resource_load_async(Get(), id, Str(path), type, priority, &handle);
+    if (status)
+    {
+        out->Adopt(Api(), handle, &engine_api::ticket_destroy);
+    }
+    return status;
+}
+
+inline Status Ticket::Finish(Resource* out) const
+{
+    engine_handle handle = {0};
+    const Status status = Api()->ticket_finish(Get(), &handle);
+    if (status)
+    {
+        out->Adopt(Api(), handle, &engine_api::resource_release);
+    }
+    return status;
+}
+
+inline Status Engine::ImportGltf(const void* bytes, size_t size, const engine_import_options& options,
+                                 ImportResult* result) const
+{
+    return Api()->import_gltf(Get(), bytes, size, &options, result->Fill());
+}
+
+inline Status Engine::ImportGltfAsync(const void* bytes, size_t size, const engine_import_options& options,
+                                      ImportTicket* out) const
+{
+    engine_handle handle = {0};
+    const Status status = Api()->import_gltf_async(Get(), bytes, size, &options, &handle);
+    if (status)
+    {
+        out->Adopt(Api(), handle, &engine_api::import_destroy);
+    }
+    return status;
+}
+
+inline Status Engine::CreateSurface(const engine_surface_info& info, Surface* out) const
+{
+    engine_handle handle = {0};
+    const Status status = Api()->surface_create(Get(), &info, &handle);
+    if (status)
+    {
+        out->Adopt(Api(), handle, &engine_api::surface_destroy);
+    }
+    return status;
+}
+
+inline Status Engine::CreateTexture(const engine_texture_info& info, Texture* out) const
+{
+    engine_handle handle = {0};
+    const Status status = Api()->texture_create(Get(), &info, &handle);
+    if (status)
+    {
+        out->Adopt(Api(), handle, &engine_api::texture_destroy);
+    }
+    return status;
+}
+
+inline Status Surface::ReadPixels(PixelsTicket* out) const
+{
+    engine_handle handle = {0};
+    const Status status = Api()->surface_read_pixels(Get(), &handle);
+    if (status)
+    {
+        out->Adopt(Api(), handle, &engine_api::pixels_destroy);
+    }
+    return status;
+}
+
+inline Status Surface::SetWorld(const World& world) const
+{
+    return Api()->surface_set_world(Get(), world.Get());
+}
+
+/// The names the layer does not wrap by object: a free function each, with the table you give it.
+inline const void* GetExtension(const engine_api* api, const char* name)
+{
+    return api->get_extension(Str(name));
+}
+/// Tells the engine the calling thread is done with it (`thread_detach`); call it before a host thread exits.
+inline void ThreadDetach(const engine_api* api)
+{
+    api->thread_detach();
 }
 
 }  // namespace engine_host

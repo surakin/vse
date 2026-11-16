@@ -622,3 +622,9 @@ if(TARGET engine_c AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET PkgConfig::
   set_tests_properties(engine_tutorial_loading_matches_doc PROPERTIES LABELS "engine_library;docs")
   engine_label_tests(engine_tutorial_loading_matches_doc)
 endif()
+
+# Phase 25 Day 401 (the user's request): the C++ layer include/engine/engine.h calls every function of the table.
+add_test(NAME engine_h_covers_table COMMAND ${CMAKE_COMMAND} -DC_HEADER=${ENGINE_PUBLIC_INCLUDE_DIR}/engine/engine_c.h
+         -DCXX_HEADER=${ENGINE_PUBLIC_INCLUDE_DIR}/engine/engine.h -P ${CMAKE_CURRENT_SOURCE_DIR}/engine_h_coverage.cmake)
+set_tests_properties(engine_h_covers_table PROPERTIES LABELS "engine_library")
+engine_label_tests(engine_h_covers_table)

@@ -398,6 +398,7 @@ test:engine_owner_*                             23   # nothing the engine alloca
 test:engine_crash_across_boundary               23   # the host's handler is restored; a crash inside a job leaves a dump (Day 345)
 test:engine_c_host*                             23   # a C program uses the C API through the function table: create, settings, log callback, destroy, every bad call (Day 346)
 test:engine_c_host_cpp*                         23   # a C++ program uses the C API through include/engine/engine.h: owners destroy the engine, worlds and counters, moved owners own nothing, buffers are released once, sized structs, failing calls return their status
+test:engine_h_covers_table                      23   # every function of the table in engine_c.h is called by the C++ layer engine.h (Phase 25 Day 401)
 test:engine_c_runtime*                          23   # a C program drives frames, a world of a thousand entities, queries, counters, jobs and the crash handler through the table, and two host threads at once (Day 349)
 test:engine_c_resources*                        23   # a C program adds, replaces and removes host-provided content (lent and copied), loads it with handles and tickets, and counts every release of a lent buffer (Day 350)
 test:engine_c_import*                           23   # a C program imports a glTF from memory (sync, async, external files from the host, manifest ids kept, cancel, hostile files) and a library without the importer says UNSUPPORTED (Day 351)

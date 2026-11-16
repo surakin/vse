@@ -19,6 +19,78 @@ static int g_failures = 0;
 
 using namespace engine_host;
 
+static void CountJob(void* user)
+{
+    *static_cast<int*>(user) = 7;
+}
+
+// The rest of the table through the layer: components, names, parents, queries, physics, counters and jobs.
+static void RunRest(const engine_api* api, Engine& engine)
+{
+    World world;
+    CHECK(engine.CreateWorld(&world));
+    uint64_t a = 0;
+    uint64_t b = 0;
+    CHECK(world.Entity(&a) && world.Entity(&b));
+    engine_transform t = Init<engine_transform>();
+    t.rotation[3] = 1.0f;
+    t.scale[0] = t.scale[1] = t.scale[2] = 1.0f;
+    t.position[1] = 2.0f;
+    CHECK(world.SetComponent(a, ENGINE_COMPONENT_TRANSFORM, &t));
+    bool has = false;
+    CHECK(world.HasComponent(a, ENGINE_COMPONENT_TRANSFORM, &has) && has);
+    CHECK(world.HasComponent(b, ENGINE_COMPONENT_TRANSFORM, &has) && !has);
+    engine_transform back = Init<engine_transform>();
+    CHECK(world.GetComponent(a, ENGINE_COMPONENT_TRANSFORM, &back) && back.position[1] == 2.0f);
+    uint64_t keys[4] = {};
+    size_t total = 0;
+    CHECK(world.Query(ENGINE_COMPONENT_BIT(ENGINE_COMPONENT_TRANSFORM), keys, 4, &total) && total == 1 && keys[0] == a);
+    CHECK(world.RemoveComponent(a, ENGINE_COMPONENT_TRANSFORM));
+    CHECK(world.HasComponent(a, ENGINE_COMPONENT_TRANSFORM, &has) && !has);
+
+    CHECK(world.SetName(a, "parent") && world.SetName(b, "child"));
+    Buffer name;
+    CHECK(world.GetName(a, &name) && name.Equals("parent"));
+    uint64_t found = 0;
+    CHECK(world.Find("child", &found) && found == b);
+    CHECK(world.FindAll("child", keys, 4, &total) && total == 1);
+    CHECK(world.SetParent(b, a));
+    uint64_t parent = 0;
+    CHECK(world.GetParent(b, &parent) && parent == a);
+
+    const float gravity[3] = {0.0f, -3.0f, 0.0f};
+    CHECK(world.SetGravity(gravity));
+    const float origin[3] = {0.0f, 5.0f, 0.0f};
+    const float down[3] = {0.0f, -1.0f, 0.0f};
+    engine_ray_hit hit;
+    bool hit_any = true;
+    CHECK(world.RayCast(origin, down, 100.0f, 0xFFFFFFFFu, &hit, &hit_any) && !hit_any);
+    CHECK(world.OverlapSphere(origin, 1.0f, 0xFFFFFFFFu, keys, 4, &total) && total == 0);
+    engine_physics_event events[2];
+    CHECK(world.PhysicsEvents(events, 2, &total) && total == 0);
+    Buffer snapshot;
+    CHECK(world.PhysicsSnapshot(&snapshot) && snapshot.Size() > 0);
+    CHECK(world.PhysicsRestore(snapshot.Data(), snapshot.Size()));
+    CHECK(world.PhysicsRestore(snapshot.Data(), 3) != ENGINE_OK);
+
+    Counter counter;
+    CHECK(engine.CreateCounter(&counter));
+    int ran = 0;
+    CHECK(engine.SubmitJob(&CountJob, &ran, counter));
+    CHECK(counter.Wait(5000));
+    uint64_t pending = 1;
+    CHECK(counter.Value(&pending) && pending == 0 && ran == 7);
+    CHECK(GetExtension(api, "no_such_extension") == nullptr);
+    ThreadDetach(api);
+
+    Buffer none;
+    CHECK(engine.ReplaceResource(Init<engine_resource_add_info>(), &none) != ENGINE_OK);
+    engine_resource_info mounted;
+    CHECK(engine.MountedResource(0x1234, &mounted) != ENGINE_OK);
+    Resource resource;
+    CHECK(engine.LoadResource(0x1234, "no/such/path", 0, &resource) != ENGINE_OK && !resource);
+}
+
 int main()
 {
     const engine_api* api = nullptr;
@@ -81,6 +153,7 @@ int main()
 
         Counter counter;
         CHECK(engine.CreateCounter(&counter) && counter);
+        RunRest(api, engine);
 
         engine_frame_stats stats = {};
         engine_frame_info frame = Init<engine_frame_info>();
