@@ -38,21 +38,46 @@ void RegisterPhysicsSettings(settings::Registry* registry)
     margin.group = "physics";
     margin.flags = settings::kAdvanced;
     registry->Register(margin);
-    settings::SettingDesc iterations = settings::MakeInt("physics.velocity_iterations", 10, 1, 100);
+    settings::SettingDesc iterations = settings::MakeInt("physics.velocity_iterations", 2, 1, 100);
     iterations.env = "ENGINE_PHYSICS_VELOCITY_ITERATIONS";
     iterations.flag = "physics-velocity-iterations";
     iterations.label = "Solver iterations";
-    iterations.description = "contact solver passes per step: more is stiffer stacks and slower steps";
+    iterations.description = "contact solver passes per substep: more is stiffer stacks and slower steps";
     iterations.group = "physics";
     registry->Register(iterations);
-    settings::SettingDesc bias = settings::MakeFloat("physics.contact_bias", 0.2, 0.0, 1.0);
-    bias.env = "ENGINE_PHYSICS_CONTACT_BIAS";
-    bias.flag = "physics-contact-bias";
-    bias.label = "Contact bias";
-    bias.description = "the fraction of a penetration (beyond the slop) removed per step";
-    bias.group = "physics";
-    bias.flags = settings::kAdvanced;
-    registry->Register(bias);
+    settings::SettingDesc solver_substeps = settings::MakeInt("physics.substeps", 4, 1, 16);
+    solver_substeps.env = "ENGINE_PHYSICS_SUBSTEPS";
+    solver_substeps.flag = "physics-substeps";
+    solver_substeps.label = "Solver substeps";
+    solver_substeps
+        .description = "substeps the touching bodies take per step: more keeps tall stacks still and costs more";
+    solver_substeps.group = "physics";
+    registry->Register(solver_substeps);
+    settings::SettingDesc hertz = settings::MakeFloat("physics.contact_hertz", 30.0, 0.0, 1000.0);
+    hertz.env = "ENGINE_PHYSICS_CONTACT_HERTZ";
+    hertz.flag = "physics-contact-hertz";
+    hertz.label = "Contact stiffness";
+    hertz.description =
+        "the frequency of the spring a resting contact acts as (capped at a quarter of the substep rate)";
+    hertz.group = "physics";
+    hertz.flags = settings::kAdvanced;
+    registry->Register(hertz);
+    settings::SettingDesc slop = settings::MakeFloat("physics.penetration_slop", 0.001, 0.0, 0.1);
+    slop.env = "ENGINE_PHYSICS_PENETRATION_SLOP";
+    slop.flag = "physics-penetration-slop";
+    slop.label = "Penetration slop";
+    slop.description = "metres of overlap that are left alone, so resting contacts do not jitter";
+    slop.group = "physics";
+    slop.flags = settings::kAdvanced;
+    registry->Register(slop);
+    settings::SettingDesc max_velocity = settings::MakeFloat("physics.max_velocity", 100.0, 1.0, 100000.0);
+    max_velocity.env = "ENGINE_PHYSICS_MAX_VELOCITY";
+    max_velocity.flag = "physics-max-velocity";
+    max_velocity.label = "Speed limit";
+    max_velocity.description = "no body moves faster than this (metres per second)";
+    max_velocity.group = "physics";
+    max_velocity.flags = settings::kAdvanced;
+    registry->Register(max_velocity);
     settings::SettingDesc interpolate = settings::MakeBool("physics.interpolate", true);
     interpolate.env = "ENGINE_PHYSICS_INTERPOLATE";
     interpolate.flag = "physics-interpolate";
@@ -91,10 +116,25 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     {
         config.velocity_iterations = static_cast<u32>(settings::Setting<i64>(registry, iterations).Get());
     }
-    const settings::SettingId bias = registry.Find(StringView("physics.contact_bias"));
-    if (bias.IsValid())
+    const settings::SettingId solver_substeps = registry.Find(StringView("physics.substeps"));
+    if (solver_substeps.IsValid())
     {
-        config.contact_bias = static_cast<f32>(settings::Setting<f64>(registry, bias).Get());
+        config.substeps = static_cast<u32>(settings::Setting<i64>(registry, solver_substeps).Get());
+    }
+    const settings::SettingId hertz = registry.Find(StringView("physics.contact_hertz"));
+    if (hertz.IsValid())
+    {
+        config.contact_hertz = static_cast<f32>(settings::Setting<f64>(registry, hertz).Get());
+    }
+    const settings::SettingId slop = registry.Find(StringView("physics.penetration_slop"));
+    if (slop.IsValid())
+    {
+        config.contact_slop = static_cast<f32>(settings::Setting<f64>(registry, slop).Get());
+    }
+    const settings::SettingId max_velocity = registry.Find(StringView("physics.max_velocity"));
+    if (max_velocity.IsValid())
+    {
+        config.max_velocity = static_cast<f32>(settings::Setting<f64>(registry, max_velocity).Get());
     }
     const settings::SettingId interpolate = registry.Find(StringView("physics.interpolate"));
     if (interpolate.IsValid())

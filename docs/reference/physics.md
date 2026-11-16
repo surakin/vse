@@ -2753,6 +2753,16 @@ How a step is solved.
 |---|---|
 | Thread-safety | thread-compatible plain data. |
 
+### `substeps` {#physics-solverconfig-substeps}
+
+`variable physics::SolverConfig::substeps` — defined in `engine/physics/solver.h`
+
+```cpp
+u32 substeps;
+```
+
+Substeps the touching bodies take, 1 to 16.
+
 ### `iterations` {#physics-solverconfig-iterations}
 
 `variable physics::SolverConfig::iterations` — defined in `engine/physics/solver.h`
@@ -2761,17 +2771,37 @@ How a step is solved.
 u32 iterations;
 ```
 
-Velocity iterations per step, 1 to 100.
+Solver iterations per substep (and as many relax iterations), 1 to 100.
 
-### `bias` {#physics-solverconfig-bias}
+### `contact_hertz` {#physics-solverconfig-contact-hertz}
 
-`variable physics::SolverConfig::bias` — defined in `engine/physics/solver.h`
+`variable physics::SolverConfig::contact_hertz` — defined in `engine/physics/solver.h`
 
 ```cpp
-f32 bias;
+f32 contact_hertz;
 ```
 
-The fraction of the penetration beyond the slop that is removed per step as a velocity bias, 0 to 1.
+The stiffness of a resting contact in hertz (capped at a quarter of the substep rate); static contacts are twice as stiff.
+
+### `damping_ratio` {#physics-solverconfig-damping-ratio}
+
+`variable physics::SolverConfig::damping_ratio` — defined in `engine/physics/solver.h`
+
+```cpp
+f32 damping_ratio;
+```
+
+The damping ratio of the contact spring.
+
+### `push_velocity` {#physics-solverconfig-push-velocity}
+
+`variable physics::SolverConfig::push_velocity` — defined in `engine/physics/solver.h`
+
+```cpp
+f32 push_velocity;
+```
+
+The fastest an overlap is pushed apart, in metres per second.
 
 ### `slop` {#physics-solverconfig-slop}
 
@@ -2802,6 +2832,26 @@ f32 dt;
 ```
 
 The length of the step in seconds.
+
+### `gravity` {#physics-solverconfig-gravity}
+
+`variable physics::SolverConfig::gravity` — defined in `engine/physics/solver.h`
+
+```cpp
+Vec3 gravity;
+```
+
+The gravity the bodies that touch fall with.
+
+### `max_velocity` {#physics-solverconfig-max-velocity}
+
+`variable physics::SolverConfig::max_velocity` — defined in `engine/physics/solver.h`
+
+```cpp
+f32 max_velocity;
+```
+
+The speed limit of a body, in metres per second.
 
 ## `ContactInput` {#physics-contactinput}
 
@@ -2911,6 +2961,36 @@ u32 warm_started;
 
 Points that started from a cached impulse.
 
+### `iterations` {#physics-solverstats-iterations}
+
+`variable physics::SolverStats::iterations` — defined in `engine/physics/solver.h`
+
+```cpp
+u32 iterations;
+```
+
+Solver iterations run in the step (substeps times iterations, relax passes not counted); 0 without a manifold.
+
+### `max_penetration` {#physics-solverstats-max-penetration}
+
+`variable physics::SolverStats::max_penetration` — defined in `engine/physics/solver.h`
+
+```cpp
+f32 max_penetration;
+```
+
+The deepest penetration of the step at its start, in metres (0 when nothing penetrates).
+
+### `max_impulse` {#physics-solverstats-max-impulse}
+
+`variable physics::SolverStats::max_impulse` — defined in `engine/physics/solver.h`
+
+```cpp
+f32 max_impulse;
+```
+
+The largest normal impulse any point received in one substep.
+
 ## `ContactSolver` {#physics-contactsolver}
 
 `class physics::ContactSolver` — defined in `engine/physics/solver.h`
@@ -2936,13 +3016,13 @@ The cache holds the last step's impulses by (collider A, collider B, feature id)
 void Solve(PhysicsWorld* world, Span<const ContactInput> inputs, const SolverConfig& config);
 ```
 
-Solves the contacts: builds the rows, warm starts, iterates and writes the new velocities into the bodies; then replaces the cache by this step's impulses.
+Solves the contacts and integrates the bodies that touch (each is marked `integrated`): the rows are built from the manifolds once, then every substep integrates the velocities, applies the cached impulses, solves with the position feedback of a soft constraint, moves the bodies and solves again without it (the relax pass); a last pass applies restitution. The cache is replaced by this step's impulses.
 
 | Field | Value |
 |---|---|
 | Parameter `world` | the world whose bodies are changed. |
 | Parameter `inputs` | the manifolds, in any order (they are solved in order of their collider ids). |
-| Parameter `config` | the iteration count and the position correction. |
+| Parameter `config` | the substeps, iterations and softness. |
 | Fails | a manifold whose body is not found is skipped. |
 | Ownership | `inputs` is read during the call only. |
 
@@ -4006,6 +4086,16 @@ u32 island;
 
 The island the body is in (Day 388).
 
+### `integrated` {#physics-body-integrated}
+
+`variable physics::Body::integrated` — defined in `engine/physics/world.h`
+
+```cpp
+bool integrated;
+```
+
+Whether the solver already integrated the body in the current step (cleared by the step).
+
 ### `teleports` {#physics-body-teleports}
 
 `variable physics::Body::teleports` — defined in `engine/physics/world.h`
@@ -4132,17 +4222,7 @@ Whether `Interpolated` blends the last two states (false: it returns the latest)
 u32 velocity_iterations;
 ```
 
-Velocity iterations of the contact solver per step, 1 to 100.
-
-### `contact_bias` {#physics-stepconfig-contact-bias}
-
-`variable physics::StepConfig::contact_bias` — defined in `engine/physics/world.h`
-
-```cpp
-f32 contact_bias;
-```
-
-The fraction of a penetration beyond `slop` that the solver removes per step, 0 to 1.
+Solver iterations per substep (each is followed by a relax pass), 1 to 100.
 
 ### `contact_slop` {#physics-stepconfig-contact-slop}
 
@@ -4163,6 +4243,56 @@ f32 restitution_threshold;
 ```
 
 An approach speed below this (metres per second) does not bounce.
+
+### `substeps` {#physics-stepconfig-substeps}
+
+`variable physics::StepConfig::substeps` — defined in `engine/physics/world.h`
+
+```cpp
+u32 substeps;
+```
+
+Substeps per step for the bodies that touch: the solver integrates and solves each of them in turn, which keeps tall stacks still (1 to 16). A body that touches nothing takes one step.
+
+### `contact_hertz` {#physics-stepconfig-contact-hertz}
+
+`variable physics::StepConfig::contact_hertz` — defined in `engine/physics/world.h`
+
+```cpp
+f32 contact_hertz;
+```
+
+The stiffness of a resting contact, in hertz (the contact acts like a damped spring of this frequency; it is capped at a quarter of the substep rate).
+
+### `contact_damping_ratio` {#physics-stepconfig-contact-damping-ratio}
+
+`variable physics::StepConfig::contact_damping_ratio` — defined in `engine/physics/world.h`
+
+```cpp
+f32 contact_damping_ratio;
+```
+
+The damping ratio of that spring (above 1 it does not oscillate).
+
+### `contact_push_velocity` {#physics-stepconfig-contact-push-velocity}
+
+`variable physics::StepConfig::contact_push_velocity` — defined in `engine/physics/world.h`
+
+```cpp
+f32 contact_push_velocity;
+```
+
+The fastest the solver pushes two overlapping shapes apart, in metres per second.
+
+### `max_velocity` {#physics-stepconfig-max-velocity}
+
+`variable physics::StepConfig::max_velocity` — defined in `engine/physics/world.h`
+
+```cpp
+f32 max_velocity;
+```
+
+A body is not allowed to move faster than this, in metres per second (it keeps its direction); it stops a body squeezed between planes from exploding.
 
 ## `StepStats` {#physics-stepstats}
 

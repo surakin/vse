@@ -3,7 +3,9 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 #include "physics/broad_phase.h"
+#include "physics/broad_phase.h"
 #include "physics/check.h"
+#include "physics/collide.h"
 #include "physics/collide.h"
 #include "physics/determinism.h"
 #include "physics/state_hash.h"
@@ -14,6 +16,9 @@ namespace engine_placeholder::physics
 
 namespace
 {
+
+// The fastest a body may spin, in radians per second.
+constexpr f32 kMaxSpin = 100.0f;
 
 // Turns q by the angular velocity w over dt: q' = normalize(q + dt/2 * (w, 0) * q).
 Quaternion Turn(const Quaternion& q, const Vec3& w, f32 dt)
@@ -42,12 +47,15 @@ PhysicsWorld& PhysicsWorld::operator=(PhysicsWorld&&) noexcept = default;
 BodyStatus PhysicsWorld::SetStepConfig(const StepConfig& config)
 {
     if (!IsFinite(config.step_hz) || config.step_hz < 1.0f || config.step_hz > 1000.0f || config.max_substeps < 1 ||
-        config.max_substeps > 32 || config.velocity_iterations < 1 || config.velocity_iterations > 100 ||
-        !IsFinite(config.contact_bias) || config.contact_bias < 0.0f || config.contact_bias > 1.0f ||
+        config.max_substeps > 32 || !IsFinite(config.contact_margin) || config.contact_margin < 0.0f ||
+        config.contact_margin > 1.0f || !FiniteVec3(config.gravity) || config.velocity_iterations < 1 ||
+        config.velocity_iterations > 100 || config.substeps < 1 || config.substeps > 16 ||
         !IsFinite(config.contact_slop) || config.contact_slop < 0.0f || config.contact_slop > 0.1f ||
         !IsFinite(config.restitution_threshold) || config.restitution_threshold < 0.0f ||
-        !IsFinite(config.contact_margin) || config.contact_margin < 0.0f || config.contact_margin > 1.0f ||
-        !FiniteVec3(config.gravity))
+        !IsFinite(config.contact_hertz) || config.contact_hertz < 0.0f || config.contact_hertz > 1000.0f ||
+        !IsFinite(config.contact_damping_ratio) || config.contact_damping_ratio < 0.0f ||
+        config.contact_damping_ratio > 1000.0f || !IsFinite(config.contact_push_velocity) ||
+        config.contact_push_velocity < 0.0f || !IsFinite(config.max_velocity) || config.max_velocity < 1.0f)
     {
         return BodyStatus::Invalid;
     }
@@ -57,6 +65,57 @@ BodyStatus PhysicsWorld::SetStepConfig(const StepConfig& config)
     }
     step_config_ = config;
     return BodyStatus::Ok;
+}
+
+void PhysicsWorld::IntegrateVelocity(const Vec3& gravity, Body* body, f32 dt)
+{
+    if (body->settings.type != BodyType::Dynamic)
+    {
+        return;
+    }
+    // Forces and gravity, then damping (v / (1 + c dt), stable for any c dt).
+    const Vec3 acceleration = gravity * body->settings.gravity_scale + body->force * body->inverse_mass;
+    body->linear_velocity = body->linear_velocity + acceleration * dt;
+    body->angular_velocity = body->angular_velocity + (body->inverse_inertia_world * body->torque) * dt;
+    body->linear_velocity = body->linear_velocity * (1.0f / (1.0f + body->settings.linear_damping * dt));
+    body->angular_velocity = body->angular_velocity * (1.0f / (1.0f + body->settings.angular_damping * dt));
+}
+
+void PhysicsWorld::LimitVelocity(f32 max_velocity, Body* body)
+{
+    if (body->settings.type != BodyType::Dynamic)
+    {
+        return;
+    }
+    const f32 speed2 = body->linear_velocity.LengthSquared();
+    if (speed2 > max_velocity * max_velocity)
+    {
+        body->linear_velocity = body->linear_velocity * (max_velocity / Sqrt(speed2));
+    }
+    const f32 spin2 = body->angular_velocity.LengthSquared();
+    if (spin2 > kMaxSpin * kMaxSpin)
+    {
+        body->angular_velocity = body->angular_velocity * (kMaxSpin / Sqrt(spin2));
+    }
+}
+
+void PhysicsWorld::IntegratePosition(Body* body, f32 dt)
+{
+    if (body->settings.type == BodyType::Dynamic)
+    {
+        // The centre of mass moves by the new velocity, the body turns about it.
+        const Vec3 offset = body->orientation.ToMat3() * body->mass.center;
+        const Vec3 center = body->position + offset + body->linear_velocity * dt;
+        body->orientation = Turn(body->orientation, body->angular_velocity, dt);
+        body->position = center - body->orientation.ToMat3() * body->mass.center;
+        RefreshInertia(body);
+    }
+    else if (body->settings.type == BodyType::Kinematic)
+    {
+        // A kinematic body is moved by its velocity, about its origin; nothing pushes it.
+        body->position = body->position + body->linear_velocity * dt;
+        body->orientation = Turn(body->orientation, body->angular_velocity, dt);
+    }
 }
 
 f32 PhysicsWorld::Alpha() const
@@ -106,28 +165,17 @@ void PhysicsWorld::Step()
     }
     const f32 dt = static_cast<f32>(1.0 / static_cast<f64>(step_config_.step_hz));
     const u32 slots = bodies_.Slots();
-    // 1. Forces, gravity and damping change the velocities; the previous poses are kept for the interpolation.
+    // The previous poses are kept for the interpolation.
     for (u32 slot = 0; slot < slots; ++slot)
     {
         Body* body = bodies_.Find(slot, bodies_.LiveGeneration(slot));
-        if (body == nullptr || body->settings.type == BodyType::Static)
+        if (body != nullptr && body->settings.type != BodyType::Static)
         {
-            continue;
-        }
-        body->previous_position = body->position;
-        body->previous_orientation = body->orientation;
-        if (body->settings.type == BodyType::Dynamic)
-        {
-            // Velocities: forces and gravity, then damping (v / (1 + c dt), stable for any c dt).
-            const Vec3 acceleration = step_config_.gravity * body->settings.gravity_scale +
-                                      body->force * body->inverse_mass;
-            body->linear_velocity = body->linear_velocity + acceleration * dt;
-            body->angular_velocity = body->angular_velocity + (body->inverse_inertia_world * body->torque) * dt;
-            body->linear_velocity = body->linear_velocity * (1.0f / (1.0f + body->settings.linear_damping * dt));
-            body->angular_velocity = body->angular_velocity * (1.0f / (1.0f + body->settings.angular_damping * dt));
+            body->previous_position = body->position;
+            body->previous_orientation = body->orientation;
         }
     }
-    // 2. Contacts: the broad phase's pairs, the narrow phase, the solver.
+    // Contacts: the broad phase's pairs and the narrow phase, on the poses the step starts from.
     if (broad_.Get() == nullptr)
     {
         BroadPhaseConfig broad_config;
@@ -176,15 +224,19 @@ void PhysicsWorld::Step()
         input.body_b = rb->owner;
         inputs.Push(input);
     }
+    // The bodies that touch take their substeps in the solver; the rest take one step.
     SolverConfig solver_config;
+    solver_config.substeps = step_config_.substeps;
     solver_config.iterations = step_config_.velocity_iterations;
-    solver_config.bias = step_config_.contact_bias;
+    solver_config.contact_hertz = step_config_.contact_hertz;
+    solver_config.damping_ratio = step_config_.contact_damping_ratio;
+    solver_config.push_velocity = step_config_.contact_push_velocity;
     solver_config.slop = step_config_.contact_slop;
     solver_config.restitution_threshold = step_config_.restitution_threshold;
     solver_config.dt = dt;
+    solver_config.gravity = step_config_.gravity;
+    solver_config.max_velocity = step_config_.max_velocity;
     solver_.Solve(this, Span<const ContactInput>(inputs.Data(), inputs.Size()), solver_config);
-    // 3. Positions: the centre of mass of a dynamic body moves by the new velocity and the body turns about it; a
-    // kinematic body moves about its origin.
     for (u32 slot = 0; slot < slots; ++slot)
     {
         Body* body = bodies_.Find(slot, bodies_.LiveGeneration(slot));
@@ -192,19 +244,13 @@ void PhysicsWorld::Step()
         {
             continue;
         }
-        if (body->settings.type == BodyType::Dynamic)
+        if (!body->integrated)
         {
-            const Vec3 offset = body->orientation.ToMat3() * body->mass.center;
-            const Vec3 center = body->position + offset + body->linear_velocity * dt;
-            body->orientation = Turn(body->orientation, body->angular_velocity, dt);
-            body->position = center - body->orientation.ToMat3() * body->mass.center;
-            RefreshInertia(body);
+            IntegrateVelocity(step_config_.gravity, body, dt);
+            LimitVelocity(step_config_.max_velocity, body);
+            IntegratePosition(body, dt);
         }
-        else
-        {
-            body->position = body->position + body->linear_velocity * dt;
-            body->orientation = Turn(body->orientation, body->angular_velocity, dt);
-        }
+        body->integrated = false;
         body->force = Vec3(0.0f, 0.0f, 0.0f);
         body->torque = Vec3(0.0f, 0.0f, 0.0f);
     }

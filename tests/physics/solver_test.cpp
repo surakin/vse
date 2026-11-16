@@ -99,13 +99,20 @@ TEST_CASE("Solver: a box slides down a slope at g (sin - mu cos)", "[physics][so
         const Vec3 normal(-s, c, 0.0f);
         const Vec3 down(-c, -s, 0.0f);
         const BodyId box = Slab(world, normal * 1.0f, tilt, Vec3(0.5f, 0.5f, 0.5f), BodyType::Dynamic, mu);
-        for (int i = 0; i < 60; ++i)
+        // The acceleration between 0.5 s and 1.5 s, after the contact has settled into its soft equilibrium.
+        f32 v_start = 0.0f;
+        for (int i = 0; i < 90; ++i)
         {
             world.Step();
+            if (i == 29)
+            {
+                v_start = VelocityOf(world, box).Dot(down);
+            }
         }
-        const f32 speed = VelocityOf(world, box).Dot(down);
-        const f32 expected = 9.81f * (s - mu * c) * 1.0f;
-        CHECK(SNear(speed, expected, 0.03f));
+        const f32 acceleration = (VelocityOf(world, box).Dot(down) - v_start) / 1.0f;
+        const f32 expected = 9.81f * (s - mu * c);
+        INFO("mu " << mu << " acceleration " << acceleration << " expected " << expected);
+        CHECK(SNear(acceleration, expected, 0.03f));
     }
 }
 
@@ -152,7 +159,7 @@ TEST_CASE("Solver: equal balls head on exchange velocities at e = 1 and stick at
         const f32 va = VelocityOf(world, a).x;
         const f32 vb = VelocityOf(world, b).x;
         CHECK(SNear(0.5f * (va + vb), 1.0f, 0.001f));
-        CHECK(Abs(vb - va) < 0.25f * 4.0f);
+        CHECK(Abs(vb - va) < 0.05f * 4.0f);
     }
 }
 
@@ -275,4 +282,21 @@ TEST_CASE("Solver: warm starting carries the impulses over", "[physics][solver]"
     world.Step();
     CHECK(world.ContactCacheSize() >= 1);
     CHECK(world.GetSolverStats().warm_started == world.GetSolverStats().points);
+    CHECK(world.GetSolverStats().iterations ==
+          world.GetStepConfig().substeps * world.GetStepConfig().velocity_iterations);
+    CHECK(world.GetSolverStats().max_impulse > 0.0f);
+}
+
+TEST_CASE("Solver: no body moves faster than the speed limit", "[physics][solver]")
+{
+    PhysicsWorld world;
+    NoGravity(world);
+    const BodyId free_ball = Ball(world, Vec3(0, 50, 0), Vec3(500, 0, 0), 0.0f);
+    world.Step();
+    CHECK(VelocityOf(world, free_ball).Length() <= world.GetStepConfig().max_velocity * 1.0001f);
+    // A body that touches is limited in the solver's substeps as well.
+    Slab(world, Vec3(0, -0.5f, 0), Quaternion::Identity(), Vec3(1000, 0.5f, 1000), BodyType::Static, 0.0f);
+    const BodyId sliding = Ball(world, Vec3(0, 0.5f, 0), Vec3(500, 0, 0), 0.0f);
+    world.Step();
+    CHECK(VelocityOf(world, sliding).Length() <= world.GetStepConfig().max_velocity * 1.0001f);
 }

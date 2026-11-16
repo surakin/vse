@@ -104,6 +104,8 @@ struct Body
     f32 sleep_time = 0.0f;
     /// The island the body is in (Day 388).
     u32 island = 0;
+    /// Whether the solver already integrated the body in the current step (cleared by the step).
+    bool integrated = false;
     /// Counts teleports; a contact cache remembers it to know its points are stale.
     u32 teleports = 0;
 };
@@ -137,14 +139,25 @@ struct StepConfig
     f32 contact_margin = 0.02f;
     /// Whether `Interpolated` blends the last two states (false: it returns the latest).
     bool interpolate = true;
-    /// Velocity iterations of the contact solver per step, 1 to 100.
-    u32 velocity_iterations = 10;
-    /// The fraction of a penetration beyond `slop` that the solver removes per step, 0 to 1.
-    f32 contact_bias = 0.2f;
+    /// Solver iterations per substep (each is followed by a relax pass), 1 to 100.
+    u32 velocity_iterations = 2;
     /// The penetration the solver leaves alone, in metres, 0 to 0.1.
-    f32 contact_slop = 0.005f;
+    f32 contact_slop = 0.001f;
     /// An approach speed below this (metres per second) does not bounce.
     f32 restitution_threshold = 1.0f;
+    /// Substeps per step for the bodies that touch: the solver integrates and solves each of them in turn, which keeps
+    /// tall stacks still (1 to 16). A body that touches nothing takes one step.
+    u32 substeps = 4;
+    /// The stiffness of a resting contact, in hertz (the contact acts like a damped spring of this frequency; it is
+    /// capped at a quarter of the substep rate).
+    f32 contact_hertz = 30.0f;
+    /// The damping ratio of that spring (above 1 it does not oscillate).
+    f32 contact_damping_ratio = 10.0f;
+    /// The fastest the solver pushes two overlapping shapes apart, in metres per second.
+    f32 contact_push_velocity = 3.0f;
+    /// A body is not allowed to move faster than this, in metres per second (it keeps its direction); it stops a body
+    /// squeezed between planes from exploding.
+    f32 max_velocity = 100.0f;
 };
 
 /// What stepping did.
@@ -194,6 +207,8 @@ class BroadPhase;
 /// - Ownership: owns its bodies and colliders.
 class PhysicsWorld
 {
+    friend class ContactSolver;
+
 public:
     /// Makes an empty world with the default step configuration.
     /// - Fails: never.
@@ -496,6 +511,12 @@ public:
 
 private:
     void RecomputeMass(Body* body);
+    // The integration the step and the solver share: forces, gravity and damping change the velocity of a dynamic body;
+    // the speed limit; and the position moves by the velocity (a dynamic body about its centre of mass, a kinematic one
+    // about its origin).
+    static void IntegrateVelocity(const Vec3& gravity, Body* body, f32 dt);
+    static void LimitVelocity(f32 max_velocity, Body* body);
+    static void IntegratePosition(Body* body, f32 dt);
     // A hull or mesh shape names an entry of its library, and its extent (the broad phase's bound) covers it; a mesh
     // belongs to a static body.
     bool HullKnown(const Shape& shape, BodyType body_type) const

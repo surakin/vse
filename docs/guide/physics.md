@@ -193,23 +193,30 @@ stretch where the axis lies flat above a face. An axis that meets the box leaves
 
 ## The contact solver
 
-`PhysicsWorld::Step` now runs the whole pipeline: forces and gravity change the velocities, the broad phase finds the
-pairs, the narrow phase makes a manifold for each non-trigger pair that has a dynamic body, `ContactSolver` changes the
-velocities, and the positions move last (`engine/physics/solver.h`).
+`PhysicsWorld::Step` runs the whole pipeline: the broad phase finds the pairs, the narrow phase makes a manifold for each
+non-trigger pair that has a dynamic body, and `ContactSolver` (`engine/physics/solver.h`) integrates and solves the bodies
+that touch. A body that touches nothing takes one plain step (so free fall is the same recurrence as before).
 
-- **Rows.** Each contact point gets a normal row and two friction rows. The normal row wants the velocity along the normal
-  to reach a target: `bias * (depth - slop) / dt` for a penetration (0.2 and 5 mm by default), `depth / dt` for a
-  speculative contact (the shapes may approach until the gap closes), and `restitution * approach speed` when the bodies
-  approach faster than `restitution_threshold` (1 m/s) and will touch this step. Friction rows use the direction of the
-  sliding velocity, and are clamped to `friction * normal impulse`.
-- **Order.** The manifolds are solved in the order of their collider keys (the lower key is body A) and then by point, so the
-  result does not depend on the order the pairs arrive in; `solver_test.cpp` shuffles and flips them. Each iteration solves
-  friction first, then the normal, with the accumulated normal impulse never below zero. Static and kinematic bodies have
-  zero inverse mass and are not pushed.
-- **Warm starting.** The impulses of a point are kept by (collider A, collider B, feature id) in sorted storage and used
-  again next step when neither body was teleported (`SetTransform`) and the point moved less than 5 cm on body A.
-- **Settings.** `physics.velocity_iterations` (default 10, 1 to 100) and `physics.contact_bias`; `StepConfig` also holds
-  `contact_slop` and `restitution_threshold`.
+- **Substeps (soft step).** The bodies that touch take `physics.substeps` (default 4) small steps. Each substep integrates
+  the velocities, applies the impulses of the last substep, solves every contact (`physics.velocity_iterations` times,
+  default 2), moves the bodies and solves again without position feedback (the relax pass). Small steps keep tall stacks
+  still where many iterations of one big step would not.
+- **Rows.** Each contact point has a normal row and two friction rows. The separation is recomputed in every substep from
+  the bodies' motion and the turn of the anchors. A gap is closed in the time that remains (a speculative contact); an
+  overlap beyond the slop (`physics.penetration_slop`, 1 mm) is a soft constraint, a damped spring of
+  `physics.contact_hertz` (30 Hz, capped at a quarter of the substep rate; twice as stiff against static bodies) that never
+  pushes faster than `contact_push_velocity` (3 m/s) and adds no energy. Friction directions follow the sliding velocity and
+  are clamped to `friction * normal impulse`; friction is solved before the normal row.
+- **Restitution** is applied once after the substeps, to the points that approached faster than `restitution_threshold`
+  (1 m/s): they leave with `e` times their approach speed.
+- **Order.** The manifolds are solved in the order of their collider keys (the lower key is body A), points in manifold
+  order, forward and backward on alternate passes, so the result does not depend on the order the pairs arrive in;
+  `solver_test.cpp` shuffles and flips them.
+- **Warm starting.** The impulses of a point are kept by (collider A, collider B, feature id) in sorted storage and start
+  the rows again next step when neither body was teleported (`SetTransform`) and the point moved less than 5 cm on body A.
+- **Speed limit.** No dynamic body moves faster than `physics.max_velocity` (100 m/s) or spins faster than 100 rad/s.
+- **Counters.** `GetSolverStats()`: manifolds, points, warm-started points, iterations, the deepest penetration and the
+  largest impulse of the step.
 
-Known limit: the position correction is a velocity bias (Baumgarte), so a body that sank in before the contact was seen is
-pushed out with some extra speed; Day 385 replaces it with a softer scheme.
+A resting contact is a stiff spring, so a stack sags a little under its weight: 10 boxes of 1 m settle 3.5 cm at the top
+(`stability_test.cpp` measures the sideways drift, the sag and the speed after 3600 steps).

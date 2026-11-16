@@ -21,16 +21,27 @@ class PhysicsWorld;
 /// - Thread-safety: thread-compatible plain data.
 struct SolverConfig
 {
-    /// Velocity iterations per step, 1 to 100.
-    u32 iterations = 10;
-    /// The fraction of the penetration beyond the slop that is removed per step as a velocity bias, 0 to 1.
-    f32 bias = 0.2f;
+    /// Substeps the touching bodies take, 1 to 16.
+    u32 substeps = 4;
+    /// Solver iterations per substep (and as many relax iterations), 1 to 100.
+    u32 iterations = 2;
+    /// The stiffness of a resting contact in hertz (capped at a quarter of the substep rate); static contacts are twice
+    /// as stiff.
+    f32 contact_hertz = 30.0f;
+    /// The damping ratio of the contact spring.
+    f32 damping_ratio = 10.0f;
+    /// The fastest an overlap is pushed apart, in metres per second.
+    f32 push_velocity = 3.0f;
     /// The penetration that is left alone, in metres, 0 to 0.1.
-    f32 slop = 0.005f;
+    f32 slop = 0.001f;
     /// An approach speed below this does not bounce, in metres per second.
     f32 restitution_threshold = 1.0f;
     /// The length of the step in seconds.
     f32 dt = 1.0f / 60.0f;
+    /// The gravity the bodies that touch fall with.
+    Vec3 gravity = Vec3(0.0f, -9.81f, 0.0f);
+    /// The speed limit of a body, in metres per second.
+    f32 max_velocity = 100.0f;
 };
 
 /// One manifold to solve: the two colliders and bodies and the contact, with the combined friction and restitution in
@@ -62,6 +73,12 @@ struct SolverStats
     u32 points = 0;
     /// Points that started from a cached impulse.
     u32 warm_started = 0;
+    /// Solver iterations run in the step (substeps times iterations, relax passes not counted); 0 without a manifold.
+    u32 iterations = 0;
+    /// The deepest penetration of the step at its start, in metres (0 when nothing penetrates).
+    f32 max_penetration = 0.0f;
+    /// The largest normal impulse any point received in one substep.
+    f32 max_impulse = 0.0f;
 };
 
 /// The solver and its contact cache.
@@ -75,12 +92,14 @@ struct SolverStats
 class ContactSolver
 {
 public:
-    /// Solves the contacts: builds the rows, warm starts, iterates and writes the new velocities into the bodies; then
-    /// replaces the cache by this step's impulses.
+    /// Solves the contacts and integrates the bodies that touch (each is marked `integrated`): the rows are built from
+    /// the manifolds once, then every substep integrates the velocities, applies the cached impulses, solves with the
+    /// position feedback of a soft constraint, moves the bodies and solves again without it (the relax pass); a last
+    /// pass applies restitution. The cache is replaced by this step's impulses.
     ///
     /// - Param world: the world whose bodies are changed.
     /// - Param inputs: the manifolds, in any order (they are solved in order of their collider ids).
-    /// - Param config: the iteration count and the position correction.
+    /// - Param config: the substeps, iterations and softness.
     /// - Ownership: `inputs` is read during the call only.
     /// - Fails: a manifold whose body is not found is skipped.
     void Solve(PhysicsWorld* world, Span<const ContactInput> inputs, const SolverConfig& config);
@@ -120,6 +139,7 @@ private:
 
     struct Row;
     struct Constraint;
+    struct BodyState;
 
     Vector<CacheEntry> cache_;
     Vector<CacheEntry> next_cache_;
