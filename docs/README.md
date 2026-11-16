@@ -41,7 +41,7 @@ and the plans in `plans/`.
 
 | Section | What it is | Pages |
 |---|---|---|
-| [guide/](guide/README.md) | Concept pages, one per subsystem — *how it works and how to use it* | 31 |
+| [guide/](guide/README.md) | Concept pages, one per subsystem — *how it works and how to use it* | 32 |
 | [reference/](reference/README.md) | API reference, generated from header comments — *what every symbol does* | index + per-module stubs |
 | [tutorials/](tutorials/README.md) | Task-oriented walkthroughs — *do this, get that* | 4 |
 

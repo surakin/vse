@@ -175,6 +175,9 @@ endif()
 # so vendored test tooling (Catch2, which needs exceptions for its REQUIRE/CHECK macros) and the test executables aren't affected.
 # The options per compiler (GCC/Clang on Linux; cl and clang-cl on Windows) and the sanitizer flavors each compiler has are in:
 include(cmake/EngineCompilerOptions.cmake)
+# A fast-math flag anywhere stops the configure step (Phase 25 Day 374; the physics step must be bit-identical on every machine).
+include(cmake/EngineFpCheck.cmake)
+engine_fp_check_flags()
 
 # Debug checks (engine/foundation/log/assert.h): ENGINE_VERIFY and ENGINE_UNREACHABLE check, and ENGINE_CHECK_SLOW
 # evaluates, only in builds without NDEBUG (the Debug configuration) unless forced on here. ENGINE_ASSERT and
@@ -229,7 +232,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
     target_compile_options(sentry PRIVATE -Wno-error -w)
   endif()
   # The engine's own Windows options, for every target created from here on (the vendored libraries above keep their own).
-  add_compile_options(${ENGINE_WINDOWS_COMPILE_OPTIONS} ${ENGINE_WARNING_COMPILE_OPTIONS})
+  add_compile_options(${ENGINE_WINDOWS_COMPILE_OPTIONS} ${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_FP_COMPILE_OPTIONS})
   add_compile_definitions(${ENGINE_WINDOWS_DEFINITIONS})
   # The Vulkan C headers (os/gpu_driver_probe.h, the Vulkan backend) from the SDK the toolchain file found. Only vulkan/*.h and the
   # vk_video/ headers vulkan_core.h includes are copied into the build tree: the SDK's Include/ also holds slang, shaderc, dxc and
@@ -265,6 +268,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/database)
   add_subdirectory(engine/storage)  # Phase 19 Day 256
   add_subdirectory(tests/storage)
+  add_subdirectory(engine/physics)  # Phase 25 Day 374
+  add_subdirectory(tests/physics)
   add_subdirectory(engine/net)  # Phase 20 Day 267
   add_subdirectory(tests/net)
   add_subdirectory(engine/ui)  # Phase 15 Day 184
@@ -327,7 +332,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
-  add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_MACOS_COMPILE_OPTIONS})
+  add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_MACOS_COMPILE_OPTIONS} ${ENGINE_FP_COMPILE_OPTIONS})
   add_compile_definitions(${ENGINE_MACOS_DEFINITIONS})
   add_subdirectory(engine/foundation)
   add_subdirectory(engine/jobs)  # Day 289
@@ -345,6 +350,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/database)
   add_subdirectory(engine/storage)
   add_subdirectory(tests/storage)
+  add_subdirectory(engine/physics)  # Phase 25 Day 374
+  add_subdirectory(tests/physics)
   add_subdirectory(engine/net)  # Day 310: the POSIX backend with the macOS hooks and the kqueue poller
   add_subdirectory(tests/net)
   add_subdirectory(engine/ui)
@@ -422,7 +429,7 @@ set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
 set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
 
 # Warnings are errors for everything from here on (CLAUDE.md): the vendored libraries above keep their own flags.
-add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS})
+add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_FP_COMPILE_OPTIONS})
 
 add_subdirectory(engine/foundation)
 add_subdirectory(engine/platform)
@@ -432,6 +439,7 @@ add_subdirectory(engine/ecs)  # Phase 17 Day 223
 add_subdirectory(engine/spatial)  # Phase 18 Day 238
 add_subdirectory(engine/database)  # Phase 19 Day 251
 add_subdirectory(engine/storage)  # Phase 19 Day 256
+add_subdirectory(engine/physics)  # Phase 25 Day 374
 add_subdirectory(engine/net)  # Phase 20 Day 267
 add_subdirectory(engine/ui)  # Phase 15 Day 184
 add_subdirectory(engine/ui_window)  # Phase 15 Day 194
@@ -480,6 +488,7 @@ add_subdirectory(tests/ecs)  # Phase 17 Day 223
 add_subdirectory(tests/spatial)  # Phase 18 Day 238
 add_subdirectory(tests/database)  # Phase 19 Day 251
 add_subdirectory(tests/storage)  # Phase 19 Day 256
+add_subdirectory(tests/physics)  # Phase 25 Day 374
 add_subdirectory(tests/net)  # Phase 20 Day 267
 add_subdirectory(tests/asset)  # Phase 22 Day 313
 add_subdirectory(tests/animation)  # Phase 22 Day 321

@@ -3727,6 +3727,21 @@ spatial::StaticBvh::FirstItem(u32) const	function	spatial	spatial-staticbvh-firs
 spatial::StaticBvh::SahCost() const	function	spatial	spatial-staticbvh-sahcost-const	spatial.md	engine/spatial/static_bvh.h:141
 spatial::StaticBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:152
 spatial::StaticBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:164
+physics::ProbeHash()	function	physics	physics-probehash	physics.md	engine/physics/determinism.h:20
+physics::ContractionObserved()	function	physics	physics-contractionobserved	physics.md	engine/physics/determinism.h:29
+physics::DenormalsPreserved()	function	physics	physics-denormalspreserved	physics.md	engine/physics/determinism.h:39
+physics::ModeReport()	function	physics	physics-modereport	physics.md	engine/physics/determinism.h:46
+physics::StateHasher	class	physics	physics-statehasher	physics.md	engine/physics/state_hash.h:23
+physics::StateHasher::StateHasher()	function	physics	physics-statehasher-statehasher	physics.md	engine/physics/state_hash.h:27
+physics::StateHasher::kOffsetBasis	variable	physics	physics-statehasher-koffsetbasis	physics.md	engine/physics/state_hash.h:30
+physics::StateHasher::kPrime	variable	physics	physics-statehasher-kprime	physics.md	engine/physics/state_hash.h:32
+physics::StateHasher::AddU8(u8)	function	physics	physics-statehasher-addu8-u8	physics.md	engine/physics/state_hash.h:37
+physics::StateHasher::AddU32(u32)	function	physics	physics-statehasher-addu32-u32	physics.md	engine/physics/state_hash.h:42
+physics::StateHasher::AddU64(u64)	function	physics	physics-statehasher-addu64-u64	physics.md	engine/physics/state_hash.h:53
+physics::StateHasher::AddF32(f32)	function	physics	physics-statehasher-addf32-f32	physics.md	engine/physics/state_hash.h:62
+physics::StateHasher::Value() const	function	physics	physics-statehasher-value-const	physics.md	engine/physics/state_hash.h:76
+physics::StateHasher::Valid() const	function	physics	physics-statehasher-valid-const	physics.md	engine/physics/state_hash.h:81
+physics::StateHasher::BitsOf(f32)	function	physics	physics-statehasher-bitsof-f32	physics.md	engine/physics/state_hash.h:86
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20

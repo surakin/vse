@@ -1,0 +1,37 @@
+# The configure-time check of the floating-point flags, tried on planted flags (Phase 25 Day 374): run with `cmake -DSOURCE_DIR=<repo> -P fp_flags_check.cmake`.
+include(${SOURCE_DIR}/cmake/EngineFpCheck.cmake)
+
+function(expect_problem flags expected)
+  engine_fp_flag_problem(found "${flags}")
+  if(NOT found STREQUAL "${expected}")
+    message(FATAL_ERROR "engine_fp_flag_problem(\"${flags}\") gave \"${found}\", expected \"${expected}\"")
+  endif()
+endfunction()
+
+expect_problem("" "")
+expect_problem("-O2 -g -Wall" "")
+expect_problem("-O3 -march=native" "")
+expect_problem("-ffp-contract=off -fno-fast-math" "")
+expect_problem("/fp:precise /O2" "")
+expect_problem("-O2 -ffast-math" "-ffast-math")
+expect_problem("-Ofast" "-Ofast")
+expect_problem("-O2 -funsafe-math-optimizations -g" "-funsafe-math-optimizations")
+expect_problem("-ffp-contract=fast" "-ffp-contract=fast")
+expect_problem("-ffp-contract=on" "-ffp-contract=on")
+expect_problem("/O2 /fp:fast" "/fp:fast")
+expect_problem("-freciprocal-math" "-freciprocal-math")
+expect_problem("-fno-signed-zeros" "-fno-signed-zeros")
+
+# engine_fp_check_flags fails on a planted variable and passes on a clean one.
+set(CMAKE_CXX_FLAGS "-O2")
+engine_fp_check_flags()
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math")
+execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DPLANTED=1 -P ${CMAKE_CURRENT_LIST_DIR}/fp_flags_planted.cmake
+                RESULT_VARIABLE rc ERROR_VARIABLE err)
+if(rc EQUAL 0)
+  message(FATAL_ERROR "engine_fp_check_flags accepted CMAKE_CXX_FLAGS_RELEASE containing -ffast-math")
+endif()
+if(NOT err MATCHES "CMAKE_CXX_FLAGS_RELEASE contains -ffast-math")
+  message(FATAL_ERROR "engine_fp_check_flags failed with the wrong message: ${err}")
+endif()
+message(STATUS "the floating-point flag check refuses planted flags and accepts clean ones")

@@ -99,6 +99,12 @@ module spatial "Spatial Partitioning"
   strict ownership
   strict failure
 
+module physics "Physics"
+  header engine/physics/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module net "Networking"
   header engine/net/*.h
   strict thread-safety

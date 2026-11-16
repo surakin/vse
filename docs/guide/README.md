@@ -45,3 +45,4 @@ the pages in the order below; each builds on the ones before it. The generated [
 22. [net](net.md): addresses, endpoints and network errors (Phase 20).
 23. [assets](assets.md): asset identity, blobs, backends and the resource manager (Phase 22).
 24. [animation](animation.md): poses, the clip sampler, skinning matrices and the animation system (Phase 22).
+25. [physics](physics.md): rigid bodies that agree to the bit: the determinism rules, the probe and the state hash (Phase 25).

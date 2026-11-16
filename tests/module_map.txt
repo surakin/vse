@@ -28,6 +28,7 @@ engine/renderer     3,4,5
 engine/ecs          3,17,18,19   # spatial, storage and the scene build on it
 engine/spatial      3,5,17,18,19   # the renderer culls through it, the scene syncs it, storage stores its components
 engine/storage      3,19
+engine/physics      3,25   # the C API will drive it (Days 396-397)
 engine/scene        3,5,17,18
 engine/text         3,5,14,15
 engine/ui           3,5,15
@@ -101,6 +102,7 @@ tests/ecs           17
 tests/scene         17,18
 tests/spatial       18
 tests/storage       19
+tests/physics       25
 tests/text          14
 tests/ui            15
 tests/foundation_sanitized 0

@@ -48,6 +48,9 @@ flavors 23  windows: plain,asan # Day 345: engine_unload_after_jobs, engine_owne
 flavors 24  linux: plain,asan # tests/scene spikes (Day 358): GPU tests leave tsan out on Linux (KNOWN-ISSUES.md)
 flavors 24  windows: plain,asan
 flavors 24  macos: plain,asan,tsan
+flavors 25  linux: plain,asan,tsan # tests/physics (Day 374)
+flavors 25  windows: plain,asan
+flavors 25  macos: plain,asan,tsan
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -360,6 +363,9 @@ test:ui_demo_*                                      15   # the ui_demo program: 
 # --- Phase 17: ECS (entities, components, archetype chunks, world, queries, systems, the scene bridge) ---
 tests/ecs/                                      17   # Phase 17 Day 223
 tests/spatial/                                  18   # Phase 18 Day 238
+tests/physics/                                  25   # Phase 25 Day 374
+test:physics_fp_determinism_probe               25   # the probe hash and the build's floating-point mode, compared with the committed hash (Day 374)
+test:physics_fp_flags_check                     25   # the configure-time fast-math check refuses planted flags (Day 374)
 
 # --- Phase 19: storage and the database interface ---
 tests/database/                                 19   # Phase 19 Day 251

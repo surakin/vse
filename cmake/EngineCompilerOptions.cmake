@@ -10,6 +10,10 @@
 #                                      them after the vendored libraries are added, so third-party code keeps its own settings
 #   ENGINE_MACOS_COMPILE_OPTIONS, ENGINE_MACOS_DEFINITIONS  the same on macOS (Phase 21 Day 284): ARC for Objective-C++, and Apple's
 #                                      AssertMacros.h kept to its underscored names
+#   ENGINE_FP_COMPILE_OPTIONS          the floating-point rules of the physics step (Phase 25 Day 374, docs/superpowers/specs/2026-11-16-physics-design.md,
+#                                      section 3): no contraction to fused multiply-add and no fast-math, for every target of ours, so that a build
+#                                      for a machine with FMA (-march=native, arm64) gives the same bits as one without. cmake/EngineFpCheck.cmake
+#                                      fails the configure step when a fast-math flag is set anywhere.
 #   ENGINE_HAVE_ASAN, ENGINE_HAVE_TSAN whether the sanitizer flavors exist with this compiler
 #   ENGINE_ASAN_COMPILE_OPTIONS, ENGINE_ASAN_LINK_OPTIONS, ENGINE_TSAN_COMPILE_OPTIONS, ENGINE_TSAN_LINK_OPTIONS
 # and the build-wide options every target gets on Windows.
@@ -37,6 +41,9 @@ if(NOT ENGINE_MSVC_LIKE)
   # engine/foundation/CMakeLists.txt). Apple clang has no LeakSanitizer: the asan flavor there is ASan and UBSan only, and a test must not
   # ask for detect_leaks=1, which aborts the process on macOS (KNOWN-ISSUES.md).
   set(ENGINE_PRODUCTION_COMPILE_OPTIONS -fno-exceptions -fno-rtti -fno-stack-protector)
+  # GCC contracts a * b + c to a fused multiply-add by default (-ffp-contract=fast) and Clang does with `on` (Day 373 spike 2: the two give different
+  # hashes, and so do builds with and without -march=native). Off in both, for C and C++ (and Objective-C) alike.
+  set(ENGINE_FP_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX,OBJC,OBJCXX>:-ffp-contract=off>" "$<$<COMPILE_LANGUAGE:C,CXX,OBJC,OBJCXX>:-fno-fast-math>")
   set(ENGINE_EXCEPTIONS_COMPILE_OPTIONS "")  # GCC and Clang have exceptions on unless told otherwise
   set(ENGINE_WINDOWS_COMPILE_OPTIONS "")
   set(ENGINE_WINDOWS_DEFINITIONS "")
@@ -77,6 +84,11 @@ set(ENGINE_WINDOWS_COMPILE_OPTIONS
   "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:preprocessor>")
 set(ENGINE_WINDOWS_DEFINITIONS NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)
 set(ENGINE_EXCEPTIONS_COMPILE_OPTIONS /EHsc)
+# cl: /fp:precise (never /fp:fast; contraction is off in precise mode); clang-cl: the same plus clang's own contraction switch through /clang:.
+set(ENGINE_FP_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:/fp:precise>")
+if(ENGINE_CLANG_CL)
+  list(APPEND ENGINE_FP_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:/clang:-ffp-contract=off>")
+endif()
 
 # CMake's default C++ flags for MSVC hold /EHsc and /GR. The engine's libraries turn both off, and passing /EHsc and then /EHs-c-
 # makes cl warn about the override on every file, so they are removed here and given back, as ENGINE_EXCEPTIONS_COMPILE_OPTIONS, to the
