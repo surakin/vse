@@ -139,7 +139,7 @@ BodyStatus PhysicsWorld::AddCollider(BodyId body_id, const Collider& collider, C
     {
         return BodyStatus::StaleId;
     }
-    if (collider.Validate() != Validation::Ok || !HullKnown(collider.shape))
+    if (collider.Validate() != Validation::Ok || !HullKnown(collider.shape, body->settings.type))
     {
         return BodyStatus::Invalid;
     }
@@ -179,7 +179,7 @@ BodyStatus PhysicsWorld::SetCollider(BodyId body_id, const Collider& collider)
     {
         return AddCollider(body_id, collider);
     }
-    if (collider.Validate() != Validation::Ok || !HullKnown(collider.shape))
+    if (collider.Validate() != Validation::Ok || !HullKnown(collider.shape, body->settings.type))
     {
         return BodyStatus::Invalid;
     }
@@ -198,6 +198,11 @@ BodyStatus PhysicsWorld::SetSettings(BodyId id, const RigidBody& settings)
     if (settings.Validate() != Validation::Ok)
     {
         return BodyStatus::Invalid;
+    }
+    const ColliderRecord* held = FindCollider(body->first_collider);
+    if (held != nullptr && held->value.shape.kind == ShapeKind::Mesh && settings.type != BodyType::Static)
+    {
+        return BodyStatus::Invalid;  // a mesh collider stays on a static body
     }
     body->settings = settings;
     if (settings.type == BodyType::Static)

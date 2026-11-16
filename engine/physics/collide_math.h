@@ -7,6 +7,7 @@
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "physics/hull.h"
+#include "physics/triangle_mesh.h"
 #include "physics/shapes.h"
 #include "physics/contact.h"
 #include "types.h"
@@ -237,6 +238,9 @@ bool BoxBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 
 // Any pair with a convex hull (Day 381), by GJK and EPA; the pair may be in either order.
 bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, const HullLibrary* hulls,
                 ContactManifold* out);
+// A static mesh against any other shape (Day 382), the mesh being shape A: the contacts of the triangles near B.
+bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other, const Pose& other_pose, f32 margin,
+              const HullLibrary* hulls, const MeshLibrary* meshes, ContactManifold* out);
 bool BoxCapsule(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out);
 
 }  // namespace engine_placeholder::physics::collide_math

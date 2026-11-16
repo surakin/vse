@@ -219,11 +219,26 @@ bool SphereBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f
 }  // namespace
 
 CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
-                      ContactManifold* manifold, const HullLibrary* hulls)
+                      ContactManifold* manifold, const HullLibrary* hulls, const MeshLibrary* meshes)
 {
     if (a.Validate() != Validation::Ok || b.Validate() != Validation::Ok || !IsFinite(margin) || margin < 0.0f)
     {
         return CollideResult::None;
+    }
+    if (a.kind == ShapeKind::Mesh && b.kind == ShapeKind::Mesh)
+    {
+        return CollideResult::Unsupported;  // meshes are static: two of them never need a contact
+    }
+    if (a.kind == ShapeKind::Mesh || b.kind == ShapeKind::Mesh)
+    {
+        const bool mesh_is_a = a.kind == ShapeKind::Mesh;
+        const bool hit = mesh_is_a ? MeshPair(a, pose_a, b, pose_b, margin, hulls, meshes, manifold)
+                                   : MeshPair(b, pose_b, a, pose_a, margin, hulls, meshes, manifold);
+        if (hit && !mesh_is_a)
+        {
+            manifold->Flip();
+        }
+        return hit ? CollideResult::Contact : CollideResult::None;
     }
     if (a.kind == ShapeKind::Hull || b.kind == ShapeKind::Hull)
     {
@@ -235,7 +250,7 @@ CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const 
     const u8 kb = static_cast<u8>(b.kind);
     if (ka > kb)
     {
-        const CollideResult result = Collide(b, pose_b, a, pose_a, margin, manifold, hulls);
+        const CollideResult result = Collide(b, pose_b, a, pose_a, margin, manifold, hulls, meshes);
         if (result == CollideResult::Contact)
         {
             manifold->Flip();

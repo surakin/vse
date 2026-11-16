@@ -46,6 +46,17 @@ Shape Shape::MakeHull(u32 hull, const Vec3& extent)
     return shape;
 }
 
+Shape Shape::MakeMesh(u32 mesh, const Vec3& extent)
+{
+    Shape shape;
+    shape.kind = ShapeKind::Mesh;
+    shape.radius = 0.0f;
+    shape.half_height = 0.0f;
+    shape.half_extents = extent;
+    shape.mesh = mesh;
+    return shape;
+}
+
 Validation Shape::Validate() const
 {
     switch (kind)
@@ -56,8 +67,14 @@ Validation Shape::Validate() const
             return Validation::NotFinite;
         }
         return radius > 0.0f ? Validation::Ok : Validation::NotPositive;
+    case ShapeKind::Mesh:
+        if (mesh == 0)
+        {
+            return Validation::OutOfRange;
+        }
+        [[fallthrough]];
     case ShapeKind::Hull:
-        if (hull == 0)
+        if (kind == ShapeKind::Hull && hull == 0)
         {
             return Validation::OutOfRange;
         }
@@ -85,7 +102,8 @@ Vec3 Shape::LocalHalfExtents() const
     {
     case ShapeKind::Sphere: return Vec3(radius, radius, radius);
     case ShapeKind::Box:
-    case ShapeKind::Hull: return half_extents;
+    case ShapeKind::Hull:
+    case ShapeKind::Mesh: return half_extents;
     case ShapeKind::Capsule: return Vec3(radius, half_height + radius, radius);
     }
     return Vec3(0.0f, 0.0f, 0.0f);
@@ -104,6 +122,7 @@ Aabb Shape::Bounds(const Vec3& position, const Quaternion& rotation) const
     case ShapeKind::Sphere: extent = Vec3(radius, radius, radius); break;
     case ShapeKind::Box:
     case ShapeKind::Hull:
+    case ShapeKind::Mesh:
         // The extent of a rotated box on axis i is the sum over its own axes j of |R(i, j)| * half_extent(j);
         // `r.col[j][i]` is element (i, j).
         extent = Vec3(

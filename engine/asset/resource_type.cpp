@@ -23,6 +23,7 @@ TypeRegistry::TypeRegistry()
     types_.Push(TypeInfo{types::kAnimation, 1, "animation"});
     types_.Push(TypeInfo{types::kNames, 1, "names"});
     types_.Push(TypeInfo{types::kHull, 1, "hull"});
+    types_.Push(TypeInfo{types::kMeshCollider, 1, "mesh_collider"});
 }
 
 Status TypeRegistry::Register(ResourceType type, u32 version, const char* name)

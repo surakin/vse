@@ -22,6 +22,8 @@ enum class ShapeKind : u8
     Capsule = 2,  ///< A cylinder with a hemisphere on each end, its axis along the shape's Y axis: `half_height` (of
                   ///< the cylinder part) and `radius`.
     Hull = 3,     ///< A convex hull from the world's `HullLibrary`: `hull` (its id) and `half_extents` (its bound).
+    Mesh = 4,     ///< A triangle mesh from the world's `MeshLibrary`: `mesh` (its id) and `half_extents` (its bound).
+                  ///< Static bodies only.
 };
 
 /// A shape as a tagged value: the kind says which fields count. The shape lives in the space of its collider (its
@@ -40,6 +42,8 @@ struct Shape
     Vec3 half_extents = Vec3(0.5f, 0.5f, 0.5f);
     /// For a hull, its id in the world's `HullLibrary`, at least 1.
     u32 hull = 0;
+    /// For a mesh, its id in the world's `MeshLibrary`, at least 1.
+    u32 mesh = 0;
 
     /// Makes a sphere.
     ///
@@ -70,6 +74,14 @@ struct Shape
     /// - Returns: the shape (not checked: see `Validate`; the library is not consulted here).
     /// - Fails: never.
     static Shape MakeHull(u32 hull, const Vec3& extent);
+
+    /// Makes a triangle mesh shape (static bodies only).
+    ///
+    /// - Param mesh: the mesh's id in the `MeshLibrary` (`MeshLibrary::Add` returned it).
+    /// - Param extent: the mesh's `TriangleMesh::Extent()`: its bound about the shape's origin.
+    /// - Returns: the shape (not checked: see `Validate`; the library is not consulted here).
+    /// - Fails: never.
+    static Shape MakeMesh(u32 mesh, const Vec3& extent);
 
     /// Checks the shape: finite numbers, positive sizes, a known kind. Host data is refused with a result, never
     /// aborted on.

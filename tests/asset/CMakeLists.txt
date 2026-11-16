@@ -17,10 +17,12 @@ set(ASSET_TEST_SOURCES
   pak_test.cpp  # Day 316
   skeleton_test.cpp  # Day 318
   hull_test.cpp  # Day 381
+  mesh_collider_test.cpp  # Day 382
   mesh_test.cpp  # Day 319
   clip_test.cpp  # Day 320
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/skeleton_source.cpp  # Day 318: the minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/hull_source.cpp  # Day 381: the hull minter under test
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/mcol_source.cpp  # Day 382
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/mesh_source.cpp  # Day 319: the mesh minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/clip_source.cpp  # Day 320: the clip minter under test
   texture_test.cpp  # Day 323

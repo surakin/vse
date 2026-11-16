@@ -74,6 +74,8 @@ inline constexpr ResourceType kAnimation = ResourceType::FromChars('A', 'N', 'I'
 inline constexpr ResourceType kSkeleton = ResourceType::FromChars('S', 'K', 'E', 'L');
 /// A convex hull for physics (Phase 25 Day 381).
 inline constexpr ResourceType kHull = ResourceType::FromChars('H', 'U', 'L', 'L');
+/// A triangle mesh for static physics colliders (Phase 25 Day 382).
+inline constexpr ResourceType kMeshCollider = ResourceType::FromChars('M', 'C', 'O', 'L');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).
 inline constexpr ResourceType kNames = ResourceType::FromChars('N', 'A', 'M', 'E');
 }  // namespace types

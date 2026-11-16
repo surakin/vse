@@ -11,6 +11,7 @@
 #include "physics/ids.h"
 #include "physics/mass.h"
 #include "physics/slot_pool.h"
+#include "physics/triangle_mesh.h"
 #include "types.h"
 
 namespace engine_placeholder::physics
@@ -415,6 +416,21 @@ public:
     /// - Fails: never.
     HullLibrary& Hulls() { return hulls_; }
 
+    /// Returns the meshes that `Shape::MakeMesh` shapes of this world refer to; add a mesh here before a collider uses
+    /// it.
+    ///
+    /// - Returns: the library.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    MeshLibrary& Meshes() { return meshes_; }
+
+    /// Returns the mesh library, read only.
+    ///
+    /// - Returns: the library.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    const MeshLibrary& Meshes() const { return meshes_; }
+
     /// Returns the hull library, read only.
     ///
     /// - Returns: the library.
@@ -424,9 +440,18 @@ public:
 
 private:
     void RecomputeMass(Body* body);
-    // A hull shape names a hull of the library, and its extent (the broad phase's bound) covers the hull.
-    bool HullKnown(const Shape& shape) const
+    // A hull or mesh shape names an entry of its library, and its extent (the broad phase's bound) covers it; a mesh
+    // belongs to a static body.
+    bool HullKnown(const Shape& shape, BodyType body_type) const
     {
+        if (shape.kind == ShapeKind::Mesh)
+        {
+            const TriangleMesh* mesh = meshes_.Find(shape.mesh);
+            return body_type == BodyType::Static && mesh != nullptr &&
+                   shape.half_extents.x >= mesh->Extent().x * 0.9999f &&
+                   shape.half_extents.y >= mesh->Extent().y * 0.9999f &&
+                   shape.half_extents.z >= mesh->Extent().z * 0.9999f;
+        }
         if (shape.kind != ShapeKind::Hull)
         {
             return true;
@@ -442,6 +467,7 @@ private:
     SlotPool<Body> bodies_;
     SlotPool<ColliderRecord> colliders_;
     HullLibrary hulls_;
+    MeshLibrary meshes_;
 };
 
 }  // namespace engine_placeholder::physics

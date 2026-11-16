@@ -111,6 +111,7 @@ f32 ShapeVolume(const Shape& shape, const HullLibrary* hulls)
         const ConvexHull* hull = hulls != nullptr ? hulls->Find(shape.hull) : nullptr;
         return hull != nullptr ? hull->Volume() : 0.0f;
     }
+    case ShapeKind::Mesh: return 0.0f;  // a mesh is static: no volume, no mass
     }
     return 0.0f;
 }
@@ -119,6 +120,10 @@ MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrar
 {
     MassProperties out;
     if (shape.Validate() != Validation::Ok || !IsFinite(density) || !(density > 0.0f))
+    {
+        return out;
+    }
+    if (shape.kind == ShapeKind::Mesh)
     {
         return out;
     }
@@ -165,6 +170,7 @@ MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrar
         out.inertia = Vec3(ix, iy, ix);
         break;
     }
+    case ShapeKind::Mesh: break;
     case ShapeKind::Hull:
     {
         // The tensor about the centroid at density 1, scaled to this density, then turned to its principal frame.

@@ -5,6 +5,7 @@
 #include "physics/contact.h"
 #include "physics/hull.h"
 #include "physics/shapes.h"
+#include "physics/triangle_mesh.h"
 #include "types.h"
 
 namespace engine_placeholder::physics
@@ -28,9 +29,12 @@ namespace engine_placeholder::physics
 /// - Param hulls: the library the hull shapes' ids refer to; may be null when neither shape is a hull (a hull that is
 /// not in it makes the result `None`).
 /// - Returns: `Contact`, `None` or `Unsupported`.
-/// - Ownership: `manifold` is the caller's and `hulls` is borrowed; nothing is kept.
+/// - Param meshes: the library the mesh shapes' ids refer to; may be null when neither shape is a mesh (a mesh that is
+/// not in it gives `None`). A mesh against a mesh is `Unsupported`.
+/// - Ownership: `manifold` is the caller's and `hulls` and `meshes` are borrowed; nothing is kept.
 /// - Fails: an invalid shape returns `None`.
 CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
-                      ContactManifold* manifold, const HullLibrary* hulls = nullptr);
+                      ContactManifold* manifold, const HullLibrary* hulls = nullptr,
+                      const MeshLibrary* meshes = nullptr);
 
 }  // namespace engine_placeholder::physics

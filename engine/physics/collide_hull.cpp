@@ -23,7 +23,8 @@ enum class CoreKind : u8
     Point,
     Segment,
     Box,
-    Hull
+    Hull,
+    Triangle
 };
 
 // The core of a shape: the convex set that GJK works on. The sphere and the capsule are a point and a segment with a
@@ -38,6 +39,8 @@ struct Core
     Vec3 q = Vec3(0.0f, 0.0f, 0.0f);
     Vec3 half = Vec3(0.0f, 0.0f, 0.0f);
     ConvexHullConstPtr hull;
+    Vec3 r = Vec3(0.0f, 0.0f, 0.0f);   // a triangle's third corner (p and q are the others)
+    Vec3 tn = Vec3(0.0f, 1.0f, 0.0f);  // a triangle's front normal
 };
 
 Core MakeCore(const Shape& shape, const Pose& pose, const HullLibrary* hulls)
@@ -64,12 +67,26 @@ Core MakeCore(const Shape& shape, const Pose& pose, const HullLibrary* hulls)
         c.kind = CoreKind::Box;
         c.half = shape.half_extents;
         break;
+    case ShapeKind::Mesh:  // never reached: meshes go through MeshPair
     case ShapeKind::Hull:
         c.kind = CoreKind::Hull;
         c.hull = hulls != nullptr ? hulls->Share(shape.hull) : ConvexHullConstPtr();
         break;
     }
     return c;
+}
+
+// A triangle of a mesh in the world: radius zero, no pose (its corners are world points), two faces (front and back).
+Core TriangleCore(const Vec3& a, const Vec3& b, const Vec3& c, const Vec3& normal)
+{
+    Core core;
+    core.kind = CoreKind::Triangle;
+    core.p = a;
+    core.q = b;
+    core.r = c;
+    core.tn = normal;
+    core.position = (a + b + c) * (1.0f / 3.0f);
+    return core;
 }
 
 Vec3 ToLocal(const Core& c, const Vec3& d)
@@ -90,6 +107,13 @@ u32 SupportFeature(const Core& c, const Vec3& dir)
         return (l.x >= 0.0f ? 1u : 0u) | (l.y >= 0.0f ? 2u : 0u) | (l.z >= 0.0f ? 4u : 0u);
     }
     case CoreKind::Hull: return c.hull->SupportVertex(ToLocal(c, dir));
+    case CoreKind::Triangle:
+    {
+        const f32 dq = dir.Dot(c.q);
+        const f32 dr = dir.Dot(c.r);
+        const f32 dp = dir.Dot(c.p);
+        return dp >= dq && dp >= dr ? 0u : (dq >= dr ? 1u : 2u);
+    }
     }
     return 0;
 }
@@ -107,6 +131,13 @@ Vec3 Support(const Core& c, const Vec3& dir)
                                               l.z >= 0.0f ? c.half.z : -c.half.z);
     }
     case CoreKind::Hull: return c.position + c.rotation * c.hull->Vertex(c.hull->SupportVertex(ToLocal(c, dir)));
+    case CoreKind::Triangle:
+    {
+        const f32 dq = dir.Dot(c.q);
+        const f32 dr = dir.Dot(c.r);
+        const f32 dp = dir.Dot(c.p);
+        return dp >= dq && dp >= dr ? c.p : (dq >= dr ? c.q : c.r);
+    }
     }
     return c.position;
 }
@@ -644,12 +675,12 @@ struct Polygon
 
 bool HasFaces(const Core& c)
 {
-    return c.radius == 0.0f && (c.kind == CoreKind::Box || c.kind == CoreKind::Hull);
+    return c.radius == 0.0f && (c.kind == CoreKind::Box || c.kind == CoreKind::Hull || c.kind == CoreKind::Triangle);
 }
 
 u32 FaceTotal(const Core& c)
 {
-    return c.kind == CoreKind::Box ? 6u : c.hull->FaceCount();
+    return c.kind == CoreKind::Box ? 6u : (c.kind == CoreKind::Triangle ? 2u : c.hull->FaceCount());
 }
 
 Vec3 LocalFaceNormal(const Core& c, u32 face)
@@ -659,6 +690,10 @@ Vec3 LocalFaceNormal(const Core& c, u32 face)
         Vec3 n(0.0f, 0.0f, 0.0f);
         n[face / 2] = (face % 2 == 0) ? 1.0f : -1.0f;
         return n;
+    }
+    if (c.kind == CoreKind::Triangle)
+    {
+        return face == 0 ? c.tn : Negate(c.tn);
     }
     return c.hull->Face(face).normal;
 }
@@ -702,6 +737,17 @@ void BuildPolygon(const Core& c, u32 face, Polygon* out)
             out->v[k] = corners[at];
             out->id[k] = at;
         }
+        return;
+    }
+    if (c.kind == CoreKind::Triangle)
+    {
+        out->count = 3;
+        out->v[0] = c.p;
+        out->v[1] = face == 0 ? c.q : c.r;
+        out->v[2] = face == 0 ? c.r : c.q;
+        out->id[0] = 0;
+        out->id[1] = face == 0 ? 1u : 2u;
+        out->id[2] = face == 0 ? 2u : 1u;
         return;
     }
     const HullFace& f = c.hull->Face(face);
@@ -799,17 +845,9 @@ bool FaceManifold(const Core& ca, const Core& cb, const Vec3& n, f32 margin, Con
     return true;
 }
 
-}  // namespace
-
-bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, const HullLibrary* hulls,
-                ContactManifold* out)
+// The contact of two cores (with their radii): the body of every convex pair.
+bool CoresContact(const Core& ca, const Core& cb, f32 margin, ContactManifold* out)
 {
-    const Core ca = MakeCore(a, pa, hulls);
-    const Core cb = MakeCore(b, pb, hulls);
-    if ((ca.kind == CoreKind::Hull && !ca.hull) || (cb.kind == CoreKind::Hull && !cb.hull))
-    {
-        return false;  // a hull the library does not hold
-    }
     const f32 radii = ca.radius + cb.radius;
     const GjkResult gjk = Gjk(ca, cb);
     Vec3 n;
@@ -861,6 +899,196 @@ bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, 
     out->points[0].feature_id = 0x40000000u | ((SupportFeature(ca, n) & 0x7FFFu) << 15) |
                                 (SupportFeature(cb, Negate(n)) & 0x7FFFu);
     return true;
+}
+
+}  // namespace
+
+bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, const HullLibrary* hulls,
+                ContactManifold* out)
+{
+    const Core ca = MakeCore(a, pa, hulls);
+    const Core cb = MakeCore(b, pb, hulls);
+    if ((ca.kind == CoreKind::Hull && !ca.hull) || (cb.kind == CoreKind::Hull && !cb.hull))
+    {
+        return false;  // a hull the library does not hold
+    }
+    return CoresContact(ca, cb, margin, out);
+}
+
+bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other, const Pose& other_pose, f32 margin,
+              const HullLibrary* hulls, const MeshLibrary* meshes, ContactManifold* out)
+{
+    const TriangleMesh* mesh = meshes != nullptr ? meshes->Find(mesh_shape.mesh) : nullptr;
+    const Core cb = MakeCore(other, other_pose, hulls);
+    if (mesh == nullptr || (cb.kind == CoreKind::Hull && !cb.hull))
+    {
+        return false;
+    }
+    // The other shape's box in the mesh's space.
+    const Aabb world_box = other.Bounds(other_pose.position, other_pose.rotation);
+    const Mat3 rot = mesh_pose.rotation.ToMat3();
+    const Vec3 centre = world_box.Center() - mesh_pose.position;
+    const Vec3 half = world_box.HalfExtents() + Vec3(margin, margin, margin);
+    const Vec3 local_centre(rot.col[0].Dot(centre), rot.col[1].Dot(centre), rot.col[2].Dot(centre));
+    const Vec3 local_half(Abs(rot.col[0].x) * half.x + Abs(rot.col[0].y) * half.y + Abs(rot.col[0].z) * half.z,
+                          Abs(rot.col[1].x) * half.x + Abs(rot.col[1].y) * half.y + Abs(rot.col[1].z) * half.z,
+                          Abs(rot.col[2].x) * half.x + Abs(rot.col[2].y) * half.y + Abs(rot.col[2].z) * half.z);
+    Vector<u32> triangles;
+    mesh->QueryBox(Aabb::FromMinMax(local_centre - local_half, local_centre + local_half), &triangles);
+
+    struct Found
+    {
+        Vec3 normal;
+        Vec3 pa;
+        Vec3 pb;
+        f32 depth = 0.0f;
+        u32 id = 0;
+    };
+    constexpr u32 kMaxFound = 64;
+    constexpr u32 kMaxTriangles = 256;
+    Array<Found, kMaxFound> found;
+    u32 found_count = 0;
+    const u32 tested = triangles.Size() < kMaxTriangles ? static_cast<u32>(triangles.Size()) : kMaxTriangles;
+    for (u32 k = 0; k < tested && found_count < kMaxFound; ++k)
+    {
+        const u32 t = triangles[k];
+        const Vec3 wa = mesh_pose.position + rot * mesh->Vertex(mesh->Index(t, 0));
+        const Vec3 wb = mesh_pose.position + rot * mesh->Vertex(mesh->Index(t, 1));
+        const Vec3 wc = mesh_pose.position + rot * mesh->Vertex(mesh->Index(t, 2));
+        const Vec3 face = rot * mesh->Normal(t);
+        const Core tc = TriangleCore(wa, wb, wc, face);
+        ContactManifold tm;
+        if (!CoresContact(tc, cb, margin, &tm))
+        {
+            continue;
+        }
+        // A flat triangle is left by the plane too: when that exit is shorter than the one the cores' EPA found (which
+        // can pick a longer way out of a thin sliver of the Minkowski difference), the plane's exit is the contact.
+        {
+            f32 deepest = tm.points[0].depth;
+            for (u32 j = 1; j < tm.count; ++j)
+            {
+                deepest = FMax(deepest, tm.points[j].depth);
+            }
+            const Vec3 low = Support(cb, Negate(face));
+            const Vec3 high = Support(cb, face);
+            const f32 plane = wa.Dot(face);
+            const f32 up_depth = plane - (low.Dot(face) - cb.radius);
+            const f32 down_depth = (high.Dot(face) + cb.radius) - plane;
+            if (FMin(up_depth, down_depth) < deepest - 1e-4f)
+            {
+                const bool up = up_depth <= down_depth;
+                const f32 depth = up ? up_depth : down_depth;
+                const Vec3 pb = up ? low - face * cb.radius : high + face * cb.radius;
+                const u32 id = tm.points[0].feature_id;
+                tm.count = 1;
+                tm.normal = up ? face : Negate(face);
+                tm.points[0].position_b = pb;
+                tm.points[0].position_a = up ? pb + face * depth : pb - face * depth;
+                tm.points[0].depth = depth;
+                tm.points[0].feature_id = id;
+            }
+        }
+        // The internal-edge rule: a single contact on an edge shared with a (nearly) coplanar triangle takes the face's
+        // normal, so a body does not catch on the seam.
+        // The side the other shape's centre is on (a sideways normal says nothing about it).
+        const Vec3 oriented = (cb.position - wa).Dot(face) >= 0.0f ? face : Negate(face);
+        if (tm.count == 1 && tm.normal.Dot(oriented) < 0.9995f)
+        {
+            const Vec3 point = tm.points[0].position_a;
+            f32 w[3];
+            const Vec3 e1 = wb - wa;
+            const Vec3 e2 = wc - wa;
+            const Vec3 d = point - wa;
+            const f32 d11 = e1.Dot(e1);
+            const f32 d12 = e1.Dot(e2);
+            const f32 d22 = e2.Dot(e2);
+            const f32 denom = d11 * d22 - d12 * d12;
+            bool flat = false;
+            if (Abs(denom) > 1e-30f)
+            {
+                const f32 v = (d22 * d.Dot(e1) - d12 * d.Dot(e2)) / denom;
+                const f32 u = (d11 * d.Dot(e2) - d12 * d.Dot(e1)) / denom;
+                w[0] = 1.0f - u - v;
+                w[1] = v;
+                w[2] = u;
+                for (u32 e = 0; e < 3; ++e)
+                {
+                    if (w[(e + 2) % 3] < 1e-3f)
+                    {
+                        const u32 nb = mesh->Neighbor(t, e);
+                        flat = flat || (nb != kNoTriangle && mesh->Normal(nb).Dot(mesh->Normal(t)) > 0.99f);
+                    }
+                }
+            }
+            if (flat)
+            {
+                const Vec3 toward = Negate(oriented);
+                const Vec3 pb = Support(cb, toward) + toward * cb.radius;
+                const f32 depth = (wa - pb).Dot(oriented);
+                if (depth < -margin)
+                {
+                    continue;
+                }
+                tm.normal = oriented;
+                tm.points[0].position_b = pb;
+                tm.points[0].position_a = pb + oriented * depth;
+                tm.points[0].depth = depth;
+            }
+        }
+        for (u32 j = 0; j < tm.count && found_count < kMaxFound; ++j)
+        {
+            Found& f = found[found_count++];
+            f.normal = tm.normal;
+            f.pa = tm.points[j].position_a;
+            f.pb = tm.points[j].position_b;
+            f.depth = tm.points[j].depth;
+            f.id = tm.points[j].feature_id * 2654435761u ^ (t + 1u) * 40503u;
+        }
+    }
+    if (found_count == 0)
+    {
+        return false;
+    }
+    u32 best = 0;
+    for (u32 k = 1; k < found_count; ++k)
+    {
+        if (found[k].depth > found[best].depth)
+        {
+            best = k;
+        }
+    }
+    const Vec3 n = found[best].normal;
+    Array<Candidate, kMaxFound> cand;
+    u32 kept = 0;
+    for (u32 k = 0; k < found_count; ++k)
+    {
+        bool duplicate = false;  // the same point reached through two triangles (a seam)
+        for (u32 j = 0; j < kept && !duplicate; ++j)
+        {
+            duplicate = (cand[j].p - found[k].pa).LengthSquared() < 1e-8f;
+        }
+        if (found[k].normal.Dot(n) >= 0.98f && !duplicate)
+        {
+            cand[kept].p = found[k].pa;
+            cand[kept].depth = (found[k].pa - found[k].pb).Dot(n);
+            cand[kept].id = k;
+            ++kept;
+        }
+    }
+    Array<u32, 4> pick;
+    const u32 picked = ReduceCandidates(cand.Data(), kept, n, &pick);
+    out->normal = n;
+    out->count = picked;
+    for (u32 k = 0; k < picked; ++k)
+    {
+        const Found& f = found[cand[pick[k]].id];
+        out->points[k].position_a = f.pa;
+        out->points[k].position_b = f.pb;
+        out->points[k].depth = cand[pick[k]].depth;
+        out->points[k].feature_id = f.id;
+    }
+    return picked != 0;
 }
 
 }  // namespace engine_placeholder::physics::collide_math

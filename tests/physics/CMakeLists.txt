@@ -11,6 +11,7 @@ set(PHYSICS_TEST_SOURCES
   step_test.cpp  # Day 378
   collide_test.cpp  # Day 379
   hull_collide_test.cpp  # Day 381
+  mesh_collide_test.cpp  # Day 382
 )
 
 find_package(Threads REQUIRED)
