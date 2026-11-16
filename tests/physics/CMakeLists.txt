@@ -8,6 +8,7 @@ set(PHYSICS_TEST_SOURCES
   world_test.cpp  # Day 376
   sync_test.cpp  # Day 376
   broad_phase_test.cpp  # Day 377
+  step_test.cpp  # Day 378
 )
 
 find_package(Threads REQUIRED)

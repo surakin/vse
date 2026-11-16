@@ -70,6 +70,11 @@ struct Body
     Vec3 position = Vec3(0.0f, 0.0f, 0.0f);
     /// The body's orientation.
     Quaternion orientation = Quaternion::Identity();
+    /// The origin and orientation before the last step, for the interpolated write-back (equal to the current ones
+    /// after a teleport).
+    Vec3 previous_position = Vec3(0.0f, 0.0f, 0.0f);
+    /// The orientation before the last step.
+    Quaternion previous_orientation = Quaternion::Identity();
     /// The linear velocity of the centre of mass.
     Vec3 linear_velocity = Vec3(0.0f, 0.0f, 0.0f);
     /// The angular velocity.
@@ -109,6 +114,39 @@ struct ColliderRecord
     BodyId owner;
     /// The next collider of the same body, or null.
     ColliderId next;
+};
+
+/// How time is stepped.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct StepConfig
+{
+    /// Steps per second, from 1 to 1000 (the Day 373 spike: 30 to 120 Hz are stable; 60 is the default).
+    f32 step_hz = 60.0f;
+    /// The most steps one `Update` runs; a longer frame drops the rest (1 to 32).
+    u32 max_substeps = 4;
+    /// The gravity in metres per second squared; a body's `gravity_scale` multiplies it.
+    Vec3 gravity = Vec3(0.0f, -9.81f, 0.0f);
+    /// Whether `Interpolated` blends the last two states (false: it returns the latest).
+    bool interpolate = true;
+};
+
+/// What stepping did.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct StepStats
+{
+    /// Fixed steps run in all.
+    u64 steps = 0;
+    /// Steps run by the last `Update`.
+    u32 last_substeps = 0;
+    /// `Update` calls that had more time than `max_substeps` steps could use: the rest was dropped.
+    u64 dropped_updates = 0;
+    /// The seconds dropped in all.
+    f64 dropped_seconds = 0.0;
+    /// Steps run while the process flushed denormals (the step's results are then not portable): zero in a correct
+    /// build.
+    u64 denormal_mode_steps = 0;
 };
 
 /// What the world holds.
@@ -292,9 +330,85 @@ public:
     /// - Fails: never.
     PhysicsWorldStats Stats() const;
 
+    /// Sets how time is stepped.
+    ///
+    /// - Param config: the rate, the cap, the gravity and whether to interpolate.
+    /// - Returns: `Ok`, or `Invalid` (a rate outside 1 to 1000, a cap outside 1 to 32, a gravity that is not finite)
+    /// with the old config kept.
+    /// - Fails: as the return says.
+    BodyStatus SetStepConfig(const StepConfig& config);
+
+    /// Returns how time is stepped.
+    ///
+    /// - Returns: the config.
+    /// - Fails: never.
+    const StepConfig& GetStepConfig() const { return step_config_; }
+
+    /// Advances the world by a frame's time in fixed steps.
+    ///
+    /// It runs as many steps as the time holds, at most `max_substeps`, and keeps the rest for the next call. A frame
+    /// with more time than the cap allows drops what the cap could not use and counts it, so a stall does not make the
+    /// next frame longer (no spiral of death).
+    ///
+    /// - Param real_seconds: the frame's time, finite and not negative (anything else is ignored).
+    /// - Returns: the number of steps run.
+    /// - Fails: a time that is not finite or is negative runs no step.
+    u32 Update(f32 real_seconds);
+
+    /// Runs one fixed step now, whatever the accumulator holds.
+    ///
+    /// Forces and gravity change the velocities, damping slows them, then the positions and orientations move by
+    /// semi-implicit Euler (the new velocity moves the body) and the forces are cleared. Static bodies do not move; a
+    /// kinematic body moves by its velocity. The broad phase, narrow phase and solver join the step on later days.
+    ///
+    /// - Fails: never.
+    void Step();
+
+    /// Returns how far the accumulator is into the next step, from 0 to 1: the blend factor for `Interpolated`.
+    ///
+    /// - Returns: the fraction.
+    /// - Fails: never.
+    f32 Alpha() const;
+
+    /// Returns where a body is drawn: the blend of its last two states by `alpha`.
+    ///
+    /// Positions are blended linearly,
+    /// orientations by a normalized one along the short arc). With `interpolate` off, or right after a teleport, it is
+    /// the current state.
+    ///
+    /// - Param id: the body.
+    /// - Param alpha: from 0 (the previous state) to 1 (the current one), usually `Alpha()`.
+    /// - Param position: receives the origin; not null.
+    /// - Param orientation: receives the orientation; not null.
+    /// - Returns: false for a stale id (the outputs are not written).
+    /// - Ownership: the outputs are the caller's; nothing is kept.
+    /// - Fails: as the return says.
+    bool Interpolated(BodyId id, f32 alpha, Vec3* position, Quaternion* orientation) const;
+
+    /// Returns what stepping did.
+    ///
+    /// - Returns: the counters.
+    /// - Fails: never.
+    StepStats GetStepStats() const { return step_stats_; }
+
+    /// Hashes the state of every body in slot order.
+    ///
+    /// The words are the position, orientation, linear and angular velocity and the sleep
+    /// byte, as `StateHasher` words. Two runs that agree to the bit hash alike; the hash is the cross-machine check of
+    /// Phase 25.
+    ///
+    /// - Param valid: receives false if a number was not finite (may be null).
+    /// - Returns: the hash.
+    /// - Ownership: `valid` is the caller's; nothing is kept.
+    /// - Fails: a non-finite number is reported through `valid`.
+    u64 StateHash(bool* valid = nullptr) const;
+
 private:
     void RecomputeMass(Body* body);
 
+    StepConfig step_config_;
+    StepStats step_stats_;
+    f64 accumulator_ = 0.0;
     SlotPool<Body> bodies_;
     SlotPool<ColliderRecord> colliders_;
 };

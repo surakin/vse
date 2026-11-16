@@ -11,6 +11,9 @@ set(PHYSICS_SOURCES
   world.cpp  # Day 376
   sync.cpp  # Day 376
   broad_phase.cpp  # Day 377
+  step.cpp  # Day 378
+  physics_settings.cpp  # Day 378
+  system.cpp  # Day 378
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

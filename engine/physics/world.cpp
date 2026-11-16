@@ -102,6 +102,8 @@ BodyId PhysicsWorld::CreateBody(const BodyDesc& desc, BodyStatus* status)
     body->settings = desc.settings;
     body->position = desc.position;
     body->orientation = desc.orientation;
+    body->previous_position = desc.position;
+    body->previous_orientation = desc.orientation;
     const bool moves = desc.settings.type != BodyType::Static;
     body->linear_velocity = moves ? desc.velocity.linear : Vec3(0.0f, 0.0f, 0.0f);
     body->angular_velocity = moves ? desc.velocity.angular : Vec3(0.0f, 0.0f, 0.0f);
@@ -322,6 +324,8 @@ BodyStatus PhysicsWorld::SetTransform(BodyId id, const Vec3& position, const Qua
     }
     body->position = position;
     body->orientation = orientation;
+    body->previous_position = position;  // a teleport is not interpolated
+    body->previous_orientation = orientation;
     RefreshInertia(body);
     ++body->teleports;
     return BodyStatus::Ok;

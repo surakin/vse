@@ -95,7 +95,7 @@ An entity with `RigidBody`, `Collider` and `LocalTransform` and no `Parent` gets
 names it. Each call destroys the bodies of entities that died or lost a component, updates the bodies whose `RigidBody` or `Collider` changed, and creates
 the missing ones **in entity order** (index, then generation), not chunk order, so two worlds holding the same entities in different archetypes get the same
 body ids. An entity with invalid components is counted in `refused` and skipped. The call changes the ECS world's structure, so it runs between iterations.
-Writing the simulated transforms back to `LocalTransform` is Day 378.
+`WriteBackTransforms` and the step system (below) write the simulated transforms back.
 
 ## The broad phase
 
@@ -117,3 +117,29 @@ one step, so a fast body meets a thin wall before it is through it. The pair mar
 With a margin of 0 the pairs are exactly the overlaps of the boxes: the test compares them with a brute-force search on 20 random scenes of 1000 bodies
 (static and moving, three shape kinds, a layer that does not meet another), four rounds each, after bodies were moved, teleported and changed type.
 `Stats()` reports what the last update did (added, removed, moved, begun, ended, pairs, static rebuilds, pending statics).
+
+## The fixed step
+
+`PhysicsWorld::Update(real_seconds)` advances the world in fixed steps: an accumulator takes the frame's time, runs as many steps of `1 / step_hz` as it
+holds, **at most `max_substeps` (default 4) per call**, and keeps the fraction for the next frame. A frame with more time than the cap can use (a stall)
+drops the rest and counts it in `GetStepStats()` (`dropped_updates`, `dropped_seconds`), so the next frame is not longer for it: no spiral of death.
+`Step()` runs one step now. Each step is, per body in slot order: the previous state is saved; a dynamic body gets `v += (gravity * gravity_scale + force /
+mass) dt` and `w += I^-1 torque dt`, then damping `v / (1 + c dt)` (stable for any `c dt`), then semi-implicit Euler: the **centre of mass** moves by the new
+velocity, the orientation turns by `q + dt/2 (w, 0) q` normalized (only `+ - * /` and `Sqrt`, so the result is the same on every machine), and the origin
+follows from the two. A kinematic body moves by its velocity about its origin; a static body is skipped; forces and torques are cleared. There is no
+gyroscopic term (a body with unequal moments tumbles as under explicit Euler; the solver days leave it). The step reports a process that flushes denormals
+(`ENGINE_ENSURE`, `denormal_mode_steps`), because then its results are not portable.
+
+`Interpolated(id, alpha, ...)` returns where to draw a body: the blend of its last two states by `alpha` (`Alpha()` is the accumulator's fraction), a linear
+blend of the origin and a normalized blend of the orientation along the short arc; a teleport sets both states, so it is not blended from the old place.
+`WriteBackTransforms(ecs, physics, alpha)` writes that into the `LocalTransform` of every dynamic body's entity, and `MakePhysicsStepSystem()` is the
+schedule system that calls `Update` with the frame's `Dt` and then writes back (it declares `Writes<LocalTransform>` and `WritesResource<PhysicsWorld>`).
+Run `SyncBodies` between runs of the schedule, not inside it.
+
+The settings are `physics.step_hz` (60), `physics.max_substeps` (4), `physics.gravity_y` (-9.81) and `physics.interpolate` (true), declared by
+`RegisterPhysicsSettings` with environment variables `ENGINE_PHYSICS_*` and flags `--physics-*`; `StepConfigFromSettings` turns them into a `StepConfig`.
+The step rate belongs to the state: the same scene hashes differently at another rate.
+
+`PhysicsWorld::StateHash()` is the cross-machine check: FNV-1a over every body in slot order (position, orientation, linear and angular velocity, the sleep
+byte). A scene of 100 boxes and capsules with offsets, spins and damping, stepped 600 times, hashes to `238b01a717a849dd` under GCC and Clang, unity and not,
+Debug and Release (`Step: the state hash of a 600-step scene...`); the Windows and macOS machines compare it on Days 398-399.
