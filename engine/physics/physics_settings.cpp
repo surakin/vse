@@ -38,6 +38,21 @@ void RegisterPhysicsSettings(settings::Registry* registry)
     margin.group = "physics";
     margin.flags = settings::kAdvanced;
     registry->Register(margin);
+    settings::SettingDesc iterations = settings::MakeInt("physics.velocity_iterations", 10, 1, 100);
+    iterations.env = "ENGINE_PHYSICS_VELOCITY_ITERATIONS";
+    iterations.flag = "physics-velocity-iterations";
+    iterations.label = "Solver iterations";
+    iterations.description = "contact solver passes per step: more is stiffer stacks and slower steps";
+    iterations.group = "physics";
+    registry->Register(iterations);
+    settings::SettingDesc bias = settings::MakeFloat("physics.contact_bias", 0.2, 0.0, 1.0);
+    bias.env = "ENGINE_PHYSICS_CONTACT_BIAS";
+    bias.flag = "physics-contact-bias";
+    bias.label = "Contact bias";
+    bias.description = "the fraction of a penetration (beyond the slop) removed per step";
+    bias.group = "physics";
+    bias.flags = settings::kAdvanced;
+    registry->Register(bias);
     settings::SettingDesc interpolate = settings::MakeBool("physics.interpolate", true);
     interpolate.env = "ENGINE_PHYSICS_INTERPOLATE";
     interpolate.flag = "physics-interpolate";
@@ -70,6 +85,16 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     if (margin.IsValid())
     {
         config.contact_margin = static_cast<f32>(settings::Setting<f64>(registry, margin).Get());
+    }
+    const settings::SettingId iterations = registry.Find(StringView("physics.velocity_iterations"));
+    if (iterations.IsValid())
+    {
+        config.velocity_iterations = static_cast<u32>(settings::Setting<i64>(registry, iterations).Get());
+    }
+    const settings::SettingId bias = registry.Find(StringView("physics.contact_bias"));
+    if (bias.IsValid())
+    {
+        config.contact_bias = static_cast<f32>(settings::Setting<f64>(registry, bias).Get());
     }
     const settings::SettingId interpolate = registry.Find(StringView("physics.interpolate"));
     if (interpolate.IsValid())

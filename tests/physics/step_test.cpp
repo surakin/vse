@@ -271,7 +271,7 @@ TEST_CASE("Step: the state hash of a 600-step scene is stable and equals the com
     const u64 first = RunScene(600);
     CHECK(first == RunScene(600));
     CHECK(first != RunScene(599));
-    CHECK(first == 0x238b01a717a849ddull);
+    CHECK(first == 0x5da8efbbd65b6cdaull);
 }
 
 TEST_CASE("Hash: a state with a NaN is reported invalid", "[physics][step][hash]")
@@ -295,8 +295,19 @@ TEST_CASE("Settings: the step settings are declared and read back", "[physics][s
     CHECK(config.gravity.y == -9.81f);
     CHECK(config.contact_margin == 0.02f);
     CHECK(config.interpolate);
+    CHECK(config.velocity_iterations == 10);
+    CHECK(config.contact_bias == 0.2f);
     PhysicsWorld world;
     CHECK(world.SetStepConfig(config) == BodyStatus::Ok);
+    StepConfig bad = config;
+    bad.velocity_iterations = 0;
+    CHECK(world.SetStepConfig(bad) == BodyStatus::Invalid);
+    bad = config;
+    bad.contact_bias = 1.5f;
+    CHECK(world.SetStepConfig(bad) == BodyStatus::Invalid);
+    bad = config;
+    bad.contact_slop = -0.1f;
+    CHECK(world.SetStepConfig(bad) == BodyStatus::Invalid);
 }
 
 TEST_CASE("System: the schedule steps the world and writes back the dynamic transforms", "[physics][step][system]")

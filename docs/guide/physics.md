@@ -190,3 +190,26 @@ stretch where the axis lies flat above a face. An axis that meets the box leaves
 **Triangle meshes** (Day 382). `TriangleMesh::Create(spec)` checks the numbers (counts, finite positions, indices, no triangle without area) and builds the face normals, the triangle across each edge (`Neighbor`) and a `spatial::StaticBvh` over the triangle boxes; `QueryBox` returns the triangles whose boxes overlap a box, in increasing order. The mesh is the data of the minted `MCOL` asset (`docs/guide/assets.md`). `Collide(mesh, pose, other, pose, margin, &m, hulls, meshes)` takes the other shape's box in the mesh's space, asks the hierarchy for the triangles (at most 256 are tested, 64 contacts kept), collides each as a flat two-sided convex piece through the same GJK/EPA and face clipping as hulls (the triangle has a front and a back face, so a box lying on it clips to its corners), and merges the results: the contact of the deepest triangle sets the normal, contacts within 11 degrees of it join (the same point reached through two triangles is kept once), and more than four reduce as for boxes. A flat triangle is also left by its plane: when the shortest way out is across the plane, that exit is the contact. **Internal edges:** a one-point contact on an edge shared with a nearly coplanar triangle (normals within 0.99) takes the face's normal, so a body sliding over a seam does not catch; the side is the one the other shape's centre is on. Limits: a mesh is a thin two-sided surface, so a body whose centre passes through a triangle is pushed out the other side (tunnelling, stated for the solver days); concave corners keep only the deepest normal's group for a step; a mesh against a mesh is `Unsupported`; the query allocates (a `Vector` per call).
 
 **Compounds, groups, masks and triggers** (Day 383). `Collide` takes a compound against anything: each child (or each pair of children, for two compounds) is collided on its own, children whose boxes do not meet are skipped, and the contacts merge as for a mesh; a point's `feature_id` mixes the child indices, so warm starting and events tell children apart. A collider has a `group` and a `mask` word (default group 1, mask all bits); the broad phase keeps a pair when the layer matrix lets it and `(a.group & b.mask) != 0 && (b.group & a.mask) != 0` (`GroupsCollide`); two children of two compounds are filtered the same way by their own words. There are no per-pair filter callbacks and no one-way platforms (determinism). A **trigger** collider makes pairs flagged `trigger` and begin and end events, and no contact is solved for it; two triggers make a pair only when `BroadPhaseConfig::trigger_pairs` is set (off by default). Changing a collider's shape (`SetCollider`) recomputes the body's mass and the next `BroadPhase::Update` moves its bound; contact caches arrive with the solver on Day 384.
+
+## The contact solver
+
+`PhysicsWorld::Step` now runs the whole pipeline: forces and gravity change the velocities, the broad phase finds the
+pairs, the narrow phase makes a manifold for each non-trigger pair that has a dynamic body, `ContactSolver` changes the
+velocities, and the positions move last (`engine/physics/solver.h`).
+
+- **Rows.** Each contact point gets a normal row and two friction rows. The normal row wants the velocity along the normal
+  to reach a target: `bias * (depth - slop) / dt` for a penetration (0.2 and 5 mm by default), `depth / dt` for a
+  speculative contact (the shapes may approach until the gap closes), and `restitution * approach speed` when the bodies
+  approach faster than `restitution_threshold` (1 m/s) and will touch this step. Friction rows use the direction of the
+  sliding velocity, and are clamped to `friction * normal impulse`.
+- **Order.** The manifolds are solved in the order of their collider keys (the lower key is body A) and then by point, so the
+  result does not depend on the order the pairs arrive in; `solver_test.cpp` shuffles and flips them. Each iteration solves
+  friction first, then the normal, with the accumulated normal impulse never below zero. Static and kinematic bodies have
+  zero inverse mass and are not pushed.
+- **Warm starting.** The impulses of a point are kept by (collider A, collider B, feature id) in sorted storage and used
+  again next step when neither body was teleported (`SetTransform`) and the point moved less than 5 cm on body A.
+- **Settings.** `physics.velocity_iterations` (default 10, 1 to 100) and `physics.contact_bias`; `StepConfig` also holds
+  `contact_slop` and `restitution_threshold`.
+
+Known limit: the position correction is a velocity bias (Baumgarte), so a body that sank in before the contact was seen is
+pushed out with some extra speed; Day 385 replaces it with a softer scheme.

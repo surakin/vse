@@ -2,7 +2,9 @@
 // (docs/guide/physics.md, "The rules of the step").
 #include "lang/scalar.h"
 #include "log/assert.h"
+#include "physics/broad_phase.h"
 #include "physics/check.h"
+#include "physics/collide.h"
 #include "physics/determinism.h"
 #include "physics/state_hash.h"
 #include "physics/world.h"
@@ -32,13 +34,26 @@ Quaternion Turn(const Quaternion& q, const Vec3& w, f32 dt)
 
 }  // namespace
 
+PhysicsWorld::PhysicsWorld() = default;
+PhysicsWorld::~PhysicsWorld() = default;
+PhysicsWorld::PhysicsWorld(PhysicsWorld&&) noexcept = default;
+PhysicsWorld& PhysicsWorld::operator=(PhysicsWorld&&) noexcept = default;
+
 BodyStatus PhysicsWorld::SetStepConfig(const StepConfig& config)
 {
     if (!IsFinite(config.step_hz) || config.step_hz < 1.0f || config.step_hz > 1000.0f || config.max_substeps < 1 ||
-        config.max_substeps > 32 || !IsFinite(config.contact_margin) || config.contact_margin < 0.0f ||
-        config.contact_margin > 1.0f || !FiniteVec3(config.gravity))
+        config.max_substeps > 32 || config.velocity_iterations < 1 || config.velocity_iterations > 100 ||
+        !IsFinite(config.contact_bias) || config.contact_bias < 0.0f || config.contact_bias > 1.0f ||
+        !IsFinite(config.contact_slop) || config.contact_slop < 0.0f || config.contact_slop > 0.1f ||
+        !IsFinite(config.restitution_threshold) || config.restitution_threshold < 0.0f ||
+        !IsFinite(config.contact_margin) || config.contact_margin < 0.0f || config.contact_margin > 1.0f ||
+        !FiniteVec3(config.gravity))
     {
         return BodyStatus::Invalid;
+    }
+    if (config.step_hz != step_config_.step_hz)
+    {
+        broad_.Reset();  // its prediction time follows the step
     }
     step_config_ = config;
     return BodyStatus::Ok;
@@ -91,6 +106,7 @@ void PhysicsWorld::Step()
     }
     const f32 dt = static_cast<f32>(1.0 / static_cast<f64>(step_config_.step_hz));
     const u32 slots = bodies_.Slots();
+    // 1. Forces, gravity and damping change the velocities; the previous poses are kept for the interpolation.
     for (u32 slot = 0; slot < slots; ++slot)
     {
         Body* body = bodies_.Find(slot, bodies_.LiveGeneration(slot));
@@ -109,7 +125,75 @@ void PhysicsWorld::Step()
             body->angular_velocity = body->angular_velocity + (body->inverse_inertia_world * body->torque) * dt;
             body->linear_velocity = body->linear_velocity * (1.0f / (1.0f + body->settings.linear_damping * dt));
             body->angular_velocity = body->angular_velocity * (1.0f / (1.0f + body->settings.angular_damping * dt));
-            // Positions: the centre of mass moves by the new velocity, the body turns about it.
+        }
+    }
+    // 2. Contacts: the broad phase's pairs, the narrow phase, the solver.
+    if (broad_.Get() == nullptr)
+    {
+        BroadPhaseConfig broad_config;
+        broad_config.step_seconds = dt;
+        broad_ = MakeUnique<BroadPhase>(broad_config);
+    }
+    broad_->Update(*this);
+    Vector<ContactInput> inputs;
+    const Vector<ColliderPair>& pairs = broad_->Pairs();
+    for (usize i = 0; i < pairs.Size(); ++i)
+    {
+        const ColliderPair& pair = pairs[i];
+        if (pair.trigger)
+        {
+            continue;
+        }
+        const ColliderRecord* ra = FindCollider(pair.a);
+        const ColliderRecord* rb = FindCollider(pair.b);
+        if (ra == nullptr || rb == nullptr || ra->owner == rb->owner)
+        {
+            continue;
+        }
+        const Body* ba = Find(ra->owner);
+        const Body* bb = Find(rb->owner);
+        if (ba == nullptr || bb == nullptr ||
+            (ba->settings.type != BodyType::Dynamic && bb->settings.type != BodyType::Dynamic))
+        {
+            continue;
+        }
+        Pose pose_a;
+        pose_a.position = ba->position + ba->orientation.ToMat3() * ra->value.offset;
+        pose_a.rotation = ba->orientation * ra->value.rotation;
+        Pose pose_b;
+        pose_b.position = bb->position + bb->orientation.ToMat3() * rb->value.offset;
+        pose_b.rotation = bb->orientation * rb->value.rotation;
+        ContactInput input;
+        if (Collide(ra->value.shape, pose_a, rb->value.shape, pose_b, step_config_.contact_margin, &input.manifold,
+                    &hulls_, &meshes_, &compounds_) != CollideResult::Contact)
+        {
+            continue;
+        }
+        CombineMaterials(ra->value.material, rb->value.material, &input.manifold);
+        input.a = pair.a;
+        input.b = pair.b;
+        input.body_a = ra->owner;
+        input.body_b = rb->owner;
+        inputs.Push(input);
+    }
+    SolverConfig solver_config;
+    solver_config.iterations = step_config_.velocity_iterations;
+    solver_config.bias = step_config_.contact_bias;
+    solver_config.slop = step_config_.contact_slop;
+    solver_config.restitution_threshold = step_config_.restitution_threshold;
+    solver_config.dt = dt;
+    solver_.Solve(this, Span<const ContactInput>(inputs.Data(), inputs.Size()), solver_config);
+    // 3. Positions: the centre of mass of a dynamic body moves by the new velocity and the body turns about it; a
+    // kinematic body moves about its origin.
+    for (u32 slot = 0; slot < slots; ++slot)
+    {
+        Body* body = bodies_.Find(slot, bodies_.LiveGeneration(slot));
+        if (body == nullptr || body->settings.type == BodyType::Static)
+        {
+            continue;
+        }
+        if (body->settings.type == BodyType::Dynamic)
+        {
             const Vec3 offset = body->orientation.ToMat3() * body->mass.center;
             const Vec3 center = body->position + offset + body->linear_velocity * dt;
             body->orientation = Turn(body->orientation, body->angular_velocity, dt);
@@ -118,7 +202,6 @@ void PhysicsWorld::Step()
         }
         else
         {
-            // A kinematic body is moved by its velocity, about its origin; nothing pushes it.
             body->position = body->position + body->linear_velocity * dt;
             body->orientation = Turn(body->orientation, body->angular_velocity, dt);
         }

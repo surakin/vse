@@ -2,6 +2,7 @@
 // them come on Day 378.
 #pragma once
 
+#include "containers/unique_ptr.h"
 #include "ecs/entity.h"
 #include "math/matrix.h"
 #include "math/quaternion.h"
@@ -12,6 +13,7 @@
 #include "physics/ids.h"
 #include "physics/mass.h"
 #include "physics/slot_pool.h"
+#include "physics/solver.h"
 #include "physics/triangle_mesh.h"
 #include "types.h"
 
@@ -135,6 +137,14 @@ struct StepConfig
     f32 contact_margin = 0.02f;
     /// Whether `Interpolated` blends the last two states (false: it returns the latest).
     bool interpolate = true;
+    /// Velocity iterations of the contact solver per step, 1 to 100.
+    u32 velocity_iterations = 10;
+    /// The fraction of a penetration beyond `slop` that the solver removes per step, 0 to 1.
+    f32 contact_bias = 0.2f;
+    /// The penetration the solver leaves alone, in metres, 0 to 0.1.
+    f32 contact_slop = 0.005f;
+    /// An approach speed below this (metres per second) does not bounce.
+    f32 restitution_threshold = 1.0f;
 };
 
 /// What stepping did.
@@ -170,6 +180,8 @@ struct PhysicsWorldStats
     u32 collider_slots = 0;
 };
 
+class BroadPhase;
+
 /// The bodies and colliders of a simulation. A pointer to a body or collider stays valid until it is destroyed (they
 /// live in chunks that never move).
 ///
@@ -183,6 +195,34 @@ struct PhysicsWorldStats
 class PhysicsWorld
 {
 public:
+    /// Makes an empty world with the default step configuration.
+    /// - Fails: never.
+    PhysicsWorld();
+
+    /// Destroys the world with its bodies, colliders and contact cache.
+    /// - Fails: never.
+    ~PhysicsWorld();
+
+    /// Moves a world; the moved-from world is empty.
+    /// - Fails: never.
+    PhysicsWorld(PhysicsWorld&&) noexcept;
+
+    /// Moves a world over this one.
+    /// - Fails: never.
+    PhysicsWorld& operator=(PhysicsWorld&&) noexcept;
+
+    /// What the contact solver did in the last step.
+    ///
+    /// - Returns: the counters.
+    /// - Fails: never.
+    const SolverStats& GetSolverStats() const { return solver_.Stats(); }
+
+    /// The number of contact points the solver remembers for warm starting.
+    ///
+    /// - Returns: the count.
+    /// - Fails: never.
+    u32 ContactCacheSize() const { return solver_.CacheSize(); }
+
     /// Makes a body, without a collider.
     ///
     /// - Param desc: where it is, how it moves.
@@ -492,6 +532,8 @@ private:
     HullLibrary hulls_;
     MeshLibrary meshes_;
     CompoundLibrary compounds_;
+    UniquePtr<BroadPhase> broad_;
+    ContactSolver solver_;
 };
 
 }  // namespace engine_placeholder::physics

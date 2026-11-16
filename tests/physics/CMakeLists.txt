@@ -13,6 +13,7 @@ set(PHYSICS_TEST_SOURCES
   hull_collide_test.cpp  # Day 381
   mesh_collide_test.cpp  # Day 382
   compound_test.cpp  # Day 383
+  solver_test.cpp  # Day 384
 )
 
 find_package(Threads REQUIRED)
