@@ -41,11 +41,24 @@ Validation JointDesc::Validate() const
             return Validation::OutOfRange;
         }
     }
+    // An anchor or a length beyond 100 km makes the position error so large that the correction leaves the world.
+    if (!InsideExtent(anchor_a) || !InsideExtent(anchor_b) || Abs(length) > kMaxExtent ||
+        Abs(min_length) > kMaxExtent || Abs(max_length) > kMaxExtent)
+    {
+        return Validation::OutOfRange;
+    }
     if (max_motor_torque < 0.0f)
     {
         return Validation::OutOfRange;
     }
     if (hertz < 0.0f || damping_ratio < 0.0f || break_force < 0.0f || break_torque < 0.0f)
+    {
+        return Validation::OutOfRange;
+    }
+    // A spring is off (0) or between a thousandth and ten thousand cycles per second: a denormal frequency makes
+    // the softness divide by nothing. The damping ratio and the motor are bounded so the products stay finite.
+    if ((hertz != 0.0f && (hertz < 1.0e-3f || hertz > 1.0e4f)) || damping_ratio > 1.0e4f ||
+        max_motor_torque > 1.0e12f || Abs(motor_speed) > 1.0e6f)
     {
         return Validation::OutOfRange;
     }

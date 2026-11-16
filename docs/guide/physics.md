@@ -359,3 +359,33 @@ switch a program reads.
 **Kinematic bodies and entities.** `DriveKinematicBodies(ecs, physics, dt)` (`physics/system.h`) sets the velocity of every kinematic body so the
 next step carries it to its entity's `LocalTransform` (a platform or door moved by moving its entity); call it before `Update`, not for a body
 whose velocity the program sets itself (a character's).
+
+## Snapshot, restore and replay
+
+`PhysicsWorld::Snapshot(&writer)` appends the whole simulation to a `bytes::ByteWriter`: the step configuration, the accumulator and the step
+counter, the three slot pools (bodies, colliders and joints, with each slot's generation, whether it is alive and the free list in its order, so
+the ids a program holds stay valid and the next id made is the same one), the contact solver's warm-start cache, the touching pairs and the trigger
+overlaps. The layout is canonical: little-endian, floats as their bit patterns, counts as varints, a magic (`PHSN`) and a version first. The mass,
+the centre of mass and the inertia are not stored: they follow from the settings and the shapes, and `Restore` makes them again. The hull, mesh and
+compound libraries are content, not state, and are not in the snapshot: a snapshot names the shapes by their ids and `Restore` refuses
+(`SnapshotStatus::LibraryMismatch`) one whose shapes the world's own libraries do not hold.
+
+`Restore(bytes)` builds a world of its own from the bytes, checks everything and swaps it in only then, so a refusal leaves the world as it was.
+The data is not trusted: counts are bounded by the bytes left, every float must be finite and within a bound the step can survive (positions
+within `kMaxCoordinate`, sizes, offsets and anchors within `kMaxExtent`, masses between a nanogram and 1e15 kilograms), quaternions must be unit,
+collider chains, owners and joint bodies must name live slots, the configuration must pass `SetStepConfig`, and trailing bytes are refused. The
+answer is a `SnapshotStatus`: `Ok`, `BadMagic`, `UnknownVersion`, `Truncated`, `Corrupt`, `LibraryMismatch` or `OutOfMemory`. The same bounds are
+checked by `Validate()` of `RigidBody`, `PhysicsMaterial`, `Collider`, `Shape` and `JointDesc` when a program creates the objects, so a world that
+could not be built by hand cannot be restored either.
+
+What is not in a snapshot is what is not state: the event lists of the last step, the statistics, the debug lines and the scheduler (a restored world keeps its own).
+A world restored from a snapshot continues bit for bit: the state hash after every later step equals the hash of the run the snapshot was taken
+from (the tests restore at a dozen points of a stack, a joint chain and a rolling scene and compare 600 steps). `SaveSnapshot(world, &store, key)` and
+`LoadSnapshot(&world, store, key, &status)` (`physics/snapshot.h`) keep the bytes as one entity record in a `storage::Store`, so a save game or a
+rollback buffer is the engine's storage and not a private file.
+
+**Replay.** An `InputLog` (`physics/input_log.h`) lists the inputs a program applied to the world with the step each one was applied before:
+forces, impulses, velocity and transform changes, body creation and destruction. `InputRecorder` wraps a world and records as the program calls it;
+`ReplayStep(world, log, &cursor)` applies the entries of the world's current step and then steps. A run is therefore a snapshot plus a log, and
+the log has its own versioned encoding (`Save`, `Load`) refused on the same terms. `FirstEntryAt(log, step)` finds where to start after restoring
+a snapshot taken at that step.

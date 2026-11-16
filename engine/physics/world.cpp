@@ -89,7 +89,7 @@ void PhysicsWorld::RecomputeMass(Body* body)
 BodyId PhysicsWorld::CreateBody(const BodyDesc& desc, BodyStatus* status)
 {
     if (desc.settings.Validate() != Validation::Ok || desc.velocity.Validate() != Validation::Ok ||
-        !FiniteVec3(desc.position) || !IsUnitQuaternion(desc.orientation))
+        !InsideWorld(desc.position) || !IsUnitQuaternion(desc.orientation))
     {
         Report(status, BodyStatus::Invalid);
         return BodyId();
@@ -551,7 +551,7 @@ BodyStatus PhysicsWorld::SetTransform(BodyId id, const Vec3& position, const Qua
     {
         return BodyStatus::StaleId;
     }
-    if (!FiniteVec3(position) || !IsUnitQuaternion(orientation))
+    if (!InsideWorld(position) || !IsUnitQuaternion(orientation))
     {
         return BodyStatus::Invalid;
     }

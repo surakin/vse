@@ -30,6 +30,8 @@ set(PHYSICS_SOURCES
   events.cpp  # Day 393
   debug_draw.cpp  # Day 393
   joint_sync.cpp  # Day 393
+  snapshot.cpp  # Day 394
+  input_log.cpp  # Day 394
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -42,7 +44,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(physics${suffix} STATIC ${PHYSICS_SOURCES})
     target_include_directories(physics${suffix} PUBLIC ${PHYSICS_INCLUDE_ROOT})
     target_compile_options(physics${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(physics${suffix} PUBLIC spatial${suffix} ecs${suffix} foundation_base${suffix})
+    target_link_libraries(physics${suffix} PUBLIC spatial${suffix} ecs${suffix} storage${suffix} foundation_base${suffix})
   endforeach()
   return()
 endif()
@@ -51,5 +53,5 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(physics${suffix} STATIC ${PHYSICS_SOURCES})
   target_include_directories(physics${suffix} PUBLIC ${PHYSICS_INCLUDE_ROOT})
   target_compile_options(physics${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(physics${suffix} PUBLIC spatial${suffix} ecs${suffix} foundation${suffix})
+  target_link_libraries(physics${suffix} PUBLIC spatial${suffix} ecs${suffix} storage${suffix} foundation${suffix})
 endforeach()

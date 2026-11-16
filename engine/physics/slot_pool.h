@@ -3,6 +3,7 @@
 #pragma once
 
 #include "containers/array.h"
+#include "containers/span.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "types.h"
@@ -136,6 +137,86 @@ public:
         }
         const Slot& slot = const_cast<SlotPool*>(this)->SlotAt(index);
         return slot.alive ? slot.generation : 0;
+    }
+
+    /// The generation of a slot, alive or free (for a snapshot).
+    ///
+    /// - Param index: below `Slots()`.
+    /// - Returns: the generation, 0 for an unknown slot.
+    /// - Fails: never.
+    u32 SlotGeneration(u32 index) const
+    {
+        return index < count_ ? const_cast<SlotPool*>(this)->SlotAt(index).generation : 0;
+    }
+
+    /// The free slots in the order `Acquire` takes them from the back (for a snapshot).
+    ///
+    /// - Returns: the list.
+    /// - Fails: never.
+    const Vector<u32>& FreeSlots() const { return free_; }
+
+    /// Replaces the pool by one with the given slots: every value is default made, the live ones are then filled in
+    /// through `Find`.
+    ///
+    /// - Param generations: the generation of each slot (never zero).
+    /// - Param alive: 1 for a live slot, 0 for a free one, as many as `generations`.
+    /// - Param free: the free slots in `FreeSlots` order: exactly the slots with `alive` 0, each once.
+    /// - Returns: false when the lists disagree or memory ran out (the pool is then empty).
+    /// - Fails: as the return says.
+    bool Rebuild(Span<const u32> generations, Span<const u8> alive, Span<const u32> free)
+    {
+        chunks_.Clear();
+        free_.Clear();
+        count_ = 0;
+        live_ = 0;
+        if (generations.Size() != alive.Size())
+        {
+            return false;
+        }
+        Vector<u8> seen;
+        for (usize i = 0; i < generations.Size(); ++i)
+        {
+            seen.Push(0);
+        }
+        for (usize i = 0; i < free.Size(); ++i)
+        {
+            if (free[i] >= generations.Size() || seen[free[i]] != 0 || alive[free[i]] != 0)
+            {
+                return false;
+            }
+            seen[free[i]] = 1;
+        }
+        for (usize i = 0; i < generations.Size(); ++i)
+        {
+            if (generations[i] == 0 || (alive[i] == 0 && seen[i] == 0) || alive[i] > 1)
+            {
+                return false;
+            }
+        }
+        for (usize i = 0; i < generations.Size(); ++i)
+        {
+            if (i / kChunkSize >= chunks_.Size())
+            {
+                UniquePtr<Chunk> chunk = MakeUnique<Chunk>();
+                if (!chunk)
+                {
+                    chunks_.Clear();
+                    count_ = 0;
+                    return false;
+                }
+                chunks_.Push(Move(chunk));
+            }
+            ++count_;
+            Slot& slot = SlotAt(static_cast<u32>(i));
+            slot.generation = generations[i];
+            slot.alive = alive[i] == 1;
+            live_ += slot.alive ? 1 : 0;
+        }
+        for (usize i = 0; i < free.Size(); ++i)
+        {
+            free_.Push(free[i]);
+        }
+        return true;
     }
 
 private:

@@ -26,6 +26,12 @@ Validation PhysicsMaterial::Validate() const
     {
         return Validation::NotPositive;
     }
+    // Between a gas and a neutron star's crust, in kilograms per cubic metre: outside it the mass or its inverse
+    // overflows for shapes of ordinary size.
+    if (density < 1.0e-3f || density > 1.0e9f)
+    {
+        return Validation::OutOfRange;
+    }
     if (friction < 0.0f || restitution < 0.0f || restitution > 1.0f)
     {
         return Validation::OutOfRange;
@@ -60,7 +66,12 @@ Validation RigidBody::Validate() const
     {
         return Validation::NotFinite;
     }
-    return mass >= 0.0f && linear_damping >= 0.0f && angular_damping >= 0.0f ? Validation::Ok : Validation::OutOfRange;
+    // A mass override is zero (the shape's own) or between `kMinMass` and `kMaxMass`: outside it the inverse mass or
+    // the inertia overflows.
+    const bool mass_ok = mass == 0.0f || (mass >= kMinMass && mass <= kMaxMass);
+    return mass_ok && linear_damping >= 0.0f && angular_damping >= 0.0f && Abs(gravity_scale) <= 1.0e6f
+               ? Validation::Ok
+               : Validation::OutOfRange;
 }
 
 Validation Velocity::Validate() const
@@ -84,6 +95,10 @@ Validation Collider::Validate() const
         !IsFinite(rotation.w))
     {
         return Validation::NotFinite;
+    }
+    if (!InsideExtent(offset))
+    {
+        return Validation::OutOfRange;
     }
     const f32 n2 = rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z +
                    rotation.w * rotation.w;

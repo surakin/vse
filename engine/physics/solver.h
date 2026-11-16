@@ -15,6 +15,8 @@ namespace engine_placeholder::physics
 {
 
 class PhysicsWorld;
+class SnapshotOut;
+class SnapshotIn;
 
 /// How a step is solved.
 ///
@@ -131,6 +133,21 @@ public:
     /// - Returns: the sum, 0 for a pair with no cached point.
     /// - Fails: never.
     f32 PairImpulse(ColliderId a, ColliderId b) const;
+
+    /// Writes the contact cache (for a snapshot).
+    ///
+    /// - Param out: the writer.
+    /// - Ownership: borrows the writer for the call.
+    /// - Fails: never.
+    void SaveCache(SnapshotOut* out) const;
+
+    /// Replaces the contact cache by one read from a snapshot.
+    ///
+    /// - Param in: the reader.
+    /// - Returns: false when the data is not valid (the cache is then empty).
+    /// - Ownership: borrows the reader for the call.
+    /// - Fails: as the return says.
+    bool LoadCache(SnapshotIn* in);
 
     /// What the last `Solve` did.
     /// - Fails: never.

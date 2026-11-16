@@ -3,6 +3,7 @@
 #include "algorithm.h"
 #include "containers/span.h"
 #include "lang/scalar.h"
+#include "physics/snapshot_io.h"
 #include "physics/world.h"
 
 namespace engine_placeholder::physics
@@ -977,6 +978,72 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
     {
         cache_.Push(next_cache_[i]);
     }
+}
+
+void ContactSolver::SaveCache(SnapshotOut* out) const
+{
+    out->Count(cache_.Size());
+    for (usize i = 0; i < cache_.Size(); ++i)
+    {
+        const CacheEntry& e = cache_[i];
+        out->U64(e.key_a);
+        out->U64(e.key_b);
+        out->U32(e.feature);
+        out->Id(e.body_a.index, e.body_a.generation);
+        out->Id(e.body_b.index, e.body_b.generation);
+        out->U32(e.teleports_a);
+        out->U32(e.teleports_b);
+        out->V3(e.local_a);
+        out->F32(e.normal_impulse);
+        out->V3(e.tangent_impulse);
+    }
+}
+
+bool ContactSolver::LoadCache(SnapshotIn* in)
+{
+    cache_.Clear();
+    next_cache_.Clear();
+    // An entry is 72 bytes: a count above what the data can hold is refused before anything is allocated.
+    const usize count = in->Count(in->Remaining() / 72);
+    for (usize i = 0; i < count && in->Ok(); ++i)
+    {
+        CacheEntry e;
+        e.key_a = in->U64();
+        e.key_b = in->U64();
+        e.feature = in->U32();
+        e.body_a.index = in->U32();
+        e.body_a.generation = in->U32();
+        e.body_b.index = in->U32();
+        e.body_b.generation = in->U32();
+        e.teleports_a = in->U32();
+        e.teleports_b = in->U32();
+        e.local_a = in->V3();
+        e.normal_impulse = in->F32();
+        e.tangent_impulse = in->V3();
+        if (!SnapshotFinite(e.local_a) || !SnapshotFinite(e.tangent_impulse) || !SnapshotFinite(e.normal_impulse))
+        {
+            in->Fail();
+        }
+        // The cache is searched by binary search: it must be sorted by (key_a, key_b, feature) with no duplicate.
+        if (!cache_.Empty())
+        {
+            const CacheEntry& last = cache_[cache_.Size() - 1];
+            const bool ordered = last.key_a != e.key_a
+                                     ? last.key_a < e.key_a
+                                     : (last.key_b != e.key_b ? last.key_b < e.key_b : last.feature < e.feature);
+            if (!ordered)
+            {
+                in->Fail();
+            }
+        }
+        cache_.Push(e);
+    }
+    if (!in->Ok())
+    {
+        cache_.Clear();
+        return false;
+    }
+    return true;
 }
 
 f32 ContactSolver::PairImpulse(ColliderId a, ColliderId b) const

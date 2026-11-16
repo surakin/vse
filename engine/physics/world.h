@@ -15,6 +15,7 @@
 #include "physics/joint.h"
 #include "physics/mass.h"
 #include "physics/slot_pool.h"
+#include "physics/snapshot_status.h"
 #include "physics/solver.h"
 #include "physics/triangle_mesh.h"
 #include "types.h"
@@ -22,6 +23,11 @@
 namespace engine_placeholder::jobs
 {
 class Scheduler;
+}
+
+namespace engine_placeholder::bytes
+{
+class ByteWriter;
 }
 
 namespace engine_placeholder::physics
@@ -653,6 +659,32 @@ public:
     /// - Returns: the counters.
     /// - Fails: never.
     StepStats GetStepStats() const { return step_stats_; }
+
+    /// Writes the whole simulation state: the step configuration, the time accumulator, every body, collider and
+    /// joint with its slot (so ids made later come out the same), the contact cache, the touching pairs and the step
+    /// count. The format is the canonical encoding of the storage module (little-endian, bit patterns, varint counts),
+    /// begins with a magic and a version, and is the same on every platform. Shapes name hulls, meshes and compounds by
+    /// id: the libraries are content, not state, and are not written (a restore needs a world that holds them). The
+    /// events, the broad phase and the statistics are not state: they are rebuilt.
+    ///
+    /// - Param out: the writer the bytes are appended to.
+    /// - Ownership: nothing is kept.
+    /// - Fails: never.
+    void Snapshot(bytes::ByteWriter* out) const;
+
+    /// Replaces the world's state by a snapshot's: the bodies, colliders, joints, contact cache and configuration of
+    /// the world are dropped and the snapshot's put in their place. The libraries and the scheduler stay. A run
+    /// restored from a snapshot continues bit for bit as the original did.
+    ///
+    /// Every value is checked (counts against the bytes left, ids against slots, numbers for being finite, shapes
+    /// against the libraries, chains of colliders against their bodies, the configuration against `SetStepConfig`), so
+    /// truncated, corrupt or hostile bytes are refused without a crash.
+    ///
+    /// - Param data: the bytes `Snapshot` wrote.
+    /// - Returns: `Ok`, or why not; on a refusal the world is unchanged.
+    /// - Ownership: `data` is read during the call only.
+    /// - Fails: as the return says.
+    SnapshotStatus Restore(ByteSpan data);
 
     /// Everything the world counts, in one value.
     ///

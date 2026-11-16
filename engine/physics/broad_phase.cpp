@@ -1,5 +1,7 @@
 #include "physics/broad_phase.h"
 
+#include "physics/check.h"
+
 #include "algorithm.h"
 
 namespace engine_placeholder::physics
@@ -41,7 +43,11 @@ Aabb WorldBox(const Body& body, const Collider& collider, f32 step_seconds, f32 
     Aabb box = collider.shape.Bounds(origin, body.orientation * collider.rotation);
     if (body.settings.type != BodyType::Static && IsContinuousBody(body, collider, step_seconds, ccd_threshold))
     {
-        const Vec3 move = body.linear_velocity * step_seconds;
+        // A speed the host set can be absurd (the step limits it only after the broad phase): the sweep stays inside
+        // the world, so the box stays finite.
+        const auto limited = [](f32 v) { return Max(-kMaxCoordinate, Min(kMaxCoordinate, v)); };
+        const Vec3 move(limited(body.linear_velocity.x * step_seconds), limited(body.linear_velocity.y * step_seconds),
+                        limited(body.linear_velocity.z * step_seconds));
         box = Union(box, Aabb{box.min + move, box.max + move});
     }
     return box;

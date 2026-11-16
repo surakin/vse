@@ -1,6 +1,7 @@
 #include "physics/shapes.h"
 
 #include "lang/scalar.h"
+#include "physics/check.h"
 
 namespace engine_placeholder::physics
 {
@@ -77,6 +78,10 @@ Validation Shape::Validate() const
         {
             return Validation::NotFinite;
         }
+        if (radius > kMaxExtent)
+        {
+            return Validation::OutOfRange;
+        }
         return radius > 0.0f ? Validation::Ok : Validation::NotPositive;
     case ShapeKind::Compound:
     case ShapeKind::Mesh:
@@ -93,12 +98,20 @@ Validation Shape::Validate() const
         {
             return Validation::NotFinite;
         }
+        if (half_extents.x > kMaxExtent || half_extents.y > kMaxExtent || half_extents.z > kMaxExtent)
+        {
+            return Validation::OutOfRange;
+        }
         return half_extents.x > 0.0f && half_extents.y > 0.0f && half_extents.z > 0.0f ? Validation::Ok
                                                                                        : Validation::NotPositive;
     case ShapeKind::Capsule:
         if (!IsFinite(radius) || !IsFinite(half_height))
         {
             return Validation::NotFinite;
+        }
+        if (radius > kMaxExtent || half_height > kMaxExtent)
+        {
+            return Validation::OutOfRange;
         }
         return radius > 0.0f && half_height >= 0.0f ? Validation::Ok : Validation::NotPositive;
     }
