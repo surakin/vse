@@ -7632,6 +7632,56 @@ u64 bodies_woken;
 
 Bodies woken, in all (by contact, joint, force, impulse, teleport, change or removal).
 
+### `broad_ns` {#physics-stepstats-broad-ns}
+
+`variable physics::StepStats::broad_ns` — defined in `engine/physics/world.h`
+
+```cpp
+u64 broad_ns;
+```
+
+Wall-clock nanoseconds spent in all steps so far, by part (timing only: not state, not in snapshots or hashes): the broad phase, the narrow phase with its bookkeeping, the solver, the free bodies' integration and the work after it (events, continuous sweeps, sleeping, joint breaks).
+
+### `narrow_ns` {#physics-stepstats-narrow-ns}
+
+`variable physics::StepStats::narrow_ns` — defined in `engine/physics/world.h`
+
+```cpp
+u64 narrow_ns;
+```
+
+See `broad_ns`: the narrow phase.
+
+### `solve_ns` {#physics-stepstats-solve-ns}
+
+`variable physics::StepStats::solve_ns` — defined in `engine/physics/world.h`
+
+```cpp
+u64 solve_ns;
+```
+
+See `broad_ns`: the solver.
+
+### `integrate_ns` {#physics-stepstats-integrate-ns}
+
+`variable physics::StepStats::integrate_ns` — defined in `engine/physics/world.h`
+
+```cpp
+u64 integrate_ns;
+```
+
+See `broad_ns`: the integration of the bodies the solver did not take.
+
+### `after_ns` {#physics-stepstats-after-ns}
+
+`variable physics::StepStats::after_ns` — defined in `engine/physics/world.h`
+
+```cpp
+u64 after_ns;
+```
+
+See `broad_ns`: the events, continuous sweeps, sleeping and joint breaks.
+
 ## `PhysicsWorldStats` {#physics-physicsworldstats}
 
 `struct physics::PhysicsWorldStats` — defined in `engine/physics/world.h`

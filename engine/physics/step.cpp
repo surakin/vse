@@ -3,6 +3,7 @@
 #include "jobs/parallel_for.h"
 #include "lang/scalar.h"
 #include "log/assert.h"
+#include "os/os.h"
 #include "physics/broad_phase.h"
 #include "physics/broad_phase.h"
 #include "physics/check.h"
@@ -212,7 +213,10 @@ void PhysicsWorld::Step()
         broad_config.ccd_threshold = step_config_.ccd_threshold;
         broad_ = MakeUnique<BroadPhase>(broad_config);
     }
+    const u64 broad_start = os::MonotonicTimeNanos();
     broad_->Update(*this);
+    const u64 narrow_start = os::MonotonicTimeNanos();
+    step_stats_.broad_ns += narrow_start - broad_start;
     // A sleeping body wakes when a joint ties it to something that moves.
     for (u32 slot = 0; slot < joints_.Slots(); ++slot)
     {
@@ -414,7 +418,11 @@ void PhysicsWorld::Step()
     solver_config.max_velocity = step_config_.max_velocity;
     solver_config.joint_hertz = step_config_.joint_hertz;
     solver_config.joint_damping_ratio = step_config_.joint_damping_ratio;
+    const u64 solve_start = os::MonotonicTimeNanos();
+    step_stats_.narrow_ns += solve_start - narrow_start;
     solver_.Solve(this, Span<const ContactInput>(inputs.Data(), inputs.Size()), solver_config);
+    const u64 integrate_start = os::MonotonicTimeNanos();
+    step_stats_.solve_ns += integrate_start - solve_start;
     // The bodies the solver did not integrate (free bodies, kinematic bodies) take their plain step; they are
     // independent, so blocks of them run as jobs.
     Vector<Body*> free_bodies;
@@ -454,6 +462,8 @@ void PhysicsWorld::Step()
             body->torque = Vec3(0.0f, 0.0f, 0.0f);
         }
     }
+    const u64 after_start = os::MonotonicTimeNanos();
+    step_stats_.integrate_ns += after_start - integrate_start;
     UpdateContactEvents(inputs, carried);
     SweepContinuous();
     UpdateSleep(edges, dt);
@@ -487,6 +497,7 @@ void PhysicsWorld::Step()
             ++step_stats_.joints_broken;
         }
     }
+    step_stats_.after_ns += os::MonotonicTimeNanos() - after_start;
     ++step_stats_.steps;
 }
 

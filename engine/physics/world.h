@@ -229,6 +229,18 @@ struct StepStats
     u64 islands_slept = 0;
     /// Bodies woken, in all (by contact, joint, force, impulse, teleport, change or removal).
     u64 bodies_woken = 0;
+    /// Wall-clock nanoseconds spent in all steps so far, by part (timing only: not state, not in snapshots or hashes):
+    /// the broad phase, the narrow phase with its bookkeeping, the solver, the free bodies' integration and the work
+    /// after it (events, continuous sweeps, sleeping, joint breaks).
+    u64 broad_ns = 0;
+    /// See `broad_ns`: the narrow phase.
+    u64 narrow_ns = 0;
+    /// See `broad_ns`: the solver.
+    u64 solve_ns = 0;
+    /// See `broad_ns`: the integration of the bodies the solver did not take.
+    u64 integrate_ns = 0;
+    /// See `broad_ns`: the events, continuous sweeps, sleeping and joint breaks.
+    u64 after_ns = 0;
 };
 
 /// What the world holds.

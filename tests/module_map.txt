@@ -86,6 +86,7 @@ game/hello_window  1
 game/input_probe    1
 game/rhi_bench      4
 game/ecs_bench      17
+game/physics_bench   25
 game/spatial_demo   18
 game/storage_demo   19
 game/asset_demo     22

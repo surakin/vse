@@ -191,8 +191,8 @@ void PairTracker::Clear()
     adjacent_.Clear();
     touched_.Clear();
     removed_.Clear();
-    // `largest_margin_` is kept: items still in the set may be larger than any touched later, and the bound only ever
-    // needs to be too big.
+    // The largest margins are kept: items still in the set may be larger than any touched later, and the bound only
+    // ever needs to be too big.
 }
 
 // Finds, for each touched live item, the pairs to begin (into begin_) and, comparing with the pairs held, the ones to
@@ -210,9 +210,10 @@ void PairTracker::Gather(const SpatialSet& set, const Vector<SetHandle>& touched
             continue;
         }
         const f32 m = MarginOf(set.ItemOf(touched[i]).box, config_.margin);
-        if (m > largest_margin_)
+        f32& largest = set.IsStatic(touched[i]) ? largest_static_margin_ : largest_dynamic_margin_;
+        if (m > largest)
         {
-            largest_margin_ = m;
+            largest = m;
         }
     }
     for (usize i = 0; i < touched.Size(); ++i)
@@ -226,14 +227,17 @@ void PairTracker::Gather(const SpatialSet& set, const Vector<SetHandle>& touched
         const bool self_static = set.IsStatic(handle);
         const f32 self_margin = MarginOf(self.box, fraction);
         const Aabb self_grown = Expand(self.box, self_margin);
-        const Aabb region = Expand(self.box, self_margin + largest_margin_);
+        // The static partners reach as far as the largest static margin and the dynamic ones as far as the largest
+        // dynamic margin: one huge static box (a floor) does not widen the search among the dynamic items.
+        const Aabb static_region = Expand(self.box, self_margin + largest_static_margin_);
+        const Aabb dynamic_region = Expand(self.box, self_margin + largest_dynamic_margin_);
         near_.Clear();
         ++stats_.touched;
-        // `region` reaches every partner: an item's margin is at most largest_margin_, the largest of any item ever
-        // touched.
+        // The regions reach every partner: an item's margin is at most the largest of its class ever touched (an item
+        // that changes class is touched again, which counts it in the new one).
         set.ForEachHandleInRegion(
-            region,  // through a grid's cells when the set has one: a scan of every item would make the update
-                     // quadratic
+            static_region, dynamic_region,  // through a grid's cells when the set has one: a scan of every item would
+                                            // make the update quadratic
             [&](SetHandle other, const Item& item)
             {
                 if (other == handle || item.key == self.key)

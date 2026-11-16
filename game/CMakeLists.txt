@@ -54,6 +54,7 @@ add_subdirectory(rhi_bench)
 add_subdirectory(renderer_demo)
 add_subdirectory(renderer_bench)
 add_subdirectory(ecs_bench)
+add_subdirectory(physics_bench)  # Phase 25 Day 400
 add_subdirectory(spatial_demo)
 add_subdirectory(storage_demo)
 add_subdirectory(asset_demo)  # Phase 22 Day 339: the glTF import demo (the the host path)

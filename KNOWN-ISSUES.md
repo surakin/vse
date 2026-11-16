@@ -84,6 +84,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 
 ## Deferred items
 
+- Phase 25 Day 400: ray/shape queries and character sweeps scan all colliders (rays 8.6k/s at 5000 bodies; 2000 characters 305 ms/step); the pair tracker runs on one thread; tall stacks (50) topple, mass ratio 1:10000 flings light boxes; joint scan is linear; allocation and peak memory not measured; stress tests run reduced (400 bodies, 100000 steps) not the planned 100k bodies / 10^7 steps; Windows and macOS bench numbers not taken.
 - Phase 25 Day 397: contact events of a character's capsule name entity 0 (the capsule has no entity link); the sample's checksum 532bfea0 and the physics hashes are not yet compared on the Windows PC and the Mac (Days 398-399); hull, mesh and compound colliders and the the host mesh-collider check are not in the C API yet (collision assets are not addressable through resource_add).
 - Phase 25 Day 396: C API colliders are spheres, boxes and capsules; hulls, meshes and compounds from resources are refused (UNSUPPORTED) until Day 397; `physics.threads` has no effect through the C API (no scheduler is attached to a world, the step runs inline with the same results); capsule overlap is not offered (sphere and box only); the Windows and macOS runs of host_physics wait for Days 398-399.
 - Phase 25 Day 395: the golden hashes (tests/physics/golden_test.cpp) wait for the Windows PC and Mac runs (Days 398-399); two X11Window tests (pointer grab, Create) failed once in the plain scoped run under load and passed on rerun.

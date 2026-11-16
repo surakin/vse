@@ -23,8 +23,8 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 406 |
-| [Spatial Partitioning](spatial.md) | 12 | 333 |
-| [Physics](physics.md) | 30 | 746 |
+| [Spatial Partitioning](spatial.md) | 12 | 334 |
+| [Physics](physics.md) | 30 | 751 |
 | [Networking](net.md) | 31 | 730 |
 | [Assets and resources](asset.md) | 35 | 1226 |
 | [glTF importer](asset_import.md) | 16 | 268 |

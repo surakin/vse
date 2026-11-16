@@ -603,3 +603,29 @@ TEST_CASE("PairTracker: a pair stays while the boxes are apart by less than the 
     tracker.Update(set, &events);
     CHECK(events.begin.Size() == 0);
 }
+
+// A huge static item has a huge margin: a pair with it must survive and end by that margin although the dynamic items'
+// search no longer reaches as far as the largest margin of all (Phase 25 Day 400).
+TEST_CASE("PairTracker: a large static item's margin still holds its pairs", "[spatial][pair]")
+{
+    SpatialSet set;
+    const PairTrackerConfig config;
+    PairTracker tracker(config);
+    PairEvents events;
+    const SetHandle floor = set.AddStatic(BoxAt(Vec3(0, -0.5f, 0), Vec3(20, 0.5f, 20)), 1, 0);  // margin about 4
+    const SetHandle ball = set.AddDynamic(BoxAt(Vec3(0, 0.5f, 0), Vec3(0.5f, 0.5f, 0.5f)), 2, 0);
+    tracker.Touch(floor);
+    tracker.Touch(ball);
+    tracker.Update(set, &events);
+    CHECK(events.begin.Size() == 1);
+    set.Move(ball, BoxAt(Vec3(0, 3.0f, 0), Vec3(0.5f, 0.5f, 0.5f)));  // 2.5 above the floor: inside the floor's margin
+    tracker.Touch(ball);
+    tracker.Update(set, &events);
+    CHECK(events.end.Size() == 0);
+    CHECK(tracker.Has(1, 2));
+    set.Move(ball, BoxAt(Vec3(0, 6.0f, 0), Vec3(0.5f, 0.5f, 0.5f)));  // 5.5 above: outside it
+    tracker.Touch(ball);
+    tracker.Update(set, &events);
+    CHECK(events.end.Size() == 1);
+    CHECK_FALSE(tracker.Has(1, 2));
+}

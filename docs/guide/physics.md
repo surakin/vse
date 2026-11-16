@@ -389,3 +389,32 @@ forces, impulses, velocity and transform changes, body creation and destruction.
 `ReplayStep(world, log, &cursor)` applies the entries of the world's current step and then steps. A run is therefore a snapshot plus a log, and
 the log has its own versioned encoding (`Save`, `Load`) refused on the same terms. `FirstEntryAt(log, step)` finds where to start after restoring
 a snapshot taken at that step.
+
+## Cost: the benchmark and the smoke test
+
+`game/physics_bench` (`--bodies N --steps N --threads N --scene drop|mesh|joints|rays|characters|all`) measures the step on scenes of the day: a grid of spheres and boxes dropped on a floor (awake while falling and landing, then asleep), a world with a one-million-triangle mesh, chains of joints, ray casts and walking characters. It prints the step's time and its parts from `StepStats` (`broad_ns`, `narrow_ns`, `solve_ns`, `integrate_ns`, `after_ns`: wall-clock, not state, never in a snapshot or a hash). It is not run by ctest; `tests/physics/perf_smoke_test.cpp` runs 500 falling bodies with a bound far above any build's time, so only a gross regression fails.
+
+Release build, one thread, Ryzen 9 7950X3D (Linux, clang), milliseconds per step:
+
+| bodies | falling (no contacts) | landing (pile forming) | asleep |
+|---|---|---|---|
+| 1,000 | 0.97 (broad 0.82) | 0.14 | 0.14 |
+| 5,000 | 7.8 (broad 7.4) | 31.9 (solve 18.9, broad 8.8, narrow 2.6) | 34.8 |
+| 20,000 | 40.6 (broad 39.1) | 183.7 (solve 94.6, broad 62.3, narrow 17.9) | 212 |
+| 50,000 | 108 (broad 104) | 561 (solve 273, broad 209, narrow 53) | 403 |
+
+A mesh of 1,000,000 triangles builds in 0.43 s; 1,000 bodies on it step in 12.8 ms (narrow phase 10.7). With eight threads at 20,000 bodies the narrow phase halves (17.9 to 8.5 ms) and the solver does not scale (islands are the unit of work; a pile that is one island runs on one thread). A step of 5,000 awake bodies is therefore about 8 ms while they fall and about 32 ms while a pile forms; sleeping bodies are not free (a sleeping body still costs its broad-phase update, 7 ms per 5,000 here).
+
+**What the benchmark found and fixed.** The pair tracker's search among the dynamic items reached as far as the largest margin of *any* item, and a single large static item (the floor, margin 10 percent of its 60 m extent) made it six metres: every moving body looked at every body within six metres, quadratic in a dense scene (650 ms for 20,000 falling bodies, with no contact at all). The tracker (`spatial::PairTracker`) now keeps the largest margin of the static items and of the dynamic items apart and searches each side with its own reach (`SpatialSet::ForEachHandleInRegion(static_region, dynamic_region, visit)`): 53 ms became 7.4 ms at 5,000 bodies, and the cost is linear. The pairs, the events and the state hashes are unchanged (the golden hashes pass). The tracker is single-threaded; at 50,000 moving bodies it is 104 ms, so parallelising its gather (disjoint output per chunk, merged in key order) remains the next step of the broad phase and is recorded in `KNOWN-ISSUES.md`.
+
+## Limits
+
+What the stress tests (`tests/physics/stress_test.cpp`) and the benchmark found, and what is deliberately not here:
+
+- **Tall stacks.** A stack of unit boxes stands at thirty and topples at fifty (600 steps at 60 Hz, four substeps); the pile it makes is finite and bounded. More substeps or a block solver would raise the height; neither is built.
+- **Large mass ratios.** At 1:10,000 (a 10-tonne box on six 1 kg boxes) the light boxes are squeezed out and thrown a few tens of metres; nothing becomes NaN and the heavy body stays above the floor. Ratios of 1:100 are inside the stability tests.
+- **Queries scan.** `RayCast`, `Overlap` and `ShapeCast` visit every collider (8,600 rays per second against 5,000 bodies; a million rays take two minutes), and the character controller's sweeps do the same (2,000 characters: 305 ms per step). They are correct and deterministic and fine for tens of calls a frame; a query through the broad phase's trees needs the trees to be current between steps and is the next change of the module.
+- **Joints and the narrow phase.** The step looks for a pair's joint among all joints that forbid collision (a linear scan per pair), which grows with joints times pairs; chains of 5,000 bodies with 5,000 joints step in 2.4 ms asleep, awake scenes of many joints are not measured.
+- **One island, one thread.** The solver parallelises over islands: a single huge pile runs on one thread, and there is no graph colouring.
+- **Static meshes only.** A triangle mesh collider is static; a mesh against a mesh is unsupported; no one-way platforms; no soft bodies, cloth or fluids.
+- **Not measured on this day:** the number of allocations per step after warm-up and the peak memory of 50,000 bodies; 100,000 random bodies and ten million steps of a single body (the tests run 400 bodies and 100,000 steps, which keep the checks inside a sanitizer's time).

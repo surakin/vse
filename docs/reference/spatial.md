@@ -3254,6 +3254,25 @@ As [`spatial::SpatialSet::ForEachInRegion`](#spatial-spatialset-foreachinregion-
 | Returns | what the walk did. |
 | Fails | never. |
 
+### `ForEachHandleInRegion(const Aabb&,const Aabb&,Visit&&)` {#spatial-spatialset-foreachhandleinregion-const-aabb-amp-const-aabb-amp-visit-amp-amp-const}
+
+`method spatial::SpatialSet::ForEachHandleInRegion` — defined in `engine/spatial/spatial_set.h`
+
+```cpp
+template <class Visit>
+TraversalStats ForEachHandleInRegion(const Aabb& static_region, const Aabb& dynamic_region, Visit&& visit) const;
+```
+
+As the one-region form with a region of its own for each side: the static items (tree and pending list) are looked for in `static_region` and the dynamic items in `dynamic_region`. The pair tracker uses it so that one huge static item, whose margin is large, does not make every search of a dynamic item reach far among the dynamic ones.
+
+| Field | Value |
+|---|---|
+| Parameter `static_region` | the box to look in for static items. |
+| Parameter `dynamic_region` | the box to look in for dynamic items. |
+| Parameter `visit` | `bool(SetHandle, const Item&)`; returns false to stop. |
+| Returns | what the walk did. |
+| Fails | never. |
+
 ## `MakeSpatialSyncSystem(const char*)` {#spatial-makespatialsyncsystem-const-char-star}
 
 `function spatial::MakeSpatialSyncSystem` — defined in `engine/spatial/spatial_sync.h`

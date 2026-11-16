@@ -171,7 +171,8 @@ private:
     Vector<SetHandle> touched_;
     Vector<SpatialKey> removed_;
     PairTrackerConfig config_;
-    f32 largest_margin_ = 0.0f;
+    f32 largest_static_margin_ = 0.0f;   // of any static item ever touched
+    f32 largest_dynamic_margin_ = 0.0f;  // of any dynamic item ever touched
     PairTrackerStats stats_;
     // Scratch, kept between updates so a steady frame allocates nothing.
     Vector<KeyPair> begin_;

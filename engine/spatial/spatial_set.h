@@ -218,6 +218,19 @@ public:
     /// - Fails: never.
     template <class Visit> TraversalStats ForEachHandleInRegion(const Aabb& region, Visit&& visit) const;
 
+    /// As the one-region form with a region of its own for each side: the static items (tree and pending list) are
+    /// looked for in `static_region` and the dynamic items in `dynamic_region`. The pair tracker uses it so that one
+    /// huge static item, whose margin is large, does not make every search of a dynamic item reach far among the
+    /// dynamic ones.
+    ///
+    /// - Param static_region: the box to look in for static items.
+    /// - Param dynamic_region: the box to look in for dynamic items.
+    /// - Param visit: `bool(SetHandle, const Item&)`; returns false to stop.
+    /// - Returns: what the walk did.
+    /// - Fails: never.
+    template <class Visit>
+    TraversalStats ForEachHandleInRegion(const Aabb& static_region, const Aabb& dynamic_region, Visit&& visit) const;
+
 private:
     static constexpr u32 kNull = 0xFFFFFFFFu;
     static constexpr u32 kLiveBit = 0x100u;
@@ -384,25 +397,26 @@ TraversalStats SpatialSet::ForEachInRegion(const Aabb& region, Exact&& exact, Vi
 
 template <class Visit> TraversalStats SpatialSet::ForEachHandleInRegion(const Aabb& region, Visit&& visit) const
 {
-    if (config_.dynamic == DynamicKind::Bvh)
-    {
-        return Traverse(
-            [&](const Aabb& node) { return Overlaps(node, region) ? NodeVisit::Descend : NodeVisit::Reject; },
-            [&](SetHandle handle, const Item& item) { return !Overlaps(item.box, region) || visit(handle, item); });
-    }
-    // The static parts through the tree and the pending list; the grid through its cells.
-    TraversalStats total = static_.Traverse([&](const Aabb& node)
-                                            { return Overlaps(node, region) ? NodeVisit::Descend : NodeVisit::Reject; },
-                                            [&](const Item& entry)
-                                            {
-                                                if (!TreeEntryLive(entry.key))
-                                                {
-                                                    return true;
-                                                }
-                                                const u32 slot = static_cast<u32>(entry.key);
-                                                const Item& item = slots_[slot].item;
-                                                return !Overlaps(item.box, region) || visit(HandleOf(slot), item);
-                                            });
+    return ForEachHandleInRegion(region, region, visit);
+}
+
+template <class Visit>
+TraversalStats SpatialSet::ForEachHandleInRegion(const Aabb& static_region, const Aabb& dynamic_region,
+                                                 Visit&& visit) const
+{
+    // The static parts through the tree and the pending list; the dynamic side through its tree or its grid's cells.
+    TraversalStats total = static_.Traverse(
+        [&](const Aabb& node) { return Overlaps(node, static_region) ? NodeVisit::Descend : NodeVisit::Reject; },
+        [&](const Item& entry)
+        {
+            if (!TreeEntryLive(entry.key))
+            {
+                return true;
+            }
+            const u32 slot = static_cast<u32>(entry.key);
+            const Item& item = slots_[slot].item;
+            return !Overlaps(item.box, static_region) || visit(HandleOf(slot), item);
+        });
     if (total.stopped)
     {
         return total;
@@ -411,14 +425,30 @@ template <class Visit> TraversalStats SpatialSet::ForEachHandleInRegion(const Aa
     {
         const Item& item = slots_[pending_[i]].item;
         ++total.nodes_tested;
-        if (Overlaps(item.box, region) && !visit(HandleOf(pending_[i]), item))
+        if (Overlaps(item.box, static_region) && !visit(HandleOf(pending_[i]), item))
         {
             total.stopped = true;
             return total;
         }
     }
+    if (config_.dynamic == DynamicKind::Bvh)
+    {
+        const TraversalStats tree = dynamic_.Traverse(
+            [&](const Aabb& node) { return Overlaps(node, dynamic_region) ? NodeVisit::Descend : NodeVisit::Reject; },
+            [&](ProxyId, const Item& entry)
+            {
+                const u32 slot = static_cast<u32>(entry.key);
+                const Item& item = slots_[slot].item;
+                return !Overlaps(item.box, dynamic_region) || visit(HandleOf(slot), item);
+            });
+        total.nodes_tested += tree.nodes_tested;
+        total.items_visited += tree.items_visited;
+        total.refused += tree.refused;
+        total.stopped = tree.stopped;
+        return total;
+    }
     const TraversalStats grid = grid_.ForEachInRegion(
-        region, [](const Item&) { return true; },
+        dynamic_region, [](const Item&) { return true; },
         [&](const Item& entry)
         {
             const u32 slot = static_cast<u32>(entry.key);
