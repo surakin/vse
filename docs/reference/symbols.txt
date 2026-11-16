@@ -3761,6 +3761,31 @@ physics::BroadPhase::Begun() const	function	physics	physics-broadphase-begun-con
 physics::BroadPhase::Ended() const	function	physics	physics-broadphase-ended-const	physics.md	engine/physics/broad_phase.h:168
 physics::BroadPhase::Stats() const	function	physics	physics-broadphase-stats-const	physics.md	engine/physics/broad_phase.h:174
 physics::BroadPhase::Set() const	function	physics	physics-broadphase-set-const	physics.md	engine/physics/broad_phase.h:181
+physics::CharacterConfig	struct	physics	physics-characterconfig	physics.md	engine/physics/character.h:16
+physics::CharacterConfig::radius	variable	physics	physics-characterconfig-radius	physics.md	engine/physics/character.h:19
+physics::CharacterConfig::height	variable	physics	physics-characterconfig-height	physics.md	engine/physics/character.h:21
+physics::CharacterConfig::step_height	variable	physics	physics-characterconfig-step-height	physics.md	engine/physics/character.h:23
+physics::CharacterConfig::min_ground_y	variable	physics	physics-characterconfig-min-ground-y	physics.md	engine/physics/character.h:26
+physics::CharacterConfig::skin_width	variable	physics	physics-characterconfig-skin-width	physics.md	engine/physics/character.h:28
+physics::CharacterConfig::gravity_scale	variable	physics	physics-characterconfig-gravity-scale	physics.md	engine/physics/character.h:30
+physics::CharacterEvents	struct	physics	physics-characterevents	physics.md	engine/physics/character.h:36
+physics::CharacterEvents::began_ground	variable	physics	physics-characterevents-began-ground	physics.md	engine/physics/character.h:39
+physics::CharacterEvents::ended_ground	variable	physics	physics-characterevents-ended-ground	physics.md	engine/physics/character.h:41
+physics::CharacterEvents::wall_hits	variable	physics	physics-characterevents-wall-hits	physics.md	engine/physics/character.h:43
+physics::CharacterEvents::wall_normal	variable	physics	physics-characterevents-wall-normal	physics.md	engine/physics/character.h:45
+physics::CharacterState	struct	physics	physics-characterstate	physics.md	engine/physics/character.h:51
+physics::CharacterState::on_ground	variable	physics	physics-characterstate-on-ground	physics.md	engine/physics/character.h:54
+physics::CharacterState::ground_body	variable	physics	physics-characterstate-ground-body	physics.md	engine/physics/character.h:56
+physics::CharacterState::ground_normal	variable	physics	physics-characterstate-ground-normal	physics.md	engine/physics/character.h:58
+physics::CharacterState::vertical_speed	variable	physics	physics-characterstate-vertical-speed	physics.md	engine/physics/character.h:60
+physics::CharacterController	class	physics	physics-charactercontroller	physics.md	engine/physics/character.h:72
+physics::CharacterController::Create(PhysicsWorld*,const CharacterConfig&,const Vec3&)	function	physics	physics-charactercontroller-create-physicsworld-star-const-characterconfig-amp-const-vec3-amp	physics.md	engine/physics/character.h:84
+physics::CharacterController::Destroy(PhysicsWorld*)	function	physics	physics-charactercontroller-destroy-physicsworld-star	physics.md	engine/physics/character.h:91
+physics::CharacterController::Stop(PhysicsWorld*)	function	physics	physics-charactercontroller-stop-physicsworld-star	physics.md	engine/physics/character.h:99
+physics::CharacterController::Move(PhysicsWorld*,const Vec3&,f32)	function	physics	physics-charactercontroller-move-physicsworld-star-const-vec3-amp-f32	physics.md	engine/physics/character.h:110
+physics::CharacterController::Jump(f32)	function	physics	physics-charactercontroller-jump-f32	physics.md	engine/physics/character.h:116
+physics::CharacterController::BodyHandle() const	function	physics	physics-charactercontroller-bodyhandle-const	physics.md	engine/physics/character.h:122
+physics::CharacterController::State() const	function	physics	physics-charactercontroller-state-const	physics.md	engine/physics/character.h:128
 physics::FiniteVec3(const Vec3&)	function	physics	physics-finitevec3-const-vec3-amp	physics.md	engine/physics/check.h:15
 physics::IsUnitQuaternion(const Quaternion&)	function	physics	physics-isunitquaternion-const-quaternion-amp	physics.md	engine/physics/check.h:23
 physics::Collide(const Shape&,const Pose&,const Shape&,const Pose&,f32,ContactManifold*,const HullLibrary*,const MeshLibrary*,const CompoundLibrary*)	function	physics	physics-collide-const-shape-amp-const-pose-amp-const-shape-amp-const-pose-amp-f32-contactmanifold-star-const-hulllibrary-star-const-meshlibrary-star-const-compoundlibrary-star	physics.md	engine/physics/collide.h:40

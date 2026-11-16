@@ -315,3 +315,17 @@ A ray that starts inside a solid collider hits it at distance zero with the norm
 for a sphere, slabs for a box, the cylinder and the two end spheres for a capsule, the face planes for a hull, the box query and
 Moller-Trumbore for a mesh and the children for a compound. The queries scan the colliders and cull by their boxes (no tree yet), change
 nothing and may run from several threads while no step or change runs; the results are sorted, so they do not depend on the thread.
+
+## The character controller
+
+`CharacterController` (`physics/character.h`) is a kinematic capsule the program moves once per fixed step: `Create` makes the body and its
+capsule collider, `Move(world, wish_velocity, dt)` is called before `PhysicsWorld::Step`, and `Jump` sets the vertical speed. `Move` sweeps
+the capsule with the shape cast of the query module against static and kinematic bodies only, slides along what it meets (four planes in turn;
+at a crease the motion follows the line of the two planes; a wall is treated as upright so the round bottom cannot ride up a corner), climbs a
+ledge up to `step_height` by casting up, forward and down (it first checks that flat ground within the step height lies a radius past the edge),
+snaps to the ground when walking down within the step height, treats a surface steeper than `min_ground_y` (the cosine of the slope limit) as a
+wall that the character slides down, and adds the velocity of the body it stands on (a lift or a conveyor). Gravity and jumps are kept as a
+vertical speed. The result is not written as a position: it is set as the body's velocity (displacement over `dt`), so the step carries the
+character there and the solver pushes dynamic bodies out of its way, while nothing pushes the character. `Move` returns `CharacterEvents`
+(`began_ground`, `ended_ground`, the walls hit and the last wall normal); `State()` has `on_ground`, `ground_body`, `ground_normal`. The
+walk is the same at 60 and 120 steps per second to a few centimetres (`tests/physics/character_test.cpp`).

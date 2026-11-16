@@ -26,6 +26,7 @@ set(PHYSICS_SOURCES
   island.cpp  # Day 388
   ccd.cpp  # Day 390
   query.cpp  # Day 391
+  character.cpp  # Day 392
 )
 set(PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

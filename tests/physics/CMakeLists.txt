@@ -21,6 +21,7 @@ set(PHYSICS_TEST_SOURCES
   parallel_test.cpp  # Day 389
   ccd_test.cpp  # Day 390
   query_test.cpp  # Day 391
+  character_test.cpp  # Day 392
 )
 
 find_package(Threads REQUIRED)
