@@ -9,6 +9,7 @@
 #include "engine/engine_c.h"
 #include "engine_c/host_texture.h"
 #include "jobs/job.h"
+#include "physics/character.h"
 #include "physics/world.h"
 #include "string_view.h"
 #include "sync/atomic.h"
@@ -117,6 +118,31 @@ struct MeshReference
     u64 material_resource = 0;  ///< The resource id of the material (0: the surface's default material).
 };
 
+/// The component of ENGINE_COMPONENT_CHARACTER (Phase 25 Day 397): the shape and rules of a character. The controller
+/// itself is in `WorldObject::characters`.
+///
+/// - Thread-safety: plain data.
+struct CharacterComponent
+{
+    f32 radius = 0.4f;
+    f32 height = 1.8f;
+    f32 step_height = 0.3f;
+    f32 min_ground_y = 0.64f;
+    f32 skin_width = 0.02f;
+    f32 gravity_scale = 1.0f;
+};
+
+/// A character controller of a world (Phase 25 Day 397): the entity it belongs to and the controller of its capsule.
+///
+/// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
+struct CharacterEntry
+{
+    u64 key = 0;  ///< The entity (its u64 form).
+    physics::CharacterController controller;
+    physics::CharacterConfig config;
+    physics::CharacterEvents events;  ///< What the last character_move found.
+};
+
 /// A world and the systems that run on it.
 ///
 /// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
@@ -125,6 +151,7 @@ struct WorldObject
     WorldObject();
     ecs::World world;
     ecs::Schedule schedule;
+    Vector<CharacterEntry> characters;  ///< The characters, in the order they were made (Day 397).
     bool physics_used = false;     ///< Whether a body component was set: the frame makes bodies only then (Day 396).
     Environment environment;       ///< What world_set_environment set (the defaults until then).
     bool environment_set = false;  ///< Whether it was called (no default sun once it was).
@@ -347,6 +374,13 @@ engine_status PhysicsOverlapSphereFn(engine_handle world, const float* center, f
                                      size_t capacity, size_t* total);
 engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, const float* half_extents, u32 layer_mask,
                                   u64* keys, size_t capacity, size_t* total);
+engine_status JointReactionFn(engine_handle world, u64 key, float* force, float* torque);
+engine_status CharacterMoveFn(engine_handle world, u64 key, const float* velocity, float dt,
+                              engine_character_state* state);
+engine_status CharacterJumpFn(engine_handle world, u64 key, float speed, engine_character_state* state);
+engine_status PhysicsEventsFn(engine_handle world, engine_physics_event* out, size_t capacity, size_t* total);
+engine_status PhysicsSnapshotFn(engine_handle world, engine_buffer* out);
+engine_status PhysicsRestoreFn(engine_handle world, const void* data, size_t size);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
 engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size);

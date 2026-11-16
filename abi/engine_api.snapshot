@@ -26,7 +26,9 @@ value ENGINE_COMPONENT_NAME 3
 value ENGINE_COMPONENT_MESH_REFERENCE 4
 value ENGINE_COMPONENT_RIGID_BODY 11
 value ENGINE_COMPONENT_COLLIDER 12
-value ENGINE_COMPONENT_MASK_ALL 4095
+value ENGINE_COMPONENT_JOINT 13
+value ENGINE_COMPONENT_CHARACTER 14
+value ENGINE_COMPONENT_MASK_ALL 16383
 value ENGINE_NAME_MAX_BYTES 63
 struct engine_string size=16
 field engine_string.data offset=0 size=8
@@ -84,6 +86,64 @@ field engine_rigid_body.linear_damping offset=12 size=4
 field engine_rigid_body.angular_damping offset=16 size=4
 field engine_rigid_body.gravity_scale offset=20 size=4
 field engine_rigid_body.flags offset=24 size=4
+value ENGINE_JOINT_BALL 0
+value ENGINE_JOINT_DISTANCE 1
+value ENGINE_JOINT_FIXED 2
+value ENGINE_JOINT_HINGE 3
+value ENGINE_JOINT_COLLIDE_CONNECTED 1
+value ENGINE_JOINT_LIMIT 2
+value ENGINE_JOINT_MOTOR 4
+value ENGINE_PHYSICS_CONTACT_BEGIN 1
+value ENGINE_PHYSICS_CONTACT_STAY 2
+value ENGINE_PHYSICS_CONTACT_END 3
+value ENGINE_PHYSICS_TRIGGER_ENTER 4
+value ENGINE_PHYSICS_TRIGGER_EXIT 5
+value ENGINE_PHYSICS_JOINT_BREAK 6
+struct engine_joint size=104
+field engine_joint.struct_size offset=0 size=4
+field engine_joint.kind offset=4 size=4
+field engine_joint.entity_a offset=8 size=8
+field engine_joint.entity_b offset=16 size=8
+field engine_joint.point_a offset=24 size=12
+field engine_joint.point_b offset=36 size=12
+field engine_joint.axis offset=48 size=12
+field engine_joint.min_length offset=60 size=4
+field engine_joint.max_length offset=64 size=4
+field engine_joint.hertz offset=68 size=4
+field engine_joint.damping_ratio offset=72 size=4
+field engine_joint.break_force offset=76 size=4
+field engine_joint.break_torque offset=80 size=4
+field engine_joint.flags offset=84 size=4
+field engine_joint.lower_angle offset=88 size=4
+field engine_joint.upper_angle offset=92 size=4
+field engine_joint.motor_speed offset=96 size=4
+field engine_joint.max_motor_torque offset=100 size=4
+struct engine_character size=28
+field engine_character.struct_size offset=0 size=4
+field engine_character.radius offset=4 size=4
+field engine_character.height offset=8 size=4
+field engine_character.step_height offset=12 size=4
+field engine_character.min_ground_y offset=16 size=4
+field engine_character.skin_width offset=20 size=4
+field engine_character.gravity_scale offset=24 size=4
+struct engine_character_state size=64
+field engine_character_state.struct_size offset=0 size=4
+field engine_character_state.on_ground offset=4 size=4
+field engine_character_state.began_ground offset=8 size=4
+field engine_character_state.ended_ground offset=12 size=4
+field engine_character_state.wall_hits offset=16 size=4
+field engine_character_state.ground_entity offset=24 size=8
+field engine_character_state.ground_normal offset=32 size=12
+field engine_character_state.wall_normal offset=44 size=12
+field engine_character_state.vertical_speed offset=56 size=4
+struct engine_physics_event size=56
+field engine_physics_event.struct_size offset=0 size=4
+field engine_physics_event.kind offset=4 size=4
+field engine_physics_event.entity_a offset=8 size=8
+field engine_physics_event.entity_b offset=16 size=8
+field engine_physics_event.point offset=24 size=12
+field engine_physics_event.normal offset=36 size=12
+field engine_physics_event.value offset=48 size=4
 struct engine_collider size=84
 field engine_collider.struct_size offset=0 size=4
 field engine_collider.shape offset=4 size=4
@@ -255,7 +315,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=752
+struct engine_api size=800
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -327,3 +387,9 @@ field engine_api.body_teleport offset=720 size=8
 field engine_api.physics_raycast offset=728 size=8
 field engine_api.physics_overlap_sphere offset=736 size=8
 field engine_api.physics_overlap_box offset=744 size=8
+field engine_api.joint_reaction offset=752 size=8
+field engine_api.character_move offset=760 size=8
+field engine_api.character_jump offset=768 size=8
+field engine_api.physics_events offset=776 size=8
+field engine_api.physics_snapshot offset=784 size=8
+field engine_api.physics_restore offset=792 size=8

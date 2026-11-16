@@ -537,11 +537,13 @@ extern "C"
                                                    363) */
         ENGINE_COMPONENT_LABEL = 10,            /* engine_label: text drawn at the entity's place (Phase 24 Day 367) */
         ENGINE_COMPONENT_RIGID_BODY = 11,       /* engine_rigid_body: a physics body (Phase 25 Day 396) */
-        ENGINE_COMPONENT_COLLIDER = 12          /* engine_collider: the shape of a physics body (Phase 25 Day 396) */
+        ENGINE_COMPONENT_COLLIDER = 12,         /* engine_collider: the shape of a physics body (Phase 25 Day 396) */
+        ENGINE_COMPONENT_JOINT = 13,            /* engine_joint: ties two entities' bodies (Phase 25 Day 397) */
+        ENGINE_COMPONENT_CHARACTER = 14         /* engine_character: a capsule character controller (Day 397) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0xFFFu
+#define ENGINE_COMPONENT_MASK_ALL 0x3FFFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -814,6 +816,98 @@ extern "C"
         float normal[3]; /* facing against the ray */
         float distance;  /* along the ray */
     } engine_ray_hit;
+
+    /* The kinds of engine_joint.kind. */
+#define ENGINE_JOINT_BALL 0u /* the anchors stay together; the bodies turn freely */
+#define ENGINE_JOINT_DISTANCE                                                                                          \
+    1u                        /* the anchors stay `min_length`..`max_length` apart (rigid when both are -1: the        \
+                                 distance they have now) */
+#define ENGINE_JOINT_FIXED 2u /* the anchors stay together and the bodies keep their relative orientation */
+#define ENGINE_JOINT_HINGE 3u /* the bodies turn about `axis` through the anchor */
+/* engine_joint.flags */
+#define ENGINE_JOINT_COLLIDE_CONNECTED 0x1u /* the two bodies still collide with each other */
+#define ENGINE_JOINT_LIMIT 0x2u             /* a hinge is limited to [lower_angle, upper_angle] */
+#define ENGINE_JOINT_MOTOR 0x4u             /* a hinge has a motor */
+
+    /* A joint between two entities' bodies (Phase 25 Day 397); the entity that has this component is the joint.
+     * `entity_a` and `entity_b` are keys of entities with a rigid body and a collider (0 on one side: the joint ties
+     * the other to the world). `point_a` and `point_b` are the anchors in world space at the time the joint is made
+     * (one point for a ball, hinge or fixed joint: `point_b` is ignored), `axis` the hinge axis in world space. `hertz`
+     * above 0 makes a distance joint a spring (`damping_ratio` as usual); `break_force` and `break_torque` above 0
+     * break it. The joint is made by the frame when both bodies exist, and removed (the component too) when it breaks.
+     */
+    typedef struct engine_joint
+    {
+        uint32_t struct_size;
+        uint32_t kind; /* ENGINE_JOINT_* */
+        uint64_t entity_a;
+        uint64_t entity_b;
+        float point_a[3];
+        float point_b[3];
+        float axis[3];
+        float min_length;
+        float max_length;
+        float hertz;
+        float damping_ratio;
+        float break_force;
+        float break_torque;
+        uint32_t flags; /* ENGINE_JOINT_* flags */
+        float lower_angle;
+        float upper_angle;
+        float motor_speed;
+        float max_motor_torque;
+    } engine_joint;
+
+    /* A character controller (Phase 25 Day 397): an upright capsule that is moved with character_move, slides along
+     * walls, climbs steps and slopes and stays on the ground. The entity needs ENGINE_COMPONENT_TRANSFORM; setting the
+     * component (again) puts the capsule at the entity's transform, and the frame writes the capsule's position back to
+     * it (the world matrix follows one frame later). Sizes are in metres. */
+    typedef struct engine_character
+    {
+        uint32_t struct_size;
+        float radius;
+        float height; /* of the whole capsule, at least 2 * radius */
+        float step_height;
+        float min_ground_y; /* the least Y of a normal that counts as ground (0.64: a slope of about 50 degrees) */
+        float skin_width;
+        float gravity_scale;
+    } engine_character;
+
+    /* What character_move found and where the character stands. */
+    typedef struct engine_character_state
+    {
+        uint32_t struct_size;
+        uint32_t on_ground;
+        uint32_t began_ground; /* from the last character_move */
+        uint32_t ended_ground;
+        uint32_t wall_hits;
+        uint64_t ground_entity; /* the entity of the body underfoot (0: none or the world's) */
+        float ground_normal[3];
+        float wall_normal[3];
+        float vertical_speed;
+    } engine_character_state;
+
+    /* The kinds of engine_physics_event.kind. */
+#define ENGINE_PHYSICS_CONTACT_BEGIN 1u
+#define ENGINE_PHYSICS_CONTACT_STAY 2u /* only with physics.stay_events */
+#define ENGINE_PHYSICS_CONTACT_END 3u
+#define ENGINE_PHYSICS_TRIGGER_ENTER 4u
+#define ENGINE_PHYSICS_TRIGGER_EXIT 5u
+#define ENGINE_PHYSICS_JOINT_BREAK 6u
+
+    /* One event of the last physics steps. `entity_a` and `entity_b` are the entities (for a trigger: the trigger and
+     * what entered; for a joint break: the joint's two entities, 0 for the world). A contact has the deepest point, the
+     * normal and `value` the depth; a joint break has the force in `point`, the torque in `normal` and `value` 0. */
+    typedef struct engine_physics_event
+    {
+        uint32_t struct_size;
+        uint32_t kind; /* ENGINE_PHYSICS_* */
+        uint64_t entity_a;
+        uint64_t entity_b;
+        float point[3];
+        float normal[3];
+        float value;
+    } engine_physics_event;
 
     /* What surrounds a world (Phase 24 Day 361): one per world, shared by every surface that shows it. Unset, a world
      * has an ambient colour of white at intensity 0.2, a black sky, exposure 1, and a default sun when it has no light
@@ -1546,6 +1640,42 @@ extern "C"
                                                 uint32_t layer_mask, uint64_t* keys, size_t capacity, size_t* total);
         engine_status (*physics_overlap_box)(engine_handle world, const float* center, const float* half_extents,
                                              uint32_t layer_mask, uint64_t* keys, size_t capacity, size_t* total);
+
+        /* ---- Phase 25 Day 397: joints, characters, events and snapshots ---- */
+
+        /* Reads the force (newtons) and torque (newton metres) a joint carried in the last step; the entity is the one
+         * with ENGINE_COMPONENT_JOINT. Either pointer may be NULL. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * TYPE_MISMATCH, NOT_FOUND (no joint made yet, or it broke). */
+        engine_status (*joint_reaction)(engine_handle world, uint64_t key, float* force, float* torque);
+
+        /* Moves a character (ENGINE_COMPONENT_CHARACTER) for the next step: `velocity` (m/s, x y z) is the wish; the
+         * controller adds gravity, slides, climbs steps and keeps it on the ground. `dt` is the time the move covers
+         * (the fixed step, usually 1/60). `state` (struct_size set by the host; may be NULL) receives what happened.
+         * Fails with: STALE_HANDLE, INVALID_ARGUMENT (not finite, dt not in (0, 1]), STRUCT_SIZE, TYPE_MISMATCH,
+         * NOT_FOUND (no character). */
+        engine_status (*character_move)(engine_handle world, uint64_t key, const float* velocity, float dt,
+                                        engine_character_state* state);
+
+        /* Gives a character an upward speed (m/s) when it stands on the ground; reads the state without moving when
+         * `speed` is 0. Same failures as character_move. */
+        engine_status (*character_jump)(engine_handle world, uint64_t key, float speed, engine_character_state* state);
+
+        /* Copies the events of the last frame (every step of it, in step order; contacts, then triggers, then joint
+         * breaks) to `out` up to `capacity`, and their number to `*total`. Plain structs; no callback is made. Valid
+         * until the next frame, which replaces them. Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE (an
+         * element's struct_size is below the struct's), TYPE_MISMATCH. */
+        engine_status (*physics_events)(engine_handle world, engine_physics_event* out, size_t capacity, size_t* total);
+
+        /* Writes the whole state of a world's physics into `*out` (release it with engine_buffer_release): a host can
+         * rewind with physics_restore, also in another process of the same build. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, TYPE_MISMATCH. */
+        engine_status (*physics_snapshot)(engine_handle world, engine_buffer* out);
+
+        /* Puts a snapshot of the same world's physics back: bodies, velocities and contacts return to the state they
+         * had, and the entities' transforms follow. The world is unchanged when the data is refused. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, CORRUPT (not a snapshot, truncated or damaged),
+         * UNSUPPORTED_VERSION, MISSING_DEPENDENCY (a shape it names is not in the world), LIMIT_EXCEEDED. */
+        engine_status (*physics_restore)(engine_handle world, const void* data, size_t size);
     } engine_api;
 
     /* Returns the function table.

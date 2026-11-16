@@ -9,6 +9,7 @@
 #include "asset/level.h"
 #include "algorithm.h"
 #include "containers/vector.h"
+#include "bytes/byte_writer.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
 #include "engine_c/engine_internal.h"
@@ -24,7 +25,9 @@
 #include "mem/heap_allocator.h"
 #include "os/os.h"
 #include "physics/components.h"
+#include "physics/joint_sync.h"
 #include "physics/query.h"
+#include "physics/snapshot_status.h"
 #include "physics/sync.h"
 #include "physics/system.h"
 #include "storage/builtin_components.h"
@@ -67,13 +70,15 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_LABEL: return "label";
     case ENGINE_COMPONENT_RIGID_BODY: return "rigid body";
     case ENGINE_COMPONENT_COLLIDER: return "collider";
+    case ENGINE_COMPONENT_JOINT: return "joint";
+    case ENGINE_COMPONENT_CHARACTER: return "character";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_COLLIDER;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_CHARACTER;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -92,6 +97,8 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_LABEL: return ecs::ComponentOf<LabelComponent>();
     case ENGINE_COMPONENT_RIGID_BODY: return ecs::ComponentOf<physics::RigidBody>();
     case ENGINE_COMPONENT_COLLIDER: return ecs::ComponentOf<physics::Collider>();
+    case ENGINE_COMPONENT_JOINT: return ecs::ComponentOf<physics::Joint>();
+    case ENGINE_COMPONENT_CHARACTER: return ecs::ComponentOf<CharacterComponent>();
     }
     return ecs::kInvalidComponent;
 }
@@ -149,6 +156,46 @@ u32 LastGeneration()
 {
     return g_generation.Load();
 }
+
+namespace
+{
+
+// After the step: each character's entity takes the position of its capsule's centre; a character whose entity is gone
+// gives its body back (Day 397).
+void FollowCharacters(WorldObject& object)
+{
+    physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+    usize kept = 0;
+    for (usize i = 0; i < object.characters.Size(); ++i)
+    {
+        CharacterEntry& entry = object.characters[i];
+        const ecs::Entity entity = ecs::Entity::FromU64(entry.key);
+        if (!object.world.Exists(entity) || !object.world.Has<CharacterComponent>(entity))
+        {
+            entry.controller.Destroy(&physics);
+            continue;
+        }
+        const physics::Body* body = physics.Find(entry.controller.BodyHandle());
+        const ecs::LocalTransform* transform = object.world.Peek<ecs::LocalTransform>(entity);
+        if (body != nullptr && transform != nullptr)
+        {
+            ecs::LocalTransform moved = *transform;
+            moved.position = body->position;
+            object.world.Set<ecs::LocalTransform>(entity, moved);
+        }
+        if (kept != i)
+        {
+            object.characters[kept] = entry;
+        }
+        ++kept;
+    }
+    while (object.characters.Size() > kept)
+    {
+        object.characters.Pop();
+    }
+}
+
+}  // namespace
 
 WorldObject::WorldObject()
 {
@@ -475,9 +522,16 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
         {
             const u64 physics_start = os::MonotonicTimeNanos();
             physics::SyncBodies(object->world, physics);
+            physics::SyncJoints(object->world, physics);
+            physics::DriveKinematicBodies(object->world, physics, static_cast<f32>(info->delta_seconds));
             result.physics_us += (os::MonotonicTimeNanos() - physics_start) / 1000;
         }
         object->schedule.Run(object->world, static_cast<f32>(info->delta_seconds));
+        if (object->physics_used)
+        {
+            physics::SyncJoints(object->world, physics);  // a joint the step broke loses its component now
+        }
+        FollowCharacters(*object);
         result.physics_steps += static_cast<u32>(physics.GetStepStats().steps - steps_before);
         result.physics_bodies += physics.Stats().bodies;
         AttachWorld(*object, resources);
@@ -716,6 +770,14 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         checked = CheckInStruct(value, sizeof(engine_collider), "engine_collider");
     }
+    else if (kind == ENGINE_COMPONENT_JOINT)
+    {
+        checked = CheckInStruct(value, sizeof(engine_joint), "engine_joint");
+    }
+    else if (kind == ENGINE_COMPONENT_CHARACTER)
+    {
+        checked = CheckInStruct(value, sizeof(engine_character), "engine_character");
+    }
     else
     {
         checked = CheckInStruct(value, kMeshReferenceFirstSize, "engine_mesh_reference");
@@ -790,6 +852,126 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 }
                 object.physics_used = true;
                 return SetOrAdd(object.world, entity, collider);
+            }
+            if (kind == ENGINE_COMPONENT_JOINT)
+            {
+                const engine_joint* in = static_cast<const engine_joint*>(value);
+                if (in->kind > ENGINE_JOINT_HINGE || (in->flags & ~7u) != 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the joint kind or flags are not known");
+                }
+                if (in->entity_a == 0 && in->entity_b == 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a joint needs at least one entity");
+                }
+                if ((in->entity_a != 0 && !object.world.Exists(ecs::Entity::FromU64(in->entity_a))) ||
+                    (in->entity_b != 0 && !object.world.Exists(ecs::Entity::FromU64(in->entity_b))))
+                {
+                    return Fail(ENGINE_ERROR_STALE_HANDLE, "an entity of the joint was destroyed");
+                }
+                if (in->entity_a == in->entity_b)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a joint ties two different entities");
+                }
+                const float numbers[] = {in->point_a[0],    in->point_a[1],  in->point_a[2],      in->point_b[0],
+                                         in->point_b[1],    in->point_b[2],  in->axis[0],         in->axis[1],
+                                         in->axis[2],       in->min_length,  in->max_length,      in->hertz,
+                                         in->damping_ratio, in->break_force, in->break_torque,    in->lower_angle,
+                                         in->upper_angle,   in->motor_speed, in->max_motor_torque};
+                for (const float number : numbers)
+                {
+                    if (!Finite(number))
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the joint has a number that is not finite");
+                    }
+                }
+                if (in->kind == ENGINE_JOINT_HINGE &&
+                    in->axis[0] * in->axis[0] + in->axis[1] * in->axis[1] + in->axis[2] * in->axis[2] < 1.0e-6f)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a hinge needs a non-zero axis");
+                }
+                physics::Joint joint;
+                joint.entity_a = in->entity_a == 0 ? ecs::Entity() : ecs::Entity::FromU64(in->entity_a);
+                joint.entity_b = in->entity_b == 0 ? ecs::Entity() : ecs::Entity::FromU64(in->entity_b);
+                joint.type = static_cast<physics::JointType>(in->kind);
+                joint.point_a = Vec3(in->point_a[0], in->point_a[1], in->point_a[2]);
+                joint.point_b = Vec3(in->point_b[0], in->point_b[1], in->point_b[2]);
+                joint.axis = Vec3(in->axis[0], in->axis[1], in->axis[2]);
+                joint.min_length = in->min_length;
+                joint.max_length = in->max_length;
+                joint.hertz = in->hertz;
+                joint.damping_ratio = in->damping_ratio;
+                joint.break_force = in->break_force;
+                joint.break_torque = in->break_torque;
+                joint.collide_connected = (in->flags & ENGINE_JOINT_COLLIDE_CONNECTED) != 0;
+                joint.enable_limit = (in->flags & ENGINE_JOINT_LIMIT) != 0;
+                joint.lower_angle = in->lower_angle;
+                joint.upper_angle = in->upper_angle;
+                joint.enable_motor = (in->flags & ENGINE_JOINT_MOTOR) != 0;
+                joint.motor_speed = in->motor_speed;
+                joint.max_motor_torque = in->max_motor_torque;
+                object.physics_used = true;
+                // New numbers (or a new pair) for a joint the physics already made: it is made again, as the sync keeps
+                // a joint whose two bodies are the same; a joint that broke is not revived by the sync, so its stale
+                // link goes too.
+                if (const physics::JointLink* link = object.world.Peek<physics::JointLink>(entity))
+                {
+                    object.world.Resource<physics::PhysicsWorld>().DestroyJoint(link->id);
+                    object.world.Remove<physics::JointLink>(entity);
+                }
+                return SetOrAdd(object.world, entity, joint);
+            }
+            if (kind == ENGINE_COMPONENT_CHARACTER)
+            {
+                const engine_character* in = static_cast<const engine_character*>(value);
+                const ecs::LocalTransform* transform = object.world.Peek<ecs::LocalTransform>(entity);
+                if (transform == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_MISSING_DEPENDENCY, "a character needs a transform");
+                }
+                physics::CharacterConfig config;
+                config.radius = in->radius;
+                config.height = in->height;
+                config.step_height = in->step_height;
+                config.min_ground_y = in->min_ground_y;
+                config.skin_width = in->skin_width;
+                config.gravity_scale = in->gravity_scale;
+                physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                usize index = object.characters.Size();
+                for (usize i = 0; i < object.characters.Size(); ++i)
+                {
+                    if (object.characters[i].key == key)
+                    {
+                        index = i;
+                    }
+                }
+                physics::CharacterController made;  // a refusal leaves the character as it was
+                if (made.Create(&physics, config, transform->position) != physics::BodyStatus::Ok)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                                "the character's size or numbers are refused (height at least 2 * radius, all finite)");
+                }
+                if (index == object.characters.Size())
+                {
+                    object.characters.Push(CharacterEntry());
+                }
+                else
+                {
+                    object.characters[index].controller.Destroy(&physics);
+                }
+                CharacterEntry& entry = object.characters[index];
+                entry.key = key;
+                entry.controller = made;
+                entry.config = config;
+                entry.events = physics::CharacterEvents();
+                CharacterComponent component;
+                component.radius = config.radius;
+                component.height = config.height;
+                component.step_height = config.step_height;
+                component.min_ground_y = config.min_ground_y;
+                component.skin_width = config.skin_width;
+                component.gravity_scale = config.gravity_scale;
+                return SetOrAdd(object.world, entity, component);
             }
             if (kind == ENGINE_COMPONENT_SKELETON_INSTANCE)
             {
@@ -1862,6 +2044,8 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_VISIBILITY        ? sizeof(engine_visibility)
                          : kind == ENGINE_COMPONENT_RIGID_BODY        ? sizeof(engine_rigid_body)
                          : kind == ENGINE_COMPONENT_COLLIDER          ? sizeof(engine_collider)
+                         : kind == ENGINE_COMPONENT_JOINT             ? sizeof(engine_joint)
+                         : kind == ENGINE_COMPONENT_CHARACTER         ? sizeof(engine_character)
                          : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? sizeof(engine_skeleton_instance)
                          : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? sizeof(engine_animation_state)
                                                                       : kMeshReferenceFirstSize;
@@ -1873,6 +2057,8 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                        : kind == ENGINE_COMPONENT_VISIBILITY        ? "engine_visibility"
                        : kind == ENGINE_COMPONENT_RIGID_BODY        ? "engine_rigid_body"
                        : kind == ENGINE_COMPONENT_COLLIDER          ? "engine_collider"
+                       : kind == ENGINE_COMPONENT_JOINT             ? "engine_joint"
+                       : kind == ENGINE_COMPONENT_CHARACTER         ? "engine_character"
                        : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? "engine_skeleton_instance"
                        : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? "engine_animation_state"
                                                                     : "engine_mesh_reference";
@@ -1969,6 +2155,61 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              result.angular_damping = body->angular_damping;
                              result.gravity_scale = body->gravity_scale;
                              result.flags = body->flags;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_JOINT)
+                         {
+                             const physics::Joint* joint = view.Peek<physics::Joint>(entity);
+                             if (joint == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no joint");
+                             }
+                             engine_joint result = {};
+                             result.struct_size = sizeof(engine_joint);
+                             result.kind = static_cast<u32>(joint->type);
+                             result.entity_a = joint->entity_a.IsValid() ? joint->entity_a.ToU64() : 0;
+                             result.entity_b = joint->entity_b.IsValid() ? joint->entity_b.ToU64() : 0;
+                             result.point_a[0] = joint->point_a.x;
+                             result.point_a[1] = joint->point_a.y;
+                             result.point_a[2] = joint->point_a.z;
+                             result.point_b[0] = joint->point_b.x;
+                             result.point_b[1] = joint->point_b.y;
+                             result.point_b[2] = joint->point_b.z;
+                             result.axis[0] = joint->axis.x;
+                             result.axis[1] = joint->axis.y;
+                             result.axis[2] = joint->axis.z;
+                             result.min_length = joint->min_length;
+                             result.max_length = joint->max_length;
+                             result.hertz = joint->hertz;
+                             result.damping_ratio = joint->damping_ratio;
+                             result.break_force = joint->break_force;
+                             result.break_torque = joint->break_torque;
+                             result.flags = (joint->collide_connected ? ENGINE_JOINT_COLLIDE_CONNECTED : 0u) |
+                                            (joint->enable_limit ? ENGINE_JOINT_LIMIT : 0u) |
+                                            (joint->enable_motor ? ENGINE_JOINT_MOTOR : 0u);
+                             result.lower_angle = joint->lower_angle;
+                             result.upper_angle = joint->upper_angle;
+                             result.motor_speed = joint->motor_speed;
+                             result.max_motor_torque = joint->max_motor_torque;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_CHARACTER)
+                         {
+                             const CharacterComponent* character = view.Peek<CharacterComponent>(entity);
+                             if (character == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no character");
+                             }
+                             engine_character result = {};
+                             result.struct_size = sizeof(engine_character);
+                             result.radius = character->radius;
+                             result.height = character->height;
+                             result.step_height = character->step_height;
+                             result.min_ground_y = character->min_ground_y;
+                             result.skin_width = character->skin_width;
+                             result.gravity_scale = character->gravity_scale;
                              MemCopy(out, &result, sizeof(result));
                              return ENGINE_OK;
                          }
@@ -2121,6 +2362,10 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_LABEL: status = w.Remove<LabelComponent>(entity); break;
                          case ENGINE_COMPONENT_RIGID_BODY: status = w.Remove<physics::RigidBody>(entity); break;
                          case ENGINE_COMPONENT_COLLIDER: status = w.Remove<physics::Collider>(entity); break;
+                         case ENGINE_COMPONENT_JOINT: status = w.Remove<physics::Joint>(entity); break;
+                         case ENGINE_COMPONENT_CHARACTER:
+                             status = w.Remove<CharacterComponent>(entity);  // the frame gives the capsule back
+                             break;
                          case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
                          case ENGINE_COMPONENT_SKELETON_INSTANCE:
                              status = w.Remove<animation::SkeletonInstance>(entity);
@@ -2224,9 +2469,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[12];
+                         ecs::ComponentId wanted[14];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_COLLIDER; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_CHARACTER; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {
@@ -2611,6 +2856,322 @@ engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, cons
                          return OverlapKeys(object, physics::Shape::MakeBox(ToVec3(half_extents)), ToVec3(center),
                                             layer_mask, keys, capacity, total);
                      });
+}
+
+// ---- joints, characters, events and snapshots (Phase 25 Day 397)
+
+namespace
+{
+
+// The character of an entity, its capsule made again when a restore dropped it. Null, with the failure set, when the
+// entity has no character.
+CharacterEntry* CharacterOf(WorldObject& object, ecs::Entity entity, engine_status* status)
+{
+    physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+    if (object.physics_used)
+    {
+        physics::SyncBodies(object.world, physics);
+    }
+    const ecs::LocalTransform* transform = object.world.Peek<ecs::LocalTransform>(entity);
+    if (!object.world.Has<CharacterComponent>(entity) || transform == nullptr)
+    {
+        *status = Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no character");
+        return nullptr;
+    }
+    const u64 key = entity.ToU64();
+    for (usize i = 0; i < object.characters.Size(); ++i)
+    {
+        CharacterEntry& entry = object.characters[i];
+        if (entry.key != key)
+        {
+            continue;
+        }
+        if (physics.Find(entry.controller.BodyHandle()) == nullptr &&
+            entry.controller.Create(&physics, entry.config, transform->position) != physics::BodyStatus::Ok)
+        {
+            *status = Fail(ENGINE_ERROR_INTERNAL, "the character's body could not be made again");
+            return nullptr;
+        }
+        *status = ENGINE_OK;
+        return &entry;
+    }
+    *status = Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no character");
+    return nullptr;
+}
+
+void FillCharacterState(WorldObject& object, const CharacterEntry& entry, engine_character_state* out)
+{
+    if (out == nullptr)
+    {
+        return;
+    }
+    const physics::CharacterState& state = entry.controller.State();
+    engine_character_state result = {};
+    result.struct_size = sizeof(engine_character_state);
+    result.on_ground = state.on_ground ? 1u : 0u;
+    result.began_ground = entry.events.began_ground ? 1u : 0u;
+    result.ended_ground = entry.events.ended_ground ? 1u : 0u;
+    result.wall_hits = entry.events.wall_hits;
+    const physics::Body* ground = object.world.Resource<physics::PhysicsWorld>().Find(state.ground_body);
+    result.ground_entity = ground != nullptr && ground->entity.IsValid() ? ground->entity.ToU64() : 0;
+    result.ground_normal[0] = state.ground_normal.x;
+    result.ground_normal[1] = state.ground_normal.y;
+    result.ground_normal[2] = state.ground_normal.z;
+    result.wall_normal[0] = entry.events.wall_normal.x;
+    result.wall_normal[1] = entry.events.wall_normal.y;
+    result.wall_normal[2] = entry.events.wall_normal.z;
+    result.vertical_speed = state.vertical_speed;
+    MemCopy(out, &result, sizeof(result));
+}
+
+u64 KeyOf(ecs::Entity entity)
+{
+    return entity.IsValid() ? entity.ToU64() : 0;
+}
+
+void FillEvent(engine_physics_event* out, u32 kind, ecs::Entity a, ecs::Entity b, const Vec3& point, const Vec3& normal,
+               f32 value)
+{
+    engine_physics_event event = {};
+    event.struct_size = sizeof(engine_physics_event);
+    event.kind = kind;
+    event.entity_a = KeyOf(a);
+    event.entity_b = KeyOf(b);
+    event.point[0] = point.x;
+    event.point[1] = point.y;
+    event.point[2] = point.z;
+    event.normal[0] = normal.x;
+    event.normal[1] = normal.y;
+    event.normal[2] = normal.z;
+    event.value = value;
+    MemCopy(out, &event, sizeof(event));
+}
+
+}  // namespace
+
+engine_status JointReactionFn(engine_handle world, u64 key, float* force, float* torque)
+{
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         if (object.physics_used)
+                         {
+                             physics::SyncBodies(object.world, physics);
+                             physics::SyncJoints(object.world, physics);
+                         }
+                         const physics::JointLink* link = object.world.Peek<physics::JointLink>(entity);
+                         Vec3 f(0.0f, 0.0f, 0.0f);
+                         Vec3 t(0.0f, 0.0f, 0.0f);
+                         if (link == nullptr || physics.JointReaction(link->id, &f, &t) != physics::BodyStatus::Ok)
+                         {
+                             return Fail(
+                                 ENGINE_ERROR_NOT_FOUND,
+                                 "the entity has no joint in the physics (none set, not made yet, or it broke)");
+                         }
+                         if (force != nullptr)
+                         {
+                             force[0] = f.x;
+                             force[1] = f.y;
+                             force[2] = f.z;
+                         }
+                         if (torque != nullptr)
+                         {
+                             torque[0] = t.x;
+                             torque[1] = t.y;
+                             torque[2] = t.z;
+                         }
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status CharacterMoveFn(engine_handle world, u64 key, const float* velocity, float dt,
+                              engine_character_state* state)
+{
+    if (velocity == nullptr || !FiniteArray(velocity, 3) || !Finite(dt) || !(dt > 0.0f && dt <= 1.0f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the velocity is NULL or not finite, or dt is not in (0, 1]");
+    }
+    if (state != nullptr)
+    {
+        const engine_status checked = CheckInStruct(state, sizeof(engine_character_state), "engine_character_state");
+        if (checked != ENGINE_OK)
+        {
+            return checked;
+        }
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         engine_status status = ENGINE_OK;
+                         CharacterEntry* entry = CharacterOf(object, entity, &status);
+                         if (entry == nullptr)
+                         {
+                             return status;
+                         }
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         entry->events = entry->controller.Move(&physics, ToVec3(velocity), dt);
+                         FillCharacterState(object, *entry, state);
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status CharacterJumpFn(engine_handle world, u64 key, float speed, engine_character_state* state)
+{
+    if (!Finite(speed) || speed < 0.0f || speed > 1000.0f)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the jump speed is not finite or not in 0..1000");
+    }
+    if (state != nullptr)
+    {
+        const engine_status checked = CheckInStruct(state, sizeof(engine_character_state), "engine_character_state");
+        if (checked != ENGINE_OK)
+        {
+            return checked;
+        }
+    }
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         engine_status status = ENGINE_OK;
+                         CharacterEntry* entry = CharacterOf(object, entity, &status);
+                         if (entry == nullptr)
+                         {
+                             return status;
+                         }
+                         if (speed > 0.0f && entry->controller.State().on_ground)
+                         {
+                             entry->controller.Jump(speed);
+                         }
+                         FillCharacterState(object, *entry, state);
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status PhysicsEventsFn(engine_handle world, engine_physics_event* out, size_t capacity, size_t* total)
+{
+    if (total == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`total` is NULL");
+    }
+    *total = 0;
+    if (out == nullptr && capacity != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out` is NULL with a capacity above zero");
+    }
+    return WithWorld(
+        world, false, 0,
+        [&](WorldObject& object, ecs::Entity)
+        {
+            const physics::PhysicsEvents& events = object.world.Resource<physics::PhysicsWorld>().Events();
+            const size_t count = events.Count();
+            const size_t written = count < capacity ? count : capacity;
+            for (size_t i = 0; i < written; ++i)
+            {
+                const engine_status checked = CheckInStruct(&out[i], sizeof(engine_physics_event),
+                                                            "engine_physics_event");
+                if (checked != ENGINE_OK)
+                {
+                    return checked;
+                }
+            }
+            size_t at = 0;
+            for (usize i = 0; i < events.contacts.Size(); ++i, ++at)
+            {
+                if (at >= written)
+                {
+                    continue;
+                }
+                const physics::ContactEvent& e = events.contacts[i];
+                const u32 kind = e.kind == physics::ContactEventKind::Begin  ? ENGINE_PHYSICS_CONTACT_BEGIN
+                                 : e.kind == physics::ContactEventKind::Stay ? ENGINE_PHYSICS_CONTACT_STAY
+                                                                             : ENGINE_PHYSICS_CONTACT_END;
+                FillEvent(&out[at], kind, e.entity_a, e.entity_b, e.point, e.normal, e.depth);
+            }
+            for (usize i = 0; i < events.triggers.Size(); ++i, ++at)
+            {
+                if (at >= written)
+                {
+                    continue;
+                }
+                const physics::TriggerEvent& e = events.triggers[i];
+                FillEvent(&out[at], e.enter ? ENGINE_PHYSICS_TRIGGER_ENTER : ENGINE_PHYSICS_TRIGGER_EXIT,
+                          e.entity_trigger, e.entity_other, Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 0.0f, 0.0f), 0.0f);
+            }
+            for (usize i = 0; i < events.joint_breaks.Size(); ++i, ++at)
+            {
+                if (at >= written)
+                {
+                    continue;
+                }
+                const physics::JointBreakEvent& e = events.joint_breaks[i];
+                FillEvent(&out[at], ENGINE_PHYSICS_JOINT_BREAK, e.entity_a, e.entity_b, e.force, e.torque, 0.0f);
+            }
+            *total = count;
+            return ENGINE_OK;
+        });
+}
+
+engine_status PhysicsSnapshotFn(engine_handle world, engine_buffer* out)
+{
+    if (out == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out` is NULL");
+    }
+    out->data = nullptr;
+    out->size = 0;
+    out->owner = nullptr;
+    out->release = nullptr;
+    return WithWorld(world, false, 0,
+                     [&](WorldObject& object, ecs::Entity)
+                     {
+                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+                         if (object.physics_used)
+                         {
+                             physics::SyncBodies(object.world, physics);
+                             physics::SyncJoints(object.world, physics);
+                         }
+                         bytes::ByteWriter writer;
+                         physics.Snapshot(&writer);
+                         const ByteSpan bytes = writer.Bytes();
+                         MakeTextBuffer(StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()), out);
+                         return ENGINE_OK;
+                     });
+}
+
+engine_status PhysicsRestoreFn(engine_handle world, const void* data, size_t size)
+{
+    if (data == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`data` is NULL");
+    }
+    return WithWorld(
+        world, false, 0,
+        [&](WorldObject& object, ecs::Entity)
+        {
+            physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+            if (object.physics_used)
+            {
+                physics::SyncBodies(object.world, physics);
+                physics::SyncJoints(object.world, physics);
+            }
+            const physics::SnapshotStatus status = physics.Restore(ByteSpan(static_cast<const byte*>(data), size));
+            switch (status)
+            {
+            case physics::SnapshotStatus::Ok: break;
+            case physics::SnapshotStatus::UnknownVersion:
+                return Fail(ENGINE_ERROR_UNSUPPORTED_VERSION, "the snapshot is of another version");
+            case physics::SnapshotStatus::LibraryMismatch:
+                return Fail(ENGINE_ERROR_MISSING_DEPENDENCY, "the snapshot names a shape the world does not hold");
+            case physics::SnapshotStatus::OutOfMemory: return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "out of memory");
+            default:
+                SetLastError("corrupt: the physics snapshot is refused (%s)", physics::SnapshotStatusName(status));
+                return ENGINE_ERROR_CORRUPT;
+            }
+            physics::WriteBackTransforms(object.world, physics, physics.Alpha());
+            FollowCharacters(object);
+            return ENGINE_OK;
+        });
 }
 
 // ---- counters and jobs

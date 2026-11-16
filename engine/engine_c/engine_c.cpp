@@ -781,6 +781,12 @@ extern "C"
             &engine_c::PhysicsRaycastFn,
             &engine_c::PhysicsOverlapSphereFn,
             &engine_c::PhysicsOverlapBoxFn,
+            &engine_c::JointReactionFn,
+            &engine_c::CharacterMoveFn,
+            &engine_c::CharacterJumpFn,
+            &engine_c::PhysicsEventsFn,
+            &engine_c::PhysicsSnapshotFn,
+            &engine_c::PhysicsRestoreFn,
         };
         *out = &table;
         return ENGINE_OK;
