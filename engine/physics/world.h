@@ -225,6 +225,13 @@ public:
     /// - Fails: the null id.
     BodyId BodyAtSlot(u32 index) const;
 
+    /// Returns the id of the collider in slot `index` if one is alive there.
+    ///
+    /// - Param index: the slot, below `Stats().collider_slots`.
+    /// - Returns: the id, or the null id for a free or unknown slot.
+    /// - Fails: the null id.
+    ColliderId ColliderAtSlot(u32 index) const;
+
     /// Returns the world position of a body's centre of mass.
     ///
     /// - Param id: the body.

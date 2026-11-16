@@ -96,3 +96,24 @@ names it. Each call destroys the bodies of entities that died or lost a componen
 the missing ones **in entity order** (index, then generation), not chunk order, so two worlds holding the same entities in different archetypes get the same
 body ids. An entity with invalid components is counted in `refused` and skipped. The call changes the ECS world's structure, so it runs between iterations.
 Writing the simulated transforms back to `LocalTransform` is Day 378.
+
+## The broad phase
+
+`physics::BroadPhase` finds which pairs of colliders may touch, with Phase 18's structures and nothing new: the colliders go into a `spatial::SpatialSet`
+(static bodies in its `StaticBvh`, everything else, kinematic bodies included, in the `DynamicBvh` with fat boxes, margin 0.25) and a `spatial::PairTracker`
+(margin 0.1) keeps the pairs. `Update(world)` first brings the set in line with the physics world, **in collider slot order**: it adds new colliders,
+removes destroyed ones, re-inserts a moved collider (the fat box makes a small move free, and a collider that did not move costs one box computation and comparison), handles a
+body whose type changed and moves a teleported static body through the dynamic side and back; then it calls `RebuildStatic()` when the static tree is
+stale, because items waiting outside the tree are scanned by every query (31 ms against 4 ms a frame on 2000 statics and 5000 moving boxes); then it
+updates the pairs.
+
+A changed layer re-adds the collider (a layer is fixed when an item is added) and keeps the pairs that still meet. `Pairs()` is the narrow phase's work list: sorted by key (a collider's key is its slot, then its generation: `ColliderId::ToKey()`), the smaller key first,
+and only pairs that can matter: different bodies, at least one dynamic body (a kinematic body against a static one is dropped), layers that meet
+(`CollisionFilter::SetMeets`, 32 layers), and trigger pairs flagged `trigger` (a trigger never reaches the solver; a kinematic body in a static trigger is
+listed). `Begun()` and `Ended()` are the pairs that changed in the last update. A body flagged `kBodyContinuous` has a box that also covers its motion over
+one step, so a fast body meets a thin wall before it is through it. The pair margin gives a pair that stays at the edge of contact a hysteresis: boxes
+0.02 m apart half the time begin one pair and end none in 120 steps (`BroadPhase: a pair at the edge of contact...`).
+
+With a margin of 0 the pairs are exactly the overlaps of the boxes: the test compares them with a brute-force search on 20 random scenes of 1000 bodies
+(static and moving, three shape kinds, a layer that does not meet another), four rounds each, after bodies were moved, teleported and changed type.
+`Stats()` reports what the last update did (added, removed, moved, begun, ended, pairs, static rebuilds, pending statics).

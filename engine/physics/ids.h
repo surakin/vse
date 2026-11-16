@@ -59,6 +59,22 @@ struct ColliderId
     /// - Fails: never.
     constexpr bool IsValid() const { return generation != 0; }
 
+    /// Packs the id into the key the spatial module orders by: the slot in the high half, so keys sort by slot.
+    ///
+    /// - Returns: the key.
+    /// - Fails: never.
+    constexpr u64 ToKey() const { return (static_cast<u64>(index) << 32) | generation; }
+
+    /// Unpacks a key made by `ToKey`.
+    ///
+    /// - Param key: the key.
+    /// - Returns: the id.
+    /// - Fails: never.
+    static constexpr ColliderId FromKey(u64 key)
+    {
+        return ColliderId{static_cast<u32>(key >> 32), static_cast<u32>(key & 0xFFFFFFFFu)};
+    }
+
     /// Returns whether two ids are the same.
     ///
     /// - Param other: the other id.

@@ -233,6 +233,11 @@ BodyId PhysicsWorld::BodyAtSlot(u32 index) const
     return BodyId{index, bodies_.LiveGeneration(index)};
 }
 
+ColliderId PhysicsWorld::ColliderAtSlot(u32 index) const
+{
+    return ColliderId{index, colliders_.LiveGeneration(index)};
+}
+
 Vec3 PhysicsWorld::WorldCenter(BodyId id) const
 {
     const Body* body = Find(id);
