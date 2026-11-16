@@ -24,6 +24,7 @@ set(PHYSICS_TEST_SOURCES
   character_test.cpp  # Day 392
   events_test.cpp  # Day 393
   snapshot_test.cpp  # Day 394
+  golden_test.cpp  # Day 395
 )
 
 find_package(Threads REQUIRED)
