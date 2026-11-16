@@ -360,6 +360,7 @@ table in `PLAN.md`.
 - **A host's scene goes through the C API's worlds and surfaces** (Phase 24, built: `docs/guide/engine-library.md`, `PLAN.md` assumption #28): entities, components, slot overrides, host textures and labels cross the boundary as ids, bytes and sized structs; a surface remakes its device-side objects from the engine's kept CPU sources on a rebind, so a new GPU-owning object in `engine/engine_c` keeps its CPU source and is rebuilt by the surface's scene, never cached across a rebind. Do not add an engine pointer to the C header.
 - **Spatial queries go through one module** (Phase 18, `engine/spatial`; planned, not built yet): physics' broad phase, the renderer's culling, audio emitter lookup, gameplay proximity and ray queries use its structures and its query vocabulary,
   fed from entities by its sync system. Do not write a private grid, tree or "find nearby" scan in another module once it exists; if a need is missing, extend the module (`PLAN.md` assumption #24).
+- **Physics is one module over the spatial pair feed, deterministic to the bit** (Phase 25, `engine/physics`; planned, not built yet; `PLAN.md` assumption #29): the broad phase is Phase 18's, not a private grid or tree; no third-party physics library; the step uses `+ - * / Sqrt` only, with FMA contraction and fast-math off and ordered merges, so the reference scenes' state hashes are equal on Linux, Windows and macOS x86-64. **libm is used as is through the `lang/scalar.h` wrappers; do not reimplement math** (the user, 2026-11-16).
 - **Entities are saved and loaded through one storage interface; SQL goes through one database interface** (Phase 19, `engine/storage` and `engine/database`; planned, not built yet; `PLAN.md` assumption #25): do not write a save format
   or a private SQL call in game or engine code. **SQLite** is a deliberate, individually justified third-party exception (same category as FreeType and LuaJIT), vendored under `third_party/sqlite/` and included only by its
   implementation file behind the database interface.
@@ -385,7 +386,7 @@ table in `PLAN.md`.
   rasterization only — text shaping for complex scripts (HarfBuzz's
   domain) is explicitly out of scope until a real need shows up; cursor/
   line-break positions instead reuse the foundation string module's
-  existing grapheme clustering. **libpng and zlib are vendored (first for the glTF importer in `asset_mint`, Phase 22 Day 338, then enabled in FreeType on Phase 28 Day 384)** (the user's decision, 2026-11-10), used only by FreeType
+  existing grapheme clustering. **libpng and zlib are vendored (first for the glTF importer in `asset_mint`, Phase 22 Day 338, then enabled in FreeType on Phase 28 Day 413)** (the user's decision, 2026-11-10), used only by FreeType
   to decode the PNG strikes of `CBDT`/`sbix` colored-glyph fonts; no engine file includes their headers.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
   starting with Lua via LuaJIT** (Phase 27). Deliberate, individually

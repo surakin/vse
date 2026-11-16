@@ -10,24 +10,24 @@ the unsupported formats falling back to the monochrome outline or `.notdef` in a
 
 ## Days
 
-358. [Design Spec, Decisions & Phase Setup](phase-28-3d-text-and-color-glyphs/day-373-design-spec-and-setup.md)
-359. [Flattening Glyph Outlines](phase-28-3d-text-and-color-glyphs/day-374-flatten-outlines.md)
-360. [Contour Orientation, Nesting & Overlap Removal](phase-28-3d-text-and-color-glyphs/day-375-contour-cleanup.md)
-361. [Triangulating Polygons with Holes](phase-28-3d-text-and-color-glyphs/day-376-triangulation.md)
-362. [Large 2D Glyph Meshes: Cache & Edge Ramp](phase-28-3d-text-and-color-glyphs/day-377-large-2d-glyph-meshes.md)
-363. [Large 2D Text on the GPU](phase-28-3d-text-and-color-glyphs/day-378-large-2d-text-rendering.md)
-364. [Extruding Glyph Geometry](phase-28-3d-text-and-color-glyphs/day-379-extrusion.md)
-365. [Beveled Extrusion](phase-28-3d-text-and-color-glyphs/day-380-bevel.md)
-366. [3D Text Meshes Through the Renderer](phase-28-3d-text-and-color-glyphs/day-381-text-3d-mesh-and-rendering.md)
-367. [Test Font Builder & COLR v0 Layers](phase-28-3d-text-and-color-glyphs/day-382-test-fonts-and-colr.md)
-368. [COLR Layers on the 2D and 3D Paths](phase-28-3d-text-and-color-glyphs/day-383-colr-on-2d-and-3d.md)
-369. [Vendor zlib & libpng, Enable PNG in FreeType](phase-28-3d-text-and-color-glyphs/day-384-vendor-libpng.md)
-370. [Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType](phase-28-3d-text-and-color-glyphs/day-385-color-bitmap-glyphs.md)
-371. [RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D](phase-28-3d-text-and-color-glyphs/day-386-rgba-atlas-and-bitmap-drawing.md)
-372. [`text3d_demo`, Settings Screen & Integration](phase-28-3d-text-and-color-glyphs/day-387-demo-and-integration.md)
-373. [Docs, Windows PC, Closing Full Run & Phase Review](phase-28-3d-text-and-color-glyphs/day-388-docs-closing-run-and-review.md)
+402. [Design Spec, Decisions & Phase Setup](phase-28-3d-text-and-color-glyphs/day-402-design-spec-and-setup.md)
+403. [Flattening Glyph Outlines](phase-28-3d-text-and-color-glyphs/day-403-flatten-outlines.md)
+404. [Contour Orientation, Nesting & Overlap Removal](phase-28-3d-text-and-color-glyphs/day-404-contour-cleanup.md)
+405. [Triangulating Polygons with Holes](phase-28-3d-text-and-color-glyphs/day-405-triangulation.md)
+406. [Large 2D Glyph Meshes: Cache & Edge Ramp](phase-28-3d-text-and-color-glyphs/day-406-large-2d-glyph-meshes.md)
+407. [Large 2D Text on the GPU](phase-28-3d-text-and-color-glyphs/day-407-large-2d-text-rendering.md)
+408. [Extruding Glyph Geometry](phase-28-3d-text-and-color-glyphs/day-408-extrusion.md)
+409. [Beveled Extrusion](phase-28-3d-text-and-color-glyphs/day-409-bevel.md)
+410. [3D Text Meshes Through the Renderer](phase-28-3d-text-and-color-glyphs/day-410-text-3d-mesh-and-rendering.md)
+411. [Test Font Builder & COLR v0 Layers](phase-28-3d-text-and-color-glyphs/day-411-test-fonts-and-colr.md)
+412. [COLR Layers on the 2D and 3D Paths](phase-28-3d-text-and-color-glyphs/day-412-colr-on-2d-and-3d.md)
+413. [Vendor zlib & libpng, Enable PNG in FreeType](phase-28-3d-text-and-color-glyphs/day-413-vendor-libpng.md)
+414. [Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType](phase-28-3d-text-and-color-glyphs/day-414-color-bitmap-glyphs.md)
+415. [RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D](phase-28-3d-text-and-color-glyphs/day-415-rgba-atlas-and-bitmap-drawing.md)
+416. [`text3d_demo`, Settings Screen & Integration](phase-28-3d-text-and-color-glyphs/day-416-demo-and-integration.md)
+417. [Docs, Windows PC, Closing Full Run & Phase Review](phase-28-3d-text-and-color-glyphs/day-417-docs-closing-run-and-review.md)
 
-Order reasoning: geometry first, pure CPU and testable without a GPU (flatten 223, cleanup 224, triangulate 225), because both consumers share it; the large 2D path (226-227) comes before 3D because it replaces a Phase 14 stand-in and is smaller; extrusion and bevel (228-229) precede the renderer integration (230); colors start with COLR (231-232), which needs no new decoder, and the bitmap formats (233-235) come last because they need libpng vendored behind FreeType.
+Order reasoning: geometry first, pure CPU and testable without a GPU (flatten 403, cleanup 404, triangulate 405), because both consumers share it; the large 2D path (406-407) comes before 3D because it replaces a Phase 14 stand-in and is smaller; extrusion and bevel (408-409) precede the renderer integration (410); colors start with COLR (411-412), which needs no new decoder, and the bitmap formats (413-415) come last because they need libpng vendored behind FreeType.
 
 ## Key deliverables (the original list; the days above break it down)
 
@@ -54,5 +54,5 @@ Carried over unchanged from the Phase 14 plan as it stood before the split:
   units (font units or world units); contour winding rules for fonts that mix conventions. Hinting is irrelevant to the 3D path (outlines load unhinted).
 - Phase 14 must keep the seams this phase needs (recorded in its design spec): the font object exposes outline loading as well as bitmap rendering,
   the layout produces glyph ids and pen positions independent of how a glyph is drawn, and the atlas can hold an RGBA page later.
-- Day files written 2026-11-10 (Days 373-388). Day 373 settles the open questions above with the planner's defaults and experiments. **User decision (2026-11-10): vendor libpng** (with zlib) behind FreeType, so `CBDT`/`sbix` PNG strikes decode through FreeType; a deliberate exception to the zero-third-party line, written into `PLAN.md` assumption #17 and `CLAUDE.md` on Day 384.
-- Phase 16's Day 219 (Windows PC) is still open; Day 388 also needs the Windows PC, for DXIL minting and the Windows closing run.
+- Day files written 2026-11-10 (Days 402-417). Day 402 settles the open questions above with the planner's defaults and experiments. **User decision (2026-11-10): vendor libpng** (with zlib) behind FreeType, so `CBDT`/`sbix` PNG strikes decode through FreeType; a deliberate exception to the zero-third-party line, written into `PLAN.md` assumption #17 and `CLAUDE.md` on Day 413.
+- Phase 16's Day 219 (Windows PC) is still open; Day 417 also needs the Windows PC, for DXIL minting and the Windows closing run.
