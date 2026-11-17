@@ -178,6 +178,11 @@ int host_window_post_key(host_window* window, int key, int down)
 
 #include "unity/x11_disable.h"
 
+int host_window_can_show(void)
+{
+    return 1;
+}
+
 int host_window_show(host_window* window, const void* rgba, uint32_t width, uint32_t height, uint32_t stride)
 {
     /* the default visual of a desktop X server is 24 or 32 bit TrueColor with the bytes in the order B, G, R, unused */

@@ -3,6 +3,7 @@
    requires; the host's AppKit work is inside autorelease pools of its own, the engine's calls are not (Day 355). */
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
+#import <QuartzCore/QuartzCore.h>
 
 #include <stdlib.h>
 
@@ -14,6 +15,7 @@ struct host_window
     uint32_t width;
     uint32_t height;
     float scale;
+    CGColorSpaceRef srgb; /* host_window_show's, made on the first picture, released by host_window_close */
 };
 
 /* Runs the run loop for a moment, so the window server shows and lays out what was just ordered front. */
@@ -132,6 +134,10 @@ void host_window_close(host_window* window)
         [w close];
         w = nil;
     }
+    if (window->srgb != NULL)
+    {
+        CGColorSpaceRelease(window->srgb);
+    }
     free(window);
 }
 
@@ -234,14 +240,56 @@ int host_window_post_key(host_window* window, int key, int down)
     }
 }
 
-/* Showing pixels in the window is Day 382 (the Mac): until then walk_around --offscreen only draws and takes the
-   pictures. */
+int host_window_can_show(void)
+{
+    return 1;
+}
+
 int host_window_show(host_window* window, const void* rgba, uint32_t width, uint32_t height, uint32_t stride)
 {
-    (void)window;
-    (void)rgba;
-    (void)width;
-    (void)height;
-    (void)stride;
-    return 0;
+    if (window == NULL || rgba == NULL || width == 0 || height == 0 || (uint64_t)width * 4u > stride)
+    {
+        return 0;
+    }
+    @autoreleasepool
+    {
+        NSWindow* w = (__bridge NSWindow*)window->window;
+        NSView* view = w.contentView;
+        if (window->srgb == NULL)
+        {
+            /* once per window: the colour space, and a content layer AppKit never redraws over (with the default
+               policy a redraw of the layer-backed view would replace the picture with the view's own empty drawing) */
+            window->srgb = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+            if (window->srgb == NULL)
+            {
+                return 0;
+            }
+            view.wantsLayer = YES;
+            view.layerContentsRedrawPolicy = NSViewLayerContentsRedrawNever;
+            view.layer.contentsGravity = kCAGravityTopLeft; /* unscaled from the top-left, as the X11 window shows it */
+        }
+        /* the picture is the engine's until surface_release_frame: the image keeps a copy of its own */
+        NSData* bytes = [NSData dataWithBytes:rgba length:(NSUInteger)stride * height];
+        CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)bytes);
+        if (provider == NULL)
+        {
+            return 0;
+        }
+        /* RGBA8, top row first, the alpha byte ignored (the picture is opaque) */
+        CGImageRef image = CGImageCreate(width, height, 8, 32, stride, window->srgb,
+                                         (CGBitmapInfo)kCGImageAlphaNoneSkipLast | kCGBitmapByteOrderDefault, provider,
+                                         NULL, false, kCGRenderingIntentDefault);
+        CGDataProviderRelease(provider);
+        if (image == NULL)
+        {
+            return 0;
+        }
+        [CATransaction begin];
+        [CATransaction setDisableActions:YES];    /* no cross-fade between pictures */
+        view.layer.contentsScale = window->scale; /* one picture pixel on one window pixel */
+        view.layer.contents = (__bridge id)image;
+        [CATransaction commit];
+        CGImageRelease(image);
+    }
+    return 1;
 }

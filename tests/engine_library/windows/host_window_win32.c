@@ -217,6 +217,11 @@ int host_window_post_key(host_window* window, int key, int down)
 
 /* Showing pixels in the window is Day 381 (the Windows PC): until then walk_around --offscreen only draws and takes the
    pictures. */
+int host_window_can_show(void)
+{
+    return 0;
+}
+
 int host_window_show(host_window* window, const void* rgba, uint32_t width, uint32_t height, uint32_t stride)
 {
     (void)window;

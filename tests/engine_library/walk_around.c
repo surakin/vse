@@ -490,6 +490,7 @@ int main(int argc, char** argv)
         if (frames_limit >= 0)
         {
             CHECK(acquired >= frame_count / 2);
+            CHECK(!host_window_can_show() || shown == acquired); /* every picture taken reached the window (Day 382) */
             printf("walk_around: off-screen: %d of %d frames taken, %d shown in the window\n", acquired, frame_count,
                    shown);
         }

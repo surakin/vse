@@ -350,7 +350,7 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
       set(scene_env "")
     elseif(APPLE)
       set(scene_window_source macos/host_window_cocoa.m)
-      set(scene_window_libs "-framework AppKit" "-framework CoreGraphics")  # CGSessionCopyCurrentDictionary is CoreGraphics
+      set(scene_window_libs "-framework AppKit" "-framework CoreGraphics" "-framework QuartzCore")  # CGSessionCopyCurrentDictionary is CoreGraphics, CATransaction QuartzCore
       set(scene_env "MTL_DEBUG_LAYER=1;MTL_DEBUG_LAYER_ERROR_MODE=assert;MTL_SHADER_VALIDATION=1")
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
       # Day 369: a Win32 window (MSVC has no ThreadSanitizer; each test runs once per graphics API below).
