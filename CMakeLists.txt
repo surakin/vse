@@ -369,6 +369,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/audio)
   add_subdirectory(engine/audio_physics)  # Phase 26 Day 431
   add_subdirectory(tests/audio_physics)
+  add_subdirectory(tools/audio_probe)  # Phase 26 Day 441: listening to the CoreAudio backend by hand
   add_subdirectory(engine/net)  # Day 310: the POSIX backend with the macOS hooks and the kqueue poller
   add_subdirectory(tests/net)
   add_subdirectory(engine/ui)

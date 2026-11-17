@@ -5,8 +5,8 @@ The audio module (`engine/audio/`) renders on its own; a platform backend only m
 documentation carries a `Backend:` label has a `###` section here, and every section names such a function. The Null and WAV-file devices
 (`engine/audio/device.cpp`) implement the same interface with no hardware and are the model for the call order.
 
-The backends today: PipeWire and raw ALSA on Linux (`engine/audio/linux/`, Days 425-426) and WASAPI in shared mode on Windows
-(`engine/audio/windows/wasapi_device.cpp`, Day 440). The channel-count-to-layout rule they share is `LayoutOf` (`pcm_negotiate.h`).
+The backends today: PipeWire and raw ALSA on Linux (`engine/audio/linux/`, Days 425-426), WASAPI in shared mode on Windows
+(`engine/audio/windows/wasapi_device.cpp`, Day 440) and CoreAudio through an AUHAL output unit on macOS (`engine/audio/macos/coreaudio_device.cpp`, Day 441). The channel-count-to-layout rule they share is `LayoutOf` (`pcm_negotiate.h`).
 
 ## Rules every backend follows
 

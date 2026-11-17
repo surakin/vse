@@ -425,7 +425,8 @@ TEST_CASE("Snapshot: the buses scene renders the committed hash and its per-bloc
     SnScene a;
     SnTopology(a);
     const Vector<f32> whole = SnRun(a, 0, 60);
-    CHECK(SnHash(whole) == testing::PlatformHash(10403398739231254235ull, 381981972835177576ull));
+    CHECK(SnHash(whole) ==
+          testing::PlatformHash(10403398739231254235ull, 381981972835177576ull, 5105081423923813688ull));
     // The levels every machine must match within the tolerance (rows: block, expected RMS).
     struct Row
     {
@@ -508,7 +509,8 @@ TEST_CASE("Snapshot: a thousand voices render the committed hash", "[audio][snap
         }
     }
     CHECK(mixer.VoiceCount() == 1000);
-    CHECK(SnHash(out) == testing::PlatformHash(7677309547114575656ull, 12564515357694794300ull));
+    CHECK(SnHash(out) ==
+          testing::PlatformHash(7677309547114575656ull, 12564515357694794300ull, 2335128283347691732ull));
     CHECK(Abs(SnBlockRms(out, 19) - 0.002474f) <= 2e-3f);
 }
 

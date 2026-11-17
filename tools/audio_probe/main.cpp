@@ -1,11 +1,12 @@
 // audio_probe: Phase 26 Day 425. A command-line tool for listening to the real audio backend by hand.
 //
-//   audio_probe list [--backend=auto|pipewire|alsa|wasapi|null]    the outputs of that backend
+//   audio_probe list [--backend=auto|pipewire|alsa|wasapi|coreaudio|null]    the outputs of that backend
 //   audio_probe play [--backend=...] [--device=NAME] [--seconds=N] [--frequency=HZ] [--buffer=FRAMES] [--rate=HZ]
 //                                                            plays a quiet sine tone through the device and prints
 //                                                            the granted configuration and the counters
 //
 // The options are this tool's own command line, not engine settings.
+#include "build_defs.h"
 #include "audio/device.h"
 #include "audio/device_list.h"
 #include "containers/vector.h"
@@ -27,7 +28,7 @@ using Line = os::CommandLine<HeapAllocator>;
 
 int Usage()
 {
-    os::PrintError("usage: audio_probe list [--backend=auto|pipewire|alsa|wasapi|null]\n"
+    os::PrintError("usage: audio_probe list [--backend=auto|pipewire|alsa|wasapi|coreaudio|null]\n"
                    "       audio_probe play [--backend=...] [--device=NAME] [--seconds=N] [--frequency=HZ]\n"
                    "                        [--buffer=FRAMES] [--rate=HZ]\n");
     return 64;
@@ -36,7 +37,9 @@ int Usage()
 bool KindOf(const char* text, DeviceKind* kind)
 {
     const StringView name(text);
-    if (name == StringView("auto") || name == StringView("wasapi"))  // WASAPI is the platform's output on Windows
+    // WASAPI and CoreAudio are the platform's output, each named only on its own platform (Day 441 review).
+    if (name == StringView("auto") || (ENGINE_PLATFORM_WINDOWS && name == StringView("wasapi")) ||
+        (ENGINE_PLATFORM_MACOS && name == StringView("coreaudio")))
     {
         *kind = DeviceKind::Platform;
     }

@@ -264,6 +264,35 @@ an empty name opens it. Exclusive mode is not built.
 - `audio_probe list` and `audio_probe play` work as on Linux (`--backend=auto` or `wasapi`). On the PC (Realtek, 48 kHz stereo)
   the three-second tone took 301 render calls with no underrun and a longest call of 21 microseconds.
 
+## The macOS backend (CoreAudio)
+
+`CreateDevice(DeviceKind::Platform)` on macOS makes a **CoreAudio** device (`engine/audio/macos/`, Day 441; Apple's headers only
+there): an AUHAL output unit (`kAudioUnitSubType_HALOutput`) bound to one device, with a render callback on CoreAudio's I/O
+thread. Plain C APIs (AudioToolbox, CoreAudio, CoreFoundation, libdispatch), no Objective-C. `EnumerateDevices` lists the devices
+that have output channels; a name is the device's UID (`kAudioDevicePropertyDeviceUID`, `BuiltInSpeakerDevice` for a Mac's
+speakers), the default output is marked, and `default` or an empty name opens it.
+
+- **Format:** the device's nominal rate is granted (the wanted rate is not forced on the hardware; the mixer adapts, as with
+  WASAPI), and so is the device's own channel count (`LayoutOf`; stereo or mono, on the first channels, for a count with no
+  layout): a narrower stream would play on the first channels only, so a mono request on stereo speakers is granted stereo. The unit is given `f32` interleaved, which the callback renders into directly; a unit that refuses it gets one
+  buffer per channel and the callback de-interleaves from a scratch buffer allocated in `Open`.
+- **Buffering:** the wanted frames are asked of the device (`kAudioDevicePropertyBufferFrameSize`, clamped to its range) and the
+  granted size is `DeviceInfo::buffer_frames`; a pull of more frames is rendered in calls of at most that size, and a pull whose
+  buffers do not hold it in the format set in `Open` is played as silence instead of written past them. `latency_frames`
+  is the buffer plus the device's latency, its safety offset and the first output stream's latency.
+- **Notifications:** property listener blocks on a private serial queue (a listener that cannot be registered fails `Open` with
+  `IoError`): the default output changed to another device (when the default was opened; a failed read is not a change),
+  the device list changed without the opened device, or the device stopped being alive report `Lost` once; a missed I/O cycle
+  (`kAudioDeviceProcessorOverload`) counts in `DeviceCounters::underruns`. `Stop` and `Close` drain the queue, so no listener runs
+  and no error callback comes after they return; `Stop` also waits for a render call in flight.
+- **Errors:** an unknown UID or an input-only device is `NotFound`, `kAudioDevicePermissionsError` `PermissionDenied`, a format the
+  unit refuses `Unsupported`, anything else `IoError`.
+- **A locked screen:** while the Mac's console is locked, `AudioOutputUnitStart` fails (status 35; `afplay` fails the same way),
+  so `Start` reports `IoError`; the hardware tests need the console unlocked, as the window tests do.
+- `audio_probe list` and `audio_probe play` work as elsewhere (`--backend=auto` or `coreaudio`). On the Mac (MacBook Pro speakers,
+  48 kHz stereo) the probe was granted 1,024 frames per call with 1,394 frames of latency, and one second took 47 render calls with
+  no underrun and a longest call of 47 microseconds.
+
 ## Changing the device at run time
 
 `AudioSystem` owns a `Mixer` and the device that plays it (`audio/audio_system.h`). `Init` opens the wanted device with the

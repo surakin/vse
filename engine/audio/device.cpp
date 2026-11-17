@@ -11,6 +11,9 @@
 #if ENGINE_PLATFORM_WINDOWS
 #include "audio/windows/wasapi_device.h"
 #endif
+#if ENGINE_PLATFORM_MACOS
+#include "audio/macos/coreaudio_device.h"
+#endif
 #if ENGINE_PLATFORM_LINUX
 #include "audio/linux/alsa_device.h"
 #include "audio/linux/linux_devices.h"
@@ -287,6 +290,12 @@ UniquePtr<AudioDevice> CreateDevice(DeviceKind kind)
         return CreateWasapiDevice();  // Day 440
     }
 #endif
+#if ENGINE_PLATFORM_MACOS
+    if (kind == DeviceKind::Platform)
+    {
+        return CreateCoreAudioDevice();  // Day 441
+    }
+#endif
 #if ENGINE_PLATFORM_LINUX
     if (kind == DeviceKind::Platform)
     {
@@ -316,6 +325,12 @@ DeviceStatus EnumerateDevices(DeviceKind kind, Vector<DeviceDescription>* out)
     if (kind == DeviceKind::Platform)
     {
         return EnumerateWasapiDevices(out);
+    }
+#endif
+#if ENGINE_PLATFORM_MACOS
+    if (kind == DeviceKind::Platform)
+    {
+        return EnumerateCoreAudioDevices(out);
     }
 #endif
 #if ENGINE_PLATFORM_LINUX

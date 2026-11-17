@@ -54,8 +54,8 @@ PcmCaps UsbDac()
     return caps;
 }
 
-#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS
-// The hardware tests' render callback (Linux and, from Day 440, Windows; the Mac's CoreAudio day adds macOS).
+#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS || ENGINE_PLATFORM_MACOS
+// The hardware tests' render callback (Linux, Windows from Day 440 and macOS from Day 441).
 struct Counting
 {
     Atomic<u64> calls{0};
@@ -247,7 +247,90 @@ TEST_CASE("Backend: WASAPI reports a missing endpoint and a bad configuration by
 
 #endif
 
-#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS
+#if ENGINE_PLATFORM_MACOS
+
+TEST_CASE("Backend: the CoreAudio list has device UIDs and one default", "[audio][backend][macos]")
+{
+    Vector<DeviceDescription> list;
+    REQUIRE(EnumerateDevices(DeviceKind::Platform, &list) == DeviceStatus::Ok);
+    u32 defaults = 0;
+    for (u32 i = 0; i < list.Size(); ++i)
+    {
+        CHECK(list[i].name[0] != 0);
+        CHECK(list[i].max_channels >= 1);
+        CHECK(list[i].min_rate == list[i].max_rate);  // the nominal rate is what Open grants
+        defaults += list[i].is_default ? 1 : 0;
+    }
+    CHECK(defaults <= 1u);  // a default that is not an output (or has no UID) is not listed
+}
+
+TEST_CASE("Backend: CoreAudio reports a missing device and a bad configuration by value", "[audio][backend][macos]")
+{
+    UniquePtr<AudioDevice> device = CreateDevice(DeviceKind::Platform);
+    REQUIRE(device != nullptr);
+    DeviceConfig config;
+    config.name = StringView("no-such-device-uid");
+    CHECK(device->Open(config) == DeviceStatus::NotFound);
+    CHECK(!device->IsOpen());
+    config.name = StringView("default");
+    config.buffer_frames = 0;
+    CHECK(device->Open(config) == DeviceStatus::InvalidConfig);
+    CHECK(device->Start() == DeviceStatus::NotOpen);
+    CHECK(device->Pump(10) == DeviceStatus::Unsupported);
+    device->Stop();
+    CHECK(device->Close() == DeviceStatus::Ok);
+    CHECK(device->Close() == DeviceStatus::Ok);
+}
+
+TEST_CASE("Backend: a CoreAudio device opened by its UID grants its own layout and reopens",
+          "[audio][backend][macos][hardware]")
+{
+    Vector<DeviceDescription> list;
+    REQUIRE(EnumerateDevices(DeviceKind::Platform, &list) == DeviceStatus::Ok);
+    if (list.Size() == 0)
+    {
+        WARN("no sound output here: the hardware test is skipped");
+        return;
+    }
+    Counting counting;
+    UniquePtr<AudioDevice> device = CreateDevice(DeviceKind::Platform);
+    REQUIRE(device != nullptr);
+    device->SetCallbacks(&CountingRender, nullptr, &counting);
+    DeviceConfig config;
+    config.name = StringView(list[0].name);
+    ChannelLayout own = ChannelLayout::Stereo;
+    if (!LayoutOf(list[0].max_channels, &own))
+    {
+        own = list[0].max_channels >= 2 ? ChannelLayout::Stereo : ChannelLayout::Mono;
+    }
+    // The device's own count is granted whatever is asked: fewer channels would play on the first speakers only (a mono
+    // request on stereo speakers from the left one), more cannot be played.
+    config.layout = ChannelLayout::Mono;
+    REQUIRE(device->Open(config) == DeviceStatus::Ok);
+    CHECK(device->Info().layout == own);
+    CHECK(device->Close() == DeviceStatus::Ok);
+    config.layout = ChannelLayout::Surround51;
+    REQUIRE(device->Open(config) == DeviceStatus::Ok);
+    CHECK(device->Info().layout == own);
+    CHECK(device->Info().sample_rate == list[0].max_rate);
+    CHECK(device->Open(config) == DeviceStatus::AlreadyOpen);
+    CHECK(device->Close() == DeviceStatus::Ok);
+    config.layout = ChannelLayout::Stereo;
+    REQUIRE(device->Open(config) == DeviceStatus::Ok);  // open again after a close
+    REQUIRE(device->Start() == DeviceStatus::Ok);
+    CHECK(device->Start() == DeviceStatus::Busy);
+    ThisThread::SleepForMilliseconds(200);
+    device->Stop();
+    const u64 calls = counting.calls.Load();
+    CHECK(calls > 0);
+    ThisThread::SleepForMilliseconds(50);
+    CHECK(counting.calls.Load() == calls);  // no render call after Stop returned
+    CHECK(device->Close() == DeviceStatus::Ok);
+}
+
+#endif
+
+#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS || ENGINE_PLATFORM_MACOS
 
 TEST_CASE("Backend: a real device is rendered at its own pace", "[audio][backend][hardware]")
 {

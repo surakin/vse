@@ -556,11 +556,11 @@ TEST_CASE("Mixer: the reference scene renders the committed hash (a same-build r
     // link the tests, see KNOWN-ISSUES.md). A compiler change that moves the bits re-commits these values; across
     // machines the tolerance check is used.
     CHECK(MxReferenceSceneHash(ResamplerQuality::Linear) ==
-          testing::PlatformHash(0x65ea76a4b48bb7e9ull, 0x2372e9134f1be9abull));
+          testing::PlatformHash(0x65ea76a4b48bb7e9ull, 0x2372e9134f1be9abull, 0xd2a3eb7663627cd5ull));
     CHECK(MxReferenceSceneHash(ResamplerQuality::Hermite) ==
-          testing::PlatformHash(0xd2c3a4192090c998ull, 0x95259c800dacee97ull));
+          testing::PlatformHash(0xd2c3a4192090c998ull, 0x95259c800dacee97ull, 0xa30c5966692fcf80ull));
     CHECK(MxReferenceSceneHash(ResamplerQuality::Sinc) ==
-          testing::PlatformHash(0x7f92be7fbe3e465aull, 0x13d56671fe1a9347ull));
+          testing::PlatformHash(0x7f92be7fbe3e465aull, 0x13d56671fe1a9347ull, 0x94d46fa909f4011eull));
     // Rendering twice gives the same bits.
     CHECK(MxReferenceSceneHash(ResamplerQuality::Hermite) == MxReferenceSceneHash(ResamplerQuality::Hermite));
 }
