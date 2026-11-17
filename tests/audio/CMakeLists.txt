@@ -15,6 +15,10 @@ set(AUDIO_TEST_SOURCES
   bus_test.cpp  # Day 422
   effect_test.cpp  # Days 423-424
   backend_test.cpp  # Days 425-426
+  system_test.cpp  # Day 427
+  spatial_test.cpp  # Day 428
+  panning_test.cpp  # Day 429
+  doppler_test.cpp  # Day 430
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 

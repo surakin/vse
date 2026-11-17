@@ -7,6 +7,7 @@
 #include "audio/filter.h"
 #include "audio/mixer.h"
 #include "containers/vector.h"
+#include "lang/limits.h"
 #include "lang/scalar.h"
 
 using namespace engine_placeholder;

@@ -137,6 +137,21 @@ struct VoiceDesc
     BusId send_bus = {0xFFFFFFFFu};
     /// The gain of that send, 0 to 16.
     f32 send_gain = 0.0f;
+    /// Whether a mono voice is placed by `direction_*` (listener space: x right, y up, z forward) instead of `pan`.
+    bool directional = false;
+    /// The direction's right component; need not be a unit vector.
+    f32 direction_x = 0.0f;
+    /// The direction's up component.
+    f32 direction_y = 0.0f;
+    /// The direction's forward component.
+    f32 direction_z = 1.0f;
+    /// How much the source fills the speakers, 0 (a point) to 1 (all of them).
+    f32 spread = 0.0f;
+    /// The level a mono voice also feeds the LFE channel of a 5.1 or 7.1 output, 0 to 1 (the channel's own crossover
+    /// takes the highs out).
+    f32 lfe_send = 0.0f;
+    /// The coefficient of the one-pole low-pass of air absorption, `AirCoefficient` (1 passes everything).
+    f32 air_coefficient = 1.0f;
 };
 
 /// What a command does.
@@ -164,6 +179,12 @@ enum class CommandType : u8
     Fade,
     /// Make a voice virtual or real (`value` nonzero is virtual).
     SetVirtual,
+    /// Place a mono voice by direction (`value`, `value2`, `value3` = x, y, z) and spread (`value4`).
+    SetDirection,
+    /// Set a voice's LFE send (`value`).
+    SetLfeSend,
+    /// Set a voice's air-absorption low-pass coefficient (`value`).
+    SetAirAbsorption,
     /// Create bus `a` under parent `b`.
     CreateBus,
     /// Change the gain of bus `a` to `value`.
@@ -213,6 +234,10 @@ struct Command
     u32 b = 0;
     /// A second float argument.
     f32 value2 = 0.0f;
+    /// A third float argument.
+    f32 value3 = 0.0f;
+    /// A fourth float argument.
+    f32 value4 = 0.0f;
     /// The effect of `SetInsert` and `SetEffectParams` (owned by the mixer).
     Effect* effect = nullptr;
     /// The parameters of `SetEffectParams`.
@@ -454,6 +479,38 @@ public:
     /// - Fails: reported by return value.
     MixerStatus SetVirtual(VoiceId id, bool is_virtual, u64 block = kAtLead);
 
+    /// Places a mono voice by the direction of the source in listener space; the gains of the output layout follow it
+    /// over the ramp (see `SpeakerGains`). A stereo clip balances by the direction's lateral position instead.
+    ///
+    /// - Param id: the voice.
+    /// - Param x: the direction's right component.
+    /// - Param y: the direction's up component.
+    /// - Param z: the direction's forward component.
+    /// - Param spread: 0 for a point source to 1 for one that fills every speaker.
+    /// - Param block: as for `Play`.
+    /// - Returns: `Ok`; `InvalidParam` for a non-finite value; `InvalidVoice`.
+    /// - Fails: reported by return value.
+    MixerStatus SetDirection(VoiceId id, f32 x, f32 y, f32 z, f32 spread, u64 block = kAtLead);
+
+    /// Sets how much of a mono voice feeds the LFE channel of a 5.1 or 7.1 output.
+    ///
+    /// - Param id: the voice.
+    /// - Param level: 0 to 1.
+    /// - Param block: as for `Play`.
+    /// - Returns: `Ok`; `InvalidVoice`; `InvalidParam`.
+    /// - Fails: reported by return value.
+    MixerStatus SetLfeSend(VoiceId id, f32 level, u64 block = kAtLead);
+
+    /// Sets the one-pole low-pass of a voice that models air absorption: `y += coefficient * (x - y)` per frame. The
+    /// change is not ramped (a one-pole filter does not click when its coefficient moves a little each update).
+    ///
+    /// - Param id: the voice.
+    /// - Param coefficient: from `AirCoefficient`, above 0 and at most 1 (1 passes everything).
+    /// - Param block: as for `Play`.
+    /// - Returns: `Ok`; `InvalidVoice`; `InvalidParam`.
+    /// - Fails: reported by return value.
+    MixerStatus SetAirAbsorption(VoiceId id, f32 coefficient, u64 block = kAtLead);
+
     /// Whether a voice is still playing, as far as the control side knows (control thread): false once it finished or
     /// a stop was posted.
     ///
@@ -626,6 +683,21 @@ public:
     /// - Fails: reported by return value.
     MixerStatus Position(VoiceId id, f64* frames) const;
 
+    /// Changes the output rate and layout while the mixer is idle (control thread; the audio thread must not be
+    /// rendering: stop the device first). Voices, positions, buses and the command queue are kept: each voice's routing
+    /// and step are recomputed for the new format at once, so a clip goes on from the frame it was at, at its own
+    /// pitch. A change of channel count reallocates the bus buffers and the limiter and bypasses every insert (effects
+    /// are built for a channel count; they stay alive and can be inserted again), and the half-rendered block is
+    /// dropped.
+    ///
+    /// - Param sample_rate: the new rate in Hz.
+    /// - Param layout: the new layout.
+    /// - Returns: `Ok`, `InvalidConfig` (a rate or layout the module refuses) or `OutOfMemory`; the mixer is unchanged
+    /// on a
+    ///   failure.
+    /// - Fails: reported by return value.
+    MixerStatus Reconfigure(u32 sample_rate, ChannelLayout layout);
+
     /// Renders one block: applies the commands stamped for it, then mixes `kBlockFrames` frames, interleaved,
     /// overwritten (audio thread).
     ///
@@ -688,6 +760,12 @@ private:
         f32 send_gain = 0.0f;
         f32 gain = 1.0f;
         f32 pan = 0.0f;
+        bool directional = false;
+        f32 dir[3] = {0.0f, 0.0f, 1.0f};
+        f32 spread = 0.0f;
+        f32 lfe_send = 0.0f;
+        f32 air_coefficient = 1.0f;
+        f32 air_state[kMaxChannels] = {};
         f32 pitch = 1.0f;
         i32 priority = 0;
         bool active = false;

@@ -55,7 +55,7 @@ renderer          ->  rhi, jobs, text, ui (from Phase 15 Day 190), spatial (from
 scene             ->  ecs, renderer (and what they use), animation (same layer; Phase 22 Day 322), foundation (Phase 17 Day 233)
 spatial           ->  foundation (incl. math); from later days ecs, jobs      (Phase 18 Day 238)
 physics           ->  foundation (incl. math), spatial, ecs, jobs; storage from Day 406  (Phase 25 Day 386)
-audio             ->  foundation (incl. math, settings), asset (same layer, from Day 418: the minted clip); jobs and ecs from later days  (Phase 26 Day 415)
+audio             ->  foundation (incl. math, settings), asset (same layer, from Day 418: the minted clip), ecs and spatial (below, from Day 428: the components and the emitter sync); jobs from later days  (Phase 26 Day 415)
 database          ->  foundation                                              (Phase 19 Day 251)
 storage           ->  foundation (incl. bytes), ecs, spatial, jobs, database  (Phase 19 Day 256; database from Day 262)
 net               ->  foundation (incl. bytes); jobs from Day 269             (Phase 20 Day 267)
@@ -149,7 +149,7 @@ The row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 2
 
 ### The audio module (Phase 26)
 
-`engine/audio` (layer 13, beside `physics`): the mixer, voices, buses, effects, devices and the ECS components that drive them. It depends on `foundation` (including `settings`, `io`, `lang`, `sync`, `cstr`), `asset` (the one same-layer edge, from Day 418: it reads `asset::AudioClipView` and loads clips through the resource manager) and, from later days, `jobs` and `ecs`; never on the renderer, the RHI, the platform layer or `physics`. The row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 415; `PLAN.md` assumption #30 and `docs/superpowers/specs/2026-11-17-audio-design.md` have the reasoning. The one implementation of the occlusion query that needs `physics` is the separate target `audio_physics` (layer 14, Day 431). One build renders the same bits run to run; across machines renders are compared within a tolerance (`docs/guide/audio.md`).
+`engine/audio` (layer 13, beside `physics`): the mixer, voices, buses, effects, devices and the ECS components that drive them. It depends on `foundation` (including `settings`, `io`, `lang`, `sync`, `cstr`), `asset` (the one same-layer edge, from Day 418: it reads `asset::AudioClipView` and loads clips through the resource manager) `ecs` and `spatial` (both layer 10, below, from Day 428: `AudioSource` and `AudioListener` read `ecs::WorldTransform` and the emitters live in a `spatial::SpatialSet`) and, from later days, `jobs`; never on the renderer, the RHI, the platform layer or `physics`. The row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 415; `PLAN.md` assumption #30 and `docs/superpowers/specs/2026-11-17-audio-design.md` have the reasoning. The one implementation of the occlusion query that needs `physics` is the separate target `audio_physics` (layer 14, Day 431). One build renders the same bits run to run; across machines renders are compared within a tolerance (`docs/guide/audio.md`).
 
 ### Planned modules (Phase 19, storage; Phase 20, networking)
 

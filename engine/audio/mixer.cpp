@@ -1,4 +1,5 @@
 #include "audio/mixer.h"
+#include "audio/panning.h"
 
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
@@ -241,6 +242,52 @@ MixerStatus Mixer::Init(const MixerConfig& config)
     return MixerStatus::Ok;
 }
 
+MixerStatus Mixer::Reconfigure(u32 sample_rate, ChannelLayout layout)
+{
+    const u32 channels = ChannelCount(layout);
+    if (sample_rate < kMinSampleRate || sample_rate > kMaxSampleRate || channels == 0)
+    {
+        return MixerStatus::InvalidConfig;
+    }
+    const bool channels_changed = channels != channels_;
+    if (channels_changed)
+    {
+        Vector<f32> carry;
+        Vector<f32> buses;
+        Limiter limiter;
+        if (!carry.TryResizeUninitialized(static_cast<usize>(kBlockFrames) * channels) ||
+            !buses.TryResizeUninitialized(static_cast<usize>(config_.max_buses) * kBlockFrames * channels) ||
+            !limiter.Init(channels, config_.limiter_config))
+        {
+            return MixerStatus::OutOfMemory;
+        }
+        carry_ = Move(carry);
+        bus_buffers_ = Move(buses);
+        limiter_ = Move(limiter);
+        for (u32 b = 0; b < kMaxBuses; ++b)
+        {
+            for (u32 i = 0; i < kMaxInserts; ++i)
+            {
+                buses_[b].inserts[i] = nullptr;
+                control_buses_[b].inserts[i] = nullptr;
+            }
+        }
+        channels_ = channels;
+    }
+    config_.sample_rate = sample_rate;
+    config_.layout = layout;
+    carry_next_ = kBlockFrames;  // the half-rendered block belonged to the old format
+    limiter_.Reset();
+    for (u32 i = 0; i < voices_.Size(); ++i)
+    {
+        if (voices_[i].active)
+        {
+            Retarget(&voices_[i], 0);
+        }
+    }
+    return MixerStatus::Ok;
+}
+
 MixerStats Mixer::Stats() const
 {
     MixerStats stats = audio_stats_;
@@ -352,7 +399,10 @@ MixerStatus Mixer::Play(const VoiceDesc& desc, VoiceId* out, u64 block)
     if (!IsFinite(desc.gain) || desc.gain < 0.0f || desc.gain > kMaxVoiceGain || !IsFinite(desc.pan) ||
         desc.pan < -1.0f || desc.pan > 1.0f || !IsFinite(desc.pitch) || desc.pitch < kMinPitch ||
         desc.pitch > kMaxPitch || desc.start_frame >= desc.clip->Frames() || !IsFinite(desc.send_gain) ||
-        desc.send_gain < 0.0f || desc.send_gain > kMaxVoiceGain)
+        desc.send_gain < 0.0f || desc.send_gain > kMaxVoiceGain || !IsFinite(desc.direction_x) ||
+        !IsFinite(desc.direction_y) || !IsFinite(desc.direction_z) || !IsFinite(desc.spread) ||
+        !IsFinite(desc.lfe_send) || desc.lfe_send < 0.0f || desc.lfe_send > 1.0f || !(desc.air_coefficient > 0.0f) ||
+        desc.air_coefficient > 1.0f)
     {
         return MixerStatus::InvalidParam;
     }
@@ -581,6 +631,51 @@ MixerStatus Mixer::Fade(VoiceId id, f32 gain, u32 frames, u64 block)
     return status;
 }
 
+MixerStatus Mixer::SetDirection(VoiceId id, f32 x, f32 y, f32 z, f32 spread, u64 block)
+{
+    if (!IsFinite(x) || !IsFinite(y) || !IsFinite(z) || !IsFinite(spread))
+    {
+        return MixerStatus::InvalidParam;
+    }
+    Command command;
+    command.stamp = StampFor(block);
+    command.type = CommandType::SetDirection;
+    command.id = id;
+    command.value = x;
+    command.value2 = y;
+    command.value3 = z;
+    command.value4 = spread;
+    return PostFor(id, Move(command));
+}
+
+MixerStatus Mixer::SetAirAbsorption(VoiceId id, f32 coefficient, u64 block)
+{
+    if (!IsFinite(coefficient) || !(coefficient > 0.0f) || coefficient > 1.0f)
+    {
+        return MixerStatus::InvalidParam;
+    }
+    Command command;
+    command.stamp = StampFor(block);
+    command.type = CommandType::SetAirAbsorption;
+    command.id = id;
+    command.value = coefficient;
+    return PostFor(id, Move(command));
+}
+
+MixerStatus Mixer::SetLfeSend(VoiceId id, f32 level, u64 block)
+{
+    if (!IsFinite(level) || level < 0.0f || level > 1.0f)
+    {
+        return MixerStatus::InvalidParam;
+    }
+    Command command;
+    command.stamp = StampFor(block);
+    command.type = CommandType::SetLfeSend;
+    command.id = id;
+    command.value = level;
+    return PostFor(id, Move(command));
+}
+
 MixerStatus Mixer::SetVirtual(VoiceId id, bool is_virtual, u64 block)
 {
     Command command;
@@ -640,7 +735,24 @@ void Mixer::ComputeTargets(Voice* voice, ChannelMatrix* route, u64* step) const
         {
             play.gain[o][0] = 0.0f;
         }
-        PanGains(voice->pan, &play.gain[0][0], &play.gain[1][0]);
+        if (voice->directional)
+        {
+            f32 gains[kMaxPanChannels];
+            SpeakerGains(config_.layout, voice->dir[0], voice->dir[1], voice->dir[2], voice->spread, gains);
+            for (u32 o = 0; o < play.outputs; ++o)
+            {
+                play.gain[o][0] = gains[o];
+            }
+            if (voice->lfe_send > 0.0f &&
+                (config_.layout == ChannelLayout::Surround51 || config_.layout == ChannelLayout::Surround71))
+            {
+                play.gain[static_cast<u32>(Speaker::Lfe)][0] = voice->lfe_send;
+            }
+        }
+        else
+        {
+            PanGains(voice->pan, &play.gain[0][0], &play.gain[1][0]);
+        }
     }
     else if (from != ChannelLayout::Mono && front_pair)
     {
@@ -836,6 +948,13 @@ void Mixer::Apply(Command* command)
                              ? desc.send_bus.index
                              : 0xFFFFFFFFu;
         voice.send_gain = desc.send_gain;
+        voice.directional = desc.directional;
+        voice.dir[0] = desc.direction_x;
+        voice.dir[1] = desc.direction_y;
+        voice.dir[2] = desc.direction_z;
+        voice.spread = desc.spread;
+        voice.lfe_send = desc.lfe_send;
+        voice.air_coefficient = desc.air_coefficient;
         voice.active = true;
         live_ += 1;
         Retarget(&voice, 0);
@@ -912,6 +1031,24 @@ void Mixer::Apply(Command* command)
     case CommandType::Fade:
         voice.gain = command->value;
         Retarget(&voice, static_cast<u32>(command->frames));
+        break;
+    case CommandType::SetDirection:
+        voice.directional = true;
+        voice.dir[0] = command->value;
+        voice.dir[1] = command->value2;
+        voice.dir[2] = command->value3;
+        voice.spread = command->value4;
+        {
+            // A stereo clip balances by the lateral position.
+            const f32 horizontal = Sqrt(voice.dir[0] * voice.dir[0] + voice.dir[2] * voice.dir[2]);
+            voice.pan = horizontal > 1e-6f ? voice.dir[0] / horizontal : 0.0f;
+        }
+        Retarget(&voice, config_.ramp_frames);
+        break;
+    case CommandType::SetAirAbsorption: voice.air_coefficient = command->value; break;
+    case CommandType::SetLfeSend:
+        voice.lfe_send = command->value;
+        Retarget(&voice, config_.ramp_frames);
         break;
     case CommandType::SetVirtual:
         if (command->value != 0.0f && !voice.is_virtual)
@@ -1071,6 +1208,17 @@ void Mixer::MixVoice(Voice* voice, f32* out, f32* send_out)
             case ResamplerQuality::Sinc: value[c] = InterpSinc(source, sinc_.Data(), c, index, frac); break;
             case ResamplerQuality::Hermite:
             default: value[c] = InterpHermite(source, c, index, frac); break;
+            }
+        }
+        if (voice->air_coefficient < 1.0f)
+        {
+            for (u32 c = 0; c < in_channels; ++c)
+            {
+                f32 state = voice->air_state[c];
+                state += voice->air_coefficient * (value[c] - state);
+                state = (state < 1e-20f && state > -1e-20f) ? 0.0f : state;
+                voice->air_state[c] = state;
+                value[c] = state;
             }
         }
         f32* frame = out + static_cast<usize>(n) * out_channels;

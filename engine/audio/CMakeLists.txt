@@ -18,6 +18,10 @@ set(AUDIO_SOURCES
   filter.cpp  # Day 423
   delay.cpp  # Day 424
   pcm_negotiate.cpp  # Day 425
+  audio_system.cpp  # Day 427
+  distance.cpp  # Day 428
+  panning.cpp  # Day 429
+  spatial_audio.cpp  # Day 428
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND AUDIO_SOURCES linux/alsa_device.cpp linux/pipewire_device.cpp linux/linux_devices.cpp)  # Days 425-426
@@ -36,7 +40,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(audio${suffix} STATIC ${AUDIO_SOURCES})
     target_include_directories(audio${suffix} PUBLIC ${AUDIO_INCLUDE_ROOT})
     target_compile_options(audio${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(audio${suffix} PUBLIC asset${suffix} foundation_base${suffix})
+    target_link_libraries(audio${suffix} PUBLIC asset${suffix} ecs${suffix} spatial${suffix} foundation_base${suffix})
   endforeach()
   return()
 endif()
@@ -54,5 +58,5 @@ foreach(suffix "" "_asan" "_tsan")
     target_link_libraries(audio${suffix} PUBLIC ${CMAKE_DL_LIBS})
   endif()
   target_compile_options(audio${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(audio${suffix} PUBLIC asset${suffix} foundation${suffix})
+  target_link_libraries(audio${suffix} PUBLIC asset${suffix} ecs${suffix} spatial${suffix} foundation${suffix})
 endforeach()

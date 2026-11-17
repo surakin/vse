@@ -237,7 +237,70 @@ headers still runs where the library is missing) and then **ALSA** through raw `
 - `tools/audio_probe` (`list`, `play --backend=... --seconds=N`) plays a quiet tone through the real backend and prints the
   granted configuration and the counters.
 
+## Changing the device at run time
+
+`AudioSystem` owns a `Mixer` and the device that plays it (`audio/audio_system.h`). `Init` opens the wanted device with the
+audio settings, starts the mixer at the rate and layout the device **granted**, and falls back to the null device when the
+wanted one cannot be opened. The mixer outlives every device: switching keeps the voices, their positions, the buses and
+the queued commands.
+
+- `Mixer::Reconfigure(rate, layout)` re-plans the mixer for a new rate or layout: every voice recomputes its step and its
+  routing, so a clip that was half played keeps its place and its pitch. A change of channel *count* re-allocates the bus
+  buffers and the limiter and **bypasses the bus inserts** (their state is per channel; the application re-creates them).
+  Effect parameter blocks are in frames, so after a rate change they are rebuilt by the application (`Make...Params`).
+- `ApplySettings` is classified by cost (`ApplyCost`): the master volume is a bus gain and free; a changed rate or channel
+  count re-plans and reopens the device; a changed device name or buffer size reopens it. The voice limit and the resampler
+  quality belong to a mixer and are not applied live. A reopen that fails leaves the system on the null device.
+- A device that reports `Lost` (from its own thread) only sets a flag; `Update(now)` on the control thread then swaps to the
+  null device, pumps it for the time that passed (so the clock and the voices go on) and retries the wanted device every
+  `retry_nanos`, logging each transition once. `Switches()` counts the devices opened (a leak check: 100 resets leave one
+  device alive).
+- The device factory is a seam (`AudioSystemConfig::factory`) so the tests use a fake card that grants another rate or
+  vanishes.
+
+## Sound in the world
+
+`AudioSource` and `AudioListener` (`audio/components.h`) are ECS components read together with `ecs::WorldTransform`; the
+entity's local -Z is its forward axis. `SpatialAudio::Update(world, dt)` (`audio/spatial_audio.h`) is the sync:
+
+1. The active listener with the lowest entity id is the ears. Its velocity is the change of position over `dt` (a jump
+   larger than `teleport_distance` is a teleport, not a speed).
+2. Every source is an item of a `spatial::SpatialSet`, a dynamic box of its **audible radius** (the distance at which its
+   gain falls to `audibility_threshold`). An entity that did not change its position or radius does not touch the set or
+   the mixer; only a change posts a command.
+3. The listener query (a zero-radius sphere) returns the emitters in range; their loudness is `gain * listener gain *
+   distance gain * cone gain`. They are ranked by loudness, then `priority`, then entity id, and the loudest
+   `max_real_voices` get real voices, the rest virtual ones (looping sources keep a virtual voice so their position goes
+   on; a one-shot starts when it is first audible). Sources without `spatial` are always candidates and are not placed.
+4. A destroyed entity (or one that lost its source) fades its voice out over `stop_fade_frames` and is forgotten.
+
+`DistanceGain` (`audio/distance.h`) has four models, all clamped to `min_distance` and silent beyond `max_distance`:
+inverse `min / (min + rolloff (d - min))`, linear `1 - rolloff (d - min) / (max - min)`, exponential `(d / min)^-rolloff`
+and a custom table of up to 16 points. `ConeGain` blends from 1 inside the inner angle to `outer_gain` outside the outer
+one (by the cosine of the angle).
+
+## Panning
+
+A voice made `directional` (or moved by `Mixer::SetDirection`) is placed by the direction of its source in listener space
+(x right, y up, z forward). `SpeakerGains` (`audio/panning.h`, `+ - * /` and `Sqrt` only, so it runs on the audio thread)
+gives: stereo an equal-power law of the lateral position, quad, 5.1 and 7.1 vector-based amplitude panning over the two
+speakers either side of the direction (a 2x2 solve), normalised so the squares of the gains add to 1. **Spread** (0 to 1)
+and elevation blend toward every speaker at equal level, and a source at the listener's own position (no direction) is
+fully spread, so a source passing through the listener does not jump. The LFE channel gets nothing from position:
+`lfe_send` (a voice setting, `SetLfeSend`) feeds it a level, and the channel's own crossover takes the highs out. A stereo
+clip balances by the direction's lateral position. Gains ramp over `ramp_frames` like every other change.
+
+## Doppler and air absorption
+
+`DopplerRatio` is `(c + v_listener . u) / (c + v_emitter . u)` with `u` from the listener to the emitter, the speeds scaled
+by the world's Doppler factor and limited to 0.9 c, the ratio to 0.25 to 4; the system multiplies it into the voice's pitch
+(the mixer ramps the change). The emitter's velocity is the change of its position over `dt`, or an `AudioVelocity`
+component when the entity has one (a physics body's); `AudioSource::doppler` turns it off per source and a factor of 0
+for the world. Air absorption is a one-pole low-pass per voice (`SetAirAbsorption`, `y += k (x - y)`) whose cutoff falls
+with distance by a table from 20 kHz at the listener to 1.2 kHz at 400 m (`AirCutoffHz`, scaled by the world factor);
+`AirCoefficient` turns a cutoff into `k` on the control side (libm, listed), and the audio side only multiplies and adds.
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
-perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers). `effect_test.cpp` (the filter responses, the clamps, the ring-out, the delay taps, the reverb decay and stereo field, the inserts, the committed echo and reverb scene hashes). `backend_test.cpp` (the negotiation tables, the conversion, the lists, a real device rendered at its pace, a stalled callback, destroying a running device; the hardware tests print a warning and skip without a sound device).
+perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers). `effect_test.cpp` (the filter responses, the clamps, the ring-out, the delay taps, the reverb decay and stereo field, the inserts, the committed echo and reverb scene hashes). `backend_test.cpp` (the negotiation tables, the conversion, the lists, a real device rendered at its pace, a stalled callback, destroying a running device; the hardware tests print a warning and skip without a sound device). `system_test.cpp` (a fake card: another granted rate mid-clip, a lost device and its recovery, every setting in turn, 100 resets). `spatial_test.cpp` (the distance models at ten distances, the cone, the sync: ranking, determinism, 10,000 emitters with one moved, a destroyed entity, the listener's velocity). `panning_test.cpp` (the documented gains per layout, constant power at 360 azimuths, smoothness, the 5.1 mix with the LFE send, a ramp without a step). `doppler_test.cpp` (the formula, teleports, a flyby, the cutoff table, the one-pole low-pass, the committed flyby hash).

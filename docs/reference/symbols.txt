@@ -4498,6 +4498,33 @@ audio::RegisterAudioSettings(settings::Registry*)	function	audio	audio-registera
 audio::AudioSettingsFromRegistry(const settings::Registry&)	function	audio	audio-audiosettingsfromregistry-const-settings-registry-amp	audio.md	engine/audio/audio_settings.h:61
 audio::LayoutForChannelCount(u32)	function	audio	audio-layoutforchannelcount-u32	audio.md	engine/audio/audio_settings.h:68
 audio::DeviceConfigFromSettings(const AudioSettings&)	function	audio	audio-deviceconfigfromsettings-const-audiosettings-amp	audio.md	engine/audio/audio_settings.h:75
+audio::ApplyCost	enum	audio	audio-applycost	audio.md	engine/audio/audio_system.h:15
+audio::ApplyCost::None	enumerator	audio	audio-applycost-none	audio.md	engine/audio/audio_system.h:18
+audio::ApplyCost::Free	enumerator	audio	audio-applycost-free	audio.md	engine/audio/audio_system.h:20
+audio::ApplyCost::Replan	enumerator	audio	audio-applycost-replan	audio.md	engine/audio/audio_system.h:22
+audio::ApplyCost::Reopen	enumerator	audio	audio-applycost-reopen	audio.md	engine/audio/audio_system.h:24
+audio::OutputState	enum	audio	audio-outputstate	audio.md	engine/audio/audio_system.h:28
+audio::OutputState::Closed	enumerator	audio	audio-outputstate-closed	audio.md	engine/audio/audio_system.h:31
+audio::OutputState::Device	enumerator	audio	audio-outputstate-device	audio.md	engine/audio/audio_system.h:33
+audio::OutputState::Fallback	enumerator	audio	audio-outputstate-fallback	audio.md	engine/audio/audio_system.h:35
+audio::DeviceFactory	alias	audio	audio-devicefactory	audio.md	engine/audio/audio_system.h:40
+audio::AudioSystemConfig	struct	audio	audio-audiosystemconfig	audio.md	engine/audio/audio_system.h:45
+audio::AudioSystemConfig::settings	variable	audio	audio-audiosystemconfig-settings	audio.md	engine/audio/audio_system.h:48
+audio::AudioSystemConfig::kind	variable	audio	audio-audiosystemconfig-kind	audio.md	engine/audio/audio_system.h:50
+audio::AudioSystemConfig::retry_nanos	variable	audio	audio-audiosystemconfig-retry-nanos	audio.md	engine/audio/audio_system.h:52
+audio::AudioSystemConfig::factory	variable	audio	audio-audiosystemconfig-factory	audio.md	engine/audio/audio_system.h:54
+audio::AudioSystemConfig::factory_user	variable	audio	audio-audiosystemconfig-factory-user	audio.md	engine/audio/audio_system.h:56
+audio::AudioSystem	class	audio	audio-audiosystem	audio.md	engine/audio/audio_system.h:68
+audio::AudioSystem::~AudioSystem()	function	audio	audio-audiosystem-tilde-audiosystem	audio.md	engine/audio/audio_system.h:74
+audio::AudioSystem::Init(const AudioSystemConfig&,u64)	function	audio	audio-audiosystem-init-const-audiosystemconfig-amp-u64	audio.md	engine/audio/audio_system.h:84
+audio::AudioSystem::Shutdown()	function	audio	audio-audiosystem-shutdown	audio.md	engine/audio/audio_system.h:89
+audio::AudioSystem::ApplySettings(const AudioSettings&,u64,ApplyCost*)	function	audio	audio-audiosystem-applysettings-const-audiosettings-amp-u64-applycost-star	audio.md	engine/audio/audio_system.h:104
+audio::AudioSystem::Update(u64)	function	audio	audio-audiosystem-update-u64	audio.md	engine/audio/audio_system.h:111
+audio::AudioSystem::GetMixer()	function	audio	audio-audiosystem-getmixer	audio.md	engine/audio/audio_system.h:116
+audio::AudioSystem::State() const	function	audio	audio-audiosystem-state-const	audio.md	engine/audio/audio_system.h:121
+audio::AudioSystem::CurrentDevice() const	function	audio	audio-audiosystem-currentdevice-const	audio.md	engine/audio/audio_system.h:127
+audio::AudioSystem::Switches() const	function	audio	audio-audiosystem-switches-const	audio.md	engine/audio/audio_system.h:132
+audio::AudioSystem::Transitions() const	function	audio	audio-audiosystem-transitions-const	audio.md	engine/audio/audio_system.h:137
 audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:22
 audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:26
 audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:29
@@ -4561,6 +4588,24 @@ audio::SpscRing::Front()	function	audio	audio-spscring-front	audio.md	engine/aud
 audio::SpscRing::Pop()	function	audio	audio-spscring-pop	audio.md	engine/audio/commands.h:89
 audio::SpscRing::Capacity() const	function	audio	audio-spscring-capacity-const	audio.md	engine/audio/commands.h:92
 audio::SpscRing::Size() const	function	audio	audio-spscring-size-const	audio.md	engine/audio/commands.h:95
+audio::AudioSource	struct	audio	audio-audiosource	audio.md	engine/audio/components.h:18
+audio::AudioSource::clip	variable	audio	audio-audiosource-clip	audio.md	engine/audio/components.h:21
+audio::AudioSource::bus	variable	audio	audio-audiosource-bus	audio.md	engine/audio/components.h:23
+audio::AudioSource::gain	variable	audio	audio-audiosource-gain	audio.md	engine/audio/components.h:25
+audio::AudioSource::pitch	variable	audio	audio-audiosource-pitch	audio.md	engine/audio/components.h:27
+audio::AudioSource::loop	variable	audio	audio-audiosource-loop	audio.md	engine/audio/components.h:29
+audio::AudioSource::play_on_start	variable	audio	audio-audiosource-play-on-start	audio.md	engine/audio/components.h:31
+audio::AudioSource::spatial	variable	audio	audio-audiosource-spatial	audio.md	engine/audio/components.h:33
+audio::AudioSource::doppler	variable	audio	audio-audiosource-doppler	audio.md	engine/audio/components.h:35
+audio::AudioSource::occlusion	variable	audio	audio-audiosource-occlusion	audio.md	engine/audio/components.h:37
+audio::AudioSource::priority	variable	audio	audio-audiosource-priority	audio.md	engine/audio/components.h:39
+audio::AudioSource::attenuation	variable	audio	audio-audiosource-attenuation	audio.md	engine/audio/components.h:41
+audio::AudioSource::cone	variable	audio	audio-audiosource-cone	audio.md	engine/audio/components.h:43
+audio::AudioVelocity	struct	audio	audio-audiovelocity	audio.md	engine/audio/components.h:50
+audio::AudioVelocity::velocity	variable	audio	audio-audiovelocity-velocity	audio.md	engine/audio/components.h:53
+audio::AudioListener	struct	audio	audio-audiolistener	audio.md	engine/audio/components.h:60
+audio::AudioListener::gain	variable	audio	audio-audiolistener-gain	audio.md	engine/audio/components.h:63
+audio::AudioListener::active	variable	audio	audio-audiolistener-active	audio.md	engine/audio/components.h:65
 audio::kDownmixGain	variable	audio	audio-kdownmixgain	audio.md	engine/audio/convert.h:14
 audio::U8ToF32(u8)	function	audio	audio-u8tof32-u8	audio.md	engine/audio/convert.h:22
 audio::S16ToF32(i16)	function	audio	audio-s16tof32-i16	audio.md	engine/audio/convert.h:24
@@ -4663,6 +4708,33 @@ audio::DeviceDescription::max_channels	variable	audio	audio-devicedescription-ma
 audio::DeviceDescription::min_rate	variable	audio	audio-devicedescription-min-rate	audio.md	engine/audio/device_list.h:22
 audio::DeviceDescription::max_rate	variable	audio	audio-devicedescription-max-rate	audio.md	engine/audio/device_list.h:24
 audio::EnumerateDevices(DeviceKind,Vector<DeviceDescription>*)	function	audio	audio-enumeratedevices-devicekind-vector-lt-devicedescription-gt-star	audio.md	engine/audio/device_list.h:36
+audio::DistanceModel	enum	audio	audio-distancemodel	audio.md	engine/audio/distance.h:12
+audio::DistanceModel::Inverse	enumerator	audio	audio-distancemodel-inverse	audio.md	engine/audio/distance.h:15
+audio::DistanceModel::Linear	enumerator	audio	audio-distancemodel-linear	audio.md	engine/audio/distance.h:17
+audio::DistanceModel::Exponential	enumerator	audio	audio-distancemodel-exponential	audio.md	engine/audio/distance.h:19
+audio::DistanceModel::Curve	enumerator	audio	audio-distancemodel-curve	audio.md	engine/audio/distance.h:21
+audio::kMaxCurvePoints	variable	audio	audio-kmaxcurvepoints	audio.md	engine/audio/distance.h:25
+audio::DistanceCurve	struct	audio	audio-distancecurve	audio.md	engine/audio/distance.h:31
+audio::DistanceCurve::count	variable	audio	audio-distancecurve-count	audio.md	engine/audio/distance.h:34
+audio::DistanceCurve::distance	variable	audio	audio-distancecurve-distance	audio.md	engine/audio/distance.h:36
+audio::DistanceCurve::gain	variable	audio	audio-distancecurve-gain	audio.md	engine/audio/distance.h:38
+audio::Attenuation	struct	audio	audio-attenuation	audio.md	engine/audio/distance.h:44
+audio::Attenuation::model	variable	audio	audio-attenuation-model	audio.md	engine/audio/distance.h:47
+audio::Attenuation::min_distance	variable	audio	audio-attenuation-min-distance	audio.md	engine/audio/distance.h:49
+audio::Attenuation::max_distance	variable	audio	audio-attenuation-max-distance	audio.md	engine/audio/distance.h:51
+audio::Attenuation::rolloff	variable	audio	audio-attenuation-rolloff	audio.md	engine/audio/distance.h:53
+audio::Attenuation::curve	variable	audio	audio-attenuation-curve	audio.md	engine/audio/distance.h:55
+audio::Cone	struct	audio	audio-cone	audio.md	engine/audio/distance.h:61
+audio::Cone::inner_angle	variable	audio	audio-cone-inner-angle	audio.md	engine/audio/distance.h:64
+audio::Cone::outer_angle	variable	audio	audio-cone-outer-angle	audio.md	engine/audio/distance.h:66
+audio::Cone::outer_gain	variable	audio	audio-cone-outer-gain	audio.md	engine/audio/distance.h:68
+audio::IsValid(const Attenuation&)	function	audio	audio-isvalid-const-attenuation-amp	audio.md	engine/audio/distance.h:77
+audio::DistanceGain(const Attenuation&,f32)	function	audio	audio-distancegain-const-attenuation-amp-f32	audio.md	engine/audio/distance.h:85
+audio::AudibleRadius(const Attenuation&,f32)	function	audio	audio-audibleradius-const-attenuation-amp-f32	audio.md	engine/audio/distance.h:93
+audio::ConeGain(const Cone&,f32)	function	audio	audio-conegain-const-cone-amp-f32	audio.md	engine/audio/distance.h:102
+audio::AirCutoffHz(f32,f32)	function	audio	audio-aircutoffhz-f32-f32	audio.md	engine/audio/distance.h:111
+audio::AirCoefficient(f32,u32)	function	audio	audio-aircoefficient-f32-u32	audio.md	engine/audio/distance.h:120
+audio::DopplerRatio(f32,f32,const Vec3&,const Vec3&,const Vec3&)	function	audio	audio-dopplerratio-f32-f32-const-vec3-amp-const-vec3-amp-const-vec3-amp	audio.md	engine/audio/distance.h:135
 audio::kEffectParams	variable	audio	audio-keffectparams	audio.md	engine/audio/effect.h:12
 audio::EffectParams	struct	audio	audio-effectparams	audio.md	engine/audio/effect.h:19
 audio::EffectParams::v	variable	audio	audio-effectparams-v	audio.md	engine/audio/effect.h:22
@@ -4783,125 +4855,143 @@ audio::VoiceDesc::fade_in	variable	audio	audio-voicedesc-fade-in	audio.md	engine
 audio::VoiceDesc::bus	variable	audio	audio-voicedesc-bus	audio.md	engine/audio/mixer.h:135
 audio::VoiceDesc::send_bus	variable	audio	audio-voicedesc-send-bus	audio.md	engine/audio/mixer.h:137
 audio::VoiceDesc::send_gain	variable	audio	audio-voicedesc-send-gain	audio.md	engine/audio/mixer.h:139
-audio::CommandType	enum	audio	audio-commandtype	audio.md	engine/audio/mixer.h:143
-audio::CommandType::Play	enumerator	audio	audio-commandtype-play	audio.md	engine/audio/mixer.h:146
-audio::CommandType::Stop	enumerator	audio	audio-commandtype-stop	audio.md	engine/audio/mixer.h:148
-audio::CommandType::Pause	enumerator	audio	audio-commandtype-pause	audio.md	engine/audio/mixer.h:150
-audio::CommandType::Resume	enumerator	audio	audio-commandtype-resume	audio.md	engine/audio/mixer.h:152
-audio::CommandType::Seek	enumerator	audio	audio-commandtype-seek	audio.md	engine/audio/mixer.h:154
-audio::CommandType::SetGain	enumerator	audio	audio-commandtype-setgain	audio.md	engine/audio/mixer.h:156
-audio::CommandType::SetPitch	enumerator	audio	audio-commandtype-setpitch	audio.md	engine/audio/mixer.h:158
-audio::CommandType::SetPan	enumerator	audio	audio-commandtype-setpan	audio.md	engine/audio/mixer.h:160
-audio::CommandType::SetLoop	enumerator	audio	audio-commandtype-setloop	audio.md	engine/audio/mixer.h:162
-audio::CommandType::Fade	enumerator	audio	audio-commandtype-fade	audio.md	engine/audio/mixer.h:164
-audio::CommandType::SetVirtual	enumerator	audio	audio-commandtype-setvirtual	audio.md	engine/audio/mixer.h:166
-audio::CommandType::CreateBus	enumerator	audio	audio-commandtype-createbus	audio.md	engine/audio/mixer.h:168
-audio::CommandType::SetBusGain	enumerator	audio	audio-commandtype-setbusgain	audio.md	engine/audio/mixer.h:170
-audio::CommandType::SetBusMute	enumerator	audio	audio-commandtype-setbusmute	audio.md	engine/audio/mixer.h:172
-audio::CommandType::SetBusSolo	enumerator	audio	audio-commandtype-setbussolo	audio.md	engine/audio/mixer.h:174
-audio::CommandType::SetBusSend	enumerator	audio	audio-commandtype-setbussend	audio.md	engine/audio/mixer.h:176
-audio::CommandType::SetDuck	enumerator	audio	audio-commandtype-setduck	audio.md	engine/audio/mixer.h:178
-audio::CommandType::SetMeter	enumerator	audio	audio-commandtype-setmeter	audio.md	engine/audio/mixer.h:180
-audio::CommandType::SetVoiceBus	enumerator	audio	audio-commandtype-setvoicebus	audio.md	engine/audio/mixer.h:182
-audio::CommandType::SetVoiceSend	enumerator	audio	audio-commandtype-setvoicesend	audio.md	engine/audio/mixer.h:184
-audio::CommandType::SetLimiter	enumerator	audio	audio-commandtype-setlimiter	audio.md	engine/audio/mixer.h:186
-audio::CommandType::SetInsert	enumerator	audio	audio-commandtype-setinsert	audio.md	engine/audio/mixer.h:188
-audio::CommandType::SetEffectParams	enumerator	audio	audio-commandtype-seteffectparams	audio.md	engine/audio/mixer.h:190
-audio::Command	struct	audio	audio-command	audio.md	engine/audio/mixer.h:196
-audio::Command::stamp	variable	audio	audio-command-stamp	audio.md	engine/audio/mixer.h:199
-audio::Command::type	variable	audio	audio-command-type	audio.md	engine/audio/mixer.h:201
-audio::Command::id	variable	audio	audio-command-id	audio.md	engine/audio/mixer.h:203
-audio::Command::desc	variable	audio	audio-command-desc	audio.md	engine/audio/mixer.h:205
-audio::Command::value	variable	audio	audio-command-value	audio.md	engine/audio/mixer.h:207
-audio::Command::frames	variable	audio	audio-command-frames	audio.md	engine/audio/mixer.h:209
-audio::Command::a	variable	audio	audio-command-a	audio.md	engine/audio/mixer.h:211
-audio::Command::b	variable	audio	audio-command-b	audio.md	engine/audio/mixer.h:213
-audio::Command::value2	variable	audio	audio-command-value2	audio.md	engine/audio/mixer.h:215
-audio::Command::effect	variable	audio	audio-command-effect	audio.md	engine/audio/mixer.h:217
-audio::Command::params	variable	audio	audio-command-params	audio.md	engine/audio/mixer.h:219
-audio::VoiceEventType	enum	audio	audio-voiceeventtype	audio.md	engine/audio/mixer.h:223
-audio::VoiceEventType::Finished	enumerator	audio	audio-voiceeventtype-finished	audio.md	engine/audio/mixer.h:226
-audio::VoiceEventType::Looped	enumerator	audio	audio-voiceeventtype-looped	audio.md	engine/audio/mixer.h:228
-audio::VoiceEventType::Virtualised	enumerator	audio	audio-voiceeventtype-virtualised	audio.md	engine/audio/mixer.h:230
-audio::VoiceEventType::Stolen	enumerator	audio	audio-voiceeventtype-stolen	audio.md	engine/audio/mixer.h:232
-audio::VoiceEventType::Stopped	enumerator	audio	audio-voiceeventtype-stopped	audio.md	engine/audio/mixer.h:234
-audio::VoiceEventType::BusLevel	enumerator	audio	audio-voiceeventtype-buslevel	audio.md	engine/audio/mixer.h:236
-audio::VoiceEvent	struct	audio	audio-voiceevent	audio.md	engine/audio/mixer.h:242
-audio::VoiceEvent::type	variable	audio	audio-voiceevent-type	audio.md	engine/audio/mixer.h:245
-audio::VoiceEvent::id	variable	audio	audio-voiceevent-id	audio.md	engine/audio/mixer.h:247
-audio::VoiceEvent::block	variable	audio	audio-voiceevent-block	audio.md	engine/audio/mixer.h:249
-audio::VoiceEvent::peak	variable	audio	audio-voiceevent-peak	audio.md	engine/audio/mixer.h:251
-audio::VoiceEvent::rms	variable	audio	audio-voiceevent-rms	audio.md	engine/audio/mixer.h:253
-audio::MixerConfig	struct	audio	audio-mixerconfig	audio.md	engine/audio/mixer.h:259
-audio::MixerConfig::sample_rate	variable	audio	audio-mixerconfig-sample-rate	audio.md	engine/audio/mixer.h:262
-audio::MixerConfig::layout	variable	audio	audio-mixerconfig-layout	audio.md	engine/audio/mixer.h:264
-audio::MixerConfig::max_voices	variable	audio	audio-mixerconfig-max-voices	audio.md	engine/audio/mixer.h:266
-audio::MixerConfig::quality	variable	audio	audio-mixerconfig-quality	audio.md	engine/audio/mixer.h:268
-audio::MixerConfig::ramp_frames	variable	audio	audio-mixerconfig-ramp-frames	audio.md	engine/audio/mixer.h:270
-audio::MixerConfig::lead_blocks	variable	audio	audio-mixerconfig-lead-blocks	audio.md	engine/audio/mixer.h:273
-audio::MixerConfig::command_capacity	variable	audio	audio-mixerconfig-command-capacity	audio.md	engine/audio/mixer.h:275
-audio::MixerConfig::event_capacity	variable	audio	audio-mixerconfig-event-capacity	audio.md	engine/audio/mixer.h:277
-audio::MixerConfig::offline	variable	audio	audio-mixerconfig-offline	audio.md	engine/audio/mixer.h:279
-audio::MixerConfig::max_buses	variable	audio	audio-mixerconfig-max-buses	audio.md	engine/audio/mixer.h:281
-audio::MixerConfig::limiter	variable	audio	audio-mixerconfig-limiter	audio.md	engine/audio/mixer.h:284
-audio::MixerConfig::limiter_config	variable	audio	audio-mixerconfig-limiter-config	audio.md	engine/audio/mixer.h:286
-audio::MixerStats	struct	audio	audio-mixerstats	audio.md	engine/audio/mixer.h:292
-audio::MixerStats::blocks	variable	audio	audio-mixerstats-blocks	audio.md	engine/audio/mixer.h:295
-audio::MixerStats::voices_mixed	variable	audio	audio-mixerstats-voices-mixed	audio.md	engine/audio/mixer.h:297
-audio::MixerStats::voices_virtual	variable	audio	audio-mixerstats-voices-virtual	audio.md	engine/audio/mixer.h:299
-audio::MixerStats::voices_stolen	variable	audio	audio-mixerstats-voices-stolen	audio.md	engine/audio/mixer.h:301
-audio::MixerStats::voices_refused	variable	audio	audio-mixerstats-voices-refused	audio.md	engine/audio/mixer.h:303
-audio::MixerStats::voices_finished	variable	audio	audio-mixerstats-voices-finished	audio.md	engine/audio/mixer.h:305
-audio::MixerStats::commands_applied	variable	audio	audio-mixerstats-commands-applied	audio.md	engine/audio/mixer.h:307
-audio::MixerStats::late_commands	variable	audio	audio-mixerstats-late-commands	audio.md	engine/audio/mixer.h:309
-audio::MixerStats::commands_dropped	variable	audio	audio-mixerstats-commands-dropped	audio.md	engine/audio/mixer.h:311
-audio::MixerStats::events_dropped	variable	audio	audio-mixerstats-events-dropped	audio.md	engine/audio/mixer.h:313
-audio::MixerStats::limiter_min_gain	variable	audio	audio-mixerstats-limiter-min-gain	audio.md	engine/audio/mixer.h:315
-audio::Mixer	class	audio	audio-mixer	audio.md	engine/audio/mixer.h:342
-audio::Mixer::Mixer()	function	audio	audio-mixer-mixer	audio.md	engine/audio/mixer.h:345
-audio::Mixer::Mixer(const Mixer&)	function	audio	audio-mixer-mixer-const-mixer-amp	audio.md	engine/audio/mixer.h:346
-audio::Mixer::operator=(const Mixer&)	function	audio	audio-mixer-operator-eq-const-mixer-amp	audio.md	engine/audio/mixer.h:347
-audio::Mixer::Init(const MixerConfig&)	function	audio	audio-mixer-init-const-mixerconfig-amp	audio.md	engine/audio/mixer.h:354
-audio::Mixer::Play(const VoiceDesc&,VoiceId*,u64)	function	audio	audio-mixer-play-const-voicedesc-amp-voiceid-star-u64	audio.md	engine/audio/mixer.h:366
-audio::Mixer::Stop(VoiceId,u32,u64)	function	audio	audio-mixer-stop-voiceid-u32-u64	audio.md	engine/audio/mixer.h:375
-audio::Mixer::Pause(VoiceId,u64)	function	audio	audio-mixer-pause-voiceid-u64	audio.md	engine/audio/mixer.h:383
-audio::Mixer::Resume(VoiceId,u64)	function	audio	audio-mixer-resume-voiceid-u64	audio.md	engine/audio/mixer.h:391
-audio::Mixer::Seek(VoiceId,u64,u64)	function	audio	audio-mixer-seek-voiceid-u64-u64	audio.md	engine/audio/mixer.h:400
-audio::Mixer::SetGain(VoiceId,f32,u64)	function	audio	audio-mixer-setgain-voiceid-f32-u64	audio.md	engine/audio/mixer.h:409
-audio::Mixer::SetPan(VoiceId,f32,u64)	function	audio	audio-mixer-setpan-voiceid-f32-u64	audio.md	engine/audio/mixer.h:418
-audio::Mixer::SetPitch(VoiceId,f32,u64)	function	audio	audio-mixer-setpitch-voiceid-f32-u64	audio.md	engine/audio/mixer.h:427
-audio::Mixer::SetLoop(VoiceId,bool,u64)	function	audio	audio-mixer-setloop-voiceid-bool-u64	audio.md	engine/audio/mixer.h:436
-audio::Mixer::Fade(VoiceId,f32,u32,u64)	function	audio	audio-mixer-fade-voiceid-f32-u32-u64	audio.md	engine/audio/mixer.h:446
-audio::Mixer::SetVirtual(VoiceId,bool,u64)	function	audio	audio-mixer-setvirtual-voiceid-bool-u64	audio.md	engine/audio/mixer.h:455
-audio::Mixer::IsPlaying(VoiceId)	function	audio	audio-mixer-isplaying-voiceid	audio.md	engine/audio/mixer.h:463
-audio::Mixer::PollEvents(VoiceEvent*,u32)	function	audio	audio-mixer-pollevents-voiceevent-star-u32	audio.md	engine/audio/mixer.h:472
-audio::Mixer::SetWatermark(u64)	function	audio	audio-mixer-setwatermark-u64	audio.md	engine/audio/mixer.h:478
-audio::Mixer::CreateBus(StringView,BusId,BusId*,u64)	function	audio	audio-mixer-createbus-stringview-busid-busid-star-u64	audio.md	engine/audio/mixer.h:490
-audio::Mixer::FindBus(StringView) const	function	audio	audio-mixer-findbus-stringview-const	audio.md	engine/audio/mixer.h:497
-audio::Mixer::SetBusGain(BusId,f32,u64)	function	audio	audio-mixer-setbusgain-busid-f32-u64	audio.md	engine/audio/mixer.h:506
-audio::Mixer::SetBusMute(BusId,bool,u64)	function	audio	audio-mixer-setbusmute-busid-bool-u64	audio.md	engine/audio/mixer.h:515
-audio::Mixer::SetBusSolo(BusId,bool,u64)	function	audio	audio-mixer-setbussolo-busid-bool-u64	audio.md	engine/audio/mixer.h:525
-audio::Mixer::SetBusSend(BusId,u32,BusId,f32,bool,u64)	function	audio	audio-mixer-setbussend-busid-u32-busid-f32-bool-u64	audio.md	engine/audio/mixer.h:537
-audio::Mixer::SetDuck(BusId,BusId,f32,f32,f32,u64)	function	audio	audio-mixer-setduck-busid-busid-f32-f32-f32-u64	audio.md	engine/audio/mixer.h:550
-audio::Mixer::SetMeter(BusId,bool,u64)	function	audio	audio-mixer-setmeter-busid-bool-u64	audio.md	engine/audio/mixer.h:559
-audio::Mixer::SetVoiceBus(VoiceId,BusId,u64)	function	audio	audio-mixer-setvoicebus-voiceid-busid-u64	audio.md	engine/audio/mixer.h:568
-audio::Mixer::SetVoiceSend(VoiceId,BusId,f32,u64)	function	audio	audio-mixer-setvoicesend-voiceid-busid-f32-u64	audio.md	engine/audio/mixer.h:578
-audio::Mixer::SetInsert(BusId,u32,UniquePtr<Effect>,u64)	function	audio	audio-mixer-setinsert-busid-u32-uniqueptr-lt-effect-gt-u64	audio.md	engine/audio/mixer.h:591
-audio::Mixer::ClearInsert(BusId,u32,u64)	function	audio	audio-mixer-clearinsert-busid-u32-u64	audio.md	engine/audio/mixer.h:600
-audio::Mixer::SetInsertParams(BusId,u32,const EffectParams&,u64)	function	audio	audio-mixer-setinsertparams-busid-u32-const-effectparams-amp-u64	audio.md	engine/audio/mixer.h:610
-audio::Mixer::SetLimiter(bool,u64)	function	audio	audio-mixer-setlimiter-bool-u64	audio.md	engine/audio/mixer.h:618
-audio::Mixer::Position(VoiceId,f64*) const	function	audio	audio-mixer-position-voiceid-f64-star-const	audio.md	engine/audio/mixer.h:627
-audio::Mixer::RenderBlock(Span<f32>)	function	audio	audio-mixer-renderblock-span-lt-f32-gt	audio.md	engine/audio/mixer.h:635
-audio::Mixer::TryRenderBlock(Span<f32>)	function	audio	audio-mixer-tryrenderblock-span-lt-f32-gt	audio.md	engine/audio/mixer.h:643
-audio::Mixer::Render(f32*,u32)	function	audio	audio-mixer-render-f32-star-u32	audio.md	engine/audio/mixer.h:653
-audio::Mixer::NextBlock() const	function	audio	audio-mixer-nextblock-const	audio.md	engine/audio/mixer.h:656
-audio::Mixer::Channels() const	function	audio	audio-mixer-channels-const	audio.md	engine/audio/mixer.h:659
-audio::Mixer::Config() const	function	audio	audio-mixer-config-const	audio.md	engine/audio/mixer.h:662
-audio::Mixer::Stats() const	function	audio	audio-mixer-stats-const	audio.md	engine/audio/mixer.h:665
-audio::Mixer::VoiceCount() const	function	audio	audio-mixer-voicecount-const	audio.md	engine/audio/mixer.h:668
-audio::Mixer::kAtLead	variable	audio	audio-mixer-katlead	audio.md	engine/audio/mixer.h:671
-audio::Mixer::kRampFrames	variable	audio	audio-mixer-krampframes	audio.md	engine/audio/mixer.h:673
-audio::MixerConfigFromSettings(const AudioSettings&,u32)	function	audio	audio-mixerconfigfromsettings-const-audiosettings-amp-u32	audio.md	engine/audio/mixer.h:820
+audio::VoiceDesc::directional	variable	audio	audio-voicedesc-directional	audio.md	engine/audio/mixer.h:141
+audio::VoiceDesc::direction_x	variable	audio	audio-voicedesc-direction-x	audio.md	engine/audio/mixer.h:143
+audio::VoiceDesc::direction_y	variable	audio	audio-voicedesc-direction-y	audio.md	engine/audio/mixer.h:145
+audio::VoiceDesc::direction_z	variable	audio	audio-voicedesc-direction-z	audio.md	engine/audio/mixer.h:147
+audio::VoiceDesc::spread	variable	audio	audio-voicedesc-spread	audio.md	engine/audio/mixer.h:149
+audio::VoiceDesc::lfe_send	variable	audio	audio-voicedesc-lfe-send	audio.md	engine/audio/mixer.h:152
+audio::VoiceDesc::air_coefficient	variable	audio	audio-voicedesc-air-coefficient	audio.md	engine/audio/mixer.h:154
+audio::CommandType	enum	audio	audio-commandtype	audio.md	engine/audio/mixer.h:158
+audio::CommandType::Play	enumerator	audio	audio-commandtype-play	audio.md	engine/audio/mixer.h:161
+audio::CommandType::Stop	enumerator	audio	audio-commandtype-stop	audio.md	engine/audio/mixer.h:163
+audio::CommandType::Pause	enumerator	audio	audio-commandtype-pause	audio.md	engine/audio/mixer.h:165
+audio::CommandType::Resume	enumerator	audio	audio-commandtype-resume	audio.md	engine/audio/mixer.h:167
+audio::CommandType::Seek	enumerator	audio	audio-commandtype-seek	audio.md	engine/audio/mixer.h:169
+audio::CommandType::SetGain	enumerator	audio	audio-commandtype-setgain	audio.md	engine/audio/mixer.h:171
+audio::CommandType::SetPitch	enumerator	audio	audio-commandtype-setpitch	audio.md	engine/audio/mixer.h:173
+audio::CommandType::SetPan	enumerator	audio	audio-commandtype-setpan	audio.md	engine/audio/mixer.h:175
+audio::CommandType::SetLoop	enumerator	audio	audio-commandtype-setloop	audio.md	engine/audio/mixer.h:177
+audio::CommandType::Fade	enumerator	audio	audio-commandtype-fade	audio.md	engine/audio/mixer.h:179
+audio::CommandType::SetVirtual	enumerator	audio	audio-commandtype-setvirtual	audio.md	engine/audio/mixer.h:181
+audio::CommandType::SetDirection	enumerator	audio	audio-commandtype-setdirection	audio.md	engine/audio/mixer.h:183
+audio::CommandType::SetLfeSend	enumerator	audio	audio-commandtype-setlfesend	audio.md	engine/audio/mixer.h:185
+audio::CommandType::SetAirAbsorption	enumerator	audio	audio-commandtype-setairabsorption	audio.md	engine/audio/mixer.h:187
+audio::CommandType::CreateBus	enumerator	audio	audio-commandtype-createbus	audio.md	engine/audio/mixer.h:189
+audio::CommandType::SetBusGain	enumerator	audio	audio-commandtype-setbusgain	audio.md	engine/audio/mixer.h:191
+audio::CommandType::SetBusMute	enumerator	audio	audio-commandtype-setbusmute	audio.md	engine/audio/mixer.h:193
+audio::CommandType::SetBusSolo	enumerator	audio	audio-commandtype-setbussolo	audio.md	engine/audio/mixer.h:195
+audio::CommandType::SetBusSend	enumerator	audio	audio-commandtype-setbussend	audio.md	engine/audio/mixer.h:197
+audio::CommandType::SetDuck	enumerator	audio	audio-commandtype-setduck	audio.md	engine/audio/mixer.h:199
+audio::CommandType::SetMeter	enumerator	audio	audio-commandtype-setmeter	audio.md	engine/audio/mixer.h:201
+audio::CommandType::SetVoiceBus	enumerator	audio	audio-commandtype-setvoicebus	audio.md	engine/audio/mixer.h:203
+audio::CommandType::SetVoiceSend	enumerator	audio	audio-commandtype-setvoicesend	audio.md	engine/audio/mixer.h:205
+audio::CommandType::SetLimiter	enumerator	audio	audio-commandtype-setlimiter	audio.md	engine/audio/mixer.h:207
+audio::CommandType::SetInsert	enumerator	audio	audio-commandtype-setinsert	audio.md	engine/audio/mixer.h:209
+audio::CommandType::SetEffectParams	enumerator	audio	audio-commandtype-seteffectparams	audio.md	engine/audio/mixer.h:211
+audio::Command	struct	audio	audio-command	audio.md	engine/audio/mixer.h:217
+audio::Command::stamp	variable	audio	audio-command-stamp	audio.md	engine/audio/mixer.h:220
+audio::Command::type	variable	audio	audio-command-type	audio.md	engine/audio/mixer.h:222
+audio::Command::id	variable	audio	audio-command-id	audio.md	engine/audio/mixer.h:224
+audio::Command::desc	variable	audio	audio-command-desc	audio.md	engine/audio/mixer.h:226
+audio::Command::value	variable	audio	audio-command-value	audio.md	engine/audio/mixer.h:228
+audio::Command::frames	variable	audio	audio-command-frames	audio.md	engine/audio/mixer.h:230
+audio::Command::a	variable	audio	audio-command-a	audio.md	engine/audio/mixer.h:232
+audio::Command::b	variable	audio	audio-command-b	audio.md	engine/audio/mixer.h:234
+audio::Command::value2	variable	audio	audio-command-value2	audio.md	engine/audio/mixer.h:236
+audio::Command::value3	variable	audio	audio-command-value3	audio.md	engine/audio/mixer.h:238
+audio::Command::value4	variable	audio	audio-command-value4	audio.md	engine/audio/mixer.h:240
+audio::Command::effect	variable	audio	audio-command-effect	audio.md	engine/audio/mixer.h:242
+audio::Command::params	variable	audio	audio-command-params	audio.md	engine/audio/mixer.h:244
+audio::VoiceEventType	enum	audio	audio-voiceeventtype	audio.md	engine/audio/mixer.h:248
+audio::VoiceEventType::Finished	enumerator	audio	audio-voiceeventtype-finished	audio.md	engine/audio/mixer.h:251
+audio::VoiceEventType::Looped	enumerator	audio	audio-voiceeventtype-looped	audio.md	engine/audio/mixer.h:253
+audio::VoiceEventType::Virtualised	enumerator	audio	audio-voiceeventtype-virtualised	audio.md	engine/audio/mixer.h:255
+audio::VoiceEventType::Stolen	enumerator	audio	audio-voiceeventtype-stolen	audio.md	engine/audio/mixer.h:257
+audio::VoiceEventType::Stopped	enumerator	audio	audio-voiceeventtype-stopped	audio.md	engine/audio/mixer.h:259
+audio::VoiceEventType::BusLevel	enumerator	audio	audio-voiceeventtype-buslevel	audio.md	engine/audio/mixer.h:261
+audio::VoiceEvent	struct	audio	audio-voiceevent	audio.md	engine/audio/mixer.h:267
+audio::VoiceEvent::type	variable	audio	audio-voiceevent-type	audio.md	engine/audio/mixer.h:270
+audio::VoiceEvent::id	variable	audio	audio-voiceevent-id	audio.md	engine/audio/mixer.h:272
+audio::VoiceEvent::block	variable	audio	audio-voiceevent-block	audio.md	engine/audio/mixer.h:274
+audio::VoiceEvent::peak	variable	audio	audio-voiceevent-peak	audio.md	engine/audio/mixer.h:276
+audio::VoiceEvent::rms	variable	audio	audio-voiceevent-rms	audio.md	engine/audio/mixer.h:278
+audio::MixerConfig	struct	audio	audio-mixerconfig	audio.md	engine/audio/mixer.h:284
+audio::MixerConfig::sample_rate	variable	audio	audio-mixerconfig-sample-rate	audio.md	engine/audio/mixer.h:287
+audio::MixerConfig::layout	variable	audio	audio-mixerconfig-layout	audio.md	engine/audio/mixer.h:289
+audio::MixerConfig::max_voices	variable	audio	audio-mixerconfig-max-voices	audio.md	engine/audio/mixer.h:291
+audio::MixerConfig::quality	variable	audio	audio-mixerconfig-quality	audio.md	engine/audio/mixer.h:293
+audio::MixerConfig::ramp_frames	variable	audio	audio-mixerconfig-ramp-frames	audio.md	engine/audio/mixer.h:295
+audio::MixerConfig::lead_blocks	variable	audio	audio-mixerconfig-lead-blocks	audio.md	engine/audio/mixer.h:298
+audio::MixerConfig::command_capacity	variable	audio	audio-mixerconfig-command-capacity	audio.md	engine/audio/mixer.h:300
+audio::MixerConfig::event_capacity	variable	audio	audio-mixerconfig-event-capacity	audio.md	engine/audio/mixer.h:302
+audio::MixerConfig::offline	variable	audio	audio-mixerconfig-offline	audio.md	engine/audio/mixer.h:304
+audio::MixerConfig::max_buses	variable	audio	audio-mixerconfig-max-buses	audio.md	engine/audio/mixer.h:306
+audio::MixerConfig::limiter	variable	audio	audio-mixerconfig-limiter	audio.md	engine/audio/mixer.h:309
+audio::MixerConfig::limiter_config	variable	audio	audio-mixerconfig-limiter-config	audio.md	engine/audio/mixer.h:311
+audio::MixerStats	struct	audio	audio-mixerstats	audio.md	engine/audio/mixer.h:317
+audio::MixerStats::blocks	variable	audio	audio-mixerstats-blocks	audio.md	engine/audio/mixer.h:320
+audio::MixerStats::voices_mixed	variable	audio	audio-mixerstats-voices-mixed	audio.md	engine/audio/mixer.h:322
+audio::MixerStats::voices_virtual	variable	audio	audio-mixerstats-voices-virtual	audio.md	engine/audio/mixer.h:324
+audio::MixerStats::voices_stolen	variable	audio	audio-mixerstats-voices-stolen	audio.md	engine/audio/mixer.h:326
+audio::MixerStats::voices_refused	variable	audio	audio-mixerstats-voices-refused	audio.md	engine/audio/mixer.h:328
+audio::MixerStats::voices_finished	variable	audio	audio-mixerstats-voices-finished	audio.md	engine/audio/mixer.h:330
+audio::MixerStats::commands_applied	variable	audio	audio-mixerstats-commands-applied	audio.md	engine/audio/mixer.h:332
+audio::MixerStats::late_commands	variable	audio	audio-mixerstats-late-commands	audio.md	engine/audio/mixer.h:334
+audio::MixerStats::commands_dropped	variable	audio	audio-mixerstats-commands-dropped	audio.md	engine/audio/mixer.h:336
+audio::MixerStats::events_dropped	variable	audio	audio-mixerstats-events-dropped	audio.md	engine/audio/mixer.h:338
+audio::MixerStats::limiter_min_gain	variable	audio	audio-mixerstats-limiter-min-gain	audio.md	engine/audio/mixer.h:340
+audio::Mixer	class	audio	audio-mixer	audio.md	engine/audio/mixer.h:367
+audio::Mixer::Mixer()	function	audio	audio-mixer-mixer	audio.md	engine/audio/mixer.h:370
+audio::Mixer::Mixer(const Mixer&)	function	audio	audio-mixer-mixer-const-mixer-amp	audio.md	engine/audio/mixer.h:371
+audio::Mixer::operator=(const Mixer&)	function	audio	audio-mixer-operator-eq-const-mixer-amp	audio.md	engine/audio/mixer.h:372
+audio::Mixer::Init(const MixerConfig&)	function	audio	audio-mixer-init-const-mixerconfig-amp	audio.md	engine/audio/mixer.h:379
+audio::Mixer::Play(const VoiceDesc&,VoiceId*,u64)	function	audio	audio-mixer-play-const-voicedesc-amp-voiceid-star-u64	audio.md	engine/audio/mixer.h:391
+audio::Mixer::Stop(VoiceId,u32,u64)	function	audio	audio-mixer-stop-voiceid-u32-u64	audio.md	engine/audio/mixer.h:400
+audio::Mixer::Pause(VoiceId,u64)	function	audio	audio-mixer-pause-voiceid-u64	audio.md	engine/audio/mixer.h:408
+audio::Mixer::Resume(VoiceId,u64)	function	audio	audio-mixer-resume-voiceid-u64	audio.md	engine/audio/mixer.h:416
+audio::Mixer::Seek(VoiceId,u64,u64)	function	audio	audio-mixer-seek-voiceid-u64-u64	audio.md	engine/audio/mixer.h:425
+audio::Mixer::SetGain(VoiceId,f32,u64)	function	audio	audio-mixer-setgain-voiceid-f32-u64	audio.md	engine/audio/mixer.h:434
+audio::Mixer::SetPan(VoiceId,f32,u64)	function	audio	audio-mixer-setpan-voiceid-f32-u64	audio.md	engine/audio/mixer.h:443
+audio::Mixer::SetPitch(VoiceId,f32,u64)	function	audio	audio-mixer-setpitch-voiceid-f32-u64	audio.md	engine/audio/mixer.h:452
+audio::Mixer::SetLoop(VoiceId,bool,u64)	function	audio	audio-mixer-setloop-voiceid-bool-u64	audio.md	engine/audio/mixer.h:461
+audio::Mixer::Fade(VoiceId,f32,u32,u64)	function	audio	audio-mixer-fade-voiceid-f32-u32-u64	audio.md	engine/audio/mixer.h:471
+audio::Mixer::SetVirtual(VoiceId,bool,u64)	function	audio	audio-mixer-setvirtual-voiceid-bool-u64	audio.md	engine/audio/mixer.h:480
+audio::Mixer::SetDirection(VoiceId,f32,f32,f32,f32,u64)	function	audio	audio-mixer-setdirection-voiceid-f32-f32-f32-f32-u64	audio.md	engine/audio/mixer.h:493
+audio::Mixer::SetLfeSend(VoiceId,f32,u64)	function	audio	audio-mixer-setlfesend-voiceid-f32-u64	audio.md	engine/audio/mixer.h:502
+audio::Mixer::SetAirAbsorption(VoiceId,f32,u64)	function	audio	audio-mixer-setairabsorption-voiceid-f32-u64	audio.md	engine/audio/mixer.h:512
+audio::Mixer::IsPlaying(VoiceId)	function	audio	audio-mixer-isplaying-voiceid	audio.md	engine/audio/mixer.h:520
+audio::Mixer::PollEvents(VoiceEvent*,u32)	function	audio	audio-mixer-pollevents-voiceevent-star-u32	audio.md	engine/audio/mixer.h:529
+audio::Mixer::SetWatermark(u64)	function	audio	audio-mixer-setwatermark-u64	audio.md	engine/audio/mixer.h:535
+audio::Mixer::CreateBus(StringView,BusId,BusId*,u64)	function	audio	audio-mixer-createbus-stringview-busid-busid-star-u64	audio.md	engine/audio/mixer.h:547
+audio::Mixer::FindBus(StringView) const	function	audio	audio-mixer-findbus-stringview-const	audio.md	engine/audio/mixer.h:554
+audio::Mixer::SetBusGain(BusId,f32,u64)	function	audio	audio-mixer-setbusgain-busid-f32-u64	audio.md	engine/audio/mixer.h:563
+audio::Mixer::SetBusMute(BusId,bool,u64)	function	audio	audio-mixer-setbusmute-busid-bool-u64	audio.md	engine/audio/mixer.h:572
+audio::Mixer::SetBusSolo(BusId,bool,u64)	function	audio	audio-mixer-setbussolo-busid-bool-u64	audio.md	engine/audio/mixer.h:582
+audio::Mixer::SetBusSend(BusId,u32,BusId,f32,bool,u64)	function	audio	audio-mixer-setbussend-busid-u32-busid-f32-bool-u64	audio.md	engine/audio/mixer.h:594
+audio::Mixer::SetDuck(BusId,BusId,f32,f32,f32,u64)	function	audio	audio-mixer-setduck-busid-busid-f32-f32-f32-u64	audio.md	engine/audio/mixer.h:607
+audio::Mixer::SetMeter(BusId,bool,u64)	function	audio	audio-mixer-setmeter-busid-bool-u64	audio.md	engine/audio/mixer.h:616
+audio::Mixer::SetVoiceBus(VoiceId,BusId,u64)	function	audio	audio-mixer-setvoicebus-voiceid-busid-u64	audio.md	engine/audio/mixer.h:625
+audio::Mixer::SetVoiceSend(VoiceId,BusId,f32,u64)	function	audio	audio-mixer-setvoicesend-voiceid-busid-f32-u64	audio.md	engine/audio/mixer.h:635
+audio::Mixer::SetInsert(BusId,u32,UniquePtr<Effect>,u64)	function	audio	audio-mixer-setinsert-busid-u32-uniqueptr-lt-effect-gt-u64	audio.md	engine/audio/mixer.h:648
+audio::Mixer::ClearInsert(BusId,u32,u64)	function	audio	audio-mixer-clearinsert-busid-u32-u64	audio.md	engine/audio/mixer.h:657
+audio::Mixer::SetInsertParams(BusId,u32,const EffectParams&,u64)	function	audio	audio-mixer-setinsertparams-busid-u32-const-effectparams-amp-u64	audio.md	engine/audio/mixer.h:667
+audio::Mixer::SetLimiter(bool,u64)	function	audio	audio-mixer-setlimiter-bool-u64	audio.md	engine/audio/mixer.h:675
+audio::Mixer::Position(VoiceId,f64*) const	function	audio	audio-mixer-position-voiceid-f64-star-const	audio.md	engine/audio/mixer.h:684
+audio::Mixer::Reconfigure(u32,ChannelLayout)	function	audio	audio-mixer-reconfigure-u32-channellayout	audio.md	engine/audio/mixer.h:699
+audio::Mixer::RenderBlock(Span<f32>)	function	audio	audio-mixer-renderblock-span-lt-f32-gt	audio.md	engine/audio/mixer.h:707
+audio::Mixer::TryRenderBlock(Span<f32>)	function	audio	audio-mixer-tryrenderblock-span-lt-f32-gt	audio.md	engine/audio/mixer.h:715
+audio::Mixer::Render(f32*,u32)	function	audio	audio-mixer-render-f32-star-u32	audio.md	engine/audio/mixer.h:725
+audio::Mixer::NextBlock() const	function	audio	audio-mixer-nextblock-const	audio.md	engine/audio/mixer.h:728
+audio::Mixer::Channels() const	function	audio	audio-mixer-channels-const	audio.md	engine/audio/mixer.h:731
+audio::Mixer::Config() const	function	audio	audio-mixer-config-const	audio.md	engine/audio/mixer.h:734
+audio::Mixer::Stats() const	function	audio	audio-mixer-stats-const	audio.md	engine/audio/mixer.h:737
+audio::Mixer::VoiceCount() const	function	audio	audio-mixer-voicecount-const	audio.md	engine/audio/mixer.h:740
+audio::Mixer::kAtLead	variable	audio	audio-mixer-katlead	audio.md	engine/audio/mixer.h:743
+audio::Mixer::kRampFrames	variable	audio	audio-mixer-krampframes	audio.md	engine/audio/mixer.h:745
+audio::MixerConfigFromSettings(const AudioSettings&,u32)	function	audio	audio-mixerconfigfromsettings-const-audiosettings-amp-u32	audio.md	engine/audio/mixer.h:898
+audio::kMaxPanChannels	variable	audio	audio-kmaxpanchannels	audio.md	engine/audio/panning.h:12
+audio::SpeakerGains(ChannelLayout,f32,f32,f32,f32,f32*)	function	audio	audio-speakergains-channellayout-f32-f32-f32-f32-f32-star	audio.md	engine/audio/panning.h:30
 audio::PcmFormat	enum	audio	audio-pcmformat	audio.md	engine/audio/pcm_negotiate.h:12
 audio::PcmFormat::F32	enumerator	audio	audio-pcmformat-f32	audio.md	engine/audio/pcm_negotiate.h:15
 audio::PcmFormat::S32	enumerator	audio	audio-pcmformat-s32	audio.md	engine/audio/pcm_negotiate.h:17
@@ -4948,6 +5038,40 @@ audio::MeasureBlock(Span<const f32>)	function	audio	audio-measureblock-span-lt-c
 audio::Summarize(Span<const f32>,usize,usize)	function	audio	audio-summarize-span-lt-const-f32-gt-usize-usize	audio.md	engine/audio/render_compare.h:85
 audio::CompareSamples(Span<const f32>,Span<const f32>,const RenderTolerance&)	function	audio	audio-comparesamples-span-lt-const-f32-gt-span-lt-const-f32-gt-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:96
 audio::CompareSummaries(const RenderSummary&,const RenderSummary&,const RenderTolerance&)	function	audio	audio-comparesummaries-const-rendersummary-amp-const-rendersummary-amp-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:107
+audio::SpatialAudioConfig	struct	audio	audio-spatialaudioconfig	audio.md	engine/audio/spatial_audio.h:20
+audio::SpatialAudioConfig::max_real_voices	variable	audio	audio-spatialaudioconfig-max-real-voices	audio.md	engine/audio/spatial_audio.h:23
+audio::SpatialAudioConfig::audibility_threshold	variable	audio	audio-spatialaudioconfig-audibility-threshold	audio.md	engine/audio/spatial_audio.h:25
+audio::SpatialAudioConfig::stop_fade_frames	variable	audio	audio-spatialaudioconfig-stop-fade-frames	audio.md	engine/audio/spatial_audio.h:27
+audio::SpatialAudioConfig::speed_of_sound	variable	audio	audio-spatialaudioconfig-speed-of-sound	audio.md	engine/audio/spatial_audio.h:29
+audio::SpatialAudioConfig::doppler_factor	variable	audio	audio-spatialaudioconfig-doppler-factor	audio.md	engine/audio/spatial_audio.h:31
+audio::SpatialAudioConfig::air_absorption_factor	variable	audio	audio-spatialaudioconfig-air-absorption-factor	audio.md	engine/audio/spatial_audio.h:33
+audio::SpatialAudioConfig::teleport_distance	variable	audio	audio-spatialaudioconfig-teleport-distance	audio.md	engine/audio/spatial_audio.h:35
+audio::ListenerState	struct	audio	audio-listenerstate	audio.md	engine/audio/spatial_audio.h:41
+audio::ListenerState::valid	variable	audio	audio-listenerstate-valid	audio.md	engine/audio/spatial_audio.h:44
+audio::ListenerState::position	variable	audio	audio-listenerstate-position	audio.md	engine/audio/spatial_audio.h:46
+audio::ListenerState::forward	variable	audio	audio-listenerstate-forward	audio.md	engine/audio/spatial_audio.h:48
+audio::ListenerState::right	variable	audio	audio-listenerstate-right	audio.md	engine/audio/spatial_audio.h:50
+audio::ListenerState::up	variable	audio	audio-listenerstate-up	audio.md	engine/audio/spatial_audio.h:52
+audio::ListenerState::velocity	variable	audio	audio-listenerstate-velocity	audio.md	engine/audio/spatial_audio.h:54
+audio::ListenerState::gain	variable	audio	audio-listenerstate-gain	audio.md	engine/audio/spatial_audio.h:56
+audio::SpatialAudioReport	struct	audio	audio-spatialaudioreport	audio.md	engine/audio/spatial_audio.h:62
+audio::SpatialAudioReport::emitters	variable	audio	audio-spatialaudioreport-emitters	audio.md	engine/audio/spatial_audio.h:65
+audio::SpatialAudioReport::audible	variable	audio	audio-spatialaudioreport-audible	audio.md	engine/audio/spatial_audio.h:67
+audio::SpatialAudioReport::real	variable	audio	audio-spatialaudioreport-real	audio.md	engine/audio/spatial_audio.h:69
+audio::SpatialAudioReport::started	variable	audio	audio-spatialaudioreport-started	audio.md	engine/audio/spatial_audio.h:71
+audio::SpatialAudioReport::stopped	variable	audio	audio-spatialaudioreport-stopped	audio.md	engine/audio/spatial_audio.h:73
+audio::SpatialAudioReport::moved	variable	audio	audio-spatialaudioreport-moved	audio.md	engine/audio/spatial_audio.h:75
+audio::SpatialAudioReport::commands	variable	audio	audio-spatialaudioreport-commands	audio.md	engine/audio/spatial_audio.h:77
+audio::SpatialAudio	class	audio	audio-spatialaudio	audio.md	engine/audio/spatial_audio.h:88
+audio::SpatialAudio::SpatialAudio()	function	audio	audio-spatialaudio-spatialaudio	audio.md	engine/audio/spatial_audio.h:94
+audio::SpatialAudio::Init(Mixer*,const SpatialAudioConfig&)	function	audio	audio-spatialaudio-init-mixer-star-const-spatialaudioconfig-amp	audio.md	engine/audio/spatial_audio.h:102
+audio::SpatialAudio::Update(ecs::World&,f32)	function	audio	audio-spatialaudio-update-ecs-world-amp-f32	audio.md	engine/audio/spatial_audio.h:109
+audio::SpatialAudio::VoiceOf(ecs::Entity) const	function	audio	audio-spatialaudio-voiceof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:115
+audio::SpatialAudio::Listener() const	function	audio	audio-spatialaudio-listener-const	audio.md	engine/audio/spatial_audio.h:120
+audio::SpatialAudio::Report() const	function	audio	audio-spatialaudio-report-const	audio.md	engine/audio/spatial_audio.h:125
+audio::SpatialAudio::IsAudible(ecs::Entity) const	function	audio	audio-spatialaudio-isaudible-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:131
+audio::SpatialAudio::PitchOf(ecs::Entity) const	function	audio	audio-spatialaudio-pitchof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:137
+audio::SpatialAudio::IsReal(ecs::Entity) const	function	audio	audio-spatialaudio-isreal-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:143
 audio::WavStatus	enum	audio	audio-wavstatus	audio.md	engine/audio/wav.h:19
 audio::WavStatus::Ok	enumerator	audio	audio-wavstatus-ok	audio.md	engine/audio/wav.h:22
 audio::WavStatus::TooShort	enumerator	audio	audio-wavstatus-tooshort	audio.md	engine/audio/wav.h:24
