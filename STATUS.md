@@ -13,6 +13,8 @@ transforms, camera and render sync) shows random boxes, spheres and capsules fal
 `physics_demo_screenshot` (label `gpu;demo`). Built clean in unity and `-DENGINE_UNITY_BUILD=OFF`; gates (module_deps, std_usage, platform_neutral,
 phase labels) pass. Windows/Mac builds of it not yet run.
 
+**Phase 27 (scripting) planned (2026-11-17):** 34 day files under `plans/phase-27-scripting/` (Days 444-477): multithreaded LuaJIT scripting (partitioned states on the job scheduler, command buffers, ordered merge, bit-identical at any thread count), latent waits, events, parallel tasks from Lua, sandbox, minted assets, hot reload, debugging, physics/audio/input bindings, persistence and replay, a second backend, the C API, a scripted demo. Phase 28 (3D text) moved to Days 478-493. Nothing started; `CURRENT_PHASE` is 26 and Phase 26's Day 441 (Mac) and Phase 26's close are still open; the next day is 444 once Phase 26 is closed.
+
 ## Build and test commands
 
 What to install first, per platform: `BUILD.md`.

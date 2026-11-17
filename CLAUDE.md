@@ -387,7 +387,7 @@ table in `PLAN.md`.
   rasterization only — text shaping for complex scripts (HarfBuzz's
   domain) is explicitly out of scope until a real need shows up; cursor/
   line-break positions instead reuse the foundation string module's
-  existing grapheme clustering. **libpng and zlib are vendored (first for the glTF importer in `asset_mint`, Phase 22 Day 338, then enabled in FreeType on Phase 28 Day 455)** (the user's decision, 2026-11-10), used only by FreeType
+  existing grapheme clustering. **libpng and zlib are vendored (first for the glTF importer in `asset_mint`, Phase 22 Day 338, then enabled in FreeType on Phase 28 Day 489)** (the user's decision, 2026-11-10), used only by FreeType
   to decode the PNG strikes of `CBDT`/`sbix` colored-glyph fonts; no engine file includes their headers.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
   starting with Lua via LuaJIT** (Phase 27). Deliberate, individually
@@ -424,6 +424,7 @@ table in `PLAN.md`.
   the committed outputs. Don't add GLSL or hand-written SPIR-V. DX12 and
   Metal output comes from the same Slang sources in Phases 13 and 21 (note
   the clip-space Y flip and Metal's `main` rename in `shaders/README.md`).
+- **Scripting is multithreaded by design** (Phase 27, `engine/script`; planned, not built yet; `PLAN.md` assumption #13): gameplay scripts run in `P` partitions on the job scheduler, each partition owning one Lua state that exactly one job uses at a time; no Lua object crosses a state (only `Value` copies do); scripts read the world as of the tick start and change it only through per-partition command buffers merged in a fixed order at sync points; events deliver at sync points; parallel work from scripts is `task.*` over pure task states; a script never blocks a thread (waits are coroutines on the simulation clock). The world state must be identical for any thread count: **do not add a script binding that reads or writes engine state outside this model, that blocks, or that keeps a pointer into a state**; mark every binding `pure`, `world-read`, `world-write` or `main-thread-only`. LuaJIT is vendored under `third_party/luajit/` and included only by `engine/script/luajit/` (a gate); scripts are untrusted input (whitelist environment, instruction/time/memory budgets).
 - **Debugging facilities are built on existing libraries** (Phase 7): libbacktrace (stack traces and symbols) and
   sentry-native 0.17.6 with its Breakpad backend and **no upload** (`none` transport, crash capture and minidumps only) - a
   deliberate, individually justified exception chosen by spike (`PLAN.md` assumption #20,
