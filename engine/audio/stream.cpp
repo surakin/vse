@@ -645,7 +645,13 @@ StreamPump::StreamPump(jobs::Scheduler& scheduler)
 {
 }
 
-StreamPump::~StreamPump() = default;
+StreamPump::~StreamPump()
+{
+    if (counter_)
+    {
+        scheduler_->HelpUntil(*counter_);
+    }
+}
 
 void StreamPump::Add(const StreamBufferPtr& buffer)
 {
