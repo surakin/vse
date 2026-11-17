@@ -4,6 +4,9 @@ set(AUDIO_TEST_SOURCES
   block_hash_test.cpp  # Day 415
   render_compare_test.cpp  # Day 415
   repeatable_render_test.cpp  # Day 415
+  format_test.cpp  # Day 416
+  convert_test.cpp  # Day 416
+  clip_test.cpp  # Day 416
 )
 
 find_package(Threads REQUIRED)

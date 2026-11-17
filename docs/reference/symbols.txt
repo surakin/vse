@@ -4479,42 +4479,136 @@ physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-mesh
 physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:771
 physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:778
 physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:785
-audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:20
-audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:24
-audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:27
-audio::BlockHasher::kPrime	variable	audio	audio-blockhasher-kprime	audio.md	engine/audio/block_hash.h:29
-audio::BlockHasher::AddSample(f32)	function	audio	audio-blockhasher-addsample-f32	audio.md	engine/audio/block_hash.h:34
-audio::BlockHasher::AddBlock(Span<const f32>)	function	audio	audio-blockhasher-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:39
-audio::BlockHasher::Value() const	function	audio	audio-blockhasher-value-const	audio.md	engine/audio/block_hash.h:42
-audio::BlockHasher::Valid() const	function	audio	audio-blockhasher-valid-const	audio.md	engine/audio/block_hash.h:47
-audio::RenderHash	class	audio	audio-renderhash	audio.md	engine/audio/block_hash.h:61
-audio::RenderHash::AddBlock(Span<const f32>)	function	audio	audio-renderhash-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:67
-audio::RenderHash::Value() const	function	audio	audio-renderhash-value-const	audio.md	engine/audio/block_hash.h:75
-audio::RenderHash::Valid() const	function	audio	audio-renderhash-valid-const	audio.md	engine/audio/block_hash.h:80
-audio::RenderHash::Blocks() const	function	audio	audio-renderhash-blocks-const	audio.md	engine/audio/block_hash.h:83
-audio::RenderHash::Samples() const	function	audio	audio-renderhash-samples-const	audio.md	engine/audio/block_hash.h:86
-audio::HashBlock(Span<const f32>,bool*)	function	audio	audio-hashblock-span-lt-const-f32-gt-bool-star	audio.md	engine/audio/block_hash.h:101
-audio::AudioClipPtr	alias	audio	audio-audioclipptr	audio.md	engine/audio/clip.h:13
-audio::AudioClipConstPtr	alias	audio	audio-audioclipconstptr	audio.md	engine/audio/clip.h:15
-audio::RenderTolerance	struct	audio	audio-rendertolerance	audio.md	engine/audio/render_compare.h:17
-audio::RenderTolerance::max_abs_error	variable	audio	audio-rendertolerance-max-abs-error	audio.md	engine/audio/render_compare.h:20
-audio::RenderTolerance::rms_error_db	variable	audio	audio-rendertolerance-rms-error-db	audio.md	engine/audio/render_compare.h:22
-audio::BlockStats	struct	audio	audio-blockstats	audio.md	engine/audio/render_compare.h:28
-audio::BlockStats::rms	variable	audio	audio-blockstats-rms	audio.md	engine/audio/render_compare.h:31
-audio::BlockStats::peak	variable	audio	audio-blockstats-peak	audio.md	engine/audio/render_compare.h:33
-audio::RenderSummary	struct	audio	audio-rendersummary	audio.md	engine/audio/render_compare.h:40
-audio::RenderSummary::blocks	variable	audio	audio-rendersummary-blocks	audio.md	engine/audio/render_compare.h:43
-audio::RenderSummary::probes	variable	audio	audio-rendersummary-probes	audio.md	engine/audio/render_compare.h:45
-audio::RenderSummary::sample_count	variable	audio	audio-rendersummary-sample-count	audio.md	engine/audio/render_compare.h:47
-audio::CompareResult	struct	audio	audio-compareresult	audio.md	engine/audio/render_compare.h:53
-audio::CompareResult::equal	variable	audio	audio-compareresult-equal	audio.md	engine/audio/render_compare.h:56
-audio::CompareResult::shape_differs	variable	audio	audio-compareresult-shape-differs	audio.md	engine/audio/render_compare.h:58
-audio::CompareResult::max_abs_error	variable	audio	audio-compareresult-max-abs-error	audio.md	engine/audio/render_compare.h:60
-audio::CompareResult::rms_error_db	variable	audio	audio-compareresult-rms-error-db	audio.md	engine/audio/render_compare.h:62
-audio::MeasureBlock(Span<const f32>)	function	audio	audio-measureblock-span-lt-const-f32-gt	audio.md	engine/audio/render_compare.h:70
-audio::Summarize(Span<const f32>,usize,usize)	function	audio	audio-summarize-span-lt-const-f32-gt-usize-usize	audio.md	engine/audio/render_compare.h:80
-audio::CompareSamples(Span<const f32>,Span<const f32>,const RenderTolerance&)	function	audio	audio-comparesamples-span-lt-const-f32-gt-span-lt-const-f32-gt-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:90
-audio::CompareSummaries(const RenderSummary&,const RenderSummary&,const RenderTolerance&)	function	audio	audio-comparesummaries-const-rendersummary-amp-const-rendersummary-amp-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:100
+audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:22
+audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:26
+audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:29
+audio::BlockHasher::kPrime	variable	audio	audio-blockhasher-kprime	audio.md	engine/audio/block_hash.h:31
+audio::BlockHasher::AddSample(f32)	function	audio	audio-blockhasher-addsample-f32	audio.md	engine/audio/block_hash.h:36
+audio::BlockHasher::AddBlock(Span<const f32>)	function	audio	audio-blockhasher-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:41
+audio::BlockHasher::Value() const	function	audio	audio-blockhasher-value-const	audio.md	engine/audio/block_hash.h:44
+audio::BlockHasher::Valid() const	function	audio	audio-blockhasher-valid-const	audio.md	engine/audio/block_hash.h:49
+audio::RenderHash	class	audio	audio-renderhash	audio.md	engine/audio/block_hash.h:63
+audio::RenderHash::AddBlock(Span<const f32>)	function	audio	audio-renderhash-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:69
+audio::RenderHash::Value() const	function	audio	audio-renderhash-value-const	audio.md	engine/audio/block_hash.h:77
+audio::RenderHash::Valid() const	function	audio	audio-renderhash-valid-const	audio.md	engine/audio/block_hash.h:82
+audio::RenderHash::Blocks() const	function	audio	audio-renderhash-blocks-const	audio.md	engine/audio/block_hash.h:85
+audio::RenderHash::Samples() const	function	audio	audio-renderhash-samples-const	audio.md	engine/audio/block_hash.h:88
+audio::HashBlock(Span<const f32>,bool*)	function	audio	audio-hashblock-span-lt-const-f32-gt-bool-star	audio.md	engine/audio/block_hash.h:103
+audio::AudioClipPtr	alias	audio	audio-audioclipptr	audio.md	engine/audio/clip.h:17
+audio::AudioClipConstPtr	alias	audio	audio-audioclipconstptr	audio.md	engine/audio/clip.h:19
+audio::ClipStatus	enum	audio	audio-clipstatus	audio.md	engine/audio/clip.h:24
+audio::ClipStatus::Ok	enumerator	audio	audio-clipstatus-ok	audio.md	engine/audio/clip.h:27
+audio::ClipStatus::BadFormat	enumerator	audio	audio-clipstatus-badformat	audio.md	engine/audio/clip.h:29
+audio::ClipStatus::BadFrameCount	enumerator	audio	audio-clipstatus-badframecount	audio.md	engine/audio/clip.h:31
+audio::ClipStatus::TooShort	enumerator	audio	audio-clipstatus-tooshort	audio.md	engine/audio/clip.h:33
+audio::ClipStatus::Misaligned	enumerator	audio	audio-clipstatus-misaligned	audio.md	engine/audio/clip.h:35
+audio::ClipStatus::BadLoop	enumerator	audio	audio-clipstatus-badloop	audio.md	engine/audio/clip.h:37
+audio::ClipStatus::NotFinite	enumerator	audio	audio-clipstatus-notfinite	audio.md	engine/audio/clip.h:39
+audio::ClipStatus::OutOfMemory	enumerator	audio	audio-clipstatus-outofmemory	audio.md	engine/audio/clip.h:41
+audio::kMaxClipFrames	variable	audio	audio-kmaxclipframes	audio.md	engine/audio/clip.h:46
+audio::ClipDesc	struct	audio	audio-clipdesc	audio.md	engine/audio/clip.h:51
+audio::ClipDesc::format	variable	audio	audio-clipdesc-format	audio.md	engine/audio/clip.h:54
+audio::ClipDesc::frame_count	variable	audio	audio-clipdesc-frame-count	audio.md	engine/audio/clip.h:56
+audio::ClipDesc::loop_start	variable	audio	audio-clipdesc-loop-start	audio.md	engine/audio/clip.h:58
+audio::ClipDesc::loop_end	variable	audio	audio-clipdesc-loop-end	audio.md	engine/audio/clip.h:61
+audio::ClipView	struct	audio	audio-clipview	audio.md	engine/audio/clip.h:69
+audio::ClipView::desc	variable	audio	audio-clipview-desc	audio.md	engine/audio/clip.h:72
+audio::ClipView::samples	variable	audio	audio-clipview-samples	audio.md	engine/audio/clip.h:74
+audio::ClipView::Frames() const	function	audio	audio-clipview-frames-const	audio.md	engine/audio/clip.h:77
+audio::ClipView::Channels() const	function	audio	audio-clipview-channels-const	audio.md	engine/audio/clip.h:80
+audio::ClipView::Frame(u64) const	function	audio	audio-clipview-frame-u64-const	audio.md	engine/audio/clip.h:87
+audio::ClipView::Duration() const	function	audio	audio-clipview-duration-const	audio.md	engine/audio/clip.h:95
+audio::ClipView::HasLoop() const	function	audio	audio-clipview-hasloop-const	audio.md	engine/audio/clip.h:100
+audio::MakeClipView(const ClipDesc&,ByteSpan,ClipView*)	function	audio	audio-makeclipview-const-clipdesc-amp-bytespan-clipview-star	audio.md	engine/audio/clip.h:114
+audio::AudioClip	class	audio	audio-audioclip	audio.md	engine/audio/clip.h:124
+audio::AudioClip::Create(const ClipDesc&,SharedBytesPtr,usize,StringView,AudioClipPtr*)	function	audio	audio-audioclip-create-const-clipdesc-amp-sharedbytesptr-usize-stringview-audioclipptr-star	audio.md	engine/audio/clip.h:138
+audio::AudioClip::CreateCopy(const ClipDesc&,Span<const f32>,StringView,AudioClipPtr*)	function	audio	audio-audioclip-createcopy-const-clipdesc-amp-span-lt-const-f32-gt-stringview-audioclipptr-star	audio.md	engine/audio/clip.h:151
+audio::AudioClip::View() const	function	audio	audio-audioclip-view-const	audio.md	engine/audio/clip.h:157
+audio::AudioClip::Desc() const	function	audio	audio-audioclip-desc-const	audio.md	engine/audio/clip.h:160
+audio::AudioClip::Format() const	function	audio	audio-audioclip-format-const	audio.md	engine/audio/clip.h:163
+audio::AudioClip::Frames() const	function	audio	audio-audioclip-frames-const	audio.md	engine/audio/clip.h:166
+audio::AudioClip::Duration() const	function	audio	audio-audioclip-duration-const	audio.md	engine/audio/clip.h:169
+audio::AudioClip::ByteSize() const	function	audio	audio-audioclip-bytesize-const	audio.md	engine/audio/clip.h:172
+audio::AudioClip::Name() const	function	audio	audio-audioclip-name-const	audio.md	engine/audio/clip.h:175
+audio::AudioClip::Bytes() const	function	audio	audio-audioclip-bytes-const	audio.md	engine/audio/clip.h:180
+audio::AudioClip::Offset() const	function	audio	audio-audioclip-offset-const	audio.md	engine/audio/clip.h:183
+audio::AudioClip::AudioClip(const AudioClip&)	function	audio	audio-audioclip-audioclip-const-audioclip-amp	audio.md	engine/audio/clip.h:185
+audio::AudioClip::operator=(const AudioClip&)	function	audio	audio-audioclip-operator-eq-const-audioclip-amp	audio.md	engine/audio/clip.h:186
+audio::AudioClip::AudioClip(const ClipDesc&,SharedBytesPtr,usize,StringView)	function	audio	audio-audioclip-audioclip-const-clipdesc-amp-sharedbytesptr-usize-stringview	audio.md	engine/audio/clip.h:189
+audio::kDownmixGain	variable	audio	audio-kdownmixgain	audio.md	engine/audio/convert.h:13
+audio::U8ToF32(u8)	function	audio	audio-u8tof32-u8	audio.md	engine/audio/convert.h:21
+audio::S16ToF32(i16)	function	audio	audio-s16tof32-i16	audio.md	engine/audio/convert.h:23
+audio::S24ToF32(i32)	function	audio	audio-s24tof32-i32	audio.md	engine/audio/convert.h:25
+audio::S32ToF32(i32)	function	audio	audio-s32tof32-i32	audio.md	engine/audio/convert.h:27
+audio::F32ToU8(f32)	function	audio	audio-f32tou8-f32	audio.md	engine/audio/convert.h:35
+audio::F32ToS16(f32)	function	audio	audio-f32tos16-f32	audio.md	engine/audio/convert.h:37
+audio::F32ToS24(f32)	function	audio	audio-f32tos24-f32	audio.md	engine/audio/convert.h:39
+audio::F32ToS32(f32)	function	audio	audio-f32tos32-f32	audio.md	engine/audio/convert.h:41
+audio::ConvertToF32(SampleFormat,ByteSpan,Span<f32>)	function	audio	audio-converttof32-sampleformat-bytespan-span-lt-f32-gt	audio.md	engine/audio/convert.h:52
+audio::ConvertFromF32(SampleFormat,Span<const f32>,MutableByteSpan)	function	audio	audio-convertfromf32-sampleformat-span-lt-const-f32-gt-mutablebytespan	audio.md	engine/audio/convert.h:63
+audio::Interleave(Span<const f32>,Span<f32>,u32)	function	audio	audio-interleave-span-lt-const-f32-gt-span-lt-f32-gt-u32	audio.md	engine/audio/convert.h:74
+audio::Deinterleave(Span<const f32>,Span<f32>,u32)	function	audio	audio-deinterleave-span-lt-const-f32-gt-span-lt-f32-gt-u32	audio.md	engine/audio/convert.h:85
+audio::ChannelMatrix	struct	audio	audio-channelmatrix	audio.md	engine/audio/convert.h:90
+audio::ChannelMatrix::inputs	variable	audio	audio-channelmatrix-inputs	audio.md	engine/audio/convert.h:93
+audio::ChannelMatrix::outputs	variable	audio	audio-channelmatrix-outputs	audio.md	engine/audio/convert.h:95
+audio::ChannelMatrix::gain	variable	audio	audio-channelmatrix-gain	audio.md	engine/audio/convert.h:97
+audio::BuildChannelMatrix(ChannelLayout,ChannelLayout)	function	audio	audio-buildchannelmatrix-channellayout-channellayout	audio.md	engine/audio/convert.h:112
+audio::ApplyChannelMatrix(const ChannelMatrix&,Span<const f32>,Span<f32>,usize)	function	audio	audio-applychannelmatrix-const-channelmatrix-amp-span-lt-const-f32-gt-span-lt-f32-gt-usize	audio.md	engine/audio/convert.h:124
+audio::kMinSampleRate	variable	audio	audio-kminsamplerate	audio.md	engine/audio/format.h:10
+audio::kMaxSampleRate	variable	audio	audio-kmaxsamplerate	audio.md	engine/audio/format.h:12
+audio::kMaxChannels	variable	audio	audio-kmaxchannels	audio.md	engine/audio/format.h:14
+audio::SampleFormat	enum	audio	audio-sampleformat	audio.md	engine/audio/format.h:19
+audio::SampleFormat::U8	enumerator	audio	audio-sampleformat-u8	audio.md	engine/audio/format.h:22
+audio::SampleFormat::S16	enumerator	audio	audio-sampleformat-s16	audio.md	engine/audio/format.h:24
+audio::SampleFormat::S24	enumerator	audio	audio-sampleformat-s24	audio.md	engine/audio/format.h:26
+audio::SampleFormat::S32	enumerator	audio	audio-sampleformat-s32	audio.md	engine/audio/format.h:28
+audio::SampleFormat::F32	enumerator	audio	audio-sampleformat-f32	audio.md	engine/audio/format.h:30
+audio::Speaker	enum	audio	audio-speaker	audio.md	engine/audio/format.h:36
+audio::Speaker::FrontLeft	enumerator	audio	audio-speaker-frontleft	audio.md	engine/audio/format.h:39
+audio::Speaker::FrontRight	enumerator	audio	audio-speaker-frontright	audio.md	engine/audio/format.h:41
+audio::Speaker::FrontCenter	enumerator	audio	audio-speaker-frontcenter	audio.md	engine/audio/format.h:43
+audio::Speaker::Lfe	enumerator	audio	audio-speaker-lfe	audio.md	engine/audio/format.h:45
+audio::Speaker::BackLeft	enumerator	audio	audio-speaker-backleft	audio.md	engine/audio/format.h:47
+audio::Speaker::BackRight	enumerator	audio	audio-speaker-backright	audio.md	engine/audio/format.h:49
+audio::Speaker::SideLeft	enumerator	audio	audio-speaker-sideleft	audio.md	engine/audio/format.h:51
+audio::Speaker::SideRight	enumerator	audio	audio-speaker-sideright	audio.md	engine/audio/format.h:53
+audio::ChannelLayout	enum	audio	audio-channellayout	audio.md	engine/audio/format.h:59
+audio::ChannelLayout::Mono	enumerator	audio	audio-channellayout-mono	audio.md	engine/audio/format.h:62
+audio::ChannelLayout::Stereo	enumerator	audio	audio-channellayout-stereo	audio.md	engine/audio/format.h:64
+audio::ChannelLayout::Quad	enumerator	audio	audio-channellayout-quad	audio.md	engine/audio/format.h:66
+audio::ChannelLayout::Surround51	enumerator	audio	audio-channellayout-surround51	audio.md	engine/audio/format.h:68
+audio::ChannelLayout::Surround71	enumerator	audio	audio-channellayout-surround71	audio.md	engine/audio/format.h:70
+audio::AudioFormat	struct	audio	audio-audioformat	audio.md	engine/audio/format.h:76
+audio::AudioFormat::sample_rate	variable	audio	audio-audioformat-sample-rate	audio.md	engine/audio/format.h:79
+audio::AudioFormat::layout	variable	audio	audio-audioformat-layout	audio.md	engine/audio/format.h:81
+audio::AudioFormat::format	variable	audio	audio-audioformat-format	audio.md	engine/audio/format.h:83
+audio::BytesPerSample(SampleFormat)	function	audio	audio-bytespersample-sampleformat	audio.md	engine/audio/format.h:91
+audio::ChannelCount(ChannelLayout)	function	audio	audio-channelcount-channellayout	audio.md	engine/audio/format.h:98
+audio::SpeakerOf(ChannelLayout,u32)	function	audio	audio-speakerof-channellayout-u32	audio.md	engine/audio/format.h:107
+audio::SpeakerName(Speaker)	function	audio	audio-speakername-speaker	audio.md	engine/audio/format.h:115
+audio::ChannelName(ChannelLayout,u32)	function	audio	audio-channelname-channellayout-u32	audio.md	engine/audio/format.h:125
+audio::LayoutName(ChannelLayout)	function	audio	audio-layoutname-channellayout	audio.md	engine/audio/format.h:133
+audio::FrameBytes(const AudioFormat&)	function	audio	audio-framebytes-const-audioformat-amp	audio.md	engine/audio/format.h:140
+audio::IsValid(const AudioFormat&)	function	audio	audio-isvalid-const-audioformat-amp	audio.md	engine/audio/format.h:148
+audio::RenderTolerance	struct	audio	audio-rendertolerance	audio.md	engine/audio/render_compare.h:18
+audio::RenderTolerance::max_abs_error	variable	audio	audio-rendertolerance-max-abs-error	audio.md	engine/audio/render_compare.h:21
+audio::RenderTolerance::rms_error_db	variable	audio	audio-rendertolerance-rms-error-db	audio.md	engine/audio/render_compare.h:23
+audio::BlockStats	struct	audio	audio-blockstats	audio.md	engine/audio/render_compare.h:29
+audio::BlockStats::rms	variable	audio	audio-blockstats-rms	audio.md	engine/audio/render_compare.h:32
+audio::BlockStats::peak	variable	audio	audio-blockstats-peak	audio.md	engine/audio/render_compare.h:34
+audio::RenderSummary	struct	audio	audio-rendersummary	audio.md	engine/audio/render_compare.h:42
+audio::RenderSummary::blocks	variable	audio	audio-rendersummary-blocks	audio.md	engine/audio/render_compare.h:45
+audio::RenderSummary::probes	variable	audio	audio-rendersummary-probes	audio.md	engine/audio/render_compare.h:47
+audio::RenderSummary::sample_count	variable	audio	audio-rendersummary-sample-count	audio.md	engine/audio/render_compare.h:49
+audio::CompareResult	struct	audio	audio-compareresult	audio.md	engine/audio/render_compare.h:55
+audio::CompareResult::equal	variable	audio	audio-compareresult-equal	audio.md	engine/audio/render_compare.h:59
+audio::CompareResult::shape_differs	variable	audio	audio-compareresult-shape-differs	audio.md	engine/audio/render_compare.h:61
+audio::CompareResult::max_abs_error	variable	audio	audio-compareresult-max-abs-error	audio.md	engine/audio/render_compare.h:63
+audio::CompareResult::rms_error_db	variable	audio	audio-compareresult-rms-error-db	audio.md	engine/audio/render_compare.h:65
+audio::MeasureBlock(Span<const f32>)	function	audio	audio-measureblock-span-lt-const-f32-gt	audio.md	engine/audio/render_compare.h:73
+audio::Summarize(Span<const f32>,usize,usize)	function	audio	audio-summarize-span-lt-const-f32-gt-usize-usize	audio.md	engine/audio/render_compare.h:85
+audio::CompareSamples(Span<const f32>,Span<const f32>,const RenderTolerance&)	function	audio	audio-comparesamples-span-lt-const-f32-gt-span-lt-const-f32-gt-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:96
+audio::CompareSummaries(const RenderSummary&,const RenderSummary&,const RenderTolerance&)	function	audio	audio-comparesummaries-const-rendersummary-amp-const-rendersummary-amp-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:107
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20

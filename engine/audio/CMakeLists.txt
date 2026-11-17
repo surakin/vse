@@ -5,6 +5,9 @@
 set(AUDIO_SOURCES
   block_hash.cpp  # Day 415
   render_compare.cpp  # Day 415
+  format.cpp  # Day 416
+  convert.cpp  # Day 416
+  clip.cpp  # Day 416
 )
 set(AUDIO_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
