@@ -19,6 +19,8 @@ set(AUDIO_TEST_SOURCES
   spatial_test.cpp  # Day 428
   panning_test.cpp  # Day 429
   doppler_test.cpp  # Day 430
+  occlusion_test.cpp  # Day 431
+  vorbis_test.cpp  # Day 432
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 
@@ -34,7 +36,8 @@ function(engine_add_audio_tests target audio_lib suffix label)
   add_executable(${target} ${AUDIO_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${audio_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint)
-  target_compile_definitions(${target} PRIVATE ENGINE_AUDIO_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
+  target_compile_definitions(${target} PRIVATE ENGINE_AUDIO_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp"
+                                              ENGINE_AUDIO_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

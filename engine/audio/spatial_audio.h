@@ -4,6 +4,7 @@
 
 #include "audio/components.h"
 #include "audio/mixer.h"
+#include "audio/occlusion.h"
 #include "containers/vector.h"
 #include "ecs/world.h"
 #include "mem/heap_allocator.h"
@@ -33,6 +34,8 @@ struct SpatialAudioConfig
     f32 air_absorption_factor = 1.0f;
     /// A jump of more than this many units in one update is a teleport, not a speed: it gives no velocity.
     f32 teleport_distance = 50.0f;
+    /// How occlusion is tested and heard (used when a query is set).
+    OcclusionConfig occlusion;
 };
 
 /// The listener as the last update read it.
@@ -67,6 +70,8 @@ struct SpatialAudioReport
     u32 audible = 0;
     /// Of those, the ones with a real voice.
     u32 real = 0;
+    /// The occlusion tests made this update (the cost; at most `OcclusionConfig::max_tests_per_update`).
+    u32 occlusion_tests = 0;
     /// The voices started this update.
     u32 started = 0;
     /// The voices stopped because their entity (or component) went.
@@ -119,6 +124,19 @@ public:
     /// - Returns: the listener state.
     const ListenerState& Listener() const { return listener_; }
 
+    /// Sets the occlusion query (null turns occlusion off).
+    ///
+    /// - Param query: the query; sources with `occlusion` set are tested through it.
+    /// - Ownership: borrows the query, which must outlive its use.
+    /// - Fails: never.
+    void SetOcclusion(OcclusionQuery* query) { occlusion_ = query; }
+
+    /// The smoothed occlusion of an emitter (0 open, 1 blocked).
+    ///
+    /// - Param entity: the entity.
+    /// - Returns: the value, 0 when unknown.
+    f32 OcclusionOf(ecs::Entity entity) const;
+
     /// What the last update did.
     ///
     /// - Returns: the report.
@@ -154,6 +172,10 @@ private:
         Vec3 velocity;
         f32 pitch_sent = 0.0f;
         f32 air_sent = 1.0f;
+        f32 occ_target = 0.0f;
+        f32 occ_smooth = 0.0f;
+        f32 occ_since = 1e9f;
+        bool occ_known = false;
         Vec3 dir_sent = Vec3(0.0f, 0.0f, 0.0f);
         f32 spread_sent = -1.0f;
         bool virtual_sent = false;
@@ -171,6 +193,8 @@ private:
         f32 spread = 0.0f;
         f32 pitch = 1.0f;
         f32 air = 1.0f;
+        f32 distance = 0.0f;
+        bool occludable = false;
         i32 priority = 0;
         u64 key = 0;
     };
@@ -189,6 +213,8 @@ private:
     Vector<u32> gone_;
     ListenerState listener_;
     SpatialAudioReport report_;
+    OcclusionQuery* occlusion_ = nullptr;
+    u64 round_robin_key_ = 0;
     u32 epoch_ = 0;
 };
 

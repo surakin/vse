@@ -370,6 +370,7 @@ tests/ecs/                                      17   # Phase 17 Day 223
 tests/spatial/                                  18   # Phase 18 Day 238
 tests/physics/                                  25   # Phase 25 Day 386
 tests/audio/                                    26   # Phase 26 Day 415
+tests/audio_physics/                            26   # Phase 26 Day 431
 test:physics_fp_determinism_probe               25   # the probe hash and the build's floating-point mode, compared with the committed hash (Day 386)
 test:physics_fp_flags_check                     25   # the configure-time fast-math check refuses planted flags (Day 386)
 

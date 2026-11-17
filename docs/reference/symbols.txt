@@ -4506,25 +4506,25 @@ audio::ApplyCost::Reopen	enumerator	audio	audio-applycost-reopen	audio.md	engine
 audio::OutputState	enum	audio	audio-outputstate	audio.md	engine/audio/audio_system.h:28
 audio::OutputState::Closed	enumerator	audio	audio-outputstate-closed	audio.md	engine/audio/audio_system.h:31
 audio::OutputState::Device	enumerator	audio	audio-outputstate-device	audio.md	engine/audio/audio_system.h:33
-audio::OutputState::Fallback	enumerator	audio	audio-outputstate-fallback	audio.md	engine/audio/audio_system.h:35
-audio::DeviceFactory	alias	audio	audio-devicefactory	audio.md	engine/audio/audio_system.h:40
-audio::AudioSystemConfig	struct	audio	audio-audiosystemconfig	audio.md	engine/audio/audio_system.h:45
-audio::AudioSystemConfig::settings	variable	audio	audio-audiosystemconfig-settings	audio.md	engine/audio/audio_system.h:48
-audio::AudioSystemConfig::kind	variable	audio	audio-audiosystemconfig-kind	audio.md	engine/audio/audio_system.h:50
-audio::AudioSystemConfig::retry_nanos	variable	audio	audio-audiosystemconfig-retry-nanos	audio.md	engine/audio/audio_system.h:52
-audio::AudioSystemConfig::factory	variable	audio	audio-audiosystemconfig-factory	audio.md	engine/audio/audio_system.h:54
-audio::AudioSystemConfig::factory_user	variable	audio	audio-audiosystemconfig-factory-user	audio.md	engine/audio/audio_system.h:56
-audio::AudioSystem	class	audio	audio-audiosystem	audio.md	engine/audio/audio_system.h:68
-audio::AudioSystem::~AudioSystem()	function	audio	audio-audiosystem-tilde-audiosystem	audio.md	engine/audio/audio_system.h:74
-audio::AudioSystem::Init(const AudioSystemConfig&,u64)	function	audio	audio-audiosystem-init-const-audiosystemconfig-amp-u64	audio.md	engine/audio/audio_system.h:84
-audio::AudioSystem::Shutdown()	function	audio	audio-audiosystem-shutdown	audio.md	engine/audio/audio_system.h:89
-audio::AudioSystem::ApplySettings(const AudioSettings&,u64,ApplyCost*)	function	audio	audio-audiosystem-applysettings-const-audiosettings-amp-u64-applycost-star	audio.md	engine/audio/audio_system.h:104
-audio::AudioSystem::Update(u64)	function	audio	audio-audiosystem-update-u64	audio.md	engine/audio/audio_system.h:111
-audio::AudioSystem::GetMixer()	function	audio	audio-audiosystem-getmixer	audio.md	engine/audio/audio_system.h:116
-audio::AudioSystem::State() const	function	audio	audio-audiosystem-state-const	audio.md	engine/audio/audio_system.h:121
-audio::AudioSystem::CurrentDevice() const	function	audio	audio-audiosystem-currentdevice-const	audio.md	engine/audio/audio_system.h:127
-audio::AudioSystem::Switches() const	function	audio	audio-audiosystem-switches-const	audio.md	engine/audio/audio_system.h:132
-audio::AudioSystem::Transitions() const	function	audio	audio-audiosystem-transitions-const	audio.md	engine/audio/audio_system.h:137
+audio::OutputState::Fallback	enumerator	audio	audio-outputstate-fallback	audio.md	engine/audio/audio_system.h:36
+audio::DeviceFactory	alias	audio	audio-devicefactory	audio.md	engine/audio/audio_system.h:41
+audio::AudioSystemConfig	struct	audio	audio-audiosystemconfig	audio.md	engine/audio/audio_system.h:46
+audio::AudioSystemConfig::settings	variable	audio	audio-audiosystemconfig-settings	audio.md	engine/audio/audio_system.h:49
+audio::AudioSystemConfig::kind	variable	audio	audio-audiosystemconfig-kind	audio.md	engine/audio/audio_system.h:51
+audio::AudioSystemConfig::retry_nanos	variable	audio	audio-audiosystemconfig-retry-nanos	audio.md	engine/audio/audio_system.h:53
+audio::AudioSystemConfig::factory	variable	audio	audio-audiosystemconfig-factory	audio.md	engine/audio/audio_system.h:55
+audio::AudioSystemConfig::factory_user	variable	audio	audio-audiosystemconfig-factory-user	audio.md	engine/audio/audio_system.h:57
+audio::AudioSystem	class	audio	audio-audiosystem	audio.md	engine/audio/audio_system.h:69
+audio::AudioSystem::~AudioSystem()	function	audio	audio-audiosystem-tilde-audiosystem	audio.md	engine/audio/audio_system.h:75
+audio::AudioSystem::Init(const AudioSystemConfig&,u64)	function	audio	audio-audiosystem-init-const-audiosystemconfig-amp-u64	audio.md	engine/audio/audio_system.h:86
+audio::AudioSystem::Shutdown()	function	audio	audio-audiosystem-shutdown	audio.md	engine/audio/audio_system.h:91
+audio::AudioSystem::ApplySettings(const AudioSettings&,u64,ApplyCost*)	function	audio	audio-audiosystem-applysettings-const-audiosettings-amp-u64-applycost-star	audio.md	engine/audio/audio_system.h:106
+audio::AudioSystem::Update(u64)	function	audio	audio-audiosystem-update-u64	audio.md	engine/audio/audio_system.h:113
+audio::AudioSystem::GetMixer()	function	audio	audio-audiosystem-getmixer	audio.md	engine/audio/audio_system.h:118
+audio::AudioSystem::State() const	function	audio	audio-audiosystem-state-const	audio.md	engine/audio/audio_system.h:123
+audio::AudioSystem::CurrentDevice() const	function	audio	audio-audiosystem-currentdevice-const	audio.md	engine/audio/audio_system.h:129
+audio::AudioSystem::Switches() const	function	audio	audio-audiosystem-switches-const	audio.md	engine/audio/audio_system.h:134
+audio::AudioSystem::Transitions() const	function	audio	audio-audiosystem-transitions-const	audio.md	engine/audio/audio_system.h:139
 audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:22
 audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:26
 audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:29
@@ -4990,6 +4990,15 @@ audio::Mixer::VoiceCount() const	function	audio	audio-mixer-voicecount-const	aud
 audio::Mixer::kAtLead	variable	audio	audio-mixer-katlead	audio.md	engine/audio/mixer.h:743
 audio::Mixer::kRampFrames	variable	audio	audio-mixer-krampframes	audio.md	engine/audio/mixer.h:745
 audio::MixerConfigFromSettings(const AudioSettings&,u32)	function	audio	audio-mixerconfigfromsettings-const-audiosettings-amp-u32	audio.md	engine/audio/mixer.h:898
+audio::OcclusionQuery	class	audio	audio-occlusionquery	audio.md	engine/audio/occlusion.h:15
+audio::OcclusionQuery::~OcclusionQuery()	function	audio	audio-occlusionquery-tilde-occlusionquery	audio.md	engine/audio/occlusion.h:18
+audio::OcclusionQuery::Occlusion(const Vec3&,const Vec3&,u32*)	function	audio	audio-occlusionquery-occlusion-const-vec3-amp-const-vec3-amp-u32-star	audio.md	engine/audio/occlusion.h:28
+audio::OcclusionConfig	struct	audio	audio-occlusionconfig	audio.md	engine/audio/occlusion.h:34
+audio::OcclusionConfig::tests_per_second	variable	audio	audio-occlusionconfig-tests-per-second	audio.md	engine/audio/occlusion.h:37
+audio::OcclusionConfig::max_tests_per_update	variable	audio	audio-occlusionconfig-max-tests-per-update	audio.md	engine/audio/occlusion.h:39
+audio::OcclusionConfig::smooth_seconds	variable	audio	audio-occlusionconfig-smooth-seconds	audio.md	engine/audio/occlusion.h:41
+audio::OcclusionConfig::occluded_gain	variable	audio	audio-occlusionconfig-occluded-gain	audio.md	engine/audio/occlusion.h:43
+audio::OcclusionConfig::occluded_cutoff_hz	variable	audio	audio-occlusionconfig-occluded-cutoff-hz	audio.md	engine/audio/occlusion.h:45
 audio::kMaxPanChannels	variable	audio	audio-kmaxpanchannels	audio.md	engine/audio/panning.h:12
 audio::SpeakerGains(ChannelLayout,f32,f32,f32,f32,f32*)	function	audio	audio-speakergains-channellayout-f32-f32-f32-f32-f32-star	audio.md	engine/audio/panning.h:30
 audio::PcmFormat	enum	audio	audio-pcmformat	audio.md	engine/audio/pcm_negotiate.h:12
@@ -5038,40 +5047,76 @@ audio::MeasureBlock(Span<const f32>)	function	audio	audio-measureblock-span-lt-c
 audio::Summarize(Span<const f32>,usize,usize)	function	audio	audio-summarize-span-lt-const-f32-gt-usize-usize	audio.md	engine/audio/render_compare.h:85
 audio::CompareSamples(Span<const f32>,Span<const f32>,const RenderTolerance&)	function	audio	audio-comparesamples-span-lt-const-f32-gt-span-lt-const-f32-gt-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:96
 audio::CompareSummaries(const RenderSummary&,const RenderSummary&,const RenderTolerance&)	function	audio	audio-comparesummaries-const-rendersummary-amp-const-rendersummary-amp-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:107
-audio::SpatialAudioConfig	struct	audio	audio-spatialaudioconfig	audio.md	engine/audio/spatial_audio.h:20
-audio::SpatialAudioConfig::max_real_voices	variable	audio	audio-spatialaudioconfig-max-real-voices	audio.md	engine/audio/spatial_audio.h:23
-audio::SpatialAudioConfig::audibility_threshold	variable	audio	audio-spatialaudioconfig-audibility-threshold	audio.md	engine/audio/spatial_audio.h:25
-audio::SpatialAudioConfig::stop_fade_frames	variable	audio	audio-spatialaudioconfig-stop-fade-frames	audio.md	engine/audio/spatial_audio.h:27
-audio::SpatialAudioConfig::speed_of_sound	variable	audio	audio-spatialaudioconfig-speed-of-sound	audio.md	engine/audio/spatial_audio.h:29
-audio::SpatialAudioConfig::doppler_factor	variable	audio	audio-spatialaudioconfig-doppler-factor	audio.md	engine/audio/spatial_audio.h:31
-audio::SpatialAudioConfig::air_absorption_factor	variable	audio	audio-spatialaudioconfig-air-absorption-factor	audio.md	engine/audio/spatial_audio.h:33
-audio::SpatialAudioConfig::teleport_distance	variable	audio	audio-spatialaudioconfig-teleport-distance	audio.md	engine/audio/spatial_audio.h:35
-audio::ListenerState	struct	audio	audio-listenerstate	audio.md	engine/audio/spatial_audio.h:41
-audio::ListenerState::valid	variable	audio	audio-listenerstate-valid	audio.md	engine/audio/spatial_audio.h:44
-audio::ListenerState::position	variable	audio	audio-listenerstate-position	audio.md	engine/audio/spatial_audio.h:46
-audio::ListenerState::forward	variable	audio	audio-listenerstate-forward	audio.md	engine/audio/spatial_audio.h:48
-audio::ListenerState::right	variable	audio	audio-listenerstate-right	audio.md	engine/audio/spatial_audio.h:50
-audio::ListenerState::up	variable	audio	audio-listenerstate-up	audio.md	engine/audio/spatial_audio.h:52
-audio::ListenerState::velocity	variable	audio	audio-listenerstate-velocity	audio.md	engine/audio/spatial_audio.h:54
-audio::ListenerState::gain	variable	audio	audio-listenerstate-gain	audio.md	engine/audio/spatial_audio.h:56
-audio::SpatialAudioReport	struct	audio	audio-spatialaudioreport	audio.md	engine/audio/spatial_audio.h:62
-audio::SpatialAudioReport::emitters	variable	audio	audio-spatialaudioreport-emitters	audio.md	engine/audio/spatial_audio.h:65
-audio::SpatialAudioReport::audible	variable	audio	audio-spatialaudioreport-audible	audio.md	engine/audio/spatial_audio.h:67
-audio::SpatialAudioReport::real	variable	audio	audio-spatialaudioreport-real	audio.md	engine/audio/spatial_audio.h:69
-audio::SpatialAudioReport::started	variable	audio	audio-spatialaudioreport-started	audio.md	engine/audio/spatial_audio.h:71
-audio::SpatialAudioReport::stopped	variable	audio	audio-spatialaudioreport-stopped	audio.md	engine/audio/spatial_audio.h:73
-audio::SpatialAudioReport::moved	variable	audio	audio-spatialaudioreport-moved	audio.md	engine/audio/spatial_audio.h:75
-audio::SpatialAudioReport::commands	variable	audio	audio-spatialaudioreport-commands	audio.md	engine/audio/spatial_audio.h:77
-audio::SpatialAudio	class	audio	audio-spatialaudio	audio.md	engine/audio/spatial_audio.h:88
-audio::SpatialAudio::SpatialAudio()	function	audio	audio-spatialaudio-spatialaudio	audio.md	engine/audio/spatial_audio.h:94
-audio::SpatialAudio::Init(Mixer*,const SpatialAudioConfig&)	function	audio	audio-spatialaudio-init-mixer-star-const-spatialaudioconfig-amp	audio.md	engine/audio/spatial_audio.h:102
-audio::SpatialAudio::Update(ecs::World&,f32)	function	audio	audio-spatialaudio-update-ecs-world-amp-f32	audio.md	engine/audio/spatial_audio.h:109
-audio::SpatialAudio::VoiceOf(ecs::Entity) const	function	audio	audio-spatialaudio-voiceof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:115
-audio::SpatialAudio::Listener() const	function	audio	audio-spatialaudio-listener-const	audio.md	engine/audio/spatial_audio.h:120
-audio::SpatialAudio::Report() const	function	audio	audio-spatialaudio-report-const	audio.md	engine/audio/spatial_audio.h:125
-audio::SpatialAudio::IsAudible(ecs::Entity) const	function	audio	audio-spatialaudio-isaudible-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:131
-audio::SpatialAudio::PitchOf(ecs::Entity) const	function	audio	audio-spatialaudio-pitchof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:137
-audio::SpatialAudio::IsReal(ecs::Entity) const	function	audio	audio-spatialaudio-isreal-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:143
+audio::SpatialAudioConfig	struct	audio	audio-spatialaudioconfig	audio.md	engine/audio/spatial_audio.h:21
+audio::SpatialAudioConfig::max_real_voices	variable	audio	audio-spatialaudioconfig-max-real-voices	audio.md	engine/audio/spatial_audio.h:24
+audio::SpatialAudioConfig::audibility_threshold	variable	audio	audio-spatialaudioconfig-audibility-threshold	audio.md	engine/audio/spatial_audio.h:26
+audio::SpatialAudioConfig::stop_fade_frames	variable	audio	audio-spatialaudioconfig-stop-fade-frames	audio.md	engine/audio/spatial_audio.h:28
+audio::SpatialAudioConfig::speed_of_sound	variable	audio	audio-spatialaudioconfig-speed-of-sound	audio.md	engine/audio/spatial_audio.h:30
+audio::SpatialAudioConfig::doppler_factor	variable	audio	audio-spatialaudioconfig-doppler-factor	audio.md	engine/audio/spatial_audio.h:32
+audio::SpatialAudioConfig::air_absorption_factor	variable	audio	audio-spatialaudioconfig-air-absorption-factor	audio.md	engine/audio/spatial_audio.h:34
+audio::SpatialAudioConfig::teleport_distance	variable	audio	audio-spatialaudioconfig-teleport-distance	audio.md	engine/audio/spatial_audio.h:36
+audio::SpatialAudioConfig::occlusion	variable	audio	audio-spatialaudioconfig-occlusion	audio.md	engine/audio/spatial_audio.h:38
+audio::ListenerState	struct	audio	audio-listenerstate	audio.md	engine/audio/spatial_audio.h:44
+audio::ListenerState::valid	variable	audio	audio-listenerstate-valid	audio.md	engine/audio/spatial_audio.h:47
+audio::ListenerState::position	variable	audio	audio-listenerstate-position	audio.md	engine/audio/spatial_audio.h:49
+audio::ListenerState::forward	variable	audio	audio-listenerstate-forward	audio.md	engine/audio/spatial_audio.h:51
+audio::ListenerState::right	variable	audio	audio-listenerstate-right	audio.md	engine/audio/spatial_audio.h:53
+audio::ListenerState::up	variable	audio	audio-listenerstate-up	audio.md	engine/audio/spatial_audio.h:55
+audio::ListenerState::velocity	variable	audio	audio-listenerstate-velocity	audio.md	engine/audio/spatial_audio.h:57
+audio::ListenerState::gain	variable	audio	audio-listenerstate-gain	audio.md	engine/audio/spatial_audio.h:59
+audio::SpatialAudioReport	struct	audio	audio-spatialaudioreport	audio.md	engine/audio/spatial_audio.h:65
+audio::SpatialAudioReport::emitters	variable	audio	audio-spatialaudioreport-emitters	audio.md	engine/audio/spatial_audio.h:68
+audio::SpatialAudioReport::audible	variable	audio	audio-spatialaudioreport-audible	audio.md	engine/audio/spatial_audio.h:70
+audio::SpatialAudioReport::real	variable	audio	audio-spatialaudioreport-real	audio.md	engine/audio/spatial_audio.h:72
+audio::SpatialAudioReport::occlusion_tests	variable	audio	audio-spatialaudioreport-occlusion-tests	audio.md	engine/audio/spatial_audio.h:74
+audio::SpatialAudioReport::started	variable	audio	audio-spatialaudioreport-started	audio.md	engine/audio/spatial_audio.h:76
+audio::SpatialAudioReport::stopped	variable	audio	audio-spatialaudioreport-stopped	audio.md	engine/audio/spatial_audio.h:78
+audio::SpatialAudioReport::moved	variable	audio	audio-spatialaudioreport-moved	audio.md	engine/audio/spatial_audio.h:80
+audio::SpatialAudioReport::commands	variable	audio	audio-spatialaudioreport-commands	audio.md	engine/audio/spatial_audio.h:82
+audio::SpatialAudio	class	audio	audio-spatialaudio	audio.md	engine/audio/spatial_audio.h:93
+audio::SpatialAudio::SpatialAudio()	function	audio	audio-spatialaudio-spatialaudio	audio.md	engine/audio/spatial_audio.h:99
+audio::SpatialAudio::Init(Mixer*,const SpatialAudioConfig&)	function	audio	audio-spatialaudio-init-mixer-star-const-spatialaudioconfig-amp	audio.md	engine/audio/spatial_audio.h:107
+audio::SpatialAudio::Update(ecs::World&,f32)	function	audio	audio-spatialaudio-update-ecs-world-amp-f32	audio.md	engine/audio/spatial_audio.h:114
+audio::SpatialAudio::VoiceOf(ecs::Entity) const	function	audio	audio-spatialaudio-voiceof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:120
+audio::SpatialAudio::Listener() const	function	audio	audio-spatialaudio-listener-const	audio.md	engine/audio/spatial_audio.h:125
+audio::SpatialAudio::SetOcclusion(OcclusionQuery*)	function	audio	audio-spatialaudio-setocclusion-occlusionquery-star	audio.md	engine/audio/spatial_audio.h:132
+audio::SpatialAudio::OcclusionOf(ecs::Entity) const	function	audio	audio-spatialaudio-occlusionof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:138
+audio::SpatialAudio::Report() const	function	audio	audio-spatialaudio-report-const	audio.md	engine/audio/spatial_audio.h:143
+audio::SpatialAudio::IsAudible(ecs::Entity) const	function	audio	audio-spatialaudio-isaudible-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:149
+audio::SpatialAudio::PitchOf(ecs::Entity) const	function	audio	audio-spatialaudio-pitchof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:155
+audio::SpatialAudio::IsReal(ecs::Entity) const	function	audio	audio-spatialaudio-isreal-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:161
+audio::VorbisStatus	enum	audio	audio-vorbisstatus	audio.md	engine/audio/vorbis.h:17
+audio::VorbisStatus::Ok	enumerator	audio	audio-vorbisstatus-ok	audio.md	engine/audio/vorbis.h:20
+audio::VorbisStatus::InvalidInput	enumerator	audio	audio-vorbisstatus-invalidinput	audio.md	engine/audio/vorbis.h:22
+audio::VorbisStatus::NotVorbis	enumerator	audio	audio-vorbisstatus-notvorbis	audio.md	engine/audio/vorbis.h:24
+audio::VorbisStatus::Truncated	enumerator	audio	audio-vorbisstatus-truncated	audio.md	engine/audio/vorbis.h:26
+audio::VorbisStatus::Corrupt	enumerator	audio	audio-vorbisstatus-corrupt	audio.md	engine/audio/vorbis.h:28
+audio::VorbisStatus::Unsupported	enumerator	audio	audio-vorbisstatus-unsupported	audio.md	engine/audio/vorbis.h:31
+audio::VorbisStatus::LimitExceeded	enumerator	audio	audio-vorbisstatus-limitexceeded	audio.md	engine/audio/vorbis.h:33
+audio::VorbisStatus::EndOfStream	enumerator	audio	audio-vorbisstatus-endofstream	audio.md	engine/audio/vorbis.h:35
+audio::VorbisStatus::OutOfMemory	enumerator	audio	audio-vorbisstatus-outofmemory	audio.md	engine/audio/vorbis.h:37
+audio::VorbisLimits	struct	audio	audio-vorbislimits	audio.md	engine/audio/vorbis.h:43
+audio::VorbisLimits::max_input_bytes	variable	audio	audio-vorbislimits-max-input-bytes	audio.md	engine/audio/vorbis.h:46
+audio::VorbisLimits::max_pages	variable	audio	audio-vorbislimits-max-pages	audio.md	engine/audio/vorbis.h:48
+audio::VorbisLimits::max_setup_bytes	variable	audio	audio-vorbislimits-max-setup-bytes	audio.md	engine/audio/vorbis.h:50
+audio::VorbisLimits::max_frames	variable	audio	audio-vorbislimits-max-frames	audio.md	engine/audio/vorbis.h:52
+audio::VorbisLimits::max_steps	variable	audio	audio-vorbislimits-max-steps	audio.md	engine/audio/vorbis.h:54
+audio::VorbisInfo	struct	audio	audio-vorbisinfo	audio.md	engine/audio/vorbis.h:60
+audio::VorbisInfo::channels	variable	audio	audio-vorbisinfo-channels	audio.md	engine/audio/vorbis.h:63
+audio::VorbisInfo::sample_rate	variable	audio	audio-vorbisinfo-sample-rate	audio.md	engine/audio/vorbis.h:65
+audio::VorbisInfo::nominal_bitrate	variable	audio	audio-vorbisinfo-nominal-bitrate	audio.md	engine/audio/vorbis.h:67
+audio::VorbisInfo::total_frames	variable	audio	audio-vorbisinfo-total-frames	audio.md	engine/audio/vorbis.h:69
+audio::VorbisDecoder	class	audio	audio-vorbisdecoder	audio.md	engine/audio/vorbis.h:79
+audio::VorbisDecoder::VorbisDecoder()	function	audio	audio-vorbisdecoder-vorbisdecoder	audio.md	engine/audio/vorbis.h:85
+audio::VorbisDecoder::~VorbisDecoder()	function	audio	audio-vorbisdecoder-tilde-vorbisdecoder	audio.md	engine/audio/vorbis.h:90
+audio::VorbisDecoder::VorbisDecoder(const VorbisDecoder&)	function	audio	audio-vorbisdecoder-vorbisdecoder-const-vorbisdecoder-amp	audio.md	engine/audio/vorbis.h:92
+audio::VorbisDecoder::operator=(const VorbisDecoder&)	function	audio	audio-vorbisdecoder-operator-eq-const-vorbisdecoder-amp	audio.md	engine/audio/vorbis.h:93
+audio::VorbisDecoder::Open(ByteSpan,const VorbisLimits&,UniquePtr<VorbisDecoder>*)	function	audio	audio-vorbisdecoder-open-bytespan-const-vorbislimits-amp-uniqueptr-lt-vorbisdecoder-gt-star	audio.md	engine/audio/vorbis.h:103
+audio::VorbisDecoder::Info() const	function	audio	audio-vorbisdecoder-info-const	audio.md	engine/audio/vorbis.h:108
+audio::VorbisDecoder::Tags() const	function	audio	audio-vorbisdecoder-tags-const	audio.md	engine/audio/vorbis.h:114
+audio::VorbisDecoder::Position() const	function	audio	audio-vorbisdecoder-position-const	audio.md	engine/audio/vorbis.h:119
+audio::VorbisDecoder::SkippedPackets() const	function	audio	audio-vorbisdecoder-skippedpackets-const	audio.md	engine/audio/vorbis.h:124
+audio::VorbisDecoder::Decode(f32*,u32,u32*)	function	audio	audio-vorbisdecoder-decode-f32-star-u32-u32-star	audio.md	engine/audio/vorbis.h:134
 audio::WavStatus	enum	audio	audio-wavstatus	audio.md	engine/audio/wav.h:19
 audio::WavStatus::Ok	enumerator	audio	audio-wavstatus-ok	audio.md	engine/audio/wav.h:22
 audio::WavStatus::TooShort	enumerator	audio	audio-wavstatus-tooshort	audio.md	engine/audio/wav.h:24
@@ -5119,6 +5164,15 @@ audio::WavReader::Info() const	function	audio	audio-wavreader-info-const	audio.m
 audio::WavReader::Position() const	function	audio	audio-wavreader-position-const	audio.md	engine/audio/wav.h:161
 audio::WavReader::Seek(u64)	function	audio	audio-wavreader-seek-u64	audio.md	engine/audio/wav.h:167
 audio::WavReader::ReadFrames(Span<f32>,usize)	function	audio	audio-wavreader-readframes-span-lt-f32-gt-usize	audio.md	engine/audio/wav.h:175
+audio_physics::PhysicsOcclusionConfig	struct	audio_physics	audio-physics-physicsocclusionconfig	audio_physics.md	engine/audio_physics/physics_occlusion.h:16
+audio_physics::PhysicsOcclusionConfig::layer_mask	variable	audio_physics	audio-physics-physicsocclusionconfig-layer-mask	audio_physics.md	engine/audio_physics/physics_occlusion.h:19
+audio_physics::PhysicsOcclusionConfig::include_triggers	variable	audio_physics	audio-physics-physicsocclusionconfig-include-triggers	audio_physics.md	engine/audio_physics/physics_occlusion.h:21
+audio_physics::PhysicsOcclusionConfig::absorption_per_metre	variable	audio_physics	audio-physics-physicsocclusionconfig-absorption-per-metre	audio_physics.md	engine/audio_physics/physics_occlusion.h:24
+audio_physics::PhysicsOcclusionConfig::default_thickness	variable	audio_physics	audio-physics-physicsocclusionconfig-default-thickness	audio_physics.md	engine/audio_physics/physics_occlusion.h:27
+audio_physics::PhysicsOcclusionConfig::PhysicsOcclusionConfig()	function	audio_physics	audio-physics-physicsocclusionconfig-physicsocclusionconfig	audio_physics.md	engine/audio_physics/physics_occlusion.h:31
+audio_physics::PhysicsOcclusion	class	audio_physics	audio-physics-physicsocclusion	audio_physics.md	engine/audio_physics/physics_occlusion.h:47
+audio_physics::PhysicsOcclusion::PhysicsOcclusion(const physics::PhysicsWorld*,const PhysicsOcclusionConfig&)	function	audio_physics	audio-physics-physicsocclusion-physicsocclusion-const-physics-physicsworld-star-const-physicsocclusionconfig-amp	audio_physics.md	engine/audio_physics/physics_occlusion.h:56
+audio_physics::PhysicsOcclusion::Occlusion(const Vec3&,const Vec3&,u32*)	function	audio_physics	audio-physics-physicsocclusion-occlusion-const-vec3-amp-const-vec3-amp-u32-star	audio_physics.md	engine/audio_physics/physics_occlusion.h:69
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20

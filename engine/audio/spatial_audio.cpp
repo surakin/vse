@@ -64,6 +64,12 @@ bool SpatialAudio::IsAudible(Entity entity) const
     return slot != nullptr && emitters_[*slot].audible;
 }
 
+f32 SpatialAudio::OcclusionOf(Entity entity) const
+{
+    const u32* slot = index_.Find(entity.ToU64());
+    return slot != nullptr ? emitters_[*slot].occ_smooth : 0.0f;
+}
+
 f32 SpatialAudio::PitchOf(Entity entity) const
 {
     const u32* slot = index_.Find(entity.ToU64());
@@ -374,7 +380,8 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
                 c.pitch = DopplerRatio(config_.speed_of_sound, config_.doppler_factor, to_emitter * (1.0f / d),
                                        listener_.velocity, ev);
             }
-            c.air = AirCoefficient(AirCutoffHz(d, config_.air_absorption_factor), mixer_->Config().sample_rate);
+            c.distance = d;
+            c.occludable = src->occlusion;
             c.loudness = loudness;
         }
         c.dir = dir;
@@ -386,6 +393,72 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
         candidates_[kept] = c;
         kept += 1;
     }
+    candidates_.Resize(kept);
+
+    // Occlusion: a bounded number of tests per update, round-robin in entity order from where the last update stopped,
+    // each emitter at most `tests_per_second`; the result is smoothed every update so a door fades.
+    const OcclusionConfig& oc = config_.occlusion;
+    const f32 interval = oc.tests_per_second > 0.0f ? 1.0f / oc.tests_per_second : 1e9f;
+    const f32 smooth_k = dt > 0.0f && oc.smooth_seconds > 0.0f
+                             ? static_cast<f32>(1.0 - Exp(-static_cast<f64>(dt) / static_cast<f64>(oc.smooth_seconds)))
+                             : 1.0f;
+    if (occlusion_ != nullptr && listener_.valid && kept > 0)
+    {
+        u32 start = 0;
+        while (start < kept && candidates_[start].key < round_robin_key_)
+        {
+            start += 1;
+        }
+        u32 budget = oc.max_tests_per_update;
+        for (u32 n = 0; n < kept; ++n)
+        {
+            Emitter& em = emitters_[candidates_[(start + n) % kept].emitter];
+            em.occ_since += dt > 0.0f ? dt : 0.0f;
+        }
+        for (u32 n = 0; n < kept && budget > 0; ++n)
+        {
+            const Candidate& c = candidates_[(start + n) % kept];
+            Emitter& em = emitters_[c.emitter];
+            if (!c.occludable || em.occ_since < interval)
+            {
+                continue;
+            }
+            em.occ_target = occlusion_->Occlusion(em.position, listener_.position, nullptr);
+            em.occ_since = 0.0f;
+            if (!em.occ_known)
+            {
+                em.occ_smooth = em.occ_target;
+                em.occ_known = true;
+            }
+            budget -= 1;
+            report_.occlusion_tests += 1;
+            round_robin_key_ = c.key + 1;
+        }
+    }
+    u32 loud = 0;
+    for (u32 i = 0; i < kept; ++i)
+    {
+        Candidate c = candidates_[i];
+        Emitter& em = emitters_[c.emitter];
+        f32 cutoff = AirCutoffHz(c.distance, config_.air_absorption_factor);
+        if (c.occludable && occlusion_ != nullptr)
+        {
+            em.occ_smooth += (em.occ_target - em.occ_smooth) * smooth_k;
+            c.loudness *= 1.0f - em.occ_smooth * (1.0f - oc.occluded_gain);
+            if (oc.occluded_cutoff_hz < cutoff)
+            {
+                cutoff += (oc.occluded_cutoff_hz - cutoff) * em.occ_smooth;
+            }
+        }
+        c.air = AirCoefficient(cutoff, mixer_->Config().sample_rate);
+        if (!(c.loudness > config_.audibility_threshold))
+        {
+            continue;
+        }
+        candidates_[loud] = c;
+        loud += 1;
+    }
+    kept = loud;
     candidates_.Resize(kept);
     Sort(Span<Candidate>(candidates_.Data(), candidates_.Size()),
          [](const Candidate& a, const Candidate& b)

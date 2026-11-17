@@ -39,6 +39,8 @@ include-dir tools/shader_mint
 include-dir third_party/nlohmann_json
 include-dir third_party/yyjson
 include-dir third_party/libpng   # Phase 22 Day 338: png.h, included only by asset_import/image_decode.cpp and png_guard.c
+include-dir third_party/libogg   # Phase 26 Day 432: ogg/ogg.h, included only by audio/vorbis.cpp
+include-dir third_party/libvorbis   # Phase 26 Day 432: vorbis/codec.h, included only by audio/vorbis.cpp
 include-dir third_party/stb_image   # Phase 22 Day 338: stb_image.h, included only by asset_import/image_decode.cpp
 system-include ^wayland-[a-z-]*\.h$
 
@@ -167,6 +169,8 @@ allow asset_import animation   # Phase 24 Day 364: the level of a glTF scene reg
 # 13 animation (Phase 22 Day 321): poses, the clip sampler, skinning matrices and the ECS components and parallel system that play clips; reads asset's skeleton and clip views (allowed below, same layer), ecs, storage, jobs and the foundation; nothing includes it but programs
 # 13 physics (Phase 25 Day 386): rigid bodies, colliders, the fixed step; the foundation, spatial, ecs and jobs (below) and, from Day 406, storage; no renderer, RHI or platform header
 module engine/physics/ physics 13
+# 14 audio_physics (Phase 26 Day 431): the physics implementation of the audio occlusion query; above audio and physics, the one place that names both
+module engine/audio_physics/ audio_physics 14
 # 13 audio (Phase 26 Day 415): the mixer, voices, buses, devices and the render checks; the foundation (below) only for now; no renderer, RHI, physics or platform header (the occlusion bridge is the separate audio_physics target above)
 module engine/audio/ audio 13
 allow audio asset   # Phase 26 Day 418: the minted clip (asset::AudioClipView, the resource manager) is read by the audio module; the one same-layer edge of the spec
@@ -282,6 +286,7 @@ target ecs ecs
 target spatial spatial
 target physics physics
 target audio audio
+target audio_physics audio_physics
 target database database
 target storage storage
 target net net

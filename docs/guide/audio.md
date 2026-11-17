@@ -300,7 +300,39 @@ for the world. Air absorption is a one-pole low-pass per voice (`SetAirAbsorptio
 with distance by a table from 20 kHz at the listener to 1.2 kHz at 400 m (`AirCutoffHz`, scaled by the world factor);
 `AirCoefficient` turns a cutoff into `k` on the control side (libm, listed), and the audio side only multiplies and adds.
 
+## Occlusion
+
+`audio::OcclusionQuery` (`audio/occlusion.h`) is the whole of what the audio module knows about walls: `Occlusion(from, to,
+&crossed)` returns 0 (open) to 1 (blocked). `SpatialAudio::SetOcclusion` hands it a query; a source is tested when its
+`occlusion` flag is set. The cost is bounded: an emitter is tested at most `tests_per_second` times, at most
+`max_tests_per_update` tests run per update over all emitters, in a round-robin by entity id that continues where the last
+update stopped (so every emitter is visited within `ceil(emitters / budget)` updates), and an emitter beyond the budget keeps
+its last value. `SpatialAudioReport::occlusion_tests` is the cost. The value is smoothed every update with the time constant
+`smooth_seconds`, so a door that opens fades instead of clicking, and is heard as a gain factor down to `occluded_gain` and a
+low-pass (the voice's one-pole of Day 430) falling toward `occluded_cutoff_hz` (the air absorption's cutoff is used when it is
+already lower).
+
+`audio_physics::PhysicsOcclusion` (`engine/audio_physics`, layer 14: the one target that names both `audio` and `physics`)
+implements the query over a `physics::PhysicsWorld`, read between steps. It casts `RayCastAll` from the emitter to the
+listener and another from the listener back; the second ray's entry into a collider is the first ray's exit, so each collider's
+**thickness** is known, and the occlusion is `1 - exp(-sum(absorption[layer] * thickness))` with an absorption per collision
+layer (3 per metre by default: a 0.1 m panel blocks 26 percent, a metre of wall 95 percent; `layer_mask` selects what blocks
+and a layer of 0 is glass). A collider whose far side the second ray did not find counts `default_thickness`. Diffraction
+(sound bending around the obstacle) is not modelled; the ray test scans the world's colliders, so a thousand emitters are
+fine and a hundred thousand are not (rate limiting is what keeps it cheap).
+
+## Ogg Vorbis
+
+`audio/vorbis.h` is the only door to the vendored libogg and libvorbis (decode only; no header of either reaches another
+file). `VorbisDecoder::Open` takes the bytes of an Ogg Vorbis stream and `VorbisLimits` (input size, pages, setup size,
+frames, steps) and returns a `VorbisStatus`: `Ok`, `InvalidInput`, `NotVorbis`, `Truncated`, `Unsupported` (1, 2, 4, 6 and 8
+channels at 8 kHz to 192 kHz only) or `LimitExceeded`. `Info()` gives channels, rate, total frames and bitrate; `Tags()` the
+comment lines as the stream spells them. `Decode(out, frames, &got)` writes interleaved `f32` frames in the engine's channel
+order (6 and 8 channel streams are reordered from Vorbis order) and ends with `EndOfStream`. A hostile stream is refused or
+stops early; it never crashes or hangs (`[fuzz]` tests). Fixtures and the script that makes them are in
+`tests/audio/fixtures/`.
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
-perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers). `effect_test.cpp` (the filter responses, the clamps, the ring-out, the delay taps, the reverb decay and stereo field, the inserts, the committed echo and reverb scene hashes). `backend_test.cpp` (the negotiation tables, the conversion, the lists, a real device rendered at its pace, a stalled callback, destroying a running device; the hardware tests print a warning and skip without a sound device). `system_test.cpp` (a fake card: another granted rate mid-clip, a lost device and its recovery, every setting in turn, 100 resets). `spatial_test.cpp` (the distance models at ten distances, the cone, the sync: ranking, determinism, 10,000 emitters with one moved, a destroyed entity, the listener's velocity). `panning_test.cpp` (the documented gains per layout, constant power at 360 azimuths, smoothness, the 5.1 mix with the LFE send, a ramp without a step). `doppler_test.cpp` (the formula, teleports, a flyby, the cutoff table, the one-pole low-pass, the committed flyby hash).
+perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers). `effect_test.cpp` (the filter responses, the clamps, the ring-out, the delay taps, the reverb decay and stereo field, the inserts, the committed echo and reverb scene hashes). `backend_test.cpp` (the negotiation tables, the conversion, the lists, a real device rendered at its pace, a stalled callback, destroying a running device; the hardware tests print a warning and skip without a sound device). `system_test.cpp` (a fake card: another granted rate mid-clip, a lost device and its recovery, every setting in turn, 100 resets). `spatial_test.cpp` (the distance models at ten distances, the cone, the sync: ranking, determinism, 10,000 emitters with one moved, a destroyed entity, the listener's velocity). `panning_test.cpp` (the documented gains per layout, constant power at 360 azimuths, smoothness, the 5.1 mix with the LFE send, a ramp without a step). `doppler_test.cpp` (the formula, teleports, a flyby, the cutoff table, the one-pole low-pass, the committed flyby hash). `occlusion_test.cpp` (a test double: open, behind a wall, the level, a door fading, the rate limit, the round-robin and the budget); `tests/audio_physics` (the real physics world: thin and thick walls, two walls, layers and absorptions, the level through the system).

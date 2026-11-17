@@ -214,6 +214,8 @@ add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (
 add_subdirectory(third_party/sqlite)  # Phase 19 Day 251: SQLite, vendored (PLAN.md assumption #25), used only behind engine/database/sqlite/
 add_subdirectory(third_party/zlib)  # Phase 22 Day 338: zlib, vendored (PLAN.md assumptions #17 and #19)
 add_subdirectory(third_party/libpng)  # Phase 22 Day 338: libpng, vendored over zlib; the PNG decoder of the glTF importer
+add_subdirectory(third_party/libogg)  # Phase 26 Day 432: libogg, vendored (PLAN.md assumption #30)
+add_subdirectory(third_party/libvorbis)  # Phase 26 Day 432: libvorbis, vendored over libogg; the Vorbis decoder of the audio module
 add_subdirectory(third_party/stb_image)  # Phase 22 Day 338: stb_image's JPEG decoder, vendored; the JPEG decoder of the glTF importer
 add_subdirectory(third_party/yyjson)  # Phase 22 Day 335: yyjson, vendored (PLAN.md assumption #19), used only by engine/asset_import/json_view.cpp
 # Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.
@@ -278,6 +280,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/physics)
   add_subdirectory(engine/audio)  # Phase 26 Day 415
   add_subdirectory(tests/audio)
+  add_subdirectory(engine/audio_physics)  # Phase 26 Day 431
+  add_subdirectory(tests/audio_physics)
   add_subdirectory(engine/net)  # Phase 20 Day 267
   add_subdirectory(tests/net)
   add_subdirectory(engine/ui)  # Phase 15 Day 184
@@ -362,6 +366,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/physics)
   add_subdirectory(engine/audio)  # Phase 26 Day 415
   add_subdirectory(tests/audio)
+  add_subdirectory(engine/audio_physics)  # Phase 26 Day 431
+  add_subdirectory(tests/audio_physics)
   add_subdirectory(engine/net)  # Day 310: the POSIX backend with the macOS hooks and the kqueue poller
   add_subdirectory(tests/net)
   add_subdirectory(engine/ui)
@@ -451,6 +457,7 @@ add_subdirectory(engine/database)  # Phase 19 Day 251
 add_subdirectory(engine/storage)  # Phase 19 Day 256
 add_subdirectory(engine/physics)  # Phase 25 Day 386
 add_subdirectory(engine/audio)  # Phase 26 Day 415
+add_subdirectory(engine/audio_physics)  # Phase 26 Day 431
 add_subdirectory(engine/net)  # Phase 20 Day 267
 add_subdirectory(engine/ui)  # Phase 15 Day 184
 add_subdirectory(engine/ui_window)  # Phase 15 Day 194
@@ -502,6 +509,7 @@ add_subdirectory(tests/database)  # Phase 19 Day 251
 add_subdirectory(tests/storage)  # Phase 19 Day 256
 add_subdirectory(tests/physics)  # Phase 25 Day 386
 add_subdirectory(tests/audio)  # Phase 26 Day 415
+add_subdirectory(tests/audio_physics)  # Phase 26 Day 431
 add_subdirectory(tests/net)  # Phase 20 Day 267
 add_subdirectory(tests/asset)  # Phase 22 Day 313
 add_subdirectory(tests/animation)  # Phase 22 Day 321

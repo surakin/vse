@@ -30,6 +30,7 @@ engine/spatial      3,5,17,18,19   # the renderer culls through it, the scene sy
 engine/storage      3,19
 engine/physics      3,25   # the C API will drive it (Days 408-409)
 engine/audio        3,26
+engine/audio_physics 26
 engine/scene        3,5,17,18
 engine/text         3,5,14,15
 engine/ui           3,5,15
@@ -74,6 +75,8 @@ third_party/yyjson 22
 third_party/zlib 22
 third_party/libpng 22
 third_party/stb_image 22
+third_party/libogg 26
+third_party/libvorbis 26
 tools/std_usage_check 10
 tools/settings_fixtures_check 11
 tools/config_access_check 11
@@ -107,6 +110,7 @@ tests/spatial       18
 tests/storage       19
 tests/physics       25
 tests/audio         26
+tests/audio_physics 26
 tests/text          14
 tests/ui            15
 tests/foundation_sanitized 0

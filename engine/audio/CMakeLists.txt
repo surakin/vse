@@ -21,6 +21,7 @@ set(AUDIO_SOURCES
   audio_system.cpp  # Day 427
   distance.cpp  # Day 428
   panning.cpp  # Day 429
+  vorbis.cpp  # Day 432
   spatial_audio.cpp  # Day 428
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -40,6 +41,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(audio${suffix} STATIC ${AUDIO_SOURCES})
     target_include_directories(audio${suffix} PUBLIC ${AUDIO_INCLUDE_ROOT})
     target_compile_options(audio${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+    target_link_libraries(audio${suffix} PRIVATE vorbis${suffix})
     target_link_libraries(audio${suffix} PUBLIC asset${suffix} ecs${suffix} spatial${suffix} foundation_base${suffix})
   endforeach()
   return()
@@ -58,5 +60,6 @@ foreach(suffix "" "_asan" "_tsan")
     target_link_libraries(audio${suffix} PUBLIC ${CMAKE_DL_LIBS})
   endif()
   target_compile_options(audio${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+  target_link_libraries(audio${suffix} PRIVATE vorbis${suffix})
   target_link_libraries(audio${suffix} PUBLIC asset${suffix} ecs${suffix} spatial${suffix} foundation${suffix})
 endforeach()

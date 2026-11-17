@@ -112,6 +112,12 @@ module audio "Audio"
   strict ownership
   strict failure
 
+module audio_physics "Audio occlusion over physics"
+  header engine/audio_physics/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module net "Networking"
   header engine/net/*.h
   strict thread-safety
