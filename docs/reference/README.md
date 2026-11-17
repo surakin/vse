@@ -25,6 +25,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
 | [Physics](physics.md) | 30 | 751 |
+| [Audio](audio.md) | 3 | 36 |
 | [Networking](net.md) | 31 | 730 |
 | [Assets and resources](asset.md) | 35 | 1247 |
 | [glTF importer](asset_import.md) | 16 | 268 |

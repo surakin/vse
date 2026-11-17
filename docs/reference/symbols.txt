@@ -4479,6 +4479,42 @@ physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-mesh
 physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:771
 physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:778
 physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:785
+audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:20
+audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:24
+audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:27
+audio::BlockHasher::kPrime	variable	audio	audio-blockhasher-kprime	audio.md	engine/audio/block_hash.h:29
+audio::BlockHasher::AddSample(f32)	function	audio	audio-blockhasher-addsample-f32	audio.md	engine/audio/block_hash.h:34
+audio::BlockHasher::AddBlock(Span<const f32>)	function	audio	audio-blockhasher-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:39
+audio::BlockHasher::Value() const	function	audio	audio-blockhasher-value-const	audio.md	engine/audio/block_hash.h:42
+audio::BlockHasher::Valid() const	function	audio	audio-blockhasher-valid-const	audio.md	engine/audio/block_hash.h:47
+audio::RenderHash	class	audio	audio-renderhash	audio.md	engine/audio/block_hash.h:61
+audio::RenderHash::AddBlock(Span<const f32>)	function	audio	audio-renderhash-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:67
+audio::RenderHash::Value() const	function	audio	audio-renderhash-value-const	audio.md	engine/audio/block_hash.h:75
+audio::RenderHash::Valid() const	function	audio	audio-renderhash-valid-const	audio.md	engine/audio/block_hash.h:80
+audio::RenderHash::Blocks() const	function	audio	audio-renderhash-blocks-const	audio.md	engine/audio/block_hash.h:83
+audio::RenderHash::Samples() const	function	audio	audio-renderhash-samples-const	audio.md	engine/audio/block_hash.h:86
+audio::HashBlock(Span<const f32>,bool*)	function	audio	audio-hashblock-span-lt-const-f32-gt-bool-star	audio.md	engine/audio/block_hash.h:101
+audio::AudioClipPtr	alias	audio	audio-audioclipptr	audio.md	engine/audio/clip.h:13
+audio::AudioClipConstPtr	alias	audio	audio-audioclipconstptr	audio.md	engine/audio/clip.h:15
+audio::RenderTolerance	struct	audio	audio-rendertolerance	audio.md	engine/audio/render_compare.h:17
+audio::RenderTolerance::max_abs_error	variable	audio	audio-rendertolerance-max-abs-error	audio.md	engine/audio/render_compare.h:20
+audio::RenderTolerance::rms_error_db	variable	audio	audio-rendertolerance-rms-error-db	audio.md	engine/audio/render_compare.h:22
+audio::BlockStats	struct	audio	audio-blockstats	audio.md	engine/audio/render_compare.h:28
+audio::BlockStats::rms	variable	audio	audio-blockstats-rms	audio.md	engine/audio/render_compare.h:31
+audio::BlockStats::peak	variable	audio	audio-blockstats-peak	audio.md	engine/audio/render_compare.h:33
+audio::RenderSummary	struct	audio	audio-rendersummary	audio.md	engine/audio/render_compare.h:40
+audio::RenderSummary::blocks	variable	audio	audio-rendersummary-blocks	audio.md	engine/audio/render_compare.h:43
+audio::RenderSummary::probes	variable	audio	audio-rendersummary-probes	audio.md	engine/audio/render_compare.h:45
+audio::RenderSummary::sample_count	variable	audio	audio-rendersummary-sample-count	audio.md	engine/audio/render_compare.h:47
+audio::CompareResult	struct	audio	audio-compareresult	audio.md	engine/audio/render_compare.h:53
+audio::CompareResult::equal	variable	audio	audio-compareresult-equal	audio.md	engine/audio/render_compare.h:56
+audio::CompareResult::shape_differs	variable	audio	audio-compareresult-shape-differs	audio.md	engine/audio/render_compare.h:58
+audio::CompareResult::max_abs_error	variable	audio	audio-compareresult-max-abs-error	audio.md	engine/audio/render_compare.h:60
+audio::CompareResult::rms_error_db	variable	audio	audio-compareresult-rms-error-db	audio.md	engine/audio/render_compare.h:62
+audio::MeasureBlock(Span<const f32>)	function	audio	audio-measureblock-span-lt-const-f32-gt	audio.md	engine/audio/render_compare.h:70
+audio::Summarize(Span<const f32>,usize,usize)	function	audio	audio-summarize-span-lt-const-f32-gt-usize-usize	audio.md	engine/audio/render_compare.h:80
+audio::CompareSamples(Span<const f32>,Span<const f32>,const RenderTolerance&)	function	audio	audio-comparesamples-span-lt-const-f32-gt-span-lt-const-f32-gt-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:90
+audio::CompareSummaries(const RenderSummary&,const RenderSummary&,const RenderTolerance&)	function	audio	audio-comparesummaries-const-rendersummary-amp-const-rendersummary-amp-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:100
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20

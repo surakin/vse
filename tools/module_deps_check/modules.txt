@@ -167,6 +167,8 @@ allow asset_import animation   # Phase 24 Day 364: the level of a glTF scene reg
 # 13 animation (Phase 22 Day 321): poses, the clip sampler, skinning matrices and the ECS components and parallel system that play clips; reads asset's skeleton and clip views (allowed below, same layer), ecs, storage, jobs and the foundation; nothing includes it but programs
 # 13 physics (Phase 25 Day 386): rigid bodies, colliders, the fixed step; the foundation, spatial, ecs and jobs (below) and, from Day 406, storage; no renderer, RHI or platform header
 module engine/physics/ physics 13
+# 13 audio (Phase 26 Day 415): the mixer, voices, buses, devices and the render checks; the foundation (below) only for now; no renderer, RHI, physics or platform header (the occlusion bridge is the separate audio_physics target above)
+module engine/audio/ audio 13
 module engine/animation/ animation 13
 allow animation asset
 module engine/engine_c/ engine_c 14
@@ -277,6 +279,7 @@ target text text
 target ecs ecs
 target spatial spatial
 target physics physics
+target audio audio
 target database database
 target storage storage
 target net net

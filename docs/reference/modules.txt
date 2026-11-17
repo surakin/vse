@@ -106,6 +106,12 @@ module physics "Physics"
   strict ownership
   strict failure
 
+module audio "Audio"
+  header engine/audio/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module net "Networking"
   header engine/net/*.h
   strict thread-safety

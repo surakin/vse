@@ -276,6 +276,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/storage)
   add_subdirectory(engine/physics)  # Phase 25 Day 386
   add_subdirectory(tests/physics)
+  add_subdirectory(engine/audio)  # Phase 26 Day 415
+  add_subdirectory(tests/audio)
   add_subdirectory(engine/net)  # Phase 20 Day 267
   add_subdirectory(tests/net)
   add_subdirectory(engine/ui)  # Phase 15 Day 184
@@ -358,6 +360,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/storage)
   add_subdirectory(engine/physics)  # Phase 25 Day 386
   add_subdirectory(tests/physics)
+  add_subdirectory(engine/audio)  # Phase 26 Day 415
+  add_subdirectory(tests/audio)
   add_subdirectory(engine/net)  # Day 310: the POSIX backend with the macOS hooks and the kqueue poller
   add_subdirectory(tests/net)
   add_subdirectory(engine/ui)
@@ -446,6 +450,7 @@ add_subdirectory(engine/spatial)  # Phase 18 Day 238
 add_subdirectory(engine/database)  # Phase 19 Day 251
 add_subdirectory(engine/storage)  # Phase 19 Day 256
 add_subdirectory(engine/physics)  # Phase 25 Day 386
+add_subdirectory(engine/audio)  # Phase 26 Day 415
 add_subdirectory(engine/net)  # Phase 20 Day 267
 add_subdirectory(engine/ui)  # Phase 15 Day 184
 add_subdirectory(engine/ui_window)  # Phase 15 Day 194
@@ -495,6 +500,7 @@ add_subdirectory(tests/spatial)  # Phase 18 Day 238
 add_subdirectory(tests/database)  # Phase 19 Day 251
 add_subdirectory(tests/storage)  # Phase 19 Day 256
 add_subdirectory(tests/physics)  # Phase 25 Day 386
+add_subdirectory(tests/audio)  # Phase 26 Day 415
 add_subdirectory(tests/net)  # Phase 20 Day 267
 add_subdirectory(tests/asset)  # Phase 22 Day 313
 add_subdirectory(tests/animation)  # Phase 22 Day 321
