@@ -6,7 +6,9 @@
 
 #include "audio/audio_settings.h"
 #include "audio/clip.h"
+#include "audio/snapshot.h"
 #include "audio/stream.h"
+#include "bytes/byte_writer.h"
 #include "audio/commands.h"
 #include "audio/convert.h"
 #include "audio/effect.h"
@@ -704,6 +706,29 @@ public:
     ///   failure.
     /// - Fails: reported by return value.
     MixerStatus Reconfigure(u32 sample_rate, ChannelLayout layout);
+
+    /// Writes the whole mixer state at the current block boundary: voices (position, pitch, gains, ramps, bus, clip by
+    /// name), buses, the limiter, every effect's history and the control side's slots. Commands queued but not yet
+    /// applied are not saved: the call refuses while any are (a host snapshots between blocks, after rendering). Events
+    /// not yet polled are not saved.
+    ///
+    /// - Param out: receives the snapshot bytes.
+    /// - Returns: `Ok`, or `Busy` while commands are queued.
+    /// - Thread-safety: thread-compatible; call it with the audio thread idle (between `Render` calls).
+    /// - Fails: reported by return value.
+    /// - Ownership: `out` is appended to.
+    SnapshotStatus SaveState(bytes::ByteWriter* out) const;
+
+    /// Restores a snapshot into a mixer set up the same way (rate, layout, voice pool, buses and inserts). The restore
+    /// is atomic: it parses and checks everything first, and on any failure the mixer is unchanged.
+    ///
+    /// - Param bytes: the snapshot.
+    /// - Param resolver: gives back the clips and streams the voices named.
+    /// - Returns: `Ok`, or why the snapshot was refused.
+    /// - Thread-safety: thread-compatible; call it with the audio thread idle.
+    /// - Fails: reported by return value; never aborts on bad bytes.
+    /// - Ownership: `resolver` is borrowed for the call.
+    SnapshotStatus LoadState(ByteSpan bytes, SnapshotResolver* resolver);
 
     /// Renders one block: applies the commands stamped for it, then mixes `kBlockFrames` frames, interleaved,
     /// overwritten (audio thread).

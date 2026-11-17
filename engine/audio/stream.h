@@ -129,6 +129,8 @@ struct StreamConfig
     u32 chunk_frames = 1024;
     /// A buffer with fewer frames than this wants a refill.
     u32 low_water_frames = 4096;
+    /// A number that names the stream's clip (`stream<id>`) so a snapshot can tell streams apart; 0 names it `stream`.
+    u32 id = 0;
 };
 
 class StreamBuffer;
@@ -284,6 +286,13 @@ public:
     ///
     /// - Param buffer: the buffer; shared.
     void Add(const StreamBufferPtr& buffer);
+
+    /// Stops keeping a buffer filled and waits for the refill jobs in flight, so the buffer's source is not read after
+    /// the call returns.
+    ///
+    /// - Param buffer: the buffer given to `Add`; one that was never added is ignored.
+    /// - Thread-safety: owner-thread-only, as `Add`.
+    void Remove(const StreamBufferPtr& buffer);
 
     /// Starts a refill job for every buffer below its low-water mark and not being refilled; returns at once.
     ///

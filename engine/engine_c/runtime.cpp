@@ -2,6 +2,8 @@
 // Every function checks its handle and its arguments, copies in and out (no pointer into a world escapes) and returns
 // an `engine_status`; nothing of the engine's C++ types, allocations or exceptions crosses the boundary.
 #include "engine_c/runtime.h"
+
+#include "engine_c/audio_api.h"
 #include "engine_c/surface.h"
 
 #include "animation/components.h"

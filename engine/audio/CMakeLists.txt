@@ -23,6 +23,7 @@ set(AUDIO_SOURCES
   panning.cpp  # Day 429
   vorbis.cpp  # Day 432
   stream.cpp  # Day 435
+  mixer_state.cpp  # Day 437
   music.cpp  # Day 436
   spatial_audio.cpp  # Day 428
 )

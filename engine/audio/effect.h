@@ -2,6 +2,7 @@
 // buses.
 #pragma once
 
+#include "audio/state_io.h"
 #include "containers/unique_ptr.h"
 #include "types.h"
 
@@ -67,6 +68,20 @@ public:
     ///
     /// - Fails: never.
     virtual u32 Channels() const = 0;
+
+    /// Writes the effect's running state (history, delay lines, ramps) for a snapshot; the parameters are part of it.
+    ///
+    /// - Param out: the writer.
+    /// - Fails: never.
+    /// - Ownership: `out` is borrowed for the call.
+    virtual void SaveState(StateOut* out) const = 0;
+
+    /// Reads what `SaveState` wrote, into an effect of the same kind and size.
+    ///
+    /// - Param in: the reader; it fails by its flag when the data do not fit this effect.
+    /// - Fails: reported by the reader's flag.
+    /// - Ownership: `in` is borrowed for the call.
+    virtual void LoadState(StateIn* in) = 0;
 };
 
 }  // namespace engine_placeholder::audio

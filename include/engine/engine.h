@@ -318,6 +318,94 @@ public:
 
     /// Sets the font the label component draws with, from the bytes of a font file (`label_font_set`).
     Status SetLabelFont(const void* data, size_t size) const { return Api()->label_font_set(Get(), data, size); }
+
+    /// The host-driven audio (`audio_open` and the rest): clips, voices, buses, the render call and the events.
+    Status AudioOpen(const engine_audio_info& info) const { return Api()->audio_open(Get(), &info); }
+    Status AudioClose() const { return Api()->audio_close(Get()); }
+    Status AudioClipCreate(const engine_audio_clip_info& info, const void* data, size_t size, uint64_t* out) const
+    {
+        return Api()->audio_clip_create(Get(), &info, data, size, out);
+    }
+    Status AudioClipDestroy(uint64_t clip) const { return Api()->audio_clip_destroy(Get(), clip); }
+    Status AudioPlay(const engine_audio_play& desc, uint64_t* out_voice) const
+    {
+        return Api()->audio_play(Get(), &desc, out_voice);
+    }
+    Status AudioVoiceSet(uint64_t voice, const engine_audio_voice_params& params) const
+    {
+        return Api()->audio_voice_set(Get(), voice, &params);
+    }
+    Status AudioVoiceStop(uint64_t voice, uint32_t fade_frames = 0) const
+    {
+        return Api()->audio_voice_stop(Get(), voice, fade_frames);
+    }
+    Status AudioBusCreate(engine_string name, uint32_t parent, uint32_t* out_bus) const
+    {
+        return Api()->audio_bus_create(Get(), name, parent, out_bus);
+    }
+    Status AudioBusSet(uint32_t bus, const engine_audio_bus_params& params) const
+    {
+        return Api()->audio_bus_set(Get(), bus, &params);
+    }
+    Status AudioRender(uint32_t frames, float* out) const { return Api()->audio_render(Get(), frames, out); }
+    Status AudioEvents(engine_audio_event* out, size_t capacity, size_t* total) const
+    {
+        return Api()->audio_events(Get(), out, capacity, total);
+    }
+    Status AudioState(engine_audio_state* out) const { return Api()->audio_state(Get(), out); }
+
+    /// Streams, music, effects and snapshots of the host-driven audio.
+    Status AudioStreamOpenClip(uint64_t clip, uint64_t* out) const
+    {
+        return Api()->audio_stream_open_clip(Get(), clip, out);
+    }
+    Status AudioStreamOpen(const engine_audio_stream_source& source, uint64_t* out) const
+    {
+        return Api()->audio_stream_open(Get(), &source, out);
+    }
+    Status AudioStreamClose(uint64_t stream) const { return Api()->audio_stream_close(Get(), stream); }
+    Status AudioStreamPlay(uint64_t stream, const engine_audio_play& desc, uint64_t* out_voice) const
+    {
+        return Api()->audio_stream_play(Get(), stream, &desc, out_voice);
+    }
+    Status AudioUpdate(bool wait = false) const { return Api()->audio_update(Get(), wait ? 1u : 0u); }
+    Status AudioMusicPlay(uint64_t stream, uint32_t bus, uint32_t fade_frames,
+                          const engine_audio_tempo* tempo = nullptr) const
+    {
+        return Api()->audio_music_play(Get(), stream, bus, fade_frames, tempo);
+    }
+    Status AudioMusicCrossfade(uint64_t stream, uint32_t fade_frames, bool at_bar,
+                               const engine_audio_tempo* tempo = nullptr) const
+    {
+        return Api()->audio_music_crossfade(Get(), stream, fade_frames, at_bar ? 1u : 0u, tempo);
+    }
+    Status AudioMusicStop(uint32_t fade_frames) const { return Api()->audio_music_stop(Get(), fade_frames); }
+    Status AudioMusicLayers(const uint64_t* streams, const float* gains, uint32_t count, uint32_t bus) const
+    {
+        return Api()->audio_music_layers(Get(), streams, gains, count, bus);
+    }
+    Status AudioMusicLayerGain(uint32_t layer, float gain, uint32_t frames) const
+    {
+        return Api()->audio_music_layer_gain(Get(), layer, gain, frames);
+    }
+    Status AudioMusicStinger(uint64_t clip, float gain, bool on_beat, uint64_t* out_frame = nullptr) const
+    {
+        return Api()->audio_music_stinger(Get(), clip, gain, on_beat ? 1u : 0u, out_frame);
+    }
+    Status AudioBusEffectSet(uint32_t bus, uint32_t slot, const engine_audio_effect& effect) const
+    {
+        return Api()->audio_bus_effect_set(Get(), bus, slot, &effect);
+    }
+    Status AudioBusSend(uint32_t bus, uint32_t slot, uint32_t aux, float gain, bool pre_fader = false) const
+    {
+        return Api()->audio_bus_send(Get(), bus, slot, aux, gain, pre_fader ? 1u : 0u);
+    }
+    Status AudioBusDuck(uint32_t target, uint32_t source, float depth, float threshold, float release_frames) const
+    {
+        return Api()->audio_bus_duck(Get(), target, source, depth, threshold, release_frames);
+    }
+    Status AudioSnapshot(Buffer* out) const { return Api()->audio_snapshot(Get(), out->Fill()); }
+    Status AudioRestore(const void* data, size_t size) const { return Api()->audio_restore(Get(), data, size); }
 };
 
 /// A world: entities and their components.

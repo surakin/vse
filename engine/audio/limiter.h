@@ -1,6 +1,7 @@
 // The master limiter and the decibel helpers (Phase 26 Day 422).
 #pragma once
 
+#include "audio/state_io.h"
 #include "containers/vector.h"
 #include "types.h"
 
@@ -74,6 +75,20 @@ public:
 
     /// The lowest gain applied in the last `Process` call (1 when nothing was limited).
     f32 MinGain() const { return min_gain_; }
+
+    /// Writes the running state (delay line, histories, gain) for a snapshot.
+    ///
+    /// - Param out: the writer.
+    /// - Fails: never.
+    /// - Ownership: `out` is borrowed for the call.
+    void SaveState(StateOut* out) const;
+
+    /// Reads what `SaveState` wrote, into a limiter set up with the same configuration.
+    ///
+    /// - Param in: the reader; it fails by its flag when the data do not fit.
+    /// - Fails: reported by the reader's flag.
+    /// - Ownership: `in` is borrowed for the call.
+    void LoadState(StateIn* in);
 
 private:
     LimiterConfig config_;

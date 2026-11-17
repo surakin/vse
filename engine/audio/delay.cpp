@@ -157,6 +157,32 @@ public:
 
     u32 Channels() const override { return channels_; }
 
+    void SaveState(StateOut* out) const override
+    {
+        out->U32(steps_left_);
+        out->U32(write_);
+        out->F32s(current_, 5);
+        out->F32s(target_, 5);
+        out->F32s(delta_, 5);
+        out->F32s(lowpass_, 8);
+        out->Floats(buffer_);
+    }
+
+    void LoadState(StateIn* in) override
+    {
+        steps_left_ = in->U32();
+        write_ = in->U32();
+        in->F32s(current_, 5);
+        in->F32s(target_, 5);
+        in->F32s(delta_, 5);
+        in->F32s(lowpass_, 8);
+        in->Floats(&buffer_);
+        if (steps_left_ > ramp_ || write_ >= capacity_)
+        {
+            in->Fail();
+        }
+    }
+
 private:
     u32 channels_ = 0;
     u32 max_frames_ = 0;
@@ -354,6 +380,46 @@ public:
     }
 
     u32 Channels() const override { return channels_; }
+
+    void SaveState(StateOut* out) const override
+    {
+        out->U32(steps_left_);
+        out->U32(predelay_write_);
+        for (u32 i = 0; i < kLines; ++i)
+        {
+            out->U32(positions_[i]);
+        }
+        out->F32s(damped_, kLines);
+        out->F32s(current_, 12);
+        out->F32s(target_, 12);
+        out->F32s(delta_, 12);
+        out->Floats(lines_);
+        out->Floats(predelay_);
+    }
+
+    void LoadState(StateIn* in) override
+    {
+        steps_left_ = in->U32();
+        predelay_write_ = in->U32();
+        for (u32 i = 0; i < kLines; ++i)
+        {
+            positions_[i] = in->U32();
+            if (positions_[i] >= lengths_[i])
+            {
+                in->Fail();
+            }
+        }
+        in->F32s(damped_, kLines);
+        in->F32s(current_, 12);
+        in->F32s(target_, 12);
+        in->F32s(delta_, 12);
+        in->Floats(&lines_);
+        in->Floats(&predelay_);
+        if (steps_left_ > ramp_ || predelay_write_ >= predelay_capacity_)
+        {
+            in->Fail();
+        }
+    }
 
 private:
     u32 channels_ = 0;

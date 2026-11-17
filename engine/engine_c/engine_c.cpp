@@ -20,6 +20,7 @@
 #include "engine_c/host_texture.h"
 #include "engine_c/import.h"
 #include "engine_c/resources.h"
+#include "engine_c/audio_api.h"
 #include "engine_c/runtime.h"
 #include "engine_c/status_map.h"
 #include "engine_c/surface.h"
@@ -795,6 +796,34 @@ extern "C"
             &engine_c::SurfaceAcquireFrameFn,
             &engine_c::SurfaceReleaseFrameFn,
             &engine_c::EntitySetMeshSlotOverrideFn,
+            &engine_c::AudioOpenFn,
+            &engine_c::AudioCloseFn,
+            &engine_c::AudioClipCreateFn,
+            &engine_c::AudioClipDestroyFn,
+            &engine_c::AudioPlayFn,
+            &engine_c::AudioVoiceSetFn,
+            &engine_c::AudioVoiceStopFn,
+            &engine_c::AudioBusCreateFn,
+            &engine_c::AudioBusSetFn,
+            &engine_c::AudioRenderFn,
+            &engine_c::AudioEventsFn,
+            &engine_c::AudioStateFn,
+            &engine_c::AudioStreamOpenClipFn,
+            &engine_c::AudioStreamOpenFn,
+            &engine_c::AudioStreamCloseFn,
+            &engine_c::AudioStreamPlayFn,
+            &engine_c::AudioUpdateFn,
+            &engine_c::AudioMusicPlayFn,
+            &engine_c::AudioMusicCrossfadeFn,
+            &engine_c::AudioMusicStopFn,
+            &engine_c::AudioMusicLayersFn,
+            &engine_c::AudioMusicLayerGainFn,
+            &engine_c::AudioMusicStingerFn,
+            &engine_c::AudioBusEffectSetFn,
+            &engine_c::AudioBusSendFn,
+            &engine_c::AudioBusDuckFn,
+            &engine_c::AudioSnapshotFn,
+            &engine_c::AudioRestoreFn,
         };
         *out = &table;
         return ENGINE_OK;

@@ -801,3 +801,15 @@ which the C layer does not change.
 - **No shared GPU textures yet.** A host that composites the engine's output itself reads pixels back (`surface_read_pixels`); importing the engine's texture into the host's own device (Vulkan external memory, a D3D12 shared handle, `IOSurface`) is not built (reasons in the spec).
 - **One engine per process is the tested case;** several engines in one process share the allocator and the job system by design (`One of everything`).
 - **Platform notes** are in the sections above: the Linux and POSIX loader, `engine.dll` and the HWND on Windows, the dylib and the `NSView` on macOS; iOS links statically.
+
+## Audio: a host-driven mixer (Phase 26 Days 438-439)
+
+`audio_open` (`engine_audio_info`: rate, channels, voice count, limiter) makes a mixer that has **no device and no thread**: the host calls `audio_render(frames, out)` from its own audio callback (or from any thread for an offline render) and gets interleaved floats. `audio_render` takes no lock, allocates nothing and never blocks; one thread at a time may call it, and every other audio function may be called while it runs. The same bytes come out whatever the callback size.
+
+`audio_clip_create` copies the PCM the host gives (8-bit, 16-bit, 24-bit, 32-bit integer or float), `audio_play` starts a voice (gain, pitch, pan, loop, a bus), `audio_voice_set` and `audio_voice_stop` change it, `audio_bus_create`, `audio_bus_set`, `audio_bus_effect_set` (filter, delay, reverb), `audio_bus_send` and `audio_bus_duck` build the bus graph, and `audio_events` polls what voices did (finished, looped, stolen). Clips, voices and streams are 64-bit handles with a generation; a stale one fails with `STALE_HANDLE`.
+
+Long sounds are streams: `audio_stream_open_clip` or `audio_stream_open` (the host's `read` and `seek` callbacks, called from the engine's job threads, never two at once and never from the audio thread). The host calls `audio_update` once per frame (with `wait` 1 for an offline render, so the same samples come out whatever the timing). `audio_music_play`, `audio_music_crossfade` (now, or at the next bar), `audio_music_layers`, `audio_music_layer_gain` and `audio_music_stinger` drive the music system on the audio clock.
+
+`audio_snapshot` writes the state of the mixer (voices, buses, effects, limiter) and `audio_restore` puts it back into a mixer set up the same way, with the clips and streams it named open; a render after the restore replays the original bit for bit. The snapshot does not hold the music player's schedule: restore at a moment when no music action is pending. The sample `tests/engine_library/audio_sample.c` renders 600 blocks, snapshots at block 300 and checks the replay.
+
+Not yet in the C API (recorded in `KNOWN-ISSUES.md`): audio components on entities, a listener and emitters, occlusion through the physics world and device selection.

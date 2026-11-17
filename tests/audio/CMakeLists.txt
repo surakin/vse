@@ -26,6 +26,7 @@ set(AUDIO_TEST_SOURCES
   vorbis_clip_test.cpp  # Day 434
   stream_test.cpp  # Day 435
   music_test.cpp  # Day 436
+  snapshot_test.cpp  # Day 437
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 

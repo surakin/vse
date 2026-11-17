@@ -1115,6 +1115,150 @@ extern "C"
         uint32_t steps_total; /* ... the import's steps */
     } engine_import_info;
 
+    /* ---- Phase 26 Day 438: audio -------------------------------------------------------------------------------- */
+
+    /* The audio of an engine is host driven: the engine opens no device and starts no audio thread. The host calls
+     * audio_render from its own audio callback (or from any thread for an offline render). */
+
+    /* How audio_open sets the mixer up. */
+    typedef struct engine_audio_info
+    {
+        uint32_t struct_size;
+        uint32_t sample_rate; /* 8000 to 384000 */
+        uint32_t channels;    /* 1 (mono), 2 (stereo), 4 (quad), 6 (5.1) or 8 (7.1) */
+        uint32_t max_voices;  /* 1 to 4096; 0: 256 */
+        uint32_t max_buses;   /* 1 to 32 (the master is one of them); 0: 16 */
+        uint32_t limiter;     /* 1: the master limiter starts on */
+    } engine_audio_info;
+
+    /* How audio_clip_create reads the bytes it is given. */
+#define ENGINE_AUDIO_FORMAT_F32 0u /* 32-bit float, little-endian, interleaved */
+#define ENGINE_AUDIO_FORMAT_S16 1u /* signed 16-bit, little-endian, interleaved */
+    typedef struct engine_audio_clip_info
+    {
+        uint32_t struct_size;
+        uint32_t sample_rate; /* 8000 to 384000 */
+        uint32_t channels;    /* 1, 2, 4, 6 or 8 */
+        uint32_t format;      /* ENGINE_AUDIO_FORMAT_* */
+        uint32_t loop_start;  /* in frames */
+        uint32_t loop_end;    /* in frames; 0: the clip has no loop points, else loop_start < loop_end <= frames */
+    } engine_audio_clip_info;
+
+    /* One voice to start. The values are used as given (a gain of 0 is silence): 1 for gain and pitch, 0 for pan,
+     * bus 0 (the master) are the neutral ones. */
+    typedef struct engine_audio_play
+    {
+        uint32_t struct_size;
+        uint64_t clip;    /* from audio_clip_create */
+        uint32_t bus;     /* from audio_bus_create; 0: the master */
+        float gain;       /* 0 to 16 */
+        float pitch;      /* 0.01 to 16 */
+        float pan;        /* -1 (left) to 1 (right) */
+        uint32_t loop;    /* 1: loop (at the clip's loop points, else the whole clip) */
+        int32_t priority; /* higher wins when the pool is full */
+    } engine_audio_play;
+
+    /* What audio_voice_set changes: the fields whose bit is in `mask`. */
+#define ENGINE_AUDIO_VOICE_GAIN 1u
+#define ENGINE_AUDIO_VOICE_PITCH 2u
+#define ENGINE_AUDIO_VOICE_PAN 4u
+#define ENGINE_AUDIO_VOICE_LOOP 8u
+    typedef struct engine_audio_voice_params
+    {
+        uint32_t struct_size;
+        uint32_t mask; /* ENGINE_AUDIO_VOICE_* */
+        float gain;
+        float pitch;
+        float pan;
+        uint32_t loop;
+        uint32_t fade_frames; /* the gain moves over this many frames (0: the engine's default ramp) */
+    } engine_audio_voice_params;
+
+    /* What audio_bus_set changes: the fields whose bit is in `mask`. */
+#define ENGINE_AUDIO_BUS_GAIN 1u
+#define ENGINE_AUDIO_BUS_MUTE 2u
+#define ENGINE_AUDIO_BUS_LIMITER 4u /* the master limiter on or off (the master bus only) */
+    typedef struct engine_audio_bus_params
+    {
+        uint32_t struct_size;
+        uint32_t mask; /* ENGINE_AUDIO_BUS_* */
+        float gain;    /* 0 to 16 */
+        uint32_t mute;
+        uint32_t limiter;
+    } engine_audio_bus_params;
+
+    /* The kinds of engine_audio_event.kind. */
+#define ENGINE_AUDIO_EVENT_FINISHED 1u    /* the voice ran off the end of its clip */
+#define ENGINE_AUDIO_EVENT_LOOPED 2u      /* the voice wrapped its loop (at most one per voice per block) */
+#define ENGINE_AUDIO_EVENT_VIRTUALISED 3u /* the voice was made inaudible and no longer mixed */
+#define ENGINE_AUDIO_EVENT_STOLEN 4u      /* a better voice took the slot */
+#define ENGINE_AUDIO_EVENT_STOPPED 5u     /* a stop finished and the voice was freed */
+    typedef struct engine_audio_event
+    {
+        uint32_t struct_size;
+        uint32_t kind; /* ENGINE_AUDIO_EVENT_* */
+        uint64_t voice;
+        uint64_t block; /* the mixer block the event happened in */
+    } engine_audio_event;
+
+    /* What audio_state reports. */
+    typedef struct engine_audio_state
+    {
+        uint32_t struct_size;
+        uint32_t sample_rate;
+        uint32_t channels;
+        uint32_t live_voices;
+        uint64_t blocks_rendered;
+        uint64_t voices_stolen;
+        uint64_t voices_finished;
+        uint64_t commands_dropped;
+    } engine_audio_state;
+
+    /* ---- Phase 26 Day 439: streams, music, effects and snapshots ---------------------------------------------- */
+
+    /* A stream whose frames come from the host: the engine's refill job calls `read` and `seek` (never the audio
+     * thread, and never two calls at once), so a host with its own decoder or file reader feeds music. Both functions
+     * must not block for long and must not call the engine. */
+    typedef struct engine_audio_stream_source
+    {
+        uint32_t struct_size;
+        uint32_t sample_rate; /* 8000 to 384000 (resampled to the mixer's) */
+        uint32_t channels;    /* 1, 2, 4, 6 or 8 */
+        uint64_t frames;      /* the length; at least 1 */
+        uint32_t loop_start;  /* as for an engine_audio_clip_info */
+        uint32_t loop_end;
+        /* Writes up to `frames` interleaved float frames to `out` and returns how many (0 at the end). */
+        uint32_t (*read)(void* user, float* out, uint32_t frames);
+        /* Moves to `frame`; returns 0 on success. */
+        int (*seek)(void* user, uint64_t frame);
+        void* user;
+    } engine_audio_stream_source;
+
+    /* The tempo of a music track, for bar and beat timing. */
+    typedef struct engine_audio_tempo
+    {
+        uint32_t struct_size;
+        float beats_per_minute; /* above 0 */
+        uint32_t beats_per_bar; /* at least 1 */
+    } engine_audio_tempo;
+
+    /* The effects of a bus insert (audio_bus_effect_set). The numbers in `params` by kind:
+     *   FILTER: params[0] type (0 low-pass, 1 high-pass, 2 band-pass, 3 notch, 4 peaking, 5 low shelf, 6 high shelf),
+     *           [1] cutoff in Hz, [2] q, [3] gain in dB (peaking and shelves);
+     *   DELAY:  [0] delay in seconds (up to 2), [1] feedback 0 to 0.995, [2] wet, [3] dry, [4] damping 0 to 1;
+     *   REVERB: [0] size, [1] decay in seconds, [2] damping, [3] wet, [4] dry, [5] pre-delay in seconds.
+     * Kind NONE removes the insert of the slot. */
+#define ENGINE_AUDIO_EFFECT_NONE 0u
+#define ENGINE_AUDIO_EFFECT_FILTER 1u
+#define ENGINE_AUDIO_EFFECT_DELAY 2u
+#define ENGINE_AUDIO_EFFECT_REVERB 3u
+    typedef struct engine_audio_effect
+    {
+        uint32_t struct_size;
+        uint32_t kind; /* ENGINE_AUDIO_EFFECT_* */
+        float params[8];
+    } engine_audio_effect;
+
     /* ---- the function table
      * ------------------------------------------------------------------------------------------------------------------------
      */
@@ -1748,6 +1892,142 @@ extern "C"
          * mounted or has no such slot). */
         engine_status (*entity_set_mesh_slot_override)(engine_handle world, uint64_t key, engine_string mesh_slot,
                                                        engine_string slot, const engine_slot_override* value);
+        /* ---- Phase 26 Day 438: audio ---- */
+
+        /* Makes the engine's mixer (no device, no thread: audio is host driven). Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT (a value out of range), STRUCT_SIZE, ALREADY_EXISTS (already open), UNSUPPORTED (a
+         * sample_rate or channel count the mixer does not take). Any thread. */
+        engine_status (*audio_open)(engine_handle engine, const engine_audio_info* info);
+
+        /* Closes the mixer: clips, buses and voices are gone, and their ids are stale. Not while another thread is in
+         * audio_render. Fails with: STALE_HANDLE, NOT_READY (not open). */
+        engine_status (*audio_close)(engine_handle engine);
+
+        /* Copies the PCM `size` bytes at `data` (a whole number of frames) into a clip. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT (NULL, a size that is not whole frames, bad loop points), STRUCT_SIZE, TOO_LARGE (above
+         * 512 MiB), NOT_READY (not open), LIMIT_EXCEEDED (4096 clips). Any thread. */
+        engine_status (*audio_clip_create)(engine_handle engine, const engine_audio_clip_info* info, const void* data,
+                                           size_t size, uint64_t* out_clip);
+
+        /* Destroys a clip. Voices that play it keep playing from their own share until they end. Fails with:
+         * STALE_HANDLE (the engine, or a clip that is gone), NOT_READY. Any thread. */
+        engine_status (*audio_clip_destroy)(engine_handle engine, uint64_t clip);
+
+        /* Starts a voice; `*out_voice` is its id (generation-checked: a finished voice's id is stale). The voice
+         * starts at the next block plus the engine's lead. Fails with: STALE_HANDLE (the clip or the engine),
+         * INVALID_ARGUMENT, STRUCT_SIZE, NOT_READY, LIMIT_EXCEEDED (the pool is full of better voices, or the command
+         * queue is full). Any thread. */
+        engine_status (*audio_play)(engine_handle engine, const engine_audio_play* desc, uint64_t* out_voice);
+
+        /* Changes the fields of a voice named by `params->mask`, in the order gain, pitch, pan, loop; a refusal leaves
+         * the fields before it changed. Fails with: STALE_HANDLE (a finished voice), INVALID_ARGUMENT, STRUCT_SIZE,
+         * NOT_READY, LIMIT_EXCEEDED. Any thread. */
+        engine_status (*audio_voice_set)(engine_handle engine, uint64_t voice, const engine_audio_voice_params* params);
+
+        /* Stops a voice after a fade of `fade_frames` frames (0: the engine's default ramp). Fails as audio_voice_set.
+         * Any thread. */
+        engine_status (*audio_voice_stop)(engine_handle engine, uint64_t voice, uint32_t fade_frames);
+
+        /* Makes a bus (a name of 1 to 63 bytes) under `parent` (0: the master); `*out_bus` is its index. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT, NOT_READY, LIMIT_EXCEEDED (no bus slot left), NOT_FOUND (no such parent).
+         * Any thread. */
+        engine_status (*audio_bus_create)(engine_handle engine, engine_string name, uint32_t parent, uint32_t* out_bus);
+
+        /* Changes a bus (0 is the master). Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, NOT_FOUND (no such
+         * bus), NOT_READY, LIMIT_EXCEEDED. Any thread. */
+        engine_status (*audio_bus_set)(engine_handle engine, uint32_t bus, const engine_audio_bus_params* params);
+
+        /* Renders `frames` interleaved frames of the master into `out` (`frames * channels` floats): the host's audio
+         * callback. It takes no lock, allocates nothing, never blocks and calls no host function, and may be called
+         * from one thread at a time (the audio thread; every other audio function may be called while it runs). The
+         * same call is the offline render. Any number of frames: the output does not depend on the size asked for.
+         * Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL `out`), NOT_READY (not open). */
+        engine_status (*audio_render)(engine_handle engine, uint32_t frames, float* out);
+
+        /* Copies the events since the last call to `out` up to `capacity` and their number to `*total` (events past
+         * the capacity are dropped). Plain structs; no callback is made. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * STRUCT_SIZE, NOT_READY. Any thread, one at a time. */
+        engine_status (*audio_events)(engine_handle engine, engine_audio_event* out, size_t capacity, size_t* total);
+
+        /* Reads the state of the mixer (struct_size set by the host). Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * STRUCT_SIZE, NOT_READY. Any thread. */
+        engine_status (*audio_state)(engine_handle engine, engine_audio_state* out);
+        /* ---- Phase 26 Day 439: streams, music, effects and snapshots ---- */
+
+        /* Opens a stream over a clip of audio_clip_create (streams play at pitch 1). Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, NOT_READY, LIMIT_EXCEEDED (256 streams). Any thread. */
+        engine_status (*audio_stream_open_clip)(engine_handle engine, uint64_t clip, uint64_t* out_stream);
+
+        /* Opens a stream over the host's own source; the first fill of its buffer runs inside this call, on the calling
+         * thread (later fills on the engine's job threads). Non-finite samples the source returns are played as
+         * silence. Fails as audio_stream_open_clip, and with STRUCT_SIZE. Any thread. */
+        engine_status (*audio_stream_open)(engine_handle engine, const engine_audio_stream_source* source,
+                                           uint64_t* out_stream);
+
+        /* Closes a stream; a voice that plays it ends. The source's callbacks are not called after this returns. Fails
+         * with: STALE_HANDLE, NOT_READY. Any thread. */
+        engine_status (*audio_stream_close)(engine_handle engine, uint64_t stream);
+
+        /* Starts a voice that plays a stream (`desc->clip` is ignored). Fails as audio_play. Any thread. */
+        engine_status (*audio_stream_play)(engine_handle engine, uint64_t stream, const engine_audio_play* desc,
+                                           uint64_t* out_voice);
+
+        /* The host's per-frame call (not from the audio thread): refills the streams that run low, on the engine's job
+         * threads, and posts the music commands that are due. With `wait` 1 it returns when the refills are done (the
+         * offline mode: the same samples whatever the timing). Fails with: STALE_HANDLE, NOT_READY. Any thread, one at
+         * a time. */
+        engine_status (*audio_update)(engine_handle engine, uint32_t wait);
+
+        /* Music: plays a stream on `bus`, fading in over `fade_frames`; `tempo` may be NULL (120 bpm, 4 beats). A track
+         * that plays is cross-faded out by audio_music_crossfade. The music plays on the bus of the first call; another
+         * bus later is INVALID_ARGUMENT. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * STRUCT_SIZE, NOT_READY, NOT_FOUND (no such bus), LIMIT_EXCEEDED. Any thread. */
+        engine_status (*audio_music_play)(engine_handle engine, uint64_t stream, uint32_t bus, uint32_t fade_frames,
+                                          const engine_audio_tempo* tempo);
+
+        /* Replaces the playing track by another with an equal-power cross-fade of `fade_frames`, now or (`at_bar` 1) at
+         * the next bar of the playing track. Fails as audio_music_play. Any thread. */
+        engine_status (*audio_music_crossfade)(engine_handle engine, uint64_t stream, uint32_t fade_frames,
+                                               uint32_t at_bar, const engine_audio_tempo* tempo);
+
+        /* Stops the music after a fade-out. Fails with: STALE_HANDLE, NOT_READY. Any thread. */
+        engine_status (*audio_music_stop)(engine_handle engine, uint32_t fade_frames);
+
+        /* Plays `count` (1 to 8) streams of one length as layers started on one frame, each at its gain. Fails as
+         * audio_music_play. */
+        engine_status (*audio_music_layers)(engine_handle engine, const uint64_t* streams, const float* gains,
+                                            uint32_t count, uint32_t bus);
+
+        /* Moves one layer's gain over `frames`. Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_READY. */
+        engine_status (*audio_music_layer_gain)(engine_handle engine, uint32_t layer, float gain, uint32_t frames);
+
+        /* Plays a clip over the music, on the next beat when `on_beat` is 1; `*out_frame` (may be NULL) receives the
+         * mixer frame it sounds at. Fails with: STALE_HANDLE, NOT_READY, LIMIT_EXCEEDED. */
+        engine_status (*audio_music_stinger)(engine_handle engine, uint64_t clip, float gain, uint32_t on_beat,
+                                             uint64_t* out_frame);
+
+        /* Sets (or, with kind NONE, removes) the effect in insert slot `slot` (0 to 3) of a bus. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (a number out of range), STRUCT_SIZE, NOT_FOUND, NOT_READY, LIMIT_EXCEEDED. */
+        engine_status (*audio_bus_effect_set)(engine_handle engine, uint32_t bus, uint32_t slot,
+                                              const engine_audio_effect* effect);
+
+        /* Sends a bus to an aux bus (slot 0 to 3) at `gain`; ducks `target` by `depth` while `source` is louder than
+         * `threshold` (linear), releasing over `release_frames`. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * NOT_FOUND, NOT_READY, LIMIT_EXCEEDED. */
+        engine_status (*audio_bus_send)(engine_handle engine, uint32_t bus, uint32_t slot, uint32_t aux, float gain,
+                                        uint32_t pre_fader);
+        engine_status (*audio_bus_duck)(engine_handle engine, uint32_t target, uint32_t source, float depth,
+                                        float threshold, float release_frames);
+
+        /* Writes the state of the mixer (voices, buses, effects) into `*out` (release it with engine_buffer_release).
+         * The mixer must have applied what it was sent: render a block first. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, NOT_READY (not open, or commands are queued). */
+        engine_status (*audio_snapshot)(engine_handle engine, engine_buffer* out);
+
+        /* Puts a snapshot back into a mixer set up the same way, with the clips and streams it named still open.
+         * Unchanged when refused. Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_READY, CORRUPT, UNSUPPORTED_VERSION,
+         * MISSING_DEPENDENCY (a clip or stream is not open), UNSUPPORTED (the mixer is set up differently). */
+        engine_status (*audio_restore)(engine_handle engine, const void* data, size_t size);
     } engine_api;
 
     /* Returns the function table.

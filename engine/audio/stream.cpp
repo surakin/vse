@@ -1,5 +1,7 @@
 #include "audio/stream.h"
 
+#include "cstr/format.h"
+
 #include "audio/convert.h"
 #include "audio/vorbis.h"
 #include "cstr/mem_ops.h"
@@ -8,6 +10,7 @@
 #include "jobs/scheduler.h"
 #include "lang/scalar.h"
 #include "lang/utility.h"
+#include "sync/thread.h"
 
 namespace engine_placeholder::audio
 {
@@ -468,7 +471,9 @@ StreamStatus StreamBuffer::Create(UniquePtr<StreamSource> source, const StreamCo
     Vector<f32> silence;
     silence.Resize(buffer->channels_);
     AudioClipPtr clip;
-    if (AudioClip::CreateCopy(desc, Span<const f32>(silence.Data(), silence.Size()), StringView("stream"), &clip) !=
+    char clip_name[24];
+    FormatTo(clip_name, sizeof(clip_name), config.id == 0 ? "stream" : "stream%u", static_cast<unsigned>(config.id));
+    if (AudioClip::CreateCopy(desc, Span<const f32>(silence.Data(), silence.Size()), StringView(clip_name), &clip) !=
         ClipStatus::Ok)
     {
         return StreamStatus::OutOfMemory;
@@ -645,17 +650,48 @@ StreamPump::StreamPump(jobs::Scheduler& scheduler)
 {
 }
 
+namespace
+{
+// Waits for the refill jobs: the scheduler's main thread helps them along, any other thread (a host's own) yields until
+// the workers have finished them.
+void StreamWaitForJobs(jobs::Scheduler* scheduler, jobs::Counter* counter)
+{
+    if (jobs::Scheduler::Current() == scheduler)
+    {
+        scheduler->HelpUntil(*counter);
+        return;
+    }
+    while (!counter->IsZero())
+    {
+        ThisThread::Yield();
+    }
+}
+}  // namespace
+
 StreamPump::~StreamPump()
 {
     if (counter_)
     {
-        scheduler_->HelpUntil(*counter_);
+        StreamWaitForJobs(scheduler_, counter_.Get());
     }
 }
 
 void StreamPump::Add(const StreamBufferPtr& buffer)
 {
     buffers_.Push(buffer);
+}
+
+void StreamPump::Remove(const StreamBufferPtr& buffer)
+{
+    for (usize i = 0; i < buffers_.Size(); ++i)
+    {
+        if (buffers_[i].Get() == buffer.Get())
+        {
+            buffers_.Remove(i);
+            break;
+        }
+    }
+    StreamWaitForJobs(scheduler_, counter_.Get());
 }
 
 u32 StreamPump::Update()
@@ -675,7 +711,7 @@ u32 StreamPump::Update()
 u32 StreamPump::Run()
 {
     const u32 started = Update();
-    scheduler_->HelpUntil(*counter_);
+    StreamWaitForJobs(scheduler_, counter_.Get());
     return started;
 }
 

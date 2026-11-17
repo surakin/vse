@@ -146,6 +146,30 @@ public:
 
     u32 Channels() const override { return channels_; }
 
+    void SaveState(StateOut* out) const override
+    {
+        out->U32(steps_left_);
+        out->F32s(current_, kCount);
+        out->F32s(target_, kCount);
+        out->F32s(delta_, kCount);
+        out->F32s(z1_, 8);
+        out->F32s(z2_, 8);
+    }
+
+    void LoadState(StateIn* in) override
+    {
+        steps_left_ = in->U32();
+        in->F32s(current_, kCount);
+        in->F32s(target_, kCount);
+        in->F32s(delta_, kCount);
+        in->F32s(z1_, 8);
+        in->F32s(z2_, 8);
+        if (steps_left_ > ramp_)
+        {
+            in->Fail();
+        }
+    }
+
 private:
     static bool IsIdentity(const f32* c)
     {
@@ -235,6 +259,28 @@ public:
     }
 
     u32 Channels() const override { return channels_; }
+
+    void SaveState(StateOut* out) const override
+    {
+        out->U32(steps_left_);
+        out->F32(current_);
+        out->F32(target_);
+        out->F32(delta_);
+        out->F32s(state_, 8);
+    }
+
+    void LoadState(StateIn* in) override
+    {
+        steps_left_ = in->U32();
+        current_ = in->F32();
+        target_ = in->F32();
+        delta_ = in->F32();
+        in->F32s(state_, 8);
+        if (steps_left_ > ramp_)
+        {
+            in->Fail();
+        }
+    }
 
 private:
     u32 channels_ = 0;

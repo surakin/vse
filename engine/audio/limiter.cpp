@@ -130,3 +130,35 @@ void Limiter::Process(f32* samples, u32 frames)
 }
 
 }  // namespace engine_placeholder::audio
+
+namespace engine_placeholder::audio
+{
+
+void Limiter::SaveState(StateOut* out) const
+{
+    out->U32(position_);
+    out->U32(delay_position_);
+    out->F32(gain_);
+    out->F32(min_gain_);
+    out->Floats(delay_);
+    out->Floats(peaks_);
+    out->Floats(gains_);
+}
+
+void Limiter::LoadState(StateIn* in)
+{
+    position_ = in->U32();
+    delay_position_ = in->U32();
+    gain_ = in->F32();
+    min_gain_ = in->F32();
+    in->Floats(&delay_);
+    in->Floats(&peaks_);
+    in->Floats(&gains_);
+    if (position_ >= (peaks_.Size() > 0 ? peaks_.Size() : 1) ||
+        delay_position_ >= (delay_.Size() > 0 ? delay_.Size() : 1))
+    {
+        in->Fail();
+    }
+}
+
+}  // namespace engine_placeholder::audio

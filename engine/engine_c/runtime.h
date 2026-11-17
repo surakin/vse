@@ -259,6 +259,8 @@ struct ResourceConfig
     ImportLimitValues import_limits;  ///< The limits of a glTF import (`assets.import.*`); all 0 without the importer.
 };
 
+class AudioHost;
+
 /// What an engine holds of worlds, counters and jobs.
 ///
 /// - Thread-safety: thread-safe; see the mutexes.
@@ -309,6 +311,12 @@ public:
 
     /// What the resource host is made from; set once when the engine is created, before any call.
     ResourceConfig resource_config;
+
+    /// The host-driven audio (Phase 26 Day 438): made by `audio_open`, destroyed by `audio_close` or with the engine.
+    /// `audio_host` is what the audio thread reads; `audio_owner` owns it; both change under `audio_mutex`.
+    Mutex audio_mutex;
+    UniquePtr<AudioHost> audio_owner;
+    Atomic<AudioHost*> audio_host{nullptr};
 
     /// The step configuration every new world's physics starts with (`physics.*` settings, read when the engine is
     /// created).
