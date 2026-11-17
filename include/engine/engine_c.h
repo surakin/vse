@@ -212,6 +212,8 @@ extern "C"
     0x40u                              /* surface_set_world draws a world's meshes on a surface (Phase 24 Day 359)     \
                                         */
 #define ENGINE_CAP_HOST_TEXTURES 0x80u /* texture_create and the host textures (Phase 24 Day 365) */
+#define ENGINE_CAP_SURFACE_OFFSCREEN                                                                                   \
+    0x100u /* surface_create with ENGINE_SURFACE_OFFSCREEN: a surface with no window (Phase 24 Day 378) */
 
 /* ---- Day 352: rendering into a window the host owns ---- */
 
@@ -229,6 +231,14 @@ extern "C"
 #define ENGINE_SURFACE_WIN32                                                                                           \
     4u /* `display` is the HINSTANCE of the window's class (GetModuleHandleW(NULL) for a class of the program),        \
           `surface` the HWND (Day 354) */
+/* Phase 24 Day 378: a surface with no window. The engine draws into a colour target of its own, `width` by `height`
+ * pixels (RGBA8, sRGB-encoded as a window shows it), and the host reads the pictures with surface_read_pixels (and,
+ * from Day 379, surface_acquire_frame). Only `kind`, `flags` (the graphics API; 0 is the platform's own), `width`,
+ * `height` and `scale` are read; `display`, `surface`, `window_id`, `present_mode` and `callbacks` are ignored (a
+ * `callbacks` table is still used for the cursor, pointer lock and clipboard requests the engine's UI makes). The
+ * host forwards the input of its own canvas with surface_input in the surface's pixels. surface_resized changes the
+ * size of the target (a size of 0 makes the surface draw nothing). Needs ENGINE_CAP_SURFACE_OFFSCREEN. */
+#define ENGINE_SURFACE_OFFSCREEN 5u
 
 /* engine_surface_info.flags: which graphics API draws into the window. Neither bit is the platform's own (Direct3D 12
  * on Windows, Vulkan on Linux, Metal on macOS, which has no bit); both at once is INVALID_ARGUMENT; one that this
@@ -458,9 +468,28 @@ extern "C"
         uint64_t textures_uploaded;      /* uploads of host textures to this surface's device (Phase 24 Day 366) */
         uint64_t texture_bytes_uploaded; /* bytes of those uploads */
         uint32_t labels_drawn;           /* labels the last frame drew (Phase 24 Day 367) */
-        uint32_t labels_refused; /* labels of the bound world the last frame did not draw: no font, no room, or behind
-                                    the camera counts as not drawn only when the font is missing */
+        uint32_t labels_refused;  /* labels of the bound world the last frame did not draw: no font, no room, or behind
+                                     the camera counts as not drawn only when the font is missing */
+        uint64_t frames_rendered; /* off-screen surfaces (Phase 24 Day 379): frames drawn into the target */
+        uint64_t frames_acquired; /* frames the host took with surface_acquire_frame */
+        uint64_t frames_dropped;  /* finished frames the host never took because a newer one was ready */
+        uint64_t frames_skipped_slow_host; /* frames whose copy was skipped because every ring slot was in flight or
+                                              unread */
     } engine_surface_state;
+
+    /* A finished picture of an off-screen surface (surface_acquire_frame): RGBA8, sRGB-encoded as a window shows it,
+     * straight alpha, `stride` = width * 4, top row first. `data` is a copy the engine keeps for the host: valid until
+     * surface_release_frame or surface_destroy, readable from any one thread, and never changed by later frames. */
+    typedef struct engine_frame_image
+    {
+        uint32_t struct_size;
+        uint32_t width;
+        uint32_t height;
+        uint32_t stride;
+        const void* data;
+        uint64_t frame;   /* counts the frames the surface rendered; the first is 1 */
+        uint64_t dropped; /* finished frames between the previous acquire and this one that were never taken */
+    } engine_frame_image;
 
     /* The pixels of a rendered frame: RGBA8, `stride` bytes per row (width * 4), top row first. `data` is the host's to
      * release. */
@@ -1676,6 +1705,40 @@ extern "C"
          * STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, CORRUPT (not a snapshot, truncated or damaged),
          * UNSUPPORTED_VERSION, MISSING_DEPENDENCY (a shape it names is not in the world), LIMIT_EXCEEDED. */
         engine_status (*physics_restore)(engine_handle world, const void* data, size_t size);
+
+        /* ---- Phase 24 Day 377: a material per mesh slot ---- */
+
+        /* Makes slot `slot` (0-based, below 16: the primitives of an imported glTF mesh in the file's order) of the
+         * entity's mesh draw with the material `material_resource`; 0 puts the slot back to the material of the
+         * entity's engine_mesh_reference. The first slot set turns the entity's mesh from one draw into one draw per
+         * slot of the mesh (a mesh without slots, or with more than 16, keeps drawing whole). A slot the mesh does not
+         * have is ignored by the draw; a material that is not mounted leaves that slot undrawn and is counted in
+         * `entities_unresolved`. engine_slot_override overrides apply to every slot. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT (`slot` is 16 or more), TYPE_MISMATCH. */
+        engine_status (*entity_set_mesh_slot_material)(engine_handle world, uint64_t key, uint32_t slot,
+                                                       uint64_t material_resource);
+
+        /* The same, naming the slot by the name the importer gave it (the name of the primitive's material, else
+         * `primitive<N>`), looked up in the entity's mesh, which must be mounted. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT (the entity has no mesh reference, an empty or too long name), NOT_FOUND (the mesh is not
+         * mounted or has no such slot), TYPE_MISMATCH. */
+        engine_status (*entity_set_mesh_slot_material_by_name)(engine_handle world, uint64_t key, engine_string slot,
+                                                               uint64_t material_resource);
+
+        /* Removes every slot material of the entity: its mesh draws whole again. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, TYPE_MISMATCH. */
+        engine_status (*entity_clear_mesh_slot_materials)(engine_handle world, uint64_t key);
+
+        /* The newest finished frame of an off-screen surface, copied out of the GPU's read-back ring; never waits for
+         * the GPU. A host that takes frames slower than they are drawn skips pictures (counted in
+         * engine_surface_state). At most two frames are held at once. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * STRUCT_SIZE, TYPE_MISMATCH, UNSUPPORTED (not an off-screen surface), NOT_READY (no frame has finished since
+         * the last acquire), LIMIT_EXCEEDED (two frames are held: release one). */
+        engine_status (*surface_acquire_frame)(engine_handle surface, engine_frame_image* out);
+
+        /* Gives a frame back; `image->data` names it. Fails with: STALE_HANDLE, INVALID_ARGUMENT (not a frame held
+         * from this surface), TYPE_MISMATCH. */
+        engine_status (*surface_release_frame)(engine_handle surface, const engine_frame_image* image);
     } engine_api;
 
     /* Returns the function table.

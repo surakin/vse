@@ -181,6 +181,18 @@ private:
             ++report.objects_removed;
         }
     }
+    // Drops every object of a handle (one per mesh slot) and forgets them there.
+    void DropObjects(renderer::RenderScene& scene, RenderHandle& handle, SceneSyncReport& report)
+    {
+        DropObject(scene, handle.object, report);
+        for (u32 i = 0; i < handle.more_count; ++i)
+        {
+            DropObject(scene, handle.more[i], report);
+            handle.more[i] = renderer::ObjectId{};
+        }
+        handle.more_count = 0;
+        handle.object = renderer::ObjectId{};
+    }
     void DropLight(renderer::RenderScene& scene, renderer::LightId id, SceneSyncReport& report)
     {
         if (id.IsValid() && scene.FindLight(id) != nullptr)
@@ -192,8 +204,16 @@ private:
 
     // Points a skinned object at the entity's joint palette (the animation runtime's SkeletonInstance): the renderer
     // borrows the memory and copies it when the frame is prepared, so only a changed pointer or count is written here.
-    void ApplySkin(renderer::RenderScene& scene, renderer::ObjectId id, const animation::SkeletonInstance* skeleton,
-                   SceneSyncReport& report)
+    void ApplySkin(renderer::RenderScene& scene, const RenderHandle& handle,
+                   const animation::SkeletonInstance* skeleton, SceneSyncReport& report)
+    {
+        for (u32 i = 0; i < ObjectCountOf(handle); ++i)
+        {
+            ApplySkinTo(scene, ObjectAt(handle, i), skeleton, report);
+        }
+    }
+    void ApplySkinTo(renderer::RenderScene& scene, renderer::ObjectId id, const animation::SkeletonInstance* skeleton,
+                     SceneSyncReport& report)
     {
         const renderer::RenderObject* object = id.IsValid() ? scene.FindObject(id) : nullptr;
         if (object == nullptr || !object->mesh->Skinned())
@@ -214,29 +234,80 @@ private:
         }
     }
 
-    // Adds the entity's object; the invalid id when the mesh is unusable (counted) or the scene is full (counted).
-    renderer::ObjectId AddObject(renderer::RenderScene& scene, const MeshRenderer& mr, const Mat4& world, bool hidden,
-                                 SceneSyncReport& report)
+    // What an entity draws: one part for a mesh drawn whole, one per slot for a mesh with slots and slot materials.
+    struct Part
     {
+        u32 material = 0;
+        u32 first_index = 0;
+        u32 index_count = 0;
+    };
+    static u32 PartsOf(const MeshRenderer& mr, Part* parts)
+    {
+        const u32 ranges = mr.mesh->RangeCount();
+        if (mr.slot_count == 0 || ranges == 0 || ranges > kMaxSlotMaterials)
+        {
+            parts[0] = Part{mr.material, 0, 0};
+            return 1;
+        }
+        for (u32 i = 0; i < ranges; ++i)
+        {
+            const renderer::MeshRange range = mr.mesh->Range(i);
+            const u32 chosen = i < mr.slot_count ? mr.slot_materials[i] : kInheritMaterial;
+            parts[i] = Part{chosen == kInheritMaterial ? mr.material : chosen, range.first_index, range.index_count};
+        }
+        return ranges;
+    }
+    static renderer::ObjectId ObjectAt(const RenderHandle& handle, u32 i)
+    {
+        return i == 0 ? handle.object : handle.more[i - 1];
+    }
+    static u32 ObjectCountOf(const RenderHandle& handle) { return handle.object.IsValid() ? 1 + handle.more_count : 0; }
+
+    // Adds the entity's objects into `handle`; its first object is invalid when the mesh is unusable (counted) or the
+    // scene is full (counted, and nothing of the entity stays).
+    void AddObjects(renderer::RenderScene& scene, const MeshRenderer& mr, const Mat4& world, bool hidden,
+                    SceneSyncReport& report, RenderHandle* handle)
+    {
+        handle->object = renderer::ObjectId{};
+        handle->more_count = 0;
         if (!MeshUsable(mr))
         {
             ++report.invalid;
-            return renderer::ObjectId{};
+            return;
         }
-        renderer::RenderObjectDesc desc;
-        desc.mesh = mr.mesh.Get();
-        desc.material = mr.material;
-        desc.transform = world;
-        desc.flags = FlagsOf(mr, hidden);
-        const renderer::ObjectId id = scene.AddObject(desc);
-        if (!id.IsValid())
+        if (mr.slot_count != 0 && mr.mesh->RangeCount() > kMaxSlotMaterials)
         {
-            ++report.refused_full;
-            return id;
+            ++report.invalid;  // drawn whole, below
         }
-        keep_[id.index] = mr.mesh;
-        ++report.objects_added;
-        return id;
+        Part parts[kMaxSlotMaterials];
+        const u32 count = PartsOf(mr, parts);
+        for (u32 i = 0; i < count; ++i)
+        {
+            renderer::RenderObjectDesc desc;
+            desc.mesh = mr.mesh.Get();
+            desc.material = parts[i].material;
+            desc.first_index = parts[i].first_index;
+            desc.index_count = parts[i].index_count;
+            desc.transform = world;
+            desc.flags = FlagsOf(mr, hidden);
+            const renderer::ObjectId id = scene.AddObject(desc);
+            if (!id.IsValid())
+            {
+                ++report.refused_full;
+                DropObjects(scene, *handle, report);  // all of the entity or none
+                return;
+            }
+            keep_[id.index] = mr.mesh;
+            ++report.objects_added;
+            if (i == 0)
+            {
+                handle->object = id;
+            }
+            else
+            {
+                handle->more[handle->more_count++] = id;
+            }
+        }
     }
 
     // Brings an existing object in line with its component: re-adds it if the mesh or material differ, else updates the
@@ -249,12 +320,24 @@ private:
         {
             return;
         }
-        const bool same_mesh = MeshUsable(mr) && object->mesh == mr.mesh.Get();
-        if (!same_mesh || object->material != mr.material)
+        bool same = MeshUsable(mr) && object->mesh == mr.mesh.Get();
+        if (same)
         {
-            DropObject(scene, handle.object, report);
-            handle.object = AddObject(scene, mr, world, hidden, report);
-            ApplySkin(scene, handle.object, context.Peek<animation::SkeletonInstance>(entity), report);
+            Part parts[kMaxSlotMaterials];
+            const u32 count = PartsOf(mr, parts);
+            same = count == ObjectCountOf(handle);
+            for (u32 i = 0; same && i < count; ++i)
+            {
+                const renderer::RenderObject* part = scene.FindObject(ObjectAt(handle, i));
+                same = part != nullptr && part->material == parts[i].material &&
+                       part->first_index == parts[i].first_index && part->index_count == parts[i].index_count;
+            }
+        }
+        if (!same)
+        {
+            DropObjects(scene, handle, report);
+            AddObjects(scene, mr, world, hidden, report, &handle);
+            ApplySkin(scene, handle, context.Peek<animation::SkeletonInstance>(entity), report);
             ++report.readded;
             if (!handle.object.IsValid() && !handle.light.IsValid())
             {
@@ -263,10 +346,14 @@ private:
             return;
         }
         const u32 flags = FlagsOf(mr, hidden);
-        if (object->flags != flags)
+        for (u32 i = 0; i < ObjectCountOf(handle); ++i)
         {
-            scene.SetFlags(handle.object, flags);
-            ++report.flags_set;
+            const renderer::RenderObject* part = scene.FindObject(ObjectAt(handle, i));
+            if (part != nullptr && part->flags != flags)
+            {
+                scene.SetFlags(ObjectAt(handle, i), flags);
+                ++report.flags_set;
+            }
         }
     }
 
@@ -301,12 +388,14 @@ private:
         q.moved->ForEach(
             [&](const MeshRenderer& mr, const RenderHandle& handle)
             {
-                const renderer::RenderObject* object = handle.object.IsValid() ? scene.FindObject(handle.object)
-                                                                               : nullptr;
-                if (object != nullptr && object->flags != FlagsOf(mr, hidden))
+                for (u32 i = 0; i < ObjectCountOf(handle); ++i)
                 {
-                    scene.SetFlags(handle.object, FlagsOf(mr, hidden));
-                    ++report.flags_set;
+                    const renderer::RenderObject* object = scene.FindObject(ObjectAt(handle, i));
+                    if (object != nullptr && object->flags != FlagsOf(mr, hidden))
+                    {
+                        scene.SetFlags(ObjectAt(handle, i), FlagsOf(mr, hidden));
+                        ++report.flags_set;
+                    }
                 }
             });
     }
@@ -318,14 +407,13 @@ private:
         q.create->ForEach(
             [&](Entity entity, const MeshRenderer& mr, const ecs::WorldTransform& w)
             {
-                const renderer::ObjectId id = AddObject(scene, mr, w.matrix, hidden, report);
-                if (id.IsValid())
+                RenderHandle handle;
+                AddObjects(scene, mr, w.matrix, hidden, report, &handle);
+                if (handle.object.IsValid())
                 {
-                    ApplySkin(scene, id, context.Peek<animation::SkeletonInstance>(entity), report);
-                    RenderHandle handle;
-                    handle.object = id;
+                    ApplySkin(scene, handle, context.Peek<animation::SkeletonInstance>(entity), report);
                     context.Commands().Add<RenderHandle>(entity, handle);
-                    pending_.Push(Pending{entity, id, renderer::LightId{}});
+                    pending_.Push(Pending{entity, handle});
                 }
             });
     }
@@ -337,8 +425,8 @@ private:
         {
             if (!context.Exists(pending_[i].entity))
             {
-                DropObject(scene, pending_[i].object, report);
-                DropLight(scene, pending_[i].light, report);
+                DropObjects(scene, pending_[i].handle, report);
+                DropLight(scene, pending_[i].handle.light, report);
             }
         }
         pending_.Clear();
@@ -353,8 +441,9 @@ private:
                 continue;
             }
             last_removal_seq_ = entry.seq;
-            DropObject(scene, entry.value.object, report);
-            DropLight(scene, entry.value.light, report);
+            RenderHandle removed_handle = entry.value;
+            DropObjects(scene, removed_handle, report);
+            DropLight(scene, removed_handle.light, report);
         }
 
         // 2. Entities that lost their MeshRenderer or LightSource but kept a handle.
@@ -363,8 +452,7 @@ private:
             {
                 if (handle.object.IsValid())
                 {
-                    DropObject(scene, handle.object, report);
-                    handle.object = renderer::ObjectId{};
+                    DropObjects(scene, handle, report);
                 }
             });
         light_orphans_->ForEach(
@@ -389,12 +477,12 @@ private:
         transform_moved_->ForEach(
             [&](Entity entity, const ecs::WorldTransform& w, const RenderHandle& handle)
             {
-                if (handle.object.IsValid())
+                for (u32 i = 0; i < ObjectCountOf(handle); ++i)
                 {
-                    const renderer::RenderObject* object = scene.FindObject(handle.object);
+                    const renderer::RenderObject* object = scene.FindObject(ObjectAt(handle, i));
                     if (object != nullptr && !SameMatrixBits(object->transform, w.matrix))
                     {
-                        scene.SetTransform(handle.object, w.matrix);
+                        scene.SetTransform(ObjectAt(handle, i), w.matrix);
                         ++report.transforms_set;
                     }
                 }
@@ -412,7 +500,7 @@ private:
         // 4b. Joint palettes: an entity's palette may have been rebuilt at another address (the animation system fills
         // it in place, but a skeleton change or a first fill reallocates it).
         skinned_->ForEach([&](const animation::SkeletonInstance& skeleton, const RenderHandle& handle)
-                          { ApplySkin(scene, handle.object, &skeleton, report); });
+                          { ApplySkin(scene, handle, &skeleton, report); });
 
         // 5. New entities.
         CreateMesh(context, scene, yes_, report);
@@ -436,7 +524,7 @@ private:
                 RenderHandle handle;
                 handle.light = id;
                 context.Commands().Add<RenderHandle>(entity, handle);
-                pending_.Push(Pending{entity, renderer::ObjectId{}, id});
+                pending_.Push(Pending{entity, handle});
             });
 
         yes_.create->Finish();
@@ -456,8 +544,7 @@ private:
     struct Pending
     {
         Entity entity;
-        renderer::ObjectId object;
-        renderer::LightId light;
+        RenderHandle handle;
     };
 
     MeshQueries<With<Hidden>> yes_;

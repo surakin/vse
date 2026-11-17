@@ -359,6 +359,8 @@ private:
         const GpuMesh* mesh = nullptr;
         u32 first_instance = 0;
         u32 instance_count = 0;
+        u32 first_index = 0;  // the index range drawn (0, 0: every index)
+        u32 index_count = 0;
         bool skinned = false;
     };
     static void Record(const PassExecuteContext& context, void* user);

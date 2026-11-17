@@ -12,6 +12,26 @@ Spawning a level into a world through the resource manager. Phase 22 Day 329.
 
 The bridge from ECS entities to the renderer: a system that mirrors renderable entities into a [`renderer::RenderScene`](renderer.md#renderer-renderscene) and one that builds the camera.
 
+## `kMaxSlotMaterials` {#scene-kmaxslotmaterials}
+
+`variable scene::kMaxSlotMaterials` — defined in `engine/scene/components.h`
+
+```cpp
+inline constexpr u32 kMaxSlotMaterials;
+```
+
+The most mesh slots a [`scene::MeshRenderer`](#scene-meshrenderer) gives a material of their own.
+
+## `kInheritMaterial` {#scene-kinheritmaterial}
+
+`variable scene::kInheritMaterial` — defined in `engine/scene/components.h`
+
+```cpp
+inline constexpr u32 kInheritMaterial;
+```
+
+A `slot_materials` entry that means "the entity's `material`".
+
 ## `MeshRenderer` {#scene-meshrenderer}
 
 `struct scene::MeshRenderer` — defined in `engine/scene/components.h`
@@ -56,6 +76,26 @@ u32 flags;
 ```
 
 Extra `renderer::ObjectFlags` bits; [`scene::Hidden`](#scene-hidden) adds `kHidden`.
+
+### `slot_materials` {#scene-meshrenderer-slot-materials}
+
+`variable scene::MeshRenderer::slot_materials` — defined in `engine/scene/components.h`
+
+```cpp
+u32 slot_materials[kMaxSlotMaterials];
+```
+
+The material of each of the mesh's slots (index ranges), for a mesh with slots: slot `i` uses `slot_materials[i]`, or `material` when that is [`scene::kInheritMaterial`](#scene-kinheritmaterial) or `i` is at or past `slot_count`. A mesh without slots, a `slot_count` of 0 and a mesh with more than `kMaxSlotMaterials` slots (counted as invalid by the sync, never drawn in part) draw the whole mesh with `material`, as before.
+
+### `slot_count` {#scene-meshrenderer-slot-count}
+
+`variable scene::MeshRenderer::slot_count` — defined in `engine/scene/components.h`
+
+```cpp
+u32 slot_count;
+```
+
+How many entries of `slot_materials` are set; 0 draws the mesh whole.
 
 ## `Hidden` {#scene-hidden}
 
@@ -221,7 +261,7 @@ The world logs removals of this component (see [`ecs::World::RemovedCount`](ecs.
 renderer::ObjectId object;
 ```
 
-The entity's object, or invalid.
+The entity's object (its first slot's), or invalid.
 
 ### `light` {#scene-renderhandle-light}
 
@@ -232,6 +272,26 @@ renderer::LightId light;
 ```
 
 The entity's light, or invalid.
+
+### `more` {#scene-renderhandle-more}
+
+`variable scene::RenderHandle::more` — defined in `engine/scene/components.h`
+
+```cpp
+renderer::ObjectId more[kMaxSlotMaterials - 1];
+```
+
+The objects of the mesh's other slots; the first `more_count` are valid.
+
+### `more_count` {#scene-renderhandle-more-count}
+
+`variable scene::RenderHandle::more_count` — defined in `engine/scene/components.h`
+
+```cpp
+u32 more_count;
+```
+
+How many of `more` exist.
 
 ## `ActiveCamera` {#scene-activecamera}
 

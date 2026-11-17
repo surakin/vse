@@ -271,6 +271,19 @@ Status CheckResources(bool parsing, ResourceId self, const TypeRegistry& types, 
 
 }  // namespace
 
+storage::ResourceRef& MeshSlotMaterials::At(u32 i)
+{
+    ENGINE_ASSERT(i < kMaxLevelSlotMaterials, "MeshSlotMaterials::At: the slot does not exist");
+    storage::ResourceRef* const slots[kMaxLevelSlotMaterials] = {&s0, &s1, &s2,  &s3,  &s4,  &s5,  &s6,  &s7,
+                                                                 &s8, &s9, &s10, &s11, &s12, &s13, &s14, &s15};
+    return *slots[i];
+}
+
+const storage::ResourceRef& MeshSlotMaterials::At(u32 i) const
+{
+    return const_cast<MeshSlotMaterials*>(this)->At(i);
+}
+
 storage::Status RegisterLevelComponents(storage::ComponentRegistry* registry)
 {
     ENGINE_TRY(registry->Register<MeshReference>(
@@ -281,6 +294,41 @@ storage::Status RegisterLevelComponents(storage::ComponentRegistry* registry)
                     storage::Field<&MeshReference::material>(
                         "material", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
                     storage::Field<&MeshReference::flags>("flags")}}));
+    ENGINE_TRY(registry->Register<MeshSlotMaterials>(
+        {.id = kMeshSlotMaterialsId,
+         .name = "mesh_slot_materials",
+         .fields = {storage::Field<&MeshSlotMaterials::s0>(
+                        "slot0", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s1>(
+                        "slot1", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s2>(
+                        "slot2", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s3>(
+                        "slot3", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s4>(
+                        "slot4", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s5>(
+                        "slot5", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s6>(
+                        "slot6", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s7>(
+                        "slot7", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s8>(
+                        "slot8", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s9>(
+                        "slot9", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s10>(
+                        "slot10", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s11>(
+                        "slot11", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s12>(
+                        "slot12", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s13>(
+                        "slot13", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s14>(
+                        "slot14", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true)),
+                    storage::Field<&MeshSlotMaterials::s15>(
+                        "slot15", storage::FieldOptions::Reference(storage::ResourceTag('M', 'A', 'T', 'L'), true))}}));
     ENGINE_TRY(registry->Register<EntityName>(
         {.id = kEntityNameId,
          .name = "entity_name",

@@ -26,17 +26,17 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
 | [Physics](physics.md) | 30 | 751 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 35 | 1226 |
+| [Assets and resources](asset.md) | 35 | 1247 |
 | [glTF importer](asset_import.md) | 16 | 268 |
 | [Animation runtime](animation.md) | 4 | 85 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 18 | 427 |
-| [Scene bridge](scene.md) | 3 | 49 |
+| [Scene bridge](scene.md) | 3 | 55 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 205 |
 | [The Render Hardware Interface](rhi.md) | 21 | 825 |
-| [The renderer](renderer.md) | 26 | 1258 |
+| [The renderer](renderer.md) | 26 | 1274 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 441 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |
 | [The Metal backend (macOS)](rhi-metal.md) | 1 | 1 |

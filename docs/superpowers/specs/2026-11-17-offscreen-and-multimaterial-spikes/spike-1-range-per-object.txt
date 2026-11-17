@@ -1,0 +1,2 @@
+Spike 1 (range-per-object): decided by reading the code on 2026-11-17; see ../2026-11-17-offscreen-and-multimaterial-design.md.
+Timings are not taken here: the benchmark of Day 374 (ranges) or Day 379 (ring) takes them and records them in the day file.

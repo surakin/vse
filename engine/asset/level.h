@@ -42,9 +42,13 @@ namespace engine_placeholder::asset
 /// Stable ids of the level components in the storage registry (the engine's own range, below 1000).
 enum LevelComponentIds : u32
 {
-    kMeshReferenceId = 50,  ///< [[asset::MeshReference]]: stored.
-    kEntityNameId = 51,     ///< [[asset::EntityName]]: stored.
+    kMeshReferenceId = 50,      ///< [[asset::MeshReference]]: stored.
+    kEntityNameId = 51,         ///< [[asset::EntityName]]: stored.
+    kMeshSlotMaterialsId = 52,  ///< [[asset::MeshSlotMaterials]]: stored (Phase 24 Day 376).
 };
+
+/// The most mesh slots a level gives a material of their own.
+inline constexpr u32 kMaxLevelSlotMaterials = 16;
 
 /// The stored form of what draws an entity: a mesh and a material named by id. The level spawner (Day 329) turns it
 /// into a `scene::MeshRenderer` with the loaded geometry; the level never holds a pointer.
@@ -55,6 +59,39 @@ struct MeshReference
     storage::ResourceRef mesh;      ///< The mesh (`MESH`); required.
     storage::ResourceRef material;  ///< The material (`MATL`); 0 for the renderer's default.
     u32 flags = 0;                  ///< Extra `renderer::ObjectFlags` bits.
+};
+
+/// The materials of an entity's mesh slots (the primitives of a glTF mesh), named by id: slot `i` of the mesh draws
+/// with `slot[i]`, or with the entity's [[asset::MeshReference::material]] when `slot[i]` is 0. An entity without this
+/// component draws all of its mesh with the one material, as before. Added in Phase 24 Day 376 as a component of its
+/// own, so no level written before it changes.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct MeshSlotMaterials
+{
+    storage::ResourceRef s0;   ///< The material of slot 0; unset keeps the entity's own.
+    storage::ResourceRef s1;   ///< The material of slot 1; unset keeps the entity's own.
+    storage::ResourceRef s2;   ///< The material of slot 2; unset keeps the entity's own.
+    storage::ResourceRef s3;   ///< The material of slot 3; unset keeps the entity's own.
+    storage::ResourceRef s4;   ///< The material of slot 4; unset keeps the entity's own.
+    storage::ResourceRef s5;   ///< The material of slot 5; unset keeps the entity's own.
+    storage::ResourceRef s6;   ///< The material of slot 6; unset keeps the entity's own.
+    storage::ResourceRef s7;   ///< The material of slot 7; unset keeps the entity's own.
+    storage::ResourceRef s8;   ///< The material of slot 8; unset keeps the entity's own.
+    storage::ResourceRef s9;   ///< The material of slot 9; unset keeps the entity's own.
+    storage::ResourceRef s10;  ///< The material of slot 10; unset keeps the entity's own.
+    storage::ResourceRef s11;  ///< The material of slot 11; unset keeps the entity's own.
+    storage::ResourceRef s12;  ///< The material of slot 12; unset keeps the entity's own.
+    storage::ResourceRef s13;  ///< The material of slot 13; unset keeps the entity's own.
+    storage::ResourceRef s14;  ///< The material of slot 14; unset keeps the entity's own.
+    storage::ResourceRef s15;  ///< The material of slot 15; unset keeps the entity's own.
+
+    /// Returns slot `i` (below `kMaxLevelSlotMaterials`).
+    /// - Aborts: `i` is out of range.
+    storage::ResourceRef& At(u32 i);
+    /// Returns slot `i` (below `kMaxLevelSlotMaterials`).
+    /// - Aborts: `i` is out of range.
+    const storage::ResourceRef& At(u32 i) const;
 };
 
 /// The name an entity has in its level's text form (`entity NAME`); also what tools show.

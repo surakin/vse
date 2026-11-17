@@ -2,6 +2,7 @@
 
 //! CPU-side geometry ([[renderer::MeshData]]), its GPU copy ([[renderer::GpuMesh]]) and procedural shapes.
 
+#include "containers/array.h"
 #include "containers/shared_bytes.h"
 #include "containers/shared_ptr.h"
 #include "containers/vector.h"
@@ -84,6 +85,18 @@ inline constexpr u32 kSkinWeightsLocation = 6;
 /// Bytes of one vertex of the skin stream.
 inline constexpr u32 kSkinVertexBytes = 8;
 
+/// The most index ranges (material slots) a mesh has.
+inline constexpr u32 kMaxMeshRanges = 64;
+
+/// A run of a mesh's indices drawn with one material (one material slot of the minted mesh).
+///
+/// - Thread-safety: thread-compatible plain data.
+struct MeshRange
+{
+    u32 first_index = 0;  ///< The first index of the run.
+    u32 index_count = 0;  ///< The number of indices; a multiple of 3 for a triangle list.
+};
+
 namespace detail
 {
 struct MeshUploadView;  // what one upload reads (defined in mesh.cpp)
@@ -109,6 +122,8 @@ struct MeshGeometry
     Bounds bounds;                                                           ///< The object-space bounds.
     u64 skin_offset = 0;       ///< Where the skin stream starts (`vertex_count * 8` bytes); skinned only.
     u32 skin_joint_count = 0;  ///< The skeleton's joint count (1 to 256) for a skinned layout, else 0.
+    Array<MeshRange, kMaxMeshRanges> ranges = {};  ///< The material slots' index ranges; the first `range_count`.
+    u32 range_count = 0;  ///< 0 for a mesh drawn whole; otherwise each range lies inside `index_count`.
 
     /// Checks the sections against the region and the counts against each other (not the values in the bytes).
     ///
@@ -177,6 +192,23 @@ public:
     /// - Ownership: the bytes are copied.
     /// - Thread-safety: thread-compatible.
     const char* SetSkin(const void* skin, u32 joint_count);
+
+    /// Names the index ranges (material slots) of the mesh, each drawn with its own material. Call it after
+    /// [[renderer::MeshData::Set]]; a later `Set` drops the ranges.
+    ///
+    /// - Param ranges: `count` ranges; each inside the indices, non-empty and a whole number of primitives.
+    /// - Param count: at most `kMaxMeshRanges`; 0 clears the ranges.
+    /// - Returns: null, or a static message (the mesh is empty, too many ranges, a range outside the indices); the
+    ///   mesh is then unchanged.
+    /// - Fails: reported through the return value.
+    /// - Ownership: `ranges` is borrowed for the call.
+    const char* SetRanges(const MeshRange* ranges, u32 count);
+    /// Returns the number of index ranges (0 for a mesh drawn whole).
+    /// - Fails: never.
+    u32 RangeCount() const { return range_count_; }
+    /// Returns the ranges (the first `RangeCount()` entries).
+    /// - Fails: never.
+    const Array<MeshRange, kMaxMeshRanges>& Ranges() const { return ranges_; }
 
     /// Returns whether the mesh has a skin stream.
     /// - Fails: never.
@@ -254,6 +286,8 @@ private:
     u32 vertex_count_ = 0;
     Vector<byte> indices_;
     u32 index_count_ = 0;
+    u32 range_count_ = 0;
+    Array<MeshRange, kMaxMeshRanges> ranges_ = {};
     rhi::IndexType index_type_ = rhi::IndexType::UInt16;
     rhi::PrimitiveTopology topology_ = rhi::PrimitiveTopology::TriangleList;
     bool has_restart_ = false;
@@ -505,6 +539,12 @@ public:
     bool HasPrimitiveRestart() const { return has_restart_; }
     /// Returns the object-space bounds.
     const Bounds& GetBounds() const { return bounds_; }
+    /// Returns the number of index ranges (material slots) the mesh has; 0 for a mesh drawn whole.
+    /// - Fails: never.
+    u32 RangeCount() const { return range_count_; }
+    /// Returns index range `i`.
+    /// - Aborts: `i` is not below `RangeCount()`.
+    MeshRange Range(u32 i) const;
     /// Returns a number from 1 to 2^24 - 1 that differs between meshes created one after another, for
     /// [[renderer::MakeDrawSortKey]]. It repeats only after 16 million meshes were created. 0 for an empty mesh.
     /// - Fails: never.
@@ -536,6 +576,13 @@ public:
     /// - Aborts: this mesh is empty, or as for [[rhi::CommandList::DrawIndexed]].
     void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance) const;
 
+    /// Draws `index_count` indices from `first_index` (a range of the mesh); `index_count` 0 draws all indices, as
+    /// the shorter overload does. Same rules as the other overload.
+    ///
+    /// - Aborts: this mesh is empty, the range lies outside the mesh, or as for the other overload.
+    /// - Ownership: `list` is borrowed for the call.
+    void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance, u32 first_index, u32 index_count) const;
+
 private:
     bool Upload(rhi::Device* device, const detail::MeshUploadView& data, const char* debug_name, rhi::BufferHandle* vb,
                 rhi::BufferHandle* ib, rhi::BufferHandle* sb);
@@ -554,6 +601,8 @@ private:
     u32 skin_joint_count_ = 0;
     u32 vertex_count_ = 0;
     u32 index_count_ = 0;
+    u32 range_count_ = 0;
+    Array<MeshRange, kMaxMeshRanges> ranges_ = {};
     rhi::IndexType index_type_ = rhi::IndexType::UInt16;
     rhi::PrimitiveTopology topology_ = rhi::PrimitiveTopology::TriangleList;
     bool has_restart_ = false;

@@ -84,6 +84,28 @@ Status LoadGpuMesh(const LoadContext& context, GpuMeshAsset* out, void* user)
     geometry.index_count = lod.index_count;
     geometry.topology = rhi::PrimitiveTopology::TriangleList;
     geometry.bounds = bounds;
+    // The material slots become index ranges of the first level of detail (slots lie in the blob's whole index list).
+    if (view.SlotCount() != 0 && view.SlotCount() <= renderer::kMaxMeshRanges)
+    {
+        bool inside = true;
+        for (u32 i = 0; i < view.SlotCount() && inside; ++i)
+        {
+            const MeshSlot slot = view.Slot(i);
+            inside = slot.first_index >= lod.first_index && slot.index_count != 0 && slot.index_count % 3 == 0 &&
+                     (slot.first_index - lod.first_index) % 3 == 0 &&
+                     slot.first_index - lod.first_index <= lod.index_count &&
+                     slot.index_count <= lod.index_count - (slot.first_index - lod.first_index);
+        }
+        if (inside)
+        {
+            for (u32 i = 0; i < view.SlotCount(); ++i)
+            {
+                const MeshSlot slot = view.Slot(i);
+                geometry.ranges[i] = renderer::MeshRange{slot.first_index - lod.first_index, slot.index_count};
+            }
+            geometry.range_count = view.SlotCount();
+        }
+    }
     geometry.skin_offset = view.Skinned() ? static_cast<u64>(view.SkinBytes().Data() - base) : 0;
     geometry.skin_joint_count = view.Skinned() ? view.SkinJointCount() : 0;
     if (const char* refused = geometry.Validate())

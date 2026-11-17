@@ -677,6 +677,41 @@ message loop turned by the polls, and the walk-around's key posted as a `WM_KEYD
 
 **Its window, on each platform (Day 370).** The two scene hosts reach their window through `tests/engine_library/host_window.h` (open the window system, open and close a window of a size in pixels, describe it as an `engine_surface_info`, poll and post the few events the walk-around reads): `linux/host_window_x11.c` is Xlib, `windows/host_window_win32.c` Win32 (Day 369, above), `macos/host_window_cocoa.m` an `NSWindow` whose plain content `NSView` gets the engine's `CAMetalLayer` (Day 355). On a Retina display the window is half as many points as the pixels asked, so the golden image of `host_scene.c` is the same 160x120 picture on every platform; on the Mac it is within the golden rule with Metal (seen: a largest difference of 2, 96 of 76,800 values off by more than 1). Host textures reach Metal through the RHI as everywhere (`engine_c/live_textures.*`: a ring of three persistently mapped staging buffers per texture and one buffer-to-texture copy per update): nothing Metal-specific was needed (the walk-around's `textures_uploaded` counts every screen on the Mac). Every call is on the main thread there, as a Cocoa surface requires (the screens' painter threads call only `texture_update`).
 
+## Meshes with several materials (Phase 24 Days 374-377)
+
+A mesh may have **slots**: index ranges of one mesh, each its own draw (the primitives of an imported glTF mesh, in the
+file's order). The renderer draws one object per slot (`RenderObjectDesc::first_index` and `index_count`), instancing only
+draws of the same mesh, material, pipeline and range; a skinned entity's slots share one joint palette. In a scene,
+`MeshRenderer::slot_materials` gives each slot a material (`kInheritMaterial` keeps the entity's own); a level stores them
+in the additive component `asset::MeshSlotMaterials` (no level-version change; the importer writes it only when the
+primitives' materials differ). A host sets them through the table:
+
+- `entity_set_mesh_slot_material(world, key, slot, material)` and `entity_set_mesh_slot_material_by_name(world, key, name,
+  material)` (the importer names a slot after its material, else `primitive<N>`); `entity_clear_mesh_slot_materials`
+  draws the mesh whole again.
+- A slot whose material is not mounted is not drawn and counts in `entities_unresolved`; `engine_slot_override`s (material
+  parameters) apply to every slot. At most 16 slots; a mesh with more draws whole.
+- Known limit: a glTF primitive without a material inherits the entity's base material (the first primitive's).
+
+## Off-screen surfaces (Phase 24 Days 378-380)
+
+`ENGINE_SURFACE_OFFSCREEN` (capability `ENGINE_CAP_SURFACE_OFFSCREEN`) makes a surface with no window and no window
+system: only `kind`, `flags`, `width`, `height` and `scale` are read. The engine draws into an RGBA8 target of its own
+(sRGB-encoded as a window shows it, straight alpha) on the platform's graphics API, and `surface_resized` changes its size
+(0 draws nothing). A world, a camera, a background, `surface_input`, `surface_pixel_ray` and `surface_read_pixels` work
+as on a window surface. Several off-screen surfaces, and a window surface beside them, share the engine's device.
+
+- **The picture each frame:** `surface_acquire_frame` returns the newest finished frame as a copy the engine keeps for the
+  host (tightly packed RGBA8, `stride = width * 4`): it never waits for the GPU, returns `NOT_READY` when nothing new
+  finished, and a host slower than the frames skips pictures (`frames_dropped`, `frames_skipped_slow_host` in
+  `engine_surface_state`). At most two frames are held; `surface_release_frame` gives one back. A held frame stays valid
+  until released or the surface is destroyed, across a resize and a device loss; read it from one thread at a time.
+  Under it a ring of three GPU read-back buffers with a fence each; the copy of a frame is skipped when all three are in
+  flight.
+- **Loss and reset:** after a lost device the surface reports `lost`; `surface_rebind` (with an off-screen info) makes a new
+  device, target and ring and binds the same world again.
+- `engine.h`: `Surface::AcquireFrame` and `Surface::ReleaseFrame`.
+
 ## Scenes: conventions and the host's duties (Phase 24 Day 372)
 
 | What | Convention |

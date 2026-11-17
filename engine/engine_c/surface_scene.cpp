@@ -168,7 +168,8 @@ void SurfaceScene::DestroyInstance(usize index)
     instances_.Pop();
 }
 
-u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 base_index, SceneFrameReport* report)
+u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 part, u32 base_index,
+                              SceneFrameReport* report)
 {
     if (overrides.count == 0)
     {
@@ -191,7 +192,7 @@ u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 ba
     Instance* instance = nullptr;
     for (usize i = 0; i < instances_.Size(); ++i)
     {
-        if (instances_[i].entity == entity)
+        if (instances_[i].entity == entity && instances_[i].part == part)
         {
             instance = &instances_[i];
             break;
@@ -219,6 +220,7 @@ u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 ba
     const renderer::MaterialId base = materials->MaterialAtIndex(base_index);
     Instance made;
     made.entity = entity;
+    made.part = part;
     made.base_index = base_index;
     made.content = overrides;
     for (u32 i = 0; i < overrides.count; ++i)
@@ -570,7 +572,7 @@ bool CameraOfEntity(const ecs::World& world, u64 key, f32 aspect_of_surface, ren
 }  // namespace
 
 SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32 width, u32 height, f32 seconds,
-                                      f32 delta_seconds)
+                                      f32 delta_seconds, const renderer::FrameTarget* target)
 {
     SceneFrameReport report;
     live_.BeginFrame();
@@ -616,15 +618,59 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                 }
                 return;  // an entry it had stays unseen and is removed below
             }
+            // What the entity draws: the mesh whole, or one part per mesh slot when the host named slot materials.
+            struct Part
+            {
+                u32 material = 0;
+                u32 first = 0;
+                u32 count = 0;
+            };
+            Part parts[kMaxParts];
+            u32 part_total = 1;
+            parts[0].material = material;
+            const SlotMaterialsComponent* slots = world.world.Peek<SlotMaterialsComponent>(entity);
+            if (slots != nullptr && slots->count != 0 && mesh->RangeCount() != 0 && mesh->RangeCount() <= kMaxParts)
+            {
+                part_total = mesh->RangeCount();
+                for (u32 i = 0; i < part_total; ++i)
+                {
+                    const renderer::MeshRange range = mesh->Range(i);
+                    parts[i].material = material;
+                    parts[i].first = range.first_index;
+                    parts[i].count = range.index_count;
+                    if (i < slots->count && slots->material[i] != 0 &&
+                        !ResolveMaterial(slots->material[i], skinned, &parts[i].material))
+                    {
+                        ++report.entities_unresolved;  // that slot's material is not mounted: it is not drawn
+                        parts[i].count = 0xFFFFFFFFu;
+                    }
+                }
+            }
             if (const SlotOverrides* overrides = world.world.Peek<SlotOverrides>(entity))
             {
-                material = MaterialFor(*overrides, key, material, &report);
+                for (u32 i = 0; i < part_total; ++i)
+                {
+                    parts[i].material = MaterialFor(*overrides, key, i, parts[i].material, &report);
+                }
             }
-            if (entry != nullptr && (entry->mesh != reference.mesh || entry->material != reference.material_resource ||
-                                     entry->material_index != material))
+            bool same = entry != nullptr && entry->mesh == reference.mesh &&
+                        entry->material == reference.material_resource && entry->count == part_total;
+            for (u32 i = 0; same && i < part_total; ++i)
             {
-                scene_->RemoveObject(entry->object);  // another mesh or material: made again
-                entry->object = renderer::ObjectId{};
+                same = entry->part_material[i] == parts[i].material && entry->part_first[i] == parts[i].first &&
+                       entry->part_count[i] == parts[i].count;
+            }
+            if (entry != nullptr && !same)
+            {
+                for (u32 i = 0; i < entry->count; ++i)
+                {
+                    if (entry->objects[i].IsValid())
+                    {
+                        scene_->RemoveObject(entry->objects[i]);  // another mesh or material: made again
+                        entry->objects[i] = renderer::ObjectId{};
+                    }
+                }
+                entry->count = 0;
             }
             if (entry == nullptr)
             {
@@ -633,44 +679,88 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                 entries_.Push(fresh);
                 entry = &entries_[entries_.Size() - 1];
             }
-            if (!entry->object.IsValid())
+            if (entry->count == 0)
             {
-                renderer::RenderObjectDesc desc;
-                desc.mesh = mesh;
-                desc.material = material;
-                desc.transform = placed.matrix;
-                if (skinned)
+                bool all = true;
+                for (u32 i = 0; i < part_total; ++i)
                 {
-                    desc.joint_matrices = skeleton->palette[0].Data();
-                    desc.joint_count = static_cast<u32>(skeleton->palette.Size() < 256 ? skeleton->palette.Size()
-                                                                                       : 256);
+                    entry->part_material[i] = parts[i].material;
+                    entry->part_first[i] = parts[i].first;
+                    entry->part_count[i] = parts[i].count;
+                    if (parts[i].count == 0xFFFFFFFFu)
+                    {
+                        entry->objects[i] = renderer::ObjectId{};  // not drawn: its material is missing
+                        continue;
+                    }
+                    renderer::RenderObjectDesc desc;
+                    desc.mesh = mesh;
+                    desc.material = parts[i].material;
+                    desc.first_index = parts[i].first;
+                    desc.index_count = parts[i].count;
+                    desc.transform = placed.matrix;
+                    if (skinned)
+                    {
+                        desc.joint_matrices = skeleton->palette[0].Data();
+                        desc.joint_count = static_cast<u32>(skeleton->palette.Size() < 256 ? skeleton->palette.Size()
+                                                                                           : 256);
+                    }
+                    entry->objects[i] = scene_->AddObject(desc);
+                    all = all && entry->objects[i].IsValid();
                 }
-                entry->object = scene_->AddObject(desc);
+                if (!all)
+                {
+                    for (u32 i = 0; i < part_total; ++i)  // all of an entity's slots or none
+                    {
+                        if (entry->objects[i].IsValid())
+                        {
+                            scene_->RemoveObject(entry->objects[i]);
+                            entry->objects[i] = renderer::ObjectId{};
+                        }
+                    }
+                }
+                else
+                {
+                    entry->count = part_total;
+                }
                 entry->mesh = reference.mesh;
                 entry->material = reference.material_resource;
-                entry->material_index = material;
                 entry->transform = placed.matrix;
             }
             else if (MemCompare(&entry->transform, &placed.matrix, sizeof(Mat4)) != 0)
             {
-                scene_->SetTransform(entry->object, placed.matrix);
+                for (u32 i = 0; i < entry->count; ++i)
+                {
+                    if (entry->objects[i].IsValid())
+                    {
+                        scene_->SetTransform(entry->objects[i], placed.matrix);
+                    }
+                }
                 entry->transform = placed.matrix;
             }
-            if (skinned && entry->object.IsValid())
+            if (skinned)
             {  // the palette is rewritten by every animation update
-                scene_->SetJointMatrices(
-                    entry->object, skeleton->palette[0].Data(),
-                    static_cast<u32>(skeleton->palette.Size() < 256 ? skeleton->palette.Size() : 256));
+                for (u32 i = 0; i < entry->count; ++i)
+                {
+                    if (entry->objects[i].IsValid())
+                    {
+                        scene_->SetJointMatrices(
+                            entry->objects[i], skeleton->palette[0].Data(),
+                            static_cast<u32>(skeleton->palette.Size() < 256 ? skeleton->palette.Size() : 256));
+                    }
+                }
             }
-            entry->seen = entry->object.IsValid();
+            entry->seen = entry->count != 0;
         });
     for (usize i = 0; i < entries_.Size();)
     {
         if (!entries_[i].seen)
         {
-            if (entries_[i].object.IsValid())
+            for (u32 k = 0; k < entries_[i].count; ++k)
             {
-                scene_->RemoveObject(entries_[i].object);
+                if (entries_[i].objects[k].IsValid())
+                {
+                    scene_->RemoveObject(entries_[i].objects[k]);
+                }
             }
             entries_[i] = entries_[entries_.Size() - 1];
             entries_.Pop();
@@ -709,7 +799,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     last_width_ = width;
     last_height_ = height;
     frame_.SetTime(seconds, delta_seconds);
-    report.status = frame_.Render(scene_.Get(), &camera, nullptr);
+    report.status = frame_.Render(scene_.Get(), &camera, target);
     report.objects_drawn = frame_.GBufferStatistics().drawn_objects;
     return report;
 }

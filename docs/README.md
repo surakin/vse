@@ -9,6 +9,7 @@ pages are structured and when a day's work counts as documented. Per platform: [
 Internal design history is for contributors, not engine users: the specs in
 `docs/superpowers/specs/` —
 [job system](superpowers/specs/2026-08-13-job-system-design.md),
+[off-screen surfaces and multi-material meshes](superpowers/specs/2026-11-17-offscreen-and-multimaterial-design.md),
 [Unicode string support](superpowers/specs/2026-08-14-unicode-string-support-design.md),
 [command-line wrapper](superpowers/specs/2026-08-16-command-line-wrapper-design.md),
 [RHI design](superpowers/specs/2026-11-04-rhi-design.md),

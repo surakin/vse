@@ -205,6 +205,7 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
     const storage::RegisteredComponent* transform_component = registry.FindById(storage::kLocalTransformId);
     const storage::RegisteredComponent* mesh_component = registry.FindById(kMeshReferenceId);
     const storage::RegisteredComponent* name_component = registry.FindById(kEntityNameId);
+    const storage::RegisteredComponent* slot_component = registry.FindById(kMeshSlotMaterialsId);
     const storage::RegisteredComponent* skeleton_component = registry.FindById(animation::kSkeletonInstanceId);
     const storage::RegisteredComponent* link_component = registry.FindById(storage::kParentLinkId);
 
@@ -253,10 +254,23 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
             }
         }
     }
-    Vector<ResourceId> material_of_mesh;  // the material of the first primitive, or the null id
+    Vector<ResourceId> material_of_mesh;           // the material of the first primitive, or the null id
+    Vector<Vector<ResourceId>> materials_of_mesh;  // the material of every primitive (a mesh slot each), or null ids
     for (usize m = 0; m < meshes.Size(); ++m)
     {
         ResourceId material;
+        materials_of_mesh.Push(Vector<ResourceId>());
+        {
+            const JsonValue all = meshes.At(m).Get("primitives");
+            for (usize p = 0; all.Exists() && p < all.Size() && p < kMaxLevelSlotMaterials; ++p)
+            {
+                u64 index = 0;
+                bool present = false;
+                ENGINE_TRY(all.At(p).OptionalUnsigned("material", &index, 0xFFFFFFFFull, &present, error));
+                materials_of_mesh[m].Push(
+                    present && index < material_ids.Size() ? material_ids[static_cast<usize>(index)] : ResourceId());
+            }
+        }
         const JsonValue primitives = meshes.At(m).Get("primitives");
         if (primitives.Exists() && primitives.Size() != 0)
         {
@@ -356,6 +370,38 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
                     piece.bytes.Push(writer.Bytes()[b]);
                 }
                 pieces.Push(static_cast<Piece&&>(piece));
+                const Vector<ResourceId>& per_slot = materials_of_mesh[node.mesh];
+                bool differs = false;
+                for (usize k = 0; k < per_slot.Size(); ++k)
+                {
+                    differs = differs || per_slot[k].Value() != material.Value();
+                }
+                if (differs && slot_component != nullptr)
+                {
+                    MeshSlotMaterials slots;
+                    for (usize k = 0; k < per_slot.Size(); ++k)
+                    {
+                        slots.At(static_cast<u32>(k)).id = per_slot[k].Value();
+                        if (!per_slot[k].IsNone())
+                        {
+                            named.Push(per_slot[k].Value());
+                        }
+                    }
+                    Piece slot_piece;
+                    slot_piece.id = kMeshSlotMaterialsId;
+                    slot_piece.version = slot_component->Version();
+                    bytes::ByteWriter slot_writer;
+                    if (slot_component->Encode(&slots, slot_writer, limits).Failed())
+                    {
+                        return Refuse(error, StringView(where, CStrLength(where)),
+                                      "has slot materials a level cannot hold", ErrorCode::Invalid);
+                    }
+                    for (usize b = 0; b < slot_writer.Bytes().Size(); ++b)
+                    {
+                        slot_piece.bytes.Push(slot_writer.Bytes()[b]);
+                    }
+                    pieces.Push(static_cast<Piece&&>(slot_piece));
+                }
                 if (node.skin != kNoGltfIndex && node.skin < skins.Size())
                 {
                     animation::SkeletonInstance instance;

@@ -502,6 +502,97 @@ static void PlaceAt(engine_handle world, uint64_t entity, float x, float y, floa
     CHECK_STATUS(g_api->component_set(world, entity, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
 }
 
+/* Phase 24 Day 377: one mesh, two slots, a material each. The mesh is two triangles side by side (slots "left" and
+   "right"); the entity's own material is the default grey. */
+static int CountColor(const engine_pixels* pixels, unsigned x0, unsigned x1, int red)
+{
+    unsigned x;
+    unsigned y;
+    int count = 0;
+    for (y = 0; y < pixels->height; ++y)
+    {
+        for (x = x0; x < x1; ++x)
+        {
+            const unsigned char* p = Pixel(pixels, x, y);
+            const int is_red = p[0] > 100 && p[1] < 60 && p[2] < 60;
+            const int is_blue = p[2] > 100 && p[0] < 60 && p[1] < 60;
+            count += (red ? is_red : is_blue) ? 1 : 0;
+        }
+    }
+    return count;
+}
+
+static void TestMeshSlotMaterials(engine_handle engine, engine_handle surface, engine_pixels* pixels)
+{
+    const uint64_t two_id = 0xb06ull;
+    const uint64_t red_id = 0xe02ull;
+    const uint64_t blue_id = 0xe03ull;
+    Blob two = ReadWholeFile(RES_DATA_DIR, "two.mesh.blob");
+    Blob red = ReadWholeFile(RES_DATA_DIR, "red.mat.blob");
+    Blob blue = ReadWholeFile(RES_DATA_DIR, "blue.mat.blob");
+    engine_handle world;
+    uint64_t entity;
+    engine_string by_name;
+    if (two.data == NULL || red.data == NULL || blue.data == NULL)
+    {
+        return;
+    }
+    AddBlob(engine, two_id, &two);
+    AddBlob(engine, red_id, &red);
+    AddBlob(engine, blue_id, &blue);
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->entity_create(world, &entity), ENGINE_OK);
+    PlaceAt(world, entity, 0.0f, 0.0f, 0.0f);
+    CHECK_STATUS(SetMeshReference(world, entity, two_id, 0), ENGINE_OK);
+    CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
+
+    /* the arguments */
+    CHECK_STATUS(g_api->entity_set_mesh_slot_material(world, entity, 16, red_id), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->entity_set_mesh_slot_material(world, 0xdeadbeefull, 0, red_id), ENGINE_ERROR_STALE_HANDLE);
+    by_name.data = "nope";
+    by_name.length = 4;
+    CHECK_STATUS(g_api->entity_set_mesh_slot_material_by_name(world, entity, by_name, red_id), ENGINE_ERROR_NOT_FOUND);
+    by_name.length = 0;
+    CHECK_STATUS(g_api->entity_set_mesh_slot_material_by_name(world, entity, by_name, red_id),
+                 ENGINE_ERROR_INVALID_ARGUMENT);
+
+    /* no slot materials: the mesh is drawn whole in the entity's grey, no red and no blue */
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    CHECK(CountColor(pixels, 0, pixels->width, 1) == 0 && CountColor(pixels, 0, pixels->width, 0) == 0);
+
+    /* slot 0 by index, slot 1 by name: left red, right blue */
+    CHECK_STATUS(g_api->entity_set_mesh_slot_material(world, entity, 0, red_id), ENGINE_OK);
+    by_name.data = "right";
+    by_name.length = 5;
+    CHECK_STATUS(g_api->entity_set_mesh_slot_material_by_name(world, entity, by_name, blue_id), ENGINE_OK);
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    CHECK(CountColor(pixels, 0, pixels->width / 2, 1) > 100);
+    CHECK(CountColor(pixels, pixels->width / 2, pixels->width, 0) > 100);
+    CHECK(CountColor(pixels, pixels->width / 2, pixels->width, 1) == 0);
+    CHECK(CountColor(pixels, 0, pixels->width / 2, 0) == 0);
+
+    /* a slot whose material is not mounted draws nothing and is counted */
+    CHECK_STATUS(g_api->entity_set_mesh_slot_material(world, entity, 1, 0xdeadull), ENGINE_OK);
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    CHECK(CountColor(pixels, 0, pixels->width / 2, 1) > 100);
+    CHECK(CountColor(pixels, pixels->width / 2, pixels->width, 0) == 0);
+
+    /* setting a slot to 0 puts it back to the entity's material (grey); clearing all draws the mesh whole */
+    CHECK_STATUS(g_api->entity_set_mesh_slot_material(world, entity, 1, 0), ENGINE_OK);
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    CHECK(CountColor(pixels, pixels->width / 2, pixels->width, 0) == 0);
+    CHECK_STATUS(g_api->entity_clear_mesh_slot_materials(world, entity), ENGINE_OK);
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    CHECK(CountColor(pixels, 0, pixels->width, 1) == 0);
+
+    CHECK_STATUS(g_api->surface_set_world(surface, (engine_handle){0}), ENGINE_OK);
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+    free(two.data);
+    free(red.data);
+    free(blue.data);
+}
+
 int main(void)
 {
     host_window* window;
@@ -1595,6 +1686,8 @@ int main(void)
     CHECK_STATUS(SurfaceState(surface, &state), ENGINE_OK);
     CHECK(state.world_status == ENGINE_ERROR_STALE_HANDLE);
     CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_ERROR_STALE_HANDLE);
+
+    TestMeshSlotMaterials(engine, surface, &pixels);
 
     engine_buffer_release(&pixels.data);
     CHECK_STATUS(g_api->surface_destroy(surface), ENGINE_OK);

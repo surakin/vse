@@ -109,6 +109,13 @@ public:
     ///   UNSUPPORTED (it includes other levels) or INVALID_ARGUMENT (damaged), with the text set.
     engine_status ReadLevel(u64 id, Vector<byte>* bytes);
 
+    /// Finds the mesh slot named `name` of the mesh `id` (Phase 24 Day 377).
+    ///
+    /// - Param index: receives the slot's index.
+    /// - Returns: ENGINE_OK, NOT_FOUND (the mesh is not mounted, or has no such slot), TYPE_MISMATCH (not a mesh), with
+    ///   the text set.
+    engine_status FindMeshSlot(u64 id, StringView name, u32* index);
+
     /// Builds what the loader has read (called by every frame).
     ///
     /// - Thread-safety: thread-safe.

@@ -135,6 +135,10 @@ ObjectId RenderScene::AddObject(const RenderObjectDesc& desc)
     ENGINE_ASSERT(desc.joint_matrices == nullptr ||
                       (desc.mesh->Skinned() && desc.joint_count > 0 && desc.joint_count <= 256),
                   "AddObject: a palette needs a skinned mesh and 1 to 256 matrices");
+    ENGINE_ASSERT(desc.index_count == 0 ? desc.first_index == 0
+                                        : (desc.first_index <= desc.mesh->IndexCount() &&
+                                           desc.index_count <= desc.mesh->IndexCount() - desc.first_index),
+                  "AddObject: the index range lies outside the mesh");
     u32 slot;
     if (free_object_ != kNoSlot)
     {
@@ -158,6 +162,8 @@ ObjectId RenderScene::AddObject(const RenderObjectDesc& desc)
     s.object.joint_matrices = desc.joint_matrices;
     s.object.joint_count = desc.joint_count;
     s.object.skin_bounds_scale = desc.skin_bounds_scale;
+    s.object.first_index = desc.first_index;
+    s.object.index_count = desc.index_count;
     s.object.bounds = TransformBounds(SkinBounds(*desc.mesh, desc.skin_bounds_scale), desc.transform);
     ++object_count_;
     IndexObject(slot);

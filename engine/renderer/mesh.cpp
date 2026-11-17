@@ -96,6 +96,19 @@ const char* MeshGeometry::Validate() const
     {
         return "mesh: a skinned layout needs 1 to 256 joints and a stride of 8, and a rigid one no joints";
     }
+    if (range_count > kMaxMeshRanges)
+    {
+        return "mesh: more index ranges than a mesh may have";
+    }
+    for (u32 i = 0; i < range_count; ++i)
+    {
+        const MeshRange& r = ranges[i];
+        if (r.index_count == 0 || r.first_index > index_count || r.index_count > index_count - r.first_index ||
+            (!strip && r.first_index % primitive != 0) || (!strip && r.index_count % primitive != 0))
+        {
+            return "mesh: an index range lies outside the indices or does not fit the topology";
+        }
+    }
     return nullptr;
 }
 
@@ -171,12 +184,15 @@ MeshData& MeshData::operator=(MeshData&& other) noexcept
         vertex_count_ = other.vertex_count_;
         indices_ = static_cast<Vector<byte>&&>(other.indices_);
         index_count_ = other.index_count_;
+        range_count_ = other.range_count_;
+        ranges_ = other.ranges_;
         index_type_ = other.index_type_;
         topology_ = other.topology_;
         has_restart_ = other.has_restart_;
         bounds_ = other.bounds_;
         other.vertex_count_ = 0;
         other.index_count_ = 0;
+        other.range_count_ = 0;
     }
     return *this;
 }
@@ -189,6 +205,7 @@ void MeshData::Release()
     indices_.Reset();
     vertex_count_ = 0;
     index_count_ = 0;
+    range_count_ = 0;
     topology_ = rhi::PrimitiveTopology::TriangleList;
     has_restart_ = false;
     layout_ = VertexLayoutData();
@@ -917,6 +934,38 @@ const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out)
     return error;
 }
 
+const char* MeshData::SetRanges(const MeshRange* ranges, u32 count)
+{
+    if (!Valid())
+    {
+        return "mesh ranges: the mesh is empty";
+    }
+    if (count > kMaxMeshRanges || (count != 0 && ranges == nullptr))
+    {
+        return "mesh ranges: too many ranges";
+    }
+    const u32 primitive = topology_ == rhi::PrimitiveTopology::TriangleList ? 3
+                          : topology_ == rhi::PrimitiveTopology::LineList   ? 2
+                          : topology_ == rhi::PrimitiveTopology::PointList  ? 1
+                                                                            : 0;
+    for (u32 i = 0; i < count; ++i)
+    {
+        const MeshRange& r = ranges[i];
+        if (r.index_count == 0 || r.first_index > index_count_ || r.index_count > index_count_ - r.first_index ||
+            (primitive != 0 && (r.first_index % primitive != 0 || r.index_count % primitive != 0)))
+        {
+            return "mesh ranges: a range lies outside the indices or does not fit the topology";
+        }
+    }
+    ranges_ = Array<MeshRange, kMaxMeshRanges>{};
+    for (u32 i = 0; i < count; ++i)
+    {
+        ranges_[i] = ranges[i];
+    }
+    range_count_ = count;
+    return nullptr;
+}
+
 MeshGeometry MeshData::CopyGeometry() const
 {
     MeshGeometry g;
@@ -945,6 +994,8 @@ MeshGeometry MeshData::CopyGeometry() const
     g.bounds = bounds_;
     g.skin_offset = vertex_bytes + index_bytes;
     g.skin_joint_count = skin_joint_count_;
+    g.ranges = ranges_;
+    g.range_count = range_count_;
     g.bytes = MakeShared<OwnedBytes>(static_cast<Vector<byte>&&>(region));
     return g;
 }
@@ -983,6 +1034,8 @@ void GpuMesh::MoveFrom(GpuMesh& other)
     skin_buffer_ = other.skin_buffer_;
     vertex_count_ = other.vertex_count_;
     index_count_ = other.index_count_;
+    range_count_ = other.range_count_;
+    ranges_ = other.ranges_;
     index_type_ = other.index_type_;
     topology_ = other.topology_;
     has_restart_ = other.has_restart_;
@@ -1090,6 +1143,8 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
     skin_buffer_ = skin_buffer;
     vertex_count_ = data.VertexCount();
     index_count_ = data.IndexCount();
+    range_count_ = data.RangeCount();
+    ranges_ = data.Ranges();
     index_type_ = data.IndexFormat();
     topology_ = data.Topology();
     has_restart_ = data.HasPrimitiveRestart();
@@ -1125,6 +1180,8 @@ bool GpuMesh::CreateFromGeometry(rhi::Device* device, const MeshGeometry& geomet
     skin_buffer_ = skin_buffer;
     vertex_count_ = geometry.vertex_count;
     index_count_ = geometry.index_count;
+    range_count_ = geometry.range_count;
+    ranges_ = geometry.ranges;
     index_type_ = geometry.index_type;
     topology_ = geometry.topology;
     layout_ = geometry.layout;
@@ -1307,6 +1364,7 @@ void GpuMesh::Destroy()
     was_ready_ = false;
     vertex_count_ = 0;
     index_count_ = 0;
+    range_count_ = 0;
     sort_id_ = 0;
 }
 
@@ -1326,7 +1384,19 @@ void GpuMesh::RecordPrepare(rhi::CommandList* list)
     prepared_ = true;
 }
 
+MeshRange GpuMesh::Range(u32 i) const
+{
+    ENGINE_ASSERT(i < range_count_, "GpuMesh::Range: the range does not exist");
+    return ranges_[i];
+}
+
 void GpuMesh::Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance) const
+{
+    Draw(list, instance_count, first_instance, 0, 0);
+}
+
+void GpuMesh::Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance, u32 first_index,
+                   u32 index_count) const
 {
     ENGINE_ASSERT(Valid() && (prepared_ || ready_),
                   "GpuMesh::Draw: the mesh is empty or RecordPrepare was never called");
@@ -1336,7 +1406,15 @@ void GpuMesh::Draw(rhi::CommandList* list, u32 instance_count, u32 first_instanc
         list->SetVertexBuffer(1, skin_buffer_, 0);
     }
     list->SetIndexBuffer(index_buffer_, 0, index_type_);
-    list->DrawIndexed(index_count_, instance_count, 0, 0, first_instance);
+    if (index_count == 0)
+    {
+        ENGINE_ASSERT(first_index == 0, "GpuMesh::Draw: a first index without an index count");
+        list->DrawIndexed(index_count_, instance_count, 0, 0, first_instance);
+        return;
+    }
+    ENGINE_ASSERT(first_index <= index_count_ && index_count <= index_count_ - first_index,
+                  "GpuMesh::Draw: the index range lies outside the mesh");
+    list->DrawIndexed(index_count, instance_count, first_index, 0, first_instance);
 }
 
 }  // namespace engine_placeholder::renderer

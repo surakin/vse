@@ -4904,6 +4904,17 @@ Stable ids of the level components in the storage registry (the engine's own ran
 |---|---|---|
 | <a id="asset-kmeshreferenceid"></a>`kMeshReferenceId` | `50` | [`asset::MeshReference`](#asset-meshreference): stored. |
 | <a id="asset-kentitynameid"></a>`kEntityNameId` | `51` | [`asset::EntityName`](#asset-entityname): stored. |
+| <a id="asset-kmeshslotmaterialsid"></a>`kMeshSlotMaterialsId` | `52` | [`asset::MeshSlotMaterials`](#asset-meshslotmaterials): stored (Phase 24 Day 376). |
+
+## `kMaxLevelSlotMaterials` {#asset-kmaxlevelslotmaterials}
+
+`variable asset::kMaxLevelSlotMaterials` — defined in `engine/asset/level.h`
+
+```cpp
+inline constexpr u32 kMaxLevelSlotMaterials;
+```
+
+The most mesh slots a level gives a material of their own.
 
 ## `MeshReference` {#asset-meshreference}
 
@@ -4948,6 +4959,208 @@ u32 flags;
 ```
 
 Extra `renderer::ObjectFlags` bits.
+
+## `MeshSlotMaterials` {#asset-meshslotmaterials}
+
+`struct asset::MeshSlotMaterials` — defined in `engine/asset/level.h`
+
+```cpp
+struct MeshSlotMaterials { ... }
+```
+
+The materials of an entity's mesh slots (the primitives of a glTF mesh), named by id: slot `i` of the mesh draws with `slot[i]`, or with the entity's [`asset::MeshReference::material`](#asset-meshreference-material) when `slot[i]` is 0. An entity without this component draws all of its mesh with the one material, as before. Added in Phase 24 Day 376 as a component of its own, so no level written before it changes.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `s0` {#asset-meshslotmaterials-s0}
+
+`variable asset::MeshSlotMaterials::s0` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s0;
+```
+
+The material of slot 0; unset keeps the entity's own.
+
+### `s1` {#asset-meshslotmaterials-s1}
+
+`variable asset::MeshSlotMaterials::s1` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s1;
+```
+
+The material of slot 1; unset keeps the entity's own.
+
+### `s2` {#asset-meshslotmaterials-s2}
+
+`variable asset::MeshSlotMaterials::s2` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s2;
+```
+
+The material of slot 2; unset keeps the entity's own.
+
+### `s3` {#asset-meshslotmaterials-s3}
+
+`variable asset::MeshSlotMaterials::s3` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s3;
+```
+
+The material of slot 3; unset keeps the entity's own.
+
+### `s4` {#asset-meshslotmaterials-s4}
+
+`variable asset::MeshSlotMaterials::s4` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s4;
+```
+
+The material of slot 4; unset keeps the entity's own.
+
+### `s5` {#asset-meshslotmaterials-s5}
+
+`variable asset::MeshSlotMaterials::s5` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s5;
+```
+
+The material of slot 5; unset keeps the entity's own.
+
+### `s6` {#asset-meshslotmaterials-s6}
+
+`variable asset::MeshSlotMaterials::s6` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s6;
+```
+
+The material of slot 6; unset keeps the entity's own.
+
+### `s7` {#asset-meshslotmaterials-s7}
+
+`variable asset::MeshSlotMaterials::s7` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s7;
+```
+
+The material of slot 7; unset keeps the entity's own.
+
+### `s8` {#asset-meshslotmaterials-s8}
+
+`variable asset::MeshSlotMaterials::s8` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s8;
+```
+
+The material of slot 8; unset keeps the entity's own.
+
+### `s9` {#asset-meshslotmaterials-s9}
+
+`variable asset::MeshSlotMaterials::s9` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s9;
+```
+
+The material of slot 9; unset keeps the entity's own.
+
+### `s10` {#asset-meshslotmaterials-s10}
+
+`variable asset::MeshSlotMaterials::s10` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s10;
+```
+
+The material of slot 10; unset keeps the entity's own.
+
+### `s11` {#asset-meshslotmaterials-s11}
+
+`variable asset::MeshSlotMaterials::s11` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s11;
+```
+
+The material of slot 11; unset keeps the entity's own.
+
+### `s12` {#asset-meshslotmaterials-s12}
+
+`variable asset::MeshSlotMaterials::s12` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s12;
+```
+
+The material of slot 12; unset keeps the entity's own.
+
+### `s13` {#asset-meshslotmaterials-s13}
+
+`variable asset::MeshSlotMaterials::s13` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s13;
+```
+
+The material of slot 13; unset keeps the entity's own.
+
+### `s14` {#asset-meshslotmaterials-s14}
+
+`variable asset::MeshSlotMaterials::s14` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s14;
+```
+
+The material of slot 14; unset keeps the entity's own.
+
+### `s15` {#asset-meshslotmaterials-s15}
+
+`variable asset::MeshSlotMaterials::s15` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef s15;
+```
+
+The material of slot 15; unset keeps the entity's own.
+
+### `At(u32)` {#asset-meshslotmaterials-at-u32}
+
+`method asset::MeshSlotMaterials::At` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef& At(u32 i);
+```
+
+Returns slot `i` (below `kMaxLevelSlotMaterials`).
+
+| Field | Value |
+|---|---|
+| Aborts | `i` is out of range. |
+
+### `At(u32)` {#asset-meshslotmaterials-at-u32-const}
+
+`method asset::MeshSlotMaterials::At` — defined in `engine/asset/level.h`
+
+```cpp
+const storage::ResourceRef& At(u32 i) const;
+```
+
+Returns slot `i` (below `kMaxLevelSlotMaterials`).
+
+| Field | Value |
+|---|---|
+| Aborts | `i` is out of range. |
 
 ## `EntityName` {#asset-entityname}
 

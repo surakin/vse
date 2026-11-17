@@ -5089,6 +5089,50 @@ inline constexpr u32 kSkinVertexBytes;
 
 Bytes of one vertex of the skin stream.
 
+## `kMaxMeshRanges` {#renderer-kmaxmeshranges}
+
+`variable renderer::kMaxMeshRanges` — defined in `engine/renderer/mesh.h`
+
+```cpp
+inline constexpr u32 kMaxMeshRanges;
+```
+
+The most index ranges (material slots) a mesh has.
+
+## `MeshRange` {#renderer-meshrange}
+
+`struct renderer::MeshRange` — defined in `engine/renderer/mesh.h`
+
+```cpp
+struct MeshRange { ... }
+```
+
+A run of a mesh's indices drawn with one material (one material slot of the minted mesh).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `first_index` {#renderer-meshrange-first-index}
+
+`variable renderer::MeshRange::first_index` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 first_index;
+```
+
+The first index of the run.
+
+### `index_count` {#renderer-meshrange-index-count}
+
+`variable renderer::MeshRange::index_count` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 index_count;
+```
+
+The number of indices; a multiple of 3 for a triangle list.
+
 ## `MeshGeometry` {#renderer-meshgeometry}
 
 `struct renderer::MeshGeometry` — defined in `engine/renderer/mesh.h`
@@ -5213,6 +5257,26 @@ u32 skin_joint_count;
 ```
 
 The skeleton's joint count (1 to 256) for a skinned layout, else 0.
+
+### `ranges` {#renderer-meshgeometry-ranges}
+
+`variable renderer::MeshGeometry::ranges` — defined in `engine/renderer/mesh.h`
+
+```cpp
+Array<MeshRange, kMaxMeshRanges> ranges;
+```
+
+The material slots' index ranges; the first `range_count`.
+
+### `range_count` {#renderer-meshgeometry-range-count}
+
+`variable renderer::MeshGeometry::range_count` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 range_count;
+```
+
+0 for a mesh drawn whole; otherwise each range lies inside `index_count`.
 
 ### `Validate()` {#renderer-meshgeometry-validate-const}
 
@@ -5349,6 +5413,52 @@ Adds the skin stream of a skinned mesh: eight bytes per vertex, joint indices (`
 | Fails | reported through the return value. |
 | Thread-safety | thread-compatible. |
 | Ownership | the bytes are copied. |
+
+### `SetRanges(const MeshRange*,u32)` {#renderer-meshdata-setranges-const-meshrange-star-u32}
+
+`method renderer::MeshData::SetRanges` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const char* SetRanges(const MeshRange* ranges, u32 count);
+```
+
+Names the index ranges (material slots) of the mesh, each drawn with its own material. Call it after [`renderer::MeshData::Set`](#renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology); a later `Set` drops the ranges.
+
+| Field | Value |
+|---|---|
+| Parameter `ranges` | `count` ranges; each inside the indices, non-empty and a whole number of primitives. |
+| Parameter `count` | at most `kMaxMeshRanges`; 0 clears the ranges. |
+| Returns | null, or a static message (the mesh is empty, too many ranges, a range outside the indices); the mesh is then unchanged. |
+| Fails | reported through the return value. |
+| Ownership | `ranges` is borrowed for the call. |
+
+### `RangeCount()` {#renderer-meshdata-rangecount-const}
+
+`method renderer::MeshData::RangeCount` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 RangeCount() const;
+```
+
+Returns the number of index ranges (0 for a mesh drawn whole).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `Ranges()` {#renderer-meshdata-ranges-const}
+
+`method renderer::MeshData::Ranges` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const Array<MeshRange, kMaxMeshRanges>& Ranges() const;
+```
+
+Returns the ranges (the first `RangeCount()` entries).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `Skinned()` {#renderer-meshdata-skinned-const}
 
@@ -6170,6 +6280,34 @@ const Bounds& GetBounds() const;
 
 Returns the object-space bounds.
 
+### `RangeCount()` {#renderer-gpumesh-rangecount-const}
+
+`method renderer::GpuMesh::RangeCount` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 RangeCount() const;
+```
+
+Returns the number of index ranges (material slots) the mesh has; 0 for a mesh drawn whole.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `Range(u32)` {#renderer-gpumesh-range-u32-const}
+
+`method renderer::GpuMesh::Range` — defined in `engine/renderer/mesh.h`
+
+```cpp
+MeshRange Range(u32 i) const;
+```
+
+Returns index range `i`.
+
+| Field | Value |
+|---|---|
+| Aborts | `i` is not below `RangeCount()`. |
+
 ### `SortId()` {#renderer-gpumesh-sortid-const}
 
 `method renderer::GpuMesh::SortId` — defined in `engine/renderer/mesh.h`
@@ -6240,6 +6378,21 @@ Binds the buffers and draws all indices for `instance_count` instances starting 
 | Parameter `instance_count` | number of instances, at least 1. |
 | Parameter `first_instance` | the first instance index (the per-object data index, see [`renderer::FrameResources`](#renderer-frameresources)). |
 | Aborts | this mesh is empty, or as for [`rhi::CommandList::DrawIndexed`](rhi.md#rhi-commandlist-drawindexed-u32-u32-u32-i32-u32). |
+| Ownership | `list` is borrowed for the call. |
+
+### `Draw(rhi::CommandList*,u32,u32,u32,u32)` {#renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-u32-u32-const}
+
+`method renderer::GpuMesh::Draw` — defined in `engine/renderer/mesh.h`
+
+```cpp
+void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance, u32 first_index, u32 index_count) const;
+```
+
+Draws `index_count` indices from `first_index` (a range of the mesh); `index_count` 0 draws all indices, as the shorter overload does. Same rules as the other overload.
+
+| Field | Value |
+|---|---|
+| Aborts | this mesh is empty, the range lies outside the mesh, or as for the other overload. |
 | Ownership | `list` is borrowed for the call. |
 
 ## `GpuMeshPtr` {#renderer-gpumeshptr}
@@ -7740,6 +7893,26 @@ f32 skin_bounds_scale;
 
 Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices outside the bind-pose box; the game sets this above 1 for a clip that does.
 
+### `first_index` {#renderer-renderobjectdesc-first-index}
+
+`variable renderer::RenderObjectDesc::first_index` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 first_index;
+```
+
+The first index drawn (a range of the mesh: one material slot). With `index_count` 0 the whole mesh is drawn.
+
+### `index_count` {#renderer-renderobjectdesc-index-count}
+
+`variable renderer::RenderObjectDesc::index_count` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 index_count;
+```
+
+The number of indices drawn from `first_index`; 0 draws every index of the mesh. The range must lie inside the mesh (`AddObject` aborts otherwise).
+
 ## `RenderObject` {#renderer-renderobject}
 
 `struct renderer::RenderObject` — defined in `engine/renderer/render_scene.h`
@@ -7834,6 +8007,26 @@ f32 skin_bounds_scale;
 ```
 
 Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices outside the bind-pose box; the game sets this above 1 for a clip that does.
+
+### `first_index` {#renderer-renderobject-first-index}
+
+`variable renderer::RenderObject::first_index` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 first_index;
+```
+
+The first index drawn; see [`renderer::RenderObjectDesc::first_index`](#renderer-renderobjectdesc-first-index).
+
+### `index_count` {#renderer-renderobject-index-count}
+
+`variable renderer::RenderObject::index_count` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 index_count;
+```
+
+The number of indices drawn; 0 draws the whole mesh.
 
 ## `LightType` {#renderer-lighttype}
 

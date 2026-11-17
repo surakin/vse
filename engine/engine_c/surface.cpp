@@ -139,6 +139,46 @@ struct SurfaceObject
     os::ForeignWindow window;
     rhi::DevicePtr device;
     rhi::Swapchain* swapchain = nullptr;
+    bool
+        offscreen = false;  // ENGINE_SURFACE_OFFSCREEN (Phase 24 Day 378): no window, no swapchain, a target of its own
+    rhi::TextureHandle target;  // the colour target of an off-screen surface (RGBA8, sRGB-encoded)
+    u32 target_width = 0;
+    u32 target_height = 0;
+    // The read-back ring of an off-screen surface (Day 379): a copy of the target goes into a GpuToCpu buffer with a
+    // fence; a finished one is read out when the host acquires. Held frames are CPU copies of their own.
+    struct RingSlot
+    {
+        rhi::BufferHandle buffer;
+        u64 buffer_bytes = 0;
+        rhi::FenceValue fence = 0;
+        u64 frame = 0;
+        u32 width = 0;
+        u32 height = 0;
+        u32 pitch = 0;
+        enum class State : u8
+        {
+            Free,
+            Pending,
+            Ready
+        } state = State::Free;
+    };
+    static constexpr u32 kRingSlots = 3;
+    static constexpr u32 kMaxHeld = 2;
+    RingSlot ring[kRingSlots];
+    struct HeldFrame
+    {
+        bool used = false;
+        Vector<byte> rgba;
+        u32 width = 0;
+        u32 height = 0;
+        u64 frame = 0;
+    };
+    HeldFrame held[kMaxHeld];
+    u64 frames_rendered = 0;
+    u64 frames_acquired = 0;
+    u64 frames_dropped = 0;
+    u64 frames_skipped_slow = 0;
+    u64 last_acquired_frame = 0;
     f32 background[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     u64 presented = 0;
     u64 recoveries = 0;
@@ -171,7 +211,11 @@ namespace
 os::NativeWindowInfo NativeOf(const engine_surface_info& info, void* layer = nullptr)
 {
     os::NativeWindowInfo native;
-    if (info.kind == ENGINE_SURFACE_COCOA)
+    if (info.kind == ENGINE_SURFACE_OFFSCREEN)
+    {
+        native.kind = os::NativeWindowKind::Invalid;  // no native window
+    }
+    else if (info.kind == ENGINE_SURFACE_COCOA)
     {
         native.kind = os::NativeWindowKind::Cocoa;
         native.display = info.display;
@@ -213,6 +257,12 @@ rhi::Backend BackendOf(const engine_surface_info& info)
     {
         return rhi::Backend::Dx12;
     }
+    if (info.kind == ENGINE_SURFACE_OFFSCREEN)
+    {  // the platform's own graphics API
+        return ENGINE_PLATFORM_WINDOWS != 0 ? rhi::Backend::Dx12
+               : ENGINE_PLATFORM_MACOS != 0 ? rhi::Backend::Metal
+                                            : rhi::Backend::Vulkan;
+    }
     return info.kind == ENGINE_SURFACE_COCOA ? rhi::Backend::Metal : rhi::Backend::Vulkan;
 }
 
@@ -220,11 +270,11 @@ bool BackendSupported(u32 kind, rhi::Backend backend)
 {
     if (backend == rhi::Backend::Dx12)
     {
-        return ENGINE_PLATFORM_WINDOWS != 0 && kind == ENGINE_SURFACE_WIN32;
+        return ENGINE_PLATFORM_WINDOWS != 0 && (kind == ENGINE_SURFACE_WIN32 || kind == ENGINE_SURFACE_OFFSCREEN);
     }
     if (backend == rhi::Backend::Metal)
     {
-        return ENGINE_PLATFORM_MACOS != 0 && kind == ENGINE_SURFACE_COCOA;
+        return ENGINE_PLATFORM_MACOS != 0 && (kind == ENGINE_SURFACE_COCOA || kind == ENGINE_SURFACE_OFFSCREEN);
     }
 #if ENGINE_RHI_HAVE_VULKAN
     return backend == rhi::Backend::Vulkan && kind != ENGINE_SURFACE_COCOA;  // no Vulkan on macOS (no MoltenVK)
@@ -264,8 +314,15 @@ engine_status CheckInfo(const engine_surface_info* given, engine_surface_info* o
     // Wayland and Win32 name the window by a pointer (`surface`), X11 by an id; a Cocoa surface's CAMetalLayer is
     // optional.
     const bool by_pointer = out->kind == ENGINE_SURFACE_WAYLAND || out->kind == ENGINE_SURFACE_WIN32;
-    if (out->display == nullptr || (by_pointer && out->surface == nullptr) ||
-        (out->kind == ENGINE_SURFACE_X11 && out->window_id == 0))
+    if (out->kind == ENGINE_SURFACE_OFFSCREEN)
+    {  // no window: nothing of the native handles is read
+        out->display = nullptr;
+        out->surface = nullptr;
+        out->window_id = 0;
+        out->present_mode = ENGINE_PRESENT_FIFO;
+    }
+    else if (out->display == nullptr || (by_pointer && out->surface == nullptr) ||
+             (out->kind == ENGINE_SURFACE_X11 && out->window_id == 0))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the native handles of the window are missing");
     }
@@ -295,6 +352,8 @@ engine_status CheckInfo(const engine_surface_info* given, engine_surface_info* o
 }
 
 void BeforePresent(rhi::TextureHandle image, void* user);
+void DestroyRing(SurfaceObject* s, bool destroy_buffers);
+void PollRing(SurfaceObject* s);
 
 // Makes the scene a bound world is drawn with, on the surface's device and swapchain.
 engine_status MakeScene(SurfaceObject* s, ResourceHost* resources)
@@ -326,7 +385,7 @@ engine_status Build(SurfaceObject* s)
     rhi::DeviceCreateInfo info;
     info.backend = s->backend;
     info.application_name = "engine";
-    info.window = &s->window;
+    info.window = s->offscreen ? nullptr : &s->window;
     info.pipeline_cache = false;
     // A new device after a loss stays on the surface's adapter: picked anew, a Direct3D 12 adapter whose removed device
     // another surface still holds reads as unsuitable, and the choice would fall to WARP, the software adapter (Day
@@ -340,6 +399,11 @@ engine_status Build(SurfaceObject* s)
                     : s->backend == rhi::Backend::Dx12 ? "no Direct3D 12 device can present to this window"
                                                        : "no Vulkan device can present to this window");
     }
+    if (s->offscreen)
+    {
+        CStrCopyTo(s->adapter, sizeof(s->adapter), s->device->Adapter().id);
+        return ENGINE_OK;  // the target is made by the first frame that has a size
+    }
     s->swapchain = s->device->CreateSwapchain(SwapchainDescOf(s));
     if (s->swapchain == nullptr)
     {
@@ -348,6 +412,46 @@ engine_status Build(SurfaceObject* s)
     }
     CStrCopyTo(s->adapter, sizeof(s->adapter), s->device->Adapter().id);
     return ENGINE_OK;
+}
+
+// Makes the colour target of an off-screen surface the size its window object says (Phase 24 Day 378), or none for a
+// size of 0. A target in use by frames still in flight is let go only after the device is idle.
+//
+// - Returns: false when the device refused the target (the surface skips the frame).
+bool EnsureTarget(SurfaceObject* s)
+{
+    const u32 width = s->window.Width();
+    const u32 height = s->window.Height();
+    if (s->target.IsValid() && s->target_width == width && s->target_height == height)
+    {
+        return true;
+    }
+    if (s->target.IsValid())
+    {
+        s->device->WaitIdle();  // the frames that drew into it are done
+        s->device->DestroyTexture(s->target);
+        s->target = rhi::TextureHandle{};
+        s->target_width = 0;
+        s->target_height = 0;
+    }
+    if (width == 0 || height == 0)
+    {
+        return true;
+    }
+    rhi::TextureDesc desc;
+    desc.width = width;
+    desc.height = height;
+    desc.format = rhi::Format::RGBA8_SRGB;
+    desc.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
+    desc.debug_name = "offscreen surface";
+    s->target = s->device->CreateTexture(desc);
+    if (!s->target.IsValid())
+    {
+        return false;
+    }
+    s->target_width = width;
+    s->target_height = height;
+    return true;
 }
 
 // Tells the tickets that wait on a surface that they will never be served.
@@ -370,11 +474,12 @@ void FailWaiting(SurfaceObject* s, Vector<PixelsObject*>* tickets_by_slot, engin
 bool SurfaceKindSupported(u32 kind)
 {
 #if ENGINE_PLATFORM_MACOS
-    return kind == ENGINE_SURFACE_COCOA;  // Metal, which every macOS build has
+    return kind == ENGINE_SURFACE_COCOA || kind == ENGINE_SURFACE_OFFSCREEN;  // Metal, which every macOS build has
 #elif ENGINE_PLATFORM_WINDOWS
-    return kind == ENGINE_SURFACE_WIN32;  // Direct3D 12 always, Vulkan when the backend is built (Day 354)
+    return kind == ENGINE_SURFACE_WIN32 ||
+           kind == ENGINE_SURFACE_OFFSCREEN;  // Direct3D 12 always, Vulkan when the backend is built (Day 354)
 #elif ENGINE_RHI_HAVE_VULKAN
-    return kind == ENGINE_SURFACE_X11 || kind == ENGINE_SURFACE_WAYLAND;
+    return kind == ENGINE_SURFACE_X11 || kind == ENGINE_SURFACE_WAYLAND || kind == ENGINE_SURFACE_OFFSCREEN;
 #else
     (void)kind;
     return false;
@@ -387,9 +492,23 @@ SurfaceHost::~SurfaceHost()
 {
     for (usize i = 0; i < surfaces_.Size(); ++i)
     {
-        if (surfaces_[i].object.Get() != nullptr && surfaces_[i].object->swapchain != nullptr)
+        SurfaceObject* o = surfaces_[i].object.Get();
+        if (o != nullptr && o->swapchain != nullptr)
         {
-            surfaces_[i].object->device->DestroySwapchain(surfaces_[i].object->swapchain);
+            o->device->DestroySwapchain(o->swapchain);
+        }
+        if (o != nullptr && o->offscreen && o->device != nullptr)
+        {  // the target and the ring leave before their device
+            if (!o->device->DeviceLost())
+            {
+                o->device->WaitIdle();
+            }
+            DestroyRing(o, true);
+            if (o->target.IsValid())
+            {
+                o->device->DestroyTexture(o->target);
+                o->target = rhi::TextureHandle{};
+            }
         }
     }
 }
@@ -428,6 +547,7 @@ engine_status SurfaceHost::Create(const engine_surface_info* given, engine_handl
     cocoa = macos::CocoaLayer();  // the reference moved: the local owns nothing
 #endif
     object->present_mode = info.present_mode;
+    object->offscreen = info.kind == ENGINE_SURFACE_OFFSCREEN;
     object->backend = BackendOf(info);
     if (info.callbacks != nullptr)
     {
@@ -453,7 +573,10 @@ engine_status SurfaceHost::Create(const engine_surface_info* given, engine_handl
         {
             if (slot >= kMaxSurfaces)
             {
-                object->device->DestroySwapchain(object->swapchain);
+                if (object->swapchain != nullptr)
+                {
+                    object->device->DestroySwapchain(object->swapchain);
+                }
                 EngineObjectRelease();
                 return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "too many surfaces exist (at most 64)");
             }
@@ -488,6 +611,16 @@ engine_status SurfaceHost::Destroy(engine_handle surface)
         dying = Move(slot->object);
     }
     dying->scene.Reset();  // its renderer points at the swapchain
+    if (dying->offscreen && dying->device != nullptr)
+    {
+        dying->device->WaitIdle();
+        DestroyRing(dying.Get(), true);
+        if (dying->target.IsValid())
+        {
+            dying->device->DestroyTexture(dying->target);
+            dying->target = rhi::TextureHandle{};
+        }
+    }
     if (dying->swapchain != nullptr)
     {
         dying->device->DestroySwapchain(dying->swapchain);
@@ -823,6 +956,28 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
         s->device->DestroySwapchain(s->swapchain);
         s->swapchain = nullptr;
     }
+    if (s->offscreen)
+    {  // made again by the next frame, on this device or the new one (the ring holds buffers of the old device)
+        if (s->device != nullptr)
+        {
+            if (!s->device->DeviceLost())
+            {
+                s->device->WaitIdle();  // a lost device has nothing running; its objects are still ours to destroy
+            }
+            DestroyRing(s, true);
+            if (s->target.IsValid())
+            {
+                s->device->DestroyTexture(s->target);
+            }
+        }
+        else
+        {
+            DestroyRing(s, false);
+        }
+        s->target = rhi::TextureHandle{};
+        s->target_width = 0;
+        s->target_height = 0;
+    }
     s->active_touch = 0;
 #if ENGINE_PLATFORM_MACOS
     macos::DetachLayer(&s->cocoa);  // the old view's layer, after the swapchain that used it
@@ -843,7 +998,7 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
             return built;
         }
     }
-    else
+    else if (!s->offscreen)
     {
         if (!s->device->RecreateSurface(&s->window))
         {
@@ -936,7 +1091,7 @@ engine_status SurfaceHost::SetWorld(engine_handle surface, engine_handle world, 
         ClearSceneReport(s);
         return ENGINE_OK;
     }
-    if (s->lost || s->swapchain == nullptr)
+    if (s->lost || (s->swapchain == nullptr && !s->offscreen))
     {
         return Fail(ENGINE_ERROR_UNSUPPORTED, "the surface is lost: call surface_rebind first");
     }
@@ -990,8 +1145,8 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ca
     engine_surface_state full = {};
     engine_surface_state* const out = &full;
     out->struct_size = sizeof(engine_surface_state);
-    out->image_width = s->swapchain != nullptr ? s->swapchain->Width() : 0;
-    out->image_height = s->swapchain != nullptr ? s->swapchain->Height() : 0;
+    out->image_width = s->offscreen ? s->target_width : s->swapchain != nullptr ? s->swapchain->Width() : 0;
+    out->image_height = s->offscreen ? s->target_height : s->swapchain != nullptr ? s->swapchain->Height() : 0;
     out->visible = s->visible ? 1 : 0;
     out->lost = s->lost ? 1 : 0;
     out->frames_presented = s->presented;
@@ -1006,6 +1161,10 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ca
     out->lights_refused = s->lights_refused;
     out->labels_drawn = s->labels_drawn;
     out->labels_refused = s->labels_refused;
+    out->frames_rendered = s->frames_rendered;
+    out->frames_acquired = s->frames_acquired;
+    out->frames_dropped = s->frames_dropped;
+    out->frames_skipped_slow_host = s->frames_skipped_slow;
     out->textures_uploaded = s->scene != nullptr ? s->scene->TextureUploads() : 0;
     out->texture_bytes_uploaded = s->scene != nullptr ? s->scene->TextureBytes() : 0;
     out->present_mode = s->present_mode;
@@ -1020,6 +1179,124 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ca
     full.struct_size = written;  // a host built against an older header gets the fields it knows
     MemCopy(caller, &full, written);
     return ENGINE_OK;
+}
+
+engine_status SurfaceHost::AcquireFrame(engine_handle surface, engine_frame_image* out)
+{
+    if (out == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out` is NULL");
+    }
+    if (StructSizeOf(out) < sizeof(engine_frame_image))
+    {
+        return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_frame_image.struct_size is smaller than the struct");
+    }
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+    SurfaceObject* s = slot->object.Get();
+    if (!s->offscreen)
+    {
+        return Fail(ENGINE_ERROR_UNSUPPORTED, "surface_acquire_frame needs an off-screen surface");
+    }
+    SurfaceObject::HeldFrame* held = nullptr;
+    for (SurfaceObject::HeldFrame& h : s->held)
+    {
+        if (!h.used)
+        {
+            held = &h;
+            break;
+        }
+    }
+    if (held == nullptr)
+    {
+        return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "two frames are held: release one");
+    }
+    if (s->device == nullptr || s->lost)
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "the surface has no finished frame");
+    }
+    PollRing(s);
+    SurfaceObject::RingSlot* newest = nullptr;
+    for (SurfaceObject::RingSlot& r : s->ring)
+    {
+        if (r.state == SurfaceObject::RingSlot::State::Ready && r.frame <= s->last_acquired_frame)
+        {  // older than a frame the host already took: never handed out after it
+            r.state = SurfaceObject::RingSlot::State::Free;
+            ++s->frames_dropped;
+            continue;
+        }
+        if (r.state == SurfaceObject::RingSlot::State::Ready && (newest == nullptr || r.frame > newest->frame))
+        {
+            newest = &r;
+        }
+    }
+    if (newest == nullptr)
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "no frame has finished since the last acquire");
+    }
+    const u32 row = newest->width * 4;
+    held->rgba.Resize(static_cast<usize>(row) * newest->height);
+    const byte* mapped = static_cast<const byte*>(s->device->MapBuffer(newest->buffer));
+    if (mapped == nullptr)
+    {
+        return Fail(ENGINE_ERROR_UNSUPPORTED, "the read-back buffer could not be mapped");
+    }
+    for (u32 y = 0; y < newest->height; ++y)
+    {
+        MemCopy(held->rgba.Data() + static_cast<usize>(y) * row, mapped + static_cast<usize>(y) * newest->pitch, row);
+    }
+    s->device->UnmapBuffer(newest->buffer);
+    held->used = true;
+    held->width = newest->width;
+    held->height = newest->height;
+    held->frame = newest->frame;
+    // every finished frame older than this one is never taken
+    u64 older = 0;
+    for (SurfaceObject::RingSlot& r : s->ring)
+    {
+        if (r.state == SurfaceObject::RingSlot::State::Ready)
+        {
+            if (&r != newest && r.frame > s->last_acquired_frame)
+            {
+                ++older;
+            }
+            r.state = SurfaceObject::RingSlot::State::Free;
+        }
+    }
+    // frames that were replaced in the ring were counted when replaced; ones that finished and are passed over now:
+    s->frames_dropped += older;
+    out->width = held->width;
+    out->height = held->height;
+    out->stride = row;
+    out->data = held->rgba.Data();
+    out->frame = held->frame;
+    out->dropped = older;
+    s->last_acquired_frame = held->frame;
+    ++s->frames_acquired;
+    return ENGINE_OK;
+}
+
+engine_status SurfaceHost::ReleaseFrame(engine_handle surface, const engine_frame_image* image)
+{
+    if (image == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`image` is NULL");
+    }
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+    SurfaceObject* s = slot->object.Get();
+    for (SurfaceObject::HeldFrame& h : s->held)
+    {
+        if (h.used && h.rgba.Data() == image->data)
+        {
+            h.used = false;
+            h.rgba.Reset();
+            return ENGINE_OK;
+        }
+    }
+    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the frame is not held from this surface");
 }
 
 engine_status SurfaceHost::ReadPixels(engine_handle surface, engine_handle* ticket)
@@ -1131,17 +1408,18 @@ namespace
 // The pixels of the image just drawn, as RGBA8 (the swapchain's own encoding: sRGB when the format is).
 bool ReadImage(SurfaceObject* s, rhi::TextureHandle image, PixelsObject* out)
 {
-    const rhi::Format format = s->swapchain->ImageFormat();
+    const rhi::Format format = s->offscreen ? rhi::Format::RGBA8_SRGB : s->swapchain->ImageFormat();
     const bool bgra = format == rhi::Format::BGRA8_UNorm || format == rhi::Format::BGRA8_SRGB;
     const bool rgba = format == rhi::Format::RGBA8_UNorm || format == rhi::Format::RGBA8_SRGB;
     if (!bgra && !rgba)
     {
         return false;
     }
-    const u32 width = s->swapchain->Width();
-    const u32 height = s->swapchain->Height();
+    const u32 width = s->offscreen ? s->target_width : s->swapchain->Width();
+    const u32 height = s->offscreen ? s->target_height : s->swapchain->Height();
     out->rgba.Resize(static_cast<usize>(width) * height * 4);
-    if (!s->device->ReadbackTexture(image, 0, 0, out->rgba.Data(), out->rgba.Size(), rhi::ResourceState::Present))
+    if (!s->device->ReadbackTexture(image, 0, 0, out->rgba.Data(), out->rgba.Size(),
+                                    s->offscreen ? rhi::ResourceState::CopySrc : rhi::ResourceState::Present))
     {
         return false;
     }
@@ -1157,6 +1435,118 @@ bool ReadImage(SurfaceObject* s, rhi::TextureHandle image, PixelsObject* out)
     out->width = width;
     out->height = height;
     return true;
+}
+
+// Drops the ring's GPU buffers (the device must be idle with them, or about to be destroyed).
+void DestroyRing(SurfaceObject* s, bool destroy_buffers)
+{
+    for (SurfaceObject::RingSlot& slot : s->ring)
+    {
+        if (destroy_buffers && slot.buffer.IsValid() && s->device != nullptr)
+        {
+            s->device->DestroyBuffer(slot.buffer);
+        }
+        slot = SurfaceObject::RingSlot{};
+    }
+}
+
+// Moves the pending slots whose copy the GPU has finished to Ready, without waiting.
+void PollRing(SurfaceObject* s)
+{
+    const rhi::FenceValue done = s->device->CompletedFence();
+    for (SurfaceObject::RingSlot& slot : s->ring)
+    {
+        if (slot.state == SurfaceObject::RingSlot::State::Pending && done >= slot.fence)
+        {
+            slot.state = SurfaceObject::RingSlot::State::Ready;
+        }
+    }
+}
+
+// Starts the copy of the frame just drawn into a free ring slot; with no free slot the frame is skipped and counted.
+void QueueFrame(SurfaceObject* s)
+{
+    ++s->frames_rendered;
+    PollRing(s);
+    SurfaceObject::RingSlot* pick = nullptr;
+    for (SurfaceObject::RingSlot& slot : s->ring)
+    {
+        if (slot.state == SurfaceObject::RingSlot::State::Free)
+        {
+            pick = &slot;
+            break;
+        }
+    }
+    if (pick == nullptr)
+    {  // replace the oldest finished frame the host has not taken (it counts as dropped when a newer one is taken)
+        for (SurfaceObject::RingSlot& slot : s->ring)
+        {
+            if (slot.state == SurfaceObject::RingSlot::State::Ready && (pick == nullptr || slot.frame < pick->frame))
+            {
+                pick = &slot;
+            }
+        }
+        if (pick != nullptr)
+        {
+            ++s->frames_dropped;
+        }
+    }
+    if (pick == nullptr)
+    {
+        ++s->frames_skipped_slow;
+        return;
+    }
+    const u32 width = s->target_width;
+    const u32 height = s->target_height;
+    const u32 pitch = (width * 4 + 255u) & ~255u;
+    const u64 bytes = static_cast<u64>(pitch) * height;
+    if (!pick->buffer.IsValid() || pick->buffer_bytes != bytes)
+    {
+        if (pick->buffer.IsValid())
+        {
+            s->device->DestroyBuffer(pick->buffer);
+            pick->buffer = rhi::BufferHandle{};
+        }
+        rhi::BufferDesc desc;
+        desc.size = bytes;
+        desc.usage = rhi::BufferUsage::CopyDst;
+        desc.location = rhi::MemoryLocation::GpuToCpu;
+        desc.debug_name = "offscreen read-back";
+        pick->buffer = s->device->CreateBuffer(desc);
+        pick->buffer_bytes = bytes;
+        if (!pick->buffer.IsValid())
+        {
+            *pick = SurfaceObject::RingSlot{};
+            ++s->frames_skipped_slow;
+            return;
+        }
+    }
+    s->device->BeginFrame();
+    rhi::CommandList* list = s->device->CreateCommandList();
+    rhi::FenceValue fence = 0;
+    if (list != nullptr)
+    {
+        list->Begin();
+        rhi::BufferTextureCopy region;
+        region.buffer_row_pitch = pitch;
+        list->CopyTextureToBuffer(s->target, pick->buffer, region);
+        list->End();
+        rhi::CommandList* lists[] = {list};
+        fence = s->device->Submit(lists, 1);
+    }
+    s->device->EndFrame();
+    if (fence == 0)
+    {
+        pick->state = SurfaceObject::RingSlot::State::Free;
+        ++s->frames_skipped_slow;
+        return;
+    }
+    pick->fence = fence;
+    pick->frame = s->frames_rendered;
+    pick->width = width;
+    pick->height = height;
+    pick->pitch = pitch;
+    pick->state = SurfaceObject::RingSlot::State::Pending;
 }
 
 // Gives the tickets waiting on a surface the pixels of the image just drawn (read once, shared by the tickets).
@@ -1224,7 +1614,7 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
             continue;
         }
         s->visible = false;
-        if (s->lost || s->swapchain == nullptr)
+        if (s->lost || (s->swapchain == nullptr && !s->offscreen))
         {
             ++s->skipped;
             FailWaiting(s, &by_slot,
@@ -1245,6 +1635,22 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
             continue;
         }
 #endif
+        if (s->offscreen && !EnsureTarget(s))
+        {
+            ++s->skipped;
+            FailWaiting(s, &by_slot, ENGINE_ERROR_UNSUPPORTED);
+            continue;
+        }
+        renderer::FrameTarget frame_target;
+        if (s->offscreen)
+        {
+            frame_target.texture = s->target;
+            frame_target.width = s->target_width;
+            frame_target.height = s->target_height;
+            frame_target.format = rhi::Format::RGBA8_SRGB;
+            frame_target.initial = rhi::ResourceState::Undefined;
+            frame_target.final_state = rhi::ResourceState::CopySrc;
+        }
         if (s->scene != nullptr)
         {
             WorldObject* world = FindWorld(runtime, s->world);
@@ -1258,10 +1664,10 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
             else
             {
                 s->frame_by_slot = &by_slot;
-                const u32 width = s->swapchain->Width();
-                const u32 height = s->swapchain->Height();
+                const u32 width = s->offscreen ? s->target_width : s->swapchain->Width();
+                const u32 height = s->offscreen ? s->target_height : s->swapchain->Height();
                 const SceneFrameReport report = s->scene->Render(*world, s->camera_entity, width, height, 0.0f,
-                                                                 delta_seconds);
+                                                                 delta_seconds, s->offscreen ? &frame_target : nullptr);
                 s->camera_status = static_cast<engine_status>(report.camera_status);
                 s->lights_refused = report.lights_refused;
                 s->labels_drawn = report.labels_drawn;
@@ -1273,7 +1679,12 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
                 {
                     s->visible = true;
                     ++s->presented;
-                    // a ticket asked for this frame was served before the present; the rest wait for the next
+                    if (s->offscreen)
+                    {  // there is no present: the tickets are served from the target now
+                        ServeReadbacks(s, s->target, by_slot);
+                        QueueFrame(s);
+                    }
+                    // a swapchain surface's ticket asked for this frame was served before the present
                 }
                 else
                 {
@@ -1286,6 +1697,45 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
                 }
                 continue;
             }
+        }
+        if (s->offscreen)
+        {
+            if (!s->target.IsValid())
+            {  // a size of 0: nothing is drawn
+                ++s->skipped;
+                continue;
+            }
+            s->device->BeginFrame();
+            rhi::CommandList* list = s->device->CreateCommandList();
+            list->Begin();
+            list->Barrier(s->target, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment);
+            rhi::RenderingDesc pass;
+            pass.color_count = 1;
+            pass.color[0].texture = s->target;
+            pass.color[0].load = rhi::LoadOp::Clear;
+            for (int c = 0; c < 4; ++c)
+            {
+                pass.color[0].clear_color[c] = s->background[c];
+            }
+            list->BeginRendering(pass);
+            list->EndRendering();
+            list->Barrier(s->target, rhi::ResourceState::ColorAttachment, rhi::ResourceState::CopySrc);
+            list->End();
+            rhi::CommandList* lists[] = {list};
+            s->device->Submit(lists, 1);
+            s->device->EndFrame();
+            if (s->device->DeviceLost())
+            {
+                s->lost = true;
+                ++s->skipped;
+                FailWaiting(s, &by_slot, ENGINE_ERROR_UNSUPPORTED);
+                continue;
+            }
+            ServeReadbacks(s, s->target, by_slot);
+            QueueFrame(s);
+            s->visible = true;
+            ++s->presented;
+            continue;
         }
         s->device->BeginFrame();
         const rhi::SwapchainStatus acquired = s->swapchain->Acquire();
@@ -1444,6 +1894,20 @@ engine_status SurfacePixelRayFn(engine_handle surface, float x, float y, float* 
     SurfaceHost* host = nullptr;
     TRY_SURFACE(HostOfObject(surface, &host));
     return host->PixelRay(surface, x, y, origin, direction);
+}
+
+engine_status SurfaceAcquireFrameFn(engine_handle surface, engine_frame_image* out)
+{
+    SurfaceHost* host = nullptr;
+    TRY_SURFACE(HostOfObject(surface, &host));
+    return host->AcquireFrame(surface, out);
+}
+
+engine_status SurfaceReleaseFrameFn(engine_handle surface, const engine_frame_image* image)
+{
+    SurfaceHost* host = nullptr;
+    TRY_SURFACE(HostOfObject(surface, &host));
+    return host->ReleaseFrame(surface, image);
 }
 
 engine_status SurfaceProjectFn(engine_handle surface, const float* point, float* out)

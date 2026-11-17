@@ -257,8 +257,11 @@ TEST_CASE("An object whose palette does not fit is left out whole and counted", 
     skinned.skinned = true;
     const MaterialId material = CreateGBufferMaterial(rig.sys, rig.templates, skinned, "skinned");
     REQUIRE(material.IsValid());
-    f32 palette[24];
-    IdentityPalette(palette, 2);
+    f32 palettes[5][24];  // one palette per entity: objects that share one palette's memory share its room (ranges)
+    for (u32 i = 0; i < 5; ++i)
+    {
+        IdentityPalette(palettes[i], 2);
+    }
     RenderScene scene(RenderSceneDesc{16, 8});
     for (u32 i = 0; i < 5; ++i)
     {
@@ -266,7 +269,7 @@ TEST_CASE("An object whose palette does not fit is left out whole and counted", 
         od.mesh = &ribbon;
         od.material = material.index;
         od.transform = ModelMatrix(Vec3(static_cast<f32>(i) * 0.1f, 0, 0), 0.5f, 0.0f);
-        od.joint_matrices = palette;
+        od.joint_matrices = palettes[i];
         od.joint_count = 2;
         REQUIRE(scene.AddObject(od).IsValid());
     }
@@ -369,4 +372,44 @@ TEST_CASE("The culling bounds of a skinned object grow with its bounds scale", "
               2.0f * (a.max.x - a.min.x)) < 1e-4f);
     scene.SetJointMatrices(plain, nullptr, 0);
     CHECK(scene.FindObject(plain)->joint_matrices == nullptr);
+}
+
+TEST_CASE("The ranges of one skinned entity share one palette in the frame", "[renderer][skinning][ranges]")
+{
+    SkinRig rig(1024, 2048);
+    MeshData data;
+    REQUIRE(MakeSkinnedRibbon(&data));
+    const u32 total = data.IndexCount();
+    REQUIRE(total >= 6);
+    const MeshRange ranges[] = {{0, 3}, {3, total - 3}};
+    REQUIRE(data.SetRanges(ranges, 2) == nullptr);
+    GpuMesh ribbon;
+    REQUIRE(ribbon.Create(rig.device.Get(), data, "ribbon"));
+    rig.MakeReady(&ribbon);
+    GBufferOptions skinned;
+    skinned.skinned = true;
+    const MaterialId m0 = CreateGBufferMaterial(rig.sys, rig.templates, skinned, "skinned0");
+    const MaterialId m1 = CreateGBufferMaterial(rig.sys, rig.templates, skinned, "skinned1");
+    f32 palette[2 * 12];
+    IdentityPalette(palette, 2);
+    RenderScene scene(RenderSceneDesc{1024, 8});
+    for (u32 r = 0; r < 2; ++r)
+    {
+        RenderObjectDesc od;
+        od.mesh = &ribbon;
+        od.material = (r == 0 ? m0 : m1).index;
+        od.first_index = ranges[r].first_index;
+        od.index_count = ranges[r].index_count;
+        od.transform = ModelMatrix(Vec3(0, 0, 0), 0.1f, 0.0f);
+        od.joint_matrices = palette;
+        od.joint_count = 2;
+        REQUIRE(scene.AddObject(od).IsValid());
+    }
+    GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
+    rig.BeginFrame(0);
+    CHECK(pass.Prepare(scene, SkinFrustum()));
+    CHECK(pass.Stats().drawn_objects == 2);
+    CHECK(pass.Stats().draws == 2);
+    CHECK(rig.frame->JointsWritten() == 2);  // one palette of two matrices, not two
+    rig.device->EndFrame();
 }

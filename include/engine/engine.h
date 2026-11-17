@@ -375,6 +375,16 @@ public:
     {
         return Api()->entity_clear_slot_override(Get(), key, Str(slot));
     }
+    /// A material per mesh slot (`entity_set_mesh_slot_material`, `..._by_name`, `entity_clear_mesh_slot_materials`).
+    Status SetMeshSlotMaterial(uint64_t key, uint32_t slot, uint64_t material_resource) const
+    {
+        return Api()->entity_set_mesh_slot_material(Get(), key, slot, material_resource);
+    }
+    Status SetMeshSlotMaterial(uint64_t key, const char* slot, uint64_t material_resource) const
+    {
+        return Api()->entity_set_mesh_slot_material_by_name(Get(), key, Str(slot), material_resource);
+    }
+    Status ClearMeshSlotMaterials(uint64_t key) const { return Api()->entity_clear_mesh_slot_materials(Get(), key); }
     Status SpawnLevel(uint64_t level, const engine_spawn_params& params, uint64_t* root, uint64_t* keys,
                       size_t capacity, size_t* total) const
     {
@@ -630,6 +640,15 @@ public:
         return Api()->surface_pixel_ray(Get(), x, y, origin, direction);
     }
     Status Project(const float* point, float* out) const { return Api()->surface_project(Get(), point, out); }
+    /// The newest finished frame of an off-screen surface (`surface_acquire_frame`); give it back with
+    /// [[ReleaseFrame]].
+    Status AcquireFrame(engine_frame_image* out) const
+    {
+        *out = Init<engine_frame_image>();
+        return Api()->surface_acquire_frame(Get(), out);
+    }
+    /// Gives a frame taken with [[AcquireFrame]] back (`surface_release_frame`).
+    Status ReleaseFrame(const engine_frame_image& image) const { return Api()->surface_release_frame(Get(), &image); }
 
 private:
     friend class Engine;

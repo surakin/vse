@@ -462,3 +462,82 @@ TEST_CASE("Scene sync: a skinned entity's joint palette is mirrored by address, 
     CHECK(rig.ObjectOf(skinned)->joint_matrices == edit->palette.Data()->Data());
     CHECK(rig.Report().joints_set == 2);
 }
+
+// Phase 24 Day 375: one object per mesh slot, each with its own material.
+TEST_CASE("Scene sync: a mesh with slots draws one object per slot with that slot's material", "[scene][slots]")
+{
+    Rig rig;
+    renderer::MeshData data;
+    REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
+    const u32 total = data.IndexCount();
+    const renderer::MeshRange ranges[] = {{0, 6}, {6, 6}, {12, total - 12}};
+    REQUIRE(data.SetRanges(ranges, 3) == nullptr);
+    renderer::GpuMeshPtr slotted = MakeShared<renderer::GpuMesh>();
+    REQUIRE(slotted->Create(rig.device.Get(), data, "slotted"));
+
+    MeshRenderer mr;
+    mr.mesh = slotted;
+    mr.material = 7;
+    mr.slot_count = 2;
+    mr.slot_materials[0] = 3;
+    mr.slot_materials[1] = scene::kInheritMaterial;  // slot 2 is past slot_count: also the base material
+    const ecs::Entity e = rig.world.Create(At(1, 2, 3), ecs::WorldTransform{}, mr);
+    rig.Frame();
+    rig.Frame();
+    CHECK(rig.render_scene.ObjectCount() == 3);
+    const RenderHandle* handle = rig.world.Get<RenderHandle>(e);
+    REQUIRE(handle != nullptr);
+    REQUIRE(handle->more_count == 2);
+    const renderer::RenderObject* o0 = rig.render_scene.FindObject(handle->object);
+    const renderer::RenderObject* o1 = rig.render_scene.FindObject(handle->more[0]);
+    const renderer::RenderObject* o2 = rig.render_scene.FindObject(handle->more[1]);
+    REQUIRE((o0 != nullptr && o1 != nullptr && o2 != nullptr));
+    CHECK(o0->material == 3);
+    CHECK(o1->material == 7);
+    CHECK(o2->material == 7);
+    CHECK(o1->first_index == 6);
+    CHECK(o2->index_count == total - 12);
+    CHECK(o2->transform.col[3].x == 1.0f);
+
+    // Moving the entity moves every object; changing one slot's material re-adds the entity's objects.
+    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3(5, 0, 0);
+    rig.Frame();
+    CHECK(rig.render_scene.FindObject(handle->more[1])->transform.col[3].x == 5.0f);
+    MeshRenderer* edited = rig.world.Get<MeshRenderer>(e);
+    edited->slot_materials[0] = 9;
+    rig.Frame();
+    handle = rig.world.Get<RenderHandle>(e);
+    CHECK(rig.render_scene.ObjectCount() == 3);
+    CHECK(rig.render_scene.FindObject(handle->object)->material == 9);
+
+    // Without slot materials the mesh is drawn whole again; destroying the entity removes every object.
+    rig.world.Get<MeshRenderer>(e)->slot_count = 0;
+    rig.Frame();
+    CHECK(rig.render_scene.ObjectCount() == 1);
+    rig.world.Get<MeshRenderer>(e)->slot_count = 1;
+    rig.Frame();
+    CHECK(rig.render_scene.ObjectCount() == 3);
+    rig.world.Destroy(e);
+    rig.Frame();
+    CHECK(rig.render_scene.ObjectCount() == 0);
+}
+
+TEST_CASE("Scene sync: a full render scene takes all of an entity's slot objects or none", "[scene][slots]")
+{
+    Rig rig(2, 4);  // room for two objects
+    renderer::MeshData data;
+    REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
+    const renderer::MeshRange ranges[] = {{0, 6}, {6, 6}, {12, data.IndexCount() - 12}};
+    REQUIRE(data.SetRanges(ranges, 3) == nullptr);
+    renderer::GpuMeshPtr slotted = MakeShared<renderer::GpuMesh>();
+    REQUIRE(slotted->Create(rig.device.Get(), data, "slotted"));
+    MeshRenderer mr;
+    mr.mesh = slotted;
+    mr.slot_count = 1;
+    mr.slot_materials[0] = 1;
+    const ecs::Entity e = rig.world.Create(At(0, 0, 0), ecs::WorldTransform{}, mr);
+    rig.Frame();
+    CHECK(rig.render_scene.ObjectCount() == 0);  // three would not fit
+    CHECK(rig.Report().refused_full >= 1);
+    CHECK(rig.world.Get<RenderHandle>(e) == nullptr);
+}

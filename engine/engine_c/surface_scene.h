@@ -61,12 +61,13 @@ public:
     /// Mirrors the world's entities that have a mesh reference and a world matrix into the render scene, resolving
     /// what they name, then renders and presents one frame.
     ///
+    /// - Param target: the off-screen colour target of a surface with no swapchain, null for a swapchain surface.
     /// - Param camera_entity: the entity key of the camera to look through, 0 for the default camera.
     /// - Param width: the swapchain's width in pixels.
     /// - Param height: the swapchain's height in pixels.
     /// - Thread-safety: the caller holds the world mutex.
     SceneFrameReport Render(WorldObject& world, u64 camera_entity, u32 width, u32 height, f32 seconds,
-                            f32 delta_seconds);
+                            f32 delta_seconds, const renderer::FrameTarget* target = nullptr);
 
     /// Names the runtime the surface's host textures and label font come from (null: a slot naming a host texture
     /// keeps its own value, and no label is drawn).
@@ -89,13 +90,18 @@ public:
     bool Project(const f32* point, f32* out) const;
 
 private:
+    static constexpr u32 kMaxParts = 16;  // the most mesh slots an entity gives a material of their own
     struct Entry
     {
         u64 entity = 0;
         u64 mesh = 0;
         u64 material = 0;
-        u32 material_index = 0;  // the material in the material system the object was made with
-        renderer::ObjectId object;
+        // One object per mesh slot (one for a mesh drawn whole): what each was made with, in order.
+        u32 count = 0;
+        u32 part_material[kMaxParts] = {};  // the material in the material system the object was made with
+        u32 part_first[kMaxParts] = {};
+        u32 part_count[kMaxParts] = {};
+        renderer::ObjectId objects[kMaxParts];
         Mat4 transform;
         bool seen = false;
     };
@@ -109,6 +115,7 @@ private:
     struct Instance
     {
         u64 entity = 0;
+        u32 part = 0;  // the mesh slot it is for (0 for a mesh drawn whole)
         u32 base_index = 0;
         SlotOverrides content;
         renderer::MaterialId material;
@@ -132,7 +139,7 @@ private:
     void SyncLabels(WorldObject& world, const renderer::Camera& camera, u32 width, u32 height,
                     SceneFrameReport* report);
     // The material an entity draws with: the base material, or its own copy with the entity's slot overrides applied.
-    u32 MaterialFor(const SlotOverrides& overrides, u64 entity, u32 base_index, SceneFrameReport* report);
+    u32 MaterialFor(const SlotOverrides& overrides, u64 entity, u32 part, u32 base_index, SceneFrameReport* report);
     void DestroyInstance(usize index);
     const renderer::GpuMesh* ResolveMesh(u64 id);
     bool ResolveMaterial(u64 id, bool skinned, u32* index);

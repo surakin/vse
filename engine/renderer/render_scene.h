@@ -86,6 +86,11 @@ struct RenderObjectDesc
     /// Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices
     /// outside the bind-pose box; the game sets this above 1 for a clip that does.
     f32 skin_bounds_scale = 1.0f;
+    /// The first index drawn (a range of the mesh: one material slot). With `index_count` 0 the whole mesh is drawn.
+    u32 first_index = 0;
+    /// The number of indices drawn from `first_index`; 0 draws every index of the mesh. The range must lie inside
+    /// the mesh (`AddObject` aborts otherwise).
+    u32 index_count = 0;
 };
 
 /// One object in a scene, as stored.
@@ -114,6 +119,10 @@ struct RenderObject
     /// Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices
     /// outside the bind-pose box; the game sets this above 1 for a clip that does.
     f32 skin_bounds_scale = 1.0f;
+    /// The first index drawn; see [[renderer::RenderObjectDesc::first_index]].
+    u32 first_index = 0;
+    /// The number of indices drawn; 0 draws the whole mesh.
+    u32 index_count = 0;
 };
 
 /// The kind of a light.

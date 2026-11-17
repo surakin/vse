@@ -298,7 +298,7 @@ field engine_surface_info.display offset=32 size=8
 field engine_surface_info.surface offset=40 size=8
 field engine_surface_info.window_id offset=48 size=8
 field engine_surface_info.callbacks offset=56 size=8
-struct engine_surface_state size=120
+struct engine_surface_state size=152
 field engine_surface_state.struct_size offset=0 size=4
 field engine_surface_state.image_width offset=4 size=4
 field engine_surface_state.image_height offset=8 size=4
@@ -315,7 +315,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=800
+struct engine_api size=840
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4

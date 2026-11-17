@@ -378,6 +378,8 @@ struct GBufferPass::SortEntry
     rhi::BindGroupHandle material_group;
     const GpuMesh* mesh = nullptr;
     u32 joint_offset = kNoJoints;
+    u32 first_index = 0;
+    u32 index_count = 0;
 };
 
 GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame)
@@ -467,6 +469,15 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
 
     SortEntry* entries = sort_scratch_.Data();
     u32 entry_count = 0;
+    struct PaletteShare
+    {
+        const f32* matrices = nullptr;
+        u32 count = 0;
+        u32 offset = kNoJoints;
+    };
+    constexpr u32 kPaletteCache = 8;
+    PaletteShare palette_cache[kPaletteCache];
+    u32 palette_next = 0;
     const PipelineTarget target = GBufferPipelineTarget();
     for (u32 i = 0; i < visible; ++i)
     {
@@ -546,7 +557,29 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
                     continue;
                 }
             }
-            joint_offset = frame_->WriteJoints(object.joint_matrices, object.joint_count);
+            // The objects of one entity (one per material slot) name the same palette: it is written once.
+            u32 cached = kPaletteCache;
+            for (u32 c = 0; c < kPaletteCache; ++c)
+            {
+                if (palette_cache[c].matrices == object.joint_matrices && palette_cache[c].count == object.joint_count)
+                {
+                    cached = c;
+                    break;
+                }
+            }
+            if (cached != kPaletteCache)
+            {
+                joint_offset = palette_cache[cached].offset;
+            }
+            else
+            {
+                joint_offset = frame_->WriteJoints(object.joint_matrices, object.joint_count);
+                if (joint_offset != kNoJoints)
+                {
+                    palette_cache[palette_next] = PaletteShare{object.joint_matrices, object.joint_count, joint_offset};
+                    palette_next = (palette_next + 1) % kPaletteCache;
+                }
+            }
             if (joint_offset == kNoJoints)
             {
                 ++stats_.skinned_dropped;  // the budget is full: this object is left out whole
@@ -560,6 +593,8 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         e.pipeline = pipeline.pipeline;
         e.material_group = materials_->MaterialBindGroup(material);
         e.mesh = mesh;
+        e.first_index = object.first_index;
+        e.index_count = object.index_count;
     }
 
     auto compare = [](const void* a, const void* b)
@@ -569,6 +604,14 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         if (x->key != y->key)
         {
             return x->key < y->key ? -1 : 1;
+        }
+        if (x->first_index != y->first_index)
+        {
+            return x->first_index < y->first_index ? -1 : 1;
+        }
+        if (x->index_count != y->index_count)
+        {
+            return x->index_count < y->index_count ? -1 : 1;
         }
         if (x->slot != y->slot)
         {
@@ -601,7 +644,8 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         if (draw_count_ > 0)
         {
             Draw& prev = draws_[draw_count_ - 1];
-            if (prev.mesh == e.mesh && prev.material_group == e.material_group && prev.pipeline == e.pipeline)
+            if (prev.mesh == e.mesh && prev.material_group == e.material_group && prev.pipeline == e.pipeline &&
+                prev.first_index == e.first_index && prev.index_count == e.index_count)
             {
                 ++prev.instance_count;
                 continue;
@@ -613,6 +657,8 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         d.mesh = e.mesh;
         d.first_instance = i;
         d.instance_count = 1;
+        d.first_index = e.first_index;
+        d.index_count = e.index_count;
         d.skinned = e.mesh->Skinned();
         if (!(d.pipeline == last_pipeline))
         {
@@ -724,7 +770,7 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user)
             list->SetBindGroup(kMaterialSet, d.material_group);
             group = d.material_group;
         }
-        d.mesh->Draw(list, d.instance_count, d.first_instance);
+        d.mesh->Draw(list, d.instance_count, d.first_instance, d.first_index, d.index_count);
     }
     list->EndRendering();
 }

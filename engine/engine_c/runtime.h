@@ -83,6 +83,17 @@ struct SlotOverrides
     Item items[kMax];
 };
 
+/// The materials of an entity's mesh slots (Phase 24 Day 377): slot `i` draws with `material[i]`, or with the mesh
+/// reference's material when that is 0. Set by entity_set_mesh_slot_material.
+///
+/// - Thread-safety: plain data.
+struct SlotMaterialsComponent
+{
+    static constexpr u32 kMax = 16;
+    u32 count = 0;  ///< One past the last slot that has a material.
+    u64 material[kMax] = {};
+};
+
 /// The component of ENGINE_COMPONENT_LABEL (Phase 24 Day 367).
 ///
 /// - Thread-safety: plain data.
@@ -381,6 +392,10 @@ engine_status CharacterJumpFn(engine_handle world, u64 key, float speed, engine_
 engine_status PhysicsEventsFn(engine_handle world, engine_physics_event* out, size_t capacity, size_t* total);
 engine_status PhysicsSnapshotFn(engine_handle world, engine_buffer* out);
 engine_status PhysicsRestoreFn(engine_handle world, const void* data, size_t size);
+engine_status EntitySetMeshSlotMaterialFn(engine_handle world, u64 key, u32 slot, u64 material_resource);
+engine_status EntitySetMeshSlotMaterialByNameFn(engine_handle world, u64 key, engine_string slot,
+                                                u64 material_resource);
+engine_status EntityClearMeshSlotMaterialsFn(engine_handle world, u64 key);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
 engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size);

@@ -6,7 +6,11 @@
 #include "asset/async_loader.h"
 #include "asset/cpu_loaders.h"
 #include "asset/memory_backend.h"
+#include "animation/components.h"
+#include "ecs/schedule.h"
+#include "asset/level.h"
 #include "asset/mesh.h"
+#include "storage/builtin_components.h"
 #include "asset/resource_manager.h"
 #include "asset_import/gltf_mesh.h"
 #include "cstr/cstr.h"
@@ -957,6 +961,72 @@ TEST_CASE("gltf mesh: imported meshes load through the resource manager from a m
     REQUIRE(reloads.Size() == 1);
     CHECK(reloads[0].status.Ok());
     CHECK(async.Get()->BoundsMax()[0] == 4.0f);
+}
+
+// Phase 24 Day 376: a node's level keeps the material of every primitive.
+TEST_CASE("A level of a two-primitive mesh names each slot's material", "[asset][gltf][level][slots]")
+{
+    GltfWriter w;
+    const f32 positions[18] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1};
+    const u16 first[3] = {0, 1, 2};
+    const u16 second[3] = {3, 4, 5};
+    const u32 pos = GmAcc(&w, positions, 18, 5126, "VEC3");
+    const u32 idx0 = GmAcc(&w, first, 3, 5123, "SCALAR");
+    const u32 idx1 = GmAcc(&w, second, 3, 5123, "SCALAR");
+    char json[700];
+    FormatTo(json, sizeof(json),
+             "\"materials\":[{\"name\":\"red\",\"pbrMetallicRoughness\":{\"baseColorFactor\":[1,0,0,1]}},"
+             "{\"name\":\"blue\",\"pbrMetallicRoughness\":{\"baseColorFactor\":[0,0,1,1]}}],"
+             "\"meshes\":[{\"name\":\"two\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u,"
+             "\"material\":0},{\"attributes\":{\"POSITION\":%u},\"indices\":%u,\"material\":1}]}],"
+             "\"nodes\":[{\"name\":\"thing\",\"mesh\":0}],\"scenes\":[{\"nodes\":[0]}],\"scene\":0",
+             pos, idx0, pos, idx1);
+    w.AddRoot(json);
+    ImportOptions options;
+    options.emit_level = true;
+    ImportResult result;
+    GltfError error;
+    REQUIRE(GmImport(w.Glb(), &result, &error, options).Ok());
+    const ImportedResource* level = nullptr;
+    ResourceId red;
+    ResourceId blue;
+    for (usize i = 0; i < result.manifest.Entries().Size(); ++i)
+    {
+        const ImportManifestEntry& e = result.manifest.Entries()[i];
+        if (e.kind == ImportKind::Material)
+        {
+            (e.index == 0 ? red : blue) = e.id;
+        }
+    }
+    for (usize i = 0; i < result.resources.Size(); ++i)
+    {
+        if (result.resources[i].type == types::kLevel)
+        {
+            level = &result.resources[i];
+        }
+    }
+    REQUIRE(level != nullptr);
+    REQUIRE((!red.IsNone() && !blue.IsNone()));
+
+    TypeRegistry types = test::MakeBackendRegistry();
+    storage::ComponentRegistry registry;
+    REQUIRE(storage::RegisterBuiltinComponents(&registry).Ok());
+    REQUIRE(RegisterLevelComponents(&registry).Ok());
+    REQUIRE(animation::RegisterAnimationComponents(&registry).Ok());
+    ecs::World world;
+    storage::KeyIndex index;
+    REQUIRE(LoadLevelBlob(ByteSpan(level->blob.Data(), level->blob.Size()), types, registry, world, index).Ok());
+    u32 found = 0;
+    world.Query<ecs::Read<MeshReference>, ecs::Read<MeshSlotMaterials>>().ForEach(
+        [&](ecs::Entity, const MeshReference& reference, const MeshSlotMaterials& slots)
+        {
+            ++found;
+            CHECK(reference.material.id == red.Value());
+            CHECK(slots.At(0).id == red.Value());
+            CHECK(slots.At(1).id == blue.Value());
+            CHECK(slots.At(2).id == 0);
+        });
+    CHECK(found == 1);
 }
 
 }  // namespace engine_placeholder::asset

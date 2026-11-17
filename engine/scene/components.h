@@ -14,6 +14,11 @@
 namespace engine_placeholder::scene
 {
 
+/// The most mesh slots a [[scene::MeshRenderer]] gives a material of their own.
+inline constexpr u32 kMaxSlotMaterials = 16;
+/// A `slot_materials` entry that means "the entity's `material`".
+inline constexpr u32 kInheritMaterial = 0xFFFFFFFFu;
+
 /// Draws a mesh at the entity's `WorldTransform`.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -29,6 +34,13 @@ struct MeshRenderer
     u32 material = 0;
     /// Extra `renderer::ObjectFlags` bits; [[scene::Hidden]] adds `kHidden`.
     u32 flags = 0;
+    /// The material of each of the mesh's slots (index ranges), for a mesh with slots: slot `i` uses
+    /// `slot_materials[i]`, or `material` when that is [[scene::kInheritMaterial]] or `i` is at or past
+    /// `slot_count`. A mesh without slots, a `slot_count` of 0 and a mesh with more than `kMaxSlotMaterials` slots
+    /// (counted as invalid by the sync, never drawn in part) draw the whole mesh with `material`, as before.
+    u32 slot_materials[kMaxSlotMaterials] = {};
+    /// How many entries of `slot_materials` are set; 0 draws the mesh whole.
+    u32 slot_count = 0;
 };
 
 /// A tag: the entity's mesh is skipped by culling and never drawn (`ObjectFlags::kHidden`).
@@ -80,10 +92,14 @@ struct RenderHandle
 {
     /// The world logs removals of this component (see [[ecs::World::RemovedCount]]).
     static constexpr bool kTrackRemoval = true;
-    /// The entity's object, or invalid.
+    /// The entity's object (its first slot's), or invalid.
     renderer::ObjectId object;
     /// The entity's light, or invalid.
     renderer::LightId light;
+    /// The objects of the mesh's other slots; the first `more_count` are valid.
+    renderer::ObjectId more[kMaxSlotMaterials - 1];
+    /// How many of `more` exist.
+    u32 more_count = 0;
 };
 
 /// The resource naming the camera entity (the entity needs [[scene::Camera]] and a `WorldTransform`).

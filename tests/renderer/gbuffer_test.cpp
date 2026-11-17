@@ -451,3 +451,68 @@ TEST_CASE("Only a UNorm8x4 attribute at location 4 counts as a vertex color", "[
     rig.device->EndFrame();
     CHECK(pass.Stats().drawn_objects == 1);
 }
+
+// Phase 24 Day 374: one mesh drawn as several index ranges, each with its own material.
+TEST_CASE("A mesh's index ranges draw as separate draws and instance by range", "[renderer][gbuffer][ranges]")
+{
+    Rig rig;
+    MeshData d;
+    REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
+    const u32 total = d.IndexCount();
+    REQUIRE(total >= 12);
+    const MeshRange ranges[] = {{0, 6}, {6, 6}, {12, total - 12}};
+    REQUIRE(d.SetRanges(ranges, 3) == nullptr);
+    GpuMesh cube;
+    REQUIRE(cube.Create(rig.device.Get(), d, "cube"));
+    REQUIRE(cube.RangeCount() == 3);
+    CHECK(cube.Range(1).first_index == 6);
+    CHECK(cube.Range(2).index_count == total - 12);
+    rig.MakeReady(&cube);
+    const MaterialId m0 = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m0");
+    const MaterialId m1 = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m1");
+
+    RenderScene scene(RenderSceneDesc{});
+    // Two cubes, each as three objects (one per range); ranges 0 and 2 share m0, range 1 uses m1.
+    for (u32 cube_number = 0; cube_number < 2; ++cube_number)
+    {
+        for (u32 r = 0; r < 3; ++r)
+        {
+            RenderObjectDesc od;
+            od.mesh = &cube;
+            od.material = (r == 1 ? m1 : m0).index;
+            od.first_index = ranges[r].first_index;
+            od.index_count = ranges[r].index_count;
+            od.transform = ModelMatrix(Vec3(static_cast<f32>(cube_number) * 2.0f, 0, 0), 1.0f, 0.0f);
+            REQUIRE(scene.AddObject(od).IsValid());
+        }
+    }
+    GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
+    rig.BeginFrame(0);
+    CHECK(pass.Prepare(scene, WideFrustum()));
+    rig.frame->Flush();
+    rig.device->EndFrame();
+    CHECK(pass.Stats().drawn_objects == 6);
+    CHECK(pass.Stats().draws == 3);  // range 0, range 1 and range 2, each instanced twice (the two cubes)
+    CHECK(StringView(pass.LastError()).Empty());
+}
+
+TEST_CASE("Index ranges are checked by the mesh data", "[renderer][gbuffer][ranges]")
+{
+    MeshData d;
+    CHECK(d.SetRanges(nullptr, 0) != nullptr);  // empty mesh
+    REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
+    const u32 total = d.IndexCount();
+    const MeshRange past[] = {{0, total + 3}};
+    CHECK(d.SetRanges(past, 1) != nullptr);
+    const MeshRange empty[] = {{0, 0}};
+    CHECK(d.SetRanges(empty, 1) != nullptr);
+    const MeshRange odd[] = {{1, 3}};
+    CHECK(d.SetRanges(odd, 1) != nullptr);
+    CHECK(d.RangeCount() == 0);
+    const MeshRange good[] = {{0, 3}, {3, total - 3}};
+    CHECK(d.SetRanges(good, 2) == nullptr);
+    CHECK(d.RangeCount() == 2);
+    CHECK(d.CopyGeometry().range_count == 2);
+    CHECK(d.SetRanges(nullptr, 0) == nullptr);
+    CHECK(d.RangeCount() == 0);
+}

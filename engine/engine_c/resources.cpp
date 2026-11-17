@@ -3,6 +3,8 @@
 #include "asset/cpu_loaders.h"
 #include "asset/content_hash.h"
 #include "asset/level.h"
+#include "asset/mesh.h"
+#include "cstr/cstr.h"
 #include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
 #include "engine_c/handles.h"
@@ -196,6 +198,42 @@ engine_status ResourceHost::ReadLevel(u64 id, Vector<byte>* bytes)
         }
     }
     return ENGINE_OK;
+}
+
+engine_status ResourceHost::FindMeshSlot(u64 id, StringView name, u32* index)
+{
+    UniquePtr<asset::ResourceReader> reader;
+    const asset::Status opened = memory_->Open(asset::ResourceId::FromValue(id), &reader);
+    if (opened.Failed())
+    {
+        return Fail(FromAssetError(opened.Code()), "the mesh is not mounted");
+    }
+    Vector<byte> bytes;
+    bytes.Resize(static_cast<usize>(reader->Size()));
+    if (bytes.Size() != 0)
+    {
+        const asset::Status read = reader->ReadAt(0, bytes.Data(), bytes.Size());
+        if (read.Failed())
+        {
+            return Fail(FromAssetError(read.Code()), read.Message());
+        }
+    }
+    asset::MeshView view;
+    const asset::Status parsed = view.Open(ByteSpan(bytes.Data(), bytes.Size()), types_);
+    if (parsed.Failed())
+    {
+        return Fail(ENGINE_ERROR_TYPE_MISMATCH, "the resource is not a mesh");
+    }
+    for (u32 i = 0; i < view.SlotCount(); ++i)
+    {
+        const asset::MeshSlot slot = view.Slot(i);
+        if (StringView(slot.name.Data(), CStrLength(slot.name.Data())) == name)
+        {
+            *index = i;
+            return ENGINE_OK;
+        }
+    }
+    return Fail(ENGINE_ERROR_NOT_FOUND, "the mesh has no slot of that name");
 }
 
 engine_status ResourceHost::PinClip(u64 id, u64 skeleton_id)

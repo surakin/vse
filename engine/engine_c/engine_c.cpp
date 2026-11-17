@@ -450,7 +450,9 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WAYLAND) ? ENGINE_CAP_SURFACE_WAYLAND : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA) ? ENGINE_CAP_SURFACE_COCOA : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WIN32) ? ENGINE_CAP_SURFACE_WIN32 : 0u) |
-                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ||
+                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_OFFSCREEN) ? ENGINE_CAP_SURFACE_OFFSCREEN : 0u) |
+                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_OFFSCREEN) ||
+                             engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ||
                              engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA) ||
                              engine_c::SurfaceKindSupported(ENGINE_SURFACE_WIN32)
                          ? (ENGINE_CAP_READBACK | ENGINE_CAP_WORLD_ON_SURFACE)
@@ -787,6 +789,11 @@ extern "C"
             &engine_c::PhysicsEventsFn,
             &engine_c::PhysicsSnapshotFn,
             &engine_c::PhysicsRestoreFn,
+            &engine_c::EntitySetMeshSlotMaterialFn,
+            &engine_c::EntitySetMeshSlotMaterialByNameFn,
+            &engine_c::EntityClearMeshSlotMaterialsFn,
+            &engine_c::SurfaceAcquireFrameFn,
+            &engine_c::SurfaceReleaseFrameFn,
         };
         *out = &table;
         return ENGINE_OK;

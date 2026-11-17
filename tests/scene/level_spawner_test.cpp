@@ -613,3 +613,117 @@ TEST_CASE("A spawned level renders the same pixels as the hand-built scene of th
         }
     }
 }
+
+// Phase 24 Day 376: a level names a material per mesh slot.
+TEST_CASE("A level gives each mesh slot its own material", "[scene][level][asset][slots]")
+{
+    LogRender.SetEnabled(false);
+    asset::TypeRegistry types;
+    storage::ComponentRegistry registry;
+    REQUIRE(storage::RegisterBuiltinComponents(&registry).Ok());
+    REQUIRE(asset::RegisterLevelComponents(&registry).Ok());
+    renderer::MeshData cube;
+    REQUIRE(renderer::MakeCubeMesh(1.0f, &cube) == nullptr);
+    // The cube's indices split into two slots (a multiple of 3 each).
+    Vector<asset::MeshVertex> vertices;
+    for (u32 i = 0; i < cube.VertexCount(); ++i)
+    {
+        const renderer::StandardVertex* v = static_cast<const renderer::StandardVertex*>(cube.Vertices()) + i;
+        asset::MeshVertex out;
+        for (u32 k = 0; k < 3; ++k)
+        {
+            out.position[k] = v->position[k];
+            out.normal[k] = v->normal[k];
+        }
+        for (u32 k = 0; k < 4; ++k)
+        {
+            out.tangent[k] = v->tangent[k];
+        }
+        out.uv[0] = v->uv[0];
+        out.uv[1] = v->uv[1];
+        vertices.Push(out);
+    }
+    Vector<u32> indices;
+    for (u32 i = 0; i < cube.IndexCount(); ++i)
+    {
+        indices.Push(cube.IndexAt(i));
+    }
+    asset::MeshSlot slots[2];
+    FormatTo(slots[0].name.Data(), slots[0].name.Size(), "%s", "top");
+    slots[0].first_index = 0;
+    slots[0].index_count = 6;
+    FormatTo(slots[1].name.Data(), slots[1].name.Size(), "%s", "rest");
+    slots[1].first_index = 6;
+    slots[1].index_count = cube.IndexCount() - 6;
+    asset::MeshBuildInput input;
+    input.vertices = Span<const asset::MeshVertex>(vertices.Data(), vertices.Size());
+    input.indices = Span<const u32>(indices.Data(), indices.Size());
+    input.slots = Span<const asset::MeshSlot>(slots, 2);
+    input.quality = asset::MeshQuality::Full;
+    Vector<byte> mesh_blob;
+    REQUIRE(asset::BuildMeshBlob(types, ResourceId::FromValue(kCubeId), input, &mesh_blob).Ok());
+    const Vector<byte> red = MaterialBlob(types, kRedId, 0.8f, 0.1f, 0.1f);
+    const Vector<byte> blue = MaterialBlob(types, kBlueId, 0.1f, 0.2f, 0.8f);
+    SpResolver resolver;
+    resolver.Add("/meshes/cube", kCubeId, mesh_blob);
+    resolver.Add("/materials/red", kRedId, red);
+    resolver.Add("/materials/blue", kBlueId, blue);
+    const char* text = "id 0000000000000040\n"
+                       "entity a\n  component mesh_reference\n    mesh = /meshes/cube\n    material = /materials/red\n"
+                       "  component mesh_slot_materials\n    slot1 = /materials/blue\n"
+                       "entity b\n  component mesh_reference\n    mesh = /meshes/cube\n    material = /materials/red\n";
+    asset::LevelSourceError error;
+    Vector<byte> level;
+    const asset::Status minted = asset::MintLevel(StringView(text, CStrLength(text)), resolver, types, registry, &level,
+                                                  &error);
+    INFO(error.message.Data());
+    REQUIRE(minted.Ok());
+
+    asset::HostMemoryBackend backend(types, u64{8} << 20);
+    REQUIRE(backend.Add(ResourceId::FromValue(kCubeId), Bytes(mesh_blob)).Ok());
+    REQUIRE(backend.Add(ResourceId::FromValue(kRedId), Bytes(red)).Ok());
+    REQUIRE(backend.Add(ResourceId::FromValue(kBlueId), Bytes(blue)).Ok());
+    REQUIRE(backend.Add(ResourceId::FromValue(0x40), Bytes(level)).Ok());
+    rhi::NullDevicePtr device = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
+    UniquePtr<renderer::MaterialSystem> materials = MakeUnique<renderer::MaterialSystem>(
+        device.Get(), renderer::MaterialSystemDesc{});
+    asset::GpuAssetContext context;
+    context.device = device.Get();
+    context.materials = materials.Get();
+    context.templates = renderer::CreateGBufferTemplates(materials.Get());
+    asset::ManagerConfig config;
+    config.buffer_pool_bytes = u64{16} << 20;
+    UniquePtr<asset::ResourceManager> manager = MakeUnique<asset::ResourceManager>(types, config);
+    asset::RegisterCpuLoaders(manager.Get());
+    asset::RegisterGpuLoaders(manager.Get(), &context);
+    REQUIRE(manager->Mount(StringView("/"), &backend, 0).Ok());
+
+    ecs::World world;
+    storage::KeyIndex index;
+    scene::SpawnedLevel spawned;
+    REQUIRE(scene::SpawnLevel(*manager, ResourceId::FromValue(0x40), registry, world, index, &spawned).Ok());
+    u32 with_slots = 0;
+    u32 without = 0;
+    world.Query<ecs::Read<scene::MeshRenderer>>().ForEach(
+        [&](ecs::Entity, const scene::MeshRenderer& mr)
+        {
+            REQUIRE(mr.mesh);
+            CHECK(mr.mesh->RangeCount() == 2);  // the slots reached the GPU mesh as index ranges
+            if (mr.slot_count == 0)
+            {
+                ++without;
+                return;
+            }
+            ++with_slots;
+            CHECK(mr.slot_count == 2);
+            CHECK(mr.slot_materials[0] == scene::kInheritMaterial);
+            CHECK(mr.slot_materials[1] != scene::kInheritMaterial);
+            CHECK(mr.slot_materials[1] != mr.material);
+        });
+    CHECK(with_slots == 1);
+    CHECK(without == 1);
+    scene::DestroyLevel(&spawned, world, index);
+    manager.Reset();
+    materials.Reset();
+    LogRender.SetEnabled(true);
+}

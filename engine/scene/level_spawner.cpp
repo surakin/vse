@@ -81,6 +81,25 @@ asset::Status Spawn(asset::ResourceManager& manager, asset::ResourceId id, const
             renderer_component.material = material.Get()->material->id.index;
             out->materials.Push(material.Get()->material);
         }
+        if (const asset::MeshSlotMaterials* slots = world.Peek<asset::MeshSlotMaterials>(entity))
+        {
+            u32 used = 0;
+            for (u32 s = 0; s < asset::kMaxLevelSlotMaterials && s < kMaxSlotMaterials; ++s)
+            {
+                const u64 id = slots->At(s).id;
+                if (id == 0)
+                {
+                    renderer_component.slot_materials[s] = kInheritMaterial;
+                    continue;
+                }
+                asset::Handle<asset::GpuMaterialAsset> slot_material;
+                ENGINE_TRY(manager.Load<asset::GpuMaterialAsset>(asset::ResourceId::FromValue(id), &slot_material));
+                renderer_component.slot_materials[s] = slot_material.Get()->material->id.index;
+                out->materials.Push(slot_material.Get()->material);
+                used = s + 1;
+            }
+            renderer_component.slot_count = used;
+        }
         if (world.Add(entity, static_cast<MeshRenderer&&>(renderer_component)) != ecs::Status::Ok)
         {
             return asset::Status::Make(asset::ErrorCode::Other, "the world refused a mesh renderer");

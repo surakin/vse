@@ -1500,6 +1500,84 @@ engine_status EntityClearSlotOverrideFn(engine_handle world, u64 key, engine_str
                      });
 }
 
+// Sets or clears slot `slot` of an entity's slot materials.
+engine_status SetMeshSlotMaterial(WorldObject& object, ecs::Entity entity, u32 slot, u64 material)
+{
+    if (slot >= SlotMaterialsComponent::kMax)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a mesh slot is numbered below 16");
+    }
+    SlotMaterialsComponent slots;
+    if (const SlotMaterialsComponent* have = object.world.Peek<SlotMaterialsComponent>(entity))
+    {
+        slots = *have;
+    }
+    slots.material[slot] = material;
+    slots.count = 0;
+    for (u32 i = 0; i < SlotMaterialsComponent::kMax; ++i)
+    {
+        if (slots.material[i] != 0)
+        {
+            slots.count = i + 1;
+        }
+    }
+    if (slots.count == 0)
+    {
+        if (object.world.Peek<SlotMaterialsComponent>(entity) != nullptr)
+        {
+            object.world.Remove<SlotMaterialsComponent>(entity);
+        }
+        return ENGINE_OK;
+    }
+    return SetOrAdd(object.world, entity, slots);
+}
+
+engine_status EntitySetMeshSlotMaterialFn(engine_handle world, u64 key, u32 slot, u64 material_resource)
+{
+    return WithWorld(world, true, key, [&](WorldObject& object, ecs::Entity entity)
+                     { return SetMeshSlotMaterial(object, entity, slot, material_resource); });
+}
+
+engine_status EntitySetMeshSlotMaterialByNameFn(engine_handle world, u64 key, engine_string slot, u64 material_resource)
+{
+    TRY_STATUS(CheckName(slot));
+    if (slot.length == 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the slot name is empty");
+    }
+    const StringView name(slot.data, slot.length);
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         const MeshReference* reference = object.world.Peek<MeshReference>(entity);
+                         if (reference == nullptr || reference->mesh == 0)
+                         {
+                             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the entity has no mesh reference");
+                         }
+                         Runtime* runtime = CurrentRuntime();
+                         u32 index = 0;
+                         const engine_status found = runtime->Resources()->FindMeshSlot(reference->mesh, name, &index);
+                         if (found != ENGINE_OK)
+                         {
+                             return found;
+                         }
+                         return SetMeshSlotMaterial(object, entity, index, material_resource);
+                     });
+}
+
+engine_status EntityClearMeshSlotMaterialsFn(engine_handle world, u64 key)
+{
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         if (object.world.Peek<SlotMaterialsComponent>(entity) != nullptr)
+                         {
+                             object.world.Remove<SlotMaterialsComponent>(entity);
+                         }
+                         return ENGINE_OK;
+                     });
+}
+
 engine_status AnimationPlayFn(engine_handle world, u64 key, u64 clip, const engine_play_params* params)
 {
     engine_play_params play = {};
@@ -1901,6 +1979,22 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                     if (status == ecs::Status::Ok)
                     {
                         status = object.world.Add<MeshReference>(entity, reference);
+                    }
+                }
+                if (const asset::MeshSlotMaterials* slots = scratch.Peek<asset::MeshSlotMaterials>(source[i]))
+                {
+                    SlotMaterialsComponent made_slots;
+                    for (u32 k = 0; k < SlotMaterialsComponent::kMax && k < asset::kMaxLevelSlotMaterials; ++k)
+                    {
+                        made_slots.material[k] = slots->At(k).id;
+                        if (made_slots.material[k] != 0)
+                        {
+                            made_slots.count = k + 1;
+                        }
+                    }
+                    if (status == ecs::Status::Ok && made_slots.count != 0)
+                    {
+                        status = object.world.Add<SlotMaterialsComponent>(entity, made_slots);
                     }
                 }
                 if (const animation::SkeletonInstance* skeleton = scratch.Peek<animation::SkeletonInstance>(source[i]))
