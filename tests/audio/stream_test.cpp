@@ -251,10 +251,10 @@ TEST_CASE("stream: a WAV file is read through the file layer", "[audio][stream][
     wide.frames = 100;
     const Vector<byte> wide_bytes = audio_test::BuildWav(wide);
     {
-        io::FilePtr out;
-        REQUIRE(io::File::Open(path, io::OpenMode::Write, io::kOpenNone, &out).Ok());
-        REQUIRE(out->Write(wide_bytes.Data(), wide_bytes.Size(), 0).Ok());
-        REQUIRE(out->Close().Ok());
+        io::FilePtr wide_file;
+        REQUIRE(io::File::Open(path, io::OpenMode::Write, io::kOpenNone, &wide_file).Ok());
+        REQUIRE(wide_file->Write(wide_bytes.Data(), wide_bytes.Size(), 0).Ok());
+        REQUIRE(wide_file->Close().Ok());
     }
     io::FilePtr third;
     REQUIRE(io::File::Open(path, io::OpenMode::Read, io::kOpenNone, &third).Ok());

@@ -12,6 +12,7 @@
 #include "io/path.h"
 #include "lang/scalar.h"
 #include "os/os.h"
+#include "platform_hash.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::audio;
@@ -120,8 +121,12 @@ TEST_CASE("vorbis decode: the decode hash of each fixture is the same-build base
     // A regression check for one build (Clang, Linux): it changes with the compiler, the libvorbis version or the
     // fixtures, and is then re-taken (the cross-build check is the RMS table above).
     const char* names[] = {"sine_mono.ogg", "noise_mono.ogg", "stereo_mix.ogg", "transient_mix.ogg", "surround51.ogg"};
-    const u64 expected[5] = {14233851687474461274ull, 11776376970900082663ull, 8245827628348519891ull,
-                             14823774197410747470ull, 13820256537831640291ull};
+    // Windows has its own (cl and clang-cl agree; Phase 24 Day 381, the Windows PC), through platform_hash.h.
+    const u64 expected[5] = {testing::PlatformHash(14233851687474461274ull, 6715489784166491711ull),
+                             testing::PlatformHash(11776376970900082663ull, 17197782754136045587ull),
+                             testing::PlatformHash(8245827628348519891ull, 6767513533495306370ull),
+                             testing::PlatformHash(14823774197410747470ull, 1892277194690204243ull),
+                             testing::PlatformHash(13820256537831640291ull, 1741561902367827691ull)};
     for (u32 i = 0; i < 5; ++i)
     {
         const Vector<f32> sound = Decode(Load(names[i]));

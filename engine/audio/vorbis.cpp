@@ -525,35 +525,35 @@ VorbisStatus VorbisDecoder::Decode(f32* out, u32 max_frames, u32* frames)
 bool VorbisDecoder::State::BuildIndex()
 {
     State& s = *this;
-    ogg_sync_state sync;
-    ogg_sync_init(&sync);
+    ogg_sync_state index_sync;
+    ogg_sync_init(&index_sync);
     ogg_stream_state st;
     if (ogg_stream_init(&st, s.serial) != 0)
     {
-        ogg_sync_clear(&sync);
+        ogg_sync_clear(&index_sync);
         return false;
     }
     usize fed = s.data_offset;
     u64 previous = 0;
     long previous_blocksize = 0;
-    u32 pages = 0;
+    u32 index_pages = 0;
     bool ok = true;
     while (ok && fed < s.bytes.Size())
     {
         const usize n = s.bytes.Size() - fed < kChunk ? s.bytes.Size() - fed : kChunk;
-        char* buffer = ogg_sync_buffer(&sync, static_cast<long>(n));
+        char* buffer = ogg_sync_buffer(&index_sync, static_cast<long>(n));
         if (buffer == nullptr)
         {
             ok = false;
             break;
         }
         MemCopy(buffer, s.bytes.Data() + fed, n);
-        ogg_sync_wrote(&sync, static_cast<long>(n));
+        ogg_sync_wrote(&index_sync, static_cast<long>(n));
         fed += n;
         ogg_page page;
         while (true)
         {
-            const int r = ogg_sync_pageout(&sync, &page);
+            const int r = ogg_sync_pageout(&index_sync, &page);
             if (r == 0)
             {
                 break;
@@ -562,8 +562,8 @@ bool VorbisDecoder::State::BuildIndex()
             {
                 continue;
             }
-            pages += 1;
-            if (pages > s.limits.max_pages)
+            index_pages += 1;
+            if (index_pages > s.limits.max_pages)
             {
                 ok = false;
                 break;
@@ -572,7 +572,7 @@ bool VorbisDecoder::State::BuildIndex()
             {
                 continue;
             }
-            const usize end = fed - static_cast<usize>(sync.fill - sync.returned);
+            const usize end = fed - static_cast<usize>(index_sync.fill - index_sync.returned);
             const usize start = end - static_cast<usize>(page.header_len) - static_cast<usize>(page.body_len);
             const bool starts_packet = !ogg_page_continued(&page);
             const ogg_int64_t granule = ogg_page_granulepos(&page);
@@ -623,7 +623,7 @@ bool VorbisDecoder::State::BuildIndex()
         }
     }
     ogg_stream_clear(&st);
-    ogg_sync_clear(&sync);
+    ogg_sync_clear(&index_sync);
     return ok;
 }
 

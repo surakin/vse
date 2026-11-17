@@ -56,6 +56,8 @@ tests and the async test, 3 of 3 runs passed; `ctest -L "^phase26$"` 310 of 310 
 (`docs/guide/audio.md`); cl and clang-cl give the same six values here, which differ from Linux's, so `tests/audio/platform_hash.h` keeps a value per
 platform (Windows' committed here; the Mac still uses Linux's, `KNOWN-ISSUES.md`).
 
+**After the rebase onto Days 431-436** (`b83265b1`): two more MSVC build fixes (`engine/audio/vorbis.cpp`'s `BuildIndex` locals `sync` and `pages`, which hid members, now `index_sync` and `index_pages`; `tests/audio/stream_test.cpp`'s inner `out`, now `wide_file`) and Windows' own Vorbis decode hashes (`vorbis_decode_test.cpp`, cl and clang-cl agree). Phase 26 in the four static trees: 408 of 410 (`build-msvc`) and 205 of 206 (`build-clang-cl`) before the Vorbis values, then the Vorbis and stream tests 137 of 137 and 69 of 69 in each; `engine_library` 120 of 120 in `build-msvc-shared` and 97 of 97 in `build-clang-cl-shared`.
+
 ## Post-implementation code review
 
 `/code-review high` over the day's diff, done inline: 3 findings. **Fixed (1):** `host_window_show` compared the stride with `width * 4u`, which wraps
