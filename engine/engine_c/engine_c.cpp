@@ -794,6 +794,7 @@ extern "C"
             &engine_c::EntityClearMeshSlotMaterialsFn,
             &engine_c::SurfaceAcquireFrameFn,
             &engine_c::SurfaceReleaseFrameFn,
+            &engine_c::EntitySetMeshSlotOverrideFn,
         };
         *out = &table;
         return ENGINE_OK;

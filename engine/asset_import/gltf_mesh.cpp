@@ -797,6 +797,9 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
         input.vertices = Span<const MeshVertex>(vertices.Data(), vertices.Size());
         input.indices = Span<const u32>(indices.Data(), indices.Size());
         input.slots = Span<const MeshSlot>(slots.Data(), slots.Size());
+        // The G-buffer templates read float3 normals and tangents: only the full layout draws (a packed mesh's
+        // SNorm8x4 attributes do not feed them). Found by the Phase 24 Day 383 acceptance scene.
+        input.quality = MeshQuality::Full;
         if (skinned)
         {
             input.skin = Span<const MeshSkinInfluence>(skin.Data(), skin.Size());

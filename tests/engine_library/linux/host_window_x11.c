@@ -177,3 +177,46 @@ int host_window_post_key(host_window* window, int key, int down)
 }
 
 #include "unity/x11_disable.h"
+
+int host_window_show(host_window* window, const void* rgba, uint32_t width, uint32_t height, uint32_t stride)
+{
+    /* the default visual of a desktop X server is 24 or 32 bit TrueColor with the bytes in the order B, G, R, unused */
+    const int depth = DefaultDepth(g_display, DefaultScreen(g_display));
+    unsigned char* bgrx;
+    XImage* image;
+    uint32_t x;
+    uint32_t y;
+    if (window == NULL || (depth != 24 && depth != 32))
+    {
+        return 0;
+    }
+    bgrx = (unsigned char*)malloc((size_t)width * height * 4);
+    if (bgrx == NULL)
+    {
+        return 0;
+    }
+    for (y = 0; y < height; ++y)
+    {
+        const unsigned char* in = (const unsigned char*)rgba + (size_t)y * stride;
+        unsigned char* out = bgrx + (size_t)y * width * 4;
+        for (x = 0; x < width; ++x)
+        {
+            out[x * 4 + 0] = in[x * 4 + 2];
+            out[x * 4 + 1] = in[x * 4 + 1];
+            out[x * 4 + 2] = in[x * 4 + 0];
+            out[x * 4 + 3] = 0;
+        }
+    }
+    image = XCreateImage(g_display, DefaultVisual(g_display, DefaultScreen(g_display)), (unsigned)depth, ZPixmap, 0,
+                         (char*)bgrx, width, height, 32, 0);
+    if (image == NULL)
+    {
+        free(bgrx);
+        return 0;
+    }
+    XPutImage(g_display, window->window, DefaultGC(g_display, DefaultScreen(g_display)), image, 0, 0, 0, 0, width,
+              height);
+    XFlush(g_display);
+    image->f.destroy_image(image); /* what XDestroyImage does: frees bgrx and the image */
+    return 1;
+}

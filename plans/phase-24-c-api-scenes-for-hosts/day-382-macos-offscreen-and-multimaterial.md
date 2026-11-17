@@ -16,3 +16,7 @@ Both features on Metal.
 - [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
 
 **Done:** The Day 374-380 tests pass on the Mac on Metal, or each failure is recorded with its observed behavior.
+
+## Outcome
+
+Skipped on the Linux machine by the user (2026-11-17): the user runs the Mac later. Nothing here was done; see `KNOWN-ISSUES.md`.

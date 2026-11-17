@@ -1385,8 +1385,10 @@ engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size
     return ENGINE_OK;
 }
 
-engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_string slot,
-                                      const engine_slot_override* value)
+// Sets an override of the material slot `slot` on `key`'s mesh slot `mesh_slot` (SlotOverrides::kAllMeshSlots: all).
+// With a name, `mesh_slot_name` names the mesh slot instead (looked up in the entity's mounted mesh).
+engine_status SetSlotOverride(engine_handle world, u64 key, engine_string slot, const engine_slot_override* value,
+                              u32 mesh_slot, const StringView* mesh_slot_name)
 {
     TRY_STATUS(CheckName(slot));
     TRY_STATUS(CheckInStruct(value, sizeof(engine_slot_override), "engine_slot_override"));
@@ -1425,39 +1427,77 @@ engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_strin
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a texture override needs a texture resource id");
     }
-    return WithWorld(world, true, key,
-                     [&](WorldObject& object, ecs::Entity entity)
-                     {
-                         SlotOverrides overrides;
-                         if (const SlotOverrides* have = object.world.Peek<SlotOverrides>(entity))
-                         {
-                             overrides = *have;
-                         }
-                         u32 at = overrides.count;
-                         for (u32 i = 0; i < overrides.count; ++i)
-                         {
-                             if (StringView(overrides.items[i].name) == name)
-                             {
-                                 at = i;
-                             }
-                         }
-                         if (at == SlotOverrides::kMax)
-                         {
-                             return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "an entity holds at most 8 slot overrides");
-                         }
-                         SlotOverrides::Item& item = overrides.items[at];
-                         item = SlotOverrides::Item();
-                         MemCopy(item.name, name.Data(), name.Length());
-                         item.kind = value->kind;
-                         MemCopy(item.value, value->value, sizeof(item.value));
-                         item.texture = value->texture_resource;
-                         item.host_texture = host_texture ? value->host_texture.value : 0;
-                         if (at == overrides.count)
-                         {
-                             ++overrides.count;
-                         }
-                         return SetOrAdd(object.world, entity, overrides);
-                     });
+    return WithWorld(
+        world, true, key,
+        [&](WorldObject& object, ecs::Entity entity)
+        {
+            if (mesh_slot_name != nullptr)
+            {
+                const MeshReference* reference = object.world.Peek<MeshReference>(entity);
+                if (reference == nullptr || reference->mesh == 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the entity has no mesh reference");
+                }
+                const engine_status found = CurrentRuntime()->Resources()->FindMeshSlot(reference->mesh,
+                                                                                        *mesh_slot_name, &mesh_slot);
+                if (found != ENGINE_OK)
+                {
+                    return found;
+                }
+            }
+            if (mesh_slot != SlotOverrides::kAllMeshSlots && mesh_slot >= SlotMaterialsComponent::kMax)
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a mesh slot is numbered below 16");
+            }
+            SlotOverrides overrides;
+            if (const SlotOverrides* have = object.world.Peek<SlotOverrides>(entity))
+            {
+                overrides = *have;
+            }
+            u32 at = overrides.count;
+            for (u32 i = 0; i < overrides.count; ++i)
+            {
+                if (StringView(overrides.items[i].name) == name && overrides.items[i].mesh_slot == mesh_slot)
+                {
+                    at = i;
+                }
+            }
+            if (at == SlotOverrides::kMax)
+            {
+                return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "an entity holds at most 8 slot overrides");
+            }
+            SlotOverrides::Item& item = overrides.items[at];
+            item = SlotOverrides::Item();
+            item.mesh_slot = mesh_slot;
+            MemCopy(item.name, name.Data(), name.Length());
+            item.kind = value->kind;
+            MemCopy(item.value, value->value, sizeof(item.value));
+            item.texture = value->texture_resource;
+            item.host_texture = host_texture ? value->host_texture.value : 0;
+            if (at == overrides.count)
+            {
+                ++overrides.count;
+            }
+            return SetOrAdd(object.world, entity, overrides);
+        });
+}
+
+engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_string slot,
+                                      const engine_slot_override* value)
+{
+    return SetSlotOverride(world, key, slot, value, SlotOverrides::kAllMeshSlots, nullptr);
+}
+
+engine_status EntitySetMeshSlotOverrideFn(engine_handle world, u64 key, engine_string mesh_slot, engine_string slot,
+                                          const engine_slot_override* value)
+{
+    TRY_STATUS(CheckName(mesh_slot));
+    if (mesh_slot.length == 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the mesh slot name is empty");
+    }
+    const StringView mesh_name(mesh_slot.data, mesh_slot.length);
+    return SetSlotOverride(world, key, slot, value, SlotOverrides::kAllMeshSlots, &mesh_name);
 }
 
 engine_status EntityClearSlotOverrideFn(engine_handle world, u64 key, engine_string slot)
@@ -1481,22 +1521,27 @@ engine_status EntityClearSlotOverrideFn(engine_handle world, u64 key, engine_str
                              return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no override of that slot");
                          }
                          SlotOverrides overrides = *have;
-                         for (u32 i = 0; i < overrides.count; ++i)
+                         bool removed = false;
+                         for (u32 i = overrides.count; i > 0; --i)  // every override of that slot, of any mesh slot
                          {
-                             if (StringView(overrides.items[i].name) == name)
+                             if (StringView(overrides.items[i - 1].name) == name)
                              {
-                                 overrides.items[i] = overrides.items[overrides.count - 1];
+                                 overrides.items[i - 1] = overrides.items[overrides.count - 1];
                                  overrides.items[overrides.count - 1] = SlotOverrides::Item();
                                  --overrides.count;
-                                 if (overrides.count == 0)
-                                 {
-                                     object.world.Remove<SlotOverrides>(entity);
-                                     return ENGINE_OK;
-                                 }
-                                 return SetOrAdd(object.world, entity, overrides);
+                                 removed = true;
                              }
                          }
-                         return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no override of that slot");
+                         if (!removed)
+                         {
+                             return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no override of that slot");
+                         }
+                         if (overrides.count == 0)
+                         {
+                             object.world.Remove<SlotOverrides>(entity);
+                             return ENGINE_OK;
+                         }
+                         return SetOrAdd(object.world, entity, overrides);
                      });
 }
 

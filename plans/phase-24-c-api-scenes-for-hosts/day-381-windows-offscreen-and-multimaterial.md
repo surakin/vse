@@ -17,3 +17,7 @@ Both features on both Windows backends.
 - [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
 
 **Done:** The Day 374-380 tests pass on the Windows PC on both backends, or each failure is recorded with its observed behavior.
+
+## Outcome
+
+Skipped on the Linux machine by the user (2026-11-17): the user runs the Windows PC later. Nothing here was done; see `KNOWN-ISSUES.md`.

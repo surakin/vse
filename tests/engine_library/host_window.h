@@ -86,4 +86,10 @@ int host_window_poll(host_window* window, host_window_event* out);
    Returns 1, or 0 when it could not be queued. */
 int host_window_post_key(host_window* window, int key, int down);
 
+/* Shows RGBA8 pixels (`height` rows of `width` pixels, `stride` bytes apart, top row first) in the window: what a
+   toolkit host does with a picture taken from an off-screen surface (walk_around --offscreen, Phase 24 Day 383).
+   Returns 1, or 0 when this platform's window code cannot show pixels yet (the Windows and macOS ones are Days
+   381-382). */
+int host_window_show(host_window* window, const void* rgba, uint32_t width, uint32_t height, uint32_t stride);
+
 #endif

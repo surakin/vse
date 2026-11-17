@@ -205,12 +205,19 @@ int main(int argc, char** argv)
     float pitch = 0.0f;
     float eye[3] = {0.0f, 1.6f, 6.0f};
     int frames_limit = -1;
+    int offscreen = 0;
+    int shown = 0;
+    int acquired = 0;
     int frame_count = 0;
     float eye_before_key = 0.0f;
     int running = 1;
     int keys[4] = {0, 0, 0, 0};
     int last_x = -1;
     int i;
+    for (i = 1; i < argc; ++i)
+    {
+        offscreen = offscreen || strcmp(argv[i], "--offscreen") == 0;
+    }
     for (i = 1; i + 1 < argc; ++i)
     {
         if (strcmp(argv[i], "--frames") == 0)
@@ -236,7 +243,8 @@ int main(int argc, char** argv)
     memset(&about, 0, sizeof(about));
     about.struct_size = sizeof(about);
     g_api->get_info(engine, &about);
-    if ((about.caps & host_window_surface_cap()) == 0 || (about.caps & ENGINE_CAP_WORLD_ON_SURFACE) == 0)
+    if ((about.caps & (offscreen ? ENGINE_CAP_SURFACE_OFFSCREEN : host_window_surface_cap())) == 0 ||
+        (about.caps & ENGINE_CAP_WORLD_ON_SURFACE) == 0)
     {
         printf("walk_around: skipped: this build draws no world into this platform's windows\n");
         g_api->destroy(engine);
@@ -254,8 +262,16 @@ int main(int argc, char** argv)
     memset(&info, 0, sizeof(info));
     info.struct_size = sizeof(info);
     host_window_describe(window, &info);
-    info.flags = host_window_api_flags(); /* Windows: HOST_SURFACE_API, Direct3D 12 or Vulkan; kept by the later
-                                             describe */
+    if (offscreen)
+    { /* the engine draws into a buffer of its own; the host shows each picture in its window (host_window_show) */
+        info.kind = ENGINE_SURFACE_OFFSCREEN;
+        info.scale = 1.0f;
+        info.display = NULL;
+        info.surface = NULL;
+        info.window_id = 0;
+    }
+    info.flags = offscreen ? 0 : host_window_api_flags(); /* Windows: HOST_SURFACE_API, Direct3D 12 or Vulkan; kept by
+                                             the later describe */
     memset(&surface, 0, sizeof(surface));
     if (g_api->surface_create(engine, &info, &surface) != ENGINE_OK)
     {
@@ -424,6 +440,18 @@ int main(int argc, char** argv)
             ++g_failures;
             break;
         }
+        if (offscreen)
+        { /* the newest finished picture, if there is one yet, into the host's own window */
+            engine_frame_image picture;
+            memset(&picture, 0, sizeof(picture));
+            picture.struct_size = sizeof(picture);
+            if (g_api->surface_acquire_frame(surface, &picture) == ENGINE_OK)
+            {
+                shown += host_window_show(window, picture.data, picture.width, picture.height, picture.stride);
+                ++acquired;
+                CHECK_STATUS(g_api->surface_release_frame(surface, &picture), ENGINE_OK);
+            }
+        }
         ++frame_count;
         if (frames_limit < 0)
         {
@@ -457,7 +485,16 @@ int main(int argc, char** argv)
         host_atomic_store(&screens[i].stop, 1);
         host_thread_join(&screens[i].thread);
     }
-    if (frames_limit >= 0)
+    if (offscreen)
+    { /* no window surface to rebind: the test is that pictures came through (and were shown where the platform can) */
+        if (frames_limit >= 0)
+        {
+            CHECK(acquired >= frame_count / 2);
+            printf("walk_around: off-screen: %d of %d frames taken, %d shown in the window\n", acquired, frame_count,
+                   shown);
+        }
+    }
+    else if (frames_limit >= 0)
     {
         unsigned long long before;
         CHECK(Frame(engine, surface, &pixels, 0.0));

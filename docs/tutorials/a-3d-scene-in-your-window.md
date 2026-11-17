@@ -14,7 +14,9 @@
 6. **Feed a texture from another thread.** `texture_create` makes a picture of your own; `entity_set_slot_override(world, entity, "albedo_tex", ...)` with `ENGINE_SLOT_HOST_TEXTURE` makes one entity draw it in place of its material's texture (the entities that share the material keep theirs); any thread calls `texture_update` and the next frame shows the newest pixels. Destroying the texture puts the slot back.
 7. **Put a name tag over a head.** `label_font_set` gives the engine a font file once; an `ENGINE_COMPONENT_LABEL` on an entity draws its text at the entity's position plus an offset, in pixels or in metres, hidden with the entity.
 8. **Survive what hosts do.** `surface_rebind` after the window or the device is lost remakes everything the surface owned from what the engine keeps; the world, the camera, the texture and the label are yours to leave alone.
-9. **Clean up in order.** Stop your painting threads, destroy the textures, the surface and the world, then the engine.
+9. **Or draw into a buffer you show yourself.** A toolkit that owns the pixels (a canvas, a texture of its own) makes the surface with `kind = ENGINE_SURFACE_OFFSCREEN` and only a size: no window is needed. After each `frame`, `surface_acquire_frame` returns the newest finished picture (RGBA8, `stride` bytes a row) without waiting for the GPU, and `surface_release_frame` gives it back; a host slower than the frames skips pictures. `walk_around --offscreen` does this and shows each picture in its own window.
+10. **Give one slot of a mesh its own look.** A mesh imported from a glTF has one slot per primitive. `entity_set_mesh_slot_material_by_name` gives a slot another material, and `entity_set_mesh_slot_override(world, entity, "Screen", "albedo_tex", ...)` changes one material slot of one mesh slot only (the face of a robot, not its body). `tests/engine_library/host_acceptance_scene.c` draws a meadow and three robots with a screen each this way.
+11. **Clean up in order.** Stop your painting threads, destroy the textures, the surface and the world, then the engine.
 
 ## Where to go next
 

@@ -214,3 +214,15 @@ int host_window_post_key(host_window* window, int key, int down)
     const LPARAM flags = down ? 1 : (LPARAM)((1u << 30) | (1u << 31) | 1u);
     return PostMessageW(window->hwnd, down ? WM_KEYDOWN : WM_KEYUP, vk, flags) ? 1 : 0;
 }
+
+/* Showing pixels in the window is Day 381 (the Windows PC): until then walk_around --offscreen only draws and takes the
+   pictures. */
+int host_window_show(host_window* window, const void* rgba, uint32_t width, uint32_t height, uint32_t stride)
+{
+    (void)window;
+    (void)rgba;
+    (void)width;
+    (void)height;
+    (void)stride;
+    return 0;
+}

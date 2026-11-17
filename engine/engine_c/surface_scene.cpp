@@ -629,7 +629,13 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             u32 part_total = 1;
             parts[0].material = material;
             const SlotMaterialsComponent* slots = world.world.Peek<SlotMaterialsComponent>(entity);
-            if (slots != nullptr && slots->count != 0 && mesh->RangeCount() != 0 && mesh->RangeCount() <= kMaxParts)
+            const SlotOverrides* wanted = world.world.Peek<SlotOverrides>(entity);
+            bool per_slot = slots != nullptr && slots->count != 0;
+            for (u32 i = 0; wanted != nullptr && i < wanted->count; ++i)
+            {
+                per_slot = per_slot || wanted->items[i].mesh_slot != SlotOverrides::kAllMeshSlots;
+            }
+            if (per_slot && mesh->RangeCount() != 0 && mesh->RangeCount() <= kMaxParts)
             {
                 part_total = mesh->RangeCount();
                 for (u32 i = 0; i < part_total; ++i)
@@ -638,7 +644,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                     parts[i].material = material;
                     parts[i].first = range.first_index;
                     parts[i].count = range.index_count;
-                    if (i < slots->count && slots->material[i] != 0 &&
+                    if (slots != nullptr && i < slots->count && slots->material[i] != 0 &&
                         !ResolveMaterial(slots->material[i], skinned, &parts[i].material))
                     {
                         ++report.entities_unresolved;  // that slot's material is not mounted: it is not drawn
@@ -650,7 +656,16 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             {
                 for (u32 i = 0; i < part_total; ++i)
                 {
-                    parts[i].material = MaterialFor(*overrides, key, i, parts[i].material, &report);
+                    SlotOverrides mine;  // the overrides of every mesh slot and those of this slot
+                    for (u32 k = 0; k < overrides->count; ++k)
+                    {
+                        const u32 target = overrides->items[k].mesh_slot;
+                        if (target == SlotOverrides::kAllMeshSlots || (part_total > 1 && target == i))
+                        {
+                            mine.items[mine.count++] = overrides->items[k];
+                        }
+                    }
+                    parts[i].material = MaterialFor(mine, key, i, parts[i].material, &report);
                 }
             }
             bool same = entry != nullptr && entry->mesh == reference.mesh &&

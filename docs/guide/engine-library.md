@@ -712,6 +712,17 @@ as on a window surface. Several off-screen surfaces, and a window surface beside
   device, target and ring and binds the same world again.
 - `engine.h`: `Surface::AcquireFrame` and `Surface::ReleaseFrame`.
 
+### Overrides of one mesh slot, and the acceptance scene (Day 383)
+
+`entity_set_mesh_slot_override(world, key, mesh_slot, slot, value)` is `entity_set_slot_override` for one mesh slot: a
+robot's `Screen` slot shows a host texture while its body keeps the material's own. It makes the entity draw one part per
+mesh slot, like slot materials; `entity_clear_slot_override` removes a slot's overrides of every mesh slot.
+`tests/engine_library/host_acceptance_scene.c` is the acceptance scene: it imports the meadow and the robot
+(`tests/engine_library/fixtures/`, see its README) at run time, spawns the meadow and three robots (one walks), gives each
+robot's screen its own host texture, draws 1280x720 into an off-screen surface and takes the pictures, through a resize,
+a lost device and a slow host. The glTF importer writes meshes in the full vertex layout, the one the G-buffer shaders
+read (a packed mesh's attributes do not feed them).
+
 ## Scenes: conventions and the host's duties (Phase 24 Day 372)
 
 | What | Convention |

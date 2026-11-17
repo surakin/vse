@@ -1739,6 +1739,15 @@ extern "C"
         /* Gives a frame back; `image->data` names it. Fails with: STALE_HANDLE, INVALID_ARGUMENT (not a frame held
          * from this surface), TYPE_MISMATCH. */
         engine_status (*surface_release_frame)(engine_handle surface, const engine_frame_image* image);
+
+        /* Like entity_set_slot_override, for one mesh slot only: the override applies to the draws of the slot named
+         * `mesh_slot` (the importer's name, as in entity_set_mesh_slot_material_by_name) and not to the entity's other
+         * slots; it makes the entity's mesh draw one part per slot, as slot materials do. entity_clear_slot_override
+         * removes the slot's overrides of every mesh slot. Fails with: those of entity_set_slot_override, and
+         * INVALID_ARGUMENT (the entity has no mesh reference, an empty or too long name), NOT_FOUND (the mesh is not
+         * mounted or has no such slot). */
+        engine_status (*entity_set_mesh_slot_override)(engine_handle world, uint64_t key, engine_string mesh_slot,
+                                                       engine_string slot, const engine_slot_override* value);
     } engine_api;
 
     /* Returns the function table.

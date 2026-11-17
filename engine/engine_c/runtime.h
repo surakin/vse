@@ -78,7 +78,10 @@ struct SlotOverrides
         f32 value[4] = {};
         u64 texture = 0;
         u64 host_texture = 0;  ///< The value of an engine_handle of a host texture (ENGINE_SLOT_HOST_TEXTURE).
+        /// The mesh slot (index range) the override applies to; `kAllMeshSlots` for every one.
+        u32 mesh_slot = 0xFFFFFFFFu;
     };
+    static constexpr u32 kAllMeshSlots = 0xFFFFFFFFu;
     u32 count = 0;
     Item items[kMax];
 };
@@ -361,6 +364,8 @@ engine_status EntitySetParentFn(engine_handle world, u64 child_key, u64 parent_k
 engine_status EntityGetParentFn(engine_handle world, u64 key, u64* parent_key);
 engine_status EntityFindFn(engine_handle world, engine_string name, u64* key);
 engine_status EntityFindAllFn(engine_handle world, engine_string name, u64* keys, size_t capacity, size_t* total);
+engine_status EntitySetMeshSlotOverrideFn(engine_handle world, u64 key, engine_string mesh_slot, engine_string slot,
+                                          const engine_slot_override* value);
 engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_string slot,
                                       const engine_slot_override* value);
 engine_status EntityClearSlotOverrideFn(engine_handle world, u64 key, engine_string slot);

@@ -371,6 +371,12 @@ public:
     {
         return Api()->entity_set_slot_override(Get(), key, Str(slot), &value);
     }
+    /// An override of one mesh slot only (`entity_set_mesh_slot_override`).
+    Status SetMeshSlotOverride(uint64_t key, const char* mesh_slot, const char* slot,
+                               const engine_slot_override& value) const
+    {
+        return Api()->entity_set_mesh_slot_override(Get(), key, Str(mesh_slot), Str(slot), &value);
+    }
     Status ClearSlotOverride(uint64_t key, const char* slot) const
     {
         return Api()->entity_clear_slot_override(Get(), key, Str(slot));

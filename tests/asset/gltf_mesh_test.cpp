@@ -151,6 +151,7 @@ TEST_CASE("gltf mesh: a triangle with every attribute equals the blob built from
     slot.name = GmName("primitive0");
     slot.index_count = 3;
     MeshBuildInput input;
+    input.quality = MeshQuality::Full;  // the importer writes the layout the G-buffer reads (Phase 24 Day 383)
     input.vertices = Span<const MeshVertex>(vertices, 3);
     input.indices = Span<const u32>(indices, 3);
     input.slots = Span<const MeshSlot>(&slot, 1);
@@ -177,6 +178,7 @@ TEST_CASE("gltf mesh: missing normals, tangents and texture coordinates are made
     slot.name = GmName("primitive0");
     slot.index_count = 3;
     MeshBuildInput input;
+    input.quality = MeshQuality::Full;  // the importer writes the layout the G-buffer reads (Phase 24 Day 383)
     input.vertices = Span<const MeshVertex>(vertices, 3);
     input.indices = Span<const u32>(indices, 3);
     input.slots = Span<const MeshSlot>(&slot, 1);
@@ -214,6 +216,7 @@ TEST_CASE("gltf mesh: tangents follow the texture coordinates and their handedne
     slot.name = GmName("primitive0");
     slot.index_count = 3;
     MeshBuildInput input;
+    input.quality = MeshQuality::Full;  // the importer writes the layout the G-buffer reads (Phase 24 Day 383)
     input.vertices = Span<const MeshVertex>(vertices, 3);
     input.indices = Span<const u32>(expected_indices, 3);
     input.slots = Span<const MeshSlot>(&slot, 1);
@@ -473,6 +476,7 @@ TEST_CASE("gltf mesh: a skinned primitive is skinned to its mesh's skeleton, or 
     slot.name = GmName("primitive0");
     slot.index_count = 3;
     MeshBuildInput input;
+    input.quality = MeshQuality::Full;  // the importer writes the layout the G-buffer reads (Phase 24 Day 383)
     input.vertices = Span<const MeshVertex>(vertices, 3);
     input.indices = Span<const u32>(want_indices, 3);
     input.slots = Span<const MeshSlot>(&slot, 1);
