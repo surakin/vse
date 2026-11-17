@@ -2021,12 +2021,14 @@ extern "C"
 
         /* Writes the state of the mixer (voices, buses, effects) into `*out` (release it with engine_buffer_release).
          * The mixer must have applied what it was sent: render a block first. Fails with: STALE_HANDLE,
-         * INVALID_ARGUMENT, NOT_READY (not open, or commands are queued). */
+         * INVALID_ARGUMENT, NOT_READY (not open, or commands are queued). Not while another thread is in audio_render.
+         */
         engine_status (*audio_snapshot)(engine_handle engine, engine_buffer* out);
 
         /* Puts a snapshot back into a mixer set up the same way, with the clips and streams it named still open.
          * Unchanged when refused. Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_READY, CORRUPT, UNSUPPORTED_VERSION,
-         * MISSING_DEPENDENCY (a clip or stream is not open), UNSUPPORTED (the mixer is set up differently). */
+         * MISSING_DEPENDENCY (a clip or stream is not open), UNSUPPORTED (the mixer is set up differently). Not while
+         * another thread is in audio_render (it replaces the state that call reads). */
         engine_status (*audio_restore)(engine_handle engine, const void* data, size_t size);
     } engine_api;
 

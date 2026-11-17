@@ -14,6 +14,9 @@ constexpr u32 kMagic = 0x504E5341;  // "ASNP"
 constexpr u32 kVersion = 1;
 constexpr u32 kNoIndex = 0xFFFFFFFFu;
 constexpr u32 kMaxName = 256;
+// The fastest a voice can advance, in clip frames per output frame (32 fraction bits): far above any pitch
+// and rate ratio the mixer takes, low enough that a loop wrap is a few steps.
+constexpr u64 kMaxStep = u64{256} << 32;
 
 void WriteName(StateOut* out, StringView name)
 {
@@ -415,7 +418,8 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
         ReadMatrix(&s, &voice.route);
         ReadMatrix(&s, &voice.route_from);
         if (!s.Ok() || voice.bus >= kMaxBuses || !buses[voice.bus].active ||
-            (voice.send_bus != kNoIndex && voice.send_bus >= kMaxBuses) || voice.ramp_pos > voice.ramp_len)
+            (voice.send_bus != kNoIndex && voice.send_bus >= kMaxBuses) || voice.ramp_pos > voice.ramp_len ||
+            voice.delay >= kBlockFrames || voice.step > kMaxStep || voice.step_from > kMaxStep)
         {
             return fail(SnapshotStatus::Corrupt);
         }
@@ -437,7 +441,7 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
                 return fail(SnapshotStatus::MissingClip);
             }
         }
-        if (!streaming && !voice.loop && (voice.position >> 32) >= frames)
+        if (!streaming && (voice.position >> 32) >= frames)
         {
             return fail(SnapshotStatus::Corrupt);
         }
