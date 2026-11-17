@@ -3,7 +3,7 @@
 **Status: planned (day files written 2026-11-17). `CURRENT_PHASE` stays 25 until Day 402. Next: Day 402.**
 
 **Depends on:** Phase 17 (ECS: the components and the sync system), Phase 18 (spatial: which emitters are audible), Phase 22 (asset pipeline: audio clips are minted assets), Phases 23-24 (the C API), Phase 25 (physics: occlusion rays), Phase 11 (settings), Phase 9 (file layer: streaming), Phase 2 (jobs: decode-ahead), Phase 13 (the Windows platform layer) and Phase 21 (the macOS port) for their output backends.
-**Goal:** an audio system built on a platform-independent mixer: voices with resampling, buses and effects, positional 3D sound with Doppler and occlusion, WAV and Ogg Vorbis (a hand-written decoder), streamed music, driven from the ECS and from a C host, with the mixer's output bit-identical on Linux, Windows and macOS (the device excluded).
+**Goal:** an audio system built on a platform-independent mixer: voices with resampling, buses and effects, positional 3D sound with Doppler and occlusion, WAV and Ogg Vorbis (vendored libogg and libvorbis behind a facade), streamed music, driven from the ECS and from a C host, with the mixer's output bit-identical on Linux, Windows and macOS (the device excluded).
 **Definition of done:** a clip minted from a WAV or an Ogg plays through the mixer with correct gain, pan, pitch and distance cues relative to a listener, on Linux (the backend the Day 402 spike chose), Windows (WASAPI) and macOS (CoreAudio); buses, filters, delay and reverb work; music streams from disk with cross-fades; occluded emitters are dulled through the physics world; the device can be switched and lost at run time without losing the mix; a C host drives it through `engine_c`, either with an engine-owned device or by pulling the mix itself; the reference scenes' render hashes are equal on the three machines (or the difference is explained in `KNOWN-ISSUES.md`).
 
 ## Days
@@ -26,8 +26,8 @@
 417. [Spatialisation: Panning to Stereo and Surround](phase-26-audio/day-417-panning-and-output-layouts.md)
 418. [Doppler and Distance Filtering](phase-26-audio/day-418-doppler-and-air-absorption.md)
 419. [Occlusion Through the Physics World](phase-26-audio/day-419-occlusion.md)
-420. [Compressed Audio I: Ogg and the Vorbis Headers](phase-26-audio/day-420-ogg-vorbis-i.md)
-421. [Compressed Audio II: Packet Decoding and the Inverse Transform](phase-26-audio/day-421-ogg-vorbis-ii.md)
+420. [Compressed Audio I: Vendoring libogg and libvorbis](phase-26-audio/day-420-vendor-libogg-libvorbis.md)
+421. [Compressed Audio II: Decoding, Channel Order and the Determinism Record](phase-26-audio/day-421-vorbis-decoding-and-determinism.md)
 422. [Compressed Audio III: Seeking, Loops and Minted Compressed Clips](phase-26-audio/day-422-vorbis-seeking-and-minting.md)
 423. [Streaming Sources: Long Clips Without Loading Them](phase-26-audio/day-423-streaming-sources.md)
 424. [Music: Cross-Fades, Layers, Stingers and Playlists](phase-26-audio/day-424-music-system.md)
@@ -43,18 +43,18 @@ Order reasoning: the spec and the spikes (402) settle the Linux backend, the res
 
 ## Decisions fixed by the plan (the Day 402 spec confirms or amends them)
 
-- **One module, `engine/audio`, above `jobs`, `ecs` and `spatial`;** it reaches `physics` only through the occlusion interface and its one implementation file. No third-party audio library (the zero-convenience-dependency rule): the mixer, the resampler, the filters, the reverb and the Vorbis decoder are ours (`PLAN.md` assumption #30).
+- **One module, `engine/audio`, above `jobs`, `ecs` and `spatial`;** it reaches `physics` only through the occlusion interface and its one implementation file. No third-party audio *convenience* library: the mixer, the resampler, the filters and the reverb are ours. **The one exception is libogg and libvorbis (the user, 2026-11-17), vendored under `third_party/`, decode only, included by one facade file and fed through hostile-input limits** (`PLAN.md` assumption #30).
 - **The device is the only per-platform code:** one interface where the mixer pulls interleaved `f32` frames from a render callback; backends are ALSA or PipeWire on Linux (**the Day 402 spike decides and recommends to the user before any backend code**), WASAPI on Windows, CoreAudio on macOS; Null and WAV-file devices exist on every platform and run every test.
 - **Determinism (user, 2026-11-17): the mixer's output is a pure function of its inputs,** not of the device or the thread timing: a fixed internal block, commands stamped with block numbers, a fixed voice and bus order, `+ - * / Sqrt` on the audio thread, 32.32 fixed-point positions in the resampler. libm is used as is through `lang/scalar.h`, on the control side only (filter and reverb coefficients, table building); a libm-only difference between machines is recorded in `KNOWN-ISSUES.md`, not worked around (the user's rule of 2026-11-16).
 - **The audio thread never allocates, locks or does I/O.** Commands arrive through a lock-free ring, events leave through another, streams are decoded ahead on a job and read from a ring.
 - **Everything configurable is a setting** (`audio.*`, Phase 11); the device and the rate change at run time through one reset path (like the RHI), and a lost device falls back to the null device.
-- **Extras, all in scope (user, 2026-11-17):** compressed formats (a hand-written Ogg Vorbis decoder, hostile-input rules, small committed fixtures), Doppler and occlusion, streaming music with cross-fades, layers and playlists, buses and effects (biquad filters, delay, reverb).
+- **Extras, all in scope (user, 2026-11-17):** compressed formats (Ogg Vorbis through vendored libogg and libvorbis, hostile-input rules around them, small committed fixtures), Doppler and occlusion, streaming music with cross-fades, layers and playlists, buses and effects (biquad filters, delay, reverb).
 - **Hosts and ports (user, 2026-11-17):** a C API in two days with a host-driven mode (`audio_render` pulls the mix into the host's own audio callback), then a Windows day and a macOS day that add their backends and check the hashes. Android and iOS stay in Phase 29, the consoles in Phase 30.
 - **Units:** metres, seconds, linear gain (decibel helpers on the control side), +Y up, the listener looks along -Z.
 
 ## Notes / open questions (settled in the Day 402 spec)
 
-- The Linux backend (raw ALSA through `libasound` or the kernel interface, or PipeWire's native protocol), the default resampler quality, the Vorbis test-stream source and licence, whether Vorbis decoding is bit-exact across machines (its tables use `sin`/`cos`) or compared with a tolerance.
+- The Linux backend (raw ALSA through `libasound` or the kernel interface, or PipeWire's native protocol), the default resampler quality, the Vorbis test-stream source and licence, the pinned library versions, whether libvorbis decodes to the same bits on every machine (its tables use libm) or is compared with a tolerance.
 - Voice limit and virtualisation rule from the voice-cost spike.
 - Not in this phase: HRTF and ambisonics, MIDI and synthesis, voice chat and capture (input devices), MP3 and other codecs, a loudness-normalised master, occlusion by diffraction, audio middleware import (FMOD or Wwise banks), exclusive-mode WASAPI.
 - This is the largest phase planned so far (30 days); Phase 28 (3D text) moved from Days 402-417 to Days 432-447.
