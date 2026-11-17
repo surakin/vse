@@ -107,4 +107,17 @@ void ConvertForPcm(PcmFormat format, const f32* in, u32 samples, void* out)
     }
 }
 
+bool LayoutOf(u32 channels, ChannelLayout* out)
+{
+    switch (channels)
+    {
+    case 1: *out = ChannelLayout::Mono; return true;
+    case 2: *out = ChannelLayout::Stereo; return true;
+    case 4: *out = ChannelLayout::Quad; return true;
+    case 6: *out = ChannelLayout::Surround51; return true;
+    case 8: *out = ChannelLayout::Surround71; return true;
+    default: return false;
+    }
+}
+
 }  // namespace engine_placeholder::audio

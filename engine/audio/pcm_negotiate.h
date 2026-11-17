@@ -95,6 +95,15 @@ DeviceStatus NegotiatePcm(const PcmCaps& caps, u32 want_rate, u32 want_channels,
 /// - Fails: never.
 void ConvertForPcm(PcmFormat format, const f32* in, u32 samples, void* out);
 
+/// The layout a card's channel count stands for (Day 440: shared by the ALSA and WASAPI backends).
+///
+/// - Param channels: the channel count the card plays.
+/// - Param out: receives the layout; not written when there is none.
+/// - Ownership: `out` is borrowed for the call.
+/// - Returns: true for 1, 2, 4, 6 and 8 channels (mono, stereo, quad, 5.1, 7.1); false for any other count.
+/// - Fails: reported by the return value.
+bool LayoutOf(u32 channels, ChannelLayout* out);
+
 /// The bytes one sample takes in a format.
 ///
 /// - Param format: the format.

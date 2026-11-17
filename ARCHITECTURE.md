@@ -112,7 +112,7 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
   `tools/crash_extract/windows/` uses `win32.h` for DbgHelp, Day 156; `settings/windows/`, the registry store, uses `win32.h` and `utf16.h`, Day 157; `platform/windows/`, the Win32 window and the windowed programs'
   entry point, the same two, Day 158; `rhi/vulkan/windows/`, the Vulkan backend's Win32 surface, `win32.h`, Day 160;
   `tools/docgen/src/windows/`, the sample runner's child processes, `win32.h` and `utf16.h`, Day 161; `net/windows/`, the Winsock backend, `win32.h`
-  and `utf16.h`, Phase 20 Day 278, with its test directory `tests/net/windows/`), named as an owner on its
+  and `utf16.h`, Phase 20 Day 278, with its test directory `tests/net/windows/`; `audio/windows/`, the WASAPI backend, `win32.h` and `utf16.h`, Phase 26 Day 440), named as an owner on its
   `platform-dir` line in `tools/module_deps_check/modules.txt`.
 - Code that is the same POSIX calls on Linux and macOS lives once in a `posix/` directory beside them (`os/posix/`, Phase 21 Day 285; `io/posix/`,
   the file layer's backend, Day 287, with the per-system hooks in `io/posix/posix_io.h`;

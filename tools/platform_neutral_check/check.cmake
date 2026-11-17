@@ -17,7 +17,7 @@
 # Rule 4 (Phase 13 Day 150): the Windows SDK headers (windows.h, winternl.h, wtsapi32.h, shlobj.h, dbghelp.h and the rest of the list
 #   below, d3d12*.h, dxgi*.h) appear only under the Windows directories (engine/foundation/{os,io,settings}/windows/, engine/jobs/windows/,
 #   engine/platform/windows/, engine/rhi/vulkan/windows/, engine/rhi/dx12/, tests/windows/, tools/crash_extract/windows/,
-#   engine/net/windows/ and tests/net/windows/ (Phase 20 Day 278), tests/engine_library/windows/ (Phase 23 Day 354)), and only through the engine's wrappers: <windows.h> is included by
+#   engine/net/windows/ and tests/net/windows/ (Phase 20 Day 278), tests/engine_library/windows/ (Phase 23 Day 354), engine/audio/windows/ (Phase 26 Day 440)), and only through the engine's wrappers: <windows.h> is included by
 #   engine/foundation/os/windows/win32.h alone (it keeps the SDK's macros from leaking), the D3D12 and DXGI headers by
 #   engine/rhi/dx12/d3d12_api.h alone (Day 164), and any other SDK header only after win32.h in the same file. tests/windows/discovery/
 #   is exempt: its programs probe the toolchain and are built outside the engine. Anywhere under engine/, game/, tools/ and tests/
@@ -210,8 +210,8 @@ endforeach()
 # --- Rule 4 ------------------------------------------------------------------------------------------------------------
 # The header's name without its folders, so <um/windows.h> counts as windows.h (Day 150 review).
 set(win_sdk_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"]([A-Za-z0-9_]+/)*([A-Za-z0-9_]+)\\.h[>\"]")
-set(win_sdk_names "^(windows|winternl|wtsapi32|psapi|dbghelp|shlobj|shlobj_core|shellapi|knownfolders|objbase|combaseapi|processthreadsapi|winbase|winuser|winnt|minwindef|fileapi|handleapi|synchapi|libloaderapi|memoryapi|sysinfoapi|debugapi|errhandlingapi|consoleapi|wincon|winreg|winsock2|ws2tcpip|mstcpip|mswsock|iphlpapi|netioapi|ws2ipdef|shtypes|propsys|mmdeviceapi|audioclient|xinput|d3d12[a-z0-9_]*|dxgi[a-z0-9_]*|d3dcommon|d3dcompiler|dxcapi)$")
-set(win_dirs_re "^(engine/foundation/(os|io|settings)/windows/|engine/jobs/windows/|engine/platform/windows/|engine/rhi/vulkan/windows/|engine/rhi/dx12/|tests/windows/|tools/crash_extract/windows/|tools/docgen/src/windows/|tools/shader_mint/windows/|engine/net/windows/|tests/net/windows/|tests/engine_library/windows/)")
+set(win_sdk_names "^(windows|winternl|wtsapi32|psapi|dbghelp|shlobj|shlobj_core|shellapi|knownfolders|objbase|combaseapi|processthreadsapi|winbase|winuser|winnt|minwindef|fileapi|handleapi|synchapi|libloaderapi|memoryapi|sysinfoapi|debugapi|errhandlingapi|consoleapi|wincon|winreg|winsock2|ws2tcpip|mstcpip|mswsock|iphlpapi|netioapi|ws2ipdef|shtypes|propsys|mmdeviceapi|audioclient|avrt|xinput|d3d12[a-z0-9_]*|dxgi[a-z0-9_]*|d3dcommon|d3dcompiler|dxcapi)$")
+set(win_dirs_re "^(engine/foundation/(os|io|settings)/windows/|engine/jobs/windows/|engine/platform/windows/|engine/rhi/vulkan/windows/|engine/rhi/dx12/|tests/windows/|tools/crash_extract/windows/|tools/docgen/src/windows/|tools/shader_mint/windows/|engine/net/windows/|tests/net/windows/|tests/engine_library/windows/|engine/audio/windows/)")
 foreach(f IN LISTS all_files)
   if(f MATCHES "(^|/)fixtures/" OR f MATCHES "^tests/windows/discovery/")
     continue()

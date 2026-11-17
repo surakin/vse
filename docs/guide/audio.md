@@ -237,6 +237,33 @@ headers still runs where the library is missing) and then **ALSA** through raw `
 - `tools/audio_probe` (`list`, `play --backend=... --seconds=N`) plays a quiet tone through the real backend and prints the
   granted configuration and the counters.
 
+## The Windows backend (WASAPI)
+
+`CreateDevice(DeviceKind::Platform)` on Windows makes a **WASAPI** device in shared mode (`engine/audio/windows/`, Day 440; the
+COM headers only there, `windows.h` only through `os/windows/win32.h`). `EnumerateDevices` lists the active render endpoints; a
+name is the endpoint's id (`{0.0.0.00000000}.{guid}`), the system's default output (the console role) is marked, and `default` or
+an empty name opens it. Exclusive mode is not built.
+
+- **Format:** shared mode plays the endpoint's mix format, so `Open` grants its rate and channel count (the mixer adapts, as
+  everywhere) and ignores the wanted rate; the rendered `f32` frames go to the endpoint as they are when it takes 32-bit float
+  (the usual case) and through `ConvertForPcm` when it takes 16- or 32-bit integers. A channel count with no layout (`LayoutOf`)
+  is `Unsupported`.
+- **Buffering:** event-driven. The client is initialized with two of the wanted buffers' worth; the endpoint signals an event
+  when it has room and the render thread fills that room in calls of at most `DeviceInfo::buffer_frames` (the endpoint's buffer
+  size), so the callback sees the endpoint's own period (10 ms, 480 frames at 48 kHz, on the PC). `latency_frames` is the buffer
+  plus `GetStreamLatency`. The first buffer is silence.
+- **Thread:** one render thread in COM's multithreaded apartment, in the MMCSS class `Pro Audio` (best effort: a refusal is not
+  an error). It wakes at least every 200 ms to see `Stop`. A wake that finds the endpoint's buffer empty counts in
+  `DeviceCounters::underruns`; a render call longer than one buffer counts in `slow_callbacks`.
+- **Losses:** `AUDCLNT_E_DEVICE_INVALIDATED` (the endpoint unplugged or disabled), the endpoint leaving the active state, or, when
+  the default output was opened, a change of the default output, stop the render calls and report `Lost` once to the error
+  callback; `AudioSystem` reopens through the path of "Changing the device at run time" (below), which opens the new default.
+  The system's notifications come through an `IMMNotificationClient` that only sets a flag and wakes the thread.
+- **Errors:** `AUDCLNT_E_DEVICE_IN_USE` is `Busy`, `E_ACCESSDENIED` `PermissionDenied`, `AUDCLNT_E_UNSUPPORTED_FORMAT` and an
+  unplayable mix format `Unsupported`, an unknown id `NotFound`.
+- `audio_probe list` and `audio_probe play` work as on Linux (`--backend=auto` or `wasapi`). On the PC (Realtek, 48 kHz stereo)
+  the three-second tone took 301 render calls with no underrun and a longest call of 21 microseconds.
+
 ## Changing the device at run time
 
 `AudioSystem` owns a `Mixer` and the device that plays it (`audio/audio_system.h`). `Init` opens the wanted device with the
@@ -405,6 +432,10 @@ a backup on any failure. Bad input is a value (`Corrupt`, `Version`, `Mismatch`,
 block N plus the commands posted from N on reproduces the render bit for bit (tested on a scene of eight voices on two buses
 with a delay, a reverb, a filter, a send, a ramp in flight and the limiter). The `MusicPlayer` and the `AudioSystem` are not
 saved: the host rebuilds them and posts their commands again.
+
+**On Windows (Day 440)** the reference levels match: the buses scene's rows (blocks 10, 30, 50) and the thousand-voice scene's
+block 19 come out as committed to the six digits recorded, under cl and clang-cl; the same-build hashes differ from Linux's, and
+Windows' own are committed (`tests/audio/platform_hash.h`).
 
 **Reference scenes** committed with a same-build hash and per-block levels: the buses scene and the thousand-voice scene
 (`snapshot_test.cpp`), the mixer scene (`mixer_test.cpp`), the echo and reverb scenes, the flyby, the 5.1 panning. A scene pulled

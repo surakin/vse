@@ -54,8 +54,8 @@ PcmCaps UsbDac()
     return caps;
 }
 
-#if ENGINE_PLATFORM_LINUX
-// The hardware tests' render callback (Linux only until the WASAPI and CoreAudio days).
+#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS
+// The hardware tests' render callback (Linux and, from Day 440, Windows; the Mac's CoreAudio day adds macOS).
 struct Counting
 {
     Atomic<u64> calls{0};
@@ -208,7 +208,48 @@ TEST_CASE("Backend: a name that is not there, and a bad configuration, are repor
     CHECK(platform->Pump(10) == DeviceStatus::Unsupported);
 }
 
-TEST_CASE("Backend: a real device is rendered at its own pace", "[audio][backend][linux][hardware]")
+#endif
+
+#if ENGINE_PLATFORM_WINDOWS
+
+TEST_CASE("Backend: the WASAPI list has endpoint ids and one default", "[audio][backend][windows]")
+{
+    Vector<DeviceDescription> list;
+    REQUIRE(EnumerateDevices(DeviceKind::Platform, &list) == DeviceStatus::Ok);
+    u32 defaults = 0;
+    for (u32 i = 0; i < list.Size(); ++i)
+    {
+        CHECK(list[i].name[0] == '{');  // an endpoint id, {0.0.0.00000000}.{guid}
+        CHECK(list[i].max_channels >= 1);
+        CHECK(list[i].min_rate == list[i].max_rate);  // shared mode plays the mix rate
+        defaults += list[i].is_default ? 1 : 0;
+    }
+    CHECK(defaults == (list.Size() == 0 ? 0u : 1u));
+}
+
+TEST_CASE("Backend: WASAPI reports a missing endpoint and a bad configuration by value", "[audio][backend][windows]")
+{
+    UniquePtr<AudioDevice> device = CreateDevice(DeviceKind::Platform);
+    REQUIRE(device != nullptr);
+    DeviceConfig config;
+    config.name = StringView("{0.0.0.00000000}.{00000000-0000-0000-0000-000000000000}");
+    CHECK(device->Open(config) == DeviceStatus::NotFound);
+    CHECK(!device->IsOpen());
+    config.name = StringView("default");
+    config.buffer_frames = 0;
+    CHECK(device->Open(config) == DeviceStatus::InvalidConfig);
+    CHECK(device->Start() == DeviceStatus::NotOpen);
+    CHECK(device->Pump(10) == DeviceStatus::Unsupported);
+    device->Stop();
+    CHECK(device->Close() == DeviceStatus::Ok);
+    CHECK(device->Close() == DeviceStatus::Ok);
+}
+
+#endif
+
+#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS
+
+TEST_CASE("Backend: a real device is rendered at its own pace", "[audio][backend][hardware]")
 {
     UniquePtr<AudioDevice> device;
     Counting counting;
@@ -235,7 +276,7 @@ TEST_CASE("Backend: a real device is rendered at its own pace", "[audio][backend
     CHECK(!device->IsOpen());
 }
 
-TEST_CASE("Backend: a stalled callback is counted and the device keeps playing", "[audio][backend][linux][hardware]")
+TEST_CASE("Backend: a stalled callback is counted and the device keeps playing", "[audio][backend][hardware]")
 {
     UniquePtr<AudioDevice> device;
     Counting counting;
@@ -260,7 +301,7 @@ TEST_CASE("Backend: a stalled callback is counted and the device keeps playing",
     device->Close();
 }
 
-TEST_CASE("Backend: destroying a running device waits for its callback", "[audio][backend][linux][hardware]")
+TEST_CASE("Backend: destroying a running device waits for its callback", "[audio][backend][hardware]")
 {
     Counting counting;
     {

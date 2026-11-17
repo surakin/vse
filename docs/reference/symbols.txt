@@ -5058,7 +5058,8 @@ audio::PcmGrant::period_frames	variable	audio	audio-pcmgrant-period-frames	audio
 audio::PcmGrant::periods	variable	audio	audio-pcmgrant-periods	audio.md	engine/audio/pcm_negotiate.h:69
 audio::NegotiatePcm(const PcmCaps&,u32,u32,u32,PcmGrant*)	function	audio	audio-negotiatepcm-const-pcmcaps-amp-u32-u32-u32-pcmgrant-star	audio.md	engine/audio/pcm_negotiate.h:86
 audio::ConvertForPcm(PcmFormat,const f32*,u32,void*)	function	audio	audio-convertforpcm-pcmformat-const-f32-star-u32-void-star	audio.md	engine/audio/pcm_negotiate.h:96
-audio::PcmSampleBytes(PcmFormat)	function	audio	audio-pcmsamplebytes-pcmformat	audio.md	engine/audio/pcm_negotiate.h:103
+audio::LayoutOf(u32,ChannelLayout*)	function	audio	audio-layoutof-u32-channellayout-star	audio.md	engine/audio/pcm_negotiate.h:105
+audio::PcmSampleBytes(PcmFormat)	function	audio	audio-pcmsamplebytes-pcmformat	audio.md	engine/audio/pcm_negotiate.h:112
 audio::RenderTolerance	struct	audio	audio-rendertolerance	audio.md	engine/audio/render_compare.h:18
 audio::RenderTolerance::max_abs_error	variable	audio	audio-rendertolerance-max-abs-error	audio.md	engine/audio/render_compare.h:21
 audio::RenderTolerance::rms_error_db	variable	audio	audio-rendertolerance-rms-error-db	audio.md	engine/audio/render_compare.h:23

@@ -324,6 +324,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/shared_state_check)  # Phase 23 Day 354: no public header under engine/ defines mutable static state
   add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
   add_subdirectory(tools/net_probe)  # Phase 20 Day 281
+  add_subdirectory(tools/audio_probe)  # Phase 26 Day 440: listening to the WASAPI backend by hand
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
   message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer, the RHI with its Vulkan backend, the renderer, "

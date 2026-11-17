@@ -8,6 +8,9 @@
 #include "io/file.h"
 #include "lang/utility.h"
 #include "build_defs.h"
+#if ENGINE_PLATFORM_WINDOWS
+#include "audio/windows/wasapi_device.h"
+#endif
 #if ENGINE_PLATFORM_LINUX
 #include "audio/linux/alsa_device.h"
 #include "audio/linux/linux_devices.h"
@@ -278,6 +281,12 @@ UniquePtr<AudioDevice> CreateDevice(DeviceKind kind)
     {
         return MakeUnique<WavFileDevice>(io::Path());
     }
+#if ENGINE_PLATFORM_WINDOWS
+    if (kind == DeviceKind::Platform)
+    {
+        return CreateWasapiDevice();  // Day 440
+    }
+#endif
 #if ENGINE_PLATFORM_LINUX
     if (kind == DeviceKind::Platform)
     {
@@ -303,6 +312,12 @@ UniquePtr<AudioDevice> CreateWavFileDevice(const io::Path& path)
 DeviceStatus EnumerateDevices(DeviceKind kind, Vector<DeviceDescription>* out)
 {
     out->Clear();
+#if ENGINE_PLATFORM_WINDOWS
+    if (kind == DeviceKind::Platform)
+    {
+        return EnumerateWasapiDevices(out);
+    }
+#endif
 #if ENGINE_PLATFORM_LINUX
     if (kind == DeviceKind::Platform || kind == DeviceKind::PipeWire || kind == DeviceKind::Alsa)
     {

@@ -1,6 +1,6 @@
 // audio_probe: Phase 26 Day 425. A command-line tool for listening to the real audio backend by hand.
 //
-//   audio_probe list [--backend=auto|pipewire|alsa|null]    the outputs of that backend
+//   audio_probe list [--backend=auto|pipewire|alsa|wasapi|null]    the outputs of that backend
 //   audio_probe play [--backend=...] [--device=NAME] [--seconds=N] [--frequency=HZ] [--buffer=FRAMES] [--rate=HZ]
 //                                                            plays a quiet sine tone through the device and prints
 //                                                            the granted configuration and the counters
@@ -27,7 +27,7 @@ using Line = os::CommandLine<HeapAllocator>;
 
 int Usage()
 {
-    os::PrintError("usage: audio_probe list [--backend=auto|pipewire|alsa|null]\n"
+    os::PrintError("usage: audio_probe list [--backend=auto|pipewire|alsa|wasapi|null]\n"
                    "       audio_probe play [--backend=...] [--device=NAME] [--seconds=N] [--frequency=HZ]\n"
                    "                        [--buffer=FRAMES] [--rate=HZ]\n");
     return 64;
@@ -36,7 +36,7 @@ int Usage()
 bool KindOf(const char* text, DeviceKind* kind)
 {
     const StringView name(text);
-    if (name == StringView("auto"))
+    if (name == StringView("auto") || name == StringView("wasapi"))  // WASAPI is the platform's output on Windows
     {
         *kind = DeviceKind::Platform;
     }

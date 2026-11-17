@@ -36,6 +36,7 @@ endif()
 set(AUDIO_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  list(APPEND AUDIO_SOURCES windows/wasapi_device.cpp)  # Day 440: WASAPI, shared mode
   set(_audio_flavors "")
   if(ENGINE_HAVE_ASAN)
     list(APPEND _audio_flavors "_asan")
@@ -46,6 +47,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_options(audio${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
     target_link_libraries(audio${suffix} PRIVATE vorbis${suffix})
     target_link_libraries(audio${suffix} PUBLIC asset${suffix} ecs${suffix} spatial${suffix} jobs${suffix} foundation_base${suffix})
+    target_link_libraries(audio${suffix} PRIVATE ole32 avrt)  # COM, and MMCSS for the render thread
   endforeach()
   return()
 endif()

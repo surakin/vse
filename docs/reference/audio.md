@@ -6190,6 +6190,24 @@ Converts rendered `f32` frames to the card's sample format, interleaved, for wri
 | Fails | never. |
 | Ownership | `in` and `out` are borrowed for the call. |
 
+## `LayoutOf(u32,ChannelLayout*)` {#audio-layoutof-u32-channellayout-star}
+
+`function audio::LayoutOf` — defined in `engine/audio/pcm_negotiate.h`
+
+```cpp
+bool LayoutOf(u32 channels, ChannelLayout* out);
+```
+
+The layout a card's channel count stands for (Day 440: shared by the ALSA and WASAPI backends).
+
+| Field | Value |
+|---|---|
+| Parameter `channels` | the channel count the card plays. |
+| Parameter `out` | receives the layout; not written when there is none. |
+| Returns | true for 1, 2, 4, 6 and 8 channels (mono, stereo, quad, 5.1, 7.1); false for any other count. |
+| Fails | reported by the return value. |
+| Ownership | `out` is borrowed for the call. |
+
 ## `PcmSampleBytes(PcmFormat)` {#audio-pcmsamplebytes-pcmformat}
 
 `function audio::PcmSampleBytes` — defined in `engine/audio/pcm_negotiate.h`

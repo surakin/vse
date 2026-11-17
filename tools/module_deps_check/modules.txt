@@ -236,7 +236,7 @@ same-layer-ok 14
 platform-dir engine/foundation/os/linux/ engine/foundation/os/
 # The Windows file backend uses the Windows OS helpers (os/windows/win32.h, utf16.h): a per-platform directory may include the same
 # platform's directory of a lower layer (ARCHITECTURE.md section 4).
-platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,engine/foundation/settings/windows/,tools/crash_extract/windows/,engine/platform/windows/,engine/rhi/vulkan/windows/,tools/docgen/src/windows/,tools/shader_mint/windows/,engine/rhi/dx12/,engine/net/windows/,tests/net/windows/
+platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,engine/foundation/settings/windows/,tools/crash_extract/windows/,engine/platform/windows/,engine/rhi/vulkan/windows/,tools/docgen/src/windows/,tools/shader_mint/windows/,engine/rhi/dx12/,engine/net/windows/,tests/net/windows/,engine/audio/windows/
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
 # The half of the os backend Linux and macOS share (Phase 21 Day 285): only their own directories use it.
 platform-dir engine/foundation/os/posix/ engine/foundation/os/linux/,engine/foundation/os/macos/

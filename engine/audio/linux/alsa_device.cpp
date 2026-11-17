@@ -232,19 +232,6 @@ int OpenPcm(i32 card, i32 device)
     return os::Open(StringView(path, n), O_RDWR | O_CLOEXEC);
 }
 
-bool LayoutOf(u32 channels, ChannelLayout* out)
-{
-    switch (channels)
-    {
-    case 1: *out = ChannelLayout::Mono; return true;
-    case 2: *out = ChannelLayout::Stereo; return true;
-    case 4: *out = ChannelLayout::Quad; return true;
-    case 6: *out = ChannelLayout::Surround51; return true;
-    case 8: *out = ChannelLayout::Surround71; return true;
-    default: return false;
-    }
-}
-
 u64 NowMicros()
 {
     return os::MonotonicTimeNanos() / 1000;

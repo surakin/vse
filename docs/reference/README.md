@@ -25,7 +25,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
 | [Physics](physics.md) | 30 | 751 |
-| [Audio](audio.md) | 28 | 802 |
+| [Audio](audio.md) | 28 | 803 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
 | [Assets and resources](asset.md) | 36 | 1286 |
