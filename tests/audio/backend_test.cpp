@@ -54,6 +54,8 @@ PcmCaps UsbDac()
     return caps;
 }
 
+#if ENGINE_PLATFORM_LINUX
+// The hardware tests' render callback (Linux only until the WASAPI and CoreAudio days).
 struct Counting
 {
     Atomic<u64> calls{0};
@@ -77,7 +79,6 @@ void CountingRender(void* user, f32* out, u32 frames)
     }
 }
 
-#if ENGINE_PLATFORM_LINUX
 // Opens the default output with a stereo 1024-frame configuration, or says why the test is skipped.
 bool OpenDefault(UniquePtr<AudioDevice>* device, Counting* counting, u32 frames)
 {
