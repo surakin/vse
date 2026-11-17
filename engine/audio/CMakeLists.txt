@@ -15,7 +15,16 @@ set(AUDIO_SOURCES
   mixer.cpp  # Day 420
   mixer_buses.cpp  # Day 422
   limiter.cpp  # Day 422
+  filter.cpp  # Day 423
+  delay.cpp  # Day 424
+  pcm_negotiate.cpp  # Day 425
 )
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND AUDIO_SOURCES linux/alsa_device.cpp linux/pipewire_device.cpp linux/linux_devices.cpp)  # Days 425-426
+  # The PipeWire client headers (libpipewire is loaded at run time, never linked): optional, as shaders' slangc is.
+  find_path(ENGINE_PIPEWIRE_INCLUDE pipewire/pipewire.h PATH_SUFFIXES pipewire-0.3)
+  find_path(ENGINE_SPA_INCLUDE spa/param/audio/format-utils.h PATH_SUFFIXES spa-0.2)
+endif()
 set(AUDIO_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -35,6 +44,15 @@ endif()
 foreach(suffix "" "_asan" "_tsan")
   add_library(audio${suffix} STATIC ${AUDIO_SOURCES})
   target_include_directories(audio${suffix} PUBLIC ${AUDIO_INCLUDE_ROOT})
+  if(ENGINE_PIPEWIRE_INCLUDE AND ENGINE_SPA_INCLUDE)
+    target_include_directories(audio${suffix} SYSTEM PRIVATE ${ENGINE_PIPEWIRE_INCLUDE} ${ENGINE_SPA_INCLUDE})
+    target_compile_definitions(audio${suffix} PRIVATE ENGINE_AUDIO_HAVE_PIPEWIRE=1)
+  else()
+    target_compile_definitions(audio${suffix} PRIVATE ENGINE_AUDIO_HAVE_PIPEWIRE=0)
+  endif()
+  if(CMAKE_DL_LIBS)
+    target_link_libraries(audio${suffix} PUBLIC ${CMAKE_DL_LIBS})
+  endif()
   target_compile_options(audio${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(audio${suffix} PUBLIC asset${suffix} foundation${suffix})
 endforeach()

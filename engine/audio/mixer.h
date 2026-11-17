@@ -8,6 +8,7 @@
 #include "audio/clip.h"
 #include "audio/commands.h"
 #include "audio/convert.h"
+#include "audio/effect.h"
 #include "audio/limiter.h"
 #include "containers/vector.h"
 #include "string_view.h"
@@ -25,6 +26,10 @@ inline constexpr u32 kMaxVoices = 4096;
 
 /// The most buses a mixer has, the master included.
 inline constexpr u32 kMaxBuses = 32;
+/// The inserts (effects) of a bus, processed in slot order.
+inline constexpr u32 kMaxInserts = 4;
+/// The effects a mixer can own over its life (an effect that is cleared or replaced is kept until the mixer goes).
+inline constexpr u32 kMaxEffects = 64;
 /// The sends one bus can have.
 inline constexpr u32 kMaxSends = 4;
 /// The longest bus name in bytes (without a terminator).
@@ -62,6 +67,8 @@ enum class MixerStatus : u8
     NoBusSlot,
     /// The heap is exhausted.
     OutOfMemory,
+    /// The mixer already owns `kMaxEffects` effects, or the slot or the effect is not valid.
+    NoEffectSlot,
 };
 
 /// A bus: an index into the mixer's tree. The master bus always exists and is index 0.
@@ -177,6 +184,10 @@ enum class CommandType : u8
     SetVoiceSend,
     /// Turn the master limiter on or off.
     SetLimiter,
+    /// Put `effect` (or none) into insert `b` of bus `a`.
+    SetInsert,
+    /// Give `effect` the parameter block `params`.
+    SetEffectParams,
 };
 
 /// One control command; the game thread fills it and the audio thread applies it.
@@ -202,6 +213,10 @@ struct Command
     u32 b = 0;
     /// A second float argument.
     f32 value2 = 0.0f;
+    /// The effect of `SetInsert` and `SetEffectParams` (owned by the mixer).
+    Effect* effect = nullptr;
+    /// The parameters of `SetEffectParams`.
+    EffectParams params;
 };
 
 /// What happened to a voice.
@@ -562,6 +577,38 @@ public:
     /// - Fails: reported by return value.
     MixerStatus SetVoiceSend(VoiceId id, BusId bus, f32 gain, u64 block = kAtLead);
 
+    /// Puts an effect into an insert slot of a bus (control thread). Inserts run in slot order on the bus's sum, before
+    /// its pre-fader sends and its fader; they keep running while the bus is silent, so a tail is not cut.
+    ///
+    /// - Param bus: the bus.
+    /// - Param slot: 0 to `kMaxInserts` - 1; an effect already there is bypassed (and kept alive).
+    /// - Param effect: an effect made for this mixer's channel count; the mixer takes it over.
+    /// - Param block: as for `Play`.
+    /// - Ownership: takes `effect`; on a failure it is destroyed with the call.
+    /// - Returns: `Ok`, `InvalidBus`, `InvalidParam` (a bad slot or a channel mismatch), `NoEffectSlot` (the mixer owns
+    ///   `kMaxEffects` already) or `QueueFull`.
+    /// - Fails: reported by return value.
+    MixerStatus SetInsert(BusId bus, u32 slot, UniquePtr<Effect> effect, u64 block = kAtLead);
+
+    /// Bypasses an insert slot (control thread); the effect is kept alive until the mixer is destroyed.
+    ///
+    /// - Param bus: the bus.
+    /// - Param slot: the slot.
+    /// - Param block: as for `Play`.
+    /// - Returns: `Ok`, `InvalidBus`, `InvalidParam` or `QueueFull`.
+    /// - Fails: reported by return value.
+    MixerStatus ClearInsert(BusId bus, u32 slot, u64 block = kAtLead);
+
+    /// Changes the parameters of the effect in an insert slot (control thread); the effect smooths the change.
+    ///
+    /// - Param bus: the bus.
+    /// - Param slot: the slot, which must hold an effect.
+    /// - Param params: a block from the effect's `Make...Params`.
+    /// - Param block: as for `Play`.
+    /// - Returns: `Ok`, `InvalidBus`, `InvalidParam` (an empty slot) or `QueueFull`.
+    /// - Fails: reported by return value.
+    MixerStatus SetInsertParams(BusId bus, u32 slot, const EffectParams& params, u64 block = kAtLead);
+
     /// Turns the master limiter on or off (control thread).
     ///
     /// - Param on: whether it limits (it delays the output by its look-ahead while on).
@@ -680,6 +727,7 @@ private:
         f32 duck_release = 0.0f;
         f32 duck_gain = 1.0f;
         f32 last_peak = 0.0f;
+        Effect* inserts[kMaxInserts] = {};
     };
 
     // What the control side knows of a bus.
@@ -690,6 +738,7 @@ private:
         char name[kMaxBusNameBytes + 1] = {};
         u32 send_target[kMaxSends] = {0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};
         u32 duck_source = 0xFFFFFFFFu;
+        Effect* inserts[kMaxInserts] = {};
     };
 
     // What the control side knows of a slot.
@@ -744,6 +793,8 @@ private:
     f32 limiter_min_gain_ = 1.0f;
     // The control side.
     ControlBus control_buses_[kMaxBuses];
+    UniquePtr<Effect> effects_[kMaxEffects];
+    u32 effect_count_ = 0;
     Vector<ControlSlot> control_;
     Vector<VoiceEvent> pending_;
     u32 event_ring_capacity_ = 0;

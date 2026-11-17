@@ -13,8 +13,15 @@ set(AUDIO_TEST_SOURCES
   mixer_test.cpp  # Day 420
   control_test.cpp
   bus_test.cpp  # Day 422
+  effect_test.cpp  # Days 423-424
+  backend_test.cpp  # Days 425-426
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
+
+# LeakSanitizer's suppressions (the PipeWire client library's own allocations): Linux only.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND AUDIO_TEST_SOURCES lsan_options.cpp)
+endif()
 
 find_package(Threads REQUIRED)
 include(Catch)
@@ -23,6 +30,7 @@ function(engine_add_audio_tests target audio_lib suffix label)
   add_executable(${target} ${AUDIO_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${audio_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint)
+  target_compile_definitions(${target} PRIVATE ENGINE_AUDIO_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

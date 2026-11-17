@@ -7,6 +7,12 @@
 #include "cstr/mem_ops.h"
 #include "io/file.h"
 #include "lang/utility.h"
+#include "build_defs.h"
+#if ENGINE_PLATFORM_LINUX
+#include "audio/linux/alsa_device.h"
+#include "audio/linux/linux_devices.h"
+#include "audio/linux/pipewire_device.h"
+#endif
 
 namespace engine_placeholder::audio
 {
@@ -272,6 +278,20 @@ UniquePtr<AudioDevice> CreateDevice(DeviceKind kind)
     {
         return MakeUnique<WavFileDevice>(io::Path());
     }
+#if ENGINE_PLATFORM_LINUX
+    if (kind == DeviceKind::Platform)
+    {
+        return CreateLinuxPlatformDevice();
+    }
+    if (kind == DeviceKind::PipeWire)
+    {
+        return CreatePipeWireDevice();
+    }
+    if (kind == DeviceKind::Alsa)
+    {
+        return CreateAlsaDevice();
+    }
+#endif
     return MakeUnique<NullDevice>();
 }
 
@@ -283,6 +303,16 @@ UniquePtr<AudioDevice> CreateWavFileDevice(const io::Path& path)
 DeviceStatus EnumerateDevices(DeviceKind kind, Vector<DeviceDescription>* out)
 {
     out->Clear();
+#if ENGINE_PLATFORM_LINUX
+    if (kind == DeviceKind::Platform || kind == DeviceKind::PipeWire || kind == DeviceKind::Alsa)
+    {
+        if (kind == DeviceKind::PipeWire)
+        {
+            return EnumeratePipeWireDevices(out);
+        }
+        return kind == DeviceKind::Alsa ? EnumerateAlsaDevices(out) : EnumerateLinuxDevices(out);
+    }
+#endif
     DeviceDescription d;
     const char* name = kind == DeviceKind::WavFile ? "wav-file" : "null";
     for (u32 i = 0; name[i] != 0; ++i)

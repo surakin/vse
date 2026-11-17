@@ -38,6 +38,8 @@ enum class DeviceStatus : u8
     IoError,
     /// The heap is exhausted.
     OutOfMemory,
+    /// The system refused access to the device (a permission problem, not another program using it).
+    PermissionDenied,
 };
 
 /// How a device is asked to run.
@@ -71,6 +73,21 @@ struct DeviceInfo
     u32 buffer_frames = 0;
     /// Frames between the render call and the sound leaving the speaker (0 for devices with no output hardware).
     u32 latency_frames = 0;
+};
+
+/// What a device counted while it ran (hardware devices; the null and file devices report zeros).
+///
+/// - Thread-safety: thread-compatible plain data.
+struct DeviceCounters
+{
+    /// Render calls made.
+    u64 callbacks = 0;
+    /// Underruns recovered (the card ran out of frames before the next write).
+    u64 underruns = 0;
+    /// Render calls that took longer than the time one buffer lasts.
+    u64 slow_callbacks = 0;
+    /// The longest render call so far, in microseconds.
+    u64 longest_callback_micros = 0;
 };
 
 /// The render callback: fills `frames` frames of interleaved `f32` samples in the granted layout.
@@ -165,6 +182,12 @@ public:
     /// - Returns: the frame count.
     /// - Fails: never.
     virtual u64 FramesRendered() const = 0;
+
+    /// The counters of a running hardware device (read from any thread; each field atomically).
+    ///
+    /// - Returns: the counters; zeros for a device with no hardware.
+    /// - Fails: never.
+    virtual DeviceCounters Counters() const { return DeviceCounters(); }
 };
 
 /// The kinds of device `CreateDevice` makes.
@@ -177,6 +200,10 @@ enum class DeviceKind : u8
     /// The platform's sound output (PipeWire or ALSA, WASAPI, CoreAudio); the Null device on a platform with no
     /// backend yet.
     Platform,
+    /// The PipeWire sound server, through its client library (Linux; `NotFound` on a machine without the library).
+    PipeWire,
+    /// The kernel's ALSA devices through raw system calls, no library (Linux).
+    Alsa,
 };
 
 /// Makes a device of `kind`. A `WavFile` device made here has no path and `Open` fails with `InvalidConfig`: use

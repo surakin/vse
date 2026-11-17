@@ -786,6 +786,18 @@ void Mixer::Apply(Command* command)
             buses_[command->a].meter = command->value != 0.0f;
         }
         return;
+    case CommandType::SetInsert:
+        if (command->a < kMaxBuses && command->b < kMaxInserts && buses_[command->a].active)
+        {
+            buses_[command->a].inserts[command->b] = command->effect;
+        }
+        return;
+    case CommandType::SetEffectParams:
+        if (command->effect != nullptr)
+        {
+            command->effect->SetParams(command->params);
+        }
+        return;
     case CommandType::SetLimiter:
         if (command->value != 0.0f && !limiter_on_)
         {

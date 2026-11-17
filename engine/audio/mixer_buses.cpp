@@ -335,6 +335,78 @@ MixerStatus Mixer::SetLimiter(bool on, u64 block)
     return PostBus(Move(command));
 }
 
+MixerStatus Mixer::SetInsert(BusId bus, u32 slot, UniquePtr<Effect> effect, u64 block)
+{
+    if (!ValidBus(bus))
+    {
+        return MixerStatus::InvalidBus;
+    }
+    if (slot >= kMaxInserts || effect == nullptr || effect->Channels() != channels_)
+    {
+        return MixerStatus::InvalidParam;
+    }
+    if (effect_count_ >= kMaxEffects)
+    {
+        return MixerStatus::NoEffectSlot;
+    }
+    Effect* raw = effect.Get();
+    Command command;
+    command.stamp = StampFor(block);
+    command.type = CommandType::SetInsert;
+    command.a = bus.index;
+    command.b = slot;
+    command.effect = raw;
+    const MixerStatus status = PostBus(Move(command));
+    if (status != MixerStatus::Ok)
+    {
+        return status;  // `effect` is destroyed here: the audio thread never saw it
+    }
+    effects_[effect_count_++] = Move(effect);
+    control_buses_[bus.index].inserts[slot] = raw;
+    return MixerStatus::Ok;
+}
+
+MixerStatus Mixer::ClearInsert(BusId bus, u32 slot, u64 block)
+{
+    if (!ValidBus(bus))
+    {
+        return MixerStatus::InvalidBus;
+    }
+    if (slot >= kMaxInserts)
+    {
+        return MixerStatus::InvalidParam;
+    }
+    Command command;
+    command.stamp = StampFor(block);
+    command.type = CommandType::SetInsert;
+    command.a = bus.index;
+    command.b = slot;
+    const MixerStatus status = PostBus(Move(command));
+    if (status == MixerStatus::Ok)
+    {
+        control_buses_[bus.index].inserts[slot] = nullptr;
+    }
+    return status;
+}
+
+MixerStatus Mixer::SetInsertParams(BusId bus, u32 slot, const EffectParams& params, u64 block)
+{
+    if (!ValidBus(bus))
+    {
+        return MixerStatus::InvalidBus;
+    }
+    if (slot >= kMaxInserts || control_buses_[bus.index].inserts[slot] == nullptr)
+    {
+        return MixerStatus::InvalidParam;
+    }
+    Command command;
+    command.stamp = StampFor(block);
+    command.type = CommandType::SetEffectParams;
+    command.effect = control_buses_[bus.index].inserts[slot];
+    command.params = params;
+    return PostBus(Move(command));
+}
+
 // ---- The audio side ----
 
 // Orders the buses so that every bus comes after the buses that feed it (its children, the buses that send to it and
@@ -474,6 +546,14 @@ void Mixer::ProcessBuses(f32* out)
         const u32 index = bus_order_[n];
         Bus& bus = buses_[index];
         f32* buffer = BusBuffer(index);
+        // The inserts, in slot order (they run even on a silent bus, so a tail rings out).
+        for (u32 i = 0; i < kMaxInserts; ++i)
+        {
+            if (bus.inserts[i] != nullptr)
+            {
+                bus.inserts[i]->Process(buffer, kBlockFrames);
+            }
+        }
         // Pre-fader sends.
         for (u32 i = 0; i < kMaxSends; ++i)
         {

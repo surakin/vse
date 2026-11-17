@@ -1,0 +1,8 @@
+# LeakSanitizer suppressions for the audio test binaries. One reason per entry; add nothing without one.
+# Anything not named here -- every leak in engine code -- is still reported.
+
+# libpipewire loads its protocol and SPA plugin modules while a stream's context is made and keeps their allocations until the
+# process exits (they are the library's own, and the library stays loaded). Seen through pw_context_load_module on every
+# pw_stream_new_simple. CAVEAT: this also covers a leak the engine's own PipeWire code might make through the library; the
+# device is covered by the hardware tests in the plain and TSan flavors and by review.
+leak:libpipewire

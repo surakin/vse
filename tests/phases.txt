@@ -226,6 +226,7 @@ test:asset_demo_*                              22   # the glTF import demo (Day 
 test:net_demo_runs                             20   # Phase 20 Day 281
 test:net_demo_simulated_runs                   20
 test:net_probe_*                               20   # Phase 20 Day 281
+test:audio_probe_*                             26   # Phase 26 Day 425
 test:renderer_demo_device_loss_trace            5
 test:renderer_demo_oom_later                    5
 test:renderer_demo_oom_device                   5

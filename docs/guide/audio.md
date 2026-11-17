@@ -182,7 +182,62 @@ is the same on every run. A gain change takes effect through the same per-frame 
   [-1, 1] at the device boundary, and only there.
 - **Decibels:** `DbToGain` and `GainToDb` run on the control side (libm); the mixer takes linear gains.
 
+## Effects: filters, delay and reverb
+
+An `Effect` (`audio/effect.h`) processes interleaved frames in place. It is made on the control thread with all its
+memory (`MakeFilterEffect`, `MakeOnePoleEffect`, `MakeDelayEffect`, `MakeReverbEffect`), handed to a bus with
+`Mixer::SetInsert(bus, slot, effect)` (four slots per bus, run in slot order on the bus's sum, before its pre-fader
+sends and its fader), and changed with `SetInsertParams(bus, slot, params)`. `ClearInsert` bypasses a slot; the effect
+is kept until the mixer is destroyed (at most `kMaxEffects` = 64 over the mixer's life). A parameter block is 16 floats
+built on the control side by the effect's own function (`DesignFilter`, `OnePoleParams`, `MakeDelayParams`,
+`MakeReverbParams`), so every logarithm, power and trigonometric call is control-side libm and the audio thread uses
+`+ - * /` and `Sqrt` only. An effect glides to new parameters over `ramp_frames` (filters and the delay; the reverb
+changes at once). Inserts keep running on a silent bus, so a reverb tail is not cut when the last voice ends;
+`Effect::TailFrames(params)` says how long a tail lasts.
+
+- **Filters:** `DesignFilter(type, rate, cutoff, q, gain_db)` gives a biquad (low-pass, high-pass, band-pass, notch,
+  peaking, low and high shelf, the RBJ cookbook forms) in direct form II transposed; inputs out of range are clamped, and a
+  design with poles outside the unit circle comes back as the identity, both reported in `FilterDesign::clamped`. The
+  identity is bit-transparent (the effect skips it). Both states of a channel are flushed to zero together once both are
+  below 1e-20 (-400 dB): without it a float biquad near the unit circle stalls at a rounding floor and never reaches
+  silence. `FilterMagnitude` gives the analytic gain at a frequency. The one-pole low-pass is `OnePoleParams` and
+  costs one multiply per sample.
+- **Delay:** a feedback delay with a buffer sized for `max_delay_seconds` when it is made, linear interpolation for a
+  fractional time (`delay = 10.5` frames gives two half taps), feedback up to 0.995, wet and dry, and a one-pole
+  `damping` in the loop.
+- **Reverb:** eight prime-length lines (`ReverbLineLengths`), a Hadamard feedback matrix by butterflies (adds and
+  subtracts), a damping one-pole per line, a pre-delay and a stereo output from decorrelated taps. The decay time is the
+  time to fall 60 dB (`MakeReverbParams` computes the per-line gains `10^(-3 length / (decay rate))`); with no damping a
+  test measures it within 5 percent. The rate and the size are fixed when the effect is made. Presets: `SmallRoom`,
+  `Hall`, `Cave` (`ReverbPresetDesc`).
+- **Voice inserts are not built:** inserts are on buses; a voice that needs a filter (occlusion, air absorption, Days
+  430-431) uses a bus of its own.
+
+## The Linux backend
+
+`CreateDevice(DeviceKind::Platform)` on Linux makes a device whose `Open` tries **PipeWire** (the sound server's own client
+library, `libpipewire-0.3.so.0`, loaded with `os::LoadLibrary` when the device is opened, so a binary built with the
+headers still runs where the library is missing) and then **ALSA** through raw `ioctl`s on `/dev/snd/pcmC<card>D<device>p`
+(no `libasound`, no server). `DeviceKind::PipeWire` and `DeviceKind::Alsa` pick one; names are `default`, `pipewire`, or
+`hw:<card>,<device>`. `EnumerateDevices` lists them, the first being the default.
+
+- **Negotiation** (`NegotiatePcm`, portable and tested against recorded tables of an HD-audio codec and a USB DAC): the
+  rate and channel count clamp into the card's range, the format is float, else 32-bit, else 16-bit (`ConvertForPcm` is
+  the conversion at the boundary), the period is the one asked for (as far as the card's limits allow) and the buffer is
+  three periods. What was granted is in `DeviceInfo`; `latency_frames` is the whole buffer (ALSA) or two periods (PipeWire).
+- **Threads:** the ALSA device runs one thread that renders a period, converts it and writes it with a blocking
+  `WRITEI_FRAMES`; it asks for `SCHED_FIFO` at priority 20 and carries on without it if refused. PipeWire renders on the
+  server's real-time thread inside the stream's `process` callback. Neither callback allocates, locks or does I/O.
+  `Stop` returns after the last render call; destroying a running device stops it first.
+- **Underruns:** a write that finds the buffer empty (`EPIPE`) re-prepares the stream and counts in
+  `DeviceCounters::underruns`; a render call longer than the time the buffer lasts counts in `slow_callbacks`
+  (`longest_callback_micros` is the longest). PipeWire reports no underruns of its own.
+- **Errors:** `EBUSY` is `Busy`, `EACCES`/`EPERM` `PermissionDenied`, `ENODEV` `Lost` (also sent to the error callback),
+  an unsupported configuration `Unsupported`, a missing device `NotFound`.
+- `tools/audio_probe` (`list`, `play --backend=... --seconds=N`) plays a quiet tone through the real backend and prints the
+  granted configuration and the counters.
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
-perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers).
+perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers). `effect_test.cpp` (the filter responses, the clamps, the ring-out, the delay taps, the reverb decay and stereo field, the inserts, the committed echo and reverb scene hashes). `backend_test.cpp` (the negotiation tables, the conversion, the lists, a real device rendered at its pace, a stalled callback, destroying a running device; the hardware tests print a warning and skip without a sound device).

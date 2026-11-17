@@ -41,6 +41,7 @@ Arch Linux's, the distribution the development machine uses.
 | `objcopy`, `strip`, `readelf` | any current | For checks | Split debug info, the crash-script tests, the no-network check. | `binutils` |
 | `systemd-coredump` | | Optional | Where the system stores core dumps (`scripts/open-core.sh`). | part of `systemd` |
 | Python 3 | 3.x | Optional | `scripts/list-aborts.py` only. | `python` |
+| `pipewire` headers (`pipewire/pipewire.h`, `spa/param/audio/format-utils.h`) | 1.6.11 | Optional | The PipeWire audio backend (Phase 26 Day 425); the library itself is loaded at run time, never linked. Without the headers the backend reports itself absent and the ALSA backend (raw system calls) is used. | `pipewire` (headers included) |
 | `wayland-scanner`, `wayland-protocols` | 1.26.0, 1.50 | Optional | Only to regenerate the vendored protocol code (`engine/platform/linux/wayland/generated/VENDORED.md`). | `wayland`, `wayland-protocols` |
 | A Wayland compositor and an X server (or Xwayland) | | For checks | The `display` test group; it skips on a locked session. | |
 
