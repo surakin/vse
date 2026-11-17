@@ -111,7 +111,7 @@ thread and `Pump` returns `Unsupported`. `CreateDevice(DeviceKind::Platform)` is
 with the header by the ctest `audio_backend_lists`.
 
 The settings (`audio/audio_settings.h`, `RegisterAudioSettings`, `AudioSettingsFromRegistry`) are `audio.device`, `audio.sample_rate`, `audio.buffer_frames` and
-`audio.channels` (each needs a device restart), and `audio.master_volume`, `audio.max_voices` and `audio.resampler_quality` (live), with the environment variables
+`audio.channels` (each needs a device restart), and `audio.master_volume`, `audio.max_voices`, `audio.resampler_quality` and `audio.ramp_frames` (live), with the environment variables
 `ENGINE_AUDIO_*` and the flags `--audio-*`. `DeviceConfigFromSettings` turns them into a `DeviceConfig`.
 
 ## The mixer
@@ -135,7 +135,54 @@ other pairing goes through the conversion table of `audio/convert.h`. Voices are
 Day 422). When the pool is full a new voice stops the one with the lowest (priority, gain, age) if it does not rank below it, and is refused with `Full`
 otherwise; a virtual voice advances its position and costs no mixing. The scene hashes of `mixer_test.cpp` are a same-build regression check.
 
+## Controlling voices
+
+Two threads use a mixer and share nothing but two rings and two counters (`audio/commands.h`, `SpscRing`: single producer, single consumer, no lock, no allocation
+after `Init`). The **game thread** calls `Play`, `Stop`, `Pause`, `Resume`, `Seek`, `SetGain`, `SetPan`, `SetPitch`, `SetLoop`, `Fade`, `SetVirtual`, `IsPlaying` and
+`PollEvents`; each call checks its arguments, posts a command and returns at once. The **audio thread** calls `RenderBlock`, which first applies every command whose
+stamp is at most the block it is about to render, in the order posted, then mixes. A stamp is the block a command takes effect at: the default is the next block plus
+`MixerConfig::lead_blocks` (one, about 5.3 ms at 256 frames and 48 kHz, so the audio thread has a block of notice), and an offline render passes the block itself. A
+command that arrives after its stamp is applied at the block being rendered and counted in `Stats().late_commands`. Commands apply in posting order, so a command
+stamped for a later block holds the ones behind it.
+
+`Play` reserves the voice's slot and generation on the game thread, so the returned `VoiceId` can be used before the audio thread has seen the command; a stale id
+(finished, stopped, or from a reused slot) is refused with `InvalidVoice` by the game side and ignored by the audio side. A full pool is decided on the game side by
+the same ranking as before (priority, gain, age), and a victim is stopped in the command stream just before the new voice. A slot is free again once the voice's
+`Finished` or `Stopped` event has come back, so a slot is never reused while the audio thread still holds the old voice.
+
+Every setter ramps: a change of gain, pan or pitch moves linearly over `audio.ramp_frames` (64 by default; 0 is instant), one step per frame, and the last frame uses
+the target itself, so the ramp ends exactly on it. A pitch ramp moves the position step the same way, so the position stays continuous. `Stop` fades out and then frees
+the voice, `Pause` fades to silence and holds the position, `Resume` fades back, `Fade(gain, frames)` is a ramp of any length, and a voice played with `fade_in`
+starts from silence; `Seek` jumps and is not smoothed. Events (`VoiceEvent`: `Finished`, `Looped` at most once a block, `Virtualised`, `Stolen`, `Stopped`) come back through
+a second ring that always keeps room for one terminal event per voice, and `PollEvents` hands them out; nothing is called back across threads. A full command ring
+returns `QueueFull` and counts in `Stats().commands_dropped`; nothing blocks.
+
+An offline render (`MixerConfig::offline`) renders block `b` only when the producer has called `SetWatermark(b)` or later (`TryRenderBlock` returns false until
+then), so the output does not depend on when the producer thread posts: `control_test.cpp` posts one scripted stream with five different timings and gets one hash.
+A voice's last clip reference is released on the audio thread when the voice ends, so keep another reference (the resource handle) while voices play.
+
+## Buses, sends, ducking and the limiter
+
+Every voice mixes into a **bus** (`VoiceDesc::bus`; the master when none is named). Buses form a tree under the master
+(`Mixer::CreateBus(name, parent, &id)`, at most `kMaxBuses` = 32, names unique); each has a gain, a mute and a solo flag.
+`ProcessBuses` sums them in an order fixed by the graph (a bus after everything that feeds it, ties by index), so the sum
+is the same on every run. A gain change takes effect through the same per-frame ramp as a voice's (`audio.ramp_frames`).
+
+- **Sends:** `SetBusSend(bus, slot, aux, gain, pre_fader)` copies a share of a bus into an auxiliary bus (up to
+  `kMaxSends` per bus); `VoiceDesc::send_bus`/`send_gain` do the same for one voice. A send that would close a loop
+  (through parents, sends or ducking) is refused with `MixerStatus::Cycle` on the control side.
+- **Solo:** while any bus is soloed, only soloed buses, their ancestors and their descendants are audible. An ancestor
+  stays audible with its own voices, since a bus carries both its own voices and its children.
+- **Ducking:** `SetDuck(target, source, depth, threshold, release_frames)` lowers `target` to `depth` (`DbToGain(-12)` is
+  about 0.25) in the same block in which `source`'s peak passes `threshold`, and lets it recover exponentially.
+- **Meters:** `SetMeter(bus, true)` posts one `BusLevel` event (peak and RMS) per block.
+- **Limiter:** `MixerConfig::limiter` or `SetLimiter(true)` puts a look-ahead peak limiter on the master. It delays
+  the output by its look-ahead (64 frames), never exceeds its threshold, and below the threshold passes the signal bit for
+  bit. `Stats().limiter_min_gain` is the lowest gain in the last block. The output of `Mixer::Render` is hard-clipped to
+  [-1, 1] at the device boundary, and only there.
+- **Decibels:** `DbToGain` and `GainToDb` run on the control side (libm); the mixer takes linear gains.
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
-perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes).
+perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers).

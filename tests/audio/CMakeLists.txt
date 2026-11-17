@@ -11,6 +11,8 @@ set(AUDIO_TEST_SOURCES
   aclip_test.cpp  # Day 418
   device_test.cpp  # Day 419
   mixer_test.cpp  # Day 420
+  control_test.cpp
+  bus_test.cpp  # Day 422
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 

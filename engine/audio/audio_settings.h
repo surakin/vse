@@ -38,12 +38,15 @@ struct AudioSettings
     u32 max_voices = 64;
     /// The resampler.
     ResamplerQuality resampler = ResamplerQuality::Hermite;
+    /// The frames over which a change of a voice's gain, pan or pitch ramps; 0 changes at once.
+    u32 ramp_frames = 64;
 };
 
 /// Declares the audio settings, each with an environment variable and a flag.
 ///
 /// They are `audio.device`, `audio.sample_rate`, `audio.buffer_frames`, `audio.channels` (these four need a device
-/// restart, `kRestartRequired`), `audio.master_volume`, `audio.max_voices` and `audio.resampler_quality` (live).
+/// restart, `kRestartRequired`), `audio.master_volume`, `audio.max_voices`, `audio.resampler_quality` and
+/// `audio.ramp_frames` (live).
 ///
 /// - Param registry: the registry to declare them in; not null.
 /// - Ownership: borrowed for the call.

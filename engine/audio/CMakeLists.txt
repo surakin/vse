@@ -13,6 +13,8 @@ set(AUDIO_SOURCES
   device.cpp  # Day 419
   audio_settings.cpp  # Day 419
   mixer.cpp  # Day 420
+  mixer_buses.cpp  # Day 422
+  limiter.cpp  # Day 422
 )
 set(AUDIO_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

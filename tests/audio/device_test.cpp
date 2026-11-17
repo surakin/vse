@@ -224,6 +224,7 @@ TEST_CASE("Settings: the audio settings are declared, read back and changed", "[
     CHECK(s.master_volume == 1.0f);
     CHECK(s.max_voices == 64);
     CHECK(s.resampler == ResamplerQuality::Hermite);
+    CHECK(s.ramp_frames == 64);
 
     const settings::SettingId channels = registry.Find(StringView("audio.channels"));
     REQUIRE(channels.IsValid());

@@ -49,6 +49,8 @@ MixerConfig MxConfig(ChannelLayout layout, ResamplerQuality quality, u32 voices 
     config.layout = layout;
     config.quality = quality;
     config.max_voices = voices;
+    config.ramp_frames = 0;  // parameter changes are instant in these tests; the ramp tests set their own
+    config.lead_blocks = 0;  // commands take effect at the next block
     return config;
 }
 
@@ -293,22 +295,27 @@ TEST_CASE("Mixer: a stale voice id names nothing, and slots are reused with a ne
     Mixer mixer;
     REQUIRE(mixer.Init(MxConfig(ChannelLayout::Mono, ResamplerQuality::Linear, 1)) == MixerStatus::Ok);
     VoiceDesc desc;
-    desc.clip = MxRamp(100);
+    desc.clip = MxRamp(1000);
     VoiceId first;
     REQUIRE(mixer.Play(desc, &first) == MixerStatus::Ok);
+    CHECK(mixer.IsPlaying(first));  // the id is usable before the audio thread has seen the command
+    MxRender(mixer, 1);
     CHECK(mixer.VoiceCount() == 1);
-    REQUIRE(mixer.Stop(first) == MixerStatus::Ok);
+    REQUIRE(mixer.Stop(first, 0) == MixerStatus::Ok);
     CHECK(mixer.Stop(first) == MixerStatus::InvalidVoice);
     CHECK(!mixer.IsPlaying(first));
+    MxRender(mixer, 1);
+    CHECK(mixer.VoiceCount() == 0);
     VoiceId second;
     REQUIRE(mixer.Play(desc, &second) == MixerStatus::Ok);
     CHECK(second.index == first.index);
     CHECK(!(second == first));
     CHECK(mixer.SetGain(first, 0.5f) == MixerStatus::InvalidVoice);
     CHECK(mixer.SetGain(second, 0.5f) == MixerStatus::Ok);
+    MxRender(mixer, 1);
     f64 position = -1.0;
     CHECK(mixer.Position(second, &position) == MixerStatus::Ok);
-    CHECK(position == 0.0);
+    CHECK(position == 256.0);
     CHECK(mixer.Position(first, &position) == MixerStatus::InvalidVoice);
 }
 
@@ -325,7 +332,7 @@ TEST_CASE("Mixer: bad parameters are refused by status", "[audio][mixer][voice]"
     VoiceDesc desc;
     VoiceId id;
     CHECK(mixer.Play(desc, &id) == MixerStatus::NoClip);
-    desc.clip = MxRamp(100);
+    desc.clip = MxRamp(1000);
     desc.pitch = 0.0f;
     CHECK(mixer.Play(desc, &id) == MixerStatus::InvalidParam);
     desc.pitch = 100.0f;
@@ -337,13 +344,14 @@ TEST_CASE("Mixer: bad parameters are refused by status", "[audio][mixer][voice]"
     desc.pan = 2.0f;
     CHECK(mixer.Play(desc, &id) == MixerStatus::InvalidParam);
     desc.pan = 0.0f;
-    desc.start_frame = 100;
+    desc.start_frame = 1000;
     CHECK(mixer.Play(desc, &id) == MixerStatus::InvalidParam);
     desc.start_frame = 50;
     REQUIRE(mixer.Play(desc, &id) == MixerStatus::Ok);
+    MxRender(mixer, 1);
     f64 position = 0.0;
     REQUIRE(mixer.Position(id, &position) == MixerStatus::Ok);
-    CHECK(position == 50.0);
+    CHECK(position == 50.0 + 256.0);
     const f32 not_a_number = 0.0f / (position - position);
     CHECK(mixer.SetGain(id, not_a_number) == MixerStatus::InvalidParam);
     CHECK(mixer.SetPitch(id, 0.01f) == MixerStatus::InvalidParam);
@@ -382,6 +390,7 @@ TEST_CASE("Mixer: a full pool stops the lowest voice for a better one and refuse
     VoiceId priority;
     REQUIRE(mixer.Play(desc, &priority) == MixerStatus::Ok);
     CHECK(mixer.IsPlaying(priority));
+    MxRender(mixer, 1);
     CHECK(mixer.VoiceCount() == 2);
 }
 

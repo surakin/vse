@@ -43,6 +43,10 @@ void RegisterAudioSettings(settings::Registry* registry)
     Declare(registry, settings::MakeEnum("audio.resampler_quality", kResamplerNames, 3, 1),
             "ENGINE_AUDIO_RESAMPLER_QUALITY", "audio-resampler-quality", "Resampler",
             "linear, hermite or sinc: how a clip at another rate is converted", settings::kAdvanced);
+    Declare(registry, settings::MakeInt("audio.ramp_frames", 64, 0, 4096), "ENGINE_AUDIO_RAMP_FRAMES",
+            "audio-ramp-frames", "Parameter ramp",
+            "frames over which a change of a voice's gain, pan or pitch ramps so it never clicks; 0 changes at once",
+            settings::kAdvanced);
 }
 
 AudioSettings AudioSettingsFromRegistry(const settings::Registry& registry)
@@ -88,6 +92,11 @@ AudioSettings AudioSettingsFromRegistry(const settings::Registry& registry)
     if (quality.IsValid())
     {
         s.resampler = settings::Setting<ResamplerQuality>(registry, quality).Get();
+    }
+    const settings::SettingId ramp = registry.Find(StringView("audio.ramp_frames"));
+    if (ramp.IsValid())
+    {
+        s.ramp_frames = static_cast<u32>(settings::Setting<i64>(registry, ramp).Get());
     }
     return s;
 }
