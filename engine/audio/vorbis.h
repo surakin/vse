@@ -13,6 +13,10 @@
 namespace engine_placeholder::audio
 {
 
+/// The version of the vendored libvorbis, `major << 16 | minor << 8 | patch` (recorded in clips decoded at mint time,
+/// so a decoder change is a visible re-mint).
+inline constexpr u32 kVorbisLibraryVersion = 0x010307;
+
 /// How a Vorbis call ended.
 enum class VorbisStatus : u8
 {
@@ -67,6 +71,10 @@ struct VorbisInfo
     u32 nominal_bitrate = 0;
     /// The length in frames from the last page's granule position, or 0 when the stream does not say.
     u64 total_frames = 0;
+    /// The loop start in frames from the `LOOPSTART` comment (0 with `loop_end` when there is no valid loop).
+    u64 loop_start = 0;
+    /// The loop end in frames from the `LOOPEND` comment; 0 when absent or not `loop_start < loop_end <= total_frames`.
+    u64 loop_end = 0;
 };
 
 /// A Vorbis decoder over bytes in memory.
@@ -134,6 +142,27 @@ public:
     /// - Ownership: `out` is borrowed for the call.
     VorbisStatus Decode(f32* out, u32 max_frames, u32* frames);
 
+    /// Moves the decode position to `frame`: the output after the seek equals what decoding from the start gives from
+    /// that frame on. The first call reads the page index of the whole input (once, bounded by the page limit); a seek
+    /// then bisects it and decodes at most one page plus the frames up to the target.
+    ///
+    /// - Param frame: the target in frames; at or past the end of the stream the decoder is left at its end.
+    /// - Returns: `Ok`, `EndOfStream` (the target is at or past the end), `Corrupt` (the stream does not match its own
+    /// index), `LimitExceeded` or `OutOfMemory`.
+    /// - Fails: reported by return value; the position is then undefined until the next successful seek.
+    VorbisStatus SeekFrame(u64 frame);
+
+    /// Turns the loop on or off: with a loop on, `Decode` wraps from `loop_end` to `loop_start` by seeking (the frames
+    /// of the codec's own lapping are decoded and discarded, so the join has no discontinuity beyond the stream's own).
+    ///
+    /// - Param on: whether to loop; ignored when the stream has no valid loop points.
+    void SetLooping(bool on) { looping_ = on; }
+
+    /// Whether the loop is on.
+    ///
+    /// - Returns: the flag.
+    bool Looping() const { return looping_; }
+
 private:
     struct State;
 
@@ -142,6 +171,7 @@ private:
     UniquePtr<State> state_;
     u64 position_ = 0;
     u32 skipped_ = 0;
+    bool looping_ = false;
 };
 
 }  // namespace engine_placeholder::audio

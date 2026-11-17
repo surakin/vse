@@ -50,6 +50,23 @@ subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'three_channe
 write_wav('rate_4000.wav', 4000, 1, [(v,) for v in sine(4000, 0.2, 300)])
 subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'rate_4000.wav', '-c:a', 'libvorbis', '-q:a', '3', 'rate_4000.ogg'])
 subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'sine_mono.wav', '-t', '0.1', '-c:a', 'flac', '-f', 'ogg', 'flac_in_ogg.ogg'])
+# 7. a 6 s stereo "music" bed at 44.1 kHz (a tone that steps every second, a seeded noise bed, a click train): several pages, so seeks and loops
+# have somewhere to land; loop tags LOOPSTART=44100 and LOOPEND=220500 (frames)
+def music():
+    rate = 44100
+    out = []
+    for i in range(rate * 6):
+        step = i // rate
+        hz = 220 * (1 + 0.25 * step)
+        a = 0.3 * math.sin(2 * math.pi * hz * i / rate) + 0.05 * (random.random() * 2 - 1)
+        b = 0.3 * math.sin(2 * math.pi * hz * 1.5 * i / rate) + 0.05 * (random.random() * 2 - 1)
+        if i % 9000 < 30:
+            a += 0.4 * (1 if i % 2 else -1)
+        out.append((a, b))
+    return out
+random.seed(20261118)
+write_wav('music_loop.wav', 44100, 2, music())
+enc('music_loop.wav', 'music_loop.ogg', '-c', 'LOOPSTART=44100', '-c', 'LOOPEND=220500')
 for f in os.listdir('.'):
     if f.endswith('.wav'):
         os.remove(f)

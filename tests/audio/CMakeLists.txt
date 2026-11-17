@@ -21,6 +21,9 @@ set(AUDIO_TEST_SOURCES
   doppler_test.cpp  # Day 430
   occlusion_test.cpp  # Day 431
   vorbis_test.cpp  # Day 432
+  vorbis_decode_test.cpp  # Day 433
+  vorbis_seek_test.cpp  # Day 434
+  vorbis_clip_test.cpp  # Day 434
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 

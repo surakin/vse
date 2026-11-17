@@ -17,7 +17,7 @@ asset_boundary_test(asset_boundary_check_planted ${ASSET_BOUNDARY_FIXTURES}/bad 
 set_tests_properties(asset_boundary_check_planted PROPERTIES WILL_FAIL TRUE)
 asset_boundary_test(asset_boundary_check_planted_count ${ASSET_BOUNDARY_FIXTURES}/bad ${ASSET_BOUNDARY_FIXTURES}/good/allowlist.txt)
 set_tests_properties(asset_boundary_check_planted_count PROPERTIES
-  PASS_REGULAR_EXPRESSION "engine/renderer/CMakeLists.txt:2:.*engine/renderer/leak.cpp:1:.*engine/renderer/leak.cpp:2:.*engine/renderer/leak.cpp:3:.*game/app/main.cpp:1:.*tools/other/tool.cpp:1:.*7 problem")
+  PASS_REGULAR_EXPRESSION "engine/renderer/CMakeLists.txt:2:.*engine/renderer/leak.cpp:1:.*engine/renderer/leak.cpp:2:.*engine/renderer/leak.cpp:3:.*engine/renderer/leak_audio.cpp:1:.*game/app/main.cpp:1:.*tools/other/tool.cpp:1:.*8 problem")
 
 # A clean tree passes: the importer includes the decoders, asset_mint includes the importer, an allow-listed game does, comments are not violations.
 asset_boundary_test(asset_boundary_check_clean ${ASSET_BOUNDARY_FIXTURES}/good ${ASSET_BOUNDARY_FIXTURES}/good/allowlist.txt)

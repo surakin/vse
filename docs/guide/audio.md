@@ -332,6 +332,36 @@ order (6 and 8 channel streams are reordered from Vorbis order) and ends with `E
 stops early; it never crashes or hangs (`[fuzz]` tests). Fixtures and the script that makes them are in
 `tests/audio/fixtures/`.
 
+### Decoded output, cost and determinism
+
+libvorbis computes in floating point with libm, so decoded PCM may differ in the last bits between builds and machines; that is
+accepted. `tests/audio/vorbis_decode_test.cpp` commits a decode hash per fixture as a **same-build** baseline (Clang, Linux) and a
+table of per-block RMS levels that every other build and machine must match within 2e-3. **Cost** (Clang, plain build, this
+machine): about 1.1 ms of CPU per second of 48 kHz stereo (`[cost]` test, a loose bound of one twentieth of real time); the resident
+size per stream was not measured (KNOWN-ISSUES.md).
+
+### Seeking and loops
+
+`VorbisDecoder::SeekFrame(frame)` is exact: the samples after a seek equal those of a decode from the start (bit for bit; the tests
+seek to thirteen frames, forwards and backwards, and compare). The first seek reads the page index of the whole input once
+(bounded by the page limit): every page that starts a packet, with the frame its restart emits first (from the packets' block
+sizes); a seek bisects the index, restarts the library there (one packet only primes the overlap) and discards the frames up to
+the target. `LOOPSTART` and `LOOPEND` comment tags (decimal frames, names in any case) become `Info().loop_start` and
+`loop_end` when they satisfy `start < end <= total_frames`; `SetLooping(true)` makes `Decode` wrap by seeking at `loop_end`, with
+no change to a sample (tested over two and a half passes). A wrap costs one seek (a page of decode), so a streaming source decodes
+ahead (Day 435).
+
+### Compressed clips
+
+An `ACLP` blob has a codec field. `codec = Vorbis` holds the Ogg bytes verbatim (section 17) with the decoded length, rate,
+channels and loop points in the header; `AudioClipView::Open` accepts either, and `MakeClipFromAsset` decodes a Vorbis blob to the
+clip's `f32` samples once (the way for short effects; Day 435 streams music from the same blob). `asset_mint mint-audio` takes an
+`ogg` line in the source: `compress on` keeps the bytes, `compress off` decodes at mint time to PCM (and records the libvorbis
+version and the hash of the decoded samples in section 18, so a decoder change shows when the clip is minted again), `compress
+auto` (default) keeps the bytes when the decoded PCM would be over 1 MiB. Both are byte-stable for one decoder version. The
+runtime never reads a loose `.ogg` or `.wav`; the `asset_boundary_check` gate lets only `engine/audio/vorbis.cpp` include the
+codec's headers and only `engine/audio/CMakeLists.txt` link it.
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,

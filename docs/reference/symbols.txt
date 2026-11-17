@@ -5085,38 +5085,44 @@ audio::SpatialAudio::Report() const	function	audio	audio-spatialaudio-report-con
 audio::SpatialAudio::IsAudible(ecs::Entity) const	function	audio	audio-spatialaudio-isaudible-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:149
 audio::SpatialAudio::PitchOf(ecs::Entity) const	function	audio	audio-spatialaudio-pitchof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:155
 audio::SpatialAudio::IsReal(ecs::Entity) const	function	audio	audio-spatialaudio-isreal-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:161
-audio::VorbisStatus	enum	audio	audio-vorbisstatus	audio.md	engine/audio/vorbis.h:17
-audio::VorbisStatus::Ok	enumerator	audio	audio-vorbisstatus-ok	audio.md	engine/audio/vorbis.h:20
-audio::VorbisStatus::InvalidInput	enumerator	audio	audio-vorbisstatus-invalidinput	audio.md	engine/audio/vorbis.h:22
-audio::VorbisStatus::NotVorbis	enumerator	audio	audio-vorbisstatus-notvorbis	audio.md	engine/audio/vorbis.h:24
-audio::VorbisStatus::Truncated	enumerator	audio	audio-vorbisstatus-truncated	audio.md	engine/audio/vorbis.h:26
-audio::VorbisStatus::Corrupt	enumerator	audio	audio-vorbisstatus-corrupt	audio.md	engine/audio/vorbis.h:28
-audio::VorbisStatus::Unsupported	enumerator	audio	audio-vorbisstatus-unsupported	audio.md	engine/audio/vorbis.h:31
-audio::VorbisStatus::LimitExceeded	enumerator	audio	audio-vorbisstatus-limitexceeded	audio.md	engine/audio/vorbis.h:33
-audio::VorbisStatus::EndOfStream	enumerator	audio	audio-vorbisstatus-endofstream	audio.md	engine/audio/vorbis.h:35
-audio::VorbisStatus::OutOfMemory	enumerator	audio	audio-vorbisstatus-outofmemory	audio.md	engine/audio/vorbis.h:37
-audio::VorbisLimits	struct	audio	audio-vorbislimits	audio.md	engine/audio/vorbis.h:43
-audio::VorbisLimits::max_input_bytes	variable	audio	audio-vorbislimits-max-input-bytes	audio.md	engine/audio/vorbis.h:46
-audio::VorbisLimits::max_pages	variable	audio	audio-vorbislimits-max-pages	audio.md	engine/audio/vorbis.h:48
-audio::VorbisLimits::max_setup_bytes	variable	audio	audio-vorbislimits-max-setup-bytes	audio.md	engine/audio/vorbis.h:50
-audio::VorbisLimits::max_frames	variable	audio	audio-vorbislimits-max-frames	audio.md	engine/audio/vorbis.h:52
-audio::VorbisLimits::max_steps	variable	audio	audio-vorbislimits-max-steps	audio.md	engine/audio/vorbis.h:54
-audio::VorbisInfo	struct	audio	audio-vorbisinfo	audio.md	engine/audio/vorbis.h:60
-audio::VorbisInfo::channels	variable	audio	audio-vorbisinfo-channels	audio.md	engine/audio/vorbis.h:63
-audio::VorbisInfo::sample_rate	variable	audio	audio-vorbisinfo-sample-rate	audio.md	engine/audio/vorbis.h:65
-audio::VorbisInfo::nominal_bitrate	variable	audio	audio-vorbisinfo-nominal-bitrate	audio.md	engine/audio/vorbis.h:67
-audio::VorbisInfo::total_frames	variable	audio	audio-vorbisinfo-total-frames	audio.md	engine/audio/vorbis.h:69
-audio::VorbisDecoder	class	audio	audio-vorbisdecoder	audio.md	engine/audio/vorbis.h:79
-audio::VorbisDecoder::VorbisDecoder()	function	audio	audio-vorbisdecoder-vorbisdecoder	audio.md	engine/audio/vorbis.h:85
-audio::VorbisDecoder::~VorbisDecoder()	function	audio	audio-vorbisdecoder-tilde-vorbisdecoder	audio.md	engine/audio/vorbis.h:90
-audio::VorbisDecoder::VorbisDecoder(const VorbisDecoder&)	function	audio	audio-vorbisdecoder-vorbisdecoder-const-vorbisdecoder-amp	audio.md	engine/audio/vorbis.h:92
-audio::VorbisDecoder::operator=(const VorbisDecoder&)	function	audio	audio-vorbisdecoder-operator-eq-const-vorbisdecoder-amp	audio.md	engine/audio/vorbis.h:93
-audio::VorbisDecoder::Open(ByteSpan,const VorbisLimits&,UniquePtr<VorbisDecoder>*)	function	audio	audio-vorbisdecoder-open-bytespan-const-vorbislimits-amp-uniqueptr-lt-vorbisdecoder-gt-star	audio.md	engine/audio/vorbis.h:103
-audio::VorbisDecoder::Info() const	function	audio	audio-vorbisdecoder-info-const	audio.md	engine/audio/vorbis.h:108
-audio::VorbisDecoder::Tags() const	function	audio	audio-vorbisdecoder-tags-const	audio.md	engine/audio/vorbis.h:115
-audio::VorbisDecoder::Position() const	function	audio	audio-vorbisdecoder-position-const	audio.md	engine/audio/vorbis.h:120
-audio::VorbisDecoder::SkippedPackets() const	function	audio	audio-vorbisdecoder-skippedpackets-const	audio.md	engine/audio/vorbis.h:125
-audio::VorbisDecoder::Decode(f32*,u32,u32*)	function	audio	audio-vorbisdecoder-decode-f32-star-u32-u32-star	audio.md	engine/audio/vorbis.h:135
+audio::kVorbisLibraryVersion	variable	audio	audio-kvorbislibraryversion	audio.md	engine/audio/vorbis.h:18
+audio::VorbisStatus	enum	audio	audio-vorbisstatus	audio.md	engine/audio/vorbis.h:21
+audio::VorbisStatus::Ok	enumerator	audio	audio-vorbisstatus-ok	audio.md	engine/audio/vorbis.h:24
+audio::VorbisStatus::InvalidInput	enumerator	audio	audio-vorbisstatus-invalidinput	audio.md	engine/audio/vorbis.h:26
+audio::VorbisStatus::NotVorbis	enumerator	audio	audio-vorbisstatus-notvorbis	audio.md	engine/audio/vorbis.h:28
+audio::VorbisStatus::Truncated	enumerator	audio	audio-vorbisstatus-truncated	audio.md	engine/audio/vorbis.h:30
+audio::VorbisStatus::Corrupt	enumerator	audio	audio-vorbisstatus-corrupt	audio.md	engine/audio/vorbis.h:32
+audio::VorbisStatus::Unsupported	enumerator	audio	audio-vorbisstatus-unsupported	audio.md	engine/audio/vorbis.h:35
+audio::VorbisStatus::LimitExceeded	enumerator	audio	audio-vorbisstatus-limitexceeded	audio.md	engine/audio/vorbis.h:37
+audio::VorbisStatus::EndOfStream	enumerator	audio	audio-vorbisstatus-endofstream	audio.md	engine/audio/vorbis.h:39
+audio::VorbisStatus::OutOfMemory	enumerator	audio	audio-vorbisstatus-outofmemory	audio.md	engine/audio/vorbis.h:41
+audio::VorbisLimits	struct	audio	audio-vorbislimits	audio.md	engine/audio/vorbis.h:47
+audio::VorbisLimits::max_input_bytes	variable	audio	audio-vorbislimits-max-input-bytes	audio.md	engine/audio/vorbis.h:50
+audio::VorbisLimits::max_pages	variable	audio	audio-vorbislimits-max-pages	audio.md	engine/audio/vorbis.h:52
+audio::VorbisLimits::max_setup_bytes	variable	audio	audio-vorbislimits-max-setup-bytes	audio.md	engine/audio/vorbis.h:54
+audio::VorbisLimits::max_frames	variable	audio	audio-vorbislimits-max-frames	audio.md	engine/audio/vorbis.h:56
+audio::VorbisLimits::max_steps	variable	audio	audio-vorbislimits-max-steps	audio.md	engine/audio/vorbis.h:58
+audio::VorbisInfo	struct	audio	audio-vorbisinfo	audio.md	engine/audio/vorbis.h:64
+audio::VorbisInfo::channels	variable	audio	audio-vorbisinfo-channels	audio.md	engine/audio/vorbis.h:67
+audio::VorbisInfo::sample_rate	variable	audio	audio-vorbisinfo-sample-rate	audio.md	engine/audio/vorbis.h:69
+audio::VorbisInfo::nominal_bitrate	variable	audio	audio-vorbisinfo-nominal-bitrate	audio.md	engine/audio/vorbis.h:71
+audio::VorbisInfo::total_frames	variable	audio	audio-vorbisinfo-total-frames	audio.md	engine/audio/vorbis.h:73
+audio::VorbisInfo::loop_start	variable	audio	audio-vorbisinfo-loop-start	audio.md	engine/audio/vorbis.h:75
+audio::VorbisInfo::loop_end	variable	audio	audio-vorbisinfo-loop-end	audio.md	engine/audio/vorbis.h:77
+audio::VorbisDecoder	class	audio	audio-vorbisdecoder	audio.md	engine/audio/vorbis.h:87
+audio::VorbisDecoder::VorbisDecoder()	function	audio	audio-vorbisdecoder-vorbisdecoder	audio.md	engine/audio/vorbis.h:93
+audio::VorbisDecoder::~VorbisDecoder()	function	audio	audio-vorbisdecoder-tilde-vorbisdecoder	audio.md	engine/audio/vorbis.h:98
+audio::VorbisDecoder::VorbisDecoder(const VorbisDecoder&)	function	audio	audio-vorbisdecoder-vorbisdecoder-const-vorbisdecoder-amp	audio.md	engine/audio/vorbis.h:100
+audio::VorbisDecoder::operator=(const VorbisDecoder&)	function	audio	audio-vorbisdecoder-operator-eq-const-vorbisdecoder-amp	audio.md	engine/audio/vorbis.h:101
+audio::VorbisDecoder::Open(ByteSpan,const VorbisLimits&,UniquePtr<VorbisDecoder>*)	function	audio	audio-vorbisdecoder-open-bytespan-const-vorbislimits-amp-uniqueptr-lt-vorbisdecoder-gt-star	audio.md	engine/audio/vorbis.h:111
+audio::VorbisDecoder::Info() const	function	audio	audio-vorbisdecoder-info-const	audio.md	engine/audio/vorbis.h:116
+audio::VorbisDecoder::Tags() const	function	audio	audio-vorbisdecoder-tags-const	audio.md	engine/audio/vorbis.h:123
+audio::VorbisDecoder::Position() const	function	audio	audio-vorbisdecoder-position-const	audio.md	engine/audio/vorbis.h:128
+audio::VorbisDecoder::SkippedPackets() const	function	audio	audio-vorbisdecoder-skippedpackets-const	audio.md	engine/audio/vorbis.h:133
+audio::VorbisDecoder::Decode(f32*,u32,u32*)	function	audio	audio-vorbisdecoder-decode-f32-star-u32-u32-star	audio.md	engine/audio/vorbis.h:143
+audio::VorbisDecoder::SeekFrame(u64)	function	audio	audio-vorbisdecoder-seekframe-u64	audio.md	engine/audio/vorbis.h:153
+audio::VorbisDecoder::SetLooping(bool)	function	audio	audio-vorbisdecoder-setlooping-bool	audio.md	engine/audio/vorbis.h:159
+audio::VorbisDecoder::Looping() const	function	audio	audio-vorbisdecoder-looping-const	audio.md	engine/audio/vorbis.h:164
 audio::WavStatus	enum	audio	audio-wavstatus	audio.md	engine/audio/wav.h:19
 audio::WavStatus::Ok	enumerator	audio	audio-wavstatus-ok	audio.md	engine/audio/wav.h:22
 audio::WavStatus::TooShort	enumerator	audio	audio-wavstatus-tooshort	audio.md	engine/audio/wav.h:24
@@ -5970,30 +5976,41 @@ asset::AsyncLoader::Update(u64,u64)	function	asset	asset-asyncloader-update-u64-
 asset::AsyncLoader::Wait(const LoadTicket&)	function	asset	asset-asyncloader-wait-const-loadticket-amp	asset.md	engine/asset/async_loader.h:224
 asset::AsyncLoader::Stats() const	function	asset	asset-asyncloader-stats-const	asset.md	engine/asset/async_loader.h:226
 asset::AsyncLoader::RunRead(LoadRequest&)	function	asset	asset-asyncloader-runread-loadrequest-amp	asset.md	engine/asset/async_loader.h:229
-asset::kAudioClipHeaderBytes	variable	asset	asset-kaudioclipheaderbytes	asset.md	engine/asset/audio_clip.h:31
-asset::kMaxAudioClipFrames	variable	asset	asset-kmaxaudioclipframes	asset.md	engine/asset/audio_clip.h:33
-asset::AudioClipSection	enum	asset	asset-audioclipsection	asset.md	engine/asset/audio_clip.h:36
-asset::kAudioClipSectionHeader	enumerator	asset	asset-kaudioclipsectionheader	asset.md	engine/asset/audio_clip.h:38
-asset::kAudioClipSectionSamples	enumerator	asset	asset-kaudioclipsectionsamples	asset.md	engine/asset/audio_clip.h:39
-asset::AudioClipStorage	enum	asset	asset-audioclipstorage	asset.md	engine/asset/audio_clip.h:43
-asset::AudioClipStorage::F32	enumerator	asset	asset-audioclipstorage-f32	asset.md	engine/asset/audio_clip.h:45
-asset::AudioClipStorage::S16	enumerator	asset	asset-audioclipstorage-s16	asset.md	engine/asset/audio_clip.h:46
-asset::AudioClipHeader	struct	asset	asset-audioclipheader	asset.md	engine/asset/audio_clip.h:52
-asset::AudioClipHeader::sample_rate	variable	asset	asset-audioclipheader-sample-rate	asset.md	engine/asset/audio_clip.h:54
-asset::AudioClipHeader::channels	variable	asset	asset-audioclipheader-channels	asset.md	engine/asset/audio_clip.h:55
-asset::AudioClipHeader::storage	variable	asset	asset-audioclipheader-storage	asset.md	engine/asset/audio_clip.h:56
-asset::AudioClipHeader::frames	variable	asset	asset-audioclipheader-frames	asset.md	engine/asset/audio_clip.h:57
-asset::AudioClipHeader::loop_start	variable	asset	asset-audioclipheader-loop-start	asset.md	engine/asset/audio_clip.h:58
-asset::AudioClipHeader::loop_end	variable	asset	asset-audioclipheader-loop-end	asset.md	engine/asset/audio_clip.h:59
-asset::BuildAudioClipBlob(const TypeRegistry&,ResourceId,const AudioClipHeader&,ByteSpan,Vector<byte>*,u32)	function	asset	asset-buildaudioclipblob-const-typeregistry-amp-resourceid-const-audioclipheader-amp-bytespan-vector-lt-byte-gt-star-u32	asset.md	engine/asset/audio_clip.h:72
-asset::AudioClipView	class	asset	asset-audioclipview	asset.md	engine/asset/audio_clip.h:79
-asset::AudioClipView::AudioClipView()	function	asset	asset-audioclipview-audioclipview	asset.md	engine/asset/audio_clip.h:83
-asset::AudioClipView::Open(const SharedBytesPtr&,const TypeRegistry&)	function	asset	asset-audioclipview-open-const-sharedbytesptr-amp-const-typeregistry-amp	asset.md	engine/asset/audio_clip.h:92
-asset::AudioClipView::Header() const	function	asset	asset-audioclipview-header-const	asset.md	engine/asset/audio_clip.h:96
-asset::AudioClipView::Id() const	function	asset	asset-audioclipview-id-const	asset.md	engine/asset/audio_clip.h:100
-asset::AudioClipView::Samples() const	function	asset	asset-audioclipview-samples-const	asset.md	engine/asset/audio_clip.h:105
-asset::AudioClipView::Bytes() const	function	asset	asset-audioclipview-bytes-const	asset.md	engine/asset/audio_clip.h:110
-asset::AudioClipView::SamplesOffset() const	function	asset	asset-audioclipview-samplesoffset-const	asset.md	engine/asset/audio_clip.h:114
+asset::kAudioClipHeaderBytes	variable	asset	asset-kaudioclipheaderbytes	asset.md	engine/asset/audio_clip.h:35
+asset::kMaxAudioClipFrames	variable	asset	asset-kmaxaudioclipframes	asset.md	engine/asset/audio_clip.h:37
+asset::AudioClipSection	enum	asset	asset-audioclipsection	asset.md	engine/asset/audio_clip.h:40
+asset::kAudioClipSectionHeader	enumerator	asset	asset-kaudioclipsectionheader	asset.md	engine/asset/audio_clip.h:42
+asset::kAudioClipSectionSamples	enumerator	asset	asset-kaudioclipsectionsamples	asset.md	engine/asset/audio_clip.h:43
+asset::kAudioClipSectionProvenance	enumerator	asset	asset-kaudioclipsectionprovenance	asset.md	engine/asset/audio_clip.h:44
+asset::AudioClipCodec	enum	asset	asset-audioclipcodec	asset.md	engine/asset/audio_clip.h:48
+asset::AudioClipCodec::Pcm	enumerator	asset	asset-audioclipcodec-pcm	asset.md	engine/asset/audio_clip.h:50
+asset::AudioClipCodec::Vorbis	enumerator	asset	asset-audioclipcodec-vorbis	asset.md	engine/asset/audio_clip.h:51
+asset::AudioClipProvenance	struct	asset	asset-audioclipprovenance	asset.md	engine/asset/audio_clip.h:57
+asset::AudioClipProvenance::decoder_version	variable	asset	asset-audioclipprovenance-decoder-version	asset.md	engine/asset/audio_clip.h:59
+asset::AudioClipProvenance::decode_hash	variable	asset	asset-audioclipprovenance-decode-hash	asset.md	engine/asset/audio_clip.h:60
+asset::kAudioClipProvenanceBytes	variable	asset	asset-kaudioclipprovenancebytes	asset.md	engine/asset/audio_clip.h:64
+asset::kMaxAudioClipVorbisBytes	variable	asset	asset-kmaxaudioclipvorbisbytes	asset.md	engine/asset/audio_clip.h:66
+asset::AudioClipStorage	enum	asset	asset-audioclipstorage	asset.md	engine/asset/audio_clip.h:69
+asset::AudioClipStorage::F32	enumerator	asset	asset-audioclipstorage-f32	asset.md	engine/asset/audio_clip.h:71
+asset::AudioClipStorage::S16	enumerator	asset	asset-audioclipstorage-s16	asset.md	engine/asset/audio_clip.h:72
+asset::AudioClipHeader	struct	asset	asset-audioclipheader	asset.md	engine/asset/audio_clip.h:78
+asset::AudioClipHeader::sample_rate	variable	asset	asset-audioclipheader-sample-rate	asset.md	engine/asset/audio_clip.h:80
+asset::AudioClipHeader::channels	variable	asset	asset-audioclipheader-channels	asset.md	engine/asset/audio_clip.h:81
+asset::AudioClipHeader::storage	variable	asset	asset-audioclipheader-storage	asset.md	engine/asset/audio_clip.h:82
+asset::AudioClipHeader::codec	variable	asset	asset-audioclipheader-codec	asset.md	engine/asset/audio_clip.h:83
+asset::AudioClipHeader::frames	variable	asset	asset-audioclipheader-frames	asset.md	engine/asset/audio_clip.h:84
+asset::AudioClipHeader::loop_start	variable	asset	asset-audioclipheader-loop-start	asset.md	engine/asset/audio_clip.h:85
+asset::AudioClipHeader::loop_end	variable	asset	asset-audioclipheader-loop-end	asset.md	engine/asset/audio_clip.h:86
+asset::BuildAudioClipBlob(const TypeRegistry&,ResourceId,const AudioClipHeader&,ByteSpan,Vector<byte>*,u32,const AudioClipProvenance*)	function	asset	asset-buildaudioclipblob-const-typeregistry-amp-resourceid-const-audioclipheader-amp-bytespan-vector-lt-byte-gt-star-u32-const-audioclipprovenance-star	asset.md	engine/asset/audio_clip.h:101
+asset::AudioClipView	class	asset	asset-audioclipview	asset.md	engine/asset/audio_clip.h:108
+asset::AudioClipView::AudioClipView()	function	asset	asset-audioclipview-audioclipview	asset.md	engine/asset/audio_clip.h:112
+asset::AudioClipView::Open(const SharedBytesPtr&,const TypeRegistry&)	function	asset	asset-audioclipview-open-const-sharedbytesptr-amp-const-typeregistry-amp	asset.md	engine/asset/audio_clip.h:121
+asset::AudioClipView::Header() const	function	asset	asset-audioclipview-header-const	asset.md	engine/asset/audio_clip.h:125
+asset::AudioClipView::Provenance() const	function	asset	asset-audioclipview-provenance-const	asset.md	engine/asset/audio_clip.h:131
+asset::AudioClipView::Id() const	function	asset	asset-audioclipview-id-const	asset.md	engine/asset/audio_clip.h:135
+asset::AudioClipView::Samples() const	function	asset	asset-audioclipview-samples-const	asset.md	engine/asset/audio_clip.h:140
+asset::AudioClipView::Bytes() const	function	asset	asset-audioclipview-bytes-const	asset.md	engine/asset/audio_clip.h:145
+asset::AudioClipView::SamplesOffset() const	function	asset	asset-audioclipview-samplesoffset-const	asset.md	engine/asset/audio_clip.h:149
 asset::BackendCapability	enum	asset	asset-backendcapability	asset.md	engine/asset/backend.h:23
 asset::kBackendRanged	enumerator	asset	asset-kbackendranged	asset.md	engine/asset/backend.h:25
 asset::kBackendAsync	enumerator	asset	asset-kbackendasync	asset.md	engine/asset/backend.h:26

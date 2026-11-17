@@ -14,3 +14,4 @@ streams are committed so no machine needs the encoders.
 | `three_channels.ogg` | 3 channels, 48 kHz | refused: no layout |
 | `rate_4000.ogg` | mono, 4 kHz | refused: rate below 8 kHz |
 | `flac_in_ogg.ogg` | FLAC in an Ogg container | refused: not Vorbis |
+| `music_loop.ogg` | a 6 s stereo bed at 44.1 kHz (a stepping tone, noise, clicks), tags `LOOPSTART=44100` and `LOOPEND=220500` | seeking and looping (Day 434) |

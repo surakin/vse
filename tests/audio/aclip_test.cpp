@@ -157,7 +157,9 @@ TEST_CASE("aclip: a corrupted blob is refused or harmless at every byte", "[audi
             {
                 audio::AudioClipPtr clip;
                 const audio::ClipStatus status = audio::MakeClipFromAsset(view, "", &clip);
-                REQUIRE((status == audio::ClipStatus::Ok || status == audio::ClipStatus::NotFinite));
+                // A flipped codec field claims Ogg Vorbis over PCM bytes (Day 434): refused as a bad format.
+                REQUIRE((status == audio::ClipStatus::Ok || status == audio::ClipStatus::NotFinite ||
+                         status == audio::ClipStatus::BadFormat));
                 if (status == audio::ClipStatus::Ok)
                 {
                     REQUIRE(clip->View().samples.Size() ==

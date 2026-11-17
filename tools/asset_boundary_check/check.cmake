@@ -8,6 +8,9 @@
 #   3. The decoders (png.h, zlib.h, stb_image.h, and the png, zlib and stb_jpeg targets) are reached only from engine/asset_import/image_decode.cpp,
 #      its C helper png_guard.c (libpng's setjmp, which MSVC refuses in C++) and its CMake file, or an allow-list entry (FreeType's color bitmaps,
 #      Phase 28).
+#   4. The Ogg Vorbis libraries' headers (ogg/ogg.h, vorbis/codec.h, vorbis/vorbisfile.h, vorbis/vorbisenc.h) are included only by
+#      engine/audio/vorbis.cpp, and the `ogg` and `vorbis` targets are linked only by engine/audio/CMakeLists.txt (Phase 26 Day 434): the audio
+#      module and, through its facade, asset_mint reach the codec; nothing else does.
 # Comments are not violations. A stale allow-list entry fails the gate, so the list only shrinks.
 cmake_minimum_required(VERSION 3.20)
 
@@ -55,6 +58,8 @@ set(allow_used "")
 set(importer_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"]asset_import/")
 set(tools_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"]tools/")
 set(decoder_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"]([^>\"]*/)?(png|pngconf|zlib|zconf|stb_image)\\.h[>\"]")
+set(codec_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"](ogg|vorbis)/[A-Za-z]+\\.h[>\"]")
+set(codec_link_re "(^|[^A-Za-z0-9_])(ogg|vorbis)(_asan|_tsan|\\$\\{[A-Za-z_]+\\})?([^A-Za-z0-9_]|$)")
 set(importer_link_re "(^|[^A-Za-z0-9_])(asset_import|asset_mint)([^A-Za-z0-9_]|$)")
 set(decoder_link_re "(^|[^A-Za-z0-9_])(png|zlib|stb_jpeg)(_asan|_tsan)?([^A-Za-z0-9_]|$)")
 
@@ -96,6 +101,10 @@ foreach(f IN LISTS files)
      OR f STREQUAL "engine/asset_import/CMakeLists.txt")
     set(decoder_home TRUE)
   endif()
+  set(codec_home FALSE)
+  if(f STREQUAL "engine/audio/vorbis.cpp" OR f STREQUAL "engine/audio/CMakeLists.txt")
+    set(codec_home TRUE)
+  endif()
   set(is_cmake FALSE)
   if(f MATCHES "CMakeLists\\.txt$")
     set(is_cmake TRUE)
@@ -126,6 +135,9 @@ foreach(f IN LISTS files)
         if(code MATCHES "${decoder_link_re}" AND NOT decoder_home AND NOT f MATCHES "^third_party/")
           set(why "links a decoder library")
         endif()
+        if(code MATCHES "${codec_link_re}" AND NOT codec_home AND NOT f MATCHES "^third_party/")
+          set(why "links the Ogg Vorbis libraries")
+        endif()
       endif()
       if(code MATCHES "\\)")
         set(in_link FALSE)
@@ -142,6 +154,9 @@ foreach(f IN LISTS files)
       endif()
       if(l MATCHES "${decoder_include_re}" AND NOT decoder_home)
         set(why "includes a decoder header")
+      endif()
+      if(l MATCHES "${codec_include_re}" AND NOT codec_home)
+        set(why "includes an Ogg Vorbis header")
       endif()
     endif()
     if(why STREQUAL "")

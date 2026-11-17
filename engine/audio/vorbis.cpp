@@ -45,6 +45,16 @@ struct VorbisDecoder::State
     bool eos = false;
     u64 frame_cap = 0;
     VorbisLimits limits;
+    usize data_offset = 0;
+    struct SeekPoint
+    {
+        usize offset;
+        u64 start;  // the frame the first sample a decode from `offset` emits belongs to
+    };
+    Vector<SeekPoint> index;
+    bool index_built = false;
+
+    bool BuildIndex();
 
     ~State()
     {
@@ -140,6 +150,65 @@ u64 LastGranule(ByteSpan bytes, i32 serial)
     }
     ogg_sync_clear(&sync);
     return granule;
+}
+
+}  // namespace
+
+namespace
+{
+
+bool NameIs(const char* text, u32 length, const char* name, u32* value_at)
+{
+    u32 n = 0;
+    while (name[n] != 0)
+    {
+        if (n >= length)
+        {
+            return false;
+        }
+        char a = text[n];
+        a = (a >= 'a' && a <= 'z') ? static_cast<char>(a - 'a' + 'A') : a;
+        if (a != name[n])
+        {
+            return false;
+        }
+        n += 1;
+    }
+    if (n >= length || text[n] != '=')
+    {
+        return false;
+    }
+    *value_at = n + 1;
+    return true;
+}
+
+// LOOPSTART=n and LOOPEND=n (decimal frames); anything else is ignored.
+void ReadLoopTag(const char* text, u32 length, VorbisInfo* info)
+{
+    u32 at = 0;
+    u64* target = nullptr;
+    if (NameIs(text, length, "LOOPSTART", &at))
+    {
+        target = &info->loop_start;
+    }
+    else if (NameIs(text, length, "LOOPEND", &at))
+    {
+        target = &info->loop_end;
+    }
+    if (target == nullptr || at >= length)
+    {
+        return;
+    }
+    u64 value = 0;
+    for (u32 i = at; i < length; ++i)
+    {
+        if (text[i] < '0' || text[i] > '9' || value > (1ull << 40))
+        {
+            return;
+        }
+        value = value * 10 + static_cast<u64>(text[i] - '0');
+    }
+    *target = value;
 }
 
 }  // namespace
@@ -284,6 +353,9 @@ VorbisStatus VorbisDecoder::Open(ByteSpan bytes, const VorbisLimits& limits, Uni
     s.frame_cap = info.total_frames != 0 && info.total_frames < limits.max_frames ? info.total_frames
                                                                                   : limits.max_frames;
 
+    // The audio starts on the page after the one that ended the setup header.
+    s.data_offset = s.consumed - static_cast<usize>(s.sync.fill - s.sync.returned);
+
     // The tags: the vendor, then the comments; bounded and never trusted.
     if (s.vc.vendor != nullptr)
     {
@@ -302,6 +374,19 @@ VorbisStatus VorbisDecoder::Open(ByteSpan bytes, const VorbisLimits& limits, Uni
         decoder->tags_.Append(StringView("\n", 1));
         decoder->tags_.Append(StringView(s.vc.user_comments[i], n));
     }
+    for (int i = 0; i < s.vc.comments; ++i)
+    {
+        const int length = s.vc.comment_lengths[i];
+        if (length > 0)
+        {
+            ReadLoopTag(s.vc.user_comments[i], static_cast<u32>(length), &decoder->info_);
+        }
+    }
+    if (!(decoder->info_.loop_start < decoder->info_.loop_end && decoder->info_.loop_end <= info.total_frames))
+    {
+        decoder->info_.loop_start = 0;
+        decoder->info_.loop_end = 0;
+    }
     *out = Move(decoder);
     return VorbisStatus::Ok;
 }
@@ -317,8 +402,18 @@ VorbisStatus VorbisDecoder::Decode(f32* out, u32 max_frames, u32* frames)
     const u32 channels = info_.channels;
     u32 steps = 0;
     u32 written = 0;
+    const bool loops = looping_ && info_.loop_end > 0;
     while (written < max_frames)
     {
+        if (loops && position_ >= info_.loop_end)
+        {
+            const VorbisStatus wrapped = SeekFrame(info_.loop_start);
+            if (wrapped != VorbisStatus::Ok)
+            {
+                *frames = written;
+                return written > 0 ? VorbisStatus::Ok : wrapped;
+            }
+        }
         if (position_ >= s.frame_cap)
         {
             break;
@@ -336,6 +431,10 @@ VorbisStatus VorbisDecoder::Decode(f32* out, u32 max_frames, u32* frames)
             if (take > s.frame_cap - position_)
             {
                 take = s.frame_cap - position_;
+            }
+            if (loops && position_ < info_.loop_end && take > info_.loop_end - position_)
+            {
+                take = info_.loop_end - position_;
             }
             for (u32 n = 0; n < take; ++n)
             {
@@ -419,6 +518,182 @@ VorbisStatus VorbisDecoder::Decode(f32* out, u32 max_frames, u32* frames)
     }
     *frames = written;
     return written > 0 ? VorbisStatus::Ok : VorbisStatus::EndOfStream;
+}
+
+// Reads the page index of the whole input once: every page of the stream that starts a packet, has a granule position
+// and is not the last, with the granule of the page before it.
+bool VorbisDecoder::State::BuildIndex()
+{
+    State& s = *this;
+    ogg_sync_state sync;
+    ogg_sync_init(&sync);
+    ogg_stream_state st;
+    if (ogg_stream_init(&st, s.serial) != 0)
+    {
+        ogg_sync_clear(&sync);
+        return false;
+    }
+    usize fed = s.data_offset;
+    u64 previous = 0;
+    long previous_blocksize = 0;
+    u32 pages = 0;
+    bool ok = true;
+    while (ok && fed < s.bytes.Size())
+    {
+        const usize n = s.bytes.Size() - fed < kChunk ? s.bytes.Size() - fed : kChunk;
+        char* buffer = ogg_sync_buffer(&sync, static_cast<long>(n));
+        if (buffer == nullptr)
+        {
+            ok = false;
+            break;
+        }
+        MemCopy(buffer, s.bytes.Data() + fed, n);
+        ogg_sync_wrote(&sync, static_cast<long>(n));
+        fed += n;
+        ogg_page page;
+        while (true)
+        {
+            const int r = ogg_sync_pageout(&sync, &page);
+            if (r == 0)
+            {
+                break;
+            }
+            if (r < 0)
+            {
+                continue;
+            }
+            pages += 1;
+            if (pages > s.limits.max_pages)
+            {
+                ok = false;
+                break;
+            }
+            if (ogg_page_serialno(&page) != s.serial)
+            {
+                continue;
+            }
+            const usize end = fed - static_cast<usize>(sync.fill - sync.returned);
+            const usize start = end - static_cast<usize>(page.header_len) - static_cast<usize>(page.body_len);
+            const bool starts_packet = !ogg_page_continued(&page);
+            const ogg_int64_t granule = ogg_page_granulepos(&page);
+            if (ogg_stream_pagein(&st, &page) < 0)
+            {
+                continue;
+            }
+            long first_blocksize = 0;
+            long last_blocksize = 0;
+            ogg_packet packet;
+            while (ogg_stream_packetout(&st, &packet) > 0)
+            {
+                const long size = vorbis_packet_blocksize(&s.vi, &packet);
+                if (size <= 0)
+                {
+                    continue;
+                }
+                if (first_blocksize == 0)
+                {
+                    first_blocksize = size;
+                }
+                last_blocksize = size;
+            }
+            // A page the decode can restart on: it starts a packet, it is not the first (whose first packet makes no
+            // sound) nor the last (whose granule position is trimmed), and a packet before it gives the lapping.
+            if (starts_packet && !ogg_page_eos(&page) && granule > 0 && start != s.data_offset && first_blocksize > 0 &&
+                previous_blocksize > 0)
+            {
+                if (!s.index.TryReserve(s.index.Size() + 1))
+                {
+                    ok = false;
+                    break;
+                }
+                SeekPoint point;
+                point.offset = start;
+                point.start = previous + static_cast<u64>(previous_blocksize / 4) +
+                              static_cast<u64>(first_blocksize / 4);
+                s.index.Push(point);
+            }
+            if (last_blocksize > 0)
+            {
+                previous_blocksize = last_blocksize;
+            }
+            if (granule > 0)
+            {
+                previous = static_cast<u64>(granule);
+            }
+        }
+    }
+    ogg_stream_clear(&st);
+    ogg_sync_clear(&sync);
+    return ok;
+}
+
+VorbisStatus VorbisDecoder::SeekFrame(u64 frame)
+{
+    State& s = *state_;
+    if (frame >= s.frame_cap)
+    {
+        position_ = s.frame_cap;
+        return VorbisStatus::EndOfStream;
+    }
+    if (!s.index_built)
+    {
+        if (!s.BuildIndex())
+        {
+            return VorbisStatus::LimitExceeded;
+        }
+        s.index_built = true;
+    }
+    // The last restart page whose first emitted frame is at or before the target.
+    usize lo = 0;
+    usize hi = s.index.Size();
+    while (lo < hi)
+    {
+        const usize mid = lo + (hi - lo) / 2;
+        if (s.index[mid].start <= frame)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+    ogg_sync_reset(&s.sync);
+    ogg_stream_reset(&s.stream);
+    vorbis_synthesis_restart(&s.dsp);
+    s.eos = false;
+    if (lo == 0)
+    {
+        s.consumed = s.data_offset;
+        position_ = 0;
+    }
+    else
+    {
+        // The first packet of the page only primes the overlap; the decode from here emits from `start` on.
+        s.consumed = s.index[lo - 1].offset;
+        position_ = s.index[lo - 1].start;
+    }
+    // The rest of the way is decoded and thrown away.
+    Vector<f32> scratch;
+    if (!scratch.TryResizeUninitialized(static_cast<usize>(2048) * info_.channels))
+    {
+        return VorbisStatus::OutOfMemory;
+    }
+    const bool was_looping = looping_;
+    looping_ = false;
+    VorbisStatus status = VorbisStatus::Ok;
+    while (position_ < frame)
+    {
+        const u64 want = frame - position_ < 2048 ? frame - position_ : 2048;
+        u32 got = 0;
+        status = Decode(scratch.Data(), static_cast<u32>(want), &got);
+        if (status != VorbisStatus::Ok)
+        {
+            break;
+        }
+    }
+    looping_ = was_looping;
+    return status == VorbisStatus::EndOfStream ? VorbisStatus::Corrupt : status;
 }
 
 }  // namespace engine_placeholder::audio

@@ -7,13 +7,16 @@
 //! Line-oriented text; `#` starts a comment; fields are separated by spaces or tabs:
 //!
 //!     id 0123456789abcdef
-//!     wav relative/path/to/file.wav
+//!     wav relative/path/to/file.wav      # or: ogg relative/path/to/file.ogg
 //!     loop 1000 48000        # optional: loop start and end in frames, overriding the file's smpl loop
 //!     format f32             # optional: f32 (default) or s16
 //!     normalize on           # optional: scale so the peak is 1.0 (default off)
+//!     compress auto          # optional, ogg only: on (keep the Ogg bytes), off (decode to PCM at mint time) or auto
+//!     (default:
+//!                            # keep the bytes when the decoded PCM would exceed 1 MiB)
 //!
-//! `id` comes first (written by `asset_mint adopt`); `wav` names the file, resolved by the caller (the command line
-//! tool resolves it against the source's directory).
+//! `id` comes first (written by `asset_mint adopt`); exactly one of `wav` and `ogg` names the file, resolved by the
+//! caller (the command line tool resolves it against the source's directory).
 
 #include "asset/audio_clip.h"
 #include "asset/resource_id.h"
@@ -34,7 +37,9 @@ namespace engine_placeholder::asset
 struct AudioSource
 {
     ResourceId id;                                     ///< The resource id from the `id` line.
-    String<HeapAllocator> wav;                         ///< The WAV path as written.
+    String<HeapAllocator> wav;                         ///< The WAV or Ogg path as written.
+    bool is_ogg = false;                               ///< Whether the file is Ogg Vorbis (an `ogg` line).
+    i32 compress = -1;                                 ///< `compress` for an Ogg: 1 on, 0 off, -1 auto.
     bool has_loop = false;                             ///< Whether a `loop` line overrides the file's loop.
     u32 loop_start = 0;                                ///< The override's start in frames.
     u32 loop_end = 0;                                  ///< The override's end in frames.
@@ -61,11 +66,12 @@ struct AudioSourceError
 /// - Ownership: borrows `text` for the call; `*out` and `*error` are written.
 Status ParseAudioSource(StringView text, AudioSource* out, AudioSourceError* error);
 
-/// The audio minter: a parsed source and the bytes of the WAV file it names, to blob bytes. Deterministic: the same
-/// inputs give the same bytes.
+/// The audio minter: a parsed source and the bytes of the WAV or Ogg file it names, to blob bytes. Deterministic: the
+/// same inputs give the same bytes.
 ///
-/// - Param wav_bytes: the whole WAV file.
-/// - Fails: `Invalid` (with `error`) for a WAV the parser refuses, a loop outside the data, or what
+/// - Param wav_bytes: the whole WAV or Ogg Vorbis file.
+/// - Fails: `Invalid` (with `error`) for a WAV or Ogg stream the decoder refuses, `normalize` with kept Ogg bytes, a
+/// loop outside the data, or what
 /// [[asset::BuildAudioClipBlob]] refuses.
 /// - Ownership: borrows its arguments for the call; `*out` is replaced.
 Status MintAudio(const AudioSource& source, ByteSpan wav_bytes, const TypeRegistry& types, Vector<byte>* out,

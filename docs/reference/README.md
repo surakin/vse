@@ -25,10 +25,10 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
 | [Physics](physics.md) | 30 | 751 |
-| [Audio](audio.md) | 24 | 685 |
+| [Audio](audio.md) | 24 | 691 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 36 | 1275 |
+| [Assets and resources](asset.md) | 36 | 1286 |
 | [glTF importer](asset_import.md) | 16 | 268 |
 | [Animation runtime](animation.md) | 4 | 85 |
 | [Database](database.md) | 9 | 161 |

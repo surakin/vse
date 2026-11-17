@@ -1,6 +1,7 @@
 #include "audio/asset_clip.h"
 
 #include "audio/convert.h"
+#include "audio/vorbis.h"
 #include "lang/utility.h"
 
 namespace engine_placeholder::audio
@@ -37,6 +38,41 @@ ClipStatus MakeClipFromAsset(const asset::AudioClipView& view, StringView name, 
     desc.frame_count = h.frames;
     desc.loop_start = h.loop_start;
     desc.loop_end = h.loop_end;
+    if (h.codec == asset::AudioClipCodec::Vorbis)
+    {
+        // Decoded once, here, to the clip's `f32` samples: the way for short effects. A music clip is streamed from the
+        // same blob instead (`audio/stream.h`).
+        UniquePtr<VorbisDecoder> decoder;
+        const ByteSpan ogg = view.Samples();
+        if (VorbisDecoder::Open(ogg, VorbisLimits(), &decoder) != VorbisStatus::Ok ||
+            decoder->Info().channels != h.channels || decoder->Info().sample_rate != h.sample_rate)
+        {
+            return ClipStatus::BadFormat;
+        }
+        Vector<f32> decoded;
+        const usize count = static_cast<usize>(h.frames) * h.channels;
+        if (!decoded.TryResizeUninitialized(count))
+        {
+            return ClipStatus::TooShort;
+        }
+        u64 done = 0;
+        while (done < h.frames)
+        {
+            u32 got = 0;
+            const u64 want = h.frames - done < 4096 ? h.frames - done : 4096;
+            if (decoder->Decode(decoded.Data() + static_cast<usize>(done) * h.channels, static_cast<u32>(want), &got) !=
+                VorbisStatus::Ok)
+            {
+                break;
+            }
+            done += got;
+        }
+        if (done != h.frames)
+        {
+            return ClipStatus::TooShort;
+        }
+        return AudioClip::CreateCopy(desc, Span<const f32>(decoded.Data(), count), name, out);
+    }
     if (h.storage == asset::AudioClipStorage::F32)
     {
         return AudioClip::Create(desc, view.Bytes(), view.SamplesOffset(), name, out);

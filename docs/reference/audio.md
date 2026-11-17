@@ -6424,6 +6424,16 @@ Whether `entity` has a real (mixed, not virtual) voice as of the last update.
 | Parameter `entity` | the entity. |
 | Returns | true if it has a voice that is not virtual. |
 
+## `kVorbisLibraryVersion` {#audio-kvorbislibraryversion}
+
+`variable audio::kVorbisLibraryVersion` — defined in `engine/audio/vorbis.h`
+
+```cpp
+inline constexpr u32 kVorbisLibraryVersion;
+```
+
+The version of the vendored libvorbis, `major << 16 | minor << 8 | patch` (recorded in clips decoded at mint time, so a decoder change is a visible re-mint).
+
 ## `VorbisStatus` {#audio-vorbisstatus}
 
 `enum audio::VorbisStatus` — defined in `engine/audio/vorbis.h`
@@ -6563,6 +6573,26 @@ u64 total_frames;
 ```
 
 The length in frames from the last page's granule position, or 0 when the stream does not say.
+
+### `loop_start` {#audio-vorbisinfo-loop-start}
+
+`variable audio::VorbisInfo::loop_start` — defined in `engine/audio/vorbis.h`
+
+```cpp
+u64 loop_start;
+```
+
+The loop start in frames from the `LOOPSTART` comment (0 with `loop_end` when there is no valid loop).
+
+### `loop_end` {#audio-vorbisinfo-loop-end}
+
+`variable audio::VorbisInfo::loop_end` — defined in `engine/audio/vorbis.h`
+
+```cpp
+u64 loop_end;
+```
+
+The loop end in frames from the `LOOPEND` comment; 0 when absent or not `loop_start < loop_end <= total_frames`.
 
 ## `VorbisDecoder` {#audio-vorbisdecoder}
 
@@ -6722,6 +6752,50 @@ Decodes up to `max_frames` frames into `out`.
 | Returns | `Ok` (with at least one frame), `EndOfStream` (none), `LimitExceeded` or `OutOfMemory`. |
 | Fails | reported by return value. |
 | Ownership | `out` is borrowed for the call. |
+
+### `SeekFrame(u64)` {#audio-vorbisdecoder-seekframe-u64}
+
+`method audio::VorbisDecoder::SeekFrame` — defined in `engine/audio/vorbis.h`
+
+```cpp
+VorbisStatus SeekFrame(u64 frame);
+```
+
+Moves the decode position to `frame`: the output after the seek equals what decoding from the start gives from that frame on. The first call reads the page index of the whole input (once, bounded by the page limit); a seek then bisects it and decodes at most one page plus the frames up to the target.
+
+| Field | Value |
+|---|---|
+| Parameter `frame` | the target in frames; at or past the end of the stream the decoder is left at its end. |
+| Returns | `Ok`, `EndOfStream` (the target is at or past the end), `Corrupt` (the stream does not match its own index), `LimitExceeded` or `OutOfMemory`. |
+| Fails | reported by return value; the position is then undefined until the next successful seek. |
+
+### `SetLooping(bool)` {#audio-vorbisdecoder-setlooping-bool}
+
+`method audio::VorbisDecoder::SetLooping` — defined in `engine/audio/vorbis.h`
+
+```cpp
+void SetLooping(bool on);
+```
+
+Turns the loop on or off: with a loop on, `Decode` wraps from `loop_end` to `loop_start` by seeking (the frames of the codec's own lapping are decoded and discarded, so the join has no discontinuity beyond the stream's own).
+
+| Field | Value |
+|---|---|
+| Parameter `on` | whether to loop; ignored when the stream has no valid loop points. |
+
+### `Looping()` {#audio-vorbisdecoder-looping-const}
+
+`method audio::VorbisDecoder::Looping` — defined in `engine/audio/vorbis.h`
+
+```cpp
+bool Looping() const;
+```
+
+Whether the loop is on.
+
+| Field | Value |
+|---|---|
+| Returns | the flag. |
 
 ## `WavStatus` {#audio-wavstatus}
 
