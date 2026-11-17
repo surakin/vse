@@ -8,6 +8,8 @@ set(AUDIO_SOURCES
   format.cpp  # Day 416
   convert.cpp  # Day 416
   clip.cpp  # Day 416
+  wav.cpp  # Day 417
+  asset_clip.cpp  # Day 418
 )
 set(AUDIO_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -20,7 +22,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(audio${suffix} STATIC ${AUDIO_SOURCES})
     target_include_directories(audio${suffix} PUBLIC ${AUDIO_INCLUDE_ROOT})
     target_compile_options(audio${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(audio${suffix} PUBLIC foundation_base${suffix})
+    target_link_libraries(audio${suffix} PUBLIC asset${suffix} foundation_base${suffix})
   endforeach()
   return()
 endif()
@@ -29,5 +31,5 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(audio${suffix} STATIC ${AUDIO_SOURCES})
   target_include_directories(audio${suffix} PUBLIC ${AUDIO_INCLUDE_ROOT})
   target_compile_options(audio${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(audio${suffix} PUBLIC foundation${suffix})
+  target_link_libraries(audio${suffix} PUBLIC asset${suffix} foundation${suffix})
 endforeach()

@@ -4479,6 +4479,8 @@ physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-mesh
 physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:771
 physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:778
 physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:785
+audio::MakeClipFromAsset(const asset::AudioClipView&,StringView,AudioClipPtr*)	function	audio	audio-makeclipfromasset-const-asset-audioclipview-amp-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:24
+audio::LoadAudioClip(asset::ResourceManager&,asset::ResourceId,StringView,AudioClipPtr*)	function	audio	audio-loadaudioclip-asset-resourcemanager-amp-asset-resourceid-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:37
 audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:22
 audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:26
 audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:29
@@ -4535,61 +4537,61 @@ audio::AudioClip::Offset() const	function	audio	audio-audioclip-offset-const	aud
 audio::AudioClip::AudioClip(const AudioClip&)	function	audio	audio-audioclip-audioclip-const-audioclip-amp	audio.md	engine/audio/clip.h:185
 audio::AudioClip::operator=(const AudioClip&)	function	audio	audio-audioclip-operator-eq-const-audioclip-amp	audio.md	engine/audio/clip.h:186
 audio::AudioClip::AudioClip(const ClipDesc&,SharedBytesPtr,usize,StringView)	function	audio	audio-audioclip-audioclip-const-clipdesc-amp-sharedbytesptr-usize-stringview	audio.md	engine/audio/clip.h:189
-audio::kDownmixGain	variable	audio	audio-kdownmixgain	audio.md	engine/audio/convert.h:13
-audio::U8ToF32(u8)	function	audio	audio-u8tof32-u8	audio.md	engine/audio/convert.h:21
-audio::S16ToF32(i16)	function	audio	audio-s16tof32-i16	audio.md	engine/audio/convert.h:23
-audio::S24ToF32(i32)	function	audio	audio-s24tof32-i32	audio.md	engine/audio/convert.h:25
-audio::S32ToF32(i32)	function	audio	audio-s32tof32-i32	audio.md	engine/audio/convert.h:27
-audio::F32ToU8(f32)	function	audio	audio-f32tou8-f32	audio.md	engine/audio/convert.h:35
-audio::F32ToS16(f32)	function	audio	audio-f32tos16-f32	audio.md	engine/audio/convert.h:37
-audio::F32ToS24(f32)	function	audio	audio-f32tos24-f32	audio.md	engine/audio/convert.h:39
-audio::F32ToS32(f32)	function	audio	audio-f32tos32-f32	audio.md	engine/audio/convert.h:41
-audio::ConvertToF32(SampleFormat,ByteSpan,Span<f32>)	function	audio	audio-converttof32-sampleformat-bytespan-span-lt-f32-gt	audio.md	engine/audio/convert.h:52
-audio::ConvertFromF32(SampleFormat,Span<const f32>,MutableByteSpan)	function	audio	audio-convertfromf32-sampleformat-span-lt-const-f32-gt-mutablebytespan	audio.md	engine/audio/convert.h:63
-audio::Interleave(Span<const f32>,Span<f32>,u32)	function	audio	audio-interleave-span-lt-const-f32-gt-span-lt-f32-gt-u32	audio.md	engine/audio/convert.h:74
-audio::Deinterleave(Span<const f32>,Span<f32>,u32)	function	audio	audio-deinterleave-span-lt-const-f32-gt-span-lt-f32-gt-u32	audio.md	engine/audio/convert.h:85
-audio::ChannelMatrix	struct	audio	audio-channelmatrix	audio.md	engine/audio/convert.h:90
-audio::ChannelMatrix::inputs	variable	audio	audio-channelmatrix-inputs	audio.md	engine/audio/convert.h:93
-audio::ChannelMatrix::outputs	variable	audio	audio-channelmatrix-outputs	audio.md	engine/audio/convert.h:95
-audio::ChannelMatrix::gain	variable	audio	audio-channelmatrix-gain	audio.md	engine/audio/convert.h:97
-audio::BuildChannelMatrix(ChannelLayout,ChannelLayout)	function	audio	audio-buildchannelmatrix-channellayout-channellayout	audio.md	engine/audio/convert.h:112
-audio::ApplyChannelMatrix(const ChannelMatrix&,Span<const f32>,Span<f32>,usize)	function	audio	audio-applychannelmatrix-const-channelmatrix-amp-span-lt-const-f32-gt-span-lt-f32-gt-usize	audio.md	engine/audio/convert.h:124
-audio::kMinSampleRate	variable	audio	audio-kminsamplerate	audio.md	engine/audio/format.h:10
-audio::kMaxSampleRate	variable	audio	audio-kmaxsamplerate	audio.md	engine/audio/format.h:12
-audio::kMaxChannels	variable	audio	audio-kmaxchannels	audio.md	engine/audio/format.h:14
-audio::SampleFormat	enum	audio	audio-sampleformat	audio.md	engine/audio/format.h:19
-audio::SampleFormat::U8	enumerator	audio	audio-sampleformat-u8	audio.md	engine/audio/format.h:22
-audio::SampleFormat::S16	enumerator	audio	audio-sampleformat-s16	audio.md	engine/audio/format.h:24
-audio::SampleFormat::S24	enumerator	audio	audio-sampleformat-s24	audio.md	engine/audio/format.h:26
-audio::SampleFormat::S32	enumerator	audio	audio-sampleformat-s32	audio.md	engine/audio/format.h:28
-audio::SampleFormat::F32	enumerator	audio	audio-sampleformat-f32	audio.md	engine/audio/format.h:30
-audio::Speaker	enum	audio	audio-speaker	audio.md	engine/audio/format.h:36
-audio::Speaker::FrontLeft	enumerator	audio	audio-speaker-frontleft	audio.md	engine/audio/format.h:39
-audio::Speaker::FrontRight	enumerator	audio	audio-speaker-frontright	audio.md	engine/audio/format.h:41
-audio::Speaker::FrontCenter	enumerator	audio	audio-speaker-frontcenter	audio.md	engine/audio/format.h:43
-audio::Speaker::Lfe	enumerator	audio	audio-speaker-lfe	audio.md	engine/audio/format.h:45
-audio::Speaker::BackLeft	enumerator	audio	audio-speaker-backleft	audio.md	engine/audio/format.h:47
-audio::Speaker::BackRight	enumerator	audio	audio-speaker-backright	audio.md	engine/audio/format.h:49
-audio::Speaker::SideLeft	enumerator	audio	audio-speaker-sideleft	audio.md	engine/audio/format.h:51
-audio::Speaker::SideRight	enumerator	audio	audio-speaker-sideright	audio.md	engine/audio/format.h:53
-audio::ChannelLayout	enum	audio	audio-channellayout	audio.md	engine/audio/format.h:59
-audio::ChannelLayout::Mono	enumerator	audio	audio-channellayout-mono	audio.md	engine/audio/format.h:62
-audio::ChannelLayout::Stereo	enumerator	audio	audio-channellayout-stereo	audio.md	engine/audio/format.h:64
-audio::ChannelLayout::Quad	enumerator	audio	audio-channellayout-quad	audio.md	engine/audio/format.h:66
-audio::ChannelLayout::Surround51	enumerator	audio	audio-channellayout-surround51	audio.md	engine/audio/format.h:68
-audio::ChannelLayout::Surround71	enumerator	audio	audio-channellayout-surround71	audio.md	engine/audio/format.h:70
-audio::AudioFormat	struct	audio	audio-audioformat	audio.md	engine/audio/format.h:76
-audio::AudioFormat::sample_rate	variable	audio	audio-audioformat-sample-rate	audio.md	engine/audio/format.h:79
-audio::AudioFormat::layout	variable	audio	audio-audioformat-layout	audio.md	engine/audio/format.h:81
-audio::AudioFormat::format	variable	audio	audio-audioformat-format	audio.md	engine/audio/format.h:83
-audio::BytesPerSample(SampleFormat)	function	audio	audio-bytespersample-sampleformat	audio.md	engine/audio/format.h:91
-audio::ChannelCount(ChannelLayout)	function	audio	audio-channelcount-channellayout	audio.md	engine/audio/format.h:98
-audio::SpeakerOf(ChannelLayout,u32)	function	audio	audio-speakerof-channellayout-u32	audio.md	engine/audio/format.h:107
-audio::SpeakerName(Speaker)	function	audio	audio-speakername-speaker	audio.md	engine/audio/format.h:115
-audio::ChannelName(ChannelLayout,u32)	function	audio	audio-channelname-channellayout-u32	audio.md	engine/audio/format.h:125
-audio::LayoutName(ChannelLayout)	function	audio	audio-layoutname-channellayout	audio.md	engine/audio/format.h:133
-audio::FrameBytes(const AudioFormat&)	function	audio	audio-framebytes-const-audioformat-amp	audio.md	engine/audio/format.h:140
-audio::IsValid(const AudioFormat&)	function	audio	audio-isvalid-const-audioformat-amp	audio.md	engine/audio/format.h:148
+audio::kDownmixGain	variable	audio	audio-kdownmixgain	audio.md	engine/audio/convert.h:14
+audio::U8ToF32(u8)	function	audio	audio-u8tof32-u8	audio.md	engine/audio/convert.h:22
+audio::S16ToF32(i16)	function	audio	audio-s16tof32-i16	audio.md	engine/audio/convert.h:24
+audio::S24ToF32(i32)	function	audio	audio-s24tof32-i32	audio.md	engine/audio/convert.h:26
+audio::S32ToF32(i32)	function	audio	audio-s32tof32-i32	audio.md	engine/audio/convert.h:28
+audio::F32ToU8(f32)	function	audio	audio-f32tou8-f32	audio.md	engine/audio/convert.h:37
+audio::F32ToS16(f32)	function	audio	audio-f32tos16-f32	audio.md	engine/audio/convert.h:39
+audio::F32ToS24(f32)	function	audio	audio-f32tos24-f32	audio.md	engine/audio/convert.h:41
+audio::F32ToS32(f32)	function	audio	audio-f32tos32-f32	audio.md	engine/audio/convert.h:43
+audio::ConvertToF32(SampleFormat,ByteSpan,Span<f32>)	function	audio	audio-converttof32-sampleformat-bytespan-span-lt-f32-gt	audio.md	engine/audio/convert.h:54
+audio::ConvertFromF32(SampleFormat,Span<const f32>,MutableByteSpan)	function	audio	audio-convertfromf32-sampleformat-span-lt-const-f32-gt-mutablebytespan	audio.md	engine/audio/convert.h:65
+audio::Interleave(Span<const f32>,Span<f32>,u32)	function	audio	audio-interleave-span-lt-const-f32-gt-span-lt-f32-gt-u32	audio.md	engine/audio/convert.h:76
+audio::Deinterleave(Span<const f32>,Span<f32>,u32)	function	audio	audio-deinterleave-span-lt-const-f32-gt-span-lt-f32-gt-u32	audio.md	engine/audio/convert.h:87
+audio::ChannelMatrix	struct	audio	audio-channelmatrix	audio.md	engine/audio/convert.h:92
+audio::ChannelMatrix::inputs	variable	audio	audio-channelmatrix-inputs	audio.md	engine/audio/convert.h:95
+audio::ChannelMatrix::outputs	variable	audio	audio-channelmatrix-outputs	audio.md	engine/audio/convert.h:97
+audio::ChannelMatrix::gain	variable	audio	audio-channelmatrix-gain	audio.md	engine/audio/convert.h:99
+audio::BuildChannelMatrix(ChannelLayout,ChannelLayout)	function	audio	audio-buildchannelmatrix-channellayout-channellayout	audio.md	engine/audio/convert.h:115
+audio::ApplyChannelMatrix(const ChannelMatrix&,Span<const f32>,Span<f32>,usize)	function	audio	audio-applychannelmatrix-const-channelmatrix-amp-span-lt-const-f32-gt-span-lt-f32-gt-usize	audio.md	engine/audio/convert.h:127
+audio::kMinSampleRate	variable	audio	audio-kminsamplerate	audio.md	engine/audio/format.h:11
+audio::kMaxSampleRate	variable	audio	audio-kmaxsamplerate	audio.md	engine/audio/format.h:13
+audio::kMaxChannels	variable	audio	audio-kmaxchannels	audio.md	engine/audio/format.h:15
+audio::SampleFormat	enum	audio	audio-sampleformat	audio.md	engine/audio/format.h:20
+audio::SampleFormat::U8	enumerator	audio	audio-sampleformat-u8	audio.md	engine/audio/format.h:23
+audio::SampleFormat::S16	enumerator	audio	audio-sampleformat-s16	audio.md	engine/audio/format.h:25
+audio::SampleFormat::S24	enumerator	audio	audio-sampleformat-s24	audio.md	engine/audio/format.h:27
+audio::SampleFormat::S32	enumerator	audio	audio-sampleformat-s32	audio.md	engine/audio/format.h:29
+audio::SampleFormat::F32	enumerator	audio	audio-sampleformat-f32	audio.md	engine/audio/format.h:31
+audio::Speaker	enum	audio	audio-speaker	audio.md	engine/audio/format.h:37
+audio::Speaker::FrontLeft	enumerator	audio	audio-speaker-frontleft	audio.md	engine/audio/format.h:40
+audio::Speaker::FrontRight	enumerator	audio	audio-speaker-frontright	audio.md	engine/audio/format.h:42
+audio::Speaker::FrontCenter	enumerator	audio	audio-speaker-frontcenter	audio.md	engine/audio/format.h:44
+audio::Speaker::Lfe	enumerator	audio	audio-speaker-lfe	audio.md	engine/audio/format.h:46
+audio::Speaker::BackLeft	enumerator	audio	audio-speaker-backleft	audio.md	engine/audio/format.h:48
+audio::Speaker::BackRight	enumerator	audio	audio-speaker-backright	audio.md	engine/audio/format.h:50
+audio::Speaker::SideLeft	enumerator	audio	audio-speaker-sideleft	audio.md	engine/audio/format.h:52
+audio::Speaker::SideRight	enumerator	audio	audio-speaker-sideright	audio.md	engine/audio/format.h:54
+audio::ChannelLayout	enum	audio	audio-channellayout	audio.md	engine/audio/format.h:60
+audio::ChannelLayout::Mono	enumerator	audio	audio-channellayout-mono	audio.md	engine/audio/format.h:63
+audio::ChannelLayout::Stereo	enumerator	audio	audio-channellayout-stereo	audio.md	engine/audio/format.h:65
+audio::ChannelLayout::Quad	enumerator	audio	audio-channellayout-quad	audio.md	engine/audio/format.h:67
+audio::ChannelLayout::Surround51	enumerator	audio	audio-channellayout-surround51	audio.md	engine/audio/format.h:69
+audio::ChannelLayout::Surround71	enumerator	audio	audio-channellayout-surround71	audio.md	engine/audio/format.h:71
+audio::AudioFormat	struct	audio	audio-audioformat	audio.md	engine/audio/format.h:77
+audio::AudioFormat::sample_rate	variable	audio	audio-audioformat-sample-rate	audio.md	engine/audio/format.h:80
+audio::AudioFormat::layout	variable	audio	audio-audioformat-layout	audio.md	engine/audio/format.h:82
+audio::AudioFormat::format	variable	audio	audio-audioformat-format	audio.md	engine/audio/format.h:84
+audio::BytesPerSample(SampleFormat)	function	audio	audio-bytespersample-sampleformat	audio.md	engine/audio/format.h:92
+audio::ChannelCount(ChannelLayout)	function	audio	audio-channelcount-channellayout	audio.md	engine/audio/format.h:99
+audio::SpeakerOf(ChannelLayout,u32)	function	audio	audio-speakerof-channellayout-u32	audio.md	engine/audio/format.h:108
+audio::SpeakerName(Speaker)	function	audio	audio-speakername-speaker	audio.md	engine/audio/format.h:116
+audio::ChannelName(ChannelLayout,u32)	function	audio	audio-channelname-channellayout-u32	audio.md	engine/audio/format.h:126
+audio::LayoutName(ChannelLayout)	function	audio	audio-layoutname-channellayout	audio.md	engine/audio/format.h:134
+audio::FrameBytes(const AudioFormat&)	function	audio	audio-framebytes-const-audioformat-amp	audio.md	engine/audio/format.h:141
+audio::IsValid(const AudioFormat&)	function	audio	audio-isvalid-const-audioformat-amp	audio.md	engine/audio/format.h:150
 audio::RenderTolerance	struct	audio	audio-rendertolerance	audio.md	engine/audio/render_compare.h:18
 audio::RenderTolerance::max_abs_error	variable	audio	audio-rendertolerance-max-abs-error	audio.md	engine/audio/render_compare.h:21
 audio::RenderTolerance::rms_error_db	variable	audio	audio-rendertolerance-rms-error-db	audio.md	engine/audio/render_compare.h:23
@@ -4609,6 +4611,53 @@ audio::MeasureBlock(Span<const f32>)	function	audio	audio-measureblock-span-lt-c
 audio::Summarize(Span<const f32>,usize,usize)	function	audio	audio-summarize-span-lt-const-f32-gt-usize-usize	audio.md	engine/audio/render_compare.h:85
 audio::CompareSamples(Span<const f32>,Span<const f32>,const RenderTolerance&)	function	audio	audio-comparesamples-span-lt-const-f32-gt-span-lt-const-f32-gt-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:96
 audio::CompareSummaries(const RenderSummary&,const RenderSummary&,const RenderTolerance&)	function	audio	audio-comparesummaries-const-rendersummary-amp-const-rendersummary-amp-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:107
+audio::WavStatus	enum	audio	audio-wavstatus	audio.md	engine/audio/wav.h:18
+audio::WavStatus::Ok	enumerator	audio	audio-wavstatus-ok	audio.md	engine/audio/wav.h:21
+audio::WavStatus::TooShort	enumerator	audio	audio-wavstatus-tooshort	audio.md	engine/audio/wav.h:23
+audio::WavStatus::NotRiff	enumerator	audio	audio-wavstatus-notriff	audio.md	engine/audio/wav.h:25
+audio::WavStatus::NotWave	enumerator	audio	audio-wavstatus-notwave	audio.md	engine/audio/wav.h:27
+audio::WavStatus::NoFmt	enumerator	audio	audio-wavstatus-nofmt	audio.md	engine/audio/wav.h:29
+audio::WavStatus::NoData	enumerator	audio	audio-wavstatus-nodata	audio.md	engine/audio/wav.h:31
+audio::WavStatus::BadFmt	enumerator	audio	audio-wavstatus-badfmt	audio.md	engine/audio/wav.h:33
+audio::WavStatus::Unsupported	enumerator	audio	audio-wavstatus-unsupported	audio.md	engine/audio/wav.h:35
+audio::WavStatus::BadChunk	enumerator	audio	audio-wavstatus-badchunk	audio.md	engine/audio/wav.h:37
+audio::WavStatus::BadFrameCount	enumerator	audio	audio-wavstatus-badframecount	audio.md	engine/audio/wav.h:39
+audio::WavStatus::BadSamples	enumerator	audio	audio-wavstatus-badsamples	audio.md	engine/audio/wav.h:41
+audio::WavStatus::OutOfMemory	enumerator	audio	audio-wavstatus-outofmemory	audio.md	engine/audio/wav.h:43
+audio::WavEncoding	enum	audio	audio-wavencoding	audio.md	engine/audio/wav.h:49
+audio::WavEncoding::U8	enumerator	audio	audio-wavencoding-u8	audio.md	engine/audio/wav.h:52
+audio::WavEncoding::S16	enumerator	audio	audio-wavencoding-s16	audio.md	engine/audio/wav.h:54
+audio::WavEncoding::S24	enumerator	audio	audio-wavencoding-s24	audio.md	engine/audio/wav.h:56
+audio::WavEncoding::S32	enumerator	audio	audio-wavencoding-s32	audio.md	engine/audio/wav.h:58
+audio::WavEncoding::F32	enumerator	audio	audio-wavencoding-f32	audio.md	engine/audio/wav.h:60
+audio::WavEncoding::F64	enumerator	audio	audio-wavencoding-f64	audio.md	engine/audio/wav.h:62
+audio::WavCue	struct	audio	audio-wavcue	audio.md	engine/audio/wav.h:68
+audio::WavCue::id	variable	audio	audio-wavcue-id	audio.md	engine/audio/wav.h:71
+audio::WavCue::frame	variable	audio	audio-wavcue-frame	audio.md	engine/audio/wav.h:73
+audio::kMaxWavCues	variable	audio	audio-kmaxwavcues	audio.md	engine/audio/wav.h:77
+audio::kMaxWavFrames	variable	audio	audio-kmaxwavframes	audio.md	engine/audio/wav.h:79
+audio::WavInfo	struct	audio	audio-wavinfo	audio.md	engine/audio/wav.h:85
+audio::WavInfo::encoding	variable	audio	audio-wavinfo-encoding	audio.md	engine/audio/wav.h:88
+audio::WavInfo::format	variable	audio	audio-wavinfo-format	audio.md	engine/audio/wav.h:90
+audio::WavInfo::channel_mask	variable	audio	audio-wavinfo-channel-mask	audio.md	engine/audio/wav.h:92
+audio::WavInfo::data_offset	variable	audio	audio-wavinfo-data-offset	audio.md	engine/audio/wav.h:94
+audio::WavInfo::data_bytes	variable	audio	audio-wavinfo-data-bytes	audio.md	engine/audio/wav.h:96
+audio::WavInfo::frame_bytes	variable	audio	audio-wavinfo-frame-bytes	audio.md	engine/audio/wav.h:98
+audio::WavInfo::frame_count	variable	audio	audio-wavinfo-frame-count	audio.md	engine/audio/wav.h:100
+audio::WavInfo::truncated	variable	audio	audio-wavinfo-truncated	audio.md	engine/audio/wav.h:102
+audio::WavInfo::has_loop	variable	audio	audio-wavinfo-has-loop	audio.md	engine/audio/wav.h:104
+audio::WavInfo::loop_start	variable	audio	audio-wavinfo-loop-start	audio.md	engine/audio/wav.h:106
+audio::WavInfo::loop_end	variable	audio	audio-wavinfo-loop-end	audio.md	engine/audio/wav.h:108
+audio::WavInfo::cues	variable	audio	audio-wavinfo-cues	audio.md	engine/audio/wav.h:110
+audio::WavInfo::ignored_metadata	variable	audio	audio-wavinfo-ignored-metadata	audio.md	engine/audio/wav.h:112
+audio::ParseWav(ByteSpan,WavInfo*)	function	audio	audio-parsewav-bytespan-wavinfo-star	audio.md	engine/audio/wav.h:124
+audio::DecodeWav(ByteSpan,StringView,AudioClipPtr*,WavInfo*)	function	audio	audio-decodewav-bytespan-stringview-audioclipptr-star-wavinfo-star	audio.md	engine/audio/wav.h:136
+audio::WavReader	class	audio	audio-wavreader	audio.md	engine/audio/wav.h:142
+audio::WavReader::Open(ByteSpan)	function	audio	audio-wavreader-open-bytespan	audio.md	engine/audio/wav.h:150
+audio::WavReader::Info() const	function	audio	audio-wavreader-info-const	audio.md	engine/audio/wav.h:153
+audio::WavReader::Position() const	function	audio	audio-wavreader-position-const	audio.md	engine/audio/wav.h:156
+audio::WavReader::Seek(u64)	function	audio	audio-wavreader-seek-u64	audio.md	engine/audio/wav.h:162
+audio::WavReader::ReadFrames(Span<f32>,usize)	function	audio	audio-wavreader-readframes-span-lt-f32-gt-usize	audio.md	engine/audio/wav.h:170
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20
@@ -5406,6 +5455,30 @@ asset::AsyncLoader::Update(u64,u64)	function	asset	asset-asyncloader-update-u64-
 asset::AsyncLoader::Wait(const LoadTicket&)	function	asset	asset-asyncloader-wait-const-loadticket-amp	asset.md	engine/asset/async_loader.h:224
 asset::AsyncLoader::Stats() const	function	asset	asset-asyncloader-stats-const	asset.md	engine/asset/async_loader.h:226
 asset::AsyncLoader::RunRead(LoadRequest&)	function	asset	asset-asyncloader-runread-loadrequest-amp	asset.md	engine/asset/async_loader.h:229
+asset::kAudioClipHeaderBytes	variable	asset	asset-kaudioclipheaderbytes	asset.md	engine/asset/audio_clip.h:30
+asset::kMaxAudioClipFrames	variable	asset	asset-kmaxaudioclipframes	asset.md	engine/asset/audio_clip.h:32
+asset::AudioClipSection	enum	asset	asset-audioclipsection	asset.md	engine/asset/audio_clip.h:35
+asset::kAudioClipSectionHeader	enumerator	asset	asset-kaudioclipsectionheader	asset.md	engine/asset/audio_clip.h:37
+asset::kAudioClipSectionSamples	enumerator	asset	asset-kaudioclipsectionsamples	asset.md	engine/asset/audio_clip.h:38
+asset::AudioClipStorage	enum	asset	asset-audioclipstorage	asset.md	engine/asset/audio_clip.h:42
+asset::AudioClipStorage::F32	enumerator	asset	asset-audioclipstorage-f32	asset.md	engine/asset/audio_clip.h:44
+asset::AudioClipStorage::S16	enumerator	asset	asset-audioclipstorage-s16	asset.md	engine/asset/audio_clip.h:45
+asset::AudioClipHeader	struct	asset	asset-audioclipheader	asset.md	engine/asset/audio_clip.h:51
+asset::AudioClipHeader::sample_rate	variable	asset	asset-audioclipheader-sample-rate	asset.md	engine/asset/audio_clip.h:53
+asset::AudioClipHeader::channels	variable	asset	asset-audioclipheader-channels	asset.md	engine/asset/audio_clip.h:54
+asset::AudioClipHeader::storage	variable	asset	asset-audioclipheader-storage	asset.md	engine/asset/audio_clip.h:55
+asset::AudioClipHeader::frames	variable	asset	asset-audioclipheader-frames	asset.md	engine/asset/audio_clip.h:56
+asset::AudioClipHeader::loop_start	variable	asset	asset-audioclipheader-loop-start	asset.md	engine/asset/audio_clip.h:57
+asset::AudioClipHeader::loop_end	variable	asset	asset-audioclipheader-loop-end	asset.md	engine/asset/audio_clip.h:58
+asset::BuildAudioClipBlob(const TypeRegistry&,ResourceId,const AudioClipHeader&,ByteSpan,Vector<byte>*,u32)	function	asset	asset-buildaudioclipblob-const-typeregistry-amp-resourceid-const-audioclipheader-amp-bytespan-vector-lt-byte-gt-star-u32	asset.md	engine/asset/audio_clip.h:71
+asset::AudioClipView	class	asset	asset-audioclipview	asset.md	engine/asset/audio_clip.h:78
+asset::AudioClipView::AudioClipView()	function	asset	asset-audioclipview-audioclipview	asset.md	engine/asset/audio_clip.h:82
+asset::AudioClipView::Open(const SharedBytesPtr&,const TypeRegistry&)	function	asset	asset-audioclipview-open-const-sharedbytesptr-amp-const-typeregistry-amp	asset.md	engine/asset/audio_clip.h:91
+asset::AudioClipView::Header() const	function	asset	asset-audioclipview-header-const	asset.md	engine/asset/audio_clip.h:95
+asset::AudioClipView::Id() const	function	asset	asset-audioclipview-id-const	asset.md	engine/asset/audio_clip.h:99
+asset::AudioClipView::Samples() const	function	asset	asset-audioclipview-samples-const	asset.md	engine/asset/audio_clip.h:104
+asset::AudioClipView::Bytes() const	function	asset	asset-audioclipview-bytes-const	asset.md	engine/asset/audio_clip.h:109
+asset::AudioClipView::SamplesOffset() const	function	asset	asset-audioclipview-samplesoffset-const	asset.md	engine/asset/audio_clip.h:113
 asset::BackendCapability	enum	asset	asset-backendcapability	asset.md	engine/asset/backend.h:23
 asset::kBackendRanged	enumerator	asset	asset-kbackendranged	asset.md	engine/asset/backend.h:25
 asset::kBackendAsync	enumerator	asset	asset-kbackendasync	asset.md	engine/asset/backend.h:26
@@ -5635,26 +5708,29 @@ asset::ContentHasher::Update(ByteSpan)	function	asset	asset-contenthasher-update
 asset::ContentHasher::Finish()	function	asset	asset-contenthasher-finish	asset.md	engine/asset/content_hash.h:55
 asset::ContentHasher::Reset()	function	asset	asset-contenthasher-reset	asset.md	engine/asset/content_hash.h:59
 asset::HashBytes(ByteSpan)	function	asset	asset-hashbytes-bytespan	asset.md	engine/asset/content_hash.h:74
-asset::ResourceTraits<SkeletonView>	struct	asset	asset-resourcetraits-lt-skeletonview-gt	asset.md	engine/asset/cpu_loaders.h:20
-asset::ResourceTraits<SkeletonView>::kType	variable	asset	asset-resourcetraits-lt-skeletonview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:22
-asset::ResourceTraits<SkeletonView>::kKind	variable	asset	asset-resourcetraits-lt-skeletonview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:23
-asset::ResourceTraits<ClipView>	struct	asset	asset-resourcetraits-lt-clipview-gt	asset.md	engine/asset/cpu_loaders.h:28
-asset::ResourceTraits<ClipView>::kType	variable	asset	asset-resourcetraits-lt-clipview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:30
-asset::ResourceTraits<ClipView>::kKind	variable	asset	asset-resourcetraits-lt-clipview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:31
-asset::ResourceTraits<MeshView>	struct	asset	asset-resourcetraits-lt-meshview-gt	asset.md	engine/asset/cpu_loaders.h:36
-asset::ResourceTraits<MeshView>::kType	variable	asset	asset-resourcetraits-lt-meshview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:38
-asset::ResourceTraits<MeshView>::kKind	variable	asset	asset-resourcetraits-lt-meshview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:39
-asset::ResourceTraits<TextureView>	struct	asset	asset-resourcetraits-lt-textureview-gt	asset.md	engine/asset/cpu_loaders.h:44
-asset::ResourceTraits<TextureView>::kType	variable	asset	asset-resourcetraits-lt-textureview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:46
-asset::ResourceTraits<TextureView>::kKind	variable	asset	asset-resourcetraits-lt-textureview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:47
-asset::ResourceTraits<MaterialAssetData>	struct	asset	asset-resourcetraits-lt-materialassetdata-gt	asset.md	engine/asset/cpu_loaders.h:52
-asset::ResourceTraits<MaterialAssetData>::kType	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-ktype	asset.md	engine/asset/cpu_loaders.h:54
-asset::ResourceTraits<MaterialAssetData>::kKind	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-kkind	asset.md	engine/asset/cpu_loaders.h:55
-asset::ResourceTraits<LevelSummary>	struct	asset	asset-resourcetraits-lt-levelsummary-gt	asset.md	engine/asset/cpu_loaders.h:60
-asset::ResourceTraits<LevelSummary>::kType	variable	asset	asset-resourcetraits-lt-levelsummary-gt-ktype	asset.md	engine/asset/cpu_loaders.h:62
-asset::ResourceTraits<LevelSummary>::kKind	variable	asset	asset-resourcetraits-lt-levelsummary-gt-kkind	asset.md	engine/asset/cpu_loaders.h:63
-asset::RegisterCpuLoaders(ResourceManager*)	function	asset	asset-registercpuloaders-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:72
-asset::RegisterSkeletonLoader(ResourceManager*)	function	asset	asset-registerskeletonloader-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:79
+asset::ResourceTraits<SkeletonView>	struct	asset	asset-resourcetraits-lt-skeletonview-gt	asset.md	engine/asset/cpu_loaders.h:21
+asset::ResourceTraits<SkeletonView>::kType	variable	asset	asset-resourcetraits-lt-skeletonview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:23
+asset::ResourceTraits<SkeletonView>::kKind	variable	asset	asset-resourcetraits-lt-skeletonview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:24
+asset::ResourceTraits<ClipView>	struct	asset	asset-resourcetraits-lt-clipview-gt	asset.md	engine/asset/cpu_loaders.h:29
+asset::ResourceTraits<ClipView>::kType	variable	asset	asset-resourcetraits-lt-clipview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:31
+asset::ResourceTraits<ClipView>::kKind	variable	asset	asset-resourcetraits-lt-clipview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:32
+asset::ResourceTraits<MeshView>	struct	asset	asset-resourcetraits-lt-meshview-gt	asset.md	engine/asset/cpu_loaders.h:37
+asset::ResourceTraits<MeshView>::kType	variable	asset	asset-resourcetraits-lt-meshview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:39
+asset::ResourceTraits<MeshView>::kKind	variable	asset	asset-resourcetraits-lt-meshview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:40
+asset::ResourceTraits<TextureView>	struct	asset	asset-resourcetraits-lt-textureview-gt	asset.md	engine/asset/cpu_loaders.h:45
+asset::ResourceTraits<TextureView>::kType	variable	asset	asset-resourcetraits-lt-textureview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:47
+asset::ResourceTraits<TextureView>::kKind	variable	asset	asset-resourcetraits-lt-textureview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:48
+asset::ResourceTraits<MaterialAssetData>	struct	asset	asset-resourcetraits-lt-materialassetdata-gt	asset.md	engine/asset/cpu_loaders.h:53
+asset::ResourceTraits<MaterialAssetData>::kType	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-ktype	asset.md	engine/asset/cpu_loaders.h:55
+asset::ResourceTraits<MaterialAssetData>::kKind	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-kkind	asset.md	engine/asset/cpu_loaders.h:56
+asset::ResourceTraits<AudioClipView>	struct	asset	asset-resourcetraits-lt-audioclipview-gt	asset.md	engine/asset/cpu_loaders.h:61
+asset::ResourceTraits<AudioClipView>::kType	variable	asset	asset-resourcetraits-lt-audioclipview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:63
+asset::ResourceTraits<AudioClipView>::kKind	variable	asset	asset-resourcetraits-lt-audioclipview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:64
+asset::ResourceTraits<LevelSummary>	struct	asset	asset-resourcetraits-lt-levelsummary-gt	asset.md	engine/asset/cpu_loaders.h:69
+asset::ResourceTraits<LevelSummary>::kType	variable	asset	asset-resourcetraits-lt-levelsummary-gt-ktype	asset.md	engine/asset/cpu_loaders.h:71
+asset::ResourceTraits<LevelSummary>::kKind	variable	asset	asset-resourcetraits-lt-levelsummary-gt-kkind	asset.md	engine/asset/cpu_loaders.h:72
+asset::RegisterCpuLoaders(ResourceManager*)	function	asset	asset-registercpuloaders-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:81
+asset::RegisterSkeletonLoader(ResourceManager*)	function	asset	asset-registerskeletonloader-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:88
 asset::FaultOp	enum	asset	asset-faultop	asset.md	engine/asset/faulty_backend.h:14
 asset::FaultOp::Stat	enumerator	asset	asset-faultop-stat	asset.md	engine/asset/faulty_backend.h:16
 asset::FaultOp::Open	enumerator	asset	asset-faultop-open	asset.md	engine/asset/faulty_backend.h:17
@@ -6427,16 +6503,17 @@ asset::types::kAnimation	variable	asset	asset-types-kanimation	asset.md	engine/a
 asset::types::kSkeleton	variable	asset	asset-types-kskeleton	asset.md	engine/asset/resource_type.h:74
 asset::types::kHull	variable	asset	asset-types-khull	asset.md	engine/asset/resource_type.h:76
 asset::types::kMeshCollider	variable	asset	asset-types-kmeshcollider	asset.md	engine/asset/resource_type.h:78
-asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:80
-asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:86
-asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:88
-asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:89
-asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:90
-asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:99
-asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:103
-asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:109
-asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:117
-asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:121
+asset::types::kAudioClip	variable	asset	asset-types-kaudioclip	asset.md	engine/asset/resource_type.h:80
+asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:82
+asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:88
+asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:90
+asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:91
+asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:92
+asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:101
+asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:105
+asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:111
+asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:119
+asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:123
 asset::kMaxSkeletonJoints	variable	asset	asset-kmaxskeletonjoints	asset.md	engine/asset/skeleton.h:34
 asset::kMaxJointNameBytes	variable	asset	asset-kmaxjointnamebytes	asset.md	engine/asset/skeleton.h:36
 asset::kNoParent	variable	asset	asset-knoparent	asset.md	engine/asset/skeleton.h:38

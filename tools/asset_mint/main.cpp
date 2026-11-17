@@ -3,6 +3,7 @@
 //   asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]
 //   asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]
 //   asset_mint mint-hull SOURCE.hull.src OUTPUT.blob [--target=N]
+//   asset_mint mint-audio SOURCE.audio.src OUTPUT.blob [--target=N]
 //   asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]
 //   asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]
 //   asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]
@@ -30,6 +31,7 @@
 #include "material_source.h"
 #include "mesh_source.h"
 #include "project.h"
+#include "audio_source.h"
 #include "hull_source.h"
 #include "mcol_source.h"
 #include "skeleton_source.h"
@@ -57,6 +59,7 @@ int Usage()
         "       asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
         "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-hull SOURCE.hull.src OUTPUT.blob [--target=N]\n"
+        "       asset_mint mint-audio SOURCE.audio.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-mcol SOURCE.mcol.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
         "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
@@ -302,6 +305,81 @@ int MintHullCommand(const Line& line)
         return 1;
     }
     os::Print("minted a hull of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+}
+
+// Mints an audio source and the WAV file it names into a blob (Phase 26 Day 418).
+int MintAudioCommand(const Line& line)
+{
+    static const char* const allowed[] = {"target"};
+    u32 target = 0;
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 1) || !TargetOption(line, &target))
+    {
+        return Usage();
+    }
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
+    io::Path source_path;
+    io::Path output;
+    if (!io::Path::Parse(StringView(in_path, CStrLength(in_path)), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    io::FilePtr in;
+    Vector<u8> text;
+    if (io::File::Open(source_path, io::OpenMode::Read, io::kOpenNone, &in).Failed() ||
+        io::ReadAll(*in, &text, u64{1} << 24).Failed())
+    {
+        os::PrintError("asset_mint: the source file could not be read\n");
+        return 1;
+    }
+    AudioSource source;
+    AudioSourceError error;
+    if (ParseAudioSource(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), &source, &error).Failed())
+    {
+        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        return 1;
+    }
+    io::Path wav_relative;
+    io::Path wav_path;
+    if (!io::Path::Parse(source.wav.View(), io::NativePathStyle(), &wav_relative) ||
+        !source_path.Parent().TryJoin(wav_relative, &wav_path))
+    {
+        os::PrintError("asset_mint: %s: the wav path is not valid\n", in_path);
+        return 1;
+    }
+    io::FilePtr wav_file;
+    Vector<u8> wav;
+    if (io::File::Open(wav_path, io::OpenMode::Read, io::kOpenNone, &wav_file).Failed() ||
+        io::ReadAll(*wav_file, &wav, u64{1} << 30).Failed())
+    {
+        os::PrintError("asset_mint: %s: the wav file could not be read\n", in_path);
+        return 1;
+    }
+    TypeRegistry types;
+    Vector<byte> blob;
+    if (MintAudio(source, ByteSpan(reinterpret_cast<const byte*>(wav.Data()), wav.Size()), types, &blob, &error, target)
+            .Failed())
+    {
+        os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+        return 1;
+    }
+    io::FilePtr file;
+    if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
+    {
+        os::PrintError("asset_mint: the output file could not be created\n");
+        return 1;
+    }
+    const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
+    if (written.Failed() || file->Close().Failed())
+    {
+        file->Close();
+        io::Remove(output);
+        os::PrintError("asset_mint: writing the output failed\n");
+        return 1;
+    }
+    os::Print("minted an audio clip of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -1450,6 +1528,10 @@ int main(int argc, char** argv)
     if (command == StringView("mint-hull"))
     {
         return MintHullCommand(line);
+    }
+    if (command == StringView("mint-audio"))
+    {
+        return MintAudioCommand(line);
     }
     return Usage();
 }

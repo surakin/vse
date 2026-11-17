@@ -10,6 +10,11 @@ Status LoadSkeleton(const LoadContext& context, SkeletonView* out, void*)
     return out->Open(context.Bytes(), context.Types());
 }
 
+Status LoadAudioClip(const LoadContext& context, AudioClipView* out, void*)
+{
+    return out->Open(context.Buffer(), context.Types());
+}
+
 Status LoadClip(const LoadContext& context, ClipView* out, void*)
 {
     ENGINE_TRY(out->Open(context.Bytes(), context.Types()));
@@ -68,6 +73,7 @@ void RegisterSkeletonLoader(ResourceManager* manager)
 void RegisterCpuLoaders(ResourceManager* manager)
 {
     manager->RegisterLoader<SkeletonView>(&LoadSkeleton);
+    manager->RegisterLoader<AudioClipView>(&LoadAudioClip);
     manager->RegisterLoader<ClipView>(&LoadClip);
     manager->RegisterLoader<MeshView>(&LoadMesh);
     manager->RegisterLoader<TextureView>(&LoadTexture);

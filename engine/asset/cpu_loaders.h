@@ -3,6 +3,7 @@
 //! The loaders of the resource types that need no GPU, and the traits that tie their C++ types to resource types. Phase
 //! 22 Day 328. Day 329 registers GPU-backed loaders for meshes, textures and materials over these.
 
+#include "asset/audio_clip.h"
 #include "asset/clip.h"
 #include "asset/level.h"
 #include "asset/material.h"
@@ -54,6 +55,14 @@ template <> struct ResourceTraits<MaterialAssetData>
     static constexpr ResourceType kType = types::kMaterial;                          ///< `MATL`.
     static constexpr u32 kKind = ResourceType::FromChars('d', 'M', 'A', 'T').Tag();  ///< The code of the C++ type.
 };
+/// An audio clip is loaded as an [[asset::AudioClipView]] over the manager's buffer.
+///
+/// - Thread-safety: thread-safe, a compile-time constant.
+template <> struct ResourceTraits<AudioClipView>
+{
+    static constexpr ResourceType kType = types::kAudioClip;                         ///< `ACLP`.
+    static constexpr u32 kKind = ResourceType::FromChars('v', 'A', 'C', 'L').Tag();  ///< The code of the C++ type.
+};
 /// A level is loaded as its summary (counts and the resources it depends on); spawning it reads the records.
 ///
 /// - Thread-safety: thread-safe, a compile-time constant.
@@ -63,9 +72,9 @@ template <> struct ResourceTraits<LevelSummary>
     static constexpr u32 kKind = ResourceType::FromChars('s', 'L', 'E', 'V').Tag();  ///< The code of the C++ type.
 };
 
-/// Registers the loaders of skeletons, clips, meshes, textures, materials and levels with `manager`. A skinned mesh is
-/// published only when its skeleton is loaded and its recorded hash and joint count match, and a clip only when its
-/// skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
+/// Registers the loaders of audio clips, skeletons, clips, meshes, textures, materials and levels with `manager`. A
+/// skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match, and a clip
+/// only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
 ///
 /// - Param manager: the manager.
 /// - Ownership: borrows `manager` for the call only; nothing is retained.

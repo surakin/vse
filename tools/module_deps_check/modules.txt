@@ -169,6 +169,7 @@ allow asset_import animation   # Phase 24 Day 364: the level of a glTF scene reg
 module engine/physics/ physics 13
 # 13 audio (Phase 26 Day 415): the mixer, voices, buses, devices and the render checks; the foundation (below) only for now; no renderer, RHI, physics or platform header (the occlusion bridge is the separate audio_physics target above)
 module engine/audio/ audio 13
+allow audio asset   # Phase 26 Day 418: the minted clip (asset::AudioClipView, the resource manager) is read by the audio module; the one same-layer edge of the spec
 module engine/animation/ animation 13
 allow animation asset
 module engine/engine_c/ engine_c 14

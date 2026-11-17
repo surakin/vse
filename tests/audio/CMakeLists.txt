@@ -7,6 +7,9 @@ set(AUDIO_TEST_SOURCES
   format_test.cpp  # Day 416
   convert_test.cpp  # Day 416
   clip_test.cpp  # Day 416
+  wav_test.cpp  # Day 417
+  aclip_test.cpp  # Day 418
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 
 find_package(Threads REQUIRED)
@@ -15,6 +18,7 @@ include(Catch)
 function(engine_add_audio_tests target audio_lib suffix label)
   add_executable(${target} ${AUDIO_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${audio_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

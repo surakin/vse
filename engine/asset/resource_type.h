@@ -76,6 +76,8 @@ inline constexpr ResourceType kSkeleton = ResourceType::FromChars('S', 'K', 'E',
 inline constexpr ResourceType kHull = ResourceType::FromChars('H', 'U', 'L', 'L');
 /// A triangle mesh for static physics colliders (Phase 25 Day 394).
 inline constexpr ResourceType kMeshCollider = ResourceType::FromChars('M', 'C', 'O', 'L');
+/// A decoded audio clip: interleaved samples with a rate, a layout and loop points (Phase 26 Day 418).
+inline constexpr ResourceType kAudioClip = ResourceType::FromChars('A', 'C', 'L', 'P');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).
 inline constexpr ResourceType kNames = ResourceType::FromChars('N', 'A', 'M', 'E');
 }  // namespace types

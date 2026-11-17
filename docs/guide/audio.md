@@ -1,6 +1,6 @@
 # Audio: repeatable on one build, equal within a tolerance across machines
 
-Status: in progress (Phase 26). Built: the module and the render checks (Day 415), the formats, conversions and the clip (Day 416). Next: the WAV parser (Day 417).
+Status: in progress (Phase 26). Built: the module and the render checks (Day 415), the formats, conversions and the clip (Day 416). the WAV parser (Day 417). minted clips (Day 418). Next: the device interface (Day 419).
 
 **Audience:** engine programmers who write or review audio code, and hosts that compare renders across machines. Read [Math](foundation-math.md) first.
 Design and the experiments behind it: `docs/superpowers/specs/2026-11-17-audio-design.md`.
@@ -68,7 +68,35 @@ converts nothing at play time: a 3-minute stereo 48 kHz clip is 69 MB as `f32` (
 format, frame count, size, 4-byte alignment, loop points and that every sample is finite); `AudioClip::View()` rebuilds it without validation or allocation, so
 a voice that starts allocates nothing for its clip. Creating a clip allocates and scans the samples once; it is not an audio-thread operation.
 
+## WAV files
+
+`audio/wav.h` reads WAV files (the source format of the minter and the tools; the runtime reads minted clips, never WAV). `ParseWav` handles RIFF/WAVE with
+`fmt ` (PCM 8, 16, 24 and 32-bit, IEEE float 32 and 64-bit, and `WAVE_FORMAT_EXTENSIBLE` with its channel mask), `data`, `smpl` (the first loop; the file's end
+point is inclusive, `WavInfo::loop_end` is exclusive) and `cue ` (markers, up to 256); chunks are padded to even sizes, unknown chunks are skipped, and a `data`
+chunk that claims more bytes than the file has (a truncated recording) is read up to the bytes present with `truncated` set. A loop or cue that points outside
+the data is dropped with `ignored_metadata` set, not an error. RF64, other format tags, other bit depths, channel counts without a layout (3, 5, 7) and rates
+outside 8,000 to 384,000 Hz are `Unsupported`.
+
+The input is hostile by rule: every size is compared with the bytes that remain before it is used, counts times sizes are done in 64 bits, the chunk walk always
+advances by at least 8 bytes, the frame count is capped at `kMaxWavFrames`, and nothing aborts on bad bytes (`WavStatus`). `DecodeWav` makes an `AudioClip`
+with the Day 416 conversions (a NaN or infinity in a float file is `BadSamples`); `WavReader` reads frames in order or from a position without allocating, for
+streaming sources (Day 435; it reads from bytes, the `io::File` source arrives with the stream interface). The tests build their files in memory
+(`tests/audio/wav_builder.h`), cut a file at every length and mutate it 6,000 times with a fixed seed.
+
+## Minted clips
+
+The runtime never reads a WAV file: `asset_mint mint-audio SOURCE.audio.src OUTPUT.blob` reads the source (an `id`, the `wav` it names, relative to the source's
+directory, an optional `loop START END` in frames that overrides the file's `smpl` loop, `format f32|s16` (default `f32`) and `normalize on|off` (the peak scaled to
+1.0, default off)) and writes an `ACLP` blob (`asset/audio_clip.h`): a 32-byte header (rate, channels, stored format, frames, loop points) and the interleaved
+samples in a 64-byte-aligned section. The same inputs and tool version give the same bytes. `asset::AudioClipView::Open` validates a blob and refuses a bad one by
+value (counts, limits, section sizes against the bytes, an undefined header field, a bad loop).
+
+`audio::MakeClipFromAsset` makes the clip: an `f32` blob is shared in place (the clip names the blob's buffer by offset, so the mixer reads the loaded bytes
+and the clip outlives the resource manager's handle); an `s16` blob is converted to `f32` once, at load. `audio::LoadAudioClip(manager, id, name, &clip)` goes
+through a manager that has `asset::RegisterCpuLoaders`; a missing or corrupt clip is the manager's named error (`NotFound`, `Corrupt`), never a substitute.
+`mint-project` does not pick `.audio.src` files up yet (a WAV is an input file outside the project's dependency tracking; `KNOWN-ISSUES.md`).
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
-perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) and `clip_test.cpp` (creation, shared bytes, validation).
+perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager).
