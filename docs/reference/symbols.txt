@@ -5113,10 +5113,10 @@ audio::VorbisDecoder::VorbisDecoder(const VorbisDecoder&)	function	audio	audio-v
 audio::VorbisDecoder::operator=(const VorbisDecoder&)	function	audio	audio-vorbisdecoder-operator-eq-const-vorbisdecoder-amp	audio.md	engine/audio/vorbis.h:93
 audio::VorbisDecoder::Open(ByteSpan,const VorbisLimits&,UniquePtr<VorbisDecoder>*)	function	audio	audio-vorbisdecoder-open-bytespan-const-vorbislimits-amp-uniqueptr-lt-vorbisdecoder-gt-star	audio.md	engine/audio/vorbis.h:103
 audio::VorbisDecoder::Info() const	function	audio	audio-vorbisdecoder-info-const	audio.md	engine/audio/vorbis.h:108
-audio::VorbisDecoder::Tags() const	function	audio	audio-vorbisdecoder-tags-const	audio.md	engine/audio/vorbis.h:114
-audio::VorbisDecoder::Position() const	function	audio	audio-vorbisdecoder-position-const	audio.md	engine/audio/vorbis.h:119
-audio::VorbisDecoder::SkippedPackets() const	function	audio	audio-vorbisdecoder-skippedpackets-const	audio.md	engine/audio/vorbis.h:124
-audio::VorbisDecoder::Decode(f32*,u32,u32*)	function	audio	audio-vorbisdecoder-decode-f32-star-u32-u32-star	audio.md	engine/audio/vorbis.h:134
+audio::VorbisDecoder::Tags() const	function	audio	audio-vorbisdecoder-tags-const	audio.md	engine/audio/vorbis.h:115
+audio::VorbisDecoder::Position() const	function	audio	audio-vorbisdecoder-position-const	audio.md	engine/audio/vorbis.h:120
+audio::VorbisDecoder::SkippedPackets() const	function	audio	audio-vorbisdecoder-skippedpackets-const	audio.md	engine/audio/vorbis.h:125
+audio::VorbisDecoder::Decode(f32*,u32,u32*)	function	audio	audio-vorbisdecoder-decode-f32-star-u32-u32-star	audio.md	engine/audio/vorbis.h:135
 audio::WavStatus	enum	audio	audio-wavstatus	audio.md	engine/audio/wav.h:19
 audio::WavStatus::Ok	enumerator	audio	audio-wavstatus-ok	audio.md	engine/audio/wav.h:22
 audio::WavStatus::TooShort	enumerator	audio	audio-wavstatus-tooshort	audio.md	engine/audio/wav.h:24
@@ -5164,15 +5164,15 @@ audio::WavReader::Info() const	function	audio	audio-wavreader-info-const	audio.m
 audio::WavReader::Position() const	function	audio	audio-wavreader-position-const	audio.md	engine/audio/wav.h:161
 audio::WavReader::Seek(u64)	function	audio	audio-wavreader-seek-u64	audio.md	engine/audio/wav.h:167
 audio::WavReader::ReadFrames(Span<f32>,usize)	function	audio	audio-wavreader-readframes-span-lt-f32-gt-usize	audio.md	engine/audio/wav.h:175
-audio_physics::PhysicsOcclusionConfig	struct	audio_physics	audio-physics-physicsocclusionconfig	audio_physics.md	engine/audio_physics/physics_occlusion.h:16
-audio_physics::PhysicsOcclusionConfig::layer_mask	variable	audio_physics	audio-physics-physicsocclusionconfig-layer-mask	audio_physics.md	engine/audio_physics/physics_occlusion.h:19
-audio_physics::PhysicsOcclusionConfig::include_triggers	variable	audio_physics	audio-physics-physicsocclusionconfig-include-triggers	audio_physics.md	engine/audio_physics/physics_occlusion.h:21
-audio_physics::PhysicsOcclusionConfig::absorption_per_metre	variable	audio_physics	audio-physics-physicsocclusionconfig-absorption-per-metre	audio_physics.md	engine/audio_physics/physics_occlusion.h:24
-audio_physics::PhysicsOcclusionConfig::default_thickness	variable	audio_physics	audio-physics-physicsocclusionconfig-default-thickness	audio_physics.md	engine/audio_physics/physics_occlusion.h:27
-audio_physics::PhysicsOcclusionConfig::PhysicsOcclusionConfig()	function	audio_physics	audio-physics-physicsocclusionconfig-physicsocclusionconfig	audio_physics.md	engine/audio_physics/physics_occlusion.h:31
-audio_physics::PhysicsOcclusion	class	audio_physics	audio-physics-physicsocclusion	audio_physics.md	engine/audio_physics/physics_occlusion.h:47
-audio_physics::PhysicsOcclusion::PhysicsOcclusion(const physics::PhysicsWorld*,const PhysicsOcclusionConfig&)	function	audio_physics	audio-physics-physicsocclusion-physicsocclusion-const-physics-physicsworld-star-const-physicsocclusionconfig-amp	audio_physics.md	engine/audio_physics/physics_occlusion.h:56
-audio_physics::PhysicsOcclusion::Occlusion(const Vec3&,const Vec3&,u32*)	function	audio_physics	audio-physics-physicsocclusion-occlusion-const-vec3-amp-const-vec3-amp-u32-star	audio_physics.md	engine/audio_physics/physics_occlusion.h:69
+audio_physics::PhysicsOcclusionConfig	struct	audio_physics	audio-physics-physicsocclusionconfig	audio_physics.md	engine/audio_physics/physics_occlusion.h:17
+audio_physics::PhysicsOcclusionConfig::layer_mask	variable	audio_physics	audio-physics-physicsocclusionconfig-layer-mask	audio_physics.md	engine/audio_physics/physics_occlusion.h:20
+audio_physics::PhysicsOcclusionConfig::include_triggers	variable	audio_physics	audio-physics-physicsocclusionconfig-include-triggers	audio_physics.md	engine/audio_physics/physics_occlusion.h:22
+audio_physics::PhysicsOcclusionConfig::absorption_per_metre	variable	audio_physics	audio-physics-physicsocclusionconfig-absorption-per-metre	audio_physics.md	engine/audio_physics/physics_occlusion.h:25
+audio_physics::PhysicsOcclusionConfig::default_thickness	variable	audio_physics	audio-physics-physicsocclusionconfig-default-thickness	audio_physics.md	engine/audio_physics/physics_occlusion.h:28
+audio_physics::PhysicsOcclusionConfig::PhysicsOcclusionConfig()	function	audio_physics	audio-physics-physicsocclusionconfig-physicsocclusionconfig	audio_physics.md	engine/audio_physics/physics_occlusion.h:32
+audio_physics::PhysicsOcclusion	class	audio_physics	audio-physics-physicsocclusion	audio_physics.md	engine/audio_physics/physics_occlusion.h:48
+audio_physics::PhysicsOcclusion::PhysicsOcclusion(const physics::PhysicsWorld*,const PhysicsOcclusionConfig&)	function	audio_physics	audio-physics-physicsocclusion-physicsocclusion-const-physics-physicsworld-star-const-physicsocclusionconfig-amp	audio_physics.md	engine/audio_physics/physics_occlusion.h:57
+audio_physics::PhysicsOcclusion::Occlusion(const Vec3&,const Vec3&,u32*)	function	audio_physics	audio-physics-physicsocclusion-occlusion-const-vec3-amp-const-vec3-amp-u32-star	audio_physics.md	engine/audio_physics/physics_occlusion.h:71
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20
