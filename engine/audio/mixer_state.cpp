@@ -321,9 +321,9 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
         for (u32 k = 0; k < kMaxInserts; ++k)
         {
             const u32 index = s.U32();
-            if (index != kNoIndex && index >= effect_count_)
+            if (!s.Ok() || (index != kNoIndex && index >= effect_count_))
             {
-                s.Fail();
+                return fail(SnapshotStatus::Corrupt);
             }
             bus.inserts[k] = index == kNoIndex ? nullptr : effects_[index].Get();
             if (s.Ok() && bus.inserts[k] != buses_[b].inserts[k])
