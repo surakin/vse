@@ -1,0 +1,27 @@
+// Spike 4: SPSC command ring, commands stamped with the block they take effect at. Producer timing is randomised; the consumer renders
+// 2000 blocks; the hash of (block, command) application order must be identical for every producer schedule. Also: live mode latency
+// (paced at 256 frames/48k) from post to apply, with the stamp = (consumer block counter read at post) + lead.
+#include <atomic>
+#include <thread>
+#include <vector>
+#include <cstdio>
+#include <cstdint>
+#include <chrono>
+#include <algorithm>
+struct Cmd{uint32_t stamp,id,arg;};
+struct Ring{ static const uint32_t N=1024; Cmd buf[N]; std::atomic<uint32_t> head{0},tail{0};
+  bool Push(const Cmd&c){uint32_t h=head.load(std::memory_order_relaxed); if(h-tail.load(std::memory_order_acquire)==N)return false; buf[h%N]=c; head.store(h+1,std::memory_order_release); return true;}
+  bool Peek(Cmd&c){uint32_t t=tail.load(std::memory_order_relaxed); if(t==head.load(std::memory_order_acquire))return false; c=buf[t%N]; return true;}
+  void Pop(){tail.store(tail.load(std::memory_order_relaxed)+1,std::memory_order_release);} };
+static uint64_t Mix(uint64_t h,uint64_t v){h^=v;h*=1099511628211ull;return h;}
+static const uint32_t kBlocks=2000,kCmds=5000;
+static uint64_t Offline(int seed){ Ring ring; std::atomic<uint32_t> mark{0};
+  std::thread prod([&]{ uint64_t s=seed*7919+1; auto rnd=[&]{s=s*6364136223846793005ull+1;return (uint32_t)(s>>33);}; uint32_t id=0;
+    for(uint32_t b=0;b<kBlocks;b++){ for(uint32_t k=0;k<kCmds/kBlocks;k++){ Cmd c{b,id,id*2654435761u}; id++; while(!ring.Push(c))std::this_thread::yield(); if(rnd()%64==0)std::this_thread::sleep_for(std::chrono::microseconds(rnd()%200)); } mark.store(b+1,std::memory_order_release); } });
+  uint64_t h=1469598103934665603ull; uint32_t applied=0; for(uint32_t b=0;b<kBlocks;b++){ while(mark.load(std::memory_order_acquire)<=b)std::this_thread::yield(); Cmd c; while(ring.Peek(c)&&c.stamp<=b){h=Mix(h,((uint64_t)b<<40)^((uint64_t)c.id<<8)^c.arg);ring.Pop();applied++;} h=Mix(h,b); } prod.join(); return h^applied; }
+static void Live(uint32_t lead){ Ring ring; std::atomic<uint32_t> cur{0}; std::atomic<bool> stop{false}; std::vector<double> lat; uint64_t late=0,total=0;
+  using clk=std::chrono::steady_clock; auto t0=clk::now(); std::vector<double> post(100000);
+  std::thread prod([&]{ uint32_t id=0; uint64_t s=5; while(!stop.load()){ s=s*6364136223846793005ull+1; std::this_thread::sleep_for(std::chrono::microseconds(500+(s>>40)%3000)); uint32_t b=cur.load(std::memory_order_acquire); Cmd c{b+lead,id,0}; if(id<post.size())post[id]=std::chrono::duration<double,std::milli>(clk::now()-t0).count(); id++; ring.Push(c);} });
+  auto next=t0; const auto per=std::chrono::nanoseconds(5333333); for(uint32_t b=0;b<1500;b++){ next+=per; std::this_thread::sleep_until(next); cur.store(b,std::memory_order_release); Cmd c; while(ring.Peek(c)&&c.stamp<=b){ if(c.stamp<b)late++; total++; double now=std::chrono::duration<double,std::milli>(clk::now()-t0).count(); if(c.id<post.size())lat.push_back(now-post[c.id]); ring.Pop(); } }
+  stop=true; prod.join(); std::sort(lat.begin(),lat.end()); printf("live lead %u blocks: %llu commands, late %llu, latency post->applied median %.2f ms max %.2f ms\n",lead,(unsigned long long)total,(unsigned long long)late,lat[lat.size()/2],lat.back()); }
+int main(){ for(int seed=1;seed<=6;seed++)printf("offline producer schedule %d: hash %016llx\n",seed,(unsigned long long)Offline(seed)); for(uint32_t lead:{0u,1u,2u})Live(lead); }

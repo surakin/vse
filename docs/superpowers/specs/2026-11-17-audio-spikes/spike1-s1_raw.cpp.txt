@@ -1,0 +1,49 @@
+// Spike 1b: raw kernel ioctls on /dev/snd/pcmC3D0p, no libasound. Counts what it takes: open, version, hw_params (masks and intervals),
+// sw_params, prepare, write loop (WRITEI_FRAMES), delay (DELAY), close. Plays silence, 200 periods.
+#include <sound/asound.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+#include <stdio.h>
+#include <string.h>
+#include <vector>
+#include <algorithm>
+static double now(){timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec*1e3+t.tv_nsec/1e6;}
+static void SetMask(snd_pcm_hw_params& p,int var,unsigned bit){ snd_mask& m=p.masks[var-SNDRV_PCM_HW_PARAM_FIRST_MASK]; memset(&m,0,sizeof m); m.bits[bit>>5]=1u<<(bit&31);}
+static void SetInterval(snd_pcm_hw_params& p,int var,unsigned lo,unsigned hi){ snd_interval& i=p.intervals[var-SNDRV_PCM_HW_PARAM_FIRST_INTERVAL]; i.min=lo; i.max=hi; i.openmin=i.openmax=0; i.integer=0; i.empty=0;}
+static void Any(snd_pcm_hw_params& p){ memset(&p,0,sizeof p); for(auto&m:p.masks) memset(&m,0xff,sizeof m); for(auto&i:p.intervals){i.min=0;i.max=~0u;} p.rmask=~0u; p.cmask=0; p.info=~0u; }
+int main(int argc,char**argv){
+  int fd=open(argv[1],O_RDWR|O_CLOEXEC); if(fd<0){perror("open");return 0;}
+  int ver=0; ioctl(fd,SNDRV_PCM_IOCTL_PVERSION,&ver); printf("pcm protocol %d.%d.%d\n",ver>>16,(ver>>8)&255,ver&255);
+  unsigned period=atoi(argv[2]);
+  snd_pcm_hw_params hw; Any(hw);
+  // refine formats the device offers
+  ioctl(fd,SNDRV_PCM_IOCTL_HW_REFINE,&hw);
+  bool f32=hw.masks[SNDRV_PCM_HW_PARAM_FORMAT-SNDRV_PCM_HW_PARAM_FIRST_MASK].bits[0]&(1u<<SNDRV_PCM_FORMAT_FLOAT_LE);
+  Any(hw);
+  SetMask(hw,SNDRV_PCM_HW_PARAM_ACCESS,SNDRV_PCM_ACCESS_RW_INTERLEAVED);
+  SetMask(hw,SNDRV_PCM_HW_PARAM_FORMAT,f32?SNDRV_PCM_FORMAT_FLOAT_LE:SNDRV_PCM_FORMAT_S16_LE);
+  SetMask(hw,SNDRV_PCM_HW_PARAM_SUBFORMAT,SNDRV_PCM_SUBFORMAT_STD);
+  SetInterval(hw,SNDRV_PCM_HW_PARAM_CHANNELS,2,2);
+  SetInterval(hw,SNDRV_PCM_HW_PARAM_RATE,48000,48000);
+  SetInterval(hw,SNDRV_PCM_HW_PARAM_PERIOD_SIZE,period,period);
+  SetInterval(hw,SNDRV_PCM_HW_PARAM_PERIODS,3,3);
+  hw.flags=0;
+  if(ioctl(fd,SNDRV_PCM_IOCTL_HW_PARAMS,&hw)<0){perror("HW_PARAMS");return 0;}
+  unsigned bufsz=hw.intervals[SNDRV_PCM_HW_PARAM_BUFFER_SIZE-SNDRV_PCM_HW_PARAM_FIRST_INTERVAL].min;
+  printf("granted: %s buffer %u frames\n",f32?"F32":"S16",bufsz);
+  snd_pcm_sw_params sw; memset(&sw,0,sizeof sw); sw.tstamp_mode=SNDRV_PCM_TSTAMP_NONE; sw.period_step=1; sw.avail_min=period; sw.start_threshold=period*2; sw.stop_threshold=bufsz; sw.boundary=bufsz; while(sw.boundary*2<=0x7fffffff-bufsz) sw.boundary*=2; sw.proto=ver;
+  if(ioctl(fd,SNDRV_PCM_IOCTL_SW_PARAMS,&sw)<0){perror("SW_PARAMS");return 0;}
+  ioctl(fd,SNDRV_PCM_IOCTL_PREPARE);
+  std::vector<char> data(period*2*(f32?4:2),0); std::vector<double> dt; double last=now(); int under=0; snd_pcm_sframes_t delay=0;
+  for(int i=0;i<200;i++){
+    snd_xferi x; x.result=0; x.buf=data.data(); x.frames=period;
+    if(ioctl(fd,SNDRV_PCM_IOCTL_WRITEI_FRAMES,&x)<0){ under++; ioctl(fd,SNDRV_PCM_IOCTL_PREPARE); }
+    double t=now(); dt.push_back(t-last); last=t;
+    if(i==100) ioctl(fd,SNDRV_PCM_IOCTL_DELAY,&delay);
+  }
+  std::sort(dt.begin()+20,dt.end());
+  printf("period %u: median %.3f ms (nominal %.3f), max %.3f ms, delay %ld frames (%.2f ms), xruns %d\n",period,dt[110],1000.0*period/48000,dt.back(),(long)delay,1000.0*delay/48000,under);
+  ioctl(fd,SNDRV_PCM_IOCTL_DROP); close(fd);
+}

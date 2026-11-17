@@ -1,0 +1,23 @@
+// Spike 1d: libpipewire (the reference client library), pw_stream playing silence F32 stereo 48k with node.latency 256/48000 and 1024/48000;
+// the process callback is timed; 200 callbacks.
+#include <pipewire/pipewire.h>
+#include <spa/param/audio/format-utils.h>
+#include <time.h>
+#include <stdio.h>
+#include <vector>
+#include <algorithm>
+static double now(){timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec*1e3+t.tv_nsec/1e6;}
+struct D{pw_main_loop*loop;pw_stream*st;std::vector<double> dt;double last=0;unsigned frames=0;};
+static void on_process(void*u){D*d=(D*)u; pw_buffer*b=pw_stream_dequeue_buffer(d->st); if(!b)return; spa_data&sd=b->buffer->datas[0];
+  unsigned n=sd.maxsize/8; if(b->requested&&b->requested<n)n=b->requested; memset(sd.data,0,n*8); sd.chunk->offset=0;sd.chunk->stride=8;sd.chunk->size=n*8; d->frames=n;
+  double t=now(); if(d->last)d->dt.push_back(t-d->last); d->last=t; pw_stream_queue_buffer(d->st,b); if(d->dt.size()>=200)pw_main_loop_quit(d->loop);}
+static const pw_stream_events ev={.version=PW_VERSION_STREAM_EVENTS,.process=on_process};
+int main(int argc,char**argv){ pw_init(&argc,&argv); D d; d.loop=pw_main_loop_new(nullptr);
+  char lat[32]; snprintf(lat,sizeof lat,"%s/48000",argv[1]);
+  d.st=pw_stream_new_simple(pw_main_loop_get_loop(d.loop),"spike",pw_properties_new(PW_KEY_MEDIA_TYPE,"Audio",PW_KEY_MEDIA_CATEGORY,"Playback",PW_KEY_MEDIA_ROLE,"Game",PW_KEY_NODE_LATENCY,lat,nullptr),&ev,&d);
+  uint8_t buf[1024]; spa_pod_builder b=SPA_POD_BUILDER_INIT(buf,sizeof buf); const spa_pod*params[1];
+  spa_audio_info_raw info=SPA_AUDIO_INFO_RAW_INIT(.format=SPA_AUDIO_FORMAT_F32,.rate=48000,.channels=2); params[0]=spa_format_audio_raw_build(&b,SPA_PARAM_EnumFormat,&info);
+  pw_stream_connect(d.st,PW_DIRECTION_OUTPUT,PW_ID_ANY,(pw_stream_flags)(PW_STREAM_FLAG_AUTOCONNECT|PW_STREAM_FLAG_MAP_BUFFERS|PW_STREAM_FLAG_RT_PROCESS),params,1);
+  pw_main_loop_run(d.loop); std::sort(d.dt.begin()+20,d.dt.end());
+  printf("libpipewire latency %s: callback frames %u, median %.3f ms, max %.3f ms (n=%zu)\n",lat,d.frames,d.dt[110],d.dt.back(),d.dt.size());
+  pw_stream_destroy(d.st); pw_main_loop_destroy(d.loop); }

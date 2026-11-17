@@ -1,0 +1,54 @@
+// Spikes 2, 3 and 6 (Phase 26 Day 402): a reference scene, the resampler candidates and the voice cost. Throwaway; std is fine here.
+// Build:  g++ -O2 -ffp-contract=off s2.cpp -o s2 ; modes: ./s2 scene [chunk] | ./s2 resample | ./s2 voices N
+#include <cstdio>
+#include <cstdint>
+#include <cstring>
+#include <cmath>
+#include <vector>
+#include <chrono>
+#include <algorithm>
+typedef float f32; typedef uint32_t u32; typedef uint64_t u64;
+static double Now(){return std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count();}
+struct Rng{u64 s;u32 Next(){s=s*6364136223846793005ull+1442695040888963407ull;return (u32)(s>>33);}f32 F(){return (Next()&0xffffff)/16777216.0f;}};
+static std::vector<f32> MakeClip(u32 frames,f32 freq,u32 seed){Rng r{seed};std::vector<f32> v(frames);for(u32 i=0;i<frames;i++)v[i]=0.5f*std::sin(6.2831853f*freq*i/48000.0f)+0.1f*(r.F()-0.5f);return v;}
+// --- interpolators over a mono clip, position = whole + 32-bit fraction -----------------------------------------------------------------
+enum Q{Linear,Hermite,Sinc16};
+static f32 g_sinc[33][16]; // 32 phases + guard
+static void InitSinc(){ const int T=16; for(int p=0;p<=32;p++){ double fr=p/32.0,sum=0; double h[16]; for(int t=0;t<T;t++){ double x=(t-(T/2-1))-fr; double s=x==0?1.0:std::sin(M_PI*x)/(M_PI*x); double w=0.42+0.5*std::cos(M_PI*x/(T/2))+0.08*std::cos(2*M_PI*x/(T/2)); if(std::fabs(x)>=T/2)w=0; h[t]=s*w; sum+=h[t]; } for(int t=0;t<T;t++)g_sinc[p][t]=(f32)(h[t]/sum);} }
+static inline f32 Fetch(const f32*c,u32 n,u64 pos,Q q,bool loop){
+  u32 i=(u32)(pos>>32); f32 f=(f32)((u32)pos)*(1.0f/4294967296.0f);
+  auto at=[&](long k)->f32{ if(loop){k%= (long)n; if(k<0)k+=n; return c[k];} return (k<0||k>=(long)n)?0.0f:c[k]; };
+  if(q==Linear) return at(i)+(at(i+1)-at(i))*f;
+  if(q==Hermite){ f32 y0=at((long)i-1),y1=at(i),y2=at(i+1),y3=at(i+2); f32 c0=y1,c1=0.5f*(y2-y0),c2=y0-2.5f*y1+2.0f*y2-0.5f*y3,c3=0.5f*(y3-y0)+1.5f*(y1-y2); return ((c3*f+c2)*f+c1)*f+c0; }
+  f32 ph=f*32.0f; u32 pi=(u32)ph; f32 pf=ph-pi; f32 acc=0; for(int t=0;t<16;t++){ f32 w=g_sinc[pi][t]+(g_sinc[pi+1][t]-g_sinc[pi][t])*pf; acc+=w*at((long)i+t-7);} return acc; }
+// --- spike 3 ---------------------------------------------------------------------------------------------------------------------------
+static void Resample(){ InitSinc(); const char*names[]={"linear","hermite","sinc16"};
+  printf("Spike 3: interpolation error (dB rel. to tone) of a tone resampled by ratio r; ideal = the tone at the new rate; 48 kHz\n freq   ratio   linear  hermite  sinc16\n");
+  for(double fq:{1000.0,5000.0,10000.0,15000.0}) for(double r:{0.7137,1.5}){ u32 n=48000; std::vector<f32> c(n); for(u32 i=0;i<n;i++)c[i]=std::sin(2*M_PI*fq*i/48000.0)*0.5f; printf("%6.0f  %5.3f ",fq,r);
+    for(int q=0;q<3;q++){ double err=0,sig=0; u64 step=(u64)(r*4294967296.0),pos=(u64)64<<32; for(int k=0;k<20000;k++,pos+=step){ f32 y=Fetch(c.data(),n,pos,(Q)q,false); double t=(double)(pos>>32)+(double)(u32)pos/4294967296.0; double ideal=0.5*std::sin(2*M_PI*fq*t/48000.0); err+=(y-ideal)*(y-ideal); sig+=ideal*ideal; } printf(" %7.1f",10*std::log10(err/sig+1e-30)); } printf("\n"); }
+  // cost: ns per output sample (mono), looping clip
+  u32 n=48000; auto c=MakeClip(n,440,1); for(int q=0;q<3;q++){ u64 step=(u64)(1.2345*4294967296.0),pos=0; f32 s=0; double t0=Now(); const int N=4000000; for(int k=0;k<N;k++,pos+=step){ pos%=((u64)n<<32); s+=Fetch(c.data(),n,pos,(Q)q,true);} double t1=Now(); printf(" cost %-8s %.2f ns/sample (sink %g)\n",names[q],(t1-t0)*1e6/N,s); }
+  // drift: 32.32 position after 1e9 frames at a ratio of 1.0000001 vs double
+  u64 step=(u64)(1.0000001*4294967296.0); u64 pos=step*1000000000ull; double ex=1000000000.0*1.0000001; printf(" drift after 1e9 frames @1.0000001: fixed %.6f vs exact %.6f (diff %.2e frames)\n",(double)(pos>>32)+(double)(u32)pos/4294967296.0,ex,(double)(pos>>32)+(double)(u32)pos/4294967296.0-ex);
+  f32 fp=0; double dd=0; for(long i=0;i<100000000;i++){fp+=1.0000001f;dd+=1.0000001;} printf(" f32 accumulator after 1e8 frames: %.1f vs exact %.1f\n",fp,dd); }
+// --- the reference scene -----------------------------------------------------------------------------------------------------------------
+struct Voice{const f32*clip;u32 n;u64 pos,step;f32 gl,gr;f32 gl_t,gr_t;bool loop;Q q;f32 z1,z2;f32 b0,b1,b2,a1,a2;};
+static const u32 kBlock=256;
+struct Fdn{ static constexpr int L=8; std::vector<f32> line[L]; u32 idx[L]; u32 len[L]; f32 lp[L]; Fdn(){ const u32 base[L]={1151,1327,1559,1787,2053,2287,2521,2753}; for(int i=0;i<L;i++){len[i]=base[i];line[i].assign(base[i],0);idx[i]=0;lp[i]=0;} }
+  void Process(const f32*in,f32*out,u32 n,f32 fb,f32 damp){ for(u32 k=0;k<n;k++){ f32 o[L],s=0; for(int i=0;i<L;i++){o[i]=line[i][idx[i]];} // Hadamard
+      f32 m[L]; for(int i=0;i<L;i++)m[i]=o[i]; for(int h=1;h<L;h<<=1) for(int i=0;i<L;i+=h<<1) for(int j=i;j<i+h;j++){f32 a=m[j],b=m[j+h];m[j]=a+b;m[j+h]=a-b;}
+      for(int i=0;i<L;i++){ f32 v=m[i]*0.35355339f*fb+in[k]*0.25f; lp[i]+=(v-lp[i])*damp; line[i][idx[i]]=lp[i]; if(++idx[i]==len[i])idx[i]=0; s+=o[i]; } out[k]=s*0.35355339f; } } };
+struct Scene{ std::vector<std::vector<f32>> clips; std::vector<Voice> v; Fdn rev; std::vector<f32> mixL,mixR,send,wet; u64 block=0; Scene(){ Rng r{7}; for(int i=0;i<24;i++)clips.push_back(MakeClip(20000+i*997,110+37*i,i+1)); for(int i=0;i<24;i++){ Voice x{}; x.clip=clips[i].data();x.n=(u32)clips[i].size();x.pos=0;x.step=(u64)((0.6+0.05*i)*4294967296.0);x.loop=true;x.q=(Q)(i%3);f32 p=(i%9-4)/4.0f;x.gl_t=std::sqrt((1-p)*0.5f)*0.2f;x.gr_t=std::sqrt((1+p)*0.5f)*0.2f;x.gl=x.gl_t;x.gr=x.gr_t; // lowpass biquad ~ 3 kHz-ish, coefficients from libm
+      double w0=2*M_PI*(1500+300*i)/48000.0,Q=0.707,al=std::sin(w0)/(2*Q),cs=std::cos(w0),a0=1+al; x.b0=(f32)((1-cs)/2/a0);x.b1=(f32)((1-cs)/a0);x.b2=x.b0;x.a1=(f32)(-2*cs/a0);x.a2=(f32)((1-al)/a0); v.push_back(x);} mixL.resize(kBlock);mixR.resize(kBlock);send.resize(kBlock);wet.resize(kBlock); InitSinc(); }
+  void RenderBlock(f32*out){ std::fill(mixL.begin(),mixL.end(),0.f);std::fill(mixR.begin(),mixR.end(),0.f);std::fill(send.begin(),send.end(),0.f);
+    if(block==40){v[3].gl_t=0;v[3].gr_t=0;} if(block==80){v[5].step=(u64)(1.7*4294967296.0);} // two "commands" at fixed block stamps
+    for(auto&x:v){ f32 dl=(x.gl_t-x.gl)/kBlock,dr=(x.gr_t-x.gr)/kBlock; for(u32 k=0;k<kBlock;k++,x.pos+=x.step){ x.pos%=((u64)x.n<<32); f32 s=Fetch(x.clip,x.n,x.pos,x.q,true); f32 y=x.b0*s+x.z1; x.z1=x.b1*s-x.a1*y+x.z2; x.z2=x.b2*s-x.a2*y; x.gl+=dl;x.gr+=dr; mixL[k]+=y*x.gl;mixR[k]+=y*x.gr; send[k]+=y*0.1f; } x.gl=x.gl_t;x.gr=x.gr_t; }
+    rev.Process(send.data(),wet.data(),kBlock,0.8f,0.5f); for(u32 k=0;k<kBlock;k++){ out[2*k]=mixL[k]+wet[k]; out[2*k+1]=mixR[k]+wet[k]; } ++block; } };
+static u64 Hash(const f32*p,size_t n,u64 h){ for(size_t i=0;i<n;i++){u32 b;memcpy(&b,&p[i],4);for(int j=0;j<4;j++){h^=(b>>(8*j))&255;h*=1099511628211ull;}} return h; }
+static void SceneRun(u32 chunk,const char*dump){ Scene sc; const u32 blocks=300; std::vector<f32> all; all.reserve(blocks*kBlock*2); std::vector<f32> pend; u64 h=14695981039346656037ull; // callback of `chunk` frames pulls from a fixed internal block
+  std::vector<f32> blk(kBlock*2); u32 have=0,off=0; u32 total=blocks*kBlock; std::vector<f32> out(chunk*2); u32 produced=0; while(produced<total){ u32 want=std::min(chunk,total-produced); for(u32 k=0;k<want;k++){ if(have==0){sc.RenderBlock(blk.data());have=kBlock;off=0;} out[2*k]=blk[2*off];out[2*k+1]=blk[2*off+1];off++;have--; } h=Hash(out.data(),want*2,h); all.insert(all.end(),out.begin(),out.begin()+want*2); produced+=want; }
+  printf("scene chunk %4u: hash %016llx\n",chunk,(unsigned long long)h); if(dump){FILE*f=fopen(dump,"wb");fwrite(all.data(),4,all.size(),f);fclose(f);} }
+// --- spike 6: voice cost ------------------------------------------------------------------------------------------------------------------
+static void Voices(u32 N,int q){ InitSinc(); std::vector<std::vector<f32>> clips; for(int i=0;i<64;i++)clips.push_back(MakeClip(48000,100+i*13,i+1)); std::vector<Voice> v(N); Rng r{3}; for(u32 i=0;i<N;i++){ auto&x=v[i]; x.clip=clips[i%64].data();x.n=48000;x.pos=(u64)(r.Next()%48000)<<32;x.step=(u64)((0.5+r.F())*4294967296.0);x.loop=true;x.q=(Q)q;x.gl=x.gr=0.1f;x.gl_t=x.gr_t=0.1f; }
+  std::vector<f32> L(kBlock),R(kBlock); const int B=200; double t0=Now(); f32 sink=0; for(int b=0;b<B;b++){ std::fill(L.begin(),L.end(),0.f);std::fill(R.begin(),R.end(),0.f); for(auto&x:v){ for(u32 k=0;k<kBlock;k++,x.pos+=x.step){ x.pos%=((u64)x.n<<32); f32 s=Fetch(x.clip,x.n,x.pos,x.q,true); L[k]+=s*x.gl;R[k]+=s*x.gr; } } sink+=L[5]; } double ms=(Now()-t0)/B; printf("voices %5u quality %d: %.3f ms per %u-frame block (budget %.2f ms) = %.1f%% of one core (sink %g)\n",N,q,ms,kBlock,1000.0*kBlock/48000,100*ms/(1000.0*kBlock/48000),sink); }
+int main(int argc,char**argv){ if(!strcmp(argv[1],"resample"))Resample(); else if(!strcmp(argv[1],"scene")){ SceneRun(argc>2?atoi(argv[2]):256,argc>3?argv[3]:nullptr);} else if(!strcmp(argv[1],"voices")) Voices(atoi(argv[2]),argc>3?atoi(argv[3]):1); }

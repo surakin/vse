@@ -1,0 +1,23 @@
+// Spike 1c: PipeWire native protocol, no libpipewire: connect to $XDG_RUNTIME_DIR/pipewire-0, send Core::Hello(version 3) as a SPA POD
+// Struct{Int}, read what the server sends back (Core::Info event, opcode 2), print the message header and size. This is only the first step
+// of ~8 (Client::UpdateProperties, Core::GetRegistry, Core::CreateObject client-node, node/port/param exchange, memfd buffer pool and
+// eventfd wakeups, the RT data loop).
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+int main(){
+  char path[108]; snprintf(path,sizeof path,"%s/pipewire-0",getenv("XDG_RUNTIME_DIR"));
+  int s=socket(AF_UNIX,SOCK_STREAM|SOCK_CLOEXEC,0); sockaddr_un a{}; a.sun_family=AF_UNIX; strcpy(a.sun_path,path);
+  if(connect(s,(sockaddr*)&a,sizeof a)<0){perror("connect");return 0;}
+  // POD: Struct { Int 3 }: size 16 (Struct body = Int pod 8 header + 4 value + 4 pad), type Struct=14 ; Int: size 4, type 4
+  uint32_t pod[8]={16,14, 4,4, 3,0};  // struct(size16,type14) { int(size4,type4) value 3 pad }
+  uint32_t hdr[4]={0, (1u<<24)|(uint32_t)(sizeof(pod[0])*6), 1, 0}; // id 0 (core), opcode 1 (Hello), size 24, seq 1, no fds
+  write(s,hdr,16); write(s,pod,24);
+  uint8_t buf[4096]; ssize_t n=read(s,buf,sizeof buf);
+  if(n>=16){uint32_t*h=(uint32_t*)buf; printf("reply: %zd bytes; id %u opcode %u size %u seq %u fds %u\n",n,h[0],h[1]>>24,h[1]&0xffffff,h[2],h[3]);}
+  else printf("reply: %zd\n",n);
+}

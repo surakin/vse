@@ -1,0 +1,9 @@
+import numpy as np,sys,glob,subprocess
+ref=np.fromfile('/tmp/sp/ref_g++.f32',dtype=np.float32)
+print("builds vs g++ -O2 contract=off: max abs err, RMS error dB rel. to ref RMS")
+for cc in ['g++','clang++']:
+  for o in ['O0','O2','O3']:
+    for fp in ['off','fast']:
+      exe=f'/tmp/sp/s2_{cc}_{o}_{fp}'; subprocess.run([exe,'scene','256','/tmp/sp/t.f32'],capture_output=True)
+      a=np.fromfile('/tmp/sp/t.f32',dtype=np.float32); d=a-ref
+      print(f'{cc:8} -{o} contract={fp:5}: max {np.abs(d).max():.3e}  rms {20*np.log10(np.sqrt((d**2).mean())/np.sqrt((ref**2).mean())+1e-30):7.1f} dB  identical={np.array_equal(a,ref)}')

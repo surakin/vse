@@ -1,0 +1,36 @@
+// Spike 5: libogg + libvorbis decode harness and mutation fuzz (decode only; no vorbisfile, no vorbisenc). Reads a file, decodes it all,
+// returns frames/channels/rate and an FNV hash of the f32 output; `fuzz N seed` mutates the file N times (bit flips, truncation, page shuffles)
+// and decodes each with a step budget; reports hangs (budget hit), rejected files, and survived decodes. Crashes show as asan/ubsan reports.
+#include <ogg/ogg.h>
+#include <vorbis/codec.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cstdint>
+#include <vector>
+#include <string>
+#include <chrono>
+typedef std::vector<unsigned char> Bytes;
+struct Result{ int status; long frames; int ch; long rate; uint64_t hash; long steps; double ms; };
+static Result Decode(const Bytes& in,long budget){ Result r{}; ogg_sync_state oy; ogg_stream_state os; ogg_page og; ogg_packet op; vorbis_info vi; vorbis_comment vc; vorbis_dsp_state vd; vorbis_block vb;
+  ogg_sync_init(&oy); vorbis_info_init(&vi); vorbis_comment_init(&vc); bool have_stream=false,synth=false; int hdr=0; size_t off=0; uint64_t h=1469598103934665603ull; long steps=0; r.status=-1;
+  auto t0=std::chrono::steady_clock::now();
+  while(true){ if(++steps>budget){r.status=-3;break;}
+    int w=ogg_sync_pageout(&oy,&og);
+    if(w==0){ if(off>=in.size())break; size_t n=std::min<size_t>(4096,in.size()-off); char*b=ogg_sync_buffer(&oy,(long)n); if(!b){r.status=-4;break;} memcpy(b,in.data()+off,n); off+=n; ogg_sync_wrote(&oy,(long)n); continue; }
+    if(w<0)continue; // hole: skip
+    if(!have_stream){ ogg_stream_init(&os,ogg_page_serialno(&og)); have_stream=true; }
+    else if(ogg_page_serialno(&og)!=os.serialno) continue; // other logical stream: skipped
+    if(ogg_stream_pagein(&os,&og)<0)continue;
+    while(ogg_stream_packetout(&os,&op)>0){ if(++steps>budget){r.status=-3;goto done;}
+      if(hdr<3){ if(vorbis_synthesis_headerin(&vi,&vc,&op)<0){r.status=-2;goto done;} if(++hdr==3){ if(vi.channels<1||vi.channels>8||vi.rate<8000||vi.rate>384000){r.status=-5;goto done;} if(vorbis_synthesis_init(&vd,&vi)!=0||vorbis_block_init(&vd,&vb)!=0){r.status=-2;goto done;} synth=true; r.ch=vi.channels; r.rate=vi.rate; r.status=0; } continue; }
+      if(!synth)continue; if(vorbis_synthesis(&vb,&op)==0)vorbis_synthesis_blockin(&vd,&vb); float**pcm; int n;
+      while((n=vorbis_synthesis_pcmout(&vd,&pcm))>0){ for(int c=0;c<vi.channels;c++)for(int i=0;i<n;i+=64){uint32_t b;memcpy(&b,&pcm[c][i],4);h^=b;h*=1099511628211ull;} r.frames+=n; vorbis_synthesis_read(&vd,n); if(r.frames>(1l<<26)){r.status=-6;goto done;} } } }
+done: r.steps=steps; r.hash=h; if(synth){vorbis_block_clear(&vb);vorbis_dsp_clear(&vd);} if(have_stream)ogg_stream_clear(&os); vorbis_comment_clear(&vc); vorbis_info_clear(&vi); ogg_sync_clear(&oy);
+  r.ms=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-t0).count(); return r; }
+static Bytes Load(const char*p){FILE*f=fopen(p,"rb");Bytes b;if(!f)return b;fseek(f,0,SEEK_END);b.resize(ftell(f));fseek(f,0,SEEK_SET);fread(b.data(),1,b.size(),f);fclose(f);return b;}
+int main(int argc,char**argv){ if(!strcmp(argv[1],"decode")){ for(int i=2;i<argc;i++){ Bytes b=Load(argv[i]); Result r=Decode(b,1<<20); printf("%-18s status %d ch %d rate %ld frames %ld hash %016llx %.2f ms\n",argv[i],r.status,r.ch,r.rate,r.frames,(unsigned long long)r.hash,r.ms);} return 0; }
+  int N=atoi(argv[2]); uint64_t s=atoi(argv[3])*2654435761u+1; auto rnd=[&]{s=s*6364136223846793005ull+1442695040888963407ull;return (uint32_t)(s>>33);}; long ok=0,rej=0,hang=0,badhdr=0; double worst=0;
+  for(int f=4;f<argc;f++){ Bytes base=Load(argv[f]); for(int i=0;i<N;i++){ Bytes b=base; int kind=rnd()%4; if(kind==0){ for(int k=0;k<1+(int)(rnd()%8);k++) b[rnd()%b.size()]^=1u<<(rnd()%8); } else if(kind==1){ b.resize(rnd()%b.size()); } else if(kind==2){ size_t a=rnd()%b.size(),len=rnd()%512; for(size_t k=0;k<len&&a+k<b.size();k++)b[a+k]=(unsigned char)rnd(); } else { size_t a=rnd()%b.size(),c=rnd()%b.size(); size_t len=std::min<size_t>(rnd()%2048,b.size()-std::max(a,c)); for(size_t k=0;k<len;k++)std::swap(b[a+k],b[c+k]); }
+      Result r=Decode(b,200000); if(r.ms>worst)worst=r.ms; if(r.status==-3)hang++; else if(r.status==0)ok++; else if(r.status==-2||r.status==-5)badhdr++; else rej++; } }
+  printf("fuzz: %d files x %d mutations: decoded %ld, header refused %ld, other %ld, step budget hit %ld, slowest %.1f ms\n",argc-4,N,ok,badhdr,rej,hang,worst); }

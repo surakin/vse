@@ -3,7 +3,7 @@
 **Phase:** [Phase 26 — Audio](../phase-26-audio.md)
 **Depends on:** Days 402, 407.
 
-The platform seam for Linux, in the form Day 402's spike chose (raw ALSA or PipeWire's native protocol); the days below name the choice generically and are amended with the spike's outcome.
+The platform seam for Linux. **Day 402's recommendation (the user confirms before this day starts): PipeWire through `libpipewire` (dynamically loaded, `ENGINE_AUDIO_HAVE_PIPEWIRE`) as the primary backend, and a raw-kernel ALSA ioctl backend (no library, about 50 lines to open and play, spike 1) as the fallback when PipeWire is absent**; `audio.backend` picks `auto`, `pipewire` or `alsa`. If the user chose one backend, drop the other's tasks.
 
 ## Tasks
 
