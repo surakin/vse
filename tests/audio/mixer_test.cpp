@@ -6,8 +6,10 @@
 #include "audio/block_hash.h"
 #include "audio/mixer.h"
 #include "containers/vector.h"
+#include "lang/limits.h"
 #include "lang/scalar.h"
 #include "lang/utility.h"
+#include "platform_hash.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::audio;
@@ -352,7 +354,7 @@ TEST_CASE("Mixer: bad parameters are refused by status", "[audio][mixer][voice]"
     f64 position = 0.0;
     REQUIRE(mixer.Position(id, &position) == MixerStatus::Ok);
     CHECK(position == 50.0 + 256.0);
-    const f32 not_a_number = 0.0f / (position - position);
+    const f32 not_a_number = Limits<f32>::QuietNaN();
     CHECK(mixer.SetGain(id, not_a_number) == MixerStatus::InvalidParam);
     CHECK(mixer.SetPitch(id, 0.01f) == MixerStatus::InvalidParam);
     CHECK(mixer.SetPan(id, -1.5f) == MixerStatus::InvalidParam);
@@ -553,9 +555,12 @@ TEST_CASE("Mixer: the reference scene renders the committed hash (a same-build r
     // The hash of the 40-block scene at each quality, committed on Linux with Clang (-ffp-contract=off; GCC could not
     // link the tests, see KNOWN-ISSUES.md). A compiler change that moves the bits re-commits these values; across
     // machines the tolerance check is used.
-    CHECK(MxReferenceSceneHash(ResamplerQuality::Linear) == 0x65ea76a4b48bb7e9ull);
-    CHECK(MxReferenceSceneHash(ResamplerQuality::Hermite) == 0xd2c3a4192090c998ull);
-    CHECK(MxReferenceSceneHash(ResamplerQuality::Sinc) == 0x7f92be7fbe3e465aull);
+    CHECK(MxReferenceSceneHash(ResamplerQuality::Linear) ==
+          testing::PlatformHash(0x65ea76a4b48bb7e9ull, 0x2372e9134f1be9abull));
+    CHECK(MxReferenceSceneHash(ResamplerQuality::Hermite) ==
+          testing::PlatformHash(0xd2c3a4192090c998ull, 0x95259c800dacee97ull));
+    CHECK(MxReferenceSceneHash(ResamplerQuality::Sinc) ==
+          testing::PlatformHash(0x7f92be7fbe3e465aull, 0x13d56671fe1a9347ull));
     // Rendering twice gives the same bits.
     CHECK(MxReferenceSceneHash(ResamplerQuality::Hermite) == MxReferenceSceneHash(ResamplerQuality::Hermite));
 }

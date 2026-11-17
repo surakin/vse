@@ -661,7 +661,7 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 The scene features of Days 359-368 run on Windows with Direct3D 12 and with Vulkan. The scene hosts' window (`tests/engine_library/host_window.h`, below) is
 `windows/host_window_win32.c` there: a window class of the host's, borderless windows of the exact client size (a captioned window has a smallest width), a
 message loop turned by the polls, and the walk-around's key posted as a `WM_KEYDOWN` message to the window. `HOST_SURFACE_API` (`d3d12` or `vulkan`, read by
-`host_window_api_flags`) chooses the graphics API, so each scene test runs once per backend (`engine_c_scene_d3d12`, `engine_c_scene_vulkan`,
+`host_surface_api_flags`) chooses the graphics API, so each scene test runs once per backend (`engine_c_scene_d3d12`, `engine_c_scene_vulkan`,
 `engine_c_walk_around_d3d12`, `engine_c_walk_around_vulkan`, plain and asan).
 
 - **Golden images.** On the PC (AMD Radeon 860M), Direct3D 12 and Vulkan draw the golden scene byte for byte the same, and both differ from the golden image
@@ -670,6 +670,13 @@ message loop turned by the polls, and the walk-around's key posted as a `WM_KEYD
   `D3D12CreateDevice` returns the one that exists. The RHI counts the users of a D3D12 device and only the last one reports the objects still alive at its
   destruction (before Day 369, destroying a second surface reported the first one's objects as leaks). Losing it loses every surface on the adapter (above).
 - **The walk-around sample** builds and runs on Windows (`walk_around.exe`; `HOST_SURFACE_API=vulkan` for Vulkan).
+- **Off-screen surfaces and multi-material meshes (Day 381)** run on both Windows backends: `engine_c_offscreen` and `engine_c_acceptance_scene` take the
+  platform's own Direct3D 12, `engine_c_offscreen_vulkan` and `engine_c_acceptance_scene_vulkan` Vulkan (`HOST_SURFACE_API`, read by
+  `tests/engine_library/host_surface_api.h`, which the window and the off-screen hosts share), and `engine_c_walk_around_offscreen_d3d12` and `_vulkan`
+  show each picture in the window (`host_window_show` is a GDI blit there: the RGBA rows converted to a top-down 32-bit DIB and drawn with
+  `SetDIBitsToDevice`). The the host acceptance picture (1280x720) differs between the two backends in 2 of 2 764 800 values, by 1. A lost device on
+  Direct3D 12 loses both surfaces of the adapter, so `host_offscreen.c` rebinds the second when the first's rebind answers `ENGINE_ERROR_UNSUPPORTED`,
+  then the first again (the rule of Day 369, above).
 
 ## The walk-around sample (Phase 24 Day 371)
 

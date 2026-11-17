@@ -270,8 +270,8 @@ int main(int argc, char** argv)
         info.surface = NULL;
         info.window_id = 0;
     }
-    info.flags = offscreen ? 0 : host_window_api_flags(); /* Windows: HOST_SURFACE_API, Direct3D 12 or Vulkan; kept by
-                                             the later describe */
+    info.flags = host_surface_api_flags(); /* Windows: HOST_SURFACE_API, Direct3D 12 or Vulkan, on a window or
+                                              off-screen (Day 381); kept by the later describe */
     memset(&surface, 0, sizeof(surface));
     if (g_api->surface_create(engine, &info, &surface) != ENGINE_OK)
     {

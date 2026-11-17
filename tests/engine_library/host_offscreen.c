@@ -11,6 +11,7 @@
 
 #include "engine/engine_c.h"
 #include "engine_c/engine_test_extension.h"
+#include "host_surface_api.h"
 
 #define MESH_ID 0xb06ull
 #define RED_ID 0xe02ull
@@ -93,6 +94,7 @@ static engine_surface_info OffscreenInfo(uint32_t width, uint32_t height)
     info.width = width;
     info.height = height;
     info.scale = 1.0f;
+    info.flags = host_surface_api_flags(); /* Windows: Direct3D 12 or Vulkan (Day 381) */
     return info;
 }
 
@@ -474,7 +476,20 @@ int main(void)
                 none_image.struct_size = sizeof(none_image);
                 CHECK(g_api->surface_acquire_frame(surface, &none_image) != ENGINE_OK);
             }
-            CHECK_STATUS(g_api->surface_rebind(surface, &again), ENGINE_OK);
+            {
+                engine_status rebound = g_api->surface_rebind(surface, &again);
+                if (rebound == ENGINE_ERROR_UNSUPPORTED)
+                { /* Direct3D 12 (Day 381): one device per adapter, so the second surface lost it too and holds the
+                     removed device until it rebinds; the host rebinds the others, then again the one refused (Day 369)
+                   */
+                    CHECK_STATUS(g_api->surface_state(second, &state), ENGINE_OK);
+                    CHECK(state.lost == 1);
+                    info = OffscreenInfo(64, 48);
+                    CHECK_STATUS(g_api->surface_rebind(second, &info), ENGINE_OK);
+                    rebound = g_api->surface_rebind(surface, &again);
+                }
+                CHECK_STATUS(rebound, ENGINE_OK);
+            }
             CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
             CHECK(Checksum(&pixels) == before);
             CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);

@@ -13,6 +13,7 @@
 
 #include "engine/engine_c.h"
 #include "engine_c/engine_test_extension.h"
+#include "host_surface_api.h"
 
 #define WIDTH 1280u
 #define HEIGHT 720u
@@ -345,6 +346,7 @@ static void RunScene(engine_handle engine, const engine_import_result* robot, co
     info.width = WIDTH;
     info.height = HEIGHT;
     info.scale = 1.0f;
+    info.flags = host_surface_api_flags(); /* Windows: Direct3D 12 or Vulkan (Day 381) */
     if (g_api->surface_create(engine, &info, &surface) != ENGINE_OK)
     {
         printf("host_acceptance_scene: skipped: no device could be made\n");

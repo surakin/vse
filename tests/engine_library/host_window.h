@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "engine/engine_c.h"
+#include "host_surface_api.h"
 
 typedef struct host_window host_window;
 
@@ -39,23 +40,6 @@ void host_window_close(host_window* window);
    window (a host_window_open that failed) writes kind 0, so the engine refuses the call that uses it (a failed check,
    not a crash). */
 void host_window_describe(const host_window* window, engine_surface_info* info);
-
-/* The graphics API a scene test asks for (Day 369): HOST_SURFACE_API=vulkan or d3d12 gives that ENGINE_SURFACE_FLAG_*,
-   anything else 0 (the platform's own). The hosts write it into engine_surface_info.flags after host_window_describe,
-   so each scene test on Windows runs once with Direct3D 12 and once with Vulkan. */
-static inline uint32_t host_window_api_flags(void)
-{
-    const char* api = getenv("HOST_SURFACE_API");
-    if (api != NULL && strcmp(api, "vulkan") == 0)
-    {
-        return ENGINE_SURFACE_FLAG_VULKAN;
-    }
-    if (api != NULL && strcmp(api, "d3d12") == 0)
-    {
-        return ENGINE_SURFACE_FLAG_D3D12;
-    }
-    return 0;
-}
 
 /* The events the walk-around reads. */
 #define HOST_KEY_W 1
@@ -86,8 +70,8 @@ int host_window_poll(host_window* window, host_window_event* out);
    Returns 1, or 0 when it could not be queued. */
 int host_window_post_key(host_window* window, int key, int down);
 
-/* 1 when this platform's window code shows pixels (host_window_show): X11 (Day 383) and Cocoa (Day 382); 0 on Windows
-   until Day 381. A test that shows pictures checks that every one was shown where this is 1. */
+/* 1 when this platform's window code shows pixels (host_window_show): X11 (Day 383), Cocoa (Day 382) and Win32 (Day
+   381, a GDI blit). A test that shows pictures checks that every one was shown where this is 1. */
 int host_window_can_show(void);
 
 /* Shows RGBA8 pixels (`height` rows of `width` pixels, `stride` bytes apart, top row first) in the window, unscaled

@@ -6,6 +6,7 @@
 #include "audio/mixer.h"
 #include "audio/panning.h"
 #include "containers/vector.h"
+#include "lang/limits.h"
 #include "lang/scalar.h"
 
 using namespace engine_placeholder;
@@ -139,7 +140,7 @@ TEST_CASE("panning: no direction (the listener's own position) fills every speak
     CHECK(g[3] == 0.0f);
     SpeakerGains(ChannelLayout::Stereo, 0.0f, 1.0f, 0.0f, 0.0f, g);  // overhead
     CHECK(g[0] == Approx(0.70710678f));
-    SpeakerGains(ChannelLayout::Stereo, 1.0f / 0.0f, 0.0f, 0.0f, 0.0f, g);  // not finite: centred
+    SpeakerGains(ChannelLayout::Stereo, Limits<f32>::Infinity(), 0.0f, 0.0f, 0.0f, g);  // not finite: centred
     CHECK(g[0] == Approx(0.70710678f));
 }
 
@@ -202,7 +203,7 @@ TEST_CASE("panning: a directional voice lands in the right channels of a 5.1 mix
     frame = out.Data() + 200 * 6;
     CHECK(frame[1] == Approx(0.5f).margin(1e-4));
     CHECK(frame[2] == Approx(0.0f).margin(1e-4));
-    CHECK(mixer.SetDirection(id, 0.0f / 0.0f, 0.0f, 1.0f, 0.0f) == MixerStatus::InvalidParam);
+    CHECK(mixer.SetDirection(id, Limits<f32>::QuietNaN(), 0.0f, 1.0f, 0.0f) == MixerStatus::InvalidParam);
 }
 
 TEST_CASE("panning: a ramp moves the gains over the ramp without a step", "[audio][panning]")

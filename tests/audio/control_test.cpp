@@ -472,12 +472,12 @@ u64 CtThreadedHash(u32 yields_between_posts)
     }
     desc.clip = CtClip(tone);
     desc.loop = true;
-    const u32 kBlocks = 40;
+    const u32 kControlBlocks = 40;
     Thread producer(
         [&]
         {
             VoiceId ids[3];
-            for (u32 block = 0; block < kBlocks; ++block)
+            for (u32 block = 0; block < kControlBlocks; ++block)
             {
                 if (block == 0)
                 {
@@ -519,7 +519,7 @@ u64 CtThreadedHash(u32 yields_between_posts)
     {
         out.Push(0.0f);
     }
-    for (u32 block = 0; block < kBlocks; ++block)
+    for (u32 block = 0; block < kControlBlocks; ++block)
     {
         while (!mixer.TryRenderBlock(Span<f32>(out.Data(), out.Size())))
         {

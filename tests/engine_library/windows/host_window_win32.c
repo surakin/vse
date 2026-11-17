@@ -1,7 +1,8 @@
 /* Phase 24 Day 369: host_window.h on Windows (Win32): a window class of the host's, borderless windows of the exact
    client size (a captioned window has a smallest width, and the golden image is 160 pixels wide), a message loop turned
    by the polls and at each window's opening and closing, and the keys and pointer motion the walk-around reads. The
-   engine draws into the HWND with Direct3D 12 or Vulkan: host_window_api_flags (host_window.h) reads HOST_SURFACE_API.
+   engine draws into the HWND with Direct3D 12 or Vulkan: host_surface_api_flags (host_surface_api.h) reads
+   HOST_SURFACE_API.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,8 @@ struct host_window
     host_window_event events[HOST_WINDOW_EVENTS]; /* written by the window procedure, read by host_window_poll */
     unsigned head;
     unsigned tail;
+    unsigned char* bgra; /* host_window_show's converted picture, kept between calls */
+    size_t bgra_bytes;
 };
 
 static const wchar_t kHostWindowClass[] = L"engine_host_window";
@@ -171,6 +174,7 @@ void host_window_close(host_window* window)
     SetWindowLongPtrW(window->hwnd, GWLP_USERDATA, 0); /* nothing queues into it while it goes */
     DestroyWindow(window->hwnd);
     Pump();
+    free(window->bgra);
     free(window);
 }
 
@@ -219,15 +223,61 @@ int host_window_post_key(host_window* window, int key, int down)
    pictures. */
 int host_window_can_show(void)
 {
-    return 0;
+    return 1;
 }
 
+/* Day 381: GDI draws a top-down 32-bit DIB, whose bytes are blue, green, red and a fourth byte per pixel and whose rows
+   are width * 4 bytes apart: the picture is converted into the window's buffer and drawn at the top-left corner. */
 int host_window_show(host_window* window, const void* rgba, uint32_t width, uint32_t height, uint32_t stride)
 {
-    (void)window;
-    (void)rgba;
-    (void)width;
-    (void)height;
-    (void)stride;
-    return 0;
+    const unsigned char* in = (const unsigned char*)rgba;
+    const size_t bytes = (size_t)width * height * 4u;
+    BITMAPINFO bmi;
+    HDC dc;
+    int drawn;
+    uint32_t x;
+    uint32_t y;
+    if (window == NULL || rgba == NULL || width == 0 || height == 0 || width > 0x8000u || height > 0x8000u ||
+        stride < width * 4u)
+    {
+        return 0;
+    }
+    if (window->bgra_bytes < bytes)
+    {
+        unsigned char* grown = (unsigned char*)realloc(window->bgra, bytes);
+        if (grown == NULL)
+        {
+            return 0;
+        }
+        window->bgra = grown;
+        window->bgra_bytes = bytes;
+    }
+    for (y = 0; y < height; ++y)
+    {
+        const unsigned char* row = in + (size_t)y * stride;
+        unsigned char* out = window->bgra + (size_t)y * width * 4u;
+        for (x = 0; x < width; ++x)
+        {
+            out[x * 4u + 0u] = row[x * 4u + 2u];
+            out[x * 4u + 1u] = row[x * 4u + 1u];
+            out[x * 4u + 2u] = row[x * 4u + 0u];
+            out[x * 4u + 3u] = row[x * 4u + 3u];
+        }
+    }
+    memset(&bmi, 0, sizeof(bmi));
+    bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
+    bmi.bmiHeader.biWidth = (LONG)width;
+    bmi.bmiHeader.biHeight = -(LONG)height; /* negative: the top row first */
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
+    dc = GetDC(window->hwnd);
+    if (dc == NULL)
+    {
+        return 0;
+    }
+    drawn = SetDIBitsToDevice(dc, 0, 0, width, height, 0, 0, 0, height, window->bgra, &bmi, DIB_RGB_COLORS);
+    ReleaseDC(window->hwnd, dc);
+    Pump();
+    return drawn == (int)height ? 1 : 0;
 }

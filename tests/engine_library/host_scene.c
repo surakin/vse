@@ -656,7 +656,7 @@ int main(void)
     memset(&info, 0, sizeof(info));
     info.struct_size = sizeof(info);
     host_window_describe(window, &info);
-    info.flags = host_window_api_flags();
+    info.flags = host_surface_api_flags();
     printf("host_scene: drawing with %s\n", ApiName(&info));
     memset(&surface, 0, sizeof(surface));
     if (g_api->surface_create(engine, &info, &surface) != ENGINE_OK)

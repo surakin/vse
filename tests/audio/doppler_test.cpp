@@ -9,6 +9,7 @@
 #include "containers/vector.h"
 #include "ecs/transform.h"
 #include "lang/scalar.h"
+#include "platform_hash.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::audio;
@@ -230,5 +231,5 @@ TEST_CASE("doppler: the flyby renders the committed hash (a same-build regressio
     }
     REQUIRE(hash.Valid());
     // Committed on Linux with Clang (-ffp-contract=off); a compiler change that moves the bits re-commits it.
-    CHECK(hash.Value() == 0xac45a6b75dd064beull);
+    CHECK(hash.Value() == testing::PlatformHash(0xac45a6b75dd064beull, 0xfc3f7b88c68898b8ull));
 }

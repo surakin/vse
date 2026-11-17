@@ -9,6 +9,7 @@
 #include "containers/vector.h"
 #include "lang/limits.h"
 #include "lang/scalar.h"
+#include "platform_hash.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::audio;
@@ -229,7 +230,7 @@ TEST_CASE("Filter: a ring-out ends in exact zero within the stated tail", "[audi
     {
         signal.Push(0.0f);
     }
-    effect->Process(signal.Data(), signal.Size());
+    effect->Process(signal.Data(), static_cast<u32>(signal.Size()));
     CHECK(signal[0] != 0.0f);
     for (u32 i = tail + 1; i < signal.Size(); ++i)
     {
@@ -519,6 +520,6 @@ TEST_CASE("Inserts: the echo and the reverb scenes render the committed hashes",
         REQUIRE(hash.Valid());
         hashes[scene] = hash.Value();
     }
-    CHECK(hashes[0] == 0x6afbd0d8694df430ull);
-    CHECK(hashes[1] == 0xc8fe19a969ce6c8full);
+    CHECK(hashes[0] == testing::PlatformHash(0x6afbd0d8694df430ull, 0x2ae7595c67d1ab6dull));
+    CHECK(hashes[1] == testing::PlatformHash(0xc8fe19a969ce6c8full, 0x43e16b3965dc2afbull));
 }
