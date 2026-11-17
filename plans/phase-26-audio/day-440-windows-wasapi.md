@@ -34,7 +34,7 @@ Done 2026-11-17 on the Windows PC (AMD Ryzen with a Realtek output), at `44b95e8
 - **`audio_probe`** builds on Windows now (it was in the Linux list of the root `CMakeLists.txt` only; `--backend=wasapi` is the
   platform's). `list`: one endpoint, `{0.0.0.00000000}.{69388c2f-1269-4f13-980f-c8ffe95b8aae} (default)  up to 2 channels`. `play
   --seconds=3`: `granted: 48000 Hz, 2 channels, 2048 frames per call, latency 2048 frames`, `callbacks 301, underruns 0, slow 0,
-  longest 21 us, frames 144480`. **Nobody has listened to it yet** (`KNOWN-ISSUES.md`).
+  longest 21 us, frames 144480`. **The user listened on 2026-11-17: the tone sounds clean.**
 - **Tests:** `backend_test.cpp`'s three hardware tests (own pace, a stalled callback counted, destruction waits for the callback)
   run on Windows too, and two WASAPI tests (the endpoint list, refusals by value) were added: 8 of 8 `[backend]` cases pass, plain
   and asan, against the real endpoint. The C API tests of Days 438-439 pass statically linked and through the DLL
