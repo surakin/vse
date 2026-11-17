@@ -10,6 +10,9 @@ set(AUDIO_SOURCES
   clip.cpp  # Day 416
   wav.cpp  # Day 417
   asset_clip.cpp  # Day 418
+  device.cpp  # Day 419
+  audio_settings.cpp  # Day 419
+  mixer.cpp  # Day 420
 )
 set(AUDIO_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

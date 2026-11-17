@@ -9,6 +9,8 @@ set(AUDIO_TEST_SOURCES
   clip_test.cpp  # Day 416
   wav_test.cpp  # Day 417
   aclip_test.cpp  # Day 418
+  device_test.cpp  # Day 419
+  mixer_test.cpp  # Day 420
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 
@@ -32,3 +34,10 @@ endif()
 if(ENGINE_HAVE_TSAN)  # not with MSVC
   engine_add_audio_tests(audio_tests_tsan audio_tsan " [tsan]" "tsan")
 endif()
+
+# The backend checklist gate (CMake script, like io_backend_lists): BACKEND.md matches the Backend: labels of the audio headers.
+add_test(NAME audio_backend_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_audio_backend_lists.cmake)
+add_test(NAME audio_backend_lists_planted COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR}
+         -DBACKEND_FILE=${CMAKE_SOURCE_DIR}/tests/io/cross_syntax/planted_backend.md -P ${CMAKE_CURRENT_SOURCE_DIR}/check_audio_backend_lists.cmake)
+set_tests_properties(audio_backend_lists_planted PROPERTIES WILL_FAIL TRUE)
+engine_label_tests(audio_backend_lists audio_backend_lists_planted)

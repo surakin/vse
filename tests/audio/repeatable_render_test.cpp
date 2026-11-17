@@ -16,7 +16,7 @@ using namespace engine_placeholder::audio;
 namespace
 {
 
-constexpr u32 kBlockFrames = 256;
+constexpr u32 kSceneBlockFrames = 256;
 constexpr u32 kBlocks = 40;
 
 struct Voice
@@ -29,8 +29,8 @@ struct Voice
     f32 z2 = 0.0f;
 };
 
-// Renders the scene as `kBlocks` stereo blocks of `kBlockFrames`, pulled by the caller in callbacks of `pull_frames`,
-// and returns the interleaved samples.
+// Renders the scene as `kBlocks` stereo blocks of `kSceneBlockFrames`, pulled by the caller in callbacks of
+// `pull_frames`, and returns the interleaved samples.
 Vector<f32> RenderScene(f32 master_gain, u32 pull_frames)
 {
     Vector<Voice> voices;
@@ -54,7 +54,7 @@ Vector<f32> RenderScene(f32 master_gain, u32 pull_frames)
 
     Vector<f32> out;
     Vector<f32> block;
-    for (u32 i = 0; i < kBlockFrames * 2; ++i)
+    for (u32 i = 0; i < kSceneBlockFrames * 2; ++i)
     {
         block.Push(0.0f);
     }
@@ -69,7 +69,7 @@ Vector<f32> RenderScene(f32 master_gain, u32 pull_frames)
         {
             block[i] = 0.0f;
         }
-        for (u32 frame = 0; frame < kBlockFrames; ++frame)
+        for (u32 frame = 0; frame < kSceneBlockFrames; ++frame)
         {
             for (usize v = 0; v < voices.Size(); ++v)  // fixed voice order
             {
@@ -119,9 +119,9 @@ Span<const f32> RenderView(const Vector<f32>& v)
 
 TEST_CASE("repeatable render: two renders in one process are bit-identical", "[audio][repeatable]")
 {
-    const Vector<f32> first = RenderScene(1.0f, kBlockFrames);
-    const Vector<f32> second = RenderScene(1.0f, kBlockFrames);
-    REQUIRE(first.Size() == static_cast<usize>(kBlocks) * kBlockFrames * 2);
+    const Vector<f32> first = RenderScene(1.0f, kSceneBlockFrames);
+    const Vector<f32> second = RenderScene(1.0f, kSceneBlockFrames);
+    REQUIRE(first.Size() == static_cast<usize>(kBlocks) * kSceneBlockFrames * 2);
     REQUIRE(first.Size() == second.Size());
 
     bool valid = false;
@@ -133,7 +133,7 @@ TEST_CASE("repeatable render: two renders in one process are bit-identical", "[a
 
 TEST_CASE("repeatable render: the size of the pulls does not change the bits", "[audio][repeatable]")
 {
-    const u64 reference = HashBlock(RenderView(RenderScene(1.0f, kBlockFrames)), nullptr);
+    const u64 reference = HashBlock(RenderView(RenderScene(1.0f, kSceneBlockFrames)), nullptr);
     const u32 pulls[3] = {64, 100, 1024};
     for (u32 pull : pulls)
     {
@@ -144,15 +144,15 @@ TEST_CASE("repeatable render: the size of the pulls does not change the bits", "
 
 TEST_CASE("repeatable render: the tolerance comparison flags a gain of 1.001", "[audio][repeatable]")
 {
-    const Vector<f32> reference = RenderScene(1.0f, kBlockFrames);
-    const Vector<f32> louder = RenderScene(1.001f, kBlockFrames);
+    const Vector<f32> reference = RenderScene(1.0f, kSceneBlockFrames);
+    const Vector<f32> louder = RenderScene(1.001f, kSceneBlockFrames);
     CHECK(HashBlock(RenderView(reference), nullptr) != HashBlock(RenderView(louder), nullptr));
 
     const CompareResult samples = CompareSamples(RenderView(reference), RenderView(louder), RenderTolerance());
     CHECK_FALSE(samples.equal);
     CHECK(samples.max_abs_error > 1.0e-5f);
 
-    const usize block_samples = static_cast<usize>(kBlockFrames) * 2;
+    const usize block_samples = static_cast<usize>(kSceneBlockFrames) * 2;
     const CompareResult summaries = CompareSummaries(Summarize(RenderView(reference), block_samples, 64),
                                                      Summarize(RenderView(louder), block_samples, 64),
                                                      RenderTolerance());

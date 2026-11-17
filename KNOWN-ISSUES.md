@@ -626,3 +626,6 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - **Phase 26 Days 417-418: not built on Windows or macOS.** `audio/wav.*`, `audio/asset_clip.*`, `asset/audio_clip.*`, the `asset` loader change and `tools/asset_mint/audio_source.*` wait for the Windows and Mac runs (Days 440-441); the shared and importer-off trees were not rebuilt.
 - **GCC 16 on Linux, observed 2026-11-17:** the whole-tree Debug build stops in `engine/net` (`-Wsubobject-linkage`), and Release builds report `-Wstringop-overflow` in `vector.h` when test code pushes bytes into a freshly resized vector; the audio sources and tests compile clean per object in Debug.
 
+- **Phase 26 Day 420: the mixer scene hashes were taken with Clang only.** GCC 16 cannot link the audio tests (the `engine/net` `-Wsubobject-linkage` failure of the whole-tree build), so the committed `mixer_test.cpp` hashes were not compared with a GCC build; the Day 415 spike found them bit-identical across both compilers. Seen: 2026-11-17.
+- **Phase 26 Days 419-420: not built on Windows or macOS.** `audio/device.*`, `audio/audio_settings.*`, `audio/mixer.*`, `audio_backend_lists` (a CMake script test) and `tests/audio/*` wait for the Windows and Mac runs (Days 440-441).
+

@@ -96,7 +96,46 @@ and the clip outlives the resource manager's handle); an `s16` blob is converted
 through a manager that has `asset::RegisterCpuLoaders`; a missing or corrupt clip is the manager's named error (`NotFound`, `Corrupt`), never a substitute.
 `mint-project` does not pick `.audio.src` files up yet (a WAV is an input file outside the project's dependency tracking; `KNOWN-ISSUES.md`).
 
+## Devices
+
+`audio::AudioDevice` (`audio/device.h`) is the only per-platform seam. The mixer renders into a callback, `void(void* user, f32* interleaved, u32 frames)`, and the device
+decides when it runs and where the frames go: `SetCallbacks`, `Open(DeviceConfig)` (a name, a rate with 0 for the device's own, a layout, buffer frames),
+`Start`, `Stop`, `Close`, and `Info()` for what was granted (rate, layout, buffer frames, latency). A refusal is a `DeviceStatus` (`InvalidConfig`, `NotFound`,
+`Unsupported`, `AlreadyOpen`, `NotOpen`, `Busy`, `Lost`, `IoError`, `OutOfMemory`); a device that stops on its own calls the error callback.
+
+Two devices need no hardware and are the test and offline route. `CreateDevice(DeviceKind::Null)` renders on demand and throws the samples away;
+`CreateWavFileDevice(path)` renders on demand and writes a 32-bit float WAV on `Close` (a test reads it back with `ParseWav`). Both are driven by
+`AudioDevice::Pump(frames)` on the caller's thread, in calls of at most the buffer size, and `FramesRendered()` is their clock; a hardware device runs from its own
+thread and `Pump` returns `Unsupported`. `CreateDevice(DeviceKind::Platform)` is the platform's output, and the null device on a platform with no backend yet.
+`EnumerateDevices` lists the outputs of a kind (one fake device for the null and file kinds). A new backend implements `engine/audio/BACKEND.md`, kept in step
+with the header by the ctest `audio_backend_lists`.
+
+The settings (`audio/audio_settings.h`, `RegisterAudioSettings`, `AudioSettingsFromRegistry`) are `audio.device`, `audio.sample_rate`, `audio.buffer_frames` and
+`audio.channels` (each needs a device restart), and `audio.master_volume`, `audio.max_voices` and `audio.resampler_quality` (live), with the environment variables
+`ENGINE_AUDIO_*` and the flags `--audio-*`. `DeviceConfigFromSettings` turns them into a `DeviceConfig`.
+
+## The mixer
+
+`audio::Mixer` (`audio/mixer.h`) renders in fixed blocks of `kBlockFrames` (256) frames; `Render(out, frames)` pulls any number of frames through a carry-over, so
+the output does not depend on the size the device calls back with. `Init(MixerConfig)` allocates everything (the voice pool, the sinc table, the carry block) and
+`RenderBlock` and `Render` allocate nothing. A voice (`VoiceDesc`: a clip, gain 0 to 16, pan -1 to 1, pitch 1/16 to 16, loop, priority, virtual, start frame) is
+started by `Play`, which returns a `VoiceId` (a slot and a generation, so a stale id names nothing), and changed by `Stop`, `SetGain`, `SetPan`, `SetPitch` and
+`SetVirtual`; until the command queue (Day 421) these are control-thread calls that must not overlap a render.
+
+A voice's position is a 32.32 fixed-point `u64`, so a long clip does not drift (an `f32` accumulator stalls after about twelve minutes at 48 kHz). The three
+resamplers, chosen by `audio.resampler_quality`, are linear, 4-point Hermite (the default) and a 16-tap Blackman-windowed sinc with 32 phases; at a whole-frame
+position all three return the sample exactly, so pitch 1 reproduces a clip bit for bit and pitch 2 plays every second sample. The sinc kernel does not low-pass for
+pitches above 1. A looping voice wraps at the clip's loop end (or the whole clip): the sample after the end is the one at the loop start and the taps of the
+interpolators wrap too, so there is no gap and no blend of the two ends; the intro before `loop_start` plays once. A voice that runs off the end of a non-looping
+clip is released.
+
+Routing: a mono clip pans over the front pair with the equal-power law `left = Sqrt((1 - p) / 2)`, `right = Sqrt((1 + p) / 2)` (-3 dB, gain 0.7071, at the centre); a
+stereo or multichannel clip on a layout with a front pair balances it (the side away from the pan is attenuated by `Sqrt(1 - |p|)`, the centre is unity); every
+other pairing goes through the conversion table of `audio/convert.h`. Voices are summed in slot order into the block, which is not clipped (the master bus limits,
+Day 422). When the pool is full a new voice stops the one with the lowest (priority, gain, age) if it does not rank below it, and is refused with `Full`
+otherwise; a virtual voice advances its position and costs no mixing. The scene hashes of `mixer_test.cpp` are a same-build regression check.
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
-perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager).
+perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes).

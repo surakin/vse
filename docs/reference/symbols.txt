@@ -4479,8 +4479,24 @@ physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-mesh
 physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:771
 physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:778
 physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:785
-audio::MakeClipFromAsset(const asset::AudioClipView&,StringView,AudioClipPtr*)	function	audio	audio-makeclipfromasset-const-asset-audioclipview-amp-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:24
-audio::LoadAudioClip(asset::ResourceManager&,asset::ResourceId,StringView,AudioClipPtr*)	function	audio	audio-loadaudioclip-asset-resourcemanager-amp-asset-resourceid-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:37
+audio::MakeClipFromAsset(const asset::AudioClipView&,StringView,AudioClipPtr*)	function	audio	audio-makeclipfromasset-const-asset-audioclipview-amp-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:25
+audio::LoadAudioClip(asset::ResourceManager&,asset::ResourceId,StringView,AudioClipPtr*)	function	audio	audio-loadaudioclip-asset-resourcemanager-amp-asset-resourceid-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:39
+audio::ResamplerQuality	enum	audio	audio-resamplerquality	audio.md	engine/audio/audio_settings.h:12
+audio::ResamplerQuality::Linear	enumerator	audio	audio-resamplerquality-linear	audio.md	engine/audio/audio_settings.h:15
+audio::ResamplerQuality::Hermite	enumerator	audio	audio-resamplerquality-hermite	audio.md	engine/audio/audio_settings.h:17
+audio::ResamplerQuality::Sinc	enumerator	audio	audio-resamplerquality-sinc	audio.md	engine/audio/audio_settings.h:19
+audio::AudioSettings	struct	audio	audio-audiosettings	audio.md	engine/audio/audio_settings.h:25
+audio::AudioSettings::device	variable	audio	audio-audiosettings-device	audio.md	engine/audio/audio_settings.h:28
+audio::AudioSettings::sample_rate	variable	audio	audio-audiosettings-sample-rate	audio.md	engine/audio/audio_settings.h:30
+audio::AudioSettings::buffer_frames	variable	audio	audio-audiosettings-buffer-frames	audio.md	engine/audio/audio_settings.h:32
+audio::AudioSettings::channels	variable	audio	audio-audiosettings-channels	audio.md	engine/audio/audio_settings.h:34
+audio::AudioSettings::master_volume	variable	audio	audio-audiosettings-master-volume	audio.md	engine/audio/audio_settings.h:36
+audio::AudioSettings::max_voices	variable	audio	audio-audiosettings-max-voices	audio.md	engine/audio/audio_settings.h:38
+audio::AudioSettings::resampler	variable	audio	audio-audiosettings-resampler	audio.md	engine/audio/audio_settings.h:40
+audio::RegisterAudioSettings(settings::Registry*)	function	audio	audio-registeraudiosettings-settings-registry-star	audio.md	engine/audio/audio_settings.h:51
+audio::AudioSettingsFromRegistry(const settings::Registry&)	function	audio	audio-audiosettingsfromregistry-const-settings-registry-amp	audio.md	engine/audio/audio_settings.h:58
+audio::LayoutForChannelCount(u32)	function	audio	audio-layoutforchannelcount-u32	audio.md	engine/audio/audio_settings.h:65
+audio::DeviceConfigFromSettings(const AudioSettings&)	function	audio	audio-deviceconfigfromsettings-const-audiosettings-amp	audio.md	engine/audio/audio_settings.h:72
 audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:22
 audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:26
 audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:29
@@ -4556,6 +4572,56 @@ audio::ChannelMatrix::outputs	variable	audio	audio-channelmatrix-outputs	audio.m
 audio::ChannelMatrix::gain	variable	audio	audio-channelmatrix-gain	audio.md	engine/audio/convert.h:99
 audio::BuildChannelMatrix(ChannelLayout,ChannelLayout)	function	audio	audio-buildchannelmatrix-channellayout-channellayout	audio.md	engine/audio/convert.h:115
 audio::ApplyChannelMatrix(const ChannelMatrix&,Span<const f32>,Span<f32>,usize)	function	audio	audio-applychannelmatrix-const-channelmatrix-amp-span-lt-const-f32-gt-span-lt-f32-gt-usize	audio.md	engine/audio/convert.h:127
+audio::DeviceStatus	enum	audio	audio-devicestatus	audio.md	engine/audio/device.h:18
+audio::DeviceStatus::Ok	enumerator	audio	audio-devicestatus-ok	audio.md	engine/audio/device.h:21
+audio::DeviceStatus::InvalidConfig	enumerator	audio	audio-devicestatus-invalidconfig	audio.md	engine/audio/device.h:23
+audio::DeviceStatus::NotFound	enumerator	audio	audio-devicestatus-notfound	audio.md	engine/audio/device.h:25
+audio::DeviceStatus::Unsupported	enumerator	audio	audio-devicestatus-unsupported	audio.md	engine/audio/device.h:28
+audio::DeviceStatus::AlreadyOpen	enumerator	audio	audio-devicestatus-alreadyopen	audio.md	engine/audio/device.h:30
+audio::DeviceStatus::NotOpen	enumerator	audio	audio-devicestatus-notopen	audio.md	engine/audio/device.h:32
+audio::DeviceStatus::Busy	enumerator	audio	audio-devicestatus-busy	audio.md	engine/audio/device.h:34
+audio::DeviceStatus::Lost	enumerator	audio	audio-devicestatus-lost	audio.md	engine/audio/device.h:36
+audio::DeviceStatus::IoError	enumerator	audio	audio-devicestatus-ioerror	audio.md	engine/audio/device.h:38
+audio::DeviceStatus::OutOfMemory	enumerator	audio	audio-devicestatus-outofmemory	audio.md	engine/audio/device.h:40
+audio::DeviceConfig	struct	audio	audio-deviceconfig	audio.md	engine/audio/device.h:46
+audio::DeviceConfig::name	variable	audio	audio-deviceconfig-name	audio.md	engine/audio/device.h:49
+audio::DeviceConfig::sample_rate	variable	audio	audio-deviceconfig-sample-rate	audio.md	engine/audio/device.h:51
+audio::DeviceConfig::layout	variable	audio	audio-deviceconfig-layout	audio.md	engine/audio/device.h:53
+audio::DeviceConfig::buffer_frames	variable	audio	audio-deviceconfig-buffer-frames	audio.md	engine/audio/device.h:55
+audio::kMaxDeviceBufferFrames	variable	audio	audio-kmaxdevicebufferframes	audio.md	engine/audio/device.h:59
+audio::DeviceInfo	struct	audio	audio-deviceinfo	audio.md	engine/audio/device.h:64
+audio::DeviceInfo::sample_rate	variable	audio	audio-deviceinfo-sample-rate	audio.md	engine/audio/device.h:67
+audio::DeviceInfo::layout	variable	audio	audio-deviceinfo-layout	audio.md	engine/audio/device.h:69
+audio::DeviceInfo::buffer_frames	variable	audio	audio-deviceinfo-buffer-frames	audio.md	engine/audio/device.h:71
+audio::DeviceInfo::latency_frames	variable	audio	audio-deviceinfo-latency-frames	audio.md	engine/audio/device.h:73
+audio::RenderCallback	alias	audio	audio-rendercallback	audio.md	engine/audio/device.h:81
+audio::DeviceErrorCallback	alias	audio	audio-deviceerrorcallback	audio.md	engine/audio/device.h:84
+audio::AudioDevice	class	audio	audio-audiodevice	audio.md	engine/audio/device.h:95
+audio::AudioDevice::~AudioDevice()	function	audio	audio-audiodevice-tilde-audiodevice	audio.md	engine/audio/device.h:98
+audio::AudioDevice::SetCallbacks(RenderCallback,DeviceErrorCallback,void*)	function	audio	audio-audiodevice-setcallbacks-rendercallback-deviceerrorcallback-void-star	audio.md	engine/audio/device.h:107
+audio::AudioDevice::Open(const DeviceConfig&)	function	audio	audio-audiodevice-open-const-deviceconfig-amp	audio.md	engine/audio/device.h:115
+audio::AudioDevice::Start()	function	audio	audio-audiodevice-start	audio.md	engine/audio/device.h:123
+audio::AudioDevice::Stop()	function	audio	audio-audiodevice-stop	audio.md	engine/audio/device.h:129
+audio::AudioDevice::Close()	function	audio	audio-audiodevice-close	audio.md	engine/audio/device.h:136
+audio::AudioDevice::Info() const	function	audio	audio-audiodevice-info-const	audio.md	engine/audio/device.h:139
+audio::AudioDevice::IsOpen() const	function	audio	audio-audiodevice-isopen-const	audio.md	engine/audio/device.h:145
+audio::AudioDevice::IsRunning() const	function	audio	audio-audiodevice-isrunning-const	audio.md	engine/audio/device.h:151
+audio::AudioDevice::Pump(u64)	function	audio	audio-audiodevice-pump-u64	audio.md	engine/audio/device.h:160
+audio::AudioDevice::FramesRendered() const	function	audio	audio-audiodevice-framesrendered-const	audio.md	engine/audio/device.h:167
+audio::DeviceKind	enum	audio	audio-devicekind	audio.md	engine/audio/device.h:171
+audio::DeviceKind::Null	enumerator	audio	audio-devicekind-null	audio.md	engine/audio/device.h:174
+audio::DeviceKind::WavFile	enumerator	audio	audio-devicekind-wavfile	audio.md	engine/audio/device.h:176
+audio::DeviceKind::Platform	enumerator	audio	audio-devicekind-platform	audio.md	engine/audio/device.h:179
+audio::CreateDevice(DeviceKind)	function	audio	audio-createdevice-devicekind	audio.md	engine/audio/device.h:189
+audio::CreateWavFileDevice(const io::Path&)	function	audio	audio-createwavfiledevice-const-io-path-amp	audio.md	engine/audio/device.h:197
+audio::IsValidDeviceConfig(const DeviceConfig&)	function	audio	audio-isvaliddeviceconfig-const-deviceconfig-amp	audio.md	engine/audio/device.h:204
+audio::DeviceDescription	struct	audio	audio-devicedescription	audio.md	engine/audio/device_list.h:13
+audio::DeviceDescription::name	variable	audio	audio-devicedescription-name	audio.md	engine/audio/device_list.h:16
+audio::DeviceDescription::is_default	variable	audio	audio-devicedescription-is-default	audio.md	engine/audio/device_list.h:18
+audio::DeviceDescription::max_channels	variable	audio	audio-devicedescription-max-channels	audio.md	engine/audio/device_list.h:20
+audio::DeviceDescription::min_rate	variable	audio	audio-devicedescription-min-rate	audio.md	engine/audio/device_list.h:22
+audio::DeviceDescription::max_rate	variable	audio	audio-devicedescription-max-rate	audio.md	engine/audio/device_list.h:24
+audio::EnumerateDevices(DeviceKind,Vector<DeviceDescription>*)	function	audio	audio-enumeratedevices-devicekind-vector-lt-devicedescription-gt-star	audio.md	engine/audio/device_list.h:36
 audio::kMinSampleRate	variable	audio	audio-kminsamplerate	audio.md	engine/audio/format.h:11
 audio::kMaxSampleRate	variable	audio	audio-kmaxsamplerate	audio.md	engine/audio/format.h:13
 audio::kMaxChannels	variable	audio	audio-kmaxchannels	audio.md	engine/audio/format.h:15
@@ -4592,6 +4658,64 @@ audio::ChannelName(ChannelLayout,u32)	function	audio	audio-channelname-channella
 audio::LayoutName(ChannelLayout)	function	audio	audio-layoutname-channellayout	audio.md	engine/audio/format.h:134
 audio::FrameBytes(const AudioFormat&)	function	audio	audio-framebytes-const-audioformat-amp	audio.md	engine/audio/format.h:141
 audio::IsValid(const AudioFormat&)	function	audio	audio-isvalid-const-audioformat-amp	audio.md	engine/audio/format.h:150
+audio::kBlockFrames	variable	audio	audio-kblockframes	audio.md	engine/audio/mixer.h:16
+audio::kMaxVoices	variable	audio	audio-kmaxvoices	audio.md	engine/audio/mixer.h:19
+audio::kMinPitch	variable	audio	audio-kminpitch	audio.md	engine/audio/mixer.h:22
+audio::kMaxPitch	variable	audio	audio-kmaxpitch	audio.md	engine/audio/mixer.h:24
+audio::MixerStatus	enum	audio	audio-mixerstatus	audio.md	engine/audio/mixer.h:29
+audio::MixerStatus::Ok	enumerator	audio	audio-mixerstatus-ok	audio.md	engine/audio/mixer.h:32
+audio::MixerStatus::InvalidConfig	enumerator	audio	audio-mixerstatus-invalidconfig	audio.md	engine/audio/mixer.h:34
+audio::MixerStatus::InvalidVoice	enumerator	audio	audio-mixerstatus-invalidvoice	audio.md	engine/audio/mixer.h:36
+audio::MixerStatus::InvalidParam	enumerator	audio	audio-mixerstatus-invalidparam	audio.md	engine/audio/mixer.h:38
+audio::MixerStatus::NoClip	enumerator	audio	audio-mixerstatus-noclip	audio.md	engine/audio/mixer.h:40
+audio::MixerStatus::Full	enumerator	audio	audio-mixerstatus-full	audio.md	engine/audio/mixer.h:42
+audio::MixerStatus::OutOfMemory	enumerator	audio	audio-mixerstatus-outofmemory	audio.md	engine/audio/mixer.h:44
+audio::VoiceId	struct	audio	audio-voiceid	audio.md	engine/audio/mixer.h:50
+audio::VoiceId::index	variable	audio	audio-voiceid-index	audio.md	engine/audio/mixer.h:53
+audio::VoiceId::generation	variable	audio	audio-voiceid-generation	audio.md	engine/audio/mixer.h:55
+audio::VoiceId::IsValid() const	function	audio	audio-voiceid-isvalid-const	audio.md	engine/audio/mixer.h:61
+audio::VoiceId::operator==(const VoiceId&) const	function	audio	audio-voiceid-operator-eq-eq-const-voiceid-amp-const	audio.md	engine/audio/mixer.h:63
+audio::VoiceDesc	struct	audio	audio-voicedesc	audio.md	engine/audio/mixer.h:69
+audio::VoiceDesc::clip	variable	audio	audio-voicedesc-clip	audio.md	engine/audio/mixer.h:72
+audio::VoiceDesc::gain	variable	audio	audio-voicedesc-gain	audio.md	engine/audio/mixer.h:74
+audio::VoiceDesc::pan	variable	audio	audio-voicedesc-pan	audio.md	engine/audio/mixer.h:76
+audio::VoiceDesc::pitch	variable	audio	audio-voicedesc-pitch	audio.md	engine/audio/mixer.h:78
+audio::VoiceDesc::loop	variable	audio	audio-voicedesc-loop	audio.md	engine/audio/mixer.h:80
+audio::VoiceDesc::is_virtual	variable	audio	audio-voicedesc-is-virtual	audio.md	engine/audio/mixer.h:82
+audio::VoiceDesc::priority	variable	audio	audio-voicedesc-priority	audio.md	engine/audio/mixer.h:84
+audio::VoiceDesc::start_frame	variable	audio	audio-voicedesc-start-frame	audio.md	engine/audio/mixer.h:86
+audio::MixerConfig	struct	audio	audio-mixerconfig	audio.md	engine/audio/mixer.h:92
+audio::MixerConfig::sample_rate	variable	audio	audio-mixerconfig-sample-rate	audio.md	engine/audio/mixer.h:95
+audio::MixerConfig::layout	variable	audio	audio-mixerconfig-layout	audio.md	engine/audio/mixer.h:97
+audio::MixerConfig::max_voices	variable	audio	audio-mixerconfig-max-voices	audio.md	engine/audio/mixer.h:99
+audio::MixerConfig::quality	variable	audio	audio-mixerconfig-quality	audio.md	engine/audio/mixer.h:101
+audio::MixerStats	struct	audio	audio-mixerstats	audio.md	engine/audio/mixer.h:107
+audio::MixerStats::blocks	variable	audio	audio-mixerstats-blocks	audio.md	engine/audio/mixer.h:110
+audio::MixerStats::voices_mixed	variable	audio	audio-mixerstats-voices-mixed	audio.md	engine/audio/mixer.h:112
+audio::MixerStats::voices_virtual	variable	audio	audio-mixerstats-voices-virtual	audio.md	engine/audio/mixer.h:114
+audio::MixerStats::voices_stolen	variable	audio	audio-mixerstats-voices-stolen	audio.md	engine/audio/mixer.h:116
+audio::MixerStats::voices_refused	variable	audio	audio-mixerstats-voices-refused	audio.md	engine/audio/mixer.h:118
+audio::MixerStats::voices_finished	variable	audio	audio-mixerstats-voices-finished	audio.md	engine/audio/mixer.h:120
+audio::Mixer	class	audio	audio-mixer	audio.md	engine/audio/mixer.h:135
+audio::Mixer::Mixer()	function	audio	audio-mixer-mixer	audio.md	engine/audio/mixer.h:138
+audio::Mixer::Mixer(const Mixer&)	function	audio	audio-mixer-mixer-const-mixer-amp	audio.md	engine/audio/mixer.h:139
+audio::Mixer::operator=(const Mixer&)	function	audio	audio-mixer-operator-eq-const-mixer-amp	audio.md	engine/audio/mixer.h:140
+audio::Mixer::Init(const MixerConfig&)	function	audio	audio-mixer-init-const-mixerconfig-amp	audio.md	engine/audio/mixer.h:147
+audio::Mixer::Play(const VoiceDesc&,VoiceId*)	function	audio	audio-mixer-play-const-voicedesc-amp-voiceid-star	audio.md	engine/audio/mixer.h:158
+audio::Mixer::Stop(VoiceId)	function	audio	audio-mixer-stop-voiceid	audio.md	engine/audio/mixer.h:165
+audio::Mixer::IsPlaying(VoiceId) const	function	audio	audio-mixer-isplaying-voiceid-const	audio.md	engine/audio/mixer.h:172
+audio::Mixer::SetGain(VoiceId,f32)	function	audio	audio-mixer-setgain-voiceid-f32	audio.md	engine/audio/mixer.h:180
+audio::Mixer::SetPan(VoiceId,f32)	function	audio	audio-mixer-setpan-voiceid-f32	audio.md	engine/audio/mixer.h:188
+audio::Mixer::SetPitch(VoiceId,f32)	function	audio	audio-mixer-setpitch-voiceid-f32	audio.md	engine/audio/mixer.h:196
+audio::Mixer::SetVirtual(VoiceId,bool)	function	audio	audio-mixer-setvirtual-voiceid-bool	audio.md	engine/audio/mixer.h:204
+audio::Mixer::Position(VoiceId,f64*) const	function	audio	audio-mixer-position-voiceid-f64-star-const	audio.md	engine/audio/mixer.h:213
+audio::Mixer::RenderBlock(Span<f32>)	function	audio	audio-mixer-renderblock-span-lt-f32-gt	audio.md	engine/audio/mixer.h:220
+audio::Mixer::Render(f32*,u32)	function	audio	audio-mixer-render-f32-star-u32	audio.md	engine/audio/mixer.h:229
+audio::Mixer::Channels() const	function	audio	audio-mixer-channels-const	audio.md	engine/audio/mixer.h:232
+audio::Mixer::Config() const	function	audio	audio-mixer-config-const	audio.md	engine/audio/mixer.h:235
+audio::Mixer::Stats() const	function	audio	audio-mixer-stats-const	audio.md	engine/audio/mixer.h:238
+audio::Mixer::VoiceCount() const	function	audio	audio-mixer-voicecount-const	audio.md	engine/audio/mixer.h:241
+audio::MixerConfigFromSettings(const AudioSettings&,u32)	function	audio	audio-mixerconfigfromsettings-const-audiosettings-amp-u32	audio.md	engine/audio/mixer.h:285
 audio::RenderTolerance	struct	audio	audio-rendertolerance	audio.md	engine/audio/render_compare.h:18
 audio::RenderTolerance::max_abs_error	variable	audio	audio-rendertolerance-max-abs-error	audio.md	engine/audio/render_compare.h:21
 audio::RenderTolerance::rms_error_db	variable	audio	audio-rendertolerance-rms-error-db	audio.md	engine/audio/render_compare.h:23
@@ -4611,53 +4735,53 @@ audio::MeasureBlock(Span<const f32>)	function	audio	audio-measureblock-span-lt-c
 audio::Summarize(Span<const f32>,usize,usize)	function	audio	audio-summarize-span-lt-const-f32-gt-usize-usize	audio.md	engine/audio/render_compare.h:85
 audio::CompareSamples(Span<const f32>,Span<const f32>,const RenderTolerance&)	function	audio	audio-comparesamples-span-lt-const-f32-gt-span-lt-const-f32-gt-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:96
 audio::CompareSummaries(const RenderSummary&,const RenderSummary&,const RenderTolerance&)	function	audio	audio-comparesummaries-const-rendersummary-amp-const-rendersummary-amp-const-rendertolerance-amp	audio.md	engine/audio/render_compare.h:107
-audio::WavStatus	enum	audio	audio-wavstatus	audio.md	engine/audio/wav.h:18
-audio::WavStatus::Ok	enumerator	audio	audio-wavstatus-ok	audio.md	engine/audio/wav.h:21
-audio::WavStatus::TooShort	enumerator	audio	audio-wavstatus-tooshort	audio.md	engine/audio/wav.h:23
-audio::WavStatus::NotRiff	enumerator	audio	audio-wavstatus-notriff	audio.md	engine/audio/wav.h:25
-audio::WavStatus::NotWave	enumerator	audio	audio-wavstatus-notwave	audio.md	engine/audio/wav.h:27
-audio::WavStatus::NoFmt	enumerator	audio	audio-wavstatus-nofmt	audio.md	engine/audio/wav.h:29
-audio::WavStatus::NoData	enumerator	audio	audio-wavstatus-nodata	audio.md	engine/audio/wav.h:31
-audio::WavStatus::BadFmt	enumerator	audio	audio-wavstatus-badfmt	audio.md	engine/audio/wav.h:33
-audio::WavStatus::Unsupported	enumerator	audio	audio-wavstatus-unsupported	audio.md	engine/audio/wav.h:35
-audio::WavStatus::BadChunk	enumerator	audio	audio-wavstatus-badchunk	audio.md	engine/audio/wav.h:37
-audio::WavStatus::BadFrameCount	enumerator	audio	audio-wavstatus-badframecount	audio.md	engine/audio/wav.h:39
-audio::WavStatus::BadSamples	enumerator	audio	audio-wavstatus-badsamples	audio.md	engine/audio/wav.h:41
-audio::WavStatus::OutOfMemory	enumerator	audio	audio-wavstatus-outofmemory	audio.md	engine/audio/wav.h:43
-audio::WavEncoding	enum	audio	audio-wavencoding	audio.md	engine/audio/wav.h:49
-audio::WavEncoding::U8	enumerator	audio	audio-wavencoding-u8	audio.md	engine/audio/wav.h:52
-audio::WavEncoding::S16	enumerator	audio	audio-wavencoding-s16	audio.md	engine/audio/wav.h:54
-audio::WavEncoding::S24	enumerator	audio	audio-wavencoding-s24	audio.md	engine/audio/wav.h:56
-audio::WavEncoding::S32	enumerator	audio	audio-wavencoding-s32	audio.md	engine/audio/wav.h:58
-audio::WavEncoding::F32	enumerator	audio	audio-wavencoding-f32	audio.md	engine/audio/wav.h:60
-audio::WavEncoding::F64	enumerator	audio	audio-wavencoding-f64	audio.md	engine/audio/wav.h:62
-audio::WavCue	struct	audio	audio-wavcue	audio.md	engine/audio/wav.h:68
-audio::WavCue::id	variable	audio	audio-wavcue-id	audio.md	engine/audio/wav.h:71
-audio::WavCue::frame	variable	audio	audio-wavcue-frame	audio.md	engine/audio/wav.h:73
-audio::kMaxWavCues	variable	audio	audio-kmaxwavcues	audio.md	engine/audio/wav.h:77
-audio::kMaxWavFrames	variable	audio	audio-kmaxwavframes	audio.md	engine/audio/wav.h:79
-audio::WavInfo	struct	audio	audio-wavinfo	audio.md	engine/audio/wav.h:85
-audio::WavInfo::encoding	variable	audio	audio-wavinfo-encoding	audio.md	engine/audio/wav.h:88
-audio::WavInfo::format	variable	audio	audio-wavinfo-format	audio.md	engine/audio/wav.h:90
-audio::WavInfo::channel_mask	variable	audio	audio-wavinfo-channel-mask	audio.md	engine/audio/wav.h:92
-audio::WavInfo::data_offset	variable	audio	audio-wavinfo-data-offset	audio.md	engine/audio/wav.h:94
-audio::WavInfo::data_bytes	variable	audio	audio-wavinfo-data-bytes	audio.md	engine/audio/wav.h:96
-audio::WavInfo::frame_bytes	variable	audio	audio-wavinfo-frame-bytes	audio.md	engine/audio/wav.h:98
-audio::WavInfo::frame_count	variable	audio	audio-wavinfo-frame-count	audio.md	engine/audio/wav.h:100
-audio::WavInfo::truncated	variable	audio	audio-wavinfo-truncated	audio.md	engine/audio/wav.h:102
-audio::WavInfo::has_loop	variable	audio	audio-wavinfo-has-loop	audio.md	engine/audio/wav.h:104
-audio::WavInfo::loop_start	variable	audio	audio-wavinfo-loop-start	audio.md	engine/audio/wav.h:106
-audio::WavInfo::loop_end	variable	audio	audio-wavinfo-loop-end	audio.md	engine/audio/wav.h:108
-audio::WavInfo::cues	variable	audio	audio-wavinfo-cues	audio.md	engine/audio/wav.h:110
-audio::WavInfo::ignored_metadata	variable	audio	audio-wavinfo-ignored-metadata	audio.md	engine/audio/wav.h:112
-audio::ParseWav(ByteSpan,WavInfo*)	function	audio	audio-parsewav-bytespan-wavinfo-star	audio.md	engine/audio/wav.h:124
-audio::DecodeWav(ByteSpan,StringView,AudioClipPtr*,WavInfo*)	function	audio	audio-decodewav-bytespan-stringview-audioclipptr-star-wavinfo-star	audio.md	engine/audio/wav.h:136
-audio::WavReader	class	audio	audio-wavreader	audio.md	engine/audio/wav.h:142
-audio::WavReader::Open(ByteSpan)	function	audio	audio-wavreader-open-bytespan	audio.md	engine/audio/wav.h:150
-audio::WavReader::Info() const	function	audio	audio-wavreader-info-const	audio.md	engine/audio/wav.h:153
-audio::WavReader::Position() const	function	audio	audio-wavreader-position-const	audio.md	engine/audio/wav.h:156
-audio::WavReader::Seek(u64)	function	audio	audio-wavreader-seek-u64	audio.md	engine/audio/wav.h:162
-audio::WavReader::ReadFrames(Span<f32>,usize)	function	audio	audio-wavreader-readframes-span-lt-f32-gt-usize	audio.md	engine/audio/wav.h:170
+audio::WavStatus	enum	audio	audio-wavstatus	audio.md	engine/audio/wav.h:19
+audio::WavStatus::Ok	enumerator	audio	audio-wavstatus-ok	audio.md	engine/audio/wav.h:22
+audio::WavStatus::TooShort	enumerator	audio	audio-wavstatus-tooshort	audio.md	engine/audio/wav.h:24
+audio::WavStatus::NotRiff	enumerator	audio	audio-wavstatus-notriff	audio.md	engine/audio/wav.h:26
+audio::WavStatus::NotWave	enumerator	audio	audio-wavstatus-notwave	audio.md	engine/audio/wav.h:28
+audio::WavStatus::NoFmt	enumerator	audio	audio-wavstatus-nofmt	audio.md	engine/audio/wav.h:30
+audio::WavStatus::NoData	enumerator	audio	audio-wavstatus-nodata	audio.md	engine/audio/wav.h:32
+audio::WavStatus::BadFmt	enumerator	audio	audio-wavstatus-badfmt	audio.md	engine/audio/wav.h:34
+audio::WavStatus::Unsupported	enumerator	audio	audio-wavstatus-unsupported	audio.md	engine/audio/wav.h:37
+audio::WavStatus::BadChunk	enumerator	audio	audio-wavstatus-badchunk	audio.md	engine/audio/wav.h:39
+audio::WavStatus::BadFrameCount	enumerator	audio	audio-wavstatus-badframecount	audio.md	engine/audio/wav.h:41
+audio::WavStatus::BadSamples	enumerator	audio	audio-wavstatus-badsamples	audio.md	engine/audio/wav.h:43
+audio::WavStatus::OutOfMemory	enumerator	audio	audio-wavstatus-outofmemory	audio.md	engine/audio/wav.h:45
+audio::WavEncoding	enum	audio	audio-wavencoding	audio.md	engine/audio/wav.h:51
+audio::WavEncoding::U8	enumerator	audio	audio-wavencoding-u8	audio.md	engine/audio/wav.h:54
+audio::WavEncoding::S16	enumerator	audio	audio-wavencoding-s16	audio.md	engine/audio/wav.h:56
+audio::WavEncoding::S24	enumerator	audio	audio-wavencoding-s24	audio.md	engine/audio/wav.h:58
+audio::WavEncoding::S32	enumerator	audio	audio-wavencoding-s32	audio.md	engine/audio/wav.h:60
+audio::WavEncoding::F32	enumerator	audio	audio-wavencoding-f32	audio.md	engine/audio/wav.h:62
+audio::WavEncoding::F64	enumerator	audio	audio-wavencoding-f64	audio.md	engine/audio/wav.h:64
+audio::WavCue	struct	audio	audio-wavcue	audio.md	engine/audio/wav.h:70
+audio::WavCue::id	variable	audio	audio-wavcue-id	audio.md	engine/audio/wav.h:73
+audio::WavCue::frame	variable	audio	audio-wavcue-frame	audio.md	engine/audio/wav.h:75
+audio::kMaxWavCues	variable	audio	audio-kmaxwavcues	audio.md	engine/audio/wav.h:79
+audio::kMaxWavFrames	variable	audio	audio-kmaxwavframes	audio.md	engine/audio/wav.h:81
+audio::WavInfo	struct	audio	audio-wavinfo	audio.md	engine/audio/wav.h:87
+audio::WavInfo::encoding	variable	audio	audio-wavinfo-encoding	audio.md	engine/audio/wav.h:90
+audio::WavInfo::format	variable	audio	audio-wavinfo-format	audio.md	engine/audio/wav.h:92
+audio::WavInfo::channel_mask	variable	audio	audio-wavinfo-channel-mask	audio.md	engine/audio/wav.h:94
+audio::WavInfo::data_offset	variable	audio	audio-wavinfo-data-offset	audio.md	engine/audio/wav.h:96
+audio::WavInfo::data_bytes	variable	audio	audio-wavinfo-data-bytes	audio.md	engine/audio/wav.h:98
+audio::WavInfo::frame_bytes	variable	audio	audio-wavinfo-frame-bytes	audio.md	engine/audio/wav.h:100
+audio::WavInfo::frame_count	variable	audio	audio-wavinfo-frame-count	audio.md	engine/audio/wav.h:102
+audio::WavInfo::truncated	variable	audio	audio-wavinfo-truncated	audio.md	engine/audio/wav.h:105
+audio::WavInfo::has_loop	variable	audio	audio-wavinfo-has-loop	audio.md	engine/audio/wav.h:107
+audio::WavInfo::loop_start	variable	audio	audio-wavinfo-loop-start	audio.md	engine/audio/wav.h:109
+audio::WavInfo::loop_end	variable	audio	audio-wavinfo-loop-end	audio.md	engine/audio/wav.h:111
+audio::WavInfo::cues	variable	audio	audio-wavinfo-cues	audio.md	engine/audio/wav.h:113
+audio::WavInfo::ignored_metadata	variable	audio	audio-wavinfo-ignored-metadata	audio.md	engine/audio/wav.h:115
+audio::ParseWav(ByteSpan,WavInfo*)	function	audio	audio-parsewav-bytespan-wavinfo-star	audio.md	engine/audio/wav.h:128
+audio::DecodeWav(ByteSpan,StringView,AudioClipPtr*,WavInfo*)	function	audio	audio-decodewav-bytespan-stringview-audioclipptr-star-wavinfo-star	audio.md	engine/audio/wav.h:140
+audio::WavReader	class	audio	audio-wavreader	audio.md	engine/audio/wav.h:147
+audio::WavReader::Open(ByteSpan)	function	audio	audio-wavreader-open-bytespan	audio.md	engine/audio/wav.h:155
+audio::WavReader::Info() const	function	audio	audio-wavreader-info-const	audio.md	engine/audio/wav.h:158
+audio::WavReader::Position() const	function	audio	audio-wavreader-position-const	audio.md	engine/audio/wav.h:161
+audio::WavReader::Seek(u64)	function	audio	audio-wavreader-seek-u64	audio.md	engine/audio/wav.h:167
+audio::WavReader::ReadFrames(Span<f32>,usize)	function	audio	audio-wavreader-readframes-span-lt-f32-gt-usize	audio.md	engine/audio/wav.h:175
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20
@@ -5455,30 +5579,30 @@ asset::AsyncLoader::Update(u64,u64)	function	asset	asset-asyncloader-update-u64-
 asset::AsyncLoader::Wait(const LoadTicket&)	function	asset	asset-asyncloader-wait-const-loadticket-amp	asset.md	engine/asset/async_loader.h:224
 asset::AsyncLoader::Stats() const	function	asset	asset-asyncloader-stats-const	asset.md	engine/asset/async_loader.h:226
 asset::AsyncLoader::RunRead(LoadRequest&)	function	asset	asset-asyncloader-runread-loadrequest-amp	asset.md	engine/asset/async_loader.h:229
-asset::kAudioClipHeaderBytes	variable	asset	asset-kaudioclipheaderbytes	asset.md	engine/asset/audio_clip.h:30
-asset::kMaxAudioClipFrames	variable	asset	asset-kmaxaudioclipframes	asset.md	engine/asset/audio_clip.h:32
-asset::AudioClipSection	enum	asset	asset-audioclipsection	asset.md	engine/asset/audio_clip.h:35
-asset::kAudioClipSectionHeader	enumerator	asset	asset-kaudioclipsectionheader	asset.md	engine/asset/audio_clip.h:37
-asset::kAudioClipSectionSamples	enumerator	asset	asset-kaudioclipsectionsamples	asset.md	engine/asset/audio_clip.h:38
-asset::AudioClipStorage	enum	asset	asset-audioclipstorage	asset.md	engine/asset/audio_clip.h:42
-asset::AudioClipStorage::F32	enumerator	asset	asset-audioclipstorage-f32	asset.md	engine/asset/audio_clip.h:44
-asset::AudioClipStorage::S16	enumerator	asset	asset-audioclipstorage-s16	asset.md	engine/asset/audio_clip.h:45
-asset::AudioClipHeader	struct	asset	asset-audioclipheader	asset.md	engine/asset/audio_clip.h:51
-asset::AudioClipHeader::sample_rate	variable	asset	asset-audioclipheader-sample-rate	asset.md	engine/asset/audio_clip.h:53
-asset::AudioClipHeader::channels	variable	asset	asset-audioclipheader-channels	asset.md	engine/asset/audio_clip.h:54
-asset::AudioClipHeader::storage	variable	asset	asset-audioclipheader-storage	asset.md	engine/asset/audio_clip.h:55
-asset::AudioClipHeader::frames	variable	asset	asset-audioclipheader-frames	asset.md	engine/asset/audio_clip.h:56
-asset::AudioClipHeader::loop_start	variable	asset	asset-audioclipheader-loop-start	asset.md	engine/asset/audio_clip.h:57
-asset::AudioClipHeader::loop_end	variable	asset	asset-audioclipheader-loop-end	asset.md	engine/asset/audio_clip.h:58
-asset::BuildAudioClipBlob(const TypeRegistry&,ResourceId,const AudioClipHeader&,ByteSpan,Vector<byte>*,u32)	function	asset	asset-buildaudioclipblob-const-typeregistry-amp-resourceid-const-audioclipheader-amp-bytespan-vector-lt-byte-gt-star-u32	asset.md	engine/asset/audio_clip.h:71
-asset::AudioClipView	class	asset	asset-audioclipview	asset.md	engine/asset/audio_clip.h:78
-asset::AudioClipView::AudioClipView()	function	asset	asset-audioclipview-audioclipview	asset.md	engine/asset/audio_clip.h:82
-asset::AudioClipView::Open(const SharedBytesPtr&,const TypeRegistry&)	function	asset	asset-audioclipview-open-const-sharedbytesptr-amp-const-typeregistry-amp	asset.md	engine/asset/audio_clip.h:91
-asset::AudioClipView::Header() const	function	asset	asset-audioclipview-header-const	asset.md	engine/asset/audio_clip.h:95
-asset::AudioClipView::Id() const	function	asset	asset-audioclipview-id-const	asset.md	engine/asset/audio_clip.h:99
-asset::AudioClipView::Samples() const	function	asset	asset-audioclipview-samples-const	asset.md	engine/asset/audio_clip.h:104
-asset::AudioClipView::Bytes() const	function	asset	asset-audioclipview-bytes-const	asset.md	engine/asset/audio_clip.h:109
-asset::AudioClipView::SamplesOffset() const	function	asset	asset-audioclipview-samplesoffset-const	asset.md	engine/asset/audio_clip.h:113
+asset::kAudioClipHeaderBytes	variable	asset	asset-kaudioclipheaderbytes	asset.md	engine/asset/audio_clip.h:31
+asset::kMaxAudioClipFrames	variable	asset	asset-kmaxaudioclipframes	asset.md	engine/asset/audio_clip.h:33
+asset::AudioClipSection	enum	asset	asset-audioclipsection	asset.md	engine/asset/audio_clip.h:36
+asset::kAudioClipSectionHeader	enumerator	asset	asset-kaudioclipsectionheader	asset.md	engine/asset/audio_clip.h:38
+asset::kAudioClipSectionSamples	enumerator	asset	asset-kaudioclipsectionsamples	asset.md	engine/asset/audio_clip.h:39
+asset::AudioClipStorage	enum	asset	asset-audioclipstorage	asset.md	engine/asset/audio_clip.h:43
+asset::AudioClipStorage::F32	enumerator	asset	asset-audioclipstorage-f32	asset.md	engine/asset/audio_clip.h:45
+asset::AudioClipStorage::S16	enumerator	asset	asset-audioclipstorage-s16	asset.md	engine/asset/audio_clip.h:46
+asset::AudioClipHeader	struct	asset	asset-audioclipheader	asset.md	engine/asset/audio_clip.h:52
+asset::AudioClipHeader::sample_rate	variable	asset	asset-audioclipheader-sample-rate	asset.md	engine/asset/audio_clip.h:54
+asset::AudioClipHeader::channels	variable	asset	asset-audioclipheader-channels	asset.md	engine/asset/audio_clip.h:55
+asset::AudioClipHeader::storage	variable	asset	asset-audioclipheader-storage	asset.md	engine/asset/audio_clip.h:56
+asset::AudioClipHeader::frames	variable	asset	asset-audioclipheader-frames	asset.md	engine/asset/audio_clip.h:57
+asset::AudioClipHeader::loop_start	variable	asset	asset-audioclipheader-loop-start	asset.md	engine/asset/audio_clip.h:58
+asset::AudioClipHeader::loop_end	variable	asset	asset-audioclipheader-loop-end	asset.md	engine/asset/audio_clip.h:59
+asset::BuildAudioClipBlob(const TypeRegistry&,ResourceId,const AudioClipHeader&,ByteSpan,Vector<byte>*,u32)	function	asset	asset-buildaudioclipblob-const-typeregistry-amp-resourceid-const-audioclipheader-amp-bytespan-vector-lt-byte-gt-star-u32	asset.md	engine/asset/audio_clip.h:72
+asset::AudioClipView	class	asset	asset-audioclipview	asset.md	engine/asset/audio_clip.h:79
+asset::AudioClipView::AudioClipView()	function	asset	asset-audioclipview-audioclipview	asset.md	engine/asset/audio_clip.h:83
+asset::AudioClipView::Open(const SharedBytesPtr&,const TypeRegistry&)	function	asset	asset-audioclipview-open-const-sharedbytesptr-amp-const-typeregistry-amp	asset.md	engine/asset/audio_clip.h:92
+asset::AudioClipView::Header() const	function	asset	asset-audioclipview-header-const	asset.md	engine/asset/audio_clip.h:96
+asset::AudioClipView::Id() const	function	asset	asset-audioclipview-id-const	asset.md	engine/asset/audio_clip.h:100
+asset::AudioClipView::Samples() const	function	asset	asset-audioclipview-samples-const	asset.md	engine/asset/audio_clip.h:105
+asset::AudioClipView::Bytes() const	function	asset	asset-audioclipview-bytes-const	asset.md	engine/asset/audio_clip.h:110
+asset::AudioClipView::SamplesOffset() const	function	asset	asset-audioclipview-samplesoffset-const	asset.md	engine/asset/audio_clip.h:114
 asset::BackendCapability	enum	asset	asset-backendcapability	asset.md	engine/asset/backend.h:23
 asset::kBackendRanged	enumerator	asset	asset-kbackendranged	asset.md	engine/asset/backend.h:25
 asset::kBackendAsync	enumerator	asset	asset-kbackendasync	asset.md	engine/asset/backend.h:26

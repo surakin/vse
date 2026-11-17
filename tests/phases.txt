@@ -274,6 +274,7 @@ test:debug_no_network_*                          7
 tests/io/                                       9
 test:file_access_check*                         9
 test:io_backend_lists*                          9
+test:audio_backend_lists*                       26
 test:io_cross_syntax_*                          9
 
 # --- Phase 10: standard types and containers ---
