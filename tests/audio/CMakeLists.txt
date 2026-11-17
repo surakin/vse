@@ -24,6 +24,8 @@ set(AUDIO_TEST_SOURCES
   vorbis_decode_test.cpp  # Day 433
   vorbis_seek_test.cpp  # Day 434
   vorbis_clip_test.cpp  # Day 434
+  stream_test.cpp  # Day 435
+  music_test.cpp  # Day 436
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 
@@ -40,7 +42,8 @@ function(engine_add_audio_tests target audio_lib suffix label)
   target_link_libraries(${target} PRIVATE ${audio_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint)
   target_compile_definitions(${target} PRIVATE ENGINE_AUDIO_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp"
-                                              ENGINE_AUDIO_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
+                                              ENGINE_AUDIO_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
+                                              ENGINE_AUDIO_TMP="${CMAKE_CURRENT_BINARY_DIR}")
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

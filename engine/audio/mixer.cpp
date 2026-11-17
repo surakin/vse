@@ -398,11 +398,12 @@ MixerStatus Mixer::Play(const VoiceDesc& desc, VoiceId* out, u64 block)
     }
     if (!IsFinite(desc.gain) || desc.gain < 0.0f || desc.gain > kMaxVoiceGain || !IsFinite(desc.pan) ||
         desc.pan < -1.0f || desc.pan > 1.0f || !IsFinite(desc.pitch) || desc.pitch < kMinPitch ||
-        desc.pitch > kMaxPitch || desc.start_frame >= desc.clip->Frames() || !IsFinite(desc.send_gain) ||
-        desc.send_gain < 0.0f || desc.send_gain > kMaxVoiceGain || !IsFinite(desc.direction_x) ||
-        !IsFinite(desc.direction_y) || !IsFinite(desc.direction_z) || !IsFinite(desc.spread) ||
-        !IsFinite(desc.lfe_send) || desc.lfe_send < 0.0f || desc.lfe_send > 1.0f || !(desc.air_coefficient > 0.0f) ||
-        desc.air_coefficient > 1.0f)
+        desc.pitch > kMaxPitch || desc.start_frame >= desc.clip->Frames() || desc.delay_frames >= kBlockFrames ||
+        (desc.stream && (desc.clip.Get() != desc.stream->Clip().Get() || desc.start_frame != 0)) ||
+        !IsFinite(desc.send_gain) || desc.send_gain < 0.0f || desc.send_gain > kMaxVoiceGain ||
+        !IsFinite(desc.direction_x) || !IsFinite(desc.direction_y) || !IsFinite(desc.direction_z) ||
+        !IsFinite(desc.spread) || !IsFinite(desc.lfe_send) || desc.lfe_send < 0.0f || desc.lfe_send > 1.0f ||
+        !(desc.air_coefficient > 0.0f) || desc.air_coefficient > 1.0f)
     {
         return MixerStatus::InvalidParam;
     }
@@ -716,6 +717,7 @@ void Mixer::Finish(Voice* voice, bool report, VoiceEventType type)
     }
     voice->active = false;
     voice->clip.Reset();
+    voice->stream.Reset();
     live_ -= 1;
 }
 
@@ -933,7 +935,13 @@ void Mixer::Apply(Command* command)
         const VoiceDesc& desc = command->desc;
         voice = Voice();
         voice.clip = Move(command->desc.clip);
+        voice.stream = Move(command->desc.stream);
+        if (voice.stream)
+        {
+            voice.stream->SetLoop(command->desc.loop);
+        }
         voice.position = desc.start_frame << 32;
+        voice.delay = desc.delay_frames;
         voice.serial = 0;
         voice.generation = command->id.generation;
         voice.gain = desc.gain;
@@ -1011,6 +1019,13 @@ void Mixer::Apply(Command* command)
         break;
     case CommandType::Seek:
     {
+        if (voice.stream)
+        {
+            // The ring is dropped and refilled from the target; the voice is silent until the first frames arrive.
+            voice.stream->Flush(command->frames);
+            voice.position = command->frames << 32;
+            break;
+        }
         const u64 last = voice.clip->Frames() - 1;
         voice.position = (command->frames > last ? last : command->frames) << 32;
         break;
@@ -1027,7 +1042,13 @@ void Mixer::Apply(Command* command)
         voice.pitch = command->value;
         Retarget(&voice, config_.ramp_frames);
         break;
-    case CommandType::SetLoop: voice.loop = command->value != 0.0f; break;
+    case CommandType::SetLoop:
+        voice.loop = command->value != 0.0f;
+        if (voice.stream)
+        {
+            voice.stream->SetLoop(voice.loop);
+        }
+        break;
     case CommandType::Fade:
         voice.gain = command->value;
         Retarget(&voice, static_cast<u32>(command->frames));
@@ -1115,6 +1136,19 @@ void Mixer::AdvanceVirtual(Voice* voice)
         Finish(voice, true, VoiceEventType::Stopped);
         return;
     }
+    if (voice->stream)
+    {
+        // A virtual stream keeps consuming its ring, so it stays where it would be.
+        f32 scratch[kBlockFrames * kMaxChannels];
+        const u32 got = voice->stream->Pop(scratch, kBlockFrames);
+        voice->position += static_cast<u64>(got) << 32;
+        if (got < kBlockFrames && voice->stream->Ended())
+        {
+            audio_stats_.voices_finished += 1;
+            Finish(voice, true, VoiceEventType::Finished);
+        }
+        return;
+    }
     const ClipView view = voice->clip->View();
     const u64 frames = view.Frames();
     const u64 loop_start = view.HasLoop() ? view.desc.loop_start : 0;
@@ -1155,13 +1189,30 @@ void Mixer::MixVoice(Voice* voice, f32* out, f32* send_out)
     const u64 loop_length = static_cast<u64>(source.loop_end - source.loop_start) << 32;
     const u64 loop_end_fixed = static_cast<u64>(source.loop_end) << 32;
     const u32 in_channels = source.channels;
+    // A stream voice reads the block's frames from its ring (silence for what is missing), at a fixed pitch of 1.
+    const bool streaming = voice->stream != nullptr;
+    f32 stream_block[kBlockFrames * kMaxChannels];
+    u32 stream_got = 0;
+    // The first block of a delayed voice starts `skip` frames late: those frames add nothing and use nothing.
+    const u32 skip = voice->delay;
+    voice->delay = 0;
+    if (streaming)
+    {
+        stream_got = voice->stream->Pop(stream_block, kBlockFrames - skip);
+    }
     const u32 out_channels = channels_;
     u64 position = voice->position;
     ChannelMatrix ramped;
-    for (u32 n = 0; n < kBlockFrames; ++n)
+    for (u32 n = skip; n < kBlockFrames; ++n)
     {
         const i64 index = static_cast<i64>(position >> 32);
-        if (!voice->loop && index >= source.frames)
+        if (streaming && n - skip >= stream_got && voice->stream->Ended())
+        {
+            audio_stats_.voices_finished += 1;
+            Finish(voice, true, VoiceEventType::Finished);
+            return;
+        }
+        if (!streaming && !voice->loop && index >= source.frames)
         {
             audio_stats_.voices_finished += 1;
             Finish(voice, true, VoiceEventType::Finished);
@@ -1202,6 +1253,11 @@ void Mixer::MixVoice(Voice* voice, f32* out, f32* send_out)
         f32 value[kMaxChannels];
         for (u32 c = 0; c < in_channels; ++c)
         {
+            if (streaming)
+            {
+                value[c] = n - skip < stream_got ? stream_block[static_cast<usize>(n - skip) * in_channels + c] : 0.0f;
+                continue;
+            }
             switch (config_.quality)
             {
             case ResamplerQuality::Linear: value[c] = InterpLinear(source, c, index, frac); break;
@@ -1236,8 +1292,8 @@ void Mixer::MixVoice(Voice* voice, f32* out, f32* send_out)
                 send_frame[o] += sum * voice->send_gain;
             }
         }
-        position += step;
-        if (voice->loop)
+        position += streaming ? (n - skip < stream_got ? (u64{1} << 32) : 0) : step;
+        if (voice->loop && !streaming)
         {
             while (position >= loop_end_fixed)
             {

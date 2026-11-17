@@ -6,6 +6,7 @@
 
 #include "audio/audio_settings.h"
 #include "audio/clip.h"
+#include "audio/stream.h"
 #include "audio/commands.h"
 #include "audio/convert.h"
 #include "audio/effect.h"
@@ -113,8 +114,11 @@ struct VoiceId
 /// - Thread-safety: thread-compatible plain data.
 struct VoiceDesc
 {
-    /// The clip; kept alive by the voice.
+    /// The clip; kept alive by the voice. A streaming voice names the buffer's stand-in clip (`StreamBuffer::Clip()`).
     AudioClipConstPtr clip;
+    /// A stream buffer the voice reads instead of the clip's samples (null for a clip voice); its pitch is fixed at 1,
+    /// a seek flushes the ring and `start_frame` must be 0.
+    StreamBufferPtr stream;
     /// The linear gain, 0 to 16.
     f32 gain = 1.0f;
     /// The pan, -1 (left) to 1 (right); a mono clip pans with an equal-power law, a stereo clip balances.
@@ -129,6 +133,9 @@ struct VoiceDesc
     i32 priority = 0;
     /// Where the voice starts, in clip frames.
     u64 start_frame = 0;
+    /// Frames of silence before the voice's first sample in the block it starts in, 0 to `kBlockFrames - 1`: a start
+    /// at an exact frame (a bar boundary, the end of the previous track) rather than a block boundary.
+    u32 delay_frames = 0;
     /// Fade in over `MixerConfig::ramp_frames` instead of starting at full gain.
     bool fade_in = false;
     /// The bus the voice mixes into (the master if the bus does not exist).
@@ -748,10 +755,12 @@ private:
     struct Voice
     {
         AudioClipConstPtr clip;
+        StreamBufferPtr stream;
         u64 position = 0;
         u64 step = 0;
         u64 step_from = 0;
         u64 serial = 0;
+        u32 delay = 0;
         u32 generation = 0;
         u32 ramp_len = 0;
         u32 ramp_pos = 0;

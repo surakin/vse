@@ -362,6 +362,34 @@ auto` (default) keeps the bytes when the decoded PCM would be over 1 MiB. Both a
 runtime never reads a loose `.ogg` or `.wav`; the `asset_boundary_check` gate lets only `engine/audio/vorbis.cpp` include the
 codec's headers and only `engine/audio/CMakeLists.txt` link it.
 
+## Streaming
+
+`audio/stream.h` plays music that is too long to keep decoded. A `StreamSource` (`MakeMemoryStream` over a clip,
+`MakeVorbisStream` over the Ogg bytes of a clip, `MakeWavFileStream` over an `io::File`, 16-bit PCM or `f32`) is read by a
+`StreamBuffer`, a ring of `StreamConfig::capacity_frames` frames (default 8192; chunks of 1024; refill below 4096). A
+`ResampledStream` converts a source of another rate to the mixer's (Catmull-Rom, on the refill job, never in the mixer). The
+**audio thread only pops**: `StreamBuffer::Pop` takes frames from the ring and allocates, locks and reads nothing; a ring that is
+short counts one underrun (`Underruns()`) and the voice mixes silence for the missing frames, then recovers on its own.
+`StreamPump` spawns one `RefillJob` per buffer that is below its low-water mark on the job scheduler (`Update`), and `Run()` is
+the offline mode (`Update` then wait). A seek or a loop change *flushes* the ring (an epoch in the write counter makes a refill
+that raced the flush drop its chunk), so there is a short silence until the next refill. Play a stream with `VoiceDesc.stream`
+(`clip` must be `stream->Clip()`, `start_frame` 0); streams play at pitch 1 only. `VoiceDesc.delay_frames` (under one block)
+starts a voice that many frames into its first block, which is how a stream joins another without a gap.
+
+## Music
+
+`audio/music.h` `MusicPlayer(mixer, bus)` plays streams with musical timing. `Tempo{bpm, beats_per_bar}` is given by the caller;
+`NextBeatFrame()` and `NextBarFrame()` return the exact frame of the next beat or bar of the playing track, so a transition or a
+stinger lands on that frame. `Play`, `CrossFadeTo(next, fade_frames, at)` and `CrossFadeAtBar` fade the old track out along a
+cosine and the new one in along a sine (equal power: the squares add to one; the fade is a run of one-block linear segments, so
+the error is under 1e-3 for fades of a tenth of a second or more). `PlayLayers` starts several streams of one length on the
+same frame with per-layer gains (`SetLayerGain`, `SeekLayers` keep them in step). `PlayStinger(clip, gain, on_beat, &frame)`
+sounds a short clip on the next beat, `DuckForDialogue` ducks the music bus under a dialogue bus, and `PlayPlaylist(tracks, seed,
+shuffle, ...)` plays tracks in a seeded order (`PlaylistOrder`: the same seed gives the same order on every machine), each next
+track starting at the exact end frame of the last (gapless, tested on a ramp). Call `Update()` once per block, before the render:
+actions are posted when their block is within the mixer's lead. Fades and transitions start on the block of the boundary frame
+(block granularity); a stinger and a bar-aligned start are exact because the voice itself is delayed.
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
