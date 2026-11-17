@@ -52,6 +52,7 @@ add_subdirectory(input_probe)
 add_subdirectory(rhi_demo)
 add_subdirectory(rhi_bench)
 add_subdirectory(renderer_demo)
+add_subdirectory(physics_demo)
 add_subdirectory(renderer_bench)
 add_subdirectory(ecs_bench)
 add_subdirectory(physics_bench)  # Phase 25 Day 412

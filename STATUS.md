@@ -8,6 +8,11 @@ with progress.
 
 Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 
+**Physics demo (2026-11-17):** `game/physics_demo` (C++, ECS: shapes with `MeshRenderer`/`RigidBody`/`Collider`, one schedule for the physics step,
+transforms, camera and render sync) shows random boxes, spheres and capsules falling onto a floor in a tray; window or `--screenshot`; ctest
+`physics_demo_screenshot` (label `gpu;demo`). Built clean in unity and `-DENGINE_UNITY_BUILD=OFF`; gates (module_deps, std_usage, platform_neutral,
+phase labels) pass. Windows/Mac builds of it not yet run.
+
 ## Build and test commands
 
 What to install first, per platform: `BUILD.md`.

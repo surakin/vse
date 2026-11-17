@@ -397,6 +397,16 @@ forces, impulses, velocity and transform changes, body creation and destruction.
 the log has its own versioned encoding (`Save`, `Load`) refused on the same terms. `FirstEntryAt(log, step)` finds where to start after restoring
 a snapshot taken at that step.
 
+## A demo you can watch
+
+`game/physics_demo` is the whole pipeline on screen: a floor in a low tray, random boxes, spheres and capsules on it and
+more of them spawning in the air and falling. Every shape is an entity (`scene::MeshRenderer`, `RigidBody`, `Collider`,
+`ecs::LocalTransform`); one `ecs::Schedule` runs the physics step system, the transform propagation, the camera system
+and the render sync, and `SyncBodies` makes the bodies of the shapes spawned since the last frame. Run
+`build/game/physics_demo/physics_demo` (Space pauses, Left/Right turn the camera) or `--frames 600 --screenshot shot.ppm`
+for an offscreen picture; the ctest `physics_demo_screenshot` runs it headless. It is a program written against the
+engine's modules, not the C API (which is for hosts that embed the engine).
+
 ## Cost: the benchmark and the smoke test
 
 `game/physics_bench` (`--bodies N --steps N --threads N --scene drop|mesh|joints|rays|characters|all`) measures the step on scenes of the day: a grid of spheres and boxes dropped on a floor (awake while falling and landing, then asleep), a world with a one-million-triangle mesh, chains of joints, ray casts and walking characters. It prints the step's time and its parts from `StepStats` (`broad_ns`, `narrow_ns`, `solve_ns`, `integrate_ns`, `after_ns`: wall-clock, not state, never in a snapshot or a hash). It is not run by ctest except for the `large` scene (below); `tests/physics/perf_smoke_test.cpp` runs 500 falling bodies with a bound far above any build's time, so only a gross regression fails.
