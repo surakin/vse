@@ -1,4 +1,4 @@
-// Spike 6 (Phase 25 Day 373): the pair feed of Phase 18 on 5000 moving boxes and 2000 static boxes. A throwaway Catch2 test appended to
+// Spike 6 (Phase 25 Day 385): the pair feed of Phase 18 on 5000 moving boxes and 2000 static boxes. A throwaway Catch2 test appended to
 // tests/spatial/pair_test.cpp (tag [.][spike6]) and run in the Release tree (`build-rel`); reverted after the run. Build and run:
 //   cmake --build build-rel --target spatial_tests && build-rel/tests/spatial/spatial_tests "[spike6]"
 // The first version forgot `set.RebuildStatic()`: the 2000 statics then sat in the pending list and every query scanned them (31 ms a frame,

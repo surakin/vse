@@ -1,4 +1,4 @@
-// The tuning scenes of the contact solver (Phase 25 Day 385): stacks, a pyramid, a column of spheres, dominoes, a heavy
+// The tuning scenes of the contact solver (Phase 25 Day 397): stacks, a pyramid, a column of spheres, dominoes, a heavy
 // box on light ones and a stack of hulls hold for an hour of simulated time (3600 steps).
 #include <catch2/catch_test_macros.hpp>
 

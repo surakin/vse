@@ -1,5 +1,5 @@
-// The contact manifold and the pose of a shape (Phase 25 Day 379): what every narrow phase test produces and the solver
-// of Day 384 consumes.
+// The contact manifold and the pose of a shape (Phase 25 Day 391): what every narrow phase test produces and the solver
+// of Day 396 consumes.
 #pragma once
 
 #include "containers/array.h"

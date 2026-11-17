@@ -1,4 +1,4 @@
-/* Phase 25 Day 396: a C program puts physical entities in a world through the function table: a rigid body and a
+/* Phase 25 Day 408: a C program puts physical entities in a world through the function table: a rigid body and a
    collider on entities, the frame that steps them, forces and impulses, velocities and teleports, ray casts and
    overlaps, the physics settings, and every refusal the API documents. */
 #include <math.h>

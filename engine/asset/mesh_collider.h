@@ -1,6 +1,6 @@
 #pragma once
 
-//! The minted triangle mesh of a static physics collider (`MCOL`, Phase 25 Day 382): positions, triangle indices and a
+//! The minted triangle mesh of a static physics collider (`MCOL`, Phase 25 Day 394): positions, triangle indices and a
 //! material index per triangle. The bounding-volume hierarchy is built by the physics module when the mesh is added
 //! (deterministically, from these bytes). The reader treats the bytes as hostile.
 

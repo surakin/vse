@@ -1,4 +1,4 @@
-// Drawing the simulation for debugging (Phase 25 Day 393): line segments for the shapes, the contacts, the joints, the
+// Drawing the simulation for debugging (Phase 25 Day 405): line segments for the shapes, the contacts, the joints, the
 // islands and the broad phase. The module holds no renderer type: a program turns the lines into a line pass (the same
 // `spatial::DebugLine` as the spatial module's drawing).
 #pragma once

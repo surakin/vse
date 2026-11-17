@@ -1,4 +1,4 @@
-// The parallel step (Phase 25 Day 389): the state hash is the same to the bit for every thread count, with or without a
+// The parallel step (Phase 25 Day 401): the state hash is the same to the bit for every thread count, with or without a
 // scheduler, and the step scales.
 #include <catch2/catch_test_macros.hpp>
 

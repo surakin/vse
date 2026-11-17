@@ -1,4 +1,4 @@
-// One expression, compiled twice (Phase 25 Day 374): once with the project's flags (`ProbeProject`) and once with
+// One expression, compiled twice (Phase 25 Day 386): once with the project's flags (`ProbeProject`) and once with
 // contraction allowed and, on x86-64, the FMA instructions enabled (`ProbeControl`). The control proves the probe can
 // see a fused multiply-add at all: without it, "the project's build does not fuse" would be true of a probe that could
 // never detect fusing.

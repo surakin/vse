@@ -1,4 +1,4 @@
-// Spikes 2, 3 and 6 (Phase 26 Day 402): a reference scene, the resampler candidates and the voice cost. Throwaway; std is fine here.
+// Spikes 2, 3 and 6 (Phase 26 Day 414): a reference scene, the resampler candidates and the voice cost. Throwaway; std is fine here.
 // Build:  g++ -O2 -ffp-contract=off s2.cpp -o s2 ; modes: ./s2 scene [chunk] | ./s2 resample | ./s2 voices N
 #include <cstdio>
 #include <cstdint>

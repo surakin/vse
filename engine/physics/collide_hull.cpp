@@ -1,4 +1,4 @@
-// Convex hulls in the narrow phase (Phase 25 Day 381): GJK for the distance, EPA for the penetration, and a face
+// Convex hulls in the narrow phase (Phase 25 Day 393): GJK for the distance, EPA for the penetration, and a face
 // manifold by clipping when both shapes have faces. Only `+ - * /` and `Sqrt` are used.
 #include "containers/array.h"
 #include "lang/scalar.h"

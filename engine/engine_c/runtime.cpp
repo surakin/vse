@@ -161,7 +161,7 @@ namespace
 {
 
 // After the step: each character's entity takes the position of its capsule's centre; a character whose entity is gone
-// gives its body back (Day 397).
+// gives its body back (Day 409).
 void FollowCharacters(WorldObject& object)
 {
     physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
@@ -515,7 +515,7 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
         ResourceHost* resources = runtime->ResourcesIfCreated();
         AnimateWorld(*object, resources, static_cast<f32>(info->delta_seconds));
         // The physics bodies follow the entities, then the schedule steps them (before the transform system, which
-        // reads what the step wrote back); a world that never had a body component pays nothing (Day 396).
+        // reads what the step wrote back); a world that never had a body component pays nothing (Day 408).
         physics::PhysicsWorld& physics = object->world.Resource<physics::PhysicsWorld>();
         const u64 steps_before = physics.GetStepStats().steps;
         if (object->physics_used)
@@ -2514,7 +2514,7 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
                      });
 }
 
-// ---- physics (Phase 25 Day 396)
+// ---- physics (Phase 25 Day 408)
 
 namespace
 {
@@ -2858,7 +2858,7 @@ engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, cons
                      });
 }
 
-// ---- joints, characters, events and snapshots (Phase 25 Day 397)
+// ---- joints, characters, events and snapshots (Phase 25 Day 409)
 
 namespace
 {

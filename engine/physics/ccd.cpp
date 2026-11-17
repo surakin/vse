@@ -1,4 +1,4 @@
-// Continuous collision (Phase 25 Day 390): a body that moved fast enough to pass through thin static geometry is moved
+// Continuous collision (Phase 25 Day 402): a body that moved fast enough to pass through thin static geometry is moved
 // back to the time its shape first touches it. The time is found by sampling the sweep and bisecting the first
 // overlapping interval, with the same narrow phase as the step (so every shape pair is covered); only + - * / and Sqrt.
 #include "algorithm.h"

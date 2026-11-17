@@ -1,4 +1,4 @@
-# The configure-time check of the floating-point flags, tried on planted flags (Phase 25 Day 374): run with `cmake -DSOURCE_DIR=<repo> -P fp_flags_check.cmake`.
+# The configure-time check of the floating-point flags, tried on planted flags (Phase 25 Day 386): run with `cmake -DSOURCE_DIR=<repo> -P fp_flags_check.cmake`.
 include(${SOURCE_DIR}/cmake/EngineFpCheck.cmake)
 
 function(expect_problem flags expected)

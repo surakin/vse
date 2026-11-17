@@ -1,4 +1,4 @@
-// Joints: ball, distance and fixed (Phase 25 Day 386).
+// Joints: ball, distance and fixed (Phase 25 Day 398).
 #include <catch2/catch_test_macros.hpp>
 
 #include "lang/limits.h"

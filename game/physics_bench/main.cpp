@@ -1,7 +1,7 @@
-// physics_bench: the Phase 25 Day 400 benchmark of the physics module. Prints one line per measurement, with the step's
+// physics_bench: the Phase 25 Day 412 benchmark of the physics module. Prints one line per measurement, with the step's
 // parts (broad phase, narrow phase, solver, integration, the rest) from `StepStats`. Nothing is asserted by the
-// measuring scenes: the numbers are recorded in plans/phase-25-physics/day-400-benchmarks-and-stress.md and
-// docs/guide/physics.md ("Cost"). The `large` scene (Phase 25 Day 401) is the Release-only stress run: it checks the
+// measuring scenes: the numbers are recorded in plans/phase-25-physics/day-412-benchmarks-and-stress.md and
+// docs/guide/physics.md ("Cost"). The `large` scene (Phase 25 Day 413) is the Release-only stress run: it checks the
 // state and exits 1 when a check fails (ctest `physics_bench_large`, registered in optimized builds only).
 //
 //   physics_bench [--bodies N]   the body count of the drop scenes (default: 1000, 5000, 20000 and 50000)

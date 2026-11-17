@@ -1,4 +1,4 @@
-// The character controller (Phase 25 Day 392): a capsule on a kinematic body that walks, slides along walls, climbs
+// The character controller (Phase 25 Day 404): a capsule on a kinematic body that walks, slides along walls, climbs
 // steps and slopes, stands on moving platforms and pushes dynamic bodies.
 #pragma once
 

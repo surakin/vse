@@ -1,6 +1,6 @@
 #pragma once
 
-//! Compound shapes (Phase 25 Day 383): several shapes on one body, each with a local transform, a material and its own
+//! Compound shapes (Phase 25 Day 395): several shapes on one body, each with a local transform, a material and its own
 //! group and mask. The mass, the centre of mass and the inertia of the whole are computed once when the compound is
 //! made.
 

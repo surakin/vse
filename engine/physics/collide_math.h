@@ -1,4 +1,4 @@
-// Small geometry helpers shared by the narrow phase's files (Phase 25 Days 379-380). Internal: not part of the
+// Small geometry helpers shared by the narrow phase's files (Phase 25 Days 391-392). Internal: not part of the
 // documented API.
 #pragma once
 
@@ -293,15 +293,15 @@ inline bool MergeContacts(const FoundContact* found, u32 count, ContactManifold*
     return picked != 0;
 }
 
-// The tests of Day 380 (collide_box.cpp): box-box and box-capsule, the box being shape A in both.
+// The tests of Day 392 (collide_box.cpp): box-box and box-capsule, the box being shape A in both.
 bool BoxBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out);
-// Any pair with a convex hull (Day 381), by GJK and EPA; the pair may be in either order.
+// Any pair with a convex hull (Day 393), by GJK and EPA; the pair may be in either order.
 bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, const HullLibrary* hulls,
                 ContactManifold* out);
-// A static mesh against any other shape (Day 382), the mesh being shape A: the contacts of the triangles near B.
+// A static mesh against any other shape (Day 394), the mesh being shape A: the contacts of the triangles near B.
 bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other, const Pose& other_pose, f32 margin,
               const HullLibrary* hulls, const MeshLibrary* meshes, ContactManifold* out);
-// Compounds (Day 383): each child, or pair of children, collided on its own and merged; either shape may be a compound.
+// Compounds (Day 395): each child, or pair of children, collided on its own and merged; either shape may be a compound.
 bool CompoundPair(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
                   const HullLibrary* hulls, const MeshLibrary* meshes, const CompoundLibrary* compounds,
                   ContactManifold* out);

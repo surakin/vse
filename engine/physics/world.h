@@ -1,5 +1,5 @@
-// The physics world (Phase 25 Day 376): the bodies and colliders of a simulation, with stable ids. The steps that move
-// them come on Day 378.
+// The physics world (Phase 25 Day 388): the bodies and colliders of a simulation, with stable ids. The steps that move
+// them come on Day 390.
 #pragma once
 
 #include "containers/unique_ptr.h"
@@ -42,7 +42,7 @@ enum class BodyStatus : u8
     StaleId,      ///< The id is null, was destroyed or never existed.
     Invalid,      ///< A number is not finite, or a component was refused by its `Validate()`.
     WrongType,    ///< The call needs another body type (a force on a static body).
-    Unsupported,  ///< Not built yet (a second collider on a body: Day 383).
+    Unsupported,  ///< Not built yet (a second collider on a body: Day 395).
     OutOfMemory,  ///< An allocation failed.
 };
 
@@ -72,7 +72,7 @@ struct BodyDesc
     ecs::Entity entity;
 };
 
-/// One body: its state and mass. The world's accessors are the way to change it; the step (Day 378) reads and writes
+/// One body: its state and mass. The world's accessors are the way to change it; the step (Day 390) reads and writes
 /// the fields.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -145,7 +145,7 @@ struct ColliderRecord
 /// - Thread-safety: thread-compatible plain data.
 struct StepConfig
 {
-    /// Steps per second, from 1 to 1000 (the Day 373 spike: 30 to 120 Hz are stable; 60 is the default).
+    /// Steps per second, from 1 to 1000 (the Day 385 spike: 30 to 120 Hz are stable; 60 is the default).
     f32 step_hz = 60.0f;
     /// The most steps one `Update` runs; a longer frame drops the rest (1 to 32).
     u32 max_substeps = 4;
@@ -346,7 +346,7 @@ public:
 
     /// Gives a body a collider and recomputes its mass.
     ///
-    /// A body takes one collider for now (compound bodies: Day 383).
+    /// A body takes one collider for now (compound bodies: Day 395).
     ///
     /// - Param body: the body.
     /// - Param collider: the collider, checked with `Validate()`.
@@ -848,7 +848,7 @@ private:
     CompoundLibrary compounds_;
     UniquePtr<BroadPhase> broad_;
     ContactSolver solver_;
-    // Events (Day 393): the lists of the last update, the pairs that touch (contacts) and the trigger pairs that
+    // Events (Day 405): the lists of the last update, the pairs that touch (contacts) and the trigger pairs that
     // overlap, both sorted by collider key; `keep_events_` is set while `Update` runs its steps.
     PhysicsEvents events_;
     Vector<ContactRecord> contacts_;

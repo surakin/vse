@@ -1,4 +1,4 @@
-// What the build does to floating point, observed (Phase 25 Day 374): the rules of the physics step hold only if the
+// What the build does to floating point, observed (Phase 25 Day 386): the rules of the physics step hold only if the
 // compiler follows them, so the engine asks it with a few fixed expressions
 // (docs/superpowers/specs/2026-11-16-physics-design.md, section 3).
 #pragma once
@@ -32,7 +32,7 @@ bool ContractionObserved();
 ///
 /// False when the process runs with flush-to-zero or denormals-are-zero, which a library linked with `-ffast-math` (its
 /// `crtfastmath.o`) or a host calling `_MM_SET_FLUSH_ZERO_MODE` sets for the whole process. The physics step requires
-/// true (the engine itself never sets either mode); the step will check it (Day 378).
+/// true (the engine itself never sets either mode); the step will check it (Day 390).
 ///
 /// - Returns: true if denormals are preserved.
 /// - Thread-safety: thread-safe; reads no shared state (the mode is per thread).

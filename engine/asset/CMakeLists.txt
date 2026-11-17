@@ -19,8 +19,8 @@ set(ASSET_SOURCES
   pak.cpp  # Day 316
   pak_backend.cpp  # Day 316
   skeleton.cpp  # Day 318
-  hull.cpp  # Day 381
-  mesh_collider.cpp  # Day 382
+  hull.cpp  # Day 393
+  mesh_collider.cpp  # Day 394
   mesh.cpp  # Day 319
   clip.cpp  # Day 320
   texture_mips.cpp  # Day 323

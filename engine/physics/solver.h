@@ -1,6 +1,6 @@
 #pragma once
 
-//! The contact solver of the physics module (Phase 25 Day 384): sequential impulses with warm starting. Contacts become
+//! The contact solver of the physics module (Phase 25 Day 396): sequential impulses with warm starting. Contacts become
 //! rows (a normal and two friction rows per point); the rows are solved in a fixed order, so the result does not depend
 //! on the order the narrow phase produced the manifolds in. Only `+ - * /` and `Sqrt` are used.
 

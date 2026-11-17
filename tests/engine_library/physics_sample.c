@@ -1,4 +1,4 @@
-/* Phase 25 Day 397: the physics sample. A host with no window builds a small world through the C API (a floor, a stack
+/* Phase 25 Day 409: the physics sample. A host with no window builds a small world through the C API (a floor, a stack
    of boxes, a pendulum on a ball joint, a character that walks and jumps, a trigger), runs 600 frames, rewinds to frame
    300 with a snapshot and runs the rest again: the two runs end in the same bits, and the checksum of the last frame is
    printed (it is the same on every build and machine). */

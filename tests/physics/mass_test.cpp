@@ -1,4 +1,4 @@
-// Mass properties (Phase 25 Day 375): closed forms against analytic values and against a numeric integral.
+// Mass properties (Phase 25 Day 387): closed forms against analytic values and against a numeric integral.
 #include <catch2/catch_test_macros.hpp>
 
 #include "lang/scalar.h"

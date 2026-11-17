@@ -1,5 +1,5 @@
-// The collision shapes of the physics module (Phase 25 Day 375): sphere, box and capsule as plain values with their
-// bounds. Convex hulls joined on Day 381; triangle meshes and compound shapes join on Days 382-383, each as a new kind
+// The collision shapes of the physics module (Phase 25 Day 387): sphere, box and capsule as plain values with their
+// bounds. Convex hulls joined on Day 393; triangle meshes and compound shapes join on Days 394-395, each as a new kind
 // at the end of `ShapeKind`.
 #pragma once
 

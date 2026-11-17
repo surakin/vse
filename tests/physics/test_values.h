@@ -32,7 +32,7 @@ struct Rng
 
 // The inputs of a hash that is compared across machines are built with exact operations only (+ - * /, Sqrt, Floor,
 // Abs, comparisons), never with libm's Sin or Cos: those differ by an ulp between glibc, the UCRT and Apple's libm, and
-// the hash then measures the libm, not the physics (Phase 25 Day 399, the Mac).
+// the hash then measures the libm, not the physics (Phase 25 Day 411, the Mac).
 
 /// A random rotation without trigonometry: a random four-vector, normalized (four draws: x, y, z, then w; the identity
 /// for a vector too short to normalize).

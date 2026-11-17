@@ -1,6 +1,6 @@
 #pragma once
 
-//! The text source form of a convex hull (`.hull.src`) and the hull minter. Phase 25 Day 381. An offline tool's code:
+//! The text source form of a convex hull (`.hull.src`) and the hull minter. Phase 25 Day 393. An offline tool's code:
 //! never linked into the engine; its tests compile it directly.
 //!
 //! Line-oriented text; `#` starts a comment; fields are separated by spaces or tabs:

@@ -1,4 +1,4 @@
-// Compound shapes in the narrow phase (Phase 25 Day 383): every child (or pair of children) is collided on its own and
+// Compound shapes in the narrow phase (Phase 25 Day 395): every child (or pair of children) is collided on its own and
 // the contacts are merged into one manifold; a child's index is part of each point's feature id.
 #include "containers/array.h"
 #include "physics/collide.h"

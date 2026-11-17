@@ -510,7 +510,7 @@ extern "C"
                                        device uploaded them */
         uint64_t slots_reverted;    /* material slots that went back to their own value because their host texture was
                                        destroyed or had no pixels */
-        /* Phase 25 Day 396: physics */
+        /* Phase 25 Day 408: physics */
         uint64_t physics_us;     /* time spent making the physics bodies follow the entities (the step itself is part of
                                     the worlds' systems) */
         uint32_t physics_bodies; /* bodies alive in the worlds that ran */
@@ -536,10 +536,10 @@ extern "C"
         ENGINE_COMPONENT_ANIMATION_PLAYER = 9,  /* engine_animation_state: what animation_play started; read only (Day
                                                    363) */
         ENGINE_COMPONENT_LABEL = 10,            /* engine_label: text drawn at the entity's place (Phase 24 Day 367) */
-        ENGINE_COMPONENT_RIGID_BODY = 11,       /* engine_rigid_body: a physics body (Phase 25 Day 396) */
-        ENGINE_COMPONENT_COLLIDER = 12,         /* engine_collider: the shape of a physics body (Phase 25 Day 396) */
-        ENGINE_COMPONENT_JOINT = 13,            /* engine_joint: ties two entities' bodies (Phase 25 Day 397) */
-        ENGINE_COMPONENT_CHARACTER = 14         /* engine_character: a capsule character controller (Day 397) */
+        ENGINE_COMPONENT_RIGID_BODY = 11,       /* engine_rigid_body: a physics body (Phase 25 Day 408) */
+        ENGINE_COMPONENT_COLLIDER = 12,         /* engine_collider: the shape of a physics body (Phase 25 Day 408) */
+        ENGINE_COMPONENT_JOINT = 13,            /* engine_joint: ties two entities' bodies (Phase 25 Day 409) */
+        ENGINE_COMPONENT_CHARACTER = 14         /* engine_character: a capsule character controller (Day 409) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
@@ -762,7 +762,7 @@ extern "C"
 #define ENGINE_BODY_KINEMATIC 1u /* moves as its velocity says, pushes dynamic bodies, is not pushed */
 #define ENGINE_BODY_DYNAMIC 2u   /* moved by forces and contacts */
 
-    /* A physics body (Phase 25 Day 396). An entity with ENGINE_COMPONENT_TRANSFORM, this and an
+    /* A physics body (Phase 25 Day 408). An entity with ENGINE_COMPONENT_TRANSFORM, this and an
      * ENGINE_COMPONENT_COLLIDER is simulated by the frame: the body starts at the entity's transform and the frame
      * writes its pose back to the transform (not for an entity with a parent). `mass` 0 takes the mass from the
      * collider's volume and density, otherwise it is in kilograms (1e-9 to 1e15). The dampings are >= 0 (per second),
@@ -783,12 +783,12 @@ extern "C"
 #define ENGINE_SHAPE_BOX 1u     /* `half_extents` */
 #define ENGINE_SHAPE_CAPSULE 2u /* `radius` and `half_height` (of the straight part, along Y) */
 
-    /* The shape of a physics body (Phase 25 Day 396), in the entity's space: sizes are in metres (above 0, at most
+    /* The shape of a physics body (Phase 25 Day 408), in the entity's space: sizes are in metres (above 0, at most
      * 1e5), `offset` and `rotation` (a unit quaternion x, y, z, w) place it on the body. `friction` >= 0, `restitution`
      * in 0..1, `density` in kilograms per cubic metre (1e-3 to 1e9). `layer` is 0..31, `group` and `mask` select which
      * colliders it meets (a pair collides when each one's group is in the other's mask). A trigger (`is_trigger` 1)
      * reports overlaps and does not collide. Convex hulls, meshes and compounds from resources need the resource
-     * shapes of Day 397 and are refused for now (UNSUPPORTED). */
+     * shapes of Day 409 and are refused for now (UNSUPPORTED). */
     typedef struct engine_collider
     {
         uint32_t struct_size;
@@ -829,7 +829,7 @@ extern "C"
 #define ENGINE_JOINT_LIMIT 0x2u             /* a hinge is limited to [lower_angle, upper_angle] */
 #define ENGINE_JOINT_MOTOR 0x4u             /* a hinge has a motor */
 
-    /* A joint between two entities' bodies (Phase 25 Day 397); the entity that has this component is the joint.
+    /* A joint between two entities' bodies (Phase 25 Day 409); the entity that has this component is the joint.
      * `entity_a` and `entity_b` are keys of entities with a rigid body and a collider (0 on one side: the joint ties
      * the other to the world). `point_a` and `point_b` are the anchors in world space at the time the joint is made
      * (one point for a ball, hinge or fixed joint: `point_b` is ignored), `axis` the hinge axis in world space. `hertz`
@@ -858,7 +858,7 @@ extern "C"
         float max_motor_torque;
     } engine_joint;
 
-    /* A character controller (Phase 25 Day 397): an upright capsule that is moved with character_move, slides along
+    /* A character controller (Phase 25 Day 409): an upright capsule that is moved with character_move, slides along
      * walls, climbs steps and slopes and stays on the ground. The entity needs ENGINE_COMPONENT_TRANSFORM; setting the
      * component (again) puts the capsule at the entity's transform, and the frame writes the capsule's position back to
      * it (the world matrix follows one frame later). Sizes are in metres. */
@@ -1599,7 +1599,7 @@ extern "C"
          * set. Fails with: INVALID_ARGUMENT (NULL, zero size), TOO_LARGE (above 32 MiB), STALE_HANDLE. */
         engine_status (*label_font_set)(engine_handle engine, const void* data, size_t size);
 
-        /* ---- Phase 25 Day 396: physics ---- */
+        /* ---- Phase 25 Day 408: physics ---- */
 
         /* Sets the gravity of a world's physics (metres per second squared; the default is (0, -9.81, 0)). Fails with:
          * STALE_HANDLE, INVALID_ARGUMENT (NULL, not finite), TYPE_MISMATCH. */
@@ -1641,7 +1641,7 @@ extern "C"
         engine_status (*physics_overlap_box)(engine_handle world, const float* center, const float* half_extents,
                                              uint32_t layer_mask, uint64_t* keys, size_t capacity, size_t* total);
 
-        /* ---- Phase 25 Day 397: joints, characters, events and snapshots ---- */
+        /* ---- Phase 25 Day 409: joints, characters, events and snapshots ---- */
 
         /* Reads the force (newtons) and torque (newton metres) a joint carried in the last step; the entity is the one
          * with ENGINE_COMPONENT_JOINT. Either pointer may be NULL. Fails with: STALE_HANDLE, INVALID_ARGUMENT,

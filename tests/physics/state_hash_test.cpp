@@ -1,4 +1,4 @@
-// The state hash helper (Phase 25 Day 374): FNV-1a on known inputs, the byte order, the zero and NaN rules.
+// The state hash helper (Phase 25 Day 386): FNV-1a on known inputs, the byte order, the zero and NaN rules.
 #include <catch2/catch_test_macros.hpp>
 
 #include "lang/limits.h"

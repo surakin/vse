@@ -322,7 +322,7 @@ JointDesc PhysicsWorld::MakeHingeJoint(BodyId a, BodyId b, const Vec3& world_poi
     Quaternion turn;
     if (local.z < -0.999999f)
     {
-        turn = Quaternion(1.0f, 0.0f, 0.0f, 0.0f);  // half a turn about X, exact (no libm: Day 399)
+        turn = Quaternion(1.0f, 0.0f, 0.0f, 0.0f);  // half a turn about X, exact (no libm: Day 411)
     }
     else
     {

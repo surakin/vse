@@ -1,4 +1,4 @@
-// Continuous collision (Phase 25 Day 390): fast bodies do not pass through thin static geometry.
+// Continuous collision (Phase 25 Day 402): fast bodies do not pass through thin static geometry.
 #include <catch2/catch_test_macros.hpp>
 
 #include "jobs/scheduler.h"

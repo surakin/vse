@@ -1,4 +1,4 @@
-// The byte helpers of the physics snapshot (Phase 25 Day 394). Internal to the physics module: a writer and a reader
+// The byte helpers of the physics snapshot (Phase 25 Day 406). Internal to the physics module: a writer and a reader
 // over `bytes::ByteWriter` and `bytes::ByteReader` (the canonical encoding of the storage module) for the types the
 // snapshot holds. The reader has a sticky failure: after the first bad read every read returns zero and `ok` is false,
 // so a parser checks once at the end of a group.

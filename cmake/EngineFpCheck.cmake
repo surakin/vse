@@ -1,4 +1,4 @@
-# The floating-point flag check (Phase 25 Day 374). The physics step is deterministic only while the compiler neither contracts a * b + c to a
+# The floating-point flag check (Phase 25 Day 386). The physics step is deterministic only while the compiler neither contracts a * b + c to a
 # fused multiply-add nor reassociates (docs/superpowers/specs/2026-11-16-physics-design.md, section 3). EngineCompilerOptions.cmake sets the flags
 # that forbid it; this file stops the configure step when anything else turns it back on.
 #

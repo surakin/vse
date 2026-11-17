@@ -1,4 +1,4 @@
-// The narrow phase's closed-form tests (Phase 25 Day 379): analytic scenes, symmetry on random pairs and the separation
+// The narrow phase's closed-form tests (Phase 25 Day 391): analytic scenes, symmetry on random pairs and the separation
 // property.
 #include <catch2/catch_test_macros.hpp>
 
@@ -206,7 +206,7 @@ TEST_CASE("Collide: invalid input is nothing and leaves the manifold alone", "[p
     const Shape box = Shape::MakeBox(Vec3(1, 1, 1));
     ContactManifold m;
     m.count = 7;
-    // A shape kind that no test handles yet (a hull, Day 381) is Unsupported and leaves the manifold alone.
+    // A shape kind that no test handles yet (a hull, Day 393) is Unsupported and leaves the manifold alone.
     Shape unknown = box;
     unknown.kind = static_cast<ShapeKind>(200);
     CHECK(Collide(box, PoseAt(0, 0, 0), unknown, PoseAt(0, 0, 0), 0.0f, &m) == CollideResult::None);  // invalid

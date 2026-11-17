@@ -1,4 +1,4 @@
-// What a physics value can be refused for (Phase 25 Day 375): host data (a shape, a body, a collider) is checked and
+// What a physics value can be refused for (Phase 25 Day 387): host data (a shape, a body, a collider) is checked and
 // refused with a status, never aborted on.
 #pragma once
 

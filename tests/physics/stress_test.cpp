@@ -1,4 +1,4 @@
-// Stress and robustness (Phase 25 Day 400): many random bodies in a box, a huge mass ratio, a tall stack, degenerate
+// Stress and robustness (Phase 25 Day 412): many random bodies in a box, a huge mass ratio, a tall stack, degenerate
 // shapes, bodies made inside each other, a body sent a million metres away, and a long run of one spinning body. Each
 // scene must finish without NaN, explosion or abort, with every body inside the world's bounds.
 #include <catch2/catch_test_macros.hpp>

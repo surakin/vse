@@ -1,32 +1,32 @@
-# The physics tests (Phase 25): the determinism foundation (Day 374) and, from Day 375, the module. Like tests/spatial, they do not apply
+# The physics tests (Phase 25): the determinism foundation (Day 386) and, from Day 387, the module. Like tests/spatial, they do not apply
 # ENGINE_PRODUCTION_COMPILE_OPTIONS (Catch2's macros use exceptions); the library under test is built without. One executable per sanitizer flavor.
 set(PHYSICS_TEST_SOURCES
-  state_hash_test.cpp  # Day 374
-  determinism_test.cpp  # Day 374
-  shapes_test.cpp  # Day 375
-  mass_test.cpp  # Day 375
-  world_test.cpp  # Day 376
-  sync_test.cpp  # Day 376
-  broad_phase_test.cpp  # Day 377
-  step_test.cpp  # Day 378
-  collide_test.cpp  # Day 379
-  hull_collide_test.cpp  # Day 381
-  mesh_collide_test.cpp  # Day 382
-  compound_test.cpp  # Day 383
-  solver_test.cpp  # Day 384
-  stability_test.cpp  # Day 385
-  joint_test.cpp  # Day 386
-  hinge_test.cpp  # Day 387
-  sleep_test.cpp  # Day 388
-  parallel_test.cpp  # Day 389
-  ccd_test.cpp  # Day 390
-  query_test.cpp  # Day 391
-  character_test.cpp  # Day 392
-  events_test.cpp  # Day 393
-  snapshot_test.cpp  # Day 394
-  golden_test.cpp  # Day 395
-  stress_test.cpp  # Day 400
-  perf_smoke_test.cpp  # Day 400
+  state_hash_test.cpp  # Day 386
+  determinism_test.cpp  # Day 386
+  shapes_test.cpp  # Day 387
+  mass_test.cpp  # Day 387
+  world_test.cpp  # Day 388
+  sync_test.cpp  # Day 388
+  broad_phase_test.cpp  # Day 389
+  step_test.cpp  # Day 390
+  collide_test.cpp  # Day 391
+  hull_collide_test.cpp  # Day 393
+  mesh_collide_test.cpp  # Day 394
+  compound_test.cpp  # Day 395
+  solver_test.cpp  # Day 396
+  stability_test.cpp  # Day 397
+  joint_test.cpp  # Day 398
+  hinge_test.cpp  # Day 399
+  sleep_test.cpp  # Day 400
+  parallel_test.cpp  # Day 401
+  ccd_test.cpp  # Day 402
+  query_test.cpp  # Day 403
+  character_test.cpp  # Day 404
+  events_test.cpp  # Day 405
+  snapshot_test.cpp  # Day 406
+  golden_test.cpp  # Day 407
+  stress_test.cpp  # Day 412
+  perf_smoke_test.cpp  # Day 412
 )
 
 find_package(Threads REQUIRED)
@@ -36,7 +36,7 @@ include(Catch)
 set(_physics_control_options "")
 if(NOT ENGINE_MSVC_LIKE)
   set(_physics_control_options -O2 -ffp-contract=fast)
-  # -mfma on x86-64 only; arm64 always has the fused instruction (Day 399: ENGINE_ARCH, since a macOS arm64 tree on an
+  # -mfma on x86-64 only; arm64 always has the fused instruction (Day 411: ENGINE_ARCH, since a macOS arm64 tree on an
   # Intel Mac reports the host's CMAKE_SYSTEM_PROCESSOR).
   if(ENGINE_ARCH STREQUAL "x64")
     list(APPEND _physics_control_options -mfma)

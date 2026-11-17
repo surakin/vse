@@ -1,6 +1,6 @@
 #pragma once
 
-//! The static triangle mesh of a collider (Phase 25 Day 382): an immutable, shared mesh with a bounding-volume
+//! The static triangle mesh of a collider (Phase 25 Day 394): an immutable, shared mesh with a bounding-volume
 //! hierarchy over its triangles (`spatial::StaticBvh`), face normals and the triangle across each edge, and the library
 //! a world keeps its meshes in.
 

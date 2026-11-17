@@ -1,4 +1,4 @@
-// A small version of the physics benchmark (Phase 25 Day 400) with a generous bound: a gross regression (a scan that
+// A small version of the physics benchmark (Phase 25 Day 412) with a generous bound: a gross regression (a scan that
 // grows with the square of the body count, a solver that stops converging) fails here; the real numbers come from
 // `physics_bench` (docs/guide/physics.md, "Cost"). The bound is far above what any build, sanitizers included, takes.
 #include <catch2/catch_test_macros.hpp>

@@ -2,7 +2,9 @@
 
 > Drafted 2026-11-15 from a the host session at the user's request; placed as Phase 24 the same day (every later phase moved up one) and broken into day files (Days 358-372) at the user's request.
 
-**Status: started (Day 358, 2026-11-15; `CURRENT_PHASE` 24); the spec and the five spikes are done (`docs/superpowers/specs/2026-11-16-c-api-scenes-design.md`). Before that: planned (2026-11-15): the day files are written (Days 358-372, `plans/phase-24-c-api-scenes-for-hosts/`), so the phase can start once Phase 23 closes (Day 357); Phase 28 (3D text) moved to Days 373-388 to make room (+15).** Placed right after Phase 23 because it builds on its C ABI, surfaces and host-provided content, and because its first user (the host's 3D call rooms) needs nothing from physics, audio or scripting.
+**Addendum (2026-11-17, the user: "fold it into phase 24"): Days 373-384 add off-screen surfaces and multi-material meshes for hosts (from a draft written from a the host session; the draft file is gone). Phases 25, 26 and 28 moved up 12 days. The addendum is planned, not started; `CURRENT_PHASE` stays 26 until Day 373 sets it to 24 and Day 415 sets it back.**
+
+**Status: started (Day 358, 2026-11-15; `CURRENT_PHASE` 24); the spec and the five spikes are done (`docs/superpowers/specs/2026-11-16-c-api-scenes-design.md`). Before that: planned (2026-11-15): the day files are written (Days 358-372, `plans/phase-24-c-api-scenes-for-hosts/`), so the phase can start once Phase 23 closes (Day 357); Phase 28 (3D text) moved to Days 385-400 to make room (+15).** Placed right after Phase 23 because it builds on its C ABI, surfaces and host-provided content, and because its first user (the host's 3D call rooms) needs nothing from physics, audio or scripting.
 
 **Depends on:** Phase 23 (the C ABI, the function table and its version rules, surfaces in host-owned windows on Linux, Windows and macOS,
 host-owned input and the host-driven frame, host-provided content, glTF import at run time), Phase 22 (resources, the level format and
@@ -48,6 +50,21 @@ pass the phase's tests and the full suite in every flavor.
 370. [macOS: Scenes on an `NSView` (Metal)](phase-24-c-api-scenes-for-hosts/day-370-macos-scenes-on-an-nsview.md)
 371. [The Walk-Around Sample & the Acceptance Scene](phase-24-c-api-scenes-for-hosts/day-371-walk-around-sample-and-acceptance-scene.md)
 372. [Docs, Closing Runs on Three Machines & the Phase Review](phase-24-c-api-scenes-for-hosts/day-372-docs-closing-runs-and-phase-review.md)
+
+373. [Off-Screen Surfaces and Multi-Material Meshes: Design Spec and Spikes](phase-24-c-api-scenes-for-hosts/day-373-offscreen-and-multimaterial-spec-and-spikes.md)
+374. [The Renderer Draws a Range of a Mesh](phase-24-c-api-scenes-for-hosts/day-374-renderer-index-ranges.md)
+375. [The Scene Bridge: One Material per Slot](phase-24-c-api-scenes-for-hosts/day-375-scene-per-slot-materials.md)
+376. [Levels and the Importer: Every Primitive Keeps Its Material](phase-24-c-api-scenes-for-hosts/day-376-levels-with-per-slot-materials.md)
+377. [C API: Slots, Names and Per-Slot Overrides](phase-24-c-api-scenes-for-hosts/day-377-c-api-multi-material.md)
+378. [Off-Screen Surfaces I: A Surface with No Window](phase-24-c-api-scenes-for-hosts/day-378-offscreen-surfaces-i.md)
+379. [Off-Screen Surfaces II: The Per-Frame Picture](phase-24-c-api-scenes-for-hosts/day-379-offscreen-surfaces-ii-frames.md)
+380. [Off-Screen Surfaces III: Device Reset, Loss and Several Surfaces](phase-24-c-api-scenes-for-hosts/day-380-offscreen-surfaces-iii-reset-and-sharing.md)
+381. [Windows: Off-Screen Surfaces and Multi-Material Meshes (Vulkan and Direct3D 12)](phase-24-c-api-scenes-for-hosts/day-381-windows-offscreen-and-multimaterial.md)
+382. [macOS: Off-Screen Surfaces and Multi-Material Meshes (Metal)](phase-24-c-api-scenes-for-hosts/day-382-macos-offscreen-and-multimaterial.md)
+383. [The the host Acceptance Scene, Fixtures and the Off-Screen Sample](phase-24-c-api-scenes-for-hosts/day-383-host-acceptance-scene-and-sample.md)
+384. [The Addendum: Docs, Closing Runs and the Review](phase-24-c-api-scenes-for-hosts/day-384-addendum-docs-closing-runs-and-review.md)
+
+Order reasoning of the addendum: the spec and spikes first (373); multi-material goes bottom up, renderer ranges (374), scene sync (375), levels and the importer (376), the C API (377), because the acceptance scene needs every primitive drawn before off-screen matters; off-screen surfaces follow, the surface (378), the per-frame picture (379), reset and sharing (380); the PC and the Mac (381-382) check both features; the the host acceptance scene and the sample (383) are the end-to-end test; the closing day (384) runs the full suite and the uncapped review of the addendum.
 
 The Linux machine does Days 358-368, 371 and 372's Linux half; **Day 369 is for the Windows PC and Day 370 for the Mac** (CLAUDE.md, "Three machines"): Linux days write the shared code and the C hosts so the other two machines run and fix. The phase starts only after Phase 23's Day 357 (`CURRENT_PHASE` moves to 24 on Day 358).
 
@@ -122,6 +139,18 @@ The Linux machine does Days 358-368, 371 and 372's Linux half; **Day 369 is for 
 - Goldens: no channel off by more than 4, at most 0.5 % of values off by more than 1 (Days 359, 371); cross-GPU figure not measured (`KNOWN-ISSUES.md`).
 - Per surface: a frame object, a `RenderScene`, a `SceneLink`, and a device-resident content cache keyed by resource id and generation (Days 359, 362, 368). The frame object moves from `game/renderer_demo` into the engine and the renderer gets a before-present hook (Day 359).
 - Live textures: latest-wins slot, a ring of three staging buffers, one upload per frame, an 8 MB per-frame budget (Day 365).
+
+## The addendum, Days 373-384: off-screen surfaces and multi-material meshes
+
+**Driving case:** the host draws its whole UI through its own canvas (`tk::Canvas`), and its native text fields already work by rendering into a buffer that the canvas draws with `draw_image()`. **The user's decision (2026-11-17): the engine view works the same way:** the engine renders into a buffer, the host draws it inside the call lobby or view like any other image, so the UI's overlays, popups, toasts and focus rules keep working over the 3D view (a native child window on top of the canvas would break them). The first test is a temporary button in the call lobby that swaps the camera preview for the 3D view: the meadow (`green_field.glb`), two or three robots (`robot.glb`), the lobby camera feed on one robot's screen, WASD and the mouse to walk and look; Qt6 on Linux first.
+
+Two things stop that today: (1) every surface needs a native window (`ENGINE_SURFACE_X11`, `_WAYLAND`, `_WIN32`, `_COCOA`), and `surface_read_pixels` is the screenshot and test path (a ticket per frame, a full copy, 256 tickets at most), not a per-frame video path; (2) an entity draws one material: `engine_mesh_reference` names one `material_resource` and `level_spawn` takes the first primitive's material (Day 364 in `KNOWN-ISSUES.md`), while the host's `robot.glb` is one skinned mesh of five primitives (`Body`, `Joint`, `Accent`, `Bezel`, `Screen`) and each tree has two (bark, leaves).
+
+**Definition of done (addendum):** through the C API only, a C host with no window of its own can create an off-screen surface of a size and a scale, bind a world and a camera to it as to a window surface, take the newest finished picture as RGBA8 each frame without blocking on the GPU, resize it, feed it input, and survive a device reset with the same picture afterwards. A glTF whose meshes have several primitives (the the host robot and meadow, copied into the fixtures with their provenance) imports, spawns as a level and draws every primitive with its own material, and a host can override one primitive's material on one entity (the robot's `Screen` gets a host texture, the body keeps its colours). A golden image of the the host acceptance scene (meadow, three robots, three screens) is compared on Linux, Windows and macOS.
+
+**Key deliverables.** *Off-screen surfaces* (Days 378-380): `ENGINE_SURFACE_OFFSCREEN` with only a size and a scale; every surface call works on it; a per-frame picture path `surface_acquire_frame`/`surface_release_frame` over a ring of mapped buffers (never waits for the GPU; a slow host skips pictures; ownership and thread rules stated); sRGB-encoded RGBA8 with the alpha mode stated; `surface_state` reports rendered, taken and dropped frames; rebuilt like a window surface on a reset or loss. *Multi-material meshes* (Days 374-377): the renderer draws a range of a mesh, `MeshRenderer` carries a material per slot, `level_spawn` gives every entity all of its mesh's materials, the C API names slots (by index or imported name) and overrides one slot of one entity. *Tests and docs* (Days 381-384): a windowless C host test of the acceptance scene with a golden image, the the host fixtures with their provenance, an off-screen mode of the walk-around sample, guide sections, the ABI additions under the struct-size rule, and every flavor on three machines.
+
+**Open questions (settled in the Day 373 spec):** who picks the device of an off-screen surface and whether several share one (the one-device-per-adapter fact of Day 369 applies on Direct3D 12); the ring depth and the "newest" rule; the lifetime of acquired frames across `surface_resized`; premultiplied or straight alpha and whether a transparent background is needed (the host does not need it for v1); naming mesh slots; whether `engine_mesh_reference` grows or a new component carries the per-slot materials; the cost of one CPU copy per frame (1280x720x4 = 3.7 MB at 60 Hz, about 220 MB/s: acceptable for the first version, measured on Day 373). **Later, not required:** sharing the picture as a GPU texture (dmabuf or Vulkan external memory, a D3D12 shared handle, `IOSurface`); the CPU path stays the fallback.
 
 ## Notes / open questions (settled in the spec on Day 358)
 

@@ -1,5 +1,5 @@
-// The physics components of an entity (Phase 25 Day 375): the body, its velocity and its collider. They are plain data:
-// the world that steps them is Day 376.
+// The physics components of an entity (Phase 25 Day 387): the body, its velocity and its collider. They are plain data:
+// the world that steps them is Day 388.
 #pragma once
 
 #include "math/quaternion.h"
@@ -28,7 +28,7 @@ enum BodyFlags : u32
 {
     kBodyLockRotation = 1u << 0,       ///< The body does not rotate (its inverse inertia is zero).
     kBodyNoSleep = 1u << 1,            ///< The body never falls asleep (the default is that it may).
-    kBodyContinuous = 1u << 2,         ///< Continuous collision detection is used for this body (Day 390).
+    kBodyContinuous = 1u << 2,         ///< Continuous collision detection is used for this body (Day 402).
     kBodyKnownFlags = (1u << 3) - 1u,  ///< Every flag this build knows, ORed (a flag outside it is refused).
 };
 
@@ -93,7 +93,7 @@ struct RigidBody
     BodyType type = BodyType::Dynamic;
     /// `BodyFlags`.
     u32 flags = 0;
-    /// The mass in kilograms; zero means "from the colliders' density" (Day 376). At least zero.
+    /// The mass in kilograms; zero means "from the colliders' density" (Day 388). At least zero.
     f32 mass = 0.0f;
     /// The fraction of the linear speed lost each second (`v *= 1 / (1 + c dt)`), at least zero.
     f32 linear_damping = 0.0f;
@@ -141,9 +141,9 @@ struct Collider
     PhysicsMaterial material;
     /// The collision layer this collider is on (0 to 31).
     u8 layer = 0;
-    /// A trigger reports overlaps and does not collide (Day 383).
+    /// A trigger reports overlaps and does not collide (Day 395).
     bool is_trigger = false;
-    /// The groups the collider is in, one bit each (Day 383).
+    /// The groups the collider is in, one bit each (Day 395).
     u32 group = 1;
     /// The groups it collides with, one bit each: a pair collides when each one's group meets the other's mask.
     u32 mask = 0xFFFFFFFFu;

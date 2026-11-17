@@ -1,4 +1,4 @@
-// The state hash of the physics step (Phase 25 Day 374): a 64-bit FNV-1a hash of an ordered sequence of words, the
+// The state hash of the physics step (Phase 25 Day 386): a 64-bit FNV-1a hash of an ordered sequence of words, the
 // value the reference scenes compare across Linux, Windows and macOS
 // (docs/superpowers/specs/2026-11-16-physics-design.md, section 2, "State hash").
 #pragma once

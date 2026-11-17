@@ -240,7 +240,7 @@ int MintSkeletonCommand(const Line& line)
     return 0;
 }
 
-// Mints a hull source into a blob (Phase 25 Day 381).
+// Mints a hull source into a blob (Phase 25 Day 393).
 int MintHullCommand(const Line& line)
 {
     static const char* const allowed[] = {"target"};

@@ -1,4 +1,4 @@
-// The physics settings (Phase 25 Day 378): the step rate, the substep cap, the gravity and interpolation, declared with
+// The physics settings (Phase 25 Day 390): the step rate, the substep cap, the gravity and interpolation, declared with
 // `settings::Registry`.
 #pragma once
 

@@ -1,6 +1,6 @@
 # Physics: rigid bodies that agree to the bit
 
-Status: in progress (Phase 25). Built: the determinism foundation (Day 374). Next: shapes, mass and the components (Day 375).
+Status: in progress (Phase 25). Built: the determinism foundation (Day 386). Next: shapes, mass and the components (Day 387).
 
 **Audience:** engine programmers who write or review physics code, and hosts that compare simulations across machines. Read [Math](foundation-math.md) and
 [Spatial partitioning](spatial.md) first. Design and the experiments behind it: `docs/superpowers/specs/2026-11-16-physics-design.md`.
@@ -20,16 +20,16 @@ replay, a rollback and a networked peer can trust it. This page states the rules
    a quaternion from an axis and an angle, reporting an angle to the host. The reference scenes use literal constants for these; a scene that does not
    is hashed separately and a disagreement between machines is recorded in `KNOWN-ISSUES.md`, not worked around.
 3. **No contraction, no fast-math.** `-ffp-contract=off -fno-fast-math` on GCC and Clang, `/fp:precise` on cl, the Clang switches through
-   `/clang:` on clang-cl (not `/fp:precise`, which is Clang's contracting `-ffp-model=precise`; Day 398) (`ENGINE_FP_COMPILE_OPTIONS`,
+   `/clang:` on clang-cl (not `/fp:precise`, which is Clang's contracting `-ffp-model=precise`; Day 410) (`ENGINE_FP_COMPILE_OPTIONS`,
    `cmake/EngineCompilerOptions.cmake`), applied to every target of ours. A fused
    multiply-add rounds once where a multiply and an add round twice, so a build for a machine with FMA (`-march=native`, and arm64 by default) would give
-   other bits, and GCC and Clang would give others still (Day 373 spike 2). The configure step stops when a fast-math flag, or contraction, is set
+   other bits, and GCC and Clang would give others still (Day 385 spike 2). The configure step stops when a fast-math flag, or contraction, is set
    anywhere (`cmake/EngineFpCheck.cmake`; a fast-math flag at link time also sets flush-to-zero for the whole process).
 4. **Denormals are kept.** The engine never sets flush-to-zero or denormals-are-zero; `physics::DenormalsPreserved()` says whether the process has them
-   off, and the step will check it (Day 378). A host that sets the mode for its own sake must restore it around the step.
+   off, and the step will check it (Day 390). A host that sets the mode for its own sake must restore it around the step.
 5. **Fixed order everywhere.** A fixed time step; pairs in the order the pair tracker gives (sorted by key); islands by their lowest body id; a parallel
    job writes only its own output and the outputs are merged in chunk order; no float reduction in thread order, no atomic float add, no iteration order of
-   a hash map, no sort by a float without an id tie-break. Day 373 spike 2: an unordered merge gave nine different hashes in nine runs; the ordered merge
+   a hash map, no sort by a float without an id tie-break. Day 385 spike 2: an unordered merge gave nine different hashes in nine runs; the ordered merge
    gave one hash for 1, 2, 4, 16 and 32 threads.
 
 ## Checking the build
@@ -43,14 +43,14 @@ fp_determinism_probe: hash 50e1be9251ea408f contraction=off denormals=kept
 
 The hash is the same under GCC and Clang, `-O0` to `-O3`, unity and non-unity builds, and with `-march=native -ffp-contract=off`; with contraction on it is
 `60498f6f6e05389d` under both compilers. The ctest `physics_fp_determinism_probe` and the test `Determinism: the probe's hash is the committed constant`
-compare it with the committed value; the Windows PC and the Mac compare it on Days 398 and 399 (arm64 can only be compiled, not run). A control probe
+compare it with the committed value; the Windows PC and the Mac compare it on Days 410 and 411 (arm64 can only be compiled, not run). A control probe
 compiled with contraction allowed shows that a fused multiply-add would be seen (`Determinism: the control probe does fuse`; skipped where the machine has no
 FMA instruction).
 
-**On Windows (Day 398)** the probe gives the same line under cl and clang-cl, and every committed hash of the physics tests (the six golden scenes,
+**On Windows (Day 410)** the probe gives the same line under cl and clang-cl, and every committed hash of the physics tests (the six golden scenes,
 the 600-step scene, the random-pair, hull, compound and mesh contacts, joints, hinges, snapshots) and the C API sample's checksum equal Linux's and the
 Mac's, in unity and non-unity builds, plain and asan. The compound and mesh contact hashes first differed here as on the Mac: their samples were built
-with `Sin` and `Cos`, which the C libraries round differently; Day 399's libm-free samples (`testing::TurnFromHalfCos`, `testing::Wave`) give the same
+with `Sin` and `Cos`, which the C libraries round differently; Day 411's libm-free samples (`testing::TurnFromHalfCos`, `testing::Wave`) give the same
 constants on Windows. The control probe is skipped under cl and clang-cl.
 
 ## The state hash
@@ -73,7 +73,7 @@ The components of an entity are `RigidBody` (type static, kinematic or dynamic; 
 override, damping, gravity scale), `Velocity` and `Collider` (shape, offset and rotation in the body, `PhysicsMaterial`, layer 0-31, trigger flag). The
 material holds friction, restitution, density and how two values combine (`CombineRule`); for a pair the rule with the larger number is used, so the
 order of the two colliders never matters. The material is inline in the collider for now: a minted `PMAT` asset is deferred (see `KNOWN-ISSUES.md`).
-A **convex hull** (Day 381) is the `Hull` kind: `Shape::MakeHull(id, extent)` names a `ConvexHull` held by the world's `HullLibrary` (`PhysicsWorld::Hulls()`; ids count from 1, and a collider that names an unknown hull, or whose extent does not cover the hull, is `BodyStatus::Invalid`). A **triangle mesh** (Day 382) is the `Mesh` kind for level geometry: `Shape::MakeMesh(id, extent)` names a `TriangleMesh` of the world's `MeshLibrary` (`PhysicsWorld::Meshes()`). A mesh belongs to a **static** body only (a collider that names an unknown mesh, a non-covering extent or a non-static body is `BodyStatus::Invalid`, and a body that holds one cannot be made dynamic); it has no mass. A **compound** (Day 383) is the `Compound` kind: several shapes (spheres, boxes, capsules and hulls, up to 64) with local transforms on one body. `CompoundShape::Create` computes the whole's mass, centre of mass and principal inertia once (each child's own density, the parallel-axis theorem; `PrincipalAxes` finds the axes) and the world's `RecomputeMass` puts the body's centre of mass there, so the body turns about its true centre; the collider's own `density` is ignored for a compound. `PhysicsWorld::Compounds()` holds them; a collider whose bound does not cover the compound, or that names an unknown one, is `BodyStatus::Invalid`.
+A **convex hull** (Day 393) is the `Hull` kind: `Shape::MakeHull(id, extent)` names a `ConvexHull` held by the world's `HullLibrary` (`PhysicsWorld::Hulls()`; ids count from 1, and a collider that names an unknown hull, or whose extent does not cover the hull, is `BodyStatus::Invalid`). A **triangle mesh** (Day 394) is the `Mesh` kind for level geometry: `Shape::MakeMesh(id, extent)` names a `TriangleMesh` of the world's `MeshLibrary` (`PhysicsWorld::Meshes()`). A mesh belongs to a **static** body only (a collider that names an unknown mesh, a non-covering extent or a non-static body is `BodyStatus::Invalid`, and a body that holds one cannot be made dynamic); it has no mass. A **compound** (Day 395) is the `Compound` kind: several shapes (spheres, boxes, capsules and hulls, up to 64) with local transforms on one body. `CompoundShape::Create` computes the whole's mass, centre of mass and principal inertia once (each child's own density, the parallel-axis theorem; `PrincipalAxes` finds the axes) and the world's `RecomputeMass` puts the body's centre of mass there, so the body turns about its true centre; the collider's own `density` is ignored for a compound. `PhysicsWorld::Compounds()` holds them; a collider whose bound does not cover the compound, or that names an unknown one, is `BodyStatus::Invalid`.
 
 A `ConvexHull` is immutable data shared by `ConvexHullConstPtr`: vertices, polygon faces (outward normal, offset, up to 64 vertices each), the volume, the centroid and the inertia tensor about the centroid, all computed offline by the `HULL` minter (`asset_mint mint-hull`, `docs/guide/assets.md`). `ConvexHull::Create` checks what it is given and refuses anything the narrow phase could not use (`Validation`). The mass of a hull body is the hull's own: its centre of mass is the centroid and its principal axes come from a Jacobi eigen-decomposition of the stored tensor, so a body's `RecomputeMass` places the centre at `offset + rotation * centroid`.
 
@@ -85,7 +85,7 @@ instead of reaching the body that took the slot. Slots are reused last-freed-fir
 state hash relies on. Bodies and colliders live in chunks of 256 that never move: a `Body*` from `Find` stays valid until that body is destroyed, and
 100,000 destroy-and-create cycles do not grow the world (`Stats().body_slots`).
 
-`CreateBody(BodyDesc)` makes a body; `AddCollider` gives it its shape and recomputes the mass (a body takes one collider until compound bodies on Day 383).
+`CreateBody(BodyDesc)` makes a body; `AddCollider` gives it its shape and recomputes the mass (a body takes one collider until compound bodies on Day 395).
 A body's origin and its centre of mass differ when the collider is offset: `WorldCenter(id)` is the centre, and impulses and forces act about it.
 `SetSettings` changes the type at any time (a body made static loses its velocity); `ApplyImpulse` changes the velocity at once, `ApplyForce` is kept until
 the step takes it; `SetTransform` teleports the body and counts it, so contact caches of the body know to drop their points. Bad input (a NaN, a quaternion
@@ -151,7 +151,7 @@ The step rate belongs to the state: the same scene hashes differently at another
 
 `PhysicsWorld::StateHash()` is the cross-machine check: FNV-1a over every body in slot order (position, orientation, linear and angular velocity, the sleep
 byte). A scene of 100 boxes and capsules with offsets, spins and damping, stepped 600 times, hashes to `238b01a717a849dd` under GCC and Clang, unity and not,
-Debug and Release (`Step: the state hash of a 600-step scene...`); the Windows and macOS machines compare it on Days 398-399.
+Debug and Release (`Step: the state hash of a 600-step scene...`); the Windows and macOS machines compare it on Days 410-411.
 
 ## The narrow phase: contacts for the shapes with closed forms
 
@@ -160,11 +160,11 @@ Debug and Release (`Step: the state hash of a 600-step scene...`); the Windows a
 
 | | sphere | capsule | box | hull |
 |---|---|---|---|---|
-| **sphere** | built (Day 379) | built | built | built (Day 381) |
-| **capsule** | | built | built (Day 380) | built (Day 381) |
-| **box** | | | built (Day 380) | built (Day 381) |
-| **hull** | | | | built (Day 381) |
-| **mesh** (static) | built (Day 382) | built | built | built |
+| **sphere** | built (Day 391) | built | built | built (Day 393) |
+| **capsule** | | built | built (Day 392) | built (Day 393) |
+| **box** | | | built (Day 392) | built (Day 393) |
+| **hull** | | | | built (Day 393) |
+| **mesh** (static) | built (Day 394) | built | built | built |
 
 The call is symmetric: swapping the shapes gives the same contact with the normal negated and the two points of each contact swapped (the dispatch runs the
 test in one fixed order and `ContactManifold::Flip`s the result). A manifold has a **unit normal from A toward B**, up to four points, and for each point
@@ -181,7 +181,7 @@ rock; crossing axes through one point use the common perpendicular. A **sphere a
 the centre (the region, face, edge or vertex, is the feature id); a centre inside the box leaves through the face of least penetration. Everything uses
 `+ - * /` and `Sqrt` only: 100,000 random pairs of every kind hash to the same constant (`a37013a6ea09b3fe`) under GCC and Clang, unity and not, Debug and Release.
 
-**Box against box** (Day 380) is the separating axis test over the 15 axes (3 + 3 face normals and the 9 edge cross products; parallel edge pairs are skipped). A
+**Box against box** (Day 392) is the separating axis test over the 15 axes (3 + 3 face normals and the 9 edge cross products; parallel edge pairs are skipped). A
 face axis wins unless an edge axis is better by more than 1e-3, and among the faces the first one wins ties (1e-4), so a resting box does not flicker between
 feature types. A **face contact** clips the incident face (the face of the other box most opposed to the reference normal) against the four side planes of the
 reference face (Sutherland-Hodgman), keeps the vertices within the margin, and reduces more than four to the deepest, the farthest from it, and the two that
@@ -192,11 +192,11 @@ works in the box's frame: the capsule's axis is cut where it crosses the planes 
 nearest point of the box moves linearly there), and the result is a sphere-like contact at the nearest point of the axis, or two points at the ends of the
 stretch where the axis lies flat above a face. An axis that meets the box leaves through the face of least penetration of the whole capsule.
 
-**Hulls** (Day 381) go through one path for every pair that has a hull: **GJK** on the two cores (a point, a segment, a box or a hull, each with the radius of a sphere or capsule), and when the cores overlap or touch, **EPA** on the Minkowski difference for the normal and the depth. The support of a hull is a scan of its vertices (at most 255; a hill-climbing support is deferred). Apart shapes get the distance of the cores minus the radii as a speculative depth; the gap is normalized by its own length, and cores closer than 1e-5 count as touching. When both shapes are box or hull (radius zero) and the best-aligned face of either is within 0.9 of the contact normal, the manifold is a **face contact** exactly as for two boxes (clip the incident polygon against the reference face, reduce to four); otherwise it is **one point**. A capsule against a hull is always one point for now. The `feature_id` of a face contact is the same code as for boxes with the hull's vertex index (its face indices are the hull's own); a one-point contact has `0x40000000` in its id. Because hulls go to the same code as boxes, a hull copy of a box agrees with the box tests to within the margin for shallow overlaps; a deep overlap has several ways out and the closed forms and EPA may pick different ones. 30,000 random hull pairs hash to `172dfbee2611621e` under GCC and Clang, unity and not, Debug and Release.
+**Hulls** (Day 393) go through one path for every pair that has a hull: **GJK** on the two cores (a point, a segment, a box or a hull, each with the radius of a sphere or capsule), and when the cores overlap or touch, **EPA** on the Minkowski difference for the normal and the depth. The support of a hull is a scan of its vertices (at most 255; a hill-climbing support is deferred). Apart shapes get the distance of the cores minus the radii as a speculative depth; the gap is normalized by its own length, and cores closer than 1e-5 count as touching. When both shapes are box or hull (radius zero) and the best-aligned face of either is within 0.9 of the contact normal, the manifold is a **face contact** exactly as for two boxes (clip the incident polygon against the reference face, reduce to four); otherwise it is **one point**. A capsule against a hull is always one point for now. The `feature_id` of a face contact is the same code as for boxes with the hull's vertex index (its face indices are the hull's own); a one-point contact has `0x40000000` in its id. Because hulls go to the same code as boxes, a hull copy of a box agrees with the box tests to within the margin for shallow overlaps; a deep overlap has several ways out and the closed forms and EPA may pick different ones. 30,000 random hull pairs hash to `172dfbee2611621e` under GCC and Clang, unity and not, Debug and Release.
 
-**Triangle meshes** (Day 382). `TriangleMesh::Create(spec)` checks the numbers (counts, finite positions, indices, no triangle without area) and builds the face normals, the triangle across each edge (`Neighbor`) and a `spatial::StaticBvh` over the triangle boxes; `QueryBox` returns the triangles whose boxes overlap a box, in increasing order. The mesh is the data of the minted `MCOL` asset (`docs/guide/assets.md`). `Collide(mesh, pose, other, pose, margin, &m, hulls, meshes)` takes the other shape's box in the mesh's space, asks the hierarchy for the triangles (at most 256 are tested, 64 contacts kept), collides each as a flat two-sided convex piece through the same GJK/EPA and face clipping as hulls (the triangle has a front and a back face, so a box lying on it clips to its corners), and merges the results: the contact of the deepest triangle sets the normal, contacts within 11 degrees of it join (the same point reached through two triangles is kept once), and more than four reduce as for boxes. A flat triangle is also left by its plane: when the shortest way out is across the plane, that exit is the contact. **Internal edges:** a one-point contact on an edge shared with a nearly coplanar triangle (normals within 0.99) takes the face's normal, so a body sliding over a seam does not catch; the side is the one the other shape's centre is on. Limits: a mesh is a thin two-sided surface, so a body whose centre passes through a triangle is pushed out the other side (tunnelling, stated for the solver days); concave corners keep only the deepest normal's group for a step; a mesh against a mesh is `Unsupported`; the query allocates (a `Vector` per call).
+**Triangle meshes** (Day 394). `TriangleMesh::Create(spec)` checks the numbers (counts, finite positions, indices, no triangle without area) and builds the face normals, the triangle across each edge (`Neighbor`) and a `spatial::StaticBvh` over the triangle boxes; `QueryBox` returns the triangles whose boxes overlap a box, in increasing order. The mesh is the data of the minted `MCOL` asset (`docs/guide/assets.md`). `Collide(mesh, pose, other, pose, margin, &m, hulls, meshes)` takes the other shape's box in the mesh's space, asks the hierarchy for the triangles (at most 256 are tested, 64 contacts kept), collides each as a flat two-sided convex piece through the same GJK/EPA and face clipping as hulls (the triangle has a front and a back face, so a box lying on it clips to its corners), and merges the results: the contact of the deepest triangle sets the normal, contacts within 11 degrees of it join (the same point reached through two triangles is kept once), and more than four reduce as for boxes. A flat triangle is also left by its plane: when the shortest way out is across the plane, that exit is the contact. **Internal edges:** a one-point contact on an edge shared with a nearly coplanar triangle (normals within 0.99) takes the face's normal, so a body sliding over a seam does not catch; the side is the one the other shape's centre is on. Limits: a mesh is a thin two-sided surface, so a body whose centre passes through a triangle is pushed out the other side (tunnelling, stated for the solver days); concave corners keep only the deepest normal's group for a step; a mesh against a mesh is `Unsupported`; the query allocates (a `Vector` per call).
 
-**Compounds, groups, masks and triggers** (Day 383). `Collide` takes a compound against anything: each child (or each pair of children, for two compounds) is collided on its own, children whose boxes do not meet are skipped, and the contacts merge as for a mesh; a point's `feature_id` mixes the child indices, so warm starting and events tell children apart. A collider has a `group` and a `mask` word (default group 1, mask all bits); the broad phase keeps a pair when the layer matrix lets it and `(a.group & b.mask) != 0 && (b.group & a.mask) != 0` (`GroupsCollide`); two children of two compounds are filtered the same way by their own words. There are no per-pair filter callbacks and no one-way platforms (determinism). A **trigger** collider makes pairs flagged `trigger` and begin and end events, and no contact is solved for it; two triggers make a pair only when `BroadPhaseConfig::trigger_pairs` is set (off by default). Changing a collider's shape (`SetCollider`) recomputes the body's mass and the next `BroadPhase::Update` moves its bound; contact caches arrive with the solver on Day 384.
+**Compounds, groups, masks and triggers** (Day 395). `Collide` takes a compound against anything: each child (or each pair of children, for two compounds) is collided on its own, children whose boxes do not meet are skipped, and the contacts merge as for a mesh; a point's `feature_id` mixes the child indices, so warm starting and events tell children apart. A collider has a `group` and a `mask` word (default group 1, mask all bits); the broad phase keeps a pair when the layer matrix lets it and `(a.group & b.mask) != 0 && (b.group & a.mask) != 0` (`GroupsCollide`); two children of two compounds are filtered the same way by their own words. There are no per-pair filter callbacks and no one-way platforms (determinism). A **trigger** collider makes pairs flagged `trigger` and begin and end events, and no contact is solved for it; two triggers make a pair only when `BroadPhaseConfig::trigger_pairs` is set (off by default). Changing a collider's shape (`SetCollider`) recomputes the body's mass and the next `BroadPhase::Update` moves its bound; contact caches arrive with the solver on Day 396.
 
 ## The contact solver
 

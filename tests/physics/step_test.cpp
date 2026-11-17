@@ -1,4 +1,4 @@
-// The fixed step, the accumulator, interpolation, the state hash, settings and the ECS system (Phase 25 Day 378).
+// The fixed step, the accumulator, interpolation, the state hash, settings and the ECS system (Phase 25 Day 390).
 #include <catch2/catch_test_macros.hpp>
 
 #include "ecs/schedule.h"

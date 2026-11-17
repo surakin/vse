@@ -1,4 +1,4 @@
-// Islands and sleeping (Phase 25 Day 388): a resting stack falls asleep and costs nothing, wakes by the stated rules,
+// Islands and sleeping (Phase 25 Day 400): a resting stack falls asleep and costs nothing, wakes by the stated rules,
 // and the island decomposition does not depend on the order the bodies were made in.
 #include <catch2/catch_test_macros.hpp>
 

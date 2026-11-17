@@ -1,4 +1,4 @@
-// Box-box and box-capsule narrow phase tests (Phase 25 Day 380). Only `+ - * /` and `Sqrt` are used.
+// Box-box and box-capsule narrow phase tests (Phase 25 Day 392). Only `+ - * /` and `Sqrt` are used.
 #include "containers/array.h"
 #include "lang/scalar.h"
 #include "physics/collide_math.h"

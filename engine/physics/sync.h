@@ -1,4 +1,4 @@
-// The bridge from ECS entities to physics bodies (Phase 25 Day 376): an entity with `RigidBody`, `Collider` and
+// The bridge from ECS entities to physics bodies (Phase 25 Day 388): an entity with `RigidBody`, `Collider` and
 // `LocalTransform` and no `Parent` gets a body.
 #pragma once
 

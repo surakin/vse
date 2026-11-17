@@ -1,4 +1,4 @@
-// The ids of the physics world (Phase 25 Day 376): an index and a generation, so a stale id is refused instead of
+// The ids of the physics world (Phase 25 Day 388): an index and a generation, so a stale id is refused instead of
 // reaching another body.
 #pragma once
 

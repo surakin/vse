@@ -1,4 +1,4 @@
-// Joints of the physics module (Phase 25 Day 386): what two bodies (or a body and the world) are tied by, and the
+// Joints of the physics module (Phase 25 Day 398): what two bodies (or a body and the world) are tied by, and the
 // record the world keeps for each.
 #pragma once
 

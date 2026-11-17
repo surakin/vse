@@ -1,4 +1,4 @@
-// Snapshot, restore and replay (Phase 25 Day 394): a run restored from a snapshot continues bit for bit, a replayed
+// Snapshot, restore and replay (Phase 25 Day 406): a run restored from a snapshot continues bit for bit, a replayed
 // input log reproduces a run, and corrupt bytes are refused.
 #include <catch2/catch_test_macros.hpp>
 

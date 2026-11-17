@@ -1,4 +1,4 @@
-# Audio design (Phase 26, Day 402, 2026-11-17)
+# Audio design (Phase 26, Day 414, 2026-11-17)
 
 A platform-independent mixer with voices, buses and effects, positional 3D sound, streamed music, and Ogg Vorbis through vendored libogg and libvorbis,
 driven from the ECS and from a C host. This spec fixes the open questions of `plans/phase-26-audio.md` with numbers from six spikes (appendix; sources in
@@ -8,9 +8,9 @@ driven from the ECS and from a C host. This spec fixes the open questions of `pl
 
 - **One module, `engine/audio`**, layer 13 (beside `physics`, `asset` and `scene`); depends on `foundation` (including `settings`, `io`, `lang`, `sync`, `cstr`,
   `os`), `jobs`, `ecs` (the world transform in `ecs/transform.h`), `spatial` (audible-emitter lookup) and `asset` (the minted clip; the one same-layer edge,
-  allowed in `modules.txt` when first used on Day 406); later `storage` for snapshots (Day 425). **It never includes `physics`:** occlusion is an interface
-  (`OcclusionQuery`, Day 419) and its one implementation lives in a separate small target **`audio_physics`**, layer 14 beside `engine_c`, which depends on
-  `audio` and `physics` (this keeps the layering rule: a module links only modules below it). Added on Day 403 (`ARCHITECTURE.md`, `modules.txt`,
+  allowed in `modules.txt` when first used on Day 418); later `storage` for snapshots (Day 437). **It never includes `physics`:** occlusion is an interface
+  (`OcclusionQuery`, Day 431) and its one implementation lives in a separate small target **`audio_physics`**, layer 14 beside `engine_c`, which depends on
+  `audio` and `physics` (this keeps the layering rule: a module links only modules below it). Added on Day 415 (`ARCHITECTURE.md`, `modules.txt`,
   `tests/module_map.txt`, `docs/reference/modules.txt`, `BUILD.md`).
 - **Not built:** HRTF and ambisonics, MIDI and synthesis, voice chat and capture, MP3 and other codecs, a loudness-normalised master, occlusion by
   diffraction, audio middleware banks, exclusive-mode WASAPI.
@@ -18,7 +18,7 @@ driven from the ECS and from a C host. This spec fixes the open questions of `pl
   the audio clock (frames rendered). It renders in **fixed blocks of 256 frames** (`kBlockFrames`) at the device's rate. A device callback of any size pulls from
   the block renderer with a carry-over, so the output does not depend on the callback size (spike 2: callback sizes 64, 100, 256 and 1,024 give the same hash).
 - **The audio thread never allocates, locks or does I/O.** Commands come through a single-producer single-consumer ring, events leave through another, streams
-  are decoded ahead on a job and read from a ring (Day 423), clips are immutable shared data.
+  are decoded ahead on a job and read from a ring (Day 435), clips are immutable shared data.
 - **Frame and units:** metres, seconds, **linear gain** (dB helpers on the control side), +Y up, the listener looks along **-Z** like the camera, right-handed;
   sample rate per device (8,000 to 384,000), at most 8 channels; internal sample type `f32`.
 
@@ -34,12 +34,12 @@ driven from the ECS and from a C host. This spec fixes the open questions of `pl
 | Floating point | The project's flags apply (`-ffp-contract=off`, no fast-math: they cover every target of ours); audio code may use libm. No `Sqrt`-only rule. | Spike 2 |
 | Pan law | Equal power: `left = Sqrt((1 - p) / 2)`, `right = Sqrt((1 + p) / 2)`; -3 dB at the centre. | Plan |
 | Gain ramp | Every gain, pan and pitch change ramps linearly over `audio.ramp_frames` (64); the target is exact on the last frame. | Plan |
-| Linux backend | **Recommended, pending the user's confirmation before Day 413:** PipeWire through `libpipewire` (the reference client library of the OS audio server, the same boundary as `libwayland-client`), **plus a raw-kernel ALSA fallback** (about 50 lines of ioctls, no library) for systems without PipeWire. See 3. | Spike 1 |
+| Linux backend | **Recommended, pending the user's confirmation before Day 425:** PipeWire through `libpipewire` (the reference client library of the OS audio server, the same boundary as `libwayland-client`), **plus a raw-kernel ALSA fallback** (about 50 lines of ioctls, no library) for systems without PipeWire. See 3. | Spike 1 |
 | Vorbis | **Vendored libogg 1.3.6 and libvorbis 1.3.7** (decode only, 21 C files), facade `audio/vorbis.cpp`; BSD-3-Clause. | Spike 5 |
 | Test streams | Four small `.ogg` fixtures made once with `oggenc` (libvorbis 1.3.7), committed with the recipe. | Spike 5 |
 | Device reset | The mixer owns the render state; `AudioSystem::ApplySettings` changes device, rate and layout at run time; a lost device falls back to the null device. | Plan |
 | Occlusion | `OcclusionQuery` interface in `audio`; physics ray casts in `audio_physics`. | 1 |
-| Snapshot | Through `engine/storage`'s byte encoding (Day 425). | Plan |
+| Snapshot | Through `engine/storage`'s byte encoding (Day 437). | Plan |
 | State hash | FNV-1a 64 over the bit patterns of the output samples in order (-0.0 as +0.0; NaN or infinity invalidate); a same-build regression check, not a cross-machine one. | Spike 2 |
 
 ## 3. The Linux backend (the recommendation)
@@ -50,7 +50,7 @@ What each route costs and does, measured on this machine (PipeWire 1.6.11 servin
 |---|---|---|---|
 | libasound `default` | 34 lines | **fails here**: `default` routes to dmix on card 0, which cannot open (this is the distro's ALSA configuration, not ours) | the system's `pipewire` PCM works: 5.29 ms / 21.35 ms, delay 29 ms at 256 |
 | libasound `hw:3,0` | same | 5.333 ms / 21.333 ms (exact), delay 16.6 ms / 64.6 ms; F32 only through `plughw` (the hardware takes S16) | opened while PipeWire was running; two programs opened the same device concurrently and both worked (observed, not understood) |
-| **raw kernel ioctls** on `/dev/snd/pcmC3D0p` | **49 lines** (`PVERSION`, `HW_PARAMS` with masks and intervals, `SW_PARAMS`, `PREPARE`, `WRITEI_FRAMES`, `DELAY`) | 5.333 ms / 21.333 ms, delay 16.6 ms / 64.6 ms, 0 xruns in 200 periods | S16 on this codec; we would convert at the boundary (Day 404 helpers); device list needs `/proc/asound` or the control ioctls; no server routing |
+| **raw kernel ioctls** on `/dev/snd/pcmC3D0p` | **49 lines** (`PVERSION`, `HW_PARAMS` with masks and intervals, `SW_PARAMS`, `PREPARE`, `WRITEI_FRAMES`, `DELAY`) | 5.333 ms / 21.333 ms, delay 16.6 ms / 64.6 ms, 0 xruns in 200 periods | S16 on this codec; we would convert at the boundary (Day 416 helpers); device list needs `/proc/asound` or the control ioctls; no server routing |
 | PipeWire native protocol, hand-written | the handshake is 23 lines (the server answered `Core::Info`, 2,384 bytes); a playback stream still needs the registry, a client-node, node and port parameters, a memfd buffer pool with eventfd wakeups: **estimated 1,500+ lines** | not built | rejected: a large protocol to maintain with no gain over the library |
 | **`libpipewire` `pw_stream`** | 60 lines | **5.292 ms / 21.351 ms** (the requested `node.latency`), F32 stereo accepted, no conversion | the server does routing (the user's default sink, Bluetooth, network and per-application volume), hot-plug and rate conversion; headers are installed here (`libpipewire-0.3` 1.6.11) |
 
@@ -60,9 +60,9 @@ headless machine, an embedded board, a container with a sound device, a system w
 `libpipewire` is absent or the connection fails. **Assumption #1:** `libpipewire` is the OS audio server's own client library, the same category as
 `libwayland-client`; the build uses it when its headers exist (`ENGINE_AUDIO_HAVE_PIPEWIRE`, the way `ENGINE_RHI_HAVE_VULKAN` guards Vulkan) and links it
 dynamically, so a binary built with it still runs where the library is missing (the backend then falls through to ALSA). **The decision is the user's:** if
-they prefer a single backend, the plan's Days 413-415 shrink (ALSA only) or keep one backend (PipeWire only) without any other change.
+they prefer a single backend, the plan's Days 425-427 shrink (ALSA only) or keep one backend (PipeWire only) without any other change.
 
-The device interface (`audio/device.h`, Day 407) is the only per-platform seam; the mixer pulls interleaved `f32` frames from a render callback.
+The device interface (`audio/device.h`, Day 419) is the only per-platform seam; the mixer pulls interleaved `f32` frames from a render callback.
 
 ## 4. Repeatability and tolerance (spike 2)
 
@@ -77,7 +77,7 @@ by a send, two commands applied at fixed block stamps, 300 blocks) was rendered 
 The project builds every target with contraction off, so audio is bit-identical across builds on one machine; across machines the differences come from
 libm (the `sin`/`cos` of filter and reverb coefficient tables), which the FMA experiment bounds from above for this scene: the tolerance is set at **1e-5**
 absolute and **-100 dB** RMS, about thirty times the FMA difference. The cross-machine check compares per-block RMS and peak and 64 sample probes per
-scene with the committed table (`audio/render_compare.h`, Day 403); the same-build hash is committed as a regression check and re-committed when a compiler
+scene with the committed table (`audio/render_compare.h`, Day 415); the same-build hash is committed as a regression check and re-committed when a compiler
 change moves the bits.
 
 ## 5. The resampler and the voice cost (spikes 3 and 6)
@@ -101,7 +101,7 @@ Cost per output sample, one channel, looping clip, not yet tuned: linear 2.8 ns,
 
 So **256 mixed voices** cost about 9 percent of a core at Hermite, which sets the default and leaves room for effects and the job-system budget; 1,000 voices at
 linear is affordable on request (`audio.max_voices` up to 1,024; the setting's upper bound). Sinc16 is for music, a few voices and offline renders; its loop
-is naive (a bounds-checked fetch per tap) and Day 408 blocks it by block-level wrap handling, which the numbers above do not include. **Fixed point:** the 32.32
+is naive (a bounds-checked fetch per tap) and Day 420 blocks it by block-level wrap handling, which the numbers above do not include. **Fixed point:** the 32.32
 position drifts by 0.12 frames after 10^9 frames at a ratio of 1.0000001 (about six hours of audio), while an `f32` accumulator stalls at 33,554,432 frames
 (about 12 minutes at 48 kHz); the fixed-point position is a requirement, not an optimisation.
 
@@ -155,7 +155,7 @@ arrives late is applied at the current block and counted (`MixerStats::late_comm
 ## 10. Ogg Vorbis (spike 5)
 
 - **Libraries:** libogg 1.3.6 (sha256 `5c82534...a1061`) and libvorbis 1.3.7 (sha256 `b33cc49...72954b`), BSD-3-Clause, vendored as source under
-  `third_party/libogg/` and `third_party/libvorbis/` on Day 420, with `VENDORED.md`. Decode-only: 21 C files (libogg `bitwise.c`, `framing.c`; libvorbis
+  `third_party/libogg/` and `third_party/libvorbis/` on Day 432, with `VENDORED.md`. Decode-only: 21 C files (libogg `bitwise.c`, `framing.c`; libvorbis
   `analysis bitrate block codebook envelope floor0 floor1 info lookup lpc lsp mapping0 mdct psy registry res0 sharedbook smallft synthesis window`); not built:
   `vorbisenc.c`, `vorbisfile.c`, `barkmel.c`, `psytune.c`. `analysis`, `bitrate`, `envelope` and `psy` are needed only because `block.c` references them. All
   21 compile with Clang 23 and GCC 16 at `-O2` without our warning flags; **the vendored files do not get `-Werror`** (they sit after `third_party/`).
@@ -167,13 +167,13 @@ arrives late is applied at the current block and counted (`MixerStats::late_comm
   **no crash, hang or leak**; 4,880 still decoded, 711 were refused at the headers; the slowest took 5.6 ms. **UBSan reports on valid streams too:** left shifts
   of negative or overflowing signed values in `sharedbook.c:425` (benign on two's-complement machines). So **the
   vendored files are built without UBSan** (the sanitizer flavors instrument ours only, `UBSAN_OPTIONS` or per-source flags), recorded in `KNOWN-ISSUES.md`;
-  the fuzz stays under ASan. The facade still adds input limits, a step budget, a frame cap and an allocation-aware setup limit (Day 420); the library's
+  the fuzz stays under ASan. The facade still adds input limits, a step budget, a frame cap and an allocation-aware setup limit (Day 432); the library's
   `malloc` calls cannot be intercepted without editing `os_types.h` (its `_ogg_malloc` is an unconditional macro), so the limit is on the stream (setup size,
   channels, rate) and a process-wide allocation cap in tests.
 - **Fixtures:** `tests/audio/fixtures/*.ogg`, made by `oggenc -q 3` (libvorbis 1.3.7) from generated WAVs (a sine, noise, a stereo tone mix, 6 channels at
   48 kHz) with the recipe in `README.md` there; the 5.1 stream uses ffmpeg's libvorbis binding. Generated test content, no third-party recordings.
 
-## 11. The C API (Days 426-427)
+## 11. The C API (Days 438-439)
 
 Appended to the end of `engine_api` with sized structs: `audio_clip_create` and `_destroy`, `audio_play`, `audio_voice_set` and `_stop`, `audio_bus_set`,
 `audio_set_listener`, `audio_master_set`; the components `ENGINE_COMPONENT_AUDIO_SOURCE` and `_AUDIO_LISTENER`; **host-driven mode** (`audio.device = host`):
@@ -184,7 +184,7 @@ through `engine_buffer`. Every function callable from any thread except `audio_r
 
 ## 12. Where the plan changed
 
-- The Linux plan grew from one backend to **PipeWire plus the raw ALSA fallback** (a recommendation awaiting the user): Days 413-415 stay three days, the
+- The Linux plan grew from one backend to **PipeWire plus the raw ALSA fallback** (a recommendation awaiting the user): Days 425-427 stay three days, the
   second backend is a day-413 task; the device list code differs per backend.
 - The cross-machine tolerance is **1e-5 / -100 dB**, tighter than the plan's 1e-4, because the FMA experiment shows the numbers can bear it.
 - **256 mixed voices** by default (the plan had no number); sinc16 is not for mass voices.

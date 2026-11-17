@@ -1,4 +1,4 @@
-// The contact solver (Phase 25 Day 384): bounce, friction on a slope, head-on collisions, momentum and energy, and
+// The contact solver (Phase 25 Day 396): bounce, friction on a slope, head-on collisions, momentum and energy, and
 // independence of the order the contacts arrive in.
 #include <catch2/catch_test_macros.hpp>
 
@@ -155,7 +155,7 @@ TEST_CASE("Solver: equal balls head on exchange velocities at e = 1 and stick at
             world.Step();
         }
         // Momentum is exact; the bodies move together except for the position correction's push out of the small
-        // penetration the 4 m/s approach made before the contact was seen (the soft contacts of Day 385 shrink it).
+        // penetration the 4 m/s approach made before the contact was seen (the soft contacts of Day 397 shrink it).
         const f32 va = VelocityOf(world, a).x;
         const f32 vb = VelocityOf(world, b).x;
         CHECK(SNear(0.5f * (va + vb), 1.0f, 0.001f));

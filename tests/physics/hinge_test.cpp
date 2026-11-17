@@ -1,4 +1,4 @@
-// The hinge joint: limits, motor, spring, full turns and the loaded arm (Phase 25 Day 387).
+// The hinge joint: limits, motor, spring, full turns and the loaded arm (Phase 25 Day 399).
 #include <catch2/catch_test_macros.hpp>
 
 #include "lang/scalar.h"
@@ -325,7 +325,7 @@ TEST_CASE("Hinge: the state hash of a hinge scene equals the committed constant"
 TEST_CASE("Hinge: an axis against the frame's Z turns the frame by an exact half turn (no libm)",
           "[physics][joint][hinge]")
 {
-    // Day 399: the half turn was FromAxisAngle(x, pi), whose cosf(pi / 2) is a libm's last ulp, not the exact zero.
+    // Day 411: the half turn was FromAxisAngle(x, pi), whose cosf(pi / 2) is a libm's last ulp, not the exact zero.
     PhysicsWorld world;
     const BodyId door = HingePlank(world, Vec3(0.5f, 5, 0), Vec3(0.5f, 0.05f, 0.05f), 4.0f);
     const JointDesc desc = world.MakeHingeJoint(BodyId(), door, Vec3(0, 5, 0), Vec3(0, 0, -1));

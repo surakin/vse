@@ -1,4 +1,4 @@
-// The fixed-step driver and the integration (Phase 25 Day 378). Everything here uses only + - * / and Sqrt
+// The fixed-step driver and the integration (Phase 25 Day 390). Everything here uses only + - * / and Sqrt
 // (docs/guide/physics.md, "The rules of the step").
 #include "jobs/parallel_for.h"
 #include "lang/scalar.h"

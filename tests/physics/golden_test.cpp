@@ -1,6 +1,6 @@
-// Golden state hashes (Phase 25 Day 395): six reference scenes run for 600 steps, the hash of the state taken every
+// Golden state hashes (Phase 25 Day 407): six reference scenes run for 600 steps, the hash of the state taken every
 // 100th step, compared with the values committed here. The same values must come out of every Linux configuration
-// (compiler, unity, optimisation, sanitizer) and every thread count, and, on Days 398-399, out of Windows and macOS.
+// (compiler, unity, optimisation, sanitizer) and every thread count, and, on Days 410-411, out of Windows and macOS.
 //
 // To regenerate after a deliberate change of the step: run `physics_tests "[golden-print]"` and paste the table it
 // prints.

@@ -48,7 +48,7 @@ flavors 23  windows: plain,asan # Day 345: engine_unload_after_jobs, engine_owne
 flavors 24  linux: plain,asan # tests/scene spikes (Day 358): GPU tests leave tsan out on Linux (KNOWN-ISSUES.md)
 flavors 24  windows: plain,asan
 flavors 24  macos: plain,asan,tsan
-flavors 25  linux: plain,asan,tsan # tests/physics (Day 374)
+flavors 25  linux: plain,asan,tsan # tests/physics (Day 386)
 flavors 25  windows: plain,asan
 flavors 25  macos: plain,asan,tsan
 flavors 15  windows: plain,asan
@@ -363,9 +363,9 @@ test:ui_demo_*                                      15   # the ui_demo program: 
 # --- Phase 17: ECS (entities, components, archetype chunks, world, queries, systems, the scene bridge) ---
 tests/ecs/                                      17   # Phase 17 Day 223
 tests/spatial/                                  18   # Phase 18 Day 238
-tests/physics/                                  25   # Phase 25 Day 374
-test:physics_fp_determinism_probe               25   # the probe hash and the build's floating-point mode, compared with the committed hash (Day 374)
-test:physics_fp_flags_check                     25   # the configure-time fast-math check refuses planted flags (Day 374)
+tests/physics/                                  25   # Phase 25 Day 386
+test:physics_fp_determinism_probe               25   # the probe hash and the build's floating-point mode, compared with the committed hash (Day 386)
+test:physics_fp_flags_check                     25   # the configure-time fast-math check refuses planted flags (Day 386)
 
 # --- Phase 19: storage and the database interface ---
 tests/database/                                 19   # Phase 19 Day 251
@@ -398,14 +398,14 @@ test:engine_owner_*                             23   # nothing the engine alloca
 test:engine_crash_across_boundary               23   # the host's handler is restored; a crash inside a job leaves a dump (Day 345)
 test:engine_c_host*                             23   # a C program uses the C API through the function table: create, settings, log callback, destroy, every bad call (Day 346)
 test:engine_c_host_cpp*                         23   # a C++ program uses the C API through include/engine/engine.h: owners destroy the engine, worlds and counters, moved owners own nothing, buffers are released once, sized structs, failing calls return their status
-test:engine_h_covers_table                      23   # every function of the table in engine_c.h is called by the C++ layer engine.h (Phase 25 Day 401)
+test:engine_h_covers_table                      23   # every function of the table in engine_c.h is called by the C++ layer engine.h (Phase 25 Day 413)
 test:engine_c_runtime*                          23   # a C program drives frames, a world of a thousand entities, queries, counters, jobs and the crash handler through the table, and two host threads at once (Day 349)
 test:engine_c_resources*                        23   # a C program adds, replaces and removes host-provided content (lent and copied), loads it with handles and tickets, and counts every release of a lent buffer (Day 350)
 test:engine_c_import*                           23   # a C program imports a glTF from memory (sync, async, external files from the host, manifest ids kept, cancel, hostile files) and a library without the importer says UNSUPPORTED (Day 351)
 test:engine_c_surface*                          23   # a C program with its own X11 window embeds the engine, which renders into it: arguments, a golden frame read back, resize, a hidden window, a destroyed window and the recovery by surface_rebind (Day 352)
 test:engine_c_scene*                            24   # a C program with its own X11 window draws a world of host-provided meshes on its surface: a golden frame, unresolved references, a destroyed world, unbinding, a second surface (Phase 24 Day 359)
-test:engine_c_physics*                          25   # a C program puts bodies and colliders in a world, steps them with frame, pushes them and casts rays through the table (Phase 25 Day 396)
-testopt:physics_bench_large                     25   # only in a Release or RelWithDebInfo build: the stress run, 50000 bodies and a million steps, state checked (Phase 25 Day 401)
+test:engine_c_physics*                          25   # a C program puts bodies and colliders in a world, steps them with frame, pushes them and casts rays through the table (Phase 25 Day 408)
+testopt:physics_bench_large                     25   # only in a Release or RelWithDebInfo build: the stress run, 50000 bodies and a million steps, state checked (Phase 25 Day 413)
 test:engine_c_walk_around*                      24   # the walk-around sample as a test: three robots, screens fed by threads, labels, a first-person camera, a rebind that brings the same picture back (Phase 24 Day 371)
 testopt:engine_c_cocoa*                            23   # an Objective-C program with its own Cocoa window embeds the engine (static and libengine.dylib): Metal into its NSView, golden frame, resize and scale, hidden, display link, input forwarded, the host's cursor and clipboard callbacks, rebind, off-main frame and destroy, no missing autorelease pool on the main thread (Day 355)
 testopt:engine_c_header_ios                        23   # engine_c.h compiles as C11 and C++20 for arm64-apple-ios (static only there; freestanding, no iOS SDK) (Day 355)

@@ -605,7 +605,7 @@ TEST_CASE("PairTracker: a pair stays while the boxes are apart by less than the 
 }
 
 // A huge static item has a huge margin: a pair with it must survive and end by that margin although the dynamic items'
-// search no longer reaches as far as the largest margin of all (Phase 25 Day 400).
+// search no longer reaches as far as the largest margin of all (Phase 25 Day 412).
 TEST_CASE("PairTracker: a large static item's margin still holds its pairs", "[spatial][pair]")
 {
     SpatialSet set;

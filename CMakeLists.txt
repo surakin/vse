@@ -78,7 +78,7 @@ endif()
 # else names the phase that ports it.
 option(ENGINE_COMPILE_ONLY "Build every target and run nothing built (no test discovery, no shader minting): a cross-compiled check" OFF)
 # ENGINE_ARCH is the processor the tree builds for (x64 or arm64), the CMake side of build_defs.h's ENGINE_ARCH_*: read it,
-# not CMAKE_SYSTEM_PROCESSOR, which a macOS arm64 tree on an Intel Mac reports as the host's x86_64 (Phase 25 Day 399).
+# not CMAKE_SYSTEM_PROCESSOR, which a macOS arm64 tree on an Intel Mac reports as the host's x86_64 (Phase 25 Day 411).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ENGINE_PLATFORM linux)
   set(ENGINE_ARCH x64)
@@ -181,7 +181,7 @@ endif()
 # so vendored test tooling (Catch2, which needs exceptions for its REQUIRE/CHECK macros) and the test executables aren't affected.
 # The options per compiler (GCC/Clang on Linux; cl and clang-cl on Windows) and the sanitizer flavors each compiler has are in:
 include(cmake/EngineCompilerOptions.cmake)
-# A fast-math flag anywhere stops the configure step (Phase 25 Day 374; the physics step must be bit-identical on every machine).
+# A fast-math flag anywhere stops the configure step (Phase 25 Day 386; the physics step must be bit-identical on every machine).
 include(cmake/EngineFpCheck.cmake)
 engine_fp_check_flags()
 
@@ -274,7 +274,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/database)
   add_subdirectory(engine/storage)  # Phase 19 Day 256
   add_subdirectory(tests/storage)
-  add_subdirectory(engine/physics)  # Phase 25 Day 374
+  add_subdirectory(engine/physics)  # Phase 25 Day 386
   add_subdirectory(tests/physics)
   add_subdirectory(engine/net)  # Phase 20 Day 267
   add_subdirectory(tests/net)
@@ -356,7 +356,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/database)
   add_subdirectory(engine/storage)
   add_subdirectory(tests/storage)
-  add_subdirectory(engine/physics)  # Phase 25 Day 374
+  add_subdirectory(engine/physics)  # Phase 25 Day 386
   add_subdirectory(tests/physics)
   add_subdirectory(engine/net)  # Day 310: the POSIX backend with the macOS hooks and the kqueue poller
   add_subdirectory(tests/net)
@@ -445,7 +445,7 @@ add_subdirectory(engine/ecs)  # Phase 17 Day 223
 add_subdirectory(engine/spatial)  # Phase 18 Day 238
 add_subdirectory(engine/database)  # Phase 19 Day 251
 add_subdirectory(engine/storage)  # Phase 19 Day 256
-add_subdirectory(engine/physics)  # Phase 25 Day 374
+add_subdirectory(engine/physics)  # Phase 25 Day 386
 add_subdirectory(engine/net)  # Phase 20 Day 267
 add_subdirectory(engine/ui)  # Phase 15 Day 184
 add_subdirectory(engine/ui_window)  # Phase 15 Day 194
@@ -494,7 +494,7 @@ add_subdirectory(tests/ecs)  # Phase 17 Day 223
 add_subdirectory(tests/spatial)  # Phase 18 Day 238
 add_subdirectory(tests/database)  # Phase 19 Day 251
 add_subdirectory(tests/storage)  # Phase 19 Day 256
-add_subdirectory(tests/physics)  # Phase 25 Day 374
+add_subdirectory(tests/physics)  # Phase 25 Day 386
 add_subdirectory(tests/net)  # Phase 20 Day 267
 add_subdirectory(tests/asset)  # Phase 22 Day 313
 add_subdirectory(tests/animation)  # Phase 22 Day 321

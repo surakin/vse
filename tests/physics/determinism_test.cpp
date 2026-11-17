@@ -1,6 +1,6 @@
-// The floating-point rules as the build gives them (Phase 25 Day 374): no contraction in the project's own code,
+// The floating-point rules as the build gives them (Phase 25 Day 386): no contraction in the project's own code,
 // denormals kept, and the probe's hash equal to the committed constant (the same constant the Windows PC and the Mac
-// must produce, Days 398-399).
+// must produce, Days 410-411).
 #include <catch2/catch_test_macros.hpp>
 
 #include "build_defs.h"

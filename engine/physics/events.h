@@ -1,4 +1,4 @@
-// What gameplay sees of the simulation (Phase 25 Day 393): contact begin, stay and end, trigger enter and exit, and
+// What gameplay sees of the simulation (Phase 25 Day 405): contact begin, stay and end, trigger enter and exit, and
 // joint breaks, in a fixed order, with the entities of the bodies.
 #pragma once
 

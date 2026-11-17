@@ -1,4 +1,4 @@
-# Physics design (Phase 25, Day 373, 2026-11-16)
+# Physics design (Phase 25, Day 385, 2026-11-16)
 
 Rigid body physics as ECS components and systems, deterministic to the bit on Linux, Windows and macOS x86-64, usable from a C host. This spec fixes the
 open questions of `plans/phase-25-physics.md` with numbers from six spikes (appendix at the end; sources in `2026-11-16-physics-spikes/`). The plan's
@@ -6,13 +6,13 @@ defaults held in every case; where a spike moved a number, it says so.
 
 ## 1. Scope and layout
 
-- **One module, `engine/physics`**, layer above `spatial`, `ecs` and `jobs` (and `storage` for snapshots, Day 394); below nothing but `engine_c` and games.
-  No third-party physics library. Added on Day 375 (`ARCHITECTURE.md`, `modules.txt`, `tests/module_map.txt`, `BUILD.md` in that commit).
+- **One module, `engine/physics`**, layer above `spatial`, `ecs` and `jobs` (and `storage` for snapshots, Day 406); below nothing but `engine_c` and games.
+  No third-party physics library. Added on Day 387 (`ARCHITECTURE.md`, `modules.txt`, `tests/module_map.txt`, `BUILD.md` in that commit).
 - **Components** (`engine/physics/components.h`, registered like the spatial ones): `RigidBody` (type static/kinematic/dynamic, mass or density, damping,
   flags `ccd`, `lock_rotation`, `can_sleep`), `Collider` (a shape, a local transform, a material, a layer and a mask, a trigger flag), `PhysicsMaterial`
   (friction, restitution, density; held inline in `Collider`, with an optional minted resource for sharing), `Joint` (kind, the two bodies, the
   anchors and axes in each body's frame, limits, motor, break force). A compound body is one `RigidBody` and several `Collider`s on child entities.
-- **`PhysicsWorld`** is an ECS resource: body and collider storage as structure of arrays with stable ids (Day 376), the spatial set and pair tracker (Day
+- **`PhysicsWorld`** is an ECS resource: body and collider storage as structure of arrays with stable ids (Day 388), the spatial set and pair tracker (Day
   377), the contact cache, the joint list, the island graph, the event arrays and the settings.
 - **Step order** (one fixed step): (1) integrate velocities (gravity, forces, damping); (2) update the broad phase (`Move`/`Touch` for bodies that
   moved; `RebuildStatic` if a static changed) and read the pair events; (3) narrow phase on the sorted pair list, giving manifolds; (4) build the islands,
@@ -26,16 +26,16 @@ defaults held in every case; where a spike moved a number, it says so.
 
 | Question | Decision | Evidence |
 |---|---|---|
-| Solver | **Sequential impulse with warm starting**, 10 velocity iterations by default; contacts and joints share one row type. Penetration by Baumgarte bias with a slop of 0.005 m (beta 0.2); Day 385 may add soft constraints if its tuning scenes ask for it. | Spike 1 |
+| Solver | **Sequential impulse with warm starting**, 10 velocity iterations by default; contacts and joints share one row type. Penetration by Baumgarte bias with a slop of 0.005 m (beta 0.2); Day 397 may add soft constraints if its tuning scenes ask for it. | Spike 1 |
 | Contact manifold | **Up to 4 points**, a normal, a depth per point and a **feature id** per point; the warm-start key is (pair, feature id). | Spike 4 |
 | Step | **60 Hz fixed**, accumulator, **at most 4 substeps** per frame, write-back interpolated between the last two steps. `physics.step_hz` (30 to 240) and `physics.max_substeps` are settings. | Spike 5 |
 | Broad phase | `spatial::SpatialSet` (a `DynamicBvh` for moving bodies with the Phase 18 defaults: fat margin 0.25, predictive 2.0; a `StaticBvh` for static colliders) and one `PairTracker` with **margin 0.1** and the layer matrix of the physics layers. **`RebuildStatic()` runs before the pair update whenever a static was added, removed or moved**, never per frame otherwise. | Spike 6 |
 | Units and frame | Metres, kilograms, seconds, **+Y up**, the engine's right-handed frame, radians; no conversion at the C boundary. Default gravity `(0, -9.81, 0)`. | |
-| Sleeping | A body is *resting* when `|v| < 0.05 m/s` and `|w| < 0.05 rad/s` (thresholds are settings); an island sleeps after **0.5 s** with every body resting; a touching awake body, a joint to an awake body, a moved collider or an applied force wakes it. | Day 388 tunes |
-| CCD | **Conservative advancement** against static and dynamic bodies, for bodies flagged `ccd` and, automatically, a body whose step displacement exceeds half its smallest extent; speculative contacts are not used. | Day 390 |
-| Hulls and meshes | **Minted assets** (`asset_mint mint-hull`, `mint-collision-mesh`): a hull is at most 64 vertices with face planes and an edge list, built by a deterministic quickhull; a collision mesh is a triangle list with a baked `StaticBvh`. A collider names them by resource id. Mesh colliders are static only. | Days 381, 382 |
+| Sleeping | A body is *resting* when `|v| < 0.05 m/s` and `|w| < 0.05 rad/s` (thresholds are settings); an island sleeps after **0.5 s** with every body resting; a touching awake body, a joint to an awake body, a moved collider or an applied force wakes it. | Day 400 tunes |
+| CCD | **Conservative advancement** against static and dynamic bodies, for bodies flagged `ccd` and, automatically, a body whose step displacement exceeds half its smallest extent; speculative contacts are not used. | Day 402 |
+| Hulls and meshes | **Minted assets** (`asset_mint mint-hull`, `mint-collision-mesh`): a hull is at most 64 vertices with face planes and an edge list, built by a deterministic quickhull; a collision mesh is a triangle list with a baked `StaticBvh`. A collider names them by resource id. Mesh colliders are static only. | Days 393, 394 |
 | Shapes | Sphere, box, capsule (analytic and SAT), convex hull (GJK for distance, EPA for depth), static triangle mesh, compound. | Plan |
-| C API | `ENGINE_COMPONENT_RIGID_BODY`, `_COLLIDER`, `_JOINT`, `_CHARACTER_CONTROLLER` through the Phase 24 component calls; table functions for forces, impulses, queries, events (polled arrays, no callbacks), snapshots (`engine_buffer`); every grown struct honours the first-version struct-size rule (Days 396-397). | Plan |
+| C API | `ENGINE_COMPONENT_RIGID_BODY`, `_COLLIDER`, `_JOINT`, `_CHARACTER_CONTROLLER` through the Phase 24 component calls; table functions for forces, impulses, queries, events (polled arrays, no callbacks), snapshots (`engine_buffer`); every grown struct honours the first-version struct-size rule (Days 408-409). | Plan |
 | State hash | FNV-1a 64 over, for every body in id order: position (3), orientation (4), linear velocity (3), angular velocity (3) as their `u32` bit patterns with **-0.0 written as +0.0**, then a sleep byte; a NaN anywhere is an `ENGINE_ENSURE` failure before it is hashed. Padding and pointers are never hashed. | Spike 2 |
 
 ## 3. Determinism rules
@@ -45,7 +45,7 @@ The step may use only `+ - * / Sqrt` on `f32`, comparisons, min, max, abs, negat
 
 1. **Fixed step.** The step takes a constant `dt`; the accumulator lives outside the step.
 2. **No FMA contraction, no fast-math.** `-ffp-contract=off` on GCC, Clang and clang-cl, MSVC `/fp:precise` with contraction off, never `-ffast-math`,
-   `/fp:fast`, `-Ofast`, `-freciprocal-math`; no `rsqrt`/`rcp` estimate instructions or intrinsics (their results differ between CPUs). Day 374 adds the
+   `/fp:fast`, `-Ofast`, `-freciprocal-math`; no `rsqrt`/`rcp` estimate instructions or intrinsics (their results differ between CPUs). Day 386 adds the
    flags to the physics targets and a test that fails when a build turns them on.
 3. **Ordered everything.** Pairs come from the `PairTracker` sorted by key; the narrow phase writes into per-chunk arrays merged in chunk order; islands are
    ordered by their lowest body id and solved in that order inside each island; a parallel job writes only its own output; no float reduction in thread
@@ -81,7 +81,7 @@ the stacking chain only; spike 4 uses real rotation but a plane; spike 2 uses sp
 (The pyramid's cost is dominated by the spike's brute-force pair search, so only the solver rows' ratios mean anything there.) Warm-started sequential
 impulse holds the stack with **zero jitter** at 4 iterations, sinks 3.4 to 4 times less than position-based at the same iteration count on the stack, and costs 20 to 40 percent less;
 position-based jitters by 2 to 13 cm/s at the same settings, because the velocity is rebuilt from positions. Dropping the warm start costs 6 times the
-penetration and 9 times the drift (the contact cache and feature ids of Days 384-385 are not optional). **Winner: sequential impulse with warm starting,
+penetration and 9 times the drift (the contact cache and feature ids of Days 396-397 are not optional). **Winner: sequential impulse with warm starting,
 10 iterations** (the 20-iteration row is the budget for tall stacks on request, `physics.solver_iterations`). The plan's assumption holds.
 
 ### Spike 4: contact manifold, a unit cube dropped tilted 10 degrees on a plane, 60 Hz, 10 s
@@ -112,7 +112,7 @@ Penetration falls about four times for each doubling of the rate (it scales with
 step does not depend on the rate, so 120 Hz doubles the cost per second for four times less sinking. Trading iterations for rate: 120 Hz with 4 iterations
 (0.0022 m; 2 x 406 ns per simulated 1/60 s) costs about the same as 60 Hz with 10 iterations (0.0029 m; 840 ns) and sinks 24 percent less on this scene; 30 Hz with 20 iterations (0.0046 m, 1,118 ns) is worse on both. **Default
 60 Hz with 10 iterations; the stable range is 30 to 120 Hz**; the accumulator caps at 4 substeps per frame (a frame longer than 4 steps drops the rest
-and counts it). Day 385 revisits the pair (rate, iterations) on the tuning scenes with rotation.
+and counts it). Day 397 revisits the pair (rate, iterations) on the tuning scenes with rotation.
 
 ### Spike 2: determinism, 2000 spheres (radius 0.3 to 0.5), 600 steps, SI with friction, grid broad phase, parallel contact generation
 
@@ -167,13 +167,13 @@ A margin of 0.1 cuts the begin/end churn from 316 to 88 pairs a frame for 20 per
 pair that begins or ends (a manifold is made or dropped), so **0.1 is the default**. The tree's fat margin barely matters at this speed; keep the Phase 18
 default (0.25). At 5000 moving bodies the feed takes 4.7 ms single-threaded, against roughly 8,700 pairs times an estimated 0.1 to 0.3 microseconds per box pair
 for the narrow phase (about 1 to 3 ms): the feed is the larger cost when everything moves, and **`PairTracker::Update` is single-threaded** (a Phase 18
-property). The expected mitigation is sleeping (20 percent moving costs 1 ms) and, if Day 400's benchmark shows the feed as the limit, parallelising the
+property). The expected mitigation is sleeping (20 percent moving costs 1 ms) and, if Day 412's benchmark shows the feed as the limit, parallelising the
 tracker's gather as a Phase 18 extension (a decision for that day, recorded as a risk here). **The first run measured 31 ms because `RebuildStatic()` was missing:
 the 2000 statics sat in the pending list and every query scanned them (78 percent of the time in `Overlaps`); the world must rebuild the static tree after any static
-change, and a test (Day 377) must fail when it does not.** The static world uses `StaticBvh` (the plan's assumption holds).
+change, and a test (Day 389) must fail when it does not.** The static world uses `StaticBvh` (the plan's assumption holds).
 
 ## 5. Changes to the plan
 
-- `plans/phase-25-physics.md` and the day files hold as written. Added: Day 377 gets the `RebuildStatic` test; Day 374's flag test must cover clang-cl and arm64 notes;
-  Day 400 benchmarks the pair feed with the 4.7 ms figure above as its reference and names parallelising `PairTracker::Update` as the option.
+- `plans/phase-25-physics.md` and the day files hold as written. Added: Day 389 gets the `RebuildStatic` test; Day 386's flag test must cover clang-cl and arm64 notes;
+  Day 412 benchmarks the pair feed with the 4.7 ms figure above as its reference and names parallelising `PairTracker::Update` as the option.
 - `PLAN.md` assumption #29 agrees with this spec and is unchanged except for the state hash definition and the 4-point manifold, added in the same commit.

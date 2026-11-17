@@ -118,7 +118,7 @@ struct MeshReference
     u64 material_resource = 0;  ///< The resource id of the material (0: the surface's default material).
 };
 
-/// The component of ENGINE_COMPONENT_CHARACTER (Phase 25 Day 397): the shape and rules of a character. The controller
+/// The component of ENGINE_COMPONENT_CHARACTER (Phase 25 Day 409): the shape and rules of a character. The controller
 /// itself is in `WorldObject::characters`.
 ///
 /// - Thread-safety: plain data.
@@ -132,7 +132,7 @@ struct CharacterComponent
     f32 gravity_scale = 1.0f;
 };
 
-/// A character controller of a world (Phase 25 Day 397): the entity it belongs to and the controller of its capsule.
+/// A character controller of a world (Phase 25 Day 409): the entity it belongs to and the controller of its capsule.
 ///
 /// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
 struct CharacterEntry
@@ -151,8 +151,8 @@ struct WorldObject
     WorldObject();
     ecs::World world;
     ecs::Schedule schedule;
-    Vector<CharacterEntry> characters;  ///< The characters, in the order they were made (Day 397).
-    bool physics_used = false;     ///< Whether a body component was set: the frame makes bodies only then (Day 396).
+    Vector<CharacterEntry> characters;  ///< The characters, in the order they were made (Day 409).
+    bool physics_used = false;     ///< Whether a body component was set: the frame makes bodies only then (Day 408).
     Environment environment;       ///< What world_set_environment set (the defaults until then).
     bool environment_set = false;  ///< Whether it was called (no default sun once it was).
 };

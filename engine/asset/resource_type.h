@@ -72,9 +72,9 @@ inline constexpr ResourceType kLevel = ResourceType::FromChars('L', 'E', 'V', 'L
 inline constexpr ResourceType kAnimation = ResourceType::FromChars('A', 'N', 'I', 'M');
 /// A skeleton: the joint hierarchy, bind pose and inverse bind matrices (Day 318).
 inline constexpr ResourceType kSkeleton = ResourceType::FromChars('S', 'K', 'E', 'L');
-/// A convex hull for physics (Phase 25 Day 381).
+/// A convex hull for physics (Phase 25 Day 393).
 inline constexpr ResourceType kHull = ResourceType::FromChars('H', 'U', 'L', 'L');
-/// A triangle mesh for static physics colliders (Phase 25 Day 382).
+/// A triangle mesh for static physics colliders (Phase 25 Day 394).
 inline constexpr ResourceType kMeshCollider = ResourceType::FromChars('M', 'C', 'O', 'L');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).
 inline constexpr ResourceType kNames = ResourceType::FromChars('N', 'A', 'M', 'E');

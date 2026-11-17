@@ -44,7 +44,7 @@ The loaders of the resource types that need no GPU, and the traits that tie thei
 
 The loaders of the resource types that live on the GPU: meshes, textures and materials. Phase 22 Day 329. [`asset::RegisterGpuLoaders`](#asset-registergpuloaders-resourcemanager-star-gpuassetcontext-star) registers them over the CPU loaders of Day 328, so the same ids load as objects that own device resources, made recreatable: a device reset rebuilds them from the manager's own bytes.
 
-The convex hull resource (Phase 25 Day 381): the vertices, the face polygons with their planes and the mass data of a convex hull, for the physics module's collision shape. [`asset::BuildHullGeometry`](#asset-buildhullgeometry-span-lt-const-array-lt-f32-3-gt-gt-hullgeometry-star) computes the hull of a point cloud, [`asset::BuildHullBlob`](#asset-buildhullblob-const-typeregistry-amp-resourceid-const-hullgeometry-amp-vector-lt-byte-gt-star-u32) writes a `HULL` blob, [`asset::HullView`](#asset-hullview) reads one in place.
+The convex hull resource (Phase 25 Day 393): the vertices, the face polygons with their planes and the mass data of a convex hull, for the physics module's collision shape. [`asset::BuildHullGeometry`](#asset-buildhullgeometry-span-lt-const-array-lt-f32-3-gt-gt-hullgeometry-star) computes the hull of a point cloud, [`asset::BuildHullBlob`](#asset-buildhullblob-const-typeregistry-amp-resourceid-const-hullgeometry-amp-vector-lt-byte-gt-star-u32) writes a `HULL` blob, [`asset::HullView`](#asset-hullview) reads one in place.
 
 Layout of the blob's sections (little-endian, one section each):
 
@@ -70,7 +70,7 @@ The mesh blob (type `MESH`, version 1): geometry laid out for the GPU, built by 
 
 Sections (ids from 16, little-endian, each 64-byte aligned by the container): 16 header (96 bytes), 17 attributes (16 bytes each: location, format, offset, binding), 18 vertex stream 0 (the exact bytes of the vertex buffer), 19 indices (16 or 32 bit, a triangle list), 20 LODs (16 bytes each), 21 material slots (40 bytes each), and for a skinned mesh 22 the skin stream (binding 1: `UInt8x4` joint indices at location 5, `UNorm8x4` weights at location 6, summing to exactly 255 per vertex) and 23 the bind-pose box of each joint's influence set. A skinned mesh declares its skeleton as a dependency (role [`asset::kMeshRoleSkinSkeleton`](#asset-kmeshroleskinskeleton)) and records the skeleton hash and joint count. Section 40 (`MORP`, morph targets) is reserved and refused by this version.
 
-The minted triangle mesh of a static physics collider (`MCOL`, Phase 25 Day 382): positions, triangle indices and a material index per triangle. The bounding-volume hierarchy is built by the physics module when the mesh is added (deterministically, from these bytes). The reader treats the bytes as hostile.
+The minted triangle mesh of a static physics collider (`MCOL`, Phase 25 Day 394): positions, triangle indices and a material index per triangle. The bounding-volume hierarchy is built by the physics module when the mesh is added (deterministically, from these bytes). The reader treats the bytes as hostile.
 
 [`asset::MountTable`](#asset-mounttable): the ordered set of backends the resource manager reads from. A lookup by id goes to the highest-priority backend that has the resource (so a loose-file mount overrides a pak), and the mounts' id <-> path tables are read asynchronously and merged.
 
@@ -11922,7 +11922,7 @@ A skeleton: the joint hierarchy, bind pose and inverse bind matrices (Day 318).
 inline constexpr ResourceType kHull;
 ```
 
-A convex hull for physics (Phase 25 Day 381).
+A convex hull for physics (Phase 25 Day 393).
 
 ## `kMeshCollider` {#asset-types-kmeshcollider}
 
@@ -11932,7 +11932,7 @@ A convex hull for physics (Phase 25 Day 381).
 inline constexpr ResourceType kMeshCollider;
 ```
 
-A triangle mesh for static physics colliders (Phase 25 Day 382).
+A triangle mesh for static physics colliders (Phase 25 Day 394).
 
 ## `kNames` {#asset-types-knames}
 

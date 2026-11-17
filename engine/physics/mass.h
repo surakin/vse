@@ -1,4 +1,4 @@
-// Mass properties of the shapes (Phase 25 Day 375): volume, mass, centre of mass and the inertia tensor in closed form.
+// Mass properties of the shapes (Phase 25 Day 387): volume, mass, centre of mass and the inertia tensor in closed form.
 #pragma once
 
 #include "math/matrix.h"
@@ -14,8 +14,8 @@ namespace engine_placeholder::physics
 /// The mass of a body and how it resists rotation, in the body's own space.
 ///
 /// The inertia tensor is stored as its diagonal in the **principal frame** plus the rotation from that frame to the
-/// body's space, so the world tensor is two matrix products. Every shape of Day 375 has its principal axes along its
-/// own axes (`principal_rotation` is the identity); a compound shape or a hull from Days 381-383 may not.
+/// body's space, so the world tensor is two matrix products. Every shape of Day 387 has its principal axes along its
+/// own axes (`principal_rotation` is the identity); a compound shape or a hull from Days 393-395 may not.
 ///
 /// - Thread-safety: thread-compatible plain data.
 struct MassProperties

@@ -190,7 +190,7 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
     endif()
   endif()
   # Day 350: the blobs of host_resources.c (a texture and a second version of it, a material that depends on it, a mesh), minted by asset_mint.
-  # A compile-only tree runs nothing it built (arm64 on an Intel Mac, Day 399): the target is empty there and the hosts only compile.
+  # A compile-only tree runs nothing it built (arm64 on an Intel Mac, Day 411): the target is empty there and the hosts only compile.
   if(ENGINE_COMPILE_ONLY)
     add_custom_target(engine_resource_data)
   else()
@@ -229,12 +229,12 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
     target_compile_definitions(host_runtime${suffix} PRIVATE "RUNTIME_DUMP_DIR=\"${CMAKE_CURRENT_BINARY_DIR}/runtime_dump${suffix}\"")
     target_link_libraries(host_runtime${suffix} PRIVATE engine_c${suffix} Threads::Threads ${ENGINE_LIBRARY_HOST_LIBS})
     set_target_properties(host_runtime${suffix} PROPERTIES LINKER_LANGUAGE CXX)
-    # Phase 25 Day 396: physics through the table (bodies, colliders, forces, ray casts, overlaps, the physics settings).
+    # Phase 25 Day 408: physics through the table (bodies, colliders, forces, ray casts, overlaps, the physics settings).
     add_executable(host_physics${suffix} host_physics.c)
     target_include_directories(host_physics${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
     target_link_libraries(host_physics${suffix} PRIVATE engine_c${suffix} Threads::Threads ${ENGINE_LIBRARY_HOST_LIBS})
     set_target_properties(host_physics${suffix} PROPERTIES LINKER_LANGUAGE CXX)
-    # Phase 25 Day 397: joints, characters, events and snapshots through the table, and the headless physics sample.
+    # Phase 25 Day 409: joints, characters, events and snapshots through the table, and the headless physics sample.
     add_executable(host_physics_joints${suffix} host_physics_joints.c)
     target_include_directories(host_physics_joints${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
     target_link_libraries(host_physics_joints${suffix} PRIVATE engine_c${suffix} Threads::Threads ${ENGINE_LIBRARY_HOST_LIBS})
@@ -623,7 +623,7 @@ if(TARGET engine_c AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET PkgConfig::
   engine_label_tests(engine_tutorial_loading_matches_doc)
 endif()
 
-# Phase 25 Day 401 (the user's request): the C++ layer include/engine/engine.h calls every function of the table.
+# Phase 25 Day 413 (the user's request): the C++ layer include/engine/engine.h calls every function of the table.
 add_test(NAME engine_h_covers_table COMMAND ${CMAKE_COMMAND} -DC_HEADER=${ENGINE_PUBLIC_INCLUDE_DIR}/engine/engine_c.h
          -DCXX_HEADER=${ENGINE_PUBLIC_INCLUDE_DIR}/engine/engine.h -P ${CMAKE_CURRENT_SOURCE_DIR}/engine_h_coverage.cmake)
 set_tests_properties(engine_h_covers_table PROPERTIES LABELS "engine_library")

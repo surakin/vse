@@ -1,4 +1,4 @@
-// Islands and sleeping (Phase 25 Day 388). Everything is ordered by body slot, so the result does not depend on the
+// Islands and sleeping (Phase 25 Day 400). Everything is ordered by body slot, so the result does not depend on the
 // order anything was visited or created in.
 #include "physics/broad_phase.h"
 #include "physics/world.h"

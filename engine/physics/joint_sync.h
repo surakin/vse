@@ -1,4 +1,4 @@
-// Joints as ECS components (Phase 25 Day 393): an entity with a `Joint` names the two entities it ties, and
+// Joints as ECS components (Phase 25 Day 405): an entity with a `Joint` names the two entities it ties, and
 // `SyncJoints` makes the physics joint.
 #pragma once
 
