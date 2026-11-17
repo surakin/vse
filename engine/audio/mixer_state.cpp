@@ -16,6 +16,9 @@ constexpr u32 kNoIndex = 0xFFFFFFFFu;
 constexpr u32 kMaxName = 256;
 // The fastest a voice can advance, in clip frames per output frame (32 fraction bits): far above any pitch
 // and rate ratio the mixer takes, low enough that a loop wrap is a few steps.
+// The longest ramp the mixer makes (`MixerConfig::ramp_frames` is at most this): keeps `step delta * ramp position`
+// inside 63 bits.
+constexpr u32 kMaxRampLength = 65536;
 constexpr u64 kMaxStep = u64{256} << 32;
 
 void WriteName(StateOut* out, StringView name)
@@ -419,9 +422,19 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
         ReadMatrix(&s, &voice.route_from);
         if (!s.Ok() || voice.bus >= kMaxBuses || !buses[voice.bus].active ||
             (voice.send_bus != kNoIndex && voice.send_bus >= kMaxBuses) || voice.ramp_pos > voice.ramp_len ||
-            voice.delay >= kBlockFrames || voice.step > kMaxStep || voice.step_from > kMaxStep)
+            voice.ramp_len > kMaxRampLength || voice.delay >= kBlockFrames || voice.step > kMaxStep ||
+            voice.step_from > kMaxStep)
         {
             return fail(SnapshotStatus::Corrupt);
+        }
+        {
+            // The ramped step is `delta * ramp_pos / ramp_len` in 64 bits: refuse a pair whose product could overflow.
+            const u64 delta = voice.step > voice.step_from ? voice.step - voice.step_from
+                                                           : voice.step_from - voice.step;
+            if (voice.ramp_len != 0 && delta > (u64{1} << 62) / voice.ramp_len)
+            {
+                return fail(SnapshotStatus::Corrupt);
+            }
         }
         if (streaming)
         {
