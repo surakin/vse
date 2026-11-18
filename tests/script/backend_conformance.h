@@ -26,6 +26,9 @@ struct ConformanceKit
     const char* syntax_error = "";
     /// Sources a hostile author might write; loading each must not crash, hang or leak (any status is fine).
     Vector<const char*> hostile;
+    /// Whether the language keeps 64-bit integers exactly (false for a language whose numbers are doubles: the case
+    /// then uses +-2^53).
+    bool exact_int64 = true;
 };
 
 /// The outcome of a run: names of failed cases and "name: reason" lines for skipped ones.
@@ -195,7 +198,7 @@ inline ConformanceReport RunConformance(Backend& backend, const ConformanceKit& 
             samples.Push(Value());
             samples.Push(Value::FromBool(false));
             samples.Push(Value::FromBool(true));
-            samples.Push(Value::FromInt(-9007199254740993LL));
+            samples.Push(Value::FromInt(kit.exact_int64 ? -9007199254740993LL : -9007199254740992LL));
             samples.Push(Value::FromFloat(-2.5));
             samples.Push(Value::FromText(""));
             samples.Push(Value::FromText("héllo\n"));

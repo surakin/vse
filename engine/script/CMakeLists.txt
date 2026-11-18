@@ -8,6 +8,9 @@ set(SCRIPT_SOURCES
   script_settings.cpp  # Day 447
   expr/expr_backend.cpp  # Day 447
 )
+if(TARGET luajit)  # the LuaJIT backend (Day 448); LuaJIT builds on Linux x86-64 only so far
+  list(APPEND SCRIPT_SOURCES luajit/luajit_backend.cpp)
+endif()
 set(SCRIPT_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 foreach(suffix "" "_asan" "_tsan")
@@ -15,4 +18,7 @@ foreach(suffix "" "_asan" "_tsan")
   target_include_directories(script${suffix} PUBLIC ${SCRIPT_INCLUDE_ROOT})
   target_compile_options(script${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(script${suffix} PUBLIC ecs${suffix} foundation${suffix})
+  if(TARGET luajit)
+    target_link_libraries(script${suffix} PUBLIC luajit)
+  endif()
 endforeach()

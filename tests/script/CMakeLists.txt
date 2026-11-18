@@ -6,10 +6,11 @@ if(NOT TARGET luajit)
 endif()
 
 set(SCRIPT_TEST_SOURCES
-  luajit_smoke_test.cpp  # Day 445
+  ${CMAKE_SOURCE_DIR}/engine/script/luajit/luajit_smoke_test.cpp  # Day 445, moved beside the backend on Day 448 (the one place that names LuaJIT)
   value_test.cpp  # Day 446
   backend_test.cpp  # Day 446
   backend_conformance_test.cpp  # Day 447
+  luajit_backend_test.cpp  # Day 448
 )
 
 find_package(Threads REQUIRED)
@@ -17,7 +18,7 @@ include(Catch)
 
 function(engine_add_script_tests target script_lib foundation_lib suffix label)
   add_executable(${target} ${SCRIPT_TEST_SOURCES})
-  target_link_libraries(${target} PRIVATE luajit ${script_lib} ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_link_libraries(${target} PRIVATE ${script_lib} ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

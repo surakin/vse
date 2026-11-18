@@ -1,3 +1,2 @@
 # path|reason - files (or directories, with a trailing /) outside engine/script/luajit/ allowed to include LuaJIT's headers, name its API, or link the
 # `luajit` target. An entry that no longer exempts anything fails the gate (remove it).
-tests/script/|Phase 27 Day 445: the smoke test of the vendored library itself (tests/script/luajit_smoke_test.cpp) and its CMakeLists link and call LuaJIT directly; the backend's own tests live under engine/script/luajit/ from Day 448

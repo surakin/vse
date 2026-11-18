@@ -1,5 +1,6 @@
-// Phase 27 Day 445: the vendored LuaJIT builds, links and runs a chunk. It names LuaJIT directly (allowed by
-// tools/luajit_boundary_check/allowlist.txt); the backend's own tests, from Day 448, go through the script module.
+// Phase 27 Day 445: the vendored LuaJIT builds, links and runs a chunk. It names LuaJIT directly, so it lives in this
+// directory (the boundary gate); the backend's own tests, from Day 448, go through the script module
+// (tests/script/luajit_backend_test.cpp).
 #include <catch2/catch_test_macros.hpp>
 
 #include "cstr/cstr.h"

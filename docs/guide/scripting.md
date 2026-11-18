@@ -65,3 +65,26 @@ as values and recovery afterwards, native functions, instruction and time budget
 independence of states, eight threads each with its own states, and hostile sources. A case needing a capability the backend does not advertise is skipped, and the report
 says why. `tests/script/backend_conformance_test.cpp` runs the suite on `script_expr` and also runs it on backends with a planted fault (swallowed errors,
 ignored budgets, dropped results) to prove the suite fails the right case.
+
+## The LuaJIT backend
+
+`script::luajit::CreateLuaJitBackend()` (`engine/script/luajit/`, registered as `luajit` by `RegisterLuaJitBackend`) gives each `script::State` its own `lua_State`. Only the
+files of that directory include LuaJIT's headers (`luajit_boundary_check`).
+
+- **Memory:** Lua allocates from the engine heap through a counting allocator, so the cap passed to `CreateState` (default 256 MiB) is exact for Lua objects; an allocation
+  that would cross it is a Lua out-of-memory error, which comes back as `Status::OutOfMemory` and leaves the state usable (after `Collect`). Cleanup after such an error is
+  given a small slack so it can run at a full cap. The machine code of the JIT is outside this count (Day 449 decides the budget mode).
+- **Calls:** every `Call` runs the function as a coroutine, so `wait(seconds)`, `wait_frames(n)` and `wait_event(name)` suspend it; the call returns with
+  `out.wait` and `out.coroutine`, and `Resume` passes the value `wait` returns inside the script. A path may be dotted (`game.on_update`).
+- **Errors:** a script error comes back as a value: `RuntimeError` with the message (`chunk:line: text`; cut to 4 KiB) and a trace of function and line (cut to 16 KiB); a
+  syntax error is `SyntaxError`. An error never unwinds through engine frames: every operation that can raise runs under `lua_cpcall`, `lua_pcall` or `lua_resume`, and
+  engine-side problems (a value that cannot cross) are returned, not raised.
+- **Natives:** `RegisterFunction("host.add", fn, user)` creates the table `host` on the way. The native gets copies of the arguments; a failure becomes a Lua error that the
+  script can `pcall`.
+- **Values:** `nil`, booleans, numbers, strings and tables cross as themselves. A Lua number is a double: an integer value outside +-2^53 is refused with `Invalid`, and a
+  float with an integral value in that range comes back as an integer. Vectors, quaternions, entities, byte blobs, and empty arrays and maps are tables tagged by a
+  metatable the backend keeps in the registry (`{x=, y=, z=}` and so on), so they round trip with their kind. An untagged table is an array when its keys are exactly 1..n
+  and a map when all its keys are strings; a map comes back with its keys sorted by bytes (Lua tables have no order). A table that mixes the two, a function, a thread, a
+  value nested deeper than 16 or shared in a way that makes more than 65,536 values is refused with `Invalid`.
+- **Not yet:** budgets (`Unsupported`, Day 449), the sandbox (the file and loader functions are removed; the rest of the whitelist is Day 449), bytecode and the JIT
+  capability.
