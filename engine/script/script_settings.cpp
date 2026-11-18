@@ -35,6 +35,26 @@ void RegisterScriptSettings(settings::Registry* registry)
     seed.group = "script";
     seed.flags = settings::kRestartRequired;
     registry->Register(seed);
+
+    settings::SettingDesc partitions = settings::MakeInt("script.partitions", 64, 1, 1024);
+    partitions.env = "ENGINE_SCRIPT_PARTITIONS";
+    partitions.flag = "script-partitions";
+    partitions.label = "Script partitions";
+    partitions.description =
+        "how many partitions a script world has (an entity's scripts live in one, chosen by a fixed hash); the world's state "
+        "is the same for any thread count but may differ between partition counts";
+    partitions.group = "script";
+    partitions.flags = settings::kRestartRequired;
+    registry->Register(partitions);
+
+    settings::SettingDesc memory = settings::MakeInt("script.partition_memory", 67108864, 1048576, 4294967296LL);
+    memory.env = "ENGINE_SCRIPT_PARTITION_MEMORY";
+    memory.flag = "script-partition-memory";
+    memory.label = "Script partition memory";
+    memory.description = "the most bytes one partition's script state may hold; a partition that reaches it is reset";
+    memory.group = "script";
+    memory.flags = settings::kRestartRequired;
+    registry->Register(memory);
 }
 
 String<HeapAllocator> ScriptBackendName(const settings::Registry& registry)
@@ -71,6 +91,18 @@ u32 ScriptRandomSeed(const settings::Registry& registry)
 {
     const settings::SettingId id = registry.Find(StringView("script.random_seed"));
     return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 1u;
+}
+
+u32 ScriptPartitions(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.partitions"));
+    return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 64u;
+}
+
+u64 ScriptPartitionMemory(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.partition_memory"));
+    return id.IsValid() ? static_cast<u64>(settings::Setting<i64>(registry, id).Get()) : u64{67108864};
 }
 
 }  // namespace engine_placeholder::script

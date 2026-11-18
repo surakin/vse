@@ -9,12 +9,14 @@
 namespace engine_placeholder::script
 {
 
-/// Declares the script settings: the backend, the budget mode and the random seed.
+/// Declares the script settings: the backend, the budget mode, the random seed, the partition count and the partition
+/// memory cap.
 ///
 /// They are `script.backend` (text, default `luajit`), `script.budget` (`budgeted` or `trusted`, default `budgeted`)
 /// and `script.random_seed` (default 1). Each has an environment variable (`ENGINE_SCRIPT_BACKEND`,
-/// `ENGINE_SCRIPT_BUDGET`, `ENGINE_SCRIPT_RANDOM_SEED`) and a flag (`--script-backend`, `--script-budget`,
-/// `--script-random-seed`), read when a script world is made.
+/// `ENGINE_SCRIPT_BUDGET`, `ENGINE_SCRIPT_RANDOM_SEED`, `ENGINE_SCRIPT_PARTITIONS`, `ENGINE_SCRIPT_PARTITION_MEMORY`)
+/// and a flag (`--script-backend`, `--script-budget`,
+/// `--script-random-seed`, `--script-partitions`, `--script-partition-memory`), read when a script world is made.
 ///
 /// - Param registry: the registry to declare them in; not null.
 /// - Ownership: borrowed for the call.
@@ -45,5 +47,19 @@ bool ScriptBudgeted(const settings::Registry& registry);
 /// - Returns: the seed.
 /// - Fails: never.
 u32 ScriptRandomSeed(const settings::Registry& registry);
+
+/// Reads `script.partitions`: how many partitions a script world has.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 64.
+/// - Returns: 1 to 1024.
+/// - Fails: never.
+u32 ScriptPartitions(const settings::Registry& registry);
+
+/// Reads `script.partition_memory`: the memory cap of one partition's state, in bytes.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 64 MiB.
+/// - Returns: 1 MiB to 4 GiB.
+/// - Fails: never.
+u64 ScriptPartitionMemory(const settings::Registry& registry);
 
 }  // namespace engine_placeholder::script

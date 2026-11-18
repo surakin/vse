@@ -1912,10 +1912,56 @@ script::BindingRegistry::FindById(u32) const	function	script	script-bindingregis
 script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:545
 script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:553
 script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:570
-script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:22
-script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:32
-script::ScriptBudgeted(const settings::Registry&)	function	script	script-scriptbudgeted-const-settings-registry-amp	script.md	engine/script/script_settings.h:40
-script::ScriptRandomSeed(const settings::Registry&)	function	script	script-scriptrandomseed-const-settings-registry-amp	script.md	engine/script/script_settings.h:47
+script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:24
+script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:34
+script::ScriptBudgeted(const settings::Registry&)	function	script	script-scriptbudgeted-const-settings-registry-amp	script.md	engine/script/script_settings.h:42
+script::ScriptRandomSeed(const settings::Registry&)	function	script	script-scriptrandomseed-const-settings-registry-amp	script.md	engine/script/script_settings.h:49
+script::ScriptPartitions(const settings::Registry&)	function	script	script-scriptpartitions-const-settings-registry-amp	script.md	engine/script/script_settings.h:56
+script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:63
+script::kMaxPartitions	variable	script	script-kmaxpartitions	script.md	engine/script/script_world.h:22
+script::PartitionOf(u64,u32)	function	script	script-partitionof-u64-u32	script.md	engine/script/script_world.h:34
+script::ScriptWorldConfig	struct	script	script-scriptworldconfig	script.md	engine/script/script_world.h:40
+script::ScriptWorldConfig::backend	variable	script	script-scriptworldconfig-backend	script.md	engine/script/script_world.h:43
+script::ScriptWorldConfig::bindings	variable	script	script-scriptworldconfig-bindings	script.md	engine/script/script_world.h:45
+script::ScriptWorldConfig::profile	variable	script	script-scriptworldconfig-profile	script.md	engine/script/script_world.h:47
+script::ScriptWorldConfig::partitions	variable	script	script-scriptworldconfig-partitions	script.md	engine/script/script_world.h:49
+script::ScriptWorldConfig::partition_memory	variable	script	script-scriptworldconfig-partition-memory	script.md	engine/script/script_world.h:52
+script::ScriptWorldConfig::reset_on_out_of_memory	variable	script	script-scriptworldconfig-reset-on-out-of-memory	script.md	engine/script/script_world.h:54
+script::PartitionCounters	struct	script	script-partitioncounters	script.md	engine/script/script_world.h:60
+script::PartitionCounters::calls	variable	script	script-partitioncounters-calls	script.md	engine/script/script_world.h:63
+script::PartitionCounters::nanoseconds	variable	script	script-partitioncounters-nanoseconds	script.md	engine/script/script_world.h:65
+script::PartitionCounters::budget_hits	variable	script	script-partitioncounters-budget-hits	script.md	engine/script/script_world.h:67
+script::PartitionCounters::out_of_memory	variable	script	script-partitioncounters-out-of-memory	script.md	engine/script/script_world.h:69
+script::PartitionCounters::resets	variable	script	script-partitioncounters-resets	script.md	engine/script/script_world.h:71
+script::PartitionCounters::memory_bytes	variable	script	script-partitioncounters-memory-bytes	script.md	engine/script/script_world.h:73
+script::CheckoutStatus	enum	script	script-checkoutstatus	script.md	engine/script/script_world.h:79
+script::CheckoutStatus::Ok	enumerator	script	script-checkoutstatus-ok	script.md	engine/script/script_world.h:82
+script::CheckoutStatus::Busy	enumerator	script	script-checkoutstatus-busy	script.md	engine/script/script_world.h:84
+script::CheckoutStatus::Invalid	enumerator	script	script-checkoutstatus-invalid	script.md	engine/script/script_world.h:86
+script::CheckoutStatus::Failed	enumerator	script	script-checkoutstatus-failed	script.md	engine/script/script_world.h:88
+script::PartitionLease	class	script	script-partitionlease	script.md	engine/script/script_world.h:101
+script::PartitionLease::PartitionLease()	function	script	script-partitionlease-partitionlease	script.md	engine/script/script_world.h:105
+script::PartitionLease::~PartitionLease()	function	script	script-partitionlease-tilde-partitionlease	script.md	engine/script/script_world.h:107
+script::PartitionLease::PartitionLease(PartitionLease&&) noexcept	function	script	script-partitionlease-partitionlease-partitionlease-amp-amp-noexcept	script.md	engine/script/script_world.h:109
+script::PartitionLease::operator=(PartitionLease&&) noexcept	function	script	script-partitionlease-operator-eq-partitionlease-amp-amp-noexcept	script.md	engine/script/script_world.h:111
+script::PartitionLease::PartitionLease(const PartitionLease&)	function	script	script-partitionlease-partitionlease-const-partitionlease-amp	script.md	engine/script/script_world.h:112
+script::PartitionLease::operator=(const PartitionLease&)	function	script	script-partitionlease-operator-eq-const-partitionlease-amp	script.md	engine/script/script_world.h:113
+script::PartitionLease::Valid() const	function	script	script-partitionlease-valid-const	script.md	engine/script/script_world.h:118
+script::PartitionLease::Partition() const	function	script	script-partitionlease-partition-const	script.md	engine/script/script_world.h:123
+script::PartitionLease::GetState() const	function	script	script-partitionlease-getstate-const	script.md	engine/script/script_world.h:131
+script::PartitionLease::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-partitionlease-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/script_world.h:141
+script::PartitionLease::Release()	function	script	script-partitionlease-release	script.md	engine/script/script_world.h:146
+script::ScriptWorld	class	script	script-scriptworld	script.md	engine/script/script_world.h:167
+script::ScriptWorld::ScriptWorld(const ScriptWorldConfig&)	function	script	script-scriptworld-scriptworld-const-scriptworldconfig-amp	script.md	engine/script/script_world.h:174
+script::ScriptWorld::~ScriptWorld()	function	script	script-scriptworld-tilde-scriptworld	script.md	engine/script/script_world.h:176
+script::ScriptWorld::ScriptWorld(const ScriptWorld&)	function	script	script-scriptworld-scriptworld-const-scriptworld-amp	script.md	engine/script/script_world.h:177
+script::ScriptWorld::operator=(const ScriptWorld&)	function	script	script-scriptworld-operator-eq-const-scriptworld-amp	script.md	engine/script/script_world.h:178
+script::ScriptWorld::PartitionCount() const	function	script	script-scriptworld-partitioncount-const	script.md	engine/script/script_world.h:183
+script::ScriptWorld::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptworld-addscript-stringview-sharedbytesptr	script.md	engine/script/script_world.h:191
+script::ScriptWorld::TryCheckout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-trycheckout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:201
+script::ScriptWorld::Checkout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-checkout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:208
+script::ScriptWorld::Counters(u32) const	function	script	script-scriptworld-counters-u32-const	script.md	engine/script/script_world.h:214
+script::ScriptWorld::Total() const	function	script	script-scriptworld-total-const	script.md	engine/script/script_world.h:219
 script::Status	enum	script	script-status	script.md	engine/script/status.h:17
 script::Status::Ok	enumerator	script	script-status-ok	script.md	engine/script/status.h:20
 script::Status::SyntaxError	enumerator	script	script-status-syntaxerror	script.md	engine/script/status.h:22

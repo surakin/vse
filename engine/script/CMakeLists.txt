@@ -8,6 +8,7 @@ set(SCRIPT_SOURCES
   script_settings.cpp  # Day 447
   expr/expr_backend.cpp  # Day 447
   bindings.cpp  # Day 450
+  script_world.cpp  # Day 451
   standard_bindings.cpp  # Day 450
 )
 if(TARGET luajit)  # the LuaJIT backend (Day 448); LuaJIT builds on Linux x86-64 only so far

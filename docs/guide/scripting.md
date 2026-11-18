@@ -133,3 +133,30 @@ of one of Lua's libraries (`math`, `string`, `table`): registering it would repl
   userdata cannot be built from Lua without it, and a tagged table round trips as a `Value` without a registry of handles. The metatables carry `+`, `-`, unary `-`, `*` (by a number, componentwise,
   quaternion times quaternion, quaternion times vec3 rotates), `/` (by a number), `==` and `tostring` (`vec3(1, 2, 3)`); `getmetatable` returns `false`, so a script cannot change them.
   The cost is a table per value; a script that makes millions of vectors a frame should use the `vec3.*` functions on scalars or the engine's batch bindings (later days).
+
+## Partitions
+
+`script::ScriptWorld` (`engine/script/script_world.h`) is a set of `P` partitions (setting `script.partitions`, 1 to 1024, default 64), each with one language state. An entity's scripts run in
+`PartitionOf(stable_id, P)`, a fixed 64-bit mix (splitmix64's finalizer) reduced modulo `P`; the value depends on nothing but its two arguments, so it does not change with the thread count, the
+load or the order entities were made in. Committed values are in `tests/script/script_world_test.cpp`.
+
+- **One holder at a time.** A job takes a partition with `TryCheckout` (or `Checkout`, which treats a held partition as a program error) and gets a `PartitionLease`; an atomic owner token makes the
+  second taker get `Busy`, and the lease's destructor (or `Release`) hands the partition back. Taking and releasing also acquire and hand over the state (`State::Acquire`, `HandOver`), so the debug
+  owner check of Day 446 follows the job's worker thread. A lease belongs to the thread that took it: do not hold one across a suspension point of a job, which may resume on another thread.
+- **States are lazy and identical.** A partition's state is made at its first checkout: the bindings installed with the world's `InstallProfile`, then every script in the order it was added. A script
+  added later is loaded into the existing states at their next checkout. A script that does not load makes the checkout `Failed` (with its outcome) and leaves the partition free.
+- **Memory.** Each state has the cap `script.partition_memory` (default 64 MiB; the cap is a limit, not a reservation). `PartitionLease::Call` runs a call and counts it; a call that ends
+  `OutOfMemory` replaces that partition's state with a fresh one holding the same scripts, and no other partition is touched. `ScriptWorld::Total().memory_bytes` is the world's total at the last
+  handback of each partition.
+- **Counters** (`Counters(p)`, `Total()`): calls, nanoseconds, budget hits, out-of-memory results, resets and bytes held, read with relaxed atomics from any thread.
+
+### What is shared between states
+
+| Thing | Rule |
+|---|---|
+| A Lua object (table, function, coroutine) | Never leaves its state; only `script::Value` copies cross. |
+| Script source text | Immutable bytes shared by `SharedBytesPtr`; every state reads the same copy and compiles its own. |
+| The binding registry | Read-only once filled; installing is safe from many threads (`Pure` bindings can be called from any state). |
+| Entity handles | Index and generation, checked on every call by the state's `EntityCheck`; the check must be safe to call from the job's thread. |
+| A binding that touches an engine singleton | Must be `main-thread-only`, or the singleton needs its own lock; a `Pure` binding touches nothing but its arguments. |
+| The backend | `CreateState` is thread-safe; a state is used by one thread at a time. |
