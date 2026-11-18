@@ -436,11 +436,14 @@ TEST_CASE("LuaJIT sandbox: pattern matching stops after its step limit", "[scrip
     UniquePtr<Backend> backend = luajit::CreateLuaJitBackend();
     UniquePtr<State> state = Fresh(
         *backend,
+        "function slow_balance() return (string.rep('(', 200000)):find('%b()') end\n"
+        "function slow_plain() return (string.rep('a', 2000000)):find(string.rep('a', 400000) .. 'b', 1, true) end\n"
+        "function slow_capture() return (string.rep('a', 3000000)):find('(a*)%1b') end\n"
         "function slow() return (string.rep('a', 3000)):find('.-.-.-.-.-.-b') end\n"
         "function slow_gsub() return (string.rep('a', 3000)):gsub('.-.-.-.-.-.-b', 'x') end\n"
         "function slow_match() return string.match(string.rep('a', 3000) .. 'c', '(.-)(.-)(.-)(.-)(.-)b') end\n"
         "function fine() return ('hello world'):find('o w') end\n");
-    for (const char* fn : {"slow", "slow_gsub", "slow_match"})
+    for (const char* fn : {"slow", "slow_gsub", "slow_match", "slow_balance", "slow_plain", "slow_capture"})
     {
         CallOutput out;
         const u64 t0 = os::MonotonicTimeNanos();
@@ -542,6 +545,9 @@ TEST_CASE("LuaJIT sandbox: scripts see a whitelist and cannot change the engine'
                 "function write_host() host.sum = nil end\n"
                 "function new_host() host.extra = 1 end\n"
                 "function write_meta() setmetatable(_G, nil) end\n"
+                "function raw_math() rawset(math, 'floor', nil) end\n"
+                "function raw_host() rawset(host, 'sum', nil) end\n"
+                "function raw_own() local t = {} rawset(t, 'a', 1) return t.a end\n"
                 "function get_meta() return getmetatable('') end\n"
                 "function shadow() print = 5 return print end\n"
                 "function say() print('hello', 1, nil, true, {}) end\n")
@@ -561,13 +567,16 @@ TEST_CASE("LuaJIT sandbox: scripts see a whitelist and cannot change the engine'
     REQUIRE(state->Call("own_globals", Span<const Value>(), Budget(), &out).IsOk());
     REQUIRE(state->Call("own_globals", Span<const Value>(), Budget(), &out).IsOk());
     CHECK(out.results[0].Equals(Value::FromInt(2)));
-    for (const char* fn : {"write_math", "write_string", "write_host", "new_host", "write_meta"})
+    for (const char* fn :
+         {"write_math", "write_string", "write_host", "new_host", "write_meta", "raw_math", "raw_host"})
     {
         CallOutput o;
         const Outcome r = state->Call(fn, Span<const Value>(), Budget(), &o);
         INFO(fn << " " << r.message.CStr());
         CHECK(r.status == Status::RuntimeError);
     }
+    REQUIRE(state->Call("raw_own", Span<const Value>(), Budget(), &out).IsOk());
+    CHECK(out.results[0].Equals(Value::FromInt(1)));
     REQUIRE(state->Call("get_meta", Span<const Value>(), Budget(), &out).IsOk());
     CHECK(out.results[0].Equals(Value::FromBool(false)));
     // Shadowing a name in the script environment is the script's own business and leaves the engine's alone.

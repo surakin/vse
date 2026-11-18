@@ -217,6 +217,10 @@ const char* MatchBalance(MatchState* ms, const char* s, const char* p)
     int cont = 1;
     while (++s < ms->src_end)
     {
+        if (--ms->steps < 0)
+        {
+            luaL_error(ms->L, "pattern too complex");
+        }
         if (*s == e)
         {
             if (--cont == 0)
@@ -309,6 +313,11 @@ const char* MatchCapture(MatchState* ms, const char* s, int l)
 {
     l = CheckCapture(ms, l);
     const usize len = static_cast<usize>(ms->capture[l].len);
+    ms->steps -= static_cast<long>(len / 16);  // comparing a long capture is real work
+    if (ms->steps < 0)
+    {
+        luaL_error(ms->L, "pattern too complex");
+    }
     if (static_cast<usize>(ms->src_end - s) >= len && MemCompare(ms->capture[l].init, s, len) == 0)
     {
         return s + len;
@@ -440,8 +449,9 @@ init:
     return result;
 }
 
-const char* FindPlain(const char* s1, usize l1, const char* s2, usize l2)
+const char* FindPlain(lua_State* L, const char* s1, usize l1, const char* s2, usize l2)
 {
+    long steps = kMaxSteps;
     if (l2 == 0)
     {
         return s1;
@@ -469,6 +479,11 @@ const char* FindPlain(const char* s1, usize l1, const char* s2, usize l2)
             return nullptr;
         }
         init++;
+        steps -= 1 + static_cast<long>(l2 / 16);  // each candidate position costs a comparison of the rest
+        if (steps < 0)
+        {
+            luaL_error(L, "pattern too complex");
+        }
         if (MemCompare(init, s2 + 1, l2) == 0)
         {
             return init - 1;
@@ -570,7 +585,7 @@ int FindAux(lua_State* L, bool find)
     }
     if (find && (lua_toboolean(L, 4) != 0 || NoSpecials(p, lp)))
     {
-        const char* s2 = FindPlain(s + init, ls - static_cast<usize>(init), p, lp);
+        const char* s2 = FindPlain(L, s + init, ls - static_cast<usize>(init), p, lp);
         if (s2 != nullptr)
         {
             lua_pushinteger(L, s2 - s + 1);

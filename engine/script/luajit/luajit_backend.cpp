@@ -775,6 +775,25 @@ int ReadOnlyError(lua_State* L)
     return luaL_error(L, "attempt to modify a read-only table");
 }
 
+// rawset(t, k, v) except on the engine's read-only views (rawset would write into the proxy itself).
+int GuardedRawSet(lua_State* L)
+{
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checkany(L, 2);
+    luaL_checkany(L, 3);
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.proxies");
+    lua_pushvalue(L, 1);
+    lua_rawget(L, -2);
+    if (lua_toboolean(L, -1) != 0)
+    {
+        return luaL_error(L, "attempt to modify a read-only table");
+    }
+    lua_settop(L, 3);
+    lua_rawset(L, 1);
+    lua_settop(L, 1);
+    return 1;
+}
+
 int TrippedFunction(lua_State* L)
 {
     lua_pushboolean(L, AccountingOf(L)->tripped ? 1 : 0);
@@ -821,6 +840,11 @@ int PrintFunction(lua_State* L)
 void MakeReadOnlyProxy(lua_State* L)
 {
     lua_newtable(L);  // proxy
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.proxies");
+    lua_pushvalue(L, -2);
+    lua_pushboolean(L, 1);
+    lua_rawset(L, -3);  // remembered, so rawset can refuse it
+    lua_pop(L, 1);
     lua_newtable(L);  // metatable
     lua_pushvalue(L, -3);
     lua_setfield(L, -2, "__index");
@@ -859,6 +883,8 @@ const char kBootstrap[] = "local tripped = ...\n"
 
 void OpenLibs(lua_State* L, Request* r)
 {
+    lua_newtable(L);
+    lua_setfield(L, LUA_REGISTRYINDEX, "engine.proxies");
     for (int t = 0; t < kTagCount; ++t)
     {
         lua_newtable(L);
@@ -922,6 +948,8 @@ void OpenLibs(lua_State* L, Request* r)
     }
     lua_pushcfunction(L, &PrintFunction);
     lua_setglobal(L, "print");
+    lua_pushcfunction(L, &GuardedRawSet);
+    lua_setglobal(L, "rawset");
     // The Lua half (runs with the original pcall, resume ... in hand).
     if (luaL_loadbuffer(L, kBootstrap, CStrLength(kBootstrap), "=sandbox") != 0)
     {
