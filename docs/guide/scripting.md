@@ -436,3 +436,7 @@ local parts = wait_task(task.parallel_for(1000000, 'local s = 0 for i = first, l
 
 The test `task_test.cpp` checks `run`, `map`, a million-index `parallel_for` against its known sum, errors as values, the globals and the world being out of reach, a closure refused, random numbers that depend
 only on the seed, the queue and size limits, taking a result once and only by its owner, dropping with the owner, and equal results at 1, 2, 7 and 16 threads with 1, 3 and 16 states.
+
+## Minted scripts
+
+A script reaches the engine as a `SCRP` asset (`asset/script_blob.h`, `docs/guide/assets.md`, "Scripts"): `asset_mint mint-script` validates the Lua source (syntax, banned libraries found statically, literal `require` names, lifecycle callbacks that are functions), rewrites `require("assets.weapon")` to an id lookup (`__require("<hex id>")`), refuses a missing dependency or a cycle, lists the behaviors the source defines, and can add a bytecode chunk keyed by the language, its version and the processor. Loading a minted script into a world is Day 463; until then the blob is built and read by `ScriptView` only.

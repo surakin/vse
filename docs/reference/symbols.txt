@@ -1842,23 +1842,24 @@ script::State::~State()	function	script	script-state-tilde-state	script.md	engin
 script::State::State(const State&)	function	script	script-state-state-const-state-amp	script.md	engine/script/backend.h:183
 script::State::operator=(const State&)	function	script	script-state-operator-eq-const-state-amp	script.md	engine/script/backend.h:184
 script::State::Load(StringView,StringView)	function	script	script-state-load-stringview-stringview	script.md	engine/script/backend.h:192
-script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:209
-script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:226
-script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:240
-script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:252
-script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:261
-script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:270
-script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:280
-script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:287
-script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:295
-script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:304
-script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:309
-script::Backend	class	script	script-backend	script.md	engine/script/backend.h:350
-script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:354
-script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:357
-script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:359
-script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:361
-script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:366
+script::State::Compile(StringView,StringView,Vector<byte>*)	function	script	script-state-compile-stringview-stringview-vector-lt-byte-gt-star	script.md	engine/script/backend.h:206
+script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:227
+script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:244
+script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:258
+script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:270
+script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:279
+script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:288
+script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:298
+script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:305
+script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:313
+script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:322
+script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:327
+script::Backend	class	script	script-backend	script.md	engine/script/backend.h:376
+script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:380
+script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:383
+script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:385
+script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:387
+script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:392
 script::BackendDescriptor	struct	script	script-backenddescriptor	script.md	engine/script/backend_registry.h:18
 script::BackendDescriptor::name	variable	script	script-backenddescriptor-name	script.md	engine/script/backend_registry.h:21
 script::BackendDescriptor::create	variable	script	script-backenddescriptor-create	script.md	engine/script/backend_registry.h:23
@@ -7812,17 +7813,53 @@ asset::types::kSkeleton	variable	asset	asset-types-kskeleton	asset.md	engine/ass
 asset::types::kHull	variable	asset	asset-types-khull	asset.md	engine/asset/resource_type.h:76
 asset::types::kMeshCollider	variable	asset	asset-types-kmeshcollider	asset.md	engine/asset/resource_type.h:78
 asset::types::kAudioClip	variable	asset	asset-types-kaudioclip	asset.md	engine/asset/resource_type.h:80
-asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:82
-asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:88
-asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:90
-asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:91
-asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:92
-asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:101
-asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:105
-asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:111
-asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:119
-asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:123
-asset::TypeRegistry::At(usize) const	function	asset	asset-typeregistry-at-usize-const	asset.md	engine/asset/resource_type.h:128
+asset::types::kScript	variable	asset	asset-types-kscript	asset.md	engine/asset/resource_type.h:82
+asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:84
+asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:90
+asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:92
+asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:93
+asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:94
+asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:103
+asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:107
+asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:113
+asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:121
+asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:125
+asset::TypeRegistry::At(usize) const	function	asset	asset-typeregistry-at-usize-const	asset.md	engine/asset/resource_type.h:130
+asset::kScriptHeaderBytes	variable	asset	asset-kscriptheaderbytes	asset.md	engine/asset/script_blob.h:37
+asset::kMaxScriptSourceBytes	variable	asset	asset-kmaxscriptsourcebytes	asset.md	engine/asset/script_blob.h:39
+asset::kMaxScriptEntries	variable	asset	asset-kmaxscriptentries	asset.md	engine/asset/script_blob.h:41
+asset::kMaxScriptEntryBytes	variable	asset	asset-kmaxscriptentrybytes	asset.md	engine/asset/script_blob.h:43
+asset::kMaxScriptTextBytes	variable	asset	asset-kmaxscripttextbytes	asset.md	engine/asset/script_blob.h:45
+asset::kMaxScriptBytecodeBytes	variable	asset	asset-kmaxscriptbytecodebytes	asset.md	engine/asset/script_blob.h:47
+asset::ScriptSection	enum	asset	asset-scriptsection	asset.md	engine/asset/script_blob.h:50
+asset::kScriptSectionHeader	enumerator	asset	asset-kscriptsectionheader	asset.md	engine/asset/script_blob.h:52
+asset::kScriptSectionSource	enumerator	asset	asset-kscriptsectionsource	asset.md	engine/asset/script_blob.h:53
+asset::kScriptSectionLanguage	enumerator	asset	asset-kscriptsectionlanguage	asset.md	engine/asset/script_blob.h:54
+asset::kScriptSectionEntries	enumerator	asset	asset-kscriptsectionentries	asset.md	engine/asset/script_blob.h:55
+asset::kScriptSectionBytecode	enumerator	asset	asset-kscriptsectionbytecode	asset.md	engine/asset/script_blob.h:56
+asset::ScriptBuild	struct	asset	asset-scriptbuild	asset.md	engine/asset/script_blob.h:63
+asset::ScriptBuild::language	variable	asset	asset-scriptbuild-language	asset.md	engine/asset/script_blob.h:66
+asset::ScriptBuild::language_version	variable	asset	asset-scriptbuild-language-version	asset.md	engine/asset/script_blob.h:68
+asset::ScriptBuild::source	variable	asset	asset-scriptbuild-source	asset.md	engine/asset/script_blob.h:70
+asset::ScriptBuild::entries	variable	asset	asset-scriptbuild-entries	asset.md	engine/asset/script_blob.h:72
+asset::ScriptBuild::dependencies	variable	asset	asset-scriptbuild-dependencies	asset.md	engine/asset/script_blob.h:74
+asset::ScriptBuild::bytecode_key	variable	asset	asset-scriptbuild-bytecode-key	asset.md	engine/asset/script_blob.h:76
+asset::ScriptBuild::bytecode	variable	asset	asset-scriptbuild-bytecode	asset.md	engine/asset/script_blob.h:78
+asset::BuildScriptBlob(const TypeRegistry&,ResourceId,const ScriptBuild&,Vector<byte>*,u32)	function	asset	asset-buildscriptblob-const-typeregistry-amp-resourceid-const-scriptbuild-amp-vector-lt-byte-gt-star-u32	asset.md	engine/asset/script_blob.h:91
+asset::ScriptView	class	asset	asset-scriptview	asset.md	engine/asset/script_blob.h:98
+asset::ScriptView::ScriptView()	function	asset	asset-scriptview-scriptview	asset.md	engine/asset/script_blob.h:102
+asset::ScriptView::Open(const SharedBytesPtr&,const TypeRegistry&)	function	asset	asset-scriptview-open-const-sharedbytesptr-amp-const-typeregistry-amp	asset.md	engine/asset/script_blob.h:111
+asset::ScriptView::Id() const	function	asset	asset-scriptview-id-const	asset.md	engine/asset/script_blob.h:116
+asset::ScriptView::Source() const	function	asset	asset-scriptview-source-const	asset.md	engine/asset/script_blob.h:122
+asset::ScriptView::SourceOffset() const	function	asset	asset-scriptview-sourceoffset-const	asset.md	engine/asset/script_blob.h:127
+asset::ScriptView::SourceSize() const	function	asset	asset-scriptview-sourcesize-const	asset.md	engine/asset/script_blob.h:131
+asset::ScriptView::SourceHash() const	function	asset	asset-scriptview-sourcehash-const	asset.md	engine/asset/script_blob.h:136
+asset::ScriptView::Language() const	function	asset	asset-scriptview-language-const	asset.md	engine/asset/script_blob.h:141
+asset::ScriptView::LanguageVersion() const	function	asset	asset-scriptview-languageversion-const	asset.md	engine/asset/script_blob.h:145
+asset::ScriptView::EntryCount() const	function	asset	asset-scriptview-entrycount-const	asset.md	engine/asset/script_blob.h:150
+asset::ScriptView::Entry(usize) const	function	asset	asset-scriptview-entry-usize-const	asset.md	engine/asset/script_blob.h:156
+asset::ScriptView::BytecodeFor(StringView) const	function	asset	asset-scriptview-bytecodefor-stringview-const	asset.md	engine/asset/script_blob.h:164
+asset::ScriptView::Bytes() const	function	asset	asset-scriptview-bytes-const	asset.md	engine/asset/script_blob.h:170
 asset::kMaxSkeletonJoints	variable	asset	asset-kmaxskeletonjoints	asset.md	engine/asset/skeleton.h:34
 asset::kMaxJointNameBytes	variable	asset	asset-kmaxjointnamebytes	asset.md	engine/asset/skeleton.h:36
 asset::kNoParent	variable	asset	asset-knoparent	asset.md	engine/asset/skeleton.h:38

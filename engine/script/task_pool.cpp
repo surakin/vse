@@ -18,6 +18,8 @@ namespace engine_placeholder::script
 const char* LuaTaskHostSource()
 {
     return R"LUA(
+-- Everything the host uses is captured now, so a task that replaces a global cannot change what the host calls.
+local pairs, pcall, error, tostring, setmetatable = pairs, pcall, error, tostring, setmetatable
 local cache = {}
 local count = 0
 local seed_random = math.randomseed
@@ -125,13 +127,13 @@ function __task_run(...)
   if running then
     error('not available in a task', 2)
   end
-  running = true
+  running = true  -- stays true until the scrub has finished
   local fresh = make_random()  -- a task may change the table it sees, never the next task's
   base.random = fresh
   _G.random = fresh
   local ok, result = pcall(run, ...)
-  running = false
   scrub()
+  running = false
   if not ok then
     error(result, 0)
   end
@@ -306,9 +308,9 @@ struct Item
     LogBuffer log{64};
 };
 
-u64 HashSource(TaskMode mode, StringView source)
+u64 HashSource(TaskMode mode, StringView source, u64 basis = 14695981039346656037ull)
 {
-    u64 h = 14695981039346656037ull ^ static_cast<u64>(mode);
+    u64 h = basis ^ static_cast<u64>(mode);
     h *= 1099511628211ull;
     for (usize i = 0; i < source.Length(); ++i)
     {
@@ -350,7 +352,8 @@ struct TaskPool::Impl
 
     TaskPoolConfig config;
     UniquePtr<ScriptWorld> world;
-    Vector<Vector<u64>> known;  // per state: the keys defined in it
+    Vector<Vector<u64>> known;   // per state: the keys defined in it
+    Vector<Vector<u64>> checks;  // per state: a second, independent hash of each defined source, in step with `known`
     Vector<u64> resets_seen;
     Vector<String<HeapAllocator>> state_errors;  // why a state could not be checked out, per state
 
@@ -373,6 +376,7 @@ struct TaskPool::Impl
         for (u32 s = 0; s < config.states; ++s)
         {
             known.Push(Vector<u64>());
+            checks.Push(Vector<u64>());
             resets_seen.Push(0);
             state_errors.Push(String<HeapAllocator>(HeapAllocator::Default()));
         }
@@ -387,12 +391,27 @@ struct TaskPool::Impl
         {
             resets_seen[state] = resets;
             known[state].Clear();
+            checks[state].Clear();
         }
         Vector<u64>& keys = known[state];
+        Vector<u64>& sums = checks[state];
+        const u64 check = HashSource(r.mode, r.source.View(), 0x9E3779B97F4A7C15ull) |
+                          1;  // a second, independent 52-bit hash
         bool defined = false;
         for (usize i = 0; i < keys.Size(); ++i)
         {
-            defined = defined || keys[i] == key;
+            if (keys[i] == key)
+            {
+                if (sums[i] != check)
+                {  // two sources share a key: forget everything rather than run the wrong function
+                    CallOutput forget;
+                    lease->Call("__task_forget", Span<const Value>(), config.budget, &forget);
+                    keys.Clear();
+                    sums.Clear();
+                    break;
+                }
+                defined = true;
+            }
         }
         if (!defined)
         {
@@ -401,6 +420,7 @@ struct TaskPool::Impl
                 CallOutput forget;
                 lease->Call("__task_forget", Span<const Value>(), config.budget, &forget);
                 keys.Clear();
+                sums.Clear();
             }
             Value announce[1] = {Value::FromInt(static_cast<i64>(key))};
             CallOutput expect;
@@ -424,6 +444,7 @@ struct TaskPool::Impl
                 return;
             }
             keys.Push(key);
+            sums.Push(check);
         }
         Value data;
         if (r.mode == TaskMode::Map)

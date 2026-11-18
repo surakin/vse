@@ -78,6 +78,8 @@ inline constexpr ResourceType kHull = ResourceType::FromChars('H', 'U', 'L', 'L'
 inline constexpr ResourceType kMeshCollider = ResourceType::FromChars('M', 'C', 'O', 'L');
 /// A decoded audio clip: interleaved samples with a rate, a layout and loop points (Phase 26 Day 418).
 inline constexpr ResourceType kAudioClip = ResourceType::FromChars('A', 'C', 'L', 'P');
+/// A script: its source text, the entry points the minter found and its dependencies (Phase 27 Day 462).
+inline constexpr ResourceType kScript = ResourceType::FromChars('S', 'C', 'R', 'P');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).
 inline constexpr ResourceType kNames = ResourceType::FromChars('N', 'A', 'M', 'E');
 }  // namespace types

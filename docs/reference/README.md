@@ -18,7 +18,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
-| [Scripting](script.md) | 21 | 629 |
+| [Scripting](script.md) | 21 | 630 |
 | [Platform: OS Services](platform-os.md) | 8 | 83 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
@@ -29,7 +29,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Audio](audio.md) | 28 | 822 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 36 | 1293 |
+| [Assets and resources](asset.md) | 37 | 1329 |
 | [glTF importer](asset_import.md) | 17 | 272 |
 | [Animation runtime](animation.md) | 4 | 85 |
 | [Database](database.md) | 9 | 161 |

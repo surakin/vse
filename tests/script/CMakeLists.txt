@@ -23,24 +23,27 @@ set(SCRIPT_TEST_SOURCES
   event_test.cpp  # Day 459
   latent_test.cpp  # Day 460
   task_test.cpp  # Day 461
+  script_asset_test.cpp  # Day 462: the SCRP blob and the script minter under test
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/script_source.cpp  # Day 462
 )
 
 find_package(Threads REQUIRED)
 include(Catch)
 
-function(engine_add_script_tests target script_lib foundation_lib suffix label)
+function(engine_add_script_tests target script_lib foundation_lib asset_lib suffix label)
   add_executable(${target} ${SCRIPT_TEST_SOURCES})
-  target_link_libraries(${target} PRIVATE ${script_lib} ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_link_libraries(${target} PRIVATE ${script_lib} ${asset_lib} ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
-engine_add_script_tests(script_tests script foundation "" "script")
+engine_add_script_tests(script_tests script foundation asset "" "script")
 if(ENGINE_HAVE_ASAN)
-  engine_add_script_tests(script_tests_asan script_asan foundation_asan " [asan]" "asan")
+  engine_add_script_tests(script_tests_asan script_asan foundation_asan asset_asan " [asan]" "asan")
 endif()
 if(ENGINE_HAVE_TSAN)  # not with MSVC
-  engine_add_script_tests(script_tests_tsan script_tsan foundation_tsan " [tsan]" "tsan")
+  engine_add_script_tests(script_tests_tsan script_tsan foundation_tsan asset_tsan " [tsan]" "tsan")
 endif()

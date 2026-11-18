@@ -25,6 +25,7 @@ TypeRegistry::TypeRegistry()
     types_.Push(TypeInfo{types::kHull, 1, "hull"});
     types_.Push(TypeInfo{types::kMeshCollider, 1, "mesh_collider"});
     types_.Push(TypeInfo{types::kAudioClip, 1, "audio_clip"});
+    types_.Push(TypeInfo{types::kScript, 1, "script"});
 }
 
 Status TypeRegistry::Register(ResourceType type, u32 version, const char* name)

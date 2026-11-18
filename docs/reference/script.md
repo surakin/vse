@@ -457,6 +457,22 @@ Compiles and runs `source` as a chunk named `chunk_name` (the name appears in me
 | Returns | `Ok`, `SyntaxError` (message and trace say where), `RuntimeError`, `BudgetExceeded`, `OutOfMemory`, or `Invalid` for an empty name. |
 | Aborts | the caller's thread does not own the state (debug checks). |
 
+### `Compile(StringView,StringView,Vector<byte>*)` {#script-state-compile-stringview-stringview-vector-lt-byte-gt-star}
+
+`method script::State::Compile` — defined in `engine/script/backend.h`
+
+```cpp
+Outcome Compile(StringView chunk_name, StringView source, Vector<byte>* bytecode);
+```
+
+Compiles `source` as a chunk named `chunk_name` without running it, to check it and, when `bytecode` is not null, to produce the precompiled chunk a loader may use instead of the source (an optional cache of the backend's own format; the bytes are valid only for the same backend, version and architecture).
+
+| Field | Value |
+|---|---|
+| Returns | `Ok`, `SyntaxError` (message says where), `OutOfMemory`, `Invalid` for an empty name, or `Unsupported` from a backend that cannot compile ahead of time. |
+| Aborts | the caller's thread does not own the state (debug checks). |
+| Ownership | `bytecode`, when given, is emptied first and then receives the chunk. |
+
 ### `Call(StringView,Span<const Value>,const Budget&,CallOutput*)` {#script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star}
 
 `method script::State::Call` — defined in `engine/script/backend.h`

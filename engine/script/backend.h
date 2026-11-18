@@ -195,6 +195,24 @@ public:
         return DoLoad(chunk_name, source);
     }
 
+    /// Compiles `source` as a chunk named `chunk_name` without running it, to check it and, when `bytecode` is not
+    /// null, to produce the precompiled chunk a loader may use instead of the source (an optional cache of the
+    /// backend's own format; the bytes are valid only for the same backend, version and architecture).
+    ///
+    /// - Returns: `Ok`, `SyntaxError` (message says where), `OutOfMemory`, `Invalid` for an empty name, or
+    /// `Unsupported` from a backend that cannot compile ahead of time.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    /// - Ownership: `bytecode`, when given, is emptied first and then receives the chunk.
+    Outcome Compile(StringView chunk_name, StringView source, Vector<byte>* bytecode)
+    {
+        CheckOwner();
+        if (bytecode != nullptr)
+        {
+            bytecode->Clear();
+        }
+        return DoCompile(chunk_name, source, bytecode);
+    }
+
     /// Calls a script function with copies of `args`, within `budget`.
     ///
     /// `function_path` is a global name, or dotted names into tables such as `game.on_update`.
@@ -314,6 +332,14 @@ protected:
 
     /// See [[State::Load]].
     virtual Outcome DoLoad(StringView chunk_name, StringView source) = 0;
+    /// See [[State::Compile]]; the default is `Unsupported`.
+    virtual Outcome DoCompile(StringView chunk_name, StringView source, Vector<byte>* bytecode)
+    {
+        (void)chunk_name;
+        (void)source;
+        (void)bytecode;
+        return Outcome(Status::Unsupported, "this backend cannot compile ahead of time");
+    }
     /// See [[State::Call]].
     virtual Outcome DoCall(StringView function_path, Span<const Value> args, const Budget& budget, CallOutput* out) = 0;
     /// See [[State::Resume]]; a backend without coroutines returns `Unsupported`.

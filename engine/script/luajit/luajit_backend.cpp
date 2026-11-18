@@ -709,6 +709,7 @@ enum class Op : int
     Unref,
     Register,
     Collect,
+    Compile,
 };
 
 // The input and output of one protected operation; it lives in the frame that calls `lua_cpcall`.
@@ -723,6 +724,7 @@ struct Request
     // Load
     const char* chunk = nullptr;  // "=name", null terminated
     StringView source;
+    Vector<byte>* bytecode = nullptr;  // Compile: receives the dumped chunk, when not null
     // Call and Resume
     StringView path;
     Span<const Value> args;
@@ -1191,6 +1193,36 @@ void RegisterNative(lua_State* L, Request* r)
     }
 }
 
+int DumpWriter(lua_State*, const void* data, size_t size, void* user)
+{
+    Vector<byte>* out = static_cast<Vector<byte>*>(user);
+    const byte* p = static_cast<const byte*>(data);
+    for (size_t i = 0; i < size; ++i)
+    {
+        out->Push(p[i]);
+    }
+    return 0;
+}
+
+// Compiles without running; dumps the chunk when asked.
+void CompileChunk(lua_State* L, Request* r)
+{
+    const int rc = luaL_loadbufferx(L, r->source.Data(), r->source.Length(), r->chunk, "t");
+    if (rc != 0)
+    {
+        r->status = rc == LUA_ERRMEM ? Status::OutOfMemory : Status::SyntaxError;
+        TakeError(L, L, r);
+        r->trace_text = MakeText(r->error_text.View());
+        return;
+    }
+    if (r->bytecode != nullptr && lua_dump(L, &DumpWriter, r->bytecode) != 0)
+    {
+        r->status = Status::RuntimeError;
+        r->failure = "the chunk could not be dumped";
+    }
+    lua_pop(L, 1);
+}
+
 void LoadChunk(lua_State* L, Request* r)
 {
     const int rc = luaL_loadbufferx(L, r->source.Data(), r->source.Length(), r->chunk,
@@ -1362,6 +1394,7 @@ int ProtectedBody(lua_State* L)
     case Op::Unref: luaL_unref(L, LUA_REGISTRYINDEX, r->ref); break;
     case Op::Register: RegisterNative(L, r); break;
     case Op::Load: LoadChunk(L, r); break;
+    case Op::Compile: CompileChunk(L, r); break;
     case Op::Call: RunCoroutine(L, r); break;
     }
     return 0;
@@ -1429,6 +1462,26 @@ protected:
         Outcome o = Execute(&r);
         EndBudget();
         return o;
+    }
+
+    Outcome DoCompile(StringView chunk_name, StringView source, Vector<byte>* bytecode) override
+    {
+        if (L_ == nullptr)
+        {
+            return Outcome(Status::Invalid, "the state is closed");
+        }
+        if (chunk_name.Length() == 0)
+        {
+            return Outcome(Status::Invalid, "empty chunk name");
+        }
+        Text chunk = MakeText("=");
+        chunk.Append(chunk_name);
+        Request r;
+        r.op = Op::Compile;
+        r.chunk = chunk.CStr();
+        r.source = source;
+        r.bytecode = bytecode;
+        return Execute(&r);
     }
 
     Outcome DoCall(StringView path, Span<const Value> args, const Budget& budget, CallOutput* out) override

@@ -4,6 +4,7 @@
 //   asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]
 //   asset_mint mint-hull SOURCE.hull.src OUTPUT.blob [--target=N]
 //   asset_mint mint-audio SOURCE.audio.src OUTPUT.blob [--target=N]
+//   asset_mint mint-script SOURCE.script.src OUTPUT.blob [--search=DIR] [--bytecode] [--no-run] [--target=N]
 //   asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]
 //   asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]
 //   asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]
@@ -32,6 +33,10 @@
 #include "mesh_source.h"
 #include "project.h"
 #include "audio_source.h"
+#include "script_source.h"
+#if ASSET_MINT_HAVE_LUAJIT
+#include "script/luajit/luajit_backend.h"
+#endif
 #include "hull_source.h"
 #include "mcol_source.h"
 #include "skeleton_source.h"
@@ -61,6 +66,7 @@ int Usage()
         "       asset_mint mint-hull SOURCE.hull.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-audio SOURCE.audio.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-mcol SOURCE.mcol.src OUTPUT.blob [--target=N]\n"
+        "       asset_mint mint-script SOURCE.script.src OUTPUT.blob [--search=DIR] [--bytecode] [--no-run] [--target=N]\n"
         "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
         "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
         "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n"
@@ -116,7 +122,10 @@ constexpr os::CommandLineOption kCliOptions[] = {{"target", true},
                                                  {"flat-normals", false},
                                                  {"drop-morph-targets", false},
                                                  {"emit-level", false},
-                                                 {"loop", true, true}};
+                                                 {"loop", true, true},
+                                                 {"search", true},
+                                                 {"bytecode", false},
+                                                 {"no-run", false}};
 constexpr usize kCliOptionCount = sizeof(kCliOptions) / sizeof(kCliOptions[0]);
 
 // True when the line holds no option outside `allowed`.
@@ -381,6 +390,157 @@ int MintAudioCommand(const Line& line)
     }
     os::Print("minted an audio clip of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
+}
+
+#if ASSET_MINT_HAVE_LUAJIT
+// Reads a whole text file (up to 16 MiB).
+bool ReadTextFile(const io::Path& path, Vector<u8>* text)
+{
+    io::FilePtr file;
+    return !io::File::Open(path, io::OpenMode::Read, io::kOpenNone, &file).Failed() &&
+           !io::ReadAll(*file, text, u64{1} << 24).Failed();
+}
+
+// Finds the script of module `name` under the search directory (`a.b` is `a/b.script.src`); its id must be `expected`.
+struct ScriptSearch
+{
+    io::Path directory;
+};
+
+bool LoadScriptModule(void* context, StringView name, ResourceId expected, ScriptSource* out, ScriptSourceError* error)
+{
+    const ScriptSearch* search = static_cast<const ScriptSearch*>(context);
+    String<HeapAllocator> relative_text(HeapAllocator::Default());
+    for (usize i = 0; i < name.Length(); ++i)
+    {
+        relative_text.Append(name[i] == '.' ? '/' : name[i]);
+    }
+    relative_text.Append(StringView(".script.src"));
+    io::Path relative;
+    io::Path path;
+    Vector<u8> text;
+    if (!io::Path::Parse(relative_text.View(), io::NativePathStyle(), &relative) ||
+        !search->directory.TryJoin(relative, &path) || !ReadTextFile(path, &text))
+    {
+        SetScriptError(error, "no such file under the search directory");
+        return false;
+    }
+    if (ParseScriptSource(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), out, error).Failed())
+    {
+        return false;
+    }
+    if (out->id != expected)
+    {
+        SetScriptError(error, "the file's id is not the id the dep line gives");
+        return false;
+    }
+    return true;
+}
+#endif
+
+// Mints a script source and the Lua file it names into a blob (Phase 27 Day 462).
+int MintScriptCommand(const Line& line)
+{
+#if ASSET_MINT_HAVE_LUAJIT
+    static const char* const allowed[] = {"target", "search", "bytecode", "no-run"};
+    u32 target = 0;
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 4) || !TargetOption(line, &target))
+    {
+        return Usage();
+    }
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
+    io::Path source_path;
+    io::Path output;
+    if (!io::Path::Parse(StringView(in_path, CStrLength(in_path)), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    ScriptSearch search;
+    search.directory = source_path.Parent();
+    StringView search_text;
+    if (line.TryGetOption(StringView("search"), search_text) &&
+        !io::Path::Parse(search_text, io::NativePathStyle(), &search.directory))
+    {
+        return Usage();
+    }
+    Vector<u8> text;
+    if (!ReadTextFile(source_path, &text))
+    {
+        os::PrintError("asset_mint: the source file could not be read\n");
+        return 1;
+    }
+    ScriptSource source;
+    ScriptSourceError error;
+    if (ParseScriptSource(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), &source, &error)
+            .Failed())
+    {
+        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        return 1;
+    }
+    StringView root_name(in_path, CStrLength(in_path));
+    for (usize i = root_name.Length(); i > 0; --i)
+    {
+        if (root_name[i - 1] == '/' || root_name[i - 1] == '\\')
+        {
+            root_name = root_name.Substring(i, root_name.Length() - i);
+            break;
+        }
+    }
+    const usize dot = root_name.Find(StringView("."));
+    root_name = root_name.Substring(0, dot < root_name.Length() ? dot : root_name.Length());
+    if (CheckScriptGraph(root_name, source, &LoadScriptModule, &search, &error, nullptr).Failed())
+    {
+        os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+        return 1;
+    }
+    io::Path script_relative;
+    io::Path script_path;
+    Vector<u8> lua;
+    if (!io::Path::Parse(source.lua.View(), io::NativePathStyle(), &script_relative) ||
+        !source_path.Parent().TryJoin(script_relative, &script_path) || !ReadTextFile(script_path, &lua))
+    {
+        os::PrintError("asset_mint: %s: the lua file could not be read\n", in_path);
+        return 1;
+    }
+    script::luajit::LuaJitOptions backend_options;
+    UniquePtr<script::Backend> backend = script::luajit::CreateLuaJitBackend(backend_options);
+    ScriptMintOptions options;
+    options.backend = backend.Get();
+    options.bytecode = line.HasFlag("bytecode");
+    options.check_entries = !line.HasFlag("no-run");
+    TypeRegistry types;
+    Vector<byte> blob;
+    if (MintScript(source, StringView(reinterpret_cast<const char*>(lua.Data()), lua.Size()), types, options, &blob,
+                   &error, target)
+            .Failed())
+    {
+        os::PrintError("asset_mint: %s:%u: %s\n", source.lua.CStr(), static_cast<unsigned>(error.line),
+                       error.message.Data());
+        return 1;
+    }
+    io::FilePtr file;
+    if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
+    {
+        os::PrintError("asset_mint: the output file could not be created\n");
+        return 1;
+    }
+    const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
+    if (written.Failed() || file->Close().Failed())
+    {
+        file->Close();
+        io::Remove(output);
+        os::PrintError("asset_mint: writing the output failed\n");
+        return 1;
+    }
+    os::Print("minted a script of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+#else
+    (void)line;
+    os::PrintError("asset_mint: mint-script is not available in this build (no LuaJIT on this platform)\n");
+    return 1;
+#endif
 }
 
 int MintMcolCommand(const Line& line)
@@ -1528,6 +1688,10 @@ int main(int argc, char** argv)
     if (command == StringView("mint-hull"))
     {
         return MintHullCommand(line);
+    }
+    if (command == StringView("mint-script"))
+    {
+        return MintScriptCommand(line);
     }
     if (command == StringView("mint-audio"))
     {

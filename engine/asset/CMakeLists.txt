@@ -21,6 +21,7 @@ set(ASSET_SOURCES
   skeleton.cpp  # Day 318
   hull.cpp  # Day 393
   mesh_collider.cpp  # Day 394
+  script_blob.cpp  # Phase 27 Day 462
   audio_clip.cpp  # Phase 26 Day 418
   mesh.cpp  # Day 319
   clip.cpp  # Day 320
