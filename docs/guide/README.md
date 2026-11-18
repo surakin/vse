@@ -7,6 +7,7 @@ the pages in the order below; each builds on the ones before it. The generated [
 ## Start here
 
 1. [getting-started](getting-started.md): build, run, test, find your way around, the house rules.
+   Also: [find-your-way](find-your-way.md) ("I want to...", by task) and the [glossary](glossary.md).
 
 ## The foundation (used in every file)
 

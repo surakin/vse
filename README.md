@@ -44,6 +44,8 @@ See [Building and testing](docs/guide/building-and-testing.md) for flavors (plai
 |---|---|
 | to go from a checkout to a running program, and learn the house rules | [Getting started](docs/guide/getting-started.md) |
 | the guide pages in reading order | [docs/guide](docs/guide/README.md) |
+| a page by what you want to do ("I want to draw text", "I want to save a world") | [I want to...](docs/guide/find-your-way.md) |
+| what a word means (mint, flavor, gate, archetype, ...) | [Glossary](docs/guide/glossary.md) |
 | step-by-step programs | [docs/tutorials](docs/tutorials/README.md) |
 | the generated API reference | [docs/reference](docs/reference/README.md) |
 | how the modules depend on each other | [ARCHITECTURE.md](ARCHITECTURE.md) |
