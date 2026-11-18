@@ -70,6 +70,13 @@ u32 ScriptRandomSeed(const settings::Registry& registry);
 /// - Fails: never.
 bool ScriptConflictsAreErrors(const settings::Registry& registry);
 
+/// Reads `script.event_chain_limit`: how many handler hops an event chain may take.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 8.
+/// - Returns: the limit.
+/// - Fails: never.
+u32 ScriptEventChainLimit(const settings::Registry& registry);
+
 /// Reads `script.log_limit`: how many `log.*` messages one script may write per tick.
 ///
 /// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 64.

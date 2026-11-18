@@ -16,6 +16,7 @@
 #include "script/bindings.h"
 #include "script/component_catalog.h"
 #include "script/entity_bindings.h"
+#include "script/event_bus.h"
 #include "script/merge.h"
 #include "script/merge_services.h"
 #include "script/script_settings.h"
@@ -88,6 +89,10 @@ struct ScriptRuntimeStats
     u64 skipped_partitions = 0;
     /// Commands the merges applied.
     u64 commands_applied = 0;
+    /// Events scripts emitted that the bus accepted.
+    u64 events_emitted = 0;
+    /// Handler calls made for delivered events.
+    u64 events_delivered = 0;
 };
 
 /// What a script runtime is made of.
@@ -108,6 +113,8 @@ struct ScriptRuntimeConfig
     u32 random_seed = 1;
     /// Log messages one script may add per partition per tick (setting `script.log_limit`); 0 is no limit.
     u32 log_limit = 64;
+    /// The most handler hops of an event chain (setting `script.event_chain_limit`).
+    u32 event_chain_limit = 8;
     /// What a failed callback does (setting `script.on_error`).
     OnScriptError on_error = OnScriptError::Disable;
     /// What happens when two partitions change the same thing (setting `script.conflicts`).
@@ -185,6 +192,10 @@ public:
     ///
     /// - Ownership: borrowed.
     const ScriptRuntimeStats& Stats() const;
+    /// The event bus: native code emits and subscribes here; scripts reach it through `event.*`.
+    ///
+    /// - Ownership: borrowed; valid for the runtime's life.
+    EventBus& Events();
     /// The merge's services, to fill after construction (prefabs, settings, components).
     ///
     /// - Ownership: borrowed.

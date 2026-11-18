@@ -20,6 +20,7 @@ set(SCRIPT_TEST_SOURCES
   component_bindings_test.cpp  # Day 456
   script_system_test.cpp  # Day 457
   parallel_script_test.cpp  # Day 458
+  event_test.cpp  # Day 459
 )
 
 find_package(Threads REQUIRED)

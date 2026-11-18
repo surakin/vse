@@ -19,6 +19,8 @@ set(SCRIPT_SOURCES
   entity_bindings.cpp  # Day 455
   component_catalog.cpp  # Day 456
   component_bindings.cpp  # Day 456
+  event_bus.cpp  # Day 459
+  event_bindings.cpp  # Day 459
   behavior_host.cpp  # Day 457
   script_runtime.cpp  # Day 457
 )

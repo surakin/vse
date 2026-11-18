@@ -46,6 +46,16 @@ void RegisterScriptSettings(settings::Registry* registry)
     log_limit.group = "script";
     registry->Register(log_limit);
 
+    settings::SettingDesc chain = settings::MakeInt("script.event_chain_limit", 8, 1, 1000);
+    chain.env = "ENGINE_SCRIPT_EVENT_CHAIN_LIMIT";
+    chain.flag = "script-event-chain-limit";
+    chain.label = "Script event chain limit";
+    chain.description =
+        "how many handler hops an event chain may take (a handler's own emits are one hop further); an event past the "
+        "limit is dropped and counted, so two scripts cannot answer each other forever";
+    chain.group = "script";
+    registry->Register(chain);
+
     settings::SettingDesc partitions = settings::MakeInt("script.partitions", 64, 1, 1024);
     partitions.env = "ENGINE_SCRIPT_PARTITIONS";
     partitions.flag = "script-partitions";
@@ -161,6 +171,12 @@ u32 ScriptLogLimit(const settings::Registry& registry)
 {
     const settings::SettingId id = registry.Find(StringView("script.log_limit"));
     return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 64u;
+}
+
+u32 ScriptEventChainLimit(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.event_chain_limit"));
+    return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 8u;
 }
 
 u32 ScriptPartitions(const settings::Registry& registry)

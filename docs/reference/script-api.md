@@ -120,6 +120,40 @@ Thread rule: **world-read**. Id: `0xeaecb59e`.
 
 Returns whether `e` is an entity that exists (as of the tick start) or that this partition spawned this tick.
 
+## event
+
+### `event.emit`
+
+`(StringView name, Value payload) -> void`
+
+Thread rule: **world-write**. Id: `0x4df846c8`.
+
+Emits an event to every subscriber of `name`; handlers run at the start of the next tick, never inside this call. The payload is copied.
+
+### `event.emit_to`
+
+`(Entity entity, StringView name, Value payload) -> void`
+
+Thread rule: **world-write**. Id: `0x1fdfdbf4`.
+
+Emits an event only the given entity's script receives, at the start of the next tick.
+
+### `event.subscribe`
+
+`(StringView name) -> void`
+
+Thread rule: **world-write**. Id: `0x3b4c59fd`.
+
+Tells the engine the running instance wants events called `name` (the host behind `event.on`; scripts call `event.on`).
+
+### `event.unsubscribe`
+
+`(StringView name) -> void`
+
+Thread rule: **world-write**. Id: `0x3d902fc4`.
+
+Withdraws the running instance's interest in `name` (the host behind `event.off`).
+
 ## log
 
 ### `log.debug`

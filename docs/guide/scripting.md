@@ -327,3 +327,41 @@ another and the result is the same.
   (run `script_tests "[cost]"` by name) so the sanitizer flavors do not run it.
 - **Not done this day** (see `KNOWN-ISSUES.md`): a hot-script detector for a partition job that runs long (the instruction budget of each callback bounds it for now), and script systems that
   declare their reads and writes so they can overlap other systems (the one script system declares every component and runs alone).
+
+## Events
+
+Scripts and native systems exchange named events with `Value` payloads. An emit never runs a handler inside the emitter's call.
+
+```lua
+behavior('door', {
+  on_create = function(self)
+    event.on('button_pressed', function(me, payload, sender) --[[ me is self, sender the emitting entity ]] end)
+    event.once('level_loaded', function(me, payload) end)
+  end,
+  on_update = function(self)
+    event.emit('door_opened', { id = 3 })            -- every subscriber
+    event.emit_to(self.params.light, 'turn_on', nil) -- only that entity's script
+  end,
+})
+```
+
+- **Calls.** `event.emit(name, payload)`, `event.emit_to(entity, name, payload)` (bindings, `event_bindings.h`), and `event.on(name, fn)`, `event.once(name, fn)`, `event.off(name[, fn])` (added by
+  the behavior host: `on` and `once` work inside a behavior callback, the handler is called as `fn(self, payload, sender)`; `off` without `fn` removes every handler of the name). A name is 1 to 64
+  bytes; one partition emits at most 65,536 events a tick.
+- **Delivery.** An emit goes into the partition's outbox. At the sync point the outboxes move into the `EventBus` in `(partition, emitting entity id, sequence)` order (native `EventBus::Emit` calls
+  enter at the call), and the next tick delivers them: first the native subscribers on the calling thread, then each partition's job calls its subscribers' handlers, events in bus order and
+  subscribers in entity id order, before the tick's lifecycle callbacks. So the latency is always one tick, a handler never runs concurrently with the emitter's partition, and the order does not
+  depend on the thread count.
+- **Chains.** An event emitted by a handler has a chain depth one more than the event it answers, and is delivered one tick later again. Past `script.event_chain_limit` (default 8, setting
+  `ENGINE_SCRIPT_EVENT_CHAIN_LIMIT`) it is dropped and counted (`EventBus::Dropped`), so two scripts cannot answer each other forever.
+- **Lifetime.** Subscriptions belong to the instance: they end when it is destroyed, and a failed or disabled instance gets no events (an event is not kept for it). `emit_to` checks that the target is a live entity when the script calls it.
+- **Native code.** `ScriptRuntime::Events()` is the bus: `Emit`, `Subscribe(name, handler, user)` (an empty name receives everything) and `Unsubscribe`. The engine's own events (`on_collision`,
+  `on_trigger` from physics, `on_input`, `on_asset_loaded`) are native emits with these names, added by the days that own them; `on_setting_change` stays a settings subscription for now.
+- **Cost** (Linux x86-64, 8 threads, 100 subscribers, 10,000 events a tick, no payload work): about 5.6 million handler calls per second, emit and delivery included.
+- **For Phase 32 (Blueprint-shaped events).** Event dispatchers map to named events with a target; "call an event on another actor" maps to `emit_to`. An interface call that returns a value is
+  deliberately absent: it would need a synchronous call into another entity's partition, which the threading model forbids. The shape that fits is a request event answered by a reply event
+  one tick later (`event.emit_to(other, 'get_health', { reply_to = self.entity })`), which the importer can generate for interface calls whose result is used in a later node. Latent nodes map to
+  the waits of Day 460.
+
+The test `event_test.cpp` checks the one-tick latency, `once` and `off`, targeted events and the sender, the chain limit, cleanup on destroy, native emit and subscribe, a handler error, and equal
+state at 1, 2, 7 and 16 threads.

@@ -9,6 +9,7 @@
 #include "log/assert.h"
 #include "script/command_buffer.h"
 #include "script/component_bindings.h"
+#include "script/event_bindings.h"
 #include "script/log_buffer.h"
 #include "script/partition_context.h"
 #include "script/script_world.h"
@@ -46,23 +47,124 @@ struct FoundScript
     ecs::Entity entity;
 };
 
+/// The instances of one partition subscribed to one event name.
+struct Group
+{
+    String<HeapAllocator> name{HeapAllocator::Default()};
+    Vector<u64> keys;
+};
+
 /// What one partition keeps between ticks.
 struct PartitionData
 {
     CommandBuffer commands;
     Overlay overlay;
     Vector<u32> members;
+    EventOutbox outbox;
+    Vector<Group> groups;      // event name -> subscribed instance keys, sorted by name and key
     LogBuffer log;             // this phase's log lines, flushed in partition order after the jobs finish
     ScriptRuntimeStats stats;  // this phase's counts, summed after the jobs finish
     u64 resets_seen = 0;
     bool load_logged = false;
 };
 
+/// The index of the first group whose name is not below `name` (the groups are sorted by name).
+usize LowerBoundGroup(const Vector<Group>& groups, StringView name)
+{
+    usize lo = 0;
+    usize hi = groups.Size();
+    while (lo < hi)
+    {
+        const usize mid = (lo + hi) / 2;
+        if (groups[mid].name.View() < name)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+    return lo;
+}
+
+usize LowerBoundKey(const Vector<u64>& keys, u64 key)
+{
+    usize lo = 0;
+    usize hi = keys.Size();
+    while (lo < hi)
+    {
+        const usize mid = (lo + hi) / 2;
+        if (keys[mid] < key)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+    return lo;
+}
+
+void Subscribe(Vector<Group>* groups, StringView name, u64 key)
+{
+    usize g = LowerBoundGroup(*groups, name);
+    if (g == groups->Size() || (*groups)[g].name.View() != name)
+    {
+        Group group;
+        group.name = String<HeapAllocator>(HeapAllocator::Default(), name);
+        groups->Insert(g, Move(group));
+    }
+    Vector<u64>& keys = (*groups)[g].keys;
+    const usize at = LowerBoundKey(keys, key);
+    if (at == keys.Size() || keys[at] != key)
+    {
+        keys.Insert(at, key);
+    }
+}
+
+void Unsubscribe(Vector<Group>* groups, StringView name, u64 key)
+{
+    const usize g = LowerBoundGroup(*groups, name);
+    if (g == groups->Size() || (*groups)[g].name.View() != name)
+    {
+        return;
+    }
+    Vector<u64>& keys = (*groups)[g].keys;
+    const usize at = LowerBoundKey(keys, key);
+    if (at < keys.Size() && keys[at] == key)
+    {
+        keys.Remove(at);
+    }
+    if (keys.Size() == 0)
+    {
+        groups->Remove(g);
+    }
+}
+
+void UnsubscribeAll(Vector<Group>* groups, u64 key)
+{
+    for (usize g = groups->Size(); g > 0; --g)
+    {
+        Vector<u64>& keys = (*groups)[g - 1].keys;
+        const usize at = LowerBoundKey(keys, key);
+        if (at < keys.Size() && keys[at] == key)
+        {
+            keys.Remove(at);
+        }
+        if (keys.Size() == 0)
+        {
+            groups->Remove(g - 1);
+        }
+    }
+}
+
 }  // namespace
 
 struct ScriptRuntime::Impl
 {
-    explicit Impl(const ScriptRuntimeConfig& cfg) : config(cfg), services(cfg.services) {}
+    explicit Impl(const ScriptRuntimeConfig& cfg) : config(cfg), services(cfg.services), bus(cfg.event_chain_limit) {}
 
     ScriptRuntimeConfig config;
     UniquePtr<ScriptWorld> scripts;
@@ -71,6 +173,8 @@ struct ScriptRuntime::Impl
     Vector<UniquePtr<PartitionData>> partitions;
     Vector<Instance> instances;
     Vector<FoundScript> found;
+    EventBus bus;
+    Vector<EventRecord> delivery;
     ScriptRuntimeStats stats;
     u32 next_serial = 1;
     u64 tick = 0;
@@ -87,6 +191,8 @@ struct ScriptRuntime::Impl
     void Fail(PartitionData* data, Instance* in, const char* what, const Outcome& outcome);
     void CheckReset(u32 p, PartitionData* data);
     void RunLive(PartitionLease* lease, PartitionData* data, Instance* in, const ScriptComponent& comp, f64 dt);
+    void DeliverEvents(PartitionLease* lease, PartitionData* data, PartitionContext* context, ecs::World* world, u32 p);
+    void ApplyChanges(PartitionData* data);
     void RunDestroy(PartitionLease* lease, PartitionData* data, Instance* in, f64 dt, bool entity_exists);
 };
 
@@ -330,11 +436,110 @@ void ScriptRuntime::Impl::RunDestroy(PartitionLease* lease, PartitionData* data,
             Call(lease, data, in, "on_destroy", dt);
         }
     }
+    {  // a callback of the closing instance may have subscribed: those changes must not outlive it
+        Vector<SubscriptionChange> kept;
+        for (usize i = 0; i < data->outbox.changes.Size(); ++i)
+        {
+            if (data->outbox.changes[i].key != in->key)
+            {
+                kept.Push(Move(data->outbox.changes[i]));
+            }
+        }
+        data->outbox.changes = Move(kept);
+    }
+    UnsubscribeAll(&data->groups, in->key);
     Value args[1] = {Value::FromInt(static_cast<i64>(in->serial))};
     CallOutput out;
     lease->Call("__behavior_drop", Span<const Value>(args, 1), config.budget, &out);
     CheckReset(lease->Partition(), data);
     ++data->stats.destroyed;
+}
+
+void ScriptRuntime::Impl::ApplyChanges(PartitionData* data)
+{
+    for (usize i = 0; i < data->outbox.changes.Size(); ++i)
+    {
+        const SubscriptionChange& change = data->outbox.changes[i];
+        if (change.add)
+        {
+            Subscribe(&data->groups, change.name.View(), change.key);
+        }
+        else
+        {
+            Unsubscribe(&data->groups, change.name.View(), change.key);
+        }
+    }
+    data->outbox.changes.Clear();
+}
+
+void ScriptRuntime::Impl::DeliverEvents(PartitionLease* lease, PartitionData* data, PartitionContext* context,
+                                        ecs::World* world, u32 p)
+{
+    (void)world;
+    for (usize e = 0; e < delivery.Size(); ++e)
+    {
+        const EventRecord& event = delivery[e];
+        if (event.target_key != 0 && PartitionOf(event.target_key, config.partitions) != p)
+        {
+            continue;
+        }
+        const usize g = LowerBoundGroup(data->groups, event.name.View());
+        if (g == data->groups.Size() || data->groups[g].name.View() != event.name.View())
+        {
+            continue;
+        }
+        const Vector<u64>& keys = data->groups[g].keys;
+        usize first = 0;
+        usize last = keys.Size();
+        if (event.target_key != 0)
+        {
+            first = LowerBoundKey(keys, event.target_key);
+            last = first < keys.Size() && keys[first] == event.target_key ? first + 1 : first;
+        }
+        for (usize k = first; k < last; ++k)
+        {
+            // The instance of this key: the partition's members are in key order.
+            usize lo = 0;
+            usize hi = data->members.Size();
+            while (lo < hi)
+            {
+                const usize mid = (lo + hi) / 2;
+                if (instances[data->members[mid]].key < keys[k])
+                {
+                    lo = mid + 1;
+                }
+                else
+                {
+                    hi = mid;
+                }
+            }
+            if (lo == data->members.Size() || instances[data->members[lo]].key != keys[k])
+            {
+                continue;
+            }
+            Instance& in = instances[data->members[lo]];
+            if (!in.alive || !in.created || in.failed || !in.notified_enabled)
+            {
+                continue;
+            }
+            context->current_entity_key = in.key;
+            data->overlay.Clear();
+            context->random_state = RandomSeedFor(config.random_seed, in.key, tick + ((static_cast<u64>(e) + 1) << 40));
+            data->outbox.chain = event.chain + 1;
+            Value args[4] = {
+                Value::FromInt(static_cast<i64>(in.serial)), Value::FromText(event.name.View()), event.payload,
+                event.sender_key != 0 ? Value::FromEntity(ecs::Entity::FromU64(event.sender_key)) : Value()};
+            CallOutput out;
+            const Outcome outcome = lease->Call("__behavior_event", Span<const Value>(args, 4), config.budget, &out);
+            CheckReset(p, data);
+            ++data->stats.events_delivered;
+            if (!outcome.IsOk() && !in.failed)
+            {
+                Fail(data, &in, "an event handler", outcome);
+            }
+        }
+    }
+    data->outbox.chain = 0;
 }
 
 void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool destroys_only)
@@ -371,7 +576,13 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     context.scene = config.scene;
     context.partitions = config.partitions;
     context.log = &data.log;
+    context.events = &data.outbox;
+    data.outbox.chain = 0;
     ScopedPartitionContext scope(&context);
+    if (!destroys_only)
+    {
+        DeliverEvents(&lease, &data, &context, world, p);
+    }
     for (usize k = 0; k < data.members.Size(); ++k)
     {
         Instance& in = instances[data.members[k]];
@@ -391,6 +602,7 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
             }
         }
     }
+    ApplyChanges(&data);
 }
 
 void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only, jobs::Scheduler* scheduler)
@@ -447,6 +659,8 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
         stats.errors += d.errors;
         stats.disabled_by_error += d.disabled_by_error;
         stats.skipped_partitions += d.skipped_partitions;
+        stats.events_delivered += d.events_delivered;
+        stats.events_emitted += bus.Accept(&partitions[p]->outbox);
     }
     {
         Vector<LogBuffer*> logs;
@@ -524,6 +738,11 @@ const ScriptRuntimeStats& ScriptRuntime::Stats() const
     return impl_->stats;
 }
 
+EventBus& ScriptRuntime::Events()
+{
+    return impl_->bus;
+}
+
 MergeServices& ScriptRuntime::Services()
 {
     return impl_->services;
@@ -532,6 +751,7 @@ MergeServices& ScriptRuntime::Services()
 void ScriptRuntime::Tick(ecs::World* world, f64 dt, jobs::Scheduler* scheduler)
 {
     Impl& m = *impl_;
+    m.bus.Take(&m.delivery);  // the events of the last tick, to native subscribers now and to scripts in the jobs
     m.Reconcile(world, true);
     m.RunPhase(world, dt, false, scheduler);
     m.Compact();

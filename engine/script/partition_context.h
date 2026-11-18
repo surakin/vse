@@ -16,6 +16,7 @@ namespace engine_placeholder::script
 struct SettingsAccess;
 struct SceneServices;
 class ComponentCatalog;
+struct EventOutbox;
 
 /// What a binding sees of the tick.
 ///
@@ -53,6 +54,8 @@ struct PartitionContext
     const SceneServices* scene = nullptr;
     /// The components scripts can name (see [[script::ComponentCatalog]]); null when scripts see none.
     ComponentCatalog* components = nullptr;
+    /// The partition's outbox of emitted events and subscription changes; null when scripts have no events.
+    EventOutbox* events = nullptr;
     /// The world's partition count (setting `script.partitions`): `query.each` keeps the entities of this partition.
     u32 partitions = 1;
 };

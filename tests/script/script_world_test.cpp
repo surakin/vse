@@ -288,6 +288,7 @@ TEST_CASE("Script settings: partitions and the partition memory cap", "[script][
     CHECK(ScriptPartitions(registry) == 64);
     CHECK(ScriptPartitionMemory(registry) == 67108864);
     CHECK(ScriptLogLimit(registry) == 64);
+    CHECK(ScriptEventChainLimit(registry) == 8);
     CHECK_FALSE(ScriptConflictsAreErrors(registry));
 }
 
