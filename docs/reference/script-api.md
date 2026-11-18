@@ -4,6 +4,64 @@ Generated from the binding registry by `script_api_doc --write`; do not edit by 
 
 Every function states the thread rule it follows: `pure` (any state, any thread), `world-read` (reads the world as of the tick start), `world-write` (changes the world only through the partition's command buffer) or `main-thread-only` (a partition job that calls it gets a script error). A wrong argument count or type is a script error that names the function and the argument; an entity handle that no longer exists is an error too.
 
+## component
+
+### `component.add`
+
+`(Entity e, StringView name, Value fields) -> void`
+
+Thread rule: **world-write**. Id: `0xaeea55b1`.
+
+Adds the component at the sync point, starting from its defaults and then the values in `fields` (nil for none); an entity that has it already is an error (use component.set).
+
+### `component.define`
+
+`(StringView name, Value fields) -> void`
+
+Thread rule: **world-write**. Id: `0x7fe6e025`.
+
+Defines a plain-data component `name` with `fields`, a table of field name to type name (f32, f64, i32, i64, u32, bool, vec2, vec3, vec4, quat), while scripts load; it is registered with the engine and saved like any other. Defining it again the same way is fine, differently or after the first tick an error.
+
+### `component.exists`
+
+`(StringView name) -> bool`
+
+Thread rule: **world-read**. Id: `0x546e48b2`.
+
+Returns whether a stored component of this name is registered.
+
+### `component.get`
+
+`(Entity e, StringView name) -> Value`
+
+Thread rule: **world-read**. Id: `0x86031fe6`.
+
+Returns a table with a copy of the component's fields (floats as numbers, vectors as vec2/3/4, quaternions as quat, enums and resource ids as integers), or nil when the entity lacks it. Writing to the table changes nothing: use component.set.
+
+### `component.has`
+
+`(Entity e, StringView name) -> bool`
+
+Thread rule: **world-read**. Id: `0xdc65b8e2`.
+
+Returns whether the entity has the component, as this script sees it (its own adds and removes this tick included).
+
+### `component.remove`
+
+`(Entity e, StringView name) -> bool`
+
+Thread rule: **world-write**. Id: `0x388fb52e`.
+
+Removes the component at the sync point; returns whether the entity had it.
+
+### `component.set`
+
+`(Entity e, StringView name, Value fields) -> void`
+
+Thread rule: **world-write**. Id: `0xb185380a`.
+
+Changes the fields named in `fields` of a component the entity has, at the sync point; every value is checked against its field's type and range, and an unknown field, a wrong type or an engine component is an error naming the component and the field. This script sees the new values at once.
+
 ## entity
 
 ### `entity.destroy`
@@ -269,6 +327,32 @@ Rotates the vector `v` by `q`.
 Thread rule: **pure**. Id: `0x96c20d3c`.
 
 Interpolates between two rotations along the shorter arc (uses `acos`, `sin`: not bit-reproducible across machines).
+
+## query
+
+### `query.all`
+
+`(Value names) -> Value`
+
+Thread rule: **world-read**. Id: `0x250f6212`.
+
+Returns every entity that has all the components in `names`, in stable id order, as of the tick start: the expensive call (it walks the whole world); up to 60000, else an error (use query.page).
+
+### `query.each`
+
+`(Value names) -> Value`
+
+Thread rule: **world-read**. Id: `0xc672fd5e`.
+
+Returns the entities of this partition that have every component in `names` (a list of up to eight), in stable id order, as of the tick start. The scripts of one entity's partition see the same entities on any thread count.
+
+### `query.page`
+
+`(Value names, Value after, i64 limit) -> Value`
+
+Thread rule: **world-read**. Id: `0x92fed91c`.
+
+Like query.all but returns at most `limit` entities (1 to 60000) with a stable id above `after` (an entity from the previous page, or nil for the first), so a world of any size can be walked in pages.
 
 ## random
 

@@ -7,6 +7,7 @@ set(SCENE_TEST_SOURCES
   visibility_test.cpp  # Phase 18 Day 247
   level_spawner_test.cpp  # Phase 22 Day 329
   scene_spikes_test.cpp  # Phase 24 Day 358: the spikes of the C API's scenes
+  scene_components_test.cpp  # Phase 27 Day 456: the scene's components in the storage registry
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 329: the level minter, to make the levels the spawner loads
 )
 

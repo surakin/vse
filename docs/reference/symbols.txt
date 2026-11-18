@@ -1948,6 +1948,29 @@ script::Overlay::Clear()	function	script	script-overlay-clear	script.md	engine/s
 script::Overlay::Put(ecs::Entity,u32,Value)	function	script	script-overlay-put-ecs-entity-u32-value	script.md	engine/script/command_buffer.h:163
 script::Overlay::Find(ecs::Entity,u32) const	function	script	script-overlay-find-ecs-entity-u32-const	script.md	engine/script/command_buffer.h:170
 script::Overlay::Size() const	function	script	script-overlay-size-const	script.md	engine/script/command_buffer.h:175
+script::ComponentCommandKind	enum	script	script-componentcommandkind	script.md	engine/script/component_bindings.h:16
+script::kCommandComponentSet	enumerator	script	script-kcommandcomponentset	script.md	engine/script/component_bindings.h:19
+script::kCommandComponentAdd	enumerator	script	script-kcommandcomponentadd	script.md	engine/script/component_bindings.h:21
+script::kCommandComponentRemove	enumerator	script	script-kcommandcomponentremove	script.md	engine/script/component_bindings.h:23
+script::kFieldComponentBase	variable	script	script-kfieldcomponentbase	script.md	engine/script/component_bindings.h:28
+script::kMaxQueryResults	variable	script	script-kmaxqueryresults	script.md	engine/script/component_bindings.h:32
+script::RegisterComponentCommandKinds(CommandKindTable*)	function	script	script-registercomponentcommandkinds-commandkindtable-star	script.md	engine/script/component_bindings.h:41
+script::RegisterComponentBindings(BindingRegistry*)	function	script	script-registercomponentbindings-bindingregistry-star	script.md	engine/script/component_bindings.h:50
+script::kMaxScriptComponentFields	variable	script	script-kmaxscriptcomponentfields	script.md	engine/script/component_catalog.h:22
+script::kMaxScriptComponentBytes	variable	script	script-kmaxscriptcomponentbytes	script.md	engine/script/component_catalog.h:26
+script::kFirstScriptWritableComponentId	variable	script	script-kfirstscriptwritablecomponentid	script.md	engine/script/component_catalog.h:31
+script::ComponentCatalog	class	script	script-componentcatalog	script.md	engine/script/component_catalog.h:39
+script::ComponentCatalog::ComponentCatalog(storage::ComponentRegistry*)	function	script	script-componentcatalog-componentcatalog-storage-componentregistry-star	script.md	engine/script/component_catalog.h:46
+script::ComponentCatalog::~ComponentCatalog()	function	script	script-componentcatalog-tilde-componentcatalog	script.md	engine/script/component_catalog.h:49
+script::ComponentCatalog::ComponentCatalog(const ComponentCatalog&)	function	script	script-componentcatalog-componentcatalog-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:50
+script::ComponentCatalog::operator=(const ComponentCatalog&)	function	script	script-componentcatalog-operator-eq-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:51
+script::ComponentCatalog::FindByName(StringView) const	function	script	script-componentcatalog-findbyname-stringview-const	script.md	engine/script/component_catalog.h:57
+script::ComponentCatalog::FindById(u32) const	function	script	script-componentcatalog-findbyid-u32-const	script.md	engine/script/component_catalog.h:62
+script::ComponentCatalog::FindByEcsId(ecs::ComponentId) const	function	script	script-componentcatalog-findbyecsid-ecs-componentid-const	script.md	engine/script/component_catalog.h:67
+script::ComponentCatalog::Define(StringView,const Value&,String<HeapAllocator>*)	function	script	script-componentcatalog-define-stringview-const-value-amp-string-lt-heapallocator-gt-star	script.md	engine/script/component_catalog.h:82
+script::ComponentCatalog::Freeze()	function	script	script-componentcatalog-freeze	script.md	engine/script/component_catalog.h:87
+script::ComponentCatalog::IsFrozen() const	function	script	script-componentcatalog-isfrozen-const	script.md	engine/script/component_catalog.h:95
+script::ComponentCatalog::DefinedCount() const	function	script	script-componentcatalog-definedcount-const	script.md	engine/script/component_catalog.h:99
 script::EntityCommandKind	enum	script	script-entitycommandkind	script.md	engine/script/entity_bindings.h:16
 script::kCommandSetPosition	enumerator	script	script-kcommandsetposition	script.md	engine/script/entity_bindings.h:19
 script::kCommandSetRotation	enumerator	script	script-kcommandsetrotation	script.md	engine/script/entity_bindings.h:21
@@ -2013,42 +2036,45 @@ script::MergeReport::unknown	variable	script	script-mergereport-unknown	script.m
 script::MergeReport::conflicts	variable	script	script-mergereport-conflicts	script.md	engine/script/merge.h:164
 script::MergeReport::refused	variable	script	script-mergereport-refused	script.md	engine/script/merge.h:166
 script::Merge(ecs::World*,Span<CommandBuffer* const>,const CommandKindTable&,ConflictPolicy,void*)	function	script	script-merge-ecs-world-star-span-lt-commandbuffer-star-const-gt-const-commandkindtable-amp-conflictpolicy-void-star	script.md	engine/script/merge.h:183
-script::PrefabSource	struct	script	script-prefabsource	script.md	engine/script/merge_services.h:18
-script::PrefabSource::spawn	variable	script	script-prefabsource-spawn	script.md	engine/script/merge_services.h:22
-script::PrefabSource::user	variable	script	script-prefabsource-user	script.md	engine/script/merge_services.h:24
-script::MergeServices	struct	script	script-mergeservices	script.md	engine/script/merge_services.h:31
-script::MergeServices::settings	variable	script	script-mergeservices-settings	script.md	engine/script/merge_services.h:34
-script::MergeServices::prefabs	variable	script	script-mergeservices-prefabs	script.md	engine/script/merge_services.h:36
-script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:23
-script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:26
-script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:28
-script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:30
-script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:32
-script::PartitionContext::world_seed	variable	script	script-partitioncontext-world-seed	script.md	engine/script/partition_context.h:34
-script::PartitionContext::tick	variable	script	script-partitioncontext-tick	script.md	engine/script/partition_context.h:36
-script::PartitionContext::dt	variable	script	script-partitioncontext-dt	script.md	engine/script/partition_context.h:38
-script::PartitionContext::sim_time	variable	script	script-partitioncontext-sim-time	script.md	engine/script/partition_context.h:40
-script::PartitionContext::frame	variable	script	script-partitioncontext-frame	script.md	engine/script/partition_context.h:42
-script::PartitionContext::replay_recording	variable	script	script-partitioncontext-replay-recording	script.md	engine/script/partition_context.h:44
-script::PartitionContext::random_state	variable	script	script-partitioncontext-random-state	script.md	engine/script/partition_context.h:46
-script::PartitionContext::log	variable	script	script-partitioncontext-log	script.md	engine/script/partition_context.h:48
-script::PartitionContext::settings	variable	script	script-partitioncontext-settings	script.md	engine/script/partition_context.h:50
-script::PartitionContext::scene	variable	script	script-partitioncontext-scene	script.md	engine/script/partition_context.h:52
-script::RandomSeedFor(u32,u64,u64)	function	script	script-randomseedfor-u32-u64-u64	script.md	engine/script/partition_context.h:61
-script::AdvanceRandom(u64*)	function	script	script-advancerandom-u64-star	script.md	engine/script/partition_context.h:69
-script::SeedPartitionRandom(PartitionContext*)	function	script	script-seedpartitionrandom-partitioncontext-star	script.md	engine/script/partition_context.h:78
-script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:84
-script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:90
-script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:92
-script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:93
-script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:94
-script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:106
-script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:114
-script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:122
-script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:128
-script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:130
-script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:131
-script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:132
+script::PrefabSource	struct	script	script-prefabsource	script.md	engine/script/merge_services.h:19
+script::PrefabSource::spawn	variable	script	script-prefabsource-spawn	script.md	engine/script/merge_services.h:23
+script::PrefabSource::user	variable	script	script-prefabsource-user	script.md	engine/script/merge_services.h:25
+script::MergeServices	struct	script	script-mergeservices	script.md	engine/script/merge_services.h:32
+script::MergeServices::settings	variable	script	script-mergeservices-settings	script.md	engine/script/merge_services.h:35
+script::MergeServices::prefabs	variable	script	script-mergeservices-prefabs	script.md	engine/script/merge_services.h:37
+script::MergeServices::components	variable	script	script-mergeservices-components	script.md	engine/script/merge_services.h:39
+script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:24
+script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:27
+script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:29
+script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:31
+script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:33
+script::PartitionContext::world_seed	variable	script	script-partitioncontext-world-seed	script.md	engine/script/partition_context.h:35
+script::PartitionContext::tick	variable	script	script-partitioncontext-tick	script.md	engine/script/partition_context.h:37
+script::PartitionContext::dt	variable	script	script-partitioncontext-dt	script.md	engine/script/partition_context.h:39
+script::PartitionContext::sim_time	variable	script	script-partitioncontext-sim-time	script.md	engine/script/partition_context.h:41
+script::PartitionContext::frame	variable	script	script-partitioncontext-frame	script.md	engine/script/partition_context.h:43
+script::PartitionContext::replay_recording	variable	script	script-partitioncontext-replay-recording	script.md	engine/script/partition_context.h:45
+script::PartitionContext::random_state	variable	script	script-partitioncontext-random-state	script.md	engine/script/partition_context.h:47
+script::PartitionContext::log	variable	script	script-partitioncontext-log	script.md	engine/script/partition_context.h:49
+script::PartitionContext::settings	variable	script	script-partitioncontext-settings	script.md	engine/script/partition_context.h:51
+script::PartitionContext::scene	variable	script	script-partitioncontext-scene	script.md	engine/script/partition_context.h:53
+script::PartitionContext::components	variable	script	script-partitioncontext-components	script.md	engine/script/partition_context.h:55
+script::PartitionContext::partitions	variable	script	script-partitioncontext-partitions	script.md	engine/script/partition_context.h:57
+script::RandomSeedFor(u32,u64,u64)	function	script	script-randomseedfor-u32-u64-u64	script.md	engine/script/partition_context.h:66
+script::AdvanceRandom(u64*)	function	script	script-advancerandom-u64-star	script.md	engine/script/partition_context.h:74
+script::SeedPartitionRandom(PartitionContext*)	function	script	script-seedpartitionrandom-partitioncontext-star	script.md	engine/script/partition_context.h:83
+script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:89
+script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:95
+script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:97
+script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:98
+script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:99
+script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:111
+script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:119
+script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:127
+script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:133
+script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:135
+script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:136
+script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:137
 script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:24
 script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:34
 script::ScriptBudgeted(const settings::Registry&)	function	script	script-scriptbudgeted-const-settings-registry-amp	script.md	engine/script/script_settings.h:42
@@ -8375,16 +8401,17 @@ storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-compone
 storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:209
 storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:210
 storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:219
-storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:228
-storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:233
-storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:238
-storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:243
-storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:245
-storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:247
-storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:258
-storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:265
-storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:273
-storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:283
+storage::ComponentRegistry::RegisterDynamic(const ComponentDesc&,Span<const FieldDesc>,ecs::ComponentId,bool)	function	storage	storage-componentregistry-registerdynamic-const-componentdesc-amp-span-lt-const-fielddesc-gt-ecs-componentid-bool	storage.md	engine/storage/component_registry.h:235
+storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:242
+storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:247
+storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:252
+storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:257
+storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:259
+storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:261
+storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:272
+storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:279
+storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:287
+storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:297
 storage::EntityKey	struct	storage	storage-entitykey	storage.md	engine/storage/entity_ref.h:19
 storage::EntityKey::high	variable	storage	storage-entitykey-high	storage.md	engine/storage/entity_ref.h:21
 storage::EntityKey::low	variable	storage	storage-entitykey-low	storage.md	engine/storage/entity_ref.h:22
@@ -8446,9 +8473,10 @@ storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	s
 storage::FieldDesc::element_kind	variable	storage	storage-fielddesc-element-kind	storage.md	engine/storage/field.h:358
 storage::FieldDesc::element_count	variable	storage	storage-fielddesc-element-count	storage.md	engine/storage/field.h:359
 storage::FieldDesc::element_size	variable	storage	storage-fielddesc-element-size	storage.md	engine/storage/field.h:360
-storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:363
-storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:367
-storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:790
+storage::FieldDesc::memory_offset	variable	storage	storage-fielddesc-memory-offset	storage.md	engine/storage/field.h:361
+storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:366
+storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:370
+storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:793
 storage::ReferenceValue	struct	storage	storage-referencevalue	storage.md	engine/storage/field_walk.h:22
 storage::ReferenceValue::field_index	variable	storage	storage-referencevalue-field-index	storage.md	engine/storage/field_walk.h:24
 storage::ReferenceValue::field	variable	storage	storage-referencevalue-field	storage.md	engine/storage/field_walk.h:25
@@ -8750,6 +8778,11 @@ scene::SceneSyncReport::refused_full	variable	scene	scene-scenesyncreport-refuse
 scene::SceneSyncReport::invalid	variable	scene	scene-scenesyncreport-invalid	scene.md	engine/scene/render_sync.h:55
 scene::MakeRenderSyncSystem(const char*)	function	scene	scene-makerendersyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:82
 scene::MakeCameraSystem(const char*)	function	scene	scene-makecamerasystem-const-char-star	scene.md	engine/scene/render_sync.h:93
+scene::SceneComponentId	enum	scene	scene-scenecomponentid	scene.md	engine/scene/scene_components.h:14
+scene::kLightSourceId	enumerator	scene	scene-klightsourceid	scene.md	engine/scene/scene_components.h:16
+scene::kCameraId	enumerator	scene	scene-kcameraid	scene.md	engine/scene/scene_components.h:17
+scene::kHiddenId	enumerator	scene	scene-khiddenid	scene.md	engine/scene/scene_components.h:18
+scene::RegisterSceneComponents(storage::ComponentRegistry*)	function	scene	scene-registerscenecomponents-storage-componentregistry-star	scene.md	engine/scene/scene_components.h:26
 ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:13
 ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:24
 ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:28

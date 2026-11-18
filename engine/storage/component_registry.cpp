@@ -128,6 +128,22 @@ Status RegisteredComponent::DecodeRecord(u32 stored_version, ByteSpan bytes, voi
 
 Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::ComponentId ecs_id, bool is_tag)
 {
+    return RegisterFields(desc, Span<const FieldDesc>(desc.fields.begin(), desc.fields.size()), ecs_id, is_tag);
+}
+
+Status ComponentRegistry::RegisterDynamic(const ComponentDesc& desc, Span<const FieldDesc> fields,
+                                          ecs::ComponentId ecs_id, bool is_tag)
+{
+    if (desc.fields.size() != 0)
+    {
+        return Status::Make(ErrorCode::Invalid, "a dynamic registration passes its fields separately");
+    }
+    return RegisterFields(desc, fields, ecs_id, is_tag);
+}
+
+Status ComponentRegistry::RegisterFields(const ComponentDesc& desc, Span<const FieldDesc> fields,
+                                         ecs::ComponentId ecs_id, bool is_tag)
+{
     if (desc.id == 0)
     {
         return Status::Make(ErrorCode::Invalid, "a component id must not be 0");
@@ -148,7 +164,7 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
         return Status::Make(ErrorCode::Invalid, "a component version starts at 1");
     }
     const bool stored = (desc.flags & (kComponentDerived | kComponentSkip)) == 0;
-    const usize field_count = desc.fields.size();
+    const usize field_count = fields.Size();
     const bool has_custom = desc.custom.save != nullptr || desc.custom.load != nullptr;
     if (has_custom && (desc.custom.save == nullptr || desc.custom.load == nullptr))
     {
@@ -199,7 +215,7 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
         return Status::Make(ErrorCode::Invalid, "a tag has no fields");
     }
     usize index = 0;
-    for (const FieldDesc& f : desc.fields)
+    for (const FieldDesc& f : fields)
     {
         if (f.name == nullptr || f.name[0] == '\0' || f.encode == nullptr || f.decode == nullptr)
         {
@@ -220,7 +236,7 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
             return Status::Make(ErrorCode::Invalid, "an array of resource references is not supported");
         }
         usize other = 0;
-        for (const FieldDesc& g : desc.fields)
+        for (const FieldDesc& g : fields)
         {
             if (other < index && CStrCompare(f.name, g.name) == 0)
             {
@@ -259,7 +275,7 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
     entry->flags_ = desc.flags;
     entry->ecs_id_ = ecs_id;
     entry->is_tag_ = is_tag;
-    for (const FieldDesc& f : desc.fields)
+    for (const FieldDesc& f : fields)
     {
         entry->fields_.Push(f);
     }

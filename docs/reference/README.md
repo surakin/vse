@@ -18,7 +18,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
-| [Scripting](script.md) | 14 | 417 |
+| [Scripting](script.md) | 16 | 443 |
 | [Platform: OS Services](platform-os.md) | 7 | 79 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
@@ -33,8 +33,8 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [glTF importer](asset_import.md) | 17 | 272 |
 | [Animation runtime](animation.md) | 4 | 85 |
 | [Database](database.md) | 9 | 161 |
-| [Storage](storage.md) | 18 | 427 |
-| [Scene bridge](scene.md) | 3 | 55 |
+| [Storage](storage.md) | 18 | 429 |
+| [Scene bridge](scene.md) | 4 | 60 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 205 |

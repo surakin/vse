@@ -17,6 +17,8 @@ set(SCRIPT_SOURCES
   log_buffer.cpp  # Day 453
   settings_bindings.cpp  # Day 454
   entity_bindings.cpp  # Day 455
+  component_catalog.cpp  # Day 456
+  component_bindings.cpp  # Day 456
 )
 if(TARGET luajit)  # the LuaJIT backend (Day 448); LuaJIT builds on Linux x86-64 only so far
   list(APPEND SCRIPT_SOURCES luajit/luajit_backend.cpp luajit/lua_patterns.cpp)
@@ -27,7 +29,7 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(script${suffix} STATIC ${SCRIPT_SOURCES})
   target_include_directories(script${suffix} PUBLIC ${SCRIPT_INCLUDE_ROOT})
   target_compile_options(script${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(script${suffix} PUBLIC ecs${suffix} foundation${suffix})
+  target_link_libraries(script${suffix} PUBLIC ecs${suffix} storage${suffix} foundation${suffix})
   if(TARGET luajit)
     target_link_libraries(script${suffix} PUBLIC luajit)
   endif()

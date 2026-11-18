@@ -1124,6 +1124,25 @@ Registers component type `T`.
 | Fails | `Exists` (the id, the name or the type `T` is registered already); `Invalid` (id 0, an empty name, version 0, a stored component of a non-tag type with no fields, fields on a tag or a derived or skipped component, an enum field with no range, two fields with one name). |
 | Ownership | nothing in `desc` is kept by reference except `name`. |
 
+### `RegisterDynamic(const ComponentDesc&,Span<const FieldDesc>,ecs::ComponentId,bool)` {#storage-componentregistry-registerdynamic-const-componentdesc-amp-span-lt-const-fielddesc-gt-ecs-componentid-bool}
+
+`method storage::ComponentRegistry::RegisterDynamic` — defined in `engine/storage/component_registry.h`
+
+```cpp
+Status RegisterDynamic(const ComponentDesc& desc, Span<const FieldDesc> fields, ecs::ComponentId ecs_id, bool is_tag);
+```
+
+Registers a component whose layout no C++ type describes (a script-defined one): the ECS type was registered by the caller ([`ecs::ComponentRegistry::Register`](ecs.md#ecs-componentregistry-register-const-typeinfo-amp)) and the fields carry their byte offsets ([`storage::FieldDesc::memory_offset`](#storage-fielddesc-memory-offset)) and their own codec functions. `desc.fields` must be empty; the fields are passed here.
+
+| Field | Value |
+|---|---|
+| Parameter `desc` | the id, name, version and flags. |
+| Parameter `fields` | the fields in storage order; copied. |
+| Parameter `ecs_id` | the ECS type, or [`ecs::kInvalidComponent`](ecs.md#ecs-kinvalidcomponent). |
+| Parameter `is_tag` | whether the type has no data. |
+| Fails | as [`storage::ComponentRegistry::Register`](#storage-componentregistry-register-const-componentdesc-amp). |
+| Ownership | `desc.name` is borrowed and must outlive the registry. |
+
 ### `FindById(u32)` {#storage-componentregistry-findbyid-u32-const}
 
 `method storage::ComponentRegistry::FindById` — defined in `engine/storage/component_registry.h`
@@ -1742,6 +1761,16 @@ usize element_size;
 ```
 
 For an `Array` field, `sizeof` of one element in memory.
+
+### `memory_offset` {#storage-fielddesc-memory-offset}
+
+`variable storage::FieldDesc::memory_offset` — defined in `engine/storage/field.h`
+
+```cpp
+usize memory_offset;
+```
+
+Where the member starts in the component: set only by a dynamic registration (a script-defined component), whose codec functions read it; 0 and unused for a field made by [`storage::Field`](#storage-field-const-char-star-fieldoptions).
 
 ### `encode` {#storage-fielddesc-encode}
 

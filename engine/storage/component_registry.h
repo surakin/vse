@@ -221,6 +221,20 @@ public:
         return RegisterEntry(desc, ecs::ComponentOf<T>(), IsEmpty<T>);
     }
 
+    /// Registers a component whose layout no C++ type describes (a script-defined one): the ECS type was registered by
+    /// the caller ([[ecs::ComponentRegistry::Register]]) and the fields carry their byte offsets
+    /// ([[storage::FieldDesc::memory_offset]]) and their own codec functions. `desc.fields` must be empty; the fields
+    /// are passed here.
+    ///
+    /// - Param desc: the id, name, version and flags.
+    /// - Param fields: the fields in storage order; copied.
+    /// - Param ecs_id: the ECS type, or [[ecs::kInvalidComponent]].
+    /// - Param is_tag: whether the type has no data.
+    /// - Ownership: `desc.name` is borrowed and must outlive the registry.
+    /// - Fails: as [[storage::ComponentRegistry::Register]].
+    Status RegisterDynamic(const ComponentDesc& desc, Span<const FieldDesc> fields, ecs::ComponentId ecs_id,
+                           bool is_tag);
+
     /// Finds a registration by id.
     ///
     /// - Ownership: the pointer is owned by the registry and valid for its life.
@@ -284,6 +298,8 @@ public:
 
 private:
     Status RegisterEntry(const ComponentDesc& desc, ecs::ComponentId ecs_id, bool is_tag);
+    Status RegisterFields(const ComponentDesc& desc, Span<const FieldDesc> fields, ecs::ComponentId ecs_id,
+                          bool is_tag);
 
     Vector<UniquePtr<RegisteredComponent>> components_;
 };

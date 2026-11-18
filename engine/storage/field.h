@@ -358,6 +358,9 @@ struct FieldDesc
     FieldKind element_kind = FieldKind::U8;  ///< For an `Array` field, the kind of its elements.
     usize element_count = 0;                 ///< For an `Array` field, the number of elements (`N`).
     usize element_size = 0;                  ///< For an `Array` field, `sizeof` of one element in memory.
+    usize memory_offset = 0;  ///< Where the member starts in the component: set only by a dynamic registration (a
+                              ///< script-defined component), whose codec functions read it; 0 and unused for a field
+                              ///< made by [[storage::Field]].
     /// Writes the member of the component at `component`. On failure nothing is promised about what `out` holds (the
     /// caller truncates).
     Status (*encode)(const FieldDesc& desc, const void* component, bytes::ByteWriter& out,

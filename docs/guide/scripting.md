@@ -190,6 +190,34 @@ Scripts reach settings only through `settings.*` (`engine/script/settings_bindin
   (recorded in `KNOWN-ISSUES.md`).
 - The test `entity_bindings_test.cpp` runs 300 entities for 120 ticks (move, rotate, spawn children, parent, destroy): one world hash on 1 and 8 threads.
 
+## Components and queries
+
+`component.*` and `query.*` (`engine/script/component_bindings.h`) reach every stored component of the host's `storage::ComponentRegistry` by its registered name (`"gadget"`, `"animation_player"`, `"light_source"`), through the
+registry's own encoder: a read encodes the component and shows its fields as script values, a write builds the new record from the values, checks it by decoding it into a scratch component (types, ranges, enum ranges, UTF-8)
+and only then records a command. The host gives scripts a `ComponentCatalog` (`PartitionContext::components`, and `MergeServices::components` for the merge) over its registry.
+
+- **Reads** (`component.get/has/exists`) are `world-read`: the tick-start component plus the script's own adds, sets and removes of this tick. `get` returns a table (floats and integers as numbers, `vec2/3/4`, `quat`,
+  a matrix as 16 numbers, an enum or a resource id as an integer, text, arrays as arrays; entity-reference fields are left out) or nil when the entity lacks the component; changing the table changes nothing. A derived or
+  runtime-only component (`world_transform`) is an error.
+- **Writes** (`component.set/add/remove`) are `world-write`, one command each (kinds 20 to 22). `set` changes the fields named in the table of a component the entity has; `add` starts from the component's defaults, then the
+  table (nil for none); `remove` returns whether it had it. A wrong type, an out-of-range number or enum, a non-finite float, a missing array length, a field that does not exist, or a component of the storage module itself
+  (ids below 20: transform, parent, identity, spatial; they have `transform.*` and `entity.*`) is a script error naming the component and the field, and nothing is recorded. Placeholders from `entity.spawn` work as targets.
+- **Scripts define components:** `component.define("health", {hp = "f32", max = "f32", dead = "bool"})` while scripts load. Types are `f32 f64 i32 i64 u32 bool vec2 vec3 vec4 quat`; text and entity references are not supported
+  yet (`KNOWN-ISSUES.md`). The fields are laid out in name order, so every state gets the same layout whatever order its table was walked in, and the stored id is derived from the name (`0x80000000 | FNV-1a`; a collision
+  with another component is an error that asks for a rename). The component is registered in the host's storage registry (`ComponentRegistry::RegisterDynamic`) and in the ECS registry, so a save writes and a load reads it like
+  an engine component. Defining the same component again succeeds (every partition's state runs the same script); a different definition under the name, an engine component's name, or any new component after
+  `ComponentCatalog::Freeze()` (called at the first tick) is an error. A component is at most 32 fields and 256 bytes (padded to 16, 32, 64, 128 or 256); the ECS holds 128 component types in all.
+- **Queries** are `world-read` and return arrays of entities in stable id order as of the tick start, so the answer never depends on the thread count. `query.each({"a", "b"})` returns the entities of the calling partition
+  (`PartitionOf(id, partitions)`, with `PartitionContext::partitions`), the common case: a partition touches only its own entities and the cost shrinks with the partition count. `query.all` returns every match and is the
+  expensive call: it walks the whole world. A call returns at most 60,000 entities (a script value holds 65,536 values); more is an error, and `query.page(names, after, limit)` walks any world in pages (`after` is the last
+  entity of the previous page, or nil). `query.each` over all partitions covers `query.all`, each entity once. A callback form (`query.each(names, fn)`) waits for the callbacks of Day 459.
+- **Render components:** `light_source`, `camera` and `hidden` are registered by `scene::RegisterSceneComponents` (`engine/scene/scene_components.h`) and work through the same calls. `MeshRenderer` holds a shared GPU mesh,
+  which has no stored form; a script names a mesh by its asset id with the resource bindings of Day 463 (`KNOWN-ISSUES.md`).
+- **Cost** (Linux x86-64, plain build, 100,001 entities with one tag): `query.each` of one of 16 partitions (6,250 entities) about 6.5 ms, `query.page` of 60,000 about 54 ms, a `query.all` that overflows (100,001 matches,
+  refused) about 14 ms. Each call walks the archetypes and sorts the ids; a world with fewer archetypes and an `each` per partition is the fast path.
+- The tests `component_bindings_test.cpp` (reflection, validation, definitions, a save and a load through `WorldStorage`, queries, 40 ticks of queries and writes: one hash on 1 and 8 threads) and
+  `tests/scene/scene_components_test.cpp`.
+
 ## Partitions
 
 `script::ScriptWorld` (`engine/script/script_world.h`) is a set of `P` partitions (setting `script.partitions`, 1 to 1024, default 64), each with one language state. An entity's scripts run in

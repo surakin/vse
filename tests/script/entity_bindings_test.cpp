@@ -2,6 +2,7 @@
 // the definition-of-done run: a script moves entities for 120 ticks and the world is the same on 1 and 8 threads.
 #include <catch2/catch_test_macros.hpp>
 
+#include "algorithm.h"
 #include "cstr/cstr.h"
 #include "ecs/query.h"
 #include "ecs/transform.h"

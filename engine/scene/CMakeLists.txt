@@ -3,6 +3,7 @@
 set(SCENE_SOURCES
   render_sync.cpp
   level_spawner.cpp  # Phase 22 Day 329
+  scene_components.cpp  # Phase 27 Day 456
 )
 set(SCENE_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

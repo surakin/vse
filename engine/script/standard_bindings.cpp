@@ -1,5 +1,6 @@
 #include "lang/scalar.h"
 #include "script/bindings.h"
+#include "script/component_bindings.h"
 #include "script/entity_bindings.h"
 #include "script/settings_bindings.h"
 
@@ -318,6 +319,7 @@ bool RegisterStandardBindings(BindingRegistry* registry)
     ok &= RegisterRuntimeBindings(registry);
     ok &= RegisterSettingsBindings(registry);
     ok &= RegisterEntityBindings(registry);
+    ok &= RegisterComponentBindings(registry);
     return ok;
 }
 

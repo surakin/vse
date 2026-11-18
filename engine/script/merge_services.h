@@ -4,6 +4,7 @@
 
 #include "ecs/entity.h"
 #include "ecs/world.h"
+#include "script/component_catalog.h"
 #include "settings/settings.h"
 #include "string_view.h"
 #include "types.h"
@@ -34,6 +35,8 @@ struct MergeServices
     settings::Settings* settings = nullptr;
     /// How `entity.spawn(prefab)` builds an entity from a prefab name.
     const PrefabSource* prefabs = nullptr;
+    /// The components `component.set/add/remove` change by stored id.
+    const ComponentCatalog* components = nullptr;
 };
 
 }  // namespace engine_placeholder::script

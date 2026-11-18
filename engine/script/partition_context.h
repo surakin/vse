@@ -15,6 +15,7 @@ namespace engine_placeholder::script
 
 struct SettingsAccess;
 struct SceneServices;
+class ComponentCatalog;
 
 /// What a binding sees of the tick.
 ///
@@ -50,6 +51,10 @@ struct PartitionContext
     SettingsAccess* settings = nullptr;
     /// The scene's names and prefabs (see [[script::SceneServices]]); null when scripts see none.
     const SceneServices* scene = nullptr;
+    /// The components scripts can name (see [[script::ComponentCatalog]]); null when scripts see none.
+    ComponentCatalog* components = nullptr;
+    /// The world's partition count (setting `script.partitions`): `query.each` keeps the entities of this partition.
+    u32 partitions = 1;
 };
 
 /// The first state of an entity's random stream this tick: a fixed 64-bit mix of the world seed, the entity's stable id
