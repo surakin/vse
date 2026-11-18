@@ -140,6 +140,15 @@ public:
     /// - Aborts: the lease is not valid.
     Outcome Call(StringView function_path, Span<const Value> args, const Budget& budget, CallOutput* out);
 
+    /// Resumes a call that suspended (see [[script::CallOutput::coroutine]]) with `values` as the result of its wait,
+    /// and records the resume in the partition's counters; an `OutOfMemory` resume resets the partition like a call
+    /// does.
+    ///
+    /// - Returns: the outcome of [[script::State::Resume]]; `Invalid` when the partition has no state.
+    /// - Ownership: as `State::Resume`.
+    /// - Aborts: the lease is not valid.
+    Outcome Resume(u64 coroutine, Span<const Value> values, const Budget& budget, CallOutput* out);
+
     /// Hands the partition back; afterwards the lease is not valid. Does nothing for an empty lease.
     ///
     /// - Fails: never.
@@ -223,6 +232,9 @@ private:
     void ReleaseSlot(PartitionSlot* slot);
     Outcome PrepareState(PartitionSlot* slot);
     Outcome CallIn(PartitionSlot* slot, StringView path, Span<const Value> args, const Budget& budget, CallOutput* out);
+    Outcome ResumeIn(PartitionSlot* slot, u64 coroutine, Span<const Value> values, const Budget& budget,
+                     CallOutput* out);
+    Outcome Settle(PartitionSlot* slot, Outcome result, u64 start);
 
     struct Script
     {

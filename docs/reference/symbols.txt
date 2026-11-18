@@ -1994,32 +1994,37 @@ script::RegisterEntityBindings(BindingRegistry*)	function	script	script-register
 script::RegisterEventBindings(BindingRegistry*)	function	script	script-registereventbindings-bindingregistry-star	script.md	engine/script/event_bindings.h:20
 script::kMaxEventNameBytes	variable	script	script-kmaxeventnamebytes	script.md	engine/script/event_bus.h:17
 script::kMaxEventsPerPartition	variable	script	script-kmaxeventsperpartition	script.md	engine/script/event_bus.h:20
-script::EventRecord	struct	script	script-eventrecord	script.md	engine/script/event_bus.h:26
-script::EventRecord::name	variable	script	script-eventrecord-name	script.md	engine/script/event_bus.h:29
-script::EventRecord::payload	variable	script	script-eventrecord-payload	script.md	engine/script/event_bus.h:31
-script::EventRecord::sender_key	variable	script	script-eventrecord-sender-key	script.md	engine/script/event_bus.h:33
-script::EventRecord::target_key	variable	script	script-eventrecord-target-key	script.md	engine/script/event_bus.h:35
-script::EventRecord::chain	variable	script	script-eventrecord-chain	script.md	engine/script/event_bus.h:38
-script::SubscriptionChange	struct	script	script-subscriptionchange	script.md	engine/script/event_bus.h:45
-script::SubscriptionChange::key	variable	script	script-subscriptionchange-key	script.md	engine/script/event_bus.h:48
-script::SubscriptionChange::name	variable	script	script-subscriptionchange-name	script.md	engine/script/event_bus.h:50
-script::SubscriptionChange::add	variable	script	script-subscriptionchange-add	script.md	engine/script/event_bus.h:52
-script::EventOutbox	struct	script	script-eventoutbox	script.md	engine/script/event_bus.h:60
-script::EventOutbox::events	variable	script	script-eventoutbox-events	script.md	engine/script/event_bus.h:63
-script::EventOutbox::changes	variable	script	script-eventoutbox-changes	script.md	engine/script/event_bus.h:65
-script::EventOutbox::chain	variable	script	script-eventoutbox-chain	script.md	engine/script/event_bus.h:67
-script::NativeEventHandler	alias	script	script-nativeeventhandler	script.md	engine/script/event_bus.h:72
-script::EventBus	class	script	script-eventbus	script.md	engine/script/event_bus.h:83
-script::EventBus::EventBus(u32)	function	script	script-eventbus-eventbus-u32	script.md	engine/script/event_bus.h:89
-script::EventBus::SetChainLimit(u32)	function	script	script-eventbus-setchainlimit-u32	script.md	engine/script/event_bus.h:94
-script::EventBus::ChainLimit() const	function	script	script-eventbus-chainlimit-const	script.md	engine/script/event_bus.h:98
-script::EventBus::Emit(StringView,Value,u64)	function	script	script-eventbus-emit-stringview-value-u64	script.md	engine/script/event_bus.h:107
-script::EventBus::Subscribe(StringView,NativeEventHandler,void*)	function	script	script-eventbus-subscribe-stringview-nativeeventhandler-void-star	script.md	engine/script/event_bus.h:116
-script::EventBus::Unsubscribe(u32)	function	script	script-eventbus-unsubscribe-u32	script.md	engine/script/event_bus.h:122
-script::EventBus::Pending() const	function	script	script-eventbus-pending-const	script.md	engine/script/event_bus.h:127
-script::EventBus::Dropped() const	function	script	script-eventbus-dropped-const	script.md	engine/script/event_bus.h:132
-script::EventBus::Accept(EventOutbox*)	function	script	script-eventbus-accept-eventoutbox-star	script.md	engine/script/event_bus.h:140
-script::EventBus::Take(Vector<EventRecord>*)	function	script	script-eventbus-take-vector-lt-eventrecord-gt-star	script.md	engine/script/event_bus.h:146
+script::kMaxSubscriptionChangesPerPartition	variable	script	script-kmaxsubscriptionchangesperpartition	script.md	engine/script/event_bus.h:23
+script::kMaxSubscriptionsPerPartition	variable	script	script-kmaxsubscriptionsperpartition	script.md	engine/script/event_bus.h:26
+script::kMaxEventPayloadWeight	variable	script	script-kmaxeventpayloadweight	script.md	engine/script/event_bus.h:29
+script::EventPayloadWeight(const Value&)	function	script	script-eventpayloadweight-const-value-amp	script.md	engine/script/event_bus.h:35
+script::EventRecord	struct	script	script-eventrecord	script.md	engine/script/event_bus.h:41
+script::EventRecord::name	variable	script	script-eventrecord-name	script.md	engine/script/event_bus.h:44
+script::EventRecord::payload	variable	script	script-eventrecord-payload	script.md	engine/script/event_bus.h:46
+script::EventRecord::sender_key	variable	script	script-eventrecord-sender-key	script.md	engine/script/event_bus.h:48
+script::EventRecord::target_key	variable	script	script-eventrecord-target-key	script.md	engine/script/event_bus.h:50
+script::EventRecord::chain	variable	script	script-eventrecord-chain	script.md	engine/script/event_bus.h:53
+script::SubscriptionChange	struct	script	script-subscriptionchange	script.md	engine/script/event_bus.h:60
+script::SubscriptionChange::key	variable	script	script-subscriptionchange-key	script.md	engine/script/event_bus.h:63
+script::SubscriptionChange::name	variable	script	script-subscriptionchange-name	script.md	engine/script/event_bus.h:65
+script::SubscriptionChange::add	variable	script	script-subscriptionchange-add	script.md	engine/script/event_bus.h:67
+script::EventOutbox	struct	script	script-eventoutbox	script.md	engine/script/event_bus.h:75
+script::EventOutbox::events	variable	script	script-eventoutbox-events	script.md	engine/script/event_bus.h:78
+script::EventOutbox::changes	variable	script	script-eventoutbox-changes	script.md	engine/script/event_bus.h:80
+script::EventOutbox::weight	variable	script	script-eventoutbox-weight	script.md	engine/script/event_bus.h:82
+script::EventOutbox::chain	variable	script	script-eventoutbox-chain	script.md	engine/script/event_bus.h:84
+script::NativeEventHandler	alias	script	script-nativeeventhandler	script.md	engine/script/event_bus.h:89
+script::EventBus	class	script	script-eventbus	script.md	engine/script/event_bus.h:100
+script::EventBus::EventBus(u32)	function	script	script-eventbus-eventbus-u32	script.md	engine/script/event_bus.h:106
+script::EventBus::SetChainLimit(u32)	function	script	script-eventbus-setchainlimit-u32	script.md	engine/script/event_bus.h:111
+script::EventBus::ChainLimit() const	function	script	script-eventbus-chainlimit-const	script.md	engine/script/event_bus.h:115
+script::EventBus::Emit(StringView,Value,u64)	function	script	script-eventbus-emit-stringview-value-u64	script.md	engine/script/event_bus.h:124
+script::EventBus::Subscribe(StringView,NativeEventHandler,void*)	function	script	script-eventbus-subscribe-stringview-nativeeventhandler-void-star	script.md	engine/script/event_bus.h:133
+script::EventBus::Unsubscribe(u32)	function	script	script-eventbus-unsubscribe-u32	script.md	engine/script/event_bus.h:139
+script::EventBus::Pending() const	function	script	script-eventbus-pending-const	script.md	engine/script/event_bus.h:144
+script::EventBus::Dropped() const	function	script	script-eventbus-dropped-const	script.md	engine/script/event_bus.h:149
+script::EventBus::Accept(EventOutbox*)	function	script	script-eventbus-accept-eventoutbox-star	script.md	engine/script/event_bus.h:157
+script::EventBus::Take(Vector<EventRecord>*)	function	script	script-eventbus-take-vector-lt-eventrecord-gt-star	script.md	engine/script/event_bus.h:163
 script::LogScript	variable	script	script-logscript	script.md	engine/script/log_buffer.h:18
 script::ScriptLogLevel	enum	script	script-scriptloglevel	script.md	engine/script/log_buffer.h:23
 script::ScriptLogLevel::Debug	enumerator	script	script-scriptloglevel-debug	script.md	engine/script/log_buffer.h:26
@@ -2128,38 +2133,41 @@ script::ScriptRuntimeStats::skipped_partitions	variable	script	script-scriptrunt
 script::ScriptRuntimeStats::commands_applied	variable	script	script-scriptruntimestats-commands-applied	script.md	engine/script/script_runtime.h:91
 script::ScriptRuntimeStats::events_emitted	variable	script	script-scriptruntimestats-events-emitted	script.md	engine/script/script_runtime.h:93
 script::ScriptRuntimeStats::events_delivered	variable	script	script-scriptruntimestats-events-delivered	script.md	engine/script/script_runtime.h:95
-script::ScriptRuntimeConfig	struct	script	script-scriptruntimeconfig	script.md	engine/script/script_runtime.h:102
-script::ScriptRuntimeConfig::backend	variable	script	script-scriptruntimeconfig-backend	script.md	engine/script/script_runtime.h:105
-script::ScriptRuntimeConfig::bindings	variable	script	script-scriptruntimeconfig-bindings	script.md	engine/script/script_runtime.h:107
-script::ScriptRuntimeConfig::partitions	variable	script	script-scriptruntimeconfig-partitions	script.md	engine/script/script_runtime.h:109
-script::ScriptRuntimeConfig::partition_memory	variable	script	script-scriptruntimeconfig-partition-memory	script.md	engine/script/script_runtime.h:111
-script::ScriptRuntimeConfig::random_seed	variable	script	script-scriptruntimeconfig-random-seed	script.md	engine/script/script_runtime.h:113
-script::ScriptRuntimeConfig::log_limit	variable	script	script-scriptruntimeconfig-log-limit	script.md	engine/script/script_runtime.h:115
-script::ScriptRuntimeConfig::event_chain_limit	variable	script	script-scriptruntimeconfig-event-chain-limit	script.md	engine/script/script_runtime.h:117
-script::ScriptRuntimeConfig::on_error	variable	script	script-scriptruntimeconfig-on-error	script.md	engine/script/script_runtime.h:119
-script::ScriptRuntimeConfig::conflicts	variable	script	script-scriptruntimeconfig-conflicts	script.md	engine/script/script_runtime.h:121
-script::ScriptRuntimeConfig::budget	variable	script	script-scriptruntimeconfig-budget	script.md	engine/script/script_runtime.h:123
-script::ScriptRuntimeConfig::components	variable	script	script-scriptruntimeconfig-components	script.md	engine/script/script_runtime.h:125
-script::ScriptRuntimeConfig::scene	variable	script	script-scriptruntimeconfig-scene	script.md	engine/script/script_runtime.h:127
-script::ScriptRuntimeConfig::services	variable	script	script-scriptruntimeconfig-services	script.md	engine/script/script_runtime.h:129
-script::ScriptRuntimeConfig::host_source	variable	script	script-scriptruntimeconfig-host-source	script.md	engine/script/script_runtime.h:132
-script::ScriptRuntimeConfig::DefaultBudget()	function	script	script-scriptruntimeconfig-defaultbudget	script.md	engine/script/script_runtime.h:135
-script::LuaBehaviorHostSource()	function	script	script-luabehaviorhostsource	script.md	engine/script/script_runtime.h:149
-script::ScriptRuntime	class	script	script-scriptruntime	script.md	engine/script/script_runtime.h:157
-script::ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp	script.md	engine/script/script_runtime.h:164
-script::ScriptRuntime::~ScriptRuntime()	function	script	script-scriptruntime-tilde-scriptruntime	script.md	engine/script/script_runtime.h:166
-script::ScriptRuntime::ScriptRuntime(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-scriptruntime-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:168
-script::ScriptRuntime::operator=(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-operator-eq-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:170
-script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:171
-script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:172
-script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:178
-script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:185
-script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:190
-script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:194
-script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:198
-script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:202
-script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:214
-script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:227
+script::ScriptRuntimeStats::waits_resumed	variable	script	script-scriptruntimestats-waits-resumed	script.md	engine/script/script_runtime.h:97
+script::ScriptRuntimeStats::coroutines_waiting	variable	script	script-scriptruntimestats-coroutines-waiting	script.md	engine/script/script_runtime.h:99
+script::ScriptRuntimeConfig	struct	script	script-scriptruntimeconfig	script.md	engine/script/script_runtime.h:106
+script::ScriptRuntimeConfig::backend	variable	script	script-scriptruntimeconfig-backend	script.md	engine/script/script_runtime.h:109
+script::ScriptRuntimeConfig::bindings	variable	script	script-scriptruntimeconfig-bindings	script.md	engine/script/script_runtime.h:111
+script::ScriptRuntimeConfig::partitions	variable	script	script-scriptruntimeconfig-partitions	script.md	engine/script/script_runtime.h:113
+script::ScriptRuntimeConfig::partition_memory	variable	script	script-scriptruntimeconfig-partition-memory	script.md	engine/script/script_runtime.h:115
+script::ScriptRuntimeConfig::random_seed	variable	script	script-scriptruntimeconfig-random-seed	script.md	engine/script/script_runtime.h:117
+script::ScriptRuntimeConfig::log_limit	variable	script	script-scriptruntimeconfig-log-limit	script.md	engine/script/script_runtime.h:119
+script::ScriptRuntimeConfig::coroutine_limit	variable	script	script-scriptruntimeconfig-coroutine-limit	script.md	engine/script/script_runtime.h:122
+script::ScriptRuntimeConfig::event_chain_limit	variable	script	script-scriptruntimeconfig-event-chain-limit	script.md	engine/script/script_runtime.h:124
+script::ScriptRuntimeConfig::on_error	variable	script	script-scriptruntimeconfig-on-error	script.md	engine/script/script_runtime.h:126
+script::ScriptRuntimeConfig::conflicts	variable	script	script-scriptruntimeconfig-conflicts	script.md	engine/script/script_runtime.h:128
+script::ScriptRuntimeConfig::budget	variable	script	script-scriptruntimeconfig-budget	script.md	engine/script/script_runtime.h:130
+script::ScriptRuntimeConfig::components	variable	script	script-scriptruntimeconfig-components	script.md	engine/script/script_runtime.h:132
+script::ScriptRuntimeConfig::scene	variable	script	script-scriptruntimeconfig-scene	script.md	engine/script/script_runtime.h:134
+script::ScriptRuntimeConfig::services	variable	script	script-scriptruntimeconfig-services	script.md	engine/script/script_runtime.h:136
+script::ScriptRuntimeConfig::host_source	variable	script	script-scriptruntimeconfig-host-source	script.md	engine/script/script_runtime.h:139
+script::ScriptRuntimeConfig::DefaultBudget()	function	script	script-scriptruntimeconfig-defaultbudget	script.md	engine/script/script_runtime.h:142
+script::LuaBehaviorHostSource()	function	script	script-luabehaviorhostsource	script.md	engine/script/script_runtime.h:156
+script::ScriptRuntime	class	script	script-scriptruntime	script.md	engine/script/script_runtime.h:164
+script::ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp	script.md	engine/script/script_runtime.h:171
+script::ScriptRuntime::~ScriptRuntime()	function	script	script-scriptruntime-tilde-scriptruntime	script.md	engine/script/script_runtime.h:173
+script::ScriptRuntime::ScriptRuntime(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-scriptruntime-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:175
+script::ScriptRuntime::operator=(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-operator-eq-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:177
+script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:178
+script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:179
+script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:185
+script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:192
+script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:197
+script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:201
+script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:205
+script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:209
+script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:221
+script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:234
 script::OnScriptError	enum	script	script-onscripterror	script.md	engine/script/script_settings.h:16
 script::OnScriptError::Disable	enumerator	script	script-onscripterror-disable	script.md	engine/script/script_settings.h:19
 script::OnScriptError::Retry	enumerator	script	script-onscripterror-retry	script.md	engine/script/script_settings.h:21
@@ -2206,18 +2214,19 @@ script::PartitionLease::Valid() const	function	script	script-partitionlease-vali
 script::PartitionLease::Partition() const	function	script	script-partitionlease-partition-const	script.md	engine/script/script_world.h:123
 script::PartitionLease::GetState() const	function	script	script-partitionlease-getstate-const	script.md	engine/script/script_world.h:131
 script::PartitionLease::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-partitionlease-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/script_world.h:141
-script::PartitionLease::Release()	function	script	script-partitionlease-release	script.md	engine/script/script_world.h:146
-script::ScriptWorld	class	script	script-scriptworld	script.md	engine/script/script_world.h:167
-script::ScriptWorld::ScriptWorld(const ScriptWorldConfig&)	function	script	script-scriptworld-scriptworld-const-scriptworldconfig-amp	script.md	engine/script/script_world.h:174
-script::ScriptWorld::~ScriptWorld()	function	script	script-scriptworld-tilde-scriptworld	script.md	engine/script/script_world.h:176
-script::ScriptWorld::ScriptWorld(const ScriptWorld&)	function	script	script-scriptworld-scriptworld-const-scriptworld-amp	script.md	engine/script/script_world.h:177
-script::ScriptWorld::operator=(const ScriptWorld&)	function	script	script-scriptworld-operator-eq-const-scriptworld-amp	script.md	engine/script/script_world.h:178
-script::ScriptWorld::PartitionCount() const	function	script	script-scriptworld-partitioncount-const	script.md	engine/script/script_world.h:183
-script::ScriptWorld::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptworld-addscript-stringview-sharedbytesptr	script.md	engine/script/script_world.h:191
-script::ScriptWorld::TryCheckout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-trycheckout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:201
-script::ScriptWorld::Checkout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-checkout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:208
-script::ScriptWorld::Counters(u32) const	function	script	script-scriptworld-counters-u32-const	script.md	engine/script/script_world.h:214
-script::ScriptWorld::Total() const	function	script	script-scriptworld-total-const	script.md	engine/script/script_world.h:219
+script::PartitionLease::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-partitionlease-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/script_world.h:150
+script::PartitionLease::Release()	function	script	script-partitionlease-release	script.md	engine/script/script_world.h:155
+script::ScriptWorld	class	script	script-scriptworld	script.md	engine/script/script_world.h:176
+script::ScriptWorld::ScriptWorld(const ScriptWorldConfig&)	function	script	script-scriptworld-scriptworld-const-scriptworldconfig-amp	script.md	engine/script/script_world.h:183
+script::ScriptWorld::~ScriptWorld()	function	script	script-scriptworld-tilde-scriptworld	script.md	engine/script/script_world.h:185
+script::ScriptWorld::ScriptWorld(const ScriptWorld&)	function	script	script-scriptworld-scriptworld-const-scriptworld-amp	script.md	engine/script/script_world.h:186
+script::ScriptWorld::operator=(const ScriptWorld&)	function	script	script-scriptworld-operator-eq-const-scriptworld-amp	script.md	engine/script/script_world.h:187
+script::ScriptWorld::PartitionCount() const	function	script	script-scriptworld-partitioncount-const	script.md	engine/script/script_world.h:192
+script::ScriptWorld::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptworld-addscript-stringview-sharedbytesptr	script.md	engine/script/script_world.h:200
+script::ScriptWorld::TryCheckout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-trycheckout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:210
+script::ScriptWorld::Checkout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-checkout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:217
+script::ScriptWorld::Counters(u32) const	function	script	script-scriptworld-counters-u32-const	script.md	engine/script/script_world.h:223
+script::ScriptWorld::Total() const	function	script	script-scriptworld-total-const	script.md	engine/script/script_world.h:228
 script::kCommandSettingsSet	variable	script	script-kcommandsettingsset	script.md	engine/script/settings_bindings.h:23
 script::kMaxSettingsSubscriptionsPerEntity	variable	script	script-kmaxsettingssubscriptionsperentity	script.md	engine/script/settings_bindings.h:26
 script::kMaxSettingsSubscriptions	variable	script	script-kmaxsettingssubscriptions	script.md	engine/script/settings_bindings.h:28

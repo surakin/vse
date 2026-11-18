@@ -42,6 +42,13 @@ void Emit(StringView name, Value payload, u64 target_key)
         RaiseScriptError("this partition emitted too many events this tick");
         return;
     }
+    const u64 weight = EventPayloadWeight(payload);
+    if (outbox->weight + weight > kMaxEventPayloadWeight)
+    {
+        RaiseScriptError("this partition emitted too much event data this tick");
+        return;
+    }
+    outbox->weight += weight;
     EventRecord record;
     record.name = String<HeapAllocator>(HeapAllocator::Default(), name);
     record.payload = Move(payload);
@@ -66,6 +73,11 @@ void Change(StringView name, bool add)
     EventOutbox* outbox = Outbox();
     if (outbox == nullptr || !CheckName(name))
     {
+        return;
+    }
+    if (outbox->changes.Size() >= kMaxSubscriptionChangesPerPartition)
+    {
+        RaiseScriptError("this partition changed too many event subscriptions this tick");
         return;
     }
     SubscriptionChange change;

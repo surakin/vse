@@ -93,6 +93,10 @@ struct ScriptRuntimeStats
     u64 events_emitted = 0;
     /// Handler calls made for delivered events.
     u64 events_delivered = 0;
+    /// Waiting coroutines resumed.
+    u64 waits_resumed = 0;
+    /// Coroutines waiting now (after the last phase).
+    u64 coroutines_waiting = 0;
 };
 
 /// What a script runtime is made of.
@@ -113,6 +117,9 @@ struct ScriptRuntimeConfig
     u32 random_seed = 1;
     /// Log messages one script may add per partition per tick (setting `script.log_limit`); 0 is no limit.
     u32 log_limit = 64;
+    /// The most coroutines one partition keeps waiting (setting `script.coroutine_limit`); a call that would suspend
+    /// past it is abandoned and fails.
+    u32 coroutine_limit = 65536;
     /// The most handler hops of an event chain (setting `script.event_chain_limit`).
     u32 event_chain_limit = 8;
     /// What a failed callback does (setting `script.on_error`).

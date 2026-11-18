@@ -16,6 +16,10 @@ local current = nil  -- the serial of the instance whose callback is running
 -- The bindings' `event` table is read-only: the host puts the handler functions in a table of its own that falls
 -- back to it, and publishes that as the global.
 local native_event = event
+local tasks = {}  -- tasks[id] = { fn, cancelled }: the coroutines `spawn` made
+local owned = {}  -- owned[serial][id] = true
+local spawn_hooked = {}
+local running_task = nil  -- the spawned task whose code is running now (nil in an ordinary callback)
 local event = setmetatable({}, { __index = native_event })
 _G.event = event
 
@@ -33,6 +37,7 @@ end
 
 function __behavior_create(serial, name, entity, params)
   current = serial
+  running_task = nil
   local class = behaviors[name]
   if class == nil then
     error("unknown behavior '" .. tostring(name) .. "'", 0)
@@ -43,6 +48,7 @@ end
 
 function __behavior_call(serial, callback, dt)
   current = serial
+  running_task = nil
   local self = instances[serial]
   if self == nil then
     error('the instance is gone from this state', 0)
@@ -58,6 +64,14 @@ end
 function __behavior_drop(serial)
   instances[serial] = nil
   handlers[serial] = nil
+  spawn_hooked[serial] = nil
+  local mine = owned[serial]
+  if mine ~= nil then
+    for id in pairs(mine) do
+      tasks[id] = nil
+    end
+    owned[serial] = nil
+  end
 end
 
 local function add_handler(name, fn, once)
@@ -116,6 +130,7 @@ end
 
 function __behavior_event(serial, name, payload, sender)
   current = serial
+  running_task = nil
   local self = instances[serial]
   local by_name = handlers[serial]
   local list = by_name and by_name[name]
@@ -148,6 +163,131 @@ function __behavior_event(serial, name, payload, sender)
     h.fn(self, payload, sender)
   end
   return #snapshot
+end
+
+-- Latent helpers. The waits are the backend's (they suspend the callback; the engine resumes it in a later tick); the
+-- host wraps them so that `stop` can end a spawned task the next time it wakes.
+local native_wait, native_wait_frames, native_wait_event = wait, wait_frames, wait_event
+local next_task = 0
+local CANCELLED = {}
+
+-- A wait remembers the task that called it and, when the engine resumes it, restores that and honors a `stop`.
+local function waiting(native, ...)
+  local mine = running_task
+  local a, b = native(...)
+  running_task = mine
+  if mine ~= nil and mine.cancelled then
+    error(CANCELLED, 0)
+  end
+  return a, b
+end
+
+function wait(seconds)
+  waiting(native_wait, seconds)
+end
+
+function wait_frames(frames)
+  waiting(native_wait_frames, frames)
+end
+
+function wait_event(name)
+  return waiting(native_wait_event, name)
+end
+
+local function hook_spawn(serial)
+  if spawn_hooked[serial] then
+    return
+  end
+  spawn_hooked[serial] = true
+  add_handler('__spawn', function(me, id, sender)
+    local t = tasks[id]
+    if sender ~= me.entity or t == nil or t.cancelled or t.started or t.owner ~= me.entity then
+      return
+    end
+    t.started = true
+    running_task = t
+    local ok, err = pcall(t.fn, me)
+    tasks[id] = nil
+    if not ok and err ~= CANCELLED then
+      error(err, 0)
+    end
+  end, false)
+end
+
+-- Starts `fn(self)` as a coroutine of the instance at the start of the next tick; it may wait. Returns a handle.
+function spawn(fn)
+  if type(fn) ~= 'function' then
+    error('spawn: expects a function', 2)
+  end
+  if current == nil then
+    error('spawn: only a behavior callback can spawn', 2)
+  end
+  next_task = next_task + 1
+  local id = next_task
+  tasks[id] = { fn = fn, cancelled = false, started = false, owner = instances[current].entity }
+  local mine = owned[current]
+  if mine == nil then
+    mine = {}
+    owned[current] = mine
+  end
+  mine[id] = true
+  hook_spawn(current)
+  native_event.emit_to(instances[current].entity, '__spawn', id)
+  return id
+end
+
+-- Cancels a spawned coroutine: it ends the next time it would have continued from a wait.
+function stop(handle)
+  local t = tasks[handle]
+  if t ~= nil then
+    t.cancelled = true
+    return true
+  end
+  return false
+end
+
+function after(seconds, fn)
+  return spawn(function(me)
+    wait(seconds)
+    fn(me)
+  end)
+end
+
+function every(seconds, fn)
+  return spawn(function(me)
+    while true do
+      wait(seconds)
+      fn(me)
+    end
+  end)
+end
+
+local easings = {
+  linear = function(a) return a end,
+  in_quad = function(a) return a * a end,
+  out_quad = function(a) return a * (2 - a) end,
+  in_out_quad = function(a) if a < 0.5 then return 2 * a * a end return -1 + (4 - 2 * a) * a end,
+}
+
+-- Calls fn(self, value) once per tick with `value` moving from `from` to `to` over `seconds`; the last call is exactly `to`.
+function tween(from, to, seconds, easing, fn)
+  local ease = easings[easing or 'linear']
+  if ease == nil then
+    error("tween: unknown easing '" .. tostring(easing) .. "'", 2)
+  end
+  return spawn(function(me)
+    local elapsed = 0
+    while elapsed < seconds do
+      wait_frames(1)
+      elapsed = elapsed + time.dt()
+      local a = elapsed / seconds
+      if a >= 1 then
+        break
+      end
+      fn(me, from + (to - from) * ease(a))
+    end
+    fn(me, to)
+  end)
 end
 )LUA";
 }

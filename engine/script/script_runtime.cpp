@@ -47,6 +47,18 @@ struct FoundScript
     ecs::Entity entity;
 };
 
+/// A call that suspended in a wait and the condition that resumes it.
+struct Waiter
+{
+    u64 key = 0;  // the instance's stable id
+    u64 coroutine = 0;
+    WaitRequest::Kind kind = WaitRequest::Kind::None;
+    f64 wake_time = 0.0;  // Seconds: the simulation time to resume at
+    u64 wake_tick = 0;    // Frames: the tick to resume at
+    String<HeapAllocator> event{HeapAllocator::Default()};
+    u32 sequence = 0;  // creation order, the last tie-break of the wake order
+};
+
 /// The instances of one partition subscribed to one event name.
 struct Group
 {
@@ -61,6 +73,10 @@ struct PartitionData
     Overlay overlay;
     Vector<u32> members;
     EventOutbox outbox;
+    Vector<Waiter> waiters;        // timers: Seconds and Frames
+    Vector<Waiter> event_waiters;  // coroutines in wait_event, scanned only when an event is delivered
+    u32 next_sequence = 0;
+    bool subscription_limit_logged = false;
     Vector<Group> groups;      // event name -> subscribed instance keys, sorted by name and key
     LogBuffer log;             // this phase's log lines, flushed in partition order after the jobs finish
     ScriptRuntimeStats stats;  // this phase's counts, summed after the jobs finish
@@ -187,12 +203,18 @@ struct ScriptRuntime::Impl
     void Compact();
     void RunPhase(ecs::World* world, f64 dt, bool destroys_only, jobs::Scheduler* scheduler);
     void RunPartition(ecs::World* world, u32 p, f64 dt, bool destroys_only);
-    bool Call(PartitionLease* lease, PartitionData* data, Instance* in, const char* callback, f64 dt);
+    bool Call(PartitionLease* lease, PartitionData* data, Instance* in, const char* callback, f64 dt,
+              bool allow_wait = true);
     void Fail(PartitionData* data, Instance* in, const char* what, const Outcome& outcome);
     void CheckReset(u32 p, PartitionData* data);
     void RunLive(PartitionLease* lease, PartitionData* data, Instance* in, const ScriptComponent& comp, f64 dt);
     void DeliverEvents(PartitionLease* lease, PartitionData* data, PartitionContext* context, ecs::World* world, u32 p);
     void ApplyChanges(PartitionData* data);
+    void Park(PartitionLease* lease, PartitionData* data, Instance* in, const CallOutput& out, bool allow_wait);
+    void WakeTimers(PartitionLease* lease, PartitionData* data, PartitionContext* context, u32 p);
+    void Resume(PartitionLease* lease, PartitionData* data, PartitionContext* context, const Waiter& w,
+                Span<const Value> values);
+    Instance* FindInstance(PartitionData* data, u64 key);
     void RunDestroy(PartitionLease* lease, PartitionData* data, Instance* in, f64 dt, bool entity_exists);
 };
 
@@ -322,6 +344,8 @@ void ScriptRuntime::Impl::CheckReset(u32 p, PartitionData* data)
         return;
     }
     data->resets_seen = resets;
+    data->waiters.Clear();  // the coroutines died with the state
+    data->event_waiters.Clear();
     for (usize k = 0; k < data->members.Size(); ++k)
     {
         Instance& in = instances[data->members[k]];
@@ -340,7 +364,8 @@ void ScriptRuntime::Impl::CheckReset(u32 p, PartitionData* data)
     }
 }
 
-bool ScriptRuntime::Impl::Call(PartitionLease* lease, PartitionData* data, Instance* in, const char* callback, f64 dt)
+bool ScriptRuntime::Impl::Call(PartitionLease* lease, PartitionData* data, Instance* in, const char* callback, f64 dt,
+                               bool allow_wait)
 {
     Value args[3] = {Value::FromInt(static_cast<i64>(in->serial)), Value::FromText(StringView(callback)),
                      Value::FromFloat(dt)};
@@ -355,7 +380,151 @@ bool ScriptRuntime::Impl::Call(PartitionLease* lease, PartitionData* data, Insta
         }
         return false;
     }
+    Park(lease, data, in, out, allow_wait);
     return !in->failed;
+}
+
+Instance* ScriptRuntime::Impl::FindInstance(PartitionData* data, u64 key)
+{
+    usize lo = 0;
+    usize hi = data->members.Size();
+    while (lo < hi)
+    {
+        const usize mid = (lo + hi) / 2;
+        if (instances[data->members[mid]].key < key)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+    return lo < data->members.Size() && instances[data->members[lo]].key == key ? &instances[data->members[lo]]
+                                                                                : nullptr;
+}
+
+// A call that suspended in a wait becomes a waiter; a call that may not wait (a destroy callback), or one over the
+// partition's cap, is abandoned.
+void ScriptRuntime::Impl::Park(PartitionLease* lease, PartitionData* data, Instance* in, const CallOutput& out,
+                               bool allow_wait)
+{
+    if (!out.Suspended())
+    {
+        return;
+    }
+    State* state = lease->GetState();
+    if (!allow_wait)
+    {
+        state->Abandon(out.coroutine);
+        return;
+    }
+    if (data->waiters.Size() + data->event_waiters.Size() >= config.coroutine_limit)
+    {
+        state->Abandon(out.coroutine);
+        Fail(data, in, "a wait", Outcome(Status::RuntimeError, "too many waiting coroutines in this partition"));
+        return;
+    }
+    Waiter w;
+    w.key = in->key;
+    w.coroutine = out.coroutine;
+    w.kind = out.wait.kind;
+    w.wake_time = sim_time + out.wait.seconds;
+    w.wake_tick = tick + out.wait.frames;
+    w.event = String<HeapAllocator>(HeapAllocator::Default(), out.wait.event.View());
+    w.sequence = data->next_sequence++;
+    if (w.kind == WaitRequest::Kind::Event)
+    {
+        data->event_waiters.Push(Move(w));
+    }
+    else
+    {
+        data->waiters.Push(Move(w));
+    }
+}
+
+void ScriptRuntime::Impl::Resume(PartitionLease* lease, PartitionData* data, PartitionContext* context, const Waiter& w,
+                                 Span<const Value> values)
+{
+    Instance* in = FindInstance(data, w.key);
+    if (in == nullptr)
+    {
+        return;
+    }
+    context->current_entity_key = in->key;
+    data->overlay.Clear();
+    CallOutput out;
+    const Outcome outcome = lease->Resume(w.coroutine, values, config.budget, &out);
+    CheckReset(lease->Partition(), data);
+    ++data->stats.waits_resumed;
+    if (!outcome.IsOk())
+    {
+        if (!in->failed)
+        {
+            Fail(data, in, "a resumed wait", outcome);
+        }
+        return;
+    }
+    Park(lease, data, in, out, true);
+}
+
+// Resumes the waiters whose time has come, in (wake time, entity id, creation order); the waits of a disabled instance
+// move later by the time that passed, so they resume with the time they had left.
+void ScriptRuntime::Impl::WakeTimers(PartitionLease* lease, PartitionData* data, PartitionContext* context, u32 p)
+{
+    (void)p;
+    if (data->waiters.Size() == 0)
+    {
+        return;
+    }
+    Vector<Waiter> due;
+    Vector<Waiter> keep;
+    for (usize i = 0; i < data->waiters.Size(); ++i)
+    {
+        Waiter& w = data->waiters[i];
+        Instance* in = FindInstance(data, w.key);
+        if (in == nullptr || !in->alive || in->failed)
+        {
+            lease->GetState()->Abandon(w.coroutine);
+            continue;
+        }
+        if (!in->notified_enabled)
+        {
+            w.wake_time += context->dt;
+            w.wake_tick += 1;
+            keep.Push(Move(w));
+            continue;
+        }
+        const bool ready = w.kind == WaitRequest::Kind::Seconds ? w.wake_time <= sim_time : w.wake_tick <= tick;
+        if (ready)
+        {
+            due.Push(Move(w));
+        }
+        else
+        {
+            keep.Push(Move(w));
+        }
+    }
+    data->waiters = Move(keep);
+    Sort(Span<Waiter>(due.Data(), due.Size()),
+         [](const Waiter& a, const Waiter& b)
+         {
+             const f64 ta = a.kind == WaitRequest::Kind::Seconds ? a.wake_time : 0.0;
+             const f64 tb = b.kind == WaitRequest::Kind::Seconds ? b.wake_time : 0.0;
+             if (ta != tb)
+             {
+                 return ta < tb;
+             }
+             if (a.key != b.key)
+             {
+                 return a.key < b.key;
+             }
+             return a.sequence < b.sequence;
+         });
+    for (usize i = 0; i < due.Size(); ++i)
+    {
+        Resume(lease, data, context, due[i], Span<const Value>());
+    }
 }
 
 void ScriptRuntime::Impl::RunLive(PartitionLease* lease, PartitionData* data, Instance* in, const ScriptComponent& comp,
@@ -429,11 +598,11 @@ void ScriptRuntime::Impl::RunDestroy(PartitionLease* lease, PartitionData* data,
         if (in->notified_enabled && entity_exists)
         {  // a dead entity gets no on_disable: its own components are gone, so the callback could not work
             in->notified_enabled = false;
-            Call(lease, data, in, "on_disable", dt);
+            Call(lease, data, in, "on_disable", dt, false);
         }
         if (!in->failed)
         {
-            Call(lease, data, in, "on_destroy", dt);
+            Call(lease, data, in, "on_destroy", dt, false);
         }
     }
     {  // a callback of the closing instance may have subscribed: those changes must not outlive it
@@ -448,6 +617,22 @@ void ScriptRuntime::Impl::RunDestroy(PartitionLease* lease, PartitionData* data,
         data->outbox.changes = Move(kept);
     }
     UnsubscribeAll(&data->groups, in->key);
+    for (Vector<Waiter>* list : {&data->waiters, &data->event_waiters})
+    {  // the instance's waiting coroutines are dropped without running another step
+        Vector<Waiter> kept;
+        for (usize i = 0; i < list->Size(); ++i)
+        {
+            if ((*list)[i].key == in->key)
+            {
+                lease->GetState()->Abandon((*list)[i].coroutine);
+            }
+            else
+            {
+                kept.Push(Move((*list)[i]));
+            }
+        }
+        *list = Move(kept);
+    }
     Value args[1] = {Value::FromInt(static_cast<i64>(in->serial))};
     CallOutput out;
     lease->Call("__behavior_drop", Span<const Value>(args, 1), config.budget, &out);
@@ -457,12 +642,28 @@ void ScriptRuntime::Impl::RunDestroy(PartitionLease* lease, PartitionData* data,
 
 void ScriptRuntime::Impl::ApplyChanges(PartitionData* data)
 {
+    usize subscriptions = 0;
+    for (usize g = 0; g < data->groups.Size(); ++g)
+    {
+        subscriptions += data->groups[g].keys.Size();
+    }
     for (usize i = 0; i < data->outbox.changes.Size(); ++i)
     {
         const SubscriptionChange& change = data->outbox.changes[i];
         if (change.add)
         {
+            if (subscriptions >= kMaxSubscriptionsPerPartition)
+            {
+                if (!data->subscription_limit_logged)
+                {
+                    data->subscription_limit_logged = true;
+                    data->log.Add(ScriptLogLevel::Error, "script runtime", 0,
+                                  "a partition reached its event subscription limit; further ones are refused");
+                }
+                continue;
+            }
             Subscribe(&data->groups, change.name.View(), change.key);
+            ++subscriptions;
         }
         else
         {
@@ -484,17 +685,18 @@ void ScriptRuntime::Impl::DeliverEvents(PartitionLease* lease, PartitionData* da
             continue;
         }
         const usize g = LowerBoundGroup(data->groups, event.name.View());
-        if (g == data->groups.Size() || data->groups[g].name.View() != event.name.View())
-        {
-            continue;
-        }
-        const Vector<u64>& keys = data->groups[g].keys;
+        const bool has_group = g < data->groups.Size() && data->groups[g].name.View() == event.name.View();
         usize first = 0;
-        usize last = keys.Size();
-        if (event.target_key != 0)
+        usize last = 0;
+        if (has_group)
         {
-            first = LowerBoundKey(keys, event.target_key);
-            last = first < keys.Size() && keys[first] == event.target_key ? first + 1 : first;
+            const Vector<u64>& keys = data->groups[g].keys;
+            last = keys.Size();
+            if (event.target_key != 0)
+            {
+                first = LowerBoundKey(keys, event.target_key);
+                last = first < keys.Size() && keys[first] == event.target_key ? first + 1 : first;
+            }
         }
         for (usize k = first; k < last; ++k)
         {
@@ -504,7 +706,7 @@ void ScriptRuntime::Impl::DeliverEvents(PartitionLease* lease, PartitionData* da
             while (lo < hi)
             {
                 const usize mid = (lo + hi) / 2;
-                if (instances[data->members[mid]].key < keys[k])
+                if (instances[data->members[mid]].key < data->groups[g].keys[k])
                 {
                     lo = mid + 1;
                 }
@@ -513,7 +715,7 @@ void ScriptRuntime::Impl::DeliverEvents(PartitionLease* lease, PartitionData* da
                     hi = mid;
                 }
             }
-            if (lo == data->members.Size() || instances[data->members[lo]].key != keys[k])
+            if (lo == data->members.Size() || instances[data->members[lo]].key != data->groups[g].keys[k])
             {
                 continue;
             }
@@ -536,6 +738,40 @@ void ScriptRuntime::Impl::DeliverEvents(PartitionLease* lease, PartitionData* da
             if (!outcome.IsOk() && !in.failed)
             {
                 Fail(data, &in, "an event handler", outcome);
+            }
+            else if (outcome.IsOk())
+            {
+                Park(lease, data, &in, out, true);
+            }
+        }
+        // Coroutines waiting for this event: the ones for this entity, or every one for a broadcast.
+        if (data->event_waiters.Size() != 0)
+        {
+            Vector<Waiter> woken;
+            Vector<Waiter> keep;
+            for (usize i = 0; i < data->event_waiters.Size(); ++i)
+            {
+                Waiter& w = data->event_waiters[i];
+                const bool match = w.kind == WaitRequest::Kind::Event && w.event.View() == event.name.View() &&
+                                   (event.target_key == 0 || event.target_key == w.key);
+                Instance* target = match ? FindInstance(data, w.key) : nullptr;
+                if (match && target != nullptr && target->notified_enabled && !target->failed)
+                {
+                    woken.Push(Move(w));
+                }
+                else
+                {
+                    keep.Push(Move(w));
+                }
+            }
+            data->event_waiters = Move(keep);
+            for (usize i = 0; i < woken.Size(); ++i)
+            {
+                Value values[2] = {event.payload, event.sender_key != 0
+                                                      ? Value::FromEntity(ecs::Entity::FromU64(event.sender_key))
+                                                      : Value()};
+                data->outbox.chain = event.chain + 1;
+                Resume(lease, data, context, woken[i], Span<const Value>(values, 2));
             }
         }
     }
@@ -578,9 +814,11 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     context.log = &data.log;
     context.events = &data.outbox;
     data.outbox.chain = 0;
+    data.outbox.weight = 0;
     ScopedPartitionContext scope(&context);
     if (!destroys_only)
     {
+        WakeTimers(&lease, &data, &context, p);
         DeliverEvents(&lease, &data, &context, world, p);
     }
     for (usize k = 0; k < data.members.Size(); ++k)
@@ -648,6 +886,7 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
             run(&job, 0, count);
         }
     }
+    usize waiting = 0;
     for (u32 p = 0; p < count; ++p)
     {
         const ScriptRuntimeStats& d = partitions[p]->stats;
@@ -660,8 +899,11 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
         stats.disabled_by_error += d.disabled_by_error;
         stats.skipped_partitions += d.skipped_partitions;
         stats.events_delivered += d.events_delivered;
+        stats.waits_resumed += d.waits_resumed;
+        waiting += partitions[p]->waiters.Size() + partitions[p]->event_waiters.Size();
         stats.events_emitted += bus.Accept(&partitions[p]->outbox);
     }
+    stats.coroutines_waiting = waiting;
     {
         Vector<LogBuffer*> logs;
         for (u32 p = 0; p < count; ++p)

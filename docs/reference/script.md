@@ -2263,6 +2263,51 @@ inline constexpr usize kMaxEventsPerPartition;
 
 The most events one partition may emit in one tick (a script that exceeds it gets an error).
 
+## `kMaxSubscriptionChangesPerPartition` {#script-kmaxsubscriptionchangesperpartition}
+
+`variable script::kMaxSubscriptionChangesPerPartition` — defined in `engine/script/event_bus.h`
+
+```cpp
+inline constexpr usize kMaxSubscriptionChangesPerPartition;
+```
+
+The most subscription changes one partition may make in one tick.
+
+## `kMaxSubscriptionsPerPartition` {#script-kmaxsubscriptionsperpartition}
+
+`variable script::kMaxSubscriptionsPerPartition` — defined in `engine/script/event_bus.h`
+
+```cpp
+inline constexpr usize kMaxSubscriptionsPerPartition;
+```
+
+The most subscriptions (instance and event name pairs) one partition keeps; further ones are refused and logged.
+
+## `kMaxEventPayloadWeight` {#script-kmaxeventpayloadweight}
+
+`variable script::kMaxEventPayloadWeight` — defined in `engine/script/event_bus.h`
+
+```cpp
+inline constexpr u64 kMaxEventPayloadWeight;
+```
+
+The most payload weight (nodes, plus one per 16 bytes of text or bytes) one partition may emit in one tick.
+
+## `EventPayloadWeight(const Value&)` {#script-eventpayloadweight-const-value-amp}
+
+`function script::EventPayloadWeight` — defined in `engine/script/event_bus.h`
+
+```cpp
+u64 EventPayloadWeight(const Value& payload);
+```
+
+The weight of a payload for the per-tick budget: one per node, plus one per 16 bytes of text or blob.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Thread-safety | thread-safe. |
+
 ## `EventRecord` {#script-eventrecord}
 
 `struct script::EventRecord` — defined in `engine/script/event_bus.h`
@@ -2406,6 +2451,16 @@ Vector<SubscriptionChange> changes;
 ```
 
 The subscription changes in the order made.
+
+### `weight` {#script-eventoutbox-weight}
+
+`variable script::EventOutbox::weight` — defined in `engine/script/event_bus.h`
+
+```cpp
+u64 weight;
+```
+
+The payload weight emitted so far this tick (see [`script::kMaxEventPayloadWeight`](#script-kmaxeventpayloadweight)).
 
 ### `chain` {#script-eventoutbox-chain}
 
@@ -3846,6 +3901,26 @@ u64 events_delivered;
 
 Handler calls made for delivered events.
 
+### `waits_resumed` {#script-scriptruntimestats-waits-resumed}
+
+`variable script::ScriptRuntimeStats::waits_resumed` — defined in `engine/script/script_runtime.h`
+
+```cpp
+u64 waits_resumed;
+```
+
+Waiting coroutines resumed.
+
+### `coroutines_waiting` {#script-scriptruntimestats-coroutines-waiting}
+
+`variable script::ScriptRuntimeStats::coroutines_waiting` — defined in `engine/script/script_runtime.h`
+
+```cpp
+u64 coroutines_waiting;
+```
+
+Coroutines waiting now (after the last phase).
+
 ## `ScriptRuntimeConfig` {#script-scriptruntimeconfig}
 
 `struct script::ScriptRuntimeConfig` — defined in `engine/script/script_runtime.h`
@@ -3920,6 +3995,16 @@ u32 log_limit;
 ```
 
 Log messages one script may add per partition per tick (setting `script.log_limit`); 0 is no limit.
+
+### `coroutine_limit` {#script-scriptruntimeconfig-coroutine-limit}
+
+`variable script::ScriptRuntimeConfig::coroutine_limit` — defined in `engine/script/script_runtime.h`
+
+```cpp
+u32 coroutine_limit;
+```
+
+The most coroutines one partition keeps waiting (setting `script.coroutine_limit`); a call that would suspend past it is abandoned and fails.
 
 ### `event_chain_limit` {#script-scriptruntimeconfig-event-chain-limit}
 
@@ -4745,6 +4830,22 @@ Calls `function_path` in the partition's state and records the call in the parti
 | Returns | the outcome of [`script::State::Call`](#script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star); when the partition has no state, the failure of making one. A reset invalidates [`script::State`](#script-state) pointers and the coroutine ids of suspended calls of the old state (a `Resume` of one answers `Invalid`). |
 | Aborts | the lease is not valid. |
 | Ownership | as `State::Call`. |
+
+### `Resume(u64,Span<const Value>,const Budget&,CallOutput*)` {#script-partitionlease-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star}
+
+`method script::PartitionLease::Resume` — defined in `engine/script/script_world.h`
+
+```cpp
+Outcome Resume(u64 coroutine, Span<const Value> values, const Budget& budget, CallOutput* out);
+```
+
+Resumes a call that suspended (see [`script::CallOutput::coroutine`](#script-calloutput-coroutine)) with `values` as the result of its wait, and records the resume in the partition's counters; an `OutOfMemory` resume resets the partition like a call does.
+
+| Field | Value |
+|---|---|
+| Returns | the outcome of [`script::State::Resume`](#script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star); `Invalid` when the partition has no state. |
+| Aborts | the lease is not valid. |
+| Ownership | as `State::Resume`. |
 
 ### `Release()` {#script-partitionlease-release}
 

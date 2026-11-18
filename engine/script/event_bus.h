@@ -19,6 +19,21 @@ inline constexpr usize kMaxEventNameBytes = 64;
 /// The most events one partition may emit in one tick (a script that exceeds it gets an error).
 inline constexpr usize kMaxEventsPerPartition = usize{1} << 16;
 
+/// The most subscription changes one partition may make in one tick.
+inline constexpr usize kMaxSubscriptionChangesPerPartition = usize{1} << 16;
+
+/// The most subscriptions (instance and event name pairs) one partition keeps; further ones are refused and logged.
+inline constexpr usize kMaxSubscriptionsPerPartition = usize{1} << 18;
+
+/// The most payload weight (nodes, plus one per 16 bytes of text or bytes) one partition may emit in one tick.
+inline constexpr u64 kMaxEventPayloadWeight = u64{1} << 22;
+
+/// The weight of a payload for the per-tick budget: one per node, plus one per 16 bytes of text or blob.
+///
+/// - Thread-safety: thread-safe.
+/// - Fails: never.
+u64 EventPayloadWeight(const Value& payload);
+
 /// One event waiting for delivery or being delivered.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -63,6 +78,8 @@ struct EventOutbox
     Vector<EventRecord> events;
     /// The subscription changes in the order made.
     Vector<SubscriptionChange> changes;
+    /// The payload weight emitted so far this tick (see [[script::kMaxEventPayloadWeight]]).
+    u64 weight = 0;
     /// The chain depth stamped on events emitted now (the runtime sets it around each callback).
     u32 chain = 0;
 };

@@ -78,6 +78,12 @@ Outcome PartitionLease::Call(StringView function_path, Span<const Value> args, c
     return world_->CallIn(slot_, function_path, args, budget, out);
 }
 
+Outcome PartitionLease::Resume(u64 coroutine, Span<const Value> values, const Budget& budget, CallOutput* out)
+{
+    ENGINE_ASSERT(slot_ != nullptr, "PartitionLease::Resume: the lease is empty");
+    return world_->ResumeIn(slot_, coroutine, values, budget, out);
+}
+
 void PartitionLease::Release()
 {
     if (slot_ != nullptr)
@@ -229,6 +235,23 @@ Outcome ScriptWorld::CallIn(PartitionSlot* slot, StringView path, Span<const Val
     }
     const u64 start = os::MonotonicTimeNanos();
     Outcome result = slot->state->Call(path, args, budget, out);
+    return Settle(slot, Move(result), start);
+}
+
+Outcome ScriptWorld::ResumeIn(PartitionSlot* slot, u64 coroutine, Span<const Value> values, const Budget& budget,
+                              CallOutput* out)
+{
+    if (slot->state.Get() == nullptr)
+    {
+        return Outcome(Status::Invalid, "the partition has no state: the coroutine is gone");
+    }
+    const u64 start = os::MonotonicTimeNanos();
+    Outcome result = slot->state->Resume(coroutine, values, budget, out);
+    return Settle(slot, Move(result), start);
+}
+
+Outcome ScriptWorld::Settle(PartitionSlot* slot, Outcome result, u64 start)
+{
     slot->nanoseconds.FetchAdd(os::MonotonicTimeNanos() - start, MemoryOrder::Relaxed);
     slot->calls.FetchAdd(1, MemoryOrder::Relaxed);
     if (result.status == Status::BudgetExceeded)

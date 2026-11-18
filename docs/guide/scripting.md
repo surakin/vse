@@ -365,3 +365,39 @@ behavior('door', {
 
 The test `event_test.cpp` checks the one-tick latency, `once` and `off`, targeted events and the sender, the chain limit, cleanup on destroy, native emit and subscribe, a handler error, and equal
 state at 1, 2, 7 and 16 threads.
+
+## Latent waits
+
+A callback or a handler may wait without blocking any thread: `wait(seconds)`, `wait_frames(n)` and `wait_event(name)` (which returns the payload and the sender) suspend the call, and the engine
+resumes it in a later tick.
+
+```lua
+behavior('lamp', {
+  on_create = function(self)
+    wait(0.5)                              -- resumes at the first tick whose simulation time is 0.5 or more
+    self.on = true
+    local payload, sender = wait_event('switch')
+    after(2.0, function(me) me.on = false end)
+    every(1.0, function(me) --[[ once a second ]] end)
+    tween(0, 1, 0.5, 'out_quad', function(me, v) --[[ v from 0 to exactly 1 ]] end)
+  end,
+})
+```
+
+- **How it resumes.** A call that waits is a coroutine of the instance's partition state. The runtime keeps a wait list per partition; at the start of a partition's work it resumes the due timers in
+  `(wake time, entity id, creation order)`, then delivers the tick's events (a `wait_event` resumes when its event is delivered, with the payload and sender), then runs the lifecycle callbacks. Time
+  is the simulation clock (`sim_time`, the sum of the `dt` of the ticks run), so a wait never depends on real time or on the thread count. `wait_frames(n)` counts ticks.
+- **Cancel rules.** Destroying the entity (or removing its script component) drops its waiting coroutines without running another step; `on_destroy` and `on_disable` of a closing instance may not wait
+  (a wait there is dropped). A disabled instance's timers do not run down: they resume with the time they had left once it is enabled again. An event wait of a disabled instance is not kept. A state
+  reset (out of memory) drops the coroutines; there is no `on_cancel` call because the state is gone.
+- **Library helpers** (plain code over `wait`, in the behavior host): `spawn(fn)` starts `fn(self)` as a coroutine of the instance at the start of the next tick (through a private event, so it takes one
+  tick) and returns a handle; `stop(handle)` ends it the next time it would continue from a wait; `after(seconds, fn)`, `every(seconds, fn)` and `tween(from, to, seconds, easing, fn)` (easings `linear`,
+  `in_quad`, `out_quad`, `in_out_quad`; one call per tick, the last exactly `to`) are built on `spawn` and return its handle.
+- **Limits.** One partition keeps at most `ScriptRuntimeConfig::coroutine_limit` waiting coroutines (65,536; a call that would suspend past it fails with "too many waiting coroutines" and the instance
+  is disabled by `script.on_error`). A coroutine that never waits runs against the instruction budget like any call. A handler that waits delays the instance's other handlers for that event until it
+  finishes. Not built: `wait_all`, `wait_any` (use `spawn` and events), the timeout of `wait_event`, and `wait_task` (Day 461).
+- **Cost** (Linux x86-64, plain build): 100,000 entities each holding one waiting coroutine take about 160 ms a tick to run, nearly all of it the 100,000 `on_update` dispatches; the waits add the scan
+  of the wait list. About 2.7 KB of script state per such entity (instance table, coroutine and bookkeeping).
+
+The test `latent_test.cpp` checks timed and frame waits, `wait_event`, `after`, `every`, `stop` and `tween`, destroy, disable, the cap, the instruction budget of a coroutine that never waits, and equal
+state at 1, 2, 7 and 16 threads.
