@@ -211,6 +211,7 @@ module tools/docgen/ tools/docgen 14
 module tools/shader_mint/ tools/shader_mint 14
 module tools/net_probe/ tools/net_probe 14
 module tools/audio_probe/ tools/audio_probe 14
+module tools/script_api_doc/ tools/script_api_doc 14
 module tools/asset_mint/ tools/asset_mint 14
 # 14 resource_server (Phase 22 Day 331): serves a directory or a pak over TCP with asset::ResourceServer; a tool, above asset and net
 module tools/resource_server/ tools/resource_server 14
@@ -337,6 +338,7 @@ target shader_mint_lib tools/shader_mint
 target shader_mint tools/shader_mint
 target net_probe tools/net_probe
 target audio_probe tools/audio_probe
+target script_api_doc tools/script_api_doc
 target asset_mint tools/asset_mint
 target resource_server tools/resource_server
 target metal_mint tools/metal_mint

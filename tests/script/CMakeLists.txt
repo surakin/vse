@@ -11,6 +11,7 @@ set(SCRIPT_TEST_SOURCES
   backend_test.cpp  # Day 446
   backend_conformance_test.cpp  # Day 447
   luajit_backend_test.cpp  # Day 448
+  bindings_test.cpp  # Day 450
 )
 
 find_package(Threads REQUIRED)

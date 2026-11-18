@@ -46,6 +46,7 @@ tools/docgen        3,4
 game/net_demo       20
 tools/net_probe     20
 tools/audio_probe   26
+tools/script_api_doc 27
 tools/asset_mint    22
 tools/resource_server    22
 tools/signal_safety_check 7

@@ -502,6 +502,7 @@ add_subdirectory(tools/shared_state_check)  # Phase 23 Day 345: no public header
 add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
 add_subdirectory(tools/net_probe)  # Phase 20 Day 281
 add_subdirectory(tools/audio_probe)  # Phase 26 Day 425
+add_subdirectory(tools/script_api_doc)  # Phase 27 Day 450: docs/reference/script-api.md from the binding registry
 add_subdirectory(tools/crash_extract)
 add_subdirectory(tests/foundation)
 add_subdirectory(tests/jobs)

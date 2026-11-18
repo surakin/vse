@@ -881,6 +881,87 @@ const char kBootstrap[] = "local tripped = ...\n"
                           "end\n"
                           "co.running = nil\n";
 
+// The operators of the value types (Day 450): the tagged tables behave like the math types in scripts. Run once with
+// the five metatables as arguments, before the libraries become read-only views. Results of the operators carry the
+// same metatable, so they cross back into the engine as the same kind of value.
+const char kOperators[] =
+    "local V2, V3, V4, Q, E = ...\n"
+    "local setmt, type, error0, fmt, sqrt = setmetatable, type, error, string.format, math.sqrt\n"
+    "local concat = table.concat\n"
+    "local function bad(op, a, b)\n"
+    "  error0('attempt to ' .. op .. ' ' .. (type(a) == 'table' and 'a value' or type(a)) .. ' and ' ..\n"
+    "         (type(b) == 'table' and 'a value' or type(b)), 3)\n"
+    "end\n"
+    "local function common(mt, F, name)\n"
+    "  local n = #F\n"
+    "  mt.__eq = function(a, b)\n"
+    "    for i = 1, n do local f = F[i] if a[f] ~= b[f] then return false end end\n"
+    "    return true\n"
+    "  end\n"
+    "  mt.__tostring = function(a)\n"
+    "    local parts = {}\n"
+    "    for i = 1, n do parts[i] = fmt('%g', a[F[i]]) end\n"
+    "    return name .. '(' .. concat(parts, ', ') .. ')'\n"
+    "  end\n"
+    "  mt.__metatable = false\n"
+    "end\n"
+    "local function vector(mt, F, name)\n"
+    "  local n = #F\n"
+    "  common(mt, F, name)\n"
+    "  local function pair(op, fn)\n"
+    "    return function(a, b)\n"
+    "      if type(a) ~= 'table' or type(b) ~= 'table' then bad(op, a, b) end\n"
+    "      local r = {}\n"
+    "      for i = 1, n do local f = F[i] r[f] = fn(a[f], b[f]) end\n"
+    "      return setmt(r, mt)\n"
+    "    end\n"
+    "  end\n"
+    "  mt.__add = pair('add', function(x, y) return x + y end)\n"
+    "  mt.__sub = pair('subtract', function(x, y) return x - y end)\n"
+    "  local mul = pair('multiply', function(x, y) return x * y end)\n"
+    "  mt.__mul = function(a, b)\n"
+    "    local r = {}\n"
+    "    if type(a) == 'number' and type(b) == 'table' then\n"
+    "      for i = 1, n do local f = F[i] r[f] = a * b[f] end\n"
+    "    elseif type(b) == 'number' and type(a) == 'table' then\n"
+    "      for i = 1, n do local f = F[i] r[f] = a[f] * b end\n"
+    "    else\n"
+    "      return mul(a, b)\n"
+    "    end\n"
+    "    return setmt(r, mt)\n"
+    "  end\n"
+    "  mt.__div = function(a, b)\n"
+    "    if type(a) ~= 'table' or type(b) ~= 'number' then bad('divide', a, b) end\n"
+    "    local r = {}\n"
+    "    for i = 1, n do local f = F[i] r[f] = a[f] / b end\n"
+    "    return setmt(r, mt)\n"
+    "  end\n"
+    "  mt.__unm = function(a)\n"
+    "    local r = {}\n"
+    "    for i = 1, n do local f = F[i] r[f] = -a[f] end\n"
+    "    return setmt(r, mt)\n"
+    "  end\n"
+    "end\n"
+    "vector(V2, {'x', 'y'}, 'vec2')\n"
+    "vector(V3, {'x', 'y', 'z'}, 'vec3')\n"
+    "vector(V4, {'x', 'y', 'z', 'w'}, 'vec4')\n"
+    "common(Q, {'x', 'y', 'z', 'w'}, 'quat')\n"
+    "common(E, {'index', 'generation'}, 'entity')\n"
+    "Q.__mul = function(a, b)\n"
+    "  if type(a) ~= 'table' or type(b) ~= 'table' then bad('multiply', a, b) end\n"
+    "  if b.w == nil then\n"
+    "    -- rotate the vec3 b by the quaternion a: v + 2w(q x v) + 2 q x (q x v)\n"
+    "    local qx, qy, qz, w = a.x, a.y, a.z, a.w\n"
+    "    local cx, cy, cz = qy * b.z - qz * b.y, qz * b.x - qx * b.z, qx * b.y - qy * b.x\n"
+    "    local dx, dy, dz = qy * cz - qz * cy, qz * cx - qx * cz, qx * cy - qy * cx\n"
+    "    return setmt({ x = b.x + 2 * (w * cx + dx), y = b.y + 2 * (w * cy + dy), z = b.z + 2 * (w * cz + dz) }, V3)\n"
+    "  end\n"
+    "  return setmt({ x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,\n"
+    "                 y = a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,\n"
+    "                 z = a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,\n"
+    "                 w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z }, Q)\n"
+    "end\n";
+
 void OpenLibs(lua_State* L, Request* r)
 {
     lua_newtable(L);
@@ -957,6 +1038,15 @@ void OpenLibs(lua_State* L, Request* r)
     }
     lua_pushcfunction(L, &TrippedFunction);
     lua_call(L, 1, 0);
+    if (luaL_loadbuffer(L, kOperators, CStrLength(kOperators), "=operators") != 0)
+    {
+        lua_error(L);
+    }
+    for (int t = kTagVec2; t <= kTagEntity; ++t)
+    {
+        lua_getfield(L, LUA_REGISTRYINDEX, kTagNames[t]);
+    }
+    lua_call(L, 5, 0);
     // The libraries become read-only views (their real tables stay in the registry only through the views).
     static const char* const libraries[] = {"string", "math", "table", "bit", "coroutine"};
     for (const char* name : libraries)

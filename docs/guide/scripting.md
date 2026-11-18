@@ -106,3 +106,30 @@ files of that directory include LuaJIT's headers (`luajit_boundary_check`).
 - **Patterns:** `string.find`, `match`, `gmatch` and `gsub` are the Lua 5.1 matcher with a step limit (4 million steps per call); a backtracking pattern ends with a
   `pattern too complex` error in milliseconds instead of running for a minute inside one C call.
 - **Bounds on what leaves Lua:** a value copies at most 16 MiB of text, blobs and keys in total.
+
+## Bindings
+
+`script::BindingRegistry` (`engine/script/bindings.h`) is how engine functions become script functions. A binding is one typed C++ function:
+
+```cpp
+f32 Clamp(f32 x, f32 lo, f32 hi);
+registry.Add<&Clamp>("num", "clamp", script::ThreadRule::Pure, "x, lo, hi", "Limits `x` to the range `lo` to `hi`.");
+```
+
+The registry derives everything from the signature: the argument checks and conversions (`f32`, `f64`, `i32`, `i64`, `bool`, `StringView`, `Vec2`, `Vec3`, `Vec4`, `Quaternion`, `ecs::Entity`, `Value`; a result of
+any of them or `void`), the error messages, the signature text and the documentation page [`script-api.md`](../reference/script-api.md), which `tools/script_api_doc` renders and the ctest
+`docs_script_api` keeps current. The function's stable id is a hash of `ns.name`; two bindings with the same id are refused. Names are lower case (`num.clamp`), and a namespace must not be the name
+of one of Lua's libraries (`math`, `string`, `table`): registering it would replace the library.
+
+- **Bad calls are script errors.** A wrong argument count or type is a `RuntimeError` naming the function and the argument (`test.add3: argument 2 (b): expected f32, got text`); the function
+  is not called, and the script can `pcall` it.
+- **Entity handles are checked.** An `Entity` is an index and a generation, never a pointer. The state's `EntityCheck` says whether the world still holds it; a dead handle fails every call
+  (`the entity 7:1 no longer exists`), including one the script kept in a table or a global. A handle nested inside a `Value` is not checked; the function that uses it must.
+- **Every binding states a thread rule:** `Pure` (any state, any thread), `WorldRead` (the tick-start view), `WorldWrite` (the command buffer), `MainThreadOnly`. `Add` refuses an unmarked binding.
+- **Installing:** `registry.Install(state, profile, &error)` registers the bindings the profile allows. `InstallProfile::Main` installs all; `Partition` installs all, but a `MainThreadOnly` function
+  raises `... is main-thread-only and cannot be called from a partition job`; `Task` installs only `Pure` ones (the task state of Day 461 has no world access). Installing only reads the
+  registry, so many threads may install into their own states at once. The returned `Installation` holds the records the state's native functions point at and must outlive the state.
+- **Value types in scripts.** A vector, quaternion or entity is a table tagged with a metatable (the Day 448 representation), not a userdata or cdata. The reason: `ffi` is removed from the sandbox,
+  userdata cannot be built from Lua without it, and a tagged table round trips as a `Value` without a registry of handles. The metatables carry `+`, `-`, unary `-`, `*` (by a number, componentwise,
+  quaternion times quaternion, quaternion times vec3 rotates), `/` (by a number), `==` and `tostring` (`vec3(1, 2, 3)`); `getmetatable` returns `false`, so a script cannot change them.
+  The cost is a table per value; a script that makes millions of vectors a frame should use the `vec3.*` functions on scalars or the engine's batch bindings (later days).
