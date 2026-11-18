@@ -229,6 +229,13 @@ or format with the C library (`tools/signal_safety_check` enforces it).
 New modules are added to `docs/reference/modules.txt` in the same day.
 Planning-only commits are exempt, as are days that change no public header.
 
+## Tutorials and user-facing guides wait for the phase to be done (required, 2026-11-19)
+
+**Do not write tutorials, getting-started material, glossaries, troubleshooting pages or other user-friendly narrative documentation for a phase that is still in progress.** The design keeps changing until the phase closes, so
+that writing is wasted. What stays per day is exactly what the section above lists: `///` comments on public headers, `docgen lint` at zero, the regenerated `docs/reference/`, and the reference-style updates to the module's guide page
+(the facts of the new API, kept correct). The phase's **last day** (or a documentation day the phase plan names) writes the tutorial, the mental-model introduction and the compiling samples, and a phase is not complete without them.
+A plan for a phase puts that work in its closing day file; a day file does not ask for tutorials before that.
+
 ## Code style: clang-format decides (required)
 
 `.clang-format` is the style: **Allman braces** (every `{` on its own line: functions, classes, enums, namespaces, control flow), **every `if`, `else`, `for`, `while`
