@@ -414,6 +414,7 @@ test:engine_c_scene*                            24   # a C program with its own 
 test:engine_c_physics*                          25   # a C program puts bodies and colliders in a world, steps them with frame, pushes them and casts rays through the table (Phase 25 Day 408)
 test:engine_c_audio*                            26   # a C program plays host-supplied clips through the host-driven audio of the table and renders the mix itself (Phase 26 Day 438)
 testopt:physics_bench_large                     25   # only in a Release or RelWithDebInfo build: the stress run, 50000 bodies and a million steps, state checked (Phase 25 Day 413)
+testopt:audio_bench_large                       26   # only in a Release or RelWithDebInfo build: two million blocks of a looping scene with random parameter changes, output checked (ten million by hand) (Phase 26 Day 442)
 test:physics_demo_screenshot                    25   # random shapes falling onto a floor through the ECS, drawn offscreen
 test:engine_c_offscreen*                          24   # a C program with no window system makes off-screen surfaces, draws a world on them, resizes, reads the pictures back and destroys them with a read-back waiting (Phase 24 Day 378)
 test:engine_c_acceptance_scene*                      24   # the meadow and three robots through an off-screen surface, every slot in its own material (Phase 24 Day 383)

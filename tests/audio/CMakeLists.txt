@@ -27,6 +27,7 @@ set(AUDIO_TEST_SOURCES
   stream_test.cpp  # Day 435
   music_test.cpp  # Day 436
   snapshot_test.cpp  # Day 437
+  stress_test.cpp  # Day 442
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 

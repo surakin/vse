@@ -195,6 +195,7 @@ module game/renderer_demo/ game/renderer_demo 14
 module game/rhi_bench/ game/rhi_bench 14
 module game/ecs_bench/ game/ecs_bench 14
 module game/physics_bench/ game/physics_bench 14
+module game/audio_bench/ game/audio_bench 14
 module game/physics_demo/ game/physics_demo 14
 module game/spatial_demo/ game/spatial_demo 14
 module game/storage_demo/ game/storage_demo 14
@@ -312,6 +313,7 @@ target rhi_demo game/rhi_demo
 target rhi_bench game/rhi_bench
 target ecs_bench game/ecs_bench
 target physics_bench game/physics_bench
+target audio_bench game/audio_bench
 target physics_demo_lib game/physics_demo
 target physics_demo game/physics_demo
 target spatial_demo game/spatial_demo

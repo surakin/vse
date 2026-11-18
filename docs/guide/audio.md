@@ -474,6 +474,38 @@ in callbacks of 64, 256 and 1,024 frames renders the same samples as whole block
 one core (2.8 microseconds per voice-block), Hermite 16 percent (3.3), sinc 31 percent (6.5); a reverb and a delay on the master
 add under 1 percent.
 
+## Cost and limits
+
+Measured by `game/audio_bench` (Release, Clang, Linux, AMD Ryzen 9 7950X3D, one thread, stereo output at 48 kHz, 256-frame blocks, so a
+5.33 ms deadline; Day 442). Every voice loops a mono clip with a random pan and pitch, and every voice is mixed (the mixer does not
+virtualise by itself: `AudioSystem` ranks emitters and makes the quiet ones virtual).
+
+| Scene | 100 voices | 1,000 voices | 4,000 voices |
+|---|---|---|---|
+| linear resampler | 0.28 ms (5%) | 2.73 ms (51%) | 10.96 ms (206%) |
+| Hermite (default) | 0.32 ms (6%) | 3.24 ms (61%) | 13.01 ms (244%) |
+| sinc16 | 0.58 ms (11%) | 6.10 ms (114%) | 25.03 ms (469%) |
+
+A voice costs about 2.7, 3.2 and 6.1 microseconds per block for the three resamplers; the cost is linear in the voices mixed. With
+1,000 Hermite voices: two filters on their bus add nothing measurable (3.25 ms), a reverb send 3.39 ms, directional 5.1 panning
+3.53 ms; 100 streams (refill included, one worker) 0.26 ms. The worst block of every scene is within 10 percent of its mean except
+when the machine is busy, so a callback has the headroom the table shows: **1,000 Hermite voices fit one core with 39 percent of the
+deadline to spare; a game that wants more than that should let `AudioSystem` virtualise** (the default is 256 mixed voices, about 16
+percent of the deadline). `audio_bench --voices N --blocks N --scene voices|filters|reverb|surround|streams` runs them.
+
+Checks that run in CI: the `[perf]` smoke (200 voices, 100 blocks, a bound of 50 ms a block in every flavor), the `[stress]` cases (ten
+thousand random commands from four threads, serialized one at a time as the contract asks, against a running audio thread, checking
+every sample is finite; a clip of every length from 1 to 4,096 frames at eight rates from 8 to 384 kHz plays to its end) and
+`audio_bench_large` (Release only: two million blocks of 48 looping voices with a random command each block and the limiter on,
+output checked in every block; the ten million block run is `audio_bench --scene large --long-blocks 10000000`).
+
+**Limits.** At most `kMaxVoices` (4,096) voices in a mixer and `kMaxBuses` (32) buses with four inserts each; the sample-rate range
+is 8 to 384 kHz; a clip is `f32` in memory (4 bytes a sample: a minute of 48 kHz stereo is 23 MB, so long clips stream or stay
+Ogg); occlusion is a ray test against the physics world and cannot see diffraction (sound does not bend around a corner).
+**Not built:** HRTF and binaural rendering, ambisonics, MIDI, synthesis, voice chat, a loudness-normalised mixer. The memory per
+voice and per stream was not measured separately (the mixer allocates its pool, buses and effects when it is created and nothing on
+the audio thread; `KNOWN-ISSUES.md`).
+
 ## Where the tests are
 
 `tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,

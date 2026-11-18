@@ -8,6 +8,8 @@ with progress.
 
 Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 
+**Phase 26 Day 442 done (2026-11-18, Linux): benchmarks, stress and limits.** `game/audio_bench` (1,000 Hermite voices 3.24 ms of the 5.33 ms deadline), `tests/audio/stress_test.cpp` (perf smoke, four-thread command stress, every clip length and rate), `audio_bench_large` (Release), "Cost and limits" in the guide. Runs: plain `ran 3860 of 10353 tests (phases: all; flavors: plain; ...)`, asan `ran 3163 of 10353`, tsan `ran 2818 of 10353`; only the known failures. Next: Day 443 (closing).
+
 **Physics demo (2026-11-17):** `game/physics_demo` (C++, ECS: shapes with `MeshRenderer`/`RigidBody`/`Collider`, one schedule for the physics step,
 transforms, camera and render sync) shows random boxes, spheres and capsules falling onto a floor in a tray; window or `--screenshot`; ctest
 `physics_demo_screenshot` (label `gpu;demo`). Built clean in unity and `-DENGINE_UNITY_BUILD=OFF`; gates (module_deps, std_usage, platform_neutral,
