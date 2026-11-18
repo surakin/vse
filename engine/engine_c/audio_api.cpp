@@ -755,7 +755,7 @@ engine_status AudioAddStream(AudioHost* host, Runtime* runtime, UniquePtr<audio:
     return ENGINE_OK;
 }
 
-engine_status AudioResolveBoth(engine_handle engine, AudioHost** host, Runtime** runtime)
+engine_status AudioResolveBoth(engine_handle engine, AudioHost** host, Runtime** runtime, AudioHostPtr* keep)
 {
     *host = nullptr;
     *runtime = nullptr;
@@ -764,7 +764,12 @@ engine_status AudioResolveBoth(engine_handle engine, AudioHost** host, Runtime**
     {
         return status;
     }
-    *host = (*runtime)->audio_host.Load(MemoryOrder::Acquire);
+    {
+        // The share is taken under the lock `audio_close` takes, so the host outlives the call.
+        LockGuard<Mutex> lock((*runtime)->audio_mutex);
+        *keep = (*runtime)->audio_owner;
+    }
+    *host = keep->Get();
     return *host == nullptr ? Fail(ENGINE_ERROR_NOT_READY, "audio is not open") : ENGINE_OK;
 }
 
@@ -820,7 +825,7 @@ engine_status AudioStreamOpenClipFn(engine_handle engine, u64 clip, u64* out_str
     AudioHostPtr keep;
     AudioHost* host = nullptr;
     Runtime* runtime = nullptr;
-    const engine_status status = AudioResolveBoth(engine, &host, &runtime);
+    const engine_status status = AudioResolveBoth(engine, &host, &runtime, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -849,7 +854,7 @@ engine_status AudioStreamOpenFn(engine_handle engine, const engine_audio_stream_
     AudioHostPtr keep;
     AudioHost* host = nullptr;
     Runtime* runtime = nullptr;
-    engine_status status = AudioResolveBoth(engine, &host, &runtime);
+    engine_status status = AudioResolveBoth(engine, &host, &runtime, &keep);
     if (status != ENGINE_OK)
     {
         return status;
