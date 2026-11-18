@@ -202,6 +202,16 @@ TEST_CASE("Expr: the language runs programs", "[script][expr]")
     CHECK(out.results[2].Equals(Value::FromFloat(3.5)));
     CHECK(out.results[3].Equals(Value::FromInt(3)));
     CHECK(out.results[4].Equals(Value::FromBool(true)));
+    REQUIRE(
+        state
+            ->Load(
+                "w",
+                "def w1()\n  wait_frames(1000000.0 * 1000000.0 * 1000000.0)\nend\ndef w2()\n  wait(1 / 0)\nend\ndef w3()\n  wait_frames(4294967296)\nend\n")
+            .IsOk());
+    for (const char* fn : {"w1", "w2", "w3"})
+    {
+        CHECK(state->Call(fn, Span<const Value>(), Budget(), &out).status == Status::RuntimeError);
+    }
     const Outcome overflow = state->Load("deep", "def r()\n  return r()\nend\nr()");
     CHECK(overflow.status == Status::RuntimeError);
     CHECK(overflow.message.View().Contains("stack overflow"));

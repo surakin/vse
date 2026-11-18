@@ -1585,9 +1585,10 @@ ExprState::RunResult ExprState::Run(Coroutine* co, const Budget& budget, Vector<
                 }
                 else
                 {
-                    if (!arg.IsNumber() || !(arg.ToDouble() >= 0.0))
+                    if (!arg.IsNumber() || !(arg.ToDouble() >= 0.0) ||
+                        arg.ToDouble() > (is_frames ? 4294967295.0 : 1.0e12))
                     {
-                        EXPR_FAIL(Status::RuntimeError, "a wait needs a number that is not negative");
+                        EXPR_FAIL(Status::RuntimeError, "a wait needs a finite number in range that is not negative");
                     }
                     wait->seconds = is_seconds ? arg.ToDouble() : 0.0;
                     wait->frames = is_frames ? static_cast<u32>(arg.ToDouble()) : 0;
