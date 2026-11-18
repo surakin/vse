@@ -36,6 +36,16 @@ void RegisterScriptSettings(settings::Registry* registry)
     seed.flags = settings::kRestartRequired;
     registry->Register(seed);
 
+    settings::SettingDesc log_limit = settings::MakeInt("script.log_limit", 64, 0, 1000000);
+    log_limit.env = "ENGINE_SCRIPT_LOG_LIMIT";
+    log_limit.flag = "script-log-limit";
+    log_limit.label = "Script log limit";
+    log_limit.description =
+        "how many log.* messages one script may write per tick (0: no limit); the rest are dropped and counted in one "
+        "warning, so a script cannot flood the log";
+    log_limit.group = "script";
+    registry->Register(log_limit);
+
     settings::SettingDesc partitions = settings::MakeInt("script.partitions", 64, 1, 1024);
     partitions.env = "ENGINE_SCRIPT_PARTITIONS";
     partitions.flag = "script-partitions";
@@ -117,6 +127,12 @@ bool ScriptConflictsAreErrors(const settings::Registry& registry)
         }
     }
     return false;
+}
+
+u32 ScriptLogLimit(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.log_limit"));
+    return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 64u;
 }
 
 u32 ScriptPartitions(const settings::Registry& registry)

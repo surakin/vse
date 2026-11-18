@@ -120,6 +120,39 @@ struct CallOutput
     bool Suspended() const { return wait.kind != WaitRequest::Kind::None; }
 };
 
+/// Where the script that called a native function is: its chunk name and line.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct SourceLocation
+{
+    /// The chunk name, cut to fit and always ended with a zero.
+    char chunk[48] = {};
+    /// The line, 0 when unknown.
+    u32 line = 0;
+};
+
+/// A backend's way to answer "where is the caller": called only while a native function runs on this thread.
+///
+/// - Returns: whether `out` was filled.
+using SourceLocationFn = bool (*)(void* context, SourceLocation* out);
+
+/// Publishes (or, with a null `fn`, withdraws) the caller-location provider for the current thread. A backend sets it
+/// around each native call it makes, so a binding such as `log.info` can name the script and line; the provider is
+/// asked only on demand, so the calls that do not ask pay for two stores.
+///
+/// - Thread-safety: thread-safe (a per-thread slot).
+/// - Ownership: borrows `context`, which must live until the provider is withdrawn.
+/// - Fails: never.
+void SetCallerLocationProvider(SourceLocationFn fn, void* context);
+
+/// Asks the provider of the current thread where the running native function was called from.
+///
+/// - Returns: whether a location was found; false outside a native call or when the backend has no provider.
+/// - Ownership: fills `out`, which the caller owns.
+/// - Thread-safety: thread-safe (a per-thread slot).
+/// - Fails: false, as described.
+bool CurrentCallerLocation(SourceLocation* out);
+
 /// A function the engine registers into a state for scripts to call.
 ///
 /// It receives the pointer given to [[State::RegisterFunction]], copies of the call's arguments and an empty list to

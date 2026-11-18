@@ -9,8 +9,8 @@
 namespace engine_placeholder::script
 {
 
-/// Declares the script settings: the backend, the budget mode, the random seed, the partition count and the partition
-/// memory cap.
+/// Declares the script settings: the backend, the budget mode, the random seed, the log limit, the partition count and
+/// the partition memory cap.
 ///
 /// They are `script.backend` (text, default `luajit`), `script.budget` (`budgeted` or `trusted`, default `budgeted`)
 /// and `script.random_seed` (default 1). Each has an environment variable (`ENGINE_SCRIPT_BACKEND`,
@@ -55,6 +55,13 @@ u32 ScriptRandomSeed(const settings::Registry& registry);
 /// - Returns: true for `error`.
 /// - Fails: never.
 bool ScriptConflictsAreErrors(const settings::Registry& registry);
+
+/// Reads `script.log_limit`: how many `log.*` messages one script may write per tick.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 64.
+/// - Returns: the limit; 0 is no limit.
+/// - Fails: never.
+u32 ScriptLogLimit(const settings::Registry& registry);
 
 /// Reads `script.partitions`: how many partitions a script world has.
 ///

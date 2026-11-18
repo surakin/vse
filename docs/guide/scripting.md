@@ -116,7 +116,7 @@ f32 Clamp(f32 x, f32 lo, f32 hi);
 registry.Add<&Clamp>("num", "clamp", script::ThreadRule::Pure, "x, lo, hi", "Limits `x` to the range `lo` to `hi`.");
 ```
 
-The registry derives everything from the signature: the argument checks and conversions (`f32`, `f64`, `i32`, `i64`, `bool`, `StringView`, `Vec2`, `Vec3`, `Vec4`, `Quaternion`, `ecs::Entity`, `Value`; a result of
+The registry derives everything from the signature: the argument checks and conversions (`f32`, `f64`, `i32`, `i64`, `bool`, `StringView`, `Vec2`, `Vec3`, `Vec4`, `Quaternion`, `Mat4` (an array of 16 numbers, column-major), `ecs::Entity`, `Value`; a result of
 any of them or `void`), the error messages, the signature text and the documentation page [`script-api.md`](../reference/script-api.md), which `tools/script_api_doc` renders and the ctest
 `docs_script_api` keeps current. The function's stable id is a hash of `ns.name`; two bindings with the same id are refused. Names are lower case (`num.clamp`), and a namespace must not be the name
 of one of Lua's libraries (`math`, `string`, `table`): registering it would replace the library.
@@ -133,6 +133,27 @@ of one of Lua's libraries (`math`, `string`, `table`): registering it would repl
   userdata cannot be built from Lua without it, and a tagged table round trips as a `Value` without a registry of handles. The metatables carry `+`, `-`, unary `-`, `*` (by a number, componentwise,
   quaternion times quaternion, quaternion times vec3 rotates), `/` (by a number), `==` and `tostring` (`vec3(1, 2, 3)`); `getmetatable` returns `false`, so a script cannot change them.
   The cost is a table per value; a script that makes millions of vectors a frame should use the `vec3.*` functions on scalars or the engine's batch bindings (later days).
+
+## Math, random, log and time
+
+`RegisterStandardBindings` installs the bindings every script has; all are `pure` (they read their arguments and the running job's own `PartitionContext`, nothing shared), so a task state gets them too.
+
+- **Math.** `num` (`clamp`, `lerp`, `sqrt`, `sign`, `smoothstep`, `approach`; the name `math` belongs to Lua's library), `vec2`, `vec3`, `vec4` (`new`, `dot`, `length`, `normalize`, `lerp`, `vec3` also `cross` and
+  `distance`), `quat` (`identity`, `from_axis_angle`, `from_euler(x, y, z)` (x first), `slerp`, `mul`, `conjugate`, `normalize`, `rotate`) and `mat4` (`identity`, `from_trs`, `mul`, `transpose`, `transform_point`,
+  `transform_direction`, `look_at(eye, target, up)`, a right-handed view matrix looking down -Z). A matrix is an array of 16 numbers, column-major; anything else is a script error. The
+  vector and quaternion operators (`+ - *` `/`) come from the value metatables. The functions use `lang/scalar.h` (libm as is): `slerp`, `from_euler`, `from_axis_angle` and `look_at` call `sin`,
+  `cos`, `acos` or `sqrt`, and their last bits are **not** reproducible across machines; a scene whose state hash must match across Linux, Windows and macOS avoids them (`+ - * /`, `dot`, `cross`,
+  `length`, `normalize`, `mat4.mul` and the transforms are exact IEEE operations).
+- **Random.** `random.float()` (0 up to but not including 1), `random.int(lo, hi)` (both included), `random.vec3_unit()`. The stream belongs to the running entity: `SeedPartitionRandom(context)` starts it
+  from `RandomSeedFor(world_seed, entity_stable_id, tick)` (SplitMix64, integers only), once per entity per tick, so the numbers are the same on every machine and for any thread count (the test draws
+  in 64 partitions on 8 threads and compares with one thread). Outside a job a per-thread stream stands in; its numbers are not tied to an entity.
+- **Log.** `log.debug`, `log.info`, `log.warn`, `log.error` write `[script:line] text` to the `LogScript` channel. The script name and line come from the language backend
+  (`script::CurrentCallerLocation`, which the LuaJIT trampoline publishes around each native call and answers only when asked). Inside a partition job the message goes to the partition's
+  `LogBuffer` (`PartitionContext::log`) and is written by `FlushLogBuffers` at the sync point in partition order, so the log reads the same for any thread count. A script may add `script.log_limit`
+  messages per tick (default 64, 0 for no limit); the rest are dropped and one warning per script counts them at the flush. Text is cut at 400 bytes.
+- **Time.** `time.dt()` (the seconds a tick advances), `time.now()` (the simulation clock at the tick start, the same for every script), `time.tick()`, `time.frame()` come from the context the driver
+  fills and are deterministic. `time.real()` is the wall clock in seconds and **not** deterministic; it returns `nil` while `PartitionContext::replay_recording` is set, so a recorded run cannot depend on it.
+  Outside a job they return 0.
 
 ## Partitions
 

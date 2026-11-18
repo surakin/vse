@@ -7,6 +7,7 @@
 #include "ecs/world.h"
 #include "script/bindings.h"
 #include "script/command_buffer.h"
+#include "script/log_buffer.h"
 #include "types.h"
 
 namespace engine_placeholder::script
@@ -26,7 +27,48 @@ struct PartitionContext
     Overlay* overlay = nullptr;
     /// The stable id (`Entity::ToU64`) of the entity whose script is running; the `order_key` of its commands.
     u64 current_entity_key = 0;
+    /// The world's random seed (setting `script.random_seed`).
+    u32 world_seed = 1;
+    /// The tick number the script phase belongs to.
+    u64 tick = 0;
+    /// The simulation seconds one tick advances.
+    f64 dt = 0.0;
+    /// The simulation clock in seconds at the tick start (`tick * dt`, kept by the caller).
+    f64 sim_time = 0.0;
+    /// The frame number (the renderer's frame; may differ from `tick`).
+    u64 frame = 0;
+    /// Whether a replay is being recorded: `time.real` is refused (it would make the run unrepeatable).
+    bool replay_recording = false;
+    /// The state of the running entity's random stream; set by [[script::SeedPartitionRandom]], advanced by `random.*`.
+    u64 random_state = 0;
+    /// The partition's log buffer; null sends `log.*` straight to the log.
+    LogBuffer* log = nullptr;
 };
+
+/// The first state of an entity's random stream this tick: a fixed 64-bit mix of the world seed, the entity's stable id
+/// and the tick. It depends on nothing else (not the thread, the partition count or the order entities run in), so
+/// the stream is the same for any thread count.
+///
+/// - Thread-safety: thread-safe.
+/// - Fails: never.
+u64 RandomSeedFor(u32 world_seed, u64 entity_key, u64 tick);
+
+/// The next 64 random bits of a stream (SplitMix64: integer arithmetic only, so the same on every machine).
+///
+/// - Param state: the stream's state, advanced; not null.
+/// - Ownership: borrowed for the call.
+/// - Thread-safety: thread-compatible.
+/// - Fails: never.
+u64 AdvanceRandom(u64* state);
+
+/// Starts the random stream of the entity `context->current_entity_key` for `context->tick`: call it once per entity
+/// per tick, after setting both (a second call repeats the same numbers).
+///
+/// - Param context: the context to seed; not null.
+/// - Ownership: borrowed for the call.
+/// - Thread-safety: thread-compatible.
+/// - Fails: never.
+void SeedPartitionRandom(PartitionContext* context);
 
 /// Publishes a [[script::PartitionContext]] for the current thread while it lives; restores the previous one after.
 ///

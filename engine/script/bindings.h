@@ -9,6 +9,7 @@
 #include "ecs/entity.h"
 #include "lang/traits.h"
 #include "mem/heap_allocator.h"
+#include "math/matrix.h"
 #include "math/quaternion.h"
 #include "math/vector.h"
 #include "script/backend.h"
@@ -278,6 +279,51 @@ template <> struct Codec<ecs::Entity>
     static ecs::Entity Get(const Value& v) { return v.AsEntity(); }
     static Value Put(ecs::Entity x) { return Value::FromEntity(x); }
 };
+/// A 4x4 matrix crosses as an array of 16 numbers in column-major order (`m[1..4]` is the first column).
+template <> struct Codec<Mat4>
+{
+    static constexpr const char* kName = "Mat4";
+    static constexpr bool kIsEntity = false;
+    static bool Check(const Value& v)
+    {
+        if (v.Kind() != ValueKind::Array || v.Size() != 16)
+        {
+            return false;
+        }
+        for (usize i = 0; i < 16; ++i)
+        {
+            if (!v.At(i).IsNumber())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    static Mat4 Get(const Value& v)
+    {
+        Mat4 m;
+        for (usize c = 0; c < 4; ++c)
+        {
+            for (usize r = 0; r < 4; ++r)
+            {
+                m.col[c][r] = static_cast<f32>(v.At(c * 4 + r).ToDouble());
+            }
+        }
+        return m;
+    }
+    static Value Put(const Mat4& m)
+    {
+        Value out = Value::MakeArray();
+        for (usize c = 0; c < 4; ++c)
+        {
+            for (usize r = 0; r < 4; ++r)
+            {
+                out.Push(Value::FromFloat(m.col[c][r]));
+            }
+        }
+        return out;
+    }
+};
 template <> struct Codec<Value>
 {
     static constexpr const char* kName = "Value";
@@ -462,10 +508,10 @@ private:
 /// The set of engine functions scripts can call: namespaces of typed, documented, thread-marked functions.
 ///
 /// `Add` derives everything from the C++ signature (`f32`, `f64`, `i32`, `i64`, `bool`, `StringView`, `Vec2`, `Vec3`,
-/// `Vec4`, `Quaternion`, `ecs::Entity`, `Value`; any of them or `void` as the result). A call with the wrong number of
-/// arguments or a wrong type becomes a script error that names the function and the argument; an `Entity` argument
-/// whose handle is dead (checked by the state's [[script::EntityCheck]]) is an error too, so a stale handle never
-/// reaches the function. `Entity` arguments nested inside a `Value` are not checked.
+/// `Vec4`, `Quaternion`, `Mat4` (an array of 16 numbers), `ecs::Entity`, `Value`; any of them or `void` as the result).
+/// A call with the wrong number of arguments or a wrong type becomes a script error that names the function and the
+/// argument; an `Entity` argument whose handle is dead (checked by the state's [[script::EntityCheck]]) is an error
+/// too, so a stale handle never reaches the function. `Entity` arguments nested inside a `Value` are not checked.
 ///
 /// Fill the registry once, then install it into any number of states from any number of threads: installing reads
 /// the registry and nothing else.
@@ -561,12 +607,26 @@ private:
     Vector<UniquePtr<detail::Entry>> entries_;
 };
 
-/// Adds the standard bindings: the `math`, `vec3` and `quat` namespaces, all `pure`.
+/// Adds the standard bindings: `num` (the Lua `math` library keeps its own name), `vec2`, `vec3`, `vec4`, `quat`,
+/// `mat4` (a matrix is an array of 16 numbers, column-major), and, through [[script::RegisterRuntimeBindings]],
+/// `random`, `log` and `time`. All are `pure`: they touch their arguments and the running job's own
+/// [[script::PartitionContext]]; the `log` calls are buffered per partition.
 ///
 /// - Param registry: the registry to add to; not null.
 /// - Returns: true when all were added (false when a name is already taken).
 /// - Ownership: borrowed for the call.
 /// - Fails: returns false, as described.
 bool RegisterStandardBindings(BindingRegistry* registry);
+
+/// Adds `random.float`, `random.int`, `random.vec3_unit`, `log.debug/info/warn/error`, and
+/// `time.dt/now/frame/tick/real`. They read the running job's [[script::PartitionContext]] (a stream per entity and
+/// tick, the partition's log buffer, the tick's clock); outside a job they use fixed fallbacks (a per-thread stream,
+/// direct logging, zero time).
+///
+/// - Param registry: the registry to add to; not null.
+/// - Returns: true when all were added (false when a name is already taken).
+/// - Ownership: borrowed for the call.
+/// - Fails: returns false, as described.
+bool RegisterRuntimeBindings(BindingRegistry* registry);
 
 }  // namespace engine_placeholder::script

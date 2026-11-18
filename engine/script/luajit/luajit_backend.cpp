@@ -8,6 +8,7 @@
 #include "os/os.h"
 #include "script/luajit/lua_patterns.h"
 #include "script/backend_registry.h"
+#include "script/log_buffer.h"
 
 #include <lua.hpp>
 
@@ -59,8 +60,6 @@ struct Accounting
     bool tripped = false;
     const char* trip_message = "";
 };
-
-LogChannel LogScript("LogScript", LogVerbosity::Info);
 
 constexpr u64 kHookCount = 1000;
 
@@ -654,11 +653,31 @@ const char* RunNative(lua_State* L, NativeEntry* e)
     return nullptr;
 }
 
+// Answers "where was this native called from": the Lua function one level up (level 0 is the native itself).
+bool LuaCallerLocation(void* context, SourceLocation* out)
+{
+    lua_State* L = static_cast<lua_State*>(context);
+    lua_Debug info;
+    if (lua_getstack(L, 1, &info) == 0 || lua_getinfo(L, "Sl", &info) == 0)
+    {
+        return false;
+    }
+    const char* name = info.short_src;
+    usize length = CStrLength(name);
+    length = length < sizeof(out->chunk) - 1 ? length : sizeof(out->chunk) - 1;
+    MemCopy(out->chunk, name, length);
+    out->chunk[length] = '\0';
+    out->line = info.currentline > 0 ? static_cast<u32>(info.currentline) : 0u;
+    return true;
+}
+
 // The Lua closure behind a registered native. Its frame holds nothing with a destructor.
 int Trampoline(lua_State* L)
 {
     NativeEntry* e = static_cast<NativeEntry*>(lua_touserdata(L, lua_upvalueindex(1)));
+    SetCallerLocationProvider(&LuaCallerLocation, L);
     const char* problem = RunNative(L, e);
+    SetCallerLocationProvider(nullptr, nullptr);
     if (problem != nullptr)
     {
         return luaL_error(L, "%s", problem);
@@ -1559,6 +1578,9 @@ private:
     Outcome Execute(Request* r)
     {
         const int rc = lua_cpcall(L_, &ProtectedBody, r);
+        // A Lua error inside a native (out of memory) skips the trampoline's own withdrawal: never leave a provider
+        // that names this state behind.
+        SetCallerLocationProvider(nullptr, nullptr);
         if (rc != 0)
         {
             r->status = rc == LUA_ERRMEM ? Status::OutOfMemory : Status::RuntimeError;
