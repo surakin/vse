@@ -25,6 +25,7 @@ set(SCRIPT_TEST_SOURCES
   task_test.cpp  # Day 461
   script_load_test.cpp  # Day 463: minted scripts through the resource manager
   script_reload_test.cpp  # Day 464: hot reload
+  script_debug_test.cpp  # Day 465: errors, console, profiler, debugger
   script_asset_test.cpp  # Day 462: the SCRP blob and the script minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/script_source.cpp  # Day 462
 )

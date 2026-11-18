@@ -52,6 +52,9 @@ struct ScriptWorldConfig
     u64 partition_memory = 0;
     /// Whether a partition whose state ran out of memory is reset (a new state, the same scripts) at once.
     bool reset_on_out_of_memory = true;
+    /// Whether the per-function profile starts on (setting `script.profile`; [[script::ScriptWorld::SetProfiling]]
+    /// changes it later).
+    bool profiling = false;
 };
 
 /// What one partition has done, read without a lock.
@@ -89,6 +92,7 @@ enum class CheckoutStatus : u8
 };
 
 class ScriptWorld;
+class ScriptDebugger;
 struct PartitionSlot;
 
 /// The right to use one partition's state: held by one job, handed back by `Release` or the destructor.
@@ -148,6 +152,19 @@ public:
     /// - Ownership: as `State::Resume`.
     /// - Aborts: the lease is not valid.
     Outcome Resume(u64 coroutine, Span<const Value> values, const Budget& budget, CallOutput* out);
+
+    /// Runs `source` as a console chunk in the partition's state ([[script::State::Eval]]) and records it in the
+    /// partition's counters. Like a call, it waits first while another partition is stopped by the debugger with
+    /// `pause_all`.
+    ///
+    /// - Param chunk_name: the name for messages; not empty.
+    /// - Param source: the chunk.
+    /// - Param budget: the limits.
+    /// - Param out: receives the results; not null.
+    /// - Returns: the outcome of [[script::State::Eval]]; when the partition has no state, the failure of making one.
+    /// - Aborts: the lease is not valid.
+    /// - Ownership: borrows every argument for the call.
+    Outcome Eval(StringView chunk_name, StringView source, const Budget& budget, CallOutput* out);
 
     /// Hands the partition back; afterwards the lease is not valid. Does nothing for an empty lease.
     ///
@@ -305,6 +322,46 @@ public:
     /// - Thread-safety: thread-safe, lock-free.
     PartitionCounters Total() const;
 
+    /// Attaches a debugger: every partition's state reports its lines to the debugger's session for that partition (at
+    /// its next checkout), and a partition waits at the debugger's gate before each call (`pause_all`). With null,
+    /// detaches every state now.
+    ///
+    /// Call it between ticks with no partition held; detaching must happen before the debugger is destroyed.
+    ///
+    /// - Param debugger: the debugger, or null; borrowed until replaced.
+    /// - Returns: false (and nothing changes) when a partition is held by a job.
+    /// - Ownership: borrows `debugger`.
+    /// - Thread-safety: thread-compatible: not safe with ticks or checkouts.
+    bool SetDebugger(ScriptDebugger* debugger);
+
+    /// The attached debugger, or null.
+    ///
+    /// - Fails: never.
+    /// - Ownership: borrowed; the debugger is the caller's.
+    ScriptDebugger* Debugger() const { return debugger_.Load(MemoryOrder::Acquire); }
+
+    /// Turns the per-function profile on or off in every partition (at its next checkout; a state made later starts
+    /// the way this was last set). Turning it on starts every profile from zero.
+    ///
+    /// - Param on: whether to profile.
+    /// - Thread-safety: thread-safe.
+    void SetProfiling(bool on);
+
+    /// Whether profiling is on.
+    ///
+    /// - Fails: never.
+    bool Profiling() const { return profiling_.Load(MemoryOrder::Acquire); }
+
+    /// Adds up the profiles of the partitions that have a state and are not held (a held one is skipped), one entry
+    /// per function (chunk, name and line), sorted by time spent, then calls, then name; at most `top` entries.
+    ///
+    /// - Param out: receives the entries (emptied first); not null.
+    /// - Param top: the most entries to return; 0 is all.
+    /// - Returns: `Ok`, or `Unsupported` when the backend cannot profile.
+    /// - Thread-safety: thread-compatible: call it between ticks.
+    /// - Ownership: `out` is borrowed for the call.
+    Outcome ProfileReport(Vector<ProfileEntry>* out, usize top);
+
 private:
     friend class PartitionLease;
     void ReleaseSlot(PartitionSlot* slot);
@@ -312,7 +369,11 @@ private:
     Outcome CallIn(PartitionSlot* slot, StringView path, Span<const Value> args, const Budget& budget, CallOutput* out);
     Outcome ResumeIn(PartitionSlot* slot, u64 coroutine, Span<const Value> values, const Budget& budget,
                      CallOutput* out);
+    Outcome EvalIn(PartitionSlot* slot, StringView chunk_name, StringView source, const Budget& budget,
+                   CallOutput* out);
     Outcome Settle(PartitionSlot* slot, Outcome result, u64 start);
+    void SyncDebug(PartitionSlot* slot);
+    void WaitAtGate();
 
     struct Script
     {
@@ -336,6 +397,8 @@ private:
     Vector<UniquePtr<PartitionSlot>> slots_;
     Mutex scripts_mutex_;
     Vector<Script> scripts_;
+    Atomic<ScriptDebugger*> debugger_{nullptr};
+    Atomic<bool> profiling_{false};
 };
 
 }  // namespace engine_placeholder::script

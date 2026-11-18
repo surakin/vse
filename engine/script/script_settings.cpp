@@ -139,6 +139,27 @@ void RegisterScriptSettings(settings::Registry* registry)
     hot_reload.flags = settings::kRestartRequired;
     registry->Register(hot_reload);
 
+    settings::SettingDesc pause_all = settings::MakeBool("script.debug_pause_all", true);
+    pause_all.env = "ENGINE_SCRIPT_DEBUG_PAUSE_ALL";
+    pause_all.flag = "script-debug-pause-all";
+    pause_all.label = "Script debugger stops every partition";
+    pause_all.description =
+        "when a breakpoint stops a script, the other partitions wait at the end of the callback they run, so the world "
+        "stays as it was (the default); off stops only the partition that hit the breakpoint and the rest run on";
+    pause_all.group = "script";
+    pause_all.flags = settings::kRestartRequired;
+    registry->Register(pause_all);
+
+    settings::SettingDesc profile = settings::MakeBool("script.profile", false);
+    profile.env = "ENGINE_SCRIPT_PROFILE";
+    profile.flag = "script-profile";
+    profile.label = "Script profiler";
+    profile.description =
+        "count the calls of every script function and the time they take (it slows scripts down: off unless you are "
+        "looking for a slow script)";
+    profile.group = "script";
+    registry->Register(profile);
+
     settings::SettingDesc conflicts = settings::MakeText("script.conflicts", "last_wins");
     conflicts.env = "ENGINE_SCRIPT_CONFLICTS";
     conflicts.flag = "script-conflicts";
@@ -253,6 +274,18 @@ u64 ScriptTaskArgBytes(const settings::Registry& registry)
 bool ScriptHotReload(const settings::Registry& registry)
 {
     const settings::SettingId id = registry.Find(StringView("script.hot_reload"));
+    return id.IsValid() && settings::Setting<bool>(registry, id).Get();
+}
+
+bool ScriptDebugPauseAll(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.debug_pause_all"));
+    return !id.IsValid() || settings::Setting<bool>(registry, id).Get();
+}
+
+bool ScriptProfile(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.profile"));
     return id.IsValid() && settings::Setting<bool>(registry, id).Get();
 }
 

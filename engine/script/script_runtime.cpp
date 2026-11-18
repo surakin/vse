@@ -39,7 +39,39 @@ struct Instance
     bool started = false;
     /// An error disabled the instance: no callback runs, but it is still dropped.
     bool failed = false;
-    bool logged = false;
+    /// The last error's identity (callback and message) and how many times it happened in a row; 0 means none yet.
+    u64 error_hash = 0;
+    u64 error_count = 0;
+};
+
+/// A new error of one instance, kept until the phase ends and then logged, recorded and sent as an event in partition
+/// order.
+struct ErrorReport
+{
+    ScriptErrorRecord record;
+    u64 hash = 0;
+};
+
+/// More of an error the instance had already reported in this phase.
+struct ErrorRepeat
+{
+    u64 entity_key = 0;
+    u64 hash = 0;
+    u64 count = 0;
+};
+
+/// A console chunk waiting for the next tick, or its result.
+struct ConsoleJob
+{
+    u64 id = 0;
+    u32 partition = 0;
+    String<HeapAllocator> chunk{HeapAllocator::Default()};
+};
+
+struct ConsoleDone
+{
+    u64 id = 0;
+    ConsoleResult result;
 };
 
 struct FoundScript
@@ -84,9 +116,11 @@ struct PartitionData
     u32 task_held = 0;             // the finished tasks the table holds for this partition's instances
     u32 next_sequence = 0;
     bool subscription_limit_logged = false;
-    Vector<Group> groups;      // event name -> subscribed instance keys, sorted by name and key
-    LogBuffer log;             // this phase's log lines, flushed in partition order after the jobs finish
-    ScriptRuntimeStats stats;  // this phase's counts, summed after the jobs finish
+    Vector<Group> groups;         // event name -> subscribed instance keys, sorted by name and key
+    Vector<ErrorReport> reports;  // this phase's new errors, in the order they happened
+    Vector<ErrorRepeat> repeats;  // this phase's repeats of earlier errors
+    LogBuffer log;                // this phase's log lines, flushed in partition order after the jobs finish
+    ScriptRuntimeStats stats;     // this phase's counts, summed after the jobs finish
     u64 resets_seen = 0;
     bool load_logged = false;
 };
@@ -207,7 +241,26 @@ struct ScriptRuntime::Impl
     bool any_gone = false;
     TaskTable task_table;
     UniquePtr<TaskPool> task_pool;
-    Vector<u64> removed_keys;  // the instances Compact dropped, until the tasks they owned are dropped
+    Vector<u64> removed_keys;                // the instances Compact dropped, until the tasks they owned are dropped
+    const ecs::World* tick_world = nullptr;  // the world of the running tick (read-only in the jobs)
+    Vector<ScriptErrorRecord> recent;        // the last errors reported, oldest first
+    UniquePtr<ScriptDebugger> debugger;
+    Mutex console_mutex;
+    Vector<ConsoleJob> console_jobs;
+    Vector<ConsoleDone> console_done;
+    u64 next_console_id = 1;
+
+    ~Impl()
+    {
+        if (debugger.Get() != nullptr)
+        {
+            scripts->SetDebugger(nullptr);
+            debugger.Reset();
+        }
+    }
+    void RunConsole(u32 partition, StringView chunk, ConsoleResult* out);
+    void RunConsoleJobs();
+    void CollectErrors(u32 count);
 
     void Reconcile(ecs::World* world, bool allow_new);
     void Compact();
@@ -317,24 +370,124 @@ void ScriptRuntime::Impl::Compact()
     instances = Move(kept);
 }
 
+namespace
+{
+
+u64 ErrorHash(StringView what, StringView message)
+{
+    u64 h = 1469598103934665603ull;
+    const StringView parts[2] = {what, message};
+    for (const StringView& part : parts)
+    {
+        for (usize i = 0; i < part.Length(); ++i)
+        {
+            h = (h ^ static_cast<u8>(part.Data()[i])) * 1099511628211ull;
+        }
+        h = (h ^ 0xFFu) * 1099511628211ull;
+    }
+    return h | 1u;  // never 0
+}
+
+/// "behavior 'x' on entity 12 ('Name'): on_update failed: message" (no trace, no count).
+void AppendErrorHead(String<HeapAllocator>* text, const ScriptErrorRecord& r)
+{
+    char key[32];
+    FormatTo(key, sizeof(key), "%llu", static_cast<unsigned long long>(r.entity_key));
+    text->Append("behavior '");
+    text->Append(r.behavior.View());
+    text->Append("' on entity ");
+    text->Append(StringView(key));
+    if (r.entity_name.Length() != 0)
+    {
+        text->Append(" ('");
+        text->Append(r.entity_name.View());
+        text->Append("')");
+    }
+    text->Append(": ");
+    text->Append(r.callback.View());
+    text->Append(" failed: ");
+    text->Append(r.message.View());
+}
+
+}  // namespace
+
 void ScriptRuntime::Impl::Fail(PartitionData* data, Instance* in, const char* what, const Outcome& outcome)
 {
     ++data->stats.errors;
-    if (!in->logged)
+    const u64 hash = ErrorHash(StringView(what), outcome.message.View());
+    if (in->error_count != 0 && in->error_hash == hash)
     {
-        in->logged = true;
-        char key[32];
-        FormatTo(key, sizeof(key), "%llu", static_cast<unsigned long long>(in->key));
+        ++in->error_count;
+        if (data->repeats.Empty() || data->repeats[data->repeats.Size() - 1].entity_key != in->key ||
+            data->repeats[data->repeats.Size() - 1].hash != hash)
+        {
+            ErrorRepeat repeat;
+            repeat.entity_key = in->key;
+            repeat.hash = hash;
+            data->repeats.Push(repeat);
+        }
+        ++data->repeats[data->repeats.Size() - 1].count;
+        // The log shows the repeat count at every power of ten, so a callback that fails every tick stays readable.
+        u64 step = 10;
+        while (step < in->error_count)
+        {
+            step *= 10;
+        }
+        if (step == in->error_count)
+        {
+            ScriptErrorRecord head;
+            head.entity_key = in->key;
+            head.behavior = String<HeapAllocator>(HeapAllocator::Default(), in->behavior.View());
+            head.callback = String<HeapAllocator>(HeapAllocator::Default(), StringView(what));
+            head.message = String<HeapAllocator>(HeapAllocator::Default(), outcome.message.View());
+            String<HeapAllocator> text(HeapAllocator::Default());
+            AppendErrorHead(&text, head);
+            char count[48];
+            FormatTo(count, sizeof(count), " (repeated %llu times)", static_cast<unsigned long long>(in->error_count));
+            text.Append(StringView(count));
+            data->log.Add(ScriptLogLevel::Error, in->behavior.View(), 0, text.View());
+        }
+    }
+    else
+    {
+        in->error_hash = hash;
+        in->error_count = 1;
+        ++data->stats.distinct_errors;
+        ErrorReport report;
+        report.hash = hash;
+        ScriptErrorRecord& r = report.record;
+        r.tick = tick;
+        r.partition = in->partition;
+        r.entity_key = in->key;
+        r.behavior = String<HeapAllocator>(HeapAllocator::Default(), in->behavior.View());
+        r.callback = String<HeapAllocator>(HeapAllocator::Default(), StringView(what));
+        r.message = String<HeapAllocator>(HeapAllocator::Default(), outcome.message.View());
+        {
+            // The language's traceback starts with the message again: keep the frames.
+            const StringView trace = outcome.trace.View();
+            const usize at = trace.Find(StringView("stack traceback:"));
+            if (at < trace.Length())
+            {
+                r.trace = String<HeapAllocator>(HeapAllocator::Default(), trace.Substring(at));
+            }
+        }
+        if (config.scene != nullptr && config.scene->name_of != nullptr && tick_world != nullptr)
+        {
+            char name[128];
+            const usize length = config.scene->name_of(config.scene->user, *tick_world, in->entity, name, sizeof(name));
+            if (length != 0 && length <= sizeof(name))
+            {
+                r.entity_name = String<HeapAllocator>(HeapAllocator::Default(), StringView(name, length));
+            }
+        }
         String<HeapAllocator> text(HeapAllocator::Default());
-        text.Append("behavior '");
-        text.Append(in->behavior.View());
-        text.Append("' on entity ");
-        text.Append(StringView(key));
-        text.Append(": ");
-        text.Append(StringView(what));
-        text.Append(" failed: ");
-        text.Append(outcome.message.View());
+        AppendErrorHead(&text, r);
         data->log.Add(ScriptLogLevel::Error, in->behavior.View(), 0, text.View());
+        if (r.trace.Length() != 0)
+        {  // a line of its own: one log line is cut at kMaxScriptLogText bytes
+            data->log.Add(ScriptLogLevel::Error, in->behavior.View(), 0, r.trace.View());
+        }
+        data->reports.Push(Move(report));
     }
     switch (config.on_error)
     {
@@ -349,6 +502,49 @@ void ScriptRuntime::Impl::Fail(PartitionData* data, Instance* in, const char* wh
         in->failed = true;
         ++data->stats.disabled_by_error;
         break;
+    }
+}
+
+void ScriptRuntime::Impl::CollectErrors(u32 count)
+{
+    constexpr usize kRecentLimit = 64;
+    for (u32 p = 0; p < count; ++p)
+    {
+        PartitionData& d = *partitions[p];
+        for (usize i = 0; i < d.reports.Size(); ++i)
+        {
+            ScriptErrorRecord& r = d.reports[i].record;
+            Value payload = Value::MakeMap();
+            payload.Set("behavior", Value::FromText(r.behavior.View()));
+            payload.Set("entity", Value::FromEntity(ecs::Entity::FromU64(r.entity_key)));
+            payload.Set("entity_name", Value::FromText(r.entity_name.View()));
+            payload.Set("callback", Value::FromText(r.callback.View()));
+            payload.Set("message", Value::FromText(r.message.View()));
+            payload.Set("trace", Value::FromText(r.trace.View()));
+            payload.Set("partition", Value::FromInt(r.partition));
+            payload.Set("tick", Value::FromInt(static_cast<i64>(r.tick)));
+            bus.Emit("on_script_error", Move(payload));
+            if (recent.Size() == kRecentLimit)
+            {
+                recent.Remove(0);
+            }
+            recent.Push(Move(r));
+        }
+        for (usize i = 0; i < d.repeats.Size(); ++i)
+        {
+            const ErrorRepeat& repeat = d.repeats[i];
+            for (usize k = recent.Size(); k > 0; --k)
+            {
+                ScriptErrorRecord& r = recent[k - 1];
+                if (r.entity_key == repeat.entity_key && ErrorHash(r.callback.View(), r.message.View()) == repeat.hash)
+                {
+                    r.count += repeat.count;
+                    break;
+                }
+            }
+        }
+        d.reports.Clear();
+        d.repeats.Clear();
     }
 }
 
@@ -371,9 +567,10 @@ void ScriptRuntime::Impl::CheckReset(u32 p, PartitionData* data)
             in.failed = true;
             ++data->stats.disabled_by_error;
             ++data->stats.errors;
-            if (!in.logged)
+            if (in.error_count == 0)
             {
-                in.logged = true;
+                in.error_count = 1;
+                in.error_hash = 1;
                 data->log.Add(ScriptLogLevel::Error, in.behavior.View(), 0,
                               "the partition's state was reset (out of memory); its instances are disabled");
             }
@@ -982,6 +1179,7 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
         stats.updates += d.updates;
         stats.destroyed += d.destroyed;
         stats.errors += d.errors;
+        stats.distinct_errors += d.distinct_errors;
         stats.disabled_by_error += d.disabled_by_error;
         stats.skipped_partitions += d.skipped_partitions;
         stats.events_delivered += d.events_delivered;
@@ -991,6 +1189,7 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
         stats.events_emitted += bus.Accept(&partitions[p]->outbox);
     }
     stats.coroutines_waiting = waiting;
+    CollectErrors(count);
     {
         Vector<LogBuffer*> logs;
         for (u32 p = 0; p < count; ++p)
@@ -1124,6 +1323,7 @@ ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig& config)
     world_config.profile = InstallProfile::Partition(ContextEntityCheck());
     world_config.partitions = config.partitions;
     world_config.partition_memory = config.partition_memory;
+    world_config.profiling = config.profile;
     m.scripts = MakeUnique<ScriptWorld>(world_config);
     for (u32 p = 0; p < config.partitions; ++p)
     {
@@ -1171,9 +1371,155 @@ MergeServices& ScriptRuntime::Services()
     return impl_->services;
 }
 
+const Vector<ScriptErrorRecord>& ScriptRuntime::RecentErrors() const
+{
+    return impl_->recent;
+}
+
+ScriptDebugger* ScriptRuntime::AttachDebugger(DebugTransport* transport)
+{
+    Impl& m = *impl_;
+    ENGINE_ASSERT(transport != nullptr, "AttachDebugger: no transport");
+    if (!m.scripts->SetDebugger(nullptr))
+    {
+        return nullptr;
+    }
+    m.debugger.Reset();
+    UniquePtr<ScriptDebugger> fresh = MakeUnique<ScriptDebugger>(transport, m.config.partitions,
+                                                                 m.config.debug_pause_all);
+    if (!m.scripts->SetDebugger(fresh.Get()))
+    {
+        return nullptr;
+    }
+    m.debugger = Move(fresh);
+    return m.debugger.Get();
+}
+
+void ScriptRuntime::DetachDebugger()
+{
+    Impl& m = *impl_;
+    if (m.debugger.Get() != nullptr)
+    {
+        m.debugger->Detach();  // stopped partitions run on before the states let go of their sessions
+        if (m.scripts->SetDebugger(nullptr))
+        {
+            m.debugger.Reset();
+        }
+    }
+}
+
+void ScriptRuntime::Impl::RunConsole(u32 partition, StringView chunk, ConsoleResult* out)
+{
+    *out = ConsoleResult();
+    CallOutput results;
+    Outcome outcome;
+    if (partition == kConsoleScratch)
+    {
+        UniquePtr<State> scratch = config.backend->CreateState(config.partition_memory);
+        outcome = scratch.Get() != nullptr ? scratch->Eval(StringView("console"), chunk, config.budget, &results)
+                                           : Outcome(Status::OutOfMemory, "the scratch state could not be made");
+    }
+    else
+    {
+        PartitionLease lease;
+        Outcome error;
+        const CheckoutStatus got = scripts->TryCheckout(partition, &lease, &error);
+        if (got == CheckoutStatus::Ok)
+        {
+            outcome = lease.Eval(StringView("console"), chunk, config.budget, &results);
+        }
+        else if (got == CheckoutStatus::Busy)
+        {
+            outcome = Outcome(Status::Invalid, "the partition is busy: run the console between ticks");
+        }
+        else if (got == CheckoutStatus::Invalid)
+        {
+            outcome = Outcome(Status::Invalid, "the partition number is out of range");
+        }
+        else
+        {
+            outcome = Outcome(error.status, error.message.View());
+        }
+    }
+    out->ok = outcome.IsOk();
+    out->status = outcome.status;
+    out->message = String<HeapAllocator>(HeapAllocator::Default(), outcome.message.View());
+    out->trace = String<HeapAllocator>(HeapAllocator::Default(), outcome.trace.View());
+    if (out->ok)
+    {
+        out->values = Move(results.results);
+    }
+}
+
+void ScriptRuntime::Impl::RunConsoleJobs()
+{
+    Vector<ConsoleJob> jobs_now;
+    {
+        LockGuard<Mutex> lock(console_mutex);
+        jobs_now = Move(console_jobs);
+        console_jobs = Vector<ConsoleJob>();
+    }
+    for (usize i = 0; i < jobs_now.Size(); ++i)
+    {
+        ConsoleDone done;
+        done.id = jobs_now[i].id;
+        RunConsole(jobs_now[i].partition, jobs_now[i].chunk.View(), &done.result);
+        LockGuard<Mutex> lock(console_mutex);
+        console_done.Push(Move(done));
+    }
+}
+
+void ScriptRuntime::ConsoleRun(u32 partition, StringView chunk, ConsoleResult* result)
+{
+    ENGINE_ASSERT(result != nullptr, "ConsoleRun: no result");
+    impl_->RunConsole(partition, chunk, result);
+}
+
+u64 ScriptRuntime::ConsoleSubmit(u32 partition, StringView chunk)
+{
+    Impl& m = *impl_;
+    ConsoleJob job;
+    job.partition = partition;
+    job.chunk = String<HeapAllocator>(HeapAllocator::Default(), chunk);
+    LockGuard<Mutex> lock(m.console_mutex);
+    job.id = m.next_console_id++;
+    const u64 id = job.id;
+    m.console_jobs.Push(Move(job));
+    return id;
+}
+
+bool ScriptRuntime::ConsoleTake(u64 id, ConsoleResult* result)
+{
+    ENGINE_ASSERT(result != nullptr, "ConsoleTake: no result");
+    Impl& m = *impl_;
+    LockGuard<Mutex> lock(m.console_mutex);
+    for (usize i = 0; i < m.console_done.Size(); ++i)
+    {
+        if (m.console_done[i].id == id)
+        {
+            *result = Move(m.console_done[i].result);
+            m.console_done.Remove(i);
+            return true;
+        }
+    }
+    return false;
+}
+
+void ScriptRuntime::SetProfiling(bool on)
+{
+    impl_->scripts->SetProfiling(on);
+}
+
+Outcome ScriptRuntime::ProfileReport(Vector<ProfileEntry>* out, usize top)
+{
+    return impl_->scripts->ProfileReport(out, top);
+}
+
 void ScriptRuntime::Tick(ecs::World* world, f64 dt, jobs::Scheduler* scheduler)
 {
     Impl& m = *impl_;
+    m.tick_world = world;
+    m.RunConsoleJobs();
     m.bus.Take(&m.delivery);  // the events of the last tick, to native subscribers now and to scripts in the jobs
     m.Reconcile(world, true);
     m.RunPhase(world, dt, false, scheduler);
@@ -1190,6 +1536,7 @@ void ScriptRuntime::Tick(ecs::World* world, f64 dt, jobs::Scheduler* scheduler)
     m.sim_time += dt;
     ++m.stats.ticks;
     m.stats.instances = m.instances.Size();
+    m.tick_world = nullptr;
 }
 
 ecs::SystemDesc MakeScriptSystem()

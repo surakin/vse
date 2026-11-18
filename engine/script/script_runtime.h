@@ -19,6 +19,7 @@
 #include "script/event_bus.h"
 #include "script/merge.h"
 #include "script/merge_services.h"
+#include "script/script_debug.h"
 #include "script/script_settings.h"
 #include "script/script_world.h"
 #include "lang/utility.h"
@@ -83,6 +84,9 @@ struct ScriptRuntimeStats
     u64 destroyed = 0;
     /// Callbacks that failed.
     u64 errors = 0;
+    /// Errors that were new for their instance (a different message or callback from its last error): each was logged
+    /// and sent as an `on_script_error` event; the rest of `errors` are repeats.
+    u64 distinct_errors = 0;
     /// Instances disabled by an error (`script.on_error` = `disable`).
     u64 disabled_by_error = 0;
     /// Partitions skipped in a tick because their state could not be made or a script did not load.
@@ -154,6 +158,10 @@ struct ScriptRuntimeConfig
     const SceneServices* scene = nullptr;
     /// The prefab source and settings the merge uses; copied.
     MergeServices services;
+    /// Whether a debugger's breakpoint stops every partition (setting `script.debug_pause_all`).
+    bool debug_pause_all = true;
+    /// Whether the per-function profile starts on (setting `script.profile`).
+    bool profile = false;
     /// The source of the script that defines `behavior`, instance creation and callback dispatch for the language;
     /// empty uses the LuaJIT host of [[script::LuaBehaviorHostSource]].
     StringView host_source;
@@ -173,6 +181,53 @@ struct ScriptRuntimeConfig
         return b;
     }
 };
+
+/// One script error as the runtime reported it (the `on_script_error` event carries the same fields).
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns its text.
+struct ScriptErrorRecord
+{
+    /// The tick the error happened in (the runtime's tick count when it ran).
+    u64 tick = 0;
+    /// The partition that ran the callback.
+    u32 partition = 0;
+    /// The failing instance's entity (`Entity::ToU64`).
+    u64 entity_key = 0;
+    /// The entity's name; empty for an entity without one.
+    String<HeapAllocator> entity_name{HeapAllocator::Default()};
+    /// The behavior's name.
+    String<HeapAllocator> behavior{HeapAllocator::Default()};
+    /// What was running: `on_update`, `on_create`, `an event handler`, `a wait`, ...
+    String<HeapAllocator> callback{HeapAllocator::Default()};
+    /// The language's message, which names the script and the line (`script name:line: message`).
+    String<HeapAllocator> message{HeapAllocator::Default()};
+    /// The stack trace of script frames; empty when the language gave none.
+    String<HeapAllocator> trace{HeapAllocator::Default()};
+    /// How many times this error happened in a row for this instance, repeats included.
+    u64 count = 1;
+};
+
+/// What a console chunk did.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns its values and text.
+struct ConsoleResult
+{
+    /// Whether the chunk ran to the end.
+    bool ok = false;
+    /// The failure's status when it did not.
+    Status status = Status::Ok;
+    /// The failure's message (the script's own words), empty when `ok`.
+    String<HeapAllocator> message{HeapAllocator::Default()};
+    /// The failure's stack trace, when there is one.
+    String<HeapAllocator> trace{HeapAllocator::Default()};
+    /// The values the chunk returned (an expression's value, or what a `return` gave).
+    Vector<Value> values;
+};
+
+/// The partition number that makes [[script::ScriptRuntime::ConsoleRun]] use a scratch state.
+inline constexpr u32 kConsoleScratch = 0xFFFFFFFFu;
 
 /// The Lua source of the behavior host: `behavior(name, table)`, instance creation and callback dispatch. It is the
 /// first script every state loads.
@@ -234,6 +289,73 @@ public:
     ///
     /// - Ownership: borrowed.
     MergeServices& Services();
+
+    /// The errors reported lately, oldest first, at most 64 (the log has them all, the events too). A repeat of the
+    /// last error of an instance raises that record's `count`.
+    ///
+    /// - Ownership: borrowed; changes in a tick.
+    const Vector<ScriptErrorRecord>& RecentErrors() const;
+
+    /// Starts a debugger on the world: breakpoints, stepping and inspection through `transport` (see
+    /// [[script::ScriptDebugger]]); `script.debug_pause_all` decides whether a stop holds every partition. A debugger
+    /// already attached is replaced.
+    ///
+    /// - Param transport: where commands come from and events go to; not null; it must outlive the debugger.
+    /// - Returns: the debugger; null when a partition is held (call it between ticks).
+    /// - Ownership: owned by the runtime until [[script::ScriptRuntime::DetachDebugger]] or its destruction.
+    /// - Thread-safety: thread-compatible: between ticks.
+    ScriptDebugger* AttachDebugger(DebugTransport* transport);
+
+    /// Ends the debugging: stopped partitions run on, breakpoints are dropped, the debugger is destroyed.
+    ///
+    /// - Thread-safety: thread-compatible: between ticks, from a thread that is not stopped.
+    void DetachDebugger();
+
+    /// Runs `chunk` now in the state of `partition`, or in a bare scratch state (`kConsoleScratch`: the language's
+    /// standard library only, nothing of the behaviors), and returns what it gave. The chunk is first tried as an
+    /// expression, then as statements. It sees the partition's globals and functions; it is not an entity's callback,
+    /// so bindings that need one (`event.on`, `spawn`) fail with their own message.
+    ///
+    /// - Param partition: the partition number, or `kConsoleScratch`.
+    /// - Param chunk: the text to run.
+    /// - Param result: receives the outcome; not null.
+    /// - Thread-safety: thread-compatible: call it between ticks, or use [[script::ScriptRuntime::ConsoleSubmit]]
+    /// from any thread.
+    /// - Ownership: borrows `chunk` and `result` for the call.
+    void ConsoleRun(u32 partition, StringView chunk, ConsoleResult* result);
+
+    /// Queues a console chunk: it runs at the start of the next tick, in the order queued, before any callback (the
+    /// sync point), and its result waits for [[script::ScriptRuntime::ConsoleTake]].
+    ///
+    /// - Param partition: the partition number, or `kConsoleScratch`.
+    /// - Param chunk: the text; copied.
+    /// - Returns: the id to take the result with.
+    /// - Thread-safety: thread-safe.
+    u64 ConsoleSubmit(u32 partition, StringView chunk);
+
+    /// Takes the result of a queued chunk.
+    ///
+    /// - Param id: from [[script::ScriptRuntime::ConsoleSubmit]].
+    /// - Param result: receives the outcome when it is ready; not null.
+    /// - Returns: false while the chunk has not run (or when the id is unknown or taken already).
+    /// - Thread-safety: thread-safe.
+    /// - Ownership: `result` is borrowed for the call.
+    bool ConsoleTake(u64 id, ConsoleResult* result);
+
+    /// Turns the per-function profile on or off in every partition.
+    ///
+    /// - Param on: whether to profile; turning it on starts from zero.
+    /// - Thread-safety: thread-safe.
+    void SetProfiling(bool on);
+
+    /// The hottest functions: calls and time added up over the partitions that are not held.
+    ///
+    /// - Param out: receives the entries, longest time first; not null.
+    /// - Param top: the most entries; 0 is all.
+    /// - Returns: `Ok`, or `Unsupported` when the language cannot profile.
+    /// - Thread-safety: thread-compatible: between ticks.
+    /// - Ownership: `out` is borrowed for the call.
+    Outcome ProfileReport(Vector<ProfileEntry>* out, usize top);
 
     /// Runs one tick on `world`: destroys, creates and starts, enables, fixed updates, updates, the merge, and the
     /// destroys the merge caused. The script system calls it; tests may call it directly.

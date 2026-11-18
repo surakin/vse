@@ -126,6 +126,20 @@ u64 ScriptTaskArgBytes(const settings::Registry& registry);
 /// - Fails: never.
 bool ScriptHotReload(const settings::Registry& registry);
 
+/// Reads `script.debug_pause_all`: whether a breakpoint stops every partition (true) or only the one that hit it.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives true.
+/// - Returns: the flag (default true).
+/// - Fails: never.
+bool ScriptDebugPauseAll(const settings::Registry& registry);
+
+/// Reads `script.profile`: whether the per-function profile is on.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives false.
+/// - Returns: the flag (default false).
+/// - Fails: never.
+bool ScriptProfile(const settings::Registry& registry);
+
 /// Reads `script.dev_directory`: the directory a development build reads script sources from (empty: off).
 ///
 /// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives "".

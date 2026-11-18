@@ -1,7 +1,10 @@
 #include "script/script_world.h"
 
+#include "algorithm.h"
+#include "containers/hash_map.h"
 #include "log/assert.h"
 #include "os/os.h"
+#include "script/script_debug.h"
 #include "sync/thread.h"
 
 namespace engine_placeholder::script
@@ -14,7 +17,9 @@ struct PartitionSlot
     UniquePtr<State> state;
     // Used only by the thread that holds the partition.
     usize loaded = 0;
-    bool module_host = false;  // whether the module host is loaded in the state
+    bool module_host = false;            // whether the module host is loaded in the state
+    ScriptDebugger* debugger = nullptr;  // the debugger whose session the state holds
+    bool profiling = false;              // whether the state's profiler was last set on
     // A module that failed to define or run leaves the state half loaded: every later checkout reports the same failure
     // until the state is reset (a retry would say "defined twice" instead).
     bool module_failed = false;
@@ -93,6 +98,12 @@ Outcome PartitionLease::Resume(u64 coroutine, Span<const Value> values, const Bu
     return world_->ResumeIn(slot_, coroutine, values, budget, out);
 }
 
+Outcome PartitionLease::Eval(StringView chunk_name, StringView source, const Budget& budget, CallOutput* out)
+{
+    ENGINE_ASSERT(slot_ != nullptr, "PartitionLease::Eval: the lease is empty");
+    return world_->EvalIn(slot_, chunk_name, source, budget, out);
+}
+
 void PartitionLease::Release()
 {
     if (slot_ != nullptr)
@@ -109,6 +120,7 @@ ScriptWorld::ScriptWorld(const ScriptWorldConfig& config) : config_(config)
     ENGINE_ASSERT(config.partitions >= 1 && config.partitions <= kMaxPartitions,
                   "ScriptWorld: partitions out of range");
     partition_count_ = config.partitions;
+    profiling_.Store(config.profiling, MemoryOrder::Relaxed);
     slots_.Reserve(partition_count_);
     for (u32 i = 0; i < partition_count_; ++i)
     {
@@ -192,6 +204,8 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
         slot->loaded = 0;
         slot->module_host = false;
         slot->module_failed = false;
+        slot->debugger = nullptr;
+        slot->profiling = false;
         if (config_.bindings != nullptr)
         {
             Outcome error;
@@ -203,6 +217,7 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
             }
         }
     }
+    SyncDebug(slot);
     if (slot->module_failed)
     {
         return Outcome(slot->module_failure_status, slot->module_failure.View());
@@ -537,6 +552,194 @@ void ScriptWorld::ReleaseSlot(PartitionSlot* slot)
     slot->owner.Store(0, MemoryOrder::Release);
 }
 
+void ScriptWorld::SyncDebug(PartitionSlot* slot)
+{
+    // The thread that holds the partition applies what the world wants: the debugger's session and the profiler.
+    ScriptDebugger* want = debugger_.Load(MemoryOrder::Acquire);
+    if (slot->debugger != want)
+    {
+        slot->debugger = want;  // a backend without a debugger says Unsupported, which leaves it detached
+        slot->state->SetDebugSession(want != nullptr ? want->SessionFor(slot->index) : nullptr);
+    }
+    const bool profile = profiling_.Load(MemoryOrder::Acquire);
+    if (slot->profiling != profile)
+    {
+        slot->profiling = profile;
+        slot->state->SetProfiling(profile);
+    }
+}
+
+void ScriptWorld::WaitAtGate()
+{
+    ScriptDebugger* debugger = debugger_.Load(MemoryOrder::Acquire);
+    if (debugger != nullptr)
+    {
+        debugger->Gate();
+    }
+}
+
+bool ScriptWorld::SetDebugger(ScriptDebugger* debugger)
+{
+    if (debugger == debugger_.Load(MemoryOrder::Acquire))
+    {
+        return true;
+    }
+    // Every state gets the new session (or none) now, so that no state keeps a session of a debugger that is gone.
+    Vector<PartitionSlot*> held;
+    bool all = true;
+    for (u32 p = 0; p < partition_count_ && all; ++p)
+    {
+        PartitionSlot* slot = slots_[p].Get();
+        usize expected = 0;
+        const usize token = ThisThread::Id().Hash() | 1u;
+        if (slot->owner.CompareExchangeStrong(expected, token, MemoryOrder::AcqRel, MemoryOrder::Acquire))
+        {
+            held.Push(slot);
+        }
+        else
+        {
+            all = false;
+        }
+    }
+    if (all)
+    {
+        debugger_.Store(debugger, MemoryOrder::Release);
+        for (usize i = 0; i < held.Size(); ++i)
+        {
+            PartitionSlot* slot = held[i];
+            if (slot->state.Get() != nullptr)
+            {
+                slot->state->Acquire();
+                SyncDebug(slot);
+                slot->state->HandOver();
+            }
+        }
+    }
+    for (usize i = 0; i < held.Size(); ++i)
+    {
+        held[i]->owner.Store(0, MemoryOrder::Release);
+    }
+    return all;
+}
+
+void ScriptWorld::SetProfiling(bool on)
+{
+    profiling_.Store(on, MemoryOrder::Release);
+}
+
+namespace
+{
+
+u64 ProfileHash(const ProfileEntry& e)
+{
+    u64 h = 1469598103934665603ull;
+    const StringView parts[2] = {e.chunk.View(), e.name.View()};
+    for (const StringView& part : parts)
+    {
+        for (usize i = 0; i < part.Length(); ++i)
+        {
+            h = (h ^ static_cast<u8>(part.Data()[i])) * 1099511628211ull;
+        }
+        h = (h ^ 0xFFu) * 1099511628211ull;
+    }
+    return (h ^ e.line) * 1099511628211ull;
+}
+
+bool SameFunction(const ProfileEntry& a, const ProfileEntry& b)
+{
+    return a.line == b.line && a.chunk.View() == b.chunk.View() && a.name.View() == b.name.View();
+}
+
+bool Hotter(const ProfileEntry& a, const ProfileEntry& b)
+{
+    if (a.nanoseconds != b.nanoseconds)
+    {
+        return a.nanoseconds > b.nanoseconds;
+    }
+    if (a.calls != b.calls)
+    {
+        return a.calls > b.calls;
+    }
+    if (a.chunk.View() != b.chunk.View())
+    {
+        return a.chunk.View() < b.chunk.View();
+    }
+    if (a.name.View() != b.name.View())
+    {
+        return a.name.View() < b.name.View();
+    }
+    return a.line < b.line;
+}
+
+}  // namespace
+
+Outcome ScriptWorld::ProfileReport(Vector<ProfileEntry>* out, usize top)
+{
+    out->Clear();
+    HashMap<u64, u32, HeapAllocator> index{HeapAllocator::Default()};
+    Outcome result;
+    for (u32 p = 0; p < partition_count_; ++p)
+    {
+        PartitionSlot* slot = slots_[p].Get();
+        usize expected = 0;
+        const usize token = ThisThread::Id().Hash() | 1u;
+        if (!slot->owner.CompareExchangeStrong(expected, token, MemoryOrder::AcqRel, MemoryOrder::Acquire))
+        {
+            continue;
+        }
+        if (slot->state.Get() != nullptr)
+        {
+            slot->state->Acquire();
+            Vector<ProfileEntry> mine;
+            const Outcome got = slot->state->ProfileReport(&mine);
+            slot->state->HandOver();
+            if (!got.IsOk())
+            {
+                result = Outcome(got.status, got.message.View());
+            }
+            for (usize i = 0; i < mine.Size(); ++i)
+            {
+                const u64 hash = ProfileHash(mine[i]);
+                u32 at = 0;
+                bool found = false;
+                if (const u32* first = index.Find(hash))
+                {
+                    // Equal hashes of different functions are told apart by the fields, scanning on.
+                    for (usize k = *first; k < out->Size(); ++k)
+                    {
+                        if (SameFunction((*out)[k], mine[i]))
+                        {
+                            at = static_cast<u32>(k);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (found)
+                {
+                    (*out)[at].calls += mine[i].calls;
+                    (*out)[at].nanoseconds += mine[i].nanoseconds;
+                }
+                else
+                {
+                    if (index.Find(hash) == nullptr)
+                    {
+                        index.Insert(hash, static_cast<u32>(out->Size()));
+                    }
+                    out->Push(Move(mine[i]));
+                }
+            }
+        }
+        slot->owner.Store(0, MemoryOrder::Release);
+    }
+    Sort(Span<ProfileEntry>(out->Data(), out->Size()), Hotter);
+    if (top != 0 && out->Size() > top)
+    {
+        out->Resize(top);
+    }
+    return result;
+}
+
 Outcome ScriptWorld::CallIn(PartitionSlot* slot, StringView path, Span<const Value> args, const Budget& budget,
                             CallOutput* out)
 {
@@ -548,6 +751,7 @@ Outcome ScriptWorld::CallIn(PartitionSlot* slot, StringView path, Span<const Val
             return Outcome(prepared.status, prepared.message.View());
         }
     }
+    WaitAtGate();
     const u64 start = os::MonotonicTimeNanos();
     Outcome result = slot->state->Call(path, args, budget, out);
     return Settle(slot, Move(result), start);
@@ -560,8 +764,26 @@ Outcome ScriptWorld::ResumeIn(PartitionSlot* slot, u64 coroutine, Span<const Val
     {
         return Outcome(Status::Invalid, "the partition has no state: the coroutine is gone");
     }
+    WaitAtGate();
     const u64 start = os::MonotonicTimeNanos();
     Outcome result = slot->state->Resume(coroutine, values, budget, out);
+    return Settle(slot, Move(result), start);
+}
+
+Outcome ScriptWorld::EvalIn(PartitionSlot* slot, StringView chunk_name, StringView source, const Budget& budget,
+                            CallOutput* out)
+{
+    if (slot->state.Get() == nullptr)
+    {
+        const Outcome prepared = PrepareState(slot);
+        if (!prepared.IsOk())
+        {
+            return Outcome(prepared.status, prepared.message.View());
+        }
+    }
+    WaitAtGate();
+    const u64 start = os::MonotonicTimeNanos();
+    Outcome result = slot->state->Eval(chunk_name, source, budget, out);
     return Settle(slot, Move(result), start);
 }
 

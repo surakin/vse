@@ -2,6 +2,8 @@
 
 #include "algorithm.h"
 #include "cstr/cstr.h"
+#include "containers/hash_map.h"
+#include "cstr/format.h"
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 #include "log/log.h"
@@ -59,6 +61,17 @@ struct Accounting
     u64 deadline_ns = 0;  // 0: none
     bool tripped = false;
     const char* trip_message = "";
+    // The debugger and the profile (Phase 27 Day 465); both are touched only by the thread that owns the state.
+    DebugSession* debug = nullptr;
+    bool profiling = false;
+    Vector<ProfileEntry> profile;
+    UniquePtr<HashMap<u64, u32, HeapAllocator>> profile_index;  // made when profiling starts
+    struct ProfileFrame
+    {
+        u32 entry = 0;
+        u64 start = 0;
+    };
+    Vector<ProfileFrame> profile_stack;
 };
 
 constexpr u64 kHookCount = 1000;
@@ -68,6 +81,42 @@ Accounting* AccountingOf(lua_State* L)
     void* ud = nullptr;
     lua_getallocf(L, &ud);
     return static_cast<Accounting*>(ud);
+}
+
+void Hook(lua_State* L, lua_Debug* ar);
+
+// The events the state's hook must see for the call that is about to start: a count for a budget, lines for a debugger
+// that wants them, calls and returns for the profile.
+int HookMask(const Accounting* a)
+{
+    int mask = 0;
+    if (a->instructions_limited || a->deadline_ns != 0)
+    {
+        mask |= LUA_MASKCOUNT;
+    }
+    if (a->debug != nullptr && a->debug->WantsLines())
+    {
+        mask |= LUA_MASKLINE;
+    }
+    if (a->profiling)
+    {
+        mask |= LUA_MASKCALL | LUA_MASKRET;
+    }
+    return mask;
+}
+
+// Installs the hook for a call; false (and no hook, no cost) when nothing needs one.
+bool ApplyHooks(lua_State* L)
+{
+    Accounting* a = AccountingOf(L);
+    a->profile_stack.Clear();
+    const int mask = HookMask(a);
+    if (mask == 0)
+    {
+        return false;
+    }
+    lua_sethook(L, &Hook, mask, static_cast<int>(kHookCount));
+    return true;
 }
 
 // The count hook: runs every kHookCount instructions while a budget is active. Once a budget has tripped it fires on
@@ -87,7 +136,7 @@ void BudgetHook(lua_State* L, lua_Debug*)
         {
             a->tripped = true;
             a->trip_message = out_of_instructions ? "instruction budget exceeded" : "time budget exceeded";
-            lua_sethook(L, &BudgetHook, LUA_MASKCOUNT, 1);  // from now on at every instruction
+            lua_sethook(L, &Hook, LUA_MASKCOUNT, 1);  // from now on at every instruction
         }
     }
     if (a->tripped)
@@ -654,6 +703,18 @@ const char* RunNative(lua_State* L, NativeEntry* e)
     return nullptr;
 }
 
+// The chunk and line of a frame filled by lua_getinfo with "Sl".
+void FillLocation(const lua_Debug& info, SourceLocation* out)
+{
+    const char* name = info.short_src;
+    usize length = CStrLength(name);
+    out->truncated = length > sizeof(out->chunk) - 1;
+    length = length < sizeof(out->chunk) - 1 ? length : sizeof(out->chunk) - 1;
+    MemCopy(out->chunk, name, length);
+    out->chunk[length] = '\0';
+    out->line = info.currentline > 0 ? static_cast<u32>(info.currentline) : 0u;
+}
+
 // Answers "where was this native called from": the Lua function one level up (level 0 is the native itself).
 bool LuaCallerLocation(void* context, SourceLocation* out)
 {
@@ -663,14 +724,260 @@ bool LuaCallerLocation(void* context, SourceLocation* out)
     {
         return false;
     }
-    const char* name = info.short_src;
-    usize length = CStrLength(name);
-    out->truncated = length > sizeof(out->chunk) - 1;
-    length = length < sizeof(out->chunk) - 1 ? length : sizeof(out->chunk) - 1;
-    MemCopy(out->chunk, name, length);
-    out->chunk[length] = '\0';
-    out->line = info.currentline > 0 ? static_cast<u32>(info.currentline) : 0u;
+    FillLocation(info, out);
     return true;
+}
+
+// ------------------------------------------------------------------ debugging and profiling (Day 465)
+
+constexpr int kMaxDebugFrames = 200;
+constexpr u32 kMaxDebugTableDepth = 3;
+constexpr int kMaxDebugTableEntries = 48;
+
+Value DebugText(const char* type)
+{
+    Text text = MakeText("<");
+    text.Append(StringView(type, CStrLength(type)));
+    text.Append(StringView(">"));
+    return Value::FromText(text.View());
+}
+
+// A copy of the value at `index` for a debugger: what the engine's values can carry crosses as it is; any other table
+// is shown field by field (a few levels, a few dozen fields: functions and cycles become `<function>` and the like).
+Value DebugValue(lua_State* L, int index, u32 depth)
+{
+    if (index < 0)
+    {
+        index = lua_gettop(L) + index + 1;
+    }
+    {
+        Marshal marshal;
+        Value plain;
+        if (ReadValue(L, index, &plain, &marshal, 0))
+        {
+            return plain;
+        }
+    }
+    if (lua_type(L, index) != LUA_TTABLE || depth >= kMaxDebugTableDepth || lua_checkstack(L, 8) == 0)
+    {
+        return DebugText(luaL_typename(L, index));
+    }
+    Value map = Value::MakeMap();
+    int count = 0;
+    lua_pushnil(L);
+    while (lua_next(L, index) != 0)
+    {
+        if (count >= kMaxDebugTableEntries)
+        {
+            lua_pop(L, 2);  // the key and value of the entry that does not fit
+            break;
+        }
+        Text key = MakeText("");
+        if (lua_type(L, -2) == LUA_TSTRING)
+        {
+            usize length = 0;
+            const char* text = lua_tolstring(L, -2, &length);
+            key = MakeText(StringView(text, length < 64 ? length : 64));
+        }
+        else if (lua_type(L, -2) == LUA_TNUMBER)
+        {
+            char number[40];
+            FormatTo(number, sizeof(number), "[%g]", static_cast<double>(lua_tonumber(L, -2)));
+            key = MakeText(StringView(number, CStrLength(number)));
+        }
+        if (key.Length() != 0)
+        {
+            map.Set(key.View(), DebugValue(L, -1, depth + 1));
+            ++count;
+        }
+        lua_pop(L, 1);
+    }
+    return map;
+}
+
+// The stack of the thread that is stopped in the hook.
+class LuaInspector final : public DebugInspector
+{
+public:
+    explicit LuaInspector(lua_State* L) : L_(L) {}
+
+    usize FrameCount() override
+    {
+        lua_Debug ar;
+        int n = 0;
+        while (n < kMaxDebugFrames && lua_getstack(L_, n, &ar) != 0)
+        {
+            ++n;
+        }
+        return static_cast<usize>(n);
+    }
+
+    bool Frame(usize level, DebugFrameInfo* out) override
+    {
+        lua_Debug ar;
+        if (level >= static_cast<usize>(kMaxDebugFrames) || lua_getstack(L_, static_cast<int>(level), &ar) == 0 ||
+            lua_getinfo(L_, "nSl", &ar) == 0)
+        {
+            return false;
+        }
+        FillLocation(ar, &out->where);
+        if (ar.name != nullptr)
+        {
+            out->function = MakeText(StringView(ar.name, CStrLength(ar.name)));
+        }
+        else
+        {
+            out->function = MakeText(ar.what != nullptr && CStrLength(ar.what) == 4 && ar.what[0] == 'm' ? "main chunk"
+                                                                                                         : "");
+        }
+        return true;
+    }
+
+    bool Locals(usize level, Vector<DebugVariable>* out) override
+    {
+        out->Clear();
+        lua_Debug ar;
+        if (level >= static_cast<usize>(kMaxDebugFrames) || lua_getstack(L_, static_cast<int>(level), &ar) == 0)
+        {
+            return false;
+        }
+        for (int i = 1; i <= 200; ++i)
+        {
+            const char* name = lua_getlocal(L_, &ar, i);  // pushes the value
+            if (name == nullptr)
+            {
+                break;
+            }
+            if (name[0] != '(')  // the compiler's own temporaries
+            {
+                DebugVariable v;
+                v.name = MakeText(StringView(name, CStrLength(name)));
+                v.value = DebugValue(L_, -1, 0);
+                out->Push(Move(v));
+            }
+            lua_pop(L_, 1);
+        }
+        return true;
+    }
+
+private:
+    lua_State* L_;
+};
+
+// A line is about to run and a debugger is attached.
+void DebugLine(lua_State* L, lua_Debug* ar, Accounting* a)
+{
+    if (a->debug == nullptr || a->tripped || lua_getinfo(L, "Sl", ar) == 0)
+    {
+        return;
+    }
+    SourceLocation where;
+    FillLocation(*ar, &where);
+    u32 depth = 0;
+    lua_Debug frame;
+    while (depth < static_cast<u32>(kMaxDebugFrames) && lua_getstack(L, static_cast<int>(depth), &frame) != 0)
+    {
+        ++depth;
+    }
+    if (!a->debug->AtLine(where, depth))
+    {
+        return;
+    }
+    LuaInspector inspector(L);
+    const u64 stopped_at = os::MonotonicTimeNanos();
+    a->cap += kCleanupSlack;  // looking at the stack allocates
+    a->debug->Pause(where, depth, &inspector);
+    a->cap -= kCleanupSlack;
+    if (a->deadline_ns != 0)
+    {
+        a->deadline_ns += os::MonotonicTimeNanos() - stopped_at;  // the time spent stopped is not the script's
+    }
+    const int mask = HookMask(a);
+    if (mask == 0)
+    {
+        lua_sethook(L, nullptr, 0, 0);
+    }
+    else
+    {
+        lua_sethook(L, &Hook, mask, static_cast<int>(kHookCount));
+    }
+}
+
+u64 ProfileKey(const lua_Debug& ar)
+{
+    u64 h = 14695981039346656037ull;
+    const char* src = ar.short_src;
+    for (usize i = 0; src[i] != '\0'; ++i)
+    {
+        h = (h ^ static_cast<u8>(src[i])) * 1099511628211ull;
+    }
+    h = (h ^ static_cast<u64>(static_cast<i64>(ar.linedefined))) * 1099511628211ull;
+    if (ar.what != nullptr && ar.what[0] == 'C' && ar.name != nullptr)
+    {
+        for (usize i = 0; ar.name[i] != '\0'; ++i)
+        {
+            h = (h ^ static_cast<u8>(ar.name[i])) * 1099511628211ull;
+        }
+    }
+    return h;
+}
+
+void ProfileCall(lua_State* L, lua_Debug* ar, Accounting* a)
+{
+    if (!a->profiling || a->profile_index.Get() == nullptr || lua_getinfo(L, "nS", ar) == 0)
+    {
+        return;
+    }
+    const u64 key = ProfileKey(*ar);
+    u32 entry = 0;
+    if (u32* found = a->profile_index->Find(key))
+    {
+        entry = *found;
+    }
+    else
+    {
+        ProfileEntry e;
+        e.chunk = MakeText(StringView(ar->short_src, CStrLength(ar->short_src)));
+        if (ar->name != nullptr)
+        {
+            e.name = MakeText(StringView(ar->name, CStrLength(ar->name)));
+        }
+        e.line = ar->linedefined > 0 ? static_cast<u32>(ar->linedefined) : 0u;
+        entry = static_cast<u32>(a->profile.Size());
+        a->profile.Push(Move(e));
+        a->profile_index->Insert(key, entry);
+    }
+    ++a->profile[entry].calls;
+    Accounting::ProfileFrame frame;
+    frame.entry = entry;
+    frame.start = os::MonotonicTimeNanos();
+    a->profile_stack.Push(frame);
+}
+
+void ProfileReturn(Accounting* a)
+{
+    if (!a->profiling || a->profile_stack.Size() == 0)
+    {
+        return;
+    }
+    const Accounting::ProfileFrame frame = a->profile_stack[a->profile_stack.Size() - 1];
+    a->profile_stack.Pop();
+    a->profile[frame.entry].nanoseconds += os::MonotonicTimeNanos() - frame.start;
+}
+
+// The state's hook: counts for the budget, lines for the debugger, calls and returns for the profile.
+void Hook(lua_State* L, lua_Debug* ar)
+{
+    Accounting* a = AccountingOf(L);
+    switch (ar->event)
+    {
+    case LUA_HOOKCOUNT: BudgetHook(L, ar); break;
+    case LUA_HOOKLINE: DebugLine(L, ar, a); break;
+    case LUA_HOOKCALL: ProfileCall(L, ar, a); break;
+    case LUA_HOOKRET:
+    case LUA_HOOKTAILRET: ProfileReturn(a); break;
+    default: break;
+    }
 }
 
 // The Lua closure behind a registered native. Its frame holds nothing with a destructor.
@@ -712,6 +1019,7 @@ enum class Op : int
     Compile,
     DefineModule,
     LoadHost,
+    Eval,
 };
 
 // The input and output of one protected operation; it lives in the frame that calls `lua_cpcall`.
@@ -1323,11 +1631,7 @@ void LoadChunk(lua_State* L, Request* r)
     lua_pushcfunction(L, &TracebackHandler);
     lua_insert(L, 1);
     Accounting* acct = AccountingOf(L);
-    const bool hooked = acct->instructions_limited || acct->deadline_ns != 0;
-    if (hooked)
-    {
-        lua_sethook(L, &BudgetHook, LUA_MASKCOUNT, static_cast<int>(kHookCount));
-    }
+    const bool hooked = ApplyHooks(L);
     const int run = lua_pcall(L, 0, 0, 1);
     if (hooked)
     {
@@ -1344,6 +1648,54 @@ void LoadChunk(lua_State* L, Request* r)
         const usize at = text.Find(StringView("\nstack traceback:"));
         r->error_text = MakeText(text.Substring(0, at));
         r->trace_text = MakeText(at < text.Length() ? text.Substring(at + 1) : StringView());
+    }
+}
+
+// Runs a console chunk: as an expression when it parses as one, else as statements; the values it returns are copied to
+// the output.
+void EvalChunk(lua_State* L, Request* r)
+{
+    Text expression = MakeText("return ");
+    expression.Append(r->source);
+    int rc = luaL_loadbufferx(L, expression.CStr(), expression.Length(), r->chunk, "t");
+    if (rc != 0)
+    {
+        lua_pop(L, 1);
+        rc = luaL_loadbufferx(L, r->source.Data(), r->source.Length(), r->chunk, "t");
+    }
+    if (rc != 0)
+    {
+        r->status = rc == LUA_ERRMEM ? Status::OutOfMemory : Status::SyntaxError;
+        TakeError(L, L, r);
+        r->trace_text = MakeText(r->error_text.View());
+        return;
+    }
+    lua_pushcfunction(L, &TracebackHandler);
+    lua_insert(L, 1);
+    Accounting* acct = AccountingOf(L);
+    const bool hooked = ApplyHooks(L);
+    const int run = lua_pcall(L, 0, LUA_MULTRET, 1);
+    if (hooked)
+    {
+        lua_sethook(L, nullptr, 0, 0);
+    }
+    if (run != 0)
+    {
+        r->status = run == LUA_ERRMEM ? Status::OutOfMemory
+                                      : (acct->tripped ? Status::BudgetExceeded : Status::RuntimeError);
+        usize len = 0;
+        const char* full = lua_tolstring(L, -1, &len);
+        len = len < kMaxMessageBytes + kMaxTraceBytes ? len : kMaxMessageBytes + kMaxTraceBytes;
+        const StringView text(full != nullptr ? full : "", full != nullptr ? len : 0);
+        const usize at = text.Find(StringView("\nstack traceback:"));
+        r->error_text = MakeText(text.Substring(0, at));
+        r->trace_text = MakeText(at < text.Length() ? text.Substring(at + 1) : StringView());
+        return;
+    }
+    const int top = lua_gettop(L);  // slot 1 is the message handler
+    for (int i = 2; i <= top && static_cast<usize>(i - 1) <= kMaxResults; ++i)
+    {
+        r->out->results.Push(DebugValue(L, i, 0));
     }
 }
 
@@ -1396,11 +1748,7 @@ void RunCoroutine(lua_State* L, Request* r)
     }
     lua_xmove(L, T, nargs + (r->resume ? 0 : 1));
     Accounting* acct = AccountingOf(L);
-    const bool hooked = acct->instructions_limited || acct->deadline_ns != 0;
-    if (hooked)
-    {
-        lua_sethook(L, &BudgetHook, LUA_MASKCOUNT, static_cast<int>(kHookCount));
-    }
+    const bool hooked = ApplyHooks(L);
     const int rc = lua_resume(T, nargs);
     if (hooked)
     {
@@ -1490,6 +1838,7 @@ int ProtectedBody(lua_State* L)
     case Op::Compile: CompileChunk(L, r); break;
     case Op::DefineModule: DefineModuleChunk(L, r); break;
     case Op::LoadHost: LoadHostChunk(L, r); break;
+    case Op::Eval: EvalChunk(L, r); break;
     case Op::Call: RunCoroutine(L, r); break;
     }
     return 0;
@@ -1757,7 +2106,72 @@ protected:
         caps.time_budget = options_.budgeted;
         caps.memory_budget = true;
         caps.jit = !options_.budgeted;
+        caps.debug = true;
+        caps.profiling = true;
+        caps.eval = true;
         return caps;
+    }
+
+    Outcome DoSetDebugSession(DebugSession* session) override
+    {
+        accounting_.debug = session;
+        return Outcome();
+    }
+
+    Outcome DoSetProfiling(bool on) override
+    {
+        accounting_.profiling = on;
+        if (on)
+        {
+            accounting_.profile.Clear();
+            accounting_.profile_index = MakeUnique<HashMap<u64, u32, HeapAllocator>>(HeapAllocator::Default());
+        }
+        accounting_.profile_stack.Clear();
+        return Outcome();
+    }
+
+    Outcome DoProfileReport(Vector<ProfileEntry>* out) override
+    {
+        for (usize i = 0; i < accounting_.profile.Size(); ++i)
+        {
+            const ProfileEntry& e = accounting_.profile[i];
+            ProfileEntry copy;
+            copy.chunk = MakeText(e.chunk.View());
+            copy.name = MakeText(e.name.View());
+            copy.line = e.line;
+            copy.calls = e.calls;
+            copy.nanoseconds = e.nanoseconds;
+            out->Push(Move(copy));
+        }
+        return Outcome();
+    }
+
+    Outcome DoEval(StringView chunk_name, StringView source, const Budget& budget, CallOutput* out) override
+    {
+        if (L_ == nullptr)
+        {
+            return Outcome(Status::Invalid, "the state is closed");
+        }
+        if (chunk_name.Length() == 0)
+        {
+            return Outcome(Status::Invalid, "empty chunk name");
+        }
+        Outcome refused = CheckCall(Span<const Value>(), budget);
+        if (!refused.IsOk())
+        {
+            return refused;
+        }
+        Text chunk = MakeText("=");
+        chunk.Append(chunk_name);
+        Request r;
+        r.op = Op::Eval;
+        r.chunk = chunk.CStr();
+        r.source = source;
+        r.out = out;
+        BeginBudget(budget);
+        Outcome o = Execute(&r);
+        EndBudget();
+        return o;
     }
 
 private:

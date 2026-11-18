@@ -51,6 +51,12 @@ struct Capabilities
     bool time_budget = false;
     /// Whether `Budget::memory_bytes` and the state's memory cap are honored.
     bool memory_budget = false;
+    /// Whether [[State::SetDebugSession]] works: line events, stack and locals inspection.
+    bool debug = false;
+    /// Whether [[State::SetProfiling]] and [[State::ProfileReport]] work.
+    bool profiling = false;
+    /// Whether [[State::Eval]] works.
+    bool eval = false;
 };
 
 /// Why a call suspended, and what resumes it. The scheduler (Day 460) owns the clock: the backend only reports the
@@ -154,6 +160,112 @@ void SetCallerLocationProvider(SourceLocationFn fn, void* context);
 /// - Thread-safety: thread-safe (a per-thread slot).
 /// - Fails: false, as described.
 bool CurrentCallerLocation(SourceLocation* out);
+
+/// One frame of the script stack, as a debugger shows it.
+///
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns the function name.
+struct DebugFrameInfo
+{
+    /// The function's name as the language knows it (empty when unknown, `main chunk` for a chunk's top level).
+    String<HeapAllocator> function{HeapAllocator::Default()};
+    /// The chunk and line the frame is at.
+    SourceLocation where;
+};
+
+/// One local variable of a frame.
+///
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its name and value.
+struct DebugVariable
+{
+    /// The variable's name.
+    String<HeapAllocator> name{HeapAllocator::Default()};
+    /// A copy of its value; a value that is not a [[script::Value]] (a function, a userdata) is the text `<function>`
+    /// and the like, and a table that is too deep or too large is cut.
+    Value value;
+};
+
+/// What a debugger may ask while a script is stopped. It is valid only inside [[script::DebugSession::Pause]], on the
+/// thread that is stopped.
+///
+/// - Thread-safety: thread-compatible: the stopped thread only.
+/// - Ownership: owned by the backend.
+class DebugInspector
+{
+public:
+    /// Ends the inspector.
+    virtual ~DebugInspector() = default;
+    /// How many script frames are on the stack of the running coroutine (frame 0 is the innermost).
+    ///
+    /// - Fails: never.
+    virtual usize FrameCount() = 0;
+    /// Describes frame `level`.
+    ///
+    /// - Param level: 0 is the frame that is stopped.
+    /// - Param out: receives the frame; unchanged on failure.
+    /// - Returns: false when there is no such frame.
+    /// - Ownership: `out` is borrowed for the call.
+    virtual bool Frame(usize level, DebugFrameInfo* out) = 0;
+    /// Lists the locals of frame `level` (parameters first, `self` among them for a behavior callback); the names the
+    /// compiler makes for itself are left out.
+    ///
+    /// - Param level: the frame.
+    /// - Param out: receives the variables (emptied first).
+    /// - Returns: false when there is no such frame.
+    /// - Ownership: `out` is borrowed for the call.
+    virtual bool Locals(usize level, Vector<DebugVariable>* out) = 0;
+};
+
+/// What the engine does when a script reaches a line while a debugger is attached. A backend calls it on the thread
+/// that runs the script, inside the language's hook, so it must be quick when it does not stop.
+///
+/// - Thread-safety: thread-compatible: the methods are called on the thread that owns the state; an implementation
+/// shared by several states (several partitions) must be thread-safe.
+/// - Ownership: borrowed by the state; it must outlive its use (detach with `SetDebugSession(nullptr)`).
+class DebugSession
+{
+public:
+    /// Ends the session.
+    virtual ~DebugSession() = default;
+    /// Whether the backend should report every line right now (a breakpoint is set, or a step or a pause is in
+    /// progress). It is asked at the start of every call and after every stop.
+    /// - Fails: never.
+    virtual bool WantsLines() = 0;
+    /// A line is about to run.
+    ///
+    /// - Param where: the chunk and line.
+    /// - Param depth: how many script frames are on the stack.
+    /// - Returns: true to stop here (the backend then calls [[script::DebugSession::Pause]]).
+    virtual bool AtLine(const SourceLocation& where, u32 depth) = 0;
+    /// The script is stopped at `where`; returns when it should run on. The thread blocks here, and may use
+    /// `inspector` meanwhile. The call's wall-clock budget does not run while stopped.
+    ///
+    /// - Param where: the chunk and line.
+    /// - Param depth: how many script frames are on the stack.
+    /// - Param inspector: valid until this returns.
+    /// - Ownership: `inspector` is borrowed until this returns.
+    virtual void Pause(const SourceLocation& where, u32 depth, DebugInspector* inspector) = 0;
+};
+
+/// One function's profile: how often it ran and how long it took.
+///
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its names.
+struct ProfileEntry
+{
+    /// The chunk the function was defined in (`[C]` for a native function).
+    String<HeapAllocator> chunk{HeapAllocator::Default()};
+    /// The function's name as the language knows it at its first call (may be empty).
+    String<HeapAllocator> name{HeapAllocator::Default()};
+    /// The line the function starts at (0 for a native function).
+    u32 line = 0;
+    /// How many calls were seen.
+    u64 calls = 0;
+    /// The nanoseconds from call to return, summed (including what the function called); calls that did not return
+    /// normally (an error, a yield) add their count but no time.
+    u64 nanoseconds = 0;
+};
 
 /// A function the engine registers into a state for scripts to call.
 ///
@@ -327,6 +439,65 @@ public:
         return DoMemoryUsed();
     }
 
+    /// Attaches a debugger session to this state (or, with null, detaches it). While attached and the session wants
+    /// lines, the state reports every line to it, and it may stop the script ([[script::DebugSession]]).
+    ///
+    /// - Param session: the session, or null; borrowed until replaced.
+    /// - Returns: `Ok`, or `Unsupported` from a backend without the `debug` capability.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    /// - Ownership: borrows `session` until it is replaced.
+    Outcome SetDebugSession(DebugSession* session)
+    {
+        CheckOwner();
+        return DoSetDebugSession(session);
+    }
+
+    /// Turns the per-function profile on or off. While on, every call and return of a function is timed (it costs time:
+    /// off by default); turning it on starts from zero.
+    ///
+    /// - Returns: `Ok`, or `Unsupported` from a backend without the `profiling` capability.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    Outcome SetProfiling(bool on)
+    {
+        CheckOwner();
+        return DoSetProfiling(on);
+    }
+
+    /// Copies the profile gathered so far, one entry per function.
+    ///
+    /// - Param out: receives the entries (emptied first).
+    /// - Returns: `Ok`, or `Unsupported`.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    /// - Ownership: `out` is borrowed for the call.
+    Outcome ProfileReport(Vector<ProfileEntry>* out)
+    {
+        CheckOwner();
+        out->Clear();
+        return DoProfileReport(out);
+    }
+
+    /// Runs `source` as a console chunk: first as an expression (`return <source>`), and when that does not parse as a
+    /// statement list, in `chunk_name`; the values it returns are copied to `out->results`. The chunk runs with the
+    /// state's globals and no sandbox beyond the state's own.
+    ///
+    /// - Param chunk_name: the name for messages; not empty.
+    /// - Param source: the chunk.
+    /// - Param budget: the limits.
+    /// - Param out: receives the results; not null.
+    /// - Returns: `Ok`, `SyntaxError`, `RuntimeError`, `BudgetExceeded`, `OutOfMemory`, `Invalid`, or `Unsupported`.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    /// - Ownership: borrows every argument for the call.
+    Outcome Eval(StringView chunk_name, StringView source, const Budget& budget, CallOutput* out)
+    {
+        CheckOwner();
+        if (out == nullptr)
+        {
+            return Outcome(Status::Invalid, "Eval needs an output");
+        }
+        out->Reset();
+        return DoEval(chunk_name, source, budget, out);
+    }
+
     /// Releases the language runtime now; the state is unusable afterwards except for `Close`, the owner check and the
     /// destructor.
     ///
@@ -391,6 +562,33 @@ protected:
         (void)source;
         (void)deps;
         return Outcome(Status::Unsupported, "this backend has no modules");
+    }
+    /// See [[State::SetDebugSession]]; the default is `Unsupported`.
+    virtual Outcome DoSetDebugSession(DebugSession* session)
+    {
+        (void)session;
+        return Outcome(Status::Unsupported, "this backend has no debugger");
+    }
+    /// See [[State::SetProfiling]]; the default is `Unsupported`.
+    virtual Outcome DoSetProfiling(bool on)
+    {
+        (void)on;
+        return Outcome(Status::Unsupported, "this backend has no profiler");
+    }
+    /// See [[State::ProfileReport]]; the default is `Unsupported`.
+    virtual Outcome DoProfileReport(Vector<ProfileEntry>* out)
+    {
+        (void)out;
+        return Outcome(Status::Unsupported, "this backend has no profiler");
+    }
+    /// See [[State::Eval]]; the default is `Unsupported`.
+    virtual Outcome DoEval(StringView chunk_name, StringView source, const Budget& budget, CallOutput* out)
+    {
+        (void)chunk_name;
+        (void)source;
+        (void)budget;
+        (void)out;
+        return Outcome(Status::Unsupported, "this backend has no console");
     }
     /// See [[State::Call]].
     virtual Outcome DoCall(StringView function_path, Span<const Value> args, const Budget& budget, CallOutput* out) = 0;
