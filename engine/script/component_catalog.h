@@ -18,6 +18,10 @@
 namespace engine_placeholder::script
 {
 
+/// The most components one catalog lets scripts define (the ECS holds 128 component types for the whole process, and a
+/// script must not be able to use them up).
+inline constexpr usize kMaxScriptComponents = 32;
+
 /// The most fields a script-defined component can have.
 inline constexpr usize kMaxScriptComponentFields = 32;
 
@@ -34,8 +38,8 @@ inline constexpr u32 kFirstScriptWritableComponentId = 20;
 ///
 /// - Thread-safety: thread-safe. Lookups take a lock until [[script::ComponentCatalog::Freeze]], and none after it;
 /// `Define` always takes it. Registering other components in the host's registry while scripts run is not allowed.
-/// - Ownership: borrows the registry; owns the script definitions and the names it registers (the registry points at
-/// them: see the destructor).
+/// - Ownership: borrows the registry; owns the script definitions. The registries copy every name, so a component
+/// outlives its catalog.
 class ComponentCatalog
 {
 public:
@@ -44,8 +48,7 @@ public:
     /// - Ownership: borrows the registry, which must outlive the catalog; no one else registers in it while scripts
     /// are loading.
     explicit ComponentCatalog(storage::ComponentRegistry* registry);
-    /// Destroys the definitions. The registry keeps pointers to the names the catalog owns, so the registry must not be
-    /// used after the catalog is gone (destroy it first, or at the same time, as members declared registry-first do).
+    /// Destroys the definitions (the components stay registered: the registries copied their names).
     ~ComponentCatalog();
     ComponentCatalog(const ComponentCatalog&) = delete;
     ComponentCatalog& operator=(const ComponentCatalog&) = delete;

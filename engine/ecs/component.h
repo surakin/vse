@@ -21,6 +21,10 @@ inline constexpr ComponentId kInvalidComponent = 0xFFFFu;
 /// The most component types a process registers.
 inline constexpr u32 kMaxComponentTypes = 128;
 
+/// The longest component name the registry keeps (a longer one is cut): the registry copies every name it is given,
+/// so a name may be a temporary.
+inline constexpr usize kMaxComponentNameBytes = 63;
+
 /// The largest alignment a component may require (one cache line).
 inline constexpr usize kMaxComponentAlign = 64;
 
@@ -71,7 +75,8 @@ public:
 
     /// Adds a type and returns its id.
     ///
-    /// - Param info: the type; `name` may be null (then "component#N" is made).
+    /// - Param info: the type; `name` may be null (then "component#N" is made); a given name is copied (cut at
+    /// [[ecs::kMaxComponentNameBytes]]).
     /// - Returns: the new id, or [[ecs::kInvalidComponent]] when [[ecs::kMaxComponentTypes]] types are registered
     /// (counted in `Refused`).
     ComponentId Register(const TypeInfo& info);
@@ -89,7 +94,7 @@ public:
 private:
     Mutex lock_;
     TypeInfo entries_[kMaxComponentTypes];
-    char names_[kMaxComponentTypes][16];
+    char names_[kMaxComponentTypes][kMaxComponentNameBytes + 1];
     Atomic<u32> count_{0};
     Atomic<u64> refused_{0};
 };

@@ -128,7 +128,7 @@ Status RegisteredComponent::DecodeRecord(u32 stored_version, ByteSpan bytes, voi
 
 Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::ComponentId ecs_id, bool is_tag)
 {
-    return RegisterFields(desc, Span<const FieldDesc>(desc.fields.begin(), desc.fields.size()), ecs_id, is_tag);
+    return RegisterFields(desc, Span<const FieldDesc>(desc.fields.begin(), desc.fields.size()), ecs_id, is_tag, false);
 }
 
 Status ComponentRegistry::RegisterDynamic(const ComponentDesc& desc, Span<const FieldDesc> fields,
@@ -138,11 +138,11 @@ Status ComponentRegistry::RegisterDynamic(const ComponentDesc& desc, Span<const 
     {
         return Status::Make(ErrorCode::Invalid, "a dynamic registration passes its fields separately");
     }
-    return RegisterFields(desc, fields, ecs_id, is_tag);
+    return RegisterFields(desc, fields, ecs_id, is_tag, true);
 }
 
 Status ComponentRegistry::RegisterFields(const ComponentDesc& desc, Span<const FieldDesc> fields,
-                                         ecs::ComponentId ecs_id, bool is_tag)
+                                         ecs::ComponentId ecs_id, bool is_tag, bool copy_names)
 {
     if (desc.id == 0)
     {
@@ -278,6 +278,20 @@ Status ComponentRegistry::RegisterFields(const ComponentDesc& desc, Span<const F
     for (const FieldDesc& f : fields)
     {
         entry->fields_.Push(f);
+    }
+    if (copy_names)
+    {  // a dynamic registration's names are the caller's temporaries: keep copies, and point at them
+        entry->owned_name_ = String<HeapAllocator>(HeapAllocator::Default(), StringView(desc.name));
+        entry->name_ = entry->owned_name_.CStr();
+        for (usize i = 0; i < entry->fields_.Size(); ++i)
+        {
+            entry->owned_field_names_.Push(
+                String<HeapAllocator>(HeapAllocator::Default(), StringView(entry->fields_[i].name)));
+        }
+        for (usize i = 0; i < entry->fields_.Size(); ++i)
+        {
+            entry->fields_[i].name = entry->owned_field_names_[i].CStr();
+        }
     }
     components_.Push(Move(entry));
     return Status::Success();

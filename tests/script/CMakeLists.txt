@@ -18,6 +18,7 @@ set(SCRIPT_TEST_SOURCES
   settings_bindings_test.cpp  # Day 454
   entity_bindings_test.cpp  # Day 455
   component_bindings_test.cpp  # Day 456
+  script_system_test.cpp  # Day 457
 )
 
 find_package(Threads REQUIRED)

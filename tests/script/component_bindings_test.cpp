@@ -334,6 +334,36 @@ TEST_CASE("Component bindings: a script defines a component, every state may rep
     CHECK(Mentions(late, "before the first tick"));
 }
 
+TEST_CASE("Component bindings: a catalog defines at most 32 components, and a component outlives its catalog",
+          "[script][component][define]")
+{
+    storage::ComponentRegistry registry;
+    ecs::ComponentId ecs_id = ecs::kInvalidComponent;
+    {
+        ComponentCatalog catalog(&registry);
+        String<HeapAllocator> error(HeapAllocator::Default());
+        Value fields = Value::MakeMap();
+        fields.Set("x", Value::FromText("f32"));
+        for (u32 i = 0; i < kMaxScriptComponents; ++i)
+        {
+            String<HeapAllocator> name(HeapAllocator::Default(), "capped_");
+            name.Append(static_cast<char>('a' + i / 26));
+            name.Append(static_cast<char>('a' + i % 26));
+            REQUIRE(catalog.Define(name.View(), fields, &error));
+        }
+        CHECK_FALSE(catalog.Define("one_too_many", fields, &error));
+        CHECK(error.View().Contains(StringView("at most 32")));
+        CHECK(catalog.Define("capped_ad", fields, &error));  // the same definition again is not a new one
+        ecs_id = registry.FindByName("capped_ah")->EcsId();
+    }
+    // The catalog is gone; the registries copied the names they point at (a use after free under ASan before).
+    const storage::RegisteredComponent* kept = registry.FindByName("capped_ah");
+    REQUIRE(kept != nullptr);
+    CHECK(StringView(kept->Name()) == StringView("capped_ah"));
+    CHECK(StringView(kept->Fields()[0].name) == StringView("x"));
+    CHECK(StringView(ecs::ComponentRegistry::Global().Info(ecs_id).name) == StringView("capped_ah"));
+}
+
 TEST_CASE("Component bindings: a script-defined component is saved and loaded through storage",
           "[script][component][define]")
 {

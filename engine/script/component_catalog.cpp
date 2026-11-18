@@ -456,6 +456,11 @@ bool ComponentCatalog::Define(StringView name, const Value& fields, String<HeapA
         Fail(error, "components are defined while scripts load, before the first tick");
         return false;
     }
+    if (definitions_.Size() >= kMaxScriptComponents)
+    {
+        Fail(error, "scripts define at most 32 components");
+        return false;
+    }
     if (registry_->FindByName(name) != nullptr)
     {
         Fail(error, "the name belongs to an engine component");
@@ -523,7 +528,7 @@ bool ComponentCatalog::Define(StringView name, const Value& fields, String<HeapA
         info.move_construct = size_class->move;
         info.destroy = &NoDestroy;
         info.default_construct = size_class->construct;
-        info.name = def->name.CStr();
+        info.name = def->name.CStr();  // the ECS registry copies it
         def->ecs_id = ecs::ComponentRegistry::Global().Register(info);
     }
     else

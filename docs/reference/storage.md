@@ -1141,7 +1141,7 @@ Registers a component whose layout no C++ type describes (a script-defined one):
 | Parameter `ecs_id` | the ECS type, or [`ecs::kInvalidComponent`](ecs.md#ecs-kinvalidcomponent). |
 | Parameter `is_tag` | whether the type has no data. |
 | Fails | as [`storage::ComponentRegistry::Register`](#storage-componentregistry-register-const-componentdesc-amp). |
-| Ownership | `desc.name` is borrowed and must outlive the registry. |
+| Ownership | the registry copies the component's name and the fields' names, so neither needs to outlive the call. |
 
 ### `FindById(u32)` {#storage-componentregistry-findbyid-u32-const}
 

@@ -66,6 +66,16 @@ void RegisterScriptSettings(settings::Registry* registry)
     memory.flags = settings::kRestartRequired;
     registry->Register(memory);
 
+    settings::SettingDesc on_error = settings::MakeText("script.on_error", "disable");
+    on_error.env = "ENGINE_SCRIPT_ON_ERROR";
+    on_error.flag = "script-on-error";
+    on_error.label = "Script error policy";
+    on_error.description =
+        "what happens to a script instance whose callback fails: disable (the default: it stops running), retry (the "
+        "callback runs again next tick) or abort_in_debug (disable, and stop a debug build)";
+    on_error.group = "script";
+    registry->Register(on_error);
+
     settings::SettingDesc conflicts = settings::MakeText("script.conflicts", "last_wins");
     conflicts.env = "ENGINE_SCRIPT_CONFLICTS";
     conflicts.flag = "script-conflicts";
@@ -127,6 +137,24 @@ bool ScriptConflictsAreErrors(const settings::Registry& registry)
         }
     }
     return false;
+}
+
+OnScriptError ScriptOnError(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.on_error"));
+    if (id.IsValid())
+    {
+        char text[32];
+        const usize length = settings::TextSetting(registry, id).Get(text, sizeof(text));
+        if (length > 0 && length < sizeof(text))
+        {
+            const StringView value(text, length);
+            return value == StringView("retry")            ? OnScriptError::Retry
+                   : value == StringView("abort_in_debug") ? OnScriptError::AbortInDebug
+                                                           : OnScriptError::Disable;
+        }
+    }
+    return OnScriptError::Disable;
 }
 
 u32 ScriptLogLimit(const settings::Registry& registry)

@@ -23,7 +23,18 @@ ComponentId ComponentRegistry::Register(const TypeInfo& info)
     }
     TypeInfo& entry = entries_[n];
     entry = info;
-    if (entry.name == nullptr)
+    if (info.name != nullptr)
+    {
+        char* out = names_[n];
+        usize length = 0;
+        for (; info.name[length] != '\0' && length < kMaxComponentNameBytes; ++length)
+        {
+            out[length] = info.name[length];
+        }
+        out[length] = '\0';
+        entry.name = out;
+    }
+    else
     {
         char* out = names_[n];
         const char prefix[] = "component#";

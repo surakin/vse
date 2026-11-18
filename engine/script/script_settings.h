@@ -5,9 +5,23 @@
 #include "settings/registry.h"
 #include "string/string.h"
 #include "mem/heap_allocator.h"
+#include "types.h"
 
 namespace engine_placeholder::script
 {
+
+/// What the script system does with an instance whose callback failed (setting `script.on_error`).
+///
+/// - Thread-safety: thread-compatible plain data.
+enum class OnScriptError : u8
+{
+    /// The instance is disabled: none of its callbacks runs again (the default).
+    Disable,
+    /// The instance stays; the failed callback runs again next tick.
+    Retry,
+    /// As `Disable`, but a debug build also stops the program (slow checks on).
+    AbortInDebug,
+};
 
 /// Declares the script settings: the backend, the budget mode, the random seed, the log limit, the partition count and
 /// the partition memory cap.
@@ -63,6 +77,13 @@ bool ScriptConflictsAreErrors(const settings::Registry& registry);
 /// - Fails: never.
 u32 ScriptLogLimit(const settings::Registry& registry);
 
+/// Reads `script.on_error`: what the script system does with an instance whose callback failed.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting, or any value
+/// other than `retry` or `abort_in_debug`, gives `Disable`.
+/// - Returns: the policy.
+/// - Fails: never.
+OnScriptError ScriptOnError(const settings::Registry& registry);
 /// Reads `script.partitions`: how many partitions a script world has.
 ///
 /// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 64.

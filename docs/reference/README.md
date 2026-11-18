@@ -18,12 +18,12 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
-| [Scripting](script.md) | 16 | 443 |
+| [Scripting](script.md) | 17 | 497 |
 | [Platform: OS Services](platform-os.md) | 7 | 79 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
 | [Text](text.md) | 6 | 221 |
-| [ECS](ecs.md) | 12 | 406 |
+| [ECS](ecs.md) | 12 | 410 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
 | [Physics](physics.md) | 30 | 751 |
 | [Audio](audio.md) | 28 | 822 |

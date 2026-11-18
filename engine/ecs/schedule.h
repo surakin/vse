@@ -147,6 +147,17 @@ public:
               "SystemContext::ReadResource: the system did not declare this resource");
         return static_cast<const World*>(world_)->Resource<T>();
     }
+    /// The world itself, for a system that declared [[ecs::SystemDesc::WritesAllComponents]] (it runs alone): it may
+    /// begin a parallel phase, run jobs and apply structural changes of its own.
+    ///
+    /// - Fails: a system that did not declare `WritesAllComponents` counts a violation.
+    /// - Ownership: borrowed; valid for the call.
+    World& ExclusiveWorld()
+    {
+        Check(writes_->words[0] == ~u64{0} && writes_->words[1] == ~u64{0},
+              "SystemContext::ExclusiveWorld: the system did not declare WritesAllComponents");
+        return *world_;
+    }
     /// Returns whether `entity` is alive.
     /// - Fails: never.
     bool Exists(Entity entity) const { return world_->Exists(entity); }
@@ -528,6 +539,24 @@ public:
     template <class... Ts> SystemDesc&& Writes() &&
     {
         (writes_.Add(ComponentOf<Ts>()), ...);
+        return Move(*this);
+    }
+    /// Declares that the system may read every component, including ones registered after this call (a system that
+    /// runs scripts, which name components at run time).
+    /// - Fails: never.
+    SystemDesc&& ReadsAllComponents() &&
+    {
+        reads_.words[0] = ~u64{0};
+        reads_.words[1] = ~u64{0};
+        return Move(*this);
+    }
+    /// Declares that the system may write every component, so it runs alone in its stage's wave and may use
+    /// [[ecs::SystemContext::ExclusiveWorld]].
+    /// - Fails: never.
+    SystemDesc&& WritesAllComponents() &&
+    {
+        writes_.words[0] = ~u64{0};
+        writes_.words[1] = ~u64{0};
         return Move(*this);
     }
     /// Declares resources the system reads.

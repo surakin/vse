@@ -206,7 +206,7 @@ and only then records a command. The host gives scripts a `ComponentCatalog` (`P
   yet (`KNOWN-ISSUES.md`). The fields are laid out in name order, so every state gets the same layout whatever order its table was walked in, and the stored id is derived from the name (`0x80000000 | FNV-1a`; a collision
   with another component is an error that asks for a rename). The component is registered in the host's storage registry (`ComponentRegistry::RegisterDynamic`) and in the ECS registry, so a save writes and a load reads it like
   an engine component. Defining the same component again succeeds (every partition's state runs the same script); a different definition under the name, an engine component's name, or any new component after
-  `ComponentCatalog::Freeze()` (called at the first tick) is an error. A component is at most 32 fields and 256 bytes (padded to 16, 32, 64, 128 or 256); the ECS holds 128 component types in all.
+  `ComponentCatalog::Freeze()` (called at the first tick) is an error. A component is at most 32 fields and 256 bytes (padded to 16, 32, 64, 128 or 256), and a catalog lets scripts define at most 32 components (the ECS holds 128 component types for the whole process, and a script must not use them up). The registries copy the names, so a component outlives its catalog.
 - **Queries** are `world-read` and return arrays of entities in stable id order as of the tick start, so the answer never depends on the thread count. `query.each({"a", "b"})` returns the entities of the calling partition
   (`PartitionOf(id, partitions)`, with `PartitionContext::partitions`), the common case: a partition touches only its own entities and the cost shrinks with the partition count. `query.all` returns every match and is the
   expensive call: it walks the whole world. A call returns at most 60,000 entities (a script value holds 65,536 values); more is an error, and `query.page(names, after, limit)` walks any world in pages (`after` is the last
@@ -266,3 +266,39 @@ Scripts on many threads read one world and change it through ordered command buf
 
 The test `world_view_test.cpp` runs 10,000 entities whose scripts move, spawn and destroy each other: the state hash is equal at 1, 2, 7 and 16 threads and over 100 runs, and a binding that reads
 a racing counter is caught by the same comparison.
+
+## Behaviors and the script system
+
+A script reaches an entity through a **behavior**: a table of callbacks registered by name, attached with the `ScriptComponent`.
+
+```lua
+behavior('door', {
+  on_create = function(self) end,          -- once, when the instance is made
+  on_enable = function(self) end,          -- when the component is enabled (also the first time)
+  on_start = function(self) end,           -- once, before the first update of an enabled instance
+  on_fixed_update = function(self, dt) end, -- once per physics step of the tick
+  on_update = function(self, dt) end,      -- once per tick
+  on_disable = function(self) end,         -- when the component is disabled, and before on_destroy
+  on_destroy = function(self) end,         -- when the entity or the component goes away
+})
+```
+
+- **The instance.** `self` is a table made for the entity, with `self.entity` (its handle) and `self.params` (a copy of `ScriptComponent::params`); its own fields persist between callbacks. It
+  lives in the entity's partition's state and nothing else can reach it. A callback that is not defined is skipped.
+- **The component.** `ScriptComponent{behavior, params, enabled}` (`script_runtime.h`). The script system makes the instance on the first tick after the component appears. Changing `enabled`
+  calls `on_enable` or `on_disable` at the next tick. Changing `behavior` closes the old instance at the next tick and makes the new one on the tick after.
+- **The system.** `script::MakeScriptSystem()` is an `ecs::SystemDesc` that runs `ScriptRuntime::Tick` on the world's `ScriptRuntime` resource. It declares `ReadsAllComponents()` and
+  `WritesAllComponents()` (scripts name components at run time), so the schedule runs it alone, and it uses `SystemContext::ExclusiveWorld()`. A tick is: reconcile the instances with the
+  entities that have the component; per partition (in this version one after another) and per entity in id order, `on_create`, `on_enable`/`on_disable`, `on_start`, `on_fixed_update` times the
+  host's `SetFixedSteps` count, `on_update`; the **merge** (the sync point); then a short second phase that closes the instances whose entity the merge destroyed.
+- **Destroys.** `on_destroy` runs for an entity the host destroyed, a component the host removed, and an entity a script destroyed (in the second phase, so the entity is already gone: the callback can
+  still change other entities, but reading `self.entity` fails). `on_disable` runs first only when the entity still exists (a removed component). The instance is dropped either way.
+- **Errors.** A callback that fails (a script error, the instruction budget, an unknown behavior name) is logged once per instance with the behavior and entity. The setting `script.on_error`
+  says what then happens: `disable` (default: the instance gets no more callbacks, including `on_destroy`; the entity keeps the component), `retry` (the next tick calls again) or
+  `abort_in_debug` (asserts in builds with slow checks, otherwise `disable`). A partition whose state ran out of memory and was reset disables its instances. The other instances are not
+  affected. Counts are in `ScriptRuntimeStats`.
+- **Determinism.** Instances run in entity id order inside a partition and partitions are merged in partition order; the random stream of an entity (`random.*`) is seeded from the world seed, the
+  entity id and the tick.
+
+The test `script_system_test.cpp` checks the callback order through a `tracer` component (`123445` for one tick with two fixed steps), enable and disable, errors and `retry`, the three ways
+an instance is destroyed, a behavior change, 10,000 instances for three ticks, and the system inside an `ecs::Schedule`.

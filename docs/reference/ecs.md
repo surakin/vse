@@ -1237,6 +1237,16 @@ inline constexpr u32 kMaxComponentTypes;
 
 The most component types a process registers.
 
+## `kMaxComponentNameBytes` {#ecs-kmaxcomponentnamebytes}
+
+`variable ecs::kMaxComponentNameBytes` — defined in `engine/ecs/component.h`
+
+```cpp
+inline constexpr usize kMaxComponentNameBytes;
+```
+
+The longest component name the registry keeps (a longer one is cut): the registry copies every name it is given, so a name may be a temporary.
+
 ## `kMaxComponentAlign` {#ecs-kmaxcomponentalign}
 
 `variable ecs::kMaxComponentAlign` — defined in `engine/ecs/component.h`
@@ -1419,7 +1429,7 @@ Adds a type and returns its id.
 
 | Field | Value |
 |---|---|
-| Parameter `info` | the type; `name` may be null (then "component#N" is made). |
+| Parameter `info` | the type; `name` may be null (then "component#N" is made); a given name is copied (cut at [`ecs::kMaxComponentNameBytes`](#ecs-kmaxcomponentnamebytes)). |
 | Returns | the new id, or [`ecs::kInvalidComponent`](#ecs-kinvalidcomponent) when [`ecs::kMaxComponentTypes`](#ecs-kmaxcomponenttypes) types are registered (counted in `Refused`). |
 
 ### `Info(ComponentId)` {#ecs-componentregistry-info-componentid-const}
@@ -2892,6 +2902,21 @@ The world's resource of type `T`, for reading.
 | Fails | `T` was declared with neither `ReadsResource` nor `WritesResource` counts a violation. |
 | Aborts | the world has no such resource. |
 
+### `ExclusiveWorld()` {#ecs-systemcontext-exclusiveworld}
+
+`method ecs::SystemContext::ExclusiveWorld` — defined in `engine/ecs/schedule.h`
+
+```cpp
+World& ExclusiveWorld();
+```
+
+The world itself, for a system that declared [`ecs::SystemDesc::WritesAllComponents`](#ecs-systemdesc-writesallcomponents) (it runs alone): it may begin a parallel phase, run jobs and apply structural changes of its own.
+
+| Field | Value |
+|---|---|
+| Fails | a system that did not declare `WritesAllComponents` counts a violation. |
+| Ownership | borrowed; valid for the call. |
+
 ### `Exists(Entity)` {#ecs-systemcontext-exists-entity-const}
 
 `method ecs::SystemContext::Exists` — defined in `engine/ecs/schedule.h`
@@ -3152,6 +3177,34 @@ SystemDesc&& Writes() &&;
 ```
 
 Declares components the system writes (a write includes reading).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `ReadsAllComponents()` {#ecs-systemdesc-readsallcomponents}
+
+`method ecs::SystemDesc::ReadsAllComponents` — defined in `engine/ecs/schedule.h`
+
+```cpp
+SystemDesc&& ReadsAllComponents() &&;
+```
+
+Declares that the system may read every component, including ones registered after this call (a system that runs scripts, which name components at run time).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `WritesAllComponents()` {#ecs-systemdesc-writesallcomponents}
+
+`method ecs::SystemDesc::WritesAllComponents` — defined in `engine/ecs/schedule.h`
+
+```cpp
+SystemDesc&& WritesAllComponents() &&;
+```
+
+Declares that the system may write every component, so it runs alone in its stage's wave and may use [`ecs::SystemContext::ExclusiveWorld`](#ecs-systemcontext-exclusiveworld).
 
 | Field | Value |
 |---|---|

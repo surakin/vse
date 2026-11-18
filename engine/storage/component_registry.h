@@ -13,6 +13,7 @@
 #include "lang/initializer_list.h"
 #include "storage/field.h"
 #include "storage/status.h"
+#include "string/string.h"
 #include "string_view.h"
 #include "types.h"
 
@@ -165,6 +166,9 @@ private:
     ecs::ComponentId ecs_id_ = ecs::kInvalidComponent;
     bool is_tag_ = false;
     Vector<FieldDesc> fields_;
+    String<HeapAllocator> owned_name_{
+        HeapAllocator::Default()};  // set by a dynamic registration, which copies its names
+    Vector<String<HeapAllocator>> owned_field_names_;
 };
 
 /// What to do with a stored record whose component id is not registered in this process.
@@ -230,7 +234,8 @@ public:
     /// - Param fields: the fields in storage order; copied.
     /// - Param ecs_id: the ECS type, or [[ecs::kInvalidComponent]].
     /// - Param is_tag: whether the type has no data.
-    /// - Ownership: `desc.name` is borrowed and must outlive the registry.
+    /// - Ownership: the registry copies the component's name and the fields' names, so neither needs to outlive the
+    /// call.
     /// - Fails: as [[storage::ComponentRegistry::Register]].
     Status RegisterDynamic(const ComponentDesc& desc, Span<const FieldDesc> fields, ecs::ComponentId ecs_id,
                            bool is_tag);
@@ -298,8 +303,8 @@ public:
 
 private:
     Status RegisterEntry(const ComponentDesc& desc, ecs::ComponentId ecs_id, bool is_tag);
-    Status RegisterFields(const ComponentDesc& desc, Span<const FieldDesc> fields, ecs::ComponentId ecs_id,
-                          bool is_tag);
+    Status RegisterFields(const ComponentDesc& desc, Span<const FieldDesc> fields, ecs::ComponentId ecs_id, bool is_tag,
+                          bool copy_names);
 
     Vector<UniquePtr<RegisteredComponent>> components_;
 };
