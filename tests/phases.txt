@@ -54,6 +54,7 @@ flavors 25  macos: plain,asan,tsan
 flavors 26  linux: plain,asan,tsan # tests/audio (Day 415)
 flavors 26  windows: plain,asan
 flavors 26  macos: plain,asan,tsan
+flavors 27  linux: plain,asan,tsan # tests/script (Day 445)
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -370,6 +371,7 @@ tests/ecs/                                      17   # Phase 17 Day 223
 tests/spatial/                                  18   # Phase 18 Day 238
 tests/physics/                                  25   # Phase 25 Day 386
 tests/audio/                                    26   # Phase 26 Day 415
+tests/script/                                   27   # Phase 27 Day 445
 tests/audio_physics/                            26   # Phase 26 Day 431
 test:physics_fp_determinism_probe               25   # the probe hash and the build's floating-point mode, compared with the committed hash (Day 386)
 test:physics_fp_flags_check                     25   # the configure-time fast-math check refuses planted flags (Day 386)
@@ -378,6 +380,7 @@ test:physics_fp_flags_check                     25   # the configure-time fast-m
 tests/database/                                 19   # Phase 19 Day 251
 tests/storage/                                  19   # Phase 19 Day 256
 test:sqlite_boundary_check*                     19   # the SQLite boundary gate (Day 251)
+test:luajit_boundary_check*                    27   # the LuaJIT boundary gate (Phase 27 Day 445)
 test:database_sql_check*                      19   # the SQL text gate (Day 252)
 tests/scene/visibility_test.cpp                 18   # Phase 18 Day 247
 tests/scene/scene_sync_test.cpp                     17   # Phase 17 Day 233

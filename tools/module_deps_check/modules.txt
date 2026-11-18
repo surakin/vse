@@ -42,6 +42,7 @@ include-dir third_party/yyjson
 include-dir third_party/libpng   # Phase 22 Day 338: png.h, included only by asset_import/image_decode.cpp and png_guard.c
 include-dir third_party/libogg   # Phase 26 Day 432: ogg/ogg.h, included only by audio/vorbis.cpp
 include-dir third_party/libvorbis   # Phase 26 Day 432: vorbis/codec.h, included only by audio/vorbis.cpp
+include-dir third_party/luajit/src   # Phase 27 Day 445: lua.h and friends, included only by engine/script/luajit/ and its smoke test
 include-dir third_party/stb_image   # Phase 22 Day 338: stb_image.h, included only by asset_import/image_decode.cpp
 system-include ^wayland-[a-z-]*\.h$
 

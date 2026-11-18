@@ -77,11 +77,13 @@ third_party/libpng 22
 third_party/stb_image 22
 third_party/libogg 26
 third_party/libvorbis 26
+third_party/luajit 27
 tools/std_usage_check 10
 tools/settings_fixtures_check 11
 tools/config_access_check 11
 tools/module_deps_check 12
 tools/sqlite_boundary_check 19
+tools/luajit_boundary_check 27
 tools/database_sql_check 19
 tests/windows       13
 tests/macos         26
@@ -113,6 +115,7 @@ tests/storage       19
 tests/physics       25
 tests/audio         26
 tests/audio_physics 26
+tests/script 27
 tests/text          14
 tests/ui            15
 tests/foundation_sanitized 0

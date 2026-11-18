@@ -1,6 +1,6 @@
 # Phase 27 — Scripting (Lua/LuaJIT), multithreaded
 
-**Status: in progress. Day 444 (spec and spikes) done 2026-11-18, `CURRENT_PHASE` is 27; the Day 444 decisions (pin, `P`, world access, budget versus JIT) are with the user before Day 445. Phase 28 (3D text) moved from Days 444-459 to Days 478-493.**
+**Status: in progress. Days 444 (spec and spikes) and 445 (LuaJIT vendored) done 2026-11-18, `CURRENT_PHASE` is 27; the Day 444 decisions (pin, `P` = 64, world access A, budget mode per world) were accepted by the user. Phase 28 (3D text) moved from Days 444-459 to Days 478-493.**
 
 **Depends on:** Phase 17 (ECS: components, the schedule, the structural-change rules), Phase 2 (jobs: the partitions run as jobs), Phase 22 (minted script assets, the resource manager), Phase 19 (storage: saving script state), Phase 11 (settings), Phase 9 (file layer: hot reload), Phases 23-24 (the C API), Phase 25 (physics bindings), Phase 26 (audio bindings) and Phases 13 and 21 for the Windows and macOS days.
 **Goal:** embedded gameplay scripting through a real, well-known language (Lua via LuaJIT, root `PLAN.md` assumption #13) behind a pluggable language-backend seam, **with scripted gameplay that runs on all cores**: users are not limited to single-threaded script execution as in Unreal (the user, 2026-11-17). Also the compilation and execution target for Phase 32's Blueprint importer, so the binding set, the event model and the latent waits keep Blueprint's semantics in mind.
@@ -60,6 +60,7 @@ Order reasoning: the spec and its seven spikes (444) settle the threading model,
 
 ## Notes / open questions
 
+- **Decided by the user on 2026-11-18 (after the Day 444 spikes):** LuaJIT pin `63c8f1a9b479ba5518cf6a170ff7729178bc3cfd`; default `P` = 64; world access design A (deferred writes over the live ECS, no copy); budget mode per world (budgeted = interpreter-only with the instruction hook, trusted = JIT). Amended: Days 449, 452, 470.
 - Settled by the Day 444 spikes: the exact world-access design (A or B), the default `P`, the value representation of vectors in Lua, the bytecode policy, the LuaJIT pin; each is put to the user at the end of Day 444 before Day 445.
 - Phase 32 (Blueprint import) will likely surface gaps in binding and event coverage (loops, latent waits, casts, interfaces); expect to revisit this phase's scope then (Day 477 writes the mapping notes).
 - Not in this phase: other language backends than the test one (decided against real demand), a network debugger adapter (the debug transport interface is there; an adapter for an external debugger is later), script-visible threads or locks (never), a visual scripting editor (Phase 33 and 32).

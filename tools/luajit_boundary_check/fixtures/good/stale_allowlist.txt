@@ -1,0 +1,2 @@
+# stale: nothing in engine/app/ names LuaJIT
+engine/app/|an old exception

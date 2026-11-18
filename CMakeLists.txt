@@ -216,6 +216,9 @@ add_subdirectory(third_party/zlib)  # Phase 22 Day 338: zlib, vendored (PLAN.md 
 add_subdirectory(third_party/libpng)  # Phase 22 Day 338: libpng, vendored over zlib; the PNG decoder of the glTF importer
 add_subdirectory(third_party/libogg)  # Phase 26 Day 432: libogg, vendored (PLAN.md assumption #30)
 add_subdirectory(third_party/libvorbis)  # Phase 26 Day 432: libvorbis, vendored over libogg; the Vorbis decoder of the audio module
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")  # Windows and macOS: Phase 27 Days 473 and 474
+  add_subdirectory(third_party/luajit)  # Phase 27 Day 445: LuaJIT, vendored (PLAN.md assumption #13); the script module's backend
+endif()
 add_subdirectory(third_party/stb_image)  # Phase 22 Day 338: stb_image's JPEG decoder, vendored; the JPEG decoder of the glTF importer
 add_subdirectory(third_party/yyjson)  # Phase 22 Day 335: yyjson, vendored (PLAN.md assumption #19), used only by engine/asset_import/json_view.cpp
 # Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.
@@ -312,7 +315,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
-               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check)
+               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check luajit_boundary_check)
     add_subdirectory(tools/${gate})
   endforeach()
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
@@ -410,7 +413,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/macos)  # the macOS-only checks (phase 21): build_defs.h on Apple clang, the headers beside AppKit and Metal
   # The source gates are CMake scripts over the tree, the same on every platform (Day 286, as Windows on Phase 13 Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
-               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check)
+               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check luajit_boundary_check)
     add_subdirectory(tools/${gate})
   endforeach()
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
@@ -469,6 +472,7 @@ add_subdirectory(engine/scene)  # Phase 17 Day 233
 add_subdirectory(engine/asset)  # Phase 22 Day 313
 add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
 add_subdirectory(engine/animation)  # Phase 22 Day 321
+add_subdirectory(tests/script)  # Phase 27 Day 445: the script tests (the LuaJIT smoke test; the module from Day 446)
 add_subdirectory(engine/engine_c)  # Phase 23: the aggregate shared library (ENGINE_BUILD_SHARED) and, from Day 346, the C API
 add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
 add_subdirectory(tools/resource_server)  # Phase 22 Day 331
@@ -485,6 +489,7 @@ add_subdirectory(tools/platform_neutral_check)
 add_subdirectory(tools/module_deps_check)
 add_subdirectory(tools/ui_widget_style_check)  # Phase 15 Day 195
 add_subdirectory(tools/sqlite_boundary_check)  # Phase 19 Day 251
+add_subdirectory(tools/luajit_boundary_check)  # Phase 27 Day 445
 add_subdirectory(tools/database_sql_check)  # Phase 19 Day 252
 add_subdirectory(tools/net_access_check)  # Phase 20 Day 268
 add_subdirectory(tools/shared_unit_check)  # Phase 22: shared units are held by SharedPtr aliases and never pointed at

@@ -11,8 +11,7 @@ Each tool is one of:
   with a printed reason.
 - **Optional:** a convenience for debugging or regenerating vendored files.
 
-Everything third-party that ships inside the engine or a tool (Catch2, libbacktrace, sentry-native with Breakpad, nlohmann/json, yyjson 0.13.0 (Phase 22 Day 335, `third_party/yyjson/VENDORED.md`: the glTF importer's JSON), FreeType (Phase 14), libogg 1.3.6 and libvorbis 1.3.7 (Phase 26 Day 432, decode-only, `third_party/libogg/VENDORED.md`, `third_party/libvorbis/VENDORED.md`; used only by `engine/audio/vorbis.cpp`), SQLite 3.54.1 (Phase 19, the amalgamation, `third_party/sqlite/VENDORED.md`) and later
-LuaJIT) is vendored under `third_party/` and built from source. **Do not install it separately.**
+Everything third-party that ships inside the engine or a tool (Catch2, libbacktrace, sentry-native with Breakpad, nlohmann/json, yyjson 0.13.0 (Phase 22 Day 335, `third_party/yyjson/VENDORED.md`: the glTF importer's JSON), FreeType (Phase 14), libogg 1.3.6 and libvorbis 1.3.7 (Phase 26 Day 432, decode-only, `third_party/libogg/VENDORED.md`, `third_party/libvorbis/VENDORED.md`; used only by `engine/audio/vorbis.cpp`), SQLite 3.54.1 (Phase 19, the amalgamation, `third_party/sqlite/VENDORED.md`) and LuaJIT 2.1 (Phase 27 Day 445, the pinned commit in `third_party/luajit/VENDORED.md`; built by CMake with its own host tools, so it needs only the C compiler and, on Linux, the assembler of the C compiler driver; used only by `engine/script/luajit/`)) is vendored under `third_party/` and built from source. **Do not install it separately.**
 
 ## Linux (x86-64): supported
 

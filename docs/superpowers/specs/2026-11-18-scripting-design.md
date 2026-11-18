@@ -147,5 +147,5 @@ ThreadSanitizer: 275,867 runs, 0 failures and 3 reports, all inside `libgcc_s.so
 uses the unwinder for error throws; none in our code or LuaJIT's C). The sanitizer builds link a plain LuaJIT (its assembler core and generated code cannot be
 instrumented), so they cover the engine's side of the boundary and LuaJIT's C code, not the VM's assembly; the shared-state question is answered by the run's
 8-thread behaviour and by LuaJIT's design (each `lua_State` has its own `global_State`; the JIT's mcode areas and string table are per state). A
-`race:libgcc_s` TSan suppression is needed for the unwinder (Day 445, `KNOWN-ISSUES.md`).
+`race:libgcc_s` TSan suppression is needed for the unwinder (Day 451, `KNOWN-ISSUES.md`).
 Create and destroy a whitelisted state: 16.5 us plain, 52.7 us under TSan, 96.4 us under ASan.
