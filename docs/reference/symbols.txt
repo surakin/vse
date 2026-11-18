@@ -2076,54 +2076,55 @@ script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonl
 script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:135
 script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:136
 script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:137
-script::ScriptComponent	struct	script	script-scriptcomponent	script.md	engine/script/script_runtime.h:38
-script::ScriptComponent::kComponentName	variable	script	script-scriptcomponent-kcomponentname	script.md	engine/script/script_runtime.h:41
-script::ScriptComponent::behavior	variable	script	script-scriptcomponent-behavior	script.md	engine/script/script_runtime.h:43
-script::ScriptComponent::params	variable	script	script-scriptcomponent-params	script.md	engine/script/script_runtime.h:45
-script::ScriptComponent::enabled	variable	script	script-scriptcomponent-enabled	script.md	engine/script/script_runtime.h:47
-script::ScriptComponent::ScriptComponent()	function	script	script-scriptcomponent-scriptcomponent	script.md	engine/script/script_runtime.h:50
-script::ScriptComponent::ScriptComponent(StringView,Value,bool)	function	script	script-scriptcomponent-scriptcomponent-stringview-value-bool	script.md	engine/script/script_runtime.h:57
-script::ScriptRuntimeStats	struct	script	script-scriptruntimestats	script.md	engine/script/script_runtime.h:66
-script::ScriptRuntimeStats::ticks	variable	script	script-scriptruntimestats-ticks	script.md	engine/script/script_runtime.h:69
-script::ScriptRuntimeStats::instances	variable	script	script-scriptruntimestats-instances	script.md	engine/script/script_runtime.h:71
-script::ScriptRuntimeStats::created	variable	script	script-scriptruntimestats-created	script.md	engine/script/script_runtime.h:73
-script::ScriptRuntimeStats::started	variable	script	script-scriptruntimestats-started	script.md	engine/script/script_runtime.h:75
-script::ScriptRuntimeStats::fixed_updates	variable	script	script-scriptruntimestats-fixed-updates	script.md	engine/script/script_runtime.h:77
-script::ScriptRuntimeStats::updates	variable	script	script-scriptruntimestats-updates	script.md	engine/script/script_runtime.h:79
-script::ScriptRuntimeStats::destroyed	variable	script	script-scriptruntimestats-destroyed	script.md	engine/script/script_runtime.h:81
-script::ScriptRuntimeStats::errors	variable	script	script-scriptruntimestats-errors	script.md	engine/script/script_runtime.h:83
-script::ScriptRuntimeStats::disabled_by_error	variable	script	script-scriptruntimestats-disabled-by-error	script.md	engine/script/script_runtime.h:85
-script::ScriptRuntimeStats::skipped_partitions	variable	script	script-scriptruntimestats-skipped-partitions	script.md	engine/script/script_runtime.h:87
-script::ScriptRuntimeStats::commands_applied	variable	script	script-scriptruntimestats-commands-applied	script.md	engine/script/script_runtime.h:89
-script::ScriptRuntimeConfig	struct	script	script-scriptruntimeconfig	script.md	engine/script/script_runtime.h:96
-script::ScriptRuntimeConfig::backend	variable	script	script-scriptruntimeconfig-backend	script.md	engine/script/script_runtime.h:99
-script::ScriptRuntimeConfig::bindings	variable	script	script-scriptruntimeconfig-bindings	script.md	engine/script/script_runtime.h:101
-script::ScriptRuntimeConfig::partitions	variable	script	script-scriptruntimeconfig-partitions	script.md	engine/script/script_runtime.h:103
-script::ScriptRuntimeConfig::partition_memory	variable	script	script-scriptruntimeconfig-partition-memory	script.md	engine/script/script_runtime.h:105
-script::ScriptRuntimeConfig::random_seed	variable	script	script-scriptruntimeconfig-random-seed	script.md	engine/script/script_runtime.h:107
-script::ScriptRuntimeConfig::on_error	variable	script	script-scriptruntimeconfig-on-error	script.md	engine/script/script_runtime.h:109
-script::ScriptRuntimeConfig::conflicts	variable	script	script-scriptruntimeconfig-conflicts	script.md	engine/script/script_runtime.h:111
-script::ScriptRuntimeConfig::budget	variable	script	script-scriptruntimeconfig-budget	script.md	engine/script/script_runtime.h:113
-script::ScriptRuntimeConfig::components	variable	script	script-scriptruntimeconfig-components	script.md	engine/script/script_runtime.h:115
-script::ScriptRuntimeConfig::scene	variable	script	script-scriptruntimeconfig-scene	script.md	engine/script/script_runtime.h:117
-script::ScriptRuntimeConfig::services	variable	script	script-scriptruntimeconfig-services	script.md	engine/script/script_runtime.h:119
-script::ScriptRuntimeConfig::host_source	variable	script	script-scriptruntimeconfig-host-source	script.md	engine/script/script_runtime.h:122
-script::ScriptRuntimeConfig::DefaultBudget()	function	script	script-scriptruntimeconfig-defaultbudget	script.md	engine/script/script_runtime.h:125
-script::LuaBehaviorHostSource()	function	script	script-luabehaviorhostsource	script.md	engine/script/script_runtime.h:139
-script::ScriptRuntime	class	script	script-scriptruntime	script.md	engine/script/script_runtime.h:147
-script::ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp	script.md	engine/script/script_runtime.h:154
-script::ScriptRuntime::~ScriptRuntime()	function	script	script-scriptruntime-tilde-scriptruntime	script.md	engine/script/script_runtime.h:156
-script::ScriptRuntime::ScriptRuntime(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-scriptruntime-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:158
-script::ScriptRuntime::operator=(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-operator-eq-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:160
-script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:161
-script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:162
-script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:168
-script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:175
-script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:180
-script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:184
-script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:188
-script::ScriptRuntime::Tick(ecs::World*,f64)	function	script	script-scriptruntime-tick-ecs-world-star-f64	script.md	engine/script/script_runtime.h:197
-script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:210
+script::ScriptComponent	struct	script	script-scriptcomponent	script.md	engine/script/script_runtime.h:39
+script::ScriptComponent::kComponentName	variable	script	script-scriptcomponent-kcomponentname	script.md	engine/script/script_runtime.h:42
+script::ScriptComponent::behavior	variable	script	script-scriptcomponent-behavior	script.md	engine/script/script_runtime.h:44
+script::ScriptComponent::params	variable	script	script-scriptcomponent-params	script.md	engine/script/script_runtime.h:46
+script::ScriptComponent::enabled	variable	script	script-scriptcomponent-enabled	script.md	engine/script/script_runtime.h:48
+script::ScriptComponent::ScriptComponent()	function	script	script-scriptcomponent-scriptcomponent	script.md	engine/script/script_runtime.h:51
+script::ScriptComponent::ScriptComponent(StringView,Value,bool)	function	script	script-scriptcomponent-scriptcomponent-stringview-value-bool	script.md	engine/script/script_runtime.h:58
+script::ScriptRuntimeStats	struct	script	script-scriptruntimestats	script.md	engine/script/script_runtime.h:67
+script::ScriptRuntimeStats::ticks	variable	script	script-scriptruntimestats-ticks	script.md	engine/script/script_runtime.h:70
+script::ScriptRuntimeStats::instances	variable	script	script-scriptruntimestats-instances	script.md	engine/script/script_runtime.h:72
+script::ScriptRuntimeStats::created	variable	script	script-scriptruntimestats-created	script.md	engine/script/script_runtime.h:74
+script::ScriptRuntimeStats::started	variable	script	script-scriptruntimestats-started	script.md	engine/script/script_runtime.h:76
+script::ScriptRuntimeStats::fixed_updates	variable	script	script-scriptruntimestats-fixed-updates	script.md	engine/script/script_runtime.h:78
+script::ScriptRuntimeStats::updates	variable	script	script-scriptruntimestats-updates	script.md	engine/script/script_runtime.h:80
+script::ScriptRuntimeStats::destroyed	variable	script	script-scriptruntimestats-destroyed	script.md	engine/script/script_runtime.h:82
+script::ScriptRuntimeStats::errors	variable	script	script-scriptruntimestats-errors	script.md	engine/script/script_runtime.h:84
+script::ScriptRuntimeStats::disabled_by_error	variable	script	script-scriptruntimestats-disabled-by-error	script.md	engine/script/script_runtime.h:86
+script::ScriptRuntimeStats::skipped_partitions	variable	script	script-scriptruntimestats-skipped-partitions	script.md	engine/script/script_runtime.h:88
+script::ScriptRuntimeStats::commands_applied	variable	script	script-scriptruntimestats-commands-applied	script.md	engine/script/script_runtime.h:90
+script::ScriptRuntimeConfig	struct	script	script-scriptruntimeconfig	script.md	engine/script/script_runtime.h:97
+script::ScriptRuntimeConfig::backend	variable	script	script-scriptruntimeconfig-backend	script.md	engine/script/script_runtime.h:100
+script::ScriptRuntimeConfig::bindings	variable	script	script-scriptruntimeconfig-bindings	script.md	engine/script/script_runtime.h:102
+script::ScriptRuntimeConfig::partitions	variable	script	script-scriptruntimeconfig-partitions	script.md	engine/script/script_runtime.h:104
+script::ScriptRuntimeConfig::partition_memory	variable	script	script-scriptruntimeconfig-partition-memory	script.md	engine/script/script_runtime.h:106
+script::ScriptRuntimeConfig::random_seed	variable	script	script-scriptruntimeconfig-random-seed	script.md	engine/script/script_runtime.h:108
+script::ScriptRuntimeConfig::log_limit	variable	script	script-scriptruntimeconfig-log-limit	script.md	engine/script/script_runtime.h:110
+script::ScriptRuntimeConfig::on_error	variable	script	script-scriptruntimeconfig-on-error	script.md	engine/script/script_runtime.h:112
+script::ScriptRuntimeConfig::conflicts	variable	script	script-scriptruntimeconfig-conflicts	script.md	engine/script/script_runtime.h:114
+script::ScriptRuntimeConfig::budget	variable	script	script-scriptruntimeconfig-budget	script.md	engine/script/script_runtime.h:116
+script::ScriptRuntimeConfig::components	variable	script	script-scriptruntimeconfig-components	script.md	engine/script/script_runtime.h:118
+script::ScriptRuntimeConfig::scene	variable	script	script-scriptruntimeconfig-scene	script.md	engine/script/script_runtime.h:120
+script::ScriptRuntimeConfig::services	variable	script	script-scriptruntimeconfig-services	script.md	engine/script/script_runtime.h:122
+script::ScriptRuntimeConfig::host_source	variable	script	script-scriptruntimeconfig-host-source	script.md	engine/script/script_runtime.h:125
+script::ScriptRuntimeConfig::DefaultBudget()	function	script	script-scriptruntimeconfig-defaultbudget	script.md	engine/script/script_runtime.h:128
+script::LuaBehaviorHostSource()	function	script	script-luabehaviorhostsource	script.md	engine/script/script_runtime.h:142
+script::ScriptRuntime	class	script	script-scriptruntime	script.md	engine/script/script_runtime.h:150
+script::ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp	script.md	engine/script/script_runtime.h:157
+script::ScriptRuntime::~ScriptRuntime()	function	script	script-scriptruntime-tilde-scriptruntime	script.md	engine/script/script_runtime.h:159
+script::ScriptRuntime::ScriptRuntime(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-scriptruntime-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:161
+script::ScriptRuntime::operator=(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-operator-eq-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:163
+script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:164
+script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:165
+script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:171
+script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:178
+script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:183
+script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:187
+script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:191
+script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:203
+script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:216
 script::OnScriptError	enum	script	script-onscripterror	script.md	engine/script/script_settings.h:16
 script::OnScriptError::Disable	enumerator	script	script-onscripterror-disable	script.md	engine/script/script_settings.h:19
 script::OnScriptError::Retry	enumerator	script	script-onscripterror-retry	script.md	engine/script/script_settings.h:21
@@ -3712,71 +3713,72 @@ ecs::SystemContext::Query()	function	ecs	ecs-systemcontext-query	ecs.md	engine/e
 ecs::SystemContext::Resource()	function	ecs	ecs-systemcontext-resource	ecs.md	engine/ecs/schedule.h:134
 ecs::SystemContext::ReadResource()	function	ecs	ecs-systemcontext-readresource	ecs.md	engine/ecs/schedule.h:143
 ecs::SystemContext::ExclusiveWorld()	function	ecs	ecs-systemcontext-exclusiveworld	ecs.md	engine/ecs/schedule.h:155
-ecs::SystemContext::Exists(Entity) const	function	ecs	ecs-systemcontext-exists-entity-const	ecs.md	engine/ecs/schedule.h:163
-ecs::SystemContext::WorldId() const	function	ecs	ecs-systemcontext-worldid-const	ecs.md	engine/ecs/schedule.h:167
-ecs::SystemContext::DestroyedCount() const	function	ecs	ecs-systemcontext-destroyedcount-const	ecs.md	engine/ecs/schedule.h:171
-ecs::SystemContext::Tick() const	function	ecs	ecs-systemcontext-tick-const	ecs.md	engine/ecs/schedule.h:174
-ecs::SystemContext::Peek(Entity)	function	ecs	ecs-systemcontext-peek-entity	ecs.md	engine/ecs/schedule.h:182
-ecs::SystemContext::RemovedCount()	function	ecs	ecs-systemcontext-removedcount	ecs.md	engine/ecs/schedule.h:191
-ecs::SystemContext::RemovedAt(usize) const	function	ecs	ecs-systemcontext-removedat-usize-const	ecs.md	engine/ecs/schedule.h:201
-ecs::SystemContext::Poke(Entity)	function	ecs	ecs-systemcontext-poke-entity	ecs.md	engine/ecs/schedule.h:211
-ecs::SystemContext::Stamp(Entity)	function	ecs	ecs-systemcontext-stamp-entity	ecs.md	engine/ecs/schedule.h:219
-ecs::SystemContext::ParallelFor(usize,usize,F&)	function	ecs	ecs-systemcontext-parallelfor-usize-usize-f-amp	ecs.md	engine/ecs/schedule.h:231
-ecs::SystemDesc	class	ecs	ecs-systemdesc	ecs.md	engine/ecs/schedule.h:513
-ecs::SystemDesc::kMaxConstraints	variable	ecs	ecs-systemdesc-kmaxconstraints	ecs.md	engine/ecs/schedule.h:517
-ecs::SystemDesc::SystemDesc()	function	ecs	ecs-systemdesc-systemdesc	ecs.md	engine/ecs/schedule.h:519
-ecs::SystemDesc::SystemDesc(const char*,detail::SystemFn)	function	ecs	ecs-systemdesc-systemdesc-const-char-star-detail-systemfn	ecs.md	engine/ecs/schedule.h:523
-ecs::SystemDesc::SystemDesc(SystemDesc&&)	function	ecs	ecs-systemdesc-systemdesc-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:524
-ecs::SystemDesc::operator=(SystemDesc&&)	function	ecs	ecs-systemdesc-operator-eq-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:525
-ecs::SystemDesc::DeduceAccess()	function	ecs	ecs-systemdesc-deduceaccess	ecs.md	engine/ecs/schedule.h:529
-ecs::SystemDesc::Reads()	function	ecs	ecs-systemdesc-reads	ecs.md	engine/ecs/schedule.h:532
-ecs::SystemDesc::Writes()	function	ecs	ecs-systemdesc-writes	ecs.md	engine/ecs/schedule.h:539
-ecs::SystemDesc::ReadsAllComponents()	function	ecs	ecs-systemdesc-readsallcomponents	ecs.md	engine/ecs/schedule.h:547
-ecs::SystemDesc::WritesAllComponents()	function	ecs	ecs-systemdesc-writesallcomponents	ecs.md	engine/ecs/schedule.h:556
-ecs::SystemDesc::ReadsResource()	function	ecs	ecs-systemdesc-readsresource	ecs.md	engine/ecs/schedule.h:564
-ecs::SystemDesc::WritesResource()	function	ecs	ecs-systemdesc-writesresource	ecs.md	engine/ecs/schedule.h:571
-ecs::SystemDesc::InStage(StageId)	function	ecs	ecs-systemdesc-instage-stageid	ecs.md	engine/ecs/schedule.h:578
-ecs::SystemDesc::After(const char*)	function	ecs	ecs-systemdesc-after-const-char-star	ecs.md	engine/ecs/schedule.h:585
-ecs::SystemDesc::Before(const char*)	function	ecs	ecs-systemdesc-before-const-char-star	ecs.md	engine/ecs/schedule.h:593
-ecs::SystemDesc::RunIf(bool(*)(SystemContext&))	function	ecs	ecs-systemdesc-runif-bool-star-systemcontext-amp	ecs.md	engine/ecs/schedule.h:601
-ecs::MakeSystem(const char*,Fn)	function	ecs	ecs-makesystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:628
-ecs::MakeQuerySystem(const char*,Fn)	function	ecs	ecs-makequerysystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:639
-ecs::SystemStats	struct	ecs	ecs-systemstats	ecs.md	engine/ecs/schedule.h:650
-ecs::SystemStats::name	variable	ecs	ecs-systemstats-name	ecs.md	engine/ecs/schedule.h:653
-ecs::SystemStats::runs	variable	ecs	ecs-systemstats-runs	ecs.md	engine/ecs/schedule.h:655
-ecs::SystemStats::skipped_runs	variable	ecs	ecs-systemstats-skipped-runs	ecs.md	engine/ecs/schedule.h:657
-ecs::SystemStats::last_ns	variable	ecs	ecs-systemstats-last-ns	ecs.md	engine/ecs/schedule.h:659
-ecs::SystemStats::total_ns	variable	ecs	ecs-systemstats-total-ns	ecs.md	engine/ecs/schedule.h:661
-ecs::SystemStats::entities	variable	ecs	ecs-systemstats-entities	ecs.md	engine/ecs/schedule.h:663
-ecs::SystemStats::chunks_visited	variable	ecs	ecs-systemstats-chunks-visited	ecs.md	engine/ecs/schedule.h:665
-ecs::SystemStats::chunks_skipped	variable	ecs	ecs-systemstats-chunks-skipped	ecs.md	engine/ecs/schedule.h:667
-ecs::SystemStats::AverageNanos() const	function	ecs	ecs-systemstats-averagenanos-const	ecs.md	engine/ecs/schedule.h:669
-ecs::BuildReport	struct	ecs	ecs-buildreport	ecs.md	engine/ecs/schedule.h:676
-ecs::BuildReport::ok	variable	ecs	ecs-buildreport-ok	ecs.md	engine/ecs/schedule.h:679
-ecs::BuildReport::message	variable	ecs	ecs-buildreport-message	ecs.md	engine/ecs/schedule.h:682
-ecs::ScheduleStats	struct	ecs	ecs-schedulestats	ecs.md	engine/ecs/schedule.h:689
-ecs::ScheduleStats::frames	variable	ecs	ecs-schedulestats-frames	ecs.md	engine/ecs/schedule.h:692
-ecs::ScheduleStats::access_violations	variable	ecs	ecs-schedulestats-access-violations	ecs.md	engine/ecs/schedule.h:694
-ecs::ScheduleStats::commands_applied	variable	ecs	ecs-schedulestats-commands-applied	ecs.md	engine/ecs/schedule.h:696
-ecs::ScheduleStats::commands_ignored	variable	ecs	ecs-schedulestats-commands-ignored	ecs.md	engine/ecs/schedule.h:698
-ecs::Schedule	class	ecs	ecs-schedule	ecs.md	engine/ecs/schedule.h:712
-ecs::Schedule::Schedule()	function	ecs	ecs-schedule-schedule	ecs.md	engine/ecs/schedule.h:716
-ecs::Schedule::Schedule(const Schedule&)	function	ecs	ecs-schedule-schedule-const-schedule-amp	ecs.md	engine/ecs/schedule.h:717
-ecs::Schedule::operator=(const Schedule&)	function	ecs	ecs-schedule-operator-eq-const-schedule-amp	ecs.md	engine/ecs/schedule.h:718
-ecs::Schedule::AddStage(const char*,StageId)	function	ecs	ecs-schedule-addstage-const-char-star-stageid	ecs.md	engine/ecs/schedule.h:723
-ecs::Schedule::Add(SystemDesc)	function	ecs	ecs-schedule-add-systemdesc	ecs.md	engine/ecs/schedule.h:726
-ecs::Schedule::Build()	function	ecs	ecs-schedule-build	ecs.md	engine/ecs/schedule.h:729
-ecs::Schedule::UseSettings(const settings::Registry&)	function	ecs	ecs-schedule-usesettings-const-settings-registry-amp	ecs.md	engine/ecs/schedule.h:735
-ecs::Schedule::SetScheduler(jobs::Scheduler*)	function	ecs	ecs-schedule-setscheduler-jobs-scheduler-star	ecs.md	engine/ecs/schedule.h:742
-ecs::Schedule::SetStatsEnabled(bool)	function	ecs	ecs-schedule-setstatsenabled-bool	ecs.md	engine/ecs/schedule.h:744
-ecs::Schedule::Run(World&,f32)	function	ecs	ecs-schedule-run-world-amp-f32	ecs.md	engine/ecs/schedule.h:749
-ecs::Schedule::WaveOf(u32) const	function	ecs	ecs-schedule-waveof-u32-const	ecs.md	engine/ecs/schedule.h:755
-ecs::Schedule::SystemCount() const	function	ecs	ecs-schedule-systemcount-const	ecs.md	engine/ecs/schedule.h:757
-ecs::Schedule::RunOrderName(u32) const	function	ecs	ecs-schedule-runordername-u32-const	ecs.md	engine/ecs/schedule.h:761
-ecs::Schedule::StatsOf(const char*) const	function	ecs	ecs-schedule-statsof-const-char-star-const	ecs.md	engine/ecs/schedule.h:765
-ecs::Schedule::Stats() const	function	ecs	ecs-schedule-stats-const	ecs.md	engine/ecs/schedule.h:767
-ecs::Schedule::ParallelRequested() const	function	ecs	ecs-schedule-parallelrequested-const	ecs.md	engine/ecs/schedule.h:771
-ecs::Schedule::HeapFallbacks()	function	ecs	ecs-schedule-heapfallbacks	ecs.md	engine/ecs/schedule.h:774
+ecs::SystemContext::JobScheduler() const	function	ecs	ecs-systemcontext-jobscheduler-const	ecs.md	engine/ecs/schedule.h:165
+ecs::SystemContext::Exists(Entity) const	function	ecs	ecs-systemcontext-exists-entity-const	ecs.md	engine/ecs/schedule.h:168
+ecs::SystemContext::WorldId() const	function	ecs	ecs-systemcontext-worldid-const	ecs.md	engine/ecs/schedule.h:172
+ecs::SystemContext::DestroyedCount() const	function	ecs	ecs-systemcontext-destroyedcount-const	ecs.md	engine/ecs/schedule.h:176
+ecs::SystemContext::Tick() const	function	ecs	ecs-systemcontext-tick-const	ecs.md	engine/ecs/schedule.h:179
+ecs::SystemContext::Peek(Entity)	function	ecs	ecs-systemcontext-peek-entity	ecs.md	engine/ecs/schedule.h:187
+ecs::SystemContext::RemovedCount()	function	ecs	ecs-systemcontext-removedcount	ecs.md	engine/ecs/schedule.h:196
+ecs::SystemContext::RemovedAt(usize) const	function	ecs	ecs-systemcontext-removedat-usize-const	ecs.md	engine/ecs/schedule.h:206
+ecs::SystemContext::Poke(Entity)	function	ecs	ecs-systemcontext-poke-entity	ecs.md	engine/ecs/schedule.h:216
+ecs::SystemContext::Stamp(Entity)	function	ecs	ecs-systemcontext-stamp-entity	ecs.md	engine/ecs/schedule.h:224
+ecs::SystemContext::ParallelFor(usize,usize,F&)	function	ecs	ecs-systemcontext-parallelfor-usize-usize-f-amp	ecs.md	engine/ecs/schedule.h:236
+ecs::SystemDesc	class	ecs	ecs-systemdesc	ecs.md	engine/ecs/schedule.h:518
+ecs::SystemDesc::kMaxConstraints	variable	ecs	ecs-systemdesc-kmaxconstraints	ecs.md	engine/ecs/schedule.h:522
+ecs::SystemDesc::SystemDesc()	function	ecs	ecs-systemdesc-systemdesc	ecs.md	engine/ecs/schedule.h:524
+ecs::SystemDesc::SystemDesc(const char*,detail::SystemFn)	function	ecs	ecs-systemdesc-systemdesc-const-char-star-detail-systemfn	ecs.md	engine/ecs/schedule.h:528
+ecs::SystemDesc::SystemDesc(SystemDesc&&)	function	ecs	ecs-systemdesc-systemdesc-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:529
+ecs::SystemDesc::operator=(SystemDesc&&)	function	ecs	ecs-systemdesc-operator-eq-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:530
+ecs::SystemDesc::DeduceAccess()	function	ecs	ecs-systemdesc-deduceaccess	ecs.md	engine/ecs/schedule.h:534
+ecs::SystemDesc::Reads()	function	ecs	ecs-systemdesc-reads	ecs.md	engine/ecs/schedule.h:537
+ecs::SystemDesc::Writes()	function	ecs	ecs-systemdesc-writes	ecs.md	engine/ecs/schedule.h:544
+ecs::SystemDesc::ReadsAllComponents()	function	ecs	ecs-systemdesc-readsallcomponents	ecs.md	engine/ecs/schedule.h:552
+ecs::SystemDesc::WritesAllComponents()	function	ecs	ecs-systemdesc-writesallcomponents	ecs.md	engine/ecs/schedule.h:561
+ecs::SystemDesc::ReadsResource()	function	ecs	ecs-systemdesc-readsresource	ecs.md	engine/ecs/schedule.h:569
+ecs::SystemDesc::WritesResource()	function	ecs	ecs-systemdesc-writesresource	ecs.md	engine/ecs/schedule.h:576
+ecs::SystemDesc::InStage(StageId)	function	ecs	ecs-systemdesc-instage-stageid	ecs.md	engine/ecs/schedule.h:583
+ecs::SystemDesc::After(const char*)	function	ecs	ecs-systemdesc-after-const-char-star	ecs.md	engine/ecs/schedule.h:590
+ecs::SystemDesc::Before(const char*)	function	ecs	ecs-systemdesc-before-const-char-star	ecs.md	engine/ecs/schedule.h:598
+ecs::SystemDesc::RunIf(bool(*)(SystemContext&))	function	ecs	ecs-systemdesc-runif-bool-star-systemcontext-amp	ecs.md	engine/ecs/schedule.h:606
+ecs::MakeSystem(const char*,Fn)	function	ecs	ecs-makesystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:633
+ecs::MakeQuerySystem(const char*,Fn)	function	ecs	ecs-makequerysystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:644
+ecs::SystemStats	struct	ecs	ecs-systemstats	ecs.md	engine/ecs/schedule.h:655
+ecs::SystemStats::name	variable	ecs	ecs-systemstats-name	ecs.md	engine/ecs/schedule.h:658
+ecs::SystemStats::runs	variable	ecs	ecs-systemstats-runs	ecs.md	engine/ecs/schedule.h:660
+ecs::SystemStats::skipped_runs	variable	ecs	ecs-systemstats-skipped-runs	ecs.md	engine/ecs/schedule.h:662
+ecs::SystemStats::last_ns	variable	ecs	ecs-systemstats-last-ns	ecs.md	engine/ecs/schedule.h:664
+ecs::SystemStats::total_ns	variable	ecs	ecs-systemstats-total-ns	ecs.md	engine/ecs/schedule.h:666
+ecs::SystemStats::entities	variable	ecs	ecs-systemstats-entities	ecs.md	engine/ecs/schedule.h:668
+ecs::SystemStats::chunks_visited	variable	ecs	ecs-systemstats-chunks-visited	ecs.md	engine/ecs/schedule.h:670
+ecs::SystemStats::chunks_skipped	variable	ecs	ecs-systemstats-chunks-skipped	ecs.md	engine/ecs/schedule.h:672
+ecs::SystemStats::AverageNanos() const	function	ecs	ecs-systemstats-averagenanos-const	ecs.md	engine/ecs/schedule.h:674
+ecs::BuildReport	struct	ecs	ecs-buildreport	ecs.md	engine/ecs/schedule.h:681
+ecs::BuildReport::ok	variable	ecs	ecs-buildreport-ok	ecs.md	engine/ecs/schedule.h:684
+ecs::BuildReport::message	variable	ecs	ecs-buildreport-message	ecs.md	engine/ecs/schedule.h:687
+ecs::ScheduleStats	struct	ecs	ecs-schedulestats	ecs.md	engine/ecs/schedule.h:694
+ecs::ScheduleStats::frames	variable	ecs	ecs-schedulestats-frames	ecs.md	engine/ecs/schedule.h:697
+ecs::ScheduleStats::access_violations	variable	ecs	ecs-schedulestats-access-violations	ecs.md	engine/ecs/schedule.h:699
+ecs::ScheduleStats::commands_applied	variable	ecs	ecs-schedulestats-commands-applied	ecs.md	engine/ecs/schedule.h:701
+ecs::ScheduleStats::commands_ignored	variable	ecs	ecs-schedulestats-commands-ignored	ecs.md	engine/ecs/schedule.h:703
+ecs::Schedule	class	ecs	ecs-schedule	ecs.md	engine/ecs/schedule.h:717
+ecs::Schedule::Schedule()	function	ecs	ecs-schedule-schedule	ecs.md	engine/ecs/schedule.h:721
+ecs::Schedule::Schedule(const Schedule&)	function	ecs	ecs-schedule-schedule-const-schedule-amp	ecs.md	engine/ecs/schedule.h:722
+ecs::Schedule::operator=(const Schedule&)	function	ecs	ecs-schedule-operator-eq-const-schedule-amp	ecs.md	engine/ecs/schedule.h:723
+ecs::Schedule::AddStage(const char*,StageId)	function	ecs	ecs-schedule-addstage-const-char-star-stageid	ecs.md	engine/ecs/schedule.h:728
+ecs::Schedule::Add(SystemDesc)	function	ecs	ecs-schedule-add-systemdesc	ecs.md	engine/ecs/schedule.h:731
+ecs::Schedule::Build()	function	ecs	ecs-schedule-build	ecs.md	engine/ecs/schedule.h:734
+ecs::Schedule::UseSettings(const settings::Registry&)	function	ecs	ecs-schedule-usesettings-const-settings-registry-amp	ecs.md	engine/ecs/schedule.h:740
+ecs::Schedule::SetScheduler(jobs::Scheduler*)	function	ecs	ecs-schedule-setscheduler-jobs-scheduler-star	ecs.md	engine/ecs/schedule.h:747
+ecs::Schedule::SetStatsEnabled(bool)	function	ecs	ecs-schedule-setstatsenabled-bool	ecs.md	engine/ecs/schedule.h:749
+ecs::Schedule::Run(World&,f32)	function	ecs	ecs-schedule-run-world-amp-f32	ecs.md	engine/ecs/schedule.h:754
+ecs::Schedule::WaveOf(u32) const	function	ecs	ecs-schedule-waveof-u32-const	ecs.md	engine/ecs/schedule.h:760
+ecs::Schedule::SystemCount() const	function	ecs	ecs-schedule-systemcount-const	ecs.md	engine/ecs/schedule.h:762
+ecs::Schedule::RunOrderName(u32) const	function	ecs	ecs-schedule-runordername-u32-const	ecs.md	engine/ecs/schedule.h:766
+ecs::Schedule::StatsOf(const char*) const	function	ecs	ecs-schedule-statsof-const-char-star-const	ecs.md	engine/ecs/schedule.h:770
+ecs::Schedule::Stats() const	function	ecs	ecs-schedule-stats-const	ecs.md	engine/ecs/schedule.h:772
+ecs::Schedule::ParallelRequested() const	function	ecs	ecs-schedule-parallelrequested-const	ecs.md	engine/ecs/schedule.h:776
+ecs::Schedule::HeapFallbacks()	function	ecs	ecs-schedule-heapfallbacks	ecs.md	engine/ecs/schedule.h:779
 ecs::kMaxHierarchyDepth	variable	ecs	ecs-kmaxhierarchydepth	ecs.md	engine/ecs/transform.h:19
 ecs::LocalTransform	struct	ecs	ecs-localtransform	ecs.md	engine/ecs/transform.h:25
 ecs::LocalTransform::position	variable	ecs	ecs-localtransform-position	ecs.md	engine/ecs/transform.h:28

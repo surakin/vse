@@ -302,3 +302,28 @@ behavior('door', {
 
 The test `script_system_test.cpp` checks the callback order through a `tracer` component (`123445` for one tick with two fixed steps), enable and disable, errors and `retry`, the three ways
 an instance is destroyed, a behavior change, 10,000 instances for three ticks, and the system inside an `ecs::Schedule`.
+
+## The parallel script system
+
+`ScriptRuntime::Tick(world, dt, scheduler)` runs each phase as one job per partition on the Phase 2 scheduler (`jobs::ParallelForBlocking` with a chunk of one partition, so the work-stealing
+scheduler balances uneven partitions; the main thread helps while it waits). `MakeScriptSystem()` passes `SystemContext::JobScheduler()`, which is set when the system is alone in its wave (it
+always is: it declares every component) and the schedule has a scheduler with several participants. With no scheduler, one participant, or a call from inside a job, the partitions run one after
+another and the result is the same.
+
+- **What runs on the workers.** The callbacks of one partition's instances (each partition is used by exactly one job at a time: the lease). The reconcile, the merge, the second destroy phase and
+  the stats sum run on the calling thread between the phases; each partition counts into its own stats, summed after the jobs finish.
+- **Independence from the thread count.** Entities run in id order within a partition, each partition has its own command buffer, the buffers are merged in partition order, and an entity's random
+  stream depends on the world seed, its id and the tick. `parallel_script_test.cpp` runs 20,000 scripted entities (a read, two component writes, a transform write and `random.int` per update) for
+  three ticks at 1, 2, 3, 7 and 16 threads: the world hash and the counts are equal.
+- **Evenness of the partition hash.** `PartitionOf` over entity ids (index low, generation 1 high): at 1,000 ids and 16 partitions the busiest partition holds under 1.5 times the mean and the
+  emptiest over 0.6 times; at 100,000 and 1,000,000 ids (64 and 256 partitions) within 10% of the mean. A heavy partition is therefore not expected, so no sub-assignment of a partition is made.
+- **Scaling** (Linux x86-64, 32 hardware threads, plain build, 100,000 entities with the test's `mixer` behavior, three ticks after the first; entity updates per second, merge included):
+
+  | threads | 1 | 2 | 4 | 8 | 16 |
+  |---|---|---|---|---|---|
+  | `P` = 64 | 119,000 | 241,000 | 434,000 | 700,000 | 904,000 |
+
+  At 8 threads `P` = 16 gives 644,000 and `P` = 256 gives 700,000. The curve flattens because the merge (one thread) is about a fifth of the tick at 16 threads. The test is hidden
+  (run `script_tests "[cost]"` by name) so the sanitizer flavors do not run it.
+- **Not done this day** (see `KNOWN-ISSUES.md`): a hot-script detector for a partition job that runs long (the instruction budget of each callback bounds it for now), and script systems that
+  declare their reads and writes so they can overlap other systems (the one script system declares every component and runs alone).

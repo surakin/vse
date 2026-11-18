@@ -1,6 +1,8 @@
 #include "script/script_runtime.h"
 
 #include "algorithm.h"
+#include "jobs/parallel_for.h"
+#include "jobs/scheduler.h"
 #include "containers/vector.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
@@ -50,6 +52,8 @@ struct PartitionData
     CommandBuffer commands;
     Overlay overlay;
     Vector<u32> members;
+    LogBuffer log;             // this phase's log lines, flushed in partition order after the jobs finish
+    ScriptRuntimeStats stats;  // this phase's counts, summed after the jobs finish
     u64 resets_seen = 0;
     bool load_logged = false;
 };
@@ -77,10 +81,10 @@ struct ScriptRuntime::Impl
 
     void Reconcile(ecs::World* world, bool allow_new);
     void Compact();
-    void RunPhase(ecs::World* world, f64 dt, bool destroys_only);
+    void RunPhase(ecs::World* world, f64 dt, bool destroys_only, jobs::Scheduler* scheduler);
     void RunPartition(ecs::World* world, u32 p, f64 dt, bool destroys_only);
     bool Call(PartitionLease* lease, PartitionData* data, Instance* in, const char* callback, f64 dt);
-    void Fail(Instance* in, const char* what, const Outcome& outcome);
+    void Fail(PartitionData* data, Instance* in, const char* what, const Outcome& outcome);
     void CheckReset(u32 p, PartitionData* data);
     void RunLive(PartitionLease* lease, PartitionData* data, Instance* in, const ScriptComponent& comp, f64 dt);
     void RunDestroy(PartitionLease* lease, PartitionData* data, Instance* in, f64 dt, bool entity_exists);
@@ -169,9 +173,9 @@ void ScriptRuntime::Impl::Compact()
     instances = Move(kept);
 }
 
-void ScriptRuntime::Impl::Fail(Instance* in, const char* what, const Outcome& outcome)
+void ScriptRuntime::Impl::Fail(PartitionData* data, Instance* in, const char* what, const Outcome& outcome)
 {
-    ++stats.errors;
+    ++data->stats.errors;
     if (!in->logged)
     {
         in->logged = true;
@@ -186,7 +190,7 @@ void ScriptRuntime::Impl::Fail(Instance* in, const char* what, const Outcome& ou
         text.Append(StringView(what));
         text.Append(" failed: ");
         text.Append(outcome.message.View());
-        WriteScriptLog(ScriptLogLevel::Error, in->behavior.View(), 0, text.View());
+        data->log.Add(ScriptLogLevel::Error, in->behavior.View(), 0, text.View());
     }
     switch (config.on_error)
     {
@@ -194,12 +198,12 @@ void ScriptRuntime::Impl::Fail(Instance* in, const char* what, const Outcome& ou
     case OnScriptError::AbortInDebug:
         ENGINE_CHECK_SLOW(false, "a behavior callback failed (script.on_error = abort_in_debug)");
         in->failed = true;
-        ++stats.disabled_by_error;
+        ++data->stats.disabled_by_error;
         break;
     case OnScriptError::Disable:
     default:
         in->failed = true;
-        ++stats.disabled_by_error;
+        ++data->stats.disabled_by_error;
         break;
     }
 }
@@ -218,13 +222,13 @@ void ScriptRuntime::Impl::CheckReset(u32 p, PartitionData* data)
         if (in.created && !in.failed)
         {
             in.failed = true;
-            ++stats.disabled_by_error;
-            ++stats.errors;
+            ++data->stats.disabled_by_error;
+            ++data->stats.errors;
             if (!in.logged)
             {
                 in.logged = true;
-                WriteScriptLog(ScriptLogLevel::Error, in.behavior.View(), 0,
-                               "the partition's state was reset (out of memory); its instances are disabled");
+                data->log.Add(ScriptLogLevel::Error, in.behavior.View(), 0,
+                              "the partition's state was reset (out of memory); its instances are disabled");
             }
         }
     }
@@ -241,7 +245,7 @@ bool ScriptRuntime::Impl::Call(PartitionLease* lease, PartitionData* data, Insta
     {
         if (!in->failed)
         {
-            Fail(in, callback, outcome);
+            Fail(data, in, callback, outcome);
         }
         return false;
     }
@@ -264,11 +268,11 @@ void ScriptRuntime::Impl::RunLive(PartitionLease* lease, PartitionData* data, In
         CheckReset(lease->Partition(), data);
         if (!outcome.IsOk())
         {
-            Fail(in, "__behavior_create", outcome);
+            Fail(data, in, "__behavior_create", outcome);
             return;
         }
         in->created = true;
-        ++stats.created;
+        ++data->stats.created;
         if (!Call(lease, data, in, "on_create", dt))
         {
             return;
@@ -289,7 +293,7 @@ void ScriptRuntime::Impl::RunLive(PartitionLease* lease, PartitionData* data, In
     if (!in->started)
     {
         in->started = true;
-        ++stats.started;
+        ++data->stats.started;
         if (!Call(lease, data, in, "on_start", dt))
         {
             return;
@@ -297,13 +301,13 @@ void ScriptRuntime::Impl::RunLive(PartitionLease* lease, PartitionData* data, In
     }
     for (u32 s = 0; s < fixed_steps; ++s)
     {
-        ++stats.fixed_updates;
+        ++data->stats.fixed_updates;
         if (!Call(lease, data, in, "on_fixed_update", fixed_dt))
         {
             return;
         }
     }
-    ++stats.updates;
+    ++data->stats.updates;
     Call(lease, data, in, "on_update", dt);
 }
 
@@ -330,7 +334,7 @@ void ScriptRuntime::Impl::RunDestroy(PartitionLease* lease, PartitionData* data,
     CallOutput out;
     lease->Call("__behavior_drop", Span<const Value>(args, 1), config.budget, &out);
     CheckReset(lease->Partition(), data);
-    ++stats.destroyed;
+    ++data->stats.destroyed;
 }
 
 void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool destroys_only)
@@ -344,13 +348,13 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     Outcome error;
     if (scripts->Checkout(p, &lease, &error) != CheckoutStatus::Ok)
     {
-        ++stats.skipped_partitions;
+        ++data.stats.skipped_partitions;
         if (!data.load_logged)
         {
             data.load_logged = true;
             String<HeapAllocator> text(HeapAllocator::Default(), "partition state unavailable: ");
             text.Append(error.message.View());
-            WriteScriptLog(ScriptLogLevel::Error, "script runtime", 0, text.View());
+            data.log.Add(ScriptLogLevel::Error, "script runtime", 0, text.View());
         }
         return;
     }
@@ -366,6 +370,7 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     context.components = config.components;
     context.scene = config.scene;
     context.partitions = config.partitions;
+    context.log = &data.log;
     ScopedPartitionContext scope(&context);
     for (usize k = 0; k < data.members.Size(); ++k)
     {
@@ -388,7 +393,7 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     }
 }
 
-void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only)
+void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only, jobs::Scheduler* scheduler)
 {
     const u32 count = config.partitions;
     for (u32 p = 0; p < count; ++p)
@@ -400,12 +405,56 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
     {
         partitions[instances[i].partition]->members.Push(static_cast<u32>(i));
     }
+    for (u32 p = 0; p < count; ++p)
+    {
+        partitions[p]->stats = ScriptRuntimeStats();
+    }
     {
         ReadOnlyPhase phase(world);
+        struct Job
+        {
+            Impl* self;
+            ecs::World* world;
+            f64 dt;
+            bool destroys_only;
+        } job{this, world, dt, destroys_only};
+        auto run = [](void* user, usize begin, usize end)
+        {
+            Job* j = static_cast<Job*>(user);
+            for (usize p = begin; p < end; ++p)
+            {
+                j->self->RunPartition(j->world, static_cast<u32>(p), j->dt, j->destroys_only);
+            }
+        };
+        if (scheduler != nullptr && scheduler->ParticipantCount() > 1 && !jobs::Scheduler::InsideJob() &&
+            jobs::Scheduler::Current() == scheduler)
+        {  // one job per partition: the work-stealing scheduler balances uneven partitions
+            jobs::ParallelForBlocking(*scheduler, count, 1, run, &job);
+        }
+        else
+        {
+            run(&job, 0, count);
+        }
+    }
+    for (u32 p = 0; p < count; ++p)
+    {
+        const ScriptRuntimeStats& d = partitions[p]->stats;
+        stats.created += d.created;
+        stats.started += d.started;
+        stats.fixed_updates += d.fixed_updates;
+        stats.updates += d.updates;
+        stats.destroyed += d.destroyed;
+        stats.errors += d.errors;
+        stats.disabled_by_error += d.disabled_by_error;
+        stats.skipped_partitions += d.skipped_partitions;
+    }
+    {
+        Vector<LogBuffer*> logs;
         for (u32 p = 0; p < count; ++p)
         {
-            RunPartition(world, p, dt, destroys_only);
+            logs.Push(&partitions[p]->log);
         }
+        FlushLogBuffers(Span<LogBuffer* const>(logs.Data(), logs.Size()));
     }
     Vector<CommandBuffer*> order;
     for (u32 p = 0; p < count; ++p)
@@ -442,6 +491,7 @@ ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig& config)
     for (u32 p = 0; p < config.partitions; ++p)
     {
         m.partitions.Push(MakeUnique<PartitionData>());
+        m.partitions[p]->log.SetLimit(config.log_limit);
     }
     const char* host = !config.host_source.Empty() ? nullptr : LuaBehaviorHostSource();
     const StringView text = host != nullptr ? StringView(host) : config.host_source;
@@ -479,17 +529,17 @@ MergeServices& ScriptRuntime::Services()
     return impl_->services;
 }
 
-void ScriptRuntime::Tick(ecs::World* world, f64 dt)
+void ScriptRuntime::Tick(ecs::World* world, f64 dt, jobs::Scheduler* scheduler)
 {
     Impl& m = *impl_;
     m.Reconcile(world, true);
-    m.RunPhase(world, dt, false);
+    m.RunPhase(world, dt, false, scheduler);
     m.Compact();
     // Entities the merge destroyed, or whose script component it removed, are closed in a second, short phase.
     m.Reconcile(world, false);
     if (m.any_gone)
     {
-        m.RunPhase(world, dt, true);
+        m.RunPhase(world, dt, true, scheduler);
         m.Compact();
     }
     ++m.tick;
@@ -500,8 +550,12 @@ void ScriptRuntime::Tick(ecs::World* world, f64 dt)
 
 ecs::SystemDesc MakeScriptSystem()
 {
-    return ecs::MakeSystem("script", [](ecs::SystemContext& ctx)
-                           { ctx.Resource<ScriptRuntime>().Tick(&ctx.ExclusiveWorld(), static_cast<f64>(ctx.Dt())); })
+    return ecs::MakeSystem("script",
+                           [](ecs::SystemContext& ctx)
+                           {
+                               ctx.Resource<ScriptRuntime>().Tick(&ctx.ExclusiveWorld(), static_cast<f64>(ctx.Dt()),
+                                                                  ctx.JobScheduler());
+                           })
         .ReadsAllComponents()
         .WritesAllComponents()
         .WritesResource<ScriptRuntime>();

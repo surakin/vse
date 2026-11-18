@@ -2917,6 +2917,21 @@ The world itself, for a system that declared [`ecs::SystemDesc::WritesAllCompone
 | Fails | a system that did not declare `WritesAllComponents` counts a violation. |
 | Ownership | borrowed; valid for the call. |
 
+### `JobScheduler()` {#ecs-systemcontext-jobscheduler-const}
+
+`method ecs::SystemContext::JobScheduler` — defined in `engine/ecs/schedule.h`
+
+```cpp
+jobs::Scheduler* JobScheduler() const;
+```
+
+The job scheduler this system may fan work out to: set only when the system is alone in its wave and the schedule has a scheduler with several participants; null otherwise (then run the work on the calling thread).
+
+| Field | Value |
+|---|---|
+| Fails | null, as described. |
+| Ownership | borrowed; valid for the call. |
+
 ### `Exists(Entity)` {#ecs-systemcontext-exists-entity-const}
 
 `method ecs::SystemContext::Exists` — defined in `engine/ecs/schedule.h`

@@ -10,6 +10,7 @@
 #include "ecs/entity.h"
 #include "ecs/schedule.h"
 #include "ecs/world.h"
+#include "jobs/scheduler.h"
 #include "mem/heap_allocator.h"
 #include "script/backend.h"
 #include "script/bindings.h"
@@ -105,6 +106,8 @@ struct ScriptRuntimeConfig
     u64 partition_memory = 0;
     /// The seed of the per-entity random streams (setting `script.random_seed`).
     u32 random_seed = 1;
+    /// Log messages one script may add per partition per tick (setting `script.log_limit`); 0 is no limit.
+    u32 log_limit = 64;
     /// What a failed callback does (setting `script.on_error`).
     OnScriptError on_error = OnScriptError::Disable;
     /// What happens when two partitions change the same thing (setting `script.conflicts`).
@@ -141,8 +144,8 @@ const char* LuaBehaviorHostSource();
 /// The script world, the instances and the merge, as one world resource. Add it with
 /// `world.SetResource(ScriptRuntime(config))` and run [[script::MakeScriptSystem]].
 ///
-/// - Thread-safety: thread-compatible: one thread runs a tick at a time (the system runs alone). The partitions are
-/// visited one after another in this version.
+/// - Thread-safety: thread-compatible: one thread runs a tick at a time (the system runs alone); inside the tick the
+/// partitions run on the scheduler's threads, each used by one job, and the result does not depend on their number.
 /// - Ownership: owns the script world, the instance table and the command buffers; borrows the config's pointers.
 class ScriptRuntime
 {
@@ -192,9 +195,12 @@ public:
     ///
     /// - Param world: the world to run scripts on; not in a parallel phase.
     /// - Param dt: the simulation seconds this tick advances.
-    /// - Ownership: borrows `world` for the call.
+    /// - Param scheduler: the job scheduler whose participant 0 is the calling thread, outside any job; the partitions
+    /// then run as jobs, one each. Null (or one participant, or a call from inside a job) runs them one after another.
+    /// The world, the stats and the merged result are the same either way.
+    /// - Ownership: borrows `world` and `scheduler` for the call.
     /// - Aborts: `world` is being iterated.
-    void Tick(ecs::World* world, f64 dt);
+    void Tick(ecs::World* world, f64 dt, jobs::Scheduler* scheduler = nullptr);
 
 private:
     struct Impl;

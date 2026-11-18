@@ -3511,6 +3511,16 @@ u32 random_seed;
 
 The seed of the per-entity random streams (setting `script.random_seed`).
 
+### `log_limit` {#script-scriptruntimeconfig-log-limit}
+
+`variable script::ScriptRuntimeConfig::log_limit` — defined in `engine/script/script_runtime.h`
+
+```cpp
+u32 log_limit;
+```
+
+Log messages one script may add per partition per tick (setting `script.log_limit`); 0 is no limit.
+
 ### `on_error` {#script-scriptruntimeconfig-on-error}
 
 `variable script::ScriptRuntimeConfig::on_error` — defined in `engine/script/script_runtime.h`
@@ -3619,7 +3629,7 @@ The script world, the instances and the merge, as one world resource. Add it wit
 
 | Field | Value |
 |---|---|
-| Thread-safety | thread-compatible: one thread runs a tick at a time (the system runs alone). The partitions are visited one after another in this version. |
+| Thread-safety | thread-compatible: one thread runs a tick at a time (the system runs alone); inside the tick the partitions run on the scheduler's threads, each used by one job, and the result does not depend on their number. |
 | Ownership | owns the script world, the instance table and the command buffers; borrows the config's pointers. |
 
 ### `ScriptRuntime(const ScriptRuntimeConfig&)` {#script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp}
@@ -3759,12 +3769,12 @@ The merge's services, to fill after construction (prefabs, settings, components)
 |---|---|
 | Ownership | borrowed. |
 
-### `Tick(ecs::World*,f64)` {#script-scriptruntime-tick-ecs-world-star-f64}
+### `Tick(ecs::World*,f64,jobs::Scheduler*)` {#script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star}
 
 `method script::ScriptRuntime::Tick` — defined in `engine/script/script_runtime.h`
 
 ```cpp
-void Tick(ecs::World* world, f64 dt);
+void Tick(ecs::World* world, f64 dt, jobs::Scheduler* scheduler = nullptr);
 ```
 
 Runs one tick on `world`: destroys, creates and starts, enables, fixed updates, updates, the merge, and the destroys the merge caused. The script system calls it; tests may call it directly.
@@ -3773,8 +3783,9 @@ Runs one tick on `world`: destroys, creates and starts, enables, fixed updates, 
 |---|---|
 | Parameter `world` | the world to run scripts on; not in a parallel phase. |
 | Parameter `dt` | the simulation seconds this tick advances. |
+| Parameter `scheduler` | the job scheduler whose participant 0 is the calling thread, outside any job; the partitions then run as jobs, one each. Null (or one participant, or a call from inside a job) runs them one after another. The world, the stats and the merged result are the same either way. |
 | Aborts | `world` is being iterated. |
-| Ownership | borrows `world` for the call. |
+| Ownership | borrows `world` and `scheduler` for the call. |
 
 ## `MakeScriptSystem()` {#script-makescriptsystem}
 
@@ -3784,7 +3795,7 @@ Runs one tick on `world`: destroys, creates and starts, enables, fixed updates, 
 ecs::SystemDesc MakeScriptSystem();
 ```
 
-Makes the script system: it runs [`script::ScriptRuntime::Tick`](#script-scriptruntime-tick-ecs-world-star-f64) on the world's `ScriptRuntime` resource every frame. It declares that it reads and writes every component (scripts name them at run time), so it runs alone in its stage, and that it writes the `ScriptRuntime` resource.
+Makes the script system: it runs [`script::ScriptRuntime::Tick`](#script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star) on the world's `ScriptRuntime` resource every frame. It declares that it reads and writes every component (scripts name them at run time), so it runs alone in its stage, and that it writes the `ScriptRuntime` resource.
 
 | Field | Value |
 |---|---|

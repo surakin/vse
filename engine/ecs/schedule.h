@@ -158,6 +158,11 @@ public:
               "SystemContext::ExclusiveWorld: the system did not declare WritesAllComponents");
         return *world_;
     }
+    /// The job scheduler this system may fan work out to: set only when the system is alone in its wave and the
+    /// schedule has a scheduler with several participants; null otherwise (then run the work on the calling thread).
+    /// - Fails: null, as described.
+    /// - Ownership: borrowed; valid for the call.
+    jobs::Scheduler* JobScheduler() const { return scheduler_; }
     /// Returns whether `entity` is alive.
     /// - Fails: never.
     bool Exists(Entity entity) const { return world_->Exists(entity); }
