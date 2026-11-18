@@ -1861,8 +1861,10 @@ script::BackendCount()	function	script	script-backendcount	script.md	engine/scri
 script::BackendAt(usize)	function	script	script-backendat-usize	script.md	engine/script/backend_registry.h:58
 script::CreateBackend(StringView,Outcome*)	function	script	script-createbackend-stringview-outcome-star	script.md	engine/script/backend_registry.h:68
 script::ClearBackendRegistryForTest()	function	script	script-clearbackendregistryfortest	script.md	engine/script/backend_registry.h:74
-script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:20
-script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:30
+script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:22
+script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:32
+script::ScriptBudgeted(const settings::Registry&)	function	script	script-scriptbudgeted-const-settings-registry-amp	script.md	engine/script/script_settings.h:40
+script::ScriptRandomSeed(const settings::Registry&)	function	script	script-scriptrandomseed-const-settings-registry-amp	script.md	engine/script/script_settings.h:47
 script::Status	enum	script	script-status	script.md	engine/script/status.h:17
 script::Status::Ok	enumerator	script	script-status-ok	script.md	engine/script/status.h:20
 script::Status::SyntaxError	enumerator	script	script-status-syntaxerror	script.md	engine/script/status.h:22

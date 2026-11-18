@@ -20,7 +20,8 @@ struct ConformanceKit
     /// A chunk that defines, as globals: `echo(a)` returns `a`; `multi()` returns 1, 2.5, "x"; `fail()` raises a
     /// runtime error; `calls_native()` returns the result of the native `host_add(2, 3)`; `waiter()` waits 0.25
     /// seconds and returns the value it is resumed with; `setg(v)` stores `v` in a global; `getg()` returns it;
-    /// `spin()` loops forever.
+    /// `spin()` loops forever; `bomb()` allocates without end (only called when the backend advertises a memory
+    /// budget).
     const char* prelude = "";
     /// A source that does not compile.
     const char* syntax_error = "";
@@ -298,7 +299,24 @@ inline ConformanceReport RunConformance(Backend& backend, const ConformanceKit& 
     {
         Skip(&report, "time_budget", "backend does not advertise time budgets");
     }
-    if (!caps.memory_budget)
+    if (caps.memory_budget)
+    {
+        Recorder r(&report, "memory_budget");
+        bool ok = true;
+        UniquePtr<State> state = Prepared(backend, kit, &ok);
+        r.Expect(ok);
+        if (ok)
+        {
+            Budget budget;
+            budget.memory_bytes = 4 << 20;
+            CallOutput out;
+            r.Expect(state->Call("bomb", Span<const Value>(), budget, &out).status == Status::OutOfMemory);
+            state->Collect();
+            Value args[1] = {Value::FromInt(1)};
+            r.Expect(state->Call("echo", Span<const Value>(args, 1), none, &out).IsOk());
+        }
+    }
+    else
     {
         Recorder r(&report, "unhonored_budget_is_unsupported");
         bool ok = true;

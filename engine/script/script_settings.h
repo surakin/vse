@@ -9,10 +9,12 @@
 namespace engine_placeholder::script
 {
 
-/// Declares the script settings: `script.backend` (text, default `luajit`).
+/// Declares the script settings: the backend, the budget mode and the random seed.
 ///
-/// Each has an environment variable (`ENGINE_SCRIPT_BACKEND`) and a flag (`--script-backend`), read when a script
-/// world is made.
+/// They are `script.backend` (text, default `luajit`), `script.budget` (`budgeted` or `trusted`, default `budgeted`)
+/// and `script.random_seed` (default 1). Each has an environment variable (`ENGINE_SCRIPT_BACKEND`,
+/// `ENGINE_SCRIPT_BUDGET`, `ENGINE_SCRIPT_RANDOM_SEED`) and a flag (`--script-backend`, `--script-budget`,
+/// `--script-random-seed`), read when a script world is made.
 ///
 /// - Param registry: the registry to declare them in; not null.
 /// - Ownership: borrowed for the call.
@@ -28,5 +30,20 @@ void RegisterScriptSettings(settings::Registry* registry);
 /// - Ownership: returns a new string.
 /// - Fails: never.
 String<HeapAllocator> ScriptBackendName(const settings::Registry& registry);
+
+/// Reads `script.budget`: whether scripts run budgeted (no JIT, instruction and time limits) or trusted.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting, or any value
+/// other than `trusted`, gives `true`.
+/// - Returns: true for budgeted.
+/// - Fails: never.
+bool ScriptBudgeted(const settings::Registry& registry);
+
+/// Reads `script.random_seed`.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 1.
+/// - Returns: the seed.
+/// - Fails: never.
+u32 ScriptRandomSeed(const settings::Registry& registry);
 
 }  // namespace engine_placeholder::script

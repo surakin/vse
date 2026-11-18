@@ -255,4 +255,6 @@ TEST_CASE("Settings: script.backend defaults to luajit and is a registered setti
     settings::Registry registry;
     RegisterScriptSettings(&registry);
     CHECK(ScriptBackendName(registry).View() == StringView("luajit"));
+    CHECK(ScriptBudgeted(registry));
+    CHECK(ScriptRandomSeed(registry) == 1);
 }

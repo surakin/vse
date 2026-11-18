@@ -4,6 +4,9 @@
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
+#include "log/log.h"
+#include "os/os.h"
+#include "script/luajit/lua_patterns.h"
 #include "script/backend_registry.h"
 
 #include <lua.hpp>
@@ -21,6 +24,9 @@ namespace
 
 using Text = String<HeapAllocator>;
 
+// The default budget of a chunk's top level in a budgeted state.
+constexpr u64 kLoadInstructions = 50'000'000;
+constexpr u64 kLoadNanoseconds = 2'000'000'000;
 constexpr u64 kDefaultMemoryCap = u64{256} << 20;
 constexpr i64 kMaxExactInt = i64{1} << 53;
 constexpr usize kMaxResults = 256;
@@ -45,7 +51,51 @@ struct Accounting
 {
     u64 used = 0;
     u64 cap = 0;
+    // The budget of the call in progress, read by the count hook (it finds this struct through the allocator's user
+    // data).
+    bool instructions_limited = false;
+    u64 instructions_left = 0;
+    u64 deadline_ns = 0;  // 0: none
+    bool tripped = false;
+    const char* trip_message = "";
 };
+
+LogChannel LogScript("LogScript", LogVerbosity::Info);
+
+constexpr u64 kHookCount = 1000;
+
+Accounting* AccountingOf(lua_State* L)
+{
+    void* ud = nullptr;
+    lua_getallocf(L, &ud);
+    return static_cast<Accounting*>(ud);
+}
+
+// The count hook: runs every kHookCount instructions while a budget is active. Once a budget has tripped it fires on
+// every instruction, so an error caught by a script's pcall comes back at the next instruction outside that pcall.
+void BudgetHook(lua_State* L, lua_Debug*)
+{
+    Accounting* a = AccountingOf(L);
+    if (!a->tripped)
+    {
+        const bool out_of_instructions = a->instructions_limited && a->instructions_left <= kHookCount;
+        if (a->instructions_limited && !out_of_instructions)
+        {
+            a->instructions_left -= kHookCount;
+        }
+        const bool out_of_time = a->deadline_ns != 0 && os::MonotonicTimeNanos() > a->deadline_ns;
+        if (out_of_instructions || out_of_time)
+        {
+            a->tripped = true;
+            a->trip_message = out_of_instructions ? "instruction budget exceeded" : "time budget exceeded";
+            lua_sethook(L, &BudgetHook, LUA_MASKCOUNT, 1);  // from now on at every instruction
+        }
+    }
+    if (a->tripped)
+    {
+        luaL_error(L, "%s", a->trip_message);
+    }
+}
 
 void* CountingAlloc(void* ud, void* ptr, usize old_size, usize new_size)
 {
@@ -658,6 +708,9 @@ struct Request
     bool resume = false;
     int ref = LUA_NOREF;  // the coroutine to resume, or the ref to drop (Unref)
     CallOutput* out = nullptr;
+    // OpenLibs
+    bool budgeted = true;
+    u32 seed = 1;
     // Register
     StringView name;
     NativeEntry* native = nullptr;
@@ -717,7 +770,94 @@ int TracebackHandler(lua_State* L)
     return 1;
 }
 
-void OpenLibs(lua_State* L)
+int ReadOnlyError(lua_State* L)
+{
+    return luaL_error(L, "attempt to modify a read-only table");
+}
+
+int TrippedFunction(lua_State* L)
+{
+    lua_pushboolean(L, AccountingOf(L)->tripped ? 1 : 0);
+    return 1;
+}
+
+// print(...) goes to the engine log (channel LogScript, Info), arguments separated by tabs.
+int PrintFunction(lua_State* L)
+{
+    char line[400];
+    usize used = 0;
+    const int n = lua_gettop(L);
+    for (int i = 1; i <= n && used + 1 < sizeof line; ++i)
+    {
+        const char* text = nullptr;
+        usize len = 0;
+        if (lua_type(L, i) == LUA_TSTRING || lua_type(L, i) == LUA_TNUMBER)
+        {
+            text = lua_tolstring(L, i, &len);
+        }
+        else
+        {
+            text = lua_type(L, i) == LUA_TNIL
+                       ? "nil"
+                       : (lua_type(L, i) == LUA_TBOOLEAN ? (lua_toboolean(L, i) != 0 ? "true" : "false")
+                                                         : luaL_typename(L, i));
+            len = CStrLength(text);
+        }
+        if (i > 1)
+        {
+            line[used++] = '\t';
+        }
+        const usize room = sizeof line - 1 - used;
+        len = len < room ? len : room;
+        MemCopy(line + used, text, len);
+        used += len;
+    }
+    Log(LogScript, LogVerbosity::Info, StringView(line, used));
+    return 0;
+}
+
+// Turns the table on top of the stack into a read-only view: a proxy whose metatable reads through to the table and
+// refuses writes, and hides itself from getmetatable. Replaces the table on the stack with the proxy.
+void MakeReadOnlyProxy(lua_State* L)
+{
+    lua_newtable(L);  // proxy
+    lua_newtable(L);  // metatable
+    lua_pushvalue(L, -3);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, &ReadOnlyError);
+    lua_setfield(L, -2, "__newindex");
+    lua_pushboolean(L, 0);
+    lua_setfield(L, -2, "__metatable");
+    lua_setmetatable(L, -2);
+    lua_remove(L, -2);
+}
+
+// The Lua half of the sandbox. It runs once with the C helpers as arguments: it wraps the functions that could swallow
+// a budget error so they raise it again, and removes what scripts must not reach. In trusted states the check is never
+// true.
+const char kBootstrap[] = "local tripped = ...\n"
+                          "local error0, pcall0, xpcall0 = error, pcall, xpcall\n"
+                          "local co = coroutine\n"
+                          "local create0, resume0 = co.create, co.resume\n"
+                          "local function chk(...)\n"
+                          "  if tripped() then error0('budget exceeded', 0) end\n"
+                          "  return ...\n"
+                          "end\n"
+                          "function pcall(...) return chk(pcall0(...)) end\n"
+                          "function xpcall(f, h) return chk(xpcall0(f, h)) end\n"
+                          "function co.resume(c, ...) return chk(resume0(c, ...)) end\n"
+                          "function co.wrap(f)\n"
+                          "  local c = create0(f)\n"
+                          "  return function(...)\n"
+                          "    local r = { resume0(c, ...) }\n"
+                          "    chk()\n"
+                          "    if not r[1] then error0(r[2], 0) end\n"
+                          "    return unpack(r, 2)\n"
+                          "  end\n"
+                          "end\n"
+                          "co.running = nil\n";
+
+void OpenLibs(lua_State* L, Request* r)
 {
     for (int t = 0; t < kTagCount; ++t)
     {
@@ -740,18 +880,35 @@ void OpenLibs(lua_State* L)
         lua_pushstring(L, lib.name);
         lua_call(L, 1, 0);
     }
-    // string.dump would let a script make bytecode (and nothing here loads bytecode).
-    lua_getglobal(L, "string");
-    lua_pushnil(L);
-    lua_setfield(L, -2, "dump");
-    lua_pop(L, 1);
-    // The file and loader functions are not for gameplay scripts (the whole sandbox is Day 449).
-    static const char* const removed[] = {"dofile", "loadfile", "load", "loadstring", "newproxy"};
+    if (r->budgeted)
+    {
+        luaJIT_setmode(L, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
+    }
+    // The globals now are the engine environment E. Remove what scripts must not reach.
+    static const char* const removed[] = {"dofile",  "loadfile", "load",           "loadstring", "newproxy", "getfenv",
+                                          "setfenv", "gcinfo",   "collectgarbage", "module",     "require"};
     for (const char* name : removed)
     {
         lua_pushnil(L);
         lua_setglobal(L, name);
     }
+    lua_getglobal(L, "string");
+    lua_pushnil(L);
+    lua_setfield(L, -2, "dump");  // it would let a script make bytecode
+    InstallSafePatterns(L);
+    lua_pop(L, 1);
+    // A seed for math.random, so every run of a state repeats.
+    lua_getglobal(L, "math");
+    lua_getfield(L, -1, "randomseed");
+    lua_pushinteger(L, static_cast<lua_Integer>(r->seed));
+    lua_call(L, 1, 0);
+    lua_pop(L, 1);
+    // The string metatable is not reachable from scripts.
+    lua_pushstring(L, "");
+    lua_getmetatable(L, -1);
+    lua_pushboolean(L, 0);
+    lua_setfield(L, -2, "__metatable");
+    lua_pop(L, 2);
     static const struct
     {
         const char* name;
@@ -763,13 +920,49 @@ void OpenLibs(lua_State* L)
         lua_pushcclosure(L, &WaitFunction, 1);
         lua_setglobal(L, w.name);
     }
+    lua_pushcfunction(L, &PrintFunction);
+    lua_setglobal(L, "print");
+    // The Lua half (runs with the original pcall, resume ... in hand).
+    if (luaL_loadbuffer(L, kBootstrap, CStrLength(kBootstrap), "=sandbox") != 0)
+    {
+        lua_error(L);
+    }
+    lua_pushcfunction(L, &TrippedFunction);
+    lua_call(L, 1, 0);
+    // The libraries become read-only views (their real tables stay in the registry only through the views).
+    static const char* const libraries[] = {"string", "math", "table", "bit", "coroutine"};
+    for (const char* name : libraries)
+    {
+        lua_getglobal(L, name);
+        MakeReadOnlyProxy(L);
+        lua_setglobal(L, name);
+    }
+    // E is kept in the registry; scripts get a fresh environment S that reads through to E and is theirs to write.
+    lua_pushvalue(L, LUA_GLOBALSINDEX);
+    lua_pushnil(L);
+    lua_setfield(L, -2, "_G");
+    lua_setfield(L, LUA_REGISTRYINDEX, "engine.env");
+    lua_newtable(L);  // roots of the registered native tables
+    lua_setfield(L, LUA_REGISTRYINDEX, "engine.roots");
+    lua_newtable(L);  // S
+    lua_newtable(L);  // its metatable
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.env");
+    lua_setfield(L, -2, "__index");
+    lua_pushboolean(L, 0);
+    lua_setfield(L, -2, "__metatable");
+    lua_setmetatable(L, -2);
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "_G");
+    lua_replace(L, LUA_GLOBALSINDEX);
 }
 
-// Pushes the value at the end of a dotted path (globals first), or nil when a step is missing. Raw access only.
+// Pushes the value at the end of a dotted path, or nil when a step is missing. The first name is looked up in the
+// script environment and then in the engine environment; deeper names are raw.
 void ResolvePath(lua_State* L, StringView path)
 {
-    lua_pushvalue(L, LUA_GLOBALSINDEX);
     usize start = 0;
+    bool first = true;
+    lua_pushvalue(L, LUA_GLOBALSINDEX);
     for (usize i = 0; i <= path.Length(); ++i)
     {
         if (i == path.Length() || path[i] == '.')
@@ -782,43 +975,76 @@ void ResolvePath(lua_State* L, StringView path)
             }
             lua_pushlstring(L, path.Data() + start, i - start);
             lua_rawget(L, -2);
+            if (first && lua_type(L, -1) == LUA_TNIL)
+            {
+                lua_pop(L, 1);
+                lua_getfield(L, LUA_REGISTRYINDEX, "engine.env");
+                lua_pushlstring(L, path.Data() + start, i - start);
+                lua_rawget(L, -2);
+                lua_remove(L, -2);
+            }
             lua_remove(L, -2);
+            first = false;
             start = i + 1;
         }
     }
 }
 
+// Registers a native in the engine environment. The first segment of a dotted name is a table the scripts see through a
+// read-only view; the real table is kept in the registry for further registrations.
 void RegisterNative(lua_State* L, Request* r)
 {
     const StringView name = r->name;
-    lua_pushvalue(L, LUA_GLOBALSINDEX);
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.env");
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.roots");  // stack: E roots
     usize start = 0;
+    bool in_table = false;  // whether a table to put into is on top of the stack (above E and roots)
     for (usize i = 0; i <= name.Length(); ++i)
     {
         if (i < name.Length() && name[i] != '.')
         {
             continue;
         }
-        lua_pushlstring(L, name.Data() + start, i - start);
+        const char* seg = name.Data() + start;
+        const usize seg_len = i - start;
         if (i == name.Length())
         {
+            lua_pushlstring(L, seg, seg_len);
             lua_pushlightuserdata(L, r->native);
             lua_pushcclosure(L, &Trampoline, 1);
-            lua_rawset(L, -3);
+            lua_rawset(L, in_table ? -3 : -4);
+            return;
+        }
+        if (!in_table)
+        {
+            lua_pushlstring(L, seg, seg_len);
+            lua_rawget(L, -2);  // roots[seg]
+            if (lua_type(L, -1) != LUA_TTABLE)
+            {
+                lua_pop(L, 1);
+                lua_newtable(L);  // R
+                lua_pushlstring(L, seg, seg_len);
+                lua_pushvalue(L, -2);
+                lua_rawset(L, -4);  // roots[seg] = R
+                lua_pushlstring(L, seg, seg_len);
+                lua_pushvalue(L, -2);
+                MakeReadOnlyProxy(L);  // proxy(R) replaces its copy
+                lua_rawset(L, -5);     // E[seg] = proxy
+            }
+            in_table = true;
         }
         else
         {
-            lua_pushvalue(L, -1);
-            lua_rawget(L, -3);
+            lua_pushlstring(L, seg, seg_len);
+            lua_rawget(L, -2);
             if (lua_type(L, -1) != LUA_TTABLE)
             {
                 lua_pop(L, 1);
                 lua_newtable(L);
+                lua_pushlstring(L, seg, seg_len);
                 lua_pushvalue(L, -2);
-                lua_pushvalue(L, -2);
-                lua_rawset(L, -5);
+                lua_rawset(L, -4);
             }
-            lua_remove(L, -2);
             lua_remove(L, -2);
         }
         start = i + 1;
@@ -838,10 +1064,21 @@ void LoadChunk(lua_State* L, Request* r)
     }
     lua_pushcfunction(L, &TracebackHandler);
     lua_insert(L, 1);
+    Accounting* acct = AccountingOf(L);
+    const bool hooked = acct->instructions_limited || acct->deadline_ns != 0;
+    if (hooked)
+    {
+        lua_sethook(L, &BudgetHook, LUA_MASKCOUNT, static_cast<int>(kHookCount));
+    }
     const int run = lua_pcall(L, 0, 0, 1);
+    if (hooked)
+    {
+        lua_sethook(L, nullptr, 0, 0);
+    }
     if (run != 0)
     {
-        r->status = run == LUA_ERRMEM ? Status::OutOfMemory : Status::RuntimeError;
+        r->status = run == LUA_ERRMEM ? Status::OutOfMemory
+                                      : (acct->tripped ? Status::BudgetExceeded : Status::RuntimeError);
         usize len = 0;
         const char* full = lua_tolstring(L, -1, &len);
         len = len < kMaxMessageBytes + kMaxTraceBytes ? len : kMaxMessageBytes + kMaxTraceBytes;
@@ -893,7 +1130,17 @@ void RunCoroutine(lua_State* L, Request* r)
         PushValue(L, r->args[i]);
     }
     lua_xmove(L, T, nargs + (r->resume ? 0 : 1));
+    Accounting* acct = AccountingOf(L);
+    const bool hooked = acct->instructions_limited || acct->deadline_ns != 0;
+    if (hooked)
+    {
+        lua_sethook(L, &BudgetHook, LUA_MASKCOUNT, static_cast<int>(kHookCount));
+    }
     const int rc = lua_resume(T, nargs);
+    if (hooked)
+    {
+        lua_sethook(L, nullptr, 0, 0);
+    }
     if (rc == 0)
     {
         const int n = lua_gettop(T);
@@ -958,7 +1205,7 @@ void RunCoroutine(lua_State* L, Request* r)
         r->error_text = MakeText("not enough memory");
         return;
     }
-    r->status = Status::RuntimeError;
+    r->status = acct->tripped ? Status::BudgetExceeded : Status::RuntimeError;
     TakeError(L, T, r);
 }
 
@@ -968,7 +1215,7 @@ int ProtectedBody(lua_State* L)
     lua_settop(L, 0);
     switch (r->op)
     {
-    case Op::OpenLibs: OpenLibs(L); break;
+    case Op::OpenLibs: OpenLibs(L, r); break;
     case Op::Collect: lua_gc(L, LUA_GCCOLLECT, 0); break;
     case Op::Unref: luaL_unref(L, LUA_REGISTRYINDEX, r->ref); break;
     case Op::Register: RegisterNative(L, r); break;
@@ -983,7 +1230,11 @@ int ProtectedBody(lua_State* L)
 class LuaJitState : public State
 {
 public:
-    explicit LuaJitState(u64 memory_cap) { accounting_.cap = memory_cap != 0 ? memory_cap : kDefaultMemoryCap; }
+    LuaJitState(u64 memory_cap, const LuaJitOptions& options) : options_(options)
+    {
+        state_cap_ = memory_cap != 0 ? memory_cap : kDefaultMemoryCap;
+        accounting_.cap = state_cap_;
+    }
 
     ~LuaJitState() override { DoClose(); }
 
@@ -997,6 +1248,8 @@ public:
         }
         Request r;
         r.op = Op::OpenLibs;
+        r.budgeted = options_.budgeted;
+        r.seed = options_.random_seed;
         const Outcome o = Execute(&r);
         if (!o.IsOk())
         {
@@ -1023,7 +1276,17 @@ protected:
         r.op = Op::Load;
         r.chunk = chunk.CStr();
         r.source = source;
-        return Execute(&r);
+        // A chunk's top level runs under a default budget in a budgeted state (a trusted state has none).
+        Budget load_budget;
+        if (options_.budgeted)
+        {
+            load_budget.instructions = kLoadInstructions;
+            load_budget.nanoseconds = kLoadNanoseconds;
+        }
+        BeginBudget(load_budget);
+        Outcome o = Execute(&r);
+        EndBudget();
+        return o;
     }
 
     Outcome DoCall(StringView path, Span<const Value> args, const Budget& budget, CallOutput* out) override
@@ -1046,7 +1309,7 @@ protected:
         r.path = path;
         r.args = args;
         r.out = out;
-        return Finish(&r, next_id_++, out);
+        return Finish(&r, next_id_++, out, budget);
     }
 
     Outcome DoResume(u64 coroutine, Span<const Value> values, const Budget& budget, CallOutput* out) override
@@ -1071,7 +1334,7 @@ protected:
                 r.args = values;
                 r.out = out;
                 suspended_.Remove(i);
-                return Finish(&r, coroutine, out);
+                return Finish(&r, coroutine, out, budget);
             }
         }
         return Outcome(Status::Invalid, "that call is not suspended in this state");
@@ -1145,15 +1408,19 @@ protected:
     {
         Capabilities caps;
         caps.coroutines = true;
+        caps.instruction_budget = options_.budgeted;
+        caps.time_budget = options_.budgeted;
+        caps.memory_budget = true;
+        caps.jit = !options_.budgeted;
         return caps;
     }
 
 private:
-    static Outcome CheckCall(Span<const Value> args, const Budget& budget)
+    Outcome CheckCall(Span<const Value> args, const Budget& budget) const
     {
-        if (budget.instructions != 0 || budget.nanoseconds != 0 || budget.memory_bytes != 0)
+        if (!options_.budgeted && (budget.instructions != 0 || budget.nanoseconds != 0))
         {
-            return Outcome(Status::Unsupported, "the LuaJIT backend does not honor budgets yet");
+            return Outcome(Status::Unsupported, "a trusted (JIT) state cannot count instructions or time");
         }
         for (usize i = 0; i < args.Size(); ++i)
         {
@@ -1213,10 +1480,38 @@ private:
         }
     }
 
-    // Executes a call or resume, then settles the coroutine's anchor and the output.
-    Outcome Finish(Request* r, u64 id, CallOutput* out)
+    // The call's budget: the hook reads it from the accounting; a memory budget lowers the cap for the call.
+    void BeginBudget(const Budget& budget)
     {
+        accounting_.tripped = false;
+        accounting_.instructions_limited = budget.instructions != 0;
+        accounting_.instructions_left = budget.instructions;
+        accounting_.deadline_ns = budget.nanoseconds != 0 ? os::MonotonicTimeNanos() + budget.nanoseconds : 0;
+        accounting_.cap = budget.memory_bytes != 0 && budget.memory_bytes < state_cap_ ? budget.memory_bytes
+                                                                                       : state_cap_;
+    }
+
+    void EndBudget()
+    {
+        accounting_.instructions_limited = false;
+        accounting_.deadline_ns = 0;
+        accounting_.cap = state_cap_;
+    }
+
+    // Executes a call or resume, then settles the coroutine's anchor and the output.
+    Outcome Finish(Request* r, u64 id, CallOutput* out, const Budget& budget)
+    {
+        // The call's budget: the hook reads it from the accounting; a memory budget lowers the cap for the call.
+        accounting_.tripped = false;
+        accounting_.instructions_limited = budget.instructions != 0;
+        accounting_.instructions_left = budget.instructions;
+        accounting_.deadline_ns = budget.nanoseconds != 0 ? os::MonotonicTimeNanos() + budget.nanoseconds : 0;
+        accounting_.cap = budget.memory_bytes != 0 && budget.memory_bytes < state_cap_ ? budget.memory_bytes
+                                                                                       : state_cap_;
         Outcome o = Execute(r);
+        accounting_.instructions_limited = false;
+        accounting_.deadline_ns = 0;
+        accounting_.cap = state_cap_;
         if (o.IsOk() && r->suspended)
         {
             Suspended s;
@@ -1240,6 +1535,8 @@ private:
         return o;
     }
 
+    LuaJitOptions options_;
+    u64 state_cap_ = 0;
     Accounting accounting_;
     lua_State* L_ = nullptr;
     Vector<UniquePtr<NativeEntry>> natives_;
@@ -1251,35 +1548,43 @@ private:
 class LuaJitBackend : public Backend
 {
 public:
+    explicit LuaJitBackend(const LuaJitOptions& options) : options_(options) {}
     StringView Name() const override { return StringView("luajit"); }
     StringView Version() const override { return StringView(LUAJIT_VERSION); }
     Capabilities Caps() const override
     {
         Capabilities caps;
         caps.coroutines = true;
+        caps.instruction_budget = options_.budgeted;
+        caps.time_budget = options_.budgeted;
+        caps.memory_budget = true;
+        caps.jit = !options_.budgeted;
         return caps;
     }
     UniquePtr<State> CreateState(u64 memory_cap_bytes) override
     {
-        UniquePtr<LuaJitState> state = MakeUnique<LuaJitState>(memory_cap_bytes);
+        UniquePtr<LuaJitState> state = MakeUnique<LuaJitState>(memory_cap_bytes, options_);
         if (!state->Open())
         {
             return UniquePtr<State>();
         }
         return UniquePtr<State>(state.Release());
     }
+
+private:
+    LuaJitOptions options_;
 };
 
 UniquePtr<Backend> MakeLuaJitBackend()
 {
-    return MakeUnique<LuaJitBackend>();
+    return MakeUnique<LuaJitBackend>(LuaJitOptions());
 }
 
 }  // namespace
 
-UniquePtr<Backend> CreateLuaJitBackend()
+UniquePtr<Backend> CreateLuaJitBackend(const LuaJitOptions& options)
 {
-    return MakeLuaJitBackend();
+    return MakeUnique<LuaJitBackend>(options);
 }
 
 bool RegisterLuaJitBackend()

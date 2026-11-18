@@ -86,5 +86,23 @@ files of that directory include LuaJIT's headers (`luajit_boundary_check`).
   metatable the backend keeps in the registry (`{x=, y=, z=}` and so on), so they round trip with their kind. An untagged table is an array when its keys are exactly 1..n
   and a map when all its keys are strings; a map comes back with its keys sorted by bytes (Lua tables have no order). A table that mixes the two, a function, a thread, a
   value nested deeper than 16 or shared in a way that makes more than 65,536 values is refused with `Invalid`.
-- **Not yet:** budgets (`Unsupported`, Day 449), the sandbox (the file and loader functions are removed; the rest of the whitelist is Day 449), bytecode and the JIT
-  capability.
+- **Not yet:** bytecode and a `jit` capability beyond the budget mode (below).
+
+### Budgets and the sandbox
+
+`LuaJitOptions` chooses the mode of every state of a backend (setting `script.budget`, `budgeted` by default; `script.random_seed` seeds `math.random`).
+
+- **Budgeted** (mods and untrusted scripts): the JIT is off (a count hook cannot stop compiled loops). A call can carry `Budget::instructions` (counted in blocks of
+  1000) and `Budget::nanoseconds`; a count hook checks both and the call ends with `BudgetExceeded`. Once a budget has tripped the hook fires at every instruction,
+  and the Lua `pcall`, `xpcall`, `coroutine.resume` and `coroutine.wrap` are wrapped to raise the budget error again, so `while true do pcall(...) end` stops. The top
+  level of a loaded chunk runs under a default budget (50 million instructions, 2 seconds).
+- **Trusted** (the game's own scripts): the JIT is on, and instruction and time budgets are refused with `Unsupported`; the machine code is bounded by LuaJIT's own
+  `maxmcode` (512 KB per state).
+- **Memory** is a budget in both modes: `Budget::memory_bytes` lowers the cap for the call, and an allocation past it is `OutOfMemory`; the state stays usable.
+- **The environment** a script sees: `base` without the file and loader functions, `getfenv`, `setfenv`, `collectgarbage`, `require` and `module`; `string` (without
+  `dump`), `math`, `table`, `bit` and `coroutine` (without `running`) as read-only views; no `io`, `os`, `package`, `debug`, `ffi` or `jit`. `print` writes to the log
+  (channel `LogScript`). The engine's environment (these libraries, `wait`, registered natives) is read-only to scripts; each state has a script environment that is
+  theirs to write and that `getmetatable` and `setmetatable` cannot change.
+- **Patterns:** `string.find`, `match`, `gmatch` and `gsub` are the Lua 5.1 matcher with a step limit (4 million steps per call); a backtracking pattern ends with a
+  `pattern too complex` error in milliseconds instead of running for a minute inside one C call.
+- **Bounds on what leaves Lua:** a value copies at most 16 MiB of text, blobs and keys in total.

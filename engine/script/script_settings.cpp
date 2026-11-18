@@ -15,6 +15,26 @@ void RegisterScriptSettings(settings::Registry* registry)
     desc.group = "script";
     desc.flags = settings::kRestartRequired;
     registry->Register(desc);
+
+    settings::SettingDesc budget = settings::MakeText("script.budget", "budgeted");
+    budget.env = "ENGINE_SCRIPT_BUDGET";
+    budget.flag = "script-budget";
+    budget.label = "Script budget mode";
+    budget.description =
+        "budgeted (the default): scripts run without the JIT and every call can be limited in instructions and time; trusted: "
+        "the JIT is on and only memory is limited";
+    budget.group = "script";
+    budget.flags = settings::kRestartRequired;
+    registry->Register(budget);
+
+    settings::SettingDesc seed = settings::MakeInt("script.random_seed", 1, 0, 4294967295LL);
+    seed.env = "ENGINE_SCRIPT_RANDOM_SEED";
+    seed.flag = "script-random-seed";
+    seed.label = "Script random seed";
+    seed.description = "the seed of math.random in each new script state (the same seed repeats a run)";
+    seed.group = "script";
+    seed.flags = settings::kRestartRequired;
+    registry->Register(seed);
 }
 
 String<HeapAllocator> ScriptBackendName(const settings::Registry& registry)
@@ -30,6 +50,27 @@ String<HeapAllocator> ScriptBackendName(const settings::Registry& registry)
         }
     }
     return String<HeapAllocator>(HeapAllocator::Default(), "luajit");
+}
+
+bool ScriptBudgeted(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.budget"));
+    if (id.IsValid())
+    {
+        char text[32];
+        const usize length = settings::TextSetting(registry, id).Get(text, sizeof(text));
+        if (length > 0 && length < sizeof(text))
+        {
+            return !(StringView(text, length) == StringView("trusted"));
+        }
+    }
+    return true;
+}
+
+u32 ScriptRandomSeed(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.random_seed"));
+    return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 1u;
 }
 
 }  // namespace engine_placeholder::script

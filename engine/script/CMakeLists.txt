@@ -9,7 +9,7 @@ set(SCRIPT_SOURCES
   expr/expr_backend.cpp  # Day 447
 )
 if(TARGET luajit)  # the LuaJIT backend (Day 448); LuaJIT builds on Linux x86-64 only so far
-  list(APPEND SCRIPT_SOURCES luajit/luajit_backend.cpp)
+  list(APPEND SCRIPT_SOURCES luajit/luajit_backend.cpp luajit/lua_patterns.cpp)
 endif()
 set(SCRIPT_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
