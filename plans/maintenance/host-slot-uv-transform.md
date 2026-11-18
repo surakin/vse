@@ -61,4 +61,10 @@ frame size changes, not every frame.
 
 ## Result
 
-(Not started.)
+Done on Linux, 2026-11-18.
+
+- Slots `albedo_uv` (`ENGINE_SLOT_VEC4`, a new kind: four plain floats, not colour-managed) and `albedo_uv_outside` (`ENGINE_SLOT_COLOR`, linear RGBA) on the G-buffer material (parameter block 48 -> 80 bytes, defaults (1,1,0,0) and (0,0,0,0)), set per mesh slot or per entity through the existing override calls.
+- `gbuffer.frag`: uv' = uv * scale + offset for the albedo only. When the outside colour's alpha is above 0, the shader masks coordinates outside 0..1 (the portable choice, no border address mode) and keeps the sampled coordinate half a texel inside the edge, so no bleed under repeat or clamp. Alpha 0 draws as before.
+- Tests: `host_acceptance_scene` fits 4:3 (picture 0.76 of the screen width, bars 13 + 13 of 108 px) and 9:16 (0.315) pictures into the 16:9 screen and checks centring, the bar-picture-bar order (no bleed), that the other robots' screens and the body are untouched, that clearing the transform stretches the picture with no bars, that a destroyed host texture counts in `slots_reverted`, and that the robot's own screen comes back. `host_scene` checks the argument validation. The default transform leaves the existing checks of the scene unchanged. The material test expects the 80-byte block.
+- Runs: plain `ran 3955 of 10622 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan 3250, tsan 2905; failing: the known three plus the DXIL and Metal minted-hash tests (the PC and Mac re-mint `gbuffer.frag`). `/code-review high`: 4 findings; the validation test was added; the rest are recorded in `KNOWN-ISSUES.md` (hard mask edge; blobs minted earlier; no golden image or cross-API comparison yet, only pixel checks on Vulkan).
+

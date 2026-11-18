@@ -222,8 +222,12 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 /// Creates a G-buffer material with the options' shader modules and sensible parameters.
 ///
 /// The parameters start as base color white, roughness 0.5, metallic 0, emissive scale 0, alpha cutoff 0.5 and
-/// occlusion 1; change them with the material system's setters (`base_color`, `roughness`, `metallic`,
-/// `emissive_scale`, `alpha_cutoff`, `occlusion`, `flags`), and the textures `albedo_tex` and `normal_tex`.
+/// occlusion 1, `albedo_uv` (1, 1, 0, 0) and `albedo_uv_outside` (0, 0, 0, 0); change them with the material system's
+/// setters (`base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion`, `flags`, `albedo_uv`,
+/// `albedo_uv_outside`), and the textures `albedo_tex` and `normal_tex`. `albedo_uv` is (scale u, scale v, offset u,
+/// offset v): the albedo is sampled at uv * scale + offset. When `albedo_uv_outside` has alpha above 0, coordinates
+/// outside 0..1 show its rgb (linear) instead of the texture, and coordinates inside are kept half a texel from the
+/// edge so that filtering never reads the other side; with alpha 0 the sampler's address mode applies as before.
 ///
 /// - Param materials: the system.
 /// - Param templates: from [[renderer::CreateGBufferTemplates]].

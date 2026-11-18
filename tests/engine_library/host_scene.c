@@ -1024,6 +1024,24 @@ int main(void)
         texture_slot.kind = ENGINE_SLOT_TEXTURE;
         CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_tex"), &texture_slot),
                      ENGINE_ERROR_INVALID_ARGUMENT); /* no texture_slot id */
+        {
+            /* the albedo's coordinate transform: four plain floats, and a colour for the outside */
+            engine_slot_override uv;
+            memset(&uv, 0, sizeof(uv));
+            uv.struct_size = sizeof(uv);
+            uv.kind = ENGINE_SLOT_COLOR;
+            CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_uv"), &uv),
+                         ENGINE_ERROR_INVALID_ARGUMENT); /* a colour for the vector slot */
+            uv.kind = ENGINE_SLOT_VEC4;
+            CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_uv_outside"), &uv),
+                         ENGINE_ERROR_INVALID_ARGUMENT); /* a vector for the colour slot */
+            uv.value[0] = 1.0f / 0.0f;
+            CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_uv"), &uv),
+                         ENGINE_ERROR_INVALID_ARGUMENT); /* not finite */
+            uv.value[0] = 2.0f;
+            CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_uv"), &uv), ENGINE_OK);
+            CHECK_STATUS(g_api->entity_clear_slot_override(world, left, Str("albedo_uv")), ENGINE_OK);
+        }
         CHECK_STATUS(g_api->entity_clear_slot_override(world, right, Str("base_color")), ENGINE_ERROR_NOT_FOUND);
         CHECK_STATUS(g_api->entity_clear_slot_override(world, left, nothing), ENGINE_OK); /* every override */
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);

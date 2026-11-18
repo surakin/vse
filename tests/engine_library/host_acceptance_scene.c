@@ -239,15 +239,10 @@ static void Place(engine_handle world, uint64_t entity, float x, float y, float 
 }
 
 /* A host texture of one flat colour with a darker frame, standing for a person's picture. */
-static engine_handle MakeScreenTexture(engine_handle engine, const char* name, unsigned char r, unsigned char g,
-                                       unsigned char b)
+static engine_handle MakeSizedTexture(engine_handle engine, const char* name, int W, int H, unsigned char r,
+                                      unsigned char g, unsigned char b)
 {
-    enum
-    {
-        W = 64,
-        H = 36
-    };
-    unsigned char pixels[W * H * 4];
+    unsigned char* pixels = (unsigned char*)malloc((size_t)W * (size_t)H * 4);
     engine_texture_info info;
     engine_update_info update;
     engine_handle texture;
@@ -275,8 +270,98 @@ static engine_handle MakeScreenTexture(engine_handle engine, const char* name, u
     CHECK_STATUS(g_api->texture_create(engine, &info, &texture), ENGINE_OK);
     memset(&update, 0, sizeof(update));
     update.struct_size = sizeof(update);
-    CHECK_STATUS(g_api->texture_update(texture, pixels, W * 4, &update), ENGINE_OK);
+    CHECK_STATUS(g_api->texture_update(texture, pixels, (uint32_t)W * 4, &update), ENGINE_OK);
+    free(pixels);
     return texture;
+}
+
+static engine_handle MakeScreenTexture(engine_handle engine, const char* name, unsigned char r, unsigned char g,
+                                       unsigned char b)
+{
+    return MakeSizedTexture(engine, name, 64, 36, r, g, b);
+}
+
+/* The colour classes of the fitting test, told apart by hue so that the lighting does not matter. */
+enum
+{
+    kOther = 0,
+    kPicture = 1, /* yellow: the test picture and its darker frame */
+    kBar = 2      /* magenta: the colour outside the picture */
+};
+
+static int ClassOf(const unsigned char* p)
+{
+    const int r = p[0];
+    const int g = p[1];
+    const int b = p[2];
+    if (r > b + 30 && g > b + 30)
+    {
+        return kPicture;
+    }
+    if (r > g + 30 && b > g + 30)
+    {
+        return kBar;
+    }
+    return kOther;
+}
+
+/* Scans the row through the screen at world point (wx, wy, wz) outward from that pixel while the pixels are picture or
+ * bar, and reports the widths: bars on the left, picture, bars on the right, and `broken` when the order is not bars,
+ * picture, bars (a bleed shows as a picture pixel inside a bar). Returns 0 when the point is off the image. */
+static int ScanScreenRow(engine_handle surface, const engine_frame_image* image, float wx, float wy, float wz,
+                         int* left_bar, int* picture, int* right_bar, int* broken)
+{
+    const float point[3] = {wx, wy, wz};
+    float out[3] = {0, 0, 0};
+    int cx;
+    int y;
+    int x0;
+    int x1;
+    int x;
+    int phase = 0; /* 0 left bar, 1 picture, 2 right bar */
+    *left_bar = *picture = *right_bar = *broken = 0;
+    if (g_api->surface_project(surface, point, out) != ENGINE_OK)
+    {
+        return 0;
+    }
+    cx = (int)out[0];
+    y = (int)out[1];
+    if (cx < 1 || y < 0 || cx >= (int)image->width - 1 || y >= (int)image->height)
+    {
+        return 0;
+    }
+    x0 = cx;
+    while (x0 > 0 && ClassOf(PixelOf(image, (unsigned)(x0 - 1), (unsigned)y)) != kOther)
+    {
+        --x0;
+    }
+    x1 = cx;
+    while (x1 < (int)image->width - 1 && ClassOf(PixelOf(image, (unsigned)(x1 + 1), (unsigned)y)) != kOther)
+    {
+        ++x1;
+    }
+    for (x = x0; x <= x1; ++x)
+    {
+        const int c = ClassOf(PixelOf(image, (unsigned)x, (unsigned)y));
+        if (c == kBar)
+        {
+            if (phase == 1)
+            {
+                phase = 2;
+            }
+            *(phase == 0 ? left_bar : right_bar) += 1;
+        }
+        else
+        {
+            if (phase == 2)
+            {
+                *broken = 1; /* picture again after the right bar */
+            }
+            phase = 1;
+            *picture += 1;
+        }
+    }
+    return 1;
 }
 
 /* The picture's pixel where the world point is, or 0 when it is off the picture. */
@@ -299,6 +384,148 @@ static int PixelAt(engine_handle surface, const engine_frame_image* image, float
     }
     memcpy(rgb, PixelOf(image, (unsigned)x, (unsigned)y), 3);
     return 1;
+}
+
+/* Sets "albedo_tex" to `texture` and the fit of a picture of aspect `aspect` on the 16:9 screen with magenta bars. */
+static void SetFit(engine_handle world, uint64_t key, engine_handle texture, float aspect, int clear_fit)
+{
+    engine_slot_override value;
+    const float screen = 16.0f / 9.0f;
+    memset(&value, 0, sizeof(value));
+    value.struct_size = sizeof(value);
+    value.kind = ENGINE_SLOT_HOST_TEXTURE;
+    value.host_texture = texture;
+    CHECK_STATUS(g_api->entity_set_mesh_slot_override(world, key, S("Screen"), S("albedo_tex"), &value), ENGINE_OK);
+    if (clear_fit)
+    {
+        CHECK_STATUS(g_api->entity_clear_slot_override(world, key, S("albedo_uv")), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_clear_slot_override(world, key, S("albedo_uv_outside")), ENGINE_OK);
+        return;
+    }
+    memset(&value, 0, sizeof(value));
+    value.struct_size = sizeof(value);
+    value.kind = ENGINE_SLOT_VEC4;
+    value.value[0] = 1.0f;
+    value.value[1] = 1.0f;
+    if (aspect < screen)
+    {
+        value.value[0] = screen / aspect;
+        value.value[2] = (1.0f - screen / aspect) / 2.0f;
+    }
+    else if (aspect > screen)
+    {
+        value.value[1] = aspect / screen;
+        value.value[3] = (1.0f - aspect / screen) / 2.0f;
+    }
+    CHECK_STATUS(g_api->entity_set_mesh_slot_override(world, key, S("Screen"), S("albedo_uv"), &value), ENGINE_OK);
+    memset(&value, 0, sizeof(value));
+    value.struct_size = sizeof(value);
+    value.kind = ENGINE_SLOT_COLOR;
+    value.value[0] = 0.8f;
+    value.value[2] = 0.8f;
+    value.value[3] = 1.0f;
+    CHECK_STATUS(g_api->entity_set_mesh_slot_override(world, key, S("Screen"), S("albedo_uv_outside"), &value),
+                 ENGINE_OK);
+}
+
+/* Draws until the changes made so far show (the frames in flight were drawn before them), and takes a picture. */
+static void Settle(engine_handle engine, engine_handle surface, engine_frame_image* image)
+{
+    int i;
+    for (i = 0; i < 5; ++i)
+    {
+        CHECK(Acquire(engine, surface, image));
+        CHECK_STATUS(g_api->surface_release_frame(surface, image), ENGINE_OK);
+    }
+    CHECK(Acquire(engine, surface, image));
+}
+
+/* A 4:3 and a 9:16 picture fitted into the 16:9 screen of the middle robot with a texture-coordinate transform and a
+ * colour outside the picture: the picture is centred and as wide as its aspect says, the bars are the colour with no
+ * picture pixel inside them, and nothing else of the scene changes. Ends with the robot as it was. */
+static void RunFitting(engine_handle engine, engine_handle surface, engine_handle world, const uint64_t* screen_keys,
+                       const float* xs, unsigned char (*before)[3], engine_handle own_texture,
+                       engine_frame_image* final_image)
+{
+    engine_frame_image image;
+    engine_handle wide = {0};
+    engine_handle tall = {0};
+    unsigned char others[3][3];
+    int left;
+    int picture;
+    int right;
+    int broken;
+    int total;
+    int i;
+    int k;
+    wide = MakeSizedTexture(engine, "fit 4:3", 64, 48, 230, 220, 30);
+    tall = MakeSizedTexture(engine, "fit 9:16", 36, 64, 230, 220, 30);
+
+    SetFit(world, screen_keys[1], wide, 4.0f / 3.0f, 0);
+    Settle(engine, surface, &image);
+    CHECK(ScanScreenRow(surface, &image, xs[1], 1.06f, 0.25f, &left, &picture, &right, &broken));
+    total = left + picture + right;
+    if (verbose_dump())
+    {
+        printf("4:3 on 16:9: %d bar, %d picture, %d bar\n", left, picture, right);
+    }
+    CHECK(total > 40 && !broken);
+    CHECK(left > 0 && right > 0 && picture > 0);
+    CHECK(left - right > -3 && left - right < 3);                    /* centred */
+    CHECK(picture * 100 > total * 70 && picture * 100 < total * 80); /* 0.75 of the width */
+    /* the other robots' screens and the bodies are as before */
+    for (i = 0; i < 3; i += 2)
+    {
+        CHECK(PixelAt(surface, &image, xs[i], 1.06f, 0.25f, others[i]));
+        for (k = 0; k < 3; ++k)
+        {
+            const int d = (int)others[i][k] - (int)before[i][k];
+            CHECK(d > -12 && d < 12);
+        }
+    }
+    CHECK_STATUS(g_api->surface_release_frame(surface, &image), ENGINE_OK);
+
+    SetFit(world, screen_keys[1], tall, 9.0f / 16.0f, 0);
+    Settle(engine, surface, &image);
+    CHECK(ScanScreenRow(surface, &image, xs[1], 1.06f, 0.25f, &left, &picture, &right, &broken));
+    total = left + picture + right;
+    if (verbose_dump())
+    {
+        printf("9:16 on 16:9: %d bar, %d picture, %d bar\n", left, picture, right);
+    }
+    CHECK(total > 40 && !broken);
+    CHECK(left - right > -3 && left - right < 3);
+    CHECK(picture * 100 > total * 27 && picture * 100 < total * 36); /* 0.316 of the width */
+    CHECK_STATUS(g_api->surface_release_frame(surface, &image), ENGINE_OK);
+
+    /* clearing the transform shows the picture stretched over the whole screen, with no bar */
+    SetFit(world, screen_keys[1], tall, 9.0f / 16.0f, 1);
+    Settle(engine, surface, &image);
+    CHECK(ScanScreenRow(surface, &image, xs[1], 1.06f, 0.25f, &left, &picture, &right, &broken));
+    CHECK(left == 0 && right == 0 && picture > 40);
+    CHECK_STATUS(g_api->surface_release_frame(surface, &image), ENGINE_OK);
+
+    /* a destroyed host texture reverts the slot to the material's own value (counted), the transform stays */
+    SetFit(world, screen_keys[1], tall, 9.0f / 16.0f, 0);
+    CHECK_STATUS(g_api->texture_destroy(tall), ENGINE_OK);
+    {
+        engine_frame_info finfo;
+        engine_frame_stats fstats;
+        memset(&finfo, 0, sizeof(finfo));
+        finfo.struct_size = sizeof(finfo);
+        finfo.delta_seconds = 1.0 / 30.0;
+        memset(&fstats, 0, sizeof(fstats));
+        fstats.struct_size = sizeof(fstats);
+        CHECK_STATUS(g_api->frame(engine, &finfo, &fstats), ENGINE_OK);
+        CHECK(fstats.slots_reverted >= 1);
+    }
+    Settle(engine, surface, &image);
+    CHECK_STATUS(g_api->surface_release_frame(surface, &image), ENGINE_OK);
+
+    /* the robot as it was */
+    SetFit(world, screen_keys[1], own_texture, 16.0f / 9.0f, 1);
+    CHECK_STATUS(g_api->texture_destroy(wide), ENGINE_OK);
+    Settle(engine, surface, final_image);
 }
 
 static void RunScene(engine_handle engine, const engine_import_result* robot, const engine_import_result* field)
@@ -326,6 +553,7 @@ static void RunScene(engine_handle engine, const engine_import_result* robot, co
     uint64_t roots[3];
     int robots_screens[3] = {0, 0, 0};
     uint64_t walker_key = 0;
+    uint64_t screen_keys[3] = {0, 0, 0};
     uint64_t walker_keys[64];
     size_t walker_count = 0;
     int played_count = 0;
@@ -427,6 +655,7 @@ static void RunScene(engine_handle engine, const engine_import_result* robot, co
             if (g_api->entity_set_mesh_slot_override(world, keys[k], S("Screen"), S("albedo_tex"), &value) == ENGINE_OK)
             {
                 ++robots_screens[i];
+                screen_keys[i] = keys[k];
             }
             play.speed = i == 0 ? 1.0f : 0.0f; /* the first walks, the others stand */
             played = g_api->animation_play(world, keys[k], i == 0 ? walk : idle, &play) == ENGINE_OK;
@@ -516,6 +745,12 @@ static void RunScene(engine_handle engine, const engine_import_result* robot, co
         printf("drawn %u unresolved %llu\n", state.objects_drawn, (unsigned long long)state.entities_unresolved);
     }
     CHECK(state.entities_unresolved == 0 && state.objects_drawn > 100);
+    RunFitting(engine, surface, world, screen_keys, xs, rgb, textures[1], &image);
+    /* the idle animations moved on while the fitting was drawn: the pictures from here on are compared with this one */
+    memcpy(still_copy, image.data, (size_t)image.stride * image.height);
+    CHECK(PixelAt(surface, &image, xs[1], 1.06f, 0.25f, rgb[1]));
+    CHECK(rgb[1][1] > rgb[1][0] + 40 && rgb[1][1] > rgb[1][2] + 40); /* the robot's own green screen is back */
+    CHECK_STATUS(g_api->surface_release_frame(surface, &image), ENGINE_OK);
     /* a resize mid-run: the pictures follow, and the old size comes back as it was */
     CHECK_STATUS(g_api->surface_resized(surface, 640, 360, 1.0f), ENGINE_OK);
     for (k = 0; k < 20; ++k)

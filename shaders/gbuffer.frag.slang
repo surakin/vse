@@ -4,7 +4,9 @@
 //   target 2 material RGBA8_UNorm    r = roughness, g = metallic, b = emissive scale, a = flags / 255
 //
 // Math (linear light)
-//   albedo = base_color.rgb * sample(albedo_tex, uv).rgb
+//   albedo = base_color.rgb * sample(albedo_tex, uv').rgb,  uv' = uv * albedo_uv.xy + albedo_uv.zw  (default (1,1,0,0))
+//   albedo_uv_outside.a > 0: where uv' leaves 0..1 the texel is albedo_uv_outside.rgb (linear) instead, and inside the
+//       picture uv' is kept half a texel from its edge, so the filter never reads across the edge (no repeat bleed)
 //   VERTEX_COLOR:  albedo *= SrgbToLinear(vertex_color.rgb)         (vertex colors are authored in sRGB)
 //   ALPHA_TEST:    discard when base_color.a * sample(albedo_tex, uv).a * vertex_color.a < alpha_cutoff
 //   N = normalize(world normal); NORMAL_MAP: t = sample(normal_tex, uv).xyz * 2 - 1,
@@ -15,7 +17,8 @@
 // Interface
 //   input  location 0: float3 world normal; 1: float2 uv; 2: float4 world tangent; 3: float4 color (VERTEX_COLOR)
 //   set 1, binding 0: uniform buffer MaterialParams (std140): float4 base_color @0; float roughness @16; float metallic @20;
-//       float emissive_scale @24; float alpha_cutoff @28; float occlusion @32; uint flags @36
+//       float emissive_scale @24; float alpha_cutoff @28; float occlusion @32; uint flags @36;
+//       float4 albedo_uv @48; float4 albedo_uv_outside @64
 //   set 1, binding 1: sampled texture albedo_tex; binding 2: sampled texture normal_tex (NORMAL_MAP); binding 3: sampler
 
 // permutation-options: NORMAL_MAP ALPHA_TEST VERTEX_COLOR
@@ -31,6 +34,8 @@ struct MaterialParams {
     float alpha_cutoff;
     float occlusion;
     uint flags;
+    float4 albedo_uv;          // scale u, scale v, offset u, offset v
+    float4 albedo_uv_outside;  // linear rgb shown outside the picture; a = 0: no mask (the sampler's address mode rules)
 };
 
 [[vk::binding(0, 1)]] ConstantBuffer<MaterialParams> material ENGINE_REGISTER(b0, space1);
@@ -55,7 +60,20 @@ struct FragmentOutput {
 
 [shader("fragment")]
 FragmentOutput main(FragmentInput input) {
-    float4 texel = albedo_tex.Sample(linear_sampler, input.uv);
+    float2 albedo_coord = input.uv * material.albedo_uv.xy + material.albedo_uv.zw;
+    bool masked = false;
+    if (material.albedo_uv_outside.a > 0.0) {
+        uint texture_width;
+        uint texture_height;
+        albedo_tex.GetDimensions(texture_width, texture_height);
+        const float2 half_texel = 0.5 / float2(max(texture_width, 1u), max(texture_height, 1u));
+        masked = any(albedo_coord < 0.0) || any(albedo_coord > 1.0);
+        albedo_coord = clamp(albedo_coord, half_texel, 1.0 - half_texel);
+    }
+    float4 texel = albedo_tex.Sample(linear_sampler, albedo_coord);
+    if (masked) {
+        texel.rgb = material.albedo_uv_outside.rgb;
+    }
     float3 albedo = material.base_color.rgb * texel.rgb;
     float alpha = material.base_color.a * texel.a;
 #ifdef VERTEX_COLOR

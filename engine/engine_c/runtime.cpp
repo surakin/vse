@@ -1411,6 +1411,14 @@ u32 KindOfSlot(StringView name)
     {
         return ENGINE_SLOT_TEXTURE;
     }
+    if (name == StringView("albedo_uv"))
+    {
+        return ENGINE_SLOT_VEC4;
+    }
+    if (name == StringView("albedo_uv_outside"))
+    {
+        return ENGINE_SLOT_COLOR;
+    }
     return 0;
 }
 
@@ -1521,7 +1529,7 @@ engine_status SetSlotOverride(engine_handle world, u64 key, engine_string slot, 
     if (expected == 0)
     {
         SetLastError("invalid_argument: the material has no slot '%.*s' (base_color, roughness, metallic, "
-                     "emissive_scale, alpha_cutoff, occlusion, albedo_tex, normal_tex)",
+                     "emissive_scale, alpha_cutoff, occlusion, albedo_tex, normal_tex, albedo_uv, albedo_uv_outside)",
                      static_cast<int>(slot.length < 40 ? slot.length : 40), slot.data != nullptr ? slot.data : "");
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }

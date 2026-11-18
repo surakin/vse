@@ -729,6 +729,7 @@ extern "C"
 #define ENGINE_SLOT_TEXTURE 3u /* texture_resource: the resource id of a texture the host added or loaded */
 #define ENGINE_SLOT_HOST_TEXTURE                                                                                       \
     4u /* host_texture: a host texture (texture_create); the slot shows its newest pixels (Phase 24 Day 366) */
+#define ENGINE_SLOT_VEC4 5u /* value[0..3]: four plain floats, not a colour (the "albedo_uv" slot) */
 
     /* A per-entity override of one slot of the material its mesh reference names (Phase 24 Day 362): the entity draws
      * with its own copy of the material in which that slot has this value, and every other entity that uses the
@@ -736,7 +737,17 @@ extern "C"
      * ENGINE_SLOT_FLOAT for "roughness", "metallic", "emissive_scale", "alpha_cutoff" and "occlusion";
      * ENGINE_SLOT_TEXTURE (a resource) or ENGINE_SLOT_HOST_TEXTURE (a host texture, which only the surfaces that draw
      * the entity upload, once per device; destroying it or having no pixels yet leaves the slot at the material's own
-     * value, counted in engine_frame_stats.slots_reverted) for "albedo_tex" and "normal_tex". */
+     * value, counted in engine_frame_stats.slots_reverted) for "albedo_tex" and "normal_tex".
+     *
+     * A texture-coordinate transform for the albedo (maintenance, 2026-11-18), to fit a picture of another aspect into
+     * a quad without copying its pixels: ENGINE_SLOT_VEC4 for "albedo_uv" = (scale u, scale v, offset u, offset v), the
+     * albedo is sampled at uv * scale + offset; the default is (1, 1, 0, 0), which draws as before. ENGINE_SLOT_COLOR
+     * for "albedo_uv_outside" = linear RGBA: when its alpha is above 0, the part of the quad whose transformed
+     * coordinates leave 0..1 shows its rgb instead of the texture (it replaces the texel, so base_color still
+     * multiplies it), and the coordinates inside are kept half a texel from the picture's edge so that filtering never
+     * reads across it (the same on every graphics API); with alpha 0 the texture's address mode applies. The normal
+     * map keeps the mesh's own coordinates. To fit a frame of aspect a on a screen of aspect s: for a > s scale v by
+     * a / s and offset v by (1 - a / s) / 2; for a < s scale u by s / a and offset u by (1 - s / a) / 2. */
     typedef struct engine_slot_override
     {
         uint32_t struct_size;

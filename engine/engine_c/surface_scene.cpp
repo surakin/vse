@@ -243,7 +243,7 @@ u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 pa
         {
             materials->SetFloat(made.material, item.name, item.value[0]);
         }
-        else if (item.kind == ENGINE_SLOT_COLOR)
+        else if (item.kind == ENGINE_SLOT_COLOR || item.kind == ENGINE_SLOT_VEC4)
         {
             materials->SetVec4(made.material, item.name,
                                Vec4(item.value[0], item.value[1], item.value[2], item.value[3]));

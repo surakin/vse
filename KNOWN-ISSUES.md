@@ -8,6 +8,7 @@ whenever a day leaves something broken, unmeasured or deferred. Entries state fa
 
 | Test | Since | Cause | Status |
 |---|---|---|---|
+| `Every minted DXIL module is a valid container minted beside the committed SPIR-V` (`tests/renderer/shader_dxil_test.cpp:201`, phase13) and `Every minted Metal library is an executable library minted beside the committed SPIR-V, naming its entry` (phase21) | 2026-11-18 | Observed on Linux: `gbuffer.frag` gained `albedo_uv` and `albedo_uv_outside` (`plans/maintenance/host-slot-uv-transform.md`) and its SPIR-V was re-minted here; the committed `gbuffer.frag` DXIL (`.dxil.inc`) and Metal library (`.metallib.inc`) still record the old SPIR-V hash | Open until the Windows PC re-mints the DXIL and the Mac the Metal library (`cmake --build <tree> --target shaders` there), and runs `host_acceptance_scene` (the fitting cases) on Direct3D 12 and Metal |
 | `A Job destroyed without being released frees its never-started frame` (`tests/jobs/job_test.cpp:121`, phase 2, plain, asan and tsan) | seen 2026-11-17 on Phase 26 Day 415 | Observed: `Snap().Live() == before.Live() + 1` fails with `0 == 1` in the Release tree, also in a clean checkout of HEAD `623dbe1d` (so not caused by Day 415); cause not investigated | open |
 
 ## Flaky tests
@@ -45,6 +46,8 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
 - Phase 7 Day 98 (2026-11-06): `The newest core of a crashed program is found by script, checked against the binary, and opens in gdb` failed three times in full `ctest -L phase7 -j16` runs (the non-unity build, a 15-repeat run, a Day 100 8-repeat run) and passed in 25 solo repeats, 40 loaded repeats and 6 further full runs; the failure output was not captured. Phase 7.
 
 ## Unverified by a human
+
+- **Slot UV transform (maintenance, 2026-11-18, Linux; `plans/maintenance/host-slot-uv-transform.md`):** the fitting cases of `host_acceptance_scene` (4:3 and 9:16 pictures on the 16:9 screen) ran on Linux Vulkan only, with pixel checks by hue on one row through the screen, not a golden image, and not compared between Vulkan, Direct3D 12 and Metal (none of those two were run). The bars are a hard edge (no antialiasing at the picture's border); the mask uses the texture's size, so a host texture resized between frames takes effect on the next frame. Minted material blobs made before this change have a 48-byte parameter block where the template now has 80 bytes (not tested what loading one does; the importer and `asset_mint` mint the 80-byte block).
 
 - **X11 content scale (2026-11-11, Linux machine):** `X11Window` now reports the desktop's `Xft.dpi` over 96 as `ContentScale()` and the window host opens X11 windows at the logical size times it. Checked here on one display (Xwayland, `Xft.dpi: 192`, scale 2.0, a 320x241 logical request opens 640x482) and by unit tests of the parser. **Not checked:** the demos by eye on a scaled X11 desktop (`--backend x11` on `ui_demo` and `renderer_demo`); the live change of the scale (the `PropertyNotify` on the root window's `RESOURCE_MANAGER` reloading it), because the test would have to rewrite the property of the running session; a real X11 session (not Xwayland); a fractional `Xft.dpi` such as 120 or 144.
 Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`, Phases 1-2).

@@ -150,11 +150,16 @@ TEST_CASE("a valid material round-trips with std140 parameters and typed texture
     REQUIRE(LoadMaterialBlob(ByteSpan(blob.Data(), blob.Size()), types, &m, &id).Ok());
     CHECK(id == ResourceId::FromValue(0xa1));
     CHECK(StringView(m.template_name.text, CStrLength(m.template_name.text)) == StringView("gbuffer"));
-    CHECK(m.block.Size() == 48);  // the std140 block
+    CHECK(m.block.Size() == 80);  // the std140 block (the albedo_uv and albedo_uv_outside vectors at 48 and 64)
     CHECK(MtFloatAt(m, 16) == 0.25f);
     CHECK(MtFloatAt(m, 20) == 0.0f);  // the template's default metallic
     CHECK(MtFloatAt(m, 4) == 0.5f);   // base_color.g
     CHECK(MtFloatAt(m, 28) == 0.5f);  // the default alpha_cutoff
+    CHECK(MtFloatAt(m, 48) == 1.0f);  // the default albedo_uv: scale 1, 1, offset 0, 0
+    CHECK(MtFloatAt(m, 52) == 1.0f);
+    CHECK(MtFloatAt(m, 56) == 0.0f);
+    CHECK(MtFloatAt(m, 60) == 0.0f);
+    CHECK(MtFloatAt(m, 76) == 0.0f);  // albedo_uv_outside: alpha 0, no mask
     CHECK(m.options.Size() == 1);
     CHECK(m.params.Size() == 2);
     REQUIRE(m.textures.Size() == 2);
