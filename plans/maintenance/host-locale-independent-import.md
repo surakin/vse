@@ -46,7 +46,7 @@ Every `%g`, `%f`, `%e` (and `%a`) conversion in `engine/`, `tools/` and `game/`,
 
 ## Result
 
-Done 2026-11-18 on the Windows PC; the engine commit is named in the next section. The importer's bytes do not change in the C locale (`FormatGeneral` is
+Done 2026-11-18 on the Windows PC. **Engine commit: `1636ecec`** (the fix, its tests and docs), with the reference index and this note in the commit after it. The importer's bytes do not change in the C locale (`FormatGeneral` is
 `%.9g` byte for byte), so `kGltfImporterOutputVersion` and `import_format_version()` stay as they were: a cache entry made before the fix stays valid, and only
 an entry the host made under a decimal-comma locale (which failed to import, so none exists) would have differed.
 
