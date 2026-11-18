@@ -59,6 +59,7 @@ module platform/os "Platform: OS Services"
   header engine/foundation/os/console.h
   header engine/foundation/os/last_error.h
   header engine/foundation/os/signal.h
+  header engine/foundation/os/locale.h
 
 module platform/window-input "Platform: Windowing and Input"
   header engine/platform/window.h

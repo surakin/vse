@@ -5,6 +5,7 @@
 #include "asset_import/gltf_accessor.h"
 #include "asset_import/gltf_names.h"
 #include "cstr/format.h"
+#include "cstr/number.h"
 #include "lang/scalar.h"
 #include "lang/status_try.h"
 
@@ -747,12 +748,18 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
         }
         if (resample.channels != 0)
         {
+            // The note is part of the result a host may store: its numbers do not follow the host's LC_NUMERIC.
+            char rate[32];
+            char translation[32];
+            char rotation[32];
+            FormatGeneral(rate, sizeof(rate), static_cast<f64>(options.clip_rate), 6);
+            FormatGeneral(translation, sizeof(translation), static_cast<f64>(resample.translation), 6);
+            FormatGeneral(rotation, sizeof(rotation), static_cast<f64>(resample.rotation_degrees), 6);
             char what[160];
             FormatTo(
                 what, sizeof(what),
-                "%u cubic-spline channels resampled at %g Hz: largest error %g (translation or scale) and %g degrees",
-                static_cast<unsigned>(resample.channels), static_cast<double>(options.clip_rate), resample.translation,
-                resample.rotation_degrees);
+                "%u cubic-spline channels resampled at %s Hz: largest error %s (translation or scale) and %s degrees",
+                static_cast<unsigned>(resample.channels), rate, translation, rotation);
             AddImportNote(&result->report, animations.At(desc.animation).Path(), StringView(what, CStrLength(what)));
             result->report.resampling_translation_error = result->report.resampling_translation_error >
                                                                   static_cast<f32>(resample.translation)

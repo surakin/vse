@@ -3,6 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "comma_locale.h"
 #include "asset/clip.h"
 #include "asset/mesh.h"
 #include "asset/skeleton.h"
@@ -762,6 +763,20 @@ TEST_CASE("gltf clip: STEP holds the value until the step, and a cubic spline is
     const f64 recorded = static_cast<f64>(result.report.resampling_translation_error);
     CHECK(result.report.resampling_translation_error >= 0.0f);
     CHECK(NoteSays(result, "cubic-spline channels resampled at 30 Hz"));
+    {
+        // the host maintenance (2026-11-18): the note's numbers do not follow a host's decimal-comma locale.
+        ::engine_placeholder::test::CommaLocale comma;
+        if (comma.Active())
+        {
+            ImportResult in_comma;
+            REQUIRE(SkImport(glb, &in_comma, &error).Ok());
+            REQUIRE(in_comma.report.notes.Size() == result.report.notes.Size());
+            for (usize i = 0; i < result.report.notes.Size(); ++i)
+            {
+                CHECK(in_comma.report.notes[i].View() == result.report.notes[i].View());
+            }
+        }
+    }
     u64 state = 99;
     for (u32 n = 0; n < 1000; ++n)
     {

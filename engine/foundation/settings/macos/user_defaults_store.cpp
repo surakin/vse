@@ -8,6 +8,7 @@
 #include "containers/span.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
+#include "cstr/number.h"
 #include "io/file.h"
 #include "io/path.h"
 
@@ -95,7 +96,9 @@ StoreError ValueText(CFPropertyListRef value, char* out, usize capacity, usize* 
             {
                 return StoreError::TypeMismatch;  // not exactly a double (a 128-bit real)
             }
-            n = FormatTo(out, capacity, "%.17g", d);
+            char number[32];  // '.' whatever the process locale is: the settings parser reads it back
+            const usize length = FormatGeneral(number, sizeof(number), d, 17);
+            n = FormatTo(out, capacity, "%.*s", static_cast<int>(length), number);
         }
         else
         {

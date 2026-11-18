@@ -3,6 +3,7 @@
 #include "algorithm.h"
 #include "asset_import/gltf_accessor.h"
 #include "cstr/format.h"
+#include "cstr/number.h"
 #include "lang/scalar.h"
 
 namespace engine_placeholder::asset
@@ -17,9 +18,9 @@ void AppendNumber(String<HeapAllocator>* out, f64 value)
     {
         value = 0;  // JSON has no infinity or NaN
     }
-    char text[40];
-    FormatTo(text, sizeof(text), "%.9g", value);
-    out->Append(StringView(text, CStrLength(text)));
+    char text[32];
+    const usize length = FormatGeneral(text, sizeof(text), value, 9);  // '.' whatever the host's LC_NUMERIC is
+    out->Append(StringView(text, length));
 }
 
 void AppendString(String<HeapAllocator>* out, StringView text)

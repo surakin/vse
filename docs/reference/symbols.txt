@@ -192,24 +192,25 @@ MemAllocateZeroed(usize,usize) noexcept	function	foundation/cstr	memallocatezero
 MemReallocate(void*,usize) noexcept	function	foundation/cstr	memreallocate-void-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:103
 MemFree(void*) noexcept	function	foundation/cstr	memfree-void-star-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:111
 SortRaw(void*,usize,usize,int(*)(const void*,const void*))	function	foundation/cstr	sortraw-void-star-usize-usize-int-star-const-void-star-const-void-star	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:120
-CStrToInt(const char*) noexcept	function	foundation/cstr	cstrtoint-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:16
-CStrToLong(const char*) noexcept	function	foundation/cstr	cstrtolong-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:21
-CStrToLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:26
-CStrToLongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:31
-CStrToULong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:36
-CStrToULongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:41
-CStrToDouble(const char*) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:46
-CStrToDouble(const char*,char**) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:51
-CStrToFloat(const char*,char**) noexcept	function	foundation/cstr	cstrtofloat-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:56
-FormatShortestResult	struct	foundation/cstr	formatshortestresult	foundation-cstr.md	engine/foundation/cstr/number.h:62
-FormatShortestResult::end	variable	foundation/cstr	formatshortestresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:65
-FormatShortestResult::ok	variable	foundation/cstr	formatshortestresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:67
-FormatShortest(char*,char*,f64) noexcept	function	foundation/cstr	formatshortest-char-star-char-star-f64-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:74
-ParseDoubleResult	struct	foundation/cstr	parsedoubleresult	foundation-cstr.md	engine/foundation/cstr/number.h:81
-ParseDoubleResult::value	variable	foundation/cstr	parsedoubleresult-value	foundation-cstr.md	engine/foundation/cstr/number.h:84
-ParseDoubleResult::end	variable	foundation/cstr	parsedoubleresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:86
-ParseDoubleResult::ok	variable	foundation/cstr	parsedoubleresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:88
-ParseDoubleExact(const char*,const char*) noexcept	function	foundation/cstr	parsedoubleexact-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:119
+CStrToInt(const char*) noexcept	function	foundation/cstr	cstrtoint-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:18
+CStrToLong(const char*) noexcept	function	foundation/cstr	cstrtolong-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:23
+CStrToLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:28
+CStrToLongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:33
+CStrToULong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:38
+CStrToULongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:43
+CStrToDouble(const char*) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:48
+CStrToDouble(const char*,char**) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:53
+CStrToFloat(const char*,char**) noexcept	function	foundation/cstr	cstrtofloat-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:58
+FormatShortestResult	struct	foundation/cstr	formatshortestresult	foundation-cstr.md	engine/foundation/cstr/number.h:64
+FormatShortestResult::end	variable	foundation/cstr	formatshortestresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:67
+FormatShortestResult::ok	variable	foundation/cstr	formatshortestresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:69
+FormatShortest(char*,char*,f64) noexcept	function	foundation/cstr	formatshortest-char-star-char-star-f64-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:76
+FormatGeneral(char*,usize,f64,int) noexcept	function	foundation/cstr	formatgeneral-char-star-usize-f64-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:95
+ParseDoubleResult	struct	foundation/cstr	parsedoubleresult	foundation-cstr.md	engine/foundation/cstr/number.h:113
+ParseDoubleResult::value	variable	foundation/cstr	parsedoubleresult-value	foundation-cstr.md	engine/foundation/cstr/number.h:116
+ParseDoubleResult::end	variable	foundation/cstr	parsedoubleresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:118
+ParseDoubleResult::ok	variable	foundation/cstr	parsedoubleresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:120
+ParseDoubleExact(const char*,const char*) noexcept	function	foundation/cstr	parsedoubleexact-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:151
 VarArgs	alias	foundation/cstr	varargs	foundation-cstr.md	engine/foundation/cstr/varargs.h:11
 ENGINE_VA_START	macro	foundation/cstr	engine-va-start	foundation-cstr.md	engine/foundation/cstr/varargs.h:16
 ENGINE_VA_END	macro	foundation/cstr	engine-va-end	foundation-cstr.md	engine/foundation/cstr/varargs.h:18
@@ -2375,6 +2376,10 @@ os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	e
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:28
 os::LastError() noexcept	function	platform/os	os-lasterror-noexcept	platform-os.md	engine/foundation/os/last_error.h:13
 os::SetLastError(int) noexcept	function	platform/os	os-setlasterror-int-noexcept	platform-os.md	engine/foundation/os/last_error.h:22
+os::LocaleCategory	enum	platform/os	os-localecategory	platform-os.md	engine/foundation/os/locale.h:15
+os::LocaleCategory::All	enumerator	platform/os	os-localecategory-all	platform-os.md	engine/foundation/os/locale.h:17
+os::LocaleCategory::Numeric	enumerator	platform/os	os-localecategory-numeric	platform-os.md	engine/foundation/os/locale.h:18
+os::SetLocale(LocaleCategory,const char*) noexcept	function	platform/os	os-setlocale-localecategory-const-char-star-noexcept	platform-os.md	engine/foundation/os/locale.h:31
 os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:31
 os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:35
 os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:42

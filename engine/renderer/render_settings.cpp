@@ -1,6 +1,7 @@
 #include "renderer/render_settings.h"
 
 #include "os/last_error.h"
+#include "lang/limits.h"
 #include "lang/scalar.h"
 #include "cstr/format.h"
 #include "cstr/number.h"
@@ -579,14 +580,16 @@ SetStatus RenderSettings::SetFromString(SettingId id, const char* text)
     }
     case SettingType::Float:
     {
-        os::SetLastError(0);
-        char* end = nullptr;
-        const float parsed = CStrToFloat(text, &end);
-        if (text[0] == '\0' || *end != '\0')
+        // Independent of the process locale (strtof follows LC_NUMERIC): the text form is the file format's.
+        const char* begin = text[0] == '+' ? text + 1 : text;
+        const char* const end = text + CStrLength(text);
+        const ParseDoubleResult parsed = ParseDoubleExact(begin, end);
+        if (!parsed.ok || parsed.end != end || begin == end || (begin != text && *begin == '-') ||
+            (IsFinite(parsed.value) && Abs(parsed.value) > static_cast<f64>(Limits<f32>::Max())))
         {
             return SetStatus::OutOfRange;
         }
-        return SetFloat(id, parsed);
+        return SetFloat(id, static_cast<f32>(parsed.value));
     }
     case SettingType::Text: return SetText(id, text);
     }
@@ -611,7 +614,13 @@ usize RenderSettings::ValueToString(SettingId id, char* out, usize capacity) con
     case SettingType::Bool: n = FormatTo(out, capacity, "%s", v.integer != 0 ? "true" : "false"); break;
     case SettingType::Enum: n = FormatTo(out, capacity, "%s", d->enum_names[v.integer]); break;
     case SettingType::Int: n = FormatTo(out, capacity, "%lld", static_cast<long long>(v.integer)); break;
-    case SettingType::Float: n = FormatTo(out, capacity, "%.9g", static_cast<double>(v.real)); break;
+    case SettingType::Float:
+    {
+        char number[32];  // '.' whatever the process locale is: the text form is the file format's
+        const usize length = FormatGeneral(number, sizeof(number), static_cast<f64>(v.real), 9);
+        n = FormatTo(out, capacity, "%.*s", static_cast<int>(length), number);
+        break;
+    }
     case SettingType::Text: n = FormatTo(out, capacity, "%s", v.text); break;
     }
     return n < 0 ? 0 : static_cast<usize>(n);

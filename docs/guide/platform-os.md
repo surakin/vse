@@ -110,6 +110,13 @@ first 42, last 7
 variables that must be read before the settings system can (the window backend, the job thread count, the crash handler). `os::EnvironmentCount()` and
 `os::EnvironmentEntry()` walk the whole environment; on Windows names ignore case (`os::EnvironmentNamesIgnoreCase()`).
 
+## Locale
+
+`os::SetLocale(os::LocaleCategory::All or Numeric, name)` (`os/locale.h`) is `setlocale`: it returns the name now in effect, or null when the locale is
+not installed, and `nullptr` as the name reads without changing it. The engine never calls it; a host program may, and the locale is process-wide. Code
+that stores or parses numbers as text is independent of it ([C strings and formatting](foundation-cstr.md)); tests use it, through
+`test::CommaLocale`, to prove that.
+
 ## Command line
 
 A windowed program defines `int EngineMain(int argc, char** argv)` and writes `ENGINE_WINDOWED_PROGRAM(EngineMain)` once at global scope instead of `main`

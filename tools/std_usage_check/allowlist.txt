@@ -10,6 +10,7 @@ engine/foundation/cstr/|<cstring>,<cwchar>,<cstdio>,<cstdarg>,<cstdlib>,<charcon
 engine/foundation/os/console.h|<cstdio>,<cstdlib>|Console output, abort, _Exit and environment wrappers over the C library.
 engine/foundation/os/last_error.h|<cerrno>|The errno wrapper (errno is a macro, so only a header can name it; the E* constants arrive through it).
 engine/foundation/os/signal.h|<csignal>|The signal-handler wrapper (the SIG* constants arrive through it).
+engine/foundation/os/locale.h|<clocale>|The locale wrapper (setlocale; the LC_* constants arrive through it): tests run the engine under a decimal-comma locale as a host may set one.
 engine/jobs/coroutine.h|<coroutine>|The coroutine wrapper: the compiler looks coroutine machinery up by the standard names.
 
 # --- documented boundaries ---------------------------------------------------------------------------------------------------------

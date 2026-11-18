@@ -262,6 +262,42 @@ TEST_CASE("Number conversion matches the C library", "[cstr]")
     CHECK(!FormatShortest(tiny, tiny + 1, 12345.678).ok);
 }
 
+// the host maintenance (2026-11-18): FormatGeneral is printf's %.Ng of the C locale, byte for byte, without the
+// locale.
+TEST_CASE("FormatGeneral writes what %.Ng writes in the C locale", "[cstr]")
+{
+    const double values[] = {0.0,   -0.0,     0.5,   0.1,      1.0 / 3.0, 0.7f, 1e-30,    123456789.0,         1e21,
+                             -2.75, 3.14159f, 1e300, 4.9e-324, 65504.0,   30.0, -1.25e-5, 0.30000001192092896, 100.0,
+                             1e9,   1e-5};
+    for (const double v : values)
+    {
+        for (const int precision : {1, 6, 9, 17})
+        {
+            char expected[64];
+            std::snprintf(expected, sizeof(expected), "%.*g", precision, v);  // this process is in the C locale
+            char got[32];
+            const usize length = FormatGeneral(got, sizeof(got), v, precision);
+            INFO(v << " at " << precision);
+            CHECK(length == std::strlen(expected));
+            CHECK(std::strcmp(got, expected) == 0);
+        }
+    }
+    // Nine digits read back as the same f32.
+    for (const float f : {0.7f, 0.1f, 1.0f / 3.0f, 16777217.0f, 1e-38f, 3.4e38f})
+    {
+        char text[32];
+        const usize length = FormatGeneral(text, sizeof(text), static_cast<double>(f), 9);
+        CHECK(static_cast<float>(std::strtod(text, nullptr)) == f);
+        CHECK(length > 0);
+    }
+    char small[4];
+    CHECK(FormatGeneral(small, sizeof(small), 12345.0, 9) == 0);
+    CHECK(small[0] == '\0');
+    CHECK(FormatGeneral(small, sizeof(small), 0.5, 9) == 3);
+    CHECK(std::strcmp(small, "0.5") == 0);
+    CHECK(FormatGeneral(nullptr, 0, 0.5, 9) == 0);
+}
+
 TEST_CASE("ParseDoubleExact reads plain decimals only", "[cstr]")
 {
     const char* ok = "12.5e1x";

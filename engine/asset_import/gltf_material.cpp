@@ -5,8 +5,10 @@
 #include "asset_import/gltf_names.h"
 #include "asset_import/image_decode.h"
 #include "asset_import/material_source.h"
+#include "containers/array.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
+#include "cstr/number.h"
 #include "lang/scalar.h"
 #include "lang/status_try.h"
 
@@ -587,12 +589,29 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
         {
             text.Append(StringView("option ALPHA_TEST\n"));
         }
-        FormatTo(line, sizeof(line),
-                 "param base_color color %.9g %.9g %.9g %.9g\nparam roughness float %.9g\nparam metallic float %.9g\n"
-                 "param emissive_scale float %.9g\nparam alpha_cutoff float %.9g\n",
-                 info.base_color[0], info.base_color[1], info.base_color[2], info.base_color[3], info.roughness,
-                 info.metallic, info.emissive_scale, info.alpha_cutoff);
-        text.Append(StringView(line, CStrLength(line)));
+        // The numbers are parsed back by MintMaterial: FormatGeneral writes '.' whatever the host's LC_NUMERIC is.
+        const auto append_float = [&text](f64 value)
+        {
+            char number[32];
+            const usize length = FormatGeneral(number, sizeof(number), value, 9);
+            text.Append(' ');
+            text.Append(StringView(number, length));
+        };
+        text.Append(StringView("param base_color color"));
+        for (u32 c = 0; c < 4; ++c)
+        {
+            append_float(info.base_color[c]);
+        }
+        const Array<const char*, 4> scalar_names = {"roughness", "metallic", "emissive_scale", "alpha_cutoff"};
+        const Array<f64, 4> scalars = {info.roughness, info.metallic, info.emissive_scale, info.alpha_cutoff};
+        for (u32 k = 0; k < 4; ++k)
+        {
+            text.Append(StringView("\nparam "));
+            text.Append(StringView(scalar_names[k]));
+            text.Append(StringView(" float"));
+            append_float(scalars[k]);
+        }
+        text.Append('\n');
         const TextureRef refs[kUses] = {info.color, info.normal};
         const char* slots[kUses] = {"albedo_tex", "normal_tex"};
         u32 first_texture = 0xFFFFFFFFu;

@@ -1,6 +1,7 @@
 // Phase 8 Day 104: the settings registry, RenderSettings, DiffSettings, ResolveSettings and the text format.
 #include <catch2/catch_test_macros.hpp>
 
+#include "comma_locale.h"
 #include "cstr/format.h"
 #include "lang/limits.h"
 #include "test_text.h"
@@ -425,6 +426,36 @@ TEST_CASE("the text format is stable and round trips", "[render_settings]")
     char tiny[16];
     CHECK(SerializeSettings(s, tiny, sizeof(tiny)) == n);
     CHECK(CStrLength(tiny) == sizeof(tiny) - 1);
+}
+
+// the host maintenance (2026-11-18): a host under a decimal-comma locale writes and reads the same text.
+TEST_CASE("the text format does not follow a decimal-comma locale", "[render_settings][locale]")
+{
+    RenderSettings s;
+    s.SetFloat(settings::kRenderScale, 0.7f);
+    char in_c[2048];
+    const usize n = SerializeSettings(s, in_c, sizeof(in_c));
+    REQUIRE(n < sizeof(in_c));
+    test::CommaLocale comma;
+    if (!comma.Active())
+    {
+        SKIP("no decimal-comma locale is installed (tried nb_NO, de_DE and fr_FR)");
+    }
+    INFO("locale " << comma.Name());
+    char in_comma[2048];
+    CHECK(SerializeSettings(s, in_comma, sizeof(in_comma)) == n);
+    CHECK(CStrCompare(in_comma, in_c) == 0);
+    RenderSettings parsed;
+    SettingsParseReport report;
+    REQUIRE(ParseSettings(in_c, n, &parsed, &report));
+    CHECK(report.error_count == 0);
+    CHECK(parsed.GetFloat(settings::kRenderScale) == 0.7f);
+    CHECK(parsed.SetFromString(settings::kRenderScale, "0.5") == SetStatus::Ok);
+    CHECK(parsed.GetFloat(settings::kRenderScale) == 0.5f);
+    CHECK(parsed.SetFromString(settings::kRenderScale, "0,5") == SetStatus::OutOfRange);  // the file format is '.'
+    CHECK(parsed.SetFromString(settings::kRenderScale, "+0.5") == SetStatus::Ok);
+    CHECK(parsed.SetFromString(settings::kRenderScale, "+-0.5") == SetStatus::OutOfRange);  // one sign only
+    CHECK(parsed.SetFromString(settings::kRenderScale, "1e39") == SetStatus::OutOfRange);   // beyond f32
 }
 
 TEST_CASE("parsing reports unknown keys, bad values and line numbers", "[render_settings]")

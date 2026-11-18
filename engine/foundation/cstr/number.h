@@ -8,7 +8,9 @@
 
 //! Number conversion (Phase 16): the engine's spelling of `atoi`, `atol`, `strtoul`, `strtod` and `to_chars`. Each
 //! forwards to the C function of the same meaning, including its quirks (leading space skipped, no error report except
-//! through `end`).
+//! through `end`). `strtod`, `strtof` and printf's floating conversions follow the process locale (`LC_NUMERIC`);
+//! text that is stored or parsed back uses [[FormatShortest]], [[FormatGeneral]] and [[ParseDoubleExact]], which do
+//! not.
 namespace engine_placeholder
 {
 
@@ -75,6 +77,36 @@ inline FormatShortestResult FormatShortest(char* first, char* last, f64 value) n
 {
     const std::to_chars_result r = std::to_chars(first, last, value);
     return {r.ptr, r.ec == std::errc()};
+}
+
+/// Writes `value` as `%.<precision>g` writes it in the C locale, with a terminator, whatever the process locale is
+/// (`std::to_chars` with `chars_format::general`): the decimal point is always `.`, never the `,` of a host that has
+/// set its locale from the environment (`setlocale` with `LC_ALL` and `""`). Use it for every number that is parsed
+/// back or stored (source text, JSON, settings, caches); `FormatTo`'s `%g`, `%f` and `%e` follow `LC_NUMERIC` and are
+/// for messages only. Nine significant digits read back as the same `f32`, seventeen as the same `f64`.
+///
+/// - Param buffer: receives the text and a terminator.
+/// - Param capacity: the size of `buffer` in bytes; 32 holds any `f64` at any precision up to 17.
+/// - Param precision: significant digits, from 1.
+/// - Returns: the length of the text without the terminator; 0 when it does not fit (`buffer` then holds an empty text
+///   if `capacity` is not zero).
+/// - Fails: returns 0 when `capacity` is too small.
+/// - Thread-safety: thread-safe.
+inline usize FormatGeneral(char* buffer, usize capacity, f64 value, int precision) noexcept
+{
+    if (capacity == 0)
+    {
+        return 0;
+    }
+    const std::to_chars_result r = std::to_chars(buffer, buffer + capacity - 1, value, std::chars_format::general,
+                                                 precision);
+    if (r.ec != std::errc())
+    {
+        buffer[0] = '\0';
+        return 0;
+    }
+    *r.ptr = '\0';
+    return static_cast<usize>(r.ptr - buffer);
 }
 
 /// The result of [[ParseDoubleExact]]: the value, where the number ended, and whether a number was read.

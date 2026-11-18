@@ -46,6 +46,7 @@ set(ASSET_TEST_SOURCES
   asset_bench.cpp  # Day 340: hidden benchmarks
   hostile_blob_test.cpp  # Day 340
   gltf_material_test.cpp  # Day 338
+  gltf_locale_test.cpp  # the host maintenance (2026-11-18): the import under a decimal-comma locale
   png_writer.h  # Day 338
   jpeg_samples.h  # Day 338
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/project.cpp  # Day 333: the project side of the minter under test
@@ -64,7 +65,7 @@ function(engine_add_asset_tests target asset_lib suffix label)
   string(REPLACE "asset" "asset_import" import_lib ${asset_lib})  # Day 335: the glTF importer under test
   string(REPLACE "asset" "animation" animation_lib ${asset_lib})  # Day 333: the project side of the minter registers the animation components
   target_link_libraries(${target} PRIVATE ${import_lib} ${asset_lib} ${animation_lib} renderer_passes${renderer_suffix} ${renderer_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tools/asset_mint)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tools/asset_mint ${CMAKE_SOURCE_DIR}/tests/support)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

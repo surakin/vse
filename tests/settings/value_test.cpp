@@ -93,7 +93,7 @@ TEST_CASE("Float text: NaN, infinity and junk are refused", "[settings][value]")
     const SettingDesc f = MakeFloat("f", 0, -1e308, 1e308, RangePolicy::Reject);
     Value v = Value::FromFloat(7);
     for (const char* bad : {"nan", "NaN", "inf", "-inf", "infinity", "0x1p3", "1.5x", "1,5", " 1", "1 ", "--1", "1e",
-                            "e1", ".", "+", "1e999", "-1e999", "1.2.3"})
+                            "e1", ".", "+", "1e999", "-1e999", "1.2.3", "+-1"})
     {
         INFO(bad);
         CHECK(ParseValue(f, bad, &v) == ValueError::BadNumber);

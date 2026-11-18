@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "asset/level.h"
+#include "comma_locale.h"
 #include "cstr/cstr.h"
 #include "cstr/number.h"
 #include "os/console.h"
@@ -285,6 +286,37 @@ TEST_CASE("Text, blob and world print back to the same canonical text", "[asset]
                         &from_world, &error)
                 .Ok());
     CHECK(from_world.View() == text.View());
+}
+
+// the host maintenance (2026-11-18): the level text is the same under a host's decimal-comma locale.
+TEST_CASE("Level text prints and mints the same under a decimal-comma locale", "[asset][level][locale]")
+{
+    const char* source = "id 0000000000000001\n"
+                         "entity rock\n"
+                         "  component local_transform\n"
+                         "    position = 0.5 -1.25 2.75\n"
+                         "    scale = 0.1 0.2 0.3\n";
+    Rig rig;
+    Vector<byte> blob;
+    LevelSourceError error;
+    REQUIRE(rig.Mint(source, &blob, &error).Ok());
+    String<HeapAllocator> in_c(HeapAllocator::Default());
+    REQUIRE(FormatLevelBlob(AsBytes(blob), rig.types, rig.registry, rig.resolver, &in_c, &error).Ok());
+    INFO(in_c.View().Data());
+    CHECK(Contains(in_c.View().Data(), "position = 0.5 -1.25 2.75"));
+
+    ::engine_placeholder::test::CommaLocale comma;
+    if (!comma.Active())
+    {
+        SKIP("no decimal-comma locale is installed (tried nb_NO, de_DE and fr_FR)");
+    }
+    String<HeapAllocator> in_comma(HeapAllocator::Default());
+    REQUIRE(FormatLevelBlob(AsBytes(blob), rig.types, rig.registry, rig.resolver, &in_comma, &error).Ok());
+    CHECK(in_comma.View() == in_c.View());
+    Vector<byte> again;
+    REQUIRE(rig.Mint(in_comma, &again, &error).Ok());
+    REQUIRE(again.Size() == blob.Size());
+    CHECK(MemCompare(again.Data(), blob.Data(), blob.Size()) == 0);
 }
 
 TEST_CASE("A level of 1,000 entities round-trips through text, blob and world", "[asset][level]")

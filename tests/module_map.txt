@@ -121,7 +121,7 @@ tests/script 27
 tests/text          14
 tests/ui            15
 tests/foundation_sanitized 0
-tests/support       0,1,2,4,5,7,9,10,11,14,15,16,17,18,19,20   # shared test helpers: any phase's tests may include them
+tests/support       0,1,2,4,5,7,9,10,11,14,15,16,17,18,19,20,22   # shared test helpers: any phase's tests may include them
 tests/io            4,5,9   # temp_dir.h is shared with the rhi and renderer tests
 tests/types         10
 tests/lang          16

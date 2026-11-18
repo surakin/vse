@@ -10,7 +10,7 @@ Formatted text (Phase 16): the engine's spelling of `snprintf`, `vsnprintf`, `sw
 
 Raw memory operations (Phase 16): the engine's spelling of the C library's `<cstring>` memory functions and the C heap of `<cstdlib>`. Every function is an inline forwarder, so the compiler still turns a constant-size [`MemCopy`](#memcopy-void-star-const-void-star-usize-noexcept) into moves.
 
-Number conversion (Phase 16): the engine's spelling of `atoi`, `atol`, `strtoul`, `strtod` and `to_chars`. Each forwards to the C function of the same meaning, including its quirks (leading space skipped, no error report except through `end`).
+Number conversion (Phase 16): the engine's spelling of `atoi`, `atol`, `strtoul`, `strtod` and `to_chars`. Each forwards to the C function of the same meaning, including its quirks (leading space skipped, no error report except through `end`). `strtod`, `strtof` and printf's floating conversions follow the process locale (`LC_NUMERIC`); text that is stored or parsed back uses [`FormatShortest`](#formatshortest-char-star-char-star-f64-noexcept), [`FormatGeneral`](#formatgeneral-char-star-usize-f64-int-noexcept) and [`ParseDoubleExact`](#parsedoubleexact-const-char-star-const-char-star-noexcept), which do not.
 
 Variable argument lists (Phase 16): the engine's spelling of `<cstdarg>`. The macros wrap the language's `va_*` macros, which are macros and cannot be functions.
 
@@ -649,6 +649,25 @@ Writes the shortest decimal text that parses back to exactly `value` into `[firs
 
 | Field | Value |
 |---|---|
+| Thread-safety | thread-safe. |
+
+## `FormatGeneral(char*,usize,f64,int)` {#formatgeneral-char-star-usize-f64-int-noexcept}
+
+`function FormatGeneral` — defined in `engine/foundation/cstr/number.h`
+
+```cpp
+inline usize FormatGeneral(char* buffer, usize capacity, f64 value, int precision) noexcept;
+```
+
+Writes `value` as `%.<precision>g` writes it in the C locale, with a terminator, whatever the process locale is (`std::to_chars` with `chars_format::general`): the decimal point is always `.`, never the `,` of a host that has set its locale from the environment (`setlocale` with `LC_ALL` and `""`). Use it for every number that is parsed back or stored (source text, JSON, settings, caches); `FormatTo`'s `%g`, `%f` and `%e` follow `LC_NUMERIC` and are for messages only. Nine significant digits read back as the same `f32`, seventeen as the same `f64`.
+
+| Field | Value |
+|---|---|
+| Parameter `buffer` | receives the text and a terminator. |
+| Parameter `capacity` | the size of `buffer` in bytes; 32 holds any `f64` at any precision up to 17. |
+| Parameter `precision` | significant digits, from 1. |
+| Returns | the length of the text without the terminator; 0 when it does not fit (`buffer` then holds an empty text if `capacity` is not zero). |
+| Fails | returns 0 when `capacity` is too small. |
 | Thread-safety | thread-safe. |
 
 ## `ParseDoubleResult` {#parsedoubleresult}

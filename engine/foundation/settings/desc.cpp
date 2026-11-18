@@ -233,6 +233,10 @@ ValueError ParseFloat(const SettingDesc& desc, StringView text, Value* out)
     if (*begin == '+')
     {
         ++begin;
+        if (begin != end && *begin == '-')
+        {
+            return ValueError::BadNumber;  // "+-1": one sign only
+        }
     }
     const ParseDoubleResult parsed = ParseDoubleExact(begin, end);
     f64 value = parsed.value;

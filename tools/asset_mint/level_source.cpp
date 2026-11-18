@@ -248,6 +248,14 @@ bytes::ByteError ReadLE(bytes::ByteReader& in, u32 count, u64* out)
 
 void AppendPrinted(String<HeapAllocator>* out, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
+// A number of the text form, with '.' whatever the process locale is (printf's %g follows LC_NUMERIC).
+void AppendGeneral(String<HeapAllocator>* out, f64 value, int precision)
+{
+    char number[32];
+    const usize length = FormatGeneral(number, sizeof(number), value, precision);
+    out->Append(StringView(number, length));
+}
+
 void AppendPrinted(String<HeapAllocator>* out, const char* format, ...)
 {
     char buffer[96];
@@ -1773,7 +1781,7 @@ bool FormatElement(storage::FieldKind kind, usize memory_size, const storage::Fi
             {
                 out->Append(' ');
             }
-            AppendPrinted(out, "%.9g", static_cast<double>(value));
+            AppendGeneral(out, static_cast<f64>(value), 9);
         }
         return true;
     }
@@ -1785,7 +1793,7 @@ bool FormatElement(storage::FieldKind kind, usize memory_size, const storage::Fi
             SetMsg(msg, "a float is truncated or not finite");
             return false;
         }
-        AppendPrinted(out, "%.17g", static_cast<double>(value));
+        AppendGeneral(out, value, 17);
         return true;
     }
     case FieldKind::Bool:

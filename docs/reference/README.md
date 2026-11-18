@@ -8,7 +8,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
 | [Foundation: Language support](foundation-lang.md) | 8 | 127 |
-| [Foundation: C library](foundation-cstr.md) | 5 | 60 |
+| [Foundation: C library](foundation-cstr.md) | 5 | 61 |
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
 | [Foundation: Containers](foundation-containers.md) | 8 | 176 |
 | [Foundation: Strings](foundation-strings.md) | 6 | 98 |

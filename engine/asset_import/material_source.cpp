@@ -4,6 +4,7 @@
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
+#include "cstr/number.h"
 #include "cstr/varargs.h"
 #include "renderer/gbuffer.h"
 #include "renderer/shader_permutation.h"
@@ -801,10 +802,13 @@ void MsAppend(String<HeapAllocator>* out, const char* format, ...)
     out->Append(StringView(buffer, CStrLength(buffer)));
 }
 
-// A float that reads back as the same f32 (nine significant digits).
+// A float that reads back as the same f32 (nine significant digits), with '.' whatever the process locale is.
 void MsAppendFloat(String<HeapAllocator>* out, f32 value)
 {
-    MsAppend(out, " %.9g", static_cast<double>(value));
+    char number[32];
+    const usize length = FormatGeneral(number, sizeof(number), static_cast<f64>(value), 9);
+    out->Append(' ');
+    out->Append(StringView(number, length));
 }
 
 }  // namespace
