@@ -1,0 +1,334 @@
+// The language-backend interface (Phase 27 Day 446): what the engine asks of a scripting language, with no mention of
+// Lua. The LuaJIT backend (Day 448) and the tiny test backend (Day 447) are two implementations; the engine, the
+// bindings and the conformance suite see only these types.
+#pragma once
+
+#include "containers/span.h"
+#include "containers/unique_ptr.h"
+#include "containers/vector.h"
+#include "script/status.h"
+#include "script/value.h"
+#include "string/string.h"
+#include "string_view.h"
+#include "sync/atomic.h"
+#include "sync/thread.h"
+#include "types.h"
+
+namespace engine_placeholder::script
+{
+
+/// What a call may use.
+///
+/// A zero field is unlimited. A backend that cannot honor a limit it is given reports `Status::Unsupported` for the
+/// call; it never ignores it silently (see [[script::Capabilities]]).
+///
+/// - Thread-safety: thread-compatible plain data.
+struct Budget
+{
+    /// The most virtual-machine instructions the call may run (0: unlimited).
+    u64 instructions = 0;
+    /// The most wall-clock nanoseconds the call may take (0: unlimited).
+    u64 nanoseconds = 0;
+    /// The most bytes the state may hold during the call (0: the state's own cap).
+    u64 memory_bytes = 0;
+};
+
+/// What a backend can do, so a caller asks before it relies (and the conformance suite skips what a backend does not
+/// advertise).
+///
+/// - Thread-safety: thread-compatible plain data.
+struct Capabilities
+{
+    /// Whether the backend compiles hot code to machine code (a configuration of the backend, not of the language).
+    bool jit = false;
+    /// Whether a call can suspend and be resumed ([[WaitRequest]]).
+    bool coroutines = false;
+    /// Whether a chunk can be loaded from precompiled bytecode (an optional cache, never required).
+    bool bytecode = false;
+    /// Whether `Budget::instructions` is honored.
+    bool instruction_budget = false;
+    /// Whether `Budget::nanoseconds` is honored.
+    bool time_budget = false;
+    /// Whether `Budget::memory_bytes` and the state's memory cap are honored.
+    bool memory_budget = false;
+};
+
+/// Why a call suspended, and what resumes it. The scheduler (Day 460) owns the clock: the backend only reports the
+/// request.
+///
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns the event name.
+struct WaitRequest
+{
+    /// What the suspended call waits for.
+    enum class Kind : u8
+    {
+        /// The call did not suspend.
+        None,
+        /// Simulation seconds.
+        Seconds,
+        /// A number of frames.
+        Frames,
+        /// A named event.
+        Event,
+        /// A parallel task (Day 461).
+        Task,
+    };
+
+    /// The kind of wait; `None` means the call finished.
+    Kind kind = Kind::None;
+    /// For `Seconds`: how long.
+    f64 seconds = 0.0;
+    /// For `Frames`: how many.
+    u32 frames = 0;
+    /// For `Task`: the task id.
+    u64 task = 0;
+    /// For `Event`: the event name.
+    String<HeapAllocator> event;
+
+    /// Creates a request that is not a wait.
+    WaitRequest() : event(HeapAllocator::Default()) {}
+};
+
+/// What a finished or suspended call produced.
+///
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns the results.
+struct CallOutput
+{
+    /// The values the function returned (empty when the call suspended).
+    Vector<Value> results;
+    /// The wait, when `wait.kind` is not `None`: the call is suspended and `coroutine` resumes it.
+    WaitRequest wait;
+    /// The id to pass to [[State::Resume]] or [[State::Abandon]]; 0 when the call finished.
+    u64 coroutine = 0;
+
+    /// Empties the output: no results, no wait, no coroutine. [[State::Call]] and [[State::Resume]] do this first, so
+    /// an output can be reused.
+    ///
+    /// - Fails: never.
+    void Reset()
+    {
+        results.Clear();
+        wait = WaitRequest();
+        coroutine = 0;
+    }
+
+    /// Whether the call is suspended and waiting to be resumed.
+    ///
+    /// - Fails: never.
+    bool Suspended() const { return wait.kind != WaitRequest::Kind::None; }
+};
+
+/// A function the engine registers into a state for scripts to call.
+///
+/// It receives the pointer given to [[State::RegisterFunction]], copies of the call's arguments and an empty list to
+/// fill with the values to return; it returns `Status::Ok`, or a failure status with a message that becomes a script
+/// error in the calling script.
+using NativeFunction = Outcome (*)(void* user, Span<const Value> args, Vector<Value>* results);
+
+/// One language state: its globals, its loaded chunks, its memory.
+///
+/// **A state is used by one thread at a time**: it is created owned by the thread that
+/// created it, and the owner changes only through [[State::HandOver]] and [[State::Acquire]], at a synchronization
+/// point the caller provides (a job boundary). Every public call checks the owner in builds with debug checks.
+///
+/// A backend derives from `State` and implements the `Do...` functions; the public functions check the thread rules and
+/// call them.
+///
+/// - Thread-safety: not-thread-safe by design: one owner thread at a time; the owner check and handover are the only
+/// members safe to call from any thread.
+/// - Ownership: the state owns its language runtime; destroying it closes the runtime.
+class State
+{
+public:
+    /// Closes the runtime if it is still open. The backend's destructor frees what it holds.
+    virtual ~State() = default;
+
+    State(const State&) = delete;
+    State& operator=(const State&) = delete;
+
+    /// Compiles and runs `source` as a chunk named `chunk_name` (the name appears in messages and traces); its top
+    /// level may define globals.
+    ///
+    /// - Returns: `Ok`, `SyntaxError` (message and trace say where), `RuntimeError`, `BudgetExceeded`, `OutOfMemory`,
+    /// or `Invalid` for an empty name.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    Outcome Load(StringView chunk_name, StringView source)
+    {
+        CheckOwner();
+        return DoLoad(chunk_name, source);
+    }
+
+    /// Calls a script function with copies of `args`, within `budget`.
+    ///
+    /// `function_path` is a global name, or dotted names into tables such as `game.on_update`.
+    /// On success `out->results` holds the returned values; when the backend supports coroutines and the function
+    /// suspends, `out->wait` says why and `out->coroutine` resumes it.
+    ///
+    /// - Returns: `Ok`, `RuntimeError` (including a missing function), `BudgetExceeded`, `OutOfMemory`, `Invalid` (a
+    /// value over [[ValueLimits]], an
+    ///   empty path), or `Unsupported` (a budget field the backend does not honor).
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    /// - Ownership: `out` is emptied first and then receives copies; the arguments are only read.
+    Outcome Call(StringView function_path, Span<const Value> args, const Budget& budget, CallOutput* out)
+    {
+        CheckOwner();
+        if (out == nullptr)
+        {
+            return Outcome(Status::Invalid, "Call needs an output");
+        }
+        out->Reset();
+        return DoCall(function_path, args, budget, out);
+    }
+
+    /// Resumes the suspended call `coroutine` with `values` as the result of its wait, within `budget`.
+    ///
+    /// - Returns: as `Call`; `Invalid` when `coroutine` is not suspended in this state; `Unsupported` without the
+    /// coroutine capability.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    /// - Ownership: `out` is emptied first and then receives copies; `values` are only read.
+    Outcome Resume(u64 coroutine, Span<const Value> values, const Budget& budget, CallOutput* out)
+    {
+        CheckOwner();
+        if (out == nullptr)
+        {
+            return Outcome(Status::Invalid, "Resume needs an output");
+        }
+        out->Reset();
+        return DoResume(coroutine, values, budget, out);
+    }
+
+    /// Drops the suspended call `coroutine` and frees what it holds; an id that is not suspended is ignored.
+    ///
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    void Abandon(u64 coroutine)
+    {
+        CheckOwner();
+        DoAbandon(coroutine);
+    }
+
+    /// Makes `function` callable from scripts under the global name `name` (or a dotted path into tables the backend
+    /// creates).
+    ///
+    /// - Returns: `Ok`, `Invalid` for an empty name or a null function.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    /// - Ownership: the state keeps `function` and `user`; `user` must outlive the state.
+    Outcome RegisterFunction(StringView name, NativeFunction function, void* user)
+    {
+        CheckOwner();
+        return DoRegisterFunction(name, function, user);
+    }
+
+    /// Runs a full garbage collection (a backend with no collector does nothing).
+    ///
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    void Collect()
+    {
+        CheckOwner();
+        DoCollect();
+    }
+
+    /// The bytes the state holds now (0 for a backend that does not count).
+    ///
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    usize MemoryUsed()
+    {
+        CheckOwner();
+        return DoMemoryUsed();
+    }
+
+    /// Releases the language runtime now; the state is unusable afterwards except for `Close`, the owner check and the
+    /// destructor.
+    ///
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    void Close()
+    {
+        CheckOwner();
+        DoClose();
+    }
+
+    /// What the backend of this state can do.
+    Capabilities Caps() const { return DoCapabilities(); }
+
+    /// Gives the state up: afterwards no thread owns it until one calls [[State::Acquire]].
+    ///
+    /// Call it as the last use before a synchronization point that
+    /// publishes the state to another thread.
+    ///
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    void HandOver()
+    {
+        CheckOwner();
+        owner_.Store(kNoOwner, MemoryOrder::Release);
+    }
+
+    /// Takes the state on the calling thread, after the synchronization point that made it visible.
+    ///
+    /// - Aborts: another thread owns the state (debug checks).
+    void Acquire();
+
+    /// Whether the calling thread owns the state.
+    ///
+    /// - Fails: never.
+    bool OwnedByCaller() const { return owner_.Load(MemoryOrder::Acquire) == CallerToken(); }
+
+protected:
+    /// Creates a state owned by the calling thread.
+    State() : owner_(CallerToken()) {}
+
+    /// See [[State::Load]].
+    virtual Outcome DoLoad(StringView chunk_name, StringView source) = 0;
+    /// See [[State::Call]].
+    virtual Outcome DoCall(StringView function_path, Span<const Value> args, const Budget& budget, CallOutput* out) = 0;
+    /// See [[State::Resume]]; a backend without coroutines returns `Unsupported`.
+    virtual Outcome DoResume(u64 coroutine, Span<const Value> values, const Budget& budget, CallOutput* out) = 0;
+    /// See [[State::Abandon]].
+    virtual void DoAbandon(u64 coroutine) = 0;
+    /// See [[State::RegisterFunction]].
+    virtual Outcome DoRegisterFunction(StringView name, NativeFunction function, void* user) = 0;
+    /// See [[State::Collect]].
+    virtual void DoCollect() = 0;
+    /// See [[State::MemoryUsed]].
+    virtual usize DoMemoryUsed() = 0;
+    /// See [[State::Close]].
+    virtual void DoClose() = 0;
+    /// See [[State::Caps]].
+    virtual Capabilities DoCapabilities() const = 0;
+
+private:
+    // A token for the thread: its id hash with the low bit set, never 0 (0 means nobody). Two threads could in
+    // principle share a token; the check is a debugging aid for the ownership rule, not a lock.
+    static usize CallerToken() { return ThisThread::Id().Hash() | 1u; }
+    static constexpr usize kNoOwner = 0;
+
+    void CheckOwner() const;
+
+    Atomic<usize> owner_;
+};
+
+/// A language: a name, a version and the capabilities of its states, and a factory for states.
+///
+/// - Thread-safety: thread-safe: a backend is immutable after construction and `CreateState` may be called from any
+/// thread.
+/// - Ownership: a backend outlives the states it made unless its documentation says otherwise.
+class Backend
+{
+public:
+    /// Destroys the backend.
+    virtual ~Backend() = default;
+
+    /// The language's registry name (`luajit`, `expr`): lower case, no spaces.
+    virtual StringView Name() const = 0;
+    /// The language runtime's version text (for logs and bug reports).
+    virtual StringView Version() const = 0;
+    /// What this backend's states can do.
+    virtual Capabilities Caps() const = 0;
+    /// Creates an empty state. `memory_cap_bytes` limits what the state may hold (0: the backend's default cap); the
+    /// calling thread owns the new state.
+    ///
+    /// - Returns: the state, or null when memory ran out.
+    virtual UniquePtr<State> CreateState(u64 memory_cap_bytes) = 0;
+};
+
+}  // namespace engine_placeholder::script

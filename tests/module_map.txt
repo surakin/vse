@@ -31,6 +31,7 @@ engine/storage      3,19
 engine/physics      3,25   # the C API will drive it (Days 408-409)
 engine/audio        3,26
 engine/audio_physics 26
+engine/script        27
 engine/scene        3,5,17,18
 engine/text         3,5,14,15
 engine/ui           3,5,15

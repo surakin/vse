@@ -45,6 +45,12 @@ module foundation/bytes "Foundation: Bytes (canonical encoding)"
   strict ownership
   strict failure
 
+module script "Scripting"
+  header engine/script/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module platform/os "Platform: OS Services"
   header engine/foundation/os/os.h
   header engine/foundation/os/command_line.h

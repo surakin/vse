@@ -22,6 +22,7 @@ module	spatial	322	322
 module	physics	0	0
 module	audio	0	0
 module	audio_physics	0	0
+module	script	0	0
 module	net	691	691
 module	asset	1104	1104
 module	asset_import	160	160

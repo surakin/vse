@@ -47,3 +47,4 @@ the pages in the order below; each builds on the ones before it. The generated [
 24. [animation](animation.md): poses, the clip sampler, skinning matrices and the animation system (Phase 22).
 25. [physics](physics.md): rigid bodies that agree to the bit: the determinism rules, the probe and the state hash (Phase 25).
 26. [audio](audio.md): the repeatability rules, the block hash and the tolerance comparison (Phase 26).
+27. [scripting](scripting.md): the backend interface, the value type and the thread rules of the script module (Phase 27).

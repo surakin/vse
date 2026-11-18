@@ -178,6 +178,8 @@ module engine/audio/ audio 13
 allow audio asset   # Phase 26 Day 418: the minted clip (asset::AudioClipView, the resource manager) is read by the audio module; the one same-layer edge of the spec
 module engine/animation/ animation 13
 allow animation asset
+# 13 script (Phase 27 Day 446): the language-neutral backend interface and the value type; the foundation and ecs below it (jobs, settings and asset from the days that use them); the LuaJIT backend is engine/script/luajit/ (Day 448); no renderer, RHI, physics, audio or platform header (their bindings are separate targets)
+module engine/script/ script 13
 module engine/engine_c/ engine_c 14
 module include/engine/ engine_c 14
 target engine_c engine_c
@@ -291,6 +293,9 @@ target spatial spatial
 target physics physics
 target audio audio
 target audio_physics audio_physics
+target script script
+target script_asan script
+target script_tsan script
 target database database
 target storage storage
 target net net

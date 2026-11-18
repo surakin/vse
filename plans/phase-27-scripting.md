@@ -1,6 +1,6 @@
 # Phase 27 — Scripting (Lua/LuaJIT), multithreaded
 
-**Status: in progress. Days 444 (spec and spikes) and 445 (LuaJIT vendored) done 2026-11-18, `CURRENT_PHASE` is 27; the Day 444 decisions (pin, `P` = 64, world access A, budget mode per world) were accepted by the user. Phase 28 (3D text) moved from Days 444-459 to Days 478-493.**
+**Status: in progress. Days 444 (spec and spikes), 445 (LuaJIT vendored) and 446 (the backend interface) done 2026-11-18, `CURRENT_PHASE` is 27; the Day 444 decisions (pin, `P` = 64, world access A, budget mode per world) were accepted by the user. Phase 28 (3D text) moved from Days 444-459 to Days 478-493.**
 
 **Depends on:** Phase 17 (ECS: components, the schedule, the structural-change rules), Phase 2 (jobs: the partitions run as jobs), Phase 22 (minted script assets, the resource manager), Phase 19 (storage: saving script state), Phase 11 (settings), Phase 9 (file layer: hot reload), Phases 23-24 (the C API), Phase 25 (physics bindings), Phase 26 (audio bindings) and Phases 13 and 21 for the Windows and macOS days.
 **Goal:** embedded gameplay scripting through a real, well-known language (Lua via LuaJIT, root `PLAN.md` assumption #13) behind a pluggable language-backend seam, **with scripted gameplay that runs on all cores**: users are not limited to single-threaded script execution as in Unreal (the user, 2026-11-17). Also the compilation and execution target for Phase 32's Blueprint importer, so the binding set, the event model and the latent waits keep Blueprint's semantics in mind.

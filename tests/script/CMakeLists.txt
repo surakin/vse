@@ -7,24 +7,26 @@ endif()
 
 set(SCRIPT_TEST_SOURCES
   luajit_smoke_test.cpp  # Day 445
+  value_test.cpp  # Day 446
+  backend_test.cpp  # Day 446
 )
 
 find_package(Threads REQUIRED)
 include(Catch)
 
-function(engine_add_script_tests target foundation_lib suffix label)
+function(engine_add_script_tests target script_lib foundation_lib suffix label)
   add_executable(${target} ${SCRIPT_TEST_SOURCES})
-  target_link_libraries(${target} PRIVATE luajit ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_link_libraries(${target} PRIVATE luajit ${script_lib} ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
-engine_add_script_tests(script_tests foundation "" "script")
+engine_add_script_tests(script_tests script foundation "" "script")
 if(ENGINE_HAVE_ASAN)
-  engine_add_script_tests(script_tests_asan foundation_asan " [asan]" "asan")
+  engine_add_script_tests(script_tests_asan script_asan foundation_asan " [asan]" "asan")
 endif()
 if(ENGINE_HAVE_TSAN)  # not with MSVC
-  engine_add_script_tests(script_tests_tsan foundation_tsan " [tsan]" "tsan")
+  engine_add_script_tests(script_tests_tsan script_tsan foundation_tsan " [tsan]" "tsan")
 endif()

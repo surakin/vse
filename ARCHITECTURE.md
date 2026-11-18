@@ -57,6 +57,7 @@ spatial           ->  foundation (incl. math); from later days ecs, jobs      (P
 physics           ->  foundation (incl. math), spatial, ecs, jobs; storage from Day 406  (Phase 25 Day 386)
 audio             ->  foundation (incl. math, settings), asset (same layer, from Day 418: the minted clip), ecs and spatial (below, from Day 428: the components and the emitter sync); jobs (from Day 435: the stream refills)  (Phase 26 Day 415)
 audio_physics     ->  audio, physics (layer 14: the physics occlusion query)  (Phase 26 Day 431)
+script            ->  foundation (incl. math), ecs (below: the entity id of a value); from later days jobs, settings, asset (same layer)  (Phase 27 Day 446)
 database          ->  foundation                                              (Phase 19 Day 251)
 storage           ->  foundation (incl. bytes), ecs, spatial, jobs, database  (Phase 19 Day 256; database from Day 262)
 net               ->  foundation (incl. bytes); jobs from Day 269             (Phase 20 Day 267)
@@ -151,6 +152,10 @@ The row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 2
 ### The audio module (Phase 26)
 
 `engine/audio` (layer 13, beside `physics`): the mixer, voices, buses, effects, devices and the ECS components that drive them. It depends on `foundation` (including `settings`, `io`, `lang`, `sync`, `cstr`), `asset` (the one same-layer edge, from Day 418: it reads `asset::AudioClipView` and loads clips through the resource manager) `ecs` and `spatial` (both layer 10, below, from Day 428: `AudioSource` and `AudioListener` read `ecs::WorldTransform` and the emitters live in a `spatial::SpatialSet`) and, from Day 435, `jobs` (the stream refills run as jobs); never on the renderer, the RHI, the platform layer or `physics`. The row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 415; `PLAN.md` assumption #30 and `docs/superpowers/specs/2026-11-17-audio-design.md` have the reasoning. The one implementation of the occlusion query that needs `physics` is the separate target `audio_physics` (`engine/audio_physics`, layer 14, built on Day 431; it depends on `audio` and `physics`, which are below it, and nothing depends on it). One build renders the same bits run to run; across machines renders are compared within a tolerance (`docs/guide/audio.md`).
+
+### The script module (Phase 27)
+
+`engine/script` (layer 13, beside `audio` and `physics`): the language-neutral backend interface (`script::Backend`, `script::State`, budgets, capabilities, wait requests) and the value type that crosses between the engine and a language state (`docs/superpowers/specs/2026-11-18-scripting-design.md`). Day 446 depends only on `foundation` and `ecs` (the entity id); later days add `jobs` (the partitions), `settings` and `asset` (the one same-layer edge, scripts as minted assets). The LuaJIT backend lives in `engine/script/luajit/` and is the only code that includes LuaJIT's headers (`luajit_boundary_check`); physics, audio and input bindings are separate targets above, so `script` never includes `physics`, `audio` or the platform layer.
 
 ### Planned modules (Phase 19, storage; Phase 20, networking)
 
