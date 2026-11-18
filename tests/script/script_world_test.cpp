@@ -292,6 +292,7 @@ TEST_CASE("Script settings: partitions and the partition memory cap", "[script][
     CHECK(ScriptTaskStates(registry) == 0);
     CHECK(ScriptTaskQueueLimit(registry) == 1024);
     CHECK(ScriptTaskArgBytes(registry) == 16777216);
+    CHECK(ScriptDevDirectory(registry).Length() == 0);  // off unless a development build sets it
     CHECK_FALSE(ScriptConflictsAreErrors(registry));
 }
 

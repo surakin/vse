@@ -213,6 +213,23 @@ public:
         return DoCompile(chunk_name, source, bytecode);
     }
 
+    /// Compiles `source` as a module and hands the compiled function to the host's `__module_define(fn, key, deps)`
+    /// without running it (the module runs when the host asks, `__module_run`), so no source text is spliced into a
+    /// wrapper. The host must be loaded in the state first.
+    ///
+    /// - Param key: the module's key (`require` names it); not empty.
+    /// - Param chunk_name: the chunk name for messages; not empty.
+    /// - Param source: the module's text.
+    /// - Param deps: the keys the module may require, one per line (may be empty).
+    /// - Returns: `Ok`, `SyntaxError`, `RuntimeError` when the host is missing or refuses the key, `OutOfMemory`,
+    /// `Invalid`, or `Unsupported` from a backend without modules.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    Outcome DefineModule(StringView key, StringView chunk_name, StringView source, StringView deps)
+    {
+        CheckOwner();
+        return DoDefineModule(key, chunk_name, source, deps);
+    }
+
     /// Calls a script function with copies of `args`, within `budget`.
     ///
     /// `function_path` is a global name, or dotted names into tables such as `game.on_update`.
@@ -339,6 +356,15 @@ protected:
         (void)source;
         (void)bytecode;
         return Outcome(Status::Unsupported, "this backend cannot compile ahead of time");
+    }
+    /// See [[State::DefineModule]]; the default is `Unsupported`.
+    virtual Outcome DoDefineModule(StringView key, StringView chunk_name, StringView source, StringView deps)
+    {
+        (void)key;
+        (void)chunk_name;
+        (void)source;
+        (void)deps;
+        return Outcome(Status::Unsupported, "this backend has no modules");
     }
     /// See [[State::Call]].
     virtual Outcome DoCall(StringView function_path, Span<const Value> args, const Budget& budget, CallOutput* out) = 0;

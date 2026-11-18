@@ -162,6 +162,14 @@ private:
     PartitionSlot* slot_ = nullptr;
 };
 
+/// The Lua source of the module host a state loads before its first minted script: `__module_define`, `__module_run`
+/// and `__require`.
+///
+/// - Returns: a string literal.
+/// - Ownership: static; not freed.
+/// - Fails: never.
+const char* LuaModuleHostSource();
+
 /// A set of partitions, each with its own language state, sharing one binding registry and one list of scripts.
 ///
 /// States are made on the first checkout of a partition (the bindings installed, every script loaded in the order it
@@ -198,6 +206,24 @@ public:
     /// - Param source: the script text, shared and immutable.
     /// - Fails: never; a script that fails to load makes the checkouts of the partitions fail with its outcome.
     void AddScript(StringView name, SharedBytesPtr source);
+
+    /// Adds a minted script (a module): its text is a range of `bytes`, compiled without running in every partition
+    /// and, when `entry` is true, run once in each partition at that point of the load order (the modules it requires
+    /// are added before it; the first `require` of any module runs it). A script reaches another only through
+    /// `__require("<key>")` with a key in its `deps`, and only while it loads (docs/guide/scripting.md, "Minted
+    /// scripts").
+    ///
+    /// - Param key: the module's key, the hex text of its resource id; not empty, no line break.
+    /// - Param name: the chunk name for messages; copied.
+    /// - Param bytes: the shared buffer holding the text; kept alive by the world.
+    /// - Param offset: where the text starts in `bytes`.
+    /// - Param size: the text's length.
+    /// - Param deps: the keys the module may require, one per line; copied.
+    /// - Param entry: whether to run the module when it loads.
+    /// - Fails: never; a module that fails to load or run makes the checkouts of the partitions fail with its outcome.
+    /// - Thread-safety: thread-safe.
+    void AddModule(StringView key, StringView name, SharedBytesPtr bytes, usize offset, usize size, StringView deps,
+                   bool entry);
 
     /// Takes a partition, or reports why not. The second job to ask for a held partition gets `Busy`.
     ///
@@ -239,11 +265,18 @@ private:
     struct Script
     {
         Script(StringView name_, SharedBytesPtr source_)
-            : name(HeapAllocator::Default(), name_), source(static_cast<SharedBytesPtr&&>(source_))
+            : name(HeapAllocator::Default(), name_), source(static_cast<SharedBytesPtr&&>(source_)),
+              key(HeapAllocator::Default()), deps(HeapAllocator::Default())
         {
         }
         String<HeapAllocator> name;
         SharedBytesPtr source;
+        // A module (key not empty): the text is source[offset, offset + size).
+        String<HeapAllocator> key;
+        String<HeapAllocator> deps;
+        usize offset = 0;
+        usize size = 0;
+        bool entry = false;
     };
 
     ScriptWorldConfig config_;

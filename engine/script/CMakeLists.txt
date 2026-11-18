@@ -9,6 +9,8 @@ set(SCRIPT_SOURCES
   expr/expr_backend.cpp  # Day 447
   bindings.cpp  # Day 450
   script_world.cpp  # Day 451
+  module_host.cpp  # Day 463
+  script_assets.cpp  # Day 463
   command_buffer.cpp  # Day 452
   merge.cpp  # Day 452
   partition_context.cpp  # Day 452
@@ -35,7 +37,7 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(script${suffix} STATIC ${SCRIPT_SOURCES})
   target_include_directories(script${suffix} PUBLIC ${SCRIPT_INCLUDE_ROOT})
   target_compile_options(script${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(script${suffix} PUBLIC ecs${suffix} storage${suffix} foundation${suffix})
+  target_link_libraries(script${suffix} PUBLIC asset${suffix} ecs${suffix} storage${suffix} foundation${suffix})
   if(TARGET luajit)
     target_link_libraries(script${suffix} PUBLIC luajit)
   endif()

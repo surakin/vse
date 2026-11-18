@@ -119,6 +119,13 @@ u32 ScriptTaskQueueLimit(const settings::Registry& registry);
 /// - Fails: never.
 u64 ScriptTaskArgBytes(const settings::Registry& registry);
 
+/// Reads `script.dev_directory`: the directory a development build reads script sources from (empty: off).
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives "".
+/// - Returns: the directory as given, or an empty string (also for one longer than 511 bytes).
+/// - Fails: never.
+String<HeapAllocator> ScriptDevDirectory(const settings::Registry& registry);
+
 /// Reads `script.partition_memory`: the memory cap of one partition's state, in bytes.
 ///
 /// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 64 MiB.

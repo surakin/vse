@@ -15,6 +15,20 @@ Status LoadAudioClip(const LoadContext& context, AudioClipView* out, void*)
     return out->Open(context.Buffer(), context.Types());
 }
 
+Status LoadScript(const LoadContext& context, ScriptView* out, void*)
+{
+    ENGINE_TRY(out->Open(context.Buffer(), context.Types()));
+    for (usize i = 0; i < out->DependencyCount(); ++i)
+    {
+        if (context.Dependency<ScriptView>(out->DependencyAt(i)) == nullptr)
+        {
+            return Status::Make(ErrorCode::DependencyTypeMismatch,
+                                "a script's required script is not among its loaded dependencies");
+        }
+    }
+    return Status::Success();
+}
+
 Status LoadClip(const LoadContext& context, ClipView* out, void*)
 {
     ENGINE_TRY(out->Open(context.Bytes(), context.Types()));
@@ -75,6 +89,7 @@ void RegisterCpuLoaders(ResourceManager* manager)
     manager->RegisterLoader<SkeletonView>(&LoadSkeleton);
     manager->RegisterLoader<AudioClipView>(&LoadAudioClip);
     manager->RegisterLoader<ClipView>(&LoadClip);
+    manager->RegisterLoader<ScriptView>(&LoadScript);
     manager->RegisterLoader<MeshView>(&LoadMesh);
     manager->RegisterLoader<TextureView>(&LoadTexture);
     manager->RegisterLoader<MaterialAssetData>(&LoadMaterial);

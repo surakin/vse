@@ -162,6 +162,19 @@ public:
     /// - Fails: never.
     ByteSpan BytecodeFor(StringView key) const;
 
+    /// How many scripts this one requires (the container's dependencies, strictly increasing by id).
+    ///
+    /// - Fails: never.
+    usize DependencyCount() const { return dependencies_.Size(); }
+
+    /// The id of required script `index`; none when `index` is out of range.
+    ///
+    /// - Fails: never.
+    ResourceId DependencyAt(usize index) const
+    {
+        return index < dependencies_.Size() ? dependencies_[index] : ResourceId::None();
+    }
+
     /// The buffer the view shares.
     ///
     /// - Ownership: borrowed.
@@ -170,6 +183,7 @@ public:
 
 private:
     ResourceId id_;
+    Vector<ResourceId> dependencies_;
     SharedBytesPtr bytes_;
     usize source_offset_ = 0;
     usize source_size_ = 0;

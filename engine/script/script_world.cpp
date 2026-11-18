@@ -14,6 +14,12 @@ struct PartitionSlot
     UniquePtr<State> state;
     // Used only by the thread that holds the partition.
     usize loaded = 0;
+    bool module_host = false;  // whether the module host is loaded in the state
+    // A module that failed to define or run leaves the state half loaded: every later checkout reports the same failure
+    // until the state is reset (a retry would say "defined twice" instead).
+    bool module_failed = false;
+    Status module_failure_status = Status::Ok;
+    String<HeapAllocator> module_failure{HeapAllocator::Default()};
     u32 index = 0;
     // 0 when free, else a token of the holding thread.
     Atomic<usize> owner{0};
@@ -24,6 +30,9 @@ struct PartitionSlot
     Atomic<u64> resets{0};
     Atomic<u64> memory_bytes{0};
 };
+
+// The instruction budget of the top level of an entry module (a trusted state takes none and runs it unbudgeted).
+constexpr u64 kModuleRunInstructions = 200'000'000;
 
 u32 PartitionOf(u64 stable_id, u32 partitions)
 {
@@ -117,6 +126,33 @@ void ScriptWorld::AddScript(StringView name, SharedBytesPtr source)
     scripts_.Push(Script(name, Move(source)));
 }
 
+void ScriptWorld::AddModule(StringView key, StringView name, SharedBytesPtr bytes, usize offset, usize size,
+                            StringView deps, bool entry)
+{
+    Script script(name, Move(bytes));
+    script.key = String<HeapAllocator>(HeapAllocator::Default(), key);
+    script.deps = String<HeapAllocator>(HeapAllocator::Default(), deps);
+    script.offset = offset;
+    script.size = size;
+    script.entry = entry;
+    LockGuard<Mutex> lock(scripts_mutex_);
+    scripts_.Push(Move(script));
+}
+
+namespace
+{
+
+// Records a module failure in the slot and returns it.
+Outcome FailModule(PartitionSlot* slot, const Outcome& failure)
+{
+    slot->module_failed = true;
+    slot->module_failure_status = failure.status;
+    slot->module_failure = String<HeapAllocator>(HeapAllocator::Default(), failure.message.View());
+    return Outcome(failure.status, failure.message.View());
+}
+
+}  // namespace
+
 Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
 {
     if (slot->state.Get() == nullptr)
@@ -127,6 +163,8 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
             return Outcome(Status::OutOfMemory, "the partition's state could not be made");
         }
         slot->loaded = 0;
+        slot->module_host = false;
+        slot->module_failed = false;
         if (config_.bindings != nullptr)
         {
             Outcome error;
@@ -138,18 +176,74 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
             }
         }
     }
+    if (slot->module_failed)
+    {
+        return Outcome(slot->module_failure_status, slot->module_failure.View());
+    }
     // Catch up with the scripts added since this state last loaded: copy the shares under the lock, load without it.
     Vector<Script> pending;
     {
         LockGuard<Mutex> lock(scripts_mutex_);
         for (usize i = slot->loaded; i < scripts_.Size(); ++i)
         {
-            pending.Push(Script(scripts_[i].name.View(), scripts_[i].source));
+            Script copy(scripts_[i].name.View(), scripts_[i].source);
+            copy.key = String<HeapAllocator>(HeapAllocator::Default(), scripts_[i].key.View());
+            copy.deps = String<HeapAllocator>(HeapAllocator::Default(), scripts_[i].deps.View());
+            copy.offset = scripts_[i].offset;
+            copy.size = scripts_[i].size;
+            copy.entry = scripts_[i].entry;
+            pending.Push(Move(copy));
         }
     }
     for (usize i = 0; i < pending.Size(); ++i)
     {
         const ByteSpan bytes = pending[i].source->Bytes();
+        if (pending[i].key.Length() != 0)
+        {
+            if (pending[i].offset > bytes.Size() || pending[i].size > bytes.Size() - pending[i].offset)
+            {
+                return Outcome(Status::Invalid, "a module's text lies outside its buffer");
+            }
+            if (!slot->module_host)
+            {
+                const Outcome host = slot->state->Load(StringView("module_host"), StringView(LuaModuleHostSource()));
+                if (!host.IsOk())
+                {
+                    return Outcome(host.status, host.message.View());
+                }
+                slot->module_host = true;
+            }
+            const StringView text(reinterpret_cast<const char*>(bytes.Data()) + pending[i].offset, pending[i].size);
+            const Outcome defined = slot->state->DefineModule(pending[i].key.View(), pending[i].name.View(), text,
+                                                              pending[i].deps.View());
+            if (!defined.IsOk())
+            {
+                return FailModule(slot, defined);
+            }
+            if (pending[i].entry)
+            {
+                Value key[1] = {Value::FromText(pending[i].key.View())};
+                CallOutput out;
+                Budget budget;
+                budget.instructions = kModuleRunInstructions;
+                Outcome ran = slot->state->Call(StringView("__module_run"), Span<const Value>(key, 1), budget, &out);
+                if (ran.status == Status::Unsupported)  // a trusted state takes no instruction budget
+                {
+                    ran = slot->state->Call(StringView("__module_run"), Span<const Value>(key, 1), Budget(), &out);
+                }
+                if (!ran.IsOk())
+                {
+                    return FailModule(slot, ran);
+                }
+                if (out.Suspended())
+                {  // a script that waits while it loads would stay half run
+                    slot->state->Abandon(out.coroutine);
+                    return FailModule(slot, Outcome(Status::RuntimeError, "a script cannot wait while it loads"));
+                }
+            }
+            ++slot->loaded;
+            continue;
+        }
         const Outcome loaded = slot->state->Load(pending[i].name.View(),
                                                  StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()));
         if (!loaded.IsOk())

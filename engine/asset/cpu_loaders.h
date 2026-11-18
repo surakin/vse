@@ -9,6 +9,7 @@
 #include "asset/material.h"
 #include "asset/mesh.h"
 #include "asset/resource_manager.h"
+#include "asset/script_blob.h"
 #include "asset/skeleton.h"
 #include "asset/texture.h"
 
@@ -63,6 +64,14 @@ template <> struct ResourceTraits<AudioClipView>
     static constexpr ResourceType kType = types::kAudioClip;                         ///< `ACLP`.
     static constexpr u32 kKind = ResourceType::FromChars('v', 'A', 'C', 'L').Tag();  ///< The code of the C++ type.
 };
+/// A script is loaded as a [[asset::ScriptView]] over the manager's buffer, with the scripts it requires loaded first.
+///
+/// - Thread-safety: thread-safe, a compile-time constant.
+template <> struct ResourceTraits<ScriptView>
+{
+    static constexpr ResourceType kType = types::kScript;                            ///< `SCRP`.
+    static constexpr u32 kKind = ResourceType::FromChars('v', 'S', 'C', 'R').Tag();  ///< The code of the C++ type.
+};
 /// A level is loaded as its summary (counts and the resources it depends on); spawning it reads the records.
 ///
 /// - Thread-safety: thread-safe, a compile-time constant.
@@ -72,9 +81,9 @@ template <> struct ResourceTraits<LevelSummary>
     static constexpr u32 kKind = ResourceType::FromChars('s', 'L', 'E', 'V').Tag();  ///< The code of the C++ type.
 };
 
-/// Registers the loaders of audio clips, skeletons, clips, meshes, textures, materials and levels with `manager`. A
-/// skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match, and a clip
-/// only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
+/// Registers the loaders of audio clips, scripts, skeletons, clips, meshes, textures, materials and levels with
+/// `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match,
+/// and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
 ///
 /// - Param manager: the manager.
 /// - Ownership: borrows `manager` for the call only; nothing is retained.

@@ -4049,6 +4049,41 @@ static constexpr u32 kKind;
 
 The code of the C++ type.
 
+## `ResourceTraits<ScriptView>` {#asset-resourcetraits-lt-scriptview-gt}
+
+`struct asset::ResourceTraits<ScriptView>` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+template <>
+struct ResourceTraits<ScriptView> { ... }
+```
+
+A script is loaded as a [`asset::ScriptView`](#asset-scriptview) over the manager's buffer, with the scripts it requires loaded first.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe, a compile-time constant. |
+
+### `kType` {#asset-resourcetraits-lt-scriptview-gt-ktype}
+
+`variable asset::ResourceTraits<ScriptView>::kType` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+static constexpr ResourceType kType;
+```
+
+`SCRP`.
+
+### `kKind` {#asset-resourcetraits-lt-scriptview-gt-kkind}
+
+`variable asset::ResourceTraits<ScriptView>::kKind` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+static constexpr u32 kKind;
+```
+
+The code of the C++ type.
+
 ## `ResourceTraits<LevelSummary>` {#asset-resourcetraits-lt-levelsummary-gt}
 
 `struct asset::ResourceTraits<LevelSummary>` — defined in `engine/asset/cpu_loaders.h`
@@ -4092,7 +4127,7 @@ The code of the C++ type.
 void RegisterCpuLoaders(ResourceManager* manager);
 ```
 
-Registers the loaders of audio clips, skeletons, clips, meshes, textures, materials and levels with `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match, and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
+Registers the loaders of audio clips, scripts, skeletons, clips, meshes, textures, materials and levels with `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match, and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
 
 | Field | Value |
 |---|---|
@@ -13151,6 +13186,34 @@ The precompiled chunk when the blob has one for exactly `key`; empty otherwise (
 | Returns | the chunk, a range of the shared buffer, or an empty span. |
 | Fails | never. |
 | Ownership | borrowed; valid while the view lives. |
+
+### `DependencyCount()` {#asset-scriptview-dependencycount-const}
+
+`method asset::ScriptView::DependencyCount` — defined in `engine/asset/script_blob.h`
+
+```cpp
+usize DependencyCount() const;
+```
+
+How many scripts this one requires (the container's dependencies, strictly increasing by id).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `DependencyAt(usize)` {#asset-scriptview-dependencyat-usize-const}
+
+`method asset::ScriptView::DependencyAt` — defined in `engine/asset/script_blob.h`
+
+```cpp
+ResourceId DependencyAt(usize index) const;
+```
+
+The id of required script `index`; none when `index` is out of range.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `Bytes()` {#asset-scriptview-bytes-const}
 

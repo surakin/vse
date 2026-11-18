@@ -117,6 +117,17 @@ void RegisterScriptSettings(settings::Registry* registry)
     task_bytes.group = "script";
     registry->Register(task_bytes);
 
+    settings::SettingDesc dev_directory = settings::MakeText("script.dev_directory", "");
+    dev_directory.env = "ENGINE_SCRIPT_DEV_DIRECTORY";
+    dev_directory.flag = "script-dev-directory";
+    dev_directory.label = "Script development directory";
+    dev_directory.description =
+        "a directory a development build reads script sources from, by asset id, instead of the minted blobs (the hot "
+        "reload of Day 464); empty is off, and a shipped configuration leaves it empty";
+    dev_directory.group = "script";
+    dev_directory.flags = settings::kRestartRequired;
+    registry->Register(dev_directory);
+
     settings::SettingDesc conflicts = settings::MakeText("script.conflicts", "last_wins");
     conflicts.env = "ENGINE_SCRIPT_CONFLICTS";
     conflicts.flag = "script-conflicts";
@@ -226,6 +237,21 @@ u64 ScriptTaskArgBytes(const settings::Registry& registry)
 {
     const settings::SettingId id = registry.Find(StringView("script.task_arg_bytes"));
     return id.IsValid() ? static_cast<u64>(settings::Setting<i64>(registry, id).Get()) : u64{16777216};
+}
+
+String<HeapAllocator> ScriptDevDirectory(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.dev_directory"));
+    if (id.IsValid())
+    {
+        char text[512];
+        const usize length = settings::TextSetting(registry, id).Get(text, sizeof(text));
+        if (length > 0 && length < sizeof(text))
+        {
+            return String<HeapAllocator>(HeapAllocator::Default(), StringView(text, length));
+        }
+    }
+    return String<HeapAllocator>(HeapAllocator::Default());
 }
 
 u32 ScriptPartitions(const settings::Registry& registry)

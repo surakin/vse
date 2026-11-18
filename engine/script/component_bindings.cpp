@@ -21,7 +21,7 @@ using storage::FieldDesc;
 using storage::FieldKind;
 using storage::RegisteredComponent;
 
-PartitionContext* Context()
+PartitionContext* ComponentContext()
 {
     PartitionContext* context = CurrentPartitionContext();
     if (context == nullptr || context->world == nullptr || context->components == nullptr)
@@ -861,7 +861,7 @@ bool RecordCommand(PartitionContext* context, u16 kind, ecs::Entity target, u32 
 
 bool ComponentExists(StringView name)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     if (context == nullptr)
     {
         return false;
@@ -872,7 +872,7 @@ bool ComponentExists(StringView name)
 
 bool ComponentHas(ecs::Entity e, StringView name)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     if (context == nullptr)
     {
         return false;
@@ -888,7 +888,7 @@ bool ComponentHas(ecs::Entity e, StringView name)
 
 Value ComponentGet(ecs::Entity e, StringView name)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     if (context == nullptr)
     {
         return Value();
@@ -941,7 +941,7 @@ void WriteComponent(PartitionContext* context, ecs::Entity e, const RegisteredCo
 
 void ComponentSet(ecs::Entity e, StringView name, Value fields)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     if (context == nullptr)
     {
         return;
@@ -968,7 +968,7 @@ void ComponentSet(ecs::Entity e, StringView name, Value fields)
 
 void ComponentAdd(ecs::Entity e, StringView name, Value fields)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     if (context == nullptr)
     {
         return;
@@ -1000,7 +1000,7 @@ void ComponentAdd(ecs::Entity e, StringView name, Value fields)
 
 bool ComponentRemove(ecs::Entity e, StringView name)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     if (context == nullptr)
     {
         return false;
@@ -1033,7 +1033,7 @@ bool ComponentRemove(ecs::Entity e, StringView name)
 
 void ComponentDefine(StringView name, Value fields)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     if (context == nullptr)
     {
         return;
@@ -1155,7 +1155,7 @@ Value RunQuery(const PartitionContext& context, const ecs::ComponentSet& set, u6
 
 Value QueryEach(Value names)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     ecs::ComponentSet set;
     if (context == nullptr || !ResolveSet(*context, names, &set))
     {
@@ -1172,7 +1172,7 @@ Value QueryEach(Value names)
 
 Value QueryAll(Value names)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     ecs::ComponentSet set;
     if (context == nullptr || !ResolveSet(*context, names, &set))
     {
@@ -1189,7 +1189,7 @@ Value QueryAll(Value names)
 
 Value QueryPage(Value names, Value after, i64 limit)
 {
-    PartitionContext* context = Context();
+    PartitionContext* context = ComponentContext();
     ecs::ComponentSet set;
     if (context == nullptr || !ResolveSet(*context, names, &set))
     {

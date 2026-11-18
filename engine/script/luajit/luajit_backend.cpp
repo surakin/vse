@@ -710,6 +710,7 @@ enum class Op : int
     Register,
     Collect,
     Compile,
+    DefineModule,
 };
 
 // The input and output of one protected operation; it lives in the frame that calls `lua_cpcall`.
@@ -725,6 +726,8 @@ struct Request
     const char* chunk = nullptr;  // "=name", null terminated
     StringView source;
     Vector<byte>* bytecode = nullptr;  // Compile: receives the dumped chunk, when not null
+    StringView module_key;             // DefineModule
+    StringView module_deps;
     // Call and Resume
     StringView path;
     Span<const Value> args;
@@ -1223,6 +1226,30 @@ void CompileChunk(lua_State* L, Request* r)
     lua_pop(L, 1);
 }
 
+// Compiles a module and gives the function to the host's `__module_define(fn, key, deps)`; nothing runs.
+void DefineModuleChunk(lua_State* L, Request* r)
+{
+    const int rc = luaL_loadbufferx(L, r->source.Data(), r->source.Length(), r->chunk, "t");
+    if (rc != 0)
+    {
+        r->status = rc == LUA_ERRMEM ? Status::OutOfMemory : Status::SyntaxError;
+        TakeError(L, L, r);
+        r->trace_text = MakeText(r->error_text.View());
+        return;
+    }
+    ResolvePath(L, StringView("__module_define"));
+    if (lua_type(L, -1) != LUA_TFUNCTION)
+    {
+        r->failure = "the module host is not loaded in this state";
+        r->status = Status::RuntimeError;
+        return;
+    }
+    lua_insert(L, -2);
+    lua_pushlstring(L, r->module_key.Data(), r->module_key.Length());
+    lua_pushlstring(L, r->module_deps.Data(), r->module_deps.Length());
+    lua_call(L, 3, 0);  // an error propagates to the protected call of Execute
+}
+
 void LoadChunk(lua_State* L, Request* r)
 {
     const int rc = luaL_loadbufferx(L, r->source.Data(), r->source.Length(), r->chunk,
@@ -1395,6 +1422,7 @@ int ProtectedBody(lua_State* L)
     case Op::Register: RegisterNative(L, r); break;
     case Op::Load: LoadChunk(L, r); break;
     case Op::Compile: CompileChunk(L, r); break;
+    case Op::DefineModule: DefineModuleChunk(L, r); break;
     case Op::Call: RunCoroutine(L, r); break;
     }
     return 0;
@@ -1481,6 +1509,27 @@ protected:
         r.chunk = chunk.CStr();
         r.source = source;
         r.bytecode = bytecode;
+        return Execute(&r);
+    }
+
+    Outcome DoDefineModule(StringView key, StringView chunk_name, StringView source, StringView deps) override
+    {
+        if (L_ == nullptr)
+        {
+            return Outcome(Status::Invalid, "the state is closed");
+        }
+        if (chunk_name.Length() == 0 || key.Length() == 0)
+        {
+            return Outcome(Status::Invalid, "a module needs a key and a chunk name");
+        }
+        Text chunk = MakeText("=");
+        chunk.Append(chunk_name);
+        Request r;
+        r.op = Op::DefineModule;
+        r.chunk = chunk.CStr();
+        r.source = source;
+        r.module_key = key;
+        r.module_deps = deps;
         return Execute(&r);
     }
 

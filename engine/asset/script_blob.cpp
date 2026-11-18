@@ -227,6 +227,16 @@ Status ScriptView::Open(const SharedBytesPtr& bytes, const TypeRegistry& types)
         bytecode_offset_ = static_cast<usize>(code.Data() - data.Data());
         bytecode_size_ = code.Size();
     }
+    for (usize i = 0; i < blob.DependencyCount(); ++i)
+    {
+        const Dependency d = blob.DependencyAt(i);
+        if (d.type != types::kScript)
+        {
+            return Status::Make(ErrorCode::DependencyTypeMismatch,
+                                "a script depends on something that is not a script");
+        }
+        dependencies_.Push(d.id);
+    }
     id_ = blob.Id();
     bytes_ = bytes;
     source_offset_ = static_cast<usize>(source.Data() - data.Data());

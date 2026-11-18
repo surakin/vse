@@ -23,6 +23,7 @@ set(SCRIPT_TEST_SOURCES
   event_test.cpp  # Day 459
   latent_test.cpp  # Day 460
   task_test.cpp  # Day 461
+  script_load_test.cpp  # Day 463: minted scripts through the resource manager
   script_asset_test.cpp  # Day 462: the SCRP blob and the script minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/script_source.cpp  # Day 462
 )
