@@ -25,6 +25,12 @@ struct ResourceConfig;
 /// - Fails: never.
 bool ImporterBuilt();
 
+/// The version of what the importer writes (`asset::kGltfImporterOutputVersion`), 0 in a build without the importer.
+///
+/// - Thread-safety: thread-safe.
+/// - Fails: never.
+u32 ImporterOutputVersion();
+
 /// Declares the `assets.import.*` settings when the importer is built in (nothing otherwise).
 ///
 /// - Thread-safety: thread-compatible.

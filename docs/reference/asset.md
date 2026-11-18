@@ -6912,6 +6912,61 @@ void* release_user;
 
 Passed to `release`.
 
+## `MemoryAddItem` {#asset-memoryadditem}
+
+`struct asset::MemoryAddItem` — defined in `engine/asset/memory_backend.h`
+
+```cpp
+struct MemoryAddItem { ... }
+```
+
+One resource of [`asset::HostMemoryBackend::AddMany`](#asset-hostmemorybackend-addmany-span-lt-const-memoryadditem-gt-usize-star).
+
+| Field | Value |
+|---|---|
+| Thread-safety | immutable value. |
+| Ownership | borrows `bytes` and the strings of `options` for the call only. |
+
+### `id` {#asset-memoryadditem-id}
+
+`variable asset::MemoryAddItem::id` — defined in `engine/asset/memory_backend.h`
+
+```cpp
+ResourceId id;
+```
+
+The id inside the blob.
+
+### `data` {#asset-memoryadditem-data}
+
+`variable asset::MemoryAddItem::data` — defined in `engine/asset/memory_backend.h`
+
+```cpp
+const byte* data;
+```
+
+The complete blob.
+
+### `size` {#asset-memoryadditem-size}
+
+`variable asset::MemoryAddItem::size` — defined in `engine/asset/memory_backend.h`
+
+```cpp
+usize size;
+```
+
+Its length.
+
+### `options` {#asset-memoryadditem-options}
+
+`variable asset::MemoryAddItem::options` — defined in `engine/asset/memory_backend.h`
+
+```cpp
+MemoryAddOptions options;
+```
+
+`release` must be null: AddMany copies the bytes.
+
 ## `HostMemoryBackend` {#asset-hostmemorybackend}
 
 `class asset::HostMemoryBackend` — defined in `engine/asset/memory_backend.h`
@@ -6982,6 +7037,21 @@ Registers `bytes`, copied or, with `options.release`, lent.
 | Field | Value |
 |---|---|
 | Fails | `Invalid` (null id, a malformed path); `DuplicateId` (the id is live, or a path belongs to another id); `Corrupt` (not a blob, the blob's id is not `id`, the hash does not verify or differs from the host's); `UnsupportedVersion`, `TypeMismatch` (as `BlobReader::Open`); `LimitExceeded` (the budget); `Other` (memory). |
+
+### `AddMany(Span<const MemoryAddItem>,usize*)` {#asset-hostmemorybackend-addmany-span-lt-const-memoryadditem-gt-usize-star}
+
+`method asset::HostMemoryBackend::AddMany` — defined in `engine/asset/memory_backend.h`
+
+```cpp
+Status AddMany(Span<const MemoryAddItem> items, usize* failed_index = nullptr);
+```
+
+Adds every item, or none: the blobs are all checked, the ids and paths (also among the items) found free and the sum of the sizes found to fit before the first one is installed. The bytes are copied. On failure `*failed_index` (may be null) names the item that was refused.
+
+| Field | Value |
+|---|---|
+| Fails | the failures of `Add` for each item; `DuplicateId` also for an id or path the batch names twice; `Invalid` for an item with a `release` function; `LimitExceeded` when the sum does not fit. |
+| Ownership | borrows its arguments for the call only; the bytes are copied. |
 
 ### `Replace(ResourceId,ByteSpan,bool,Vector<ResourceId>*,const MemoryAddOptions&)` {#asset-hostmemorybackend-replace-resourceid-bytespan-bool-vector-lt-resourceid-gt-star-const-memoryaddoptions-amp}
 
@@ -12678,6 +12748,20 @@ Returns the number of registered types.
 | Field | Value |
 |---|---|
 | Fails | never. |
+
+### `At(usize)` {#asset-typeregistry-at-usize-const}
+
+`method asset::TypeRegistry::At` — defined in `engine/asset/resource_type.h`
+
+```cpp
+const TypeInfo& At(usize index) const;
+```
+
+Returns the `index`th registered type (in registration order, the same on every run).
+
+| Field | Value |
+|---|---|
+| Aborts | `index` is not below `Size()`. |
 
 ## `kMaxSkeletonJoints` {#asset-kmaxskeletonjoints}
 

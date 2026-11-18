@@ -125,6 +125,39 @@ void HostMemoryBackend::UnloadDependents(const ResourceInUseQuery& query, const 
     }
 }
 
+Status HostMemoryBackend::CheckBlob(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options, ContentHash* hash,
+                                    ResourceType* type, Vector<String<HeapAllocator>>* paths)
+{
+    if (id.IsNone())
+    {
+        return Status::Make(ErrorCode::Invalid, "the null id cannot name a resource");
+    }
+    BlobReader blob;
+    ENGINE_TRY(blob.Open(bytes, *types_));
+    if (blob.Id() != id)
+    {
+        return Status::Make(ErrorCode::Corrupt, "the blob's own id is not the id it was added under");
+    }
+    ENGINE_TRY(blob.Verify());
+    {
+        BlobHeaderInfo header;
+        ENGINE_TRY(PeekBlobHeader(bytes, &header));
+        *hash = header.content_hash;
+    }
+    if (options.expected_hash != nullptr && !(*options.expected_hash == *hash))
+    {
+        return Status::Make(ErrorCode::Corrupt, "the blob's hash is not the hash the host supplied");
+    }
+    *type = blob.Type();
+    for (usize i = 0; i < options.paths.Size(); ++i)
+    {
+        String<HeapAllocator> normalized(HeapAllocator::Default());
+        ENGINE_TRY(NormalizePath(options.paths[i], &normalized));
+        paths->Push(Move(normalized));
+    }
+    return Status::Success();
+}
+
 Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options, bool replacing,
                                   bool force, Vector<ResourceId>* dependents, EntryPtr* replaced)
 {
@@ -135,31 +168,10 @@ Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, const MemoryAdd
     LockGuard<Mutex> change(change_mutex_);
 
     // Check the blob before anything changes.
-    BlobReader blob;
-    ENGINE_TRY(blob.Open(bytes, *types_));
-    if (blob.Id() != id)
-    {
-        return Status::Make(ErrorCode::Corrupt, "the blob's own id is not the id it was added under");
-    }
-    ENGINE_TRY(blob.Verify());
     ContentHash hash;
-    {
-        BlobHeaderInfo header;
-        ENGINE_TRY(PeekBlobHeader(bytes, &header));
-        hash = header.content_hash;
-    }
-    if (options.expected_hash != nullptr && !(*options.expected_hash == hash))
-    {
-        return Status::Make(ErrorCode::Corrupt, "the blob's hash is not the hash the host supplied");
-    }
-
+    ResourceType type;
     Vector<String<HeapAllocator>> paths;
-    for (usize i = 0; i < options.paths.Size(); ++i)
-    {
-        String<HeapAllocator> normalized(HeapAllocator::Default());
-        ENGINE_TRY(NormalizePath(options.paths[i], &normalized));
-        paths.Push(Move(normalized));
-    }
+    ENGINE_TRY(CheckBlob(id, bytes, options, &hash, &type, &paths));
 
     {
         LockGuard<Mutex> lock(mutex_);
@@ -199,7 +211,7 @@ Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, const MemoryAdd
         MemCopy(entry->bytes.Data(), bytes.Data(), bytes.Size());
     }
     entry->hash = hash;
-    entry->type = blob.Type();
+    entry->type = type;
 
     // Nothing changes until the new bytes are known to fit and their paths to be free: a forced replace unloads the
     // dependents only for a change that will happen.
@@ -267,6 +279,146 @@ Status HostMemoryBackend::Add(ResourceId id, ByteSpan bytes, const MemoryAddOpti
 {
     EntryPtr replaced;  // released after the change lock
     return Install(id, bytes, options, false, false, nullptr, &replaced);
+}
+
+Status HostMemoryBackend::AddMany(Span<const MemoryAddItem> items, usize* failed_index)
+{
+    if (failed_index != nullptr)
+    {
+        *failed_index = 0;
+    }
+    LockGuard<Mutex> change(change_mutex_);
+    struct Prepared
+    {
+        EntryPtr entry;
+        ResourceId id;
+    };
+    Vector<Prepared> prepared;
+    u64 total = 0;
+    for (usize n = 0; n < items.Size(); ++n)
+    {
+        const MemoryAddItem& item = items[n];
+        if (failed_index != nullptr)
+        {
+            *failed_index = n;
+        }
+        if (item.options.release != nullptr)
+        {
+            return Status::Make(ErrorCode::Invalid, "AddMany copies the bytes: it takes no release function");
+        }
+        ContentHash hash;
+        ResourceType type;
+        Vector<String<HeapAllocator>> paths;
+        ENGINE_TRY(CheckBlob(item.id, ByteSpan(item.data, item.size), item.options, &hash, &type, &paths));
+        for (usize k = 0; k < prepared.Size(); ++k)
+        {
+            if (prepared[k].id == item.id)
+            {
+                return Status::Make(ErrorCode::DuplicateId, "the batch names one id twice");
+            }
+            for (usize p = 0; p < paths.Size(); ++p)
+            {
+                for (usize q = 0; q < prepared[k].entry->paths.Size(); ++q)
+                {
+                    if (prepared[k].entry->paths[q].View() == paths[p].View())
+                    {
+                        return Status::Make(ErrorCode::DuplicateId, "the batch names one path twice");
+                    }
+                }
+            }
+        }
+        EntryPtr entry = MakeShared<Entry>();
+        if (!entry || !entry->bytes.TryResizeUninitialized(item.size))
+        {
+            return Status::Make(ErrorCode::Other, "memory for the resource ran out");
+        }
+        MemCopy(entry->bytes.Data(), item.data, item.size);
+        entry->hash = hash;
+        entry->type = type;
+        entry->paths = Move(paths);
+        total += item.size;
+        prepared.Push(Prepared{Move(entry), item.id});
+    }
+    if (failed_index != nullptr)
+    {
+        *failed_index = items.Size();  // from here the batch as a whole is what may be refused
+    }
+    {
+        LockGuard<Mutex> lock(mutex_);
+        if (held_ + total > budget_)
+        {
+            return Status::Make(ErrorCode::LimitExceeded, "the memory backend budget is exhausted");
+        }
+        for (usize n = 0; n < prepared.Size(); ++n)
+        {
+            if (failed_index != nullptr)
+            {
+                *failed_index = n;
+            }
+            if (entries_.Find(prepared[n].id.Value()) != nullptr)
+            {
+                return Status::Make(ErrorCode::DuplicateId, "the id is already live; use Replace");
+            }
+            for (usize i = 0; i < prepared[n].entry->paths.Size(); ++i)
+            {
+                ResourceId owner;
+                if (table_.Resolve(prepared[n].entry->paths[i].View(), &owner))
+                {
+                    return Status::Make(ErrorCode::DuplicateId, "a path belongs to another resource");
+                }
+            }
+        }
+        // Everything fits and is free: the commit below can fail only when memory runs out (the table), and then
+        // the entries made so far are taken out again.
+        usize done = 0;
+        Status failure = Status::Success();
+        for (; done < prepared.Size() && !failure.Failed(); ++done)
+        {
+            Prepared& one = prepared[done];
+            usize added_paths = 0;
+            for (; added_paths < one.entry->paths.Size(); ++added_paths)
+            {
+                failure = table_.Add(one.entry->paths[added_paths].View(), one.id, one.entry->type);
+                if (failure.Failed())
+                {
+                    break;
+                }
+            }
+            if (failure.Failed())
+            {
+                for (usize i = 0; i < added_paths; ++i)
+                {
+                    table_.Remove(one.entry->paths[i].View());
+                }
+                break;
+            }
+            entries_.Insert(one.id.Value(), one.entry);
+        }
+        if (failure.Failed())
+        {
+            if (failed_index != nullptr)
+            {
+                *failed_index = done;
+            }
+            for (usize n = 0; n < done; ++n)
+            {
+                for (usize i = 0; i < prepared[n].entry->paths.Size(); ++i)
+                {
+                    table_.Remove(prepared[n].entry->paths[i].View());
+                }
+                entries_.Remove(prepared[n].id.Value());
+            }
+            return failure;
+        }
+        for (usize n = 0; n < prepared.Size(); ++n)
+        {
+            ++stamp_counter_;
+            prepared[n].entry->stamp = stamp_counter_;
+            held_ += prepared[n].entry->Size();
+            changes_.Push(ChangeRecord{prepared[n].id, ChangeKind::Added});
+        }
+    }
+    return Status::Success();
 }
 
 Status HostMemoryBackend::Replace(ResourceId id, ByteSpan bytes, bool force, Vector<ResourceId>* dependents,

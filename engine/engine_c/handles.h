@@ -22,7 +22,8 @@ enum HandleKind : u64
     kKindSurface = 6,
     kKindPixels = 7,
     kKindTexture = 8,
-    kKindLastIssued = kKindTexture
+    kKindAddMany = 9,
+    kKindLastIssued = kKindAddMany
 };
 
 /// The sizes of the structs that grew after Phase 23 (`engine_frame_stats`, `engine_surface_state`,

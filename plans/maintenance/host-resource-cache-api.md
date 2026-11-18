@@ -1,6 +1,6 @@
 # Maintenance: C API the host needs to cache imported (minted) assets in its own disk cache
 
-Not a numbered phase. Request from the the host project (2026-11-18), written against the engine at `ed6d8327`. Nothing here is started.
+Not a numbered phase. Request from the the host project (2026-11-18), written against the engine at `ed6d8327`. Done 2026-11-18 (see Result).
 
 ## Why
 
@@ -72,4 +72,22 @@ and a few things around it. The memory backend holds the blobs internally (`asse
 
 ## Result
 
-(Not started.)
+Done 2026-11-18 (Linux), all eight items, one commit. Runs: plain `ran 3955 of 10622 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` in 631 s, asan `ran 3250 of 10622`, tsan `ran 2905 of 10622` (taken before the gate fixes of the review; the plain run repeated after); the only failures are the three already in `KNOWN-ISSUES.md` (`engine_c_surface`, the job-destroyed test, the audio voice-cost test); `ctest -L docs` 9 of 9; GCC and Clang unity-off builds of `engine_c`, `asset_tests`, `host_import`, `host_cpp`, `host_import_off` clean, their tests passed.
+
+1. **`resource_read(engine, id, max_size, out)`** (one parameter more than the plan: `max_size`, 0 = no limit, refuses `TOO_LARGE` before copying). Reads the blob from the memory backend into a buffer made by `MakeBlankBuffer` (one copy). A pak or file resource, an unknown id: `NOT_FOUND`. `out` is zeroed on failure.
+2. **`resource_add_many(engine, infos, count, size_t* failed_index)`**, atomic in the backend: new `asset::HostMemoryBackend::AddMany` checks every blob, then every id and path (also among the items), then the sum against the budget, and only then installs, all under the change lock. `failed_index` instead of the plan's `engine_buffer* failed_ids`: with all-or-none exactly one item can be the reason (or `count` for the budget). The bytes are copied (`BORROW` is `INVALID_ARGUMENT`), because a rollback of a lent entry would call its release function, which the contract says a failed add never does. **Checked: `resource_add` does not look at dependencies** (neither does `AddMany`); `resource_load` reports `MISSING_DEPENDENCY`, so `import_result.ids` order is enough but not required.
+3. **`import_format_version()`**: `uint64_t`, a function of the table (callable before any engine). FNV-1a over a layout number, `asset::kGltfImporterOutputVersion` (new, in `gltf_import.h`: raise it with every change of what the importer writes), `kContainerVersion` and every registered type's tag and version (`TypeRegistry::At` added). The golden is `EXPECTED_FORMAT_VERSION` in `host_import.c`.
+4. **Import facts: not readable from a loaded level, so `engine_import_result.summary` was added** (and only that): the C API has entity names and transforms but no bounds of a level, no material by name and no clip length. The importer writes JSON (`asset_import/gltf_summary.{h,cpp}`, called from `ImportLevel`): level nodes with names (as `entity_find` sees them) and world positions, bounds of the meshes' `POSITION` ranges (accessor `min`/`max`, else computed), material names, animation names with durations. A host built against the first `engine_import_result` (no `summary`) is still served.
+5. **Docs note**: `docs/guide/engine-library.md` ("Keeping what an import made") and `docs/guide/assets.md` say which of `ids`, `types`, `paths`, the blob, the level id and `summary` the host stores and how to load again.
+6. **Blob limits** are in the doc comment of `resource_read` (the budget `assets.memory_backend_bytes`, `assets.import.max_output_bytes` for one import) and in the guide.
+7. **`ENGINE_CAP_RESOURCE_CACHE`** (0x200), set in every build; `host_import_off.c` runs add, read, load and the async form in the importer-less library (with the sample blobs minted by `asset_mint`).
+8. **Asynchronous add** (the plan said to do it only if measured slow; done on the user's request, 2026-11-18, without a measurement): `resource_add_many_async`, `resource_add_wait`, `resource_add_finish`, `resource_add_destroy` over a new handle kind. The engine reads the host's bytes in place until the ticket ends (no second copy); the arguments are checked before the call returns.
+
+C++ layer: `Engine::ReadResource`, `AddResources`, `AddResourcesAsync`, `ImportFormatVersion`, class `AddTicket`. ABI: seven functions appended to `engine_api` (1072 to 1128 bytes) and `summary` to `engine_import_result` (176 to 208), snapshot regenerated; the version stays 1.0 (`status unreleased`).
+
+Tests: `host_import.c` (round trip through two engines, atomicity: corrupt last blob, repeated id, live ids, budget; `resource_read` limits; fingerprint; summary; async; an old-size `engine_import_result`), `host_import_off.c`, `host_cpp.cpp`, `tests/asset/memory_backend_test.cpp` (`AddMany`), `tests/asset/gltf_mesh_test.cpp` (summary). Not done from the plan's test list: the golden-image round trip (`engine_c_acceptance_scene`, needs a GPU window; the blobs of two engines are compared byte for byte and the level spawns instead) and a fingerprint test that changes with a bump (the golden does that).
+
+### Post-implementation code review
+
+`/code-review high` on the diff: 4 findings. **Fixed:** (1) the summary re-read a mesh's `POSITION` accessor for every node that uses the mesh (a hostile file with many nodes on one mesh without `min`/`max` made that quadratic): the box is now computed once per mesh. (2) the summary test had only root nodes: a node under a translated parent is now checked. **Declined, recorded:** (3) the fingerprint does not fold in the component versions inside level blobs, so a level-component bump needs `kGltfImporterOutputVersion` raised by hand (`KNOWN-ISSUES.md`, item 4 of the cache entry); (4) the asynchronous add borrows the host's bytes until the ticket ends: documented in `engine_c.h` and the guide, the price of not copying twice.
+

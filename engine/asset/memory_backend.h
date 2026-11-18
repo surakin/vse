@@ -46,6 +46,18 @@ struct MemoryAddOptions
     void* release_user = nullptr;  ///< Passed to `release`.
 };
 
+/// One resource of [[asset::HostMemoryBackend::AddMany]].
+///
+/// - Thread-safety: immutable value.
+/// - Ownership: borrows `bytes` and the strings of `options` for the call only.
+struct MemoryAddItem
+{
+    ResourceId id;               ///< The id inside the blob.
+    const byte* data = nullptr;  ///< The complete blob.
+    usize size = 0;              ///< Its length.
+    MemoryAddOptions options;    ///< `release` must be null: AddMany copies the bytes.
+};
+
 /// Resources provided by the host.
 ///
 /// The bytes of every resource are a complete blob (Day 314): `Add` checks the container, that the blob's own id is the
@@ -80,6 +92,15 @@ public:
     ///   `UnsupportedVersion`, `TypeMismatch` (as `BlobReader::Open`); `LimitExceeded` (the budget); `Other` (memory).
     Status Add(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options = MemoryAddOptions());
 
+    /// Adds every item, or none: the blobs are all checked, the ids and paths (also among the items) found free and
+    /// the sum of the sizes found to fit before the first one is installed. The bytes are copied. On failure
+    /// `*failed_index` (may be null) names the item that was refused.
+    ///
+    /// - Fails: the failures of `Add` for each item; `DuplicateId` also for an id or path the batch names twice;
+    ///   `Invalid` for an item with a `release` function; `LimitExceeded` when the sum does not fit.
+    /// - Ownership: borrows its arguments for the call only; the bytes are copied.
+    Status AddMany(Span<const MemoryAddItem> items, usize* failed_index = nullptr);
+
     /// Replaces the bytes of a live resource with `bytes`, copied or lent as `options` says. Its paths stay unless
     /// `options` names new ones.
     ///
@@ -108,6 +129,8 @@ public:
     Status Watch(Vector<ChangeRecord>* out) override;
 
 private:
+    Status CheckBlob(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options, ContentHash* hash,
+                     ResourceType* type, Vector<String<HeapAllocator>>* paths);
     Status Install(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options, bool replacing, bool force,
                    Vector<ResourceId>* dependents, EntryPtr* replaced);
     Status CheckDependents(ResourceId id, bool force, Vector<ResourceId>* named, Vector<ResourceId>* to_unload,

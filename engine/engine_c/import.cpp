@@ -273,8 +273,11 @@ void FillResult(const asset::ImportResult& made, engine_import_result* out)
     }
     String<HeapAllocator> manifest{HeapAllocator::Default()};
     made.manifest.Format(&manifest);
+    const bool has_summary = StructSizeOf(out) >=
+                             sizeof(engine_import_result);  // `summary` came after the first version
+    const u32 host_size = out->struct_size;
     *out = engine_import_result{};
-    out->struct_size = sizeof(engine_import_result);
+    out->struct_size = host_size;
     out->resource_count = static_cast<u32>(made.resources.Size());
     out->warning_count = static_cast<u32>(made.report.notes.Size());
     MakeTextBuffer(StringView(reinterpret_cast<const char*>(ids.Data()), ids.Size() * sizeof(u64)), &out->ids);
@@ -282,7 +285,14 @@ void FillResult(const asset::ImportResult& made, engine_import_result* out)
     MakeTextBuffer(StringView(paths.CStr(), paths.Length()), &out->paths);
     MakeTextBuffer(StringView(warnings.CStr(), warnings.Length()), &out->warnings);
     MakeTextBuffer(StringView(manifest.CStr(), manifest.Length()), &out->manifest);
+    if (has_summary)
+    {
+        MakeTextBuffer(StringView(made.summary.CStr(), made.summary.Length()), &out->summary);
+    }
 }
+
+// The first version of engine_import_result ended before `summary`: four u32 and the five buffers.
+constexpr usize kResultFirstVersionSize = 4 * sizeof(u32) + 5 * sizeof(engine_buffer);
 
 engine_status CheckResultOut(engine_import_result* result)
 {
@@ -290,12 +300,13 @@ engine_status CheckResultOut(engine_import_result* result)
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`result` is NULL");
     }
-    if (StructSizeOf(result) < sizeof(engine_import_result))
+    if (StructSizeOf(result) < kResultFirstVersionSize)
     {
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_import_result.struct_size is smaller than the struct");
     }
-    *result = engine_import_result{};
-    result->struct_size = sizeof(engine_import_result);
+    const u32 host_size = result->struct_size;
+    MemSet(result, 0, host_size < sizeof(engine_import_result) ? host_size : sizeof(engine_import_result));
+    result->struct_size = host_size;
     return ENGINE_OK;
 }
 
@@ -323,6 +334,11 @@ private:
 bool ImporterBuilt()
 {
     return true;
+}
+
+u32 ImporterOutputVersion()
+{
+    return asset::kGltfImporterOutputVersion;
 }
 
 void RegisterImporterSettings(settings::Registry* registry)
@@ -554,6 +570,11 @@ engine_status ImportHost::Destroy(engine_handle ticket)
 bool ImporterBuilt()
 {
     return false;
+}
+
+u32 ImporterOutputVersion()
+{
+    return 0;
 }
 
 void RegisterImporterSettings(settings::Registry*) {}

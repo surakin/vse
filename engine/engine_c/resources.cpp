@@ -1,5 +1,6 @@
 #include "engine_c/resources.h"
 
+#include "asset/asset_module.h"
 #include "asset/cpu_loaders.h"
 #include "asset/content_hash.h"
 #include "asset/level.h"
@@ -13,7 +14,9 @@
 #include "jobs/job.h"
 #include "jobs/scheduler.h"
 #include "log/assert.h"
+#include "mem/heap_allocator.h"
 #include "os/os.h"
+#include "string/string.h"
 #include "sync/thread.h"
 
 namespace engine_placeholder::engine_c
@@ -26,6 +29,29 @@ struct ResourceHost::ReleaseRecord
     void* user = nullptr;
     const void* data = nullptr;
     usize size = 0;
+};
+
+// One resource of an adding of many (resource_add_many and its asynchronous form): the checked arguments, owned except
+// for the bytes, which the host keeps valid until the adding is over.
+struct AddManyItem
+{
+    asset::ResourceId id;
+    String<HeapAllocator> path{HeapAllocator::Default()};
+    StringView path_view;  // `path`, in a place that does not move
+    ByteSpan bytes;
+    asset::ContentHash hash;
+    bool check_hash = false;
+};
+
+// An adding of many: what the job reads, and what it leaves for the host.
+struct AddManyObject
+{
+    Vector<UniquePtr<AddManyItem>> items;
+    Atomic<bool> done{false};  // the job's last access to the object
+    u32 waiters = 0;           // calls using the ticket (guarded by the host's table mutex)
+    engine_status code = ENGINE_OK;
+    String<HeapAllocator> message{HeapAllocator::Default()};
+    usize failed_index = 0;
 };
 
 // Returns from the function when a call of the C API's own kind fails.
@@ -43,6 +69,9 @@ namespace
 {
 
 constexpr usize kMaxHostSlots = 1u << 16;  // loaded resources, and tickets, each
+constexpr usize kMaxAddManyItems = 1u << 16;
+constexpr usize kMaxAddManyTickets = 256;
+constexpr u32 kAddManyFlags = ENGINE_RESOURCE_CHECK_HASH;
 
 constexpr u32 kAddFlags = ENGINE_RESOURCE_BORROW | ENGINE_RESOURCE_CHECK_HASH;
 constexpr u32 kReplaceFlags = kAddFlags | ENGINE_RESOURCE_FORCE;
@@ -60,6 +89,12 @@ StringView TextOf(engine_string s)
 jobs::Job RunReleaseJob(ResourceHost* host)
 {
     host->RunReleases();
+    co_return;
+}
+
+jobs::Job RunAddManyJob(ResourceHost* host, AddManyObject* object)
+{
+    host->RunAddMany(object);
     co_return;
 }
 
@@ -484,6 +519,289 @@ engine_status ResourceHost::Remove(u64 id, u32 flags, engine_buffer* dependents)
     }
     TablesChanged();
     WriteIds(unloaded, dependents);
+    return ENGINE_OK;
+}
+
+engine_status ResourceHost::Read(u64 id, u64 max_size, engine_buffer* out)
+{
+    if (out == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out` is NULL");
+    }
+    *out = engine_buffer{};
+    if (id == 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the resource id is zero");
+    }
+    const asset::ResourceId rid = asset::ResourceId::FromValue(id);
+    UniquePtr<asset::ResourceReader> reader;
+    const asset::Status opened = memory_->Open(rid, &reader);  // a resource of a pak or a file is not here
+    if (opened.Failed())
+    {
+        return FromStatus(opened);
+    }
+    const u64 size = reader->Size();
+    if (max_size != 0 && size > max_size)
+    {
+        SetLastError("too_large: the blob is %llu bytes, above the limit of %llu",
+                     static_cast<unsigned long long>(size), static_cast<unsigned long long>(max_size));
+        return ENGINE_ERROR_TOO_LARGE;
+    }
+    char* block = MakeBlankBuffer(static_cast<usize>(size), out);
+    if (block == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INTERNAL, "memory for the blob ran out");
+    }
+    if (size != 0)
+    {
+        const asset::Status read = reader->ReadAt(0, block, static_cast<usize>(size));
+        if (read.Failed())
+        {
+            out->release(out);
+            return FromStatus(read);
+        }
+    }
+    return ENGINE_OK;
+}
+
+void ResourceHost::RunAddMany(AddManyObject* object)
+{
+    Vector<asset::MemoryAddItem> list;
+    for (usize i = 0; i < object->items.Size(); ++i)
+    {
+        AddManyItem* item = object->items[i].Get();
+        asset::MemoryAddItem one;
+        one.id = item->id;
+        one.data = item->bytes.Data();
+        one.size = item->bytes.Size();
+        if (item->path_view.Length() != 0)
+        {
+            one.options.paths = Span<const StringView>(&item->path_view, 1);
+        }
+        one.options.expected_hash = item->check_hash ? &item->hash : nullptr;
+        list.Push(one);
+    }
+    usize failed = 0;
+    const asset::Status status = memory_->AddMany(Span<const asset::MemoryAddItem>(list.Data(), list.Size()), &failed);
+    if (status.Failed())
+    {
+        object->code = FromAssetError(status.Code());
+        object->message = String<HeapAllocator>(HeapAllocator::Default(), StringView(status.Message()));
+        object->failed_index = failed;
+    }
+    else
+    {
+        TablesChanged();
+    }
+    object->done.Store(true, MemoryOrder::Release);
+}
+
+namespace
+{
+
+// Checks the host's array and makes the items of an adding (the paths copied, the bytes borrowed).
+engine_status MakeAddManyItems(ResourceHost* host, const engine_resource_add_info* infos, usize count,
+                               usize* failed_index, AddManyObject* object)
+{
+    if (failed_index != nullptr)
+    {
+        *failed_index = 0;
+    }
+    if (count > kMaxAddManyItems)
+    {
+        if (failed_index != nullptr)
+        {
+            *failed_index = count;
+        }
+        return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "an adding takes at most 65536 resources");
+    }
+    if (count != 0 && infos == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`infos` is NULL");
+    }
+    for (usize i = 0; i < count; ++i)
+    {
+        AddArgs args;
+        const engine_status checked = BuildArgs(host, &infos[i], kAddManyFlags, &args);
+        if (checked != ENGINE_OK)
+        {
+            if (failed_index != nullptr)
+            {
+                *failed_index = i;
+            }
+            return checked;
+        }
+        UniquePtr<AddManyItem> item = MakeUnique<AddManyItem>();
+        item->id = args.id;
+        item->path = String<HeapAllocator>(HeapAllocator::Default(), args.path);
+        item->path_view = item->path.View();
+        item->bytes = args.bytes;
+        item->check_hash = (infos[i].flags & ENGINE_RESOURCE_CHECK_HASH) != 0;
+        item->hash = args.hash;
+        object->items.Push(Move(item));
+    }
+    return ENGINE_OK;
+}
+
+}  // namespace
+
+engine_status ResourceHost::AddMany(const engine_resource_add_info* infos, usize count, usize* failed_index)
+{
+    AddManyObject object;
+    TRY_C(MakeAddManyItems(this, infos, count, failed_index, &object));
+    if (count == 0)
+    {
+        return ENGINE_OK;
+    }
+    RunAddMany(&object);
+    if (object.code != ENGINE_OK)
+    {
+        if (failed_index != nullptr)
+        {
+            *failed_index = object.failed_index;
+        }
+        return Fail(object.code, object.message.CStr());
+    }
+    return ENGINE_OK;
+}
+
+engine_status ResourceHost::AddManyAsync(const engine_resource_add_info* infos, usize count, engine_handle* ticket)
+{
+    if (ticket == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`ticket` is NULL");
+    }
+    *ticket = engine_handle{};
+    UniquePtr<AddManyObject> object = MakeUnique<AddManyObject>();
+    TRY_C(MakeAddManyItems(this, infos, count, nullptr, object.Get()));
+    if (!EngineObjectAcquire())
+    {
+        return Fail(ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    AddManyObject* raw = object.Get();
+    {
+        LockGuard<Mutex> lock(table_mutex_);
+        usize slot = 0;
+        for (; slot < adds_.Size(); ++slot)
+        {
+            if (adds_[slot].object.Get() == nullptr)
+            {
+                break;
+            }
+        }
+        if (slot == adds_.Size())
+        {
+            if (adds_.Size() >= kMaxAddManyTickets)
+            {
+                EngineObjectRelease();
+                return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "too many adding tickets exist (at most 256)");
+            }
+            adds_.Push(AddSlot());
+        }
+        adds_[slot].object = Move(object);
+        adds_[slot].generation = NextGeneration();
+        *ticket = MakeObjectHandle(kKindAddMany, adds_[slot].generation, slot);
+    }
+    runtime_->EnsureJobs().Submit(RunAddManyJob(this, raw));
+    return ENGINE_OK;
+}
+
+namespace
+{
+
+// Keeps a ticket from being destroyed while a call waits on it.
+class AddPin
+{
+public:
+    AddPin(Mutex* mutex, AddManyObject* object) : mutex_(mutex), object_(object) {}
+    AddPin(const AddPin&) = delete;
+    AddPin& operator=(const AddPin&) = delete;
+    ~AddPin()
+    {
+        LockGuard<Mutex> lock(*mutex_);
+        --object_->waiters;
+    }
+    AddManyObject* Get() const { return object_; }
+
+private:
+    Mutex* mutex_;
+    AddManyObject* object_;
+};
+
+}  // namespace
+
+engine_status ResourceHost::AddWait(engine_handle ticket, u64 timeout_ms)
+{
+    if (jobs::Scheduler::InsideJob())
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "resource_add_wait is not allowed inside a job");
+    }
+    AddManyObject* found = nullptr;
+    {
+        LockGuard<Mutex> lock(table_mutex_);
+        AddSlot* slot = nullptr;
+        TRY_C(ResolveSlot(adds_, ticket, kKindAddMany, "add ticket", &slot));
+        found = slot->object.Get();
+        ++found->waiters;
+    }
+    AddPin pin(&table_mutex_, found);
+    const u64 start = os::MonotonicTimeNanos();
+    const bool forever = timeout_ms == 0xFFFFFFFFFFFFFFFFull;
+    while (!pin.Get()->done.Load(MemoryOrder::Acquire))
+    {
+        if (!forever && (os::MonotonicTimeNanos() - start) / 1000000u >= timeout_ms)
+        {
+            return Fail(ENGINE_ERROR_NOT_READY, "the adding has not finished");
+        }
+        ThisThread::SleepForMicroseconds(100);
+    }
+    return ENGINE_OK;
+}
+
+engine_status ResourceHost::AddFinish(engine_handle ticket, usize* failed_index)
+{
+    UniquePtr<AddManyObject> taken;
+    {
+        LockGuard<Mutex> lock(table_mutex_);
+        AddSlot* slot = nullptr;
+        TRY_C(ResolveSlot(adds_, ticket, kKindAddMany, "add ticket", &slot));
+        if (!slot->object->done.Load(MemoryOrder::Acquire))
+        {
+            return Fail(ENGINE_ERROR_NOT_READY, "the adding has not finished");
+        }
+        if (slot->object->waiters != 0)
+        {
+            return Fail(ENGINE_ERROR_IN_USE, "another call is waiting on the ticket");
+        }
+        taken = Move(slot->object);
+    }
+    EngineObjectRelease();
+    if (failed_index != nullptr)
+    {
+        *failed_index = taken->failed_index;
+    }
+    return taken->code == ENGINE_OK ? ENGINE_OK : Fail(taken->code, taken->message.CStr());
+}
+
+engine_status ResourceHost::AddDestroy(engine_handle ticket)
+{
+    UniquePtr<AddManyObject> dying;
+    {
+        LockGuard<Mutex> lock(table_mutex_);
+        AddSlot* slot = nullptr;
+        TRY_C(ResolveSlot(adds_, ticket, kKindAddMany, "add ticket", &slot));
+        if (slot->object->waiters != 0)
+        {
+            return Fail(ENGINE_ERROR_IN_USE, "another call is waiting on the ticket");
+        }
+        dying = Move(slot->object);
+    }
+    while (!dying->done.Load(MemoryOrder::Acquire))  // the job still reads the object
+    {
+        ThisThread::SleepForMicroseconds(100);
+    }
+    dying = nullptr;
+    EngineObjectRelease();
     return ENGINE_OK;
 }
 
@@ -919,6 +1237,80 @@ engine_status ResourceMountedFn(engine_handle engine, u64 id, engine_resource_in
     ResourceHost* host = nullptr;
     TRY_C(HostOfEngine(engine, &host));
     return host->Mounted(id, out);
+}
+
+engine_status ResourceReadFn(engine_handle engine, u64 id, u64 max_size, engine_buffer* out)
+{
+    ResourceHost* host = nullptr;
+    TRY_C(HostOfEngine(engine, &host));
+    return host->Read(id, max_size, out);
+}
+
+engine_status ResourceAddManyFn(engine_handle engine, const engine_resource_add_info* infos, usize count,
+                                usize* failed_index)
+{
+    ResourceHost* host = nullptr;
+    TRY_C(HostOfEngine(engine, &host));
+    return host->AddMany(infos, count, failed_index);
+}
+
+engine_status ResourceAddManyAsyncFn(engine_handle engine, const engine_resource_add_info* infos, usize count,
+                                     engine_handle* ticket)
+{
+    ResourceHost* host = nullptr;
+    TRY_C(HostOfEngine(engine, &host));
+    return host->AddManyAsync(infos, count, ticket);
+}
+
+engine_status ResourceAddWaitFn(engine_handle ticket, u64 timeout_ms)
+{
+    ResourceHost* host = nullptr;
+    TRY_C(HostOfCurrent(ticket, &host));
+    return host->AddWait(ticket, timeout_ms);
+}
+
+engine_status ResourceAddFinishFn(engine_handle ticket, usize* failed_index)
+{
+    ResourceHost* host = nullptr;
+    TRY_C(HostOfCurrent(ticket, &host));
+    return host->AddFinish(ticket, failed_index);
+}
+
+engine_status ResourceAddDestroyFn(engine_handle ticket)
+{
+    ResourceHost* host = nullptr;
+    TRY_C(HostOfCurrent(ticket, &host));
+    return host->AddDestroy(ticket);
+}
+
+namespace
+{
+
+u64 Mix(u64 hash, u64 value)
+{
+    for (u32 i = 0; i < 8; ++i)
+    {
+        hash ^= (value >> (8 * i)) & 0xFFu;
+        hash *= 0x100000001B3ull;
+    }
+    return hash;
+}
+
+}  // namespace
+
+u64 ImportFormatVersionFn()
+{
+    u64 hash = 0xCBF29CE484222325ull;
+    hash = Mix(hash, 1);  // the layout of this fingerprint
+    hash = Mix(hash, ImporterOutputVersion());
+    hash = Mix(hash, asset::kContainerVersion);
+    const asset::TypeRegistry types;
+    for (usize i = 0; i < types.Size(); ++i)
+    {
+        hash = Mix(hash, types.At(i).type.Tag());
+        hash = Mix(hash, types.At(i).current_version);
+    }
+    return hash;
 }
 
 engine_status ResourceLoadFn(engine_handle engine, u64 id, engine_string path, u32 type, engine_handle* out)

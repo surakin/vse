@@ -35,6 +35,8 @@ struct ResourceObject
 ///
 /// - Thread-safety: thread-compatible; `waiters` is guarded by the host's table mutex.
 /// - Ownership: owns the ticket (a share of the load).
+struct AddManyObject;
+
 struct TicketObject
 {
     asset::LoadTicket ticket;
@@ -64,6 +66,13 @@ public:
     engine_status Replace(const engine_resource_add_info* info, engine_buffer* dependents);
     engine_status Remove(u64 id, u32 flags, engine_buffer* dependents);
     engine_status Mounted(u64 id, engine_resource_info* out);
+    engine_status Read(u64 id, u64 max_size, engine_buffer* out);
+    engine_status AddMany(const engine_resource_add_info* infos, usize count, usize* failed_index);
+    engine_status AddManyAsync(const engine_resource_add_info* infos, usize count, engine_handle* ticket);
+    engine_status AddWait(engine_handle ticket, u64 timeout_ms);
+    engine_status AddFinish(engine_handle ticket, usize* failed_index);
+    engine_status AddDestroy(engine_handle ticket);
+    void RunAddMany(AddManyObject* object);  // the job of an asynchronous adding
     engine_status Load(u64 id, engine_string path, u32 type, engine_handle* out);
     engine_status Release(engine_handle resource);
     engine_status StatusOf(engine_handle resource, engine_resource_info* out);
@@ -173,8 +182,14 @@ private:
         UniquePtr<TicketObject> object;
         u32 generation = 0;
     };
+    struct AddSlot
+    {
+        UniquePtr<AddManyObject> object;
+        u32 generation = 0;
+    };
     Vector<ResourceSlot> resources_;
     Vector<TicketSlot> tickets_;
+    Vector<AddSlot> adds_;
 };
 
 /// The host of the engine a handle names, made on first use.
@@ -192,6 +207,15 @@ engine_status ResourceAddFn(engine_handle engine, const engine_resource_add_info
 engine_status ResourceReplaceFn(engine_handle engine, const engine_resource_add_info* info, engine_buffer* dependents);
 engine_status ResourceRemoveFn(engine_handle engine, u64 id, u32 flags, engine_buffer* dependents);
 engine_status ResourceMountedFn(engine_handle engine, u64 id, engine_resource_info* out);
+engine_status ResourceReadFn(engine_handle engine, u64 id, u64 max_size, engine_buffer* out);
+engine_status ResourceAddManyFn(engine_handle engine, const engine_resource_add_info* infos, usize count,
+                                usize* failed_index);
+engine_status ResourceAddManyAsyncFn(engine_handle engine, const engine_resource_add_info* infos, usize count,
+                                     engine_handle* ticket);
+engine_status ResourceAddWaitFn(engine_handle ticket, u64 timeout_ms);
+engine_status ResourceAddFinishFn(engine_handle ticket, usize* failed_index);
+engine_status ResourceAddDestroyFn(engine_handle ticket);
+u64 ImportFormatVersionFn();
 engine_status ResourceLoadFn(engine_handle engine, u64 id, engine_string path, u32 type, engine_handle* out);
 engine_status ResourceReleaseFn(engine_handle resource);
 engine_status ResourceStatusFn(engine_handle resource, engine_resource_info* out);

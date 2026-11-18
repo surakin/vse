@@ -29,8 +29,8 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Audio](audio.md) | 28 | 803 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 36 | 1286 |
-| [glTF importer](asset_import.md) | 16 | 268 |
+| [Assets and resources](asset.md) | 36 | 1293 |
+| [glTF importer](asset_import.md) | 17 | 272 |
 | [Animation runtime](animation.md) | 4 | 85 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 18 | 427 |

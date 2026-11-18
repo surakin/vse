@@ -288,6 +288,44 @@ refusing callback, the asynchronous import (poll, wait, finish twice, 24 cancels
 run leaves the fixture's PNG uncorrupted.
 
 
+### Keeping what an import made: a host's own disk cache (maintenance, 2026-11-18)
+
+Importing a large `.glb` can take a second or more, so a host that shows the same file again (the host, a world or an avatar it saw before) keeps what
+the import made and adds it back next time instead of importing again. The supported way, and the only state the host has to keep:
+
+1. **Import**, with `ENGINE_IMPORT_EMIT_LEVEL` when the file is a scene. Key the cache by the file's own hash (SHA-256 of the `.glb`; the host has it) **and by
+   `import_format_version()`**, a `uint64_t` that changes whenever a re-import of the same file could give other blobs: the importer's output version
+   (`asset::kGltfImporterOutputVersion`, raised by every change of what it writes), the blob container version and the version of every resource type. It needs
+   no engine, so the cache directory can be named before `engine_create`. Compare it for equality only. `abi_major` / `abi_minor` do not serve: they track the API,
+   not the importer's output. A library built without the importer has a fingerprint of its own (the formats only): the cache of one is not valid for the other.
+2. **Store, per resource of the result**, in the host's index: the id (`ids`), the type (`types`), the path (one line of `paths`) and the blob that
+   `resource_read(engine, id, max_size, &buffer)` returns (byte for byte what `resource_add` takes: container, type, id, content hash), plus the id of the level (the
+   last resource, the one of type `ENGINE_RESOURCE_LEVEL`) and the `summary` text. `resource_mounted` gives the size and `content_hash` before and after. Only a
+   resource of the memory backend can be read (what `resource_add` and the imports put there); one of a pak or a file is `NOT_FOUND`. No blob is larger than the
+   setting `assets.memory_backend_bytes`, and the blobs of one import together at most `assets.import.max_output_bytes` (2 GiB by default); `max_size` makes
+   `resource_read` refuse a bigger blob (`TOO_LARGE`) before copying a byte.
+3. **Facts about the file** that no engine call reads from a loaded level (the bounds of a level, a material by name, the length of a clip) are in `result.summary`,
+   UTF-8 JSON (`asset_import/gltf_summary.h`): the level's nodes with their names and world positions (the `Spawn` and `Eye` nodes of the host's specs),
+   the bounding box of the meshes (the walkable area of a world, the height of an avatar), the material names (`Screen`) and the animation names with their
+   durations (`Walk`, `Idle`). Store it beside the blobs; it is written once, by the import.
+4. **Load again** with `resource_add_many(engine, infos, count, &failed_index)`: every blob is checked (as `resource_add` checks it, `ENGINE_RESOURCE_CHECK_HASH` with
+   the stored `content_hash` included), every id and path is found free (also among the items) and the sum of the sizes is found to fit the budget **before the
+   first is installed**, and the resources then appear together, in the given order: a failure leaves the backend as it was, and `failed_index` is the item that
+   was refused (or `count` when the batch as a whole was: the budget). The bytes are copied (`BORROW` is `INVALID_ARGUMENT` here). Adding does not look at
+   dependencies (a load does: `MISSING_DEPENDENCY`), so the order of `ids`, dependencies first, is enough but not required. Then `resource_load` the level by
+   its id and `level_spawn` it. Two participants who use the same file share one set of resources: add it once (`resource_mounted` tells whether it is there).
+5. **Without stalling the frame:** `resource_add_many_async` returns a ticket at once and the checking and copying run on an engine worker (`resource_add_wait`,
+   `resource_add_finish` for the outcome and `failed_index`, `resource_add_destroy` to drop it). The engine reads the host's bytes in place until the ticket is
+   finished or destroyed, so they must stay valid until then; a ticket counts as an object of the engine. Measure before using it: a synchronous add is a
+   check of the blob hashes and one copy.
+6. **A library without the importer** (`-DENGINE_LIBRARY_WITH_IMPORTER=OFF`) still has all of this (`ENGINE_CAP_RESOURCE_CACHE` is set in every build): a cache-only host
+   adds blobs it stored from another build with the same `import_format_version()` rules.
+
+`ENGINE_CAP_RESOURCE_CACHE` says the library has these functions; `engine_api.struct_size` says the host's header and the library agree on the table.
+**Tested** in `host_import.c` (the round trip through two engines, atomicity of a corrupt, a repeated and a live id and of the budget, the limits of
+`resource_read`, the asynchronous form, a host built against the first `engine_import_result`), `host_import_off.c` (the same functions in the library without
+the importer), `host_cpp.cpp` (the C++ layer) and `tests/asset/memory_backend_test.cpp` (the backend's `AddMany`).
+
 ## Rendering into a window the host owns (Day 352)
 
 An application with its own toolkit (a Qt, GTK or Electron shell, or a C program with a bare Xlib window) keeps its window and has the engine draw into it:

@@ -156,6 +156,117 @@ TEST_CASE("A hash the host supplies is verified, and a damaged blob is refused",
     CHECK(backend.Add(ResourceId::None(), test::AsBytes(blob)).Is(ErrorCode::Invalid));
 }
 
+TEST_CASE("AddMany adds every item or none, and says which one was refused", "[asset][backend][memory][many]")
+{
+    TypeRegistry registry = test::MakeBackendRegistry();
+    const Vector<byte> a = test::MakeTestBlob(registry, test::Rid(40), 100, 1);
+    const Vector<byte> b = test::MakeTestBlob(registry, test::Rid(41), 100, 2);
+    const Vector<byte> c = test::MakeTestBlob(registry, test::Rid(42), 100, 3);
+    const StringView path_a = test::Vp("/many/a.bk");
+    const StringView path_c = test::Vp("/many/c.bk");
+    auto item = [](ResourceId id, const Vector<byte>& blob, const StringView* path)
+    {
+        MemoryAddItem one;
+        one.id = id;
+        one.data = blob.Data();
+        one.size = blob.Size();
+        if (path != nullptr)
+        {
+            one.options.paths = engine_placeholder::Span<const StringView>(path, 1);
+        }
+        return one;
+    };
+    HostMemoryBackend backend(registry, kBudget);
+    usize failed = 99;
+    ResourceInfo info;
+
+    SECTION("a batch is added in full, with its paths, and shows in the watch records")
+    {
+        const MemoryAddItem items[] = {item(test::Rid(40), a, &path_a), item(test::Rid(41), b, nullptr),
+                                       item(test::Rid(42), c, &path_c)};
+        REQUIRE(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(items, 3), &failed).Ok());
+        CHECK(backend.BytesHeld() == a.Size() + b.Size() + c.Size());
+        for (u32 id = 40; id < 43; ++id)
+        {
+            CHECK(backend.Stat(test::Rid(id), &info).Ok());
+        }
+        ResourceTable table;
+        REQUIRE(backend.ReadTable(&table).Ok());
+        ResourceId found;
+        CHECK((table.Resolve(path_a, &found) && found == test::Rid(40)));
+        CHECK((table.Resolve(path_c, &found) && found == test::Rid(42)));
+        Vector<ChangeRecord> changes;
+        REQUIRE(backend.Watch(&changes).Ok());
+        CHECK(changes.Size() == 3);
+    }
+    SECTION("an empty batch is nothing")
+    {
+        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(), &failed).Ok());
+        CHECK(backend.BytesHeld() == 0);
+    }
+    SECTION("a damaged blob refuses the batch and names it")
+    {
+        Vector<byte> damaged = test::MakeTestBlob(registry, test::Rid(42), 100, 3);
+        damaged[damaged.Size() - 1] = static_cast<byte>(damaged[damaged.Size() - 1] ^ 0x5A);
+        const MemoryAddItem items[] = {item(test::Rid(40), a, &path_a), item(test::Rid(41), b, nullptr),
+                                       item(test::Rid(42), damaged, nullptr)};
+        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(items, 3), &failed).Is(ErrorCode::Corrupt));
+        CHECK(failed == 2);
+        CHECK(backend.BytesHeld() == 0);
+        CHECK(backend.Stat(test::Rid(40), &info).Is(ErrorCode::NotFound));
+        ResourceTable table;
+        REQUIRE(backend.ReadTable(&table).Ok());
+        CHECK(table.Size() == 0);
+    }
+    SECTION("a live id, a repeated id and a repeated path refuse the batch")
+    {
+        REQUIRE(backend.Add(test::Rid(41), test::AsBytes(b)).Ok());
+        const u64 held = backend.BytesHeld();
+        const MemoryAddItem live[] = {item(test::Rid(40), a, nullptr), item(test::Rid(41), b, nullptr)};
+        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(live, 2), &failed)
+                  .Is(ErrorCode::DuplicateId));
+        CHECK(failed == 1);
+        const MemoryAddItem twice[] = {item(test::Rid(40), a, nullptr), item(test::Rid(40), a, nullptr)};
+        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(twice, 2), &failed)
+                  .Is(ErrorCode::DuplicateId));
+        CHECK(failed == 1);
+        const MemoryAddItem same_path[] = {item(test::Rid(40), a, &path_a), item(test::Rid(42), c, &path_a)};
+        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(same_path, 2), &failed)
+                  .Is(ErrorCode::DuplicateId));
+        CHECK(failed == 1);
+        CHECK(backend.BytesHeld() == held);
+        CHECK(backend.Stat(test::Rid(40), &info).Is(ErrorCode::NotFound));
+    }
+    SECTION("a path of another resource refuses the batch")
+    {
+        const MemoryAddItem first[] = {item(test::Rid(40), a, &path_a)};
+        REQUIRE(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(first, 1), &failed).Ok());
+        const MemoryAddItem second[] = {item(test::Rid(41), b, nullptr), item(test::Rid(42), c, &path_a)};
+        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(second, 2), &failed)
+                  .Is(ErrorCode::DuplicateId));
+        CHECK(failed == 1);
+        CHECK(backend.Stat(test::Rid(41), &info).Is(ErrorCode::NotFound));
+    }
+    SECTION("the sum must fit the budget, and then the failed index is the count")
+    {
+        HostMemoryBackend small(registry, a.Size() + b.Size() + c.Size() - 1);
+        const MemoryAddItem items[] = {item(test::Rid(40), a, nullptr), item(test::Rid(41), b, nullptr),
+                                       item(test::Rid(42), c, nullptr)};
+        CHECK(small.AddMany(engine_placeholder::Span<const MemoryAddItem>(items, 3), &failed)
+                  .Is(ErrorCode::LimitExceeded));
+        CHECK(failed == 3);
+        CHECK(small.BytesHeld() == 0);
+        CHECK(small.Stat(test::Rid(40), &info).Is(ErrorCode::NotFound));
+    }
+    SECTION("a lent blob is refused: AddMany copies")
+    {
+        MemoryAddItem lent = item(test::Rid(40), a, nullptr);
+        lent.options.release = [](void*, ByteSpan) {};
+        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(&lent, 1), &failed).Is(ErrorCode::Invalid));
+        CHECK(backend.BytesHeld() == 0);
+    }
+}
+
 TEST_CASE("The byte budget is back-pressure, not eviction", "[asset][backend][memory]")
 {
     TypeRegistry registry = test::MakeBackendRegistry();

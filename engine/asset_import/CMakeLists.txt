@@ -12,6 +12,7 @@ set(ASSET_IMPORT_SOURCES
   gltf_skin.cpp  # Day 337
   gltf_clip.cpp  # Day 337
   gltf_level.cpp  # Phase 24 Day 364: the default scene as a level
+  gltf_summary.cpp  # maintenance 2026-11-18: facts about the file for a host cache
   image_decode.cpp  # Day 338
   png_guard.c  # the one setjmp for libpng, in C (MSVC C4611; the Windows PC, 2026-11-15)
   gltf_async.cpp  # Day 338

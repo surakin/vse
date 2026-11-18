@@ -255,6 +255,7 @@ int main(void)
     FIELD(engine_import_result, paths);
     FIELD(engine_import_result, warnings);
     FIELD(engine_import_result, manifest);
+    FIELD(engine_import_result, summary);
     STRUCT(engine_import_info);
     FIELD(engine_import_info, struct_size);
     FIELD(engine_import_info, done);
@@ -488,6 +489,13 @@ int main(void)
     FIELD(engine_api, audio_bus_duck);
     FIELD(engine_api, audio_snapshot);
     FIELD(engine_api, audio_restore);
+    FIELD(engine_api, resource_read);
+    FIELD(engine_api, resource_add_many);
+    FIELD(engine_api, resource_add_many_async);
+    FIELD(engine_api, resource_add_wait);
+    FIELD(engine_api, resource_add_finish);
+    FIELD(engine_api, resource_add_destroy);
+    FIELD(engine_api, import_format_version);
     STRUCT(engine_audio_info);
     FIELD(engine_audio_info, struct_size);
     FIELD(engine_audio_info, sample_rate);

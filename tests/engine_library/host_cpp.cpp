@@ -161,6 +161,21 @@ static void RunRest(const engine_api* api, Engine& engine)
     CHECK(engine.MountedResource(0x1234, &mounted) != ENGINE_OK);
     Resource resource;
     CHECK(engine.LoadResource(0x1234, "no/such/path", 0, &resource) != ENGINE_OK && !resource);
+
+    // The host cache of imported resources (maintenance, 2026-11-18).
+    CHECK(Engine::ImportFormatVersion(api) != 0 &&
+          Engine::ImportFormatVersion(api) == Engine::ImportFormatVersion(api));
+    Buffer blob;
+    CHECK(engine.ReadResource(0x1234, 0, &blob) == ENGINE_ERROR_NOT_FOUND && blob.Size() == 0);
+    size_t failed = 7;
+    CHECK(engine.AddResources(nullptr, 0, &failed));
+    engine_resource_add_info bad = Init<engine_resource_add_info>();
+    CHECK(engine.AddResources(&bad, 1, &failed) == ENGINE_ERROR_INVALID_ARGUMENT && failed == 0);
+    AddTicket adding;
+    CHECK(engine.AddResourcesAsync(&bad, 1, &adding) == ENGINE_ERROR_INVALID_ARGUMENT && !adding);
+    CHECK(engine.AddResourcesAsync(nullptr, 0, &adding));
+    CHECK(adding.Wait(UINT64_MAX));
+    CHECK(adding.Finish(&failed) && !adding);
 }
 
 int main()

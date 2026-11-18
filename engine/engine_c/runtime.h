@@ -438,6 +438,13 @@ engine_status CounterWaitFn(engine_handle counter, u64 timeout_ms);
 /// - Fails: never.
 void MakeTextBuffer(StringView text, engine_buffer* out);
 
+/// Makes a buffer of `size` writable bytes (a NUL after them) the host releases with `engine_buffer_release`, and
+/// returns its bytes; null (and `out` untouched) when memory ran out.
+///
+/// - Thread-safety: thread-safe.
+/// - Fails: returns null when memory ran out.
+char* MakeBlankBuffer(usize size, engine_buffer* out);
+
 /// The world a handle names, or null when the handle is stale or not a world's (the failure text is set as for any
 /// handle).
 ///

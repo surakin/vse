@@ -228,6 +228,7 @@ class Counter;
 class Resource;
 class Ticket;
 class ImportTicket;
+class AddTicket;
 class Surface;
 class PixelsTicket;
 class Texture;
@@ -299,6 +300,21 @@ public:
     }
     inline Status LoadResource(uint64_t id, const char* path, uint32_t type, Resource* out) const;
     inline Status LoadResourceAsync(uint64_t id, const char* path, uint32_t type, uint32_t priority, Ticket* out) const;
+
+    /// The host's cache of imported resources (maintenance, 2026-11-18): the blob of a resource of the memory backend
+    /// (`resource_read`; `max_size` 0 is no limit), many blobs added all or none, at once or in the background
+    /// (`resource_add_many`, `resource_add_many_async`; `failed_index` may be null), and the fingerprint of what
+    /// imports write (`import_format_version`, which needs no engine: this static form takes the table).
+    Status ReadResource(uint64_t id, uint64_t max_size, Buffer* out) const
+    {
+        return Api()->resource_read(Get(), id, max_size, out->Fill());
+    }
+    Status AddResources(const engine_resource_add_info* infos, size_t count, size_t* failed_index = nullptr) const
+    {
+        return Api()->resource_add_many(Get(), infos, count, failed_index);
+    }
+    inline Status AddResourcesAsync(const engine_resource_add_info* infos, size_t count, AddTicket* out) const;
+    static uint64_t ImportFormatVersion(const engine_api* api) { return api->import_format_version(); }
 
     /// Imports a glTF file held in memory, at once or in the background (`import_gltf`, `import_gltf_async`).
     Status ImportGltf(const void* bytes, size_t size, const engine_import_options& options,
@@ -650,6 +666,7 @@ public:
         engine_buffer_release(&raw_.paths);
         engine_buffer_release(&raw_.warnings);
         engine_buffer_release(&raw_.manifest);
+        engine_buffer_release(&raw_.summary);
         raw_ = Init<engine_import_result>();
     }
 
@@ -669,6 +686,28 @@ public:
     Status Wait(uint64_t timeout_ms) const { return Api()->import_wait(Get(), timeout_ms); }
     Status Finish(ImportResult* out) const { return Api()->import_finish(Get(), out->Fill()); }
     Status Cancel() const { return Api()->import_cancel(Get()); }
+
+private:
+    friend class Engine;
+};
+
+/// An adding of many resources in the background (`resource_add_many_async`). The bytes of the items stay the host's
+/// and must stay valid until `Finish` or the destruction of the ticket.
+class AddTicket : public Owned
+{
+public:
+    /// Waits until the adding is done, at most `timeout_ms` (0 only looks): OK when done, NOT_READY on a timeout.
+    Status Wait(uint64_t timeout_ms) const { return Api()->resource_add_wait(Get(), timeout_ms); }
+    /// Takes the outcome of a finished adding; the ticket is gone after it (except for NOT_READY and IN_USE).
+    Status Finish(size_t* failed_index = nullptr)
+    {
+        const Status status = Api()->resource_add_finish(Get(), failed_index);
+        if (status != ENGINE_ERROR_NOT_READY && status != ENGINE_ERROR_IN_USE)
+        {
+            (void)Release();
+        }
+        return status;
+    }
 
 private:
     friend class Engine;
@@ -841,6 +880,17 @@ inline Status Engine::ImportGltfAsync(const void* bytes, size_t size, const engi
     if (status)
     {
         out->Adopt(Api(), handle, &engine_api::import_destroy);
+    }
+    return status;
+}
+
+inline Status Engine::AddResourcesAsync(const engine_resource_add_info* infos, size_t count, AddTicket* out) const
+{
+    engine_handle handle = {0};
+    const Status status = Api()->resource_add_many_async(Get(), infos, count, &handle);
+    if (status)
+    {
+        out->Adopt(Api(), handle, &engine_api::resource_add_destroy);
     }
     return status;
 }

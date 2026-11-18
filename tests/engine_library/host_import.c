@@ -6,6 +6,7 @@
    container, over the limits): each must come back as a status and a message, never a crash (under asan, nothing is
    read or written out of bounds). */
 #include <math.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,11 @@
 
 static int g_failures = 0;
 static const engine_api* g_api = NULL;
+
+/* engine_api.import_format_version of this source tree. A change means a blob container or type version, or the
+   importer's output version (asset::kGltfImporterOutputVersion), moved: that invalidates every host's cache of imported
+   blobs, so the number is updated here on purpose, in the commit that moved it. */
+#define EXPECTED_FORMAT_VERSION 0xf0fdad91d9e0f07eull
 
 #define CHECK(condition)                                                                                               \
     do                                                                                                                 \
@@ -339,6 +345,7 @@ static void ReleaseResult(engine_import_result* r)
     engine_buffer_release(&r->paths);
     engine_buffer_release(&r->warnings);
     engine_buffer_release(&r->manifest);
+    engine_buffer_release(&r->summary);
 }
 
 /* Loads every resource of a result by its id, then each by its path, and releases them. Counts the types. */
@@ -1244,6 +1251,305 @@ static void TestDeepScene(engine_handle engine)
     ReleaseResult(&result);
 }
 
+/* ---- Maintenance (2026-11-18): the host's own cache of imported resources */
+
+typedef struct CachedResource
+{
+    uint64_t id;
+    uint32_t type;
+    char path[256];
+    engine_buffer blob;
+    engine_resource_info info;
+} CachedResource;
+
+static engine_resource_info NewInfo(void)
+{
+    engine_resource_info i;
+    memset(&i, 0, sizeof(i));
+    i.struct_size = sizeof(i);
+    return i;
+}
+
+static engine_resource_add_info AddInfoOf(const CachedResource* c)
+{
+    engine_resource_add_info a;
+    memset(&a, 0, sizeof(a));
+    a.struct_size = sizeof(a);
+    a.id = c->id;
+    a.path = S(c->path);
+    a.bytes = c->blob.data;
+    a.size = c->blob.size;
+    a.flags = ENGINE_RESOURCE_CHECK_HASH;
+    memcpy(a.expected_hash, c->info.content_hash, 16);
+    return a;
+}
+
+static int NoneMounted(engine_handle engine, const CachedResource* items, uint32_t count)
+{
+    uint32_t i;
+    for (i = 0; i < count; ++i)
+    {
+        engine_resource_info info = NewInfo();
+        if (g_api->resource_mounted(engine, items[i].id, &info) != ENGINE_ERROR_NOT_FOUND)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int AllMountedAsCached(engine_handle engine, const CachedResource* items, uint32_t count)
+{
+    uint32_t i;
+    for (i = 0; i < count; ++i)
+    {
+        engine_resource_info info = NewInfo();
+        engine_buffer again;
+        memset(&again, 0, sizeof(again));
+        if (g_api->resource_mounted(engine, items[i].id, &info) != ENGINE_OK || info.type != items[i].type ||
+            info.size != items[i].blob.size || memcmp(info.content_hash, items[i].info.content_hash, 16) != 0)
+        {
+            return 0;
+        }
+        if (g_api->resource_read(engine, items[i].id, 0, &again) != ENGINE_OK || again.size != items[i].blob.size ||
+            memcmp(again.data, items[i].blob.data, again.size) != 0)
+        {
+            engine_buffer_release(&again);
+            return 0;
+        }
+        engine_buffer_release(&again);
+    }
+    return 1;
+}
+
+static void TestResourceCache(const Bytes* gltf)
+{
+    enum
+    {
+        kMax = 16
+    };
+    CachedResource items[kMax];
+    engine_handle engine;
+    engine_import_options options = Options("/cache");
+    engine_import_result result = NewResult();
+    engine_resource_add_info infos[kMax + 1];
+    uint32_t count;
+    uint32_t i;
+    uint64_t level = 0;
+    uint64_t fingerprint = g_api->import_format_version();
+    size_t failed = 99;
+    char summary[16384];
+    const char* line;
+    engine_info info;
+
+    /* the fingerprint needs no engine, is not zero and does not change */
+    CHECK(fingerprint != 0 && g_api->import_format_version() == fingerprint);
+    printf("host_import: format fingerprint %016llx\n", (unsigned long long)fingerprint);
+    CHECK(fingerprint == EXPECTED_FORMAT_VERSION);
+
+    engine = NewEngine();
+    memset(&info, 0, sizeof(info));
+    info.struct_size = sizeof(info);
+    CHECK_STATUS(g_api->get_info(engine, &info), ENGINE_OK);
+    CHECK((info.caps & ENGINE_CAP_RESOURCE_CACHE) != 0);
+    options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+    options.id_seed = 4242;
+    CHECK_STATUS(g_api->import_gltf(engine, gltf->data, gltf->size, &options, &result), ENGINE_OK);
+    count = result.resource_count;
+    CHECK(count == 6 && count <= kMax);
+    level = IdAt(&result, count - 1);
+
+    { /* a host built against the first version of the struct (no `summary`) is served, and its struct is not overrun */
+        engine_import_result old = NewResult();
+        engine_import_options again = Options("/cache_old");
+        again.flags = ENGINE_IMPORT_EMIT_LEVEL;
+        again.id_seed = 4343;
+        old.struct_size = (uint32_t)offsetof(engine_import_result, summary);
+        CHECK_STATUS(g_api->import_gltf(engine, gltf->data, gltf->size, &again, &old), ENGINE_OK);
+        CHECK(old.struct_size == offsetof(engine_import_result, summary) && old.resource_count == 6);
+        engine_buffer_release(&old.ids);
+        engine_buffer_release(&old.types);
+        engine_buffer_release(&old.paths);
+        engine_buffer_release(&old.warnings);
+        engine_buffer_release(&old.manifest);
+        old.struct_size = 8;
+        CHECK_STATUS(g_api->import_gltf(engine, gltf->data, gltf->size, &again, &old), ENGINE_ERROR_STRUCT_SIZE);
+    }
+    /* the facts about the file, as the host stores them beside the blobs */
+    CHECK(result.summary.size > 0 && result.summary.size < sizeof(summary));
+    memcpy(summary, result.summary.data, result.summary.size);
+    summary[result.summary.size] = 0;
+    CHECK(strstr(summary, "\"version\":1") != NULL && strstr(summary, "\"name\":\"body\"") != NULL &&
+          strstr(summary, "\"name\":\"tip\"") != NULL && strstr(summary, "\"bounds\":{\"min\":[") != NULL &&
+          strstr(summary, "\"materials\":[") != NULL && strstr(summary, "\"max\":[1,1,0]") != NULL &&
+          strstr(summary, "\"animations\":[{\"name\":\"sway\",\"duration\":1}]") != NULL &&
+          strstr(summary, "\"position\":[0,1,0]") != NULL);
+
+    line = result.paths.data;
+    for (i = 0; i < count; ++i)
+    {
+        const char* end = strchr(line, '\n');
+        size_t length = end == NULL ? 0 : (size_t)(end - line);
+        engine_buffer again;
+        memset(&again, 0, sizeof(again));
+        memset(&items[i], 0, sizeof(items[i]));
+        items[i].id = IdAt(&result, i);
+        items[i].type = TypeAt(&result, i);
+        CHECK(length > 0 && length < sizeof(items[i].path));
+        memcpy(items[i].path, line, length < sizeof(items[i].path) ? length : 0);
+        line = end == NULL ? line : end + 1;
+        items[i].info = NewInfo();
+        CHECK_STATUS(g_api->resource_mounted(engine, items[i].id, &items[i].info), ENGINE_OK);
+        CHECK_STATUS(g_api->resource_read(engine, items[i].id, 0, &items[i].blob), ENGINE_OK);
+        CHECK(items[i].blob.size == items[i].info.size && items[i].blob.size > 0);
+        /* a limit below the size refuses before copying; the buffer is zeroed on every failure */
+        CHECK_STATUS(g_api->resource_read(engine, items[i].id, 1, &again), ENGINE_ERROR_TOO_LARGE);
+        CHECK(again.data == NULL && again.size == 0);
+        CHECK_STATUS(g_api->resource_read(engine, items[i].id, items[i].blob.size, &again), ENGINE_OK);
+        CHECK(again.size == items[i].blob.size && memcmp(again.data, items[i].blob.data, again.size) == 0);
+        engine_buffer_release(&again);
+    }
+    {
+        engine_buffer none;
+        memset(&none, 0, sizeof(none));
+        CHECK_STATUS(g_api->resource_read(engine, 0, 0, &none), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->resource_read(engine, 0xDEADBEEFull, 0, &none), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->resource_read(engine, items[0].id, 0, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK(none.data == NULL);
+    }
+    ReleaseResult(&result);
+    CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
+    {
+        engine_buffer stale;
+        memset(&stale, 0, sizeof(stale));
+        CHECK_STATUS(g_api->resource_read(engine, items[0].id, 0, &stale), ENGINE_ERROR_STALE_HANDLE);
+    }
+
+    /* a second engine takes the blobs back, all or none */
+    engine = NewEngine();
+    for (i = 0; i < count; ++i)
+    {
+        infos[i] = AddInfoOf(&items[i]);
+    }
+    CHECK_STATUS(g_api->resource_add_many(engine, NULL, 0, &failed), ENGINE_OK); /* nothing to add */
+    CHECK_STATUS(g_api->resource_add_many(engine, NULL, 3, &failed), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->resource_add_many(engine, infos, 70000, &failed), ENGINE_ERROR_LIMIT_EXCEEDED);
+    CHECK(NoneMounted(engine, items, count));
+    { /* borrowed bytes are refused: the engine copies */
+        engine_resource_add_info lent = infos[0];
+        lent.flags |= ENGINE_RESOURCE_BORROW;
+        CHECK_STATUS(g_api->resource_add_many(engine, &lent, 1, &failed), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK(failed == 0);
+    }
+    { /* the last blob is damaged: the error names it and nothing was added */
+        engine_resource_add_info broken[kMax];
+        unsigned char* damaged = (unsigned char*)malloc(items[count - 1].blob.size);
+        memcpy(damaged, items[count - 1].blob.data, items[count - 1].blob.size);
+        damaged[items[count - 1].blob.size - 1] ^= 0x5A;
+        memcpy(broken, infos, count * sizeof(infos[0]));
+        broken[count - 1].bytes = damaged;
+        broken[count - 1].flags = 0;
+        failed = 99;
+        CHECK_STATUS(g_api->resource_add_many(engine, broken, count, &failed), ENGINE_ERROR_CORRUPT);
+        CHECK(failed == count - 1);
+        CHECK(NoneMounted(engine, items, count));
+        free(damaged);
+    }
+    { /* an id twice in one batch: refused, and nothing was added */
+        memcpy(&infos[count], &infos[0], sizeof(infos[0]));
+        failed = 99;
+        CHECK_STATUS(g_api->resource_add_many(engine, infos, count + 1, &failed), ENGINE_ERROR_ALREADY_EXISTS);
+        CHECK(failed == count);
+        CHECK(NoneMounted(engine, items, count));
+    }
+    CHECK_STATUS(g_api->resource_add_many(engine, infos, count, &failed), ENGINE_OK);
+    CHECK(AllMountedAsCached(engine, items, count));
+    /* the same again: every id is live, nothing changes */
+    failed = 99;
+    CHECK_STATUS(g_api->resource_add_many(engine, infos, count, &failed), ENGINE_ERROR_ALREADY_EXISTS);
+    CHECK(failed == 0);
+    CHECK(AllMountedAsCached(engine, items, count));
+    { /* the cached level loads and spawns as the imported one does */
+        engine_handle world;
+        engine_handle loaded;
+        uint64_t root = 0;
+        uint64_t keys[8];
+        size_t total = 0;
+        memset(&world, 0, sizeof(world));
+        memset(&loaded, 0, sizeof(loaded));
+        CHECK_STATUS(g_api->resource_load(engine, level, NoPath(), ENGINE_RESOURCE_LEVEL, &loaded), ENGINE_OK);
+        CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+        CHECK_STATUS(g_api->level_spawn(world, level, NULL, &root, keys, 8, &total), ENGINE_OK);
+        CHECK(total == 4 && Find(world, "body") != 0 && Find(world, "tip") != 0);
+        CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+        CHECK_STATUS(g_api->resource_release(loaded), ENGINE_OK);
+    }
+    /* remove them all, and add them on a worker */
+    for (i = 0; i < count; ++i)
+    {
+        CHECK_STATUS(g_api->resource_remove(engine, items[count - 1 - i].id, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+    }
+    CHECK(NoneMounted(engine, items, count));
+    {
+        engine_handle ticket;
+        engine_handle second;
+        memset(&ticket, 0, sizeof(ticket));
+        memset(&second, 0, sizeof(second));
+        CHECK_STATUS(g_api->resource_add_many_async(engine, infos, count, &ticket), ENGINE_OK);
+        CHECK_STATUS(g_api->destroy(engine), ENGINE_ERROR_IN_USE); /* the ticket is an object of the engine */
+        CHECK_STATUS(g_api->resource_add_wait(ticket, 0xFFFFFFFFFFFFFFFFull), ENGINE_OK);
+        failed = 99;
+        CHECK_STATUS(g_api->resource_add_finish(ticket, &failed), ENGINE_OK);
+        CHECK_STATUS(g_api->resource_add_finish(ticket, &failed), ENGINE_ERROR_STALE_HANDLE);
+        CHECK_STATUS(g_api->resource_add_wait(ticket, 0), ENGINE_ERROR_STALE_HANDLE);
+        CHECK(AllMountedAsCached(engine, items, count));
+        /* an asynchronous adding that is refused leaves nothing, and says which blob */
+        CHECK_STATUS(g_api->resource_add_many_async(engine, infos, count, &second), ENGINE_OK);
+        CHECK_STATUS(g_api->resource_add_wait(second, 0xFFFFFFFFFFFFFFFFull), ENGINE_OK);
+        failed = 99;
+        CHECK_STATUS(g_api->resource_add_finish(second, &failed), ENGINE_ERROR_ALREADY_EXISTS);
+        CHECK(failed == 0);
+        CHECK_STATUS(g_api->resource_add_many_async(engine, infos, count, &second), ENGINE_OK);
+        CHECK_STATUS(g_api->resource_add_destroy(second), ENGINE_OK); /* waits for the worker */
+        CHECK_STATUS(g_api->resource_add_destroy(second), ENGINE_ERROR_STALE_HANDLE);
+        CHECK_STATUS(g_api->resource_add_many_async(engine, NULL, 3, &second), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK(second.value == 0);
+        CHECK(AllMountedAsCached(engine, items, count));
+    }
+    CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
+
+    /* a budget too small for the batch: refused as a whole, nothing added */
+    {
+        char budget[32];
+        size_t total = 0;
+        engine_setting_entry entry;
+        engine_create_info create;
+        for (i = 0; i < count; ++i)
+        {
+            total += items[i].blob.size;
+        }
+        snprintf(budget, sizeof(budget), "%llu", (unsigned long long)(total - 1));
+        memset(&create, 0, sizeof(create));
+        create.struct_size = sizeof(create);
+        create.flags = ENGINE_CREATE_LOG_SUPPRESS_CONSOLE;
+        entry.key = S("assets.memory_backend_bytes");
+        entry.value = S(budget);
+        create.settings = &entry;
+        create.setting_count = 1;
+        memset(&engine, 0, sizeof(engine));
+        CHECK_STATUS(g_api->create(&create, &engine), ENGINE_OK);
+        failed = 99;
+        CHECK_STATUS(g_api->resource_add_many(engine, infos, count, &failed), ENGINE_ERROR_LIMIT_EXCEEDED);
+        CHECK(failed == count);
+        CHECK(NoneMounted(engine, items, count));
+        CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
+    }
+    for (i = 0; i < count; ++i)
+    {
+        engine_buffer_release(&items[i].blob);
+    }
+}
+
 int main(void)
 {
     Bytes gltf;
@@ -1283,6 +1589,7 @@ int main(void)
     TestDeepScene(engine);
     TestTextures(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
+    TestResourceCache(&gltf);
     free(gltf.data);
 #if IMPORT_DYNAMIC
     g_api->thread_detach();

@@ -122,6 +122,11 @@ public:
     /// - Fails: never.
     usize Size() const { return types_.Size(); }
 
+    /// Returns the `index`th registered type (in registration order, the same on every run).
+    ///
+    /// - Aborts: `index` is not below `Size()`.
+    const TypeInfo& At(usize index) const { return types_[index]; }
+
 private:
     Vector<TypeInfo> types_;
 };

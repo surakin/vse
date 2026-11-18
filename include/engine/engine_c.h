@@ -214,6 +214,9 @@ extern "C"
 #define ENGINE_CAP_HOST_TEXTURES 0x80u /* texture_create and the host textures (Phase 24 Day 365) */
 #define ENGINE_CAP_SURFACE_OFFSCREEN                                                                                   \
     0x100u /* surface_create with ENGINE_SURFACE_OFFSCREEN: a surface with no window (Phase 24 Day 378) */
+#define ENGINE_CAP_RESOURCE_CACHE                                                                                      \
+    0x200u /* resource_read, resource_add_many (and its asynchronous form) and import_format_version work: set in      \
+              every build, with or without the importer (maintenance, 2026-11-18) */
 
 /* ---- Day 352: rendering into a window the host owns ---- */
 
@@ -1106,6 +1109,17 @@ extern "C"
         engine_buffer paths;    /* the paths, UTF-8, one per line (each ends with '\n'), in the order of `ids` */
         engine_buffer warnings; /* UTF-8, one line per warning */
         engine_buffer manifest; /* UTF-8: pass it to the next import of this file as `manifest` to keep the ids */
+        /* UTF-8 JSON, the facts about the file that a host needs after adding the blobs back from its own cache and
+         * that no engine call reads from a loaded level (maintenance, 2026-11-18); empty when the file made no level:
+         *   {"version":1,
+         *    "nodes":[{"name":"Spawn","position":[x,y,z],"mesh":-1}, ...],   the level's entities in order, with the
+         *                                                                     names level_spawn gives them
+         * (entity_find) "bounds":{"min":[x,y,z],"max":[x,y,z]} or null,                  of the meshes' POSITION
+         * ranges, world "materials":["Screen", ...],                                     in the file's order, "" if
+         * unnamed "animations":[{"name":"Walk","duration":1.2}, ...]}              seconds, the longest sampler input
+         * Positions and bounds are in the units of the level (the import's `scale` applied). The host stores this text
+         * beside the blobs it caches. Present when struct_size covers it. */
+        engine_buffer summary;
     } engine_import_result;
 
     /* What import_poll reports. */
@@ -2075,6 +2089,75 @@ extern "C"
          * MISSING_DEPENDENCY (a clip or stream is not open), UNSUPPORTED (the mixer is set up differently). Not while
          * another thread is in audio_render (it replaces the state that call reads). */
         engine_status (*audio_restore)(engine_handle engine, const void* data, size_t size);
+
+        /* ---- Maintenance (2026-11-18): a host's own cache of imported resources ----
+         *
+         * A host that imports a file often (the host's worlds and avatars) can keep what import_gltf made and add it
+         * back later instead of importing again: after an import it stores, for each id of `engine_import_result`, the
+         * id, the type, the path (one per line of `paths`) and the blob that resource_read returns, together with the
+         * `manifest`; it keys the cache by the file's own hash and by import_format_version(). To use the cache it adds
+         * the stored blobs with resource_add_many, giving each its id and path again (the order of `ids` is
+         * dependencies first), and loads the level by its id (the level is the resource made with
+         * ENGINE_IMPORT_EMIT_LEVEL; store which id it is) with resource_load. Everything a load needs is in the blobs
+         * and the paths, plus `summary` (the node positions, the bounds, the material and animation names: nothing in
+         * the engine reads them back from a loaded level), which the host keeps in its own index with the ids, the
+         * types, the paths and the level's id. */
+
+        /* Copies the complete blob of a resource of the memory backend into `*out` (release it with
+         * engine_buffer_release): byte for byte what resource_add takes, so that adding it again gives a resource with
+         * the same container, type, id and content hash (resource_mounted reports the size and the hash before and
+         * after). Only resources of the memory backend can be read (what resource_add and the imports put there): a
+         * resource of a pak or of a file is NOT_FOUND. `max_size` (0: no limit) refuses a blob above it with TOO_LARGE
+         * before any byte is copied. No blob is larger than the setting `assets.memory_backend_bytes` (the backend's
+         * budget), and the blobs of one import together are at most `assets.import.max_output_bytes` (default 2 GiB),
+         * so that a host can bound its cache by the file. `*out` is zeroed on failure. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT (NULL, a zero id), NOT_FOUND, TOO_LARGE, INTERNAL (memory ran out). Any thread. */
+        engine_status (*resource_read)(engine_handle engine, uint64_t id, uint64_t max_size, engine_buffer* out);
+
+        /* Adds `count` resources to the memory backend, all or none: every blob is checked (as resource_add checks
+         * it), every id and path found free (also among the items: one id or path twice is ALREADY_EXISTS) and the sum
+         * of the sizes found to fit the budget before the first is installed, and the resources become visible
+         * together, in the given order. The bytes are always copied: ENGINE_RESOURCE_BORROW is INVALID_ARGUMENT here
+         * (flags: ENGINE_RESOURCE_CHECK_HASH). A resource may name a dependency that comes later in the array or is
+         * not there at all: adding does not look at dependencies, resource_load does (MISSING_DEPENDENCY). On failure
+         * nothing was added, and `*failed_index` (may be NULL) is the index of the item that was refused, or `count`
+         * when the batch as a whole was refused (the budget). Up to 65536 items. Fails with: the errors of
+         * resource_add (for the first item that has one), LIMIT_EXCEEDED (the budget, or too many items). A `count`
+         * of 0 does nothing. */
+        engine_status (*resource_add_many)(engine_handle engine, const engine_resource_add_info* infos, size_t count,
+                                           size_t* failed_index);
+
+        /* The same on an engine worker, so that a frame loop goes on: returns a ticket at once. The checks of the
+         * arguments (struct sizes, flags, ids, NULL bytes) are made before it returns and fail the call. The engine
+         * copies the structs and the paths but reads the bytes in place: they must stay valid and unchanged until
+         * resource_add_finish or resource_add_destroy returns for the ticket. The ticket counts as an object of the
+         * engine until then. Fails with: the argument errors of resource_add_many, LIMIT_EXCEEDED (too many tickets or
+         * items), INTERNAL. Needs ENGINE_CAP_RESOURCE_CACHE. */
+        engine_status (*resource_add_many_async)(engine_handle engine, const engine_resource_add_info* infos,
+                                                 size_t count, engine_handle* ticket);
+
+        /* Waits until the adding is done, at most `timeout_ms` (0 only looks; UINT64_MAX waits for ever). Not from
+         * inside a job. Returns OK when done, NOT_READY on a timeout. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * TYPE_MISMATCH, NOT_READY. */
+        engine_status (*resource_add_wait)(engine_handle ticket, uint64_t timeout_ms);
+
+        /* Takes the outcome of a finished adding and destroys the ticket: OK (all added) or the error resource_add_many
+         * would have returned, with `*failed_index` (may be NULL) as there. Fails with: NOT_READY (not done: the
+         * ticket stays), STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, and the adding's own errors. */
+        engine_status (*resource_add_finish)(engine_handle ticket, size_t* failed_index);
+
+        /* Destroys a ticket without taking its outcome, waiting until the adding is done (whether the resources were
+         * added is then read with resource_mounted). Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH,
+         * IN_USE (another call is waiting on it). */
+        engine_status (*resource_add_destroy)(engine_handle ticket);
+
+        /* A fingerprint of what imports write: the same value in every build of the same sources, a different one
+         * whenever a re-import of one file can give other blobs (the importer's output version, the blob container
+         * version and the version of every resource type), so that a host keys its cache of imported blobs by it. It
+         * needs no engine (callable before engine_create, from any thread) and never fails. A library built without
+         * the importer folds in the formats only (the cache of a build with an importer is not valid for it and back:
+         * check ENGINE_CAP_IMPORT_GLTF). Treat it as an opaque number: compare for equality, store it as a number. */
+        uint64_t (*import_format_version)(void);
     } engine_api;
 
     /* Returns the function table.

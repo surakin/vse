@@ -4,6 +4,7 @@
 #include "animation/components.h"
 #include "asset/level.h"
 #include "asset_import/gltf_names.h"
+#include "asset_import/gltf_summary.h"
 #include "bytes/byte_writer.h"
 #include "cstr/format.h"
 #include "ecs/transform.h"
@@ -176,6 +177,7 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
         names.Push(static_cast<String<HeapAllocator>&&>(name));
     }
     MakeNamesUnique(&names);
+    BuildImportSummary(document, graph, options, nodes, names, result);
 
     // The id and the path of the level.
     StringView scene_name;

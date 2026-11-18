@@ -967,6 +967,63 @@ TEST_CASE("gltf mesh: imported meshes load through the resource manager from a m
     CHECK(async.Get()->BoundsMax()[0] == 4.0f);
 }
 
+// Maintenance 2026-11-18: the summary a host stores beside the cached blobs (asset_import/gltf_summary.h).
+TEST_CASE("The import summary names the nodes, the bounds, the materials and the animations",
+          "[asset][gltf][level][summary]")
+{
+    GltfWriter w;
+    const f32 positions[9] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
+    const u16 indices[3] = {0, 1, 2};
+    const f32 times[2] = {0, 2.5f};
+    const f32 values[6] = {0, 0, 0, 0, 3, 0};
+    const u32 pos = GmAcc(&w, positions, 9, 5126, "VEC3");
+    const u32 idx = GmAcc(&w, indices, 3, 5123, "SCALAR");
+    const u32 time = GmAcc(&w, times, 2, 5126, "SCALAR");
+    const u32 translation = GmAcc(&w, values, 6, 5126, "VEC3");
+    char json[1400];
+    FormatTo(
+        json, sizeof(json),
+        "\"materials\":[{\"name\":\"Screen\"},{}],"
+        "\"meshes\":[{\"name\":\"m\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}],"
+        "\"nodes\":[{\"name\":\"Spawn\",\"translation\":[10,0,5]},"
+        "{\"name\":\"thing\",\"mesh\":0,\"translation\":[1,2,3]},"
+        "{\"name\":\"kid\",\"translation\":[0,0,1]},{\"name\":\"parent\",\"translation\":[5,0,0],\"children\":[2]}],"
+        "\"scenes\":[{\"nodes\":[0,1,3]}],\"scene\":0,"
+        "\"animations\":[{\"name\":\"Walk\",\"samplers\":[{\"input\":%u,\"output\":%u}],"
+        "\"channels\":[{\"sampler\":0,\"target\":{\"node\":1,\"path\":\"translation\"}}]}]",
+        pos, idx, time, translation);
+    w.AddRoot(json);
+    ImportOptions options;
+    options.emit_level = true;
+    ImportResult result;
+    GltfError error;
+    REQUIRE(GmImport(w.Glb(), &result, &error, options).Ok());
+    const StringView summary = result.summary.View();
+    INFO(result.summary.CStr());
+    CHECK(summary.Contains(StringView("\"version\":1")));
+    CHECK(summary.Contains(StringView("{\"name\":\"Spawn\",\"position\":[10,0,5],\"mesh\":-1}")));
+    CHECK(summary.Contains(StringView("{\"name\":\"thing\",\"position\":[1,2,3],\"mesh\":0}")));
+    CHECK(summary.Contains(StringView("{\"name\":\"kid\",\"position\":[5,0,1],\"mesh\":-1}")));  // under its parent
+    CHECK(summary.Contains(StringView("\"bounds\":{\"min\":[1,2,3],\"max\":[2,3,3]}")));
+    CHECK(summary.Contains(StringView("\"materials\":[\"Screen\",\"\"]")));
+    CHECK(summary.Contains(StringView("\"animations\":[{\"name\":\"Walk\",\"duration\":2.5}]")));
+
+    // The import's `scale` applies to positions and bounds, not to durations.
+    options.scale = 2.0f;
+    ImportResult scaled;
+    REQUIRE(GmImport(w.Glb(), &scaled, &error, options).Ok());
+    const StringView big = scaled.summary.View();
+    CHECK(big.Contains(StringView("\"position\":[20,0,10]")));
+    CHECK(big.Contains(StringView("\"bounds\":{\"min\":[2,4,6],\"max\":[4,6,6]}")));
+    CHECK(big.Contains(StringView("\"duration\":2.5")));
+
+    // A file with no level has no summary.
+    ImportOptions plain;
+    ImportResult none;
+    REQUIRE(GmImport(w.Glb(), &none, &error, plain).Ok());
+    CHECK(none.summary.Length() == 0);
+}
+
 // Phase 24 Day 376: a node's level keeps the material of every primitive.
 TEST_CASE("A level of a two-primitive mesh names each slot's material", "[asset][gltf][level][slots]")
 {

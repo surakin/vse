@@ -87,13 +87,24 @@ void ReleaseTextBuffer(engine_buffer* buffer)
 // Fills `out` with a copy of `text` (and a NUL after it, which `size` does not count).
 void MakeTextBuffer(StringView text, engine_buffer* out)
 {
-    char* block = static_cast<char*>(HeapAllocator::Default().Alloc(text.Length() + 1, 1));
+    char* block = MakeBlankBuffer(text.Length(), out);
     MemCopy(block, text.Data(), text.Length());
-    block[text.Length()] = '\0';
+}
+
+// Fills `out` with a buffer of `size` bytes the caller writes (a NUL follows them) and returns the bytes.
+char* MakeBlankBuffer(usize size, engine_buffer* out)
+{
+    char* block = static_cast<char*>(HeapAllocator::Default().Alloc(size + 1, 1));
+    if (block == nullptr)
+    {
+        return nullptr;
+    }
+    block[size] = '\0';
     out->data = block;
-    out->size = text.Length();
+    out->size = size;
     out->owner = block;
     out->release = &ReleaseTextBuffer;
+    return block;
 }
 
 namespace
@@ -456,7 +467,8 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
     out->struct_size = static_cast<u32>(kFirstVersionSize);
     if (host_size >= sizeof(engine_info))
     {
-        out->caps = ENGINE_CAP_HOST_TEXTURES | (engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u) |
+        out->caps = ENGINE_CAP_HOST_TEXTURES | ENGINE_CAP_RESOURCE_CACHE |
+                    (engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_SURFACE_X11 : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WAYLAND) ? ENGINE_CAP_SURFACE_WAYLAND : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA) ? ENGINE_CAP_SURFACE_COCOA : 0u) |
@@ -844,6 +856,13 @@ extern "C"
             &engine_c::AudioBusDuckFn,
             &engine_c::AudioSnapshotFn,
             &engine_c::AudioRestoreFn,
+            &engine_c::ResourceReadFn,
+            &engine_c::ResourceAddManyFn,
+            &engine_c::ResourceAddManyAsyncFn,
+            &engine_c::ResourceAddWaitFn,
+            &engine_c::ResourceAddFinishFn,
+            &engine_c::ResourceAddDestroyFn,
+            &engine_c::ImportFormatVersionFn,
         };
         *out = &table;
         return ENGINE_OK;
