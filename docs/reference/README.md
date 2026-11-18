@@ -18,15 +18,15 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
-| [Scripting](script.md) | 25 | 779 |
-| [Script physics bindings](script_physics.md) | 2 | 31 |
+| [Scripting](script.md) | 25 | 780 |
+| [Script physics bindings](script_physics.md) | 4 | 68 |
 | [Platform: OS Services](platform-os.md) | 8 | 83 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 411 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
-| [Physics](physics.md) | 30 | 752 |
+| [Physics](physics.md) | 30 | 756 |
 | [Audio](audio.md) | 28 | 822 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |

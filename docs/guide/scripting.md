@@ -355,8 +355,8 @@ behavior('door', {
 - **Chains.** An event emitted by a handler has a chain depth one more than the event it answers, and is delivered one tick later again. Past `script.event_chain_limit` (default 8, setting
   `ENGINE_SCRIPT_EVENT_CHAIN_LIMIT`) it is dropped and counted (`EventBus::Dropped`), so two scripts cannot answer each other forever.
 - **Lifetime.** Subscriptions belong to the instance: they end when it is destroyed, and a failed or disabled instance gets no events (an event is not kept for it). `emit_to` checks that the target is a live entity when the script calls it.
-- **Native code.** `ScriptRuntime::Events()` is the bus: `Emit`, `Subscribe(name, handler, user)` (an empty name receives everything) and `Unsubscribe`. The engine's own events (`on_collision`,
-  `on_trigger` from physics, `on_input`, `on_asset_loaded`) are native emits with these names, added by the days that own them; `on_setting_change` stays a settings subscription for now.
+- **Native code.** `ScriptRuntime::Events()` is the bus: `Emit`, `Subscribe(name, handler, user)` (an empty name receives everything) and `Unsubscribe`. The engine's own events (`on_collision_*` and
+  `on_trigger_*` from physics (Day 467), `on_input`, `on_asset_loaded`) are native emits with these names, added by the days that own them; `on_setting_change` stays a settings subscription for now.
 - **Cost** (Linux x86-64, 8 threads, 100 subscribers, 10,000 events a tick, no payload work): about 5.6 million handler calls per second, emit and delivery included.
 - **For Phase 32 (Blueprint-shaped events).** Event dispatchers map to named events with a target; "call an event on another actor" maps to `emit_to`. An interface call that returns a value is
   deliberately absent: it would need a synchronous call into another entity's partition, which the threading model forbids. The shape that fits is a request event answered by a reply event
@@ -485,15 +485,16 @@ The tests `script_debug_test.cpp` check the error text and the repeat counts, th
 
 ## Physics
 
-Day 466 (`script_physics/physics_bindings.h`, `script_physics/physics_layers.h`): scripts drive and question the physics world. The bindings are the separate target `script_physics` (layer 14, above `script` and `physics`), so `script` still never includes `physics`. A host wires it in five steps:
+Day 466 (`script_physics/physics_bindings.h`, `script_physics/physics_layers.h`): scripts drive and question the physics world. The bindings are the separate target `script_physics` (layer 14, above `script` and `physics`), so `script` still never includes `physics`. A host wires it in these steps:
 
 ```cpp
 script_physics::RegisterPhysicsScriptSettings(&settings_registry);  // script.physics_layers (the layer names)
 script_physics::RegisterPhysicsComponents(&registry);           // rigid_body, velocity, collider in the storage registry
 script_physics::RegisterPhysicsValidators(&catalog);            // their Validate() functions run at component.set/add
 script_physics::RegisterPhysicsBindings(&bindings);             // the physics.* functions, before the runtime is made
-script_physics::RegisterPhysicsCommandKinds(&runtime.Kinds());  // kinds 100 to 109, before the first tick
-script_physics::PhysicsScriptServices services{&physics_world, &layers};
+script_physics::RegisterPhysicsCommandKinds(&runtime.Kinds());  // kinds 100 to 114, before the first tick
+script_physics::CharacterSet characters(&physics_world);        // optional: `character.*` (installs the pre-step hook)
+script_physics::PhysicsScriptServices services{&physics_world, &layers, &characters};
 runtime.Services().extensions[script::kServicePhysics] = &services;
 ```
 
@@ -518,3 +519,23 @@ runtime.Services().extensions[script::kServicePhysics] = &services;
 The test `script_physics_test.cpp` runs this order and checks that an observer script reads velocity `N - 1` in tick `N` while an impulse recorded in tick `N` is in the body when the step runs; it also checks that 256 scripts pushing one body from 64 partitions leave the same physics state hash at 1, 2, 3, 7 and 16 threads, and that 300 scripts raycasting and overlapping from 16 threads at once agree (under tsan too).
 
 Not here yet: contact and trigger events and the character controller are Day 467.
+
+**Contact and trigger events (Day 467).** After each physics step the host calls `script_physics::EmitPhysicsEvents(physics_world, &runtime, options)`; the events reach the scripts that listen at the start of the next script phase, through the event bus:
+
+```lua
+behavior('crate', {
+  on_create = function(self)
+    event.on('on_collision_begin', function(me, hit) -- hit.other, hit.point, hit.normal, hit.depth, hit.impulse, hit.points
+      if hit.impulse > 5 then log.info('hard hit by ' .. tostring(hit.other)) end
+    end)
+  end,
+})
+behavior('pad', { on_create = function(self)
+  event.on('on_trigger_enter', function(me, info) --[[ info.other entered ]] end)
+  event.on('on_trigger_exit', function(me, info) end)
+end })
+```
+
+The names are `on_collision_begin`, `on_collision_stay` (only when `StepConfig::stay_events` is on), `on_collision_end`, `on_trigger_enter` and `on_trigger_exit`. Both entities of a contact get their own event (the one with the smaller stable id first), with `normal` pointing from `self` toward `other`; a trigger event goes to the trigger's entity, `other` being the body that entered or left. The order is the physics step's fixed event order, so a log of the deliveries is the same at any thread count (tested at 1 and 16 threads, with equal `StateHash`). **Filtering:** an event is built only for an entity that has a handler (`ScriptRuntime::HasHandler`: one lookup per receiver, so 100,000 events with no listener put nothing on the bus), and `PhysicsEventOptions::layer_mask` keeps out events whose other collider is on a layer not in the mask; `contacts` and `triggers` turn a kind off. A handler that runs several times in one tick sees the world's value of its own components each time, so count in a field of `self` and write the total.
+
+**Characters (Day 467).** `character.create(e, config)` makes a kinematic capsule at the entity's transform (`{radius, height, step_height, min_ground_y, skin_width, gravity_scale}` or nil for the defaults); `character.move(e, velocity)` sets the horizontal velocity it walks at until set again, `jump(e, speed)` gives it an upward speed, `set_height(e, h)` crouches with the feet kept, `destroy(e)` removes it. Reads: `exists`, `is_grounded`, `ground_normal` (nil in the air), `ground_velocity` (the platform's velocity) and `vertical_speed`, as of the last step. The calls are merge commands; the moves themselves run inside the physics step: `script_physics::CharacterSet` (made by the host over its `PhysicsWorld`, in `PhysicsScriptServices::characters`) installs a pre-step hook (`PhysicsWorld::SetPreStepHook`) that moves every character at the start of each fixed step, so a frame with three steps moves it three times. The host calls `CharacterSet::Prune(ecs)` at the sync point (a character whose entity is gone goes away) and `CharacterSet::WriteBack(ecs)` after the step (a kinematic body is not written back by `WriteBackTransforms`). The events of a character's body name its entity when `PhysicsEventOptions::characters` is set. Raycast vehicles, ragdolls and the like are library scripts built from these primitives (the demo, Day 475), not engine features.

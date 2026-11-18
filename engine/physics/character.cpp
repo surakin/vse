@@ -153,6 +153,43 @@ BodyStatus CharacterController::Create(PhysicsWorld* world, const CharacterConfi
     return BodyStatus::Ok;
 }
 
+BodyStatus CharacterController::SetHeight(PhysicsWorld* world, f32 height)
+{
+    const Body* body = body_.IsValid() ? world->Find(body_) : nullptr;
+    if (body == nullptr)
+    {
+        return BodyStatus::StaleId;
+    }
+    if (!IsFinite(height) || !(height >= 2.0f * config_.radius))
+    {
+        return BodyStatus::Invalid;
+    }
+    const CharacterState kept = state_;
+    CharacterConfig config = config_;
+    config.height = height;
+    const Vec3 feet_kept = body->position + Vec3(0.0f, 0.5f * (height - config_.height), 0.0f);
+    if (height > config_.height)
+    {
+        // Standing up: the taller capsule must not start inside a ceiling or a wall.
+        PhysicsQueryFilter filter;
+        filter.include_dynamic = false;
+        filter.ignore = Span<const BodyId>(&body_, 1);
+        Vector<ColliderId> found;
+        const Shape taller = Shape::MakeCapsule(0.5f * height - config.radius - config.skin_width, config.radius);
+        Overlap(*world, taller, feet_kept, Quaternion::Identity(), filter, &found);
+        if (found.Size() != 0)
+        {
+            return BodyStatus::Invalid;  // blocked
+        }
+    }
+    const BodyStatus status = Create(world, config, feet_kept);
+    if (status == BodyStatus::Ok)
+    {
+        state_ = kept;
+    }
+    return status;
+}
+
 void CharacterController::Destroy(PhysicsWorld* world)
 {
     if (body_.IsValid())

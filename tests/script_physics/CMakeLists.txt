@@ -6,6 +6,7 @@ endif()
 
 set(SCRIPT_PHYSICS_TEST_SOURCES
   script_physics_test.cpp  # Day 466
+  script_physics_events_test.cpp  # Day 467
 )
 
 find_package(Threads REQUIRED)

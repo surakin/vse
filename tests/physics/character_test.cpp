@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "algorithm.h"
+#include "lang/limits.h"
 #include "lang/scalar.h"
 #include "physics/character.h"
 
@@ -339,4 +340,66 @@ TEST_CASE("Character: a skin width too small to probe the ground is refused", "[
     CHECK(controller.Create(&world, config, Vec3(0, 2, 0)) == BodyStatus::Invalid);
     config.skin_width = 0.001f;
     CHECK(controller.Create(&world, config, Vec3(0, 2, 0)) == BodyStatus::Ok);
+}
+
+TEST_CASE("Character: the pre-step hook runs once per fixed step, before the step", "[physics][character]")
+{
+    PhysicsWorld world;
+    struct Count
+    {
+        u32 calls = 0;
+        f32 dt = 0.0f;
+    } count;
+    world.SetPreStepHook(
+        [](void* user, PhysicsWorld*, f32 dt)
+        {
+            Count* c = static_cast<Count*>(user);
+            ++c->calls;
+            c->dt = dt;
+        },
+        &count);
+    CHECK(world.Update(3.0f / 60.0f + 0.001f) == 3);
+    CHECK(count.calls == 3);
+    CHECK(Abs(count.dt - 1.0f / 60.0f) < 1e-6f);
+    world.Step();
+    CHECK(count.calls == 4);
+    world.SetPreStepHook(nullptr, nullptr);
+    world.Step();
+    CHECK(count.calls == 4);
+}
+
+TEST_CASE("Character: SetHeight keeps the feet, the ground state and the speed", "[physics][character]")
+{
+    Walker w(Vec3(0, 0.95f, 0));
+    ChFloor(w.world);
+    w.Run(Vec3(0, 0, 0), 30);
+    REQUIRE(w.controller.State().on_ground);
+    const f32 feet = w.Position().y - 0.9f;
+    CHECK(w.controller.SetHeight(&w.world, 1.0f) == BodyStatus::Ok);
+    CHECK(Abs(w.controller.Config().height - 1.0f) < 1e-6f);
+    CHECK(Abs((w.Position().y - 0.5f) - feet) < 1e-4f);
+    CHECK(w.controller.State().on_ground);
+    w.Run(Vec3(0, 0, 0), 10);
+    CHECK(w.controller.State().on_ground);
+    CHECK(w.controller.SetHeight(&w.world, 0.5f) == BodyStatus::Invalid);  // under twice the radius
+    CHECK(w.controller.SetHeight(&w.world, Limits<f32>::QuietNaN()) == BodyStatus::Invalid);
+    CHECK(Abs(w.controller.Config().height - 1.0f) < 1e-6f);
+    CharacterController none;
+    CHECK(none.SetHeight(&w.world, 1.0f) == BodyStatus::StaleId);
+}
+
+TEST_CASE("Character: SetHeight refuses to stand up into a ceiling", "[physics][character]")
+{
+    CharacterConfig config;
+    config.height = 1.0f;
+    Walker w(Vec3(0, 0.5f, 0), config);
+    ChFloor(w.world);
+    ChStatic(w.world, Vec3(0, 1.5f, 0), Vec3(20, 0.1f, 20));  // the underside is at 1.4
+    w.Run(Vec3(0, 0, 0), 20);
+    const Vec3 before = w.Position();
+    CHECK(w.controller.SetHeight(&w.world, 1.8f) == BodyStatus::Invalid);
+    CHECK(Abs(w.controller.Config().height - 1.0f) < 1e-6f);
+    CHECK(w.world.Find(w.controller.BodyHandle()) != nullptr);
+    CHECK(Abs(w.Position().y - before.y) < 1e-6f);
+    CHECK(w.controller.SetHeight(&w.world, 1.2f) == BodyStatus::Ok);  // 1.2 fits under 1.4
 }

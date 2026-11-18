@@ -2314,18 +2314,19 @@ script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptrunti
 script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:279
 script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:283
 script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:287
-script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:291
-script::ScriptRuntime::Kinds()	function	script	script-scriptruntime-kinds	script.md	engine/script/script_runtime.h:296
-script::ScriptRuntime::RecentErrors() const	function	script	script-scriptruntime-recenterrors-const	script.md	engine/script/script_runtime.h:302
-script::ScriptRuntime::AttachDebugger(DebugTransport*)	function	script	script-scriptruntime-attachdebugger-debugtransport-star	script.md	engine/script/script_runtime.h:312
-script::ScriptRuntime::DetachDebugger()	function	script	script-scriptruntime-detachdebugger	script.md	engine/script/script_runtime.h:317
-script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script	script-scriptruntime-consolerun-u32-stringview-consoleresult-star	script.md	engine/script/script_runtime.h:330
-script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:339
-script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:348
-script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:354
-script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:363
-script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:375
-script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:388
+script::ScriptRuntime::HasHandler(u64,StringView) const	function	script	script-scriptruntime-hashandler-u64-stringview-const	script.md	engine/script/script_runtime.h:298
+script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:302
+script::ScriptRuntime::Kinds()	function	script	script-scriptruntime-kinds	script.md	engine/script/script_runtime.h:307
+script::ScriptRuntime::RecentErrors() const	function	script	script-scriptruntime-recenterrors-const	script.md	engine/script/script_runtime.h:313
+script::ScriptRuntime::AttachDebugger(DebugTransport*)	function	script	script-scriptruntime-attachdebugger-debugtransport-star	script.md	engine/script/script_runtime.h:323
+script::ScriptRuntime::DetachDebugger()	function	script	script-scriptruntime-detachdebugger	script.md	engine/script/script_runtime.h:328
+script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script	script-scriptruntime-consolerun-u32-stringview-consoleresult-star	script.md	engine/script/script_runtime.h:341
+script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:350
+script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:359
+script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:365
+script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:374
+script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:386
+script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:399
 script::OnScriptError	enum	script	script-onscripterror	script.md	engine/script/script_settings.h:16
 script::OnScriptError::Disable	enumerator	script	script-onscripterror-disable	script.md	engine/script/script_settings.h:19
 script::OnScriptError::Retry	enumerator	script	script-onscripterror-retry	script.md	engine/script/script_settings.h:21
@@ -2602,28 +2603,65 @@ script::Value::Depth() const	function	script	script-value-depth-const	script.md	
 script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:245
 script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:250
 script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:253
-script_physics::PhysicsCommandKind	enum	script_physics	script-physics-physicscommandkind	script_physics.md	engine/script_physics/physics_bindings.h:36
-script_physics::kCommandPhysicsForce	enumerator	script_physics	script-physics-kcommandphysicsforce	script_physics.md	engine/script_physics/physics_bindings.h:38
-script_physics::kCommandPhysicsImpulse	enumerator	script_physics	script-physics-kcommandphysicsimpulse	script_physics.md	engine/script_physics/physics_bindings.h:39
-script_physics::kCommandPhysicsTorque	enumerator	script_physics	script-physics-kcommandphysicstorque	script_physics.md	engine/script_physics/physics_bindings.h:40
-script_physics::kCommandPhysicsSetLinear	enumerator	script_physics	script-physics-kcommandphysicssetlinear	script_physics.md	engine/script_physics/physics_bindings.h:41
-script_physics::kCommandPhysicsSetAngular	enumerator	script_physics	script-physics-kcommandphysicssetangular	script_physics.md	engine/script_physics/physics_bindings.h:42
-script_physics::kCommandPhysicsGravityScale	enumerator	script_physics	script-physics-kcommandphysicsgravityscale	script_physics.md	engine/script_physics/physics_bindings.h:43
-script_physics::kCommandPhysicsWake	enumerator	script_physics	script-physics-kcommandphysicswake	script_physics.md	engine/script_physics/physics_bindings.h:44
-script_physics::kCommandPhysicsSleep	enumerator	script_physics	script-physics-kcommandphysicssleep	script_physics.md	engine/script_physics/physics_bindings.h:45
-script_physics::kCommandPhysicsAddJoint	enumerator	script_physics	script-physics-kcommandphysicsaddjoint	script_physics.md	engine/script_physics/physics_bindings.h:46
-script_physics::kCommandPhysicsRemoveJoint	enumerator	script_physics	script-physics-kcommandphysicsremovejoint	script_physics.md	engine/script_physics/physics_bindings.h:47
-script_physics::PhysicsComponentId	enum	script_physics	script-physics-physicscomponentid	script_physics.md	engine/script_physics/physics_bindings.h:53
-script_physics::kRigidBodyId	enumerator	script_physics	script-physics-krigidbodyid	script_physics.md	engine/script_physics/physics_bindings.h:55
-script_physics::kVelocityId	enumerator	script_physics	script-physics-kvelocityid	script_physics.md	engine/script_physics/physics_bindings.h:56
-script_physics::kColliderId	enumerator	script_physics	script-physics-kcolliderid	script_physics.md	engine/script_physics/physics_bindings.h:57
-script_physics::PhysicsScriptServices	struct	script_physics	script-physics-physicsscriptservices	script_physics.md	engine/script_physics/physics_bindings.h:65
-script_physics::PhysicsScriptServices::world	variable	script_physics	script-physics-physicsscriptservices-world	script_physics.md	engine/script_physics/physics_bindings.h:68
-script_physics::PhysicsScriptServices::layers	variable	script_physics	script-physics-physicsscriptservices-layers	script_physics.md	engine/script_physics/physics_bindings.h:70
-script_physics::RegisterPhysicsComponents(storage::ComponentRegistry*)	function	script_physics	script-physics-registerphysicscomponents-storage-componentregistry-star	script_physics.md	engine/script_physics/physics_bindings.h:82
-script_physics::RegisterPhysicsValidators(script::ComponentCatalog*)	function	script_physics	script-physics-registerphysicsvalidators-script-componentcatalog-star	script_physics.md	engine/script_physics/physics_bindings.h:90
-script_physics::RegisterPhysicsCommandKinds(script::CommandKindTable*)	function	script_physics	script-physics-registerphysicscommandkinds-script-commandkindtable-star	script_physics.md	engine/script_physics/physics_bindings.h:98
-script_physics::RegisterPhysicsBindings(script::BindingRegistry*)	function	script_physics	script-physics-registerphysicsbindings-script-bindingregistry-star	script_physics.md	engine/script_physics/physics_bindings.h:110
+script_physics::CharacterSet	class	script_physics	script-physics-characterset	script_physics.md	engine/script_physics/character_set.h:28
+script_physics::CharacterSet::CharacterSet(physics::PhysicsWorld*)	function	script_physics	script-physics-characterset-characterset-physics-physicsworld-star	script_physics.md	engine/script_physics/character_set.h:35
+script_physics::CharacterSet::~CharacterSet()	function	script_physics	script-physics-characterset-tilde-characterset	script_physics.md	engine/script_physics/character_set.h:37
+script_physics::CharacterSet::CharacterSet(const CharacterSet&)	function	script_physics	script-physics-characterset-characterset-const-characterset-amp	script_physics.md	engine/script_physics/character_set.h:39
+script_physics::CharacterSet::operator=(const CharacterSet&)	function	script_physics	script-physics-characterset-operator-eq-const-characterset-amp	script_physics.md	engine/script_physics/character_set.h:40
+script_physics::CharacterSet::Add(ecs::Entity,const physics::CharacterConfig&,const Vec3&)	function	script_physics	script-physics-characterset-add-ecs-entity-const-physics-characterconfig-amp-const-vec3-amp	script_physics.md	engine/script_physics/character_set.h:50
+script_physics::CharacterSet::Remove(ecs::Entity)	function	script_physics	script-physics-characterset-remove-ecs-entity	script_physics.md	engine/script_physics/character_set.h:57
+script_physics::CharacterSet::Prune(const ecs::World&)	function	script_physics	script-physics-characterset-prune-const-ecs-world-amp	script_physics.md	engine/script_physics/character_set.h:64
+script_physics::CharacterSet::SetMove(ecs::Entity,const Vec3&)	function	script_physics	script-physics-characterset-setmove-ecs-entity-const-vec3-amp	script_physics.md	engine/script_physics/character_set.h:72
+script_physics::CharacterSet::Jump(ecs::Entity,f32)	function	script_physics	script-physics-characterset-jump-ecs-entity-f32	script_physics.md	engine/script_physics/character_set.h:80
+script_physics::CharacterSet::SetHeight(ecs::Entity,f32)	function	script_physics	script-physics-characterset-setheight-ecs-entity-f32	script_physics.md	engine/script_physics/character_set.h:89
+script_physics::CharacterSet::Find(ecs::Entity) const	function	script_physics	script-physics-characterset-find-ecs-entity-const	script_physics.md	engine/script_physics/character_set.h:97
+script_physics::CharacterSet::Wish(ecs::Entity,Vec3*) const	function	script_physics	script-physics-characterset-wish-ecs-entity-vec3-star-const	script_physics.md	engine/script_physics/character_set.h:106
+script_physics::CharacterSet::EntityOfBody(physics::BodyId) const	function	script_physics	script-physics-characterset-entityofbody-physics-bodyid-const	script_physics.md	engine/script_physics/character_set.h:114
+script_physics::CharacterSet::Count() const	function	script_physics	script-physics-characterset-count-const	script_physics.md	engine/script_physics/character_set.h:119
+script_physics::CharacterSet::WriteBack(ecs::World&) const	function	script_physics	script-physics-characterset-writeback-ecs-world-amp-const	script_physics.md	engine/script_physics/character_set.h:128
+script_physics::PhysicsCommandKind	enum	script_physics	script-physics-physicscommandkind	script_physics.md	engine/script_physics/physics_bindings.h:40
+script_physics::kCommandPhysicsForce	enumerator	script_physics	script-physics-kcommandphysicsforce	script_physics.md	engine/script_physics/physics_bindings.h:42
+script_physics::kCommandPhysicsImpulse	enumerator	script_physics	script-physics-kcommandphysicsimpulse	script_physics.md	engine/script_physics/physics_bindings.h:43
+script_physics::kCommandPhysicsTorque	enumerator	script_physics	script-physics-kcommandphysicstorque	script_physics.md	engine/script_physics/physics_bindings.h:44
+script_physics::kCommandPhysicsSetLinear	enumerator	script_physics	script-physics-kcommandphysicssetlinear	script_physics.md	engine/script_physics/physics_bindings.h:45
+script_physics::kCommandPhysicsSetAngular	enumerator	script_physics	script-physics-kcommandphysicssetangular	script_physics.md	engine/script_physics/physics_bindings.h:46
+script_physics::kCommandPhysicsGravityScale	enumerator	script_physics	script-physics-kcommandphysicsgravityscale	script_physics.md	engine/script_physics/physics_bindings.h:47
+script_physics::kCommandPhysicsWake	enumerator	script_physics	script-physics-kcommandphysicswake	script_physics.md	engine/script_physics/physics_bindings.h:48
+script_physics::kCommandPhysicsSleep	enumerator	script_physics	script-physics-kcommandphysicssleep	script_physics.md	engine/script_physics/physics_bindings.h:49
+script_physics::kCommandPhysicsAddJoint	enumerator	script_physics	script-physics-kcommandphysicsaddjoint	script_physics.md	engine/script_physics/physics_bindings.h:50
+script_physics::kCommandPhysicsRemoveJoint	enumerator	script_physics	script-physics-kcommandphysicsremovejoint	script_physics.md	engine/script_physics/physics_bindings.h:51
+script_physics::kCommandCharacterCreate	enumerator	script_physics	script-physics-kcommandcharactercreate	script_physics.md	engine/script_physics/physics_bindings.h:52
+script_physics::kCommandCharacterDestroy	enumerator	script_physics	script-physics-kcommandcharacterdestroy	script_physics.md	engine/script_physics/physics_bindings.h:53
+script_physics::kCommandCharacterMove	enumerator	script_physics	script-physics-kcommandcharactermove	script_physics.md	engine/script_physics/physics_bindings.h:54
+script_physics::kCommandCharacterJump	enumerator	script_physics	script-physics-kcommandcharacterjump	script_physics.md	engine/script_physics/physics_bindings.h:55
+script_physics::kCommandCharacterHeight	enumerator	script_physics	script-physics-kcommandcharacterheight	script_physics.md	engine/script_physics/physics_bindings.h:56
+script_physics::PhysicsComponentId	enum	script_physics	script-physics-physicscomponentid	script_physics.md	engine/script_physics/physics_bindings.h:62
+script_physics::kRigidBodyId	enumerator	script_physics	script-physics-krigidbodyid	script_physics.md	engine/script_physics/physics_bindings.h:64
+script_physics::kVelocityId	enumerator	script_physics	script-physics-kvelocityid	script_physics.md	engine/script_physics/physics_bindings.h:65
+script_physics::kColliderId	enumerator	script_physics	script-physics-kcolliderid	script_physics.md	engine/script_physics/physics_bindings.h:66
+script_physics::PhysicsScriptServices	struct	script_physics	script-physics-physicsscriptservices	script_physics.md	engine/script_physics/physics_bindings.h:74
+script_physics::PhysicsScriptServices::world	variable	script_physics	script-physics-physicsscriptservices-world	script_physics.md	engine/script_physics/physics_bindings.h:77
+script_physics::PhysicsScriptServices::layers	variable	script_physics	script-physics-physicsscriptservices-layers	script_physics.md	engine/script_physics/physics_bindings.h:79
+script_physics::PhysicsScriptServices::characters	variable	script_physics	script-physics-physicsscriptservices-characters	script_physics.md	engine/script_physics/physics_bindings.h:82
+script_physics::RegisterPhysicsComponents(storage::ComponentRegistry*)	function	script_physics	script-physics-registerphysicscomponents-storage-componentregistry-star	script_physics.md	engine/script_physics/physics_bindings.h:94
+script_physics::RegisterPhysicsValidators(script::ComponentCatalog*)	function	script_physics	script-physics-registerphysicsvalidators-script-componentcatalog-star	script_physics.md	engine/script_physics/physics_bindings.h:102
+script_physics::RegisterPhysicsCommandKinds(script::CommandKindTable*)	function	script_physics	script-physics-registerphysicscommandkinds-script-commandkindtable-star	script_physics.md	engine/script_physics/physics_bindings.h:110
+script_physics::RegisterPhysicsBindings(script::BindingRegistry*)	function	script_physics	script-physics-registerphysicsbindings-script-bindingregistry-star	script_physics.md	engine/script_physics/physics_bindings.h:125
+script_physics::PhysicsEventOptions	struct	script_physics	script-physics-physicseventoptions	script_physics.md	engine/script_physics/physics_events.h:22
+script_physics::PhysicsEventOptions::contacts	variable	script_physics	script-physics-physicseventoptions-contacts	script_physics.md	engine/script_physics/physics_events.h:26
+script_physics::PhysicsEventOptions::triggers	variable	script_physics	script-physics-physicseventoptions-triggers	script_physics.md	engine/script_physics/physics_events.h:28
+script_physics::PhysicsEventOptions::layer_mask	variable	script_physics	script-physics-physicseventoptions-layer-mask	script_physics.md	engine/script_physics/physics_events.h:31
+script_physics::PhysicsEventOptions::characters	variable	script_physics	script-physics-physicseventoptions-characters	script_physics.md	engine/script_physics/physics_events.h:34
+script_physics::PhysicsEventReport	struct	script_physics	script-physics-physicseventreport	script_physics.md	engine/script_physics/physics_events.h:40
+script_physics::PhysicsEventReport::emitted	variable	script_physics	script-physics-physicseventreport-emitted	script_physics.md	engine/script_physics/physics_events.h:43
+script_physics::PhysicsEventReport::unhandled	variable	script_physics	script-physics-physicseventreport-unhandled	script_physics.md	engine/script_physics/physics_events.h:45
+script_physics::PhysicsEventReport::filtered	variable	script_physics	script-physics-physicseventreport-filtered	script_physics.md	engine/script_physics/physics_events.h:47
+script_physics::EmitPhysicsEvents(const physics::PhysicsWorld&,script::ScriptRuntime*,const PhysicsEventOptions&)	function	script_physics	script-physics-emitphysicsevents-const-physics-physicsworld-amp-script-scriptruntime-star-const-physicseventoptions-amp	script_physics.md	engine/script_physics/physics_events.h:69
+script_physics::kEventCollisionBegin	variable	script_physics	script-physics-keventcollisionbegin	script_physics.md	engine/script_physics/physics_events.h:73
+script_physics::kEventCollisionStay	variable	script_physics	script-physics-keventcollisionstay	script_physics.md	engine/script_physics/physics_events.h:74
+script_physics::kEventCollisionEnd	variable	script_physics	script-physics-keventcollisionend	script_physics.md	engine/script_physics/physics_events.h:75
+script_physics::kEventTriggerEnter	variable	script_physics	script-physics-keventtriggerenter	script_physics.md	engine/script_physics/physics_events.h:76
+script_physics::kEventTriggerExit	variable	script_physics	script-physics-keventtriggerexit	script_physics.md	engine/script_physics/physics_events.h:77
 script_physics::kMaxPhysicsLayers	variable	script_physics	script-physics-kmaxphysicslayers	script_physics.md	engine/script_physics/physics_layers.h:18
 script_physics::PhysicsLayers	class	script_physics	script-physics-physicslayers	script_physics.md	engine/script_physics/physics_layers.h:24
 script_physics::PhysicsLayers::Parse(StringView,String<HeapAllocator>*)	function	script_physics	script-physics-physicslayers-parse-stringview-string-lt-heapallocator-gt-star	script_physics.md	engine/script_physics/physics_layers.h:35
@@ -4625,12 +4663,14 @@ physics::CharacterState::ground_normal	variable	physics	physics-characterstate-g
 physics::CharacterState::vertical_speed	variable	physics	physics-characterstate-vertical-speed	physics.md	engine/physics/character.h:61
 physics::CharacterController	class	physics	physics-charactercontroller	physics.md	engine/physics/character.h:73
 physics::CharacterController::Create(PhysicsWorld*,const CharacterConfig&,const Vec3&)	function	physics	physics-charactercontroller-create-physicsworld-star-const-characterconfig-amp-const-vec3-amp	physics.md	engine/physics/character.h:85
-physics::CharacterController::Destroy(PhysicsWorld*)	function	physics	physics-charactercontroller-destroy-physicsworld-star	physics.md	engine/physics/character.h:92
-physics::CharacterController::Stop(PhysicsWorld*)	function	physics	physics-charactercontroller-stop-physicsworld-star	physics.md	engine/physics/character.h:100
-physics::CharacterController::Move(PhysicsWorld*,const Vec3&,f32)	function	physics	physics-charactercontroller-move-physicsworld-star-const-vec3-amp-f32	physics.md	engine/physics/character.h:111
-physics::CharacterController::Jump(f32)	function	physics	physics-charactercontroller-jump-f32	physics.md	engine/physics/character.h:117
-physics::CharacterController::BodyHandle() const	function	physics	physics-charactercontroller-bodyhandle-const	physics.md	engine/physics/character.h:123
-physics::CharacterController::State() const	function	physics	physics-charactercontroller-state-const	physics.md	engine/physics/character.h:129
+physics::CharacterController::SetHeight(PhysicsWorld*,f32)	function	physics	physics-charactercontroller-setheight-physicsworld-star-f32	physics.md	engine/physics/character.h:98
+physics::CharacterController::Config() const	function	physics	physics-charactercontroller-config-const	physics.md	engine/physics/character.h:104
+physics::CharacterController::Destroy(PhysicsWorld*)	function	physics	physics-charactercontroller-destroy-physicsworld-star	physics.md	engine/physics/character.h:111
+physics::CharacterController::Stop(PhysicsWorld*)	function	physics	physics-charactercontroller-stop-physicsworld-star	physics.md	engine/physics/character.h:119
+physics::CharacterController::Move(PhysicsWorld*,const Vec3&,f32)	function	physics	physics-charactercontroller-move-physicsworld-star-const-vec3-amp-f32	physics.md	engine/physics/character.h:130
+physics::CharacterController::Jump(f32)	function	physics	physics-charactercontroller-jump-f32	physics.md	engine/physics/character.h:136
+physics::CharacterController::BodyHandle() const	function	physics	physics-charactercontroller-bodyhandle-const	physics.md	engine/physics/character.h:142
+physics::CharacterController::State() const	function	physics	physics-charactercontroller-state-const	physics.md	engine/physics/character.h:148
 physics::FiniteVec3(const Vec3&)	function	physics	physics-finitevec3-const-vec3-amp	physics.md	engine/physics/check.h:15
 physics::kMaxCoordinate	variable	physics	physics-kmaxcoordinate	physics.md	engine/physics/check.h:22
 physics::kMaxExtent	variable	physics	physics-kmaxextent	physics.md	engine/physics/check.h:26
@@ -5302,28 +5342,30 @@ physics::PhysicsWorld::Stats() const	function	physics	physics-physicsworld-stats
 physics::PhysicsWorld::SetStepConfig(const StepConfig&)	function	physics	physics-physicsworld-setstepconfig-const-stepconfig-amp	physics.md	engine/physics/world.h:584
 physics::PhysicsWorld::GetStepConfig() const	function	physics	physics-physicsworld-getstepconfig-const	physics.md	engine/physics/world.h:590
 physics::PhysicsWorld::Update(f32)	function	physics	physics-physicsworld-update-f32	physics.md	engine/physics/world.h:601
-physics::PhysicsWorld::Step()	function	physics	physics-physicsworld-step	physics.md	engine/physics/world.h:610
-physics::PhysicsWorld::Alpha() const	function	physics	physics-physicsworld-alpha-const	physics.md	engine/physics/world.h:616
-physics::PhysicsWorld::Interpolated(BodyId,f32,Vec3*,Quaternion*) const	function	physics	physics-physicsworld-interpolated-bodyid-f32-vec3-star-quaternion-star-const	physics.md	engine/physics/world.h:631
-physics::PhysicsWorld::SetScheduler(jobs::Scheduler*)	function	physics	physics-physicsworld-setscheduler-jobs-scheduler-star	physics.md	engine/physics/world.h:641
-physics::PhysicsWorld::IsSleeping(BodyId) const	function	physics	physics-physicsworld-issleeping-bodyid-const	physics.md	engine/physics/world.h:647
-physics::PhysicsWorld::IslandOf(BodyId,u32*) const	function	physics	physics-physicsworld-islandof-bodyid-u32-star-const	physics.md	engine/physics/world.h:661
-physics::PhysicsWorld::Wake(BodyId)	function	physics	physics-physicsworld-wake-bodyid	physics.md	engine/physics/world.h:667
-physics::PhysicsWorld::Sleep(BodyId)	function	physics	physics-physicsworld-sleep-bodyid	physics.md	engine/physics/world.h:676
-physics::PhysicsWorld::GetStepStats() const	function	physics	physics-physicsworld-getstepstats-const	physics.md	engine/physics/world.h:682
-physics::PhysicsWorld::Snapshot(bytes::ByteWriter*) const	function	physics	physics-physicsworld-snapshot-bytes-bytewriter-star-const	physics.md	engine/physics/world.h:694
-physics::PhysicsWorld::Restore(ByteSpan)	function	physics	physics-physicsworld-restore-bytespan	physics.md	engine/physics/world.h:708
-physics::PhysicsWorld::AllStats() const	function	physics	physics-physicsworld-allstats-const	physics.md	engine/physics/world.h:714
-physics::PhysicsWorld::Events() const	function	physics	physics-physicsworld-events-const	physics.md	engine/physics/world.h:723
-physics::PhysicsWorld::ClearEvents()	function	physics	physics-physicsworld-clearevents	physics.md	engine/physics/world.h:729
-physics::PhysicsWorld::Contacts() const	function	physics	physics-physicsworld-contacts-const	physics.md	engine/physics/world.h:737
-physics::PhysicsWorld::StateHash(bool*) const	function	physics	physics-physicsworld-statehash-bool-star-const	physics.md	engine/physics/world.h:749
-physics::PhysicsWorld::Hulls()	function	physics	physics-physicsworld-hulls	physics.md	engine/physics/world.h:757
-physics::PhysicsWorld::Meshes()	function	physics	physics-physicsworld-meshes	physics.md	engine/physics/world.h:765
-physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-meshes-const	physics.md	engine/physics/world.h:772
-physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:780
-physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:787
-physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:794
+physics::PhysicsWorld::PreStepHook	alias	physics	physics-physicsworld-prestephook	physics.md	engine/physics/world.h:605
+physics::PhysicsWorld::SetPreStepHook(PreStepHook,void*)	function	physics	physics-physicsworld-setprestephook-prestephook-void-star	physics.md	engine/physics/world.h:615
+physics::PhysicsWorld::Step()	function	physics	physics-physicsworld-step	physics.md	engine/physics/world.h:628
+physics::PhysicsWorld::Alpha() const	function	physics	physics-physicsworld-alpha-const	physics.md	engine/physics/world.h:634
+physics::PhysicsWorld::Interpolated(BodyId,f32,Vec3*,Quaternion*) const	function	physics	physics-physicsworld-interpolated-bodyid-f32-vec3-star-quaternion-star-const	physics.md	engine/physics/world.h:649
+physics::PhysicsWorld::SetScheduler(jobs::Scheduler*)	function	physics	physics-physicsworld-setscheduler-jobs-scheduler-star	physics.md	engine/physics/world.h:659
+physics::PhysicsWorld::IsSleeping(BodyId) const	function	physics	physics-physicsworld-issleeping-bodyid-const	physics.md	engine/physics/world.h:665
+physics::PhysicsWorld::IslandOf(BodyId,u32*) const	function	physics	physics-physicsworld-islandof-bodyid-u32-star-const	physics.md	engine/physics/world.h:679
+physics::PhysicsWorld::Wake(BodyId)	function	physics	physics-physicsworld-wake-bodyid	physics.md	engine/physics/world.h:685
+physics::PhysicsWorld::Sleep(BodyId)	function	physics	physics-physicsworld-sleep-bodyid	physics.md	engine/physics/world.h:694
+physics::PhysicsWorld::GetStepStats() const	function	physics	physics-physicsworld-getstepstats-const	physics.md	engine/physics/world.h:700
+physics::PhysicsWorld::Snapshot(bytes::ByteWriter*) const	function	physics	physics-physicsworld-snapshot-bytes-bytewriter-star-const	physics.md	engine/physics/world.h:712
+physics::PhysicsWorld::Restore(ByteSpan)	function	physics	physics-physicsworld-restore-bytespan	physics.md	engine/physics/world.h:726
+physics::PhysicsWorld::AllStats() const	function	physics	physics-physicsworld-allstats-const	physics.md	engine/physics/world.h:732
+physics::PhysicsWorld::Events() const	function	physics	physics-physicsworld-events-const	physics.md	engine/physics/world.h:741
+physics::PhysicsWorld::ClearEvents()	function	physics	physics-physicsworld-clearevents	physics.md	engine/physics/world.h:747
+physics::PhysicsWorld::Contacts() const	function	physics	physics-physicsworld-contacts-const	physics.md	engine/physics/world.h:755
+physics::PhysicsWorld::StateHash(bool*) const	function	physics	physics-physicsworld-statehash-bool-star-const	physics.md	engine/physics/world.h:767
+physics::PhysicsWorld::Hulls()	function	physics	physics-physicsworld-hulls	physics.md	engine/physics/world.h:775
+physics::PhysicsWorld::Meshes()	function	physics	physics-physicsworld-meshes	physics.md	engine/physics/world.h:783
+physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-meshes-const	physics.md	engine/physics/world.h:790
+physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:798
+physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:805
+physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:812
 audio::MakeClipFromAsset(const asset::AudioClipView&,StringView,AudioClipPtr*)	function	audio	audio-makeclipfromasset-const-asset-audioclipview-amp-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:25
 audio::LoadAudioClip(asset::ResourceManager&,asset::ResourceId,StringView,AudioClipPtr*)	function	audio	audio-loadaudioclip-asset-resourcemanager-amp-asset-resourceid-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:39
 audio::ResamplerQuality	enum	audio	audio-resamplerquality	audio.md	engine/audio/audio_settings.h:12

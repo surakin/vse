@@ -600,6 +600,24 @@ public:
     /// - Fails: a time that is not finite or is negative runs no step.
     u32 Update(f32 real_seconds);
 
+    /// A function the world calls at the start of every fixed step, before gravity and the solver, with the step's
+    /// length: a program's own per-step work (the character controllers' moves).
+    using PreStepHook = void (*)(void* user, PhysicsWorld* world, f32 dt);
+
+    /// Sets (or, with a null `hook`, removes) the function called at the start of every fixed step, whether `Update` or
+    /// `Step` runs it. The hook may move and change bodies; it must not step the world or destroy the hook. It is not
+    /// part of a snapshot: a restored world has none.
+    ///
+    /// - Param hook: the function, or null.
+    /// - Param user: passed to it; borrowed, it must outlive the hook.
+    /// - Ownership: nothing is kept but the two pointers.
+    /// - Fails: never.
+    void SetPreStepHook(PreStepHook hook, void* user)
+    {
+        pre_step_ = hook;
+        pre_step_user_ = user;
+    }
+
     /// Runs one fixed step now, whatever the accumulator holds.
     ///
     /// Forces and gravity change the velocities, damping slows them, then the positions and orientations move by
@@ -863,6 +881,8 @@ private:
     Vector<ContactRecord> contacts_;
     Vector<TriggerEvent> triggers_touching_;
     bool keep_events_ = false;
+    PreStepHook pre_step_ = nullptr;
+    void* pre_step_user_ = nullptr;
     void UpdateContactEvents(const Vector<ContactInput>& inputs, const Vector<ColliderPair>& carried);
     void UpdateTriggerEvents(const Vector<ColliderPair>& pairs);
     void DropEventsOf(BodyId id);

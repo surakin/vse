@@ -2,9 +2,11 @@
 
 #include "containers/hash_map.h"
 #include "cstr/mem_ops.h"
+#include "ecs/transform.h"
 #include "ecs/world.h"
 #include "lang/scalar.h"
 #include "physics/components.h"
+#include "physics/character.h"
 #include "physics/joint_sync.h"
 #include "physics/query.h"
 #include "physics/sync.h"
@@ -753,6 +755,208 @@ Value PhysicsClosestPoint(Vec3 point, f32 max_distance, Value layers)
     return HitValue(*services->world, hit);
 }
 
+// ------------------------------------------------------------------ characters
+
+struct CharacterPayload
+{
+    f32 radius;
+    f32 height;
+    f32 step_height;
+    f32 min_ground_y;
+    f32 skin_width;
+    f32 gravity_scale;
+};
+
+// The characters of the host, or null with a script error.
+CharacterSet* NeedCharacters(const PhysicsScriptServices* services)
+{
+    if (services->characters == nullptr)
+    {
+        script::RaiseScriptError("this world has no characters");
+        return nullptr;
+    }
+    return services->characters;
+}
+
+// The character of an entity as of the tick start; raises when there is none.
+const physics::CharacterController* CharacterOf(PartitionContext* context, ecs::Entity e)
+{
+    const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
+    const CharacterSet* characters = services != nullptr ? NeedCharacters(services) : nullptr;
+    if (characters == nullptr)
+    {
+        return nullptr;
+    }
+    const physics::CharacterController* controller = characters->Find(e);
+    if (controller == nullptr)
+    {
+        script::RaiseScriptError("the entity has no character (`character.create` makes one)");
+    }
+    return controller;
+}
+
+bool CharacterConfigValid(const physics::CharacterConfig& c)
+{
+    return IsFinite(c.radius) && IsFinite(c.height) && IsFinite(c.step_height) && IsFinite(c.min_ground_y) &&
+           IsFinite(c.skin_width) && IsFinite(c.gravity_scale) && c.radius > 0.0f && c.height >= 2.0f * c.radius &&
+           c.step_height >= 0.0f && c.skin_width >= 1e-4f && c.min_ground_y >= 0.0f && c.min_ground_y <= 1.0f;
+}
+
+void CharacterCreate(ecs::Entity e, Value desc)
+{
+    PartitionContext* context = Context();
+    const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
+    const CharacterSet* characters = services != nullptr ? NeedCharacters(services) : nullptr;
+    if (characters == nullptr)
+    {
+        return;
+    }
+    if (!desc.IsNil() && desc.Kind() != ValueKind::Map)
+    {
+        script::RaiseScriptError("the character is described by a table (or nil for the defaults)");
+        return;
+    }
+    if (e.IsPlaceholder() || !context->world->Has<ecs::LocalTransform>(e))
+    {
+        script::RaiseScriptError("the entity needs a transform to hold a character");
+        return;
+    }
+    if (characters->Find(e) != nullptr)
+    {
+        script::RaiseScriptError("the entity already has a character");
+        return;
+    }
+    physics::CharacterConfig config;
+    if (!desc.IsNil() && (!ReadNumber(desc, "character", "radius", &config.radius) ||
+                          !ReadNumber(desc, "character", "height", &config.height) ||
+                          !ReadNumber(desc, "character", "step_height", &config.step_height) ||
+                          !ReadNumber(desc, "character", "min_ground_y", &config.min_ground_y) ||
+                          !ReadNumber(desc, "character", "skin_width", &config.skin_width) ||
+                          !ReadNumber(desc, "character", "gravity_scale", &config.gravity_scale)))
+    {
+        return;
+    }
+    if (!CharacterConfigValid(config))
+    {
+        script::RaiseScriptError("the character's sizes are not valid (radius above zero, height at least twice the "
+                                 "radius, skin_width at least 0.0001, min_ground_y from 0 to 1)");
+        return;
+    }
+    const CharacterPayload payload{config.radius,       config.height,     config.step_height,
+                                   config.min_ground_y, config.skin_width, config.gravity_scale};
+    Record(context, kCommandCharacterCreate, e, &payload, sizeof(payload));
+}
+
+void CharacterDestroy(ecs::Entity e)
+{
+    PartitionContext* context = Context();
+    if (context != nullptr && CharacterOf(context, e) != nullptr)
+    {
+        Record(context, kCommandCharacterDestroy, e, nullptr, 0);
+    }
+}
+
+void CharacterMove(ecs::Entity e, Vec3 velocity)
+{
+    PartitionContext* context = Context();
+    if (context == nullptr || CharacterOf(context, e) == nullptr)
+    {
+        return;
+    }
+    if (!Finite3(velocity))
+    {
+        script::RaiseScriptError("the velocity must be finite");
+        return;
+    }
+    const VectorPayload payload = MakeVector(velocity, nullptr);
+    Record(context, kCommandCharacterMove, e, &payload, sizeof(payload));
+}
+
+void CharacterScalar(u16 kind, ecs::Entity e, f32 value, const char* what)
+{
+    PartitionContext* context = Context();
+    if (context == nullptr || CharacterOf(context, e) == nullptr)
+    {
+        return;
+    }
+    if (!IsFinite(value))
+    {
+        Raise("the ", StringView(what), " must be finite");
+        return;
+    }
+    const ScalarPayload payload{value};
+    Record(context, kind, e, &payload, sizeof(payload));
+}
+
+void CharacterJump(ecs::Entity e, f32 speed)
+{
+    CharacterScalar(kCommandCharacterJump, e, speed, "jump speed");
+}
+
+void CharacterSetHeight(ecs::Entity e, f32 height)
+{
+    PartitionContext* context = Context();
+    const physics::CharacterController* controller = context != nullptr ? CharacterOf(context, e) : nullptr;
+    if (controller == nullptr)
+    {
+        return;
+    }
+    if (!IsFinite(height) || !(height >= 2.0f * controller->Config().radius))
+    {
+        script::RaiseScriptError("the height must be finite and at least twice the character's radius");
+        return;
+    }
+    const ScalarPayload payload{height};
+    Record(context, kCommandCharacterHeight, e, &payload, sizeof(payload));
+}
+
+bool CharacterExists(ecs::Entity e)
+{
+    PartitionContext* context = Context();
+    const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
+    return services != nullptr && services->characters != nullptr && services->characters->Find(e) != nullptr;
+}
+
+bool CharacterIsGrounded(ecs::Entity e)
+{
+    PartitionContext* context = Context();
+    const physics::CharacterController* controller = context != nullptr ? CharacterOf(context, e) : nullptr;
+    return controller != nullptr && controller->State().on_ground;
+}
+
+Value CharacterGroundNormal(ecs::Entity e)
+{
+    PartitionContext* context = Context();
+    const physics::CharacterController* controller = context != nullptr ? CharacterOf(context, e) : nullptr;
+    if (controller == nullptr || !controller->State().on_ground)
+    {
+        return Value();
+    }
+    return Value::FromVec3(controller->State().ground_normal);
+}
+
+// The velocity of the body the character stands on (a moving platform), zero in the air or on a static floor.
+Value CharacterGroundVelocity(ecs::Entity e)
+{
+    PartitionContext* context = Context();
+    const physics::CharacterController* controller = context != nullptr ? CharacterOf(context, e) : nullptr;
+    if (controller == nullptr)
+    {
+        return Value();
+    }
+    const physics::Body* ground = controller->State().on_ground
+                                      ? ServicesOf(*context)->world->Find(controller->State().ground_body)
+                                      : nullptr;
+    return Value::FromVec3(ground != nullptr ? ground->linear_velocity : Vec3(0.0f, 0.0f, 0.0f));
+}
+
+f32 CharacterVerticalSpeed(ecs::Entity e)
+{
+    PartitionContext* context = Context();
+    const physics::CharacterController* controller = context != nullptr ? CharacterOf(context, e) : nullptr;
+    return controller != nullptr ? controller->State().vertical_speed : 0.0f;
+}
+
 // ------------------------------------------------------------------ the merge
 
 physics::PhysicsWorld* WorldOf(MergeContext& context)
@@ -926,6 +1130,78 @@ bool ApplyRemoveJoint(MergeContext& context, ecs::Entity target, Span<const u8>)
            context.World()->Remove<physics::Joint>(target) == ecs::Status::Ok;
 }
 
+// The characters of the merge's host.
+CharacterSet* CharactersOf(MergeContext& context)
+{
+    const script::MergeServices* services = static_cast<const script::MergeServices*>(context.User());
+    if (services == nullptr)
+    {
+        return nullptr;
+    }
+    const PhysicsScriptServices* physics = static_cast<const PhysicsScriptServices*>(
+        services->extensions[script::kServicePhysics]);
+    return physics != nullptr ? physics->characters : nullptr;
+}
+
+bool ApplyCharacterCreate(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    CharacterSet* characters = CharactersOf(context);
+    CharacterPayload p;
+    const ecs::LocalTransform* transform = context.World()->Get<ecs::LocalTransform>(target);
+    if (characters == nullptr || payload.Size() != sizeof(p) || transform == nullptr)
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    physics::CharacterConfig config;
+    config.radius = p.radius;
+    config.height = p.height;
+    config.step_height = p.step_height;
+    config.min_ground_y = p.min_ground_y;
+    config.skin_width = p.skin_width;
+    config.gravity_scale = p.gravity_scale;
+    return characters->Add(target, config, transform->position);
+}
+
+bool ApplyCharacterDestroy(MergeContext& context, ecs::Entity target, Span<const u8>)
+{
+    CharacterSet* characters = CharactersOf(context);
+    return characters != nullptr && characters->Remove(target);
+}
+
+bool ApplyCharacterMove(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    CharacterSet* characters = CharactersOf(context);
+    VectorPayload p;
+    return characters != nullptr && ReadPayload(payload, &p) && characters->SetMove(target, PayloadValue(p));
+}
+
+bool ReadScalar(Span<const u8> payload, f32* out)
+{
+    ScalarPayload p;
+    if (payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    *out = p.value;
+    return true;
+}
+
+bool ApplyCharacterJump(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    CharacterSet* characters = CharactersOf(context);
+    f32 speed = 0.0f;
+    return characters != nullptr && ReadScalar(payload, &speed) && characters->Jump(target, speed);
+}
+
+bool ApplyCharacterHeight(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    CharacterSet* characters = CharactersOf(context);
+    f32 height = 0.0f;
+    return characters != nullptr && ReadScalar(payload, &height) && characters->SetHeight(target, height);
+}
+
 }  // namespace
 
 bool RegisterPhysicsCommandKinds(CommandKindTable* kinds)
@@ -944,6 +1220,13 @@ bool RegisterPhysicsCommandKinds(CommandKindTable* kinds)
     ok &= kinds->Register(kCommandPhysicsAddJoint, CommandKind{"physics.add_joint", &ApplyAddJoint, false, true});
     ok &= kinds->Register(kCommandPhysicsRemoveJoint,
                           CommandKind{"physics.remove_joint", &ApplyRemoveJoint, false, true});
+    ok &= kinds->Register(kCommandCharacterCreate, CommandKind{"character.create", &ApplyCharacterCreate, false, true});
+    ok &= kinds->Register(kCommandCharacterDestroy,
+                          CommandKind{"character.destroy", &ApplyCharacterDestroy, false, true});
+    ok &= kinds->Register(kCommandCharacterMove, CommandKind{"character.move", &ApplyCharacterMove, false, true});
+    ok &= kinds->Register(kCommandCharacterJump, CommandKind{"character.jump", &ApplyCharacterJump, false, true});
+    ok &= kinds->Register(kCommandCharacterHeight,
+                          CommandKind{"character.set_height", &ApplyCharacterHeight, false, true});
     return ok;
 }
 
@@ -1016,6 +1299,33 @@ bool RegisterPhysicsBindings(script::BindingRegistry* registry)
                                               "point, max_distance, layers",
                                               "Returns nil or {entity=, point=, normal=, distance=}: the nearest point "
                                               "on a collider's surface within `max_distance`.");
+    ok &= registry->Add<&CharacterCreate>("character", "create", ThreadRule::WorldWrite, "e, config",
+                                          "Makes a character (a kinematic capsule that walks, slides, climbs steps and "
+                                          "slopes and stands on moving platforms) at the entity's transform: "
+                                          "{radius=, height=, step_height=, min_ground_y=, skin_width=, "
+                                          "gravity_scale=} or nil for the defaults.");
+    ok &= registry->Add<&CharacterDestroy>("character", "destroy", ThreadRule::WorldWrite, "e",
+                                           "Removes the entity's character.");
+    ok &= registry->Add<&CharacterMove>("character", "move", ThreadRule::WorldWrite, "e, velocity",
+                                        "Sets the horizontal velocity the character walks at (the y part is ignored); "
+                                        "it holds until set again. The move runs inside the physics step.");
+    ok &= registry->Add<&CharacterJump>("character", "jump", ThreadRule::WorldWrite, "e, speed",
+                                        "Gives the character an upward speed (m/s) at the start of the next step; "
+                                        "check `is_grounded` first for a jump from the ground only.");
+    ok &= registry->Add<&CharacterSetHeight>("character", "set_height", ThreadRule::WorldWrite, "e, height",
+                                             "Changes the capsule's total height (crouching), feet kept in place.");
+    ok &= registry->Add<&CharacterExists>("character", "exists", ThreadRule::WorldRead, "e",
+                                          "Returns whether the entity has a character.");
+    ok &= registry->Add<&CharacterIsGrounded>("character", "is_grounded", ThreadRule::WorldRead, "e",
+                                              "Returns whether the character stood on ground after the last step.");
+    ok &= registry->Add<&CharacterGroundNormal>("character", "ground_normal", ThreadRule::WorldRead, "e",
+                                                "Returns the ground's unit normal, or nil in the air.");
+    ok &= registry->Add<&CharacterGroundVelocity>("character", "ground_velocity", ThreadRule::WorldRead, "e",
+                                                  "Returns the velocity of the body the character stands on (a moving "
+                                                  "platform), zero on a static floor or in the air.");
+    ok &= registry->Add<&CharacterVerticalSpeed>("character", "vertical_speed", ThreadRule::WorldRead, "e",
+                                                 "Returns the vertical speed the controller keeps (gravity and "
+                                                 "jumps), in m/s.");
     return ok;
 }
 

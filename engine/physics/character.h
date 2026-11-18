@@ -84,6 +84,25 @@ public:
     /// - Fails: as the return says.
     BodyStatus Create(PhysicsWorld* world, const CharacterConfig& config, const Vec3& position);
 
+    /// Changes the capsule's total height (crouching, standing up): the body is made again with the new capsule, its
+    /// feet where they were (the centre moves by half the change), and the ground state and the kept vertical speed
+    /// stay. The body gets a new id.
+    ///
+    /// - Param world: the world the controller was created in.
+    /// - Param height: the new height in metres (at least twice the radius, finite).
+    /// - Returns: `Ok`, `StaleId` before `Create`, `Invalid` for a height that is too small or not finite, or when a
+    /// taller capsule would start inside static or kinematic geometry (a ceiling: the character cannot stand up there);
+    /// the character is unchanged in both cases.
+    /// - Ownership: the controller keeps the new body id.
+    /// - Fails: as the return says.
+    BodyStatus SetHeight(PhysicsWorld* world, f32 height);
+
+    /// Returns the config the character was made with (the height as last set).
+    ///
+    /// - Returns: the config.
+    /// - Fails: never.
+    const CharacterConfig& Config() const { return config_; }
+
     /// Destroys the character's body.
     ///
     /// - Param world: the world the controller was created in.

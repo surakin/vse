@@ -5846,6 +5846,24 @@ The event bus: native code emits and subscribes here; scripts reach it through `
 |---|---|
 | Ownership | borrowed; valid for the runtime's life. |
 
+### `HasHandler(u64,StringView)` {#script-scriptruntime-hashandler-u64-stringview-const}
+
+`method script::ScriptRuntime::HasHandler` — defined in `engine/script/script_runtime.h`
+
+```cpp
+bool HasHandler(u64 entity_key, StringView name) const;
+```
+
+Whether the entity with stable id `entity_key` listens for the event `name` as of the end of the last tick: a handler made with `event.on` or `event.once` in one of its behaviors, or a coroutine parked in `wait_event`. A native emitter asks before it builds a payload, so an event nobody handles costs one lookup. Call it between ticks, not while a tick runs.
+
+| Field | Value |
+|---|---|
+| Parameter `entity_key` | the entity's stable id (`ecs::Entity::ToU64`). |
+| Parameter `name` | the event name. |
+| Returns | true if a handler is subscribed. |
+| Fails | returns false for an entity with no script. |
+| Thread-safety | thread-compatible; not while a tick runs. |
+
 ### `Services()` {#script-scriptruntime-services}
 
 `method script::ScriptRuntime::Services` — defined in `engine/script/script_runtime.h`

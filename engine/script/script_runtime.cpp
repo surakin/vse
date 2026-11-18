@@ -1385,6 +1385,41 @@ CommandKindTable& ScriptRuntime::Kinds()
     return impl_->kinds;
 }
 
+bool ScriptRuntime::HasHandler(u64 entity_key, StringView name) const
+{
+    const Impl& m = *impl_;
+    if (entity_key == 0 || m.partitions.Size() == 0)
+    {
+        return false;
+    }
+    const u32 p = PartitionOf(entity_key, m.config.partitions);
+    if (p >= m.partitions.Size() || m.partitions[p].Get() == nullptr)
+    {
+        return false;
+    }
+    const PartitionData& data = *m.partitions[p];
+    const usize g = LowerBoundGroup(data.groups, name);
+    if (g < data.groups.Size() && data.groups[g].name.View() == name)
+    {
+        const Vector<u64>& keys = data.groups[g].keys;
+        const usize at = LowerBoundKey(keys, entity_key);
+        if (at < keys.Size() && keys[at] == entity_key)
+        {
+            return true;
+        }
+    }
+    // A coroutine parked in `wait_event(name)` is a listener too.
+    for (usize i = 0; i < data.event_waiters.Size(); ++i)
+    {
+        const Waiter& w = data.event_waiters[i];
+        if (w.kind == WaitRequest::Kind::Event && w.key == entity_key && w.event.View() == name)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 const Vector<ScriptErrorRecord>& ScriptRuntime::RecentErrors() const
 {
     return impl_->recent;

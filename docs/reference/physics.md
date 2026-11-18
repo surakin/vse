@@ -658,6 +658,39 @@ Creates the character's body (kinematic, one upright capsule collider) in a worl
 | Fails | as the return says. |
 | Ownership | the controller keeps the world's body id. |
 
+### `SetHeight(PhysicsWorld*,f32)` {#physics-charactercontroller-setheight-physicsworld-star-f32}
+
+`method physics::CharacterController::SetHeight` — defined in `engine/physics/character.h`
+
+```cpp
+BodyStatus SetHeight(PhysicsWorld* world, f32 height);
+```
+
+Changes the capsule's total height (crouching, standing up): the body is made again with the new capsule, its feet where they were (the centre moves by half the change), and the ground state and the kept vertical speed stay. The body gets a new id.
+
+| Field | Value |
+|---|---|
+| Parameter `world` | the world the controller was created in. |
+| Parameter `height` | the new height in metres (at least twice the radius, finite). |
+| Returns | `Ok`, `StaleId` before `Create`, `Invalid` for a height that is too small or not finite, or when a taller capsule would start inside static or kinematic geometry (a ceiling: the character cannot stand up there); the character is unchanged in both cases. |
+| Fails | as the return says. |
+| Ownership | the controller keeps the new body id. |
+
+### `Config()` {#physics-charactercontroller-config-const}
+
+`method physics::CharacterController::Config` — defined in `engine/physics/character.h`
+
+```cpp
+const CharacterConfig& Config() const;
+```
+
+Returns the config the character was made with (the height as last set).
+
+| Field | Value |
+|---|---|
+| Returns | the config. |
+| Fails | never. |
+
 ### `Destroy(PhysicsWorld*)` {#physics-charactercontroller-destroy-physicsworld-star}
 
 `method physics::CharacterController::Destroy` — defined in `engine/physics/character.h`
@@ -8484,6 +8517,33 @@ It runs as many steps as the time holds, at most `max_substeps`, and keeps the r
 | Parameter `real_seconds` | the frame's time, finite and not negative (anything else is ignored). |
 | Returns | the number of steps run. |
 | Fails | a time that is not finite or is negative runs no step. |
+
+### `PreStepHook` {#physics-physicsworld-prestephook}
+
+`alias physics::PhysicsWorld::PreStepHook` — defined in `engine/physics/world.h`
+
+```cpp
+using PreStepHook = void (*)(void* user, PhysicsWorld* world, f32 dt);
+```
+
+A function the world calls at the start of every fixed step, before gravity and the solver, with the step's length: a program's own per-step work (the character controllers' moves).
+
+### `SetPreStepHook(PreStepHook,void*)` {#physics-physicsworld-setprestephook-prestephook-void-star}
+
+`method physics::PhysicsWorld::SetPreStepHook` — defined in `engine/physics/world.h`
+
+```cpp
+void SetPreStepHook(PreStepHook hook, void* user);
+```
+
+Sets (or, with a null `hook`, removes) the function called at the start of every fixed step, whether `Update` or `Step` runs it. The hook may move and change bodies; it must not step the world or destroy the hook. It is not part of a snapshot: a restored world has none.
+
+| Field | Value |
+|---|---|
+| Parameter `hook` | the function, or null. |
+| Parameter `user` | passed to it; borrowed, it must outlive the hook. |
+| Fails | never. |
+| Ownership | nothing is kept but the two pointers. |
 
 ### `Step()` {#physics-physicsworld-step}
 

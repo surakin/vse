@@ -285,6 +285,17 @@ public:
     ///
     /// - Ownership: borrowed; valid for the runtime's life.
     EventBus& Events();
+    /// Whether the entity with stable id `entity_key` listens for the event `name` as of the end of the last tick: a
+    /// handler made with `event.on` or `event.once` in one of its behaviors, or a coroutine parked in `wait_event`. A
+    /// native emitter asks before it builds a payload, so an event nobody handles costs one lookup. Call it between
+    /// ticks, not while a tick runs.
+    ///
+    /// - Param entity_key: the entity's stable id (`ecs::Entity::ToU64`).
+    /// - Param name: the event name.
+    /// - Returns: true if a handler is subscribed.
+    /// - Thread-safety: thread-compatible; not while a tick runs.
+    /// - Fails: returns false for an entity with no script.
+    bool HasHandler(u64 entity_key, StringView name) const;
     /// The merge's services, to fill after construction (prefabs, settings, components).
     ///
     /// - Ownership: borrowed.

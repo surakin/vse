@@ -57,7 +57,7 @@ spatial           ->  foundation (incl. math); from later days ecs, jobs      (P
 physics           ->  foundation (incl. math), spatial, ecs, jobs; storage from Day 406  (Phase 25 Day 386)
 audio             ->  foundation (incl. math, settings), asset (same layer, from Day 418: the minted clip), ecs and spatial (below, from Day 428: the components and the emitter sync); jobs (from Day 435: the stream refills)  (Phase 26 Day 415)
 audio_physics     ->  audio, physics (layer 14: the physics occlusion query)  (Phase 26 Day 431)
-script_physics    ->  script, physics (layer 14: the physics bindings, commands and components of the script module)  (Phase 27 Day 466)
+script_physics    ->  script, physics (layer 14: the physics bindings, commands, components, physics events and the character set of the script module)  (Phase 27 Days 466-467)
 script            ->  foundation (incl. math), ecs, storage (below: the component registry, from Day 456); from later days jobs, settings, asset (same layer)  (Phase 27 Day 446)
 database          ->  foundation                                              (Phase 19 Day 251)
 storage           ->  foundation (incl. bytes), ecs, spatial, jobs, database  (Phase 19 Day 256; database from Day 262)

@@ -4,6 +4,88 @@ Generated from the binding registry by `script_api_doc --write`; do not edit by 
 
 Every function states the thread rule it follows: `pure` (any state, any thread), `world-read` (reads the world as of the tick start), `world-write` (changes the world only through the partition's command buffer) or `main-thread-only` (a partition job that calls it gets a script error). A wrong argument count or type is a script error that names the function and the argument; an entity handle that no longer exists is an error too.
 
+## character
+
+### `character.create`
+
+`(Entity e, Value config) -> void`
+
+Thread rule: **world-write**. Id: `0x8eea5b0e`.
+
+Makes a character (a kinematic capsule that walks, slides, climbs steps and slopes and stands on moving platforms) at the entity's transform: {radius=, height=, step_height=, min_ground_y=, skin_width=, gravity_scale=} or nil for the defaults.
+
+### `character.destroy`
+
+`(Entity e) -> void`
+
+Thread rule: **world-write**. Id: `0x39f040b4`.
+
+Removes the entity's character.
+
+### `character.exists`
+
+`(Entity e) -> bool`
+
+Thread rule: **world-read**. Id: `0x8c08a782`.
+
+Returns whether the entity has a character.
+
+### `character.ground_normal`
+
+`(Entity e) -> Value`
+
+Thread rule: **world-read**. Id: `0x6fbab48d`.
+
+Returns the ground's unit normal, or nil in the air.
+
+### `character.ground_velocity`
+
+`(Entity e) -> Value`
+
+Thread rule: **world-read**. Id: `0xa99d7d4d`.
+
+Returns the velocity of the body the character stands on (a moving platform), zero on a static floor or in the air.
+
+### `character.is_grounded`
+
+`(Entity e) -> bool`
+
+Thread rule: **world-read**. Id: `0x4ccfd9bd`.
+
+Returns whether the character stood on ground after the last step.
+
+### `character.jump`
+
+`(Entity e, f32 speed) -> void`
+
+Thread rule: **world-write**. Id: `0xdfce3c12`.
+
+Gives the character an upward speed (m/s) at the start of the next step; check `is_grounded` first for a jump from the ground only.
+
+### `character.move`
+
+`(Entity e, Vec3 velocity) -> void`
+
+Thread rule: **world-write**. Id: `0xbe094bb7`.
+
+Sets the horizontal velocity the character walks at (the y part is ignored); it holds until set again. The move runs inside the physics step.
+
+### `character.set_height`
+
+`(Entity e, f32 height) -> void`
+
+Thread rule: **world-write**. Id: `0xd33878a0`.
+
+Changes the capsule's total height (crouching), feet kept in place.
+
+### `character.vertical_speed`
+
+`(Entity e) -> f32`
+
+Thread rule: **world-read**. Id: `0x9d3c5038`.
+
+Returns the vertical speed the controller keeps (gravity and jumps), in m/s.
+
 ## component
 
 ### `component.add`

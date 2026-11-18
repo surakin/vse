@@ -194,6 +194,10 @@ void PhysicsWorld::Step()
         ++step_stats_.denormal_mode_steps;
     }
     const f32 dt = static_cast<f32>(1.0 / static_cast<f64>(step_config_.step_hz));
+    if (pre_step_ != nullptr)
+    {
+        pre_step_(pre_step_user_, this, dt);
+    }
     const u32 slots = bodies_.Slots();
     // The previous poses are kept for the interpolation.
     for (u32 slot = 0; slot < slots; ++slot)
