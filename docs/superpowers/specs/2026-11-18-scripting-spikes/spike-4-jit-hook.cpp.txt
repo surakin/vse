@@ -1,0 +1,22 @@
+#include <lua.hpp>
+#include <luajit.h>
+#include <chrono>
+#include <thread>
+#include <atomic>
+#include <cstdio>
+#include <cstdlib>
+using Clock=std::chrono::steady_clock;
+static double Now(){return std::chrono::duration<double>(Clock::now().time_since_epoch()).count();}
+static void Hook(lua_State* L, lua_Debug*){ luaL_error(L,"budget exceeded"); }
+static void Hook1000(lua_State* L, lua_Debug*){ static long c=0; if(++c>(1L<<60)) luaL_error(L,"budget exceeded"); }
+int main(int argc,char**argv){
+  int mode=atoi(argv[1]); const char* src = argc>2? argv[2] : "local s=0 while true do s=s+1 end";
+  lua_State* L=luaL_newstate(); luaL_openlibs(L);
+  if(mode==1){ luaJIT_setmode(L,0,LUAJIT_MODE_ENGINE|LUAJIT_MODE_OFF); lua_sethook(L,Hook1000,LUA_MASKCOUNT,1000); }
+  std::thread wd;
+  if(mode==2){ wd=std::thread([&]{ std::this_thread::sleep_for(std::chrono::milliseconds(300)); lua_sethook(L,Hook,LUA_MASKCOUNT|LUA_MASKLINE|LUA_MASKCALL,1); }); }
+  if(mode==4){ luaJIT_setmode(L,0,LUAJIT_MODE_ENGINE|LUAJIT_MODE_OFF);} if(mode==3){ lua_sethook(L,Hook1000,LUA_MASKCOUNT,1000); }
+  double t0=Now(); int rc=luaL_loadstring(L,src)||lua_pcall(L,0,0,0);
+  printf("mode %d rc=%d %.0f ms %s\n",mode,rc,(Now()-t0)*1000, rc?lua_tostring(L,-1):"");
+  if(wd.joinable()) wd.join();
+}

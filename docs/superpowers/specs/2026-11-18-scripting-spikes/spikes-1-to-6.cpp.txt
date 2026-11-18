@@ -1,0 +1,305 @@
+// Throwaway spike for Phase 27 Day 444. Not product code.
+#include <lua.hpp>
+#include <luajit.h>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
+#include <string>
+#include <thread>
+#include <vector>
+#include <mutex>
+#include <condition_variable>
+#include <functional>
+using Clock = std::chrono::steady_clock;
+static double Now() { return std::chrono::duration<double>(Clock::now().time_since_epoch()).count(); }
+
+struct Mem { size_t used = 0, cap = SIZE_MAX, peak = 0; bool failed = false; };
+static void* Alloc(void* ud, void* p, size_t o, size_t n)
+{
+    Mem* m = (Mem*)ud;
+    if (n == 0) { if (p) { m->used -= o; free(p); } return nullptr; }
+    size_t old = p ? o : 0;
+    if (m->used - old + n > m->cap) { m->failed = true; return nullptr; }
+    void* r = realloc(p, n);
+    if (!r) return nullptr;
+    m->used = m->used - old + n; if (m->used > m->peak) m->peak = m->used;
+    return r;
+}
+static void OpenWhitelist(lua_State* L)
+{
+    luaopen_base(L); lua_pop(L,1);
+    lua_pushcfunction(L, luaopen_string); lua_pushstring(L, LUA_STRLIBNAME); lua_call(L,1,0);
+    lua_pushcfunction(L, luaopen_table);  lua_pushstring(L, LUA_TABLIBNAME); lua_call(L,1,0);
+    lua_pushcfunction(L, luaopen_math);   lua_pushstring(L, LUA_MATHLIBNAME); lua_call(L,1,0);
+    lua_pushcfunction(L, luaopen_bit);    lua_pushstring(L, LUA_BITLIBNAME); lua_call(L,1,0);
+    lua_pushcfunction(L, luaopen_jit);    lua_pushstring(L, LUA_JITLIBNAME); lua_call(L,1,0);
+    // strip dangerous
+    const char* kill[] = {"loadfile","dofile","load","loadstring","collectgarbage","getfenv","setfenv","rawget_unused",nullptr};
+    for (int i = 0; kill[i]; ++i) { lua_pushnil(L); lua_setglobal(L, kill[i]); }
+    // hide jit from scripts
+    lua_pushnil(L); lua_setglobal(L, "jit");
+    lua_pushnil(L); lua_setglobal(L, "package");
+    lua_pushnil(L); lua_setglobal(L, "require");
+}
+static lua_State* NewState(Mem* m, bool whitelist = true)
+{
+    lua_State* L = lua_newstate(Alloc, m);
+    if (!L) return nullptr;
+    if (whitelist) OpenWhitelist(L);
+    return L;
+}
+
+// ---------- world ----------
+struct World
+{
+    int N;
+    std::vector<float> px, py, pz, vx, vy, vz;      // live
+    std::vector<float> spx, spy, spz;               // tick-start snapshot
+    uint64_t Hash() const
+    {
+        uint64_t h = 1469598103934665603ull;
+        auto mix = [&](float f){ uint32_t u; memcpy(&u,&f,4); h ^= u; h *= 1099511628211ull; };
+        for (int i = 0; i < N; ++i) { mix(px[i]);mix(py[i]);mix(pz[i]);mix(vx[i]);mix(vy[i]);mix(vz[i]); }
+        return h;
+    }
+};
+struct Cmd { uint32_t entity; uint32_t seq; float x, y, z; uint8_t kind; };
+struct Part
+{
+    Mem mem; lua_State* L = nullptr; std::vector<int> ents; std::vector<Cmd> cmds; World* w = nullptr;
+    uint32_t seq = 0; uint32_t cur = 0;
+    // overlay for own-entity reads after writes
+    std::vector<std::pair<uint32_t,std::array<float,3>>> unused;
+    std::atomic<int> owner{0};
+};
+static int b_pos(lua_State* L) { Part* p=(Part*)lua_touserdata(L, lua_upvalueindex(1)); int e=(int)lua_tointeger(L,1);
+    lua_pushnumber(L,p->w->spx[e]); lua_pushnumber(L,p->w->spy[e]); lua_pushnumber(L,p->w->spz[e]); return 3; }
+static int b_setvel(lua_State* L) { Part* p=(Part*)lua_touserdata(L, lua_upvalueindex(1));
+    Cmd c; c.entity=(uint32_t)lua_tointeger(L,1); c.seq=p->seq++; c.x=(float)lua_tonumber(L,2); c.y=(float)lua_tonumber(L,3); c.z=(float)lua_tonumber(L,4); c.kind=0; p->cmds.push_back(c); return 0; }
+static int b_rand(lua_State* L) { (void)L; return 0; }
+
+static const char* kScript =
+"local pos, setvel, rnd = pos, setvel, math.random\n"
+"function on_update(e, n, dt)\n"
+"  local x,y,z = pos(e)\n"
+"  local ox,oy,oz = pos(n)\n"
+"  local dx,dy,dz = ox-x, oy-y, oz-z\n"
+"  local d = dx*dx+dy*dy+dz*dz + 1\n"
+"  setvel(e, dx/d + (rnd()-0.5)*0.01, dy/d, dz/d - 0.1)\n"
+"end\n";
+
+static void InitPart(Part& p, World* w)
+{
+    p.w = w; p.L = NewState(&p.mem);
+    lua_State* L = p.L;
+    lua_pushlightuserdata(L, &p); lua_pushcclosure(L, b_pos, 1); lua_setglobal(L, "pos");
+    lua_pushlightuserdata(L, &p); lua_pushcclosure(L, b_setvel, 1); lua_setglobal(L, "setvel");
+    (void)b_rand;
+    if (luaL_loadbuffer(L, kScript, strlen(kScript), "=s") || lua_pcall(L,0,0,0)) { printf("load err %s\n", lua_tostring(L,-1)); exit(1); }
+    lua_getglobal(L, "math"); lua_getfield(L, -1, "randomseed"); lua_pushnumber(L, 12345 + (double)(&p == nullptr)); lua_pcall(L,1,0,0); lua_pop(L,1);
+}
+
+// simple fixed pool: run fn(i) for i in [0,count) across T threads (dynamic claim)
+static void ParFor(int T, int count, const std::function<void(int)>& fn)
+{
+    if (T <= 1) { for (int i=0;i<count;++i) fn(i); return; }
+    std::atomic<int> next{0};
+    std::vector<std::thread> th;
+    for (int t=0;t<T;++t) th.emplace_back([&]{ for(;;){ int i=next.fetch_add(1); if(i>=count) break; fn(i);} });
+    for (auto& t: th) t.join();
+}
+
+static uint64_t RunTicks(int N, int P, int T, int ticks, double* msPerTick, double* mergeMs)
+{
+    World w; w.N=N; for (auto* v : {&w.px,&w.py,&w.pz,&w.vx,&w.vy,&w.vz,&w.spx,&w.spy,&w.spz}) v->assign(N,0.f);
+    for (int i=0;i<N;++i){ w.px[i]=(float)(i%100); w.py[i]=(float)((i/100)%100); w.pz[i]=(float)(i/10000); }
+    std::vector<Part> parts(P);
+    for (int i=0;i<N;++i) parts[(uint32_t)(i*2654435761u>>7)%P].ents.push_back(i);
+    for (auto& p : parts) InitPart(p, &w);
+    double t0=Now(), merge=0;
+    for (int t=0;t<ticks;++t)
+    {
+        w.spx=w.px; w.spy=w.py; w.spz=w.pz;
+        ParFor(T, P, [&](int pi){
+            Part& p=parts[pi]; p.cmds.clear(); p.seq=0; lua_State* L=p.L;
+            for (int e : p.ents) { lua_getglobal(L,"on_update"); lua_pushinteger(L,e); lua_pushinteger(L,(e+1)%N); lua_pushnumber(L,1.0/60); if (lua_pcall(L,3,0,0)) { printf("err %s\n", lua_tostring(L,-1)); exit(1);} }
+        });
+        double m0=Now();
+        for (auto& p : parts) for (auto& c : p.cmds) { w.vx[c.entity]=c.x; w.vy[c.entity]=c.y; w.vz[c.entity]=c.z; }
+        for (int i=0;i<N;++i){ w.px[i]+=w.vx[i]/60; w.py[i]+=w.vy[i]/60; w.pz[i]+=w.vz[i]/60; }
+        merge += Now()-m0;
+    }
+    *msPerTick=(Now()-t0)*1000/ticks; *mergeMs=merge*1000/ticks;
+    uint64_t h=w.Hash();
+    for (auto& p : parts) lua_close(p.L);
+    return h;
+}
+
+// ---------- spikes ----------
+static void Spike1(int seconds)
+{
+    printf("== Spike 1: many states, many threads ==\n");
+    { Mem m; double t0=Now(); lua_State* L=NewState(&m,false); printf("empty state (no libs): %zu bytes, %.1f us\n", m.used,(Now()-t0)*1e6); lua_close(L);
+      Mem m2; t0=Now(); L=NewState(&m2,true); printf("whitelisted state: %zu bytes, %.1f us\n", m2.used,(Now()-t0)*1e6);
+      lua_close(L); printf("after close, used=%zu\n", m2.used);
+      Mem m3; L=lua_newstate(Alloc,&m3); luaL_openlibs(L); printf("full openlibs state: %zu bytes\n", m3.used); lua_close(L); }
+    const char* chunks[] = {
+      "local s=0 for i=1,200000 do s=s+i*i%7 end return s",
+      "local t={} for i=1,2000 do t[i]=tostring(i) end return #table.concat(t)",
+      "local function f(n) if n<2 then return n end return f(n-1)+f(n-2) end return f(22)",
+      "local t={} for i=1,500 do t[#t+1]={x=i,y=i*2} end table.sort(t,function(a,b) return a.y>b.y end) return t[1].x",
+    };
+    std::atomic<bool> stop{false}; std::atomic<long> iters{0}, fails{0};
+    std::vector<std::thread> th;
+    for (int t=0;t<8;++t) th.emplace_back([&,t]{
+        unsigned r=t*7919+1; Mem* ms[8]={}; lua_State* Ls[8]={};
+        for(int i=0;i<8;++i){ ms[i]=new Mem; ms[i]->cap=32u<<20; Ls[i]=NewState(ms[i]); }
+        while(!stop){
+            r=r*1103515245+12345; int k=(r>>8)&7;
+            if (((r>>16)&15)==0) { lua_close(Ls[k]); delete ms[k]; ms[k]=new Mem; ms[k]->cap=32u<<20; Ls[k]=NewState(ms[k]); }
+            const char* c=chunks[(r>>12)&3];
+            if (luaL_loadstring(Ls[k],c)||lua_pcall(Ls[k],0,1,0)) fails++; else lua_pop(Ls[k],1);
+            iters++;
+        }
+        for(int i=0;i<8;++i){ lua_close(Ls[i]); delete ms[i]; }
+    });
+    std::this_thread::sleep_for(std::chrono::seconds(seconds)); stop=true; for(auto&t:th)t.join();
+    printf("8 threads x 8 states x %ds: %ld chunk runs, %ld failures\n", seconds, iters.load(), fails.load());
+    // create/destroy 64 states in loop
+    double t0=Now(); for (int i=0;i<64*50;++i){ Mem m; lua_State* L=NewState(&m); lua_close(L);} printf("create+destroy whitelisted state: %.1f us each\n",(Now()-t0)*1e6/(64*50));
+    // JIT code per state
+    { Mem m; lua_State* L=NewState(&m); size_t before=m.used;
+      luaL_dostring(L,"local s=0 for i=1,1e7 do s=s+i%3 end"); printf("state memory after hot loop: +%zu bytes (JIT mcode is outside the allocator)\n", m.used-before);
+      lua_close(L); }
+}
+
+static void Spike2and3()
+{
+    printf("== Spike 2/3: tick at scale and determinism (N=100000, 20 ticks) ==\n");
+    printf("%6s %4s %10s %10s %18s\n","P","T","ms/tick","merge ms","hash");
+    for (int P : {16,64,256}) {
+        uint64_t ref=0; bool first=true; bool same=true;
+        for (int T : {1,2,4,7,8,16}) {
+            double ms,mm; uint64_t h=RunTicks(100000,P,T,20,&ms,&mm);
+            printf("%6d %4d %10.2f %10.2f %18llx\n",P,T,ms,mm,(unsigned long long)h);
+            if(first){ref=h;first=false;} else if(h!=ref) same=false;
+        }
+        printf("  P=%d hash identical across thread counts: %s\n",P,same?"YES":"NO");
+    }
+}
+
+static void Spike2b()
+{
+    printf("== call overhead ==\n");
+    Mem m; lua_State* L=NewState(&m);
+    luaL_dostring(L,"function f(a,b) return a+b end");
+    lua_pushcfunction(L,[](lua_State* L)->int{ lua_pushnumber(L,lua_tonumber(L,1)+1); return 1;}); lua_setglobal(L,"cf");
+    int N=2000000; double t0=Now();
+    for(int i=0;i<N;++i){ lua_getglobal(L,"f"); lua_pushnumber(L,1); lua_pushnumber(L,2); lua_pcall(L,2,1,0); lua_pop(L,1);} 
+    printf("C->Lua call: %.0f ns\n",(Now()-t0)*1e9/N);
+    luaL_dostring(L,"function g(n) local s=0 for i=1,n do s=cf(s) end return s end");
+    t0=Now(); lua_getglobal(L,"g"); lua_pushinteger(L,N); lua_pcall(L,1,1,0); lua_pop(L,1);
+    printf("Lua->C call (JIT on): %.0f ns\n",(Now()-t0)*1e9/N);
+    luaL_dostring(L,"jit.off()");
+    lua_close(L);
+    Mem m2; lua_State* L2=lua_newstate(Alloc,&m2); luaL_openlibs(L2); luaL_dostring(L2,"jit.off()");
+    lua_pushcfunction(L2,[](lua_State* L)->int{ lua_pushnumber(L,lua_tonumber(L,1)+1); return 1;}); lua_setglobal(L2,"cf");
+    luaL_dostring(L2,"function g(n) local s=0 for i=1,n do s=cf(s) end return s end");
+    t0=Now(); lua_getglobal(L2,"g"); lua_pushinteger(L2,N); lua_pcall(L2,1,1,0); lua_pop(L2,1);
+    printf("Lua->C call (interpreter): %.0f ns\n",(Now()-t0)*1e9/N);
+    lua_close(L2);
+}
+
+// ---- spike 4
+struct Budget { bool tripped=false; std::atomic<long> count{0}; long limit; double deadline; };
+static thread_local Budget* gB;
+static void Hook(lua_State* L, lua_Debug*) { if (gB) { gB->count += 1000; if (gB->count > gB->limit || Now()>gB->deadline) { gB->tripped=true; luaL_error(L, "script budget exceeded"); } } }
+static int SafePcall(lua_State* L) { int n=lua_gettop(L); luaL_checkany(L,1); int rc=lua_pcall(L,n-1,LUA_MULTRET,0); if (gB && gB->tripped) return lua_error(L); lua_pushboolean(L,rc==0); lua_insert(L,1); return lua_gettop(L); }
+static int SafeResume(lua_State* L) { lua_State* co=lua_tothread(L,1); int n=lua_gettop(L)-1; lua_xmove(L,co,n); int rc=lua_resume(co,n); if (gB && gB->tripped) { lua_pushstring(L,"script budget exceeded"); return lua_error(L);} if(rc==0||rc==LUA_YIELD){ int m=lua_gettop(co); lua_xmove(co,L,m); lua_pushboolean(L,1); lua_insert(L,-m-1); return m+1;} lua_pushboolean(L,0); lua_xmove(co,L,1); return 2; }
+static void Spike4()
+{
+    printf("== Spike 4: sandbox ==\n");
+    struct C { const char* name; const char* src; } corpus[] = {
+      {"infinite loop","while true do end"},
+      {"string doubling","local s='x' while true do s=s..s end"},
+      {"deep recursion","local function f() return 1+f() end f()"},
+      {"table bomb","local t={} while true do t[#t+1]={} end"},
+      {"__gc bomb","for i=1,1e6 do setmetatable({}, {__gc=function() while true do end end}) end collectgarbage() "},
+      {"coroutine never yields","local co=coroutine.wrap(function() while true do end end) co()"},
+      {"pcall swallow","while true do pcall(function() while true do end end) end"},
+      {"string.rep big","local s=string.rep('x',2^31)"},
+      {"pattern backtrack","local s=string.rep('a',30)..'b' return s:find(string.rep('a?',30)..string.rep('a',30))"},
+      {"load text","return load and 'load present' or 'load removed'"},
+      {"os/io","return (os and 'os present') or (io and 'io present') or 'no os/io'"},
+    };
+    for (auto& c : corpus) {
+        Mem m; m.cap=16u<<20; lua_State* L=NewState(&m); luaJIT_setmode(L,0,LUAJIT_MODE_ENGINE|LUAJIT_MODE_OFF); Budget b; b.limit=50*1000*1000; b.deadline=Now()+0.5; gB=&b; lua_sethook(L,Hook,LUA_MASKCOUNT,1000); lua_pushcfunction(L,SafePcall); lua_setglobal(L,"pcall"); lua_getglobal(L,"coroutine"); lua_pushcfunction(L,SafeResume); lua_setfield(L,-2,"resume"); lua_pop(L,1);
+        double t0=Now(); int r=luaL_loadstring(L,c.src)||lua_pcall(L,0,1,0);
+        std::string msg = lua_gettop(L)? (lua_tostring(L,-1)?lua_tostring(L,-1):"(non-string)") : "";
+        printf("  %-22s rc=%d %6.0f ms  mem-fail=%d  %.60s\n", c.name, r, (Now()-t0)*1000, (int)m.failed, msg.c_str());
+        lua_sethook(L,nullptr,0,0); double t1=Now(); lua_close(L); double cl=(Now()-t1)*1000; if (cl>50) printf("     close took %.0f ms\n", cl);
+    }
+}
+
+// ---- spike 5
+struct Waiter { lua_State* co; int ref; double wake; };
+static void Spike5()
+{
+    printf("== Spike 5: coroutine waits ==\n");
+    Mem m; lua_State* L=NewState(&m);
+    luaL_dostring(L,
+      "wait = function(s) return coroutine.yield('t', s) end\n"
+      "function body(i) local c=0 while true do wait(0.1 + (i%10)*0.01) c=c+1 end end\n");
+    int N=100000; std::vector<Waiter> ws(N);
+    double t0=Now(); size_t m0=m.used;
+    for (int i=0;i<N;++i){ lua_State* co=lua_newthread(L); int ref=luaL_ref(L,LUA_REGISTRYINDEX); (void)ref;
+        lua_getglobal(co,"body"); lua_pushinteger(co,i); int n=0; int rc=lua_resume(co,1); (void)n;
+        ws[i].co=co; ws[i].ref=ref; ws[i].wake = (rc==LUA_YIELD)? lua_tonumber(co,-1) : -1; lua_settop(co,0);}
+    printf("create+first-yield of %d coroutines: %.0f ms, memory %zu bytes (%.0f B each)\n",N,(Now()-t0)*1000,m.used-m0,(double)(m.used-m0)/N);
+    double now=0; long resumes=0; t0=Now();
+    for (int tick=0; tick<600; ++tick){ now+=1.0/60;
+        for (auto& w: ws) if (w.wake<=now){ int rc=lua_resume(w.co,0); resumes++; w.wake = rc==LUA_YIELD? now+lua_tonumber(w.co,-1):1e18; lua_settop(w.co,0);} }
+    printf("10 s of sim time: %ld resumes in %.0f ms (%.0f ns per resume; scan of all %d waiters each tick included)\n",resumes,(Now()-t0)*1000,(Now()-t0)*1e9/resumes,N);
+    // coroutine inside pcall across yield
+    luaL_dostring(L,"local co=coroutine.create(function() local ok,e=pcall(function() coroutine.yield(1) error('x') end) coroutine.yield(ok) end) print('yield across pcall (LuaJIT):', coroutine.resume(co)) print(coroutine.resume(co))");
+    lua_close(L);
+}
+
+// ---- spike 6
+static int Wr(lua_State*, const void* p, size_t sz, void* ud) { ((std::string*)ud)->append((const char*)p, sz); return 0; }
+static void Spike6()
+{
+    printf("== Spike 6: source vs bytecode, 1000 scripts ==\n");
+    std::vector<std::string> src(1000), bc(1000), bcs(1000);
+    Mem m; lua_State* L=NewState(&m);
+    for (int i=0;i<1000;++i){ char b[2048]; std::string s;
+        for (int f=0; f<20; ++f){ snprintf(b,sizeof b,"local function f%d_%d(a,b,c) local t={x=a,y=b,z=c} for i=1,10 do t.x=t.x+i*a-b/(c+1) end return t.x+t.y+t.z end\n",i,f); s+=b; }
+        s+="return {update=function(self,dt) return f0_0 end}\n"; src[i]=s; }
+    double t0=Now(); for (int i=0;i<1000;++i){ luaL_loadbuffer(L,src[i].data(),src[i].size(),"=s"); lua_pop(L,1);} 
+    double ts=(Now()-t0)*1000;
+    for (int i=0;i<1000;++i){ luaL_loadbuffer(L,src[i].data(),src[i].size(),"=s"); lua_dump(L,Wr,&bc[i]); lua_pop(L,1); }
+    size_t srcb=0,bcb=0; for(int i=0;i<1000;++i){srcb+=src[i].size();bcb+=bc[i].size();}
+    t0=Now(); for (int i=0;i<1000;++i){ luaL_loadbuffer(L,bc[i].data(),bc[i].size(),"=s"); lua_pop(L,1);} 
+    double tb=(Now()-t0)*1000;
+    printf("source bytes %zu, bytecode bytes %zu\nload+compile source: %.1f ms (%.1f us/script), load bytecode: %.1f ms (%.1f us/script)\n",srcb,bcb,ts,ts,tb,tb);
+    printf("bytecode header (version/flags): %02x %02x %02x %02x ... arch-dependent flags in byte 3 (GC64=%s)\n",(unsigned char)bc[0][0],(unsigned char)bc[0][1],(unsigned char)bc[0][2],(unsigned char)bc[0][3], (bc[0][4]&8)?"yes":"no");
+    // bytecode loading when text-only mode asked: mode string 'b' vs 't'
+    int rc = luaL_loadbufferx ? 0 : 0; (void)rc;
+    lua_close(L);
+}
+
+int main(int argc, char** argv)
+{
+    std::string which = argc>1? argv[1] : "all";
+    int secs = argc>2? atoi(argv[2]) : 10;
+    printf("%s\n", LUAJIT_VERSION);
+    if (which=="1"||which=="all") Spike1(secs);
+    if (which=="2"||which=="all") { Spike2b(); Spike2and3(); }
+    if (which=="4"||which=="all") Spike4();
+    if (which=="5"||which=="all") Spike5();
+    if (which=="6"||which=="all") Spike6();
+}

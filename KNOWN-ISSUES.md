@@ -450,6 +450,10 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   the tests pass with it off).
 - Phase 13 Day 174 (2026-11-08, Linux): `renderer_demo --rhi dx12` and `rhi_demo --rhi dx12` on Linux exit 1 with "the dx12 backend is not registered in this program (link rhi_backends and call rhi::RegisterCompiledBackends ...)". The program does link `rhi_backends`; the backend is not built on Linux. The refusal is correct, its reason is misleading.
 
+- **Phase 27 Day 444 (2026-11-18, Linux): findings the sandbox (Day 449) must fix.** A `lua_sethook` count hook does not interrupt JIT-compiled loops (`while true do end` ran until killed; a hook set from another thread did not stop it); the instruction budget therefore needs the JIT off. `pcall` and `coroutine.resume` swallow the hook's error unless replaced. `string.find` on a backtracking pattern ran 52 s inside one C call with no hook firing. LuaJIT's machine code (`mmap`) is outside the Lua allocator's memory cap. Observed with the spike in `docs/superpowers/specs/2026-11-18-scripting-spikes/`; no engine code exists yet.
+- **Phase 27 Day 444: ThreadSanitizer reports 3 data races inside `libgcc_s.so`'s unwinder** when 8 threads throw and catch Lua errors (heap blocks the unwinder allocates itself; none in LuaJIT's C or our code); the engine's tsan flavor will need a suppression on Day 445. The sanitizer runs link a plain LuaJIT, so its assembly core is not instrumented.
+- **Phase 27 Day 444: LuaJIT not built with MSVC or on macOS** (the spec's section 8 is from reading the tree; Days 473 and 474 build it). `LUAJIT_DISABLE_JIT` was built and run on Linux only.
+
 ## Phase 15 (Day 185)
 
 - The Wayland pointer, wheel, focus and key handlers (`wayland_input.cpp`) have no automated test: no test-compositor seam exists, and the real compositor cannot be made to send input. Only open + Resize is checked. Key logic is tested through `KeyboardEvents`; X11 is tested with injected events.

@@ -36,7 +36,8 @@ Internal design history is for contributors, not engine users: the specs in
 [the engine as a loadable library](superpowers/specs/2026-11-16-engine-library-design.md),
 [scenes for hosts through the C API](superpowers/specs/2026-11-16-c-api-scenes-design.md),
 [physics](superpowers/specs/2026-11-16-physics-design.md),
-[audio](superpowers/specs/2026-11-17-audio-design.md) —
+[audio](superpowers/specs/2026-11-17-audio-design.md),
+[scripting](superpowers/specs/2026-11-18-scripting-design.md) —
 and the plans in `plans/`.
 
 ## Map
