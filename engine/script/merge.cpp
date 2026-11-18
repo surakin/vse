@@ -45,7 +45,7 @@ MergeReport Merge(ecs::World* world, Span<CommandBuffer* const> buffers, const C
                 continue;
             }
             ecs::Entity target = command.target;
-            if (!kind->creates)
+            if (!kind->creates && !kind->global)
             {
                 target = context.Resolve(command.target);
                 if (!target.IsValid())
@@ -54,7 +54,7 @@ MergeReport Merge(ecs::World* world, Span<CommandBuffer* const> buffers, const C
                     continue;
                 }
             }
-            if (kind->writes)
+            if (kind->writes && !kind->global)
             {
                 const u64 key = (static_cast<u64>(target.index) << 16) | command.kind;
                 Writer* previous = writers.Find(key);

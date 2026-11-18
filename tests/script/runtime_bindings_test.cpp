@@ -530,11 +530,16 @@ TEST_CASE("Time: the tick's clock, and time.real refused while a replay records"
     context.replay_recording = true;
     {
         ScopedPartitionContext scope(&context);
-        r = rig.Run("return time.real(), time.now()");
+        REQUIRE(rig.state->Load("test", "function bad() return time.real() end function ok() return time.now() end")
+                    .IsOk());
+        CallOutput out;
+        const Outcome refused = rig.state->Call("bad", Span<const Value>(), Budget(), &out);
+        CHECK_FALSE(refused.IsOk());
+        CHECK(refused.message.View().Contains("time.real"));
+        CHECK(out.results.Size() == 0);
+        REQUIRE(rig.state->Call("ok", Span<const Value>(), Budget(), &out).IsOk());
+        CHECK(out.results[0].ToDouble() == 2.5);
     }
-    REQUIRE(r.Size() == 2);
-    CHECK(r[0].IsNil());
-    CHECK(r[1].ToDouble() == 2.5);
 }
 
 TEST_CASE("Bindings: the runtime bindings are all marked pure and documented", "[script][bindings][runtime]")

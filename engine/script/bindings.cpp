@@ -119,6 +119,29 @@ void TypeError(const CallEnv& env, usize index, const Value& got, const char* wa
     *out = Outcome(Status::RuntimeError, sb.View());
 }
 
+namespace
+{
+
+thread_local char g_raised[256];
+thread_local usize g_raised_length = 0;
+thread_local bool g_raised_set = false;
+
+}  // namespace
+
+bool TakeRaisedError(const CallEnv& env, Outcome* out)
+{
+    if (!g_raised_set)
+    {
+        return false;
+    }
+    g_raised_set = false;
+    StringBuilder<HeapAllocator> sb(HeapAllocator::Default());
+    sb.Append(env.info->full_name.View()).Append(StringView(": "));
+    sb.Append(StringView(g_raised, g_raised_length));
+    *out = Outcome(Status::RuntimeError, sb.View());
+    return true;
+}
+
 void DeadEntityError(const CallEnv& env, usize index, ecs::Entity entity, Outcome* out)
 {
     StringBuilder<HeapAllocator> sb(HeapAllocator::Default());
@@ -139,6 +162,17 @@ void DeadEntityError(const CallEnv& env, usize index, ecs::Entity entity, Outcom
 }
 
 }  // namespace detail
+
+void RaiseScriptError(StringView message)
+{
+    usize length = message.Length() < sizeof(detail::g_raised) - 1 ? message.Length() : sizeof(detail::g_raised) - 1;
+    for (usize i = 0; i < length; ++i)
+    {
+        detail::g_raised[i] = message[i];
+    }
+    detail::g_raised_length = length;
+    detail::g_raised_set = true;
+}
 
 struct Installation::Bound
 {

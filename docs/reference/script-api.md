@@ -238,6 +238,48 @@ Thread rule: **pure**. Id: `0x101c92c6`.
 
 Returns a vector of length 1 pointing in a random direction, from the running entity's stream.
 
+## settings
+
+### `settings.describe`
+
+`(StringView key) -> Value`
+
+Thread rule: **pure**. Id: `0xad37ffd3`.
+
+Returns a table describing a setting: `key`, `type`, `default`, `min` and `max` (numbers), `names` (an enum), `restart_required`, `label`, `description`. An unknown or secret setting is an error.
+
+### `settings.exists`
+
+`(StringView key) -> bool`
+
+Thread rule: **pure**. Id: `0xbc6df3ba`.
+
+Returns whether a setting with this key is declared.
+
+### `settings.get`
+
+`(StringView key) -> Value`
+
+Thread rule: **pure**. Id: `0x7827ff7e`.
+
+Returns the value of a setting as of the tick start: a bool, an integer, a float or text (an enum is its name). An unknown or secret setting is an error.
+
+### `settings.on_change`
+
+`(StringView prefix, StringView function) -> void`
+
+Thread rule: **world-write**. Id: `0x2e01d96c`.
+
+Subscribes the running entity's script to changes of the setting `prefix` or anything below it; at the sync point after a change the global function named `function` is called (by the event delivery of Day 459) with the key. Removed when the entity is destroyed.
+
+### `settings.set`
+
+`(StringView key, Value value) -> void`
+
+Thread rule: **world-write**. Id: `0xe6360fe2`.
+
+Sets a setting at the sync point, if the script's policy allows the key (by default only `game.*`) and the registry accepts the value (type, range, enum name); otherwise an error and nothing is stored. Reads in the same tick still see the old value.
+
 ## time
 
 ### `time.dt`
@@ -270,7 +312,7 @@ Returns the simulation clock in seconds at the tick start; deterministic, the sa
 
 Thread rule: **pure**. Id: `0x6925216e`.
 
-Returns the wall clock in seconds since 1970. NOT deterministic: nothing that reaches the world should depend on it. Returns nil while a replay is being recorded.
+Returns the wall clock in seconds since 1970. NOT deterministic: nothing that reaches the world should depend on it. Raises an error while a replay is being recorded.
 
 ### `time.tick`
 

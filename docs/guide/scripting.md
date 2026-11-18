@@ -152,8 +152,25 @@ of one of Lua's libraries (`math`, `string`, `table`): registering it would repl
   `LogBuffer` (`PartitionContext::log`) and is written by `FlushLogBuffers` at the sync point in partition order, so the log reads the same for any thread count. A script may add `script.log_limit`
   messages per tick (default 64, 0 for no limit); the rest are dropped and one warning per script counts them at the flush. Text is cut at 400 bytes.
 - **Time.** `time.dt()` (the seconds a tick advances), `time.now()` (the simulation clock at the tick start, the same for every script), `time.tick()`, `time.frame()` come from the context the driver
-  fills and are deterministic. `time.real()` is the wall clock in seconds and **not** deterministic; it returns `nil` while `PartitionContext::replay_recording` is set, so a recorded run cannot depend on it.
+  fills and are deterministic. `time.real()` is the wall clock in seconds and **not** deterministic; it raises a script error while `PartitionContext::replay_recording` is set, so a recorded run cannot depend on it.
   Outside a job they return 0.
+
+## Settings
+
+Scripts reach settings only through `settings.*` (`engine/script/settings_bindings.h`); a script has no `os`, no file access and no environment.
+
+- **Reads** (`settings.get(key)`, `settings.exists(key)`, `settings.describe(key)`) are `pure`: they read the snapshot the driver took at the tick start (`SettingsAccess::snapshot`), so every partition
+  sees the same values for the whole tick. A value is a bool, an integer, a float or text; an enum reads as its name. `describe` returns the declaration (`type`, `default`, `min`, `max`, `names`,
+  `restart_required`, `label`, `description`). An unknown key is a script error; **a secret setting is not readable** (`get` and `describe` raise without showing the value).
+- **Writes** (`settings.set(key, value)`) are `world-write`: the call checks the key against the script's policy and the value against the declaration (type, range with the registry's clamp or reject policy,
+  enum name or index) and records one command; the merge applies it with `Settings::Set` at the sync point, in partition order, so listeners and the apply function run on the merging thread, never in a
+  partition job. A refused call is an error that names the key, and stores nothing. Reads in the same tick still return the old value.
+- **The allow list** is a `SettingsPolicy` the host fills: by default every script may set `game.*` only, and `script.*` and `renderer.*` are read-only. A prefix is a dotted prefix (`game` covers `game` and `game.volume`,
+  not `gamepad.x`); `SetScriptWritable(chunk_name, prefixes)` gives one script its own list, which replaces the default for it.
+- **Changes** (`settings.on_change(prefix, function_name)`) record a subscription in the partition (a function crosses as its global name, since a Lua function never leaves its state). After the merge the driver
+  calls `CollectSettingChanges(registry, before, after, partitions)`, which lists, in the order partition, subscription, key, who is owed a call; the event delivery of Day 459 makes the calls in the next
+  phase. `RemoveSettingsSubscriptions` drops an entity's subscriptions when it is destroyed.
+- **Errors from bindings.** A binding reports a failure with `script::RaiseScriptError(message)`; the call's results are dropped and the script sees `name: message`.
 
 ## Partitions
 

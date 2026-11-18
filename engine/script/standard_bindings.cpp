@@ -1,5 +1,6 @@
 #include "lang/scalar.h"
 #include "script/bindings.h"
+#include "script/settings_bindings.h"
 
 namespace engine_placeholder::script
 {
@@ -314,6 +315,7 @@ bool RegisterStandardBindings(BindingRegistry* registry)
         "Returns the view matrix of a camera at `eye` looking at `target` (right-handed, "
         "looking down -Z); the identity when the view direction is zero or parallel to `up`.");
     ok &= RegisterRuntimeBindings(registry);
+    ok &= RegisterSettingsBindings(registry);
     return ok;
 }
 

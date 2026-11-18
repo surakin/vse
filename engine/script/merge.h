@@ -102,6 +102,9 @@ struct CommandKind
     bool creates = false;
     /// A kind that overwrites state of its target: two partitions using it on one entity in one tick conflict.
     bool writes = false;
+    /// Whether the command is not about an entity: its target is ignored (it may be the null entity), and two
+    /// partitions issuing it is not a conflict (the later one applies, as in a sequence).
+    bool global = false;
 };
 
 /// The kinds a world's commands may have, by id.

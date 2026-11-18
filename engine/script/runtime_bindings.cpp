@@ -135,7 +135,9 @@ Value TimeReal()
     const PartitionContext* context = CurrentPartitionContext();
     if (context != nullptr && context->replay_recording)
     {
-        return Value();  // refused: a wall-clock reading would make the recorded run unrepeatable
+        // Refused: a wall-clock reading would make the recorded run unrepeatable.
+        RaiseScriptError("the wall clock is refused while a replay is recording");
+        return Value();
     }
     return Value::FromFloat(static_cast<f64>(os::WallClockUnixMillis()) / 1000.0);
 }
@@ -181,8 +183,8 @@ bool RegisterRuntimeBindings(BindingRegistry* registry)
     ok &= registry->Add<&TimeTick>("time", "tick", ThreadRule::Pure, "", "Returns the tick number.");
     ok &= registry->Add<&TimeReal>("time", "real", ThreadRule::Pure, "",
                                    "Returns the wall clock in seconds since 1970. NOT deterministic: nothing that "
-                                   "reaches the world should depend on it. Returns nil while a replay is being "
-                                   "recorded.");
+                                   "reaches the world should depend on it. Raises an error while a replay is "
+                                   "being recorded.");
     return ok;
 }
 

@@ -13,6 +13,8 @@
 namespace engine_placeholder::script
 {
 
+struct SettingsAccess;
+
 /// What a binding sees of the tick.
 ///
 /// - Thread-safety: thread-compatible; one job owns it.
@@ -43,6 +45,8 @@ struct PartitionContext
     u64 random_state = 0;
     /// The partition's log buffer; null sends `log.*` straight to the log.
     LogBuffer* log = nullptr;
+    /// The partition's view of the settings (snapshot, policy, subscriptions); null when scripts have no settings.
+    SettingsAccess* settings = nullptr;
 };
 
 /// The first state of an entity's random stream this tick: a fixed 64-bit mix of the world seed, the entity's stable id

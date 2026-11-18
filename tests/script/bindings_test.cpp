@@ -249,7 +249,7 @@ TEST_CASE("Bindings: a state is built from a subset of the registry", "[script][
 {
     Rig rig;
     rig.Install(InstallProfile::Task());
-    CHECK(rig.installed->Skipped() == 3);  // index (world-read), forty (main-thread-only), write (world-write)
+    CHECK(rig.installed->Skipped() == 5);  // index, forty, write, settings.set, settings.on_change
     CallOutput out;
     REQUIRE(rig.Run("function run() return test.twice(2), num.clamp(5, 0, 1) end", "run", Span<const Value>(), &out)
                 .IsOk());

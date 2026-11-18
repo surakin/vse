@@ -15,6 +15,7 @@ set(SCRIPT_TEST_SOURCES
   script_world_test.cpp  # Day 451
   world_view_test.cpp  # Day 452
   runtime_bindings_test.cpp  # Day 453
+  settings_bindings_test.cpp  # Day 454
 )
 
 find_package(Threads REQUIRED)

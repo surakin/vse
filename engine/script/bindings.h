@@ -369,6 +369,8 @@ usize FirstDeadEntity([[maybe_unused]] const CallEnv& env, [[maybe_unused]] Span
 void ArityError(const CallEnv& env, usize got, Outcome* out);
 void TypeError(const CallEnv& env, usize index, const Value& got, const char* wanted, Outcome* out);
 void DeadEntityError(const CallEnv& env, usize index, ecs::Entity entity, Outcome* out);
+// Turns an error a binding raised with `RaiseScriptError` into the call's outcome; returns whether there was one.
+bool TakeRaisedError(const CallEnv& env, Outcome* out);
 
 template <class R, class... A, usize... I>
 Outcome Run(R (*fn)(A...), const CallEnv& env, Span<const Value> args, Vector<Value>* results, Indices<I...> indices)
@@ -399,6 +401,10 @@ Outcome Run(R (*fn)(A...), const CallEnv& env, Span<const Value> args, Vector<Va
     else
     {
         results->Push(Codec<R>::Put(fn(Codec<A>::Get(args[I])...)));
+    }
+    if (TakeRaisedError(env, &out))
+    {
+        results->Clear();
     }
     return out;
 }
@@ -606,6 +612,16 @@ private:
 
     Vector<UniquePtr<detail::Entry>> entries_;
 };
+
+/// Makes the binding that is running fail with a script error: the call's results are dropped and the message, with
+/// the binding's name in front, becomes a `RuntimeError` in the calling script (which can `pcall` it). Call it from
+/// inside a binding, once, before returning (the binding still returns normally; its result is discarded). The message
+/// is kept per thread, up to 255 bytes.
+///
+/// - Param message: the text; copied.
+/// - Thread-safety: thread-safe (a per-thread slot).
+/// - Fails: never.
+void RaiseScriptError(StringView message);
 
 /// Adds the standard bindings: `num` (the Lua `math` library keeps its own name), `vec2`, `vec3`, `vec4`, `quat`,
 /// `mat4` (a matrix is an array of 16 numbers, column-major), and, through [[script::RegisterRuntimeBindings]],
