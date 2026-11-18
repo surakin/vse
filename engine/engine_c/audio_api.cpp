@@ -45,7 +45,7 @@ engine_status AudioCheckIn(const void* value, usize first_version, const char* w
 }
 
 // Finds the engine's audio host; sets the failure text when the engine is stale or audio is not open.
-engine_status AudioResolve(engine_handle engine, AudioHost** out)
+engine_status AudioResolve(engine_handle engine, AudioHost** out, AudioHostPtr* keep)
 {
     *out = nullptr;
     Runtime* runtime = nullptr;
@@ -54,12 +54,16 @@ engine_status AudioResolve(engine_handle engine, AudioHost** out)
     {
         return status;
     }
-    AudioHost* host = runtime->audio_host.Load(MemoryOrder::Acquire);
-    if (host == nullptr)
+    {
+        // The share is taken under the lock `audio_close` takes, so the host outlives the call.
+        LockGuard<Mutex> lock(runtime->audio_mutex);
+        *keep = runtime->audio_owner;
+    }
+    if (keep->Get() == nullptr)
     {
         return Fail(ENGINE_ERROR_NOT_READY, "audio is not open");
     }
-    *out = host;
+    *out = keep->Get();
     return ENGINE_OK;
 }
 
@@ -152,7 +156,7 @@ engine_status AudioOpenFn(engine_handle engine, const engine_audio_info* info)
     {
         return Fail(ENGINE_ERROR_ALREADY_EXISTS, "audio is already open");
     }
-    UniquePtr<AudioHost> host = MakeUnique<AudioHost>();
+    AudioHostPtr host = MakeShared<AudioHost>();
     if (host.Get() == nullptr)
     {
         return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "out of memory");
@@ -181,7 +185,7 @@ engine_status AudioCloseFn(engine_handle engine)
         return Fail(ENGINE_ERROR_NOT_READY, "audio is not open");
     }
     runtime->audio_host.Store(nullptr, MemoryOrder::Release);
-    runtime->audio_owner.Reset();
+    runtime->audio_owner.Reset();  // the last share (a call in flight may hold one) frees the host
     return ENGINE_OK;
 }
 
@@ -193,8 +197,9 @@ engine_status AudioClipCreateFn(engine_handle engine, const engine_audio_clip_in
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_clip` is NULL");
     }
     *out_clip = 0;
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -308,10 +313,54 @@ audio::AudioClipConstPtr AudioFindClip(AudioHost* host, u64 handle)
 
 }  // namespace
 
+engine_status AudioClipOfHandle(Runtime& runtime, u64 handle, audio::AudioClipConstPtr* out)
+{
+    out->Reset();
+    if (handle == 0)
+    {
+        return ENGINE_OK;
+    }
+    AudioHostPtr keep;
+    {
+        LockGuard<Mutex> lock(runtime.audio_mutex);
+        keep = runtime.audio_owner;
+    }
+    if (keep.Get() == nullptr)
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "audio is not open");
+    }
+    LockGuard<Mutex> lock(keep->mutex);
+    *out = AudioFindClip(keep.Get(), handle);
+    return out->Get() == nullptr ? Fail(ENGINE_ERROR_STALE_HANDLE, "the clip is gone") : ENGINE_OK;
+}
+
+u64 AudioHandleOfClip(Runtime& runtime, const audio::AudioClipConstPtr& clip)
+{
+    AudioHostPtr keep;
+    {
+        LockGuard<Mutex> lock(runtime.audio_mutex);
+        keep = runtime.audio_owner;
+    }
+    if (keep.Get() == nullptr || clip.Get() == nullptr)
+    {
+        return 0;
+    }
+    LockGuard<Mutex> lock(keep->mutex);
+    for (usize i = 0; i < keep->clips.Size(); ++i)
+    {
+        if (keep->clips[i].clip.Get() == clip.Get())
+        {
+            return AudioPack(keep->clips[i].generation, static_cast<u32>(i));
+        }
+    }
+    return 0;
+}
+
 engine_status AudioClipDestroyFn(engine_handle engine, u64 clip)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -332,8 +381,9 @@ engine_status AudioPlayFn(engine_handle engine, const engine_audio_play* desc, u
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_voice` is NULL");
     }
     *out_voice = 0;
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -367,8 +417,9 @@ engine_status AudioPlayFn(engine_handle engine, const engine_audio_play* desc, u
 
 engine_status AudioVoiceSetFn(engine_handle engine, u64 voice, const engine_audio_voice_params* params)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -423,8 +474,9 @@ engine_status AudioVoiceSetFn(engine_handle engine, u64 voice, const engine_audi
 
 engine_status AudioVoiceStopFn(engine_handle engine, u64 voice, u32 fade_frames)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -445,8 +497,9 @@ engine_status AudioBusCreateFn(engine_handle engine, engine_string name, u32 par
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_bus` is NULL");
     }
     *out_bus = 0;
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -469,8 +522,9 @@ engine_status AudioBusCreateFn(engine_handle engine, engine_string name, u32 par
 
 engine_status AudioBusSetFn(engine_handle engine, u32 bus, const engine_audio_bus_params* params)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -513,12 +567,12 @@ engine_status AudioBusSetFn(engine_handle engine, u32 bus, const engine_audio_bu
 engine_status AudioRenderFn(engine_handle engine, u32 frames, float* out)
 {
     // No lock, no allocation, no failure text on the success path: the host's audio thread.
-    Runtime* runtime = CurrentRuntime();
+    Runtime* runtime = AudioRenderRuntime(engine);
     if (out == nullptr)
     {
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }
-    if (runtime == nullptr || engine.value == 0)
+    if (runtime == nullptr)
     {
         return ENGINE_ERROR_STALE_HANDLE;
     }
@@ -542,8 +596,9 @@ engine_status AudioEventsFn(engine_handle engine, engine_audio_event* out, size_
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out` is NULL with a capacity above zero");
     }
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -590,8 +645,9 @@ engine_status AudioEventsFn(engine_handle engine, engine_audio_event* out, size_
 
 engine_status AudioStateFn(engine_handle engine, engine_audio_state* out)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -761,6 +817,7 @@ engine_status AudioStreamOpenClipFn(engine_handle engine, u64 clip, u64* out_str
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_stream` is NULL");
     }
     *out_stream = 0;
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
     Runtime* runtime = nullptr;
     const engine_status status = AudioResolveBoth(engine, &host, &runtime);
@@ -789,6 +846,7 @@ engine_status AudioStreamOpenFn(engine_handle engine, const engine_audio_stream_
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_stream` is NULL");
     }
     *out_stream = 0;
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
     Runtime* runtime = nullptr;
     engine_status status = AudioResolveBoth(engine, &host, &runtime);
@@ -820,8 +878,9 @@ engine_status AudioStreamOpenFn(engine_handle engine, const engine_audio_stream_
 
 engine_status AudioStreamCloseFn(engine_handle engine, u64 stream)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -849,8 +908,9 @@ engine_status AudioStreamPlayFn(engine_handle engine, u64 stream, const engine_a
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_voice` is NULL");
     }
     *out_voice = 0;
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -886,8 +946,9 @@ engine_status AudioStreamPlayFn(engine_handle engine, u64 stream, const engine_a
 
 engine_status AudioUpdateFn(engine_handle engine, u32 wait)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -914,8 +975,9 @@ engine_status AudioUpdateFn(engine_handle engine, u32 wait)
 engine_status AudioMusicPlayFn(engine_handle engine, u64 stream, u32 bus, u32 fade_frames,
                                const engine_audio_tempo* tempo)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -941,8 +1003,9 @@ engine_status AudioMusicPlayFn(engine_handle engine, u64 stream, u32 bus, u32 fa
 engine_status AudioMusicCrossfadeFn(engine_handle engine, u64 stream, u32 fade_frames, u32 at_bar,
                                     const engine_audio_tempo* tempo)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -966,8 +1029,9 @@ engine_status AudioMusicCrossfadeFn(engine_handle engine, u64 stream, u32 fade_f
 
 engine_status AudioMusicStopFn(engine_handle engine, u32 fade_frames)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -982,8 +1046,9 @@ engine_status AudioMusicStopFn(engine_handle engine, u32 fade_frames)
 
 engine_status AudioMusicLayersFn(engine_handle engine, const u64* streams, const float* gains, u32 count, u32 bus)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -1016,8 +1081,9 @@ engine_status AudioMusicLayersFn(engine_handle engine, const u64* streams, const
 
 engine_status AudioMusicLayerGainFn(engine_handle engine, u32 layer, float gain, u32 frames)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -1036,8 +1102,9 @@ engine_status AudioMusicLayerGainFn(engine_handle engine, u32 layer, float gain,
 
 engine_status AudioMusicStingerFn(engine_handle engine, u64 clip, float gain, u32 on_beat, u64* out_frame)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -1063,8 +1130,9 @@ engine_status AudioMusicStingerFn(engine_handle engine, u64 clip, float gain, u3
 
 engine_status AudioBusEffectSetFn(engine_handle engine, u32 bus, u32 slot, const engine_audio_effect* effect)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    engine_status status = AudioResolve(engine, &host);
+    engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -1091,10 +1159,19 @@ engine_status AudioBusEffectSetFn(engine_handle engine, u32 bus, u32 slot, const
     const u32 rate = host->mixer.Config().sample_rate;
     const u32 ramp = host->mixer.Config().ramp_frames;
     const f32* p = effect->params;
+    const bool known_bus = bus < audio::kMaxBuses;
+    u8* held = known_bus ? &host->insert_kind[bus][slot] : nullptr;
+    f32* held_size = known_bus ? &host->insert_size[bus][slot] : nullptr;
     if (effect->kind == ENGINE_AUDIO_EFFECT_NONE)
     {
-        return AudioFromMixer(host->mixer.ClearInsert(id, slot));
+        status = AudioFromMixer(host->mixer.ClearInsert(id, slot));
+        if (status == ENGINE_OK && held != nullptr)
+        {
+            *held = 0;
+        }
+        return status;
     }
+    const bool same = held != nullptr && *held == effect->kind;
     if (effect->kind == ENGINE_AUDIO_EFFECT_FILTER)
     {
         if (p[0] < 0.0f || p[0] > 6.0f || !(p[1] > 0.0f) || !(p[2] > 0.0f))
@@ -1103,8 +1180,19 @@ engine_status AudioBusEffectSetFn(engine_handle engine, u32 bus, u32 slot, const
         }
         const audio::FilterDesign design = audio::DesignFilter(static_cast<audio::FilterType>(static_cast<u32>(p[0])),
                                                                rate, p[1], p[2], p[3]);
-        status = AudioFromMixer(host->mixer.SetInsert(id, slot, audio::MakeFilterEffect(channels, ramp)));
-        return status != ENGINE_OK ? status : AudioFromMixer(host->mixer.SetInsertParams(id, slot, design.params));
+        if (!same)
+        {
+            status = AudioFromMixer(host->mixer.SetInsert(id, slot, audio::MakeFilterEffect(channels, ramp)));
+            if (status != ENGINE_OK)
+            {
+                return status;
+            }
+            if (held != nullptr)
+            {
+                *held = static_cast<u8>(effect->kind);
+            }
+        }
+        return AudioFromMixer(host->mixer.SetInsertParams(id, slot, design.params));
     }
     if (effect->kind == ENGINE_AUDIO_EFFECT_DELAY)
     {
@@ -1118,10 +1206,20 @@ engine_status AudioBusEffectSetFn(engine_handle engine, u32 bus, u32 slot, const
         desc.wet = p[2];
         desc.dry = p[3];
         desc.damping = p[4];
-        status = AudioFromMixer(host->mixer.SetInsert(id, slot, audio::MakeDelayEffect(channels, rate, 2.0f, ramp)));
-        return status != ENGINE_OK
-                   ? status
-                   : AudioFromMixer(host->mixer.SetInsertParams(id, slot, audio::MakeDelayParams(rate, desc)));
+        if (!same)
+        {
+            status = AudioFromMixer(
+                host->mixer.SetInsert(id, slot, audio::MakeDelayEffect(channels, rate, 2.0f, ramp)));
+            if (status != ENGINE_OK)
+            {
+                return status;
+            }
+            if (held != nullptr)
+            {
+                *held = static_cast<u8>(effect->kind);
+            }
+        }
+        return AudioFromMixer(host->mixer.SetInsertParams(id, slot, audio::MakeDelayParams(rate, desc)));
     }
     audio::ReverbDesc desc;
     desc.sample_rate = rate;
@@ -1131,15 +1229,28 @@ engine_status AudioBusEffectSetFn(engine_handle engine, u32 bus, u32 slot, const
     desc.wet = p[3];
     desc.dry = p[4];
     desc.predelay_seconds = p[5];
-    status = AudioFromMixer(host->mixer.SetInsert(id, slot, audio::MakeReverbEffect(channels, desc)));
-    return status != ENGINE_OK ? status
-                               : AudioFromMixer(host->mixer.SetInsertParams(id, slot, audio::MakeReverbParams(desc)));
+    // A reverb's lines are sized when it is made: a new size needs a new effect, the same size only new numbers.
+    if (!(same && *held_size == desc.size))
+    {
+        status = AudioFromMixer(host->mixer.SetInsert(id, slot, audio::MakeReverbEffect(channels, desc)));
+        if (status != ENGINE_OK)
+        {
+            return status;
+        }
+        if (held != nullptr)
+        {
+            *held = static_cast<u8>(effect->kind);
+            *held_size = desc.size;
+        }
+    }
+    return AudioFromMixer(host->mixer.SetInsertParams(id, slot, audio::MakeReverbParams(desc)));
 }
 
 engine_status AudioBusSendFn(engine_handle engine, u32 bus, u32 slot, u32 aux, float gain, u32 pre_fader)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -1151,8 +1262,9 @@ engine_status AudioBusSendFn(engine_handle engine, u32 bus, u32 slot, u32 aux, f
 engine_status AudioBusDuckFn(engine_handle engine, u32 target, u32 source, float depth, float threshold,
                              float release_frames)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -1211,8 +1323,9 @@ engine_status AudioSnapshotFn(engine_handle engine, engine_buffer* out)
     out->size = 0;
     out->owner = nullptr;
     out->release = nullptr;
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;
@@ -1230,8 +1343,9 @@ engine_status AudioSnapshotFn(engine_handle engine, engine_buffer* out)
 
 engine_status AudioRestoreFn(engine_handle engine, const void* data, size_t size)
 {
+    AudioHostPtr keep;
     AudioHost* host = nullptr;
-    const engine_status status = AudioResolve(engine, &host);
+    const engine_status status = AudioResolve(engine, &host, &keep);
     if (status != ENGINE_OK)
     {
         return status;

@@ -7,6 +7,7 @@
 #include "engine_c/surface.h"
 
 #include "animation/components.h"
+#include "audio/components.h"
 #include "animation/pose.h"
 #include "asset/level.h"
 #include "algorithm.h"
@@ -74,13 +75,15 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_COLLIDER: return "collider";
     case ENGINE_COMPONENT_JOINT: return "joint";
     case ENGINE_COMPONENT_CHARACTER: return "character";
+    case ENGINE_COMPONENT_AUDIO_SOURCE: return "audio source";
+    case ENGINE_COMPONENT_AUDIO_LISTENER: return "audio listener";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_CHARACTER;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_AUDIO_LISTENER;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -101,6 +104,8 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_COLLIDER: return ecs::ComponentOf<physics::Collider>();
     case ENGINE_COMPONENT_JOINT: return ecs::ComponentOf<physics::Joint>();
     case ENGINE_COMPONENT_CHARACTER: return ecs::ComponentOf<CharacterComponent>();
+    case ENGINE_COMPONENT_AUDIO_SOURCE: return ecs::ComponentOf<audio::AudioSource>();
+    case ENGINE_COMPONENT_AUDIO_LISTENER: return ecs::ComponentOf<audio::AudioListener>();
     }
     return ecs::kInvalidComponent;
 }
@@ -198,6 +203,60 @@ void FollowCharacters(WorldObject& object)
 }
 
 }  // namespace
+
+namespace
+{
+
+// Stops the voices of a world's audio sources (on the host they play on) and lets go of the host.
+void ReleaseWorldAudio(WorldObject& object)
+{
+    if (object.spatial_audio != nullptr && object.spatial_host.Get() != nullptr)
+    {
+        LockGuard<Mutex> lock(object.spatial_host->mutex);
+        ecs::World nothing;
+        object.spatial_audio->Update(nothing, 0.0f);  // no sources: every voice is stopped
+    }
+    object.spatial_audio = nullptr;
+    object.spatial_host = AudioHostPtr();
+}
+
+// Places a world's sounds on the engine's audio host, once per frame (a world without an audio component pays nothing).
+void UpdateWorldAudio(Runtime& runtime, WorldObject& object, f32 dt)
+{
+    if (!object.audio_used)
+    {
+        return;
+    }
+    AudioHostPtr host;
+    {
+        LockGuard<Mutex> lock(runtime.audio_mutex);
+        host = runtime.audio_owner;
+    }
+    if (host.Get() != object.spatial_host.Get())
+    {  // audio was closed, or closed and opened again: the voices of the old mixer are gone with it
+        ReleaseWorldAudio(object);
+        if (host.Get() == nullptr)
+        {
+            return;
+        }
+        object.spatial_audio = MakeUnique<audio::SpatialAudio>();
+        object.spatial_audio->Init(&host->mixer, audio::SpatialAudioConfig());
+        object.spatial_host = host;
+    }
+    if (host.Get() == nullptr)
+    {
+        return;
+    }
+    LockGuard<Mutex> lock(host->mutex);
+    object.spatial_audio->Update(object.world, dt);
+}
+
+}  // namespace
+
+WorldObject::~WorldObject()
+{
+    ReleaseWorldAudio(*this);
+}
 
 WorldObject::WorldObject()
 {
@@ -534,6 +593,7 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
             physics::SyncJoints(object->world, physics);  // a joint the step broke loses its component now
         }
         FollowCharacters(*object);
+        UpdateWorldAudio(*runtime, *object, static_cast<f32>(info->delta_seconds));
         result.physics_steps += static_cast<u32>(physics.GetStepStats().steps - steps_before);
         result.physics_bodies += physics.Stats().bodies;
         AttachWorld(*object, resources);
@@ -780,6 +840,14 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         checked = CheckInStruct(value, sizeof(engine_character), "engine_character");
     }
+    else if (kind == ENGINE_COMPONENT_AUDIO_SOURCE)
+    {
+        checked = CheckInStruct(value, sizeof(engine_audio_source), "engine_audio_source");
+    }
+    else if (kind == ENGINE_COMPONENT_AUDIO_LISTENER)
+    {
+        checked = CheckInStruct(value, sizeof(engine_audio_listener), "engine_audio_listener");
+    }
     else
     {
         checked = CheckInStruct(value, kMeshReferenceFirstSize, "engine_mesh_reference");
@@ -792,6 +860,60 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
         world, true, key,
         [&](WorldObject& object, ecs::Entity entity)
         {
+            if (kind == ENGINE_COMPONENT_AUDIO_SOURCE)
+            {
+                const engine_audio_source* in = static_cast<const engine_audio_source*>(value);
+                audio::AudioSource source;
+                const engine_status found = AudioClipOfHandle(*CurrentRuntime(), in->clip, &source.clip);
+                if (found != ENGINE_OK)
+                {
+                    return found;
+                }
+                if (in->model > ENGINE_AUDIO_MODEL_EXPONENTIAL || !IsFinite(in->gain) || in->gain < 0.0f ||
+                    in->gain > 16.0f || !IsFinite(in->pitch) || in->pitch < 0.25f || in->pitch > 4.0f ||
+                    !IsFinite(in->rolloff) || in->rolloff < 0.0f || !IsFinite(in->cone_inner) ||
+                    !IsFinite(in->cone_outer) || !IsFinite(in->cone_outer_gain) || in->cone_outer_gain < 0.0f ||
+                    in->cone_outer_gain > 1.0f || in->cone_inner < 0.0f || in->cone_outer < in->cone_inner ||
+                    (in->flags & ~31u) != 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a number of the audio source is out of range");
+                }
+                source.bus = audio::BusId{in->bus};
+                source.gain = in->gain;
+                source.pitch = in->pitch;
+                source.loop = (in->flags & ENGINE_AUDIO_SOURCE_LOOP) != 0;
+                source.play_on_start = (in->flags & ENGINE_AUDIO_SOURCE_PLAY_ON_START) != 0;
+                source.spatial = (in->flags & ENGINE_AUDIO_SOURCE_SPATIAL) != 0;
+                source.doppler = (in->flags & ENGINE_AUDIO_SOURCE_DOPPLER) != 0;
+                source.occlusion = (in->flags & ENGINE_AUDIO_SOURCE_OCCLUSION) != 0;
+                source.priority = in->priority;
+                source.attenuation.model = static_cast<audio::DistanceModel>(in->model);
+                source.attenuation.min_distance = in->min_distance;
+                source.attenuation.max_distance = in->max_distance;
+                source.attenuation.rolloff = in->rolloff;
+                source.cone.inner_angle = in->cone_inner;
+                source.cone.outer_angle = in->cone_outer;
+                source.cone.outer_gain = in->cone_outer_gain;
+                if (!audio::IsValid(source.attenuation))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the distances of the audio source are not valid");
+                }
+                object.audio_used = true;
+                return SetOrAdd(object.world, entity, source);
+            }
+            if (kind == ENGINE_COMPONENT_AUDIO_LISTENER)
+            {
+                const engine_audio_listener* in = static_cast<const engine_audio_listener*>(value);
+                if (!IsFinite(in->gain) || in->gain < 0.0f || in->gain > 4.0f)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the listener gain is not in 0 to 4");
+                }
+                audio::AudioListener listener;
+                listener.gain = in->gain;
+                listener.active = in->active != 0;
+                object.audio_used = true;
+                return SetOrAdd(object.world, entity, listener);
+            }
             if (kind == ENGINE_COMPONENT_RIGID_BODY)
             {
                 const engine_rigid_body* in = static_cast<const engine_rigid_body*>(value);
@@ -2187,6 +2309,8 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_COLLIDER          ? sizeof(engine_collider)
                          : kind == ENGINE_COMPONENT_JOINT             ? sizeof(engine_joint)
                          : kind == ENGINE_COMPONENT_CHARACTER         ? sizeof(engine_character)
+                         : kind == ENGINE_COMPONENT_AUDIO_SOURCE      ? sizeof(engine_audio_source)
+                         : kind == ENGINE_COMPONENT_AUDIO_LISTENER    ? sizeof(engine_audio_listener)
                          : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? sizeof(engine_skeleton_instance)
                          : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? sizeof(engine_animation_state)
                                                                       : kMeshReferenceFirstSize;
@@ -2200,6 +2324,8 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                        : kind == ENGINE_COMPONENT_COLLIDER          ? "engine_collider"
                        : kind == ENGINE_COMPONENT_JOINT             ? "engine_joint"
                        : kind == ENGINE_COMPONENT_CHARACTER         ? "engine_character"
+                       : kind == ENGINE_COMPONENT_AUDIO_SOURCE      ? "engine_audio_source"
+                       : kind == ENGINE_COMPONENT_AUDIO_LISTENER    ? "engine_audio_listener"
                        : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? "engine_skeleton_instance"
                        : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? "engine_animation_state"
                                                                     : "engine_mesh_reference";
@@ -2278,6 +2404,49 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              result.clip = player->clip;
                              result.time = player->time;
                              result.speed = player->speed;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_AUDIO_SOURCE)
+                         {
+                             const audio::AudioSource* source = view.Peek<audio::AudioSource>(entity);
+                             if (source == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no audio source");
+                             }
+                             engine_audio_source result = {};
+                             result.struct_size = sizeof(engine_audio_source);
+                             result.clip = AudioHandleOfClip(*CurrentRuntime(), source->clip);
+                             result.bus = source->bus.index;
+                             result.gain = source->gain;
+                             result.pitch = source->pitch;
+                             result.flags = (source->loop ? ENGINE_AUDIO_SOURCE_LOOP : 0u) |
+                                            (source->play_on_start ? ENGINE_AUDIO_SOURCE_PLAY_ON_START : 0u) |
+                                            (source->spatial ? ENGINE_AUDIO_SOURCE_SPATIAL : 0u) |
+                                            (source->doppler ? ENGINE_AUDIO_SOURCE_DOPPLER : 0u) |
+                                            (source->occlusion ? ENGINE_AUDIO_SOURCE_OCCLUSION : 0u);
+                             result.priority = source->priority;
+                             result.model = static_cast<u32>(source->attenuation.model);
+                             result.min_distance = source->attenuation.min_distance;
+                             result.max_distance = source->attenuation.max_distance;
+                             result.rolloff = source->attenuation.rolloff;
+                             result.cone_inner = source->cone.inner_angle;
+                             result.cone_outer = source->cone.outer_angle;
+                             result.cone_outer_gain = source->cone.outer_gain;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_AUDIO_LISTENER)
+                         {
+                             const audio::AudioListener* listener = view.Peek<audio::AudioListener>(entity);
+                             if (listener == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no audio listener");
+                             }
+                             engine_audio_listener result = {};
+                             result.struct_size = sizeof(engine_audio_listener);
+                             result.gain = listener->gain;
+                             result.active = listener->active ? 1u : 0u;
                              MemCopy(out, &result, sizeof(result));
                              return ENGINE_OK;
                          }
@@ -2507,6 +2676,8 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_CHARACTER:
                              status = w.Remove<CharacterComponent>(entity);  // the frame gives the capsule back
                              break;
+                         case ENGINE_COMPONENT_AUDIO_SOURCE: status = w.Remove<audio::AudioSource>(entity); break;
+                         case ENGINE_COMPONENT_AUDIO_LISTENER: status = w.Remove<audio::AudioListener>(entity); break;
                          case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
                          case ENGINE_COMPONENT_SKELETON_INSTANCE:
                              status = w.Remove<animation::SkeletonInstance>(entity);
@@ -2612,7 +2783,7 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
                      {
                          ecs::ComponentId wanted[14];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_CHARACTER; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_AUDIO_LISTENER; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {

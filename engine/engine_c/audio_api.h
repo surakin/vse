@@ -4,6 +4,7 @@
 #include "audio/mixer.h"
 #include "audio/music.h"
 #include "audio/stream.h"
+#include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "engine/engine_c.h"
@@ -51,7 +52,28 @@ public:
     UniquePtr<audio::MusicPlayer> music;
     /// The bus the player plays on.
     u32 music_bus = 0;
+    /// What each insert slot holds (an `ENGINE_AUDIO_EFFECT_*` kind) and the size of a reverb: the mixer keeps every
+    /// effect it was given, so a call that changes only the numbers of the effect in a slot retunes it instead of
+    /// using another of the mixer's limited effect slots.
+    u8 insert_kind[audio::kMaxBuses][audio::kMaxInserts] = {};
+    f32 insert_size[audio::kMaxBuses][audio::kMaxInserts] = {};
 };
+
+class Runtime;
+
+/// The clip a clip handle of `audio_clip_create` names (for an audio source component).
+///
+/// - Param runtime: the engine's runtime.
+/// - Param handle: the clip handle; 0 gives a null clip and `ENGINE_OK`.
+/// - Param out: receives the clip.
+/// - Returns: `ENGINE_OK`, `ENGINE_ERROR_NOT_READY` (audio is not open) or `ENGINE_ERROR_STALE_HANDLE`.
+/// - Thread-safety: thread-safe.
+engine_status AudioClipOfHandle(Runtime& runtime, u64 handle, audio::AudioClipConstPtr* out);
+
+/// The handle of a clip of the table, 0 when it is not in it (or audio is closed).
+///
+/// - Thread-safety: thread-safe.
+u64 AudioHandleOfClip(Runtime& runtime, const audio::AudioClipConstPtr& clip);
 
 engine_status AudioOpenFn(engine_handle engine, const engine_audio_info* info);
 engine_status AudioCloseFn(engine_handle engine);

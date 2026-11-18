@@ -83,6 +83,78 @@ static void RunRest(const engine_api* api, Engine& engine)
     CHECK(GetExtension(api, "no_such_extension") == nullptr);
     ThreadDetach(api);
 
+    // The host-driven audio through the layer: a clip, a source and a listener on entities, a frame, a render, the
+    // snapshot, and the refusals.
+    {
+        engine_audio_info audio = Init<engine_audio_info>();
+        audio.sample_rate = 48000;
+        audio.channels = 2;
+        audio.max_voices = 8;
+        CHECK(engine.AudioOpen(audio));
+        CHECK(engine.AudioOpen(audio) == ENGINE_ERROR_ALREADY_EXISTS);
+        float tone[480];
+        for (int i = 0; i < 480; ++i)
+        {
+            tone[i] = 0.25f;
+        }
+        engine_audio_clip_info clip_info = Init<engine_audio_clip_info>();
+        clip_info.sample_rate = 48000;
+        clip_info.channels = 1;
+        clip_info.format = ENGINE_AUDIO_FORMAT_F32;
+        uint64_t clip = 0;
+        CHECK(engine.AudioClipCreate(clip_info, tone, sizeof(tone), &clip) && clip != 0);
+        uint64_t source_entity = 0;
+        uint64_t ear_entity = 0;
+        CHECK(world.Entity(&source_entity) && world.Entity(&ear_entity));
+        engine_transform place = Init<engine_transform>();
+        place.rotation[3] = 1.0f;
+        place.scale[0] = place.scale[1] = place.scale[2] = 1.0f;
+        CHECK(world.SetComponent(ear_entity, ENGINE_COMPONENT_TRANSFORM, &place));
+        place.position[2] = -2.0f;
+        CHECK(world.SetComponent(source_entity, ENGINE_COMPONENT_TRANSFORM, &place));
+        engine_audio_source source = Init<engine_audio_source>();
+        source.clip = clip;
+        source.gain = 1.0f;
+        source.pitch = 1.0f;
+        source.flags = ENGINE_AUDIO_SOURCE_LOOP | ENGINE_AUDIO_SOURCE_PLAY_ON_START | ENGINE_AUDIO_SOURCE_SPATIAL;
+        source.min_distance = 1.0f;
+        source.max_distance = 50.0f;
+        source.rolloff = 1.0f;
+        source.cone_inner = 6.2831853f;
+        source.cone_outer = 6.2831853f;
+        CHECK(world.SetComponent(source_entity, ENGINE_COMPONENT_AUDIO_SOURCE, &source));
+        engine_audio_listener ear = Init<engine_audio_listener>();
+        ear.gain = 1.0f;
+        ear.active = 1;
+        CHECK(world.SetComponent(ear_entity, ENGINE_COMPONENT_AUDIO_LISTENER, &ear));
+        engine_audio_source source_back = Init<engine_audio_source>();
+        CHECK(world.GetComponent(source_entity, ENGINE_COMPONENT_AUDIO_SOURCE, &source_back) &&
+              source_back.clip == clip);
+        engine_frame_info frame = Init<engine_frame_info>();
+        frame.delta_seconds = 1.0 / 60.0;
+        for (int i = 0; i < 4; ++i)
+        {
+            CHECK(engine.Frame(frame));
+        }
+        float block[256 * 2];
+        float peak = 0.0f;
+        for (int i = 0; i < 6; ++i)
+        {
+            CHECK(engine.AudioRender(256, block));
+            for (float v : block)
+            {
+                peak = v > peak ? v : (-v > peak ? -v : peak);
+            }
+        }
+        CHECK(peak > 0.001f);
+        engine_audio_state audio_state = Init<engine_audio_state>();
+        CHECK(engine.AudioState(&audio_state) && audio_state.channels == 2);
+        Buffer audio_snapshot;
+        CHECK(engine.AudioSnapshot(&audio_snapshot) == ENGINE_ERROR_NOT_READY || audio_snapshot.Size() > 0);
+        CHECK(engine.AudioClose());
+        CHECK(engine.AudioClose() == ENGINE_ERROR_NOT_READY);
+    }
+
     Buffer none;
     CHECK(engine.ReplaceResource(Init<engine_resource_add_info>(), &none) != ENGINE_OK);
     engine_resource_info mounted;

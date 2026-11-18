@@ -2,6 +2,7 @@
 //! The runtime of one engine (Phase 23 Day 349): its worlds, its counters and its job system, behind the functions of
 //! the C API's table that make and use them. Internal to the module `engine_c`: nothing here reaches the host but
 //! through `engine_c.h`.
+#include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "ecs/schedule.h"
@@ -9,6 +10,7 @@
 #include "engine/engine_c.h"
 #include "engine_c/host_texture.h"
 #include "jobs/job.h"
+#include "audio/spatial_audio.h"
 #include "physics/character.h"
 #include "physics/world.h"
 #include "string_view.h"
@@ -146,6 +148,11 @@ struct CharacterComponent
     f32 gravity_scale = 1.0f;
 };
 
+class AudioHost;
+/// A shared handle to the audio host: the runtime holds one, and every table function in flight holds one, so
+/// `audio_close` never frees a host another thread is inside.
+using AudioHostPtr = SharedPtr<AudioHost>;
+
 /// A character controller of a world (Phase 25 Day 409): the entity it belongs to and the controller of its capsule.
 ///
 /// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
@@ -163,12 +170,18 @@ struct CharacterEntry
 struct WorldObject
 {
     WorldObject();
+    ~WorldObject();
     ecs::World world;
     ecs::Schedule schedule;
     Vector<CharacterEntry> characters;  ///< The characters, in the order they were made (Day 409).
     bool physics_used = false;     ///< Whether a body component was set: the frame makes bodies only then (Day 408).
     Environment environment;       ///< What world_set_environment set (the defaults until then).
     bool environment_set = false;  ///< Whether it was called (no default sun once it was).
+    bool audio_used = false;  ///< Whether an audio component was set: the frame places sounds only then (Phase 26).
+    /// The world's sounds and the audio host they play on (the share keeps its mixer alive); remade when the host
+    /// changes.
+    UniquePtr<audio::SpatialAudio> spatial_audio;
+    AudioHostPtr spatial_host;
 };
 
 /// A count of jobs not yet finished.
@@ -259,8 +272,6 @@ struct ResourceConfig
     ImportLimitValues import_limits;  ///< The limits of a glTF import (`assets.import.*`); all 0 without the importer.
 };
 
-class AudioHost;
-
 /// What an engine holds of worlds, counters and jobs.
 ///
 /// - Thread-safety: thread-safe; see the mutexes.
@@ -315,7 +326,7 @@ public:
     /// The host-driven audio (Phase 26 Day 438): made by `audio_open`, destroyed by `audio_close` or with the engine.
     /// `audio_host` is what the audio thread reads; `audio_owner` owns it; both change under `audio_mutex`.
     Mutex audio_mutex;
-    UniquePtr<AudioHost> audio_owner;
+    AudioHostPtr audio_owner;
     Atomic<AudioHost*> audio_host{nullptr};
 
     /// The step configuration every new world's physics starts with (`physics.*` settings, read when the engine is

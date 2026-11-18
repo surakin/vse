@@ -36,4 +36,12 @@ engine_status ResolveRuntime(engine_handle engine, Runtime** out);
 /// - Thread-safety: thread-safe.
 Runtime* CurrentRuntime();
 
+/// The runtime a handle names, for the host's audio thread: no lock, no allocation, no failure text.
+///
+/// - Param engine: the handle `audio_render` was given.
+/// - Returns: the runtime, or null when the handle is zero, was never issued or names an engine that is gone.
+/// - Thread-safety: thread-safe and lock-free; the engine must not be destroyed while the call runs (the host stops
+/// its audio thread first, as `audio_close` asks).
+Runtime* AudioRenderRuntime(engine_handle engine);
+
 }  // namespace engine_placeholder::engine_c

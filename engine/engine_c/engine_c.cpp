@@ -34,6 +34,7 @@
 #include "settings/memory_store.h"
 #include "settings/settings.h"
 #include "string/string.h"
+#include "sync/atomic.h"
 #include "sync/mutex.h"
 #include "types.h"
 #if ENGINE_TEST_EXTENSION
@@ -143,6 +144,11 @@ struct State
     bool destroying = false;  // an engine is between leaving the slot and its log callback being gone: no new engine
                               // yet (it would install its own observer)
 };
+
+// What the host's audio thread reads without taking the state's lock: the handle and the runtime of the engine that
+// exists (both zero when none does). Written under the state's lock, on create and on destroy.
+Atomic<u64> g_audio_handle{0};
+Atomic<Runtime*> g_audio_runtime{nullptr};
 
 State& GetState()
 {
@@ -375,6 +381,8 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
         SetLogObserver(&ObserveLog, raw);
     }
     *out = MakeHandle(state.generation);
+    g_audio_handle.Store(out->value, MemoryOrder::Relaxed);
+    g_audio_runtime.Store(raw->runtime.Get(), MemoryOrder::Release);
     return ENGINE_OK;
 }
 
@@ -396,6 +404,8 @@ engine_status DestroyFn(engine_handle handle)
                          static_cast<unsigned>(engine->outstanding));
             return ENGINE_ERROR_IN_USE;
         }
+        g_audio_runtime.Store(nullptr, MemoryOrder::Release);
+        g_audio_handle.Store(0, MemoryOrder::Relaxed);
         dying = static_cast<UniquePtr<Engine>&&>(state.engine);
         state.destroying = true;
     }
@@ -654,6 +664,16 @@ engine_status ResolveRuntime(engine_handle engine, Runtime** out)
         *out = resolved->runtime.Get();
     }
     return status;
+}
+
+Runtime* AudioRenderRuntime(engine_handle engine)
+{
+    Runtime* runtime = g_audio_runtime.Load(MemoryOrder::Acquire);
+    if (runtime == nullptr || engine.value == 0 || engine.value != g_audio_handle.Load(MemoryOrder::Relaxed))
+    {
+        return nullptr;
+    }
+    return runtime;
 }
 
 Runtime* CurrentRuntime()

@@ -28,7 +28,9 @@ value ENGINE_COMPONENT_RIGID_BODY 11
 value ENGINE_COMPONENT_COLLIDER 12
 value ENGINE_COMPONENT_JOINT 13
 value ENGINE_COMPONENT_CHARACTER 14
-value ENGINE_COMPONENT_MASK_ALL 16383
+value ENGINE_COMPONENT_AUDIO_SOURCE 15
+value ENGINE_COMPONENT_AUDIO_LISTENER 16
+value ENGINE_COMPONENT_MASK_ALL 65535
 value ENGINE_NAME_MAX_BYTES 63
 struct engine_string size=16
 field engine_string.data offset=0 size=8
@@ -419,6 +421,25 @@ struct engine_audio_tempo size=12
 field engine_audio_tempo.struct_size offset=0 size=4
 field engine_audio_tempo.beats_per_minute offset=4 size=4
 field engine_audio_tempo.beats_per_bar offset=8 size=4
+struct engine_audio_source size=64
+field engine_audio_source.struct_size offset=0 size=4
+field engine_audio_source.clip offset=8 size=8
+field engine_audio_source.bus offset=16 size=4
+field engine_audio_source.gain offset=20 size=4
+field engine_audio_source.pitch offset=24 size=4
+field engine_audio_source.flags offset=28 size=4
+field engine_audio_source.priority offset=32 size=4
+field engine_audio_source.model offset=36 size=4
+field engine_audio_source.min_distance offset=40 size=4
+field engine_audio_source.max_distance offset=44 size=4
+field engine_audio_source.rolloff offset=48 size=4
+field engine_audio_source.cone_inner offset=52 size=4
+field engine_audio_source.cone_outer offset=56 size=4
+field engine_audio_source.cone_outer_gain offset=60 size=4
+struct engine_audio_listener size=12
+field engine_audio_listener.struct_size offset=0 size=4
+field engine_audio_listener.gain offset=4 size=4
+field engine_audio_listener.active offset=8 size=4
 struct engine_audio_effect size=40
 field engine_audio_effect.struct_size offset=0 size=4
 field engine_audio_effect.kind offset=4 size=4

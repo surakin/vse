@@ -568,11 +568,13 @@ extern "C"
         ENGINE_COMPONENT_RIGID_BODY = 11,       /* engine_rigid_body: a physics body (Phase 25 Day 408) */
         ENGINE_COMPONENT_COLLIDER = 12,         /* engine_collider: the shape of a physics body (Phase 25 Day 408) */
         ENGINE_COMPONENT_JOINT = 13,            /* engine_joint: ties two entities' bodies (Phase 25 Day 409) */
-        ENGINE_COMPONENT_CHARACTER = 14         /* engine_character: a capsule character controller (Day 409) */
+        ENGINE_COMPONENT_CHARACTER = 14,        /* engine_character: a capsule character controller (Day 409) */
+        ENGINE_COMPONENT_AUDIO_SOURCE = 15,     /* engine_audio_source: a sound at the entity's place (Phase 26) */
+        ENGINE_COMPONENT_AUDIO_LISTENER = 16    /* engine_audio_listener: the ears (Phase 26) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0x3FFFu
+#define ENGINE_COMPONENT_MASK_ALL 0xFFFFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -1186,6 +1188,46 @@ extern "C"
         uint32_t mute;
         uint32_t limiter;
     } engine_audio_bus_params;
+
+    /* A sound on an entity (ENGINE_COMPONENT_AUDIO_SOURCE). The entity needs ENGINE_COMPONENT_TRANSFORM; its world
+     * matrix places the sound (the cone's axis is the entity's local -Z). The sound plays through the engine's
+     * host-driven mixer: audio_open first, then the frame (engine_api.frame) starts, moves and stops the voices, so the
+     * host's audio_render hears them. A source set while audio is not open plays once it is. Distances are in the
+     * world's units. */
+#define ENGINE_AUDIO_SOURCE_LOOP 1u
+#define ENGINE_AUDIO_SOURCE_PLAY_ON_START 2u /* starts when first seen (set it for the usual case) */
+#define ENGINE_AUDIO_SOURCE_SPATIAL 4u       /* placed in the world; clear for music and interface sounds */
+#define ENGINE_AUDIO_SOURCE_DOPPLER 8u
+#define ENGINE_AUDIO_SOURCE_OCCLUSION 16u
+#define ENGINE_AUDIO_MODEL_INVERSE 0u
+#define ENGINE_AUDIO_MODEL_LINEAR 1u
+#define ENGINE_AUDIO_MODEL_EXPONENTIAL 2u
+    typedef struct engine_audio_source
+    {
+        uint32_t struct_size;
+        uint64_t clip;      /* from audio_clip_create; 0 plays nothing */
+        uint32_t bus;       /* from audio_bus_create; 0: the master */
+        float gain;         /* 0 to 16, before distance and cone */
+        float pitch;        /* the rate ratio, 0.25 to 4 */
+        uint32_t flags;     /* ENGINE_AUDIO_SOURCE_* */
+        int32_t priority;   /* higher survives when voices are scarce */
+        uint32_t model;     /* ENGINE_AUDIO_MODEL_* */
+        float min_distance; /* full level up to here */
+        float max_distance; /* nothing is heard beyond; above min_distance */
+        float rolloff;
+        float cone_inner; /* full angle in radians; 6.2831853 or more: all directions */
+        float cone_outer; /* at least cone_inner */
+        float cone_outer_gain;
+    } engine_audio_source;
+
+    /* The ears (ENGINE_COMPONENT_AUDIO_LISTENER): the active listener with the lowest entity id places every spatial
+     * source from its world matrix (forward is local -Z); its velocity is the change of its position between frames. */
+    typedef struct engine_audio_listener
+    {
+        uint32_t struct_size;
+        float gain;      /* 0 to 4 */
+        uint32_t active; /* nonzero: a candidate */
+    } engine_audio_listener;
 
     /* The kinds of engine_audio_event.kind. */
 #define ENGINE_AUDIO_EVENT_FINISHED 1u    /* the voice ran off the end of its clip */
@@ -1899,8 +1941,9 @@ extern "C"
          * sample_rate or channel count the mixer does not take). Any thread. */
         engine_status (*audio_open)(engine_handle engine, const engine_audio_info* info);
 
-        /* Closes the mixer: clips, buses and voices are gone, and their ids are stale. Not while another thread is in
-         * audio_render. Fails with: STALE_HANDLE, NOT_READY (not open). */
+        /* Closes the mixer: clips, buses and voices are gone, and their ids are stale. A table call in flight on
+         * another thread finishes first (it keeps the mixer alive); not while another thread is in audio_render. Fails
+         * with: STALE_HANDLE, NOT_READY (not open). */
         engine_status (*audio_close)(engine_handle engine);
 
         /* Copies the PCM `size` bytes at `data` (a whole number of frames) into a clip. Fails with: STALE_HANDLE,
@@ -2007,7 +2050,9 @@ extern "C"
                                              uint64_t* out_frame);
 
         /* Sets (or, with kind NONE, removes) the effect in insert slot `slot` (0 to 3) of a bus. Fails with:
-         * STALE_HANDLE, INVALID_ARGUMENT (a number out of range), STRUCT_SIZE, NOT_FOUND, NOT_READY, LIMIT_EXCEEDED. */
+         * STALE_HANDLE, INVALID_ARGUMENT (a number out of range), STRUCT_SIZE, NOT_FOUND, NOT_READY, LIMIT_EXCEEDED
+         * (the mixer makes at most 64 effects over its life: a call that only changes the numbers of the effect of the
+         * same kind in the slot, or a reverb of the same size, retunes it and uses none). */
         engine_status (*audio_bus_effect_set)(engine_handle engine, uint32_t bus, uint32_t slot,
                                               const engine_audio_effect* effect);
 

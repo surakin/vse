@@ -51,6 +51,8 @@ int main(void)
     VALUE(ENGINE_COMPONENT_COLLIDER);
     VALUE(ENGINE_COMPONENT_JOINT);
     VALUE(ENGINE_COMPONENT_CHARACTER);
+    VALUE(ENGINE_COMPONENT_AUDIO_SOURCE);
+    VALUE(ENGINE_COMPONENT_AUDIO_LISTENER);
     VALUE(ENGINE_COMPONENT_MASK_ALL);
     VALUE(ENGINE_NAME_MAX_BYTES);
 
@@ -443,6 +445,25 @@ int main(void)
     FIELD(engine_audio_tempo, struct_size);
     FIELD(engine_audio_tempo, beats_per_minute);
     FIELD(engine_audio_tempo, beats_per_bar);
+    STRUCT(engine_audio_source);
+    FIELD(engine_audio_source, struct_size);
+    FIELD(engine_audio_source, clip);
+    FIELD(engine_audio_source, bus);
+    FIELD(engine_audio_source, gain);
+    FIELD(engine_audio_source, pitch);
+    FIELD(engine_audio_source, flags);
+    FIELD(engine_audio_source, priority);
+    FIELD(engine_audio_source, model);
+    FIELD(engine_audio_source, min_distance);
+    FIELD(engine_audio_source, max_distance);
+    FIELD(engine_audio_source, rolloff);
+    FIELD(engine_audio_source, cone_inner);
+    FIELD(engine_audio_source, cone_outer);
+    FIELD(engine_audio_source, cone_outer_gain);
+    STRUCT(engine_audio_listener);
+    FIELD(engine_audio_listener, struct_size);
+    FIELD(engine_audio_listener, gain);
+    FIELD(engine_audio_listener, active);
     STRUCT(engine_audio_effect);
     FIELD(engine_audio_effect, struct_size);
     FIELD(engine_audio_effect, kind);
