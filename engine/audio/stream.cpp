@@ -613,6 +613,19 @@ u32 StreamBuffer::Refill()
             continue;
         }
         empty_wraps = 0;
+        {
+            // A hostile or damaged source (a float WAV with a NaN, a Vorbis stream that overflows) must not put a
+            // non-finite sample into the mix; the clip path refuses the same data.
+            f32* samples = ring_.Data() + static_cast<usize>(slot) * channels_;
+            const usize count = static_cast<usize>(got) * channels_;
+            for (usize i = 0; i < count; ++i)
+            {
+                if (!IsFinite(samples[i]))
+                {
+                    samples[i] = 0.0f;
+                }
+            }
+        }
         u64 expected = state;
         if (!state_.CompareExchangeStrong(expected, (epoch << 48) | (written + got), MemoryOrder::Release,
                                           MemoryOrder::Acquire))

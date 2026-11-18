@@ -10,6 +10,7 @@
 #include "io/file_system.h"
 #include "io/path.h"
 #include "jobs/scheduler.h"
+#include "lang/limits.h"
 #include "lang/scalar.h"
 #include "wav_builder.h"
 
@@ -457,4 +458,56 @@ TEST_CASE("stream: a flush from the consumer while the job fills never mixes epo
     }
     pump.Run();
     CHECK(flushes > 20);
+}
+
+namespace
+{
+
+// A source whose samples include a NaN and an infinity (a damaged float WAV).
+class StNanSource final : public StreamSource
+{
+public:
+    u32 Channels() const override { return 1; }
+    u32 SampleRate() const override { return 48000; }
+    u64 Length() const override { return 64; }
+    u64 LoopStart() const override { return 0; }
+    u64 LoopEnd() const override { return 0; }
+    u32 Read(f32* out, u32 frames) override
+    {
+        u32 n = 0;
+        while (n < frames && position_ < 64)
+        {
+            out[n] = position_ == 5 ? Limits<f32>::QuietNaN() : (position_ == 9 ? Limits<f32>::Infinity() : 0.5f);
+            position_ += 1;
+            n += 1;
+        }
+        return n;
+    }
+    bool Seek(u64 frame) override
+    {
+        position_ = frame;
+        return true;
+    }
+
+private:
+    u64 position_ = 0;
+};
+
+}  // namespace
+
+TEST_CASE("Stream: a non-finite sample from a source reaches the mix as silence", "[audio][stream]")
+{
+    StreamConfig config;
+    config.capacity_frames = 128;
+    config.chunk_frames = 64;
+    config.low_water_frames = 64;
+    StreamBufferPtr buffer;
+    REQUIRE(StreamBuffer::Create(MakeUnique<StNanSource>(), config, &buffer) == StreamStatus::Ok);
+    buffer->Refill();
+    f32 out[64] = {};
+    REQUIRE(buffer->Pop(out, 64) == 64);
+    CHECK(out[5] == 0.0f);
+    CHECK(out[9] == 0.0f);
+    CHECK(out[4] == 0.5f);
+    CHECK(out[10] == 0.5f);
 }

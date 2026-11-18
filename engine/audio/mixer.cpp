@@ -901,7 +901,10 @@ void Mixer::Apply(Command* command)
         }
         return;
     case CommandType::SetInsert:
-        if (command->a < kMaxBuses && command->b < kMaxInserts && buses_[command->a].active)
+        // An effect made for another channel count (a device switch happened between the post and now) is refused:
+        // its buffers would not match the bus buffer.
+        if (command->a < kMaxBuses && command->b < kMaxInserts && buses_[command->a].active &&
+            (command->effect == nullptr || command->effect->Channels() == channels_))
         {
             buses_[command->a].inserts[command->b] = command->effect;
         }
@@ -1401,7 +1404,7 @@ void Mixer::Render(f32* out, u32 frames)
         for (usize i = 0; i < total; ++i)
         {
             const f32 v = source[i];
-            out[i] = v > 1.0f ? 1.0f : (v < -1.0f ? -1.0f : v);
+            out[i] = v > 1.0f ? 1.0f : (v < -1.0f ? -1.0f : (v == v ? v : 0.0f));  // a NaN becomes silence
         }
         out += total;
         carry_next_ += count;

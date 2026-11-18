@@ -386,6 +386,8 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
         }
         c.dir = dir;
         c.spread = spread;
+        // The mixer refuses a gain above 16 (a source gain of 16 times a listener gain of 4 would never start).
+        c.loudness = c.loudness > 16.0f ? 16.0f : c.loudness;
         if (!(c.loudness > config_.audibility_threshold))
         {
             continue;

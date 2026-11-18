@@ -97,7 +97,8 @@ struct DeviceCounters
 /// overwritten (not zeroed beforehand); `frames` is 1 to the granted buffer size.
 using RenderCallback = void (*)(void* user, f32* interleaved, u32 frames);
 
-/// The error callback: the device stopped on its own (`Lost`, `IoError`). It may run on any thread.
+/// The error callback: the device stopped on its own (`Lost`, `IoError`). It may run on any thread and must only record
+/// the failure (set a flag): calling `Stop` or `Close` from it waits for the very thread it runs on.
 using DeviceErrorCallback = void (*)(void* user, DeviceStatus status);
 
 /// An audio output device: a null clock, a file, or a platform's sound card.

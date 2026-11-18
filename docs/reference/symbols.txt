@@ -4678,29 +4678,29 @@ audio::DeviceCounters::underruns	variable	audio	audio-devicecounters-underruns	a
 audio::DeviceCounters::slow_callbacks	variable	audio	audio-devicecounters-slow-callbacks	audio.md	engine/audio/device.h:88
 audio::DeviceCounters::longest_callback_micros	variable	audio	audio-devicecounters-longest-callback-micros	audio.md	engine/audio/device.h:90
 audio::RenderCallback	alias	audio	audio-rendercallback	audio.md	engine/audio/device.h:98
-audio::DeviceErrorCallback	alias	audio	audio-deviceerrorcallback	audio.md	engine/audio/device.h:101
-audio::AudioDevice	class	audio	audio-audiodevice	audio.md	engine/audio/device.h:112
-audio::AudioDevice::~AudioDevice()	function	audio	audio-audiodevice-tilde-audiodevice	audio.md	engine/audio/device.h:115
-audio::AudioDevice::SetCallbacks(RenderCallback,DeviceErrorCallback,void*)	function	audio	audio-audiodevice-setcallbacks-rendercallback-deviceerrorcallback-void-star	audio.md	engine/audio/device.h:124
-audio::AudioDevice::Open(const DeviceConfig&)	function	audio	audio-audiodevice-open-const-deviceconfig-amp	audio.md	engine/audio/device.h:132
-audio::AudioDevice::Start()	function	audio	audio-audiodevice-start	audio.md	engine/audio/device.h:140
-audio::AudioDevice::Stop()	function	audio	audio-audiodevice-stop	audio.md	engine/audio/device.h:146
-audio::AudioDevice::Close()	function	audio	audio-audiodevice-close	audio.md	engine/audio/device.h:153
-audio::AudioDevice::Info() const	function	audio	audio-audiodevice-info-const	audio.md	engine/audio/device.h:156
-audio::AudioDevice::IsOpen() const	function	audio	audio-audiodevice-isopen-const	audio.md	engine/audio/device.h:162
-audio::AudioDevice::IsRunning() const	function	audio	audio-audiodevice-isrunning-const	audio.md	engine/audio/device.h:168
-audio::AudioDevice::Pump(u64)	function	audio	audio-audiodevice-pump-u64	audio.md	engine/audio/device.h:177
-audio::AudioDevice::FramesRendered() const	function	audio	audio-audiodevice-framesrendered-const	audio.md	engine/audio/device.h:184
-audio::AudioDevice::Counters() const	function	audio	audio-audiodevice-counters-const	audio.md	engine/audio/device.h:190
-audio::DeviceKind	enum	audio	audio-devicekind	audio.md	engine/audio/device.h:194
-audio::DeviceKind::Null	enumerator	audio	audio-devicekind-null	audio.md	engine/audio/device.h:197
-audio::DeviceKind::WavFile	enumerator	audio	audio-devicekind-wavfile	audio.md	engine/audio/device.h:199
-audio::DeviceKind::Platform	enumerator	audio	audio-devicekind-platform	audio.md	engine/audio/device.h:202
-audio::DeviceKind::PipeWire	enumerator	audio	audio-devicekind-pipewire	audio.md	engine/audio/device.h:204
-audio::DeviceKind::Alsa	enumerator	audio	audio-devicekind-alsa	audio.md	engine/audio/device.h:206
-audio::CreateDevice(DeviceKind)	function	audio	audio-createdevice-devicekind	audio.md	engine/audio/device.h:216
-audio::CreateWavFileDevice(const io::Path&)	function	audio	audio-createwavfiledevice-const-io-path-amp	audio.md	engine/audio/device.h:224
-audio::IsValidDeviceConfig(const DeviceConfig&)	function	audio	audio-isvaliddeviceconfig-const-deviceconfig-amp	audio.md	engine/audio/device.h:231
+audio::DeviceErrorCallback	alias	audio	audio-deviceerrorcallback	audio.md	engine/audio/device.h:102
+audio::AudioDevice	class	audio	audio-audiodevice	audio.md	engine/audio/device.h:113
+audio::AudioDevice::~AudioDevice()	function	audio	audio-audiodevice-tilde-audiodevice	audio.md	engine/audio/device.h:116
+audio::AudioDevice::SetCallbacks(RenderCallback,DeviceErrorCallback,void*)	function	audio	audio-audiodevice-setcallbacks-rendercallback-deviceerrorcallback-void-star	audio.md	engine/audio/device.h:125
+audio::AudioDevice::Open(const DeviceConfig&)	function	audio	audio-audiodevice-open-const-deviceconfig-amp	audio.md	engine/audio/device.h:133
+audio::AudioDevice::Start()	function	audio	audio-audiodevice-start	audio.md	engine/audio/device.h:141
+audio::AudioDevice::Stop()	function	audio	audio-audiodevice-stop	audio.md	engine/audio/device.h:147
+audio::AudioDevice::Close()	function	audio	audio-audiodevice-close	audio.md	engine/audio/device.h:154
+audio::AudioDevice::Info() const	function	audio	audio-audiodevice-info-const	audio.md	engine/audio/device.h:157
+audio::AudioDevice::IsOpen() const	function	audio	audio-audiodevice-isopen-const	audio.md	engine/audio/device.h:163
+audio::AudioDevice::IsRunning() const	function	audio	audio-audiodevice-isrunning-const	audio.md	engine/audio/device.h:169
+audio::AudioDevice::Pump(u64)	function	audio	audio-audiodevice-pump-u64	audio.md	engine/audio/device.h:178
+audio::AudioDevice::FramesRendered() const	function	audio	audio-audiodevice-framesrendered-const	audio.md	engine/audio/device.h:185
+audio::AudioDevice::Counters() const	function	audio	audio-audiodevice-counters-const	audio.md	engine/audio/device.h:191
+audio::DeviceKind	enum	audio	audio-devicekind	audio.md	engine/audio/device.h:195
+audio::DeviceKind::Null	enumerator	audio	audio-devicekind-null	audio.md	engine/audio/device.h:198
+audio::DeviceKind::WavFile	enumerator	audio	audio-devicekind-wavfile	audio.md	engine/audio/device.h:200
+audio::DeviceKind::Platform	enumerator	audio	audio-devicekind-platform	audio.md	engine/audio/device.h:203
+audio::DeviceKind::PipeWire	enumerator	audio	audio-devicekind-pipewire	audio.md	engine/audio/device.h:205
+audio::DeviceKind::Alsa	enumerator	audio	audio-devicekind-alsa	audio.md	engine/audio/device.h:207
+audio::CreateDevice(DeviceKind)	function	audio	audio-createdevice-devicekind	audio.md	engine/audio/device.h:217
+audio::CreateWavFileDevice(const io::Path&)	function	audio	audio-createwavfiledevice-const-io-path-amp	audio.md	engine/audio/device.h:225
+audio::IsValidDeviceConfig(const DeviceConfig&)	function	audio	audio-isvaliddeviceconfig-const-deviceconfig-amp	audio.md	engine/audio/device.h:232
 audio::DeviceDescription	struct	audio	audio-devicedescription	audio.md	engine/audio/device_list.h:13
 audio::DeviceDescription::name	variable	audio	audio-devicedescription-name	audio.md	engine/audio/device_list.h:16
 audio::DeviceDescription::is_default	variable	audio	audio-devicedescription-is-default	audio.md	engine/audio/device_list.h:18

@@ -8,6 +8,8 @@ with progress.
 
 Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 
+**Phase 26 complete on Linux (2026-11-18, Day 443).** Closing run `ran 10353 of 10353 tests (phases: all; flavors: all; display: included; crash tests: included)`; failures only the known ones plus crash-label tests and one load-sensitive timing test (`KNOWN-ISSUES.md`); the uncapped four-area review fixed the memory-safety and finiteness findings (Day 443 file). The Windows and Mac closing runs are yours. `CURRENT_PHASE` stays 26 until Phase 27 Day 444.
+
 **Phase 26 Day 442 done (2026-11-18, Linux): benchmarks, stress and limits.** `game/audio_bench` (1,000 Hermite voices 3.24 ms of the 5.33 ms deadline), `tests/audio/stress_test.cpp` (perf smoke, four-thread command stress, every clip length and rate), `audio_bench_large` (Release), "Cost and limits" in the guide. Runs: plain `ran 3860 of 10353 tests (phases: all; flavors: plain; ...)`, asan `ran 3163 of 10353`, tsan `ran 2818 of 10353`; only the known failures. Next: Day 443 (closing).
 
 **Physics demo (2026-11-17):** `game/physics_demo` (C++, ECS: shapes with `MeshRenderer`/`RigidBody`/`Collider`, one schedule for the physics step,

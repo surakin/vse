@@ -3,6 +3,7 @@
 // clips of every length and many rates. The Release-only long run is `audio_bench --scene large`.
 #include <catch2/catch_test_macros.hpp>
 
+#include "audio/filter.h"
 #include "audio/mixer.h"
 #include "containers/vector.h"
 #include "lang/scalar.h"
@@ -246,4 +247,30 @@ TEST_CASE("Stress: an empty clip is refused", "[audio][stress]")
     desc.frame_count = 0;
     AudioClipPtr clip;
     CHECK(AudioClip::CreateCopy(desc, Span<const f32>(), "empty", &clip) == ClipStatus::BadFrameCount);
+}
+
+TEST_CASE("Stress: an insert posted for another channel count is refused after a device switch", "[audio][stress]")
+{
+    MixerConfig config;
+    config.layout = ChannelLayout::Surround71;
+    config.max_voices = 4;
+    config.lead_blocks = 1;
+    Mixer mixer;
+    REQUIRE(mixer.Init(config) == MixerStatus::Ok);
+    // Posted for eight channels (valid then), applied after the mixer became stereo.
+    REQUIRE(mixer.SetInsert(kMasterBus, 0, MakeFilterEffect(8, 0)) == MixerStatus::Ok);
+    REQUIRE(mixer.Reconfigure(48000, ChannelLayout::Stereo) == MixerStatus::Ok);
+    Vector<f32> out;
+    out.Resize(static_cast<usize>(kBlockFrames) * 2);
+    const AudioClipPtr clip = StTone(2000, 48000);
+    VoiceDesc d;
+    d.clip = clip;
+    d.loop = true;
+    VoiceId id;
+    REQUIRE(mixer.Play(d, &id) == MixerStatus::Ok);
+    for (u32 b = 0; b < 4; ++b)
+    {
+        mixer.RenderBlock(Span<f32>(out.Data(), out.Size()));  // under asan an eight-channel insert would overrun
+        CHECK(StFinite(out));
+    }
 }

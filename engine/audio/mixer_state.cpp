@@ -351,7 +351,18 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
         }
         for (u32 k = 0; k < kMaxSends; ++k)
         {
-            if (bus.sends[k].target != kNoIndex && bus.sends[k].target >= kMaxBuses)
+            if (bus.sends[k].target != kNoIndex && bus.sends[k].target >= config_.max_buses)
+            {
+                return fail(SnapshotStatus::Corrupt);
+            }
+        }
+    }
+    // A send must name an active bus (an inactive one has no buffer to write to).
+    for (u32 b = 0; b < kMaxBuses; ++b)
+    {
+        for (u32 k = 0; k < kMaxSends; ++k)
+        {
+            if (buses[b].active && buses[b].sends[k].target != kNoIndex && !buses[buses[b].sends[k].target].active)
             {
                 return fail(SnapshotStatus::Corrupt);
             }
@@ -421,9 +432,9 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
         ReadMatrix(&s, &voice.route);
         ReadMatrix(&s, &voice.route_from);
         if (!s.Ok() || voice.bus >= kMaxBuses || !buses[voice.bus].active ||
-            (voice.send_bus != kNoIndex && voice.send_bus >= kMaxBuses) || voice.ramp_pos > voice.ramp_len ||
-            voice.ramp_len > kMaxRampLength || voice.delay >= kBlockFrames || voice.step > kMaxStep ||
-            voice.step_from > kMaxStep)
+            (voice.send_bus != kNoIndex && (voice.send_bus >= config_.max_buses || !buses[voice.send_bus].active)) ||
+            voice.ramp_pos > voice.ramp_len || voice.ramp_len > kMaxRampLength || voice.delay >= kBlockFrames ||
+            voice.step > kMaxStep || voice.step_from > kMaxStep)
         {
             return fail(SnapshotStatus::Corrupt);
         }

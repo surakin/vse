@@ -39,7 +39,7 @@ public:
         const bool want_alsa = IsDefaultName(config.name) || (config.name.Length() > 3 && config.name[0] == 'h');
         for (u32 attempt = 0; attempt < 2; ++attempt)
         {
-            if ((attempt == 0 && !want_pipewire) || (attempt == 1 && !want_alsa))
+            if ((attempt == 0 && (!want_pipewire || !PipeWireAvailable())) || (attempt == 1 && !want_alsa))
             {
                 continue;
             }

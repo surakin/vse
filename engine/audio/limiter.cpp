@@ -155,7 +155,7 @@ void Limiter::LoadState(StateIn* in)
     in->Floats(&peaks_);
     in->Floats(&gains_);
     if (position_ >= (peaks_.Size() > 0 ? peaks_.Size() : 1) ||
-        delay_position_ >= (delay_.Size() > 0 ? delay_.Size() : 1))
+        delay_position_ >= (config_.lookahead_frames > 0 ? config_.lookahead_frames : 1u))
     {
         in->Fail();
     }

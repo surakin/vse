@@ -316,6 +316,11 @@ VorbisStatus VorbisDecoder::Open(ByteSpan bytes, const VorbisLimits& limits, Uni
             {
                 return VorbisStatus::LimitExceeded;
             }
+            // The comment header allocates per comment (about seven times its size): it has the setup's bound.
+            if (headers == 1 && packet.bytes > static_cast<long>(limits.max_setup_bytes))
+            {
+                return VorbisStatus::LimitExceeded;
+            }
             const int h = vorbis_synthesis_headerin(&s.vi, &s.vc, &packet);
             if (h == OV_ENOTVORBIS)
             {
@@ -662,6 +667,7 @@ VorbisStatus VorbisDecoder::SeekFrame(u64 frame)
     ogg_stream_reset(&s.stream);
     vorbis_synthesis_restart(&s.dsp);
     s.eos = false;
+    s.pages = 0;  // the page limit is per pass: an endlessly looping stream must not run into it
     if (lo == 0)
     {
         s.consumed = s.data_offset;

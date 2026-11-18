@@ -2156,7 +2156,7 @@ It runs on the device's thread (the caller's thread for `Pump`). It must not all
 using DeviceErrorCallback = void (*)(void* user, DeviceStatus status);
 ```
 
-The error callback: the device stopped on its own (`Lost`, `IoError`). It may run on any thread.
+The error callback: the device stopped on its own (`Lost`, `IoError`). It may run on any thread and must only record the failure (set a flag): calling `Stop` or `Close` from it waits for the very thread it runs on.
 
 ## `AudioDevice` {#audio-audiodevice}
 

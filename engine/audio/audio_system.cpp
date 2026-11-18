@@ -90,6 +90,9 @@ DeviceStatus AudioSystem::OpenWanted(u64 now_nanos)
             return DeviceStatus::OutOfMemory;
         }
     }
+    // Cleared before the start: a device that fails right after starting reports from its own thread, and that report
+    // must not be erased.
+    lost_.Store(false);
     status = device->Start();
     if (status != DeviceStatus::Ok)
     {
@@ -97,7 +100,6 @@ DeviceStatus AudioSystem::OpenWanted(u64 now_nanos)
         return status;
     }
     device_ = Move(device);
-    lost_.Store(false);
     switches_ += 1;
     state_ = OutputState::Device;
     (void)now_nanos;
@@ -107,6 +109,9 @@ DeviceStatus AudioSystem::OpenWanted(u64 now_nanos)
 // The null device: it runs at the mixer's own rate and layout and is pumped by `Update`.
 void AudioSystem::OpenFallback(u64 now_nanos)
 {
+    // A failure leaves nothing open (`Closed`), never a stale state with a null or closed device.
+    device_ = nullptr;
+    state_ = OutputState::Closed;
     UniquePtr<AudioDevice> device = Make(DeviceKind::Null);
     if (device == nullptr)
     {

@@ -55,6 +55,10 @@ f32 PhysicsOcclusion::Occlusion(const Vec3& from, const Vec3& to, u32* crossed)
         *crossed = static_cast<u32>(forward_.Size());
     }
     const f64 occlusion = 1.0 - Exp(-static_cast<f64>(depth));
+    if (!IsFinite(occlusion))
+    {
+        return 0.0f;  // a NaN absorption or thickness must not poison the emitter's smoothing
+    }
     return occlusion < 0.0 ? 0.0f : (occlusion > 1.0 ? 1.0f : static_cast<f32>(occlusion));
 }
 
