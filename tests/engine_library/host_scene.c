@@ -1035,7 +1035,7 @@ int main(void)
             uv.kind = ENGINE_SLOT_VEC4;
             CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_uv_outside"), &uv),
                          ENGINE_ERROR_INVALID_ARGUMENT); /* a vector for the colour slot */
-            uv.value[0] = 1.0f / 0.0f;
+            uv.value[0] = INFINITY;
             CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_uv"), &uv),
                          ENGINE_ERROR_INVALID_ARGUMENT); /* not finite */
             uv.value[0] = 2.0f;
