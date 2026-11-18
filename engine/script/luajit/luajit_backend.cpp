@@ -715,6 +715,11 @@ void OpenLibs(lua_State* L)
         lua_pushstring(L, lib.name);
         lua_call(L, 1, 0);
     }
+    // string.dump would let a script make bytecode (and nothing here loads bytecode).
+    lua_getglobal(L, "string");
+    lua_pushnil(L);
+    lua_setfield(L, -2, "dump");
+    lua_pop(L, 1);
     // The file and loader functions are not for gameplay scripts (the whole sandbox is Day 449).
     static const char* const removed[] = {"dofile", "loadfile", "load", "loadstring", "newproxy"};
     for (const char* name : removed)
@@ -797,7 +802,8 @@ void RegisterNative(lua_State* L, Request* r)
 
 void LoadChunk(lua_State* L, Request* r)
 {
-    const int rc = luaL_loadbuffer(L, r->source.Data(), r->source.Length(), r->chunk);
+    const int rc = luaL_loadbufferx(L, r->source.Data(), r->source.Length(), r->chunk,
+                                    "t");  // text only: bytecode is not verified
     if (rc != 0)
     {
         r->status = rc == LUA_ERRMEM ? Status::OutOfMemory : Status::SyntaxError;

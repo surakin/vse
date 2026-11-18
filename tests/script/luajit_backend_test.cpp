@@ -297,3 +297,15 @@ TEST_CASE("LuaJIT backend: a huge error message is cut", "[script][luajit]")
     CHECK(load.message.Length() <= 4096);
     CHECK(load.trace.Length() <= 16384);
 }
+
+TEST_CASE("LuaJIT backend: precompiled bytecode is refused and string.dump is gone", "[script][luajit]")
+{
+    UniquePtr<Backend> backend = luajit::CreateLuaJitBackend();
+    UniquePtr<State> state = Fresh(*backend, "function has_dump() return string.dump end");
+    const Outcome o = state->Load("bc", "\x1b\x4c\x4a\x02\x00garbage bytecode");
+    CHECK(o.status == Status::SyntaxError);
+    CallOutput out;
+    REQUIRE(state->Call("has_dump", Span<const Value>(), Budget(), &out).IsOk());
+    REQUIRE(out.results.Size() == 1);
+    CHECK(out.results[0].IsNil());
+}
