@@ -647,6 +647,30 @@ io::WalkOptions::sorted	variable	foundation/io	io-walkoptions-sorted	foundation-
 io::WalkOptions::name_pattern	variable	foundation/io	io-walkoptions-name-pattern	foundation-io.md	engine/foundation/io/directory.h:156
 io::WalkVisitor	alias	foundation/io	io-walkvisitor	foundation-io.md	engine/foundation/io/directory.h:161
 io::WalkDirectory(const Path&,const WalkOptions&,WalkVisitor,void*)	function	foundation/io	io-walkdirectory-const-path-amp-const-walkoptions-amp-walkvisitor-void-star	foundation-io.md	engine/foundation/io/directory.h:173
+io::WatchEventKind	enum	foundation/io	io-watcheventkind	foundation-io.md	engine/foundation/io/directory_watcher.h:18
+io::WatchEventKind::Created	enumerator	foundation/io	io-watcheventkind-created	foundation-io.md	engine/foundation/io/directory_watcher.h:20
+io::WatchEventKind::Modified	enumerator	foundation/io	io-watcheventkind-modified	foundation-io.md	engine/foundation/io/directory_watcher.h:21
+io::WatchEventKind::Removed	enumerator	foundation/io	io-watcheventkind-removed	foundation-io.md	engine/foundation/io/directory_watcher.h:22
+io::WatchEventKind::Renamed	enumerator	foundation/io	io-watcheventkind-renamed	foundation-io.md	engine/foundation/io/directory_watcher.h:23
+io::WatchEventKind::Overflow	enumerator	foundation/io	io-watcheventkind-overflow	foundation-io.md	engine/foundation/io/directory_watcher.h:24
+io::WatchEvent	struct	foundation/io	io-watchevent	foundation-io.md	engine/foundation/io/directory_watcher.h:31
+io::WatchEvent::kind	variable	foundation/io	io-watchevent-kind	foundation-io.md	engine/foundation/io/directory_watcher.h:33
+io::WatchEvent::name	variable	foundation/io	io-watchevent-name	foundation-io.md	engine/foundation/io/directory_watcher.h:34
+io::WatchEvent::old_name	variable	foundation/io	io-watchevent-old-name	foundation-io.md	engine/foundation/io/directory_watcher.h:35
+io::WatchOptions	struct	foundation/io	io-watchoptions	foundation-io.md	engine/foundation/io/directory_watcher.h:41
+io::WatchOptions::force_polling	variable	foundation/io	io-watchoptions-force-polling	foundation-io.md	engine/foundation/io/directory_watcher.h:44
+io::WatchOptions::poll_interval_ms	variable	foundation/io	io-watchoptions-poll-interval-ms	foundation-io.md	engine/foundation/io/directory_watcher.h:46
+io::DirectoryWatcher	class	foundation/io	io-directorywatcher	foundation-io.md	engine/foundation/io/directory_watcher.h:59
+io::DirectoryWatcher::~DirectoryWatcher()	function	foundation/io	io-directorywatcher-tilde-directorywatcher	foundation-io.md	engine/foundation/io/directory_watcher.h:62
+io::DirectoryWatcher::DirectoryWatcher(const DirectoryWatcher&)	function	foundation/io	io-directorywatcher-directorywatcher-const-directorywatcher-amp	foundation-io.md	engine/foundation/io/directory_watcher.h:63
+io::DirectoryWatcher::operator=(const DirectoryWatcher&)	function	foundation/io	io-directorywatcher-operator-eq-const-directorywatcher-amp	foundation-io.md	engine/foundation/io/directory_watcher.h:64
+io::DirectoryWatcher::Open(const Path&,const WatchOptions&,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-directorywatcher-open-const-path-amp-const-watchoptions-amp-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:77
+io::DirectoryWatcher::Poll(Vector<WatchEvent>*)	function	foundation/io	io-directorywatcher-poll-vector-lt-watchevent-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:84
+io::DirectoryWatcher::Wait(u32)	function	foundation/io	io-directorywatcher-wait-u32	foundation-io.md	engine/foundation/io/directory_watcher.h:91
+io::DirectoryWatcher::Wake()	function	foundation/io	io-directorywatcher-wake	foundation-io.md	engine/foundation/io/directory_watcher.h:98
+io::DirectoryWatcher::IsNative() const	function	foundation/io	io-directorywatcher-isnative-const	foundation-io.md	engine/foundation/io/directory_watcher.h:103
+io::OpenNativeWatcher(const Path&,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-opennativewatcher-const-path-amp-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:116
+io::OpenPollingWatcher(const Path&,u32,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-openpollingwatcher-const-path-amp-u32-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:125
 io::Error	enum	foundation/io	io-error	foundation-io.md	engine/foundation/io/error.h:12
 io::Error::None	enumerator	foundation/io	io-error-none	foundation-io.md	engine/foundation/io/error.h:14
 io::Error::NotFound	enumerator	foundation/io	io-error-notfound	foundation-io.md	engine/foundation/io/error.h:15
@@ -1843,24 +1867,25 @@ script::State::State(const State&)	function	script	script-state-state-const-stat
 script::State::operator=(const State&)	function	script	script-state-operator-eq-const-state-amp	script.md	engine/script/backend.h:184
 script::State::Load(StringView,StringView)	function	script	script-state-load-stringview-stringview	script.md	engine/script/backend.h:192
 script::State::Compile(StringView,StringView,Vector<byte>*)	function	script	script-state-compile-stringview-stringview-vector-lt-byte-gt-star	script.md	engine/script/backend.h:206
-script::State::DefineModule(StringView,StringView,StringView,StringView)	function	script	script-state-definemodule-stringview-stringview-stringview-stringview	script.md	engine/script/backend.h:227
-script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:244
-script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:261
-script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:275
-script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:287
-script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:296
-script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:305
-script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:315
-script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:322
-script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:330
-script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:339
-script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:344
-script::Backend	class	script	script-backend	script.md	engine/script/backend.h:402
-script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:406
-script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:409
-script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:411
-script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:413
-script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:418
+script::State::LoadHost(StringView,StringView)	function	script	script-state-loadhost-stringview-stringview	script.md	engine/script/backend.h:226
+script::State::DefineModule(StringView,StringView,StringView,StringView)	function	script	script-state-definemodule-stringview-stringview-stringview-stringview	script.md	engine/script/backend.h:245
+script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:263
+script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:280
+script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:294
+script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:306
+script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:315
+script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:324
+script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:334
+script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:341
+script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:349
+script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:358
+script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:363
+script::Backend	class	script	script-backend	script.md	engine/script/backend.h:428
+script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:432
+script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:435
+script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:437
+script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:439
+script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:444
 script::BackendDescriptor	struct	script	script-backenddescriptor	script.md	engine/script/backend_registry.h:18
 script::BackendDescriptor::name	variable	script	script-backenddescriptor-name	script.md	engine/script/backend_registry.h:21
 script::BackendDescriptor::create	variable	script	script-backenddescriptor-create	script.md	engine/script/backend_registry.h:23
@@ -2123,6 +2148,32 @@ script::ScriptAssets::Count() const	function	script	script-scriptassets-count-co
 script::ScriptAssets::Added() const	function	script	script-scriptassets-added-const	script.md	engine/script/script_assets.h:56
 script::ScriptAssets::ScriptOf(StringView) const	function	script	script-scriptassets-scriptof-stringview-const	script.md	engine/script/script_assets.h:63
 script::ScriptAssets::Release()	function	script	script-scriptassets-release	script.md	engine/script/script_assets.h:69
+script::ReloadProblem	struct	script	script-reloadproblem	script.md	engine/script/script_reload.h:26
+script::ReloadProblem::key	variable	script	script-reloadproblem-key	script.md	engine/script/script_reload.h:29
+script::ReloadProblem::line	variable	script	script-reloadproblem-line	script.md	engine/script/script_reload.h:31
+script::ReloadProblem::message	variable	script	script-reloadproblem-message	script.md	engine/script/script_reload.h:33
+script::ReloadReport	struct	script	script-reloadreport	script.md	engine/script/script_reload.h:40
+script::ReloadReport::enabled	variable	script	script-reloadreport-enabled	script.md	engine/script/script_reload.h:43
+script::ReloadReport::requested	variable	script	script-reloadreport-requested	script.md	engine/script/script_reload.h:45
+script::ReloadReport::compile_failures	variable	script	script-reloadreport-compile-failures	script.md	engine/script/script_reload.h:47
+script::ReloadReport::deferred	variable	script	script-reloadreport-deferred	script.md	engine/script/script_reload.h:49
+script::ReloadReport::applied	variable	script	script-reloadreport-applied	script.md	engine/script/script_reload.h:51
+script::ReloadReport::run_failure	variable	script	script-reloadreport-run-failure	script.md	engine/script/script_reload.h:53
+script::ReloadReport::result	variable	script	script-reloadreport-result	script.md	engine/script/script_reload.h:55
+script::ScriptReloader	class	script	script-scriptreloader	script.md	engine/script/script_reload.h:63
+script::ScriptReloader::ScriptReloader(ScriptWorld*,Backend*,bool)	function	script	script-scriptreloader-scriptreloader-scriptworld-star-backend-star-bool	script.md	engine/script/script_reload.h:72
+script::ScriptReloader::Enabled() const	function	script	script-scriptreloader-enabled-const	script.md	engine/script/script_reload.h:77
+script::ScriptReloader::Reload(Span<const ModuleReplacement>,u64,ReloadReport*)	function	script	script-scriptreloader-reload-span-lt-const-modulereplacement-gt-u64-reloadreport-star	script.md	engine/script/script_reload.h:93
+script::DevChange	struct	script	script-devchange	script.md	engine/script/script_reload.h:106
+script::DevChange::id	variable	script	script-devchange-id	script.md	engine/script/script_reload.h:109
+script::DevChange::text	variable	script	script-devchange-text	script.md	engine/script/script_reload.h:111
+script::DevChange::hash	variable	script	script-devchange-hash	script.md	engine/script/script_reload.h:113
+script::ScriptDevWatcher	class	script	script-scriptdevwatcher	script.md	engine/script/script_reload.h:124
+script::ScriptDevWatcher::ScriptDevWatcher(StringView)	function	script	script-scriptdevwatcher-scriptdevwatcher-stringview	script.md	engine/script/script_reload.h:130
+script::ScriptDevWatcher::Active() const	function	script	script-scriptdevwatcher-active-const	script.md	engine/script/script_reload.h:135
+script::ScriptDevWatcher::Watch(asset::ResourceId)	function	script	script-scriptdevwatcher-watch-asset-resourceid	script.md	engine/script/script_reload.h:141
+script::ScriptDevWatcher::Poll(Vector<DevChange>*)	function	script	script-scriptdevwatcher-poll-vector-lt-devchange-gt-star	script.md	engine/script/script_reload.h:149
+script::ScriptDevWatcher::Applied(const DevChange&)	function	script	script-scriptdevwatcher-applied-const-devchange-amp	script.md	engine/script/script_reload.h:157
 script::ScriptComponent	struct	script	script-scriptcomponent	script.md	engine/script/script_runtime.h:40
 script::ScriptComponent::kComponentName	variable	script	script-scriptcomponent-kcomponentname	script.md	engine/script/script_runtime.h:43
 script::ScriptComponent::behavior	variable	script	script-scriptcomponent-behavior	script.md	engine/script/script_runtime.h:45
@@ -2205,8 +2256,9 @@ script::ScriptPartitions(const settings::Registry&)	function	script	script-scrip
 script::ScriptTaskStates(const settings::Registry&)	function	script	script-scripttaskstates-const-settings-registry-amp	script.md	engine/script/script_settings.h:106
 script::ScriptTaskQueueLimit(const settings::Registry&)	function	script	script-scripttaskqueuelimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:113
 script::ScriptTaskArgBytes(const settings::Registry&)	function	script	script-scripttaskargbytes-const-settings-registry-amp	script.md	engine/script/script_settings.h:120
-script::ScriptDevDirectory(const settings::Registry&)	function	script	script-scriptdevdirectory-const-settings-registry-amp	script.md	engine/script/script_settings.h:127
-script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:134
+script::ScriptHotReload(const settings::Registry&)	function	script	script-scripthotreload-const-settings-registry-amp	script.md	engine/script/script_settings.h:127
+script::ScriptDevDirectory(const settings::Registry&)	function	script	script-scriptdevdirectory-const-settings-registry-amp	script.md	engine/script/script_settings.h:134
+script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:141
 script::kMaxPartitions	variable	script	script-kmaxpartitions	script.md	engine/script/script_world.h:22
 script::PartitionOf(u64,u32)	function	script	script-partitionof-u64-u32	script.md	engine/script/script_world.h:34
 script::ScriptWorldConfig	struct	script	script-scriptworldconfig	script.md	engine/script/script_world.h:40
@@ -2241,19 +2293,31 @@ script::PartitionLease::GetState() const	function	script	script-partitionlease-g
 script::PartitionLease::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-partitionlease-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/script_world.h:141
 script::PartitionLease::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-partitionlease-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/script_world.h:150
 script::PartitionLease::Release()	function	script	script-partitionlease-release	script.md	engine/script/script_world.h:155
-script::LuaModuleHostSource()	function	script	script-luamodulehostsource	script.md	engine/script/script_world.h:171
-script::ScriptWorld	class	script	script-scriptworld	script.md	engine/script/script_world.h:184
-script::ScriptWorld::ScriptWorld(const ScriptWorldConfig&)	function	script	script-scriptworld-scriptworld-const-scriptworldconfig-amp	script.md	engine/script/script_world.h:191
-script::ScriptWorld::~ScriptWorld()	function	script	script-scriptworld-tilde-scriptworld	script.md	engine/script/script_world.h:193
-script::ScriptWorld::ScriptWorld(const ScriptWorld&)	function	script	script-scriptworld-scriptworld-const-scriptworld-amp	script.md	engine/script/script_world.h:194
-script::ScriptWorld::operator=(const ScriptWorld&)	function	script	script-scriptworld-operator-eq-const-scriptworld-amp	script.md	engine/script/script_world.h:195
-script::ScriptWorld::PartitionCount() const	function	script	script-scriptworld-partitioncount-const	script.md	engine/script/script_world.h:200
-script::ScriptWorld::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptworld-addscript-stringview-sharedbytesptr	script.md	engine/script/script_world.h:208
-script::ScriptWorld::AddModule(StringView,StringView,SharedBytesPtr,usize,usize,StringView,bool)	function	script	script-scriptworld-addmodule-stringview-stringview-sharedbytesptr-usize-usize-stringview-bool	script.md	engine/script/script_world.h:225
-script::ScriptWorld::TryCheckout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-trycheckout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:236
-script::ScriptWorld::Checkout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-checkout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:243
-script::ScriptWorld::Counters(u32) const	function	script	script-scriptworld-counters-u32-const	script.md	engine/script/script_world.h:249
-script::ScriptWorld::Total() const	function	script	script-scriptworld-total-const	script.md	engine/script/script_world.h:254
+script::ModuleReplacement	struct	script	script-modulereplacement	script.md	engine/script/script_world.h:169
+script::ModuleReplacement::key	variable	script	script-modulereplacement-key	script.md	engine/script/script_world.h:172
+script::ModuleReplacement::bytes	variable	script	script-modulereplacement-bytes	script.md	engine/script/script_world.h:174
+script::ModuleReplacement::offset	variable	script	script-modulereplacement-offset	script.md	engine/script/script_world.h:176
+script::ModuleReplacement::size	variable	script	script-modulereplacement-size	script.md	engine/script/script_world.h:178
+script::ReloadResult	struct	script	script-reloadresult	script.md	engine/script/script_world.h:185
+script::ReloadResult::partitions	variable	script	script-reloadresult-partitions	script.md	engine/script/script_world.h:188
+script::ReloadResult::modules_run	variable	script	script-reloadresult-modules-run	script.md	engine/script/script_world.h:190
+script::ReloadResult::instances_rebound	variable	script	script-reloadresult-instances-rebound	script.md	engine/script/script_world.h:192
+script::ReloadResult::hook_errors	variable	script	script-reloadresult-hook-errors	script.md	engine/script/script_world.h:194
+script::ReloadResult::hook_error	variable	script	script-reloadresult-hook-error	script.md	engine/script/script_world.h:196
+script::LuaModuleHostSource()	function	script	script-luamodulehostsource	script.md	engine/script/script_world.h:205
+script::ScriptWorld	class	script	script-scriptworld	script.md	engine/script/script_world.h:218
+script::ScriptWorld::ScriptWorld(const ScriptWorldConfig&)	function	script	script-scriptworld-scriptworld-const-scriptworldconfig-amp	script.md	engine/script/script_world.h:225
+script::ScriptWorld::~ScriptWorld()	function	script	script-scriptworld-tilde-scriptworld	script.md	engine/script/script_world.h:227
+script::ScriptWorld::ScriptWorld(const ScriptWorld&)	function	script	script-scriptworld-scriptworld-const-scriptworld-amp	script.md	engine/script/script_world.h:228
+script::ScriptWorld::operator=(const ScriptWorld&)	function	script	script-scriptworld-operator-eq-const-scriptworld-amp	script.md	engine/script/script_world.h:229
+script::ScriptWorld::PartitionCount() const	function	script	script-scriptworld-partitioncount-const	script.md	engine/script/script_world.h:234
+script::ScriptWorld::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptworld-addscript-stringview-sharedbytesptr	script.md	engine/script/script_world.h:242
+script::ScriptWorld::AddModule(StringView,StringView,SharedBytesPtr,usize,usize,StringView,bool)	function	script	script-scriptworld-addmodule-stringview-stringview-sharedbytesptr-usize-usize-stringview-bool	script.md	engine/script/script_world.h:259
+script::ScriptWorld::ReloadModules(Span<const ModuleReplacement>,ReloadResult*)	function	script	script-scriptworld-reloadmodules-span-lt-const-modulereplacement-gt-reloadresult-star	script.md	engine/script/script_world.h:278
+script::ScriptWorld::TryCheckout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-trycheckout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:288
+script::ScriptWorld::Checkout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-checkout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:295
+script::ScriptWorld::Counters(u32) const	function	script	script-scriptworld-counters-u32-const	script.md	engine/script/script_world.h:301
+script::ScriptWorld::Total() const	function	script	script-scriptworld-total-const	script.md	engine/script/script_world.h:306
 script::kCommandSettingsSet	variable	script	script-kcommandsettingsset	script.md	engine/script/settings_bindings.h:23
 script::kMaxSettingsSubscriptionsPerEntity	variable	script	script-kmaxsettingssubscriptionsperentity	script.md	engine/script/settings_bindings.h:26
 script::kMaxSettingsSubscriptions	variable	script	script-kmaxsettingssubscriptions	script.md	engine/script/settings_bindings.h:28

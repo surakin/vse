@@ -162,8 +162,42 @@ private:
     PartitionSlot* slot_ = nullptr;
 };
 
-/// The Lua source of the module host a state loads before its first minted script: `__module_define`, `__module_run`
-/// and `__require`.
+/// One module's new text for a hot reload.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns the key; shares the bytes.
+struct ModuleReplacement
+{
+    /// The key the module was added with.
+    String<HeapAllocator> key{HeapAllocator::Default()};
+    /// The shared buffer holding the new text.
+    SharedBytesPtr bytes;
+    /// Where the text starts in `bytes`.
+    usize offset = 0;
+    /// The text's length.
+    usize size = 0;
+};
+
+/// What a hot reload did.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns its text.
+struct ReloadResult
+{
+    /// The partitions that had a state and were reloaded.
+    u32 partitions = 0;
+    /// The modules run again in each of them: the replaced ones and every module that requires one of them.
+    u32 modules_run = 0;
+    /// The instances moved to a new version of their behavior, over all partitions.
+    u64 instances_rebound = 0;
+    /// How many `on_reload_save` and `on_reload_restore` hooks failed (the reload went on).
+    u64 hook_errors = 0;
+    /// The first hook error's text.
+    String<HeapAllocator> hook_error{HeapAllocator::Default()};
+};
+
+/// The Lua source of the module host a state loads (with [[script::State::LoadHost]]) before its first minted script:
+/// `module_env`, `module_store`, `module_run`, `module_rerun` and the `reload_*` functions, kept outside the globals.
 ///
 /// - Returns: a string literal.
 /// - Ownership: static; not freed.
@@ -224,6 +258,24 @@ public:
     /// - Thread-safety: thread-safe.
     void AddModule(StringView key, StringView name, SharedBytesPtr bytes, usize offset, usize size, StringView deps,
                    bool entry);
+
+    /// Replaces the text of modules and runs them, and every module that requires one of them, again in every
+    /// partition that has a state, so that no tick sees two versions: first every partition runs the new modules
+    /// (the old behavior classes and module values stay in place), then, only if all succeeded, every partition
+    /// commits (instances move to the new behavior classes, with the `on_reload_save` and `on_reload_restore` hooks).
+    /// A failure in any partition puts every partition back and leaves the world's list as it was. Partitions without a
+    /// state load the new text when they are made.
+    ///
+    /// Call it between ticks, on one thread, with no partition held (the check of the ownership tokens fails the call
+    /// with `Invalid` otherwise).
+    ///
+    /// - Param replacements: the new texts; each key must have been added with [[script::ScriptWorld::AddModule]].
+    /// - Param result: receives what was done; not null.
+    /// - Returns: `Ok`, or the failure (a syntax or run error of the new text, a partition that is busy, a key that is
+    /// not a module, a partition left failed by an earlier load).
+    /// - Ownership: borrows the replacements for the call; the world keeps their bytes.
+    /// - Thread-safety: thread-compatible: not safe with ticks or checkouts.
+    Outcome ReloadModules(Span<const ModuleReplacement> replacements, ReloadResult* result);
 
     /// Takes a partition, or reports why not. The second job to ask for a held partition gets `Busy`.
     ///

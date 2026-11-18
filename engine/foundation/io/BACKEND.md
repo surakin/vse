@@ -358,6 +358,27 @@ serial and the 128-bit file id).
 Windows: FindClose; macOS: closedir.
 
 
+### `OpenNativeWatcher`
+
+The directory watcher (`io/directory_watcher.h`, Phase 27 Day 464): `DirectoryWatcher::Open` tries this first and falls back to the neutral polling
+watcher (`io/directory_watcher_poll.cpp`) when it fails with anything but `NotFound`, `NotADirectory` or `PermissionDenied`. A backend returns
+`Unsupported` until it has one. Every backend fills a `detail::WatchQueue` (merges the events of one name, collapses to one `Overflow` after 4096)
+and implements `Poll`, `Wait`, `Wake` and `IsNative`; `tests/io/directory_watcher_test.cpp` runs the same cases against the native backend and the
+polling one. Events are hints: a file written by an editor arrives as a modification after the writer closed it, or as a rename-over.
+
+Linux, as built: inotify (`io/linux/directory_watcher.cpp`), one non-blocking descriptor with `IN_CREATE | IN_CLOSE_WRITE | IN_DELETE | IN_MOVED_FROM |
+IN_MOVED_TO | IN_DELETE_SELF | IN_MOVE_SELF | IN_ONLYDIR`; `IN_MODIFY` is not watched (a half-written file is not reported); a move out and in with
+one cookie is a `Renamed`; `IN_Q_OVERFLOW` and a vanished directory are an `Overflow`; an `eventfd` is the `Wake`, and `Wait` is `poll` on both.
+
+Windows (Day 473): `CreateFileW(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED)` on the directory with the layer's share flags and one outstanding
+`ReadDirectoryChangesW` into a 64 KiB buffer (`FILE_NOTIFY_CHANGE_FILE_NAME | LAST_WRITE | SIZE | CREATION`), re-armed after each completion;
+`FILE_ACTION_RENAMED_OLD_NAME`/`NEW_NAME` paired; `ERROR_NOTIFY_ENUM_DIR` is an `Overflow`; names from UTF-16; the destructor `CancelIoEx`es and drains
+the request before the buffer goes.
+
+macOS (Day 474): `FSEventStreamCreate` with `kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer` on a private serial dispatch
+queue; per-item flags mapped to the neutral events; `MustScanSubDirs`, `UserDropped` and `KernelDropped` are an `Overflow`; events below the watched
+directory are dropped; the callback only queues, `Poll` and `Wait` drain it.
+
 ### `ErrorFromOsCode`
 
 Windows: GetLastError() codes (ERROR_FILE_NOT_FOUND, ERROR_ACCESS_DENIED, ERROR_ALREADY_EXISTS, ERROR_DISK_FULL, ...); macOS: errno as on Linux.

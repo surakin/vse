@@ -142,6 +142,33 @@ void ScriptWorld::AddModule(StringView key, StringView name, SharedBytesPtr byte
 namespace
 {
 
+// Calls a function of the module host, which may not wait: the budget is the module run's (a trusted state takes no
+// instruction budget and runs unbudgeted).
+Outcome RunHost(State* state, StringView path, Span<const Value> args, CallOutput* out_results = nullptr)
+{
+    CallOutput local;
+    CallOutput* out = out_results != nullptr ? out_results : &local;
+    Budget budget;
+    budget.instructions = kModuleRunInstructions;
+    Outcome ran = state->Call(path, args, budget, out);
+    if (ran.status == Status::Unsupported)
+    {
+        ran = state->Call(path, args, Budget(), out);
+    }
+    if (ran.IsOk() && out->Suspended())
+    {  // a script that waits while it loads would stay half run
+        state->Abandon(out->coroutine);
+        return Outcome(Status::RuntimeError, "a script cannot wait while it loads");
+    }
+    return ran;
+}
+
+// True when `outcome` says the function does not exist (an optional host function that is not loaded).
+bool IsMissingFunction(const Outcome& outcome)
+{
+    return !outcome.IsOk() && outcome.message.View().Find(StringView("nil value")) < outcome.message.View().Length();
+}
+
 // Records a module failure in the slot and returns it.
 Outcome FailModule(PartitionSlot* slot, const Outcome& failure)
 {
@@ -206,7 +233,8 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
             }
             if (!slot->module_host)
             {
-                const Outcome host = slot->state->Load(StringView("module_host"), StringView(LuaModuleHostSource()));
+                const Outcome host = slot->state->LoadHost(StringView("module_host"),
+                                                           StringView(LuaModuleHostSource()));
                 if (!host.IsOk())
                 {
                     return Outcome(host.status, host.message.View());
@@ -223,22 +251,10 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
             if (pending[i].entry)
             {
                 Value key[1] = {Value::FromText(pending[i].key.View())};
-                CallOutput out;
-                Budget budget;
-                budget.instructions = kModuleRunInstructions;
-                Outcome ran = slot->state->Call(StringView("__module_run"), Span<const Value>(key, 1), budget, &out);
-                if (ran.status == Status::Unsupported)  // a trusted state takes no instruction budget
-                {
-                    ran = slot->state->Call(StringView("__module_run"), Span<const Value>(key, 1), Budget(), &out);
-                }
+                const Outcome ran = RunHost(slot->state.Get(), StringView("@module_run"), key);
                 if (!ran.IsOk())
                 {
                     return FailModule(slot, ran);
-                }
-                if (out.Suspended())
-                {  // a script that waits while it loads would stay half run
-                    slot->state->Abandon(out.coroutine);
-                    return FailModule(slot, Outcome(Status::RuntimeError, "a script cannot wait while it loads"));
                 }
             }
             ++slot->loaded;
@@ -252,6 +268,211 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
         }
         ++slot->loaded;
     }
+    return Outcome();
+}
+
+Outcome ScriptWorld::ReloadModules(Span<const ModuleReplacement> replacements, ReloadResult* result)
+{
+    ENGINE_ASSERT(result != nullptr, "ReloadModules: no result");
+    *result = ReloadResult();
+    if (replacements.Size() == 0)
+    {
+        return Outcome();
+    }
+    // 1. Hold every partition that has a state, caught up with the scripts added so far.
+    Vector<PartitionLease> held;
+    for (u32 p = 0; p < partition_count_; ++p)
+    {
+        PartitionSlot* slot = slots_[p].Get();
+        usize expected = 0;
+        const usize token = ThisThread::Id().Hash() | 1u;
+        if (!slot->owner.CompareExchangeStrong(expected, token, MemoryOrder::AcqRel, MemoryOrder::Acquire))
+        {
+            return Outcome(Status::Invalid, "a partition is busy: reload between ticks");
+        }
+        if (slot->state.Get() == nullptr)
+        {
+            slot->owner.Store(0, MemoryOrder::Release);
+            continue;
+        }
+        slot->state->Acquire();
+        PartitionLease lease(this, slot);
+        const Outcome prepared = PrepareState(slot);
+        if (!prepared.IsOk())
+        {
+            return Outcome(prepared.status, prepared.message.View());
+        }
+        if (slot->module_failed)
+        {
+            return Outcome(slot->module_failure_status, slot->module_failure.View());
+        }
+        held.Push(Move(lease));
+    }
+    // 2. Replace the texts in the list (the old entries are kept to put back) and find what runs again, in load order.
+    struct Item
+    {
+        String<HeapAllocator> key{HeapAllocator::Default()};
+        String<HeapAllocator> name{HeapAllocator::Default()};
+        String<HeapAllocator> deps{HeapAllocator::Default()};
+        SharedBytesPtr bytes;
+        usize offset = 0;
+        usize size = 0;
+        bool replaced = false;
+    };
+    struct Backup
+    {
+        usize index = 0;
+        SharedBytesPtr bytes;
+        usize offset = 0;
+        usize size = 0;
+    };
+    Vector<Item> items;
+    Vector<Backup> backups;
+    {
+        LockGuard<Mutex> lock(scripts_mutex_);
+        Vector<String<HeapAllocator>> selected;
+        for (usize r = 0; r < replacements.Size(); ++r)
+        {
+            bool found = false;
+            for (usize i = 0; i < scripts_.Size(); ++i)
+            {
+                found = found || scripts_[i].key.View() == replacements[r].key.View();
+            }
+            if (!found || replacements[r].bytes == nullptr ||
+                replacements[r].offset > replacements[r].bytes->Bytes().Size() ||
+                replacements[r].size > replacements[r].bytes->Bytes().Size() - replacements[r].offset)
+            {
+                return Outcome(Status::Invalid, "a replacement names no module or its text lies outside its buffer");
+            }
+        }
+        for (usize i = 0; i < scripts_.Size(); ++i)
+        {
+            Script& script = scripts_[i];
+            if (script.key.Length() == 0)
+            {
+                continue;
+            }
+            const ModuleReplacement* replacement = nullptr;
+            for (usize r = 0; r < replacements.Size(); ++r)
+            {
+                if (replacements[r].key.View() == script.key.View())
+                {
+                    replacement = &replacements[r];  // the last one for a key wins
+                }
+            }
+            bool depends = false;
+            for (usize k = 0; k < selected.Size() && !depends; ++k)
+            {
+                const StringView deps = script.deps.View();
+                usize pos = 0;
+                while (pos <= deps.Length() && deps.Length() != 0)
+                {
+                    usize end = pos;
+                    while (end < deps.Length() && deps[end] != '\n')
+                    {
+                        ++end;
+                    }
+                    depends = depends || deps.Substring(pos, end - pos) == selected[k].View();
+                    pos = end + 1;
+                }
+            }
+            if (replacement == nullptr && !depends)
+            {
+                continue;
+            }
+            selected.Push(String<HeapAllocator>(HeapAllocator::Default(), script.key.View()));
+            Item item;
+            item.key = String<HeapAllocator>(HeapAllocator::Default(), script.key.View());
+            item.name = String<HeapAllocator>(HeapAllocator::Default(), script.name.View());
+            item.deps = String<HeapAllocator>(HeapAllocator::Default(), script.deps.View());
+            if (replacement != nullptr)
+            {
+                Backup backup;
+                backup.index = i;
+                backup.bytes = script.source;
+                backup.offset = script.offset;
+                backup.size = script.size;
+                backups.Push(Move(backup));
+                script.source = replacement->bytes;
+                script.offset = replacement->offset;
+                script.size = replacement->size;
+                item.bytes = replacement->bytes;
+                item.offset = replacement->offset;
+                item.size = replacement->size;
+                item.replaced = true;
+            }
+            items.Push(Move(item));
+        }
+    }
+    // 3. Phase one, in every partition: run the new versions. Nothing is committed yet.
+    auto restore = [&]()
+    {
+        for (usize h = 0; h < held.Size(); ++h)
+        {
+            State* state = held[h].GetState();
+            CallOutput out;
+            RunHost(state, StringView("@reload_abort"), Span<const Value>(), &out);
+            RunHost(state, StringView("__behavior_reload_abort"), Span<const Value>(), &out);  // absent without it
+        }
+        LockGuard<Mutex> lock(scripts_mutex_);
+        for (usize b = 0; b < backups.Size(); ++b)
+        {
+            scripts_[backups[b].index].source = backups[b].bytes;
+            scripts_[backups[b].index].offset = backups[b].offset;
+            scripts_[backups[b].index].size = backups[b].size;
+        }
+    };
+    for (usize h = 0; h < held.Size(); ++h)
+    {
+        State* state = held[h].GetState();
+        Outcome step = RunHost(state, StringView("@reload_begin"), Span<const Value>());
+        if (step.IsOk())
+        {
+            const Outcome behavior = RunHost(state, StringView("__behavior_reload_begin"), Span<const Value>());
+            if (!behavior.IsOk() && !IsMissingFunction(behavior))
+            {
+                step = Outcome(behavior.status, behavior.message.View());
+            }
+        }
+        for (usize i = 0; step.IsOk() && i < items.Size(); ++i)
+        {
+            const byte* base = items[i].replaced ? items[i].bytes->Bytes().Data() : nullptr;
+            if (items[i].replaced)
+            {
+                const StringView text(reinterpret_cast<const char*>(base) + items[i].offset, items[i].size);
+                step = state->DefineModule(items[i].key.View(), items[i].name.View(), text, items[i].deps.View());
+            }
+            if (step.IsOk())
+            {
+                Value key[1] = {Value::FromText(items[i].key.View())};
+                step = RunHost(state, StringView("@module_rerun"), key);
+            }
+        }
+        if (!step.IsOk())
+        {
+            restore();
+            return Outcome(step.status, step.message.View());
+        }
+    }
+    // 4. Phase two: commit everywhere.
+    for (usize h = 0; h < held.Size(); ++h)
+    {
+        State* state = held[h].GetState();
+        RunHost(state, StringView("@reload_commit"), Span<const Value>());
+        CallOutput out;
+        const Outcome behavior = RunHost(state, StringView("__behavior_reload_commit"), Span<const Value>(), &out);
+        if (behavior.IsOk() && out.results.Size() == 3)
+        {
+            result->instances_rebound += static_cast<u64>(out.results[0].AsInt());
+            result->hook_errors += static_cast<u64>(out.results[1].AsInt());
+            if (result->hook_error.Length() == 0 && out.results[2].Text().Length() != 0)
+            {
+                result->hook_error = String<HeapAllocator>(HeapAllocator::Default(), out.results[2].Text());
+            }
+        }
+    }
+    result->partitions = static_cast<u32>(held.Size());
+    result->modules_run = static_cast<u32>(items.Size());
     return Outcome();
 }
 

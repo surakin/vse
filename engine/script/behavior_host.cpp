@@ -19,6 +19,9 @@ local native_event = event
 local tasks = {}  -- tasks[id] = { fn, cancelled }: the coroutines `spawn` made
 local owned = {}  -- owned[serial][id] = true
 local spawn_hooked = {}
+local instance_name = {}  -- instance_name[serial] = the behavior's name
+local reloading = false
+local previous = {}  -- during a reload: previous[name] = the class a behavior had before the reload
 local running_task = nil  -- the spawned task whose code is running now (nil in an ordinary callback)
 local event = setmetatable({}, { __index = native_event })
 _G.event = event
@@ -31,6 +34,9 @@ function behavior(name, class)
     error('behavior: the second argument must be a table of callbacks', 2)
   end
   class.__index = class
+  if reloading and behaviors[name] ~= nil and previous[name] == nil then
+    previous[name] = behaviors[name]
+  end
   behaviors[name] = class
   return class
 end
@@ -43,6 +49,7 @@ function __behavior_create(serial, name, entity, params)
     error("unknown behavior '" .. tostring(name) .. "'", 0)
   end
   instances[serial] = setmetatable({ entity = entity, params = params }, class)
+  instance_name[serial] = name
   return true
 end
 
@@ -63,6 +70,7 @@ end
 
 function __behavior_drop(serial)
   instances[serial] = nil
+  instance_name[serial] = nil
   handlers[serial] = nil
   spawn_hooked[serial] = nil
   local mine = owned[serial]
@@ -72,6 +80,69 @@ function __behavior_drop(serial)
     end
     owned[serial] = nil
   end
+end
+
+-- Hot reload (docs/guide/scripting.md, "Hot reload"): between `begin` and `commit` a redefined behavior remembers the
+-- class it replaces; `commit` moves every instance of such a behavior to the class that replaced it, calling the first
+-- class's `on_reload_save(self)` and then the second's `on_reload_restore(self, saved)` when they exist (an instance
+-- keeps its own fields either way); `abort` puts the old classes back.
+function __behavior_reload_begin()
+  reloading = true
+  previous = {}
+end
+
+function __behavior_reload_abort()
+  for name, old in pairs(previous) do
+    behaviors[name] = old
+  end
+  previous = {}
+  reloading = false
+end
+
+function __behavior_reload_commit()
+  local serials = {}
+  for serial in pairs(instances) do
+    serials[#serials + 1] = serial
+  end
+  table.sort(serials)
+  local rebound, failures, first = 0, 0, ''
+  for i = 1, #serials do
+    local serial = serials[i]
+    local self = instances[serial]
+    local name = instance_name[serial]
+    local old = name and previous[name]
+    if old ~= nil and self ~= nil then
+      current = serial
+      running_task = nil
+      local saved = nil
+      if old.on_reload_save ~= nil then
+        local ok, result = pcall(old.on_reload_save, self)
+        if ok then
+          saved = result
+        else
+          failures = failures + 1
+          if first == '' then first = tostring(result) end
+        end
+      end
+      local new = behaviors[name]
+      setmetatable(self, new)
+      if new.on_reload_restore ~= nil then
+        local ok, result = pcall(new.on_reload_restore, self, saved)
+        if not ok then
+          failures = failures + 1
+          if first == '' then first = tostring(result) end
+        end
+      end
+      current = nil
+      running_task = nil
+      rebound = rebound + 1
+    end
+  end
+  current = nil  -- no instance's identity outlives the commit
+  running_task = nil
+  previous = {}
+  reloading = false
+  return rebound, failures, first
 end
 
 local function add_handler(name, fn, once)

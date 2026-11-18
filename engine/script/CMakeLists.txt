@@ -11,6 +11,7 @@ set(SCRIPT_SOURCES
   script_world.cpp  # Day 451
   module_host.cpp  # Day 463
   script_assets.cpp  # Day 463
+  script_reload.cpp  # Day 464
   command_buffer.cpp  # Day 452
   merge.cpp  # Day 452
   partition_context.cpp  # Day 452

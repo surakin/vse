@@ -12,13 +12,13 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
 | [Foundation: Containers](foundation-containers.md) | 8 | 176 |
 | [Foundation: Strings](foundation-strings.md) | 6 | 98 |
-| [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
+| [Foundation: Paths and Files](foundation-io.md) | 6 | 289 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 3 | 87 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
-| [Scripting](script.md) | 22 | 641 |
+| [Scripting](script.md) | 23 | 681 |
 | [Platform: OS Services](platform-os.md) | 8 | 83 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |

@@ -128,6 +128,17 @@ void RegisterScriptSettings(settings::Registry* registry)
     dev_directory.flags = settings::kRestartRequired;
     registry->Register(dev_directory);
 
+    settings::SettingDesc hot_reload = settings::MakeBool("script.hot_reload", false);
+    hot_reload.env = "ENGINE_SCRIPT_HOT_RELOAD";
+    hot_reload.flag = "script-hot-reload";
+    hot_reload.label = "Script hot reload";
+    hot_reload.description =
+        "apply edited scripts to the running world between ticks (development only; off in a shipped build, where the "
+        "reloader does nothing)";
+    hot_reload.group = "script";
+    hot_reload.flags = settings::kRestartRequired;
+    registry->Register(hot_reload);
+
     settings::SettingDesc conflicts = settings::MakeText("script.conflicts", "last_wins");
     conflicts.env = "ENGINE_SCRIPT_CONFLICTS";
     conflicts.flag = "script-conflicts";
@@ -237,6 +248,12 @@ u64 ScriptTaskArgBytes(const settings::Registry& registry)
 {
     const settings::SettingId id = registry.Find(StringView("script.task_arg_bytes"));
     return id.IsValid() ? static_cast<u64>(settings::Setting<i64>(registry, id).Get()) : u64{16777216};
+}
+
+bool ScriptHotReload(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.hot_reload"));
+    return id.IsValid() && settings::Setting<bool>(registry, id).Get();
 }
 
 String<HeapAllocator> ScriptDevDirectory(const settings::Registry& registry)

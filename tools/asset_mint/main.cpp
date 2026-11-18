@@ -4,13 +4,12 @@
 //   asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]
 //   asset_mint mint-hull SOURCE.hull.src OUTPUT.blob [--target=N]
 //   asset_mint mint-audio SOURCE.audio.src OUTPUT.blob [--target=N]
-//   asset_mint mint-script SOURCE.script.src OUTPUT.blob [--search=DIR] [--bytecode] [--no-run] [--target=N]
-//   asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]
-//   asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]
-//   asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]
-//   asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]
-//   asset_mint mint-level SOURCE.level.src OUTPUT.blob [--root=DIR] [--target=N]
-//   asset_mint unmint-level LEVEL.blob OUTPUT.level.src [--root=DIR]
+//   asset_mint mint-script SOURCE.script.src OUTPUT.blob [--search=DIR] [--bytecode] [--no-run] [--dev-out=DIR]
+//   [--target=N] asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N] asset_mint
+//   mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N] asset_mint mint-texture SOURCE.tex.src
+//   OUTPUT.blob [--target=N] asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N] asset_mint mint-level
+//   SOURCE.level.src OUTPUT.blob [--root=DIR] [--target=N] asset_mint unmint-level LEVEL.blob OUTPUT.level.src
+//   [--root=DIR]
 //
 // packs the blobs of a directory (found by their own headers; the path is the file's location) into one pak for target
 // N (default 0, the development target). It refuses an incomplete closure and lists each missing (blob, dependency)
@@ -66,7 +65,7 @@ int Usage()
         "       asset_mint mint-hull SOURCE.hull.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-audio SOURCE.audio.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-mcol SOURCE.mcol.src OUTPUT.blob [--target=N]\n"
-        "       asset_mint mint-script SOURCE.script.src OUTPUT.blob [--search=DIR] [--bytecode] [--no-run] [--target=N]\n"
+        "       asset_mint mint-script SOURCE.script.src OUTPUT.blob [--search=DIR] [--bytecode] [--no-run] [--dev-out=DIR] [--target=N]\n"
         "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
         "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
         "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n"
@@ -125,7 +124,8 @@ constexpr os::CommandLineOption kCliOptions[] = {{"target", true},
                                                  {"loop", true, true},
                                                  {"search", true},
                                                  {"bytecode", false},
-                                                 {"no-run", false}};
+                                                 {"no-run", false},
+                                                 {"dev-out", true}};
 constexpr usize kCliOptionCount = sizeof(kCliOptions) / sizeof(kCliOptions[0]);
 
 // True when the line holds no option outside `allowed`.
@@ -442,9 +442,9 @@ bool LoadScriptModule(void* context, StringView name, ResourceId expected, Scrip
 int MintScriptCommand(const Line& line)
 {
 #if ASSET_MINT_HAVE_LUAJIT
-    static const char* const allowed[] = {"target", "search", "bytecode", "no-run"};
+    static const char* const allowed[] = {"target", "search", "bytecode", "no-run", "dev-out"};
     u32 target = 0;
-    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 4) || !TargetOption(line, &target))
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 5) || !TargetOption(line, &target))
     {
         return Usage();
     }
@@ -533,6 +533,29 @@ int MintScriptCommand(const Line& line)
         io::Remove(output);
         os::PrintError("asset_mint: writing the output failed\n");
         return 1;
+    }
+    StringView dev_out;
+    if (line.TryGetOption(StringView("dev-out"), dev_out))
+    {
+        // The stored text, as the hot-reload watcher reads it: <hex id>.lua in the directory.
+        SharedBytesPtr shared = CopyShared(ByteSpan(blob.Data(), blob.Size()));
+        ScriptView view;
+        TypeRegistry view_types;
+        char hex[17];
+        FormatResourceId(source.id, hex);
+        String<HeapAllocator> name(HeapAllocator::Default(), StringView(hex, 16));
+        name.Append(StringView(".lua"));
+        io::Path directory;
+        io::Path relative;
+        io::Path dev_file;
+        if (view.Open(shared, view_types).Failed() || !io::Path::Parse(dev_out, io::NativePathStyle(), &directory) ||
+            !io::Path::Parse(name.View(), io::NativePathStyle(), &relative) ||
+            !directory.TryJoin(relative, &dev_file) || io::CreateDirectories(directory).Failed() ||
+            io::WriteFileAtomic(dev_file, view.Source().Data(), view.Source().Size()).Failed())
+        {
+            os::PrintError("asset_mint: the --dev-out file could not be written\n");
+            return 1;
+        }
     }
     os::Print("minted a script of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;

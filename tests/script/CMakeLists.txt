@@ -24,6 +24,7 @@ set(SCRIPT_TEST_SOURCES
   latent_test.cpp  # Day 460
   task_test.cpp  # Day 461
   script_load_test.cpp  # Day 463: minted scripts through the resource manager
+  script_reload_test.cpp  # Day 464: hot reload
   script_asset_test.cpp  # Day 462: the SCRP blob and the script minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/script_source.cpp  # Day 462
 )
@@ -34,7 +35,7 @@ include(Catch)
 function(engine_add_script_tests target script_lib foundation_lib asset_lib suffix label)
   add_executable(${target} ${SCRIPT_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${script_lib} ${asset_lib} ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint)
+  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

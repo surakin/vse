@@ -711,6 +711,7 @@ enum class Op : int
     Collect,
     Compile,
     DefineModule,
+    LoadHost,
 };
 
 // The input and output of one protected operation; it lives in the frame that calls `lua_cpcall`.
@@ -1226,7 +1227,50 @@ void CompileChunk(lua_State* L, Request* r)
     lua_pop(L, 1);
 }
 
-// Compiles a module and gives the function to the host's `__module_define(fn, key, deps)`; nothing runs.
+// Pushes the host function `name` kept by LoadHost, or nil.
+void PushHostFunction(lua_State* L, StringView name)
+{
+    lua_pushliteral(L, "engine.host.");
+    lua_pushlstring(L, name.Data(), name.Length());
+    lua_concat(L, 2);
+    lua_rawget(L, LUA_REGISTRYINDEX);
+}
+
+// Runs a host chunk that returns a table of functions and keeps each function outside the scripts' globals.
+void LoadHostChunk(lua_State* L, Request* r)
+{
+    const int rc = luaL_loadbufferx(L, r->source.Data(), r->source.Length(), r->chunk, "t");
+    if (rc != 0)
+    {
+        r->status = rc == LUA_ERRMEM ? Status::OutOfMemory : Status::SyntaxError;
+        TakeError(L, L, r);
+        r->trace_text = MakeText(r->error_text.View());
+        return;
+    }
+    lua_call(L, 0, 1);  // an error propagates to the protected call of Execute
+    if (lua_type(L, -1) != LUA_TTABLE)
+    {
+        r->failure = "a host chunk must return a table of functions";
+        r->status = Status::RuntimeError;
+        return;
+    }
+    lua_pushnil(L);
+    while (lua_next(L, -2) != 0)
+    {
+        if (lua_type(L, -2) == LUA_TSTRING && lua_type(L, -1) == LUA_TFUNCTION)
+        {
+            lua_pushliteral(L, "engine.host.");
+            lua_pushvalue(L, -3);
+            lua_concat(L, 2);
+            lua_pushvalue(L, -2);
+            lua_rawset(L, LUA_REGISTRYINDEX);
+        }
+        lua_pop(L, 1);
+    }
+}
+
+// Compiles a module, gives it the environment the host's `module_env(key, deps)` made and hands it to the host's
+// `module_store(fn, key)`; nothing of the module runs.
 void DefineModuleChunk(lua_State* L, Request* r)
 {
     const int rc = luaL_loadbufferx(L, r->source.Data(), r->source.Length(), r->chunk, "t");
@@ -1237,7 +1281,23 @@ void DefineModuleChunk(lua_State* L, Request* r)
         r->trace_text = MakeText(r->error_text.View());
         return;
     }
-    ResolvePath(L, StringView("__module_define"));
+    PushHostFunction(L, StringView("module_env"));
+    if (lua_type(L, -1) != LUA_TFUNCTION)
+    {
+        r->failure = "the module host is not loaded in this state";
+        r->status = Status::RuntimeError;
+        return;
+    }
+    lua_pushlstring(L, r->module_key.Data(), r->module_key.Length());
+    lua_pushlstring(L, r->module_deps.Data(), r->module_deps.Length());
+    lua_call(L, 2, 1);  // the environment; an error propagates to the protected call of Execute
+    if (lua_type(L, -1) != LUA_TTABLE || lua_setfenv(L, -2) == 0)
+    {
+        r->failure = "the module host did not make an environment";
+        r->status = Status::RuntimeError;
+        return;
+    }
+    PushHostFunction(L, StringView("module_store"));
     if (lua_type(L, -1) != LUA_TFUNCTION)
     {
         r->failure = "the module host is not loaded in this state";
@@ -1246,8 +1306,7 @@ void DefineModuleChunk(lua_State* L, Request* r)
     }
     lua_insert(L, -2);
     lua_pushlstring(L, r->module_key.Data(), r->module_key.Length());
-    lua_pushlstring(L, r->module_deps.Data(), r->module_deps.Length());
-    lua_call(L, 3, 0);  // an error propagates to the protected call of Execute
+    lua_call(L, 2, 0);
 }
 
 void LoadChunk(lua_State* L, Request* r)
@@ -1303,7 +1362,14 @@ void RunCoroutine(lua_State* L, Request* r)
     {
         T = lua_newthread(L);
         r->new_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-        ResolvePath(L, r->path);
+        if (r->path.Length() > 1 && r->path[0] == '@')
+        {
+            PushHostFunction(L, r->path.Substring(1, r->path.Length() - 1));
+        }
+        else
+        {
+            ResolvePath(L, r->path);
+        }
         if (lua_type(L, -1) != LUA_TFUNCTION)
         {
             r->failure = "attempt to call a nil value";
@@ -1423,6 +1489,7 @@ int ProtectedBody(lua_State* L)
     case Op::Load: LoadChunk(L, r); break;
     case Op::Compile: CompileChunk(L, r); break;
     case Op::DefineModule: DefineModuleChunk(L, r); break;
+    case Op::LoadHost: LoadHostChunk(L, r); break;
     case Op::Call: RunCoroutine(L, r); break;
     }
     return 0;
@@ -1512,6 +1579,25 @@ protected:
         return Execute(&r);
     }
 
+    Outcome DoLoadHost(StringView chunk_name, StringView source) override
+    {
+        if (L_ == nullptr)
+        {
+            return Outcome(Status::Invalid, "the state is closed");
+        }
+        if (chunk_name.Length() == 0)
+        {
+            return Outcome(Status::Invalid, "empty chunk name");
+        }
+        Text chunk = MakeText("=");
+        chunk.Append(chunk_name);
+        Request r;
+        r.op = Op::LoadHost;
+        r.chunk = chunk.CStr();
+        r.source = source;
+        return ExecuteLoadBudgeted(&r);
+    }
+
     Outcome DoDefineModule(StringView key, StringView chunk_name, StringView source, StringView deps) override
     {
         if (L_ == nullptr)
@@ -1530,7 +1616,22 @@ protected:
         r.source = source;
         r.module_key = key;
         r.module_deps = deps;
-        return Execute(&r);
+        return ExecuteLoadBudgeted(&r);
+    }
+
+    // Runs a request under the default budget of a chunk's top level (a trusted state has none).
+    Outcome ExecuteLoadBudgeted(Request* r)
+    {
+        Budget load_budget;
+        if (options_.budgeted)
+        {
+            load_budget.instructions = kLoadInstructions;
+            load_budget.nanoseconds = kLoadNanoseconds;
+        }
+        BeginBudget(load_budget);
+        Outcome o = Execute(r);
+        EndBudget();
+        return o;
     }
 
     Outcome DoCall(StringView path, Span<const Value> args, const Budget& budget, CallOutput* out) override

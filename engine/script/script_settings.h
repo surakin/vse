@@ -119,6 +119,13 @@ u32 ScriptTaskQueueLimit(const settings::Registry& registry);
 /// - Fails: never.
 u64 ScriptTaskArgBytes(const settings::Registry& registry);
 
+/// Reads `script.hot_reload`: whether edited scripts are applied to the running world.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives false.
+/// - Returns: the flag (default false).
+/// - Fails: never.
+bool ScriptHotReload(const settings::Registry& registry);
+
 /// Reads `script.dev_directory`: the directory a development build reads script sources from (empty: off).
 ///
 /// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives "".

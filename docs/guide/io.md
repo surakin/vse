@@ -390,6 +390,24 @@ src/main.cpp
 src/util/strings.cpp
 ```
 
+## Watching a directory
+
+`io::DirectoryWatcher` (`engine/foundation/io/directory_watcher.h`, Phase 27 Day 464) tells a program that something in one directory changed, so it
+does not read the whole directory again and again. `DirectoryWatcher::Open(directory, options, &watcher)` starts a watch (not recursive); `Poll(&events)` takes the
+queued events; `Wait(timeout_ms)` sleeps until one arrives, `Wake()` (any thread) ends a wait early.
+
+- **Events:** `Created`, `Modified` (a file written **and closed**: a half-written file is not reported), `Removed`, `Renamed` (`old_name` became `name`) and
+  `Overflow` (events were lost, so look at the directory again). Names are one component, relative to the directory.
+- **Merging:** within one `Poll` the events of one name are merged (a create then writes is one `Created`, a create then a remove is nothing), and a backlog
+  of 4096 events collapses into one `Overflow`.
+- **An event is a hint:** read the file and compare what you find (a content hash), as `script::ScriptDevWatcher` does. An editor that saves by renaming a temporary
+  file over the target arrives as a `Renamed` (inotify) or `Created`, not a `Modified`.
+- **Backends:** inotify on Linux; the polling backend (list the directory every `poll_interval_ms`, compare names, sizes and times; a rename is a
+  `Removed` and a `Created`) everywhere else until the Windows (`ReadDirectoryChangesW`) and macOS (FSEvents) backends land on Days 473 and 474, and wherever a
+  native watch cannot start (a watch limit, a file system without notifications). `IsNative()` tells which one you got; `WatchOptions::force_polling` picks polling.
+- **Threads:** one thread calls `Poll` and `Wait`; `Wake` is thread-safe. Wake a waiting thread and join it before destroying the watcher.
+- **Failure:** a missing directory fails `Open` with `NotFound`; when the watched directory is removed an `Overflow` is queued and `Poll` then fails with `Invalid`.
+
 ## On macOS
 
 The backend is the POSIX one Linux uses (`io/posix/`, directories included), with a few macOS rules (Phase 21 Days 287-288):

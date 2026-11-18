@@ -322,6 +322,47 @@ TEST_CASE("script assets: a script with a syntax error or an error at load fails
     CHECK(first.View().Find(StringView("boom")) < first.View().Length());
 }
 
+TEST_CASE("script assets: a script cannot reach or replace the module host", "[script][assets][load]")
+{
+    LoadRig rig;
+    rig.Add(3, StringView("return { sum = 3 }\n"));
+    // Script 1 tries every way it knows to break the declared-dependency rule for the scripts loaded after it.
+    rig.Add(1, StringView(
+                   "function probe() return type(__module_run) .. type(__module_define) .. type(__module_store) end\n"
+                   "__require = function() return { sum = 999 } end\n"
+                   "_G.__require = function() return { sum = 999 } end\n"
+                   "__module_run = nil\n"));
+    // Script 2 declares nothing and requires 3: the rule must still refuse it.
+    String<HeapAllocator> text(HeapAllocator::Default());
+    text.Append(StringView("local x = __require(\""));
+    text.Append(Key(3).View());
+    text.Append(StringView("\")\n"));
+    rig.Add(2, text.View());
+    UniquePtr<ScriptWorld> world = rig.World(1);
+    ScriptAssets assets(world.Get(), rig.manager.Get());
+    REQUIRE(assets.Add(ResourceId::FromValue(3)).Ok());
+    REQUIRE(assets.Add(ResourceId::FromValue(1)).Ok());
+    REQUIRE(assets.Add(ResourceId::FromValue(2)).Ok());
+    PartitionLease lease;
+    Outcome error;
+    CHECK(world->Checkout(0, &lease, &error) == CheckoutStatus::Failed);
+    CHECK(error.message.View().Find(StringView("not a declared dependency")) < error.message.View().Length());
+    // The host's functions are not globals at all.
+    LoadRig plain;
+    plain.Add(1,
+              StringView(
+                  "function probe() return type(__module_run) .. type(__module_define) .. type(__module_store) end\n"));
+    UniquePtr<ScriptWorld> world2 = plain.World(1);
+    ScriptAssets assets2(world2.Get(), plain.manager.Get());
+    REQUIRE(assets2.Add(ResourceId::FromValue(1)).Ok());
+    PartitionLease lease2;
+    REQUIRE(world2->Checkout(0, &lease2, &error) == CheckoutStatus::Ok);
+    CallOutput out;
+    REQUIRE(lease2.Call("probe", Span<const Value>(), Budget(), &out).IsOk());
+    REQUIRE(out.results.Size() == 1);
+    CHECK(out.results[0].Text() == StringView("nilnilnil"));
+}
+
 TEST_CASE("script assets: a script that waits while it loads fails instead of staying half run",
           "[script][assets][load]")
 {

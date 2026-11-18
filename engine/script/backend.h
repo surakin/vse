@@ -213,9 +213,27 @@ public:
         return DoCompile(chunk_name, source, bytecode);
     }
 
-    /// Compiles `source` as a module and hands the compiled function to the host's `__module_define(fn, key, deps)`
-    /// without running it (the module runs when the host asks, `__module_run`), so no source text is spliced into a
-    /// wrapper. The host must be loaded in the state first.
+    /// Loads and runs a host chunk, which must return a table of functions; each function is kept by the state under
+    /// the table's key, outside the scripts' globals, so a script cannot replace it. [[State::Call]] reaches one with
+    /// the path `@name`, and [[State::DefineModule]] uses `module_env` and `module_store` (the module host,
+    /// docs/guide/scripting.md, "Minted scripts").
+    ///
+    /// - Param chunk_name: the chunk name for messages; not empty.
+    /// - Param source: the host's text.
+    /// - Returns: `Ok`, `SyntaxError`, `RuntimeError` (also when the chunk returns no table), `OutOfMemory`,
+    /// `Invalid`, or `Unsupported` from a backend without hosts.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    Outcome LoadHost(StringView chunk_name, StringView source)
+    {
+        CheckOwner();
+        return DoLoadHost(chunk_name, source);
+    }
+
+    /// Compiles `source` as a module without running it: the host's `module_env(key, deps)` makes the module's
+    /// environment (its own `__require`, reading and writing the state's globals), the function gets that
+    /// environment, and the host's `module_store(fn, key)` keeps it; the module runs when the host is asked
+    /// (`Call("@module_run")`). No source text is spliced into a wrapper. The host must be loaded with
+    /// [[State::LoadHost]] first.
     ///
     /// - Param key: the module's key (`require` names it); not empty.
     /// - Param chunk_name: the chunk name for messages; not empty.
@@ -232,7 +250,8 @@ public:
 
     /// Calls a script function with copies of `args`, within `budget`.
     ///
-    /// `function_path` is a global name, or dotted names into tables such as `game.on_update`.
+    /// `function_path` is a global name (or `@name`, a function of the host loaded with [[State::LoadHost]]), or
+    /// dotted names into tables such as `game.on_update`.
     /// On success `out->results` holds the returned values; when the backend supports coroutines and the function
     /// suspends, `out->wait` says why and `out->coroutine` resumes it.
     ///
@@ -356,6 +375,13 @@ protected:
         (void)source;
         (void)bytecode;
         return Outcome(Status::Unsupported, "this backend cannot compile ahead of time");
+    }
+    /// See [[State::LoadHost]]; the default is `Unsupported`.
+    virtual Outcome DoLoadHost(StringView chunk_name, StringView source)
+    {
+        (void)chunk_name;
+        (void)source;
+        return Outcome(Status::Unsupported, "this backend has no hosts");
     }
     /// See [[State::DefineModule]]; the default is `Unsupported`.
     virtual Outcome DoDefineModule(StringView key, StringView chunk_name, StringView source, StringView deps)

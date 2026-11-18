@@ -31,6 +31,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     io/posix/posix_directory.cpp
     io/linux/posix_hooks.cpp
     io/linux/special_folders.cpp
+    io/linux/directory_watcher.cpp  # Phase 27 Day 464
   )
   set(FOUNDATION_SETTINGS_PLATFORM_SOURCES
     settings/linux/policy_layers.cpp
@@ -70,6 +71,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     io/windows/file_operations.cpp
     io/windows/local_file.cpp
     io/windows/directory.cpp
+    io/directory_watcher_unsupported.cpp  # Day 473 replaces it with io/windows/directory_watcher.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # Phase 21 ports one layer per day (ARCHITECTURE.md order). Day 285: the base layer's os backend, the POSIX half shared with Linux
@@ -87,6 +89,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     io/posix/posix_directory.cpp
     io/macos/posix_hooks.cpp
     io/macos/special_folders.mm
+    io/directory_watcher_unsupported.cpp  # Day 474 replaces it with io/macos/directory_watcher.mm
   )
   # The debugging backend (os/macos/debug/BACKEND.md): stack traces through libbacktrace on Mach-O, the module list, the crash context (Day 290);
   # the crash hook on Breakpad's on_crash, death tests (shared with Linux in os/posix/debug/), fault injection, the debugger check (Day 291).
@@ -143,6 +146,8 @@ set(FOUNDATION_IO_SOURCES
   io/path.cpp
   io/error.cpp
   io/directory.cpp
+  io/directory_watcher.cpp  # Phase 27 Day 464
+  io/directory_watcher_poll.cpp
   ${FOUNDATION_IO_PLATFORM_SOURCES}
   io/file.cpp
 )
