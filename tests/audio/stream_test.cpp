@@ -12,6 +12,8 @@
 #include "jobs/scheduler.h"
 #include "lang/limits.h"
 #include "lang/scalar.h"
+#include "sync/atomic.h"
+#include "sync/thread.h"
 #include "wav_builder.h"
 
 using namespace engine_placeholder;
@@ -510,4 +512,177 @@ TEST_CASE("Stream: a non-finite sample from a source reaches the mix as silence"
     CHECK(out[9] == 0.0f);
     CHECK(out[4] == 0.5f);
     CHECK(out[10] == 0.5f);
+}
+
+// ---- Push streams (maintenance, 2026-11-18): live voices fed by the host as its audio arrives ----
+
+namespace
+{
+StreamBufferPtr StPush(u32 capacity, u32 prefill = 0, u32 channels = 1)
+{
+    PushStreamConfig config;
+    config.channels = channels;
+    config.capacity_frames = capacity;
+    config.prefill_frames = prefill;
+    StreamBufferPtr buffer;
+    REQUIRE(StreamBuffer::CreatePush(config, &buffer) == StreamStatus::Ok);
+    return buffer;
+}
+}  // namespace
+
+TEST_CASE("Push stream: frames come out in order, a dry ring is a counted underrun and the stream never ends",
+          "[audio][stream][push]")
+{
+    StreamBufferPtr buffer = StPush(1000);
+    CHECK(buffer->IsPush());
+    f32 data[300];
+    for (u32 i = 0; i < 300; ++i)
+    {
+        data[i] = static_cast<f32>(i + 1);
+    }
+    CHECK(buffer->Push(data, 100) == 100);
+    CHECK(buffer->Push(data + 100, 200) == 200);
+    f32 out[256] = {};
+    CHECK(buffer->Pop(out, 256) == 256);
+    CHECK(out[0] == 1.0f);
+    CHECK(out[255] == 256.0f);
+    CHECK(buffer->PushStats().underruns == 0);
+    CHECK(buffer->Pop(out, 256) == 44);  // the rest, then silence from the voice: a counted underrun
+    CHECK(out[43] == 300.0f);
+    CHECK(buffer->PushStats().underruns == 1);
+    CHECK_FALSE(buffer->Ended());
+    CHECK(buffer->Pop(out, 256) == 0);
+    CHECK_FALSE(buffer->Ended());
+    CHECK(buffer->Push(data, 10) == 10);  // and it plays on when frames return
+    CHECK(buffer->Pop(out, 256) == 10);
+    CHECK(out[9] == 10.0f);
+    const PushStreamStats stats = buffer->PushStats();
+    CHECK(stats.frames_pushed == 310);
+    CHECK(stats.frames_dropped == 0);
+    CHECK(stats.underruns == 3);
+}
+
+TEST_CASE("Push stream: the prefill collects frames before the voice plays and again after it ran dry",
+          "[audio][stream][push]")
+{
+    StreamBufferPtr buffer = StPush(1000, 200);
+    f32 data[400];
+    for (u32 i = 0; i < 400; ++i)
+    {
+        data[i] = static_cast<f32>(i + 1);
+    }
+    f32 out[256] = {};
+    buffer->Push(data, 100);
+    CHECK(buffer->Pop(out, 64) == 0);  // 100 of 200: not yet
+    buffer->Push(data + 100, 100);
+    CHECK(buffer->Pop(out, 64) == 64);  // 200: plays
+    CHECK(out[0] == 1.0f);
+    CHECK(buffer->Pop(out, 256) == 136);  // runs dry: the rest, short
+    CHECK(out[135] == 200.0f);
+    buffer->Push(data + 200, 100);
+    CHECK(buffer->Pop(out, 64) == 0);  // collects again
+    buffer->Push(data + 300, 100);
+    CHECK(buffer->Pop(out, 64) == 64);
+    CHECK(out[0] == 201.0f);
+}
+
+TEST_CASE("Push stream: a full ring drops the oldest frames and counts them", "[audio][stream][push]")
+{
+    StreamBufferPtr buffer = StPush(100);
+    f32 data[250];
+    for (u32 i = 0; i < 250; ++i)
+    {
+        data[i] = static_cast<f32>(i + 1);
+    }
+    CHECK(buffer->Push(data, 250) == 250);
+    CHECK(buffer->PushStats().frames_dropped == 150);  // known before the voice looks
+    CHECK(buffer->PushStats().buffered == 100);
+    f32 out[256] = {};
+    CHECK(buffer->Pop(out, 256) == 100);
+    CHECK(out[0] == 151.0f);  // the newest 100
+    CHECK(out[99] == 250.0f);
+    CHECK(buffer->PushStats().frames_dropped == 150);
+    CHECK(buffer->PushStats().frames_pushed == 250);
+}
+
+TEST_CASE("Push stream: 16-bit samples are scaled, non-finite floats are silence, bad arguments are refused",
+          "[audio][stream][push]")
+{
+    StreamBufferPtr buffer = StPush(256, 0, 2);
+    const i16 pcm[4] = {16384, -16384, 32767, -32768};
+    CHECK(buffer->PushI16(pcm, 2) == 2);
+    f32 bad[2] = {Limits<f32>::QuietNaN(), 0.25f};
+    CHECK(buffer->Push(bad, 1) == 1);
+    f32 out[8] = {};
+    CHECK(buffer->Pop(out, 3) == 3);
+    CHECK(out[0] == 0.5f);
+    CHECK(out[1] == -0.5f);
+    CHECK(out[2] == 32767.0f / 32768.0f);
+    CHECK(out[3] == -1.0f);
+    CHECK(out[4] == 0.0f);  // the NaN
+    CHECK(out[5] == 0.25f);
+    CHECK(buffer->Push(nullptr, 5) == 0);
+    PushStreamConfig refused;
+    refused.channels = 3;
+    StreamBufferPtr none;
+    CHECK(StreamBuffer::CreatePush(refused, &none) == StreamStatus::Invalid);
+    refused.channels = 1;
+    refused.capacity_frames = 10;
+    CHECK(StreamBuffer::CreatePush(refused, &none) == StreamStatus::Invalid);
+    refused.capacity_frames = 100;
+    refused.prefill_frames = 101;
+    CHECK(StreamBuffer::CreatePush(refused, &none) == StreamStatus::Invalid);
+    // a stream that is not a push stream takes no pushes
+    StreamBufferPtr pulled;
+    StreamConfig config;
+    REQUIRE(StreamBuffer::Create(MakeUnique<StNanSource>(), config, &pulled) == StreamStatus::Ok);
+    CHECK_FALSE(pulled->IsPush());
+    CHECK(pulled->Push(out, 1) == 0);
+}
+
+TEST_CASE("Push stream: a pusher and the audio thread running at once lose or reorder nothing they did not drop",
+          "[audio][stream][push]")
+{
+    // The ring is small so that the pusher laps the reader: what comes out is an increasing run of the ramp with gaps
+    // only where the stream counted drops.
+    StreamBufferPtr buffer = StPush(600);
+    constexpr u32 kTotal = 300000;
+    Atomic<bool> done{false};
+    Thread pusher(
+        [&]()
+        {
+            f32 block[160];
+            u32 next = 1;
+            while (next <= kTotal)
+            {
+                u32 n = 0;
+                for (; n < 160 && next + n <= kTotal; ++n)
+                {
+                    block[n] = static_cast<f32>(next + n);
+                }
+                buffer->Push(block, n);
+                next += n;
+            }
+            done.Store(true, MemoryOrder::Release);
+        });
+    f32 out[256];
+    f32 last = 0.0f;
+    u64 popped = 0;
+    bool ordered = true;
+    while (!done.Load(MemoryOrder::Acquire) || buffer->Buffered() != 0)
+    {
+        const u32 got = buffer->Pop(out, 256);
+        for (u32 i = 0; i < got; ++i)
+        {
+            ordered = ordered && out[i] > last;
+            last = out[i];
+        }
+        popped += got;
+    }
+    pusher.Join();
+    CHECK(ordered);
+    const PushStreamStats stats = buffer->PushStats();
+    CHECK(stats.frames_pushed + (stats.frames_dropped > 0 ? 0 : 0) <= kTotal);
+    CHECK(popped + stats.frames_dropped >= stats.frames_pushed);
+    CHECK(popped <= stats.frames_pushed);
 }

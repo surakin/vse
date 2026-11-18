@@ -85,6 +85,13 @@ SnapshotStatus Mixer::SaveState(bytes::ByteWriter* out) const
     {
         return SnapshotStatus::Busy;
     }
+    for (usize v = 0; v < voices_.Size(); ++v)
+    {
+        if (voices_[v].active && voices_[v].stream && voices_[v].stream->IsPush())
+        {
+            return SnapshotStatus::LiveStream;  // what a host feeds as it arrives cannot be saved
+        }
+    }
     StateOut s(out);
     s.U32(kMagic);
     s.U32(kVersion);

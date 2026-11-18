@@ -715,8 +715,8 @@ audio::StreamBufferPtr AudioFindStream(AudioHost* host, u64 handle)
     return slot.buffer && slot.generation == static_cast<u32>(handle >> 32) ? slot.buffer : audio::StreamBufferPtr();
 }
 
-// Opens a stream over `source` and stores it; the lock is held.
-engine_status AudioAddStream(AudioHost* host, Runtime* runtime, UniquePtr<audio::StreamSource> source, u64* out)
+// The slot of a new stream (a free one, or a new one); the lock is held.
+engine_status AudioFreeStreamSlot(AudioHost* host, usize* out)
 {
     usize slot = host->streams.Size();
     for (usize i = 0; i < host->streams.Size(); ++i)
@@ -734,6 +734,19 @@ engine_status AudioAddStream(AudioHost* host, Runtime* runtime, UniquePtr<audio:
             return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "256 streams exist");
         }
         host->streams.Push(AudioHost::StreamSlot());
+    }
+    *out = slot;
+    return ENGINE_OK;
+}
+
+// Opens a stream over `source` and stores it; the lock is held.
+engine_status AudioAddStream(AudioHost* host, Runtime* runtime, UniquePtr<audio::StreamSource> source, u64* out)
+{
+    usize slot = 0;
+    const engine_status slot_status = AudioFreeStreamSlot(host, &slot);
+    if (slot_status != ENGINE_OK)
+    {
+        return slot_status;
     }
     audio::StreamConfig config;
     config.sample_rate = host->mixer.Config().sample_rate;
@@ -881,6 +894,224 @@ engine_status AudioStreamOpenFn(engine_handle engine, const engine_audio_stream_
     return AudioAddStream(host, runtime, Move(made), out_stream);
 }
 
+engine_status AudioStreamOfHandle(Runtime& runtime, u64 handle, audio::StreamBufferPtr* out)
+{
+    out->Reset();
+    if (handle == 0)
+    {
+        return ENGINE_OK;
+    }
+    AudioHostPtr keep;
+    {
+        LockGuard<Mutex> lock(runtime.audio_mutex);
+        keep = runtime.audio_owner;
+    }
+    if (keep.Get() == nullptr)
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "audio is not open");
+    }
+    LockGuard<Mutex> lock(keep->mutex);
+    *out = AudioFindStream(keep.Get(), handle);
+    return out->Get() == nullptr ? Fail(ENGINE_ERROR_STALE_HANDLE, "the stream is gone") : ENGINE_OK;
+}
+
+u64 AudioHandleOfStream(Runtime& runtime, const audio::StreamBufferPtr& stream)
+{
+    AudioHostPtr keep;
+    {
+        LockGuard<Mutex> lock(runtime.audio_mutex);
+        keep = runtime.audio_owner;
+    }
+    if (keep.Get() == nullptr || stream.Get() == nullptr)
+    {
+        return 0;
+    }
+    LockGuard<Mutex> lock(keep->mutex);
+    for (usize i = 0; i < keep->streams.Size(); ++i)
+    {
+        if (keep->streams[i].buffer.Get() == stream.Get())
+        {
+            return AudioPack(keep->streams[i].generation, static_cast<u32>(i));
+        }
+    }
+    return 0;
+}
+
+engine_status AudioStreamOpenPushFn(engine_handle engine, const engine_audio_push_info* info, u64* out_stream)
+{
+    if (out_stream == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_stream` is NULL");
+    }
+    *out_stream = 0;
+    AudioHostPtr keep;
+    AudioHost* host = nullptr;
+    engine_status status = AudioResolve(engine, &host, &keep);
+    if (status != ENGINE_OK)
+    {
+        return status;
+    }
+    status = AudioCheckIn(info, 20, "engine_audio_push_info");
+    if (status != ENGINE_OK)
+    {
+        return status;
+    }
+    audio::ChannelLayout layout = audio::ChannelLayout::Mono;
+    if (!AudioLayoutOf(info->channels, &layout) || info->capacity_frames < 64 || info->capacity_frames > 480000 ||
+        info->prefill_frames > info->capacity_frames)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                    "a push stream takes 1, 2, 4, 6 or 8 channels, 64 to 480000 frames and a prefill within them");
+    }
+    LockGuard<Mutex> lock(host->mutex);
+    if (info->sample_rate != host->mixer.Config().sample_rate)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                    "a push stream has the mixer's sample rate (audio_state): it is not resampled");
+    }
+    usize slot = 0;
+    status = AudioFreeStreamSlot(host, &slot);
+    if (status != ENGINE_OK)
+    {
+        return status;
+    }
+    audio::PushStreamConfig config;
+    config.sample_rate = info->sample_rate;
+    config.channels = info->channels;
+    config.capacity_frames = info->capacity_frames;
+    config.prefill_frames = info->prefill_frames;
+    config.id = host->next_stream_generation;
+    audio::StreamBufferPtr buffer;
+    if (audio::StreamBuffer::CreatePush(config, &buffer) != audio::StreamStatus::Ok)
+    {
+        return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the push stream could not be made (memory)");
+    }
+    host->streams[slot].buffer = buffer;
+    host->streams[slot].generation = host->next_stream_generation++;
+    *out_stream = AudioPack(host->streams[slot].generation, static_cast<u32>(slot));
+    return ENGINE_OK;
+}
+
+namespace
+{
+// The stream of a handle, a push stream; takes the lock for the lookup only (the buffer is shared, so a close during
+// the push leaves it alive).
+engine_status AudioPushTarget(engine_handle engine, u64 stream, audio::StreamBufferPtr* out)
+{
+    AudioHostPtr keep;
+    AudioHost* host = nullptr;
+    const engine_status status = AudioResolve(engine, &host, &keep);
+    if (status != ENGINE_OK)
+    {
+        return status;
+    }
+    {
+        LockGuard<Mutex> lock(host->mutex);
+        *out = AudioFindStream(host, stream);
+    }
+    if (!*out)
+    {
+        return Fail(ENGINE_ERROR_STALE_HANDLE, "the stream is gone");
+    }
+    if (!(*out)->IsPush())
+    {
+        out->Reset();
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the stream is not a push stream (audio_stream_open_push)");
+    }
+    return ENGINE_OK;
+}
+}  // namespace
+
+engine_status AudioStreamPushFn(engine_handle engine, u64 stream, const float* data, u32 frames, u32* accepted)
+{
+    if (accepted != nullptr)
+    {
+        *accepted = 0;
+    }
+    if (data == nullptr && frames != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`data` is NULL");
+    }
+    audio::StreamBufferPtr buffer;
+    const engine_status status = AudioPushTarget(engine, stream, &buffer);
+    if (status != ENGINE_OK)
+    {
+        return status;
+    }
+    const u32 took = buffer->Push(data, frames);
+    if (accepted != nullptr)
+    {
+        *accepted = took;
+    }
+    return ENGINE_OK;
+}
+
+engine_status AudioStreamPushI16Fn(engine_handle engine, u64 stream, const i16* data, u32 frames, u32* accepted)
+{
+    if (accepted != nullptr)
+    {
+        *accepted = 0;
+    }
+    if (data == nullptr && frames != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`data` is NULL");
+    }
+    audio::StreamBufferPtr buffer;
+    const engine_status status = AudioPushTarget(engine, stream, &buffer);
+    if (status != ENGINE_OK)
+    {
+        return status;
+    }
+    const u32 took = buffer->PushI16(data, frames);
+    if (accepted != nullptr)
+    {
+        *accepted = took;
+    }
+    return ENGINE_OK;
+}
+
+engine_status AudioStreamStatsFn(engine_handle engine, u64 stream, engine_audio_stream_stats* out)
+{
+    if (out == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out` is NULL");
+    }
+    const engine_status checked = AudioCheckIn(out, 40, "engine_audio_stream_stats");
+    if (checked != ENGINE_OK)
+    {
+        return checked;
+    }
+    AudioHostPtr keep;
+    AudioHost* host = nullptr;
+    const engine_status status = AudioResolve(engine, &host, &keep);
+    if (status != ENGINE_OK)
+    {
+        return status;
+    }
+    audio::StreamBufferPtr buffer;
+    {
+        LockGuard<Mutex> lock(host->mutex);
+        buffer = AudioFindStream(host, stream);
+    }
+    if (!buffer)
+    {
+        return Fail(ENGINE_ERROR_STALE_HANDLE, "the stream is gone");
+    }
+    out->is_push = buffer->IsPush() ? 1u : 0u;
+    out->buffered_frames = buffer->Buffered();
+    out->underruns = buffer->Underruns();
+    out->frames_pushed = 0;
+    out->frames_dropped = 0;
+    if (buffer->IsPush())
+    {
+        const audio::PushStreamStats stats = buffer->PushStats();
+        out->frames_pushed = stats.frames_pushed;
+        out->frames_dropped = stats.frames_dropped;
+        out->underruns = stats.underruns;
+    }
+    return ENGINE_OK;
+}
+
 engine_status AudioStreamCloseFn(engine_handle engine, u64 stream)
 {
     AudioHostPtr keep;
@@ -902,6 +1133,7 @@ engine_status AudioStreamCloseFn(engine_handle engine, u64 stream)
     {
         host->pump->Remove(host->streams[index].buffer);
     }
+    host->streams[index].buffer->Close();  // a voice that plays a push stream (an entity's, say) ends
     host->streams[index].buffer.Reset();
     return ENGINE_OK;
 }
@@ -1337,7 +1569,13 @@ engine_status AudioSnapshotFn(engine_handle engine, engine_buffer* out)
     }
     LockGuard<Mutex> lock(host->mutex);
     bytes::ByteWriter writer;
-    if (host->mixer.SaveState(&writer) != audio::SnapshotStatus::Ok)
+    const audio::SnapshotStatus saved = host->mixer.SaveState(&writer);
+    if (saved == audio::SnapshotStatus::LiveStream)
+    {
+        return Fail(ENGINE_ERROR_UNSUPPORTED,
+                    "a voice plays a live push stream, which a snapshot cannot hold: stop it first");
+    }
+    if (saved != audio::SnapshotStatus::Ok)
     {
         return Fail(ENGINE_ERROR_NOT_READY, "commands are queued: render a block first");
     }
@@ -1370,6 +1608,7 @@ engine_status AudioRestoreFn(engine_handle engine, const void* data, size_t size
     case audio::SnapshotStatus::Mismatch: return Fail(ENGINE_ERROR_UNSUPPORTED, "the mixer is set up differently");
     case audio::SnapshotStatus::MissingClip:
         return Fail(ENGINE_ERROR_MISSING_DEPENDENCY, "a clip or stream is not open");
+    case audio::SnapshotStatus::LiveStream: return Fail(ENGINE_ERROR_UNSUPPORTED, "a live stream cannot be restored");
     }
     return Fail(ENGINE_ERROR_INTERNAL, "unknown snapshot status");
 }

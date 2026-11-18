@@ -4915,22 +4915,23 @@ audio::SpscRing::Capacity() const	function	audio	audio-spscring-capacity-const	a
 audio::SpscRing::Size() const	function	audio	audio-spscring-size-const	audio.md	engine/audio/commands.h:95
 audio::AudioSource	struct	audio	audio-audiosource	audio.md	engine/audio/components.h:18
 audio::AudioSource::clip	variable	audio	audio-audiosource-clip	audio.md	engine/audio/components.h:21
-audio::AudioSource::bus	variable	audio	audio-audiosource-bus	audio.md	engine/audio/components.h:23
-audio::AudioSource::gain	variable	audio	audio-audiosource-gain	audio.md	engine/audio/components.h:25
-audio::AudioSource::pitch	variable	audio	audio-audiosource-pitch	audio.md	engine/audio/components.h:27
-audio::AudioSource::loop	variable	audio	audio-audiosource-loop	audio.md	engine/audio/components.h:29
-audio::AudioSource::play_on_start	variable	audio	audio-audiosource-play-on-start	audio.md	engine/audio/components.h:31
-audio::AudioSource::spatial	variable	audio	audio-audiosource-spatial	audio.md	engine/audio/components.h:33
-audio::AudioSource::doppler	variable	audio	audio-audiosource-doppler	audio.md	engine/audio/components.h:35
-audio::AudioSource::occlusion	variable	audio	audio-audiosource-occlusion	audio.md	engine/audio/components.h:37
-audio::AudioSource::priority	variable	audio	audio-audiosource-priority	audio.md	engine/audio/components.h:39
-audio::AudioSource::attenuation	variable	audio	audio-audiosource-attenuation	audio.md	engine/audio/components.h:41
-audio::AudioSource::cone	variable	audio	audio-audiosource-cone	audio.md	engine/audio/components.h:43
-audio::AudioVelocity	struct	audio	audio-audiovelocity	audio.md	engine/audio/components.h:50
-audio::AudioVelocity::velocity	variable	audio	audio-audiovelocity-velocity	audio.md	engine/audio/components.h:53
-audio::AudioListener	struct	audio	audio-audiolistener	audio.md	engine/audio/components.h:60
-audio::AudioListener::gain	variable	audio	audio-audiolistener-gain	audio.md	engine/audio/components.h:63
-audio::AudioListener::active	variable	audio	audio-audiolistener-active	audio.md	engine/audio/components.h:65
+audio::AudioSource::stream	variable	audio	audio-audiosource-stream	audio.md	engine/audio/components.h:25
+audio::AudioSource::bus	variable	audio	audio-audiosource-bus	audio.md	engine/audio/components.h:27
+audio::AudioSource::gain	variable	audio	audio-audiosource-gain	audio.md	engine/audio/components.h:29
+audio::AudioSource::pitch	variable	audio	audio-audiosource-pitch	audio.md	engine/audio/components.h:31
+audio::AudioSource::loop	variable	audio	audio-audiosource-loop	audio.md	engine/audio/components.h:33
+audio::AudioSource::play_on_start	variable	audio	audio-audiosource-play-on-start	audio.md	engine/audio/components.h:35
+audio::AudioSource::spatial	variable	audio	audio-audiosource-spatial	audio.md	engine/audio/components.h:37
+audio::AudioSource::doppler	variable	audio	audio-audiosource-doppler	audio.md	engine/audio/components.h:39
+audio::AudioSource::occlusion	variable	audio	audio-audiosource-occlusion	audio.md	engine/audio/components.h:41
+audio::AudioSource::priority	variable	audio	audio-audiosource-priority	audio.md	engine/audio/components.h:43
+audio::AudioSource::attenuation	variable	audio	audio-audiosource-attenuation	audio.md	engine/audio/components.h:45
+audio::AudioSource::cone	variable	audio	audio-audiosource-cone	audio.md	engine/audio/components.h:47
+audio::AudioVelocity	struct	audio	audio-audiovelocity	audio.md	engine/audio/components.h:54
+audio::AudioVelocity::velocity	variable	audio	audio-audiovelocity-velocity	audio.md	engine/audio/components.h:57
+audio::AudioListener	struct	audio	audio-audiolistener	audio.md	engine/audio/components.h:64
+audio::AudioListener::gain	variable	audio	audio-audiolistener-gain	audio.md	engine/audio/components.h:67
+audio::AudioListener::active	variable	audio	audio-audiolistener-active	audio.md	engine/audio/components.h:69
 audio::kDownmixGain	variable	audio	audio-kdownmixgain	audio.md	engine/audio/convert.h:14
 audio::U8ToF32(u8)	function	audio	audio-u8tof32-u8	audio.md	engine/audio/convert.h:22
 audio::S16ToF32(i16)	function	audio	audio-s16tof32-i16	audio.md	engine/audio/convert.h:24
@@ -5415,6 +5416,7 @@ audio::SnapshotStatus::Corrupt	enumerator	audio	audio-snapshotstatus-corrupt	aud
 audio::SnapshotStatus::Version	enumerator	audio	audio-snapshotstatus-version	audio.md	engine/audio/snapshot.h:47
 audio::SnapshotStatus::Mismatch	enumerator	audio	audio-snapshotstatus-mismatch	audio.md	engine/audio/snapshot.h:49
 audio::SnapshotStatus::MissingClip	enumerator	audio	audio-snapshotstatus-missingclip	audio.md	engine/audio/snapshot.h:51
+audio::SnapshotStatus::LiveStream	enumerator	audio	audio-snapshotstatus-livestream	audio.md	engine/audio/snapshot.h:53
 audio::SpatialAudioConfig	struct	audio	audio-spatialaudioconfig	audio.md	engine/audio/spatial_audio.h:21
 audio::SpatialAudioConfig::max_real_voices	variable	audio	audio-spatialaudioconfig-max-real-voices	audio.md	engine/audio/spatial_audio.h:24
 audio::SpatialAudioConfig::audibility_threshold	variable	audio	audio-spatialaudioconfig-audibility-threshold	audio.md	engine/audio/spatial_audio.h:26
@@ -5495,33 +5497,50 @@ audio::StreamConfig::capacity_frames	variable	audio	audio-streamconfig-capacity-
 audio::StreamConfig::chunk_frames	variable	audio	audio-streamconfig-chunk-frames	audio.md	engine/audio/stream.h:129
 audio::StreamConfig::low_water_frames	variable	audio	audio-streamconfig-low-water-frames	audio.md	engine/audio/stream.h:131
 audio::StreamConfig::id	variable	audio	audio-streamconfig-id	audio.md	engine/audio/stream.h:133
-audio::StreamBufferPtr	alias	audio	audio-streambufferptr	audio.md	engine/audio/stream.h:138
-audio::StreamBuffer	class	audio	audio-streambuffer	audio.md	engine/audio/stream.h:149
-audio::StreamBuffer::Create(UniquePtr<StreamSource>,const StreamConfig&,StreamBufferPtr*)	function	audio	audio-streambuffer-create-uniqueptr-lt-streamsource-gt-const-streamconfig-amp-streambufferptr-star	audio.md	engine/audio/stream.h:160
-audio::StreamBuffer::StreamBuffer()	function	audio	audio-streambuffer-streambuffer	audio.md	engine/audio/stream.h:165
-audio::StreamBuffer::~StreamBuffer()	function	audio	audio-streambuffer-tilde-streambuffer	audio.md	engine/audio/stream.h:170
-audio::StreamBuffer::StreamBuffer(const StreamBuffer&)	function	audio	audio-streambuffer-streambuffer-const-streambuffer-amp	audio.md	engine/audio/stream.h:171
-audio::StreamBuffer::operator=(const StreamBuffer&)	function	audio	audio-streambuffer-operator-eq-const-streambuffer-amp	audio.md	engine/audio/stream.h:172
-audio::StreamBuffer::Clip() const	function	audio	audio-streambuffer-clip-const	audio.md	engine/audio/stream.h:178
-audio::StreamBuffer::Channels() const	function	audio	audio-streambuffer-channels-const	audio.md	engine/audio/stream.h:183
-audio::StreamBuffer::Length() const	function	audio	audio-streambuffer-length-const	audio.md	engine/audio/stream.h:188
-audio::StreamBuffer::Pop(f32*,u32)	function	audio	audio-streambuffer-pop-f32-star-u32	audio.md	engine/audio/stream.h:198
-audio::StreamBuffer::Ended() const	function	audio	audio-streambuffer-ended-const	audio.md	engine/audio/stream.h:204
-audio::StreamBuffer::Flush(u64)	function	audio	audio-streambuffer-flush-u64	audio.md	engine/audio/stream.h:210
-audio::StreamBuffer::SetLoop(bool)	function	audio	audio-streambuffer-setloop-bool	audio.md	engine/audio/stream.h:215
-audio::StreamBuffer::Refill()	function	audio	audio-streambuffer-refill	audio.md	engine/audio/stream.h:221
-audio::StreamBuffer::NeedsRefill() const	function	audio	audio-streambuffer-needsrefill-const	audio.md	engine/audio/stream.h:226
-audio::StreamBuffer::Buffered() const	function	audio	audio-streambuffer-buffered-const	audio.md	engine/audio/stream.h:231
-audio::StreamBuffer::Underruns() const	function	audio	audio-streambuffer-underruns-const	audio.md	engine/audio/stream.h:236
-audio::StreamPump	class	audio	audio-streampump	audio.md	engine/audio/stream.h:270
-audio::StreamPump::StreamPump(jobs::Scheduler&)	function	audio	audio-streampump-streampump-jobs-scheduler-amp	audio.md	engine/audio/stream.h:276
-audio::StreamPump::~StreamPump()	function	audio	audio-streampump-tilde-streampump	audio.md	engine/audio/stream.h:281
-audio::StreamPump::StreamPump(const StreamPump&)	function	audio	audio-streampump-streampump-const-streampump-amp	audio.md	engine/audio/stream.h:282
-audio::StreamPump::operator=(const StreamPump&)	function	audio	audio-streampump-operator-eq-const-streampump-amp	audio.md	engine/audio/stream.h:283
-audio::StreamPump::Add(const StreamBufferPtr&)	function	audio	audio-streampump-add-const-streambufferptr-amp	audio.md	engine/audio/stream.h:288
-audio::StreamPump::Remove(const StreamBufferPtr&)	function	audio	audio-streampump-remove-const-streambufferptr-amp	audio.md	engine/audio/stream.h:295
-audio::StreamPump::Update()	function	audio	audio-streampump-update	audio.md	engine/audio/stream.h:300
-audio::StreamPump::Run()	function	audio	audio-streampump-run	audio.md	engine/audio/stream.h:305
+audio::PushStreamConfig	struct	audio	audio-pushstreamconfig	audio.md	engine/audio/stream.h:140
+audio::PushStreamConfig::sample_rate	variable	audio	audio-pushstreamconfig-sample-rate	audio.md	engine/audio/stream.h:143
+audio::PushStreamConfig::channels	variable	audio	audio-pushstreamconfig-channels	audio.md	engine/audio/stream.h:145
+audio::PushStreamConfig::capacity_frames	variable	audio	audio-pushstreamconfig-capacity-frames	audio.md	engine/audio/stream.h:147
+audio::PushStreamConfig::prefill_frames	variable	audio	audio-pushstreamconfig-prefill-frames	audio.md	engine/audio/stream.h:150
+audio::PushStreamConfig::id	variable	audio	audio-pushstreamconfig-id	audio.md	engine/audio/stream.h:152
+audio::PushStreamStats	struct	audio	audio-pushstreamstats	audio.md	engine/audio/stream.h:158
+audio::PushStreamStats::frames_pushed	variable	audio	audio-pushstreamstats-frames-pushed	audio.md	engine/audio/stream.h:160
+audio::PushStreamStats::frames_dropped	variable	audio	audio-pushstreamstats-frames-dropped	audio.md	engine/audio/stream.h:161
+audio::PushStreamStats::underruns	variable	audio	audio-pushstreamstats-underruns	audio.md	engine/audio/stream.h:162
+audio::PushStreamStats::buffered	variable	audio	audio-pushstreamstats-buffered	audio.md	engine/audio/stream.h:163
+audio::StreamBufferPtr	alias	audio	audio-streambufferptr	audio.md	engine/audio/stream.h:168
+audio::StreamBuffer	class	audio	audio-streambuffer	audio.md	engine/audio/stream.h:179
+audio::StreamBuffer::Create(UniquePtr<StreamSource>,const StreamConfig&,StreamBufferPtr*)	function	audio	audio-streambuffer-create-uniqueptr-lt-streamsource-gt-const-streamconfig-amp-streambufferptr-star	audio.md	engine/audio/stream.h:190
+audio::StreamBuffer::CreatePush(const PushStreamConfig&,StreamBufferPtr*)	function	audio	audio-streambuffer-createpush-const-pushstreamconfig-amp-streambufferptr-star	audio.md	engine/audio/stream.h:200
+audio::StreamBuffer::IsPush() const	function	audio	audio-streambuffer-ispush-const	audio.md	engine/audio/stream.h:205
+audio::StreamBuffer::Push(const f32*,u32)	function	audio	audio-streambuffer-push-const-f32-star-u32	audio.md	engine/audio/stream.h:217
+audio::StreamBuffer::PushI16(const i16*,u32)	function	audio	audio-streambuffer-pushi16-const-i16-star-u32	audio.md	engine/audio/stream.h:226
+audio::StreamBuffer::Close()	function	audio	audio-streambuffer-close	audio.md	engine/audio/stream.h:232
+audio::StreamBuffer::PushStats() const	function	audio	audio-streambuffer-pushstats-const	audio.md	engine/audio/stream.h:238
+audio::StreamBuffer::StreamBuffer()	function	audio	audio-streambuffer-streambuffer	audio.md	engine/audio/stream.h:243
+audio::StreamBuffer::~StreamBuffer()	function	audio	audio-streambuffer-tilde-streambuffer	audio.md	engine/audio/stream.h:248
+audio::StreamBuffer::StreamBuffer(const StreamBuffer&)	function	audio	audio-streambuffer-streambuffer-const-streambuffer-amp	audio.md	engine/audio/stream.h:249
+audio::StreamBuffer::operator=(const StreamBuffer&)	function	audio	audio-streambuffer-operator-eq-const-streambuffer-amp	audio.md	engine/audio/stream.h:250
+audio::StreamBuffer::Clip() const	function	audio	audio-streambuffer-clip-const	audio.md	engine/audio/stream.h:256
+audio::StreamBuffer::Channels() const	function	audio	audio-streambuffer-channels-const	audio.md	engine/audio/stream.h:261
+audio::StreamBuffer::Length() const	function	audio	audio-streambuffer-length-const	audio.md	engine/audio/stream.h:266
+audio::StreamBuffer::Pop(f32*,u32)	function	audio	audio-streambuffer-pop-f32-star-u32	audio.md	engine/audio/stream.h:276
+audio::StreamBuffer::Ended() const	function	audio	audio-streambuffer-ended-const	audio.md	engine/audio/stream.h:282
+audio::StreamBuffer::Flush(u64)	function	audio	audio-streambuffer-flush-u64	audio.md	engine/audio/stream.h:288
+audio::StreamBuffer::SetLoop(bool)	function	audio	audio-streambuffer-setloop-bool	audio.md	engine/audio/stream.h:293
+audio::StreamBuffer::Refill()	function	audio	audio-streambuffer-refill	audio.md	engine/audio/stream.h:299
+audio::StreamBuffer::NeedsRefill() const	function	audio	audio-streambuffer-needsrefill-const	audio.md	engine/audio/stream.h:304
+audio::StreamBuffer::Buffered() const	function	audio	audio-streambuffer-buffered-const	audio.md	engine/audio/stream.h:309
+audio::StreamBuffer::Underruns() const	function	audio	audio-streambuffer-underruns-const	audio.md	engine/audio/stream.h:314
+audio::StreamPump	class	audio	audio-streampump	audio.md	engine/audio/stream.h:367
+audio::StreamPump::StreamPump(jobs::Scheduler&)	function	audio	audio-streampump-streampump-jobs-scheduler-amp	audio.md	engine/audio/stream.h:373
+audio::StreamPump::~StreamPump()	function	audio	audio-streampump-tilde-streampump	audio.md	engine/audio/stream.h:378
+audio::StreamPump::StreamPump(const StreamPump&)	function	audio	audio-streampump-streampump-const-streampump-amp	audio.md	engine/audio/stream.h:379
+audio::StreamPump::operator=(const StreamPump&)	function	audio	audio-streampump-operator-eq-const-streampump-amp	audio.md	engine/audio/stream.h:380
+audio::StreamPump::Add(const StreamBufferPtr&)	function	audio	audio-streampump-add-const-streambufferptr-amp	audio.md	engine/audio/stream.h:385
+audio::StreamPump::Remove(const StreamBufferPtr&)	function	audio	audio-streampump-remove-const-streambufferptr-amp	audio.md	engine/audio/stream.h:392
+audio::StreamPump::Update()	function	audio	audio-streampump-update	audio.md	engine/audio/stream.h:397
+audio::StreamPump::Run()	function	audio	audio-streampump-run	audio.md	engine/audio/stream.h:402
 audio::kVorbisLibraryVersion	variable	audio	audio-kvorbislibraryversion	audio.md	engine/audio/vorbis.h:18
 audio::VorbisStatus	enum	audio	audio-vorbisstatus	audio.md	engine/audio/vorbis.h:21
 audio::VorbisStatus::Ok	enumerator	audio	audio-vorbisstatus-ok	audio.md	engine/audio/vorbis.h:24

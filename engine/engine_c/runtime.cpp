@@ -842,7 +842,8 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     }
     else if (kind == ENGINE_COMPONENT_AUDIO_SOURCE)
     {
-        checked = CheckInStruct(value, sizeof(engine_audio_source), "engine_audio_source");
+        // The first version ended before `stream`; a host built against it passes a struct without one.
+        checked = CheckInStruct(value, offsetof(engine_audio_source, stream), "engine_audio_source");
     }
     else if (kind == ENGINE_COMPONENT_AUDIO_LISTENER)
     {
@@ -868,6 +869,28 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 if (found != ENGINE_OK)
                 {
                     return found;
+                }
+                const u64 stream = StructSizeOf(in) >= sizeof(engine_audio_source) ? in->stream : 0;
+                if (stream != 0)
+                {
+                    if (in->clip != 0)
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "an audio source has a clip or a stream, not both");
+                    }
+                    const engine_status of_stream = AudioStreamOfHandle(*CurrentRuntime(), stream, &source.stream);
+                    if (of_stream != ENGINE_OK)
+                    {
+                        return of_stream;
+                    }
+                    bool taken = false;
+                    object.world.Query<ecs::Read<audio::AudioSource>>().ForEach(
+                        [&](ecs::Entity other, const audio::AudioSource& have)
+                        { taken = taken || (other != entity && have.stream.Get() == source.stream.Get()); });
+                    if (taken)
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                                    "the stream is already the sound of another audio source (it has one reader)");
+                    }
                 }
                 if (in->model > ENGINE_AUDIO_MODEL_EXPONENTIAL || !IsFinite(in->gain) || in->gain < 0.0f ||
                     in->gain > 16.0f || !IsFinite(in->pitch) || in->pitch < 0.25f || in->pitch > 4.0f ||
@@ -2317,7 +2340,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_COLLIDER          ? sizeof(engine_collider)
                          : kind == ENGINE_COMPONENT_JOINT             ? sizeof(engine_joint)
                          : kind == ENGINE_COMPONENT_CHARACTER         ? sizeof(engine_character)
-                         : kind == ENGINE_COMPONENT_AUDIO_SOURCE      ? sizeof(engine_audio_source)
+                         : kind == ENGINE_COMPONENT_AUDIO_SOURCE      ? offsetof(engine_audio_source, stream)
                          : kind == ENGINE_COMPONENT_AUDIO_LISTENER    ? sizeof(engine_audio_listener)
                          : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? sizeof(engine_skeleton_instance)
                          : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? sizeof(engine_animation_state)
@@ -2441,7 +2464,11 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              result.cone_inner = source->cone.inner_angle;
                              result.cone_outer = source->cone.outer_angle;
                              result.cone_outer_gain = source->cone.outer_gain;
-                             MemCopy(out, &result, sizeof(result));
+                             result.stream = AudioHandleOfStream(*CurrentRuntime(), source->stream);
+                             // A host of the first version has a struct that ends before `stream`.
+                             const usize room = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out) : sizeof(result);
+                             result.struct_size = static_cast<u32>(room);
+                             MemCopy(out, &result, room);
                              return ENGINE_OK;
                          }
                          if (kind == ENGINE_COMPONENT_AUDIO_LISTENER)

@@ -133,6 +133,36 @@ struct StreamConfig
     u32 id = 0;
 };
 
+/// What a push stream is made of (Maintenance 2026-11-18, live voices): a stream the host feeds with `Push` as its
+/// audio arrives, with no source object and no refill job in between.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct PushStreamConfig
+{
+    /// The rate of the frames pushed: the mixer's (there is no resampling).
+    u32 sample_rate = 48000;
+    /// The channel count: 1, 2, 4, 6 or 8.
+    u32 channels = 1;
+    /// The most frames kept: a push past it makes the oldest frames go (counted). 64 to 480000.
+    u32 capacity_frames = 9600;
+    /// Frames to collect before the voice plays, and again after it ran dry: a jitter buffer. 0 plays what is there;
+    /// at most `capacity_frames`. The delay a voice adds to the audio is about this many frames.
+    u32 prefill_frames = 0;
+    /// A number that names the stream's clip, as `StreamConfig::id`.
+    u32 id = 0;
+};
+
+/// What a push stream counted.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct PushStreamStats
+{
+    u64 frames_pushed = 0;   ///< Frames accepted by `Push`.
+    u64 frames_dropped = 0;  ///< Frames lost to a full ring (the oldest) or to a second concurrent pusher.
+    u64 underruns = 0;       ///< Mixer blocks that found fewer frames than they needed.
+    u32 buffered = 0;        ///< Frames waiting now.
+};
+
 class StreamBuffer;
 /// A shared handle to a stream buffer: the mixer voice, the pump and the caller hold one.
 using StreamBufferPtr = SharedPtr<StreamBuffer>;
@@ -158,6 +188,54 @@ public:
     /// - Fails: reported by return value.
     /// - Ownership: the buffer owns `source`.
     static StreamStatus Create(UniquePtr<StreamSource> source, const StreamConfig& config, StreamBufferPtr* out);
+
+    /// Makes a push stream: frames arrive through `Push` from any one thread at a time and are read by the mixer
+    /// voice, with no job in between. The ring keeps the newest `capacity_frames`; the voice never finishes.
+    ///
+    /// - Param config: the sizes.
+    /// - Param out: receives the buffer.
+    /// - Returns: `Ok`, `Invalid` (a rate, channel count, capacity or prefill out of range) or `OutOfMemory`.
+    /// - Fails: reported by return value.
+    /// - Ownership: the buffer owns its ring; nothing is borrowed.
+    static StreamStatus CreatePush(const PushStreamConfig& config, StreamBufferPtr* out);
+
+    /// Whether this is a push stream.
+    ///
+    /// - Returns: the flag.
+    bool IsPush() const { return push_; }
+
+    /// Appends interleaved frames to a push stream. When the ring is full the oldest frames are dropped and counted
+    /// (a block the mixer is reading right now makes the newest of the call be dropped instead, also counted). A
+    /// second concurrent call returns 0 at once and counts the frames as dropped.
+    ///
+    /// - Param data: `frames * Channels()` finite samples (a non-finite one is stored as silence).
+    /// - Param frames: the frame count.
+    /// - Returns: the frames accepted.
+    /// - Thread-safety: thread-compatible; any thread, one at a time; it allocates nothing and does not wait for the
+    /// mixer.
+    /// - Ownership: `data` is borrowed for the call.
+    u32 Push(const f32* data, u32 frames);
+
+    /// Like `Push`, with 16-bit samples (scaled by 1/32768).
+    ///
+    /// - Param data: `frames * Channels()` samples.
+    /// - Param frames: the frame count.
+    /// - Returns: the frames accepted.
+    /// - Thread-safety: thread-compatible; as `Push`.
+    /// - Ownership: `data` is borrowed for the call.
+    u32 PushI16(const i16* data, u32 frames);
+
+    /// Closes a push stream: later pushes are refused and the voice that plays it ends (as a stream that reached its
+    /// end does). Other streams are unchanged.
+    ///
+    /// - Thread-safety: thread-safe.
+    void Close() { push_closed_.Store(true, MemoryOrder::Release); }
+
+    /// The counters of a push stream.
+    ///
+    /// - Returns: the counts (zero for another stream).
+    /// - Thread-safety: thread-safe.
+    PushStreamStats PushStats() const;
 
     /// An empty buffer: use `Create` (public only so `MakeShared` can build it).
     ///
@@ -261,6 +339,25 @@ private:
     Atomic<u64> ended_epoch_{0};
     Atomic<bool> looping_{false};
     Atomic<u64> underruns_{0};
+
+    // Push mode: a ring of `push_ring_` frames (the newest `push_limit_` are kept, the rest is room for a push in
+    // flight). `written` and `claim` are what the pusher and the mixer tell each other: the mixer announces where its
+    // current read starts, the pusher never writes over it.
+    static constexpr u64 kNoClaim = ~u64{0};
+    u32 PopPush(f32* out, u32 frames);
+    bool push_ = false;
+    u32 push_limit_ = 0;
+    u32 push_ring_ = 0;
+    u32 push_chunk_ = 0;
+    u32 push_prefill_ = 0;
+    bool push_primed_ = false;  // the mixer's own
+    Atomic<bool> push_busy_{false};
+    Atomic<bool> push_closed_{false};
+    Atomic<u64> push_written_{0};
+    Atomic<u64> push_read_{0};
+    Atomic<u64> push_claim_{kNoClaim};
+    Atomic<u64> push_pushed_{0};
+    Atomic<u64> push_dropped_{0};
 };
 
 /// Keeps stream buffers filled from jobs on the scheduler.

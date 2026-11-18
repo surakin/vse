@@ -467,7 +467,7 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
     out->struct_size = static_cast<u32>(kFirstVersionSize);
     if (host_size >= sizeof(engine_info))
     {
-        out->caps = ENGINE_CAP_HOST_TEXTURES | ENGINE_CAP_RESOURCE_CACHE |
+        out->caps = ENGINE_CAP_HOST_TEXTURES | ENGINE_CAP_RESOURCE_CACHE | ENGINE_CAP_AUDIO_PUSH_STREAMS |
                     (engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_SURFACE_X11 : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WAYLAND) ? ENGINE_CAP_SURFACE_WAYLAND : 0u) |
@@ -863,6 +863,10 @@ extern "C"
             &engine_c::ResourceAddFinishFn,
             &engine_c::ResourceAddDestroyFn,
             &engine_c::ImportFormatVersionFn,
+            &engine_c::AudioStreamOpenPushFn,
+            &engine_c::AudioStreamPushFn,
+            &engine_c::AudioStreamPushI16Fn,
+            &engine_c::AudioStreamStatsFn,
         };
         *out = &table;
         return ENGINE_OK;

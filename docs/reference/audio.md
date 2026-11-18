@@ -1221,7 +1221,7 @@ A sound at the entity's `ecs::WorldTransform`: the position is the entity's, the
 | Field | Value |
 |---|---|
 | Thread-safety | thread-compatible plain data. |
-| Ownership | shares `clip`. |
+| Ownership | shares `clip` and `stream`. |
 
 ### `clip` {#audio-audiosource-clip}
 
@@ -1231,7 +1231,17 @@ A sound at the entity's `ecs::WorldTransform`: the position is the entity's, the
 AudioClipConstPtr clip;
 ```
 
-The sound; null plays nothing.
+The sound; null plays nothing (unless `stream` is set).
+
+### `stream` {#audio-audiosource-stream}
+
+`variable audio::AudioSource::stream` — defined in `engine/audio/components.h`
+
+```cpp
+StreamBufferPtr stream;
+```
+
+A stream the voice reads instead of `clip` (a live voice fed by `StreamBuffer::Push`, for instance); null for a clip. It is never also the stream of another source (a push stream has one reader). The voice starts even when the emitter is not audible (virtual), as a looping clip does, so that the stream keeps being read.
 
 ### `bus` {#audio-audiosource-bus}
 
@@ -6536,6 +6546,7 @@ How a snapshot call ended.
 | <a id="audio-snapshotstatus-version"></a>`Version` |  | The snapshot is of another version. |
 | <a id="audio-snapshotstatus-mismatch"></a>`Mismatch` |  | The mixer is set up differently from the one saved (rate, layout, voices, buses, inserts, effects). |
 | <a id="audio-snapshotstatus-missingclip"></a>`MissingClip` |  | A clip or stream the snapshot names is unknown. |
+| <a id="audio-snapshotstatus-livestream"></a>`LiveStream` |  | A voice plays a live push stream, which a snapshot cannot hold (`SaveState` refuses; stop that voice first). |
 
 ## `SpatialAudioConfig` {#audio-spatialaudioconfig}
 
@@ -7512,6 +7523,124 @@ u32 id;
 
 A number that names the stream's clip (`stream<id>`) so a snapshot can tell streams apart; 0 names it `stream`.
 
+## `PushStreamConfig` {#audio-pushstreamconfig}
+
+`struct audio::PushStreamConfig` — defined in `engine/audio/stream.h`
+
+```cpp
+struct PushStreamConfig { ... }
+```
+
+What a push stream is made of (Maintenance 2026-11-18, live voices): a stream the host feeds with `Push` as its audio arrives, with no source object and no refill job in between.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `sample_rate` {#audio-pushstreamconfig-sample-rate}
+
+`variable audio::PushStreamConfig::sample_rate` — defined in `engine/audio/stream.h`
+
+```cpp
+u32 sample_rate;
+```
+
+The rate of the frames pushed: the mixer's (there is no resampling).
+
+### `channels` {#audio-pushstreamconfig-channels}
+
+`variable audio::PushStreamConfig::channels` — defined in `engine/audio/stream.h`
+
+```cpp
+u32 channels;
+```
+
+The channel count: 1, 2, 4, 6 or 8.
+
+### `capacity_frames` {#audio-pushstreamconfig-capacity-frames}
+
+`variable audio::PushStreamConfig::capacity_frames` — defined in `engine/audio/stream.h`
+
+```cpp
+u32 capacity_frames;
+```
+
+The most frames kept: a push past it makes the oldest frames go (counted). 64 to 480000.
+
+### `prefill_frames` {#audio-pushstreamconfig-prefill-frames}
+
+`variable audio::PushStreamConfig::prefill_frames` — defined in `engine/audio/stream.h`
+
+```cpp
+u32 prefill_frames;
+```
+
+Frames to collect before the voice plays, and again after it ran dry: a jitter buffer. 0 plays what is there; at most `capacity_frames`. The delay a voice adds to the audio is about this many frames.
+
+### `id` {#audio-pushstreamconfig-id}
+
+`variable audio::PushStreamConfig::id` — defined in `engine/audio/stream.h`
+
+```cpp
+u32 id;
+```
+
+A number that names the stream's clip, as `StreamConfig::id`.
+
+## `PushStreamStats` {#audio-pushstreamstats}
+
+`struct audio::PushStreamStats` — defined in `engine/audio/stream.h`
+
+```cpp
+struct PushStreamStats { ... }
+```
+
+What a push stream counted.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `frames_pushed` {#audio-pushstreamstats-frames-pushed}
+
+`variable audio::PushStreamStats::frames_pushed` — defined in `engine/audio/stream.h`
+
+```cpp
+u64 frames_pushed;
+```
+
+Frames accepted by `Push`.
+
+### `frames_dropped` {#audio-pushstreamstats-frames-dropped}
+
+`variable audio::PushStreamStats::frames_dropped` — defined in `engine/audio/stream.h`
+
+```cpp
+u64 frames_dropped;
+```
+
+Frames lost to a full ring (the oldest) or to a second concurrent pusher.
+
+### `underruns` {#audio-pushstreamstats-underruns}
+
+`variable audio::PushStreamStats::underruns` — defined in `engine/audio/stream.h`
+
+```cpp
+u64 underruns;
+```
+
+Mixer blocks that found fewer frames than they needed.
+
+### `buffered` {#audio-pushstreamstats-buffered}
+
+`variable audio::PushStreamStats::buffered` — defined in `engine/audio/stream.h`
+
+```cpp
+u32 buffered;
+```
+
+Frames waiting now.
+
 ## `StreamBufferPtr` {#audio-streambufferptr}
 
 `alias audio::StreamBufferPtr` — defined in `engine/audio/stream.h`
@@ -7557,6 +7686,103 @@ Makes a buffer; nothing is read yet (call `Refill` before the voice starts).
 | Returns | `Ok`, `Invalid` or `OutOfMemory`. |
 | Fails | reported by return value. |
 | Ownership | the buffer owns `source`. |
+
+### `CreatePush(const PushStreamConfig&,StreamBufferPtr*)` {#audio-streambuffer-createpush-const-pushstreamconfig-amp-streambufferptr-star}
+
+`method audio::StreamBuffer::CreatePush` — defined in `engine/audio/stream.h`
+
+```cpp
+static StreamStatus CreatePush(const PushStreamConfig& config, StreamBufferPtr* out);
+```
+
+Makes a push stream: frames arrive through `Push` from any one thread at a time and are read by the mixer voice, with no job in between. The ring keeps the newest `capacity_frames`; the voice never finishes.
+
+| Field | Value |
+|---|---|
+| Parameter `config` | the sizes. |
+| Parameter `out` | receives the buffer. |
+| Returns | `Ok`, `Invalid` (a rate, channel count, capacity or prefill out of range) or `OutOfMemory`. |
+| Fails | reported by return value. |
+| Ownership | the buffer owns its ring; nothing is borrowed. |
+
+### `IsPush()` {#audio-streambuffer-ispush-const}
+
+`method audio::StreamBuffer::IsPush` — defined in `engine/audio/stream.h`
+
+```cpp
+bool IsPush() const;
+```
+
+Whether this is a push stream.
+
+| Field | Value |
+|---|---|
+| Returns | the flag. |
+
+### `Push(const f32*,u32)` {#audio-streambuffer-push-const-f32-star-u32}
+
+`method audio::StreamBuffer::Push` — defined in `engine/audio/stream.h`
+
+```cpp
+u32 Push(const f32* data, u32 frames);
+```
+
+Appends interleaved frames to a push stream. When the ring is full the oldest frames are dropped and counted (a block the mixer is reading right now makes the newest of the call be dropped instead, also counted). A second concurrent call returns 0 at once and counts the frames as dropped.
+
+| Field | Value |
+|---|---|
+| Parameter `data` | `frames * Channels()` finite samples (a non-finite one is stored as silence). |
+| Parameter `frames` | the frame count. |
+| Returns | the frames accepted. |
+| Thread-safety | thread-compatible; any thread, one at a time; it allocates nothing and does not wait for the mixer. |
+| Ownership | `data` is borrowed for the call. |
+
+### `PushI16(const i16*,u32)` {#audio-streambuffer-pushi16-const-i16-star-u32}
+
+`method audio::StreamBuffer::PushI16` — defined in `engine/audio/stream.h`
+
+```cpp
+u32 PushI16(const i16* data, u32 frames);
+```
+
+Like `Push`, with 16-bit samples (scaled by 1/32768).
+
+| Field | Value |
+|---|---|
+| Parameter `data` | `frames * Channels()` samples. |
+| Parameter `frames` | the frame count. |
+| Returns | the frames accepted. |
+| Thread-safety | thread-compatible; as `Push`. |
+| Ownership | `data` is borrowed for the call. |
+
+### `Close()` {#audio-streambuffer-close}
+
+`method audio::StreamBuffer::Close` — defined in `engine/audio/stream.h`
+
+```cpp
+void Close();
+```
+
+Closes a push stream: later pushes are refused and the voice that plays it ends (as a stream that reached its end does). Other streams are unchanged.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe. |
+
+### `PushStats()` {#audio-streambuffer-pushstats-const}
+
+`method audio::StreamBuffer::PushStats` — defined in `engine/audio/stream.h`
+
+```cpp
+PushStreamStats PushStats() const;
+```
+
+The counters of a push stream.
+
+| Field | Value |
+|---|---|
+| Returns | the counts (zero for another stream). |
+| Thread-safety | thread-safe. |
 
 ### `StreamBuffer()` {#audio-streambuffer-streambuffer}
 

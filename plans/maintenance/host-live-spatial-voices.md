@@ -82,4 +82,12 @@ placed mix differs in level and balance from that reference. The canceller adapt
 
 ## Result
 
-(Not started.)
+Done on Linux, 2026-11-18. Option 4 (the push ring) was built, as the host prefers; items 2 and 3 (a `live` flag and a read-ahead on the callback stream) are not, since the ring has no refill job to measure.
+
+- `audio_stream_open_push` / `audio_stream_push` / `audio_stream_push_i16` / `audio_stream_stats`, `engine_audio_source.stream` (first-version structs without it still work), `ENGINE_CAP_AUDIO_PUSH_STREAMS`, C++ wrappers; `StreamBuffer::CreatePush` in `engine/audio/stream.*`: a ring of the newest `capacity_frames` plus room for a push in flight; the mixer announces where its read starts and the pusher never writes over it, so neither side takes a lock, allocates or waits; the oldest frames are dropped and counted; `prefill_frames` is the jitter buffer; a closed stream ends its voice.
+- The spatial driver (`SpatialAudio::Drive`) starts the voice from the source's stream (virtual too, so the stream keeps being read) and restarts it when another stream is set.
+- Tests: `Push stream` unit tests (order, underrun, prefill, overrun, int16, a pusher thread against the reader) and `host_audio_live` (argument checks; live tone vs the same tone as a clip at 1, 5 and 25 m in front, left and behind: equal to 5 digits; 200 ms of silence: silent output, 37 underruns, the voice alive and resumed; overrun counted; delay; the six orders of destroying the entity, removing the source and closing the stream; one reader per stream; a participant's stream moved to a new entity; the first-version struct; the snapshot refusing a live voice; a pusher thread in real time).
+- Delay (Linux, 48 kHz, 480-frame pushes and calls, `prefill_frames` 0): at most 256 frames, 5.33 ms; Windows and macOS not measured. Well under the 40 ms the request set as the threshold.
+- Code review (high): 5 findings; the doc claim that a push never waits was corrected (it takes the control lock for the lookup); stale frames before a voice starts, the newest-dropped window, the per-world one-reader rule and the missing Doppler/movement test are recorded in `KNOWN-ISSUES.md`.
+- Not done or not measured: Doppler and smooth movement of a live voice against a clip's, Windows and Mac runs; recorded in `KNOWN-ISSUES.md`.
+

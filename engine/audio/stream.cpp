@@ -429,6 +429,208 @@ StreamStatus MakeWavFileStream(io::FilePtr file, UniquePtr<StreamSource>* out)
 // ---- The ring
 // ---------------------------------------------------------------------------------------------------------
 
+namespace
+{
+// The one-frame clip a stream's voice names, in the delivered format.
+StreamStatus MakeStandInClip(u32 sample_rate, u32 channels, u32 id, AudioClipPtr* clip)
+{
+    ClipDesc desc;
+    desc.format.sample_rate = sample_rate;
+    desc.format.layout = StreamLayoutOf(channels);
+    desc.format.format = SampleFormat::F32;
+    desc.frame_count = 1;
+    Vector<f32> silence;
+    silence.Resize(channels);
+    char clip_name[24];
+    FormatTo(clip_name, sizeof(clip_name), id == 0 ? "stream" : "stream%u", static_cast<unsigned>(id));
+    return AudioClip::CreateCopy(desc, Span<const f32>(silence.Data(), silence.Size()), StringView(clip_name), clip) ==
+                   ClipStatus::Ok
+               ? StreamStatus::Ok
+               : StreamStatus::OutOfMemory;
+}
+}  // namespace
+
+StreamStatus StreamBuffer::CreatePush(const PushStreamConfig& config, StreamBufferPtr* out)
+{
+    if (out == nullptr || config.sample_rate < 8000 || config.sample_rate > 384000 || !ChannelsOk(config.channels) ||
+        config.capacity_frames < 64 || config.capacity_frames > 480000 ||
+        config.prefill_frames > config.capacity_frames)
+    {
+        return StreamStatus::Invalid;
+    }
+    StreamBufferPtr buffer = MakeShared<StreamBuffer>();
+    if (!buffer)
+    {
+        return StreamStatus::OutOfMemory;
+    }
+    buffer->push_ = true;
+    buffer->channels_ = config.channels;
+    buffer->push_limit_ = config.capacity_frames;
+    buffer->push_chunk_ = 1024;
+    buffer->push_ring_ = config.capacity_frames + buffer->push_chunk_;
+    buffer->capacity_ = buffer->push_ring_;
+    buffer->push_prefill_ = config.prefill_frames;
+    buffer->push_primed_ = config.prefill_frames == 0;
+    if (!buffer->ring_.TryResizeUninitialized(static_cast<usize>(buffer->push_ring_) * config.channels))
+    {
+        return StreamStatus::OutOfMemory;
+    }
+    AudioClipPtr clip;
+    const StreamStatus made = MakeStandInClip(config.sample_rate, config.channels, config.id, &clip);
+    if (made != StreamStatus::Ok)
+    {
+        return made;
+    }
+    buffer->clip_ = clip;
+    *out = Move(buffer);
+    return StreamStatus::Ok;
+}
+
+u32 StreamBuffer::Push(const f32* data, u32 frames)
+{
+    if (!push_ || data == nullptr || frames == 0 || push_closed_.Load(MemoryOrder::Acquire))
+    {
+        return 0;
+    }
+    if (push_busy_.Exchange(true, MemoryOrder::Acquire))
+    {
+        push_dropped_.FetchAdd(frames, MemoryOrder::Relaxed);
+        return 0;
+    }
+    u32 accepted = 0;
+    u64 w = push_written_.Load(MemoryOrder::Relaxed);
+    while (accepted < frames)
+    {
+        const u32 n = frames - accepted < push_chunk_ ? frames - accepted : push_chunk_;
+        // The mixer's read starts at `claim`: the slots this write reuses hold frames before `w + n - ring`, which are
+        // behind the claim unless the mixer has fallen more than a ring behind.
+        const u64 claim = push_claim_.Load(MemoryOrder::SeqCst);
+        if (claim != kNoClaim && claim + push_ring_ < w + n)
+        {
+            push_dropped_.FetchAdd(frames - accepted, MemoryOrder::Relaxed);
+            break;
+        }
+        u32 done = 0;
+        while (done < n)
+        {
+            const u32 slot = static_cast<u32>((w + done) % push_ring_);
+            u32 run = push_ring_ - slot;
+            if (run > n - done)
+            {
+                run = n - done;
+            }
+            f32* to = ring_.Data() + static_cast<usize>(slot) * channels_;
+            const f32* from = data + static_cast<usize>(accepted + done) * channels_;
+            for (usize i = 0; i < static_cast<usize>(run) * channels_; ++i)
+            {
+                to[i] = IsFinite(from[i]) ? from[i] : 0.0f;
+            }
+            done += run;
+        }
+        w += n;
+        push_written_.Store(w, MemoryOrder::SeqCst);
+        accepted += n;
+    }
+    push_pushed_.FetchAdd(accepted, MemoryOrder::Relaxed);
+    push_busy_.Store(false, MemoryOrder::Release);
+    return accepted;
+}
+
+u32 StreamBuffer::PushI16(const i16* data, u32 frames)
+{
+    if (!push_ || data == nullptr || frames == 0)
+    {
+        return 0;
+    }
+    constexpr u32 kPiece = 256;
+    f32 piece[kPiece * 8];
+    u32 accepted = 0;
+    while (accepted < frames)
+    {
+        const u32 n = frames - accepted < kPiece ? frames - accepted : kPiece;
+        const i16* from = data + static_cast<usize>(accepted) * channels_;
+        for (usize i = 0; i < static_cast<usize>(n) * channels_; ++i)
+        {
+            piece[i] = static_cast<f32>(from[i]) * (1.0f / 32768.0f);
+        }
+        const u32 took = Push(piece, n);
+        accepted += took;
+        if (took < n)
+        {
+            break;
+        }
+    }
+    return accepted;
+}
+
+PushStreamStats StreamBuffer::PushStats() const
+{
+    PushStreamStats stats;
+    if (!push_)
+    {
+        return stats;
+    }
+    const u64 w = push_written_.Load(MemoryOrder::Acquire);
+    const u64 r = push_read_.Load(MemoryOrder::Acquire);
+    const u64 waiting = w > r ? w - r : 0;
+    stats.frames_pushed = push_pushed_.Load(MemoryOrder::Relaxed);
+    // Frames past the limit that the mixer has not yet skipped are as good as dropped.
+    stats.frames_dropped = push_dropped_.Load(MemoryOrder::Relaxed) +
+                           (waiting > push_limit_ ? waiting - push_limit_ : 0);
+    stats.underruns = underruns_.Load(MemoryOrder::Relaxed);
+    stats.buffered = waiting > push_limit_ ? push_limit_ : static_cast<u32>(waiting);
+    return stats;
+}
+
+u32 StreamBuffer::PopPush(f32* out, u32 frames)
+{
+    if (push_closed_.Load(MemoryOrder::Acquire))
+    {
+        return 0;
+    }
+    u64 r = push_read_.Load(MemoryOrder::Relaxed);
+    push_claim_.Store(r, MemoryOrder::SeqCst);
+    const u64 w = push_written_.Load(MemoryOrder::SeqCst);
+    if (w - r > push_limit_)
+    {
+        const u64 skip = w - r - push_limit_;  // the oldest go
+        r += skip;
+        push_dropped_.FetchAdd(skip, MemoryOrder::Relaxed);
+        push_claim_.Store(r, MemoryOrder::SeqCst);
+    }
+    u32 take = 0;
+    if (!push_primed_ && w - r >= push_prefill_)
+    {
+        push_primed_ = true;
+    }
+    if (push_primed_)
+    {
+        const u64 available = w - r;
+        take = available < frames ? static_cast<u32>(available) : frames;
+        u32 done = 0;
+        while (done < take)
+        {
+            const u32 slot = static_cast<u32>((r + done) % push_ring_);
+            u32 run = push_ring_ - slot;
+            if (run > take - done)
+            {
+                run = take - done;
+            }
+            MemCopy(out + static_cast<usize>(done) * channels_, ring_.Data() + static_cast<usize>(slot) * channels_,
+                    static_cast<usize>(run) * channels_ * sizeof(f32));
+            done += run;
+        }
+    }
+    push_claim_.Store(kNoClaim, MemoryOrder::Release);
+    push_read_.Store(r + take, MemoryOrder::Release);
+    if (take < frames)
+    {
+        underruns_.FetchAdd(1, MemoryOrder::Relaxed);
+        push_primed_ = push_prefill_ == 0;  // a jitter buffer fills again before the voice plays on
+    }
+    return take;
+}
+
 StreamStatus StreamBuffer::Create(UniquePtr<StreamSource> source, const StreamConfig& config, StreamBufferPtr* out)
 {
     if (!source || out == nullptr || config.sample_rate < 8000 || config.sample_rate > 384000 ||
@@ -463,20 +665,11 @@ StreamStatus StreamBuffer::Create(UniquePtr<StreamSource> source, const StreamCo
     {
         return StreamStatus::OutOfMemory;
     }
-    ClipDesc desc;
-    desc.format.sample_rate = config.sample_rate;
-    desc.format.layout = StreamLayoutOf(buffer->channels_);
-    desc.format.format = SampleFormat::F32;
-    desc.frame_count = 1;
-    Vector<f32> silence;
-    silence.Resize(buffer->channels_);
     AudioClipPtr clip;
-    char clip_name[24];
-    FormatTo(clip_name, sizeof(clip_name), config.id == 0 ? "stream" : "stream%u", static_cast<unsigned>(config.id));
-    if (AudioClip::CreateCopy(desc, Span<const f32>(silence.Data(), silence.Size()), StringView(clip_name), &clip) !=
-        ClipStatus::Ok)
+    const StreamStatus made = MakeStandInClip(config.sample_rate, buffer->channels_, config.id, &clip);
+    if (made != StreamStatus::Ok)
     {
-        return StreamStatus::OutOfMemory;
+        return made;
     }
     buffer->clip_ = clip;
     buffer->source_ = Move(source);
@@ -488,6 +681,10 @@ StreamBuffer::~StreamBuffer() = default;
 
 u32 StreamBuffer::Pop(f32* out, u32 frames)
 {
+    if (push_)
+    {
+        return PopPush(out, frames);
+    }
     const u64 state = state_.Load(MemoryOrder::Acquire);
     const u64 epoch = state >> 48;
     const u64 written = state & kCountMask;
@@ -517,6 +714,10 @@ u32 StreamBuffer::Pop(f32* out, u32 frames)
 
 bool StreamBuffer::Ended() const
 {
+    if (push_)
+    {
+        return push_closed_.Load(MemoryOrder::Acquire);  // a live stream ends only when it is closed
+    }
     const u64 state = state_.Load(MemoryOrder::Acquire);
     return ended_epoch_.Load(MemoryOrder::Acquire) == (state >> 48) + 1 &&
            (state & kCountMask) <= read_count_.Load(MemoryOrder::Relaxed);
@@ -524,6 +725,12 @@ bool StreamBuffer::Ended() const
 
 void StreamBuffer::Flush(u64 frame)
 {
+    if (push_)
+    {
+        push_read_.Store(push_written_.Load(MemoryOrder::Acquire), MemoryOrder::Release);  // what waits is dropped
+        push_primed_ = push_prefill_ == 0;
+        return;
+    }
     const u64 state = state_.Load(MemoryOrder::Acquire);
     const u64 epoch = ((state >> 48) + 1) & 0xFFFFull;
     seek_target_.Store(frame, MemoryOrder::Relaxed);
@@ -533,6 +740,10 @@ void StreamBuffer::Flush(u64 frame)
 
 u32 StreamBuffer::Buffered() const
 {
+    if (push_)
+    {
+        return PushStats().buffered;
+    }
     const u64 written = state_.Load(MemoryOrder::Acquire) & kCountMask;
     const u64 read = read_count_.Load(MemoryOrder::Acquire);
     return written > read ? static_cast<u32>(written - read) : 0u;
@@ -540,12 +751,20 @@ u32 StreamBuffer::Buffered() const
 
 bool StreamBuffer::NeedsRefill() const
 {
+    if (push_)
+    {
+        return false;
+    }
     const u64 state = state_.Load(MemoryOrder::Acquire);
     return Buffered() < low_water_ && ended_epoch_.Load(MemoryOrder::Acquire) != (state >> 48) + 1;
 }
 
 u32 StreamBuffer::Refill()
 {
+    if (push_)
+    {
+        return 0;
+    }
     if (busy_.Exchange(true, MemoryOrder::Acquire))
     {
         return 0;

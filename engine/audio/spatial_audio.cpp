@@ -116,14 +116,24 @@ bool SpatialAudio::Post(MixerStatus status)
 // Starts or updates the voice of an emitter that has been ranked.
 void SpatialAudio::Drive(Emitter* e, const AudioSource& src, const Candidate& c, bool real)
 {
+    if (e->voice.IsValid() && e->stream_sent != static_cast<const void*>(src.stream.Get()))
+    {
+        // Another stream was set: the voice reads the old one, so it stops and the new one starts below.
+        Post(mixer_->Stop(e->voice, config_.stop_fade_frames));
+        report_.stopped += 1;
+        e->voice = VoiceId();
+        e->finished = false;
+    }
     if (!e->voice.IsValid())
     {
-        if (e->finished || !src.play_on_start || src.clip == nullptr || (!real && !src.loop))
+        if (e->finished || !src.play_on_start || (src.clip == nullptr && !src.stream) ||
+            (!real && !src.loop && !src.stream))
         {
             return;
         }
         VoiceDesc desc;
-        desc.clip = src.clip;
+        desc.clip = src.stream ? src.stream->Clip() : src.clip;
+        desc.stream = src.stream;
         desc.gain = c.loudness;
         desc.directional = src.spatial;
         desc.direction_x = c.dir.x;
@@ -140,6 +150,7 @@ void SpatialAudio::Drive(Emitter* e, const AudioSource& src, const Candidate& c,
         if (mixer_->Play(desc, &id) == MixerStatus::Ok)
         {
             e->voice = id;
+            e->stream_sent = src.stream.Get();
             e->gain_sent = c.loudness;
             e->dir_sent = c.dir;
             e->spread_sent = c.spread;

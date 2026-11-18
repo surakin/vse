@@ -166,6 +166,7 @@ private:
         ecs::Entity entity;
         spatial::SetHandle handle = spatial::kInvalidSetHandle;
         VoiceId voice;
+        const void* stream_sent = nullptr;  ///< The stream the voice was started on (a new one restarts the voice).
         Vec3 position;
         f32 radius = -1.0f;
         f32 gain_sent = -1.0f;

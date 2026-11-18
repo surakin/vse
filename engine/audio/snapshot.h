@@ -49,6 +49,8 @@ enum class SnapshotStatus : u8
     Mismatch,
     /// A clip or stream the snapshot names is unknown.
     MissingClip,
+    /// A voice plays a live push stream, which a snapshot cannot hold (`SaveState` refuses; stop that voice first).
+    LiveStream,
 };
 
 }  // namespace engine_placeholder::audio

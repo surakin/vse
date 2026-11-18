@@ -318,7 +318,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=1128
+struct engine_api size=1160
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -422,7 +422,7 @@ struct engine_audio_tempo size=12
 field engine_audio_tempo.struct_size offset=0 size=4
 field engine_audio_tempo.beats_per_minute offset=4 size=4
 field engine_audio_tempo.beats_per_bar offset=8 size=4
-struct engine_audio_source size=64
+struct engine_audio_source size=72
 field engine_audio_source.struct_size offset=0 size=4
 field engine_audio_source.clip offset=8 size=8
 field engine_audio_source.bus offset=16 size=4

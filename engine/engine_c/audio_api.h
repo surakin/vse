@@ -75,6 +75,18 @@ engine_status AudioClipOfHandle(Runtime& runtime, u64 handle, audio::AudioClipCo
 /// - Thread-safety: thread-safe.
 u64 AudioHandleOfClip(Runtime& runtime, const audio::AudioClipConstPtr& clip);
 
+/// The stream buffer a stream handle of `audio_stream_open` and its siblings names (for an audio source component).
+///
+/// - Param handle: the stream handle; 0 gives a null buffer and `ENGINE_OK`.
+/// - Returns: `ENGINE_OK`, `ENGINE_ERROR_NOT_READY` (audio is not open) or `ENGINE_ERROR_STALE_HANDLE`.
+/// - Thread-safety: thread-safe.
+engine_status AudioStreamOfHandle(Runtime& runtime, u64 handle, audio::StreamBufferPtr* out);
+
+/// The handle of a stream of the table, 0 when it is not in it (or audio is closed).
+///
+/// - Thread-safety: thread-safe.
+u64 AudioHandleOfStream(Runtime& runtime, const audio::StreamBufferPtr& stream);
+
 engine_status AudioOpenFn(engine_handle engine, const engine_audio_info* info);
 engine_status AudioCloseFn(engine_handle engine);
 engine_status AudioClipCreateFn(engine_handle engine, const engine_audio_clip_info* info, const void* data, size_t size,
@@ -90,6 +102,10 @@ engine_status AudioEventsFn(engine_handle engine, engine_audio_event* out, size_
 engine_status AudioStateFn(engine_handle engine, engine_audio_state* out);
 engine_status AudioStreamOpenClipFn(engine_handle engine, u64 clip, u64* out_stream);
 engine_status AudioStreamOpenFn(engine_handle engine, const engine_audio_stream_source* source, u64* out_stream);
+engine_status AudioStreamOpenPushFn(engine_handle engine, const engine_audio_push_info* info, u64* out_stream);
+engine_status AudioStreamPushFn(engine_handle engine, u64 stream, const float* data, u32 frames, u32* accepted);
+engine_status AudioStreamPushI16Fn(engine_handle engine, u64 stream, const i16* data, u32 frames, u32* accepted);
+engine_status AudioStreamStatsFn(engine_handle engine, u64 stream, engine_audio_stream_stats* out);
 engine_status AudioStreamCloseFn(engine_handle engine, u64 stream);
 engine_status AudioStreamPlayFn(engine_handle engine, u64 stream, const engine_audio_play* desc, u64* out_voice);
 engine_status AudioUpdateFn(engine_handle engine, u32 wait);

@@ -380,6 +380,26 @@ public:
         return Api()->audio_stream_open(Get(), &source, out);
     }
     Status AudioStreamClose(uint64_t stream) const { return Api()->audio_stream_close(Get(), stream); }
+    /// Live voices (maintenance, 2026-11-18): a stream the host feeds as its audio arrives (`audio_stream_open_push`),
+    /// pushed to from the thread the audio comes on (`audio_stream_push`, `audio_stream_push_i16`; `accepted` may be
+    /// null), and its counters (`audio_stream_stats`). Set it as the `stream` of an audio source to place it in the
+    /// world.
+    Status AudioStreamOpenPush(const engine_audio_push_info& info, uint64_t* out) const
+    {
+        return Api()->audio_stream_open_push(Get(), &info, out);
+    }
+    Status AudioStreamPush(uint64_t stream, const float* data, uint32_t frames, uint32_t* accepted = nullptr) const
+    {
+        return Api()->audio_stream_push(Get(), stream, data, frames, accepted);
+    }
+    Status AudioStreamPushI16(uint64_t stream, const int16_t* data, uint32_t frames, uint32_t* accepted = nullptr) const
+    {
+        return Api()->audio_stream_push_i16(Get(), stream, data, frames, accepted);
+    }
+    Status AudioStreamStats(uint64_t stream, engine_audio_stream_stats* out) const
+    {
+        return Api()->audio_stream_stats(Get(), stream, out);
+    }
     Status AudioStreamPlay(uint64_t stream, const engine_audio_play& desc, uint64_t* out_voice) const
     {
         return Api()->audio_stream_play(Get(), stream, &desc, out_voice);

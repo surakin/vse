@@ -14,11 +14,15 @@ namespace engine_placeholder::audio
 /// local -Z.
 ///
 /// - Thread-safety: thread-compatible plain data.
-/// - Ownership: shares `clip`.
+/// - Ownership: shares `clip` and `stream`.
 struct AudioSource
 {
-    /// The sound; null plays nothing.
+    /// The sound; null plays nothing (unless `stream` is set).
     AudioClipConstPtr clip;
+    /// A stream the voice reads instead of `clip` (a live voice fed by `StreamBuffer::Push`, for instance); null for a
+    /// clip. It is never also the stream of another source (a push stream has one reader). The voice starts even when
+    /// the emitter is not audible (virtual), as a looping clip does, so that the stream keeps being read.
+    StreamBufferPtr stream;
     /// The bus the voice mixes into.
     BusId bus = {0};
     /// The linear gain before distance and cone, 0 to 16.

@@ -214,6 +214,9 @@ extern "C"
 #define ENGINE_CAP_HOST_TEXTURES 0x80u /* texture_create and the host textures (Phase 24 Day 365) */
 #define ENGINE_CAP_SURFACE_OFFSCREEN                                                                                   \
     0x100u /* surface_create with ENGINE_SURFACE_OFFSCREEN: a surface with no window (Phase 24 Day 378) */
+#define ENGINE_CAP_AUDIO_PUSH_STREAMS                                                                                  \
+    0x400u /* audio_stream_open_push, audio_stream_push, audio_stream_stats and the stream field of the audio source   \
+              work (maintenance, 2026-11-18) */
 #define ENGINE_CAP_RESOURCE_CACHE                                                                                      \
     0x200u /* resource_read, resource_add_many (and its asynchronous form) and import_format_version work: set in      \
               every build, with or without the importer (maintenance, 2026-11-18) */
@@ -1243,6 +1246,14 @@ extern "C"
         float cone_inner; /* full angle in radians; 6.2831853 or more: all directions */
         float cone_outer; /* at least cone_inner */
         float cone_outer_gain;
+        /* A stream (audio_stream_open_push, audio_stream_open) the voice plays instead of `clip`: 0 for a clip. Both
+         * set is INVALID_ARGUMENT, and a stream that another source of the world already has is INVALID_ARGUMENT (a
+         * live stream has one reader). Everything else of the source applies as for a clip. The voice follows the
+         * entity and starts even while the source is out of earshot (so that the stream goes on being read); removing
+         * the source, destroying the entity or setting another stream stops it, and the stream stays open until
+         * audio_stream_close, so it can be set again (a participant who leaves and comes back). Present when
+         * struct_size covers it (maintenance, 2026-11-18); an older host's struct has no stream. */
+        uint64_t stream;
     } engine_audio_source;
 
     /* The ears (ENGINE_COMPONENT_AUDIO_LISTENER): the active listener with the lowest entity id places every spatial
@@ -1300,6 +1311,35 @@ extern "C"
         int (*seek)(void* user, uint64_t frame);
         void* user;
     } engine_audio_stream_source;
+
+    /* A live stream the host feeds as its audio arrives (audio_stream_open_push), for a call's participants: no
+     * callback, no refill job, nothing between audio_stream_push and the audio thread but a ring. Frames are
+     * interleaved, at the mixer's sample rate (engine_audio_state.sample_rate: no resampling). */
+    typedef struct engine_audio_push_info
+    {
+        uint32_t struct_size;
+        uint32_t sample_rate;     /* the mixer's */
+        uint32_t channels;        /* 1, 2, 4, 6 or 8 */
+        uint32_t capacity_frames; /* the most frames kept, 64 to 480000 (9600 is 200 ms at 48 kHz): a push past it makes
+                                     the oldest frames go, counted in frames_dropped */
+        uint32_t
+            prefill_frames; /* frames to collect before the voice plays, and again after it ran dry (a jitter buffer,
+                               the delay it adds to the voice); 0 plays what is there; at most capacity_frames */
+    } engine_audio_push_info;
+
+    /* What audio_stream_stats reports. */
+    typedef struct engine_audio_stream_stats
+    {
+        uint32_t struct_size;
+        uint32_t is_push;         /* 1 for a stream of audio_stream_open_push */
+        uint32_t buffered_frames; /* frames waiting for the audio thread */
+        uint32_t reserved;
+        uint64_t frames_pushed;  /* push streams: frames accepted */
+        uint64_t frames_dropped; /* push streams: frames lost to a full ring (the oldest) or to a second thread pushing
+                                    at once */
+        uint64_t underruns; /* mixer blocks that found fewer frames than they needed (silence for the rest; the voice
+                               stays alive) */
+    } engine_audio_stream_stats;
 
     /* The tempo of a music track, for bar and beat timing. */
     typedef struct engine_audio_tempo
@@ -2169,6 +2209,35 @@ extern "C"
          * the importer folds in the formats only (the cache of a build with an importer is not valid for it and back:
          * check ENGINE_CAP_IMPORT_GLTF). Treat it as an opaque number: compare for equality, store it as a number. */
         uint64_t (*import_format_version)(void);
+
+        /* ---- Live voices (maintenance, 2026-11-18; ENGINE_CAP_AUDIO_PUSH_STREAMS) ---- */
+
+        /* Opens a push stream: a live stream the host feeds with audio_stream_push, played by a voice
+         * (audio_stream_play, or the `stream` of an audio source, which places it in the world). It never ends: a voice
+         * that finds the ring empty plays silence for the rest of the block (counted as an underrun) and goes on with
+         * the next frames. Fails with: STALE_HANDLE, NOT_READY (audio is not open), INVALID_ARGUMENT (channels,
+         * capacity, prefill, or a sample_rate other than the mixer's), STRUCT_SIZE, LIMIT_EXCEEDED (256 streams). Any
+         * thread. */
+        engine_status (*audio_stream_open_push)(engine_handle engine, const engine_audio_push_info* info,
+                                                uint64_t* out_stream);
+
+        /* Appends `frames` interleaved float frames (non-finite samples become silence) to a push stream and, when
+         * `accepted` is not NULL, tells how many were taken (all, unless another thread was pushing to the same stream
+         * at that moment: one thread at a time per stream). A full ring drops its oldest frames, counted in
+         * audio_stream_stats. It takes no lock the audio thread takes and allocates nothing; the one lock it takes is
+         * the engine's control lock, for the lookup of the stream (a control call that runs long, such as the first
+         * fill of audio_stream_open, makes it wait): call it from the thread the audio arrives on. Fails with:
+         * STALE_HANDLE, NOT_READY, INVALID_ARGUMENT (NULL data, a stream that is not a push stream). Any thread. */
+        engine_status (*audio_stream_push)(engine_handle engine, uint64_t stream, const float* data, uint32_t frames,
+                                           uint32_t* accepted);
+
+        /* As audio_stream_push, with 16-bit samples (divided by 32768). */
+        engine_status (*audio_stream_push_i16)(engine_handle engine, uint64_t stream, const int16_t* data,
+                                               uint32_t frames, uint32_t* accepted);
+
+        /* Reads the counters of a stream (a push stream's; for another only buffered_frames and underruns). Fails
+         * with: STALE_HANDLE, NOT_READY, INVALID_ARGUMENT, STRUCT_SIZE. Any thread. */
+        engine_status (*audio_stream_stats)(engine_handle engine, uint64_t stream, engine_audio_stream_stats* out);
     } engine_api;
 
     /* Returns the function table.
