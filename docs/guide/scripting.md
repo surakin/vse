@@ -172,6 +172,24 @@ Scripts reach settings only through `settings.*` (`engine/script/settings_bindin
   phase. `RemoveSettingsSubscriptions` drops an entity's subscriptions when it is destroyed.
 - **Errors from bindings.** A binding reports a failure with `script::RaiseScriptError(message)`; the call's results are dropped and the script sees `name: message`.
 
+## Entities and transforms
+
+`entity.*` and `transform.*` (`engine/script/entity_bindings.h`) work on the Phase 17 components `LocalTransform`, `WorldTransform` and `Parent`.
+
+- **Reads** (`entity.valid/self/name/find`, `transform.get/position/rotation/scale/world`) are `world-read`: the tick-start world, plus the script's own writes of this tick through the `Overlay` (a script that sets a
+  position reads it back at once; another entity's read never sees it). `transform.world` is the matrix of the last propagation (the tick start). `entity.valid` accepts anything and returns false for a dead handle or a
+  non-entity; every other call refuses a dead handle as an error before it runs.
+- **Writes** (`entity.spawn/destroy/set_parent`, `transform.set_position/set_rotation/set_scale/translate`) are `world-write`: one command each, applied by the merge in the total order. `entity.spawn` returns a placeholder
+  handle at once (usable by the other calls of the tick: `set_position`, `set_parent`, `valid`); the merge creates the entity and binds the placeholder. `entity.destroy` removes the entity and everything below it
+  (`ecs::DestroyRecursive`). A rotation is normalized (a zero or non-finite one is an error), a position or scale must be finite. A cycle or too deep a hierarchy is refused by `set_parent` at the merge and counted
+  in `MergeReport::skipped`.
+- **Names and prefabs** are the scene's, not the script module's: a host fills `SceneServices` (`name_of`, `find`, `has_prefab`; the level's `asset::EntityName` is adapted by the host) and, for `entity.spawn("name")`, the merge's
+  `MergeServices::prefabs` (`PrefabSource`). Without them `entity.name` and `entity.find` return nil and a prefab spawn is an error. `entity.find` costs a search of the scene: keep the result.
+- **`self`:** `entity.self()` is the entity whose script runs (the `current_entity_key` of the job's context); the callbacks of Day 457 also pass it as their first argument.
+- **The merge** applies the commands one at a time in `(partition, entity id, sequence)` order. A batched structural pass (one pass per component type) is not done: the Phase 17 structural path is used per command
+  (recorded in `KNOWN-ISSUES.md`).
+- The test `entity_bindings_test.cpp` runs 300 entities for 120 ticks (move, rotate, spawn children, parent, destroy): one world hash on 1 and 8 threads.
+
 ## Partitions
 
 `script::ScriptWorld` (`engine/script/script_world.h`) is a set of `P` partitions (setting `script.partitions`, 1 to 1024, default 64), each with one language state. An entity's scripts run in

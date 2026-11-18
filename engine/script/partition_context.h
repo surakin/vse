@@ -14,6 +14,7 @@ namespace engine_placeholder::script
 {
 
 struct SettingsAccess;
+struct SceneServices;
 
 /// What a binding sees of the tick.
 ///
@@ -47,6 +48,8 @@ struct PartitionContext
     LogBuffer* log = nullptr;
     /// The partition's view of the settings (snapshot, policy, subscriptions); null when scripts have no settings.
     SettingsAccess* settings = nullptr;
+    /// The scene's names and prefabs (see [[script::SceneServices]]); null when scripts see none.
+    const SceneServices* scene = nullptr;
 };
 
 /// The first state of an entity's random stream this tick: a fixed 64-bit mix of the world seed, the entity's stable id

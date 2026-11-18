@@ -129,6 +129,8 @@ struct SourceLocation
     char chunk[48] = {};
     /// The line, 0 when unknown.
     u32 line = 0;
+    /// Whether the chunk name was cut to fit: such a name does not identify a script (two names may share a prefix).
+    bool truncated = false;
 };
 
 /// A backend's way to answer "where is the caller": called only while a native function runs on this thread.

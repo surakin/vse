@@ -4,6 +4,64 @@ Generated from the binding registry by `script_api_doc --write`; do not edit by 
 
 Every function states the thread rule it follows: `pure` (any state, any thread), `world-read` (reads the world as of the tick start), `world-write` (changes the world only through the partition's command buffer) or `main-thread-only` (a partition job that calls it gets a script error). A wrong argument count or type is a script error that names the function and the argument; an entity handle that no longer exists is an error too.
 
+## entity
+
+### `entity.destroy`
+
+`(Entity e) -> void`
+
+Thread rule: **world-write**. Id: `0xdaba351e`.
+
+Destroys the entity and everything below it at the sync point.
+
+### `entity.find`
+
+`(StringView name) -> Value`
+
+Thread rule: **world-read**. Id: `0x27ed4b2f`.
+
+Returns the entity with this name, or nil. Costs a search of the scene: keep the result.
+
+### `entity.name`
+
+`(Entity e) -> Value`
+
+Thread rule: **world-read**. Id: `0xffb30717`.
+
+Returns the entity's name, or nil when it has none.
+
+### `entity.self`
+
+`() -> Entity`
+
+Thread rule: **world-read**. Id: `0xb8abc3be`.
+
+Returns the entity whose script is running.
+
+### `entity.set_parent`
+
+`(Entity child, Value parent) -> void`
+
+Thread rule: **world-write**. Id: `0xd54010d1`.
+
+Makes `parent` the parent of `child` (nil makes it a root) at the sync point; a cycle or too deep a hierarchy is refused there and counted.
+
+### `entity.spawn`
+
+`(Value prefab) -> Entity`
+
+Thread rule: **world-write**. Id: `0x75ba4133`.
+
+Spawns an entity at the sync point and returns its handle now (usable in this tick's other calls); `prefab` is a prefab name or nil for an empty entity with a transform.
+
+### `entity.valid`
+
+`(Value e) -> bool`
+
+Thread rule: **world-read**. Id: `0xeaecb59e`.
+
+Returns whether `e` is an entity that exists (as of the tick start) or that this partition spawned this tick.
+
 ## log
 
 ### `log.debug`
@@ -321,6 +379,80 @@ Returns the wall clock in seconds since 1970. NOT deterministic: nothing that re
 Thread rule: **pure**. Id: `0x8db56feb`.
 
 Returns the tick number.
+
+## transform
+
+### `transform.get`
+
+`(Entity e) -> Value`
+
+Thread rule: **world-read**. Id: `0x2d04da49`.
+
+Returns a table with the local `position`, `rotation` and `scale`, including this script's own writes this tick.
+
+### `transform.position`
+
+`(Entity e) -> Vec3`
+
+Thread rule: **world-read**. Id: `0x89d4084c`.
+
+Returns the local position.
+
+### `transform.rotation`
+
+`(Entity e) -> Quaternion`
+
+Thread rule: **world-read**. Id: `0x9ad00671`.
+
+Returns the local rotation.
+
+### `transform.scale`
+
+`(Entity e) -> Vec3`
+
+Thread rule: **world-read**. Id: `0xe12be92f`.
+
+Returns the local scale.
+
+### `transform.set_position`
+
+`(Entity e, Vec3 position) -> void`
+
+Thread rule: **world-write**. Id: `0xe5d23079`.
+
+Sets the local position at the sync point; this script sees it at once.
+
+### `transform.set_rotation`
+
+`(Entity e, Quaternion rotation) -> void`
+
+Thread rule: **world-write**. Id: `0x7bf42264`.
+
+Sets the local rotation (normalized) at the sync point; this script sees it at once.
+
+### `transform.set_scale`
+
+`(Entity e, Vec3 scale) -> void`
+
+Thread rule: **world-write**. Id: `0xaa4c067c`.
+
+Sets the local scale at the sync point; this script sees it at once.
+
+### `transform.translate`
+
+`(Entity e, Vec3 delta) -> void`
+
+Thread rule: **world-write**. Id: `0x1345ba9f`.
+
+Adds `delta` to the local position (as this script sees it).
+
+### `transform.world`
+
+`(Entity e) -> Mat4`
+
+Thread rule: **world-read**. Id: `0x40f7006d`.
+
+Returns the world matrix (16 numbers, column-major) as of the tick start.
 
 ## vec2
 

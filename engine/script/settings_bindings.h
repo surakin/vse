@@ -9,6 +9,7 @@
 #include "mem/heap_allocator.h"
 #include "script/bindings.h"
 #include "script/merge.h"
+#include "script/merge_services.h"
 #include "settings/registry.h"
 #include "settings/settings.h"
 #include "string/string.h"
@@ -117,23 +118,13 @@ struct SettingNotification
 };
 
 /// Registers the command that applies `settings.set` at the merge. The merge's `user` pointer must be a
-/// [[script::SettingsMergeServices]].
+/// [[script::MergeServices]].
 ///
 /// - Param kinds: the table to add to; not null.
 /// - Returns: false when the id is taken.
 /// - Ownership: borrowed for the call.
 /// - Fails: returns false, as described.
 bool RegisterSettingsCommandKind(CommandKindTable* kinds);
-
-/// What the settings command needs at the merge.
-///
-/// - Thread-safety: thread-compatible plain data.
-/// - Ownership: borrows the settings, which must outlive the merge.
-struct SettingsMergeServices
-{
-    /// Where the values are set.
-    settings::Settings* settings = nullptr;
-};
 
 /// Lists, for every subscription of every partition, the keys whose value differs between two snapshots, in the order
 /// partition, subscription, key: so the sync point delivers the same notifications for any thread count.

@@ -86,7 +86,7 @@ struct SettingsRig
     MergeReport Merge()
     {
         CommandBuffer* buffers[] = {&buffer};
-        SettingsMergeServices services;
+        MergeServices services;
         services.settings = settings.Get();
         return script::Merge(&world, Span<CommandBuffer* const>(buffers, 1), kinds, ConflictPolicy::LastWins,
                              &services);
@@ -300,4 +300,70 @@ TEST_CASE("Settings bindings: a script cannot subscribe without limit", "[script
     CHECK_FALSE(o.IsOk());
     CHECK(o.message.View().Contains("too many"));
     CHECK(rig.access.subscriptions.Size() == kMaxSettingsSubscriptionsPerEntity);
+}
+
+TEST_CASE("Settings bindings: a script cannot set a secret, use an alias or borrow a longer script's name",
+          "[script][settings][security]")
+{
+    SettingsRig rig;
+    CallOutput out;
+    // A secret under an allowed prefix is still refused.
+    Outcome o = rig.Run("writer", "settings.set('game.token', 'x')", &out);
+    CHECK_FALSE(o.IsOk());
+    CHECK(o.message.View().Contains("secret"));
+    // Notifications never name a secret.
+    const SharedPtr<const settings::SettingsSnapshot> before = rig.settings->Snapshot();
+    REQUIRE(rig.settings->SetText("game.token", "hunter2").Ok());
+    REQUIRE(rig.Run("watcher", "settings.on_change('game', 'f')", &out).IsOk());
+    SettingsAccess* parts[] = {&rig.access};
+    CHECK(CollectSettingChanges(rig.registry, *before, *rig.settings->Snapshot(), Span<SettingsAccess* const>(parts, 1))
+              .Size() == 0);
+
+    // A script whose name is cut to fit is not the script that has the same first bytes.
+    const char* long_name = "a_very_long_script_name_that_goes_past_the_limit_of_forty_seven_bytes";
+    String<HeapAllocator> prefix(HeapAllocator::Default());
+    prefix.Append(StringView(long_name, 47));
+    const StringView renderer("renderer");
+    rig.policy.SetScriptWritable(prefix.View(), Span<const StringView>(&renderer, 1));
+    o = rig.Run(long_name, "settings.set('renderer.msaa', 8)", &out);
+    CHECK_FALSE(o.IsOk());
+    CHECK(rig.buffer.Size() == 0);
+}
+
+TEST_CASE("Settings bindings: the policy is checked against the declared key, not an alias",
+          "[script][settings][security]")
+{
+    settings::Registry registry;
+    static const char* const kOld[] = {"game.old_msaa"};
+    settings::SettingDesc msaa = settings::MakeInt("renderer.msaa", 4, 1, 16);
+    msaa.deprecated_keys = kOld;
+    msaa.deprecated_count = 1;
+    registry.Register(msaa);
+    settings::Settings store(registry);
+    store.Layers().AddLayer("user", settings::LayerRole::User, MakeUnique<settings::MemoryConfigStore>());
+    store.LoadFromLayers();
+    SettingsPolicy policy;  // game.* only
+    SettingsAccess access;
+    access.registry = &registry;
+    access.snapshot = store.Snapshot();
+    access.policy = &policy;
+    BindingRegistry bindings;
+    REQUIRE(RegisterStandardBindings(&bindings));
+    UniquePtr<Backend> backend = luajit::CreateLuaJitBackend();
+    UniquePtr<State> state = backend->CreateState(0);
+    Outcome error;
+    UniquePtr<Installation> installed = bindings.Install(state.Get(), InstallProfile::Partition(ContextEntityCheck()),
+                                                         &error);
+    CommandBuffer buffer;
+    buffer.Begin(0);
+    PartitionContext context;
+    context.commands = &buffer;
+    context.settings = &access;
+    ecs::World world;
+    context.world = &world;
+    ScopedPartitionContext scope(&context);
+    REQUIRE(state->Load("w", "function run() settings.set('game.old_msaa', 8) end").IsOk());
+    CallOutput out;
+    CHECK_FALSE(state->Call("run", Span<const Value>(), Budget(), &out).IsOk());
+    CHECK(buffer.Size() == 0);
 }

@@ -1,5 +1,6 @@
 #include "lang/scalar.h"
 #include "script/bindings.h"
+#include "script/entity_bindings.h"
 #include "script/settings_bindings.h"
 
 namespace engine_placeholder::script
@@ -316,6 +317,7 @@ bool RegisterStandardBindings(BindingRegistry* registry)
         "looking down -Z); the identity when the view direction is zero or parallel to `up`.");
     ok &= RegisterRuntimeBindings(registry);
     ok &= RegisterSettingsBindings(registry);
+    ok &= RegisterEntityBindings(registry);
     return ok;
 }
 

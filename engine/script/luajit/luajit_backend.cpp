@@ -664,6 +664,7 @@ bool LuaCallerLocation(void* context, SourceLocation* out)
     }
     const char* name = info.short_src;
     usize length = CStrLength(name);
+    out->truncated = length > sizeof(out->chunk) - 1;
     length = length < sizeof(out->chunk) - 1 ? length : sizeof(out->chunk) - 1;
     MemCopy(out->chunk, name, length);
     out->chunk[length] = '\0';

@@ -334,12 +334,20 @@ void SettingsSet(StringView key, Value value)
         return;
     }
     const settings::SettingDesc* desc = access->registry->Desc(id);
+    // The policy is asked about the declared key, never an alias the script spelled, and a script whose name was cut to
+    // fit does not count as named (it gets the default list).
+    const StringView canonical(desc->key);
     SourceLocation where;
-    const StringView script = CurrentCallerLocation(&where) ? StringView(where.chunk, CStrLength(where.chunk))
-                                                            : StringView();
-    if (access->policy == nullptr || !access->policy->CanWrite(script, key))
+    const bool named = CurrentCallerLocation(&where) && !where.truncated;
+    const StringView script = named ? StringView(where.chunk, CStrLength(where.chunk)) : StringView();
+    if (access->policy == nullptr || !access->policy->CanWrite(script, canonical))
     {
         Fail("the script may not set", key, "(not in its allowed prefixes)");
+        return;
+    }
+    if ((desc->flags & settings::kSecret) != 0)
+    {
+        Fail("the setting", key, "is secret and cannot be set by a script");
         return;
     }
     settings::Value typed;
@@ -358,6 +366,7 @@ void SettingsSet(StringView key, Value value)
     }
     SetHeader header = {};
     header.type = static_cast<u8>(checked.GetType());
+    key = canonical;  // the merge never resolves an alias again
     header.key_length = static_cast<u16>(key.Length());
     StringView text;
     switch (checked.GetType())
@@ -413,7 +422,7 @@ void SettingsOnChange(StringView prefix, StringView function)
 
 bool ApplySettingsSet(MergeContext& context, ecs::Entity, Span<const u8> payload)
 {
-    SettingsMergeServices* services = static_cast<SettingsMergeServices*>(context.User());
+    MergeServices* services = static_cast<MergeServices*>(context.User());
     if (services == nullptr || services->settings == nullptr || payload.Size() < sizeof(SetHeader))
     {
         return false;
@@ -495,7 +504,7 @@ Vector<SettingNotification> CollectSettingChanges(const settings::Registry& regi
             {
                 const settings::SettingId id = registry.SortedAt(k);
                 const StringView key(registry.Desc(id)->key);
-                if (!Below(sub.prefix.View(), key))
+                if ((registry.Desc(id)->flags & settings::kSecret) != 0 || !Below(sub.prefix.View(), key))
                 {
                     continue;
                 }

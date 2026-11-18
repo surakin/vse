@@ -1831,32 +1831,33 @@ script::CallOutput::Suspended() const	function	script	script-calloutput-suspende
 script::SourceLocation	struct	script	script-sourcelocation	script.md	engine/script/backend.h:126
 script::SourceLocation::chunk	variable	script	script-sourcelocation-chunk	script.md	engine/script/backend.h:129
 script::SourceLocation::line	variable	script	script-sourcelocation-line	script.md	engine/script/backend.h:131
-script::SourceLocationFn	alias	script	script-sourcelocationfn	script.md	engine/script/backend.h:137
-script::SetCallerLocationProvider(SourceLocationFn,void*)	function	script	script-setcallerlocationprovider-sourcelocationfn-void-star	script.md	engine/script/backend.h:146
-script::CurrentCallerLocation(SourceLocation*)	function	script	script-currentcallerlocation-sourcelocation-star	script.md	engine/script/backend.h:154
-script::NativeFunction	alias	script	script-nativefunction	script.md	engine/script/backend.h:161
-script::State	class	script	script-state	script.md	engine/script/backend.h:175
-script::State::~State()	function	script	script-state-tilde-state	script.md	engine/script/backend.h:179
-script::State::State(const State&)	function	script	script-state-state-const-state-amp	script.md	engine/script/backend.h:181
-script::State::operator=(const State&)	function	script	script-state-operator-eq-const-state-amp	script.md	engine/script/backend.h:182
-script::State::Load(StringView,StringView)	function	script	script-state-load-stringview-stringview	script.md	engine/script/backend.h:190
-script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:207
-script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:224
-script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:238
-script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:250
-script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:259
-script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:268
-script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:278
-script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:285
-script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:293
-script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:302
-script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:307
-script::Backend	class	script	script-backend	script.md	engine/script/backend.h:348
-script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:352
-script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:355
-script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:357
-script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:359
-script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:364
+script::SourceLocation::truncated	variable	script	script-sourcelocation-truncated	script.md	engine/script/backend.h:133
+script::SourceLocationFn	alias	script	script-sourcelocationfn	script.md	engine/script/backend.h:139
+script::SetCallerLocationProvider(SourceLocationFn,void*)	function	script	script-setcallerlocationprovider-sourcelocationfn-void-star	script.md	engine/script/backend.h:148
+script::CurrentCallerLocation(SourceLocation*)	function	script	script-currentcallerlocation-sourcelocation-star	script.md	engine/script/backend.h:156
+script::NativeFunction	alias	script	script-nativefunction	script.md	engine/script/backend.h:163
+script::State	class	script	script-state	script.md	engine/script/backend.h:177
+script::State::~State()	function	script	script-state-tilde-state	script.md	engine/script/backend.h:181
+script::State::State(const State&)	function	script	script-state-state-const-state-amp	script.md	engine/script/backend.h:183
+script::State::operator=(const State&)	function	script	script-state-operator-eq-const-state-amp	script.md	engine/script/backend.h:184
+script::State::Load(StringView,StringView)	function	script	script-state-load-stringview-stringview	script.md	engine/script/backend.h:192
+script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:209
+script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:226
+script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:240
+script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:252
+script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:261
+script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:270
+script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:280
+script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:287
+script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:295
+script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:304
+script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:309
+script::Backend	class	script	script-backend	script.md	engine/script/backend.h:350
+script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:354
+script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:357
+script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:359
+script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:361
+script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:366
 script::BackendDescriptor	struct	script	script-backenddescriptor	script.md	engine/script/backend_registry.h:18
 script::BackendDescriptor::name	variable	script	script-backenddescriptor-name	script.md	engine/script/backend_registry.h:21
 script::BackendDescriptor::create	variable	script	script-backenddescriptor-create	script.md	engine/script/backend_registry.h:23
@@ -1947,6 +1948,24 @@ script::Overlay::Clear()	function	script	script-overlay-clear	script.md	engine/s
 script::Overlay::Put(ecs::Entity,u32,Value)	function	script	script-overlay-put-ecs-entity-u32-value	script.md	engine/script/command_buffer.h:163
 script::Overlay::Find(ecs::Entity,u32) const	function	script	script-overlay-find-ecs-entity-u32-const	script.md	engine/script/command_buffer.h:170
 script::Overlay::Size() const	function	script	script-overlay-size-const	script.md	engine/script/command_buffer.h:175
+script::EntityCommandKind	enum	script	script-entitycommandkind	script.md	engine/script/entity_bindings.h:16
+script::kCommandSetPosition	enumerator	script	script-kcommandsetposition	script.md	engine/script/entity_bindings.h:19
+script::kCommandSetRotation	enumerator	script	script-kcommandsetrotation	script.md	engine/script/entity_bindings.h:21
+script::kCommandSetScale	enumerator	script	script-kcommandsetscale	script.md	engine/script/entity_bindings.h:23
+script::kCommandSpawn	enumerator	script	script-kcommandspawn	script.md	engine/script/entity_bindings.h:25
+script::kCommandDestroy	enumerator	script	script-kcommanddestroy	script.md	engine/script/entity_bindings.h:27
+script::kCommandSetParent	enumerator	script	script-kcommandsetparent	script.md	engine/script/entity_bindings.h:29
+script::TransformField	enum	script	script-transformfield	script.md	engine/script/entity_bindings.h:33
+script::kFieldPosition	enumerator	script	script-kfieldposition	script.md	engine/script/entity_bindings.h:36
+script::kFieldRotation	enumerator	script	script-kfieldrotation	script.md	engine/script/entity_bindings.h:38
+script::kFieldScale	enumerator	script	script-kfieldscale	script.md	engine/script/entity_bindings.h:40
+script::SceneServices	struct	script	script-sceneservices	script.md	engine/script/entity_bindings.h:49
+script::SceneServices::name_of	variable	script	script-sceneservices-name-of	script.md	engine/script/entity_bindings.h:53
+script::SceneServices::find	variable	script	script-sceneservices-find	script.md	engine/script/entity_bindings.h:55
+script::SceneServices::has_prefab	variable	script	script-sceneservices-has-prefab	script.md	engine/script/entity_bindings.h:57
+script::SceneServices::user	variable	script	script-sceneservices-user	script.md	engine/script/entity_bindings.h:59
+script::RegisterEntityCommandKinds(CommandKindTable*)	function	script	script-registerentitycommandkinds-commandkindtable-star	script.md	engine/script/entity_bindings.h:69
+script::RegisterEntityBindings(BindingRegistry*)	function	script	script-registerentitybindings-bindingregistry-star	script.md	engine/script/entity_bindings.h:78
 script::LogScript	variable	script	script-logscript	script.md	engine/script/log_buffer.h:18
 script::ScriptLogLevel	enum	script	script-scriptloglevel	script.md	engine/script/log_buffer.h:23
 script::ScriptLogLevel::Debug	enumerator	script	script-scriptloglevel-debug	script.md	engine/script/log_buffer.h:26
@@ -1994,35 +2013,42 @@ script::MergeReport::unknown	variable	script	script-mergereport-unknown	script.m
 script::MergeReport::conflicts	variable	script	script-mergereport-conflicts	script.md	engine/script/merge.h:164
 script::MergeReport::refused	variable	script	script-mergereport-refused	script.md	engine/script/merge.h:166
 script::Merge(ecs::World*,Span<CommandBuffer* const>,const CommandKindTable&,ConflictPolicy,void*)	function	script	script-merge-ecs-world-star-span-lt-commandbuffer-star-const-gt-const-commandkindtable-amp-conflictpolicy-void-star	script.md	engine/script/merge.h:183
-script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:22
-script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:25
-script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:27
-script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:29
-script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:31
-script::PartitionContext::world_seed	variable	script	script-partitioncontext-world-seed	script.md	engine/script/partition_context.h:33
-script::PartitionContext::tick	variable	script	script-partitioncontext-tick	script.md	engine/script/partition_context.h:35
-script::PartitionContext::dt	variable	script	script-partitioncontext-dt	script.md	engine/script/partition_context.h:37
-script::PartitionContext::sim_time	variable	script	script-partitioncontext-sim-time	script.md	engine/script/partition_context.h:39
-script::PartitionContext::frame	variable	script	script-partitioncontext-frame	script.md	engine/script/partition_context.h:41
-script::PartitionContext::replay_recording	variable	script	script-partitioncontext-replay-recording	script.md	engine/script/partition_context.h:43
-script::PartitionContext::random_state	variable	script	script-partitioncontext-random-state	script.md	engine/script/partition_context.h:45
-script::PartitionContext::log	variable	script	script-partitioncontext-log	script.md	engine/script/partition_context.h:47
-script::PartitionContext::settings	variable	script	script-partitioncontext-settings	script.md	engine/script/partition_context.h:49
-script::RandomSeedFor(u32,u64,u64)	function	script	script-randomseedfor-u32-u64-u64	script.md	engine/script/partition_context.h:58
-script::AdvanceRandom(u64*)	function	script	script-advancerandom-u64-star	script.md	engine/script/partition_context.h:66
-script::SeedPartitionRandom(PartitionContext*)	function	script	script-seedpartitionrandom-partitioncontext-star	script.md	engine/script/partition_context.h:75
-script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:81
-script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:87
-script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:89
-script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:90
-script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:91
-script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:103
-script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:111
-script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:119
-script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:125
-script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:127
-script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:128
-script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:129
+script::PrefabSource	struct	script	script-prefabsource	script.md	engine/script/merge_services.h:18
+script::PrefabSource::spawn	variable	script	script-prefabsource-spawn	script.md	engine/script/merge_services.h:22
+script::PrefabSource::user	variable	script	script-prefabsource-user	script.md	engine/script/merge_services.h:24
+script::MergeServices	struct	script	script-mergeservices	script.md	engine/script/merge_services.h:31
+script::MergeServices::settings	variable	script	script-mergeservices-settings	script.md	engine/script/merge_services.h:34
+script::MergeServices::prefabs	variable	script	script-mergeservices-prefabs	script.md	engine/script/merge_services.h:36
+script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:23
+script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:26
+script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:28
+script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:30
+script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:32
+script::PartitionContext::world_seed	variable	script	script-partitioncontext-world-seed	script.md	engine/script/partition_context.h:34
+script::PartitionContext::tick	variable	script	script-partitioncontext-tick	script.md	engine/script/partition_context.h:36
+script::PartitionContext::dt	variable	script	script-partitioncontext-dt	script.md	engine/script/partition_context.h:38
+script::PartitionContext::sim_time	variable	script	script-partitioncontext-sim-time	script.md	engine/script/partition_context.h:40
+script::PartitionContext::frame	variable	script	script-partitioncontext-frame	script.md	engine/script/partition_context.h:42
+script::PartitionContext::replay_recording	variable	script	script-partitioncontext-replay-recording	script.md	engine/script/partition_context.h:44
+script::PartitionContext::random_state	variable	script	script-partitioncontext-random-state	script.md	engine/script/partition_context.h:46
+script::PartitionContext::log	variable	script	script-partitioncontext-log	script.md	engine/script/partition_context.h:48
+script::PartitionContext::settings	variable	script	script-partitioncontext-settings	script.md	engine/script/partition_context.h:50
+script::PartitionContext::scene	variable	script	script-partitioncontext-scene	script.md	engine/script/partition_context.h:52
+script::RandomSeedFor(u32,u64,u64)	function	script	script-randomseedfor-u32-u64-u64	script.md	engine/script/partition_context.h:61
+script::AdvanceRandom(u64*)	function	script	script-advancerandom-u64-star	script.md	engine/script/partition_context.h:69
+script::SeedPartitionRandom(PartitionContext*)	function	script	script-seedpartitionrandom-partitioncontext-star	script.md	engine/script/partition_context.h:78
+script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:84
+script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:90
+script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:92
+script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:93
+script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:94
+script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:106
+script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:114
+script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:122
+script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:128
+script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:130
+script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:131
+script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:132
 script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:24
 script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:34
 script::ScriptBudgeted(const settings::Registry&)	function	script	script-scriptbudgeted-const-settings-registry-amp	script.md	engine/script/script_settings.h:42
@@ -2075,34 +2101,32 @@ script::ScriptWorld::TryCheckout(u32,PartitionLease*,Outcome*)	function	script	s
 script::ScriptWorld::Checkout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-checkout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:208
 script::ScriptWorld::Counters(u32) const	function	script	script-scriptworld-counters-u32-const	script.md	engine/script/script_world.h:214
 script::ScriptWorld::Total() const	function	script	script-scriptworld-total-const	script.md	engine/script/script_world.h:219
-script::kCommandSettingsSet	variable	script	script-kcommandsettingsset	script.md	engine/script/settings_bindings.h:22
-script::kMaxSettingsSubscriptionsPerEntity	variable	script	script-kmaxsettingssubscriptionsperentity	script.md	engine/script/settings_bindings.h:25
-script::kMaxSettingsSubscriptions	variable	script	script-kmaxsettingssubscriptions	script.md	engine/script/settings_bindings.h:27
-script::SettingsPolicy	class	script	script-settingspolicy	script.md	engine/script/settings_bindings.h:34
-script::SettingsPolicy::SettingsPolicy()	function	script	script-settingspolicy-settingspolicy	script.md	engine/script/settings_bindings.h:38
-script::SettingsPolicy::SetDefaultWritable(Span<const StringView>)	function	script	script-settingspolicy-setdefaultwritable-span-lt-const-stringview-gt	script.md	engine/script/settings_bindings.h:45
-script::SettingsPolicy::SetScriptWritable(StringView,Span<const StringView>)	function	script	script-settingspolicy-setscriptwritable-stringview-span-lt-const-stringview-gt	script.md	engine/script/settings_bindings.h:53
-script::SettingsPolicy::CanWrite(StringView,StringView) const	function	script	script-settingspolicy-canwrite-stringview-stringview-const	script.md	engine/script/settings_bindings.h:59
-script::SettingsSubscription	struct	script	script-settingssubscription	script.md	engine/script/settings_bindings.h:77
-script::SettingsSubscription::entity_key	variable	script	script-settingssubscription-entity-key	script.md	engine/script/settings_bindings.h:80
-script::SettingsSubscription::prefix	variable	script	script-settingssubscription-prefix	script.md	engine/script/settings_bindings.h:82
-script::SettingsSubscription::function	variable	script	script-settingssubscription-function	script.md	engine/script/settings_bindings.h:84
-script::SettingsAccess	struct	script	script-settingsaccess	script.md	engine/script/settings_bindings.h:92
-script::SettingsAccess::registry	variable	script	script-settingsaccess-registry	script.md	engine/script/settings_bindings.h:95
-script::SettingsAccess::snapshot	variable	script	script-settingsaccess-snapshot	script.md	engine/script/settings_bindings.h:97
-script::SettingsAccess::policy	variable	script	script-settingsaccess-policy	script.md	engine/script/settings_bindings.h:99
-script::SettingsAccess::subscriptions	variable	script	script-settingsaccess-subscriptions	script.md	engine/script/settings_bindings.h:101
-script::SettingNotification	struct	script	script-settingnotification	script.md	engine/script/settings_bindings.h:107
-script::SettingNotification::partition	variable	script	script-settingnotification-partition	script.md	engine/script/settings_bindings.h:110
-script::SettingNotification::entity_key	variable	script	script-settingnotification-entity-key	script.md	engine/script/settings_bindings.h:112
-script::SettingNotification::function	variable	script	script-settingnotification-function	script.md	engine/script/settings_bindings.h:114
-script::SettingNotification::key	variable	script	script-settingnotification-key	script.md	engine/script/settings_bindings.h:116
-script::RegisterSettingsCommandKind(CommandKindTable*)	function	script	script-registersettingscommandkind-commandkindtable-star	script.md	engine/script/settings_bindings.h:126
-script::SettingsMergeServices	struct	script	script-settingsmergeservices	script.md	engine/script/settings_bindings.h:132
-script::SettingsMergeServices::settings	variable	script	script-settingsmergeservices-settings	script.md	engine/script/settings_bindings.h:135
-script::CollectSettingChanges(const settings::Registry&,const settings::SettingsSnapshot&,const settings::SettingsSnapshot&,Span<SettingsAccess* const>)	function	script	script-collectsettingchanges-const-settings-registry-amp-const-settings-settingssnapshot-amp-const-settings-settingssnapshot-amp-span-lt-settingsaccess-star-const-gt	script.md	engine/script/settings_bindings.h:149
-script::RemoveSettingsSubscriptions(SettingsAccess*,u64)	function	script	script-removesettingssubscriptions-settingsaccess-star-u64	script.md	engine/script/settings_bindings.h:161
-script::RegisterSettingsBindings(BindingRegistry*)	function	script	script-registersettingsbindings-bindingregistry-star	script.md	engine/script/settings_bindings.h:171
+script::kCommandSettingsSet	variable	script	script-kcommandsettingsset	script.md	engine/script/settings_bindings.h:23
+script::kMaxSettingsSubscriptionsPerEntity	variable	script	script-kmaxsettingssubscriptionsperentity	script.md	engine/script/settings_bindings.h:26
+script::kMaxSettingsSubscriptions	variable	script	script-kmaxsettingssubscriptions	script.md	engine/script/settings_bindings.h:28
+script::SettingsPolicy	class	script	script-settingspolicy	script.md	engine/script/settings_bindings.h:35
+script::SettingsPolicy::SettingsPolicy()	function	script	script-settingspolicy-settingspolicy	script.md	engine/script/settings_bindings.h:39
+script::SettingsPolicy::SetDefaultWritable(Span<const StringView>)	function	script	script-settingspolicy-setdefaultwritable-span-lt-const-stringview-gt	script.md	engine/script/settings_bindings.h:46
+script::SettingsPolicy::SetScriptWritable(StringView,Span<const StringView>)	function	script	script-settingspolicy-setscriptwritable-stringview-span-lt-const-stringview-gt	script.md	engine/script/settings_bindings.h:54
+script::SettingsPolicy::CanWrite(StringView,StringView) const	function	script	script-settingspolicy-canwrite-stringview-stringview-const	script.md	engine/script/settings_bindings.h:60
+script::SettingsSubscription	struct	script	script-settingssubscription	script.md	engine/script/settings_bindings.h:78
+script::SettingsSubscription::entity_key	variable	script	script-settingssubscription-entity-key	script.md	engine/script/settings_bindings.h:81
+script::SettingsSubscription::prefix	variable	script	script-settingssubscription-prefix	script.md	engine/script/settings_bindings.h:83
+script::SettingsSubscription::function	variable	script	script-settingssubscription-function	script.md	engine/script/settings_bindings.h:85
+script::SettingsAccess	struct	script	script-settingsaccess	script.md	engine/script/settings_bindings.h:93
+script::SettingsAccess::registry	variable	script	script-settingsaccess-registry	script.md	engine/script/settings_bindings.h:96
+script::SettingsAccess::snapshot	variable	script	script-settingsaccess-snapshot	script.md	engine/script/settings_bindings.h:98
+script::SettingsAccess::policy	variable	script	script-settingsaccess-policy	script.md	engine/script/settings_bindings.h:100
+script::SettingsAccess::subscriptions	variable	script	script-settingsaccess-subscriptions	script.md	engine/script/settings_bindings.h:102
+script::SettingNotification	struct	script	script-settingnotification	script.md	engine/script/settings_bindings.h:108
+script::SettingNotification::partition	variable	script	script-settingnotification-partition	script.md	engine/script/settings_bindings.h:111
+script::SettingNotification::entity_key	variable	script	script-settingnotification-entity-key	script.md	engine/script/settings_bindings.h:113
+script::SettingNotification::function	variable	script	script-settingnotification-function	script.md	engine/script/settings_bindings.h:115
+script::SettingNotification::key	variable	script	script-settingnotification-key	script.md	engine/script/settings_bindings.h:117
+script::RegisterSettingsCommandKind(CommandKindTable*)	function	script	script-registersettingscommandkind-commandkindtable-star	script.md	engine/script/settings_bindings.h:127
+script::CollectSettingChanges(const settings::Registry&,const settings::SettingsSnapshot&,const settings::SettingsSnapshot&,Span<SettingsAccess* const>)	function	script	script-collectsettingchanges-const-settings-registry-amp-const-settings-settingssnapshot-amp-const-settings-settingssnapshot-amp-span-lt-settingsaccess-star-const-gt	script.md	engine/script/settings_bindings.h:140
+script::RemoveSettingsSubscriptions(SettingsAccess*,u64)	function	script	script-removesettingssubscriptions-settingsaccess-star-u64	script.md	engine/script/settings_bindings.h:152
+script::RegisterSettingsBindings(BindingRegistry*)	function	script	script-registersettingsbindings-bindingregistry-star	script.md	engine/script/settings_bindings.h:162
 script::Status	enum	script	script-status	script.md	engine/script/status.h:17
 script::Status::Ok	enumerator	script	script-status-ok	script.md	engine/script/status.h:20
 script::Status::SyntaxError	enumerator	script	script-status-syntaxerror	script.md	engine/script/status.h:22
