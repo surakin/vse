@@ -98,6 +98,27 @@ OnScriptError ScriptOnError(const settings::Registry& registry);
 /// - Fails: never.
 u32 ScriptPartitions(const settings::Registry& registry);
 
+/// Reads `script.task_states`: how many language states run script tasks at once.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 0.
+/// - Returns: 0 (one per scheduler thread) to 1024.
+/// - Fails: never.
+u32 ScriptTaskStates(const settings::Registry& registry);
+
+/// Reads `script.task_queue_limit`: how many tasks one partition may have queued or finished and not taken.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 1024.
+/// - Returns: the limit.
+/// - Fails: never.
+u32 ScriptTaskQueueLimit(const settings::Registry& registry);
+
+/// Reads `script.task_arg_bytes`: the most bytes of task source and arguments one partition may queue in a tick.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 16 MiB.
+/// - Returns: the limit in bytes.
+/// - Fails: never.
+u64 ScriptTaskArgBytes(const settings::Registry& registry);
+
 /// Reads `script.partition_memory`: the memory cap of one partition's state, in bytes.
 ///
 /// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 64 MiB.

@@ -582,6 +582,7 @@ enum WaitKind : int
     kWaitSeconds,
     kWaitFrames,
     kWaitEvent,
+    kWaitTask,
 };
 
 // wait(seconds), wait_frames(n), wait_event(name): yield (kind, argument) to whoever resumed the coroutine.
@@ -602,7 +603,7 @@ int WaitFunction(lua_State* L)
             return luaL_error(L, "a wait needs a number");
         }
         const f64 d = lua_tonumber(L, 1);
-        if (!(d >= 0.0) || d > (kind == kWaitFrames ? 4294967295.0 : 1.0e12))
+        if (!(d >= 0.0) || d > (kind == kWaitFrames ? 4294967295.0 : (kind == kWaitTask ? 9007199254740991.0 : 1.0e12)))
         {
             return luaL_error(L, "a wait needs a finite number in range that is not negative");
         }
@@ -1040,7 +1041,8 @@ void OpenLibs(lua_State* L, Request* r)
     {
         const char* name;
         int kind;
-    } waits[] = {{"wait", kWaitSeconds}, {"wait_frames", kWaitFrames}, {"wait_event", kWaitEvent}};
+    } waits[] = {
+        {"wait", kWaitSeconds}, {"wait_frames", kWaitFrames}, {"wait_event", kWaitEvent}, {"wait_task", kWaitTask}};
     for (const auto& w : waits)
     {
         lua_pushinteger(L, w.kind);
@@ -1313,10 +1315,12 @@ void RunCoroutine(lua_State* L, Request* r)
         const int top = lua_gettop(L);
         r->wait_kind = static_cast<int>(lua_tointeger(L, top - 1));
         const f64 amount = lua_type(L, top) == LUA_TNUMBER ? lua_tonumber(L, top) : -1.0;
-        const bool good_kind = r->wait_kind >= kWaitSeconds && r->wait_kind <= kWaitEvent;
+        const bool good_kind = r->wait_kind >= kWaitSeconds && r->wait_kind <= kWaitTask;
         const bool good_arg = r->wait_kind == kWaitEvent
                                   ? lua_type(L, top) == LUA_TSTRING
-                                  : (amount >= 0.0 && amount <= (r->wait_kind == kWaitFrames ? 4294967295.0 : 1.0e12));
+                                  : (amount >= 0.0 && amount <= (r->wait_kind == kWaitFrames ? 4294967295.0
+                                                                 : r->wait_kind == kWaitTask ? 9007199254740991.0
+                                                                                             : 1.0e12));
         if (!good_kind || !good_arg)
         {
             r->failure = "a coroutine yielded something that is not a wait request";
@@ -1662,7 +1666,9 @@ private:
             out->coroutine = id;
             out->wait.kind = r->wait_kind == kWaitSeconds  ? WaitRequest::Kind::Seconds
                              : r->wait_kind == kWaitFrames ? WaitRequest::Kind::Frames
+                             : r->wait_kind == kWaitTask   ? WaitRequest::Kind::Task
                                                            : WaitRequest::Kind::Event;
+            out->wait.task = r->wait_kind == kWaitTask ? static_cast<u64>(r->wait_number) : 0;
             out->wait.seconds = r->wait_kind == kWaitSeconds ? r->wait_number : 0.0;
             out->wait.frames = r->wait_kind == kWaitFrames ? static_cast<u32>(r->wait_number) : 0;
             out->wait.event = MakeText(r->event.View());

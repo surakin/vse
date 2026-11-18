@@ -14,6 +14,7 @@
 #include "script/partition_context.h"
 #include "script/script_world.h"
 #include "script/settings_bindings.h"
+#include "script/task_pool.h"
 
 namespace engine_placeholder::script
 {
@@ -57,6 +58,7 @@ struct Waiter
     u64 wake_tick = 0;    // Frames: the tick to resume at
     String<HeapAllocator> event{HeapAllocator::Default()};
     u32 sequence = 0;  // creation order, the last tie-break of the wake order
+    u64 task = 0;      // Task: the handle it waits for
 };
 
 /// The instances of one partition subscribed to one event name.
@@ -75,6 +77,11 @@ struct PartitionData
     EventOutbox outbox;
     Vector<Waiter> waiters;        // timers: Seconds and Frames
     Vector<Waiter> event_waiters;  // coroutines in wait_event, scanned only when an event is delivered
+    Vector<Waiter> task_waiters;   // coroutines in wait_task
+    TaskOutbox task_outbox;        // the tasks asked for in this tick
+    Vector<u64> task_taken;        // the handles taken in this tick, erased at the sync point
+    TaskPartition task_view;       // what the task bindings of this partition's job reach
+    u32 task_held = 0;             // the finished tasks the table holds for this partition's instances
     u32 next_sequence = 0;
     bool subscription_limit_logged = false;
     Vector<Group> groups;      // event name -> subscribed instance keys, sorted by name and key
@@ -198,6 +205,9 @@ struct ScriptRuntime::Impl
     u32 fixed_steps = 0;
     f64 fixed_dt = 0.0;
     bool any_gone = false;
+    TaskTable task_table;
+    UniquePtr<TaskPool> task_pool;
+    Vector<u64> removed_keys;  // the instances Compact dropped, until the tasks they owned are dropped
 
     void Reconcile(ecs::World* world, bool allow_new);
     void Compact();
@@ -212,6 +222,8 @@ struct ScriptRuntime::Impl
     void ApplyChanges(PartitionData* data);
     void Park(PartitionLease* lease, PartitionData* data, Instance* in, const CallOutput& out, bool allow_wait);
     void WakeTimers(PartitionLease* lease, PartitionData* data, PartitionContext* context, u32 p);
+    void WakeTasks(PartitionLease* lease, PartitionData* data, PartitionContext* context);
+    void RunTasks(jobs::Scheduler* scheduler);
     void Resume(PartitionLease* lease, PartitionData* data, PartitionContext* context, const Waiter& w,
                 Span<const Value> values);
     Instance* FindInstance(PartitionData* data, u64 key);
@@ -297,6 +309,10 @@ void ScriptRuntime::Impl::Compact()
         {
             kept.Push(Move(instances[i]));
         }
+        else
+        {
+            removed_keys.Push(instances[i].key);
+        }
     }
     instances = Move(kept);
 }
@@ -346,6 +362,7 @@ void ScriptRuntime::Impl::CheckReset(u32 p, PartitionData* data)
     data->resets_seen = resets;
     data->waiters.Clear();  // the coroutines died with the state
     data->event_waiters.Clear();
+    data->task_waiters.Clear();
     for (usize k = 0; k < data->members.Size(); ++k)
     {
         Instance& in = instances[data->members[k]];
@@ -419,7 +436,7 @@ void ScriptRuntime::Impl::Park(PartitionLease* lease, PartitionData* data, Insta
         state->Abandon(out.coroutine);
         return;
     }
-    if (data->waiters.Size() + data->event_waiters.Size() >= config.coroutine_limit)
+    if (data->waiters.Size() + data->event_waiters.Size() + data->task_waiters.Size() >= config.coroutine_limit)
     {
         state->Abandon(out.coroutine);
         Fail(data, in, "a wait", Outcome(Status::RuntimeError, "too many waiting coroutines in this partition"));
@@ -433,7 +450,12 @@ void ScriptRuntime::Impl::Park(PartitionLease* lease, PartitionData* data, Insta
     w.wake_tick = tick + out.wait.frames;
     w.event = String<HeapAllocator>(HeapAllocator::Default(), out.wait.event.View());
     w.sequence = data->next_sequence++;
-    if (w.kind == WaitRequest::Kind::Event)
+    w.task = out.wait.task;
+    if (w.kind == WaitRequest::Kind::Task)
+    {
+        data->task_waiters.Push(Move(w));
+    }
+    else if (w.kind == WaitRequest::Kind::Event)
     {
         data->event_waiters.Push(Move(w));
     }
@@ -527,6 +549,60 @@ void ScriptRuntime::Impl::WakeTimers(PartitionLease* lease, PartitionData* data,
     }
 }
 
+// Resumes the coroutines waiting for a task, in (entity id, creation order). A task finishes at the end of the tick it
+// was asked for, so every handle a waiter holds is ready now; an unknown or foreign handle resumes with an error.
+void ScriptRuntime::Impl::WakeTasks(PartitionLease* lease, PartitionData* data, PartitionContext* context)
+{
+    if (data->task_waiters.Size() == 0)
+    {
+        return;
+    }
+    Vector<Waiter> due;
+    Vector<Waiter> keep;
+    for (usize i = 0; i < data->task_waiters.Size(); ++i)
+    {
+        Waiter& w = data->task_waiters[i];
+        Instance* in = FindInstance(data, w.key);
+        if (in == nullptr || !in->alive || in->failed)
+        {
+            lease->GetState()->Abandon(w.coroutine);
+        }
+        else if (!in->notified_enabled)
+        {
+            keep.Push(Move(w));
+        }
+        else
+        {
+            due.Push(Move(w));
+        }
+    }
+    data->task_waiters = Move(keep);
+    Sort(Span<Waiter>(due.Data(), due.Size()),
+         [](const Waiter& a, const Waiter& b) { return a.key != b.key ? a.key < b.key : a.sequence < b.sequence; });
+    for (usize i = 0; i < due.Size(); ++i)
+    {
+        Value out;
+        const TakeStatus status = TakeTask(&data->task_view, due[i].key, due[i].task, &out);
+        Value values[2];
+        if (status == TakeStatus::Ready)
+        {
+            values[0] = Move(out);
+        }
+        else if (status == TakeStatus::Failed)
+        {
+            values[1] = Move(out);
+        }
+        else
+        {
+            values[1] = Value::FromText(
+                status == TakeStatus::NotOwner  ? StringView("that task belongs to another script")
+                : status == TakeStatus::Pending ? StringView("the task has not finished")
+                                                : StringView("no such task (unknown, already taken, or dropped)"));
+        }
+        Resume(lease, data, context, due[i], Span<const Value>(values, 2));
+    }
+}
+
 void ScriptRuntime::Impl::RunLive(PartitionLease* lease, PartitionData* data, Instance* in, const ScriptComponent& comp,
                                   f64 dt)
 {
@@ -617,7 +693,7 @@ void ScriptRuntime::Impl::RunDestroy(PartitionLease* lease, PartitionData* data,
         data->outbox.changes = Move(kept);
     }
     UnsubscribeAll(&data->groups, in->key);
-    for (Vector<Waiter>* list : {&data->waiters, &data->event_waiters})
+    for (Vector<Waiter>* list : {&data->waiters, &data->event_waiters, &data->task_waiters})
     {  // the instance's waiting coroutines are dropped without running another step
         Vector<Waiter> kept;
         for (usize i = 0; i < list->Size(); ++i)
@@ -813,12 +889,22 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     context.partitions = config.partitions;
     context.log = &data.log;
     context.events = &data.outbox;
+    data.task_view.outbox = &data.task_outbox;
+    data.task_view.table = &task_table;
+    data.task_view.taken = &data.task_taken;
+    data.task_view.partition = p;
+    data.task_view.held = data.task_held;
+    data.task_view.queue_limit = config.task_queue_limit;
+    data.task_view.arg_bytes_limit = config.task_arg_bytes;
+    data.task_view.tick = tick;
+    context.tasks = &data.task_view;
     data.outbox.chain = 0;
     data.outbox.weight = 0;
     ScopedPartitionContext scope(&context);
     if (!destroys_only)
     {
         WakeTimers(&lease, &data, &context, p);
+        WakeTasks(&lease, &data, &context);
         DeliverEvents(&lease, &data, &context, world, p);
     }
     for (usize k = 0; k < data.members.Size(); ++k)
@@ -900,7 +986,8 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
         stats.skipped_partitions += d.skipped_partitions;
         stats.events_delivered += d.events_delivered;
         stats.waits_resumed += d.waits_resumed;
-        waiting += partitions[p]->waiters.Size() + partitions[p]->event_waiters.Size();
+        waiting += partitions[p]->waiters.Size() + partitions[p]->event_waiters.Size() +
+                   partitions[p]->task_waiters.Size();
         stats.events_emitted += bus.Accept(&partitions[p]->outbox);
     }
     stats.coroutines_waiting = waiting;
@@ -920,6 +1007,100 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
     const MergeReport report = Merge(world, Span<CommandBuffer* const>(order.Data(), order.Size()), kinds,
                                      config.conflicts, &services);
     stats.commands_applied += report.applied;
+}
+
+// The sync point of the tasks: results taken in this tick are dropped, so are the tasks of instances that went away;
+// the requests of the tick run on the pool and their results wait for the owners to take them.
+void ScriptRuntime::Impl::RunTasks(jobs::Scheduler* scheduler)
+{
+    for (u32 p = 0; p < config.partitions; ++p)
+    {
+        PartitionData& d = *partitions[p];
+        for (usize i = 0; i < d.task_taken.Size(); ++i)
+        {
+            task_table.Erase(d.task_taken[i]);
+            if (d.task_held > 0)
+            {
+                --d.task_held;
+            }
+        }
+        d.task_taken.Clear();
+    }
+    if (removed_keys.Size() != 0)
+    {
+        Vector<u32> removed;
+        task_table.EraseOwners(Span<const u64>(removed_keys.Data(), removed_keys.Size()), &removed);
+        for (u32 p = 0; p < removed.Size() && p < config.partitions; ++p)
+        {
+            PartitionData& d = *partitions[p];
+            d.task_held = d.task_held > removed[p] ? d.task_held - removed[p] : 0;
+        }
+        removed_keys.Clear();
+    }
+    Vector<TaskRequest> batch;
+    for (u32 p = 0; p < config.partitions; ++p)
+    {
+        TaskOutbox& box = partitions[p]->task_outbox;
+        for (usize i = 0; i < box.requests.Size(); ++i)
+        {
+            usize lo = 0;
+            usize hi = instances.Size();
+            const u64 key = box.requests[i].owner_key;
+            while (lo < hi)
+            {
+                const usize mid = lo + (hi - lo) / 2;
+                if (instances[mid].key < key)
+                {
+                    lo = mid + 1;
+                }
+                else
+                {
+                    hi = mid;
+                }
+            }
+            if (lo < instances.Size() && instances[lo].key == key && instances[lo].alive)
+            {  // a task never runs for an owner that is gone
+                batch.Push(Move(box.requests[i]));
+            }
+        }
+        box.requests.Clear();
+        box.bytes = 0;
+    }
+    if (batch.Size() != 0)
+    {
+        if (task_pool.Get() == nullptr)
+        {
+            TaskPoolConfig pc;
+            pc.backend = config.backend;
+            pc.bindings = config.bindings;
+            u32 states = config.task_states;
+            if (states == 0)
+            {
+                states = scheduler != nullptr ? static_cast<u32>(scheduler->ParticipantCount()) : 1u;
+            }
+            pc.states = states < 1 ? 1 : (states > kMaxPartitions ? kMaxPartitions : states);
+            pc.state_memory = config.task_state_memory;
+            pc.budget = config.task_budget;
+            task_pool = MakeUnique<TaskPool>(pc);
+        }
+        Vector<TaskOutcome> outcomes;
+        stats.task_chunks += task_pool->Execute(Span<const TaskRequest>(batch.Data(), batch.Size()), &outcomes,
+                                                scheduler);
+        for (usize i = 0; i < batch.Size(); ++i)
+        {
+            const u32 owner_partition = static_cast<u32>((batch[i].id >> kTaskIdShift) - 1);
+            TaskRecord* record = task_table.Insert(batch[i].id);
+            record->owner_key = batch[i].owner_key;
+            record->partition = owner_partition;
+            record->failed = outcomes[i].failed;
+            record->result = Move(outcomes[i].value);
+            record->error = Move(outcomes[i].error);
+            ++partitions[owner_partition]->task_held;
+            ++stats.tasks_run;
+            stats.tasks_failed += record->failed ? 1 : 0;
+        }
+    }
+    stats.tasks_held = task_table.Size();
 }
 
 ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig& config)
@@ -1004,6 +1185,7 @@ void ScriptRuntime::Tick(ecs::World* world, f64 dt, jobs::Scheduler* scheduler)
         m.RunPhase(world, dt, true, scheduler);
         m.Compact();
     }
+    m.RunTasks(scheduler);
     ++m.tick;
     m.sim_time += dt;
     ++m.stats.ticks;

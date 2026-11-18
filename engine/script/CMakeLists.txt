@@ -21,6 +21,8 @@ set(SCRIPT_SOURCES
   component_bindings.cpp  # Day 456
   event_bus.cpp  # Day 459
   event_bindings.cpp  # Day 459
+  task_pool.cpp  # Day 461
+  task_bindings.cpp  # Day 461
   behavior_host.cpp  # Day 457
   script_runtime.cpp  # Day 457
 )

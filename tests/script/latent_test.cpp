@@ -88,6 +88,11 @@ behavior('late_spawner', {
 behavior('plain_trace', {
   on_update = function(self) end,
 })
+behavior('stop_forger', {
+  on_create = function(self)
+    stop(forge_task)
+  end,
+})
 behavior('forge_victim', {
   on_create = function(self)
     forge_victim = self.entity
@@ -245,6 +250,16 @@ TEST_CASE("Latent waits: another script cannot start someone else's spawned coro
     CHECK(rig.Text(owner).View() == StringView("T"));
     CHECK(rig.Text(victim).View() == StringView(""));
     CHECK(rig.runtime->Stats().errors == 0);
+}
+
+TEST_CASE("Latent waits: another script cannot stop someone else's coroutine", "[script][latent]")
+{
+    LatentRig rig(1);
+    rig.Make("forge_victim");
+    const ecs::Entity owner = rig.Make("forge_owner");
+    rig.Make("stop_forger");
+    rig.Tick(12);
+    CHECK(rig.Text(owner).View() == StringView("T"));
 }
 
 TEST_CASE("Latent waits: a coroutine that resumes after other instances ran still acts as itself", "[script][latent]")

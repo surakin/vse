@@ -2079,39 +2079,41 @@ script::MergeServices	struct	script	script-mergeservices	script.md	engine/script
 script::MergeServices::settings	variable	script	script-mergeservices-settings	script.md	engine/script/merge_services.h:35
 script::MergeServices::prefabs	variable	script	script-mergeservices-prefabs	script.md	engine/script/merge_services.h:37
 script::MergeServices::components	variable	script	script-mergeservices-components	script.md	engine/script/merge_services.h:39
-script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:25
-script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:28
-script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:30
-script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:32
-script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:34
-script::PartitionContext::world_seed	variable	script	script-partitioncontext-world-seed	script.md	engine/script/partition_context.h:36
-script::PartitionContext::tick	variable	script	script-partitioncontext-tick	script.md	engine/script/partition_context.h:38
-script::PartitionContext::dt	variable	script	script-partitioncontext-dt	script.md	engine/script/partition_context.h:40
-script::PartitionContext::sim_time	variable	script	script-partitioncontext-sim-time	script.md	engine/script/partition_context.h:42
-script::PartitionContext::frame	variable	script	script-partitioncontext-frame	script.md	engine/script/partition_context.h:44
-script::PartitionContext::replay_recording	variable	script	script-partitioncontext-replay-recording	script.md	engine/script/partition_context.h:46
-script::PartitionContext::random_state	variable	script	script-partitioncontext-random-state	script.md	engine/script/partition_context.h:48
-script::PartitionContext::log	variable	script	script-partitioncontext-log	script.md	engine/script/partition_context.h:50
-script::PartitionContext::settings	variable	script	script-partitioncontext-settings	script.md	engine/script/partition_context.h:52
-script::PartitionContext::scene	variable	script	script-partitioncontext-scene	script.md	engine/script/partition_context.h:54
-script::PartitionContext::components	variable	script	script-partitioncontext-components	script.md	engine/script/partition_context.h:56
-script::PartitionContext::events	variable	script	script-partitioncontext-events	script.md	engine/script/partition_context.h:58
-script::PartitionContext::partitions	variable	script	script-partitioncontext-partitions	script.md	engine/script/partition_context.h:60
-script::RandomSeedFor(u32,u64,u64)	function	script	script-randomseedfor-u32-u64-u64	script.md	engine/script/partition_context.h:69
-script::AdvanceRandom(u64*)	function	script	script-advancerandom-u64-star	script.md	engine/script/partition_context.h:77
-script::SeedPartitionRandom(PartitionContext*)	function	script	script-seedpartitionrandom-partitioncontext-star	script.md	engine/script/partition_context.h:86
-script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:92
-script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:98
-script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:100
-script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:101
-script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:102
-script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:114
-script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:122
-script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:130
-script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:136
-script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:138
-script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:139
-script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:140
+script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:26
+script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:29
+script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:31
+script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:33
+script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:35
+script::PartitionContext::world_seed	variable	script	script-partitioncontext-world-seed	script.md	engine/script/partition_context.h:37
+script::PartitionContext::tick	variable	script	script-partitioncontext-tick	script.md	engine/script/partition_context.h:39
+script::PartitionContext::dt	variable	script	script-partitioncontext-dt	script.md	engine/script/partition_context.h:41
+script::PartitionContext::sim_time	variable	script	script-partitioncontext-sim-time	script.md	engine/script/partition_context.h:43
+script::PartitionContext::frame	variable	script	script-partitioncontext-frame	script.md	engine/script/partition_context.h:45
+script::PartitionContext::replay_recording	variable	script	script-partitioncontext-replay-recording	script.md	engine/script/partition_context.h:47
+script::PartitionContext::random_state	variable	script	script-partitioncontext-random-state	script.md	engine/script/partition_context.h:49
+script::PartitionContext::log	variable	script	script-partitioncontext-log	script.md	engine/script/partition_context.h:51
+script::PartitionContext::settings	variable	script	script-partitioncontext-settings	script.md	engine/script/partition_context.h:53
+script::PartitionContext::scene	variable	script	script-partitioncontext-scene	script.md	engine/script/partition_context.h:55
+script::PartitionContext::components	variable	script	script-partitioncontext-components	script.md	engine/script/partition_context.h:57
+script::PartitionContext::events	variable	script	script-partitioncontext-events	script.md	engine/script/partition_context.h:59
+script::PartitionContext::tasks	variable	script	script-partitioncontext-tasks	script.md	engine/script/partition_context.h:61
+script::PartitionContext::in_task	variable	script	script-partitioncontext-in-task	script.md	engine/script/partition_context.h:63
+script::PartitionContext::partitions	variable	script	script-partitioncontext-partitions	script.md	engine/script/partition_context.h:65
+script::RandomSeedFor(u32,u64,u64)	function	script	script-randomseedfor-u32-u64-u64	script.md	engine/script/partition_context.h:74
+script::AdvanceRandom(u64*)	function	script	script-advancerandom-u64-star	script.md	engine/script/partition_context.h:82
+script::SeedPartitionRandom(PartitionContext*)	function	script	script-seedpartitionrandom-partitioncontext-star	script.md	engine/script/partition_context.h:91
+script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:97
+script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:103
+script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:105
+script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:106
+script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:107
+script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:119
+script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:127
+script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:135
+script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:141
+script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:143
+script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:144
+script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:145
 script::ScriptComponent	struct	script	script-scriptcomponent	script.md	engine/script/script_runtime.h:40
 script::ScriptComponent::kComponentName	variable	script	script-scriptcomponent-kcomponentname	script.md	engine/script/script_runtime.h:43
 script::ScriptComponent::behavior	variable	script	script-scriptcomponent-behavior	script.md	engine/script/script_runtime.h:45
@@ -2135,39 +2137,49 @@ script::ScriptRuntimeStats::events_emitted	variable	script	script-scriptruntimes
 script::ScriptRuntimeStats::events_delivered	variable	script	script-scriptruntimestats-events-delivered	script.md	engine/script/script_runtime.h:95
 script::ScriptRuntimeStats::waits_resumed	variable	script	script-scriptruntimestats-waits-resumed	script.md	engine/script/script_runtime.h:97
 script::ScriptRuntimeStats::coroutines_waiting	variable	script	script-scriptruntimestats-coroutines-waiting	script.md	engine/script/script_runtime.h:99
-script::ScriptRuntimeConfig	struct	script	script-scriptruntimeconfig	script.md	engine/script/script_runtime.h:106
-script::ScriptRuntimeConfig::backend	variable	script	script-scriptruntimeconfig-backend	script.md	engine/script/script_runtime.h:109
-script::ScriptRuntimeConfig::bindings	variable	script	script-scriptruntimeconfig-bindings	script.md	engine/script/script_runtime.h:111
-script::ScriptRuntimeConfig::partitions	variable	script	script-scriptruntimeconfig-partitions	script.md	engine/script/script_runtime.h:113
-script::ScriptRuntimeConfig::partition_memory	variable	script	script-scriptruntimeconfig-partition-memory	script.md	engine/script/script_runtime.h:115
-script::ScriptRuntimeConfig::random_seed	variable	script	script-scriptruntimeconfig-random-seed	script.md	engine/script/script_runtime.h:117
-script::ScriptRuntimeConfig::log_limit	variable	script	script-scriptruntimeconfig-log-limit	script.md	engine/script/script_runtime.h:119
-script::ScriptRuntimeConfig::coroutine_limit	variable	script	script-scriptruntimeconfig-coroutine-limit	script.md	engine/script/script_runtime.h:122
-script::ScriptRuntimeConfig::event_chain_limit	variable	script	script-scriptruntimeconfig-event-chain-limit	script.md	engine/script/script_runtime.h:124
-script::ScriptRuntimeConfig::on_error	variable	script	script-scriptruntimeconfig-on-error	script.md	engine/script/script_runtime.h:126
-script::ScriptRuntimeConfig::conflicts	variable	script	script-scriptruntimeconfig-conflicts	script.md	engine/script/script_runtime.h:128
-script::ScriptRuntimeConfig::budget	variable	script	script-scriptruntimeconfig-budget	script.md	engine/script/script_runtime.h:130
-script::ScriptRuntimeConfig::components	variable	script	script-scriptruntimeconfig-components	script.md	engine/script/script_runtime.h:132
-script::ScriptRuntimeConfig::scene	variable	script	script-scriptruntimeconfig-scene	script.md	engine/script/script_runtime.h:134
-script::ScriptRuntimeConfig::services	variable	script	script-scriptruntimeconfig-services	script.md	engine/script/script_runtime.h:136
-script::ScriptRuntimeConfig::host_source	variable	script	script-scriptruntimeconfig-host-source	script.md	engine/script/script_runtime.h:139
-script::ScriptRuntimeConfig::DefaultBudget()	function	script	script-scriptruntimeconfig-defaultbudget	script.md	engine/script/script_runtime.h:142
-script::LuaBehaviorHostSource()	function	script	script-luabehaviorhostsource	script.md	engine/script/script_runtime.h:156
-script::ScriptRuntime	class	script	script-scriptruntime	script.md	engine/script/script_runtime.h:164
-script::ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp	script.md	engine/script/script_runtime.h:171
-script::ScriptRuntime::~ScriptRuntime()	function	script	script-scriptruntime-tilde-scriptruntime	script.md	engine/script/script_runtime.h:173
-script::ScriptRuntime::ScriptRuntime(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-scriptruntime-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:175
-script::ScriptRuntime::operator=(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-operator-eq-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:177
-script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:178
-script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:179
-script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:185
-script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:192
-script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:197
-script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:201
-script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:205
-script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:209
-script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:221
-script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:234
+script::ScriptRuntimeStats::tasks_run	variable	script	script-scriptruntimestats-tasks-run	script.md	engine/script/script_runtime.h:101
+script::ScriptRuntimeStats::tasks_failed	variable	script	script-scriptruntimestats-tasks-failed	script.md	engine/script/script_runtime.h:103
+script::ScriptRuntimeStats::task_chunks	variable	script	script-scriptruntimestats-task-chunks	script.md	engine/script/script_runtime.h:105
+script::ScriptRuntimeStats::tasks_held	variable	script	script-scriptruntimestats-tasks-held	script.md	engine/script/script_runtime.h:107
+script::ScriptRuntimeConfig	struct	script	script-scriptruntimeconfig	script.md	engine/script/script_runtime.h:114
+script::ScriptRuntimeConfig::backend	variable	script	script-scriptruntimeconfig-backend	script.md	engine/script/script_runtime.h:117
+script::ScriptRuntimeConfig::bindings	variable	script	script-scriptruntimeconfig-bindings	script.md	engine/script/script_runtime.h:119
+script::ScriptRuntimeConfig::partitions	variable	script	script-scriptruntimeconfig-partitions	script.md	engine/script/script_runtime.h:121
+script::ScriptRuntimeConfig::partition_memory	variable	script	script-scriptruntimeconfig-partition-memory	script.md	engine/script/script_runtime.h:123
+script::ScriptRuntimeConfig::random_seed	variable	script	script-scriptruntimeconfig-random-seed	script.md	engine/script/script_runtime.h:125
+script::ScriptRuntimeConfig::log_limit	variable	script	script-scriptruntimeconfig-log-limit	script.md	engine/script/script_runtime.h:127
+script::ScriptRuntimeConfig::coroutine_limit	variable	script	script-scriptruntimeconfig-coroutine-limit	script.md	engine/script/script_runtime.h:130
+script::ScriptRuntimeConfig::event_chain_limit	variable	script	script-scriptruntimeconfig-event-chain-limit	script.md	engine/script/script_runtime.h:132
+script::ScriptRuntimeConfig::on_error	variable	script	script-scriptruntimeconfig-on-error	script.md	engine/script/script_runtime.h:134
+script::ScriptRuntimeConfig::conflicts	variable	script	script-scriptruntimeconfig-conflicts	script.md	engine/script/script_runtime.h:136
+script::ScriptRuntimeConfig::budget	variable	script	script-scriptruntimeconfig-budget	script.md	engine/script/script_runtime.h:138
+script::ScriptRuntimeConfig::task_states	variable	script	script-scriptruntimeconfig-task-states	script.md	engine/script/script_runtime.h:141
+script::ScriptRuntimeConfig::task_queue_limit	variable	script	script-scriptruntimeconfig-task-queue-limit	script.md	engine/script/script_runtime.h:144
+script::ScriptRuntimeConfig::task_arg_bytes	variable	script	script-scriptruntimeconfig-task-arg-bytes	script.md	engine/script/script_runtime.h:146
+script::ScriptRuntimeConfig::task_budget	variable	script	script-scriptruntimeconfig-task-budget	script.md	engine/script/script_runtime.h:148
+script::ScriptRuntimeConfig::task_state_memory	variable	script	script-scriptruntimeconfig-task-state-memory	script.md	engine/script/script_runtime.h:150
+script::ScriptRuntimeConfig::components	variable	script	script-scriptruntimeconfig-components	script.md	engine/script/script_runtime.h:152
+script::ScriptRuntimeConfig::scene	variable	script	script-scriptruntimeconfig-scene	script.md	engine/script/script_runtime.h:154
+script::ScriptRuntimeConfig::services	variable	script	script-scriptruntimeconfig-services	script.md	engine/script/script_runtime.h:156
+script::ScriptRuntimeConfig::host_source	variable	script	script-scriptruntimeconfig-host-source	script.md	engine/script/script_runtime.h:159
+script::ScriptRuntimeConfig::TaskDefaultBudget()	function	script	script-scriptruntimeconfig-taskdefaultbudget	script.md	engine/script/script_runtime.h:162
+script::ScriptRuntimeConfig::DefaultBudget()	function	script	script-scriptruntimeconfig-defaultbudget	script.md	engine/script/script_runtime.h:169
+script::LuaBehaviorHostSource()	function	script	script-luabehaviorhostsource	script.md	engine/script/script_runtime.h:183
+script::ScriptRuntime	class	script	script-scriptruntime	script.md	engine/script/script_runtime.h:191
+script::ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp	script.md	engine/script/script_runtime.h:198
+script::ScriptRuntime::~ScriptRuntime()	function	script	script-scriptruntime-tilde-scriptruntime	script.md	engine/script/script_runtime.h:200
+script::ScriptRuntime::ScriptRuntime(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-scriptruntime-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:202
+script::ScriptRuntime::operator=(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-operator-eq-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:204
+script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:205
+script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:206
+script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:212
+script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:219
+script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:224
+script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:228
+script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:232
+script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:236
+script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:248
+script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:261
 script::OnScriptError	enum	script	script-onscripterror	script.md	engine/script/script_settings.h:16
 script::OnScriptError::Disable	enumerator	script	script-onscripterror-disable	script.md	engine/script/script_settings.h:19
 script::OnScriptError::Retry	enumerator	script	script-onscripterror-retry	script.md	engine/script/script_settings.h:21
@@ -2181,7 +2193,10 @@ script::ScriptEventChainLimit(const settings::Registry&)	function	script	script-
 script::ScriptLogLimit(const settings::Registry&)	function	script	script-scriptloglimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:85
 script::ScriptOnError(const settings::Registry&)	function	script	script-scriptonerror-const-settings-registry-amp	script.md	engine/script/script_settings.h:93
 script::ScriptPartitions(const settings::Registry&)	function	script	script-scriptpartitions-const-settings-registry-amp	script.md	engine/script/script_settings.h:99
-script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:106
+script::ScriptTaskStates(const settings::Registry&)	function	script	script-scripttaskstates-const-settings-registry-amp	script.md	engine/script/script_settings.h:106
+script::ScriptTaskQueueLimit(const settings::Registry&)	function	script	script-scripttaskqueuelimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:113
+script::ScriptTaskArgBytes(const settings::Registry&)	function	script	script-scripttaskargbytes-const-settings-registry-amp	script.md	engine/script/script_settings.h:120
+script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:127
 script::kMaxPartitions	variable	script	script-kmaxpartitions	script.md	engine/script/script_world.h:22
 script::PartitionOf(u64,u32)	function	script	script-partitionof-u64-u32	script.md	engine/script/script_world.h:34
 script::ScriptWorldConfig	struct	script	script-scriptworldconfig	script.md	engine/script/script_world.h:40
@@ -2269,6 +2284,78 @@ script::Outcome::trace	variable	script	script-outcome-trace	script.md	engine/scr
 script::Outcome::Outcome()	function	script	script-outcome-outcome	script.md	engine/script/status.h:71
 script::Outcome::Outcome(Status,StringView)	function	script	script-outcome-outcome-status-stringview	script.md	engine/script/status.h:73
 script::Outcome::IsOk() const	function	script	script-outcome-isok-const	script.md	engine/script/status.h:81
+script::RegisterTaskBindings(BindingRegistry*)	function	script	script-registertaskbindings-bindingregistry-star	script.md	engine/script/task_bindings.h:20
+script::kTaskIdShift	variable	script	script-ktaskidshift	script.md	engine/script/task_pool.h:27
+script::kMaxTaskChunks	variable	script	script-kmaxtaskchunks	script.md	engine/script/task_pool.h:30
+script::kDefaultTaskChunk	variable	script	script-kdefaulttaskchunk	script.md	engine/script/task_pool.h:34
+script::TaskMode	enum	script	script-taskmode	script.md	engine/script/task_pool.h:37
+script::TaskMode::Run	enumerator	script	script-taskmode-run	script.md	engine/script/task_pool.h:40
+script::TaskMode::Map	enumerator	script	script-taskmode-map	script.md	engine/script/task_pool.h:42
+script::TaskMode::For	enumerator	script	script-taskmode-for	script.md	engine/script/task_pool.h:45
+script::TaskRequest	struct	script	script-taskrequest	script.md	engine/script/task_pool.h:52
+script::TaskRequest::id	variable	script	script-taskrequest-id	script.md	engine/script/task_pool.h:55
+script::TaskRequest::owner_key	variable	script	script-taskrequest-owner-key	script.md	engine/script/task_pool.h:57
+script::TaskRequest::mode	variable	script	script-taskrequest-mode	script.md	engine/script/task_pool.h:59
+script::TaskRequest::source	variable	script	script-taskrequest-source	script.md	engine/script/task_pool.h:61
+script::TaskRequest::data	variable	script	script-taskrequest-data	script.md	engine/script/task_pool.h:63
+script::TaskRequest::seed	variable	script	script-taskrequest-seed	script.md	engine/script/task_pool.h:65
+script::TaskRequest::count	variable	script	script-taskrequest-count	script.md	engine/script/task_pool.h:67
+script::TaskRequest::chunk	variable	script	script-taskrequest-chunk	script.md	engine/script/task_pool.h:69
+script::TaskRequest::bytes	variable	script	script-taskrequest-bytes	script.md	engine/script/task_pool.h:71
+script::TaskOutbox	struct	script	script-taskoutbox	script.md	engine/script/task_pool.h:77
+script::TaskOutbox::requests	variable	script	script-taskoutbox-requests	script.md	engine/script/task_pool.h:80
+script::TaskOutbox::next_sequence	variable	script	script-taskoutbox-next-sequence	script.md	engine/script/task_pool.h:82
+script::TaskOutbox::bytes	variable	script	script-taskoutbox-bytes	script.md	engine/script/task_pool.h:84
+script::TaskRecord	struct	script	script-taskrecord	script.md	engine/script/task_pool.h:91
+script::TaskRecord::owner_key	variable	script	script-taskrecord-owner-key	script.md	engine/script/task_pool.h:94
+script::TaskRecord::partition	variable	script	script-taskrecord-partition	script.md	engine/script/task_pool.h:96
+script::TaskRecord::failed	variable	script	script-taskrecord-failed	script.md	engine/script/task_pool.h:98
+script::TaskRecord::result	variable	script	script-taskrecord-result	script.md	engine/script/task_pool.h:100
+script::TaskRecord::error	variable	script	script-taskrecord-error	script.md	engine/script/task_pool.h:102
+script::TaskTable	class	script	script-tasktable	script.md	engine/script/task_pool.h:110
+script::TaskTable::TaskTable()	function	script	script-tasktable-tasktable	script.md	engine/script/task_pool.h:114
+script::TaskTable::Find(u64) const	function	script	script-tasktable-find-u64-const	script.md	engine/script/task_pool.h:120
+script::TaskTable::Insert(u64)	function	script	script-tasktable-insert-u64	script.md	engine/script/task_pool.h:126
+script::TaskTable::Erase(u64)	function	script	script-tasktable-erase-u64	script.md	engine/script/task_pool.h:131
+script::TaskTable::EraseOwners(Span<const u64>,Vector<u32>*)	function	script	script-tasktable-eraseowners-span-lt-const-u64-gt-vector-lt-u32-gt-star	script.md	engine/script/task_pool.h:139
+script::TaskTable::Size() const	function	script	script-tasktable-size-const	script.md	engine/script/task_pool.h:144
+script::TaskPartition	struct	script	script-taskpartition	script.md	engine/script/task_pool.h:164
+script::TaskPartition::outbox	variable	script	script-taskpartition-outbox	script.md	engine/script/task_pool.h:167
+script::TaskPartition::table	variable	script	script-taskpartition-table	script.md	engine/script/task_pool.h:169
+script::TaskPartition::taken	variable	script	script-taskpartition-taken	script.md	engine/script/task_pool.h:171
+script::TaskPartition::partition	variable	script	script-taskpartition-partition	script.md	engine/script/task_pool.h:173
+script::TaskPartition::held	variable	script	script-taskpartition-held	script.md	engine/script/task_pool.h:175
+script::TaskPartition::queue_limit	variable	script	script-taskpartition-queue-limit	script.md	engine/script/task_pool.h:177
+script::TaskPartition::arg_bytes_limit	variable	script	script-taskpartition-arg-bytes-limit	script.md	engine/script/task_pool.h:180
+script::TaskPartition::tick	variable	script	script-taskpartition-tick	script.md	engine/script/task_pool.h:182
+script::TaskValueBytes(const Value&)	function	script	script-taskvaluebytes-const-value-amp	script.md	engine/script/task_pool.h:188
+script::TakeStatus	enum	script	script-takestatus	script.md	engine/script/task_pool.h:191
+script::TakeStatus::Pending	enumerator	script	script-takestatus-pending	script.md	engine/script/task_pool.h:194
+script::TakeStatus::Ready	enumerator	script	script-takestatus-ready	script.md	engine/script/task_pool.h:196
+script::TakeStatus::Failed	enumerator	script	script-takestatus-failed	script.md	engine/script/task_pool.h:198
+script::TakeStatus::Unknown	enumerator	script	script-takestatus-unknown	script.md	engine/script/task_pool.h:200
+script::TakeStatus::NotOwner	enumerator	script	script-takestatus-notowner	script.md	engine/script/task_pool.h:202
+script::TakeTask(TaskPartition*,u64,u64,Value*)	function	script	script-taketask-taskpartition-star-u64-u64-value-star	script.md	engine/script/task_pool.h:213
+script::TaskOutcome	struct	script	script-taskoutcome	script.md	engine/script/task_pool.h:218
+script::TaskOutcome::failed	variable	script	script-taskoutcome-failed	script.md	engine/script/task_pool.h:221
+script::TaskOutcome::value	variable	script	script-taskoutcome-value	script.md	engine/script/task_pool.h:223
+script::TaskOutcome::error	variable	script	script-taskoutcome-error	script.md	engine/script/task_pool.h:225
+script::TaskPoolConfig	struct	script	script-taskpoolconfig	script.md	engine/script/task_pool.h:232
+script::TaskPoolConfig::backend	variable	script	script-taskpoolconfig-backend	script.md	engine/script/task_pool.h:235
+script::TaskPoolConfig::bindings	variable	script	script-taskpoolconfig-bindings	script.md	engine/script/task_pool.h:237
+script::TaskPoolConfig::states	variable	script	script-taskpoolconfig-states	script.md	engine/script/task_pool.h:239
+script::TaskPoolConfig::state_memory	variable	script	script-taskpoolconfig-state-memory	script.md	engine/script/task_pool.h:241
+script::TaskPoolConfig::budget	variable	script	script-taskpoolconfig-budget	script.md	engine/script/task_pool.h:243
+script::TaskPoolConfig::host_source	variable	script	script-taskpoolconfig-host-source	script.md	engine/script/task_pool.h:245
+script::LuaTaskHostSource()	function	script	script-luataskhostsource	script.md	engine/script/task_pool.h:254
+script::TaskPool	class	script	script-taskpool	script.md	engine/script/task_pool.h:260
+script::TaskPool::TaskPool(const TaskPoolConfig&)	function	script	script-taskpool-taskpool-const-taskpoolconfig-amp	script.md	engine/script/task_pool.h:264
+script::TaskPool::~TaskPool()	function	script	script-taskpool-tilde-taskpool	script.md	engine/script/task_pool.h:266
+script::TaskPool::TaskPool(const TaskPool&)	function	script	script-taskpool-taskpool-const-taskpool-amp	script.md	engine/script/task_pool.h:267
+script::TaskPool::operator=(const TaskPool&)	function	script	script-taskpool-operator-eq-const-taskpool-amp	script.md	engine/script/task_pool.h:268
+script::TaskPool::Execute(Span<const TaskRequest>,Vector<TaskOutcome>*,jobs::Scheduler*)	function	script	script-taskpool-execute-span-lt-const-taskrequest-gt-vector-lt-taskoutcome-gt-star-jobs-scheduler-star	script.md	engine/script/task_pool.h:281
+script::TaskPool::StateCount() const	function	script	script-taskpool-statecount-const	script.md	engine/script/task_pool.h:286
+script::TaskPool::Resets() const	function	script	script-taskpool-resets-const	script.md	engine/script/task_pool.h:291
 script::kMaxValueDepth	variable	script	script-kmaxvaluedepth	script.md	engine/script/value.h:21
 script::kMaxContainerItems	variable	script	script-kmaxcontaineritems	script.md	engine/script/value.h:23
 script::ValueKind	enum	script	script-valuekind	script.md	engine/script/value.h:28

@@ -17,6 +17,7 @@ struct SettingsAccess;
 struct SceneServices;
 class ComponentCatalog;
 struct EventOutbox;
+struct TaskPartition;
 
 /// What a binding sees of the tick.
 ///
@@ -56,6 +57,10 @@ struct PartitionContext
     ComponentCatalog* components = nullptr;
     /// The partition's outbox of emitted events and subscription changes; null when scripts have no events.
     EventOutbox* events = nullptr;
+    /// Where `task.*` queues requests and reads results; null in a task state.
+    TaskPartition* tasks = nullptr;
+    /// Whether the running call is a task (a pool state): the wall clock and the world are not available.
+    bool in_task = false;
     /// The world's partition count (setting `script.partitions`): `query.each` keeps the entities of this partition.
     u32 partitions = 1;
 };

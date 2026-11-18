@@ -86,6 +86,37 @@ void RegisterScriptSettings(settings::Registry* registry)
     on_error.group = "script";
     registry->Register(on_error);
 
+    settings::SettingDesc task_states = settings::MakeInt("script.task_states", 0, 0, 1024);
+    task_states.env = "ENGINE_SCRIPT_TASK_STATES";
+    task_states.flag = "script-task-states";
+    task_states.label = "Script task states";
+    task_states.description =
+        "how many language states run script tasks (task.run, task.map, task.parallel_for) at once; 0 is one per "
+        "scheduler thread. The results of a task do not depend on this number";
+    task_states.group = "script";
+    task_states.flags = settings::kRestartRequired;
+    registry->Register(task_states);
+
+    settings::SettingDesc task_queue = settings::MakeInt("script.task_queue_limit", 1024, 1, 1000000);
+    task_queue.env = "ENGINE_SCRIPT_TASK_QUEUE_LIMIT";
+    task_queue.flag = "script-task-queue-limit";
+    task_queue.label = "Script task queue limit";
+    task_queue.description =
+        "how many tasks one partition may have queued or finished-but-not-taken; task.run past it returns an error "
+        "value (nil and a message)";
+    task_queue.group = "script";
+    registry->Register(task_queue);
+
+    settings::SettingDesc task_bytes = settings::MakeInt("script.task_arg_bytes", 16777216, 1024, 1073741824LL);
+    task_bytes.env = "ENGINE_SCRIPT_TASK_ARG_BYTES";
+    task_bytes.flag = "script-task-arg-bytes";
+    task_bytes.label = "Script task argument bytes";
+    task_bytes.description =
+        "the most bytes of task source and arguments one partition may queue in a tick; a request past it is refused "
+        "with an error value";
+    task_bytes.group = "script";
+    registry->Register(task_bytes);
+
     settings::SettingDesc conflicts = settings::MakeText("script.conflicts", "last_wins");
     conflicts.env = "ENGINE_SCRIPT_CONFLICTS";
     conflicts.flag = "script-conflicts";
@@ -177,6 +208,24 @@ u32 ScriptEventChainLimit(const settings::Registry& registry)
 {
     const settings::SettingId id = registry.Find(StringView("script.event_chain_limit"));
     return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 8u;
+}
+
+u32 ScriptTaskStates(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.task_states"));
+    return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 0u;
+}
+
+u32 ScriptTaskQueueLimit(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.task_queue_limit"));
+    return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 1024u;
+}
+
+u64 ScriptTaskArgBytes(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.task_arg_bytes"));
+    return id.IsValid() ? static_cast<u64>(settings::Setting<i64>(registry, id).Get()) : u64{16777216};
 }
 
 u32 ScriptPartitions(const settings::Registry& registry)

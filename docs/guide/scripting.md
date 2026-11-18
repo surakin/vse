@@ -395,9 +395,44 @@ behavior('lamp', {
   `in_quad`, `out_quad`, `in_out_quad`; one call per tick, the last exactly `to`) are built on `spawn` and return its handle.
 - **Limits.** One partition keeps at most `ScriptRuntimeConfig::coroutine_limit` waiting coroutines (65,536; a call that would suspend past it fails with "too many waiting coroutines" and the instance
   is disabled by `script.on_error`). A coroutine that never waits runs against the instruction budget like any call. A handler that waits delays the instance's other handlers for that event until it
-  finishes. Not built: `wait_all`, `wait_any` (use `spawn` and events), the timeout of `wait_event`, and `wait_task` (Day 461).
+  finishes. Not built: `wait_all`, `wait_any` (use `spawn` and events), and the timeout of `wait_event`. `wait_task` is in the next section.
 - **Cost** (Linux x86-64, plain build): 100,000 entities each holding one waiting coroutine take about 160 ms a tick to run, nearly all of it the 100,000 `on_update` dispatches; the waits add the scan
   of the wait list. About 2.7 KB of script state per such entity (instance table, coroutine and bookkeeping).
 
 The test `latent_test.cpp` checks timed and frame waits, `wait_event`, `after`, `every`, `stop` and `tween`, destroy, disable, the cap, the instruction budget of a coroutine that never waits, and equal
 state at 1, 2, 7 and 16 threads.
+
+## Script tasks
+
+A script can start parallel work of its own: pathfinding, generation, anything that only computes. A task is a function given as **source text** (a Lua closure cannot cross into another state; passing one is an
+error that says so), run on a **task state**: a pooled language state that has only the `pure` bindings (math, `random`, `log`, `num`, `vec3`, the string, table and bit libraries). It has no world, no
+events, no settings, no clock (`time.real` is refused), and none of `task.*` or `wait`.
+
+```lua
+local h = task.run('return args.a + args.b', { a = 1, b = 2 })          -- the body of function(args)
+local sum = wait_task(h)                                                 -- 3, one tick later
+
+local doubled = wait_task(task.map('return item * 2 + index', array, 256))   -- function(item, index), in index order
+local parts = wait_task(task.parallel_for(1000000, 'local s = 0 for i = first, last do s = s + i end return s', nil, 4096))
+-- function(first, last, args) once per chunk of indices (counted from 1, both included); one result per chunk
+```
+
+- **Calls.** `task.run(source, args, seed)`, `task.map(source, array, chunk, seed)` and `task.parallel_for(count, source, args, chunk, seed)` return a handle, or `nil` and a message when the request is
+  refused (queue full, arguments too large, a bad chunk size). `wait_task(handle)` returns `result, nil` or `nil, message`; `task.result(handle)` does the same without waiting and answers `nil, 'pending'`
+  in the tick the task was asked for. A result is **taken once** (the second take says "no such task") and only by the instance that asked.
+- **When it runs.** The tasks asked for in a tick run at the end of that tick (after the merge), on the job scheduler, and a waiting coroutine resumes at the start of the next tick, in `(entity id,
+  creation order)`. A long task therefore lengthens its tick; split big work into chunks, which run on every state at once. The results are the same for any thread count and any number of states.
+- **Chunks.** `map` and `parallel_for` cut the work into chunks of `chunk` elements (default 256, never derived from the thread count) and run them on the pool's states; the answer is assembled in index
+  order. A `map` array holds at most 65,536 elements (a value container's limit), and a call makes at most 65,536 chunks, so a million-index loop uses `parallel_for` with a chunk of 4,096 or more and
+  reduces the per-chunk results itself. A failing chunk fails the whole task: the message names the first failing chunk (`chunk starting at index 5: ...`). A `map` function may not return `nil`.
+- **Determinism.** A task's result depends only on its source, its arguments and its seed. Before each task, and before each element of a `map`, `math.random` is seeded again from the seed (plus the
+  index); the `random` table in a task (`random.float`, `random.int`) is built on it. Whatever a task does to the globals (adds, removes or replaces one) is put back when it ends, so a task leaves
+  nothing for the next one on the same state. Do not change the standard libraries' contents: they are read-only views.
+- **Limits** (settings): `script.task_states` (0: one per scheduler thread), `script.task_queue_limit` (1,024 tasks a partition may have queued or finished and not taken), `script.task_arg_bytes` (16 MiB of
+  source and arguments a partition may queue in a tick). The budget of a chunk is `ScriptRuntimeConfig::task_budget` (500 million instructions); a chunk that exceeds it fails like any call. A task state
+  that runs out of memory is replaced. A task whose owner is destroyed is dropped (queued, running or finished), and a result never reaches a destroyed owner.
+- **Not built:** a task that spans several ticks (it holds the tick it runs in), cancelling a queued task by handle, tasks started from native code (the pool is `script::TaskPool`, used by the runtime),
+  and minted script assets as task functions (Days 462 and 463 add the asset kind; today the function is source text, cached by a hash of it).
+
+The test `task_test.cpp` checks `run`, `map`, a million-index `parallel_for` against its known sum, errors as values, the globals and the world being out of reach, a closure refused, random numbers that depend
+only on the seed, the queue and size limits, taking a result once and only by its owner, dropping with the owner, and equal results at 1, 2, 7 and 16 threads with 1, 3 and 16 states.

@@ -22,6 +22,7 @@ set(SCRIPT_TEST_SOURCES
   parallel_script_test.cpp  # Day 458
   event_test.cpp  # Day 459
   latent_test.cpp  # Day 460
+  task_test.cpp  # Day 461
 )
 
 find_package(Threads REQUIRED)

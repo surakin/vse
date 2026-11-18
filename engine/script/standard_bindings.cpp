@@ -4,6 +4,7 @@
 #include "script/entity_bindings.h"
 #include "script/event_bindings.h"
 #include "script/settings_bindings.h"
+#include "script/task_bindings.h"
 
 namespace engine_placeholder::script
 {
@@ -322,6 +323,7 @@ bool RegisterStandardBindings(BindingRegistry* registry)
     ok &= RegisterEntityBindings(registry);
     ok &= RegisterComponentBindings(registry);
     ok &= RegisterEventBindings(registry);
+    ok &= RegisterTaskBindings(registry);
     return ok;
 }
 

@@ -97,6 +97,14 @@ struct ScriptRuntimeStats
     u64 waits_resumed = 0;
     /// Coroutines waiting now (after the last phase).
     u64 coroutines_waiting = 0;
+    /// Tasks scripts started that ran (Day 461).
+    u64 tasks_run = 0;
+    /// Tasks that failed (a failing task is an error value for its owner, not a script error).
+    u64 tasks_failed = 0;
+    /// Chunks the task pool ran (a `Run` is one chunk).
+    u64 task_chunks = 0;
+    /// Finished tasks whose owners have not taken the result yet.
+    u64 tasks_held = 0;
 };
 
 /// What a script runtime is made of.
@@ -128,6 +136,18 @@ struct ScriptRuntimeConfig
     ConflictPolicy conflicts = ConflictPolicy::LastWins;
     /// The limits of every callback call.
     Budget budget = DefaultBudget();
+    /// The states of the task pool (setting `script.task_states`); 0 is one per scheduler participant at the first
+    /// tick that runs a task.
+    u32 task_states = 0;
+    /// The most queued and finished-but-not-taken tasks one partition may hold (setting `script.task_queue_limit`);
+    /// `task.run` past it returns an error value.
+    u32 task_queue_limit = 1024;
+    /// The most bytes of task source and arguments one partition may queue in a tick (setting `script.task_arg_bytes`).
+    u64 task_arg_bytes = 16777216;
+    /// The limits of one task chunk's call.
+    Budget task_budget = TaskDefaultBudget();
+    /// The memory cap of one task state; 0 is the backend's default.
+    u64 task_state_memory = 0;
     /// The components scripts can name; may be null (then `component.*` fails).
     ComponentCatalog* components = nullptr;
     /// The scene's names and prefabs; may be null.
@@ -138,6 +158,13 @@ struct ScriptRuntimeConfig
     /// empty uses the LuaJIT host of [[script::LuaBehaviorHostSource]].
     StringView host_source;
 
+    /// The default budget of a task chunk: five hundred million instructions.
+    static Budget TaskDefaultBudget()
+    {
+        Budget b;
+        b.instructions = 500000000;
+        return b;
+    }
     /// The default budget of a callback: ten million instructions.
     static Budget DefaultBudget()
     {

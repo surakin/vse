@@ -133,6 +133,11 @@ i64 TimeTick()
 Value TimeReal()
 {
     const PartitionContext* context = CurrentPartitionContext();
+    if (context != nullptr && context->in_task)
+    {
+        RaiseScriptError("the wall clock is not available in a task: its result must depend only on its arguments");
+        return Value();
+    }
     if (context != nullptr && context->replay_recording)
     {
         // Refused: a wall-clock reading would make the recorded run unrepeatable.

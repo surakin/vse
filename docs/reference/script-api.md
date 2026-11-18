@@ -456,6 +456,24 @@ Thread rule: **world-write**. Id: `0xe6360fe2`.
 
 Sets a setting at the sync point, if the script's policy allows the key (by default only `game.*`) and the registry accepts the value (type, range, enum name); otherwise an error and nothing is stored. Reads in the same tick still see the old value.
 
+## task
+
+### `task.enqueue`
+
+`(i64 mode, StringView source, Value data, i64 seed, i64 count, i64 chunk) -> Value`
+
+Thread rule: **world-write**. Id: `0x465eb5e8`.
+
+Queues a task (the host behind `task.run`, `task.map` and `task.parallel_for`); returns its handle, or text saying why it was refused. It runs at the end of the tick.
+
+### `task.take`
+
+`(i64 handle) -> Value`
+
+Thread rule: **world-write**. Id: `0xafa7bb2d`.
+
+Takes a finished task's result (the host behind `task.result`): returns `{ status, value }`.
+
 ## time
 
 ### `time.dt`

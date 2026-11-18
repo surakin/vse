@@ -167,7 +167,7 @@ end
 
 -- Latent helpers. The waits are the backend's (they suspend the callback; the engine resumes it in a later tick); the
 -- host wraps them so that `stop` can end a spawned task the next time it wakes.
-local native_wait, native_wait_frames, native_wait_event = wait, wait_frames, wait_event
+local native_wait, native_wait_frames, native_wait_event, native_wait_task = wait, wait_frames, wait_event, wait_task
 local next_task = 0
 local CANCELLED = {}
 
@@ -194,6 +194,51 @@ end
 
 function wait_event(name)
   return waiting(native_wait_event, name)
+end
+
+function wait_task(handle)
+  return waiting(native_wait_task, handle)
+end
+
+-- Tasks: parallel work on the task pool (docs/guide/scripting.md, "Script tasks"). The binding table is read-only, so
+-- the host publishes its own `task` table that falls back to it.
+local native_task = task
+local task = setmetatable({}, { __index = native_task })
+_G.task = task
+
+local function enqueue(mode, source, data, seed, count, chunk)
+  if type(source) ~= 'string' then
+    error('task: the function must be given as source text; a Lua closure cannot cross into a task state', 3)
+  end
+  local r = native_task.enqueue(mode, source, data, seed or 0, count or 0, chunk or 0)
+  if type(r) == 'string' then
+    return nil, r
+  end
+  return r
+end
+
+function task.run(source, args, seed)
+  return enqueue(1, source, args, seed)
+end
+
+function task.map(source, array, chunk, seed)
+  return enqueue(2, source, array, seed, 0, chunk)
+end
+
+function task.parallel_for(count, source, args, chunk, seed)
+  return enqueue(3, source, args, seed, count, chunk)
+end
+
+function task.result(handle)
+  local pair = native_task.take(handle)
+  local status, value = pair[1], pair[2]
+  if status == 1 then
+    return value
+  end
+  if status == 2 then
+    return nil, value
+  end
+  return nil, status == 0 and 'pending' or (status == 4 and 'that task belongs to another script' or 'no such task')
 end
 
 local function hook_spawn(serial)
@@ -241,7 +286,7 @@ end
 -- Cancels a spawned coroutine: it ends the next time it would have continued from a wait.
 function stop(handle)
   local t = tasks[handle]
-  if t ~= nil then
+  if t ~= nil and current ~= nil and t.owner == instances[current].entity then
     t.cancelled = true
     return true
   end
