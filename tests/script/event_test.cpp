@@ -336,3 +336,11 @@ TEST_CASE("Events: the throughput of emit and delivery (printed, not asserted)",
     const f64 delivered = static_cast<f64>(rig.runtime->Stats().events_delivered);
     os::Print("events: %.0f handler calls per second (100 subscribers, 10,000 events a tick)\n", delivered / seconds);
 }
+
+TEST_CASE("Events: a map's keys count toward the payload weight", "[script][event]")
+{
+    Value m = Value::MakeMap();
+    const Value plain = Value::FromInt(1);
+    REQUIRE(m.Set("a_key_that_is_longer_than_sixteen_bytes_for_sure", Value::FromInt(1)));
+    CHECK(EventPayloadWeight(m) >= EventPayloadWeight(plain) + 1 + 2);
+}

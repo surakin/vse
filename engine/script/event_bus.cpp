@@ -13,10 +13,15 @@ u64 EventPayloadWeight(const Value& payload)
     case ValueKind::Text: weight += payload.Text().Length() / 16; break;
     case ValueKind::Bytes: weight += payload.Bytes().Size() / 16; break;
     case ValueKind::Array:
-    case ValueKind::Map:
         for (usize i = 0; i < payload.Size(); ++i)
         {
             weight += EventPayloadWeight(payload.At(i));  // the depth of a value is bounded by kMaxValueDepth
+        }
+        break;
+    case ValueKind::Map:
+        for (usize i = 0; i < payload.Size(); ++i)
+        {
+            weight += 1 + payload.KeyAt(i).Length() / 16 + EventPayloadWeight(payload.At(i));
         }
         break;
     default: break;

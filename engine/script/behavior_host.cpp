@@ -174,8 +174,10 @@ local CANCELLED = {}
 -- A wait remembers the task that called it and, when the engine resumes it, restores that and honors a `stop`.
 local function waiting(native, ...)
   local mine = running_task
+  local serial = current
   local a, b = native(...)
   running_task = mine
+  current = serial  -- other instances ran while this coroutine waited
   if mine ~= nil and mine.cancelled then
     error(CANCELLED, 0)
   end

@@ -79,6 +79,15 @@ behavior('napper', {
 behavior('spinner', {
   on_create = function(self) while true do end end,
 })
+behavior('late_spawner', {
+  on_create = function(self)
+    wait(0.15)
+    spawn(function(me) put(me, 'S') end)
+  end,
+})
+behavior('plain_trace', {
+  on_update = function(self) end,
+})
 behavior('forge_victim', {
   on_create = function(self)
     forge_victim = self.entity
@@ -235,6 +244,17 @@ TEST_CASE("Latent waits: another script cannot start someone else's spawned coro
     rig.Tick(12);
     CHECK(rig.Text(owner).View() == StringView("T"));
     CHECK(rig.Text(victim).View() == StringView(""));
+    CHECK(rig.runtime->Stats().errors == 0);
+}
+
+TEST_CASE("Latent waits: a coroutine that resumes after other instances ran still acts as itself", "[script][latent]")
+{
+    LatentRig rig(1);
+    const ecs::Entity a = rig.Make("late_spawner");
+    const ecs::Entity b = rig.Make("plain_trace");
+    rig.Tick(8);
+    CHECK(rig.Text(a).View() == StringView("S"));
+    CHECK(rig.Text(b).View() == StringView(""));
     CHECK(rig.runtime->Stats().errors == 0);
 }
 
