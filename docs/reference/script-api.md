@@ -296,6 +296,192 @@ Thread rule: **pure**. Id: `0x5dbb00f1`.
 
 Returns the square root of `x`, or 0 for a negative `x`.
 
+## physics
+
+### `physics.add_force`
+
+`(Entity e, Vec3 force) -> void`
+
+Thread rule: **world-write**. Id: `0xc77f2a93`.
+
+Adds a force in newtons at the body's centre of mass, kept until the next physics step takes it. Forces from every script add up. The body must be dynamic.
+
+### `physics.add_force_at`
+
+`(Entity e, Vec3 force, Vec3 point) -> void`
+
+Thread rule: **world-write**. Id: `0x6ac86cf1`.
+
+Adds a force at a world point (it also turns the body).
+
+### `physics.add_impulse`
+
+`(Entity e, Vec3 impulse) -> void`
+
+Thread rule: **world-write**. Id: `0x95982013`.
+
+Changes the body's velocity at once by impulse / mass (newton seconds) at the centre of mass; the body must be dynamic.
+
+### `physics.add_impulse_at`
+
+`(Entity e, Vec3 impulse, Vec3 point) -> void`
+
+Thread rule: **world-write**. Id: `0xd0c0d971`.
+
+An impulse at a world point (it also turns the body).
+
+### `physics.add_joint`
+
+`(Entity owner, Value joint) -> void`
+
+Thread rule: **world-write**. Id: `0x1e1a3c0c`.
+
+Puts a joint component on `owner` (any entity): {type="ball"|"distance"|"fixed"|"hinge", a=, b=, point_a=, point_b=, axis=, min_length=, max_length=, hertz=, damping_ratio=, break_force=, break_torque=, collide_connected=, enable_limit=, lower_angle=, upper_angle=, enable_motor=, motor_speed=, max_motor_torque=}. `a` and `b` are entities with bodies (nil is the world, not both).
+
+### `physics.add_torque`
+
+`(Entity e, Vec3 torque) -> void`
+
+Thread rule: **world-write**. Id: `0xc920b1ce`.
+
+Adds a torque, kept until the next physics step takes it.
+
+### `physics.closest_point`
+
+`(Vec3 point, f32 max_distance, Value layers) -> Value`
+
+Thread rule: **world-read**. Id: `0xe6ade196`.
+
+Returns nil or {entity=, point=, normal=, distance=}: the nearest point on a collider's surface within `max_distance`.
+
+### `physics.get_angular_velocity`
+
+`(Entity e) -> Value`
+
+Thread rule: **world-read**. Id: `0x66d4a421`.
+
+Returns the body's angular velocity after the last step.
+
+### `physics.get_velocity`
+
+`(Entity e) -> Value`
+
+Thread rule: **world-read**. Id: `0x2051683a`.
+
+Returns the body's linear velocity after the last physics step.
+
+### `physics.is_sleeping`
+
+`(Entity e) -> bool`
+
+Thread rule: **world-read**. Id: `0xb7ee3f8c`.
+
+Returns whether the body is asleep.
+
+### `physics.layer`
+
+`(StringView name) -> i64`
+
+Thread rule: **world-read**. Id: `0xbe1065d1`.
+
+Returns the number of the physics layer called `name` (for the `layer` field of a collider).
+
+### `physics.layer_mask`
+
+`(Value layers) -> i64`
+
+Thread rule: **world-read**. Id: `0xd068b772`.
+
+Returns the bit mask of layer names: nil is all layers, a name is one, an array is several (for the `group` and `mask` fields of a collider).
+
+### `physics.overlap_box`
+
+`(Vec3 center, Vec3 half_extents, Quaternion rotation, Value layers) -> Value`
+
+Thread rule: **world-read**. Id: `0x79559151`.
+
+Returns an array of the entities whose colliders touch the box.
+
+### `physics.overlap_sphere`
+
+`(Vec3 center, f32 radius, Value layers) -> Value`
+
+Thread rule: **world-read**. Id: `0x1f2847ed`.
+
+Returns an array of the entities whose colliders touch the sphere.
+
+### `physics.raycast`
+
+`(Vec3 origin, Vec3 direction, f32 max_distance, Value layers) -> Value`
+
+Thread rule: **world-read**. Id: `0xbc09f06f`.
+
+Casts a ray against the physics world as of the tick start; `layers` is nil (all), a layer name or an array of names. Returns nil, or {entity=, point=, normal=, distance=} of the nearest hit.
+
+### `physics.raycast_ex`
+
+`(Vec3 origin, Vec3 direction, f32 max_distance, Value layers, Value ignore) -> Value`
+
+Thread rule: **world-read**. Id: `0x9bf57875`.
+
+As raycast, skipping the colliders of the entity `ignore` (or nil).
+
+### `physics.remove_joint`
+
+`(Entity owner) -> void`
+
+Thread rule: **world-write**. Id: `0x63aca073`.
+
+Takes the joint component off `owner`; the physics joint goes at the next sync.
+
+### `physics.set_angular_velocity`
+
+`(Entity e, Vec3 velocity) -> void`
+
+Thread rule: **world-write**. Id: `0x513024bd`.
+
+Sets the angular velocity (radians per second).
+
+### `physics.set_gravity_scale`
+
+`(Entity e, f32 scale) -> void`
+
+Thread rule: **world-write**. Id: `0xecaf10e8`.
+
+Sets how much gravity pulls the body (0 floats it).
+
+### `physics.set_velocity`
+
+`(Entity e, Vec3 velocity) -> void`
+
+Thread rule: **world-write**. Id: `0xa98319de`.
+
+Sets the linear velocity (metres per second) of a dynamic or kinematic body.
+
+### `physics.shape_cast`
+
+`(Value shape, Vec3 position, Quaternion rotation, Vec3 direction, f32 distance, Value layers) -> Value`
+
+Thread rule: **world-read**. Id: `0x60d451a1`.
+
+Sweeps {kind="sphere", radius=} / {kind="box", half_extents=} / {kind="capsule", half_height=, radius=} along a direction; returns nil or the first hit, `distance` being how far the shape moved.
+
+### `physics.sleep`
+
+`(Entity e) -> void`
+
+Thread rule: **world-write**. Id: `0x230ad967`.
+
+Puts a dynamic body and its island to sleep until something wakes them.
+
+### `physics.wake`
+
+`(Entity e) -> void`
+
+Thread rule: **world-write**. Id: `0x4675ce04`.
+
+Wakes the body and every body of its island.
+
 ## quat
 
 ### `quat.conjugate`

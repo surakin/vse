@@ -732,9 +732,11 @@ bool BuildRecord(const RegisteredComponent& rc, ByteSpan old_record, const Value
     return true;
 }
 
-// Whether a record decodes into a real component (enum ranges, UTF-8, ...): the check that the merge would pass.
-bool Decodes(const RegisteredComponent& rc, ByteSpan record)
+// Whether a record decodes into a real component (enum ranges, UTF-8, ...): the check that the merge would pass; then
+// the component's own validator (a target above `script` registers one), whose reason goes to `*why`.
+bool Decodes(const PartitionContext& context, const RegisteredComponent& rc, ByteSpan record, const char** why)
 {
+    *why = nullptr;
     if (rc.IsTag())
     {
         return record.Size() == 0;
@@ -745,7 +747,16 @@ bool Decodes(const RegisteredComponent& rc, ByteSpan record)
         return false;
     }
     bytes::ByteReader in(record);
-    return rc.Decode(in, scratch.Memory(), storage::CodecLimits()).Ok() && in.Remaining() == 0;
+    if (!rc.Decode(in, scratch.Memory(), storage::CodecLimits()).Ok() || in.Remaining() != 0)
+    {
+        return false;
+    }
+    const ComponentValidator validator = context.components->ValidatorFor(rc.Id());
+    if (validator != nullptr)
+    {
+        *why = validator(scratch.Memory());
+    }
+    return *why == nullptr;
 }
 
 // ------------------------------------------------------------------ reading what the script sees
@@ -922,9 +933,17 @@ void WriteComponent(PartitionContext* context, ecs::Entity e, const RegisteredCo
         return;
     }
     const ByteSpan record = out.Bytes();
-    if (!Decodes(rc, record))
+    const char* why = nullptr;
+    if (!Decodes(*context, rc, record, &why))
     {
-        Raise("the values given for `", StringView(rc.Name()), "` are not valid for it");
+        if (why != nullptr)
+        {
+            Raise("the values given for `", StringView(rc.Name()), "` are not valid: ", StringView(why));
+        }
+        else
+        {
+            Raise("the values given for `", StringView(rc.Name()), "` are not valid for it");
+        }
         return;
     }
     if (!RecordCommand(context, kind, e, rc.Id(), reinterpret_cast<const u8*>(record.Data()), record.Size()))

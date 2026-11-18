@@ -19,7 +19,10 @@
 namespace engine_placeholder::script
 {
 
-namespace
+// The runtime's own types are in a named namespace, not an anonymous one: `ScriptRuntime::Impl` (a class with external
+// linkage) holds them, and GCC refuses a field of internal linkage there (`-Wsubobject-linkage`, an error in a unity
+// build).
+namespace runtime_detail
 {
 
 /// One behavior instance: what the runtime knows about it outside the language state.
@@ -217,7 +220,9 @@ void UnsubscribeAll(Vector<Group>* groups, u64 key)
     }
 }
 
-}  // namespace
+}  // namespace runtime_detail
+
+using namespace runtime_detail;
 
 struct ScriptRuntime::Impl
 {
@@ -1084,6 +1089,10 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     context.components = config.components;
     context.scene = config.scene;
     context.partitions = config.partitions;
+    for (usize i = 0; i < kMaxServiceExtensions; ++i)
+    {
+        context.extensions[i] = services.extensions[i];
+    }
     context.log = &data.log;
     context.events = &data.outbox;
     data.task_view.outbox = &data.task_outbox;
@@ -1369,6 +1378,11 @@ EventBus& ScriptRuntime::Events()
 MergeServices& ScriptRuntime::Services()
 {
     return impl_->services;
+}
+
+CommandKindTable& ScriptRuntime::Kinds()
+{
+    return impl_->kinds;
 }
 
 const Vector<ScriptErrorRecord>& ScriptRuntime::RecentErrors() const

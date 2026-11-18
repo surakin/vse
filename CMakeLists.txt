@@ -473,7 +473,9 @@ add_subdirectory(engine/asset)  # Phase 22 Day 313
 add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
 add_subdirectory(engine/animation)  # Phase 22 Day 321
 add_subdirectory(engine/script)  # Phase 27 Day 446: the script module (the backend interface and the value type; Linux so far)
+add_subdirectory(engine/script_physics)  # Phase 27 Day 466: the physics bindings (layer 14, above script and physics; Linux so far)
 add_subdirectory(tests/script)  # Phase 27 Day 445: the script tests (the LuaJIT smoke test; the module from Day 446)
+add_subdirectory(tests/script_physics)  # Phase 27 Day 466: the physics bindings tests
 add_subdirectory(engine/engine_c)  # Phase 23: the aggregate shared library (ENGINE_BUILD_SHARED) and, from Day 346, the C API
 add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
 add_subdirectory(tools/resource_server)  # Phase 22 Day 331

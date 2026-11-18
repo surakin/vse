@@ -5,6 +5,7 @@
 #include "ecs/entity.h"
 #include "ecs/world.h"
 #include "script/component_catalog.h"
+#include "script/service_slots.h"
 #include "settings/settings.h"
 #include "string_view.h"
 #include "types.h"
@@ -37,6 +38,10 @@ struct MergeServices
     const PrefabSource* prefabs = nullptr;
     /// The components `component.set/add/remove` change by stored id.
     const ComponentCatalog* components = nullptr;
+    /// What a target above `script` keeps here (see [[script::ServiceSlot]]): its commands read it at the merge and
+    /// the runtime hands the same pointers to every partition's bindings. The merge may change what a slot points to;
+    /// while the script phase runs it is only read (the scripts run against the tick-start state).
+    void* extensions[kMaxServiceExtensions] = {};
 };
 
 }  // namespace engine_placeholder::script

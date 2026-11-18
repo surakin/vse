@@ -51,6 +51,12 @@ module script "Scripting"
   strict ownership
   strict failure
 
+module script_physics "Script physics bindings"
+  header engine/script_physics/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module platform/os "Platform: OS Services"
   header engine/foundation/os/os.h
   header engine/foundation/os/command_line.h

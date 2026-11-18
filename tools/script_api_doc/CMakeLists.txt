@@ -2,7 +2,7 @@
 # is not what the registry renders, and the `docs` target rewrites it. Never linked into the engine.
 add_executable(script_api_doc main.cpp)
 target_compile_options(script_api_doc PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-target_link_libraries(script_api_doc PRIVATE script foundation)
+target_link_libraries(script_api_doc PRIVATE script_physics script foundation)
 add_test(NAME docs_script_api COMMAND script_api_doc --check WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 set_tests_properties(docs_script_api PROPERTIES LABELS "docs" TIMEOUT 300)
 engine_label_tests(docs_script_api)

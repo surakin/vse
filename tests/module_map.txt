@@ -32,6 +32,7 @@ engine/physics      3,25   # the C API will drive it (Days 408-409)
 engine/audio        3,26
 engine/audio_physics 26
 engine/script        27
+engine/script_physics 27
 engine/scene        3,5,17,18
 engine/text         3,5,14,15
 engine/ui           3,5,15
@@ -118,6 +119,7 @@ tests/physics       25
 tests/audio         26
 tests/audio_physics 26
 tests/script 27
+tests/script_physics 27
 tests/text          14
 tests/ui            15
 tests/foundation_sanitized 0

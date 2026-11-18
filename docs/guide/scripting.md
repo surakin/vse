@@ -482,3 +482,39 @@ The debugger talks through a `DebugTransport`: commands come in as `Value` maps,
 **The profiler.** `script.profile` (off by default; `ScriptRuntime::SetProfiling(on)` changes it at run time) times every Lua function call and return in the hook, so it slows scripts down: look for a slow script, then turn it off. `ProfileReport(&entries, top)` adds up the partitions that are not held, one entry per function (chunk, name, line, calls, nanoseconds including what it called), longest first; a call that did not return normally (an error, a yield) adds its count and no time.
 
 The tests `script_debug_test.cpp` check the error text and the repeat counts, the event, the console (partition, scratch, queued), the profiler's counts, the transport queue, a breakpoint with stack, locals and step over and out, a bad command and `detach`, and the policy on eight threads: a held world does not move while a partition is stopped, an unheld one does, and 48 instances stopping and stepping in 16 partitions finish without a deadlock (also under asan and tsan).
+
+## Physics
+
+Day 466 (`script_physics/physics_bindings.h`, `script_physics/physics_layers.h`): scripts drive and question the physics world. The bindings are the separate target `script_physics` (layer 14, above `script` and `physics`), so `script` still never includes `physics`. A host wires it in five steps:
+
+```cpp
+script_physics::RegisterPhysicsScriptSettings(&settings_registry);  // script.physics_layers (the layer names)
+script_physics::RegisterPhysicsComponents(&registry);           // rigid_body, velocity, collider in the storage registry
+script_physics::RegisterPhysicsValidators(&catalog);            // their Validate() functions run at component.set/add
+script_physics::RegisterPhysicsBindings(&bindings);             // the physics.* functions, before the runtime is made
+script_physics::RegisterPhysicsCommandKinds(&runtime.Kinds());  // kinds 100 to 109, before the first tick
+script_physics::PhysicsScriptServices services{&physics_world, &layers};
+runtime.Services().extensions[script::kServicePhysics] = &services;
+```
+
+`script` offers only opaque pieces for this: the service slots (`MergeServices::extensions`, copied into `PartitionContext::extensions`) and `ScriptRuntime::Kinds()`.
+
+**Components.** `component.add/set/get(e, "rigid_body" | "velocity" | "collider", {...})` work like any component, with fields `type` (0 static, 1 kinematic, 2 dynamic), `flags`, `mass`, `linear_damping`, `angular_damping`, `gravity_scale`; `linear`, `angular`; and for a collider `shape` (0 sphere, 1 box, 2 capsule, 3 hull, 4 mesh, 5 compound), `radius`, `half_height`, `half_extents`, `hull`, `mesh`, `compound`, `offset`, `rotation`, `friction`, `restitution`, `density`, `friction_rule`, `restitution_rule`, `layer`, `trigger`, `group`, `mask`. The physics module's own `Validate()` runs on the new values before the command is recorded, so `{mass = -1}` or `{layer = 40}` is an error at the call, with the physics reason. `physics::SyncBodies` makes the body at the next sync.
+
+**Writes** are `world-write` commands applied in the merge, through the body's `BodyLink`: `physics.add_force(e, v)`, `add_force_at(e, v, point)`, `add_impulse`, `add_impulse_at`, `add_torque` (they add up, in the merge order, so forces from every partition sum to the same bits at any thread count), `set_velocity`, `set_angular_velocity` (they overwrite, and count as writes for the conflict policy), `set_gravity_scale` (changes the `rigid_body` component, which the sync follows), `wake`, `sleep` (a body and its island), `add_joint(owner, {type = "ball" | "distance" | "fixed" | "hinge", a = e, b = e, ...})` and `remove_joint(owner)` (put a `physics::Joint` on any entity, or take it off; `physics::SyncJoints` makes or destroys the physics joint). A kinematic body is moved the usual way: `transform.set_position(e, p)`, and `physics::DriveKinematicBodies` turns the change into a velocity so the body carries what stands on it. `set_gravity_scale` changes the component at the merge, so a `component.get(e, "rigid_body")` in the same tick still shows the old scale (the write is not part of the script's own-entity view; `component.set` is). A call that cannot work is an error where it is made: a non-finite number, a force on a body that is not dynamic, an entity with no body yet (a body exists after the next sync, so a script that creates a body asks for forces in a later tick).
+
+**Reads** are `world-read` against the physics world as of the tick start: `get_velocity`, `get_angular_velocity`, `is_sleeping`, `raycast(origin, direction, max, layers)` (nil, or `{entity=, point=, normal=, distance=}`), `raycast_ex(..., ignore)`, `shape_cast(shape, position, rotation, direction, distance, layers)` with `shape = {kind = "sphere", radius = r}`, `{kind = "box", half_extents = v}` or `{kind = "capsule", half_height = h, radius = r}`, `overlap_sphere(center, radius, layers)` and `overlap_box(center, half_extents, rotation, layers)` (arrays of entities, each once), and `closest_point(point, max, layers)`. The physics world is not stepping while scripts run and the queries only read it, so every partition can query at once.
+
+**Layers by name.** `layers` is nil (every layer), a layer name or an array of names. The names are the setting `script.physics_layers` (`default,world,player,enemy`: a name's position is its layer number, 0 to 31; the default is `default`). `physics.layer("enemy")` gives the number for a collider's `layer` field and `physics.layer_mask({"world", "enemy"})` the bits for its `group` and `mask`; an unknown name is an error.
+
+**The frame order** is fixed, and a script sees the last step's results:
+
+1. the script phase: scripts read the world and the physics world as of the tick start and record commands;
+2. the merge applies the commands in the fixed order (forces, impulses and velocities into the physics world; gravity scale and joints into the components);
+3. `physics::SyncBodies` and `physics::SyncJoints`;
+4. `physics::DriveKinematicBodies`;
+5. the physics step, the write-back of the transforms, transform propagation, the render sync.
+
+The test `script_physics_test.cpp` runs this order and checks that an observer script reads velocity `N - 1` in tick `N` while an impulse recorded in tick `N` is in the body when the step runs; it also checks that 256 scripts pushing one body from 64 partitions leave the same physics state hash at 1, 2, 3, 7 and 16 threads, and that 300 scripts raycasting and overlapping from 16 threads at once agree (under tsan too).
+
+Not here yet: contact and trigger events and the character controller are Day 467.

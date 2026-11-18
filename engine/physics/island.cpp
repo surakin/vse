@@ -136,6 +136,44 @@ BodyStatus PhysicsWorld::Wake(BodyId id)
     return BodyStatus::Ok;
 }
 
+BodyStatus PhysicsWorld::Sleep(BodyId id)
+{
+    Body* body = Find(id);
+    if (body == nullptr)
+    {
+        return BodyStatus::StaleId;
+    }
+    if (body->settings.type != BodyType::Dynamic)
+    {
+        return BodyStatus::WrongType;
+    }
+    const auto put_to_sleep = [](Body* b)
+    {
+        b->sleeping = true;
+        b->linear_velocity = Vec3(0.0f, 0.0f, 0.0f);
+        b->angular_velocity = Vec3(0.0f, 0.0f, 0.0f);
+        b->previous_position = b->position;
+        b->previous_orientation = b->orientation;
+    };
+    if (body->island == 0)
+    {
+        put_to_sleep(body);
+        return BodyStatus::Ok;
+    }
+    const u32 island = body->island;
+    const u32 slots = bodies_.Slots();
+    for (u32 slot = 0; slot < slots; ++slot)
+    {
+        Body* other = bodies_.Find(slot, bodies_.LiveGeneration(slot));
+        if (other != nullptr && !other->sleeping && other->settings.type == BodyType::Dynamic &&
+            other->island == island)
+        {
+            put_to_sleep(other);
+        }
+    }
+    return BodyStatus::Ok;
+}
+
 void PhysicsWorld::UpdateSleep(const Vector<u32>& edges, f32 dt)
 {
     const u32 slots = bodies_.Slots();

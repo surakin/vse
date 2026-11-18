@@ -2017,18 +2017,21 @@ script::kMaxScriptComponents	variable	script	script-kmaxscriptcomponents	script.
 script::kMaxScriptComponentFields	variable	script	script-kmaxscriptcomponentfields	script.md	engine/script/component_catalog.h:26
 script::kMaxScriptComponentBytes	variable	script	script-kmaxscriptcomponentbytes	script.md	engine/script/component_catalog.h:30
 script::kFirstScriptWritableComponentId	variable	script	script-kfirstscriptwritablecomponentid	script.md	engine/script/component_catalog.h:35
-script::ComponentCatalog	class	script	script-componentcatalog	script.md	engine/script/component_catalog.h:43
-script::ComponentCatalog::ComponentCatalog(storage::ComponentRegistry*)	function	script	script-componentcatalog-componentcatalog-storage-componentregistry-star	script.md	engine/script/component_catalog.h:50
-script::ComponentCatalog::~ComponentCatalog()	function	script	script-componentcatalog-tilde-componentcatalog	script.md	engine/script/component_catalog.h:52
-script::ComponentCatalog::ComponentCatalog(const ComponentCatalog&)	function	script	script-componentcatalog-componentcatalog-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:53
-script::ComponentCatalog::operator=(const ComponentCatalog&)	function	script	script-componentcatalog-operator-eq-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:54
-script::ComponentCatalog::FindByName(StringView) const	function	script	script-componentcatalog-findbyname-stringview-const	script.md	engine/script/component_catalog.h:60
-script::ComponentCatalog::FindById(u32) const	function	script	script-componentcatalog-findbyid-u32-const	script.md	engine/script/component_catalog.h:65
-script::ComponentCatalog::FindByEcsId(ecs::ComponentId) const	function	script	script-componentcatalog-findbyecsid-ecs-componentid-const	script.md	engine/script/component_catalog.h:70
-script::ComponentCatalog::Define(StringView,const Value&,String<HeapAllocator>*)	function	script	script-componentcatalog-define-stringview-const-value-amp-string-lt-heapallocator-gt-star	script.md	engine/script/component_catalog.h:85
-script::ComponentCatalog::Freeze()	function	script	script-componentcatalog-freeze	script.md	engine/script/component_catalog.h:90
-script::ComponentCatalog::IsFrozen() const	function	script	script-componentcatalog-isfrozen-const	script.md	engine/script/component_catalog.h:98
-script::ComponentCatalog::DefinedCount() const	function	script	script-componentcatalog-definedcount-const	script.md	engine/script/component_catalog.h:102
+script::ComponentValidator	alias	script	script-componentvalidator	script.md	engine/script/component_catalog.h:44
+script::ComponentCatalog	class	script	script-componentcatalog	script.md	engine/script/component_catalog.h:52
+script::ComponentCatalog::ComponentCatalog(storage::ComponentRegistry*)	function	script	script-componentcatalog-componentcatalog-storage-componentregistry-star	script.md	engine/script/component_catalog.h:59
+script::ComponentCatalog::~ComponentCatalog()	function	script	script-componentcatalog-tilde-componentcatalog	script.md	engine/script/component_catalog.h:61
+script::ComponentCatalog::ComponentCatalog(const ComponentCatalog&)	function	script	script-componentcatalog-componentcatalog-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:62
+script::ComponentCatalog::operator=(const ComponentCatalog&)	function	script	script-componentcatalog-operator-eq-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:63
+script::ComponentCatalog::FindByName(StringView) const	function	script	script-componentcatalog-findbyname-stringview-const	script.md	engine/script/component_catalog.h:69
+script::ComponentCatalog::FindById(u32) const	function	script	script-componentcatalog-findbyid-u32-const	script.md	engine/script/component_catalog.h:74
+script::ComponentCatalog::FindByEcsId(ecs::ComponentId) const	function	script	script-componentcatalog-findbyecsid-ecs-componentid-const	script.md	engine/script/component_catalog.h:79
+script::ComponentCatalog::Define(StringView,const Value&,String<HeapAllocator>*)	function	script	script-componentcatalog-define-stringview-const-value-amp-string-lt-heapallocator-gt-star	script.md	engine/script/component_catalog.h:94
+script::ComponentCatalog::SetValidator(u32,ComponentValidator)	function	script	script-componentcatalog-setvalidator-u32-componentvalidator	script.md	engine/script/component_catalog.h:103
+script::ComponentCatalog::ValidatorFor(u32) const	function	script	script-componentcatalog-validatorfor-u32-const	script.md	engine/script/component_catalog.h:108
+script::ComponentCatalog::Freeze()	function	script	script-componentcatalog-freeze	script.md	engine/script/component_catalog.h:113
+script::ComponentCatalog::IsFrozen() const	function	script	script-componentcatalog-isfrozen-const	script.md	engine/script/component_catalog.h:121
+script::ComponentCatalog::DefinedCount() const	function	script	script-componentcatalog-definedcount-const	script.md	engine/script/component_catalog.h:125
 script::EntityCommandKind	enum	script	script-entitycommandkind	script.md	engine/script/entity_bindings.h:16
 script::kCommandSetPosition	enumerator	script	script-kcommandsetposition	script.md	engine/script/entity_bindings.h:19
 script::kCommandSetRotation	enumerator	script	script-kcommandsetrotation	script.md	engine/script/entity_bindings.h:21
@@ -2128,48 +2131,50 @@ script::MergeReport::unknown	variable	script	script-mergereport-unknown	script.m
 script::MergeReport::conflicts	variable	script	script-mergereport-conflicts	script.md	engine/script/merge.h:164
 script::MergeReport::refused	variable	script	script-mergereport-refused	script.md	engine/script/merge.h:166
 script::Merge(ecs::World*,Span<CommandBuffer* const>,const CommandKindTable&,ConflictPolicy,void*)	function	script	script-merge-ecs-world-star-span-lt-commandbuffer-star-const-gt-const-commandkindtable-amp-conflictpolicy-void-star	script.md	engine/script/merge.h:183
-script::PrefabSource	struct	script	script-prefabsource	script.md	engine/script/merge_services.h:19
-script::PrefabSource::spawn	variable	script	script-prefabsource-spawn	script.md	engine/script/merge_services.h:23
-script::PrefabSource::user	variable	script	script-prefabsource-user	script.md	engine/script/merge_services.h:25
-script::MergeServices	struct	script	script-mergeservices	script.md	engine/script/merge_services.h:32
-script::MergeServices::settings	variable	script	script-mergeservices-settings	script.md	engine/script/merge_services.h:35
-script::MergeServices::prefabs	variable	script	script-mergeservices-prefabs	script.md	engine/script/merge_services.h:37
-script::MergeServices::components	variable	script	script-mergeservices-components	script.md	engine/script/merge_services.h:39
-script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:26
-script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:29
-script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:31
-script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:33
-script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:35
-script::PartitionContext::world_seed	variable	script	script-partitioncontext-world-seed	script.md	engine/script/partition_context.h:37
-script::PartitionContext::tick	variable	script	script-partitioncontext-tick	script.md	engine/script/partition_context.h:39
-script::PartitionContext::dt	variable	script	script-partitioncontext-dt	script.md	engine/script/partition_context.h:41
-script::PartitionContext::sim_time	variable	script	script-partitioncontext-sim-time	script.md	engine/script/partition_context.h:43
-script::PartitionContext::frame	variable	script	script-partitioncontext-frame	script.md	engine/script/partition_context.h:45
-script::PartitionContext::replay_recording	variable	script	script-partitioncontext-replay-recording	script.md	engine/script/partition_context.h:47
-script::PartitionContext::random_state	variable	script	script-partitioncontext-random-state	script.md	engine/script/partition_context.h:49
-script::PartitionContext::log	variable	script	script-partitioncontext-log	script.md	engine/script/partition_context.h:51
-script::PartitionContext::settings	variable	script	script-partitioncontext-settings	script.md	engine/script/partition_context.h:53
-script::PartitionContext::scene	variable	script	script-partitioncontext-scene	script.md	engine/script/partition_context.h:55
-script::PartitionContext::components	variable	script	script-partitioncontext-components	script.md	engine/script/partition_context.h:57
-script::PartitionContext::events	variable	script	script-partitioncontext-events	script.md	engine/script/partition_context.h:59
-script::PartitionContext::tasks	variable	script	script-partitioncontext-tasks	script.md	engine/script/partition_context.h:61
-script::PartitionContext::in_task	variable	script	script-partitioncontext-in-task	script.md	engine/script/partition_context.h:63
-script::PartitionContext::partitions	variable	script	script-partitioncontext-partitions	script.md	engine/script/partition_context.h:65
-script::RandomSeedFor(u32,u64,u64)	function	script	script-randomseedfor-u32-u64-u64	script.md	engine/script/partition_context.h:74
-script::AdvanceRandom(u64*)	function	script	script-advancerandom-u64-star	script.md	engine/script/partition_context.h:82
-script::SeedPartitionRandom(PartitionContext*)	function	script	script-seedpartitionrandom-partitioncontext-star	script.md	engine/script/partition_context.h:91
-script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:97
-script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:103
-script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:105
-script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:106
-script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:107
-script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:119
-script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:127
-script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:135
-script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:141
-script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:143
-script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:144
-script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:145
+script::PrefabSource	struct	script	script-prefabsource	script.md	engine/script/merge_services.h:20
+script::PrefabSource::spawn	variable	script	script-prefabsource-spawn	script.md	engine/script/merge_services.h:24
+script::PrefabSource::user	variable	script	script-prefabsource-user	script.md	engine/script/merge_services.h:26
+script::MergeServices	struct	script	script-mergeservices	script.md	engine/script/merge_services.h:33
+script::MergeServices::settings	variable	script	script-mergeservices-settings	script.md	engine/script/merge_services.h:36
+script::MergeServices::prefabs	variable	script	script-mergeservices-prefabs	script.md	engine/script/merge_services.h:38
+script::MergeServices::components	variable	script	script-mergeservices-components	script.md	engine/script/merge_services.h:40
+script::MergeServices::extensions	variable	script	script-mergeservices-extensions	script.md	engine/script/merge_services.h:44
+script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:27
+script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:30
+script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:32
+script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:34
+script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:36
+script::PartitionContext::world_seed	variable	script	script-partitioncontext-world-seed	script.md	engine/script/partition_context.h:38
+script::PartitionContext::tick	variable	script	script-partitioncontext-tick	script.md	engine/script/partition_context.h:40
+script::PartitionContext::dt	variable	script	script-partitioncontext-dt	script.md	engine/script/partition_context.h:42
+script::PartitionContext::sim_time	variable	script	script-partitioncontext-sim-time	script.md	engine/script/partition_context.h:44
+script::PartitionContext::frame	variable	script	script-partitioncontext-frame	script.md	engine/script/partition_context.h:46
+script::PartitionContext::replay_recording	variable	script	script-partitioncontext-replay-recording	script.md	engine/script/partition_context.h:48
+script::PartitionContext::random_state	variable	script	script-partitioncontext-random-state	script.md	engine/script/partition_context.h:50
+script::PartitionContext::log	variable	script	script-partitioncontext-log	script.md	engine/script/partition_context.h:52
+script::PartitionContext::settings	variable	script	script-partitioncontext-settings	script.md	engine/script/partition_context.h:54
+script::PartitionContext::scene	variable	script	script-partitioncontext-scene	script.md	engine/script/partition_context.h:56
+script::PartitionContext::components	variable	script	script-partitioncontext-components	script.md	engine/script/partition_context.h:58
+script::PartitionContext::events	variable	script	script-partitioncontext-events	script.md	engine/script/partition_context.h:60
+script::PartitionContext::tasks	variable	script	script-partitioncontext-tasks	script.md	engine/script/partition_context.h:62
+script::PartitionContext::in_task	variable	script	script-partitioncontext-in-task	script.md	engine/script/partition_context.h:64
+script::PartitionContext::partitions	variable	script	script-partitioncontext-partitions	script.md	engine/script/partition_context.h:66
+script::PartitionContext::extensions	variable	script	script-partitioncontext-extensions	script.md	engine/script/partition_context.h:69
+script::RandomSeedFor(u32,u64,u64)	function	script	script-randomseedfor-u32-u64-u64	script.md	engine/script/partition_context.h:78
+script::AdvanceRandom(u64*)	function	script	script-advancerandom-u64-star	script.md	engine/script/partition_context.h:86
+script::SeedPartitionRandom(PartitionContext*)	function	script	script-seedpartitionrandom-partitioncontext-star	script.md	engine/script/partition_context.h:95
+script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:101
+script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:107
+script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:109
+script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:110
+script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:111
+script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:123
+script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:131
+script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:139
+script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:145
+script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:147
+script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:148
+script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:149
 script::ScriptAssets	class	script	script-scriptassets	script.md	engine/script/script_assets.h:28
 script::ScriptAssets::ScriptAssets(ScriptWorld*,asset::ResourceManager*)	function	script	script-scriptassets-scriptassets-scriptworld-star-asset-resourcemanager-star	script.md	engine/script/script_assets.h:34
 script::ScriptAssets::Add(asset::ResourceId,asset::LoadFailure*)	function	script	script-scriptassets-add-asset-resourceid-asset-loadfailure-star	script.md	engine/script/script_assets.h:45
@@ -2310,16 +2315,17 @@ script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	sc
 script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:283
 script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:287
 script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:291
-script::ScriptRuntime::RecentErrors() const	function	script	script-scriptruntime-recenterrors-const	script.md	engine/script/script_runtime.h:297
-script::ScriptRuntime::AttachDebugger(DebugTransport*)	function	script	script-scriptruntime-attachdebugger-debugtransport-star	script.md	engine/script/script_runtime.h:307
-script::ScriptRuntime::DetachDebugger()	function	script	script-scriptruntime-detachdebugger	script.md	engine/script/script_runtime.h:312
-script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script	script-scriptruntime-consolerun-u32-stringview-consoleresult-star	script.md	engine/script/script_runtime.h:325
-script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:334
-script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:343
-script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:349
-script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:358
-script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:370
-script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:383
+script::ScriptRuntime::Kinds()	function	script	script-scriptruntime-kinds	script.md	engine/script/script_runtime.h:296
+script::ScriptRuntime::RecentErrors() const	function	script	script-scriptruntime-recenterrors-const	script.md	engine/script/script_runtime.h:302
+script::ScriptRuntime::AttachDebugger(DebugTransport*)	function	script	script-scriptruntime-attachdebugger-debugtransport-star	script.md	engine/script/script_runtime.h:312
+script::ScriptRuntime::DetachDebugger()	function	script	script-scriptruntime-detachdebugger	script.md	engine/script/script_runtime.h:317
+script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script	script-scriptruntime-consolerun-u32-stringview-consoleresult-star	script.md	engine/script/script_runtime.h:330
+script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:339
+script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:348
+script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:354
+script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:363
+script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:375
+script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:388
 script::OnScriptError	enum	script	script-onscripterror	script.md	engine/script/script_settings.h:16
 script::OnScriptError::Disable	enumerator	script	script-onscripterror-disable	script.md	engine/script/script_settings.h:19
 script::OnScriptError::Retry	enumerator	script	script-onscripterror-retry	script.md	engine/script/script_settings.h:21
@@ -2407,6 +2413,9 @@ script::ScriptWorld::Debugger() const	function	script	script-scriptworld-debugge
 script::ScriptWorld::SetProfiling(bool)	function	script	script-scriptworld-setprofiling-bool	script.md	engine/script/script_world.h:348
 script::ScriptWorld::Profiling() const	function	script	script-scriptworld-profiling-const	script.md	engine/script/script_world.h:353
 script::ScriptWorld::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptworld-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_world.h:363
+script::kMaxServiceExtensions	variable	script	script-kmaxserviceextensions	script.md	engine/script/service_slots.h:13
+script::ServiceSlot	enum	script	script-serviceslot	script.md	engine/script/service_slots.h:18
+script::kServicePhysics	enumerator	script	script-kservicephysics	script.md	engine/script/service_slots.h:20
 script::kCommandSettingsSet	variable	script	script-kcommandsettingsset	script.md	engine/script/settings_bindings.h:23
 script::kMaxSettingsSubscriptionsPerEntity	variable	script	script-kmaxsettingssubscriptionsperentity	script.md	engine/script/settings_bindings.h:26
 script::kMaxSettingsSubscriptions	variable	script	script-kmaxsettingssubscriptions	script.md	engine/script/settings_bindings.h:28
@@ -2593,6 +2602,37 @@ script::Value::Depth() const	function	script	script-value-depth-const	script.md	
 script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:245
 script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:250
 script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:253
+script_physics::PhysicsCommandKind	enum	script_physics	script-physics-physicscommandkind	script_physics.md	engine/script_physics/physics_bindings.h:36
+script_physics::kCommandPhysicsForce	enumerator	script_physics	script-physics-kcommandphysicsforce	script_physics.md	engine/script_physics/physics_bindings.h:38
+script_physics::kCommandPhysicsImpulse	enumerator	script_physics	script-physics-kcommandphysicsimpulse	script_physics.md	engine/script_physics/physics_bindings.h:39
+script_physics::kCommandPhysicsTorque	enumerator	script_physics	script-physics-kcommandphysicstorque	script_physics.md	engine/script_physics/physics_bindings.h:40
+script_physics::kCommandPhysicsSetLinear	enumerator	script_physics	script-physics-kcommandphysicssetlinear	script_physics.md	engine/script_physics/physics_bindings.h:41
+script_physics::kCommandPhysicsSetAngular	enumerator	script_physics	script-physics-kcommandphysicssetangular	script_physics.md	engine/script_physics/physics_bindings.h:42
+script_physics::kCommandPhysicsGravityScale	enumerator	script_physics	script-physics-kcommandphysicsgravityscale	script_physics.md	engine/script_physics/physics_bindings.h:43
+script_physics::kCommandPhysicsWake	enumerator	script_physics	script-physics-kcommandphysicswake	script_physics.md	engine/script_physics/physics_bindings.h:44
+script_physics::kCommandPhysicsSleep	enumerator	script_physics	script-physics-kcommandphysicssleep	script_physics.md	engine/script_physics/physics_bindings.h:45
+script_physics::kCommandPhysicsAddJoint	enumerator	script_physics	script-physics-kcommandphysicsaddjoint	script_physics.md	engine/script_physics/physics_bindings.h:46
+script_physics::kCommandPhysicsRemoveJoint	enumerator	script_physics	script-physics-kcommandphysicsremovejoint	script_physics.md	engine/script_physics/physics_bindings.h:47
+script_physics::PhysicsComponentId	enum	script_physics	script-physics-physicscomponentid	script_physics.md	engine/script_physics/physics_bindings.h:53
+script_physics::kRigidBodyId	enumerator	script_physics	script-physics-krigidbodyid	script_physics.md	engine/script_physics/physics_bindings.h:55
+script_physics::kVelocityId	enumerator	script_physics	script-physics-kvelocityid	script_physics.md	engine/script_physics/physics_bindings.h:56
+script_physics::kColliderId	enumerator	script_physics	script-physics-kcolliderid	script_physics.md	engine/script_physics/physics_bindings.h:57
+script_physics::PhysicsScriptServices	struct	script_physics	script-physics-physicsscriptservices	script_physics.md	engine/script_physics/physics_bindings.h:65
+script_physics::PhysicsScriptServices::world	variable	script_physics	script-physics-physicsscriptservices-world	script_physics.md	engine/script_physics/physics_bindings.h:68
+script_physics::PhysicsScriptServices::layers	variable	script_physics	script-physics-physicsscriptservices-layers	script_physics.md	engine/script_physics/physics_bindings.h:70
+script_physics::RegisterPhysicsComponents(storage::ComponentRegistry*)	function	script_physics	script-physics-registerphysicscomponents-storage-componentregistry-star	script_physics.md	engine/script_physics/physics_bindings.h:82
+script_physics::RegisterPhysicsValidators(script::ComponentCatalog*)	function	script_physics	script-physics-registerphysicsvalidators-script-componentcatalog-star	script_physics.md	engine/script_physics/physics_bindings.h:90
+script_physics::RegisterPhysicsCommandKinds(script::CommandKindTable*)	function	script_physics	script-physics-registerphysicscommandkinds-script-commandkindtable-star	script_physics.md	engine/script_physics/physics_bindings.h:98
+script_physics::RegisterPhysicsBindings(script::BindingRegistry*)	function	script_physics	script-physics-registerphysicsbindings-script-bindingregistry-star	script_physics.md	engine/script_physics/physics_bindings.h:110
+script_physics::kMaxPhysicsLayers	variable	script_physics	script-physics-kmaxphysicslayers	script_physics.md	engine/script_physics/physics_layers.h:18
+script_physics::PhysicsLayers	class	script_physics	script-physics-physicslayers	script_physics.md	engine/script_physics/physics_layers.h:24
+script_physics::PhysicsLayers::Parse(StringView,String<HeapAllocator>*)	function	script_physics	script-physics-physicslayers-parse-stringview-string-lt-heapallocator-gt-star	script_physics.md	engine/script_physics/physics_layers.h:35
+script_physics::PhysicsLayers::Count() const	function	script_physics	script-physics-physicslayers-count-const	script_physics.md	engine/script_physics/physics_layers.h:40
+script_physics::PhysicsLayers::NameOf(usize) const	function	script_physics	script-physics-physicslayers-nameof-usize-const	script_physics.md	engine/script_physics/physics_layers.h:45
+script_physics::PhysicsLayers::Find(StringView,u32*) const	function	script_physics	script-physics-physicslayers-find-stringview-u32-star-const	script_physics.md	engine/script_physics/physics_layers.h:54
+script_physics::PhysicsLayers::MaskOf(const script::Value&,u32*,String<HeapAllocator>*) const	function	script_physics	script-physics-physicslayers-maskof-const-script-value-amp-u32-star-string-lt-heapallocator-gt-star-const	script_physics.md	engine/script_physics/physics_layers.h:65
+script_physics::RegisterPhysicsScriptSettings(settings::Registry*)	function	script_physics	script-physics-registerphysicsscriptsettings-settings-registry-star	script_physics.md	engine/script_physics/physics_layers.h:76
+script_physics::PhysicsLayersFromSettings(const settings::Registry&,PhysicsLayers*)	function	script_physics	script-physics-physicslayersfromsettings-const-settings-registry-amp-physicslayers-star	script_physics.md	engine/script_physics/physics_layers.h:85
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:24
 os::CommandLineOption	struct	platform/os	os-commandlineoption	platform-os.md	engine/foundation/os/command_line.h:38
 os::CommandLineOption::name	variable	platform/os	os-commandlineoption-name	platform-os.md	engine/foundation/os/command_line.h:41
@@ -5269,20 +5309,21 @@ physics::PhysicsWorld::SetScheduler(jobs::Scheduler*)	function	physics	physics-p
 physics::PhysicsWorld::IsSleeping(BodyId) const	function	physics	physics-physicsworld-issleeping-bodyid-const	physics.md	engine/physics/world.h:647
 physics::PhysicsWorld::IslandOf(BodyId,u32*) const	function	physics	physics-physicsworld-islandof-bodyid-u32-star-const	physics.md	engine/physics/world.h:661
 physics::PhysicsWorld::Wake(BodyId)	function	physics	physics-physicsworld-wake-bodyid	physics.md	engine/physics/world.h:667
-physics::PhysicsWorld::GetStepStats() const	function	physics	physics-physicsworld-getstepstats-const	physics.md	engine/physics/world.h:673
-physics::PhysicsWorld::Snapshot(bytes::ByteWriter*) const	function	physics	physics-physicsworld-snapshot-bytes-bytewriter-star-const	physics.md	engine/physics/world.h:685
-physics::PhysicsWorld::Restore(ByteSpan)	function	physics	physics-physicsworld-restore-bytespan	physics.md	engine/physics/world.h:699
-physics::PhysicsWorld::AllStats() const	function	physics	physics-physicsworld-allstats-const	physics.md	engine/physics/world.h:705
-physics::PhysicsWorld::Events() const	function	physics	physics-physicsworld-events-const	physics.md	engine/physics/world.h:714
-physics::PhysicsWorld::ClearEvents()	function	physics	physics-physicsworld-clearevents	physics.md	engine/physics/world.h:720
-physics::PhysicsWorld::Contacts() const	function	physics	physics-physicsworld-contacts-const	physics.md	engine/physics/world.h:728
-physics::PhysicsWorld::StateHash(bool*) const	function	physics	physics-physicsworld-statehash-bool-star-const	physics.md	engine/physics/world.h:740
-physics::PhysicsWorld::Hulls()	function	physics	physics-physicsworld-hulls	physics.md	engine/physics/world.h:748
-physics::PhysicsWorld::Meshes()	function	physics	physics-physicsworld-meshes	physics.md	engine/physics/world.h:756
-physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-meshes-const	physics.md	engine/physics/world.h:763
-physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:771
-physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:778
-physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:785
+physics::PhysicsWorld::Sleep(BodyId)	function	physics	physics-physicsworld-sleep-bodyid	physics.md	engine/physics/world.h:676
+physics::PhysicsWorld::GetStepStats() const	function	physics	physics-physicsworld-getstepstats-const	physics.md	engine/physics/world.h:682
+physics::PhysicsWorld::Snapshot(bytes::ByteWriter*) const	function	physics	physics-physicsworld-snapshot-bytes-bytewriter-star-const	physics.md	engine/physics/world.h:694
+physics::PhysicsWorld::Restore(ByteSpan)	function	physics	physics-physicsworld-restore-bytespan	physics.md	engine/physics/world.h:708
+physics::PhysicsWorld::AllStats() const	function	physics	physics-physicsworld-allstats-const	physics.md	engine/physics/world.h:714
+physics::PhysicsWorld::Events() const	function	physics	physics-physicsworld-events-const	physics.md	engine/physics/world.h:723
+physics::PhysicsWorld::ClearEvents()	function	physics	physics-physicsworld-clearevents	physics.md	engine/physics/world.h:729
+physics::PhysicsWorld::Contacts() const	function	physics	physics-physicsworld-contacts-const	physics.md	engine/physics/world.h:737
+physics::PhysicsWorld::StateHash(bool*) const	function	physics	physics-physicsworld-statehash-bool-star-const	physics.md	engine/physics/world.h:749
+physics::PhysicsWorld::Hulls()	function	physics	physics-physicsworld-hulls	physics.md	engine/physics/world.h:757
+physics::PhysicsWorld::Meshes()	function	physics	physics-physicsworld-meshes	physics.md	engine/physics/world.h:765
+physics::PhysicsWorld::Meshes() const	function	physics	physics-physicsworld-meshes-const	physics.md	engine/physics/world.h:772
+physics::PhysicsWorld::Compounds()	function	physics	physics-physicsworld-compounds	physics.md	engine/physics/world.h:780
+physics::PhysicsWorld::Compounds() const	function	physics	physics-physicsworld-compounds-const	physics.md	engine/physics/world.h:787
+physics::PhysicsWorld::Hulls() const	function	physics	physics-physicsworld-hulls-const	physics.md	engine/physics/world.h:794
 audio::MakeClipFromAsset(const asset::AudioClipView&,StringView,AudioClipPtr*)	function	audio	audio-makeclipfromasset-const-asset-audioclipview-amp-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:25
 audio::LoadAudioClip(asset::ResourceManager&,asset::ResourceId,StringView,AudioClipPtr*)	function	audio	audio-loadaudioclip-asset-resourcemanager-amp-asset-resourceid-stringview-audioclipptr-star	audio.md	engine/audio/asset_clip.h:39
 audio::ResamplerQuality	enum	audio	audio-resamplerquality	audio.md	engine/audio/audio_settings.h:12

@@ -8,6 +8,7 @@
 #include "script/bindings.h"
 #include "script/command_buffer.h"
 #include "script/log_buffer.h"
+#include "script/service_slots.h"
 #include "types.h"
 
 namespace engine_placeholder::script
@@ -63,6 +64,9 @@ struct PartitionContext
     bool in_task = false;
     /// The world's partition count (setting `script.partitions`): `query.each` keeps the entities of this partition.
     u32 partitions = 1;
+    /// The objects a target above `script` hangs here (see [[script::ServiceSlot]]), read-only during the script
+    /// phase; copied from [[script::MergeServices::extensions]].
+    const void* extensions[kMaxServiceExtensions] = {};
 };
 
 /// The first state of an entity's random stream this tick: a fixed 64-bit mix of the world seed, the entity's stable id

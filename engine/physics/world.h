@@ -666,6 +666,15 @@ public:
     /// - Fails: as the return says.
     BodyStatus Wake(BodyId id);
 
+    /// Puts a dynamic body to sleep, and every body of its island: their velocities are zeroed and nothing moves them
+    /// until something wakes them (a force, an impulse, a body that touches them moving, `Wake`). A body that has not
+    /// been stepped yet has no island and sleeps alone. A body that is not dynamic is left as it is.
+    ///
+    /// - Param id: the body.
+    /// - Returns: `Ok`, `StaleId`, or `WrongType` for a static or kinematic body.
+    /// - Fails: as the return says.
+    BodyStatus Sleep(BodyId id);
+
     /// Returns what stepping did.
     ///
     /// - Returns: the counters.

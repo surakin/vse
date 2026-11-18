@@ -10,6 +10,7 @@
 #include "os/command_line.h"
 #include "os/console.h"
 #include "script/bindings.h"
+#include "script_physics/physics_bindings.h"
 
 using namespace engine_placeholder;
 
@@ -46,6 +47,11 @@ int main(int argc, char** argv)
     if (!script::RegisterStandardBindings(&registry))
     {
         os::PrintError("script_api_doc: the standard bindings do not register\n");
+        return 2;
+    }
+    if (!script_physics::RegisterPhysicsBindings(&registry))
+    {
+        os::PrintError("script_api_doc: the physics bindings do not register\n");
         return 2;
     }
     const String<HeapAllocator> page = registry.RenderMarkdown();

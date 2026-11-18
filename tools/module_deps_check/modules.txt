@@ -180,6 +180,8 @@ module engine/animation/ animation 13
 allow animation asset
 # 13 script (Phase 27 Day 446): the language-neutral backend interface and the value type; the foundation and ecs below it (jobs, settings and asset from the days that use them); the LuaJIT backend is engine/script/luajit/ (Day 448); no renderer, RHI, physics, audio or platform header (their bindings are separate targets)
 module engine/script/ script 13
+# 14 script_physics (Phase 27 Day 466): the physics bindings, commands and components of the script module; above script and physics, the one place that names both
+module engine/script_physics/ script_physics 14
 allow script asset   # Phase 27 Day 463: scripts are minted assets, loaded through the resource manager (script_assets.h); the one same-layer edge of the spec
 module engine/engine_c/ engine_c 14
 module include/engine/ engine_c 14
@@ -212,7 +214,7 @@ module tools/docgen/ tools/docgen 14
 module tools/shader_mint/ tools/shader_mint 14
 module tools/net_probe/ tools/net_probe 14
 module tools/audio_probe/ tools/audio_probe 14
-module tools/script_api_doc/ tools/script_api_doc 14
+module tools/script_api_doc/ tools/script_api_doc 15
 module tools/asset_mint/ tools/asset_mint 14
 # 14 resource_server (Phase 22 Day 331): serves a directory or a pak over TCP with asset::ResourceServer; a tool, above asset and net
 module tools/resource_server/ tools/resource_server 14
@@ -298,6 +300,9 @@ target audio_physics audio_physics
 target script script
 target script_asan script
 target script_tsan script
+target script_physics script_physics
+target script_physics_asan script_physics
+target script_physics_tsan script_physics
 target database database
 target storage storage
 target net net

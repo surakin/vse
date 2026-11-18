@@ -351,6 +351,45 @@ const storage::RegisteredComponent* ComponentCatalog::FindByEcsId(ecs::Component
     return registry_->FindByEcsId(id);
 }
 
+void ComponentCatalog::SetValidator(u32 stored_id, ComponentValidator validator)
+{
+    LockGuard<Mutex> guard(lock_);
+    if (IsFrozen())
+    {
+        return;
+    }
+    for (usize i = 0; i < validators_.Size(); ++i)
+    {
+        if (validators_[i].stored_id == stored_id)
+        {
+            validators_[i].validator = validator;
+            return;
+        }
+    }
+    validators_.Push(Check{stored_id, validator});
+}
+
+ComponentValidator ComponentCatalog::ValidatorFor(u32 stored_id) const
+{
+    const auto find = [&]()
+    {
+        for (usize i = 0; i < validators_.Size(); ++i)
+        {
+            if (validators_[i].stored_id == stored_id)
+            {
+                return validators_[i].validator;
+            }
+        }
+        return ComponentValidator(nullptr);
+    };
+    if (IsFrozen())
+    {
+        return find();
+    }
+    LockGuard<Mutex> guard(lock_);
+    return find();
+}
+
 usize ComponentCatalog::DefinedCount() const
 {
     LockGuard<Mutex> guard(lock_);

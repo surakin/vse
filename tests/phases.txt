@@ -372,6 +372,7 @@ tests/spatial/                                  18   # Phase 18 Day 238
 tests/physics/                                  25   # Phase 25 Day 386
 tests/audio/                                    26   # Phase 26 Day 415
 tests/script/                                   27   # Phase 27 Day 445
+tests/script_physics/                           27   # Phase 27 Day 466
 engine/script/luajit/luajit_smoke_test.cpp      27   # Phase 27 Day 448: the smoke test of the vendored library, beside the backend
 tests/audio_physics/                            26   # Phase 26 Day 431
 test:physics_fp_determinism_probe               25   # the probe hash and the build's floating-point mode, compared with the committed hash (Day 386)

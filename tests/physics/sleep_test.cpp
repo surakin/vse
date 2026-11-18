@@ -402,3 +402,45 @@ TEST_CASE("Sleep: a scene of 10000 bodies mostly asleep steps at a fraction of t
     CHECK(asleep * 2 < awake);
     CHECK(world.GetSolverStats().manifolds == 0);
 }
+
+TEST_CASE("Sleep: puts a body and its island to sleep at once, and wakes like any sleeper", "[physics][sleep]")
+{
+    PhysicsWorld world;
+    StepConfig config;
+    config.gravity = Vec3(0, -9.81f, 0);
+    REQUIRE(world.SetStepConfig(config) == BodyStatus::Ok);
+    SlStatic(world, Vec3(0, -0.5f, 0), Vec3(20, 0.5f, 20));
+    const BodyId lower = SlBox(world, Vec3(0, 0.5f, 0));
+    const BodyId upper = SlBox(world, Vec3(0, 1.5f, 0));
+    const BodyId apart = SlBox(world, Vec3(10, 0.5f, 0));
+    for (u32 i = 0; i < 3; ++i)
+    {
+        world.Step();
+    }
+    REQUIRE_FALSE(world.IsSleeping(lower));
+    REQUIRE(world.Sleep(lower) == BodyStatus::Ok);
+    CHECK(world.IsSleeping(lower));
+    CHECK(world.IsSleeping(upper));  // the island of the stack goes with it
+    CHECK_FALSE(world.IsSleeping(apart));
+    CHECK(world.Find(lower)->linear_velocity.y == 0.0f);
+    // Nothing moves while it sleeps.
+    const Vec3 at = world.Find(upper)->position;
+    world.Step();
+    CHECK(world.Find(upper)->position.y == at.y);
+    // A body that was never stepped has no island and sleeps alone.
+    PhysicsWorld other;
+    const BodyId lone = SlBox(other, Vec3(0, 3, 0));
+    REQUIRE(other.Sleep(lone) == BodyStatus::Ok);
+    CHECK(other.IsSleeping(lone));
+    // An impulse wakes it again.
+    REQUIRE(world.ApplyImpulse(upper, Vec3(0, 1, 0), world.Find(upper)->position) == BodyStatus::Ok);
+    CHECK_FALSE(world.IsSleeping(upper));
+    CHECK_FALSE(world.IsSleeping(lower));
+    // Static, stale and kinematic are refused.
+    BodyDesc kinematic;
+    kinematic.settings.type = BodyType::Kinematic;
+    const BodyId mover = world.CreateBody(kinematic);
+    CHECK(world.Sleep(mover) == BodyStatus::WrongType);
+    CHECK(world.Sleep(BodyId{}) == BodyStatus::StaleId);
+    CHECK_FALSE(world.IsSleeping(apart));
+}

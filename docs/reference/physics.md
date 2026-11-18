@@ -8602,6 +8602,22 @@ Wakes a body and every body of its island; it also restarts the body's rest time
 | Returns | `Ok`, or `StaleId`. |
 | Fails | as the return says. |
 
+### `Sleep(BodyId)` {#physics-physicsworld-sleep-bodyid}
+
+`method physics::PhysicsWorld::Sleep` — defined in `engine/physics/world.h`
+
+```cpp
+BodyStatus Sleep(BodyId id);
+```
+
+Puts a dynamic body to sleep, and every body of its island: their velocities are zeroed and nothing moves them until something wakes them (a force, an impulse, a body that touches them moving, `Wake`). A body that has not been stepped yet has no island and sleeps alone. A body that is not dynamic is left as it is.
+
+| Field | Value |
+|---|---|
+| Parameter `id` | the body. |
+| Returns | `Ok`, `StaleId`, or `WrongType` for a static or kinematic body. |
+| Fails | as the return says. |
+
 ### `GetStepStats()` {#physics-physicsworld-getstepstats-const}
 
 `method physics::PhysicsWorld::GetStepStats` — defined in `engine/physics/world.h`

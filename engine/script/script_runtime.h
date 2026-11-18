@@ -289,6 +289,11 @@ public:
     ///
     /// - Ownership: borrowed.
     MergeServices& Services();
+    /// The command kinds the merge applies: a target above `script` registers its own after construction (the ids
+    /// below 256 that the built-in kinds do not use; see `script_physics`). Register before the first tick.
+    ///
+    /// - Ownership: borrowed.
+    CommandKindTable& Kinds();
 
     /// The errors reported lately, oldest first, at most 64 (the log has them all, the events too). A repeat of the
     /// last error of an instance raises that record's `count`.
