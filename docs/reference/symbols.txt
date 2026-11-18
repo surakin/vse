@@ -1912,12 +1912,85 @@ script::BindingRegistry::FindById(u32) const	function	script	script-bindingregis
 script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:545
 script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:553
 script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:570
+script::kPlaceholdersPerPartition	variable	script	script-kplaceholdersperpartition	script.md	engine/script/command_buffer.h:17
+script::CommandRecord	struct	script	script-commandrecord	script.md	engine/script/command_buffer.h:22
+script::CommandRecord::order_key	variable	script	script-commandrecord-order-key	script.md	engine/script/command_buffer.h:25
+script::CommandRecord::sequence	variable	script	script-commandrecord-sequence	script.md	engine/script/command_buffer.h:27
+script::CommandRecord::kind	variable	script	script-commandrecord-kind	script.md	engine/script/command_buffer.h:29
+script::CommandRecord::target	variable	script	script-commandrecord-target	script.md	engine/script/command_buffer.h:31
+script::CommandRecord::payload_offset	variable	script	script-commandrecord-payload-offset	script.md	engine/script/command_buffer.h:33
+script::CommandRecord::payload_size	variable	script	script-commandrecord-payload-size	script.md	engine/script/command_buffer.h:35
+script::CommandBuffer	class	script	script-commandbuffer	script.md	engine/script/command_buffer.h:47
+script::CommandBuffer::CommandBuffer()	function	script	script-commandbuffer-commandbuffer	script.md	engine/script/command_buffer.h:51
+script::CommandBuffer::Begin(u32)	function	script	script-commandbuffer-begin-u32	script.md	engine/script/command_buffer.h:58
+script::CommandBuffer::Partition() const	function	script	script-commandbuffer-partition-const	script.md	engine/script/command_buffer.h:63
+script::CommandBuffer::Record(u16,u64,ecs::Entity,const void*,u32)	function	script	script-commandbuffer-record-u16-u64-ecs-entity-const-void-star-u32	script.md	engine/script/command_buffer.h:75
+script::CommandBuffer::Record(u16,u64,ecs::Entity,const T&)	function	script	script-commandbuffer-record-u16-u64-ecs-entity-const-t-amp	script.md	engine/script/command_buffer.h:80
+script::CommandBuffer::Reserve()	function	script	script-commandbuffer-reserve	script.md	engine/script/command_buffer.h:94
+script::CommandBuffer::IsReserved(ecs::Entity) const	function	script	script-commandbuffer-isreserved-ecs-entity-const	script.md	engine/script/command_buffer.h:99
+script::CommandBuffer::Size() const	function	script	script-commandbuffer-size-const	script.md	engine/script/command_buffer.h:104
+script::CommandBuffer::Commands() const	function	script	script-commandbuffer-commands-const	script.md	engine/script/command_buffer.h:110
+script::CommandBuffer::PayloadOf(const CommandRecord&) const	function	script	script-commandbuffer-payloadof-const-commandrecord-amp-const	script.md	engine/script/command_buffer.h:116
+script::CommandBuffer::IsSorted() const	function	script	script-commandbuffer-issorted-const	script.md	engine/script/command_buffer.h:124
+script::CommandBuffer::SortIfNeeded()	function	script	script-commandbuffer-sortifneeded	script.md	engine/script/command_buffer.h:129
+script::CommandBuffer::PayloadBytes() const	function	script	script-commandbuffer-payloadbytes-const	script.md	engine/script/command_buffer.h:134
+script::Overlay	class	script	script-overlay	script.md	engine/script/command_buffer.h:151
+script::Overlay::Clear()	function	script	script-overlay-clear	script.md	engine/script/command_buffer.h:157
+script::Overlay::Put(ecs::Entity,u32,Value)	function	script	script-overlay-put-ecs-entity-u32-value	script.md	engine/script/command_buffer.h:163
+script::Overlay::Find(ecs::Entity,u32) const	function	script	script-overlay-find-ecs-entity-u32-const	script.md	engine/script/command_buffer.h:170
+script::Overlay::Size() const	function	script	script-overlay-size-const	script.md	engine/script/command_buffer.h:175
+script::ConflictPolicy	enum	script	script-conflictpolicy	script.md	engine/script/merge.h:19
+script::ConflictPolicy::LastWins	enumerator	script	script-conflictpolicy-lastwins	script.md	engine/script/merge.h:22
+script::ConflictPolicy::Error	enumerator	script	script-conflictpolicy-error	script.md	engine/script/merge.h:24
+script::MergeContext	class	script	script-mergecontext	script.md	engine/script/merge.h:31
+script::MergeContext::MergeContext(ecs::World*,void*)	function	script	script-mergecontext-mergecontext-ecs-world-star-void-star	script.md	engine/script/merge.h:39
+script::MergeContext::World() const	function	script	script-mergecontext-world-const	script.md	engine/script/merge.h:48
+script::MergeContext::User() const	function	script	script-mergecontext-user-const	script.md	engine/script/merge.h:53
+script::MergeContext::Partition() const	function	script	script-mergecontext-partition-const	script.md	engine/script/merge.h:57
+script::MergeContext::Bind(ecs::Entity,ecs::Entity)	function	script	script-mergecontext-bind-ecs-entity-ecs-entity	script.md	engine/script/merge.h:63
+script::MergeContext::Resolve(ecs::Entity) const	function	script	script-mergecontext-resolve-ecs-entity-const	script.md	engine/script/merge.h:69
+script::ApplyFunction	alias	script	script-applyfunction	script.md	engine/script/merge.h:89
+script::CommandKind	struct	script	script-commandkind	script.md	engine/script/merge.h:95
+script::CommandKind::name	variable	script	script-commandkind-name	script.md	engine/script/merge.h:98
+script::CommandKind::apply	variable	script	script-commandkind-apply	script.md	engine/script/merge.h:100
+script::CommandKind::creates	variable	script	script-commandkind-creates	script.md	engine/script/merge.h:102
+script::CommandKind::writes	variable	script	script-commandkind-writes	script.md	engine/script/merge.h:104
+script::CommandKindTable	class	script	script-commandkindtable	script.md	engine/script/merge.h:111
+script::CommandKindTable::kMaxKinds	variable	script	script-commandkindtable-kmaxkinds	script.md	engine/script/merge.h:115
+script::CommandKindTable::Register(u16,const CommandKind&)	function	script	script-commandkindtable-register-u16-const-commandkind-amp	script.md	engine/script/merge.h:123
+script::CommandKindTable::Find(u16) const	function	script	script-commandkindtable-find-u16-const	script.md	engine/script/merge.h:138
+script::MergeReport	struct	script	script-mergereport	script.md	engine/script/merge.h:150
+script::MergeReport::applied	variable	script	script-mergereport-applied	script.md	engine/script/merge.h:153
+script::MergeReport::skipped	variable	script	script-mergereport-skipped	script.md	engine/script/merge.h:155
+script::MergeReport::dangling	variable	script	script-mergereport-dangling	script.md	engine/script/merge.h:157
+script::MergeReport::unknown	variable	script	script-mergereport-unknown	script.md	engine/script/merge.h:159
+script::MergeReport::conflicts	variable	script	script-mergereport-conflicts	script.md	engine/script/merge.h:161
+script::MergeReport::refused	variable	script	script-mergereport-refused	script.md	engine/script/merge.h:163
+script::Merge(ecs::World*,Span<CommandBuffer* const>,const CommandKindTable&,ConflictPolicy,void*)	function	script	script-merge-ecs-world-star-span-lt-commandbuffer-star-const-gt-const-commandkindtable-amp-conflictpolicy-void-star	script.md	engine/script/merge.h:180
+script::PartitionContext	struct	script	script-partitioncontext	script.md	engine/script/partition_context.h:19
+script::PartitionContext::world	variable	script	script-partitioncontext-world	script.md	engine/script/partition_context.h:22
+script::PartitionContext::commands	variable	script	script-partitioncontext-commands	script.md	engine/script/partition_context.h:24
+script::PartitionContext::overlay	variable	script	script-partitioncontext-overlay	script.md	engine/script/partition_context.h:26
+script::PartitionContext::current_entity_key	variable	script	script-partitioncontext-current-entity-key	script.md	engine/script/partition_context.h:28
+script::ScopedPartitionContext	class	script	script-scopedpartitioncontext	script.md	engine/script/partition_context.h:35
+script::ScopedPartitionContext::ScopedPartitionContext(PartitionContext*)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-partitioncontext-star	script.md	engine/script/partition_context.h:41
+script::ScopedPartitionContext::~ScopedPartitionContext()	function	script	script-scopedpartitioncontext-tilde-scopedpartitioncontext	script.md	engine/script/partition_context.h:43
+script::ScopedPartitionContext::ScopedPartitionContext(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-scopedpartitioncontext-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:44
+script::ScopedPartitionContext::operator=(const ScopedPartitionContext&)	function	script	script-scopedpartitioncontext-operator-eq-const-scopedpartitioncontext-amp	script.md	engine/script/partition_context.h:45
+script::CurrentPartitionContext()	function	script	script-currentpartitioncontext	script.md	engine/script/partition_context.h:57
+script::ContextEntityCheck()	function	script	script-contextentitycheck	script.md	engine/script/partition_context.h:65
+script::ReadOnlyPhase	class	script	script-readonlyphase	script.md	engine/script/partition_context.h:73
+script::ReadOnlyPhase::ReadOnlyPhase(ecs::World*)	function	script	script-readonlyphase-readonlyphase-ecs-world-star	script.md	engine/script/partition_context.h:79
+script::ReadOnlyPhase::~ReadOnlyPhase()	function	script	script-readonlyphase-tilde-readonlyphase	script.md	engine/script/partition_context.h:81
+script::ReadOnlyPhase::ReadOnlyPhase(const ReadOnlyPhase&)	function	script	script-readonlyphase-readonlyphase-const-readonlyphase-amp	script.md	engine/script/partition_context.h:82
+script::ReadOnlyPhase::operator=(const ReadOnlyPhase&)	function	script	script-readonlyphase-operator-eq-const-readonlyphase-amp	script.md	engine/script/partition_context.h:83
 script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:24
 script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:34
 script::ScriptBudgeted(const settings::Registry&)	function	script	script-scriptbudgeted-const-settings-registry-amp	script.md	engine/script/script_settings.h:42
 script::ScriptRandomSeed(const settings::Registry&)	function	script	script-scriptrandomseed-const-settings-registry-amp	script.md	engine/script/script_settings.h:49
-script::ScriptPartitions(const settings::Registry&)	function	script	script-scriptpartitions-const-settings-registry-amp	script.md	engine/script/script_settings.h:56
-script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:63
+script::ScriptConflictsAreErrors(const settings::Registry&)	function	script	script-scriptconflictsareerrors-const-settings-registry-amp	script.md	engine/script/script_settings.h:57
+script::ScriptPartitions(const settings::Registry&)	function	script	script-scriptpartitions-const-settings-registry-amp	script.md	engine/script/script_settings.h:64
+script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:71
 script::kMaxPartitions	variable	script	script-kmaxpartitions	script.md	engine/script/script_world.h:22
 script::PartitionOf(u64,u32)	function	script	script-partitionof-u64-u32	script.md	engine/script/script_world.h:34
 script::ScriptWorldConfig	struct	script	script-scriptworldconfig	script.md	engine/script/script_world.h:40

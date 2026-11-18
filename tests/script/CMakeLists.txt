@@ -13,6 +13,7 @@ set(SCRIPT_TEST_SOURCES
   luajit_backend_test.cpp  # Day 448
   bindings_test.cpp  # Day 450
   script_world_test.cpp  # Day 451
+  world_view_test.cpp  # Day 452
 )
 
 find_package(Threads REQUIRED)

@@ -48,6 +48,14 @@ bool ScriptBudgeted(const settings::Registry& registry);
 /// - Fails: never.
 u32 ScriptRandomSeed(const settings::Registry& registry);
 
+/// Reads `script.conflicts`: whether a write conflict between partitions is an error.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting, or any value
+/// other than `error`, gives `false` (last wins).
+/// - Returns: true for `error`.
+/// - Fails: never.
+bool ScriptConflictsAreErrors(const settings::Registry& registry);
+
 /// Reads `script.partitions`: how many partitions a script world has.
 ///
 /// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 64.

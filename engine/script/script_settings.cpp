@@ -55,6 +55,17 @@ void RegisterScriptSettings(settings::Registry* registry)
     memory.group = "script";
     memory.flags = settings::kRestartRequired;
     registry->Register(memory);
+
+    settings::SettingDesc conflicts = settings::MakeText("script.conflicts", "last_wins");
+    conflicts.env = "ENGINE_SCRIPT_CONFLICTS";
+    conflicts.flag = "script-conflicts";
+    conflicts.label = "Script write conflicts";
+    conflicts.description =
+        "what the merge does when two partitions change the same thing of one entity in one tick: last_wins (the higher "
+        "partition's command applies; the default) or error (the later command is refused and counted)";
+    conflicts.group = "script";
+    conflicts.flags = settings::kRestartRequired;
+    registry->Register(conflicts);
 }
 
 String<HeapAllocator> ScriptBackendName(const settings::Registry& registry)
@@ -91,6 +102,21 @@ u32 ScriptRandomSeed(const settings::Registry& registry)
 {
     const settings::SettingId id = registry.Find(StringView("script.random_seed"));
     return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 1u;
+}
+
+bool ScriptConflictsAreErrors(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.conflicts"));
+    if (id.IsValid())
+    {
+        char text[32];
+        const usize length = settings::TextSetting(registry, id).Get(text, sizeof(text));
+        if (length > 0 && length < sizeof(text))
+        {
+            return StringView(text, length) == StringView("error");
+        }
+    }
+    return false;
 }
 
 u32 ScriptPartitions(const settings::Registry& registry)

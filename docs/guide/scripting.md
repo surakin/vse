@@ -160,3 +160,25 @@ load or the order entities were made in. Committed values are in `tests/script/s
 | Entity handles | Index and generation, checked on every call by the state's `EntityCheck`; the check must be safe to call from the job's thread. |
 | A binding that touches an engine singleton | Must be `main-thread-only`, or the singleton needs its own lock; a `Pure` binding touches nothing but its arguments. |
 | The backend | `CreateState` is thread-safe; a state is used by one thread at a time. |
+
+## The world view and the merge
+
+Scripts on many threads read one world and change it through ordered command buffers (design A of the scripting design: no tick-start copy).
+
+- **Reads.** During the script phase the ECS is read-only: `script::ReadOnlyPhase` begins the ECS parallel phase, so a structural call aborts, and every partition reads the live world, which holds
+  the tick-start values. A binding finds the world, the partition's command buffer and the running entity's overlay in `script::PartitionContext`, which the job publishes for its thread with
+  `ScopedPartitionContext` (`CurrentPartitionContext()` is null outside a job).
+- **Writes.** A binding records a command (`CommandBuffer::Record(kind, order_key, target, payload)`; plain bytes, copied into the buffer, storage kept between ticks). The `order_key` is the
+  stable id (`Entity::ToU64`) of the entity whose script runs. A script's own reads after its own writes come from the `Overlay`, which the driver clears before each entity runs.
+- **Spawning.** `CommandBuffer::Reserve()` returns a placeholder entity (`generation` = `kPlaceholderGeneration`, `index` = `partition * 2^22 + n`), so a script can name an entity it spawns
+  before the merge creates it. Placeholders depend only on the partition and the script's own order, not on threads. `ContextEntityCheck()` treats a reserved placeholder as alive.
+- **Order.** `Merge` applies the buffers in partition order and each buffer in `(order_key, sequence)` order, sorting a buffer that is not already in that order, so the result does not depend on
+  the thread count or on the order a partition ran its entities in. A creating kind binds its placeholder to the new entity (`MergeContext::Bind`); a later command naming it is resolved, and
+  one naming a placeholder that was never created is counted as `dangling`.
+- **Conflicts.** Two partitions using a `writes` kind on one entity in one tick conflict. `script.conflicts` is `last_wins` (default: the higher partition's command applies; counted) or `error`
+  (the later command is refused and counted in `refused`).
+- **Destroyed entities.** A read of an entity that a command destroys this tick still returns the tick-start value; after the merge the handle fails the entity check ("no longer exists").
+- **Cost** (Linux x86-64, one thread, 200,000 `set_vel`-style commands of 12 payload bytes): about 23 ns to record one command and 100 ns to merge it (including the component write).
+
+The test `world_view_test.cpp` runs 10,000 entities whose scripts move, spawn and destroy each other: the state hash is equal at 1, 2, 7 and 16 threads and over 100 runs, and a binding that reads
+a racing counter is caught by the same comparison.

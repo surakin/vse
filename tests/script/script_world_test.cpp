@@ -287,6 +287,7 @@ TEST_CASE("Script settings: partitions and the partition memory cap", "[script][
     RegisterScriptSettings(&registry);
     CHECK(ScriptPartitions(registry) == 64);
     CHECK(ScriptPartitionMemory(registry) == 67108864);
+    CHECK_FALSE(ScriptConflictsAreErrors(registry));
 }
 
 namespace
