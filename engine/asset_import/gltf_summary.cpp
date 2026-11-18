@@ -302,6 +302,7 @@ void BuildImportSummary(const GltfDocument& document, const GltfNodeGraph& graph
 
     out.Append("],\"animations\":[");
     const JsonValue animations = document.root.Get("animations");
+    Vector<f64> input_end;  // by accessor index: the last time of an animation input, -1 not scanned yet
     for (usize a = 0; animations.Exists() && a < animations.Size(); ++a)
     {
         if (a != 0)
@@ -318,14 +319,33 @@ void BuildImportSummary(const GltfDocument& document, const GltfNodeGraph& graph
         }
         f64 duration = 0;
         const JsonValue samplers = animation.Get("samplers");
+        // Samplers of one file often name the same accessor; scan each accessor once (hostile files repeat one).
         for (usize s = 0; samplers.Exists() && s < samplers.Size(); ++s)
         {
-            f64 start = 0;
-            f64 end = 0;
-            if (AccessorRange(document, samplers.At(s).Get("input"), 1, &start, &end))
+            const JsonValue input = samplers.At(s).Get("input");
+            const JsonValue accessors = document.root.Get("accessors");
+            GltfError index_error;
+            u32 index = 0;
+            if (!input.Exists() || !accessors.Exists() ||
+                input.AsIndex(&index, accessors.Size(), &index_error).Failed())
             {
-                duration = Max(duration, end);
+                continue;
             }
+            if (input_end.Size() != accessors.Size())
+            {
+                input_end.Resize(accessors.Size());
+                for (usize i = 0; i < input_end.Size(); ++i)
+                {
+                    input_end[i] = -1.0;
+                }
+            }
+            if (input_end[index] < 0)
+            {
+                f64 start = 0;
+                f64 end = 0;
+                input_end[index] = AccessorRange(document, input, 1, &start, &end) ? Max(end, 0.0) : 0.0;
+            }
+            duration = Max(duration, input_end[index]);
         }
         out.Append("{\"name\":");
         AppendString(&out, name);

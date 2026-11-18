@@ -276,7 +276,8 @@ void FillResult(const asset::ImportResult& made, engine_import_result* out)
     const bool has_summary = StructSizeOf(out) >=
                              sizeof(engine_import_result);  // `summary` came after the first version
     const u32 host_size = out->struct_size;
-    *out = engine_import_result{};
+    // Clear only what the host's struct holds: an older host passes a smaller one.
+    MemSet(out, 0, host_size < sizeof(engine_import_result) ? host_size : sizeof(engine_import_result));
     out->struct_size = host_size;
     out->resource_count = static_cast<u32>(made.resources.Size());
     out->warning_count = static_cast<u32>(made.report.notes.Size());

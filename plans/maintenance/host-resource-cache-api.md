@@ -91,3 +91,10 @@ Tests: `host_import.c` (round trip through two engines, atomicity: corrupt last 
 
 `/code-review high` on the diff: 4 findings. **Fixed:** (1) the summary re-read a mesh's `POSITION` accessor for every node that uses the mesh (a hostile file with many nodes on one mesh without `min`/`max` made that quadratic): the box is now computed once per mesh. (2) the summary test had only root nodes: a node under a translated parent is now checked. **Declined, recorded:** (3) the fingerprint does not fold in the component versions inside level blobs, so a level-component bump needs `kGltfImporterOutputVersion` raised by hand (`KNOWN-ISSUES.md`, item 4 of the cache entry); (4) the asynchronous add borrows the host's bytes until the ticket ends: documented in `engine_c.h` and the guide, the price of not copying twice.
 
+
+### Security review of e0debb5e (2026-11-18)
+
+- HIGH, fixed: `FillResult` wrote a whole `engine_import_result{}` over a host struct that may be the older, smaller size (out-of-bounds write).
+  It now clears only `min(struct_size, sizeof)` bytes. Regression test: `host_import.c` passes a result of the old size in exact-size memory
+  (asan reports the overflow without the fix).
+- MEDIUM, fixed: the animation summary rescanned an accessor once per sampler naming it; each accessor is now scanned once.

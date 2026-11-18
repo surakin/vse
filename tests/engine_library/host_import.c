@@ -675,6 +675,26 @@ static void TestArguments(engine_handle engine, const Bytes* gltf)
         free(raw);
     }
     {
+        /* A host built before `summary` existed passes a result of the old size, in memory of exactly that size: the
+         * engine writes no byte past it (asan), on success and on the failure paths. */
+        const size_t old_size = offsetof(engine_import_result, summary);
+        char* old = (char*)malloc(old_size);
+        engine_import_options good = Options("/oldresult");
+        memset(old, 0xAB, old_size);
+        *(uint32_t*)old = (uint32_t)old_size; /* struct_size is the first member */
+        if (g_api->import_gltf(engine, gltf->data, gltf->size, &good, (engine_import_result*)(void*)old) == ENGINE_OK)
+        {
+            /* Copy what the old struct holds into a full one, to remove the resources it added. */
+            engine_import_result full = NewResult();
+            memcpy(&full.resource_count, old + offsetof(engine_import_result, resource_count),
+                   offsetof(engine_import_result, manifest) + sizeof(engine_buffer) -
+                       offsetof(engine_import_result, resource_count));
+            RemoveAll(engine, &full);
+            ReleaseResult(&full);
+        }
+        free(old);
+    }
+    {
         /* Odd prefixes are refused or accepted, never a crash. */
         static const char* prefixes[] = {"/", "/..", "/a/../b", "/a//b", "/a b", "/\xff\xfe", "/a/", "//"};
         size_t k;
