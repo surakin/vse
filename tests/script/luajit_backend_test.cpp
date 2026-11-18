@@ -309,3 +309,18 @@ TEST_CASE("LuaJIT backend: precompiled bytecode is refused and string.dump is go
     REQUIRE(out.results.Size() == 1);
     CHECK(out.results[0].IsNil());
 }
+
+TEST_CASE("LuaJIT backend: many references to one big string do not amplify", "[script][luajit]")
+{
+    UniquePtr<Backend> backend = luajit::CreateLuaJitBackend();
+    UniquePtr<State> state = Fresh(*backend,
+                                   "function amp() local s = string.rep('x', 1000000) local t = {} "
+                                   "for i = 1, 60 do t[i] = s end return t end\n"
+                                   "function keys() local t = {} t[string.rep('k', 2000000)] = 1 return t end\n"
+                                   "function fine() local s = string.rep('x', 1000000) return {s, s} end\n");
+    CallOutput out;
+    CHECK(state->Call("amp", Span<const Value>(), Budget(), &out).status == Status::Invalid);
+    CHECK(out.results.Size() == 0);
+    CHECK(state->Call("keys", Span<const Value>(), Budget(), &out).status == Status::Invalid);
+    CHECK(state->Call("fine", Span<const Value>(), Budget(), &out).IsOk());
+}

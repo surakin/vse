@@ -31,6 +31,8 @@ constexpr usize kMaxTraceBytes = 16384;
 // protected call needs bytes.
 constexpr u64 kCleanupSlack = u64{1} << 20;
 constexpr u32 kMaxNodes = 1u << 16;
+// The most text, blob and key bytes one value may copy out of Lua: a table can hold many references to one big string.
+constexpr usize kMaxMarshalBytes = usize{16} << 20;
 
 Text MakeText(StringView sv)
 {
@@ -95,6 +97,7 @@ struct Marshal
 {
     Vector<StringView> keys;  // a stack of map keys, sorted per table
     u32 nodes = 0;
+    usize bytes = 0;
     const char* problem = nullptr;  // set (never raised) when a value cannot cross
 };
 
@@ -254,6 +257,17 @@ bool Fail(Marshal* m, const char* problem)
     return false;
 }
 
+// Counts bytes copied out of Lua against the total allowed for one value.
+bool Spend(Marshal* m, usize bytes)
+{
+    if (bytes > kMaxMarshalBytes - m->bytes)
+    {
+        return Fail(m, "a value copies too many bytes out of Lua");
+    }
+    m->bytes += bytes;
+    return true;
+}
+
 bool KeyLess(const StringView& a, const StringView& b)
 {
     const usize n = a.Length() < b.Length() ? a.Length() : b.Length();
@@ -300,6 +314,10 @@ bool ReadValue(lua_State* L, int index, Value* out, Marshal* m, u32 depth)
         if (len > (usize{1} << 20))
         {
             return Fail(m, "a string is too long");
+        }
+        if (!Spend(m, len))
+        {
+            return false;
         }
         *out = Value::FromText(StringView(s, len));
         return true;
@@ -374,7 +392,7 @@ bool ReadValue(lua_State* L, int index, Value* out, Marshal* m, u32 depth)
         }
         usize len = 0;
         const char* s = lua_tolstring(L, -1, &len);
-        if (len > (usize{16} << 20))
+        if (len > (usize{16} << 20) || !Spend(m, len))
         {
             lua_pop(L, 1);
             return Fail(m, "a byte blob is too large");
@@ -403,6 +421,12 @@ bool ReadValue(lua_State* L, int index, Value* out, Marshal* m, u32 depth)
             ++strings;
             usize len = 0;
             const char* s = lua_tolstring(L, -2, &len);
+            if (len > (usize{1} << 20) || !Spend(m, len))
+            {
+                lua_pop(L, 2);
+                m->keys.Resize(keys_base);
+                return Fail(m, "a map key is too long, or the value is too large");
+            }
             m->keys.Push(StringView(s, len));
         }
         else
@@ -545,6 +569,7 @@ const char* RunNative(lua_State* L, NativeEntry* e)
 {
     NativeScratch* s = e->scratch;
     s->marshal.nodes = 0;
+    s->marshal.bytes = 0;
     s->marshal.problem = nullptr;
     s->marshal.keys.Clear();
     s->args.Clear();
@@ -856,6 +881,12 @@ void RunCoroutine(lua_State* L, Request* r)
         T = lua_tothread(L, -1);
         lua_pop(L, 1);
         r->new_ref = r->ref;
+        if (T == nullptr || lua_status(T) != LUA_YIELD)
+        {
+            r->failure = "that call is not suspended";
+            r->status = Status::Invalid;
+            return;
+        }
     }
     for (usize i = 0; i < r->args.Size(); ++i)
     {
@@ -896,6 +927,17 @@ void RunCoroutine(lua_State* L, Request* r)
         lua_xmove(T, L, lua_gettop(T));
         const int top = lua_gettop(L);
         r->wait_kind = static_cast<int>(lua_tointeger(L, top - 1));
+        const f64 amount = lua_type(L, top) == LUA_TNUMBER ? lua_tonumber(L, top) : -1.0;
+        const bool good_kind = r->wait_kind >= kWaitSeconds && r->wait_kind <= kWaitEvent;
+        const bool good_arg = r->wait_kind == kWaitEvent
+                                  ? lua_type(L, top) == LUA_TSTRING
+                                  : (amount >= 0.0 && amount <= (r->wait_kind == kWaitFrames ? 4294967295.0 : 1.0e12));
+        if (!good_kind || !good_arg)
+        {
+            r->failure = "a coroutine yielded something that is not a wait request";
+            r->status = Status::RuntimeError;
+            return;
+        }
         if (r->wait_kind == kWaitEvent)
         {
             usize len = 0;
