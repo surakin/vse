@@ -4,6 +4,9 @@
 set(SCRIPT_SOURCES
   value.cpp  # Day 446
   state.cpp  # Day 446
+  backend_registry.cpp  # Day 447
+  script_settings.cpp  # Day 447
+  expr/expr_backend.cpp  # Day 447
 )
 set(SCRIPT_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

@@ -9,6 +9,7 @@ set(SCRIPT_TEST_SOURCES
   luajit_smoke_test.cpp  # Day 445
   value_test.cpp  # Day 446
   backend_test.cpp  # Day 446
+  backend_conformance_test.cpp  # Day 447
 )
 
 find_package(Threads REQUIRED)

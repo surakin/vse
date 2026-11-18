@@ -1851,6 +1851,18 @@ script::Backend::Name() const	function	script	script-backend-name-const	script.m
 script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:324
 script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:326
 script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:331
+script::BackendDescriptor	struct	script	script-backenddescriptor	script.md	engine/script/backend_registry.h:18
+script::BackendDescriptor::name	variable	script	script-backenddescriptor-name	script.md	engine/script/backend_registry.h:21
+script::BackendDescriptor::create	variable	script	script-backenddescriptor-create	script.md	engine/script/backend_registry.h:23
+script::kMaxBackends	variable	script	script-kmaxbackends	script.md	engine/script/backend_registry.h:27
+script::RegisterBackend(const BackendDescriptor&)	function	script	script-registerbackend-const-backenddescriptor-amp	script.md	engine/script/backend_registry.h:37
+script::FindBackend(StringView)	function	script	script-findbackend-stringview	script.md	engine/script/backend_registry.h:45
+script::BackendCount()	function	script	script-backendcount	script.md	engine/script/backend_registry.h:51
+script::BackendAt(usize)	function	script	script-backendat-usize	script.md	engine/script/backend_registry.h:58
+script::CreateBackend(StringView,Outcome*)	function	script	script-createbackend-stringview-outcome-star	script.md	engine/script/backend_registry.h:68
+script::ClearBackendRegistryForTest()	function	script	script-clearbackendregistryfortest	script.md	engine/script/backend_registry.h:74
+script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:20
+script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:30
 script::Status	enum	script	script-status	script.md	engine/script/status.h:17
 script::Status::Ok	enumerator	script	script-status-ok	script.md	engine/script/status.h:20
 script::Status::SyntaxError	enumerator	script	script-status-syntaxerror	script.md	engine/script/status.h:22
