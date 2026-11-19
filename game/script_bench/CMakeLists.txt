@@ -18,4 +18,5 @@ if(CMAKE_BUILD_TYPE MATCHES "^(Release|RelWithDebInfo)$")
   add_test(NAME script_stress_large COMMAND script_bench --scene stress)
   set_tests_properties(script_stress_large PROPERTIES TIMEOUT 3000)
   engine_label_tests(script_stress_large)
+  engine_soak_tests(script_stress_large)  # a million scripted entities: only with --all or --soak
 endif()

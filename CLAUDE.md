@@ -84,6 +84,9 @@ phase in progress. Day to day, run only what the work can have affected:
   (`--affected --flavor asan`, then `--flavor tsan`) when the day touched concurrency, lifetime or memory code.
 - **A reduced run is reported as what it was**: the day file and `STATUS.md` quote the script's final line
   (`ran X of Y tests (phases ...)`) and never say "all tests pass" for a run that left tests out.
+- **Long runs are labelled `soak`** (the benches' and stress runs' long forms): scoped runs leave them out and `--all` keeps them; a day that
+  changes a module with soak tests also runs `--affected --soak` before its review, and a test the script warns about (over 30 s, 60 s
+  sanitized, unlabelled) gets a short form or the label (`docs/guide/building-and-testing.md`, "Long tests").
 - **A phase's last day runs the whole suite in every flavor**: `scripts/test-phase.sh --all --flavor all`, plus
   `ctest -L docs` and the demos the phase ships, and records the line in the day file. A phase is not complete without
   it. `CURRENT_PHASE` changes only in the commit that starts the next phase.

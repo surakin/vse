@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="fixture" tests="6" failures="0" disabled="0" skipped="0" hostname="" time="0" timestamp="">
+	<testcase name="a plain test of 45 seconds" classname="a plain test of 45 seconds" time="45.25" status="run">
+	</testcase>
+	<testcase name="a short test" classname="a short test" time="2.5" status="run">
+	</testcase>
+	<testcase name="a sanitized test of 45 seconds [asan]" classname="a sanitized test of 45 seconds [asan]" time="45.0" status="run">
+	</testcase>
+	<testcase name="a sanitized test of 75 seconds [tsan]" classname="a sanitized test of 75 seconds [tsan]" time="75.5" status="run">
+	</testcase>
+	<testcase name="quotes &quot;and&quot; &amp; in a long name" classname="x" time="31.0" status="run">
+	</testcase>
+	<testcase name="script_stress_large" classname="script_stress_large" time="300.0" status="run">
+	</testcase>
+</testsuite>

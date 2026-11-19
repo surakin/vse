@@ -10,4 +10,5 @@ if(CMAKE_BUILD_TYPE MATCHES "^(Release|RelWithDebInfo)$")
   add_test(NAME audio_bench_large COMMAND audio_bench --scene large --long-blocks 2000000)
   set_tests_properties(audio_bench_large PROPERTIES TIMEOUT 900)
   engine_label_tests(audio_bench_large)
+  engine_soak_tests(audio_bench_large)  # two million blocks: only with --all or --soak
 endif()

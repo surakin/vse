@@ -12,4 +12,5 @@ if(CMAKE_BUILD_TYPE MATCHES "^(Release|RelWithDebInfo)$")
   add_test(NAME physics_bench_large COMMAND physics_bench --scene large --threads 1)
   set_tests_properties(physics_bench_large PROPERTIES TIMEOUT 900)
   engine_label_tests(physics_bench_large)
+  engine_soak_tests(physics_bench_large)  # 50,000 bodies for a million steps: only with --all or --soak
 endif()

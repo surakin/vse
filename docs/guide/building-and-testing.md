@@ -128,6 +128,18 @@ ctest label `crash` and `scripts/test-phase.sh` leaves them out of every run but
 `--crashes`. The summary line says so (`crash tests: excluded`), so a reduced run is never mistaken for a full one. The script also
 sets a soft core limit of 0 for the tests it starts. Plain `ctest` runs them.
 
+**Long tests: the `soak` label.** A test whose length is its point carries the label `soak` (`engine_soak_tests(<name>)` after
+`engine_label_tests`): today `audio_bench_large`, `physics_bench_large` and `script_stress_large`, each several minutes. The script
+leaves them out of every run but `--all`, unless you pass `--soak`. The summary line says `soak: excluded`. A day that changes a module with soak
+tests (audio, physics, scripting) runs `--affected --soak` once before its review.
+
+After a run the script warns about each test that took over 30 s (60 s for a sanitizer test, one whose name has `asan` or `tsan` as a word)
+without the label. It reads the run's own JUnit file (`<build>/Testing/test-phase-<pid>.xml`, removed after the run). It is a warning, not a failure, because times
+depend on the load. For a test it lists:
+- if its length is its point (a benchmark, a million-step stress run), label it `soak`;
+- if it is long only because of its count (a loop of resets, a sweep of failure points), give it a short form for the ordinary run and
+  register the full count as a second, `soak`-labelled test. Both run the same checks. See "Stress tests and replaying a failing seed".
+
 #### The runner
 
 `scripts/test-phase.sh` builds, selects tests by label and runs them. It is how day-to-day work runs tests:

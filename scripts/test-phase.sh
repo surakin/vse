@@ -25,6 +25,8 @@
 #   --flavor plain|asan|tsan|all   which sanitizer flavor (default plain: neither asan nor tsan)
 #   --crashes                      include the tests labelled `crash` (the Phase 7 suite, which crashes processes on purpose and
 #                                  so makes a desktop crash reporter notify); left out of every run but --all
+#   --soak                         include the tests labelled `soak` (the long benches and stress runs, a minute or more each);
+#                                  left out of every run but --all
 #   --display / --no-display       include or leave out the window tests (label `display`); by default left out of
 #                                  --current/--affected unless phase 1 is selected or engine/foundation changed
 #   --jobs N                       parallel build jobs and tests (default: the number of CPUs; CMAKE_BUILD_PARALLEL_LEVEL, if set, wins for the build)
@@ -36,6 +38,7 @@
 #   --start-day [REF]              record REF (default HEAD) as the day's start for --affected, in the checkout's own .git (never
 #                                  committed; each worktree and machine has its own), and stop; run it when a day starts
 #   --repo-root DIR                run git in DIR instead of this checkout; for tests
+#   --report-long FILE             print the long-test warning for a ctest JUnit file (--output-junit) and stop; for tests
 #   --diff-from-file FILE          read the changed paths from FILE (one per line) instead of git; for tests
 #   --additive-from-file FILE      with --diff-from-file: the paths in FILE (a subset of the changed ones) only had lines added; for tests
 #   --current-phase-file FILE      read the current phase from FILE instead of CURRENT_PHASE; for tests
@@ -64,6 +67,8 @@ phase_arg=""
 flavor=plain
 display=auto
 crashes=auto
+soak=auto
+report_long=""
 jobs="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 dry=0
 do_build=1
@@ -86,6 +91,8 @@ while [ $# -gt 0 ]; do
         --all) mode=all ;;
         --flavor) flavor="${2:?--flavor needs plain, asan, tsan or all}"; shift ;;
         --crashes) crashes=yes ;;
+        --soak) soak=yes ;;
+        --report-long) report_long="${2:?--report-long needs a JUnit file}"; shift ;;
         --display) display=yes ;;
         --no-display) display=no ;;
         --jobs) jobs="${2:?--jobs needs a number}"; shift ;;
@@ -262,6 +269,35 @@ if [ "$start_day" = 1 ]; then
     exit 0
 fi
 
+# Warns about every test in a ctest JUnit file that ran long without the `soak` label: over 30 s, or 60 s for a sanitizer test
+# (a name with asan or tsan as a word). A warning, not a failure: timing depends on the machine's load. The fix is a short form
+# for the ordinary run, or the `soak` label for a test whose length is its point (docs/guide/building-and-testing.md, "Long tests").
+long_test_warning() {
+    local junit="$1" names
+    [ -f "$junit" ] || return 0
+    # The soak names go to awk in a file, not with -v: macOS's awk refuses a newline in a -v value, and -v also expands backslashes.
+    names="$junit.soak"
+    ctest --test-dir "$build" -N -L '^soak$' 2>/dev/null | sed -n 's/^ *Test *#[0-9]*: //p' > "$names" || true
+    awk '
+        FNR == NR { skip[$0] = 1; next }
+        /<testcase / {
+            name = $0; sub(/.*<testcase name="/, "", name); sub(/" classname=.*/, "", name)
+            t = $0; sub(/.* time="/, "", t); sub(/".*/, "", t)
+            gsub(/&quot;/, "\"", name); gsub(/&apos;/, "\047", name); gsub(/&lt;/, "<", name); gsub(/&gt;/, ">", name); gsub(/&amp;/, "\\&", name)
+            limit = (name ~ /(^|[^a-z])(asan|tsan)([^a-z]|$)/) ? 60 : 30
+            if (!(name in skip) && t + 0 > limit) printf "%8.1f s  %s\n", t, name
+        }' "$names" "$junit" | sort -rn > "$junit.long" || true
+    if [ -s "$junit.long" ]; then
+        echo "test-phase: WARNING: these tests ran over 30 s (60 s for a sanitizer test) without the soak label; give each a short form or the label (docs/guide/building-and-testing.md, \"Long tests\"):"
+        cat "$junit.long"
+    fi
+    rm -f "$junit.long" "$names"
+}
+if [ -n "$report_long" ]; then
+    long_test_warning "$report_long"
+    exit 0
+fi
+
 started=$SECONDS
 full=0
 reasons=""
@@ -326,6 +362,12 @@ show_crashes=yes
 if [ "$crashes" = auto ] && [ "$mode" != all ]; then
     show_crashes=no
     exclude="${exclude:+$exclude|}crash"
+fi
+# The soak tests (label `soak`: benches and stress runs whose length is their point) run with --all and --soak only.
+show_soak=yes
+if [ "$soak" = auto ] && [ "$mode" != all ]; then
+    show_soak=no
+    exclude="${exclude:+$exclude|}soak"
 fi
 [ -z "$exclude" ] || flavor_sel+=(-LE "^(${exclude})\$")
 
@@ -407,7 +449,7 @@ total="$(count)"
 picked="$(count ${sel[@]+"${sel[@]}"})"
 [ -n "$total" ] && [ -n "$picked" ] || die "could not count tests in $build (is it configured?)"
 
-summary="phases: ${phases_shown}; flavors: ${flavor}${flavor_note}; display: $([ "$show_display" = yes ] && echo included || echo excluded); crash tests: $([ "$show_crashes" = yes ] && echo included || echo excluded)"
+summary="phases: ${phases_shown}; flavors: ${flavor}${flavor_note}; display: $([ "$show_display" = yes ] && echo included || echo excluded); crash tests: $([ "$show_crashes" = yes ] && echo included || echo excluded); soak: $([ "$show_soak" = yes ] && echo included || echo excluded)"
 if [ "$picked" -eq 0 ]; then
     echo "test-phase: the selection ($summary) contains no tests; nothing ran (a phase has none until its first test file is in tests/phases.txt; --affected adds the touched modules' phases)" >&2
     exit 1
@@ -423,8 +465,15 @@ status=0
 # systemd-coredump, so a desktop crash reporter (Plasma's systray) does not raise a notification for each one. The hard limit
 # stays as it was: the tests that need a real core raise the soft limit themselves.
 ulimit -S -c 0 2>/dev/null || true
-ctest --test-dir "$build" -j"$jobs" --output-on-failure ${sel[@]+"${sel[@]}"} || status=$?
+# This run's own JUnit file (the process id keeps two runs on one tree apart), read by the long-test warning and then removed, so a
+# run that writes none cannot report an earlier run's tests.
+junit="$build/Testing/test-phase-$$.xml"
+mkdir -p "$build/Testing"
+rm -f "$junit"
+ctest --test-dir "$build" -j"$jobs" --output-on-failure --output-junit "$junit" ${sel[@]+"${sel[@]}"} || status=$?
 elapsed=$((SECONDS - started))
+long_test_warning "$junit"
+rm -f "$junit"
 last=""
 if [ "$mode" = all ] && [ "$flavor" = all ] && [ "$picked" = "$total" ] && [ "$status" = 0 ]; then
     echo "$elapsed" > "$build/.last-full-run"

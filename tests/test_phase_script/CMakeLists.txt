@@ -47,31 +47,36 @@ function(phase_script_refuses name text)
   set(PHASE_SCRIPT_TESTS ${PHASE_SCRIPT_TESTS} PARENT_SCOPE)
 endfunction()
 
-# Every scoped run leaves out the tests labelled `crash` (the Phase 7 suite crashes processes on purpose); --all and --crashes keep them.
-set(PLAIN -LE "^(asan|tsan|crash)$")
-set(PLAIN_NO_DISPLAY -LE "^(asan|tsan|display|crash)$")
+# Every scoped run leaves out the tests labelled `crash` (the Phase 7 suite crashes processes on purpose) and `soak` (the long benches);
+# --all keeps both, --crashes and --soak keep one each.
+set(PLAIN -LE "^(asan|tsan|crash|soak)$")
+set(PLAIN_NO_DISPLAY -LE "^(asan|tsan|display|crash|soak)$")
 
 # One explicit phase: all of its tests, in the plain flavor by default.
 phase_script_case(explicit_plain PHASES 5 DISPLAY included ARGS 5 --flavor plain CTEST -L "^(phase5)$" ${PLAIN})
 # The sanitizer cases use phases that have those flavors on the platform (Windows: plain and asan only, in phases 0, 10 and 13 so far).
 if(ENGINE_PLATFORM STREQUAL "windows")
-  phase_script_case(explicit_asan PHASES 13 ARGS 13 --flavor asan CTEST -L "^(phase13)$" -L "^asan$" -LE "^crash$")
+  phase_script_case(explicit_asan PHASES 13 ARGS 13 --flavor asan CTEST -L "^(phase13)$" -L "^asan$" -LE "^(crash|soak)$")
   phase_script_refuses(explicit_tsan "MSVC has no ThreadSanitizer" 2 --flavor tsan)
-  phase_script_case(explicit_all_flavors PHASES 13 ARGS 13 --flavor all CTEST -L "^(phase13)$" -LE "^crash$")
+  phase_script_case(explicit_all_flavors PHASES 13 ARGS 13 --flavor all CTEST -L "^(phase13)$" -LE "^(crash|soak)$")
 elseif(ENGINE_PLATFORM STREQUAL "macos")
   # macOS builds one layer more each day (Phase 21): the phases with sanitizer tests there so far are 0, 10, 16 and 21.
-  phase_script_case(explicit_asan PHASES 16 ARGS 16 --flavor asan CTEST -L "^(phase16)$" -L "^asan$" -LE "^crash$")
-  phase_script_case(explicit_tsan PHASES 10 ARGS 10 --flavor tsan CTEST -L "^(phase10)$" -L "^tsan$" -LE "^crash$")
-  phase_script_case(explicit_all_flavors PHASES 21 ARGS 21 --flavor all CTEST -L "^(phase21)$" -LE "^crash$")
+  phase_script_case(explicit_asan PHASES 16 ARGS 16 --flavor asan CTEST -L "^(phase16)$" -L "^asan$" -LE "^(crash|soak)$")
+  phase_script_case(explicit_tsan PHASES 10 ARGS 10 --flavor tsan CTEST -L "^(phase10)$" -L "^tsan$" -LE "^(crash|soak)$")
+  phase_script_case(explicit_all_flavors PHASES 21 ARGS 21 --flavor all CTEST -L "^(phase21)$" -LE "^(crash|soak)$")
 else()
-  phase_script_case(explicit_asan PHASES 4 ARGS 4 --flavor asan CTEST -L "^(phase4)$" -L "^asan$" -LE "^crash$")
-  phase_script_case(explicit_tsan PHASES 2 ARGS 2 --flavor tsan CTEST -L "^(phase2)$" -L "^tsan$" -LE "^crash$")
-  phase_script_case(explicit_all_flavors PHASES 3 ARGS 3 --flavor all CTEST -L "^(phase3)$" -LE "^crash$")
+  phase_script_case(explicit_asan PHASES 4 ARGS 4 --flavor asan CTEST -L "^(phase4)$" -L "^asan$" -LE "^(crash|soak)$")
+  phase_script_case(explicit_tsan PHASES 2 ARGS 2 --flavor tsan CTEST -L "^(phase2)$" -L "^tsan$" -LE "^(crash|soak)$")
+  phase_script_case(explicit_all_flavors PHASES 3 ARGS 3 --flavor all CTEST -L "^(phase3)$" -LE "^(crash|soak)$")
 endif()
 phase_script_case(everything PHASES all ARGS --all --flavor all)
 phase_script_case(everything_without_windows PHASES all DISPLAY excluded ARGS --all --no-display CTEST -LE "^(asan|tsan|display)$")
 phase_script_case(current_with_crashes PHASES 5 DISPLAY excluded ARGS --current --crashes --current-phase-file ${FIX}/phase5.txt
-  CTEST -L "^(phase5)$" -LE "^(asan|tsan|display)$")
+  CTEST -L "^(phase5)$" -LE "^(asan|tsan|display|soak)$")
+# The soak tests (phases 25, 26 and 27 have one each in a Release build): left out of a phase's run, kept with --soak (Day 3 of
+# "shorter test runs"). The counts differ only where the build has them; the cases hold either way.
+phase_script_case(phase_without_soak PHASES 27 ARGS 27 --flavor plain CTEST -L "^(phase27)$" ${PLAIN})
+phase_script_case(phase_with_soak PHASES 27 ARGS 27 --flavor plain --soak CTEST -L "^(phase27)$" -LE "^(asan|tsan|crash)$")
 # Without --diff-from-file the script asks git; any result is fine, it only has to work.
 phase_script_case(affected_from_git PHASES ANY ARGS --affected --current-phase-file ${FIX}/phase5.txt)
 # The current phase: window tests are left out, unless the phase is 1.
@@ -129,7 +134,7 @@ phase_script_case(affected_side_phase PHASES "5 6 (side)" SIDE ${FIX}/side_6.txt
 # A side phase with no tests in the run's flavor is not added (phase 6 has plain tests only; Day 286 review). The flavor is asan, which every
 # platform runs (Windows refuses tsan).
 phase_script_case(affected_side_phase_wrong_flavor PHASES 5 SIDE ${FIX}/side_6.txt ARGS --affected --flavor asan --current-phase-file ${FIX}/phase5.txt
-  --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5)$" -L "^asan$" -LE "^(display|crash)$")
+  --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5)$" -L "^asan$" -LE "^(display|crash|soak)$")
 phase_script_case(affected_side_phase_not_built PHASES 5 SIDE ${FIX}/side_99.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5)$" ${PLAIN_NO_DISPLAY})
 phase_script_case(affected_side_phase_already_selected PHASES "5 6" SIDE ${FIX}/side_6.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt
@@ -202,6 +207,37 @@ foreach(case "plain|--flavor;plain;--jobs;7|--parallel 7 --target engine_tests_p
   set_tests_properties(test_phase_script_build_plan_${name} PROPERTIES PASS_REGULAR_EXPRESSION "would build: [^\n]* ${expect}")
   list(APPEND PHASE_SCRIPT_TESTS test_phase_script_build_plan_${name})
 endforeach()
+# The long-test warning after a run (Day 3): over 30 s plain or 60 s sanitized, without the soak label. The fixture's soak test
+# (script_stress_large) is left out only where this build has it: an optimized build, the condition in game/script_bench.
+if(CMAKE_BUILD_TYPE MATCHES "^(Release|RelWithDebInfo)$")
+  set(_soak_line "")
+else()
+  set(_soak_line "\n *300.0 s  script_stress_large")
+endif()
+add_test(NAME test_phase_script_long_warning
+  COMMAND ${BASH_PROGRAM} ${TEST_PHASE_SCRIPT} --build-dir ${CMAKE_BINARY_DIR} --report-long ${FIX}/long_tests.xml)
+# Every line after the header is checked in order, so a test left in or out shows.
+set_tests_properties(test_phase_script_long_warning PROPERTIES PASS_REGULAR_EXPRESSION
+  "WARNING: these tests ran over 30 s [^\n]*:${_soak_line}\n *75.5 s  a sanitized test of 75 seconds \\[tsan\\]\n *45.2 s  a plain test of 45 seconds\n *31.0 s  quotes \"and\" & in a long name\n$")
+list(APPEND PHASE_SCRIPT_TESTS test_phase_script_long_warning)
+# The same under the one-true-awk (macOS's family; on Linux `nawk`), which refuses a newline in an awk -v value: the warning must not
+# end the run there (Day 3 review). The script finds `awk` on PATH, so the check puts a directory with that awk first.
+find_program(ENGINE_BWK_AWK NAMES nawk original-awk)
+if(ENGINE_BWK_AWK AND NOT CMAKE_HOST_WIN32)
+  set(_awk_dir ${CMAKE_CURRENT_BINARY_DIR}/bwk_awk)
+  file(MAKE_DIRECTORY ${_awk_dir})
+  file(CREATE_LINK ${ENGINE_BWK_AWK} ${_awk_dir}/awk SYMBOLIC)
+  add_test(NAME test_phase_script_long_warning_bwk_awk
+    COMMAND ${CMAKE_COMMAND} -E env "PATH=${_awk_dir}:$ENV{PATH}" ${BASH_PROGRAM} ${TEST_PHASE_SCRIPT} --build-dir ${CMAKE_BINARY_DIR}
+      --report-long ${FIX}/long_tests.xml)
+  set_tests_properties(test_phase_script_long_warning_bwk_awk PROPERTIES PASS_REGULAR_EXPRESSION "75.5 s  a sanitized test of 75 seconds")
+  list(APPEND PHASE_SCRIPT_TESTS test_phase_script_long_warning_bwk_awk)
+endif()
+add_test(NAME test_phase_script_long_quiet
+  COMMAND ${BASH_PROGRAM} ${TEST_PHASE_SCRIPT} --build-dir ${CMAKE_BINARY_DIR} --report-long ${FIX}/diff_jobs.txt)
+set_tests_properties(test_phase_script_long_quiet PROPERTIES FAIL_REGULAR_EXPRESSION "WARNING")
+list(APPEND PHASE_SCRIPT_TESTS test_phase_script_long_quiet)
+
 # The base --affected compares with: --since, the day start --start-day records, the upstream merge-base, the phase's start (Day 2).
 find_package(Git QUIET)
 if(GIT_EXECUTABLE)

@@ -40,3 +40,18 @@ function(engine_label_tests)
     set_tests_properties(${name} PROPERTIES LABELS "${labels}")
   endforeach()
 endfunction()
+
+# engine_soak_tests(<test name>...)
+# Adds the `soak` label to tests whose length is their point (a benchmark's long run, a stress run of a million steps): they run only
+# with scripts/test-phase.sh --all or --soak, never in a scoped run. A test that is long only because of its count gets a short form
+# for the ordinary run instead (docs/guide/building-and-testing.md, "Long tests"). Call it after add_test and engine_label_tests.
+function(engine_soak_tests)
+  foreach(name IN LISTS ARGN)
+    get_test_property(${name} LABELS labels)
+    if(labels STREQUAL "NOTFOUND")
+      set(labels "")
+    endif()
+    list(APPEND labels soak)
+    set_tests_properties(${name} PROPERTIES LABELS "${labels}")
+  endforeach()
+endfunction()
