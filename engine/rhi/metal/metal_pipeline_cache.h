@@ -6,6 +6,7 @@
 
 #include "sync/mutex.h"
 
+#include "containers/hash.h"
 #include "containers/vector.h"
 #include "rhi/rhi.h"
 
@@ -18,8 +19,8 @@ namespace engine_placeholder::rhi::metal
 // and the archive's FNV-1a hash seeded with its size.
 inline constexpr usize kMetalArchiveHeaderBytes = 32;
 
-// FNV-1a over bytes, continuing from `seed`. Pure.
-u64 MetalArchiveFnv(const void* data, usize size, u64 seed = 0xcbf29ce484222325ull);
+// FNV-1a over bytes (`Fnv1a64Builder`), continuing from `seed`. Pure.
+u64 MetalArchiveFnv(const void* data, usize size, u64 seed = kFnv1a64Basis);
 
 // The identity a cache file is for: the adapter's id and its driver (the macOS build). Pure.
 u64 MetalArchiveIdentity(const char* adapter_id, const char* driver);

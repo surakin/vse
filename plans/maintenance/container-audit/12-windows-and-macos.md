@@ -23,17 +23,22 @@ tested on both machines, and the physics state hashes are compared across all th
 
 **The Mac:**
 
-- [ ] `rhi/metal/metal_device_bindings.mm:629` `RefFor`: a per-encoder map. `:229-233` drops the span cast (Day 3's `Sort` overload).
+- [x] `rhi/metal/metal_device_bindings.mm:629` `RefFor`: a per-encoder map. `:229-233` drops the span cast (Day 3's `Sort` overload).
   `metal_device_pipelines.mm:174-178` uses `Append`.
-- [ ] The FNV copies in `metal_pipeline_cache.*` use `Fnv1a64`, with the keys unchanged.
-- [ ] Build `macos-clang` (unity on and off) and `macos-clang-arm64` (compile only, both modes).
-  - Run `scripts/test-phase.sh --affected` plain (the user's standing rule for the Mac: no sanitizer runs for now), quoting the line.
-  - Compare the physics and script hashes with Linux's.
-  - Format with MacPorts' clang-format.
+  - **Changed on the Mac (2026-11-19): not a per-encoder map but sorted refs and a binary search.** A stage's refs are fixed when its pipeline
+    is made, so `MapStageSlots` sorts them once by (set, binding) (`SlotRefKey`, a stable sort, so of two refs for one binding the first still
+    wins) and `RefFor` finds a resource with `LowerBound`: O(log S) per resource with nothing built per encoder, where a map would be filled
+    again for every encoder.
+- [x] The FNV copies in `metal_pipeline_cache.*` use `Fnv1a64`, with the keys unchanged.
+- [x] Build `macos-clang` (unity on and off) and `macos-clang-arm64` (compile only, both modes).
+  - **Unity only (the user, 2026-11-19: the Mac skips the unity-off builds from now on).**
+  - [x] Run `scripts/test-phase.sh --affected` plain (the user's standing rule for the Mac: no sanitizer runs for now), quoting the line.
+  - [x] Compare the physics and script hashes with Linux's.
+  - [x] Format with MacPorts' clang-format.
 
 **Both:**
 
-- [ ] **Standing rows** (as [the series rules](../container-audit.md#rules-for-every-day)):
+- [x] **Standing rows** (as [the series rules](../container-audit.md#rules-for-every-day)):
   - docs (`ctest -L docs`) on each machine;
   - `/code-review high` over each machine's diff, recorded below;
   - `STATUS.md` and `KNOWN-ISSUES.md` (what still waits for which machine); commit and push.
@@ -83,6 +88,27 @@ tested on both machines, and the physics state hashes are compared across all th
 The list's time is mostly the D3D12 validation layer (the test device runs validated) and the barrier calls; single runs ranged from
 3.3 to 6.8 ms. The poller's wait is `select` itself; the lookups it no longer does show in the re-arm.
 
+## Notes (the Mac, 2026-11-19)
+
+**The Metal items:**
+- `RefFor` (`metal_device_bindings.mm`): not the per-encoder map of the task (see the task's note) but sorted refs. `MapStageSlots` sorts a stage's
+  refs once by `SlotRefKey(set, binding)` (`metal_device.h`) with `StableSort`, and `RefFor` finds a resource with `LowerBound`; a set or binding
+  above 255 matches nothing, as before (a ref's set and binding are bytes). `HighestBufferSlot` and the overlap check do not depend on the order.
+- `CreateBindGroupLayout` sorts through the container `Sort` overload (no span cast); `CopySlots` uses `Append`.
+- `MetalArchiveFnv` is `Fnv1a64Builder(seed).AddBytes`, with `kFnv1a64Basis` as the default seed, so the archive identity and checksum are
+  unchanged; `metal_pipeline_test.mm` now pins three values computed by the old loop (the identity of its test adapter, `"a"`, and a seeded
+  hash). `container_use_check`'s `engine/rhi/metal/` allow-list entry is removed.
+
+**Found on the Mac:**
+- **`PlatformWindowHost refuses Wayland, X11 and Win32` and `OpenFromEnvironment honors ENGINE_WINDOW_BACKEND` aborted** in the first run
+  (`Vector::Reserve` out of memory in the window host's 128-byte arena). The PC's `AppendRawBytes` fix makes the Wayland and X11 lines fit,
+  but the macOS refusal of Win32, `Window: no usable backend (win32 is the Windows backend)` (56 characters), still needs a 112-byte block
+  after 28 and 56 (196 bytes; an arena never frees). `window_host_macos.cpp` builds the line with `HeapAllocator` now (a failure path). The
+  Linux and Windows hosts keep their arenas: their own refusals fit after the PC's fix. Both tests aborted every time before the fix.
+- **`directory watcher: the native backend where there is one` failed on the Mac** after the pull: Day 473 added a rename case that expects
+  one `Renamed` from every native backend, but the macOS backend reports a rename as `Removed` and `Created` (Day 474, `directory_watcher.h`).
+  The case now expects the two names on macOS.
+
 ## Runs
 
 The Windows PC, 2026-11-19, after the fixes. `scripts/test-phase.sh --affected` selects everything here (the series changed foundation
@@ -112,6 +138,27 @@ removed and the gate passes; `engine_c_runtime` timed out once and passed alone 
 Before the fixes, the first plain run had 271 segfaults (the `HashMap` growth bug), a later one three gate failures, `docs_check`, and
 three tool segfaults that were stale links left by interrupted builds (relinked, they pass).
 
+**The Mac, 2026-11-19, after the pull of `89a79335` (the PC's half and Day 473 included), x86-64 Debug, unity only** (the user's rule from
+this day: the Mac builds no unity-off tree; plain only, no sanitizer runs):
+
+- `scripts/test-phase.sh --affected` (everything: foundation headers and CMake changed) **`ran 4073 of 11236 tests (phases: all; flavors:
+  plain; display: included; crash tests: excluded) in 1427 s`**, 3 failures: the known voice-cost bound (phase 26), and the two window-host
+  aborts and the watcher rename case above, all fixed afterwards (the four tests pass 3 of 3 reruns). The run before the pull (`ran 4060
+  of 11203`, 711 s) had the voice-cost bound and the two window-host aborts.
+- Built clean (warnings are errors): `build-macos` (x86-64, unity) and `build-macos-arm64` (unity, compile only).
+- `ctest -L docs`: 7 of 7. The gates (`container_use_check` with the Metal entry gone, `std_usage_check`, `platform_neutral_check`,
+  `rhi_boundary_check`, `metal_autorelease_pools` and the rest by name): 25 of 25. The Metal tests: 66 of 66 before the review, and the new
+  out-of-order case after it.
+- **Hashes:** the physics golden and determinism tests (phase 25) pass, so their committed constants hold on the Mac; the query index and
+  children index tests of the Query and hierarchy indices series pass. Script: `engine_c_script_sample` `e3e3ca13a45686f9` at 1, 2, 4 and 8
+  partitions (Linux's); `Script demo: the state hash after 150 frames is the same on every machine` (`0xCD4A4433E698FAD7`, the PC's) passes;
+  `script_demo` at the default 600 frames ends on `424a6fbf279d2104` at 1, 2 and 8 threads, Linux's value. `script_demo_window_cocoa` (the
+  window, 1,000 frames with Metal validation) passes.
+- **Also on the Mac this day** (open items of other entries): the nojit tree (`ENGINE_LUAJIT_JIT=OFF`, script targets only): `script_tests`
+  242 cases, `script_physics_tests` 35, `script_media_tests` 19, `script_demo_tests` 5, all pass; the shared library
+  (`-DENGINE_BUILD_SHARED=ON`, the plain host tests of `tests/engine_library/` only): 48 of 48, `engine_c_script`, `engine_c_script_sample`
+  and `engine_c_import_off` among them, the ABI snapshot unchanged.
+
 ## Post-implementation code review
 
 `/code-review high` over the PC's diff (Day 12's Windows changes and the foundation fixes): 5 findings.
@@ -125,6 +172,20 @@ three tool segfaults that were stale links left by interrupted builds (relinked,
     `ENGINE_CHECK_SLOW`); one compare per iterator step.
   - The list benchmark is dominated by the validation layer, so it would hide a small lookup regression.
 - **No change needed:** two sampler sets whose 64-bit hashes collide do not share a table; it stays correct and costs only heap room.
+
+`/code-review high` over the Mac's diff (the Metal changes, the window hosts and the test before the pull): 7 findings.
+
+- **Fixed:** no test listed a slot table out of order, so nothing guarded the sort the binary search relies on: new case `A slot table
+  listed out of binding order maps sorted and binds every resource (container audit Day 12)` (`metal_bindings_test.mm`), shown failing with
+  the sort disabled. The plan's "per-encoder map" was not edited to say what was built: the task now carries the note. `SlotRefKey` had been
+  put between `MetalStageSlots` and its comment: moved above it. A history comment repeated at four call sites: removed.
+- **Moot after the pull:** the Linux and Windows window hosts had been edited on the Mac, which cannot build them; the edits were dropped
+  when the PC's `String` fix arrived (only the macOS host changes, and the Mac builds it).
+- **Recorded, not fixed** (`KNOWN-ISSUES.md`): the same "string built in a small fixed arena" pattern remains at other call sites
+  (`game/input_probe/main.cpp:318` with 128 bytes; `wayland_connection.cpp`, `wayland_window.cpp`, `x11_window.cpp`, `win32_window.cpp`,
+  `game/hello_window/main.cpp` with 256); a long enough name or message aborts them.
+- **Declined:** "no regression test for the window-host abort": `PlatformWindowHost refuses Wayland, X11 and Win32` is that test; it aborted
+  in every run before the fix and passes after it.
 
 **Done:**
 - The D3D12, Metal and `select` audit items are fixed.

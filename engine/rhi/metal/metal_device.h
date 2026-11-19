@@ -68,10 +68,16 @@ struct MetalSlotRef
     u32 count = 1;
 };
 
+// The order of a stage's refs: by set, then binding.
+inline u32 SlotRefKey(u32 set, u32 binding)
+{
+    return (set << 8) | binding;
+}
+
 // Every resource one stage of a pipeline binds, and its push-constant buffer slot (kNoShaderSlot for none).
 struct MetalStageSlots
 {
-    Vector<MetalSlotRef> refs;
+    Vector<MetalSlotRef> refs;  // sorted by SlotRefKey (MapStageSlots)
     u32 push_constant_slot = kNoShaderSlot;
 };
 

@@ -410,6 +410,11 @@ TEST_CASE("The Metal pipeline cache file's header refuses another format, adapte
     const u64 identity = MetalArchiveIdentity("00000000000abcde", "Version 15.8.1 (Build 24H32)");
     CHECK(identity != MetalArchiveIdentity("00000000000abcde", "Version 15.8.2 (Build 24H40)"));
     CHECK(identity != MetalArchiveIdentity("00000000000abcdf", "Version 15.8.1 (Build 24H32)"));
+    // The hash moved onto Fnv1a64Builder (container audit Day 12) with its values unchanged, so a cache file written
+    // before still loads: these are the old loop's values.
+    CHECK(identity == 0xdc8751d071614625ull);
+    CHECK(MetalArchiveFnv("a", 1) == 0xaf63dc4c8601ec8cull);
+    CHECK(MetalArchiveFnv("archive", 7, 7) == 0x694c619a37f9d787ull);
     u8 file[kMetalArchiveHeaderBytes + 5];
     WriteMetalArchiveHeader(file, identity, archive, 5);
     MemCopy(file + kMetalArchiveHeaderBytes, archive, 5);

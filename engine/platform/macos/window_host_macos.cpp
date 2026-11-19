@@ -4,7 +4,7 @@
 
 #include "debug/crash_state.h"
 #include "log/log.h"
-#include "mem/arena_allocator.h"
+#include "mem/heap_allocator.h"
 #include "os/console.h"
 #include "platform/macos/cocoa_window.h"
 #include "string/string.h"
@@ -30,8 +30,7 @@ bool PlatformWindowHost::Open(WindowBackend requested, StringView title, u32 wid
     const BackendPlan plan = PlanCocoaWindowBackends(requested);
     if (plan.count == 0)
     {
-        ArenaAllocator scratch(128);
-        StringBuilder<ArenaAllocator> line(scratch);
+        StringBuilder<HeapAllocator> line(HeapAllocator::Default());
         line.Append("Window: no usable backend (")
             .Append(plan.refusal != nullptr ? plan.refusal : "none asked for")
             .Append(')');

@@ -119,7 +119,9 @@ void RunCases(bool polling)
             renamed = renamed || (events[i].kind == io::WatchEventKind::Renamed &&
                                   events[i].name.View() == "after.lua" && events[i].old_name.View() == "before.lua");
         }
-        if (watcher->IsNative())
+        // FSEvents gives no pairing to rely on: the macOS backend reports a rename as its two names
+        // (directory_watcher.h).
+        if (watcher->IsNative() && !ENGINE_PLATFORM_MACOS)
         {
             CHECK(renamed);
         }

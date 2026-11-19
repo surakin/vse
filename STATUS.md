@@ -86,8 +86,19 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - Runs after the rebase onto Day 13 (ctest, the reset loop and crash tests left out): `build-msvc` plain 4022 of 4024, asan 3442 of 3443,
     `build-clang-cl` plain 4050 of 4054; only known failures (voice cost, the jobs flake, the `engine_c_runtime` hang) and the dx12 entry
     of `container_use_check`'s allow list, now stale and removed. The physics and script hashes are unchanged. Review: 5 findings, 1 fixed,
-    3 recorded, 1 no change needed. The Mac's half waits.
-- **Day 13 done (2026-11-19, Linux): the series is closed on Linux; Day 12 (Windows and macOS) is the user's.**
+    3 recorded, 1 no change needed.
+- **Day 12, the Mac's half done (2026-11-19):**
+  - Metal: a stage's slot refs are sorted once by (set, binding) and `RefFor` binary-searches them (not the planned per-encoder map:
+    nothing is rebuilt per encoder); the layout sort and `CopySlots` use the container overloads; `MetalArchiveFnv` is `Fnv1a64Builder`,
+    its values pinned in a test, and `container_use_check`'s Metal entry is gone.
+  - Found on the Mac: the macOS window host's Win32 refusal still outgrew its 128-byte arena after the PC's `String` fix (it uses the heap
+    now), and Day 473's rename case expected `Renamed` from FSEvents, which reports two names (the case now expects that on macOS).
+  - Runs (plain, unity only): `ran 4073 of 11236 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, the voice-cost
+    bound and the three issues above, fixed after; arm64 compile-only clean; docs 7 of 7. Hashes equal Linux's and the PC's (physics
+    golden, `script_sample`, the 150-frame demo hash, the 600-frame demo `424a6fbf279d2104`); `script_demo_window_cocoa` passes. Also: the
+    nojit script tests and the shared library's 48 host tests pass on the Mac. Review: 7 findings, 4 fixed (a regression test for the sort
+    shown failing), 1 moot, 1 recorded, 1 declined.
+- **Day 13 done (2026-11-19, Linux): the series is closed on Linux; Day 12 (Windows and macOS) is the user's (both halves done 2026-11-19).**
   - The gate `container_use_check` is in.
   - Closing run: `ran 11247 of 11377 tests (phases: all; flavors: all; display: excluded; crash tests: included)`. Four gate failures from the series
     were fixed; the remaining failures are known from Phase 27.

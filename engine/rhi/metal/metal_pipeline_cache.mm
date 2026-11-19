@@ -75,14 +75,7 @@ io::Path PathOf(const char* text)
 
 u64 MetalArchiveFnv(const void* data, usize size, u64 seed)
 {
-    const u8* p = static_cast<const u8*>(data);
-    u64 h = seed;
-    for (usize i = 0; i < size; ++i)
-    {
-        h ^= p[i];
-        h *= 0x100000001b3ull;
-    }
-    return h;
+    return Fnv1a64Builder(seed).AddBytes(ByteSpan(static_cast<const byte*>(data), size)).Value();
 }
 
 u64 MetalArchiveIdentity(const char* adapter_id, const char* driver)

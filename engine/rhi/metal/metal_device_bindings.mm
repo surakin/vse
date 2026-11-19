@@ -230,8 +230,7 @@ BindGroupLayoutHandle MetalDevice::CreateBindGroupLayout(const BindGroupLayoutDe
     {
         res.bindings.Push(desc.entries[i]);
     }
-    Sort(engine_placeholder::Span<BindingDesc>(res.bindings.Data(), res.bindings.Size()),  // rhi::Span is read-only
-         [](const BindingDesc& a, const BindingDesc& b) { return a.binding < b.binding; });
+    Sort(res.bindings, [](const BindingDesc& a, const BindingDesc& b) { return a.binding < b.binding; });
     LockGuard<Mutex> lock(resource_mutex_);
     const BindGroupLayoutHandle handle = bind_group_layouts_.Allocate(static_cast<BindGroupLayoutRes&&>(res));
     if (!handle.IsValid())
@@ -608,6 +607,10 @@ bool MapStageSlots(MetalDevice& device, ShaderStage stage, const ShaderSlotTable
         ref.count = found->count;
         out->refs.Push(ref);
     }
+    // Sorted by (set, binding) once here, so the binder finds a group's resource by a binary search on every bind
+    // (container audit Day 12); stable, so of two refs for one binding the first stays the one found, as before.
+    StableSort(out->refs, [](const MetalSlotRef& a, const MetalSlotRef& b)
+               { return SlotRefKey(a.set, a.binding) < SlotRefKey(b.set, b.binding); });
     return true;
 }
 
@@ -628,20 +631,24 @@ namespace
 // argument table (the group's layout disagrees with the pipeline's) sets `*mismatch`.
 const MetalSlotRef* RefFor(const MetalStageSlots& slots, u32 set, const MetalGroupResource& r, bool* mismatch)
 {
-    for (usize i = 0; i < slots.refs.Size(); ++i)
+    if (set > 0xff || r.binding > 0xff)
     {
-        const MetalSlotRef& ref = slots.refs[i];
-        if (ref.set == set && ref.binding == r.binding)
-        {
-            if (ClassOf(ref.type) != ClassOf(r.type) || r.element >= ref.count)
-            {
-                *mismatch = true;
-                return nullptr;
-            }
-            return &ref;
-        }
+        return nullptr;  // a ref's set and binding are bytes: nothing can match
     }
-    return nullptr;
+    const u32 key = SlotRefKey(set, r.binding);
+    const usize at = LowerBound(slots.refs, key,
+                                [](const MetalSlotRef& ref, u32 k) { return SlotRefKey(ref.set, ref.binding) < k; });
+    if (at == slots.refs.Size() || SlotRefKey(slots.refs[at].set, slots.refs[at].binding) != key)
+    {
+        return nullptr;
+    }
+    const MetalSlotRef& ref = slots.refs[at];
+    if (ClassOf(ref.type) != ClassOf(r.type) || r.element >= ref.count)
+    {
+        *mismatch = true;
+        return nullptr;
+    }
+    return &ref;
 }
 
 // Sets one resource on a stage through the stage's three setters, by the binding's class, skipping a slot that already

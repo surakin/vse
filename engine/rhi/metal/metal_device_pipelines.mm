@@ -173,10 +173,7 @@ int HighestBufferSlot(const MetalStageSlots& slots)
 void CopySlots(const MetalStageSlots& from, MetalStageSlots* to)
 {
     to->refs.Clear();
-    for (usize i = 0; i < from.refs.Size(); ++i)
-    {
-        to->refs.Push(from.refs[i]);
-    }
+    to->refs.Append(from.refs);
     to->push_constant_slot = from.push_constant_slot;
 }
 

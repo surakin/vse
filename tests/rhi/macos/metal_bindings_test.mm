@@ -287,6 +287,63 @@ TEST_CASE("The Metal binder skips slots that already hold the resource, and star
     CHECK(c.samplers == 0);
 }
 
+TEST_CASE("A slot table listed out of binding order maps sorted and binds every resource (container audit Day 12)",
+          "[rhi][metal][gpu]")
+{
+    // The binder finds a group's resource in a stage's refs by a binary search, so MapStageSlots must sort them by
+    // (set, binding) whatever order the library's table lists them in.
+    DevicePtr device = CreateDevice(MetalInfo("metal_bindings_test"));
+    REQUIRE(device);
+    MetalDevice& metal = AsMetal(*device);
+    const BindGroupLayoutHandle layout = FragmentLayout(*device);
+    const Resources r = MakeResources(*device);
+    const BindGroupHandle group = MakeGroup(*device, layout, r, 0);
+    REQUIRE(group.IsValid());
+    const ShaderSlot reversed[3] = {{0, 2, 0, BindingType::Sampler, 1},
+                                    {0, 1, 0, BindingType::SampledTexture, 1},
+                                    {0, 0, 0, BindingType::UniformBuffer, 1}};
+    const ShaderSlotTable table{reversed, 3, kNoShaderSlot};
+    MetalStageSlots slots;
+    char error[256] = {};
+    REQUIRE(MapStageSlots(metal, ShaderStage::Fragment, &table, &layout, 1, &slots, error, sizeof(error)));
+    INFO(error);
+    REQUIRE(slots.refs.Size() == 3);
+    for (usize i = 0; i < slots.refs.Size(); ++i)
+    {
+        CHECK(slots.refs[i].binding == i);
+    }
+    @autoreleasepool
+    {
+        MTLTextureDescriptor* td = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
+                                                                                      width:4
+                                                                                     height:4
+                                                                                  mipmapped:NO];
+        td.usage = MTLTextureUsageRenderTarget;
+        td.storageMode = MTLStorageModePrivate;
+        id<MTLTexture> target = [metal.Mtl() newTextureWithDescriptor:td];
+        MTLRenderPassDescriptor* pass = [MTLRenderPassDescriptor renderPassDescriptor];
+        pass.colorAttachments[0].texture = target;
+        pass.colorAttachments[0].loadAction = MTLLoadActionClear;
+        pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+        id<MTLCommandBuffer> commands = [metal.Queue() commandBuffer];
+        id<MTLRenderCommandEncoder> encoder = [commands renderCommandEncoderWithDescriptor:pass];
+        MetalBinder binder;
+        binder.Reset();
+        CHECK(binder.BindRender(metal, encoder, nullptr, &slots, 0, group));
+        CHECK(binder.IssuedCalls() == 3);  // buffer, texture and sampler all found
+        [encoder endEncoding];
+        [commands commit];
+        [commands waitUntilCompleted];
+        CHECK(commands.status == MTLCommandBufferStatusCompleted);
+    }
+    device->DestroyBindGroup(group);
+    device->DestroyBindGroupLayout(layout);
+    device->DestroyBuffer(r.uniforms);
+    device->DestroyTexture(r.texture);
+    device->DestroySampler(r.sampler);
+    device->WaitIdle();
+}
+
 TEST_CASE("Equal Metal sampler descriptions share one sampler until the last is destroyed", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_bindings_test"));
