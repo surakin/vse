@@ -311,6 +311,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
   add_subdirectory(tools/resource_server)  # Phase 22 Day 331
   add_subdirectory(tests/asset)
+  add_subdirectory(tests/animation)  # Phase 22 Day 321 (Windows from 2026-11-19: it was left out)
   add_subdirectory(tests/rhi)  # Day 160: the Phase 4 RHI suite through Vulkan
   add_subdirectory(tests/renderer)  # Day 161
   add_subdirectory(tests/scene)  # Phase 17 Day 233
@@ -413,6 +414,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
   add_subdirectory(tools/resource_server)  # Phase 22 Day 331
   add_subdirectory(tests/asset)
+  add_subdirectory(tests/animation)  # Phase 22 Day 321 (macOS from 2026-11-19: it was left out)
   add_subdirectory(tests/rhi)
   add_subdirectory(tests/renderer)
   add_subdirectory(tests/scene)
@@ -451,6 +453,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/shared_state_check)  # Phase 23 Day 355: no public header under engine/ defines mutable static state
   add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
   add_subdirectory(tools/net_probe)  # Phase 21 Day 310
+  add_subdirectory(tools/script_api_doc)  # Phase 27 Day 450: docs/reference/script-api.md (macOS from 2026-11-19: it was left out)
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
   message(STATUS "macOS (Phase 21): building everything the Linux build has, with the Metal backend in place of Vulkan (Day 311)")

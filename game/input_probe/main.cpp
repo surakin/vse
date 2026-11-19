@@ -8,7 +8,7 @@
 //   program first) O  like P for the primary selection (the middle-click one) F  show which formats the clipboard
 //   offers D  start a drag of a test string (drop it into another program); drops on this window are printed (text and
 //   files accepted) Esc quit
-// Options: --backend=wayland|x11|cocoa|auto, --run-seconds=N (default 60).
+// Options: --backend=wayland|x11|win32|cocoa|auto, --run-seconds=N (default 60).
 #include "log/log.h"
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"

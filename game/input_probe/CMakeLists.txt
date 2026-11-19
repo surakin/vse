@@ -5,9 +5,11 @@ target_compile_options(input_probe PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_link_libraries(input_probe PRIVATE platform)
 
 # The banner line once overflowed a 256-byte scratch arena and aborted the program at start (found by hand on 2026-11-11): a one-second run on each display
-# backend, in a real window, must reach the end. Holds the `display` resource and skips without a session for that backend. macOS has one
-# backend, Cocoa (Phase 21 Day 296).
-if(APPLE)
+# backend, in a real window, must reach the end. Holds the `display` resource and skips without a session for that backend. Windows has one
+# backend, Win32, and macOS one, Cocoa (Phase 21 Day 296).
+if(WIN32)
+  set(INPUT_PROBE_BACKENDS win32)
+elseif(APPLE)
   set(INPUT_PROBE_BACKENDS cocoa)
 else()
   set(INPUT_PROBE_BACKENDS wayland x11)
@@ -20,7 +22,7 @@ foreach(backend ${INPUT_PROBE_BACKENDS})
   set_tests_properties(input_probe_runs_${backend} PROPERTIES LABELS "demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77)
   engine_label_tests(input_probe_runs_${backend})
 endforeach()
-if(NOT APPLE)
+if(NOT WIN32 AND NOT APPLE)
   # X11 copy: a soak test (docs/guide/building-and-testing.md, "Long tests"; the user, 2026-11-19)
   engine_soak_tests(input_probe_runs_x11)
 endif()
