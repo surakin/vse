@@ -2357,11 +2357,21 @@ Empties the list and its counters, keeping the capacity.
 void SortLayers();
 ```
 
-Orders the commands by layer, keeping call order inside a layer (a stable insertion sort that allocates nothing; a frame has a handful of commands, and an already ordered list costs one pass). The index data stays where it is: a command names its own range.
+Orders the commands by layer, keeping call order inside a layer: an already ordered list costs one pass, and any other is merge-sorted through `sort_scratch`, which keeps its capacity, so a frame allocates nothing once it has grown (container audit Day 6: it was an insertion sort, quadratic when a popup's commands come early). The index data stays where it is: a command names its own range.
 
 | Field | Value |
 |---|---|
 | Fails | never. |
+
+### `sort_scratch` {#ui-drawlist-sort-scratch}
+
+`variable ui::DrawList::sort_scratch` — defined in `engine/ui/draw_list.h`
+
+```cpp
+Vector<DrawCommand> sort_scratch;
+```
+
+The merge buffer of `SortLayers`, kept between frames; its contents mean nothing.
 
 ## `DrawListCanvas` {#ui-drawlistcanvas}
 

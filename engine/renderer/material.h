@@ -214,6 +214,45 @@ struct MaterialSystemDesc
 /// - Aborts: an argument is out of range.
 u64 MakeDrawSortKey(u32 pipeline_index, u32 material_index, u32 mesh_index);
 
+namespace detail
+{
+
+// The key of a cached pipeline: every field the material system's lookup compares (container audit Day 7: it was a
+// bare 64-bit hash with a collision scan). Only the used colors and attributes take part in `==` and the hash.
+struct PipelineKey
+{
+    u32 template_index = 0;
+    u32 template_generation = 0;
+    u32 key_bits = 0;
+    PipelineTarget target;
+    VertexLayoutData layout;
+    rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList;
+    bool restart = false;
+};
+
+bool operator==(const PipelineKey& a, const PipelineKey& b);
+
+}  // namespace detail
+
+}  // namespace engine_placeholder::renderer
+
+namespace engine_placeholder
+{
+
+/// Hash function for the material system's pipeline keys (container audit Day 7).
+///
+/// - Thread-safety: thread-safe (stateless).
+template <> struct Hash<renderer::detail::PipelineKey>
+{
+    /// Returns a well-mixed hash of the key's fields.
+    usize operator()(const renderer::detail::PipelineKey& k) const;
+};
+
+}  // namespace engine_placeholder
+
+namespace engine_placeholder::renderer
+{
+
 /// Templates, materials, default textures, bind groups and the pipeline cache.
 ///
 /// Creation validates against reflection and returns an invalid id (after logging) on any mismatch; a stale or invalid
@@ -645,6 +684,7 @@ private:
     MaterialSlot& Get(MaterialId id);
     Variant* BuildVariant(TemplateSlot& t, PermutationKey key);
     void DestroyPipelines(u32 template_index);
+    static detail::PipelineKey KeyOf(const PipelineEntry& p);
 
     rhi::Device* device_ = nullptr;
     MaterialSystemDesc desc_;
@@ -652,7 +692,7 @@ private:
     Vector<MaterialSlot> materials_;
     Vector<PipelineEntry> pipelines_;
     u32 pipeline_count_ = 0;
-    HashMap<u64, u32, HeapAllocator> pipeline_index_{HeapAllocator::Default()};  // key hash -> first entry with it
+    HashMap<detail::PipelineKey, u32, HeapAllocator> pipeline_index_{HeapAllocator::Default()};  // key -> its entry
     u32 material_high_ = 0;  // one past the highest material slot ever used
     rhi::BindGroupLayoutHandle frame_layout_;
     rhi::BindGroupLayoutHandle object_layout_;

@@ -17,31 +17,21 @@ constexpr u32 kSectionNames = kFirstUserSection;
 
 }  // namespace
 
-ResourceTable::ResourceTable() : by_path_(HeapAllocator::Default()), by_id_(HeapAllocator::Default()) {}
-
-void ResourceTable::IndexEntry(u32 index)
-{
-    Entry& entry = entries_[index];
-    by_path_.Insert(entry.path.View(), index);
-    const u32* id_head = by_id_.Find(entry.id.Value());
-    entry.next_by_id = id_head != nullptr ? *id_head : kNoEntry;
-    by_id_.Insert(entry.id.Value(), index);
-}
+ResourceTable::ResourceTable() : by_id_(HeapAllocator::Default()) {}
 
 void ResourceTable::Clear()
 {
-    by_path_.Clear();
     by_id_.Clear();
     entries_.Clear();
 }
 
-// Replaces the reference to entry `from` in its id's chain (the head or the previous entry's link) with `to`.
-void ResourceTable::RelinkId(u32 from, u32 to)
+// Replaces the reference to slot `from` in the chain of `id` (the head or the previous entry's link) with `to`.
+void ResourceTable::RelinkId(u64 id, u32 from, u32 to)
 {
-    u32* link = by_id_.Find(entries_[from].id.Value());
+    u32* link = by_id_.Find(id);
     while (link != nullptr && *link != from)
     {
-        link = *link == kNoEntry ? nullptr : &entries_[*link].next_by_id;
+        link = *link == kNoEntry ? nullptr : &entries_.At(*link).next_by_id;
     }
     if (link != nullptr)
     {
@@ -51,8 +41,7 @@ void ResourceTable::RelinkId(u32 from, u32 to)
 
 const ResourceTable::Entry* ResourceTable::FindByNormalized(StringView normalized) const
 {
-    const u32* at = by_path_.Find(normalized);
-    return at != nullptr ? &entries_[*at] : nullptr;
+    return entries_.Find(normalized);
 }
 
 Status ResourceTable::Add(StringView path, ResourceId id, ResourceType type)
@@ -84,9 +73,9 @@ Status ResourceTable::Add(StringView path, ResourceId id, ResourceType type)
     {
         return Status::Make(ErrorCode::LimitExceeded, "the table holds the most entries it may hold");
     }
-    Entry entry{Move(normalized), id, type, kNoEntry};
-    entries_.Push(Move(entry));
-    IndexEntry(static_cast<u32>(entries_.Size() - 1));
+    const u32* id_head = by_id_.Find(id.Value());
+    const auto made = entries_.Emplace(Move(normalized), Entry{id, type, id_head != nullptr ? *id_head : kNoEntry});
+    by_id_.Insert(id.Value(), made.slot);
     return Status::Success();
 }
 
@@ -97,28 +86,24 @@ bool ResourceTable::Remove(StringView path)
     {
         return false;
     }
-    const u32* found = by_path_.Find(normalized.View());
-    if (found == nullptr)
+    const u32 slot = entries_.SlotOf(normalized.View());
+    if (slot == DenseMap<String<HeapAllocator>, Entry>::kNone)
     {
         return false;
     }
-    // O(1): unlink the entry, then move the last entry into its place (the table's order reaches no output: listings
-    // and the NAMES blob are sorted).
-    const u32 index = *found;
-    const u32 next = entries_[index].next_by_id;
-    RelinkId(index, next);
-    if (*by_id_.Find(entries_[index].id.Value()) == kNoEntry)
+    // O(1): unlink the entry from its id's chain, then remove it; the last entry moves into its slot and its chain is
+    // relinked (the table's order reaches no output: listings and the NAMES blob are sorted).
+    const u64 id = entries_.At(slot).id.Value();
+    RelinkId(id, slot, entries_.At(slot).next_by_id);
+    if (*by_id_.Find(id) == kNoEntry)
     {
-        by_id_.Remove(entries_[index].id.Value());
+        by_id_.Remove(id);
     }
-    by_path_.Remove(normalized.View());
-    const u32 last = static_cast<u32>(entries_.Size() - 1);
-    if (index != last)
+    const u32 moved = entries_.RemoveAt(slot);
+    if (moved != DenseMap<String<HeapAllocator>, Entry>::kNone)
     {
-        RelinkId(last, index);
-        *by_path_.Find(entries_[last].path.View()) = index;
+        RelinkId(entries_.At(slot).id.Value(), moved, slot);
     }
-    entries_.SwapRemove(index);
     return true;
 }
 
@@ -150,7 +135,7 @@ bool ResourceTable::TypeOf(ResourceId id, ResourceType* type) const
     }
     if (type != nullptr)
     {
-        *type = entries_[*head].type;
+        *type = entries_.At(*head).type;
     }
     return true;
 }
@@ -159,9 +144,9 @@ usize ResourceTable::PathsOf(ResourceId id, Vector<StringView>* out) const
 {
     const usize before = out->Size();
     const u32* head = by_id_.Find(id.Value());
-    for (u32 i = head != nullptr ? *head : kNoEntry; i != kNoEntry; i = entries_[i].next_by_id)
+    for (u32 i = head != nullptr ? *head : kNoEntry; i != kNoEntry; i = entries_.At(i).next_by_id)
     {
-        out->Push(entries_[i].path.View());
+        out->Push(entries_.KeyAt(i).View());
     }
     Sort(Span<StringView>(out->Data() + before, out->Size() - before),
          [](const StringView& a, const StringView& b) { return a < b; });
@@ -171,12 +156,12 @@ usize ResourceTable::PathsOf(ResourceId id, Vector<StringView>* out) const
 usize ResourceTable::ListPrefix(StringView prefix, Vector<TableEntryView>* out) const
 {
     const usize before = out->Size();
-    for (usize i = 0; i < entries_.Size(); ++i)
+    for (const auto& [key, e] : entries_)
     {
-        const StringView path = entries_[i].path.View();
+        const StringView path = key.View();
         if (path.Length() >= prefix.Length() && path.Substring(0, prefix.Length()) == prefix)
         {
-            out->Push(TableEntryView{path, entries_[i].id, entries_[i].type});
+            out->Push(TableEntryView{path, e.id, e.type});
         }
     }
     Sort(Span<TableEntryView>(out->Data() + before, out->Size() - before),
@@ -187,22 +172,22 @@ usize ResourceTable::ListPrefix(StringView prefix, Vector<TableEntryView>* out) 
 TableEntryView ResourceTable::At(usize index) const
 {
     ENGINE_ASSERT(index < entries_.Size(), "ResourceTable::At: the index is out of range");
-    return TableEntryView{entries_[index].path.View(), entries_[index].id, entries_[index].type};
+    const u32 slot = static_cast<u32>(index);
+    return TableEntryView{entries_.KeyAt(slot).View(), entries_.At(slot).id, entries_.At(slot).type};
 }
 
 Status ResourceTable::Merge(const ResourceTable& lower, Vector<ShadowedEntry>* shadowed)
 {
     // First pass: check everything that can fail, so a failure merges nothing.
     usize added = 0;
-    for (usize i = 0; i < lower.entries_.Size(); ++i)
+    for (const auto& [path, e] : lower.entries_)
     {
-        const Entry& e = lower.entries_[i];
         ResourceType known;
         if (TypeOf(e.id, &known) && known != e.type)
         {
             return Status::Make(ErrorCode::TypeMismatch, "an id has one type in one table and another in the other");
         }
-        if (FindByNormalized(e.path.View()) == nullptr)
+        if (FindByNormalized(path.View()) == nullptr)
         {
             ++added;
         }
@@ -211,18 +196,16 @@ Status ResourceTable::Merge(const ResourceTable& lower, Vector<ShadowedEntry>* s
     {
         return Status::Make(ErrorCode::LimitExceeded, "the merged table would hold more entries than the limit");
     }
-    for (usize i = 0; i < lower.entries_.Size(); ++i)
+    for (const auto& [path, e] : lower.entries_)
     {
-        const Entry& e = lower.entries_[i];
-        const Entry* mine = FindByNormalized(e.path.View());
+        const Entry* mine = FindByNormalized(path.View());
         if (mine == nullptr)
         {
-            ENGINE_TRY(Add(e.path.View(), e.id, e.type));
+            ENGINE_TRY(Add(path.View(), e.id, e.type));
         }
         else if (mine->id != e.id && shadowed != nullptr)
         {
-            shadowed->Push(
-                ShadowedEntry{String<HeapAllocator>(HeapAllocator::Default(), e.path.View()), e.id, mine->id});
+            shadowed->Push(ShadowedEntry{String<HeapAllocator>(HeapAllocator::Default(), path.View()), e.id, mine->id});
         }
     }
     return Status::Success();
@@ -238,21 +221,25 @@ Status ResourceTable::WriteNamesBlob(const TypeRegistry& types, Vector<byte>* ou
     Sort(Span<usize>(order.Data(), order.Size()),
          [this](usize a, usize b)
          {
-             if (entries_[a].id != entries_[b].id)
+             const u32 x = static_cast<u32>(a);
+             const u32 y = static_cast<u32>(b);
+             if (entries_.At(x).id != entries_.At(y).id)
              {
-                 return entries_[a].id < entries_[b].id;
+                 return entries_.At(x).id < entries_.At(y).id;
              }
-             return entries_[a].path.View() < entries_[b].path.View();
+             return entries_.KeyAt(x).View() < entries_.KeyAt(y).View();
          });
     bytes::ByteWriter writer;
     writer.WriteVarint(entries_.Size());
     for (usize k = 0; k < order.Size(); ++k)
     {
-        const Entry& e = entries_[order[k]];
+        const u32 slot = static_cast<u32>(order[k]);
+        const Entry& e = entries_.At(slot);
+        const String<HeapAllocator>& path = entries_.KeyAt(slot);
         writer.WriteU64(e.id.Value());
         writer.WriteU32(e.type.Tag());
-        writer.WriteVarint(e.path.Length());
-        writer.WriteBytes(ByteSpan(reinterpret_cast<const byte*>(e.path.CStr()), e.path.Length()));
+        writer.WriteVarint(path.Length());
+        writer.WriteBytes(ByteSpan(reinterpret_cast<const byte*>(path.CStr()), path.Length()));
     }
     BlobWriter blob(types, types::kNames, ResourceId::None());
     ENGINE_TRY(blob.AddSection(kSectionNames, writer.Bytes()));

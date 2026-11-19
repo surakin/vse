@@ -111,7 +111,7 @@ public:
     void Rebind(Recreatable* from, Recreatable* to);
 
     /// Returns the number of registered owners.
-    usize Count() const { return entries_.Size(); }
+    usize Count() const { return owners_.Size(); }
 
     /// Releases the live owners at `first_tier` and above, highest first, leaving the lower tiers alone (a pipeline
     /// rebuild releases tiers 3 and 4 only). `CurrentDevice` is unchanged.
@@ -159,23 +159,32 @@ public:
 private:
     struct Entry
     {
-        Recreatable* owner = nullptr;
         u32 tier = 0;
         u32 sequence = 0;
         bool live = false;
+        bool dead = false;  // unregistered during a reset: removed when the step ends, skipped until then
+    };
+    struct Visit
+    {
+        Recreatable* owner;
+        u32 tier;
+        u32 sequence;
     };
 
     void ReleaseLive(u32 first_tier);
     void ReleaseAllLive();
     void Compact();
-    void RemoveAt(usize index);
-    // The entries at `first_tier` and above in visiting order: by tier and registration, ascending (recreate) or
+    // The owners at `first_tier` and above in visiting order: by tier and registration, ascending (recreate) or
     // descending (release). Registration is refused during a reset, so the order made at the start of a step stays
-    // valid; entries unregistered meanwhile are skipped by their null owner.
-    void Order(u32 first_tier, bool ascending, Vector<u32>* out) const;
+    // valid; owners unregistered meanwhile are marked dead and skipped.
+    void Order(u32 first_tier, bool ascending, Vector<Visit>* out) const;
 
-    Vector<Entry> entries_;  // in no particular order: `sequence` keeps it
-    HashMap<Recreatable*, u32, HeapAllocator> index_{HeapAllocator::Default()};  // owner -> its entry
+    // The owners (container audit Days 5 and 7: a fixed array of 256, then a Vector with a position index; nothing
+    // needs a position, the order is (tier, sequence)).
+    HashMap<Recreatable*, Entry, HeapAllocator> owners_{HeapAllocator::Default()};
+    // Owners moved (Rebind) during the current reset step: old address -> new, so the step's visit list follows them.
+    HashMap<Recreatable*, Recreatable*, HeapAllocator> moved_{HeapAllocator::Default()};
+    Recreatable* Current(Recreatable* owner) const;
     u32 next_sequence_ = 0;
     rhi::Device* device_ = nullptr;
     bool resetting_ = false;

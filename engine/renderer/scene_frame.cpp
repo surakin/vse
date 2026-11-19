@@ -31,7 +31,6 @@ void SceneFrame::Destroy()
     labels_.Clear();
     label_text_.Clear();
     label_cache_.Clear();
-    label_cache_index_.Clear();
     debug_view_.Reset();
     tonemap_.Reset();
     lighting_.Reset();
@@ -151,62 +150,44 @@ bool SceneFrame::OpenLabelFont(ByteSpan data)
 
 const text::TextLayout* SceneFrame::LabelLayout(StringView text, const text::TextStyle& style, u64 frame)
 {
-    const u64 key = Fnv1a64Builder().AddWord(style.pixel_size).AddText(text).Value();
-    const u32* at = label_cache_index_.Find(key);
-    if (at != nullptr)
+    if (CachedLabel* c = label_cache_.Find(detail::LabelKeyView{style.pixel_size, text}))
     {
-        CachedLabel& c = label_cache_[*at];
-        if (c.pixel_size == style.pixel_size && StringView(c.text.Data(), c.text.Size()) == text)
-        {
-            c.used_frame = frame;
-            label_missing_ += c.missing;
-            return &c.layout;
-        }
-        // Another label has this key (a collision, rare): lay this one out without caching it.
-        if (!text::Layout(text, style, text::LayoutOptions{}, &label_layout_).Ok())
-        {
-            return nullptr;
-        }
-        for (usize g = 0; g < label_layout_.glyphs.Size(); ++g)
-        {
-            label_missing_ += label_layout_.glyphs[g].glyph == 0 ? 1u : 0u;
-        }
-        return &label_layout_;
+        c->used_frame = frame;
+        label_missing_ += c->missing;
+        return &c->layout;
     }
     CachedLabel c;
     if (!text::Layout(text, style, text::LayoutOptions{}, &c.layout).Ok())
     {
         return nullptr;
     }
-    c.key = key;
-    c.pixel_size = style.pixel_size;
-    c.text.Append(text.Data(), text.Length());
     for (usize g = 0; g < c.layout.glyphs.Size(); ++g)
     {
         c.missing += c.layout.glyphs[g].glyph == 0 ? 1u : 0u;
     }
     c.used_frame = frame;
     label_missing_ += c.missing;
-    label_cache_index_.Insert(key, static_cast<u32>(label_cache_.Size()));
-    label_cache_.Push(Move(c));
-    return &label_cache_[label_cache_.Size() - 1].layout;
+    detail::LabelKey key;
+    key.pixel_size = style.pixel_size;
+    key.text.Append(text);
+    return &label_cache_.Emplace(Move(key), Move(c)).value->layout;
 }
 
 void SceneFrame::DropUnusedLabels(u64 frame)
 {
-    for (usize i = label_cache_.Size(); i > 0; --i)
+    // Collect, then remove: the map is not changed while it is walked. The views point into keys that stay until their
+    // own removal, which looks them up first.
+    Vector<detail::LabelKeyView> unused;
+    for (const auto& [key, label] : label_cache_)
     {
-        if (label_cache_[i - 1].used_frame == frame)
+        if (label.used_frame != frame)
         {
-            continue;
+            unused.Push(detail::LabelKeyView{key.pixel_size, key.text.View()});
         }
-        label_cache_index_.Remove(label_cache_[i - 1].key);
-        const usize last = label_cache_.Size() - 1;
-        if (i - 1 != last)
-        {
-            *label_cache_index_.Find(label_cache_[last].key) = static_cast<u32>(i - 1);
-        }
-        label_cache_.SwapRemove(i - 1);
+    }
+    for (const detail::LabelKeyView& key : unused)
+    {
+        label_cache_.Remove(key);
     }
 }
 

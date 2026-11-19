@@ -1,6 +1,6 @@
 #pragma once
 
-#include "containers/hash_map.h"
+#include "containers/dense_map.h"
 #include "containers/hash_set.h"
 #include "containers/span.h"
 #include "containers/vector.h"
@@ -355,7 +355,6 @@ private:
         f32 scale;
         bool variant_found;
         ResolvedStyle value;
-        u128 key;  // CacheKey of the fields above
     };
     ResolvedStyle Compute(WidgetKind kind, VariantId variant, u32 state, f32 scale, Span<const Theme* const> overrides,
                           bool* variant_found) const;
@@ -369,10 +368,9 @@ private:
     const Theme* theme_ = nullptr;
     u64 revision_ = 0;
     Vector<const Theme*> active_;
-    Vector<CacheEntry> cache_;
-    // The cache's index (container audit Day 5: it was scanned once per widget draw); a full cache replaces its entries
-    // in turn instead of being emptied.
-    HashMap<u128, u32, HeapAllocator> cache_index_{HeapAllocator::Default()};
+    // The resolved styles by (kind, variant, state, scale bits) (container audit Days 5 and 7: it was a Vector scanned
+    // once per widget draw); a full cache replaces its entries in turn instead of being emptied.
+    DenseMap<u128, CacheEntry> cache_;
     u32 evict_next_ = 0;
     HashSet<u64, HeapAllocator> logged_missing_{HeapAllocator::Default()};
     ThemeStats stats_;

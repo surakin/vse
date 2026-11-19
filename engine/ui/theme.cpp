@@ -542,7 +542,6 @@ bool ThemeSet::SetTheme(const Theme* theme)
     theme_ = theme;
     ++revision_;
     cache_.Clear();
-    cache_index_.Clear();
     evict_next_ = 0;
     return changed;
 }
@@ -636,9 +635,9 @@ ResolvedStyle ThemeSet::Resolve(WidgetKind kind, VariantId variant, u32 state, f
     const bool cacheable = overrides.Size() == 0;
     if (cacheable)
     {
-        if (const u32* at = cache_index_.Find(CacheKey(kind, variant, state, scale)))
+        if (const CacheEntry* found = cache_.Find(CacheKey(kind, variant, state, scale)))
         {
-            const CacheEntry& e = cache_[*at];
+            const CacheEntry& e = *found;
             ++stats_.cache_hits;
             if (!e.variant_found)
             {
@@ -662,22 +661,14 @@ ResolvedStyle ThemeSet::Resolve(WidgetKind kind, VariantId variant, u32 state, f
         e.scale = scale;
         e.variant_found = found;
         e.value = r;
-        e.key = CacheKey(kind, variant, state, scale);
-        if (cache_.Size() < kMaxCache)
+        if (cache_.Size() >= kMaxCache)
         {
-            cache_index_.Insert(e.key, static_cast<u32>(cache_.Size()));
-            cache_.Push(e);
+            // Full: drop one entry, going round the slots, instead of emptying the cache and recomputing every style
+            // the next frame.
+            cache_.RemoveAt(evict_next_);
+            evict_next_ = (evict_next_ + 1) % static_cast<u32>(kMaxCache - 1);
         }
-        else
-        {
-            // Full: replace the entries in turn (the oldest made first), instead of emptying the cache and recomputing
-            // every style the next frame.
-            const u32 slot = evict_next_;
-            evict_next_ = (evict_next_ + 1) % static_cast<u32>(kMaxCache);
-            cache_index_.Remove(cache_[slot].key);
-            cache_[slot] = e;
-            cache_index_.Insert(e.key, slot);
-        }
+        cache_.Emplace(CacheKey(kind, variant, state, scale), e);
     }
     return r;
 }

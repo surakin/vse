@@ -18,91 +18,93 @@ bool DeviceResources::Register(Recreatable* owner, u32 tier)
         return false;
     }
     Entry e;
-    e.owner = owner;
     e.tier = tier;
     e.sequence = next_sequence_++;
     e.live = owner->Live();
-    index_.Insert(owner, static_cast<u32>(entries_.Size()));
-    entries_.Push(e);
+    owners_.Insert(owner, e);
     return true;
-}
-
-// Removes the entry at `index` in O(1): the last entry takes its place (the order lives in `sequence`).
-void DeviceResources::RemoveAt(usize index)
-{
-    const usize last = entries_.Size() - 1;
-    if (index != last && entries_[last].owner != nullptr)
-    {
-        *index_.Find(entries_[last].owner) = static_cast<u32>(index);
-    }
-    entries_.SwapRemove(index);
 }
 
 void DeviceResources::Compact()
 {
-    for (usize i = entries_.Size(); i > 0; --i)
+    Vector<Recreatable*> dead;
+    for (const auto& [owner, e] : owners_)
     {
-        if (entries_[i - 1].owner == nullptr)
+        if (e.dead)
         {
-            RemoveAt(i - 1);
+            dead.Push(owner);
         }
     }
+    for (Recreatable* owner : dead)
+    {
+        owners_.Remove(owner);
+    }
+    moved_.Clear();  // the step is over: no visit list names an old address
     compact_pending_ = false;
 }
 
 void DeviceResources::Unregister(Recreatable* owner)
 {
-    const u32* at = owner != nullptr ? index_.Find(owner) : nullptr;
-    if (at == nullptr)
+    Entry* e = owner != nullptr ? owners_.Find(owner) : nullptr;
+    if (e == nullptr || e->dead)
     {
         return;
     }
-    const usize i = *at;
-    index_.Remove(owner);
     if (resetting_)
     {
-        entries_[i].owner = nullptr;  // removed when the reset step ends; the loops skip it
-        entries_[i].live = false;
+        e->dead = true;  // removed when the reset step ends; the loops skip it
+        e->live = false;
         compact_pending_ = true;
         return;
     }
-    RemoveAt(i);
+    owners_.Remove(owner);
 }
 
 void DeviceResources::Rebind(Recreatable* from, Recreatable* to)
 {
-    const u32* at = from != nullptr ? index_.Find(from) : nullptr;
-    if (at == nullptr)
+    const Entry* e = from != nullptr ? owners_.Find(from) : nullptr;
+    if (e == nullptr || e->dead)
     {
         return;
     }
-    const u32 i = *at;
-    index_.Remove(from);
-    entries_[i].owner = to;
+    const Entry moved = *e;
+    owners_.Remove(from);
     if (to != nullptr)
     {
-        index_.Insert(to, i);
+        owners_.Insert(to, moved);
+        if (resetting_)
+        {
+            moved_.Remove(to);        // `to` is the current address now: no move starts from it (no cycle)
+            moved_.Insert(from, to);  // the step's visit list still names `from`: it follows the move
+        }
     }
 }
 
-void DeviceResources::Order(u32 first_tier, bool ascending, Vector<u32>* out) const
+Recreatable* DeviceResources::Current(Recreatable* owner) const
+{
+    for (const Recreatable* const* to = moved_.Find(owner); to != nullptr; to = moved_.Find(owner))
+    {
+        owner = const_cast<Recreatable*>(*to);
+    }
+    return owner;
+}
+
+void DeviceResources::Order(u32 first_tier, bool ascending, Vector<Visit>* out) const
 {
     out->Clear();
-    for (usize i = 0; i < entries_.Size(); ++i)
+    for (const auto& [owner, e] : owners_)
     {
-        if (entries_[i].owner != nullptr && entries_[i].tier >= first_tier)
+        if (!e.dead && e.tier >= first_tier)
         {
-            out->Push(static_cast<u32>(i));
+            out->Push(Visit{owner, e.tier, e.sequence});
         }
     }
-    const Vector<Entry>& entries = entries_;
+    // (tier, sequence) is unique, so the order does not depend on the map's.
     Sort(*out,
-         [&](u32 a, u32 b)
+         [ascending](const Visit& x, const Visit& y)
          {
-             const Entry& x = entries[a];
-             const Entry& y = entries[b];
              const bool before = x.tier < y.tier || (x.tier == y.tier && x.sequence < y.sequence);
-             return ascending ? before : (!before && (x.tier != y.tier || x.sequence != y.sequence));
+             return ascending ? before : (x.tier > y.tier || (x.tier == y.tier && x.sequence > y.sequence));
          });
 }
 
@@ -126,21 +128,27 @@ bool DeviceResources::RecreateFrom(u32 first_tier)
     resetting_ = true;
     failed_name_[0] = '\0';
     bool ok = true;
-    Vector<u32> order;
+    Vector<Visit> order;
     Order(first_tier, true, &order);  // lowest tier first; within a tier the earlier registration first
-    for (u32 at : order)
+    for (const Visit& v : order)
     {
-        Entry& e = entries_[at];
-        if (e.owner == nullptr || e.live)
+        Recreatable* const owner = Current(v.owner);  // a Rebind during the step moved it
+        Entry* e = owners_.Find(owner);
+        if (e == nullptr || e->dead || e->live)
         {
             continue;  // unregistered meanwhile, or already live
         }
-        e.live = true;
-        if (!e.owner->Recreate(device_))
+        e->live = true;
+        if (!owner->Recreate(device_))
         {
-            FormatTo(failed_name_, sizeof(failed_name_), "%s", e.owner->RecreatableName());
+            Recreatable* const now = Current(owner);
+            FormatTo(failed_name_, sizeof(failed_name_), "%s", now->RecreatableName());
             RenderLog(LogVerbosity::Error, "DeviceResources: '%s' could not be recreated", failed_name_);
-            e.live = false;
+            e = owners_.Find(now);
+            if (e != nullptr)
+            {
+                e->live = false;
+            }
             ok = false;
             break;
         }
@@ -157,17 +165,18 @@ bool DeviceResources::RecreateFrom(u32 first_tier)
 void DeviceResources::ReleaseLive(u32 first_tier)
 {
     // Highest tier first; within a tier the later registration first.
-    Vector<u32> order;
+    Vector<Visit> order;
     Order(first_tier, false, &order);
-    for (u32 at : order)
+    for (const Visit& v : order)
     {
-        Entry& e = entries_[at];
-        if (e.owner == nullptr || !e.live)
+        Recreatable* const owner = Current(v.owner);  // a Rebind during the step moved it
+        Entry* e = owners_.Find(owner);
+        if (e == nullptr || e->dead || !e->live)
         {
             continue;  // unregistered meanwhile, or not live
         }
-        e.live = false;
-        e.owner->Release();
+        e->live = false;
+        owner->Release();
     }
 }
 

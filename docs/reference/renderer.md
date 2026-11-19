@@ -4084,6 +4084,31 @@ Sorting by this key groups draws that share a pipeline and, within it, a materia
 | Returns | the key; compare keys with `<`. |
 | Aborts | an argument is out of range. |
 
+## `Hash<renderer::detail::PipelineKey>` {#hash-lt-renderer-detail-pipelinekey-gt}
+
+`struct Hash<renderer::detail::PipelineKey>` — defined in `engine/renderer/material.h`
+
+```cpp
+template <>
+struct Hash<renderer::detail::PipelineKey> { ... }
+```
+
+Hash function for the material system's pipeline keys (container audit Day 7).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe (stateless). |
+
+### `operator()(const renderer::detail::PipelineKey&)` {#hash-lt-renderer-detail-pipelinekey-gt-operator-call-const-renderer-detail-pipelinekey-amp-const}
+
+`operator Hash<renderer::detail::PipelineKey>::operator()` — defined in `engine/renderer/material.h`
+
+```cpp
+usize operator()(const renderer::detail::PipelineKey& k) const;
+```
+
+Returns a well-mixed hash of the key's fields.
+
 ## `MaterialSystem` {#renderer-materialsystem}
 
 `class renderer::MaterialSystem` — defined in `engine/renderer/material.h`
@@ -11276,6 +11301,56 @@ void* user;
 ```
 
 Passed to both callbacks.
+
+## `Hash<renderer::detail::LabelKey>` {#hash-lt-renderer-detail-labelkey-gt}
+
+`struct Hash<renderer::detail::LabelKey>` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+template <>
+struct Hash<renderer::detail::LabelKey> { ... }
+```
+
+Hash function for the scene frame's label keys (container audit Day 7).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe (stateless). |
+
+### `operator()(const renderer::detail::LabelKey&)` {#hash-lt-renderer-detail-labelkey-gt-operator-call-const-renderer-detail-labelkey-amp-const}
+
+`operator Hash<renderer::detail::LabelKey>::operator()` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+usize operator()(const renderer::detail::LabelKey& k) const;
+```
+
+Returns the hash of the pixel size and the text, equal to the view's.
+
+## `Hash<renderer::detail::LabelKeyView>` {#hash-lt-renderer-detail-labelkeyview-gt}
+
+`struct Hash<renderer::detail::LabelKeyView>` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+template <>
+struct Hash<renderer::detail::LabelKeyView> { ... }
+```
+
+Hash function for a borrowed label key, equal to the owned key's for equal contents.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe (stateless). |
+
+### `operator()(const renderer::detail::LabelKeyView&)` {#hash-lt-renderer-detail-labelkeyview-gt-operator-call-const-renderer-detail-labelkeyview-amp-const}
+
+`operator Hash<renderer::detail::LabelKeyView>::operator()` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+usize operator()(const renderer::detail::LabelKeyView& k) const;
+```
+
+Returns the hash of the pixel size and the text.
 
 ## `SceneFrame` {#renderer-sceneframe}
 

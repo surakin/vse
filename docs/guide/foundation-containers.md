@@ -16,6 +16,7 @@ teaches the ones you will use every day: `Array`, `Vector`, `HashMap`, `UniquePt
 | a list that grows and shrinks | `Vector<T>` | heap by default; `Vector<T, ArenaAllocator>` for frame data |
 | find a value by key | `HashMap<K, V, Allocator>` | needs `Hash<K>` and `==`; iteration order is unspecified |
 | know whether a key is in a set | `HashSet<K, Allocator>` | the map's table with no value |
+| find by key **and** walk in a stable order, or hand out slot numbers | `DenseMap<K, V>` | entries dense in slots; removal swaps the last in and says which moved |
 | a queue: push at one end, pop at the other | `Deque<T>` | a growable ring; never `Vector::Remove(0)` |
 | always take the best next item | `BinaryHeap<T, Less>` | O(log n) push and pop; add a sequence number to break ties |
 | one object with one owner | `UniquePtr<T>` | `MakeUnique<T>(args...)` |
@@ -31,6 +32,7 @@ teaches the ones you will use every day: `Array`, `Vector`, `HashMap`, `UniquePt
 - `engine/foundation/mem/heap_allocator.h`
 - `engine/foundation/containers/hash_map.h`
 - `engine/foundation/containers/hash_set.h`
+- `engine/foundation/containers/dense_map.h`
 - `engine/foundation/containers/hash.h`
 - `engine/foundation/containers/deque.h`
 - `engine/foundation/containers/binary_heap.h`
@@ -49,6 +51,7 @@ Full reference: [Foundation: Containers](../reference/foundation-containers.md).
 - [[Deque]] — a growable ring, pushed and popped at both ends
 - [[BinaryHeap]] — a priority queue
 - [[HashSet]] — the map's table with no value: a set of keys
+- [[DenseMap]] — a map whose entries are dense in slots, walked in slot order
 - `Hash<K>`, `Fnv1a64`, [[Fnv1a64Builder]], [[HashCombine]] — the key hashes and the engine's one byte hash (`containers/hash.h`)
 - [[Span]] — a non-owning view of consecutive elements (`ByteSpan` for bytes), see [Standard types](foundation-types.md)
 
@@ -199,6 +202,18 @@ Never assign to `key` in a range-for (the entry would no longer be found); do no
 the last entry goes unseen).
 
 [[HashSet]]`<K, Allocator>` is the same table with no value, for "have I seen this?": `Insert` returns whether the key was new.
+
+### DenseMap: a map you can walk in order
+
+[[DenseMap]]`<K, V>` keeps its entries dense in slots `0..Size()-1` and finds them by key through a hash index. Use it instead of a `Vector`
+plus a `HashMap` of positions (the pattern it replaces). `Emplace` appends and returns the slot. `Remove`/`RemoveAt` move the last entry into
+the hole in O(1) and report the slot it came from, so code that keeps slot numbers can follow the move. `RemoveIf` removes in one pass. A
+range-for visits the slots in order, which is always the same for the same sequence of calls, so unlike a `HashMap` walk it may reach a
+deterministic output. Keys are stored once and may be move-only. Use a plain `HashMap` when nothing needs the order or the slots.
+
+A key made of several fields gets a struct with `operator==` and a `Hash` specialization (`HashCombine` the fields). Never key a map by a
+bare hash of the fields: two different keys with the same hash would be one entry. To search without making a key (a string key searched
+with a view), give it a borrowed twin type that compares equal and hashes the same (`renderer::detail::LabelKeyView`).
 
 ### Hashing bytes
 

@@ -14,6 +14,7 @@
 #include "renderer/renderer.h"
 #include "renderer/text_renderer.h"
 #include "containers/vector.h"
+#include "string/string.h"
 #include "string_view.h"
 #include "text/font.h"
 #include "text/glyph_atlas.h"
@@ -85,6 +86,69 @@ struct SceneFrameCompose
     /// Passed to both callbacks.
     void* user = nullptr;
 };
+
+namespace detail
+{
+
+// The key of a cached label layout: the pixel size and the text (container audit Day 7: it was a bare 64-bit hash
+// with a collision fallback). A `LabelKeyView` borrows the text, so a lookup makes no string.
+struct LabelKey
+{
+    u32 pixel_size = 0;
+    String<HeapAllocator> text{HeapAllocator::Default()};
+};
+struct LabelKeyView
+{
+    u32 pixel_size = 0;
+    StringView text;
+};
+inline bool operator==(const LabelKey& a, const LabelKey& b)
+{
+    return a.pixel_size == b.pixel_size && a.text.View() == b.text.View();
+}
+inline bool operator==(const LabelKey& a, const LabelKeyView& b)
+{
+    return a.pixel_size == b.pixel_size && a.text.View() == b.text;
+}
+inline usize HashLabel(u32 pixel_size, StringView text)
+{
+    return HashCombine(Hash<u32>{}(pixel_size), Hash<StringView>{}(text));
+}
+
+}  // namespace detail
+
+}  // namespace engine_placeholder::renderer
+
+namespace engine_placeholder
+{
+
+/// Hash function for the scene frame's label keys (container audit Day 7).
+///
+/// - Thread-safety: thread-safe (stateless).
+template <> struct Hash<renderer::detail::LabelKey>
+{
+    /// Returns the hash of the pixel size and the text, equal to the view's.
+    usize operator()(const renderer::detail::LabelKey& k) const
+    {
+        return renderer::detail::HashLabel(k.pixel_size, k.text.View());
+    }
+};
+/// Hash function for a borrowed label key, equal to the owned key's for equal contents.
+///
+/// - Thread-safety: thread-safe (stateless).
+template <> struct Hash<renderer::detail::LabelKeyView>
+{
+    /// Returns the hash of the pixel size and the text.
+    usize operator()(const renderer::detail::LabelKeyView& k) const
+    {
+        return renderer::detail::HashLabel(k.pixel_size, k.text);
+    }
+};
+
+}  // namespace engine_placeholder
+
+namespace engine_placeholder::renderer
+{
 
 /// The frame of a lit scene: owns the material system, the per-frame buffers and the passes, and renders
 /// [[renderer::RenderScene]]s with them.
@@ -252,21 +316,16 @@ private:
     };
     Vector<Label> labels_;
     Vector<char> label_text_;
-    text::TextLayout label_layout_;  // the layout of a label the cache cannot hold (a key collision)
-    // The layouts of the labels drawn last frame, by (pixel size, text): a host adds its labels again every frame, and
-    // most are unchanged (container audit Day 6: every label was laid out every frame). Entries a frame does not use
-    // are dropped after it, so the cache holds at most one frame's labels.
+    // The layouts of the labels drawn last frame: a host adds its labels again every frame, and most are unchanged
+    // (container audit Days 6 and 7: every label was laid out every frame). Entries a frame does not use are dropped
+    // after it, so the cache holds at most one frame's labels.
     struct CachedLabel
     {
-        u64 key = 0;
-        u32 pixel_size = 0;
-        Vector<char> text;
         text::TextLayout layout;
         u32 missing = 0;  // glyphs the font lacks
         u64 used_frame = 0;
     };
-    Vector<CachedLabel> label_cache_;
-    HashMap<u64, u32, HeapAllocator> label_cache_index_{HeapAllocator::Default()};
+    HashMap<detail::LabelKey, CachedLabel, HeapAllocator> label_cache_{HeapAllocator::Default()};
     u64 label_frame_ = 0;
     u64 label_missing_ = 0;
     DeviceResources* resources_ = nullptr;

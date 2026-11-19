@@ -20,6 +20,7 @@ set(FOUNDATION_BASE_TEST_SOURCES
   deque_test.cpp
   binary_heap_test.cpp
   algorithm_test.cpp
+  dense_map_test.cpp
   utf8_test.cpp
   grapheme_test.cpp
   normalize_test.cpp
