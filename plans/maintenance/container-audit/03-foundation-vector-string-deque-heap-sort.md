@@ -35,6 +35,14 @@ queue, insertion sorts with comments ("a handful", "tiny") that don't hold, and 
   - `Sort` partitions three ways (or Hoare), so all-equal input stays n log n without falling to heap sort. Day 1 measured all-equal input; record before/after;
   - `Sort` accepts the RHI's read-only span through a conversion, so `metal_device_bindings.mm:233` needs no cast.
   - Tests against a brute-force oracle on random, sorted, reversed and all-equal inputs, with stability checked for `StableSort`.
+- [ ] **Range-for over every remaining container** (the user, 2026-11-19), as on Day 2: public lowercase `begin()`/`end()` with an `Internal:` label:
+  - `Vector`: `T*`;
+  - `String` and `StringView`: `const char*` over the bytes. The guide says it walks bytes, not code points, and points to the grapheme and UTF-8 iterators;
+  - `Deque`: a `detail` iterator over the ring in front-to-back order;
+  - `BinaryHeap`: none, because a heap's storage order means nothing. Record the decision;
+  - `Array` and `Span` already have them: add the `Internal:` label so the reference treats all containers the same.
+  - Tests: range-for on each container, including empty, const, and a wrapped `Deque`.
+  - `UniquePtr`, `SharedPtr` and `SharedBytes` are not containers and get no `begin()`/`end()`.
 - [ ] **`SortRaw` (qsort)** stays for C-style tables only. The two typed per-frame uses are moved on Day 6.
 - [ ] **Docs:**
   - the "Choosing a container" table gains deque, heap and the algorithms;

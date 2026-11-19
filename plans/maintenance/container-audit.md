@@ -49,6 +49,10 @@ Phase 28's Day 478 unless the user orders otherwise.
 
 ## Rules for every day
 
+- **Every engine container supports range-for** (the user, 2026-11-19), through public lowercase `begin()`/`end()` with an `Internal:` label, so they stay
+  out of the reference: `HashMap`/`HashSet` on Day 2, the rest on Day 3. From Day 4 on, new and rewritten loops over a container use
+  `for (auto& x : c)` where no index is needed. Loops a day doesn't otherwise touch are not rewritten for style alone.
+
 - **Deterministic outputs stay bit-identical.** A map or set replaces a scan only for membership and lookup. Anything that iterates in an order that
   reaches an output keeps a sorted or insertion order: `HashMap::ForEach` order is unspecified, and it is never used where order matters. Each day
   names the hashes and determinism tests it re-runs.

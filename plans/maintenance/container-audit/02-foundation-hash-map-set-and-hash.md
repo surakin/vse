@@ -27,6 +27,13 @@ every probe, and allocates in its constructor. No set exists, and FNV-1a is writ
   `ForEach`, `Size`, and heterogeneous lookup.
   - Share the probing with `HashMap` (a `detail` table over a slot type). Do not copy it.
   - Tests mirror the map's: tombstone churn, move-only keys, and growth under removal.
+- [ ] **Range-for over `HashMap` and `HashSet`** (the user, 2026-11-19: every engine container supports `for (auto& x : c)`):
+  - public lowercase `begin()`/`end()`, const and non-const, each with an `Internal:` label so docgen leaves them out of the reference;
+  - the iterator is a `detail` type that skips empty and tombstone slots. A map yields an entry with `.key` (const) and `.value`, which works with
+    structured bindings (`for (auto& [k, v] : map)`); a set yields `const K&`;
+  - the order is unspecified, as with `ForEach`, which stays. Inserting or removing during the loop is not allowed (an `ENGINE_CHECK_SLOW` modification counter in debug builds);
+  - the guide states the order rule: no deterministic output may depend on it.
+  - Tests: a range-for visits every entry exactly once, after churn with tombstones, on an empty map and on a moved-from map, and a structured-binding loop compiles.
 - [ ] **`Hash` for the keys the audit found without one:**
   - `asset::ContentHash` (128 bits, beside its type);
   - a pair key helper `HashCombine(a, b)`, used by the physics pair and the theme cache key;
