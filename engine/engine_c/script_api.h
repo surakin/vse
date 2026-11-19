@@ -106,5 +106,14 @@ engine_status ScriptRegisterFunctionFn(engine_handle world, engine_string name, 
 engine_status ScriptSetBudgetFn(engine_handle world, const engine_script_budget* budget);
 /// See `engine_api.script_stats`.
 engine_status ScriptStatsFn(engine_handle world, engine_script_stats* out);
+/// See `engine_api.script_event_emit`.
+engine_status ScriptEventEmitFn(engine_handle world, engine_string name, const engine_value_pool* payload, u64 target);
+/// See `engine_api.script_event_subscribe`.
+engine_status ScriptEventSubscribeFn(engine_handle world, engine_string name, engine_script_event_fn callback,
+                                     void* user, u32* out_id);
+/// See `engine_api.script_event_unsubscribe`.
+engine_status ScriptEventUnsubscribeFn(engine_handle world, u32 id);
+/// See `engine_api.script_task_run`.
+engine_status ScriptTaskRunFn(engine_handle world, const engine_script_task* task, engine_value_pool* results);
 
 }  // namespace engine_placeholder::engine_c

@@ -318,7 +318,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=1200
+struct engine_api size=1232
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -578,6 +578,18 @@ field engine_script_stats.calls offset=40 size=8
 field engine_script_stats.host_calls offset=48 size=8
 field engine_script_stats.scripts_loaded offset=56 size=4
 field engine_script_stats.host_functions offset=60 size=4
+struct engine_script_task size=56
+field engine_script_task.struct_size offset=0 size=4
+field engine_script_task.mode offset=4 size=4
+field engine_script_task.source offset=8 size=16
+field engine_script_task.data offset=24 size=8
+field engine_script_task.count offset=32 size=8
+field engine_script_task.seed offset=40 size=8
+field engine_script_task.chunk offset=48 size=4
+field engine_script_task.reserved offset=52 size=4
+value ENGINE_SCRIPT_TASK_RUN 1
+value ENGINE_SCRIPT_TASK_MAP 2
+value ENGINE_SCRIPT_TASK_FOR 3
 value ENGINE_COMPONENT_SCRIPT 17
 value ENGINE_VALUE_NIL 0
 value ENGINE_VALUE_BOOL 1

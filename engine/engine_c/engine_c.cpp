@@ -876,6 +876,10 @@ extern "C"
             &engine_c::ScriptRegisterFunctionFn,
             &engine_c::ScriptSetBudgetFn,
             &engine_c::ScriptStatsFn,
+            &engine_c::ScriptEventEmitFn,
+            &engine_c::ScriptEventSubscribeFn,
+            &engine_c::ScriptEventUnsubscribeFn,
+            &engine_c::ScriptTaskRunFn,
         };
         *out = &table;
         return ENGINE_OK;

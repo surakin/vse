@@ -886,4 +886,22 @@ The world's script runtime is made by the first `script_load`, the first script 
   A script's `vec2`, `vec3`, `vec4` and `quat` come out as arrays of numbers.
 - **`script_stats`** reports the partitions, ticks, live instances, updates, errors, calls and host calls, and how many scripts and host functions the world has.
 
+### Events and tasks (Phase 27 Day 472)
+
+- **`script_event_emit`** sends an event from the host (a name of 1 to 64 bytes, the first root of a pool as the payload, a target entity id or 0 for every subscriber). It enters the world's event bus at
+  once and is delivered at the start of the world's next script tick, in the bus order (host emits in call order; events the scripts emit follow at the sync points). It needs the runtime
+  (`NOT_READY` before the first script) and, like `script_call`, does not wait for a running frame.
+- **`script_event_subscribe`** calls a host function for the events with a given name (an empty name: every event) that scripts or the host emit. The call happens on the thread that runs `frame`,
+  at the start of the script tick, while the world is held: it must not call the engine API. It may be made before the first script (the runtime takes it over when it is made); at most 256
+  per world. **`script_event_unsubscribe`** removes it. The payload is a pool with one root, valid for the call only.
+- **`script_task_run`** runs one pure task (`task.run`, `task.map` or `task.parallel_for`: mode `ENGINE_SCRIPT_TASK_RUN`, `_MAP`, `_FOR`) in the world's task states and fills `results`. Only functions registered
+  `ENGINE_SCRIPT_FUNCTION_PURE` exist there. It runs now, on the calling thread (a host thread is not a job-system participant, so the chunks run one after another); the result is cut into chunks
+  by index and does not depend on the thread count. Register the functions first (`NOT_READY` after the first script or task).
+- **Threads.** One thread at a time runs `frame` for an engine; the other calls (`script_call`, `script_task_run`, `script_event_emit`) from other threads beside it get `NOT_READY` and are retried by
+  the host. `tests/engine_library/script_sample.c` shows all of it: 1,000 entities moved by a behavior for 600 frames, a host event in, script events out, host functions, tasks, and three host
+  threads with worlds of their own beside the frame thread; the state hash is the same for 1, 2, 4 and 8 script partitions.
+
+**A the host note (not a requirement).** A room could be a world whose objects carry a behavior: the host emits `player_entered` events and subscribes to what the room's scripts emit, and runs
+`script_task_run` for work it wants the engine to do off its own thread. Nothing here depends on it.
+
 What is not here yet is listed in `KNOWN-ISSUES.md`: unloading a script, calling a behavior of one entity, loading a minted script by resource id, and running the partitions on the engine's jobs from the host's frame call.

@@ -484,6 +484,19 @@ public:
         return Api()->script_set_budget(Get(), &budget);
     }
     Status ScriptStats(engine_script_stats* out) const { return Api()->script_stats(Get(), out); }
+    Status ScriptEventEmit(engine_string name, const engine_value_pool* payload, uint64_t target) const
+    {
+        return Api()->script_event_emit(Get(), name, payload, target);
+    }
+    Status ScriptEventSubscribe(engine_string name, engine_script_event_fn callback, void* user, uint32_t* out_id) const
+    {
+        return Api()->script_event_subscribe(Get(), name, callback, user, out_id);
+    }
+    Status ScriptEventUnsubscribe(uint32_t id) const { return Api()->script_event_unsubscribe(Get(), id); }
+    Status ScriptTaskRun(const engine_script_task& task, engine_value_pool* results) const
+    {
+        return Api()->script_task_run(Get(), &task, results);
+    }
     Status HasComponent(uint64_t key, uint32_t kind, bool* out) const
     {
         int has = 0;

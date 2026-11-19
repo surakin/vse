@@ -16,7 +16,9 @@
 #include "script/bindings.h"
 #include "script/luajit/luajit_backend.h"
 #include "script/script_runtime.h"
+#include "script/event_bus.h"
 #include "script/script_settings.h"
+#include "script/task_pool.h"
 #include "script/value.h"
 #include "string_view.h"
 #include "sync/atomic.h"
@@ -464,6 +466,40 @@ script::Outcome InvokeHost(void* user, Span<const Value> args, Vector<Value>* re
     return script::Outcome();
 }
 
+constexpr usize kMaxEventSubscriptions = 256;
+
+// One host subscription to script events.
+struct EventSub
+{
+    u32 id = 0;
+    String<HeapAllocator> name{HeapAllocator::Default()};
+    engine_script_event_fn fn = nullptr;
+    void* user = nullptr;
+    u32 bus_id = 0;  // the event bus's id; 0 until the runtime exists
+};
+
+// The bus calls this on the thread that runs the script tick.
+void DeliverEvent(void* user, const script::EventRecord& event)
+{
+    EventSub* sub = static_cast<EventSub*>(user);
+    Vector<engine_value> items;
+    Vector<u8> bytes;
+    WriteRoots(Span<const Value>(&event.payload, 1), &items, &bytes);
+    engine_value_pool pool = {};
+    pool.struct_size = sizeof(pool);
+    pool.root_count = 1;
+    pool.item_count = items.Size();
+    pool.item_capacity = items.Size();
+    pool.items = items.Data();
+    pool.byte_count = bytes.Size();
+    pool.byte_capacity = bytes.Size();
+    pool.bytes = bytes.Data();
+    engine_string name;
+    name.data = event.name.CStr();
+    name.length = event.name.Length();
+    sub->fn(sub->user, name, event.sender_key, &pool);
+}
+
 bool GoodName(StringView name)
 {
     if (name.Length() == 0 || name.Length() > kMaxFunctionName)
@@ -519,14 +555,13 @@ struct ScriptHost::Impl
     u32 loaded = 0;
     u64 calls = 0;
     Atomic<u64> host_calls{0};
+    Vector<UniquePtr<EventSub>> subs;
+    u32 next_sub = 1;
+    UniquePtr<script::TaskPool> tasks;
 
-    // Makes the backend, the standard bindings and the runtime on first use.
-    engine_status Ensure()
+    // Makes the backend and the standard bindings (what a task and the runtime both need).
+    engine_status EnsureBackend()
     {
-        if (runtime.Get() != nullptr)
-        {
-            return ENGINE_OK;
-        }
         if (backend.Get() == nullptr)
         {
             script::luajit::LuaJitOptions options;
@@ -544,6 +579,21 @@ struct ScriptHost::Impl
             }
             standard_bindings = true;
         }
+        return ENGINE_OK;
+    }
+
+    // Makes the backend, the standard bindings and the runtime on first use.
+    engine_status Ensure()
+    {
+        if (runtime.Get() != nullptr)
+        {
+            return ENGINE_OK;
+        }
+        const engine_status backend_status = EnsureBackend();
+        if (backend_status != ENGINE_OK)
+        {
+            return backend_status;
+        }
         script::ScriptRuntimeConfig config;
         config.backend = backend.Get();
         config.bindings = &bindings;
@@ -552,6 +602,10 @@ struct ScriptHost::Impl
         config.random_seed = settings.random_seed;
         config.budget = callback_budget;
         runtime = MakeUnique<script::ScriptRuntime>(config);
+        for (usize i = 0; i < subs.Size(); ++i)
+        {
+            subs[i]->bus_id = runtime->Events().Subscribe(subs[i]->name.View(), &DeliverEvent, subs[i].Get());
+        }
         return ENGINE_OK;
     }
 };
@@ -852,9 +906,9 @@ engine_status ScriptRegisterFunctionFn(engine_handle world, engine_string name, 
         return status;
     }
     ScriptHost::Impl* impl = ImplOf(*object, &runtime->script_settings);
-    if (impl->runtime.Get() != nullptr)
+    if (impl->runtime.Get() != nullptr || impl->tasks.Get() != nullptr)
     {
-        return Fail(ENGINE_ERROR_NOT_READY, "register host functions before the first script of the world");
+        return Fail(ENGINE_ERROR_NOT_READY, "register host functions before the first script or task of the world");
     }
     if (!impl->standard_bindings)
     {
@@ -922,6 +976,8 @@ engine_status ScriptSetBudgetFn(engine_handle world, const engine_script_budget*
     set.nanoseconds = budget->nanoseconds;
     set.memory_bytes = budget->memory_bytes;
     impl->call_budget = set;
+    impl->tasks = UniquePtr<script::TaskPool>();  // the pool took the old budget when it was made: the next task
+                                                  // remakes it
     if (impl->runtime.Get() == nullptr)
     {
         impl->callback_budget = set;
@@ -973,6 +1029,212 @@ engine_status ScriptStatsFn(engine_handle world, engine_script_stats* out)
     }
     MemCopy(out, &result, sizeof(result));
     return ENGINE_OK;
+}
+
+engine_status ScriptEventEmitFn(engine_handle world, engine_string name, const engine_value_pool* payload, u64 target)
+{
+    if (name.data == nullptr || name.length == 0 || name.length > script::kMaxEventNameBytes)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the event name is empty, NULL or over 64 bytes");
+    }
+    Vector<Value> values;
+    const engine_status read = ReadPool(payload, &values);
+    if (read != ENGINE_OK)
+    {
+        return read;
+    }
+    Runtime* runtime = CurrentRuntime();
+    if (runtime == nullptr)
+    {
+        return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    TryLocked lock(runtime->world_mutex);
+    if (!lock.Held())
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "a frame or another world call is running on another thread");
+    }
+    engine_status status = ENGINE_OK;
+    WorldObject* object = FindWorld(*runtime, world, &status);
+    if (object == nullptr)
+    {
+        return status;
+    }
+    ScriptHost::Impl* impl = ImplOf(*object, nullptr);
+    if (impl == nullptr || impl->runtime.Get() == nullptr)
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "no script was loaded into the world");
+    }
+    Value value;
+    if (values.Size() != 0)
+    {
+        value = Move(values[0]);
+    }
+    if (!impl->runtime->Events().Emit(StringView(name.data, name.length), Move(value), target))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the event name was refused");
+    }
+    return ENGINE_OK;
+}
+
+engine_status ScriptEventSubscribeFn(engine_handle world, engine_string name, engine_script_event_fn callback,
+                                     void* user, u32* out_id)
+{
+    if (callback == nullptr || out_id == nullptr || (name.data == nullptr && name.length != 0) ||
+        name.length > script::kMaxEventNameBytes)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`callback` or `out_id` is NULL, or the name is malformed");
+    }
+    *out_id = 0;
+    Runtime* runtime = CurrentRuntime();
+    if (runtime == nullptr)
+    {
+        return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    LockGuard<Mutex> lock(runtime->world_mutex);
+    engine_status status = ENGINE_OK;
+    WorldObject* object = FindWorld(*runtime, world, &status);
+    if (object == nullptr)
+    {
+        return status;
+    }
+    ScriptHost::Impl* impl = ImplOf(*object, &runtime->script_settings);
+    if (impl->subs.Size() >= kMaxEventSubscriptions)
+    {
+        return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "a world holds at most 256 event subscriptions");
+    }
+    auto sub = MakeUnique<EventSub>();
+    sub->id = impl->next_sub++;
+    sub->name = String<HeapAllocator>(HeapAllocator::Default(), StringView(name.data, name.length));
+    sub->fn = callback;
+    sub->user = user;
+    if (impl->runtime.Get() != nullptr)
+    {
+        sub->bus_id = impl->runtime->Events().Subscribe(sub->name.View(), &DeliverEvent, sub.Get());
+    }
+    *out_id = sub->id;
+    impl->subs.Push(Move(sub));
+    return ENGINE_OK;
+}
+
+engine_status ScriptEventUnsubscribeFn(engine_handle world, u32 id)
+{
+    Runtime* runtime = CurrentRuntime();
+    if (runtime == nullptr)
+    {
+        return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    LockGuard<Mutex> lock(runtime->world_mutex);
+    engine_status status = ENGINE_OK;
+    WorldObject* object = FindWorld(*runtime, world, &status);
+    if (object == nullptr)
+    {
+        return status;
+    }
+    ScriptHost::Impl* impl = ImplOf(*object, nullptr);
+    if (impl != nullptr)
+    {
+        for (usize i = 0; i < impl->subs.Size(); ++i)
+        {
+            if (impl->subs[i]->id == id)
+            {
+                if (impl->subs[i]->bus_id != 0 && impl->runtime.Get() != nullptr)
+                {
+                    impl->runtime->Events().Unsubscribe(impl->subs[i]->bus_id);
+                }
+                impl->subs.Remove(i);
+                return ENGINE_OK;
+            }
+        }
+    }
+    return Fail(ENGINE_ERROR_NOT_FOUND, "no such event subscription");
+}
+
+engine_status ScriptTaskRunFn(engine_handle world, const engine_script_task* task, engine_value_pool* results)
+{
+    if (task == nullptr || task->source.data == nullptr || task->source.length == 0 ||
+        task->source.length > kMaxScriptBytes)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`task` is NULL or its source is empty");
+    }
+    if (StructSizeOf(task) < sizeof(engine_script_task))
+    {
+        return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_script_task.struct_size is smaller than the struct");
+    }
+    if (task->mode < ENGINE_SCRIPT_TASK_RUN || task->mode > ENGINE_SCRIPT_TASK_FOR || task->reserved != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the task's mode is unknown or `reserved` is not zero");
+    }
+    if (results != nullptr && StructSizeOf(results) < sizeof(engine_value_pool))
+    {
+        return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_value_pool.struct_size is smaller than the struct");
+    }
+    Vector<Value> values;
+    const engine_status read = ReadPool(task->data, &values);
+    if (read != ENGINE_OK)
+    {
+        return read;
+    }
+    Runtime* runtime = CurrentRuntime();
+    if (runtime == nullptr)
+    {
+        return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    TryLocked lock(runtime->world_mutex);
+    if (!lock.Held())
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "a frame or another world call is running on another thread");
+    }
+    engine_status status = ENGINE_OK;
+    WorldObject* object = FindWorld(*runtime, world, &status);
+    if (object == nullptr)
+    {
+        return status;
+    }
+    ScriptHost::Impl* impl = ImplOf(*object, &runtime->script_settings);
+    const engine_status backend_status = impl->EnsureBackend();
+    if (backend_status != ENGINE_OK)
+    {
+        return backend_status;
+    }
+    if (impl->tasks.Get() == nullptr)
+    {
+        script::TaskPoolConfig config;
+        config.backend = impl->backend.Get();
+        config.bindings = &impl->bindings;
+        config.states = impl->settings.partitions < 1 ? 1u : impl->settings.partitions;
+        config.state_memory = impl->settings.partition_memory;
+        config.budget = impl->call_budget;
+        impl->tasks = MakeUnique<script::TaskPool>(config);
+    }
+    script::TaskRequest request;
+    request.id = 1;
+    request.mode = static_cast<script::TaskMode>(task->mode);
+    request.source = String<HeapAllocator>(HeapAllocator::Default(),
+                                           StringView(task->source.data, task->source.length));
+    if (values.Size() != 0)
+    {
+        request.data = Move(values[0]);
+    }
+    request.seed = task->seed;
+    request.count = task->count;
+    request.chunk = task->chunk;
+    Vector<script::TaskRequest> requests;
+    requests.Push(Move(request));
+    Vector<script::TaskOutcome> outcomes;
+    impl->tasks->Execute(Span<const script::TaskRequest>(requests.Data(), requests.Size()), &outcomes, nullptr);
+    if (outcomes.Size() != 1)
+    {
+        return Fail(ENGINE_ERROR_INTERNAL, "the task pool returned no outcome");
+    }
+    if (outcomes[0].failed)
+    {
+        SetLastError("internal: the task failed: %s", outcomes[0].error.CStr());
+        return ENGINE_ERROR_INTERNAL;
+    }
+    Vector<engine_value> items;
+    Vector<u8> bytes;
+    WriteRoots(Span<const Value>(&outcomes[0].value, 1), &items, &bytes);
+    return StorePool(items, bytes, 1, results);
 }
 
 #else  // no script module in this build
@@ -1035,6 +1297,26 @@ engine_status ScriptSetBudgetFn(engine_handle, const engine_script_budget*)
 }
 
 engine_status ScriptStatsFn(engine_handle, engine_script_stats*)
+{
+    return Fail(ENGINE_ERROR_UNSUPPORTED, "this build of the engine has no scripts");
+}
+
+engine_status ScriptEventEmitFn(engine_handle, engine_string, const engine_value_pool*, u64)
+{
+    return Fail(ENGINE_ERROR_UNSUPPORTED, "this build of the engine has no scripts");
+}
+
+engine_status ScriptEventSubscribeFn(engine_handle, engine_string, engine_script_event_fn, void*, u32*)
+{
+    return Fail(ENGINE_ERROR_UNSUPPORTED, "this build of the engine has no scripts");
+}
+
+engine_status ScriptEventUnsubscribeFn(engine_handle, u32)
+{
+    return Fail(ENGINE_ERROR_UNSUPPORTED, "this build of the engine has no scripts");
+}
+
+engine_status ScriptTaskRunFn(engine_handle, const engine_script_task*, engine_value_pool*)
 {
     return Fail(ENGINE_ERROR_UNSUPPORTED, "this build of the engine has no scripts");
 }

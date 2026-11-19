@@ -218,7 +218,8 @@ extern "C"
     0x400u /* audio_stream_open_push, audio_stream_push, audio_stream_stats and the stream field of the audio source   \
               work (maintenance, 2026-11-18) */
 #define ENGINE_CAP_SCRIPT                                                                                              \
-    0x800u /* script_load, script_call, script_register_function, script_set_budget and script_stats work, and an      \
+    0x800u /* script_load, script_call, script_register_function, script_set_budget, script_stats, the event and task  \
+              functions work, and an                                                                                   \
               entity can carry ENGINE_COMPONENT_SCRIPT (Phase 27 Day 471; Linux x86-64 so far: elsewhere they fail     \
               with UNSUPPORTED) */
 #define ENGINE_CAP_RESOURCE_CACHE                                                                                      \
@@ -1483,6 +1484,33 @@ extern "C"
      * and must not call any function of the engine API (the frame holds the world). */
     typedef engine_status (*engine_script_fn)(void* user, const engine_value_pool* args, engine_value_pool* results);
 
+    /* A script event delivered to the host. `payload` holds one root (nil when the event has none); it is valid only
+     * during the call. It runs on the thread that runs the frame (world_frame), at the start of the script tick, in
+     * the bus order, with the world held: it must not call any function of the engine API and must not block. */
+    typedef void (*engine_script_event_fn)(void* user, engine_string name, uint64_t sender,
+                                           const engine_value_pool* payload);
+
+    /* The kinds of script_task_run. */
+#define ENGINE_SCRIPT_TASK_RUN 1u /* the source is the body of `function(args)`; the result is its first result */
+#define ENGINE_SCRIPT_TASK_MAP                                                                                         \
+    2u /* `function(item, index)` over the array in `data`; the result is the array of the results */
+#define ENGINE_SCRIPT_TASK_FOR                                                                                         \
+    3u /* `function(first, last, args)` once per chunk of `count` indices; the result is one result per chunk */
+
+    /* What script_task_run runs: a pure task over the engine's task states. */
+    typedef struct engine_script_task
+    {
+        uint32_t struct_size;
+        uint32_t mode;        /* ENGINE_SCRIPT_TASK_* */
+        engine_string source; /* the function body */
+        const engine_value_pool*
+            data;          /* RUN: the argument; MAP: the array; FOR: the argument of every chunk; or NULL */
+        uint64_t count;    /* FOR: the number of indices (MAP takes it from the array) */
+        uint64_t seed;     /* the seed of the task's random numbers */
+        uint32_t chunk;    /* elements per chunk; 0 the default (256) */
+        uint32_t reserved; /* zero */
+    } engine_script_task;
+
     typedef struct engine_api
     {
         uint32_t struct_size; /* bytes of this table the library filled (at most what the host asked for) */
@@ -2390,6 +2418,34 @@ extern "C"
         /* Reads what the world's scripts have done. Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE,
          * UNSUPPORTED. */
         engine_status (*script_stats)(engine_handle world, engine_script_stats* out);
+
+        /* Emits the event `name` (1 to 64 bytes) with the first root of `payload` (NULL: no payload) from the host.
+         * It is delivered at the start of the world's next script tick to the scripts that listen (`target` 0: every
+         * subscriber; else only the entity with that id) and to the host's subscribers. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT (a bad name, a bad pool), STRUCT_SIZE, NOT_READY (busy, or no script was loaded),
+         * UNSUPPORTED. */
+        engine_status (*script_event_emit)(engine_handle world, engine_string name, const engine_value_pool* payload,
+                                           uint64_t target);
+
+        /* Calls `callback` for the events named `name` (empty: every event) that scripts or the host emit, at the
+         * start of each script tick, on the frame's thread. `*out_id` receives an id for script_event_unsubscribe.
+         * `user` must outlive the subscription. Fails with: STALE_HANDLE, INVALID_ARGUMENT, LIMIT_EXCEEDED (256
+         * subscriptions), UNSUPPORTED. */
+        engine_status (*script_event_subscribe)(engine_handle world, engine_string name,
+                                                engine_script_event_fn callback, void* user, uint32_t* out_id);
+
+        /* Removes a subscription. Fails with: STALE_HANDLE, NOT_FOUND, UNSUPPORTED. */
+        engine_status (*script_event_unsubscribe)(engine_handle world, uint32_t id);
+
+        /* Runs a pure task now, on the engine's task states (the same states and rules as `task.run`, `task.map` and
+         * `task.parallel_for`: only functions registered with ENGINE_SCRIPT_FUNCTION_PURE exist there), and fills
+         * `results` with its result (one root). The result does not depend on the number of threads. It runs on the
+         * calling thread (a host thread is not a job-system participant) and holds the world. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (a bad task or pool), STRUCT_SIZE, NOT_READY (busy), TOO_LARGE (`results`
+         * has no room), LIMIT_EXCEEDED (the budget), INTERNAL (the task failed: the last-error text says why),
+         * UNSUPPORTED. */
+        engine_status (*script_task_run)(engine_handle world, const engine_script_task* task,
+                                         engine_value_pool* results);
     } engine_api;
 
     /* Returns the function table.

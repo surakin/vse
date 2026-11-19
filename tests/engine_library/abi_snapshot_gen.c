@@ -602,6 +602,18 @@ int main(void)
     FIELD(engine_script_stats, host_calls);
     FIELD(engine_script_stats, scripts_loaded);
     FIELD(engine_script_stats, host_functions);
+    STRUCT(engine_script_task);
+    FIELD(engine_script_task, struct_size);
+    FIELD(engine_script_task, mode);
+    FIELD(engine_script_task, source);
+    FIELD(engine_script_task, data);
+    FIELD(engine_script_task, count);
+    FIELD(engine_script_task, seed);
+    FIELD(engine_script_task, chunk);
+    FIELD(engine_script_task, reserved);
+    VALUE(ENGINE_SCRIPT_TASK_RUN);
+    VALUE(ENGINE_SCRIPT_TASK_MAP);
+    VALUE(ENGINE_SCRIPT_TASK_FOR);
     VALUE(ENGINE_COMPONENT_SCRIPT);
     VALUE(ENGINE_VALUE_NIL);
     VALUE(ENGINE_VALUE_BOOL);
