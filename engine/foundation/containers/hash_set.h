@@ -1,46 +1,15 @@
 #pragma once
 
 #include "containers/hash_map.h"
+#include "containers/open_table.h"
 #include "types.h"
 
-//! A set of keys: [[HashMap]]'s table with no value (container audit series, Day 2), for membership tests that were
-//! written as `HashMap<K, u8>`.
+//! A set of keys over the open-addressing table [[HashMap]] uses (container audit series, Days 2 and 7), for the
+//! membership tests that were written as `HashMap<K, u8>`. The set stores its keys alone.
 namespace engine_placeholder
 {
 
-namespace detail
-{
-
-// The value a HashSet stores beside each key: nothing.
-struct HashSetNoValue
-{
-};
-
-// The range-for iterator of a HashSet: the map's, yielding the key alone.
-template <typename MapIterator, typename K> class HashSetIterator
-{
-public:
-    explicit HashSetIterator(MapIterator it) : it_(it) {}
-
-    const K& operator*() const { return (*it_).key; }
-    const K* operator->() const { return &(*it_).key; }
-
-    HashSetIterator& operator++()
-    {
-        ++it_;
-        return *this;
-    }
-
-    bool operator==(const HashSetIterator& other) const { return it_ == other.it_; }
-    bool operator!=(const HashSetIterator& other) const { return it_ != other.it_; }
-
-private:
-    MapIterator it_;
-};
-
-}  // namespace detail
-
-/// A set of `K` using open addressing with linear probing: the table of [[HashMap]] with no value.
+/// A set of `K` using open addressing with linear probing: the table of [[HashMap]], holding keys alone.
 ///
 /// The rules are the map's: `K` needs `operator==` and a `Hash<K>` specialization, may be move-only, and can be looked
 /// up by a [[HeterogeneousKey]] (a [[StringView]] for a [[String]] key); the table is a power of two, made by the first
@@ -52,14 +21,14 @@ private:
 /// - Ownership: the set owns its keys; the allocator must outlive it.
 template <typename K, typename Allocator> class HashSet
 {
-    using Map = HashMap<K, detail::HashSetNoValue, Allocator>;
+    using Table = detail::OpenTable<K, detail::SetKeyOf, Allocator>;
 
 public:
     /// Creates an empty set. No table is made until the first insert.
     ///
     /// - Param allocator: allocator for table storage; held by pointer and must outlive the set.
     /// - Param initial_capacity: slots of the first table; rounded up to a power of two, at least 8.
-    explicit HashSet(Allocator& allocator, usize initial_capacity = 16) : map_(allocator, initial_capacity) {}
+    explicit HashSet(Allocator& allocator, usize initial_capacity = 16) : table_(allocator, initial_capacity) {}
 
     HashSet(const HashSet&) = delete;
     HashSet& operator=(const HashSet&) = delete;
@@ -77,68 +46,106 @@ public:
         requires(IsConstructible<K, KK&&>)
     bool Insert(KK&& key)
     {
-        return map_.Emplace(Forward<KK>(key)).inserted;
+        if constexpr (!kSearchesAs<KK>)
+        {
+            return Insert(K(Forward<KK>(key)));  // hashed as K, never as another type
+        }
+        else
+        {
+            if (!table_.NeedsGrow())
+            {
+                const usize i = table_.SlotForInsert(key);
+                if (table_.OccupiedAt(i))
+                {
+                    return false;
+                }
+                table_.Make(i, K(Forward<KK>(key)));
+                return true;
+            }
+            if (table_.Find(key) != Table::kNone)
+            {
+                return false;  // present: no growth
+            }
+            K held(Forward<KK>(key));  // before a growth that may move what `key` refers to
+            table_.Grow();
+            table_.Make(table_.SlotForInsert(held), Move(held));
+            return true;
+        }
     }
 
     /// Returns true when `key` is present.
     ///
     /// - Param key: the key to search for.
-    bool Contains(const K& key) const { return map_.Contains(key); }
+    bool Contains(const K& key) const { return table_.Find(key) != Table::kNone; }
 
     /// Returns true when a key equal to `key`, a value of another type, is present.
     ///
     /// - Param key: what to search for.
-    template <HeterogeneousKey<K> Q> bool Contains(const Q& key) const { return map_.Contains(key); }
+    template <HeterogeneousKey<K> Q> bool Contains(const Q& key) const { return table_.Find(key) != Table::kNone; }
 
     /// Removes `key` if present.
     ///
     /// - Param key: the key to remove.
     /// - Returns: true when the key was present and has been removed.
-    bool Remove(const K& key) { return map_.Remove(key); }
+    bool Remove(const K& key) { return RemoveBy(key); }
 
     /// Removes the key equal to `key`, a value of another type.
     ///
     /// - Param key: what to remove.
     /// - Returns: true when a key was present and has been removed.
-    template <HeterogeneousKey<K> Q> bool Remove(const Q& key) { return map_.Remove(key); }
+    template <HeterogeneousKey<K> Q> bool Remove(const Q& key) { return RemoveBy(key); }
 
     /// Removes every key and keeps the table.
-    void Clear() { map_.Clear(); }
+    void Clear() { table_.Clear(); }
 
     /// Makes room for `count` keys without a rehash.
     ///
     /// - Param count: the number of keys to make room for.
     /// - Aborts: the allocator is out of memory.
-    void Reserve(usize count) { map_.Reserve(count); }
+    void Reserve(usize count) { table_.Reserve(count); }
 
     /// Calls `visit(key)` for every key, in no particular order; `visit` must not change the set.
     ///
     /// - Param visit: called as `visit(const K&)`.
     template <typename Visit> void ForEach(Visit visit) const
     {
-        map_.ForEach([&](const K& key, const detail::HashSetNoValue&) { visit(key); });
+        table_.ForEach([&](const K& key) { visit(key); });
     }
 
     /// The first key, for a range-for (`for (const K& key : set)`); in no particular order.
     ///
     /// - Internal: the range-for protocol; use the loop, not the iterator.
-    auto begin() const { return detail::HashSetIterator<decltype(map_.begin()), K>(map_.begin()); }
+    auto begin() const { return table_.begin(); }
     /// The end of a range-for.
     ///
     /// - Internal: the range-for protocol.
-    auto end() const { return detail::HashSetIterator<decltype(map_.end()), K>(map_.end()); }
+    auto end() const { return table_.end(); }
 
     /// Returns the number of keys.
-    usize Size() const { return map_.Size(); }
+    usize Size() const { return table_.Size(); }
     /// Returns true when the set holds no key.
-    bool Empty() const { return map_.Empty(); }
+    bool Empty() const { return table_.Size() == 0; }
     /// Returns the number of slots in the table; for tests that observe growth.
-    usize SlotCapacity() const { return map_.SlotCapacity(); }
+    usize SlotCapacity() const { return table_.SlotCapacity(); }
     /// Returns the number of tombstones the next rehash clears.
-    usize TombstoneCount() const { return map_.TombstoneCount(); }
+    usize TombstoneCount() const { return table_.TombstoneCount(); }
 
 private:
-    Map map_;
+    template <typename KK>
+    static constexpr bool kSearchesAs = IsSame<RemoveCVRef<KK>, K> || HeterogeneousKey<RemoveCVRef<KK>, K>;
+
+    template <typename Q> bool RemoveBy(const Q& key)
+    {
+        const usize i = table_.Find(key);
+        if (i == Table::kNone)
+        {
+            return false;
+        }
+        table_.Erase(i);
+        return true;
+    }
+
+    Table table_;
 };
 
 }  // namespace engine_placeholder

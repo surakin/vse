@@ -54,9 +54,13 @@ to the simplest container that fits.
   - **The label cache:** `HashMap<detail::LabelKey, CachedLabel>`, searched with `LabelKeyView` (no string made); the sweep collects, then removes.
 - Pages touched: `docs/guide/foundation-containers.md` (a `DenseMap` row and section; keys made of several fields get a struct and a `Hash`, never a
   bare hash) and `docs/reference`.
-- **Open** (the user's question while this day was being finished): `HashSet` is built as a `HashMap<K, empty>`, which doubles a `u64` set's slot
-  size and inverts the layering. The proposed fix is a `detail::OpenTable<Element, KeyOf>` under both, with no change to either public API; it is
-  waiting for the user's decision.
+- **`HashSet` on its own table** (the user's question, then "yes, do it now"):
+  - `HashSet` was a `HashMap<K, empty>`, which doubled a `u64` set's slot size and inverted the layering.
+  - Both now sit on `detail::OpenTable<Element, KeyOf, Allocator>` (`containers/open_table.h`), which holds the probing, growth, tombstones,
+    `Clear`, `Reserve`, the change counter and the walk. `HashSet` stores bare keys (`SetKeyOf`), and `HashMap` stores `HashMapEntry` (`MapKeyOf`).
+  - Neither public API changed. The map's tests, the set's and `DenseMap`'s pass (17 cases), and the whole tree builds unchanged.
+  - Spot numbers (`container_bench`, 3 runs, not the Day 13 table): `HashMap<u64>` find hit at 1e5 was 6.9 ns on Day 1 and is 4.7 ns now (the
+    mask probe of Day 2), and insert at 1e6 is about 100 ns (88 on Day 1).
 
 ## Runs
 
@@ -68,6 +72,9 @@ to the simplest container that fits.
 `/code-review high`: 1 finding, fixed. The reset loops looked owners up by the address in the step's visit list, so an owner moved by a `Rebind` during
 the step would have been looked up as null and dereferenced. The step now records moves (old address to new, with no cycles) and follows them, as the
 old array did; the record is cleared when the step ends.
+
+The `OpenTable` change got its own `/code-review high`: 1 finding, fixed. `Insert` of a new key probed twice (find, then slot) where the old
+code probed once; it probes once again when no growth is due.
 
 **Done:**
 - `DenseMap` exists and is tested against an oracle.

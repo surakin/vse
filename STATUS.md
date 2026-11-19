@@ -60,7 +60,7 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - `DenseMap` (entries dense in slots, a slot index, the key stored once).
   - The theme cache and `ResourceTable` use it; `DeviceResources` and the label cache are plain `HashMap`s.
   - The pipeline and label caches use real key types (`PipelineKey`, `LabelKey`/`LabelKeyView`), so nothing is keyed by a bare hash.
-  - Open: `HashSet` over a shared `OpenTable` instead of a `HashMap` with an empty value (the user's question).
+  - `HashSet` and `HashMap` share `detail::OpenTable` (`containers/open_table.h`), and the set stores bare keys (the user's request).
   - Tests deferred to Day 13. Review: 1 finding, fixed.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 

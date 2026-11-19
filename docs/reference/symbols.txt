@@ -464,56 +464,55 @@ Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md
 Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash.h:234
 Hash<StringView>	struct	foundation/containers	hash-lt-stringview-gt	foundation-containers.md	engine/foundation/containers/hash.h:240
 Hash<StringView>::operator()(StringView) const	function	foundation/containers	hash-lt-stringview-gt-operator-call-stringview-const	foundation-containers.md	engine/foundation/containers/hash.h:243
-HeterogeneousKey	variable	foundation/containers	heterogeneouskey	foundation-containers.md	engine/foundation/containers/hash_map.h:22
-HashMapEntry	struct	foundation/containers	hashmapentry	foundation-containers.md	engine/foundation/containers/hash_map.h:35
-HashMapEntry::key	variable	foundation/containers	hashmapentry-key	foundation-containers.md	engine/foundation/containers/hash_map.h:37
-HashMapEntry::value	variable	foundation/containers	hashmapentry-value	foundation-containers.md	engine/foundation/containers/hash_map.h:38
-HashMapEmplaced	struct	foundation/containers	hashmapemplaced	foundation-containers.md	engine/foundation/containers/hash_map.h:44
-HashMapEmplaced::value	variable	foundation/containers	hashmapemplaced-value	foundation-containers.md	engine/foundation/containers/hash_map.h:46
-HashMapEmplaced::inserted	variable	foundation/containers	hashmapemplaced-inserted	foundation-containers.md	engine/foundation/containers/hash_map.h:48
-HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:113
-HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:123
-HashMap::~HashMap()	function	foundation/containers	hashmap-tilde-hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:129
-HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:131
-HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:132
-HashMap::HashMap(HashMap&&) noexcept	function	foundation/containers	hashmap-hashmap-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:136
-HashMap::operator=(HashMap&&) noexcept	function	foundation/containers	hashmap-operator-eq-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:147
-HashMap::Insert(KK&&,VV&&)	function	foundation/containers	hashmap-insert-kk-amp-amp-vv-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:173
-HashMap::Emplace(KK&&,Args&&...)	function	foundation/containers	hashmap-emplace-kk-amp-amp-args-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:211
-HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:269
-HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:277
-HashMap::Find(const Q&)	function	foundation/containers	hashmap-find-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:285
-HashMap::Find(const Q&) const	function	foundation/containers	hashmap-find-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:292
-HashMap::Contains(const K&) const	function	foundation/containers	hashmap-contains-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:297
-HashMap::Contains(const Q&) const	function	foundation/containers	hashmap-contains-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:302
-HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:309
-HashMap::Remove(const Q&)	function	foundation/containers	hashmap-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:315
-HashMap::Clear()	function	foundation/containers	hashmap-clear	foundation-containers.md	engine/foundation/containers/hash_map.h:318
-HashMap::Reserve(usize)	function	foundation/containers	hashmap-reserve-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:328
-HashMap::ForEach(Visit)	function	foundation/containers	hashmap-foreach-visit	foundation-containers.md	engine/foundation/containers/hash_map.h:342
-HashMap::ForEach(Visit) const	function	foundation/containers	hashmap-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_map.h:356
-HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:394
-HashMap::Empty() const	function	foundation/containers	hashmap-empty-const	foundation-containers.md	engine/foundation/containers/hash_map.h:396
-HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:401
-HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:407
-HashSet	class	foundation/containers	hashset	foundation-containers.md	engine/foundation/containers/hash_set.h:53
-HashSet::HashSet(Allocator&,usize)	function	foundation/containers	hashset-hashset-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_set.h:62
-HashSet::HashSet(const HashSet&)	function	foundation/containers	hashset-hashset-const-hashset-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:64
-HashSet::operator=(const HashSet&)	function	foundation/containers	hashset-operator-eq-const-hashset-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:65
-HashSet::HashSet(HashSet&&) noexcept	function	foundation/containers	hashset-hashset-hashset-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_set.h:67
-HashSet::operator=(HashSet&&) noexcept	function	foundation/containers	hashset-operator-eq-hashset-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_set.h:69
-HashSet::Insert(KK&&)	function	foundation/containers	hashset-insert-kk-amp-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:76
-HashSet::Contains(const K&) const	function	foundation/containers	hashset-contains-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_set.h:86
-HashSet::Contains(const Q&) const	function	foundation/containers	hashset-contains-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_set.h:91
-HashSet::Remove(const K&)	function	foundation/containers	hashset-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:97
-HashSet::Remove(const Q&)	function	foundation/containers	hashset-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:103
-HashSet::Clear()	function	foundation/containers	hashset-clear	foundation-containers.md	engine/foundation/containers/hash_set.h:106
-HashSet::Reserve(usize)	function	foundation/containers	hashset-reserve-usize	foundation-containers.md	engine/foundation/containers/hash_set.h:112
-HashSet::ForEach(Visit) const	function	foundation/containers	hashset-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_set.h:117
-HashSet::Size() const	function	foundation/containers	hashset-size-const	foundation-containers.md	engine/foundation/containers/hash_set.h:132
-HashSet::Empty() const	function	foundation/containers	hashset-empty-const	foundation-containers.md	engine/foundation/containers/hash_set.h:134
-HashSet::SlotCapacity() const	function	foundation/containers	hashset-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_set.h:136
-HashSet::TombstoneCount() const	function	foundation/containers	hashset-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_set.h:138
+HeterogeneousKey	variable	foundation/containers	heterogeneouskey	foundation-containers.md	engine/foundation/containers/hash_map.h:23
+HashMapEntry	struct	foundation/containers	hashmapentry	foundation-containers.md	engine/foundation/containers/hash_map.h:36
+HashMapEntry::key	variable	foundation/containers	hashmapentry-key	foundation-containers.md	engine/foundation/containers/hash_map.h:38
+HashMapEntry::value	variable	foundation/containers	hashmapentry-value	foundation-containers.md	engine/foundation/containers/hash_map.h:39
+HashMapEmplaced	struct	foundation/containers	hashmapemplaced	foundation-containers.md	engine/foundation/containers/hash_map.h:45
+HashMapEmplaced::value	variable	foundation/containers	hashmapemplaced-value	foundation-containers.md	engine/foundation/containers/hash_map.h:47
+HashMapEmplaced::inserted	variable	foundation/containers	hashmapemplaced-inserted	foundation-containers.md	engine/foundation/containers/hash_map.h:49
+HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:72
+HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:83
+HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:85
+HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:86
+HashMap::HashMap(HashMap&&) noexcept	function	foundation/containers	hashmap-hashmap-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:89
+HashMap::operator=(HashMap&&) noexcept	function	foundation/containers	hashmap-operator-eq-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:92
+HashMap::Insert(KK&&,VV&&)	function	foundation/containers	hashmap-insert-kk-amp-amp-vv-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:102
+HashMap::Emplace(KK&&,Args&&...)	function	foundation/containers	hashmap-emplace-kk-amp-amp-args-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:141
+HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:179
+HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:187
+HashMap::Find(const Q&)	function	foundation/containers	hashmap-find-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:195
+HashMap::Find(const Q&) const	function	foundation/containers	hashmap-find-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:202
+HashMap::Contains(const K&) const	function	foundation/containers	hashmap-contains-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:207
+HashMap::Contains(const Q&) const	function	foundation/containers	hashmap-contains-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:212
+HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:219
+HashMap::Remove(const Q&)	function	foundation/containers	hashmap-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:225
+HashMap::Clear()	function	foundation/containers	hashmap-clear	foundation-containers.md	engine/foundation/containers/hash_map.h:228
+HashMap::Reserve(usize)	function	foundation/containers	hashmap-reserve-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:234
+HashMap::ForEach(Visit)	function	foundation/containers	hashmap-foreach-visit	foundation-containers.md	engine/foundation/containers/hash_map.h:240
+HashMap::ForEach(Visit) const	function	foundation/containers	hashmap-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_map.h:248
+HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:271
+HashMap::Empty() const	function	foundation/containers	hashmap-empty-const	foundation-containers.md	engine/foundation/containers/hash_map.h:273
+HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:278
+HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:284
+HashSet	class	foundation/containers	hashset	foundation-containers.md	engine/foundation/containers/hash_set.h:22
+HashSet::HashSet(Allocator&,usize)	function	foundation/containers	hashset-hashset-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_set.h:31
+HashSet::HashSet(const HashSet&)	function	foundation/containers	hashset-hashset-const-hashset-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:33
+HashSet::operator=(const HashSet&)	function	foundation/containers	hashset-operator-eq-const-hashset-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:34
+HashSet::HashSet(HashSet&&) noexcept	function	foundation/containers	hashset-hashset-hashset-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_set.h:36
+HashSet::operator=(HashSet&&) noexcept	function	foundation/containers	hashset-operator-eq-hashset-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_set.h:38
+HashSet::Insert(KK&&)	function	foundation/containers	hashset-insert-kk-amp-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:45
+HashSet::Contains(const K&) const	function	foundation/containers	hashset-contains-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_set.h:79
+HashSet::Contains(const Q&) const	function	foundation/containers	hashset-contains-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_set.h:84
+HashSet::Remove(const K&)	function	foundation/containers	hashset-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:90
+HashSet::Remove(const Q&)	function	foundation/containers	hashset-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:96
+HashSet::Clear()	function	foundation/containers	hashset-clear	foundation-containers.md	engine/foundation/containers/hash_set.h:99
+HashSet::Reserve(usize)	function	foundation/containers	hashset-reserve-usize	foundation-containers.md	engine/foundation/containers/hash_set.h:105
+HashSet::ForEach(Visit) const	function	foundation/containers	hashset-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_set.h:110
+HashSet::Size() const	function	foundation/containers	hashset-size-const	foundation-containers.md	engine/foundation/containers/hash_set.h:125
+HashSet::Empty() const	function	foundation/containers	hashset-empty-const	foundation-containers.md	engine/foundation/containers/hash_set.h:127
+HashSet::SlotCapacity() const	function	foundation/containers	hashset-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_set.h:129
+HashSet::TombstoneCount() const	function	foundation/containers	hashset-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_set.h:131
 SharedBytes	class	foundation/containers	sharedbytes	foundation-containers.md	engine/foundation/containers/shared_bytes.h:21
 SharedBytes::~SharedBytes()	function	foundation/containers	sharedbytes-tilde-sharedbytes	foundation-containers.md	engine/foundation/containers/shared_bytes.h:24
 SharedBytes::Bytes() const	function	foundation/containers	sharedbytes-bytes-const	foundation-containers.md	engine/foundation/containers/shared_bytes.h:30
@@ -12117,15 +12116,15 @@ renderer::DeviceResources::CurrentDevice() const	function	renderer	renderer-devi
 renderer::DeviceResources::OnDeviceReleasing(u32)	function	renderer	renderer-deviceresources-ondevicereleasing-u32	renderer.md	engine/renderer/device_resources.h:144
 renderer::DeviceResources::OnDeviceCreated(rhi::Device*,u32)	function	renderer	renderer-deviceresources-ondevicecreated-rhi-device-star-u32	renderer.md	engine/renderer/device_resources.h:152
 renderer::DeviceResources::ObserverName() const	function	renderer	renderer-deviceresources-observername-const	renderer.md	engine/renderer/device_resources.h:157
-renderer::ScopedRegistration	class	renderer	renderer-scopedregistration	renderer.md	engine/renderer/device_resources.h:199
-renderer::ScopedRegistration::ScopedRegistration()	function	renderer	renderer-scopedregistration-scopedregistration	renderer.md	engine/renderer/device_resources.h:202
-renderer::ScopedRegistration::~ScopedRegistration()	function	renderer	renderer-scopedregistration-tilde-scopedregistration	renderer.md	engine/renderer/device_resources.h:204
-renderer::ScopedRegistration::ScopedRegistration(const ScopedRegistration&)	function	renderer	renderer-scopedregistration-scopedregistration-const-scopedregistration-amp	renderer.md	engine/renderer/device_resources.h:205
-renderer::ScopedRegistration::operator=(const ScopedRegistration&)	function	renderer	renderer-scopedregistration-operator-eq-const-scopedregistration-amp	renderer.md	engine/renderer/device_resources.h:206
-renderer::ScopedRegistration::Attach(DeviceResources*,Recreatable*,u32)	function	renderer	renderer-scopedregistration-attach-deviceresources-star-recreatable-star-u32	renderer.md	engine/renderer/device_resources.h:216
-renderer::ScopedRegistration::Adopt(ScopedRegistration*,Recreatable*)	function	renderer	renderer-scopedregistration-adopt-scopedregistration-star-recreatable-star	renderer.md	engine/renderer/device_resources.h:234
-renderer::ScopedRegistration::Reset()	function	renderer	renderer-scopedregistration-reset	renderer.md	engine/renderer/device_resources.h:248
-renderer::ScopedRegistration::Registered() const	function	renderer	renderer-scopedregistration-registered-const	renderer.md	engine/renderer/device_resources.h:260
+renderer::ScopedRegistration	class	renderer	renderer-scopedregistration	renderer.md	engine/renderer/device_resources.h:202
+renderer::ScopedRegistration::ScopedRegistration()	function	renderer	renderer-scopedregistration-scopedregistration	renderer.md	engine/renderer/device_resources.h:205
+renderer::ScopedRegistration::~ScopedRegistration()	function	renderer	renderer-scopedregistration-tilde-scopedregistration	renderer.md	engine/renderer/device_resources.h:207
+renderer::ScopedRegistration::ScopedRegistration(const ScopedRegistration&)	function	renderer	renderer-scopedregistration-scopedregistration-const-scopedregistration-amp	renderer.md	engine/renderer/device_resources.h:208
+renderer::ScopedRegistration::operator=(const ScopedRegistration&)	function	renderer	renderer-scopedregistration-operator-eq-const-scopedregistration-amp	renderer.md	engine/renderer/device_resources.h:209
+renderer::ScopedRegistration::Attach(DeviceResources*,Recreatable*,u32)	function	renderer	renderer-scopedregistration-attach-deviceresources-star-recreatable-star-u32	renderer.md	engine/renderer/device_resources.h:219
+renderer::ScopedRegistration::Adopt(ScopedRegistration*,Recreatable*)	function	renderer	renderer-scopedregistration-adopt-scopedregistration-star-recreatable-star	renderer.md	engine/renderer/device_resources.h:237
+renderer::ScopedRegistration::Reset()	function	renderer	renderer-scopedregistration-reset	renderer.md	engine/renderer/device_resources.h:251
+renderer::ScopedRegistration::Registered() const	function	renderer	renderer-scopedregistration-registered-const	renderer.md	engine/renderer/device_resources.h:263
 renderer::FrameData	struct	renderer	renderer-framedata	renderer.md	engine/renderer/frame_data.h:20
 renderer::FrameData::view	variable	renderer	renderer-framedata-view	renderer.md	engine/renderer/frame_data.h:23
 renderer::FrameData::projection	variable	renderer	renderer-framedata-projection	renderer.md	engine/renderer/frame_data.h:25
