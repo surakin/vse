@@ -72,6 +72,8 @@ in a day file or in `STATUS.md` prose.
 Every test carries one phase label (`tests/phases.txt`, enforced by `test_phase_labels`), and `CURRENT_PHASE` names the
 phase in progress. Day to day, run only what the work can have affected:
 
+- **A day starts with `scripts/test-phase.sh --start-day`**, which records the commit the day starts from; `--affected` compares with it
+  (else with the upstream branch, else with the phase's start) and prints the base it used.
 - `scripts/test-phase.sh --affected` (plain flavor) runs the current phase plus the phases of every module the work
   touched; it runs everything by itself when `cmake/`, `third_party/` or an `engine/foundation` header changed, or when a
   module's or the root `CMakeLists.txt`, the phase map or the module map had a line edited or removed (a change that only adds lines,

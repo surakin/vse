@@ -5,9 +5,11 @@
 #
 #   N          one phase: 0 1 2 3 4 ... (every test of that phase)
 #   --current  the phase in CURRENT_PHASE (the default)
-#   --affected the current phase plus the phases of every module touched since that phase started (the working tree
-#              and the commits since the last commit that changed CURRENT_PHASE; --since REF picks another base), plus every
-#              side phase in SIDE_PHASES that this build has tests of (the summary marks it "(side)").
+#   --affected the current phase plus the phases of every module touched since the base (the working tree, new files and the
+#              commits since the base), plus every side phase in SIDE_PHASES that this build has tests of (the summary marks it
+#              "(side)"). The base is, in order: --since REF; the day start recorded by --start-day, if it is an ancestor of HEAD and
+#              not older than the phase's start; the merge-base with the upstream branch, under the same rule; the last commit that
+#              changed CURRENT_PHASE. The first line printed names the base and the rule that chose it.
 #              Runs everything when a CMakeLists.txt, cmake/, CMakePresets.json, third_party/, a header under
 #              engine/foundation, tests/phases.txt or tests/module_map.txt changed (the reasons are printed before anything is
 #              built). A changed path that is in no line of tests/module_map.txt is an ERROR, not a reason to run everything: the
@@ -31,6 +33,9 @@
 #   --no-build                     do not build first (the build makes only the chosen flavors' targets, engine_tests_<flavor>)
 #   --dry-run                      print what would run and stop
 #   --since REF                    base commit for --affected
+#   --start-day [REF]              record REF (default HEAD) as the day's start for --affected, in the checkout's own .git (never
+#                                  committed; each worktree and machine has its own), and stop; run it when a day starts
+#   --repo-root DIR                run git in DIR instead of this checkout; for tests
 #   --diff-from-file FILE          read the changed paths from FILE (one per line) instead of git; for tests
 #   --additive-from-file FILE      with --diff-from-file: the paths in FILE (a subset of the changed ones) only had lines added; for tests
 #   --current-phase-file FILE      read the current phase from FILE instead of CURRENT_PHASE; for tests
@@ -63,6 +68,9 @@ jobs="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 dry=0
 do_build=1
 since=""
+start_day=0
+start_ref=""
+git_root=""
 diff_file=""
 additive_file=""
 phase_file="$root/CURRENT_PHASE"
@@ -85,6 +93,11 @@ while [ $# -gt 0 ]; do
         --no-build) do_build=0 ;;
         --dry-run) dry=1 ;;
         --since) since="${2:?--since needs a commit}"; shift ;;
+        --start-day)
+            start_day=1
+            # An optional commit after it (default HEAD); anything that is not an option is taken as one.
+            if [ $# -gt 1 ] && [ "${2#-}" = "$2" ]; then start_ref="$2"; shift; fi ;;
+        --repo-root) git_root="${2:?--repo-root needs a directory}"; shift ;;
         --diff-from-file) diff_file="${2:?--diff-from-file needs a file}"; shift ;;
         --additive-from-file) additive_file="${2:?--additive-from-file needs a file}"; shift ;;
         --current-phase-file) phase_file="${2:?--current-phase-file needs a file}"; shift ;;
@@ -102,6 +115,7 @@ fi
 flavor_note=""
 [ "$platform" = windows ] && [ "$flavor" = all ] && flavor_note=" (plain and asan, no tsan on Windows)"  # no ';' in it: the summary's fields are ';'-separated
 case "$jobs" in ''|*[!0-9]*) die "--jobs must be a number" ;; esac
+[ -n "$git_root" ] || git_root="$root"
 
 map="$root/tests/phases.txt"
 modules="$root/tests/module_map.txt"
@@ -136,13 +150,9 @@ changed_files() {
         grep -v '^[[:space:]]*$' "$diff_file" || true
         return
     fi
-    local base="$since"
-    if [ -z "$base" ]; then
-        base="$(git -C "$root" log -1 --format=%H -- CURRENT_PHASE 2>/dev/null || true)"
-        [ -n "$base" ] || base=HEAD
-    fi
-    { git -C "$root" diff --name-only --no-renames "$base" --
-      git -C "$root" ls-files --others --exclude-standard; } | sort -u
+    base_commit
+    { git -C "$git_root" diff --name-only --no-renames "$diff_base" --
+      git -C "$git_root" ls-files --others --exclude-standard; } | sort -u
 }
 
 # Prints the phases for one changed file: a comma list, "-" (nothing depends on it) or "?" (not in the map).
@@ -155,14 +165,56 @@ module_phases() {
         END { print (best ? out : "?") }' "$modules"
 }
 
-# The base commit --affected compares with (set once, by base_commit).
+# The base commit --affected compares with (set once, by base_commit; call it outside a $(...) so the choice is kept), and the
+# rule that chose it (base_why). In order:
+#   1. --since REF;
+#   2. the day start recorded by --start-day (.git/test-phase-base), if it is an ancestor of HEAD and not older than the commit
+#      that last changed CURRENT_PHASE (a stale record from an earlier phase cannot narrow a run);
+#   3. the merge-base of HEAD and its upstream, under the same "not older" rule;
+#   4. the last commit that changed CURRENT_PHASE (the start of the phase), else HEAD.
+# The working tree and untracked files are always added to the diff.
 diff_base=""
+base_why=""
+base_note=""
+# The record's path in this checkout's own git directory (a worktree has its own). --git-path prints it relative to git_root unless it
+# is absolute; --path-format=absolute would need git 2.31.
+day_record() {
+    local p
+    p="$(git -C "$git_root" rev-parse --git-path test-phase-base 2>/dev/null)" || return 1
+    case "$p" in /*|[A-Za-z]:*) ;; *) p="$git_root/$p" ;; esac
+    printf '%s\n' "$p"
+}
+is_ancestor() { git -C "$git_root" merge-base --is-ancestor "$1" "$2" 2>/dev/null; }
 base_commit() {
     [ -z "$diff_base" ] || return 0
-    diff_base="$since"
-    if [ -z "$diff_base" ]; then
-        diff_base="$(git -C "$root" log -1 --format=%H -- CURRENT_PHASE 2>/dev/null || true)"
-        [ -n "$diff_base" ] || diff_base=HEAD
+    local phase_start record recorded upstream
+    phase_start="$(git -C "$git_root" log -1 --format=%H -- CURRENT_PHASE 2>/dev/null || true)"
+    if [ -n "$since" ]; then
+        diff_base="$since"; base_why="--since"; return 0
+    fi
+    record="$(day_record)"
+    if [ -n "$record" ] && [ -f "$record" ]; then
+        recorded="$(tr -d '[:space:]' < "$record")"
+        if ! git -C "$git_root" rev-parse -q --verify "$recorded^{commit}" >/dev/null 2>&1 || ! is_ancestor "$recorded" HEAD; then
+            base_note="the recorded day start ${recorded:0:12} is not an ancestor of HEAD (a rebase or another branch); ignored"
+        elif [ -n "$phase_start" ] && ! is_ancestor "$phase_start" "$recorded"; then
+            base_note="the recorded day start ${recorded:0:12} is older than the phase's start; ignored"
+        else
+            diff_base="$recorded"; base_why="the day start recorded by --start-day"; return 0
+        fi
+    fi
+    upstream="$(git -C "$git_root" merge-base HEAD '@{upstream}' 2>/dev/null || true)"
+    if [ -n "$upstream" ] && { [ -z "$phase_start" ] || is_ancestor "$phase_start" "$upstream"; }; then
+        diff_base="$upstream"; base_why="the merge-base with the upstream branch (no day start recorded: scripts/test-phase.sh --start-day)"
+        if [ "$upstream" = "$(git -C "$git_root" rev-parse HEAD 2>/dev/null)" ]; then
+            base_note="HEAD is pushed and no day start is recorded, so only the working tree counts: commits of this day that are already pushed are left out (record the day's start with --start-day REF)"
+        fi
+        return 0
+    fi
+    if [ -n "$phase_start" ]; then
+        diff_base="$phase_start"; base_why="the last commit that changed CURRENT_PHASE (the start of the phase)"
+    else
+        diff_base=HEAD; base_why="HEAD (no commit changed CURRENT_PHASE)"
     fi
 }
 
@@ -174,11 +226,11 @@ only_additions() {
         return
     fi
     base_commit
-    if ! git -C "$root" ls-files --error-unmatch -- "$1" >/dev/null 2>&1; then
+    if ! git -C "$git_root" ls-files --error-unmatch -- "$1" >/dev/null 2>&1; then
         return 0   # untracked: a new file
     fi
     local patch
-    patch="$(git -C "$root" diff -U0 --no-renames "$diff_base" -- "$1")" || return 1
+    patch="$(git -C "$git_root" diff -U0 --no-renames "$diff_base" -- "$1")" || return 1
     if printf '%s\n' "$patch" | grep -q '^-[^-]'; then return 1; fi
     if [ "$1" = CMakeLists.txt ]; then
         if printf '%s\n' "$patch" | grep '^+[^+]' | grep -qvE '^\+[[:space:]]*(add_subdirectory\(|#|$)'; then return 1; fi
@@ -200,6 +252,16 @@ forces_all() {
     return 1
 }
 
+# --start-day: record the commit the day starts from, for --affected; nothing is built or run.
+if [ "$start_day" = 1 ]; then
+    ref="${start_ref:-HEAD}"
+    commit="$(git -C "$git_root" rev-parse -q --verify "$ref^{commit}" 2>/dev/null)" || die "--start-day: '$ref' is not a commit"
+    record="$(day_record)" || die "--start-day: not in a git checkout ($git_root)"
+    printf '%s\n' "$commit" > "$record"
+    echo "test-phase: the day starts at ${commit:0:12} ($(git -C "$git_root" log -1 --format=%s "$commit")); --affected compares with it (recorded in $record)"
+    exit 0
+fi
+
 started=$SECONDS
 full=0
 reasons=""
@@ -215,6 +277,11 @@ case "$mode" in
     affected)
         phases="$(current_phase)"
         [ -f "$modules" ] || die "missing $modules"
+        if [ -z "$diff_file" ]; then
+            base_commit
+            [ -z "$base_note" ] || echo "test-phase: $base_note"
+            echo "test-phase: --affected compares with ${diff_base:0:12}: $base_why"
+        fi
         files="$(changed_files)"
         while IFS= read -r f; do
             [ -n "$f" ] || continue

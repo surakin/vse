@@ -134,7 +134,8 @@ sets a soft core limit of 0 for the tests it starts. Plain `ctest` runs them.
 
 ```
 scripts/test-phase.sh                  # the phase in CURRENT_PHASE, plain flavor, without the window tests
-scripts/test-phase.sh --affected       # that phase plus the phases of every module touched since the phase started
+scripts/test-phase.sh --start-day      # when a day starts: record its first commit for --affected
+scripts/test-phase.sh --affected       # that phase plus the phases of every module touched since the day started
 scripts/test-phase.sh 3 --flavor asan  # all of phase 4 under AddressSanitizer
 scripts/test-phase.sh --all --flavor all   # the whole suite in every flavor: the closing run of a phase
 scripts/test-phase.sh --affected --dry-run # show the selection only
@@ -166,8 +167,7 @@ Measured on 2026-11-19 (Linux, 32 CPUs, Unix Makefiles), after touching `engine/
 | every flavor, `-j32` | 44.5 s |
 | plain only, `-j32` | 21 s |
 
-`--affected` reads the paths changed since the last commit that changed `CURRENT_PHASE` (the commits of the phase and the
-working tree, plus new files) and adds the phases listed for each directory in `tests/module_map.txt`: `engine/rhi` selects
+`--affected` reads the paths changed since its **base** (the commits since it, the working tree and new files) and adds the phases listed for each directory in `tests/module_map.txt`: `engine/rhi` selects
 the RHI and renderer tests and the docs checks, `engine/foundation` almost everything. It runs everything when the root or a module's
 `CMakeLists.txt`, `cmake/`, `third_party/`, a header under `engine/foundation`, `tests/phases.txt` or `tests/module_map.txt` changed,
 and it says so, with the reasons, before the build starts. A `CMakeLists.txt`, `tests/phases.txt` or `tests/module_map.txt` whose change
@@ -175,7 +175,21 @@ only **adds** lines (a new library, a new test file, a new map line; in the root
 comments) does not widen the run, so a day that adds a module or a test costs its own phases, not the suite. Editing or removing an
 existing line there still runs everything. The `CMakeLists.txt` of a directory under `tests/`, `tools/` or `game/` never widens it (the
 map line of the directory names the phases; `tools/docgen`'s goes to phase 3). Because the diff reaches back to the start of the
-phase, one non-additive edit to a module's CMake widens every later day of the phase too: keep such edits to the day that needs them.
+day, one non-additive edit to a module's CMake widens the rest of that day's runs: keep such edits to the day that needs them.
+
+**The base** is chosen in this order, and the first line the script prints names it and the rule:
+1. `--since REF`;
+2. the day start recorded by `scripts/test-phase.sh --start-day [REF]` (default `HEAD`). It is kept in the checkout's own `.git`
+   (`git rev-parse --git-path test-phase-base`), so each machine and worktree has its own and nothing is committed. It is ignored, with a
+   message, when it is not an ancestor of `HEAD` (after a rebase that dropped it) or is older than the phase's start;
+3. the merge-base of `HEAD` and its upstream branch, under the same "not older than the phase" rule. Pushing after every commit makes
+   this the working tree alone, so a day committed in pieces records its start;
+4. the last commit that changed `CURRENT_PHASE`.
+
+Before 2026-11-19 the base was always the phase's start, so a long phase, or a stretch of maintenance work, kept every run at the whole
+suite. Measured on the unlit-materials change (`258cc983`): the old base ran every phase (10,928 tests in every flavor); its own day's base
+selects phases 3, 4, 5, 17, 18, 22 and 27 (1,651 tests plain, 4,430 in every flavor). The ctest `test_phase_script_base` checks each rule in a
+scratch repository.
 
 **A changed path that is in no line of the module map is an error**, not a reason to run everything: the script stops before it
 builds, names the paths and asks for the map line (`path  phases`, the phases whose tests exercise the directory). The ctest

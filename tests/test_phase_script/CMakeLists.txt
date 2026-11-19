@@ -202,6 +202,14 @@ foreach(case "plain|--flavor;plain;--jobs;7|--parallel 7 --target engine_tests_p
   set_tests_properties(test_phase_script_build_plan_${name} PROPERTIES PASS_REGULAR_EXPRESSION "would build: [^\n]* ${expect}")
   list(APPEND PHASE_SCRIPT_TESTS test_phase_script_build_plan_${name})
 endforeach()
+# The base --affected compares with: --since, the day start --start-day records, the upstream merge-base, the phase's start (Day 2).
+find_package(Git QUIET)
+if(GIT_EXECUTABLE)
+  add_test(NAME test_phase_script_base
+    COMMAND ${CMAKE_COMMAND} -DBASH=${BASH_PROGRAM} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} -DGIT=${GIT_EXECUTABLE}
+      -DWORK=${CMAKE_CURRENT_BINARY_DIR}/base_repo -P ${CMAKE_CURRENT_SOURCE_DIR}/base.cmake)
+  list(APPEND PHASE_SCRIPT_TESTS test_phase_script_base)
+endif()
 add_test(NAME test_phase_script_build_plan_env
   COMMAND ${CMAKE_COMMAND} -E env CMAKE_BUILD_PARALLEL_LEVEL=2 ${BASH_PROGRAM} ${TEST_PHASE_SCRIPT} --dry-run --build-dir ${CMAKE_BINARY_DIR} 0)
 set_tests_properties(test_phase_script_build_plan_env PROPERTIES PASS_REGULAR_EXPRESSION "would build: cmake --build [^ ]+ --target engine_tests_plain\n")
