@@ -255,9 +255,47 @@ Atomic<LPTOP_LEVEL_EXCEPTION_FILTER> g_library_filter{nullptr};  // Breakpad's, 
 Atomic<u32> g_crashing_thread{0};
 constexpr DWORD kGateWaitMs = 60 * 1000;  // the first crash normally ends the process long before this
 
+// The host's filter (the one before the gate) is called at most once per crash while the gate is active (crash handler
+// chaining, Day 2): after the library's dump, or when the library gave the crash back. Reset by InstallCrashEventHook.
+Atomic<bool> g_host_filter_called{false};
+
 LONG PassOn(LPTOP_LEVEL_EXCEPTION_FILTER filter, EXCEPTION_POINTERS* info)
 {
     return filter != nullptr ? filter(info) : EXCEPTION_CONTINUE_SEARCH;
+}
+
+// Calls the host's filter; a fault inside it ends its call there (the gate's caller then ends the process with the
+// original exception), instead of reaching the gate again as a nested exception.
+LONG CallHostFilterGuarded(LPTOP_LEVEL_EXCEPTION_FILTER filter, EXCEPTION_POINTERS* info)
+{
+    __try
+    {
+        return filter(info);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        static const char kText[] = "the program's own exception filter faulted after the crash report\n";
+        os::Write(2, kText, sizeof(kText) - 1);
+        return EXCEPTION_EXECUTE_HANDLER;
+    }
+}
+
+// The host's filter, once: true when this call is the one that ran it (or there is none to run), with its action in
+// `action`; false when it already ran for this crash.
+bool CallHostFilterOnce(EXCEPTION_POINTERS* info, LONG* action)
+{
+    *action = EXCEPTION_CONTINUE_SEARCH;
+    const LPTOP_LEVEL_EXCEPTION_FILTER host = g_filter_before_gate.Load(MemoryOrder::Acquire);
+    if (host == nullptr)
+    {
+        return true;
+    }
+    if (g_host_filter_called.Exchange(true, MemoryOrder::AcqRel))
+    {
+        return false;
+    }
+    *action = CallHostFilterGuarded(host, info);
+    return true;
 }
 
 LONG WINAPI CrashGate(EXCEPTION_POINTERS* info)
@@ -275,14 +313,27 @@ LONG WINAPI CrashGate(EXCEPTION_POINTERS* info)
         if (action == EXCEPTION_CONTINUE_EXECUTION)
         {
             g_crashing_thread.Store(0, MemoryOrder::Release);  // the program goes on: not a crash
+            return action;
+        }
+        if (action == EXCEPTION_EXECUTE_HANDLER)
+        {
+            // The dump and the report are written: the host's filter runs now, here on the faulting thread, with the
+            // original exception. Its answer is not followed: the process ends with the original code as before.
+            // Breakpad, returning, made its own filter top-level again: the gate goes back on top first, so a thread
+            // that faults while the host's filter runs waits here instead of being dumped a second time.
+            SetUnhandledExceptionFilter(&CrashGate);
+            LONG ignored = EXCEPTION_CONTINUE_SEARCH;
+            CallHostFilterOnce(info, &ignored);
         }
         return action;
     }
     if (first == self)
     {
         // The library gave this thread's crash back (it wrote no dump) and called the filter it replaced, the gate: the
-        // system's turn.
-        return PassOn(g_filter_before_gate.Load(MemoryOrder::Acquire), info);
+        // host's filter decides, as it would have without the engine; or the system's turn when there is none. A second
+        // exception on this thread after the host's filter ran (one raised inside it) ends the process.
+        LONG action = EXCEPTION_CONTINUE_SEARCH;
+        return CallHostFilterOnce(info, &action) ? action : EXCEPTION_EXECUTE_HANDLER;
     }
     Sleep(kGateWaitMs);  // another thread's crash is being handled; the process ends when it is done
     return EXCEPTION_CONTINUE_SEARCH;
@@ -324,6 +375,7 @@ bool InstallCrashEventHook(CrashEventFn fn)
         g_library_filter.Store(library, MemoryOrder::Release);
     }
     g_crashing_thread.Store(0, MemoryOrder::Release);
+    g_host_filter_called.Store(false, MemoryOrder::Release);
     g_gate_active.Store(true, MemoryOrder::Release);
     return g_observer != nullptr;
 }

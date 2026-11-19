@@ -1655,7 +1655,9 @@ extern "C"
          * `crash.dump_directory` (give it in engine_create_info.settings; empty: the user's crash directory) and the
          * handler that was there before is back after crash_handler_uninstall (or engine_destroy, which uninstalls).
          * On Linux and macOS that earlier handler also runs at a crash, after the report and the dump, once, in signal
-         * context on the faulting thread; then the original fault ends the process (Windows: not yet). Fails with:
+         * context on the faulting thread; on Windows an unhandled-exception filter set before runs after them on the
+         * faulting thread (a SIGABRT handler set before, for an abort); then the original fault ends the process.
+         * Fails with:
          * STALE_HANDLE, INVALID_ARGUMENT, ALREADY_EXISTS (installed), IO (the directory), UNSUPPORTED. */
         engine_status (*crash_handler_install)(engine_handle engine);
 

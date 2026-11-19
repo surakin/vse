@@ -71,8 +71,10 @@ enum class CrashHandlerResult : u8
 /// signals **after** this call must call the one it replaced (the library's handler runs only if it is called). On
 /// Linux and macOS, a handler installed **before** it is called after the report and the dump, once, in signal context
 /// on the faulting thread, for its own signal only; then the original fault ends the process
-/// (`docs/guide/foundation-debugging.md`, "If your program has its own signal handler"). On Windows it is replaced and
-/// does not run (not yet chained).
+/// (`docs/guide/foundation-debugging.md`, "If your program has its own signal handler"). On Windows, an
+/// unhandled-exception filter set before runs after the report and the dump, once, on the faulting thread, with the
+/// original exception, and a `SIGABRT` handler set before runs after them for an `abort()` ("If your program has its
+/// own unhandled-exception filter (Windows)").
 ///
 /// On Windows, while it is installed, `abort()` neither shows the C runtime's "abort() has been called" dialog (Debug
 /// builds) nor calls Windows Error Reporting: the handler writes the report and the dump, and nothing waits for a

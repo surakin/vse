@@ -208,9 +208,12 @@ removes the handler if the host did not.
 
 - **Where the dump goes:** give `crash.dump_directory` at creation, before `crash_handler_install`: an `engine_setting_entry` `{"crash.dump_directory", "/path/to/dir"}` in `engine_create_info.settings`. The directory is made (private to the user) if it is
   missing; the report is `crash-report.txt` in it, and each crash's `.envelope` (the minidump with the report attached) and `.crash` file go in a `<run id>.run` directory below it.
-- **A host with its own crash handler** (Linux and macOS; Windows: not yet): a handler installed before `crash_handler_install` still runs, after the engine's report and dump, once, in signal context on the faulting thread,
+- **A host with its own crash handler** (Linux, macOS and Windows): a handler installed before `crash_handler_install` still runs, after the engine's report and dump, once, in signal context on the faulting thread,
   then the original fault ends the process (`foundation-debugging.md`, "If your program has its own signal handler"). `crash_host.c` checks it: its child installs the host's `SIGSEGV` handler first, crashes in a job, and finds both the
   host's marker and the envelope. The dump the crash test checks is in a directory of the run, so a dump of an earlier run cannot make a failing run pass.
+- **On Windows** the host's handler is its unhandled-exception filter, set before `crash_handler_install`: it runs after the report and the dump, once, on the faulting thread, with the original exception, and the process still ends with
+  the original code; a `SIGABRT` handler set before runs after them for an `abort()`, which raises no exception (a crash inside a job can end that way on Windows: the job's assert aborts). `foundation-debugging.md`, "If your program has its
+  own unhandled-exception filter (Windows)". `crash_host.c`'s Windows child installs both, and one of them leaves the marker.
 
 **Tests.** `host_runtime` (ctest `engine_c_runtime*`, plain, asan and tsan; static link) creates a world with a thousand entities with transforms, names and mesh references, queries by every combination, runs frames and reads the
 matrices, runs a frame with a budget over two worlds, submits 500 jobs and waits, runs jobs that create entities through the table, waits with a timeout, destroys a counter with a pending job (refused), makes every bad call (a stale

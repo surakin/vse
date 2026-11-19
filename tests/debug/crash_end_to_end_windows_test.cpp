@@ -26,6 +26,7 @@
 #include "io/path.h"
 #include "log/log.h"
 #include "os/os.h"
+#include "os/signal.h"
 #include "catch_engine_types.h"
 #include "support/death_test_skip.h"
 #include "test_text.h"
@@ -577,6 +578,274 @@ TEST_CASE("Windows: after the crash handler is uninstalled a fault prints no rep
     CHECK(r.native_code == kAccessViolation);
     CHECK_FALSE(r.StderrContains("=== CRASH REPORT ==="));
     CHECK(FindFiles(dir.IoPath(), "*.envelope").Empty());
+}
+
+// ---- a filter the program set before the crash handler (crash handler chaining, Day 2)
+// ----------------------------------------------------------------------------
+
+namespace
+{
+
+// The program's own filter: says on standard error which call this is, the exception it got and whether it runs on the
+// thread that faulted (g_faulting_thread, set by that thread just before the fault). Test code: it formats.
+Atomic<u32> g_host_filter_calls{0};
+Atomic<u32> g_faulting_thread{0};
+LONG g_host_filter_answer = EXCEPTION_CONTINUE_SEARCH;
+
+void SayHostFilter(const EXCEPTION_POINTERS* info)
+{
+    const u32 call = g_host_filter_calls.FetchAdd(1) + 1;
+    const EXCEPTION_RECORD& record = *info->ExceptionRecord;
+    const unsigned long long address = record.NumberParameters >= 2
+                                           ? static_cast<unsigned long long>(record.ExceptionInformation[1])
+                                           : 0ull;
+    char text[256];
+    const int n = FormatTo(text, sizeof(text), "HOST-FILTER call %u code 0x%08lx address 0x%llx on %s thread\n", call,
+                           static_cast<unsigned long>(record.ExceptionCode), address,
+                           GetCurrentThreadId() == g_faulting_thread.Load() ? "the faulting" : "another");
+    if (n > 0)
+    {
+        os::Write(2, text, static_cast<usize>(n));
+    }
+}
+
+LONG WINAPI HostFilter(EXCEPTION_POINTERS* info)
+{
+    SayHostFilter(info);
+    return g_host_filter_answer;
+}
+
+LONG WINAPI FaultingHostFilter(EXCEPTION_POINTERS* info)
+{
+    SayHostFilter(info);
+    InjectFault(FaultKind::NullWrite);  // does not return
+}
+
+DWORD WINAPI FaultOnThisThread(LPVOID)
+{
+    InjectFault(FaultKind::NullWrite);  // does not return
+}
+
+// A filter during which another thread faults: that thread must wait at the gate (one report, one dump), not reach the
+// library's filter, which is top-level again once the library has returned.
+LONG WINAPI HostFilterWhileAnotherThreadFaults(EXCEPTION_POINTERS* info)
+{
+    SayHostFilter(info);
+    const HANDLE other = CreateThread(nullptr, 0, &FaultOnThisThread, nullptr, 0, nullptr);
+    if (other != nullptr)
+    {
+        Sleep(1000);  // the other thread's fault is reached and waits (or, without the gate on top, is dumped)
+        CloseHandle(other);
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+void HostAbortHandler(int)
+{
+    static const char kText[] = "HOST-SIGABRT\n";
+    os::Write(2, kText, sizeof(kText) - 1);
+}
+
+void FaultHere()
+{
+    g_faulting_thread.Store(GetCurrentThreadId());
+    InjectFault(FaultKind::NullWrite);
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_win_host_filter)
+{
+    SetUnhandledExceptionFilter(&HostFilter);
+    InstallInto(argument);
+    FaultHere();
+}
+// The filter answers "continue execution": not followed, the process still ends with the access violation.
+ENGINE_DEATH_TEST_FN(dt_e2e_win_host_filter_continue)
+{
+    g_host_filter_answer = EXCEPTION_CONTINUE_EXECUTION;
+    SetUnhandledExceptionFilter(&HostFilter);
+    InstallInto(argument);
+    FaultHere();
+}
+ENGINE_DEATH_TEST_FN(dt_e2e_win_host_filter_faults)
+{
+    SetUnhandledExceptionFilter(&FaultingHostFilter);
+    InstallInto(argument);
+    FaultHere();
+}
+ENGINE_DEATH_TEST_FN(dt_e2e_win_host_filter_second_fault)
+{
+    SetUnhandledExceptionFilter(&HostFilterWhileAnotherThreadFaults);
+    InstallInto(argument);
+    FaultHere();
+}
+ENGINE_DEATH_TEST_FN(dt_e2e_win_host_filter_on_worker)
+{
+    SetUnhandledExceptionFilter(&HostFilter);
+    InstallInto(argument);
+    Thread worker(
+        []()
+        {
+            RegisterThreadForCrashHandling("worker");
+            FaultHere();
+        });
+    worker.Join();
+}
+// Install, uninstall, install: the second install notes the host's filter again, and it runs once.
+ENGINE_DEATH_TEST_FN(dt_e2e_win_host_filter_reinstall)
+{
+    hang_watchdog::Start(30);  // a hang under load was seen once: its stacks, not only a timeout
+    SetUnhandledExceptionFilter(&HostFilter);
+    InstallInto(argument);
+    UninstallCrashHandler();
+    CrashHandlerOptions options;
+    options.dump_directory = argument;
+    if (InstallCrashHandler(options) != CrashHandlerResult::Installed)
+    {
+        os::Exit(7);
+    }
+    FaultHere();
+}
+// A second install is refused and changes nothing: the host's filter, not the engine's gate, runs once.
+ENGINE_DEATH_TEST_FN(dt_e2e_win_host_filter_install_twice)
+{
+    hang_watchdog::Start(30);  // a hang under load was seen once: its stacks, not only a timeout
+    SetUnhandledExceptionFilter(&HostFilter);
+    InstallInto(argument);
+    CrashHandlerOptions options;
+    options.dump_directory = argument;
+    if (InstallCrashHandler(options) != CrashHandlerResult::AlreadyInstalled)
+    {
+        os::Exit(7);
+    }
+    FaultHere();
+}
+// abort() raises no exception, so no unhandled-exception filter sees it (as without the engine); the program's SIGABRT
+// handler runs after the report and the dump (the library calls the one it replaced).
+ENGINE_DEATH_TEST_FN(dt_e2e_win_host_abort_handler)
+{
+    os::SetSignalHandler(SIGABRT, &HostAbortHandler);
+    SetUnhandledExceptionFilter(&HostFilter);
+    InstallInto(argument);
+    InjectFault(FaultKind::Abort);
+}
+
+// The host's line comes after the report's end, once, and the process ends with the access violation.
+void CheckHostFilterRanOnceAfterReport(const ChildResult& r, const TempDir& dir)
+{
+    CheckReportAndDump(r, dir, "AccessViolation at 0x");
+    const StringView err = Stderr(r);
+    CHECK(r.native_code == kAccessViolation);
+    CHECK(CountOf(err, "HOST-FILTER call") == 1);
+    const usize end = err.Find("=== END OF REPORT ===");
+    const usize host = err.Find("HOST-FILTER call 1 code 0xc0000005");
+    REQUIRE(host != err.Length());
+    CHECK(end < host);
+}
+
+}  // namespace
+
+TEST_CASE("Windows: a filter set before the crash handler runs once after the report and the dump, on the faulting "
+          "thread, with the original exception",
+          "[crash][crashreport][death][debug][windows]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_win_host_filter", dir.Path());
+    CheckHostFilterRanOnceAfterReport(r, dir);
+    const StringView err = Stderr(r);
+    CHECK(TextHas(err, "on the faulting thread"));
+    // The address the filter got is the one the report names.
+    const usize at = err.Find("AccessViolation at 0x");
+    const usize host = err.Find("HOST-FILTER call 1");
+    REQUIRE(at != err.Length());
+    REQUIRE(host != err.Length());
+    unsigned long long reported = 1;
+    unsigned long long received = 2;
+    const Text report_line = MakeText(err.Substring(at, err.Substring(at).IndexOf('\n')));
+    const Text host_line = MakeText(err.Substring(host, err.Substring(host).IndexOf('\n')));
+    INFO(report_line.CStr() << " / " << host_line.CStr());
+    REQUIRE(ScanFrom(report_line.CStr(), "AccessViolation at 0x%llx", &reported) == 1);
+    const char* address = CStrFind(host_line.CStr(), "address 0x");
+    REQUIRE(address != nullptr);
+    REQUIRE(ScanFrom(address, "address 0x%llx", &received) == 1);
+    CHECK(reported == received);
+}
+
+TEST_CASE("Windows: the earlier filter's answer does not keep the process alive, and a fault inside it does not loop",
+          "[crash][crashreport][death][debug][windows]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    {
+        TempDir dir;
+        const ChildResult r = RunCrashChild("dt_e2e_win_host_filter_continue", dir.Path());
+        CheckHostFilterRanOnceAfterReport(r, dir);
+    }
+    {
+        TempDir dir;
+        const ChildResult r = RunCrashChild("dt_e2e_win_host_filter_faults", dir.Path());
+        CHECK_FALSE(r.timed_out);
+        CheckHostFilterRanOnceAfterReport(r, dir);
+        CHECK(TextHas(Stderr(r), "the program's own exception filter faulted after the crash report"));
+        CHECK(CountOf(Stderr(r), "=== CRASH REPORT ===") == 1);
+    }
+    {
+        // Review finding: once the library has returned its filter is top-level again; the gate goes back on top
+        // before the earlier filter runs, so a second thread faulting meanwhile is neither reported nor dumped.
+        TempDir dir;
+        const ChildResult r = RunCrashChild("dt_e2e_win_host_filter_second_fault", dir.Path());
+        CHECK_FALSE(r.timed_out);
+        CheckHostFilterRanOnceAfterReport(r, dir);  // one envelope
+        CHECK(CountOf(Stderr(r), "=== CRASH REPORT ===") == 1);
+    }
+}
+
+TEST_CASE("Windows: the earlier filter runs on a worker thread that faults",
+          "[crash][crashreport][death][debug][windows]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_win_host_filter_on_worker", dir.Path());
+    CheckHostFilterRanOnceAfterReport(r, dir);
+    CHECK(TextHas(Stderr(r), "\"worker\""));
+    CHECK(TextHas(Stderr(r), "on the faulting thread"));
+}
+
+TEST_CASE("Windows: install, uninstall, install and a refused second install each call the earlier filter once",
+          "[crash][crashreport][death][debug][windows]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    const Array<const char*, 2> children = {"dt_e2e_win_host_filter_reinstall", "dt_e2e_win_host_filter_install_twice"};
+    for (const char* child : children)
+    {
+        INFO(child);
+        TempDir dir;
+        const ChildResult r = RunCrashChild(child, dir.Path());
+        if (r.timed_out || r.native_code == 0xDEAD0002)
+        {
+            hang_watchdog::NameFrames(r.stderr_text, r.stderr_length);
+        }
+        CHECK_FALSE(r.exited);  // 7: the install's result was not the expected one
+        CheckHostFilterRanOnceAfterReport(r, dir);
+    }
+}
+
+TEST_CASE("Windows: an abort calls the earlier SIGABRT handler once after the report, and no exception filter",
+          "[crash][crashreport][death][debug][windows]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_win_host_abort_handler", dir.Path());
+    CheckReportAndDump(r, dir, "Abort");
+    const StringView err = Stderr(r);
+    CHECK(CountOf(err, "HOST-SIGABRT") == 1);
+    CHECK_FALSE(TextHas(err, "HOST-FILTER"));
+    const usize end = err.Find("=== END OF REPORT ===");
+    const usize host = err.Find("HOST-SIGABRT");
+    REQUIRE(host != err.Length());
+    CHECK(end < host);
+    // abort()'s exit code; the harness's own SIGABRT marker is not printed (the program's handler replaced it).
+    CHECK(r.exited);
+    CHECK(r.exit_code == 3);
 }
 
 ENGINE_DEATH_TEST_FN(dt_e2e_win_fast_fail)

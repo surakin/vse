@@ -122,6 +122,14 @@ mode and job limits a child runs with, and that a hung child's own child is gone
   process to end, and a crash the library hands back goes on to the system (one it resumes, `EXCEPTION_CONTINUE_EXECUTION`, frees the
   gate again). The gate handles nothing itself. After `UninstallCrashHandler`
   it passes everything on to the filter that was there before it.
+- **The program's earlier filter (crash handler chaining, Day 2):** Breakpad calls the filter it replaced (the gate) only when its dump
+  fails; once the dump is written it answers `EXCEPTION_EXECUTE_HANDLER` and nothing else would run. So the gate, after the library's
+  filter returns that answer, calls the filter that was top-level before `PrepareCrashEventHook` (the program's), on the faulting thread
+  with the original `EXCEPTION_POINTERS`, once per crash (an atomic flag, reset by each install), inside `__try` (a fault in it prints a
+  line and ends its call), and returns `EXCEPTION_EXECUTE_HANDLER` whatever it answered: the process ends with the original code. When the
+  library gives a crash back, the program's filter decides, as without the engine; a second exception on that thread after it ran ends
+  the process. An `abort()` raises no exception, so no filter sees it, with or without the engine; the library calls the `SIGABRT`
+  handler it replaced (`sentry_os.c`) after the report and the dump, then ends the process with exit code 3.
 - **What the report calls into Windows for:** the report file is opened at crash time with `CreateFileW` (through `os::CreateFileForWriting`),
   which converts the path with a heap allocation inside Windows (`KNOWN-ISSUES.md`); everything else is fixed buffers and `WriteFile`. The
   allocation check (`tests/debug/crash_alloc_windows_test.cpp`) is the debug C runtime's `_CrtSetAllocHook`, counting the C runtime

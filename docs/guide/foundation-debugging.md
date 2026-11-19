@@ -170,7 +170,7 @@ there is no helper program to ship next to the game.
   it replaced, or the dump is not written. **On Windows** the library writes the dump first and then the engine writes the report,
   from the library's own handler thread; the engine adds an observer (a vectored handler that only notes which thread raised each
   exception) and a gate filter (so a second thread crashing meanwhile waits instead of ending the process before the dump). A program
-  that installs its own unhandled-exception filter after this call replaces the library's, so do not.
+  that installs its own unhandled-exception filter after this call replaces the library's, so do not; set it before (below).
 - **What no handler sees (Windows).** A fast fail (`__fastfail`, the `/GS` stack-cookie check, some C runtime checks) ends the process
   in the kernel with exit code `0xC0000409`: no report and no dump in the dump directory. Windows Error Reporting's local dumps
   (post-mortem dumps) are the only record such a crash leaves.
@@ -348,11 +348,23 @@ error and `crash-report.txt`), the dump (the `.envelope` with its minidump), **y
   crash's signal nothing changes: the library ends the process with `_exit(<exception type>)` (exit code 1 for an access fault, 5 for an
   abort), not a signal; with one, the process dies of the signal. This rests on a local change to the vendored Breakpad
   (`third_party/sentry_native/VENDORED.md`).
-- Windows: not yet (crash handler chaining, Day 2); there the earlier handler is still replaced and does not run.
+- **Windows** (crash handler chaining, Day 2): a `SIGABRT` handler set before runs after the report and the dump for an `abort()`;
+  faults reach your unhandled-exception filter instead (the next section).
 
 **Installed after:** it runs first; call the handler that was there before it (the one `sigaction` returns) to get the report and the dump.
 
 `UninstallCrashHandler` removes the crash handler and puts back what was there before it.
+
+### If your program has its own unhandled-exception filter (Windows)
+
+Set it **before** `InstallCrashHandler` (with `SetUnhandledExceptionFilter`). On a crash the order is: the engine's report, the
+dump, **your filter**, then the end of the process with the original exception code. Your filter runs once, on the faulting thread,
+with the original `EXCEPTION_POINTERS`, while the process is crashing: keep it to writing what you need. Its answer is not followed (an
+`EXCEPTION_CONTINUE_EXECUTION` does not keep the process alive), and a fault inside it ends its call with a line on standard error,
+not a loop. `abort()` raises no exception, so it never reaches an exception filter (it does not without the engine either): set a
+`SIGABRT` handler before the install too, and it runs after the report and the dump, before the process ends with exit code 3.
+`UninstallCrashHandler` makes your filter top-level again. A crash the library could not dump goes to your filter as it would have
+without the engine. (Linux and macOS: the section above.)
 
 ### Reading the exit status
 

@@ -54,7 +54,7 @@ static inline int ProbeLibraryGone(const char* path)
 #endif
 
 /* Whether the engine's crash handler calls the host's handler, installed before it, after the report and the dump
-   (crash handler chaining): Linux (Day 1) and macOS (Day 3); Windows is the series' Day 2. */
+   (crash handler chaining): Linux (Day 1) and macOS (Day 3); Windows defines it in host_os_windows.h (Day 2). */
 #define ENGINE_HOST_HANDLER_CHAINED (ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_MACOS)
 
 /* Whether a process that faulted with the engine's crash handler installed ended as it does after the dump: by SIGSEGV

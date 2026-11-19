@@ -183,8 +183,6 @@ answered in the the host notes (`plans/maintenance/`).
 - The handler must be async-signal-safe, as it already is.
 - Under AddressSanitizer with `handle_segv=1`, ASan's handler is an earlier handler too, and its report follows the engine's dump.
 
-**Still open:** Windows (Day 2, the PC). There the earlier handler is still replaced (`KNOWN-ISSUES.md`).
-
 ## Done on macOS (2026-11-19, Day 3)
 
 - **The same order as Linux:** a handler installed before `crash_handler_install`, for a fault or an abort, runs **after the report and the
@@ -197,3 +195,12 @@ answered in the the host notes (`plans/maintenance/`).
   signal.
 - **What the host does:** nothing new, as on Linux. Install the handlers at startup, create the engine, call `crash_handler_install`; choose the
   dump directory with `crash.dump_directory` at creation.
+
+## Done on Windows (2026-11-19, Day 2)
+
+an unhandled-exception filter set before `crash_handler_install` runs after the report and
+the dump, once, on the faulting thread, with the original exception; the process still ends with the original code. An `abort()`
+raises no exception and reaches no filter (as without the engine): a `SIGABRT` handler set before runs after the report and the dump
+instead. the host on Windows: keep setting its filter (and its `SIGABRT` handler) at startup, before `crash_handler_install`; the filter's
+answer is not followed. Details in [02-windows.md](host-crash-handler-chaining/02-windows.md).
+

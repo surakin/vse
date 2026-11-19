@@ -5,6 +5,7 @@
 #define HOST_OS_WINDOWS_H
 
 #include <crtdbg.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -214,6 +215,7 @@ static inline void host_child_entry(void (*child)(const char*))
    planted, or exit code 3 (abort), which is how it ends when the fault happens inside a job: MSVC's coroutine machinery
    hands the fault to Job::promise_type::unhandled_exception, whose assert aborts after the report (KNOWN-ISSUES.md,
    Phase 23 Day 354). The caller checks the dump the engine's handler left either way. */
+static DWORD g_host_child_code = 0; /* how the last crash child ended (host_run_crash_child) */
 static inline int host_run_crash_child(void (*child)(const char*), const char* arg)
 {
     wchar_t self[MAX_PATH * 2];
@@ -238,6 +240,7 @@ static inline int host_run_crash_child(void (*child)(const char*), const char* a
     SetEnvironmentVariableW(L"HOST_CRASH_CHILD", NULL);
     WaitForSingleObject(process.hProcess, 60000);
     GetExitCodeProcess(process.hProcess, &code);
+    g_host_child_code = code;
     CloseHandle(process.hThread);
     CloseHandle(process.hProcess);
     if (code != (DWORD)EXCEPTION_ACCESS_VIOLATION && code != 3)
@@ -254,15 +257,57 @@ static inline void host_exit_now(int code)
 
 /* ---- the host's own crash handler ---- */
 
+/* Whether the engine's crash handler calls the host's handlers, installed before it, after the report and the dump
+   (crash handler chaining, Day 2; the POSIX value is in process_probe.h). */
+#define ENGINE_HOST_HANDLER_CHAINED 1
+
+/* Where the host's handlers leave a mark that they ran (empty: they leave none); set before the crash. */
+static char g_host_marker[1100];
+static inline void host_set_crash_marker(const char* path)
+{
+    snprintf(g_host_marker, sizeof(g_host_marker), "%s", path);
+}
+static inline void host_write_marker(void)
+{
+    wchar_t wide[1100];
+    HANDLE file;
+    DWORD written = 0;
+    if (g_host_marker[0] == '\0')
+    {
+        return;
+    }
+    file = CreateFileW(host_wide(g_host_marker, wide, 1100), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                       FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file != INVALID_HANDLE_VALUE)
+    {
+        WriteFile(file, "ran\n", 4, &written, NULL);
+        CloseHandle(file);
+    }
+}
 static LONG WINAPI host_own_filter(EXCEPTION_POINTERS* info)
 {
     (void)info;
+    host_write_marker();
     return EXCEPTION_CONTINUE_SEARCH;
 }
-/* Installs the host's own unhandled-exception filter. */
+static void host_own_abort_handler(int signal_number)
+{
+    (void)signal_number;
+    host_write_marker();
+}
+/* Installs the host's own crash handlers, as a program with its own crash log has: the unhandled-exception filter, and
+   a SIGABRT handler (abort() raises no exception; a crash inside a job may end that way: host_run_crash_child). */
 static inline void host_install_own_crash_handler(void)
 {
     SetUnhandledExceptionFilter(&host_own_filter);
+    signal(SIGABRT, &host_own_abort_handler);
+}
+/* Whether the last crash child ended with its crash, after the host's handler ran (crash_host.c's chaining check; the
+   POSIX side asks for SIGSEGV): the access violation, or exit code 3 when the fault inside the job ended through the
+   job's assert and abort() (host_run_crash_child). */
+static inline int host_crash_child_died_of_segv(void)
+{
+    return g_host_child_code == (DWORD)EXCEPTION_ACCESS_VIOLATION || g_host_child_code == 3;
 }
 /* Whether the top-level filter is the host's own (read by setting it and putting back what was there). */
 static inline int host_own_crash_handler_active(void)
