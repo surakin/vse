@@ -167,6 +167,10 @@ struct Entry
 {
     BindingInfo info;
     InvokeFn invoke = nullptr;
+    /// A binding registered at run time ([[script::BindingRegistry::AddDynamic]]): called with `user` in place of
+    /// `invoke`.
+    Outcome (*dynamic)(void* user, Span<const Value> args, Vector<Value>* results) = nullptr;
+    void* user = nullptr;
 };
 
 template <usize... I> struct Indices
@@ -559,6 +563,26 @@ public:
         return AddEntry(ns, name, rule, params, doc, signature.View(), detail::InvokerFor<Fn>(Sig()),
                         SignatureArity(Sig()), error);
     }
+
+    /// Adds a function a host decides at run time, as `ns.name`: the same registration as
+    /// [[script::BindingRegistry::Add]] with a callback in place of a compile-time function. The callback gets the
+    /// arguments as values (it checks their kinds itself; the count is checked here) and fills the results; a failed
+    /// `Outcome` becomes a script error.
+    ///
+    /// - Param ns: the namespace, as for `Add`.
+    /// - Param name: the function name, as for `Add`.
+    /// - Param rule: the thread rule, as for `Add`; the callback runs on the threads that rule allows, several at once.
+    /// - Param params: one name per parameter, comma separated (empty for none); sets the arity.
+    /// - Param doc: the description; copied.
+    /// - Param callback: the function to call; not null.
+    /// - Param user: passed to `callback`; borrowed, it must outlive every installation made from the registry.
+    /// - Returns: true when the binding is added.
+    /// - Fails: returns false (and fills `error`) as `Add` does, or for a null callback.
+    /// - Ownership: the strings are copied; the registry owns the entry; `user` is borrowed.
+    /// - Thread-safety: thread-compatible: not while an installation is being made from the registry.
+    bool AddDynamic(StringView ns, StringView name, ThreadRule rule, StringView params, StringView doc,
+                    Outcome (*callback)(void* user, Span<const Value> args, Vector<Value>* results), void* user,
+                    Outcome* error = nullptr);
 
     /// How many bindings there are.
     ///

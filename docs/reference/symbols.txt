@@ -1960,29 +1960,30 @@ script::BindingInfo::doc	variable	script	script-bindinginfo-doc	script.md	engine
 script::BindingInfo::rule	variable	script	script-bindinginfo-rule	script.md	engine/script/bindings.h:142
 script::BindingInfo::arity	variable	script	script-bindinginfo-arity	script.md	engine/script/bindings.h:144
 script::BindingInfo::BindingInfo()	function	script	script-bindinginfo-bindinginfo	script.md	engine/script/bindings.h:147
-script::Installation	class	script	script-installation	script.md	engine/script/bindings.h:479
-script::Installation::Installed() const	function	script	script-installation-installed-const	script.md	engine/script/bindings.h:485
-script::Installation::Refusing() const	function	script	script-installation-refusing-const	script.md	engine/script/bindings.h:489
-script::Installation::Skipped() const	function	script	script-installation-skipped-const	script.md	engine/script/bindings.h:493
-script::Installation::~Installation()	function	script	script-installation-tilde-installation	script.md	engine/script/bindings.h:496
-script::Installation::Installation(const Installation&)	function	script	script-installation-installation-const-installation-amp	script.md	engine/script/bindings.h:497
-script::Installation::operator=(const Installation&)	function	script	script-installation-operator-eq-const-installation-amp	script.md	engine/script/bindings.h:498
-script::Installation::Installation()	function	script	script-installation-installation	script.md	engine/script/bindings.h:500
-script::BindingRegistry	class	script	script-bindingregistry	script.md	engine/script/bindings.h:528
-script::BindingRegistry::BindingRegistry()	function	script	script-bindingregistry-bindingregistry	script.md	engine/script/bindings.h:532
-script::BindingRegistry::~BindingRegistry()	function	script	script-bindingregistry-tilde-bindingregistry	script.md	engine/script/bindings.h:534
-script::BindingRegistry::BindingRegistry(const BindingRegistry&)	function	script	script-bindingregistry-bindingregistry-const-bindingregistry-amp	script.md	engine/script/bindings.h:535
-script::BindingRegistry::operator=(const BindingRegistry&)	function	script	script-bindingregistry-operator-eq-const-bindingregistry-amp	script.md	engine/script/bindings.h:536
-script::BindingRegistry::Add(StringView,StringView,ThreadRule,StringView,StringView,Outcome*)	function	script	script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star	script.md	engine/script/bindings.h:552
-script::BindingRegistry::Count() const	function	script	script-bindingregistry-count-const	script.md	engine/script/bindings.h:566
-script::BindingRegistry::At(usize) const	function	script	script-bindingregistry-at-usize-const	script.md	engine/script/bindings.h:571
-script::BindingRegistry::Find(StringView) const	function	script	script-bindingregistry-find-stringview-const	script.md	engine/script/bindings.h:578
-script::BindingRegistry::FindById(u32) const	function	script	script-bindingregistry-findbyid-u32-const	script.md	engine/script/bindings.h:585
-script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:597
-script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:605
-script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:624
-script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:635
-script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:646
+script::Installation	class	script	script-installation	script.md	engine/script/bindings.h:483
+script::Installation::Installed() const	function	script	script-installation-installed-const	script.md	engine/script/bindings.h:489
+script::Installation::Refusing() const	function	script	script-installation-refusing-const	script.md	engine/script/bindings.h:493
+script::Installation::Skipped() const	function	script	script-installation-skipped-const	script.md	engine/script/bindings.h:497
+script::Installation::~Installation()	function	script	script-installation-tilde-installation	script.md	engine/script/bindings.h:500
+script::Installation::Installation(const Installation&)	function	script	script-installation-installation-const-installation-amp	script.md	engine/script/bindings.h:501
+script::Installation::operator=(const Installation&)	function	script	script-installation-operator-eq-const-installation-amp	script.md	engine/script/bindings.h:502
+script::Installation::Installation()	function	script	script-installation-installation	script.md	engine/script/bindings.h:504
+script::BindingRegistry	class	script	script-bindingregistry	script.md	engine/script/bindings.h:532
+script::BindingRegistry::BindingRegistry()	function	script	script-bindingregistry-bindingregistry	script.md	engine/script/bindings.h:536
+script::BindingRegistry::~BindingRegistry()	function	script	script-bindingregistry-tilde-bindingregistry	script.md	engine/script/bindings.h:538
+script::BindingRegistry::BindingRegistry(const BindingRegistry&)	function	script	script-bindingregistry-bindingregistry-const-bindingregistry-amp	script.md	engine/script/bindings.h:539
+script::BindingRegistry::operator=(const BindingRegistry&)	function	script	script-bindingregistry-operator-eq-const-bindingregistry-amp	script.md	engine/script/bindings.h:540
+script::BindingRegistry::Add(StringView,StringView,ThreadRule,StringView,StringView,Outcome*)	function	script	script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star	script.md	engine/script/bindings.h:556
+script::BindingRegistry::AddDynamic(StringView,StringView,ThreadRule,StringView,StringView,Outcome(*)(void*,Span<const Value>,Vector<Value>*),void*,Outcome*)	function	script	script-bindingregistry-adddynamic-stringview-stringview-threadrule-stringview-stringview-outcome-star-void-star-span-lt-const-value-gt-vector-lt-value-gt-star-void-star-outcome-star	script.md	engine/script/bindings.h:583
+script::BindingRegistry::Count() const	function	script	script-bindingregistry-count-const	script.md	engine/script/bindings.h:590
+script::BindingRegistry::At(usize) const	function	script	script-bindingregistry-at-usize-const	script.md	engine/script/bindings.h:595
+script::BindingRegistry::Find(StringView) const	function	script	script-bindingregistry-find-stringview-const	script.md	engine/script/bindings.h:602
+script::BindingRegistry::FindById(u32) const	function	script	script-bindingregistry-findbyid-u32-const	script.md	engine/script/bindings.h:609
+script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:621
+script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:629
+script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:648
+script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:659
+script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:670
 script::kPlaceholdersPerPartition	variable	script	script-kplaceholdersperpartition	script.md	engine/script/command_buffer.h:17
 script::CommandRecord	struct	script	script-commandrecord	script.md	engine/script/command_buffer.h:22
 script::CommandRecord::order_key	variable	script	script-commandrecord-order-key	script.md	engine/script/command_buffer.h:25

@@ -30,7 +30,7 @@ value ENGINE_COMPONENT_JOINT 13
 value ENGINE_COMPONENT_CHARACTER 14
 value ENGINE_COMPONENT_AUDIO_SOURCE 15
 value ENGINE_COMPONENT_AUDIO_LISTENER 16
-value ENGINE_COMPONENT_MASK_ALL 65535
+value ENGINE_COMPONENT_MASK_ALL 131071
 value ENGINE_NAME_MAX_BYTES 63
 struct engine_string size=16
 field engine_string.data offset=0 size=8
@@ -318,7 +318,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=1160
+struct engine_api size=1200
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -537,3 +537,56 @@ value ENGINE_AUDIO_EVENT_LOOPED 2
 value ENGINE_AUDIO_EVENT_VIRTUALISED 3
 value ENGINE_AUDIO_EVENT_STOLEN 4
 value ENGINE_AUDIO_EVENT_STOPPED 5
+struct engine_value size=24
+field engine_value.tag offset=0 size=4
+field engine_value.count offset=4 size=4
+field engine_value.i offset=8 size=8
+field engine_value.f offset=16 size=8
+struct engine_value_pool size=56
+field engine_value_pool.struct_size offset=0 size=4
+field engine_value_pool.root_count offset=4 size=4
+field engine_value_pool.item_count offset=8 size=8
+field engine_value_pool.item_capacity offset=16 size=8
+field engine_value_pool.items offset=24 size=8
+field engine_value_pool.byte_count offset=32 size=8
+field engine_value_pool.byte_capacity offset=40 size=8
+field engine_value_pool.bytes offset=48 size=8
+struct engine_script_load size=40
+field engine_script_load.struct_size offset=0 size=4
+field engine_script_load.flags offset=4 size=4
+field engine_script_load.name offset=8 size=16
+field engine_script_load.source offset=24 size=16
+struct engine_script_component size=80
+field engine_script_component.struct_size offset=0 size=4
+field engine_script_component.enabled offset=4 size=4
+field engine_script_component.behavior offset=8 size=64
+field engine_script_component.params offset=72 size=8
+struct engine_script_budget size=32
+field engine_script_budget.struct_size offset=0 size=4
+field engine_script_budget.reserved offset=4 size=4
+field engine_script_budget.instructions offset=8 size=8
+field engine_script_budget.nanoseconds offset=16 size=8
+field engine_script_budget.memory_bytes offset=24 size=8
+struct engine_script_stats size=64
+field engine_script_stats.struct_size offset=0 size=4
+field engine_script_stats.partitions offset=4 size=4
+field engine_script_stats.ticks offset=8 size=8
+field engine_script_stats.instances offset=16 size=8
+field engine_script_stats.updates offset=24 size=8
+field engine_script_stats.errors offset=32 size=8
+field engine_script_stats.calls offset=40 size=8
+field engine_script_stats.host_calls offset=48 size=8
+field engine_script_stats.scripts_loaded offset=56 size=4
+field engine_script_stats.host_functions offset=60 size=4
+value ENGINE_COMPONENT_SCRIPT 17
+value ENGINE_VALUE_NIL 0
+value ENGINE_VALUE_BOOL 1
+value ENGINE_VALUE_INT 2
+value ENGINE_VALUE_NUMBER 3
+value ENGINE_VALUE_STRING 4
+value ENGINE_VALUE_BYTES 5
+value ENGINE_VALUE_ARRAY 6
+value ENGINE_VALUE_MAP 7
+value ENGINE_VALUE_ENTITY 8
+value ENGINE_SCRIPT_FUNCTION_PURE 1
+value ENGINE_CAP_SCRIPT 2048

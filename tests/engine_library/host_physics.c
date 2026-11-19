@@ -236,7 +236,7 @@ static void TestArguments(engine_handle engine)
     CHECK(total == 1 && keys[0] == key);
     CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_BIT(ENGINE_COMPONENT_COLLIDER), keys, 4, &total), ENGINE_OK);
     CHECK(total == 1);
-    CHECK_STATUS(g_api->query(world, 0x10000u, keys, 4, &total), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->query(world, 0x20000u, keys, 4, &total), ENGINE_ERROR_INVALID_ARGUMENT);
     {
         int has = 0;
         CHECK_STATUS(g_api->component_has(world, key, ENGINE_COMPONENT_COLLIDER, &has), ENGINE_OK);

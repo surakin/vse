@@ -197,6 +197,18 @@ Outcome Dispatch(void* user, Span<const Value> args, Vector<Value>* results)
         sb.Append(StringView(" is main-thread-only and cannot be called from a partition job"));
         return Outcome(Status::RuntimeError, sb.View());
     }
+    if (bound->entry->dynamic != nullptr)
+    {
+        if (args.Size() != bound->entry->info.arity)
+        {
+            StringBuilder<HeapAllocator> sb(HeapAllocator::Default());
+            sb.Append(bound->entry->info.full_name.View()).Append(StringView(": expected "));
+            sb.AppendInt(bound->entry->info.arity).Append(StringView(" arguments, got "));
+            sb.AppendInt(static_cast<i64>(args.Size()));
+            return Outcome(Status::RuntimeError, sb.View());
+        }
+        return bound->entry->dynamic(bound->entry->user, args, results);
+    }
     return bound->entry->invoke(bound->env, args, results);
 }
 
@@ -290,6 +302,30 @@ bool BindingRegistry::AddEntry(StringView ns, StringView name, ThreadRule rule, 
     info.arity = arity;
     entry->invoke = invoke;
     entries_.Push(Move(entry));
+    return true;
+}
+
+bool BindingRegistry::AddDynamic(StringView ns, StringView name, ThreadRule rule, StringView params, StringView doc,
+                                 Outcome (*callback)(void* user, Span<const Value> args, Vector<Value>* results),
+                                 void* user, Outcome* error)
+{
+    if (callback == nullptr)
+    {
+        return Refuse(error, ns, name, "the callback is null");
+    }
+    String<HeapAllocator> signature(HeapAllocator::Default());
+    signature.Append(StringView("("));
+    signature.Append(params);
+    signature.Append(StringView(") -> values"));
+    const usize before = entries_.Size();
+    if (!AddEntry(ns, name, rule, params, doc, signature.View(), nullptr, static_cast<u32>(detail::CountNames(params)),
+                  error))
+    {
+        return false;
+    }
+    detail::Entry& entry = *entries_[before];
+    entry.dynamic = callback;
+    entry.user = user;
     return true;
 }
 

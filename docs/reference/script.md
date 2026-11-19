@@ -1804,6 +1804,30 @@ Adds the function `Fn` as `ns.name`.
 | Fails | returns false (and fills `error`) for an unmarked rule, a bad name, a name or id already in the registry, or a `params` list that does not match the parameter count. |
 | Ownership | the strings are copied; the registry owns the entry. |
 
+### `AddDynamic(StringView,StringView,ThreadRule,StringView,StringView,Outcome(*)(void*,Span<const Value>,Vector<Value>*),void*,Outcome*)` {#script-bindingregistry-adddynamic-stringview-stringview-threadrule-stringview-stringview-outcome-star-void-star-span-lt-const-value-gt-vector-lt-value-gt-star-void-star-outcome-star}
+
+`method script::BindingRegistry::AddDynamic` — defined in `engine/script/bindings.h`
+
+```cpp
+bool AddDynamic(StringView ns, StringView name, ThreadRule rule, StringView params, StringView doc, Outcome (*callback)(void* user, Span<const Value> args, Vector<Value>* results), void* user, Outcome* error = nullptr);
+```
+
+Adds a function a host decides at run time, as `ns.name`: the same registration as [`script::BindingRegistry::Add`](#script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star) with a callback in place of a compile-time function. The callback gets the arguments as values (it checks their kinds itself; the count is checked here) and fills the results; a failed `Outcome` becomes a script error.
+
+| Field | Value |
+|---|---|
+| Parameter `ns` | the namespace, as for `Add`. |
+| Parameter `name` | the function name, as for `Add`. |
+| Parameter `rule` | the thread rule, as for `Add`; the callback runs on the threads that rule allows, several at once. |
+| Parameter `params` | one name per parameter, comma separated (empty for none); sets the arity. |
+| Parameter `doc` | the description; copied. |
+| Parameter `callback` | the function to call; not null. |
+| Parameter `user` | passed to `callback`; borrowed, it must outlive every installation made from the registry. |
+| Returns | true when the binding is added. |
+| Fails | returns false (and fills `error`) as `Add` does, or for a null callback. |
+| Thread-safety | thread-compatible: not while an installation is being made from the registry. |
+| Ownership | the strings are copied; the registry owns the entry; `user` is borrowed. |
+
 ### `Count()` {#script-bindingregistry-count-const}
 
 `method script::BindingRegistry::Count` — defined in `engine/script/bindings.h`

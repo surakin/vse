@@ -385,3 +385,86 @@ TEST_CASE("Bindings: eight threads install the same registry into their own stat
     }
     CHECK(good.Load(MemoryOrder::Acquire) == 8);
 }
+
+namespace
+{
+
+struct DynamicCounter
+{
+    int calls = 0;
+};
+
+// A host decides at run time: sums its integer arguments, counts its calls, fails on a negative sum.
+Outcome DynamicSum(void* user, Span<const Value> args, Vector<Value>* results)
+{
+    DynamicCounter* counter = static_cast<DynamicCounter*>(user);
+    ++counter->calls;
+    i64 sum = 0;
+    for (usize i = 0; i < args.Size(); ++i)
+    {
+        sum += args[i].Kind() == ValueKind::Int ? args[i].AsInt() : 0;
+    }
+    if (sum < 0)
+    {
+        return Outcome(Status::RuntimeError, "negative sum");
+    }
+    results->Push(Value::FromInt(sum));
+    return Outcome();
+}
+
+}  // namespace
+
+TEST_CASE("Bindings: a function registered at run time is installed and called like a typed one",
+          "[script][bindings][dynamic]")
+{
+    BindingRegistry registry;
+    DynamicCounter counter;
+    Outcome error;
+    REQUIRE(registry.AddDynamic("host", "sum", ThreadRule::WorldRead, "a, b", "Adds two integers.", &DynamicSum,
+                                &counter, &error));
+    CHECK(registry.Find("host.sum") != nullptr);
+    CHECK(registry.Find("host.sum")->arity == 2);
+    CHECK(registry.Find("host.sum")->rule == ThreadRule::WorldRead);
+    UniquePtr<Backend> backend = luajit::CreateLuaJitBackend();
+    UniquePtr<State> state = backend->CreateState(0);
+    Outcome install_error;
+    UniquePtr<Installation> installed = registry.Install(state.Get(), InstallProfile::Partition(EntityCheck()),
+                                                         &install_error);
+    REQUIRE(installed.Get() != nullptr);
+    REQUIRE(
+        state->Load("dynamic", "function run(a, b) return host.sum(a, b) end function wrong() return host.sum(1) end")
+            .IsOk());
+    CallOutput out;
+    Value args[2] = {Value::FromInt(40), Value::FromInt(2)};
+    REQUIRE(state->Call("run", Span<const Value>(args, 2), Budget(), &out).IsOk());
+    REQUIRE(out.results.Size() == 1);
+    CHECK(out.results[0].Equals(Value::FromInt(42)));
+    CHECK(counter.calls == 1);
+    // The count is checked before the callback runs; a failure of the callback is a script error.
+    const Outcome wrong = state->Call("wrong", Span<const Value>(), Budget(), &out);
+    CHECK(wrong.status == Status::RuntimeError);
+    CHECK(counter.calls == 1);
+    Value negative[2] = {Value::FromInt(-5), Value::FromInt(1)};
+    const Outcome failed = state->Call("run", Span<const Value>(negative, 2), Budget(), &out);
+    CHECK(failed.status == Status::RuntimeError);
+    CHECK(counter.calls == 2);
+}
+
+TEST_CASE("Bindings: a run-time registration is refused for a null callback, a taken name or a bad rule",
+          "[script][bindings][dynamic]")
+{
+    BindingRegistry registry;
+    DynamicCounter counter;
+    Outcome error;
+    CHECK_FALSE(registry.AddDynamic("host", "none", ThreadRule::Pure, "", "no callback", nullptr, &counter, &error));
+    CHECK_FALSE(error.IsOk());
+    REQUIRE(registry.AddDynamic("host", "sum", ThreadRule::Pure, "a", "one", &DynamicSum, &counter, &error));
+    CHECK_FALSE(registry.AddDynamic("host", "sum", ThreadRule::Pure, "a", "again", &DynamicSum, &counter, &error));
+    CHECK_FALSE(
+        registry.AddDynamic("host", "unmarked", ThreadRule::Unmarked, "a", "no rule", &DynamicSum, &counter, &error));
+    CHECK_FALSE(registry.AddDynamic("math", "sum", ThreadRule::Pure, "a", "a Lua library's name", &DynamicSum, &counter,
+                                    &error));
+    CHECK_FALSE(
+        registry.AddDynamic("host", "Upper", ThreadRule::Pure, "a", "a bad name", &DynamicSum, &counter, &error));
+    CHECK(registry.Count() == 1);
+}

@@ -461,6 +461,29 @@ public:
         return Api()->component_get(Get(), key, kind, out);
     }
     Status RemoveComponent(uint64_t key, uint32_t kind) const { return Api()->component_remove(Get(), key, kind); }
+
+    /// Scripts (Phase 27 Day 471; `ENGINE_CAP_SCRIPT`): `ScriptLoad` adds a script to the world, `ScriptCall` calls a
+    /// global function with a value pool in and out, `ScriptRegisterFunction` makes a host function callable from
+    /// scripts (before the first script), `ScriptSetBudget` limits calls, `ScriptStats` reads the counters. Script
+    /// components are `ENGINE_COMPONENT_SCRIPT` with `SetComponent`.
+    Status ScriptLoad(const engine_script_load& info, uint64_t* out_script = nullptr) const
+    {
+        return Api()->script_load(Get(), &info, out_script);
+    }
+    Status ScriptCall(engine_string function, const engine_value_pool* args, engine_value_pool* results) const
+    {
+        return Api()->script_call(Get(), function, args, results);
+    }
+    Status ScriptRegisterFunction(engine_string name, uint32_t arity, uint32_t flags, engine_script_fn function,
+                                  void* user) const
+    {
+        return Api()->script_register_function(Get(), name, arity, flags, function, user);
+    }
+    Status ScriptSetBudget(const engine_script_budget& budget) const
+    {
+        return Api()->script_set_budget(Get(), &budget);
+    }
+    Status ScriptStats(engine_script_stats* out) const { return Api()->script_stats(Get(), out); }
     Status HasComponent(uint64_t key, uint32_t kind, bool* out) const
     {
         int has = 0;

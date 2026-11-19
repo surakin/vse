@@ -9,6 +9,7 @@
 #include "ecs/world.h"
 #include "engine/engine_c.h"
 #include "engine_c/host_texture.h"
+#include "engine_c/script_api.h"
 #include "jobs/job.h"
 #include "audio/spatial_audio.h"
 #include "physics/character.h"
@@ -182,6 +183,8 @@ struct WorldObject
     /// changes.
     UniquePtr<audio::SpatialAudio> spatial_audio;
     AudioHostPtr spatial_host;
+    /// The world's scripts (Phase 27 Day 471): made by the first `script_load`, script component or host function.
+    UniquePtr<ScriptHost> scripts;
 };
 
 /// A count of jobs not yet finished.
@@ -322,6 +325,9 @@ public:
 
     /// What the resource host is made from; set once when the engine is created, before any call.
     ResourceConfig resource_config;
+
+    /// What the `script.*` settings said when the engine was created; a world's script runtime is made from it.
+    ScriptSettingValues script_settings;
 
     /// The host-driven audio (Phase 26 Day 438): made by `audio_open`, destroyed by `audio_close` or with the engine.
     /// `audio_host` is what the audio thread reads; `audio_owner` owns it; both change under `audio_mutex`.

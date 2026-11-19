@@ -77,13 +77,14 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_CHARACTER: return "character";
     case ENGINE_COMPONENT_AUDIO_SOURCE: return "audio source";
     case ENGINE_COMPONENT_AUDIO_LISTENER: return "audio listener";
+    case ENGINE_COMPONENT_SCRIPT: return "script";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_AUDIO_LISTENER;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_SCRIPT;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -106,6 +107,7 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_CHARACTER: return ecs::ComponentOf<CharacterComponent>();
     case ENGINE_COMPONENT_AUDIO_SOURCE: return ecs::ComponentOf<audio::AudioSource>();
     case ENGINE_COMPONENT_AUDIO_LISTENER: return ecs::ComponentOf<audio::AudioListener>();
+    case ENGINE_COMPONENT_SCRIPT: return ScriptComponentId();
     }
     return ecs::kInvalidComponent;
 }
@@ -575,6 +577,7 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
         }
         ResourceHost* resources = runtime->ResourcesIfCreated();
         AnimateWorld(*object, resources, static_cast<f32>(info->delta_seconds));
+        ScriptTickWorld(*object, info->delta_seconds);  // before the bodies follow the entities (Phase 27 Day 471)
         // The physics bodies follow the entities, then the schedule steps them (before the transform system, which
         // reads what the step wrote back); a world that never had a body component pays nothing (Day 408).
         physics::PhysicsWorld& physics = object->world.Resource<physics::PhysicsWorld>();
@@ -849,6 +852,11 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         checked = CheckInStruct(value, sizeof(engine_audio_listener), "engine_audio_listener");
     }
+    else if (kind == ENGINE_COMPONENT_SCRIPT)
+    {
+        // The params pointer ends the struct: a host of a version with none passes a shorter one.
+        checked = CheckInStruct(value, offsetof(engine_script_component, params), "engine_script_component");
+    }
     else
     {
         checked = CheckInStruct(value, kMeshReferenceFirstSize, "engine_mesh_reference");
@@ -861,6 +869,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
         world, true, key,
         [&](WorldObject& object, ecs::Entity entity)
         {
+            if (kind == ENGINE_COMPONENT_SCRIPT)
+            {
+                return ScriptComponentSet(*CurrentRuntime(), object, entity, value);
+            }
             if (kind == ENGINE_COMPONENT_AUDIO_SOURCE)
             {
                 const engine_audio_source* in = static_cast<const engine_audio_source*>(value);
@@ -2342,6 +2354,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_CHARACTER         ? sizeof(engine_character)
                          : kind == ENGINE_COMPONENT_AUDIO_SOURCE      ? offsetof(engine_audio_source, stream)
                          : kind == ENGINE_COMPONENT_AUDIO_LISTENER    ? sizeof(engine_audio_listener)
+                         : kind == ENGINE_COMPONENT_SCRIPT            ? sizeof(engine_script_component)
                          : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? sizeof(engine_skeleton_instance)
                          : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? sizeof(engine_animation_state)
                                                                       : kMeshReferenceFirstSize;
@@ -2357,6 +2370,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                        : kind == ENGINE_COMPONENT_CHARACTER         ? "engine_character"
                        : kind == ENGINE_COMPONENT_AUDIO_SOURCE      ? "engine_audio_source"
                        : kind == ENGINE_COMPONENT_AUDIO_LISTENER    ? "engine_audio_listener"
+                       : kind == ENGINE_COMPONENT_SCRIPT            ? "engine_script_component"
                        : kind == ENGINE_COMPONENT_SKELETON_INSTANCE ? "engine_skeleton_instance"
                        : kind == ENGINE_COMPONENT_ANIMATION_PLAYER  ? "engine_animation_state"
                                                                     : "engine_mesh_reference";
@@ -2470,6 +2484,10 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              result.struct_size = static_cast<u32>(room);
                              MemCopy(out, &result, room);
                              return ENGINE_OK;
+                         }
+                         if (kind == ENGINE_COMPONENT_SCRIPT)
+                         {
+                             return ScriptComponentGet(object, entity, out);
                          }
                          if (kind == ENGINE_COMPONENT_AUDIO_LISTENER)
                          {
@@ -2713,6 +2731,7 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                              break;
                          case ENGINE_COMPONENT_AUDIO_SOURCE: status = w.Remove<audio::AudioSource>(entity); break;
                          case ENGINE_COMPONENT_AUDIO_LISTENER: status = w.Remove<audio::AudioListener>(entity); break;
+                         case ENGINE_COMPONENT_SCRIPT: return ScriptComponentRemove(object, entity);
                          case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
                          case ENGINE_COMPONENT_SKELETON_INSTANCE:
                              status = w.Remove<animation::SkeletonInstance>(entity);
@@ -2746,7 +2765,8 @@ engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind_value, int* 
     return WithWorld(world, true, key,
                      [&](WorldObject& object, ecs::Entity entity)
                      {
-                         *out = object.world.HasById(entity, IdOfKind(kind)) ? 1 : 0;
+                         const ecs::ComponentId id = IdOfKind(kind);
+                         *out = id != ecs::kInvalidComponent && object.world.HasById(entity, id) ? 1 : 0;
                          return ENGINE_OK;
                      });
 }
@@ -2816,13 +2836,17 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[14];
+                         ecs::ComponentId wanted[ENGINE_COMPONENT_SCRIPT];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_AUDIO_LISTENER; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_SCRIPT; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {
                                  wanted[wanted_count++] = IdOfKind(static_cast<engine_component_kind>(kind));
+                                 if (wanted[wanted_count - 1] == ecs::kInvalidComponent)
+                                 {
+                                     return ENGINE_OK;  // a component this build does not have: nothing has it
+                                 }
                              }
                          }
                          const ecs::World& view = object.world;

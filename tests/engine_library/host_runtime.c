@@ -177,7 +177,7 @@ static void TestWorld(engine_handle engine)
     CHECK(total == kEntities / 4);
     CHECK_STATUS(g_api->query(world, 0, NULL, 0, &total), ENGINE_OK);
     CHECK(total == kEntities);
-    CHECK_STATUS(g_api->query(world, 0x10000u, found, 8, &total), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->query(world, 0x20000u, found, 8, &total), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->query(world, 0, NULL, 4, &total), ENGINE_ERROR_INVALID_ARGUMENT);
 
     /* a frame runs the transform system: the world matrix is the local one for a root */

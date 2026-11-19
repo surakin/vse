@@ -860,3 +860,30 @@ A live stream never ends. When the ring is empty the voice plays silence for the
 **Sounds on entities.** `ENGINE_COMPONENT_AUDIO_SOURCE` (`engine_audio_source`: a clip handle, a bus, gain, pitch, flags for loop, play on start, spatial, Doppler and occlusion, a priority, a distance model with its range and a cone) and `ENGINE_COMPONENT_AUDIO_LISTENER` (`engine_audio_listener`: a gain and an active flag) go on entities that have a transform. Each `frame` call places the world's sounds on the engine's mixer (`audio::SpatialAudio`: the loudest sources get real voices, the rest are virtual, the listener's velocity gives the Doppler shift, a removed component or a destroyed entity stops its voice); a world with no audio component pays nothing. A source needs the clip to exist (`audio_clip_create`) when it is set, and a clip handle read back from `component_get` is the table's handle for the same clip. Closing audio and opening it again keeps the sources: the world remakes its voices on the new mixer. `audio_close` waits for no one but keeps the mixer alive for any table call still in flight, and `audio_render` finds the engine without a lock. `audio_bus_effect_set` retunes the effect of the same kind in a slot instead of making another (the mixer makes at most 64 over its life).
 
 Not in the C API (recorded in `KNOWN-ISSUES.md`): occlusion of sources through the physics world (the `occlusion` flag is kept but nothing answers it yet) and device selection (the host owns the device).
+
+## Scripts: loading, calling and host functions (Phase 27 Day 471)
+
+A library built with the script module (`ENGINE_CAP_SCRIPT` in `engine_info.caps`; Linux x86-64 so far, the other platforms answer `UNSUPPORTED`) lets a host put scripts in a world.
+The world's script runtime is made by the first `script_load`, the first script component or the first host function, from the `script.*` settings read when the engine was created
+(`script.partitions`, `script.budget`, `script.jit`, `script.random_seed`, ...; see [Scripting](scripting.md)).
+
+- **`script_load`** adds a script (its text and a chunk name) to the world: every state of the world loads it in the order of the calls. A script that fails to compile does not fail the
+  call; its error is in the log and counted in `script_stats().errors` when it runs. A script resource id (a minted script) is not loadable through the C API yet.
+- **`ENGINE_COMPONENT_SCRIPT`** attaches a behavior (the name given to `behavior(name, table)` in a loaded script) to an entity through `component_set`; `params` is a map the instance reads as
+  `self.params`. The frame runs the callbacks, in the world's script runtime, before the bodies follow the entities; `enabled` 0 keeps the instance from running.
+  `component_get`, `component_has` and `component_remove` work as for every component (`params` is NULL on a read).
+- **`script_call`** calls a global function (`name` or `table.name`) of the world's scripts at once, on the calling thread, with `args` in and `results` out. It is refused with `NOT_READY` when a
+  frame or another call is running on another thread (it never waits), and a function that waits (a coroutine) is an error. A call runs in one state of the world: a global it changes is seen by
+  the later calls of that state, not by the behaviors' instances in other partitions.
+- **`script_set_budget`** limits one `script_call` (instructions, nanoseconds, memory; 0 is no limit); set before the runtime exists it also sets the limit of the frame's callbacks.
+  With `script.budget` false (a trusted world with the JIT) an instruction limit is `UNSUPPORTED`.
+- **`script_register_function`** makes `namespace.function` callable from scripts, with a fixed arity. Register before the first script of the world (`NOT_READY` after). The callback runs on an
+  engine worker thread in whichever partition made the call, several at once, while the frame holds the world: it must be thread-safe, short, and must call no function of the engine API (a
+  `script_call` from inside it, even on another thread, is refused as busy). `ENGINE_SCRIPT_FUNCTION_PURE` also installs it in the states of script tasks.
+- **Values** cross as an `engine_value_pool`: an array of `engine_value` (nil, bool, int, number, string, bytes, array, map, entity) and a byte pool, with containers and strings named by index and
+  offset, so no pointer into the engine and no allocation crosses the boundary. An input pool is checked before anything runs (limits: 65,536 values, depth 32, text 1 MiB, blob 16 MiB; an index outside
+  the pool, an unknown tag or a map key that is not a string is `INVALID_ARGUMENT`). An output pool that is too small is `TOO_LARGE` with `item_count` and `byte_count` telling how much it needs.
+  A script's `vec2`, `vec3`, `vec4` and `quat` come out as arrays of numbers.
+- **`script_stats`** reports the partitions, ticks, live instances, updates, errors, calls and host calls, and how many scripts and host functions the world has.
+
+What is not here yet is listed in `KNOWN-ISSUES.md`: unloading a script, calling a behavior of one entity, loading a minted script by resource id, and running the partitions on the engine's jobs from the host's frame call.

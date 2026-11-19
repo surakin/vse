@@ -217,6 +217,10 @@ extern "C"
 #define ENGINE_CAP_AUDIO_PUSH_STREAMS                                                                                  \
     0x400u /* audio_stream_open_push, audio_stream_push, audio_stream_stats and the stream field of the audio source   \
               work (maintenance, 2026-11-18) */
+#define ENGINE_CAP_SCRIPT                                                                                              \
+    0x800u /* script_load, script_call, script_register_function, script_set_budget and script_stats work, and an      \
+              entity can carry ENGINE_COMPONENT_SCRIPT (Phase 27 Day 471; Linux x86-64 so far: elsewhere they fail     \
+              with UNSUPPORTED) */
 #define ENGINE_CAP_RESOURCE_CACHE                                                                                      \
     0x200u /* resource_read, resource_add_many (and its asynchronous form) and import_format_version work: set in      \
               every build, with or without the importer (maintenance, 2026-11-18) */
@@ -576,11 +580,12 @@ extern "C"
         ENGINE_COMPONENT_JOINT = 13,            /* engine_joint: ties two entities' bodies (Phase 25 Day 409) */
         ENGINE_COMPONENT_CHARACTER = 14,        /* engine_character: a capsule character controller (Day 409) */
         ENGINE_COMPONENT_AUDIO_SOURCE = 15,     /* engine_audio_source: a sound at the entity's place (Phase 26) */
-        ENGINE_COMPONENT_AUDIO_LISTENER = 16    /* engine_audio_listener: the ears (Phase 26) */
+        ENGINE_COMPONENT_AUDIO_LISTENER = 16,   /* engine_audio_listener: the ears (Phase 26) */
+        ENGINE_COMPONENT_SCRIPT = 17 /* engine_script_component: a behavior of a loaded script (Phase 27 Day 471) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0xFFFFu
+#define ENGINE_COMPONENT_MASK_ALL 0x1FFFFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -1369,6 +1374,114 @@ extern "C"
     /* ---- the function table
      * ------------------------------------------------------------------------------------------------------------------------
      */
+
+    /* ---- Phase 27 Day 471: scripts ----
+     *
+     * A world can run scripts: behaviors (tables of callbacks a script registers with `behavior(name, table)`) attached
+     * to entities by ENGINE_COMPONENT_SCRIPT and run by the frame on the engine's jobs, and global functions the host
+     * calls with script_call. Values cross the boundary as an engine_value_pool: arrays of engine_value and a byte
+     * pool, addressed by index and offset (no pointer into the engine, nothing allocated by one side and freed by the
+     * other). The runtime of a world is made by the first script_load or the first script component set on it. */
+
+    /* The kinds of engine_value.tag. */
+    typedef enum engine_value_tag
+    {
+        ENGINE_VALUE_NIL = 0,
+        ENGINE_VALUE_BOOL = 1,   /* `i` is 0 or 1 */
+        ENGINE_VALUE_INT = 2,    /* `i` */
+        ENGINE_VALUE_NUMBER = 3, /* `f` (a script's vec2, vec3, vec4 and quat come out as an ARRAY of NUMBERs) */
+        ENGINE_VALUE_STRING = 4, /* `count` bytes at byte offset `i` of the pool's bytes (UTF-8, not NUL-terminated) */
+        ENGINE_VALUE_BYTES = 5,  /* as STRING, a blob */
+        ENGINE_VALUE_ARRAY = 6,  /* `count` values at item index `i`, one after the other */
+        ENGINE_VALUE_MAP = 7,    /* `count` pairs at item index `i`: a STRING key then its value, 2 * count items */
+        ENGINE_VALUE_ENTITY = 8  /* `i` is the entity key (the u64 the world functions take) */
+    } engine_value_tag;
+
+    /* One value. A STRING or BYTES value names bytes of the pool; an ARRAY or MAP names items of the pool (the items
+     * of a container come after every root, a container's children after it; no cycles). */
+    typedef struct engine_value
+    {
+        uint32_t tag; /* engine_value_tag */
+        uint32_t count;
+        int64_t i;
+        double f;
+    } engine_value;
+
+    /* A list of values and what they point to. As an input (script_call's `args`, a script component's `params`) the
+     * host fills `items[0 .. item_count)` and `bytes[0 .. byte_count)`; the first `root_count` items are the values
+     * themselves (the arguments, in order), the rest are the children the roots name. As an output (script_call's
+     * `results`, the results a host function returns) the writer sets the capacities and the arrays; it fills the same
+     * fields and, when a capacity is too small, nothing is written but `item_count` and `byte_count` tell what is
+     * needed (the call fails with TOO_LARGE, and a retry with that room succeeds when the script is deterministic).
+     * Limits of an input: 65536 items, 1 MiB of text, 16 MiB of blob, depth 32; a value outside them is
+     * INVALID_ARGUMENT. */
+    typedef struct engine_value_pool
+    {
+        uint32_t struct_size;
+        uint32_t root_count;
+        size_t item_count;
+        size_t item_capacity;
+        engine_value* items;
+        size_t byte_count;
+        size_t byte_capacity;
+        uint8_t* bytes;
+    } engine_value_pool;
+
+    /* script_load: a script every state of the world loads, run in the order loaded. */
+    typedef struct engine_script_load
+    {
+        uint32_t struct_size;
+        uint32_t flags;       /* 0 */
+        engine_string name;   /* the chunk name in messages (may be empty) */
+        engine_string source; /* the script's text; copied */
+    } engine_script_load;
+
+    /* ENGINE_COMPONENT_SCRIPT: attaches a behavior to an entity. The instance is made at the next frame; `enabled` 0
+     * keeps it from running. On a read `params` is NULL. */
+    typedef struct engine_script_component
+    {
+        uint32_t struct_size;
+        uint32_t enabled;
+        char behavior[64];               /* the behavior's name, NUL-terminated */
+        const engine_value_pool* params; /* a map (or NULL): the instance reads it as self.params; copied */
+    } engine_script_component;
+
+    /* script_set_budget: the limits of one script_call, and of the callbacks of the frame when set before the world's
+     * runtime exists. 0 means no limit for that field. */
+    typedef struct engine_script_budget
+    {
+        uint32_t struct_size;
+        uint32_t reserved;
+        uint64_t instructions; /* VM instructions */
+        uint64_t nanoseconds;  /* wall time */
+        uint64_t memory_bytes; /* the state's memory */
+    } engine_script_budget;
+
+    /* What script_stats reports. */
+    typedef struct engine_script_stats
+    {
+        uint32_t struct_size;
+        uint32_t partitions;     /* states the world runs callbacks in; 0 before the runtime exists */
+        uint64_t ticks;          /* frames the scripts ran */
+        uint64_t instances;      /* instances alive */
+        uint64_t updates;        /* on_update calls */
+        uint64_t errors;         /* callbacks that failed */
+        uint64_t calls;          /* script_call calls made */
+        uint64_t host_calls;     /* calls scripts made to host functions */
+        uint32_t scripts_loaded; /* script_load calls that succeeded */
+        uint32_t host_functions; /* script_register_function calls that succeeded */
+    } engine_script_stats;
+
+    /* The flags of script_register_function. */
+#define ENGINE_SCRIPT_FUNCTION_PURE                                                                                    \
+    0x1u /* the function touches only its arguments: it is also installed in the states of script tasks */
+
+    /* A host function scripts can call. `args` holds the call's arguments (root_count of them; read only). Fill
+     * `results` (its arrays have room for 64 items and 4096 bytes; set root_count, item_count and byte_count) and
+     * return ENGINE_OK, or return an error status: the calling script gets a script error. It runs on an engine worker
+     * thread, in whichever partition called it, several calls at once: it must be thread-safe, must not block for long
+     * and must not call any function of the engine API (the frame holds the world). */
+    typedef engine_status (*engine_script_fn)(void* user, const engine_value_pool* args, engine_value_pool* results);
 
     typedef struct engine_api
     {
@@ -2238,6 +2351,45 @@ extern "C"
         /* Reads the counters of a stream (a push stream's; for another only buffered_frames and underruns). Fails
          * with: STALE_HANDLE, NOT_READY, INVALID_ARGUMENT, STRUCT_SIZE. Any thread. */
         engine_status (*audio_stream_stats)(engine_handle engine, uint64_t stream, engine_audio_stream_stats* out);
+
+        /* ---- Scripts (Phase 27 Day 471; ENGINE_CAP_SCRIPT) ---- */
+
+        /* Adds a script to the world: every state of the world loads it, in the order of the calls, and it may define
+         * behaviors and global functions. The world's script runtime is made by the first call (host functions are
+         * registered before it). `*out_script` (may be NULL) receives the number of the script, from 1. A script that
+         * fails to compile or run does not fail this call: its error is in the log and in script_stats.errors at the
+         * next frame or call. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, an empty source, flags), STRUCT_SIZE,
+         * TOO_LARGE (a source above 16 MiB), LIMIT_EXCEEDED (1024 scripts), UNSUPPORTED (no ENGINE_CAP_SCRIPT).
+         * Main thread; not from a host function. */
+        engine_status (*script_load)(engine_handle world, const engine_script_load* info, uint64_t* out_script);
+
+        /* Calls a global function of the world's scripts (`name` or `table.name`) with `args` (may be NULL: no
+         * arguments) and writes what it returns into `results` (may be NULL to drop them). It runs at once on the
+         * calling thread, in one state of the world (state a call leaves is not shared with the behaviors' instances:
+         * a global a script changes is seen by the calls and callbacks of that state only). Refused with NOT_READY, not
+         * waited for, when a frame or another world call is running on another thread: a host calls it from the thread
+         * that runs the frame or between frames. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a bad pool),
+         * STRUCT_SIZE, NOT_FOUND (no such function), NOT_READY (busy, or no script was loaded), TOO_LARGE (`results`
+         * has no room: its counts say how much), LIMIT_EXCEEDED (the budget: instructions, time or memory), INTERNAL
+         * (the script raised an error: the last-error text has the message), UNSUPPORTED. */
+        engine_status (*script_call)(engine_handle world, engine_string function, const engine_value_pool* args,
+                                     engine_value_pool* results);
+
+        /* Makes `name` (`namespace.function`, lower case letters, digits and `_`) callable from the world's scripts,
+         * taking `arity` arguments. Register before the first script_load of the world: a state made earlier would not
+         * have it (NOT_READY). `flags` is 0 or ENGINE_SCRIPT_FUNCTION_PURE. See engine_script_fn for the thread rule.
+         * Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a bad name, flags, arity above 16), ALREADY_EXISTS (the
+         * name, or the namespace is one of Lua's), NOT_READY, UNSUPPORTED. */
+        engine_status (*script_register_function)(engine_handle world, engine_string name, uint32_t arity,
+                                                  uint32_t flags, engine_script_fn function, void* user);
+
+        /* Sets the limits of script_call, and of the frame's callbacks when the world's runtime does not exist yet.
+         * Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, UNSUPPORTED. */
+        engine_status (*script_set_budget)(engine_handle world, const engine_script_budget* budget);
+
+        /* Reads what the world's scripts have done. Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE,
+         * UNSUPPORTED. */
+        engine_status (*script_stats)(engine_handle world, engine_script_stats* out);
     } engine_api;
 
     /* Returns the function table.

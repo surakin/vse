@@ -15,6 +15,7 @@
 #include "engine/engine_c.h"
 #include "debug/crash_handler.h"
 #include "debug/stack_trace.h"
+#include "engine_c/script_api.h"
 #include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
 #include "engine_c/host_texture.h"
@@ -290,6 +291,7 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
     engine_c::RegisterImporterSettings(&engine->registry);
     engine_c::RegisterHostTextureSettings(&engine->registry);
     physics::RegisterPhysicsSettings(&engine->registry);
+    engine_c::RegisterScriptSettingsInEngine(&engine->registry);
     {
         settings::SettingDesc dump = settings::MakeText("crash.dump_directory", "");
         dump.description = "the directory a crash dump goes to (empty: the user's crash directory)";
@@ -377,6 +379,7 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
         engine_c::ReadImporterSettings(engine->registry, &config);
         engine->runtime->textures.Configure(engine_c::ReadHostTextureSettings(engine->registry));
         engine->runtime->physics_config = physics::StepConfigFromSettings(engine->registry);
+        engine->runtime->script_settings = engine_c::ReadScriptSettings(engine->registry);
     }
     for (LogChannel* channel = LogChannel::First(); channel != nullptr; channel = channel->Next())
     {
@@ -468,6 +471,7 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
     if (host_size >= sizeof(engine_info))
     {
         out->caps = ENGINE_CAP_HOST_TEXTURES | ENGINE_CAP_RESOURCE_CACHE | ENGINE_CAP_AUDIO_PUSH_STREAMS |
+                    (engine_c::ScriptBuilt() ? ENGINE_CAP_SCRIPT : 0u) |
                     (engine_c::ImporterBuilt() ? ENGINE_CAP_IMPORT_GLTF : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_SURFACE_X11 : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WAYLAND) ? ENGINE_CAP_SURFACE_WAYLAND : 0u) |
@@ -867,6 +871,11 @@ extern "C"
             &engine_c::AudioStreamPushFn,
             &engine_c::AudioStreamPushI16Fn,
             &engine_c::AudioStreamStatsFn,
+            &engine_c::ScriptLoadFn,
+            &engine_c::ScriptCallFn,
+            &engine_c::ScriptRegisterFunctionFn,
+            &engine_c::ScriptSetBudgetFn,
+            &engine_c::ScriptStatsFn,
         };
         *out = &table;
         return ENGINE_OK;
