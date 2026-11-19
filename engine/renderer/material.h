@@ -420,6 +420,25 @@ public:
     rhi::BindGroupHandle JointBindGroup(const BufferRegion& region);
     /// The bind group set of the joint palette in skinned pipelines.
     static constexpr u32 kJointSet = 3;
+    /// The size of the morph pass's push constants (shaders/morph.comp).
+    static constexpr u32 kMorphPushBytes = 128;
+    /// Returns the device the system's objects live on now (it changes with a device reset); for passes that make
+    /// transient objects while recording.
+    ///
+    /// - Fails: never.
+    rhi::Device* Device() const { return device_; }
+    /// Returns the compute pipeline of the morph pass (glTF coverage Day 7; shaders/morph.comp).
+    ///
+    /// It is rebuilt with the system's other device objects on a reset, and invalid where the device could not build
+    /// it (morphed objects then draw their base shape). Read it when recording; do not keep it past the frame.
+    ///
+    /// - Fails: returns an invalid handle.
+    rhi::PipelineHandle MorphPipeline() const { return morph_pipeline_; }
+    /// Returns the bind group layout of the morph pass: binding 0 the mesh's morph buffer (read), binding 1 the
+    /// morphed vertices (written).
+    ///
+    /// - Fails: returns an invalid handle.
+    rhi::BindGroupLayoutHandle MorphLayout() const { return morph_layout_; }
     /// Returns whether the material's vertex shader reads the vertex attribute at `location`.
     ///
     /// - Param id: a live material.
@@ -758,6 +777,9 @@ private:
     CachedGroup frame_groups_[kMaxCachedGroups];
     CachedGroup object_groups_[kMaxCachedGroups];
     CachedGroup joint_groups_[kMaxCachedGroups];
+    rhi::BindGroupLayoutHandle morph_layout_;
+    rhi::ShaderHandle morph_shader_;
+    rhi::PipelineHandle morph_pipeline_;
     u32 frame_group_count_ = 0;
     u32 object_group_count_ = 0;
     u32 joint_group_count_ = 0;

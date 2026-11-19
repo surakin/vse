@@ -11,6 +11,7 @@
 #include "renderer/frame_data.h"
 #include "renderer/renderer_log.h"
 #include "renderer/texture.h"
+#include "morph.comp.dxil.inc"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
@@ -359,6 +360,38 @@ bool MaterialSystem::CreateDefaults()
     jl.debug_name = "joint layout";
     joint_layout_ = device_->CreateBindGroupLayout(jl);
 
+    // The morph pass (glTF coverage Day 7): binding 0 the mesh's base vertices and deltas (read), binding 1 the frame's
+    // morphed vertices (written); 128 bytes of push constants (shaders/morph.comp).
+    rhi::BindingDesc morph_bindings[2];
+    morph_bindings[0].binding = 0;
+    morph_bindings[0].type = rhi::BindingType::ReadOnlyStorageBuffer;
+    morph_bindings[0].stride = 4;
+    morph_bindings[0].stages = rhi::ShaderStage::Compute;
+    morph_bindings[1].binding = 1;
+    morph_bindings[1].type = rhi::BindingType::StorageBuffer;
+    morph_bindings[1].stride = 4;
+    morph_bindings[1].stages = rhi::ShaderStage::Compute;
+    rhi::BindGroupLayoutDesc ml;
+    ml.entries = rhi::Span<rhi::BindingDesc>(morph_bindings, 2);
+    ml.debug_name = "morph layout";
+    morph_layout_ = device_->CreateBindGroupLayout(ml);
+    morph_shader_ = rhi::CreateShaderFromSet(*device_, shaders::kMorphCompShader, rhi::ShaderStage::Compute);
+    if (morph_layout_.IsValid() && morph_shader_.IsValid())
+    {
+        rhi::ComputePipelineDesc cp;
+        cp.shader = morph_shader_;
+        cp.bind_group_layouts[0] = morph_layout_;
+        cp.bind_group_layout_count = 1;
+        cp.push_constant_bytes = kMorphPushBytes;
+        cp.debug_name = "morph";
+        morph_pipeline_ = device_->CreateComputePipeline(cp);
+    }
+    if (!morph_pipeline_.IsValid())
+    {
+        // A device without this format of the morph shader still draws: morphed objects show their base shape.
+        RenderLog(LogVerbosity::Warn, "MaterialSystem: the morph pipeline could not be created; morph targets are off");
+    }
+
     rhi::SamplerDesc sd;
     sd.debug_name = "default sampler";
     default_sampler_ = device_->CreateSampler(sd);
@@ -491,6 +524,21 @@ void MaterialSystem::DestroyDefaults()
         device_->DestroyBindGroupLayout(joint_layout_);
     }
     joint_layout_ = {};
+    if (morph_pipeline_.IsValid())
+    {
+        device_->DestroyPipeline(morph_pipeline_);
+    }
+    morph_pipeline_ = {};
+    if (morph_shader_.IsValid())
+    {
+        device_->DestroyShader(morph_shader_);
+    }
+    morph_shader_ = {};
+    if (morph_layout_.IsValid())
+    {
+        device_->DestroyBindGroupLayout(morph_layout_);
+    }
+    morph_layout_ = {};
     if (object_index_stream_.IsValid())
     {
         device_->DestroyBuffer(object_index_stream_);

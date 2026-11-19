@@ -400,7 +400,29 @@ struct GBufferPass::SortEntry
     u32 joint_offset = kNoJoints;
     u32 first_index = 0;
     u32 index_count = 0;
+    u32 morph_job = 0xFFFFFFFFu;  // GBufferPass::kNoMorphJob
 };
+
+namespace
+{
+
+// The frame's morph buffer stays below this; an object past it draws its base shape (counted).
+constexpr u64 kMaxMorphBytes = u64{256} << 20;
+
+// The word offset of the f32 attribute at `location` in binding 0 (Validate checked the formats).
+u32 AttributeWord(const VertexLayoutData& layout, u32 location)
+{
+    for (u32 i = 0; i < layout.attribute_count; ++i)
+    {
+        if (layout.attributes[i].binding == 0 && layout.attributes[i].location == location)
+        {
+            return layout.attributes[i].offset / 4;
+        }
+    }
+    return 0;
+}
+
+}  // namespace
 
 GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame)
     : materials_(materials), frame_(frame)
@@ -457,6 +479,9 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
     frame_group_ = materials_->FrameBindGroup(frame_->FrameRegion());
     object_group_ = materials_->ObjectBindGroup(frame_->ObjectRegion());
     joint_group_ = rhi::BindGroupHandle{};  // made on the first skinned object of the frame
+    morph_jobs_.Clear();
+    morph_bytes_ = 0;
+    morph_buffer_ = GraphResource{};
     object_index_stream_ = materials_
                                ->ObjectIndexStream();  // valid only where shaders read the index from it (Direct3D 12)
     if (object_index_stream_.IsValid() && cap > kMaxObjectIndices)
@@ -608,8 +633,94 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
                 continue;
             }
         }
+        // Morph targets (glTF coverage Day 7): the morph pass writes this object's vertices; the slots of one entity
+        // name the same mesh and weights and share one job.
+        u32 morph_job = kNoMorphJob;
+        if (mesh->MorphTargetCount() != 0 && object.morph_weights != nullptr && object.morph_weight_count != 0 &&
+            mesh->MorphBuffer().IsValid() && materials_->MorphPipeline().IsValid())
+        {
+            for (usize j = 0; j < morph_jobs_.Size(); ++j)
+            {
+                if (morph_jobs_[j].mesh == mesh && morph_jobs_[j].weights == object.morph_weights)
+                {
+                    morph_job = static_cast<u32>(j);
+                    break;
+                }
+            }
+            if (morph_job == kNoMorphJob)
+            {
+                // The largest |weight| first (ties by target), zero weights skipped, at most kMaxActiveMorphTargets.
+                const u32 count = object.morph_weight_count < mesh->MorphTargetCount() ? object.morph_weight_count
+                                                                                       : mesh->MorphTargetCount();
+                Array<u32, kMaxActiveMorphTargets> chosen = {};
+                u32 chosen_count = 0;
+                u32 nonzero = 0;
+                for (u32 t = 0; t < count; ++t)
+                {
+                    const f32 w = object.morph_weights[t];
+                    if (!(w != 0.0f) || !IsFinite(w))
+                    {
+                        continue;
+                    }
+                    ++nonzero;
+                    u32 at = chosen_count;
+                    while (at > 0 && Abs(object.morph_weights[chosen[at - 1]]) < Abs(w))
+                    {
+                        --at;
+                    }
+                    if (at >= kMaxActiveMorphTargets)
+                    {
+                        continue;
+                    }
+                    const u32 last = chosen_count < kMaxActiveMorphTargets ? chosen_count : kMaxActiveMorphTargets - 1;
+                    for (u32 k = last; k > at; --k)
+                    {
+                        chosen[k] = chosen[k - 1];
+                    }
+                    chosen[at] = t;
+                    chosen_count = chosen_count < kMaxActiveMorphTargets ? chosen_count + 1 : chosen_count;
+                }
+                stats_.morph_targets_dropped += nonzero - chosen_count;
+                const u32 stride_words = mesh->Layout().stride / 4;
+                const u64 bytes = static_cast<u64>(mesh->VertexCount()) * mesh->Layout().stride;
+                if (chosen_count != 0 && morph_bytes_ + bytes <= kMaxMorphBytes)
+                {
+                    MorphJob job;
+                    job.mesh = mesh;
+                    job.weights = object.morph_weights;
+                    job.out_offset = morph_bytes_;
+                    job.push[0] = mesh->VertexCount();
+                    job.push[1] = stride_words;
+                    job.push[2] = AttributeWord(mesh->Layout(), 0);
+                    job.push[3] = AttributeWord(mesh->Layout(), 1);
+                    job.push[4] = AttributeWord(mesh->Layout(), 2);
+                    job.push[5] = mesh->VertexCount() * stride_words;
+                    job.push[6] = static_cast<u32>(morph_bytes_ / 4);
+                    job.push[7] = chosen_count;
+                    for (u32 k = 0; k < chosen_count; ++k)
+                    {
+                        const MeshMorphRange range = mesh->MorphTarget(chosen[k]);
+                        const f32 w = object.morph_weights[chosen[k]];
+                        u32 bits = 0;
+                        MemCopy(&bits, &w, 4);
+                        job.push[8 + k * 4] = range.first_delta;
+                        job.push[8 + k * 4 + 1] = range.delta_count;
+                        job.push[8 + k * 4 + 2] = bits;
+                    }
+                    morph_bytes_ += bytes;
+                    morph_job = static_cast<u32>(morph_jobs_.Size());
+                    morph_jobs_.Push(job);
+                    ++stats_.morphed_objects;
+                }
+                else if (chosen_count != 0)
+                {
+                    stats_.morph_targets_dropped += chosen_count;  // the budget is full: the base shape
+                }
+            }
+        }
         SortEntry& e = entries[entry_count++];
         e.joint_offset = joint_offset;
+        e.morph_job = morph_job;
         e.key = MakeDrawSortKey(pipeline.index, material.index, mesh->SortId());
         e.slot = slot;
         e.pipeline = pipeline.pipeline;
@@ -671,7 +782,8 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         {
             Draw& prev = draws_[draw_count_ - 1];
             if (prev.mesh == e.mesh && prev.material_group == e.material_group && prev.pipeline == e.pipeline &&
-                prev.first_index == e.first_index && prev.index_count == e.index_count)
+                prev.first_index == e.first_index && prev.index_count == e.index_count &&
+                prev.morph_job == kNoMorphJob && e.morph_job == kNoMorphJob)
             {
                 ++prev.instance_count;
                 continue;
@@ -686,6 +798,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         d.first_index = e.first_index;
         d.index_count = e.index_count;
         d.skinned = e.mesh->Skinned();
+        d.morph_job = e.morph_job;
         if (!(d.pipeline == last_pipeline))
         {
             ++stats_.pipeline_binds;
@@ -732,13 +845,65 @@ GBufferTargets GBufferPass::AddToGraph(RenderGraph* graph, u32 width, u32 height
     targets_.depth = graph->CreateTexture("gbuffer_depth", td);
     width_ = width;
     height_ = height;
-    graph->AddPass("gbuffer", &GBufferPass::Record, this)
-        .Write(targets_.albedo, GraphUsage::ColorAttachment)
+    // The morph pass (glTF coverage Day 7) writes the morphed objects' vertices before the G-buffer pass reads them.
+    if (!morph_jobs_.Empty())
+    {
+        rhi::BufferDesc bd;
+        bd.size = morph_bytes_;
+        bd.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::Vertex;
+        bd.location = rhi::MemoryLocation::GpuOnly;
+        bd.debug_name = "morph_vertices";
+        morph_buffer_ = graph->CreateBuffer("morph_vertices", bd);
+        graph->AddPass("morph", &GBufferPass::RecordMorph, this).Write(morph_buffer_, GraphUsage::StorageWrite);
+    }
+    PassBuilder pass = graph->AddPass("gbuffer", &GBufferPass::Record, this);
+    pass.Write(targets_.albedo, GraphUsage::ColorAttachment)
         .Write(targets_.normal, GraphUsage::ColorAttachment)
         .Write(targets_.material, GraphUsage::ColorAttachment)
         .Write(targets_.emissive, GraphUsage::ColorAttachment)
         .Write(targets_.depth, GraphUsage::DepthAttachment);
+    if (!morph_jobs_.Empty())
+    {
+        pass.Read(morph_buffer_, GraphUsage::VertexBuffer);
+    }
     return targets_;
+}
+
+void GBufferPass::RecordMorph(const PassExecuteContext& context, void* user)
+{
+    const GBufferPass* self = static_cast<const GBufferPass*>(user);
+    rhi::CommandList* list = context.list;
+    rhi::Device* device = self->materials_->Device();
+    const rhi::BufferHandle out = context.graph->ResolvedBuffer(self->morph_buffer_);
+    const rhi::PipelineHandle pipeline = self->materials_->MorphPipeline();
+    if (!pipeline.IsValid() || !out.IsValid())
+    {
+        return;
+    }
+    list->PushDebugLabel("morph");
+    list->SetPipeline(pipeline);
+    for (usize j = 0; j < self->morph_jobs_.Size(); ++j)
+    {
+        const MorphJob& job = self->morph_jobs_[j];
+        rhi::BindGroupEntry e[2];
+        e[0].binding = 0;
+        e[0].buffer = job.mesh->MorphBuffer();
+        e[1].binding = 1;
+        e[1].buffer = out;
+        rhi::BindGroupDesc gd;
+        gd.layout = self->materials_->MorphLayout();
+        gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 2);
+        gd.transient = true;
+        const rhi::BindGroupHandle group = device->CreateBindGroup(gd);
+        if (!group.IsValid())
+        {
+            continue;  // the object draws whatever the buffer holds: logged by the device
+        }
+        list->SetBindGroup(0, group);
+        list->SetPushConstants(0, job.push.Data(), MaterialSystem::kMorphPushBytes);
+        list->Dispatch((job.mesh->VertexCount() + 63) / 64, 1, 1);
+    }
+    list->PopDebugLabel();
 }
 
 void GBufferPass::Record(const PassExecuteContext& context, void* user)
@@ -801,7 +966,16 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user)
             list->SetBindGroup(kMaterialSet, d.material_group);
             group = d.material_group;
         }
-        d.mesh->Draw(list, d.instance_count, d.first_instance, d.first_index, d.index_count);
+        if (d.morph_job != kNoMorphJob)
+        {
+            d.mesh->DrawWithVertices(list, context.graph->ResolvedBuffer(self->morph_buffer_),
+                                     self->morph_jobs_[d.morph_job].out_offset, d.instance_count, d.first_instance,
+                                     d.first_index, d.index_count);
+        }
+        else
+        {
+            d.mesh->Draw(list, d.instance_count, d.first_instance, d.first_index, d.index_count);
+        }
     }
     list->EndRendering();
 }

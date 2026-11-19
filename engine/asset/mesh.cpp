@@ -251,6 +251,10 @@ Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildIn
     {
         return Status::Make(ErrorCode::LimitExceeded, "more morph targets than a mesh holds");
     }
+    if (input.morph_targets.Size() != 0 && input.quality != MeshQuality::Full)
+    {
+        return MeshInvalid("morph targets need the full layout (the GPU morph pass writes f32 attributes)");
+    }
     for (usize t = 0; t < input.morph_targets.Size(); ++t)
     {
         const MeshMorphTarget& morph = input.morph_targets[t];

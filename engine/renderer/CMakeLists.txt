@@ -38,6 +38,8 @@ set(RENDERER_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 function(engine_add_renderer_lib suffix)
   add_library(renderer${suffix} STATIC ${RENDERER_SOURCES})
   target_include_directories(renderer${suffix} PUBLIC ${RENDERER_INCLUDE_ROOT})
+  # The morph pass's compute shader (glTF coverage Day 7): the material system owns its pipeline, so it survives a reset.
+  target_include_directories(renderer${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders)
   target_compile_options(renderer${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   # Only the neutral RHI: devices come through the backend registry, and the program links rhi_backends (Phase 13 Day 162).
   target_link_libraries(renderer${suffix} PUBLIC rhi${suffix} jobs${suffix} text${suffix} ui${suffix} spatial${suffix} foundation${suffix}) # spatial: the culling hierarchy of RenderScene (Phase 18 Day 247); ui: the draw list the UI pass draws (Phase 15 Day 190); text: the CPU glyph atlas the GPU copy follows (Phase 14 Day 180)

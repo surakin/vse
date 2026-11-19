@@ -102,6 +102,22 @@ namespace detail
 struct MeshUploadView;  // what one upload reads (defined in mesh.cpp)
 }  // namespace detail
 
+/// Most morph targets a [[renderer::GpuMesh]] holds (the mesh blob's limit).
+inline constexpr u32 kMaxMeshMorphTargets = 64;
+/// Most morph targets applied to one object in one frame: the ones with the largest weights.
+inline constexpr u32 kMaxActiveMorphTargets = 8;
+/// Bytes of one morph delta in the delta stream: the vertex, then position, normal and tangent deltas, `f32x3` each.
+inline constexpr u32 kMorphDeltaBytes = 40;
+
+/// One morph target's run in a mesh's delta stream.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct MeshMorphRange
+{
+    u32 first_delta = 0;  ///< Its first delta.
+    u32 delta_count = 0;  ///< Its number of deltas.
+};
+
 /// Geometry read in place: what [[renderer::GpuMesh]] uploads, and uploads again after a device reset, without copying
 /// a byte of it. A loaded mesh blob hands its sections over this way (the minter laid them out exactly as the buffers
 /// hold them). The bytes are not pointed at: the geometry holds a share of the region they are in and the offsets of
@@ -124,13 +140,21 @@ struct MeshGeometry
     u32 skin_joint_count = 0;  ///< The skeleton's joint count (1 to 256) for a skinned layout, else 0.
     Array<MeshRange, kMaxMeshRanges> ranges = {};  ///< The material slots' index ranges; the first `range_count`.
     u32 range_count = 0;  ///< 0 for a mesh drawn whole; otherwise each range lies inside `index_count`.
+    /// Where the morph deltas start in `bytes` (`morph_delta_count * kMorphDeltaBytes` bytes; glTF coverage Day 7).
+    u64 morph_delta_offset = 0;
+    u32 morph_delta_count = 0;   ///< The number of deltas.
+    u32 morph_target_count = 0;  ///< 0 for a mesh without morph targets; at most [[renderer::kMaxMeshMorphTargets]].
+    Array<MeshMorphRange, kMaxMeshMorphTargets> morph_targets =
+        {};  ///< The targets' runs; the first `morph_target_count`.
 
     /// Checks the sections against the region and the counts against each other (not the values in the bytes).
     ///
     /// - Returns: null when the geometry can be uploaded, otherwise a static message.
     /// - Fails: no region, a section outside it, a zero count or stride, an index count that does not fit the topology,
     ///   a skinned layout without a joint count of 1 to 256 or with a stride
-    ///   other than 8, or a joint count with a rigid layout.
+    ///   other than 8, or a joint count with a rigid layout; morph targets with a layout whose position, normal and
+    ///   tangent are not `Float3`, `Float3` and `Float4` (locations 0 to 2), a delta stream outside the region, or
+    ///   target runs outside it.
     /// - Ownership: reads the shared bytes only to learn their size; the message is static.
     const char* Validate() const;
 };
@@ -539,6 +563,19 @@ public:
     bool HasPrimitiveRestart() const { return has_restart_; }
     /// Returns the object-space bounds.
     const Bounds& GetBounds() const { return bounds_; }
+    /// Returns the number of morph targets (0 without; glTF coverage Day 7).
+    /// - Fails: never.
+    u32 MorphTargetCount() const { return morph_target_count_; }
+    /// Returns morph target `i`'s run of deltas.
+    /// - Aborts: `i` is not below `MorphTargetCount()`.
+    MeshMorphRange MorphTarget(u32 i) const;
+    /// Returns the storage buffer the morph pass reads: the base vertices (`VertexCount() * Layout().stride` bytes)
+    /// followed by the deltas ([[renderer::kMorphDeltaBytes]] each); invalid for a mesh without morph targets.
+    /// - Fails: never.
+    rhi::BufferHandle MorphBuffer() const { return morph_buffer_; }
+    /// Returns the number of morph deltas.
+    /// - Fails: never.
+    u32 MorphDeltaCount() const { return morph_delta_count_; }
     /// Returns the number of index ranges (material slots) the mesh has; 0 for a mesh drawn whole.
     /// - Fails: never.
     u32 RangeCount() const { return range_count_; }
@@ -583,7 +620,20 @@ public:
     /// - Ownership: `list` is borrowed for the call.
     void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance, u32 first_index, u32 index_count) const;
 
+    /// Draws as `Draw` does, but reads vertex binding 0 from `vertices` at `offset`.
+    ///
+    /// That is the morph pass's output for this object, read instead of the mesh's own vertex buffer; the index and skin
+    /// buffers are the mesh's.
+    ///
+    /// - Param vertices: a buffer in the `VertexBuffer` state holding `VertexCount()` vertices of this mesh's layout.
+    /// - Param offset: where they start, in bytes.
+    /// - Aborts: as for `Draw`.
+    /// - Ownership: `list` is borrowed for the call.
+    void DrawWithVertices(rhi::CommandList* list, rhi::BufferHandle vertices, u64 offset, u32 instance_count,
+                          u32 first_instance, u32 first_index, u32 index_count) const;
+
 private:
+    bool UploadMorph(rhi::Device* device, const MeshGeometry& geometry);
     bool Upload(rhi::Device* device, const detail::MeshUploadView& data, const char* debug_name, rhi::BufferHandle* vb,
                 rhi::BufferHandle* ib, rhi::BufferHandle* sb);
     void MoveFrom(GpuMesh& other);
@@ -598,6 +648,10 @@ private:
     rhi::BufferHandle vertex_buffer_;
     rhi::BufferHandle index_buffer_;
     rhi::BufferHandle skin_buffer_;
+    rhi::BufferHandle morph_buffer_;  // the base vertices and the deltas, for the morph pass (glTF coverage Day 7)
+    u32 morph_target_count_ = 0;
+    u32 morph_delta_count_ = 0;
+    Array<MeshMorphRange, kMaxMeshMorphTargets> morph_targets_ = {};
     u32 skin_joint_count_ = 0;
     u32 vertex_count_ = 0;
     u32 index_count_ = 0;

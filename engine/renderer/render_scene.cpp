@@ -161,6 +161,10 @@ ObjectId RenderScene::AddObject(const RenderObjectDesc& desc)
     s.object.flags = desc.flags;
     s.object.joint_matrices = desc.joint_matrices;
     s.object.joint_count = desc.joint_count;
+    ENGINE_ASSERT(desc.morph_weights == nullptr || desc.morph_weight_count <= desc.mesh->MorphTargetCount(),
+                  "AddObject: more morph weights than the mesh has targets");
+    s.object.morph_weights = desc.morph_weights;
+    s.object.morph_weight_count = desc.morph_weights != nullptr ? desc.morph_weight_count : 0;
     s.object.skin_bounds_scale = desc.skin_bounds_scale;
     s.object.first_index = desc.first_index;
     s.object.index_count = desc.index_count;
@@ -209,6 +213,16 @@ void RenderScene::SetJointMatrices(ObjectId id, const f32* matrices, u32 count)
                   "SetJointMatrices: the mesh is rigid or the count is outside 1 to 256");
     o.joint_matrices = matrices;
     o.joint_count = matrices != nullptr ? count : 0;
+}
+
+void RenderScene::SetMorphWeights(ObjectId id, const f32* weights, u32 count)
+{
+    ENGINE_ASSERT(FindObject(id) != nullptr, "SetMorphWeights: the id is invalid or stale");
+    RenderObject& o = objects_[id.index].object;
+    ENGINE_ASSERT(weights == nullptr || count <= o.mesh->MorphTargetCount(),
+                  "SetMorphWeights: more weights than the mesh has targets");
+    o.morph_weights = weights;
+    o.morph_weight_count = weights != nullptr ? count : 0;
 }
 
 void RenderScene::SetFlags(ObjectId id, u32 flags)

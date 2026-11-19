@@ -592,6 +592,27 @@ octahedral (0.707, -0.780) -> (0.360, -0.480, -0.800)
 a vertex color material reads the color attribute: yes
 ```
 
+### Morph targets
+
+A mesh with morph targets (glTF coverage Day 7; the blob's sections 40 and 41, read by the GPU loader into
+`MeshGeometry::morph_*`) keeps one read-only storage buffer, `GpuMesh::MorphBuffer`: its base vertices followed by its deltas
+(`kMorphDeltaBytes` each). It is uploaded from the blob's bytes where they are, and again after a device reset. An object
+draws its morphed shape when its render object has `morph_weights` (`RenderObjectDesc::morph_weights`,
+`RenderScene::SetMorphWeights`; borrowed until the frame is prepared, like a joint palette).
+
+- **The morph pass.** `GBufferPass::Prepare` gives each morphed object a job: the up to `kMaxActiveMorphTargets` (8) largest
+  `|weight|`, ties by target, zero weights skipped. Further weights are counted in `GBufferStats::morph_targets_dropped`. The slots
+  of one entity (the same mesh and weights) share one job. `AddToGraph` declares a transient buffer of the frame's morphed vertices
+  (at most 256 MiB; past that an object draws its base shape, counted) and a compute pass, `morph`, before the G-buffer pass.
+  `shaders/morph.comp` runs one thread per vertex: it copies the base vertex and adds each active target's weighted delta (found by
+  a binary search, since a target's deltas are sorted by vertex) to the position, normal and tangent.
+- **The draw.** It reads binding 0 from that buffer (`GpuMesh::DrawWithVertices`); the indices and the skin stream are the mesh's,
+  so a skinned mesh is morphed first and skinned after, as glTF orders them. A morphed object is never instanced with another.
+- **The layout:** the morph pass writes `f32` attributes, so morph targets need the full layout (the minter refuses them on
+  a packed mesh). The culling box is the blob's, which holds every target at weights from -1 to 1.
+- The pipeline is the material system's (`MaterialSystem::MorphPipeline`), rebuilt on a reset. Where the device cannot build it, a
+  warning is logged and morphed objects show their base shape.
+
 ### Skinned meshes
 
 A skinned mesh is a rigid mesh plus a **skin stream**: vertex binding 1 holds eight bytes per vertex, four joint indices (`UInt8x4`, shader

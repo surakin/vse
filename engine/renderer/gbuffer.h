@@ -15,6 +15,7 @@
 //! list; `AddToGraph` declares the pass whose callback records it. The record step creates no object and issues a
 //! handful of RHI calls per draw: bind the pipeline and material group only when they change, one instanced draw per
 //! run of the same mesh and material.
+#include "containers/array.h"
 #include "containers/vector.h"
 #include "debug/compiler.h"
 #include "math/matrix.h"
@@ -302,6 +303,15 @@ struct GBufferStats
     /// Skinned objects not drawn because the frame's joint palette had no room for their matrices (the budget is
     /// `renderer.joint_palette_bytes`); each is skipped whole, never drawn with a stale or partial pose.
     u32 skinned_dropped = 0;
+    /// Objects drawn with their morph targets applied this frame (glTF coverage Day 7).
+    ///
+    /// One per mesh and weights, so an entity whose mesh has several material slots counts once.
+    u32 morphed_objects = 0;
+    /// Non-zero morph weights left out this frame.
+    ///
+    /// An object with more than [[renderer::kMaxActiveMorphTargets]] keeps the largest; when the frame's morph budget
+    /// is full, the object draws its base shape and all its weights count.
+    u32 morph_targets_dropped = 0;
 };
 
 /// Draws the scene's visible objects into the G-buffer.
@@ -381,8 +391,20 @@ private:
         u32 first_index = 0;  // the index range drawn (0, 0: every index)
         u32 index_count = 0;
         bool skinned = false;
+        u32 morph_job = kNoMorphJob;  // the morph pass's output this draw reads, or none
     };
+    // One object's morph work: the mesh, the weights it was given (to share the work between the slots of one
+    // entity), where its vertices go in the frame's morph buffer, and the push constants of shaders/morph.comp.
+    struct MorphJob
+    {
+        const GpuMesh* mesh = nullptr;
+        const f32* weights = nullptr;
+        u64 out_offset = 0;
+        Array<u32, 32> push = {};
+    };
+    static constexpr u32 kNoMorphJob = 0xFFFFFFFFu;
     static void Record(const PassExecuteContext& context, void* user);
+    static void RecordMorph(const PassExecuteContext& context, void* user);
     void Reject(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
     MaterialSystem* materials_ = nullptr;
@@ -408,6 +430,9 @@ private:
     rhi::BindGroupHandle frame_group_;
     rhi::BindGroupHandle object_group_;
     rhi::BindGroupHandle joint_group_;       // the frame's joint palette (set 3), bound for skinned draws only
+    Vector<MorphJob> morph_jobs_;            // this frame's morphed objects (glTF coverage Day 7)
+    u64 morph_bytes_ = 0;                    // the size of the frame's morph buffer
+    GraphResource morph_buffer_;             // the morphed vertices, written by the morph pass
     rhi::BufferHandle object_index_stream_;  // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     GBufferTargets targets_;
     rhi::TextureUsage extra_usage_ = rhi::TextureUsage::None;

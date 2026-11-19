@@ -331,6 +331,8 @@ TEST_CASE("mesh: morph targets round-trip, grow the box and refuse bad deltas", 
     input.indices = Span<const u32>(indices.Data(), indices.Size());
     input.morph_targets = Span<const MeshMorphTarget>(targets.Data(), targets.Size());
     Vector<byte> blob;
+    CHECK(BuildMeshBlob(types, ResourceId::FromValue(0x61), input, &blob).Failed());  // packed: refused
+    input.quality = MeshQuality::Full;
     REQUIRE(BuildMeshBlob(types, ResourceId::FromValue(0x61), input, &blob).Ok());
     MeshView view;
     REQUIRE(view.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok());

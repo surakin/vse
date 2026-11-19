@@ -2305,6 +2305,30 @@ u32 skinned_dropped;
 
 Skinned objects not drawn because the frame's joint palette had no room for their matrices (the budget is `renderer.joint_palette_bytes`); each is skipped whole, never drawn with a stale or partial pose.
 
+### `morphed_objects` {#renderer-gbufferstats-morphed-objects}
+
+`variable renderer::GBufferStats::morphed_objects` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 morphed_objects;
+```
+
+Objects drawn with their morph targets applied this frame (glTF coverage Day 7).
+
+One per mesh and weights, so an entity whose mesh has several material slots counts once.
+
+### `morph_targets_dropped` {#renderer-gbufferstats-morph-targets-dropped}
+
+`variable renderer::GBufferStats::morph_targets_dropped` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 morph_targets_dropped;
+```
+
+Non-zero morph weights left out this frame.
+
+An object with more than [`renderer::kMaxActiveMorphTargets`](#renderer-kmaxactivemorphtargets) keeps the largest; when the frame's morph budget is full, the object draws its base shape and all its weights count.
+
 ## `GBufferPass` {#renderer-gbufferpass}
 
 `class renderer::GBufferPass` — defined in `engine/renderer/gbuffer.h`
@@ -4418,6 +4442,60 @@ static constexpr u32 kJointSet;
 
 The bind group set of the joint palette in skinned pipelines.
 
+### `kMorphPushBytes` {#renderer-materialsystem-kmorphpushbytes}
+
+`variable renderer::MaterialSystem::kMorphPushBytes` — defined in `engine/renderer/material.h`
+
+```cpp
+static constexpr u32 kMorphPushBytes;
+```
+
+The size of the morph pass's push constants (shaders/morph.comp).
+
+### `Device()` {#renderer-materialsystem-device-const}
+
+`method renderer::MaterialSystem::Device` — defined in `engine/renderer/material.h`
+
+```cpp
+rhi::Device* Device() const;
+```
+
+Returns the device the system's objects live on now (it changes with a device reset); for passes that make transient objects while recording.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `MorphPipeline()` {#renderer-materialsystem-morphpipeline-const}
+
+`method renderer::MaterialSystem::MorphPipeline` — defined in `engine/renderer/material.h`
+
+```cpp
+rhi::PipelineHandle MorphPipeline() const;
+```
+
+Returns the compute pipeline of the morph pass (glTF coverage Day 7; shaders/morph.comp).
+
+It is rebuilt with the system's other device objects on a reset, and invalid where the device could not build it (morphed objects then draw their base shape). Read it when recording; do not keep it past the frame.
+
+| Field | Value |
+|---|---|
+| Fails | returns an invalid handle. |
+
+### `MorphLayout()` {#renderer-materialsystem-morphlayout-const}
+
+`method renderer::MaterialSystem::MorphLayout` — defined in `engine/renderer/material.h`
+
+```cpp
+rhi::BindGroupLayoutHandle MorphLayout() const;
+```
+
+Returns the bind group layout of the morph pass: binding 0 the mesh's morph buffer (read), binding 1 the morphed vertices (written).
+
+| Field | Value |
+|---|---|
+| Fails | returns an invalid handle. |
+
 ### `ReadsVertexInput(MaterialId,u32)` {#renderer-materialsystem-readsvertexinput-materialid-u32-const}
 
 `method renderer::MaterialSystem::ReadsVertexInput` — defined in `engine/renderer/material.h`
@@ -5196,6 +5274,70 @@ u32 index_count;
 
 The number of indices; a multiple of 3 for a triangle list.
 
+## `kMaxMeshMorphTargets` {#renderer-kmaxmeshmorphtargets}
+
+`variable renderer::kMaxMeshMorphTargets` — defined in `engine/renderer/mesh.h`
+
+```cpp
+inline constexpr u32 kMaxMeshMorphTargets;
+```
+
+Most morph targets a [`renderer::GpuMesh`](#renderer-gpumesh) holds (the mesh blob's limit).
+
+## `kMaxActiveMorphTargets` {#renderer-kmaxactivemorphtargets}
+
+`variable renderer::kMaxActiveMorphTargets` — defined in `engine/renderer/mesh.h`
+
+```cpp
+inline constexpr u32 kMaxActiveMorphTargets;
+```
+
+Most morph targets applied to one object in one frame: the ones with the largest weights.
+
+## `kMorphDeltaBytes` {#renderer-kmorphdeltabytes}
+
+`variable renderer::kMorphDeltaBytes` — defined in `engine/renderer/mesh.h`
+
+```cpp
+inline constexpr u32 kMorphDeltaBytes;
+```
+
+Bytes of one morph delta in the delta stream: the vertex, then position, normal and tangent deltas, `f32x3` each.
+
+## `MeshMorphRange` {#renderer-meshmorphrange}
+
+`struct renderer::MeshMorphRange` — defined in `engine/renderer/mesh.h`
+
+```cpp
+struct MeshMorphRange { ... }
+```
+
+One morph target's run in a mesh's delta stream.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `first_delta` {#renderer-meshmorphrange-first-delta}
+
+`variable renderer::MeshMorphRange::first_delta` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 first_delta;
+```
+
+Its first delta.
+
+### `delta_count` {#renderer-meshmorphrange-delta-count}
+
+`variable renderer::MeshMorphRange::delta_count` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 delta_count;
+```
+
+Its number of deltas.
+
 ## `MeshGeometry` {#renderer-meshgeometry}
 
 `struct renderer::MeshGeometry` — defined in `engine/renderer/mesh.h`
@@ -5341,6 +5483,46 @@ u32 range_count;
 
 0 for a mesh drawn whole; otherwise each range lies inside `index_count`.
 
+### `morph_delta_offset` {#renderer-meshgeometry-morph-delta-offset}
+
+`variable renderer::MeshGeometry::morph_delta_offset` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u64 morph_delta_offset;
+```
+
+Where the morph deltas start in `bytes` (`morph_delta_count * kMorphDeltaBytes` bytes; glTF coverage Day 7).
+
+### `morph_delta_count` {#renderer-meshgeometry-morph-delta-count}
+
+`variable renderer::MeshGeometry::morph_delta_count` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 morph_delta_count;
+```
+
+The number of deltas.
+
+### `morph_target_count` {#renderer-meshgeometry-morph-target-count}
+
+`variable renderer::MeshGeometry::morph_target_count` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 morph_target_count;
+```
+
+0 for a mesh without morph targets; at most [`renderer::kMaxMeshMorphTargets`](#renderer-kmaxmeshmorphtargets).
+
+### `morph_targets` {#renderer-meshgeometry-morph-targets}
+
+`variable renderer::MeshGeometry::morph_targets` — defined in `engine/renderer/mesh.h`
+
+```cpp
+Array<MeshMorphRange, kMaxMeshMorphTargets> morph_targets;
+```
+
+The targets' runs; the first `morph_target_count`.
+
 ### `Validate()` {#renderer-meshgeometry-validate-const}
 
 `method renderer::MeshGeometry::Validate` — defined in `engine/renderer/mesh.h`
@@ -5354,7 +5536,7 @@ Checks the sections against the region and the counts against each other (not th
 | Field | Value |
 |---|---|
 | Returns | null when the geometry can be uploaded, otherwise a static message. |
-| Fails | no region, a section outside it, a zero count or stride, an index count that does not fit the topology, a skinned layout without a joint count of 1 to 256 or with a stride other than 8, or a joint count with a rigid layout. |
+| Fails | no region, a section outside it, a zero count or stride, an index count that does not fit the topology, a skinned layout without a joint count of 1 to 256 or with a stride other than 8, or a joint count with a rigid layout; morph targets with a layout whose position, normal and tangent are not `Float3`, `Float3` and `Float4` (locations 0 to 2), a delta stream outside the region, or target runs outside it. |
 | Ownership | reads the shared bytes only to learn their size; the message is static. |
 
 ## `MeshData` {#renderer-meshdata}
@@ -6343,6 +6525,62 @@ const Bounds& GetBounds() const;
 
 Returns the object-space bounds.
 
+### `MorphTargetCount()` {#renderer-gpumesh-morphtargetcount-const}
+
+`method renderer::GpuMesh::MorphTargetCount` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 MorphTargetCount() const;
+```
+
+Returns the number of morph targets (0 without; glTF coverage Day 7).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `MorphTarget(u32)` {#renderer-gpumesh-morphtarget-u32-const}
+
+`method renderer::GpuMesh::MorphTarget` — defined in `engine/renderer/mesh.h`
+
+```cpp
+MeshMorphRange MorphTarget(u32 i) const;
+```
+
+Returns morph target `i`'s run of deltas.
+
+| Field | Value |
+|---|---|
+| Aborts | `i` is not below `MorphTargetCount()`. |
+
+### `MorphBuffer()` {#renderer-gpumesh-morphbuffer-const}
+
+`method renderer::GpuMesh::MorphBuffer` — defined in `engine/renderer/mesh.h`
+
+```cpp
+rhi::BufferHandle MorphBuffer() const;
+```
+
+Returns the storage buffer the morph pass reads: the base vertices (`VertexCount() * Layout().stride` bytes) followed by the deltas ([`renderer::kMorphDeltaBytes`](#renderer-kmorphdeltabytes) each); invalid for a mesh without morph targets.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `MorphDeltaCount()` {#renderer-gpumesh-morphdeltacount-const}
+
+`method renderer::GpuMesh::MorphDeltaCount` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 MorphDeltaCount() const;
+```
+
+Returns the number of morph deltas.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `RangeCount()` {#renderer-gpumesh-rangecount-const}
 
 `method renderer::GpuMesh::RangeCount` — defined in `engine/renderer/mesh.h`
@@ -6456,6 +6694,25 @@ Draws `index_count` indices from `first_index` (a range of the mesh); `index_cou
 | Field | Value |
 |---|---|
 | Aborts | this mesh is empty, the range lies outside the mesh, or as for the other overload. |
+| Ownership | `list` is borrowed for the call. |
+
+### `DrawWithVertices(rhi::CommandList*,rhi::BufferHandle,u64,u32,u32,u32,u32)` {#renderer-gpumesh-drawwithvertices-rhi-commandlist-star-rhi-bufferhandle-u64-u32-u32-u32-u32-const}
+
+`method renderer::GpuMesh::DrawWithVertices` — defined in `engine/renderer/mesh.h`
+
+```cpp
+void DrawWithVertices(rhi::CommandList* list, rhi::BufferHandle vertices, u64 offset, u32 instance_count, u32 first_instance, u32 first_index, u32 index_count) const;
+```
+
+Draws as `Draw` does, but reads vertex binding 0 from `vertices` at `offset`.
+
+That is the morph pass's output for this object, read instead of the mesh's own vertex buffer; the index and skin buffers are the mesh's.
+
+| Field | Value |
+|---|---|
+| Parameter `vertices` | a buffer in the `VertexBuffer` state holding `VertexCount()` vertices of this mesh's layout. |
+| Parameter `offset` | where they start, in bytes. |
+| Aborts | as for `Draw`. |
 | Ownership | `list` is borrowed for the call. |
 
 ## `GpuMeshPtr` {#renderer-gpumeshptr}
@@ -7946,6 +8203,26 @@ u32 joint_count;
 
 The number of matrices at `joint_matrices`; at most 256.
 
+### `morph_weights` {#renderer-renderobjectdesc-morph-weights}
+
+`variable renderer::RenderObjectDesc::morph_weights` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+const f32* morph_weights;
+```
+
+The weights of a mesh's morph targets, one per target from target 0 (glTF coverage Day 7); null for none, which draws the base shape. Borrowed like `joint_matrices`: valid until the frame that reads it has been prepared.
+
+### `morph_weight_count` {#renderer-renderobjectdesc-morph-weight-count}
+
+`variable renderer::RenderObjectDesc::morph_weight_count` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 morph_weight_count;
+```
+
+The number of weights at `morph_weights`; at most the mesh's target count.
+
 ### `skin_bounds_scale` {#renderer-renderobjectdesc-skin-bounds-scale}
 
 `variable renderer::RenderObjectDesc::skin_bounds_scale` — defined in `engine/renderer/render_scene.h`
@@ -8060,6 +8337,26 @@ u32 joint_count;
 ```
 
 The number of matrices at `joint_matrices`; at most 256.
+
+### `morph_weights` {#renderer-renderobject-morph-weights}
+
+`variable renderer::RenderObject::morph_weights` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+const f32* morph_weights;
+```
+
+The weights of a mesh's morph targets, one per target from target 0 (glTF coverage Day 7); null for none, which draws the base shape. Borrowed like `joint_matrices`: valid until the frame that reads it has been prepared.
+
+### `morph_weight_count` {#renderer-renderobject-morph-weight-count}
+
+`variable renderer::RenderObject::morph_weight_count` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 morph_weight_count;
+```
+
+The number of weights at `morph_weights`; at most the mesh's target count.
 
 ### `skin_bounds_scale` {#renderer-renderobject-skin-bounds-scale}
 
@@ -8369,6 +8666,24 @@ Replaces the borrowed joint palette of a skinned object (see [`renderer::RenderO
 | Parameter `matrices` | `count` 3x4 matrices, or null to draw nothing until a palette is set. |
 | Parameter `count` | from 1 to 256 when `matrices` is not null. |
 | Aborts | `id` is invalid or stale, or the mesh is rigid. |
+| Thread-safety | thread-compatible. |
+
+### `SetMorphWeights(ObjectId,const f32*,u32)` {#renderer-renderscene-setmorphweights-objectid-const-f32-star-u32}
+
+`method renderer::RenderScene::SetMorphWeights` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+void SetMorphWeights(ObjectId id, const f32* weights, u32 count);
+```
+
+Replaces the borrowed morph weights of an object (see [`renderer::RenderObjectDesc::morph_weights`](#renderer-renderobjectdesc-morph-weights)).
+
+| Field | Value |
+|---|---|
+| Parameter `id` | a live object. |
+| Parameter `weights` | `count` weights from target 0, or null for the base shape. |
+| Parameter `count` | at most the mesh's morph target count when `weights` is not null. |
+| Aborts | `id` is invalid or stale, or `count` is above the mesh's target count. |
 | Thread-safety | thread-compatible. |
 
 ### `FindObject(ObjectId)` {#renderer-renderscene-findobject-objectid-const}

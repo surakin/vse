@@ -109,6 +109,36 @@ const char* MeshGeometry::Validate() const
             return "mesh: an index range lies outside the indices or does not fit the topology";
         }
     }
+    if (morph_target_count != 0)
+    {
+        // The morph pass (glTF coverage Day 7) writes f32 positions, normals and tangents at their offsets.
+        bool position = false;
+        bool normal = false;
+        bool tangent = false;
+        for (u32 i = 0; i < layout.attribute_count; ++i)
+        {
+            const rhi::VertexAttributeDesc& a = layout.attributes[i];
+            position = position || (a.binding == 0 && a.location == 0 && a.format == rhi::VertexFormat::Float3);
+            normal = normal || (a.binding == 0 && a.location == 1 && a.format == rhi::VertexFormat::Float3);
+            tangent = tangent || (a.binding == 0 && a.location == 2 && a.format == rhi::VertexFormat::Float4);
+        }
+        if (!position || !normal || !tangent || layout.stride % 4 != 0 || morph_target_count > kMaxMeshMorphTargets)
+        {
+            return "mesh: morph targets need f32 positions, normals and tangents (the full layout), at most 64 targets";
+        }
+        if (!InRegion(morph_delta_offset, morph_delta_count, kMorphDeltaBytes, total))
+        {
+            return "mesh: the morph deltas lie outside the region";
+        }
+        for (u32 t = 0; t < morph_target_count; ++t)
+        {
+            const MeshMorphRange& r = morph_targets[t];
+            if (r.first_delta > morph_delta_count || r.delta_count > morph_delta_count - r.first_delta)
+            {
+                return "mesh: a morph target's deltas lie outside the delta stream";
+            }
+        }
+    }
     return nullptr;
 }
 
@@ -1032,6 +1062,13 @@ void GpuMesh::MoveFrom(GpuMesh& other)
     vertex_buffer_ = other.vertex_buffer_;
     index_buffer_ = other.index_buffer_;
     skin_buffer_ = other.skin_buffer_;
+    morph_buffer_ = other.morph_buffer_;
+    morph_target_count_ = other.morph_target_count_;
+    morph_delta_count_ = other.morph_delta_count_;
+    morph_targets_ = other.morph_targets_;
+    other.morph_buffer_ = {};
+    other.morph_target_count_ = 0;
+    other.morph_delta_count_ = 0;
     vertex_count_ = other.vertex_count_;
     index_count_ = other.index_count_;
     range_count_ = other.range_count_;
@@ -1178,6 +1215,14 @@ bool GpuMesh::CreateFromGeometry(rhi::Device* device, const MeshGeometry& geomet
     vertex_buffer_ = vertex_buffer;
     index_buffer_ = index_buffer;
     skin_buffer_ = skin_buffer;
+    morph_target_count_ = geometry.morph_target_count;
+    morph_delta_count_ = geometry.morph_delta_count;
+    morph_targets_ = geometry.morph_targets;
+    if (!UploadMorph(device, geometry))
+    {
+        Release();
+        return false;
+    }
     vertex_count_ = geometry.vertex_count;
     index_count_ = geometry.index_count;
     range_count_ = geometry.range_count;
@@ -1260,6 +1305,11 @@ void GpuMesh::Release()
     {
         device_->DestroyBuffer(skin_buffer_);
     }
+    if (morph_buffer_.IsValid())
+    {
+        device_->DestroyBuffer(morph_buffer_);
+    }
+    morph_buffer_ = {};
     if (index_buffer_.IsValid())
     {
         device_->DestroyBuffer(index_buffer_);
@@ -1311,6 +1361,11 @@ bool GpuMesh::Recreate(rhi::Device* device)
         return false;
     }
     device_ = device;
+    if (!UploadMorph(device, geometry_))
+    {
+        Release();
+        return false;
+    }
     if (was_ready_)
     {
         // Put the buffers back into their read states, as before the reset.
@@ -1365,6 +1420,8 @@ void GpuMesh::Destroy()
     vertex_count_ = 0;
     index_count_ = 0;
     range_count_ = 0;
+    morph_target_count_ = 0;
+    morph_delta_count_ = 0;
     sort_id_ = 0;
 }
 
@@ -1381,7 +1438,71 @@ void GpuMesh::RecordPrepare(rhi::CommandList* list)
     {
         list->Barrier(skin_buffer_, rhi::ResourceState::CopyDst, rhi::ResourceState::VertexBuffer);
     }
+    if (morph_buffer_.IsValid())
+    {
+        list->Barrier(morph_buffer_, rhi::ResourceState::CopyDst, rhi::ResourceState::ShaderRead);
+    }
     prepared_ = true;
+}
+
+bool GpuMesh::UploadMorph(rhi::Device* device, const MeshGeometry& geometry)
+{
+    if (geometry.morph_target_count == 0)
+    {
+        return true;
+    }
+    // One read-only storage buffer: the base vertices, then the deltas (the morph pass reads both as words).
+    const u64 vertex_bytes = static_cast<u64>(geometry.vertex_count) * geometry.layout.stride;
+    const u64 delta_bytes = static_cast<u64>(geometry.morph_delta_count) * kMorphDeltaBytes;
+    rhi::BufferDesc bd;
+    bd.location = rhi::MemoryLocation::GpuOnly;
+    bd.size = vertex_bytes + (delta_bytes != 0 ? delta_bytes : 4);
+    bd.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::CopyDst;
+    bd.debug_name = name_;
+    const rhi::BufferHandle buffer = device->CreateBuffer(bd);
+    const byte* base = geometry.bytes->Bytes().Data();
+    const bool ok = buffer.IsValid() &&
+                    device->UploadBuffer(buffer, 0, base + geometry.vertex_offset, vertex_bytes).ok &&
+                    (delta_bytes == 0 ||
+                     device->UploadBuffer(buffer, vertex_bytes, base + geometry.morph_delta_offset, delta_bytes).ok);
+    if (!ok)
+    {
+        RenderLog(LogVerbosity::Error, "GpuMesh '%s': creating or uploading the morph buffer failed", name_);
+        if (buffer.IsValid())
+        {
+            device->DestroyBuffer(buffer);
+        }
+        return false;
+    }
+    morph_buffer_ = buffer;
+    return true;
+}
+
+MeshMorphRange GpuMesh::MorphTarget(u32 i) const
+{
+    ENGINE_ASSERT(i < morph_target_count_, "GpuMesh::MorphTarget: the target does not exist");
+    return morph_targets_[i];
+}
+
+void GpuMesh::DrawWithVertices(rhi::CommandList* list, rhi::BufferHandle vertices, u64 offset, u32 instance_count,
+                               u32 first_instance, u32 first_index, u32 index_count) const
+{
+    ENGINE_ASSERT(Valid() && (prepared_ || ready_),
+                  "GpuMesh::DrawWithVertices: the mesh is empty or RecordPrepare was never called");
+    list->SetVertexBuffer(0, vertices, offset);
+    if (skin_buffer_.IsValid())
+    {
+        list->SetVertexBuffer(1, skin_buffer_, 0);
+    }
+    list->SetIndexBuffer(index_buffer_, 0, index_type_);
+    if (index_count == 0)
+    {
+        list->DrawIndexed(index_count_, instance_count, 0, 0, first_instance);
+        return;
+    }
+    ENGINE_ASSERT(first_index <= index_count_ && index_count <= index_count_ - first_index,
+                  "GpuMesh::DrawWithVertices: the index range lies outside the mesh");
+    list->DrawIndexed(index_count, instance_count, first_index, 0, first_instance);
 }
 
 MeshRange GpuMesh::Range(u32 i) const

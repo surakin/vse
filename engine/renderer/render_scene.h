@@ -83,6 +83,11 @@ struct RenderObjectDesc
     const f32* joint_matrices = nullptr;
     /// The number of matrices at `joint_matrices`; at most 256.
     u32 joint_count = 0;
+    /// The weights of a mesh's morph targets, one per target from target 0 (glTF coverage Day 7); null for none, which
+    /// draws the base shape. Borrowed like `joint_matrices`: valid until the frame that reads it has been prepared.
+    const f32* morph_weights = nullptr;
+    /// The number of weights at `morph_weights`; at most the mesh's target count.
+    u32 morph_weight_count = 0;
     /// Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices
     /// outside the bind-pose box; the game sets this above 1 for a clip that does.
     f32 skin_bounds_scale = 1.0f;
@@ -116,6 +121,11 @@ struct RenderObject
     const f32* joint_matrices = nullptr;
     /// The number of matrices at `joint_matrices`; at most 256.
     u32 joint_count = 0;
+    /// The weights of a mesh's morph targets, one per target from target 0 (glTF coverage Day 7); null for none, which
+    /// draws the base shape. Borrowed like `joint_matrices`: valid until the frame that reads it has been prepared.
+    const f32* morph_weights = nullptr;
+    /// The number of weights at `morph_weights`; at most the mesh's target count.
+    u32 morph_weight_count = 0;
     /// Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices
     /// outside the bind-pose box; the game sets this above 1 for a clip that does.
     f32 skin_bounds_scale = 1.0f;
@@ -230,6 +240,15 @@ public:
     /// - Aborts: `id` is invalid or stale, or the mesh is rigid.
     /// - Thread-safety: thread-compatible.
     void SetJointMatrices(ObjectId id, const f32* matrices, u32 count);
+
+    /// Replaces the borrowed morph weights of an object (see [[renderer::RenderObjectDesc::morph_weights]]).
+    ///
+    /// - Param id: a live object.
+    /// - Param weights: `count` weights from target 0, or null for the base shape.
+    /// - Param count: at most the mesh's morph target count when `weights` is not null.
+    /// - Aborts: `id` is invalid or stale, or `count` is above the mesh's target count.
+    /// - Thread-safety: thread-compatible.
+    void SetMorphWeights(ObjectId id, const f32* weights, u32 count);
 
     /// Looks an object up.
     ///

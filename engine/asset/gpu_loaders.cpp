@@ -108,6 +108,21 @@ Status LoadGpuMesh(const LoadContext& context, GpuMeshAsset* out, void* user)
     }
     geometry.skin_offset = view.Skinned() ? static_cast<u64>(view.SkinBytes().Data() - base) : 0;
     geometry.skin_joint_count = view.Skinned() ? view.SkinJointCount() : 0;
+    // Morph targets (glTF coverage Day 7): the delta section is uploaded where it is; the runs of the targets are
+    // small.
+    if (view.MorphTargetCount() != 0)
+    {
+        geometry.morph_delta_offset = view.MorphDeltaCount() != 0
+                                          ? static_cast<u64>(view.MorphDeltaBytes().Data() - base)
+                                          : 0;
+        geometry.morph_delta_count = view.MorphDeltaCount();
+        geometry.morph_target_count = view.MorphTargetCount();
+        for (u32 t = 0; t < view.MorphTargetCount(); ++t)
+        {
+            const MeshMorphTargetInfo info = view.MorphTarget(t);
+            geometry.morph_targets[t] = renderer::MeshMorphRange{info.first_delta, info.delta_count};
+        }
+    }
     if (const char* refused = geometry.Validate())
     {
         return Status::Make(ErrorCode::Corrupt, refused);
