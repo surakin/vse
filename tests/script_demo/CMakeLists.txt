@@ -4,6 +4,10 @@
 if(NOT TARGET luajit)
   return()  # LuaJIT builds on Linux and Windows x86-64 so far (macOS: Day 474)
 endif()
+# The Linux desktop only (the user, 2026-11-19: too heavy for the PC and the Mac).
+if(NOT ENGINE_PLATFORM STREQUAL "linux")
+  return()
+endif()
 
 find_package(Threads REQUIRED)
 include(Catch)

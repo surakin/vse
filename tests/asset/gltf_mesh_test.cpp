@@ -1272,8 +1272,8 @@ TEST_CASE("gltf: KHR_lights_punctual lights land on their nodes as light sources
         "{\"type\":\"area\"},{\"type\":\"point\"},{\"type\":\"point\"}",
         "{\"type\":\"point\",\"intensity\":-1},{\"type\":\"point\"},{\"type\":\"point\"}",
         "{\"type\":\"point\",\"range\":0},{\"type\":\"point\"},{\"type\":\"point\"}",
-        "{\"type\":\"spot\",\"spot\":{\"innerConeAngle\":0.6,\"outerConeAngle\":0.5}},{\"type\":\"point\"},"
-        "{\"type\":\"point\"}",
+        ("{\"type\":\"spot\",\"spot\":{\"innerConeAngle\":0.6,\"outerConeAngle\":0.5}},{\"type\":\"point\"},"
+         "{\"type\":\"point\"}"),  // one element, split for the line length
         "{\"type\":\"spot\",\"spot\":{\"outerConeAngle\":2}},{\"type\":\"point\"},{\"type\":\"point\"}",
         "{\"type\":\"point\"},{\"type\":\"point\"}",  // node 3 names light 2, which is not there
     };

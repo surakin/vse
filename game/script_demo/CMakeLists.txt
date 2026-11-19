@@ -38,6 +38,11 @@ target_include_directories(script_demo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMA
 target_link_libraries(script_demo PRIVATE script_media script_physics script physics storage audio asset renderer_passes renderer rhi
   platform ecs jobs foundation rhi_backends)
 
+# The demo's ctests run on the Linux desktop only (the user, 2026-11-19: too heavy for the PC and the Mac, where the program still builds).
+if(NOT ENGINE_PLATFORM STREQUAL "linux")
+  return()
+endif()
+
 # Offscreen: 240 frames of the game drawn with its overlay, the picture written. Skips (77) without a GPU, as the other demos do.
 add_test(NAME script_demo_screenshot
   COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:script_demo>;--frames;240;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/script_demo_screenshot.ppm"
@@ -60,19 +65,9 @@ function(script_demo_windowed name backend frames)
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
   engine_label_tests(${name})
 endfunction()
-if(WIN32)
-  script_demo_windowed(script_demo_window_win32 win32 120)
-  script_demo_windowed(script_demo_window_win32_long win32 1000)
-  engine_soak_tests(script_demo_window_win32_long)
-elseif(APPLE)
-  script_demo_windowed(script_demo_window_cocoa cocoa 120)
-  script_demo_windowed(script_demo_window_cocoa_long cocoa 1000)
-  engine_soak_tests(script_demo_window_cocoa_long)
-else()
-  script_demo_windowed(script_demo_window_wayland wayland 120)
-  script_demo_windowed(script_demo_window_wayland_long wayland 1000)
-  script_demo_windowed(script_demo_window_x11 x11 120)
-  script_demo_windowed(script_demo_window_x11_long x11 1000)
-  # X11 copy: a soak test (docs/guide/building-and-testing.md, "Long tests"; the user, 2026-11-19)
-  engine_soak_tests(script_demo_window_wayland_long script_demo_window_x11 script_demo_window_x11_long)
-endif()
+script_demo_windowed(script_demo_window_wayland wayland 120)
+script_demo_windowed(script_demo_window_wayland_long wayland 1000)
+script_demo_windowed(script_demo_window_x11 x11 120)
+script_demo_windowed(script_demo_window_x11_long x11 1000)
+# X11 copy: a soak test (docs/guide/building-and-testing.md, "Long tests"; the user, 2026-11-19)
+engine_soak_tests(script_demo_window_wayland_long script_demo_window_x11 script_demo_window_x11_long)
