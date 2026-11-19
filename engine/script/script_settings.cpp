@@ -27,6 +27,29 @@ void RegisterScriptSettings(settings::Registry* registry)
     budget.flags = settings::kRestartRequired;
     registry->Register(budget);
 
+    settings::SettingDesc jit = settings::MakeBool("script.jit", true);
+    jit.env = "ENGINE_SCRIPT_JIT";
+    jit.flag = "script-jit";
+    jit.label = "Script JIT";
+    jit.description =
+        "whether a trusted script world uses the JIT compiler (a budgeted world never does); false runs the interpreter "
+        "with no instruction budget; a build without the JIT (ENGINE_LUAJIT_JIT=OFF) ignores it";
+    jit.group = "script";
+    jit.flags = settings::kRestartRequired;
+    registry->Register(jit);
+
+    settings::SettingDesc jit_code = settings::MakeInt("script.jit_code_kb", 0, 0, 1048576);
+    jit_code.env = "ENGINE_SCRIPT_JIT_CODE_KB";
+    jit_code.flag = "script-jit-code-kb";
+    jit_code.label = "Script JIT code cap";
+    jit_code.description =
+        "the most kilobytes of machine code one script state may keep (LuaJIT's maxmcode; 0 keeps its default of 2048; a state "
+        "always has one 64 KB area, so a smaller value acts as 64); a state that reaches it flushes its traces, so a world of "
+        "many partitions bounds its total";
+    jit_code.group = "script";
+    jit_code.flags = settings::kRestartRequired;
+    registry->Register(jit_code);
+
     settings::SettingDesc seed = settings::MakeInt("script.random_seed", 1, 0, 4294967295LL);
     seed.env = "ENGINE_SCRIPT_RANDOM_SEED";
     seed.flag = "script-random-seed";
@@ -200,6 +223,18 @@ bool ScriptBudgeted(const settings::Registry& registry)
         }
     }
     return true;
+}
+
+bool ScriptJit(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.jit"));
+    return !id.IsValid() || settings::Setting<bool>(registry, id).Get();
+}
+
+u32 ScriptJitCodeKb(const settings::Registry& registry)
+{
+    const settings::SettingId id = registry.Find(StringView("script.jit_code_kb"));
+    return id.IsValid() ? static_cast<u32>(settings::Setting<i64>(registry, id).Get()) : 0u;
 }
 
 u32 ScriptRandomSeed(const settings::Registry& registry)

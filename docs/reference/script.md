@@ -691,6 +691,50 @@ u64 nanoseconds;
 
 The nanoseconds from call to return, summed (including what the function called); calls that did not return normally (an error, a yield) add their count but no time.
 
+## `JitStats` {#script-jitstats}
+
+`struct script::JitStats` — defined in `engine/script/backend.h`
+
+```cpp
+struct JitStats { ... }
+```
+
+What a state's JIT compiler has done: whether it is on and how much machine code it holds.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `enabled` {#script-jitstats-enabled}
+
+`variable script::JitStats::enabled` — defined in `engine/script/backend.h`
+
+```cpp
+bool enabled;
+```
+
+Whether the compiler is on in this state (false for a budgeted state, a state made with the JIT off, and a build without the compiler).
+
+### `traces` {#script-jitstats-traces}
+
+`variable script::JitStats::traces` — defined in `engine/script/backend.h`
+
+```cpp
+u32 traces;
+```
+
+The compiled traces the state holds now.
+
+### `code_bytes` {#script-jitstats-code-bytes}
+
+`variable script::JitStats::code_bytes` — defined in `engine/script/backend.h`
+
+```cpp
+u64 code_bytes;
+```
+
+The bytes of machine code those traces hold.
+
 ## `NativeFunction` {#script-nativefunction}
 
 `alias script::NativeFunction` — defined in `engine/script/backend.h`
@@ -957,6 +1001,23 @@ Copies the profile gathered so far, one entry per function.
 |---|---|
 | Parameter `out` | receives the entries (emptied first). |
 | Returns | `Ok`, or `Unsupported`. |
+| Aborts | the caller's thread does not own the state (debug checks). |
+| Ownership | `out` is borrowed for the call. |
+
+### `JitReport(JitStats*)` {#script-state-jitreport-jitstats-star}
+
+`method script::State::JitReport` — defined in `engine/script/backend.h`
+
+```cpp
+Outcome JitReport(JitStats* out);
+```
+
+Reads what the state's JIT compiler has done.
+
+| Field | Value |
+|---|---|
+| Parameter `out` | receives the numbers (reset first). |
+| Returns | `Ok`, or `Unsupported` when the language has no JIT. |
 | Aborts | the caller's thread does not own the state (debug checks). |
 | Ownership | `out` is borrowed for the call. |
 
@@ -6232,6 +6293,23 @@ Turns the per-function profile on or off in every partition.
 | Parameter `on` | whether to profile; turning it on starts from zero. |
 | Thread-safety | thread-safe. |
 
+### `JitTotals(JitStats*)` {#script-scriptruntime-jittotals-jitstats-star}
+
+`method script::ScriptRuntime::JitTotals` — defined in `engine/script/script_runtime.h`
+
+```cpp
+Outcome JitTotals(JitStats* totals);
+```
+
+What the JIT compilers of the partitions have done, added up: whether any state compiles, the traces and the bytes of machine code they hold (a partition that is held is skipped).
+
+| Field | Value |
+|---|---|
+| Parameter `totals` | receives the sums; not null. |
+| Returns | `Ok`, or `Unsupported` when the language has no JIT. |
+| Thread-safety | thread-compatible: between ticks. |
+| Ownership | `totals` is borrowed for the call. |
+
 ### `ProfileReport(Vector<ProfileEntry>*,usize)` {#script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize}
 
 `method script::ScriptRuntime::ProfileReport` — defined in `engine/script/script_runtime.h`
@@ -6427,6 +6505,38 @@ Reads `script.budget`: whether scripts run budgeted (no JIT, instruction and tim
 |---|---|
 | Parameter `registry` | a registry in which [`script::RegisterScriptSettings`](#script-registerscriptsettings-settings-registry-star) was called; a missing setting, or any value other than `trusted`, gives `true`. |
 | Returns | true for budgeted. |
+| Fails | never. |
+
+## `ScriptJit(const settings::Registry&)` {#script-scriptjit-const-settings-registry-amp}
+
+`function script::ScriptJit` — defined in `engine/script/script_settings.h`
+
+```cpp
+bool ScriptJit(const settings::Registry& registry);
+```
+
+Reads `script.jit`: whether a trusted world may use the JIT compiler.
+
+| Field | Value |
+|---|---|
+| Parameter `registry` | a registry in which [`script::RegisterScriptSettings`](#script-registerscriptsettings-settings-registry-star) was called; a missing setting gives true. |
+| Returns | the flag (default true). A budgeted world never uses the JIT, whatever this says. |
+| Fails | never. |
+
+## `ScriptJitCodeKb(const settings::Registry&)` {#script-scriptjitcodekb-const-settings-registry-amp}
+
+`function script::ScriptJitCodeKb` — defined in `engine/script/script_settings.h`
+
+```cpp
+u32 ScriptJitCodeKb(const settings::Registry& registry);
+```
+
+Reads `script.jit_code_kb`: the machine-code cap of one script state.
+
+| Field | Value |
+|---|---|
+| Parameter `registry` | a registry in which [`script::RegisterScriptSettings`](#script-registerscriptsettings-settings-registry-star) was called; a missing setting gives 0. |
+| Returns | kilobytes; 0 keeps the language's default. |
 | Fails | never. |
 
 ## `ScriptRandomSeed(const settings::Registry&)` {#script-scriptrandomseed-const-settings-registry-amp}
@@ -7464,6 +7574,23 @@ Adds up the profiles of the partitions that have a state and are not held (a hel
 | Returns | `Ok`, or `Unsupported` when the backend cannot profile. |
 | Thread-safety | thread-compatible: call it between ticks. |
 | Ownership | `out` is borrowed for the call. |
+
+### `JitTotals(JitStats*)` {#script-scriptworld-jittotals-jitstats-star}
+
+`method script::ScriptWorld::JitTotals` — defined in `engine/script/script_world.h`
+
+```cpp
+Outcome JitTotals(JitStats* totals);
+```
+
+Adds up what the JIT compilers of the partitions that are not held have done: how many states compile, the traces and the bytes of machine code.
+
+| Field | Value |
+|---|---|
+| Parameter `totals` | receives the sums (reset first); `enabled` is true when any state compiles. |
+| Returns | `Ok`, or `Unsupported` when the language has no JIT. |
+| Thread-safety | thread-compatible: between ticks. |
+| Ownership | `totals` is borrowed for the call. |
 
 ## `kMaxServiceExtensions` {#script-kmaxserviceextensions}
 

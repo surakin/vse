@@ -3,6 +3,7 @@
 #pragma once
 
 #include "script/backend.h"
+#include "script/script_settings.h"
 
 namespace engine_placeholder::script::luajit
 {
@@ -17,9 +18,29 @@ struct LuaJitOptions
     /// trusted: the JIT is on (a count hook cannot stop compiled loops) and instruction and time budgets are refused
     /// with `Unsupported`. The memory budget works in both modes.
     bool budgeted = true;
+    /// Whether a trusted state may use the JIT compiler (`script.jit`). A budgeted state never does, and a build with
+    /// `ENGINE_LUAJIT_JIT=OFF` has no compiler to use; [[script::State::Caps]] reports what a state really does.
+    bool jit = true;
+    /// The most kilobytes of machine code one state keeps (`script.jit_code_kb`); 0 is LuaJIT's default.
+    u32 jit_code_kb = 0;
     /// The seed of `math.random` in each new state (every state starts from the same seed, so runs repeat).
     u32 random_seed = 1;
 };
+
+/// The options the settings ask for: `script.budget`, `script.jit`, `script.jit_code_kb` and `script.random_seed`.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called (missing settings give the
+/// defaults).
+/// - Returns: the options.
+/// - Fails: never.
+LuaJitOptions OptionsFromSettings(const settings::Registry& registry);
+
+/// Whether this build of LuaJIT contains the JIT compiler (`ENGINE_LUAJIT_JIT`, default ON; OFF defines
+/// `LUAJIT_DISABLE_JIT`, for platforms that forbid run-time code generation).
+///
+/// - Returns: true when states can compile.
+/// - Fails: never.
+bool JitCompiledIn();
 
 /// Creates the LuaJIT backend.
 ///

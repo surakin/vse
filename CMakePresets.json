@@ -10,6 +10,13 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
     },
     {
+      "name": "linux-nojit",
+      "displayName": "Linux with LuaJIT's JIT compiled out (build-nojit/; the script_nojit flavor, Phase 27 Day 470)",
+      "binaryDir": "${sourceDir}/build-nojit",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "ENGINE_LUAJIT_JIT": "OFF" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
       "name": "windows-msvc",
       "displayName": "Windows, MSVC (build-msvc/); finds Visual Studio and the Windows SDK itself",
       "generator": "Ninja",
@@ -46,6 +53,7 @@
   ],
   "buildPresets": [
     { "name": "linux", "configurePreset": "linux" },
+    { "name": "linux-nojit", "configurePreset": "linux-nojit" },
     { "name": "windows-msvc", "configurePreset": "windows-msvc" },
     { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl" },
     { "name": "macos-clang", "configurePreset": "macos-clang" },

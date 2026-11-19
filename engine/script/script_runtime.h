@@ -366,6 +366,15 @@ public:
     /// - Thread-safety: thread-safe.
     void SetProfiling(bool on);
 
+    /// What the JIT compilers of the partitions have done, added up: whether any state compiles, the traces and the
+    /// bytes of machine code they hold (a partition that is held is skipped).
+    ///
+    /// - Param totals: receives the sums; not null.
+    /// - Returns: `Ok`, or `Unsupported` when the language has no JIT.
+    /// - Thread-safety: thread-compatible: between ticks.
+    /// - Ownership: `totals` is borrowed for the call.
+    Outcome JitTotals(JitStats* totals);
+
     /// The hottest functions: calls and time added up over the partitions that are not held.
     ///
     /// - Param out: receives the entries, longest time first; not null.

@@ -55,6 +55,20 @@ String<HeapAllocator> ScriptBackendName(const settings::Registry& registry);
 /// - Fails: never.
 bool ScriptBudgeted(const settings::Registry& registry);
 
+/// Reads `script.jit`: whether a trusted world may use the JIT compiler.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives true.
+/// - Returns: the flag (default true). A budgeted world never uses the JIT, whatever this says.
+/// - Fails: never.
+bool ScriptJit(const settings::Registry& registry);
+
+/// Reads `script.jit_code_kb`: the machine-code cap of one script state.
+///
+/// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 0.
+/// - Returns: kilobytes; 0 keeps the language's default.
+/// - Fails: never.
+u32 ScriptJitCodeKb(const settings::Registry& registry);
+
 /// Reads `script.random_seed`.
 ///
 /// - Param registry: a registry in which [[script::RegisterScriptSettings]] was called; a missing setting gives 1.

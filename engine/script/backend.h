@@ -267,6 +267,20 @@ struct ProfileEntry
     u64 nanoseconds = 0;
 };
 
+/// What a state's JIT compiler has done: whether it is on and how much machine code it holds.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct JitStats
+{
+    /// Whether the compiler is on in this state (false for a budgeted state, a state made with the JIT off, and a build
+    /// without the compiler).
+    bool enabled = false;
+    /// The compiled traces the state holds now.
+    u32 traces = 0;
+    /// The bytes of machine code those traces hold.
+    u64 code_bytes = 0;
+};
+
 /// A function the engine registers into a state for scripts to call.
 ///
 /// It receives the pointer given to [[State::RegisterFunction]], copies of the call's arguments and an empty list to
@@ -476,6 +490,19 @@ public:
         return DoProfileReport(out);
     }
 
+    /// Reads what the state's JIT compiler has done.
+    ///
+    /// - Param out: receives the numbers (reset first).
+    /// - Returns: `Ok`, or `Unsupported` when the language has no JIT.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    /// - Ownership: `out` is borrowed for the call.
+    Outcome JitReport(JitStats* out)
+    {
+        CheckOwner();
+        *out = JitStats();
+        return DoJitReport(out);
+    }
+
     /// Runs `source` as a console chunk: first as an expression (`return <source>`), and when that does not parse as a
     /// statement list, in `chunk_name`; the values it returns are copied to `out->results`. The chunk runs with the
     /// state's globals and no sandbox beyond the state's own.
@@ -580,6 +607,12 @@ protected:
     {
         (void)out;
         return Outcome(Status::Unsupported, "this backend has no profiler");
+    }
+    /// See [[State::JitReport]]; the default is `Unsupported`.
+    virtual Outcome DoJitReport(JitStats* out)
+    {
+        (void)out;
+        return Outcome(Status::Unsupported, "this backend has no JIT");
     }
     /// See [[State::Eval]]; the default is `Unsupported`.
     virtual Outcome DoEval(StringView chunk_name, StringView source, const Budget& budget, CallOutput* out)

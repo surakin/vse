@@ -1020,6 +1020,7 @@ enum class Op : int
     DefineModule,
     LoadHost,
     Eval,
+    JitInfo,
 };
 
 // The input and output of one protected operation; it lives in the frame that calls `lua_cpcall`.
@@ -1045,7 +1046,11 @@ struct Request
     CallOutput* out = nullptr;
     // OpenLibs
     bool budgeted = true;
+    bool jit = true;
+    u32 jit_code_kb = 0;
     u32 seed = 1;
+    // JitInfo
+    JitStats* jit_out = nullptr;
     // Register
     StringView name;
     NativeEntry* native = nullptr;
@@ -1297,6 +1302,58 @@ const char kOperators[] =
     "                 w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z }, Q)\n"
     "end\n";
 
+// Counts the compiled traces and their machine code through the JIT library kept in the registry.
+void ReadJit(lua_State* L, Request* r)
+{
+    JitStats* out = r->jit_out;
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.jit_on");
+    out->enabled = lua_toboolean(L, -1) != 0;
+    lua_pop(L, 1);
+    if (!out->enabled)
+    {
+        return;
+    }
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.jit");
+    // jit.util is a preloaded module: call its opener once.
+    lua_getfield(L, LUA_REGISTRYINDEX, "_PRELOAD");
+    lua_getfield(L, -1, "jit.util");
+    if (lua_type(L, -1) != LUA_TFUNCTION)
+    {
+        lua_settop(L, 0);
+        return;
+    }
+    lua_pushstring(L, "jit.util");
+    lua_call(L, 1, 1);  // [jit, _PRELOAD, util]
+    const int util = lua_gettop(L);
+    u32 misses = 0;
+    for (int trace = 1; trace < 16384 && misses < 256; ++trace)
+    {
+        lua_getfield(L, util, "traceinfo");
+        lua_pushinteger(L, trace);
+        lua_call(L, 1, 1);
+        const bool exists = lua_type(L, -1) == LUA_TTABLE;
+        lua_pop(L, 1);
+        if (!exists)
+        {
+            ++misses;
+            continue;
+        }
+        misses = 0;
+        ++out->traces;
+        lua_getfield(L, util, "tracemc");
+        lua_pushinteger(L, trace);
+        lua_call(L, 1, 1);
+        if (lua_type(L, -1) == LUA_TSTRING)
+        {
+            usize length = 0;
+            lua_tolstring(L, -1, &length);
+            out->code_bytes += length;
+        }
+        lua_pop(L, 1);
+    }
+    lua_settop(L, 0);
+}
+
 void OpenLibs(lua_State* L, Request* r)
 {
     lua_newtable(L);
@@ -1322,10 +1379,30 @@ void OpenLibs(lua_State* L, Request* r)
         lua_pushstring(L, lib.name);
         lua_call(L, 1, 0);
     }
-    if (r->budgeted)
+    // The JIT library is kept in the registry for the statistics and the code cap; scripts never see it.
+    lua_pushcfunction(L, luaopen_jit);
+    lua_pushstring(L, LUA_JITLIBNAME);
+    lua_call(L, 1, 0);
+    lua_getglobal(L, "jit");
+    lua_setfield(L, LUA_REGISTRYINDEX, "engine.jit");
+    lua_pushnil(L);
+    lua_setglobal(L, "jit");
+    const bool jit_on = JitCompiledIn() && !r->budgeted && r->jit;
+    if (!jit_on)
     {
         luaJIT_setmode(L, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
     }
+    else if (r->jit_code_kb != 0)
+    {
+        lua_getfield(L, LUA_REGISTRYINDEX, "engine.jit");
+        lua_getfield(L, -1, "opt");
+        lua_getfield(L, -1, "start");
+        lua_pushfstring(L, "maxmcode=%d", static_cast<int>(r->jit_code_kb));
+        lua_call(L, 1, 0);
+        lua_pop(L, 2);
+    }
+    lua_pushboolean(L, jit_on ? 1 : 0);
+    lua_setfield(L, LUA_REGISTRYINDEX, "engine.jit_on");
     // The globals now are the engine environment E. Remove what scripts must not reach.
     static const char* const removed[] = {"dofile",  "loadfile", "load",           "loadstring", "newproxy", "getfenv",
                                           "setfenv", "gcinfo",   "collectgarbage", "module",     "require"};
@@ -1831,6 +1908,7 @@ int ProtectedBody(lua_State* L)
     switch (r->op)
     {
     case Op::OpenLibs: OpenLibs(L, r); break;
+    case Op::JitInfo: ReadJit(L, r); break;
     case Op::Collect: lua_gc(L, LUA_GCCOLLECT, 0); break;
     case Op::Unref: luaL_unref(L, LUA_REGISTRYINDEX, r->ref); break;
     case Op::Register: RegisterNative(L, r); break;
@@ -1868,6 +1946,8 @@ public:
         Request r;
         r.op = Op::OpenLibs;
         r.budgeted = options_.budgeted;
+        r.jit = options_.jit;
+        r.jit_code_kb = options_.jit_code_kb;
         r.seed = options_.random_seed;
         const Outcome o = Execute(&r);
         if (!o.IsOk())
@@ -2105,7 +2185,7 @@ protected:
         caps.instruction_budget = options_.budgeted;
         caps.time_budget = options_.budgeted;
         caps.memory_budget = true;
-        caps.jit = !options_.budgeted;
+        caps.jit = JitCompiledIn() && !options_.budgeted && options_.jit;
         caps.debug = true;
         caps.profiling = true;
         caps.eval = true;
@@ -2144,6 +2224,18 @@ protected:
             out->Push(Move(copy));
         }
         return Outcome();
+    }
+
+    Outcome DoJitReport(JitStats* out) override
+    {
+        if (L_ == nullptr)
+        {
+            return Outcome(Status::Invalid, "the state is closed");
+        }
+        Request r;
+        r.op = Op::JitInfo;
+        r.jit_out = out;
+        return Execute(&r);
     }
 
     Outcome DoEval(StringView chunk_name, StringView source, const Budget& budget, CallOutput* out) override
@@ -2322,7 +2414,7 @@ public:
         caps.instruction_budget = options_.budgeted;
         caps.time_budget = options_.budgeted;
         caps.memory_budget = true;
-        caps.jit = !options_.budgeted;
+        caps.jit = JitCompiledIn() && !options_.budgeted && options_.jit;
         return caps;
     }
     UniquePtr<State> CreateState(u64 memory_cap_bytes) override
@@ -2345,6 +2437,25 @@ UniquePtr<Backend> MakeLuaJitBackend()
 }
 
 }  // namespace
+
+bool JitCompiledIn()
+{
+#ifdef LUAJIT_DISABLE_JIT
+    return false;
+#else
+    return true;
+#endif
+}
+
+LuaJitOptions OptionsFromSettings(const settings::Registry& registry)
+{
+    LuaJitOptions options;
+    options.budgeted = ScriptBudgeted(registry);
+    options.jit = ScriptJit(registry);
+    options.jit_code_kb = ScriptJitCodeKb(registry);
+    options.random_seed = ScriptRandomSeed(registry);
+    return options;
+}
 
 UniquePtr<Backend> CreateLuaJitBackend(const LuaJitOptions& options)
 {

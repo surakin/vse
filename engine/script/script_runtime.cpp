@@ -1637,6 +1637,11 @@ void ScriptRuntime::SetProfiling(bool on)
     impl_->scripts->SetProfiling(on);
 }
 
+Outcome ScriptRuntime::JitTotals(JitStats* totals)
+{
+    return impl_->scripts->JitTotals(totals);
+}
+
 Outcome ScriptRuntime::ProfileReport(Vector<ProfileEntry>* out, usize top)
 {
     return impl_->scripts->ProfileReport(out, top);

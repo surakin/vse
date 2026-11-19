@@ -1885,36 +1885,41 @@ script::ProfileEntry::name	variable	script	script-profileentry-name	script.md	en
 script::ProfileEntry::line	variable	script	script-profileentry-line	script.md	engine/script/backend.h:262
 script::ProfileEntry::calls	variable	script	script-profileentry-calls	script.md	engine/script/backend.h:264
 script::ProfileEntry::nanoseconds	variable	script	script-profileentry-nanoseconds	script.md	engine/script/backend.h:267
-script::NativeFunction	alias	script	script-nativefunction	script.md	engine/script/backend.h:275
-script::State	class	script	script-state	script.md	engine/script/backend.h:289
-script::State::~State()	function	script	script-state-tilde-state	script.md	engine/script/backend.h:293
-script::State::State(const State&)	function	script	script-state-state-const-state-amp	script.md	engine/script/backend.h:295
-script::State::operator=(const State&)	function	script	script-state-operator-eq-const-state-amp	script.md	engine/script/backend.h:296
-script::State::Load(StringView,StringView)	function	script	script-state-load-stringview-stringview	script.md	engine/script/backend.h:304
-script::State::Compile(StringView,StringView,Vector<byte>*)	function	script	script-state-compile-stringview-stringview-vector-lt-byte-gt-star	script.md	engine/script/backend.h:318
-script::State::LoadHost(StringView,StringView)	function	script	script-state-loadhost-stringview-stringview	script.md	engine/script/backend.h:338
-script::State::DefineModule(StringView,StringView,StringView,StringView)	function	script	script-state-definemodule-stringview-stringview-stringview-stringview	script.md	engine/script/backend.h:357
-script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:375
-script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:392
-script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:406
-script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:418
-script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:427
-script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:436
-script::State::SetDebugSession(DebugSession*)	function	script	script-state-setdebugsession-debugsession-star	script.md	engine/script/backend.h:449
-script::State::SetProfiling(bool)	function	script	script-state-setprofiling-bool	script.md	engine/script/backend.h:460
-script::State::ProfileReport(Vector<ProfileEntry>*)	function	script	script-state-profilereport-vector-lt-profileentry-gt-star	script.md	engine/script/backend.h:472
-script::State::Eval(StringView,StringView,const Budget&,CallOutput*)	function	script	script-state-eval-stringview-stringview-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:490
-script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:505
-script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:512
-script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:520
-script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:529
-script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:534
-script::Backend	class	script	script-backend	script.md	engine/script/backend.h:626
-script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:630
-script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:633
-script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:635
-script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:637
-script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:642
+script::JitStats	struct	script	script-jitstats	script.md	engine/script/backend.h:273
+script::JitStats::enabled	variable	script	script-jitstats-enabled	script.md	engine/script/backend.h:277
+script::JitStats::traces	variable	script	script-jitstats-traces	script.md	engine/script/backend.h:279
+script::JitStats::code_bytes	variable	script	script-jitstats-code-bytes	script.md	engine/script/backend.h:281
+script::NativeFunction	alias	script	script-nativefunction	script.md	engine/script/backend.h:289
+script::State	class	script	script-state	script.md	engine/script/backend.h:303
+script::State::~State()	function	script	script-state-tilde-state	script.md	engine/script/backend.h:307
+script::State::State(const State&)	function	script	script-state-state-const-state-amp	script.md	engine/script/backend.h:309
+script::State::operator=(const State&)	function	script	script-state-operator-eq-const-state-amp	script.md	engine/script/backend.h:310
+script::State::Load(StringView,StringView)	function	script	script-state-load-stringview-stringview	script.md	engine/script/backend.h:318
+script::State::Compile(StringView,StringView,Vector<byte>*)	function	script	script-state-compile-stringview-stringview-vector-lt-byte-gt-star	script.md	engine/script/backend.h:332
+script::State::LoadHost(StringView,StringView)	function	script	script-state-loadhost-stringview-stringview	script.md	engine/script/backend.h:352
+script::State::DefineModule(StringView,StringView,StringView,StringView)	function	script	script-state-definemodule-stringview-stringview-stringview-stringview	script.md	engine/script/backend.h:371
+script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:389
+script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:406
+script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:420
+script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:432
+script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:441
+script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:450
+script::State::SetDebugSession(DebugSession*)	function	script	script-state-setdebugsession-debugsession-star	script.md	engine/script/backend.h:463
+script::State::SetProfiling(bool)	function	script	script-state-setprofiling-bool	script.md	engine/script/backend.h:474
+script::State::ProfileReport(Vector<ProfileEntry>*)	function	script	script-state-profilereport-vector-lt-profileentry-gt-star	script.md	engine/script/backend.h:486
+script::State::JitReport(JitStats*)	function	script	script-state-jitreport-jitstats-star	script.md	engine/script/backend.h:499
+script::State::Eval(StringView,StringView,const Budget&,CallOutput*)	function	script	script-state-eval-stringview-stringview-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:517
+script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:532
+script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:539
+script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:547
+script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:556
+script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:561
+script::Backend	class	script	script-backend	script.md	engine/script/backend.h:659
+script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:663
+script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:666
+script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:668
+script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:670
+script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:675
 script::BackendDescriptor	struct	script	script-backenddescriptor	script.md	engine/script/backend_registry.h:18
 script::BackendDescriptor::name	variable	script	script-backenddescriptor-name	script.md	engine/script/backend_registry.h:21
 script::BackendDescriptor::create	variable	script	script-backenddescriptor-create	script.md	engine/script/backend_registry.h:23
@@ -2346,13 +2351,14 @@ script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script
 script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:352
 script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:361
 script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:367
-script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:376
-script::ScriptRuntime::CapturePersistent(ecs::World*,const storage::KeyIndex&,PersistReport*)	function	script	script-scriptruntime-capturepersistent-ecs-world-star-const-storage-keyindex-amp-persistreport-star	script.md	engine/script/script_runtime.h:394
-script::ScriptRuntime::ResolveLoaded(ecs::World*,const storage::KeyIndex&,LoadReport*)	function	script	script-scriptruntime-resolveloaded-ecs-world-star-const-storage-keyindex-amp-loadreport-star	script.md	engine/script/script_runtime.h:407
-script::ScriptRuntime::Clock(u64*,f64*) const	function	script	script-scriptruntime-clock-u64-star-f64-star-const	script.md	engine/script/script_runtime.h:416
-script::ScriptRuntime::RestoreClock(u64,f64)	function	script	script-scriptruntime-restoreclock-u64-f64	script.md	engine/script/script_runtime.h:424
-script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:436
-script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:449
+script::ScriptRuntime::JitTotals(JitStats*)	function	script	script-scriptruntime-jittotals-jitstats-star	script.md	engine/script/script_runtime.h:376
+script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:385
+script::ScriptRuntime::CapturePersistent(ecs::World*,const storage::KeyIndex&,PersistReport*)	function	script	script-scriptruntime-capturepersistent-ecs-world-star-const-storage-keyindex-amp-persistreport-star	script.md	engine/script/script_runtime.h:403
+script::ScriptRuntime::ResolveLoaded(ecs::World*,const storage::KeyIndex&,LoadReport*)	function	script	script-scriptruntime-resolveloaded-ecs-world-star-const-storage-keyindex-amp-loadreport-star	script.md	engine/script/script_runtime.h:416
+script::ScriptRuntime::Clock(u64*,f64*) const	function	script	script-scriptruntime-clock-u64-star-f64-star-const	script.md	engine/script/script_runtime.h:425
+script::ScriptRuntime::RestoreClock(u64,f64)	function	script	script-scriptruntime-restoreclock-u64-f64	script.md	engine/script/script_runtime.h:433
+script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:445
+script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:458
 script::OnScriptError	enum	script	script-onscripterror	script.md	engine/script/script_settings.h:16
 script::OnScriptError::Disable	enumerator	script	script-onscripterror-disable	script.md	engine/script/script_settings.h:19
 script::OnScriptError::Retry	enumerator	script	script-onscripterror-retry	script.md	engine/script/script_settings.h:21
@@ -2360,20 +2366,22 @@ script::OnScriptError::AbortInDebug	enumerator	script	script-onscripterror-abort
 script::RegisterScriptSettings(settings::Registry*)	function	script	script-registerscriptsettings-settings-registry-star	script.md	engine/script/script_settings.h:38
 script::ScriptBackendName(const settings::Registry&)	function	script	script-scriptbackendname-const-settings-registry-amp	script.md	engine/script/script_settings.h:48
 script::ScriptBudgeted(const settings::Registry&)	function	script	script-scriptbudgeted-const-settings-registry-amp	script.md	engine/script/script_settings.h:56
-script::ScriptRandomSeed(const settings::Registry&)	function	script	script-scriptrandomseed-const-settings-registry-amp	script.md	engine/script/script_settings.h:63
-script::ScriptConflictsAreErrors(const settings::Registry&)	function	script	script-scriptconflictsareerrors-const-settings-registry-amp	script.md	engine/script/script_settings.h:71
-script::ScriptEventChainLimit(const settings::Registry&)	function	script	script-scripteventchainlimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:78
-script::ScriptLogLimit(const settings::Registry&)	function	script	script-scriptloglimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:85
-script::ScriptOnError(const settings::Registry&)	function	script	script-scriptonerror-const-settings-registry-amp	script.md	engine/script/script_settings.h:93
-script::ScriptPartitions(const settings::Registry&)	function	script	script-scriptpartitions-const-settings-registry-amp	script.md	engine/script/script_settings.h:99
-script::ScriptTaskStates(const settings::Registry&)	function	script	script-scripttaskstates-const-settings-registry-amp	script.md	engine/script/script_settings.h:106
-script::ScriptTaskQueueLimit(const settings::Registry&)	function	script	script-scripttaskqueuelimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:113
-script::ScriptTaskArgBytes(const settings::Registry&)	function	script	script-scripttaskargbytes-const-settings-registry-amp	script.md	engine/script/script_settings.h:120
-script::ScriptHotReload(const settings::Registry&)	function	script	script-scripthotreload-const-settings-registry-amp	script.md	engine/script/script_settings.h:127
-script::ScriptDebugPauseAll(const settings::Registry&)	function	script	script-scriptdebugpauseall-const-settings-registry-amp	script.md	engine/script/script_settings.h:134
-script::ScriptProfile(const settings::Registry&)	function	script	script-scriptprofile-const-settings-registry-amp	script.md	engine/script/script_settings.h:141
-script::ScriptDevDirectory(const settings::Registry&)	function	script	script-scriptdevdirectory-const-settings-registry-amp	script.md	engine/script/script_settings.h:148
-script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:155
+script::ScriptJit(const settings::Registry&)	function	script	script-scriptjit-const-settings-registry-amp	script.md	engine/script/script_settings.h:63
+script::ScriptJitCodeKb(const settings::Registry&)	function	script	script-scriptjitcodekb-const-settings-registry-amp	script.md	engine/script/script_settings.h:70
+script::ScriptRandomSeed(const settings::Registry&)	function	script	script-scriptrandomseed-const-settings-registry-amp	script.md	engine/script/script_settings.h:77
+script::ScriptConflictsAreErrors(const settings::Registry&)	function	script	script-scriptconflictsareerrors-const-settings-registry-amp	script.md	engine/script/script_settings.h:85
+script::ScriptEventChainLimit(const settings::Registry&)	function	script	script-scripteventchainlimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:92
+script::ScriptLogLimit(const settings::Registry&)	function	script	script-scriptloglimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:99
+script::ScriptOnError(const settings::Registry&)	function	script	script-scriptonerror-const-settings-registry-amp	script.md	engine/script/script_settings.h:107
+script::ScriptPartitions(const settings::Registry&)	function	script	script-scriptpartitions-const-settings-registry-amp	script.md	engine/script/script_settings.h:113
+script::ScriptTaskStates(const settings::Registry&)	function	script	script-scripttaskstates-const-settings-registry-amp	script.md	engine/script/script_settings.h:120
+script::ScriptTaskQueueLimit(const settings::Registry&)	function	script	script-scripttaskqueuelimit-const-settings-registry-amp	script.md	engine/script/script_settings.h:127
+script::ScriptTaskArgBytes(const settings::Registry&)	function	script	script-scripttaskargbytes-const-settings-registry-amp	script.md	engine/script/script_settings.h:134
+script::ScriptHotReload(const settings::Registry&)	function	script	script-scripthotreload-const-settings-registry-amp	script.md	engine/script/script_settings.h:141
+script::ScriptDebugPauseAll(const settings::Registry&)	function	script	script-scriptdebugpauseall-const-settings-registry-amp	script.md	engine/script/script_settings.h:148
+script::ScriptProfile(const settings::Registry&)	function	script	script-scriptprofile-const-settings-registry-amp	script.md	engine/script/script_settings.h:155
+script::ScriptDevDirectory(const settings::Registry&)	function	script	script-scriptdevdirectory-const-settings-registry-amp	script.md	engine/script/script_settings.h:162
+script::ScriptPartitionMemory(const settings::Registry&)	function	script	script-scriptpartitionmemory-const-settings-registry-amp	script.md	engine/script/script_settings.h:169
 script::kMaxPartitions	variable	script	script-kmaxpartitions	script.md	engine/script/script_world.h:22
 script::PartitionOf(u64,u32)	function	script	script-partitionof-u64-u32	script.md	engine/script/script_world.h:34
 script::ScriptWorldConfig	struct	script	script-scriptworldconfig	script.md	engine/script/script_world.h:40
@@ -2440,6 +2448,7 @@ script::ScriptWorld::Debugger() const	function	script	script-scriptworld-debugge
 script::ScriptWorld::SetProfiling(bool)	function	script	script-scriptworld-setprofiling-bool	script.md	engine/script/script_world.h:348
 script::ScriptWorld::Profiling() const	function	script	script-scriptworld-profiling-const	script.md	engine/script/script_world.h:353
 script::ScriptWorld::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptworld-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_world.h:363
+script::ScriptWorld::JitTotals(JitStats*)	function	script	script-scriptworld-jittotals-jitstats-star	script.md	engine/script/script_world.h:372
 script::kMaxServiceExtensions	variable	script	script-kmaxserviceextensions	script.md	engine/script/service_slots.h:13
 script::ServiceSlot	enum	script	script-serviceslot	script.md	engine/script/service_slots.h:18
 script::kServicePhysics	enumerator	script	script-kservicephysics	script.md	engine/script/service_slots.h:20

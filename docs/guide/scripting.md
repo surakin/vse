@@ -603,3 +603,33 @@ not saved: closures, userdata, coroutines and any field not marked; a script reb
 - **Replay.** `script_media::ReplayLog` records, for every tick, the `InputSnapshot` the scripts read and the world's hash after the tick (`Record`), writes and reads them
   (`Serialize`, `Deserialize`: a version, a count, rising ticks and every snapshot are checked) and gives snapshots back (`Snapshot`). Feed them to a fresh world; a session
   recorded at 16 threads replays to the same hashes at 1, 2, 3, 7 and 16, and the reverse (`tests/script_media/script_media_test.cpp`).
+
+## JIT or interpreter
+
+LuaJIT can compile hot loops to machine code. The engine treats that as a platform and trust choice, not a language feature scripts rely on: every script gives the same results
+in every mode, and only the speed differs (`tests/script/script_jit_test.cpp`; the whole phase also runs on a build without the compiler, below).
+
+- **Budget mode decides first.** A *budgeted* world (`script.budget = budgeted`, the default) runs the interpreter with a count hook, so every call can be limited in instructions and time;
+  it never uses the JIT. A *trusted* world (`script.budget = trusted`) may use the JIT and refuses instruction and time budgets with `Unsupported` (a count hook cannot stop compiled
+  loops); memory is limited in both.
+- **`script.jit`** (default true; env `ENGINE_SCRIPT_JIT`, flag `--script-jit`, restart required) turns the compiler off for a trusted world: it then runs the interpreter with no
+  instruction budget. `luajit::OptionsFromSettings` reads it with `script.budget`, `script.jit_code_kb` and `script.random_seed`.
+- **`ENGINE_LUAJIT_JIT`** (CMake option, default ON) builds LuaJIT without the compiler (`LUAJIT_DISABLE_JIT`) for platforms that forbid run-time code generation. `luajit::JitCompiledIn()`
+  tells which build this is; `Backend::Caps().jit` and `State::Caps().jit` report what a state really does (budgeted: false; `script.jit` off: false; compiled out: false).
+- **Machine code per state.** Every partition is its own compiler. `script.jit_code_kb` (default 0, LuaJIT's 2048) caps the machine code of one state (LuaJIT's `maxmcode`); a state always
+  has one 64 KB area, so values below 64 act as 64, and a state that reaches the cap flushes its traces and goes on correctly. `State::JitReport(&stats)` gives one state's `JitStats` (enabled,
+  traces, code bytes) and `ScriptRuntime::JitTotals(&stats)` adds up the partitions that are not held. In the measurement below a state holding 300 hot loops keeps about 159 KB, so 256 partitions
+  keep about 40 MB uncapped.
+- **What it costs** (the spec's loop of 2e8 iterations, Debug build of the engine, Linux x86-64, `script_tests "[.jit_bench]"`): the JIT 467 ms; the interpreter without a budget 865 ms; the interpreter with
+  the count hook 1,262 to 1,703 ms between runs. Recommendation: shipped game scripts run trusted with the JIT (`script.budget = trusted`); mods and other untrusted scripts run budgeted;
+  a platform with no JIT runs trusted with `script.jit` off or a build with `ENGINE_LUAJIT_JIT=OFF`.
+
+| Platform | Mode | Notes |
+|---|---|---|
+| Linux x86-64 | JIT available, budgeted by default | built and tested (plain, asan, tsan, and the no-JIT build) |
+| Windows x64, macOS x86-64 | JIT available | Days 473 and 474 build and test them |
+| Android | JIT allowed | decided in Phase 29 |
+| iOS, consoles | interpreter only | `ENGINE_LUAJIT_JIT=OFF` (Phases 29 and 30) |
+
+**The `script_nojit` flavor.** The preset `linux-nojit` (tree `build-nojit`) configures `-DENGINE_LUAJIT_JIT=OFF`; the phase runs on it with
+`scripts/test-phase.sh 27 --no-display --build-dir build-nojit`. Tests that expect the compiler check `luajit::JitCompiledIn()` first.

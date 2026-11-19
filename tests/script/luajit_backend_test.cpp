@@ -416,7 +416,7 @@ TEST_CASE("LuaJIT sandbox: a trusted state refuses instruction and time budgets,
     luajit::LuaJitOptions trusted;
     trusted.budgeted = false;
     UniquePtr<Backend> backend = luajit::CreateLuaJitBackend(trusted);
-    CHECK(backend->Caps().jit);
+    CHECK(backend->Caps().jit == luajit::JitCompiledIn());  // false in the script_nojit build
     CHECK_FALSE(backend->Caps().instruction_budget);
     CHECK(backend->Caps().memory_budget);
     UniquePtr<State> state = Fresh(*backend, "function f() return 1 end");

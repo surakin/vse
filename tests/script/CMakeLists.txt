@@ -27,6 +27,7 @@ set(SCRIPT_TEST_SOURCES
   script_reload_test.cpp  # Day 464: hot reload
   script_debug_test.cpp  # Day 465: errors, console, profiler, debugger
   script_persist_test.cpp  # Day 469: saved script state
+  script_jit_test.cpp  # Day 470: the JIT seam
   script_asset_test.cpp  # Day 462: the SCRP blob and the script minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/script_source.cpp  # Day 462
 )

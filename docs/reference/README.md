@@ -18,7 +18,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
-| [Scripting](script.md) | 27 | 817 |
+| [Scripting](script.md) | 27 | 826 |
 | [Script physics bindings](script_physics.md) | 4 | 68 |
 | [Script audio and input bindings](script_media.md) | 5 | 132 |
 | [Platform: OS Services](platform-os.md) | 8 | 83 |

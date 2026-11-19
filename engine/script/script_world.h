@@ -362,6 +362,15 @@ public:
     /// - Ownership: `out` is borrowed for the call.
     Outcome ProfileReport(Vector<ProfileEntry>* out, usize top);
 
+    /// Adds up what the JIT compilers of the partitions that are not held have done: how many states compile, the
+    /// traces and the bytes of machine code.
+    ///
+    /// - Param totals: receives the sums (reset first); `enabled` is true when any state compiles.
+    /// - Returns: `Ok`, or `Unsupported` when the language has no JIT.
+    /// - Thread-safety: thread-compatible: between ticks.
+    /// - Ownership: `totals` is borrowed for the call.
+    Outcome JitTotals(JitStats* totals);
+
 private:
     friend class PartitionLease;
     void ReleaseSlot(PartitionSlot* slot);

@@ -673,6 +673,38 @@ bool Hotter(const ProfileEntry& a, const ProfileEntry& b)
 
 }  // namespace
 
+Outcome ScriptWorld::JitTotals(JitStats* totals)
+{
+    *totals = JitStats();
+    Outcome result;
+    for (u32 p = 0; p < partition_count_; ++p)
+    {
+        PartitionSlot* slot = slots_[p].Get();
+        usize expected = 0;
+        const usize token = ThisThread::Id().Hash() | 1u;
+        if (!slot->owner.CompareExchangeStrong(expected, token, MemoryOrder::AcqRel, MemoryOrder::Acquire))
+        {
+            continue;
+        }
+        if (slot->state.Get() != nullptr)
+        {
+            slot->state->Acquire();
+            JitStats mine;
+            const Outcome got = slot->state->JitReport(&mine);
+            slot->state->HandOver();
+            if (!got.IsOk())
+            {
+                result = Outcome(got.status, got.message.View());
+            }
+            totals->enabled = totals->enabled || mine.enabled;
+            totals->traces += mine.traces;
+            totals->code_bytes += mine.code_bytes;
+        }
+        slot->owner.Store(0, MemoryOrder::Release);
+    }
+    return result;
+}
+
 Outcome ScriptWorld::ProfileReport(Vector<ProfileEntry>* out, usize top)
 {
     out->Clear();
