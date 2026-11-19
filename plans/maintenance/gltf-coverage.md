@@ -2,7 +2,7 @@
 
 Not a numbered phase. Asked by the user on 2026-11-19, after the list of what glTF 2.0 holds that the engine cannot import: "make a plan to
 implement morph targets, vertex colours, punctual lights, dropped occlusion, metallic roughness and emissive textures". Planned the same
-day on the Windows PC. **Not started; the decisions below wait for the user's answer.**
+day on the Windows PC. **The eight decisions below were confirmed by the user as written (2026-11-19); Day 1 may start.**
 
 ## Why
 
@@ -34,7 +34,7 @@ A typical exported model loses these today, so it looks wrong or does not import
 - **Shaders** are minted per target on its machine: SPIR-V anywhere `slangc` is, DXIL on the PC, Metal on the Mac (`shaders/README.md`).
   A shader changed on one machine fails the other targets' staleness tests until they are minted (the unlit-materials series, 2026-11-19).
 
-## Decisions (proposed; the user confirms before Day 1)
+## Decisions (confirmed by the user, 2026-11-19)
 
 1. **The three maps are slots with default textures, not permutations.** `metallic_roughness_tex` (white), `occlusion_tex` (white),
    `emissive_tex` (white, times an `emissive_color` that defaults to black): every G-buffer template has them, a material that leaves one
