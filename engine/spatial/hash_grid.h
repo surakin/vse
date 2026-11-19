@@ -320,7 +320,17 @@ template <class Visit> TraversalStats HashGrid::ForEachOverlappingPair(Visit&& v
             }
         }
     }
-    // The oversized items against everything (and each other once).
+    // The oversized items against everything (and each other once). The list position of each oversized slot, made once
+    // (container audit Day 8: each oversized pair searched the list for it).
+    Vector<u32> oversized_at;
+    if (oversized_.Size() > 1)
+    {
+        oversized_at.Resize(slots_.Size());
+        for (usize i = 0; i < oversized_.Size(); ++i)
+        {
+            oversized_at[oversized_[i]] = static_cast<u32>(i);
+        }
+    }
     for (usize i = 0; i < oversized_.Size(); ++i)
     {
         const Item& big = slots_[oversized_[i]].item;
@@ -334,12 +344,7 @@ template <class Visit> TraversalStats HashGrid::ForEachOverlappingPair(Visit&& v
             if (other.Oversized())
             {
                 // Each oversized pair once: from the one earlier in the list.
-                usize at = 0;
-                while (oversized_[at] != s)
-                {
-                    ++at;
-                }
-                if (at < i)
+                if (oversized_at[s] < i)
                 {
                     continue;
                 }

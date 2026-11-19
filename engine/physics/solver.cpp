@@ -540,6 +540,7 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
     stats_ = SolverStats();
     // The constraints in the order of their colliders, whatever the order of the input.
     Vector<u32> order;
+    order.Reserve(inputs.Size());
     for (usize i = 0; i < inputs.Size(); ++i)
     {
         order.Push(static_cast<u32>(i));
@@ -570,6 +571,7 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
     Vector<BodyState> states;
     Vector<i32> state_of;
     const u32 slots = world->Stats().body_slots;
+    state_of.Reserve(slots);
     for (u32 i = 0; i < slots; ++i)
     {
         state_of.Push(-1);
@@ -973,11 +975,7 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
              }
              return x.feature < y.feature;
          });
-    cache_.Clear();
-    for (usize i = 0; i < next_cache_.Size(); ++i)
-    {
-        cache_.Push(next_cache_[i]);
-    }
+    cache_.Swap(next_cache_);  // next_cache_ is cleared before its next use (container audit Day 8: a copy every step)
 }
 
 void ContactSolver::SaveCache(SnapshotOut* out) const
@@ -1086,11 +1084,7 @@ void ContactSolver::ForgetBody(BodyId body)
             next_cache_.Push(e);
         }
     }
-    cache_.Clear();
-    for (usize i = 0; i < next_cache_.Size(); ++i)
-    {
-        cache_.Push(next_cache_[i]);
-    }
+    cache_.Swap(next_cache_);  // next_cache_ is cleared before its next use (container audit Day 8: a copy every step)
 }
 
 void ContactSolver::Clear()

@@ -331,11 +331,7 @@ void PairTracker::Finish(PairEvents* events)
             merged_.Push(begin_[b++]);
         }
     }
-    adjacent_.Resize(0);
-    for (usize k = 0; k < merged_.Size(); ++k)
-    {
-        adjacent_.Push(merged_[k]);
-    }
+    adjacent_.Swap(merged_);  // merged_ is cleared before its next use (container audit Day 8: a copy every update)
     for (usize k = 0; k < begin_.Size(); ++k)
     {
         if (begin_[k].a < begin_[k].b)

@@ -1,5 +1,7 @@
 // The fixed-step driver and the integration (Phase 25 Day 390). Everything here uses only + - * / and Sqrt
 // (docs/guide/physics.md, "The rules of the step").
+#include "containers/hash_set.h"
+#include "int128.h"
 #include "jobs/parallel_for.h"
 #include "lang/scalar.h"
 #include "log/assert.h"
@@ -243,18 +245,18 @@ void PhysicsWorld::Step()
             }
         }
     }
-    // The body pairs of joints that keep their bodies from colliding, as sorted keys.
-    Vector<u64> connected;
+    // The body pairs of joints that keep their bodies from colliding, as a set of (low id, high id) keys: membership
+    // only, so the order of the pairs and of the work is not touched (container audit Day 7: every broad-phase pair
+    // scanned every joint).
+    HashSet<u128, HeapAllocator> connected(HeapAllocator::Default());
+    const auto pair_key = [](u64 x, u64 y) { return x < y ? (u128(x) << 64) | u128(y) : (u128(y) << 64) | u128(x); };
     for (u32 slot = 0; slot < joints_.Slots(); ++slot)
     {
         const JointRecord* joint = joints_.Find(slot, joints_.LiveGeneration(slot));
         if (joint != nullptr && !joint->desc.collide_connected && joint->desc.body_a.IsValid() &&
             joint->desc.body_b.IsValid())
         {
-            const u64 x = joint->desc.body_a.ToU64();
-            const u64 y = joint->desc.body_b.ToU64();
-            connected.Push(x < y ? x : y);
-            connected.Push(x < y ? y : x);
+            connected.Insert(pair_key(joint->desc.body_a.ToU64(), joint->desc.body_b.ToU64()));
         }
     }
     Vector<ContactInput> inputs;
@@ -314,14 +316,7 @@ void PhysicsWorld::Step()
             }
             return;
         }
-        bool joined = false;
-        for (usize k = 0; k < connected.Size(); k += 2)
-        {
-            const u64 x = ra->owner.ToU64();
-            const u64 y = rb->owner.ToU64();
-            joined = joined || (connected[k] == (x < y ? x : y) && connected[k + 1] == (x < y ? y : x));
-        }
-        if (joined)
+        if (!connected.Empty() && connected.Contains(pair_key(ra->owner.ToU64(), rb->owner.ToU64())))
         {
             return;
         }
