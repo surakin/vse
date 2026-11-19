@@ -1,7 +1,9 @@
 # One build target per sanitizer flavor (maintenance "shorter test runs", Day 1): engine_tests_plain, engine_tests_asan and
 # engine_tests_tsan. scripts/test-phase.sh builds only the flavors a run tests, so a plain run compiles no `_asan` or `_tsan`
-# object. The root CMakeLists.txt includes this file early (for engine_flavor_needs and engine_flavor_label) and calls
-# engine_add_flavor_targets() at its end, after every directory has made its targets.
+# object. The root CMakeLists.txt includes this file early (for engine_flavor_needs and engine_flavor_label). The include
+# defers engine_add_flavor_targets() to the end of the top-level directory (the last lines of this file), so it runs after
+# every directory has made its targets on every platform branch, including those that end in return() (macOS and Windows:
+# an explicit call at the root file's end missed them; shorter test runs, Day 5).
 #
 # A target belongs to a flavor by its name: one with `asan` or `tsan` as a word of it (`ecs_tests_asan`, `tsan_canary`) is that flavor's,
 # every other target of ours is plain's. Only the targets under our own directories count (third_party/ comes in through the
@@ -99,3 +101,6 @@ function(engine_add_flavor_targets)
   endforeach()
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/engine_flavor_targets.txt" CONTENT "${lines}")
 endfunction()
+
+# Runs when the top-level CMakeLists.txt is done, however it ends (a platform branch's return() included).
+cmake_language(DEFER DIRECTORY "${CMAKE_SOURCE_DIR}" CALL engine_add_flavor_targets)

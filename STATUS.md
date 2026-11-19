@@ -125,7 +125,7 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
     - Series review: 4 findings (1 fixed, 2 declined, 1 no change). Windows and macOS wait.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
-**Shorter test runs: Days 1-4 of 5 done (2026-11-19, Linux)** ([plans/maintenance/test-time.md](plans/maintenance/test-time.md); the user confirmed the decisions).
+**Shorter test runs: Days 1-4 of 5 done on Linux, Day 5's Mac half done (2026-11-19)** ([plans/maintenance/test-time.md](plans/maintenance/test-time.md); the user confirmed the decisions).
 - **Day 1:** `scripts/test-phase.sh` builds only the chosen flavors' targets (`engine_tests_plain`, `_asan`, `_tsan`), and in
   parallel. After touching `gbuffer.h` that is 21 s for plain, against 357 s before. `test_phase_script_flavor_targets` checks that every
   test's programs are built by its flavor's target. Ninja and sccache are measured: Ninja rebuilds about 40% faster, and switching the
@@ -145,7 +145,17 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 - **Window addendum (the user's choice):** the demos run on Wayland only in ordinary runs; their X11 copies, and a 1,000-frame
   `script_demo_window_*_long`, are soak tests. The scripted game's window run is 120 frames. The window layer and the RHI presentation
   tests keep both backends. The saving is not measured yet: the desktop was in use.
-- **Next:** Day 5 is on the PC and the Mac.
+- **Day 5, the Mac:** the root `CMakeLists.txt`'s macOS and Windows branches returned before `engine_add_flavor_targets()`, so neither had
+  `engine_tests_plain`. It is now one deferred call in `cmake/EngineFlavorTargets.cmake`, not yet configured on the PC. The script and its ctests pass under
+  `/bin/bash` 3.2, as do `--start-day` and `--soak`.
+  - Before and after, `--affected --crashes --no-display` over every phase: 946 s and then 712 s of ctest wall time. After:
+    `ran 4163 of 11291 tests (phases: all; flavors: plain; display: excluded; crash tests: included; soak: excluded) in 712 s`, with only the
+    known voice-cost snapshot failing.
+  - Nine plain tests take over 30 s alone on this Debug Mac (up to 111 s). Whether to give them a Mac count is the user's call
+    (`KNOWN-ISSUES.md`). The short hostile-scripts form fails whenever its soak form runs beside it (3 of 3 `27 --soak` runs, `ticks 2`). It is
+    recorded as failing.
+  - Review: 7 findings; 5 fixed, 1 recorded (the Windows configure, for the PC), 1 declined.
+- **Next:** Day 5's PC half.
 
 **Unlit materials (2026-11-19, Linux)** ([plans/maintenance/unlit-materials.md](plans/maintenance/unlit-materials.md)). The glTF importer accepts `KHR_materials_unlit` (it refused it) and sets `renderer::kMaterialFlagUnlit` in the material's `flags`; the lighting and point-light passes show such a pixel as its base colour. Found by the user's `.glb` in the model viewer, which now opens and looks right. SPIR-V re-minted here; DXIL and Metal wait for the PC and the Mac.
 

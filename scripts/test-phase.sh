@@ -409,6 +409,11 @@ if [ "$dry" = 0 ] && [ "$do_build" = 1 ]; then
     # from an older checkout keeps its engine_flavor_targets.txt, so the generated files are what is asked).
     if ! grep -qs "engine_tests_plain" "$build/Makefile" "$build/build.ninja"; then
         cmake "$build" > /dev/null || { echo "test-phase: re-running CMake in $build failed; nothing ran" >&2; exit 1; }
+        # Still no rule: the configure never made the targets (engine_add_flavor_targets, cmake/EngineFlavorTargets.cmake).
+        if [ -f "$build/build.ninja" ] || [ -f "$build/Makefile" ]; then
+            grep -qs "engine_tests_plain" "$build/Makefile" "$build/build.ninja" ||
+                { echo "test-phase: $build has no engine_tests_plain target after CMake ran again: engine_add_flavor_targets() (cmake/EngineFlavorTargets.cmake) did not run for this configuration; nothing ran" >&2; exit 1; }
+        fi
     fi
     cmake --build "$build" ${build_parallel[@]+"${build_parallel[@]}"} --target "${build_targets[@]}" ||
         { echo "test-phase: the build failed; nothing ran" >&2; exit 1; }

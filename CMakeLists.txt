@@ -569,6 +569,3 @@ add_subdirectory(tests/model_viewer)  # the model viewer's camera (maintenance, 
 add_subdirectory(tests/docgen)
 add_subdirectory(tests/phase_labels)
 add_subdirectory(tests/test_phase_script)
-
-# After every directory: the per-flavor build targets (cmake/EngineFlavorTargets.cmake).
-engine_add_flavor_targets()
