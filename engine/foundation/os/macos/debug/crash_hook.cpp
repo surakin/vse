@@ -6,12 +6,21 @@
 // records, the crashed thread found among the task's threads by its registers, and the stack walked from its frame
 // pointer, every read through vm_read_overwrite so a bad pointer cannot fault the handler. No Linux-style signal
 // recorder is installed.
+//
+// A host's own handlers (crash handler chaining Day 3): Breakpad would _exit after the dump, so a handler the host
+// installed before the crash handler never ran. NoteHostSignalHandlers keeps them; after the report, when the host has
+// a handler for the crash's signal, ArmHostRelay puts a one-shot relay on that signal and sets the vendored Breakpad's
+// local switch (breakpad_mac_continue_after_dump, VENDORED.md), so Breakpad writes the envelope and does not exit: a
+// Mach exception goes back to the kernel unhandled, which delivers the BSD signal on the faulting thread, and an abort
+// returns from Breakpad's SIGABRT handler into a SIGABRT this file raised and held. The relay restores the default
+// action and calls the host's handler once, with the signal's own siginfo and context; then the fault ends the process.
 #include "debug/crash_event_platform.h"
 #include "debug/crash_handler.h"
 #include "debug/thread_info.h"
 #include "os/macos/debug/thread_id_macos.h"
 
 #include "build_defs.h"
+#include "cstr/mem_ops.h"
 #include "sync/atomic.h"
 
 #include <mach/mach.h>
@@ -21,6 +30,10 @@
 #if ENGINE_ARCH_ARM64
 #include <sys/_types/_ucontext64.h>
 #endif
+
+// The vendored Breakpad's local switch: nonzero, set during the dump callback, keeps it from _exiting after the dump
+// (third_party/sentry_native/VENDORED.md).
+extern "C" volatile int breakpad_mac_continue_after_dump;
 
 namespace engine_placeholder::debug
 {
@@ -36,6 +49,13 @@ Atomic<bool> g_reported{false};
 Atomic<bool> g_reporting{false};
 detail::CrashEvent g_event;  // filled by the one report
 char g_thread_name[64];      // the crashed thread's name, when the report runs on Breakpad's thread
+
+// The host's handlers from before the crash library's (NoteHostSignalHandlers), called once by the relay after the
+// dump.
+constexpr int kHostSignals[] = {SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP, SIGABRT};
+struct sigaction g_host[NSIG];
+bool g_host_noted[NSIG];
+Atomic<bool> g_host_called{false};
 
 // SIGNAL-SAFE-BEGIN
 // The registers the report needs, from either architecture's context.
@@ -279,9 +299,137 @@ bool FindCrashedThread(Registers& r, u64* id)
     return found;
 }
 
-// The task's exception ports for the fault types, saved while the report runs on Breakpad's thread (below).
+// The fault types Breakpad takes as Mach exceptions (its ports are cleared and restored around the report, below).
 constexpr exception_mask_t kFaultMask = EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION | EXC_MASK_ARITHMETIC |
                                         EXC_MASK_BREAKPOINT;
+
+// Whether the kernel delivers `signal_number` again by itself when the handler returns: a hardware fault (the
+// faulting instruction runs again). An abort, a breakpoint (the PC is already past int3) and anything sent with
+// kill/raise (macOS: si_code SI_USER and up, 0x10001 and above, or 0) are not repeated.
+bool RepeatsByItself(int signal_number, const siginfo_t* info)
+{
+    if (info == nullptr || info->si_code <= 0 || info->si_code >= SI_USER)
+    {
+        return false;
+    }
+    return signal_number == SIGSEGV || signal_number == SIGBUS || signal_number == SIGILL || signal_number == SIGFPE;
+}
+
+// The signal relay: the default action back first (a fault inside the host's handler, or the fault running again after
+// it returns, then ends the process), then the host's handler, once per process; a signal nothing repeats is raised
+// again afterwards, so the process always ends.
+void HostRelay(int signal_number, siginfo_t* info, void* user_context)
+{
+    struct sigaction dfl;
+    MemSet(&dfl, 0, sizeof(dfl));
+    dfl.sa_handler = SIG_DFL;
+    ::sigaction(signal_number, &dfl, nullptr);
+    breakpad_mac_continue_after_dump = 0;  // used: a later dump in this process ends it as Breakpad always does
+    const bool first = signal_number > 0 && signal_number < NSIG && g_host_noted[signal_number] &&
+                       !g_host_called.Exchange(true, MemoryOrder::AcqRel);
+    if (first)
+    {
+        // A fault inside the host's handler must not reach Breakpad again (on the abort path it is still installed):
+        // with the task's ports for the fault types cleared, it goes to the kernel and ends the process. The dump is
+        // written already.
+        ::task_set_exception_ports(::mach_task_self(), kFaultMask, MACH_PORT_NULL, EXCEPTION_DEFAULT,
+                                   THREAD_STATE_NONE);
+        const struct sigaction& host = g_host[signal_number];
+        if ((host.sa_flags & SA_SIGINFO) != 0)
+        {
+            if (host.sa_sigaction != nullptr)
+            {
+                host.sa_sigaction(signal_number, info, user_context);
+            }
+        }
+        else if (host.sa_handler != SIG_DFL && host.sa_handler != SIG_IGN && host.sa_handler != nullptr)
+        {
+            host.sa_handler(signal_number);
+        }
+    }
+    if (!RepeatsByItself(signal_number, info))
+    {
+        // Nothing delivers it again: raise it once more, now with the default action.
+        ::raise(signal_number);
+    }
+}
+
+// After the report: puts the relay on each of `signals` the host had a handler for and, when there is one, sets
+// Breakpad's switch so the process goes on to the signal instead of exiting. An abort (`raise_abort`, on the crashing
+// thread inside Breakpad's SIGABRT handler, where SIGABRT is blocked) also raises the SIGABRT the relay will take once
+// that handler has returned, after the envelope is written.
+void ArmHostRelay(const int* signals, usize count, bool raise_abort)
+{
+    if (g_host_called.Load(MemoryOrder::Acquire))
+    {
+        return;
+    }
+    bool armed = false;
+    for (usize i = 0; i < count; ++i)
+    {
+        const int signal_number = signals[i];
+        if (!g_host_noted[signal_number])
+        {
+            continue;
+        }
+        struct sigaction relay;
+        MemSet(&relay, 0, sizeof(relay));
+        relay.sa_sigaction = &HostRelay;
+        // The host's own flags (its stack choice). For a hardware fault also SA_NODEFER, as Linux's recorder has: a
+        // fault of the same kind inside the host's handler is then delivered (to the default action the relay put back)
+        // instead of running the blocked faulting instruction again forever. An abort keeps the usual deferral, as on
+        // Linux, where the recorder holds a raised signal: a raise inside the host's SIGABRT handler waits until it
+        // returns.
+        const bool fault = signal_number != SIGABRT;
+        relay.sa_flags = (g_host[signal_number].sa_flags | SA_SIGINFO | (fault ? SA_NODEFER : 0)) & ~SA_RESETHAND;
+        relay.sa_mask = g_host[signal_number].sa_mask;
+        armed = ::sigaction(signal_number, &relay, nullptr) == 0 || armed;
+    }
+    if (!armed)
+    {
+        return;  // no host handler for this crash: Breakpad exits after the dump, as without chaining
+    }
+    breakpad_mac_continue_after_dump = 1;
+    if (raise_abort)
+    {
+        ::raise(SIGABRT);
+    }
+}
+
+// The signals the kernel may deliver for a Mach exception of the given reason (an access fault is SIGSEGV or SIGBUS by
+// the kind of mapping; the guess in AccessReason is not the kernel's rule). A reason this file could not classify (an
+// unknown trap number, an alignment fault, a thread state it could not read: Abort) arms them all.
+usize SignalsFor(CrashReason reason, bool thread_known, int* out)
+{
+    if (!thread_known || reason == CrashReason::Abort)
+    {
+        out[0] = SIGSEGV;
+        out[1] = SIGBUS;
+        out[2] = SIGILL;
+        out[3] = SIGFPE;
+        out[4] = SIGTRAP;
+        return 5;
+    }
+    switch (reason)
+    {
+    case CrashReason::AccessViolation:
+    case CrashReason::BusError:
+    case CrashReason::StackOverflow:
+        out[0] = SIGSEGV;
+        out[1] = SIGBUS;
+        return 2;
+    case CrashReason::IllegalInstruction: out[0] = SIGILL; return 1;
+    case CrashReason::ArithmeticFault: out[0] = SIGFPE; return 1;
+    default:
+        out[0] = SIGSEGV;
+        out[1] = SIGBUS;
+        out[2] = SIGILL;
+        out[3] = SIGFPE;
+        out[4] = SIGTRAP;
+        return 5;
+    }
+}
+
 struct SavedPorts
 {
     exception_mask_t masks[EXC_TYPES_COUNT];
@@ -367,11 +515,36 @@ void ReportCrashFromMachContext(const void* user_context)
     if (on_handler_thread)
     {
         RestoreTaskFaultPorts();
+        int signals[5];
+        const usize count = SignalsFor(event.reason, event.thread_known, signals);
+        ArmHostRelay(signals, count, false);
+    }
+    else
+    {
+        const int abort_signal[1] = {SIGABRT};
+        ArmHostRelay(abort_signal, 1, true);
     }
     g_reporting.Store(false, MemoryOrder::Release);
 }
 
 // SIGNAL-SAFE-END
+
+void NoteHostSignalHandlers()
+{
+    g_host_called.Store(false, MemoryOrder::Release);
+    breakpad_mac_continue_after_dump = 0;
+    for (int signal_number : kHostSignals)
+    {
+        struct sigaction current;
+        MemSet(&current, 0, sizeof(current));
+        const bool read = ::sigaction(signal_number, nullptr, &current) == 0;
+        const bool ours = (current.sa_flags & SA_SIGINFO) != 0 && current.sa_sigaction == &HostRelay;
+        const bool none = (current.sa_flags & SA_SIGINFO) == 0 &&
+                          (current.sa_handler == SIG_DFL || current.sa_handler == SIG_IGN);
+        g_host_noted[signal_number] = read && !ours && !none;
+        g_host[signal_number] = current;
+    }
+}
 
 bool InstallCrashEventHook(CrashEventFn fn)
 {
@@ -394,6 +567,10 @@ bool CrashReportInProgress()
 void RemoveCrashEventHook()
 {
     g_event_fn.Store(nullptr, MemoryOrder::Release);
+    for (int signal_number : kHostSignals)
+    {
+        g_host_noted[signal_number] = false;  // the library's close puts the host's SIGABRT handler back
+    }
     g_reported.Store(false, MemoryOrder::Release);
 }
 

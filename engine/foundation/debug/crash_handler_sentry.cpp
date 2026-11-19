@@ -319,8 +319,9 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options)
     sentry_options_set_on_crash(sentry, &OnLibraryCrash, nullptr);  // the report on macOS (above)
 #endif
 
-#if ENGINE_PLATFORM_LINUX
-    detail::NoteHostSignalHandlers();  // before the library replaces them: called after the dump (crash_signal.cpp)
+#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_MACOS
+    detail::NoteHostSignalHandlers();  // before the library replaces them: called after the dump (crash_signal.cpp,
+                                       // os/macos/debug/crash_hook.cpp)
 #endif
     if (sentry_init(sentry) != 0)
     {  // takes ownership of `sentry`

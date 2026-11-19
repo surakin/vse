@@ -282,6 +282,265 @@ TEST_CASE("macOS: a state provider that faults inside the report ends the proces
     CHECK(envelopes.Size() >= 1);
 }
 
+// ---- a host's handler installed before the crash handler (crash handler chaining, Day 3)
+// ----------------------------------------------------------------------------------------------
+
+namespace
+{
+
+// A host's own crash handler, installed before the crash handler, as a host with its own crash log installs it: a
+// marker, the default action back, the signal raised again.
+void MacHostSegvHandler(int signal_number)
+{
+    static const char kText[] = "HOST-SEGV-HANDLER-RAN\n";
+    os::Write(2, kText, sizeof(kText) - 1);
+    os::SetSignalHandler(signal_number, SIG_DFL);
+    ::raise(signal_number);
+}
+
+void MacHostAbrtHandler(int signal_number)
+{
+    static const char kText[] = "HOST-ABRT-HANDLER-RAN\n";
+    os::Write(2, kText, sizeof(kText) - 1);
+    os::SetSignalHandler(signal_number, SIG_DFL);
+    ::raise(signal_number);
+}
+
+void MacInstallHostHandler(int signal_number, void (*fn)(int))
+{
+    struct sigaction action;
+    MemSet(&action, 0, sizeof(action));
+    action.sa_handler = fn;
+    sigemptyset(&action.sa_mask);
+    ::sigaction(signal_number, &action, nullptr);
+}
+
+// The address a test faults at: not null, and inside __PAGEZERO, so the kernel delivers SIGSEGV with it as si_addr.
+constexpr u64 kMacFaultAddress = 0x1238;
+
+void MacHostInfoHandler(int, siginfo_t* info, void*)
+{
+    if (info != nullptr && reinterpret_cast<u64>(info->si_addr) == kMacFaultAddress)
+    {
+        static const char kText[] = "HOST-SIGINFO-ADDRESS-OK\n";
+        os::Write(2, kText, sizeof(kText) - 1);
+    }
+    else
+    {
+        static const char kText[] = "HOST-SIGINFO-ADDRESS-WRONG\n";
+        os::Write(2, kText, sizeof(kText) - 1);
+    }
+    // Returns: the fault runs again under the default action and ends the process.
+}
+
+void MacHostFaultingHandler(int)
+{
+    static const char kText[] = "HOST-HANDLER-ENTERED\n";
+    os::Write(2, kText, sizeof(kText) - 1);
+    *reinterpret_cast<volatile int*>(kMacFaultAddress) = 1;  // the host's handler itself faults
+}
+
+// The report, then the host's handler once, the envelope written before it, and the original signal ends the child.
+void CheckHostRanAfterDump(const ChildResult& r, const char* directory, const char* marker, int signal_number)
+{
+    const StringView err = debug_test::StderrView(r);
+    INFO("child stderr: " << Cat(err).CStr());
+    CHECK(err.Contains("=== CRASH REPORT ==="));
+    CHECK(err.Find("=== END OF REPORT ===") < err.Find(StringView(marker)));
+    CHECK(debug_test::CountOf(err, marker) == 1);
+    CHECK(r.terminated);
+    CHECK(r.native_code == signal_number);
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(directory, ".envelope", &envelopes);
+    REQUIRE(envelopes.Size() == 1);
+    const Text content = debug_test::ReadWholeFile(envelopes[0]);
+    crash_extract::Minidump dump;
+    CHECK(crash_extract::FindMinidump(content.CStr(), content.Length(), &dump) == crash_extract::EnvelopeResult::Ok);
+}
+
+}  // namespace
+
+ENGINE_DEATH_TEST_FN(dt_mac_host_before)
+{
+    MacInstallHostHandler(SIGSEGV, &MacHostSegvHandler);  // installed before the crash handler
+    InstallInto(argument);
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("macOS: a handler installed before the crash handler runs once, after the report and the dump",
+          "[crash][crashreport][death][debug][macos]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_mac_host_before", dir.Path());
+    CheckHostRanAfterDump(r, dir.Path(), "HOST-SEGV-HANDLER-RAN", SIGSEGV);
+}
+
+ENGINE_DEATH_TEST_FN(dt_mac_host_two_signals_segv)
+{
+    MacInstallHostHandler(SIGSEGV, &MacHostSegvHandler);
+    MacInstallHostHandler(SIGABRT, &MacHostAbrtHandler);
+    InstallInto(argument);
+    InjectFault(FaultKind::NullWrite);
+}
+
+ENGINE_DEATH_TEST_FN(dt_mac_host_two_signals_abrt)
+{
+    MacInstallHostHandler(SIGSEGV, &MacHostSegvHandler);
+    MacInstallHostHandler(SIGABRT, &MacHostAbrtHandler);
+    InstallInto(argument);
+    InjectFault(FaultKind::Abort);
+}
+
+TEST_CASE("macOS: earlier handlers on two signals: each runs for its own signal only",
+          "[crash][crashreport][death][debug][macos]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    {
+        TempDir dir;
+        const ChildResult r = RunCrashChild("dt_mac_host_two_signals_segv", dir.Path());
+        CheckHostRanAfterDump(r, dir.Path(), "HOST-SEGV-HANDLER-RAN", SIGSEGV);
+        CHECK_FALSE(debug_test::StderrView(r).Contains("HOST-ABRT-HANDLER-RAN"));
+    }
+    {
+        TempDir dir;
+        const ChildResult r = RunCrashChild("dt_mac_host_two_signals_abrt", dir.Path());
+        CheckHostRanAfterDump(r, dir.Path(), "HOST-ABRT-HANDLER-RAN", SIGABRT);
+        CHECK_FALSE(debug_test::StderrView(r).Contains("HOST-SEGV-HANDLER-RAN"));
+    }
+}
+
+ENGINE_DEATH_TEST_FN(dt_mac_host_siginfo)
+{
+    struct sigaction action;
+    MemSet(&action, 0, sizeof(action));
+    action.sa_sigaction = &MacHostInfoHandler;
+    action.sa_flags = SA_SIGINFO;
+    sigemptyset(&action.sa_mask);
+    ::sigaction(SIGSEGV, &action, nullptr);
+    InstallInto(argument);
+    *reinterpret_cast<volatile int*>(kMacFaultAddress) = 1;
+}
+
+TEST_CASE("macOS: an earlier SA_SIGINFO handler gets the fault's siginfo, with its address, on the faulting thread",
+          "[crash][crashreport][death][debug][macos]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_mac_host_siginfo", dir.Path());
+    CheckHostRanAfterDump(r, dir.Path(), "HOST-SIGINFO-ADDRESS-OK", SIGSEGV);
+    CHECK_FALSE(debug_test::StderrView(r).Contains("HOST-SIGINFO-ADDRESS-WRONG"));
+}
+
+ENGINE_DEATH_TEST_FN(dt_mac_host_handler_faults)
+{
+    MacInstallHostHandler(SIGSEGV, &MacHostFaultingHandler);
+    InstallInto(argument);
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("macOS: an earlier handler that faults itself ends the process with the original signal, once",
+          "[crash][crashreport][death][debug][macos]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_mac_host_handler_faults", dir.Path());
+    CheckHostRanAfterDump(r, dir.Path(), "HOST-HANDLER-ENTERED", SIGSEGV);
+}
+
+namespace
+{
+
+void MacHostAbrtFaultingHandler(int)
+{
+    static const char kText[] = "HOST-ABRT-HANDLER-ENTERED\n";
+    os::Write(2, kText, sizeof(kText) - 1);
+    *reinterpret_cast<volatile int*>(kMacFaultAddress) = 1;  // the host's SIGABRT handler itself faults
+}
+
+}  // namespace
+
+ENGINE_DEATH_TEST_FN(dt_mac_host_abrt_handler_faults)
+{
+    os::SetSignalHandler(SIGSEGV, SIG_DFL);  // no Catch2 handler on the second fault's signal
+    os::SetSignalHandler(SIGBUS, SIG_DFL);
+    MacInstallHostHandler(SIGABRT, &MacHostAbrtFaultingHandler);
+    InstallInto(argument);
+    InjectFault(FaultKind::Abort);
+}
+
+TEST_CASE("macOS: an earlier SIGABRT handler that faults ends the process without a second dump",
+          "[crash][crashreport][death][debug][macos]")
+{
+    // On the abort path the crash library is still installed when the host's handler runs; a fault there must not
+    // reach it again (a second report and envelope), it ends the process (Day 3 review).
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_mac_host_abrt_handler_faults", dir.Path());
+    const StringView err = debug_test::StderrView(r);
+    INFO("child stderr: " << Cat(err).CStr());
+    CHECK(err.Find("=== END OF REPORT ===") < err.Find(StringView("HOST-ABRT-HANDLER-ENTERED")));
+    CHECK(debug_test::CountOf(err, "HOST-ABRT-HANDLER-ENTERED") == 1);
+    CHECK(debug_test::CountOf(err, "=== CRASH REPORT ===") == 1);
+    CHECK(r.terminated);
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(dir.Path(), ".envelope", &envelopes);
+    CHECK(envelopes.Size() == 1);
+}
+
+ENGINE_DEATH_TEST_FN(dt_mac_host_reinstall)
+{
+    MacInstallHostHandler(SIGSEGV, &MacHostSegvHandler);
+    InstallInto(argument);
+    UninstallCrashHandler();
+    InstallInto(argument);
+    CrashHandlerOptions again;
+    again.dump_directory = argument;
+    if (InstallCrashHandler(again) != CrashHandlerResult::AlreadyInstalled)
+    {
+        static const char kText[] = "SECOND-INSTALL-NOT-REFUSED\n";
+        os::Write(2, kText, sizeof(kText) - 1);
+    }
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("macOS: install, uninstall, install: the earlier handler runs once, and a second install does not chain to "
+          "itself",
+          "[crash][crashreport][death][debug][macos]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_mac_host_reinstall", dir.Path());
+    CheckHostRanAfterDump(r, dir.Path(), "HOST-SEGV-HANDLER-RAN", SIGSEGV);
+    CHECK(debug_test::CountOf(debug_test::StderrView(r), "=== CRASH REPORT ===") == 1);
+    CHECK_FALSE(debug_test::StderrView(r).Contains("SECOND-INSTALL-NOT-REFUSED"));
+}
+
+ENGINE_DEATH_TEST_FN(dt_mac_host_abrt_only_then_fault)
+{
+    // The child runs inside a Catch2 test case, whose fatal-condition handlers are on SIGSEGV and the others: those are
+    // earlier handlers too (and are chained to in the other crash tests). Here the fault's signals have none.
+    os::SetSignalHandler(SIGSEGV, SIG_DFL);
+    os::SetSignalHandler(SIGBUS, SIG_DFL);
+    MacInstallHostHandler(SIGABRT, &MacHostAbrtHandler);
+    InstallInto(argument);
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("macOS: with no earlier handler for the crash's signal, the process ends as before (no chaining)",
+          "[crash][crashreport][death][debug][macos]")
+{
+    // Only SIGABRT has a host handler; a null write is a SIGSEGV, so Breakpad exits after the dump as it always has.
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_mac_host_abrt_only_then_fault", dir.Path());
+    CheckReportAndDump(r, dir.Path(), "AccessViolation at 0x");
+    INFO("child stderr: " << Cat(debug_test::StderrView(r)).CStr());
+    CHECK_FALSE(debug_test::StderrView(r).Contains("HOST-ABRT-HANDLER-RAN"));
+    CHECK(r.exited);          // Breakpad's _exit after the dump, not a signal
+    CHECK(r.exit_code == 1);  // EXC_BAD_ACCESS
+}
+
 // ---- a child never outlives its parent
 // ----------------------------------------------------------------------------------------------
 

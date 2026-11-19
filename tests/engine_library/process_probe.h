@@ -54,16 +54,16 @@ static inline int ProbeLibraryGone(const char* path)
 #endif
 
 /* Whether the engine's crash handler calls the host's handler, installed before it, after the report and the dump
-   (crash handler chaining): Linux so far; Windows and macOS are the
-   series' Days 2 and 3. */
-#define ENGINE_HOST_HANDLER_CHAINED (ENGINE_PLATFORM_LINUX)
+   (crash handler chaining): Linux (Day 1) and macOS (Day 3); Windows is the series' Day 2. */
+#define ENGINE_HOST_HANDLER_CHAINED (ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_MACOS)
 
 /* Whether a process that faulted with the engine's crash handler installed ended as it does after the dump: by SIGSEGV
-   on Linux; on macOS Breakpad ends it with _exit(<exception type>), exit code 1 for EXC_BAD_ACCESS (BACKEND.md). */
+   on Linux; on macOS Breakpad ends it with _exit(<exception type>), exit code 1 for EXC_BAD_ACCESS (BACKEND.md), or,
+   when the host had a SIGSEGV handler before the engine's (crash handler chaining), by SIGSEGV after that handler. */
 static inline int ProbeEndedByFault(int status)
 {
 #if ENGINE_PLATFORM_MACOS
-    return WIFEXITED(status) && WEXITSTATUS(status) == 1;
+    return (WIFEXITED(status) && WEXITSTATUS(status) == 1) || (WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV);
 #else
     return WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV;
 #endif

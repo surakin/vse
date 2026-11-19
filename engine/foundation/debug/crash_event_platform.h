@@ -47,11 +47,12 @@ void ReleaseThreadAlternateStack();
 // through.
 void RemoveCrashEventHook();
 
-#if ENGINE_PLATFORM_LINUX
+#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_MACOS
 // Notes, per fatal signal, the handler the host had installed before the crash library's (call it before
-// `sentry_init`): after the report and the dump the recorder calls it once, in signal context on the faulting thread
-// (a host's crash log keeps working beside the engine's dump). `SIG_DFL`, `SIG_IGN` and the recorder
-// itself are noted as none. `RemoveCrashEventHook` forgets them.
+// `sentry_init`): after the report and the dump it is called once, in signal context on the faulting thread (a host's
+// crash log keeps working beside the engine's dump). Linux: the recorder calls it. macOS: a relay put on the crash's
+// signal after the report, with the vendored Breakpad told not to exit (os/macos/debug/crash_hook.cpp). `SIG_DFL`,
+// `SIG_IGN` and the engine's own handler are noted as none. `RemoveCrashEventHook` forgets them.
 void NoteHostSignalHandlers();
 #endif
 

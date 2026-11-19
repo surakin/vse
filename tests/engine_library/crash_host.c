@@ -2,8 +2,8 @@
    the unhandled-exception filter, Day 354); the engine
    installs its handler (through the table) and uninstalls it, and the host's handler is back. (2) A child installs the
    handler and crashes inside a job of the shared engine: it dies of SIGSEGV and leaves an envelope holding a minidump
-   in the dump directory; where the engine chains to it (Linux), the host's handler installed before it runs after the
-   dump and leaves a marker (crash handler chaining). Plain flavor only. */
+   in the dump directory; where the engine chains to it (Linux, macOS), the host's handler installed before it runs
+   after the dump and leaves a marker (crash handler chaining: Linux, and macOS from Day 3). Plain flavor only. */
 #include <stdio.h>
 #include <string.h>
 
@@ -26,6 +26,9 @@ static void CrashChild(const char* dump_dir)
     snprintf(marker, sizeof(marker), "%s/host-handler.marker", dump_dir);
     host_set_crash_marker(marker);
     host_install_own_crash_handler();
+#if ENGINE_PLATFORM_MACOS
+    host_install_own_fault_handler(); /* the crash below is a fault: SIGSEGV (the one above is SIGABRT here) */
+#endif
 #endif
     if (g_table->crash_install(dump_dir) == 1)
     {
@@ -82,6 +85,11 @@ int main(void)
     if (host_count_files(dump_dir, "host-handler.marker") != 1)
     {
         printf("crash_host: the host's handler, installed before the engine's, did not run after the dump\n");
+        return 1;
+    }
+    if (!host_crash_child_died_of_segv())
+    {
+        printf("crash_host: after the host's handler the child did not die of SIGSEGV\n");
         return 1;
     }
     printf("crash_host: the host's handler ran after the dump\n");

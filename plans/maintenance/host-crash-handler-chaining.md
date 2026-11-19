@@ -183,4 +183,17 @@ answered in the the host notes (`plans/maintenance/`).
 - The handler must be async-signal-safe, as it already is.
 - Under AddressSanitizer with `handle_segv=1`, ASan's handler is an earlier handler too, and its report follows the engine's dump.
 
-**Still open:** Windows (Day 2, the PC) and macOS (Day 3, the Mac). There the earlier handler is still replaced (`KNOWN-ISSUES.md`).
+**Still open:** Windows (Day 2, the PC). There the earlier handler is still replaced (`KNOWN-ISSUES.md`).
+
+## Done on macOS (2026-11-19, Day 3)
+
+- **The same order as Linux:** a handler installed before `crash_handler_install`, for a fault or an abort, runs **after the report and the
+  dump (and the envelope), once, in signal context on the faulting thread**, with the kernel's `siginfo`; then the process dies of the
+  original signal. The report itself is still written on the crash library's own thread for a fault.
+- **No earlier handler for the crash's signal:** nothing changes; the process ends with `_exit(<exception type>)` (exit code 1 for an access
+  fault, 5 for an abort), not a signal, as before.
+- **How:** Breakpad ended the process right after the dump, so a local change to the vendored Breakpad lets it go on to the signal when the
+  engine asks (`third_party/sentry_native/VENDORED.md`; the user's decision); the engine asks only when the host has a handler for the crash's
+  signal.
+- **What the host does:** nothing new, as on Linux. Install the handlers at startup, create the engine, call `crash_handler_install`; choose the
+  dump directory with `crash.dump_directory` at creation.

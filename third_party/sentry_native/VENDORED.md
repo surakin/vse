@@ -5,7 +5,7 @@ Pinned release: **0.17.6** (2026-11-04), taken from the release asset `sentry-na
 build needs no network), SHA-256 `40b4b70cbada5bfae5b73f8267831dd023ec676d9676fb0d890878f31d2b5055`.
 Licenses: `LICENSE` (MIT, sentry-native), `external/breakpad/LICENSE` (BSD-3-Clause, Google Breakpad),
 `external/third_party/lss/LICENSE` (BSD-3-Clause, Linux Syscall Support), `vendor/libunwind/COPYING` (MIT, libunwind).
-All unmodified.
+Unmodified except one local change on macOS (below, "Local changes").
 
 Per `PLAN.md` assumption #20 this is a source vendor (not a submodule, not `FetchContent`). It is used **only** for crash
 capture and minidumps, through the facade `engine/foundation/debug/crash_handler.h`; the one file that includes `sentry.h`
@@ -42,6 +42,18 @@ until no include was missing:
 | `external/breakpad/src/common/mac/byteswap.h` | `4565ea05ff4b2ea5f864cfc11e4ae7838161ae24858acd58fcbc9fcd8f626261` |
 | `external/breakpad/src/common/mac/MachIPC.h` | `41f6ba2a4af80ccc4d797032b1cdeceec9e617ea5ab248ef739a9ce72aa49d56` |
 | `external/breakpad/src/common/mac/scoped_task_suspend-inl.h` | `49fd5393fe88ca0e0b9b21d05643951851df0d98e16c07850e0685cceeb88573` |
+
+## Local changes
+
+- **`external/breakpad/src/client/mac/handler/exception_handler.cc`** (crash handler chaining Day 3, 2026-11-19, the user's decision): a
+  switch `extern "C" volatile int breakpad_mac_continue_after_dump` (0 by default: Breakpad's own behavior), which the engine sets during the
+  minidump callback only when the host has its own handler for the crash's signal (`engine/foundation/os/macos/debug/crash_hook.cpp`). While it
+  is set: the three `_exit(exception_type)` calls after the dump are skipped; after a Mach exception's dump the suspended threads are resumed
+  (`ResumeThreads`) and the exception is forwarded by `ForwardException` directly, with the reply built in place, instead of through libSystem's
+  `exc_server` (which looks `catch_exception_raise` up by symbol and so cannot find it in a shared engine library that exports one symbol); and
+  `ForwardException` answers `KERN_FAILURE` when there is no earlier port, or a null one, instead of exiting or printing "Unknown exception
+  behavior". Each changed line is marked "Local change". An update of the pin carries it over (or replaces it, if upstream gains a way to
+  continue after the dump).
 
 ## Added by this repository
 

@@ -76,6 +76,14 @@
   extern ProtectedMemoryAllocator *gBreakpadAllocator;
 #endif
 
+// Local change (this repository, crash handler chaining Day 3; third_party/sentry_native/VENDORED.md): when the embedding
+// program sets this during the minidump callback, the handler does not _exit after the dump. A Mach exception is then
+// forwarded unhandled with the other threads resumed, so the kernel delivers the fault as its BSD signal on the
+// faulting thread, and an abort returns from the SIGABRT handler. Zero (the default) is Breakpad's own behavior.
+extern "C" {
+volatile int breakpad_mac_continue_after_dump = 0;
+}
+
 namespace google_breakpad {
 
 static union {
@@ -378,7 +386,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
                         exception_code,
                         exception_subcode,
                         thread_name) ) {
-      if (exit_after_write)
+      if (exit_after_write && !breakpad_mac_continue_after_dump)
         _exit(exception_type);
     }
 #if !TARGET_OS_IPHONE
@@ -393,7 +401,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
           exception_code,
           exception_subcode,
           thread_name);
-      if (result && exit_after_write) {
+      if (result && exit_after_write && !breakpad_mac_continue_after_dump) {
         _exit(exception_type);
       }
     }
@@ -445,7 +453,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
 #else
       if (callback_(dump_path_c_, next_minidump_id_c_, callback_context_, result)) {
 #endif
-        if (exit_after_write)
+        if (exit_after_write && !breakpad_mac_continue_after_dump)
           _exit(exception_type);
       }
     }
@@ -483,12 +491,16 @@ kern_return_t ForwardException(mach_port_t task, mach_port_t failed_thread,
 
   // Nothing to forward
   if (found == current.count) {
+    if (breakpad_mac_continue_after_dump)
+      return KERN_FAILURE;  // local change: unhandled, so the kernel delivers the BSD signal
     fprintf(stderr, "** No previous ports for forwarding!! \n");
     exit(KERN_FAILURE);
   }
 
   mach_port_t target_port = current.ports[found];
   exception_behavior_t target_behavior = current.behaviors[found];
+  if (breakpad_mac_continue_after_dump && target_port == MACH_PORT_NULL)
+    return KERN_FAILURE;  // local change: no earlier handler, so the kernel delivers the BSD signal
 
   kern_return_t result;
   // TODO: Handle the case where |target_behavior| has MACH_EXCEPTION_CODES
@@ -621,6 +633,31 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
         if (gBreakpadAllocator)
           gBreakpadAllocator->Protect();
 #endif
+        // Local change: the process goes on to the signal, so the threads suspended for the dump run again.
+        if (breakpad_mac_continue_after_dump)
+          self->ResumeThreads();
+        }
+        // Local change: when the process goes on to the signal, forward here and reply with the result. exc_server
+        // finds catch_exception_raise by its symbol, which a shared library that exports nothing else cannot give it.
+        if (breakpad_mac_continue_after_dump &&
+            receive.header.msgh_id == 2401 /* exception_raise */) {
+          ExceptionReplyMessage forward_reply;
+          memset(&forward_reply, 0, sizeof(forward_reply));
+          forward_reply.header.msgh_bits =
+              MACH_MSGH_BITS(MACH_MSGH_BITS_REMOTE(receive.header.msgh_bits), 0);
+          forward_reply.header.msgh_remote_port = receive.header.msgh_remote_port;
+          forward_reply.header.msgh_local_port = MACH_PORT_NULL;
+          forward_reply.header.msgh_size = static_cast<mach_msg_size_t>(sizeof(forward_reply));
+          forward_reply.header.msgh_id = receive.header.msgh_id + 100;
+          forward_reply.ndr = NDR_record;
+          forward_reply.return_code =
+              receive.task.name == mach_task_self()
+                  ? ForwardException(receive.task.name, receive.thread.name, receive.exception, receive.code,
+                                     receive.code_count)
+                  : KERN_FAILURE;
+          mach_msg(&(forward_reply.header), MACH_SEND_MSG, forward_reply.header.msgh_size, 0, MACH_PORT_NULL,
+                   MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+          continue;
         }
         // Pass along the exception to the server, which will setup the
         // message and call catch_exception_raise() and put the return

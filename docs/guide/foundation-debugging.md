@@ -341,8 +341,14 @@ error and `crash-report.txt`), the dump (the `.envelope` with its minidump), **y
 - **Sanitizers:** a sanitizer's own `SIGSEGV` handler, installed at startup, is such an earlier handler: under AddressSanitizer with
   `handle_segv=1` (its default) the sanitizer's report follows the dump and the process ends with its exit code. Tests that expect the
   original signal run with `handle_segv=0`, as the death tests do.
-- Windows and macOS: not yet (crash handler chaining, Days 2 and 3); there the earlier
-  handler is still replaced and does not run.
+- **macOS** (crash handler chaining, Day 3): the same order and the same rules. A fault reaches the crash handler as a Mach exception on the
+  crash library's own thread, and the report is written there; then, when your handler exists for the fault's signal, the fault is handed
+  back to the kernel, which delivers it as that signal on the faulting thread, where your handler runs (with the kernel's `siginfo`). An
+  `abort()` is handled on the aborting thread; your `SIGABRT` handler runs after the library's handler has returned. Without a handler for the
+  crash's signal nothing changes: the library ends the process with `_exit(<exception type>)` (exit code 1 for an access fault, 5 for an
+  abort), not a signal; with one, the process dies of the signal. This rests on a local change to the vendored Breakpad
+  (`third_party/sentry_native/VENDORED.md`).
+- Windows: not yet (crash handler chaining, Day 2); there the earlier handler is still replaced and does not run.
 
 **Installed after:** it runs first; call the handler that was there before it (the one `sigaction` returns) to get the report and the dump.
 

@@ -91,7 +91,18 @@ handler; sentry calls `on_crash` with the crashed thread's register context only
 the abort path when the context's stack pointer lies on the current thread's stack, otherwise the crashed thread found among the task's threads
 by its registers, the reason from that thread's exception state (`x86_EXCEPTION_STATE64`: the context's own exception part is zero), the stack
 walked from the frame pointer through `vm_read_overwrite`. After the dump Breakpad ends the process with `_exit(<exception type>)` (exit code 1
-for `EXC_BAD_ACCESS`), not a signal; without the handler a fault ends it by signal. ASan builds suppress ASan's write-interceptor report on
+for `EXC_BAD_ACCESS`), not a signal; without the handler a fault ends it by signal.
+
+**A host's handler installed before the crash handler (crash handler chaining Day 3):** `detail::NoteHostSignalHandlers` reads each fatal
+signal's disposition before `sentry_init`. After the report, when the host has a handler for the crash's signal (an access fault: `SIGSEGV` or
+`SIGBUS`, whichever the kernel picks; `SIGILL`, `SIGFPE`, `SIGTRAP`; an abort: `SIGABRT`), `crash_hook.cpp` puts a one-shot relay on it and sets
+the vendored Breakpad's local switch `breakpad_mac_continue_after_dump` (`third_party/sentry_native/VENDORED.md`): Breakpad writes the envelope and
+does not `_exit`; it uninstalls itself, resumes the threads it suspended and forwards the exception to the ports from before it (itself, not
+through libSystem's `exc_server`, which a shared engine library cannot serve), or answers it unhandled, so the kernel delivers the BSD signal on
+the faulting thread. For an abort the hook raises a `SIGABRT` that stays blocked until Breakpad's handler returns. The relay puts the default
+action back and calls the host's handler once (`SA_NODEFER`: a fault inside it reaches the default action); then the fault ends the process
+with its signal. Without a host handler for the crash's signal nothing changes (`_exit`). Tested in `crash_end_to_end_macos_test.cpp` and
+`crash_host.c` (shared library). ASan builds suppress ASan's write-interceptor report on
 Breakpad's stack copy into the dump (`__asan_default_suppressions`).
 
 - **Crash handler build:** `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`. The library's `on_crash` hook receives a

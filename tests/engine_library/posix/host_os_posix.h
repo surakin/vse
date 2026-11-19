@@ -155,9 +155,11 @@ static inline void host_child_entry(void (*child)(const char*))
 {
     (void)child;
 }
+/* The wait status of the last child host_run_crash_child ran. */
+static int g_host_child_status = 0;
 /* Runs `child(arg)` in a child process started before this program has any thread of its own, and returns 1 when the
-   child ended as the crash the test planted ends with the engine's handler (process_probe.h: SIGSEGV on Linux, exit
-   code 1 from Breakpad on macOS), 0 otherwise. */
+   child ended as the crash the test planted ends with the engine's handler (process_probe.h: SIGSEGV on Linux; on macOS
+   exit code 1 from Breakpad, or SIGSEGV when a host handler was chained to), 0 otherwise. */
 static inline int host_run_crash_child(void (*child)(const char*), const char* arg)
 {
     int status = 0;
@@ -168,6 +170,7 @@ static inline int host_run_crash_child(void (*child)(const char*), const char* a
         _exit(4);
     }
     waitpid(pid, &status, 0);
+    g_host_child_status = status;
     if (!ProbeEndedByFault(status))
     {
         printf("host_run_crash_child: the child ended with status 0x%x (signaled %d, signal %d, exited %d, code %d)\n",
@@ -214,6 +217,20 @@ static inline void host_install_own_crash_handler(void)
     memset(&host, 0, sizeof(host));
     host.sa_handler = host_own_handler;
     sigaction(ENGINE_CRASH_HANDLER_SIGNAL, &host, NULL);
+}
+/* Installs the host's own handler for the signal a fault is delivered as, SIGSEGV (crash handler chaining: on macOS the
+   engine's handler leaves it in place and calls it after the dump, as on Linux). */
+static inline void host_install_own_fault_handler(void)
+{
+    struct sigaction host;
+    memset(&host, 0, sizeof(host));
+    host.sa_handler = host_own_handler;
+    sigaction(SIGSEGV, &host, NULL);
+}
+/* Whether the last crash child died of SIGSEGV (a chained crash ends so, on Linux and macOS alike). */
+static inline int host_crash_child_died_of_segv(void)
+{
+    return WIFSIGNALED(g_host_child_status) && WTERMSIG(g_host_child_status) == SIGSEGV;
 }
 /* Whether the handler that runs on a crash is the host's own. */
 static inline int host_own_crash_handler_active(void)
