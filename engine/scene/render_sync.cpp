@@ -42,7 +42,8 @@ bool SameLight(const renderer::Light& a, const renderer::Light& b)
     return a.type == b.type && a.color.x == b.color.x && a.color.y == b.color.y && a.color.z == b.color.z &&
            a.intensity == b.intensity && a.direction.x == b.direction.x && a.direction.y == b.direction.y &&
            a.direction.z == b.direction.z && a.position.x == b.position.x && a.position.y == b.position.y &&
-           a.position.z == b.position.z && a.radius == b.radius;
+           a.position.z == b.position.z && a.radius == b.radius && a.inner_cone == b.inner_cone &&
+           a.outer_cone == b.outer_cone;
 }
 
 bool FiniteVec(const Vec3& v)
@@ -58,7 +59,13 @@ bool LightValid(const renderer::Light& l)
     {
         return false;
     }
-    return l.type != renderer::LightType::Point || l.radius > 0.0f;
+    if (l.type == renderer::LightType::Spot &&
+        (!IsFinite(l.inner_cone) || !IsFinite(l.outer_cone) || l.inner_cone < 0.0f || !(l.inner_cone < l.outer_cone) ||
+         l.outer_cone > 1.5707964f))
+    {
+        return false;  // the render scene would refuse it (glTF coverage Day 11)
+    }
+    return (l.type != renderer::LightType::Point && l.type != renderer::LightType::Spot) || l.radius > 0.0f;
 }
 
 renderer::Light MakeLight(const LightSource& source, const Mat4& world)
@@ -68,6 +75,8 @@ renderer::Light MakeLight(const LightSource& source, const Mat4& world)
     light.color = source.color;
     light.intensity = source.intensity;
     light.radius = source.radius;
+    light.inner_cone = source.inner_cone;
+    light.outer_cone = source.outer_cone;
     light.position = Vec3(world.col[3].x, world.col[3].y, world.col[3].z);
     const Vec3 x(world.col[0].x, world.col[0].y, world.col[0].z);
     const Vec3 y(world.col[1].x, world.col[1].y, world.col[1].z);

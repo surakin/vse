@@ -141,6 +141,7 @@ enum class LightType : u8
     Directional = 0,  ///< Infinitely far away; only `direction` matters.
     Point,            ///< A point with a radius of influence.
     Ambient,          ///< A uniform light from every direction; only `color` and `intensity` matter.
+    Spot,             ///< A point light limited to a cone around `-direction` (glTF coverage Day 11).
 };
 
 /// A light. Directional and ambient lights are lit by the fullscreen part of the deferred lighting pass, point lights
@@ -162,6 +163,13 @@ struct Light
     /// For a point light, the distance at which its contribution reaches exactly zero (see
     /// [[renderer::PointLightAttenuation]]); greater than zero.
     f32 radius = 1.0f;
+    /// For a spot light, the half-angle in radians inside which it is at full strength; at least 0, below `outer_cone`.
+    ///
+    /// A spot light shines along `-direction` (the direction from the surface toward the light, as for a directional
+    /// light); its position and radius are a point light's.
+    f32 inner_cone = 0.0f;
+    /// For a spot light, the half-angle in radians beyond which it gives nothing; above `inner_cone`, at most pi/2.
+    f32 outer_cone = 0.7853981634f;
 };
 
 /// The most lights a scene or a [[renderer::FrameResources]] can hold: 16384.

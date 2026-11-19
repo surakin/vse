@@ -117,6 +117,18 @@ Vec3 ReconstructWorldPosition(u32 pixel_x, u32 pixel_y, f32 depth, u32 width, u3
 /// - Fails: never.
 f32 PointLightAttenuation(f32 distance, f32 radius);
 
+/// The cone factor of a spot light (glTF coverage Day 11; glTF's KHR_lights_punctual form).
+///
+/// With `t = saturate((cos_angle - cos(outer)) / (cos(inner) - cos(outer)))`, it is `t * t`: 1 inside the inner cone and
+/// 0 outside the outer one. The CPU twin of `SpotFactor` in `lighting_common.slang`.
+///
+/// - Param cos_angle: the cosine of the angle between the spot's axis and the direction from the light to the surface.
+/// - Param inner_cone: the inner half-angle in radians.
+/// - Param outer_cone: the outer half-angle in radians, above `inner_cone`.
+/// - Returns: the factor, 0 to 1.
+/// - Fails: never.
+f32 SpotLightFactor(f32 cos_angle, f32 inner_cone, f32 outer_cone);
+
 /// Slices of the light volume sphere around the Y axis.
 inline constexpr u32 kLightVolumeSegments = 16;
 /// Bands of the light volume sphere from pole to pole.

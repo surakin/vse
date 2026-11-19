@@ -1095,7 +1095,9 @@ One light as the lighting shaders read it (std430, 48 bytes).
 Vec4 direction;
 ```
 
-xyz: for a directional light the unit vector from the surface toward the light; w: the type (0 directional, 1 point).
+xyz: the direction from the surface toward the light; w: the type (0 directional, 1 point or spot).
+
+A directional light's is a unit vector. A spot light's is that unit vector times the cone's angle scale, `1 / (cos(inner) - cos(outer))` (glTF coverage Day 11); a point light's is zero.
 
 ### `color` {#renderer-lightdata-color}
 
@@ -1105,7 +1107,7 @@ xyz: for a directional light the unit vector from the surface toward the light; 
 Vec4 color;
 ```
 
-rgb: the light's color times its intensity (linear); w unused.
+rgb: the light's color times its intensity (linear); w: a spot light's angle offset, `-cos(outer)` times the angle scale (0 otherwise).
 
 ### `position_radius` {#renderer-lightdata-position-radius}
 
@@ -3025,6 +3027,26 @@ It is 1 at the light, falls like an inverse square (the `+ 1` keeps it finite) o
 | Parameter `distance` | the distance from the light, not negative. |
 | Parameter `radius` | the light's radius, greater than zero. |
 | Returns | a factor in [0, 1]. |
+| Fails | never. |
+
+## `SpotLightFactor(f32,f32,f32)` {#renderer-spotlightfactor-f32-f32-f32}
+
+`function renderer::SpotLightFactor` — defined in `engine/renderer/lighting.h`
+
+```cpp
+f32 SpotLightFactor(f32 cos_angle, f32 inner_cone, f32 outer_cone);
+```
+
+The cone factor of a spot light (glTF coverage Day 11; glTF's KHR_lights_punctual form).
+
+With `t = saturate((cos_angle - cos(outer)) / (cos(inner) - cos(outer)))`, it is `t * t`: 1 inside the inner cone and 0 outside the outer one. The CPU twin of `SpotFactor` in `lighting_common.slang`.
+
+| Field | Value |
+|---|---|
+| Parameter `cos_angle` | the cosine of the angle between the spot's axis and the direction from the light to the surface. |
+| Parameter `inner_cone` | the inner half-angle in radians. |
+| Parameter `outer_cone` | the outer half-angle in radians, above `inner_cone`. |
+| Returns | the factor, 0 to 1. |
 | Fails | never. |
 
 ## `kLightVolumeSegments` {#renderer-klightvolumesegments}
@@ -8404,6 +8426,7 @@ The kind of a light.
 | <a id="renderer-lighttype-directional"></a>`Directional` | `0` | Infinitely far away; only `direction` matters. |
 | <a id="renderer-lighttype-point"></a>`Point` |  | A point with a radius of influence. |
 | <a id="renderer-lighttype-ambient"></a>`Ambient` |  | A uniform light from every direction; only `color` and `intensity` matter. |
+| <a id="renderer-lighttype-spot"></a>`Spot` |  | A point light limited to a cone around `-direction` (glTF coverage Day 11). |
 
 ## `Light` {#renderer-light}
 
@@ -8478,6 +8501,28 @@ f32 radius;
 ```
 
 For a point light, the distance at which its contribution reaches exactly zero (see [`renderer::PointLightAttenuation`](#renderer-pointlightattenuation-f32-f32)); greater than zero.
+
+### `inner_cone` {#renderer-light-inner-cone}
+
+`variable renderer::Light::inner_cone` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+f32 inner_cone;
+```
+
+For a spot light, the half-angle in radians inside which it is at full strength; at least 0, below `outer_cone`.
+
+A spot light shines along `-direction` (the direction from the surface toward the light, as for a directional light); its position and radius are a point light's.
+
+### `outer_cone` {#renderer-light-outer-cone}
+
+`variable renderer::Light::outer_cone` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+f32 outer_cone;
+```
+
+For a spot light, the half-angle in radians beyond which it gives nothing; above `inner_cone`, at most pi/2.
 
 ## `kMaxLights` {#renderer-kmaxlights}
 

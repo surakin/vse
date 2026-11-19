@@ -89,10 +89,13 @@ struct BufferRegion
 /// - Thread-safety: thread-compatible plain data.
 struct LightData
 {
-    /// xyz: for a directional light the unit vector from the surface toward the light; w: the type (0 directional, 1
-    /// point).
+    /// xyz: the direction from the surface toward the light; w: the type (0 directional, 1 point or spot).
+    ///
+    /// A directional light's is a unit vector. A spot light's is that unit vector times the cone's angle scale, `1 /
+    /// (cos(inner) - cos(outer))` (glTF coverage Day 11); a point light's is zero.
     Vec4 direction;
-    /// rgb: the light's color times its intensity (linear); w unused.
+    /// rgb: the light's color times its intensity (linear); w: a spot light's angle offset, `-cos(outer)` times the
+    /// angle scale (0 otherwise).
     Vec4 color;
     /// xyz: a point light's position; w: its radius. Unused (zero) for a directional light.
     Vec4 position_radius;

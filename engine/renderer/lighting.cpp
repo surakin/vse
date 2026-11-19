@@ -91,6 +91,15 @@ Vec3 ReconstructWorldPosition(u32 pixel_x, u32 pixel_y, f32 depth, u32 width, u3
     return Vec3(c.x / c.w, c.y / c.w, c.z / c.w);
 }
 
+f32 SpotLightFactor(f32 cos_angle, f32 inner_cone, f32 outer_cone)
+{
+    const f32 cos_inner = Cos(inner_cone);
+    const f32 cos_outer = Cos(outer_cone);
+    const f32 scale = 1.0f / FMax(1e-3f, cos_inner - cos_outer);
+    const f32 t = Saturate(cos_angle * scale - cos_outer * scale);
+    return t * t;
+}
+
 f32 PointLightAttenuation(f32 distance, f32 radius)
 {
     const f32 r = distance / radius;

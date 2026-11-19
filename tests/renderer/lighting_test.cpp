@@ -81,6 +81,22 @@ TEST_CASE("The ambient term follows occlusion and metallic, and holds no emissio
     CHECK(m.x == 0.0f);  // a metal takes no diffuse ambient light
 }
 
+// glTF coverage Day 11: a spot light's cone, glTF's form: 1 inside the inner cone, 0 outside the outer one, smooth
+// between.
+TEST_CASE("A spot light's cone factor is 1 inside the inner cone, 0 outside the outer and rises between",
+          "[renderer][lighting]")
+{
+    const f32 inner = 0.2f;
+    const f32 outer = 0.5f;
+    CHECK(SpotLightFactor(1.0f, inner, outer) == 1.0f);       // on the axis
+    CHECK(SpotLightFactor(Cos(0.1f), inner, outer) == 1.0f);  // inside the inner cone
+    CHECK(SpotLightFactor(Cos(0.6f), inner, outer) == 0.0f);  // outside the outer cone
+    const f32 mid = SpotLightFactor(Cos(0.35f), inner, outer);
+    CHECK(mid > 0.0f);
+    CHECK(mid < 1.0f);
+    CHECK(SpotLightFactor(Cos(0.3f), inner, outer) > SpotLightFactor(Cos(0.4f), inner, outer));
+}
+
 TEST_CASE("The tonemap curve is monotonic, bounded and has the ACES fit's known values", "[renderer][lighting]")
 {
     CHECK(TonemapAces(0.0f) == 0.0f);

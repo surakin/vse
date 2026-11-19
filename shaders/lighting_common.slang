@@ -72,3 +72,16 @@ float PointAttenuation(float distance_to_light, float radius) {
     float window = saturate(1.0 - r * r * r * r);
     return window * window / (distance_to_light * distance_to_light + 1.0);
 }
+
+// Spot lights (glTF coverage Day 11; KHR_lights_punctual's form). The light data carries the spot's unit axis (from the
+// surface toward the light) times the angle scale 1 / (cos(inner) - cos(outer)), and the offset -cos(outer) * scale:
+//   factor = saturate(dot(L, axis) * scale + offset)^2     (1 inside the inner cone, 0 outside the outer one)
+// A point light's axis is zero: the factor is 1. The CPU twin is renderer::SpotLightFactor.
+float SpotFactor(float3 L, float3 scaled_axis, float offset) {
+    float scale = length(scaled_axis);
+    if (scale <= 0.0) {
+        return 1.0;
+    }
+    float t = saturate(dot(L, scaled_axis / scale) * scale + offset);
+    return t * t;
+}

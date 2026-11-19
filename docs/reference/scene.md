@@ -175,7 +175,27 @@ For a point light, the distance at which its contribution reaches zero; greater 
 Vec3 direction;
 ```
 
-For a directional light, the unit vector from the surface toward the light in the entity's own space; the entity's rotation turns it into world space.
+For a directional or spot light, the unit vector from the surface toward the light in the entity's own space (a spot shines along its opposite); the entity's rotation turns it into world space.
+
+### `inner_cone` {#scene-lightsource-inner-cone}
+
+`variable scene::LightSource::inner_cone` — defined in `engine/scene/components.h`
+
+```cpp
+f32 inner_cone;
+```
+
+For a spot light, the inner half-angle in radians (glTF coverage Day 11; stored from version 2).
+
+### `outer_cone` {#scene-lightsource-outer-cone}
+
+`variable scene::LightSource::outer_cone` — defined in `engine/scene/components.h`
+
+```cpp
+f32 outer_cone;
+```
+
+For a spot light, the outer half-angle in radians, above `inner_cone`, at most pi/2.
 
 ## `Camera` {#scene-camera}
 

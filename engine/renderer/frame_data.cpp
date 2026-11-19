@@ -319,9 +319,9 @@ LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameDa
             continue;
         }
         const Light& light = scene.LightAt(slot);
-        if (light.type != LightType::Point)
+        if (light.type != LightType::Point && light.type != LightType::Spot)
         {
-            continue;
+            continue;  // spot lights are point lights with a cone: the same volumes (glTF coverage Day 11)
         }
         BoundingSphere sphere;
         sphere.center = light.position;
@@ -358,6 +358,19 @@ LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameDa
         d.direction = Vec4(0, 0, 0, 1.0f);
         d.color = Vec4(light.color * light.intensity, 0.0f);
         d.position_radius = Vec4(light.position, light.radius);
+        if (light.type == LightType::Spot)
+        {
+            // The cone as glTF writes it: factor = saturate(cos(angle) * scale + offset)^2, carried in the unit
+            // direction's length and in color.w.
+            Vec3 dir = light.direction;
+            const f32 len = Sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+            dir = len > 1e-6f ? Vec3(dir.x / len, dir.y / len, dir.z / len) : Vec3(0, 1, 0);
+            const f32 cos_inner = Cos(light.inner_cone);
+            const f32 cos_outer = Cos(light.outer_cone);
+            const f32 scale = 1.0f / FMax(1e-3f, cos_inner - cos_outer);
+            d.direction = Vec4(dir * scale, 1.0f);
+            d.color.w = -cos_outer * scale;
+        }
         out[n++] = d;
         ++summary.point_count;
     }

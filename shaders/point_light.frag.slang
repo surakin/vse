@@ -5,7 +5,8 @@
 //   depth = depth_tex[pixel]; depth >= 1 is background: discarded. world is rebuilt as in lighting.frag.
 //   to_light = light.position - world; d = length(to_light); where d >= radius the pixel gets nothing (attenuation is exactly 0 there)
 //   L = to_light / d; V = normalize(camera_position - world)
-//   color = ShadeLight(surface, V, L, light.color * PointAttenuation(d, radius))
+//   color = ShadeLight(surface, V, L, light.color * PointAttenuation(d, radius) * SpotFactor(L, axis, offset))
+//   (a spot light, glTF coverage Day 11, is a point light with a cone: SpotFactor is 1 for a point light)
 // The lighting model and the attenuation are in lighting_common.slang.
 //
 // Interface
@@ -85,6 +86,7 @@ FragmentOutput main(FragmentInput input) {
 
     float3 V = normalize(frame.camera_position.xyz - world);
     float3 L = to_light / max(dist, 1e-6);
+    atten *= SpotFactor(L, light.direction.xyz, light.color.w);
     FragmentOutput output;
     output.color = float4(ShadeLight(s, V, L, light.color.rgb * atten), 0.0);
     return output;

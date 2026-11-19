@@ -25,8 +25,13 @@ void CheckLight(const Light& light)
                   "light: the position must be finite");
     ENGINE_ASSERT(IsFinite(light.direction.x) && IsFinite(light.direction.y) && IsFinite(light.direction.z),
                   "light: the direction must be finite");
-    ENGINE_ASSERT(light.type != LightType::Point || (IsFinite(light.radius) && light.radius > 0.0f),
-                  "light: a point light needs a positive radius");
+    ENGINE_ASSERT((light.type != LightType::Point && light.type != LightType::Spot) ||
+                      (IsFinite(light.radius) && light.radius > 0.0f),
+                  "light: a point or spot light needs a positive radius");
+    ENGINE_ASSERT(light.type != LightType::Spot ||
+                      (IsFinite(light.inner_cone) && IsFinite(light.outer_cone) && light.inner_cone >= 0.0f &&
+                       light.inner_cone < light.outer_cone && light.outer_cone <= 1.5707964f),
+                  "light: a spot light needs 0 <= inner_cone < outer_cone <= pi/2");
 }
 
 // Next generation for a slot, skipping 0 (which means "invalid").
