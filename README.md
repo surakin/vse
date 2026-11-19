@@ -12,16 +12,16 @@ off** (errors are values). The first page of the guide explains both.
 
 ## Build and run
 
-You need a C++20 compiler (Clang is the reference), CMake 3.21 or newer, Ninja or Make, and the platform's window libraries. [BUILD.md](BUILD.md) lists every
+You need a C++20 compiler (Clang is the reference), CMake 3.21 or newer, Ninja, and the platform's window libraries. [BUILD.md](BUILD.md) lists every
 prerequisite per platform with the versions in use.
 
 ```bash
-cmake -S . -B build
+cmake --preset linux
 cmake --build build
 build/game/hello_window/hello_window
 ```
 
-`hello_window` opens a window and prints keyboard and mouse input for six seconds. Windows and macOS use presets (`cmake --preset windows-msvc`,
+`hello_window` opens a window and prints keyboard and mouse input for six seconds. Windows and macOS use their own presets (`cmake --preset windows-msvc`,
 `cmake --preset macos-clang`); [Getting started](docs/guide/getting-started.md) has the commands.
 
 Other demos live in `game/`: `rhi_demo` (a lit, textured cube), `renderer_demo` (a lit scene), `ui_demo` (a window built from the engine's widgets), `physics_demo`,

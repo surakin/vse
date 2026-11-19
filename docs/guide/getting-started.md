@@ -32,9 +32,12 @@ Third-party libraries are **vendored**: do not install FreeType, Catch2 or anyth
 On Linux, from the repository root:
 
 ```bash
-cmake -S . -B build
+cmake --preset linux
 cmake --build build
 ```
+
+The preset makes `build/`, a Debug tree built with Ninja. A tree made by an older configure with Make has to be removed first: CMake refuses to
+change the generator of an existing tree.
 
 The first build compiles everything, so expect it to take a while. Our own targets are built as *unity builds* (several source files merged into one translation unit) to be fast;
 `-DENGINE_UNITY_BUILD=OFF` compiles each file alone, and both must keep working. Warnings are errors on every compiler: a clean build is the rule, not a goal.

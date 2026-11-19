@@ -5,6 +5,7 @@
     {
       "name": "linux",
       "displayName": "Linux (Clang, else the default compiler; build/)",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
@@ -12,6 +13,7 @@
     {
       "name": "linux-nojit",
       "displayName": "Linux with LuaJIT's JIT compiled out (build-nojit/; the script_nojit flavor, Phase 27 Day 470)",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-nojit",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "ENGINE_LUAJIT_JIT": "OFF" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
