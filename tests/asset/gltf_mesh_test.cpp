@@ -1074,6 +1074,7 @@ TEST_CASE("The import summary names the nodes, the bounds, the materials and the
     CHECK(summary.Contains(StringView("\"bounds\":{\"min\":[1,2,3],\"max\":[2,3,3]}")));
     CHECK(summary.Contains(StringView("\"materials\":[\"Screen\",\"\"]")));
     CHECK(summary.Contains(StringView("\"animations\":[{\"name\":\"Walk\",\"duration\":2.5}]")));
+    CHECK(summary.Contains(StringView("\"lights\":[]}")));  // a level with no light (glTF coverage Day 12)
 
     // The import's `scale` applies to positions and bounds, not to durations.
     options.scale = 2.0f;
@@ -1283,6 +1284,39 @@ TEST_CASE("gltf: KHR_lights_punctual lights land on their nodes as light sources
         ImportResult refused;
         CHECK(GmImport(GmLightsGlb(b), &refused, &error, options).Failed());
     }
+}
+
+// glTF coverage Day 12: the import summary lists each light of the level with its name, its type, the entity it is on
+// and its world position (under its parents, times the import's scale), in level order.
+TEST_CASE("The import summary lists the level's lights", "[asset][gltf][level][lights][summary]")
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const u32 pos = GmAcc(&w, GmkTrianglePositions, 9, 5126, "VEC3");
+    const u32 idx = GmAcc(&w, indices, 3, 5123, "SCALAR");
+    char json[1400];
+    FormatTo(json, sizeof(json),
+             "\"extensionsUsed\":[\"KHR_lights_punctual\"],"
+             "\"extensions\":{\"KHR_lights_punctual\":{\"lights\":[{\"name\":\"Lamp\",\"type\":\"point\"},"
+             "{\"type\":\"spot\"}]}},"
+             "\"meshes\":[{\"name\":\"tri\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}],"
+             "\"nodes\":[{\"name\":\"thing\",\"mesh\":0},"
+             "{\"name\":\"post\",\"translation\":[1,2,3],\"children\":[2]},"
+             "{\"name\":\"bulb\",\"translation\":[0,1,0],\"extensions\":{\"KHR_lights_punctual\":{\"light\":0}}},"
+             "{\"name\":\"torch\",\"translation\":[4,0,0],\"extensions\":{\"KHR_lights_punctual\":{\"light\":1}}}],"
+             "\"scenes\":[{\"nodes\":[0,1,3]}],\"scene\":0",
+             pos, idx);
+    w.AddRoot(json);
+    ImportOptions options;
+    options.emit_level = true;
+    options.scale = 2.0f;
+    ImportResult result;
+    GltfError error;
+    REQUIRE(GmImport(w.Glb(), &result, &error, options).Ok());
+    INFO(result.summary.CStr());
+    CHECK(result.summary.View().Contains(
+        StringView("\"lights\":[{\"name\":\"Lamp\",\"type\":\"point\",\"node\":\"bulb\",\"position\":[2,6,6]},"
+                   "{\"name\":\"\",\"type\":\"spot\",\"node\":\"torch\",\"position\":[8,0,0]}]}")));
 }
 
 }  // namespace engine_placeholder::asset

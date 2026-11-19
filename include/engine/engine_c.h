@@ -1140,7 +1140,10 @@ extern "C"
          *                                                                     names level_spawn gives them
          * (entity_find) "bounds":{"min":[x,y,z],"max":[x,y,z]} or null,                  of the meshes' POSITION
          * ranges, world "materials":["Screen", ...],                                     in the file's order, "" if
-         * unnamed "animations":[{"name":"Walk","duration":1.2}, ...]}              seconds, the longest sampler input
+         * unnamed "animations":[{"name":"Walk","duration":1.2}, ...],             seconds, the longest sampler input
+         * "lights":[{"name":"Lamp","type":"point","node":"Lamp","position":[x,y,z]}, ...]}   one per level node
+         * with a KHR_lights_punctual light, in level order: its name ("" if unnamed), its glTF type
+         * (point, spot or directional), the entity it is on and its world position.
          * Positions and bounds are in the units of the level (the import's `scale` applied). The host stores this text
          * beside the blobs it caches. Present when struct_size covers it. */
         engine_buffer summary;

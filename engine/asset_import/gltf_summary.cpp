@@ -354,6 +354,52 @@ void BuildImportSummary(const GltfDocument& document, const GltfNodeGraph& graph
         AppendNumber(&out, duration);
         out.Append('}');
     }
+
+    // The punctual lights (glTF coverage Day 12): one per level node that names a light, in level order. The level
+    // import checks the lights; a value it would refuse fails the import, so the summary only reads what it needs.
+    out.Append("],\"lights\":[");
+    const JsonValue light_list = document.root.Get("extensions").Get("KHR_lights_punctual").Get("lights");
+    const JsonValue node_list = document.root.Get("nodes");
+    bool first_light = true;
+    for (usize i = 0; i < nodes.Size(); ++i)
+    {
+        const JsonValue light_ref = node_list.At(nodes[i]).Get("extensions").Get("KHR_lights_punctual").Get("light");
+        GltfError ignored;
+        u32 index = 0;
+        if (!light_ref.Exists() || !light_list.IsArray() ||
+            light_ref.AsIndex(&index, light_list.Size(), &ignored).Failed())
+        {
+            continue;
+        }
+        const JsonValue light = light_list.At(index);
+        StringView name;
+        bool present = false;
+        if (light.OptionalString("name", &name, &present, &ignored).Failed() || !present)
+        {
+            name = StringView();
+        }
+        StringView type;
+        if (light.OptionalString("type", &type, &present, &ignored).Failed() || !present)
+        {
+            type = StringView();
+        }
+        if (!first_light)
+        {
+            out.Append(',');
+        }
+        first_light = false;
+        const GltfMatrix world = WorldOf(graph, nodes[i]);
+        const f64 position[3] = {world.m[12] * scale, world.m[13] * scale, world.m[14] * scale};
+        out.Append("{\"name\":");
+        AppendString(&out, name);
+        out.Append(",\"type\":");
+        AppendString(&out, type);
+        out.Append(",\"node\":");
+        AppendString(&out, names[i].View());
+        out.Append(",\"position\":");
+        AppendVector(&out, position);
+        out.Append('}');
+    }
     out.Append("]}");
 }
 
