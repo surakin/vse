@@ -15,6 +15,8 @@
 #include "jobs/scheduler.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
+#include "cstr/mem_ops.h"
+#include "renderer/gbuffer.h"
 #include "gltf_writer.h"
 #include "png_writer.h"
 #include "support.h"
@@ -169,15 +171,67 @@ TEST_CASE("gltf material: the import is deterministic", "[asset][gltf]")
     }
 }
 
+namespace
+{
+
+// The `flags` parameter of a material blob: its value, or -1 when the material does not set it.
+i64 FlagsOf(const ImportedResource& material)
+{
+    TypeRegistry types;
+    MaterialAssetData data;
+    REQUIRE(LoadMaterialBlob(ByteSpan(material.blob.Data(), material.blob.Size()), types, &data).Ok());
+    for (const MaterialParam& p : data.params)
+    {
+        if (StringView(p.name.text) == StringView("flags"))
+        {
+            REQUIRE(p.type == MaterialParamType::UInt);
+            u32 value = 0;
+            MemCopy(&value, data.block.Data() + p.offset, sizeof(value));
+            return value;
+        }
+    }
+    return -1;
+}
+
+}  // namespace
+
+TEST_CASE("gltf material: KHR_materials_unlit imports with the unlit flag; a lit material has no flags parameter",
+          "[asset][gltf]")
+{
+    NoGltfSource none;
+    ImportResult result;
+    GltfError error;
+    REQUIRE(
+        MtImport(TexturedGlb(
+                     "\"materials\":[{\"name\":\"sign\",\"extensions\":{\"KHR_materials_unlit\":{}},"
+                     "\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":0}}},{\"name\":\"lit\"}],",
+                     "\"extensionsUsed\":[\"KHR_materials_unlit\"],\"extensionsRequired\":[\"KHR_materials_unlit\"],"),
+                 none, &result, &error)
+            .Ok());
+    const ImportedResource* sign = nullptr;
+    const ImportedResource* lit = nullptr;
+    for (const ImportedResource& r : result.resources)
+    {
+        if (r.path.View() == StringView("/gltf/materials/sign"))
+        {
+            sign = &r;
+        }
+        if (r.path.View() == StringView("/gltf/materials/lit"))
+        {
+            lit = &r;
+        }
+    }
+    REQUIRE(sign != nullptr);
+    REQUIRE(lit != nullptr);
+    CHECK(FlagsOf(*sign) == static_cast<i64>(renderer::kMaterialFlagUnlit));
+    CHECK(FlagsOf(*lit) == -1);  // nothing new for a lit material: its blob is what it was before unlit existed
+}
+
 TEST_CASE("gltf material: what the template cannot show is refused or dropped, naming the material", "[asset][gltf]")
 {
     NoGltfSource none;
     ImportResult result;
     GltfError error;
-    CHECK(MtImport(TexturedGlb("\"materials\":[{\"extensions\":{\"KHR_materials_unlit\":{}}}],"), none, &result, &error)
-              .Is(ErrorCode::Unsupported));
-    CHECK(MtSays(error, "materials[0]"));
-    CHECK(MtSays(error, "KHR_materials_unlit"));
     CHECK(MtImport(
               TexturedGlb("\"materials\":[{\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":0,\"extensions\":"
                           "{\"KHR_texture_transform\":{\"scale\":[2,2]}}}}}],",

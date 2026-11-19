@@ -1608,6 +1608,16 @@ inline constexpr rhi::Format kGBufferDepthFormat;
 
 The depth target's format.
 
+## `kMaterialFlagUnlit` {#renderer-kmaterialflagunlit}
+
+`variable renderer::kMaterialFlagUnlit` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+inline constexpr u32 kMaterialFlagUnlit;
+```
+
+The bit of a G-buffer material's `flags` parameter that makes it unlit: the pixel shows its base colour (albedo) with no ambient, light or emissive term, and the point lights add nothing to it (glTF's `KHR_materials_unlit`). The other bits are free.
+
 ## `GBufferLayer` {#renderer-gbufferlayer}
 
 `enum renderer::GBufferLayer` — defined in `engine/renderer/gbuffer.h`

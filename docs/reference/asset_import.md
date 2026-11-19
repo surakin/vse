@@ -38,7 +38,7 @@ Phase 24 Day 364 (the scene output moved out of Phase 22 Day 338). Every node re
 
 Importing glTF images, textures and materials.
 
-Phase 22 Day 338. Images (a URI, a `data:` URI or a buffer view) decode to RGBA8; each glTF texture becomes one texture resource per way it is used (sRGB color for the base color, linear data for the normal map; BC7 block compression, mip chain) minted by [`asset::MintTextureFromPixels`](asset.md#asset-minttexturefrompixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32-jobs-scheduler-star); each glTF material becomes one material resource of the standard G-buffer template, minted from a generated `.mat.src` by [`asset::MintMaterial`](#asset-mintmaterial-stringview-const-materialreferenceresolver-amp-const-typeregistry-amp-vector-lt-byte-gt-star-materialsourceerror-star-u32). What the template cannot hold (a metallic-roughness, occlusion or emissive texture, an emissive color, a texture transform) is dropped with a counted warning naming the material, or refused when it changes what the surface is (`KHR_materials_unlit`, a `KHR_texture_transform`).
+Phase 22 Day 338. Images (a URI, a `data:` URI or a buffer view) decode to RGBA8; each glTF texture becomes one texture resource per way it is used (sRGB color for the base color, linear data for the normal map; BC7 block compression, mip chain) minted by [`asset::MintTextureFromPixels`](asset.md#asset-minttexturefrompixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32-jobs-scheduler-star); each glTF material becomes one material resource of the standard G-buffer template, minted from a generated `.mat.src` by [`asset::MintMaterial`](#asset-mintmaterial-stringview-const-materialreferenceresolver-amp-const-typeregistry-amp-vector-lt-byte-gt-star-materialsourceerror-star-u32). What the template cannot hold (a metallic-roughness, occlusion or emissive texture, an emissive color, a texture transform) is dropped with a counted warning naming the material, or refused when it changes what the surface is (a `KHR_texture_transform`). `KHR_materials_unlit` sets the material's unlit flag (`renderer::kMaterialFlagUnlit`).
 
 Importing glTF meshes into mesh blobs.
 
@@ -1852,7 +1852,7 @@ Appends the texture resources (path `<prefix>/textures/<name>`, `<name>_normal` 
 | Parameter `types` | the registry the blobs are minted with. |
 | Parameter `result` | receives the resources, manifest entries and warnings (appended to). |
 | Parameter `error` | receives the sentence naming the glTF object. |
-| Fails | `Invalid` (an image that does not decode, a texture without an image, an index outside its array), `Unsupported` (`KHR_materials_unlit`, a texture transform that is not the identity, a material the template cannot take), `TooLarge` (an image above the pixel limit), `NotFound` (an image file the source lacks), `LimitExceeded` (memory). |
+| Fails | `Invalid` (an image that does not decode, a texture without an image, an index outside its array), `Unsupported` (a texture transform that is not the identity, a material the template cannot take), `TooLarge` (an image above the pixel limit), `NotFound` (an image file the source lacks), `LimitExceeded` (memory). |
 | Thread-safety | thread-safe for separate calls with separate arguments. |
 | Ownership | borrows its arguments for the call only; `*result` owns what it receives. |
 

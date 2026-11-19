@@ -71,7 +71,11 @@ FragmentOutput main(FragmentInput input) {
     }
 
     float4 albedo_texel = albedo_tex.Load(int3(pixel, 0));
-    float3 material = material_tex.Load(int3(pixel, 0)).rgb;
+    float4 material_texel = material_tex.Load(int3(pixel, 0));
+    if ((uint(round(material_texel.a * 255.0)) & 1u) != 0u) {
+        discard;  // an unlit material (flags bit 0) takes no light
+    }
+    float3 material = material_texel.rgb;
     Surface s;
     s.albedo = albedo_texel.rgb;
     s.occlusion = albedo_texel.a;

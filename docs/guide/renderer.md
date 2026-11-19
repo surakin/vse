@@ -523,7 +523,7 @@ four targets (the library is `renderer_passes`; the shaders are `gbuffer.vert` a
 |---|---|---|
 | albedo | `RGBA8_SRGB` | rgb linear albedo (the attachment encodes sRGB on write), a = baked occlusion |
 | normal | `RG16_Float` | world-space normal, octahedral (`OctEncode` / `OctDecode`) |
-| material | `RGBA8_UNorm` | r roughness, g metallic, b emissive scale, a flags / 255 |
+| material | `RGBA8_UNorm` | r roughness, g metallic, b emissive scale, a flags / 255 (bit 0: unlit) |
 | depth | `D32_Float` | 0 at the near plane, 1 at the far plane, no reverse-Z |
 
 `CheckGBufferFormats` asks the device for every format with the usage the pass needs and names the first one it lacks; call
@@ -540,7 +540,7 @@ only when they change and creates nothing; the frame and object bind groups are 
 Materials come from `CreateGBufferMaterial(materials, templates, options, name)`. The options (`normal_map`, `alpha_test`,
 `vertex_color`) pick the fragment permutation, and `vertex_color` also picks the vertex shader that reads the mesh's color, so
 the two stages cannot disagree. Per-vertex colors are authored in sRGB; the shader converts them to linear and multiplies
-the albedo. The parameters are `base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion` and `flags`,
+the albedo. The parameters are `base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion` and `flags` (bit `kMaterialFlagUnlit`: the pixel shows its base colour, no ambient, light or emissive term, and the point lights skip it; tone mapping still applies),
 and the textures `albedo_tex` and `normal_tex`. `Prepare` leaves an object out and names it in `LastError` when its mesh was
 never prepared (`GpuMesh::RecordPrepare`, then `MarkReady` after the submit), its material does not exist, no pipeline fits
 the mesh, or the mesh and the material disagree about vertex colors (a colored mesh through a material that ignores them is

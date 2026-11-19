@@ -6,7 +6,7 @@
 //   ndc   = (2 * (pixel + 0.5) / size - 1, depth)             size = the depth texture's extent; Vulkan clip space: x right, y down, depth 0..1
 //   world = inverse_view_projection * (ndc, 1), divided by w  the projection's Y flip is already in the inverse, so the
 //                                                             pixel row is used as it is (no second flip)
-//   N     = OctDecode(normal.rg); albedo.rgb, occlusion = albedo.a; roughness, metallic, emissive = material.rgb
+//   N     = OctDecode(normal.rg); albedo.rgb, occlusion = albedo.a; roughness, metallic, emissive = material.rgb; flags = material.a * 255 (bit 0: unlit)
 //   V     = normalize(camera_position - world)
 //   color = ShadeAmbient(ambient) + sum over directional lights of ShadeLight(L = light.direction, radiance = light.color)
 // The lighting model is in lighting_common.slang.
@@ -77,7 +77,14 @@ FragmentOutput main(FragmentInput input) {
     float3 world = clip.xyz / clip.w;
 
     float4 albedo_texel = albedo_tex.Load(int3(pixel, 0));
-    float3 material = material_tex.Load(int3(pixel, 0)).rgb;
+    float4 material_texel = material_tex.Load(int3(pixel, 0));
+    FragmentOutput output;
+    // An unlit material (flags bit 0, KHR_materials_unlit) is its base colour: no ambient, light or emissive term.
+    if ((uint(round(material_texel.a * 255.0)) & 1u) != 0u) {
+        output.color = float4(albedo_texel.rgb, 1.0);
+        return output;
+    }
+    float3 material = material_texel.rgb;
     Surface s;
     s.albedo = albedo_texel.rgb;
     s.occlusion = albedo_texel.a;
@@ -91,7 +98,6 @@ FragmentOutput main(FragmentInput input) {
     for (uint i = 0u; i < push.directional_count; ++i) {
         color += ShadeLight(s, V, lights[i].direction.xyz, lights[i].color.rgb);
     }
-    FragmentOutput output;
     output.color = float4(color, 1.0);
     return output;
 }

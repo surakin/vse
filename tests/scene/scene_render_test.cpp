@@ -217,3 +217,129 @@ TEST_CASE("An entity-built scene renders the same pixels as the hand-built Rende
         device.Reset();
     }
 }
+
+// Unlit materials (maintenance, 2026-11-19; glTF's KHR_materials_unlit): a material with renderer::kMaterialFlagUnlit
+// in its `flags` shows its base colour whatever the lights are, while a lit one beside it follows them.
+TEST_CASE("An unlit material keeps its colour under other lights; a lit one does not", "[scene][render][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DeviceCreateInfo info;
+        info.backend = backend;
+        info.validation = rhi::ValidationSetting::On;
+        info.pipeline_cache = false;
+        rhi::DevicePtr device = rhi::CreateDevice(info);
+        if (device.Get() == nullptr)
+        {
+            const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
+            if (required != nullptr && required[0] == '1')
+            {
+                FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            }
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        }
+        {
+            renderer_demo::FrameSetup setup;
+            setup.device = device.Get();
+            setup.max_objects = 8;
+            setup.max_lights = 8;
+            renderer_demo::DemoFrame frame;
+            REQUIRE(frame.Create(setup));
+            const renderer::MaterialId lit = renderer::CreateGBufferMaterial(frame.Materials(), frame.Templates(),
+                                                                             renderer::GBufferOptions{}, "lit");
+            const renderer::MaterialId unlit = renderer::CreateGBufferMaterial(frame.Materials(), frame.Templates(),
+                                                                               renderer::GBufferOptions{}, "unlit");
+            REQUIRE(frame.Materials()->SetVec4(lit, "base_color", Vec4(0.8f, 0.2f, 0.2f, 1.0f)));
+            REQUIRE(frame.Materials()->SetVec4(unlit, "base_color", Vec4(0.8f, 0.2f, 0.2f, 1.0f)));
+            REQUIRE(frame.Materials()->SetUInt(unlit, "flags", renderer::kMaterialFlagUnlit));
+
+            auto cube = MakeShared<renderer::GpuMesh>();
+            renderer::MeshData data;
+            REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
+            REQUIRE(cube->Create(device.Get(), data, "cube"));
+            {
+                device->BeginFrame();
+                rhi::CommandList* list = device->CreateCommandList();
+                REQUIRE(list != nullptr);
+                list->Begin();
+                cube->RecordPrepare(list);
+                list->End();
+                rhi::CommandList* lists[] = {list};
+                REQUIRE(device->Submit(lists, 1) != 0);
+                device->EndFrame();
+                device->WaitIdle();
+                cube->MarkReady();
+            }
+
+            renderer::Camera camera;
+            camera.SetLookAt(Vec3(0, 1.0f, 4.0f), Vec3(0, 0, 0), Vec3(0, 1, 0));
+            camera.aspect = 1.0f;
+            camera.near_plane = 0.5f;
+            camera.far_plane = 50.0f;
+            renderer::RenderSceneDesc desc;
+            desc.max_objects = 8;
+            desc.max_lights = 8;
+            renderer::RenderScene scene(desc);
+            renderer::RenderObjectDesc od;
+            od.mesh = cube.Get();
+            od.material = unlit.index;
+            od.transform = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(-0.9f, 0, 0));
+            scene.AddObject(od);
+            od.material = lit.index;
+            od.transform = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(0.9f, 0, 0));
+            scene.AddObject(od);
+            renderer::Light sun;
+            sun.type = renderer::LightType::Directional;
+            sun.direction = Vec3(0.3f, 0.8f, 0.6f);
+            renderer::Light point;
+            point.type = renderer::LightType::Point;
+            point.position = Vec3(0.0f, 1.0f, 2.0f);
+            point.radius = 6.0f;
+            renderer::Light ambient;
+            ambient.type = renderer::LightType::Ambient;
+            ambient.intensity = 0.3f;
+            const renderer::LightId sun_id = scene.AddLight(sun);
+            const renderer::LightId point_id = scene.AddLight(point);
+            const renderer::LightId ambient_id = scene.AddLight(ambient);
+
+            const auto render_with = [&](const Vec3& color, Vector<u8>* pixels)
+            {
+                sun.color = color;
+                point.color = color;
+                ambient.color = color;
+                scene.SetLight(sun_id, sun);
+                scene.SetLight(point_id, point);
+                scene.SetLight(ambient_id, ambient);
+                return Render(frame, device.Get(), scene, camera, pixels);
+            };
+            Vector<u8> blue_lit;
+            Vector<u8> green_lit;
+            REQUIRE(render_with(Vec3(0.2f, 0.3f, 1.0f), &blue_lit));
+            REQUIRE(render_with(Vec3(0.2f, 1.0f, 0.3f), &green_lit));
+            // The middle row: the unlit cube on the left third, the lit one on the right third.
+            const u32 row = kSize / 2;
+            const auto at = [&](const Vector<u8>& px, u32 x, u32 c)
+            { return static_cast<int>(px[(row * kSize + x) * 4 + c]); };
+            const u32 left = kSize / 4;
+            const u32 right = kSize - kSize / 4;
+            INFO("unlit " << at(blue_lit, left, 0) << "," << at(blue_lit, left, 1) << "," << at(blue_lit, left, 2)
+                          << " / " << at(green_lit, left, 0) << "," << at(green_lit, left, 1) << ","
+                          << at(green_lit, left, 2));
+            INFO("lit " << at(blue_lit, right, 0) << "," << at(blue_lit, right, 1) << "," << at(blue_lit, right, 2)
+                        << " / " << at(green_lit, right, 0) << "," << at(green_lit, right, 1) << ","
+                        << at(green_lit, right, 2));
+            for (u32 c = 0; c < 3; ++c)
+            {
+                CHECK(at(blue_lit, left, c) == at(green_lit, left, c));  // the lights do not reach it
+            }
+            CHECK(at(blue_lit, left, 0) > at(blue_lit, left, 1));  // and it shows its own red base colour
+            CHECK(at(blue_lit, left, 0) > at(blue_lit, left, 2));
+            CHECK(at(blue_lit, right, 2) > at(green_lit, right, 2));  // the lit cube follows the light's colour
+            CHECK(at(green_lit, right, 1) > at(blue_lit, right, 1));
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}

@@ -15,7 +15,7 @@ constexpr u32 kChunkBin = 0x004E4942;   // "BIN\0"
 constexpr usize kMaxChunks = 16;
 constexpr usize kMaxUriBytes = 512;
 
-const char* const kSupported[] = {"KHR_materials_emissive_strength", "KHR_texture_transform"};
+const char* const kSupported[] = {"KHR_materials_emissive_strength", "KHR_materials_unlit", "KHR_texture_transform"};
 
 bool AddOverflows(u64 a, u64 b, u64* out)
 {

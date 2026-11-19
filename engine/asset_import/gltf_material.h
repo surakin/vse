@@ -7,8 +7,8 @@
 //! compression, mip chain) minted by [[asset::MintTextureFromPixels]]; each glTF material becomes one material resource
 //! of the standard G-buffer template, minted from a generated `.mat.src` by [[asset::MintMaterial]]. What the template
 //! cannot hold (a metallic-roughness, occlusion or emissive texture, an emissive color, a texture transform) is dropped
-//! with a counted warning naming the material, or refused when it changes what the surface is (`KHR_materials_unlit`, a
-//! `KHR_texture_transform`).
+//! with a counted warning naming the material, or refused when it changes what the surface is (a
+//! `KHR_texture_transform`). `KHR_materials_unlit` sets the material's unlit flag (`renderer::kMaterialFlagUnlit`).
 
 #include "asset_import/gltf_container.h"
 #include "asset_import/gltf_nodes.h"
@@ -30,8 +30,8 @@ namespace engine_placeholder::asset
 /// - Param result: receives the resources, manifest entries and warnings (appended to).
 /// - Param error: receives the sentence naming the glTF object.
 /// - Fails: `Invalid` (an image that does not decode, a texture without an image, an index outside its array),
-/// `Unsupported` (`KHR_materials_unlit`, a
-///   texture transform that is not the identity, a material the template cannot take), `TooLarge` (an image above the
+/// `Unsupported` (a texture transform that is not the identity, a material the template cannot take), `TooLarge` (an
+/// image above the
 ///   pixel limit), `NotFound` (an image file the source lacks), `LimitExceeded` (memory).
 /// - Thread-safety: thread-safe for separate calls with separate arguments.
 /// - Ownership: borrows its arguments for the call only; `*result` owns what it receives.

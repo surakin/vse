@@ -43,6 +43,7 @@ struct MaterialInfo
     f64 metallic = 1.0;
     f64 roughness = 1.0;
     f64 emissive_scale = 0.0;
+    bool unlit = false;  // KHR_materials_unlit: the `flags` parameter gets the unlit bit
     f64 alpha_cutoff = 0.5;
     u8 alpha_mode = 0;  // 0 opaque, 1 mask, 2 blend
     bool double_sided = false;
@@ -115,12 +116,9 @@ Status ReadMaterial(const JsonValue& material, u64 texture_count, MaterialInfo* 
         out->name = StringView();
     }
     const JsonValue extensions = material.Get("extensions");
-    if (extensions.Get("KHR_materials_unlit").Exists())
-    {
-        return RefuseMaterial(error, extensions.Get("KHR_materials_unlit").Path(),
-                              StringView("is KHR_materials_unlit, which the engine's materials cannot show"),
-                              ErrorCode::Unsupported);
-    }
+    // KHR_materials_unlit: the base colour (factor and texture) is shown as it is; the extension says the material's
+    // other properties are ignored, and the renderer's unlit flag ignores them (renderer::kMaterialFlagUnlit).
+    out->unlit = extensions.Get("KHR_materials_unlit").Exists();
     const JsonValue pbr = material.Get("pbrMetallicRoughness");
     if (pbr.Exists())
     {
@@ -610,6 +608,11 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
             text.Append(StringView(scalar_names[k]));
             text.Append(StringView(" float"));
             append_float(scalars[k]);
+        }
+        if (info.unlit)
+        {
+            // Written only for an unlit material, so the blobs of the materials that imported before do not change.
+            text.Append(StringView("\nparam flags uint 1"));
         }
         text.Append('\n');
         const TextureRef refs[kUses] = {info.color, info.normal};

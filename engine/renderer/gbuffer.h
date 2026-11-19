@@ -38,6 +38,10 @@ inline constexpr rhi::Format kGBufferNormalFormat = rhi::Format::RG16_Float;
 inline constexpr rhi::Format kGBufferMaterialFormat = rhi::Format::RGBA8_UNorm;
 /// The depth target's format.
 inline constexpr rhi::Format kGBufferDepthFormat = rhi::Format::D32_Float;
+/// The bit of a G-buffer material's `flags` parameter that makes it unlit: the pixel shows its base colour (albedo)
+/// with no ambient, light or emissive term, and the point lights add nothing to it (glTF's `KHR_materials_unlit`). The
+/// other bits are free.
+inline constexpr u32 kMaterialFlagUnlit = 1u;
 
 /// A G-buffer layer, for the debug view.
 enum class GBufferLayer : u8

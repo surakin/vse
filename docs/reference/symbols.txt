@@ -12200,93 +12200,94 @@ renderer::kGBufferAlbedoFormat	variable	renderer	renderer-kgbufferalbedoformat	r
 renderer::kGBufferNormalFormat	variable	renderer	renderer-kgbuffernormalformat	renderer.md	engine/renderer/gbuffer.h:36
 renderer::kGBufferMaterialFormat	variable	renderer	renderer-kgbuffermaterialformat	renderer.md	engine/renderer/gbuffer.h:38
 renderer::kGBufferDepthFormat	variable	renderer	renderer-kgbufferdepthformat	renderer.md	engine/renderer/gbuffer.h:40
-renderer::GBufferLayer	enum	renderer	renderer-gbufferlayer	renderer.md	engine/renderer/gbuffer.h:43
-renderer::GBufferLayer::Albedo	enumerator	renderer	renderer-gbufferlayer-albedo	renderer.md	engine/renderer/gbuffer.h:45
-renderer::GBufferLayer::Normal	enumerator	renderer	renderer-gbufferlayer-normal	renderer.md	engine/renderer/gbuffer.h:46
-renderer::GBufferLayer::Material	enumerator	renderer	renderer-gbufferlayer-material	renderer.md	engine/renderer/gbuffer.h:47
-renderer::GBufferLayer::Depth	enumerator	renderer	renderer-gbufferlayer-depth	renderer.md	engine/renderer/gbuffer.h:48
-renderer::GBufferLayer::WorldPosition	enumerator	renderer	renderer-gbufferlayer-worldposition	renderer.md	engine/renderer/gbuffer.h:49
-renderer::CheckGBufferFormats(const rhi::Device*,char*,usize)	function	renderer	renderer-checkgbufferformats-const-rhi-device-star-char-star-usize	renderer.md	engine/renderer/gbuffer.h:65
-renderer::GBufferPipelineTarget()	function	renderer	renderer-gbufferpipelinetarget	renderer.md	engine/renderer/gbuffer.h:70
-renderer::OctEncode(const Vec3&)	function	renderer	renderer-octencode-const-vec3-amp	renderer.md	engine/renderer/gbuffer.h:78
-renderer::OctDecode(const Vec2&)	function	renderer	renderer-octdecode-const-vec2-amp	renderer.md	engine/renderer/gbuffer.h:85
-renderer::SrgbToLinear(f32)	function	renderer	renderer-srgbtolinear-f32	renderer.md	engine/renderer/gbuffer.h:93
-renderer::LinearizeDepth(f32,f32,f32)	function	renderer	renderer-linearizedepth-f32-f32-f32	renderer.md	engine/renderer/gbuffer.h:102
-renderer::FitCameraDepthRange(const RenderScene&,Camera*,f32)	function	renderer	renderer-fitcameradepthrange-const-renderscene-amp-camera-star-f32	renderer.md	engine/renderer/gbuffer.h:115
-renderer::SlotShape	enum	renderer	renderer-slotshape	renderer.md	engine/renderer/gbuffer.h:118
-renderer::SlotShape::Texture2D	enumerator	renderer	renderer-slotshape-texture2d	renderer.md	engine/renderer/gbuffer.h:120
-renderer::SlotShape::Cube	enumerator	renderer	renderer-slotshape-cube	renderer.md	engine/renderer/gbuffer.h:121
-renderer::SlotShape::Array2D	enumerator	renderer	renderer-slotshape-array2d	renderer.md	engine/renderer/gbuffer.h:122
-renderer::SlotColorSpace	enum	renderer	renderer-slotcolorspace	renderer.md	engine/renderer/gbuffer.h:126
-renderer::SlotColorSpace::Any	enumerator	renderer	renderer-slotcolorspace-any	renderer.md	engine/renderer/gbuffer.h:128
-renderer::SlotColorSpace::Srgb	enumerator	renderer	renderer-slotcolorspace-srgb	renderer.md	engine/renderer/gbuffer.h:129
-renderer::SlotColorSpace::Linear	enumerator	renderer	renderer-slotcolorspace-linear	renderer.md	engine/renderer/gbuffer.h:130
-renderer::TemplateTextureSlot	struct	renderer	renderer-templatetextureslot	renderer.md	engine/renderer/gbuffer.h:137
-renderer::TemplateTextureSlot::name	variable	renderer	renderer-templatetextureslot-name	renderer.md	engine/renderer/gbuffer.h:139
-renderer::TemplateTextureSlot::shape	variable	renderer	renderer-templatetextureslot-shape	renderer.md	engine/renderer/gbuffer.h:140
-renderer::TemplateTextureSlot::color_space	variable	renderer	renderer-templatetextureslot-color-space	renderer.md	engine/renderer/gbuffer.h:141
-renderer::TemplateParamDefault	struct	renderer	renderer-templateparamdefault	renderer.md	engine/renderer/gbuffer.h:149
-renderer::TemplateParamDefault::name	variable	renderer	renderer-templateparamdefault-name	renderer.md	engine/renderer/gbuffer.h:151
-renderer::TemplateParamDefault::value	variable	renderer	renderer-templateparamdefault-value	renderer.md	engine/renderer/gbuffer.h:152
-renderer::GBufferTemplateInfo	struct	renderer	renderer-gbuffertemplateinfo	renderer.md	engine/renderer/gbuffer.h:160
-renderer::GBufferTemplateInfo::name	variable	renderer	renderer-gbuffertemplateinfo-name	renderer.md	engine/renderer/gbuffer.h:162
-renderer::GBufferTemplateInfo::skinned	variable	renderer	renderer-gbuffertemplateinfo-skinned	renderer.md	engine/renderer/gbuffer.h:163
-renderer::GBufferTemplateInfo::vertex_color	variable	renderer	renderer-gbuffertemplateinfo-vertex-color	renderer.md	engine/renderer/gbuffer.h:164
-renderer::GBufferTemplateInfo::fragment_permutations	variable	renderer	renderer-gbuffertemplateinfo-fragment-permutations	renderer.md	engine/renderer/gbuffer.h:165
-renderer::GBufferTemplateInfo::slots	variable	renderer	renderer-gbuffertemplateinfo-slots	renderer.md	engine/renderer/gbuffer.h:166
-renderer::GBufferTemplateInfo::slot_count	variable	renderer	renderer-gbuffertemplateinfo-slot-count	renderer.md	engine/renderer/gbuffer.h:167
-renderer::GBufferTemplateInfo::defaults	variable	renderer	renderer-gbuffertemplateinfo-defaults	renderer.md	engine/renderer/gbuffer.h:168
-renderer::GBufferTemplateInfo::default_count	variable	renderer	renderer-gbuffertemplateinfo-default-count	renderer.md	engine/renderer/gbuffer.h:169
-renderer::FindGBufferTemplateInfo(const char*)	function	renderer	renderer-findgbuffertemplateinfo-const-char-star	renderer.md	engine/renderer/gbuffer.h:178
-renderer::GBufferOptions	struct	renderer	renderer-gbufferoptions	renderer.md	engine/renderer/gbuffer.h:183
-renderer::GBufferOptions::normal_map	variable	renderer	renderer-gbufferoptions-normal-map	renderer.md	engine/renderer/gbuffer.h:186
-renderer::GBufferOptions::alpha_test	variable	renderer	renderer-gbufferoptions-alpha-test	renderer.md	engine/renderer/gbuffer.h:189
-renderer::GBufferOptions::vertex_color	variable	renderer	renderer-gbufferoptions-vertex-color	renderer.md	engine/renderer/gbuffer.h:192
-renderer::GBufferOptions::skinned	variable	renderer	renderer-gbufferoptions-skinned	renderer.md	engine/renderer/gbuffer.h:195
-renderer::GBufferTemplates	struct	renderer	renderer-gbuffertemplates	renderer.md	engine/renderer/gbuffer.h:201
-renderer::GBufferTemplates::plain	variable	renderer	renderer-gbuffertemplates-plain	renderer.md	engine/renderer/gbuffer.h:204
-renderer::GBufferTemplates::colored	variable	renderer	renderer-gbuffertemplates-colored	renderer.md	engine/renderer/gbuffer.h:206
-renderer::GBufferTemplates::skinned	variable	renderer	renderer-gbuffertemplates-skinned	renderer.md	engine/renderer/gbuffer.h:208
-renderer::GBufferTemplates::skinned_colored	variable	renderer	renderer-gbuffertemplates-skinned-colored	renderer.md	engine/renderer/gbuffer.h:210
-renderer::CreateGBufferTemplates(MaterialSystem*)	function	renderer	renderer-creategbuffertemplates-materialsystem-star	renderer.md	engine/renderer/gbuffer.h:220
-renderer::CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)	function	renderer	renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star	renderer.md	engine/renderer/gbuffer.h:240
-renderer::ApplyGBufferDefaults(MaterialSystem*,MaterialId)	function	renderer	renderer-applygbufferdefaults-materialsystem-star-materialid	renderer.md	engine/renderer/gbuffer.h:252
-renderer::GBufferTargets	struct	renderer	renderer-gbuffertargets	renderer.md	engine/renderer/gbuffer.h:257
-renderer::GBufferTargets::albedo	variable	renderer	renderer-gbuffertargets-albedo	renderer.md	engine/renderer/gbuffer.h:260
-renderer::GBufferTargets::normal	variable	renderer	renderer-gbuffertargets-normal	renderer.md	engine/renderer/gbuffer.h:262
-renderer::GBufferTargets::material	variable	renderer	renderer-gbuffertargets-material	renderer.md	engine/renderer/gbuffer.h:264
-renderer::GBufferTargets::depth	variable	renderer	renderer-gbuffertargets-depth	renderer.md	engine/renderer/gbuffer.h:267
-renderer::GBufferStats	struct	renderer	renderer-gbufferstats	renderer.md	engine/renderer/gbuffer.h:273
-renderer::GBufferStats::visible	variable	renderer	renderer-gbufferstats-visible	renderer.md	engine/renderer/gbuffer.h:276
-renderer::GBufferStats::drawn_objects	variable	renderer	renderer-gbufferstats-drawn-objects	renderer.md	engine/renderer/gbuffer.h:278
-renderer::GBufferStats::draws	variable	renderer	renderer-gbufferstats-draws	renderer.md	engine/renderer/gbuffer.h:280
-renderer::GBufferStats::rejected	variable	renderer	renderer-gbufferstats-rejected	renderer.md	engine/renderer/gbuffer.h:282
-renderer::GBufferStats::pipeline_binds	variable	renderer	renderer-gbufferstats-pipeline-binds	renderer.md	engine/renderer/gbuffer.h:284
-renderer::GBufferStats::material_binds	variable	renderer	renderer-gbufferstats-material-binds	renderer.md	engine/renderer/gbuffer.h:286
-renderer::GBufferStats::skinned_dropped	variable	renderer	renderer-gbufferstats-skinned-dropped	renderer.md	engine/renderer/gbuffer.h:289
-renderer::GBufferPass	class	renderer	renderer-gbufferpass	renderer.md	engine/renderer/gbuffer.h:297
-renderer::GBufferPass::GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/gbuffer.h:307
-renderer::GBufferPass::~GBufferPass()	function	renderer	renderer-gbufferpass-tilde-gbufferpass	renderer.md	engine/renderer/gbuffer.h:309
-renderer::GBufferPass::GBufferPass(const GBufferPass&)	function	renderer	renderer-gbufferpass-gbufferpass-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:310
-renderer::GBufferPass::operator=(const GBufferPass&)	function	renderer	renderer-gbufferpass-operator-eq-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:311
-renderer::GBufferPass::Prepare(const RenderScene&,const Frustum&)	function	renderer	renderer-gbufferpass-prepare-const-renderscene-amp-const-frustum-amp	renderer.md	engine/renderer/gbuffer.h:327
-renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	renderer-gbufferpass-addtograph-rendergraph-star-u32-u32	renderer.md	engine/renderer/gbuffer.h:338
-renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:347
-renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:352
-renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:355
-renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:412
-renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:420
-renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:422
-renderer::GBufferDebugView::GBufferDebugView(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:423
-renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-operator-eq-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:424
-renderer::GBufferDebugView::RegisterWith(DeviceResources*)	function	renderer	renderer-gbufferdebugview-registerwith-deviceresources-star	renderer.md	engine/renderer/gbuffer.h:432
-renderer::GBufferDebugView::Release()	function	renderer	renderer-gbufferdebugview-release	renderer.md	engine/renderer/gbuffer.h:435
-renderer::GBufferDebugView::Recreate(rhi::Device*)	function	renderer	renderer-gbufferdebugview-recreate-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:443
-renderer::GBufferDebugView::Live() const	function	renderer	renderer-gbufferdebugview-live-const	renderer.md	engine/renderer/gbuffer.h:444
-renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-gbufferdebugview-recreatablename-const	renderer.md	engine/renderer/gbuffer.h:445
-renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:449
-renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:457
-renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:480
+renderer::kMaterialFlagUnlit	variable	renderer	renderer-kmaterialflagunlit	renderer.md	engine/renderer/gbuffer.h:44
+renderer::GBufferLayer	enum	renderer	renderer-gbufferlayer	renderer.md	engine/renderer/gbuffer.h:47
+renderer::GBufferLayer::Albedo	enumerator	renderer	renderer-gbufferlayer-albedo	renderer.md	engine/renderer/gbuffer.h:49
+renderer::GBufferLayer::Normal	enumerator	renderer	renderer-gbufferlayer-normal	renderer.md	engine/renderer/gbuffer.h:50
+renderer::GBufferLayer::Material	enumerator	renderer	renderer-gbufferlayer-material	renderer.md	engine/renderer/gbuffer.h:51
+renderer::GBufferLayer::Depth	enumerator	renderer	renderer-gbufferlayer-depth	renderer.md	engine/renderer/gbuffer.h:52
+renderer::GBufferLayer::WorldPosition	enumerator	renderer	renderer-gbufferlayer-worldposition	renderer.md	engine/renderer/gbuffer.h:53
+renderer::CheckGBufferFormats(const rhi::Device*,char*,usize)	function	renderer	renderer-checkgbufferformats-const-rhi-device-star-char-star-usize	renderer.md	engine/renderer/gbuffer.h:69
+renderer::GBufferPipelineTarget()	function	renderer	renderer-gbufferpipelinetarget	renderer.md	engine/renderer/gbuffer.h:74
+renderer::OctEncode(const Vec3&)	function	renderer	renderer-octencode-const-vec3-amp	renderer.md	engine/renderer/gbuffer.h:82
+renderer::OctDecode(const Vec2&)	function	renderer	renderer-octdecode-const-vec2-amp	renderer.md	engine/renderer/gbuffer.h:89
+renderer::SrgbToLinear(f32)	function	renderer	renderer-srgbtolinear-f32	renderer.md	engine/renderer/gbuffer.h:97
+renderer::LinearizeDepth(f32,f32,f32)	function	renderer	renderer-linearizedepth-f32-f32-f32	renderer.md	engine/renderer/gbuffer.h:106
+renderer::FitCameraDepthRange(const RenderScene&,Camera*,f32)	function	renderer	renderer-fitcameradepthrange-const-renderscene-amp-camera-star-f32	renderer.md	engine/renderer/gbuffer.h:119
+renderer::SlotShape	enum	renderer	renderer-slotshape	renderer.md	engine/renderer/gbuffer.h:122
+renderer::SlotShape::Texture2D	enumerator	renderer	renderer-slotshape-texture2d	renderer.md	engine/renderer/gbuffer.h:124
+renderer::SlotShape::Cube	enumerator	renderer	renderer-slotshape-cube	renderer.md	engine/renderer/gbuffer.h:125
+renderer::SlotShape::Array2D	enumerator	renderer	renderer-slotshape-array2d	renderer.md	engine/renderer/gbuffer.h:126
+renderer::SlotColorSpace	enum	renderer	renderer-slotcolorspace	renderer.md	engine/renderer/gbuffer.h:130
+renderer::SlotColorSpace::Any	enumerator	renderer	renderer-slotcolorspace-any	renderer.md	engine/renderer/gbuffer.h:132
+renderer::SlotColorSpace::Srgb	enumerator	renderer	renderer-slotcolorspace-srgb	renderer.md	engine/renderer/gbuffer.h:133
+renderer::SlotColorSpace::Linear	enumerator	renderer	renderer-slotcolorspace-linear	renderer.md	engine/renderer/gbuffer.h:134
+renderer::TemplateTextureSlot	struct	renderer	renderer-templatetextureslot	renderer.md	engine/renderer/gbuffer.h:141
+renderer::TemplateTextureSlot::name	variable	renderer	renderer-templatetextureslot-name	renderer.md	engine/renderer/gbuffer.h:143
+renderer::TemplateTextureSlot::shape	variable	renderer	renderer-templatetextureslot-shape	renderer.md	engine/renderer/gbuffer.h:144
+renderer::TemplateTextureSlot::color_space	variable	renderer	renderer-templatetextureslot-color-space	renderer.md	engine/renderer/gbuffer.h:145
+renderer::TemplateParamDefault	struct	renderer	renderer-templateparamdefault	renderer.md	engine/renderer/gbuffer.h:153
+renderer::TemplateParamDefault::name	variable	renderer	renderer-templateparamdefault-name	renderer.md	engine/renderer/gbuffer.h:155
+renderer::TemplateParamDefault::value	variable	renderer	renderer-templateparamdefault-value	renderer.md	engine/renderer/gbuffer.h:156
+renderer::GBufferTemplateInfo	struct	renderer	renderer-gbuffertemplateinfo	renderer.md	engine/renderer/gbuffer.h:164
+renderer::GBufferTemplateInfo::name	variable	renderer	renderer-gbuffertemplateinfo-name	renderer.md	engine/renderer/gbuffer.h:166
+renderer::GBufferTemplateInfo::skinned	variable	renderer	renderer-gbuffertemplateinfo-skinned	renderer.md	engine/renderer/gbuffer.h:167
+renderer::GBufferTemplateInfo::vertex_color	variable	renderer	renderer-gbuffertemplateinfo-vertex-color	renderer.md	engine/renderer/gbuffer.h:168
+renderer::GBufferTemplateInfo::fragment_permutations	variable	renderer	renderer-gbuffertemplateinfo-fragment-permutations	renderer.md	engine/renderer/gbuffer.h:169
+renderer::GBufferTemplateInfo::slots	variable	renderer	renderer-gbuffertemplateinfo-slots	renderer.md	engine/renderer/gbuffer.h:170
+renderer::GBufferTemplateInfo::slot_count	variable	renderer	renderer-gbuffertemplateinfo-slot-count	renderer.md	engine/renderer/gbuffer.h:171
+renderer::GBufferTemplateInfo::defaults	variable	renderer	renderer-gbuffertemplateinfo-defaults	renderer.md	engine/renderer/gbuffer.h:172
+renderer::GBufferTemplateInfo::default_count	variable	renderer	renderer-gbuffertemplateinfo-default-count	renderer.md	engine/renderer/gbuffer.h:173
+renderer::FindGBufferTemplateInfo(const char*)	function	renderer	renderer-findgbuffertemplateinfo-const-char-star	renderer.md	engine/renderer/gbuffer.h:182
+renderer::GBufferOptions	struct	renderer	renderer-gbufferoptions	renderer.md	engine/renderer/gbuffer.h:187
+renderer::GBufferOptions::normal_map	variable	renderer	renderer-gbufferoptions-normal-map	renderer.md	engine/renderer/gbuffer.h:190
+renderer::GBufferOptions::alpha_test	variable	renderer	renderer-gbufferoptions-alpha-test	renderer.md	engine/renderer/gbuffer.h:193
+renderer::GBufferOptions::vertex_color	variable	renderer	renderer-gbufferoptions-vertex-color	renderer.md	engine/renderer/gbuffer.h:196
+renderer::GBufferOptions::skinned	variable	renderer	renderer-gbufferoptions-skinned	renderer.md	engine/renderer/gbuffer.h:199
+renderer::GBufferTemplates	struct	renderer	renderer-gbuffertemplates	renderer.md	engine/renderer/gbuffer.h:205
+renderer::GBufferTemplates::plain	variable	renderer	renderer-gbuffertemplates-plain	renderer.md	engine/renderer/gbuffer.h:208
+renderer::GBufferTemplates::colored	variable	renderer	renderer-gbuffertemplates-colored	renderer.md	engine/renderer/gbuffer.h:210
+renderer::GBufferTemplates::skinned	variable	renderer	renderer-gbuffertemplates-skinned	renderer.md	engine/renderer/gbuffer.h:212
+renderer::GBufferTemplates::skinned_colored	variable	renderer	renderer-gbuffertemplates-skinned-colored	renderer.md	engine/renderer/gbuffer.h:214
+renderer::CreateGBufferTemplates(MaterialSystem*)	function	renderer	renderer-creategbuffertemplates-materialsystem-star	renderer.md	engine/renderer/gbuffer.h:224
+renderer::CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)	function	renderer	renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star	renderer.md	engine/renderer/gbuffer.h:244
+renderer::ApplyGBufferDefaults(MaterialSystem*,MaterialId)	function	renderer	renderer-applygbufferdefaults-materialsystem-star-materialid	renderer.md	engine/renderer/gbuffer.h:256
+renderer::GBufferTargets	struct	renderer	renderer-gbuffertargets	renderer.md	engine/renderer/gbuffer.h:261
+renderer::GBufferTargets::albedo	variable	renderer	renderer-gbuffertargets-albedo	renderer.md	engine/renderer/gbuffer.h:264
+renderer::GBufferTargets::normal	variable	renderer	renderer-gbuffertargets-normal	renderer.md	engine/renderer/gbuffer.h:266
+renderer::GBufferTargets::material	variable	renderer	renderer-gbuffertargets-material	renderer.md	engine/renderer/gbuffer.h:268
+renderer::GBufferTargets::depth	variable	renderer	renderer-gbuffertargets-depth	renderer.md	engine/renderer/gbuffer.h:271
+renderer::GBufferStats	struct	renderer	renderer-gbufferstats	renderer.md	engine/renderer/gbuffer.h:277
+renderer::GBufferStats::visible	variable	renderer	renderer-gbufferstats-visible	renderer.md	engine/renderer/gbuffer.h:280
+renderer::GBufferStats::drawn_objects	variable	renderer	renderer-gbufferstats-drawn-objects	renderer.md	engine/renderer/gbuffer.h:282
+renderer::GBufferStats::draws	variable	renderer	renderer-gbufferstats-draws	renderer.md	engine/renderer/gbuffer.h:284
+renderer::GBufferStats::rejected	variable	renderer	renderer-gbufferstats-rejected	renderer.md	engine/renderer/gbuffer.h:286
+renderer::GBufferStats::pipeline_binds	variable	renderer	renderer-gbufferstats-pipeline-binds	renderer.md	engine/renderer/gbuffer.h:288
+renderer::GBufferStats::material_binds	variable	renderer	renderer-gbufferstats-material-binds	renderer.md	engine/renderer/gbuffer.h:290
+renderer::GBufferStats::skinned_dropped	variable	renderer	renderer-gbufferstats-skinned-dropped	renderer.md	engine/renderer/gbuffer.h:293
+renderer::GBufferPass	class	renderer	renderer-gbufferpass	renderer.md	engine/renderer/gbuffer.h:301
+renderer::GBufferPass::GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/gbuffer.h:311
+renderer::GBufferPass::~GBufferPass()	function	renderer	renderer-gbufferpass-tilde-gbufferpass	renderer.md	engine/renderer/gbuffer.h:313
+renderer::GBufferPass::GBufferPass(const GBufferPass&)	function	renderer	renderer-gbufferpass-gbufferpass-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:314
+renderer::GBufferPass::operator=(const GBufferPass&)	function	renderer	renderer-gbufferpass-operator-eq-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:315
+renderer::GBufferPass::Prepare(const RenderScene&,const Frustum&)	function	renderer	renderer-gbufferpass-prepare-const-renderscene-amp-const-frustum-amp	renderer.md	engine/renderer/gbuffer.h:331
+renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	renderer-gbufferpass-addtograph-rendergraph-star-u32-u32	renderer.md	engine/renderer/gbuffer.h:342
+renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:351
+renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:356
+renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:359
+renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:416
+renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:424
+renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:426
+renderer::GBufferDebugView::GBufferDebugView(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:427
+renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-operator-eq-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:428
+renderer::GBufferDebugView::RegisterWith(DeviceResources*)	function	renderer	renderer-gbufferdebugview-registerwith-deviceresources-star	renderer.md	engine/renderer/gbuffer.h:436
+renderer::GBufferDebugView::Release()	function	renderer	renderer-gbufferdebugview-release	renderer.md	engine/renderer/gbuffer.h:439
+renderer::GBufferDebugView::Recreate(rhi::Device*)	function	renderer	renderer-gbufferdebugview-recreate-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:447
+renderer::GBufferDebugView::Live() const	function	renderer	renderer-gbufferdebugview-live-const	renderer.md	engine/renderer/gbuffer.h:448
+renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-gbufferdebugview-recreatablename-const	renderer.md	engine/renderer/gbuffer.h:449
+renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:453
+renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:461
+renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:484
 renderer::GlyphAtlasTexture	class	renderer	renderer-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:28
 renderer::GlyphAtlasTexture::GlyphAtlasTexture()	function	renderer	renderer-glyphatlastexture-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:31
 renderer::GlyphAtlasTexture::~GlyphAtlasTexture()	function	renderer	renderer-glyphatlastexture-tilde-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:33
