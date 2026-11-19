@@ -56,6 +56,7 @@ struct Reader
 {
     const engine_value_pool* pool;
     u32 nodes = 0;
+    usize bytes_copied = 0;
 };
 
 bool ReadValue(Reader& r, const engine_value& v, u32 depth, Value* out, const char** why)
@@ -93,6 +94,12 @@ bool ReadValue(Reader& r, const engine_value& v, u32 depth, Value* out, const ch
             v.count > limit)
         {
             *why = "a string or blob lies outside the bytes of the pool, or is over its limit";
+            return false;
+        }
+        r.bytes_copied += v.count;
+        if (r.bytes_copied > kMaxScriptBytes)
+        {
+            *why = "the strings and blobs of the pool add up to more than 16 MiB";
             return false;
         }
         const u8* data = pool.bytes + static_cast<usize>(v.i);
@@ -550,7 +557,8 @@ struct ScriptHost::Impl
     bool standard_bindings = false;
     Vector<UniquePtr<HostFunction>> functions;
     UniquePtr<script::ScriptRuntime> runtime;
-    script::Budget call_budget;
+    script::Budget
+        call_budget = script::ScriptRuntimeConfig::DefaultBudget();  // 0 would mean unlimited: never the default
     script::Budget callback_budget = script::ScriptRuntimeConfig::DefaultBudget();
     u32 loaded = 0;
     u64 calls = 0;
@@ -1151,14 +1159,17 @@ engine_status ScriptEventUnsubscribeFn(engine_handle world, u32 id)
 
 engine_status ScriptTaskRunFn(engine_handle world, const engine_script_task* task, engine_value_pool* results)
 {
-    if (task == nullptr || task->source.data == nullptr || task->source.length == 0 ||
-        task->source.length > kMaxScriptBytes)
+    if (task == nullptr)
     {
-        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`task` is NULL or its source is empty");
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`task` is NULL");
     }
     if (StructSizeOf(task) < sizeof(engine_script_task))
     {
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_script_task.struct_size is smaller than the struct");
+    }
+    if (task->source.data == nullptr || task->source.length == 0 || task->source.length > kMaxScriptBytes)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the task's source is empty or too long");
     }
     if (task->mode < ENGINE_SCRIPT_TASK_RUN || task->mode > ENGINE_SCRIPT_TASK_FOR || task->reserved != 0)
     {

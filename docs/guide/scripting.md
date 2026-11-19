@@ -1,6 +1,8 @@
 # Scripting: a language behind an interface, many threads in front
 
-Status: in progress (Phase 27). Built: the design and the spikes (Day 444), LuaJIT vendored (Day 445), the backend interface and the value type (Day 446). Next: a second backend and the conformance suite (Day 447), the LuaJIT backend (Days 448-449).
+Status: written (Phase 27 complete on Linux; the Windows and macOS runs are Days 473-474). New to the model? Start with [Why your script runs on many threads](scripting-and-threads.md) and the tutorials [Your first script](../tutorials/your-first-script.md) and [Using every core](../tutorials/using-every-core.md).
+
+**The model in six lines.** Gameplay scripts are Lua (LuaJIT), behind a language interface. Entities are split over `P` partitions (64 by default), each with its own script state, and the partitions run at the same time on the job scheduler. A script reads the world as of the tick start and records its changes in a command buffer; at the sync point the buffers are merged in a fixed order, events are delivered and finished tasks resume their waiters. A script never blocks a thread: waits are coroutines on the simulation clock, and parallel work is a pure task. Because nothing depends on the thread count, the world after any tick is the same at 1 thread and at 32, which replay, rollback and the tests rely on. The sections below are the reference: the rules, values, calling, backends, bindings, partitions, the merge, behaviors, events, waits, tasks, assets and hot reload, debugging, physics, audio and input, persistence, the JIT table, cost and limits. The C API for scripts (`script_load`, `script_call`, the script component, events and tasks) is in [The Engine as a Loadable Library](engine-library.md).
 
 **Audience:** engine programmers who write or review script code, and programmers who add a language backend. Design and the measurements behind it:
 `docs/superpowers/specs/2026-11-18-scripting-design.md`.

@@ -349,6 +349,9 @@ int main(void)
     CHECK_STATUS(g_api->script_call(world, Str("no_such_function"), NULL, NULL), ENGINE_ERROR_INTERNAL);
     CHECK_STATUS(g_api->script_call(world, Str("use_fail"), NULL, NULL), ENGINE_ERROR_INTERNAL);
 
+    /* With no budget set, a loop still ends: the default is a limit, not "unlimited". */
+    CHECK_STATUS(g_api->script_call(world, Str("slow"), NULL, NULL), ENGINE_ERROR_LIMIT_EXCEEDED);
+
     /* A budget stops a loop; a call after it works. */
     memset(&budget, 0, sizeof(budget));
     budget.struct_size = sizeof(budget);

@@ -224,6 +224,20 @@ static void CheckTasks(engine_handle world)
     }
     CHECK(total == 5050);
 
+    /* a count near 2^64 is refused (the chunk count must not wrap), and a struct that is too short is refused first */
+    task.count = 0xFFFFFFFFFFFFFFFFull;
+    task.chunk = 1;
+    PoolInit(&out);
+    CHECK(g_api->script_task_run(world, &task, &out.pool) != ENGINE_OK);
+    task.count = 100;
+    task.chunk = 10;
+    {
+        engine_script_task shorter = task;
+        shorter.struct_size = 4;
+        PoolInit(&out);
+        CHECK_STATUS(g_api->script_task_run(world, &shorter, &out.pool), ENGINE_ERROR_STRUCT_SIZE);
+    }
+
     /* a task that raises an error fails the call with the script's words in the last error */
     task.mode = ENGINE_SCRIPT_TASK_RUN;
     task.source = Str("error('nope')");

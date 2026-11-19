@@ -548,7 +548,7 @@ usize TaskPool::Execute(Span<const TaskRequest> requests, Vector<TaskOutcome>* o
             continue;
         }
         const u64 chunk = r.chunk != 0 ? r.chunk : kDefaultTaskChunk;
-        const u64 chunks = (n + chunk - 1) / chunk;
+        const u64 chunks = n / chunk + (n % chunk != 0 ? 1 : 0);
         if (chunks > kMaxTaskChunks)
         {
             o.failed = true;

@@ -85,6 +85,12 @@ behavior('late_spawner', {
     spawn(function(me) put(me, 'S') end)
   end,
 })
+behavior('dicer', {
+  on_create = function(self)
+    wait(0.05)
+    put(self, tostring(random.float()))
+  end,
+})
 behavior('plain_trace', {
   on_update = function(self) end,
 })
@@ -341,6 +347,29 @@ u64 LatentHash(usize threads)
 }
 
 }  // namespace
+
+TEST_CASE("Latent waits: a resumed wait draws from its own stream, whatever resumed before it", "[script][latent]")
+{
+    // One partition; the second entity's number must not depend on whether the first one drew before it.
+    String<HeapAllocator> alone(HeapAllocator::Default());
+    {
+        LatentRig rig(1);
+        rig.Make("plain_trace");
+        const ecs::Entity e = rig.Make("dicer");
+        rig.Tick(3);
+        alone = rig.Text(e);
+    }
+    String<HeapAllocator> after_neighbor(HeapAllocator::Default());
+    {
+        LatentRig rig(1);
+        rig.Make("dicer");
+        const ecs::Entity e = rig.Make("dicer");
+        rig.Tick(3);
+        after_neighbor = rig.Text(e);
+    }
+    CHECK(alone.Length() > 0);
+    CHECK(alone.View() == after_neighbor.View());
+}
 
 TEST_CASE("Latent waits: the same state at 1, 2, 7 and 16 threads", "[script][latent][parallel]")
 {

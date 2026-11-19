@@ -32,6 +32,7 @@ Status: written. A way into the documentation by what you want to do. Each line 
 | ask what is near something, or cast a ray | [Ask what is near something](../tutorials/spatial-queries.md), [Spatial](spatial.md) |
 | have bodies fall, collide and stack | [Physics in your window](../tutorials/physics-in-your-window.md), [Physics](physics.md) |
 | play sound, including positional sound | [Sound in your window](../tutorials/audio-in-your-window.md), [Audio](audio.md) |
+| script gameplay in Lua on every core | [Your first script](../tutorials/your-first-script.md), [Using every core](../tutorials/using-every-core.md), [Why scripts run on many threads](scripting-and-threads.md), [Scripting](scripting.md) |
 | play skeletal animation | [Animation](animation.md) |
 | load models, textures and levels | [Assets](assets.md) |
 

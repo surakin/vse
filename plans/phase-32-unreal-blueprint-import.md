@@ -61,6 +61,38 @@ libraries, and Blueprint-to-Blueprint communication — each adds real
 complexity and should be scoped in once the basic event/branch/function
 path is proven end to end.
 
+## Landing notes from Phase 27 (written on Day 477): how Blueprint semantics map to the scripting model
+
+Phase 27's scripts are multithreaded by design (partitions, tick-start reads, command buffers, one-tick events, tasks that see no world; `docs/guide/scripting.md`, `docs/guide/scripting-and-threads.md`). A Blueprint is single-threaded and
+synchronous, so the transpiler must keep every node on one of the shapes below, and say "unsupported" for the rest. Nothing here needs a change to Phase 27; the recommended transpilation is the right-hand column.
+
+| Blueprint feature | Maps to | Transpile as |
+|---|---|---|
+| Event graph, `BeginPlay`, `Tick`, `EndPlay` | behavior callbacks | `on_start`, `on_update(self, dt)`, `on_destroy` of one `behavior('<BlueprintName>', {...})`; one behavior per Blueprint class, one instance per actor |
+| Custom event, event dispatcher (bind, call) | named events | `event.on('<Dispatcher>', fn)` in `on_create`; `event.emit` for a call to all bound; one tick of latency |
+| Call a custom event on another actor | `event.emit_to(actor, name, payload)` | direct; the call returns nothing (a Blueprint event never does) |
+| Function call on `self` or a pure library function | a Lua local function, or a binding (`num.*`, `vec3.*`) | direct |
+| Function with outputs on **another** actor, or an interface call whose result is used | **not available** (it would call into another partition synchronously) | request event + reply event one tick later (`event.emit_to(other, 'get_health', {reply_to=self.entity})`), and the nodes after the call move into the reply handler; mark the generated code with a comment |
+| Interface message to an actor that may not implement it | `emit_to` | the target's behavior ignores events it does not handle; the result of "does implement" is unsupported (emit and see) |
+| Cast to a class / `Is Valid` | component and behavior checks | `component.has(entity, 'name')` and `entity.valid`; a cast fails the same way (the pin is not executed) |
+| Get/Set a variable of **another** actor | a component read; a component write | `component.get/set` on a component the importer declares per Blueprint class; the read sees the tick-start value, the write lands at the sync point, so "set then immediately read it on the other actor" is unsupported |
+| Variable of `self` | field of `self` | `self.<name>`; persisted state goes in a component so it saves and replays |
+| `Delay`, `Retriggerable Delay` | latent waits | `wait(seconds)` in a spawned coroutine; retriggerable = `stop(handle)` then `spawn` |
+| Timeline | `tween(from, to, seconds, easing, fn)` | direct for float tracks; curve-asset tracks need a sampled table |
+| `Set Timer by Event` / `by Function Name` | `after` / `every` | direct, with the returned handle for clear/pause |
+| Async actions (`Async Load Asset`, `MoveComponentTo`) | `wait_event` on an engine event, or a task | per node; the engine's own events are `on_asset_loaded`, physics `on_collision_*`, `on_trigger_*` |
+| `For Each Loop`, `While`, `Sequence`, `Branch`, `Switch`, `Do N`, `Gate` | Lua control flow | direct; `While` runs against the instruction budget (an endless Blueprint loop ends with an error, as Unreal's infinite-loop guard does) |
+| Spawn Actor, Destroy Actor | `entity.spawn`, `entity.destroy` | direct; the new entity exists after the merge (a placeholder handle works until then) |
+| Overlap / Hit events | `on_trigger_enter/exit`, `on_collision_begin/end` | direct |
+| Input actions | `on_input` and the input bindings | direct |
+| Get All Actors Of Class | `physics.overlap_*`, or a query binding | per use; a query reads the tick-start view |
+| Blueprint macros | inlined at import | expand into the caller |
+| Blueprint-to-Blueprint **synchronous** state sharing, static/global variables (Game Instance, subsystems) | **not available** (scripts share no Lua state) | keep the state in a component on one owner entity, change it through events sent to the owner; the importer reports each use as a design decision |
+| Multithreaded Blueprint (rare) | n/a | all Blueprints run in the model above |
+
+What this means for fidelity: a Blueprint whose logic is "react to events, change own state, send events to others, wait" imports exactly; one that reads another actor's result in the middle of a node chain needs the reply-event rewrite
+(the importer can generate it for the common shape "call, then use the result in the next nodes"). Order between actors within one tick is not observable by design, so Blueprints that depend on actor tick order are reported, not guessed.
+
 ## Notes / open questions
 
 - Inherits Phase 31's EULA review blocker (root `PLAN.md` assumption #6) —

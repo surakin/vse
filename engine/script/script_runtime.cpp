@@ -721,11 +721,15 @@ void ScriptRuntime::Impl::Resume(PartitionLease* lease, PartitionData* data, Par
                                  Span<const Value> values)
 {
     Instance* in = FindInstance(data, w.key);
-    if (in == nullptr)
+    if (in == nullptr || in->failed || !in->alive)
     {
         return;
     }
     context->current_entity_key = in->key;
+    // The stream of a resumed wait: the entity, the tick and the wait's own id, so it does not depend on what ran
+    // before.
+    context->random_state = RandomSeedFor(config.random_seed, in->key,
+                                          tick + ((static_cast<u64>(w.coroutine) + 1) << 40));
     data->overlay.Clear();
     CallOutput out;
     const Outcome outcome = lease->Resume(w.coroutine, values, config.budget, &out);
@@ -1164,6 +1168,7 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     context.overlay = &data.overlay;
     context.world_seed = config.random_seed;
     context.tick = tick;
+    context.frame = tick;
     context.dt = dt;
     context.sim_time = sim_time;
     context.components = config.components;
@@ -1317,6 +1322,8 @@ void ScriptRuntime::Impl::RunTasks(jobs::Scheduler* scheduler)
     if (removed_keys.Size() != 0)
     {
         Vector<u32> removed;
+        // Two Compact calls in one tick leave two sorted runs; the search needs one.
+        Sort(Span<u64>(removed_keys.Data(), removed_keys.Size()), [](u64 a, u64 b) { return a < b; });
         task_table.EraseOwners(Span<const u64>(removed_keys.Data(), removed_keys.Size()), &removed);
         for (u32 p = 0; p < removed.Size() && p < config.partitions; ++p)
         {

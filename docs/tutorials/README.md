@@ -15,3 +15,5 @@ Goal-oriented walkthroughs. Every tutorial is written; each one has a program yo
 - [A 3D Scene in Your Window](a-3d-scene-in-your-window.md)
 - [Physics in Your Window](physics-in-your-window.md)
 - [Sound in Your Window](audio-in-your-window.md)
+- [Your First Script](your-first-script.md)
+- [Using Every Core with Scripts](using-every-core.md)

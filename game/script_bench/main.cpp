@@ -46,7 +46,7 @@ int g_failures = 0;
 
 const char* const kScripts = R"LUA(
 function noop() end
-function lua_to_c(n)
+function native_ns(n)
   local s = 0
   for i = 1, n do s = s + num.clamp(i, 0, 1) end
   return s
@@ -209,11 +209,11 @@ void SceneCalls()
     const u64 c_to_lua = os::MonotonicTimeNanos() - t0;
     Value n = Value::FromInt(1000000);
     t0 = os::MonotonicTimeNanos();
-    lease.Call("lua_to_c", Span<const Value>(&n, 1), budget, &out);
-    const u64 lua_to_c = os::MonotonicTimeNanos() - t0;
+    lease.Call("native_ns", Span<const Value>(&n, 1), budget, &out);
+    const u64 native_ns = os::MonotonicTimeNanos() - t0;
     os::Print(
         "calls: C to Lua %.0f ns per call; Lua to a pure binding %.0f ns per call (1,000,000 calls of num.clamp)\n",
-        static_cast<double>(c_to_lua) / calls, static_cast<double>(lua_to_c) / 1000000.0);
+        static_cast<double>(c_to_lua) / calls, static_cast<double>(native_ns) / 1000000.0);
 }
 
 // ---- tick: a mixer behavior (two component reads and writes, a transform write, random) over many entities
