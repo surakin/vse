@@ -202,6 +202,57 @@ Status ImportSkins(const GltfDocument& document, const GltfNodeGraph& graph, con
                 order.Push(best);
             }
         }
+        // The space of the joints (2026-11-20): glTF places a skinned mesh by its joints alone and ignores the mesh
+        // node's transform, while the engine draws the mesh entity's world transform times the palette. So the root
+        // joints are made relative to the world matrix of the node that uses the skin (the first one by index), and
+        // the non-joint nodes above both (an exporter's scaled and turned root) count once. A skin no node uses, or
+        // one whose node cannot be inverted, keeps the scene's space.
+        GltfMatrix skin_space_inverse;
+        {
+            u32 user = kNoGltfIndex;
+            usize elsewhere = 0;
+            GltfMatrix user_world;
+            for (usize n = 0; n < node_count; ++n)
+            {
+                if (graph.nodes[n].skin != static_cast<u32>(s) || graph.nodes[n].mesh == kNoGltfIndex)
+                {
+                    continue;
+                }
+                GltfMatrix world_n;
+                for (u32 up = static_cast<u32>(n); up != kNoGltfIndex; up = graph.nodes[up].parent)
+                {
+                    world_n = MultiplyMatrices(graph.nodes[up].local, world_n);
+                }
+                if (user == kNoGltfIndex)
+                {
+                    user = static_cast<u32>(n);
+                    user_world = world_n;
+                    continue;
+                }
+                f64 worst = 0.0;
+                for (usize k = 0; k < 16; ++k)
+                {
+                    const f64 diff = Abs(world_n.m[k] - user_world.m[k]);
+                    worst = diff > worst ? diff : worst;
+                }
+                elsewhere += worst > 1e-6 ? 1 : 0;
+            }
+            if (user != kNoGltfIndex && !InvertAffineMatrix(user_world, &skin_space_inverse))
+            {
+                AddImportWarning(&result->report, skin.Path(),
+                                 StringView("the node that uses the skin has a transform with no inverse: the joints "
+                                            "stay in the scene's space"));
+                skin_space_inverse = GltfMatrix();
+            }
+            if (elsewhere != 0)
+            {
+                char what[160];
+                FormatTo(what, sizeof(what),
+                         "%u other nodes use the skin at another place than node %u: they are drawn as if there",
+                         static_cast<unsigned>(elsewhere), static_cast<unsigned>(user));
+                AddImportWarning(&result->report, skin.Path(), StringView(what, CStrLength(what)));
+            }
+        }
         Vector<u32> joint_of_slot;
         joint_of_slot.Resize(joint_count);
         for (usize j = 0; j < joint_count; ++j)
@@ -224,6 +275,10 @@ Status ImportSkins(const GltfDocument& document, const GltfNodeGraph& graph, con
             {
                 ancestor = MultiplyMatrices(graph.nodes[up].local, ancestor);
                 up = graph.nodes[up].parent;
+            }
+            if (up == kNoGltfIndex)
+            {
+                ancestor = MultiplyMatrices(skin_space_inverse, ancestor);  // a root joint: relative to the mesh node
             }
             const GltfMatrix folded = MultiplyMatrices(ancestor, graph.nodes[node].local);
             ancestors.Push(ancestor);
@@ -304,6 +359,18 @@ Status ImportSkins(const GltfDocument& document, const GltfNodeGraph& graph, con
                     return RefuseSkin(error, ibm_value.Path(), StringView(what, CStrLength(what)));
                 }
                 SkeletonJoint& joint = joints[joint_of_slot[k]];
+                // The computed matrix is the inverse of the joint in the mesh node's space; the file's is in the
+                // scene's. Compare the file's with the computed one times the inverse of the mesh node's world.
+                GltfMatrix computed;
+                for (usize row = 0; row < 3; ++row)
+                {
+                    for (usize col = 0; col < 4; ++col)
+                    {
+                        const f64 v = static_cast<f64>(joint.inverse_bind[row * 4 + col]);
+                        computed.m[col * 4 + row] = col == 3 ? v / static_cast<f64>(options.scale) : v;
+                    }
+                }
+                const GltfMatrix expected = MultiplyMatrices(computed, skin_space_inverse);
                 bool differs = false;
                 for (usize row = 0; row < 3; ++row)
                 {
@@ -311,7 +378,9 @@ Status ImportSkins(const GltfDocument& document, const GltfNodeGraph& graph, con
                     {
                         // The translation column scales with the positions it takes back to the origin.
                         const f32 value = col == 3 ? m[col * 4 + row] * options.scale : m[col * 4 + row];
-                        differs = differs || Abs(value - joint.inverse_bind[row * 4 + col]) > 1e-4f;
+                        const f64 want = col == 3 ? expected.m[col * 4 + row] * static_cast<f64>(options.scale)
+                                                  : expected.m[col * 4 + row];
+                        differs = differs || Abs(static_cast<f64>(value) - want) > 1e-4;
                         joint.inverse_bind[row * 4 + col] = value;
                     }
                 }

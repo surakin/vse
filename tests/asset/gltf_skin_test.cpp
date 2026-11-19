@@ -361,6 +361,50 @@ TEST_CASE("gltf skin: joints listed child first are put parent first, and meshes
     CHECK(Find(result, types::kSkeleton) < Find(result, types::kMesh));
 }
 
+// 2026-11-20 (a model whose root node scales and turns the whole file, the skinned meshes beside the armature): glTF
+// places a skinned mesh by its joints alone and ignores the mesh node's transform. The engine draws the entity's world
+// transform times the palette, so the joints are relative to the mesh node: the root's transform counted twice (the
+// model was drawn about 2,000 times too small).
+TEST_CASE("gltf skin: joints are relative to the mesh node that uses the skin, so nothing above it counts twice",
+          "[asset][gltf]")
+{
+    const TestNode nodes[4] = {
+        {"model", -1, {1, 2, 3}, {0.70710678118654752, 0, 0, 0.70710678118654752}, {0.5, 0.5, 0.5}},
+        {"hips", 0, {0, 1, 0}, {0, 0, 0, 1}, {1, 1, 1}},
+        {"spine", 1, {0, 1, 0}, {0, 0, 0.70710678118654752, 0.70710678118654752}, {1, 1, 1}},
+        {"body", 0, {0, 0, 0}, {0, 0, 0, 1}, {1, 1, 1}, 0, 0}};
+    const u32 joints[2] = {1, 2};
+    GltfWriter w;
+    const f32 positions[9] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
+    const u16 indices[3] = {0, 1, 2};
+    const u8 joint_values[12] = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
+    const f32 weights[12] = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
+    const u32 pos = SkAcc(&w, positions, 9, 5126, "VEC3");
+    const u32 idx = SkAcc(&w, indices, 3, 5123, "SCALAR");
+    const u32 jnt = SkAcc(&w, joint_values, 12, 5121, "VEC4");
+    const u32 wgt = SkAcc(&w, weights, 12, 5126, "VEC4");
+    char mesh[300];
+    FormatTo(mesh, sizeof(mesh),
+             "\"meshes\":[{\"name\":\"m\",\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"JOINTS_0\":%u,"
+             "\"WEIGHTS_0\":%u},\"indices\":%u}]}]",
+             pos, jnt, wgt, idx);
+    const Vector<byte> glb = SkinGlb(&w, nodes, 4, joints, 2, "", mesh);
+    ImportResult result;
+    GltfError error;
+    REQUIRE(SkImport(glb, &result, &error).Ok());
+    TypeRegistry types;
+    SkeletonView view;
+    REQUIRE(view.Open(BlobOf(*Find(result, types::kSkeleton)), types).Ok());
+    REQUIRE(view.JointCount() == 2);
+    // The mesh node's world times the skeleton's joint is the joint's world in the file.
+    const Vector<Mat> worlds = SkeletonWorlds(view);
+    const Mat body = WorldOf(nodes, 3);
+    for (u32 j = 0; j < 2; ++j)
+    {
+        CHECK(MaxDifference(Mul(body, worlds[j]), WorldOf(nodes, static_cast<i32>(joints[j]))) < 1e-5);
+    }
+}
+
 TEST_CASE("gltf skin: joint names are made, kept distinct and cut, and the renames are listed", "[asset][gltf]")
 {
     char long_name[100];

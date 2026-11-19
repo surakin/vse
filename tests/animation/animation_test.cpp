@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "animation/components.h"
+#include "asset/clip.h"
 #include "animation/pose.h"
 #include "animation/sampler.h"
 #include "clip_source.h"
@@ -646,6 +647,62 @@ TEST_CASE("animation: a clip for another skeleton is refused, not applied", "[an
     CHECK(stats.refused == 2);
     CHECK(w.world.Get<SkeletonInstance>(w.entities[1])->palette.Size() == 0);
     CHECK(w.world.Get<SkeletonInstance>(w.entities[0])->palette.Size() == 20);
+}
+
+// 2026-11-20 (a glTF whose only animation moves the morph weights of two skinned meshes): a clip of morph weights only
+// plays on an entity that has a skeleton too. Its weights follow the clip and its skeleton stays in the bind pose; it
+// was skipped ("a skeleton or clip is not loaded, or the clip was made for another skeleton").
+TEST_CASE("animation: a clip of morph weights only plays on a skinned entity and on one without a skeleton",
+          "[animation][morph]")
+{
+    AnSkeleton skeleton;
+    skeleton.Make(0xb0, 4);
+    const Array<f32, 2> times = {{0.0f, 1.0f}};
+    const Array<f32, 2> values = {{0.0f, 1.0f}};
+    asset::ClipBuildInput input;
+    input.duration = 1.0f;
+    input.weights.target_count = 1;
+    input.weights.times = Span<const f32>(times.Data(), times.Size());
+    input.weights.values = Span<const f32>(values.Data(), values.Size());
+    AnClip clip;
+    REQUIRE(asset::BuildClipBlob(skeleton.types, ResourceId::FromValue(0xc0), input, &clip.blob).Ok());
+    REQUIRE(clip.view.Open(ByteSpan(clip.blob.Data(), clip.blob.Size()), skeleton.types).Ok());
+    AnResolver resolver;
+    resolver.skeleton = &skeleton;
+    resolver.clip = &clip;
+    resolver.skeleton_id = 0xb0;
+    resolver.clip_id = 0xc0;
+
+    ecs::World world;
+    const auto player = []
+    {
+        AnimationPlayer p;
+        p.clip = 0xc0;
+        return p;
+    };
+    SkeletonInstance inst;
+    inst.skeleton = 0xb0;
+    MorphWeights weights;
+    weights.count = 1;
+    const ecs::Entity skinned = world.Create(player(), Move(inst), MorphWeights(weights));
+    const ecs::Entity plain = world.Create(player(), MorphWeights(weights));
+    AnimationSystem animator(&resolver);
+    const AnimationStats stats = animator.Update(&world, nullptr, 0.5f);
+    CHECK(stats.refused == 0);
+    CHECK(stats.players_updated == 2);
+    CHECK(world.Get<MorphWeights>(skinned)->weights[0] == 0.5f);
+    CHECK(world.Get<MorphWeights>(plain)->weights[0] == 0.5f);
+
+    // The skinned entity is drawn in its bind pose.
+    LocalPose bind;
+    SetBindPose(skeleton.view, &bind);
+    ModelPose model;
+    ModelFromLocal(skeleton.view, bind, &model);
+    Array<Mat3x4, 4> expected;
+    SkinningMatrices(skeleton.view, model, Span<Mat3x4>(expected.Data(), 4));
+    const SkeletonInstance* posed = world.Get<SkeletonInstance>(skinned);
+    REQUIRE(posed->palette.Size() == 4);
+    CHECK(MemCompare(posed->palette.Data(), expected.Data(), sizeof(Mat3x4) * 4) == 0);
 }
 
 TEST_CASE("animation: an additive clip, a weight above 1 and an infinite step do not break the system", "[animation]")

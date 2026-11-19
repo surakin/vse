@@ -58,6 +58,56 @@ GltfMatrix MultiplyMatrices(const GltfMatrix& a, const GltfMatrix& b)
     return out;
 }
 
+bool InvertAffineMatrix(const GltfMatrix& matrix, GltfMatrix* out)
+{
+    const f64* m = matrix.m.Data();
+    if (Abs(m[3]) > 1e-6 || Abs(m[7]) > 1e-6 || Abs(m[11]) > 1e-6 || Abs(m[15] - 1.0) > 1e-6)
+    {
+        return false;
+    }
+    // The 3x3 part (column-major: column c is m[c * 4 + 0..2]) by its adjugate.
+    const f64 a = m[0], b = m[4], c = m[8];
+    const f64 d = m[1], e = m[5], f = m[9];
+    const f64 g = m[2], h = m[6], i = m[10];
+    const f64 co_a = e * i - f * h;
+    const f64 co_b = -(d * i - f * g);
+    const f64 co_c = d * h - e * g;
+    const f64 det = a * co_a + b * co_b + c * co_c;
+    if (!(Abs(det) > 1e-300))
+    {
+        return false;
+    }
+    const f64 r = 1.0 / det;
+    GltfMatrix inv;
+    // Row-major inverse entries placed column-major.
+    inv.m[0] = co_a * r;
+    inv.m[4] = -(b * i - c * h) * r;
+    inv.m[8] = (b * f - c * e) * r;
+    inv.m[1] = co_b * r;
+    inv.m[5] = (a * i - c * g) * r;
+    inv.m[9] = -(a * f - c * d) * r;
+    inv.m[2] = co_c * r;
+    inv.m[6] = -(a * h - b * g) * r;
+    inv.m[10] = (a * e - b * d) * r;
+    for (usize row = 0; row < 3; ++row)
+    {
+        inv.m[12 + row] = -(inv.m[row] * m[12] + inv.m[4 + row] * m[13] + inv.m[8 + row] * m[14]);
+    }
+    inv.m[3] = 0.0;
+    inv.m[7] = 0.0;
+    inv.m[11] = 0.0;
+    inv.m[15] = 1.0;
+    for (usize k = 0; k < 16; ++k)
+    {
+        if (!IsFinite(inv.m[k]))
+        {
+            return false;
+        }
+    }
+    *out = inv;
+    return true;
+}
+
 GltfMatrix MatrixFromTrs(const GltfTrs& trs)
 {
     const f64 x = trs.rotation[0];

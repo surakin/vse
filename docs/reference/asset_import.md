@@ -774,7 +774,7 @@ The text of a refusal, for a log: `error` when set, else the status's own messag
 inline constexpr u32 kGltfImporterOutputVersion;
 ```
 
-The version of what the glTF importer writes: raised by every change that can make a re-import of the same file give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that keeps imported blobs (a disk cache) keys them by this and by the engine's format fingerprint (`engine_api.import_format_version`, which also folds in the blob container and type versions).
+The version of what the glTF importer writes: raised by every change that can make a re-import of the same file give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that keeps imported blobs (a disk cache) keys them by this and by the engine's format fingerprint (`engine_api.import_format_version`, which also folds in the blob container and type versions). 2: glTF coverage (PBR maps, colours, morphs, lights); 3: skins in the space of the node that uses them (2026-11-20).
 
 ## `kImportSteps` {#asset-kimportsteps}
 
@@ -2308,6 +2308,24 @@ The product `a * b` (apply `b` first).
 | Field | Value |
 |---|---|
 | Fails | never. |
+
+## `InvertAffineMatrix(const GltfMatrix&,GltfMatrix*)` {#asset-invertaffinematrix-const-gltfmatrix-amp-gltfmatrix-star}
+
+`function asset::InvertAffineMatrix` — defined in `engine/asset_import/gltf_nodes.h`
+
+```cpp
+bool InvertAffineMatrix(const GltfMatrix& matrix, GltfMatrix* out);
+```
+
+The inverse of an affine matrix (glTF coverage maintenance, 2026-11-20: the skin space of a skinned mesh).
+
+| Field | Value |
+|---|---|
+| Parameter `matrix` | the matrix (its last row must be 0 0 0 1). |
+| Parameter `out` | receives the inverse. |
+| Returns | false when the matrix has a projective part or its 3x3 part has a determinant of almost 0 (below 1e-300 in magnitude), or the inverse is not finite. |
+| Fails | reported by the return value. |
+| Ownership | borrows its arguments for the call only; nothing is retained. |
 
 ## `MatrixFromTrs(const GltfTrs&)` {#asset-matrixfromtrs-const-gltftrs-amp}
 

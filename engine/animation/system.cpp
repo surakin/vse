@@ -32,6 +32,33 @@ void SampleMorphWeights(const asset::ClipView& clip, f32 time, MorphWeights* wei
     weights->count = n > weights->count ? n : weights->count;
 }
 
+// Advances a player over `dt` and records the step for the events pass; returns where the clip is now.
+TimeAdvance StepPlayer(AnimationPlayer* p, const asset::ClipView& clip, f32 dt)
+{
+    const f32 from = p->time;
+    TimeAdvance advance;
+    advance.time = from;
+    if (p->playing && !p->finished)
+    {
+        advance = AdvanceTime(clip, from, dt * p->speed, p->looping);
+        p->finished = advance.finished;
+    }
+    p->step_from = from;
+    p->step_wraps = advance.wraps;
+    p->step_time = advance.time;
+    p->step_include = !p->started;
+    p->step_valid = true;
+    p->started = true;
+    p->time = advance.time;
+    return advance;
+}
+
+// A clip of morph weights only (glTF coverage Day 9): no skeleton, a weight track.
+bool WeightsOnly(const asset::ClipView& clip)
+{
+    return clip.Skeleton().IsNone() && clip.WeightTargetCount() != 0;
+}
+
 // The clip belongs to the skeleton when its recorded id, hash and joint count are the skeleton's.
 bool SysBound(const asset::ClipView& clip, const asset::SkeletonView& skeleton)
 {
@@ -88,6 +115,21 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                 const asset::SkeletonView* skeleton = resolver->FindSkeleton(
                     asset::ResourceId::FromValue(inst.skeleton));
                 const asset::ClipView* clip = resolver->FindClip(asset::ResourceId::FromValue(p.clip));
+                if (skeleton != nullptr && clip != nullptr && WeightsOnly(*clip) && !morphs.Empty())
+                {
+                    // A skinned mesh that plays a clip of its morph weights only: the weights move, the skeleton
+                    // stays in its bind pose (2026-11-20: such an entity was skipped).
+                    const TimeAdvance advance = StepPlayer(&p, *clip, dt);
+                    LocalPose bind;
+                    SetBindPose(*skeleton, &bind);
+                    ModelPose model;
+                    ModelFromLocal(*skeleton, bind, &model);
+                    inst.palette.Resize(bind.joint_count);
+                    SkinningMatrices(*skeleton, model, Span<Mat3x4>(inst.palette.Data(), inst.palette.Size()));
+                    SampleMorphWeights(*clip, advance.time, &morphs[i]);
+                    counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
+                    continue;
+                }
                 if (skeleton == nullptr || clip == nullptr || !SysBound(*clip, *skeleton) ||
                     (clip->Flags() & asset::kClipAdditive) != 0)
                 {
@@ -95,20 +137,7 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                     continue;
                 }
                 const f32 from = p.time;
-                TimeAdvance advance;
-                advance.time = from;
-                if (p.playing && !p.finished)
-                {
-                    advance = AdvanceTime(*clip, from, dt * p.speed, p.looping);
-                    p.finished = advance.finished;
-                }
-                p.step_from = from;
-                p.step_wraps = advance.wraps;
-                p.step_time = advance.time;
-                p.step_include = !p.started;
-                p.step_valid = true;
-                p.started = true;
-                p.time = advance.time;
+                const TimeAdvance advance = StepPlayer(&p, *clip, dt);
 
                 LocalPose pose;
                 SampleClip(*clip, *skeleton, advance.time, p.looping, &p.sampler, &pose);
@@ -176,21 +205,7 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                                                   counts.refused.FetchAdd(1, MemoryOrder::Relaxed);
                                                   continue;
                                               }
-                                              const f32 from = p.time;
-                                              TimeAdvance advance;
-                                              advance.time = from;
-                                              if (p.playing && !p.finished)
-                                              {
-                                                  advance = AdvanceTime(*clip, from, dt * p.speed, p.looping);
-                                                  p.finished = advance.finished;
-                                              }
-                                              p.step_from = from;
-                                              p.step_wraps = advance.wraps;
-                                              p.step_time = advance.time;
-                                              p.step_include = !p.started;
-                                              p.step_valid = true;
-                                              p.started = true;
-                                              p.time = advance.time;
+                                              const TimeAdvance advance = StepPlayer(&p, *clip, dt);
                                               SampleMorphWeights(*clip, advance.time, &morphs[i]);
                                               counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
                                           }

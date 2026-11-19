@@ -60,7 +60,22 @@ bool SceneFrame::Create(const SceneFrameSetup& setup)
     md.resources = setup.resources;
     md.prewarm_pipelines = setup.prewarm_pipelines;
     materials_ = MakeUnique<MaterialSystem>(setup.device, md);
-    frame_ = MakeUnique<FrameResources>(setup.device, setup.max_objects, setup.max_lights);
+    // The joint palette's room: the setup's, else the setting (48 bytes a matrix; it was not read before 2026-11-20, so
+    // every program had 1024 matrices and a character of several skinned meshes was partly not drawn).
+    u32 joints = setup.max_joint_matrices;
+    if (joints == 0)
+    {
+        joints = 1024;
+        if (setup.initial_settings != nullptr)
+        {
+            const i64 bytes = setup.initial_settings->GetInt(settings::kJointPaletteBytes);
+            const i64 matrices = bytes / 48;
+            joints = matrices < 1 ? 1u
+                                  : (matrices > static_cast<i64>(kMaxJointMatrices) ? kMaxJointMatrices
+                                                                                    : static_cast<u32>(matrices));
+        }
+    }
+    frame_ = MakeUnique<FrameResources>(setup.device, setup.max_objects, setup.max_lights, joints);
     if (!frame_->RegisterWith(setup.resources) || !materials_->Valid() || !frame_->Valid())
     {
         rhi::RhiLogV(LogVerbosity::Error, "scene frame: could not create the material system or the frame buffers");

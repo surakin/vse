@@ -1,10 +1,13 @@
 // The model viewer's scene. See viewer_scene.h.
 #include "viewer_scene.h"
 
+#include "animation/pose.h"
 #include "asset/cpu_loaders.h"
 #include "asset/level.h"
 #include "asset/memory_backend.h"
 #include "containers/array.h"
+#include "cstr/format.h"
+#include "log/log.h"
 #include "ecs/query.h"
 #include "ecs/transform.h"
 #include "scene/components.h"
@@ -45,6 +48,7 @@ void ViewerScene::Destroy()
     clip_handles_.Clear();
     clips_.Clear();
     posed_.Clear();
+    morphed_.Clear();
     scene_.Reset();
     manager_.Reset();
     backend_.Reset();
@@ -118,7 +122,8 @@ bool ViewerScene::Create(rhi::Device* device, renderer::MaterialSystem* material
         return Fail("the imported resources could not be mounted");
     }
 
-    // 3. The world: the level's entities (with the file's lights, or else a sun), an ambient term, and the systems that move and mirror them.
+    // 3. The world: the level's entities (with the file's lights, or else a sun), an ambient term, and the systems that
+    // move and mirror them.
     registry_ = MakeUnique<storage::ComponentRegistry>();
     if (storage::RegisterBuiltinComponents(registry_.Get()).Failed() ||
         asset::RegisterLevelComponents(registry_.Get()).Failed() ||
@@ -155,9 +160,9 @@ bool ViewerScene::Create(rhi::Device* device, renderer::MaterialSystem* material
     {
         scene::LightSource sun;
         sun.type = renderer::LightType::Directional;
-    sun.direction = Vec3(0.4f, 0.85f, 0.35f);
-    sun.color = Vec3(1.0f, 0.97f, 0.92f);
-    sun.intensity = 1.2f;
+        sun.direction = Vec3(0.4f, 0.85f, 0.35f);
+        sun.color = Vec3(1.0f, 0.97f, 0.92f);
+        sun.intensity = 1.2f;
         world_->Create(ecs::LocalTransform{}, ecs::WorldTransform{}, sun);
     }
     scene::LightSource ambient;
@@ -178,16 +183,26 @@ bool ViewerScene::Create(rhi::Device* device, renderer::MaterialSystem* material
     for (const ClipInfo& clip : clips_)
     {
         asset::Handle<asset::ClipView> handle;
-        if (manager_->Load<asset::ClipView>(clip.id, &handle).Failed())
+        const auto status = manager_->Load<asset::ClipView>(clip.id, &handle);
+        if (status.Failed())
         {
-            return Fail("a clip of the file could not be loaded");
+            char what[256];
+            FormatTo(what, sizeof(what), "a clip of the file could not be loaded: %s", status.Message());
+            return Fail(what);
         }
         clip_handles_.Push(Move(handle));
     }
     world_->Query<ecs::Read<animation::SkeletonInstance>>().ForEach(
         [&](ecs::Entity e, const animation::SkeletonInstance&) { posed_.Push(e); });
     skinned_ = static_cast<u32>(posed_.Size());
+    world_->Query<ecs::Read<animation::MorphWeights>>().ForEach([&](ecs::Entity e, const animation::MorphWeights&)
+                                                                { morphed_.Push(e); });
     resolver_ = MakeUnique<animation::ManagerResolver>(manager_.Get());
+    for (const ecs::Entity e : posed_)
+    {
+        BindPose(
+            e);  // a skinned mesh no clip poses is drawn in its bind pose (the renderer refuses one with no palette)
+    }
     animation_ = MakeUnique<animation::AnimationSystem>(resolver_.Get());
     current_clip_ = clips_.Size();
     if (animate_ && !clips_.Empty())
@@ -250,13 +265,73 @@ void ViewerScene::PrepareMeshes()
 void ViewerScene::PlayClip(usize index)
 {
     current_clip_ = index;
-    for (const ecs::Entity e : posed_)
+    // A clip of morph weights only plays on the entities that have weights; a skeletal clip on the entities of its
+    // skeleton (a file can hold several). The others stop: a clip they cannot play would be skipped every frame.
+    const asset::ClipView& clip = *clip_handles_[index].Get();
+    const bool weights_only = clip.Skeleton().IsNone();
+    const auto play = [&](ecs::Entity e)
     {
         animation::AnimationPlayer player;
         player.clip = clips_[index].id.Value();
         player.looping = true;
         world_->Set<animation::AnimationPlayer>(e, Move(player));
+    };
+    const auto stop = [&](ecs::Entity e)
+    {
+        if (world_->Get<animation::AnimationPlayer>(e) != nullptr &&
+            world_->Remove<animation::AnimationPlayer>(e) != ecs::Status::Ok)
+        {
+            Log(LogCore, LogVerbosity::Warn, "model_viewer: a clip could not be stopped on an entity");
+        }
+    };
+    for (const ecs::Entity e : posed_)
+    {
+        const animation::SkeletonInstance* inst = world_->Get<animation::SkeletonInstance>(e);
+        const bool fits = weights_only ? world_->Get<animation::MorphWeights>(e) != nullptr
+                                       : inst != nullptr && inst->skeleton == clip.Skeleton().Value();
+        if (fits)
+        {
+            play(e);
+        }
+        else
+        {
+            stop(e);
+            BindPose(e);
+        }
     }
+    for (const ecs::Entity e : morphed_)
+    {
+        if (world_->Get<animation::SkeletonInstance>(e) != nullptr)
+        {
+            continue;  // done above
+        }
+        if (weights_only)
+        {
+            play(e);
+        }
+        else
+        {
+            stop(e);
+        }
+    }
+}
+
+void ViewerScene::BindPose(ecs::Entity e)
+{
+    animation::SkeletonInstance* inst = world_->Get<animation::SkeletonInstance>(e);
+    const asset::SkeletonView* skeleton = inst != nullptr
+                                              ? resolver_->FindSkeleton(asset::ResourceId::FromValue(inst->skeleton))
+                                              : nullptr;
+    if (skeleton == nullptr)
+    {
+        return;
+    }
+    animation::LocalPose bind;
+    animation::SetBindPose(*skeleton, &bind);
+    animation::ModelPose model;
+    animation::ModelFromLocal(*skeleton, bind, &model);
+    inst->palette.Resize(bind.joint_count);
+    animation::SkinningMatrices(*skeleton, model, Span<animation::Mat3x4>(inst->palette.Data(), inst->palette.Size()));
 }
 
 void ViewerScene::NextClip()
@@ -284,11 +359,20 @@ void ViewerScene::Update(f32 seconds, jobs::Scheduler* scheduler)
 
 Aabb ViewerScene::Bounds() const
 {
+    // A morphed mesh's bounds hold every target at full weight, so one broken target (deltas a hundred times the
+    // mesh, as a converter wrote them in a file found on 2026-11-20) would frame a box thousands of times too big.
+    // The meshes without targets frame the view when there are any; the morphed ones only when nothing else is.
+    bool plain_exists = false;
+    for (u32 slot = 0; scene_.Get() != nullptr && slot < scene_->SlotCount(); ++slot)
+    {
+        plain_exists = plain_exists ||
+                       (scene_->SlotAlive(slot) && scene_->ObjectAt(slot).mesh->MorphTargetCount() == 0);
+    }
     Aabb box;
     bool any = false;
     for (u32 slot = 0; scene_.Get() != nullptr && slot < scene_->SlotCount(); ++slot)
     {
-        if (!scene_->SlotAlive(slot))
+        if (!scene_->SlotAlive(slot) || (plain_exists && scene_->ObjectAt(slot).mesh->MorphTargetCount() != 0))
         {
             continue;
         }

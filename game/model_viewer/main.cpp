@@ -159,9 +159,10 @@ model_viewer::ViewerOptions SceneOptions(const Options& options, ModelFile* mode
     return so;
 }
 
-SceneFrameSetup SetupFor(rhi::Device* device, rhi::Swapchain* swapchain)
+SceneFrameSetup SetupFor(rhi::Device* device, rhi::Swapchain* swapchain, const RenderSettings& settings)
 {
     SceneFrameSetup fs;
+    fs.initial_settings = &settings;  // the device was made from them; also sizes the joint palette
     fs.device = device;
     fs.swapchain = swapchain;
     fs.max_objects = 65536;
@@ -214,7 +215,7 @@ int RunScreenshot(const Options& options, const RenderSettings& settings, ModelF
     {
         SceneFrame frame;
         model_viewer::ViewerScene scene;
-        if (!target.IsValid() || !frame.Create(SetupFor(device.Get(), nullptr)))
+        if (!target.IsValid() || !frame.Create(SetupFor(device.Get(), nullptr, settings)))
         {
             RhiLogV(LogVerbosity::Error, "model_viewer: could not create the target or the frame");
         }
@@ -327,11 +328,10 @@ int RunWindow(const Options& options, const RenderSettings& settings, ModelFile*
     {
         SceneFrame frame;
         model_viewer::ViewerScene scene;
-        SceneFrameSetup fs = SetupFor(host.GetDevice(), host.GetSwapchain());
+        SceneFrameSetup fs = SetupFor(host.GetDevice(), host.GetSwapchain(), settings);
         fs.resources = &registry;
         fs.host = &host;
         fs.create_info = base;
-        fs.initial_settings = &settings;
         fs.window = window;
         if (!frame.Create(fs))
         {

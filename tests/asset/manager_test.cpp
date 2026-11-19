@@ -2,6 +2,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "asset/clip.h"
 #include "asset/cpu_loaders.h"
 #include "asset/memory_backend.h"
 #include "asset/pak.h"
@@ -822,6 +823,29 @@ TEST_CASE("manager: skeletons, clips and skinned meshes load with their closure 
     CHECK(other.manager->Load<ClipView>(Rid(0xcc), &bad_clip).Is(ErrorCode::DependencyTypeMismatch));
     CHECK(other.manager->Load<MeshView>(Rid(0xbb), &bad_mesh).Is(ErrorCode::DependencyTypeMismatch));
     CHECK(other.manager->Stats().resident == 0);
+}
+
+// glTF coverage (2026-11-20): a clip that animates morph weights only has no skeleton and no dependency (Day 9). The
+// manager loaded it as a skeletal clip and refused it ("the clip's skeleton is not among its loaded dependencies"), so
+// a glTF with a weight animation did not open in the model viewer.
+TEST_CASE("manager: a clip of morph weights only loads without a skeleton", "[asset][manager][skeletal]")
+{
+    MgrRig rig;
+    const Array<f32, 2> times = {{0.0f, 1.0f}};
+    const Array<f32, 2> values = {{0.0f, 1.0f}};
+    ClipBuildInput input;
+    input.duration = 1.0f;
+    input.weights.target_count = 1;
+    input.weights.times = Span<const f32>(times.Data(), times.Size());
+    input.weights.values = Span<const f32>(values.Data(), values.Size());
+    Vector<byte> blob;
+    REQUIRE(BuildClipBlob(rig.types, Rid(0xcd), input, &blob).Ok());
+    REQUIRE(rig.backend.Add(Rid(0xcd), AsBytes(blob)).Ok());
+    Handle<ClipView> clip;
+    REQUIRE(rig.manager->Load<ClipView>(Rid(0xcd), &clip).Ok());
+    CHECK(clip.Get()->Skeleton().IsNone());
+    CHECK(clip.Get()->WeightTargetCount() == 1);
+    CHECK(rig.manager->Stats().loads == 1);
 }
 
 TEST_CASE("manager: a level loads as its summary with the closure it declares", "[asset][manager][level]")

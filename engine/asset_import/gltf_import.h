@@ -36,9 +36,9 @@ namespace engine_placeholder::asset
 /// The version of what the glTF importer writes: raised by every change that can make a re-import of the same file
 /// give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that
 /// keeps imported blobs (a disk cache) keys them by this and by the engine's format fingerprint
-/// (`engine_api.import_format_version`, which also folds in the blob container and type versions).
-inline constexpr u32
-    kGltfImporterOutputVersion = 2;  // 2: glTF coverage (2026-11-19/20): PBR maps, colours, morphs, lights
+/// (`engine_api.import_format_version`, which also folds in the blob container and type versions). 2: glTF coverage
+/// (PBR maps, colours, morphs, lights); 3: skins in the space of the node that uses them (2026-11-20).
+inline constexpr u32 kGltfImporterOutputVersion = 3;
 
 /// The steps an import goes through (container, textures and materials, skeletons, meshes, clips);
 /// `ImportOptions::steps_done` counts them.

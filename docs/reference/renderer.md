@@ -11537,6 +11537,16 @@ u32 max_lights;
 
 The most lights one frame writes.
 
+### `max_joint_matrices` {#renderer-sceneframesetup-max-joint-matrices}
+
+`variable renderer::SceneFrameSetup::max_joint_matrices` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+u32 max_joint_matrices;
+```
+
+The most joint matrices one frame writes (skinned meshes' palettes), or 0: then `renderer.joint_palette_bytes` of `initial_settings` divided by 48, or 1024 without settings.
+
 ### `gbuffer_layer` {#renderer-sceneframesetup-gbuffer-layer}
 
 `variable renderer::SceneFrameSetup::gbuffer_layer` — defined in `engine/renderer/scene_frame.h`

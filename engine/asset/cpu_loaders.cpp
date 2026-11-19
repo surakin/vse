@@ -32,6 +32,10 @@ Status LoadScript(const LoadContext& context, ScriptView* out, void*)
 Status LoadClip(const LoadContext& context, ClipView* out, void*)
 {
     ENGINE_TRY(out->Open(context.Bytes(), context.Types()));
+    if (out->Skeleton().IsNone())
+    {
+        return Status::Success();  // morph weights only (glTF coverage Day 9): no skeleton, no dependency
+    }
     const SkeletonView* skeleton = context.Dependency<SkeletonView>(out->Skeleton());
     if (skeleton == nullptr)
     {

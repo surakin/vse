@@ -94,6 +94,7 @@ public:
 
 private:
     bool Fail(const char* what);
+    void BindPose(ecs::Entity e);  // the entity's palette from its skeleton's bind pose
     void PlayClip(usize index);
     // Moves the buffers of the meshes the level uses out of their upload state (after a load, and after a device
     // reset made them again), in one submission.
@@ -116,7 +117,8 @@ private:
     UniquePtr<animation::AnimationSystem> animation_;
     Vector<asset::Handle<asset::ClipView>> clip_handles_;
     Vector<ClipInfo> clips_;
-    Vector<ecs::Entity> posed_;  // the entities with a skeleton
+    Vector<ecs::Entity> posed_;    // the entities with a skeleton
+    Vector<ecs::Entity> morphed_;  // the entities with morph weights
     usize current_clip_ = 0;
     u32 triangles_ = 0;
     u32 skinned_ = 0;

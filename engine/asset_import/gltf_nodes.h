@@ -71,6 +71,16 @@ Status ReadNodeGraph(const GltfDocument& document, GltfNodeGraph* out, GltfError
 /// - Fails: never.
 GltfMatrix MultiplyMatrices(const GltfMatrix& a, const GltfMatrix& b);
 
+/// The inverse of an affine matrix (glTF coverage maintenance, 2026-11-20: the skin space of a skinned mesh).
+///
+/// - Param matrix: the matrix (its last row must be 0 0 0 1).
+/// - Param out: receives the inverse.
+/// - Returns: false when the matrix has a projective part or its 3x3 part has a determinant of almost 0 (below 1e-300
+///   in magnitude), or the inverse is not finite.
+/// - Fails: reported by the return value.
+/// - Ownership: borrows its arguments for the call only; nothing is retained.
+bool InvertAffineMatrix(const GltfMatrix& matrix, GltfMatrix* out);
+
 /// The matrix of a translation, rotation and scale.
 ///
 /// - Fails: never.

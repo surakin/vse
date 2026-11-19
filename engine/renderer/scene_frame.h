@@ -42,6 +42,9 @@ struct SceneFrameSetup
     u32 max_objects = 1024;
     /// The most lights one frame writes.
     u32 max_lights = 1024;
+    /// The most joint matrices one frame writes (skinned meshes' palettes), or 0: then `renderer.joint_palette_bytes`
+    /// of `initial_settings` divided by 48, or 1024 without settings.
+    u32 max_joint_matrices = 0;
     /// A G-buffer layer to show instead of the lit picture, or -1 for the lit picture.
     int gbuffer_layer = -1;
     /// The tonemap exposure.

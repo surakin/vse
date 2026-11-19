@@ -8694,7 +8694,7 @@ asset::GltfError::message	variable	asset_import	asset-gltferror-message	asset_im
 asset::GltfError::Set(StringView,StringView)	function	asset_import	asset-gltferror-set-stringview-stringview	asset_import.md	engine/asset_import/gltf_error.h:26
 asset::GltfError::SetNumber(StringView,StringView,u64)	function	asset_import	asset-gltferror-setnumber-stringview-stringview-u64	asset_import.md	engine/asset_import/gltf_error.h:28
 asset::GltfMessage(const GltfError&,const Status&)	function	asset_import	asset-gltfmessage-const-gltferror-amp-const-status-amp	asset_import.md	engine/asset_import/gltf_error.h:35
-asset::kGltfImporterOutputVersion	variable	asset_import	asset-kgltfimporteroutputversion	asset_import.md	engine/asset_import/gltf_import.h:40
+asset::kGltfImporterOutputVersion	variable	asset_import	asset-kgltfimporteroutputversion	asset_import.md	engine/asset_import/gltf_import.h:41
 asset::kImportSteps	variable	asset_import	asset-kimportsteps	asset_import.md	engine/asset_import/gltf_import.h:45
 asset::ImportLimits	struct	asset_import	asset-importlimits	asset_import.md	engine/asset_import/gltf_import.h:53
 asset::ImportLimits::max_file_bytes	variable	asset_import	asset-importlimits-max-file-bytes	asset_import.md	engine/asset_import/gltf_import.h:55
@@ -8829,8 +8829,9 @@ asset::GltfNodeGraph	struct	asset_import	asset-gltfnodegraph	asset_import.md	eng
 asset::GltfNodeGraph::nodes	variable	asset_import	asset-gltfnodegraph-nodes	asset_import.md	engine/asset_import/gltf_nodes.h:56
 asset::ReadNodeGraph(const GltfDocument&,GltfNodeGraph*,GltfError*)	function	asset_import	asset-readnodegraph-const-gltfdocument-amp-gltfnodegraph-star-gltferror-star	asset_import.md	engine/asset_import/gltf_nodes.h:67
 asset::MultiplyMatrices(const GltfMatrix&,const GltfMatrix&)	function	asset_import	asset-multiplymatrices-const-gltfmatrix-amp-const-gltfmatrix-amp	asset_import.md	engine/asset_import/gltf_nodes.h:72
-asset::MatrixFromTrs(const GltfTrs&)	function	asset_import	asset-matrixfromtrs-const-gltftrs-amp	asset_import.md	engine/asset_import/gltf_nodes.h:77
-asset::DecomposeMatrix(const GltfMatrix&,GltfTrs*)	function	asset_import	asset-decomposematrix-const-gltfmatrix-amp-gltftrs-star	asset_import.md	engine/asset_import/gltf_nodes.h:87
+asset::InvertAffineMatrix(const GltfMatrix&,GltfMatrix*)	function	asset_import	asset-invertaffinematrix-const-gltfmatrix-amp-gltfmatrix-star	asset_import.md	engine/asset_import/gltf_nodes.h:82
+asset::MatrixFromTrs(const GltfTrs&)	function	asset_import	asset-matrixfromtrs-const-gltftrs-amp	asset_import.md	engine/asset_import/gltf_nodes.h:87
+asset::DecomposeMatrix(const GltfMatrix&,GltfTrs*)	function	asset_import	asset-decomposematrix-const-gltfmatrix-amp-gltftrs-star	asset_import.md	engine/asset_import/gltf_nodes.h:97
 asset::NodeJoint	struct	asset_import	asset-nodejoint	asset_import.md	engine/asset_import/gltf_skin.h:21
 asset::NodeJoint::node	variable	asset_import	asset-nodejoint-node	asset_import.md	engine/asset_import/gltf_skin.h:23
 asset::NodeJoint::joint	variable	asset_import	asset-nodejoint-joint	asset_import.md	engine/asset_import/gltf_skin.h:24
@@ -13073,60 +13074,61 @@ renderer::SceneFrameSetup::device	variable	renderer	renderer-sceneframesetup-dev
 renderer::SceneFrameSetup::swapchain	variable	renderer	renderer-sceneframesetup-swapchain	renderer.md	engine/renderer/scene_frame.h:40
 renderer::SceneFrameSetup::max_objects	variable	renderer	renderer-sceneframesetup-max-objects	renderer.md	engine/renderer/scene_frame.h:42
 renderer::SceneFrameSetup::max_lights	variable	renderer	renderer-sceneframesetup-max-lights	renderer.md	engine/renderer/scene_frame.h:44
-renderer::SceneFrameSetup::gbuffer_layer	variable	renderer	renderer-sceneframesetup-gbuffer-layer	renderer.md	engine/renderer/scene_frame.h:46
-renderer::SceneFrameSetup::exposure	variable	renderer	renderer-sceneframesetup-exposure	renderer.md	engine/renderer/scene_frame.h:48
-renderer::SceneFrameSetup::scheduler	variable	renderer	renderer-sceneframesetup-scheduler	renderer.md	engine/renderer/scene_frame.h:50
-renderer::SceneFrameSetup::resources	variable	renderer	renderer-sceneframesetup-resources	renderer.md	engine/renderer/scene_frame.h:52
-renderer::SceneFrameSetup::prewarm_pipelines	variable	renderer	renderer-sceneframesetup-prewarm-pipelines	renderer.md	engine/renderer/scene_frame.h:54
-renderer::SceneFrameSetup::host	variable	renderer	renderer-sceneframesetup-host	renderer.md	engine/renderer/scene_frame.h:56
-renderer::SceneFrameSetup::create_info	variable	renderer	renderer-sceneframesetup-create-info	renderer.md	engine/renderer/scene_frame.h:58
-renderer::SceneFrameSetup::initial_settings	variable	renderer	renderer-sceneframesetup-initial-settings	renderer.md	engine/renderer/scene_frame.h:60
-renderer::SceneFrameSetup::window	variable	renderer	renderer-sceneframesetup-window	renderer.md	engine/renderer/scene_frame.h:62
-renderer::SceneFrameSetup::recovery	variable	renderer	renderer-sceneframesetup-recovery	renderer.md	engine/renderer/scene_frame.h:64
-renderer::SceneFrameSetup::before_present	variable	renderer	renderer-sceneframesetup-before-present	renderer.md	engine/renderer/scene_frame.h:66
-renderer::SceneFrameSetup::before_present_user	variable	renderer	renderer-sceneframesetup-before-present-user	renderer.md	engine/renderer/scene_frame.h:68
-renderer::SceneFrameSetup::font_path	variable	renderer	renderer-sceneframesetup-font-path	renderer.md	engine/renderer/scene_frame.h:71
-renderer::SceneFrameCompose	struct	renderer	renderer-sceneframecompose	renderer.md	engine/renderer/scene_frame.h:78
-renderer::SceneFrameCompose::scene_target	variable	renderer	renderer-sceneframecompose-scene-target	renderer.md	engine/renderer/scene_frame.h:82
-renderer::SceneFrameCompose::after_scene	variable	renderer	renderer-sceneframecompose-after-scene	renderer.md	engine/renderer/scene_frame.h:85
-renderer::SceneFrameCompose::user	variable	renderer	renderer-sceneframecompose-user	renderer.md	engine/renderer/scene_frame.h:87
-Hash<renderer::detail::LabelKey>	struct	renderer	hash-lt-renderer-detail-labelkey-gt	renderer.md	engine/renderer/scene_frame.h:128
-Hash<renderer::detail::LabelKey>::operator()(const renderer::detail::LabelKey&) const	function	renderer	hash-lt-renderer-detail-labelkey-gt-operator-call-const-renderer-detail-labelkey-amp-const	renderer.md	engine/renderer/scene_frame.h:131
-Hash<renderer::detail::LabelKeyView>	struct	renderer	hash-lt-renderer-detail-labelkeyview-gt	renderer.md	engine/renderer/scene_frame.h:139
-Hash<renderer::detail::LabelKeyView>::operator()(const renderer::detail::LabelKeyView&) const	function	renderer	hash-lt-renderer-detail-labelkeyview-gt-operator-call-const-renderer-detail-labelkeyview-amp-const	renderer.md	engine/renderer/scene_frame.h:142
-renderer::SceneFrame	class	renderer	renderer-sceneframe	renderer.md	engine/renderer/scene_frame.h:159
-renderer::SceneFrame::SceneFrame()	function	renderer	renderer-sceneframe-sceneframe	renderer.md	engine/renderer/scene_frame.h:163
-renderer::SceneFrame::~SceneFrame()	function	renderer	renderer-sceneframe-tilde-sceneframe	renderer.md	engine/renderer/scene_frame.h:165
-renderer::SceneFrame::SceneFrame(const SceneFrame&)	function	renderer	renderer-sceneframe-sceneframe-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:166
-renderer::SceneFrame::operator=(const SceneFrame&)	function	renderer	renderer-sceneframe-operator-eq-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:167
-renderer::SceneFrame::Create(const SceneFrameSetup&)	function	renderer	renderer-sceneframe-create-const-sceneframesetup-amp	renderer.md	engine/renderer/scene_frame.h:173
-renderer::SceneFrame::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-sceneframe-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/scene_frame.h:177
-renderer::SceneFrame::Destroy()	function	renderer	renderer-sceneframe-destroy	renderer.md	engine/renderer/scene_frame.h:179
-renderer::SceneFrame::GetRenderer()	function	renderer	renderer-sceneframe-getrenderer	renderer.md	engine/renderer/scene_frame.h:185
-renderer::SceneFrame::Materials()	function	renderer	renderer-sceneframe-materials	renderer.md	engine/renderer/scene_frame.h:190
-renderer::SceneFrame::Templates() const	function	renderer	renderer-sceneframe-templates-const	renderer.md	engine/renderer/scene_frame.h:192
-renderer::SceneFrame::SetCompose(const SceneFrameCompose&)	function	renderer	renderer-sceneframe-setcompose-const-sceneframecompose-amp	renderer.md	engine/renderer/scene_frame.h:195
-renderer::SceneFrame::SetTime(f32,f32)	function	renderer	renderer-sceneframe-settime-f32-f32	renderer.md	engine/renderer/scene_frame.h:197
-renderer::SceneFrame::SetEnvironment(f32,const Vec3&)	function	renderer	renderer-sceneframe-setenvironment-f32-const-vec3-amp	renderer.md	engine/renderer/scene_frame.h:207
-renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:216
-renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:223
-renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:227
-renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:231
-renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:234
-renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:236
-renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:243
-renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:247
-renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:251
-renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:258
-renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:262
-renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:266
-renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:271
-renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:273
-renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:275
-renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:277
-renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:279
-renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:281
-renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:285
+renderer::SceneFrameSetup::max_joint_matrices	variable	renderer	renderer-sceneframesetup-max-joint-matrices	renderer.md	engine/renderer/scene_frame.h:47
+renderer::SceneFrameSetup::gbuffer_layer	variable	renderer	renderer-sceneframesetup-gbuffer-layer	renderer.md	engine/renderer/scene_frame.h:49
+renderer::SceneFrameSetup::exposure	variable	renderer	renderer-sceneframesetup-exposure	renderer.md	engine/renderer/scene_frame.h:51
+renderer::SceneFrameSetup::scheduler	variable	renderer	renderer-sceneframesetup-scheduler	renderer.md	engine/renderer/scene_frame.h:53
+renderer::SceneFrameSetup::resources	variable	renderer	renderer-sceneframesetup-resources	renderer.md	engine/renderer/scene_frame.h:55
+renderer::SceneFrameSetup::prewarm_pipelines	variable	renderer	renderer-sceneframesetup-prewarm-pipelines	renderer.md	engine/renderer/scene_frame.h:57
+renderer::SceneFrameSetup::host	variable	renderer	renderer-sceneframesetup-host	renderer.md	engine/renderer/scene_frame.h:59
+renderer::SceneFrameSetup::create_info	variable	renderer	renderer-sceneframesetup-create-info	renderer.md	engine/renderer/scene_frame.h:61
+renderer::SceneFrameSetup::initial_settings	variable	renderer	renderer-sceneframesetup-initial-settings	renderer.md	engine/renderer/scene_frame.h:63
+renderer::SceneFrameSetup::window	variable	renderer	renderer-sceneframesetup-window	renderer.md	engine/renderer/scene_frame.h:65
+renderer::SceneFrameSetup::recovery	variable	renderer	renderer-sceneframesetup-recovery	renderer.md	engine/renderer/scene_frame.h:67
+renderer::SceneFrameSetup::before_present	variable	renderer	renderer-sceneframesetup-before-present	renderer.md	engine/renderer/scene_frame.h:69
+renderer::SceneFrameSetup::before_present_user	variable	renderer	renderer-sceneframesetup-before-present-user	renderer.md	engine/renderer/scene_frame.h:71
+renderer::SceneFrameSetup::font_path	variable	renderer	renderer-sceneframesetup-font-path	renderer.md	engine/renderer/scene_frame.h:74
+renderer::SceneFrameCompose	struct	renderer	renderer-sceneframecompose	renderer.md	engine/renderer/scene_frame.h:81
+renderer::SceneFrameCompose::scene_target	variable	renderer	renderer-sceneframecompose-scene-target	renderer.md	engine/renderer/scene_frame.h:85
+renderer::SceneFrameCompose::after_scene	variable	renderer	renderer-sceneframecompose-after-scene	renderer.md	engine/renderer/scene_frame.h:88
+renderer::SceneFrameCompose::user	variable	renderer	renderer-sceneframecompose-user	renderer.md	engine/renderer/scene_frame.h:90
+Hash<renderer::detail::LabelKey>	struct	renderer	hash-lt-renderer-detail-labelkey-gt	renderer.md	engine/renderer/scene_frame.h:131
+Hash<renderer::detail::LabelKey>::operator()(const renderer::detail::LabelKey&) const	function	renderer	hash-lt-renderer-detail-labelkey-gt-operator-call-const-renderer-detail-labelkey-amp-const	renderer.md	engine/renderer/scene_frame.h:134
+Hash<renderer::detail::LabelKeyView>	struct	renderer	hash-lt-renderer-detail-labelkeyview-gt	renderer.md	engine/renderer/scene_frame.h:142
+Hash<renderer::detail::LabelKeyView>::operator()(const renderer::detail::LabelKeyView&) const	function	renderer	hash-lt-renderer-detail-labelkeyview-gt-operator-call-const-renderer-detail-labelkeyview-amp-const	renderer.md	engine/renderer/scene_frame.h:145
+renderer::SceneFrame	class	renderer	renderer-sceneframe	renderer.md	engine/renderer/scene_frame.h:162
+renderer::SceneFrame::SceneFrame()	function	renderer	renderer-sceneframe-sceneframe	renderer.md	engine/renderer/scene_frame.h:166
+renderer::SceneFrame::~SceneFrame()	function	renderer	renderer-sceneframe-tilde-sceneframe	renderer.md	engine/renderer/scene_frame.h:168
+renderer::SceneFrame::SceneFrame(const SceneFrame&)	function	renderer	renderer-sceneframe-sceneframe-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:169
+renderer::SceneFrame::operator=(const SceneFrame&)	function	renderer	renderer-sceneframe-operator-eq-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:170
+renderer::SceneFrame::Create(const SceneFrameSetup&)	function	renderer	renderer-sceneframe-create-const-sceneframesetup-amp	renderer.md	engine/renderer/scene_frame.h:176
+renderer::SceneFrame::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-sceneframe-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/scene_frame.h:180
+renderer::SceneFrame::Destroy()	function	renderer	renderer-sceneframe-destroy	renderer.md	engine/renderer/scene_frame.h:182
+renderer::SceneFrame::GetRenderer()	function	renderer	renderer-sceneframe-getrenderer	renderer.md	engine/renderer/scene_frame.h:188
+renderer::SceneFrame::Materials()	function	renderer	renderer-sceneframe-materials	renderer.md	engine/renderer/scene_frame.h:193
+renderer::SceneFrame::Templates() const	function	renderer	renderer-sceneframe-templates-const	renderer.md	engine/renderer/scene_frame.h:195
+renderer::SceneFrame::SetCompose(const SceneFrameCompose&)	function	renderer	renderer-sceneframe-setcompose-const-sceneframecompose-amp	renderer.md	engine/renderer/scene_frame.h:198
+renderer::SceneFrame::SetTime(f32,f32)	function	renderer	renderer-sceneframe-settime-f32-f32	renderer.md	engine/renderer/scene_frame.h:200
+renderer::SceneFrame::SetEnvironment(f32,const Vec3&)	function	renderer	renderer-sceneframe-setenvironment-f32-const-vec3-amp	renderer.md	engine/renderer/scene_frame.h:210
+renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:219
+renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:226
+renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:230
+renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:234
+renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:237
+renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:239
+renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:246
+renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:250
+renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:254
+renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:261
+renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:265
+renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:269
+renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:274
+renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:276
+renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:278
+renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:280
+renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:282
+renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:284
+renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:288
 renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:19
 renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:21
 renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:26
