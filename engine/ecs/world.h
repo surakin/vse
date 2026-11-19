@@ -16,6 +16,7 @@
 #include "lang/utility.h"
 #include "log/assert.h"
 #include "mem/heap_allocator.h"
+#include "sync/atomic.h"
 #include "types.h"
 
 namespace engine_placeholder::ecs
@@ -318,6 +319,7 @@ public:
              id = writes.NextFrom(static_cast<u32>(id) + 1u))
         {
             iteration_writes_.Add(id);
+            Bump(id);
         }
         return previous;
     }
@@ -440,6 +442,52 @@ public:
     /// The entity table.
     const EntityTable& Entities() const { return table_; }
 
+    /// Starts counting the changes of `T` in this world (see [[ecs::World::ComponentVersion]]); a type is counted from
+    /// the first call on. Calling it again changes nothing.
+    ///
+    /// - Fails: never.
+    template <class T> void TrackComponentVersion()
+    {
+        const ComponentId id = ComponentOf<T>();
+        if (id != kInvalidComponent)
+        {
+            versioned_.Add(id);
+        }
+    }
+
+    /// A counter that grows whenever `T` may have changed in this world since tracking began: an entity gained or lost
+    /// `T` (`Add`, `Remove`, `Create` with it, `Destroy`), or a value of `T` may have been written (`Set`, the
+    /// non-const `Get`, `Poke`, `Stamp`, the non-const `CellOf`, and a query that writes `T`, counted when it begins).
+    /// It may grow without a change (a query that declares a write and writes nothing); it never stays the same across
+    /// one. A caller that keeps something derived from `T` compares two readings to know whether to rebuild it. Writes
+    /// made by hand into an archetype's columns are not counted.
+    ///
+    /// - Returns: the counter; 0 for a type that is not tracked (or not registered).
+    /// - Thread-safety: thread-safe. The counter is a relaxed atomic: it may be read, and bumped by writes, from
+    /// several
+    ///   threads.
+    /// - Fails: never.
+    template <class T> u64 ComponentVersion() const
+    {
+        const ComponentId id = ComponentOf<T>();
+        return id != kInvalidComponent && versioned_.Has(id) ? versions_[id].Load(MemoryOrder::Relaxed) : 0;
+    }
+
+    /// A key that orders entities as a query visits them now: by archetype, then chunk, then row. It changes with every
+    /// structural call that moves the entity.
+    ///
+    /// - Returns: the key, or the largest value for a dead entity.
+    /// - Fails: as the return says.
+    u64 StorageOrder(Entity entity) const
+    {
+        const EntityLocation* where = table_.Location(entity);
+        if (where == nullptr)
+        {
+            return ~u64{0};
+        }
+        return (static_cast<u64>(where->archetype) << 40) | (static_cast<u64>(where->chunk) << 20) | where->row;
+    }
+
     /// The counters.
     WorldStats Stats() const;
 
@@ -494,6 +542,18 @@ private:
     bool parallel_ = false;
     u64 tick_ = 1;
     ComponentSet iteration_writes_;
+    // The tracked types (TrackComponentVersion) and their change counters (ComponentVersion).
+    ComponentSet versioned_;
+    Array<Atomic<u64>, kMaxComponentTypes> versions_;
+    void Bump(ComponentId id)
+    {
+        if (id != kInvalidComponent && versioned_.Has(id))
+        {
+            versions_[id].FetchAdd(1, MemoryOrder::Relaxed);
+        }
+    }
+    // Bumps every tracked component of an archetype (an entity made in it or destroyed from it).
+    void BumpAll(const Archetype& a);
     Vector<ResourceSlot> resources_;
     u64 next_resource_serial_ = 1;
     u64 migrations_ = 0;
@@ -674,6 +734,7 @@ template <class T> Status World::Set(Entity entity, T value)
             static_cast<T*>(cell)->~T();
             ConstructAt<T>(cell, Move(value));
             a.MarkWritten(a.ChunkAt(where->chunk), id, tick_);
+            Bump(id);
         }
         return Status::Ok;
     }
@@ -710,6 +771,7 @@ template <class T> T* World::GetCell(Entity entity, bool mark)
     if (mark)
     {
         a.MarkWritten(chunk, id, tick_);
+        Bump(id);
     }
     return static_cast<T*>(a.CellPtr(chunk, id, where->row));
 }
@@ -727,6 +789,7 @@ template <class T> const T* World::Peek(Entity entity) const
 
 template <class T> T* World::Poke(Entity entity)
 {
+    Bump(ComponentOf<T>());
     return const_cast<T*>(static_cast<const World*>(this)->Peek<T>(entity));
 }
 
@@ -737,6 +800,7 @@ template <class T> void World::Stamp(Entity entity)
     {
         Archetype& a = *archetypes_[where->archetype];
         a.MarkWritten(a.ChunkAt(where->chunk), ComponentOf<T>(), tick_);
+        Bump(ComponentOf<T>());
     }
 }
 

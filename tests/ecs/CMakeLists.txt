@@ -12,6 +12,7 @@ set(ECS_TEST_SOURCES
   schedule_test.cpp
   parallel_test.cpp
   transform_test.cpp
+  hierarchy_index_test.cpp  # query and hierarchy indices, Day 2
   removal_test.cpp
   bench_test.cpp
   ../../game/ecs_bench/bench.cpp

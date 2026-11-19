@@ -51,3 +51,17 @@ Phase 17 (ECS), and the container audit (`DenseMap`, `HashMap`, `Sort`).
 - **Results stay identical:** a change that moves a hash, a checksum or a query result is wrong, not a new baseline.
 - **Windows and macOS** build and run both days on the user's machines, no later than the next phase close. Each day lists what is waiting in
   `KNOWN-ISSUES.md`.
+
+## Before and after (the series close, 2026-11-19, Linux, Release)
+
+| Path | Before | After |
+|---|---|---|
+| Rays against 5,000 bodies (`physics_bench --scene rays`) | 8,637 per second | 846,000 per second |
+| Characters 100 / 500 / 2,000 (`physics_bench --scene characters`) | 1.38 / 20.6 / 294 ms per step | 0.45 / 2.3 / 10 ms per step |
+| Physics step, 5,000 falling bodies, one thread (`--scene drop`) | 17.5 ms | 18.0 ms (the index's refresh) |
+| `SetParent` at 1,000 / 4,000 entities (`container_bench`) | 4,870-5,111 / 19,079-19,699 ns | 113 / 122 ns |
+| ECS iteration and churn (`ecs_bench`) | 0.275-0.285 / 1.51-1.79 ms | 0.278-0.299 / 1.56-1.64 ms (noise) |
+
+**Series done.** Both days' boxes are checked, the physics hashes and the C sample checksum are unchanged, and the oracles agree. The closing run
+is `ran 10888 of 11400 tests (phases: all; flavors: all; display: included; crash tests: excluded)`, with known failures only. Windows and macOS
+wait for the user's machines (`KNOWN-ISSUES.md`).

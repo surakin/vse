@@ -134,6 +134,7 @@ Entity World::CreateIn(u32 archetype, RowRef* row)
         return Entity{};
     }
     archetypes_[archetype]->MarkArrived(row->chunk, tick_);
+    BumpAll(*archetypes_[archetype]);
     EntityLocation* where = table_.Location(entity);
     where->chunk = row->chunk_index;
     where->row = row->row;
@@ -282,6 +283,7 @@ void* World::CellOf(Entity entity, ComponentId id)
     Archetype& a = *archetypes_[where->archetype];
     Chunk* chunk = a.ChunkAt(where->chunk);
     a.MarkWritten(chunk, id, tick_);
+    Bump(id);
     return a.CellPtr(chunk, id, where->row);
 }
 
@@ -301,6 +303,19 @@ Entity World::Create()
     NotIterating("World::Create during iteration");
     RowRef row;
     return CreateIn(0, &row);
+}
+
+void World::BumpAll(const Archetype& a)
+{
+    if (versioned_.Count() == 0)
+    {
+        return;
+    }
+    const ArchetypeLayout& layout = a.Layout();
+    for (u32 c = 1; c < layout.column_count; ++c)
+    {
+        Bump(layout.component[c]);
+    }
 }
 
 void World::FixMoved(Entity moved, u32 chunk, u32 row)
@@ -323,6 +338,7 @@ Status World::Destroy(Entity entity)
     }
     const EntityLocation at = *where;
     Archetype& home = *archetypes_[at.archetype];
+    BumpAll(home);
     {
         Chunk* chunk = home.ChunkAt(at.chunk);
         const ArchetypeLayout& layout = home.Layout();
@@ -360,6 +376,16 @@ bool World::Migrate(Entity entity, u32 target, RowRef* new_row)
         return false;
     }
     dest.MarkArrived(new_row->chunk, tick_);
+    {
+        const ArchetypeLayout& added = dest.Layout();
+        for (u32 c = 1; c < added.column_count; ++c)
+        {
+            if (!source.Has(added.component[c]))
+            {
+                Bump(added.component[c]);  // added
+            }
+        }
+    }
     Chunk* source_chunk = source.ChunkAt(from.chunk);
     const ArchetypeLayout& layout = source.Layout();
     for (u32 c = 1; c < layout.column_count; ++c)
@@ -370,6 +396,7 @@ bool World::Migrate(Entity entity, u32 target, RowRef* new_row)
         void* to_cell = dest.CellPtr(new_row->chunk, id, new_row->row);
         if (to_cell == nullptr)
         {
+            Bump(id);  // dropped
             if (info.track_removal)
             {
                 RecordRemoval(id, info, entity, from_cell);

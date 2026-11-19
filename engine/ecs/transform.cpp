@@ -1,5 +1,6 @@
 #include "ecs/transform.h"
 
+#include "algorithm.h"
 #include "containers/hash_map.h"
 #include "ecs/query.h"
 #include "math/transform.h"
@@ -25,63 +26,135 @@ bool SameMatrix(const Mat4& a, const Mat4& b)
     return true;
 }
 
-// The parent and depth of every entity that has a Parent, in iteration order.
-struct Link
+// The children of every parent, kept beside the hierarchy as a world resource (query and hierarchy indices series,
+// Day 2): SetParent, ClearParent and DestroyRecursive walk a subtree through it instead of collecting every Parent link
+// in the world. It is current while the world's Parent version equals `version`; anything else that changed a Parent (a
+// raw Set<Parent>, a Remove, a destruction, the propagation's repair of an orphan) moves the version, and the next call
+// makes the index again with one pass.
+struct HierarchyIndex
 {
-    Entity entity;
-    Entity parent;
+    HierarchyIndex() : children(HeapAllocator::Default()) {}
+
+    HashMap<Entity, Vector<Entity>, HeapAllocator> children;
+    u64 version = 0;
+    bool made = false;
 };
 
-void CollectLinks(World& world, Vector<Link>* out)
+void AddChild(HierarchyIndex& index, Entity parent, Entity child)
 {
-    world.Query<Read<Parent>>().ForEach([&](Entity e, const Parent& p) { out->Push(Link{e, p.entity}); });
+    Vector<Entity>* list = index.children.Find(parent);
+    if (list == nullptr)
+    {
+        list = index.children.Emplace(parent).value;
+    }
+    list->Push(child);
 }
 
-// The descendants of `root` with their distance below it, found by repeated passes over the links (each pass finds one
-// more level).
-void Descendants(const Vector<Link>& links, Entity root, HashMap<Entity, u32, HeapAllocator>* distance, u32* height)
+void RemoveChild(HierarchyIndex& index, Entity parent, Entity child)
 {
-    distance->Insert(root, 0);
-    *height = 0;
-    for (bool grew = true; grew;)
+    Vector<Entity>* list = index.children.Find(parent);
+    if (list == nullptr)
     {
-        grew = false;
-        for (usize i = 0; i < links.Size(); ++i)
+        return;
+    }
+    for (usize i = 0; i < list->Size(); ++i)
+    {
+        if ((*list)[i] == child)
         {
-            const u32* up = distance->Find(links[i].parent);
-            if (up != nullptr && distance->Find(links[i].entity) == nullptr)
+            list->SwapRemove(i);
+            break;
+        }
+    }
+    if (list->Empty())
+    {
+        index.children.Remove(parent);
+    }
+}
+
+// The world's index, made again when the world's Parent links changed behind it.
+HierarchyIndex& IndexOf(World& world)
+{
+    world.TrackComponentVersion<Parent>();
+    HierarchyIndex* index = world.TryResource<HierarchyIndex>();
+    if (index == nullptr)
+    {
+        index = &world.SetResource(HierarchyIndex());
+    }
+    const u64 version = world.ComponentVersion<Parent>();
+    if (!index->made || index->version != version)
+    {
+        index->children.Clear();
+        world.Query<Read<Parent>>().ForEach([&](Entity e, const Parent& p) { AddChild(*index, p.entity, e); });
+        index->version = version;
+        index->made = true;
+        if (TransformReport* report = world.TryResource<TransformReport>())
+        {
+            ++report->index_rebuilds;
+        }
+    }
+    return *index;
+}
+
+// One entity below a root: its distance below it, and its place in a query's visiting order at the moment the subtree
+// was found (the order the link pass of the old code visited them in).
+struct Below
+{
+    Entity entity;
+    u32 distance = 0;
+    u64 order = 0;
+};
+
+// The descendants of `root` (not root itself) with their distance below it, in the order a query over `Parent` visits
+// them now; the height of the subtree in `*height`. A forced cycle through the root ends at the root.
+void Descendants(const World& world, const HierarchyIndex& index, Entity root, Vector<Below>* out, u32* height)
+{
+    out->Clear();
+    *height = 0;
+    if (index.children.Find(root) == nullptr)
+    {
+        return;  // a leaf, the common case when a hierarchy is built: nothing to walk or allocate
+    }
+    HashMap<Entity, u32, HeapAllocator> seen(HeapAllocator::Default());
+    seen.Insert(root, 0);
+    Vector<Entity> frontier;
+    frontier.Push(root);
+    for (u32 distance = 1; !frontier.Empty(); ++distance)
+    {
+        Vector<Entity> next;
+        for (const Entity parent : frontier)
+        {
+            const Vector<Entity>* list = index.children.Find(parent);
+            if (list == nullptr)
             {
-                const u32 next = *up + 1;  // copied first: Insert may rehash and move the slot `up` points at
-                distance->Insert(links[i].entity, next);
-                *height = next > *height ? next : *height;
-                grew = true;
+                continue;
+            }
+            for (const Entity child : *list)
+            {
+                if (seen.Find(child) == nullptr)
+                {
+                    seen.Insert(child, distance);
+                    Below b;
+                    b.entity = child;
+                    b.distance = distance;
+                    b.order = world.StorageOrder(child);
+                    out->Push(b);
+                    next.Push(child);
+                    *height = distance;
+                }
             }
         }
+        frontier.Swap(next);
     }
+    Sort(Span<Below>(out->Data(), out->Size()), [](const Below& a, const Below& b) { return a.order < b.order; });
 }
 
-// Sets the depth of every descendant of `root` (not root itself) to `root_depth` plus its distance.
-void RebaseDepths(World& world, const Vector<Link>& links, Entity root, u32 root_depth)
+// Sets the depth of every entity of `below` to `root_depth` plus its distance, in the order of `below`.
+void RebaseDepths(World& world, const Vector<Below>& below, u32 root_depth)
 {
-    HashMap<Entity, u32, HeapAllocator> distance(HeapAllocator::Default());
-    u32 height = 0;
-    Descendants(links, root, &distance, &height);
-    for (usize i = 0; i < links.Size(); ++i)
+    for (const Below& b : below)
     {
-        const u32* d = distance.Find(links[i].entity);
-        if (d != nullptr && links[i].entity != root)
-        {
-            world.Set<HierarchyDepth>(links[i].entity, HierarchyDepth{root_depth + *d});
-        }
+        world.Set<HierarchyDepth>(b.entity, HierarchyDepth{root_depth + b.distance});
     }
-}
-
-u32 SubtreeHeight(const Vector<Link>& links, Entity root)
-{
-    HashMap<Entity, u32, HeapAllocator> distance(HeapAllocator::Default());
-    u32 height = 0;
-    Descendants(links, root, &distance, &height);
-    return height;
 }
 
 }  // namespace
@@ -174,9 +247,11 @@ HierarchyStatus SetParent(World& world, Entity child, Entity parent)
             break;  // a deeper, malformed chain: refused below
         }
     }
-    Vector<Link> links;
-    CollectLinks(world, &links);
-    if (parent_depth + 1 + SubtreeHeight(links, child) > kMaxHierarchyDepth)
+    HierarchyIndex& index = IndexOf(world);
+    Vector<Below> below;
+    u32 height = 0;
+    Descendants(world, index, child, &below, &height);
+    if (parent_depth + 1 + height > kMaxHierarchyDepth)
     {
         if (TransformReport* report = world.TryResource<TransformReport>())
         {
@@ -184,7 +259,9 @@ HierarchyStatus SetParent(World& world, Entity child, Entity parent)
         }
         return HierarchyStatus::TooDeep;
     }
-    const bool had_parent = world.Has<Parent>(child);
+    const Parent* before = world.Peek<Parent>(child);
+    const bool had_parent = before != nullptr;
+    const Entity old_parent = had_parent ? before->entity : Entity{};
     if (world.Set<Parent>(child, Parent{parent}) != Status::Ok)
     {
         return HierarchyStatus::Refused;
@@ -195,11 +272,22 @@ HierarchyStatus SetParent(World& world, Entity child, Entity parent)
         {
             world.Remove<Parent>(child);  // no half-made link: a Parent without a depth is visited by no query
         }
+        else
+        {
+            RemoveChild(index, old_parent, child);
+            AddChild(index, parent, child);
+        }
+        index.version = world.ComponentVersion<Parent>();  // its own writes; the index follows them
         return HierarchyStatus::Refused;
     }
-    // The child's own migration moved no one else, but the links list predates the Set: its entries stay valid
-    // (entities, not rows).
-    RebaseDepths(world, links, child, parent_depth + 1);
+    if (had_parent)
+    {
+        RemoveChild(index, old_parent, child);
+    }
+    AddChild(index, parent, child);
+    index.version = world.ComponentVersion<Parent>();
+    // The subtree's order was taken before the child's own migration, as the link pass of the old code took it.
+    RebaseDepths(world, below, parent_depth + 1);
     return HierarchyStatus::Ok;
 }
 
@@ -213,31 +301,35 @@ HierarchyStatus ClearParent(World& world, Entity child)
     {
         return HierarchyStatus::Ok;
     }
+    HierarchyIndex& index = IndexOf(world);
+    const Entity old_parent = world.Peek<Parent>(child)->entity;
     world.Remove<Parent>(child);
     world.Remove<HierarchyDepth>(child);
-    Vector<Link> links;
-    CollectLinks(world, &links);
-    RebaseDepths(world, links, child, 0);
+    RemoveChild(index, old_parent, child);
+    index.version = world.ComponentVersion<Parent>();
+    Vector<Below> below;
+    u32 height = 0;
+    Descendants(world, index, child, &below, &height);
+    RebaseDepths(world, below, 0);
     return HierarchyStatus::Ok;
 }
 
 u32 DestroyRecursive(World& world, CommandBuffer& commands, Entity root)
 {
-    Vector<Link> links;
-    CollectLinks(world, &links);
-    HashMap<Entity, u32, HeapAllocator> distance(HeapAllocator::Default());
+    const HierarchyIndex& index = IndexOf(world);
+    Vector<Below> below;
     u32 height = 0;
-    Descendants(links, root, &distance, &height);
+    Descendants(world, index, root, &below, &height);
     u32 recorded = 0;
-    // Deepest first, so a reader of the commands sees children go before their parent.
-    for (u32 d = height + 1; d > 0; --d)
+    // Deepest first, so a reader of the commands sees children go before their parent; within a depth, in the order a
+    // query over Parent visits them (the order of the old link pass).
+    for (u32 d = height; d > 0; --d)
     {
-        for (usize i = 0; i < links.Size(); ++i)
+        for (const Below& b : below)
         {
-            const u32* at = distance.Find(links[i].entity);
-            if (at != nullptr && *at == d - 1 && links[i].entity != root)
+            if (b.distance == d)
             {
-                commands.Destroy(links[i].entity);
+                commands.Destroy(b.entity);
                 ++recorded;
             }
         }

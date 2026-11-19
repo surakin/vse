@@ -354,6 +354,13 @@ before it.
 Many systems only need the data that changed since they last ran: the renderer sync re-uploads moved transforms, the hierarchy updates children of moved
 parents. Add a **`Changed<T>`** or **`Added<T>`** term and the query skips chunks that did not change.
 
+**Component versions** answer a coarser question in constant time: "may anything about `T` have changed in this world since I last looked?" Call
+`world.TrackComponentVersion<T>()` once; from then on `world.ComponentVersion<T>()` grows whenever an entity gains or loses `T` (`Add`, `Remove`, `Create` with it,
+`Destroy`) or a value of `T` may have been written (`Set`, the non-const `Get`, `Poke`, `Stamp`, the non-const `CellOf`, and a query that declares a write of `T`, counted
+once when it begins). It can grow without a real change, never the reverse, so a cache derived from `T` compares two readings and rebuilds when they differ. An
+untracked type costs one bit test on those paths and reads as 0. The hierarchy's children index is the first user. `world.StorageOrder(entity)` gives the order a query
+visits entities in now (archetype, chunk, row), for a caller that must reproduce it without running the query.
+
 ```cpp compile run standalone
 #include "ecs/query.h"
 #include "os/console.h"
@@ -569,7 +576,12 @@ turret at 20 2
   (a refusal for depth is counted in `TransformReport::refused_depth`). Reparenting moves the whole subtree, whose depths are rebased.
 - **Bad data survives.** A parent destroyed behind a child's back makes the child a root (`dangling_fixed`); a stored depth that is wrong is recomputed from the chain
   (`depth_repaired`); an entity whose chain loops keeps its previous matrix (`unresolved`). Writing `Parent` directly with `world.Set` works but is repaired a frame late.
-- **Destroying a subtree.** `DestroyRecursive(world, commands, root)` records the destruction of the root and every descendant into a command buffer and returns how many.
+- **Destroying a subtree.** `DestroyRecursive(world, commands, root)` records the destruction of the root and every descendant into a command buffer and returns how many,
+  deepest first and, within a depth, in the order a query over `Parent` visits them.
+- **Cost** (query and hierarchy indices series, Day 2). `SetParent`, `ClearParent` and `DestroyRecursive` keep a children index beside the hierarchy (a world resource),
+  so a call costs the child's subtree: about 200 ns per `SetParent` when building a wide tree of 1,000 or 4,000 entities (5 and 19 µs when each call walked every link).
+  The index follows these calls' own writes; when `Parent` changed any other way (a raw `Set` or `Get`, a removal, a destruction, the propagation's repair of an
+  orphan) the world's `ComponentVersion<Parent>()` moved, and the next call makes the index again with one pass (`TransformReport::index_rebuilds`).
 - **Helpers.** `LookAt(eye, target, up)` returns a `LocalTransform` whose -Z axis points at the target; `Decompose(matrix)` splits a matrix back into position, rotation and scale.
 
 ## Removal tracking

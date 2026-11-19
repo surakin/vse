@@ -3990,6 +3990,16 @@ u64 unresolved;
 
 Children in a cycle or deeper than the maximum: they kept their previous matrix.
 
+### `index_rebuilds` {#ecs-transformreport-index-rebuilds}
+
+`variable ecs::TransformReport::index_rebuilds` — defined in `engine/ecs/transform.h`
+
+```cpp
+u64 index_rebuilds;
+```
+
+Times the hierarchy's children index was made again because `Parent` changed outside `SetParent` and `ClearParent` (a raw `Set<Parent>`, a removal, a destruction, an orphan's repair); 1 for its first use.
+
 ### `refused_depth` {#ecs-transformreport-refused-depth}
 
 `variable ecs::TransformReport::refused_depth` — defined in `engine/ecs/transform.h`
@@ -4075,7 +4085,7 @@ HierarchyStatus SetParent(World& world, Entity child, Entity parent);
 
 Makes `parent` the parent of `child`, keeping the depths of the child and of all its descendants right.
 
-The cost is one pass over every entity that has a `Parent` per level of the child's subtree; reparenting is rare, a per-frame change is a smell.
+The cost is the child's subtree (a children index kept beside the hierarchy, query and hierarchy indices series Day 2), plus one pass over every entity that has a `Parent` when `Parent` changed outside these calls since the last one (a raw `Set<Parent>`, a removal, a destruction, the propagation's repair of an orphan; see [`ecs::World::ComponentVersion`](#ecs-world-componentversion-const)).
 
 | Field | Value |
 |---|---|
@@ -5188,6 +5198,53 @@ const EntityTable& Entities() const;
 ```
 
 The entity table.
+
+### `TrackComponentVersion()` {#ecs-world-trackcomponentversion}
+
+`method ecs::World::TrackComponentVersion` — defined in `engine/ecs/world.h`
+
+```cpp
+template <class T>
+void TrackComponentVersion();
+```
+
+Starts counting the changes of `T` in this world (see [`ecs::World::ComponentVersion`](#ecs-world-componentversion-const)); a type is counted from the first call on. Calling it again changes nothing.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `ComponentVersion()` {#ecs-world-componentversion-const}
+
+`method ecs::World::ComponentVersion` — defined in `engine/ecs/world.h`
+
+```cpp
+template <class T>
+u64 ComponentVersion() const;
+```
+
+A counter that grows whenever `T` may have changed in this world since tracking began: an entity gained or lost `T` (`Add`, `Remove`, `Create` with it, `Destroy`), or a value of `T` may have been written (`Set`, the non-const `Get`, `Poke`, `Stamp`, the non-const `CellOf`, and a query that writes `T`, counted when it begins). It may grow without a change (a query that declares a write and writes nothing); it never stays the same across one. A caller that keeps something derived from `T` compares two readings to know whether to rebuild it. Writes made by hand into an archetype's columns are not counted.
+
+| Field | Value |
+|---|---|
+| Returns | the counter; 0 for a type that is not tracked (or not registered). |
+| Fails | never. |
+| Thread-safety | thread-safe. The counter is a relaxed atomic: it may be read, and bumped by writes, from several threads. |
+
+### `StorageOrder(Entity)` {#ecs-world-storageorder-entity-const}
+
+`method ecs::World::StorageOrder` — defined in `engine/ecs/world.h`
+
+```cpp
+u64 StorageOrder(Entity entity) const;
+```
+
+A key that orders entities as a query visits them now: by archetype, then chunk, then row. It changes with every structural call that moves the entity.
+
+| Field | Value |
+|---|---|
+| Returns | the key, or the largest value for a dead entity. |
+| Fails | as the return says. |
 
 ### `Stats()` {#ecs-world-stats-const}
 

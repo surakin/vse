@@ -25,7 +25,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
 | [Text](text.md) | 6 | 221 |
-| [ECS](ecs.md) | 12 | 411 |
+| [ECS](ecs.md) | 12 | 415 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
 | [Physics](physics.md) | 30 | 756 |
 | [Audio](audio.md) | 28 | 822 |
