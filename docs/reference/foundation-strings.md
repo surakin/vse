@@ -509,6 +509,27 @@ bool operator!=(StringView other) const;
 
 Returns true if the contents differ from `other`.
 
+## `Hash<String<Allocator>>` {#hash-lt-string-lt-allocator-gt-gt}
+
+`struct Hash<String<Allocator>>` — defined in `engine/foundation/string/string.h`
+
+```cpp
+template <typename Allocator>
+struct Hash<String<Allocator>> { ... }
+```
+
+Hash function for [`String`](#string) keys of a [`HashMap`](foundation-containers.md#hashmap) (Phase 27 Day 474): the hash of the contents' [`StringView`](#stringview), so a map keyed by strings is searched with a view, without making a string.
+
+### `operator()(const String<Allocator>&)` {#hash-lt-string-lt-allocator-gt-gt-operator-call-const-string-lt-allocator-gt-amp-const}
+
+`operator Hash<String<Allocator>>::operator()` — defined in `engine/foundation/string/string.h`
+
+```cpp
+usize operator()(const String<Allocator>& k) const;
+```
+
+Returns the hash of the string's bytes, equal to `Hash<StringView>` of its view.
+
 ## `StringBuilder` {#stringbuilder}
 
 `class StringBuilder` — defined in `engine/foundation/string/string.h`

@@ -59,6 +59,7 @@ audio             ->  foundation (incl. math, settings), asset (same layer, from
 audio_physics     ->  audio, physics (layer 14: the physics occlusion query)  (Phase 26 Day 431)
 script_physics    ->  script, physics (layer 14: the physics bindings, commands, components, physics events and the character set of the script module)  (Phase 27 Days 466-467)
 game/script_bench  ->  script, storage, ecs, jobs, foundation (layer 14: the script benchmark, the regression check and the large stress run)  (Phase 27 Day 476)
+game/container_bench  ->  renderer, ui, script, storage, asset, ecs, rhi, foundation (layer 14: the container audit benchmark: the containers alone and the engine paths the audit found slow)  (container audit series Day 1)
 game/script_demo   ->  script_physics, script, physics, storage, ecs, jobs, foundation (layer 14: the scripted game over the whole frame, headless; its world is built by the program and by tests/script_demo)  (Phase 27 Day 475)
 script_media      ->  script, audio, platform (header-only input types) (layer 14: the audio and input bindings of the script module: voice handles, the input snapshot and its replay record)  (Phase 27 Day 468)
 script            ->  foundation (incl. math), ecs, storage (below: the component registry, from Day 456); from later days jobs, settings, asset (same layer)  (Phase 27 Day 446)

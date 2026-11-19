@@ -3,6 +3,7 @@
 
 #include "lang/new.h"              // before the X11 headers: <X11/X.h> defines `BadAlloc`, which lang/new.h names
 #include "platform/input_event.h"  // before the X11 headers: they define `None`
+#include "containers/hash_map.h"   // before the X11 headers: <X11/X.h> defines `DestroyAll`, a HashMap member
 #include "unity/x11_enable.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

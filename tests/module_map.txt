@@ -124,6 +124,7 @@ tests/script_physics 27
 tests/script_demo 27
 game/script_demo 27
 game/script_bench 27
+game/container_bench 10
 tests/script_media 27
 tests/text          14
 tests/ui            15

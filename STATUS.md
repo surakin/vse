@@ -21,7 +21,15 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - Days 5-10: the modules.
   - Day 11: Windows and macOS (the user's).
   - Day 12: a gate, the after numbers, the full closing runs and an uncapped review.
-- Not started; `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
+- **Day 1 done (2026-11-19, Linux):**
+  - `game/container_bench` (the containers alone, and the audited engine paths) and the baselines of every audited path; the table is in the day file.
+    Quadratic: `SetParent`, `Value` maps, `MemoryStore` puts and the character queries. Rays run at 8,700/s against 5,000 bodies. `DeviceResources` takes 256 owners.
+    Linear after all: script waits and events, `ResourceTable` removal.
+  - The Mac's `HashMap` checked on Linux: `<X11/X.h>`'s `DestroyAll` macro broke a GCC non-unity build. Fixed with the X11 guard (`containers/hash_map.h`
+    included before the X11 region of the two X11 tests, `DestroyAll` in `x11_enable.h`/`x11_disable.h`). `docs/reference` regenerated.
+  - Runs: plain `ran 4077 of 11341 tests (phases: all; flavors: plain; display: excluded; crash tests: excluded)`, three known failures; asan and tsan in the day file.
+  - Review: 5 findings, all fixed.
+- `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).
 

@@ -32,6 +32,7 @@
 #pragma push_macro("EnterNotify")
 #pragma push_macro("LeaveNotify")
 #pragma push_macro("DestroyNotify")
+#pragma push_macro("DestroyAll")
 #pragma push_macro("UnmapNotify")
 #pragma push_macro("MapNotify")
 #pragma push_macro("ConfigureNotify")

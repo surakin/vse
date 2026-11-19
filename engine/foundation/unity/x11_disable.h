@@ -28,6 +28,7 @@
 #pragma pop_macro("EnterNotify")
 #pragma pop_macro("LeaveNotify")
 #pragma pop_macro("DestroyNotify")
+#pragma pop_macro("DestroyAll")
 #pragma pop_macro("UnmapNotify")
 #pragma pop_macro("MapNotify")
 #pragma pop_macro("ConfigureNotify")

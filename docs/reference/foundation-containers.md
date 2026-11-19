@@ -498,6 +498,38 @@ usize operator()(T* k) const;
 
 Returns a well-mixed hash of the pointer's address.
 
+## `Hash<StringView>` {#hash-lt-stringview-gt}
+
+`struct Hash<StringView>` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+template <>
+struct Hash<StringView> { ... }
+```
+
+Hash function for [`StringView`](foundation-strings.md#stringview) keys (Phase 27 Day 474): FNV-1a over the bytes, then mixed. A string type that hashes as a key gives the same value as the view of its contents, so a map keyed by strings can be searched with a view (`String<A>`'s hash is in `string/string.h`).
+
+### `operator()(StringView)` {#hash-lt-stringview-gt-operator-call-stringview-const}
+
+`operator Hash<StringView>::operator()` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+usize operator()(StringView k) const;
+```
+
+Returns a well-mixed hash of the bytes.
+
+## `HeterogeneousKey` {#heterogeneouskey}
+
+`variable HeterogeneousKey` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+template <typename Q, typename K>
+concept HeterogeneousKey;
+```
+
+A type `Q` a [`HashMap`](#hashmap) keyed by `K` can be searched with, without making a `K`: not `K` itself, not a pointer, an array or an arithmetic or enum type (a C string would hash its address and an integer of another width hashes differently: both convert to `K` and take the ordinary overload instead), comparable with `K`, and hashed by `Hash<Q>` the way `Hash<K>` hashes an equal key (a [`StringView`](foundation-strings.md#stringview) for a [`String`](foundation-strings.md#string) key).
+
 ## `HashMap` {#hashmap}
 
 `class HashMap` — defined in `engine/foundation/containers/hash_map.h`
@@ -509,12 +541,12 @@ class HashMap { ... }
 
 Hash map from `K` to `V` using open addressing with linear probing.
 
-`K` needs `operator==`, a `Hash<K>` specialization, and a default constructor; `V` needs a default constructor. Keys and values are copied in and stored by value. The table starts with at least 8 slots and rehashes when the load factor, counting tombstones, reaches 0.7: into twice the slots if the live entries alone fill at least half of that, otherwise into the same number (which clears the tombstones left by removals). Growth rehashes into a new block and abandons the old one inside the allocator, as with [`Vector`](#vector). Growth invalidates pointers returned by `Find`. There is no iteration support.
+`K` needs `operator==` and a `Hash<K>` specialization. Keys and values are stored by value, constructed when they are inserted (copied or moved in) and destroyed when they are removed, when the table is rehashed into a new one (they are moved across) and with the map; neither needs a default constructor, and either may be move-only (a [`String`](foundation-strings.md#string) key, Phase 27 Day 474). A key can also be looked up by a type `Q` it compares equal to (`K == Q`) whose `Hash<Q>` agrees with `Hash<K>` for equal keys: a [`StringView`](foundation-strings.md#stringview) for a [`String`](foundation-strings.md#string) key. The table starts with at least 8 slots and rehashes when the load factor, counting tombstones, reaches 0.7: into twice the slots if the live entries alone fill at least half of that, otherwise into the same number (which clears the tombstones left by removals). Growth invalidates pointers returned by `Find`. `ForEach` visits the entries in no particular order.
 
 | Field | Value |
 |---|---|
 | Thread-safety | not-thread-safe. Synchronize externally if shared, including concurrent `Find` calls with a writer. |
-| Ownership | the allocator owns all storage and must outlive the map; the map never frees memory. |
+| Ownership | the map owns its keys and values; its storage comes from the allocator, which must outlive the map, and is released as a [`Vector`](#vector) releases it (freed when the allocator has `Free`, else abandoned inside it). |
 
 ### `HashMap(Allocator&,usize)` {#hashmap-hashmap-allocator-amp-usize}
 
@@ -531,6 +563,16 @@ Creates an empty map and allocates its initial table.
 | Parameter `allocator` | allocator for table storage; held by pointer and must outlive the map. |
 | Parameter `initial_capacity` | initial slot count; values below 8 are raised to 8. |
 | Aborts | the allocator is out of memory. |
+
+### `~HashMap()` {#hashmap-tilde-hashmap}
+
+`destructor HashMap::~HashMap` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+~HashMap();
+```
+
+Destroys every key and value.
 
 ### `HashMap(const HashMap&)` {#hashmap-hashmap-const-hashmap-amp}
 
@@ -552,22 +594,43 @@ HashMap& operator=(const HashMap&) = delete;
 
 _Deleted._
 
-### `Insert(const K&,const V&)` {#hashmap-insert-const-k-amp-const-v-amp}
+### `HashMap(HashMap&&)` {#hashmap-hashmap-hashmap-amp-amp-noexcept}
+
+`constructor HashMap::HashMap` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+HashMap(HashMap&& other) noexcept;
+```
+
+Takes over `other`'s entries and table, leaving `other` empty (it may be used again: its next `Insert` makes a table).
+
+### `operator=(HashMap&&)` {#hashmap-operator-eq-hashmap-amp-amp-noexcept}
+
+`operator HashMap::operator=` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+HashMap& operator=(HashMap&& other) noexcept;
+```
+
+Destroys this map's entries, then takes over `other`'s entries, table and allocator, leaving `other` empty (it may be used again).
+
+### `Insert(KK&&,VV&&)` {#hashmap-insert-kk-amp-amp-vv-amp-amp}
 
 `method HashMap::Insert` — defined in `engine/foundation/containers/hash_map.h`
 
 ```cpp
-void Insert(const K& key, const V& value);
+template <typename KK, typename VV> requires(IsConstructible<K, KK&&> && IsConstructible<V, VV&&>)
+void Insert(KK&& key, VV&& value);
 ```
 
-Inserts `key` mapped to `value`, replacing the value if the key is already present.
+Inserts `key` mapped to `value`, replacing the value if the key is already present. Each argument is copied or moved in as it is passed (a `const K&` copies, a `K&&` moves); an argument may refer to an entry of this map.
 
 May rehash, which invalidates pointers returned by `Find`.
 
 | Field | Value |
 |---|---|
-| Parameter `key` | key to copy in. |
-| Parameter `value` | value to copy in. |
+| Parameter `key` | the key; `K` must be constructible from it. |
+| Parameter `value` | the value; `V` must be constructible from it. |
 | Aborts | growth is needed and the allocator is out of memory. |
 
 ### `Find(const K&)` {#hashmap-find-const-k-amp}
@@ -602,6 +665,40 @@ Looks up the value stored for `key` in a const map.
 | Returns | a pointer to the stored value, valid until the next `Insert`, or nullptr if `key` is absent. |
 | Fails | reports an absent key by returning nullptr. |
 
+### `Find(const Q&)` {#hashmap-find-const-q-amp}
+
+`method HashMap::Find` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+template <HeterogeneousKey<K> Q>
+V* Find(const Q& key);
+```
+
+Looks up the value stored for the key equal to `key`, a value of another type (a [`StringView`](foundation-strings.md#stringview) for a [`String`](foundation-strings.md#string) key), without making a `K`.
+
+| Field | Value |
+|---|---|
+| Parameter `key` | what to search for; `Hash<Q>` must agree with `Hash<K>` for equal keys. |
+| Returns | a pointer to the stored value, valid until the next `Insert`, or nullptr if absent. |
+| Fails | reports an absent key by returning nullptr. |
+
+### `Find(const Q&)` {#hashmap-find-const-q-amp-const}
+
+`method HashMap::Find` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+template <HeterogeneousKey<K> Q>
+const V* Find(const Q& key) const;
+```
+
+Looks up the value stored for the key equal to `key` in a const map (as the non-const overload).
+
+| Field | Value |
+|---|---|
+| Parameter `key` | what to search for. |
+| Returns | a pointer to the stored value, valid until the next `Insert`, or nullptr if absent. |
+| Fails | reports an absent key by returning nullptr. |
+
 ### `Remove(const K&)` {#hashmap-remove-const-k-amp}
 
 `method HashMap::Remove` — defined in `engine/foundation/containers/hash_map.h`
@@ -610,12 +707,58 @@ Looks up the value stored for `key` in a const map.
 bool Remove(const K& key);
 ```
 
-Removes `key` if present, leaving a tombstone until the next rehash.
+Removes `key` if present, destroying its key and value and leaving a tombstone until the next rehash.
 
 | Field | Value |
 |---|---|
 | Parameter `key` | key to remove. |
 | Returns | true if the key was present and has been removed, false if it was absent. |
+
+### `Remove(const Q&)` {#hashmap-remove-const-q-amp}
+
+`method HashMap::Remove` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+template <HeterogeneousKey<K> Q>
+bool Remove(const Q& key);
+```
+
+Removes the key equal to `key`, a value of another type (as the heterogeneous `Find`).
+
+| Field | Value |
+|---|---|
+| Parameter `key` | what to remove. |
+| Returns | true if a key was present and has been removed. |
+
+### `ForEach(Visit)` {#hashmap-foreach-visit}
+
+`method HashMap::ForEach` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+template <typename Visit>
+void ForEach(Visit visit);
+```
+
+Calls `visit(key, value)` for every entry, in no particular order. `visit` must not insert into or remove from the map.
+
+| Field | Value |
+|---|---|
+| Parameter `visit` | called as `visit(const K&, V&)`. |
+
+### `ForEach(Visit)` {#hashmap-foreach-visit-const}
+
+`method HashMap::ForEach` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+template <typename Visit>
+void ForEach(Visit visit) const;
+```
+
+Calls `visit(key, value)` for every entry of a const map, in no particular order.
+
+| Field | Value |
+|---|---|
+| Parameter `visit` | called as `visit(const K&, const V&)`. |
 
 ### `Size()` {#hashmap-size-const}
 
