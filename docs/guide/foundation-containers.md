@@ -58,7 +58,8 @@ Full reference: [Foundation: Containers](../reference/foundation-containers.md).
 ### Sorting, searching and copying spans
 
 `algorithm.h` holds the small algorithms the engine uses instead of `<algorithm>`: `Min`, `Max`, `Clamp`, `IndexOf(span, value)`,
-`Sort(span, less)` (in place, no allocation, not stable) and `StableSort(span, less)` (keeps equal elements in order, any movable type;
+`Sort(span, less)` (pattern-defeating quicksort: in place, no allocation, not stable; about one pass on input that is sorted, reversed or all
+equal) and `StableSort(span, less)` (keeps equal elements in order, any movable type;
 allocates a scratch buffer); both also take a `Vector` directly (`Sort(vector, less)`). On a sorted span, `LowerBound`, `UpperBound` and
 `BinarySearch` find a value in O(log n): use a sorted `Vector` and these instead of a scan when the order matters (a `HashMap` has no
 order). To keep the best `k` without sorting the rest, `PartialSort(span, k, less)` sorts the first `k`, and `NthElement(span, n, less)`

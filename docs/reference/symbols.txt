@@ -336,21 +336,25 @@ detail_sort::InsertionSort(T*,usize,Less)	function	foundation/containers	detail-
 detail_sort::SiftDown(T*,usize,usize,Less)	function	foundation/containers	detail-sort-siftdown-t-star-usize-usize-less	foundation-containers.md	engine/foundation/algorithm.h:76
 detail_sort::SwapItems(T&,T&)	function	foundation/containers	detail-sort-swapitems-t-amp-t-amp	foundation-containers.md	engine/foundation/algorithm.h:107
 detail_sort::HeapSortItems(T*,usize,Less)	function	foundation/containers	detail-sort-heapsortitems-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:115
-detail_sort::IntroSortItems(T*,usize,int,Less)	function	foundation/containers	detail-sort-introsortitems-t-star-usize-int-less	foundation-containers.md	engine/foundation/algorithm.h:130
-Sort(Span<T>,Less)	function	foundation/containers	sort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:185
-Sort(Span<T>)	function	foundation/containers	sort-span-lt-t-gt	foundation-containers.md	engine/foundation/algorithm.h:197
-StableSort(Span<T>,Less,Vector<T,A>&)	function	foundation/containers	stablesort-span-lt-t-gt-less-vector-lt-t-a-gt-amp	foundation-containers.md	engine/foundation/algorithm.h:209
-StableSort(Span<T>,Less)	function	foundation/containers	stablesort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:268
-Sort(C&,Less)	function	foundation/containers	sort-c-amp-less	foundation-containers.md	engine/foundation/algorithm.h:278
-StableSort(C&,Less)	function	foundation/containers	stablesort-c-amp-less	foundation-containers.md	engine/foundation/algorithm.h:293
-LowerBound(Span<T>,const V&,Less)	function	foundation/containers	lowerbound-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:309
-UpperBound(Span<T>,const V&,Less)	function	foundation/containers	upperbound-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:334
-BinarySearch(Span<T>,const V&,Less)	function	foundation/containers	binarysearch-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:359
-LowerBound(const C&,const V&,Less)	function	foundation/containers	lowerbound-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:370
-UpperBound(const C&,const V&,Less)	function	foundation/containers	upperbound-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:385
-BinarySearch(const C&,const V&,Less)	function	foundation/containers	binarysearch-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:400
-NthElement(Span<T>,usize,Less)	function	foundation/containers	nthelement-span-lt-t-gt-usize-less	foundation-containers.md	engine/foundation/algorithm.h:416
-PartialSort(Span<T>,usize,Less)	function	foundation/containers	partialsort-span-lt-t-gt-usize-less	foundation-containers.md	engine/foundation/algorithm.h:485
+detail_sort::Sort3(T&,T&,T&,Less)	function	foundation/containers	detail-sort-sort3-t-amp-t-amp-t-amp-less	foundation-containers.md	engine/foundation/algorithm.h:129
+detail_sort::PartialInsertionSort(T*,usize,Less)	function	foundation/containers	detail-sort-partialinsertionsort-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:146
+detail_sort::PartitionRight(T*,usize,Less,bool*)	function	foundation/containers	detail-sort-partitionright-t-star-usize-less-bool-star	foundation-containers.md	engine/foundation/algorithm.h:175
+detail_sort::PartitionLeft(T*,usize,Less)	function	foundation/containers	detail-sort-partitionleft-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:211
+detail_sort::PdqSort(T*,usize,Less,int,bool)	function	foundation/containers	detail-sort-pdqsort-t-star-usize-less-int-bool	foundation-containers.md	engine/foundation/algorithm.h:249
+Sort(Span<T>,Less)	function	foundation/containers	sort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:325
+Sort(Span<T>)	function	foundation/containers	sort-span-lt-t-gt	foundation-containers.md	engine/foundation/algorithm.h:341
+StableSort(Span<T>,Less,Vector<T,A>&)	function	foundation/containers	stablesort-span-lt-t-gt-less-vector-lt-t-a-gt-amp	foundation-containers.md	engine/foundation/algorithm.h:353
+StableSort(Span<T>,Less)	function	foundation/containers	stablesort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:412
+Sort(C&,Less)	function	foundation/containers	sort-c-amp-less	foundation-containers.md	engine/foundation/algorithm.h:422
+StableSort(C&,Less)	function	foundation/containers	stablesort-c-amp-less	foundation-containers.md	engine/foundation/algorithm.h:437
+LowerBound(Span<T>,const V&,Less)	function	foundation/containers	lowerbound-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:453
+UpperBound(Span<T>,const V&,Less)	function	foundation/containers	upperbound-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:478
+BinarySearch(Span<T>,const V&,Less)	function	foundation/containers	binarysearch-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:503
+LowerBound(const C&,const V&,Less)	function	foundation/containers	lowerbound-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:514
+UpperBound(const C&,const V&,Less)	function	foundation/containers	upperbound-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:529
+BinarySearch(const C&,const V&,Less)	function	foundation/containers	binarysearch-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:544
+NthElement(Span<T>,usize,Less)	function	foundation/containers	nthelement-span-lt-t-gt-usize-less	foundation-containers.md	engine/foundation/algorithm.h:560
+PartialSort(Span<T>,usize,Less)	function	foundation/containers	partialsort-span-lt-t-gt-usize-less	foundation-containers.md	engine/foundation/algorithm.h:629
 Array	struct	foundation/containers	array	foundation-containers.md	engine/foundation/containers/array.h:20
 Array::items	variable	foundation/containers	array-items	foundation-containers.md	engine/foundation/containers/array.h:25
 Array::operator[](usize)	function	foundation/containers	array-operator-index-usize	foundation-containers.md	engine/foundation/containers/array.h:30

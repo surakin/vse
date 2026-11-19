@@ -5,6 +5,7 @@
 #include "containers/hash_map.h"
 #include "containers/unique_ptr.h"
 #include "cstr/format.h"
+#include "cstr/mem_ops.h"
 #include "string/string.h"
 
 namespace container_bench
@@ -167,38 +168,84 @@ void VectorCases(const Options& o, Report* report, u32 n)
                 q);
 }
 
+// A 56-byte element like the G-buffer's draw entries: a key, a few tie-breaks, a payload.
+struct Wide
+{
+    u64 key = 0;
+    u32 first = 0;
+    u32 count = 0;
+    u32 slot = 0;
+    u32 pad = 0;
+    Array<u64, 4> payload{};
+};
+
+inline bool Less(u32 a, u32 b)
+{
+    return a < b;
+}
+inline bool Less(const Wide& a, const Wide& b)
+{
+    if (a.key != b.key)
+    {
+        return a.key < b.key;
+    }
+    return a.slot < b.slot;
+}
+inline void SetKey(u32* v, u64 k, u32)
+{
+    *v = static_cast<u32>(k);
+}
+inline void SetKey(Wide* v, u64 k, u32 slot)
+{
+    v->key = k;
+    v->slot = slot;
+}
+template <typename T> int Compare(const void* a, const void* b)
+{
+    const T& x = *static_cast<const T*>(a);
+    const T& y = *static_cast<const T*>(b);
+    return Less(x, y) ? -1 : (Less(y, x) ? 1 : 0);
+}
+
+template <typename T> void SortCasesOf(const Options& o, Report* report, u32 n, const char* type)
+{
+    Vector<T> v;
+    v.Resize(n);
+    Vector<T> scratch;
+    Rng rng;
+    const Array<const char*, 5> patterns = {"random", "sorted", "reversed", "all equal", "few distinct"};
+    for (u32 pattern = 0; pattern < 5; ++pattern)
+    {
+        const auto fill = [&]()
+        {
+            for (u32 i = 0; i < n; ++i)
+            {
+                const u64 r = rng.Next() >> 8;
+                const u64 k = pattern == 0 ? r : pattern == 1 ? i : pattern == 2 ? n - i : pattern == 3 ? 7 : r % 8;
+                SetKey(&v[i], k, i);
+            }
+        };
+        const Span<T> span(v.Data(), v.Size());
+        char name[80];
+        FormatTo(name, sizeof(name), "Sort %s %s", type, patterns[pattern]);
+        report->Add("sort", name, n,
+                    MedianMs(o.runs, fill, [&]() { Sort(span, [](const T& a, const T& b) { return Less(a, b); }); }),
+                    n);
+        FormatTo(name, sizeof(name), "StableSort %s %s", type, patterns[pattern]);
+        report->Add("sort", name, n,
+                    MedianMs(o.runs, fill,
+                             [&]() { StableSort(span, [](const T& a, const T& b) { return Less(a, b); }, scratch); }),
+                    n);
+        FormatTo(name, sizeof(name), "qsort %s %s", type, patterns[pattern]);
+        report->Add("sort", name, n, MedianMs(o.runs, fill, [&]() { SortRaw(v.Data(), n, sizeof(T), &Compare<T>); }),
+                    n);
+    }
+}
+
 void SortCases(const Options& o, Report* report, u32 n)
 {
-    Vector<u32> v;
-    v.Resize(n);
-    Rng rng;
-    const auto random = [&]()
-    {
-        for (u32 i = 0; i < n; ++i)
-        {
-            v[i] = static_cast<u32>(rng.Next());
-        }
-    };
-    const auto sorted = [&]()
-    {
-        for (u32 i = 0; i < n; ++i)
-        {
-            v[i] = i;
-        }
-    };
-    const auto equal = [&]()
-    {
-        for (u32 i = 0; i < n; ++i)
-        {
-            v[i] = 7;
-        }
-    };
-    const auto sort = [&]() { Sort(Span<u32>(v.Data(), v.Size())); };
-    const auto stable = [&]() { StableSort(Span<u32>(v.Data(), v.Size()), [](u32 a, u32 b) { return a < b; }); };
-    report->Add("micro", "Sort random", n, MedianMs(o.runs, random, sort), n);
-    report->Add("micro", "Sort sorted", n, MedianMs(o.runs, sorted, sort), n);
-    report->Add("micro", "Sort all equal", n, MedianMs(o.runs, equal, sort), n);
-    report->Add("micro", "StableSort random", n, MedianMs(o.runs, random, stable), n);
+    SortCasesOf<u32>(o, report, n, "u32");
+    SortCasesOf<Wide>(o, report, n / 4, "56B");
 }
 
 void StringCases(const Options& o, Report* report, u32 bytes)

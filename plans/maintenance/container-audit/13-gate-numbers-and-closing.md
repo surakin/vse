@@ -51,8 +51,6 @@
   - **The pipeline lookup's key hash.** The lookup now checks the 4 most recent entries before hashing (the frame asks for few pipelines), and the
     hashed lookup borrows its key (`PipelineKeyRef`).
   - After both: 0.106 µs at 10,000 and 0.133 to 0.140 at 50,000, which is Day 1's 0.105 and 0.141 to 0.148.
-- **Open, for the user:** the engine's `Sort` loses to glibc's on large elements (it moves them, where glibc sorts pointers). See the
-  `KNOWN-ISSUES.md` entry.
 - Not run: the `linux-nojit` tree, `-DENGINE_BUILD_SHARED=ON`, `-DENGINE_LIBRARY_WITH_IMPORTER=OFF`, the display tests (130 left out by
   `--no-display`), Windows and macOS (Day 12).
 
@@ -114,3 +112,40 @@ The same machine and benches as Day 1. Per operation, Day 1 then now:
 - The full suite passes in every flavor on Linux.
 - The uncapped series review is recorded.
 - The before/after table is published in this file and in the audit.
+
+## Follow-up: the sort reworked (the user's request, 2026-11-19)
+
+- **`Sort` is now a pattern-defeating quicksort** (after Orson Peters' pdqsort). It has:
+  - median-of-three pivots, with a ninther past 128 elements;
+  - a partition that moves few elements;
+  - equal keys grouped in one pass, when a range's pivot equals the element before it;
+  - nearly sorted ranges finished by a bounded insertion sort;
+  - a shuffle on unbalanced splits, then heap sort, so the worst case stays O(n log n).
+
+  It is in place with no allocation, as before. The introsort is gone.
+- **`StableSort`:** unchanged after measuring.
+- **Tried and dropped, by measurement:**
+  - **Sorting large elements through their positions:** a pdqsort of positions lost to sorting the 56-byte entries in place (76.6 against
+    55.7 ns per element on random input).
+  - **A stable merge of positions with already-ordered pairs skipped:** 5 to 18% better in `container_bench`, but in the renderer frame
+    1.17 ms against `qsort`'s 1.01 at 10,000 objects, and 8.36 against 5.57 at 50,000.
+- **The G-buffer's draw sort stays `qsort`.** Its comparison usually falls through to its fourth field, so the sort with the fewest comparisons
+  wins. renderer_bench at 10,000 objects, ms per frame: qsort 1.01, the new Sort 1.07, the old introsort 1.26.
+- **`container_bench` sort cases,** ns per element, old Sort / new Sort / qsort:
+
+  | Input | u32 | 56-byte |
+  |---|---|---|
+  | random | 41.9 / 44.9 / 84.1 | 71.0 / 55.5 / 116.2 |
+  | sorted | 4.8 / 0.4 / 20.8 | 23.3 / 1.2 / 23.8 |
+  | reversed | 14.5 / 0.9 / 23.2 | 58.9 / 2.5 / 28.5 |
+  | all equal | 8.5 / 0.4 / 20.9 | 23.7 / 1.2 / 23.7 |
+  | few distinct | 14.7 / 7.2 / 48.1 | 58.0 / 53.5 / 69.5 |
+
+- **Tests:**
+  - a new oracle test of every pattern at the edge sizes (0, 1, 2, 23-25, 127, 129, 1,000, 20,000) for 4-byte and 56-byte elements, checking that
+    the result is ordered and is the same multiset;
+  - organ-pipe and sawtooth inputs.
+- **Run:** `scripts/test-phase.sh --all --flavor all --no-display`: `ran 11249 of 11379 tests (phases: all; flavors: all; display: excluded; crash
+  tests: included) in 1276 s`. Only the known failures, plus `docs_check` (regenerated, then 9 of 9). No golden, minting or state-hash test
+  changed, although `Sort` orders equal elements differently.
+- **Review:** `/code-review high`: 1 finding, fixed (raw arrays in the new bench and test).

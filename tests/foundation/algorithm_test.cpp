@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "algorithm.h"
+#include "containers/array.h"
 #include "containers/span.h"
 #include "containers/vector.h"
 #include "types.h"
@@ -139,5 +140,87 @@ TEST_CASE("StableSort keeps equal elements in order for a non-trivial type", "[a
             REQUIRE(items[i - 1].order < items[i].order);
         }
         REQUIRE(items[i].payload[0] == items[i].order);
+    }
+}
+
+TEST_CASE("Sort orders every input pattern and keeps the multiset, for small and large elements", "[algorithm]")
+{
+    // Container audit follow-up: the pdqsort-style Sort, against a brute-force check (sorted, and the same elements).
+    struct Big
+    {
+        u64 key = 0;
+        u32 tag = 0;
+        Array<u64, 5> payload{};
+    };
+    for (u32 kind = 0; kind < 5; ++kind)
+    {
+        for (usize n : {usize{0}, usize{1}, usize{2}, usize{23}, usize{24}, usize{25}, usize{127}, usize{129},
+                        usize{1000}, usize{20000}})
+        {
+            Vector<u32> v = Made(n, kind, 11);
+            u64 sum = 0;
+            for (usize i = 0; i < n; ++i)
+            {
+                sum += v[i];
+            }
+            Sort(v, Less);
+            u64 after = 0;
+            for (usize i = 0; i < n; ++i)
+            {
+                after += v[i];
+                if (i > 0)
+                {
+                    REQUIRE_FALSE(v[i] < v[i - 1]);
+                }
+            }
+            CHECK(after == sum);
+            const Vector<u32> keys = Made(n, kind, 11);
+            Vector<Big> big;
+            for (usize i = 0; i < n; ++i)
+            {
+                Big b;
+                b.key = keys[i];
+                b.tag = static_cast<u32>(i);
+                b.payload[0] = b.key * 3 + i;
+                big.Push(b);
+            }
+            Sort(big, [](const Big& a, const Big& b) { return a.key < b.key; });
+            u64 tags = 0;
+            for (usize i = 0; i < n; ++i)
+            {
+                REQUIRE(big[i].payload[0] == big[i].key * 3 + big[i].tag);  // each element moved whole
+                tags += big[i].tag;
+                if (i > 0)
+                {
+                    REQUIRE_FALSE(big[i].key < big[i - 1].key);
+                }
+            }
+            CHECK(tags == (n == 0 ? 0 : n * (n - 1) / 2));
+        }
+    }
+}
+
+TEST_CASE("Sort stays fast on an adversarial pattern (organ pipe, sawtooth)", "[algorithm]")
+{
+    Vector<u32> v;
+    const u32 n = 200000;
+    for (u32 i = 0; i < n; ++i)
+    {
+        v.Push(i < n / 2 ? i : n - i);  // organ pipe
+    }
+    Sort(v, Less);
+    for (u32 i = 1; i < n; ++i)
+    {
+        REQUIRE(v[i - 1] <= v[i]);
+    }
+    v.Clear();
+    for (u32 i = 0; i < n; ++i)
+    {
+        v.Push(i % 1000);  // sawtooth
+    }
+    Sort(v, Less);
+    for (u32 i = 1; i < n; ++i)
+    {
+        REQUIRE(v[i - 1] <= v[i]);
     }
 }

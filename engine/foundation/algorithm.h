@@ -125,72 +125,216 @@ template <typename T, typename Less> void HeapSortItems(T* p, usize count, Less 
     }
 }
 
-/// Quick sort with a median-of-three pivot; recurses into the smaller side, and falls back to heap sort past `depth`
-/// levels.
-template <typename T, typename Less> void IntroSortItems(T* p, usize n, int depth, Less less)
+/// Orders three elements so that `*a`, `*b`, `*c` are ascending (the median ends in `*b`).
+template <typename T, typename Less> void Sort3(T& a, T& b, T& c, Less less)
 {
-    while (n > 16)
+    if (less(b, a))
     {
-        if (depth-- == 0)
+        SwapItems(a, b);
+    }
+    if (less(c, b))
+    {
+        SwapItems(b, c);
+        if (less(b, a))
         {
-            HeapSortItems(p, n, less);
+            SwapItems(a, b);
+        }
+    }
+}
+
+/// Insertion sort that gives up after `limit` moves: true when it finished (the range was nearly sorted).
+template <typename T, typename Less> bool PartialInsertionSort(T* p, usize n, Less less)
+{
+    constexpr usize kLimit = 8;
+    usize moves = 0;
+    for (usize i = 1; i < n; ++i)
+    {
+        if (!less(p[i], p[i - 1]))
+        {
+            continue;
+        }
+        T value = static_cast<T&&>(p[i]);
+        usize j = i;
+        do
+        {
+            p[j] = static_cast<T&&>(p[j - 1]);
+            --j;
+        } while (j > 0 && less(value, p[j - 1]));
+        p[j] = static_cast<T&&>(value);
+        moves += i - j;
+        if (moves > kLimit)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/// Partitions around the pivot in `p[0]`: smaller elements to its left, the rest to its right. Returns the pivot's
+/// position, and whether nothing had to move (the range was already partitioned).
+template <typename T, typename Less> usize PartitionRight(T* p, usize n, Less less, bool* already)
+{
+    T pivot = static_cast<T&&>(p[0]);
+    usize first = 1;
+    usize last = n;
+    while (first < last && less(p[first], pivot))
+    {
+        ++first;
+    }
+    while (first < last && !less(p[last - 1], pivot))
+    {
+        --last;
+    }
+    *already = first >= last;
+    while (first < last)
+    {
+        SwapItems(p[first], p[last - 1]);
+        ++first;
+        --last;
+        while (first < last && less(p[first], pivot))
+        {
+            ++first;
+        }
+        while (first < last && !less(p[last - 1], pivot))
+        {
+            --last;
+        }
+    }
+    const usize at = first - 1;
+    p[0] = static_cast<T&&>(p[at]);
+    p[at] = static_cast<T&&>(pivot);
+    return at;
+}
+
+/// Partitions around the pivot in `p[0]` when every element is known to be at least the pivot (it equals the element
+/// before the range): the elements equal to it go left. Returns the pivot's position; `p[0..at]` all equal it.
+template <typename T, typename Less> usize PartitionLeft(T* p, usize n, Less less)
+{
+    T pivot = static_cast<T&&>(p[0]);
+    usize first = 1;
+    usize last = n;
+    while (first < last && !less(pivot, p[first]))
+    {
+        ++first;
+    }
+    while (first < last && less(pivot, p[last - 1]))
+    {
+        --last;
+    }
+    while (first < last)
+    {
+        SwapItems(p[first], p[last - 1]);
+        ++first;
+        --last;
+        while (first < last && !less(pivot, p[first]))
+        {
+            ++first;
+        }
+        while (first < last && less(pivot, p[last - 1]))
+        {
+            --last;
+        }
+    }
+    const usize at = first - 1;
+    p[0] = static_cast<T&&>(p[at]);
+    p[at] = static_cast<T&&>(pivot);
+    return at;
+}
+
+/// Pattern-defeating quicksort (after Orson Peters' pdqsort): median-of-three pivots (a ninther past 128 elements), a
+/// partition that moves few elements, equal keys grouped in one pass (a range whose pivot equals the element before
+/// it), nearly sorted ranges finished by a bounded insertion sort, and on unbalanced splits a shuffle and finally heap
+/// sort, so the worst case stays O(n log n). `leftmost` is false when `p[-1]` exists and is not greater than any
+/// element.
+template <typename T, typename Less> void PdqSort(T* p, usize n, Less less, int bad_allowed, bool leftmost)
+{
+    constexpr usize kInsertion = 24;
+    constexpr usize kNinther = 128;
+    for (;;)
+    {
+        if (n < kInsertion)
+        {
+            InsertionSort(p, n, less);
             return;
         }
-        const usize mid = n / 2;
-        if (less(p[mid], p[0]))
+        const usize half = n / 2;
+        if (n > kNinther)
         {
-            SwapItems(p[mid], p[0]);
-        }
-        if (less(p[n - 1], p[0]))
-        {
-            SwapItems(p[n - 1], p[0]);
-        }
-        if (less(p[n - 1], p[mid]))
-        {
-            SwapItems(p[n - 1], p[mid]);
-        }
-        SwapItems(p[mid], p[n - 1]);  // the median is the pivot, parked at the end
-        usize store = 0;
-        for (usize j = 0; j + 1 < n; ++j)
-        {
-            if (less(p[j], p[n - 1]))
-            {
-                SwapItems(p[store++], p[j]);
-            }
-        }
-        SwapItems(p[store], p[n - 1]);
-        const usize left = store, right = n - store - 1;
-        if (left < right)
-        {
-            IntroSortItems(p, left, depth, less);
-            p += store + 1;
-            n = right;
+            Sort3(p[0], p[half], p[n - 1], less);
+            Sort3(p[1], p[half - 1], p[n - 2], less);
+            Sort3(p[2], p[half + 1], p[n - 3], less);
+            Sort3(p[half - 1], p[half], p[half + 1], less);
+            SwapItems(p[0], p[half]);
         }
         else
         {
-            IntroSortItems(p + store + 1, right, depth, less);
-            n = left;
+            Sort3(p[half], p[0], p[n - 1], less);  // the median of three into p[0]
         }
+        if (!leftmost && !less(p[-1], p[0]))
+        {
+            // The pivot equals the element before the range, so nothing here is smaller: skip every element equal to
+            // it.
+            const usize at = PartitionLeft(p, n, less);
+            p += at + 1;
+            n -= at + 1;
+            continue;
+        }
+        bool already = false;
+        const usize at = PartitionRight(p, n, less, &already);
+        const usize left = at;
+        const usize right = n - at - 1;
+        if (left < n / 8 || right < n / 8)
+        {
+            if (--bad_allowed <= 0)
+            {
+                HeapSortItems(p, n, less);
+                return;
+            }
+            // Unbalanced: shuffle a few elements so the next pivots are not chosen the same way.
+            if (left >= kInsertion)
+            {
+                SwapItems(p[0], p[left / 4]);
+                SwapItems(p[left - 1], p[left - left / 4]);
+            }
+            if (right >= kInsertion)
+            {
+                SwapItems(p[at + 1], p[at + 1 + right / 4]);
+                SwapItems(p[n - 1], p[n - right / 4]);
+            }
+        }
+        else if (already && PartialInsertionSort(p, left, less) && PartialInsertionSort(p + at + 1, right, less))
+        {
+            return;  // it was nearly sorted
+        }
+        PdqSort(p, left, less, bad_allowed, leftmost);
+        p += at + 1;
+        n = right;
+        leftmost = false;
     }
-    InsertionSort(p, n, less);
 }
 
 }  // namespace detail_sort
 
-/// Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable. Introsort:
-/// quick sort with a median-of-three pivot, heap sort when it degrades, insertion sort for small runs; O(n log n) worst
-/// case, no allocation.
+/// Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable.
+/// Pattern-defeating quicksort: few moves, equal keys grouped in one pass, sorted and nearly sorted input in about one
+/// pass, heap sort when the splits keep coming out unbalanced, so O(n log n) in the worst case (container audit
+/// follow-up). In place, no allocation. (Sorting large elements through their positions was measured and lost: the
+/// indirection costs a cache miss per comparison.)
 ///
 /// - Param less: a strict weak ordering, `bool less(const T&, const T&)`.
 template <typename T, typename Less> void Sort(Span<T> items, Less less)
 {
     const usize n = items.Size();
-    int depth = 0;
+    if (n < 2)
+    {
+        return;
+    }
+    int bad = 1;
     for (usize m = n; m > 1; m >>= 1)
     {
-        depth += 2;
+        ++bad;
     }
-    detail_sort::IntroSortItems(items.Data(), n, depth, less);
+    detail_sort::PdqSort(items.Data(), n, less, bad, true);
 }
 
 /// Sorts the span in place with `operator<`.
@@ -261,7 +405,7 @@ template <typename T, typename Less, typename A> void StableSort(Span<T> items, 
 }
 
 /// Sorts like `Sort`, but elements that compare equal keep their order. Any movable `T` (container audit Day 3; it
-/// was trivially copyable types only); the merge buffer is a [[Vector]] made for the call.
+/// was trivially copyable types only); the merge buffer is made for the call.
 ///
 /// - Param less: a strict weak ordering.
 /// - Aborts: the scratch buffer cannot be allocated.

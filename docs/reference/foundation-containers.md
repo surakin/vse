@@ -132,16 +132,60 @@ void HeapSortItems(T* p, usize count, Less less);
 
 Heap sort of `count` elements: the fallback of `Sort` when quick sort degrades.
 
-## `IntroSortItems(T*,usize,int,Less)` {#detail-sort-introsortitems-t-star-usize-int-less}
+## `Sort3(T&,T&,T&,Less)` {#detail-sort-sort3-t-amp-t-amp-t-amp-less}
 
-`function detail_sort::IntroSortItems` — defined in `engine/foundation/algorithm.h`
+`function detail_sort::Sort3` — defined in `engine/foundation/algorithm.h`
 
 ```cpp
 template <typename T, typename Less>
-void IntroSortItems(T* p, usize n, int depth, Less less);
+void Sort3(T& a, T& b, T& c, Less less);
 ```
 
-Quick sort with a median-of-three pivot; recurses into the smaller side, and falls back to heap sort past `depth` levels.
+Orders three elements so that `*a`, `*b`, `*c` are ascending (the median ends in `*b`).
+
+## `PartialInsertionSort(T*,usize,Less)` {#detail-sort-partialinsertionsort-t-star-usize-less}
+
+`function detail_sort::PartialInsertionSort` — defined in `engine/foundation/algorithm.h`
+
+```cpp
+template <typename T, typename Less>
+bool PartialInsertionSort(T* p, usize n, Less less);
+```
+
+Insertion sort that gives up after `limit` moves: true when it finished (the range was nearly sorted).
+
+## `PartitionRight(T*,usize,Less,bool*)` {#detail-sort-partitionright-t-star-usize-less-bool-star}
+
+`function detail_sort::PartitionRight` — defined in `engine/foundation/algorithm.h`
+
+```cpp
+template <typename T, typename Less>
+usize PartitionRight(T* p, usize n, Less less, bool* already);
+```
+
+Partitions around the pivot in `p[0]`: smaller elements to its left, the rest to its right. Returns the pivot's position, and whether nothing had to move (the range was already partitioned).
+
+## `PartitionLeft(T*,usize,Less)` {#detail-sort-partitionleft-t-star-usize-less}
+
+`function detail_sort::PartitionLeft` — defined in `engine/foundation/algorithm.h`
+
+```cpp
+template <typename T, typename Less>
+usize PartitionLeft(T* p, usize n, Less less);
+```
+
+Partitions around the pivot in `p[0]` when every element is known to be at least the pivot (it equals the element before the range): the elements equal to it go left. Returns the pivot's position; `p[0..at]` all equal it.
+
+## `PdqSort(T*,usize,Less,int,bool)` {#detail-sort-pdqsort-t-star-usize-less-int-bool}
+
+`function detail_sort::PdqSort` — defined in `engine/foundation/algorithm.h`
+
+```cpp
+template <typename T, typename Less>
+void PdqSort(T* p, usize n, Less less, int bad_allowed, bool leftmost);
+```
+
+Pattern-defeating quicksort (after Orson Peters' pdqsort): median-of-three pivots (a ninther past 128 elements), a partition that moves few elements, equal keys grouped in one pass (a range whose pivot equals the element before it), nearly sorted ranges finished by a bounded insertion sort, and on unbalanced splits a shuffle and finally heap sort, so the worst case stays O(n log n). `leftmost` is false when `p[-1]` exists and is not greater than any element.
 
 ## `Sort(Span<T>,Less)` {#sort-span-lt-t-gt-less}
 
@@ -152,7 +196,7 @@ template <typename T, typename Less>
 void Sort(Span<T> items, Less less);
 ```
 
-Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable. Introsort: quick sort with a median-of-three pivot, heap sort when it degrades, insertion sort for small runs; O(n log n) worst case, no allocation.
+Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable. Pattern-defeating quicksort: few moves, equal keys grouped in one pass, sorted and nearly sorted input in about one pass, heap sort when the splits keep coming out unbalanced, so O(n log n) in the worst case (container audit follow-up). In place, no allocation. (Sorting large elements through their positions was measured and lost: the indirection costs a cache miss per comparison.)
 
 | Field | Value |
 |---|---|
@@ -195,7 +239,7 @@ template <typename T, typename Less>
 void StableSort(Span<T> items, Less less);
 ```
 
-Sorts like `Sort`, but elements that compare equal keep their order. Any movable `T` (container audit Day 3; it was trivially copyable types only); the merge buffer is a [`Vector`](#vector) made for the call.
+Sorts like `Sort`, but elements that compare equal keep their order. Any movable `T` (container audit Day 3; it was trivially copyable types only); the merge buffer is made for the call.
 
 | Field | Value |
 |---|---|
