@@ -68,6 +68,8 @@ elseif(APPLE)
 else()
   ui_demo_scripted(ui_demo_script_wayland wayland vulkan)
   ui_demo_scripted(ui_demo_script_x11 x11 vulkan)
+  # X11 copy: a soak test (docs/guide/building-and-testing.md, "Long tests"; the user, 2026-11-19)
+  engine_soak_tests(ui_demo_script_x11)
 endif()
 
 demo_settings_tests(ui_demo)

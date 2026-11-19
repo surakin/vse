@@ -142,6 +142,9 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - Short forms (`tests/support/soak.h`): the reset loop runs 20 resets, 100 in soak; the hostile scripts run ten seconds, a minute in soak.
   - Gates: `test_phase_labels` 43 s to 3.2 s, `platform_neutral_check` 28.5 s to 6.1 s, `file_access_check` 17.3 s to 8.75 s.
   - The plain suite's wall time is now the window tests' serial `display` chain (115-205 s); that is the next lever.
+- **Window addendum (the user's choice):** the demos run on Wayland only in ordinary runs; their X11 copies, and a 1,000-frame
+  `script_demo_window_*_long`, are soak tests. The scripted game's window run is 120 frames. The window layer and the RHI presentation
+  tests keep both backends. The saving is not measured yet: the desktop was in use.
 - **Next:** Day 5 is on the PC and the Mac.
 
 **Unlit materials (2026-11-19, Linux)** ([plans/maintenance/unlit-materials.md](plans/maintenance/unlit-materials.md)). The glTF importer accepts `KHR_materials_unlit` (it refused it) and sets `renderer::kMaterialFlagUnlit` in the material's `flags`; the lighting and point-light passes show such a pixel as its base colour. Found by the user's `.glb` in the model viewer, which now opens and looks right. SPIR-V re-minted here; DXIL and Metal wait for the PC and the Mac.

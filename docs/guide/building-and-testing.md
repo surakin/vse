@@ -146,6 +146,11 @@ depend on the load. For a test it lists:
 - **First measure the test alone** (`ctest -j1 -R ...`): a test that is long only in a full run is waiting for the GPU or a lock, and a
   short form saves nothing. On 2026-11-19 most GPU tests on the warning's list took 1-4 s alone and 30-90 s beside dozens of others.
   The plain suite's wall time is set by the window tests, which hold the `display` lock and run one at a time (125 of them, 115 to 205 s).
+- **The demos run on one display backend in ordinary runs** (the user, 2026-11-19). On Linux that is Wayland: the X11 copies of the
+  demos' window runs (`script_demo_window_x11`, `model_viewer_window_x11`, `ui_demo_script_x11`, `renderer_demo_script_x11`,
+  `renderer_demo_overlay_x11`, `input_probe_runs_x11`) carry `soak`. The demos' code is the same on both backends; X11's own code is
+  tested by the window layer's tests and the RHI presentation tests, which still run on both. The scripted game's window run draws
+  120 frames, and `script_demo_window_*_long` (1,000 frames) is a soak test.
 
 #### The runner
 

@@ -83,3 +83,38 @@ The full `--all --flavor all` run still includes every test, `soak` included, an
 ## Notes
 
 (Filled in as the days are done.)
+
+## Addendum (2026-11-19): the window tests
+
+After Day 4 the plain suite's wall time is the window tests' serial chain (125 tests holding the `display` lock, 115 s on a quiet desktop).
+70 s of it is `script_demo_window_x11` and `_wayland` (1,000 frames each, at the display's rate), and about 45 s is the X11 halves of six
+demo pairs. The window layer (101 tests) and the RHI presentation tests (12) test each backend's own code; the demos run the same code on
+both, above the window.
+
+**Decision (the user, 2026-11-19, "1"):**
+- the demos run on Wayland only in ordinary runs. Their X11 copies (`script_demo_window_x11`, `model_viewer_window_x11`,
+  `ui_demo_script_x11`, `renderer_demo_script_x11`, `renderer_demo_overlay_x11`, `input_probe_runs_x11`) carry `soak`, so `--all` and
+  `--soak` still run them;
+- `script_demo_window_*` draws 120 frames; a `..._long` copy with 1,000 frames carries `soak`.
+- The window layer's tests and the RHI presentation tests keep both backends.
+
+- [x] The six X11 demo copies labelled `soak`.
+- [x] `script_demo_window_*` at 120 frames, with `script_demo_window_*_long` (1,000 frames, `soak`).
+- [x] The display chain measured again; the soak copies run once; the review; `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.
+
+**Done (2026-11-19):**
+- Six X11 demo copies carry `soak`, in each demo's `CMakeLists.txt`. `script_demo_windowed` takes a frame count:
+  - `script_demo_window_{wayland,x11,win32,cocoa}` draw 120 frames;
+  - `..._long` draw 1,000 and carry `soak`.
+- **Ordinary window tests:** 119 (was 125) on Linux, with the display included.
+- **Measured** (`ctest -L display -LE soak`): 115 s, the same as Day 3, but not comparable.
+  - `script_demo_window_wayland` fell from 31.7 s to 6.3 s, and the X11 copies left the chain.
+  - Two Wayland presentation tests grew while the desktop was in use (load 4.8, Steam running): the Wayland frame loop from 2.2 s to
+    18.5 s, and `model_viewer_window_wayland` from 1.6 s to 15.4 s.
+  - From Day 3's quiet times, the chain would be about 45-50 s; not measured on a quiet desktop.
+- **The soak copies:** all pass. `script_demo_window_wayland_long` 50.8 s, `_x11_long` 22.3 s, `script_demo_window_x11` 2.7 s,
+  `model_viewer_window_x11` 5.4 s, and the other four about 1 s each.
+- **The two X11 window tests** (`X11Window takes the pointer grab ...`, `X11Window::Create opens a mapped window ...`) failed again, with
+  the desktop in use (`KNOWN-ISSUES.md`).
+- **Review** (`/code-review high`): 1 finding, fixed. The comment on the X11 copies was a 190-column line pasted five times; it is now a
+  short pointer to the guide, which holds the reason.

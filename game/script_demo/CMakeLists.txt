@@ -47,12 +47,13 @@ set_tests_properties(script_demo_screenshot PROPERTIES LABELS "gpu;demo" SKIP_RE
   ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/script_demo_screenshot;${DEMO_PROFILE_ENV}")
 engine_label_tests(script_demo_screenshot)
 
-# In a real window on each display backend, with validation on: 1,000 frames, no script error, no validation error (Phase 27 Day 477's
-# demo run). They hold the `display` resource like the other window tests and skip without a session.
-function(script_demo_windowed name backend)
+# In a real window on each display backend, with validation on: no script error, no validation error (Phase 27 Day 477's demo run).
+# They hold the `display` resource like the other window tests and skip without a session. The ordinary run draws 120 frames (at the
+# display's rate, 1,000 took about 17 s); `<name>_long` draws the 1,000 and is a soak test (shorter test runs, the user, 2026-11-19).
+function(script_demo_windowed name backend frames)
   add_test(NAME ${name}
-    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:script_demo>;--backend;${backend};--set;renderer.validation=on;--audio;null;--frames;1000"
-      -DEXPECT_CODE=0 "-DEXPECT_OUT=ran 1000 frames in a window"
+    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:script_demo>;--backend;${backend};--set;renderer.validation=on;--audio;null;--frames;${frames}"
+      -DEXPECT_CODE=0 "-DEXPECT_OUT=ran ${frames} frames in a window"
       "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer|failed assertion" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
@@ -60,10 +61,18 @@ function(script_demo_windowed name backend)
   engine_label_tests(${name})
 endfunction()
 if(WIN32)
-  script_demo_windowed(script_demo_window_win32 win32)
+  script_demo_windowed(script_demo_window_win32 win32 120)
+  script_demo_windowed(script_demo_window_win32_long win32 1000)
+  engine_soak_tests(script_demo_window_win32_long)
 elseif(APPLE)
-  script_demo_windowed(script_demo_window_cocoa cocoa)
+  script_demo_windowed(script_demo_window_cocoa cocoa 120)
+  script_demo_windowed(script_demo_window_cocoa_long cocoa 1000)
+  engine_soak_tests(script_demo_window_cocoa_long)
 else()
-  script_demo_windowed(script_demo_window_wayland wayland)
-  script_demo_windowed(script_demo_window_x11 x11)
+  script_demo_windowed(script_demo_window_wayland wayland 120)
+  script_demo_windowed(script_demo_window_wayland_long wayland 1000)
+  script_demo_windowed(script_demo_window_x11 x11 120)
+  script_demo_windowed(script_demo_window_x11_long x11 1000)
+  # X11 copy: a soak test (docs/guide/building-and-testing.md, "Long tests"; the user, 2026-11-19)
+  engine_soak_tests(script_demo_window_wayland_long script_demo_window_x11 script_demo_window_x11_long)
 endif()

@@ -170,6 +170,8 @@ elseif(APPLE)
   engine_label_tests(renderer_demo_script_cocoa)
 else()
   engine_label_tests(renderer_demo_script_wayland renderer_demo_script_x11)
+  # X11 copy: a soak test (docs/guide/building-and-testing.md, "Long tests"; the user, 2026-11-19)
+  engine_soak_tests(renderer_demo_script_x11 renderer_demo_overlay_x11)
 endif()
 engine_label_tests(renderer_demo_crash_after_reset renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
   renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects ${_renderer_demo_no_vulkan}
