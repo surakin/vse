@@ -49,6 +49,10 @@ Phase 28's Day 478 unless the user orders otherwise.
 
 ## Rules for every day
 
+- **Amended 2026-11-19 (the user, during Day 2): no per-day test runs.** From Day 2 on, each day builds clean in the Clang unity tree and gets its
+  `/code-review high`, but runs no ctest and no bench. Day 12 runs the full suite in every flavor, the GCC non-unity build, `ctest -L docs` and every after
+  number. The "Runs" and "before/after" rows of Days 2-10 are therefore deferred to Day 12, and each day file says so.
+
 - **Every engine container supports range-for** (the user, 2026-11-19), through public lowercase `begin()`/`end()` with an `Internal:` label, so they stay
   out of the reference: `HashMap`/`HashSet` on Day 2, the rest on Day 3. From Day 4 on, new and rewritten loops over a container use
   `for (auto& x : c)` where no index is needed. Loops a day doesn't otherwise touch are not rewritten for style alone.

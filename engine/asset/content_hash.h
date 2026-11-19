@@ -5,6 +5,7 @@
 //! identifies a base pak. It is not on the load path of a local file, and it is not a security feature (the engine's
 //! networking is for trusted networks).
 
+#include "containers/hash.h"
 #include "containers/span.h"
 #include "types.h"
 
@@ -28,6 +29,34 @@ struct ContentHash
     /// - Fails: never.
     friend bool operator!=(const ContentHash& a, const ContentHash& b) { return !(a == b); }
 };
+
+}  // namespace engine_placeholder::asset
+
+namespace engine_placeholder
+{
+
+/// Hash function for [[asset::ContentHash]] keys of a [[HashMap]] or [[HashSet]] (container audit series, Day 2): the
+/// first eight bytes of the digest, mixed (a digest is already uniform).
+///
+/// - Thread-safety: thread-safe (stateless).
+template <> struct Hash<asset::ContentHash>
+{
+    /// Returns a well-mixed hash of the digest.
+    usize operator()(const asset::ContentHash& k) const
+    {
+        u64 word = 0;
+        for (usize i = 0; i < 8; ++i)
+        {
+            word |= static_cast<u64>(k.bytes[i]) << (8 * i);
+        }
+        return detail::MixHash64(word);
+    }
+};
+
+}  // namespace engine_placeholder
+
+namespace engine_placeholder::asset
+{
 
 /// Writes `hash` as 32 lower-case hex digits and a terminating zero.
 ///

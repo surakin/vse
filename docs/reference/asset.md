@@ -3744,6 +3744,31 @@ Returns true when every byte is zero (no hash recorded).
 |---|---|
 | Fails | never. |
 
+## `Hash<asset::ContentHash>` {#hash-lt-asset-contenthash-gt}
+
+`struct Hash<asset::ContentHash>` — defined in `engine/asset/content_hash.h`
+
+```cpp
+template <>
+struct Hash<asset::ContentHash> { ... }
+```
+
+Hash function for [`asset::ContentHash`](#asset-contenthash) keys of a [`HashMap`](foundation-containers.md#hashmap) or [`HashSet`](foundation-containers.md#hashset) (container audit series, Day 2): the first eight bytes of the digest, mixed (a digest is already uniform).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe (stateless). |
+
+### `operator()(const asset::ContentHash&)` {#hash-lt-asset-contenthash-gt-operator-call-const-asset-contenthash-amp-const}
+
+`operator Hash<asset::ContentHash>::operator()` — defined in `engine/asset/content_hash.h`
+
+```cpp
+usize operator()(const asset::ContentHash& k) const;
+```
+
+Returns a well-mixed hash of the digest.
+
 ## `FormatContentHash(const ContentHash&,char(&)[33])` {#asset-formatcontenthash-const-contenthash-amp-char-amp-33}
 
 `function asset::FormatContentHash` — defined in `engine/asset/content_hash.h`

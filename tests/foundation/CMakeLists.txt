@@ -15,6 +15,8 @@ set(FOUNDATION_BASE_TEST_SOURCES
   unique_ptr_test.cpp
   shared_ptr_test.cpp
   hash_map_test.cpp
+  hash_set_test.cpp
+  hash_test.cpp
   utf8_test.cpp
   grapheme_test.cpp
   normalize_test.cpp

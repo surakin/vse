@@ -359,6 +359,23 @@ Creates a string holding a copy of `sv`.
 | Parameter `sv` | text to copy; need not be NUL-terminated. |
 | Aborts | the allocator is out of memory. |
 
+### `String(StringView)` {#string-string-stringview}
+
+`constructor String::String` — defined in `engine/foundation/string/string.h`
+
+```cpp
+explicit String(StringView sv) requires requires { Allocator::Default(); };
+```
+
+Creates a string holding a copy of `sv` on the allocator's shared default (container audit Day 2: lets a [`HashMap`](foundation-containers.md#hashmap) or [`HashSet`](foundation-containers.md#hashset) keyed by strings make its key from a view or a literal).
+
+Only available when the allocator has a static `Default()`, as [`HeapAllocator`](foundation-memory.md#heapallocator) does.
+
+| Field | Value |
+|---|---|
+| Parameter `sv` | text to copy; need not be NUL-terminated. |
+| Aborts | the allocator is out of memory. |
+
 ### `String(const String&)` {#string-string-const-string-amp}
 
 `constructor String::String` — defined in `engine/foundation/string/string.h`

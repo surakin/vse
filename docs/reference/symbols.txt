@@ -351,47 +351,90 @@ Array::begin()	function	foundation/containers	array-begin	foundation-containers.
 Array::end()	function	foundation/containers	array-end	foundation-containers.md	engine/foundation/containers/array.h:46
 Array::begin() const	function	foundation/containers	array-begin-const	foundation-containers.md	engine/foundation/containers/array.h:48
 Array::end() const	function	foundation/containers	array-end-const	foundation-containers.md	engine/foundation/containers/array.h:50
-Hash<i8>	struct	foundation/containers	hash-lt-i8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:41
-Hash<i8>::operator()(i8) const	function	foundation/containers	hash-lt-i8-gt-operator-call-i8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:44
-Hash<i16>	struct	foundation/containers	hash-lt-i16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:47
-Hash<i16>::operator()(i16) const	function	foundation/containers	hash-lt-i16-gt-operator-call-i16-const	foundation-containers.md	engine/foundation/containers/hash_map.h:50
-Hash<i32>	struct	foundation/containers	hash-lt-i32-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:53
-Hash<i32>::operator()(i32) const	function	foundation/containers	hash-lt-i32-gt-operator-call-i32-const	foundation-containers.md	engine/foundation/containers/hash_map.h:56
-Hash<i64>	struct	foundation/containers	hash-lt-i64-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:59
-Hash<i64>::operator()(i64) const	function	foundation/containers	hash-lt-i64-gt-operator-call-i64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:62
-Hash<u8>	struct	foundation/containers	hash-lt-u8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:65
-Hash<u8>::operator()(u8) const	function	foundation/containers	hash-lt-u8-gt-operator-call-u8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:68
-Hash<u16>	struct	foundation/containers	hash-lt-u16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:71
-Hash<u16>::operator()(u16) const	function	foundation/containers	hash-lt-u16-gt-operator-call-u16-const	foundation-containers.md	engine/foundation/containers/hash_map.h:74
-Hash<u32>	struct	foundation/containers	hash-lt-u32-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:77
-Hash<u32>::operator()(u32) const	function	foundation/containers	hash-lt-u32-gt-operator-call-u32-const	foundation-containers.md	engine/foundation/containers/hash_map.h:80
-Hash<u64>	struct	foundation/containers	hash-lt-u64-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:83
-Hash<u64>::operator()(u64) const	function	foundation/containers	hash-lt-u64-gt-operator-call-u64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:86
-Hash	variable	foundation/containers	hash	foundation-containers.md	engine/foundation/containers/hash_map.h:92
-Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:102
-Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash_map.h:105
-Hash<StringView>	struct	foundation/containers	hash-lt-stringview-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:111
-Hash<StringView>::operator()(StringView) const	function	foundation/containers	hash-lt-stringview-gt-operator-call-stringview-const	foundation-containers.md	engine/foundation/containers/hash_map.h:114
-HeterogeneousKey	variable	foundation/containers	heterogeneouskey	foundation-containers.md	engine/foundation/containers/hash_map.h:130
-HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:153
-HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:163
-HashMap::~HashMap()	function	foundation/containers	hashmap-tilde-hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:169
-HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:171
-HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:172
-HashMap::HashMap(HashMap&&) noexcept	function	foundation/containers	hashmap-hashmap-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:176
-HashMap::operator=(HashMap&&) noexcept	function	foundation/containers	hashmap-operator-eq-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:186
-HashMap::Insert(KK&&,VV&&)	function	foundation/containers	hashmap-insert-kk-amp-amp-vv-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:209
-HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:231
-HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:239
-HashMap::Find(const Q&)	function	foundation/containers	hashmap-find-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:247
-HashMap::Find(const Q&) const	function	foundation/containers	hashmap-find-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:254
-HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:261
-HashMap::Remove(const Q&)	function	foundation/containers	hashmap-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:267
-HashMap::ForEach(Visit)	function	foundation/containers	hashmap-foreach-visit	foundation-containers.md	engine/foundation/containers/hash_map.h:273
-HashMap::ForEach(Visit) const	function	foundation/containers	hashmap-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_map.h:287
-HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:299
-HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:304
-HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:310
+kFnv1a64Basis	variable	foundation/containers	kfnv1a64basis	foundation-containers.md	engine/foundation/containers/hash.h:33
+kFnv1a64Prime	variable	foundation/containers	kfnv1a64prime	foundation-containers.md	engine/foundation/containers/hash.h:35
+Fnv1a64Builder	class	foundation/containers	fnv1a64builder	foundation-containers.md	engine/foundation/containers/hash.h:44
+Fnv1a64Builder::Fnv1a64Builder(u64)	function	foundation/containers	fnv1a64builder-fnv1a64builder-u64	foundation-containers.md	engine/foundation/containers/hash.h:50
+Fnv1a64Builder::AddByte(u8)	function	foundation/containers	fnv1a64builder-addbyte-u8	foundation-containers.md	engine/foundation/containers/hash.h:56
+Fnv1a64Builder::AddBytes(ByteSpan)	function	foundation/containers	fnv1a64builder-addbytes-bytespan	foundation-containers.md	engine/foundation/containers/hash.h:66
+Fnv1a64Builder::AddText(StringView)	function	foundation/containers	fnv1a64builder-addtext-stringview	foundation-containers.md	engine/foundation/containers/hash.h:79
+Fnv1a64Builder::AddCString(const char*)	function	foundation/containers	fnv1a64builder-addcstring-const-char-star	foundation-containers.md	engine/foundation/containers/hash.h:92
+Fnv1a64Builder::AddWord(u64)	function	foundation/containers	fnv1a64builder-addword-u64	foundation-containers.md	engine/foundation/containers/hash.h:105
+Fnv1a64Builder::Value() const	function	foundation/containers	fnv1a64builder-value-const	foundation-containers.md	engine/foundation/containers/hash.h:112
+Fnv1a64(ByteSpan)	function	foundation/containers	fnv1a64-bytespan	foundation-containers.md	engine/foundation/containers/hash.h:121
+Fnv1a64(StringView)	function	foundation/containers	fnv1a64-stringview	foundation-containers.md	engine/foundation/containers/hash.h:129
+HashCombine(usize,usize)	function	foundation/containers	hashcombine-usize-usize	foundation-containers.md	engine/foundation/containers/hash.h:139
+Hash<i8>	struct	foundation/containers	hash-lt-i8-gt	foundation-containers.md	engine/foundation/containers/hash.h:152
+Hash<i8>::operator()(i8) const	function	foundation/containers	hash-lt-i8-gt-operator-call-i8-const	foundation-containers.md	engine/foundation/containers/hash.h:155
+Hash<i16>	struct	foundation/containers	hash-lt-i16-gt	foundation-containers.md	engine/foundation/containers/hash.h:158
+Hash<i16>::operator()(i16) const	function	foundation/containers	hash-lt-i16-gt-operator-call-i16-const	foundation-containers.md	engine/foundation/containers/hash.h:161
+Hash<i32>	struct	foundation/containers	hash-lt-i32-gt	foundation-containers.md	engine/foundation/containers/hash.h:164
+Hash<i32>::operator()(i32) const	function	foundation/containers	hash-lt-i32-gt-operator-call-i32-const	foundation-containers.md	engine/foundation/containers/hash.h:167
+Hash<i64>	struct	foundation/containers	hash-lt-i64-gt	foundation-containers.md	engine/foundation/containers/hash.h:170
+Hash<i64>::operator()(i64) const	function	foundation/containers	hash-lt-i64-gt-operator-call-i64-const	foundation-containers.md	engine/foundation/containers/hash.h:173
+Hash<u8>	struct	foundation/containers	hash-lt-u8-gt	foundation-containers.md	engine/foundation/containers/hash.h:176
+Hash<u8>::operator()(u8) const	function	foundation/containers	hash-lt-u8-gt-operator-call-u8-const	foundation-containers.md	engine/foundation/containers/hash.h:179
+Hash<u16>	struct	foundation/containers	hash-lt-u16-gt	foundation-containers.md	engine/foundation/containers/hash.h:182
+Hash<u16>::operator()(u16) const	function	foundation/containers	hash-lt-u16-gt-operator-call-u16-const	foundation-containers.md	engine/foundation/containers/hash.h:185
+Hash<u32>	struct	foundation/containers	hash-lt-u32-gt	foundation-containers.md	engine/foundation/containers/hash.h:188
+Hash<u32>::operator()(u32) const	function	foundation/containers	hash-lt-u32-gt-operator-call-u32-const	foundation-containers.md	engine/foundation/containers/hash.h:191
+Hash<u64>	struct	foundation/containers	hash-lt-u64-gt	foundation-containers.md	engine/foundation/containers/hash.h:194
+Hash<u64>::operator()(u64) const	function	foundation/containers	hash-lt-u64-gt-operator-call-u64-const	foundation-containers.md	engine/foundation/containers/hash.h:197
+Hash	variable	foundation/containers	hash	foundation-containers.md	engine/foundation/containers/hash.h:203
+Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md	engine/foundation/containers/hash.h:213
+Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash.h:216
+Hash<StringView>	struct	foundation/containers	hash-lt-stringview-gt	foundation-containers.md	engine/foundation/containers/hash.h:222
+Hash<StringView>::operator()(StringView) const	function	foundation/containers	hash-lt-stringview-gt-operator-call-stringview-const	foundation-containers.md	engine/foundation/containers/hash.h:225
+HeterogeneousKey	variable	foundation/containers	heterogeneouskey	foundation-containers.md	engine/foundation/containers/hash_map.h:22
+HashMapEntry	struct	foundation/containers	hashmapentry	foundation-containers.md	engine/foundation/containers/hash_map.h:35
+HashMapEntry::key	variable	foundation/containers	hashmapentry-key	foundation-containers.md	engine/foundation/containers/hash_map.h:37
+HashMapEntry::value	variable	foundation/containers	hashmapentry-value	foundation-containers.md	engine/foundation/containers/hash_map.h:38
+HashMapEmplaced	struct	foundation/containers	hashmapemplaced	foundation-containers.md	engine/foundation/containers/hash_map.h:44
+HashMapEmplaced::value	variable	foundation/containers	hashmapemplaced-value	foundation-containers.md	engine/foundation/containers/hash_map.h:46
+HashMapEmplaced::inserted	variable	foundation/containers	hashmapemplaced-inserted	foundation-containers.md	engine/foundation/containers/hash_map.h:48
+HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:113
+HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:123
+HashMap::~HashMap()	function	foundation/containers	hashmap-tilde-hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:129
+HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:131
+HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:132
+HashMap::HashMap(HashMap&&) noexcept	function	foundation/containers	hashmap-hashmap-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:136
+HashMap::operator=(HashMap&&) noexcept	function	foundation/containers	hashmap-operator-eq-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:147
+HashMap::Insert(KK&&,VV&&)	function	foundation/containers	hashmap-insert-kk-amp-amp-vv-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:173
+HashMap::Emplace(KK&&,Args&&...)	function	foundation/containers	hashmap-emplace-kk-amp-amp-args-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:211
+HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:269
+HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:277
+HashMap::Find(const Q&)	function	foundation/containers	hashmap-find-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:285
+HashMap::Find(const Q&) const	function	foundation/containers	hashmap-find-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:292
+HashMap::Contains(const K&) const	function	foundation/containers	hashmap-contains-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:297
+HashMap::Contains(const Q&) const	function	foundation/containers	hashmap-contains-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:302
+HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:309
+HashMap::Remove(const Q&)	function	foundation/containers	hashmap-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:315
+HashMap::Clear()	function	foundation/containers	hashmap-clear	foundation-containers.md	engine/foundation/containers/hash_map.h:318
+HashMap::Reserve(usize)	function	foundation/containers	hashmap-reserve-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:328
+HashMap::ForEach(Visit)	function	foundation/containers	hashmap-foreach-visit	foundation-containers.md	engine/foundation/containers/hash_map.h:342
+HashMap::ForEach(Visit) const	function	foundation/containers	hashmap-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_map.h:356
+HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:394
+HashMap::Empty() const	function	foundation/containers	hashmap-empty-const	foundation-containers.md	engine/foundation/containers/hash_map.h:396
+HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:401
+HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:407
+HashSet	class	foundation/containers	hashset	foundation-containers.md	engine/foundation/containers/hash_set.h:53
+HashSet::HashSet(Allocator&,usize)	function	foundation/containers	hashset-hashset-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_set.h:62
+HashSet::HashSet(const HashSet&)	function	foundation/containers	hashset-hashset-const-hashset-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:64
+HashSet::operator=(const HashSet&)	function	foundation/containers	hashset-operator-eq-const-hashset-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:65
+HashSet::HashSet(HashSet&&) noexcept	function	foundation/containers	hashset-hashset-hashset-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_set.h:67
+HashSet::operator=(HashSet&&) noexcept	function	foundation/containers	hashset-operator-eq-hashset-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_set.h:69
+HashSet::Insert(KK&&)	function	foundation/containers	hashset-insert-kk-amp-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:76
+HashSet::Contains(const K&) const	function	foundation/containers	hashset-contains-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_set.h:86
+HashSet::Contains(const Q&) const	function	foundation/containers	hashset-contains-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_set.h:91
+HashSet::Remove(const K&)	function	foundation/containers	hashset-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:97
+HashSet::Remove(const Q&)	function	foundation/containers	hashset-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:103
+HashSet::Clear()	function	foundation/containers	hashset-clear	foundation-containers.md	engine/foundation/containers/hash_set.h:106
+HashSet::Reserve(usize)	function	foundation/containers	hashset-reserve-usize	foundation-containers.md	engine/foundation/containers/hash_set.h:112
+HashSet::ForEach(Visit) const	function	foundation/containers	hashset-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_set.h:117
+HashSet::Size() const	function	foundation/containers	hashset-size-const	foundation-containers.md	engine/foundation/containers/hash_set.h:132
+HashSet::Empty() const	function	foundation/containers	hashset-empty-const	foundation-containers.md	engine/foundation/containers/hash_set.h:134
+HashSet::SlotCapacity() const	function	foundation/containers	hashset-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_set.h:136
+HashSet::TombstoneCount() const	function	foundation/containers	hashset-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_set.h:138
 SharedBytes	class	foundation/containers	sharedbytes	foundation-containers.md	engine/foundation/containers/shared_bytes.h:21
 SharedBytes::~SharedBytes()	function	foundation/containers	sharedbytes-tilde-sharedbytes	foundation-containers.md	engine/foundation/containers/shared_bytes.h:24
 SharedBytes::Bytes() const	function	foundation/containers	sharedbytes-bytes-const	foundation-containers.md	engine/foundation/containers/shared_bytes.h:30
@@ -552,32 +595,33 @@ NormalizeNFC(Allocator&,StringView)	function	foundation/strings	normalizenfc-all
 String	class	foundation/strings	string	foundation-strings.md	engine/foundation/string/string.h:28
 String::String(Allocator&)	function	foundation/strings	string-string-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:35
 String::String(Allocator&,StringView)	function	foundation/strings	string-string-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/string.h:42
-String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:52
-String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:53
-String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:55
-String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:56
-String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:63
-String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:79
-String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:94
-String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:108
-String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:110
-String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:113
-String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:115
-String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:120
-String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:122
-Hash<String<Allocator>>	struct	foundation/strings	hash-lt-string-lt-allocator-gt-gt	foundation-strings.md	engine/foundation/string/string.h:130
-Hash<String<Allocator>>::operator()(const String<Allocator>&) const	function	foundation/strings	hash-lt-string-lt-allocator-gt-gt-operator-call-const-string-lt-allocator-gt-amp-const	foundation-strings.md	engine/foundation/string/string.h:133
-StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:145
-StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:152
-StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:159
-StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:170
-StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:182
-StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:197
-StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:219
-StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:238
-StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:274
-StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:301
-StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:303
+String::String(StringView)	function	foundation/strings	string-string-stringview	foundation-strings.md	engine/foundation/string/string.h:59
+String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:65
+String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:66
+String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:68
+String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:69
+String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:76
+String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:92
+String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:107
+String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:121
+String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:123
+String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:126
+String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:128
+String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:133
+String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:135
+Hash<String<Allocator>>	struct	foundation/strings	hash-lt-string-lt-allocator-gt-gt	foundation-strings.md	engine/foundation/string/string.h:143
+Hash<String<Allocator>>::operator()(const String<Allocator>&) const	function	foundation/strings	hash-lt-string-lt-allocator-gt-gt-operator-call-const-string-lt-allocator-gt-amp-const	foundation-strings.md	engine/foundation/string/string.h:146
+StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:158
+StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:165
+StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:172
+StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:183
+StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:195
+StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:210
+StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:232
+StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:251
+StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:287
+StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:314
+StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:316
 CodepointCount(StringView)	function	foundation/strings	codepointcount-stringview	foundation-strings.md	engine/foundation/string/utf8.h:18
 IsValidUtf8(StringView)	function	foundation/strings	isvalidutf8-stringview	foundation-strings.md	engine/foundation/string/utf8.h:36
 Utf8CodepointIterator	class	foundation/strings	utf8codepointiterator	foundation-strings.md	engine/foundation/string/utf8.h:59
@@ -7440,16 +7484,18 @@ asset::ClipView::KeyCount(u32,u32) const	function	asset	asset-clipview-keycount-
 asset::ClipView::IsConstant(u32,u32) const	function	asset	asset-clipview-isconstant-u32-u32-const	asset.md	engine/asset/clip.h:218
 asset::ClipView::Sample(u32,f32,u32*) const	function	asset	asset-clipview-sample-u32-f32-u32-star-const	asset.md	engine/asset/clip.h:228
 asset::ClipView::Bind(const SkeletonView&) const	function	asset	asset-clipview-bind-const-skeletonview-amp-const	asset.md	engine/asset/clip.h:233
-asset::ContentHash	struct	asset	asset-contenthash	asset.md	engine/asset/content_hash.h:17
-asset::ContentHash::bytes	variable	asset	asset-contenthash-bytes	asset.md	engine/asset/content_hash.h:19
-asset::ContentHash::IsZero() const	function	asset	asset-contenthash-iszero-const	asset.md	engine/asset/content_hash.h:23
-asset::FormatContentHash(const ContentHash&,char(&)[33])	function	asset	asset-formatcontenthash-const-contenthash-amp-char-amp-33	asset.md	engine/asset/content_hash.h:35
-asset::ContentHasher	class	asset	asset-contenthasher	asset.md	engine/asset/content_hash.h:41
-asset::ContentHasher::ContentHasher()	function	asset	asset-contenthasher-contenthasher	asset.md	engine/asset/content_hash.h:45
-asset::ContentHasher::Update(ByteSpan)	function	asset	asset-contenthasher-update-bytespan	asset.md	engine/asset/content_hash.h:50
-asset::ContentHasher::Finish()	function	asset	asset-contenthasher-finish	asset.md	engine/asset/content_hash.h:55
-asset::ContentHasher::Reset()	function	asset	asset-contenthasher-reset	asset.md	engine/asset/content_hash.h:59
-asset::HashBytes(ByteSpan)	function	asset	asset-hashbytes-bytespan	asset.md	engine/asset/content_hash.h:74
+asset::ContentHash	struct	asset	asset-contenthash	asset.md	engine/asset/content_hash.h:18
+asset::ContentHash::bytes	variable	asset	asset-contenthash-bytes	asset.md	engine/asset/content_hash.h:20
+asset::ContentHash::IsZero() const	function	asset	asset-contenthash-iszero-const	asset.md	engine/asset/content_hash.h:24
+Hash<asset::ContentHash>	struct	asset	hash-lt-asset-contenthash-gt	asset.md	engine/asset/content_hash.h:42
+Hash<asset::ContentHash>::operator()(const asset::ContentHash&) const	function	asset	hash-lt-asset-contenthash-gt-operator-call-const-asset-contenthash-amp-const	asset.md	engine/asset/content_hash.h:45
+asset::FormatContentHash(const ContentHash&,char(&)[33])	function	asset	asset-formatcontenthash-const-contenthash-amp-char-amp-33	asset.md	engine/asset/content_hash.h:64
+asset::ContentHasher	class	asset	asset-contenthasher	asset.md	engine/asset/content_hash.h:70
+asset::ContentHasher::ContentHasher()	function	asset	asset-contenthasher-contenthasher	asset.md	engine/asset/content_hash.h:74
+asset::ContentHasher::Update(ByteSpan)	function	asset	asset-contenthasher-update-bytespan	asset.md	engine/asset/content_hash.h:79
+asset::ContentHasher::Finish()	function	asset	asset-contenthasher-finish	asset.md	engine/asset/content_hash.h:84
+asset::ContentHasher::Reset()	function	asset	asset-contenthasher-reset	asset.md	engine/asset/content_hash.h:88
+asset::HashBytes(ByteSpan)	function	asset	asset-hashbytes-bytespan	asset.md	engine/asset/content_hash.h:103
 asset::ResourceTraits<SkeletonView>	struct	asset	asset-resourcetraits-lt-skeletonview-gt	asset.md	engine/asset/cpu_loaders.h:22
 asset::ResourceTraits<SkeletonView>::kType	variable	asset	asset-resourcetraits-lt-skeletonview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:24
 asset::ResourceTraits<SkeletonView>::kKind	variable	asset	asset-resourcetraits-lt-skeletonview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:25

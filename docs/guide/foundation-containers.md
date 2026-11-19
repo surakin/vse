@@ -14,7 +14,8 @@ teaches the ones you will use every day: `Array`, `Vector`, `HashMap`, `UniquePt
 |---|---|---|
 | a fixed number of items, known at compile time | `Array<T, N>` | lives inside the object; no allocation |
 | a list that grows and shrinks | `Vector<T>` | heap by default; `Vector<T, ArenaAllocator>` for frame data |
-| find a value by key | `HashMap<K, V, Allocator>` | no iteration; needs `Hash<K>` and `==` |
+| find a value by key | `HashMap<K, V, Allocator>` | needs `Hash<K>` and `==`; iteration order is unspecified |
+| know whether a key is in a set | `HashSet<K, Allocator>` | the map's table with no value |
 | one object with one owner | `UniquePtr<T>` | `MakeUnique<T>(args...)` |
 | one object with several owners | `SharedPtr<T>` | `MakeShared<T>(args...)`; reference counted |
 | look at a run of items without owning them | `Span<T>` | pointer + length, bounds checked |
@@ -27,6 +28,8 @@ teaches the ones you will use every day: `Array`, `Vector`, `HashMap`, `UniquePt
 - `engine/foundation/containers/vector.h`
 - `engine/foundation/mem/heap_allocator.h`
 - `engine/foundation/containers/hash_map.h`
+- `engine/foundation/containers/hash_set.h`
+- `engine/foundation/containers/hash.h`
 
 ## API reference
 
@@ -38,6 +41,8 @@ Full reference: [Foundation: Containers](../reference/foundation-containers.md).
 - [[UniquePtr]] — owns one object (move-only, optional deleter)
 - [[SharedPtr]] — shares one object by reference count (atomic or plain)
 - [[HashMap]] — open-addressing hash map
+- [[HashSet]] — the map's table with no value: a set of keys
+- `Hash<K>`, `Fnv1a64`, [[Fnv1a64Builder]], [[HashCombine]] — the key hashes and the engine's one byte hash (`containers/hash.h`)
 - [[Span]] — a non-owning view of consecutive elements (`ByteSpan` for bytes), see [Standard types](foundation-types.md)
 
 ### Sorting, searching and copying spans
@@ -162,9 +167,33 @@ int main() {
 size 1, removed key is gone
 ```
 
-To use your own type as a key give it `operator==` and specialize `Hash<K>` (see `Hash<ecs::Entity>` in `engine/ecs/entity.h` for a short example);
-the key and the value must be default-constructible, and both are stored by value. There is **no iteration**: a map answers "what is stored for this
-key?", not "what is in it?". If you need to walk the items keep them in a `Vector` and use the map as an index into it.
+To use your own type as a key give it `operator==` and specialize `Hash<K>` (see `Hash<ecs::Entity>` in `engine/ecs/entity.h` for a short example;
+`HashCombine` mixes the hashes of several fields). Keys and values are stored by value and may be move-only (a `String` key); neither needs a default
+constructor. A map keyed by `String` is searched with a `StringView` without making a string (`Find`, `Contains`, `Remove`), and `Insert` and `Emplace`
+convert any other argument type (a literal, an integer of another width) to the key type before hashing it.
+
+The members beyond the example above:
+
+| Member | What it does |
+|---|---|
+| `Emplace(key, args...)` | makes the value from `args` only when the key is absent; returns the value and whether it was made |
+| `Contains(key)` | whether the key is present |
+| `Clear()` | destroys every entry and keeps the table |
+| `Reserve(n)` | makes room for `n` entries without a rehash |
+| `ForEach(visit)`, `for (auto& [key, value] : map)` | every entry, **in no particular order** |
+
+No table is allocated until the first insert, and the table is always a power of two. The order of a walk depends on the hashes and the history of the
+table, so **nothing deterministic may depend on it**: a minted file, a state hash, an event order. Sort the keys first when the order reaches an output.
+Never assign to `key` in a range-for (the entry would no longer be found); do not insert or remove during a walk (a debug build with `ENGINE_SLOW_CHECKS` aborts when the walk takes its next step after a change, so a change at
+the last entry goes unseen).
+
+[[HashSet]]`<K, Allocator>` is the same table with no value, for "have I seen this?": `Insert` returns whether the key was new.
+
+### Hashing bytes
+
+`Fnv1a64(bytes)` (and `Fnv1a64(text)`) in `containers/hash.h` is the engine's one byte hash: FNV-1a 64-bit with the published values, so a hash stored in a
+file or compared across machines does not change. `Fnv1a64Builder` hashes in pieces (`AddBytes`, `AddText`, `AddCString`, `AddByte`) and `AddWord` folds a
+whole 64-bit word in one step, as the state hashes do. Do not write the FNV constants out again in a module.
 
 ### Iteration and invalidation rules
 
@@ -174,8 +203,10 @@ Most container bugs are a pointer, reference or span that outlived a change. The
 |---|---|
 | `Vector::Push`, `Insert`, `Resize`, `Reserve` that grows | every pointer, reference, iterator and span into the vector |
 | `Vector::Remove`, `Pop`, `Clear` | pointers to the removed elements, and to those after a removed one |
-| `HashMap::Insert` | every pointer from `Find` (the table may rehash) |
+| `HashMap::Insert`, `Emplace`, `Reserve` | every pointer from `Find` (the table may rehash) |
 | `HashMap::Remove` | the pointer to the removed value |
+| `HashMap::Clear` | every pointer from `Find` |
+| any change during a `ForEach` or range-for over a map | the walk itself (not allowed) |
 | moving a `Vector` into another | nothing is copied: the new vector owns the same storage, the old one is empty |
 | `ArenaAllocator::Reset` | every container that drew from the arena |
 

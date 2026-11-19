@@ -72,6 +72,8 @@ TEST_CASE("HashMap: tombstone accumulation from insert/remove churn still trigge
     // even as every iteration leaves behind one more tombstone.
     ArenaAllocator arena(1024 * 1024);
     HashMap<usize, usize, ArenaAllocator> map(arena, 8);
+    map.Insert(usize{1000}, usize{0});  // the first table is made by the first insert (container audit Day 2)
+    map.Remove(usize{1000});
     usize initial_capacity = map.SlotCapacity();
 
     for (usize i = 0; i < 100; ++i)
@@ -248,4 +250,182 @@ TEST_CASE("HashMap: the StringView hash agrees with the String hash", "[containe
     CHECK(Hash<Name>{}(name) == Hash<StringView>{}(StringView("sk\xC3\xA5l.lua")));
     CHECK(Hash<StringView>{}(StringView("a")) != Hash<StringView>{}(StringView("b")));
     CHECK(Hash<StringView>{}(StringView("")) == Hash<StringView>{}(StringView()));
+}
+
+// Container audit series Day 2: lazy first table, power-of-two capacity, Clear, Reserve, Contains, Emplace, range-for,
+// and keys of another type converted before they are hashed.
+
+TEST_CASE("HashMap: no table until the first insert, then a power of two", "[containers][hash_map]")
+{
+    HashMap<u32, u32, HeapAllocator> map(HeapAllocator::Default(), 100);
+    CHECK(map.SlotCapacity() == 0);
+    CHECK(map.Find(5u) == nullptr);
+    CHECK_FALSE(map.Remove(5u));
+    CHECK_FALSE(map.Contains(5u));
+    usize visited = 0;
+    for (auto& entry : map)
+    {
+        visited += entry.value;
+    }
+    CHECK(visited == 0);
+    map.Insert(5u, 50u);
+    CHECK(map.SlotCapacity() == 128);  // 100 rounded up
+    for (u32 i = 0; i < 1000; ++i)
+    {
+        map.Insert(i, i);
+    }
+    const usize cap = map.SlotCapacity();
+    CHECK((cap & (cap - 1)) == 0);
+    CHECK(map.Size() == 1000);
+}
+
+TEST_CASE("HashMap: Clear keeps the table, Reserve grows it once", "[containers][hash_map]")
+{
+    CountedValue::live = 0;
+    HashMap<Name, CountedValue, HeapAllocator> map(HeapAllocator::Default());
+    map.Reserve(1000);
+    const usize reserved = map.SlotCapacity();
+    CHECK(reserved >= 1000 * 10 / 7);
+    for (u32 i = 0; i < 1000; ++i)
+    {
+        map.Insert(MakeName(i), CountedValue(static_cast<int>(i)));
+    }
+    CHECK(map.SlotCapacity() == reserved);  // no rehash on the way
+    for (u32 i = 0; i < 1000; i += 3)
+    {
+        map.Remove(MakeName(i).View());
+    }
+    CHECK(map.TombstoneCount() > 0);
+    map.Clear();
+    CHECK(map.Size() == 0);
+    CHECK(map.Empty());
+    CHECK(map.TombstoneCount() == 0);
+    CHECK(map.SlotCapacity() == reserved);
+    CHECK(CountedValue::live == 0);
+    CHECK(map.Find(StringView("n1")) == nullptr);
+    map.Insert(MakeName(1), CountedValue(1));
+    CHECK(map.Find(StringView("n1"))->value == 1);
+}
+
+TEST_CASE("HashMap: Emplace makes the value only when the key is absent", "[containers][hash_map]")
+{
+    CountedValue::live = 0;
+    HashMap<Name, CountedValue, HeapAllocator> map(HeapAllocator::Default());
+    auto first = map.Emplace(StringView("n1"), 10);  // a view: converted to a Name only when absent
+    CHECK(first.inserted);
+    CHECK(first.value->value == 10);
+    auto again = map.Emplace(StringView("n1"), 99);
+    CHECK_FALSE(again.inserted);
+    CHECK(again.value->value == 10);  // left as it was
+    CHECK(CountedValue::live == 1);
+    for (u32 i = 2; i < 300; ++i)
+    {
+        CHECK(map.Emplace(MakeName(i), static_cast<int>(i)).inserted);
+    }
+    CHECK(map.Size() == 299);
+    CHECK(map.Contains(MakeName(299)));  // MakeName writes the digits in reverse ("n992")
+    CHECK(map.Contains(MakeName(2)));
+    CHECK_FALSE(map.Contains(MakeName(300)));
+}
+
+TEST_CASE("HashMap: a key of another type is converted before it is hashed", "[containers][hash_map]")
+{
+    // A C string hashed as a pointer, or an int hashed as an i32 in a u64 map, would land in the wrong slot and could
+    // not be found by the key type.
+    HashMap<Name, u32, HeapAllocator> names(HeapAllocator::Default());
+    names.Insert("n5", 5u);
+    CHECK(names.Find(StringView("n5")) != nullptr);
+    CHECK(names.Emplace("n6", 6u).inserted);
+    CHECK(names.Find(MakeName(6)) != nullptr);
+    HashMap<engine_placeholder::u64, u32, HeapAllocator> wide(HeapAllocator::Default());
+    for (int i = 0; i < 100; ++i)
+    {
+        wide.Insert(i, static_cast<u32>(i));
+    }
+    for (engine_placeholder::u64 i = 0; i < 100; ++i)
+    {
+        REQUIRE(wide.Find(i) != nullptr);
+        CHECK(*wide.Find(i) == i);
+    }
+    // A negative int hashed as an i32 differs from the same value hashed as an i64.
+    HashMap<engine_placeholder::i64, u32, HeapAllocator> signed_keys(HeapAllocator::Default());
+    for (int i = -50; i < 0; ++i)
+    {
+        signed_keys.Insert(i, static_cast<u32>(-i));
+    }
+    for (engine_placeholder::i64 i = -50; i < 0; ++i)
+    {
+        REQUIRE(signed_keys.Find(i) != nullptr);
+        CHECK(*signed_keys.Find(i) == static_cast<u32>(-i));
+    }
+}
+
+TEST_CASE("HashMap: a range-for visits every entry once, through churn", "[containers][hash_map]")
+{
+    HashMap<u32, u32, HeapAllocator> map(HeapAllocator::Default());
+    for (u32 i = 0; i < 2000; ++i)
+    {
+        map.Insert(i, i * 2);
+    }
+    for (u32 i = 0; i < 2000; i += 2)
+    {
+        map.Remove(i);
+    }
+    engine_placeholder::Vector<u32> seen;
+    seen.Resize(2000);
+    for (auto& [key, value] : map)
+    {
+        CHECK(value == key * 2);
+        ++seen[key];
+        value += 1;  // values may be written through the loop
+    }
+    for (u32 i = 0; i < 2000; ++i)
+    {
+        CHECK(seen[i] == (i % 2 == 0 ? 0u : 1u));
+    }
+    const HashMap<u32, u32, HeapAllocator>& view = map;
+    usize count = 0;
+    for (const auto& entry : view)
+    {
+        CHECK(entry.value == entry.key * 2 + 1);
+        ++count;
+    }
+    CHECK(count == 1000);
+
+    HashMap<u32, u32, HeapAllocator> moved(Move(map));
+    count = 0;
+    for (auto& entry : map)  // moved-from: empty
+    {
+        count += entry.value;
+    }
+    CHECK(count == 0);
+    for (auto& entry : moved)
+    {
+        count += entry.key > 0 ? 1 : 0;
+    }
+    CHECK(count == 1000);
+}
+
+TEST_CASE("HashMap: replacing a value at the load threshold does not grow the table", "[containers][hash_map]")
+{
+    HashMap<u32, u32, HeapAllocator> map(HeapAllocator::Default(), 16);
+    u32 n = 0;
+    while ((map.Size() + 2) * 10 < 16 * 7)  // fill to one below the threshold of 16 slots
+    {
+        map.Insert(n, n);
+        ++n;
+    }
+    map.Insert(n, n);  // now at the threshold: the next new key would grow
+    ++n;
+    const usize cap = map.SlotCapacity();
+    REQUIRE(cap == 16);
+    for (u32 i = 0; i < n; ++i)
+    {
+        map.Insert(i, i + 100);  // replacements
+        CHECK_FALSE(map.Emplace(i, 0u).inserted);
+    }
+    CHECK(map.SlotCapacity() == cap);
+    CHECK(*map.Find(0u) == 100);
+    map.Insert(n, n);  // a new key grows it
+    CHECK(map.SlotCapacity() == 32);
 }

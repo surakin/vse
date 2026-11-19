@@ -10,8 +10,8 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Language support](foundation-lang.md) | 8 | 127 |
 | [Foundation: C library](foundation-cstr.md) | 5 | 61 |
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
-| [Foundation: Containers](foundation-containers.md) | 8 | 187 |
-| [Foundation: Strings](foundation-strings.md) | 6 | 100 |
+| [Foundation: Containers](foundation-containers.md) | 10 | 230 |
+| [Foundation: Strings](foundation-strings.md) | 6 | 101 |
 | [Foundation: Paths and Files](foundation-io.md) | 6 | 289 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 3 | 87 |
@@ -31,7 +31,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Audio](audio.md) | 28 | 822 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 37 | 1334 |
+| [Assets and resources](asset.md) | 37 | 1336 |
 | [glTF importer](asset_import.md) | 17 | 272 |
 | [Animation runtime](animation.md) | 4 | 85 |
 | [Database](database.md) | 9 | 161 |

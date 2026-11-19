@@ -29,6 +29,12 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
     included before the X11 region of the two X11 tests, `DestroyAll` in `x11_enable.h`/`x11_disable.h`). `docs/reference` regenerated.
   - Runs: plain `ran 4077 of 11341 tests (phases: all; flavors: plain; display: excluded; crash tests: excluded)`, three known failures; asan and tsan in the day file.
   - Review: 5 findings, all fixed.
+- **Day 2 done (2026-11-19, Linux):**
+  - `containers/hash.h` (`Fnv1a64`, `Fnv1a64Builder`, `HashCombine`, the `Hash<K>` specializations); `HashMap` completed (lazy, power of two,
+    `Clear`/`Reserve`/`Contains`/`Emplace`, range-for); `HashSet`; `Hash<ContentHash>`; `String(StringView)`.
+  - Fixed: keys of another type are converted before hashing.
+  - Tests deferred to Day 12 at the user's request (the series now builds and reviews per day and tests once at the end); the container tests pass.
+  - Review: 3 findings, all fixed.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

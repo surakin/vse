@@ -111,6 +111,8 @@ tests/foundation/container_vector_test.cpp      0
 tests/foundation/file_io_test.cpp               0
 tests/foundation/grapheme_test.cpp              0
 tests/foundation/hash_map_test.cpp              0
+tests/foundation/hash_set_test.cpp              0
+tests/foundation/hash_test.cpp                  0
 tests/foundation/log_test.cpp                   0
 tests/foundation/matrix_test.cpp                0
 tests/foundation/normalize_test.cpp             0

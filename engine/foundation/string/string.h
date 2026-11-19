@@ -1,6 +1,6 @@
 #pragma once
 
-#include "containers/hash_map.h"
+#include "containers/hash.h"
 #include "containers/vector.h"
 #include "string_view.h"
 #include "types.h"
@@ -47,6 +47,19 @@ public:
             chars_.Push(sv[i]);
         }
         chars_.Push('\0');
+    }
+
+    /// Creates a string holding a copy of `sv` on the allocator's shared default (container audit Day 2: lets a
+    /// [[HashMap]] or [[HashSet]] keyed by strings make its key from a view or a literal).
+    ///
+    /// Only available when the allocator has a static `Default()`, as [[HeapAllocator]] does.
+    ///
+    /// - Param sv: text to copy; need not be NUL-terminated.
+    /// - Aborts: the allocator is out of memory.
+    explicit String(StringView sv)
+        requires requires { Allocator::Default(); }
+        : String(Allocator::Default(), sv)
+    {
     }
 
     String(const String&) = delete;
