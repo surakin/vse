@@ -131,6 +131,18 @@ The same machine and benches as Day 1. Per operation, Day 1 then now:
     1.17 ms against `qsort`'s 1.01 at 10,000 objects, and 8.36 against 5.57 at 50,000.
 - **The G-buffer's draw sort stays `qsort`.** Its comparison usually falls through to its fourth field, so the sort with the fewest comparisons
   wins. renderer_bench at 10,000 objects, ms per frame: qsort 1.01, the new Sort 1.07, the old introsort 1.26.
+- **The G-buffer's draw sort without `qsort`** (the user: glibc's sort is not portable, so the frame time should not be the platform's):
+  - it now sorts 24-byte proxies (`key`, first index above index count, slot, entry), and the two loops after the sort read the entries in the
+    proxies' order, so the 56-byte entries do not move;
+  - the proxies are sorted by the engine's `StableSort` with a merge buffer reserved at construction (no allocation per frame);
+  - renderer_bench, ms per frame, 3 alternating runs: at 10,000 objects 0.99 against `qsort`'s 1.02; at 50,000, 6.0 against 6.1;
+  - tried first and dropped: a packed `u128` tie-break in the entry (1.10 at 10,000, the entry grew to 72 bytes) and `Sort` (pdqsort) over the
+    proxies (1.06 at 10,000, 5.8 at 50,000).
+  - runs: `scripts/test-phase.sh --affected`, `ran 4232 of 11379 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`;
+    the failures are the known `engine_c_surface` and jobs test, plus `docs_check` before `docs/reference` was regenerated (line numbers only);
+    `ctest -L docs` passes, and the GCC renderer build is clean;
+  - `/code-review high` on the change: no findings (the order is the same total order as before, so stability changes nothing, and the merge
+    buffer never grows past its reservation).
 - **`container_bench` sort cases,** ns per element, old Sort / new Sort / qsort:
 
   | Input | u32 | 56-byte |

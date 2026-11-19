@@ -394,13 +394,15 @@ GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameRe
                   "GBufferPass: device, materials or frame is null");
     const u32 cap = frame->MaxObjects();
     if (!draws_.TryResize(cap) || !slots_.TryResize(cap) || !joint_offsets_.TryResize(cap) ||
-        !sort_scratch_.TryResize(cap))
+        !sort_scratch_.TryResize(cap) || !order_.TryResize(cap) || !order_scratch_.TryReserve(cap))
     {
         RenderLog(LogVerbosity::Error, "GBufferPass: out of memory for %u objects", cap);
         draws_.Reset();
         slots_.Reset();
         joint_offsets_.Reset();
         sort_scratch_.Reset();
+        order_.Reset();
+        order_scratch_.Reset();
     }
     else
     {
@@ -600,39 +602,39 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         e.mesh = mesh;
         e.first_index = object.first_index;
         e.index_count = object.index_count;
+        DrawOrder& o = order_[entry_count - 1];
+        o.key = e.key;
+        o.tie = (u64{object.first_index} << 32) | object.index_count;  // first index, then count
+        o.slot = slot;
+        o.entry = entry_count - 1;
     }
 
-    // The C library's qsort, kept on purpose (container audit Day 13 and its sort follow-up). The comparison here
-    // usually falls through to its fourth field (few distinct draw keys), so the sort with the fewest comparisons wins:
-    // glibc's merge sort. Measured on renderer_bench (10,000 objects, ms per frame): qsort 1.01, the engine's
-    // pdqsort 1.07, the old introsort 1.26, a merge of positions 1.17.
-    auto compare = [](const void* a, const void* b)
-    {
-        const SortEntry* x = static_cast<const SortEntry*>(a);
-        const SortEntry* y = static_cast<const SortEntry*>(b);
-        if (x->key != y->key)
+    // The draw order: by key, then first index, index count and slot (a total order: the slot breaks every tie, so the
+    // order is the same on every platform). The engine's own merge sort over 24-byte proxies, whose comparison is
+    // three integer compares: the 56-byte entries are not moved, and the loops below read them in the proxies' order.
+    // It replaced the C library's qsort, whose speed is the platform's; a merge wins here because few distinct keys
+    // make most comparisons fall through to the tie-breaks, and it makes fewer of them (container audit sort
+    // follow-up).
+    StableSort(
+        Span<DrawOrder>(order_.Data(), entry_count),
+        [](const DrawOrder& x, const DrawOrder& y)
         {
-            return x->key < y->key ? -1 : 1;
-        }
-        if (x->first_index != y->first_index)
-        {
-            return x->first_index < y->first_index ? -1 : 1;
-        }
-        if (x->index_count != y->index_count)
-        {
-            return x->index_count < y->index_count ? -1 : 1;
-        }
-        if (x->slot != y->slot)
-        {
-            return x->slot < y->slot ? -1 : 1;
-        }
-        return 0;
-    };
-    SortRaw(entries, entry_count, sizeof(SortEntry), compare);
+            if (x.key != y.key)
+            {
+                return x.key < y.key;
+            }
+            if (x.tie != y.tie)
+            {
+                return x.tie < y.tie;
+            }
+            return x.slot < y.slot;
+        },
+        order_scratch_);
     for (u32 i = 0; i < entry_count; ++i)
     {
-        slots_[i] = entries[i].slot;
-        joint_offsets_[i] = entries[i].joint_offset;
+        const SortEntry& e = entries[order_[i].entry];
+        slots_[i] = e.slot;
+        joint_offsets_[i] = e.joint_offset;
     }
     if (stats_.skinned_dropped > 0)
     {
@@ -649,7 +651,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
     rhi::BindGroupHandle last_group;
     for (u32 i = 0; i < entry_count; ++i)
     {
-        const SortEntry& e = entries[i];
+        const SortEntry& e = entries[order_[i].entry];
         if (draw_count_ > 0)
         {
             Draw& prev = draws_[draw_count_ - 1];

@@ -380,6 +380,16 @@ private:
     bool added_ = false;
     bool storage_ok_ = false;  // the draw, slot and sort arrays were allocated
     Vector<SortEntry> sort_scratch_;
+    // The draw order: one small proxy per entry, sorted instead of the entries.
+    struct DrawOrder
+    {
+        u64 key = 0;
+        u64 tie = 0;  // first_index above index_count
+        u32 slot = 0;
+        u32 entry = 0;  // the entry in sort_scratch_
+    };
+    Vector<DrawOrder> order_;
+    Vector<DrawOrder> order_scratch_;  // the merge buffer, reserved at construction
     rhi::BindGroupHandle frame_group_;
     rhi::BindGroupHandle object_group_;
     rhi::BindGroupHandle joint_group_;       // the frame's joint palette (set 3), bound for skinned draws only

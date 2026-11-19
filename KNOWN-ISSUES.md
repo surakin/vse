@@ -102,9 +102,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
     - the `platform/` clipboard paths copy byte by byte.
   - (7) Seen on series Day 13, reworked the same day: `Sort` is now pattern-defeating quicksort, many times faster on sorted, reversed,
     all-equal and few-distinct input and 22% faster on random 56-byte elements, but about 7% slower on random `u32` than the old introsort. The
-    G-buffer's draw sort keeps `SortRaw` (`qsort`): its comparison usually falls through to its fourth field, and glibc's merge sort makes the
-    fewest comparisons (renderer_bench at 10,000 objects: qsort 1.01 ms per frame, the engine's Sort 1.07). A merge sort of positions was
-    tried for large elements and lost (1.17).
+    G-buffer's draw sort no longer uses `qsort` (a `StableSort` of 24-byte proxies, as fast or faster).
   - (8) Not run at the series close (2026-11-19): the `linux-nojit` tree, `-DENGINE_BUILD_SHARED=ON`, `-DENGINE_LIBRARY_WITH_IMPORTER=OFF` and the
     display tests; Windows and macOS are series Day 12.
   - (6) Deferred from series Day 11:
