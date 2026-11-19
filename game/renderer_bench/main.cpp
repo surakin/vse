@@ -1,7 +1,7 @@
 // renderer_bench: records the Phase 5 performance baseline. Prints one line per measurement; nothing here is asserted
 // in CI. See docs/guide/renderer.md ("Performance notes") for what the numbers mean.
 //
-//   renderer_bench [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|metal|auto] [--frames N]
+//   renderer_bench [--section graph|frame|gpu|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|metal|auto] [--frames N]
 //   [--threads N]
 //             [--objects 1000|10000|50000] [--single]
 //
@@ -159,6 +159,8 @@ struct Run
 {
     double cpu_median_ms = 0;
     double cpu_min_ms = 0;
+    double total_median_ms = 0;  // submission to the end of WaitIdle: the frame's GPU work included
+    double total_min_ms = 0;
     GBufferStats gbuffer;
     LightSummary lights;
     u32 volume_draws = 0;
@@ -230,6 +232,7 @@ Run RunScene(const Options& o, u32 objects, u32 lights, bool use_jobs)
             ft.initial = rhi::ResourceState::Undefined;
             ft.final_state = rhi::ResourceState::CopySrc;
             Samples cpu;
+            Samples total;
             bool all_ok = true;
             for (u32 i = 0; i < o.frames + 5; ++i)
             {
@@ -238,6 +241,7 @@ Run RunScene(const Options& o, u32 objects, u32 lights, bool use_jobs)
                 const FrameStatus status = frame.Render(&scene.Scene(), &camera, &ft);
                 const double t1 = Now();
                 device->WaitIdle();
+                const double t2 = Now();
                 if (status != FrameStatus::Ok)
                 {
                     all_ok = false;
@@ -245,10 +249,13 @@ Run RunScene(const Options& o, u32 objects, u32 lights, bool use_jobs)
                 if (i >= 5)
                 {
                     cpu.Add(t1 - t0);
+                    total.Add(t2 - t0);
                 }
             }
             run.cpu_median_ms = cpu.Median() * 1e3;
             run.cpu_min_ms = cpu.Min() * 1e3;
+            run.total_median_ms = total.Median() * 1e3;
+            run.total_min_ms = total.Min() * 1e3;
             run.gbuffer = frame.GBufferStatistics();
             run.lights = frame.Lights();
             run.volume_draws = frame.PointDraws();
@@ -299,6 +306,26 @@ void BenchFrame(const Options& o)
                     r.gbuffer.draws != 0 ? static_cast<double>(r.gbuffer.drawn_objects) / r.gbuffer.draws : 0.0);
             }
         }
+    }
+}
+
+// The whole frame with its GPU work (glTF coverage Day 1): no point lights, so the G-buffer pass is most of the GPU
+// time, and a change to the geometry shader shows as a change of these medians (the RHI has no timestamp queries, so
+// the pass itself is not timed alone).
+void BenchGpu(const Options& o)
+{
+    os::Print("# gpu: a whole frame at %ux%u from submission to the end of WaitIdle, no point lights\n", kWidth,
+              kHeight);
+    const u32 counts[] = {1000, 10000};
+    for (u32 objects : counts)
+    {
+        if (o.objects != 0 && o.objects != objects)
+        {
+            continue;
+        }
+        const Run r = RunScene(o, objects, 0, false);
+        os::Print("gpu    objects %6u  median %8.3f ms  min %8.3f ms  %s\n", objects, r.total_median_ms, r.total_min_ms,
+                  r.ok ? "ok" : "NOT OK");
     }
 }
 
@@ -727,7 +754,7 @@ bool Section(const Options& o, const char* name)
 int Usage(const char* program)
 {
     os::PrintError(
-        "usage: %s [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|metal|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
+        "usage: %s [--section graph|frame|gpu|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|metal|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
         program);
     return 2;
 }
@@ -767,7 +794,7 @@ int main(int argc, char** argv)
     {
         o.section = value.Data();
         if (!Section(o, "graph") && !Section(o, "frame") && !Section(o, "lights") && !Section(o, "pool") &&
-            !Section(o, "text") && !Section(o, "ui"))
+            !Section(o, "gpu") && !Section(o, "text") && !Section(o, "ui"))
         {
             return Usage(program);
         }
@@ -799,7 +826,7 @@ int main(int argc, char** argv)
     {
         return Usage(program);
     }
-    if (!o.null_device && (Section(o, "frame") || Section(o, "lights") || Section(o, "pool")))
+    if (!o.null_device && (Section(o, "frame") || Section(o, "lights") || Section(o, "pool") || Section(o, "gpu")))
     {
         char why[256] = {};
         const rhi::BackendDescriptor* backend = rhi::ResolveBackend(o.backend, why, sizeof(why));
@@ -821,6 +848,10 @@ int main(int argc, char** argv)
     if (Section(o, "lights"))
     {
         BenchLights(o);
+    }
+    if (Section(o, "gpu"))
+    {
+        BenchGpu(o);
     }
     if (Section(o, "pool"))
     {

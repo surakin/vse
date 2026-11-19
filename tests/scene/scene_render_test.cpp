@@ -8,7 +8,9 @@
 #include "ecs/transform.h"
 #include "os/console.h"
 #include "os/os.h"
+#include "containers/array.h"
 #include "renderer/render_scene.h"
+#include "renderer/texture.h"
 #include "scene/render_sync.h"
 
 using namespace engine_placeholder;
@@ -338,6 +340,183 @@ TEST_CASE("An unlit material keeps its colour under other lights; a lit one does
             CHECK(at(blue_lit, right, 2) > at(green_lit, right, 2));  // the lit cube follows the light's colour
             CHECK(at(green_lit, right, 1) > at(blue_lit, right, 1));
             device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+namespace
+{
+
+// The largest difference of one channel between two pictures of the same size.
+int LargestDifference(const Vector<u8>& a, const Vector<u8>& b)
+{
+    int largest = a.Size() == b.Size() ? 0 : 255;
+    for (usize i = 0; i < a.Size() && i < b.Size(); ++i)
+    {
+        const int d = static_cast<int>(a[i]) - static_cast<int>(b[i]);
+        const int magnitude = d < 0 ? -d : d;
+        largest = magnitude > largest ? magnitude : largest;
+    }
+    return largest;
+}
+
+// A 1x1 linear texture of one texel, for a map slot.
+renderer::GpuTexturePtr MakeTexel(rhi::Device* device, u8 r, u8 g, u8 b, const char* name)
+{
+    renderer::GpuTexturePtr texture = MakeShared<renderer::GpuTexture>();
+    renderer::TextureImage image;
+    image.desc.width = image.desc.height = 1;
+    image.desc.format = rhi::Format::RGBA8_UNorm;
+    image.desc.usage = rhi::TextureUsage::Sampled;
+    image.pixels.Resize(4);
+    image.pixels[0] = r;
+    image.pixels[1] = g;
+    image.pixels[2] = b;
+    image.pixels[3] = 255;
+    if (!texture->Create(device, static_cast<renderer::TextureImage&&>(image), nullptr, name))
+    {
+        return renderer::GpuTexturePtr{};
+    }
+    return texture;
+}
+
+}  // namespace
+
+// glTF coverage Day 1: the metallic-roughness and occlusion maps give exactly what their products as scalars give
+// (roughness times green, metallic times blue, occlusion times 1 + strength * (red - 1)), under a directional, a point
+// and an ambient light, and a white map changes nothing.
+TEST_CASE("A metallic-roughness or occlusion map draws as its products set as scalars do", "[scene][render][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DeviceCreateInfo info;
+        info.backend = backend;
+        info.validation = rhi::ValidationSetting::On;
+        info.pipeline_cache = false;
+        rhi::DevicePtr device = rhi::CreateDevice(info);
+        if (device.Get() == nullptr)
+        {
+            const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
+            if (required != nullptr && required[0] == '1')
+            {
+                FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            }
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        }
+        {
+            renderer_demo::FrameSetup setup;
+            setup.device = device.Get();
+            setup.max_objects = 8;
+            setup.max_lights = 8;
+            renderer_demo::DemoFrame frame;
+            REQUIRE(frame.Create(setup));
+            renderer::MaterialSystem* materials = frame.Materials();
+            const auto make = [&](const char* name, f32 roughness, f32 metallic, f32 occlusion)
+            {
+                const renderer::MaterialId id = renderer::CreateGBufferMaterial(materials, frame.Templates(),
+                                                                                renderer::GBufferOptions{}, name);
+                CHECK(materials->SetVec4(id, "base_color", Vec4(0.7f, 0.5f, 0.3f, 1.0f)));
+                CHECK(materials->SetFloat(id, "roughness", roughness));
+                CHECK(materials->SetFloat(id, "metallic", metallic));
+                CHECK(materials->SetFloat(id, "occlusion", occlusion));
+                return id;
+            };
+            // The texels are exact in 8 bits, so each scalar material is given the very value the map holds.
+            const f32 g = 153.0f / 255.0f;
+            const f32 b = 128.0f / 255.0f;
+            const f32 occ = 64.0f / 255.0f;
+            const renderer::MaterialId mr_scalars = make("mr scalars", g, b, 1.0f);
+            const renderer::MaterialId mr_map = make("mr map", 1.0f, 1.0f, 1.0f);
+            const renderer::MaterialId mr_unmapped = make("mr without its map", 1.0f, 1.0f, 1.0f);
+            const renderer::MaterialId occ_scalar = make("occlusion scalar", 0.5f, 0.0f, 1.0f + 0.5f * (occ - 1.0f));
+            const renderer::MaterialId occ_map = make("occlusion map", 0.5f, 0.0f, 1.0f);
+            const renderer::MaterialId white_maps = make("white maps", 0.5f, 0.0f, 1.0f);
+            const renderer::MaterialId no_maps = make("no maps", 0.5f, 0.0f, 1.0f);
+            const renderer::GpuTexturePtr mr_texel = MakeTexel(device.Get(), 0, 153, 128, "mr texel");
+            const renderer::GpuTexturePtr occ_texel = MakeTexel(device.Get(), 64, 0, 0, "occlusion texel");
+            const renderer::GpuTexturePtr white = MakeTexel(device.Get(), 255, 255, 255, "white texel");
+            REQUIRE(mr_texel.Get() != nullptr);
+            REQUIRE(occ_texel.Get() != nullptr);
+            REQUIRE(white.Get() != nullptr);
+            REQUIRE(materials->SetTexture(mr_map, "metallic_roughness_tex", mr_texel));
+            REQUIRE(materials->SetTexture(occ_map, "occlusion_tex", occ_texel));
+            REQUIRE(materials->SetFloat(occ_map, "occlusion_strength", 0.5f));
+            REQUIRE(materials->SetTexture(white_maps, "metallic_roughness_tex", white));
+            REQUIRE(materials->SetTexture(white_maps, "occlusion_tex", white));
+
+            auto cube = MakeShared<renderer::GpuMesh>();
+            renderer::MeshData data;
+            REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
+            REQUIRE(cube->Create(device.Get(), data, "cube"));
+            {
+                device->BeginFrame();
+                rhi::CommandList* list = device->CreateCommandList();
+                REQUIRE(list != nullptr);
+                list->Begin();
+                cube->RecordPrepare(list);
+                list->End();
+                rhi::CommandList* lists[] = {list};
+                REQUIRE(device->Submit(lists, 1) != 0);
+                device->EndFrame();
+                device->WaitIdle();
+                cube->MarkReady();
+            }
+            renderer::Camera camera;
+            camera.SetLookAt(Vec3(0, 1.5f, 2.5f), Vec3(0, 0, 0), Vec3(0, 1, 0));
+            camera.aspect = 1.0f;
+            camera.near_plane = 0.5f;
+            camera.far_plane = 50.0f;
+            const auto draw = [&](renderer::MaterialId material, Vector<u8>* pixels)
+            {
+                renderer::RenderSceneDesc desc;
+                desc.max_objects = 8;
+                desc.max_lights = 8;
+                renderer::RenderScene scene(desc);
+                renderer::RenderObjectDesc od;
+                od.mesh = cube.Get();
+                od.material = material.index;
+                od.transform = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(0, 0, 0));
+                scene.AddObject(od);
+                renderer::Light sun;
+                sun.type = renderer::LightType::Directional;
+                sun.direction = Vec3(0.3f, 0.8f, 0.6f);
+                renderer::Light point;
+                point.type = renderer::LightType::Point;
+                point.position = Vec3(0.8f, 1.0f, 1.2f);
+                point.radius = 6.0f;
+                renderer::Light ambient;
+                ambient.type = renderer::LightType::Ambient;
+                ambient.intensity = 0.6f;
+                scene.AddLight(sun);
+                scene.AddLight(point);
+                scene.AddLight(ambient);
+                return Render(frame, device.Get(), scene, camera, pixels);
+            };
+            Vector<u8> scalars;
+            Vector<u8> mapped;
+            Vector<u8> plain;
+            REQUIRE(draw(mr_scalars, &scalars));
+            REQUIRE(draw(mr_map, &mapped));
+            REQUIRE(draw(mr_unmapped, &plain));
+            CHECK(LargestDifference(scalars, mapped) <= 1);  // the map's products
+            CHECK(LargestDifference(plain, mapped) > 8);     // and the map did change the picture
+            REQUIRE(draw(occ_scalar, &scalars));
+            REQUIRE(draw(occ_map, &mapped));
+            REQUIRE(draw(no_maps, &plain));
+            CHECK(LargestDifference(scalars, mapped) <= 1);
+            CHECK(LargestDifference(plain, mapped) > 8);
+            REQUIRE(draw(white_maps, &mapped));
+            CHECK(LargestDifference(plain, mapped) == 0);  // a white map is the default: nothing changes
+            device->WaitIdle();
+            const Array<renderer::MaterialId, 3> mapped_materials = {mr_map, occ_map, white_maps};
+            for (const renderer::MaterialId& id : mapped_materials)
+            {
+                materials->SetTexture(id, "metallic_roughness_tex", renderer::GpuTextureConstPtr{});
+                materials->SetTexture(id, "occlusion_tex", renderer::GpuTextureConstPtr{});
+            }
         }
         device->WaitIdle();
         device.Reset();

@@ -12250,44 +12250,44 @@ renderer::GBufferTemplates::colored	variable	renderer	renderer-gbuffertemplates-
 renderer::GBufferTemplates::skinned	variable	renderer	renderer-gbuffertemplates-skinned	renderer.md	engine/renderer/gbuffer.h:212
 renderer::GBufferTemplates::skinned_colored	variable	renderer	renderer-gbuffertemplates-skinned-colored	renderer.md	engine/renderer/gbuffer.h:214
 renderer::CreateGBufferTemplates(MaterialSystem*)	function	renderer	renderer-creategbuffertemplates-materialsystem-star	renderer.md	engine/renderer/gbuffer.h:224
-renderer::CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)	function	renderer	renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star	renderer.md	engine/renderer/gbuffer.h:244
-renderer::ApplyGBufferDefaults(MaterialSystem*,MaterialId)	function	renderer	renderer-applygbufferdefaults-materialsystem-star-materialid	renderer.md	engine/renderer/gbuffer.h:256
-renderer::GBufferTargets	struct	renderer	renderer-gbuffertargets	renderer.md	engine/renderer/gbuffer.h:261
-renderer::GBufferTargets::albedo	variable	renderer	renderer-gbuffertargets-albedo	renderer.md	engine/renderer/gbuffer.h:264
-renderer::GBufferTargets::normal	variable	renderer	renderer-gbuffertargets-normal	renderer.md	engine/renderer/gbuffer.h:266
-renderer::GBufferTargets::material	variable	renderer	renderer-gbuffertargets-material	renderer.md	engine/renderer/gbuffer.h:268
-renderer::GBufferTargets::depth	variable	renderer	renderer-gbuffertargets-depth	renderer.md	engine/renderer/gbuffer.h:271
-renderer::GBufferStats	struct	renderer	renderer-gbufferstats	renderer.md	engine/renderer/gbuffer.h:277
-renderer::GBufferStats::visible	variable	renderer	renderer-gbufferstats-visible	renderer.md	engine/renderer/gbuffer.h:280
-renderer::GBufferStats::drawn_objects	variable	renderer	renderer-gbufferstats-drawn-objects	renderer.md	engine/renderer/gbuffer.h:282
-renderer::GBufferStats::draws	variable	renderer	renderer-gbufferstats-draws	renderer.md	engine/renderer/gbuffer.h:284
-renderer::GBufferStats::rejected	variable	renderer	renderer-gbufferstats-rejected	renderer.md	engine/renderer/gbuffer.h:286
-renderer::GBufferStats::pipeline_binds	variable	renderer	renderer-gbufferstats-pipeline-binds	renderer.md	engine/renderer/gbuffer.h:288
-renderer::GBufferStats::material_binds	variable	renderer	renderer-gbufferstats-material-binds	renderer.md	engine/renderer/gbuffer.h:290
-renderer::GBufferStats::skinned_dropped	variable	renderer	renderer-gbufferstats-skinned-dropped	renderer.md	engine/renderer/gbuffer.h:293
-renderer::GBufferPass	class	renderer	renderer-gbufferpass	renderer.md	engine/renderer/gbuffer.h:301
-renderer::GBufferPass::GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/gbuffer.h:311
-renderer::GBufferPass::~GBufferPass()	function	renderer	renderer-gbufferpass-tilde-gbufferpass	renderer.md	engine/renderer/gbuffer.h:313
-renderer::GBufferPass::GBufferPass(const GBufferPass&)	function	renderer	renderer-gbufferpass-gbufferpass-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:314
-renderer::GBufferPass::operator=(const GBufferPass&)	function	renderer	renderer-gbufferpass-operator-eq-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:315
-renderer::GBufferPass::Prepare(const RenderScene&,const Frustum&)	function	renderer	renderer-gbufferpass-prepare-const-renderscene-amp-const-frustum-amp	renderer.md	engine/renderer/gbuffer.h:331
-renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	renderer-gbufferpass-addtograph-rendergraph-star-u32-u32	renderer.md	engine/renderer/gbuffer.h:342
-renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:351
-renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:356
-renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:359
-renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:416
-renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:424
-renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:426
-renderer::GBufferDebugView::GBufferDebugView(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:427
-renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-operator-eq-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:428
-renderer::GBufferDebugView::RegisterWith(DeviceResources*)	function	renderer	renderer-gbufferdebugview-registerwith-deviceresources-star	renderer.md	engine/renderer/gbuffer.h:436
-renderer::GBufferDebugView::Release()	function	renderer	renderer-gbufferdebugview-release	renderer.md	engine/renderer/gbuffer.h:439
-renderer::GBufferDebugView::Recreate(rhi::Device*)	function	renderer	renderer-gbufferdebugview-recreate-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:447
-renderer::GBufferDebugView::Live() const	function	renderer	renderer-gbufferdebugview-live-const	renderer.md	engine/renderer/gbuffer.h:448
-renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-gbufferdebugview-recreatablename-const	renderer.md	engine/renderer/gbuffer.h:449
-renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:453
-renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:461
-renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:484
+renderer::CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)	function	renderer	renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star	renderer.md	engine/renderer/gbuffer.h:247
+renderer::ApplyGBufferDefaults(MaterialSystem*,MaterialId)	function	renderer	renderer-applygbufferdefaults-materialsystem-star-materialid	renderer.md	engine/renderer/gbuffer.h:259
+renderer::GBufferTargets	struct	renderer	renderer-gbuffertargets	renderer.md	engine/renderer/gbuffer.h:264
+renderer::GBufferTargets::albedo	variable	renderer	renderer-gbuffertargets-albedo	renderer.md	engine/renderer/gbuffer.h:267
+renderer::GBufferTargets::normal	variable	renderer	renderer-gbuffertargets-normal	renderer.md	engine/renderer/gbuffer.h:269
+renderer::GBufferTargets::material	variable	renderer	renderer-gbuffertargets-material	renderer.md	engine/renderer/gbuffer.h:271
+renderer::GBufferTargets::depth	variable	renderer	renderer-gbuffertargets-depth	renderer.md	engine/renderer/gbuffer.h:274
+renderer::GBufferStats	struct	renderer	renderer-gbufferstats	renderer.md	engine/renderer/gbuffer.h:280
+renderer::GBufferStats::visible	variable	renderer	renderer-gbufferstats-visible	renderer.md	engine/renderer/gbuffer.h:283
+renderer::GBufferStats::drawn_objects	variable	renderer	renderer-gbufferstats-drawn-objects	renderer.md	engine/renderer/gbuffer.h:285
+renderer::GBufferStats::draws	variable	renderer	renderer-gbufferstats-draws	renderer.md	engine/renderer/gbuffer.h:287
+renderer::GBufferStats::rejected	variable	renderer	renderer-gbufferstats-rejected	renderer.md	engine/renderer/gbuffer.h:289
+renderer::GBufferStats::pipeline_binds	variable	renderer	renderer-gbufferstats-pipeline-binds	renderer.md	engine/renderer/gbuffer.h:291
+renderer::GBufferStats::material_binds	variable	renderer	renderer-gbufferstats-material-binds	renderer.md	engine/renderer/gbuffer.h:293
+renderer::GBufferStats::skinned_dropped	variable	renderer	renderer-gbufferstats-skinned-dropped	renderer.md	engine/renderer/gbuffer.h:296
+renderer::GBufferPass	class	renderer	renderer-gbufferpass	renderer.md	engine/renderer/gbuffer.h:304
+renderer::GBufferPass::GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/gbuffer.h:314
+renderer::GBufferPass::~GBufferPass()	function	renderer	renderer-gbufferpass-tilde-gbufferpass	renderer.md	engine/renderer/gbuffer.h:316
+renderer::GBufferPass::GBufferPass(const GBufferPass&)	function	renderer	renderer-gbufferpass-gbufferpass-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:317
+renderer::GBufferPass::operator=(const GBufferPass&)	function	renderer	renderer-gbufferpass-operator-eq-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:318
+renderer::GBufferPass::Prepare(const RenderScene&,const Frustum&)	function	renderer	renderer-gbufferpass-prepare-const-renderscene-amp-const-frustum-amp	renderer.md	engine/renderer/gbuffer.h:334
+renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	renderer-gbufferpass-addtograph-rendergraph-star-u32-u32	renderer.md	engine/renderer/gbuffer.h:345
+renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:354
+renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:359
+renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:362
+renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:419
+renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:427
+renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:429
+renderer::GBufferDebugView::GBufferDebugView(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:430
+renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-operator-eq-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:431
+renderer::GBufferDebugView::RegisterWith(DeviceResources*)	function	renderer	renderer-gbufferdebugview-registerwith-deviceresources-star	renderer.md	engine/renderer/gbuffer.h:439
+renderer::GBufferDebugView::Release()	function	renderer	renderer-gbufferdebugview-release	renderer.md	engine/renderer/gbuffer.h:442
+renderer::GBufferDebugView::Recreate(rhi::Device*)	function	renderer	renderer-gbufferdebugview-recreate-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:450
+renderer::GBufferDebugView::Live() const	function	renderer	renderer-gbufferdebugview-live-const	renderer.md	engine/renderer/gbuffer.h:451
+renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-gbufferdebugview-recreatablename-const	renderer.md	engine/renderer/gbuffer.h:452
+renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:456
+renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:464
+renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:487
 renderer::GlyphAtlasTexture	class	renderer	renderer-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:28
 renderer::GlyphAtlasTexture::GlyphAtlasTexture()	function	renderer	renderer-glyphatlastexture-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:31
 renderer::GlyphAtlasTexture::~GlyphAtlasTexture()	function	renderer	renderer-glyphatlastexture-tilde-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:33

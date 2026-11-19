@@ -9,6 +9,10 @@
 //       picture uv' is kept half a texel from its edge, so the filter never reads across the edge (no repeat bleed)
 //   VERTEX_COLOR:  albedo *= SrgbToLinear(vertex_color.rgb)         (vertex colors are authored in sRGB)
 //   ALPHA_TEST:    discard when base_color.a * sample(albedo_tex, uv).a * vertex_color.a < alpha_cutoff
+//   metallic-roughness map (glTF): mr = sample(metallic_roughness_tex, uv); roughness = roughness * mr.g,
+//       metallic = metallic * mr.b (an unset slot is white: the scalars alone)
+//   occlusion map (glTF): occ = sample(occlusion_tex, uv).r; occlusion = occlusion * (1 + occlusion_strength * (occ - 1))
+//   both maps read the mesh's uv as it is (like the normal map; albedo_uv transforms the albedo only)
 //   N = normalize(world normal); NORMAL_MAP: t = sample(normal_tex, uv).xyz * 2 - 1,
 //       T = normalize(world tangent.xyz - N * dot(N, tangent.xyz)), B = cross(N, T) * tangent.w,
 //       N = normalize(T * t.x + B * t.y + N * t.z)
@@ -18,8 +22,9 @@
 //   input  location 0: float3 world normal; 1: float2 uv; 2: float4 world tangent; 3: float4 color (VERTEX_COLOR)
 //   set 1, binding 0: uniform buffer MaterialParams (std140): float4 base_color @0; float roughness @16; float metallic @20;
 //       float emissive_scale @24; float alpha_cutoff @28; float occlusion @32; uint flags @36;
-//       float4 albedo_uv @48; float4 albedo_uv_outside @64
-//   set 1, binding 1: sampled texture albedo_tex; binding 2: sampled texture normal_tex (NORMAL_MAP); binding 3: sampler
+//       float4 albedo_uv @48; float4 albedo_uv_outside @64; float occlusion_strength @80
+//   set 1, binding 1: sampled texture albedo_tex; binding 2: sampled texture normal_tex (NORMAL_MAP); binding 3: sampler;
+//       binding 4: sampled texture metallic_roughness_tex (linear); binding 5: sampled texture occlusion_tex (linear)
 
 // permutation-options: NORMAL_MAP ALPHA_TEST VERTEX_COLOR
 
@@ -36,12 +41,15 @@ struct MaterialParams {
     uint flags;
     float4 albedo_uv;          // scale u, scale v, offset u, offset v
     float4 albedo_uv_outside;  // linear rgb shown outside the picture; a = 0: no mask (the sampler's address mode rules)
+    float occlusion_strength;  // glTF's occlusionTexture.strength: 0 ignores the occlusion map, 1 applies it fully
 };
 
 [[vk::binding(0, 1)]] ConstantBuffer<MaterialParams> material ENGINE_REGISTER(b0, space1);
 [[vk::binding(1, 1)]] Texture2D albedo_tex ENGINE_REGISTER(t1, space1);
 [[vk::binding(2, 1)]] Texture2D normal_tex ENGINE_REGISTER(t2, space1);
 [[vk::binding(3, 1)]] SamplerState linear_sampler ENGINE_REGISTER(s3, space1);
+[[vk::binding(4, 1)]] Texture2D metallic_roughness_tex ENGINE_REGISTER(t4, space1);
+[[vk::binding(5, 1)]] Texture2D occlusion_tex ENGINE_REGISTER(t5, space1);
 
 struct FragmentInput {
     [[vk::location(0)]] float3 normal : NORMAL;
@@ -92,9 +100,13 @@ FragmentOutput main(FragmentInput input) {
     float3 bitangent = cross(n, tangent) * input.tangent.w;
     n = normalize(tangent * t.x + bitangent * t.y + n * t.z);
 #endif
+    const float4 metal_rough = metallic_roughness_tex.Sample(linear_sampler, input.uv);
+    const float occlusion_texel = occlusion_tex.Sample(linear_sampler, input.uv).r;
+    const float occlusion = material.occlusion * (1.0 + material.occlusion_strength * (occlusion_texel - 1.0));
     FragmentOutput output;
-    output.albedo = float4(albedo, material.occlusion);
+    output.albedo = float4(albedo, occlusion);
     output.normal = OctEncode(n);
-    output.material = float4(material.roughness, material.metallic, material.emissive_scale, float(material.flags) / 255.0);
+    output.material = float4(material.roughness * metal_rough.g, material.metallic * metal_rough.b,
+                             material.emissive_scale, float(material.flags) / 255.0);
     return output;
 }

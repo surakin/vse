@@ -200,20 +200,25 @@ void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near)
 namespace
 {
 
-constexpr TemplateTextureSlot kGBufferSlots[2] = {{"albedo_tex", SlotShape::Texture2D, SlotColorSpace::Srgb},
-                                                  {"normal_tex", SlotShape::Texture2D, SlotColorSpace::Linear}};
+// The metallic-roughness and occlusion maps (glTF coverage Day 1) are linear; unset, they get the white default texture
+// (by name: renderer::MaterialSystem), so the scalar parameters alone decide, as before the maps existed.
+constexpr TemplateTextureSlot kGBufferSlots[4] = {
+    {"albedo_tex", SlotShape::Texture2D, SlotColorSpace::Srgb},
+    {"normal_tex", SlotShape::Texture2D, SlotColorSpace::Linear},
+    {"metallic_roughness_tex", SlotShape::Texture2D, SlotColorSpace::Linear},
+    {"occlusion_tex", SlotShape::Texture2D, SlotColorSpace::Linear}};
 
-constexpr TemplateParamDefault kGBufferParamDefaults[8] = {
-    {"base_color", {1, 1, 1, 1}},     {"roughness", {0.5f, 0, 0, 0}},     {"metallic", {0, 0, 0, 0}},
-    {"emissive_scale", {0, 0, 0, 0}}, {"alpha_cutoff", {0.5f, 0, 0, 0}},  {"occlusion", {1, 0, 0, 0}},
-    {"albedo_uv", {1, 1, 0, 0}},      {"albedo_uv_outside", {0, 0, 0, 0}}};
+constexpr TemplateParamDefault kGBufferParamDefaults[9] = {
+    {"base_color", {1, 1, 1, 1}},     {"roughness", {0.5f, 0, 0, 0}},      {"metallic", {0, 0, 0, 0}},
+    {"emissive_scale", {0, 0, 0, 0}}, {"alpha_cutoff", {0.5f, 0, 0, 0}},   {"occlusion", {1, 0, 0, 0}},
+    {"albedo_uv", {1, 1, 0, 0}},      {"albedo_uv_outside", {0, 0, 0, 0}}, {"occlusion_strength", {1, 0, 0, 0}}};
 
 const GBufferTemplateInfo kGBufferTemplateInfos[4] = {
-    {"gbuffer", false, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 2, kGBufferParamDefaults, 8},
-    {"gbuffer_color", false, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 2, kGBufferParamDefaults, 8},
-    {"gbuffer_skinned", true, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 2, kGBufferParamDefaults, 8},
-    {"gbuffer_skinned_color", true, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 2, kGBufferParamDefaults,
-     8},
+    {"gbuffer", false, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 4, kGBufferParamDefaults, 9},
+    {"gbuffer_color", false, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 4, kGBufferParamDefaults, 9},
+    {"gbuffer_skinned", true, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 4, kGBufferParamDefaults, 9},
+    {"gbuffer_skinned_color", true, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 4, kGBufferParamDefaults,
+     9},
 };
 
 }  // namespace
@@ -237,8 +242,10 @@ const GBufferTemplateInfo* FindGBufferTemplateInfo(const char* name)
 GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
 {
     ENGINE_ASSERT(materials != nullptr, "CreateGBufferTemplates: materials is null");
-    const TextureDefault defaults[2] = {{"albedo_tex", DefaultTexture::White},
-                                        {"normal_tex", DefaultTexture::FlatNormal}};
+    const TextureDefault defaults[4] = {{"albedo_tex", DefaultTexture::White},
+                                        {"normal_tex", DefaultTexture::FlatNormal},
+                                        {"metallic_roughness_tex", DefaultTexture::White},
+                                        {"occlusion_tex", DefaultTexture::White}};
     TemplateId ids[4];  // plain, colored, skinned, skinned_colored
     for (u32 variant = 0; variant < 4; ++variant)
     {
@@ -284,7 +291,7 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
             d.state.depth_write = true;
             d.state.depth_compare = rhi::CompareOp::Less;
             d.texture_defaults = defaults;
-            d.texture_default_count = 2;
+            d.texture_default_count = 4;
             d.skinned = skinned;
             id = materials->CreateTemplate(d);
         }

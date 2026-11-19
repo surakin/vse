@@ -150,7 +150,8 @@ TEST_CASE("a valid material round-trips with std140 parameters and typed texture
     REQUIRE(LoadMaterialBlob(ByteSpan(blob.Data(), blob.Size()), types, &m, &id).Ok());
     CHECK(id == ResourceId::FromValue(0xa1));
     CHECK(StringView(m.template_name.text, CStrLength(m.template_name.text)) == StringView("gbuffer"));
-    CHECK(m.block.Size() == 80);  // the std140 block (the albedo_uv and albedo_uv_outside vectors at 48 and 64)
+    CHECK(m.block.Size() == 96);  // the std140 block (the albedo_uv and albedo_uv_outside vectors at 48 and 64, the
+                                  // occlusion strength at 80, the block rounded to 16 bytes)
     CHECK(MtFloatAt(m, 16) == 0.25f);
     CHECK(MtFloatAt(m, 20) == 0.0f);  // the template's default metallic
     CHECK(MtFloatAt(m, 4) == 0.5f);   // base_color.g
@@ -160,6 +161,7 @@ TEST_CASE("a valid material round-trips with std140 parameters and typed texture
     CHECK(MtFloatAt(m, 56) == 0.0f);
     CHECK(MtFloatAt(m, 60) == 0.0f);
     CHECK(MtFloatAt(m, 76) == 0.0f);  // albedo_uv_outside: alpha 0, no mask
+    CHECK(MtFloatAt(m, 80) == 1.0f);  // the default occlusion_strength (glTF coverage Day 1)
     CHECK(m.options.Size() == 1);
     CHECK(m.params.Size() == 2);
     REQUIRE(m.textures.Size() == 2);
@@ -176,6 +178,26 @@ TEST_CASE("a valid material round-trips with std140 parameters and typed texture
     CHECK_FALSE(m.state.set_depth_test);
 }
 
+// glTF coverage Day 1: the metallic-roughness and occlusion maps are slots of every G-buffer template, with no
+// permutation option, and take linear textures.
+TEST_CASE("a material binds linear metallic-roughness and occlusion maps without an option", "[asset][material]")
+{
+    const MtResolver r = MtMakeResolver();
+    const Vector<byte> blob = MtMintOk("template gbuffer\n"
+                                       "param occlusion_strength float 0.5\n"
+                                       "texture metallic_roughness_tex normal.texr\n"
+                                       "texture occlusion_tex normal.texr\n",
+                                       r);
+    TypeRegistry types;
+    MaterialAssetData m;
+    REQUIRE(LoadMaterialBlob(ByteSpan(blob.Data(), blob.Size()), types, &m).Ok());
+    REQUIRE(m.textures.Size() == 2);
+    CHECK(StringView(m.textures[0].slot.text, CStrLength(m.textures[0].slot.text)) ==
+          StringView("metallic_roughness_tex"));
+    CHECK(StringView(m.textures[1].slot.text, CStrLength(m.textures[1].slot.text)) == StringView("occlusion_tex"));
+    CHECK(MtFloatAt(m, 80) == 0.5f);
+}
+
 TEST_CASE("a material with three textures lists three dependencies", "[asset][material]")
 {
     MtResolver r = MtMakeResolver();
@@ -188,7 +210,8 @@ TEST_CASE("a material with three textures lists three dependencies", "[asset][ma
     BlobReader reader;
     REQUIRE(reader.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok());
     CHECK(reader.DependencyCount() == 2);
-    // Three bindings is above the template's two slots; a repeated texture is one dependency.
+    // Three bindings, one of a slot the template does not have (the blob builder does not check slots); a repeated
+    // texture is one dependency.
     MaterialAssetData data;
     data.template_name = MaterialName();
     MakeMaterialName("gbuffer", 7, &data.template_name);
@@ -232,6 +255,8 @@ TEST_CASE("invalid material sources are refused with the line", "[asset][materia
         {"id 00000000000000a1\ntemplate gbuffer\ntexture albedo_tex normal.texr\n", 3, "sRGB"},
         {"id 00000000000000a1\ntemplate gbuffer\ntexture albedo_tex sky.texr\n", 3, "2D texture"},
         {"id 00000000000000a1\ntemplate gbuffer\ntexture normal_tex normal.texr\n", 3, "no texture slot"},
+        {"id 00000000000000a1\ntemplate gbuffer\ntexture metallic_roughness_tex albedo.texr\n", 3, "takes linear"},
+        {"id 00000000000000a1\ntemplate gbuffer\ntexture occlusion_tex albedo.texr\n", 3, "takes linear"},
         {"id 00000000000000a1\ntemplate gbuffer\nsampler nothing filter linear\n", 3, "no sampler slot"},
         {"id 00000000000000a1\ntemplate gbuffer\noption BOGUS\n", 0, "BOGUS"},
         {"id 00000000000000a1\ntemplate gbuffer\nstate cull sideways\n", 3, "cull"},

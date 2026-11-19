@@ -540,8 +540,8 @@ only when they change and creates nothing; the frame and object bind groups are 
 Materials come from `CreateGBufferMaterial(materials, templates, options, name)`. The options (`normal_map`, `alpha_test`,
 `vertex_color`) pick the fragment permutation, and `vertex_color` also picks the vertex shader that reads the mesh's color, so
 the two stages cannot disagree. Per-vertex colors are authored in sRGB; the shader converts them to linear and multiplies
-the albedo. The parameters are `base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion` and `flags` (bit `kMaterialFlagUnlit`: the pixel shows its base colour, no ambient, light or emissive term, and the point lights skip it; tone mapping still applies),
-and the textures `albedo_tex` and `normal_tex`. `Prepare` leaves an object out and names it in `LastError` when its mesh was
+the albedo. The parameters are `base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion`, `occlusion_strength` and `flags` (bit `kMaterialFlagUnlit`: the pixel shows its base colour, no ambient, light or emissive term, and the point lights skip it; tone mapping still applies),
+and the textures `albedo_tex`, `normal_tex`, `metallic_roughness_tex` and `occlusion_tex`. The last two are glTF's maps, linear and sampled at the mesh's coordinates: roughness is multiplied by the green channel, metallic by the blue, and occlusion by `1 + occlusion_strength * (red - 1)`. Left unset they are white, so the scalars alone decide, as before the maps existed. `Prepare` leaves an object out and names it in `LastError` when its mesh was
 never prepared (`GpuMesh::RecordPrepare`, then `MarkReady` after the submit), its material does not exist, no pipeline fits
 the mesh, or the mesh and the material disagree about vertex colors (a colored mesh through a material that ignores them is
 refused, not drawn plain). The rest of the frame is still drawn and `Prepare` returns false.
@@ -967,6 +967,12 @@ Recorded by `renderer_bench` on 2026-11-05: NVIDIA GeForce RTX 3060, AMD Ryzen 9
 off, a 1280x720 offscreen target, the demo scene with 300 point lights (except where the light count varies), the device idled
 after each frame outside the timer so the numbers are CPU time. Two runs agree within a few percent. They are a baseline, not
 a promise, and are never asserted in CI. Do not tune on a Debug build: it is five to seven times slower here.
+
+`renderer_bench --section gpu` (glTF coverage Day 1) times the whole frame from submission to the end of `WaitIdle`, with no
+point lights, at 1,000 and 10,000 objects: the GPU work is inside the number, so a change of the geometry shader shows as a
+change of these medians. The RHI has no timestamp queries, so no pass is timed alone. On the Windows PC (Release, 2026-11-19)
+the two map samples the G-buffer gained left the medians where they were: 0.94-0.95 ms (Direct3D 12) and 0.84 ms (Vulkan) at
+1,000 objects before and after.
 
 | Measurement | Result |
 |---|---|

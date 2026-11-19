@@ -1438,11 +1438,13 @@ u32 KindOfSlot(StringView name)
         return ENGINE_SLOT_COLOR;
     }
     if (name == StringView("roughness") || name == StringView("metallic") || name == StringView("emissive_scale") ||
-        name == StringView("alpha_cutoff") || name == StringView("occlusion"))
+        name == StringView("alpha_cutoff") || name == StringView("occlusion") ||
+        name == StringView("occlusion_strength"))
     {
         return ENGINE_SLOT_FLOAT;
     }
-    if (name == StringView("albedo_tex") || name == StringView("normal_tex"))
+    if (name == StringView("albedo_tex") || name == StringView("normal_tex") ||
+        name == StringView("metallic_roughness_tex") || name == StringView("occlusion_tex"))
     {
         return ENGINE_SLOT_TEXTURE;
     }
@@ -1564,7 +1566,8 @@ engine_status SetSlotOverride(engine_handle world, u64 key, engine_string slot, 
     if (expected == 0)
     {
         SetLastError("invalid_argument: the material has no slot '%.*s' (base_color, roughness, metallic, "
-                     "emissive_scale, alpha_cutoff, occlusion, albedo_tex, normal_tex, albedo_uv, albedo_uv_outside)",
+                     "emissive_scale, alpha_cutoff, occlusion, occlusion_strength, albedo_tex, normal_tex, "
+                     "metallic_roughness_tex, occlusion_tex, albedo_uv, albedo_uv_outside)",
                      static_cast<int>(slot.length < 40 ? slot.length : 40), slot.data != nullptr ? slot.data : "");
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }

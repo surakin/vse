@@ -743,10 +743,12 @@ extern "C"
     /* A per-entity override of one slot of the material its mesh reference names (Phase 24 Day 362): the entity draws
      * with its own copy of the material in which that slot has this value, and every other entity that uses the
      * material is untouched. The slots are those of the engine's G-buffer material: ENGINE_SLOT_COLOR for "base_color";
-     * ENGINE_SLOT_FLOAT for "roughness", "metallic", "emissive_scale", "alpha_cutoff" and "occlusion";
-     * ENGINE_SLOT_TEXTURE (a resource) or ENGINE_SLOT_HOST_TEXTURE (a host texture, which only the surfaces that draw
-     * the entity upload, once per device; destroying it or having no pixels yet leaves the slot at the material's own
-     * value, counted in engine_frame_stats.slots_reverted) for "albedo_tex" and "normal_tex".
+     * ENGINE_SLOT_FLOAT for "roughness", "metallic", "emissive_scale", "alpha_cutoff", "occlusion" and
+     * "occlusion_strength"; ENGINE_SLOT_TEXTURE (a resource) or ENGINE_SLOT_HOST_TEXTURE (a host texture, which only
+     * the surfaces that draw the entity upload, once per device; destroying it or having no pixels yet leaves the slot
+     * at the material's own value, counted in engine_frame_stats.slots_reverted) for "albedo_tex", "normal_tex",
+     * "metallic_roughness_tex" and "occlusion_tex" (glTF's maps, linear: roughness times green, metallic times blue,
+     * occlusion times 1 + occlusion_strength * (red - 1); unset they are white).
      *
      * A texture-coordinate transform for the albedo (maintenance, 2026-11-18), to fit a picture of another aspect into
      * a quad without copying its pixels: ENGINE_SLOT_VEC4 for "albedo_uv" = (scale u, scale v, offset u, offset v), the

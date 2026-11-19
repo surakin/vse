@@ -1042,6 +1042,28 @@ int main(void)
             CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("albedo_uv"), &uv), ENGINE_OK);
             CHECK_STATUS(g_api->entity_clear_slot_override(world, left, Str("albedo_uv")), ENGINE_OK);
         }
+        {
+            /* glTF coverage Day 1: the metallic-roughness and occlusion maps are texture slots (a colour is the wrong
+               kind, not an unknown name), and the occlusion strength a float slot */
+            static const char* const kMapSlots[2] = {"metallic_roughness_tex", "occlusion_tex"};
+            engine_slot_override strength;
+            for (int k = 0; k < 2; ++k)
+            {
+                engine_buffer message;
+                CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str(kMapSlots[k]), &color),
+                             ENGINE_ERROR_INVALID_ARGUMENT);
+                memset(&message, 0, sizeof(message));
+                CHECK_STATUS(g_api->last_error(&message), ENGINE_OK);
+                CHECK(message.data != NULL && strstr((const char*)message.data, "another kind") != NULL);
+                engine_buffer_release(&message);
+            }
+            memset(&strength, 0, sizeof(strength));
+            strength.struct_size = sizeof(strength);
+            strength.kind = ENGINE_SLOT_FLOAT;
+            strength.value[0] = 0.5f;
+            CHECK_STATUS(g_api->entity_set_slot_override(world, left, Str("occlusion_strength"), &strength), ENGINE_OK);
+            CHECK_STATUS(g_api->entity_clear_slot_override(world, left, Str("occlusion_strength")), ENGINE_OK);
+        }
         CHECK_STATUS(g_api->entity_clear_slot_override(world, right, Str("base_color")), ENGINE_ERROR_NOT_FOUND);
         CHECK_STATUS(g_api->entity_clear_slot_override(world, left, nothing), ENGINE_OK); /* every override */
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);

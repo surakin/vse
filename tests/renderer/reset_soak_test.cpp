@@ -193,6 +193,51 @@ TEST_CASE("A reset while the job scheduler runs records on the new device afterw
     rig.TearDown();
 }
 
+// glTF coverage Day 1: the metallic-roughness and occlusion slots are bound by owner like the albedo, so a device reset
+// rebuilds the texture and both slots draw from the new one.
+TEST_CASE("The metallic-roughness and occlusion maps follow their texture through device resets",
+          "[reset_soak][material]")
+{
+    SoakQuietLog quiet;
+    reset_rig::Rig rig;
+    REQUIRE(rig.Create(rhi::Backend::Null));
+    MaterialSystem* materials = rig.frame.Materials();
+    MaterialId plastic;
+    for (u32 i = 0; i < 16 && !plastic.IsValid(); ++i)
+    {
+        const MaterialId id = materials->MaterialAtIndex(i);
+        if (id.IsValid() &&
+            materials->EffectiveTexture(id, "albedo_tex") == materials->GetDefaultTexture(DefaultTexture::White))
+        {
+            plastic = id;
+        }
+    }
+    REQUIRE(plastic.IsValid());
+    GpuTexturePtr map = MakeShared<GpuTexture>();
+    TextureImage image;
+    image.desc.width = image.desc.height = 4;
+    image.desc.format = rhi::Format::RGBA8_UNorm;
+    image.desc.usage = rhi::TextureUsage::Sampled;
+    image.pixels.Resize(64);
+    REQUIRE(map->Create(rig.host.GetDevice(), static_cast<TextureImage&&>(image), &rig.registry, "orm"));
+    REQUIRE(materials->SetTexture(plastic, "metallic_roughness_tex", map));
+    REQUIRE(materials->SetTexture(plastic, "occlusion_tex", map));
+    REQUIRE(rig.Render() == FrameStatus::Ok);
+    for (int i = 0; i < 3; ++i)
+    {
+        REQUIRE(rig.ResetDevice(i % 2 == 0).ok);
+        REQUIRE(rig.Render() == FrameStatus::Ok);
+        REQUIRE(map->Handle().IsValid());
+        CHECK(materials->EffectiveTexture(plastic, "metallic_roughness_tex") == map->Handle());
+        CHECK(materials->EffectiveTexture(plastic, "occlusion_tex") == map->Handle());
+    }
+    materials->SetTexture(plastic, "metallic_roughness_tex", GpuTextureConstPtr{});
+    materials->SetTexture(plastic, "occlusion_tex", GpuTextureConstPtr{});
+    map->Destroy();
+    CHECK(static_cast<rhi::NullDevice*>(rig.host.GetDevice())->ErrorCount() == 0);
+    rig.TearDown();
+}
+
 TEST_CASE("A material follows a texture owner that was rebuilt on its own", "[reset_soak][material]")
 {
     SoakQuietLog quiet;

@@ -12,6 +12,7 @@
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
 #include "cstr/mem_ops.h"
+#include "containers/array.h"
 #include "containers/vector.h"
 #include "test_text.h"
 
@@ -203,6 +204,46 @@ TEST_CASE("G-buffer materials pick the shader modules their options name", "[ren
     CHECK_FALSE(rig.sys->MaterialAtIndex(999).IsValid());
     GBufferTemplates none;
     CHECK_FALSE(CreateGBufferMaterial(rig.sys, none, GBufferOptions{}, "m").IsValid());
+}
+
+// glTF coverage Day 1: every G-buffer template has the metallic-roughness and occlusion map slots, linear, and a
+// material that leaves them unset samples the white default (the scalars alone decide, as before the maps existed).
+TEST_CASE("The G-buffer templates have linear metallic-roughness and occlusion slots that default to white",
+          "[renderer][gbuffer]")
+{
+    const Array<const char*, 4> names = {"gbuffer", "gbuffer_color", "gbuffer_skinned", "gbuffer_skinned_color"};
+    for (const char* name : names)
+    {
+        INFO(name);
+        const GBufferTemplateInfo* info = FindGBufferTemplateInfo(name);
+        REQUIRE(info != nullptr);
+        bool mr = false;
+        bool occlusion = false;
+        for (u32 i = 0; i < info->slot_count; ++i)
+        {
+            const StringView slot(info->slots[i].name);
+            mr = mr ||
+                 (slot == StringView("metallic_roughness_tex") && info->slots[i].color_space == SlotColorSpace::Linear);
+            occlusion = occlusion ||
+                        (slot == StringView("occlusion_tex") && info->slots[i].color_space == SlotColorSpace::Linear);
+        }
+        CHECK(mr);
+        CHECK(occlusion);
+        bool strength = false;
+        for (u32 i = 0; i < info->default_count; ++i)
+        {
+            strength = strength || (StringView(info->defaults[i].name) == StringView("occlusion_strength") &&
+                                    info->defaults[i].value[0] == 1.0f);
+        }
+        CHECK(strength);
+    }
+    Rig rig;
+    const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
+    REQUIRE(m.IsValid());
+    const rhi::TextureHandle white = rig.sys->GetDefaultTexture(DefaultTexture::White);
+    CHECK(rig.sys->EffectiveTexture(m, "metallic_roughness_tex") == white);
+    CHECK(rig.sys->EffectiveTexture(m, "occlusion_tex") == white);
+    CHECK(rig.sys->SetFloat(m, "occlusion_strength", 0.5f));
 }
 
 TEST_CASE("A colored mesh gets a pipeline from a vertex color material and is refused by one without",
