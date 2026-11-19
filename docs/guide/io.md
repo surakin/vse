@@ -401,10 +401,11 @@ queued events; `Wait(timeout_ms)` sleeps until one arrives, `Wake()` (any thread
 - **Merging:** within one `Poll` the events of one name are merged (a create then writes is one `Created`, a create then a remove is nothing), and a backlog
   of 4096 events collapses into one `Overflow`.
 - **An event is a hint:** read the file and compare what you find (a content hash), as `script::ScriptDevWatcher` does. An editor that saves by renaming a temporary
-  file over the target arrives as a `Renamed` (inotify) or `Created`, not a `Modified`.
-- **Backends:** inotify on Linux; the polling backend (list the directory every `poll_interval_ms`, compare names, sizes and times; a rename is a
-  `Removed` and a `Created`) everywhere else until the Windows (`ReadDirectoryChangesW`) and macOS (FSEvents) backends land on Days 473 and 474, and wherever a
-  native watch cannot start (a watch limit, a file system without notifications). `IsNative()` tells which one you got; `WatchOptions::force_polling` picks polling.
+  file over the target arrives as a `Renamed` (inotify, `ReadDirectoryChangesW`) or `Created`, not a `Modified`.
+- **Backends:** inotify on Linux; `ReadDirectoryChangesW` on Windows (Day 473: a write is reported as it happens, not only when the file is closed, and a read
+  the system cancels or overflows is an `Overflow`); the polling backend (list the directory every `poll_interval_ms`, compare names, sizes and times; a rename
+  is a `Removed` and a `Created`) on macOS until its FSEvents backend lands on Day 474, and wherever a native watch cannot start (a watch limit, a file system
+  without notifications). `IsNative()` tells which one you got; `WatchOptions::force_polling` picks polling.
 - **Threads:** one thread calls `Poll` and `Wait`; `Wake` is thread-safe. Wake a waiting thread and join it before destroying the watcher.
 - **Failure:** a missing directory fails `Open` with `NotFound`; when the watched directory is removed an `Overflow` is queued and `Poll` then fails with `Invalid`.
 

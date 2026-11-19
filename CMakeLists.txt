@@ -216,7 +216,7 @@ add_subdirectory(third_party/zlib)  # Phase 22 Day 338: zlib, vendored (PLAN.md 
 add_subdirectory(third_party/libpng)  # Phase 22 Day 338: libpng, vendored over zlib; the PNG decoder of the glTF importer
 add_subdirectory(third_party/libogg)  # Phase 26 Day 432: libogg, vendored (PLAN.md assumption #30)
 add_subdirectory(third_party/libvorbis)  # Phase 26 Day 432: libvorbis, vendored over libogg; the Vorbis decoder of the audio module
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")  # macOS: Phase 27 Day 474; Windows: Day 473
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")  # Windows: Phase 27 Day 473; macOS: Day 474
   add_subdirectory(third_party/luajit)  # Phase 27 Day 445: LuaJIT, vendored (PLAN.md assumption #13); the script module's backend
 endif()
 add_subdirectory(third_party/stb_image)  # Phase 22 Day 338: stb_image's JPEG decoder, vendored; the JPEG decoder of the glTF importer
@@ -302,6 +302,9 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/asset)  # Phase 22 Day 313
   add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
   add_subdirectory(engine/animation)  # Phase 22 Day 321
+  add_subdirectory(engine/script)  # Phase 27 Day 473: the script module with its LuaJIT backend (before engine_c, which links it)
+  add_subdirectory(engine/script_physics)  # Phase 27 Day 473
+  add_subdirectory(engine/script_media)  # Phase 27 Day 473
   add_subdirectory(engine/engine_c)  # Phase 23 Day 354: the C API and, with ENGINE_BUILD_SHARED, engine.dll
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
   add_subdirectory(tools/resource_server)  # Phase 22 Day 331
@@ -309,6 +312,12 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/rhi)  # Day 160: the Phase 4 RHI suite through Vulkan
   add_subdirectory(tests/renderer)  # Day 161
   add_subdirectory(tests/scene)  # Phase 17 Day 233
+  add_subdirectory(tests/script)  # Phase 27 Day 473
+  add_subdirectory(tests/script_physics)  # Phase 27 Day 473
+  add_subdirectory(tests/script_media)  # Phase 27 Day 473
+  add_subdirectory(game/script_demo)  # Phase 27 Day 473: the scripted game
+  add_subdirectory(game/script_bench)  # Phase 27 Day 473: the script benchmark and the large stress run
+  add_subdirectory(tests/script_demo)  # Phase 27 Day 473
   add_subdirectory(game)  # hello_window (Day 158), the demos and the benchmarks (Day 161)
   add_subdirectory(tools/shader_mint)  # Day 163: the shader minter, with DXIL
   add_subdirectory(tests/shader_mint)
@@ -328,6 +337,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
   add_subdirectory(tools/net_probe)  # Phase 20 Day 281
   add_subdirectory(tools/audio_probe)  # Phase 26 Day 440: listening to the WASAPI backend by hand
+  add_subdirectory(tools/script_api_doc)  # Phase 27 Day 473: docs/reference/script-api.md from the binding registry
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
   message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer, the RHI with its Vulkan backend, the renderer, "

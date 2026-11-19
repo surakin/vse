@@ -1,6 +1,6 @@
 # Scripting: a language behind an interface, many threads in front
 
-Status: written (Phase 27 complete on Linux; the Windows and macOS runs are Days 473-474). New to the model? Start with [Why your script runs on many threads](scripting-and-threads.md) and the tutorials [Your first script](../tutorials/your-first-script.md) and [Using every core](../tutorials/using-every-core.md).
+Status: written (Phase 27 complete on Linux; Windows x64 built and tested on Day 473; the macOS run is Day 474). New to the model? Start with [Why your script runs on many threads](scripting-and-threads.md) and the tutorials [Your first script](../tutorials/your-first-script.md) and [Using every core](../tutorials/using-every-core.md).
 
 **The model in six lines.** Gameplay scripts are Lua (LuaJIT), behind a language interface. Entities are split over `P` partitions (64 by default), each with its own script state, and the partitions run at the same time on the job scheduler. A script reads the world as of the tick start and records its changes in a command buffer; at the sync point the buffers are merged in a fixed order, events are delivered and finished tasks resume their waiters. A script never blocks a thread: waits are coroutines on the simulation clock, and parallel work is a pure task. Because nothing depends on the thread count, the world after any tick is the same at 1 thread and at 32, which replay, rollback and the tests rely on. The sections below are the reference: the rules, values, calling, backends, bindings, partitions, the merge, behaviors, events, waits, tasks, assets and hot reload, debugging, physics, audio and input, persistence, the JIT table, cost and limits. The C API for scripts (`script_load`, `script_call`, the script component, events and tasks) is in [The Engine as a Loadable Library](engine-library.md).
 
@@ -629,7 +629,8 @@ in every mode, and only the speed differs (`tests/script/script_jit_test.cpp`; t
 | Platform | Mode | Notes |
 |---|---|---|
 | Linux x86-64 | JIT available, budgeted by default | built and tested (plain, asan, tsan, and the no-JIT build) |
-| Windows x64, macOS x86-64 | JIT available | Days 473 and 474 build and test them |
+| Windows x64 | JIT available, budgeted by default | built and tested with MSVC (plain, asan, and the no-JIT build) and `clang-cl` (plain), Day 473; Windows has no ThreadSanitizer |
+| macOS x86-64 | JIT available | Day 474 builds and tests it |
 | Android | JIT allowed | decided in Phase 29 |
 | iOS, consoles | interpreter only | `ENGINE_LUAJIT_JIT=OFF` (Phases 29 and 30) |
 
@@ -645,6 +646,10 @@ merge, body sync, kinematic drive, physics step, write-back, physics events). Th
 `script_demo --threads N --partitions P --entities N --frames N` prints the script and physics time of the last frame and the state hash (the physics state, the marker, the pickup count and the script counters). On the Linux machine (32 hardware threads, 2,000
 bodies, 16 partitions, scripts only): 1 thread 114.6 ms per frame, 2 threads 57.9 ms, 4 threads 29.8 ms, 8 threads 20.7 ms, 16 threads 12.2 ms, with the same hash at every count (`tests/script_demo` runs 1, 2 and 16 threads under every flavor and compares; it also reloads the
 script in the middle of a run, with the same hash at 1 and 16 threads, and checks that a text that does not compile is refused while the old one runs on). The physics step is about 6 ms and was given the same threads.
+
+On the Windows PC (16 hardware threads, MSVC Release, 120 frames, Day 473): 1 thread 260.7 ms, 2 threads 152.7 ms, 4 threads 92.9 ms, 8 threads 50.2 ms, 16 threads 28.6 ms; physics about 9.6 ms;
+state hash `e1f5c33055210a41` at every count and in the Debug build. **Measure in an optimized build on Windows:** a Debug build links the C runtime's debug heap (`/MDd`), whose one lock every
+Lua allocation takes, so the same frame costs 1,145 ms at 1 thread and still 851 ms at 16.
 
 ## Cost (Phase 27 Day 476)
 

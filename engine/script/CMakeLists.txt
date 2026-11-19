@@ -1,6 +1,6 @@
 # Phase 27 Day 446: the script module, layer 13 (docs/superpowers/specs/2026-11-18-scripting-design.md). The language-neutral backend interface and the
 # value type; LuaJIT's backend (engine/script/luajit/, Day 448) and the tiny test backend (Day 447) implement it. Headers are included as "script/<name>.h",
-# rooted at engine/. Linux only until the Windows and macOS days (473 and 474). One library per sanitizer flavor.
+# rooted at engine/. Linux and Windows (Day 473); macOS on Day 474. One library per sanitizer flavor.
 set(SCRIPT_SOURCES
   value.cpp  # Day 446
   state.cpp  # Day 446
@@ -32,12 +32,20 @@ set(SCRIPT_SOURCES
   value_codec.cpp  # Day 469
   script_persist.cpp  # Day 469
 )
-if(TARGET luajit)  # the LuaJIT backend (Day 448); LuaJIT builds on Linux x86-64 only so far
+if(TARGET luajit)  # the LuaJIT backend (Day 448); LuaJIT builds on Linux and Windows x86-64 so far
   list(APPEND SCRIPT_SOURCES luajit/luajit_backend.cpp luajit/lua_patterns.cpp)
 endif()
 set(SCRIPT_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-foreach(suffix "" "_asan" "_tsan")
+# Windows has no ThreadSanitizer, and ASan only where the compiler has it (as the modules below this one).
+set(_script_flavors "_asan" "_tsan")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(_script_flavors "")
+  if(ENGINE_HAVE_ASAN)
+    list(APPEND _script_flavors "_asan")
+  endif()
+endif()
+foreach(suffix "" ${_script_flavors})
   add_library(script${suffix} STATIC ${SCRIPT_SOURCES})
   target_include_directories(script${suffix} PUBLIC ${SCRIPT_INCLUDE_ROOT})
   target_compile_options(script${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

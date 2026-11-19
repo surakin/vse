@@ -810,13 +810,13 @@ io::DirectoryWatcher	class	foundation/io	io-directorywatcher	foundation-io.md	en
 io::DirectoryWatcher::~DirectoryWatcher()	function	foundation/io	io-directorywatcher-tilde-directorywatcher	foundation-io.md	engine/foundation/io/directory_watcher.h:62
 io::DirectoryWatcher::DirectoryWatcher(const DirectoryWatcher&)	function	foundation/io	io-directorywatcher-directorywatcher-const-directorywatcher-amp	foundation-io.md	engine/foundation/io/directory_watcher.h:63
 io::DirectoryWatcher::operator=(const DirectoryWatcher&)	function	foundation/io	io-directorywatcher-operator-eq-const-directorywatcher-amp	foundation-io.md	engine/foundation/io/directory_watcher.h:64
-io::DirectoryWatcher::Open(const Path&,const WatchOptions&,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-directorywatcher-open-const-path-amp-const-watchoptions-amp-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:77
-io::DirectoryWatcher::Poll(Vector<WatchEvent>*)	function	foundation/io	io-directorywatcher-poll-vector-lt-watchevent-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:84
-io::DirectoryWatcher::Wait(u32)	function	foundation/io	io-directorywatcher-wait-u32	foundation-io.md	engine/foundation/io/directory_watcher.h:91
-io::DirectoryWatcher::Wake()	function	foundation/io	io-directorywatcher-wake	foundation-io.md	engine/foundation/io/directory_watcher.h:98
-io::DirectoryWatcher::IsNative() const	function	foundation/io	io-directorywatcher-isnative-const	foundation-io.md	engine/foundation/io/directory_watcher.h:103
-io::OpenNativeWatcher(const Path&,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-opennativewatcher-const-path-amp-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:116
-io::OpenPollingWatcher(const Path&,u32,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-openpollingwatcher-const-path-amp-u32-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:125
+io::DirectoryWatcher::Open(const Path&,const WatchOptions&,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-directorywatcher-open-const-path-amp-const-watchoptions-amp-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:76
+io::DirectoryWatcher::Poll(Vector<WatchEvent>*)	function	foundation/io	io-directorywatcher-poll-vector-lt-watchevent-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:83
+io::DirectoryWatcher::Wait(u32)	function	foundation/io	io-directorywatcher-wait-u32	foundation-io.md	engine/foundation/io/directory_watcher.h:90
+io::DirectoryWatcher::Wake()	function	foundation/io	io-directorywatcher-wake	foundation-io.md	engine/foundation/io/directory_watcher.h:97
+io::DirectoryWatcher::IsNative() const	function	foundation/io	io-directorywatcher-isnative-const	foundation-io.md	engine/foundation/io/directory_watcher.h:102
+io::OpenNativeWatcher(const Path&,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-opennativewatcher-const-path-amp-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:115
+io::OpenPollingWatcher(const Path&,u32,UniquePtr<DirectoryWatcher>*)	function	foundation/io	io-openpollingwatcher-const-path-amp-u32-uniqueptr-lt-directorywatcher-gt-star	foundation-io.md	engine/foundation/io/directory_watcher.h:124
 io::Error	enum	foundation/io	io-error	foundation-io.md	engine/foundation/io/error.h:12
 io::Error::None	enumerator	foundation/io	io-error-none	foundation-io.md	engine/foundation/io/error.h:14
 io::Error::NotFound	enumerator	foundation/io	io-error-notfound	foundation-io.md	engine/foundation/io/error.h:15

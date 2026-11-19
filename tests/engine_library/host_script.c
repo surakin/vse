@@ -455,12 +455,12 @@ int main(void)
     CHECK_STATUS(g_api->script_stats(world, &stats), ENGINE_OK);
     CHECK(stats.instances == 20 && stats.errors == 0);
     {
-        uint64_t found[32];
+        uint64_t hits[32];
         size_t total = 0;
-        CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_BIT(ENGINE_COMPONENT_SCRIPT), found, 32, &total), ENGINE_OK);
+        CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_BIT(ENGINE_COMPONENT_SCRIPT), hits, 32, &total), ENGINE_OK);
         CHECK(total == 20);
         /* Every component bit at once (the query's list of ids once held 14 for 16 kinds: a stack overrun). */
-        CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_MASK_ALL, found, 32, &total), ENGINE_OK);
+        CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_MASK_ALL, hits, 32, &total), ENGINE_OK);
         CHECK(total == 0);
     }
     /* A params pool from a host whose struct is smaller than ours is refused before it is read. */

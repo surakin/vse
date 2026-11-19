@@ -1,7 +1,7 @@
 # The script physics tests (Phase 27 Day 466): the physics bindings over a real physics world. Like tests/script, they do not apply
 # ENGINE_PRODUCTION_COMPILE_OPTIONS (Catch2's macros use exceptions). One executable per sanitizer flavor.
 if(NOT TARGET luajit)
-  return()  # LuaJIT builds on Linux x86-64 only so far
+  return()  # LuaJIT builds on Linux and Windows x86-64 so far (macOS: Day 474)
 endif()
 
 set(SCRIPT_PHYSICS_TEST_SOURCES

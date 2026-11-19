@@ -117,6 +117,18 @@ TEST_CASE("Script demo: the game runs, and its state hash is the same at 1, 2 an
     }
 }
 
+// The state hash of the small game after 150 frames, taken on the Windows PC (MSVC and clang-cl, Debug and Release;
+// Phase 27 Day 473). The scripts use `+ - * /`, `sqrt` and `floor` only and physics is bit-exact by design, so every
+// machine must give this value: the cross-machine check of the scripting phase. A machine that differs has found a real
+// divergence (KNOWN-ISSUES.md names the machines that have run it).
+constexpr u64 kCrossMachineHash = 0xCD4A4433E698FAD7ull;
+
+TEST_CASE("Script demo: the state hash after 150 frames is the same on every machine", "[script_demo][cross_machine]")
+{
+    const Result r = Run(2, 150);
+    CHECK(r.hash == kCrossMachineHash);
+}
+
 TEST_CASE("Script demo: the planner's parallel search puts the marker in the world", "[script_demo][tasks]")
 {
     const Result r = Run(4, 60);

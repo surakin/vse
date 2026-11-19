@@ -2,7 +2,7 @@
 # plans/phase-27-scripting/day-476-benchmarks-and-limits.md. `script_bench --scene check` is the regression check ctest runs in an
 # optimized build (generous bounds, scripts/check.cmake is not needed: the program exits 1 when a bound is broken).
 if(NOT TARGET luajit)
-  return()  # LuaJIT builds on Linux x86-64 only so far
+  return()  # LuaJIT builds on Linux and Windows x86-64 so far (macOS: Day 474)
 endif()
 add_executable(script_bench main.cpp)
 engine_split_debug_info(script_bench)

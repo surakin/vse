@@ -7,7 +7,7 @@ add_test(NAME docs_script_api COMMAND script_api_doc --check WORKING_DIRECTORY $
 set_tests_properties(docs_script_api PROPERTIES LABELS "docs" TIMEOUT 300)
 engine_label_tests(docs_script_api)
 if(TARGET docs)
-  add_custom_target(script_api_page COMMAND script_api_doc --write WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  add_custom_target(script_api_page COMMAND $<TARGET_FILE:script_api_doc> --write WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Regenerating docs/reference/script-api.md" VERBATIM)
   add_dependencies(docs script_api_page)
 endif()

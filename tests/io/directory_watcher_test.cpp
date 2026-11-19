@@ -76,10 +76,10 @@ void RunCases(bool polling)
     {
         CHECK(!watcher->IsNative());
     }
-#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_MACOS
+#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_MACOS || ENGINE_PLATFORM_WINDOWS
     else
     {
-        CHECK(watcher->IsNative());  // inotify; FSEvents (Day 474)
+        CHECK(watcher->IsNative());  // inotify; FSEvents (Day 474); ReadDirectoryChangesW (Day 473)
     }
 #endif
 
@@ -104,6 +104,30 @@ void RunCases(bool polling)
         const Vector<io::WatchEvent> events = Gather(watcher.Get(), [](const Vector<io::WatchEvent>& e)
                                                      { return HasName(e, "t.lua"); });
         CHECK(HasName(events, "t.lua"));
+    }
+
+    SECTION("a rename inside the directory: one Renamed with the old name (native), or Removed and Created (polling)")
+    {
+        Write(dir.Path().Join("before.lua"), "x");
+        Gather(watcher.Get(), [](const Vector<io::WatchEvent>& e) { return HasName(e, "before.lua"); });
+        REQUIRE(io::Rename(dir.Path().Join("before.lua"), dir.Path().Join("after.lua")).Ok());
+        const Vector<io::WatchEvent> events = Gather(watcher.Get(), [](const Vector<io::WatchEvent>& e)
+                                                     { return HasName(e, "after.lua"); });
+        bool renamed = false;
+        for (usize i = 0; i < events.Size(); ++i)
+        {
+            renamed = renamed || (events[i].kind == io::WatchEventKind::Renamed &&
+                                  events[i].name.View() == "after.lua" && events[i].old_name.View() == "before.lua");
+        }
+        if (watcher->IsNative())
+        {
+            CHECK(renamed);
+        }
+        else
+        {
+            CHECK(Has(events, io::WatchEventKind::Removed, "before.lua"));
+            CHECK(HasName(events, "after.lua"));
+        }
     }
 
     SECTION("a removed file")
@@ -243,6 +267,50 @@ TEST_CASE("directory watcher: the polling backend", "[io][watch]")
 TEST_CASE("directory watcher: the native backend where there is one", "[io][watch]")
 {
     RunCases(false);
+}
+
+TEST_CASE("directory watcher: a watcher last polled by a thread that has ended keeps watching", "[io][watch]")
+{
+    // Windows cancels the I/O a thread started when the thread ends: a read armed inside Poll on a worker that then
+    // exits must not end the watch (Day 473). The other backends have nothing to cancel and pass trivially.
+    io_test::TempDir dir;
+    UniquePtr<io::DirectoryWatcher> watcher;
+    REQUIRE(io::DirectoryWatcher::Open(dir.Path(), Options(false), &watcher).Ok());
+    Write(dir.Path().Join("first.lua"), "x");
+    Atomic<bool> polled(false);
+    Thread worker(
+        [&]()
+        {
+            Vector<io::WatchEvent> events;
+            const u64 start = os::MonotonicTimeNanos();
+            while (!HasName(events, "first.lua") && os::MonotonicTimeNanos() - start < 2000ull * 1000000ull)
+            {
+                watcher->Wait(50);
+                if (watcher->Poll(&events).Failed())
+                {
+                    return;
+                }
+            }
+            polled.Store(HasName(events, "first.lua"));
+        });
+    worker.Join();
+    REQUIRE(polled.Load());
+    Write(dir.Path().Join("second.lua"), "x");
+    Vector<io::WatchEvent> events;
+    bool failed = false;
+    const u64 start = os::MonotonicTimeNanos();
+    while (!HasName(events, "second.lua") && !failed && os::MonotonicTimeNanos() - start < 2000ull * 1000000ull)
+    {
+        watcher->Wait(50);
+        failed = watcher->Poll(&events).Failed();
+    }
+    CHECK_FALSE(failed);
+    bool overflow = false;
+    for (usize i = 0; i < events.Size(); ++i)
+    {
+        overflow = overflow || events[i].kind == io::WatchEventKind::Overflow;
+    }
+    CHECK((HasName(events, "second.lua") || overflow));
 }
 
 TEST_CASE("directory watcher: a missing directory and a bad interval fail by value", "[io][watch]")

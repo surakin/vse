@@ -2,7 +2,7 @@
 # tests/script, they do not apply ENGINE_PRODUCTION_COMPILE_OPTIONS (Catch2's macros use exceptions). One executable per
 # sanitizer flavor.
 if(NOT TARGET luajit)
-  return()  # LuaJIT builds on Linux x86-64 only so far
+  return()  # LuaJIT builds on Linux and Windows x86-64 so far (macOS: Day 474)
 endif()
 
 set(SCRIPT_MEDIA_TEST_SOURCES

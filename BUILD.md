@@ -11,7 +11,7 @@ Each tool is one of:
   with a printed reason.
 - **Optional:** a convenience for debugging or regenerating vendored files.
 
-Everything third-party that ships inside the engine or a tool (Catch2, libbacktrace, sentry-native with Breakpad, nlohmann/json, yyjson 0.13.0 (Phase 22 Day 335, `third_party/yyjson/VENDORED.md`: the glTF importer's JSON), FreeType (Phase 14), libogg 1.3.6 and libvorbis 1.3.7 (Phase 26 Day 432, decode-only, `third_party/libogg/VENDORED.md`, `third_party/libvorbis/VENDORED.md`; used only by `engine/audio/vorbis.cpp`), SQLite 3.54.1 (Phase 19, the amalgamation, `third_party/sqlite/VENDORED.md`) and LuaJIT 2.1 (Phase 27 Day 445, the pinned commit in `third_party/luajit/VENDORED.md`; built by CMake with its own host tools, so it needs only the C compiler and, on Linux and macOS (Day 474), the assembler of the C compiler driver; used only by `engine/script/luajit/`; `-DENGINE_LUAJIT_JIT=OFF` (preset `linux-nojit`) builds it without the JIT compiler, for platforms that forbid run-time code generation)) is vendored under `third_party/` and built from source. **Do not install it separately.**
+Everything third-party that ships inside the engine or a tool (Catch2, libbacktrace, sentry-native with Breakpad, nlohmann/json, yyjson 0.13.0 (Phase 22 Day 335, `third_party/yyjson/VENDORED.md`: the glTF importer's JSON), FreeType (Phase 14), libogg 1.3.6 and libvorbis 1.3.7 (Phase 26 Day 432, decode-only, `third_party/libogg/VENDORED.md`, `third_party/libvorbis/VENDORED.md`; used only by `engine/audio/vorbis.cpp`), SQLite 3.54.1 (Phase 19, the amalgamation, `third_party/sqlite/VENDORED.md`) and LuaJIT 2.1 (Phase 27 Day 445, the pinned commit in `third_party/luajit/VENDORED.md`; built by CMake with its own host tools, so it needs only the C compiler and, on Linux and macOS (Day 474), the assembler of the C compiler driver (on Windows, from Phase 27 Day 473, its VM is a COFF object that `buildvm` writes itself: MSVC or `clang-cl`, nothing more); used only by `engine/script/luajit/`; `-DENGINE_LUAJIT_JIT=OFF` (preset `linux-nojit`) builds it without the JIT compiler, for platforms that forbid run-time code generation)) is vendored under `third_party/` and built from source. **Do not install it separately.**
 
 ## Linux (x86-64): supported
 
@@ -85,6 +85,9 @@ Day 163, `ENGINE_SLANGC` (`slangc`; else `PATH`, then `C:\Tools\slang-2026.18.2\
 | WinDbg or the Debugging Tools for Windows (`cdb`) | not installed on the developer PC | Optional | `scripts/open-dump.ps1` opens a dump in one of them (it exits 66 and says what to install without); `crash-report.ps1` does not need them. | `winget install --id Microsoft.WinDbg -e`, or the Windows SDK feature "Debugging Tools for Windows" |
 | PIX for Windows | current | Optional | GPU captures while debugging the DX12 backend. | `winget install --id Microsoft.PIX -e` |
 | Python 3 | 3.x | Optional | `scripts/list-aborts.py` only. | `winget install --id Python.Python.3.14 -e` |
+
+LuaJIT (Phase 27 Day 473) needs nothing beyond the table: CMake builds its host tools (`minilua`, `buildvm`) with the configured compiler and runs
+them, as `msvcbuild.bat` would (DynASM with `-D WIN`, `buildvm -m peobj`), with MSVC and `clang-cl` alike. Do not run `msvcbuild.bat`.
 
 There is no Windows ThreadSanitizer or UBSan: those flavors run on the Linux machine only.
 

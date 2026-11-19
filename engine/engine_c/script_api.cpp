@@ -1250,6 +1250,11 @@ engine_status ScriptTaskRunFn(engine_handle world, const engine_script_task* tas
 
 #else  // no script module in this build
 
+// Nothing to hold; defined so that the destructor below deletes a complete type (cl refuses an incomplete one).
+struct ScriptHost::Impl
+{
+};
+
 ScriptHost::ScriptHost() = default;
 ScriptHost::~ScriptHost() = default;
 

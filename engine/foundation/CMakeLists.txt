@@ -71,7 +71,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     io/windows/file_operations.cpp
     io/windows/local_file.cpp
     io/windows/directory.cpp
-    io/directory_watcher_unsupported.cpp  # Day 473 replaces it with io/windows/directory_watcher.cpp
+    io/windows/directory_watcher.cpp  # Phase 27 Day 473: ReadDirectoryChangesW
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # Phase 21 ports one layer per day (ARCHITECTURE.md order). Day 285: the base layer's os backend, the POSIX half shared with Linux

@@ -3,7 +3,7 @@
 # the program and the tests (tests/script_demo) both build, so they run the very same game. The script is scripts/demo.lua, embedded by
 # the build (demo_script.cpp.in). The windowed view with its overlay is not built yet (KNOWN-ISSUES.md).
 if(NOT TARGET luajit)
-  return()  # LuaJIT builds on Linux x86-64 only so far
+  return()  # LuaJIT builds on Linux and Windows x86-64 so far (macOS: Day 474)
 endif()
 
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/scripts/demo.lua DEMO_LUA)

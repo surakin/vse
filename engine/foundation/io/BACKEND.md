@@ -370,10 +370,17 @@ Linux, as built: inotify (`io/linux/directory_watcher.cpp`), one non-blocking de
 IN_MOVED_TO | IN_DELETE_SELF | IN_MOVE_SELF | IN_ONLYDIR`; `IN_MODIFY` is not watched (a half-written file is not reported); a move out and in with
 one cookie is a `Renamed`; `IN_Q_OVERFLOW` and a vanished directory are an `Overflow`; an `eventfd` is the `Wake`, and `Wait` is `poll` on both.
 
-Windows (Day 473): `CreateFileW(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED)` on the directory with the layer's share flags and one outstanding
-`ReadDirectoryChangesW` into a 64 KiB buffer (`FILE_NOTIFY_CHANGE_FILE_NAME | LAST_WRITE | SIZE | CREATION`), re-armed after each completion;
-`FILE_ACTION_RENAMED_OLD_NAME`/`NEW_NAME` paired; `ERROR_NOTIFY_ENUM_DIR` is an `Overflow`; names from UTF-16; the destructor `CancelIoEx`es and drains
-the request before the buffer goes.
+Windows, as built (Day 473): `io/windows/directory_watcher.cpp`. `CreateFileW(FILE_LIST_DIRECTORY, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED)`
+on the directory with the layer's share flags (a file opened this way is `NotADirectory`) and one outstanding `ReadDirectoryChangesW` into a 64 KiB
+buffer the watcher owns (`FILE_NOTIFY_CHANGE_FILE_NAME | DIR_NAME | LAST_WRITE | SIZE | CREATION`: directory names too, as inotify's `IN_CREATE`
+reports them), re-armed after each completion by whichever thread calls `Poll` or `Wait`; `FILE_ACTION_RENAMED_OLD_NAME` followed by `NEW_NAME` is a
+`Renamed`, an old name alone a `Removed`, a new name alone a `Created`; `FILE_ACTION_MODIFIED` is a `Modified` for every write (not only at close, as
+inotify's `IN_CLOSE_WRITE`; the queue merges them); a completion with no bytes and `ERROR_NOTIFY_ENUM_DIR` are an `Overflow`, and so is
+`ERROR_OPERATION_ABORTED` (Windows cancels the I/O a thread started when that thread ends), after which the read is armed again; a directory marked
+for deletion (`FileStandardInfo.DeletePending`, checked after each completion and while a read is outstanding) or any other failure ends the watch
+with one `Overflow` and `Poll` returning `Invalid`. Names come from UTF-16 through `os/windows/utf16.h`. `Wake` is an auto-reset event and `Wait` is
+`WaitForMultipleObjects` on it and the read's event; the destructor `CancelIoEx`es the read and waits for it (`GetOverlappedResult(TRUE)`) before the
+buffer goes.
 
 macOS, as built (Day 474): FSEvents (`io/macos/fsevents_watcher.cpp`, Core Services' C API, no Objective-C; a `kqueue` watch on the directory was
 the alternative, but it says only that the directory changed, so it would list the directory again like the polling backend and need one descriptor
