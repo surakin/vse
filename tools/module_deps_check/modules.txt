@@ -34,6 +34,7 @@ include-dir game/common
 include-dir game/renderer_demo
 include-dir game/physics_demo
 include-dir game/script_demo
+include-dir game/model_viewer
 include-dir game/ui_demo
 include-dir shaders
 include-dir tools/docgen/src
@@ -212,6 +213,7 @@ module game/container_bench/ game/container_bench 14
 module game/spatial_demo/ game/spatial_demo 14
 module game/storage_demo/ game/storage_demo 14
 module game/asset_demo/ game/asset_demo 14
+module game/model_viewer/ game/model_viewer 14
 module game/net_demo/ game/net_demo 14
 module game/rhi_demo/ game/rhi_demo 14
 module game/ui_demo/ game/ui_demo 14
@@ -344,6 +346,8 @@ target container_bench game/container_bench
 target spatial_demo game/spatial_demo
 target storage_demo game/storage_demo
 target asset_demo game/asset_demo
+target model_viewer_lib game/model_viewer
+target model_viewer game/model_viewer
 target net_demo game/net_demo
 target renderer_demo_lib game/renderer_demo
 target renderer_demo game/renderer_demo

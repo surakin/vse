@@ -1,0 +1,302 @@
+// The model viewer's scene. See viewer_scene.h.
+#include "viewer_scene.h"
+
+#include "asset/cpu_loaders.h"
+#include "asset/level.h"
+#include "asset/memory_backend.h"
+#include "containers/array.h"
+#include "ecs/query.h"
+#include "ecs/transform.h"
+#include "scene/components.h"
+#include "scene/render_sync.h"
+#include "storage/builtin_components.h"
+
+namespace model_viewer
+{
+
+ViewerScene::ViewerScene() = default;
+
+ViewerScene::~ViewerScene()
+{
+    Destroy();
+}
+
+bool ViewerScene::Fail(const char* what)
+{
+    error_ = String<HeapAllocator>(HeapAllocator::Default(), StringView(what));
+    return false;
+}
+
+void ViewerScene::Destroy()
+{
+    if (device_ != nullptr)
+    {
+        device_->WaitIdle();  // frames may still use the meshes
+    }
+    if (world_.Get() != nullptr)
+    {
+        scene::DestroyLevel(&level_, *world_, index_);
+    }
+    schedule_.Reset();
+    world_.Reset();  // the entities hold shares of the meshes
+    animation_.Reset();
+    resolver_.Reset();
+    clip_handles_.Clear();
+    clips_.Clear();
+    posed_.Clear();
+    scene_.Reset();
+    manager_.Reset();
+    backend_.Reset();
+    registry_.Reset();
+    device_ = nullptr;
+}
+
+bool ViewerScene::Create(rhi::Device* device, renderer::MaterialSystem* materials,
+                         const renderer::GBufferTemplates& templates, const ViewerOptions& options)
+{
+    Destroy();
+    device_ = device;
+    animate_ = options.animate;
+
+    // 1. The import, in memory, with a level of the default scene's nodes.
+    asset::ImportOptions import;
+    import.emit_level = true;
+    asset::ImportResult result;
+    asset::GltfError gltf_error;
+    const asset::Status imported = asset::ImportGltf(options.file, *options.source, import, &result, &gltf_error);
+    if (imported.Failed())
+    {
+        return Fail(asset::GltfMessage(gltf_error, imported));
+    }
+    report_ = Move(result.report);
+    asset::ResourceId level_id;
+    for (const asset::ImportedResource& r : result.resources)
+    {
+        if (r.type == asset::types::kLevel)
+        {
+            level_id = r.id;
+        }
+        else if (r.type == asset::types::kAnimation)
+        {
+            ClipInfo clip;
+            clip.id = r.id;
+            const StringView path = r.path.View();
+            usize slash = path.Length();
+            for (usize i = 0; i < path.Length(); ++i)
+            {
+                slash = path[i] == '/' ? i : slash;
+            }
+            clip.name = String<HeapAllocator>(
+                HeapAllocator::Default(),
+                slash < path.Length() ? path.Substring(slash + 1, path.Length() - slash - 1) : path);
+            clips_.Push(Move(clip));
+        }
+    }
+    if (level_id.Value() == 0)
+    {
+        return Fail("the file has no scene to show");
+    }
+
+    // 2. The blobs in a memory backend, mounted on a manager that loads them onto the device.
+    backend_ = MakeUnique<asset::HostMemoryBackend>(types_, u64{2} << 30);
+    if (asset::ImportIntoBackend(*backend_, result).Failed())
+    {
+        return Fail("the imported resources could not be kept in memory");
+    }
+    asset::ManagerConfig config;
+    config.buffer_pool_bytes = u64{256} << 20;
+    manager_ = MakeUnique<asset::ResourceManager>(types_, config);
+    context_.device = device;
+    context_.resources = options.resources;
+    context_.materials = materials;
+    context_.templates = templates;
+    asset::RegisterCpuLoaders(manager_.Get());
+    asset::RegisterGpuLoaders(manager_.Get(), &context_);
+    if (manager_->Mount(StringView("/"), backend_.Get(), 0).Failed())
+    {
+        return Fail("the imported resources could not be mounted");
+    }
+
+    // 3. The world: the level's entities, a sun and an ambient term, and the systems that move and mirror them.
+    registry_ = MakeUnique<storage::ComponentRegistry>();
+    if (storage::RegisterBuiltinComponents(registry_.Get()).Failed() ||
+        asset::RegisterLevelComponents(registry_.Get()).Failed() ||
+        animation::RegisterAnimationComponents(registry_.Get()).Failed())
+    {
+        return Fail("the components could not be registered");
+    }
+    renderer::RenderSceneDesc desc;
+    desc.max_objects = 65536;
+    desc.max_lights = 8;
+    scene_ = MakeUnique<renderer::RenderScene>(desc);
+    world_ = MakeUnique<ecs::World>();
+    world_->SetResource(ecs::TransformReport{});
+    world_->SetResource(scene::SceneLink{scene_.Get()});
+    world_->SetResource(scene::SceneSyncReport{});
+    schedule_ = MakeUnique<ecs::Schedule>();
+    schedule_->Add(ecs::MakeTransformSystem("transforms").InStage(ecs::kPostUpdate));
+    schedule_->Add(scene::MakeRenderSyncSystem("render sync").InStage(ecs::kRender));
+    if (!schedule_->Build().ok)
+    {
+        return Fail("the schedule does not build");
+    }
+    const asset::Status spawned = scene::SpawnLevel(*manager_, level_id, *registry_, *world_, index_, &level_);
+    if (spawned.Failed())
+    {
+        return Fail(
+            "the file's scene could not be loaded onto the device (a mesh, a texture or a material was refused)");
+    }
+    scene::LightSource sun;
+    sun.type = renderer::LightType::Directional;
+    sun.direction = Vec3(0.4f, 0.85f, 0.35f);
+    sun.color = Vec3(1.0f, 0.97f, 0.92f);
+    sun.intensity = 1.2f;
+    world_->Create(ecs::LocalTransform{}, ecs::WorldTransform{}, sun);
+    scene::LightSource ambient;
+    ambient.type = renderer::LightType::Ambient;
+    ambient.color = Vec3(0.55f, 0.6f, 0.7f);
+    ambient.intensity = 0.35f;
+    world_->Create(ecs::LocalTransform{}, ecs::WorldTransform{}, ambient);
+    world_->Query<ecs::Read<scene::MeshRenderer>>().ForEach(
+        [&](const scene::MeshRenderer& mr)
+        {
+            if (mr.mesh.Get() != nullptr)
+            {
+                triangles_ += mr.mesh->IndexCount() / 3;
+            }
+        });
+
+    // 4. The clips: loaded (the resolver finds them only while something holds them), and the first one played.
+    for (const ClipInfo& clip : clips_)
+    {
+        asset::Handle<asset::ClipView> handle;
+        if (manager_->Load<asset::ClipView>(clip.id, &handle).Failed())
+        {
+            return Fail("a clip of the file could not be loaded");
+        }
+        clip_handles_.Push(Move(handle));
+    }
+    world_->Query<ecs::Read<animation::SkeletonInstance>>().ForEach(
+        [&](ecs::Entity e, const animation::SkeletonInstance&) { posed_.Push(e); });
+    skinned_ = static_cast<u32>(posed_.Size());
+    resolver_ = MakeUnique<animation::ManagerResolver>(manager_.Get());
+    animation_ = MakeUnique<animation::AnimationSystem>(resolver_.Get());
+    current_clip_ = clips_.Size();
+    if (animate_ && !clips_.Empty())
+    {
+        PlayClip(options.clip < clips_.Size() ? options.clip : 0);
+    }
+    return true;
+}
+
+void ViewerScene::PrepareMeshes()
+{
+    Vector<renderer::GpuMesh*> pending;
+    world_->Query<ecs::Read<scene::MeshRenderer>>().ForEach(
+        [&](const scene::MeshRenderer& mr)
+        {
+            renderer::GpuMesh* mesh = mr.mesh.Get();
+            if (mesh == nullptr || mesh->Ready())
+            {
+                return;
+            }
+            for (const renderer::GpuMesh* known : pending)
+            {
+                if (known == mesh)
+                {
+                    return;  // several entities share a mesh
+                }
+            }
+            pending.Push(mesh);
+        });
+    if (pending.Empty() || device_ == nullptr)
+    {
+        return;
+    }
+    device_->BeginFrame();
+    rhi::CommandList* list = device_->CreateCommandList();
+    if (list == nullptr)
+    {
+        device_->EndFrame();
+        return;
+    }
+    list->Begin();
+    for (renderer::GpuMesh* mesh : pending)
+    {
+        mesh->RecordPrepare(list);
+    }
+    list->End();
+    const Array<rhi::CommandList*, 1> lists = {list};
+    const bool submitted = device_->Submit(lists.Data(), 1) != 0;
+    device_->EndFrame();
+    device_->WaitIdle();
+    if (submitted)
+    {
+        for (renderer::GpuMesh* mesh : pending)
+        {
+            mesh->MarkReady();
+        }
+    }
+}
+
+void ViewerScene::PlayClip(usize index)
+{
+    current_clip_ = index;
+    for (const ecs::Entity e : posed_)
+    {
+        animation::AnimationPlayer player;
+        player.clip = clips_[index].id.Value();
+        player.looping = true;
+        world_->Set<animation::AnimationPlayer>(e, Move(player));
+    }
+}
+
+void ViewerScene::NextClip()
+{
+    if (!animate_ || clips_.Empty())
+    {
+        return;
+    }
+    PlayClip(current_clip_ + 1 < clips_.Size() ? current_clip_ + 1 : 0);
+}
+
+void ViewerScene::Update(f32 seconds, jobs::Scheduler* scheduler)
+{
+    if (world_.Get() == nullptr)
+    {
+        return;
+    }
+    PrepareMeshes();
+    if (animate_ && current_clip_ < clips_.Size())
+    {
+        animation_->Update(world_.Get(), scheduler, paused_ ? 0.0f : seconds);
+    }
+    schedule_->Run(*world_, seconds);
+}
+
+Aabb ViewerScene::Bounds() const
+{
+    Aabb box;
+    bool any = false;
+    for (u32 slot = 0; scene_.Get() != nullptr && slot < scene_->SlotCount(); ++slot)
+    {
+        if (!scene_->SlotAlive(slot))
+        {
+            continue;
+        }
+        const Aabb& b = scene_->ObjectAt(slot).bounds.box;
+        if (!any)
+        {
+            box = b;
+            any = true;
+            continue;
+        }
+        box.min = Vec3(b.min.x < box.min.x ? b.min.x : box.min.x, b.min.y < box.min.y ? b.min.y : box.min.y,
+                       b.min.z < box.min.z ? b.min.z : box.min.z);
+        box.max = Vec3(b.max.x > box.max.x ? b.max.x : box.max.x, b.max.y > box.max.y ? b.max.y : box.max.y,
+                       b.max.z > box.max.z ? b.max.z : box.max.z);
+    }
+    return box;
+}
+
+}  // namespace model_viewer

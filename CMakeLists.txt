@@ -319,6 +319,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(game/script_bench)  # Phase 27 Day 473: the script benchmark and the large stress run
   add_subdirectory(tests/script_demo)  # Phase 27 Day 473
   add_subdirectory(game)  # hello_window (Day 158), the demos and the benchmarks (Day 161)
+  add_subdirectory(tests/model_viewer)  # the model viewer's camera (maintenance, 2026-11-19)
   add_subdirectory(tools/shader_mint)  # Day 163: the shader minter, with DXIL
   add_subdirectory(tests/shader_mint)
   add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
@@ -414,6 +415,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/renderer)
   add_subdirectory(tests/scene)
   add_subdirectory(game)  # Day 294's ecs_bench, Day 295's hello_window and Day 296's input_probe, and from Day 298 the demos
+  add_subdirectory(tests/model_viewer)  # the model viewer's camera (maintenance, 2026-11-19)
   add_subdirectory(tools/metal_mint)  # Day 299: the Metal library minter (macOS only), before the shaders that use it
   add_subdirectory(tools/shader_mint)  # Day 299: the shader minter, with the Metal library (tools/metal_mint)
   add_subdirectory(tests/shader_mint)
@@ -561,6 +563,7 @@ add_subdirectory(tests/debug)
 add_subdirectory(tests/shader_mint)
 add_subdirectory(shaders)
 add_subdirectory(game)
+add_subdirectory(tests/model_viewer)  # the model viewer's camera (maintenance, 2026-11-19)
 add_subdirectory(tests/docgen)
 add_subdirectory(tests/phase_labels)
 add_subdirectory(tests/test_phase_script)

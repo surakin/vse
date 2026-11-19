@@ -104,6 +104,8 @@ game/physics_demo    25
 game/spatial_demo   18
 game/storage_demo   19
 game/asset_demo     22
+game/model_viewer   22
+tests/model_viewer  22
 game/ui_demo        3,15
 game/rhi_demo       4,5
 game/renderer_demo  4,5
