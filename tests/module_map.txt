@@ -33,6 +33,7 @@ engine/audio        3,26
 engine/audio_physics 26
 engine/script        27
 engine/script_physics 27
+engine/script_media 27
 engine/scene        3,5,17,18
 engine/text         3,5,14,15
 engine/ui           3,5,15
@@ -120,6 +121,7 @@ tests/audio         26
 tests/audio_physics 26
 tests/script 27
 tests/script_physics 27
+tests/script_media 27
 tests/text          14
 tests/ui            15
 tests/foundation_sanitized 0
@@ -162,3 +164,4 @@ CURRENT_PHASE       6    # test_phase_labels reads it (Phase 21 Day 286)
 SIDE_PHASES         6    # read by scripts/test-phase.sh and test_phase_labels
 ARCHITECTURE.md     -
 BUILD.md            -
+README.md           -

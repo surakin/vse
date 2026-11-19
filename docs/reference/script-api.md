@@ -4,6 +4,104 @@ Generated from the binding registry by `script_api_doc --write`; do not edit by 
 
 Every function states the thread rule it follows: `pure` (any state, any thread), `world-read` (reads the world as of the tick start), `world-write` (changes the world only through the partition's command buffer) or `main-thread-only` (a partition job that calls it gets a script error). A wrong argument count or type is a script error that names the function and the argument; an entity handle that no longer exists is an error too.
 
+## audio
+
+### `audio.crossfade_music`
+
+`(StringView stream, Value seconds) -> void`
+
+Thread rule: **world-write**. Id: `0x372bb4e5`.
+
+Replaces the playing track by a stream with a cross-fade (nil: one second).
+
+### `audio.exists`
+
+`(StringView clip) -> bool`
+
+Thread rule: **world-read**. Id: `0x2d234c4d`.
+
+Returns whether a clip of that name exists.
+
+### `audio.is_playing`
+
+`(i64 voice) -> bool`
+
+Thread rule: **world-read**. Id: `0x6ec048c8`.
+
+Returns whether the handle names a voice that is playing (a voice started in this very tick is not yet).
+
+### `audio.pause`
+
+`(i64 voice) -> void`
+
+Thread rule: **world-write**. Id: `0xe1fde81d`.
+
+Fades the voice to silence and holds its position.
+
+### `audio.play`
+
+`(StringView clip, Value options) -> i64`
+
+Thread rule: **world-write**. Id: `0xf801da33`.
+
+Starts a clip by name and returns the voice's handle (a number). `options` is nil or {gain=0..16, pitch=1/16..16, pan=-1..1, bus="name", loop=, priority=, fade_in=}. The sound starts when the commands of the tick are applied.
+
+### `audio.play_music`
+
+`(StringView stream, Value fade_seconds) -> void`
+
+Thread rule: **world-write**. Id: `0x58f411ff`.
+
+Starts a music stream, fading in (nil: no fade).
+
+### `audio.resume`
+
+`(i64 voice) -> void`
+
+Thread rule: **world-write**. Id: `0xa92a5a1a`.
+
+Undoes `pause`.
+
+### `audio.set_bus_gain`
+
+`(StringView bus, f64 gain) -> void`
+
+Thread rule: **world-write**. Id: `0x6f4f9520`.
+
+Changes a bus's gain (0 to 16).
+
+### `audio.set_gain`
+
+`(i64 voice, f64 gain) -> void`
+
+Thread rule: **world-write**. Id: `0x329659c7`.
+
+Changes the voice's gain (0 to 16) over a short ramp.
+
+### `audio.set_pitch`
+
+`(i64 voice, f64 pitch) -> void`
+
+Thread rule: **world-write**. Id: `0x60aaf06a`.
+
+Changes the voice's pitch (1/16 to 16; 2 is an octave up).
+
+### `audio.stop`
+
+`(i64 voice, Value fade_seconds) -> void`
+
+Thread rule: **world-write**. Id: `0x662d9115`.
+
+Fades the voice out (nil: the mixer's short ramp) and frees it. The handle is then no longer valid.
+
+### `audio.stop_music`
+
+`(Value fade_seconds) -> void`
+
+Thread rule: **world-write**. Id: `0x1c05bec5`.
+
+Fades the music out (nil: half a second) and stops it.
+
 ## character
 
 ### `character.create`
@@ -235,6 +333,136 @@ Tells the engine the running instance wants events called `name` (the host behin
 Thread rule: **world-write**. Id: `0x3d902fc4`.
 
 Withdraws the running instance's interest in `name` (the host behind `event.off`).
+
+## input
+
+### `input.action`
+
+`(StringView name) -> bool`
+
+Thread rule: **world-read**. Id: `0xde594475`.
+
+Returns whether a named action the host defined is down.
+
+### `input.action_pressed`
+
+`(StringView name) -> bool`
+
+Thread rule: **world-read**. Id: `0xc9651514`.
+
+Returns whether the action went down since the previous tick.
+
+### `input.action_released`
+
+`(StringView name) -> bool`
+
+Thread rule: **world-read**. Id: `0xe6093ab9`.
+
+Returns whether the action went up since the previous tick.
+
+### `input.axis`
+
+`(StringView name) -> f64`
+
+Thread rule: **world-read**. Id: `0x06f5eb7a`.
+
+Returns the value of a named axis the host defined, from -1 to 1.
+
+### `input.key_down`
+
+`(StringView key) -> bool`
+
+Thread rule: **world-read**. Id: `0x468a1107`.
+
+Returns whether the key (a lower-case name such as "w", "space", "leftshift") was down at the start of the tick.
+
+### `input.key_pressed`
+
+`(StringView key) -> bool`
+
+Thread rule: **world-read**. Id: `0xc5c623a3`.
+
+Returns whether the key went down since the previous tick.
+
+### `input.key_released`
+
+`(StringView key) -> bool`
+
+Thread rule: **world-read**. Id: `0x6e5298b4`.
+
+Returns whether the key went up since the previous tick.
+
+### `input.modifier`
+
+`(StringView name) -> bool`
+
+Thread rule: **world-read**. Id: `0xb4daa616`.
+
+Returns whether "shift", "ctrl", "alt" or "super" was held.
+
+### `input.mouse_delta`
+
+`() -> Vec2`
+
+Thread rule: **world-read**. Id: `0xb4b2f9f7`.
+
+Returns the mouse movement since the previous tick.
+
+### `input.mouse_down`
+
+`(StringView button) -> bool`
+
+Thread rule: **world-read**. Id: `0xc684c5fb`.
+
+Returns whether the mouse button ("left", "right", "middle", "back", "forward") was down.
+
+### `input.mouse_position`
+
+`() -> Vec2`
+
+Thread rule: **world-read**. Id: `0xbae5a8cc`.
+
+Returns the mouse position in window pixels as a vec2.
+
+### `input.mouse_pressed`
+
+`(StringView button) -> bool`
+
+Thread rule: **world-read**. Id: `0x0e3d79e7`.
+
+Returns whether the button went down since the previous tick.
+
+### `input.mouse_released`
+
+`(StringView button) -> bool`
+
+Thread rule: **world-read**. Id: `0x4d035100`.
+
+Returns whether the button went up since the previous tick.
+
+### `input.pointer_inside`
+
+`() -> bool`
+
+Thread rule: **world-read**. Id: `0xc479e879`.
+
+Returns whether the pointer is inside the window.
+
+### `input.scroll`
+
+`() -> Vec2`
+
+Thread rule: **world-read**. Id: `0xb2e15aee`.
+
+Returns the scroll since the previous tick (10 units a notch).
+
+### `input.text`
+
+`() -> StringView`
+
+Thread rule: **world-read**. Id: `0x53b08578`.
+
+Returns the text typed since the previous tick (UTF-8).
 
 ## log
 

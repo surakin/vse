@@ -10,6 +10,8 @@
 #include "os/command_line.h"
 #include "os/console.h"
 #include "script/bindings.h"
+#include "script_media/audio_bindings.h"
+#include "script_media/input_bindings.h"
 #include "script_physics/physics_bindings.h"
 
 using namespace engine_placeholder;
@@ -52,6 +54,11 @@ int main(int argc, char** argv)
     if (!script_physics::RegisterPhysicsBindings(&registry))
     {
         os::PrintError("script_api_doc: the physics bindings do not register\n");
+        return 2;
+    }
+    if (!script_media::RegisterAudioBindings(&registry) || !script_media::RegisterInputBindings(&registry))
+    {
+        os::PrintError("script_api_doc: the audio and input bindings do not register\n");
         return 2;
     }
     const String<HeapAllocator> page = registry.RenderMarkdown();

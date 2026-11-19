@@ -18,6 +18,8 @@ inline constexpr usize kMaxServiceExtensions = 4;
 enum ServiceSlot : u32
 {
     kServicePhysics = 0,  ///< The physics bindings' services (`script_physics`: `PhysicsScriptServices`).
+    kServiceAudio = 1,    ///< The audio bindings' services (`script_media`: `AudioScriptServices`).
+    kServiceInput = 2,    ///< The input bindings' services (`script_media`: `InputScriptServices`).
 };
 
 }  // namespace engine_placeholder::script

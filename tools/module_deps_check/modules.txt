@@ -182,6 +182,8 @@ allow animation asset
 module engine/script/ script 13
 # 14 script_physics (Phase 27 Day 466): the physics bindings, commands and components of the script module; above script and physics, the one place that names both
 module engine/script_physics/ script_physics 14
+# 14 script_media (Phase 27 Day 468): the audio and input bindings of the script module; above script, audio and the platform's input types
+module engine/script_media/ script_media 14
 allow script asset   # Phase 27 Day 463: scripts are minted assets, loaded through the resource manager (script_assets.h); the one same-layer edge of the spec
 module engine/engine_c/ engine_c 14
 module include/engine/ engine_c 14
@@ -303,6 +305,9 @@ target script_tsan script
 target script_physics script_physics
 target script_physics_asan script_physics
 target script_physics_tsan script_physics
+target script_media script_media
+target script_media_asan script_media
+target script_media_tsan script_media
 target database database
 target storage storage
 target net net

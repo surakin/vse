@@ -2417,6 +2417,8 @@ script::ScriptWorld::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	
 script::kMaxServiceExtensions	variable	script	script-kmaxserviceextensions	script.md	engine/script/service_slots.h:13
 script::ServiceSlot	enum	script	script-serviceslot	script.md	engine/script/service_slots.h:18
 script::kServicePhysics	enumerator	script	script-kservicephysics	script.md	engine/script/service_slots.h:20
+script::kServiceAudio	enumerator	script	script-kserviceaudio	script.md	engine/script/service_slots.h:21
+script::kServiceInput	enumerator	script	script-kserviceinput	script.md	engine/script/service_slots.h:22
 script::kCommandSettingsSet	variable	script	script-kcommandsettingsset	script.md	engine/script/settings_bindings.h:23
 script::kMaxSettingsSubscriptionsPerEntity	variable	script	script-kmaxsettingssubscriptionsperentity	script.md	engine/script/settings_bindings.h:26
 script::kMaxSettingsSubscriptions	variable	script	script-kmaxsettingssubscriptions	script.md	engine/script/settings_bindings.h:28
@@ -2671,6 +2673,119 @@ script_physics::PhysicsLayers::Find(StringView,u32*) const	function	script_physi
 script_physics::PhysicsLayers::MaskOf(const script::Value&,u32*,String<HeapAllocator>*) const	function	script_physics	script-physics-physicslayers-maskof-const-script-value-amp-u32-star-string-lt-heapallocator-gt-star-const	script_physics.md	engine/script_physics/physics_layers.h:65
 script_physics::RegisterPhysicsScriptSettings(settings::Registry*)	function	script_physics	script-physics-registerphysicsscriptsettings-settings-registry-star	script_physics.md	engine/script_physics/physics_layers.h:76
 script_physics::PhysicsLayersFromSettings(const settings::Registry&,PhysicsLayers*)	function	script_physics	script-physics-physicslayersfromsettings-const-settings-registry-amp-physicslayers-star	script_physics.md	engine/script_physics/physics_layers.h:85
+script_media::AudioCommandKind	enum	script_media	script-media-audiocommandkind	script_media.md	engine/script_media/audio_bindings.h:27
+script_media::kCommandAudioPlay	enumerator	script_media	script-media-kcommandaudioplay	script_media.md	engine/script_media/audio_bindings.h:29
+script_media::kCommandAudioStop	enumerator	script_media	script-media-kcommandaudiostop	script_media.md	engine/script_media/audio_bindings.h:30
+script_media::kCommandAudioPause	enumerator	script_media	script-media-kcommandaudiopause	script_media.md	engine/script_media/audio_bindings.h:31
+script_media::kCommandAudioSetGain	enumerator	script_media	script-media-kcommandaudiosetgain	script_media.md	engine/script_media/audio_bindings.h:32
+script_media::kCommandAudioSetPitch	enumerator	script_media	script-media-kcommandaudiosetpitch	script_media.md	engine/script_media/audio_bindings.h:33
+script_media::kCommandAudioBusGain	enumerator	script_media	script-media-kcommandaudiobusgain	script_media.md	engine/script_media/audio_bindings.h:34
+script_media::kCommandMusicPlay	enumerator	script_media	script-media-kcommandmusicplay	script_media.md	engine/script_media/audio_bindings.h:35
+script_media::kCommandMusicStop	enumerator	script_media	script-media-kcommandmusicstop	script_media.md	engine/script_media/audio_bindings.h:36
+script_media::AudioComponentId	enum	script_media	script-media-audiocomponentid	script_media.md	engine/script_media/audio_bindings.h:42
+script_media::kAudioListenerId	enumerator	script_media	script-media-kaudiolistenerid	script_media.md	engine/script_media/audio_bindings.h:44
+script_media::RegisterAudioComponents(storage::ComponentRegistry*)	function	script_media	script-media-registeraudiocomponents-storage-componentregistry-star	script_media.md	engine/script_media/audio_bindings.h:56
+script_media::RegisterAudioValidators(script::ComponentCatalog*)	function	script_media	script-media-registeraudiovalidators-script-componentcatalog-star	script_media.md	engine/script_media/audio_bindings.h:63
+script_media::RegisterAudioCommandKinds(script::CommandKindTable*)	function	script_media	script-media-registeraudiocommandkinds-script-commandkindtable-star	script_media.md	engine/script_media/audio_bindings.h:71
+script_media::RegisterAudioBindings(script::BindingRegistry*)	function	script_media	script-media-registeraudiobindings-script-bindingregistry-star	script_media.md	engine/script_media/audio_bindings.h:85
+script_media::AudioEventReport	struct	script_media	script-media-audioeventreport	script_media.md	engine/script_media/audio_bindings.h:90
+script_media::AudioEventReport::polled	variable	script_media	script-media-audioeventreport-polled	script_media.md	engine/script_media/audio_bindings.h:93
+script_media::AudioEventReport::emitted	variable	script_media	script-media-audioeventreport-emitted	script_media.md	engine/script_media/audio_bindings.h:95
+script_media::AudioEventReport::unhandled	variable	script_media	script-media-audioeventreport-unhandled	script_media.md	engine/script_media/audio_bindings.h:97
+script_media::kEventVoiceEnd	variable	script_media	script-media-keventvoiceend	script_media.md	engine/script_media/audio_bindings.h:101
+script_media::PumpAudioEvents(audio::Mixer*,VoiceTable*,script::ScriptRuntime*)	function	script_media	script-media-pumpaudioevents-audio-mixer-star-voicetable-star-script-scriptruntime-star	script_media.md	engine/script_media/audio_bindings.h:118
+script_media::ClipSource	struct	script_media	script-media-clipsource	script_media.md	engine/script_media/audio_services.h:23
+script_media::ClipSource::resolve	variable	script_media	script-media-clipsource-resolve	script_media.md	engine/script_media/audio_services.h:26
+script_media::ClipSource::user	variable	script_media	script-media-clipsource-user	script_media.md	engine/script_media/audio_services.h:28
+script_media::StreamSource	struct	script_media	script-media-streamsource	script_media.md	engine/script_media/audio_services.h:35
+script_media::StreamSource::resolve	variable	script_media	script-media-streamsource-resolve	script_media.md	engine/script_media/audio_services.h:38
+script_media::StreamSource::user	variable	script_media	script-media-streamsource-user	script_media.md	engine/script_media/audio_services.h:40
+script_media::VoiceTable	class	script_media	script-media-voicetable	script_media.md	engine/script_media/audio_services.h:54
+script_media::VoiceTable::Entry	struct	script_media	script-media-voicetable-entry	script_media.md	engine/script_media/audio_services.h:60
+script_media::VoiceTable::Entry::voice	variable	script_media	script-media-voicetable-entry-voice	script_media.md	engine/script_media/audio_services.h:63
+script_media::VoiceTable::Entry::owner_key	variable	script_media	script-media-voicetable-entry-owner-key	script_media.md	engine/script_media/audio_services.h:65
+script_media::VoiceTable::Entry::stopping	variable	script_media	script-media-voicetable-entry-stopping	script_media.md	engine/script_media/audio_services.h:67
+script_media::VoiceTable::VoiceTable()	function	script_media	script-media-voicetable-voicetable	script_media.md	engine/script_media/audio_services.h:71
+script_media::VoiceTable::VoiceTable(const VoiceTable&)	function	script_media	script-media-voicetable-voicetable-const-voicetable-amp	script_media.md	engine/script_media/audio_services.h:73
+script_media::VoiceTable::operator=(const VoiceTable&)	function	script_media	script-media-voicetable-operator-eq-const-voicetable-amp	script_media.md	engine/script_media/audio_services.h:74
+script_media::VoiceTable::Add(u64,audio::VoiceId,u64)	function	script_media	script-media-voicetable-add-u64-audio-voiceid-u64	script_media.md	engine/script_media/audio_services.h:82
+script_media::VoiceTable::Find(u64) const	function	script_media	script-media-voicetable-find-u64-const	script_media.md	engine/script_media/audio_services.h:89
+script_media::VoiceTable::MarkStopping(u64)	function	script_media	script-media-voicetable-markstopping-u64	script_media.md	engine/script_media/audio_services.h:95
+script_media::VoiceTable::HandleOf(audio::VoiceId) const	function	script_media	script-media-voicetable-handleof-audio-voiceid-const	script_media.md	engine/script_media/audio_services.h:101
+script_media::VoiceTable::Remove(u64)	function	script_media	script-media-voicetable-remove-u64	script_media.md	engine/script_media/audio_services.h:107
+script_media::VoiceTable::Size() const	function	script_media	script-media-voicetable-size-const	script_media.md	engine/script_media/audio_services.h:112
+script_media::AudioScriptServices	struct	script_media	script-media-audioscriptservices	script_media.md	engine/script_media/audio_services.h:125
+script_media::AudioScriptServices::mixer	variable	script_media	script-media-audioscriptservices-mixer	script_media.md	engine/script_media/audio_services.h:128
+script_media::AudioScriptServices::clips	variable	script_media	script-media-audioscriptservices-clips	script_media.md	engine/script_media/audio_services.h:130
+script_media::AudioScriptServices::streams	variable	script_media	script-media-audioscriptservices-streams	script_media.md	engine/script_media/audio_services.h:132
+script_media::AudioScriptServices::music	variable	script_media	script-media-audioscriptservices-music	script_media.md	engine/script_media/audio_services.h:134
+script_media::AudioScriptServices::voices	variable	script_media	script-media-audioscriptservices-voices	script_media.md	engine/script_media/audio_services.h:136
+script_media::AudioScriptServices::sample_rate	variable	script_media	script-media-audioscriptservices-sample-rate	script_media.md	engine/script_media/audio_services.h:138
+script_media::RegisterInputBindings(script::BindingRegistry*)	function	script_media	script-media-registerinputbindings-script-bindingregistry-star	script_media.md	engine/script_media/input_bindings.h:30
+script_media::kEventInput	variable	script_media	script-media-keventinput	script_media.md	engine/script_media/input_bindings.h:33
+script_media::InputEventReport	struct	script_media	script-media-inputeventreport	script_media.md	engine/script_media/input_bindings.h:38
+script_media::InputEventReport::emitted	variable	script_media	script-media-inputeventreport-emitted	script_media.md	engine/script_media/input_bindings.h:41
+script_media::EmitInputEvents(const InputSnapshot&,script::ScriptRuntime*)	function	script_media	script-media-emitinputevents-const-inputsnapshot-amp-script-scriptruntime-star	script_media.md	engine/script_media/input_bindings.h:58
+script_media::InputBinding	struct	script_media	script-media-inputbinding	script_media.md	engine/script_media/input_snapshot.h:25
+script_media::InputBinding::kKey	variable	script_media	script-media-inputbinding-kkey	script_media.md	engine/script_media/input_snapshot.h:28
+script_media::InputBinding::kMouse	variable	script_media	script-media-inputbinding-kmouse	script_media.md	engine/script_media/input_snapshot.h:30
+script_media::InputBinding::kind	variable	script_media	script-media-inputbinding-kind	script_media.md	engine/script_media/input_snapshot.h:33
+script_media::InputBinding::key	variable	script_media	script-media-inputbinding-key	script_media.md	engine/script_media/input_snapshot.h:35
+script_media::InputBinding::buttons	variable	script_media	script-media-inputbinding-buttons	script_media.md	engine/script_media/input_snapshot.h:37
+script_media::InputBinding::OfKey(os::Key)	function	script_media	script-media-inputbinding-ofkey-os-key	script_media.md	engine/script_media/input_snapshot.h:40
+script_media::InputBinding::OfMouse(u32)	function	script_media	script-media-inputbinding-ofmouse-u32	script_media.md	engine/script_media/input_snapshot.h:48
+script_media::kMaxInputNames	variable	script_media	script-media-kmaxinputnames	script_media.md	engine/script_media/input_snapshot.h:58
+script_media::kMaxInputBindings	variable	script_media	script-media-kmaxinputbindings	script_media.md	engine/script_media/input_snapshot.h:60
+script_media::kMaxInputNameBytes	variable	script_media	script-media-kmaxinputnamebytes	script_media.md	engine/script_media/input_snapshot.h:62
+script_media::kMaxInputTextBytes	variable	script_media	script-media-kmaxinputtextbytes	script_media.md	engine/script_media/input_snapshot.h:64
+script_media::InputMap	class	script_media	script-media-inputmap	script_media.md	engine/script_media/input_snapshot.h:76
+script_media::InputMap::InputMap()	function	script_media	script-media-inputmap-inputmap	script_media.md	engine/script_media/input_snapshot.h:80
+script_media::InputMap::AddAction(StringView,Span<const InputBinding>)	function	script_media	script-media-inputmap-addaction-stringview-span-lt-const-inputbinding-gt	script_media.md	engine/script_media/input_snapshot.h:89
+script_media::InputMap::AddAxis(StringView,Span<const InputBinding>,Span<const InputBinding>)	function	script_media	script-media-inputmap-addaxis-stringview-span-lt-const-inputbinding-gt-span-lt-const-inputbinding-gt	script_media.md	engine/script_media/input_snapshot.h:99
+script_media::InputMap::Action	struct	script_media	script-media-inputmap-action	script_media.md	engine/script_media/input_snapshot.h:104
+script_media::InputMap::Action::name	variable	script_media	script-media-inputmap-action-name	script_media.md	engine/script_media/input_snapshot.h:107
+script_media::InputMap::Action::bindings	variable	script_media	script-media-inputmap-action-bindings	script_media.md	engine/script_media/input_snapshot.h:109
+script_media::InputMap::Axis	struct	script_media	script-media-inputmap-axis	script_media.md	engine/script_media/input_snapshot.h:115
+script_media::InputMap::Axis::name	variable	script_media	script-media-inputmap-axis-name	script_media.md	engine/script_media/input_snapshot.h:118
+script_media::InputMap::Axis::negative	variable	script_media	script-media-inputmap-axis-negative	script_media.md	engine/script_media/input_snapshot.h:120
+script_media::InputMap::Axis::positive	variable	script_media	script-media-inputmap-axis-positive	script_media.md	engine/script_media/input_snapshot.h:122
+script_media::InputMap::Actions() const	function	script_media	script-media-inputmap-actions-const	script_media.md	engine/script_media/input_snapshot.h:129
+script_media::InputMap::Axes() const	function	script_media	script-media-inputmap-axes-const	script_media.md	engine/script_media/input_snapshot.h:134
+script_media::ExternalAxis	struct	script_media	script-media-externalaxis	script_media.md	engine/script_media/input_snapshot.h:144
+script_media::ExternalAxis::name	variable	script_media	script-media-externalaxis-name	script_media.md	engine/script_media/input_snapshot.h:147
+script_media::ExternalAxis::value	variable	script_media	script-media-externalaxis-value	script_media.md	engine/script_media/input_snapshot.h:149
+script_media::ActionState	struct	script_media	script-media-actionstate	script_media.md	engine/script_media/input_snapshot.h:155
+script_media::ActionState::down	variable	script_media	script-media-actionstate-down	script_media.md	engine/script_media/input_snapshot.h:158
+script_media::ActionState::pressed	variable	script_media	script-media-actionstate-pressed	script_media.md	engine/script_media/input_snapshot.h:160
+script_media::ActionState::released	variable	script_media	script-media-actionstate-released	script_media.md	engine/script_media/input_snapshot.h:162
+script_media::InputSnapshot	class	script_media	script-media-inputsnapshot	script_media.md	engine/script_media/input_snapshot.h:170
+script_media::InputSnapshot::InputSnapshot()	function	script_media	script-media-inputsnapshot-inputsnapshot	script_media.md	engine/script_media/input_snapshot.h:174
+script_media::InputSnapshot::Capture(u64,const os::InputState&,StringView,const InputMap&,Span<const ExternalAxis>)	function	script_media	script-media-inputsnapshot-capture-u64-const-os-inputstate-amp-stringview-const-inputmap-amp-span-lt-const-externalaxis-gt	script_media.md	engine/script_media/input_snapshot.h:185
+script_media::InputSnapshot::Tick() const	function	script_media	script-media-inputsnapshot-tick-const	script_media.md	engine/script_media/input_snapshot.h:191
+script_media::InputSnapshot::KeyDown(os::Key) const	function	script_media	script-media-inputsnapshot-keydown-os-key-const	script_media.md	engine/script_media/input_snapshot.h:195
+script_media::InputSnapshot::KeyPressed(os::Key) const	function	script_media	script-media-inputsnapshot-keypressed-os-key-const	script_media.md	engine/script_media/input_snapshot.h:199
+script_media::InputSnapshot::KeyReleased(os::Key) const	function	script_media	script-media-inputsnapshot-keyreleased-os-key-const	script_media.md	engine/script_media/input_snapshot.h:203
+script_media::InputSnapshot::Modifiers() const	function	script_media	script-media-inputsnapshot-modifiers-const	script_media.md	engine/script_media/input_snapshot.h:207
+script_media::InputSnapshot::MouseX() const	function	script_media	script-media-inputsnapshot-mousex-const	script_media.md	engine/script_media/input_snapshot.h:211
+script_media::InputSnapshot::MouseY() const	function	script_media	script-media-inputsnapshot-mousey-const	script_media.md	engine/script_media/input_snapshot.h:215
+script_media::InputSnapshot::MouseDeltaX() const	function	script_media	script-media-inputsnapshot-mousedeltax-const	script_media.md	engine/script_media/input_snapshot.h:219
+script_media::InputSnapshot::MouseDeltaY() const	function	script_media	script-media-inputsnapshot-mousedeltay-const	script_media.md	engine/script_media/input_snapshot.h:223
+script_media::InputSnapshot::ScrollX() const	function	script_media	script-media-inputsnapshot-scrollx-const	script_media.md	engine/script_media/input_snapshot.h:227
+script_media::InputSnapshot::ScrollY() const	function	script_media	script-media-inputsnapshot-scrolly-const	script_media.md	engine/script_media/input_snapshot.h:231
+script_media::InputSnapshot::PointerInside() const	function	script_media	script-media-inputsnapshot-pointerinside-const	script_media.md	engine/script_media/input_snapshot.h:235
+script_media::InputSnapshot::MouseDown(u32) const	function	script_media	script-media-inputsnapshot-mousedown-u32-const	script_media.md	engine/script_media/input_snapshot.h:239
+script_media::InputSnapshot::MousePressed(u32) const	function	script_media	script-media-inputsnapshot-mousepressed-u32-const	script_media.md	engine/script_media/input_snapshot.h:243
+script_media::InputSnapshot::MouseReleased(u32) const	function	script_media	script-media-inputsnapshot-mousereleased-u32-const	script_media.md	engine/script_media/input_snapshot.h:247
+script_media::InputSnapshot::Text() const	function	script_media	script-media-inputsnapshot-text-const	script_media.md	engine/script_media/input_snapshot.h:252
+script_media::InputSnapshot::Action(StringView,ActionState*) const	function	script_media	script-media-inputsnapshot-action-stringview-actionstate-star-const	script_media.md	engine/script_media/input_snapshot.h:261
+script_media::InputSnapshot::Axis(StringView,f32*) const	function	script_media	script-media-inputsnapshot-axis-stringview-f32-star-const	script_media.md	engine/script_media/input_snapshot.h:269
+script_media::InputSnapshot::ActionCount() const	function	script_media	script-media-inputsnapshot-actioncount-const	script_media.md	engine/script_media/input_snapshot.h:273
+script_media::InputSnapshot::AxisCount() const	function	script_media	script-media-inputsnapshot-axiscount-const	script_media.md	engine/script_media/input_snapshot.h:277
+script_media::InputSnapshot::Serialize(bytes::ByteWriter*) const	function	script_media	script-media-inputsnapshot-serialize-bytes-bytewriter-star-const	script_media.md	engine/script_media/input_snapshot.h:284
+script_media::InputSnapshot::Deserialize(bytes::ByteReader*)	function	script_media	script-media-inputsnapshot-deserialize-bytes-bytereader-star	script_media.md	engine/script_media/input_snapshot.h:292
+script_media::InputSnapshot::Equals(const InputSnapshot&) const	function	script_media	script-media-inputsnapshot-equals-const-inputsnapshot-amp-const	script_media.md	engine/script_media/input_snapshot.h:297
+script_media::InputScriptServices	struct	script_media	script-media-inputscriptservices	script_media.md	engine/script_media/input_snapshot.h:334
+script_media::InputScriptServices::snapshot	variable	script_media	script-media-inputscriptservices-snapshot	script_media.md	engine/script_media/input_snapshot.h:337
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:24
 os::CommandLineOption	struct	platform/os	os-commandlineoption	platform-os.md	engine/foundation/os/command_line.h:38
 os::CommandLineOption::name	variable	platform/os	os-commandlineoption-name	platform-os.md	engine/foundation/os/command_line.h:41
