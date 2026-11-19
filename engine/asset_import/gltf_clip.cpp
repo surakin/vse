@@ -36,13 +36,82 @@ struct ChannelDesc
     u32 index = 0;  // its position in the animation's `channels`
 };
 
-// One clip to make: an animation and a skin whose joints it animates.
+// One clip to make: an animation and a skin whose joints it animates, or (glTF coverage Day 10) an animation's
+// `weights` channel on a node no clip of the animation's skins covers (`skin` is kNoGltfIndex then).
 struct ClipDesc
 {
     u32 animation = 0;
     u32 skin = 0;
     Vector<ChannelDesc> channels;
+    bool has_weights = false;  // the clip carries a weight track (the node's `weights` channel)
+    ChannelDesc weights;       // that channel
 };
+
+// The keys of a `weights` channel, as a clip's weight track takes them (glTF coverage Day 10): LINEAR as they are, STEP
+// with a key one tick before each change, CUBICSPLINE by the values at the keys (the tangents are dropped).
+Status ReadWeightKeys(const GltfDocument& document, const ImportOptions& options, const JsonValue& sampler,
+                      Vector<f32>* times, Vector<f32>* values, u32* targets, GltfError* error)
+{
+    u32 input_index = 0;
+    u32 output_index = 0;
+    ENGINE_TRY(sampler.RequiredIndex("input", &input_index, document.accessors.Size(), error));
+    ENGINE_TRY(sampler.RequiredIndex("output", &output_index, document.accessors.Size(), error));
+    StringView mode("LINEAR");
+    bool has_mode = false;
+    ENGINE_TRY(sampler.OptionalString("interpolation", &mode, &has_mode, error));
+    const bool step = mode == StringView("STEP");
+    const bool cubic = mode == StringView("CUBICSPLINE");
+    if (!step && !cubic && mode != StringView("LINEAR"))
+    {
+        return RefuseClip(error, sampler.Get("interpolation").Path(), StringView("is not LINEAR, STEP or CUBICSPLINE"));
+    }
+    const GltfAccessor& input = document.accessors[input_index];
+    const GltfAccessor& output = document.accessors[output_index];
+    if (input.type != GltfAccessorType::Scalar || input.component_type != 5126 || input.count == 0 ||
+        output.type != GltfAccessorType::Scalar)
+    {
+        return RefuseClip(error, sampler.Path(), StringView("is a weights sampler without SCALAR times and values"));
+    }
+    const u64 n = input.count;
+    const u64 per_key = cubic ? 3 : 1;
+    if (output.count % (n * per_key) != 0 || output.count / (n * per_key) == 0 || output.count / (n * per_key) > 64 ||
+        (step ? 2 * n - 1 : n) > kMaxClipKeys)
+    {
+        return RefuseClip(error, sampler.Path(),
+                          StringView("has a number of weights that is not 1 to 64 per key, or too many keys"));
+    }
+    *targets = static_cast<u32>(output.count / (n * per_key));
+    Vector<f32> raw_times;
+    Vector<f32> raw_values;
+    ENGINE_TRY(ReadAccessorFloats(document, input_index, &raw_times, error));
+    ENGINE_TRY(ReadAccessorFloats(document, output_index, &raw_values, error));
+    const u32 t = *targets;
+    const f64 tick = 1.0 / static_cast<f64>(options.clip_rate);
+    for (usize k = 0; k < raw_times.Size(); ++k)
+    {
+        if (raw_times[k] < 0.0f || (k > 0 && !(raw_times[k] > raw_times[k - 1])))
+        {
+            return RefuseClip(error, sampler.Get("input").Path(),
+                              StringView("has key times that are negative or not strictly increasing"));
+        }
+        if (step && k > 0)
+        {
+            // Hold the previous value until just before this key: one tick before it, or halfway when closer.
+            const f64 gap = static_cast<f64>(raw_times[k]) - raw_times[k - 1];
+            times->Push(static_cast<f32>(raw_times[k] - (tick < gap * 0.5 ? tick : gap * 0.5)));
+            for (u32 i = 0; i < t; ++i)
+            {
+                values->Push(raw_values[(k - 1) * t + i]);
+            }
+        }
+        times->Push(raw_times[k]);
+        for (u32 i = 0; i < t; ++i)
+        {
+            values->Push(raw_values[(cubic ? k * 3 + 1 : k) * t + i]);
+        }
+    }
+    return Status::Success();
+}
 
 // The errors cubic resampling made.
 struct ResampleError
@@ -447,6 +516,14 @@ bool NameMatches(Span<const StringView> names, StringView name)
     return false;
 }
 
+// The manifest key of a clip: animation * 65536 + skin as before; a weights-only clip (glTF coverage Day 10) has keys
+// of its own, 0x80000000 + animation * 32768 + node.
+u32 ClipKey(const ClipDesc& desc)
+{
+    return desc.skin != kNoGltfIndex ? desc.animation * 65536u + desc.skin
+                                     : 0x80000000u + desc.animation * 32768u + desc.weights.node;
+}
+
 }  // namespace
 
 Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, const ImportOptions& options,
@@ -486,6 +563,7 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
         }
         Vector<u64> seen;       // node * 4 + path of every channel kept
         Vector<ClipDesc> mine;  // one per skin, in skin order
+        Vector<ChannelDesc> weight_channels;
         for (usize c = 0; c < channels.Size(); ++c)
         {
             const JsonValue channel = channels.At(c);
@@ -518,11 +596,24 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
             {
                 kind = kPathScale;
             }
+            else if (path == StringView("weights"))
+            {
+                // glTF coverage Day 10: the node's morph weights, placed after the animation's skin clips are known.
+                ChannelDesc weights;
+                weights.sampler_value = samplers.At(sampler_index);
+                weights.sampler = sampler_index;
+                weights.node = node;
+                weights.index = static_cast<u32>(c);
+                weights.path = 3;
+                weight_channels.Push(weights);
+                seen.Push(static_cast<u64>(node) * 4 + 3);
+                continue;
+            }
             else
             {
                 char what[96];
-                FormatTo(what, sizeof(what), "channel on node %u dropped: `%s` is not animated by clips",
-                         static_cast<unsigned>(node), path == StringView("weights") ? "weights" : "this path");
+                FormatTo(what, sizeof(what), "channel on node %u dropped: `this path` is not animated by clips",
+                         static_cast<unsigned>(node));
                 AddImportWarning(&result->report, channel.Path(), StringView(what, CStrLength(what)));
                 continue;
             }
@@ -575,7 +666,39 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
                 return RefuseClip(error, channels.Path(), StringView(what, CStrLength(what)));
             }
         }
-        // The animation's clips in skin order.
+        // Weights: into the clip of the node's own skin when the animation has one (a skinned, morphed mesh plays
+        // both from one clip), otherwise a clip of the weights alone, for the node's entity.
+        Vector<ClipDesc> weights_only;
+        for (const ChannelDesc& w : weight_channels)
+        {
+            const u32 skin = graph.nodes[w.node].skin;
+            bool placed = false;
+            for (usize m = 0; m < mine.Size() && skin != kNoGltfIndex && !placed; ++m)
+            {
+                if (mine[m].skin == skin && !mine[m].has_weights)
+                {
+                    mine[m].has_weights = true;
+                    mine[m].weights = w;
+                    placed = true;
+                }
+            }
+            if (!placed)
+            {
+                if (w.node >= 32768)
+                {
+                    AddImportWarning(&result->report, channels.Path(),
+                                     StringView("a weights channel on a node numbered 32768 or above is dropped"));
+                    continue;
+                }
+                ClipDesc desc;
+                desc.animation = static_cast<u32>(a);
+                desc.skin = kNoGltfIndex;
+                desc.has_weights = true;
+                desc.weights = w;
+                weights_only.Push(static_cast<ClipDesc&&>(desc));
+            }
+        }
+        // The animation's clips in skin order, then its weights-only clips.
         for (usize s = 0; s < skins.Size(); ++s)
         {
             for (usize m = 0; m < mine.Size(); ++m)
@@ -585,6 +708,10 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
                     descs.Push(static_cast<ClipDesc&&>(mine[m]));
                 }
             }
+        }
+        for (usize m = 0; m < weights_only.Size(); ++m)
+        {
+            descs.Push(static_cast<ClipDesc&&>(weights_only[m]));
         }
     }
     if (descs.Size() == 0)
@@ -604,12 +731,29 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
             raw = String<HeapAllocator>(HeapAllocator::Default(), StringView(text, CStrLength(text)));
         }
         raw.Append('_');
-        raw.Append(skins[descs[d].skin].name.View());
+        if (descs[d].skin != kNoGltfIndex)
+        {
+            raw.Append(skins[descs[d].skin].name.View());
+        }
+        else
+        {
+            const StringView node_name = graph.nodes[descs[d].weights.node].name;
+            if (node_name.Length() != 0)
+            {
+                raw.Append(node_name);
+            }
+            else
+            {
+                char text[24];
+                FormatTo(text, sizeof(text), "node%u", static_cast<unsigned>(descs[d].weights.node));
+                raw.Append(StringView(text, CStrLength(text)));
+            }
+        }
         raw_names.Push(static_cast<String<HeapAllocator>&&>(raw));
     }
     for (usize d = 0; d < descs.Size(); ++d)
     {
-        objects.Push(ManifestObject{descs[d].animation * 65536u + descs[d].skin, raw_names[d].View()});
+        objects.Push(ManifestObject{ClipKey(descs[d]), raw_names[d].View()});
     }
     Vector<ResourceId> ids;
     AssignIds(options, ImportKind::Clip, Span<const ManifestObject>(objects.Data(), objects.Size()), &ids);
@@ -628,7 +772,7 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
     for (usize d = 0; d < descs.Size(); ++d)
     {
         const ClipDesc& desc = descs[d];
-        const ImportedSkin& skin = skins[desc.skin];
+        const bool weights_only = desc.skin == kNoGltfIndex;
         if (desc.animation != cache_animation)
         {
             cache.Clear();
@@ -660,6 +804,7 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
             {
                 keys.keys4.Push(cache[channel.index].keys4[k]);
             }
+            const ImportedSkin& skin = skins[desc.skin];  // a weights-only clip has no channels
             const u32 joint = skin.JointOfNode(channel.node);
             if (!FollowAncestor(skin.ancestors[joint], channel.path, &keys))
             {
@@ -710,7 +855,17 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
                 tracks[at].rotation = static_cast<Vector<ClipKey4>&&>(keys.keys4);
             }
         }
-        if (tracks.Size() == 0)
+        Vector<f32> weight_times;
+        Vector<f32> weight_values;
+        u32 weight_targets = 0;
+        if (desc.has_weights)
+        {
+            ENGINE_TRY(ReadWeightKeys(document, options, desc.weights.sampler_value, &weight_times, &weight_values,
+                                      &weight_targets, error));
+            const f64 last = weight_times[weight_times.Size() - 1];
+            duration = last > duration ? last : duration;
+        }
+        if (tracks.Size() == 0 && !desc.has_weights)
         {
             continue;  // every channel of this clip was dropped (and said so)
         }
@@ -725,12 +880,22 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
                               NameMatches(options.looping_clips, animation_names[desc.animation])
                           ? static_cast<u32>(kClipLooping)
                           : 0u;
-        input.skeleton = skin.id;
-        input.skeleton_hash = skin.hash;
-        input.joint_count = skin.joint_count;
-        input.bounds_min = skin.bounds_min;
-        input.bounds_max = skin.bounds_max;
+        if (!weights_only)
+        {
+            const ImportedSkin& skin = skins[desc.skin];
+            input.skeleton = skin.id;
+            input.skeleton_hash = skin.hash;
+            input.joint_count = skin.joint_count;
+            input.bounds_min = skin.bounds_min;
+            input.bounds_max = skin.bounds_max;
+        }
         input.tracks = Span<const ClipTrackSource>(tracks.Data(), tracks.Size());
+        if (desc.has_weights)
+        {
+            input.weights.target_count = weight_targets;
+            input.weights.times = Span<const f32>(weight_times.Data(), weight_times.Size());
+            input.weights.values = Span<const f32>(weight_values.Data(), weight_values.Size());
+        }
         ImportedResource resource;
         resource.id = ids[d];
         resource.type = types::kAnimation;
@@ -777,7 +942,7 @@ Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, con
                               StringView("takes the import past the limit on the bytes it may make"),
                               ErrorCode::TooLarge);
         }
-        result->manifest.Add(ImportKind::Clip, desc.animation * 65536u + desc.skin, raw_names[d].View(), resource.id);
+        result->manifest.Add(ImportKind::Clip, ClipKey(desc), raw_names[d].View(), resource.id);
         result->resources.Push(static_cast<ImportedResource&&>(resource));
     }
     return Status::Success();

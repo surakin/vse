@@ -12477,42 +12477,42 @@ renderer::MaterialSystem::ObjectBindGroup(const BufferRegion&)	function	renderer
 renderer::MaterialSystem::JointBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-jointbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:420
 renderer::MaterialSystem::kJointSet	variable	renderer	renderer-materialsystem-kjointset	renderer.md	engine/renderer/material.h:422
 renderer::MaterialSystem::kMorphPushBytes	variable	renderer	renderer-materialsystem-kmorphpushbytes	renderer.md	engine/renderer/material.h:424
-renderer::MaterialSystem::Device() const	function	renderer	renderer-materialsystem-device-const	renderer.md	engine/renderer/material.h:429
-renderer::MaterialSystem::MorphPipeline() const	function	renderer	renderer-materialsystem-morphpipeline-const	renderer.md	engine/renderer/material.h:436
-renderer::MaterialSystem::MorphLayout() const	function	renderer	renderer-materialsystem-morphlayout-const	renderer.md	engine/renderer/material.h:441
-renderer::MaterialSystem::ReadsVertexInput(MaterialId,u32) const	function	renderer	renderer-materialsystem-readsvertexinput-materialid-u32-const	renderer.md	engine/renderer/material.h:448
-renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:458
-renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:467
-renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:476
-renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:485
-renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:494
-renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:503
-renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:512
-renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:524
-renderer::MaterialSystem::SetTexture(MaterialId,const char*,const GpuTextureConstPtr&)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-const-gputextureconstptr-amp	renderer.md	engine/renderer/material.h:536
-renderer::MaterialSystem::SetSampler(MaterialId,const char*,const GpuSamplerConstPtr&)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusamplerconstptr-amp	renderer.md	engine/renderer/material.h:547
-renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:558
-renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:563
-renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:569
-renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:577
-renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:584
-renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:588
-renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:591
-renderer::MaterialSystem::ObjectIndexStream() const	function	renderer	renderer-materialsystem-objectindexstream-const	renderer.md	engine/renderer/material.h:601
-renderer::MaterialSystem::ObjectIndexSlot()	function	renderer	renderer-materialsystem-objectindexslot	renderer.md	engine/renderer/material.h:607
-renderer::MaterialSystem::ObjectIndexSlotFor(bool)	function	renderer	renderer-materialsystem-objectindexslotfor-bool	renderer.md	engine/renderer/material.h:614
-renderer::MaterialSystem::AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)	function	renderer	renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32	renderer.md	engine/renderer/material.h:632
-renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:639
-renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:649
-renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:657
-renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:677
-renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:691
-renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:698
-renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:702
-renderer::MaterialSystem::Release()	function	renderer	renderer-materialsystem-release	renderer.md	engine/renderer/material.h:707
-renderer::MaterialSystem::Recreate(rhi::Device*)	function	renderer	renderer-materialsystem-recreate-rhi-device-star	renderer.md	engine/renderer/material.h:715
-renderer::MaterialSystem::Live() const	function	renderer	renderer-materialsystem-live-const	renderer.md	engine/renderer/material.h:716
-renderer::MaterialSystem::RecreatableName() const	function	renderer	renderer-materialsystem-recreatablename-const	renderer.md	engine/renderer/material.h:717
+renderer::MaterialSystem::Device() const	function	renderer	renderer-materialsystem-device-const	renderer.md	engine/renderer/material.h:430
+renderer::MaterialSystem::MorphPipeline() const	function	renderer	renderer-materialsystem-morphpipeline-const	renderer.md	engine/renderer/material.h:437
+renderer::MaterialSystem::MorphLayout() const	function	renderer	renderer-materialsystem-morphlayout-const	renderer.md	engine/renderer/material.h:442
+renderer::MaterialSystem::ReadsVertexInput(MaterialId,u32) const	function	renderer	renderer-materialsystem-readsvertexinput-materialid-u32-const	renderer.md	engine/renderer/material.h:449
+renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:459
+renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:468
+renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:477
+renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:486
+renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:495
+renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:504
+renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:513
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:525
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,const GpuTextureConstPtr&)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-const-gputextureconstptr-amp	renderer.md	engine/renderer/material.h:537
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,const GpuSamplerConstPtr&)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusamplerconstptr-amp	renderer.md	engine/renderer/material.h:548
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:559
+renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:564
+renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:570
+renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:578
+renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:585
+renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:589
+renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:592
+renderer::MaterialSystem::ObjectIndexStream() const	function	renderer	renderer-materialsystem-objectindexstream-const	renderer.md	engine/renderer/material.h:602
+renderer::MaterialSystem::ObjectIndexSlot()	function	renderer	renderer-materialsystem-objectindexslot	renderer.md	engine/renderer/material.h:608
+renderer::MaterialSystem::ObjectIndexSlotFor(bool)	function	renderer	renderer-materialsystem-objectindexslotfor-bool	renderer.md	engine/renderer/material.h:615
+renderer::MaterialSystem::AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)	function	renderer	renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32	renderer.md	engine/renderer/material.h:633
+renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:640
+renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:650
+renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:658
+renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:678
+renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:692
+renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:699
+renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:703
+renderer::MaterialSystem::Release()	function	renderer	renderer-materialsystem-release	renderer.md	engine/renderer/material.h:708
+renderer::MaterialSystem::Recreate(rhi::Device*)	function	renderer	renderer-materialsystem-recreate-rhi-device-star	renderer.md	engine/renderer/material.h:716
+renderer::MaterialSystem::Live() const	function	renderer	renderer-materialsystem-live-const	renderer.md	engine/renderer/material.h:717
+renderer::MaterialSystem::RecreatableName() const	function	renderer	renderer-materialsystem-recreatablename-const	renderer.md	engine/renderer/material.h:718
 renderer::StandardVertex	struct	renderer	renderer-standardvertex	renderer.md	engine/renderer/mesh.h:25
 renderer::StandardVertex::position	variable	renderer	renderer-standardvertex-position	renderer.md	engine/renderer/mesh.h:28
 renderer::StandardVertex::normal	variable	renderer	renderer-standardvertex-normal	renderer.md	engine/renderer/mesh.h:30

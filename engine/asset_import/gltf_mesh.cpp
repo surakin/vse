@@ -32,6 +32,15 @@ struct PrimData
     Vector<MeshSkinInfluence> skin;  // empty, or one per vertex
     Vector<Array<u8, 4>> colors;     // empty, or one per vertex: COLOR_0 as the mesh stores it (glTF coverage Day 5)
     Vector<u32> indices;             // a triangle list over `vertices`
+    // Morph targets (glTF coverage Day 10): per target, the position, normal and tangent deltas, three f32 per vertex
+    // each (an absent one is empty).
+    struct Target
+    {
+        Vector<f32> position;
+        Vector<f32> normal;
+        Vector<f32> tangent;
+    };
+    Vector<Target> targets;
 };
 
 struct Vec3
@@ -211,10 +220,12 @@ void Unshare(PrimData* prim)
     Vector<MeshVertex> vertices;
     Vector<MeshSkinInfluence> skin;
     Vector<Array<u8, 4>> colors;
+    Vector<u32> order;  // the old vertex of each new one
     const bool skinned = prim->skin.Size() != 0;
     const bool colored = prim->colors.Size() != 0;
     for (usize i = 0; i < prim->indices.Size(); ++i)
     {
+        order.Push(prim->indices[i]);
         vertices.Push(prim->vertices[prim->indices[i]]);
         if (skinned)
         {
@@ -225,6 +236,27 @@ void Unshare(PrimData* prim)
             colors.Push(prim->colors[prim->indices[i]]);
         }
         prim->indices[i] = static_cast<u32>(i);
+    }
+    // The morph deltas follow their vertices; the indices are 0, 1, 2... now, so the old ones are read from `order`.
+    for (PrimData::Target& t : prim->targets)
+    {
+        Vector<f32>* streams[3] = {&t.position, &t.normal, &t.tangent};
+        for (Vector<f32>* stream : streams)
+        {
+            if (stream->Size() == 0)
+            {
+                continue;
+            }
+            Vector<f32> unshared;
+            for (usize i = 0; i < order.Size(); ++i)
+            {
+                for (u32 c = 0; c < 3; ++c)
+                {
+                    unshared.Push((*stream)[order[i] * 3 + c]);
+                }
+            }
+            *stream = static_cast<Vector<f32>&&>(unshared);
+        }
     }
     prim->vertices = static_cast<Vector<MeshVertex>&&>(vertices);
     prim->skin = static_cast<Vector<MeshSkinInfluence>&&>(skin);
@@ -409,16 +441,14 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
         return RefuseMesh(error, where, StringView("has no `attributes` object"));
     }
     const JsonValue targets = primitive.Get("targets");
-    if (targets.Exists() && targets.Size() != 0)
+    const bool keep_targets = targets.Exists() && targets.Size() != 0 && !options.drop_morph_targets;
+    if (targets.Exists() && targets.Size() != 0 && options.drop_morph_targets)
     {
-        if (!options.drop_morph_targets)
-        {
-            return RefuseMesh(error, targets.Path(),
-                              StringView("has morph targets, which the mesh format does not hold (drop them with "
-                                         "drop-morph-targets)"),
-                              ErrorCode::Unsupported);
-        }
         AddImportWarning(report, where, StringView("morph targets dropped; the base shape is imported"));
+    }
+    if (keep_targets && targets.Size() > kMaxMorphTargets)
+    {
+        return RefuseMesh(error, targets.Path(), StringView("has more than 64 morph targets"), ErrorCode::TooLarge);
     }
     // What is read and what is dropped.
     JsonMembers members;
@@ -688,6 +718,37 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
     {
         AddImportWarning(report, where, StringView("no TEXCOORD_0: the texture coordinates are zero"));
     }
+    // Morph targets (glTF coverage Day 10): POSITION, NORMAL and TANGENT deltas, VEC3 floats (sparse accessors are read
+    // like any other); positions are scaled with the mesh.
+    if (keep_targets)
+    {
+        for (usize t = 0; t < targets.Size(); ++t)
+        {
+            const JsonValue target = targets.At(t);
+            PrimData::Target deltas;
+            const char* names[3] = {"POSITION", "NORMAL", "TANGENT"};
+            Vector<f32>* outs[3] = {&deltas.position, &deltas.normal, &deltas.tangent};
+            for (u32 k = 0; k < 3; ++k)
+            {
+                const JsonValue attribute = target.Get(StringView(names[k]));
+                if (!attribute.Exists())
+                {
+                    continue;
+                }
+                u64 n = 0;
+                ENGINE_TRY(
+                    ReadFloatAttribute(document, attribute, GltfAccessorType::Vec3, false, count, outs[k], &n, error));
+            }
+            if (options.scale != 1.0f)
+            {
+                for (f32& v : deltas.position)
+                {
+                    v *= options.scale;
+                }
+            }
+            out->targets.Push(static_cast<PrimData::Target&&>(deltas));
+        }
+    }
     // What the file lacks, made deterministically.
     if (normals.Size() == 0)
     {
@@ -695,7 +756,7 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
         {
             Unshare(out);
         }
-        MakeNormals(out);
+        MakeNormals(out);  // morph targets keep the normal deltas the file gave (none: the made normals do not move)
     }
     if (tangents.Size() == 0)
     {
@@ -846,10 +907,65 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
                 }
             }
         }
+        // Morph targets (glTF coverage Day 10): every primitive of a mesh has the same number (glTF's rule); each
+        // target is the deltas of all primitives, by vertex.
+        const usize target_count = prims.Size() != 0 ? prims[0].targets.Size() : 0;
+        for (usize p = 1; p < prims.Size(); ++p)
+        {
+            if (prims[p].targets.Size() != target_count)
+            {
+                return RefuseMesh(
+                    error, primitives.At(p).Path(),
+                    StringView("has a different number of morph targets than the mesh's first primitive"));
+            }
+        }
+        Vector<Vector<MeshMorphDelta>> deltas;
+        Vector<MeshMorphTarget> morph_targets;
+        if (target_count != 0)
+        {
+            deltas.Resize(target_count);
+            const JsonValue target_names = mesh.Get("extras").Get("targetNames");
+            for (usize t = 0; t < target_count; ++t)
+            {
+                u32 base = 0;
+                for (usize p = 0; p < prims.Size(); ++p)
+                {
+                    const PrimData::Target& source = prims[p].targets[t];
+                    for (usize v = 0; v < prims[p].vertices.Size(); ++v)
+                    {
+                        MeshMorphDelta d;
+                        d.vertex = base + static_cast<u32>(v);
+                        for (u32 c = 0; c < 3; ++c)
+                        {
+                            d.position[c] = source.position.Size() != 0 ? source.position[v * 3 + c] : 0.0f;
+                            d.normal[c] = source.normal.Size() != 0 ? source.normal[v * 3 + c] : 0.0f;
+                            d.tangent[c] = source.tangent.Size() != 0 ? source.tangent[v * 3 + c] : 0.0f;
+                        }
+                        deltas[t].Push(d);
+                    }
+                    base += static_cast<u32>(prims[p].vertices.Size());
+                }
+                MeshMorphTarget target;
+                StringView name;
+                if (target_names.IsArray() && t < target_names.Size() &&
+                    target_names.At(t).AsString(&name, error).Ok() && name.Length() != 0)
+                {
+                    const usize n = name.Length() < kMaxMorphNameBytes ? name.Length() : kMaxMorphNameBytes;
+                    MemCopy(target.name.Data(), name.Data(), n);
+                }
+                else
+                {
+                    FormatTo(target.name.Data(), target.name.Size(), "target%u", static_cast<unsigned>(t));
+                }
+                target.deltas = Span<const MeshMorphDelta>(deltas[t].Data(), deltas[t].Size());
+                morph_targets.Push(target);
+            }
+        }
         MeshBuildInput input;
         input.vertices = Span<const MeshVertex>(vertices.Data(), vertices.Size());
         input.indices = Span<const u32>(indices.Data(), indices.Size());
         input.slots = Span<const MeshSlot>(slots.Data(), slots.Size());
+        input.morph_targets = Span<const MeshMorphTarget>(morph_targets.Data(), morph_targets.Size());
         // The G-buffer templates read float3 normals and tangents: only the full layout draws (a packed mesh's
         // SNorm8x4 attributes do not feed them). Found by the Phase 24 Day 383 acceptance scene.
         input.quality = MeshQuality::Full;

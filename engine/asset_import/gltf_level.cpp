@@ -211,6 +211,7 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
     const storage::RegisteredComponent* slot_component = registry.FindById(kMeshSlotMaterialsId);
     const storage::RegisteredComponent* skeleton_component = registry.FindById(animation::kSkeletonInstanceId);
     const storage::RegisteredComponent* link_component = registry.FindById(storage::kParentLinkId);
+    const storage::RegisteredComponent* weights_component = registry.FindById(animation::kMorphWeightsId);
 
     Vector<storage::EntityKey> keys;  // by position in `nodes`
     for (usize i = 0; i < nodes.Size(); ++i)
@@ -435,6 +436,41 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
                         skin_piece.bytes.Push(skin_writer.Bytes()[b]);
                     }
                     pieces.Push(static_cast<Piece&&>(skin_piece));
+                }
+            }
+            // The default morph weights (glTF coverage Day 10): the node's `weights`, else its mesh's.
+            if (weights_component != nullptr)
+            {
+                JsonValue weights = document.root.Get("nodes").At(n).Get("weights");
+                if (!weights.Exists())
+                {
+                    weights = document.root.Get("meshes").At(node.mesh).Get("weights");
+                }
+                if (weights.IsArray() && weights.Size() != 0)
+                {
+                    animation::MorphWeights morph;
+                    morph.count = weights.Size() < animation::kMaxMorphWeights ? static_cast<u32>(weights.Size())
+                                                                               : animation::kMaxMorphWeights;
+                    for (u32 k = 0; k < morph.count; ++k)
+                    {
+                        f64 v = 0.0;
+                        ENGINE_TRY(weights.At(k).AsDouble(&v, error));
+                        morph.weights[k] = static_cast<f32>(v);
+                    }
+                    Piece weights_piece;
+                    weights_piece.id = animation::kMorphWeightsId;
+                    weights_piece.version = weights_component->Version();
+                    bytes::ByteWriter weights_writer;
+                    if (weights_component->Encode(&morph, weights_writer, limits).Failed())
+                    {
+                        return Refuse(error, StringView(where, CStrLength(where)), "has weights a level cannot hold",
+                                      ErrorCode::Invalid);
+                    }
+                    for (usize b = 0; b < weights_writer.Bytes().Size(); ++b)
+                    {
+                        weights_piece.bytes.Push(weights_writer.Bytes()[b]);
+                    }
+                    pieces.Push(static_cast<Piece&&>(weights_piece));
                 }
             }
         }

@@ -4465,6 +4465,7 @@ Returns the device the system's objects live on now (it changes with a device re
 | Field | Value |
 |---|---|
 | Fails | never. |
+| Ownership | the device is borrowed; read it when recording and do not keep it past the frame. |
 
 ### `MorphPipeline()` {#renderer-materialsystem-morphpipeline-const}
 

@@ -426,6 +426,7 @@ public:
     /// transient objects while recording.
     ///
     /// - Fails: never.
+    /// - Ownership: the device is borrowed; read it when recording and do not keep it past the frame.
     rhi::Device* Device() const { return device_; }
     /// Returns the compute pipeline of the morph pass (glTF coverage Day 7; shaders/morph.comp).
     ///

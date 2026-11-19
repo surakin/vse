@@ -413,7 +413,8 @@ TEST_CASE("gltf mesh: a sparse accessor's overrides are in the mesh", "[asset][g
     CHECK(view.BoundsMax()[0] == 0.0f);
 }
 
-TEST_CASE("gltf mesh: morph targets are refused, or dropped with a warning", "[asset][gltf]")
+// glTF coverage Day 10: morph targets are imported (they were refused); drop_morph_targets still drops them.
+TEST_CASE("gltf mesh: morph targets are imported, or dropped with a warning", "[asset][gltf]")
 {
     GltfWriter w;
     const u16 indices[3] = {0, 1, 2};
@@ -428,8 +429,16 @@ TEST_CASE("gltf mesh: morph targets are refused, or dropped with a warning", "[a
     const Vector<byte> glb = w.Glb();
     ImportResult result;
     GltfError error;
-    CHECK(GmImport(glb, &result, &error).Is(ErrorCode::Unsupported));
-    CHECK(GmSays(error, "meshes[0].primitives[0].targets"));
+    REQUIRE(GmImport(glb, &result, &error).Ok());
+    REQUIRE(result.resources.Size() == 1);
+    {
+        const TypeRegistry types;
+        MeshView view;
+        REQUIRE(view.Open(ByteSpan(result.resources[0].blob.Data(), result.resources[0].blob.Size()), types).Ok());
+        REQUIRE(view.MorphTargetCount() == 1);
+        CHECK(StringView(view.MorphTarget(0).name.Data()) == StringView("target0"));
+        CHECK(view.MorphTarget(0).delta_count == 2);  // the first vertex is at the origin: its delta is zero
+    }
     ImportOptions options;
     options.drop_morph_targets = true;
     REQUIRE(GmImport(glb, &result, &error, options).Ok());
