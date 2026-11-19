@@ -133,7 +133,10 @@ public:
                 K held_key(Forward<KK>(key));
                 V held_value(Forward<VV>(value));
                 table_.Grow();
-                table_.Make(table_.SlotForInsert(held_key), Entry{Move(held_key), Move(held_value)});
+                // The slot first, in a statement of its own: the order of a call's arguments is unspecified (cl
+                // evaluates them right to left), and the Entry argument moves `held_key` out before it is hashed.
+                const usize i = table_.SlotForInsert(held_key);
+                table_.Make(i, Entry{Move(held_key), Move(held_value)});
             }
         }
     }

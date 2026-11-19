@@ -68,7 +68,8 @@ public:
             }
             K held(Forward<KK>(key));  // before a growth that may move what `key` refers to
             table_.Grow();
-            table_.Make(table_.SlotForInsert(held), Move(held));
+            const usize i = table_.SlotForInsert(held);  // before `held` is moved: argument order is unspecified
+            table_.Make(i, Move(held));
             return true;
         }
     }

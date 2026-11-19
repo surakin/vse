@@ -33,7 +33,7 @@ TEST_CASE("Identity: keys are unique over a million draws, and never null", "[st
         const EntityKey k = random.Next();
         REQUIRE_FALSE(k.IsNull());
         REQUIRE(seen.Find(k) == nullptr);
-        seen.Insert(k, 1);
+        seen.Insert(k, u8{1});
     }
 }
 

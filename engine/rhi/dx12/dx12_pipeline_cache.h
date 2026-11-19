@@ -1,5 +1,6 @@
 #pragma once
 
+#include "containers/hash.h"
 #include "containers/vector.h"
 #include "types.h"
 
@@ -16,7 +17,7 @@ namespace engine_placeholder::rhi::dx12
 /// - Param seed: the running hash.
 /// - Returns: the hash.
 /// - Thread-safety: thread-safe. A pure function.
-u64 Fnv1a(const void* data, usize size, u64 seed = 0xcbf29ce484222325ull);
+u64 Fnv1a(const void* data, usize size, u64 seed = kFnv1a64Basis);
 
 /// The size of the header in front of the library's serialized bytes.
 inline constexpr usize kPipelineLibraryHeaderBytes = 40;

@@ -98,9 +98,18 @@ public:
     /// - Aborts: growth is needed and the allocator is out of memory.
     void AppendRawBytes(const char* bytes, usize count)
     {
-        chars_.Pop();                 // drop the trailing '\0'
-        chars_.Append(bytes, count);  // one growth, then a byte copy (container audit Day 3)
-        chars_.Push('\0');
+        if (count == 0)
+        {
+            return;
+        }
+        // One growth that already counts the terminator (container audit Day 12): appending after the '\0' and then
+        // shifting the bytes down over it. Popping the '\0', appending and pushing it back grew twice per append (the
+        // push found an exact-size buffer full), which ran a fixed arena out of room (the Windows window host's
+        // 128-byte message scratch).
+        const usize end = chars_.Size() - 1;  // the terminator's index, where the bytes go
+        chars_.Append(bytes, count);          // [text, '\0', bytes]; safe when `bytes` is in this string's storage
+        MemMove(chars_.Data() + end, chars_.Data() + end + 1, count);
+        chars_[end + count] = '\0';
     }
 
     /// Makes room for `length` bytes of text without growing again.

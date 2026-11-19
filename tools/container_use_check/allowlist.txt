@@ -1,5 +1,4 @@
 # path|reason - files allowed a `.Remove(0)` or an FNV-1a constant. An entry that no longer exempts anything fails the gate (remove it).
-engine/rhi/dx12/|the D3D12 pipeline cache's FNV copies move to Fnv1a64 on container audit Day 12, on the Windows PC (not built on Linux)
 engine/rhi/metal/|the Metal pipeline cache's FNV copies move to Fnv1a64 on container audit Day 12, on the Mac (not built on Linux)
 tools/shader_mint/main.cpp|an offline tool with its own std rules (nlohmann/json); its hash is part of the minted shader outputs
 engine/database/sqlite/sqlite_database.cpp|the idle-statement LRU also removes from the middle (a Deque cannot), bounded by statement_cache (32 by default)

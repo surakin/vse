@@ -22,6 +22,8 @@
 #include "rhi/dx12/dx12_format.h"
 #include "rhi/rhi.h"
 #include "cstr/mem_ops.h"
+#include "os/console.h"
+#include "os/os.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -825,4 +827,52 @@ TEST_CASE("A DX12 list begun and dropped without End is handed out again when it
         device->EndFrame();
     }
     device->WaitIdle();
+}
+
+// The per-list state lookups at scale (container audit Day 12): one list touches 2,000 buffers, each once with a
+// barrier and once more as a second use, as a frame of 2,000 draws with a buffer each would. Recording is timed.
+// Hidden: run from a Release build with `rhi_tests "[dx12-list-bench]"`; it prints one line.
+TEST_CASE("Benchmark: a DX12 list touching 2,000 buffers", "[.][render-bench][dx12-list-bench]")
+{
+    Dx12DevicePtr device = MakeCommandsDevice();
+    REQUIRE(device);
+    CommandsSilence silence;  // the barriers it records are valid: the debug layer stays quiet
+    constexpr u32 kBuffers = 2000;
+    constexpr u32 kRounds = 20;
+    Vector<BufferHandle> buffers;
+    for (u32 i = 0; i < kBuffers; ++i)
+    {
+        buffers.Push(CmdBuffer(*device, 256, BufferUsage::Storage));
+        REQUIRE(buffers[i].IsValid());
+    }
+    u64 record_nanos = 0;
+    for (u32 round = 0; round < kRounds; ++round)
+    {
+        device->BeginFrame();
+        CommandList* list = device->CreateCommandList();
+        REQUIRE(list != nullptr);
+        const u64 start = os::MonotonicTimeNanos();
+        list->Begin();
+        for (BufferHandle b : buffers)
+        {
+            list->Barrier(b, ResourceState::Undefined, ResourceState::ShaderRead);
+        }
+        for (BufferHandle b : buffers)
+        {
+            list->Barrier(b, ResourceState::ShaderRead, ResourceState::ShaderWrite);
+        }
+        list->End();
+        record_nanos += os::MonotonicTimeNanos() - start;
+        CommandList* lists[] = {list};
+        REQUIRE(device->Submit(lists, 1) != 0);
+        device->EndFrame();
+    }
+    device->WaitIdle();
+    os::Print("dx12 list, %u buffers x 2 barriers: %.3f ms to record (mean of %u)\n", kBuffers,
+              static_cast<f64>(record_nanos) / 1e6 / kRounds, kRounds);
+    for (BufferHandle b : buffers)
+    {
+        device->DestroyBuffer(b);
+    }
+    device->Quiesce();
 }

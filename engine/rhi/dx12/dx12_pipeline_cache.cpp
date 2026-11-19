@@ -2,6 +2,8 @@
 
 #include "rhi/dx12/dx12_pipeline_cache.h"
 
+#include "algorithm.h"
+#include "containers/hash.h"
 #include "cstr/mem_ops.h"
 #include "cstr/cstr.h"
 
@@ -65,14 +67,7 @@ bool Append(char* out, usize capacity, usize* pos, const char* text, bool dots_t
 
 u64 Fnv1a(const void* data, usize size, u64 seed)
 {
-    const byte* p = static_cast<const byte*>(data);
-    u64 h = seed;
-    for (usize i = 0; i < size; ++i)
-    {
-        h ^= p[i];
-        h *= 0x100000001b3ull;
-    }
-    return h;
+    return Fnv1a64Builder(seed).AddBytes(ByteSpan(static_cast<const byte*>(data), size)).Value();
 }
 
 u64 PipelineLibraryIdentity(const char* adapter_id, const char* driver)
@@ -146,45 +141,27 @@ u64 PipelineLibraryKey(const PipelineLibraryParts& parts, u32 index)
 namespace
 {
 
-usize LowerBound(const Vector<u64>& keys, u64 key)
+bool KeyLess(u64 a, u64 b)
 {
-    usize lo = 0, hi = keys.Size();
-    while (lo < hi)
-    {
-        const usize mid = lo + (hi - lo) / 2;
-        if (keys[mid] < key)
-        {
-            lo = mid + 1;
-        }
-        else
-        {
-            hi = mid;
-        }
-    }
-    return lo;
+    return a < b;
 }
 
 }  // namespace
 
 bool InsertSortedKey(Vector<u64>* keys, u64 key)
 {
-    const usize at = LowerBound(*keys, key);
+    const usize at = LowerBound(*keys, key, KeyLess);
     if (at < keys->Size() && (*keys)[at] == key)
     {
         return false;
     }
-    keys->Push(key);
-    for (usize i = keys->Size() - 1; i > at; --i)
-    {
-        (*keys)[i] = (*keys)[i - 1];
-    }
-    (*keys)[at] = key;
+    keys->Insert(at, key);
     return true;
 }
 
 bool HasSortedKey(const Vector<u64>& keys, u64 key)
 {
-    const usize at = LowerBound(keys, key);
+    const usize at = LowerBound(keys, key, KeyLess);
     return at < keys.Size() && keys[at] == key;
 }
 

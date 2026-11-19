@@ -130,7 +130,7 @@ template <typename T> u64 HashValue(const T& value, u64 seed)
 // content. `desc` was zero-filled before it was set, so the padding inside its plain parts is zero too.
 u64 GraphicsKey(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& d, u64 vs, u64 ps, u64 root)
 {
-    u64 h = HashValue(u32{1}, 0xcbf29ce484222325ull);  // the key's own version
+    u64 h = HashValue(u32{1}, kFnv1a64Basis);  // the key's own version
     h = HashValue(vs, h);
     h = HashValue(ps, h);
     h = HashValue(root, h);
@@ -638,7 +638,7 @@ PipelineHandle Dx12Device::CreateComputePipeline(const ComputePipelineDesc& desc
         return {};
     }
     SharedPtr<ShaderCode> code;
-    u64 key = HashValue(u32{2}, 0xcbf29ce484222325ull);  // the key's own version
+    u64 key = HashValue(u32{2}, kFnv1a64Basis);  // the key's own version
     {
         LockGuard<Mutex> lock(resource_mutex_);
         const ShaderRes* cs = shaders_.Get(desc.shader);

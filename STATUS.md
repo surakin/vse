@@ -78,6 +78,15 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - Settings documents are indexed by key (2,000 keys: 3,088 to 314 ns each); the async load queue is a `BinaryHeap`.
   - `asset_mint` level names are indexed; long combining-mark runs are counting-sorted.
   - The resource manager, blob cache, backends and others are deferred (`KNOWN-ISSUES.md`). Review: no findings.
+- **Day 12, the Windows PC's half done (2026-11-19):**
+  - D3D12: per-list resource-state indexes (a list touching 2,000 buffers: 5.26 to 4.19 ms, mostly validation), a hashed sampler-table cache
+    with a free list, the pipeline keys through `LowerBound` and `Fnv1a64Builder` (values unchanged). The `select` poller is indexed by handle.
+  - Found and fixed in the series' shared code: `HashMap`/`HashSet` growth moved the key before hashing it on MSVC (271 segfaults),
+    `String` appends grew twice (an arena ran out); the gate violations were fixed on Linux by Day 13 the same way.
+  - Runs after the rebase onto Day 13 (ctest, the reset loop and crash tests left out): `build-msvc` plain 4022 of 4024, asan 3442 of 3443,
+    `build-clang-cl` plain 4050 of 4054; only known failures (voice cost, the jobs flake, the `engine_c_runtime` hang) and the dx12 entry
+    of `container_use_check`'s allow list, now stale and removed. The physics and script hashes are unchanged. Review: 5 findings, 1 fixed,
+    3 recorded, 1 no change needed. The Mac's half waits.
 - **Day 13 done (2026-11-19, Linux): the series is closed on Linux; Day 12 (Windows and macOS) is the user's.**
   - The gate `container_use_check` is in.
   - Closing run: `ran 11247 of 11377 tests (phases: all; flavors: all; display: excluded; crash tests: included)`. Four gate failures from the series

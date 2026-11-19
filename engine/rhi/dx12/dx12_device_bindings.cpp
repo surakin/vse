@@ -130,6 +130,8 @@ void Dx12Device::ShutdownBindings()
     bind_groups_.ForEachLive([&](BindGroupHandle, BindGroupRes& g) { ReleaseBindGroupLocked(g); });
     root_signatures_.Clear();
     sampler_tables_.Clear();
+    sampler_table_index_.Clear();
+    free_sampler_tables_.Clear();
     view_ring_.Shutdown();
     sampler_tables_heap_.Shutdown();
     group_views_.Shutdown();
@@ -321,25 +323,34 @@ void Dx12Device::DestroyBindGroupLayout(BindGroupLayoutHandle layout)
 
 // ---- sampler tables ----
 
+namespace
+{
+
+u64 SamplerTableHash(const u64* keys, u32 count)
+{
+    Fnv1a64Builder h;
+    for (u32 i = 0; i < count; ++i)
+    {
+        h.AddWord(keys[i]);
+    }
+    return h.AddWord(count).Value();
+}
+
+}  // namespace
+
 u32 Dx12Device::AcquireSamplerTableLocked(const u64* keys, const usize* sources, u32 count)
 {
-    u32 free_entry = ~0u;
-    for (u32 i = 0; i < sampler_tables_.Size(); ++i)
+    const u64 hash = SamplerTableHash(keys, count);
+    const u32* indexed = sampler_table_index_.Find(hash);
+    if (indexed != nullptr)
     {
-        SamplerTable& t = sampler_tables_[i];
-        if (t.refs == 0)
-        {
-            if (free_entry == ~0u)
-            {
-                free_entry = i;
-            }
-            continue;
-        }
+        SamplerTable& t = sampler_tables_[*indexed];
         if (t.count == count && MemCompare(t.keys.Data(), keys, count * sizeof(u64)) == 0)
         {
             ++t.refs;
-            return i;
+            return *indexed;
         }
+        // Another set with the same hash holds the index entry: this one gets a table of its own, unshared.
     }
     u32 offset = 0;
     if (!sampler_tables_heap_.Allocate(count, &offset))
@@ -354,21 +365,29 @@ u32 Dx12Device::AcquireSamplerTableLocked(const u64* keys, const usize* sources,
         device_->CopyDescriptorsSimple(1, sampler_tables_heap_.Cpu(offset + i), D3D12_CPU_DESCRIPTOR_HANDLE{sources[i]},
                                        D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     }
-    if (free_entry == ~0u)
+    u32 entry = 0;
+    if (free_sampler_tables_.Empty())
     {
+        entry = static_cast<u32>(sampler_tables_.Size());
         sampler_tables_.Push(SamplerTable{});
-        free_entry = static_cast<u32>(sampler_tables_.Size() - 1);
     }
-    SamplerTable& t = sampler_tables_[free_entry];
+    else
+    {
+        entry = free_sampler_tables_[free_sampler_tables_.Size() - 1];
+        free_sampler_tables_.Pop();
+    }
+    SamplerTable& t = sampler_tables_[entry];
     t.offset = offset;
     t.count = count;
     t.keys.Clear();
-    for (u32 i = 0; i < count; ++i)
-    {
-        t.keys.Push(keys[i]);
-    }
+    t.keys.Append(keys, count);
     t.refs = 1;
-    return free_entry;
+    t.hash = hash;
+    if (indexed == nullptr)
+    {
+        sampler_table_index_.Insert(hash, entry);
+    }
+    return entry;
 }
 
 void Dx12Device::ReleaseSamplerTableLocked(u32 index)
@@ -383,6 +402,12 @@ void Dx12Device::ReleaseSamplerTableLocked(u32 index)
         sampler_tables_heap_.Free(t.offset,
                                   t.count);  // the group is collected: the frames that used the table have finished
         t.keys.Clear();
+        const u32* indexed = sampler_table_index_.Find(t.hash);
+        if (indexed != nullptr && *indexed == index)
+        {
+            sampler_table_index_.Remove(t.hash);
+        }
+        free_sampler_tables_.Push(index);
     }
 }
 
@@ -432,6 +457,7 @@ BindGroupHandle Dx12Device::CreateBindGroup(const BindGroupDesc& desc)
         return BindGroupHandle{};
     };
     const u32 inc = group_views_.Increment();
+    res.refs.Reserve(desc.entries.Size());
     for (u32 b = 0; b < layout->binding_count; ++b)
     {
         const BindingDesc& bd = layout->bindings[b].desc;

@@ -1,6 +1,8 @@
 #pragma once
 
+#include "containers/hash_map.h"
 #include "containers/vector.h"
+#include "mem/heap_allocator.h"
 #include "rhi/command_list.h"
 #include "rhi/dx12/com_ref.h"
 #include "rhi/dx12/d3d12_api.h"
@@ -144,7 +146,11 @@ private:
     u32 label_depth_ = 0;
 
     Vector<BufferState> buffers_;
-    Vector<TextureUse> textures_;
+    Vector<TextureUse> textures_;  // in first-use order: the submit prologue walks it
+    // Where each resource's entry is in `buffers_` and `textures_` (container audit Day 12: a scan per use made a list
+    // of n draws O(n^2)). Cleared with the vectors when the list is recycled.
+    HashMap<ID3D12Resource*, u32, HeapAllocator> buffer_index_{HeapAllocator::Default()};
+    HashMap<ID3D12Resource*, u32, HeapAllocator> texture_index_{HeapAllocator::Default()};
 
     bool in_rendering_ = false;
     u32 pass_color_count_ = 0;

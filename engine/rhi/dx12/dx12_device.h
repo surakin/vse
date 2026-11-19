@@ -3,6 +3,7 @@
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 
+#include "containers/hash_map.h"
 #include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -14,6 +15,7 @@
 #include "rhi/handle_pool.h"
 #include "rhi/rhi.h"
 #include "rhi/staging_ring.h"
+#include "mem/heap_allocator.h"
 
 //! The Direct3D 12 implementation of [[rhi::Device]] (Phase 13, Days 164-172).
 
@@ -594,6 +596,7 @@ private:
         Vector<u64> keys;  // the samplers' handles (index and generation): a destroyed sampler's descriptor may be
                            // reused, its handle not
         u32 refs = 0;      // 0: the entry is free
+        u64 hash = 0;      // SamplerTableHash of `keys`, its key in sampler_table_index_
     };
     struct LayoutIdentity
     {
@@ -680,6 +683,10 @@ private:
     GpuDescriptorRing view_ring_;              // shader-visible, per frame slot
     GpuDescriptorTables sampler_tables_heap_;  // shader-visible samplers
     Vector<SamplerTable> sampler_tables_;
+    // Container audit Day 12: the live tables by the hash of their keys (a hit is compared, a colliding set gets a
+    // table of its own, unindexed) and the free entries, so acquiring a table no longer scans every one.
+    HashMap<u64, u32, HeapAllocator> sampler_table_index_{HeapAllocator::Default()};
+    Vector<u32> free_sampler_tables_;
     Vector<LayoutIdentity> layout_identities_;  // never shrinks: an id is never reused
     u64 next_layout_id_ = 1;
     Vector<RootSignatureEntry> root_signatures_;  // under resource_mutex_

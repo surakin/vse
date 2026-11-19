@@ -43,6 +43,25 @@ TEST_CASE("String: Append builds expected content and stays null-terminated", "[
     REQUIRE(s.CStr()[s.Length()] == '\0');
 }
 
+// Container audit Day 12: an append grew twice (the bytes to an exact size, then the terminator doubled it), and the
+// Windows window host's 128-byte scratch for this very line ran out (an abort, seen as input_probe failing on the PC).
+TEST_CASE("String: an append grows once, so the window host's message fits its 128-byte arena", "[string]")
+{
+    ArenaAllocator arena(128);
+    StringBuilder<ArenaAllocator> line(arena);
+    line.Append("Window: no usable backend (").Append("wayland is a Linux backend").Append(')');
+    CHECK(line.View() == StringView("Window: no usable backend (wayland is a Linux backend)"));
+    CHECK(line.CStr()[line.View().Length()] == '\0');
+
+    ArenaAllocator self_arena(4096);
+    String<ArenaAllocator> s(self_arena);
+    s.Append(StringView("abc"));
+    s.Append(s.View());  // its own storage: copied from its offset after the growth
+    s.Append(s.View().Substring(1, 2));
+    CHECK(s.View() == StringView("abcabcbc"));
+    CHECK(s.CStr()[s.Length()] == '\0');
+}
+
 TEST_CASE("StringBuilder: formats ints/floats/strings byte-for-byte correctly", "[string][string_builder]")
 {
     ArenaAllocator arena(1024 * 1024);

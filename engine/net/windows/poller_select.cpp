@@ -14,10 +14,12 @@
 // but disarmed until it is armed again.
 
 #include "containers/array.h"
+#include "containers/hash_map.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
+#include "mem/heap_allocator.h"
 #include "net/poller.h"
 #include "net/socket.h"
 #include "net/windows/windows_net.h"
@@ -71,19 +73,8 @@ public:
         MemCopy(&count, slots_.Data(), sizeof(count));
         return count;
     }
-    // After select: whether `socket` is among the ready ones.
-    bool Contains(SOCKET socket) const
-    {
-        const u_int count = Count();
-        for (u_int i = 0; i < count; ++i)
-        {
-            if (slots_[1 + i] == socket)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+    // After select: the socket at `i` (below Count) of the ready ones.
+    SOCKET At(u_int i) const { return slots_[1 + i]; }
     // The set for select; null when empty (select takes no empty set).
     fd_set* Native() { return Count() == 0 ? nullptr : reinterpret_cast<fd_set*>(slots_.Data()); }
 
@@ -106,17 +97,46 @@ struct Poller::ArmedSet
     SocketSet readable;
     SocketSet writable;
     SocketSet failed;  // exceptfds: a connect that failed
+    // Container audit Day 12: where each handle is in `sockets` (guarded by `lock`), and what select reported for each
+    // ready socket (the waiting thread's), so a wait is linear in the armed sockets instead of quadratic.
+    HashMap<i64, usize, HeapAllocator> index{HeapAllocator::Default()};
+    HashMap<SOCKET, u32, HeapAllocator> ready{HeapAllocator::Default()};
 
     usize IndexOf(i64 handle) const
     {
-        for (usize i = 0; i < sockets.Size(); ++i)
+        const usize* at = index.Find(handle);
+        return at == nullptr ? kNotFound : *at;
+    }
+
+    // Gathers the three sets select left into `ready`, one lookup per socket afterwards.
+    void CollectReady()
+    {
+        ready.Clear();
+        Gather(readable, kPollRead);
+        Gather(writable, kPollWrite);
+        Gather(failed, kPollError);
+    }
+
+    void Gather(const SocketSet& set, u32 bit)
+    {
+        const u_int count = set.Count();
+        for (u_int i = 0; i < count; ++i)
         {
-            if (sockets[i].handle == handle)
+            if (u32* bits = ready.Find(set.At(i)))
             {
-                return i;
+                *bits |= bit;
+            }
+            else
+            {
+                ready.Insert(set.At(i), bit);
             }
         }
-        return kNotFound;
+    }
+
+    u32 ReadyBits(SOCKET socket) const
+    {
+        const u32* bits = ready.Find(socket);
+        return bits == nullptr ? 0 : *bits;
     }
 };
 
@@ -189,6 +209,7 @@ Status Poller::Arm(i64 handle, u32 interest)
             entry.handle = handle;
             entry.interest = interest;
             entry.generation = armed_->next_generation++;
+            armed_->index.Insert(handle, armed_->sockets.Size());
             armed_->sockets.Push(entry);
         }
         else
@@ -216,7 +237,13 @@ void Poller::Disarm(i64 handle)
     const usize at = armed_->IndexOf(handle);
     if (at != kNotFound)
     {
-        armed_->sockets[at] = armed_->sockets[armed_->sockets.Size() - 1];
+        const usize last = armed_->sockets.Size() - 1;
+        armed_->index.Remove(handle);
+        if (at != last)
+        {
+            armed_->sockets[at] = armed_->sockets[last];
+            armed_->index.Insert(armed_->sockets[at].handle, at);  // the last entry moved into the hole
+        }
         armed_->sockets.Pop();
     }
 }
@@ -310,7 +337,8 @@ Status Poller::Wait(PollEvent* events, usize capacity, i64 timeout_nanos, usize*
     {
         return Status::Success();  // the timeout
     }
-    if (a.readable.Contains(windows::SocketOf(poller_)))
+    a.CollectReady();
+    if ((a.ReadyBits(windows::SocketOf(poller_)) & kPollRead) != 0)
     {
         // Drain the wake-ups: every byte sent since the last wait. The reader is non-blocking, so the loop ends with
         // WouldBlock (or an error, which leaves nothing to drain).
@@ -324,20 +352,8 @@ Status Poller::Wait(PollEvent* events, usize capacity, i64 timeout_nanos, usize*
     usize reported = 0;
     for (usize i = 0; i < a.polled.Size() && reported < limit; ++i)
     {
-        const SOCKET socket = windows::SocketOf(a.polled[i].handle);
-        u32 bits = 0;
-        if (a.readable.Contains(socket))
-        {
-            bits |= kPollRead;
-        }
-        if (a.writable.Contains(socket))
-        {
-            bits |= kPollWrite;
-        }
-        if (a.failed.Contains(socket))
-        {
-            bits |= kPollError;  // the connect failed: FinishConnect reads the error
-        }
+        // kPollError from exceptfds: the connect failed, and FinishConnect reads the error.
+        u32 bits = a.ReadyBits(windows::SocketOf(a.polled[i].handle));
         if (bits == 0)
         {
             continue;

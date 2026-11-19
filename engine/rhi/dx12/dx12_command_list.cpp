@@ -118,6 +118,8 @@ bool Dx12CommandList::Recycle(u64 frame)
     label_depth_ = 0;
     buffers_.Clear();
     textures_.Clear();
+    buffer_index_.Clear();
+    texture_index_.Clear();
     in_rendering_ = false;
     pass_color_count_ = 0;
     pass_depth_format_ = Format::Undefined;
@@ -157,15 +159,13 @@ void Dx12CommandList::Fail(const char* what, HRESULT hr)
 
 Dx12CommandList::BufferState* Dx12CommandList::FindBuffer(ID3D12Resource* resource)
 {
-    for (usize i = buffers_.Size(); i > 0; --i)
-    {  // the newest first: a list usually works on the buffer it touched last
-        if (buffers_[i - 1].resource == resource)
-        {
-            return &buffers_[i - 1];
-        }
+    if (const u32* i = buffer_index_.Find(resource))
+    {
+        return &buffers_[*i];
     }
     BufferState s;
     s.resource = resource;
+    buffer_index_.Insert(resource, static_cast<u32>(buffers_.Size()));
     buffers_.Push(s);
     return &buffers_[buffers_.Size() - 1];
 }
@@ -188,14 +188,8 @@ void Dx12CommandList::UseBuffer(ID3D12Resource* resource, D3D12_RESOURCE_STATES 
 
 Dx12CommandList::TextureUse* Dx12CommandList::FindTexture(ID3D12Resource* resource)
 {
-    for (usize i = textures_.Size(); i > 0; --i)
-    {
-        if (textures_[i - 1].resource == resource)
-        {
-            return &textures_[i - 1];
-        }
-    }
-    return nullptr;
+    const u32* i = texture_index_.Find(resource);
+    return i == nullptr ? nullptr : &textures_[*i];
 }
 
 void Dx12CommandList::Begin()
@@ -403,6 +397,7 @@ void Dx12CommandList::Barrier(TextureHandle texture, ResourceState before, Resou
         fresh.resource = t.resource;
         fresh.initial = before == ResourceState::Undefined ? target : TextureStateFor(before, t.desc);
         fresh.current = fresh.initial;
+        texture_index_.Insert(t.resource, static_cast<u32>(textures_.Size()));
         textures_.Push(fresh);
         u = &textures_[textures_.Size() - 1];
     }

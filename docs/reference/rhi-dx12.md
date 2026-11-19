@@ -3402,7 +3402,7 @@ Returns the resource state an RHI state maps to; `Undefined` and `Present` are `
 `function rhi::dx12::Fnv1a` — defined in `engine/rhi/dx12/dx12_pipeline_cache.h`
 
 ```cpp
-u64 Fnv1a(const void* data, usize size, u64 seed = 0xcbf29ce484222325ull);
+u64 Fnv1a(const void* data, usize size, u64 seed = kFnv1a64Basis);
 ```
 
 FNV-1a over bytes, continuing from `seed` (the offset basis to start).
