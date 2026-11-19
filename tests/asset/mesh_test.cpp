@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "asset/mesh.h"
+#include "containers/array.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 #include "lang/limits.h"
@@ -254,6 +255,52 @@ TEST_CASE("mesh: quality full keeps the 48-byte standard layout", "[asset][mesh]
     CHECK(MshF32(v + 36) == 1.0f);  // tangent w
     CHECK(MshF32(v + 40) == 0.5f);  // uv
     CHECK(view.UvError() == 0.0f);
+}
+
+// glTF coverage Day 4: per-vertex colours are a UNorm8x4 attribute at location 4 after the others, sRGB-encoded.
+TEST_CASE("mesh: per-vertex colours are a fifth attribute, sRGB-encoded, in packed and full layouts", "[asset][mesh]")
+{
+    CHECK(EncodeMeshColor(Array<f32, 4>{{0.0f, 1.0f, 0.5f, 0.5f}})[0] == 0);
+    CHECK(EncodeMeshColor(Array<f32, 4>{{0.0f, 1.0f, 0.5f, 0.5f}})[1] == 255);
+    CHECK(EncodeMeshColor(Array<f32, 4>{{0.0f, 1.0f, 0.5f, 0.5f}})[2] == 188);  // sRGB of linear 0.5
+    CHECK(EncodeMeshColor(Array<f32, 4>{{0.0f, 1.0f, 0.5f, 0.5f}})[3] == 128);  // alpha stays linear
+    CHECK(EncodeMeshColor(Array<f32, 4>{{-1.0f, 2.0f, 0.0f, 1.0f}})[0] == 0);   // clamped
+    CHECK(EncodeMeshColor(Array<f32, 4>{{-1.0f, 2.0f, 0.0f, 1.0f}})[1] == 255);
+    TypeRegistry types;
+    Array<MeshVertex, 3> vertices;
+    vertices[1].position = {{1, 0, 0}};
+    vertices[2].position = {{0, 1, 0}};
+    const Array<u32, 3> indices = {{0, 1, 2}};
+    const Array<Array<u8, 4>, 3> colors = {{{{255, 0, 0, 255}}, {{0, 255, 0, 128}}, {{0, 0, 255, 0}}}};
+    for (const MeshQuality quality : {MeshQuality::Packed, MeshQuality::Full})
+    {
+        MeshBuildInput input;
+        input.vertices = Span<const MeshVertex>(vertices.Data(), vertices.Size());
+        input.indices = Span<const u32>(indices.Data(), indices.Size());
+        input.colors = Span<const Array<u8, 4>>(colors.Data(), colors.Size());
+        input.quality = quality;
+        Vector<byte> blob;
+        REQUIRE(BuildMeshBlob(types, ResourceId::FromValue(0x51), input, &blob).Ok());
+        MeshView view;
+        REQUIRE(view.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok());
+        const u32 base = quality == MeshQuality::Packed ? 24 : 48;
+        CHECK(view.HasColors());
+        CHECK(view.VertexStride() == base + 4);
+        REQUIRE(view.AttributeCount() == 5);
+        CHECK(view.Attribute(4).location == kMeshLocationColor);
+        CHECK(view.Attribute(4).format == rhi::VertexFormat::UNorm8x4);
+        CHECK(view.Attribute(4).offset == base);
+        const byte* second = view.VertexBytes().Data() + (base + 4);
+        CHECK(second[base + 1] == 255);
+        CHECK(second[base + 3] == 128);
+        input.colors = Span<const Array<u8, 4>>(colors.Data(), 2);  // not one per vertex
+        CHECK(BuildMeshBlob(types, ResourceId::FromValue(0x51), input, &blob).Failed());
+    }
+    // Without colours nothing changes: the attribute is absent.
+    const Vector<byte> plain = MshMint(types, MshGrid(1));
+    MeshView view;
+    REQUIRE(view.Open(ByteSpan(plain.Data(), plain.Size()), types).Ok());
+    CHECK_FALSE(view.HasColors());
 }
 
 TEST_CASE("mesh: minting twice is byte-identical", "[asset][mesh]")

@@ -78,6 +78,8 @@ The mesh blob (type `MESH`, version 1): geometry laid out for the GPU, built by 
 
 Sections (ids from 16, little-endian, each 64-byte aligned by the container): 16 header (96 bytes), 17 attributes (16 bytes each: location, format, offset, binding), 18 vertex stream 0 (the exact bytes of the vertex buffer), 19 indices (16 or 32 bit, a triangle list), 20 LODs (16 bytes each), 21 material slots (40 bytes each), and for a skinned mesh 22 the skin stream (binding 1: `UInt8x4` joint indices at location 5, `UNorm8x4` weights at location 6, summing to exactly 255 per vertex) and 23 the bind-pose box of each joint's influence set. A skinned mesh declares its skeleton as a dependency (role [`asset::kMeshRoleSkinSkeleton`](#asset-kmeshroleskinskeleton)) and records the skeleton hash and joint count. Section 40 (`MORP`, morph targets) is reserved and refused by this version.
 
+Per-vertex colours (glTF coverage Day 4) are one more attribute of stream 0, `UNorm8x4` at location 4 after the others (offset 24 packed, 48 full): rgb sRGB-encoded, alpha linear, as `gbuffer.vert`'s `VERTEX_COLOR` reads them. The version-1 reader already took any attribute, so a coloured mesh is still version 1.
+
 The minted triangle mesh of a static physics collider (`MCOL`, Phase 25 Day 394): positions, triangle indices and a material index per triangle. The bounding-volume hierarchy is built by the physics module when the mesh is added (deterministically, from these bytes). The reader treats the bytes as hostile.
 
 [`asset::MountTable`](#asset-mounttable): the ordered set of backends the resource manager reads from. A lookup by id goes to the highest-priority backend that has the resource (so a loose-file mount overrides a pak), and the mounts' id <-> path tables are read asynchronously and merged.
@@ -7343,6 +7345,16 @@ inline constexpr u32 kMeshLocationUv;
 
 The shader input location of the texture coordinates.
 
+## `kMeshLocationColor` {#asset-kmeshlocationcolor}
+
+`variable asset::kMeshLocationColor` — defined in `engine/asset/mesh.h`
+
+```cpp
+inline constexpr u32 kMeshLocationColor;
+```
+
+The shader input location of the per-vertex colour (`UNorm8x4`, rgb sRGB-encoded, alpha linear).
+
 ## `kMeshLocationJoints` {#asset-kmeshlocationjoints}
 
 `variable asset::kMeshLocationJoints` — defined in `engine/asset/mesh.h`
@@ -7749,6 +7761,16 @@ Span<const MeshSkinInfluence> skin;
 
 Empty, or one per vertex.
 
+### `colors` {#asset-meshbuildinput-colors}
+
+`variable asset::MeshBuildInput::colors` — defined in `engine/asset/mesh.h`
+
+```cpp
+Span<const Array<u8, 4>> colors;
+```
+
+Empty, or one per vertex: rgb sRGB-encoded, alpha linear.
+
 ### `skeleton` {#asset-meshbuildinput-skeleton}
 
 `variable asset::MeshBuildInput::skeleton` — defined in `engine/asset/mesh.h`
@@ -7798,6 +7820,22 @@ Packs a source's up-to-four influences into quantized ones: the four largest wei
 | Fails | reported by the return value. |
 | Ownership | borrows the arrays and `out` for the call. |
 
+## `EncodeMeshColor(const Array<f32,4>&)` {#asset-encodemeshcolor-const-array-lt-f32-4-gt-amp}
+
+`function asset::EncodeMeshColor` — defined in `engine/asset/mesh.h`
+
+```cpp
+Array<u8, 4> EncodeMeshColor(const Array<f32, 4>& rgba);
+```
+
+Encodes a linear colour as a mesh stores it: rgb to sRGB, alpha linear, each rounded to 8 bits (the inverse of the shader's `SrgbToLinear`). Values outside 0..1 are clamped.
+
+| Field | Value |
+|---|---|
+| Parameter `rgba` | the linear colour. |
+| Returns | the four bytes. |
+| Fails | never; a value that is not a number encodes as 0. |
+
 ## `BuildMeshBlob(const TypeRegistry&,ResourceId,const MeshBuildInput&,Vector<byte>*,u32)` {#asset-buildmeshblob-const-typeregistry-amp-resourceid-const-meshbuildinput-amp-vector-lt-byte-gt-star-u32}
 
 `function asset::BuildMeshBlob` — defined in `engine/asset/mesh.h`
@@ -7810,7 +7848,7 @@ Builds a mesh blob: packs the attributes, computes the bounds (and the joint box
 
 | Field | Value |
 |---|---|
-| Fails | `Invalid` (no vertices or indices, an index count that is not a multiple of 3, an index past the vertices, a non-finite value, a LOD or slot range outside the indices or not a multiple of 3, LOD screen sizes that grow, a slot name that is empty or too long, a skin array of the wrong length, a skin joint at or past the skeleton's joint count or weights that do not sum to 255); `LimitExceeded` for a count above the limits. |
+| Fails | `Invalid` (no vertices or indices, an index count that is not a multiple of 3, an index past the vertices, a non-finite value, a LOD or slot range outside the indices or not a multiple of 3, LOD screen sizes that grow, a slot name that is empty or too long, a colour array of the wrong length, a skin array of the wrong length, a skin joint at or past the skeleton's joint count or weights that do not sum to 255); `LimitExceeded` for a count above the limits. |
 | Ownership | borrows `input` for the call; `*out` is replaced. |
 
 ## `MeshView` {#asset-meshview}
@@ -7882,6 +7920,20 @@ u32 IndexBytesPerIndex() const;
 ```
 
 The width of an index in bytes (2 or 4).
+
+### `HasColors()` {#asset-meshview-hascolors-const}
+
+`method asset::MeshView::HasColors` — defined in `engine/asset/mesh.h`
+
+```cpp
+bool HasColors() const;
+```
+
+True when the mesh has per-vertex colours (an attribute at [`asset::kMeshLocationColor`](#asset-kmeshlocationcolor)).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `Skinned()` {#asset-meshview-skinned-const}
 

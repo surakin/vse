@@ -113,16 +113,23 @@ Status ParseMeshSource(StringView text, MeshSource* out, MeshSourceError* error)
             {
                 return MshFail(error, line_number, "vertices must come before indices and skin records");
             }
-            if (t.count != 13)
+            // 16 numbers: a linear RGBA colour after the uv (glTF coverage Day 4); every v of a mesh has one or none.
+            if (t.count != 13 && t.count != 17)
             {
-                return MshFail(error, line_number, "v needs 12 numbers: position, normal, tangent xyzw, uv");
+                return MshFail(error, line_number,
+                               "v needs 12 numbers (position, normal, tangent xyzw, uv) or 16 (and a colour)");
+            }
+            const bool colored = t.count == 17;
+            if (out->vertices.Size() != 0 && colored != (out->colors.Size() != 0))
+            {
+                return MshFail(error, line_number, "every v has a colour, or none does");
             }
             if (out->vertices.Size() >= kMaxMeshVertices)
             {
                 return MshLimit(error, line_number, "more vertices than the format allows");
             }
-            f32 n[12];
-            for (u32 k = 0; k < 12; ++k)
+            f32 n[16];
+            for (u32 k = 0; k + 1 < t.count; ++k)
             {
                 if (!srctext::ParseFloat(t.tokens[1 + k], &n[k]))
                 {
@@ -139,6 +146,10 @@ Status ParseMeshSource(StringView text, MeshSource* out, MeshSourceError* error)
             v.tangent[3] = n[9];
             v.uv[0] = n[10];
             v.uv[1] = n[11];
+            if (colored)
+            {
+                out->colors.Push(EncodeMeshColor(Array<f32, 4>{{n[12], n[13], n[14], n[15]}}));
+            }
             if ((n[3] == 0.0f && n[4] == 0.0f && n[5] == 0.0f) || (n[6] == 0.0f && n[7] == 0.0f && n[8] == 0.0f))
             {
                 return MshFail(error, line_number, "a normal or tangent has zero length");
@@ -315,6 +326,7 @@ Status MintMesh(StringView text, const TypeRegistry& types, const SkeletonView* 
     input.lods = Span<const MeshLod>(source.lods.Data(), source.lods.Size());
     input.slots = Span<const MeshSlot>(source.slots.Data(), source.slots.Size());
     input.quality = source.quality;
+    input.colors = Span<const Array<u8, 4>>(source.colors.Data(), source.colors.Size());
 
     Vector<MeshSkinInfluence> skin;
     if (!source.skeleton.IsNone())

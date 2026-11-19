@@ -194,6 +194,22 @@ bool QuantizeSkinInfluences(const u32* joints, const f64* weights, usize count, 
     return true;
 }
 
+Array<u8, 4> EncodeMeshColor(const Array<f32, 4>& rgba)
+{
+    Array<u8, 4> out = {{0, 0, 0, 0}};
+    for (u32 c = 0; c < 4; ++c)
+    {
+        f64 v = rgba[c];
+        v = v > 0.0 ? (v < 1.0 ? v : 1.0) : 0.0;  // a NaN compares false and becomes 0
+        if (c < 3)
+        {
+            v = v <= 0.0031308 ? v * 12.92 : 1.055 * Pow(v, 1.0 / 2.4) - 0.055;
+        }
+        out[c] = static_cast<u8>(Floor(v * 255.0 + 0.5));
+    }
+    return out;
+}
+
 Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildInput& input, Vector<byte>* out,
                      u32 target)
 {
@@ -223,6 +239,11 @@ Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildIn
     if (skinned && input.skin.Size() != vcount)
     {
         return MeshInvalid("the skin array does not have one entry per vertex");
+    }
+    const bool colored = input.colors.Size() != 0;
+    if (colored && input.colors.Size() != vcount)
+    {
+        return MeshInvalid("the colour array does not have one entry per vertex");
     }
     if (skinned && (input.skeleton.IsNone() || input.skeleton_joint_count == 0 || input.skeleton_joint_count > 256))
     {
@@ -356,7 +377,9 @@ Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildIn
     }
 
     // The vertex stream.
-    const u32 stride = packed ? kMeshPackedStride : kMeshFullStride;
+    // A colour (glTF coverage Day 4) is four bytes after the other attributes.
+    const u32 base_stride = packed ? kMeshPackedStride : kMeshFullStride;
+    const u32 stride = base_stride + (colored ? 4u : 0u);
     Vector<byte> vertices;
     vertices.Resize(vcount * stride);
     f64 uv_error = 0;
@@ -378,6 +401,13 @@ Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildIn
             t[c] = v.tangent[c] / tl;
         }
         const f64 sign = v.tangent[3] < 0.0f ? -1.0 : 1.0;
+        if (colored)
+        {
+            for (u32 c = 0; c < 4; ++c)
+            {
+                p[base_stride + c] = static_cast<byte>(input.colors[i][c]);
+            }
+        }
         MeshStoreF32(p, v.position[0]);
         MeshStoreF32(p + 4, v.position[1]);
         MeshStoreF32(p + 8, v.position[2]);
@@ -454,11 +484,16 @@ Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildIn
         MeshPutAttribute(&attributes, kMeshLocationTangent, rhi::VertexFormat::Float4, 24, 0);
         MeshPutAttribute(&attributes, kMeshLocationUv, rhi::VertexFormat::Float2, 40, 0);
     }
+    if (colored)
+    {
+        MeshPutAttribute(&attributes, kMeshLocationColor, rhi::VertexFormat::UNorm8x4, base_stride, 0);
+        attribute_count += 1;
+    }
     if (skinned)
     {
         MeshPutAttribute(&attributes, kMeshLocationJoints, rhi::VertexFormat::UInt8x4, 0, 1);
         MeshPutAttribute(&attributes, kMeshLocationWeights, rhi::VertexFormat::UNorm8x4, 4, 1);
-        attribute_count = 6;
+        attribute_count += 2;
         skin_bytes.Resize(vcount * kMeshSkinStride);
         for (usize i = 0; i < vcount; ++i)
         {
@@ -653,6 +688,7 @@ Status MeshView::Open(ByteSpan data, const TypeRegistry& types)
     }
     u32 stride[2] = {0, 0};
     u32 locations = 0;
+    bool has_colors = false;
     for (u32 i = 0; i < acount; ++i)
     {
         const byte* a = attributes.Data() + i * kMeshAttributeBytes;
@@ -666,6 +702,8 @@ Status MeshView::Open(ByteSpan data, const TypeRegistry& types)
             return MeshCorrupt("a mesh attribute is out of range, misaligned or repeats a location");
         }
         locations |= 1u << location;
+        has_colors = has_colors || (location == kMeshLocationColor &&
+                                    format == static_cast<u64>(rhi::VertexFormat::UNorm8x4) && binding == 0);
         const u64 end = offset + rhi::VertexFormatSize(static_cast<rhi::VertexFormat>(format));
         if (end > 256)
         {
@@ -780,6 +818,7 @@ Status MeshView::Open(ByteSpan data, const TypeRegistry& types)
     index_count_ = static_cast<u32>(icount);
     index_width_ = static_cast<u32>(width);
     skinned_ = skinned;
+    has_colors_ = has_colors;
     quality_ = (flags & kMeshFlagPacked) != 0 ? MeshQuality::Packed : MeshQuality::Full;
     attribute_count_ = static_cast<u32>(acount);
     stride_ = stride[0];

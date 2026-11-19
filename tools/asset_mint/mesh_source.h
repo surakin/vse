@@ -52,6 +52,7 @@ struct MeshSource
     u32 skeleton_line = 0;                      ///< Its line.
     Vector<MeshVertex> vertices;                ///< The `v` records.
     Vector<u32> vertex_lines;                   ///< The line of each `v` record.
+    Vector<Array<u8, 4>> colors;                ///< One per vertex when the `v` records carry a colour, else empty.
     Vector<u32> indices;                        ///< The `i` records, three each.
     Vector<MeshLod> lods;                       ///< The `lod` records.
     Vector<MeshSlot> slots;                     ///< The `slot` records.

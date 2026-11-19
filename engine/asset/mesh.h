@@ -10,6 +10,10 @@
 //! summing to exactly 255 per vertex) and 23 the bind-pose box of each joint's influence set. A skinned mesh declares
 //! its skeleton as a dependency (role [[asset::kMeshRoleSkinSkeleton]]) and records the skeleton hash and joint count.
 //! Section 40 (`MORP`, morph targets) is reserved and refused by this version.
+//!
+//! Per-vertex colours (glTF coverage Day 4) are one more attribute of stream 0, `UNorm8x4` at location 4 after the
+//! others (offset 24 packed, 48 full): rgb sRGB-encoded, alpha linear, as `gbuffer.vert`'s `VERTEX_COLOR` reads them.
+//! The version-1 reader already took any attribute, so a coloured mesh is still version 1.
 
 #include "asset/blob.h"
 #include "asset/content_hash.h"
@@ -49,6 +53,8 @@ inline constexpr u32 kMeshLocationNormal = 1;
 inline constexpr u32 kMeshLocationTangent = 2;
 /// The shader input location of the texture coordinates.
 inline constexpr u32 kMeshLocationUv = 3;
+/// The shader input location of the per-vertex colour (`UNorm8x4`, rgb sRGB-encoded, alpha linear).
+inline constexpr u32 kMeshLocationColor = 4;
 /// The shader input location of the skin joint indices (vertex binding 1).
 inline constexpr u32 kMeshLocationJoints = 5;
 /// The shader input location of the skin weights (vertex binding 1).
@@ -148,6 +154,7 @@ struct MeshBuildInput
     Span<const MeshSlot> slots;                 ///< May be empty.
     MeshQuality quality = MeshQuality::Packed;  ///< The storage.
     Span<const MeshSkinInfluence> skin;         ///< Empty, or one per vertex.
+    Span<const Array<u8, 4>> colors;            ///< Empty, or one per vertex: rgb sRGB-encoded, alpha linear.
     ResourceId skeleton;                        ///< The skeleton of a skinned mesh.
     ContentHash skeleton_hash;                  ///< Its hash.
     u32 skeleton_joint_count = 0;               ///< Its joint count.
@@ -164,13 +171,22 @@ struct MeshBuildInput
 /// - Ownership: borrows the arrays and `out` for the call.
 bool QuantizeSkinInfluences(const u32* joints, const f64* weights, usize count, MeshSkinInfluence* out);
 
+/// Encodes a linear colour as a mesh stores it: rgb to sRGB, alpha linear, each rounded to 8 bits (the inverse of the
+/// shader's `SrgbToLinear`). Values outside 0..1 are clamped.
+///
+/// - Param rgba: the linear colour.
+/// - Returns: the four bytes.
+/// - Fails: never; a value that is not a number encodes as 0.
+Array<u8, 4> EncodeMeshColor(const Array<f32, 4>& rgba);
+
 /// Builds a mesh blob: packs the attributes, computes the bounds (and the joint boxes of a skinned mesh), records the
 /// measured packing error, and writes the sections.
 ///
 /// - Fails: `Invalid` (no vertices or indices, an index count that is not a multiple of 3, an index past the vertices,
 ///   a non-finite value, a LOD or slot range outside the indices or not a multiple of 3, LOD screen sizes that grow, a
-///   slot name that is empty or too long, a skin array of the wrong length, a skin joint at or past the skeleton's
-///   joint count or weights that do not sum to 255); `LimitExceeded` for a count above the limits.
+///   slot name that is empty or too long, a colour array of the wrong length, a skin array of the wrong length, a skin
+///   joint at or past the skeleton's joint count or weights that do not sum to 255); `LimitExceeded` for a count above
+///   the limits.
 /// - Ownership: borrows `input` for the call; `*out` is replaced.
 Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildInput& input, Vector<byte>* out,
                      u32 target = 0);
@@ -202,6 +218,10 @@ public:
     u32 IndexCount() const { return index_count_; }
     /// The width of an index in bytes (2 or 4).
     u32 IndexBytesPerIndex() const { return index_width_; }
+    /// True when the mesh has per-vertex colours (an attribute at [[asset::kMeshLocationColor]]).
+    ///
+    /// - Fails: never.
+    bool HasColors() const { return has_colors_; }
     /// True when the mesh has a skin stream.
     ///
     /// - Fails: never.
@@ -279,6 +299,7 @@ private:
     u32 index_count_ = 0;
     u32 index_width_ = 2;
     bool skinned_ = false;
+    bool has_colors_ = false;
     MeshQuality quality_ = MeshQuality::Packed;
     u32 attribute_count_ = 0;
     u32 stride_ = 0;

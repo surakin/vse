@@ -7909,100 +7909,104 @@ asset::HostMemoryBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-ho
 asset::HostMemoryBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-hostmemorybackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/memory_backend.h:127
 asset::HostMemoryBackend::ReadTable(ResourceTable*)	function	asset	asset-hostmemorybackend-readtable-resourcetable-star	asset.md	engine/asset/memory_backend.h:128
 asset::HostMemoryBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-hostmemorybackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/memory_backend.h:129
-asset::kMaxMeshVertices	variable	asset	asset-kmaxmeshvertices	asset.md	engine/asset/mesh.h:31
-asset::kMaxMeshIndices	variable	asset	asset-kmaxmeshindices	asset.md	engine/asset/mesh.h:33
-asset::kMaxMeshLods	variable	asset	asset-kmaxmeshlods	asset.md	engine/asset/mesh.h:35
-asset::kMaxMeshSlots	variable	asset	asset-kmaxmeshslots	asset.md	engine/asset/mesh.h:37
-asset::kMaxSlotNameBytes	variable	asset	asset-kmaxslotnamebytes	asset.md	engine/asset/mesh.h:39
-asset::kMaxMeshAttributes	variable	asset	asset-kmaxmeshattributes	asset.md	engine/asset/mesh.h:41
-asset::kMeshRoleSkinSkeleton	variable	asset	asset-kmeshroleskinskeleton	asset.md	engine/asset/mesh.h:43
-asset::kMeshLocationPosition	variable	asset	asset-kmeshlocationposition	asset.md	engine/asset/mesh.h:45
-asset::kMeshLocationNormal	variable	asset	asset-kmeshlocationnormal	asset.md	engine/asset/mesh.h:47
-asset::kMeshLocationTangent	variable	asset	asset-kmeshlocationtangent	asset.md	engine/asset/mesh.h:49
-asset::kMeshLocationUv	variable	asset	asset-kmeshlocationuv	asset.md	engine/asset/mesh.h:51
-asset::kMeshLocationJoints	variable	asset	asset-kmeshlocationjoints	asset.md	engine/asset/mesh.h:53
-asset::kMeshLocationWeights	variable	asset	asset-kmeshlocationweights	asset.md	engine/asset/mesh.h:55
-asset::MeshSection	enum	asset	asset-meshsection	asset.md	engine/asset/mesh.h:58
-asset::kMeshSectionHeader	enumerator	asset	asset-kmeshsectionheader	asset.md	engine/asset/mesh.h:60
-asset::kMeshSectionAttributes	enumerator	asset	asset-kmeshsectionattributes	asset.md	engine/asset/mesh.h:61
-asset::kMeshSectionVertices	enumerator	asset	asset-kmeshsectionvertices	asset.md	engine/asset/mesh.h:62
-asset::kMeshSectionIndices	enumerator	asset	asset-kmeshsectionindices	asset.md	engine/asset/mesh.h:63
-asset::kMeshSectionLods	enumerator	asset	asset-kmeshsectionlods	asset.md	engine/asset/mesh.h:64
-asset::kMeshSectionSlots	enumerator	asset	asset-kmeshsectionslots	asset.md	engine/asset/mesh.h:65
-asset::kMeshSectionSkin	enumerator	asset	asset-kmeshsectionskin	asset.md	engine/asset/mesh.h:66
-asset::kMeshSectionJointBounds	enumerator	asset	asset-kmeshsectionjointbounds	asset.md	engine/asset/mesh.h:67
-asset::kMeshSectionMorphReserved	enumerator	asset	asset-kmeshsectionmorphreserved	asset.md	engine/asset/mesh.h:68
-asset::MeshQuality	enum	asset	asset-meshquality	asset.md	engine/asset/mesh.h:72
-asset::MeshQuality::Packed	enumerator	asset	asset-meshquality-packed	asset.md	engine/asset/mesh.h:74
-asset::MeshQuality::Full	enumerator	asset	asset-meshquality-full	asset.md	engine/asset/mesh.h:75
-asset::MeshVertex	struct	asset	asset-meshvertex	asset.md	engine/asset/mesh.h:81
-asset::MeshVertex::position	variable	asset	asset-meshvertex-position	asset.md	engine/asset/mesh.h:83
-asset::MeshVertex::normal	variable	asset	asset-meshvertex-normal	asset.md	engine/asset/mesh.h:84
-asset::MeshVertex::tangent	variable	asset	asset-meshvertex-tangent	asset.md	engine/asset/mesh.h:85
-asset::MeshVertex::uv	variable	asset	asset-meshvertex-uv	asset.md	engine/asset/mesh.h:86
-asset::MeshSkinInfluence	struct	asset	asset-meshskininfluence	asset.md	engine/asset/mesh.h:92
-asset::MeshSkinInfluence::joint	variable	asset	asset-meshskininfluence-joint	asset.md	engine/asset/mesh.h:94
-asset::MeshSkinInfluence::weight	variable	asset	asset-meshskininfluence-weight	asset.md	engine/asset/mesh.h:95
-asset::MeshLod	struct	asset	asset-meshlod	asset.md	engine/asset/mesh.h:101
-asset::MeshLod::first_index	variable	asset	asset-meshlod-first-index	asset.md	engine/asset/mesh.h:103
-asset::MeshLod::index_count	variable	asset	asset-meshlod-index-count	asset.md	engine/asset/mesh.h:104
-asset::MeshLod::screen_size	variable	asset	asset-meshlod-screen-size	asset.md	engine/asset/mesh.h:105
-asset::MeshSlot	struct	asset	asset-meshslot	asset.md	engine/asset/mesh.h:111
-asset::MeshSlot::name	variable	asset	asset-meshslot-name	asset.md	engine/asset/mesh.h:113
-asset::MeshSlot::first_index	variable	asset	asset-meshslot-first-index	asset.md	engine/asset/mesh.h:114
-asset::MeshSlot::index_count	variable	asset	asset-meshslot-index-count	asset.md	engine/asset/mesh.h:115
-asset::MeshAttribute	struct	asset	asset-meshattribute	asset.md	engine/asset/mesh.h:121
-asset::MeshAttribute::location	variable	asset	asset-meshattribute-location	asset.md	engine/asset/mesh.h:123
-asset::MeshAttribute::format	variable	asset	asset-meshattribute-format	asset.md	engine/asset/mesh.h:124
-asset::MeshAttribute::offset	variable	asset	asset-meshattribute-offset	asset.md	engine/asset/mesh.h:125
-asset::MeshAttribute::binding	variable	asset	asset-meshattribute-binding	asset.md	engine/asset/mesh.h:126
-asset::MeshJointBounds	struct	asset	asset-meshjointbounds	asset.md	engine/asset/mesh.h:132
-asset::MeshJointBounds::used	variable	asset	asset-meshjointbounds-used	asset.md	engine/asset/mesh.h:134
-asset::MeshJointBounds::min	variable	asset	asset-meshjointbounds-min	asset.md	engine/asset/mesh.h:135
-asset::MeshJointBounds::max	variable	asset	asset-meshjointbounds-max	asset.md	engine/asset/mesh.h:136
-asset::MeshBuildInput	struct	asset	asset-meshbuildinput	asset.md	engine/asset/mesh.h:143
-asset::MeshBuildInput::vertices	variable	asset	asset-meshbuildinput-vertices	asset.md	engine/asset/mesh.h:145
-asset::MeshBuildInput::indices	variable	asset	asset-meshbuildinput-indices	asset.md	engine/asset/mesh.h:146
-asset::MeshBuildInput::lods	variable	asset	asset-meshbuildinput-lods	asset.md	engine/asset/mesh.h:147
-asset::MeshBuildInput::slots	variable	asset	asset-meshbuildinput-slots	asset.md	engine/asset/mesh.h:148
-asset::MeshBuildInput::quality	variable	asset	asset-meshbuildinput-quality	asset.md	engine/asset/mesh.h:149
-asset::MeshBuildInput::skin	variable	asset	asset-meshbuildinput-skin	asset.md	engine/asset/mesh.h:150
-asset::MeshBuildInput::skeleton	variable	asset	asset-meshbuildinput-skeleton	asset.md	engine/asset/mesh.h:151
-asset::MeshBuildInput::skeleton_hash	variable	asset	asset-meshbuildinput-skeleton-hash	asset.md	engine/asset/mesh.h:152
-asset::MeshBuildInput::skeleton_joint_count	variable	asset	asset-meshbuildinput-skeleton-joint-count	asset.md	engine/asset/mesh.h:153
-asset::QuantizeSkinInfluences(const u32*,const f64*,usize,MeshSkinInfluence*)	function	asset	asset-quantizeskininfluences-const-u32-star-const-f64-star-usize-meshskininfluence-star	asset.md	engine/asset/mesh.h:165
-asset::BuildMeshBlob(const TypeRegistry&,ResourceId,const MeshBuildInput&,Vector<byte>*,u32)	function	asset	asset-buildmeshblob-const-typeregistry-amp-resourceid-const-meshbuildinput-amp-vector-lt-byte-gt-star-u32	asset.md	engine/asset/mesh.h:175
-asset::MeshView	class	asset	asset-meshview	asset.md	engine/asset/mesh.h:182
-asset::MeshView::MeshView()	function	asset	asset-meshview-meshview	asset.md	engine/asset/mesh.h:186
-asset::MeshView::Open(ByteSpan,const TypeRegistry&)	function	asset	asset-meshview-open-bytespan-const-typeregistry-amp	asset.md	engine/asset/mesh.h:197
-asset::MeshView::VertexCount() const	function	asset	asset-meshview-vertexcount-const	asset.md	engine/asset/mesh.h:200
-asset::MeshView::IndexCount() const	function	asset	asset-meshview-indexcount-const	asset.md	engine/asset/mesh.h:202
-asset::MeshView::IndexBytesPerIndex() const	function	asset	asset-meshview-indexbytesperindex-const	asset.md	engine/asset/mesh.h:204
-asset::MeshView::Skinned() const	function	asset	asset-meshview-skinned-const	asset.md	engine/asset/mesh.h:208
-asset::MeshView::Quality() const	function	asset	asset-meshview-quality-const	asset.md	engine/asset/mesh.h:210
-asset::MeshView::AttributeCount() const	function	asset	asset-meshview-attributecount-const	asset.md	engine/asset/mesh.h:212
-asset::MeshView::Attribute(u32) const	function	asset	asset-meshview-attribute-u32-const	asset.md	engine/asset/mesh.h:216
-asset::MeshView::VertexBytes() const	function	asset	asset-meshview-vertexbytes-const	asset.md	engine/asset/mesh.h:218
-asset::MeshView::IndexBytes() const	function	asset	asset-meshview-indexbytes-const	asset.md	engine/asset/mesh.h:220
-asset::MeshView::SkinBytes() const	function	asset	asset-meshview-skinbytes-const	asset.md	engine/asset/mesh.h:222
-asset::MeshView::VertexStride() const	function	asset	asset-meshview-vertexstride-const	asset.md	engine/asset/mesh.h:224
-asset::MeshView::BoundsMin() const	function	asset	asset-meshview-boundsmin-const	asset.md	engine/asset/mesh.h:226
-asset::MeshView::BoundsMax() const	function	asset	asset-meshview-boundsmax-const	asset.md	engine/asset/mesh.h:228
-asset::MeshView::UvOffset() const	function	asset	asset-meshview-uvoffset-const	asset.md	engine/asset/mesh.h:230
-asset::MeshView::UvScale() const	function	asset	asset-meshview-uvscale-const	asset.md	engine/asset/mesh.h:232
-asset::MeshView::UvError() const	function	asset	asset-meshview-uverror-const	asset.md	engine/asset/mesh.h:234
-asset::MeshView::NormalError() const	function	asset	asset-meshview-normalerror-const	asset.md	engine/asset/mesh.h:236
-asset::MeshView::LodCount() const	function	asset	asset-meshview-lodcount-const	asset.md	engine/asset/mesh.h:238
-asset::MeshView::Lod(u32) const	function	asset	asset-meshview-lod-u32-const	asset.md	engine/asset/mesh.h:242
-asset::MeshView::SlotCount() const	function	asset	asset-meshview-slotcount-const	asset.md	engine/asset/mesh.h:244
-asset::MeshView::Slot(u32) const	function	asset	asset-meshview-slot-u32-const	asset.md	engine/asset/mesh.h:248
-asset::MeshView::Skeleton() const	function	asset	asset-meshview-skeleton-const	asset.md	engine/asset/mesh.h:250
-asset::MeshView::SkeletonHash() const	function	asset	asset-meshview-skeletonhash-const	asset.md	engine/asset/mesh.h:252
-asset::MeshView::SkinJointCount() const	function	asset	asset-meshview-skinjointcount-const	asset.md	engine/asset/mesh.h:254
-asset::MeshView::JointBounds(u32) const	function	asset	asset-meshview-jointbounds-u32-const	asset.md	engine/asset/mesh.h:258
-asset::MeshView::CheckSkeleton(const SkeletonView&) const	function	asset	asset-meshview-checkskeleton-const-skeletonview-amp-const	asset.md	engine/asset/mesh.h:264
-asset::MeshView::CheckIndices() const	function	asset	asset-meshview-checkindices-const	asset.md	engine/asset/mesh.h:269
-asset::MeshView::CheckSkin() const	function	asset	asset-meshview-checkskin-const	asset.md	engine/asset/mesh.h:275
+asset::kMaxMeshVertices	variable	asset	asset-kmaxmeshvertices	asset.md	engine/asset/mesh.h:35
+asset::kMaxMeshIndices	variable	asset	asset-kmaxmeshindices	asset.md	engine/asset/mesh.h:37
+asset::kMaxMeshLods	variable	asset	asset-kmaxmeshlods	asset.md	engine/asset/mesh.h:39
+asset::kMaxMeshSlots	variable	asset	asset-kmaxmeshslots	asset.md	engine/asset/mesh.h:41
+asset::kMaxSlotNameBytes	variable	asset	asset-kmaxslotnamebytes	asset.md	engine/asset/mesh.h:43
+asset::kMaxMeshAttributes	variable	asset	asset-kmaxmeshattributes	asset.md	engine/asset/mesh.h:45
+asset::kMeshRoleSkinSkeleton	variable	asset	asset-kmeshroleskinskeleton	asset.md	engine/asset/mesh.h:47
+asset::kMeshLocationPosition	variable	asset	asset-kmeshlocationposition	asset.md	engine/asset/mesh.h:49
+asset::kMeshLocationNormal	variable	asset	asset-kmeshlocationnormal	asset.md	engine/asset/mesh.h:51
+asset::kMeshLocationTangent	variable	asset	asset-kmeshlocationtangent	asset.md	engine/asset/mesh.h:53
+asset::kMeshLocationUv	variable	asset	asset-kmeshlocationuv	asset.md	engine/asset/mesh.h:55
+asset::kMeshLocationColor	variable	asset	asset-kmeshlocationcolor	asset.md	engine/asset/mesh.h:57
+asset::kMeshLocationJoints	variable	asset	asset-kmeshlocationjoints	asset.md	engine/asset/mesh.h:59
+asset::kMeshLocationWeights	variable	asset	asset-kmeshlocationweights	asset.md	engine/asset/mesh.h:61
+asset::MeshSection	enum	asset	asset-meshsection	asset.md	engine/asset/mesh.h:64
+asset::kMeshSectionHeader	enumerator	asset	asset-kmeshsectionheader	asset.md	engine/asset/mesh.h:66
+asset::kMeshSectionAttributes	enumerator	asset	asset-kmeshsectionattributes	asset.md	engine/asset/mesh.h:67
+asset::kMeshSectionVertices	enumerator	asset	asset-kmeshsectionvertices	asset.md	engine/asset/mesh.h:68
+asset::kMeshSectionIndices	enumerator	asset	asset-kmeshsectionindices	asset.md	engine/asset/mesh.h:69
+asset::kMeshSectionLods	enumerator	asset	asset-kmeshsectionlods	asset.md	engine/asset/mesh.h:70
+asset::kMeshSectionSlots	enumerator	asset	asset-kmeshsectionslots	asset.md	engine/asset/mesh.h:71
+asset::kMeshSectionSkin	enumerator	asset	asset-kmeshsectionskin	asset.md	engine/asset/mesh.h:72
+asset::kMeshSectionJointBounds	enumerator	asset	asset-kmeshsectionjointbounds	asset.md	engine/asset/mesh.h:73
+asset::kMeshSectionMorphReserved	enumerator	asset	asset-kmeshsectionmorphreserved	asset.md	engine/asset/mesh.h:74
+asset::MeshQuality	enum	asset	asset-meshquality	asset.md	engine/asset/mesh.h:78
+asset::MeshQuality::Packed	enumerator	asset	asset-meshquality-packed	asset.md	engine/asset/mesh.h:80
+asset::MeshQuality::Full	enumerator	asset	asset-meshquality-full	asset.md	engine/asset/mesh.h:81
+asset::MeshVertex	struct	asset	asset-meshvertex	asset.md	engine/asset/mesh.h:87
+asset::MeshVertex::position	variable	asset	asset-meshvertex-position	asset.md	engine/asset/mesh.h:89
+asset::MeshVertex::normal	variable	asset	asset-meshvertex-normal	asset.md	engine/asset/mesh.h:90
+asset::MeshVertex::tangent	variable	asset	asset-meshvertex-tangent	asset.md	engine/asset/mesh.h:91
+asset::MeshVertex::uv	variable	asset	asset-meshvertex-uv	asset.md	engine/asset/mesh.h:92
+asset::MeshSkinInfluence	struct	asset	asset-meshskininfluence	asset.md	engine/asset/mesh.h:98
+asset::MeshSkinInfluence::joint	variable	asset	asset-meshskininfluence-joint	asset.md	engine/asset/mesh.h:100
+asset::MeshSkinInfluence::weight	variable	asset	asset-meshskininfluence-weight	asset.md	engine/asset/mesh.h:101
+asset::MeshLod	struct	asset	asset-meshlod	asset.md	engine/asset/mesh.h:107
+asset::MeshLod::first_index	variable	asset	asset-meshlod-first-index	asset.md	engine/asset/mesh.h:109
+asset::MeshLod::index_count	variable	asset	asset-meshlod-index-count	asset.md	engine/asset/mesh.h:110
+asset::MeshLod::screen_size	variable	asset	asset-meshlod-screen-size	asset.md	engine/asset/mesh.h:111
+asset::MeshSlot	struct	asset	asset-meshslot	asset.md	engine/asset/mesh.h:117
+asset::MeshSlot::name	variable	asset	asset-meshslot-name	asset.md	engine/asset/mesh.h:119
+asset::MeshSlot::first_index	variable	asset	asset-meshslot-first-index	asset.md	engine/asset/mesh.h:120
+asset::MeshSlot::index_count	variable	asset	asset-meshslot-index-count	asset.md	engine/asset/mesh.h:121
+asset::MeshAttribute	struct	asset	asset-meshattribute	asset.md	engine/asset/mesh.h:127
+asset::MeshAttribute::location	variable	asset	asset-meshattribute-location	asset.md	engine/asset/mesh.h:129
+asset::MeshAttribute::format	variable	asset	asset-meshattribute-format	asset.md	engine/asset/mesh.h:130
+asset::MeshAttribute::offset	variable	asset	asset-meshattribute-offset	asset.md	engine/asset/mesh.h:131
+asset::MeshAttribute::binding	variable	asset	asset-meshattribute-binding	asset.md	engine/asset/mesh.h:132
+asset::MeshJointBounds	struct	asset	asset-meshjointbounds	asset.md	engine/asset/mesh.h:138
+asset::MeshJointBounds::used	variable	asset	asset-meshjointbounds-used	asset.md	engine/asset/mesh.h:140
+asset::MeshJointBounds::min	variable	asset	asset-meshjointbounds-min	asset.md	engine/asset/mesh.h:141
+asset::MeshJointBounds::max	variable	asset	asset-meshjointbounds-max	asset.md	engine/asset/mesh.h:142
+asset::MeshBuildInput	struct	asset	asset-meshbuildinput	asset.md	engine/asset/mesh.h:149
+asset::MeshBuildInput::vertices	variable	asset	asset-meshbuildinput-vertices	asset.md	engine/asset/mesh.h:151
+asset::MeshBuildInput::indices	variable	asset	asset-meshbuildinput-indices	asset.md	engine/asset/mesh.h:152
+asset::MeshBuildInput::lods	variable	asset	asset-meshbuildinput-lods	asset.md	engine/asset/mesh.h:153
+asset::MeshBuildInput::slots	variable	asset	asset-meshbuildinput-slots	asset.md	engine/asset/mesh.h:154
+asset::MeshBuildInput::quality	variable	asset	asset-meshbuildinput-quality	asset.md	engine/asset/mesh.h:155
+asset::MeshBuildInput::skin	variable	asset	asset-meshbuildinput-skin	asset.md	engine/asset/mesh.h:156
+asset::MeshBuildInput::colors	variable	asset	asset-meshbuildinput-colors	asset.md	engine/asset/mesh.h:157
+asset::MeshBuildInput::skeleton	variable	asset	asset-meshbuildinput-skeleton	asset.md	engine/asset/mesh.h:158
+asset::MeshBuildInput::skeleton_hash	variable	asset	asset-meshbuildinput-skeleton-hash	asset.md	engine/asset/mesh.h:159
+asset::MeshBuildInput::skeleton_joint_count	variable	asset	asset-meshbuildinput-skeleton-joint-count	asset.md	engine/asset/mesh.h:160
+asset::QuantizeSkinInfluences(const u32*,const f64*,usize,MeshSkinInfluence*)	function	asset	asset-quantizeskininfluences-const-u32-star-const-f64-star-usize-meshskininfluence-star	asset.md	engine/asset/mesh.h:172
+asset::EncodeMeshColor(const Array<f32,4>&)	function	asset	asset-encodemeshcolor-const-array-lt-f32-4-gt-amp	asset.md	engine/asset/mesh.h:180
+asset::BuildMeshBlob(const TypeRegistry&,ResourceId,const MeshBuildInput&,Vector<byte>*,u32)	function	asset	asset-buildmeshblob-const-typeregistry-amp-resourceid-const-meshbuildinput-amp-vector-lt-byte-gt-star-u32	asset.md	engine/asset/mesh.h:191
+asset::MeshView	class	asset	asset-meshview	asset.md	engine/asset/mesh.h:198
+asset::MeshView::MeshView()	function	asset	asset-meshview-meshview	asset.md	engine/asset/mesh.h:202
+asset::MeshView::Open(ByteSpan,const TypeRegistry&)	function	asset	asset-meshview-open-bytespan-const-typeregistry-amp	asset.md	engine/asset/mesh.h:213
+asset::MeshView::VertexCount() const	function	asset	asset-meshview-vertexcount-const	asset.md	engine/asset/mesh.h:216
+asset::MeshView::IndexCount() const	function	asset	asset-meshview-indexcount-const	asset.md	engine/asset/mesh.h:218
+asset::MeshView::IndexBytesPerIndex() const	function	asset	asset-meshview-indexbytesperindex-const	asset.md	engine/asset/mesh.h:220
+asset::MeshView::HasColors() const	function	asset	asset-meshview-hascolors-const	asset.md	engine/asset/mesh.h:224
+asset::MeshView::Skinned() const	function	asset	asset-meshview-skinned-const	asset.md	engine/asset/mesh.h:228
+asset::MeshView::Quality() const	function	asset	asset-meshview-quality-const	asset.md	engine/asset/mesh.h:230
+asset::MeshView::AttributeCount() const	function	asset	asset-meshview-attributecount-const	asset.md	engine/asset/mesh.h:232
+asset::MeshView::Attribute(u32) const	function	asset	asset-meshview-attribute-u32-const	asset.md	engine/asset/mesh.h:236
+asset::MeshView::VertexBytes() const	function	asset	asset-meshview-vertexbytes-const	asset.md	engine/asset/mesh.h:238
+asset::MeshView::IndexBytes() const	function	asset	asset-meshview-indexbytes-const	asset.md	engine/asset/mesh.h:240
+asset::MeshView::SkinBytes() const	function	asset	asset-meshview-skinbytes-const	asset.md	engine/asset/mesh.h:242
+asset::MeshView::VertexStride() const	function	asset	asset-meshview-vertexstride-const	asset.md	engine/asset/mesh.h:244
+asset::MeshView::BoundsMin() const	function	asset	asset-meshview-boundsmin-const	asset.md	engine/asset/mesh.h:246
+asset::MeshView::BoundsMax() const	function	asset	asset-meshview-boundsmax-const	asset.md	engine/asset/mesh.h:248
+asset::MeshView::UvOffset() const	function	asset	asset-meshview-uvoffset-const	asset.md	engine/asset/mesh.h:250
+asset::MeshView::UvScale() const	function	asset	asset-meshview-uvscale-const	asset.md	engine/asset/mesh.h:252
+asset::MeshView::UvError() const	function	asset	asset-meshview-uverror-const	asset.md	engine/asset/mesh.h:254
+asset::MeshView::NormalError() const	function	asset	asset-meshview-normalerror-const	asset.md	engine/asset/mesh.h:256
+asset::MeshView::LodCount() const	function	asset	asset-meshview-lodcount-const	asset.md	engine/asset/mesh.h:258
+asset::MeshView::Lod(u32) const	function	asset	asset-meshview-lod-u32-const	asset.md	engine/asset/mesh.h:262
+asset::MeshView::SlotCount() const	function	asset	asset-meshview-slotcount-const	asset.md	engine/asset/mesh.h:264
+asset::MeshView::Slot(u32) const	function	asset	asset-meshview-slot-u32-const	asset.md	engine/asset/mesh.h:268
+asset::MeshView::Skeleton() const	function	asset	asset-meshview-skeleton-const	asset.md	engine/asset/mesh.h:270
+asset::MeshView::SkeletonHash() const	function	asset	asset-meshview-skeletonhash-const	asset.md	engine/asset/mesh.h:272
+asset::MeshView::SkinJointCount() const	function	asset	asset-meshview-skinjointcount-const	asset.md	engine/asset/mesh.h:274
+asset::MeshView::JointBounds(u32) const	function	asset	asset-meshview-jointbounds-u32-const	asset.md	engine/asset/mesh.h:278
+asset::MeshView::CheckSkeleton(const SkeletonView&) const	function	asset	asset-meshview-checkskeleton-const-skeletonview-amp-const	asset.md	engine/asset/mesh.h:284
+asset::MeshView::CheckIndices() const	function	asset	asset-meshview-checkindices-const	asset.md	engine/asset/mesh.h:289
+asset::MeshView::CheckSkin() const	function	asset	asset-meshview-checkskin-const	asset.md	engine/asset/mesh.h:295
 asset::kMaxMeshColliderVertices	variable	asset	asset-kmaxmeshcollidervertices	asset.md	engine/asset/mesh_collider.h:21
 asset::kMaxMeshColliderTriangles	variable	asset	asset-kmaxmeshcollidertriangles	asset.md	engine/asset/mesh_collider.h:23
 asset::kMeshColliderHeaderBytes	variable	asset	asset-kmeshcolliderheaderbytes	asset.md	engine/asset/mesh_collider.h:25
