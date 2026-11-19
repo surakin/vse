@@ -5341,6 +5341,40 @@ Makes a component for the behavior `name`.
 | Parameter `instance_params` | the parameters; copied. |
 | Parameter `is_enabled` | whether the instance starts enabled. |
 
+## `PartitionLoad` {#script-partitionload}
+
+`struct script::PartitionLoad` — defined in `engine/script/script_runtime.h`
+
+```cpp
+struct PartitionLoad { ... }
+```
+
+One partition's share of the last tick's script phase, for profiling tools and overlays (a measurement, not part of the simulation: it differs run to run, the world does not).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `instances` {#script-partitionload-instances}
+
+`variable script::PartitionLoad::instances` — defined in `engine/script/script_runtime.h`
+
+```cpp
+u32 instances;
+```
+
+The instances the partition ran.
+
+### `nanoseconds` {#script-partitionload-nanoseconds}
+
+`variable script::PartitionLoad::nanoseconds` — defined in `engine/script/script_runtime.h`
+
+```cpp
+u64 nanoseconds;
+```
+
+The wall time its job took, in nanoseconds (0 for a partition with no instances).
+
 ## `ScriptRuntimeStats` {#script-scriptruntimestats}
 
 `struct script::ScriptRuntimeStats` — defined in `engine/script/script_runtime.h`
@@ -6143,6 +6177,22 @@ The counts so far.
 | Field | Value |
 |---|---|
 | Ownership | borrowed. |
+
+### `LastPartitionLoad(Vector<PartitionLoad>*)` {#script-scriptruntime-lastpartitionload-vector-lt-partitionload-gt-star-const}
+
+`method script::ScriptRuntime::LastPartitionLoad` — defined in `engine/script/script_runtime.h`
+
+```cpp
+void LastPartitionLoad(Vector<PartitionLoad>* out) const;
+```
+
+What each partition did in the last tick's script phase: its instances and its job's wall time, one entry per partition in partition order (Phase 27 Day 475: the script demo's overlay).
+
+| Field | Value |
+|---|---|
+| Parameter `out` | receives the entries; not null. |
+| Thread-safety | thread-compatible: between ticks. |
+| Ownership | `out` is borrowed for the call. |
 
 ### `Events()` {#script-scriptruntime-events}
 

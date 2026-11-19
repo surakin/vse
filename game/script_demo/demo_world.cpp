@@ -2,9 +2,12 @@
 #include "demo_world.h"
 #include "containers/hash.h"
 
+#include "asset/resource_id.h"
+#include "containers/array.h"
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
+#include "lang/scalar.h"
 #include "os/console.h"
 #include "os/os.h"
 #include "physics/joint_sync.h"
@@ -15,6 +18,8 @@
 #include "script/entity_bindings.h"
 #include "script/luajit/luajit_backend.h"
 #include "script/merge_services.h"
+#include "script_media/audio_bindings.h"
+#include "script_media/input_bindings.h"
 #include "script_physics/physics_events.h"
 #include "storage/builtin_components.h"
 
@@ -67,6 +72,47 @@ SharedBytesPtr Bytes(StringView text)
     return CopyShared(ByteSpan(reinterpret_cast<const byte*>(text.Data()), text.Length()));
 }
 
+// The player's keys: two axes, the arrows and W, A, S, D (W and Up go toward -z, away from the camera).
+void FillInputMap(script_media::InputMap* map)
+{
+    using script_media::InputBinding;
+    using Pair = Array<InputBinding, 2>;
+    const Pair left = {InputBinding::OfKey(os::Key::A), InputBinding::OfKey(os::Key::Left)};
+    const Pair right = {InputBinding::OfKey(os::Key::D), InputBinding::OfKey(os::Key::Right)};
+    const Pair up = {InputBinding::OfKey(os::Key::W), InputBinding::OfKey(os::Key::Up)};
+    const Pair down = {InputBinding::OfKey(os::Key::S), InputBinding::OfKey(os::Key::Down)};
+    const auto span = [](const Pair& p) { return Span<const InputBinding>(p.Data(), p.Size()); };
+    ENGINE_ASSERT(map->AddAxis(StringView("move_x"), span(left), span(right)), "the input map refused move_x");
+    ENGINE_ASSERT(map->AddAxis(StringView("move_z"), span(up), span(down)), "the input map refused move_z");
+}
+
+// The pickups' chime: a short mono tone that fades out, made at the mixer's rate.
+audio::AudioClipPtr MakeChime(u32 sample_rate)
+{
+    const u32 frames = sample_rate / 5;  // 0.2 s
+    Vector<f32> samples;
+    samples.Resize(frames);
+    const f32 rate = static_cast<f32>(sample_rate);
+    for (u32 i = 0; i < frames; ++i)
+    {
+        const f32 t = static_cast<f32>(i) / rate;
+        const f32 fade = 1.0f - static_cast<f32>(i) / static_cast<f32>(frames);
+        samples[i] = 0.4f * fade * fade * (Sin(6.2831853f * 880.0f * t) + 0.5f * Sin(6.2831853f * 1320.0f * t));
+    }
+    audio::ClipDesc desc;
+    desc.format.sample_rate = sample_rate;
+    desc.format.layout = audio::ChannelLayout::Mono;
+    desc.format.format = audio::SampleFormat::F32;
+    desc.frame_count = frames;
+    audio::AudioClipPtr clip;
+    if (audio::AudioClip::CreateCopy(desc, Span<const f32>(samples.Data(), samples.Size()), "chime", &clip) !=
+        audio::ClipStatus::Ok)
+    {
+        return audio::AudioClipPtr();
+    }
+    return clip;
+}
+
 }  // namespace
 
 DemoWorld::DemoWorld(const DemoOptions& options)
@@ -77,6 +123,23 @@ DemoWorld::DemoWorld(const DemoOptions& options)
     script_physics::RegisterPhysicsValidators(&catalog_);
     ENGINE_ASSERT(script::RegisterStandardBindings(&bindings_), "the standard bindings did not register");
     ENGINE_ASSERT(script_physics::RegisterPhysicsBindings(&bindings_), "the physics bindings did not register");
+    if (options_.mixer != nullptr)
+    {
+        ENGINE_ASSERT(script_media::RegisterAudioComponents(&registry_), "the audio components did not register");
+        ENGINE_ASSERT(script_media::RegisterAudioBindings(&bindings_), "the audio bindings did not register");
+        chime_ = MakeChime(options_.sample_rate);
+        audio_services_.mixer = options_.mixer;
+        audio_services_.clips.resolve = &DemoWorld::ResolveClip;
+        audio_services_.clips.user = this;
+        audio_services_.voices = &voices_;
+        audio_services_.sample_rate = options_.sample_rate;
+    }
+    if (options_.input)
+    {
+        ENGINE_ASSERT(script_media::RegisterInputBindings(&bindings_), "the input bindings did not register");
+        FillInputMap(&input_map_);
+        input_services_.snapshot = &snapshot_;
+    }
     String<HeapAllocator> why(HeapAllocator::Default());
     ENGINE_ASSERT(layers_.Parse(StringView("default,world,player,pickup"), &why), "the layer names did not parse");
     services_.world = &physics_;
@@ -93,11 +156,34 @@ DemoWorld::DemoWorld(const DemoOptions& options)
     runtime_->Services().extensions[script::kServicePhysics] = &services_;
     ENGINE_ASSERT(script_physics::RegisterPhysicsCommandKinds(&runtime_->Kinds()),
                   "the command kinds did not register");
+    if (options_.mixer != nullptr)
     {
-        // As a module with a key, so that hot reload can name it.
+        runtime_->Services().extensions[script::kServiceAudio] = &audio_services_;
+        ENGINE_ASSERT(script_media::RegisterAudioCommandKinds(&runtime_->Kinds()),
+                      "the audio command kinds did not register");
+    }
+    if (options_.input)
+    {
+        runtime_->Services().extensions[script::kServiceInput] = &input_services_;
+    }
+    if (options_.minted != nullptr)
+    {
+        // The minted blob, through the resource manager: a module keyed by its id, as `ScriptAssets` adds every script.
+        assets_ = MakeUnique<script::ScriptAssets>(&runtime_->Scripts(), options_.minted);
+        asset::LoadFailure failure;
+        const asset::Status status = assets_->Add(asset::ResourceId::FromValue(kDemoScriptId), &failure);
+        if (!status.Ok())
+        {
+            os::PrintError("script_demo: the minted script %s did not load\n", kDemoScriptKey);
+            ok_ = false;
+        }
+    }
+    else
+    {
+        // The built-in copy, as a module under the same key, so that hot reload names it alike.
         const StringView text(BuiltInScript());
-        runtime_->Scripts().AddModule(StringView("demo"), StringView("demo"), Bytes(text), 0, text.Length(),
-                                      StringView(), true);
+        runtime_->Scripts().AddModule(StringView(kDemoScriptKey), StringView(kDemoScriptKey), Bytes(text), 0,
+                                      text.Length(), StringView(), true);
     }
     reloader_ = MakeUnique<script::ScriptReloader>(&runtime_->Scripts(), backend_.Get(), true);
     runtime_->Events().Subscribe(StringView("pickup_collected"), &DemoWorld::OnPickup, this);
@@ -129,13 +215,16 @@ DemoWorld::DemoWorld(const DemoOptions& options)
         const ecs::Entity e = world_.Create(BodyOf(physics::BodyType::Dynamic, 1.0f), BallOf(0.4f, 0, false),
                                             At(x, 0.5f, z));
         world_.Add(e, script::ScriptComponent(StringView(kBehaviors[i % 3])));
+        visuals_.Push(Visual{e, static_cast<VisualKind>(i % 3)});
     }
     entity_count_ = options_.entities;
     // The player: a kinematic ball the script walks along a square.
+    ecs::Entity player;
     {
-        const ecs::Entity e = world_.Create(BodyOf(physics::BodyType::Kinematic, 0.0f), BallOf(0.5f, 2, false),
-                                            At(-8.0f, 0.5f, 8.0f));
-        world_.Add(e, script::ScriptComponent(StringView("player")));
+        player = world_.Create(BodyOf(physics::BodyType::Kinematic, 0.0f), BallOf(0.5f, 2, false),
+                               At(-8.0f, 0.5f, 8.0f));
+        world_.Add(player, script::ScriptComponent(StringView("player")));
+        visuals_.Push(Visual{player, VisualKind::Player});
     }
     // Pickups: trigger balls on a ring.
     for (u32 i = 0; i < 16; ++i)
@@ -146,10 +235,13 @@ DemoWorld::DemoWorld(const DemoOptions& options)
                                             At(x, 0.5f, z));
         script::Value params = script::Value::MakeMap();
         params.Set("id", script::Value::FromInt(static_cast<i64>(i)));
+        params.Set("player", script::Value::FromEntity(player));
         world_.Add(e, script::ScriptComponent(StringView("pickup"), Move(params)));
+        visuals_.Push(Visual{e, VisualKind::Pickup});
     }
     // The planner and the marker it moves.
     marker_ = world_.Create(ecs::LocalTransform());
+    visuals_.Push(Visual{marker_, VisualKind::Marker});
     {
         const ecs::Entity e = world_.Create(ecs::LocalTransform());
         u32 width = 1;
@@ -173,7 +265,13 @@ void DemoWorld::OnPickup(void* user, const script::EventRecord&)
     ++static_cast<DemoWorld*>(user)->pickups_;
 }
 
-void DemoWorld::Frame(jobs::Scheduler* scheduler)
+audio::AudioClipConstPtr DemoWorld::ResolveClip(void* user, StringView name)
+{
+    DemoWorld* self = static_cast<DemoWorld*>(user);
+    return name == StringView("chime") ? audio::AudioClipConstPtr(self->chime_) : audio::AudioClipConstPtr();
+}
+
+void DemoWorld::Frame(jobs::Scheduler* scheduler, const os::InputState* keys)
 {
     physics::StepConfig step = physics_.GetStepConfig();
     const u32 threads = scheduler != nullptr ? static_cast<u32>(scheduler->ParticipantCount()) : 1u;
@@ -184,7 +282,16 @@ void DemoWorld::Frame(jobs::Scheduler* scheduler)
     }
     physics_.SetScheduler(scheduler);  // every frame: the caller may pass another scheduler, or none
     const u64 t0 = os::MonotonicTimeNanos();
+    if (options_.input)
+    {
+        snapshot_.Capture(frames_ + 1, keys != nullptr ? *keys : no_keys_, StringView(), input_map_);
+        script_media::EmitInputEvents(snapshot_, runtime_.Get());
+    }
     runtime_->Tick(&world_, static_cast<f64>(kStep), scheduler);
+    if (options_.mixer != nullptr)
+    {
+        script_media::PumpAudioEvents(options_.mixer, &voices_, runtime_.Get());
+    }
     const u64 t1 = os::MonotonicTimeNanos();
     physics::SyncBodies(world_, physics_);
     physics::SyncJoints(world_, physics_);
@@ -200,15 +307,22 @@ void DemoWorld::Frame(jobs::Scheduler* scheduler)
 
 bool DemoWorld::Reload(StringView text)
 {
+    bool deferred = false;
+    return ApplyReload(StringView(kDemoScriptKey), Bytes(text), text.Length(), &deferred);
+}
+
+bool DemoWorld::ApplyReload(StringView key, SharedBytesPtr bytes, usize size, bool* deferred)
+{
     Vector<script::ModuleReplacement> changes;
     script::ModuleReplacement r;
-    r.key = String<HeapAllocator>(HeapAllocator::Default(), "demo");
-    r.bytes = Bytes(text);
-    r.size = text.Length();
+    r.key = String<HeapAllocator>(HeapAllocator::Default(), key);
+    r.bytes = Move(bytes);
+    r.size = size;
     changes.Push(Move(r));
     script::ReloadReport report;
     const script::Outcome outcome = reloader_->Reload(
         Span<const script::ModuleReplacement>(changes.Data(), changes.Size()), ++reload_tick_ + frames_, &report);
+    *deferred = report.deferred.Size() != 0;
     if (!outcome.IsOk())
     {
         os::PrintError("script_demo: reload failed: %s\n", outcome.message.CStr());
@@ -220,6 +334,51 @@ bool DemoWorld::Reload(StringView text)
                        static_cast<unsigned>(report.deferred.Size()), report.run_failure.message.CStr());
     }
     return outcome.IsOk() && report.applied && report.compile_failures.Size() == 0;
+}
+
+bool DemoWorld::WatchDirectory(StringView directory)
+{
+    watcher_ = MakeUnique<script::ScriptDevWatcher>(directory);
+    if (!watcher_->Active())
+    {
+        watcher_.Reset();
+        return false;
+    }
+    watcher_->Watch(asset::ResourceId::FromValue(kDemoScriptId));
+    return true;
+}
+
+u32 DemoWorld::PollReload()
+{
+    if (watcher_.Get() == nullptr)
+    {
+        return 0;
+    }
+    Vector<script::DevChange> changes;
+    watcher_->Poll(&changes);
+    u32 applied = 0;
+    for (usize i = 0; i < changes.Size(); ++i)
+    {
+        const script::DevChange& change = changes[i];
+        if (change.text.Get() == nullptr)
+        {
+            continue;
+        }
+        const usize size = change.text->Bytes().Size();
+        bool deferred = false;
+        if (ApplyReload(StringView(kDemoScriptKey), change.text, size, &deferred))
+        {
+            ++applied;
+            ++file_reloads_;
+            os::PrintError("script_demo: reloaded the script from its file (%llu bytes)\n",
+                           static_cast<unsigned long long>(size));
+        }
+        if (!deferred)
+        {
+            watcher_->Applied(change);  // a refused text is not tried again until the file changes; a deferred one is
+        }
+    }
+    return applied;
 }
 
 Vec3 DemoWorld::MarkerPosition() const

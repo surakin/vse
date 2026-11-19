@@ -322,3 +322,35 @@ TEST_CASE("Script system: a partition whose scripts do not load is skipped and c
     CHECK(rig.runtime->Stats().skipped_partitions == 1);
     CHECK(rig.runtime->Stats().created == 0);
 }
+
+TEST_CASE("Script system: the last tick's load is reported per partition", "[script][system]")
+{
+    SystemRig rig;
+    Vector<PartitionLoad> load;
+    rig.runtime->LastPartitionLoad(&load);
+    REQUIRE(load.Size() == 16);  // before any tick: every partition idle
+    for (const PartitionLoad& l : load)
+    {
+        CHECK(l.instances == 0);
+        CHECK(l.nanoseconds == 0);
+    }
+    for (u32 i = 0; i < 1000; ++i)
+    {
+        const ecs::Entity e = ecs::CreateTransformEntity(rig.world, ecs::LocalTransform());
+        REQUIRE(rig.world.Add(e, Tally()) == ecs::Status::Ok);
+        REQUIRE(rig.world.Add(e, ScriptComponent("selfcount")) == ecs::Status::Ok);
+    }
+    rig.runtime->Tick(&rig.world, 0.1);
+    rig.runtime->LastPartitionLoad(&load);
+    REQUIRE(load.Size() == 16);
+    u32 instances = 0;
+    u32 busy = 0;
+    for (const PartitionLoad& l : load)
+    {
+        instances += l.instances;
+        busy += l.nanoseconds > 0 ? 1u : 0u;
+        CHECK((l.instances == 0) == (l.nanoseconds == 0));
+    }
+    CHECK(instances == 1000);
+    CHECK(busy > 1);  // the instances are spread over the partitions
+}

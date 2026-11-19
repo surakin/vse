@@ -33,6 +33,7 @@ Close the phase: documentation, the whole suite in every flavor, and the uncappe
 - The `script_nojit` flavor: `ran 311 of 11340 tests (phases: 27; flavors: plain; display: excluded; crash tests: excluded) in 293 s`, passed.
 - Built clean (warnings are errors) with GCC and in the non-unity tree for `script_tests`, `script_bench`, `script_demo_tests`, `host_script` and `script_sample`. `-DENGINE_BUILD_SHARED=ON` and `-DENGINE_LIBRARY_WITH_IMPORTER=OFF` were not rebuilt after the day's `engine_c` edits (the edits touch one file and no export).
 - Not run: `script_demo` windowed on Wayland and X11 (the user excluded window runs); the Windows and macOS closing runs (Days 473-474, the user's).
+- **Done afterwards (2026-11-19, Day 475's finish):** `script_demo_window_wayland` and `script_demo_window_x11` (1,000 frames in a window with validation on) pass, and `script_demo_screenshot` too.
 - Regression checks: the resumed-wait stream test fails without the fix (shown); `host_script` hangs on the `slow` call without the default budget (shown: it had to be killed); the chunk-overflow and struct-size checks in `script_sample` pass on the old code too (the old code also refused them, by another route), so they pin the behavior, not the fix.
 
 ## Post-implementation code review

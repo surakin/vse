@@ -38,8 +38,11 @@ public:
     // Registers the renderer, engine and log settings, loads every layer (the user's file in the standard place, the
     // environment, the command line) and prints what went wrong while loading to stderr. `usage` is the demo's own
     // usage text for --help. Returns false (after printing why) if the command line has an error of its own, such as an
-    // unknown --set key; the caller then exits with the usage code.
-    bool Begin(const char* app_name, const char* usage, int argc, char** argv);
+    // unknown --set key; the caller then exits with the usage code. `register_more`, when given, registers the
+    // program's own modules' settings first (the script demo: script and audio), so their keys and flags load like the
+    // rest.
+    bool Begin(const char* app_name, const char* usage, int argc, char** argv,
+               void (*register_more)(sset::Registry*) = nullptr);
 
     // The settings.
     sset::Settings& Get() { return *settings_; }

@@ -1,6 +1,7 @@
--- The script demo's game (Phase 27 Day 475): a crowd of bodies that wander, flock and flee, a player that walks a square, pickups
--- that count who touches them, and a planner that searches a field on every core with task.parallel_for. Nothing here uses sin or
--- cos: a world built from + - * / compares equal across machines.
+-- The script demo's game (Phase 27 Day 475): a crowd of bodies that wander, flock and flee, a player that walks a square
+-- (or follows the keys in a window), pickups that count who touches them and chime for the player, and a planner that
+-- searches a field on every core with task.parallel_for. Nothing here uses sin or cos: a world built from + - * /
+-- compares equal across machines.
 
 -- Pushes a body in a random direction; the stream is the entity's own, so the push is the same at any thread count.
 behavior('wander', {
@@ -51,9 +52,22 @@ behavior('flee', {
   end,
 })
 
--- The player walks the sides of a square, one side per second.
+-- The player walks the sides of a square, one side per second, until a key moves it: in a window the arrows or W, A, S, D
+-- drive it (the `input` bindings exist only where the host gives input; without them, as in the tests, it walks).
 behavior('player', {
   on_update = function(self, dt)
+    if input ~= nil then
+      local mx, mz = input.axis('move_x'), input.axis('move_z')
+      if mx ~= 0 or mz ~= 0 then self.driven = true end
+      if self.driven then
+        local p = transform.position(self.entity) + vec3.new(mx, 0, mz) * (10 * dt)
+        local limit = 55
+        p.x = math.max(-limit, math.min(limit, p.x))
+        p.z = math.max(-limit, math.min(limit, p.z))
+        transform.set_position(self.entity, vec3.new(p.x, 0.5, p.z))
+        return
+      end
+    end
     local k = time.tick() % 240
     local side = math.floor(k / 60)
     local f = (k % 60) / 60
@@ -73,6 +87,10 @@ behavior('pickup', {
     event.on('on_trigger_enter', function(me, info)
       me.count = me.count + 1
       event.emit('pickup_collected', me.params.id)
+      -- A chime when the player walks in, pitched by the pickup (`audio` exists only where the host has a mixer).
+      if audio ~= nil and info.other == me.params.player then
+        audio.play('chime', { gain = 0.5, pitch = 1 + me.params.id / 16 })
+      end
     end)
   end,
 })

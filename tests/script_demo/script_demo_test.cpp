@@ -3,9 +3,15 @@
 // hash each time, and hot reload of its script in the middle of a run.
 #include <catch2/catch_test_macros.hpp>
 
+#include "asset/cpu_loaders.h"
+#include "asset/resource_manager.h"
+#include "audio/mixer.h"
 #include "cstr/cstr.h"
 #include "demo_world.h"
+#include "io/file_system.h"
 #include "jobs/scheduler.h"
+#include "sync/thread.h"
+#include "temp_dir.h"
 
 using namespace engine_placeholder;
 using namespace script_demo;
@@ -187,4 +193,157 @@ TEST_CASE("Script demo: a script that does not compile is refused and the old on
     }
     CHECK(world.ScriptStats().updates > before);
     CHECK(world.ScriptStats().errors == 0);
+}
+
+namespace
+{
+
+// A resource manager over the build's minted script (game/script_demo/minted).
+struct MintedScripts
+{
+    asset::TypeRegistry types;
+    UniquePtr<asset::ResourceManager> manager;
+
+    MintedScripts()
+    {
+        asset::ManagerConfig config;
+        config.buffer_pool_bytes = u64{4} << 20;
+        manager = MakeUnique<asset::ResourceManager>(types, config);
+        asset::RegisterCpuLoaders(manager.Get());
+        io::Path dir;
+        REQUIRE(io::Path::Parse(StringView(SCRIPT_DEMO_MINTED_DIR), io::NativePathStyle(), &dir));
+        REQUIRE(manager->MountPath(StringView("/"), dir, 0).Ok());
+    }
+};
+
+}  // namespace
+
+TEST_CASE("Script demo: the minted script runs the same game as the built-in copy", "[script_demo][minted]")
+{
+    MintedScripts minted;
+    DemoOptions options = SmallOptions();
+    options.minted = minted.manager.Get();
+    jobs::Scheduler scheduler(ConfigFor(2));
+    DemoWorld world(options);
+    REQUIRE(world.Ok());
+    for (u32 f = 0; f < 150; ++f)
+    {
+        world.Frame(&scheduler);
+    }
+    CHECK(world.ScriptStats().errors == 0);
+    CHECK(world.StateHash() == kCrossMachineHash);
+}
+
+TEST_CASE("Script demo: editing the script's file reloads it in the running game", "[script_demo][reload][watch]")
+{
+    io_test::TempDir dir;
+    String<HeapAllocator> name(HeapAllocator::Default(), StringView(kDemoScriptKey));
+    name.Append(StringView(".lua"));
+    const io::Path file = dir.Path().Join(name.View());
+    const StringView original(BuiltInScript());
+    REQUIRE(io::WriteFile(file, original.Data(), original.Length()).Ok());
+
+    jobs::Scheduler scheduler(ConfigFor(4));
+    DemoWorld world(SmallOptions());
+    REQUIRE(world.WatchDirectory(dir.Path().View()));
+    for (u32 f = 0; f < 40; ++f)
+    {
+        world.Frame(&scheduler);
+        CHECK(world.PollReload() == 0);  // the file holds the running text: nothing to do
+    }
+    // The edit a user makes in the editor: the wander push is ten times stronger.
+    const String<HeapAllocator> edited = Edited("physics.add_force(self.entity, d * 6.0)",
+                                                "physics.add_force(self.entity, d * 60.0)");
+    REQUIRE(io::WriteFile(file, edited.View().Data(), edited.View().Length()).Ok());
+    u32 applied = 0;
+    for (u32 tries = 0; tries < 80 && applied == 0; ++tries)
+    {
+        ThisThread::SleepForMilliseconds(25);
+        applied += world.PollReload();
+    }
+    REQUIRE(applied == 1);
+    CHECK(world.FileReloads() == 1);
+    for (u32 f = 0; f < 40; ++f)
+    {
+        world.Frame(&scheduler);
+        CHECK(world.PollReload() == 0);  // applied once: the same bytes are not reported again
+    }
+    CHECK(world.ScriptStats().errors == 0);
+    // The file reload is the text reload: the same game as an in-memory reload at the same frame.
+    bool in_memory = false;
+    const Result expected = RunWithReload(4, edited, &in_memory);
+    REQUIRE(in_memory);
+    CHECK(world.StateHash() == expected.hash);
+
+    // A text that does not compile is refused and the game runs on.
+    const char broken[] = "behavior('wander', { on_update = function(self dt) end })";
+    REQUIRE(io::WriteFile(file, broken, sizeof(broken) - 1).Ok());
+    for (u32 tries = 0; tries < 20; ++tries)
+    {
+        ThisThread::SleepForMilliseconds(25);
+        CHECK(world.PollReload() == 0);
+    }
+    world.Frame(&scheduler);
+    CHECK(world.ScriptStats().errors == 0);
+    CHECK(world.FileReloads() == 1);
+}
+
+TEST_CASE("Script demo: the keys drive the player and a pickup chimes when it walks in", "[script_demo][media]")
+{
+    audio::Mixer mixer;
+    audio::MixerConfig mix;
+    mix.layout = audio::ChannelLayout::Mono;
+    mix.max_voices = 64;
+    REQUIRE(mixer.Init(mix) == audio::MixerStatus::Ok);
+    DemoOptions options = SmallOptions();
+    options.input = true;
+    options.mixer = &mixer;
+    options.sample_rate = mix.sample_rate;
+    jobs::Scheduler scheduler(ConfigFor(4));
+    DemoWorld world(options);
+    Vec3 start;
+    world.ForEachVisual(
+        [&](VisualKind kind, const Vec3& p)
+        {
+            if (kind == VisualKind::Player)
+            {
+                start = p;
+            }
+        });
+    // W held for two seconds: the player walks toward -z along x = -8, through the pickups at z = 3, -3 and -9.
+    os::InputState keys;
+    keys.keyboard.SetDown(os::Key::W, true);
+    Array<f32, audio::kBlockFrames> block;
+    for (u32 f = 0; f < 120; ++f)
+    {
+        world.Frame(&scheduler, &keys);
+        mixer.RenderBlock(Span<f32>(block.Data(), block.Size()));
+    }
+    Vec3 end;
+    world.ForEachVisual(
+        [&](VisualKind kind, const Vec3& p)
+        {
+            if (kind == VisualKind::Player)
+            {
+                end = p;
+            }
+        });
+    CHECK(end.z < start.z - 15.0f);  // 10 m/s for 2 s, clamped to the floor
+    CHECK(end.x == start.x);
+    CHECK(world.ScriptStats().errors == 0);
+    const audio::MixerStats stats = mixer.Stats();
+    INFO("commands " << stats.commands_applied << ", finished " << stats.voices_finished);
+    CHECK(stats.commands_applied >= 2);  // at least two chimes started
+    // The same keys at another thread count give the same game.
+    audio::Mixer mixer2;
+    REQUIRE(mixer2.Init(mix) == audio::MixerStatus::Ok);
+    options.mixer = &mixer2;
+    jobs::Scheduler one(ConfigFor(1));
+    DemoWorld again(options);
+    for (u32 f = 0; f < 120; ++f)
+    {
+        again.Frame(&one, &keys);
+        mixer2.RenderBlock(Span<f32>(block.Data(), block.Size()));
+    }
+    CHECK(again.StateHash() == world.StateHash());
 }

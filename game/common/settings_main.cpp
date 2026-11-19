@@ -29,7 +29,8 @@ const char* BackendLabel(::engine_placeholder::rhi::Backend backend)
 DemoSettings::DemoSettings() = default;
 DemoSettings::~DemoSettings() = default;
 
-bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char** argv)
+bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char** argv,
+                         void (*register_more)(sset::Registry*))
 {
     usage_ = String<HeapAllocator>(HeapAllocator::Default(), StringView(usage));
     const ::engine_placeholder::os::CommandLine<HeapAllocator> native(HeapAllocator::Default(), argc, argv);
@@ -37,6 +38,10 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
     ::engine_placeholder::renderer::RegisterSharedSettings(&registry_);
     sset::RegisterEngineSettings(&registry_);
     sset::RegisterLogSettings(&registry_);
+    if (register_more != nullptr)
+    {
+        register_more(&registry_);  // the program's own modules' settings (the script demo's script and audio)
+    }
     settings_ = MakeUnique<sset::Settings>(registry_);
     ::engine_placeholder::renderer::AddRendererMigrations(&settings_->Migrations());
     sset::LoadOptions options;

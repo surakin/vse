@@ -8,6 +8,7 @@
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "log/assert.h"
+#include "os/os.h"
 #include "script/command_buffer.h"
 #include "script/component_bindings.h"
 #include "script/event_bindings.h"
@@ -137,6 +138,7 @@ struct PartitionData
     ScriptRuntimeStats stats;     // this phase's counts, summed after the jobs finish
     u64 resets_seen = 0;
     bool load_logged = false;
+    PartitionLoad load;  // the last script phase's instances and time
 };
 
 /// The index of the first group whose name is not below `name` (the groups are sorted by name).
@@ -1243,7 +1245,11 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
             Job* j = static_cast<Job*>(user);
             for (usize p = begin; p < end; ++p)
             {
+                PartitionData& data = *j->self->partitions[p];
+                const u64 start = os::MonotonicTimeNanos();
                 j->self->RunPartition(j->world, static_cast<u32>(p), j->dt, j->destroys_only);
+                data.load.instances = static_cast<u32>(data.members.Size());
+                data.load.nanoseconds = data.members.Size() != 0 ? os::MonotonicTimeNanos() - start : 0;
             }
         };
         if (scheduler != nullptr && scheduler->ParticipantCount() > 1 && !jobs::Scheduler::InsideJob() &&
@@ -1448,6 +1454,15 @@ ScriptWorld& ScriptRuntime::Scripts()
 const ScriptRuntimeStats& ScriptRuntime::Stats() const
 {
     return impl_->stats;
+}
+
+void ScriptRuntime::LastPartitionLoad(Vector<PartitionLoad>* out) const
+{
+    out->Clear();
+    for (usize p = 0; p < impl_->partitions.Size(); ++p)
+    {
+        out->Push(impl_->partitions[p]->load);
+    }
 }
 
 EventBus& ScriptRuntime::Events()

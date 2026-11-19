@@ -1,0 +1,5 @@
+# The script demo's game script (Phase 27 Day 475), minted by the build: `asset_mint mint-script` writes the blob the demo loads
+# and, with --dev-out, the editable copy `5c27de0000000475.lua` the demo watches for hot reload. The id is `kDemoScriptId`
+# (demo_world.h).
+id 5c27de0000000475
+lua demo.lua

@@ -65,6 +65,18 @@ struct ScriptComponent
     }
 };
 
+/// One partition's share of the last tick's script phase, for profiling tools and overlays (a measurement, not part of
+/// the simulation: it differs run to run, the world does not).
+///
+/// - Thread-safety: thread-compatible plain data.
+struct PartitionLoad
+{
+    /// The instances the partition ran.
+    u32 instances = 0;
+    /// The wall time its job took, in nanoseconds (0 for a partition with no instances).
+    u64 nanoseconds = 0;
+};
+
 /// What the script system has done, counted since the runtime was made.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -283,6 +295,13 @@ public:
     ///
     /// - Ownership: borrowed.
     const ScriptRuntimeStats& Stats() const;
+    /// What each partition did in the last tick's script phase: its instances and its job's wall time, one entry per
+    /// partition in partition order (Phase 27 Day 475: the script demo's overlay).
+    ///
+    /// - Param out: receives the entries; not null.
+    /// - Thread-safety: thread-compatible: between ticks.
+    /// - Ownership: `out` is borrowed for the call.
+    void LastPartitionLoad(Vector<PartitionLoad>* out) const;
     /// The event bus: native code emits and subscribes here; scripts reach it through `event.*`.
     ///
     /// - Ownership: borrowed; valid for the runtime's life.
