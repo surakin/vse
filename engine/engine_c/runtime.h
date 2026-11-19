@@ -257,6 +257,9 @@ struct ImportLimitValues
     u32 max_nodes = 0;         ///< `assets.import.max_nodes`.
     u32 max_accessors = 0;     ///< `assets.import.max_accessors`.
     u32 max_images = 0;        ///< `assets.import.max_images`.
+    f32 light_intensity_scale = 1.0f;     ///< `assets.import.light_intensity_scale`.
+    f32 sun_intensity_scale = 1e-4f;      ///< `assets.import.sun_intensity_scale`.
+    f32 light_cutoff = 1.0f / 256.0f;     ///< `assets.import.light_cutoff`.
 };
 
 /// The settings the resource host is made from (read when the engine is created).

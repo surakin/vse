@@ -1482,6 +1482,36 @@ f32 scale;
 
 Positions are multiplied by it (glTF is in metres).
 
+### `light_intensity_scale` {#asset-importoptions-light-intensity-scale}
+
+`variable asset::ImportOptions::light_intensity_scale` — defined in `engine/asset_import/gltf_import.h`
+
+```cpp
+f32 light_intensity_scale;
+```
+
+`KHR_lights_punctual` point and spot intensities (candela) are multiplied by it (glTF coverage Day 12; `assets.import.light_intensity_scale`).
+
+### `sun_intensity_scale` {#asset-importoptions-sun-intensity-scale}
+
+`variable asset::ImportOptions::sun_intensity_scale` — defined in `engine/asset_import/gltf_import.h`
+
+```cpp
+f32 sun_intensity_scale;
+```
+
+Directional intensities (lux) are multiplied by it (`assets.import.sun_intensity_scale`: 10,000 lux of daylight becomes 1).
+
+### `light_cutoff` {#asset-importoptions-light-cutoff}
+
+`variable asset::ImportOptions::light_cutoff` — defined in `engine/asset_import/gltf_import.h`
+
+```cpp
+f32 light_cutoff;
+```
+
+A point or spot light without a `range` reaches as far as its scaled intensity over `d^2 + 1` stays at or above this (`assets.import.light_cutoff`).
+
 ### `emit_level` {#asset-importoptions-emit-level}
 
 `variable asset::ImportOptions::emit_level` — defined in `engine/asset_import/gltf_import.h`
@@ -2668,7 +2698,7 @@ Decodes a PNG or a JPEG.
 void RegisterImportSettings(settings::Registry* registry);
 ```
 
-Declares `assets.import.max_file_bytes`, `max_json_bytes`, `max_buffer_bytes`, `max_nodes`, `max_accessors`, `max_images`, `max_pixels` and `max_output_bytes` (flags `assets-import-*`, environment `ENGINE_ASSETS_IMPORT_*`), once: a second call changes nothing.
+Declares `assets.import.max_file_bytes`, `max_json_bytes`, `max_buffer_bytes`, `max_nodes`, `max_accessors`, `max_images`, `max_pixels`, `max_output_bytes`, `light_intensity_scale`, `sun_intensity_scale` and `light_cutoff` (flags `assets-import-*`, environment `ENGINE_ASSETS_IMPORT_*`), once: a second call changes nothing.
 
 | Field | Value |
 |---|---|
@@ -2692,6 +2722,23 @@ The limits the settings give; a limit with no setting keeps its default.
 | Returns | the limits. |
 | Fails | never. |
 | Ownership | borrows `registry` for the call only. |
+
+## `ApplyImportLightSettings(const settings::Registry&,ImportOptions*)` {#asset-applyimportlightsettings-const-settings-registry-amp-importoptions-star}
+
+`function asset::ApplyImportLightSettings` — defined in `engine/asset_import/import_settings.h`
+
+```cpp
+void ApplyImportLightSettings(const settings::Registry& registry, ImportOptions* options);
+```
+
+Reads `assets.import.light_intensity_scale`, `sun_intensity_scale` and `light_cutoff` (glTF coverage Day 12; flags `assets-import-*`, environment `ENGINE_ASSETS_IMPORT_*`) into `options`; a setting that is not declared leaves its field as it is.
+
+| Field | Value |
+|---|---|
+| Parameter `registry` | a registry in which [`asset::RegisterImportSettings`](#asset-registerimportsettings-settings-registry-star) ran. |
+| Parameter `options` | receives the three fields. |
+| Fails | never. |
+| Ownership | borrows both for the call only. |
 
 ## `JsonValue` {#asset-jsonvalue}
 

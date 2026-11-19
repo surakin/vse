@@ -170,6 +170,7 @@ module engine/asset/ asset 13
 module engine/asset_import/ asset_import 13
 allow asset_import asset
 allow asset_import animation   # Phase 24 Day 364: the level of a glTF scene registers the skeleton instance component
+allow asset_import scene   # glTF coverage Day 12: the level of a glTF scene holds its KHR_lights_punctual lights as light_source
 # 13 animation (Phase 22 Day 321): poses, the clip sampler, skinning matrices and the ECS components and parallel system that play clips; reads asset's skeleton and clip views (allowed below, same layer), ecs, storage, jobs and the foundation; nothing includes it but programs
 # 13 physics (Phase 25 Day 386): rigid bodies, colliders, the fixed step; the foundation, spatial, ecs and jobs (below) and, from Day 406, storage; no renderer, RHI or platform header
 module engine/physics/ physics 13

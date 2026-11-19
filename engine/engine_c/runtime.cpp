@@ -9,6 +9,7 @@
 #include "animation/components.h"
 #include "audio/components.h"
 #include "animation/pose.h"
+#include "scene/scene_components.h"
 #include "asset/level.h"
 #include "algorithm.h"
 #include "containers/vector.h"
@@ -2079,8 +2080,10 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
     Vector<byte> blob;
     TRY_STATUS(resources->ReadLevel(level, &blob));
     storage::ComponentRegistry registry;
+    // The scene components too (glTF coverage Day 12: an imported level holds its file's lights as light_source); a
+    // world of the C API does not take them over yet (KNOWN-ISSUES).
     if (storage::RegisterBuiltinComponents(&registry).Failed() || asset::RegisterLevelComponents(&registry).Failed() ||
-        animation::RegisterAnimationComponents(&registry).Failed())
+        animation::RegisterAnimationComponents(&registry).Failed() || scene::RegisterSceneComponents(&registry).Failed())
     {
         return Fail(ENGINE_ERROR_UNSUPPORTED, "the level components could not be registered");
     }

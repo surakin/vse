@@ -9,6 +9,7 @@
 #include "ecs/transform.h"
 #include "scene/components.h"
 #include "scene/render_sync.h"
+#include "scene/scene_components.h"
 #include "storage/builtin_components.h"
 
 namespace model_viewer
@@ -117,11 +118,12 @@ bool ViewerScene::Create(rhi::Device* device, renderer::MaterialSystem* material
         return Fail("the imported resources could not be mounted");
     }
 
-    // 3. The world: the level's entities, a sun and an ambient term, and the systems that move and mirror them.
+    // 3. The world: the level's entities (with the file's lights, or else a sun), an ambient term, and the systems that move and mirror them.
     registry_ = MakeUnique<storage::ComponentRegistry>();
     if (storage::RegisterBuiltinComponents(registry_.Get()).Failed() ||
         asset::RegisterLevelComponents(registry_.Get()).Failed() ||
-        animation::RegisterAnimationComponents(registry_.Get()).Failed())
+        animation::RegisterAnimationComponents(registry_.Get()).Failed() ||
+        scene::RegisterSceneComponents(registry_.Get()).Failed())
     {
         return Fail("the components could not be registered");
     }
@@ -146,12 +148,18 @@ bool ViewerScene::Create(rhi::Device* device, renderer::MaterialSystem* material
         return Fail(
             "the file's scene could not be loaded onto the device (a mesh, a texture or a material was refused)");
     }
-    scene::LightSource sun;
-    sun.type = renderer::LightType::Directional;
+    // The file's own lights (KHR_lights_punctual) when it has any; the default sun only when it has none.
+    u32 file_lights = 0;
+    world_->Query<ecs::Read<scene::LightSource>>().ForEach([&](const scene::LightSource&) { ++file_lights; });
+    if (file_lights == 0)
+    {
+        scene::LightSource sun;
+        sun.type = renderer::LightType::Directional;
     sun.direction = Vec3(0.4f, 0.85f, 0.35f);
     sun.color = Vec3(1.0f, 0.97f, 0.92f);
     sun.intensity = 1.2f;
-    world_->Create(ecs::LocalTransform{}, ecs::WorldTransform{}, sun);
+        world_->Create(ecs::LocalTransform{}, ecs::WorldTransform{}, sun);
+    }
     scene::LightSource ambient;
     ambient.type = renderer::LightType::Ambient;
     ambient.color = Vec3(0.55f, 0.6f, 0.7f);

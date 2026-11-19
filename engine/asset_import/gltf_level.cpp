@@ -6,6 +6,9 @@
 #include "asset_import/gltf_mesh.h"
 #include "asset_import/gltf_names.h"
 #include "asset_import/gltf_summary.h"
+#include "lang/scalar.h"
+#include "scene/components.h"
+#include "scene/scene_components.h"
 #include "bytes/byte_writer.h"
 #include "cstr/format.h"
 #include "ecs/transform.h"
@@ -200,7 +203,8 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
 
     storage::ComponentRegistry registry;
     if (storage::RegisterBuiltinComponents(&registry).Failed() || RegisterLevelComponents(&registry).Failed() ||
-        animation::RegisterAnimationComponents(&registry).Failed())
+        animation::RegisterAnimationComponents(&registry).Failed() ||
+        scene::RegisterSceneComponents(&registry).Failed())
     {
         return Status::Make(ErrorCode::Other, "the level components could not be registered");
     }
@@ -212,6 +216,90 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
     const storage::RegisteredComponent* skeleton_component = registry.FindById(animation::kSkeletonInstanceId);
     const storage::RegisteredComponent* link_component = registry.FindById(storage::kParentLinkId);
     const storage::RegisteredComponent* weights_component = registry.FindById(animation::kMorphWeightsId);
+    const storage::RegisteredComponent* light_component = registry.FindById(scene::kLightSourceId);
+
+    // KHR_lights_punctual (glTF coverage Day 12): the file's lights, checked once; a node names one by index.
+    Vector<scene::LightSource> lights;
+    const JsonValue light_list = document.root.Get("extensions").Get("KHR_lights_punctual").Get("lights");
+    for (usize l = 0; light_list.IsArray() && l < light_list.Size(); ++l)
+    {
+        const JsonValue light = light_list.At(l);
+        StringView type;
+        ENGINE_TRY(light.RequiredString("type", &type, error));
+        scene::LightSource source;
+        f64 intensity = 1.0;
+        if (light.Get("intensity").Exists())
+        {
+            ENGINE_TRY(light.Get("intensity").AsDouble(&intensity, error));
+        }
+        const JsonValue color = light.Get("color");
+        for (usize c = 0; color.IsArray() && c < 3 && c < color.Size(); ++c)
+        {
+            f64 v = 1.0;
+            ENGINE_TRY(color.At(c).AsDouble(&v, error));
+            (c == 0 ? source.color.x : (c == 1 ? source.color.y : source.color.z)) = static_cast<f32>(v);
+        }
+        if (!(intensity >= 0.0) || !IsFinite(static_cast<f32>(intensity)))
+        {
+            return Refuse(error, light.Path(), "has an intensity that is negative or not finite", ErrorCode::Invalid);
+        }
+        // glTF lights shine along -Z: +Z points from the surface toward the light. (The math type, named in full: a
+        // unity build merges another file's own Vec3 here.)
+        source.direction = ::engine_placeholder::Vec3(0, 0, 1);
+        if (type == StringView("directional"))
+        {
+            source.type = renderer::LightType::Directional;
+            source.intensity = static_cast<f32>(intensity) * options.sun_intensity_scale;
+        }
+        else if (type == StringView("point") || type == StringView("spot"))
+        {
+            source.type = type == StringView("point") ? renderer::LightType::Point : renderer::LightType::Spot;
+            source.intensity = static_cast<f32>(intensity) * options.light_intensity_scale;
+            f64 range = 0.0;
+            if (light.Get("range").Exists())
+            {
+                ENGINE_TRY(light.Get("range").AsDouble(&range, error));
+                if (!(range > 0.0) || !IsFinite(static_cast<f32>(range)))
+                {
+                    return Refuse(error, light.Path(), "has a range that is not above 0", ErrorCode::Invalid);
+                }
+                source.radius = static_cast<f32>(range) * options.scale;
+            }
+            else
+            {
+                // No range: as far as intensity / (d^2 + 1) stays at or above the cutoff.
+                const f32 cutoff = options.light_cutoff > 0.0f ? options.light_cutoff : 1.0f / 256.0f;
+                const f32 reach = source.intensity / cutoff - 1.0f;
+                source.radius = reach > 1e-4f ? Sqrt(reach) : 0.01f;
+            }
+            if (source.type == renderer::LightType::Spot)
+            {
+                f64 inner = 0.0;
+                f64 outer = 0.7853981634;
+                const JsonValue spot = light.Get("spot");
+                if (spot.Get("innerConeAngle").Exists())
+                {
+                    ENGINE_TRY(spot.Get("innerConeAngle").AsDouble(&inner, error));
+                }
+                if (spot.Get("outerConeAngle").Exists())
+                {
+                    ENGINE_TRY(spot.Get("outerConeAngle").AsDouble(&outer, error));
+                }
+                if (!(inner >= 0.0) || !(inner < outer) || !(outer <= 1.5707964))
+                {
+                    return Refuse(error, light.Path(), "has cone angles that are not 0 <= inner < outer <= pi/2",
+                                  ErrorCode::Invalid);
+                }
+                source.inner_cone = static_cast<f32>(inner);
+                source.outer_cone = static_cast<f32>(outer);
+            }
+        }
+        else
+        {
+            return Refuse(error, light.Path(), "has a type that is not directional, point or spot", ErrorCode::Invalid);
+        }
+        lights.Push(source);
+    }
 
     Vector<storage::EntityKey> keys;  // by position in `nodes`
     for (usize i = 0; i < nodes.Size(); ++i)
@@ -473,6 +561,27 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
                     pieces.Push(static_cast<Piece&&>(weights_piece));
                 }
             }
+        }
+        // The node's light (glTF coverage Day 12): a light_source on its entity.
+        const JsonValue light_ref = document.root.Get("nodes").At(n).Get("extensions").Get("KHR_lights_punctual");
+        if (light_ref.Exists() && light_component != nullptr)
+        {
+            u32 light_index = 0;
+            ENGINE_TRY(light_ref.RequiredIndex("light", &light_index, lights.Size(), error));
+            Piece light_piece;
+            light_piece.id = scene::kLightSourceId;
+            light_piece.version = light_component->Version();
+            bytes::ByteWriter light_writer;
+            if (light_component->Encode(&lights[light_index], light_writer, limits).Failed())
+            {
+                return Refuse(error, StringView(where, CStrLength(where)), "has a light a level cannot hold",
+                              ErrorCode::Invalid);
+            }
+            for (usize b = 0; b < light_writer.Bytes().Size(); ++b)
+            {
+                light_piece.bytes.Push(light_writer.Bytes()[b]);
+            }
+            pieces.Push(static_cast<Piece&&>(light_piece));
         }
         {
             EntityName name;

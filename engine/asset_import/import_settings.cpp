@@ -25,6 +25,23 @@ void Declare(settings::Registry* registry, const char* key, i64 value, i64 minim
     registry->Register(d);
 }
 
+void DeclareFloat(settings::Registry* registry, const char* key, f64 value, f64 minimum, f64 maximum, const char* env,
+                  const char* flag, const char* label, const char* description)
+{
+    if (registry->Find(StringView(key)).IsValid())
+    {
+        return;
+    }
+    settings::SettingDesc d = settings::MakeFloat(key, value, minimum, maximum);
+    d.env = env;
+    d.flag = flag;
+    d.label = label;
+    d.description = description;
+    d.group = "assets";
+    d.flags = settings::kAdvanced;
+    registry->Register(d);
+}
+
 u64 Read(const settings::Registry& registry, const char* key, u64 fallback)
 {
     const settings::SettingId id = registry.Find(StringView(key));
@@ -62,6 +79,31 @@ void RegisterImportSettings(settings::Registry* registry)
     Declare(registry, "assets.import.max_output_bytes", static_cast<i64>(d.max_output_bytes), 1024, kMax,
             "ENGINE_ASSETS_IMPORT_MAX_OUTPUT_BYTES", "assets-import-max-output-bytes", "Import: most output bytes",
             "the most bytes of blobs one import may make");
+    const ImportOptions o;
+    DeclareFloat(registry, "assets.import.light_intensity_scale", o.light_intensity_scale, 0.0, 1e9,
+                 "ENGINE_ASSETS_IMPORT_LIGHT_INTENSITY_SCALE", "assets-import-light-intensity-scale",
+                 "Import: point and spot light scale",
+                 "multiplies the candela of KHR_lights_punctual point and spot lights");
+    DeclareFloat(registry, "assets.import.sun_intensity_scale", o.sun_intensity_scale, 0.0, 1e9,
+                 "ENGINE_ASSETS_IMPORT_SUN_INTENSITY_SCALE", "assets-import-sun-intensity-scale",
+                 "Import: directional light scale", "multiplies the lux of KHR_lights_punctual directional lights");
+    DeclareFloat(registry, "assets.import.light_cutoff", o.light_cutoff, 1e-9, 1.0, "ENGINE_ASSETS_IMPORT_LIGHT_CUTOFF",
+                 "assets-import-light-cutoff", "Import: light cutoff",
+                 "the light level at which a point or spot light without a range ends");
+}
+
+void ApplyImportLightSettings(const settings::Registry& registry, ImportOptions* options)
+{
+    const auto read = [&](const char* key, f32* field)
+    {
+        if (registry.Find(StringView(key)).IsValid())
+        {
+            *field = static_cast<f32>(settings::Setting<f64>::Find(registry, StringView(key)).Get());
+        }
+    };
+    read("assets.import.light_intensity_scale", &options->light_intensity_scale);
+    read("assets.import.sun_intensity_scale", &options->sun_intensity_scale);
+    read("assets.import.light_cutoff", &options->light_cutoff);
 }
 
 ImportLimits ImportLimitsFromSettings(const settings::Registry& registry)

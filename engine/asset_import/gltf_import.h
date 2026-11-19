@@ -252,6 +252,15 @@ struct ImportOptions
     Atomic<u32>* steps_done = nullptr;  ///< Receives the number of the import's steps finished (of `kImportSteps`), for
                                         ///< progress.
     f32 scale = 1.0f;                   ///< Positions are multiplied by it (glTF is in metres).
+    /// `KHR_lights_punctual` point and spot intensities (candela) are multiplied by it (glTF coverage Day 12;
+    /// `assets.import.light_intensity_scale`).
+    f32 light_intensity_scale = 1.0f;
+    /// Directional intensities (lux) are multiplied by it (`assets.import.sun_intensity_scale`: 10,000 lux of
+    /// daylight becomes 1).
+    f32 sun_intensity_scale = 1e-4f;
+    /// A point or spot light without a `range` reaches as far as its scaled intensity over `d^2 + 1` stays at or above
+    /// this (`assets.import.light_cutoff`).
+    f32 light_cutoff = 1.0f / 256.0f;
     bool
         emit_level = false;  ///< Also make a level of the default scene's node tree ([[asset::ImportLevel]], Phase 24).
 };

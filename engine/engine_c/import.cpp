@@ -188,6 +188,9 @@ engine_status Prepare(const engine_import_options* given, const ResourceConfig& 
         out.limits.max_accessors = c.max_accessors;
         out.limits.max_images = c.max_images;
     }
+    out.light_intensity_scale = c.light_intensity_scale;
+    out.sun_intensity_scale = c.sun_intensity_scale;
+    out.light_cutoff = c.light_cutoff;
     if (o.max_file_bytes != 0)
     {
         out.limits.max_file_bytes = o.max_file_bytes;
@@ -359,6 +362,11 @@ void ReadImporterSettings(const settings::Registry& registry, ResourceConfig* co
     c.max_nodes = limits.max_nodes;
     c.max_accessors = limits.max_accessors;
     c.max_images = limits.max_images;
+    asset::ImportOptions light_options;
+    asset::ApplyImportLightSettings(registry, &light_options);
+    c.light_intensity_scale = light_options.light_intensity_scale;
+    c.sun_intensity_scale = light_options.sun_intensity_scale;
+    c.light_cutoff = light_options.light_cutoff;
 }
 
 ImportHost::ImportHost(Runtime& runtime, asset::HostMemoryBackend& backend, Atomic<bool>* tables_dirty)

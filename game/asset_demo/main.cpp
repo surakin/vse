@@ -136,6 +136,7 @@ int main(int argc, char** argv)
     }
     asset::ImportOptions options;
     options.limits = asset::ImportLimitsFromSettings(registry);
+    asset::ApplyImportLightSettings(registry, &options);
     StringView prefix;
     if (line.TryGetOption(StringView("prefix"), prefix))
     {

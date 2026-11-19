@@ -12,6 +12,8 @@
 #include "asset/material.h"
 #include "asset/mesh.h"
 #include "storage/builtin_components.h"
+#include "scene/components.h"
+#include "scene/scene_components.h"
 #include "asset/resource_manager.h"
 #include "asset_import/gltf_mesh.h"
 #include "cstr/cstr.h"
@@ -20,6 +22,7 @@
 #include "gltf_writer.h"
 #include "jobs/scheduler.h"
 #include "lang/limits.h"
+#include "lang/scalar.h"
 #include "support.h"
 
 namespace engine_placeholder::asset
@@ -1152,6 +1155,134 @@ TEST_CASE("A level of a two-primitive mesh names each slot's material", "[asset]
             CHECK(slots.At(2).id == 0);
         });
     CHECK(found == 1);
+}
+
+// glTF coverage Day 12: KHR_lights_punctual lights become light_source components on their nodes' entities, in the
+// engine's units (a point or spot light's intensity times the light scale, a sun's times the sun scale, a missing range
+// from the cutoff), and a light that breaks a rule is refused.
+namespace
+{
+
+bool GmNear(f32 a, f32 b)
+{
+    return Abs(a - b) <= 1e-5f * (1.0f + Abs(b));
+}
+
+Vector<byte> GmLightsGlb(const char* lights)
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const u32 pos = GmAcc(&w, GmkTrianglePositions, 9, 5126, "VEC3");
+    const u32 idx = GmAcc(&w, indices, 3, 5123, "SCALAR");
+    char json[1400];
+    FormatTo(json, sizeof(json),
+             "\"extensionsUsed\":[\"KHR_lights_punctual\"],"
+             "\"extensions\":{\"KHR_lights_punctual\":{\"lights\":[%s]}},"
+             "\"meshes\":[{\"name\":\"tri\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}],"
+             "\"nodes\":[{\"name\":\"thing\",\"mesh\":0},"
+             "{\"name\":\"sun\",\"extensions\":{\"KHR_lights_punctual\":{\"light\":0}}},"
+             "{\"name\":\"bulb\",\"extensions\":{\"KHR_lights_punctual\":{\"light\":1}}},"
+             "{\"name\":\"torch\",\"extensions\":{\"KHR_lights_punctual\":{\"light\":2}}}],"
+             "\"scenes\":[{\"nodes\":[0,1,2,3]}],\"scene\":0",
+             lights, pos, idx);
+    w.AddRoot(json);
+    return w.Glb();
+}
+
+}  // namespace
+
+TEST_CASE("gltf: KHR_lights_punctual lights land on their nodes as light sources, in the engine's units",
+          "[asset][gltf][level][lights]")
+{
+    const char* lights = "{\"type\":\"directional\",\"color\":[1,0.5,0.25],\"intensity\":20000},"
+                         "{\"type\":\"point\",\"intensity\":3,\"range\":12},"
+                         "{\"type\":\"spot\",\"intensity\":1,\"spot\":{\"innerConeAngle\":0.2,\"outerConeAngle\":0.6}}";
+    ImportOptions options;
+    options.emit_level = true;
+    options.light_intensity_scale = 2.0f;
+    options.sun_intensity_scale = 1e-4f;
+    options.light_cutoff = 0.25f;
+    ImportResult result;
+    GltfError error;
+    REQUIRE(GmImport(GmLightsGlb(lights), &result, &error, options).Ok());
+    const ImportedResource* level = nullptr;
+    for (usize i = 0; i < result.resources.Size(); ++i)
+    {
+        if (result.resources[i].type == types::kLevel)
+        {
+            level = &result.resources[i];
+        }
+    }
+    REQUIRE(level != nullptr);
+    TypeRegistry types = test::MakeBackendRegistry();
+    storage::ComponentRegistry registry;
+    REQUIRE(storage::RegisterBuiltinComponents(&registry).Ok());
+    REQUIRE(RegisterLevelComponents(&registry).Ok());
+    REQUIRE(animation::RegisterAnimationComponents(&registry).Ok());
+    REQUIRE(scene::RegisterSceneComponents(&registry).Ok());
+    ecs::World world;
+    storage::KeyIndex index;
+    REQUIRE(LoadLevelBlob(ByteSpan(level->blob.Data(), level->blob.Size()), types, registry, world, index).Ok());
+    u32 found = 0;
+    world.Query<ecs::Read<scene::LightSource>, ecs::Read<EntityName>>().ForEach(
+        [&](ecs::Entity, const scene::LightSource& light, const EntityName& name)
+        {
+            ++found;
+            CHECK(light.direction.z == 1.0f);  // glTF lights shine along -Z
+            if (name.name.View() == StringView("sun"))
+            {
+                CHECK(light.type == renderer::LightType::Directional);
+                CHECK(GmNear(light.intensity, 2.0f));
+                CHECK(light.color.y == 0.5f);
+                CHECK(light.color.z == 0.25f);
+            }
+            else if (name.name.View() == StringView("bulb"))
+            {
+                CHECK(light.type == renderer::LightType::Point);
+                CHECK(GmNear(light.intensity, 6.0f));
+                CHECK(GmNear(light.radius, 12.0f));
+            }
+            else
+            {
+                CHECK(light.type == renderer::LightType::Spot);
+                CHECK(GmNear(light.intensity, 2.0f));
+                CHECK(GmNear(light.radius, Sqrt(2.0f / 0.25f - 1.0f)));  // no range: intensity / (d^2 + 1) = cutoff
+                CHECK(GmNear(light.inner_cone, 0.2f));
+                CHECK(GmNear(light.outer_cone, 0.6f));
+            }
+        });
+    CHECK(found == 3);
+
+    // The same file imports to the same level bytes.
+    ImportResult again;
+    REQUIRE(GmImport(GmLightsGlb(lights), &again, &error, options).Ok());
+    bool same = false;
+    for (usize i = 0; i < again.resources.Size(); ++i)
+    {
+        if (again.resources[i].type == types::kLevel)
+        {
+            same = again.resources[i].blob.Size() == level->blob.Size() &&
+                   MemCompare(again.resources[i].blob.Data(), level->blob.Data(), level->blob.Size()) == 0;
+        }
+    }
+    CHECK(same);
+
+    // Lights that break a rule are refused, naming the light.
+    const char* bad[] = {
+        "{\"type\":\"area\"},{\"type\":\"point\"},{\"type\":\"point\"}",
+        "{\"type\":\"point\",\"intensity\":-1},{\"type\":\"point\"},{\"type\":\"point\"}",
+        "{\"type\":\"point\",\"range\":0},{\"type\":\"point\"},{\"type\":\"point\"}",
+        "{\"type\":\"spot\",\"spot\":{\"innerConeAngle\":0.6,\"outerConeAngle\":0.5}},{\"type\":\"point\"},"
+        "{\"type\":\"point\"}",
+        "{\"type\":\"spot\",\"spot\":{\"outerConeAngle\":2}},{\"type\":\"point\"},{\"type\":\"point\"}",
+        "{\"type\":\"point\"},{\"type\":\"point\"}",  // node 3 names light 2, which is not there
+    };
+    for (const char* b : bad)
+    {
+        INFO(b);
+        ImportResult refused;
+        CHECK(GmImport(GmLightsGlb(b), &refused, &error, options).Failed());
+    }
 }
 
 }  // namespace engine_placeholder::asset

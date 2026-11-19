@@ -8763,34 +8763,37 @@ asset::ImportOptions::looping_clips	variable	asset_import	asset-importoptions-lo
 asset::ImportOptions::cancel	variable	asset_import	asset-importoptions-cancel	asset_import.md	engine/asset_import/gltf_import.h:250
 asset::ImportOptions::steps_done	variable	asset_import	asset-importoptions-steps-done	asset_import.md	engine/asset_import/gltf_import.h:252
 asset::ImportOptions::scale	variable	asset_import	asset-importoptions-scale	asset_import.md	engine/asset_import/gltf_import.h:254
-asset::ImportOptions::emit_level	variable	asset_import	asset-importoptions-emit-level	asset_import.md	engine/asset_import/gltf_import.h:255
-asset::ImportedResource	struct	asset_import	asset-importedresource	asset_import.md	engine/asset_import/gltf_import.h:263
-asset::ImportedResource::ImportedResource()	function	asset_import	asset-importedresource-importedresource	asset_import.md	engine/asset_import/gltf_import.h:266
-asset::ImportedResource::id	variable	asset_import	asset-importedresource-id	asset_import.md	engine/asset_import/gltf_import.h:267
-asset::ImportedResource::type	variable	asset_import	asset-importedresource-type	asset_import.md	engine/asset_import/gltf_import.h:268
-asset::ImportedResource::path	variable	asset_import	asset-importedresource-path	asset_import.md	engine/asset_import/gltf_import.h:269
-asset::ImportedResource::blob	variable	asset_import	asset-importedresource-blob	asset_import.md	engine/asset_import/gltf_import.h:270
-asset::ImportReport	struct	asset_import	asset-importreport	asset_import.md	engine/asset_import/gltf_import.h:276
-asset::ImportReport::meshes	variable	asset_import	asset-importreport-meshes	asset_import.md	engine/asset_import/gltf_import.h:278
-asset::ImportReport::materials	variable	asset_import	asset-importreport-materials	asset_import.md	engine/asset_import/gltf_import.h:279
-asset::ImportReport::textures	variable	asset_import	asset-importreport-textures	asset_import.md	engine/asset_import/gltf_import.h:280
-asset::ImportReport::images	variable	asset_import	asset-importreport-images	asset_import.md	engine/asset_import/gltf_import.h:281
-asset::ImportReport::skins	variable	asset_import	asset-importreport-skins	asset_import.md	engine/asset_import/gltf_import.h:282
-asset::ImportReport::animations	variable	asset_import	asset-importreport-animations	asset_import.md	engine/asset_import/gltf_import.h:283
-asset::ImportReport::nodes	variable	asset_import	asset-importreport-nodes	asset_import.md	engine/asset_import/gltf_import.h:284
-asset::ImportReport::accessors	variable	asset_import	asset-importreport-accessors	asset_import.md	engine/asset_import/gltf_import.h:285
-asset::ImportReport::resampling_translation_error	variable	asset_import	asset-importreport-resampling-translation-error	asset_import.md	engine/asset_import/gltf_import.h:286
-asset::ImportReport::resampling_rotation_degrees	variable	asset_import	asset-importreport-resampling-rotation-degrees	asset_import.md	engine/asset_import/gltf_import.h:288
-asset::ImportReport::output_bytes	variable	asset_import	asset-importreport-output-bytes	asset_import.md	engine/asset_import/gltf_import.h:290
-asset::ImportReport::warnings	variable	asset_import	asset-importreport-warnings	asset_import.md	engine/asset_import/gltf_import.h:291
-asset::ImportReport::notes	variable	asset_import	asset-importreport-notes	asset_import.md	engine/asset_import/gltf_import.h:292
-asset::ImportResult	struct	asset_import	asset-importresult	asset_import.md	engine/asset_import/gltf_import.h:299
-asset::ImportResult::resources	variable	asset_import	asset-importresult-resources	asset_import.md	engine/asset_import/gltf_import.h:301
-asset::ImportResult::manifest	variable	asset_import	asset-importresult-manifest	asset_import.md	engine/asset_import/gltf_import.h:302
-asset::ImportResult::report	variable	asset_import	asset-importresult-report	asset_import.md	engine/asset_import/gltf_import.h:303
-asset::ImportResult::summary	variable	asset_import	asset-importresult-summary	asset_import.md	engine/asset_import/gltf_import.h:304
-asset::ImportGltf(ByteSpan,GltfSource&,const ImportOptions&,ImportResult*,GltfError*)	function	asset_import	asset-importgltf-bytespan-gltfsource-amp-const-importoptions-amp-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_import.h:324
-asset::ImportIntoBackend(HostMemoryBackend&,const ImportResult&)	function	asset_import	asset-importintobackend-hostmemorybackend-amp-const-importresult-amp	asset_import.md	engine/asset_import/gltf_import.h:334
+asset::ImportOptions::light_intensity_scale	variable	asset_import	asset-importoptions-light-intensity-scale	asset_import.md	engine/asset_import/gltf_import.h:257
+asset::ImportOptions::sun_intensity_scale	variable	asset_import	asset-importoptions-sun-intensity-scale	asset_import.md	engine/asset_import/gltf_import.h:260
+asset::ImportOptions::light_cutoff	variable	asset_import	asset-importoptions-light-cutoff	asset_import.md	engine/asset_import/gltf_import.h:263
+asset::ImportOptions::emit_level	variable	asset_import	asset-importoptions-emit-level	asset_import.md	engine/asset_import/gltf_import.h:264
+asset::ImportedResource	struct	asset_import	asset-importedresource	asset_import.md	engine/asset_import/gltf_import.h:272
+asset::ImportedResource::ImportedResource()	function	asset_import	asset-importedresource-importedresource	asset_import.md	engine/asset_import/gltf_import.h:275
+asset::ImportedResource::id	variable	asset_import	asset-importedresource-id	asset_import.md	engine/asset_import/gltf_import.h:276
+asset::ImportedResource::type	variable	asset_import	asset-importedresource-type	asset_import.md	engine/asset_import/gltf_import.h:277
+asset::ImportedResource::path	variable	asset_import	asset-importedresource-path	asset_import.md	engine/asset_import/gltf_import.h:278
+asset::ImportedResource::blob	variable	asset_import	asset-importedresource-blob	asset_import.md	engine/asset_import/gltf_import.h:279
+asset::ImportReport	struct	asset_import	asset-importreport	asset_import.md	engine/asset_import/gltf_import.h:285
+asset::ImportReport::meshes	variable	asset_import	asset-importreport-meshes	asset_import.md	engine/asset_import/gltf_import.h:287
+asset::ImportReport::materials	variable	asset_import	asset-importreport-materials	asset_import.md	engine/asset_import/gltf_import.h:288
+asset::ImportReport::textures	variable	asset_import	asset-importreport-textures	asset_import.md	engine/asset_import/gltf_import.h:289
+asset::ImportReport::images	variable	asset_import	asset-importreport-images	asset_import.md	engine/asset_import/gltf_import.h:290
+asset::ImportReport::skins	variable	asset_import	asset-importreport-skins	asset_import.md	engine/asset_import/gltf_import.h:291
+asset::ImportReport::animations	variable	asset_import	asset-importreport-animations	asset_import.md	engine/asset_import/gltf_import.h:292
+asset::ImportReport::nodes	variable	asset_import	asset-importreport-nodes	asset_import.md	engine/asset_import/gltf_import.h:293
+asset::ImportReport::accessors	variable	asset_import	asset-importreport-accessors	asset_import.md	engine/asset_import/gltf_import.h:294
+asset::ImportReport::resampling_translation_error	variable	asset_import	asset-importreport-resampling-translation-error	asset_import.md	engine/asset_import/gltf_import.h:295
+asset::ImportReport::resampling_rotation_degrees	variable	asset_import	asset-importreport-resampling-rotation-degrees	asset_import.md	engine/asset_import/gltf_import.h:297
+asset::ImportReport::output_bytes	variable	asset_import	asset-importreport-output-bytes	asset_import.md	engine/asset_import/gltf_import.h:299
+asset::ImportReport::warnings	variable	asset_import	asset-importreport-warnings	asset_import.md	engine/asset_import/gltf_import.h:300
+asset::ImportReport::notes	variable	asset_import	asset-importreport-notes	asset_import.md	engine/asset_import/gltf_import.h:301
+asset::ImportResult	struct	asset_import	asset-importresult	asset_import.md	engine/asset_import/gltf_import.h:308
+asset::ImportResult::resources	variable	asset_import	asset-importresult-resources	asset_import.md	engine/asset_import/gltf_import.h:310
+asset::ImportResult::manifest	variable	asset_import	asset-importresult-manifest	asset_import.md	engine/asset_import/gltf_import.h:311
+asset::ImportResult::report	variable	asset_import	asset-importresult-report	asset_import.md	engine/asset_import/gltf_import.h:312
+asset::ImportResult::summary	variable	asset_import	asset-importresult-summary	asset_import.md	engine/asset_import/gltf_import.h:313
+asset::ImportGltf(ByteSpan,GltfSource&,const ImportOptions&,ImportResult*,GltfError*)	function	asset_import	asset-importgltf-bytespan-gltfsource-amp-const-importoptions-amp-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_import.h:333
+asset::ImportIntoBackend(HostMemoryBackend&,const ImportResult&)	function	asset_import	asset-importintobackend-hostmemorybackend-amp-const-importresult-amp	asset_import.md	engine/asset_import/gltf_import.h:343
 asset::kMaxLevelDepth	variable	asset_import	asset-kmaxleveldepth	asset_import.md	engine/asset_import/gltf_level.h:18
 asset::ImportLevel(const GltfDocument&,const GltfNodeGraph&,const ImportOptions&,const TypeRegistry&,Span<const ImportedSkin>,ImportResult*,GltfError*)	function	asset_import	asset-importlevel-const-gltfdocument-amp-const-gltfnodegraph-amp-const-importoptions-amp-const-typeregistry-amp-span-lt-const-importedskin-gt-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_level.h:38
 asset::ImportMaterials(const GltfDocument&,const GltfNodeGraph&,GltfSource&,const ImportOptions&,const TypeRegistry&,ImportResult*,GltfError*)	function	asset_import	asset-importmaterials-const-gltfdocument-amp-const-gltfnodegraph-amp-gltfsource-amp-const-importoptions-amp-const-typeregistry-amp-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_material.h:38
@@ -8861,6 +8864,7 @@ asset::SniffImageFormat(ByteSpan)	function	asset_import	asset-sniffimageformat-b
 asset::DecodePixels(ByteSpan,u64,DecodedImage*,GltfError*)	function	asset_import	asset-decodepixels-bytespan-u64-decodedimage-star-gltferror-star	asset_import.md	engine/asset_import/image_decode.h:58
 asset::RegisterImportSettings(settings::Registry*)	function	asset_import	asset-registerimportsettings-settings-registry-star	asset_import.md	engine/asset_import/import_settings.h:19
 asset::ImportLimitsFromSettings(const settings::Registry&)	function	asset_import	asset-importlimitsfromsettings-const-settings-registry-amp	asset_import.md	engine/asset_import/import_settings.h:27
+asset::ApplyImportLightSettings(const settings::Registry&,ImportOptions*)	function	asset_import	asset-applyimportlightsettings-const-settings-registry-amp-importoptions-star	asset_import.md	engine/asset_import/import_settings.h:37
 asset::JsonValue	class	asset_import	asset-jsonvalue	asset_import.md	engine/asset_import/json_view.h:29
 asset::JsonValue::JsonValue()	function	asset_import	asset-jsonvalue-jsonvalue	asset_import.md	engine/asset_import/json_view.h:33
 asset::JsonValue::Exists() const	function	asset_import	asset-jsonvalue-exists-const	asset_import.md	engine/asset_import/json_view.h:37

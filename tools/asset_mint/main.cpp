@@ -25,6 +25,7 @@
 #include "io/file_system.h"
 #include "io/path.h"
 #include "animation/components.h"
+#include "scene/scene_components.h"
 #include "asset/level.h"
 #include "clip_source.h"
 #include "level_source.h"
@@ -1054,12 +1055,12 @@ private:
     mutable Vector<Vector<byte>> blobs_;  // the inner buffers do not move when the outer grows
 };
 
-// The components a level may hold: the engine's own and the animation ones; a game adds its own where it builds its
-// tools.
+// The components a level may hold: the engine's own, the animation ones and the scene ones (an imported level's lights);
+// a game adds its own where it builds its tools.
 bool RegisterLevelRegistry(storage::ComponentRegistry* registry)
 {
     return storage::RegisterBuiltinComponents(registry).Ok() && RegisterLevelComponents(registry).Ok() &&
-           animation::RegisterAnimationComponents(registry).Ok();
+           animation::RegisterAnimationComponents(registry).Ok() && scene::RegisterSceneComponents(registry).Ok();
 }
 
 bool WriteOutput(const io::Path& output, const void* data, usize size)
