@@ -55,6 +55,7 @@ flavors 26  linux: plain,asan,tsan # tests/audio (Day 415)
 flavors 26  windows: plain,asan
 flavors 26  macos: plain,asan,tsan
 flavors 27  linux: plain,asan,tsan # tests/script (Day 445)
+flavors 27  macos: plain,asan,tsan # LuaJIT and the script tests on the Mac (Day 474)
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.

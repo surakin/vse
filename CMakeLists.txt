@@ -216,7 +216,7 @@ add_subdirectory(third_party/zlib)  # Phase 22 Day 338: zlib, vendored (PLAN.md 
 add_subdirectory(third_party/libpng)  # Phase 22 Day 338: libpng, vendored over zlib; the PNG decoder of the glTF importer
 add_subdirectory(third_party/libogg)  # Phase 26 Day 432: libogg, vendored (PLAN.md assumption #30)
 add_subdirectory(third_party/libvorbis)  # Phase 26 Day 432: libvorbis, vendored over libogg; the Vorbis decoder of the audio module
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")  # Windows and macOS: Phase 27 Days 473 and 474
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")  # macOS: Phase 27 Day 474; Windows: Day 473
   add_subdirectory(third_party/luajit)  # Phase 27 Day 445: LuaJIT, vendored (PLAN.md assumption #13); the script module's backend
 endif()
 add_subdirectory(third_party/stb_image)  # Phase 22 Day 338: stb_image's JPEG decoder, vendored; the JPEG decoder of the glTF importer
@@ -386,6 +386,17 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/asset)
   add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
   add_subdirectory(engine/animation)
+  # Phase 27 Day 474: the script module with its LuaJIT backend, the bindings above physics, audio and input, their tests and programs, before
+  # asset_mint (mint-script links the module) and engine_c (the C API's scripts).
+  add_subdirectory(engine/script)
+  add_subdirectory(engine/script_physics)
+  add_subdirectory(engine/script_media)
+  add_subdirectory(tests/script)
+  add_subdirectory(tests/script_physics)
+  add_subdirectory(tests/script_media)
+  add_subdirectory(game/script_demo)
+  add_subdirectory(game/script_bench)
+  add_subdirectory(tests/script_demo)
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
   add_subdirectory(tools/resource_server)  # Phase 22 Day 331
   add_subdirectory(tests/asset)

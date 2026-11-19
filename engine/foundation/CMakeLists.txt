@@ -89,7 +89,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     io/posix/posix_directory.cpp
     io/macos/posix_hooks.cpp
     io/macos/special_folders.mm
-    io/directory_watcher_unsupported.cpp  # Day 474 replaces it with io/macos/directory_watcher.mm
+    io/macos/fsevents_watcher.cpp  # Phase 27 Day 474: FSEvents (Core Services' C API)
   )
   # The debugging backend (os/macos/debug/BACKEND.md): stack traces through libbacktrace on Mach-O, the module list, the crash context (Day 290);
   # the crash hook on Breakpad's on_crash, death tests (shared with Linux in os/posix/debug/), fault injection, the debugger check (Day 291).
@@ -270,7 +270,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_link_libraries(foundation_base${suffix} PUBLIC ${CMAKE_DL_LIBS} "-framework CoreGraphics" "-framework Foundation")
     engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
     # The user directories (io/macos/special_folders.mm) ask Foundation (NSSearchPathForDirectoriesInDomains).
-    target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} "-framework Foundation")
+    target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} "-framework Foundation" "-framework CoreServices")
     engine_add_foundation_layer(foundation_debug "${suffix}" ${FOUNDATION_DEBUG_SOURCES})
     target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE backtrace sentry)
     # The user defaults store (settings/macos/) uses CoreFoundation's preferences.

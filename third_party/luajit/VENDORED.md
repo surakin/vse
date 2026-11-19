@@ -13,4 +13,4 @@ changes.** `luajit_relver.txt` is ours: the commit time upstream's Makefile read
 Built by `CMakeLists.txt` as the static library `luajit`, without `make`: the host tools `minilua`, DynASM and `buildvm` run at build time and write their output
 (`lj_vm.S`, `lj_bcdef.h`, ..., `luajit.h`) to the build tree. The build uses 64-bit GC objects (`LJ_GC64`, LuaJIT's default on x86-64 and arm64), so
 `lua_newstate` accepts the engine's allocator. `ENGINE_LUAJIT_JIT=OFF` builds with `LUAJIT_DISABLE_JIT`. Warnings are off for the target (third-party C). Only
-`engine/script/luajit/` includes its headers (gate `luajit_boundary_check`). Linux x86-64 today; Windows and macOS: Phase 27 Days 473 and 474.
+`engine/script/luajit/` includes its headers (gate `luajit_boundary_check`). Linux x86-64, and macOS x86-64 and arm64 (Day 474; arm64 compile-only); Windows: Phase 27 Day 473.

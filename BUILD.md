@@ -11,7 +11,7 @@ Each tool is one of:
   with a printed reason.
 - **Optional:** a convenience for debugging or regenerating vendored files.
 
-Everything third-party that ships inside the engine or a tool (Catch2, libbacktrace, sentry-native with Breakpad, nlohmann/json, yyjson 0.13.0 (Phase 22 Day 335, `third_party/yyjson/VENDORED.md`: the glTF importer's JSON), FreeType (Phase 14), libogg 1.3.6 and libvorbis 1.3.7 (Phase 26 Day 432, decode-only, `third_party/libogg/VENDORED.md`, `third_party/libvorbis/VENDORED.md`; used only by `engine/audio/vorbis.cpp`), SQLite 3.54.1 (Phase 19, the amalgamation, `third_party/sqlite/VENDORED.md`) and LuaJIT 2.1 (Phase 27 Day 445, the pinned commit in `third_party/luajit/VENDORED.md`; built by CMake with its own host tools, so it needs only the C compiler and, on Linux, the assembler of the C compiler driver; used only by `engine/script/luajit/`; `-DENGINE_LUAJIT_JIT=OFF` (preset `linux-nojit`) builds it without the JIT compiler, for platforms that forbid run-time code generation)) is vendored under `third_party/` and built from source. **Do not install it separately.**
+Everything third-party that ships inside the engine or a tool (Catch2, libbacktrace, sentry-native with Breakpad, nlohmann/json, yyjson 0.13.0 (Phase 22 Day 335, `third_party/yyjson/VENDORED.md`: the glTF importer's JSON), FreeType (Phase 14), libogg 1.3.6 and libvorbis 1.3.7 (Phase 26 Day 432, decode-only, `third_party/libogg/VENDORED.md`, `third_party/libvorbis/VENDORED.md`; used only by `engine/audio/vorbis.cpp`), SQLite 3.54.1 (Phase 19, the amalgamation, `third_party/sqlite/VENDORED.md`) and LuaJIT 2.1 (Phase 27 Day 445, the pinned commit in `third_party/luajit/VENDORED.md`; built by CMake with its own host tools, so it needs only the C compiler and, on Linux and macOS (Day 474), the assembler of the C compiler driver; used only by `engine/script/luajit/`; `-DENGINE_LUAJIT_JIT=OFF` (preset `linux-nojit`) builds it without the JIT compiler, for platforms that forbid run-time code generation)) is vendored under `third_party/` and built from source. **Do not install it separately.**
 
 ## Linux (x86-64): supported
 
@@ -110,6 +110,12 @@ Homebrew works the same way.
 | The Metal shader minting | the driver's compiler (`metalfe-32023.622` on macOS 15.8.1 (24H32)) | For checks | **Interim, pending (the user's decision, 2026-11-10):** `.metallib` files are minted through the driver's compiler with the undocumented `-[MTLLibrary serializeToURL:error:]` by `tools/metal_mint` (built on macOS, Phase 21 Day 299), so no Xcode; `cmake --build build-macos --target shaders` mints them with `slangc`. The minted bytes depend on the macOS build (recorded in each `.metallib.inc`), and the route is decided again when the user has a new Mac (Phase 21 Day 282, `KNOWN-ISSUES.md`). Without it the committed `.metallib.inc` files are used, and a shader added elsewhere gets a placeholder until a Mac mints it. | part of macOS |
 | Python 3 | 3.x (3.14.10 used) | Optional | `scripts/list-aborts.py` and `scripts/std-usage-report.py` only. | `sudo port install python314` |
 | Xcode | not installed | Optional | Instruments and the Metal debugger for GPU captures. Not needed to build, test or mint. | App Store |
+
+**LuaJIT on macOS (Phase 27 Day 474):** the vendored LuaJIT needs nothing installed beyond the Command Line Tools. `third_party/luajit/CMakeLists.txt`
+builds its host tools for the host's processor (`OSX_ARCHITECTURES` = the host's, so the `macos-clang-arm64` tree on an Intel Mac runs x86-64 tools
+that generate the arm64 interpreter), writes Mach-O assembly (`buildvm -m machasm`), and takes the deployment target that LuaJIT's Makefile asks for in
+`MACOSX_DEPLOYMENT_TARGET` from `CMAKE_OSX_DEPLOYMENT_TARGET` (13.3). The file layer's directory watcher uses FSEvents from Core Services, a system
+framework.
 
 There is no LeakSanitizer on macOS (Apple clang): ASan aborts the process when `ASAN_OPTIONS` asks for `detect_leaks=1`, so leak checks stay on Linux;
 `leaks --atExit -- <program>` is the macOS tool. ASan (with UBSan) and TSan both work, so macOS runs all three flavors.

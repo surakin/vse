@@ -375,9 +375,22 @@ Windows (Day 473): `CreateFileW(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPE
 `FILE_ACTION_RENAMED_OLD_NAME`/`NEW_NAME` paired; `ERROR_NOTIFY_ENUM_DIR` is an `Overflow`; names from UTF-16; the destructor `CancelIoEx`es and drains
 the request before the buffer goes.
 
-macOS (Day 474): `FSEventStreamCreate` with `kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer` on a private serial dispatch
-queue; per-item flags mapped to the neutral events; `MustScanSubDirs`, `UserDropped` and `KernelDropped` are an `Overflow`; events below the watched
-directory are dropped; the callback only queues, `Poll` and `Wait` drain it.
+macOS, as built (Day 474): FSEvents (`io/macos/fsevents_watcher.cpp`, Core Services' C API, no Objective-C; a `kqueue` watch on the directory was
+the alternative, but it says only that the directory changed, so it would list the directory again like the polling backend and need one descriptor
+per file for writes). `FSEventStreamCreate` on the resolved directory (`io::Canonical`: FSEvents reports `/private/var/...`) with
+`kFSEventStreamCreateFlagFileEvents | NoDefer | WatchRoot`, 50 ms latency, on a private serial dispatch queue (`FSEventStreamSetDispatchQueue`, no
+run loop); the callback only maps and queues, `Poll` and `Wait` (a condition variable) take the events. FSEvents' per-file flags accumulate on a path
+(a file written once carries `ItemModified` on every later event, a chmod included), so the flags are not used to tell what happened: the watcher keeps
+each name's type, size and modification time (a `HashMap` keyed by name) and maps an event by what `io::Lstat` finds now, outside the lock: a name
+that exists is `Created` the first time it is seen and `Modified` when its type, size or time changed; a known name that is not found is `Removed`; a
+change of metadata only is not reported (an event whose own flags say `ItemModified` and no metadata change is a `Modified` even when the size and time
+are the same: a tool that restores the time, a coarse clock); a rename is the two names, never `Renamed`; a look that fails otherwise (permission, I/O) is an `Overflow`.
+The directory is listed before the stream starts and again after, and the differences are queued, so a change in between is not lost.
+`MustScanSubDirs`, `UserDropped` and `KernelDropped` on the directory, above it or on one of its names are an `Overflow` and the
+directory is listed again; below a subdirectory they are ignored, as is every event there (FSEvents is recursive). `RootChanged`, or an event on the
+directory itself when it is no longer a directory, ends the watch; `RootChanged` when a directory is at the path again (replaced) lists it again and
+queues the differences. The destructor stops and invalidates the stream only if it was started and
+scheduled, releases it, then waits on the queue for a callback in flight.
 
 ### `ErrorFromOsCode`
 

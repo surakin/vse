@@ -76,10 +76,10 @@ void RunCases(bool polling)
     {
         CHECK(!watcher->IsNative());
     }
-#if ENGINE_PLATFORM_LINUX
+#if ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_MACOS
     else
     {
-        CHECK(watcher->IsNative());  // inotify
+        CHECK(watcher->IsNative());  // inotify; FSEvents (Day 474)
     }
 #endif
 
@@ -114,6 +114,35 @@ void RunCases(bool polling)
         const Vector<io::WatchEvent> events = Gather(watcher.Get(), [](const Vector<io::WatchEvent>& e)
                                                      { return Has(e, io::WatchEventKind::Removed, "gone.lua"); });
         CHECK(Has(events, io::WatchEventKind::Removed, "gone.lua"));
+    }
+
+    SECTION("a change of permissions only is not reported as a write (Day 474 review)")
+    {
+        Write(dir.Path().Join("mode.lua"), "x");
+        Gather(watcher.Get(), [](const Vector<io::WatchEvent>& e) { return HasName(e, "mode.lua"); });
+        Write(dir.Path().Join("mode.lua"), "x and more");  // FSEvents keeps ItemModified on the path from here on
+        Gather(watcher.Get(),
+               [](const Vector<io::WatchEvent>& e) { return Has(e, io::WatchEventKind::Modified, "mode.lua"); });
+        REQUIRE(io::SetPermissions(dir.Path().Join("mode.lua"), 0600).Ok());
+        Vector<io::WatchEvent> events;
+        const u64 start = os::MonotonicTimeNanos();
+        while (os::MonotonicTimeNanos() - start < 400ull * 1000000ull)
+        {
+            watcher->Wait(50);
+            REQUIRE(watcher->Poll(&events).Ok());
+        }
+        CHECK_FALSE(HasName(events, "mode.lua"));
+    }
+
+    SECTION("a name that was there before the watch and goes at once is reported removed (Day 474 review)")
+    {
+        UniquePtr<io::DirectoryWatcher> fresh;
+        Write(dir.Path().Join("early.lua"), "x");
+        REQUIRE(io::DirectoryWatcher::Open(dir.Path(), Options(polling), &fresh).Ok());
+        REQUIRE(io::Remove(dir.Path().Join("early.lua")).Ok());
+        const Vector<io::WatchEvent> events = Gather(fresh.Get(), [](const Vector<io::WatchEvent>& e)
+                                                     { return Has(e, io::WatchEventKind::Removed, "early.lua"); });
+        CHECK(Has(events, io::WatchEventKind::Removed, "early.lua"));
     }
 
     SECTION("a name with UTF-8")

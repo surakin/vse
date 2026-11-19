@@ -9,8 +9,8 @@
 #include "types.h"
 
 //! Watching one directory for changes without reading it again and again: [[io::DirectoryWatcher]]. Phase 27 Day 464
-//! (hot reload). Linux has a native backend (inotify); every platform has the polling one, which the other native
-//! backends (Windows and macOS, Days 473 and 474) replace.
+//! (hot reload). Linux (inotify) and macOS (FSEvents, Day 474) have a native backend; every platform has the polling
+//! one, which the Windows backend (Day 473) replaces.
 namespace engine_placeholder::io
 {
 
@@ -72,8 +72,8 @@ public:
     /// - Fails: `NotFound`, `NotADirectory`, `PermissionDenied`, `Invalid` (an interval out of range). A native backend
     /// that cannot start (watch limit reached, a file system without notifications) falls back to the polling backend
     /// instead of failing; [[io::DirectoryWatcher::IsNative]] tells which one was made.
-    /// - Backend: Linux: inotify; Windows: ReadDirectoryChangesW (Day 473, polling until then); macOS: FSEvents (Day
-    /// 474, polling until then).
+    /// - Backend: Linux: inotify; Windows: ReadDirectoryChangesW (Day 473, polling until then); macOS: FSEvents (a
+    /// rename is reported as its two names, not as `Renamed`).
     static Status Open(const Path& directory, const WatchOptions& options, UniquePtr<DirectoryWatcher>* out);
 
     /// Takes the queued events, appending them to `out` (which is not cleared) in the order they happened.
