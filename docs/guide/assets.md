@@ -765,7 +765,7 @@ Minting is deterministic: the same inputs and tool version give the same bytes, 
 
 ## Importing glTF
 
-`engine/asset_import` (`asset_import/gltf_import.h`) imports glTF 2.0 files (`.gltf` and `.glb`) into the engine's own resources, in memory: bytes in, blobs out. It is a library a program opts into (a host such as the host that fetches `.glb` files at run time, and `asset_mint import-gltf`, which is a thin command over it); no runtime engine module includes it, and the runtime still reads only its own formats.
+`engine/asset_import` (`asset_import/gltf_import.h`) imports glTF 2.0 files (`.gltf` and `.glb`) into the engine's own resources, in memory: bytes in, blobs out. It is a library a program opts into (a host that fetches `.glb` files at run time, and `asset_mint import-gltf`, which is a thin command over it); no runtime engine module includes it, and the runtime still reads only its own formats.
 
 ```cpp
 asset::NoGltfSource none;                       // a .glb has everything inside it
@@ -808,7 +808,7 @@ manager.LoadPath<asset::MeshView>("/gltf/meshes/tri", &mesh);
 - **The command.** `asset_mint import-gltf FILE --out=DIRECTORY [--manifest=FILE] [--prefix=/PATH] [--scale=X] [--clip-rate=HZ] [--flat-normals] [--drop-morph-targets] [--loop=NAME]...` reads the files the glTF names from its own folder, writes every blob under `DIRECTORY/<resource path>.blob` (ready for `asset_mint pack`) and the manifest next to the glTF (`FILE.import` unless `--manifest` says where), prints each warning and exits 1 on a refusal, naming the glTF object.
 - **Limits are settings.** `RegisterImportSettings(registry)` declares `assets.import.max_file_bytes`, `max_json_bytes`, `max_buffer_bytes`, `max_nodes`, `max_accessors`, `max_images`, `max_pixels` and `max_output_bytes` (flags `--assets-import-*`, environment `ENGINE_ASSETS_IMPORT_*`), and `ImportLimitsFromSettings(registry)` reads them into the `ImportLimits` of an import.
 - **The boundary.** The runtime never reaches the importer: the gate `asset_boundary_check` fails when a file under `engine/` (outside `engine/asset_import/`) includes `asset_import/...` or a tool's header or links `asset_import` or `asset_mint`, when a program under `game/` does so without an entry in `tools/asset_boundary_check/allowlist.txt` (with its reason), or when anything but `image_decode.cpp` includes a decoder header (`png.h`, `zlib.h`, `stb_image.h`).
-- **The demo.** `asset_demo --import FILE [--async]` is the the host path in one headless program: import from memory, add to a `HostMemoryBackend`, mount, load every mesh, skeleton and clip through the manager by path, by id and through the `AsyncLoader`, open the textures and materials as blobs, and fail when anything does not verify or a load converted data.
+- **The demo.** `asset_demo --import FILE [--async]` is a host's run-time import in one headless program: import from memory, add to a `HostMemoryBackend`, mount, load every mesh, skeleton and clip through the manager by path, by id and through the `AsyncLoader`, open the textures and materials as blobs, and fail when anything does not verify or a load converted data.
 
 ### Keeping an import's blobs (the host cache)
 

@@ -2286,11 +2286,11 @@ extern "C"
 
         /* ---- Maintenance (2026-11-18): a host's own cache of imported resources ----
          *
-         * A host that imports a file often (the host's worlds and avatars) can keep what import_gltf made and add it
-         * back later instead of importing again: after an import it stores, for each id of `engine_import_result`, the
-         * id, the type, the path (one per line of `paths`) and the blob that resource_read returns, together with the
-         * `manifest`; it keys the cache by the file's own hash and by import_format_version(). To use the cache it adds
-         * the stored blobs with resource_add_many, giving each its id and path again (the order of `ids` is
+         * A host that imports a file often (the same worlds and avatars again) can keep what import_gltf made and add
+         * it back later instead of importing again: after an import it stores, for each id of `engine_import_result`,
+         * the id, the type, the path (one per line of `paths`) and the blob that resource_read returns, together with
+         * the `manifest`; it keys the cache by the file's own hash and by import_format_version(). To use the cache it
+         * adds the stored blobs with resource_add_many, giving each its id and path again (the order of `ids` is
          * dependencies first), and loads the level by its id (the level is the resource made with
          * ENGINE_IMPORT_EMIT_LEVEL; store which id it is) with resource_load. Everything a load needs is in the blobs
          * and the paths, plus `summary` (the node positions, the bounds, the material and animation names: nothing in

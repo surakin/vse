@@ -3,7 +3,7 @@
    installs its handler (through the table) and uninstalls it, and the host's handler is back. (2) A child installs the
    handler and crashes inside a job of the shared engine: it dies of SIGSEGV and leaves an envelope holding a minidump
    in the dump directory; where the engine chains to it (Linux), the host's handler installed before it runs after the
-   dump and leaves a marker (the host's request). Plain flavor only. */
+   dump and leaves a marker (crash handler chaining). Plain flavor only. */
 #include <stdio.h>
 #include <string.h>
 

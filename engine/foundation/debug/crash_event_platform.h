@@ -50,7 +50,7 @@ void RemoveCrashEventHook();
 #if ENGINE_PLATFORM_LINUX
 // Notes, per fatal signal, the handler the host had installed before the crash library's (call it before
 // `sentry_init`): after the report and the dump the recorder calls it once, in signal context on the faulting thread
-// (the host's request, plans/maintenance/host-crash-handler-chaining.md). `SIG_DFL`, `SIG_IGN` and the recorder
+// (a host's crash log keeps working beside the engine's dump). `SIG_DFL`, `SIG_IGN` and the recorder
 // itself are noted as none. `RemoveCrashEventHook` forgets them.
 void NoteHostSignalHandlers();
 #endif

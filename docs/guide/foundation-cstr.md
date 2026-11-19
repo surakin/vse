@@ -88,7 +88,7 @@ os::Print("loaded %u assets in %.2f ms\n", count, elapsed_ms);
 - **Passing a count of elements where bytes are wanted.** `MemCopy(dst, src, n)` copies `n` bytes; for `u32` that is `n * sizeof(u32)`.
 - **Using `CStrCompare` as a boolean.** It returns zero when the strings are equal.
 - **Trusting `ParseDoubleExact` on user text without checks.** It reads `nan` and `inf`, stops at the first character that is not part of a number (`0x10` reads as `0`) and refuses a leading `+` or space.
-- **Formatting a stored number with `%g`.** Source text, JSON, settings and caches written with `FormatTo("%.9g")` carry a `,` under a host's decimal-comma locale, and the reader refuses them (the host's glTF import failed so, 2026-11-18). Use `FormatGeneral`.
+- **Formatting a stored number with `%g`.** Source text, JSON, settings and caches written with `FormatTo("%.9g")` carry a `,` under a host's decimal-comma locale, and the reader refuses them (a host's glTF import failed so, 2026-11-18). Use `FormatGeneral`.
 - **Reading `os::LastError()` late.** Another call may have changed it; read it right after the call that failed.
 - **Using a C string function on a `StringView`.** A view has a length and is not necessarily NUL-terminated.
 

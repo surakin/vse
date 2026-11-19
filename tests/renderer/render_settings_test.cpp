@@ -428,7 +428,7 @@ TEST_CASE("the text format is stable and round trips", "[render_settings]")
     CHECK(CStrLength(tiny) == sizeof(tiny) - 1);
 }
 
-// the host maintenance (2026-11-18): a host under a decimal-comma locale writes and reads the same text.
+// Maintenance (2026-11-18): a host under a decimal-comma locale writes and reads the same text.
 TEST_CASE("the text format does not follow a decimal-comma locale", "[render_settings][locale]")
 {
     RenderSettings s;

@@ -1,4 +1,4 @@
-// the host maintenance (2026-11-18, plans/maintenance/host-locale-independent-import.md): a host that sets its
+// Maintenance (2026-11-18, the locale-independent import): a host that sets its
 // locale from the environment (Qt, GTK) runs the importer under a decimal-comma locale, where printf's %g writes "0,5".
 // The import must succeed there and mint the same bytes, summary and notes as under the C locale.
 

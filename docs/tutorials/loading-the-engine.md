@@ -151,4 +151,4 @@ The page and the program cannot drift apart: the test `engine_tutorial_loading_m
 
 ## Where next
 
-[Rendering into a window the host owns](../guide/engine-library.md) describes resize, hidden windows and recovery; input forwarding and the cursor and clipboard callbacks are in the same guide. Importing a glTF at run time is the the host path.
+[Rendering into a window the host owns](../guide/engine-library.md) describes resize, hidden windows and recovery; input forwarding and the cursor and clipboard callbacks are in the same guide. Importing a glTF at run time is in the same guide.

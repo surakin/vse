@@ -1,5 +1,5 @@
 # Phase 22 Day 335: the glTF importer (library `asset_import`): glTF 2.0 files in memory into the engine's own resources, for a program that imports
-# at run time (the host) and for `asset_mint import-gltf`. A leaf above `asset`: no runtime engine module includes it. yyjson (third_party/yyjson) is
+# at run time and for `asset_mint import-gltf`. A leaf above `asset`: no runtime engine module includes it. yyjson (third_party/yyjson) is
 # reached only through json_view.cpp. Headers are included as "asset_import/<name>.h", rooted at engine/. Built plain, ASan and TSan.
 set(ASSET_IMPORT_SOURCES
   json_view.cpp  # Day 335

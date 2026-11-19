@@ -1,4 +1,4 @@
-// asset_demo: Phase 22 Day 339. The the host path in one program: a glTF file is imported from memory
+// asset_demo: Phase 22 Day 339. A host's run-time import in one program: a glTF file is imported from memory
 // (`asset::ImportGltf`, or `ImportGltfAsync` with
 // --async), the result is added to a host memory backend, mounted on a resource manager, and every mesh, skeleton and
 // clip is loaded through the manager (by path and by id, then again through the AsyncLoader), the textures and

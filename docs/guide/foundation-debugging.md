@@ -326,7 +326,7 @@ deeply. Without it a stack overflow on that thread kills the process with no rep
 
 ### If your program has its own signal handler
 
-**Installed before `InstallCrashHandler`** (a host that has its own crash log, as the host does): it still runs. The crash handler notes
+**Installed before `InstallCrashHandler`** (a host that keeps its own crash log): it still runs. The crash handler notes
 the handler each fatal signal had before the library installed its own, and calls it after its work, in this order: the report (standard
 error and `crash-report.txt`), the dump (the `.envelope` with its minidump), **your handler**, then the original fault ends the process.
 
@@ -341,7 +341,7 @@ error and `crash-report.txt`), the dump (the `.envelope` with its minidump), **y
 - **Sanitizers:** a sanitizer's own `SIGSEGV` handler, installed at startup, is such an earlier handler: under AddressSanitizer with
   `handle_segv=1` (its default) the sanitizer's report follows the dump and the process ends with its exit code. Tests that expect the
   original signal run with `handle_segv=0`, as the death tests do.
-- Windows and macOS: not yet (the series `plans/maintenance/host-crash-handler-chaining.md`, Days 2 and 3); there the earlier
+- Windows and macOS: not yet (crash handler chaining, Days 2 and 3); there the earlier
   handler is still replaced and does not run.
 
 **Installed after:** it runs first; call the handler that was there before it (the one `sigaction` returns) to get the report and the dump.

@@ -443,9 +443,8 @@ TEST_CASE(
     CHECK(envelopes.Size() == 1);
 }
 
-// A host's own crash handler, installed before the crash handler, the way the host installs it: it writes a marker,
-// puts the default action back and raises the signal again (the host's request,
-// plans/maintenance/host-crash-handler-chaining.md).
+// A host's own crash handler, installed before the crash handler, the way a host with its own crash log installs it:
+// it writes a marker, puts the default action back and raises the signal again (crash handler chaining, Day 1).
 void HostSegvHandler(int signal_number)
 {
     static const char kText[] = "HOST-SEGV-HANDLER-RAN\n";

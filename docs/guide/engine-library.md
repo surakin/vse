@@ -250,9 +250,9 @@ A host that has its content in memory (it downloaded it, unpacked it, generated 
 Not here: paks and loose files are not mounted by the C API yet (`assets.mounts` is declared but only the memory mount is made), and GPU resources come
 with the renderer's C functions.
 
-## Importing a glTF at run time: the the host path (Day 351)
+## Importing a glTF at run time (Day 351)
 
-A program that fetches a glTF file from somewhere (the host gets 3D room models from a Matrix room) hands the bytes to the engine and gets resources it can
+A program that fetches a glTF file from somewhere (a 3D room model from a server, say) hands the bytes to the engine and gets resources it can
 load: `import_gltf` (synchronous) and `import_gltf_async` with its ticket calls (`import_poll`, `import_wait`, `import_finish`, `import_cancel`,
 `import_destroy`), described in `engine_c.h` ("Day 351"). The importer is `engine/asset_import` (Phase 22); the C API is a thin skin over `ImportGltf`,
 `ImportGltfAsync` and `ImportIntoBackend`. The whole path from a C host, in the order a host makes the calls:
@@ -296,7 +296,7 @@ run leaves the fixture's PNG uncorrupted.
 
 ### Keeping what an import made: a host's own disk cache (maintenance, 2026-11-18)
 
-Importing a large `.glb` can take a second or more, so a host that shows the same file again (the host, a world or an avatar it saw before) keeps what
+Importing a large `.glb` can take a second or more, so a host that shows the same file again (a world or an avatar it saw before) keeps what
 the import made and adds it back next time instead of importing again. The supported way, and the only state the host has to keep:
 
 1. **Import**, with `ENGINE_IMPORT_EMIT_LEVEL` when the file is a scene. Key the cache by the file's own hash (SHA-256 of the `.glb`; the host has it) **and by
@@ -311,7 +311,7 @@ the import made and adds it back next time instead of importing again. The suppo
    setting `assets.memory_backend_bytes`, and the blobs of one import together at most `assets.import.max_output_bytes` (2 GiB by default); `max_size` makes
    `resource_read` refuse a bigger blob (`TOO_LARGE`) before copying a byte.
 3. **Facts about the file** that no engine call reads from a loaded level (the bounds of a level, a material by name, the length of a clip) are in `result.summary`,
-   UTF-8 JSON (`asset_import/gltf_summary.h`): the level's nodes with their names and world positions (the `Spawn` and `Eye` nodes of the host's specs),
+   UTF-8 JSON (`asset_import/gltf_summary.h`): the level's nodes with their names and world positions (the `Spawn` and `Eye` nodes a host may name),
    the bounding box of the meshes (the walkable area of a world, the height of an avatar), the material names (`Screen`) and the animation names with their
    durations (`Walk`, `Idle`). Store it beside the blobs; it is written once, by the import.
 4. **Load again** with `resource_add_many(engine, infos, count, &failed_index)`: every blob is checked (as `resource_add` checks it, `ENGINE_RESOURCE_CHECK_HASH` with
@@ -719,7 +719,7 @@ message loop turned by the polls, and the walk-around's key posted as a `WM_KEYD
   platform's own Direct3D 12, `engine_c_offscreen_vulkan` and `engine_c_acceptance_scene_vulkan` Vulkan (`HOST_SURFACE_API`, read by
   `tests/engine_library/host_surface_api.h`, which the window and the off-screen hosts share), and `engine_c_walk_around_offscreen_d3d12` and `_vulkan`
   show each picture in the window (`host_window_show` is a GDI blit there: the RGBA rows converted to a top-down 32-bit DIB and drawn with
-  `SetDIBitsToDevice`). The the host acceptance picture (1280x720) differs between the two backends in 2 of 2 764 800 values, by 1. A lost device on
+  `SetDIBitsToDevice`). The acceptance picture (1280x720) differs between the two backends in 2 of 2 764 800 values, by 1. A lost device on
   Direct3D 12 loses both surfaces of the adapter, so `host_offscreen.c` rebinds the second when the first's rebind answers `ENGINE_ERROR_UNSUPPORTED`,
   then the first again (the rule of Day 369, above).
 
@@ -855,7 +855,7 @@ which the C layer does not change.
 
 Long sounds are streams: `audio_stream_open_clip` or `audio_stream_open` (the host's `read` and `seek` callbacks, called from the engine's job threads, never two at once and never from the audio thread). The host calls `audio_update` once per frame (with `wait` 1 for an offline render, so the same samples come out whatever the timing). `audio_music_play`, `audio_music_crossfade` (now, or at the next bar), `audio_music_layers`, `audio_music_layer_gain` and `audio_music_stinger` drive the music system on the audio clock.
 
-**Live voices** (maintenance, 2026-11-18; `ENGINE_CAP_AUDIO_PUSH_STREAMS`, `plans/maintenance/host-live-spatial-voices.md`). A call's participants speak in blocks the host receives as they arrive, with no clip to give. `audio_stream_open_push(engine, &engine_audio_push_info, &stream)` opens a stream the host feeds: `audio_stream_push` (floats) or `audio_stream_push_i16` from the thread the audio arrives on, one thread per stream, any number of streams. There is no callback and no refill job: the push writes into a ring and the audio thread reads it, with no lock and no allocation on the audio thread; the push takes the control lock only for the lookup of the stream (a control call that runs long, such as the first fill of `audio_stream_open`, makes it wait). The frames are interleaved at the mixer's sample rate (`audio_state`; a push stream is not resampled). Set the stream as the `stream` of an entity's `engine_audio_source` (`clip` 0) and the voice is placed in the world like a clip's: spatial flag, distances, rolloff, cone, Doppler, bus, gain, priority. The voice follows the entity; destroying the entity, removing the source or setting another stream on it stops the voice, and the stream stays open until `audio_stream_close` (which also ends a voice that still plays it), so a participant who leaves and comes back gets the same stream on a new entity. A stream has one reader: a second source of the world with it, or a source with both a clip and a stream, is `INVALID_ARGUMENT`.
+**Live voices** (maintenance, 2026-11-18; `ENGINE_CAP_AUDIO_PUSH_STREAMS`, a maintenance item). A call's participants speak in blocks the host receives as they arrive, with no clip to give. `audio_stream_open_push(engine, &engine_audio_push_info, &stream)` opens a stream the host feeds: `audio_stream_push` (floats) or `audio_stream_push_i16` from the thread the audio arrives on, one thread per stream, any number of streams. There is no callback and no refill job: the push writes into a ring and the audio thread reads it, with no lock and no allocation on the audio thread; the push takes the control lock only for the lookup of the stream (a control call that runs long, such as the first fill of `audio_stream_open`, makes it wait). The frames are interleaved at the mixer's sample rate (`audio_state`; a push stream is not resampled). Set the stream as the `stream` of an entity's `engine_audio_source` (`clip` 0) and the voice is placed in the world like a clip's: spatial flag, distances, rolloff, cone, Doppler, bus, gain, priority. The voice follows the entity; destroying the entity, removing the source or setting another stream on it stops the voice, and the stream stays open until `audio_stream_close` (which also ends a voice that still plays it), so a participant who leaves and comes back gets the same stream on a new entity. A stream has one reader: a second source of the world with it, or a source with both a clip and a stream, is `INVALID_ARGUMENT`.
 
 A live stream never ends. When the ring is empty the voice plays silence for the rest of the mixer block and goes on with the next frames, counted as an underrun in `audio_stream_stats` (it is not a `FINISHED` event). When the host pushes faster than the audio thread reads, the ring keeps the newest `capacity_frames` and drops the oldest, counted in `frames_dropped`. `prefill_frames` is a jitter buffer: the voice waits until that many frames are collected, and again after it ran dry (0 plays whatever is there); it is the delay a voice adds. A voice that plays a live stream cannot be saved: `audio_snapshot` fails with `UNSUPPORTED` until it is stopped.
 
@@ -907,7 +907,7 @@ The world's script runtime is made by the first `script_load`, the first script 
   the host. `tests/engine_library/script_sample.c` shows all of it: 1,000 entities moved by a behavior for 600 frames, a host event in, script events out, host functions, tasks, and three host
   threads with worlds of their own beside the frame thread; the state hash is the same for 1, 2, 4 and 8 script partitions.
 
-**A the host note (not a requirement).** A room could be a world whose objects carry a behavior: the host emits `player_entered` events and subscribes to what the room's scripts emit, and runs
+**A note for hosts (not a requirement).** A room could be a world whose objects carry a behavior: the host emits `player_entered` events and subscribes to what the room's scripts emit, and runs
 `script_task_run` for work it wants the engine to do off its own thread. Nothing here depends on it.
 
 What is not here yet is listed in `KNOWN-ISSUES.md`: unloading a script, calling a behavior of one entity, loading a minted script by resource id, and running the partitions on the engine's jobs from the host's frame call.

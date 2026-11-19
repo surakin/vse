@@ -1,10 +1,10 @@
 /* Phase 24 Day 383: the acceptance scene of the off-screen path, a C host with no window system that stands for
-   the host: it imports the meadow and the robot (glTF files in fixtures/) at run time, spawns the meadow and three
-   robots (one walks, two stand), gives each robot's `Screen` slot its own host texture (and nothing else of the robot),
-   draws 1280x720 into an off-screen surface and takes the pictures with surface_acquire_frame. It checks that the
-   screens show three different patterns while the robots' other slots keep their colours, that the walker moves, that
-   a resize mid-run and a lost device leave the same picture, and that a host that takes only every third frame gets the
-   newest one. Exit 0 also when no device exists. */
+   a host application: it imports the meadow and the robot (glTF files in fixtures/) at run time, spawns the meadow and
+   three robots (one walks, two stand), gives each robot's `Screen` slot its own host texture (and nothing else of the
+   robot), draws 1280x720 into an off-screen surface and takes the pictures with surface_acquire_frame. It checks that
+   the screens show three different patterns while the robots' other slots keep their colours, that the walker moves,
+   that a resize mid-run and a lost device leave the same picture, and that a host that takes only every third frame
+   gets the newest one. Exit 0 also when no device exists. */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -29,7 +29,7 @@ static int g_failures = 0;
     {                                                                                                                  \
         if (!(condition))                                                                                              \
         {                                                                                                              \
-            printf("host_acceptance_scene: line %d: CHECK failed: %s\n", __LINE__, #condition);                         \
+            printf("host_acceptance_scene: line %d: CHECK failed: %s\n", __LINE__, #condition);                        \
             ++g_failures;                                                                                              \
         }                                                                                                              \
     } while (0)
@@ -40,7 +40,7 @@ static int g_failures = 0;
         const engine_status got_ = (call);                                                                             \
         if (got_ != (expected))                                                                                        \
         {                                                                                                              \
-            printf("host_acceptance_scene: line %d: %s returned %d, expected %d\n", __LINE__, #call, (int)got_,         \
+            printf("host_acceptance_scene: line %d: %s returned %d, expected %d\n", __LINE__, #call, (int)got_,        \
                    (int)(expected));                                                                                   \
             ++g_failures;                                                                                              \
         }                                                                                                              \

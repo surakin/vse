@@ -125,7 +125,7 @@ latency, and 40-joint characters. Spike 5's figures above (the zero-copy path) s
 ## What was built that the decisions did not say (deviations from Day 313)
 
 - Days were split and inserted: Day 333 became two (the tool's first and second parts), and Days 335-338 are the glTF importer, an in-memory library
-  (`engine/asset_import`) for a host that imports at run time (the host), added on 2026-11-14 with the user's decisions: no hand-written JSON (yyjson by a spike),
+  (`engine/asset_import`) for a host that imports at run time, added on 2026-11-14 with the user's decisions: no hand-written JSON (yyjson by a spike),
   zlib and libpng and stb_image's JPEG decoder vendored behind the importer, the command line through `os::CommandLine`.
 - The texture and material minters' cores moved from `tools/asset_mint` into `asset` (`MintTextureFromPixels`) and `asset_import` (`MintMaterial`) so that the
   tool and the importer mint identically; `asset_mint` links `asset_import`.

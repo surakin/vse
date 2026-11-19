@@ -1,5 +1,5 @@
 # Phase 22 Day 339: the asset demo, a headless console program: a glTF is imported from memory into a host memory backend, mounted, and every resource
-# loaded through the resource manager (the the host path). A program under game/ may link the importer (tools/asset_boundary_check's allow list).
+# loaded through the resource manager (a host's run-time import). A program under game/ may link the importer (tools/asset_boundary_check's allow list).
 add_executable(asset_demo main.cpp)
 engine_split_debug_info(asset_demo)
 target_compile_options(asset_demo PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

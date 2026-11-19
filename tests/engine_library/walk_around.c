@@ -2,7 +2,7 @@
    skinned mesh with a skeleton; one walks, two stand), three screens that show a pattern each, fed by a thread of their
    own, name tags over the robots' heads, a sun and an ambient term, and a first-person camera the keys and the mouse
    move (W A S D, the mouse looks, Escape quits). It reads the minted blobs of the engine's test data (the meadow and
-   robot of the host's sample assets are not in this checkout: the day file says so).
+   sample robot assets are not in this checkout: the day file says so).
 
    With `--frames N` it is a test: it draws N frames without waiting, stops the screens' threads, reads the picture,
    rebinds the surface to a new window (what a lost device or a moved window does) and checks that the same picture

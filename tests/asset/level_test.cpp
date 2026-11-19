@@ -288,7 +288,7 @@ TEST_CASE("Text, blob and world print back to the same canonical text", "[asset]
     CHECK(from_world.View() == text.View());
 }
 
-// the host maintenance (2026-11-18): the level text is the same under a host's decimal-comma locale.
+// Maintenance (2026-11-18): the level text is the same under a host's decimal-comma locale.
 TEST_CASE("Level text prints and mints the same under a decimal-comma locale", "[asset][level][locale]")
 {
     const char* source = "id 0000000000000001\n"

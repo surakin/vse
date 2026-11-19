@@ -764,7 +764,7 @@ TEST_CASE("gltf clip: STEP holds the value until the step, and a cubic spline is
     CHECK(result.report.resampling_translation_error >= 0.0f);
     CHECK(NoteSays(result, "cubic-spline channels resampled at 30 Hz"));
     {
-        // the host maintenance (2026-11-18): the note's numbers do not follow a host's decimal-comma locale.
+        // Maintenance (2026-11-18): the note's numbers do not follow a host's decimal-comma locale.
         ::engine_placeholder::test::CommaLocale comma;
         if (comma.Active())
         {

@@ -1,6 +1,6 @@
 # Off-screen surfaces and multi-material meshes: design (Phase 24 addendum, Day 373)
 
-Why: the host draws its whole UI through its own canvas, so the engine view must be an image the host draws, and its
+Why: a host that draws its whole UI through its own canvas needs this, so the engine view must be an image the host draws, and its
 `robot.glb` and `green_field.glb` need every primitive drawn with its own material (the user, 2026-11-17).
 
 ## Checked against the code (2026-11-17)

@@ -35,7 +35,7 @@ namespace engine_placeholder::asset
 
 /// The version of what the glTF importer writes: raised by every change that can make a re-import of the same file
 /// give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that
-/// keeps imported blobs (the host's disk cache) keys them by this and by the engine's format fingerprint
+/// keeps imported blobs (a disk cache) keys them by this and by the engine's format fingerprint
 /// (`engine_api.import_format_version`, which also folds in the blob container and type versions).
 inline constexpr u32 kGltfImporterOutputVersion = 1;
 

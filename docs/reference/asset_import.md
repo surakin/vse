@@ -58,7 +58,7 @@ Phase 22 Day 337. Each glTF skin becomes one skeleton resource ([`asset::BuildSk
 
 The facts about an imported glTF that the minted blobs do not hold in a form a host can read cheaply: where the named nodes are, how big the scene is, which materials and animations the file has.
 
-Maintenance (2026-11-18, the host cache of imported resources). A host that adds the blobs of an import back without importing again (the host's disk cache) still needs a few facts about the file: the position of the node named `Spawn`, the bounding box of the scene (the walkable area of a world), the height of an avatar, whether a material named `Screen` and animations named `Walk` and `Idle` exist, and the position of a node named `Eye`. The engine's C API has no query for the bounds of a loaded level, a material by name or the duration of a clip, so the importer writes them once, as UTF-8 JSON, into `ImportResult::summary`; the host stores that text beside the blobs.
+Maintenance (2026-11-18, the host cache of imported resources). A host that adds the blobs of an import back without importing again (from a disk cache) still needs a few facts about the file: the position of the node named `Spawn`, the bounding box of the scene (the walkable area of a world), the height of an avatar, whether a material named `Screen` and animations named `Walk` and `Idle` exist, and the position of a node named `Eye`. The engine's C API has no query for the bounds of a loaded level, a material by name or the duration of a clip, so the importer writes them once, as UTF-8 JSON, into `ImportResult::summary`; the host stores that text beside the blobs.
 
 Decoding the images of a glTF: PNG and JPEG to RGBA8.
 
@@ -774,7 +774,7 @@ The text of a refusal, for a log: `error` when set, else the status's own messag
 inline constexpr u32 kGltfImporterOutputVersion;
 ```
 
-The version of what the glTF importer writes: raised by every change that can make a re-import of the same file give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that keeps imported blobs (the host's disk cache) keys them by this and by the engine's format fingerprint (`engine_api.import_format_version`, which also folds in the blob container and type versions).
+The version of what the glTF importer writes: raised by every change that can make a re-import of the same file give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that keeps imported blobs (a disk cache) keys them by this and by the engine's format fingerprint (`engine_api.import_format_version`, which also folds in the blob container and type versions).
 
 ## `kImportSteps` {#asset-kimportsteps}
 

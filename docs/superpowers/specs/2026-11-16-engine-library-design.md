@@ -143,7 +143,7 @@ and `IOSurface` on macOS. Not built in this phase: the primary path (render into
 matching external-memory handle types, a synchronization contract (semaphore export) that the C API has no vocabulary for yet, and a test that creates a
 second Vulkan instance in the C host (the host would need the Vulkan loader as a test dependency). There is no `engine_caps` bit for it (a bit claiming a
 feature that is absent would be a lie, and a bit added later is free: size-prefixed structs and the caps word grow). Phase 24's scenes-for-hosts days are the place
-to revisit it when the host names the need.
+to revisit it when a host names the need.
 
 ### The plugin question: not in this phase
 

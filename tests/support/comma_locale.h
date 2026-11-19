@@ -1,4 +1,4 @@
-// A scope that runs the engine under a locale whose decimal point is ',' (the host maintenance, 2026-11-18): a host
+// A scope that runs the engine under a locale whose decimal point is ',' (maintenance, 2026-11-18): a host
 // such as a Qt or GTK program sets its locale from the environment at startup, and printf's %g then writes "0,5".
 #pragma once
 
@@ -28,7 +28,7 @@ public:
         }
         MemCopy(previous_.Data(), now, length + 1);
         saved_ = true;
-        // POSIX names first (nb_NO.utf8 is installed on the the host machine), then the Windows forms.
+        // POSIX names first (nb_NO.utf8 is installed on the machine that reported it), then the Windows forms.
         const Array<const char*, 12> names = {"nb_NO.utf8",  "nb_NO.UTF-8", "de_DE.UTF-8", "de_DE.utf8",
                                               "fr_FR.UTF-8", "fr_FR.utf8",  "nb-NO",       "de-DE",
                                               "fr-FR",       "de_DE",       "nb_NO",       "fr_FR"};

@@ -317,7 +317,7 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
       endif()
       engine_label_tests(engine_c_offscreen${suffix})
     endif()
-    # Phase 24 Day 383: the the host acceptance scene through an off-screen surface, with the sample assets of tests/engine_library/fixtures.
+    # Phase 24 Day 383: the acceptance scene through an off-screen surface, with the sample assets of tests/engine_library/fixtures.
     if(NOT suffix STREQUAL "_tsan")
       add_executable(host_acceptance_scene${suffix} host_acceptance_scene.c)
       target_include_directories(host_acceptance_scene${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)

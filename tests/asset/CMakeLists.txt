@@ -46,7 +46,7 @@ set(ASSET_TEST_SOURCES
   asset_bench.cpp  # Day 340: hidden benchmarks
   hostile_blob_test.cpp  # Day 340
   gltf_material_test.cpp  # Day 338
-  gltf_locale_test.cpp  # the host maintenance (2026-11-18): the import under a decimal-comma locale
+  gltf_locale_test.cpp  # maintenance (2026-11-18): the import under a decimal-comma locale
   png_writer.h  # Day 338
   jpeg_samples.h  # Day 338
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/project.cpp  # Day 333: the project side of the minter under test

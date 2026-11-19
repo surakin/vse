@@ -60,7 +60,7 @@ add_subdirectory(container_bench)  # the container audit series, Day 1
 add_subdirectory(audio_bench)  # Phase 26 Day 442
 add_subdirectory(spatial_demo)
 add_subdirectory(storage_demo)
-add_subdirectory(asset_demo)  # Phase 22 Day 339: the glTF import demo (the the host path)
+add_subdirectory(asset_demo)  # Phase 22 Day 339: the glTF import demo (a run-time import)
 add_subdirectory(net_demo)  # Phase 20 Day 281 (macOS from Phase 21 Day 310)
 add_subdirectory(ui_demo)
 

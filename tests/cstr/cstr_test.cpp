@@ -262,7 +262,7 @@ TEST_CASE("Number conversion matches the C library", "[cstr]")
     CHECK(!FormatShortest(tiny, tiny + 1, 12345.678).ok);
 }
 
-// the host maintenance (2026-11-18): FormatGeneral is printf's %.Ng of the C locale, byte for byte, without the
+// Maintenance (2026-11-18): FormatGeneral is printf's %.Ng of the C locale, byte for byte, without the
 // locale.
 TEST_CASE("FormatGeneral writes what %.Ng writes in the C locale", "[cstr]")
 {

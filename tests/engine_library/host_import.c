@@ -1,4 +1,4 @@
-/* Phase 23 Day 351: a C program imports a glTF from memory through the function table (the the host path), the way a
+/* Phase 23 Day 351: a C program imports a glTF from memory through the function table (a run-time import), the way a
    host in another language would: the file's bytes in, resources in the engine's content out. It imports a fixture
    synchronously and asynchronously, with its external files given by a read_file callback, loads every mesh, skeleton,
    clip, texture and material it made (by id and by path), removes them and imports again with the manifest to see that

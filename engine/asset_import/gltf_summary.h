@@ -4,7 +4,7 @@
 //! named nodes are, how big the scene is, which materials and animations the file has.
 //!
 //! Maintenance (2026-11-18, the host cache of imported resources). A host that adds the blobs of an import back without
-//! importing again (the host's disk cache) still needs a few facts about the file: the position of the node named
+//! importing again (from a disk cache) still needs a few facts about the file: the position of the node named
 //! `Spawn`, the bounding box of the scene (the walkable area of a world), the height of an avatar, whether a material
 //! named `Screen` and animations named `Walk` and `Idle` exist, and the position of a node named `Eye`. The engine's C
 //! API has no query for the bounds of a loaded level, a material by name or the duration of a clip, so the importer
