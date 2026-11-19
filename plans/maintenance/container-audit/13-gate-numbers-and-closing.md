@@ -1,7 +1,7 @@
-# Container audit / Day 12: The gate, the after numbers, the closing runs and the series review
+# Container audit / Day 13: The gate, the after numbers, the closing runs and the series review
 
 **Series:** [the container audit fixes](../container-audit.md)
-**Depends on:** Days 1-11. If Day 11 has not run on both machines, this day closes on Linux and lists what waits in `KNOWN-ISSUES.md`.
+**Depends on:** Days 1-12. If Day 12 has not run on both machines, this day closes on Linux and lists what waits in `KNOWN-ISSUES.md`.
 
 ## Tasks
 
@@ -23,7 +23,7 @@
   - the nojit tree;
   - `-DENGINE_BUILD_SHARED=ON` and `-DENGINE_LIBRARY_WITH_IMPORTER=OFF`.
 
-  Record each final line here. The Windows and Mac closing runs are their own (Day 11), or listed as waiting.
+  Record each final line here. The Windows and Mac closing runs are their own (Day 12), or listed as waiting.
 - [ ] **The series review:** `/code-review high --max-findings all` over the whole series' diff, from the commit before Day 1 to the working tree. Verify, fix or decline each
   finding, and record the count and outcome below.
 - [ ] **Docs:** the "Choosing a container" table in `docs/guide/foundation-types.md` is final, with the measured costs from this day. It holds facts and numbers in

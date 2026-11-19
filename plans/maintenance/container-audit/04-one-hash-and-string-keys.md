@@ -14,7 +14,7 @@ re-create-to-clear and map-as-set patterns.
   `net/address.cpp`, `physics/state_hash.h`, `platform/cursor.h`, `script/*` (5 files), `storage/store.cpp`, `ui/widget.cpp`,
   `game/script_demo/demo_world.cpp` and `tools/asset_mint/project.cpp`.
   - `tools/shader_mint/main.cpp` may stay (a tool with its own std rules). Record the decision.
-  - The `rhi/dx12` and `rhi/metal` copies are Day 11's, because they are not built on Linux.
+  - The `rhi/dx12` and `rhi/metal` copies are Day 12's, because they are not built on Linux.
   - Each replacement keeps its value. The proof is the unchanged outputs: the minting determinism tests, the physics and script reference hashes,
     the audio block hashes, the settings key tests and the ABI snapshot all pass unchanged.
 - [x] **Path keys compared on a hit, or keyed by the string itself:**
@@ -57,8 +57,8 @@ re-create-to-clear and map-as-set patterns.
 - **Changed values:** `net::Address::HashValue` only. It was a multiply-add (`h * prime + byte`), not FNV-1a, and is used only as an in-memory map
   hash, never stored; the address tests compare hashes for equality, not values.
 - **Left:**
-  - `rhi/dx12` and `rhi/metal` (Day 11, not built here) and `tools/shader_mint` (a tool with its own std rules).
-  - About 30 copies in `tests/`, mostly golden hashes of test output and C files that cannot use the C++ header. The Day 12 gate allows `tests/`
+  - `rhi/dx12` and `rhi/metal` (Day 12, not built here) and `tools/shader_mint` (a tool with its own std rules).
+  - About 30 copies in `tests/`, mostly golden hashes of test output and C files that cannot use the C++ header. The Day 13 gate allows `tests/`
     with that reason.
 - **Hash-only keys:**
   - `asset_mint`'s `by_path` is a `HashMap<String, u32>`, and its `HashText` is gone;
@@ -75,7 +75,7 @@ re-create-to-clear and map-as-set patterns.
     deterministic merge.
   - `GlyphAtlas`'s table reports out-of-memory (`TryResize`), where `HashMap` aborts.
   - `PakReader`'s is a build-once index of 4-byte slots (Day 313 spike), smaller than a map of key and value.
-  - `config_text`'s `SeenKeys` moves with the settings work on Day 10.
+  - `config_text`'s `SeenKeys` moves with the settings work on Day 11.
   - The raw-pointer values of the net transports point into objects the transport's `Vector<UniquePtr>` owns for longer than the entry, and that
     vector is the deterministic iteration order.
 - **Measured** (this one before/after was taken because Day 1's was invalid): `ResourceTable::Remove` went from 112,764 to 310 ns at 2,000 paths, and
@@ -83,7 +83,7 @@ re-create-to-clear and map-as-set patterns.
 
 ## Runs
 
-- **Deferred to Day 12** (the series rule). Built clean: the whole Clang unity tree. `asset_tests [table]` passes, 11 cases including the new one.
+- **Deferred to Day 13** (the series rule). Built clean: the whole Clang unity tree. `asset_tests [table]` passes, 11 cases including the new one.
 
 ## Post-implementation code review
 
@@ -92,6 +92,6 @@ re-create-to-clear and map-as-set patterns.
 2. The value hasher made a builder per byte; it now holds one.
 
 **Done:**
-- One FNV-1a in the engine outside the RHI backends (Day 11) and `shader_mint`, with every hash and minted output unchanged.
+- One FNV-1a in the engine outside the RHI backends (Day 12) and `shader_mint`, with every hash and minted output unchanged.
 - No path or name is keyed by its hash alone.
 - The map and set workarounds are gone, and each kept exception is recorded with its reason.

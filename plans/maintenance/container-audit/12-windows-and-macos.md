@@ -1,9 +1,9 @@
-# Container audit / Day 11: Windows and macOS: the backend fixes and the runs (the user's machines)
+# Container audit / Day 12: Windows and macOS: the backend fixes and the runs (the user's machines)
 
 **Series:** [the container audit fixes](../container-audit.md)
-**Depends on:** Days 1-10, pushed. Done by the user on the Windows PC and the Mac. Each machine fetches first.
+**Depends on:** Days 1-11, pushed. Done by the user on the Windows PC and the Mac. Each machine fetches first.
 
-The Direct3D 12, Metal and `select` code is not built on Linux, so its audit items are fixed here. Every shared change of Days 1-10 is built and
+The Direct3D 12, Metal and `select` code is not built on Linux, so its audit items are fixed here. Every shared change of Days 1-11 is built and
 tested on both machines, and the physics state hashes are compared across all three.
 
 ## Tasks
@@ -19,7 +19,7 @@ tested on both machines, and the physics state hashes are compared across all th
 - [ ] `net/windows/poller_select.cpp:75-345`: `SocketSet::Contains` and `ArmedSet::IndexOf` through a `HashMap` by socket, so `Wait` is linear.
 - [ ] Build `windows-msvc` and `windows-clang-cl`, unity on and off.
   - Run `scripts/test-phase.sh --affected` plain and asan, quoting the lines.
-  - Run the physics reference state hashes and the script hashes, compared with Linux's (Day 7, Day 8).
+  - Run the physics reference state hashes and the script hashes, compared with Linux's (Day 8, Day 10).
 
 **The Mac:**
 

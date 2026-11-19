@@ -1,4 +1,4 @@
-# Container audit / Day 8: Scripting: coroutines, values, handlers, overlay, tasks, queries
+# Container audit / Day 9: Scripting: coroutines, values, handlers, overlay, tasks, queries
 
 **Series:** [the container audit fixes](../container-audit.md)
 **Depends on:** Days 2-3.

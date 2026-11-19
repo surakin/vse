@@ -68,7 +68,7 @@ then records a before/after number against these baselines. No engine behavior c
 ## Notes
 
 - Benches run in the `build` tree (Release) on an otherwise idle machine. Each figure is the median of at least five runs. A display is not needed for any case.
-- Benches assert nothing. The regression bounds come on Day 12, from the after numbers.
+- Benches assert nothing. The regression bounds come on Day 13, from the after numbers.
 - **Amended while doing the day:**
   - The existing benches already sweep the physics and script paths, so they are run as they are and get no new scenes: joints at 50/200/500 chains of 10,
     characters at 100/500/2,000, script waits by `--entities`.
@@ -137,7 +137,7 @@ the time at the smallest: about 1× is linear, and a growth that tracks the size
 5. The theme cache past ~1,000 keys.
 6. The material cache with many pipelines.
 
-The `DeviceResources` cap is a correctness item. Script waits and events measure linear (the `ResourceTable` row was wrong, see the corrected row): Day 8 keeps their fixes (order-keeping
+The `DeviceResources` cap is a correctness item. Script waits and events measure linear (the `ResourceTable` row was wrong, see the corrected row): Day 9 keeps their fixes (order-keeping
 removes in a scan), but they move down the list. Day 4 records why the table removal is not quadratic.
 
 ## Post-implementation code review

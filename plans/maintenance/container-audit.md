@@ -1,6 +1,6 @@
 # Maintenance: the container audit fixes
 
-This is not a numbered phase: it is a maintenance series of twelve days, chosen by the user on 2026-11-19 over inserting a phase. It does not change `CURRENT_PHASE` or any phase or day number.
+This is not a numbered phase: it is a maintenance series of thirteen days (twelve, then Day 7 inserted on 2026-11-19 at the user's request; the later days moved up by one), chosen by the user on 2026-11-19 over inserting a phase. It does not change `CURRENT_PHASE` or any phase or day number.
 
 **Origin:** the audit [container-audit-2026-11-19.md](container-audit-2026-11-19.md). It found slow containers and algorithms everywhere, most chosen because
 the fast container lacked a feature. It also found three correctness problems: the renderer's 256-owner cap, hashed path keys that are never compared, and a joint list
@@ -25,7 +25,7 @@ Phase 28's Day 478 unless the user orders otherwise.
 
 **Definition of done:**
 - Every day's boxes are checked.
-- The Day 1 benchmarks show each P1 path linear or n log n in the scene size, with the numbers recorded in Day 12.
+- The Day 1 benchmarks show each P1 path linear or n log n in the scene size, with the numbers recorded in Day 13.
 - The physics reference state hashes, the script world hashes (1 to 16 threads), the minted outputs (determinism tests), the audio render comparisons
   and the ABI snapshot are unchanged.
 - No `Remove(0)` queue and no FNV constant remains outside the foundation hash, and a gate enforces both.
@@ -40,18 +40,19 @@ Phase 28's Day 478 unless the user orders otherwise.
 4. [One FNV, string keys compared, and the map workarounds removed](container-audit/04-one-hash-and-string-keys.md)
 5. [Renderer I: DeviceResources without a cap, the material and theme caches, UI](container-audit/05-renderer-device-resources-and-caches.md)
 6. [Renderer II: per-frame sorting, text relayout, bind groups, Vulkan memory](container-audit/06-renderer-sorting-text-rhi.md)
-7. [Physics: joint pairs, queries through the broad phase, waking and teardown](container-audit/07-physics.md)
-8. [Scripting: coroutines, values, handlers, overlay, tasks, queries](container-audit/08-scripting.md)
-9. [C API scene, ECS hierarchy, storage and networking](container-audit/09-engine-c-ecs-storage-net.md)
-10. [Assets, settings, database, tools and text normalization](container-audit/10-assets-settings-tools.md)
-11. [Windows and macOS: the backend fixes and the runs (the user's machines)](container-audit/11-windows-and-macos.md)
-12. [The gate, the after numbers, the closing runs and the series review](container-audit/12-gate-numbers-and-closing.md)
+7. [DenseMap, real key types, and the indexed-vector sites moved onto them](container-audit/07-dense-map-and-key-types.md)
+8. [Physics: joint pairs, queries through the broad phase, waking and teardown](container-audit/08-physics.md)
+9. [Scripting: coroutines, values, handlers, overlay, tasks, queries](container-audit/09-scripting.md)
+10. [C API scene, ECS hierarchy, storage and networking](container-audit/10-engine-c-ecs-storage-net.md)
+11. [Assets, settings, database, tools and text normalization](container-audit/11-assets-settings-tools.md)
+12. [Windows and macOS: the backend fixes and the runs (the user's machines)](container-audit/12-windows-and-macos.md)
+13. [The gate, the after numbers, the closing runs and the series review](container-audit/13-gate-numbers-and-closing.md)
 
 ## Rules for every day
 
 - **Amended 2026-11-19 (the user, during Day 2): no per-day test runs.** From Day 2 on, each day builds clean in the Clang unity tree and gets its
-  `/code-review high`, but runs no ctest and no bench. Day 12 runs the full suite in every flavor, the GCC non-unity build, `ctest -L docs` and every after
-  number. The "Runs" and "before/after" rows of Days 2-10 are therefore deferred to Day 12, and each day file says so.
+  `/code-review high`, but runs no ctest and no bench. Day 13 runs the full suite in every flavor, the GCC non-unity build, `ctest -L docs` and every after
+  number. The "Runs" and "before/after" rows of Days 2-11 are therefore deferred to Day 13, and each day file says so.
 
 - **Every engine container supports range-for** (the user, 2026-11-19), through public lowercase `begin()`/`end()` with an `Internal:` label, so they stay
   out of the reference: `HashMap`/`HashSet` on Day 2, the rest on Day 3. From Day 4 on, new and rewritten loops over a container use
@@ -69,8 +70,8 @@ Phase 28's Day 478 unless the user orders otherwise.
   - `/code-review high` recorded in the day file.
   - `STATUS.md` and `KNOWN-ISSUES.md` in the same commit; commit and push.
 - New tests take the phase label of the module they test: phase 10 for the containers, the module's own phase elsewhere.
-- Windows-only and macOS-only code (`rhi/dx12`, `rhi/metal`, `net/windows`) is planned for Day 11 on those machines. A shared change is built there no
-  later than Day 11.
+- Windows-only and macOS-only code (`rhi/dx12`, `rhi/metal`, `net/windows`) is planned for Day 12 on those machines. A shared change is built there no
+  later than Day 12.
 
 ## Notes
 

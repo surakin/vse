@@ -73,7 +73,7 @@ pipeline cache for each object, and the theme cache for each widget.
 
 ## Runs
 
-- **Deferred to Day 12** (the series rule), and so are the before/after numbers. Built clean: the whole Clang unity tree. Run while writing: the
+- **Deferred to Day 13** (the series rule), and so are the before/after numbers. Built clean: the whole Clang unity tree. Run while writing: the
   renderer's `[reset],[geometry]` (4 cases, including the new 10,000-owner test) and `[material]` (18 cases), and the UI's
   `[theme],[text_field],[debug_overlay],[callback]` (19 cases); all pass.
 

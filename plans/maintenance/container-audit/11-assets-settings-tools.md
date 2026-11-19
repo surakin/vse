@@ -1,4 +1,4 @@
-# Container audit / Day 10: Assets, settings, database, tools and text normalization
+# Container audit / Day 11: Assets, settings, database, tools and text normalization
 
 **Series:** [the container audit fixes](../container-audit.md)
 **Depends on:** Days 2-4.

@@ -18,9 +18,11 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - Day 1: baselines.
   - Days 2-3: the foundation (map, set, byte hash, deque, heap, vector, string, sorts).
   - Day 4: one FNV and string keys.
-  - Days 5-10: the modules.
-  - Day 11: Windows and macOS (the user's).
-  - Day 12: a gate, the after numbers, the full closing runs and an uncapped review.
+  - Days 5-6: the renderer and the UI.
+  - Day 7: `DenseMap` and real key types (inserted 2026-11-19 at the user's request).
+  - Days 8-11: the modules.
+  - Day 12: Windows and macOS (the user's).
+  - Day 13: a gate, the after numbers, the full closing runs and an uncapped review.
 - **Day 1 done (2026-11-19, Linux):**
   - `game/container_bench` (the containers alone, and the audited engine paths) and the baselines of every audited path; the table is in the day file.
     Quadratic: `SetParent`, `Value` maps, `MemoryStore` puts and the character queries. Rays run at 8,700/s against 5,000 bodies. `DeviceResources` takes 256 owners.
@@ -33,27 +35,27 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - `containers/hash.h` (`Fnv1a64`, `Fnv1a64Builder`, `HashCombine`, the `Hash<K>` specializations); `HashMap` completed (lazy, power of two,
     `Clear`/`Reserve`/`Contains`/`Emplace`, range-for); `HashSet`; `Hash<ContentHash>`; `String(StringView)`.
   - Fixed: keys of another type are converted before hashing.
-  - Tests deferred to Day 12 at the user's request (the series now builds and reviews per day and tests once at the end); the container tests pass.
+  - Tests deferred to Day 13 at the user's request (the series now builds and reviews per day and tests once at the end); the container tests pass.
   - Review: 3 findings, all fixed.
 - **Day 3 done (2026-11-19, Linux):**
   - `Vector` swap-remove, append, emplace, clone, swap and range-for; bulk `String` append, reserve and clear; `Deque`; `BinaryHeap`.
   - Search (`LowerBound`/`UpperBound`/`BinarySearch`), selection (`NthElement`/`PartialSort`), `StableSort` for any movable type, and sorts of containers.
-  - Tests deferred to Day 12; the container tests pass. Review: 3 findings, all fixed.
+  - Tests deferred to Day 13; the container tests pass. Review: 3 findings, all fixed.
 - **Day 4 done (2026-11-19, Linux):**
   - One FNV-1a: 22 files call `Fnv1a64`, with values kept (`kFnv1a64LegacyBasis` for the truncated basis nine copies used).
   - Hash-only keys fixed: `asset_mint` paths, the LuaJIT profiler, `script_reload`.
   - `ResourceTable` keyed by `String` with O(1) `Remove`: 1.29 ms down to 378 ns per removal at 10,000 paths (Day 1's flat number was an invalid bench, corrected).
   - Five `HashSet`s; `Clear()` instead of re-made maps.
-  - Tests deferred to Day 12. Review: 2 findings, both fixed.
+  - Tests deferred to Day 13. Review: 2 findings, both fixed.
 - **Day 5 done (2026-11-19, Linux):**
   - `DeviceResources` takes any number of owners (O(1) registration, one sort per reset step), tested with 10,000.
   - The material pipeline cache and the theme cache are hashed; the theme cache replaces entries instead of emptying itself.
   - Variant names are mapped; the overlay filter, callback snapshots and text field edits are cheaper.
-  - Tests deferred to Day 12. Review: 1 finding, fixed.
+  - Tests deferred to Day 13. Review: 1 finding, fixed.
 - **Day 6 done (2026-11-19, Linux):**
   - The G-buffer and light sorts are typed (the lights by `PartialSort`); the draw list sorts with a kept scratch.
   - Unchanged scene labels are not laid out again; `SetPixelSize` returns early; the Vulkan free list frees by binary search.
-  - Bind-group caching and some small allocations deferred (`KNOWN-ISSUES.md`). Tests deferred to Day 12. Review: no findings.
+  - Bind-group caching and some small allocations deferred (`KNOWN-ISSUES.md`). Tests deferred to Day 13. Review: no findings.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

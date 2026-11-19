@@ -76,7 +76,7 @@ every probe, and allocates in its constructor. No set exists, and FNV-1a is writ
 
 ## Runs
 
-- **Deferred to Day 12** (the user, during this day: "skip per-day tests. test everything at the end"). That covers the scoped plain, asan and tsan runs,
+- **Deferred to Day 13** (the user, during this day: "skip per-day tests. test everything at the end"). That covers the scoped plain, asan and tsan runs,
   `ctest -L docs` and the before/after probe number.
 - Built clean: the whole Clang unity `build` tree. The new and changed container tests were run while writing them: 17 test cases of
   `[hash_map],[hash_set],[hash]` pass. A negative-key check was shown to fail on the old map: a small program against `eefa8c3b`'s `hash_map.h` lost 5 of 50

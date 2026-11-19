@@ -1,4 +1,4 @@
-# Container audit / Day 9: C API scene, ECS hierarchy, storage and networking
+# Container audit / Day 10: C API scene, ECS hierarchy, storage and networking
 
 **Series:** [the container audit fixes](../container-audit.md)
 **Depends on:** Days 2-3.

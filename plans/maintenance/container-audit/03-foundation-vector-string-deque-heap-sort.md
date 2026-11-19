@@ -76,12 +76,12 @@ queue, insertion sorts with comments ("a handful", "tiny") that don't hold, and 
   - A three-way `Sort` partition: Day 1 measured all-equal input at 8.4 ns per element against 42.3 ns for random input, so it does not degrade.
   - The private `LowerBound` copies (`settings/registry.cpp:104` and others): they move on their own days (10 and others), where each caller's comparison is checked.
 - The RHI cast (`metal_device_bindings.mm:233`) was there because sorting a `Vector` meant building a foundation `Span`. `Sort(vector, less)` is the
-  fix, and the call site is Day 11's (Metal is not built here).
+  fix, and the call site is Day 12's (Metal is not built here).
 - Pages touched: `docs/guide/foundation-containers.md` (at a glance, sorting and searching) and `docs/reference`.
 
 ## Runs
 
-- **Deferred to Day 12** (the user's rule for the series). Built clean: the whole Clang unity `build` tree. While writing, the new and changed tests
+- **Deferred to Day 13** (the user's rule for the series). Built clean: the whole Clang unity `build` tree. While writing, the new and changed tests
   passed: `[deque],[binary_heap],[algorithm],[vector],[string],[hash_map],[hash_set]`, 47 test cases; the algorithms are checked against brute-force
   oracles on random, sorted, reversed, all-equal and few-distinct input.
 

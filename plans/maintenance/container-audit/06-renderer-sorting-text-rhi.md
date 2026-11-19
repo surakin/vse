@@ -72,7 +72,7 @@ The renderer re-sorts and relays out work every frame that does not change betwe
 
 ## Runs
 
-- **Deferred to Day 12** (the series rule). Built clean: the whole Clang unity tree. Run while writing: renderer `[text],[lights],[gbuffer],[scene_frame]`
+- **Deferred to Day 13** (the series rule). Built clean: the whole Clang unity tree. Run while writing: renderer `[text],[lights],[gbuffer],[scene_frame]`
   (27 cases) and UI `[drawlist],[text],[textfield]` (39 cases) pass. The Day 5 file named a `[text_field]` tag, which does not exist (the tag is
   `[textfield]`): those tests ran here instead.
 

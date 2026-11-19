@@ -1,4 +1,4 @@
-# Container audit / Day 7: Physics: joint pairs, queries through the broad phase, waking and teardown
+# Container audit / Day 8: Physics: joint pairs, queries through the broad phase, waking and teardown
 
 **Series:** [the container audit fixes](../container-audit.md)
 **Depends on:** Days 2-3.
@@ -42,7 +42,7 @@ hashes identical, so the order of anything that feeds the solver is not touched.
 - [ ] **Determinism proof:**
   - the reference-scene state hashes and the `physics_determinism` tests at 1 to 16 threads are unchanged;
   - `physics_bench_large` (Release) passes;
-  - the hashes for the PC and the Mac are listed for Day 11.
+  - the hashes for the PC and the Mac are listed for Day 12.
 - [ ] **Standing rows** (as [the series rules](../container-audit.md#rules-for-every-day)):
   - runs: `--affected` (physics, spatial, script_physics), plain, then asan and tsan (the step runs on the scheduler);
   - builds: both compilers, both unity modes;
