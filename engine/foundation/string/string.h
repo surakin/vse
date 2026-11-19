@@ -1,5 +1,6 @@
 #pragma once
 
+#include "containers/hash_map.h"
 #include "containers/vector.h"
 #include "string_view.h"
 #include "types.h"
@@ -122,6 +123,14 @@ public:
 
 private:
     Vector<char, Allocator> chars_;
+};
+
+/// Hash function for [[String]] keys of a [[HashMap]] (Phase 27 Day 474): the hash of the contents' [[StringView]], so
+/// a map keyed by strings is searched with a view, without making a string.
+template <typename Allocator> struct Hash<String<Allocator>>
+{
+    /// Returns the hash of the string's bytes, equal to `Hash<StringView>` of its view.
+    usize operator()(const String<Allocator>& k) const { return Hash<StringView>{}(k.View()); }
 };
 
 /// Accumulates text and formatted numbers into a [[String]]; each `Append` returns
