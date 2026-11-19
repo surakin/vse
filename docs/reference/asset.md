@@ -76,7 +76,7 @@ Sections (ids from [`asset::kFirstUserSection`](#asset-kfirstusersection)): 16 t
 
 The mesh blob (type `MESH`, version 1): geometry laid out for the GPU, built by [`asset::BuildMeshBlob`](#asset-buildmeshblob-const-typeregistry-amp-resourceid-const-meshbuildinput-amp-vector-lt-byte-gt-star-u32) and read zero-copy through [`asset::MeshView`](#asset-meshview). Phase 22 Day 319.
 
-Sections (ids from 16, little-endian, each 64-byte aligned by the container): 16 header (96 bytes), 17 attributes (16 bytes each: location, format, offset, binding), 18 vertex stream 0 (the exact bytes of the vertex buffer), 19 indices (16 or 32 bit, a triangle list), 20 LODs (16 bytes each), 21 material slots (40 bytes each), and for a skinned mesh 22 the skin stream (binding 1: `UInt8x4` joint indices at location 5, `UNorm8x4` weights at location 6, summing to exactly 255 per vertex) and 23 the bind-pose box of each joint's influence set. A skinned mesh declares its skeleton as a dependency (role [`asset::kMeshRoleSkinSkeleton`](#asset-kmeshroleskinskeleton)) and records the skeleton hash and joint count. Section 40 (`MORP`, morph targets) is reserved and refused by this version.
+Sections (ids from 16, little-endian, each 64-byte aligned by the container): 16 header (96 bytes), 17 attributes (16 bytes each: location, format, offset, binding), 18 vertex stream 0 (the exact bytes of the vertex buffer), 19 indices (16 or 32 bit, a triangle list), 20 LODs (16 bytes each), 21 material slots (40 bytes each), and for a skinned mesh 22 the skin stream (binding 1: `UInt8x4` joint indices at location 5, `UNorm8x4` weights at location 6, summing to exactly 255 per vertex) and 23 the bind-pose box of each joint's influence set. A skinned mesh declares its skeleton as a dependency (role [`asset::kMeshRoleSkinSkeleton`](#asset-kmeshroleskinskeleton)) and records the skeleton hash and joint count. Morph targets (glTF coverage Day 6) are sections 40 (the targets, 48 bytes each: a name of up to 31 bytes, the first delta, the delta count) and 41 (the deltas, 40 bytes each: the vertex, then position, normal and tangent deltas as `f32x3`; a target's deltas sorted by vertex, no repeats). An older reader refused section 40, so a blob with targets is refused there and one without is unchanged: the version stays 1. The box holds every target at weights from -1 to 1.
 
 Per-vertex colours (glTF coverage Day 4) are one more attribute of stream 0, `UNorm8x4` at location 4 after the others (offset 24 packed, 48 full): rgb sRGB-encoded, alpha linear, as `gbuffer.vert`'s `VERTEX_COLOR` reads them. The version-1 reader already took any attribute, so a coloured mesh is still version 1.
 
@@ -7295,6 +7295,26 @@ inline constexpr u32 kMaxMeshAttributes;
 
 Most attributes of one mesh.
 
+## `kMaxMorphTargets` {#asset-kmaxmorphtargets}
+
+`variable asset::kMaxMorphTargets` — defined in `engine/asset/mesh.h`
+
+```cpp
+inline constexpr u32 kMaxMorphTargets;
+```
+
+Most morph targets of one mesh.
+
+## `kMaxMorphNameBytes` {#asset-kmaxmorphnamebytes}
+
+`variable asset::kMaxMorphNameBytes` — defined in `engine/asset/mesh.h`
+
+```cpp
+inline constexpr u32 kMaxMorphNameBytes;
+```
+
+Most bytes of a morph target's name.
+
 ## `kMeshRoleSkinSkeleton` {#asset-kmeshroleskinskeleton}
 
 `variable asset::kMeshRoleSkinSkeleton` — defined in `engine/asset/mesh.h`
@@ -7395,7 +7415,8 @@ The section ids of a mesh blob.
 | <a id="asset-kmeshsectionslots"></a>`kMeshSectionSlots` | `21` | The material slots, 40 bytes each. |
 | <a id="asset-kmeshsectionskin"></a>`kMeshSectionSkin` | `22` | The skin stream (vertex binding 1), 8 bytes per vertex. |
 | <a id="asset-kmeshsectionjointbounds"></a>`kMeshSectionJointBounds` | `23` | The bind-pose box of each joint's influence set, 32 bytes each. |
-| <a id="asset-kmeshsectionmorphreserved"></a>`kMeshSectionMorphReserved` | `40` | Reserved for morph targets; a blob holding it is refused. |
+| <a id="asset-kmeshsectionmorphtargets"></a>`kMeshSectionMorphTargets` | `40` | The morph targets, 48 bytes each. |
+| <a id="asset-kmeshsectionmorphdeltas"></a>`kMeshSectionMorphDeltas` | `41` | The morph deltas, 40 bytes each. |
 
 ## `MeshQuality` {#asset-meshquality}
 
@@ -7588,6 +7609,138 @@ u32 index_count;
 
 Number of indices (a multiple of 3).
 
+## `MeshMorphDelta` {#asset-meshmorphdelta}
+
+`struct asset::MeshMorphDelta` — defined in `engine/asset/mesh.h`
+
+```cpp
+struct MeshMorphDelta { ... }
+```
+
+One vertex's change in a morph target: added to the vertex times the target's weight.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible (a plain value). |
+
+### `vertex` {#asset-meshmorphdelta-vertex}
+
+`variable asset::MeshMorphDelta::vertex` — defined in `engine/asset/mesh.h`
+
+```cpp
+u32 vertex;
+```
+
+The vertex it moves.
+
+### `position` {#asset-meshmorphdelta-position}
+
+`variable asset::MeshMorphDelta::position` — defined in `engine/asset/mesh.h`
+
+```cpp
+Array<f32, 3> position;
+```
+
+Position delta.
+
+### `normal` {#asset-meshmorphdelta-normal}
+
+`variable asset::MeshMorphDelta::normal` — defined in `engine/asset/mesh.h`
+
+```cpp
+Array<f32, 3> normal;
+```
+
+Normal delta.
+
+### `tangent` {#asset-meshmorphdelta-tangent}
+
+`variable asset::MeshMorphDelta::tangent` — defined in `engine/asset/mesh.h`
+
+```cpp
+Array<f32, 3> tangent;
+```
+
+Tangent delta (xyz; the sign is the base's).
+
+## `MeshMorphTarget` {#asset-meshmorphtarget}
+
+`struct asset::MeshMorphTarget` — defined in `engine/asset/mesh.h`
+
+```cpp
+struct MeshMorphTarget { ... }
+```
+
+A morph target as the minter takes it.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible (a plain value; borrows its deltas). |
+
+### `name` {#asset-meshmorphtarget-name}
+
+`variable asset::MeshMorphTarget::name` — defined in `engine/asset/mesh.h`
+
+```cpp
+Array<char, kMaxMorphNameBytes + 1> name;
+```
+
+NUL-terminated, not empty.
+
+### `deltas` {#asset-meshmorphtarget-deltas}
+
+`variable asset::MeshMorphTarget::deltas` — defined in `engine/asset/mesh.h`
+
+```cpp
+Span<const MeshMorphDelta> deltas;
+```
+
+Sorted by vertex, no repeats; all-zero deltas are dropped.
+
+## `MeshMorphTargetInfo` {#asset-meshmorphtargetinfo}
+
+`struct asset::MeshMorphTargetInfo` — defined in `engine/asset/mesh.h`
+
+```cpp
+struct MeshMorphTargetInfo { ... }
+```
+
+A morph target of a blob.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible (a plain value). |
+
+### `name` {#asset-meshmorphtargetinfo-name}
+
+`variable asset::MeshMorphTargetInfo::name` — defined in `engine/asset/mesh.h`
+
+```cpp
+Array<char, kMaxMorphNameBytes + 1> name;
+```
+
+NUL-terminated.
+
+### `first_delta` {#asset-meshmorphtargetinfo-first-delta}
+
+`variable asset::MeshMorphTargetInfo::first_delta` — defined in `engine/asset/mesh.h`
+
+```cpp
+u32 first_delta;
+```
+
+Its first delta in the delta section.
+
+### `delta_count` {#asset-meshmorphtargetinfo-delta-count}
+
+`variable asset::MeshMorphTargetInfo::delta_count` — defined in `engine/asset/mesh.h`
+
+```cpp
+u32 delta_count;
+```
+
+Its number of deltas.
+
 ## `MeshAttribute` {#asset-meshattribute}
 
 `struct asset::MeshAttribute` — defined in `engine/asset/mesh.h`
@@ -7761,6 +7914,16 @@ Span<const MeshSkinInfluence> skin;
 
 Empty, or one per vertex.
 
+### `morph_targets` {#asset-meshbuildinput-morph-targets}
+
+`variable asset::MeshBuildInput::morph_targets` — defined in `engine/asset/mesh.h`
+
+```cpp
+Span<const MeshMorphTarget> morph_targets;
+```
+
+Empty, or up to [`asset::kMaxMorphTargets`](#asset-kmaxmorphtargets).
+
 ### `colors` {#asset-meshbuildinput-colors}
 
 `variable asset::MeshBuildInput::colors` — defined in `engine/asset/mesh.h`
@@ -7848,7 +8011,7 @@ Builds a mesh blob: packs the attributes, computes the bounds (and the joint box
 
 | Field | Value |
 |---|---|
-| Fails | `Invalid` (no vertices or indices, an index count that is not a multiple of 3, an index past the vertices, a non-finite value, a LOD or slot range outside the indices or not a multiple of 3, LOD screen sizes that grow, a slot name that is empty or too long, a colour array of the wrong length, a skin array of the wrong length, a skin joint at or past the skeleton's joint count or weights that do not sum to 255); `LimitExceeded` for a count above the limits. |
+| Fails | `Invalid` (no vertices or indices, an index count that is not a multiple of 3, an index past the vertices, a non-finite value, a LOD or slot range outside the indices or not a multiple of 3, LOD screen sizes that grow, a slot name that is empty or too long, a morph target with a bad name, a delta past the vertices or out of order, more targets than [`asset::kMaxMorphTargets`](#asset-kmaxmorphtargets), a colour array of the wrong length, a skin array of the wrong length, a skin joint at or past the skeleton's joint count or weights that do not sum to 255); `LimitExceeded` for a count above the limits. |
 | Ownership | borrows `input` for the call; `*out` is replaced. |
 
 ## `MeshView` {#asset-meshview}
@@ -7888,7 +8051,7 @@ Validates `data` as a mesh blob of the current version and keeps spans into it. 
 
 | Field | Value |
 |---|---|
-| Fails | the errors of [`asset::BlobReader::Open`](#asset-blobreader-open-bytespan-const-typeregistry-amp); `TypeMismatch` for another type; `Corrupt` for a missing or mis-sized section, a count above the limit, an attribute that is not valid for its binding, a stream whose size is not the stride times the count, a LOD or slot range outside the indices, LOD screen sizes that grow, a non-finite bound, a skin section without its skeleton dependency or the reverse, or the reserved morph section. |
+| Fails | the errors of [`asset::BlobReader::Open`](#asset-blobreader-open-bytespan-const-typeregistry-amp); `TypeMismatch` for another type; `Corrupt` for a missing or mis-sized section, a count above the limit, an attribute that is not valid for its binding, a stream whose size is not the stride times the count, a LOD or slot range outside the indices, LOD screen sizes that grow, a non-finite bound, a skin section without its skeleton dependency or the reverse, or a morph section that is mis-sized, has more targets than the limit, a delta past the vertices, out of order or not finite, or deltas that the targets do not cover exactly (each delta is checked: the GPU indexes vertices with them). |
 | Ownership | borrows `data` and `types` for the call; the view keeps spans into `data`. |
 
 ### `VertexCount()` {#asset-meshview-vertexcount-const}
@@ -7934,6 +8097,64 @@ True when the mesh has per-vertex colours (an attribute at [`asset::kMeshLocatio
 | Field | Value |
 |---|---|
 | Fails | never. |
+
+### `MorphTargetCount()` {#asset-meshview-morphtargetcount-const}
+
+`method asset::MeshView::MorphTargetCount` — defined in `engine/asset/mesh.h`
+
+```cpp
+u32 MorphTargetCount() const;
+```
+
+The number of morph targets (0 without).
+
+### `MorphTarget(u32)` {#asset-meshview-morphtarget-u32-const}
+
+`method asset::MeshView::MorphTarget` — defined in `engine/asset/mesh.h`
+
+```cpp
+MeshMorphTargetInfo MorphTarget(u32 i) const;
+```
+
+Morph target `i`.
+
+| Field | Value |
+|---|---|
+| Aborts | `i` is not below `MorphTargetCount()`. |
+
+### `MorphDeltaCount()` {#asset-meshview-morphdeltacount-const}
+
+`method asset::MeshView::MorphDeltaCount` — defined in `engine/asset/mesh.h`
+
+```cpp
+u32 MorphDeltaCount() const;
+```
+
+The total number of morph deltas.
+
+### `MorphDelta(u32)` {#asset-meshview-morphdelta-u32-const}
+
+`method asset::MeshView::MorphDelta` — defined in `engine/asset/mesh.h`
+
+```cpp
+MeshMorphDelta MorphDelta(u32 k) const;
+```
+
+Morph delta `k` of the delta section (a target's are `first_delta` to `first_delta + delta_count - 1`).
+
+| Field | Value |
+|---|---|
+| Aborts | `k` is not below `MorphDeltaCount()`. |
+
+### `MorphDeltaBytes()` {#asset-meshview-morphdeltabytes-const}
+
+`method asset::MeshView::MorphDeltaBytes` — defined in `engine/asset/mesh.h`
+
+```cpp
+ByteSpan MorphDeltaBytes() const;
+```
+
+The bytes of the delta section, 40 per delta, as the blob holds them.
 
 ### `Skinned()` {#asset-meshview-skinned-const}
 

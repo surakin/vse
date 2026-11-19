@@ -303,6 +303,54 @@ TEST_CASE("mesh: per-vertex colours are a fifth attribute, sRGB-encoded, in pack
     CHECK_FALSE(view.HasColors());
 }
 
+// glTF coverage Day 6: morph targets are sections 40 and 41; zero deltas are dropped, the box holds every target at
+// weights from -1 to 1, and a delta past the vertices or out of order is refused.
+TEST_CASE("mesh: morph targets round-trip, grow the box and refuse bad deltas", "[asset][mesh]")
+{
+    TypeRegistry types;
+    Array<MeshVertex, 3> vertices;
+    vertices[1].position = {{1, 0, 0}};
+    vertices[2].position = {{0, 1, 0}};
+    const Array<u32, 3> indices = {{0, 1, 2}};
+    Array<MeshMorphDelta, 3> smile;
+    smile[0].vertex = 0;  // all zero: dropped
+    smile[1].vertex = 1;
+    smile[1].position = {{0, 0, 2}};
+    smile[2].vertex = 2;
+    smile[2].normal = {{0.5f, 0, 0}};
+    Array<MeshMorphDelta, 1> blink;
+    blink[0].vertex = 2;
+    blink[0].position = {{0, -3, 0}};
+    Array<MeshMorphTarget, 2> targets;
+    MemCopy(targets[0].name.Data(), "smile", 5);
+    targets[0].deltas = Span<const MeshMorphDelta>(smile.Data(), smile.Size());
+    MemCopy(targets[1].name.Data(), "blink", 5);
+    targets[1].deltas = Span<const MeshMorphDelta>(blink.Data(), blink.Size());
+    MeshBuildInput input;
+    input.vertices = Span<const MeshVertex>(vertices.Data(), vertices.Size());
+    input.indices = Span<const u32>(indices.Data(), indices.Size());
+    input.morph_targets = Span<const MeshMorphTarget>(targets.Data(), targets.Size());
+    Vector<byte> blob;
+    REQUIRE(BuildMeshBlob(types, ResourceId::FromValue(0x61), input, &blob).Ok());
+    MeshView view;
+    REQUIRE(view.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok());
+    REQUIRE(view.MorphTargetCount() == 2);
+    CHECK(view.MorphDeltaCount() == 3);
+    CHECK(StringView(view.MorphTarget(0).name.Data()) == StringView("smile"));
+    CHECK(view.MorphTarget(0).delta_count == 2);
+    CHECK(view.MorphTarget(1).first_delta == 2);
+    CHECK(view.MorphDelta(0).vertex == 1);
+    CHECK(view.MorphDelta(0).position[2] == 2.0f);
+    CHECK(view.MorphDelta(2).position[1] == -3.0f);
+    CHECK(view.BoundsMax()[2] == 2.0f);   // smile at weight 1
+    CHECK(view.BoundsMin()[2] == -2.0f);  // and at -1
+    CHECK(view.BoundsMin()[1] == -3.0f);  // blink
+    smile[2].vertex = 1;                  // out of order
+    CHECK(BuildMeshBlob(types, ResourceId::FromValue(0x61), input, &blob).Failed());
+    smile[2].vertex = 3;  // past the vertices
+    CHECK(BuildMeshBlob(types, ResourceId::FromValue(0x61), input, &blob).Failed());
+}
+
 TEST_CASE("mesh: minting twice is byte-identical", "[asset][mesh]")
 {
     TypeRegistry types;
@@ -651,11 +699,11 @@ TEST_CASE("mesh: hostile blobs are refused", "[asset][mesh]")
         MemCopy(header.Data() + 32, &big, 4);  // min x above max x
         CHECK(MshOpen(types, MshWith(types, good, kMeshSectionHeader, header)).Failed());
     }
-    SECTION("the reserved morph section, another type, truncation and an old version")
+    SECTION("a morph target section without its deltas, another type, truncation and an old version")
     {
         Vector<byte> morph;
-        morph.Resize(16);
-        CHECK(MshOpen(types, MshWith(types, good, kMeshSectionMorphReserved, morph)).Code() == ErrorCode::Corrupt);
+        morph.Resize(48);
+        CHECK(MshOpen(types, MshWith(types, good, kMeshSectionMorphTargets, morph)).Code() == ErrorCode::Corrupt);
 
         BlobWriter other(types, types::kNames, ResourceId::FromValue(5), 0);
         Vector<byte> not_a_mesh;

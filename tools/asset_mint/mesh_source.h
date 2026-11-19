@@ -41,6 +41,16 @@ struct MeshSourceSkin
     Array<f64, 12> weight = {};  ///< Weights.
 };
 
+/// A `morph` record and its `d` records (glTF coverage Day 6).
+///
+/// - Thread-safety: thread-compatible.
+struct MeshSourceMorph
+{
+    Array<char, kMaxMorphNameBytes + 1> name = {};  ///< The target's name.
+    u32 line = 0;                                   ///< The line of the `morph` record.
+    Vector<MeshMorphDelta> deltas;                  ///< Its deltas, by vertex.
+};
+
 /// A parsed mesh source.
 ///
 /// - Thread-safety: thread-compatible.
@@ -57,6 +67,7 @@ struct MeshSource
     Vector<MeshLod> lods;                       ///< The `lod` records.
     Vector<MeshSlot> slots;                     ///< The `slot` records.
     Vector<MeshSourceSkin> skin;                ///< One per vertex when any `skin` record exists, otherwise empty.
+    Vector<MeshSourceMorph> morphs;             ///< The `morph` records.
 };
 
 /// Where and why a mesh source was refused.

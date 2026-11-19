@@ -9,7 +9,11 @@
 //! skinned mesh 22 the skin stream (binding 1: `UInt8x4` joint indices at location 5, `UNorm8x4` weights at location 6,
 //! summing to exactly 255 per vertex) and 23 the bind-pose box of each joint's influence set. A skinned mesh declares
 //! its skeleton as a dependency (role [[asset::kMeshRoleSkinSkeleton]]) and records the skeleton hash and joint count.
-//! Section 40 (`MORP`, morph targets) is reserved and refused by this version.
+//! Morph targets (glTF coverage Day 6) are sections 40 (the targets, 48 bytes each: a name of up to 31 bytes, the
+//! first delta, the delta count) and 41 (the deltas, 40 bytes each: the vertex, then position, normal and tangent
+//! deltas as `f32x3`; a target's deltas sorted by vertex, no repeats). An older reader refused section 40, so a blob
+//! with targets is refused there and one without is unchanged: the version stays 1. The box holds every target at
+//! weights from -1 to 1.
 //!
 //! Per-vertex colours (glTF coverage Day 4) are one more attribute of stream 0, `UNorm8x4` at location 4 after the
 //! others (offset 24 packed, 48 full): rgb sRGB-encoded, alpha linear, as `gbuffer.vert`'s `VERTEX_COLOR` reads them.
@@ -43,6 +47,10 @@ inline constexpr u32 kMaxMeshSlots = 64;
 inline constexpr u32 kMaxSlotNameBytes = 31;
 /// Most attributes of one mesh.
 inline constexpr u32 kMaxMeshAttributes = 8;
+/// Most morph targets of one mesh.
+inline constexpr u32 kMaxMorphTargets = 64;
+/// Most bytes of a morph target's name.
+inline constexpr u32 kMaxMorphNameBytes = 31;
 /// The dependency role of a skinned mesh's skeleton.
 inline constexpr u32 kMeshRoleSkinSkeleton = 1;
 /// The shader input location of the position.
@@ -64,14 +72,15 @@ inline constexpr u32 kMeshLocationWeights = 6;
 enum MeshSection : u32
 {
     kMeshSectionHeader = 16,  ///< Counts, flags, bounds, texture-coordinate decode and the skeleton record (96 bytes).
-    kMeshSectionAttributes = 17,     ///< The vertex attributes, 16 bytes each.
-    kMeshSectionVertices = 18,       ///< Vertex stream 0.
-    kMeshSectionIndices = 19,        ///< The indices.
-    kMeshSectionLods = 20,           ///< The LODs, 16 bytes each.
-    kMeshSectionSlots = 21,          ///< The material slots, 40 bytes each.
-    kMeshSectionSkin = 22,           ///< The skin stream (vertex binding 1), 8 bytes per vertex.
-    kMeshSectionJointBounds = 23,    ///< The bind-pose box of each joint's influence set, 32 bytes each.
-    kMeshSectionMorphReserved = 40,  ///< Reserved for morph targets; a blob holding it is refused.
+    kMeshSectionAttributes = 17,    ///< The vertex attributes, 16 bytes each.
+    kMeshSectionVertices = 18,      ///< Vertex stream 0.
+    kMeshSectionIndices = 19,       ///< The indices.
+    kMeshSectionLods = 20,          ///< The LODs, 16 bytes each.
+    kMeshSectionSlots = 21,         ///< The material slots, 40 bytes each.
+    kMeshSectionSkin = 22,          ///< The skin stream (vertex binding 1), 8 bytes per vertex.
+    kMeshSectionJointBounds = 23,   ///< The bind-pose box of each joint's influence set, 32 bytes each.
+    kMeshSectionMorphTargets = 40,  ///< The morph targets, 48 bytes each.
+    kMeshSectionMorphDeltas = 41,   ///< The morph deltas, 40 bytes each.
 };
 
 /// How the minter stores the attributes.
@@ -121,6 +130,36 @@ struct MeshSlot
     u32 index_count = 0;                           ///< Number of indices (a multiple of 3).
 };
 
+/// One vertex's change in a morph target: added to the vertex times the target's weight.
+///
+/// - Thread-safety: thread-compatible (a plain value).
+struct MeshMorphDelta
+{
+    u32 vertex = 0;                        ///< The vertex it moves.
+    Array<f32, 3> position = {{0, 0, 0}};  ///< Position delta.
+    Array<f32, 3> normal = {{0, 0, 0}};    ///< Normal delta.
+    Array<f32, 3> tangent = {{0, 0, 0}};   ///< Tangent delta (xyz; the sign is the base's).
+};
+
+/// A morph target as the minter takes it.
+///
+/// - Thread-safety: thread-compatible (a plain value; borrows its deltas).
+struct MeshMorphTarget
+{
+    Array<char, kMaxMorphNameBytes + 1> name = {};  ///< NUL-terminated, not empty.
+    Span<const MeshMorphDelta> deltas;              ///< Sorted by vertex, no repeats; all-zero deltas are dropped.
+};
+
+/// A morph target of a blob.
+///
+/// - Thread-safety: thread-compatible (a plain value).
+struct MeshMorphTargetInfo
+{
+    Array<char, kMaxMorphNameBytes + 1> name = {};  ///< NUL-terminated.
+    u32 first_delta = 0;                            ///< Its first delta in the delta section.
+    u32 delta_count = 0;                            ///< Its number of deltas.
+};
+
 /// One vertex attribute of a blob.
 ///
 /// - Thread-safety: immutable value.
@@ -154,6 +193,7 @@ struct MeshBuildInput
     Span<const MeshSlot> slots;                 ///< May be empty.
     MeshQuality quality = MeshQuality::Packed;  ///< The storage.
     Span<const MeshSkinInfluence> skin;         ///< Empty, or one per vertex.
+    Span<const MeshMorphTarget> morph_targets;  ///< Empty, or up to [[asset::kMaxMorphTargets]].
     Span<const Array<u8, 4>> colors;            ///< Empty, or one per vertex: rgb sRGB-encoded, alpha linear.
     ResourceId skeleton;                        ///< The skeleton of a skinned mesh.
     ContentHash skeleton_hash;                  ///< Its hash.
@@ -184,9 +224,10 @@ Array<u8, 4> EncodeMeshColor(const Array<f32, 4>& rgba);
 ///
 /// - Fails: `Invalid` (no vertices or indices, an index count that is not a multiple of 3, an index past the vertices,
 ///   a non-finite value, a LOD or slot range outside the indices or not a multiple of 3, LOD screen sizes that grow, a
-///   slot name that is empty or too long, a colour array of the wrong length, a skin array of the wrong length, a skin
-///   joint at or past the skeleton's joint count or weights that do not sum to 255); `LimitExceeded` for a count above
-///   the limits.
+///   slot name that is empty or too long, a morph target with a bad name, a delta past the vertices or out of
+///   order, more targets than [[asset::kMaxMorphTargets]], a colour array of the wrong length, a skin array of the
+///   wrong length, a skin joint at or past the skeleton's joint count or weights that do not sum to 255);
+///   `LimitExceeded` for a count above the limits.
 /// - Ownership: borrows `input` for the call; `*out` is replaced.
 Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildInput& input, Vector<byte>* out,
                      u32 target = 0);
@@ -207,8 +248,9 @@ public:
     /// - Fails: the errors of [[asset::BlobReader::Open]]; `TypeMismatch` for another type; `Corrupt` for a missing or
     ///   mis-sized section, a count above the limit, an attribute that is not valid for its binding, a stream whose
     ///   size is not the stride times the count, a LOD or slot range outside the indices, LOD screen sizes that grow,
-    ///   a non-finite bound, a skin section without its skeleton dependency or the reverse, or the reserved morph
-    ///   section.
+    ///   a non-finite bound, a skin section without its skeleton dependency or the reverse, or a morph section that is
+    ///   mis-sized, has more targets than the limit, a delta past the vertices, out of order or not finite, or deltas
+    ///   that the targets do not cover exactly (each delta is checked: the GPU indexes vertices with them).
     /// - Ownership: borrows `data` and `types` for the call; the view keeps spans into `data`.
     Status Open(ByteSpan data, const TypeRegistry& types);
 
@@ -222,6 +264,20 @@ public:
     ///
     /// - Fails: never.
     bool HasColors() const { return has_colors_; }
+    /// The number of morph targets (0 without).
+    u32 MorphTargetCount() const { return morph_target_count_; }
+    /// Morph target `i`.
+    ///
+    /// - Aborts: `i` is not below `MorphTargetCount()`.
+    MeshMorphTargetInfo MorphTarget(u32 i) const;
+    /// The total number of morph deltas.
+    u32 MorphDeltaCount() const { return morph_delta_count_; }
+    /// Morph delta `k` of the delta section (a target's are `first_delta` to `first_delta + delta_count - 1`).
+    ///
+    /// - Aborts: `k` is not below `MorphDeltaCount()`.
+    MeshMorphDelta MorphDelta(u32 k) const;
+    /// The bytes of the delta section, 40 per delta, as the blob holds them.
+    ByteSpan MorphDeltaBytes() const { return morph_deltas_; }
     /// True when the mesh has a skin stream.
     ///
     /// - Fails: never.
@@ -300,6 +356,10 @@ private:
     u32 index_width_ = 2;
     bool skinned_ = false;
     bool has_colors_ = false;
+    u32 morph_target_count_ = 0;
+    u32 morph_delta_count_ = 0;
+    ByteSpan morph_targets_;
+    ByteSpan morph_deltas_;
     MeshQuality quality_ = MeshQuality::Packed;
     u32 attribute_count_ = 0;
     u32 stride_ = 0;

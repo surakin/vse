@@ -18,6 +18,8 @@ constexpr u32 kMeshFlagPacked = 2;
 constexpr u32 kMeshPackedStride = 24;
 constexpr u32 kMeshFullStride = 48;
 constexpr u32 kMeshSkinStride = 8;
+constexpr u32 kMeshMorphTargetBytes = 48;
+constexpr u32 kMeshMorphDeltaBytes = 40;
 
 void MeshStore(byte* p, u64 value, u32 width)
 {
@@ -245,6 +247,33 @@ Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildIn
     {
         return MeshInvalid("the colour array does not have one entry per vertex");
     }
+    if (input.morph_targets.Size() > kMaxMorphTargets)
+    {
+        return Status::Make(ErrorCode::LimitExceeded, "more morph targets than a mesh holds");
+    }
+    for (usize t = 0; t < input.morph_targets.Size(); ++t)
+    {
+        const MeshMorphTarget& morph = input.morph_targets[t];
+        usize length = 0;
+        while (length <= kMaxMorphNameBytes && morph.name[length] != '\0')
+        {
+            ++length;
+        }
+        if (length == 0 || length > kMaxMorphNameBytes)
+        {
+            return MeshInvalid("a morph target name is empty or longer than 31 bytes");
+        }
+        for (usize k = 0; k < morph.deltas.Size(); ++k)
+        {
+            const MeshMorphDelta& d = morph.deltas[k];
+            if (d.vertex >= vcount || (k > 0 && d.vertex <= morph.deltas[k - 1].vertex) ||
+                !MeshFinite(d.position.Data(), 3) || !MeshFinite(d.normal.Data(), 3) ||
+                !MeshFinite(d.tangent.Data(), 3))
+            {
+                return MeshInvalid("a morph delta is past the vertices, out of order or not finite");
+            }
+        }
+    }
     if (skinned && (input.skeleton.IsNone() || input.skeleton_joint_count == 0 || input.skeleton_joint_count > 256))
     {
         return MeshInvalid("a skinned mesh needs its skeleton id and a joint count of 1 to 256");
@@ -358,6 +387,25 @@ Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildIn
             const f32 u = input.vertices[i].uv[c];
             uvmin[c] = u < uvmin[c] ? u : uvmin[c];
             uvmax[c] = u > uvmax[c] ? u : uvmax[c];
+        }
+    }
+    // Morph targets (glTF coverage Day 6): the box grows by the largest position delta of each target, on each side, so
+    // it holds every target at any weight from -1 to 1 together.
+    for (usize t = 0; t < input.morph_targets.Size(); ++t)
+    {
+        f32 extent[3] = {0, 0, 0};
+        for (const MeshMorphDelta& d : input.morph_targets[t].deltas)
+        {
+            for (u32 c = 0; c < 3; ++c)
+            {
+                const f32 a = Abs(d.position[c]);
+                extent[c] = a > extent[c] ? a : extent[c];
+            }
+        }
+        for (u32 c = 0; c < 3; ++c)
+        {
+            bmin[c] -= extent[c];
+            bmax[c] += extent[c];
         }
     }
     const bool packed = input.quality == MeshQuality::Packed;
@@ -610,6 +658,48 @@ Status BuildMeshBlob(const TypeRegistry& types, ResourceId id, const MeshBuildIn
         ENGINE_TRY(writer.AddSection(kMeshSectionSkin, ByteSpan(skin_bytes.Data(), skin_bytes.Size())));
         ENGINE_TRY(writer.AddSection(kMeshSectionJointBounds, ByteSpan(joint_bounds.Data(), joint_bounds.Size())));
     }
+    if (input.morph_targets.Size() != 0)
+    {
+        Vector<byte> target_bytes;
+        Vector<byte> delta_bytes;
+        target_bytes.Resize(input.morph_targets.Size() * kMeshMorphTargetBytes);
+        MemSet(target_bytes.Data(), 0, target_bytes.Size());
+        u32 written = 0;
+        for (usize t = 0; t < input.morph_targets.Size(); ++t)
+        {
+            const MeshMorphTarget& morph = input.morph_targets[t];
+            const u32 first = written;
+            for (const MeshMorphDelta& d : morph.deltas)
+            {
+                bool zero = true;
+                for (u32 c = 0; c < 3; ++c)
+                {
+                    zero = zero && d.position[c] == 0.0f && d.normal[c] == 0.0f && d.tangent[c] == 0.0f;
+                }
+                if (zero)
+                {
+                    continue;  // an all-zero delta moves nothing
+                }
+                const usize at = delta_bytes.Size();
+                delta_bytes.Resize(at + kMeshMorphDeltaBytes);
+                byte* p = delta_bytes.Data() + at;
+                MeshStore(p, d.vertex, 4);
+                for (u32 c = 0; c < 3; ++c)
+                {
+                    MeshStoreF32(p + 4 + c * 4, d.position[c]);
+                    MeshStoreF32(p + 16 + c * 4, d.normal[c]);
+                    MeshStoreF32(p + 28 + c * 4, d.tangent[c]);
+                }
+                ++written;
+            }
+            byte* r = target_bytes.Data() + t * kMeshMorphTargetBytes;
+            MemCopy(r, morph.name.Data(), kMaxMorphNameBytes);
+            MeshStore(r + 32, first, 4);
+            MeshStore(r + 36, written - first, 4);
+        }
+        ENGINE_TRY(writer.AddSection(kMeshSectionMorphTargets, ByteSpan(target_bytes.Data(), target_bytes.Size())));
+        ENGINE_TRY(writer.AddSection(kMeshSectionMorphDeltas, ByteSpan(delta_bytes.Data(), delta_bytes.Size())));
+    }
     return writer.Finish(out);
 }
 
@@ -623,10 +713,6 @@ Status MeshView::Open(ByteSpan data, const TypeRegistry& types)
         return Status::Make(ErrorCode::TypeMismatch, "the blob is not a mesh");
     }
     ByteSpan unused;
-    if (blob.FindSection(kMeshSectionMorphReserved, &unused))
-    {
-        return MeshCorrupt("morph targets are not supported by this version");
-    }
     ByteSpan header;
     if (!blob.FindSection(kMeshSectionHeader, &header) || header.Size() != kMeshHeaderBytes)
     {
@@ -777,6 +863,58 @@ Status MeshView::Open(ByteSpan data, const TypeRegistry& types)
         return MeshCorrupt("a mesh that is not skinned holds a skin section or a dependency");
     }
 
+    // Morph targets: every delta checked, since the GPU indexes vertices with them.
+    ByteSpan morph_targets;
+    ByteSpan morph_deltas;
+    const bool has_targets = blob.FindSection(kMeshSectionMorphTargets, &morph_targets);
+    const bool has_deltas = blob.FindSection(kMeshSectionMorphDeltas, &morph_deltas);
+    u64 target_count = 0;
+    u64 delta_count = 0;
+    if (has_targets != has_deltas)
+    {
+        return MeshCorrupt("a morph section is missing its other half");
+    }
+    if (has_targets)
+    {
+        if (morph_targets.Size() == 0 || morph_targets.Size() % kMeshMorphTargetBytes != 0 ||
+            morph_targets.Size() / kMeshMorphTargetBytes > kMaxMorphTargets ||
+            morph_deltas.Size() % kMeshMorphDeltaBytes != 0)
+        {
+            return MeshCorrupt("a morph section is mis-sized or holds more targets than the limit");
+        }
+        target_count = morph_targets.Size() / kMeshMorphTargetBytes;
+        delta_count = morph_deltas.Size() / kMeshMorphDeltaBytes;
+        u64 next = 0;
+        for (u64 t = 0; t < target_count; ++t)
+        {
+            const byte* r = morph_targets.Data() + t * kMeshMorphTargetBytes;
+            const u64 first = MeshLoad(r + 32, 4);
+            const u64 count = MeshLoad(r + 36, 4);
+            if (r[0] == 0 || r[kMaxMorphNameBytes] != 0 || first != next || count > delta_count - next ||
+                MeshLoad(r + 40, 4) != 0 || MeshLoad(r + 44, 4) != 0)
+            {
+                return MeshCorrupt("a morph target has no name or its deltas do not follow the one before");
+            }
+            for (u64 k = first; k < first + count; ++k)
+            {
+                const byte* d = morph_deltas.Data() + k * kMeshMorphDeltaBytes;
+                const u64 vertex = MeshLoad(d, 4);
+                f32 values[9];
+                MemCopy(values, d + 4, 36);
+                if (vertex >= vcount || (k > first && vertex <= MeshLoad(d - kMeshMorphDeltaBytes, 4)) ||
+                    !MeshFinite(values, 9))
+                {
+                    return MeshCorrupt("a morph delta is past the vertices, out of order or not finite");
+                }
+            }
+            next = first + count;
+        }
+        if (next != delta_count)
+        {
+            return MeshCorrupt("the morph deltas are not covered exactly by the targets");
+        }
+    }
+
     // LODs and slots.
     f32 previous_screen = 0;
     for (u32 i = 0; i < lcount; ++i)
@@ -819,6 +957,10 @@ Status MeshView::Open(ByteSpan data, const TypeRegistry& types)
     index_width_ = static_cast<u32>(width);
     skinned_ = skinned;
     has_colors_ = has_colors;
+    morph_target_count_ = static_cast<u32>(target_count);
+    morph_delta_count_ = static_cast<u32>(delta_count);
+    morph_targets_ = morph_targets;
+    morph_deltas_ = morph_deltas;
     quality_ = (flags & kMeshFlagPacked) != 0 ? MeshQuality::Packed : MeshQuality::Full;
     attribute_count_ = static_cast<u32>(acount);
     stride_ = stride[0];
@@ -933,6 +1075,38 @@ Status MeshView::CheckSkin() const
         }
     }
     return Status::Success();
+}
+
+}  // namespace engine_placeholder::asset
+
+namespace engine_placeholder::asset
+{
+
+MeshMorphTargetInfo MeshView::MorphTarget(u32 i) const
+{
+    ENGINE_ASSERT(i < morph_target_count_, "MeshView::MorphTarget: index out of range");
+    const byte* r = morph_targets_.Data() + static_cast<usize>(i) * kMeshMorphTargetBytes;
+    MeshMorphTargetInfo out;
+    MemCopy(out.name.Data(), r, kMaxMorphNameBytes);
+    out.name[kMaxMorphNameBytes] = '\0';
+    out.first_delta = static_cast<u32>(MeshLoad(r + 32, 4));
+    out.delta_count = static_cast<u32>(MeshLoad(r + 36, 4));
+    return out;
+}
+
+MeshMorphDelta MeshView::MorphDelta(u32 k) const
+{
+    ENGINE_ASSERT(k < morph_delta_count_, "MeshView::MorphDelta: index out of range");
+    const byte* d = morph_deltas_.Data() + static_cast<usize>(k) * kMeshMorphDeltaBytes;
+    MeshMorphDelta out;
+    out.vertex = static_cast<u32>(MeshLoad(d, 4));
+    for (u32 c = 0; c < 3; ++c)
+    {
+        out.position[c] = MeshLoadF32(d + 4 + c * 4);
+        out.normal[c] = MeshLoadF32(d + 16 + c * 4);
+        out.tangent[c] = MeshLoadF32(d + 28 + c * 4);
+    }
+    return out;
 }
 
 }  // namespace engine_placeholder::asset

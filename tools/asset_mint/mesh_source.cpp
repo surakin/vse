@@ -222,6 +222,58 @@ Status ParseMeshSource(StringView text, MeshSource* out, MeshSourceError* error)
             MemCopy(slot.name.Data(), t.tokens[1].Data(), t.tokens[1].Length());
             out->slots.Push(slot);
         }
+        else if (kind == StringView("morph"))
+        {
+            // glTF coverage Day 6: a morph target; the `d` records after it are its deltas.
+            if (t.count != 2 || t.tokens[1].Length() > kMaxMorphNameBytes)
+            {
+                return MshFail(error, line_number, "morph needs a NAME of up to 31 bytes");
+            }
+            if (out->morphs.Size() >= kMaxMorphTargets)
+            {
+                return MshLimit(error, line_number, "more morph targets than the format allows");
+            }
+            MeshSourceMorph morph;
+            MemCopy(morph.name.Data(), t.tokens[1].Data(), t.tokens[1].Length());
+            morph.line = line_number;
+            out->morphs.Push(static_cast<MeshSourceMorph&&>(morph));
+        }
+        else if (kind == StringView("d"))
+        {
+            if (out->morphs.Size() == 0)
+            {
+                return MshFail(error, line_number, "a d record needs a morph record before it");
+            }
+            if (t.count != 5 && t.count != 8 && t.count != 11)
+            {
+                return MshFail(error, line_number, "d needs VERTEX and 3, 6 or 9 numbers (position, normal, tangent)");
+            }
+            MeshMorphDelta d;
+            if (!srctext::ParseUnsigned(t.tokens[1], &d.vertex) || d.vertex >= out->vertices.Size())
+            {
+                return MshFail(error, line_number, "a d record names a vertex that is not defined");
+            }
+            f32 n[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+            for (u32 k = 0; k + 2 < t.count; ++k)
+            {
+                if (!srctext::ParseFloat(t.tokens[2 + k], &n[k]))
+                {
+                    return MshFail(error, line_number, "a number is malformed or not finite");
+                }
+            }
+            for (u32 c = 0; c < 3; ++c)
+            {
+                d.position[c] = n[c];
+                d.normal[c] = n[3 + c];
+                d.tangent[c] = n[6 + c];
+            }
+            MeshSourceMorph& morph = out->morphs[out->morphs.Size() - 1];
+            if (morph.deltas.Size() != 0 && d.vertex <= morph.deltas[morph.deltas.Size() - 1].vertex)
+            {
+                return MshFail(error, line_number, "the d records of a morph go up by vertex, without repeats");
+            }
+            morph.deltas.Push(d);
+        }
         else if (kind == StringView("skin"))
         {
             if (t.count < 4 || t.count % 2 != 0)
@@ -327,6 +379,15 @@ Status MintMesh(StringView text, const TypeRegistry& types, const SkeletonView* 
     input.slots = Span<const MeshSlot>(source.slots.Data(), source.slots.Size());
     input.quality = source.quality;
     input.colors = Span<const Array<u8, 4>>(source.colors.Data(), source.colors.Size());
+    Vector<MeshMorphTarget> morphs;
+    for (const MeshSourceMorph& m : source.morphs)
+    {
+        MeshMorphTarget morph;
+        morph.name = m.name;
+        morph.deltas = Span<const MeshMorphDelta>(m.deltas.Data(), m.deltas.Size());
+        morphs.Push(morph);
+    }
+    input.morph_targets = Span<const MeshMorphTarget>(morphs.Data(), morphs.Size());
 
     Vector<MeshSkinInfluence> skin;
     if (!source.skeleton.IsNone())
