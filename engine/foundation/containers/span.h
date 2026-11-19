@@ -98,8 +98,12 @@ public:
     }
 
     /// Returns a pointer to the first element, for range-based `for`.
+    ///
+    /// - Internal: the range-for protocol.
     constexpr T* begin() const { return data_; }
     /// Returns a pointer one past the last element, for range-based `for`.
+    ///
+    /// - Internal: the range-for protocol.
     constexpr T* end() const { return data_ + size_; }
 
     /// Returns the first `count` elements.
@@ -189,28 +193,7 @@ template <typename T, typename A> void Append(Vector<T, A>& target, TypeIdentity
     ENGINE_ASSERT(target.Size() == 0 || items.Size() == 0 || items.Data() + items.Size() <= begin ||
                       items.Data() >= begin + target.Size(),
                   "Append: the source overlaps the vector");
-    const usize needed = target.Size() + items.Size();
-    if (needed > target.Capacity())
-    {
-        const usize doubled = target.Capacity() * 2;
-        target.Reserve(needed > doubled ? needed : doubled);
-    }
-    if constexpr (IsTriviallyCopyable<T>)
-    {
-        if (items.Size() != 0)
-        {
-            const usize old_size = target.Size();
-            target.Resize(old_size + items.Size());
-            MemCopy(target.Data() + old_size, items.Data(), items.SizeBytes());
-        }
-    }
-    else
-    {
-        for (usize i = 0; i < items.Size(); ++i)
-        {
-            target.Push(items[i]);
-        }
-    }
+    target.Append(items.Data(), items.Size());  // one growth, then a byte copy for trivially copyable elements
 }
 
 /// Replaces the contents of `target` with copies of `items`.

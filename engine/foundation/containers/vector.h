@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cstr/mem_ops.h"
 #include "lang/traits.h"
 #include "lang/utility.h"
 
@@ -128,7 +129,14 @@ public:
             return false;
         }
         T* new_data = static_cast<T*>(mem);
-        if constexpr (IsMoveConstructible<T>)
+        if constexpr (IsTriviallyCopyable<T>)
+        {
+            if (size_ != 0)
+            {
+                MemCopy(new_data, data_, size_ * sizeof(T));  // a trivially copyable element moves as its bytes
+            }
+        }
+        else if constexpr (IsMoveConstructible<T>)
         {
             for (usize i = 0; i < size_; ++i)
             {
@@ -359,6 +367,126 @@ public:
         size_ -= count;
     }
 
+    /// Removes the element at `index` by moving the last element into its place: O(1), and the order of the others
+    /// is not kept (use `Remove` where it matters).
+    ///
+    /// - Param index: position to remove.
+    /// - Aborts: `index` is not less than `Size()`.
+    void SwapRemove(usize index)
+    {
+        ENGINE_ASSERT(index < size_, "Vector::SwapRemove: index is past the end");
+        if (index + 1 != size_)
+        {
+            data_[index] = Move(data_[size_ - 1]);
+        }
+        Pop();
+    }
+
+    /// Appends a copy of `count` elements starting at `items`, growing once; trivially copyable elements are copied as
+    /// bytes.
+    ///
+    /// - Param items: the first element to copy; the elements may be elements of this vector.
+    /// - Param count: how many to copy.
+    /// - Aborts: growth is needed and the allocator is out of memory.
+    void Append(const T* items, usize count)
+    {
+        if (count == 0)
+        {
+            return;
+        }
+        if (InStorage(items))
+        {
+            // The source is part of this vector, which growing frees: copy from its offset after growing.
+            const usize offset = static_cast<usize>(items - data_);
+            Reserve(GrowTarget(size_ + count));
+            for (usize i = 0; i < count; ++i)
+            {
+                new (data_ + size_) T(data_[offset + i]);
+                ++size_;
+            }
+            return;
+        }
+        Reserve(GrowTarget(size_ + count));
+        if constexpr (IsTriviallyCopyable<T>)
+        {
+            MemCopy(data_ + size_, items, count * sizeof(T));
+            size_ += count;
+        }
+        else
+        {
+            for (usize i = 0; i < count; ++i)
+            {
+                new (data_ + size_) T(items[i]);
+                ++size_;
+            }
+        }
+    }
+
+    /// Appends a copy of every element of `items`: a [[Span]], an [[Array]], another [[Vector]] or anything with
+    /// `Data()` and `Size()`.
+    ///
+    /// - Param items: the elements to copy.
+    /// - Aborts: growth is needed and the allocator is out of memory.
+    template <typename C>
+        requires(IsConvertible<decltype(static_cast<const C*>(nullptr)->Data()), const T*> &&
+                 requires(const C& c) { c.Size(); })
+    void Append(const C& items)
+    {
+        Append(items.Data(), static_cast<usize>(items.Size()));
+    }
+
+    /// Constructs an element at the end from `args`, growing if full.
+    ///
+    /// - Param args: the arguments of `T`'s constructor; they must not refer to elements of this vector.
+    /// - Returns: the new element; valid until the next growth.
+    /// - Aborts: growth is needed and the allocator is out of memory.
+    template <typename... Args> T& Emplace(Args&&... args)
+    {
+        GrowIfNeeded();
+        new (data_ + size_) T(Forward<Args>(args)...);
+        return data_[size_++];
+    }
+
+    /// Returns a copy of this vector on the same allocator: the explicit copy, since the copy constructor is deleted
+    /// so that copies of large data are visible.
+    ///
+    /// - Aborts: the allocator is out of memory.
+    Vector Clone() const
+        requires IsCopyConstructible<T>
+    {
+        Vector copy(*allocator_);
+        copy.Append(data_, size_);
+        return copy;
+    }
+
+    /// Exchanges the elements, storage and allocator of two vectors; no element is moved or copied.
+    ///
+    /// - Param other: the vector to exchange with.
+    void Swap(Vector& other)
+    {
+        engine_placeholder::Swap(allocator_, other.allocator_);
+        engine_placeholder::Swap(data_, other.data_);
+        engine_placeholder::Swap(size_, other.size_);
+        engine_placeholder::Swap(capacity_, other.capacity_);
+    }
+
+    /// The first element, for a range-for (`for (T& item : vector)`).
+    ///
+    /// - Internal: the range-for protocol.
+    T* begin() { return data_; }
+    /// The end of a range-for.
+    ///
+    /// - Internal: the range-for protocol.
+    T* end() { return data_ + size_; }
+    /// The first element of a const vector, for a range-for.
+    ///
+    /// - Internal: the range-for protocol.
+    const T* begin() const { return data_; }
+    /// The end of a range-for over a const vector.
+    ///
+    /// - Internal: the range-for protocol.
+    const T* end() const { return data_ + size_; }
+
     /// Returns a reference to the element at `index`.
     ///
     /// - Param index: element position; must be less than `Size()` (not checked).
@@ -404,12 +532,18 @@ private:
         {
             return true;
         }
-        usize target = new_size;
-        if (size_ != 0 && capacity_ * 2 > target)
+        return TryReserve(GrowTarget(new_size));
+    }
+
+    // The capacity to reserve for `new_size` elements: at least double the current one once the vector holds
+    // elements, so that repeated appends are amortized O(1).
+    usize GrowTarget(usize new_size) const
+    {
+        if (new_size <= capacity_)
         {
-            target = capacity_ * 2;
+            return capacity_;
         }
-        return TryReserve(target);
+        return size_ != 0 && capacity_ * 2 > new_size ? capacity_ * 2 : new_size;
     }
 
     void ReleaseStorage()

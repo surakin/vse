@@ -10,8 +10,8 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Language support](foundation-lang.md) | 8 | 127 |
 | [Foundation: C library](foundation-cstr.md) | 5 | 61 |
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
-| [Foundation: Containers](foundation-containers.md) | 10 | 230 |
-| [Foundation: Strings](foundation-strings.md) | 6 | 101 |
+| [Foundation: Containers](foundation-containers.md) | 12 | 275 |
+| [Foundation: Strings](foundation-strings.md) | 6 | 104 |
 | [Foundation: Paths and Files](foundation-io.md) | 6 | 289 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 3 | 87 |

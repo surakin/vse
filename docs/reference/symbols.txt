@@ -328,18 +328,28 @@ ThisThread::Id() noexcept	function	foundation/sync	thisthread-id-noexcept	founda
 ThisThread::Yield() noexcept	function	foundation/sync	thisthread-yield-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:87
 ThisThread::SleepForMilliseconds(u64)	function	foundation/sync	thisthread-sleepformilliseconds-u64	foundation-sync.md	engine/foundation/sync/thread.h:92
 ThisThread::SleepForMicroseconds(u64)	function	foundation/sync	thisthread-sleepformicroseconds-u64	foundation-sync.md	engine/foundation/sync/thread.h:98
-Min(const T&,const T&)	function	foundation/containers	min-const-t-amp-const-t-amp	foundation-containers.md	engine/foundation/algorithm.h:19
-Max(const T&,const T&)	function	foundation/containers	max-const-t-amp-const-t-amp	foundation-containers.md	engine/foundation/algorithm.h:25
-Clamp(T,T,T)	function	foundation/containers	clamp-t-t-t	foundation-containers.md	engine/foundation/algorithm.h:33
-IndexOf(const C&,const V&)	function	foundation/containers	indexof-const-c-amp-const-v-amp	foundation-containers.md	engine/foundation/algorithm.h:41
-detail_sort::InsertionSort(T*,usize,Less)	function	foundation/containers	detail-sort-insertionsort-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:57
-detail_sort::SiftDown(T*,usize,usize,Less)	function	foundation/containers	detail-sort-siftdown-t-star-usize-usize-less	foundation-containers.md	engine/foundation/algorithm.h:73
-detail_sort::SwapItems(T&,T&)	function	foundation/containers	detail-sort-swapitems-t-amp-t-amp	foundation-containers.md	engine/foundation/algorithm.h:104
-detail_sort::HeapSortItems(T*,usize,Less)	function	foundation/containers	detail-sort-heapsortitems-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:112
-detail_sort::IntroSortItems(T*,usize,int,Less)	function	foundation/containers	detail-sort-introsortitems-t-star-usize-int-less	foundation-containers.md	engine/foundation/algorithm.h:127
-Sort(Span<T>,Less)	function	foundation/containers	sort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:182
-Sort(Span<T>)	function	foundation/containers	sort-span-lt-t-gt	foundation-containers.md	engine/foundation/algorithm.h:194
-StableSort(Span<T>,Less)	function	foundation/containers	stablesort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:202
+Min(const T&,const T&)	function	foundation/containers	min-const-t-amp-const-t-amp	foundation-containers.md	engine/foundation/algorithm.h:22
+Max(const T&,const T&)	function	foundation/containers	max-const-t-amp-const-t-amp	foundation-containers.md	engine/foundation/algorithm.h:28
+Clamp(T,T,T)	function	foundation/containers	clamp-t-t-t	foundation-containers.md	engine/foundation/algorithm.h:36
+IndexOf(const C&,const V&)	function	foundation/containers	indexof-const-c-amp-const-v-amp	foundation-containers.md	engine/foundation/algorithm.h:44
+detail_sort::InsertionSort(T*,usize,Less)	function	foundation/containers	detail-sort-insertionsort-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:60
+detail_sort::SiftDown(T*,usize,usize,Less)	function	foundation/containers	detail-sort-siftdown-t-star-usize-usize-less	foundation-containers.md	engine/foundation/algorithm.h:76
+detail_sort::SwapItems(T&,T&)	function	foundation/containers	detail-sort-swapitems-t-amp-t-amp	foundation-containers.md	engine/foundation/algorithm.h:107
+detail_sort::HeapSortItems(T*,usize,Less)	function	foundation/containers	detail-sort-heapsortitems-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:115
+detail_sort::IntroSortItems(T*,usize,int,Less)	function	foundation/containers	detail-sort-introsortitems-t-star-usize-int-less	foundation-containers.md	engine/foundation/algorithm.h:130
+Sort(Span<T>,Less)	function	foundation/containers	sort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:185
+Sort(Span<T>)	function	foundation/containers	sort-span-lt-t-gt	foundation-containers.md	engine/foundation/algorithm.h:197
+StableSort(Span<T>,Less)	function	foundation/containers	stablesort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:207
+Sort(C&,Less)	function	foundation/containers	sort-c-amp-less	foundation-containers.md	engine/foundation/algorithm.h:255
+StableSort(C&,Less)	function	foundation/containers	stablesort-c-amp-less	foundation-containers.md	engine/foundation/algorithm.h:270
+LowerBound(Span<T>,const V&,Less)	function	foundation/containers	lowerbound-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:286
+UpperBound(Span<T>,const V&,Less)	function	foundation/containers	upperbound-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:311
+BinarySearch(Span<T>,const V&,Less)	function	foundation/containers	binarysearch-span-lt-t-gt-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:336
+LowerBound(const C&,const V&,Less)	function	foundation/containers	lowerbound-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:347
+UpperBound(const C&,const V&,Less)	function	foundation/containers	upperbound-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:362
+BinarySearch(const C&,const V&,Less)	function	foundation/containers	binarysearch-const-c-amp-const-v-amp-less	foundation-containers.md	engine/foundation/algorithm.h:377
+NthElement(Span<T>,usize,Less)	function	foundation/containers	nthelement-span-lt-t-gt-usize-less	foundation-containers.md	engine/foundation/algorithm.h:393
+PartialSort(Span<T>,usize,Less)	function	foundation/containers	partialsort-span-lt-t-gt-usize-less	foundation-containers.md	engine/foundation/algorithm.h:462
 Array	struct	foundation/containers	array	foundation-containers.md	engine/foundation/containers/array.h:20
 Array::items	variable	foundation/containers	array-items	foundation-containers.md	engine/foundation/containers/array.h:25
 Array::operator[](usize)	function	foundation/containers	array-operator-index-usize	foundation-containers.md	engine/foundation/containers/array.h:30
@@ -347,10 +357,41 @@ Array::operator[](usize) const	function	foundation/containers	array-operator-ind
 Array::Data()	function	foundation/containers	array-data	foundation-containers.md	engine/foundation/containers/array.h:37
 Array::Data() const	function	foundation/containers	array-data-const	foundation-containers.md	engine/foundation/containers/array.h:39
 Array::Size()	function	foundation/containers	array-size	foundation-containers.md	engine/foundation/containers/array.h:41
-Array::begin()	function	foundation/containers	array-begin	foundation-containers.md	engine/foundation/containers/array.h:44
-Array::end()	function	foundation/containers	array-end	foundation-containers.md	engine/foundation/containers/array.h:46
-Array::begin() const	function	foundation/containers	array-begin-const	foundation-containers.md	engine/foundation/containers/array.h:48
-Array::end() const	function	foundation/containers	array-end-const	foundation-containers.md	engine/foundation/containers/array.h:50
+BinaryHeap	class	foundation/containers	binaryheap	foundation-containers.md	engine/foundation/containers/binary_heap.h:24
+BinaryHeap::BinaryHeap(Allocator&,Less)	function	foundation/containers	binaryheap-binaryheap-allocator-amp-less	foundation-containers.md	engine/foundation/containers/binary_heap.h:31
+BinaryHeap::BinaryHeap(Less)	function	foundation/containers	binaryheap-binaryheap-less	foundation-containers.md	engine/foundation/containers/binary_heap.h:36
+BinaryHeap::Push(T)	function	foundation/containers	binaryheap-push-t	foundation-containers.md	engine/foundation/containers/binary_heap.h:46
+BinaryHeap::Top() const	function	foundation/containers	binaryheap-top-const	foundation-containers.md	engine/foundation/containers/binary_heap.h:55
+BinaryHeap::Pop()	function	foundation/containers	binaryheap-pop	foundation-containers.md	engine/foundation/containers/binary_heap.h:65
+BinaryHeap::Remove(usize)	function	foundation/containers	binaryheap-remove-usize	foundation-containers.md	engine/foundation/containers/binary_heap.h:76
+BinaryHeap::At(usize) const	function	foundation/containers	binaryheap-at-usize-const	foundation-containers.md	engine/foundation/containers/binary_heap.h:97
+BinaryHeap::Size() const	function	foundation/containers	binaryheap-size-const	foundation-containers.md	engine/foundation/containers/binary_heap.h:104
+BinaryHeap::Empty() const	function	foundation/containers	binaryheap-empty-const	foundation-containers.md	engine/foundation/containers/binary_heap.h:106
+BinaryHeap::Clear()	function	foundation/containers	binaryheap-clear	foundation-containers.md	engine/foundation/containers/binary_heap.h:108
+BinaryHeap::Reserve(usize)	function	foundation/containers	binaryheap-reserve-usize	foundation-containers.md	engine/foundation/containers/binary_heap.h:113
+Deque	class	foundation/containers	deque	foundation-containers.md	engine/foundation/containers/deque.h:54
+Deque::Deque(Allocator&)	function	foundation/containers	deque-deque-allocator-amp	foundation-containers.md	engine/foundation/containers/deque.h:60
+Deque::Deque()	function	foundation/containers	deque-deque	foundation-containers.md	engine/foundation/containers/deque.h:65
+Deque::~Deque()	function	foundation/containers	deque-tilde-deque	foundation-containers.md	engine/foundation/containers/deque.h:72
+Deque::Deque(const Deque&)	function	foundation/containers	deque-deque-const-deque-amp	foundation-containers.md	engine/foundation/containers/deque.h:78
+Deque::operator=(const Deque&)	function	foundation/containers	deque-operator-eq-const-deque-amp	foundation-containers.md	engine/foundation/containers/deque.h:79
+Deque::Deque(Deque&&) noexcept	function	foundation/containers	deque-deque-deque-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/deque.h:82
+Deque::operator=(Deque&&) noexcept	function	foundation/containers	deque-operator-eq-deque-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/deque.h:93
+Deque::PushBack(U&&)	function	foundation/containers	deque-pushback-u-amp-amp	foundation-containers.md	engine/foundation/containers/deque.h:116
+Deque::PushFront(U&&)	function	foundation/containers	deque-pushfront-u-amp-amp	foundation-containers.md	engine/foundation/containers/deque.h:129
+Deque::PopFront()	function	foundation/containers	deque-popfront	foundation-containers.md	engine/foundation/containers/deque.h:143
+Deque::PopBack()	function	foundation/containers	deque-popback	foundation-containers.md	engine/foundation/containers/deque.h:157
+Deque::Front()	function	foundation/containers	deque-front	foundation-containers.md	engine/foundation/containers/deque.h:170
+Deque::Front() const	function	foundation/containers	deque-front-const	foundation-containers.md	engine/foundation/containers/deque.h:178
+Deque::Back()	function	foundation/containers	deque-back	foundation-containers.md	engine/foundation/containers/deque.h:186
+Deque::Back() const	function	foundation/containers	deque-back-const	foundation-containers.md	engine/foundation/containers/deque.h:194
+Deque::operator[](usize)	function	foundation/containers	deque-operator-index-usize	foundation-containers.md	engine/foundation/containers/deque.h:204
+Deque::operator[](usize) const	function	foundation/containers	deque-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/deque.h:213
+Deque::Clear()	function	foundation/containers	deque-clear	foundation-containers.md	engine/foundation/containers/deque.h:220
+Deque::Reserve(usize)	function	foundation/containers	deque-reserve-usize	foundation-containers.md	engine/foundation/containers/deque.h:234
+Deque::Size() const	function	foundation/containers	deque-size-const	foundation-containers.md	engine/foundation/containers/deque.h:248
+Deque::Empty() const	function	foundation/containers	deque-empty-const	foundation-containers.md	engine/foundation/containers/deque.h:250
+Deque::Capacity() const	function	foundation/containers	deque-capacity-const	foundation-containers.md	engine/foundation/containers/deque.h:252
 kFnv1a64Basis	variable	foundation/containers	kfnv1a64basis	foundation-containers.md	engine/foundation/containers/hash.h:33
 kFnv1a64Prime	variable	foundation/containers	kfnv1a64prime	foundation-containers.md	engine/foundation/containers/hash.h:35
 Fnv1a64Builder	class	foundation/containers	fnv1a64builder	foundation-containers.md	engine/foundation/containers/hash.h:44
@@ -491,20 +532,18 @@ Span::Size() const	function	foundation/containers	span-size-const	foundation-con
 Span::SizeBytes() const	function	foundation/containers	span-sizebytes-const	foundation-containers.md	engine/foundation/containers/span.h:86
 Span::Empty() const	function	foundation/containers	span-empty-const	foundation-containers.md	engine/foundation/containers/span.h:88
 Span::operator[](usize) const	function	foundation/containers	span-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/span.h:94
-Span::begin() const	function	foundation/containers	span-begin-const	foundation-containers.md	engine/foundation/containers/span.h:101
-Span::end() const	function	foundation/containers	span-end-const	foundation-containers.md	engine/foundation/containers/span.h:103
-Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:109
-Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:118
-Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:128
-Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:137
-ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:149
-MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:151
-AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:156
-AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:163
-AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:170
-ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:176
-Append(Vector<T,A>&,TypeIdentity<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-typeidentity-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:186
-Assign(Vector<T,A>&,TypeIdentity<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-typeidentity-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:220
+Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:113
+Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:122
+Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:132
+Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:141
+ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:153
+MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:155
+AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:160
+AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:167
+AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:174
+ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:180
+Append(Vector<T,A>&,TypeIdentity<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-typeidentity-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:190
+Assign(Vector<T,A>&,TypeIdentity<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-typeidentity-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:203
 DefaultDelete	struct	foundation/containers	defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:23
 DefaultDelete::DefaultDelete()	function	foundation/containers	defaultdelete-defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:26
 DefaultDelete::DefaultDelete(const DefaultDelete<U>&)	function	foundation/containers	defaultdelete-defaultdelete-const-defaultdelete-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:28
@@ -529,35 +568,41 @@ UniquePtr::Reset(T*)	function	foundation/containers	uniqueptr-reset-t-star	found
 UniquePtr::GetDeleter()	function	foundation/containers	uniqueptr-getdeleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:148
 UniquePtr::GetDeleter() const	function	foundation/containers	uniqueptr-getdeleter-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:150
 MakeUnique(Args&&...)	function	foundation/containers	makeunique-args-amp-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:164
-Vector	class	foundation/containers	vector	foundation-containers.md	engine/foundation/containers/vector.h:30
-Vector::Vector(Allocator&)	function	foundation/containers	vector-vector-allocator-amp	foundation-containers.md	engine/foundation/containers/vector.h:37
-Vector::Vector()	function	foundation/containers	vector-vector	foundation-containers.md	engine/foundation/containers/vector.h:42
-Vector::~Vector()	function	foundation/containers	vector-tilde-vector	foundation-containers.md	engine/foundation/containers/vector.h:49
-Vector::Vector(const Vector&)	function	foundation/containers	vector-vector-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:55
-Vector::operator=(const Vector&)	function	foundation/containers	vector-operator-eq-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:56
-Vector::Vector(Vector&&) noexcept	function	foundation/containers	vector-vector-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:59
-Vector::operator=(Vector&&) noexcept	function	foundation/containers	vector-operator-eq-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:71
-Vector::Reserve(usize)	function	foundation/containers	vector-reserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:96
-Vector::TryReserve(usize)	function	foundation/containers	vector-tryreserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:108
-Vector::Resize(usize)	function	foundation/containers	vector-resize-usize	foundation-containers.md	engine/foundation/containers/vector.h:152
-Vector::TryResize(usize)	function	foundation/containers	vector-tryresize-usize	foundation-containers.md	engine/foundation/containers/vector.h:163
-Vector::TryResizeUninitialized(usize)	function	foundation/containers	vector-tryresizeuninitialized-usize	foundation-containers.md	engine/foundation/containers/vector.h:188
-Vector::Clear()	function	foundation/containers	vector-clear	foundation-containers.md	engine/foundation/containers/vector.h:206
-Vector::Reset()	function	foundation/containers	vector-reset	foundation-containers.md	engine/foundation/containers/vector.h:213
-Vector::Push(const T&)	function	foundation/containers	vector-push-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:226
-Vector::Push(T&&)	function	foundation/containers	vector-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:247
-Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md	engine/foundation/containers/vector.h:266
-Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:280
-Vector::Insert(usize,T&&)	function	foundation/containers	vector-insert-usize-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:307
-Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:331
-Vector::RemoveRange(usize,usize)	function	foundation/containers	vector-removerange-usize-usize	foundation-containers.md	engine/foundation/containers/vector.h:347
-Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:365
-Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:369
-Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:372
-Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:374
-Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:377
-Vector::Empty() const	function	foundation/containers	vector-empty-const	foundation-containers.md	engine/foundation/containers/vector.h:379
-Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:381
+Vector	class	foundation/containers	vector	foundation-containers.md	engine/foundation/containers/vector.h:31
+Vector::Vector(Allocator&)	function	foundation/containers	vector-vector-allocator-amp	foundation-containers.md	engine/foundation/containers/vector.h:38
+Vector::Vector()	function	foundation/containers	vector-vector	foundation-containers.md	engine/foundation/containers/vector.h:43
+Vector::~Vector()	function	foundation/containers	vector-tilde-vector	foundation-containers.md	engine/foundation/containers/vector.h:50
+Vector::Vector(const Vector&)	function	foundation/containers	vector-vector-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:56
+Vector::operator=(const Vector&)	function	foundation/containers	vector-operator-eq-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:57
+Vector::Vector(Vector&&) noexcept	function	foundation/containers	vector-vector-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:60
+Vector::operator=(Vector&&) noexcept	function	foundation/containers	vector-operator-eq-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:72
+Vector::Reserve(usize)	function	foundation/containers	vector-reserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:97
+Vector::TryReserve(usize)	function	foundation/containers	vector-tryreserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:109
+Vector::Resize(usize)	function	foundation/containers	vector-resize-usize	foundation-containers.md	engine/foundation/containers/vector.h:160
+Vector::TryResize(usize)	function	foundation/containers	vector-tryresize-usize	foundation-containers.md	engine/foundation/containers/vector.h:171
+Vector::TryResizeUninitialized(usize)	function	foundation/containers	vector-tryresizeuninitialized-usize	foundation-containers.md	engine/foundation/containers/vector.h:196
+Vector::Clear()	function	foundation/containers	vector-clear	foundation-containers.md	engine/foundation/containers/vector.h:214
+Vector::Reset()	function	foundation/containers	vector-reset	foundation-containers.md	engine/foundation/containers/vector.h:221
+Vector::Push(const T&)	function	foundation/containers	vector-push-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:234
+Vector::Push(T&&)	function	foundation/containers	vector-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:255
+Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md	engine/foundation/containers/vector.h:274
+Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:288
+Vector::Insert(usize,T&&)	function	foundation/containers	vector-insert-usize-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:315
+Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:339
+Vector::RemoveRange(usize,usize)	function	foundation/containers	vector-removerange-usize-usize	foundation-containers.md	engine/foundation/containers/vector.h:355
+Vector::SwapRemove(usize)	function	foundation/containers	vector-swapremove-usize	foundation-containers.md	engine/foundation/containers/vector.h:375
+Vector::Append(const T*,usize)	function	foundation/containers	vector-append-const-t-star-usize	foundation-containers.md	engine/foundation/containers/vector.h:391
+Vector::Append(const C&)	function	foundation/containers	vector-append-const-c-amp	foundation-containers.md	engine/foundation/containers/vector.h:430
+Vector::Emplace(Args&&...)	function	foundation/containers	vector-emplace-args-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:443
+Vector::Clone() const	function	foundation/containers	vector-clone-const	foundation-containers.md	engine/foundation/containers/vector.h:454
+Vector::Swap(Vector&)	function	foundation/containers	vector-swap-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:465
+Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:493
+Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:497
+Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:500
+Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:502
+Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:505
+Vector::Empty() const	function	foundation/containers	vector-empty-const	foundation-containers.md	engine/foundation/containers/vector.h:507
+Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:509
 GraphemeBreakProperty	enum	foundation/strings	graphemebreakproperty	foundation-strings.md	engine/foundation/string/grapheme.h:14
 GraphemeBreakProperty::Other	enumerator	foundation/strings	graphemebreakproperty-other	foundation-strings.md	engine/foundation/string/grapheme.h:16
 GraphemeBreakProperty::CR	enumerator	foundation/strings	graphemebreakproperty-cr	foundation-strings.md	engine/foundation/string/grapheme.h:17
@@ -601,27 +646,30 @@ String::operator=(const String&)	function	foundation/strings	string-operator-eq-
 String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:68
 String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:69
 String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:76
-String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:92
-String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:107
-String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:121
-String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:123
-String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:126
-String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:128
-String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:133
-String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:135
-Hash<String<Allocator>>	struct	foundation/strings	hash-lt-string-lt-allocator-gt-gt	foundation-strings.md	engine/foundation/string/string.h:143
-Hash<String<Allocator>>::operator()(const String<Allocator>&) const	function	foundation/strings	hash-lt-string-lt-allocator-gt-gt-operator-call-const-string-lt-allocator-gt-amp-const	foundation-strings.md	engine/foundation/string/string.h:146
-StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:158
-StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:165
-StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:172
-StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:183
-StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:195
-StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:210
-StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:232
-StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:251
-StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:287
-StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:314
-StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:316
+String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:84
+String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:99
+String::Reserve(usize)	function	foundation/strings	string-reserve-usize	foundation-strings.md	engine/foundation/string/string.h:110
+String::Clear()	function	foundation/strings	string-clear	foundation-strings.md	engine/foundation/string/string.h:113
+String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:133
+String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:135
+String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:138
+String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:140
+String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:145
+String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:147
+Hash<String<Allocator>>	struct	foundation/strings	hash-lt-string-lt-allocator-gt-gt	foundation-strings.md	engine/foundation/string/string.h:155
+Hash<String<Allocator>>::operator()(const String<Allocator>&) const	function	foundation/strings	hash-lt-string-lt-allocator-gt-gt-operator-call-const-string-lt-allocator-gt-amp-const	foundation-strings.md	engine/foundation/string/string.h:158
+StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:170
+StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:177
+StringBuilder::Reserve(usize)	function	foundation/strings	stringbuilder-reserve-usize	foundation-strings.md	engine/foundation/string/string.h:184
+StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:195
+StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:206
+StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:218
+StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:233
+StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:255
+StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:274
+StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:310
+StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:337
+StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:339
 CodepointCount(StringView)	function	foundation/strings	codepointcount-stringview	foundation-strings.md	engine/foundation/string/utf8.h:18
 IsValidUtf8(StringView)	function	foundation/strings	isvalidutf8-stringview	foundation-strings.md	engine/foundation/string/utf8.h:36
 Utf8CodepointIterator	class	foundation/strings	utf8codepointiterator	foundation-strings.md	engine/foundation/string/utf8.h:59
@@ -647,18 +695,18 @@ StringView::Data() const	function	foundation/strings	stringview-data-const	found
 StringView::Length() const	function	foundation/strings	stringview-length-const	foundation-strings.md	engine/foundation/string_view.h:39
 StringView::Empty() const	function	foundation/strings	stringview-empty-const	foundation-strings.md	engine/foundation/string_view.h:41
 StringView::operator[](usize) const	function	foundation/strings	stringview-operator-index-usize-const	foundation-strings.md	engine/foundation/string_view.h:46
-StringView::operator==(const StringView&) const	function	foundation/strings	stringview-operator-eq-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:49
-StringView::operator!=(const StringView&) const	function	foundation/strings	stringview-operator-not-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:65
-StringView::Compare(const StringView&) const	function	foundation/strings	stringview-compare-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:72
-StringView::operator<(const StringView&) const	function	foundation/strings	stringview-operator-lt-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:91
-StringView::Substring(usize,usize) const	function	foundation/strings	stringview-substring-usize-usize-const	foundation-strings.md	engine/foundation/string_view.h:98
-StringView::IndexOf(char) const	function	foundation/strings	stringview-indexof-char-const	foundation-strings.md	engine/foundation/string_view.h:105
-StringView::Find(StringView) const	function	foundation/strings	stringview-find-stringview-const	foundation-strings.md	engine/foundation/string_view.h:123
-StringView::Substring(usize) const	function	foundation/strings	stringview-substring-usize-const	foundation-strings.md	engine/foundation/string_view.h:152
-StringView::LastIndexOf(char) const	function	foundation/strings	stringview-lastindexof-char-const	foundation-strings.md	engine/foundation/string_view.h:159
-StringView::StartsWith(StringView) const	function	foundation/strings	stringview-startswith-stringview-const	foundation-strings.md	engine/foundation/string_view.h:172
-StringView::EndsWith(StringView) const	function	foundation/strings	stringview-endswith-stringview-const	foundation-strings.md	engine/foundation/string_view.h:178
-StringView::Contains(StringView) const	function	foundation/strings	stringview-contains-stringview-const	foundation-strings.md	engine/foundation/string_view.h:184
+StringView::operator==(const StringView&) const	function	foundation/strings	stringview-operator-eq-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:58
+StringView::operator!=(const StringView&) const	function	foundation/strings	stringview-operator-not-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:74
+StringView::Compare(const StringView&) const	function	foundation/strings	stringview-compare-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:81
+StringView::operator<(const StringView&) const	function	foundation/strings	stringview-operator-lt-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:100
+StringView::Substring(usize,usize) const	function	foundation/strings	stringview-substring-usize-usize-const	foundation-strings.md	engine/foundation/string_view.h:107
+StringView::IndexOf(char) const	function	foundation/strings	stringview-indexof-char-const	foundation-strings.md	engine/foundation/string_view.h:114
+StringView::Find(StringView) const	function	foundation/strings	stringview-find-stringview-const	foundation-strings.md	engine/foundation/string_view.h:132
+StringView::Substring(usize) const	function	foundation/strings	stringview-substring-usize-const	foundation-strings.md	engine/foundation/string_view.h:161
+StringView::LastIndexOf(char) const	function	foundation/strings	stringview-lastindexof-char-const	foundation-strings.md	engine/foundation/string_view.h:168
+StringView::StartsWith(StringView) const	function	foundation/strings	stringview-startswith-stringview-const	foundation-strings.md	engine/foundation/string_view.h:181
+StringView::EndsWith(StringView) const	function	foundation/strings	stringview-endswith-stringview-const	foundation-strings.md	engine/foundation/string_view.h:187
+StringView::Contains(StringView) const	function	foundation/strings	stringview-contains-stringview-const	foundation-strings.md	engine/foundation/string_view.h:193
 io::DirectoryEntry	struct	foundation/io	io-directoryentry	foundation-io.md	engine/foundation/io/directory.h:22
 io::DirectoryEntry::name	variable	foundation/io	io-directoryentry-name	foundation-io.md	engine/foundation/io/directory.h:24
 io::DirectoryEntry::type	variable	foundation/io	io-directoryentry-type	foundation-io.md	engine/foundation/io/directory.h:25

@@ -113,6 +113,9 @@ tests/foundation/grapheme_test.cpp              0
 tests/foundation/hash_map_test.cpp              0
 tests/foundation/hash_set_test.cpp              0
 tests/foundation/hash_test.cpp                  0
+tests/foundation/deque_test.cpp                 0
+tests/foundation/binary_heap_test.cpp           0
+tests/foundation/algorithm_test.cpp             0
 tests/foundation/log_test.cpp                   0
 tests/foundation/matrix_test.cpp                0
 tests/foundation/normalize_test.cpp             0

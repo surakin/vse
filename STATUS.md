@@ -35,6 +35,10 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - Fixed: keys of another type are converted before hashing.
   - Tests deferred to Day 12 at the user's request (the series now builds and reviews per day and tests once at the end); the container tests pass.
   - Review: 3 findings, all fixed.
+- **Day 3 done (2026-11-19, Linux):**
+  - `Vector` swap-remove, append, emplace, clone, swap and range-for; bulk `String` append, reserve and clear; `Deque`; `BinaryHeap`.
+  - Search (`LowerBound`/`UpperBound`/`BinarySearch`), selection (`NthElement`/`PartialSort`), `StableSort` for any movable type, and sorts of containers.
+  - Tests deferred to Day 12; the container tests pass. Review: 3 findings, all fixed.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

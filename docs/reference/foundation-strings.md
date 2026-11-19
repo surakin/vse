@@ -428,7 +428,7 @@ Appends a copy of `sv`.
 
 | Field | Value |
 |---|---|
-| Parameter `sv` | text to append; must not view this string's own storage because growth may invalidate it. |
+| Parameter `sv` | text to append; it may view this string's own storage (the copy is taken from its offset after growing). |
 | Aborts | growth is needed and the allocator is out of memory. |
 
 ### `Append(char)` {#string-append-char}
@@ -463,6 +463,31 @@ Unlike `Append(char)`, the bytes may be part of a multi-byte UTF-8 sequence; the
 | Parameter `bytes` | first byte to append. |
 | Parameter `count` | number of bytes. |
 | Aborts | growth is needed and the allocator is out of memory. |
+
+### `Reserve(usize)` {#string-reserve-usize}
+
+`method String::Reserve` — defined in `engine/foundation/string/string.h`
+
+```cpp
+void Reserve(usize length);
+```
+
+Makes room for `length` bytes of text without growing again.
+
+| Field | Value |
+|---|---|
+| Parameter `length` | the length to make room for, not counting the terminator. |
+| Aborts | the allocator is out of memory. |
+
+### `Clear()` {#string-clear}
+
+`method String::Clear` — defined in `engine/foundation/string/string.h`
+
+```cpp
+void Clear();
+```
+
+Empties the string and keeps its storage.
 
 ### `CStr()` {#string-cstr-const}
 
@@ -578,6 +603,22 @@ Creates an empty builder.
 | Field | Value |
 |---|---|
 | Parameter `allocator` | allocator for the characters; must outlive the builder. |
+| Aborts | the allocator is out of memory. |
+
+### `Reserve(usize)` {#stringbuilder-reserve-usize}
+
+`method StringBuilder::Reserve` — defined in `engine/foundation/string/string.h`
+
+```cpp
+StringBuilder& Reserve(usize length);
+```
+
+Makes room for `length` bytes of text without growing again.
+
+| Field | Value |
+|---|---|
+| Parameter `length` | the length to make room for. |
+| Returns | this builder. |
 | Aborts | the allocator is out of memory. |
 
 ### `Append(StringView)` {#stringbuilder-append-stringview}

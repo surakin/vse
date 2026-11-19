@@ -17,6 +17,9 @@ set(FOUNDATION_BASE_TEST_SOURCES
   hash_map_test.cpp
   hash_set_test.cpp
   hash_test.cpp
+  deque_test.cpp
+  binary_heap_test.cpp
+  algorithm_test.cpp
   utf8_test.cpp
   grapheme_test.cpp
   normalize_test.cpp

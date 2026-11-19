@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/array.h"
 #include "containers/vector.h"
 #include "log/log.h"
 #include "mem/arena_allocator.h"
@@ -468,4 +469,87 @@ TEST_CASE("Vector: RemoveRange removes a run in one pass and keeps the order", "
     CHECK(v.Size() == 3);
     v.RemoveRange(0, 3);
     CHECK(v.Empty());
+}
+
+// Container audit series Day 3: SwapRemove, Append, Emplace, Clone, Swap and range-for.
+TEST_CASE("Vector: SwapRemove, Append, Emplace, Clone, Swap and range-for", "[containers][vector]")
+{
+    using engine_placeholder::u32;
+    using engine_placeholder::Vector;
+    Vector<u32> v;
+    for (u32 i = 0; i < 6; ++i)
+    {
+        v.Push(i);
+    }
+    v.SwapRemove(1);  // the last element takes its place
+    REQUIRE(v.Size() == 5);
+    CHECK(v[1] == 5);
+    v.SwapRemove(4);  // the last one itself
+    CHECK(v.Size() == 4);
+    CHECK(v[3] == 3);
+
+    v.Append(v);  // a vector appended to itself: the source is copied from its offset after growing
+    REQUIRE(v.Size() == 8);
+    CHECK(v[4] == 0);
+    CHECK(v[5] == 5);
+    const engine_placeholder::Array<u32, 3> more = {7, 8, 9};
+    v.Append(more);
+    CHECK(v.Size() == 11);
+    CHECK(v[10] == 9);
+
+    u32 sum = 0;
+    for (u32 x : v)
+    {
+        sum += x;
+    }
+    CHECK(sum == 2 * (0 + 5 + 2 + 3) + 7 + 8 + 9);
+
+    Vector<u32> copy = v.Clone();
+    CHECK(copy.Size() == v.Size());
+    CHECK(copy[10] == 9);
+    copy.Push(100);
+    Vector<u32> other;
+    other.Push(42);
+    other.Swap(copy);
+    CHECK(other.Size() == 12);
+    CHECK(copy.Size() == 1);
+    CHECK(copy[0] == 42);
+
+    struct Pair
+    {
+        Pair(u32 a_, u32 b_) : a(a_), b(b_) {}
+        u32 a;
+        u32 b;
+    };
+    Vector<Pair> pairs;
+    Pair& made = pairs.Emplace(3u, 4u);
+    CHECK(made.a == 3);
+    CHECK(pairs[0].b == 4);
+}
+
+namespace
+{
+
+struct CopiedName
+{
+    CopiedName(const char* t) : text(t) {}
+    CopiedName(const CopiedName& o) : text(o.text) { ++copies; }
+    CopiedName& operator=(const CopiedName&) = default;
+    const char* text;
+    static inline int copies = 0;
+};
+
+}  // namespace
+
+TEST_CASE("Vector: Append of a non-trivial type copies each element", "[containers][vector]")
+{
+    using engine_placeholder::Vector;
+    Vector<CopiedName> names;
+    names.Emplace("a");
+    names.Emplace("b");
+    CopiedName::copies = 0;
+    names.Append(names);
+    CHECK(names.Size() == 4);
+    CHECK(CopiedName::copies == 2);
+    CHECK(names[3].text[0] == 'b');
 }

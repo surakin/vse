@@ -70,18 +70,10 @@ public:
 
     /// Appends a copy of `sv`.
     ///
-    /// - Param sv: text to append; must not view this string's own storage
-    ///   because growth may invalidate it.
+    /// - Param sv: text to append; it may view this string's own storage (the copy is taken from its offset after
+    ///   growing).
     /// - Aborts: growth is needed and the allocator is out of memory.
-    void Append(StringView sv)
-    {
-        chars_.Pop();  // drop the trailing '\0'
-        for (usize i = 0; i < sv.Length(); ++i)
-        {
-            chars_.Push(sv[i]);
-        }
-        chars_.Push('\0');
-    }
+    void Append(StringView sv) { AppendRawBytes(sv.Data(), sv.Length()); }
 
     /// Appends one ASCII character.
     ///
@@ -106,13 +98,33 @@ public:
     /// - Aborts: growth is needed and the allocator is out of memory.
     void AppendRawBytes(const char* bytes, usize count)
     {
-        chars_.Pop();
-        for (usize i = 0; i < count; ++i)
-        {
-            chars_.Push(bytes[i]);
-        }
+        chars_.Pop();                 // drop the trailing '\0'
+        chars_.Append(bytes, count);  // one growth, then a byte copy (container audit Day 3)
         chars_.Push('\0');
     }
+
+    /// Makes room for `length` bytes of text without growing again.
+    ///
+    /// - Param length: the length to make room for, not counting the terminator.
+    /// - Aborts: the allocator is out of memory.
+    void Reserve(usize length) { chars_.Reserve(length + 1); }
+
+    /// Empties the string and keeps its storage.
+    void Clear()
+    {
+        chars_.Clear();
+        chars_.Push('\0');
+    }
+
+    /// The first byte, for a range-for over the bytes (`for (char c : text)`); bytes, not code points (see
+    /// `string/utf8.h` for those).
+    ///
+    /// - Internal: the range-for protocol.
+    const char* begin() const { return CStr(); }
+    /// The end of a range-for over the bytes.
+    ///
+    /// - Internal: the range-for protocol.
+    const char* end() const { return CStr() + Length(); }
 
     /// Returns the NUL-terminated contents.
     ///
@@ -163,6 +175,17 @@ public:
     /// - Param allocator: allocator for the characters; must outlive the builder.
     /// - Aborts: the allocator is out of memory.
     explicit StringBuilder(Allocator& allocator) : str_(allocator) {}
+
+    /// Makes room for `length` bytes of text without growing again.
+    ///
+    /// - Param length: the length to make room for.
+    /// - Returns: this builder.
+    /// - Aborts: the allocator is out of memory.
+    StringBuilder& Reserve(usize length)
+    {
+        str_.Reserve(length);
+        return *this;
+    }
 
     /// Appends the text `sv`.
     ///

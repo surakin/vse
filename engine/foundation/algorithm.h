@@ -3,6 +3,7 @@
 #include "lang/traits.h"
 
 #include "containers/span.h"
+#include "containers/vector.h"
 #include "mem/heap_allocator.h"
 #include "types.h"
 
@@ -10,7 +11,9 @@
 //!
 //! `Min`, `Max` and `Clamp` take values; `IndexOf` searches a span; `Sort` orders a span in place with a comparison
 //! (not stable, no allocation); `StableSort` keeps equal elements in their order (it allocates a scratch buffer from
-//! the heap).
+//! the heap); `LowerBound`, `UpperBound` and `BinarySearch` search a sorted span; `NthElement` and `PartialSort` select
+//! the best `k` without sorting the rest (container audit series, Day 3). The sorts also take a [[Vector]] or anything
+//! else with `Data()` and `Size()`.
 
 namespace engine_placeholder
 {
@@ -196,12 +199,13 @@ template <typename T> void Sort(Span<T> items)
     Sort(items, [](const T& a, const T& b) { return a < b; });
 }
 
-/// Sorts like `Sort`, but elements that compare equal keep their order.
+/// Sorts like `Sort`, but elements that compare equal keep their order. Any movable `T` (container audit Day 3; it
+/// was trivially copyable types only): the scratch buffer is a [[Vector]].
 ///
-/// - Fails: the scratch buffer cannot be allocated; the span is then sorted by insertion, which is stable and slow.
+/// - Param less: a strict weak ordering.
+/// - Aborts: the scratch buffer cannot be allocated.
 template <typename T, typename Less> void StableSort(Span<T> items, Less less)
 {
-    static_assert(IsTriviallyCopyable<T>, "StableSort: elements are moved through raw scratch memory");
     const usize n = items.Size();
     // Bottom-up merge sort with insertion-sorted runs of 8.
     constexpr usize kRun = 8;
@@ -214,30 +218,27 @@ template <typename T, typename Less> void StableSort(Span<T> items, Less less)
     {
         return;
     }
-    T* scratch = static_cast<T*>(HeapAllocator::Default().Alloc(n * sizeof(T), alignof(T)));
-    if (scratch == nullptr)
-    {
-        detail_sort::InsertionSort(p, n, less);
-        return;
-    }
+    Vector<T> scratch;
+    scratch.Reserve(n);
     for (usize width = kRun; width < n; width *= 2)
     {
+        scratch.Clear();
         for (usize lo = 0; lo < n; lo += 2 * width)
         {
             const usize mid = (lo + width < n) ? lo + width : n;
             const usize hi = (lo + 2 * width < n) ? lo + 2 * width : n;
-            usize a = lo, b = mid, out = lo;
+            usize a = lo, b = mid;
             while (a < mid && b < hi)
             {
-                scratch[out++] = static_cast<T&&>(less(p[b], p[a]) ? p[b++] : p[a++]);
+                scratch.Push(static_cast<T&&>(less(p[b], p[a]) ? p[b++] : p[a++]));
             }
             while (a < mid)
             {
-                scratch[out++] = static_cast<T&&>(p[a++]);
+                scratch.Push(static_cast<T&&>(p[a++]));
             }
             while (b < hi)
             {
-                scratch[out++] = static_cast<T&&>(p[b++]);
+                scratch.Push(static_cast<T&&>(p[b++]));
             }
         }
         for (usize i = 0; i < n; ++i)
@@ -245,7 +246,232 @@ template <typename T, typename Less> void StableSort(Span<T> items, Less less)
             p[i] = static_cast<T&&>(scratch[i]);
         }
     }
-    HeapAllocator::Default().Free(scratch, n * sizeof(T), alignof(T));
+}
+
+/// Sorts a [[Vector]] (or anything with mutable `Data()` and `Size()`) in place, as `Sort` on its span.
+///
+/// - Param items: the container.
+/// - Param less: a strict weak ordering.
+template <typename C, typename Less>
+    requires requires(C& c) {
+        c.Data();
+        c.Size();
+    } && (!IsSame<RemoveCVRef<C>, Span<RemoveReference<decltype(*static_cast<C*>(nullptr)->Data())>>>)
+void Sort(C& items, Less less)
+{
+    Sort(Span<RemoveReference<decltype(*items.Data())>>(items.Data(), items.Size()), less);
+}
+
+/// Sorts a [[Vector]] (or anything with mutable `Data()` and `Size()`) in place, keeping equal elements in order.
+///
+/// - Param items: the container.
+/// - Param less: a strict weak ordering.
+/// - Aborts: the scratch buffer cannot be allocated.
+template <typename C, typename Less>
+    requires requires(C& c) {
+        c.Data();
+        c.Size();
+    } && (!IsSame<RemoveCVRef<C>, Span<RemoveReference<decltype(*static_cast<C*>(nullptr)->Data())>>>)
+void StableSort(C& items, Less less)
+{
+    StableSort(Span<RemoveReference<decltype(*items.Data())>>(items.Data(), items.Size()), less);
+}
+
+/// Returns the position of the first element of the sorted span that is not before `value`: `less(items[i], value)`
+/// is false there and true before it. Returns the size when every element is before `value`.
+///
+/// - Param items: sorted by `less`.
+/// - Param value: what to search for; compared as `less(element, value)`.
+/// - Param less: the ordering the span is sorted by.
+template <typename T, typename V, typename Less> usize LowerBound(Span<T> items, const V& value, Less less)
+{
+    usize lo = 0;
+    usize hi = items.Size();
+    while (lo < hi)
+    {
+        const usize mid = lo + (hi - lo) / 2;
+        if (less(items.Data()[mid], value))
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+    return lo;
+}
+
+/// Returns the position of the first element of the sorted span that comes after `value`: `less(value, items[i])` is
+/// true there and false before it. Returns the size when none does.
+///
+/// - Param items: sorted by `less`.
+/// - Param value: what to search for; compared as `less(value, element)`.
+/// - Param less: the ordering the span is sorted by.
+template <typename T, typename V, typename Less> usize UpperBound(Span<T> items, const V& value, Less less)
+{
+    usize lo = 0;
+    usize hi = items.Size();
+    while (lo < hi)
+    {
+        const usize mid = lo + (hi - lo) / 2;
+        if (!less(value, items.Data()[mid]))
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+    return lo;
+}
+
+/// Returns the position of an element equal to `value` in the sorted span (neither before nor after it), or the size
+/// when there is none.
+///
+/// - Param items: sorted by `less`.
+/// - Param value: what to search for.
+/// - Param less: the ordering, used both ways (`less(element, value)` and `less(value, element)`).
+template <typename T, typename V, typename Less> usize BinarySearch(Span<T> items, const V& value, Less less)
+{
+    const usize at = LowerBound(items, value, less);
+    return at < items.Size() && !less(value, items.Data()[at]) ? at : items.Size();
+}
+
+/// `LowerBound` over a sorted [[Vector]] (or anything with `Data()` and `Size()`).
+///
+/// - Param items: sorted by `less`.
+/// - Param value: what to search for.
+/// - Param less: the ordering.
+template <typename C, typename V, typename Less>
+    requires requires(const C& c) {
+        c.Data();
+        c.Size();
+    } && (!IsSame<RemoveCVRef<C>, Span<RemoveReference<decltype(*static_cast<const C*>(nullptr)->Data())>>>)
+usize LowerBound(const C& items, const V& value, Less less)
+{
+    return LowerBound(Span<RemoveReference<decltype(*items.Data())>>(items.Data(), items.Size()), value, less);
+}
+
+/// `UpperBound` over a sorted [[Vector]] (or anything with `Data()` and `Size()`).
+///
+/// - Param items: sorted by `less`.
+/// - Param value: what to search for.
+/// - Param less: the ordering.
+template <typename C, typename V, typename Less>
+    requires requires(const C& c) {
+        c.Data();
+        c.Size();
+    } && (!IsSame<RemoveCVRef<C>, Span<RemoveReference<decltype(*static_cast<const C*>(nullptr)->Data())>>>)
+usize UpperBound(const C& items, const V& value, Less less)
+{
+    return UpperBound(Span<RemoveReference<decltype(*items.Data())>>(items.Data(), items.Size()), value, less);
+}
+
+/// `BinarySearch` over a sorted [[Vector]] (or anything with `Data()` and `Size()`).
+///
+/// - Param items: sorted by `less`.
+/// - Param value: what to search for.
+/// - Param less: the ordering.
+template <typename C, typename V, typename Less>
+    requires requires(const C& c) {
+        c.Data();
+        c.Size();
+    } && (!IsSame<RemoveCVRef<C>, Span<RemoveReference<decltype(*static_cast<const C*>(nullptr)->Data())>>>)
+usize BinarySearch(const C& items, const V& value, Less less)
+{
+    return BinarySearch(Span<RemoveReference<decltype(*items.Data())>>(items.Data(), items.Size()), value, less);
+}
+
+/// Reorders the span so that the element at `nth` is the one a full sort would put there, every element before it is
+/// not after it and every element after it is not before it (introselect: quick select with a median-of-three pivot,
+/// heap select past a depth limit; O(n) on average, no allocation). Not stable.
+///
+/// - Param nth: the position to settle; a value at or past the size does nothing.
+/// - Param less: a strict weak ordering.
+template <typename T, typename Less> void NthElement(Span<T> items, usize nth, Less less)
+{
+    T* p = items.Data();
+    usize lo = 0;
+    usize hi = items.Size();
+    if (nth >= hi)
+    {
+        return;
+    }
+    int depth = 0;
+    for (usize m = hi; m > 1; m >>= 1)
+    {
+        depth += 2;
+    }
+    while (hi - lo > 16)
+    {
+        if (depth-- == 0)
+        {
+            // Degraded: sort the rest of the range, which settles `nth` too (n log n, rare).
+            detail_sort::HeapSortItems(p + lo, hi - lo, less);
+            return;
+        }
+        const usize n = hi - lo;
+        T* q = p + lo;
+        const usize mid = n / 2;
+        if (less(q[mid], q[0]))
+        {
+            detail_sort::SwapItems(q[mid], q[0]);
+        }
+        if (less(q[n - 1], q[0]))
+        {
+            detail_sort::SwapItems(q[n - 1], q[0]);
+        }
+        if (less(q[n - 1], q[mid]))
+        {
+            detail_sort::SwapItems(q[n - 1], q[mid]);
+        }
+        detail_sort::SwapItems(q[mid], q[n - 1]);
+        usize store = 0;
+        for (usize j = 0; j + 1 < n; ++j)
+        {
+            if (less(q[j], q[n - 1]))
+            {
+                detail_sort::SwapItems(q[store++], q[j]);
+            }
+        }
+        detail_sort::SwapItems(q[store], q[n - 1]);
+        const usize pivot = lo + store;
+        if (pivot == nth)
+        {
+            return;
+        }
+        if (nth < pivot)
+        {
+            hi = pivot;
+        }
+        else
+        {
+            lo = pivot + 1;
+        }
+    }
+    detail_sort::InsertionSort(p + lo, hi - lo, less);
+}
+
+/// Sorts the first `count` elements of the span into the order a full sort would give them, leaving the rest in no
+/// particular order: "keep the best `count`". O(n + count log count) on average.
+///
+/// - Param count: how many to settle; at or past the size, the whole span is sorted.
+/// - Param less: a strict weak ordering.
+template <typename T, typename Less> void PartialSort(Span<T> items, usize count, Less less)
+{
+    if (count >= items.Size())
+    {
+        Sort(items, less);
+        return;
+    }
+    if (count == 0)
+    {
+        return;
+    }
+    NthElement(items, count - 1, less);
+    Sort(Span<T>(items.Data(), count - 1), less);
 }
 
 }  // namespace engine_placeholder

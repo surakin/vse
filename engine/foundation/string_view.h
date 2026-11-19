@@ -45,6 +45,15 @@ public:
     /// - Param index: byte position; must be less than `Length()` (not checked).
     char operator[](usize index) const { return data_[index]; }
 
+    /// The first byte, for a range-for over the bytes (`for (char c : view)`); bytes, not code points.
+    ///
+    /// - Internal: the range-for protocol.
+    const char* begin() const { return data_; }
+    /// The end of a range-for over the bytes.
+    ///
+    /// - Internal: the range-for protocol.
+    const char* end() const { return data_ + length_; }
+
     /// Returns true if both views have the same length and bytes.
     bool operator==(const StringView& other) const
     {

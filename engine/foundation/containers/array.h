@@ -41,12 +41,20 @@ template <typename T, usize N> struct Array
     static constexpr usize Size() { return N; }
 
     /// Returns a pointer to the first element, for range-for.
+    ///
+    /// - Internal: the range-for protocol.
     T* begin() { return items; }
     /// Returns a pointer one past the last element, for range-for.
+    ///
+    /// - Internal: the range-for protocol.
     T* end() { return items + N; }
     /// Returns a const pointer to the first element, for range-for.
+    ///
+    /// - Internal: the range-for protocol.
     const T* begin() const { return items; }
     /// Returns a const pointer one past the last element, for range-for.
+    ///
+    /// - Internal: the range-for protocol.
     const T* end() const { return items + N; }
 };
 

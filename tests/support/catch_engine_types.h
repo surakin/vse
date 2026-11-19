@@ -45,6 +45,12 @@ template <> struct StringMaker<engine_placeholder::StringView>
     }
 };
 
+// A String has begin()/end() (container audit Day 3), which makes Catch2 see a range of chars; it prints as text
+// through the StringMaker below instead.
+template <typename A> struct is_range<engine_placeholder::String<A>> : std::false_type
+{
+};
+
 template <typename A> struct StringMaker<engine_placeholder::String<A>>
 {
     static std::string convert(const engine_placeholder::String<A>& text)

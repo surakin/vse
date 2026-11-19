@@ -16,6 +16,8 @@ teaches the ones you will use every day: `Array`, `Vector`, `HashMap`, `UniquePt
 | a list that grows and shrinks | `Vector<T>` | heap by default; `Vector<T, ArenaAllocator>` for frame data |
 | find a value by key | `HashMap<K, V, Allocator>` | needs `Hash<K>` and `==`; iteration order is unspecified |
 | know whether a key is in a set | `HashSet<K, Allocator>` | the map's table with no value |
+| a queue: push at one end, pop at the other | `Deque<T>` | a growable ring; never `Vector::Remove(0)` |
+| always take the best next item | `BinaryHeap<T, Less>` | O(log n) push and pop; add a sequence number to break ties |
 | one object with one owner | `UniquePtr<T>` | `MakeUnique<T>(args...)` |
 | one object with several owners | `SharedPtr<T>` | `MakeShared<T>(args...)`; reference counted |
 | look at a run of items without owning them | `Span<T>` | pointer + length, bounds checked |
@@ -30,6 +32,9 @@ teaches the ones you will use every day: `Array`, `Vector`, `HashMap`, `UniquePt
 - `engine/foundation/containers/hash_map.h`
 - `engine/foundation/containers/hash_set.h`
 - `engine/foundation/containers/hash.h`
+- `engine/foundation/containers/deque.h`
+- `engine/foundation/containers/binary_heap.h`
+- `engine/foundation/algorithm.h`
 
 ## API reference
 
@@ -41,6 +46,8 @@ Full reference: [Foundation: Containers](../reference/foundation-containers.md).
 - [[UniquePtr]] — owns one object (move-only, optional deleter)
 - [[SharedPtr]] — shares one object by reference count (atomic or plain)
 - [[HashMap]] — open-addressing hash map
+- [[Deque]] — a growable ring, pushed and popped at both ends
+- [[BinaryHeap]] — a priority queue
 - [[HashSet]] — the map's table with no value: a set of keys
 - `Hash<K>`, `Fnv1a64`, [[Fnv1a64Builder]], [[HashCombine]] — the key hashes and the engine's one byte hash (`containers/hash.h`)
 - [[Span]] — a non-owning view of consecutive elements (`ByteSpan` for bytes), see [Standard types](foundation-types.md)
@@ -48,8 +55,12 @@ Full reference: [Foundation: Containers](../reference/foundation-containers.md).
 ### Sorting, searching and copying spans
 
 `algorithm.h` holds the small algorithms the engine uses instead of `<algorithm>`: `Min`, `Max`, `Clamp`, `IndexOf(span, value)`,
-`Sort(span, less)` (in place, no allocation, not stable) and `StableSort(span, less)` (keeps equal elements in order; allocates a
-scratch buffer). `Append(vector, span)` and `Assign(vector, span)` copy a span into a vector, growing it once.
+`Sort(span, less)` (in place, no allocation, not stable) and `StableSort(span, less)` (keeps equal elements in order, any movable type;
+allocates a scratch buffer); both also take a `Vector` directly (`Sort(vector, less)`). On a sorted span, `LowerBound`, `UpperBound` and
+`BinarySearch` find a value in O(log n): use a sorted `Vector` and these instead of a scan when the order matters (a `HashMap` has no
+order). To keep the best `k` without sorting the rest, `PartialSort(span, k, less)` sorts the first `k`, and `NthElement(span, n, less)`
+settles one position. `Append(vector, span)` (or `vector.Append(items)`) and `Assign(vector, span)` copy a span into a vector, growing it
+once; `vector.SwapRemove(i)` removes in O(1) when the order of the rest does not matter.
 
 ### Array and Vector: which one
 

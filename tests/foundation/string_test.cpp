@@ -108,3 +108,39 @@ TEST_CASE("StringView: LastIndexOf, StartsWith, EndsWith and open-ended Substrin
     REQUIRE(a.Substring(2) == StringView("b/c"));
     REQUIRE(a.Substring(a.Length()).Empty());
 }
+
+// Container audit series Day 3: bulk append, Reserve, Clear and range-for over the bytes.
+TEST_CASE("String: bulk append, Reserve, Clear and range-for", "[string]")
+{
+    using namespace engine_placeholder;
+    String<HeapAllocator> s(HeapAllocator::Default());
+    s.Reserve(1000);
+    for (int i = 0; i < 100; ++i)
+    {
+        s.Append(StringView("0123456789"));
+    }
+    CHECK(s.Length() == 1000);
+    CHECK(s.CStr()[1000] == '\0');
+    usize digits = 0;
+    for (char c : s)
+    {
+        digits += c >= '0' && c <= '9' ? 1 : 0;
+    }
+    CHECK(digits == 1000);
+    usize in_view = 0;
+    for (char c : StringView("abc"))
+    {
+        in_view += static_cast<usize>(c - 'a');
+    }
+    CHECK(in_view == 3);
+    s.Clear();
+    CHECK(s.Length() == 0);
+    CHECK(s.View() == StringView(""));
+    s.AppendRawBytes("xy", 2);
+    CHECK(s == StringView("xy"));
+    s.Append(s.View());  // a view of itself
+    CHECK(s == StringView("xyxy"));
+    StringBuilder<HeapAllocator> b(HeapAllocator::Default());
+    b.Reserve(64).Append(StringView("n=")).AppendInt(42);
+    CHECK(b.View() == StringView("n=42"));
+}
