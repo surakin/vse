@@ -225,6 +225,7 @@ testopt:shaders_portability                     5   # only with slangc
 test:input_probe_runs_wayland                    15
 test:input_probe_runs_x11                        15
 testopt:input_probe_runs_cocoa                  21   # only on macOS (the Mac line registered it as required: unused on Linux)
+testopt:input_probe_runs_win32                  15   # only on Windows (562bebac registered it there; unused on Linux)
 test:renderer_demo_screenshot                   5
 test:renderer_demo_gbuffer_layers               5
 test:renderer_demo_device_loss_screenshot       5
