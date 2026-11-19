@@ -1,0 +1,3 @@
+plain|a_tests|/build/tests/a/a_tests
+asan|a_tests_asan|/build/tests/a/a_tests_asan
+tsan|a_tests_tsan|/build/tests/a/a_tests_tsan

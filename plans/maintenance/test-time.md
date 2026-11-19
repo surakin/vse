@@ -42,7 +42,7 @@ A typical day's scoped run goes from about 15 minutes to a few minutes on Linux,
 - skipping a test silently;
 - a different test framework.
 
-## Decisions proposed (the user confirms before Day 1)
+## Decisions (proposed; confirmed by the user, 2026-11-19: "Confirm, start Day 1")
 
 1. **The `--affected` base:**
    - the commit recorded when the day starts (`scripts/test-phase.sh --start-day` writes it to `.git/test-phase-base`);

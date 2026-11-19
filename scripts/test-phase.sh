@@ -25,10 +25,10 @@
 #                                  so makes a desktop crash reporter notify); left out of every run but --all
 #   --display / --no-display       include or leave out the window tests (label `display`); by default left out of
 #                                  --current/--affected unless phase 1 is selected or engine/foundation changed
-#   --jobs N                       parallel tests (default: the number of CPUs)
+#   --jobs N                       parallel build jobs and tests (default: the number of CPUs; CMAKE_BUILD_PARALLEL_LEVEL, if set, wins for the build)
 #   --build-dir DIR                the CMake build directory (default: build; on Windows build-msvc, the windows-msvc preset's; on
 #                                  macOS build-macos, the macos-clang preset's)
-#   --no-build                     do not build first
+#   --no-build                     do not build first (the build makes only the chosen flavors' targets, engine_tests_<flavor>)
 #   --dry-run                      print what would run and stop
 #   --since REF                    base commit for --affected
 #   --diff-from-file FILE          read the changed paths from FILE (one per line) instead of git; for tests
@@ -285,8 +285,24 @@ if [ -n "$reasons" ] && [ "$mode" = affected ]; then
     echo "test-phase: running everything because of:$reasons (the build starts now; --dry-run prints this without building)"
 fi
 # Tests are registered when their executable is built, so build before counting (a dry run counts the tree as built).
+# Only the chosen flavors' targets are built (cmake/EngineFlavorTargets.cmake), in parallel: --jobs build jobs, unless
+# CMAKE_BUILD_PARALLEL_LEVEL is set, which cmake --build reads itself.
+case "$flavor" in
+    all) build_targets=(engine_tests_plain engine_tests_asan); [ "$platform" = windows ] || build_targets+=(engine_tests_tsan) ;;
+    *) build_targets=("engine_tests_$flavor") ;;
+esac
+build_parallel=()
+[ -n "${CMAKE_BUILD_PARALLEL_LEVEL:-}" ] || build_parallel=(--parallel "$jobs")
+# The build step as words, for the run and for the dry run's report (tests/test_phase_script checks it).
+build_plan="${build_parallel[*]+${build_parallel[*]} }--target ${build_targets[*]}"
 if [ "$dry" = 0 ] && [ "$do_build" = 1 ]; then
-    cmake --build "$build" || { echo "test-phase: the build failed; nothing ran" >&2; exit 1; }
+    # A build system generated before the flavor targets existed has no rule for them until CMake runs again (a tree configured
+    # from an older checkout keeps its engine_flavor_targets.txt, so the generated files are what is asked).
+    if ! grep -qs "engine_tests_plain" "$build/Makefile" "$build/build.ninja"; then
+        cmake "$build" > /dev/null || { echo "test-phase: re-running CMake in $build failed; nothing ran" >&2; exit 1; }
+    fi
+    cmake --build "$build" ${build_parallel[@]+"${build_parallel[@]}"} --target "${build_targets[@]}" ||
+        { echo "test-phase: the build failed; nothing ran" >&2; exit 1; }
 fi
 
 # --affected adds each side phase this run would select tests of (the Mac builds phase 21's, the Linux machine does not), unless already
@@ -330,6 +346,7 @@ if [ "$picked" -eq 0 ]; then
     exit 1
 fi
 if [ "$dry" = 1 ]; then
+    echo "would build: cmake --build $build $build_plan"
     echo "would run $picked of $total tests ($summary)"
     exit 0
 fi

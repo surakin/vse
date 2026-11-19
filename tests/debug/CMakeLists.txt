@@ -125,7 +125,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   foreach(binary IN LISTS _no_network_binaries)
     add_test(NAME debug_no_network_${binary}
       COMMAND ${CMAKE_COMMAND} -DBINARY=$<TARGET_FILE:${binary}> -DDUMP_TOOL=${_import_dump_tool} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network_windows.cmake)
-    set_tests_properties(debug_no_network_${binary} PROPERTIES LABELS "debug" SKIP_REGULAR_EXPRESSION "no import dump tool found")
+    engine_flavor_label(${binary} labels debug)  # a sanitized binary's check runs with its flavor, which builds it
+    set_tests_properties(debug_no_network_${binary} PROPERTIES LABELS "${labels}" SKIP_REGULAR_EXPRESSION "no import dump tool found")
     engine_label_tests(debug_no_network_${binary})
   endforeach()
   foreach(case "clean|dumpbin_clean.txt" "planted_library|dumpbin_with_winhttp.txt" "planted_delay_function|dumpbin_delay_function.txt")
@@ -221,7 +222,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   foreach(binary debug_tests debug_tests_asan debug_tests_tsan debug_checks_off_tests crash_extract)
     add_test(NAME debug_no_network_${binary}
       COMMAND ${CMAKE_COMMAND} -DBINARY=$<TARGET_FILE:${binary}> -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network_macos.cmake)
-    set_tests_properties(debug_no_network_${binary} PROPERTIES LABELS "debug" SKIP_REGULAR_EXPRESSION "otool or nm not found")
+    engine_flavor_label(${binary} labels debug)  # a sanitized binary's check runs with its flavor, which builds it
+    set_tests_properties(debug_no_network_${binary} PROPERTIES LABELS "${labels}" SKIP_REGULAR_EXPRESSION "otool or nm not found")
     engine_label_tests(debug_no_network_${binary})
   endforeach()
   foreach(case "clean|otool_nm_clean.txt" "planted_library|otool_nm_with_curl.txt" "planted_class|otool_nm_with_nsurlsession.txt")
@@ -308,6 +310,7 @@ if(ENGINE_STRIP_TOOL)
   add_custom_command(TARGET debug_tests POST_BUILD
     COMMAND ${ENGINE_STRIP_TOOL} -o $<TARGET_FILE:debug_tests>.stripped $<TARGET_FILE:debug_tests>
     COMMENT "Stripping a copy of debug_tests for the stripped-binary trace test")
+  set_property(TARGET debug_tests APPEND PROPERTY ENGINE_FLAVOR_EXTRA_FILES "$<TARGET_FILE:debug_tests>.stripped")
   add_test(NAME debug_stack_trace_stripped
     COMMAND $<TARGET_FILE:debug_tests>.stripped "In a stripped binary the frames fall back to module and offset")
   set_tests_properties(debug_stack_trace_stripped PROPERTIES
@@ -321,7 +324,8 @@ endif()
 function(engine_no_network_test name binary_target)
   add_test(NAME debug_no_network_${name}
     COMMAND ${CMAKE_COMMAND} -DBINARY=$<TARGET_FILE:${binary_target}> -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network.cmake)
-  set_tests_properties(debug_no_network_${name} PROPERTIES LABELS "debug" SKIP_REGULAR_EXPRESSION "readelf not found")
+  engine_flavor_label(${binary_target} labels debug)  # a sanitized binary's check runs with its flavor, which builds it
+  set_tests_properties(debug_no_network_${name} PROPERTIES LABELS "${labels}" SKIP_REGULAR_EXPRESSION "readelf not found")
   engine_label_tests(debug_no_network_${name})
 endfunction()
 engine_no_network_test(debug_tests debug_tests)

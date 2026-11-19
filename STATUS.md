@@ -125,7 +125,15 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
     - Series review: 4 findings (1 fixed, 2 declined, 1 no change). Windows and macOS wait.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
-**Shorter test runs: planned (2026-11-19)** ([plans/maintenance/test-time.md](plans/maintenance/test-time.md), five days, not started). Measured: a scoped `--affected --flavor all` run took 902 s. About 450 s was the build: no `-j`, and every flavor is built whatever `--flavor` says. The other 452 s was ctest, set by `audio_bench_large` alone (450 s). `--affected` widened to every phase because it diffs against the `CURRENT_PHASE` commit. The plan: a parallel per-flavor build, a day base for `--affected`, a `soak` label, short forms of the long loops, and faster gates. The proposed decisions wait for the user's confirmation before Day 1.
+**Shorter test runs: Day 1 of 5 done (2026-11-19, Linux)** ([plans/maintenance/test-time.md](plans/maintenance/test-time.md); the user confirmed the decisions).
+- **What changed:** `scripts/test-phase.sh` builds only the chosen flavors' targets (`engine_tests_plain`, `_asan`, `_tsan`;
+  `cmake/EngineFlavorTargets.cmake`), and in parallel. Before, it built one job at a time: after touching `gbuffer.h` the build took
+  357 s, against 21 s now for plain.
+- **New check:** `test_phase_script_flavor_targets` checks that every test's programs are built by its flavor's target.
+- **Measured:** Ninja rebuilds about 40% faster than Make, which the Linux tree still uses (switching it is the user's call). sccache helps only clean builds.
+- **Runs:** `--affected` plain: `ran 4264 of 11457 tests (phases: all; ...) in 397 s`, failures all known. It still covers every phase,
+  which Day 2 (the `--affected` day base) fixes.
+- **Next:** Day 2. Day 5 is on the PC and the Mac.
 
 **Unlit materials (2026-11-19, Linux)** ([plans/maintenance/unlit-materials.md](plans/maintenance/unlit-materials.md)). The glTF importer accepts `KHR_materials_unlit` (it refused it) and sets `renderer::kMaterialFlagUnlit` in the material's `flags`; the lighting and point-light passes show such a pixel as its base colour. Found by the user's `.glb` in the model viewer, which now opens and looks right. SPIR-V re-minted here; DXIL and Metal wait for the PC and the Mac.
 

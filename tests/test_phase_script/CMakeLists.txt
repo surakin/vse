@@ -172,4 +172,39 @@ foreach(phase IN LISTS _partition_phases)
   list(APPEND PHASE_SCRIPT_TESTS test_phase_script_flavors_partition_${phase})
 endforeach()
 
+# Every test's programs are built by its flavor's build target, which is all scripts/test-phase.sh builds (maintenance "shorter
+# test runs", Day 1). The planted listing has a plain check of a tsan binary and a program no target makes; both are named.
+add_test(NAME test_phase_script_flavor_targets
+  COMMAND ${CMAKE_COMMAND} -DBUILD=${CMAKE_BINARY_DIR} -DCTEST=${CMAKE_CTEST_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/flavor_targets.cmake)
+add_test(NAME test_phase_script_flavor_targets_planted
+  COMMAND ${CMAKE_COMMAND} -DLISTING=${FIX}/flavor_listing.txt -DTARGETS=${FIX}/flavor_targets.txt -DBUILD=/build
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/flavor_targets.cmake)
+set_tests_properties(test_phase_script_flavor_targets_planted PROPERTIES PASS_REGULAR_EXPRESSION
+  "a check of a tsan binary labelled plain \\(plain\\) runs a_tests_tsan, which engine_tests_plain does not build.*a program no target makes: its program /build/tests/a/forgotten is no target's file")
+list(APPEND PHASE_SCRIPT_TESTS test_phase_script_flavor_targets test_phase_script_flavor_targets_planted)
+
+# The build step builds only the chosen flavors' targets, with --jobs build jobs unless CMAKE_BUILD_PARALLEL_LEVEL is set (the dry run
+# prints the plan; Day 1 of "shorter test runs").
+if(ENGINE_PLATFORM STREQUAL "windows")
+  set(_all_flavor_targets "engine_tests_plain engine_tests_asan")
+else()
+  set(_all_flavor_targets "engine_tests_plain engine_tests_asan engine_tests_tsan")
+endif()
+foreach(case "plain|--flavor;plain;--jobs;7|--parallel 7 --target engine_tests_plain\n"
+             "asan|--flavor;asan;--jobs;3|--parallel 3 --target engine_tests_asan\n"
+             "all|--flavor;all;--jobs;5|--parallel 5 --target ${_all_flavor_targets}\n")
+  string(REPLACE "|" ";" parts "${case}")
+  list(GET parts 0 name)
+  list(SUBLIST parts 1 4 args)
+  list(GET parts 5 expect)
+  add_test(NAME test_phase_script_build_plan_${name}
+    COMMAND ${BASH_PROGRAM} ${TEST_PHASE_SCRIPT} --dry-run --build-dir ${CMAKE_BINARY_DIR} 0 ${args})  # phase 0 has every flavor
+  set_tests_properties(test_phase_script_build_plan_${name} PROPERTIES PASS_REGULAR_EXPRESSION "would build: [^\n]* ${expect}")
+  list(APPEND PHASE_SCRIPT_TESTS test_phase_script_build_plan_${name})
+endforeach()
+add_test(NAME test_phase_script_build_plan_env
+  COMMAND ${CMAKE_COMMAND} -E env CMAKE_BUILD_PARALLEL_LEVEL=2 ${BASH_PROGRAM} ${TEST_PHASE_SCRIPT} --dry-run --build-dir ${CMAKE_BINARY_DIR} 0)
+set_tests_properties(test_phase_script_build_plan_env PROPERTIES PASS_REGULAR_EXPRESSION "would build: cmake --build [^ ]+ --target engine_tests_plain\n")
+list(APPEND PHASE_SCRIPT_TESTS test_phase_script_build_plan_env)
+
 engine_label_tests(${PHASE_SCRIPT_TESTS})

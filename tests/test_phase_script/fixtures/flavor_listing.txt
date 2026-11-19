@@ -1,0 +1,15 @@
+Test project /build
+1: Test command: /build/tests/a/a_tests "case one"
+Labels: a phase5
+  Test #1: case one
+2: Test command: /build/tests/a/a_tests_asan "case one"
+Labels: asan phase5
+  Test #2: case one [asan]
+3: Test command: /usr/bin/cmake -DBINARY=/build/tests/a/a_tests_tsan -P check.cmake
+Labels: debug phase7
+  Test #3: a check of a tsan binary labelled plain
+4: Test command: /build/tests/a/forgotten
+Labels: phase5
+  Test #4: a program no target makes
+
+Total Tests: 4

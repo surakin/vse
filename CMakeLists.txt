@@ -184,6 +184,8 @@ include(cmake/EngineCompilerOptions.cmake)
 # A fast-math flag anywhere stops the configure step (Phase 25 Day 386; the physics step must be bit-identical on every machine).
 include(cmake/EngineFpCheck.cmake)
 engine_fp_check_flags()
+# One build target per sanitizer flavor, which scripts/test-phase.sh builds (maintenance "shorter test runs", Day 1).
+include(cmake/EngineFlavorTargets.cmake)
 
 # Debug checks (engine/foundation/log/assert.h): ENGINE_VERIFY and ENGINE_UNREACHABLE check, and ENGINE_CHECK_SLOW
 # evaluates, only in builds without NDEBUG (the Debug configuration) unless forced on here. ENGINE_ASSERT and
@@ -567,3 +569,6 @@ add_subdirectory(tests/model_viewer)  # the model viewer's camera (maintenance, 
 add_subdirectory(tests/docgen)
 add_subdirectory(tests/phase_labels)
 add_subdirectory(tests/test_phase_script)
+
+# After every directory: the per-flavor build targets (cmake/EngineFlavorTargets.cmake).
+engine_add_flavor_targets()

@@ -144,6 +144,28 @@ Every run ends with how much it ran, for example `ran 35 of 1874 tests (phases: 
 and says so loudly when it left tests out. Quote that line when reporting a reduced run; "all tests pass" means the
 `--all --flavor all` line. `--help` lists the options. A scoped run with `--flavor asan` or `tsan` needs ctest 3.29 or newer (it combines two label filters); the script stops with a message on an older one.
 
+**The build step builds only the flavors the run tests, in parallel.** Each flavor has one build target, `engine_tests_plain`,
+`engine_tests_asan` and `engine_tests_tsan` (`cmake/EngineFlavorTargets.cmake`). A plain run builds `engine_tests_plain` and compiles
+no `_asan` or `_tsan` object; `--flavor all` builds all three. The build uses `--jobs` jobs (default: the number of CPUs), unless
+`CMAKE_BUILD_PARALLEL_LEVEL` is set, which `cmake --build` reads instead.
+- A target belongs to a flavor by its name: `asan` or `tsan` as a word of it (`ecs_tests_asan`, `tsan_canary`); everything else is plain.
+- A test belongs to a flavor by its `asan` or `tsan` label. A test that inspects a sanitized program without being one (the no-network
+  checks of `debug_tests_asan`) takes that program's flavor through `engine_flavor_label`.
+- A sanitized test that runs a plain program adds the program to its flavor with `engine_flavor_needs(<flavor> <target>)`.
+- A program a target's POST_BUILD step makes beside it (the stripped copy of `debug_tests`) is listed in the target's
+  `ENGINE_FLAVOR_EXTRA_FILES` property.
+- The ctest `test_phase_script_flavor_targets` checks that every test's programs are built by its flavor's target. It fails naming the
+  test, so a test cannot quietly run a stale binary.
+- `--dry-run` prints the build step it would run (`would build: cmake --build build --parallel 32 --target engine_tests_plain`).
+
+Measured on 2026-11-19 (Linux, 32 CPUs, Unix Makefiles), after touching `engine/renderer/gbuffer.h`:
+
+| Build | Time |
+|---|---|
+| every flavor, one job (what the script did before) | 357 s |
+| every flavor, `-j32` | 44.5 s |
+| plain only, `-j32` | 21 s |
+
 `--affected` reads the paths changed since the last commit that changed `CURRENT_PHASE` (the commits of the phase and the
 working tree, plus new files) and adds the phases listed for each directory in `tests/module_map.txt`: `engine/rhi` selects
 the RHI and renderer tests and the docs checks, `engine/foundation` almost everything. It runs everything when the root or a module's
