@@ -4,6 +4,7 @@
 // neighbor keeps running.
 #include <catch2/catch_test_macros.hpp>
 
+#include "soak.h"
 #include "build_defs.h"
 #include "cstr/cstr.h"
 #include "ecs/transform.h"
@@ -55,8 +56,9 @@ const char* const kAbsorbed[] = {"stringbomb", "flooder", "waiter_spam", "task_f
 
 }  // namespace
 
-TEST_CASE("Hostile scripts: every kind of misbehavior at once for a minute, and the world goes on",
-          "[script][hostile][stress]")
+TEST_CASE(
+    "Hostile scripts: every kind of misbehavior at once, for ten seconds (a minute in soak), and the world goes on",
+    "[script][hostile][stress]")
 {
     storage::ComponentRegistry registry;
     REQUIRE(storage::RegisterBuiltinComponents(&registry).Ok());
@@ -112,11 +114,10 @@ TEST_CASE("Hostile scripts: every kind of misbehavior at once for a minute, and 
     scheduler_config.participants = 16;
     scheduler_config.pin = false;
     jobs::Scheduler scheduler(scheduler_config);
-#if ENGINE_SANITIZER_ADDRESS || ENGINE_SANITIZER_THREAD
-    const u64 limit_ns = 60ull * 1000000000ull;
-#else
-    const u64 limit_ns = 10ull * 1000000000ull;
-#endif
+    // Ten seconds in the ordinary run, every flavor; the soak form ("... [soak]", ENGINE_TEST_SOAK=1) runs the full
+    // minute. Ten seconds is hundreds of ticks plain and dozens sanitized, so every behavior misbehaves many times over
+    // (the checks below need 3).
+    const u64 limit_ns = static_cast<u64>(test_support::SoakCount(10, 60)) * 1000000000ull;
     const u64 start = os::MonotonicTimeNanos();
     u64 ticks = 0;
     while (os::MonotonicTimeNanos() - start < limit_ns)

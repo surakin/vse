@@ -44,6 +44,9 @@ function(engine_add_script_tests target script_lib foundation_lib asset_lib suff
     engine_asan_runtime(${target})
   endif()
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
+  # The hostile-script test's soak form: a minute instead of ten seconds (tests/support/soak.h), in every flavor.
+  engine_soak_catch_test(${target} "Hostile scripts: every kind of misbehavior at once, for ten seconds (a minute in soak), and the world goes on"
+    SOURCE tests/script/script_hostile_test.cpp SUFFIX "${suffix}" LABELS ${label})
 endfunction()
 
 engine_add_script_tests(script_tests script foundation asset "" "script")

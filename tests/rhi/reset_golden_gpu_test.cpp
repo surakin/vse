@@ -10,6 +10,7 @@
 #include "os/os.h"
 #include "reset_rig.h"
 #include "rhi/rhi_log.h"
+#include "soak.h"
 #include "build_defs.h"
 
 #if ENGINE_PLATFORM_MACOS
@@ -113,7 +114,11 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         rig.host.GetDevice()->Quiesce();
         rhi::ResourceCounts first = rig.host.GetDevice()->Resources();
         const usize owners = rig.registry.Count();
-        const int iterations = Sanitized() ? 20 : 100;
+        // 20 resets in the ordinary run (and always under a sanitizer); the soak form ("... [soak]",
+        // ENGINE_TEST_SOAK=1) runs 100. Every reset compares the device's object counts and the registry, so a
+        // per-reset leak of an object fails at the second reset either way; the memory drift between resets 5-9 and the
+        // last five is what the longer run sees more finely.
+        const int iterations = Sanitized() ? 20 : static_cast<int>(test_support::SoakCount(20, 100));
         // Warm the loop up before the baseline: driver caches and allocator pools settle in the first iterations.
         // Memory is compared by its lowest reading over resets 5 to 9 and over the last five: a leak per reset raises
         // the low point. On Windows (AMD Radeon 860M, Day 161) the process holds about 130 MiB more after some resets

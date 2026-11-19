@@ -125,7 +125,7 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
     - Series review: 4 findings (1 fixed, 2 declined, 1 no change). Windows and macOS wait.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
-**Shorter test runs: Days 1-3 of 5 done (2026-11-19, Linux)** ([plans/maintenance/test-time.md](plans/maintenance/test-time.md); the user confirmed the decisions).
+**Shorter test runs: Days 1-4 of 5 done (2026-11-19, Linux)** ([plans/maintenance/test-time.md](plans/maintenance/test-time.md); the user confirmed the decisions).
 - **Day 1:** `scripts/test-phase.sh` builds only the chosen flavors' targets (`engine_tests_plain`, `_asan`, `_tsan`), and in
   parallel. After touching `gbuffer.h` that is 21 s for plain, against 357 s before. `test_phase_script_flavor_targets` checks that every
   test's programs are built by its flavor's target. Ninja and sccache are measured: Ninja rebuilds about 40% faster, and switching the
@@ -137,7 +137,12 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   the script warns about any unlabelled test over 30 s (60 s for a sanitizer test).
   - Run: every phase plain took 117 s (`ran 4270 of 11466 tests (...; soak: excluded)`), against 397 s on Day 1.
   - The warning lists 13 tests, Day 4's work.
-- **Next:** Day 4 (short forms of the long loops, faster gates). Day 5 is on the PC and the Mac.
+- **Day 4:** measured alone, most GPU tests on the warning's list take 1-4 s. They were long only while sharing the GPU, so the day was
+  re-planned.
+  - Short forms (`tests/support/soak.h`): the reset loop runs 20 resets, 100 in soak; the hostile scripts run ten seconds, a minute in soak.
+  - Gates: `test_phase_labels` 43 s to 3.2 s, `platform_neutral_check` 28.5 s to 6.1 s, `file_access_check` 17.3 s to 8.75 s.
+  - The plain suite's wall time is now the window tests' serial `display` chain (115-205 s); that is the next lever.
+- **Next:** Day 5 is on the PC and the Mac.
 
 **Unlit materials (2026-11-19, Linux)** ([plans/maintenance/unlit-materials.md](plans/maintenance/unlit-materials.md)). The glTF importer accepts `KHR_materials_unlit` (it refused it) and sets `renderer::kMaterialFlagUnlit` in the material's `flags`; the lighting and point-light passes show such a pixel as its base colour. Found by the user's `.glb` in the model viewer, which now opens and looks right. SPIR-V re-minted here; DXIL and Metal wait for the PC and the Mac.
 

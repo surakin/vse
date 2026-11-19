@@ -95,6 +95,13 @@ foreach(f IN LISTS files)
     endif()
     math(EXPR i "${i}+1")
   endforeach()
+  # A file with no raw line that could hit (a call name before `(`, a stream name) cannot hit after its comments and strings are
+  # blanked either, so it is not walked (maintenance "shorter test runs", Day 4: the line walk in CMake took 17 s). Skipping it marks
+  # no allow entry used, as walking it would not.
+  file(STRINGS "${ROOT}/${f}" maybe REGEX "(${names})[ \t]*\\(|${stream_re}" LIMIT_COUNT 1 ENCODING UTF-8)  # whole lines, not split at non-ASCII bytes
+  if(NOT maybe)
+    continue()
+  endif()
   read_lines("${ROOT}/${f}" lines)
   set(n 0)
   set(in_block FALSE)

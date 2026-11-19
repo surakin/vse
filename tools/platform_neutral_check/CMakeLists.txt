@@ -28,3 +28,11 @@ set_tests_properties(platform_neutral_check_raw_defines PROPERTIES
   PASS_REGULAR_EXPRESSION "engine/raw.cpp:1: a raw compiler or system macro \\(_WIN32\\).*engine/raw.cpp:3: a raw compiler or system macro \\(__linux__\\).*engine/raw.cpp:6: a raw compiler or system macro \\(__has_feature\\).*3 violation"
   FAIL_REGULAR_EXPRESSION "engine/raw.cpp:2:")
 engine_label_tests(platform_neutral_check_raw_defines)
+
+# A violation behind a leading block comment is still found: the token filter that lets a rule skip a file reads the raw line, and the
+# comment is stripped before the rule's anchored pattern is tried (maintenance "shorter test runs", Day 4). Line 5 has a non-ASCII
+# character between the parts the Windows rule's filter needs, which the filter reads as one line (ENCODING UTF-8).
+platform_neutral_test(platform_neutral_check_comment_prefix ${PLATFORM_NEUTRAL_FIXTURES}/comment_prefix)
+set_tests_properties(platform_neutral_check_comment_prefix PROPERTIES
+  PASS_REGULAR_EXPRESSION "engine/other/hidden.cpp:2: includes ft2build.h.*engine/other/hidden.cpp:5: a Windows SDK header outside.*engine/other/hidden.cpp:3: a raw compiler or system macro \\(__linux__\\).*3 violation")
+engine_label_tests(platform_neutral_check_comment_prefix)

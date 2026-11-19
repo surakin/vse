@@ -134,6 +134,14 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
     PROPERTIES LABELS "${label}" ENVIRONMENT "${env}")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "[window]${spec},[x11]${spec},[wayland]${spec}"
     PROPERTIES LABELS "${label};display" RESOURCE_LOCK display ENVIRONMENT "${env}")
+  # The reset loop's soak form: 100 resets instead of 20 (tests/support/soak.h); a sanitized build runs 20 either way, so only the
+  # plain flavor has one. Its pipeline cache is its own, so it never shares a directory with the ordinary run.
+  if(label STREQUAL "rhi")
+    set(soak_env "${env}")
+    list(TRANSFORM soak_env REPLACE "^ENGINE_RHI_CACHE_DIR=(.*)$" "ENGINE_RHI_CACHE_DIR=\\1-soak")
+    engine_soak_catch_test(${target} "Resets in a loop on a real device leave the counts, memory and descriptors where they were"
+      SOURCE tests/rhi/reset_golden_gpu_test.cpp ENVIRONMENT ${soak_env})
+  endif()
   # The Metal pipeline archive's tests (tag [archive], Phase 21 Day 309): Metal stops inside a binary archive while its
   # shader validation is on, and the device then leaves the archive off, so these run with the API validation alone.
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -175,11 +183,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # Every Metal object the backend's calls autorelease is drained by a pool of its own (Phase 21 Day 309): a caller
   # with no pool (a job thread, a C++ test) would otherwise keep it, and a released object autoreleases its device, so
   # a hundred resets held about 37 MiB. Only the test's own thread counts (tests/rhi/macos/run_autorelease_pools.cmake).
-  # Without Metal's validation layer this run also keeps the loop's memory check, which that layer's own growth defeats.
+  # Without Metal's validation layer this run also keeps the loop's memory check, which that layer's own growth defeats; it runs the
+  # loop's full 100 resets (ENGINE_TEST_SOAK=1, tests/support/soak.h), the only run of that check on Metal (shorter test runs, Day 4).
   add_test(NAME metal_autorelease_pools COMMAND ${CMAKE_COMMAND} -DPROGRAM=$<TARGET_FILE:rhi_tests>
            -P ${CMAKE_CURRENT_SOURCE_DIR}/macos/run_autorelease_pools.cmake)
   set_tests_properties(metal_autorelease_pools PROPERTIES
-    ENVIRONMENT "OBJC_DEBUG_MISSING_POOLS=YES;ENGINE_RHI_PRINT_TEST_THREAD=1;ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/metal_autorelease_pools"
+    ENVIRONMENT "OBJC_DEBUG_MISSING_POOLS=YES;ENGINE_RHI_PRINT_TEST_THREAD=1;ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/metal_autorelease_pools;ENGINE_TEST_SOAK=1"
     PASS_REGULAR_EXPRESSION "no Metal object autoreleased without a pool")
   engine_label_tests(metal_autorelease_pools)
 endif()

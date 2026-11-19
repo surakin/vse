@@ -138,7 +138,14 @@ without the label. It reads the run's own JUnit file (`<build>/Testing/test-phas
 depend on the load. For a test it lists:
 - if its length is its point (a benchmark, a million-step stress run), label it `soak`;
 - if it is long only because of its count (a loop of resets, a sweep of failure points), give it a short form for the ordinary run and
-  register the full count as a second, `soak`-labelled test. Both run the same checks. See "Stress tests and replaying a failing seed".
+  register the full count as a second, `soak`-labelled test. Both run the same checks. In the test, take the count from
+  `test_support::SoakCount(short, full)` (`tests/support/soak.h`, which reads `ENGINE_TEST_SOAK=1`). In its directory's CMake, register
+  the soak form with `engine_soak_catch_test(<target> "<case name>" SOURCE <file> [SUFFIX " [asan]"] [LABELS asan] [ENVIRONMENT ...])`,
+  which runs that one case as `<case name> [soak]`. Today the reset loop (20 resets, 100 in soak) and the hostile-script run (ten
+  seconds, a minute in soak) have both forms.
+- **First measure the test alone** (`ctest -j1 -R ...`): a test that is long only in a full run is waiting for the GPU or a lock, and a
+  short form saves nothing. On 2026-11-19 most GPU tests on the warning's list took 1-4 s alone and 30-90 s beside dozens of others.
+  The plain suite's wall time is set by the window tests, which hold the `display` lock and run one at a time (125 of them, 115 to 205 s).
 
 #### The runner
 

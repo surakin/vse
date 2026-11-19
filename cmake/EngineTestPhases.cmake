@@ -55,3 +55,32 @@ function(engine_soak_tests)
     set_tests_properties(${name} PROPERTIES LABELS "${labels}")
   endforeach()
 endfunction()
+
+# engine_soak_catch_test(<target> <test case name> SOURCE <repo-relative source file> [SUFFIX <suffix>] [LABELS <label>...]
+#                        [ENVIRONMENT <VAR=value>...])
+# Registers the soak form of one Catch2 test case: the test program run on that case alone with ENGINE_TEST_SOAK=1
+# (tests/support/soak.h), named "<case> [soak]", with the phase of its source file and the `soak` label. The ordinary form, which
+# catch_discover_tests registers, runs the short count. ENVIRONMENT adds to the test's environment (give it what the discovered
+# tests of <target> get, with its own scratch directories). SUFFIX goes after the case name, before " [soak]" (a sanitized
+# target's " [asan]"), and LABELS are added (its flavor). Call it in the directory that defines <target>.
+function(engine_soak_catch_test target name)
+  cmake_parse_arguments(S "" "SOURCE;SUFFIX" "ENVIRONMENT;LABELS" ${ARGN})
+  if(ENGINE_COMPILE_ONLY)
+    return()
+  endif()
+  engine_phase_map_load("${ENGINE_PHASE_MAP}")
+  engine_phase_lookup(file "${S_SOURCE}" phase found)
+  if(NOT found)
+    message(FATAL_ERROR "engine_soak_catch_test: tests/phases.txt has no line for '${S_SOURCE}'")
+  endif()
+  engine_phase_label("${phase}" label)
+  # Catch2's command line reads a comma as a separator and brackets as a tag: escape them so the name selects this one case.
+  string(REPLACE "\\" "\\\\" spec "${name}")
+  string(REPLACE "," "\\," spec "${spec}")
+  string(REPLACE "[" "\\[" spec "${spec}")
+  set(test_name "${name}${S_SUFFIX} [soak]")
+  add_test(NAME "${test_name}" COMMAND ${target} "${spec}")
+  set(labels ${label} soak ${S_LABELS})
+  set(environment ENGINE_TEST_SOAK=1 ${S_ENVIRONMENT})
+  set_tests_properties("${test_name}" PROPERTIES ENVIRONMENT "${environment}" LABELS "${labels}" SKIP_RETURN_CODE 4)
+endfunction()
