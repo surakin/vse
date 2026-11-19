@@ -1,5 +1,7 @@
 #include "storage/memory_store.h"
 
+#include "algorithm.h"
+
 namespace engine_placeholder::storage
 {
 
@@ -17,10 +19,12 @@ MemoryStore::State MemoryStore::State::Clone() const
 {
     State s;
     s.records.Reserve(records.Size());
-    for (usize i = 0; i < records.Size(); ++i)
+    for (const auto& [key, record] : records)
     {
-        s.records.Push(records[i].Clone());
+        s.records.Insert(key, record.Clone());
     }
+    s.order.Append(order);
+    s.order_dirty = order_dirty;
     for (usize i = 0; i < meta.Size(); ++i)
     {
         s.meta.Push(Meta{Text(meta[i].name.View()), Text(meta[i].value.View())});
@@ -28,30 +32,27 @@ MemoryStore::State MemoryStore::State::Clone() const
     return s;
 }
 
+const Vector<EntityKey>& MemoryStore::State::Sorted() const
+{
+    if (order_dirty)
+    {
+        order.Clear();
+        order.Reserve(records.Size());
+        for (const auto& [key, record] : records)
+        {
+            order.Push(key);
+        }
+        Sort(order, [](const EntityKey& x, const EntityKey& y) { return x < y; });
+        order_dirty = false;
+    }
+    return order;
+}
+
 MemoryStore::MemoryStore() = default;
 
 const char* MemoryStore::Name() const
 {
     return "memory";
-}
-
-usize MemoryStore::LowerBound(const State& s, EntityKey key)
-{
-    usize lo = 0;
-    usize hi = s.records.Size();
-    while (lo < hi)
-    {
-        const usize mid = lo + (hi - lo) / 2;
-        if (s.records[mid].key < key)
-        {
-            lo = mid + 1;
-        }
-        else
-        {
-            hi = mid;
-        }
-    }
-    return lo;
 }
 
 const MemoryStore::State& MemoryStore::ViewFor() const
@@ -102,14 +103,14 @@ Status MemoryStore::Put(const EntityRecord& record)
     LockGuard<Mutex> guard(lock_);
     State* s = nullptr;
     ENGINE_TRY(Writable(&s));
-    const usize at = LowerBound(*s, record.key);
-    if (at < s->records.Size() && s->records[at].key == record.key)
+    if (EntityRecord* existing = s->records.Find(record.key))
     {
-        s->records[at] = record.Clone();
+        *existing = record.Clone();
     }
     else
     {
-        s->records.Insert(at, record.Clone());
+        s->records.Insert(record.key, record.Clone());
+        s->order_dirty = true;
     }
     return Status::Success();
 }
@@ -118,16 +119,16 @@ Status MemoryStore::Get(EntityKey key, EntityRecord* out) const
 {
     LockGuard<Mutex> guard(lock_);
     const State& s = ViewFor();
-    const usize at = LowerBound(s, key);
-    if (at >= s.records.Size() || !(s.records[at].key == key))
+    const EntityRecord* r = s.records.Find(key);
+    if (r == nullptr)
     {
         return Status::Make(ErrorCode::NotFound, "no record has this key");
     }
-    if (!s.records[at].HashMatches())
+    if (!r->HashMatches())
     {
         return Status::Make(ErrorCode::Corrupt, "a record does not match its hash");
     }
-    *out = s.records[at].Clone();
+    *out = r->Clone();
     return Status::Success();
 }
 
@@ -136,12 +137,11 @@ Status MemoryStore::Remove(EntityKey key)
     LockGuard<Mutex> guard(lock_);
     State* s = nullptr;
     ENGINE_TRY(Writable(&s));
-    const usize at = LowerBound(*s, key);
-    if (at >= s->records.Size() || !(s->records[at].key == key))
+    if (!s->records.Remove(key))
     {
         return Status::Make(ErrorCode::NotFound, "no record has this key");
     }
-    s->records.Remove(at);
+    s->order_dirty = true;
     return Status::Success();
 }
 
@@ -149,9 +149,11 @@ Status MemoryStore::Scan(const KeyRange& range, RecordVisitor& visitor) const
 {
     LockGuard<Mutex> guard(lock_);  // held across the visits: a visitor must not call the store
     const State& s = ViewFor();
-    for (usize i = LowerBound(s, range.first); i < s.records.Size(); ++i)
+    const Vector<EntityKey>& keys = s.Sorted();
+    for (usize i = LowerBound(keys, range.first, [](const EntityKey& k, const EntityKey& v) { return k < v; });
+         i < keys.Size(); ++i)
     {
-        const EntityRecord& r = s.records[i];
+        const EntityRecord& r = *s.records.Find(keys[i]);
         if (!range.Contains(r.key))
         {
             break;
@@ -261,12 +263,12 @@ Status MemoryStore::SetMetadata(StringView name, StringView value)
 bool MemoryStore::CorruptRecord(EntityKey key)
 {
     LockGuard<Mutex> guard(lock_);
-    const usize at = LowerBound(committed_, key);
-    if (at >= committed_.records.Size() || !(committed_.records[at].key == key))
+    EntityRecord* found = committed_.records.Find(key);
+    if (found == nullptr)
     {
         return false;
     }
-    EntityRecord& r = committed_.records[at];
+    EntityRecord& r = *found;
     if (r.blob.Empty())
     {
         r.hash ^= 1;  // nothing to flip: damage the stored hash instead

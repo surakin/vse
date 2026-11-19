@@ -4,6 +4,7 @@
 //! resource manager of its own that makes the world's meshes and materials resident on that device. Internal to the
 //! module `engine_c`.
 
+#include "containers/dense_map.h"
 #include "asset/cpu_loaders.h"
 #include "asset/gpu_loaders.h"
 #include "asset/resource_manager.h"
@@ -151,13 +152,13 @@ private:
     asset::MountId mount_;
     renderer::SceneFrame frame_;
     UniquePtr<renderer::RenderScene> scene_;
-    Vector<Entry> entries_;
-    Vector<LightEntry> light_entries_;
+    DenseMap<u64, Entry> entries_;             // by entity, dense in slots (container audit Day 10)
+    DenseMap<u64, LightEntry> light_entries_;  // by entity, dense in slots
     Vector<Instance> instances_;
-    renderer::LightId ambient_;  // the environment's ambient term
-    renderer::LightId sun_;      // the default sun of a world with no light and no environment
-    Vector<Mesh> meshes_;
-    Vector<Material> materials_;
+    renderer::LightId ambient_;          // the environment's ambient term
+    renderer::LightId sun_;              // the default sun of a world with no light and no environment
+    DenseMap<u64, Mesh> meshes_;         // by resource id; released in the order they were made
+    DenseMap<u64, Material> materials_;  // by resource id
     Runtime* runtime_ = nullptr;
     u64 label_font_version_ = 0;  // of the font this surface's frame opened
     LiveTextures live_;           // the device side of the host textures the world's slots name

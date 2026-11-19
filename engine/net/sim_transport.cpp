@@ -1,5 +1,6 @@
 #include "net/sim_transport.h"
 
+#include "containers/hash_set.h"
 #include "bytes/byte_reader.h"
 #include "bytes/byte_writer.h"
 #include "cstr/mem_ops.h"
@@ -61,18 +62,13 @@ Vector<byte> CopyOf(ByteSpan bytes)
     return copy;
 }
 
-struct Buffered
-{
-    u32 seq = 0;
-    Vector<byte> data;
-};
-
 struct RecvSpace
 {
-    u32 next = 0;               // ordered: the next expected; unordered: every seq below it has arrived
-    Vector<u32> above;          // unordered: arrived seqs at or above `next`
-    Vector<Buffered> buffered;  // ordered: arrived ahead of `next`
-    bool any = false;           // unreliable kinds: something was delivered
+    u32 next = 0;  // ordered: the next expected; unordered: every seq below it has arrived
+    // By sequence number (container audit Day 10: vectors rescanned from the start after every delivery).
+    HashSet<u32, HeapAllocator> above{HeapAllocator::Default()};  // unordered: arrived at or above `next`
+    HashMap<u32, Vector<byte>, HeapAllocator> buffered{HeapAllocator::Default()};  // ordered: arrived ahead of `next`
+    bool any = false;  // unreliable kinds: something was delivered
     u32 highest = 0;
     u64 mask = 0;  // unreliable: bit i set = seq (highest - 1 - i) seen
 };
@@ -520,28 +516,14 @@ struct SimulatedTransport::Impl
             {
                 break;
             }
-            for (usize i = 0; i < rs.above.Size(); ++i)
+            if (!rs.above.Insert(seq))
             {
-                if (rs.above[i] == seq)
-                {
-                    return;
-                }
+                return;
             }
-            rs.above.Push(seq);
             DeliverMessage(c, channel, rel, payload);
-            for (bool again = true; again;)
+            while (rs.above.Remove(rs.next))
             {
-                again = false;
-                for (usize i = 0; i < rs.above.Size(); ++i)
-                {
-                    if (rs.above[i] == rs.next)
-                    {
-                        rs.above.Remove(i);
-                        ++rs.next;
-                        again = true;
-                        break;
-                    }
-                }
+                ++rs.next;
             }
             break;
         }
@@ -558,36 +540,22 @@ struct SimulatedTransport::Impl
             }
             if (seq != rs.next)
             {
-                for (usize i = 0; i < rs.buffered.Size(); ++i)
+                if (rs.buffered.Contains(seq))
                 {
-                    if (rs.buffered[i].seq == seq)
-                    {
-                        return;
-                    }
+                    return;
                 }
-                Buffered b;
-                b.seq = seq;
-                b.data = CopyOf(payload);
-                rs.buffered.Push(Move(b));
+                rs.buffered.Insert(seq, CopyOf(payload));
                 break;
             }
             DeliverMessage(c, channel, rel, payload);
             ++rs.next;
-            for (bool again = true; again;)
+            for (Vector<byte>* next = rs.buffered.Find(rs.next); next != nullptr; next = rs.buffered.Find(rs.next))
             {
-                again = false;
-                for (usize i = 0; i < rs.buffered.Size(); ++i)
-                {
-                    if (rs.buffered[i].seq == rs.next)
-                    {
-                        DeliverMessage(c, channel, rel,
-                                       ByteSpan(rs.buffered[i].data.Data(), rs.buffered[i].data.Size()));
-                        rs.buffered.Remove(i);
-                        ++rs.next;
-                        again = true;
-                        break;
-                    }
-                }
+                const Vector<byte> message = Move(
+                    *next);  // out of the map first: DeliverMessage runs the receiver's code
+                rs.buffered.Remove(rs.next);
+                DeliverMessage(c, channel, rel, ByteSpan(message.Data(), message.Size()));
+                ++rs.next;  // after the delivery, as before
             }
             break;
         }

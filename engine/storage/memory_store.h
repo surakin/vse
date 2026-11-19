@@ -3,6 +3,7 @@
 //! [[storage::MemoryStore]]: the reference record store (Phase 19 Day 259), correct and simple rather than fast. Every
 //! other store is compared with it.
 
+#include "containers/hash_map.h"
 #include "storage/store.h"
 #include "sync/mutex.h"
 #include "sync/thread.h"
@@ -60,16 +61,20 @@ private:
     };
     struct State
     {
-        Vector<EntityRecord> records;
+        // The records by key (container audit Day 10: a sorted vector, so a put in random key order shifted the tail),
+        // and the keys in order, sorted again only for a scan after a change.
+        HashMap<EntityKey, EntityRecord, HeapAllocator> records{HeapAllocator::Default()};
+        mutable Vector<EntityKey> order;
+        mutable bool order_dirty = false;
         Vector<Meta> meta;
         State Clone() const;
+        const Vector<EntityKey>& Sorted() const;
     };
     // `view_` is the state the calling thread sees: the open batch's for its owner, the committed one for everyone
     // else.
     const State& ViewFor() const;
     Status Writable(State** out);
     bool ShouldFail();
-    static usize LowerBound(const State& s, EntityKey key);
 
     mutable Mutex lock_;
     State committed_;

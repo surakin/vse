@@ -106,18 +106,14 @@ struct UdpChannelOut
     u16 next_seq[4] = {};
 };
 
-struct UdpBuffered
-{
-    u16 seq = 0;
-    Vector<byte> data;
-};
-
 struct UdpRecvSpace
 {
     bool any = false;
     u16 next = 0;  // sequenced: the newest delivered; reliable: the next expected (ordered) or the lowest missing
-    Vector<u16> above;
-    Vector<UdpBuffered> buffered;
+    // By sequence number (container audit Day 10: vectors rescanned from the start after every delivery, so one lost
+    // packet with the window full cost O(window^2)).
+    HashSet<u16, HeapAllocator> above{HeapAllocator::Default()};
+    HashMap<u16, Vector<byte>, HeapAllocator> buffered{HeapAllocator::Default()};
 };
 
 struct UdpChannelIn
@@ -1577,28 +1573,14 @@ struct UdpTransport::Impl
             {
                 return false;
             }
-            for (usize i = 0; i < rs.above.Size(); ++i)
+            if (!rs.above.Insert(seq))
             {
-                if (rs.above[i] == seq)
-                {
-                    return true;
-                }
+                return true;  // delivered before
             }
-            rs.above.Push(seq);
             Deliver(c, channel, rel, data);
-            for (bool again = true; again;)
+            while (rs.above.Remove(rs.next))
             {
-                again = false;
-                for (usize i = 0; i < rs.above.Size(); ++i)
-                {
-                    if (rs.above[i] == rs.next)
-                    {
-                        rs.above.Remove(i);
-                        ++rs.next;
-                        again = true;
-                        break;
-                    }
-                }
+                ++rs.next;
             }
             return true;
         }
@@ -1615,43 +1597,30 @@ struct UdpTransport::Impl
             }
             if (d != 0)
             {
-                for (usize i = 0; i < rs.buffered.Size(); ++i)
+                if (rs.buffered.Contains(seq))
                 {
-                    if (rs.buffered[i].seq == seq)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
                 if (c->receive_bytes + data.Size() > config.max_receive_buffer_bytes || OverBudget(data.Size()))
                 {
                     return false;
                 }
-                UdpBuffered b;
-                b.seq = seq;
-                b.data.TryResizeUninitialized(data.Size());
-                MemCopy(b.data.Data(), data.Data(), data.Size());
+                Vector<byte> bytes;
+                bytes.Append(data.Data(), data.Size());
                 c->receive_bytes += data.Size();
                 total_receive += data.Size();
-                rs.buffered.Push(Move(b));
+                rs.buffered.Insert(seq, Move(bytes));
                 return true;
             }
             Deliver(c, channel, rel, data);
             ++rs.next;
-            for (bool again = true; again;)
+            for (Vector<byte>* next = rs.buffered.Find(rs.next); next != nullptr; next = rs.buffered.Find(rs.next))
             {
-                again = false;
-                for (usize i = 0; i < rs.buffered.Size(); ++i)
-                {
-                    if (rs.buffered[i].seq == rs.next)
-                    {
-                        Deliver(c, channel, rel, ByteSpan(rs.buffered[i].data.Data(), rs.buffered[i].data.Size()));
-                        c->receive_bytes -= rs.buffered[i].data.Size();
-                        rs.buffered.Remove(i);
-                        ++rs.next;
-                        again = true;
-                        break;
-                    }
-                }
+                const usize size = next->Size();  // read before Deliver, which runs the receiver's code
+                Deliver(c, channel, rel, ByteSpan(next->Data(), size));
+                c->receive_bytes -= size;
+                rs.buffered.Remove(rs.next);
+                ++rs.next;
             }
             return true;
         }
@@ -1668,23 +1637,9 @@ struct UdpTransport::Impl
         }
         if (rel == static_cast<u8>(Reliability::ReliableUnordered))
         {
-            for (usize i = 0; i < rs.above.Size(); ++i)
-            {
-                if (rs.above[i] == seq)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return rs.above.Contains(seq);
         }
-        for (usize i = 0; i < rs.buffered.Size(); ++i)
-        {
-            if (rs.buffered[i].seq == seq)
-            {
-                return true;
-            }
-        }
-        return false;
+        return rs.buffered.Contains(seq);
     }
 
     // Removes reliable reassemblies of messages that were completed meanwhile (a duplicate fragment can start one

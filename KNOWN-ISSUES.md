@@ -98,6 +98,8 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
     - `text/layout.cpp` makes five vectors per `Arrange`;
     - `combobox` and `value_widgets` make a probe `TextRun` per `Measure`;
     - the `platform/` clipboard paths copy byte by byte.
+  - (5) Deferred from series Day 10: `ecs::SetParent`, `ClearParent` and `DestroyRecursive` collect every `Parent` link in the world per call, so
+    building a hierarchy is O(N²): 4,000 entities take 118 ms (Day 1). It needs a children index kept through every structural change.
   - (3) Deferred from series Day 8 (physics):
     - the queries (`RayCast`, overlaps, shape casts, closest point, and so the character controller) still test every collider: the broad phase's
       set is stale between steps, so it cannot serve them as it is;

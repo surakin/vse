@@ -95,12 +95,9 @@ SurfaceScene::~SurfaceScene()
 
 const renderer::GpuMesh* SurfaceScene::ResolveMesh(u64 id)
 {
-    for (usize i = 0; i < meshes_.Size(); ++i)
+    if (const Mesh* known = meshes_.Find(id))  // container audit Day 10: a scan per entity and slot
     {
-        if (meshes_[i].id == id)
-        {
-            return meshes_[i].handle.Get()->mesh.Get();
-        }
+        return known->handle.Get()->mesh.Get();
     }
     Mesh made;
     made.id = id;
@@ -126,8 +123,7 @@ const renderer::GpuMesh* SurfaceScene::ResolveMesh(u64 id)
             mesh->MarkReady();
         }
     }
-    meshes_.Push(static_cast<Mesh&&>(made));
-    return meshes_[meshes_.Size() - 1].handle.Get()->mesh.Get();
+    return meshes_.Emplace(id, static_cast<Mesh&&>(made)).value->handle.Get()->mesh.Get();
 }
 
 bool SurfaceScene::ResolveMaterial(u64 id, bool skinned, u32* index)
@@ -137,13 +133,10 @@ bool SurfaceScene::ResolveMaterial(u64 id, bool skinned, u32* index)
         *index = skinned ? default_skinned_material_.index : default_material_.index;
         return true;
     }
-    for (usize i = 0; i < materials_.Size(); ++i)
+    if (const Material* known = materials_.Find(id))
     {
-        if (materials_[i].id == id)
-        {
-            *index = materials_[i].handle.Get()->material->id.index;
-            return true;
-        }
+        *index = known->handle.Get()->material->id.index;
+        return true;
     }
     Material made;
     made.id = id;
@@ -151,8 +144,7 @@ bool SurfaceScene::ResolveMaterial(u64 id, bool skinned, u32* index)
     {
         return false;  // not remembered: the host may add the material later
     }
-    materials_.Push(static_cast<Material&&>(made));
-    *index = materials_[materials_.Size() - 1].handle.Get()->material->id.index;
+    *index = materials_.Emplace(id, static_cast<Material&&>(made)).value->handle.Get()->material->id.index;
     return true;
 }
 
@@ -384,9 +376,9 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
     }
     frame_.SetEnvironment(environment.exposure,
                           Vec3(environment.sky_color[0], environment.sky_color[1], environment.sky_color[2]));
-    for (usize i = 0; i < light_entries_.Size(); ++i)
+    for (auto& [entity, e] : light_entries_)
     {
-        light_entries_[i].seen = false;
+        e.seen = false;
     }
     u32 light_entities = 0;
     auto query = world.world.Query<ecs::Read<LightComponent>, ecs::Read<ecs::WorldTransform>>();
@@ -416,15 +408,7 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
                 light.direction = back * (1.0f / length);
             }
             const u64 key = entity.ToU64();
-            LightEntry* entry = nullptr;
-            for (usize i = 0; i < light_entries_.Size(); ++i)
-            {
-                if (light_entries_[i].entity == key)
-                {
-                    entry = &light_entries_[i];
-                    break;
-                }
-            }
+            LightEntry* entry = light_entries_.Find(key);
             if (entry != nullptr)
             {
                 scene_->SetLight(entry->id, light);
@@ -441,15 +425,14 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
             fresh.entity = key;
             fresh.id = id;
             fresh.seen = true;
-            light_entries_.Push(fresh);
+            light_entries_.Emplace(key, fresh);
         });
-    for (usize i = 0; i < light_entries_.Size();)
+    for (u32 i = 0; i < light_entries_.Size();)  // the removal order the Vector gave, as for the objects
     {
-        if (!light_entries_[i].seen)
+        if (!light_entries_.At(i).seen)
         {
-            scene_->RemoveLight(light_entries_[i].id);
-            light_entries_[i] = light_entries_[light_entries_.Size() - 1];
-            light_entries_.Pop();
+            scene_->RemoveLight(light_entries_.At(i).id);
+            light_entries_.RemoveAt(i);
         }
         else
         {
@@ -577,9 +560,9 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     SceneFrameReport report;
     live_.BeginFrame();
     const f32 aspect = height != 0 ? static_cast<f32>(width) / static_cast<f32>(height) : 1.0f;
-    for (usize i = 0; i < entries_.Size(); ++i)
+    for (auto& [entity, e] : entries_)
     {
-        entries_[i].seen = false;
+        e.seen = false;
     }
     for (usize i = 0; i < instances_.Size(); ++i)
     {
@@ -590,15 +573,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
         [&](ecs::Entity entity, const MeshReference& reference, const ecs::WorldTransform& placed)
         {
             const u64 key = entity.ToU64();
-            Entry* entry = nullptr;
-            for (usize i = 0; i < entries_.Size(); ++i)
-            {
-                if (entries_[i].entity == key)
-                {
-                    entry = &entries_[i];
-                    break;
-                }
-            }
+            Entry* entry = entries_.Find(key);  // container audit Day 10: a scan of every entry, per drawn entity
             if (IsHidden(world.world, entity))
             {
                 return;  // not drawn: an entry it had stays unseen and is removed below
@@ -691,8 +666,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             {
                 Entry fresh;
                 fresh.entity = key;
-                entries_.Push(fresh);
-                entry = &entries_[entries_.Size() - 1];
+                entry = entries_.Emplace(key, fresh).value;
             }
             if (entry->count == 0)
             {
@@ -766,19 +740,21 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             }
             entry->seen = entry->count != 0;
         });
-    for (usize i = 0; i < entries_.Size();)
+    // Front to back, the last entry moved into a removed one's slot: the order the objects are removed in (and so the
+    // ids the scene hands out next) is the one the Vector gave.
+    for (u32 i = 0; i < entries_.Size();)
     {
-        if (!entries_[i].seen)
+        Entry& e = entries_.At(i);
+        if (!e.seen)
         {
-            for (u32 k = 0; k < entries_[i].count; ++k)
+            for (u32 k = 0; k < e.count; ++k)
             {
-                if (entries_[i].objects[k].IsValid())
+                if (e.objects[k].IsValid())
                 {
-                    scene_->RemoveObject(entries_[i].objects[k]);
+                    scene_->RemoveObject(e.objects[k]);
                 }
             }
-            entries_[i] = entries_[entries_.Size() - 1];
-            entries_.Pop();
+            entries_.RemoveAt(i);
         }
         else
         {
