@@ -156,6 +156,16 @@ bool Before(const LoadRequestPtr& a, const LoadRequestPtr& b)
     return a->sequence < b->sequence;
 }
 
+}  // namespace
+
+bool AsyncLoader::LaterRequest::operator()(const LoadRequestPtr& a, const LoadRequestPtr& b) const
+{
+    return Before(b, a);  // a max-heap of "comes first"
+}
+
+namespace
+{
+
 usize BestOf(const Vector<LoadRequestPtr>& list)
 {
     usize best = 0;
@@ -269,20 +279,42 @@ bool AsyncLoader::FullLocked() const
 void AsyncLoader::DropCancelledLocked()
 {
     // Cancelled requests that wait do not count against the limit.
-    for (int pass = 0; pass < 2; ++pass)
+    bool any = false;
+    for (usize i = 0; i < queued_.Size() && !any; ++i)
     {
-        Vector<LoadRequestPtr>& list = pass == 0 ? queued_ : waiting_;
-        for (usize i = 0; i < list.Size();)
+        any = queued_.At(i)->IsCancelled();
+    }
+    if (any)
+    {
+        // A heap cannot be walked while it changes: take everything out in order, keep what is not cancelled.
+        Vector<LoadRequestPtr> keep;
+        while (!queued_.Empty())
         {
-            if (list[i]->IsCancelled())
+            LoadRequestPtr request = queued_.Pop();
+            if (request->IsCancelled())
             {
-                LoadRequestPtr request = Take(&list, i);
                 CompleteLocked(request, Status::Make(ErrorCode::Cancelled, "the load was cancelled"));
             }
             else
             {
-                ++i;
+                keep.Push(Move(request));
             }
+        }
+        for (LoadRequestPtr& request : keep)
+        {
+            queued_.Push(Move(request));
+        }
+    }
+    for (usize i = 0; i < waiting_.Size();)
+    {
+        if (waiting_[i]->IsCancelled())
+        {
+            LoadRequestPtr request = Take(&waiting_, i);
+            CompleteLocked(request, Status::Make(ErrorCode::Cancelled, "the load was cancelled"));
+        }
+        else
+        {
+            ++i;
         }
     }
 }
@@ -494,7 +526,7 @@ void AsyncLoader::PumpLocked()
     // The queue, most urgent first, while there are reading slots.
     while (reading_ < options_.max_inflight && queued_.Size() != 0)
     {
-        LoadRequestPtr request = Take(&queued_, BestOf(queued_));
+        LoadRequestPtr request = queued_.Pop();
         if (request->IsCancelled())
         {
             CompleteLocked(request, Status::Make(ErrorCode::Cancelled, "the load was cancelled"));

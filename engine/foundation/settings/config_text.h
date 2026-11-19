@@ -22,6 +22,7 @@
 //! from, including line endings, comments, spacing and lines it could not understand (those are reported as errors and
 //! never touched).
 
+#include "containers/hash_map.h"
 #include "containers/vector.h"
 #include "settings/key.h"
 #include "string/string.h"
@@ -136,10 +137,15 @@ public:
 private:
     struct Line;
     Vector<Line> lines_;
+    // Each key's last entry line (container audit Day 11: every lookup scanned every line, so reading every setting of
+    // a file was O(settings x lines)). Made again by every call that changes the lines, so const calls only read it.
+    HashMap<Key, u32, HeapAllocator> last_line_{HeapAllocator::Default()};
     bool bom_ = false;
     u8 eol_ = 1;  // 1 = "\n", 2 = "\r\n": what a new line ends with
     usize FindLast(const Key& key) const;
     void AppendLine(StringView text);
+    bool SetLine(const Key& key, StringView value);
+    void Reindex();
 };
 
 }  // namespace engine_placeholder::settings

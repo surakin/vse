@@ -442,18 +442,25 @@ void ConfigDocument::Parse(StringView text, ConfigReport* report)
         }
         lines_.Push(static_cast<Line&&>(line));
     }
+    Reindex();
 }
 
 usize ConfigDocument::FindLast(const Key& key) const
 {
-    for (usize i = lines_.Size(); i-- > 0;)
+    const u32* at = last_line_.Find(key);
+    return at != nullptr ? *at : lines_.Size();
+}
+
+void ConfigDocument::Reindex()
+{
+    last_line_.Clear();
+    for (usize i = 0; i < lines_.Size(); ++i)
     {
-        if (lines_[i].kind == Kind::Entry && lines_[i].key == key)
+        if (lines_[i].kind == Kind::Entry)
         {
-            return i;
+            last_line_.Insert(lines_[i].key, static_cast<u32>(i));  // a later entry of the key replaces an earlier one
         }
     }
-    return lines_.Size();
 }
 
 bool ConfigDocument::Find(StringView key_text, StringView* value) const
@@ -532,6 +539,13 @@ bool ConfigDocument::Set(StringView key_text, StringView value)
     {
         return false;
     }
+    const bool changed = SetLine(key, value);
+    Reindex();  // the lines may have moved: an insert shifts every later line
+    return changed;
+}
+
+bool ConfigDocument::SetLine(const Key& key, StringView value)
+{
     const usize at = FindLast(key);
     if (at != lines_.Size())
     {
@@ -700,6 +714,10 @@ bool ConfigDocument::Remove(StringView key_text)
             }
         }
     }
+    if (removed)
+    {
+        Reindex();
+    }
     return removed;
 }
 
@@ -712,6 +730,7 @@ void ConfigDocument::RemoveUnreadable()
             lines_.Remove(i);
         }
     }
+    Reindex();
 }
 
 void ConfigDocument::Keys(StringView prefix, Vector<Key>* out) const

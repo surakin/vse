@@ -478,23 +478,23 @@ HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operat
 HashMap::HashMap(HashMap&&) noexcept	function	foundation/containers	hashmap-hashmap-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:89
 HashMap::operator=(HashMap&&) noexcept	function	foundation/containers	hashmap-operator-eq-hashmap-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/hash_map.h:92
 HashMap::Insert(KK&&,VV&&)	function	foundation/containers	hashmap-insert-kk-amp-amp-vv-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:102
-HashMap::Emplace(KK&&,Args&&...)	function	foundation/containers	hashmap-emplace-kk-amp-amp-args-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:141
-HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:179
-HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:187
-HashMap::Find(const Q&)	function	foundation/containers	hashmap-find-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:195
-HashMap::Find(const Q&) const	function	foundation/containers	hashmap-find-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:202
-HashMap::Contains(const K&) const	function	foundation/containers	hashmap-contains-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:207
-HashMap::Contains(const Q&) const	function	foundation/containers	hashmap-contains-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:212
-HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:219
-HashMap::Remove(const Q&)	function	foundation/containers	hashmap-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:225
-HashMap::Clear()	function	foundation/containers	hashmap-clear	foundation-containers.md	engine/foundation/containers/hash_map.h:228
-HashMap::Reserve(usize)	function	foundation/containers	hashmap-reserve-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:234
-HashMap::ForEach(Visit)	function	foundation/containers	hashmap-foreach-visit	foundation-containers.md	engine/foundation/containers/hash_map.h:240
-HashMap::ForEach(Visit) const	function	foundation/containers	hashmap-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_map.h:248
-HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:271
-HashMap::Empty() const	function	foundation/containers	hashmap-empty-const	foundation-containers.md	engine/foundation/containers/hash_map.h:273
-HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:278
-HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:284
+HashMap::Emplace(KK&&,Args&&...)	function	foundation/containers	hashmap-emplace-kk-amp-amp-args-amp-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:149
+HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:187
+HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:195
+HashMap::Find(const Q&)	function	foundation/containers	hashmap-find-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:203
+HashMap::Find(const Q&) const	function	foundation/containers	hashmap-find-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:210
+HashMap::Contains(const K&) const	function	foundation/containers	hashmap-contains-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:215
+HashMap::Contains(const Q&) const	function	foundation/containers	hashmap-contains-const-q-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:220
+HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:227
+HashMap::Remove(const Q&)	function	foundation/containers	hashmap-remove-const-q-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:233
+HashMap::Clear()	function	foundation/containers	hashmap-clear	foundation-containers.md	engine/foundation/containers/hash_map.h:236
+HashMap::Reserve(usize)	function	foundation/containers	hashmap-reserve-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:242
+HashMap::ForEach(Visit)	function	foundation/containers	hashmap-foreach-visit	foundation-containers.md	engine/foundation/containers/hash_map.h:248
+HashMap::ForEach(Visit) const	function	foundation/containers	hashmap-foreach-visit-const	foundation-containers.md	engine/foundation/containers/hash_map.h:256
+HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:279
+HashMap::Empty() const	function	foundation/containers	hashmap-empty-const	foundation-containers.md	engine/foundation/containers/hash_map.h:281
+HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:286
+HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:292
 HashSet	class	foundation/containers	hashset	foundation-containers.md	engine/foundation/containers/hash_set.h:22
 HashSet::HashSet(Allocator&,usize)	function	foundation/containers	hashset-hashset-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_set.h:31
 HashSet::HashSet(const HashSet&)	function	foundation/containers	hashset-hashset-const-hashset-amp	foundation-containers.md	engine/foundation/containers/hash_set.h:33
@@ -1427,33 +1427,33 @@ settings::ConfigStore::Origin(StringView,char*,usize) const	function	foundation/
 settings::ConfigStore::IsPresent() const	function	foundation/settings	settings-configstore-ispresent-const	foundation-settings.md	engine/foundation/settings/config_store.h:238
 settings::ConfigStore::SetChangeListener(ChangeListener,void*)	function	foundation/settings	settings-configstore-setchangelistener-changelistener-void-star	foundation-settings.md	engine/foundation/settings/config_store.h:252
 settings::ConfigStorePtr	alias	foundation/settings	settings-configstoreptr	foundation-settings.md	engine/foundation/settings/config_store.h:261
-settings::kMaxConfigLineBytes	variable	foundation/settings	settings-kmaxconfiglinebytes	foundation-settings.md	engine/foundation/settings/config_text.h:34
-settings::kMaxConfigProblems	variable	foundation/settings	settings-kmaxconfigproblems	foundation-settings.md	engine/foundation/settings/config_text.h:36
-settings::kMaxProblemMessageBytes	variable	foundation/settings	settings-kmaxproblemmessagebytes	foundation-settings.md	engine/foundation/settings/config_text.h:38
-settings::ConfigProblem	struct	foundation/settings	settings-configproblem	foundation-settings.md	engine/foundation/settings/config_text.h:43
-settings::ConfigProblem::line	variable	foundation/settings	settings-configproblem-line	foundation-settings.md	engine/foundation/settings/config_text.h:46
-settings::ConfigProblem::column	variable	foundation/settings	settings-configproblem-column	foundation-settings.md	engine/foundation/settings/config_text.h:48
-settings::ConfigProblem::message	variable	foundation/settings	settings-configproblem-message	foundation-settings.md	engine/foundation/settings/config_text.h:50
-settings::ConfigReport	struct	foundation/settings	settings-configreport	foundation-settings.md	engine/foundation/settings/config_text.h:56
-settings::ConfigReport::errors	variable	foundation/settings	settings-configreport-errors	foundation-settings.md	engine/foundation/settings/config_text.h:59
-settings::ConfigReport::error_count	variable	foundation/settings	settings-configreport-error-count	foundation-settings.md	engine/foundation/settings/config_text.h:61
-settings::ConfigReport::warnings	variable	foundation/settings	settings-configreport-warnings	foundation-settings.md	engine/foundation/settings/config_text.h:63
-settings::ConfigReport::warning_count	variable	foundation/settings	settings-configreport-warning-count	foundation-settings.md	engine/foundation/settings/config_text.h:65
-settings::ConfigDocument	class	foundation/settings	settings-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:72
-settings::ConfigDocument::ConfigDocument()	function	foundation/settings	settings-configdocument-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:76
-settings::ConfigDocument::ConfigDocument(ConfigDocument&&) noexcept	function	foundation/settings	settings-configdocument-configdocument-configdocument-amp-amp-noexcept	foundation-settings.md	engine/foundation/settings/config_text.h:78
-settings::ConfigDocument::operator=(ConfigDocument&&) noexcept	function	foundation/settings	settings-configdocument-operator-eq-configdocument-amp-amp-noexcept	foundation-settings.md	engine/foundation/settings/config_text.h:80
-settings::ConfigDocument::~ConfigDocument()	function	foundation/settings	settings-configdocument-tilde-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:82
-settings::ConfigDocument::Parse(StringView,ConfigReport*)	function	foundation/settings	settings-configdocument-parse-stringview-configreport-star	foundation-settings.md	engine/foundation/settings/config_text.h:90
-settings::ConfigDocument::Find(StringView,StringView*) const	function	foundation/settings	settings-configdocument-find-stringview-stringview-star-const	foundation-settings.md	engine/foundation/settings/config_text.h:98
-settings::ConfigDocument::Set(StringView,StringView)	function	foundation/settings	settings-configdocument-set-stringview-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:106
-settings::ConfigDocument::Remove(StringView)	function	foundation/settings	settings-configdocument-remove-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:111
-settings::ConfigDocument::LineOf(StringView) const	function	foundation/settings	settings-configdocument-lineof-stringview-const	foundation-settings.md	engine/foundation/settings/config_text.h:114
-settings::ConfigDocument::Keys(StringView,Vector<Key>*) const	function	foundation/settings	settings-configdocument-keys-stringview-vector-lt-key-gt-star-const	foundation-settings.md	engine/foundation/settings/config_text.h:118
-settings::ConfigDocument::RemoveUnreadable()	function	foundation/settings	settings-configdocument-removeunreadable	foundation-settings.md	engine/foundation/settings/config_text.h:122
-settings::ConfigDocument::IsValidValue(StringView)	function	foundation/settings	settings-configdocument-isvalidvalue-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:126
-settings::ConfigDocument::Serialize(Vector<char>*,bool) const	function	foundation/settings	settings-configdocument-serialize-vector-lt-char-gt-star-bool-const	foundation-settings.md	engine/foundation/settings/config_text.h:131
-settings::ConfigDocument::LineCount() const	function	foundation/settings	settings-configdocument-linecount-const	foundation-settings.md	engine/foundation/settings/config_text.h:134
+settings::kMaxConfigLineBytes	variable	foundation/settings	settings-kmaxconfiglinebytes	foundation-settings.md	engine/foundation/settings/config_text.h:35
+settings::kMaxConfigProblems	variable	foundation/settings	settings-kmaxconfigproblems	foundation-settings.md	engine/foundation/settings/config_text.h:37
+settings::kMaxProblemMessageBytes	variable	foundation/settings	settings-kmaxproblemmessagebytes	foundation-settings.md	engine/foundation/settings/config_text.h:39
+settings::ConfigProblem	struct	foundation/settings	settings-configproblem	foundation-settings.md	engine/foundation/settings/config_text.h:44
+settings::ConfigProblem::line	variable	foundation/settings	settings-configproblem-line	foundation-settings.md	engine/foundation/settings/config_text.h:47
+settings::ConfigProblem::column	variable	foundation/settings	settings-configproblem-column	foundation-settings.md	engine/foundation/settings/config_text.h:49
+settings::ConfigProblem::message	variable	foundation/settings	settings-configproblem-message	foundation-settings.md	engine/foundation/settings/config_text.h:51
+settings::ConfigReport	struct	foundation/settings	settings-configreport	foundation-settings.md	engine/foundation/settings/config_text.h:57
+settings::ConfigReport::errors	variable	foundation/settings	settings-configreport-errors	foundation-settings.md	engine/foundation/settings/config_text.h:60
+settings::ConfigReport::error_count	variable	foundation/settings	settings-configreport-error-count	foundation-settings.md	engine/foundation/settings/config_text.h:62
+settings::ConfigReport::warnings	variable	foundation/settings	settings-configreport-warnings	foundation-settings.md	engine/foundation/settings/config_text.h:64
+settings::ConfigReport::warning_count	variable	foundation/settings	settings-configreport-warning-count	foundation-settings.md	engine/foundation/settings/config_text.h:66
+settings::ConfigDocument	class	foundation/settings	settings-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:73
+settings::ConfigDocument::ConfigDocument()	function	foundation/settings	settings-configdocument-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:77
+settings::ConfigDocument::ConfigDocument(ConfigDocument&&) noexcept	function	foundation/settings	settings-configdocument-configdocument-configdocument-amp-amp-noexcept	foundation-settings.md	engine/foundation/settings/config_text.h:79
+settings::ConfigDocument::operator=(ConfigDocument&&) noexcept	function	foundation/settings	settings-configdocument-operator-eq-configdocument-amp-amp-noexcept	foundation-settings.md	engine/foundation/settings/config_text.h:81
+settings::ConfigDocument::~ConfigDocument()	function	foundation/settings	settings-configdocument-tilde-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:83
+settings::ConfigDocument::Parse(StringView,ConfigReport*)	function	foundation/settings	settings-configdocument-parse-stringview-configreport-star	foundation-settings.md	engine/foundation/settings/config_text.h:91
+settings::ConfigDocument::Find(StringView,StringView*) const	function	foundation/settings	settings-configdocument-find-stringview-stringview-star-const	foundation-settings.md	engine/foundation/settings/config_text.h:99
+settings::ConfigDocument::Set(StringView,StringView)	function	foundation/settings	settings-configdocument-set-stringview-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:107
+settings::ConfigDocument::Remove(StringView)	function	foundation/settings	settings-configdocument-remove-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:112
+settings::ConfigDocument::LineOf(StringView) const	function	foundation/settings	settings-configdocument-lineof-stringview-const	foundation-settings.md	engine/foundation/settings/config_text.h:115
+settings::ConfigDocument::Keys(StringView,Vector<Key>*) const	function	foundation/settings	settings-configdocument-keys-stringview-vector-lt-key-gt-star-const	foundation-settings.md	engine/foundation/settings/config_text.h:119
+settings::ConfigDocument::RemoveUnreadable()	function	foundation/settings	settings-configdocument-removeunreadable	foundation-settings.md	engine/foundation/settings/config_text.h:123
+settings::ConfigDocument::IsValidValue(StringView)	function	foundation/settings	settings-configdocument-isvalidvalue-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:127
+settings::ConfigDocument::Serialize(Vector<char>*,bool) const	function	foundation/settings	settings-configdocument-serialize-vector-lt-char-gt-star-bool-const	foundation-settings.md	engine/foundation/settings/config_text.h:132
+settings::ConfigDocument::LineCount() const	function	foundation/settings	settings-configdocument-linecount-const	foundation-settings.md	engine/foundation/settings/config_text.h:135
 settings::RangePolicy	enum	foundation/settings	settings-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:13
 settings::RangePolicy::Clamp	enumerator	foundation/settings	settings-rangepolicy-clamp	foundation-settings.md	engine/foundation/settings/desc.h:15
 settings::RangePolicy::Reject	enumerator	foundation/settings	settings-rangepolicy-reject	foundation-settings.md	engine/foundation/settings/desc.h:16
@@ -1567,30 +1567,32 @@ settings::FileConfigStore::Origin(StringView,char*,usize) const	function	foundat
 settings::FileConfigStore::IsPresent() const	function	foundation/settings	settings-fileconfigstore-ispresent-const	foundation-settings.md	engine/foundation/settings/file_store.h:63
 settings::FileConfigStore::Report() const	function	foundation/settings	settings-fileconfigstore-report-const	foundation-settings.md	engine/foundation/settings/file_store.h:66
 settings::FileConfigStore::Damaged() const	function	foundation/settings	settings-fileconfigstore-damaged-const	foundation-settings.md	engine/foundation/settings/file_store.h:68
-settings::kMaxKeyBytes	variable	foundation/settings	settings-kmaxkeybytes	foundation-settings.md	engine/foundation/settings/key.h:18
-settings::kMaxSegmentBytes	variable	foundation/settings	settings-kmaxsegmentbytes	foundation-settings.md	engine/foundation/settings/key.h:20
-settings::kMaxKeySegments	variable	foundation/settings	settings-kmaxkeysegments	foundation-settings.md	engine/foundation/settings/key.h:22
-settings::KeyError	enum	foundation/settings	settings-keyerror	foundation-settings.md	engine/foundation/settings/key.h:25
-settings::KeyError::None	enumerator	foundation/settings	settings-keyerror-none	foundation-settings.md	engine/foundation/settings/key.h:27
-settings::KeyError::Empty	enumerator	foundation/settings	settings-keyerror-empty	foundation-settings.md	engine/foundation/settings/key.h:28
-settings::KeyError::TooLong	enumerator	foundation/settings	settings-keyerror-toolong	foundation-settings.md	engine/foundation/settings/key.h:29
-settings::KeyError::BadCharacter	enumerator	foundation/settings	settings-keyerror-badcharacter	foundation-settings.md	engine/foundation/settings/key.h:30
-settings::KeyError::EmptySegment	enumerator	foundation/settings	settings-keyerror-emptysegment	foundation-settings.md	engine/foundation/settings/key.h:32
-settings::KeyError::TooManySegments	enumerator	foundation/settings	settings-keyerror-toomanysegments	foundation-settings.md	engine/foundation/settings/key.h:33
-settings::KeyError::SegmentTooLong	enumerator	foundation/settings	settings-keyerror-segmenttoolong	foundation-settings.md	engine/foundation/settings/key.h:34
-settings::KeyErrorName(KeyError)	function	foundation/settings	settings-keyerrorname-keyerror	foundation-settings.md	engine/foundation/settings/key.h:43
-settings::Key	class	foundation/settings	settings-key	foundation-settings.md	engine/foundation/settings/key.h:49
-settings::Key::Key()	function	foundation/settings	settings-key-key	foundation-settings.md	engine/foundation/settings/key.h:53
-settings::Key::Parse(StringView,Key*)	function	foundation/settings	settings-key-parse-stringview-key-star	foundation-settings.md	engine/foundation/settings/key.h:61
-settings::Key::View() const	function	foundation/settings	settings-key-view-const	foundation-settings.md	engine/foundation/settings/key.h:64
-settings::Key::IsValid() const	function	foundation/settings	settings-key-isvalid-const	foundation-settings.md	engine/foundation/settings/key.h:66
-settings::Key::Segments() const	function	foundation/settings	settings-key-segments-const	foundation-settings.md	engine/foundation/settings/key.h:68
-settings::Key::Section() const	function	foundation/settings	settings-key-section-const	foundation-settings.md	engine/foundation/settings/key.h:70
-settings::Key::Name() const	function	foundation/settings	settings-key-name-const	foundation-settings.md	engine/foundation/settings/key.h:72
-settings::Key::Hash() const	function	foundation/settings	settings-key-hash-const	foundation-settings.md	engine/foundation/settings/key.h:74
-settings::Key::operator==(const Key&) const	function	foundation/settings	settings-key-operator-eq-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:77
-settings::Key::operator!=(const Key&) const	function	foundation/settings	settings-key-operator-not-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:79
-settings::Key::operator<(const Key&) const	function	foundation/settings	settings-key-operator-lt-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:81
+settings::kMaxKeyBytes	variable	foundation/settings	settings-kmaxkeybytes	foundation-settings.md	engine/foundation/settings/key.h:19
+settings::kMaxSegmentBytes	variable	foundation/settings	settings-kmaxsegmentbytes	foundation-settings.md	engine/foundation/settings/key.h:21
+settings::kMaxKeySegments	variable	foundation/settings	settings-kmaxkeysegments	foundation-settings.md	engine/foundation/settings/key.h:23
+settings::KeyError	enum	foundation/settings	settings-keyerror	foundation-settings.md	engine/foundation/settings/key.h:26
+settings::KeyError::None	enumerator	foundation/settings	settings-keyerror-none	foundation-settings.md	engine/foundation/settings/key.h:28
+settings::KeyError::Empty	enumerator	foundation/settings	settings-keyerror-empty	foundation-settings.md	engine/foundation/settings/key.h:29
+settings::KeyError::TooLong	enumerator	foundation/settings	settings-keyerror-toolong	foundation-settings.md	engine/foundation/settings/key.h:30
+settings::KeyError::BadCharacter	enumerator	foundation/settings	settings-keyerror-badcharacter	foundation-settings.md	engine/foundation/settings/key.h:31
+settings::KeyError::EmptySegment	enumerator	foundation/settings	settings-keyerror-emptysegment	foundation-settings.md	engine/foundation/settings/key.h:33
+settings::KeyError::TooManySegments	enumerator	foundation/settings	settings-keyerror-toomanysegments	foundation-settings.md	engine/foundation/settings/key.h:34
+settings::KeyError::SegmentTooLong	enumerator	foundation/settings	settings-keyerror-segmenttoolong	foundation-settings.md	engine/foundation/settings/key.h:35
+settings::KeyErrorName(KeyError)	function	foundation/settings	settings-keyerrorname-keyerror	foundation-settings.md	engine/foundation/settings/key.h:44
+settings::Key	class	foundation/settings	settings-key	foundation-settings.md	engine/foundation/settings/key.h:50
+settings::Key::Key()	function	foundation/settings	settings-key-key	foundation-settings.md	engine/foundation/settings/key.h:54
+settings::Key::Parse(StringView,Key*)	function	foundation/settings	settings-key-parse-stringview-key-star	foundation-settings.md	engine/foundation/settings/key.h:62
+settings::Key::View() const	function	foundation/settings	settings-key-view-const	foundation-settings.md	engine/foundation/settings/key.h:65
+settings::Key::IsValid() const	function	foundation/settings	settings-key-isvalid-const	foundation-settings.md	engine/foundation/settings/key.h:67
+settings::Key::Segments() const	function	foundation/settings	settings-key-segments-const	foundation-settings.md	engine/foundation/settings/key.h:69
+settings::Key::Section() const	function	foundation/settings	settings-key-section-const	foundation-settings.md	engine/foundation/settings/key.h:71
+settings::Key::Name() const	function	foundation/settings	settings-key-name-const	foundation-settings.md	engine/foundation/settings/key.h:73
+settings::Key::Hash() const	function	foundation/settings	settings-key-hash-const	foundation-settings.md	engine/foundation/settings/key.h:75
+settings::Key::operator==(const Key&) const	function	foundation/settings	settings-key-operator-eq-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:78
+settings::Key::operator!=(const Key&) const	function	foundation/settings	settings-key-operator-not-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:80
+settings::Key::operator<(const Key&) const	function	foundation/settings	settings-key-operator-lt-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:82
+Hash<settings::Key>	struct	foundation/settings	hash-lt-settings-key-gt	foundation-settings.md	engine/foundation/settings/key.h:97
+Hash<settings::Key>::operator()(const settings::Key&) const	function	foundation/settings	hash-lt-settings-key-gt-operator-call-const-settings-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:100
 settings::LayerRole	enum	foundation/settings	settings-layerrole	foundation-settings.md	engine/foundation/settings/layers.h:22
 settings::LayerRole::System	enumerator	foundation/settings	settings-layerrole-system	foundation-settings.md	engine/foundation/settings/layers.h:24
 settings::LayerRole::User	enumerator	foundation/settings	settings-layerrole-user	foundation-settings.md	engine/foundation/settings/layers.h:25
@@ -2126,33 +2128,33 @@ script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingre
 script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:648
 script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:659
 script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:670
-script::kPlaceholdersPerPartition	variable	script	script-kplaceholdersperpartition	script.md	engine/script/command_buffer.h:17
-script::CommandRecord	struct	script	script-commandrecord	script.md	engine/script/command_buffer.h:22
-script::CommandRecord::order_key	variable	script	script-commandrecord-order-key	script.md	engine/script/command_buffer.h:25
-script::CommandRecord::sequence	variable	script	script-commandrecord-sequence	script.md	engine/script/command_buffer.h:27
-script::CommandRecord::kind	variable	script	script-commandrecord-kind	script.md	engine/script/command_buffer.h:29
-script::CommandRecord::target	variable	script	script-commandrecord-target	script.md	engine/script/command_buffer.h:31
-script::CommandRecord::payload_offset	variable	script	script-commandrecord-payload-offset	script.md	engine/script/command_buffer.h:33
-script::CommandRecord::payload_size	variable	script	script-commandrecord-payload-size	script.md	engine/script/command_buffer.h:35
-script::CommandBuffer	class	script	script-commandbuffer	script.md	engine/script/command_buffer.h:47
-script::CommandBuffer::CommandBuffer()	function	script	script-commandbuffer-commandbuffer	script.md	engine/script/command_buffer.h:51
-script::CommandBuffer::Begin(u32)	function	script	script-commandbuffer-begin-u32	script.md	engine/script/command_buffer.h:58
-script::CommandBuffer::Partition() const	function	script	script-commandbuffer-partition-const	script.md	engine/script/command_buffer.h:63
-script::CommandBuffer::Record(u16,u64,ecs::Entity,const void*,u32)	function	script	script-commandbuffer-record-u16-u64-ecs-entity-const-void-star-u32	script.md	engine/script/command_buffer.h:75
-script::CommandBuffer::Record(u16,u64,ecs::Entity,const T&)	function	script	script-commandbuffer-record-u16-u64-ecs-entity-const-t-amp	script.md	engine/script/command_buffer.h:80
-script::CommandBuffer::Reserve()	function	script	script-commandbuffer-reserve	script.md	engine/script/command_buffer.h:94
-script::CommandBuffer::IsReserved(ecs::Entity) const	function	script	script-commandbuffer-isreserved-ecs-entity-const	script.md	engine/script/command_buffer.h:99
-script::CommandBuffer::Size() const	function	script	script-commandbuffer-size-const	script.md	engine/script/command_buffer.h:104
-script::CommandBuffer::Commands() const	function	script	script-commandbuffer-commands-const	script.md	engine/script/command_buffer.h:110
-script::CommandBuffer::PayloadOf(const CommandRecord&) const	function	script	script-commandbuffer-payloadof-const-commandrecord-amp-const	script.md	engine/script/command_buffer.h:116
-script::CommandBuffer::IsSorted() const	function	script	script-commandbuffer-issorted-const	script.md	engine/script/command_buffer.h:124
-script::CommandBuffer::SortIfNeeded()	function	script	script-commandbuffer-sortifneeded	script.md	engine/script/command_buffer.h:129
-script::CommandBuffer::PayloadBytes() const	function	script	script-commandbuffer-payloadbytes-const	script.md	engine/script/command_buffer.h:134
-script::Overlay	class	script	script-overlay	script.md	engine/script/command_buffer.h:151
-script::Overlay::Clear()	function	script	script-overlay-clear	script.md	engine/script/command_buffer.h:157
-script::Overlay::Put(ecs::Entity,u32,Value)	function	script	script-overlay-put-ecs-entity-u32-value	script.md	engine/script/command_buffer.h:163
-script::Overlay::Find(ecs::Entity,u32) const	function	script	script-overlay-find-ecs-entity-u32-const	script.md	engine/script/command_buffer.h:170
-script::Overlay::Size() const	function	script	script-overlay-size-const	script.md	engine/script/command_buffer.h:175
+script::kPlaceholdersPerPartition	variable	script	script-kplaceholdersperpartition	script.md	engine/script/command_buffer.h:19
+script::CommandRecord	struct	script	script-commandrecord	script.md	engine/script/command_buffer.h:24
+script::CommandRecord::order_key	variable	script	script-commandrecord-order-key	script.md	engine/script/command_buffer.h:27
+script::CommandRecord::sequence	variable	script	script-commandrecord-sequence	script.md	engine/script/command_buffer.h:29
+script::CommandRecord::kind	variable	script	script-commandrecord-kind	script.md	engine/script/command_buffer.h:31
+script::CommandRecord::target	variable	script	script-commandrecord-target	script.md	engine/script/command_buffer.h:33
+script::CommandRecord::payload_offset	variable	script	script-commandrecord-payload-offset	script.md	engine/script/command_buffer.h:35
+script::CommandRecord::payload_size	variable	script	script-commandrecord-payload-size	script.md	engine/script/command_buffer.h:37
+script::CommandBuffer	class	script	script-commandbuffer	script.md	engine/script/command_buffer.h:49
+script::CommandBuffer::CommandBuffer()	function	script	script-commandbuffer-commandbuffer	script.md	engine/script/command_buffer.h:53
+script::CommandBuffer::Begin(u32)	function	script	script-commandbuffer-begin-u32	script.md	engine/script/command_buffer.h:60
+script::CommandBuffer::Partition() const	function	script	script-commandbuffer-partition-const	script.md	engine/script/command_buffer.h:65
+script::CommandBuffer::Record(u16,u64,ecs::Entity,const void*,u32)	function	script	script-commandbuffer-record-u16-u64-ecs-entity-const-void-star-u32	script.md	engine/script/command_buffer.h:77
+script::CommandBuffer::Record(u16,u64,ecs::Entity,const T&)	function	script	script-commandbuffer-record-u16-u64-ecs-entity-const-t-amp	script.md	engine/script/command_buffer.h:82
+script::CommandBuffer::Reserve()	function	script	script-commandbuffer-reserve	script.md	engine/script/command_buffer.h:96
+script::CommandBuffer::IsReserved(ecs::Entity) const	function	script	script-commandbuffer-isreserved-ecs-entity-const	script.md	engine/script/command_buffer.h:101
+script::CommandBuffer::Size() const	function	script	script-commandbuffer-size-const	script.md	engine/script/command_buffer.h:106
+script::CommandBuffer::Commands() const	function	script	script-commandbuffer-commands-const	script.md	engine/script/command_buffer.h:112
+script::CommandBuffer::PayloadOf(const CommandRecord&) const	function	script	script-commandbuffer-payloadof-const-commandrecord-amp-const	script.md	engine/script/command_buffer.h:118
+script::CommandBuffer::IsSorted() const	function	script	script-commandbuffer-issorted-const	script.md	engine/script/command_buffer.h:126
+script::CommandBuffer::SortIfNeeded()	function	script	script-commandbuffer-sortifneeded	script.md	engine/script/command_buffer.h:131
+script::CommandBuffer::PayloadBytes() const	function	script	script-commandbuffer-payloadbytes-const	script.md	engine/script/command_buffer.h:136
+script::Overlay	class	script	script-overlay	script.md	engine/script/command_buffer.h:153
+script::Overlay::Clear()	function	script	script-overlay-clear	script.md	engine/script/command_buffer.h:159
+script::Overlay::Put(ecs::Entity,u32,Value)	function	script	script-overlay-put-ecs-entity-u32-value	script.md	engine/script/command_buffer.h:165
+script::Overlay::Find(ecs::Entity,u32) const	function	script	script-overlay-find-ecs-entity-u32-const	script.md	engine/script/command_buffer.h:172
+script::Overlay::Size() const	function	script	script-overlay-size-const	script.md	engine/script/command_buffer.h:177
 script::ComponentCommandKind	enum	script	script-componentcommandkind	script.md	engine/script/component_bindings.h:16
 script::kCommandComponentSet	enumerator	script	script-kcommandcomponentset	script.md	engine/script/component_bindings.h:19
 script::kCommandComponentAdd	enumerator	script	script-kcommandcomponentadd	script.md	engine/script/component_bindings.h:21
@@ -2711,78 +2713,78 @@ script::TaskPool::operator=(const TaskPool&)	function	script	script-taskpool-ope
 script::TaskPool::Execute(Span<const TaskRequest>,Vector<TaskOutcome>*,jobs::Scheduler*)	function	script	script-taskpool-execute-span-lt-const-taskrequest-gt-vector-lt-taskoutcome-gt-star-jobs-scheduler-star	script.md	engine/script/task_pool.h:281
 script::TaskPool::StateCount() const	function	script	script-taskpool-statecount-const	script.md	engine/script/task_pool.h:286
 script::TaskPool::Resets() const	function	script	script-taskpool-resets-const	script.md	engine/script/task_pool.h:291
-script::kMaxValueDepth	variable	script	script-kmaxvaluedepth	script.md	engine/script/value.h:21
-script::kMaxContainerItems	variable	script	script-kmaxcontaineritems	script.md	engine/script/value.h:23
-script::ValueKind	enum	script	script-valuekind	script.md	engine/script/value.h:28
-script::ValueKind::Nil	enumerator	script	script-valuekind-nil	script.md	engine/script/value.h:31
-script::ValueKind::Bool	enumerator	script	script-valuekind-bool	script.md	engine/script/value.h:33
-script::ValueKind::Int	enumerator	script	script-valuekind-int	script.md	engine/script/value.h:35
-script::ValueKind::Float	enumerator	script	script-valuekind-float	script.md	engine/script/value.h:37
-script::ValueKind::Text	enumerator	script	script-valuekind-text	script.md	engine/script/value.h:39
-script::ValueKind::Vec2	enumerator	script	script-valuekind-vec2	script.md	engine/script/value.h:41
-script::ValueKind::Vec3	enumerator	script	script-valuekind-vec3	script.md	engine/script/value.h:43
-script::ValueKind::Vec4	enumerator	script	script-valuekind-vec4	script.md	engine/script/value.h:45
-script::ValueKind::Quat	enumerator	script	script-valuekind-quat	script.md	engine/script/value.h:47
-script::ValueKind::Entity	enumerator	script	script-valuekind-entity	script.md	engine/script/value.h:49
-script::ValueKind::Bytes	enumerator	script	script-valuekind-bytes	script.md	engine/script/value.h:51
-script::ValueKind::Array	enumerator	script	script-valuekind-array	script.md	engine/script/value.h:53
-script::ValueKind::Map	enumerator	script	script-valuekind-map	script.md	engine/script/value.h:55
-script::ValueCheck	enum	script	script-valuecheck	script.md	engine/script/value.h:61
-script::ValueCheck::Ok	enumerator	script	script-valuecheck-ok	script.md	engine/script/value.h:64
-script::ValueCheck::TooDeep	enumerator	script	script-valuecheck-toodeep	script.md	engine/script/value.h:66
-script::ValueCheck::TooManyNodes	enumerator	script	script-valuecheck-toomanynodes	script.md	engine/script/value.h:68
-script::ValueCheck::TextTooLong	enumerator	script	script-valuecheck-texttoolong	script.md	engine/script/value.h:70
-script::ValueCheck::BlobTooLarge	enumerator	script	script-valuecheck-blobtoolarge	script.md	engine/script/value.h:72
-script::ValueCheck::NotFinite	enumerator	script	script-valuecheck-notfinite	script.md	engine/script/value.h:74
-script::ValueLimits	struct	script	script-valuelimits	script.md	engine/script/value.h:81
-script::ValueLimits::max_depth	variable	script	script-valuelimits-max-depth	script.md	engine/script/value.h:84
-script::ValueLimits::max_nodes	variable	script	script-valuelimits-max-nodes	script.md	engine/script/value.h:86
-script::ValueLimits::max_text_bytes	variable	script	script-valuelimits-max-text-bytes	script.md	engine/script/value.h:88
-script::ValueLimits::max_blob_bytes	variable	script	script-valuelimits-max-blob-bytes	script.md	engine/script/value.h:90
-script::ValueLimits::require_finite	variable	script	script-valuelimits-require-finite	script.md	engine/script/value.h:92
-script::Value	class	script	script-value	script.md	engine/script/value.h:106
-script::Value::Value()	function	script	script-value-value	script.md	engine/script/value.h:110
-script::Value::Value(const Value&)	function	script	script-value-value-const-value-amp	script.md	engine/script/value.h:112
-script::Value::Value(Value&&) noexcept	function	script	script-value-value-value-amp-amp-noexcept	script.md	engine/script/value.h:114
-script::Value::operator=(const Value&)	function	script	script-value-operator-eq-const-value-amp	script.md	engine/script/value.h:116
-script::Value::operator=(Value&&) noexcept	function	script	script-value-operator-eq-value-amp-amp-noexcept	script.md	engine/script/value.h:118
-script::Value::~Value()	function	script	script-value-tilde-value	script.md	engine/script/value.h:120
-script::Value::FromBool(bool)	function	script	script-value-frombool-bool	script.md	engine/script/value.h:123
-script::Value::FromInt(i64)	function	script	script-value-fromint-i64	script.md	engine/script/value.h:125
-script::Value::FromFloat(f64)	function	script	script-value-fromfloat-f64	script.md	engine/script/value.h:127
-script::Value::FromText(StringView)	function	script	script-value-fromtext-stringview	script.md	engine/script/value.h:131
-script::Value::FromVec2(Vec2)	function	script	script-value-fromvec2-vec2	script.md	engine/script/value.h:133
-script::Value::FromVec3(Vec3)	function	script	script-value-fromvec3-vec3	script.md	engine/script/value.h:135
-script::Value::FromVec4(Vec4)	function	script	script-value-fromvec4-vec4	script.md	engine/script/value.h:137
-script::Value::FromQuat(Quaternion)	function	script	script-value-fromquat-quaternion	script.md	engine/script/value.h:139
-script::Value::FromEntity(ecs::Entity)	function	script	script-value-fromentity-ecs-entity	script.md	engine/script/value.h:141
-script::Value::FromBytes(Span<const u8>)	function	script	script-value-frombytes-span-lt-const-u8-gt	script.md	engine/script/value.h:145
-script::Value::MakeArray()	function	script	script-value-makearray	script.md	engine/script/value.h:147
-script::Value::MakeMap()	function	script	script-value-makemap	script.md	engine/script/value.h:149
-script::Value::Kind() const	function	script	script-value-kind-const	script.md	engine/script/value.h:152
-script::Value::IsNil() const	function	script	script-value-isnil-const	script.md	engine/script/value.h:156
-script::Value::IsNumber() const	function	script	script-value-isnumber-const	script.md	engine/script/value.h:160
-script::Value::AsBool() const	function	script	script-value-asbool-const	script.md	engine/script/value.h:165
-script::Value::AsInt() const	function	script	script-value-asint-const	script.md	engine/script/value.h:169
-script::Value::AsFloat() const	function	script	script-value-asfloat-const	script.md	engine/script/value.h:173
-script::Value::ToDouble() const	function	script	script-value-todouble-const	script.md	engine/script/value.h:177
-script::Value::Text() const	function	script	script-value-text-const	script.md	engine/script/value.h:181
-script::Value::AsVec2() const	function	script	script-value-asvec2-const	script.md	engine/script/value.h:185
-script::Value::AsVec3() const	function	script	script-value-asvec3-const	script.md	engine/script/value.h:189
-script::Value::AsVec4() const	function	script	script-value-asvec4-const	script.md	engine/script/value.h:193
-script::Value::AsQuat() const	function	script	script-value-asquat-const	script.md	engine/script/value.h:197
-script::Value::AsEntity() const	function	script	script-value-asentity-const	script.md	engine/script/value.h:201
-script::Value::Bytes() const	function	script	script-value-bytes-const	script.md	engine/script/value.h:205
-script::Value::Size() const	function	script	script-value-size-const	script.md	engine/script/value.h:210
-script::Value::At(usize) const	function	script	script-value-at-usize-const	script.md	engine/script/value.h:214
-script::Value::KeyAt(usize) const	function	script	script-value-keyat-usize-const	script.md	engine/script/value.h:218
-script::Value::Find(StringView) const	function	script	script-value-find-stringview-const	script.md	engine/script/value.h:223
-script::Value::Push(Value&&)	function	script	script-value-push-value-amp-amp	script.md	engine/script/value.h:231
-script::Value::Set(StringView,Value&&)	function	script	script-value-set-stringview-value-amp-amp	script.md	engine/script/value.h:238
-script::Value::Depth() const	function	script	script-value-depth-const	script.md	engine/script/value.h:241
-script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:245
-script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:250
-script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:253
+script::kMaxValueDepth	variable	script	script-kmaxvaluedepth	script.md	engine/script/value.h:23
+script::kMaxContainerItems	variable	script	script-kmaxcontaineritems	script.md	engine/script/value.h:25
+script::ValueKind	enum	script	script-valuekind	script.md	engine/script/value.h:30
+script::ValueKind::Nil	enumerator	script	script-valuekind-nil	script.md	engine/script/value.h:33
+script::ValueKind::Bool	enumerator	script	script-valuekind-bool	script.md	engine/script/value.h:35
+script::ValueKind::Int	enumerator	script	script-valuekind-int	script.md	engine/script/value.h:37
+script::ValueKind::Float	enumerator	script	script-valuekind-float	script.md	engine/script/value.h:39
+script::ValueKind::Text	enumerator	script	script-valuekind-text	script.md	engine/script/value.h:41
+script::ValueKind::Vec2	enumerator	script	script-valuekind-vec2	script.md	engine/script/value.h:43
+script::ValueKind::Vec3	enumerator	script	script-valuekind-vec3	script.md	engine/script/value.h:45
+script::ValueKind::Vec4	enumerator	script	script-valuekind-vec4	script.md	engine/script/value.h:47
+script::ValueKind::Quat	enumerator	script	script-valuekind-quat	script.md	engine/script/value.h:49
+script::ValueKind::Entity	enumerator	script	script-valuekind-entity	script.md	engine/script/value.h:51
+script::ValueKind::Bytes	enumerator	script	script-valuekind-bytes	script.md	engine/script/value.h:53
+script::ValueKind::Array	enumerator	script	script-valuekind-array	script.md	engine/script/value.h:55
+script::ValueKind::Map	enumerator	script	script-valuekind-map	script.md	engine/script/value.h:57
+script::ValueCheck	enum	script	script-valuecheck	script.md	engine/script/value.h:63
+script::ValueCheck::Ok	enumerator	script	script-valuecheck-ok	script.md	engine/script/value.h:66
+script::ValueCheck::TooDeep	enumerator	script	script-valuecheck-toodeep	script.md	engine/script/value.h:68
+script::ValueCheck::TooManyNodes	enumerator	script	script-valuecheck-toomanynodes	script.md	engine/script/value.h:70
+script::ValueCheck::TextTooLong	enumerator	script	script-valuecheck-texttoolong	script.md	engine/script/value.h:72
+script::ValueCheck::BlobTooLarge	enumerator	script	script-valuecheck-blobtoolarge	script.md	engine/script/value.h:74
+script::ValueCheck::NotFinite	enumerator	script	script-valuecheck-notfinite	script.md	engine/script/value.h:76
+script::ValueLimits	struct	script	script-valuelimits	script.md	engine/script/value.h:83
+script::ValueLimits::max_depth	variable	script	script-valuelimits-max-depth	script.md	engine/script/value.h:86
+script::ValueLimits::max_nodes	variable	script	script-valuelimits-max-nodes	script.md	engine/script/value.h:88
+script::ValueLimits::max_text_bytes	variable	script	script-valuelimits-max-text-bytes	script.md	engine/script/value.h:90
+script::ValueLimits::max_blob_bytes	variable	script	script-valuelimits-max-blob-bytes	script.md	engine/script/value.h:92
+script::ValueLimits::require_finite	variable	script	script-valuelimits-require-finite	script.md	engine/script/value.h:94
+script::Value	class	script	script-value	script.md	engine/script/value.h:108
+script::Value::Value()	function	script	script-value-value	script.md	engine/script/value.h:112
+script::Value::Value(const Value&)	function	script	script-value-value-const-value-amp	script.md	engine/script/value.h:114
+script::Value::Value(Value&&) noexcept	function	script	script-value-value-value-amp-amp-noexcept	script.md	engine/script/value.h:116
+script::Value::operator=(const Value&)	function	script	script-value-operator-eq-const-value-amp	script.md	engine/script/value.h:118
+script::Value::operator=(Value&&) noexcept	function	script	script-value-operator-eq-value-amp-amp-noexcept	script.md	engine/script/value.h:120
+script::Value::~Value()	function	script	script-value-tilde-value	script.md	engine/script/value.h:122
+script::Value::FromBool(bool)	function	script	script-value-frombool-bool	script.md	engine/script/value.h:125
+script::Value::FromInt(i64)	function	script	script-value-fromint-i64	script.md	engine/script/value.h:127
+script::Value::FromFloat(f64)	function	script	script-value-fromfloat-f64	script.md	engine/script/value.h:129
+script::Value::FromText(StringView)	function	script	script-value-fromtext-stringview	script.md	engine/script/value.h:133
+script::Value::FromVec2(Vec2)	function	script	script-value-fromvec2-vec2	script.md	engine/script/value.h:135
+script::Value::FromVec3(Vec3)	function	script	script-value-fromvec3-vec3	script.md	engine/script/value.h:137
+script::Value::FromVec4(Vec4)	function	script	script-value-fromvec4-vec4	script.md	engine/script/value.h:139
+script::Value::FromQuat(Quaternion)	function	script	script-value-fromquat-quaternion	script.md	engine/script/value.h:141
+script::Value::FromEntity(ecs::Entity)	function	script	script-value-fromentity-ecs-entity	script.md	engine/script/value.h:143
+script::Value::FromBytes(Span<const u8>)	function	script	script-value-frombytes-span-lt-const-u8-gt	script.md	engine/script/value.h:147
+script::Value::MakeArray()	function	script	script-value-makearray	script.md	engine/script/value.h:149
+script::Value::MakeMap()	function	script	script-value-makemap	script.md	engine/script/value.h:151
+script::Value::Kind() const	function	script	script-value-kind-const	script.md	engine/script/value.h:154
+script::Value::IsNil() const	function	script	script-value-isnil-const	script.md	engine/script/value.h:158
+script::Value::IsNumber() const	function	script	script-value-isnumber-const	script.md	engine/script/value.h:162
+script::Value::AsBool() const	function	script	script-value-asbool-const	script.md	engine/script/value.h:167
+script::Value::AsInt() const	function	script	script-value-asint-const	script.md	engine/script/value.h:171
+script::Value::AsFloat() const	function	script	script-value-asfloat-const	script.md	engine/script/value.h:175
+script::Value::ToDouble() const	function	script	script-value-todouble-const	script.md	engine/script/value.h:179
+script::Value::Text() const	function	script	script-value-text-const	script.md	engine/script/value.h:183
+script::Value::AsVec2() const	function	script	script-value-asvec2-const	script.md	engine/script/value.h:187
+script::Value::AsVec3() const	function	script	script-value-asvec3-const	script.md	engine/script/value.h:191
+script::Value::AsVec4() const	function	script	script-value-asvec4-const	script.md	engine/script/value.h:195
+script::Value::AsQuat() const	function	script	script-value-asquat-const	script.md	engine/script/value.h:199
+script::Value::AsEntity() const	function	script	script-value-asentity-const	script.md	engine/script/value.h:203
+script::Value::Bytes() const	function	script	script-value-bytes-const	script.md	engine/script/value.h:207
+script::Value::Size() const	function	script	script-value-size-const	script.md	engine/script/value.h:212
+script::Value::At(usize) const	function	script	script-value-at-usize-const	script.md	engine/script/value.h:216
+script::Value::KeyAt(usize) const	function	script	script-value-keyat-usize-const	script.md	engine/script/value.h:220
+script::Value::Find(StringView) const	function	script	script-value-find-stringview-const	script.md	engine/script/value.h:225
+script::Value::Push(Value&&)	function	script	script-value-push-value-amp-amp	script.md	engine/script/value.h:233
+script::Value::Set(StringView,Value&&)	function	script	script-value-set-stringview-value-amp-amp	script.md	engine/script/value.h:240
+script::Value::Depth() const	function	script	script-value-depth-const	script.md	engine/script/value.h:243
+script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:247
+script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:252
+script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:255
 script::kValueRecordVersion	variable	script	script-kvaluerecordversion	script.md	engine/script/value_codec.h:16
 script::ValueRecordStatus	enum	script	script-valuerecordstatus	script.md	engine/script/value_codec.h:21
 script::ValueRecordStatus::Ok	enumerator	script	script-valuerecordstatus-ok	script.md	engine/script/value_codec.h:24
@@ -7263,58 +7265,58 @@ asset::MountSpec::prefix	variable	asset	asset-mountspec-prefix	asset.md	engine/a
 asset::MountSpec::path	variable	asset	asset-mountspec-path	asset.md	engine/asset/asset_settings.h:82
 asset::MountSpec::priority	variable	asset	asset-mountspec-priority	asset.md	engine/asset/asset_settings.h:83
 asset::MountSpecsFromSettings(const settings::Registry&,Vector<MountSpec>*)	function	asset	asset-mountspecsfromsettings-const-settings-registry-amp-vector-lt-mountspec-gt-star	asset.md	engine/asset/asset_settings.h:94
-asset::LoadPriority	enum	asset	asset-loadpriority	asset.md	engine/asset/async_loader.h:28
-asset::LoadPriority::Immediate	enumerator	asset	asset-loadpriority-immediate	asset.md	engine/asset/async_loader.h:30
-asset::LoadPriority::Normal	enumerator	asset	asset-loadpriority-normal	asset.md	engine/asset/async_loader.h:31
-asset::LoadPriority::Background	enumerator	asset	asset-loadpriority-background	asset.md	engine/asset/async_loader.h:32
-asset::LoadRequestPtr	alias	asset	asset-loadrequestptr	asset.md	engine/asset/async_loader.h:39
-asset::LoadTicket	class	asset	asset-loadticket	asset.md	engine/asset/async_loader.h:49
-asset::LoadTicket::LoadTicket()	function	asset	asset-loadticket-loadticket	asset.md	engine/asset/async_loader.h:53
-asset::LoadTicket::LoadTicket(const LoadTicket&)	function	asset	asset-loadticket-loadticket-const-loadticket-amp	asset.md	engine/asset/async_loader.h:54
-asset::LoadTicket::operator=(const LoadTicket&)	function	asset	asset-loadticket-operator-eq-const-loadticket-amp	asset.md	engine/asset/async_loader.h:55
-asset::LoadTicket::LoadTicket(LoadTicket&&) noexcept	function	asset	asset-loadticket-loadticket-loadticket-amp-amp-noexcept	asset.md	engine/asset/async_loader.h:57
-asset::LoadTicket::operator=(LoadTicket&&) noexcept	function	asset	asset-loadticket-operator-eq-loadticket-amp-amp-noexcept	asset.md	engine/asset/async_loader.h:59
-asset::LoadTicket::~LoadTicket()	function	asset	asset-loadticket-tilde-loadticket	asset.md	engine/asset/async_loader.h:61
-asset::LoadTicket::Valid() const	function	asset	asset-loadticket-valid-const	asset.md	engine/asset/async_loader.h:66
-asset::LoadTicket::IsDone() const	function	asset	asset-loadticket-isdone-const	asset.md	engine/asset/async_loader.h:71
-asset::LoadTicket::Result() const	function	asset	asset-loadticket-result-const	asset.md	engine/asset/async_loader.h:75
-asset::LoadTicket::Finish(HandleBase*) const	function	asset	asset-loadticket-finish-handlebase-star-const	asset.md	engine/asset/async_loader.h:81
-asset::LoadTicket::Cancel()	function	asset	asset-loadticket-cancel	asset.md	engine/asset/async_loader.h:86
-asset::LoadTicket::Progress(u32*,u32*) const	function	asset	asset-loadticket-progress-u32-star-u32-star-const	asset.md	engine/asset/async_loader.h:93
-asset::LoadUpdate	struct	asset	asset-loadupdate	asset.md	engine/asset/async_loader.h:107
-asset::LoadUpdate::completed	variable	asset	asset-loadupdate-completed	asset.md	engine/asset/async_loader.h:109
-asset::LoadUpdate::bytes	variable	asset	asset-loadupdate-bytes	asset.md	engine/asset/async_loader.h:110
-asset::LoadUpdate::backlog	variable	asset	asset-loadupdate-backlog	asset.md	engine/asset/async_loader.h:111
-asset::AsyncLoadStats	struct	asset	asset-asyncloadstats	asset.md	engine/asset/async_loader.h:117
-asset::AsyncLoadStats::queued	variable	asset	asset-asyncloadstats-queued	asset.md	engine/asset/async_loader.h:119
-asset::AsyncLoadStats::waiting_table	variable	asset	asset-asyncloadstats-waiting-table	asset.md	engine/asset/async_loader.h:120
-asset::AsyncLoadStats::reading	variable	asset	asset-asyncloadstats-reading	asset.md	engine/asset/async_loader.h:121
-asset::AsyncLoadStats::ready	variable	asset	asset-asyncloadstats-ready	asset.md	engine/asset/async_loader.h:122
-asset::AsyncLoadStats::completed	variable	asset	asset-asyncloadstats-completed	asset.md	engine/asset/async_loader.h:123
-asset::AsyncLoadStats::failed	variable	asset	asset-asyncloadstats-failed	asset.md	engine/asset/async_loader.h:124
-asset::AsyncLoadStats::cancelled	variable	asset	asset-asyncloadstats-cancelled	asset.md	engine/asset/async_loader.h:125
-asset::AsyncLoadStats::rejected	variable	asset	asset-asyncloadstats-rejected	asset.md	engine/asset/async_loader.h:126
-asset::AsyncLoadStats::shared	variable	asset	asset-asyncloadstats-shared	asset.md	engine/asset/async_loader.h:127
-asset::AsyncLoadStats::updates	variable	asset	asset-asyncloadstats-updates	asset.md	engine/asset/async_loader.h:128
-asset::AsyncLoaderOptions	struct	asset	asset-asyncloaderoptions	asset.md	engine/asset/async_loader.h:134
-asset::AsyncLoaderOptions::max_inflight	variable	asset	asset-asyncloaderoptions-max-inflight	asset.md	engine/asset/async_loader.h:136
-asset::AsyncLoaderOptions::max_queued	variable	asset	asset-asyncloaderoptions-max-queued	asset.md	engine/asset/async_loader.h:137
-asset::AsyncLoaderOptions::clock	variable	asset	asset-asyncloaderoptions-clock	asset.md	engine/asset/async_loader.h:140
-asset::AsyncLoaderOptions::clock_user	variable	asset	asset-asyncloaderoptions-clock-user	asset.md	engine/asset/async_loader.h:141
-asset::AsyncLoader	class	asset	asset-asyncloader	asset.md	engine/asset/async_loader.h:151
-asset::AsyncLoader::AsyncLoader(ResourceManager&,jobs::Scheduler&,const AsyncLoaderOptions&)	function	asset	asset-asyncloader-asyncloader-resourcemanager-amp-jobs-scheduler-amp-const-asyncloaderoptions-amp	asset.md	engine/asset/async_loader.h:157
-asset::AsyncLoader::AsyncLoader(const AsyncLoader&)	function	asset	asset-asyncloader-asyncloader-const-asyncloader-amp	asset.md	engine/asset/async_loader.h:159
-asset::AsyncLoader::operator=(const AsyncLoader&)	function	asset	asset-asyncloader-operator-eq-const-asyncloader-amp	asset.md	engine/asset/async_loader.h:160
-asset::AsyncLoader::~AsyncLoader()	function	asset	asset-asyncloader-tilde-asyncloader	asset.md	engine/asset/async_loader.h:163
-asset::AsyncLoader::LoadAsync(ResourceId,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadasync-resourceid-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:174
-asset::AsyncLoader::LoadPathAsync(StringView,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadpathasync-stringview-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:184
-asset::AsyncLoader::LoadAsyncRaw(ResourceId,ResourceType,u32,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadasyncraw-resourceid-resourcetype-u32-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:193
-asset::AsyncLoader::LoadPathAsyncRaw(StringView,ResourceType,u32,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadpathasyncraw-stringview-resourcetype-u32-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:198
-asset::AsyncLoader::LoadLevelAsync(ResourceId,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadlevelasync-resourceid-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:209
-asset::AsyncLoader::Update(u64,u64)	function	asset	asset-asyncloader-update-u64-u64	asset.md	engine/asset/async_loader.h:219
-asset::AsyncLoader::Wait(const LoadTicket&)	function	asset	asset-asyncloader-wait-const-loadticket-amp	asset.md	engine/asset/async_loader.h:224
-asset::AsyncLoader::Stats() const	function	asset	asset-asyncloader-stats-const	asset.md	engine/asset/async_loader.h:226
-asset::AsyncLoader::RunRead(LoadRequest&)	function	asset	asset-asyncloader-runread-loadrequest-amp	asset.md	engine/asset/async_loader.h:229
+asset::LoadPriority	enum	asset	asset-loadpriority	asset.md	engine/asset/async_loader.h:29
+asset::LoadPriority::Immediate	enumerator	asset	asset-loadpriority-immediate	asset.md	engine/asset/async_loader.h:31
+asset::LoadPriority::Normal	enumerator	asset	asset-loadpriority-normal	asset.md	engine/asset/async_loader.h:32
+asset::LoadPriority::Background	enumerator	asset	asset-loadpriority-background	asset.md	engine/asset/async_loader.h:33
+asset::LoadRequestPtr	alias	asset	asset-loadrequestptr	asset.md	engine/asset/async_loader.h:40
+asset::LoadTicket	class	asset	asset-loadticket	asset.md	engine/asset/async_loader.h:50
+asset::LoadTicket::LoadTicket()	function	asset	asset-loadticket-loadticket	asset.md	engine/asset/async_loader.h:54
+asset::LoadTicket::LoadTicket(const LoadTicket&)	function	asset	asset-loadticket-loadticket-const-loadticket-amp	asset.md	engine/asset/async_loader.h:55
+asset::LoadTicket::operator=(const LoadTicket&)	function	asset	asset-loadticket-operator-eq-const-loadticket-amp	asset.md	engine/asset/async_loader.h:56
+asset::LoadTicket::LoadTicket(LoadTicket&&) noexcept	function	asset	asset-loadticket-loadticket-loadticket-amp-amp-noexcept	asset.md	engine/asset/async_loader.h:58
+asset::LoadTicket::operator=(LoadTicket&&) noexcept	function	asset	asset-loadticket-operator-eq-loadticket-amp-amp-noexcept	asset.md	engine/asset/async_loader.h:60
+asset::LoadTicket::~LoadTicket()	function	asset	asset-loadticket-tilde-loadticket	asset.md	engine/asset/async_loader.h:62
+asset::LoadTicket::Valid() const	function	asset	asset-loadticket-valid-const	asset.md	engine/asset/async_loader.h:67
+asset::LoadTicket::IsDone() const	function	asset	asset-loadticket-isdone-const	asset.md	engine/asset/async_loader.h:72
+asset::LoadTicket::Result() const	function	asset	asset-loadticket-result-const	asset.md	engine/asset/async_loader.h:76
+asset::LoadTicket::Finish(HandleBase*) const	function	asset	asset-loadticket-finish-handlebase-star-const	asset.md	engine/asset/async_loader.h:82
+asset::LoadTicket::Cancel()	function	asset	asset-loadticket-cancel	asset.md	engine/asset/async_loader.h:87
+asset::LoadTicket::Progress(u32*,u32*) const	function	asset	asset-loadticket-progress-u32-star-u32-star-const	asset.md	engine/asset/async_loader.h:94
+asset::LoadUpdate	struct	asset	asset-loadupdate	asset.md	engine/asset/async_loader.h:108
+asset::LoadUpdate::completed	variable	asset	asset-loadupdate-completed	asset.md	engine/asset/async_loader.h:110
+asset::LoadUpdate::bytes	variable	asset	asset-loadupdate-bytes	asset.md	engine/asset/async_loader.h:111
+asset::LoadUpdate::backlog	variable	asset	asset-loadupdate-backlog	asset.md	engine/asset/async_loader.h:112
+asset::AsyncLoadStats	struct	asset	asset-asyncloadstats	asset.md	engine/asset/async_loader.h:118
+asset::AsyncLoadStats::queued	variable	asset	asset-asyncloadstats-queued	asset.md	engine/asset/async_loader.h:120
+asset::AsyncLoadStats::waiting_table	variable	asset	asset-asyncloadstats-waiting-table	asset.md	engine/asset/async_loader.h:121
+asset::AsyncLoadStats::reading	variable	asset	asset-asyncloadstats-reading	asset.md	engine/asset/async_loader.h:122
+asset::AsyncLoadStats::ready	variable	asset	asset-asyncloadstats-ready	asset.md	engine/asset/async_loader.h:123
+asset::AsyncLoadStats::completed	variable	asset	asset-asyncloadstats-completed	asset.md	engine/asset/async_loader.h:124
+asset::AsyncLoadStats::failed	variable	asset	asset-asyncloadstats-failed	asset.md	engine/asset/async_loader.h:125
+asset::AsyncLoadStats::cancelled	variable	asset	asset-asyncloadstats-cancelled	asset.md	engine/asset/async_loader.h:126
+asset::AsyncLoadStats::rejected	variable	asset	asset-asyncloadstats-rejected	asset.md	engine/asset/async_loader.h:127
+asset::AsyncLoadStats::shared	variable	asset	asset-asyncloadstats-shared	asset.md	engine/asset/async_loader.h:128
+asset::AsyncLoadStats::updates	variable	asset	asset-asyncloadstats-updates	asset.md	engine/asset/async_loader.h:129
+asset::AsyncLoaderOptions	struct	asset	asset-asyncloaderoptions	asset.md	engine/asset/async_loader.h:135
+asset::AsyncLoaderOptions::max_inflight	variable	asset	asset-asyncloaderoptions-max-inflight	asset.md	engine/asset/async_loader.h:137
+asset::AsyncLoaderOptions::max_queued	variable	asset	asset-asyncloaderoptions-max-queued	asset.md	engine/asset/async_loader.h:138
+asset::AsyncLoaderOptions::clock	variable	asset	asset-asyncloaderoptions-clock	asset.md	engine/asset/async_loader.h:141
+asset::AsyncLoaderOptions::clock_user	variable	asset	asset-asyncloaderoptions-clock-user	asset.md	engine/asset/async_loader.h:142
+asset::AsyncLoader	class	asset	asset-asyncloader	asset.md	engine/asset/async_loader.h:152
+asset::AsyncLoader::AsyncLoader(ResourceManager&,jobs::Scheduler&,const AsyncLoaderOptions&)	function	asset	asset-asyncloader-asyncloader-resourcemanager-amp-jobs-scheduler-amp-const-asyncloaderoptions-amp	asset.md	engine/asset/async_loader.h:158
+asset::AsyncLoader::AsyncLoader(const AsyncLoader&)	function	asset	asset-asyncloader-asyncloader-const-asyncloader-amp	asset.md	engine/asset/async_loader.h:160
+asset::AsyncLoader::operator=(const AsyncLoader&)	function	asset	asset-asyncloader-operator-eq-const-asyncloader-amp	asset.md	engine/asset/async_loader.h:161
+asset::AsyncLoader::~AsyncLoader()	function	asset	asset-asyncloader-tilde-asyncloader	asset.md	engine/asset/async_loader.h:164
+asset::AsyncLoader::LoadAsync(ResourceId,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadasync-resourceid-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:175
+asset::AsyncLoader::LoadPathAsync(StringView,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadpathasync-stringview-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:185
+asset::AsyncLoader::LoadAsyncRaw(ResourceId,ResourceType,u32,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadasyncraw-resourceid-resourcetype-u32-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:194
+asset::AsyncLoader::LoadPathAsyncRaw(StringView,ResourceType,u32,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadpathasyncraw-stringview-resourcetype-u32-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:199
+asset::AsyncLoader::LoadLevelAsync(ResourceId,LoadPriority,const storage::CancelToken*)	function	asset	asset-asyncloader-loadlevelasync-resourceid-loadpriority-const-storage-canceltoken-star	asset.md	engine/asset/async_loader.h:210
+asset::AsyncLoader::Update(u64,u64)	function	asset	asset-asyncloader-update-u64-u64	asset.md	engine/asset/async_loader.h:220
+asset::AsyncLoader::Wait(const LoadTicket&)	function	asset	asset-asyncloader-wait-const-loadticket-amp	asset.md	engine/asset/async_loader.h:225
+asset::AsyncLoader::Stats() const	function	asset	asset-asyncloader-stats-const	asset.md	engine/asset/async_loader.h:227
+asset::AsyncLoader::RunRead(LoadRequest&)	function	asset	asset-asyncloader-runread-loadrequest-amp	asset.md	engine/asset/async_loader.h:230
 asset::kAudioClipHeaderBytes	variable	asset	asset-kaudioclipheaderbytes	asset.md	engine/asset/audio_clip.h:35
 asset::kMaxAudioClipFrames	variable	asset	asset-kmaxaudioclipframes	asset.md	engine/asset/audio_clip.h:37
 asset::AudioClipSection	enum	asset	asset-audioclipsection	asset.md	engine/asset/audio_clip.h:40
@@ -9335,21 +9337,21 @@ storage::LocalStorage::Records()	function	storage	storage-localstorage-records	s
 storage::LocalStorage::Connection()	function	storage	storage-localstorage-connection	storage.md	engine/storage/local_storage.h:50
 storage::LocalStorage::AutosaveSeconds() const	function	storage	storage-localstorage-autosaveseconds-const	storage.md	engine/storage/local_storage.h:53
 storage::LocalStorage::Path() const	function	storage	storage-localstorage-path-const	storage.md	engine/storage/local_storage.h:56
-storage::MemoryStore	class	storage	storage-memorystore	storage.md	engine/storage/memory_store.h:21
-storage::MemoryStore::MemoryStore()	function	storage	storage-memorystore-memorystore	storage.md	engine/storage/memory_store.h:25
-storage::MemoryStore::Name() const	function	storage	storage-memorystore-name-const	storage.md	engine/storage/memory_store.h:30
-storage::MemoryStore::Put(const EntityRecord&)	function	storage	storage-memorystore-put-const-entityrecord-amp	storage.md	engine/storage/memory_store.h:31
-storage::MemoryStore::Get(EntityKey,EntityRecord*) const	function	storage	storage-memorystore-get-entitykey-entityrecord-star-const	storage.md	engine/storage/memory_store.h:32
-storage::MemoryStore::Remove(EntityKey)	function	storage	storage-memorystore-remove-entitykey	storage.md	engine/storage/memory_store.h:33
-storage::MemoryStore::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-memorystore-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/memory_store.h:34
-storage::MemoryStore::Count(usize*) const	function	storage	storage-memorystore-count-usize-star-const	storage.md	engine/storage/memory_store.h:35
-storage::MemoryStore::Begin()	function	storage	storage-memorystore-begin	storage.md	engine/storage/memory_store.h:36
-storage::MemoryStore::Commit()	function	storage	storage-memorystore-commit	storage.md	engine/storage/memory_store.h:37
-storage::MemoryStore::Rollback()	function	storage	storage-memorystore-rollback	storage.md	engine/storage/memory_store.h:38
-storage::MemoryStore::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-memorystore-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/memory_store.h:39
-storage::MemoryStore::SetMetadata(StringView,StringView)	function	storage	storage-memorystore-setmetadata-stringview-stringview	storage.md	engine/storage/memory_store.h:40
-storage::MemoryStore::FailAfter(u32)	function	storage	storage-memorystore-failafter-u32	storage.md	engine/storage/memory_store.h:47
-storage::MemoryStore::CorruptRecord(EntityKey)	function	storage	storage-memorystore-corruptrecord-entitykey	storage.md	engine/storage/memory_store.h:53
+storage::MemoryStore	class	storage	storage-memorystore	storage.md	engine/storage/memory_store.h:22
+storage::MemoryStore::MemoryStore()	function	storage	storage-memorystore-memorystore	storage.md	engine/storage/memory_store.h:26
+storage::MemoryStore::Name() const	function	storage	storage-memorystore-name-const	storage.md	engine/storage/memory_store.h:31
+storage::MemoryStore::Put(const EntityRecord&)	function	storage	storage-memorystore-put-const-entityrecord-amp	storage.md	engine/storage/memory_store.h:32
+storage::MemoryStore::Get(EntityKey,EntityRecord*) const	function	storage	storage-memorystore-get-entitykey-entityrecord-star-const	storage.md	engine/storage/memory_store.h:33
+storage::MemoryStore::Remove(EntityKey)	function	storage	storage-memorystore-remove-entitykey	storage.md	engine/storage/memory_store.h:34
+storage::MemoryStore::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-memorystore-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/memory_store.h:35
+storage::MemoryStore::Count(usize*) const	function	storage	storage-memorystore-count-usize-star-const	storage.md	engine/storage/memory_store.h:36
+storage::MemoryStore::Begin()	function	storage	storage-memorystore-begin	storage.md	engine/storage/memory_store.h:37
+storage::MemoryStore::Commit()	function	storage	storage-memorystore-commit	storage.md	engine/storage/memory_store.h:38
+storage::MemoryStore::Rollback()	function	storage	storage-memorystore-rollback	storage.md	engine/storage/memory_store.h:39
+storage::MemoryStore::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-memorystore-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/memory_store.h:40
+storage::MemoryStore::SetMetadata(StringView,StringView)	function	storage	storage-memorystore-setmetadata-stringview-stringview	storage.md	engine/storage/memory_store.h:41
+storage::MemoryStore::FailAfter(u32)	function	storage	storage-memorystore-failafter-u32	storage.md	engine/storage/memory_store.h:48
+storage::MemoryStore::CorruptRecord(EntityKey)	function	storage	storage-memorystore-corruptrecord-entitykey	storage.md	engine/storage/memory_store.h:54
 storage::SaveSession	class	storage	storage-savesession	storage.md	engine/storage/save_session.h:26
 storage::SaveSession::SaveSession()	function	storage	storage-savesession-savesession	storage.md	engine/storage/save_session.h:30
 storage::SaveSession::SaveSession(const SaveSession&)	function	storage	storage-savesession-savesession-const-savesession-amp	storage.md	engine/storage/save_session.h:31

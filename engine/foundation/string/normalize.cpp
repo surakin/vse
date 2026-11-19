@@ -1,5 +1,9 @@
 #include "string/normalize.h"
 
+#include "containers/array.h"
+#include "containers/vector.h"
+#include "cstr/mem_ops.h"
+
 // Hangul syllable arithmetic (UAX #15 / Unicode 3.12), used instead of a
 // table lookup for the whole precomposed-syllable block — a shortcut here
 // would silently produce wrong output for all Hangul text.
@@ -122,8 +126,31 @@ void Detail_CanonicalOrder(Vector<u32, ArenaAllocator>& codepoints)
         }
         usize run_end = i;  // [run_start, run_end) is a maximal non-starter run.
 
-        // Stable insertion sort by combining class — runs are tiny (a
-        // handful of combining marks at most).
+        // Stable sort by combining class. A real text has a handful of marks per run, sorted by insertion; a long run
+        // (hostile input: thousands of marks on one letter) is merge-sorted, so it stays n log n (container audit
+        // Day 11: insertion was quadratic in the run).
+        if (run_end - run_start > 32)
+        {
+            // A stable counting sort over the 256 classes: O(n), and it needs nothing from `algorithm.h` (which
+            // depends on this module).
+            Array<u32, 257> start{};
+            for (usize a = run_start; a < run_end; ++a)
+            {
+                ++start[CombiningClass(codepoints[a]) + 1u];
+            }
+            for (usize c = 1; c < start.Size(); ++c)
+            {
+                start[c] += start[c - 1];
+            }
+            Vector<u32> sorted;
+            sorted.Resize(run_end - run_start);
+            for (usize a = run_start; a < run_end; ++a)
+            {
+                sorted[start[CombiningClass(codepoints[a])]++] = codepoints[a];
+            }
+            MemCopy(codepoints.Data() + run_start, sorted.Data(), sorted.Size() * sizeof(u32));
+            continue;
+        }
         for (usize a = run_start + 1; a < run_end; ++a)
         {
             u32 value = codepoints[a];

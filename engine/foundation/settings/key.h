@@ -8,6 +8,7 @@
 //! `width` in the section `[renderer]`, and `a.b.c` is `c` in `[a.b]`; [[settings::Key::Section]] and
 //! [[settings::Key::Name]] give that split.
 
+#include "containers/hash.h"
 #include "string/string.h"
 #include "types.h"
 
@@ -86,3 +87,17 @@ private:
 };
 
 }  // namespace engine_placeholder::settings
+
+namespace engine_placeholder
+{
+
+/// Hash function for [[settings::Key]] keys of a [[HashMap]] (container audit Day 11): the key's own `Hash()`.
+///
+/// - Thread-safety: thread-safe (stateless).
+template <> struct Hash<settings::Key>
+{
+    /// Returns the key's hash.
+    usize operator()(const settings::Key& k) const { return k.Hash(); }
+};
+
+}  // namespace engine_placeholder

@@ -98,6 +98,15 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
     - `text/layout.cpp` makes five vectors per `Arrange`;
     - `combobox` and `value_widgets` make a probe `TextRun` per `Measure`;
     - the `platform/` clipboard paths copy byte by byte.
+  - (6) Deferred from series Day 11:
+    - `ResourceManager::Replace`/`Unload` find dependents by scanning every slot (O(n³·d) for a hot reload);
+    - the blob cache looks up and evicts by scan, and rewrites its index per `Put`;
+    - the memory backend's `AddMany` duplicate check, and the network backend's slot scans;
+    - the settings registry's sorted inserts and deprecated-alias scan;
+    - `asset_mint` `project.cpp` referrer and asset scans;
+    - the glTF names' fallback past 32 passes;
+    - `json_view` building error paths on every `Get`;
+    - the music queue's shift.
   - (5) Deferred from series Day 10: `ecs::SetParent`, `ClearParent` and `DestroyRecursive` collect every `Parent` link in the world per call, so
     building a hierarchy is O(N²): 4,000 entities take 118 ms (Day 1). It needs a children index kept through every structural change.
   - (3) Deferred from series Day 8 (physics):

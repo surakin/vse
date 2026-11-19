@@ -74,6 +74,10 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - The C API surface scene's entries, lights, meshes and materials are `DenseMap`s (O(1) per drawn entity, same removal order).
   - `MemoryStore` is a `HashMap` with sorted keys for scans (10,000 random puts: 2,975 to 145 ns each); the UDP and simulated reorder buffers are keyed by sequence.
   - The ECS hierarchy index is deferred (`KNOWN-ISSUES.md`). Review: no findings.
+- **Day 11 done in part (2026-11-19, Linux):**
+  - Settings documents are indexed by key (2,000 keys: 3,088 to 314 ns each); the async load queue is a `BinaryHeap`.
+  - `asset_mint` level names are indexed; long combining-mark runs are counting-sorted.
+  - The resource manager, blob cache, backends and others are deferred (`KNOWN-ISSUES.md`). Review: no findings.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

@@ -16,7 +16,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 3 | 87 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
-| [Foundation: Settings](foundation-settings.md) | 18 | 545 |
+| [Foundation: Settings](foundation-settings.md) | 18 | 547 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
 | [Scripting](script.md) | 27 | 827 |
 | [Script physics bindings](script_physics.md) | 4 | 68 |

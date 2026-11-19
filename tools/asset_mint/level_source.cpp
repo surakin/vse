@@ -727,6 +727,9 @@ private:
     bool have_id_ = false;
     bool entities_started_ = false;
     Vector<LvEntity> entities_;
+    // The named entities by name, positions in `entities_` (container audit Day 11: every reference and the duplicate
+    // check scanned every entity, O(E^2) for a level). The names are views into the source text, which outlives them.
+    HashMap<StringView, u32, HeapAllocator> by_name_{HeapAllocator::Default()};
     Vector<LevelResource> resources_;
     Vector<Resolved> resolved_;
     Vector<DefaultFields> defaults_;
@@ -948,14 +951,8 @@ bool Minter::CheckCycle(ByteSpan blob, ResourceId included, usize depth, Vector<
 
 const LvEntity* Minter::FindByName(StringView name) const
 {
-    for (usize i = 0; i < entities_.Size(); ++i)
-    {
-        if (entities_[i].named && entities_[i].name == name)
-        {
-            return &entities_[i];
-        }
-    }
-    return nullptr;
+    const u32* at = by_name_.Find(name);
+    return at != nullptr ? &entities_[*at] : nullptr;
 }
 
 const DefaultFields* Minter::DefaultsOf(const storage::RegisteredComponent& component)
@@ -1228,6 +1225,10 @@ Status Minter::Line(const Vector<StringView>& tokens, u32 line)
         if (entities_.Size() >= kMaxLevelEntities)
         {
             return Fail(error_, line, "the level has more entities than the limit");
+        }
+        if (entity.named)
+        {
+            by_name_.Insert(entity.name, static_cast<u32>(entities_.Size()));
         }
         entities_.Push(static_cast<LvEntity&&>(entity));
         return Status::Success();

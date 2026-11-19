@@ -9,6 +9,7 @@
 //! The objects of a closure are built together, as in [[asset::ResourceManager::Load]]: a level and everything it
 //! names appear at once, while the reading reports its progress.
 
+#include "containers/binary_heap.h"
 #include "asset/resource_manager.h"
 #include "containers/hash_map.h"
 #include "containers/shared_ptr.h"
@@ -244,7 +245,13 @@ private:
     AsyncLoaderOptions options_;
     jobs::Counter outstanding_;
     mutable Mutex mutex_;
-    Vector<LoadRequestPtr> queued_;
+    // The most urgent first (container audit Day 11: a linear scan per start). `Before` is a total order (priority,
+    // then the submit sequence), so the loads start in the same order as before.
+    struct LaterRequest
+    {
+        bool operator()(const LoadRequestPtr& a, const LoadRequestPtr& b) const;
+    };
+    BinaryHeap<LoadRequestPtr, LaterRequest> queued_;
     Vector<LoadRequestPtr> waiting_;
     Vector<LoadRequestPtr> ready_;
     Vector<LoadRequestPtr> active_;  // every request that is not done: for deduplication and shutdown

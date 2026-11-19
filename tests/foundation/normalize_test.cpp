@@ -121,3 +121,27 @@ TEST_CASE("composition-excluded U+0958 does not recompose from its decomposition
     String<ArenaAllocator> nfc = NormalizeNFC(out_arena, nfd.View());
     REQUIRE((nfc.View() == nfd.View() && nfc.View() != source));
 }
+
+TEST_CASE("Canonical ordering of a long run of combining marks is stable and the same as for a short one",
+          "[normalize]")
+{
+    // Container audit Day 11: a run longer than 32 marks is ordered by a counting sort (it was an insertion sort,
+    // quadratic on hostile input). U+0316 has class 220, U+0301 class 230.
+    using namespace engine_placeholder;
+    ArenaAllocator arena(1 << 20);
+    Vector<u32, ArenaAllocator> codepoints(arena);
+    codepoints.Push(0x61);  // a starter
+    const u32 n = 5000;
+    for (u32 i = 0; i < n; ++i)
+    {
+        codepoints.Push(i % 3 == 0 ? 0x0316u : 0x0301u);
+    }
+    Detail_CanonicalOrder(codepoints);
+    REQUIRE(codepoints.Size() == n + 1);
+    CHECK(codepoints[0] == 0x61);
+    const u32 low = (n + 2) / 3;  // the class-220 marks: i = 0, 3, 6, ...
+    for (u32 i = 1; i <= n; ++i)
+    {
+        CHECK(codepoints[i] == (i <= low ? 0x0316u : 0x0301u));
+    }
+}

@@ -2214,6 +2214,31 @@ bool operator<(const Key& other) const;
 
 Orders keys bytewise.
 
+## `Hash<settings::Key>` {#hash-lt-settings-key-gt}
+
+`struct Hash<settings::Key>` — defined in `engine/foundation/settings/key.h`
+
+```cpp
+template <>
+struct Hash<settings::Key> { ... }
+```
+
+Hash function for [`settings::Key`](#settings-key) keys of a [`HashMap`](foundation-containers.md#hashmap) (container audit Day 11): the key's own `Hash()`.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe (stateless). |
+
+### `operator()(const settings::Key&)` {#hash-lt-settings-key-gt-operator-call-const-settings-key-amp-const}
+
+`operator Hash<settings::Key>::operator()` — defined in `engine/foundation/settings/key.h`
+
+```cpp
+usize operator()(const settings::Key& k) const;
+```
+
+Returns the key's hash.
+
 ## `LayerRole` {#settings-layerrole}
 
 `enum settings::LayerRole` — defined in `engine/foundation/settings/layers.h`
