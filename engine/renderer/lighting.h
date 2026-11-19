@@ -54,8 +54,6 @@ struct SurfacePoint
     f32 metallic = 0.0f;
     /// Baked occlusion in [0, 1] applied to the ambient term.
     f32 occlusion = 1.0f;
-    /// Emissive scale: the surface emits `albedo * emissive_scale`.
-    f32 emissive_scale = 0.0f;
     /// Unit world-space normal.
     Vec3 normal = Vec3(0, 1, 0);
 };
@@ -74,7 +72,10 @@ struct SurfacePoint
 /// - Fails: never.
 Vec3 ShadeLight(const SurfacePoint& surface, const Vec3& view, const Vec3& light, const Vec3& radiance);
 
-/// Returns the ambient and emissive terms: `albedo * (1 - metallic) * ambient * occlusion + albedo * emissive_scale`.
+/// Returns the ambient term: `albedo * (1 - metallic) * ambient * occlusion`.
+///
+/// Emission is not part of it: the G-buffer's emissive target holds it, and the lighting pass adds it as it is (glTF
+/// coverage Day 2).
 ///
 /// - Param surface: the decoded surface.
 /// - Param ambient: the summed ambient light (linear).

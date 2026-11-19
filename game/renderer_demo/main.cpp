@@ -989,8 +989,8 @@ bool ParseCount(const char* text, long* out, long max = 0x7fffffffL)
 // Maps a layer name to a GBufferLayer value, or -1.
 int ParseLayer(const char* name)
 {
-    static const char* const kNames[] = {"albedo", "normal", "material", "depth", "worldpos"};
-    for (int i = 0; i < 5; ++i)
+    static const char* const kNames[] = {"albedo", "normal", "material", "depth", "worldpos", "emissive"};
+    for (int i = 0; i < 6; ++i)
     {
         if (CStrCompare(name, kNames[i]) == 0)
         {
@@ -1002,7 +1002,7 @@ int ParseLayer(const char* name)
 
 const char kUsageFormat[] =
     "usage: %s [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
-    "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]\n"
+    "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos|emissive]\n"
     "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]\n"
     "       [--script WORDS] [--text STRING]\n"
     "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"

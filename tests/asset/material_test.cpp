@@ -151,7 +151,8 @@ TEST_CASE("a valid material round-trips with std140 parameters and typed texture
     CHECK(id == ResourceId::FromValue(0xa1));
     CHECK(StringView(m.template_name.text, CStrLength(m.template_name.text)) == StringView("gbuffer"));
     CHECK(m.block.Size() == 96);  // the std140 block (the albedo_uv and albedo_uv_outside vectors at 48 and 64, the
-                                  // occlusion strength at 80, the block rounded to 16 bytes)
+                                  // emissive colour at 80; the occlusion strength took the old emissive
+                                  // scale's place at 24)
     CHECK(MtFloatAt(m, 16) == 0.25f);
     CHECK(MtFloatAt(m, 20) == 0.0f);  // the template's default metallic
     CHECK(MtFloatAt(m, 4) == 0.5f);   // base_color.g
@@ -161,7 +162,9 @@ TEST_CASE("a valid material round-trips with std140 parameters and typed texture
     CHECK(MtFloatAt(m, 56) == 0.0f);
     CHECK(MtFloatAt(m, 60) == 0.0f);
     CHECK(MtFloatAt(m, 76) == 0.0f);  // albedo_uv_outside: alpha 0, no mask
-    CHECK(MtFloatAt(m, 80) == 1.0f);  // the default occlusion_strength (glTF coverage Day 1)
+    CHECK(MtFloatAt(m, 24) == 1.0f);  // the default occlusion_strength (glTF coverage Day 1)
+    CHECK(MtFloatAt(m, 80) == 0.0f);  // the default emissive_color: black, strength 1 (glTF coverage Day 2)
+    CHECK(MtFloatAt(m, 92) == 1.0f);
     CHECK(m.options.Size() == 1);
     CHECK(m.params.Size() == 2);
     REQUIRE(m.textures.Size() == 2);
@@ -195,7 +198,7 @@ TEST_CASE("a material binds linear metallic-roughness and occlusion maps without
     CHECK(StringView(m.textures[0].slot.text, CStrLength(m.textures[0].slot.text)) ==
           StringView("metallic_roughness_tex"));
     CHECK(StringView(m.textures[1].slot.text, CStrLength(m.textures[1].slot.text)) == StringView("occlusion_tex"));
-    CHECK(MtFloatAt(m, 80) == 0.5f);
+    CHECK(MtFloatAt(m, 24) == 0.5f);
 }
 
 TEST_CASE("a material with three textures lists three dependencies", "[asset][material]")

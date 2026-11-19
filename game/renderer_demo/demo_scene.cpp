@@ -298,7 +298,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         materials->SetVec4(ids[slot], "base_color", color);
         materials->SetFloat(ids[slot], "roughness", roughness);
         materials->SetFloat(ids[slot], "metallic", metallic);
-        materials->SetFloat(ids[slot], "emissive_scale", emissive);
+        // The glow is the base colour times `emissive` (glTF coverage Day 2: emission is a colour of its own now, so
+        // the demo gives it the colour the old scale of the albedo gave).
+        materials->SetVec4(ids[slot], "emissive_color",
+                           Vec4(color.x * emissive, color.y * emissive, color.z * emissive, 1));
         return true;
     };
     GBufferOptions plain;

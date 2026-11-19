@@ -6,16 +6,17 @@
 //   ndc   = (2 * (pixel + 0.5) / size - 1, depth)             size = the depth texture's extent; Vulkan clip space: x right, y down, depth 0..1
 //   world = inverse_view_projection * (ndc, 1), divided by w  the projection's Y flip is already in the inverse, so the
 //                                                             pixel row is used as it is (no second flip)
-//   N     = OctDecode(normal.rg); albedo.rgb, occlusion = albedo.a; roughness, metallic, emissive = material.rgb; flags = material.a * 255 (bit 0: unlit)
+//   N     = OctDecode(normal.rg); albedo.rgb, occlusion = albedo.a; roughness, metallic = material.rg; flags = material.a * 255 (bit 0: unlit)
 //   V     = normalize(camera_position - world)
 //   color = ShadeAmbient(ambient) + sum over directional lights of ShadeLight(L = light.direction, radiance = light.color)
+//           + emissive.rgb                                     (the G-buffer's emissive target, added here once)
 // The lighting model is in lighting_common.slang.
 //
 // Interface
 //   fragment input location 0: float2 uv (unused; the pixel comes from SV_Position)
 //   set 0, binding 0: uniform buffer FrameData (renderer::FrameData, 304 bytes)
 //   set 1, binding 0: albedo; 1: normal; 2: material; 3: depth (sampled textures, read with Load); 4: storage buffer of
-//       LightData (48 bytes each, directional lights first)
+//       LightData (48 bytes each, directional lights first); 5: emissive (sampled texture, read with Load)
 //   push constants (32 bytes): float4 ambient (rgb); uint directional_count; 3 pad
 
 #include "target_common.slang"  // ENGINE_REGISTER
@@ -44,6 +45,7 @@ struct LightData {
 [[vk::binding(2, 1)]] Texture2D<float4> material_tex ENGINE_REGISTER(t2, space1);
 [[vk::binding(3, 1)]] Texture2D<float4> depth_tex ENGINE_REGISTER(t3, space1);
 [[vk::binding(4, 1)]] StructuredBuffer<LightData> lights ENGINE_REGISTER(t4, space1);
+[[vk::binding(5, 1)]] Texture2D<float4> emissive_tex ENGINE_REGISTER(t5, space1);
 
 struct Push {
     float4 ambient;
@@ -91,13 +93,13 @@ FragmentOutput main(FragmentInput input) {
     s.normal = OctDecode(normal_tex.Load(int3(pixel, 0)).rg);
     s.roughness = material.r;
     s.metallic = material.g;
-    s.emissive_scale = material.b;
 
     float3 V = normalize(frame.camera_position.xyz - world);
     float3 color = ShadeAmbient(s, push.ambient.rgb);
     for (uint i = 0u; i < push.directional_count; ++i) {
         color += ShadeLight(s, V, lights[i].direction.xyz, lights[i].color.rgb);
     }
+    color += emissive_tex.Load(int3(pixel, 0)).rgb;
     output.color = float4(color, 1.0);
     return output;
 }

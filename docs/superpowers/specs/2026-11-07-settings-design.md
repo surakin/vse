@@ -48,7 +48,7 @@ command-line option, not persisted), **env** (stays an environment variable read
 | swapchain_format | enum auto,srgb8,rgba16f,rgb10a2 | auto | Swapchain | renderer.swapchain_format | 137 |
 | hdr | enum off,scrgb,hdr10 (capability `hdr`) | off | Swapchain | renderer.hdr | 137 |
 | shader_quality | enum low,medium,high | high | PipelineRebuild | renderer.shader_quality | 137 |
-| gbuffer_debug_layer | enum none,albedo,normal,material,depth,worldpos | none | Dynamic | renderer.gbuffer_debug_layer | 137 |
+| gbuffer_debug_layer | enum none,albedo,normal,material,depth,worldpos,emissive | none | Dynamic | renderer.gbuffer_debug_layer | 137 |
 | render_scale | float | 1.0 | Dynamic | renderer.render_scale | 137 |
 
 ### 2.2 Environment variables of the engine

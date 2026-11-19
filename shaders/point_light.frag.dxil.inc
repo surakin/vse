@@ -465,7 +465,7 @@ inline constexpr u8 kPointLightFragDxil[kPointLightFragDxilByteCount] = {
 };
 
 // The FNV-1a hash of the SPIR-V this DXIL was minted beside: a test compares it with the SPIR-V that is committed now.
-inline constexpr u64 kPointLightFragDxilSpirvFnv = 0xac0019fcc076aa17ull;
+inline constexpr u64 kPointLightFragDxilSpirvFnv = 0xffa0e16ee7e8d5c4ull;
 
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kPointLightFragShader = {"point_light.frag", rhi::SpirvBlob(kPointLightFragSpv, kPointLightFragSpvWordCount), rhi::DxilBlob(kPointLightFragDxil, kPointLightFragDxilByteCount), rhi::MetalLibBlob(kPointLightFragMetallib, kPointLightFragMetallibByteCount, kPointLightFragMetallibEntry, &kPointLightFragMetallibSlots)};

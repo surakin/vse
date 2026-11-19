@@ -13,7 +13,7 @@ and a display are needed only for the last step.
    call `MarkReady`.
 2. **Materials.** A `MaterialSystem` owns materials and pipelines. `CreateGBufferTemplates` makes the two G-buffer
    templates; `CreateGBufferMaterial` makes a material from one, with parameters (`base_color`, `roughness`, `metallic`,
-   `emissive_scale`) set by name and textures (`albedo_tex`, `normal_tex`) set with `SetTexture`.
+   `emissive_color`) set by name and textures (`albedo_tex`, `normal_tex`) set with `SetTexture`.
 3. **The scene.** A `RenderScene` is a list of objects (mesh, material, transform) and lights. Directional lights point
    *toward* the light; ambient lights are one color; point lights have a position and a radius beyond which they give
    exactly nothing.

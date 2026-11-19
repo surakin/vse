@@ -1,5 +1,5 @@
 usage: PROGRAM [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]
-       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]
+       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos|emissive]
        [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]
        [--script WORDS] [--text STRING]
   --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)

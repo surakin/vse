@@ -267,14 +267,15 @@ u32 MakeEveryPipeline(Dx12Device& device, Vector<PipelineHandle>* pipelines, Vec
         gp.fragment_shader = fs;
         gp.vertex_bindings = rhi::Span<VertexBindingDesc>(bindings, binding_count);
         gp.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, attribute_count);
-        // The G-buffer's three targets for gbuffer.frag (D3D12 warns about a target with more channels than the shader
+        // The G-buffer's four targets for gbuffer.frag (D3D12 warns about a target with more channels than the shader
         // writes), else one.
         if (CStrCompareN(pair.fs.name, "gbuffer.frag", 12) == 0)
         {
             gp.color_targets[0].format = renderer::kGBufferAlbedoFormat;
             gp.color_targets[1].format = renderer::kGBufferNormalFormat;
             gp.color_targets[2].format = renderer::kGBufferMaterialFormat;
-            gp.color_target_count = 3;
+            gp.color_targets[3].format = renderer::kGBufferEmissiveFormat;
+            gp.color_target_count = 4;
         }
         else
         {
@@ -703,14 +704,14 @@ TEST_CASE(
     d.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     d.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
     d.RasterizerState.DepthClipEnable = TRUE;
-    const DXGI_FORMAT gbuffer[3] = {DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_R16G16_FLOAT,
-                                    DXGI_FORMAT_R8G8B8A8_UNORM};
-    for (u32 i = 0; i < 3; ++i)
+    const DXGI_FORMAT gbuffer[4] = {DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_R16G16_FLOAT,
+                                    DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R16G16B16A16_FLOAT};
+    for (u32 i = 0; i < 4; ++i)
     {
         d.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
         d.RTVFormats[i] = gbuffer[i];
     }
-    d.NumRenderTargets = 3;
+    d.NumRenderTargets = 4;
     d.DepthStencilState.DepthEnable = TRUE;
     d.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
     d.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;

@@ -103,7 +103,7 @@ const char* const kPresentNames[] = {"fifo", "mailbox", "immediate"};
 const char* const kFormatNames[] = {"auto", "srgb8", "rgba16f", "rgb10a2"};
 const char* const kHdrNames[] = {"off", "scrgb", "hdr10"};
 const char* const kQualityNames[] = {"low", "medium", "high"};
-const char* const kLayerNames[] = {"none", "albedo", "normal", "material", "depth", "worldpos"};
+const char* const kLayerNames[] = {"none", "albedo", "normal", "material", "depth", "worldpos", "emissive"};
 
 bool AllEnumNamesValid(const SettingDesc& desc)
 {

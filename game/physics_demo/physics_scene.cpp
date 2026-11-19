@@ -227,7 +227,6 @@ bool PhysicsScene::Create(rhi::Device* device, MaterialSystem* materials, const 
         materials->SetVec4(id, "base_color", kColor[i]);
         materials->SetFloat(id, "roughness", i < kColors ? 0.45f : 0.85f);
         materials->SetFloat(id, "metallic", 0.0f);
-        materials->SetFloat(id, "emissive_scale", 0.0f);
         material_ids_[i] = id.index;
     }
 

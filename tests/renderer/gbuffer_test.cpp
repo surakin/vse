@@ -132,23 +132,24 @@ TEST_CASE("The device check names the first unsupported G-buffer format", "[rend
     CHECK(CheckGBufferFormats(rig.device.Get(), error, sizeof(error)));
     CHECK(error[0] == '\0');
     const PipelineTarget t = GBufferPipelineTarget();
-    CHECK(t.color_count == 3);
+    CHECK(t.color_count == 4);
     CHECK(t.color_formats[0] == rhi::Format::RGBA8_SRGB);
     CHECK(t.color_formats[1] == rhi::Format::RG16_Float);
     CHECK(t.color_formats[2] == rhi::Format::RGBA8_UNorm);
+    CHECK(t.color_formats[3] == rhi::Format::RGBA16_Float);  // the emissive target (glTF coverage Day 2)
     CHECK(t.depth_format == rhi::Format::D32_Float);
 }
 
 TEST_CASE("The device check refuses a device with too few color attachments, naming the limit", "[renderer][gbuffer]")
 {
     rhi::NullDeviceOptions options;
-    options.caps.max_color_attachments = 2;
+    options.caps.max_color_attachments = 3;
     rhi::NullDevicePtr device = rhi::CreateNullDevice(options);
     char error[160] = "";
     CHECK_FALSE(CheckGBufferFormats(device.Get(), error, sizeof(error)));
-    CHECK(StringView(error).Contains("2 color attachments"));
-    CHECK(StringView(error).Contains("writes 3"));
-    options.caps.max_color_attachments = 3;
+    CHECK(StringView(error).Contains("3 color attachments"));
+    CHECK(StringView(error).Contains("writes 4"));
+    options.caps.max_color_attachments = 4;
     rhi::NullDevicePtr enough = rhi::CreateNullDevice(options);
     CHECK(CheckGBufferFormats(enough.Get(), error, sizeof(error)));
 }

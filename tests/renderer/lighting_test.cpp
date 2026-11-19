@@ -67,18 +67,18 @@ TEST_CASE("A metal has no diffuse term and takes its color from the albedo throu
     CHECK(ShadeLight(rough, up, up, Vec3(1, 1, 1)).x < c.x);
 }
 
-TEST_CASE("Ambient and emissive terms follow occlusion and metallic", "[renderer][lighting]")
+// glTF coverage Day 2: emission left the ambient term (it is the G-buffer's emissive target, added by the pass).
+TEST_CASE("The ambient term follows occlusion and metallic, and holds no emission", "[renderer][lighting]")
 {
     SurfacePoint s;
     s.albedo = Vec3(0.8f, 0.4f, 0.2f);
     s.occlusion = 0.5f;
-    s.emissive_scale = 0.1f;
     const Vec3 a = ShadeAmbient(s, Vec3(0.2f, 0.2f, 0.2f));
-    CHECK(Near(a.x, 0.8f * (0.5f * 0.2f + 0.1f)));
-    CHECK(Near(a.y, 0.4f * (0.5f * 0.2f + 0.1f)));
+    CHECK(Near(a.x, 0.8f * 0.5f * 0.2f));
+    CHECK(Near(a.y, 0.4f * 0.5f * 0.2f));
     s.metallic = 1.0f;
     const Vec3 m = ShadeAmbient(s, Vec3(0.2f, 0.2f, 0.2f));
-    CHECK(Near(m.x, 0.8f * 0.1f));  // only the emission is left
+    CHECK(m.x == 0.0f);  // a metal takes no diffuse ambient light
 }
 
 TEST_CASE("The tonemap curve is monotonic, bounded and has the ACES fit's known values", "[renderer][lighting]")

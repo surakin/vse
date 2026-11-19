@@ -82,7 +82,6 @@ FragmentOutput main(FragmentInput input) {
     s.normal = OctDecode(normal_tex.Load(int3(pixel, 0)).rg);
     s.roughness = material.r;
     s.metallic = material.g;
-    s.emissive_scale = material.b;
 
     float3 V = normalize(frame.camera_position.xyz - world);
     float3 L = to_light / max(dist, 1e-6);

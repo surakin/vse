@@ -112,7 +112,7 @@ TEST_CASE("gltf material: a textured glb imports to textures, materials and a me
     CHECK(result.resources[2].type == types::kMaterial);
     CHECK(result.resources[2].path.View() == StringView("/gltf/materials/brick"));
     CHECK(result.resources[4].type == types::kMesh);
-    CHECK(result.report.warnings >= 3);  // metallicRoughnessTexture, emissive approximation, the missing UVs ...
+    CHECK(result.report.warnings >= 2);  // metallicRoughnessTexture, the missing UVs ... (the emissive colour is exact)
 
     TypeRegistry types;
     TextureView color;
@@ -132,6 +132,22 @@ TEST_CASE("gltf material: a textured glb imports to textures, materials and a me
     CHECK(brick.options.Size() == 1);  // NORMAL_MAP
     CHECK(brick.state.set_cull);
     CHECK(brick.state.cull == 0);
+    // glTF coverage Day 2: emissiveFactor arrives as the emissive colour, rgb as it is and the strength 1.
+    bool emissive_found = false;
+    for (const MaterialParam& p : brick.params)
+    {
+        if (StringView(p.name.text) == StringView("emissive_color"))
+        {
+            emissive_found = true;
+            f32 v[4] = {};
+            MemCopy(v, brick.block.Data() + p.offset, sizeof(v));
+            CHECK(v[0] == 0.0f);
+            CHECK(v[1] == 0.5f);
+            CHECK(v[2] == 0.0f);
+            CHECK(v[3] == 1.0f);
+        }
+    }
+    CHECK(emissive_found);
     MaterialAssetData plain;
     REQUIRE(LoadMaterialBlob(ByteSpan(result.resources[3].blob.Data(), result.resources[3].blob.Size()), types, &plain)
                 .Ok());

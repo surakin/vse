@@ -221,7 +221,7 @@ TEST_CASE("A lit plane matches the CPU lighting model, and background pixels sta
             rig.sys->SetFloat(m, "roughness", 0.6f);
             rig.sys->SetFloat(m, "metallic", 0.0f);
             rig.sys->SetFloat(m, "occlusion", 0.75f);
-            rig.sys->SetFloat(m, "emissive_scale", 0.05f);
+            rig.sys->SetVec4(m, "emissive_color", Vec4(0.03f, 0.025f, 0.02f, 1.0f));  // the old 0.05 of the albedo
             RenderScene scene(RenderSceneDesc{});
             RenderObjectDesc od;
             od.mesh = &plane;
@@ -274,14 +274,16 @@ TEST_CASE("A lit plane matches the CPU lighting model, and background pixels sta
             surface.roughness = 0.6f;
             surface.metallic = 0.0f;
             surface.occlusion = 0.75f;
-            surface.emissive_scale = 0.05f;
             surface.normal = Vec3(0, 1, 0);
             const FrameData fd = MakeFrameData(cam, kW, kH, 0, 0, 0);
             for (const Vec3& probe : {Vec3(0, 0, 0), Vec3(1.5f, 0, -1.0f), Vec3(-2.0f, 0, 2.0f)})
             {
                 const Pixel p = Project(cam, probe);
                 const Vec3 world = ReconstructWorldPosition(p.x, p.y, p.depth, kW, kH, fd.inverse_view_projection);
-                const Vec3 want = Expected(surface, cam.position, world, engine_placeholder::Span<const Light>(lights));
+                // The lights, and the emission the G-buffer's emissive target holds, added once (glTF coverage Day 2).
+                const Vec3 want = Expected(surface, cam.position, world,
+                                           engine_placeholder::Span<const Light>(lights)) +
+                                  Vec3(0.03f, 0.025f, 0.02f);
                 INFO("probe " << probe.x << " " << probe.z << " want " << want.x << " " << want.y << " " << want.z
                               << " got " << L.Accum(p.x, p.y, 0) << " " << L.Accum(p.x, p.y, 1) << " "
                               << L.Accum(p.x, p.y, 2));

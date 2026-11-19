@@ -50,7 +50,7 @@ cannot turn it on after Metal starts. Its settings file is `~/Library/Applicatio
 | `--screenshot FILE` | render offscreen with a fixed camera and time, with no window, and write the last frame to FILE as a binary PPM |
 | `--objects N` | total objects, the 49 ground tiles included, 64 to 20000 (default 540) |
 | `--lights N` | point lights, 0 to 16000 (default 300) |
-| `--gbuffer LAYER` | `albedo`, `normal`, `material`, `depth` or `worldpos` instead of the lit picture |
+| `--gbuffer LAYER` | `albedo`, `normal`, `material`, `depth`, `worldpos` or `emissive` instead of the lit picture |
 | `--no-vsync` | present with `Immediate` instead of `Fifo` (the same as pressing F1 once the window is open) |
 | `--gpu G` | the GPU to use: an id from `--list-gpus`, an index, or part of its name. A GPU that does not exist or cannot present fails (exit 1); it never falls back to another one |
 | `--list-gpus` | print the backend and its GPUs (id, name, kind, memory, driver, and why one is unsuitable) and exit |

@@ -200,7 +200,7 @@ inline constexpr SettingId kSwapchainFormat{10};
 inline constexpr SettingId kHdr{11};
 /// Shader quality (`low`, `medium`, `high`). `PipelineRebuild`; mechanism only until shaders read it.
 inline constexpr SettingId kShaderQuality{12};
-/// The G-buffer debug layer (`none`, `albedo`, `normal`, `material`, `depth`, `worldpos`). `Dynamic`.
+/// The G-buffer debug layer (`none`, `albedo`, `normal`, `material`, `depth`, `worldpos`, `emissive`). `Dynamic`.
 inline constexpr SettingId kGBufferDebugLayer{13};
 /// Render scale, 0.25 to 2. `Dynamic`; mechanism only until the targets read it.
 inline constexpr SettingId kRenderScale{14};

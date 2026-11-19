@@ -510,13 +510,147 @@ TEST_CASE("A metallic-roughness or occlusion map draws as its products set as sc
             CHECK(LargestDifference(plain, mapped) > 8);
             REQUIRE(draw(white_maps, &mapped));
             CHECK(LargestDifference(plain, mapped) == 0);  // a white map is the default: nothing changes
+            // glTF coverage Day 2 (a Day 1 bug): a material that never sets occlusion_strength applies its occlusion
+            // map fully, as glTF's default strength 1 says (the defaults left it 0, which ignored the map).
+            const renderer::MaterialId occ_default = make("occlusion map, strength unset", 0.5f, 0.0f, 1.0f);
+            const renderer::MaterialId occ_full = make("occlusion scalar, full strength", 0.5f, 0.0f, occ);
+            REQUIRE(materials->SetTexture(occ_default, "occlusion_tex", occ_texel));
+            REQUIRE(draw(occ_full, &scalars));
+            REQUIRE(draw(occ_default, &mapped));
+            CHECK(LargestDifference(scalars, mapped) <= 1);
             device->WaitIdle();
-            const Array<renderer::MaterialId, 3> mapped_materials = {mr_map, occ_map, white_maps};
+            const Array<renderer::MaterialId, 4> mapped_materials = {mr_map, occ_map, white_maps, occ_default};
             for (const renderer::MaterialId& id : mapped_materials)
             {
                 materials->SetTexture(id, "metallic_roughness_tex", renderer::GpuTextureConstPtr{});
                 materials->SetTexture(id, "occlusion_tex", renderer::GpuTextureConstPtr{});
             }
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+// glTF coverage Day 2: emission is a colour of its own, in the G-buffer's emissive target, added once after the lights:
+// a white emissive map changes nothing and a black one removes the glow, a strength above 1 is not clamped, the glow
+// does not depend on the base colour, and an unlit material shows its base colour whatever its emissive colour is.
+TEST_CASE("An emissive colour glows on its own, times its map and strength, and not on an unlit material",
+          "[scene][render][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DeviceCreateInfo info;
+        info.backend = backend;
+        info.validation = rhi::ValidationSetting::On;
+        info.pipeline_cache = false;
+        rhi::DevicePtr device = rhi::CreateDevice(info);
+        if (device.Get() == nullptr)
+        {
+            const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
+            if (required != nullptr && required[0] == '1')
+            {
+                FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            }
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        }
+        {
+            renderer_demo::FrameSetup setup;
+            setup.device = device.Get();
+            setup.max_objects = 8;
+            setup.max_lights = 8;
+            renderer_demo::DemoFrame frame;
+            REQUIRE(frame.Create(setup));
+            renderer::MaterialSystem* materials = frame.Materials();
+            const auto make = [&](const char* name, const Vec4& base, const Vec4& emissive)
+            {
+                const renderer::MaterialId id = renderer::CreateGBufferMaterial(materials, frame.Templates(),
+                                                                                renderer::GBufferOptions{}, name);
+                CHECK(materials->SetVec4(id, "base_color", base));
+                CHECK(materials->SetVec4(id, "emissive_color", emissive));
+                return id;
+            };
+            const Vec4 grey(0.2f, 0.2f, 0.2f, 1.0f);
+            const Vec4 glow(0.8f, 0.4f, 0.2f, 1.0f);
+            const renderer::MaterialId dark = make("no glow", grey, Vec4(0, 0, 0, 1));
+            const renderer::MaterialId lit = make("glow", grey, glow);
+            const renderer::MaterialId white_map = make("glow, white map", grey, glow);
+            const renderer::MaterialId black_map = make("glow, black map", grey, glow);
+            const renderer::MaterialId bright = make("glow, strength 4", grey, Vec4(0.8f, 0.4f, 0.2f, 4.0f));
+            const renderer::MaterialId other_base = make("glow on another base", Vec4(0.6f, 0.1f, 0.5f, 1), glow);
+            const renderer::MaterialId unlit = make("unlit", grey, Vec4(0, 0, 0, 1));
+            const renderer::MaterialId unlit_glow = make("unlit with a glow", grey, glow);
+            REQUIRE(materials->SetUInt(unlit, "flags", renderer::kMaterialFlagUnlit));
+            REQUIRE(materials->SetUInt(unlit_glow, "flags", renderer::kMaterialFlagUnlit));
+            const renderer::GpuTexturePtr white = MakeTexel(device.Get(), 255, 255, 255, "white texel");
+            const renderer::GpuTexturePtr black = MakeTexel(device.Get(), 0, 0, 0, "black texel");
+            REQUIRE(white.Get() != nullptr);
+            REQUIRE(black.Get() != nullptr);
+            REQUIRE(materials->SetTexture(white_map, "emissive_tex", white));
+            REQUIRE(materials->SetTexture(black_map, "emissive_tex", black));
+
+            auto cube = MakeShared<renderer::GpuMesh>();
+            renderer::MeshData data;
+            REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
+            REQUIRE(cube->Create(device.Get(), data, "cube"));
+            {
+                device->BeginFrame();
+                rhi::CommandList* list = device->CreateCommandList();
+                REQUIRE(list != nullptr);
+                list->Begin();
+                cube->RecordPrepare(list);
+                list->End();
+                rhi::CommandList* lists[] = {list};
+                REQUIRE(device->Submit(lists, 1) != 0);
+                device->EndFrame();
+                device->WaitIdle();
+                cube->MarkReady();
+            }
+            renderer::Camera camera;
+            camera.SetLookAt(Vec3(0, 1.5f, 2.5f), Vec3(0, 0, 0), Vec3(0, 1, 0));
+            camera.aspect = 1.0f;
+            camera.near_plane = 0.5f;
+            camera.far_plane = 50.0f;
+            // No light at all: what shows is the glow alone (and the unlit base colour).
+            const auto draw = [&](renderer::MaterialId material, Vector<u8>* pixels)
+            {
+                renderer::RenderSceneDesc desc;
+                desc.max_objects = 8;
+                desc.max_lights = 8;
+                renderer::RenderScene scene(desc);
+                renderer::RenderObjectDesc od;
+                od.mesh = cube.Get();
+                od.material = material.index;
+                od.transform = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(0, 0, 0));
+                scene.AddObject(od);
+                return Render(frame, device.Get(), scene, camera, pixels);
+            };
+            Vector<u8> none;
+            Vector<u8> glowing;
+            Vector<u8> other;
+            REQUIRE(draw(dark, &none));
+            REQUIRE(draw(lit, &glowing));
+            const u32 centre = (kSize / 2 * kSize + kSize / 2) * 4;
+            INFO("dark " << int(none[centre]) << " glowing " << int(glowing[centre]) << "," << int(glowing[centre + 1])
+                         << "," << int(glowing[centre + 2]));
+            CHECK(int(none[centre]) == 0);                           // no light, no glow: black
+            CHECK(int(glowing[centre]) > int(glowing[centre + 1]));  // the glow's own colour, red over green over blue
+            CHECK(int(glowing[centre + 1]) > int(glowing[centre + 2]));
+            REQUIRE(draw(white_map, &other));
+            CHECK(LargestDifference(glowing, other) == 0);  // a white map is the default
+            REQUIRE(draw(black_map, &other));
+            CHECK(LargestDifference(none, other) == 0);  // a black map takes the glow away
+            REQUIRE(draw(other_base, &other));
+            CHECK(LargestDifference(glowing, other) == 0);  // the glow does not depend on the base colour
+            REQUIRE(draw(bright, &other));
+            CHECK(int(other[centre]) > int(glowing[centre]));  // a strength of 4 is not clamped to 1
+            Vector<u8> flat;
+            REQUIRE(draw(unlit, &flat));
+            REQUIRE(draw(unlit_glow, &other));
+            CHECK(LargestDifference(flat, other) == 0);  // unlit: its base colour, no glow
+            device->WaitIdle();
+            materials->SetTexture(white_map, "emissive_tex", renderer::GpuTextureConstPtr{});
+            materials->SetTexture(black_map, "emissive_tex", renderer::GpuTextureConstPtr{});
         }
         device->WaitIdle();
         device.Reset();

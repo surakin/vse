@@ -7,10 +7,11 @@
 //   layer 3 depth:    d = depth in [0, 1]; z = near * far / (far - d * (far - near)); out = z / far, as grey
 //   layer 4 world position: ndc = (2 * (pixel + 0.5) / size - 1, d), world = inverse_view_projection * (ndc, 1) / w;
 //                     out = world * 0.05 + 0.5 (background pixels, d = 1, show black)
+//   layer 5 emissive: out = emissive.rgb (the target clamps radiance above 1)
 //
 // Interface
 //   fragment input location 0: float2 uv
-//   set 0, binding 0: albedo; 1: normal; 2: material; 3: depth (sampled textures); 4: sampler (nearest)
+//   set 0, binding 0: albedo; 1: normal; 2: material; 3: depth (sampled textures); 4: sampler (nearest); 5: emissive
 //   push constants (80 bytes): float4x4 inverse_view_projection; uint layer; float near_plane; float far_plane; uint pad
 
 #include "target_common.slang"  // ENGINE_REGISTER
@@ -21,6 +22,7 @@
 [[vk::binding(2, 0)]] Texture2D<float4> material_tex ENGINE_REGISTER(t2, space0);
 [[vk::binding(3, 0)]] Texture2D<float4> depth_tex ENGINE_REGISTER(t3, space0);
 [[vk::binding(4, 0)]] SamplerState point_sampler ENGINE_REGISTER(s4, space0);
+[[vk::binding(5, 0)]] Texture2D<float4> emissive_tex ENGINE_REGISTER(t5, space0);
 
 struct Push {
     float4x4 inverse_view_projection;
@@ -49,6 +51,8 @@ FragmentOutput main(FragmentInput input) {
         rgb = OctDecode(normal_tex.Sample(point_sampler, input.uv).rg) * 0.5 + 0.5;
     } else if (push.layer == 2u) {
         rgb = material_tex.Sample(point_sampler, input.uv).rgb;
+    } else if (push.layer == 5u) {
+        rgb = emissive_tex.Sample(point_sampler, input.uv).rgb;
     } else if (push.layer == 4u) {
         float d = depth_tex.Sample(point_sampler, input.uv).r;
         if (d < 1.0) {

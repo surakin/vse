@@ -18,7 +18,8 @@
 //   F        = F0 + (1 - F0) * (1 - dot(V,H))^5              Schlick Fresnel, F0 = lerp(0.04, albedo, metallic)
 //   diffuse  = albedo * (1 - metallic)
 //   specular = pi * D * Vis * F
-// The ambient term is albedo * (1 - metallic) * ambient * occlusion; an emissive scale adds albedo * scale.
+// The ambient term is albedo * (1 - metallic) * ambient * occlusion. Emission is not here: the G-buffer's emissive target
+// holds it, and the fullscreen lighting pass adds it once (lighting.frag).
 // The CPU twin is renderer::ShadeLight (engine/renderer/lighting.cpp); a test checks them against each other.
 //
 // Point lights (renderer spec R11)
@@ -35,7 +36,6 @@ struct Surface {
     float roughness;
     float metallic;
     float occlusion;
-    float emissive_scale;
     float3 normal;
 };
 
@@ -64,7 +64,7 @@ float3 ShadeLight(Surface s, float3 V, float3 L, float3 radiance) {
 }
 
 float3 ShadeAmbient(Surface s, float3 ambient) {
-    return s.albedo * (1.0 - s.metallic) * ambient * s.occlusion + s.albedo * s.emissive_scale;
+    return s.albedo * (1.0 - s.metallic) * ambient * s.occlusion;
 }
 
 float PointAttenuation(float distance_to_light, float radius) {

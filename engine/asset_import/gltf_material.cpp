@@ -42,7 +42,8 @@ struct MaterialInfo
     f64 base_color[4] = {1, 1, 1, 1};
     f64 metallic = 1.0;
     f64 roughness = 1.0;
-    f64 emissive_scale = 0.0;
+    Array<f64, 4> emissive_color = {{0.0, 0.0, 0.0, 1.0}};  // emissiveFactor's rgb, the strength in a
+    bool emissive = false;                                  // written only when the factor is not black
     bool unlit = false;  // KHR_materials_unlit: the `flags` parameter gets the unlit bit
     f64 alpha_cutoff = 0.5;
     u8 alpha_mode = 0;  // 0 opaque, 1 mask, 2 blend
@@ -174,26 +175,15 @@ Status ReadMaterial(const JsonValue& material, u64 texture_count, MaterialInfo* 
     const JsonValue emissive = material.Get("emissiveFactor");
     if (emissive.Exists())
     {
-        f64 largest = 0;
         for (usize k = 0; k < 3; ++k)
         {
-            f64 v = 0;
-            ENGINE_TRY(emissive.At(k).AsDouble(&v, error));
-            largest = v > largest ? v : largest;
+            ENGINE_TRY(emissive.At(k).AsDouble(&out->emissive_color[k], error));
+            out->emissive = out->emissive || out->emissive_color[k] > 0.0;
         }
-        f64 strength = 1.0;
         const JsonValue strength_value = extensions.Get("KHR_materials_emissive_strength").Get("emissiveStrength");
         if (strength_value.Exists())
         {
-            ENGINE_TRY(strength_value.AsDouble(&strength, error));
-        }
-        out->emissive_scale = largest * strength;
-        if (largest > 0)
-        {
-            AddImportWarning(
-                report, emissive.Path(),
-                StringView(
-                    "emissiveFactor approximated by its largest component: the template has an emissive scale only"));
+            ENGINE_TRY(strength_value.AsDouble(&out->emissive_color[3], error));
         }
     }
     StringView mode("OPAQUE");
@@ -600,14 +590,23 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
         {
             append_float(info.base_color[c]);
         }
-        const Array<const char*, 4> scalar_names = {"roughness", "metallic", "emissive_scale", "alpha_cutoff"};
-        const Array<f64, 4> scalars = {info.roughness, info.metallic, info.emissive_scale, info.alpha_cutoff};
-        for (u32 k = 0; k < 4; ++k)
+        const Array<const char*, 3> scalar_names = {"roughness", "metallic", "alpha_cutoff"};
+        const Array<f64, 3> scalars = {info.roughness, info.metallic, info.alpha_cutoff};
+        for (u32 k = 0; k < 3; ++k)
         {
             text.Append(StringView("\nparam "));
             text.Append(StringView(scalar_names[k]));
             text.Append(StringView(" float"));
             append_float(scalars[k]);
+        }
+        if (info.emissive)
+        {
+            // glTF coverage Day 2: the emissive colour as it is (rgb, the strength in a), not its largest component.
+            text.Append(StringView("\nparam emissive_color color"));
+            for (u32 c = 0; c < 4; ++c)
+            {
+                append_float(info.emissive_color[c]);
+            }
         }
         if (info.unlit)
         {

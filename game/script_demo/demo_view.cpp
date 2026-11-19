@@ -134,7 +134,8 @@ bool DemoView::Create(rhi::Device* device, renderer::MaterialSystem* materials,
         materials->SetVec4(id, "base_color", kColor[i]);
         materials->SetFloat(id, "roughness", i < kKinds ? 0.45f : 0.9f);
         materials->SetFloat(id, "metallic", 0.0f);
-        materials->SetFloat(id, "emissive_scale", kGlow[i]);
+        materials->SetVec4(id, "emissive_color",
+                           Vec4(kColor[i].x * kGlow[i], kColor[i].y * kGlow[i], kColor[i].z * kGlow[i], 1));
         materials_.Push(id.index);
     }
 

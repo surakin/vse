@@ -73,10 +73,12 @@ bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_cap
          "color attachment and sampled"},
         {kGBufferMaterialFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled,
          "color attachment and sampled"},
+        {kGBufferEmissiveFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled,
+         "color attachment and sampled"},
         {kGBufferDepthFormat, rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled,
          "depth attachment and sampled"},
     };
-    // The geometry pass writes three colors at once; D3D12 and Metal allow 8 (4 on some older mobile GPUs), so this
+    // The geometry pass writes four colors at once; D3D12 and Metal allow 8 (4 on some older mobile GPUs), so this
     // only fails on those.
     const PipelineTarget target = GBufferPipelineTarget();
     if (device->Caps().max_color_attachments < target.color_count)
@@ -114,7 +116,8 @@ PipelineTarget GBufferPipelineTarget()
     t.color_formats[0] = kGBufferAlbedoFormat;
     t.color_formats[1] = kGBufferNormalFormat;
     t.color_formats[2] = kGBufferMaterialFormat;
-    t.color_count = 3;
+    t.color_formats[3] = kGBufferEmissiveFormat;
+    t.color_count = 4;
     t.depth_format = kGBufferDepthFormat;
     return t;
 }
@@ -202,22 +205,23 @@ namespace
 
 // The metallic-roughness and occlusion maps (glTF coverage Day 1) are linear; unset, they get the white default texture
 // (by name: renderer::MaterialSystem), so the scalar parameters alone decide, as before the maps existed.
-constexpr TemplateTextureSlot kGBufferSlots[4] = {
+constexpr TemplateTextureSlot kGBufferSlots[5] = {
     {"albedo_tex", SlotShape::Texture2D, SlotColorSpace::Srgb},
     {"normal_tex", SlotShape::Texture2D, SlotColorSpace::Linear},
     {"metallic_roughness_tex", SlotShape::Texture2D, SlotColorSpace::Linear},
-    {"occlusion_tex", SlotShape::Texture2D, SlotColorSpace::Linear}};
+    {"occlusion_tex", SlotShape::Texture2D, SlotColorSpace::Linear},
+    {"emissive_tex", SlotShape::Texture2D, SlotColorSpace::Srgb}};
 
 constexpr TemplateParamDefault kGBufferParamDefaults[9] = {
     {"base_color", {1, 1, 1, 1}},     {"roughness", {0.5f, 0, 0, 0}},      {"metallic", {0, 0, 0, 0}},
-    {"emissive_scale", {0, 0, 0, 0}}, {"alpha_cutoff", {0.5f, 0, 0, 0}},   {"occlusion", {1, 0, 0, 0}},
+    {"emissive_color", {0, 0, 0, 1}}, {"alpha_cutoff", {0.5f, 0, 0, 0}},   {"occlusion", {1, 0, 0, 0}},
     {"albedo_uv", {1, 1, 0, 0}},      {"albedo_uv_outside", {0, 0, 0, 0}}, {"occlusion_strength", {1, 0, 0, 0}}};
 
 const GBufferTemplateInfo kGBufferTemplateInfos[4] = {
-    {"gbuffer", false, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 4, kGBufferParamDefaults, 9},
-    {"gbuffer_color", false, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 4, kGBufferParamDefaults, 9},
-    {"gbuffer_skinned", true, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 4, kGBufferParamDefaults, 9},
-    {"gbuffer_skinned_color", true, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 4, kGBufferParamDefaults,
+    {"gbuffer", false, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults, 9},
+    {"gbuffer_color", false, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults, 9},
+    {"gbuffer_skinned", true, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults, 9},
+    {"gbuffer_skinned_color", true, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults,
      9},
 };
 
@@ -242,10 +246,13 @@ const GBufferTemplateInfo* FindGBufferTemplateInfo(const char* name)
 GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
 {
     ENGINE_ASSERT(materials != nullptr, "CreateGBufferTemplates: materials is null");
-    const TextureDefault defaults[4] = {{"albedo_tex", DefaultTexture::White},
+    // The emissive map is white when unset (its colour comes from `emissive_color`, black by default), not the black
+    // its name would pick.
+    const TextureDefault defaults[5] = {{"albedo_tex", DefaultTexture::White},
                                         {"normal_tex", DefaultTexture::FlatNormal},
                                         {"metallic_roughness_tex", DefaultTexture::White},
-                                        {"occlusion_tex", DefaultTexture::White}};
+                                        {"occlusion_tex", DefaultTexture::White},
+                                        {"emissive_tex", DefaultTexture::White}};
     TemplateId ids[4];  // plain, colored, skinned, skinned_colored
     for (u32 variant = 0; variant < 4; ++variant)
     {
@@ -291,7 +298,7 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
             d.state.depth_write = true;
             d.state.depth_compare = rhi::CompareOp::Less;
             d.texture_defaults = defaults;
-            d.texture_default_count = 4;
+            d.texture_default_count = 5;
             d.skinned = skinned;
             id = materials->CreateTemplate(d);
         }
@@ -372,12 +379,13 @@ void ApplyGBufferDefaults(MaterialSystem* materials, MaterialId id)
     materials->SetVec4(id, "base_color", Vec4(1, 1, 1, 1));
     materials->SetFloat(id, "roughness", 0.5f);
     materials->SetFloat(id, "metallic", 0.0f);
-    materials->SetFloat(id, "emissive_scale", 0.0f);
+    materials->SetVec4(id, "emissive_color", Vec4(0, 0, 0, 1));
     materials->SetFloat(id, "alpha_cutoff", 0.5f);
     materials->SetFloat(id, "occlusion", 1.0f);
     materials->SetUInt(id, "flags", 0);
     materials->SetVec4(id, "albedo_uv", Vec4(1, 1, 0, 0));
     materials->SetVec4(id, "albedo_uv_outside", Vec4(0, 0, 0, 0));
+    materials->SetFloat(id, "occlusion_strength", 1.0f);
 }
 
 // ---- GBufferPass ----
@@ -715,6 +723,9 @@ GBufferTargets GBufferPass::AddToGraph(RenderGraph* graph, u32 width, u32 height
     td.format = kGBufferMaterialFormat;
     td.debug_name = "gbuffer_material";
     targets_.material = graph->CreateTexture("gbuffer_material", td);
+    td.format = kGBufferEmissiveFormat;
+    td.debug_name = "gbuffer_emissive";
+    targets_.emissive = graph->CreateTexture("gbuffer_emissive", td);
     td.format = kGBufferDepthFormat;
     td.usage = rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled | extra_usage_;
     td.debug_name = "gbuffer_depth";
@@ -725,6 +736,7 @@ GBufferTargets GBufferPass::AddToGraph(RenderGraph* graph, u32 width, u32 height
         .Write(targets_.albedo, GraphUsage::ColorAttachment)
         .Write(targets_.normal, GraphUsage::ColorAttachment)
         .Write(targets_.material, GraphUsage::ColorAttachment)
+        .Write(targets_.emissive, GraphUsage::ColorAttachment)
         .Write(targets_.depth, GraphUsage::DepthAttachment);
     return targets_;
 }
@@ -734,11 +746,12 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user)
     const GBufferPass* self = static_cast<const GBufferPass*>(user);
     rhi::CommandList* list = context.list;
     rhi::RenderingDesc rd;
-    rd.color_count = 3;
+    rd.color_count = 4;
     rd.color[0].texture = context.graph->ResolvedTexture(self->targets_.albedo);
     rd.color[1].texture = context.graph->ResolvedTexture(self->targets_.normal);
     rd.color[2].texture = context.graph->ResolvedTexture(self->targets_.material);
-    for (u32 i = 0; i < 3; ++i)
+    rd.color[3].texture = context.graph->ResolvedTexture(self->targets_.emissive);
+    for (u32 i = 0; i < 4; ++i)
     {
         rd.color[i].load = rhi::LoadOp::Clear;
         rd.color[i].store = rhi::StoreOp::Store;
@@ -813,14 +826,15 @@ void GBufferDebugView::Build()
     smp.address_u = rhi::AddressMode::ClampToEdge;
     smp.address_v = rhi::AddressMode::ClampToEdge;
     sampler_ = device->CreateSampler(smp);
-    rhi::BindingDesc bindings[5];
+    rhi::BindingDesc bindings[6];
     for (u32 i = 0; i < 4; ++i)
     {
         bindings[i] = {i, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
     }
     bindings[4] = {4, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1};
+    bindings[5] = {5, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
     rhi::BindGroupLayoutDesc ld;
-    ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 5);
+    ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 6);
     layout_ = device->CreateBindGroupLayout(ld);
 }
 
@@ -925,6 +939,7 @@ void GBufferDebugView::AddToGraph(RenderGraph* graph, const GBufferTargets& targ
         .Read(targets.normal, GraphUsage::Sampled)
         .Read(targets.material, GraphUsage::Sampled)
         .Read(targets.depth, GraphUsage::Sampled)
+        .Read(targets.emissive, GraphUsage::Sampled)
         .Write(output, GraphUsage::ColorAttachment);
 }
 
@@ -940,7 +955,7 @@ void GBufferDebugView::Record(const PassExecuteContext& context, void* user)
                   "GBufferDebugView: the pipeline for the output format could not be created; nothing is drawn");
         return;
     }
-    rhi::BindGroupEntry e[5];
+    rhi::BindGroupEntry e[6];
     e[0].binding = 0;
     e[0].texture = context.graph->ResolvedTexture(self->targets_.albedo);
     e[1].binding = 1;
@@ -951,9 +966,11 @@ void GBufferDebugView::Record(const PassExecuteContext& context, void* user)
     e[3].texture = context.graph->ResolvedTexture(self->targets_.depth);
     e[4].binding = 4;
     e[4].sampler = self->sampler_;
+    e[5].binding = 5;
+    e[5].texture = context.graph->ResolvedTexture(self->targets_.emissive);
     rhi::BindGroupDesc gd;
     gd.layout = self->layout_;
-    gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 5);
+    gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 6);
     gd.transient = true;
     const rhi::BindGroupHandle group = device->CreateBindGroup(gd);
     rhi::RenderingDesc rd;

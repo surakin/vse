@@ -2,10 +2,11 @@
 
 //! The G-buffer geometry pass: draws every visible object once into the G-buffer with its material, depth-tested.
 //!
-//! The G-buffer holds three color targets and a depth target (renderer spec R11): albedo (`RGBA8_SRGB`: rgb albedo, a
+//! The G-buffer holds four color targets and a depth target (renderer spec R11): albedo (`RGBA8_SRGB`: rgb albedo, a
 //! baked occlusion), the world-space normal (`RG16_Float`, octahedral-encoded by [[renderer::OctEncode]]), the material
-//! (`RGBA8_UNorm`: roughness, metallic, emissive scale, flags / 255) and `D32_Float` depth (0 at the near plane, 1 at
-//! the far plane, no reverse-Z). The shaders are `gbuffer.vert` and `gbuffer.frag`; the fragment shader has
+//! (`RGBA8_UNorm`: roughness, metallic, a free channel written 0, flags / 255), the emitted radiance (`RGBA16_Float`,
+//! linear rgb, not limited to 1; glTF coverage Day 2) and `D32_Float` depth (0 at the near plane, 1 at the far plane,
+//! no reverse-Z). The shaders are `gbuffer.vert` and `gbuffer.frag`; the fragment shader has
 //! permutations for a normal map, an alpha test and per-vertex colors, and [[renderer::CreateGBufferMaterial]] picks
 //! the matching vertex and fragment modules so the two never disagree.
 //!
@@ -34,8 +35,10 @@ namespace engine_placeholder::renderer
 inline constexpr rhi::Format kGBufferAlbedoFormat = rhi::Format::RGBA8_SRGB;
 /// The normal target's format (two octahedral coordinates in [-1, 1]).
 inline constexpr rhi::Format kGBufferNormalFormat = rhi::Format::RG16_Float;
-/// The material target's format (roughness, metallic, emissive scale, flags / 255).
+/// The material target's format (roughness, metallic, a free channel, flags / 255).
 inline constexpr rhi::Format kGBufferMaterialFormat = rhi::Format::RGBA8_UNorm;
+/// The emissive target's format: the radiance a surface emits, linear and above 1 where it is bright.
+inline constexpr rhi::Format kGBufferEmissiveFormat = rhi::Format::RGBA16_Float;
 /// The depth target's format.
 inline constexpr rhi::Format kGBufferDepthFormat = rhi::Format::D32_Float;
 /// The bit of a G-buffer material's `flags` parameter that makes it unlit: the pixel shows its base colour (albedo)
@@ -48,14 +51,15 @@ enum class GBufferLayer : u8
 {
     Albedo = 0,     ///< The albedo target as it is.
     Normal,         ///< The decoded normal shown as `n * 0.5 + 0.5`.
-    Material,       ///< The material target's rgb (roughness, metallic, emissive scale).
+    Material,       ///< The material target's rgb (roughness, metallic, the free channel).
     Depth,          ///< Linear view-space depth divided by the far plane, as grey.
     WorldPosition,  ///< The world position rebuilt from depth, shown as `position * 0.05 + 0.5` (background black);
                     ///< needs `SetInverseViewProjection`.
+    Emissive,       ///< The emissive target's rgb (radiance above 1 shows as 1).
 };
 
 /// Checks that the device supports every G-buffer format for the usage the pass needs, and enough simultaneous color
-/// attachments (the geometry pass writes three). Call it once at start-up, before creating templates and passes: the
+/// attachments (the geometry pass writes four). Call it once at start-up, before creating templates and passes: the
 /// passes themselves do not repeat it, and on a device that fails it every object would be left out with a log line per
 /// pipeline.
 ///
@@ -68,7 +72,7 @@ enum class GBufferLayer : u8
 /// - Ownership: `error` is borrowed for the call.
 bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_capacity);
 
-/// Returns the attachment formats a G-buffer pipeline renders to (three colors and depth).
+/// Returns the attachment formats a G-buffer pipeline renders to (four colors and depth).
 ///
 /// - Fails: never.
 PipelineTarget GBufferPipelineTarget();
@@ -225,16 +229,18 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 
 /// Creates a G-buffer material with the options' shader modules and sensible parameters.
 ///
-/// The parameters start as base color white, roughness 0.5, metallic 0, emissive scale 0, alpha cutoff 0.5 and
+/// The parameters start as base color white, roughness 0.5, metallic 0, emissive colour black, alpha cutoff 0.5 and
 /// occlusion 1, `albedo_uv` (1, 1, 0, 0), `albedo_uv_outside` (0, 0, 0, 0) and occlusion strength 1; change them with
-/// the material system's setters (`base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion`,
+/// the material system's setters (`base_color`, `roughness`, `metallic`, `emissive_color`, `alpha_cutoff`, `occlusion`,
 /// `flags`, `albedo_uv`, `albedo_uv_outside`, `occlusion_strength`), and the textures `albedo_tex`, `normal_tex`,
-/// `metallic_roughness_tex` and `occlusion_tex` (glTF's maps, linear: roughness times the green channel, metallic times
-/// the blue, occlusion times `1 + occlusion_strength * (red - 1)`; unset they are white, so the scalars alone decide;
-/// both read the mesh's coordinates untransformed, as the normal map does). `albedo_uv` is (scale u, scale v, offset u,
-/// offset v): the albedo is sampled at uv * scale + offset. When `albedo_uv_outside` has alpha above 0, coordinates
-/// outside 0..1 show its rgb (linear) instead of the texture, and coordinates inside are kept half a texel from the
-/// edge so that filtering never reads the other side; with alpha 0 the sampler's address mode applies as before.
+/// `metallic_roughness_tex`, `occlusion_tex` and `emissive_tex` (glTF's maps: the first two linear, roughness times the
+/// green channel, metallic times the blue, occlusion times `1 + occlusion_strength * (red - 1)`; the emissive map sRGB,
+/// the emitted radiance `emissive_color.rgb * emissive_color.a * emissive_tex.rgb`, with the strength in `a`; unset
+/// they are white, so the parameters alone decide; all three read the mesh's coordinates untransformed, as the normal
+/// map does). `albedo_uv` is (scale u, scale v, offset u, offset v): the albedo is sampled at uv * scale + offset. When
+/// `albedo_uv_outside` has alpha above 0, coordinates outside 0..1 show its rgb (linear) instead of the texture, and
+/// coordinates inside are kept half a texel from the edge so that filtering never reads the other side; with alpha 0
+/// the sampler's address mode applies as before.
 ///
 /// - Param materials: the system.
 /// - Param templates: from [[renderer::CreateGBufferTemplates]].
@@ -267,8 +273,10 @@ struct GBufferTargets
     GraphResource albedo;
     /// Octahedral world-space normal.
     GraphResource normal;
-    /// Roughness, metallic, emissive scale, flags.
+    /// Roughness, metallic, a free channel, flags.
     GraphResource material;
+    /// The emitted radiance (linear rgb); the fullscreen lighting pass adds it once.
+    GraphResource emissive;
     /// Depth; left in the `DepthAttachment` state; a later pass reads it as `Sampled` (through a sampler) or
     /// `DepthRead` (depth test).
     GraphResource depth;

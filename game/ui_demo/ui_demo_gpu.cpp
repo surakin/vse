@@ -102,6 +102,8 @@ bool UiDemoGpu::Update(f32 dt)
     if (scene_->ScreenMaterial().IsValid())
     {
         frame_->Materials()->SetTexture(scene_->ScreenMaterial(), "albedo_tex", world_target_.Handle());
+        // The screen glows with its own picture (its emissive colour is white times 1).
+        frame_->Materials()->SetTexture(scene_->ScreenMaterial(), "emissive_tex", world_target_.Handle());
     }
     return rebuilt;
 }

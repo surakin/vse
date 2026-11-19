@@ -56,13 +56,14 @@ inline f32 LinearToSrgb(f32 c)
     return c <= 0.0031308f ? c * 12.92f : 1.055f * Pow(c, 1.0f / 2.4f) - 0.055f;
 }
 
-// The four layers read back to the host.
+// The five layers read back to the host.
 struct Layers
 {
-    Vector<u8> albedo;    // RGBA8_SRGB bytes
-    Vector<u16> normal;   // RG16_Float
-    Vector<u8> material;  // RGBA8_UNorm
-    Vector<f32> depth;    // D32_Float
+    Vector<u8> albedo;     // RGBA8_SRGB bytes
+    Vector<u16> normal;    // RG16_Float
+    Vector<u8> material;   // RGBA8_UNorm
+    Vector<f32> depth;     // D32_Float
+    Vector<u16> emissive;  // RGBA16_Float (glTF coverage Day 2)
     GBufferStats stats;
     bool ok = false;
     engine_test::Text error = engine_test::MakeText();
@@ -74,6 +75,7 @@ struct Layers
         return OctDecode(Vec2(HalfToFloat(normal[(y * kW + x) * 2]), HalfToFloat(normal[(y * kW + x) * 2 + 1])));
     }
     f32 Depth(u32 x, u32 y) const { return depth[y * kW + x]; }
+    f32 Emissive(u32 x, u32 y, u32 c) const { return HalfToFloat(emissive[(y * kW + x) * 4 + c]); }
 };
 
 struct Pixel
@@ -147,14 +149,14 @@ struct Rig
     struct CopyJob
     {
         GBufferTargets targets;
-        GraphResource buffers[4];
+        GraphResource buffers[5];
     };
     static void CopyPass(const PassExecuteContext& ctx, void* user)
     {
         const CopyJob* job = static_cast<const CopyJob*>(user);
-        const GraphResource tex[4] = {job->targets.albedo, job->targets.normal, job->targets.material,
-                                      job->targets.depth};
-        for (int i = 0; i < 4; ++i)
+        const GraphResource tex[5] = {job->targets.albedo, job->targets.normal, job->targets.material,
+                                      job->targets.depth, job->targets.emissive};
+        for (int i = 0; i < 5; ++i)
         {
             ctx.list->CopyTextureToBuffer(ctx.graph->ResolvedTexture(tex[i]),
                                           ctx.graph->ImportedBuffer(job->buffers[i]), rhi::BufferTextureCopy{});
@@ -180,9 +182,9 @@ struct Rig
         out.stats = pass.Stats();
         frame->Flush();
 
-        rhi::BufferHandle bufs[4];
-        const u64 sizes[4] = {kW * kH * 4, kW * kH * 4, kW * kH * 4, kW * kH * 4};
-        for (int i = 0; i < 4; ++i)
+        rhi::BufferHandle bufs[5];
+        const u64 sizes[5] = {kW * kH * 4, kW * kH * 4, kW * kH * 4, kW * kH * 4, kW * kH * 8};
+        for (int i = 0; i < 5; ++i)
         {
             rhi::BufferDesc bd;
             bd.size = sizes[i];
@@ -213,9 +215,9 @@ struct Rig
                                  camera.far_plane);
             }
             PassBuilder copy = graph.AddPass("readback", &CopyPass, &job, PassFlags::SideEffects);
-            const GraphResource tex[4] = {job.targets.albedo, job.targets.normal, job.targets.material,
-                                          job.targets.depth};
-            for (int i = 0; i < 4; ++i)
+            const GraphResource tex[5] = {job.targets.albedo, job.targets.normal, job.targets.material,
+                                          job.targets.depth, job.targets.emissive};
+            for (int i = 0; i < 5; ++i)
             {
                 job.buffers[i] = graph.ImportBuffer("host", bufs[i], rhi::ResourceState::Undefined,
                                                     rhi::ResourceState::CopySrc, false);
@@ -239,10 +241,12 @@ struct Rig
         out.normal.Resize(kW * kH * 2);
         out.material.Resize(kW * kH * 4);
         out.depth.Resize(kW * kH);
+        out.emissive.Resize(kW * kH * 4);
         REQUIRE(device->ReadbackBuffer(bufs[0], 0, out.albedo.Data(), sizes[0]));
         REQUIRE(device->ReadbackBuffer(bufs[1], 0, out.normal.Data(), sizes[1]));
         REQUIRE(device->ReadbackBuffer(bufs[2], 0, out.material.Data(), sizes[2]));
         REQUIRE(device->ReadbackBuffer(bufs[3], 0, out.depth.Data(), sizes[3]));
+        REQUIRE(device->ReadbackBuffer(bufs[4], 0, out.emissive.Data(), sizes[4]));
         if (debug_out != nullptr)
         {
             debug_out->Resize(kW * kH * 4);
@@ -253,7 +257,7 @@ struct Rig
         {
             device->DestroyTexture(debug_tex);
         }
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 5; ++i)
         {
             device->DestroyBuffer(bufs[i]);
         }

@@ -53,7 +53,8 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
             rig.sys->SetFloat(red, "roughness", 0.4f);
             rig.sys->SetFloat(red, "metallic", 1.0f);
             rig.sys->SetVec4(white, "base_color", Vec4(0.5f, 0.5f, 0.5f, 1.0f));
-            rig.sys->SetFloat(white, "emissive_scale", 0.25f);
+            // An HDR emissive colour (glTF coverage Day 2): rgb times the strength in a, over 1 in red.
+            rig.sys->SetVec4(white, "emissive_color", Vec4(1.0f, 0.5f, 0.25f, 2.0f));
 
             Camera cam = TopDownCamera();
             RenderScene scene(RenderSceneDesc{});
@@ -113,14 +114,18 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
             CHECK(Near(L.Albedo(top2.x, top2.y, 0), static_cast<int>(LinearToSrgb(0.8f) * 255.0f + 0.5f), 2));
             CHECK(Abs(L.Depth(top2.x, top2.y) - top2.depth) < 1e-4f);
 
-            // The sphere: a point 0.6 off its pole has the normal (0.6, 0.8, 0); the emissive scale lands in the
-            // material layer.
+            // The sphere: a point 0.6 off its pole has the normal (0.6, 0.8, 0); the emission lands in the emissive
+            // layer, not limited to 1, and the material layer's free channel is 0.
             const Pixel sp = Project(cam, Vec3(3.6f, 1.0f + Sqrt(1.0f - 0.36f), 0));
             const Vec3 sn = L.Normal(sp.x, sp.y);
             CHECK(Abs(sn.x - 0.6f) < 0.08f);
             CHECK(Abs(sn.y - 0.8f) < 0.08f);
             CHECK(Abs(sn.z) < 0.08f);
-            CHECK(Near(L.Material(sp.x, sp.y, 2), 64, 2));
+            CHECK(L.Material(sp.x, sp.y, 2) == 0);
+            CHECK(Abs(L.Emissive(sp.x, sp.y, 0) - 2.0f) < 1e-3f);
+            CHECK(Abs(L.Emissive(sp.x, sp.y, 1) - 1.0f) < 1e-3f);
+            CHECK(Abs(L.Emissive(sp.x, sp.y, 2) - 0.5f) < 1e-3f);
+            CHECK(L.Emissive(top.x, top.y, 0) == 0.0f);  // the cube emits nothing
 
             // Nothing was drawn where no object is: this corner lies on the ground, so use the cleared depth of a point
             // outside the ground instead (the ground is 16 wide, the view 11.5 wide at that distance, so every pixel is

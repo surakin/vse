@@ -517,13 +517,14 @@ list 384 indices, strip 151 indices, back 384 indices, restart yes
 ### The G-buffer geometry pass
 
 `GBufferPass` is the first real pass of the deferred renderer. It draws every visible object once, with its material, into
-four targets (the library is `renderer_passes`; the shaders are `gbuffer.vert` and `gbuffer.frag`):
+five targets (the library is `renderer_passes`; the shaders are `gbuffer.vert` and `gbuffer.frag`):
 
 | Target | Format | Contents |
 |---|---|---|
 | albedo | `RGBA8_SRGB` | rgb linear albedo (the attachment encodes sRGB on write), a = baked occlusion |
 | normal | `RG16_Float` | world-space normal, octahedral (`OctEncode` / `OctDecode`) |
-| material | `RGBA8_UNorm` | r roughness, g metallic, b emissive scale, a flags / 255 (bit 0: unlit) |
+| material | `RGBA8_UNorm` | r roughness, g metallic, b free (written 0), a flags / 255 (bit 0: unlit) |
+| emissive | `RGBA16_Float` | rgb emitted radiance, linear and not limited to 1 (glTF coverage Day 2); the fullscreen lighting pass adds it once |
 | depth | `D32_Float` | 0 at the near plane, 1 at the far plane, no reverse-Z |
 
 `CheckGBufferFormats` asks the device for every format with the usage the pass needs and names the first one it lacks; call
@@ -540,8 +541,8 @@ only when they change and creates nothing; the frame and object bind groups are 
 Materials come from `CreateGBufferMaterial(materials, templates, options, name)`. The options (`normal_map`, `alpha_test`,
 `vertex_color`) pick the fragment permutation, and `vertex_color` also picks the vertex shader that reads the mesh's color, so
 the two stages cannot disagree. Per-vertex colors are authored in sRGB; the shader converts them to linear and multiplies
-the albedo. The parameters are `base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion`, `occlusion_strength` and `flags` (bit `kMaterialFlagUnlit`: the pixel shows its base colour, no ambient, light or emissive term, and the point lights skip it; tone mapping still applies),
-and the textures `albedo_tex`, `normal_tex`, `metallic_roughness_tex` and `occlusion_tex`. The last two are glTF's maps, linear and sampled at the mesh's coordinates: roughness is multiplied by the green channel, metallic by the blue, and occlusion by `1 + occlusion_strength * (red - 1)`. Left unset they are white, so the scalars alone decide, as before the maps existed. `Prepare` leaves an object out and names it in `LastError` when its mesh was
+the albedo. The parameters are `base_color`, `roughness`, `metallic`, `emissive_color` (linear rgb, the strength in alpha), `alpha_cutoff`, `occlusion`, `occlusion_strength` and `flags` (bit `kMaterialFlagUnlit`: the pixel shows its base colour, no ambient, light or emissive term, and the point lights skip it; tone mapping still applies),
+and the textures `albedo_tex`, `normal_tex`, `metallic_roughness_tex`, `occlusion_tex` and `emissive_tex` (sRGB; the emitted radiance is `emissive_color.rgb * emissive_color.a * emissive_tex.rgb`, white when unset). The last two are glTF's maps, linear and sampled at the mesh's coordinates: roughness is multiplied by the green channel, metallic by the blue, and occlusion by `1 + occlusion_strength * (red - 1)`. Left unset they are white, so the scalars alone decide, as before the maps existed. `Prepare` leaves an object out and names it in `LastError` when its mesh was
 never prepared (`GpuMesh::RecordPrepare`, then `MarkReady` after the submit), its material does not exist, no pipeline fits
 the mesh, or the mesh and the material disagree about vertex colors (a colored mesh through a material that ignores them is
 refused, not drawn plain). The rest of the frame is still drawn and `Prepare` returns false.
@@ -642,7 +643,9 @@ phase can change it. For a unit normal `N`, view vector `V` and light vector `L`
 - `Vis = 0.5 / (NL sqrt(NV^2 (1 - a^2) + a^2) + NV sqrt(NL^2 (1 - a^2) + a^2))` (height-correlated Smith, with the `1 / (4 NL NV)`);
 - `F = F0 + (1 - F0) (1 - dot(V,H))^5` with `F0 = lerp(0.04, albedo, metallic)` (Schlick);
 - one light adds `(albedo (1 - metallic) + pi D Vis F) * radiance * max(dot(N, L), 0)`;
-- the ambient light adds `albedo (1 - metallic) * ambient * occlusion`, and emission adds `albedo * emissive_scale`.
+- the ambient light adds `albedo (1 - metallic) * ambient * occlusion`;
+- emission adds the emissive target, `emissive_color.rgb * emissive_color.a * emissive_tex.rgb`, once, in the fullscreen pass (not
+  per light, and not on an unlit material).
 
 The diffuse BRDF is the albedo itself: the `1/pi` of a Lambertian surface is folded into the intensity, so a white surface
 facing a light of intensity 1 comes out at 1 (the same convention as the older forward shader), and the specular lobe carries

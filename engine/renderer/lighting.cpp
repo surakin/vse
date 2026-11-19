@@ -74,8 +74,7 @@ Vec3 ShadeLight(const SurfacePoint& s, const Vec3& view, const Vec3& light, cons
 Vec3 ShadeAmbient(const SurfacePoint& s, const Vec3& ambient)
 {
     const f32 k = (1.0f - s.metallic) * s.occlusion;
-    return Vec3(s.albedo.x * (k * ambient.x + s.emissive_scale), s.albedo.y * (k * ambient.y + s.emissive_scale),
-                s.albedo.z * (k * ambient.z + s.emissive_scale));
+    return Vec3(s.albedo.x * k * ambient.x, s.albedo.y * k * ambient.y, s.albedo.z * k * ambient.z);
 }
 
 f32 TonemapAces(f32 x)
@@ -181,7 +180,7 @@ void LightingPass::Build()
     fragment_ = rhi::CreateShaderFromSet(*device, shaders::kLightingFragShader, rhi::ShaderStage::Fragment);
     volume_vertex_ = rhi::CreateShaderFromSet(*device, shaders::kPointLightVertShader, rhi::ShaderStage::Vertex);
     volume_fragment_ = rhi::CreateShaderFromSet(*device, shaders::kPointLightFragShader, rhi::ShaderStage::Fragment);
-    rhi::BindingDesc bindings[5];
+    rhi::BindingDesc bindings[6];
     for (u32 i = 0; i < 4; ++i)
     {
         bindings[i] = {i, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
@@ -189,8 +188,11 @@ void LightingPass::Build()
     // StructuredBuffer<LightData> lights; the light volume's vertex shader reads it too.
     bindings[4] = {4, rhi::BindingType::ReadOnlyStorageBuffer, rhi::ShaderStage::AllGraphics, 1,
                    static_cast<u32>(sizeof(LightData))};
+    // The G-buffer's emissive target (glTF coverage Day 2): the fullscreen pass adds it; the light volumes do not read
+    // it.
+    bindings[5] = {5, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
     rhi::BindGroupLayoutDesc ld;
-    ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 5);
+    ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 6);
     layout_ = device->CreateBindGroupLayout(ld);
     if (!vertex_.IsValid() || !fragment_.IsValid() || !volume_vertex_.IsValid() || !volume_fragment_.IsValid() ||
         !layout_.IsValid())
@@ -372,6 +374,7 @@ GraphResource LightingPass::AddToGraph(RenderGraph* graph, const GBufferTargets&
         .Read(targets.normal, GraphUsage::Sampled)
         .Read(targets.material, GraphUsage::Sampled)
         .Read(targets.depth, GraphUsage::Sampled)
+        .Read(targets.emissive, GraphUsage::Sampled)
         .Write(accum_, GraphUsage::ColorAttachment);
     return accum_;
 }
@@ -383,7 +386,7 @@ void LightingPass::Record(const PassExecuteContext& context, void* user)
     rhi::BindGroupHandle textures;
     if (self->pipeline_.IsValid() && self->frame_group_.IsValid())
     {
-        rhi::BindGroupEntry e[5];
+        rhi::BindGroupEntry e[6];
         e[0].binding = 0;
         e[0].texture = context.graph->ResolvedTexture(self->targets_.albedo);
         e[1].binding = 1;
@@ -396,9 +399,11 @@ void LightingPass::Record(const PassExecuteContext& context, void* user)
         e[4].buffer = self->lights_.buffer;
         e[4].offset = self->lights_.offset;
         e[4].size = self->lights_.size;
+        e[5].binding = 5;
+        e[5].texture = context.graph->ResolvedTexture(self->targets_.emissive);
         rhi::BindGroupDesc gd;
         gd.layout = self->layout_;
-        gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 5);
+        gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 6);
         gd.transient = true;
         textures = self->device_->CreateBindGroup(gd);
     }
