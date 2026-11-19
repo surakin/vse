@@ -697,7 +697,9 @@ void ScriptRuntime::Impl::Park(PartitionLease* lease, PartitionData* data, Insta
     w.coroutine = out.coroutine;
     w.kind = out.wait.kind;
     w.wake_time = sim_time + out.wait.seconds;
-    w.wake_tick = tick + out.wait.frames;
+    // A task waiter is due the tick after the one that asked: the task runs at the end of this tick. A coroutine
+    // resumed from a timed wait at the start of a tick can ask and wait in the same tick, before the task has run.
+    w.wake_tick = tick + (out.wait.kind == WaitRequest::Kind::Task ? 1 : out.wait.frames);
     w.event = String<HeapAllocator>(HeapAllocator::Default(), out.wait.event.View());
     w.sequence = data->next_sequence++;
     w.task = out.wait.task;
@@ -817,7 +819,7 @@ void ScriptRuntime::Impl::WakeTasks(PartitionLease* lease, PartitionData* data, 
         {
             lease->GetState()->Abandon(w.coroutine);
         }
-        else if (!in->notified_enabled)
+        else if (!in->notified_enabled || w.wake_tick > tick)
         {
             keep.Push(Move(w));
         }

@@ -58,6 +58,7 @@ physics           ->  foundation (incl. math), spatial, ecs, jobs; storage from 
 audio             ->  foundation (incl. math, settings), asset (same layer, from Day 418: the minted clip), ecs and spatial (below, from Day 428: the components and the emitter sync); jobs (from Day 435: the stream refills)  (Phase 26 Day 415)
 audio_physics     ->  audio, physics (layer 14: the physics occlusion query)  (Phase 26 Day 431)
 script_physics    ->  script, physics (layer 14: the physics bindings, commands, components, physics events and the character set of the script module)  (Phase 27 Days 466-467)
+game/script_demo   ->  script_physics, script, physics, storage, ecs, jobs, foundation (layer 14: the scripted game over the whole frame, headless; its world is built by the program and by tests/script_demo)  (Phase 27 Day 475)
 script_media      ->  script, audio, platform (header-only input types) (layer 14: the audio and input bindings of the script module: voice handles, the input snapshot and its replay record)  (Phase 27 Day 468)
 script            ->  foundation (incl. math), ecs, storage (below: the component registry, from Day 456); from later days jobs, settings, asset (same layer)  (Phase 27 Day 446)
 database          ->  foundation                                              (Phase 19 Day 251)

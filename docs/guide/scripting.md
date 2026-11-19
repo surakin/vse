@@ -633,3 +633,14 @@ in every mode, and only the speed differs (`tests/script/script_jit_test.cpp`; t
 
 **The `script_nojit` flavor.** The preset `linux-nojit` (tree `build-nojit`) configures `-DENGINE_LUAJIT_JIT=OFF`; the phase runs on it with
 `scripts/test-phase.sh 27 --no-display --build-dir build-nojit`. Tests that expect the compiler check `luajit::JitCompiledIn()` first.
+
+## The script demo (Phase 27 Day 475)
+
+`game/script_demo` is a whole game in Lua over the full frame: 2,000 dynamic bodies with a `wander`, `flock` or `flee` behavior, a kinematic player the script walks around a square, 16 trigger pickups that count the bodies entering them
+(`on_trigger_enter`, then `event.emit('pickup_collected')`, which the host counts), and a `planner` that searches a field with `task.parallel_for` every ten ticks and moves a marker to the best cell. The frame is the documented order (scripts and
+merge, body sync, kinematic drive, physics step, write-back, physics events). The script avoids `sin` and `cos`, so the world is made of `+ - * /` and compares equal across machines.
+
+`script_demo --threads N --partitions P --entities N --frames N` prints the script and physics time of the last frame and the state hash (the physics state, the marker, the pickup count and the script counters). On the Linux machine (32 hardware threads, 2,000
+bodies, 16 partitions, scripts only): 1 thread 114.6 ms per frame, 2 threads 57.9 ms, 4 threads 29.8 ms, 8 threads 20.7 ms, 16 threads 12.2 ms, with the same hash at every count (`tests/script_demo` runs 1, 2 and 16 threads under every flavor and compares; it also reloads the
+script in the middle of a run, with the same hash at 1 and 16 threads, and checks that a text that does not compile is refused while the old one runs on). The physics step is about 6 ms and was given the same threads.
+

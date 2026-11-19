@@ -1,0 +1,12 @@
+// Generated from scripts/demo.lua by CMake (Phase 27 Day 475): the demo's script, embedded so a test and the program need no file.
+#include "demo_world.h"
+
+namespace script_demo
+{
+
+const char* BuiltInScript()
+{
+    return R"LUA(@DEMO_LUA@)LUA";
+}
+
+}  // namespace script_demo

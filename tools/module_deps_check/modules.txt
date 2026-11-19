@@ -33,6 +33,7 @@ include-dir .
 include-dir game/common
 include-dir game/renderer_demo
 include-dir game/physics_demo
+include-dir game/script_demo
 include-dir game/ui_demo
 include-dir shaders
 include-dir tools/docgen/src
@@ -205,6 +206,7 @@ module game/ecs_bench/ game/ecs_bench 14
 module game/physics_bench/ game/physics_bench 14
 module game/audio_bench/ game/audio_bench 14
 module game/physics_demo/ game/physics_demo 14
+module game/script_demo/ game/script_demo 14
 module game/spatial_demo/ game/spatial_demo 14
 module game/storage_demo/ game/storage_demo 14
 module game/asset_demo/ game/asset_demo 14
@@ -334,6 +336,7 @@ target physics_bench game/physics_bench
 target audio_bench game/audio_bench
 target physics_demo_lib game/physics_demo
 target physics_demo game/physics_demo
+target script_demo game/script_demo
 target spatial_demo game/spatial_demo
 target storage_demo game/storage_demo
 target asset_demo game/asset_demo

@@ -373,6 +373,7 @@ tests/physics/                                  25   # Phase 25 Day 386
 tests/audio/                                    26   # Phase 26 Day 415
 tests/script/                                   27   # Phase 27 Day 445
 tests/script_physics/                           27   # Phase 27 Day 466
+tests/script_demo/                              27   # Phase 27 Day 475: the scripted game at several thread counts, hot reload
 tests/script_media/                             27   # Phase 27 Day 468
 engine/script/luajit/luajit_smoke_test.cpp      27   # Phase 27 Day 448: the smoke test of the vendored library, beside the backend
 tests/audio_physics/                            26   # Phase 26 Day 431

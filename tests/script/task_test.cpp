@@ -102,6 +102,14 @@ behavior('definer', {
     put(self, tostring(a) .. ':' .. tostring(ea) .. '|' .. tostring(b) .. ':' .. tostring(eb) .. '|' .. tostring(c) .. ':' .. tostring(ec))
   end,
 })
+behavior('napper', {
+  on_create = function(self)
+    -- A task asked for after a timed wait resumes: it runs at the end of that tick, so its waiter is not ready in the same one.
+    wait_frames(1)
+    local r, err = wait_task(task.run('return args + 1', 41))
+    put(self, tostring(r) .. ':' .. tostring(err))
+  end,
+})
 behavior('closer', {
   on_create = function(self)
     local ok, err = pcall(task.run, function() return 1 end)
@@ -259,6 +267,13 @@ TEST_CASE("Tasks: run returns a result through wait_task", "[script][task]")
     CHECK(rig.Run("adder").View() == StringView("3"));
     CHECK(rig.runtime->Stats().tasks_run == 1);
     CHECK(rig.runtime->Stats().tasks_held == 0);
+    CHECK(rig.runtime->Stats().errors == 0);
+}
+
+TEST_CASE("Tasks: a task asked for after a timed wait is waited for until it has run", "[script][task]")
+{
+    TaskRig rig;
+    CHECK(rig.Run("napper", 6).View() == StringView("42:nil"));
     CHECK(rig.runtime->Stats().errors == 0);
 }
 
