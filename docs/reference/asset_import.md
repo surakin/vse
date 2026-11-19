@@ -1920,6 +1920,36 @@ Span<const u32> joint_remap;
 
 A `JOINTS_n` value (a slot of the skin) to the skeleton's joint index; empty: the same.
 
+## `kGltfColorTwinKey` {#asset-kgltfcolortwinkey}
+
+`variable asset::kGltfColorTwinKey` — defined in `engine/asset_import/gltf_mesh.h`
+
+```cpp
+inline constexpr u32 kGltfColorTwinKey;
+```
+
+The manifest key base of a material's colour-template twin.
+
+The twin `<name>_color` has this plus the glTF material index as its key (glTF coverage Day 5). A material used by coloured and uncoloured meshes has both; the twin keeps its id on a re-import.
+
+## `GltfMeshHasColors(const JsonValue&)` {#asset-gltfmeshhascolors-const-jsonvalue-amp}
+
+`function asset::GltfMeshHasColors` — defined in `engine/asset_import/gltf_mesh.h`
+
+```cpp
+bool GltfMeshHasColors(const JsonValue& mesh);
+```
+
+Whether a glTF mesh has `COLOR_0` on any primitive.
+
+Such a mesh is imported with per-vertex colours on every primitive (white where a primitive has none), and the materials it uses are on the colour template.
+
+| Field | Value |
+|---|---|
+| Parameter `mesh` | an element of the glTF's `meshes`. |
+| Returns | true when a primitive has `COLOR_0`. |
+| Fails | never; a mesh without `primitives` has none. |
+
 ## `ImportMeshes(const GltfDocument&,const ImportOptions&,const TypeRegistry&,Span<const MeshSkeletonBinding>,ImportResult*,GltfError*)` {#asset-importmeshes-const-gltfdocument-amp-const-importoptions-amp-const-typeregistry-amp-span-lt-const-meshskeletonbinding-gt-importresult-star-gltferror-star}
 
 `function asset::ImportMeshes` — defined in `engine/asset_import/gltf_mesh.h`

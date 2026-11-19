@@ -30,6 +30,7 @@ struct PrimData
 {
     Vector<MeshVertex> vertices;
     Vector<MeshSkinInfluence> skin;  // empty, or one per vertex
+    Vector<Array<u8, 4>> colors;     // empty, or one per vertex: COLOR_0 as the mesh stores it (glTF coverage Day 5)
     Vector<u32> indices;             // a triangle list over `vertices`
 };
 
@@ -126,7 +127,7 @@ Status ReadJointAttribute(const GltfDocument& document, const JsonValue& value, 
 bool IsHandledAttribute(StringView key)
 {
     return key == StringView("POSITION") || key == StringView("NORMAL") || key == StringView("TANGENT") ||
-           key == StringView("TEXCOORD_0");
+           key == StringView("TEXCOORD_0") || key == StringView("COLOR_0");
 }
 
 // `JOINTS_n` or `WEIGHTS_n` (n < kMaxSkinSets): true when `key` is one.
@@ -209,7 +210,9 @@ void Unshare(PrimData* prim)
 {
     Vector<MeshVertex> vertices;
     Vector<MeshSkinInfluence> skin;
+    Vector<Array<u8, 4>> colors;
     const bool skinned = prim->skin.Size() != 0;
+    const bool colored = prim->colors.Size() != 0;
     for (usize i = 0; i < prim->indices.Size(); ++i)
     {
         vertices.Push(prim->vertices[prim->indices[i]]);
@@ -217,10 +220,15 @@ void Unshare(PrimData* prim)
         {
             skin.Push(prim->skin[prim->indices[i]]);
         }
+        if (colored)
+        {
+            colors.Push(prim->colors[prim->indices[i]]);
+        }
         prim->indices[i] = static_cast<u32>(i);
     }
     prim->vertices = static_cast<Vector<MeshVertex>&&>(vertices);
     prim->skin = static_cast<Vector<MeshSkinInfluence>&&>(skin);
+    prim->colors = static_cast<Vector<Array<u8, 4>>&&>(colors);
 }
 
 // Smooth normals: the sum of the (area-weighted) face normals around each vertex.
@@ -467,6 +475,23 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
         ENGINE_TRY(
             ReadFloatAttribute(document, attribute, optional.type, optional.integers, count, optional.out, &n, error));
     }
+    // COLOR_0 (glTF coverage Day 5): VEC3 or VEC4, float or normalized integers, linear; stored sRGB 8-bit.
+    Vector<f32> colors;
+    usize color_components = 0;
+    const JsonValue color_value = attributes.Get("COLOR_0");
+    if (color_value.Exists())
+    {
+        u32 accessor = 0;
+        ENGINE_TRY(color_value.AsIndex(&accessor, document.accessors.Size(), error));
+        const GltfAccessorType type = document.accessors[accessor].type;
+        if (type != GltfAccessorType::Vec3 && type != GltfAccessorType::Vec4)
+        {
+            return RefuseMesh(error, color_value.Path(), StringView("COLOR_0 is not a VEC3 or VEC4"));
+        }
+        color_components = type == GltfAccessorType::Vec3 ? 3 : 4;
+        u64 n = 0;
+        ENGINE_TRY(ReadFloatAttribute(document, color_value, type, true, count, &colors, &n, error));
+    }
     // The skin: every JOINTS_k with its WEIGHTS_k, k from 0.
     Vector<Vector<u32>> joint_sets;
     Vector<Vector<f32>> weight_sets;
@@ -589,6 +614,13 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
             vertex.tangent = {{tangents[v * 4], tangents[v * 4 + 1], tangents[v * 4 + 2], w < 0 ? -1.0f : 1.0f}};
         }
         out->vertices.Push(vertex);
+        if (color_components != 0)
+        {
+            Array<f32, 4> linear = {{colors[v * color_components], colors[v * color_components + 1],
+                                     colors[v * color_components + 2],
+                                     color_components == 4 ? colors[v * color_components + 3] : 1.0f}};
+            out->colors.Push(EncodeMeshColor(linear));
+        }
     }
     if (keep_skin)
     {
@@ -674,6 +706,19 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
 
 }  // namespace
 
+bool GltfMeshHasColors(const JsonValue& mesh)
+{
+    const JsonValue primitives = mesh.Get("primitives");
+    for (usize p = 0; primitives.IsArray() && p < primitives.Size(); ++p)
+    {
+        if (primitives.At(p).Get("attributes").Get("COLOR_0").Exists())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, const TypeRegistry& types,
                     Span<const MeshSkeletonBinding> bindings, ImportResult* result, GltfError* error)
 {
@@ -758,7 +803,11 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
         }
         Vector<MeshVertex> vertices;
         Vector<MeshSkinInfluence> skin;
+        Vector<Array<u8, 4>> colors;
         Vector<u32> indices;
+        // A mesh with COLOR_0 on any primitive carries colours on all (white on the others: the colour template
+        // multiplies by 1 there), and every material it uses is the colour template's (gltf_material.cpp).
+        const bool colored = GltfMeshHasColors(mesh);
         for (usize p = 0; p < prims.Size(); ++p)
         {
             PrimData& data = prims[p];
@@ -778,6 +827,10 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
             for (usize v = 0; v < data.vertices.Size(); ++v)
             {
                 vertices.Push(data.vertices[v]);
+                if (colored)
+                {
+                    colors.Push(data.colors.Size() != 0 ? data.colors[v] : Array<u8, 4>{{255, 255, 255, 255}});
+                }
                 if (skinned)
                 {
                     if (data.skin.Size() != 0)
@@ -800,6 +853,7 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
         // The G-buffer templates read float3 normals and tangents: only the full layout draws (a packed mesh's
         // SNorm8x4 attributes do not feed them). Found by the Phase 24 Day 383 acceptance scene.
         input.quality = MeshQuality::Full;
+        input.colors = Span<const Array<u8, 4>>(colors.Data(), colors.Size());
         if (skinned)
         {
             input.skin = Span<const MeshSkinInfluence>(skin.Data(), skin.Size());

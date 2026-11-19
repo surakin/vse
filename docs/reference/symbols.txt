@@ -8770,7 +8770,9 @@ asset::MeshSkeletonBinding::skeleton	variable	asset_import	asset-meshskeletonbin
 asset::MeshSkeletonBinding::skeleton_hash	variable	asset_import	asset-meshskeletonbinding-skeleton-hash	asset_import.md	engine/asset_import/gltf_mesh.h:28
 asset::MeshSkeletonBinding::joint_count	variable	asset_import	asset-meshskeletonbinding-joint-count	asset_import.md	engine/asset_import/gltf_mesh.h:29
 asset::MeshSkeletonBinding::joint_remap	variable	asset_import	asset-meshskeletonbinding-joint-remap	asset_import.md	engine/asset_import/gltf_mesh.h:30
-asset::ImportMeshes(const GltfDocument&,const ImportOptions&,const TypeRegistry&,Span<const MeshSkeletonBinding>,ImportResult*,GltfError*)	function	asset_import	asset-importmeshes-const-gltfdocument-amp-const-importoptions-amp-const-typeregistry-amp-span-lt-const-meshskeletonbinding-gt-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_mesh.h:53
+asset::kGltfColorTwinKey	variable	asset_import	asset-kgltfcolortwinkey	asset_import.md	engine/asset_import/gltf_mesh.h:38
+asset::GltfMeshHasColors(const JsonValue&)	function	asset_import	asset-gltfmeshhascolors-const-jsonvalue-amp	asset_import.md	engine/asset_import/gltf_mesh.h:48
+asset::ImportMeshes(const GltfDocument&,const ImportOptions&,const TypeRegistry&,Span<const MeshSkeletonBinding>,ImportResult*,GltfError*)	function	asset_import	asset-importmeshes-const-gltfdocument-amp-const-importoptions-amp-const-typeregistry-amp-span-lt-const-meshskeletonbinding-gt-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_mesh.h:69
 asset::CleanPathSegment(StringView,String<HeapAllocator>*)	function	asset_import	asset-cleanpathsegment-stringview-string-lt-heapallocator-gt-star	asset_import.md	engine/asset_import/gltf_names.h:21
 asset::MakeNamesUnique(Vector<String<HeapAllocator>>*)	function	asset_import	asset-makenamesunique-vector-lt-string-lt-heapallocator-gt-gt-star	asset_import.md	engine/asset_import/gltf_names.h:29
 asset::ImportPathPrefix(const ImportOptions&)	function	asset_import	asset-importpathprefix-const-importoptions-amp	asset_import.md	engine/asset_import/gltf_names.h:36

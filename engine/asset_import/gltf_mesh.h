@@ -31,6 +31,22 @@ struct MeshSkeletonBinding
         joint_remap;  ///< A `JOINTS_n` value (a slot of the skin) to the skeleton's joint index; empty: the same.
 };
 
+/// The manifest key base of a material's colour-template twin.
+///
+/// The twin `<name>_color` has this plus the glTF material index as its key (glTF coverage Day 5). A material used by
+/// coloured and uncoloured meshes has both; the twin keeps its id on a re-import.
+inline constexpr u32 kGltfColorTwinKey = 0x40000000u;
+
+/// Whether a glTF mesh has `COLOR_0` on any primitive.
+///
+/// Such a mesh is imported with per-vertex colours on every primitive (white where a primitive has none), and the
+/// materials it uses are on the colour template.
+///
+/// - Param mesh: an element of the glTF's `meshes`.
+/// - Returns: true when a primitive has `COLOR_0`.
+/// - Fails: never; a mesh without `primitives` has none.
+bool GltfMeshHasColors(const JsonValue& mesh);
+
 /// Imports every mesh of a parsed glTF.
 ///
 /// Appends one mesh resource per glTF mesh to `result->resources` (path `<prefix>/meshes/<name>`), their ids to

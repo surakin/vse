@@ -3,6 +3,7 @@
 #include "algorithm.h"
 #include "animation/components.h"
 #include "asset/level.h"
+#include "asset_import/gltf_mesh.h"
 #include "asset_import/gltf_names.h"
 #include "asset_import/gltf_summary.h"
 #include "bytes/byte_writer.h"
@@ -238,9 +239,11 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
         mesh_ids.Push(ResourceId());
     }
     const JsonValue materials_array = document.root.Get("materials");
+    Vector<ResourceId> twin_ids;  // a material's twin on the colour template, for coloured meshes (Day 5)
     for (usize m = 0; m < materials_array.Size(); ++m)
     {
         material_ids.Push(ResourceId());
+        twin_ids.Push(ResourceId());
     }
     {
         const Vector<ImportManifestEntry>& entries = result->manifest.Entries();
@@ -254,6 +257,11 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
             {
                 material_ids[entries[e].index] = entries[e].id;
             }
+            else if (entries[e].kind == ImportKind::Material && entries[e].index >= kGltfColorTwinKey &&
+                     entries[e].index - kGltfColorTwinKey < twin_ids.Size())
+            {
+                twin_ids[entries[e].index - kGltfColorTwinKey] = entries[e].id;
+            }
         }
     }
     Vector<ResourceId> material_of_mesh;           // the material of the first primitive, or the null id
@@ -262,6 +270,10 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
     {
         ResourceId material;
         materials_of_mesh.Push(Vector<ResourceId>());
+        const bool colored = GltfMeshHasColors(meshes.At(m));
+        // A coloured mesh draws through the colour-template twin where the material has one (gltf_material.cpp).
+        const auto pick = [&](usize index)
+        { return colored && !twin_ids[index].IsNone() ? twin_ids[index] : material_ids[index]; };
         {
             const JsonValue all = meshes.At(m).Get("primitives");
             for (usize p = 0; all.Exists() && p < all.Size() && p < kMaxLevelSlotMaterials; ++p)
@@ -269,8 +281,8 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
                 u64 index = 0;
                 bool present = false;
                 ENGINE_TRY(all.At(p).OptionalUnsigned("material", &index, 0xFFFFFFFFull, &present, error));
-                materials_of_mesh[m].Push(
-                    present && index < material_ids.Size() ? material_ids[static_cast<usize>(index)] : ResourceId());
+                materials_of_mesh[m].Push(present && index < material_ids.Size() ? pick(static_cast<usize>(index))
+                                                                                 : ResourceId());
             }
         }
         const JsonValue primitives = meshes.At(m).Get("primitives");
@@ -281,7 +293,7 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
             ENGINE_TRY(primitives.At(0).OptionalUnsigned("material", &material_index, 0xFFFFFFFFull, &present, error));
             if (present && material_index < material_ids.Size())
             {
-                material = material_ids[static_cast<usize>(material_index)];
+                material = pick(static_cast<usize>(material_index));
             }
         }
         material_of_mesh.Push(material);

@@ -9,6 +9,7 @@
 #include "animation/components.h"
 #include "ecs/schedule.h"
 #include "asset/level.h"
+#include "asset/material.h"
 #include "asset/mesh.h"
 #include "storage/builtin_components.h"
 #include "asset/resource_manager.h"
@@ -159,6 +160,60 @@ TEST_CASE("gltf mesh: a triangle with every attribute equals the blob built from
     Vector<byte> expected;
     REQUIRE(BuildMeshBlob(types, result.resources[0].id, input, &expected).Ok());
     CHECK(GmSameBytes(result.resources[0].blob, expected));
+}
+
+// glTF coverage Day 5: COLOR_0 (linear) becomes the mesh's sRGB 8-bit colour stream; a material that a coloured and an
+// uncoloured mesh share gets a twin on the colour template.
+TEST_CASE("gltf mesh: COLOR_0 becomes per-vertex colours and a colour-template twin of a shared material",
+          "[asset][gltf]")
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const f32 colors[12] = {1, 0, 0, 1, 0, 1, 0, 0.5f, 0, 0, 0.5f, 1};
+    const u32 pos = GmAcc(&w, GmkTrianglePositions, 9, 5126, "VEC3");
+    const u32 idx = GmAcc(&w, indices, 3, 5123, "SCALAR");
+    const u32 col = GmAcc(&w, colors, 12, 5126, "VEC4");
+    char json[700];
+    FormatTo(json, sizeof(json),
+             "\"materials\":[{\"name\":\"paint\"}],"
+             "\"meshes\":[{\"name\":\"coloured\",\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"COLOR_0\":%u},"
+             "\"indices\":%u,\"material\":0}]},{\"name\":\"plain\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},"
+             "\"indices\":%u,\"material\":0}]}]",
+             pos, col, idx, pos, idx);
+    w.AddRoot(json);
+    ImportResult result;
+    GltfError error;
+    REQUIRE(GmImport(w.Glb(), &result, &error).Ok());
+    const TypeRegistry types;
+    bool twin = false;
+    bool plain_material = false;
+    for (const ImportedResource& r : result.resources)
+    {
+        if (r.path.View() == StringView("/gltf/meshes/coloured"))
+        {
+            MeshView view;
+            REQUIRE(view.Open(ByteSpan(r.blob.Data(), r.blob.Size()), types).Ok());
+            CHECK(view.HasColors());
+            const byte* second = view.VertexBytes().Data() + view.VertexStride();
+            CHECK(second[48 + 1] == 255);  // green, sRGB of 1
+            CHECK(second[48 + 3] == 128);  // alpha 0.5, linear
+        }
+        if (r.path.View() == StringView("/gltf/meshes/plain"))
+        {
+            MeshView view;
+            REQUIRE(view.Open(ByteSpan(r.blob.Data(), r.blob.Size()), types).Ok());
+            CHECK_FALSE(view.HasColors());
+        }
+        if (r.path.View() == StringView("/gltf/materials/paint_color"))
+        {
+            MaterialAssetData m;
+            REQUIRE(LoadMaterialBlob(ByteSpan(r.blob.Data(), r.blob.Size()), types, &m).Ok());
+            twin = StringView(m.template_name.text) == StringView("gbuffer_color");
+        }
+        plain_material = plain_material || r.path.View() == StringView("/gltf/materials/paint");
+    }
+    CHECK(twin);
+    CHECK(plain_material);
 }
 
 TEST_CASE("gltf mesh: missing normals, tangents and texture coordinates are made, with a counted warning",

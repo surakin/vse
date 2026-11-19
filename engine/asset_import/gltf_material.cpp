@@ -2,6 +2,7 @@
 
 #include "asset/material.h"
 #include "asset/texture_mint.h"
+#include "asset_import/gltf_mesh.h"
 #include "asset_import/gltf_names.h"
 #include "asset_import/image_decode.h"
 #include "asset_import/material_source.h"
@@ -79,6 +80,8 @@ struct MaterialInfo
     bool double_sided = false;
     bool skinned = false;
     bool used_static = false;
+    bool used_colored = false;    // by a mesh with COLOR_0 (glTF coverage Day 5): the colour template
+    bool used_uncolored = false;  // by a mesh without
     TextureRef color;
     TextureRef normal;
     TextureRef metal_rough;        // pbrMetallicRoughness.metallicRoughnessTexture
@@ -352,6 +355,8 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
             if (index.Exists() && index.AsIndex(&material, material_count, error).Ok())
             {
                 (mesh_skinned[mesh] ? infos[material].skinned : infos[material].used_static) = true;
+                (GltfMeshHasColors(meshes.At(mesh)) ? infos[material].used_colored
+                                                    : infos[material].used_uncolored) = true;
             }
         }
     }
@@ -561,14 +566,38 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
         result->resources.Push(static_cast<ImportedResource&&>(resource));
     }
     // The materials.
+    // A material that coloured and uncoloured meshes both use gets a twin on the colour template, `<name>_color`, with
+    // the manifest key kGltfColorTwinKey + its index; one only coloured meshes use is itself on the colour template.
+    Vector<String<HeapAllocator>> twin_names;
     Vector<ManifestObject> material_objects;
     for (usize m = 0; m < material_count; ++m)
     {
         material_objects.Push(ManifestObject{static_cast<u32>(m), infos[m].name});
+        String<HeapAllocator> twin(HeapAllocator::Default(), infos[m].name);
+        twin.Append(StringView("_color"));
+        twin_names.Push(static_cast<String<HeapAllocator>&&>(twin));
     }
-    Vector<ResourceId> material_ids;
+    for (usize m = 0; m < material_count; ++m)
+    {
+        if (infos[m].used_colored && infos[m].used_uncolored)
+        {
+            material_objects.Push(ManifestObject{kGltfColorTwinKey + static_cast<u32>(m), twin_names[m].View()});
+        }
+    }
+    Vector<ResourceId> assigned;
     AssignIds(options, ImportKind::Material,
-              Span<const ManifestObject>(material_objects.Data(), material_objects.Size()), &material_ids);
+              Span<const ManifestObject>(material_objects.Data(), material_objects.Size()), &assigned);
+    Vector<ResourceId> material_ids;
+    Vector<ResourceId> twin_ids;
+    for (usize m = 0; m < material_count; ++m)
+    {
+        material_ids.Push(assigned[m]);
+        twin_ids.Push(ResourceId());
+    }
+    for (usize k = material_count; k < material_objects.Size(); ++k)
+    {
+        twin_ids[material_objects[k].index - kGltfColorTwinKey] = assigned[k];
+    }
     Vector<String<HeapAllocator>> material_segments;
     for (usize m = 0; m < material_count; ++m)
     {
@@ -609,153 +638,172 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
     };
     for (usize m = 0; m < material_count; ++m)
     {
-        const MaterialInfo& info = infos[m];
-        String<HeapAllocator> text(HeapAllocator::Default());
-        char id[17];
-        FormatResourceId(material_ids[m], id);
-        char line[256];
-        FormatTo(line, sizeof(line), "id %s\ntemplate %s\n", id, info.skinned ? "gbuffer_skinned" : "gbuffer");
-        text.Append(StringView(line, CStrLength(line)));
-        if (info.normal.present)
+        for (u32 variant = 0; variant < 2; ++variant)
         {
-            text.Append(StringView("option NORMAL_MAP\n"));
-        }
-        if (info.alpha_mode == 1)
-        {
-            text.Append(StringView("option ALPHA_TEST\n"));
-        }
-        // The numbers are parsed back by MintMaterial: FormatGeneral writes '.' whatever the host's LC_NUMERIC is.
-        const auto append_float = [&text](f64 value)
-        {
-            char number[32];
-            const usize length = FormatGeneral(number, sizeof(number), value, 9);
-            text.Append(' ');
-            text.Append(StringView(number, length));
-        };
-        text.Append(StringView("param base_color color"));
-        for (u32 c = 0; c < 4; ++c)
-        {
-            append_float(info.base_color[c]);
-        }
-        const Array<const char*, 3> scalar_names = {"roughness", "metallic", "alpha_cutoff"};
-        const Array<f64, 3> scalars = {info.roughness, info.metallic, info.alpha_cutoff};
-        for (u32 k = 0; k < 3; ++k)
-        {
-            text.Append(StringView("\nparam "));
-            text.Append(StringView(scalar_names[k]));
-            text.Append(StringView(" float"));
-            append_float(scalars[k]);
-        }
-        if (info.emissive)
-        {
-            // glTF coverage Day 2: the emissive colour as it is (rgb, the strength in a), not its largest component.
-            text.Append(StringView("\nparam emissive_color color"));
+            const MaterialInfo& info = infos[m];
+            const bool colored = variant == 1;
+            const bool twin = info.used_colored && info.used_uncolored;
+            if (colored ? !info.used_colored : (info.used_colored && !info.used_uncolored))
+            {
+                continue;  // this variant is not used
+            }
+            const ResourceId material_id = colored && twin ? twin_ids[m] : material_ids[m];
+            String<HeapAllocator> text(HeapAllocator::Default());
+            char id[17];
+            FormatResourceId(material_id, id);
+            char line[256];
+            const char* template_name = info.skinned ? (colored ? "gbuffer_skinned_color" : "gbuffer_skinned")
+                                                     : (colored ? "gbuffer_color" : "gbuffer");
+            FormatTo(line, sizeof(line), "id %s\ntemplate %s\n", id, template_name);
+            text.Append(StringView(line, CStrLength(line)));
+            if (info.normal.present)
+            {
+                text.Append(StringView("option NORMAL_MAP\n"));
+            }
+            if (info.alpha_mode == 1)
+            {
+                text.Append(StringView("option ALPHA_TEST\n"));
+            }
+            // The numbers are parsed back by MintMaterial: FormatGeneral writes '.' whatever the host's LC_NUMERIC is.
+            const auto append_float = [&text](f64 value)
+            {
+                char number[32];
+                const usize length = FormatGeneral(number, sizeof(number), value, 9);
+                text.Append(' ');
+                text.Append(StringView(number, length));
+            };
+            text.Append(StringView("param base_color color"));
             for (u32 c = 0; c < 4; ++c)
             {
-                append_float(info.emissive_color[c]);
+                append_float(info.base_color[c]);
             }
-        }
-        if (info.unlit)
-        {
-            // Written only for an unlit material, so the blobs of the materials that imported before do not change.
-            text.Append(StringView("\nparam flags uint 1"));
-        }
-        else if (info.occlusion.present && info.occlusion_strength != 1.0)
-        {
-            // glTF coverage Day 3: the occlusion map's strength (1, the default, is the template's own).
-            text.Append(StringView("\nparam occlusion_strength float"));
-            append_float(info.occlusion_strength);
-        }
-        text.Append('\n');
-        TextureRef refs[kUses];
-        MaterialRefs(info, refs);
-        u32 made_use[kUses] = {kUseColor, kUseNormal, kUseMetalRough, kUseOcclusion, kUseEmissive};
-        if (SharesMetalRough(info))
-        {
-            refs[kUseOcclusion] = info.occlusion;  // bound to the metallic-roughness texture, made once
-            made_use[kUseOcclusion] = kUseMetalRough;
-        }
-        const char* slots[kUses] = {"albedo_tex", "normal_tex", "metallic_roughness_tex", "occlusion_tex",
-                                    "emissive_tex"};
-        u32 first_texture = 0xFFFFFFFFu;
-        for (u32 use = 0; use < kUses; ++use)
-        {
-            if (!refs[use].present)
+            const Array<const char*, 3> scalar_names = {"roughness", "metallic", "alpha_cutoff"};
+            const Array<f64, 3> scalars = {info.roughness, info.metallic, info.alpha_cutoff};
+            for (u32 k = 0; k < 3; ++k)
             {
-                continue;
+                text.Append(StringView("\nparam "));
+                text.Append(StringView(scalar_names[k]));
+                text.Append(StringView(" float"));
+                append_float(scalars[k]);
             }
-            for (usize k = 0; k < made.Size(); ++k)
+            if (info.emissive)
             {
-                if (made[k].texture == refs[use].texture && made[k].use == made_use[use])
+                // glTF coverage Day 2: the emissive colour as it is (rgb, the strength in a), not its largest
+                // component.
+                text.Append(StringView("\nparam emissive_color color"));
+                for (u32 c = 0; c < 4; ++c)
                 {
-                    FormatTo(line, sizeof(line), "texture %s %s\n", slots[use], made[k].path.CStr());
+                    append_float(info.emissive_color[c]);
+                }
+            }
+            if (info.unlit)
+            {
+                // Written only for an unlit material, so the blobs of the materials that imported before do not change.
+                text.Append(StringView("\nparam flags uint 1"));
+            }
+            else if (info.occlusion.present && info.occlusion_strength != 1.0)
+            {
+                // glTF coverage Day 3: the occlusion map's strength (1, the default, is the template's own).
+                text.Append(StringView("\nparam occlusion_strength float"));
+                append_float(info.occlusion_strength);
+            }
+            text.Append('\n');
+            TextureRef refs[kUses];
+            MaterialRefs(info, refs);
+            u32 made_use[kUses] = {kUseColor, kUseNormal, kUseMetalRough, kUseOcclusion, kUseEmissive};
+            if (SharesMetalRough(info))
+            {
+                refs[kUseOcclusion] = info.occlusion;  // bound to the metallic-roughness texture, made once
+                made_use[kUseOcclusion] = kUseMetalRough;
+            }
+            const char* slots[kUses] = {"albedo_tex", "normal_tex", "metallic_roughness_tex", "occlusion_tex",
+                                        "emissive_tex"};
+            u32 first_texture = 0xFFFFFFFFu;
+            for (u32 use = 0; use < kUses; ++use)
+            {
+                if (!refs[use].present)
+                {
+                    continue;
+                }
+                for (usize k = 0; k < made.Size(); ++k)
+                {
+                    if (made[k].texture == refs[use].texture && made[k].use == made_use[use])
+                    {
+                        FormatTo(line, sizeof(line), "texture %s %s\n", slots[use], made[k].path.CStr());
+                        text.Append(StringView(line, CStrLength(line)));
+                    }
+                }
+                first_texture = first_texture == 0xFFFFFFFFu ? refs[use].texture : first_texture;
+            }
+            // The sampler of the first texture the material uses.
+            if (first_texture != 0xFFFFFFFFu)
+            {
+                const JsonValue texture = textures.At(first_texture);
+                u32 sampler_index = 0;
+                const JsonValue sampler_value = texture.Get("sampler");
+                if (sampler_value.Exists())
+                {
+                    ENGINE_TRY(sampler_value.AsIndex(&sampler_index, samplers.Size(), error));
+                    const JsonValue sampler = samplers.At(sampler_index);
+                    u64 wrap_s = 10497;
+                    u64 wrap_t = 10497;
+                    u64 mag = 9729;
+                    u64 min = 9987;
+                    bool present = false;
+                    ENGINE_TRY(sampler.OptionalUnsigned("wrapS", &wrap_s, 100000, &present, error));
+                    ENGINE_TRY(sampler.OptionalUnsigned("wrapT", &wrap_t, 100000, &present, error));
+                    ENGINE_TRY(sampler.OptionalUnsigned("magFilter", &mag, 100000, &present, error));
+                    ENGINE_TRY(sampler.OptionalUnsigned("minFilter", &min, 100000, &present, error));
+                    if (wrap_s != wrap_t)
+                    {
+                        AddImportWarning(&result->report, sampler.Path(),
+                                         StringView("wrapT differs from wrapS: the sampler uses wrapS for both"));
+                    }
+                    const char* address = wrap_s == 33071 ? "clamp" : (wrap_s == 33648 ? "mirror" : "repeat");
+                    const bool nearest = mag == 9728 && (min == 9728 || min == 9984 || min == 9986);
+                    FormatTo(line, sizeof(line), "sampler linear_sampler filter %s address %s\n",
+                             nearest ? "nearest" : "linear", address);
                     text.Append(StringView(line, CStrLength(line)));
                 }
             }
-            first_texture = first_texture == 0xFFFFFFFFu ? refs[use].texture : first_texture;
-        }
-        // The sampler of the first texture the material uses.
-        if (first_texture != 0xFFFFFFFFu)
-        {
-            const JsonValue texture = textures.At(first_texture);
-            u32 sampler_index = 0;
-            const JsonValue sampler_value = texture.Get("sampler");
-            if (sampler_value.Exists())
+            if (info.double_sided)
             {
-                ENGINE_TRY(sampler_value.AsIndex(&sampler_index, samplers.Size(), error));
-                const JsonValue sampler = samplers.At(sampler_index);
-                u64 wrap_s = 10497;
-                u64 wrap_t = 10497;
-                u64 mag = 9729;
-                u64 min = 9987;
-                bool present = false;
-                ENGINE_TRY(sampler.OptionalUnsigned("wrapS", &wrap_s, 100000, &present, error));
-                ENGINE_TRY(sampler.OptionalUnsigned("wrapT", &wrap_t, 100000, &present, error));
-                ENGINE_TRY(sampler.OptionalUnsigned("magFilter", &mag, 100000, &present, error));
-                ENGINE_TRY(sampler.OptionalUnsigned("minFilter", &min, 100000, &present, error));
-                if (wrap_s != wrap_t)
-                {
-                    AddImportWarning(&result->report, sampler.Path(),
-                                     StringView("wrapT differs from wrapS: the sampler uses wrapS for both"));
-                }
-                const char* address = wrap_s == 33071 ? "clamp" : (wrap_s == 33648 ? "mirror" : "repeat");
-                const bool nearest = mag == 9728 && (min == 9728 || min == 9984 || min == 9986);
-                FormatTo(line, sizeof(line), "sampler linear_sampler filter %s address %s\n",
-                         nearest ? "nearest" : "linear", address);
-                text.Append(StringView(line, CStrLength(line)));
+                text.Append(StringView("state cull none\n"));
             }
+            if (info.alpha_mode == 2)
+            {
+                text.Append(StringView("state alpha_blend on\nstate depth_write off\n"));
+            }
+            ImportedResource resource;
+            resource.id = material_id;
+            resource.type = types::kMaterial;
+            resource.path = String<HeapAllocator>(HeapAllocator::Default(), prefix.View());
+            resource.path.Append(StringView("/materials/"));
+            resource.path.Append(material_segments[m].View());
+            if (colored && twin)
+            {
+                resource.path.Append(StringView("_color"));
+            }
+            const Resolver resolver(result, &made);
+            MaterialSourceError mint_error;
+            const Status minted = MintMaterial(text.View(), resolver, types, &resource.blob, &mint_error);
+            if (minted.Failed())
+            {
+                error->Set(materials.At(m).Path(), StringView(mint_error.message.Data()));
+                return Status::Make(ErrorCode::Unsupported, "the material does not fit the template");
+            }
+            result->report.output_bytes += resource.blob.Size();
+            if (result->report.output_bytes > options.limits.max_output_bytes)
+            {
+                return RefuseMaterial(error, materials.At(m).Path(),
+                                      StringView("takes the import past the limit on the bytes it may make"),
+                                      ErrorCode::TooLarge);
+            }
+            result->manifest.Add(ImportKind::Material,
+                                 colored && twin ? kGltfColorTwinKey + static_cast<u32>(m) : static_cast<u32>(m),
+                                 colored && twin ? twin_names[m].View() : infos[m].name, resource.id);
+            result->resources.Push(static_cast<ImportedResource&&>(resource));
         }
-        if (info.double_sided)
-        {
-            text.Append(StringView("state cull none\n"));
-        }
-        if (info.alpha_mode == 2)
-        {
-            text.Append(StringView("state alpha_blend on\nstate depth_write off\n"));
-        }
-        ImportedResource resource;
-        resource.id = material_ids[m];
-        resource.type = types::kMaterial;
-        resource.path = String<HeapAllocator>(HeapAllocator::Default(), prefix.View());
-        resource.path.Append(StringView("/materials/"));
-        resource.path.Append(material_segments[m].View());
-        const Resolver resolver(result, &made);
-        MaterialSourceError mint_error;
-        const Status minted = MintMaterial(text.View(), resolver, types, &resource.blob, &mint_error);
-        if (minted.Failed())
-        {
-            error->Set(materials.At(m).Path(), StringView(mint_error.message.Data()));
-            return Status::Make(ErrorCode::Unsupported, "the material does not fit the template");
-        }
-        result->report.output_bytes += resource.blob.Size();
-        if (result->report.output_bytes > options.limits.max_output_bytes)
-        {
-            return RefuseMaterial(error, materials.At(m).Path(),
-                                  StringView("takes the import past the limit on the bytes it may make"),
-                                  ErrorCode::TooLarge);
-        }
-        result->manifest.Add(ImportKind::Material, static_cast<u32>(m), infos[m].name, resource.id);
-        result->resources.Push(static_cast<ImportedResource&&>(resource));
     }
     return Status::Success();
 }
