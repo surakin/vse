@@ -12,6 +12,7 @@
 #include "physics/collide.h"
 #include "physics/collide.h"
 #include "physics/determinism.h"
+#include "physics/query_index.h"
 #include "physics/state_hash.h"
 #include "physics/world.h"
 
@@ -495,6 +496,11 @@ void PhysicsWorld::Step()
             joints_.Release(slot, generation);
             ++step_stats_.joints_broken;
         }
+    }
+    // The queries' index follows the step's motion (the moving colliders, then the static tree if it waits).
+    if (query_index_.Get() != nullptr)
+    {
+        query_index_->RefreshMoving(*this);
     }
     step_stats_.after_ns += os::MonotonicTimeNanos() - after_start;
     ++step_stats_.steps;

@@ -26,6 +26,7 @@ set(PHYSICS_SOURCES
   island.cpp  # Day 400
   ccd.cpp  # Day 402
   query.cpp  # Day 403
+  query_index.cpp  # query and hierarchy indices, Day 1
   character.cpp  # Day 404
   events.cpp  # Day 405
   debug_draw.cpp  # Day 405

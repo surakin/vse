@@ -90,8 +90,13 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - The G-buffer keeps `qsort` (measured). Full suite: `ran 11249 of 11379`, only the known failures.
   - Then the G-buffer's draw sort moved off `qsort` (not portable): a `StableSort` of 24-byte proxies, 0.99 ms per frame against `qsort`'s 1.02 at
     10,000 objects. Renderer tests run for it only (see the day file).
-- **Planned next (2026-11-19, the user's request):** the maintenance series [the query index and the hierarchy index](plans/maintenance/query-and-hierarchy-indices.md),
-  two days: physics queries through a query index kept current (rays, characters), and a children index for `SetParent`. Not started.
+- **Maintenance series [the query index and the hierarchy index](plans/maintenance/query-and-hierarchy-indices.md) (2026-11-19, the user's request):**
+  - **Day 1 done:** physics queries go through a query index kept current by the world, with results bit-identical to the full scan, which the
+    oracle tests compare. Rays against 5,000 bodies run 98 times faster (8,637 to 846,000 per second), and 2,000 characters step in 10 ms
+    (294 before). The step pays about 0.55 ms at 5,000 falling bodies.
+  - Runs: plain `ran 4236 of 11391 tests`, asan `ran 3494 of 11391`, tsan `ran 3149 of 11391` (phases: all; display included; crash tests
+    excluded), with only known failures and flakes. Review: 1 fixed, 2 declined.
+  - **Next:** Day 2, the ECS children index for `SetParent`, which also closes the series.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Phase 27 Day 474 done (2026-11-19, the Mac): LuaJIT, the FSEvents watcher and the script tests on macOS.** LuaJIT builds from CMake on macOS (host tools for the host processor, `buildvm -m machasm`, x64 or arm64 by `CMAKE_OSX_ARCHITECTURES`); the script modules, tests, `script_demo` and `script_bench` are in the macOS build. `io::DirectoryWatcher` has a native macOS backend, FSEvents (`io/macos/fsevents_watcher.cpp`; chosen over kqueue by the spike), deciding by `lstat` against a known-name map; a rename is two events. It needed a string-keyed `HashMap`: the rework (move-only keys and values, `StringView` lookup, `ForEach`, `Hash<String>`) is `eefa8c3b`. Hashes: `script_sample` `e3e3ca13a45686f9` equals Linux's; `script_demo` `e1f5c33055210a41` at 1, 2 and 8 threads (no Linux value recorded; the PC waits for Day 473). JIT on Apple silicon: a hardened app needs `LUAJIT_ENABLE_OSX_HRT` and the allow-jit entitlement (Phase 29 finding). Review: two `/code-review high` passes, 10 and 10 findings, all fixed (one regression test shown failing). Runs: `--affected` plain `ran 4022 of 11153 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, 3 failures (the known voice-cost snapshot, the known `Throughput` flake, and a new one-time hang of the FIFO read test; `KNOWN-ISSUES.md`); a reduced run, no sanitizer flavors on the Mac; `ctest -L docs` 7 of 7. arm64 compile-only (the unity-off tree's sanitizer test links hit a full disk); nojit and the shared build not built on the Mac. Next on the Mac: none in Phase 27; Day 473 is the PC's.

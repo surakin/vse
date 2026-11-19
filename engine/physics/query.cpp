@@ -2,9 +2,11 @@
 
 #include "algorithm.h"
 #include "lang/scalar.h"
+#include "log/assert.h"
 #include "physics/check.h"
 #include "physics/collide.h"
 #include "physics/compound.h"
+#include "physics/query_index.h"
 #include "physics/triangle_mesh.h"
 
 namespace engine_placeholder::physics
@@ -382,12 +384,10 @@ Libraries LibrariesOf(const PhysicsWorld& world)
     return Libraries{&world.Hulls(), &world.Meshes(), &world.Compounds()};
 }
 
+// The same pose the query index boxes (query_index.h), so a box a query computes equals the one the index holds.
 Pose PoseOf(const Body& body, const Collider& collider)
 {
-    Pose pose;
-    pose.position = body.position + body.orientation.ToMat3() * collider.offset;
-    pose.rotation = body.orientation * collider.rotation;
-    return pose;
+    return ColliderPose(body, collider);
 }
 
 bool Unit(const Vec3& v, Vec3* out)
@@ -413,6 +413,63 @@ template <class F> void ForEachCollider(const PhysicsWorld& world, const Physics
             continue;
         }
         const ColliderRecord* record = world.FindCollider(id);
+        const Body* body = record != nullptr ? world.Find(record->owner) : nullptr;
+        if (body != nullptr && Passes(filter, *record, *body))
+        {
+            f(id, *record, *body);
+        }
+    }
+}
+
+// Whether two boxes touch (faces count), as every query's box test writes it.
+bool BoxesTouch(const Aabb& box, const Aabb& region)
+{
+    return !(box.min.x > region.max.x || box.max.x < region.min.x || box.min.y > region.max.y ||
+             box.max.y < region.min.y || box.min.z > region.max.z || box.max.z < region.min.z);
+}
+
+#if ENGINE_SLOW_CHECKS
+// Whether the index holds every collider's current exact box (the slow check of the candidates' superset).
+bool IndexCurrent(const PhysicsWorld& world, const QueryIndex& index)
+{
+    const u32 slots = world.Stats().collider_slots;
+    for (u32 slot = 0; slot < slots; ++slot)
+    {
+        const ColliderId id = world.ColliderAtSlot(slot);
+        const ColliderRecord* record = id.IsValid() ? world.FindCollider(id) : nullptr;
+        const Body* body = record != nullptr ? world.Find(record->owner) : nullptr;
+        if (body != nullptr && !index.Holds(slot, id.generation, ColliderBounds(*body, record->value)))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+#endif
+
+// The colliders that pass the filter and whose box `test` may accept, in slot order, with their record and body: the
+// index's candidates when it holds every collider, otherwise every collider (as ForEachCollider). `test` must be the
+// query's own box test or one that accepts more, and monotone in the box (a box that contains another is accepted when
+// the other is), so no collider the query would find is left out and the visit order is ForEachCollider's.
+template <class Test, class F>
+void ForEachCandidate(const PhysicsWorld& world, const PhysicsQueryFilter& filter, Test&& test, F&& f)
+{
+    const QueryIndex* index = world.QueryIndexOf();
+    if (index == nullptr || !index->Complete())
+    {
+        ForEachCollider(world, filter, f);
+        return;
+    }
+#if ENGINE_SLOW_CHECKS
+    ENGINE_CHECK_SLOW(IndexCurrent(world, *index), "physics: the query index is behind the world (a pose or shape "
+                                                   "changed without SetTransform or SetCollider)");
+#endif
+    Vector<u32> slots;
+    index->Collect(test, &slots);
+    for (const u32 slot : slots)
+    {
+        const ColliderId id = world.ColliderAtSlot(slot);
+        const ColliderRecord* record = id.IsValid() ? world.FindCollider(id) : nullptr;
         const Body* body = record != nullptr ? world.Find(record->owner) : nullptr;
         if (body != nullptr && Passes(filter, *record, *body))
         {
@@ -495,19 +552,20 @@ bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& directio
     bool found = false;
     PhysicsHit best;
     f32 reach = max_distance;  // shrinks to the closest hit so far: later colliders only count if nearer
-    ForEachCollider(world, filter,
-                    [&](ColliderId id, const ColliderRecord& record, const Body& body)
-                    {
-                        PhysicsHit h;
-                        if (RayOne(libs, id, record, body, origin, d, reach, &h) &&
-                            (!found || h.distance < best.distance ||
-                             (h.distance == best.distance && id.ToKey() < best.collider.ToKey())))
-                        {
-                            best = h;
-                            found = true;
-                            reach = h.distance;
-                        }
-                    });
+    ForEachCandidate(
+        world, filter, [&](const Aabb& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
+        [&](ColliderId id, const ColliderRecord& record, const Body& body)
+        {
+            PhysicsHit h;
+            if (RayOne(libs, id, record, body, origin, d, reach, &h) &&
+                (!found || h.distance < best.distance ||
+                 (h.distance == best.distance && id.ToKey() < best.collider.ToKey())))
+            {
+                best = h;
+                found = true;
+                reach = h.distance;
+            }
+        });
     if (found && hit != nullptr)
     {
         *hit = best;
@@ -525,15 +583,16 @@ usize RayCastAll(const PhysicsWorld& world, const Vec3& origin, const Vec3& dire
         return 0;
     }
     const Libraries libs = LibrariesOf(world);
-    ForEachCollider(world, filter,
-                    [&](ColliderId id, const ColliderRecord& record, const Body& body)
-                    {
-                        PhysicsHit h;
-                        if (RayOne(libs, id, record, body, origin, d, max_distance, &h))
-                        {
-                            hits->Push(h);
-                        }
-                    });
+    ForEachCandidate(
+        world, filter, [&](const Aabb& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
+        [&](ColliderId id, const ColliderRecord& record, const Body& body)
+        {
+            PhysicsHit h;
+            if (RayOne(libs, id, record, body, origin, d, max_distance, &h))
+            {
+                hits->Push(h);
+            }
+        });
     Sort(Span<PhysicsHit>(hits->Data(), hits->Size()), [](const PhysicsHit& a, const PhysicsHit& b)
          { return a.distance < b.distance || (a.distance == b.distance && a.collider.ToKey() < b.collider.ToKey()); });
     return hits->Size();
@@ -563,74 +622,75 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
     Aabb swept;
     swept.min = Vec3(Min(start.min.x, end.min.x), Min(start.min.y, end.min.y), Min(start.min.z, end.min.z));
     swept.max = Vec3(Max(start.max.x, end.max.x), Max(start.max.y, end.max.y), Max(start.max.z, end.max.z));
-    ForEachCollider(world, filter,
-                    [&](ColliderId id, const ColliderRecord& record, const Body& body)
+    ForEachCandidate(
+        world, filter, [&](const Aabb& box) { return BoxesTouch(box, swept); },
+        [&](ColliderId id, const ColliderRecord& record, const Body& body)
+        {
+            const Pose target = PoseOf(body, record.value);
+            const Aabb box = record.value.shape.Bounds(target.position, target.rotation);
+            if (box.min.x > swept.max.x || box.max.x < swept.min.x || box.min.y > swept.max.y ||
+                box.max.y < swept.min.y || box.min.z > swept.max.z || box.max.z < swept.min.z)
+            {
+                return;
+            }
+            const auto touches = [&](f32 t, ContactManifold* manifold)
+            {
+                Pose pose;
+                pose.position = position + d * (distance * t);
+                pose.rotation = rotation;
+                return Collide(shape, pose, record.value.shape, target, 0.0f, manifold, libs.hulls, libs.meshes,
+                               libs.compounds) == CollideResult::Contact;
+            };
+            ContactManifold manifold;
+            f32 toi = -1.0f;
+            if (touches(0.0f, &manifold))
+            {
+                toi = 0.0f;
+            }
+            else
+            {
+                for (u32 k = 1; k <= samples && toi < 0.0f; ++k)
+                {
+                    const f32 t = static_cast<f32>(k) / static_cast<f32>(samples);
+                    if (!touches(t, &manifold))
                     {
-                        const Pose target = PoseOf(body, record.value);
-                        const Aabb box = record.value.shape.Bounds(target.position, target.rotation);
-                        if (box.min.x > swept.max.x || box.max.x < swept.min.x || box.min.y > swept.max.y ||
-                            box.max.y < swept.min.y || box.min.z > swept.max.z || box.max.z < swept.min.z)
+                        continue;
+                    }
+                    f32 lo = static_cast<f32>(k - 1) / static_cast<f32>(samples);
+                    f32 hi = t;
+                    for (u32 b = 0; b < 30; ++b)
+                    {
+                        const f32 mid = 0.5f * (lo + hi);
+                        ContactManifold scratch;
+                        if (touches(mid, &scratch))
                         {
-                            return;
-                        }
-                        const auto touches = [&](f32 t, ContactManifold* manifold)
-                        {
-                            Pose pose;
-                            pose.position = position + d * (distance * t);
-                            pose.rotation = rotation;
-                            return Collide(shape, pose, record.value.shape, target, 0.0f, manifold, libs.hulls,
-                                           libs.meshes, libs.compounds) == CollideResult::Contact;
-                        };
-                        ContactManifold manifold;
-                        f32 toi = -1.0f;
-                        if (touches(0.0f, &manifold))
-                        {
-                            toi = 0.0f;
+                            hi = mid;
                         }
                         else
                         {
-                            for (u32 k = 1; k <= samples && toi < 0.0f; ++k)
-                            {
-                                const f32 t = static_cast<f32>(k) / static_cast<f32>(samples);
-                                if (!touches(t, &manifold))
-                                {
-                                    continue;
-                                }
-                                f32 lo = static_cast<f32>(k - 1) / static_cast<f32>(samples);
-                                f32 hi = t;
-                                for (u32 b = 0; b < 30; ++b)
-                                {
-                                    const f32 mid = 0.5f * (lo + hi);
-                                    ContactManifold scratch;
-                                    if (touches(mid, &scratch))
-                                    {
-                                        hi = mid;
-                                    }
-                                    else
-                                    {
-                                        lo = mid;
-                                    }
-                                }
-                                toi = hi;
-                                touches(hi, &manifold);
-                            }
+                            lo = mid;
                         }
-                        if (toi < 0.0f)
-                        {
-                            return;
-                        }
-                        const f32 moved = toi * distance;
-                        if (moved < best.distance || (moved == best.distance && id.ToKey() < best.collider.ToKey()))
-                        {
-                            best.collider = id;
-                            best.body = record.owner;
-                            best.distance = moved;
-                            best.normal = manifold.count > 0 ? manifold.normal * -1.0f : d * -1.0f;
-                            best.point = manifold.count > 0 ? manifold.points[0].position_b : position + d * moved;
-                            best.triangle = kNoTriangle;
-                            found = true;
-                        }
-                    });
+                    }
+                    toi = hi;
+                    touches(hi, &manifold);
+                }
+            }
+            if (toi < 0.0f)
+            {
+                return;
+            }
+            const f32 moved = toi * distance;
+            if (moved < best.distance || (moved == best.distance && id.ToKey() < best.collider.ToKey()))
+            {
+                best.collider = id;
+                best.body = record.owner;
+                best.distance = moved;
+                best.normal = manifold.count > 0 ? manifold.normal * -1.0f : d * -1.0f;
+                best.point = manifold.count > 0 ? manifold.points[0].position_b : position + d * moved;
+                best.triangle = kNoTriangle;
+                found = true;
+            }
+        });
     if (found && hit != nullptr)
     {
         *hit = best;
@@ -651,23 +711,24 @@ usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& positio
     pose.position = position;
     pose.rotation = rotation;
     const Aabb mine = shape.Bounds(position, rotation);
-    ForEachCollider(world, filter,
-                    [&](ColliderId id, const ColliderRecord& record, const Body& body)
-                    {
-                        const Pose target = PoseOf(body, record.value);
-                        const Aabb box = record.value.shape.Bounds(target.position, target.rotation);
-                        if (box.min.x > mine.max.x || box.max.x < mine.min.x || box.min.y > mine.max.y ||
-                            box.max.y < mine.min.y || box.min.z > mine.max.z || box.max.z < mine.min.z)
-                        {
-                            return;
-                        }
-                        ContactManifold manifold;
-                        if (Collide(shape, pose, record.value.shape, target, 0.0f, &manifold, libs.hulls, libs.meshes,
-                                    libs.compounds) == CollideResult::Contact)
-                        {
-                            out->Push(id);
-                        }
-                    });
+    ForEachCandidate(
+        world, filter, [&](const Aabb& box) { return BoxesTouch(box, mine); },
+        [&](ColliderId id, const ColliderRecord& record, const Body& body)
+        {
+            const Pose target = PoseOf(body, record.value);
+            const Aabb box = record.value.shape.Bounds(target.position, target.rotation);
+            if (box.min.x > mine.max.x || box.max.x < mine.min.x || box.min.y > mine.max.y || box.max.y < mine.min.y ||
+                box.min.z > mine.max.z || box.max.z < mine.min.z)
+            {
+                return;
+            }
+            ContactManifold manifold;
+            if (Collide(shape, pose, record.value.shape, target, 0.0f, &manifold, libs.hulls, libs.meshes,
+                        libs.compounds) == CollideResult::Contact)
+            {
+                out->Push(id);
+            }
+        });
     Sort(Span<ColliderId>(out->Data(), out->Size()),
          [](const ColliderId& a, const ColliderId& b) { return a.ToKey() < b.ToKey(); });
     return out->Size();
@@ -688,36 +749,41 @@ bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance
     bool found = false;
     PhysicsHit best;
     best.distance = kBig;
-    ForEachCollider(world, filter,
-                    [&](ColliderId id, const ColliderRecord& record, const Body& body)
-                    {
-                        const Pose target = PoseOf(body, record.value);
-                        ContactManifold manifold;
-                        if (Collide(probe, probe_pose, record.value.shape, target, max_distance, &manifold, libs.hulls,
-                                    libs.meshes, libs.compounds) != CollideResult::Contact ||
-                            manifold.count == 0)
-                        {
-                            return;
-                        }
-                        // A negative depth is the gap between the shapes; the probe's own radius is part of the
-                        // distance.
-                        const f32 depth = manifold.points[0].depth;
-                        const f32 distance = depth > 0.0f ? 0.0f : Max(0.0f, -depth + kProbe);
-                        if (distance > max_distance)
-                        {
-                            return;
-                        }
-                        if (distance < best.distance ||
-                            (distance == best.distance && id.ToKey() < best.collider.ToKey()))
-                        {
-                            best.collider = id;
-                            best.body = record.owner;
-                            best.distance = distance;
-                            best.point = manifold.points[0].position_b;
-                            best.normal = manifold.normal * -1.0f;
-                            found = true;
-                        }
-                    });
+    // ClosestPoint has no box test of its own (the narrow phase measures the gap): the candidates are the colliders
+    // whose box is within twice the distance, so a narrow-phase gap would have to be off by more than the distance
+    // itself for a collider to be left out.
+    const f32 grow = 2.0f * max_distance + 2.0f * kProbe;
+    const Aabb reach{point - Vec3(grow, grow, grow), point + Vec3(grow, grow, grow)};
+    ForEachCandidate(
+        world, filter, [&](const Aabb& box) { return BoxesTouch(box, reach); },
+        [&](ColliderId id, const ColliderRecord& record, const Body& body)
+        {
+            const Pose target = PoseOf(body, record.value);
+            ContactManifold manifold;
+            if (Collide(probe, probe_pose, record.value.shape, target, max_distance, &manifold, libs.hulls, libs.meshes,
+                        libs.compounds) != CollideResult::Contact ||
+                manifold.count == 0)
+            {
+                return;
+            }
+            // A negative depth is the gap between the shapes; the probe's own radius is part of the
+            // distance.
+            const f32 depth = manifold.points[0].depth;
+            const f32 distance = depth > 0.0f ? 0.0f : Max(0.0f, -depth + kProbe);
+            if (distance > max_distance)
+            {
+                return;
+            }
+            if (distance < best.distance || (distance == best.distance && id.ToKey() < best.collider.ToKey()))
+            {
+                best.collider = id;
+                best.body = record.owner;
+                best.distance = distance;
+                best.point = manifold.points[0].position_b;
+                best.normal = manifold.normal * -1.0f;
+                found = true;
+            }
+        });
     if (found && hit != nullptr)
     {
         *hit = best;

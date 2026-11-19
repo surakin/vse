@@ -21,6 +21,7 @@ set(PHYSICS_TEST_SOURCES
   parallel_test.cpp  # Day 401
   ccd_test.cpp  # Day 402
   query_test.cpp  # Day 403
+  query_index_test.cpp  # query and hierarchy indices, Day 1
   character_test.cpp  # Day 404
   events_test.cpp  # Day 405
   snapshot_test.cpp  # Day 406

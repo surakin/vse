@@ -2,6 +2,7 @@
 
 #include "lang/scalar.h"
 #include "physics/check.h"
+#include "physics/query_index.h"
 
 namespace engine_placeholder::physics
 {
@@ -131,6 +132,7 @@ BodyStatus PhysicsWorld::DestroyBody(BodyId id)
         const ColliderRecord* record = colliders_.Find(next.index, next.generation);
         const ColliderId following = record != nullptr ? record->next : ColliderId();
         colliders_.Release(next.index, next.generation);
+        RefreshQueryIndex(next);  // gone: the index drops it
         next = following;
     }
     // The joints of the body go with it.
@@ -376,6 +378,7 @@ BodyStatus PhysicsWorld::AddCollider(BodyId body_id, const Collider& collider, C
     body->first_collider = ColliderId{index, generation};
     body->collider_count = 1;
     RecomputeMass(body);
+    RefreshQueryIndex(body->first_collider);
     if (out != nullptr)
     {
         *out = body->first_collider;
@@ -402,6 +405,7 @@ BodyStatus PhysicsWorld::SetCollider(BodyId body_id, const Collider& collider)
     Disturb(body);
     record->value = collider;
     RecomputeMass(body);
+    RefreshQueryIndex(body->first_collider);
     return BodyStatus::Ok;
 }
 
@@ -432,7 +436,21 @@ BodyStatus PhysicsWorld::SetSettings(BodyId id, const RigidBody& settings)
     body->force = Vec3(0.0f, 0.0f, 0.0f);
     body->torque = Vec3(0.0f, 0.0f, 0.0f);
     RecomputeMass(body);
+    RefreshQueryIndex(body->first_collider);  // a change of class moves the collider across the index's two sides
     return BodyStatus::Ok;
+}
+
+void PhysicsWorld::RefreshQueryIndex(ColliderId id)
+{
+    if (!id.IsValid())
+    {
+        return;
+    }
+    if (query_index_.Get() == nullptr)
+    {
+        query_index_ = MakeUnique<QueryIndex>();
+    }
+    query_index_->Refresh(*this, id);
 }
 
 Body* PhysicsWorld::Find(BodyId id)
@@ -562,6 +580,7 @@ BodyStatus PhysicsWorld::SetTransform(BodyId id, const Vec3& position, const Qua
     body->previous_orientation = orientation;
     RefreshInertia(body);
     ++body->teleports;
+    RefreshQueryIndex(body->first_collider);
     return BodyStatus::Ok;
 }
 

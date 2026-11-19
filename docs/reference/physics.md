@@ -8070,7 +8070,7 @@ Looks a body up.
 | Field | Value |
 |---|---|
 | Parameter `id` | the id. |
-| Returns | the body, or null for a stale id. The pointer stays valid until the body is destroyed. |
+| Returns | the body, or null for a stale id. The pointer stays valid until the body is destroyed. Its pose is changed only through `SetTransform` (and its class through `SetSettings`): the queries' index follows those calls, not writes through the pointer. |
 | Fails | null for a stale id. |
 | Ownership | the world owns it; the pointer is valid until the body or collider is destroyed. |
 
@@ -8121,7 +8121,7 @@ Looks a collider up.
 | Field | Value |
 |---|---|
 | Parameter `id` | the id. |
-| Returns | the record, or null for a stale id. |
+| Returns | the record, or null for a stale id. Its shape and place are changed only through `SetCollider`: the queries' index follows that call, not writes through the pointer. |
 | Fails | null for a stale id. |
 | Ownership | the world owns it; the pointer is valid until the body or collider is destroyed. |
 

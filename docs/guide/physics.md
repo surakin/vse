@@ -312,7 +312,7 @@ count the work; both stay zero when no body is continuous.
 
 ## Queries
 
-`physics/query.h` has free functions over a `const PhysicsWorld&` that read the world as the last step left it: `RayCast` (the closest hit
+`physics/query.h` has free functions over a `const PhysicsWorld&` that read the world as it is now (after the last step and any change made since): `RayCast` (the closest hit
 with collider, body, point, normal, distance and, for a mesh, the triangle), `RayCastAll` (every collider the ray meets, nearest first,
 ties by collider key), `ShapeCast` (sweeps a sphere, box, capsule or hull and returns the first collider it touches, by the same sampling
 and bisection as continuous collision), `Overlap` (the colliders a shape touches, sorted by id key) and `ClosestPoint` (the nearest
@@ -320,8 +320,21 @@ surface point of any collider within a distance). A `PhysicsQueryFilter` selects
 (`include_triggers`, off by default), the body class (`include_static`, `include_kinematic`, `include_dynamic`) and an ignore list of bodies.
 A ray that starts inside a solid collider hits it at distance zero with the normal against the ray. The exact ray tests are the quadratic
 for a sphere, slabs for a box, the cylinder and the two end spheres for a capsule, the face planes for a hull, the box query and
-Moller-Trumbore for a mesh and the children for a compound. The queries scan the colliders and cull by their boxes (no tree yet), change
-nothing and may run from several threads while no step or change runs; the results are sorted, so they do not depend on the thread.
+Moller-Trumbore for a mesh and the children for a compound. The queries change nothing and may run from several threads while no step or
+change runs; the results are sorted, so they do not depend on the thread.
+
+**The query index** (query and hierarchy indices series, Day 1). The world keeps every collider's exact world box in a spatial set of its
+own: static colliders in its static tree, the others in its dynamic tree with fat boxes. It is updated by the calls that change a
+collider's box or class (`AddCollider`, `SetCollider`, `SetTransform`, `SetSettings`, `DestroyBody`), at the end of each `Step` for the
+colliders of every body that is not static, and rebuilt by `Restore`; a query never changes it, so concurrent queries stay safe. A query
+asks it for the colliders under the nodes its own box test accepts (`RayCast` and `RayCastAll`: the slab test along the whole ray;
+`ShapeCast`: the swept box; `Overlap`: the shape's box; `ClosestPoint`, which has no box test of its own: the point's box grown by twice
+the distance), sorts them by slot and runs the same per-collider code as before. Rounding is monotone, so a box test that accepts a box
+accepts every box containing it: no collider the old scan would find is left out, the visit order is the old one, and the results are the
+same bit for bit (`tests/physics/query_index_test.cpp` compares both paths over random changing scenes; `SetQueryIndexEnabled(false)` turns
+the index off for that comparison). A pose or shape changed by writing through `Find` or `FindCollider` instead of those calls is not
+followed: builds with slow checks abort the next query when the index is behind. A collider the set cannot hold (a box with a non-finite
+corner) makes the queries scan every collider until it goes.
 
 ## The character controller
 
@@ -434,7 +447,7 @@ What the stress tests (`tests/physics/stress_test.cpp`) and the benchmark found,
 
 - **Tall stacks.** A stack of unit boxes stands at thirty and topples at fifty (600 steps at 60 Hz, four substeps); the pile it makes is finite and bounded. More substeps or a block solver would raise the height; neither is built.
 - **Large mass ratios.** At 1:10,000 (a 10-tonne box on six 1 kg boxes) the light boxes are squeezed out and thrown a few tens of metres; nothing becomes NaN and the heavy body stays above the floor. Ratios of 1:100 are inside the stability tests.
-- **Queries scan.** `RayCast`, `Overlap` and `ShapeCast` visit every collider (8,600 rays per second against 5,000 bodies; a million rays take two minutes), and the character controller's sweeps do the same (2,000 characters: 305 ms per step). They are correct and deterministic and fine for tens of calls a frame; a query through the broad phase's trees needs the trees to be current between steps and is the next change of the module.
+- **Queries go through the query index** (see "Queries"): 846,000 rays per second against 5,000 bodies (8,600 when they scanned), and 2,000 characters step in 10 ms (294 before). The index costs the step about 0.55 ms at 5,000 falling bodies on one thread (3%), and under 1% at rest or at 50,000 bodies, also in a world that never queries.
 - **Joints and the narrow phase.** The step looks for a pair's joint among all joints that forbid collision (a linear scan per pair), which grows with joints times pairs; chains of 5,000 bodies with 5,000 joints step in 2.4 ms asleep, awake scenes of many joints are not measured.
 - **One island, one thread.** The solver parallelises over islands: a single huge pile runs on one thread, and there is no graph colouring.
 - **Static meshes only.** A triangle mesh collider is static; a mesh against a mesh is unsupported; no one-way platforms; no soft bodies, cloth or fluids.

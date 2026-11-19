@@ -121,6 +121,7 @@ module spatial "Spatial Partitioning"
 module physics "Physics"
   header engine/physics/*.h
   exclude engine/physics/collide_math.h   # internal helpers of the narrow phase (collide.cpp, collide_box.cpp), not API
+  exclude engine/physics/query_index.h   # the queries' index (query.cpp, the world), not API
   strict thread-safety
   strict ownership
   strict failure

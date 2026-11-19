@@ -262,6 +262,7 @@ struct PhysicsWorldStats
 
 struct ColliderPair;
 class BroadPhase;
+class QueryIndex;
 
 /// Everything a world can say about itself, in one value.
 ///
@@ -377,7 +378,9 @@ public:
     /// Looks a body up.
     ///
     /// - Param id: the id.
-    /// - Returns: the body, or null for a stale id. The pointer stays valid until the body is destroyed.
+    /// - Returns: the body, or null for a stale id. The pointer stays valid until the body is destroyed. Its pose is
+    ///   changed only through `SetTransform` (and its class through `SetSettings`): the queries' index follows those
+    ///   calls, not writes through the pointer.
     /// - Ownership: the world owns it; the pointer is valid until the body or collider is destroyed.
     /// - Fails: null for a stale id.
     Body* Find(BodyId id);
@@ -401,7 +404,8 @@ public:
     /// Looks a collider up.
     ///
     /// - Param id: the id.
-    /// - Returns: the record, or null for a stale id.
+    /// - Returns: the record, or null for a stale id. Its shape and place are changed only through `SetCollider`: the
+    ///   queries' index follows that call, not writes through the pointer.
     /// - Ownership: the world owns it; the pointer is valid until the body or collider is destroyed.
     /// - Fails: null for a stale id.
     ColliderRecord* FindCollider(ColliderId id);
@@ -754,6 +758,20 @@ public:
     /// - Fails: never.
     const Vector<ContactRecord>& Contacts() const { return contacts_; }
 
+    /// The index the queries ask for candidates (`RayCast`, `ShapeCast`, `Overlap`, ...); null before the first
+    /// collider.
+    ///
+    /// - Internal: the queries' own path; not for callers.
+    /// - Ownership: owned by the world; valid until the next change of a collider, a step or a restore.
+    const QueryIndex* QueryIndexOf() const { return query_index_enabled_ ? query_index_.Get() : nullptr; }
+
+    /// Turns the queries' use of the index off and on; while off, every query tests every collider, which is the
+    /// reference the index's results are compared with. The index is kept current either way.
+    ///
+    /// - Internal: for the tests that compare the two paths.
+    /// - Param enabled: whether the queries use the index (the default).
+    void SetQueryIndexEnabled(bool enabled) { query_index_enabled_ = enabled; }
+
     /// Hashes the state of every body in slot order.
     ///
     /// The words are the position, orientation, linear and angular velocity and the sleep
@@ -874,6 +892,11 @@ private:
     MeshLibrary meshes_;
     CompoundLibrary compounds_;
     UniquePtr<BroadPhase> broad_;
+    // Every collider's world box, for the queries (query_index.h); made by the first collider, kept current by every
+    // change of a collider's body, shape or class.
+    UniquePtr<QueryIndex> query_index_;
+    bool query_index_enabled_ = true;
+    void RefreshQueryIndex(ColliderId id);
     ContactSolver solver_;
     // Events (Day 405): the lists of the last update, the pairs that touch (contacts) and the trigger pairs that
     // overlap, both sorted by collider key; `keep_events_` is set while `Update` runs its steps.

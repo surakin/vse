@@ -2,6 +2,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 #include "physics/check.h"
+#include "physics/query_index.h"
 #include "physics/snapshot.h"
 #include "physics/snapshot_io.h"
 #include "physics/world.h"
@@ -667,6 +668,12 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
     }
     next.scheduler_ = scheduler_;
     *this = Move(next);
+    // The restored colliders, in the queries' index (the restored world was built without it).
+    if (colliders_.Live() != 0)
+    {
+        query_index_ = MakeUnique<QueryIndex>();
+        query_index_->Rebuild(*this);
+    }
     return SnapshotStatus::Ok;
 }
 
