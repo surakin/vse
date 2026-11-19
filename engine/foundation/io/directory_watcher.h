@@ -72,8 +72,8 @@ public:
     /// - Fails: `NotFound`, `NotADirectory`, `PermissionDenied`, `Invalid` (an interval out of range). A native backend
     /// that cannot start (watch limit reached, a file system without notifications) falls back to the polling backend
     /// instead of failing; [[io::DirectoryWatcher::IsNative]] tells which one was made.
-    /// - Backend: Linux: inotify; Windows: ReadDirectoryChangesW; macOS: FSEvents (a rename is reported as its two names,
-    /// not as `Renamed`).
+    /// - Backend: Linux: inotify; Windows: ReadDirectoryChangesW; macOS: FSEvents (a rename is reported as its two
+    /// names, not as `Renamed`).
     static Status Open(const Path& directory, const WatchOptions& options, UniquePtr<DirectoryWatcher>* out);
 
     /// Takes the queued events, appending them to `out` (which is not cleared) in the order they happened.
