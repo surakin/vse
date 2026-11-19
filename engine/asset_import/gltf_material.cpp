@@ -18,9 +18,38 @@ namespace engine_placeholder::asset
 namespace
 {
 
-constexpr u32 kUseColor = 0;   // sRGB base color
-constexpr u32 kUseNormal = 1;  // linear normal map
-constexpr u32 kUses = 2;
+constexpr u32 kUseColor = 0;       // sRGB base color
+constexpr u32 kUseNormal = 1;      // linear normal map
+constexpr u32 kUseMetalRough = 2;  // linear metallic-roughness map (glTF coverage Day 3)
+constexpr u32 kUseOcclusion = 3;   // linear occlusion map
+constexpr u32 kUseEmissive = 4;    // sRGB emissive map
+constexpr u32 kUses = 5;
+
+// The manifest's key of a (texture, use) pair. The base colour and the normal map keep the key they had before the maps
+// existed (`texture * 2 + use`), so a re-import with an older manifest keeps their ids; the maps get keys of their own.
+u32 TextureKey(u32 texture, u32 use)
+{
+    return use < kUseMetalRough ? texture * 2 + use : 0x40000000u + texture * 3 + (use - kUseMetalRough);
+}
+
+// The suffix of a texture's resource name for its use.
+const char* TextureSuffix(u32 use)
+{
+    switch (use)
+    {
+    case kUseNormal: return "_normal";
+    case kUseMetalRough: return "_mr";
+    case kUseOcclusion: return "_occlusion";
+    case kUseEmissive: return "_emissive";
+    default: return "";
+    }
+}
+
+// Whether a use's texture is sRGB (the colours) or linear data.
+bool UseIsSrgb(u32 use)
+{
+    return use == kUseColor || use == kUseEmissive;
+}
 
 Status RefuseMaterial(GltfError* error, StringView where, StringView what, ErrorCode code = ErrorCode::Invalid)
 {
@@ -52,7 +81,35 @@ struct MaterialInfo
     bool used_static = false;
     TextureRef color;
     TextureRef normal;
+    TextureRef metal_rough;        // pbrMetallicRoughness.metallicRoughnessTexture
+    TextureRef occlusion;          // occlusionTexture
+    TextureRef emissive_map;       // emissiveTexture
+    f64 occlusion_strength = 1.0;  // occlusionTexture.strength
 };
+
+// The textures a material binds, by use. KHR_materials_unlit ignores everything but the base colour (and the normal map
+// it always had), so an unlit material binds none of the maps. The occlusion of an ORM texture (the same texture as the
+// metallic-roughness map, both linear) is not made twice: it is listed here as absent and bound to the
+// metallic-roughness texture (`SharesMetalRough`).
+void MaterialRefs(const MaterialInfo& info, TextureRef refs[kUses])
+{
+    refs[kUseColor] = info.color;
+    refs[kUseNormal] = info.normal;
+    refs[kUseMetalRough] = info.unlit ? TextureRef() : info.metal_rough;
+    refs[kUseOcclusion] = info.unlit ? TextureRef() : info.occlusion;
+    refs[kUseEmissive] = info.unlit ? TextureRef() : info.emissive_map;
+    if (refs[kUseOcclusion].present && refs[kUseMetalRough].present &&
+        refs[kUseOcclusion].texture == refs[kUseMetalRough].texture)
+    {
+        refs[kUseOcclusion].present = false;
+    }
+}
+
+bool SharesMetalRough(const MaterialInfo& info)
+{
+    return !info.unlit && info.occlusion.present && info.metal_rough.present &&
+           info.occlusion.texture == info.metal_rough.texture;
+}
 
 Status ReadTextureRef(const JsonValue& info, u64 texture_count, TextureRef* out, ImportReport* report, GltfError* error)
 {
@@ -144,12 +201,8 @@ Status ReadMaterial(const JsonValue& material, u64 texture_count, MaterialInfo* 
             ENGINE_TRY(pbr.Get("roughnessFactor").AsDouble(&out->roughness, error));
         }
         ENGINE_TRY(ReadTextureRef(pbr.Get("baseColorTexture"), texture_count, &out->color, report, error));
-        if (pbr.Get("metallicRoughnessTexture").Exists())
-        {
-            AddImportWarning(
-                report, pbr.Get("metallicRoughnessTexture").Path(),
-                StringView("metallicRoughnessTexture dropped: the template takes scalar metallic and roughness"));
-        }
+        ENGINE_TRY(
+            ReadTextureRef(pbr.Get("metallicRoughnessTexture"), texture_count, &out->metal_rough, report, error));
     }
     ENGINE_TRY(ReadTextureRef(material.Get("normalTexture"), texture_count, &out->normal, report, error));
     if (material.Get("normalTexture").Get("scale").Exists())
@@ -162,16 +215,12 @@ Status ReadMaterial(const JsonValue& material, u64 texture_count, MaterialInfo* 
                              StringView("normalTexture.scale dropped: the template has no normal scale"));
         }
     }
-    if (material.Get("occlusionTexture").Exists())
+    ENGINE_TRY(ReadTextureRef(material.Get("occlusionTexture"), texture_count, &out->occlusion, report, error));
+    if (material.Get("occlusionTexture").Get("strength").Exists())
     {
-        AddImportWarning(report, material.Get("occlusionTexture").Path(),
-                         StringView("occlusionTexture dropped: the template has no occlusion map"));
+        ENGINE_TRY(material.Get("occlusionTexture").Get("strength").AsDouble(&out->occlusion_strength, error));
     }
-    if (material.Get("emissiveTexture").Exists())
-    {
-        AddImportWarning(report, material.Get("emissiveTexture").Path(),
-                         StringView("emissiveTexture dropped: the template has no emissive map"));
-    }
+    ENGINE_TRY(ReadTextureRef(material.Get("emissiveTexture"), texture_count, &out->emissive_map, report, error));
     const JsonValue emissive = material.Get("emissiveFactor");
     if (emissive.Exists())
     {
@@ -319,7 +368,8 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
     Vector<u32> needed[kUses];
     for (usize m = 0; m < material_count; ++m)
     {
-        const TextureRef refs[kUses] = {infos[m].color, infos[m].normal};
+        TextureRef refs[kUses];
+        MaterialRefs(infos[m], refs);
         for (u32 use = 0; use < kUses; ++use)
         {
             if (!refs[use].present)
@@ -401,15 +451,12 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
             FormatTo(text, sizeof(text), "texture%u", static_cast<unsigned>(order_texture[i]));
             raw = String<HeapAllocator>(HeapAllocator::Default(), StringView(text, CStrLength(text)));
         }
-        if (order_use[i] == kUseNormal)
-        {
-            raw.Append(StringView("_normal"));
-        }
+        raw.Append(StringView(TextureSuffix(order_use[i])));
         name_store.Push(static_cast<String<HeapAllocator>&&>(raw));
     }
     for (usize i = 0; i < order_texture.Size(); ++i)
     {
-        objects.Push(ManifestObject{order_texture[i] * kUses + order_use[i], name_store[i].View()});
+        objects.Push(ManifestObject{TextureKey(order_texture[i], order_use[i]), name_store[i].View()});
     }
     Vector<ResourceId> texture_ids;
     AssignIds(options, ImportKind::Texture, Span<const ManifestObject>(objects.Data(), objects.Size()), &texture_ids);
@@ -468,8 +515,8 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
         }
         const DecodedImage& pixels = decoded[image_index];
         TextureMintSpec spec;
-        spec.format = order_use[i] == kUseColor ? rhi::Format::BC7_SRGB : rhi::Format::BC7_UNorm;
-        spec.srgb = order_use[i] == kUseColor;
+        spec.format = UseIsSrgb(order_use[i]) ? rhi::Format::BC7_SRGB : rhi::Format::BC7_UNorm;
+        spec.srgb = UseIsSrgb(order_use[i]);
         spec.drop_alpha = !(order_use[i] == kUseColor && pixels.has_alpha);
         spec.alpha = spec.drop_alpha ? MipAlpha::Ignore : MipAlpha::Straight;
         ImportedResource resource;
@@ -509,7 +556,7 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
         record.resource = result->resources.Size();
         record.path = String<HeapAllocator>(HeapAllocator::Default(), resource.path.View());
         made.Push(static_cast<MadeTexture&&>(record));
-        result->manifest.Add(ImportKind::Texture, order_texture[i] * kUses + order_use[i], name_store[i].View(),
+        result->manifest.Add(ImportKind::Texture, TextureKey(order_texture[i], order_use[i]), name_store[i].View(),
                              resource.id);
         result->resources.Push(static_cast<ImportedResource&&>(resource));
     }
@@ -613,9 +660,23 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
             // Written only for an unlit material, so the blobs of the materials that imported before do not change.
             text.Append(StringView("\nparam flags uint 1"));
         }
+        else if (info.occlusion.present && info.occlusion_strength != 1.0)
+        {
+            // glTF coverage Day 3: the occlusion map's strength (1, the default, is the template's own).
+            text.Append(StringView("\nparam occlusion_strength float"));
+            append_float(info.occlusion_strength);
+        }
         text.Append('\n');
-        const TextureRef refs[kUses] = {info.color, info.normal};
-        const char* slots[kUses] = {"albedo_tex", "normal_tex"};
+        TextureRef refs[kUses];
+        MaterialRefs(info, refs);
+        u32 made_use[kUses] = {kUseColor, kUseNormal, kUseMetalRough, kUseOcclusion, kUseEmissive};
+        if (SharesMetalRough(info))
+        {
+            refs[kUseOcclusion] = info.occlusion;  // bound to the metallic-roughness texture, made once
+            made_use[kUseOcclusion] = kUseMetalRough;
+        }
+        const char* slots[kUses] = {"albedo_tex", "normal_tex", "metallic_roughness_tex", "occlusion_tex",
+                                    "emissive_tex"};
         u32 first_texture = 0xFFFFFFFFu;
         for (u32 use = 0; use < kUses; ++use)
         {
@@ -625,7 +686,7 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
             }
             for (usize k = 0; k < made.Size(); ++k)
             {
-                if (made[k].texture == refs[use].texture && made[k].use == use)
+                if (made[k].texture == refs[use].texture && made[k].use == made_use[use])
                 {
                     FormatTo(line, sizeof(line), "texture %s %s\n", slots[use], made[k].path.CStr());
                     text.Append(StringView(line, CStrLength(line)));

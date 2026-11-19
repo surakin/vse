@@ -104,32 +104,37 @@ TEST_CASE("gltf material: a textured glb imports to textures, materials and a me
     ImportResult result;
     GltfError error;
     REQUIRE(MtImport(TexturedGlb(materials), none, &result, &error).Ok());
-    // Dependencies come first: two textures (color and normal use of one glTF texture), two materials, the mesh.
-    REQUIRE(result.resources.Size() == 5);
+    // Dependencies come first: three textures (the colour, normal and metallic-roughness use of one glTF texture), two
+    // materials, the mesh.
+    REQUIRE(result.resources.Size() == 6);
     CHECK(result.resources[0].type == types::kTexture);
     CHECK(result.resources[0].path.View() == StringView("/gltf/textures/wall"));
     CHECK(result.resources[1].path.View() == StringView("/gltf/textures/wall_normal"));
-    CHECK(result.resources[2].type == types::kMaterial);
-    CHECK(result.resources[2].path.View() == StringView("/gltf/materials/brick"));
-    CHECK(result.resources[4].type == types::kMesh);
-    CHECK(result.report.warnings >= 2);  // metallicRoughnessTexture, the missing UVs ... (the emissive colour is exact)
+    CHECK(result.resources[2].path.View() == StringView("/gltf/textures/wall_mr"));
+    CHECK(result.resources[3].type == types::kMaterial);
+    CHECK(result.resources[3].path.View() == StringView("/gltf/materials/brick"));
+    CHECK(result.resources[5].type == types::kMesh);
+    CHECK(result.report.warnings >= 1);  // the missing UVs ... (the maps and the emissive colour are imported)
 
     TypeRegistry types;
     TextureView color;
     TextureView normal;
+    TextureView metal_rough;
     REQUIRE(color.Open(ByteSpan(result.resources[0].blob.Data(), result.resources[0].blob.Size()), types).Ok());
     REQUIRE(normal.Open(ByteSpan(result.resources[1].blob.Data(), result.resources[1].blob.Size()), types).Ok());
+    REQUIRE(metal_rough.Open(ByteSpan(result.resources[2].blob.Data(), result.resources[2].blob.Size()), types).Ok());
     CHECK(color.Format() == rhi::Format::BC7_SRGB);
     CHECK(normal.Format() == rhi::Format::BC7_UNorm);
+    CHECK(metal_rough.Format() == rhi::Format::BC7_UNorm);
     CHECK(color.Width() == 8);
     CHECK(color.Height() == 4);
     CHECK(color.MipCount() == 4);
     MaterialAssetData brick;
-    REQUIRE(LoadMaterialBlob(ByteSpan(result.resources[2].blob.Data(), result.resources[2].blob.Size()), types, &brick)
+    REQUIRE(LoadMaterialBlob(ByteSpan(result.resources[3].blob.Data(), result.resources[3].blob.Size()), types, &brick)
                 .Ok());
     CHECK(StringView(brick.template_name.text) == StringView("gbuffer"));
-    CHECK(brick.textures.Size() == 2);
-    CHECK(brick.options.Size() == 1);  // NORMAL_MAP
+    CHECK(brick.textures.Size() == 3);  // albedo, normal and metallic-roughness
+    CHECK(brick.options.Size() == 1);   // NORMAL_MAP
     CHECK(brick.state.set_cull);
     CHECK(brick.state.cull == 0);
     // glTF coverage Day 2: emissiveFactor arrives as the emissive colour, rgb as it is and the strength 1.
@@ -149,7 +154,7 @@ TEST_CASE("gltf material: a textured glb imports to textures, materials and a me
     }
     CHECK(emissive_found);
     MaterialAssetData plain;
-    REQUIRE(LoadMaterialBlob(ByteSpan(result.resources[3].blob.Data(), result.resources[3].blob.Size()), types, &plain)
+    REQUIRE(LoadMaterialBlob(ByteSpan(result.resources[4].blob.Data(), result.resources[4].blob.Size()), types, &plain)
                 .Ok());
     CHECK(plain.textures.Size() == 0);
     CHECK(plain.options.Size() == 1);  // ALPHA_TEST
@@ -166,6 +171,60 @@ TEST_CASE("gltf material: a textured glb imports to textures, materials and a me
     Handle<TextureView> texture;
     REQUIRE(manager.LoadPath<TextureView>(StringView("/gltf/textures/wall"), &texture).Ok());
     CHECK(texture.Get()->Width() == 8);
+}
+
+// glTF coverage Day 3: an ORM texture (occlusion and metallic-roughness from one glTF texture) is made once and bound
+// to both slots, the occlusion strength is a parameter, the emissive map is an sRGB texture of its own, and a map on
+// TEXCOORD_1 is dropped with a warning.
+TEST_CASE("gltf material: the metallic-roughness, occlusion and emissive maps are imported", "[asset][gltf]")
+{
+    const char* materials =
+        "\"materials\":[{\"name\":\"orm\",\"pbrMetallicRoughness\":{\"metallicRoughnessTexture\":{\"index\":0}},"
+        "\"occlusionTexture\":{\"index\":0,\"strength\":0.5},\"emissiveTexture\":{\"index\":0},"
+        "\"emissiveFactor\":[1,0.5,0.25]},{\"name\":\"second\",\"occlusionTexture\":{\"index\":0,\"texCoord\":1}}],";
+    NoGltfSource none;
+    ImportResult result;
+    GltfError error;
+    REQUIRE(MtImport(TexturedGlb(materials), none, &result, &error).Ok());
+    TypeRegistry types;
+    usize textures = 0;
+    for (const ImportedResource& r : result.resources)
+    {
+        textures += r.type == types::kTexture ? 1 : 0;
+    }
+    CHECK(textures == 2);  // wall_mr (also the occlusion) and wall_emissive
+    MaterialAssetData orm;
+    bool found = false;
+    for (const ImportedResource& r : result.resources)
+    {
+        if (r.path.View() == StringView("/gltf/materials/orm"))
+        {
+            REQUIRE(LoadMaterialBlob(ByteSpan(r.blob.Data(), r.blob.Size()), types, &orm).Ok());
+            found = true;
+        }
+        if (r.path.View() == StringView("/gltf/textures/wall_emissive"))
+        {
+            TextureView emissive;
+            REQUIRE(emissive.Open(ByteSpan(r.blob.Data(), r.blob.Size()), types).Ok());
+            CHECK(emissive.Format() == rhi::Format::BC7_SRGB);
+        }
+    }
+    REQUIRE(found);
+    REQUIRE(orm.textures.Size() == 3);
+    // The occlusion and the metallic-roughness share one texture.
+    CHECK((orm.textures[1].texture == orm.textures[2].texture || orm.textures[0].texture == orm.textures[1].texture));
+    bool strength = false;
+    for (const MaterialParam& p : orm.params)
+    {
+        if (StringView(p.name.text) == StringView("occlusion_strength"))
+        {
+            f32 v = 0;
+            MemCopy(&v, orm.block.Data() + p.offset, sizeof(v));
+            strength = v == 0.5f;
+        }
+    }
+    CHECK(strength);
+    CHECK(result.report.warnings >= 1);  // the second material's occlusion on TEXCOORD_1
 }
 
 TEST_CASE("gltf material: the import is deterministic", "[asset][gltf]")
