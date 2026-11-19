@@ -24,6 +24,14 @@ struct SysCounts
     Atomic<u64> refused{0};
 };
 
+// The clip's weight track at `time` into the entity's weights (glTF coverage Day 9); the count becomes the track's.
+void SampleMorphWeights(const asset::ClipView& clip, f32 time, MorphWeights* weights)
+{
+    const u32 n = clip.WeightTargetCount() < kMaxMorphWeights ? clip.WeightTargetCount() : kMaxMorphWeights;
+    clip.SampleWeights(time, weights->weights.Data(), n);
+    weights->count = n > weights->count ? n : weights->count;
+}
+
 // The clip belongs to the skeleton when its recorded id, hash and joint count are the skeleton's.
 bool SysBound(const asset::ClipView& clip, const asset::SkeletonView& skeleton)
 {
@@ -50,6 +58,10 @@ storage::Status RegisterAnimationComponents(storage::ComponentRegistry* registry
              "skeleton", storage::FieldOptions::Reference(storage::ResourceTag('S', 'K', 'E', 'L'), false))}}));
     ENGINE_TRY(registry->Register<RootMotion>(
         {.id = kRootMotionId, .name = "root_motion", .flags = storage::kComponentDerived}));
+    ENGINE_TRY(registry->Register<MorphWeights>({.id = kMorphWeightsId,
+                                                 .name = "morph_weights",
+                                                 .fields = {storage::Field<&MorphWeights::count>("count"),
+                                                            storage::Field<&MorphWeights::weights>("weights")}}));
     return storage::Status::Success();
 }
 
@@ -58,7 +70,8 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
     AnimationStats stats;
     SysCounts counts;
     const AnimationResolver* resolver = resolver_;
-    auto query = world->Query<Write<AnimationPlayer>, Write<SkeletonInstance>, OptionalWrite<RootMotion>>();
+    auto query = world->Query<Write<AnimationPlayer>, Write<SkeletonInstance>, OptionalWrite<RootMotion>,
+                              OptionalWrite<MorphWeights>>();
     query.ForEachChunkParallel(
         scheduler,
         [&](ChunkView& view)
@@ -66,6 +79,7 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
             Span<AnimationPlayer> players = view.Write<AnimationPlayer>();
             Span<SkeletonInstance> instances = view.Write<SkeletonInstance>();
             Span<RootMotion> roots = view.Write<RootMotion>();
+            Span<MorphWeights> morphs = view.Write<MorphWeights>();
             for (usize i = 0; i < players.Size(); ++i)
             {
                 AnimationPlayer& p = players[i];
@@ -133,6 +147,10 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                 ModelFromLocal(*skeleton, pose, &model);
                 inst.palette.Resize(pose.joint_count);
                 SkinningMatrices(*skeleton, model, Span<Mat3x4>(inst.palette.Data(), inst.palette.Size()));
+                if (!morphs.Empty() && clip->WeightTargetCount() != 0)
+                {
+                    SampleMorphWeights(*clip, advance.time, &morphs[i]);  // glTF coverage Day 9
+                }
                 if (!roots.Empty() && (clip->Flags() & asset::kClipRootMotion) != 0)
                 {
                     roots[i].delta = RootMotionOver(*clip, *skeleton, from, p.playing ? dt * p.speed : 0.0f, p.looping);
@@ -140,6 +158,43 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                 counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
             }
         });
+    // Clips of morph weights only (glTF coverage Day 9): an entity with no skeleton plays its clip into its weights.
+    auto weights_only = world->Query<Write<AnimationPlayer>, Write<MorphWeights>, ecs::Without<SkeletonInstance>>();
+    weights_only.ForEachChunkParallel(scheduler,
+                                      [&](ChunkView& view)
+                                      {
+                                          Span<AnimationPlayer> players = view.Write<AnimationPlayer>();
+                                          Span<MorphWeights> morphs = view.Write<MorphWeights>();
+                                          for (usize i = 0; i < players.Size(); ++i)
+                                          {
+                                              AnimationPlayer& p = players[i];
+                                              p.step_valid = false;
+                                              const asset::ClipView* clip = resolver->FindClip(
+                                                  asset::ResourceId::FromValue(p.clip));
+                                              if (clip == nullptr || clip->WeightTargetCount() == 0)
+                                              {
+                                                  counts.refused.FetchAdd(1, MemoryOrder::Relaxed);
+                                                  continue;
+                                              }
+                                              const f32 from = p.time;
+                                              TimeAdvance advance;
+                                              advance.time = from;
+                                              if (p.playing && !p.finished)
+                                              {
+                                                  advance = AdvanceTime(*clip, from, dt * p.speed, p.looping);
+                                                  p.finished = advance.finished;
+                                              }
+                                              p.step_from = from;
+                                              p.step_wraps = advance.wraps;
+                                              p.step_time = advance.time;
+                                              p.step_include = !p.started;
+                                              p.step_valid = true;
+                                              p.started = true;
+                                              p.time = advance.time;
+                                              SampleMorphWeights(*clip, advance.time, &morphs[i]);
+                                              counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
+                                          }
+                                      });
     stats.players_updated = counts.updated.Load(MemoryOrder::Relaxed);
     stats.refused = counts.refused.Load(MemoryOrder::Relaxed);
     if (stats.refused != 0)

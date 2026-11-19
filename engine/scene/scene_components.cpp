@@ -29,15 +29,7 @@ storage::Status RegisterSceneComponents(storage::ComponentRegistry* registry)
     {
         return s;
     }
-    s = registry->Register<Hidden>({.id = kHiddenId, .name = "hidden"});
-    if (s.Failed())
-    {
-        return s;
-    }
-    return registry->Register<MorphWeights>(
-        {.id = kMorphWeightsId,
-         .name = "morph_weights",
-         .fields = {Field<&MorphWeights::count>("count"), Field<&MorphWeights::weights>("weights")}});
+    return registry->Register<Hidden>({.id = kHiddenId, .name = "hidden"});
 }
 
 }  // namespace engine_placeholder::scene

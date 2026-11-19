@@ -27,6 +27,53 @@ Stable ids of the animation components in the storage registry (the engine's own
 | <a id="animation-kanimationplayerid"></a>`kAnimationPlayerId` | `40` | [`animation::AnimationPlayer`](#animation-animationplayer): stored. |
 | <a id="animation-kskeletoninstanceid"></a>`kSkeletonInstanceId` | `41` | [`animation::SkeletonInstance`](#animation-skeletoninstance): stored (the skeleton id only). |
 | <a id="animation-krootmotionid"></a>`kRootMotionId` | `42` | [`animation::RootMotion`](#animation-rootmotion): derived. |
+| <a id="animation-kmorphweightsid"></a>`kMorphWeightsId` | `43` | [`animation::MorphWeights`](#animation-morphweights): stored (glTF coverage Days 8 and 9). |
+
+## `kMaxMorphWeights` {#animation-kmaxmorphweights}
+
+`variable animation::kMaxMorphWeights` — defined in `engine/animation/components.h`
+
+```cpp
+inline constexpr u32 kMaxMorphWeights;
+```
+
+Most morph weights of one entity: the mesh blob's limit on morph targets.
+
+## `MorphWeights` {#animation-morphweights}
+
+`struct animation::MorphWeights` — defined in `engine/animation/components.h`
+
+```cpp
+struct MorphWeights { ... }
+```
+
+The weights of the entity's mesh's morph targets (glTF coverage Days 8 and 9).
+
+Weight `i` is target `i`'s, the first `count` of them; the rest are 0. Set by levels (glTF's `mesh.weights` and `node.weights`), saves, scripts, and the animation system when the entity plays a clip with a weight track; `scene::MakeRenderSyncSystem` hands them to the render objects.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data; the system writes it from a job that owns the entity's chunk. |
+
+### `count` {#animation-morphweights-count}
+
+`variable animation::MorphWeights::count` — defined in `engine/animation/components.h`
+
+```cpp
+u32 count;
+```
+
+How many of `weights` are used; at most [`animation::kMaxMorphWeights`](#animation-kmaxmorphweights) (the render sync clamps a larger count and counts it as invalid).
+
+### `weights` {#animation-morphweights-weights}
+
+`variable animation::MorphWeights::weights` — defined in `engine/animation/components.h`
+
+```cpp
+Array<f32, kMaxMorphWeights> weights;
+```
+
+The weights, from target 0.
 
 ## `AnimationPlayer` {#animation-animationplayer}
 

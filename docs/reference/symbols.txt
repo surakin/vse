@@ -7523,66 +7523,75 @@ asset::kClipSectionHeader	enumerator	asset	asset-kclipsectionheader	asset.md	eng
 asset::kClipSectionTracks	enumerator	asset	asset-kclipsectiontracks	asset.md	engine/asset/clip.h:53
 asset::kClipSectionKeys	enumerator	asset	asset-kclipsectionkeys	asset.md	engine/asset/clip.h:54
 asset::kClipSectionEvents	enumerator	asset	asset-kclipsectionevents	asset.md	engine/asset/clip.h:55
-asset::ClipKey3	struct	asset	asset-clipkey3	asset.md	engine/asset/clip.h:61
-asset::ClipKey3::time	variable	asset	asset-clipkey3-time	asset.md	engine/asset/clip.h:63
-asset::ClipKey3::value	variable	asset	asset-clipkey3-value	asset.md	engine/asset/clip.h:64
-asset::ClipKey4	struct	asset	asset-clipkey4	asset.md	engine/asset/clip.h:70
-asset::ClipKey4::time	variable	asset	asset-clipkey4-time	asset.md	engine/asset/clip.h:72
-asset::ClipKey4::value	variable	asset	asset-clipkey4-value	asset.md	engine/asset/clip.h:73
-asset::ClipTrackSource	struct	asset	asset-cliptracksource	asset.md	engine/asset/clip.h:79
-asset::ClipTrackSource::joint	variable	asset	asset-cliptracksource-joint	asset.md	engine/asset/clip.h:81
-asset::ClipTrackSource::translation	variable	asset	asset-cliptracksource-translation	asset.md	engine/asset/clip.h:82
-asset::ClipTrackSource::rotation	variable	asset	asset-cliptracksource-rotation	asset.md	engine/asset/clip.h:83
-asset::ClipTrackSource::scale	variable	asset	asset-cliptracksource-scale	asset.md	engine/asset/clip.h:84
-asset::ClipEvent	struct	asset	asset-clipevent	asset.md	engine/asset/clip.h:90
-asset::ClipEvent::time	variable	asset	asset-clipevent-time	asset.md	engine/asset/clip.h:92
-asset::ClipEvent::name_hash	variable	asset	asset-clipevent-name-hash	asset.md	engine/asset/clip.h:93
-asset::ClipEvent::payload	variable	asset	asset-clipevent-payload	asset.md	engine/asset/clip.h:94
-asset::ClipLimits	struct	asset	asset-cliplimits	asset.md	engine/asset/clip.h:100
-asset::ClipLimits::rotation_degrees	variable	asset	asset-cliplimits-rotation-degrees	asset.md	engine/asset/clip.h:102
-asset::ClipLimits::translation	variable	asset	asset-cliplimits-translation	asset.md	engine/asset/clip.h:104
-asset::ClipBuildInput	struct	asset	asset-clipbuildinput	asset.md	engine/asset/clip.h:111
-asset::ClipBuildInput::duration	variable	asset	asset-clipbuildinput-duration	asset.md	engine/asset/clip.h:113
-asset::ClipBuildInput::sample_rate	variable	asset	asset-clipbuildinput-sample-rate	asset.md	engine/asset/clip.h:114
-asset::ClipBuildInput::flags	variable	asset	asset-clipbuildinput-flags	asset.md	engine/asset/clip.h:115
-asset::ClipBuildInput::skeleton	variable	asset	asset-clipbuildinput-skeleton	asset.md	engine/asset/clip.h:116
-asset::ClipBuildInput::skeleton_hash	variable	asset	asset-clipbuildinput-skeleton-hash	asset.md	engine/asset/clip.h:117
-asset::ClipBuildInput::joint_count	variable	asset	asset-clipbuildinput-joint-count	asset.md	engine/asset/clip.h:118
-asset::ClipBuildInput::bounds_min	variable	asset	asset-clipbuildinput-bounds-min	asset.md	engine/asset/clip.h:119
-asset::ClipBuildInput::bounds_max	variable	asset	asset-clipbuildinput-bounds-max	asset.md	engine/asset/clip.h:120
-asset::ClipBuildInput::tracks	variable	asset	asset-clipbuildinput-tracks	asset.md	engine/asset/clip.h:121
-asset::ClipBuildInput::events	variable	asset	asset-clipbuildinput-events	asset.md	engine/asset/clip.h:122
-asset::ClipBuildInput::limits	variable	asset	asset-clipbuildinput-limits	asset.md	engine/asset/clip.h:123
-asset::ClipSample	struct	asset	asset-clipsample	asset.md	engine/asset/clip.h:129
-asset::ClipSample::translation	variable	asset	asset-clipsample-translation	asset.md	engine/asset/clip.h:131
-asset::ClipSample::rotation	variable	asset	asset-clipsample-rotation	asset.md	engine/asset/clip.h:132
-asset::ClipSample::scale	variable	asset	asset-clipsample-scale	asset.md	engine/asset/clip.h:133
-asset::ClipSample::has_translation	variable	asset	asset-clipsample-has-translation	asset.md	engine/asset/clip.h:134
-asset::ClipSample::has_rotation	variable	asset	asset-clipsample-has-rotation	asset.md	engine/asset/clip.h:135
-asset::ClipSample::has_scale	variable	asset	asset-clipsample-has-scale	asset.md	engine/asset/clip.h:136
-asset::BuildClipBlob(const TypeRegistry&,ResourceId,const ClipBuildInput&,Vector<byte>*,u32,f32*,f32*)	function	asset	asset-buildclipblob-const-typeregistry-amp-resourceid-const-clipbuildinput-amp-vector-lt-byte-gt-star-u32-f32-star-f32-star	asset.md	engine/asset/clip.h:150
-asset::ClipView	class	asset	asset-clipview	asset.md	engine/asset/clip.h:157
-asset::ClipView::ClipView()	function	asset	asset-clipview-clipview	asset.md	engine/asset/clip.h:161
-asset::ClipView::Open(ByteSpan,const TypeRegistry&)	function	asset	asset-clipview-open-bytespan-const-typeregistry-amp	asset.md	engine/asset/clip.h:172
-asset::ClipView::Duration() const	function	asset	asset-clipview-duration-const	asset.md	engine/asset/clip.h:175
-asset::ClipView::SampleRate() const	function	asset	asset-clipview-samplerate-const	asset.md	engine/asset/clip.h:177
-asset::ClipView::Flags() const	function	asset	asset-clipview-flags-const	asset.md	engine/asset/clip.h:179
-asset::ClipView::Looping() const	function	asset	asset-clipview-looping-const	asset.md	engine/asset/clip.h:183
-asset::ClipView::JointCount() const	function	asset	asset-clipview-jointcount-const	asset.md	engine/asset/clip.h:185
-asset::ClipView::TrackCount() const	function	asset	asset-clipview-trackcount-const	asset.md	engine/asset/clip.h:187
-asset::ClipView::Skeleton() const	function	asset	asset-clipview-skeleton-const	asset.md	engine/asset/clip.h:189
-asset::ClipView::SkeletonHash() const	function	asset	asset-clipview-skeletonhash-const	asset.md	engine/asset/clip.h:191
-asset::ClipView::RotationError() const	function	asset	asset-clipview-rotationerror-const	asset.md	engine/asset/clip.h:193
-asset::ClipView::TranslationError() const	function	asset	asset-clipview-translationerror-const	asset.md	engine/asset/clip.h:195
-asset::ClipView::BoundsMin() const	function	asset	asset-clipview-boundsmin-const	asset.md	engine/asset/clip.h:197
-asset::ClipView::BoundsMax() const	function	asset	asset-clipview-boundsmax-const	asset.md	engine/asset/clip.h:199
-asset::ClipView::EventCount() const	function	asset	asset-clipview-eventcount-const	asset.md	engine/asset/clip.h:201
-asset::ClipView::Event(u32) const	function	asset	asset-clipview-event-u32-const	asset.md	engine/asset/clip.h:205
-asset::ClipView::TrackJoint(u32) const	function	asset	asset-clipview-trackjoint-u32-const	asset.md	engine/asset/clip.h:209
-asset::ClipView::KeyCount(u32,u32) const	function	asset	asset-clipview-keycount-u32-u32-const	asset.md	engine/asset/clip.h:214
-asset::ClipView::IsConstant(u32,u32) const	function	asset	asset-clipview-isconstant-u32-u32-const	asset.md	engine/asset/clip.h:218
-asset::ClipView::Sample(u32,f32,u32*) const	function	asset	asset-clipview-sample-u32-f32-u32-star-const	asset.md	engine/asset/clip.h:228
-asset::ClipView::Bind(const SkeletonView&) const	function	asset	asset-clipview-bind-const-skeletonview-amp-const	asset.md	engine/asset/clip.h:233
+asset::kClipSectionWeights	enumerator	asset	asset-kclipsectionweights	asset.md	engine/asset/clip.h:56
+asset::ClipKey3	struct	asset	asset-clipkey3	asset.md	engine/asset/clip.h:63
+asset::ClipKey3::time	variable	asset	asset-clipkey3-time	asset.md	engine/asset/clip.h:65
+asset::ClipKey3::value	variable	asset	asset-clipkey3-value	asset.md	engine/asset/clip.h:66
+asset::ClipKey4	struct	asset	asset-clipkey4	asset.md	engine/asset/clip.h:72
+asset::ClipKey4::time	variable	asset	asset-clipkey4-time	asset.md	engine/asset/clip.h:74
+asset::ClipKey4::value	variable	asset	asset-clipkey4-value	asset.md	engine/asset/clip.h:75
+asset::ClipTrackSource	struct	asset	asset-cliptracksource	asset.md	engine/asset/clip.h:81
+asset::ClipTrackSource::joint	variable	asset	asset-cliptracksource-joint	asset.md	engine/asset/clip.h:83
+asset::ClipTrackSource::translation	variable	asset	asset-cliptracksource-translation	asset.md	engine/asset/clip.h:84
+asset::ClipTrackSource::rotation	variable	asset	asset-cliptracksource-rotation	asset.md	engine/asset/clip.h:85
+asset::ClipTrackSource::scale	variable	asset	asset-cliptracksource-scale	asset.md	engine/asset/clip.h:86
+asset::ClipEvent	struct	asset	asset-clipevent	asset.md	engine/asset/clip.h:92
+asset::ClipEvent::time	variable	asset	asset-clipevent-time	asset.md	engine/asset/clip.h:94
+asset::ClipEvent::name_hash	variable	asset	asset-clipevent-name-hash	asset.md	engine/asset/clip.h:95
+asset::ClipEvent::payload	variable	asset	asset-clipevent-payload	asset.md	engine/asset/clip.h:96
+asset::ClipWeightTrack	struct	asset	asset-clipweighttrack	asset.md	engine/asset/clip.h:106
+asset::ClipWeightTrack::target_count	variable	asset	asset-clipweighttrack-target-count	asset.md	engine/asset/clip.h:108
+asset::ClipWeightTrack::times	variable	asset	asset-clipweighttrack-times	asset.md	engine/asset/clip.h:109
+asset::ClipWeightTrack::values	variable	asset	asset-clipweighttrack-values	asset.md	engine/asset/clip.h:110
+asset::ClipLimits	struct	asset	asset-cliplimits	asset.md	engine/asset/clip.h:116
+asset::ClipLimits::rotation_degrees	variable	asset	asset-cliplimits-rotation-degrees	asset.md	engine/asset/clip.h:118
+asset::ClipLimits::translation	variable	asset	asset-cliplimits-translation	asset.md	engine/asset/clip.h:120
+asset::ClipBuildInput	struct	asset	asset-clipbuildinput	asset.md	engine/asset/clip.h:127
+asset::ClipBuildInput::duration	variable	asset	asset-clipbuildinput-duration	asset.md	engine/asset/clip.h:129
+asset::ClipBuildInput::sample_rate	variable	asset	asset-clipbuildinput-sample-rate	asset.md	engine/asset/clip.h:130
+asset::ClipBuildInput::flags	variable	asset	asset-clipbuildinput-flags	asset.md	engine/asset/clip.h:131
+asset::ClipBuildInput::skeleton	variable	asset	asset-clipbuildinput-skeleton	asset.md	engine/asset/clip.h:132
+asset::ClipBuildInput::skeleton_hash	variable	asset	asset-clipbuildinput-skeleton-hash	asset.md	engine/asset/clip.h:133
+asset::ClipBuildInput::joint_count	variable	asset	asset-clipbuildinput-joint-count	asset.md	engine/asset/clip.h:134
+asset::ClipBuildInput::bounds_min	variable	asset	asset-clipbuildinput-bounds-min	asset.md	engine/asset/clip.h:135
+asset::ClipBuildInput::bounds_max	variable	asset	asset-clipbuildinput-bounds-max	asset.md	engine/asset/clip.h:136
+asset::ClipBuildInput::tracks	variable	asset	asset-clipbuildinput-tracks	asset.md	engine/asset/clip.h:137
+asset::ClipBuildInput::events	variable	asset	asset-clipbuildinput-events	asset.md	engine/asset/clip.h:138
+asset::ClipBuildInput::weights	variable	asset	asset-clipbuildinput-weights	asset.md	engine/asset/clip.h:139
+asset::ClipBuildInput::limits	variable	asset	asset-clipbuildinput-limits	asset.md	engine/asset/clip.h:140
+asset::ClipSample	struct	asset	asset-clipsample	asset.md	engine/asset/clip.h:146
+asset::ClipSample::translation	variable	asset	asset-clipsample-translation	asset.md	engine/asset/clip.h:148
+asset::ClipSample::rotation	variable	asset	asset-clipsample-rotation	asset.md	engine/asset/clip.h:149
+asset::ClipSample::scale	variable	asset	asset-clipsample-scale	asset.md	engine/asset/clip.h:150
+asset::ClipSample::has_translation	variable	asset	asset-clipsample-has-translation	asset.md	engine/asset/clip.h:151
+asset::ClipSample::has_rotation	variable	asset	asset-clipsample-has-rotation	asset.md	engine/asset/clip.h:152
+asset::ClipSample::has_scale	variable	asset	asset-clipsample-has-scale	asset.md	engine/asset/clip.h:153
+asset::BuildClipBlob(const TypeRegistry&,ResourceId,const ClipBuildInput&,Vector<byte>*,u32,f32*,f32*)	function	asset	asset-buildclipblob-const-typeregistry-amp-resourceid-const-clipbuildinput-amp-vector-lt-byte-gt-star-u32-f32-star-f32-star	asset.md	engine/asset/clip.h:171
+asset::ClipView	class	asset	asset-clipview	asset.md	engine/asset/clip.h:178
+asset::ClipView::ClipView()	function	asset	asset-clipview-clipview	asset.md	engine/asset/clip.h:182
+asset::ClipView::Open(ByteSpan,const TypeRegistry&)	function	asset	asset-clipview-open-bytespan-const-typeregistry-amp	asset.md	engine/asset/clip.h:193
+asset::ClipView::Duration() const	function	asset	asset-clipview-duration-const	asset.md	engine/asset/clip.h:196
+asset::ClipView::SampleRate() const	function	asset	asset-clipview-samplerate-const	asset.md	engine/asset/clip.h:198
+asset::ClipView::Flags() const	function	asset	asset-clipview-flags-const	asset.md	engine/asset/clip.h:200
+asset::ClipView::Looping() const	function	asset	asset-clipview-looping-const	asset.md	engine/asset/clip.h:204
+asset::ClipView::WeightTargetCount() const	function	asset	asset-clipview-weighttargetcount-const	asset.md	engine/asset/clip.h:206
+asset::ClipView::WeightKeyCount() const	function	asset	asset-clipview-weightkeycount-const	asset.md	engine/asset/clip.h:208
+asset::ClipView::SampleWeights(f32,f32*,u32) const	function	asset	asset-clipview-sampleweights-f32-f32-star-u32-const	asset.md	engine/asset/clip.h:215
+asset::ClipView::JointCount() const	function	asset	asset-clipview-jointcount-const	asset.md	engine/asset/clip.h:217
+asset::ClipView::TrackCount() const	function	asset	asset-clipview-trackcount-const	asset.md	engine/asset/clip.h:219
+asset::ClipView::Skeleton() const	function	asset	asset-clipview-skeleton-const	asset.md	engine/asset/clip.h:221
+asset::ClipView::SkeletonHash() const	function	asset	asset-clipview-skeletonhash-const	asset.md	engine/asset/clip.h:223
+asset::ClipView::RotationError() const	function	asset	asset-clipview-rotationerror-const	asset.md	engine/asset/clip.h:225
+asset::ClipView::TranslationError() const	function	asset	asset-clipview-translationerror-const	asset.md	engine/asset/clip.h:227
+asset::ClipView::BoundsMin() const	function	asset	asset-clipview-boundsmin-const	asset.md	engine/asset/clip.h:229
+asset::ClipView::BoundsMax() const	function	asset	asset-clipview-boundsmax-const	asset.md	engine/asset/clip.h:231
+asset::ClipView::EventCount() const	function	asset	asset-clipview-eventcount-const	asset.md	engine/asset/clip.h:233
+asset::ClipView::Event(u32) const	function	asset	asset-clipview-event-u32-const	asset.md	engine/asset/clip.h:237
+asset::ClipView::TrackJoint(u32) const	function	asset	asset-clipview-trackjoint-u32-const	asset.md	engine/asset/clip.h:241
+asset::ClipView::KeyCount(u32,u32) const	function	asset	asset-clipview-keycount-u32-u32-const	asset.md	engine/asset/clip.h:246
+asset::ClipView::IsConstant(u32,u32) const	function	asset	asset-clipview-isconstant-u32-u32-const	asset.md	engine/asset/clip.h:250
+asset::ClipView::Sample(u32,f32,u32*) const	function	asset	asset-clipview-sample-u32-f32-u32-star-const	asset.md	engine/asset/clip.h:260
+asset::ClipView::Bind(const SkeletonView&) const	function	asset	asset-clipview-bind-const-skeletonview-amp-const	asset.md	engine/asset/clip.h:265
 asset::ContentHash	struct	asset	asset-contenthash	asset.md	engine/asset/content_hash.h:18
 asset::ContentHash::bytes	variable	asset	asset-contenthash-bytes	asset.md	engine/asset/content_hash.h:20
 asset::ContentHash::IsZero() const	function	asset	asset-contenthash-iszero-const	asset.md	engine/asset/content_hash.h:24
@@ -8897,55 +8906,60 @@ asset::MaterialReferenceResolver::Resolve(StringView,ResourceId*,ByteSpan*) cons
 asset::MintMaterial(StringView,const MaterialReferenceResolver&,const TypeRegistry&,Vector<byte>*,MaterialSourceError*,u32)	function	asset_import	asset-mintmaterial-stringview-const-materialreferenceresolver-amp-const-typeregistry-amp-vector-lt-byte-gt-star-materialsourceerror-star-u32	asset_import.md	engine/asset_import/material_source.h:88
 asset::MaterialPathOf	alias	asset_import	asset-materialpathof	asset_import.md	engine/asset_import/material_source.h:95
 asset::FormatMaterialBlob(ByteSpan,const TypeRegistry&,MaterialPathOf,void*,String<HeapAllocator>*,MaterialSourceError*)	function	asset_import	asset-formatmaterialblob-bytespan-const-typeregistry-amp-materialpathof-void-star-string-lt-heapallocator-gt-star-materialsourceerror-star	asset_import.md	engine/asset_import/material_source.h:108
-animation::ComponentIds	enum	animation	animation-componentids	animation.md	engine/animation/components.h:21
-animation::kAnimationPlayerId	enumerator	animation	animation-kanimationplayerid	animation.md	engine/animation/components.h:23
-animation::kSkeletonInstanceId	enumerator	animation	animation-kskeletoninstanceid	animation.md	engine/animation/components.h:24
-animation::kRootMotionId	enumerator	animation	animation-krootmotionid	animation.md	engine/animation/components.h:25
-animation::AnimationPlayer	struct	animation	animation-animationplayer	animation.md	engine/animation/components.h:31
-animation::AnimationPlayer::clip	variable	animation	animation-animationplayer-clip	animation.md	engine/animation/components.h:33
-animation::AnimationPlayer::time	variable	animation	animation-animationplayer-time	animation.md	engine/animation/components.h:34
-animation::AnimationPlayer::speed	variable	animation	animation-animationplayer-speed	animation.md	engine/animation/components.h:35
-animation::AnimationPlayer::weight	variable	animation	animation-animationplayer-weight	animation.md	engine/animation/components.h:36
-animation::AnimationPlayer::playing	variable	animation	animation-animationplayer-playing	animation.md	engine/animation/components.h:37
-animation::AnimationPlayer::looping	variable	animation	animation-animationplayer-looping	animation.md	engine/animation/components.h:38
-animation::AnimationPlayer::finished	variable	animation	animation-animationplayer-finished	animation.md	engine/animation/components.h:39
-animation::AnimationPlayer::started	variable	animation	animation-animationplayer-started	animation.md	engine/animation/components.h:40
-animation::AnimationPlayer::step_from	variable	animation	animation-animationplayer-step-from	animation.md	engine/animation/components.h:42
-animation::AnimationPlayer::step_wraps	variable	animation	animation-animationplayer-step-wraps	animation.md	engine/animation/components.h:43
-animation::AnimationPlayer::step_time	variable	animation	animation-animationplayer-step-time	animation.md	engine/animation/components.h:44
-animation::AnimationPlayer::step_include	variable	animation	animation-animationplayer-step-include	animation.md	engine/animation/components.h:45
-animation::AnimationPlayer::step_valid	variable	animation	animation-animationplayer-step-valid	animation.md	engine/animation/components.h:46
-animation::AnimationPlayer::sampler	variable	animation	animation-animationplayer-sampler	animation.md	engine/animation/components.h:47
-animation::AnimationPlayer::fade_clip	variable	animation	animation-animationplayer-fade-clip	animation.md	engine/animation/components.h:48
-animation::AnimationPlayer::fade_time	variable	animation	animation-animationplayer-fade-time	animation.md	engine/animation/components.h:49
-animation::AnimationPlayer::fade_total	variable	animation	animation-animationplayer-fade-total	animation.md	engine/animation/components.h:50
-animation::AnimationPlayer::fade_elapsed	variable	animation	animation-animationplayer-fade-elapsed	animation.md	engine/animation/components.h:51
-animation::AnimationPlayer::fade_sampler	variable	animation	animation-animationplayer-fade-sampler	animation.md	engine/animation/components.h:52
-animation::SkeletonInstance	struct	animation	animation-skeletoninstance	animation.md	engine/animation/components.h:58
-animation::SkeletonInstance::skeleton	variable	animation	animation-skeletoninstance-skeleton	animation.md	engine/animation/components.h:60
-animation::SkeletonInstance::palette	variable	animation	animation-skeletoninstance-palette	animation.md	engine/animation/components.h:61
-animation::RootMotion	struct	animation	animation-rootmotion	animation.md	engine/animation/components.h:68
-animation::RootMotion::delta	variable	animation	animation-rootmotion-delta	animation.md	engine/animation/components.h:70
-animation::AnimationEvent	struct	animation	animation-animationevent	animation.md	engine/animation/components.h:76
-animation::AnimationEvent::entity	variable	animation	animation-animationevent-entity	animation.md	engine/animation/components.h:78
-animation::AnimationEvent::time	variable	animation	animation-animationevent-time	animation.md	engine/animation/components.h:79
-animation::AnimationEvent::name_hash	variable	animation	animation-animationevent-name-hash	animation.md	engine/animation/components.h:80
-animation::AnimationEvent::payload	variable	animation	animation-animationevent-payload	animation.md	engine/animation/components.h:81
-animation::AnimationEvents	struct	animation	animation-animationevents	animation.md	engine/animation/components.h:88
-animation::AnimationEvents::events	variable	animation	animation-animationevents-events	animation.md	engine/animation/components.h:90
-animation::AnimationResolver	class	animation	animation-animationresolver	animation.md	engine/animation/components.h:97
-animation::AnimationResolver::~AnimationResolver()	function	animation	animation-animationresolver-tilde-animationresolver	animation.md	engine/animation/components.h:100
-animation::AnimationResolver::FindSkeleton(asset::ResourceId) const	function	animation	animation-animationresolver-findskeleton-asset-resourceid-const	animation.md	engine/animation/components.h:105
-animation::AnimationResolver::FindClip(asset::ResourceId) const	function	animation	animation-animationresolver-findclip-asset-resourceid-const	animation.md	engine/animation/components.h:110
-animation::AnimationStats	struct	animation	animation-animationstats	animation.md	engine/animation/components.h:116
-animation::AnimationStats::players_updated	variable	animation	animation-animationstats-players-updated	animation.md	engine/animation/components.h:118
-animation::AnimationStats::refused	variable	animation	animation-animationstats-refused	animation.md	engine/animation/components.h:119
-animation::AnimationStats::events	variable	animation	animation-animationstats-events	animation.md	engine/animation/components.h:120
-animation::AnimationStats::events_dropped	variable	animation	animation-animationstats-events-dropped	animation.md	engine/animation/components.h:121
-animation::RegisterAnimationComponents(storage::ComponentRegistry*)	function	animation	animation-registeranimationcomponents-storage-componentregistry-star	animation.md	engine/animation/components.h:128
-animation::AnimationSystem	class	animation	animation-animationsystem	animation.md	engine/animation/components.h:136
-animation::AnimationSystem::AnimationSystem(const AnimationResolver*)	function	animation	animation-animationsystem-animationsystem-const-animationresolver-star	animation.md	engine/animation/components.h:142
-animation::AnimationSystem::Update(ecs::World*,jobs::Scheduler*,f32)	function	animation	animation-animationsystem-update-ecs-world-star-jobs-scheduler-star-f32	animation.md	engine/animation/components.h:152
+animation::ComponentIds	enum	animation	animation-componentids	animation.md	engine/animation/components.h:22
+animation::kAnimationPlayerId	enumerator	animation	animation-kanimationplayerid	animation.md	engine/animation/components.h:24
+animation::kSkeletonInstanceId	enumerator	animation	animation-kskeletoninstanceid	animation.md	engine/animation/components.h:25
+animation::kRootMotionId	enumerator	animation	animation-krootmotionid	animation.md	engine/animation/components.h:26
+animation::kMorphWeightsId	enumerator	animation	animation-kmorphweightsid	animation.md	engine/animation/components.h:27
+animation::kMaxMorphWeights	variable	animation	animation-kmaxmorphweights	animation.md	engine/animation/components.h:31
+animation::MorphWeights	struct	animation	animation-morphweights	animation.md	engine/animation/components.h:40
+animation::MorphWeights::count	variable	animation	animation-morphweights-count	animation.md	engine/animation/components.h:44
+animation::MorphWeights::weights	variable	animation	animation-morphweights-weights	animation.md	engine/animation/components.h:46
+animation::AnimationPlayer	struct	animation	animation-animationplayer	animation.md	engine/animation/components.h:52
+animation::AnimationPlayer::clip	variable	animation	animation-animationplayer-clip	animation.md	engine/animation/components.h:54
+animation::AnimationPlayer::time	variable	animation	animation-animationplayer-time	animation.md	engine/animation/components.h:55
+animation::AnimationPlayer::speed	variable	animation	animation-animationplayer-speed	animation.md	engine/animation/components.h:56
+animation::AnimationPlayer::weight	variable	animation	animation-animationplayer-weight	animation.md	engine/animation/components.h:57
+animation::AnimationPlayer::playing	variable	animation	animation-animationplayer-playing	animation.md	engine/animation/components.h:58
+animation::AnimationPlayer::looping	variable	animation	animation-animationplayer-looping	animation.md	engine/animation/components.h:59
+animation::AnimationPlayer::finished	variable	animation	animation-animationplayer-finished	animation.md	engine/animation/components.h:60
+animation::AnimationPlayer::started	variable	animation	animation-animationplayer-started	animation.md	engine/animation/components.h:61
+animation::AnimationPlayer::step_from	variable	animation	animation-animationplayer-step-from	animation.md	engine/animation/components.h:63
+animation::AnimationPlayer::step_wraps	variable	animation	animation-animationplayer-step-wraps	animation.md	engine/animation/components.h:64
+animation::AnimationPlayer::step_time	variable	animation	animation-animationplayer-step-time	animation.md	engine/animation/components.h:65
+animation::AnimationPlayer::step_include	variable	animation	animation-animationplayer-step-include	animation.md	engine/animation/components.h:66
+animation::AnimationPlayer::step_valid	variable	animation	animation-animationplayer-step-valid	animation.md	engine/animation/components.h:67
+animation::AnimationPlayer::sampler	variable	animation	animation-animationplayer-sampler	animation.md	engine/animation/components.h:68
+animation::AnimationPlayer::fade_clip	variable	animation	animation-animationplayer-fade-clip	animation.md	engine/animation/components.h:69
+animation::AnimationPlayer::fade_time	variable	animation	animation-animationplayer-fade-time	animation.md	engine/animation/components.h:70
+animation::AnimationPlayer::fade_total	variable	animation	animation-animationplayer-fade-total	animation.md	engine/animation/components.h:71
+animation::AnimationPlayer::fade_elapsed	variable	animation	animation-animationplayer-fade-elapsed	animation.md	engine/animation/components.h:72
+animation::AnimationPlayer::fade_sampler	variable	animation	animation-animationplayer-fade-sampler	animation.md	engine/animation/components.h:73
+animation::SkeletonInstance	struct	animation	animation-skeletoninstance	animation.md	engine/animation/components.h:79
+animation::SkeletonInstance::skeleton	variable	animation	animation-skeletoninstance-skeleton	animation.md	engine/animation/components.h:81
+animation::SkeletonInstance::palette	variable	animation	animation-skeletoninstance-palette	animation.md	engine/animation/components.h:82
+animation::RootMotion	struct	animation	animation-rootmotion	animation.md	engine/animation/components.h:89
+animation::RootMotion::delta	variable	animation	animation-rootmotion-delta	animation.md	engine/animation/components.h:91
+animation::AnimationEvent	struct	animation	animation-animationevent	animation.md	engine/animation/components.h:97
+animation::AnimationEvent::entity	variable	animation	animation-animationevent-entity	animation.md	engine/animation/components.h:99
+animation::AnimationEvent::time	variable	animation	animation-animationevent-time	animation.md	engine/animation/components.h:100
+animation::AnimationEvent::name_hash	variable	animation	animation-animationevent-name-hash	animation.md	engine/animation/components.h:101
+animation::AnimationEvent::payload	variable	animation	animation-animationevent-payload	animation.md	engine/animation/components.h:102
+animation::AnimationEvents	struct	animation	animation-animationevents	animation.md	engine/animation/components.h:109
+animation::AnimationEvents::events	variable	animation	animation-animationevents-events	animation.md	engine/animation/components.h:111
+animation::AnimationResolver	class	animation	animation-animationresolver	animation.md	engine/animation/components.h:118
+animation::AnimationResolver::~AnimationResolver()	function	animation	animation-animationresolver-tilde-animationresolver	animation.md	engine/animation/components.h:121
+animation::AnimationResolver::FindSkeleton(asset::ResourceId) const	function	animation	animation-animationresolver-findskeleton-asset-resourceid-const	animation.md	engine/animation/components.h:126
+animation::AnimationResolver::FindClip(asset::ResourceId) const	function	animation	animation-animationresolver-findclip-asset-resourceid-const	animation.md	engine/animation/components.h:131
+animation::AnimationStats	struct	animation	animation-animationstats	animation.md	engine/animation/components.h:137
+animation::AnimationStats::players_updated	variable	animation	animation-animationstats-players-updated	animation.md	engine/animation/components.h:139
+animation::AnimationStats::refused	variable	animation	animation-animationstats-refused	animation.md	engine/animation/components.h:140
+animation::AnimationStats::events	variable	animation	animation-animationstats-events	animation.md	engine/animation/components.h:141
+animation::AnimationStats::events_dropped	variable	animation	animation-animationstats-events-dropped	animation.md	engine/animation/components.h:142
+animation::RegisterAnimationComponents(storage::ComponentRegistry*)	function	animation	animation-registeranimationcomponents-storage-componentregistry-star	animation.md	engine/animation/components.h:149
+animation::AnimationSystem	class	animation	animation-animationsystem	animation.md	engine/animation/components.h:157
+animation::AnimationSystem::AnimationSystem(const AnimationResolver*)	function	animation	animation-animationsystem-animationsystem-const-animationresolver-star	animation.md	engine/animation/components.h:163
+animation::AnimationSystem::Update(ecs::World*,jobs::Scheduler*,f32)	function	animation	animation-animationsystem-update-ecs-world-star-jobs-scheduler-star-f32	animation.md	engine/animation/components.h:173
 animation::ManagerResolver	class	animation	animation-managerresolver	animation.md	engine/animation/manager_resolver.h:17
 animation::ManagerResolver::ManagerResolver(const asset::ResourceManager*)	function	animation	animation-managerresolver-managerresolver-const-asset-resourcemanager-star	animation.md	engine/animation/manager_resolver.h:23
 animation::ManagerResolver::FindSkeleton(asset::ResourceId) const	function	animation	animation-managerresolver-findskeleton-asset-resourceid-const	animation.md	engine/animation/manager_resolver.h:29
@@ -9581,31 +9595,28 @@ scene::MeshRenderer::flags	variable	scene	scene-meshrenderer-flags	scene.md	engi
 scene::MeshRenderer::slot_materials	variable	scene	scene-meshrenderer-slot-materials	scene.md	engine/scene/components.h:42
 scene::MeshRenderer::slot_count	variable	scene	scene-meshrenderer-slot-count	scene.md	engine/scene/components.h:44
 scene::Hidden	struct	scene	scene-hidden	scene.md	engine/scene/components.h:50
-scene::MorphWeights	struct	scene	scene-morphweights	scene.md	engine/scene/components.h:60
-scene::MorphWeights::count	variable	scene	scene-morphweights-count	scene.md	engine/scene/components.h:64
-scene::MorphWeights::weights	variable	scene	scene-morphweights-weights	scene.md	engine/scene/components.h:66
-scene::LightSource	struct	scene	scene-lightsource	scene.md	engine/scene/components.h:73
-scene::LightSource::type	variable	scene	scene-lightsource-type	scene.md	engine/scene/components.h:76
-scene::LightSource::color	variable	scene	scene-lightsource-color	scene.md	engine/scene/components.h:78
-scene::LightSource::intensity	variable	scene	scene-lightsource-intensity	scene.md	engine/scene/components.h:80
-scene::LightSource::radius	variable	scene	scene-lightsource-radius	scene.md	engine/scene/components.h:82
-scene::LightSource::direction	variable	scene	scene-lightsource-direction	scene.md	engine/scene/components.h:85
-scene::Camera	struct	scene	scene-camera	scene.md	engine/scene/components.h:91
-scene::Camera::fov_y	variable	scene	scene-camera-fov-y	scene.md	engine/scene/components.h:94
-scene::Camera::aspect	variable	scene	scene-camera-aspect	scene.md	engine/scene/components.h:96
-scene::Camera::near_plane	variable	scene	scene-camera-near-plane	scene.md	engine/scene/components.h:98
-scene::Camera::far_plane	variable	scene	scene-camera-far-plane	scene.md	engine/scene/components.h:100
-scene::RenderHandle	struct	scene	scene-renderhandle	scene.md	engine/scene/components.h:107
-scene::RenderHandle::kTrackRemoval	variable	scene	scene-renderhandle-ktrackremoval	scene.md	engine/scene/components.h:110
-scene::RenderHandle::object	variable	scene	scene-renderhandle-object	scene.md	engine/scene/components.h:112
-scene::RenderHandle::light	variable	scene	scene-renderhandle-light	scene.md	engine/scene/components.h:114
-scene::RenderHandle::more	variable	scene	scene-renderhandle-more	scene.md	engine/scene/components.h:116
-scene::RenderHandle::more_count	variable	scene	scene-renderhandle-more-count	scene.md	engine/scene/components.h:118
-scene::ActiveCamera	struct	scene	scene-activecamera	scene.md	engine/scene/components.h:124
-scene::ActiveCamera::entity	variable	scene	scene-activecamera-entity	scene.md	engine/scene/components.h:127
-scene::CameraOutput	struct	scene	scene-cameraoutput	scene.md	engine/scene/components.h:133
-scene::CameraOutput::camera	variable	scene	scene-cameraoutput-camera	scene.md	engine/scene/components.h:136
-scene::CameraOutput::valid	variable	scene	scene-cameraoutput-valid	scene.md	engine/scene/components.h:138
+scene::LightSource	struct	scene	scene-lightsource	scene.md	engine/scene/components.h:58
+scene::LightSource::type	variable	scene	scene-lightsource-type	scene.md	engine/scene/components.h:61
+scene::LightSource::color	variable	scene	scene-lightsource-color	scene.md	engine/scene/components.h:63
+scene::LightSource::intensity	variable	scene	scene-lightsource-intensity	scene.md	engine/scene/components.h:65
+scene::LightSource::radius	variable	scene	scene-lightsource-radius	scene.md	engine/scene/components.h:67
+scene::LightSource::direction	variable	scene	scene-lightsource-direction	scene.md	engine/scene/components.h:70
+scene::Camera	struct	scene	scene-camera	scene.md	engine/scene/components.h:76
+scene::Camera::fov_y	variable	scene	scene-camera-fov-y	scene.md	engine/scene/components.h:79
+scene::Camera::aspect	variable	scene	scene-camera-aspect	scene.md	engine/scene/components.h:81
+scene::Camera::near_plane	variable	scene	scene-camera-near-plane	scene.md	engine/scene/components.h:83
+scene::Camera::far_plane	variable	scene	scene-camera-far-plane	scene.md	engine/scene/components.h:85
+scene::RenderHandle	struct	scene	scene-renderhandle	scene.md	engine/scene/components.h:92
+scene::RenderHandle::kTrackRemoval	variable	scene	scene-renderhandle-ktrackremoval	scene.md	engine/scene/components.h:95
+scene::RenderHandle::object	variable	scene	scene-renderhandle-object	scene.md	engine/scene/components.h:97
+scene::RenderHandle::light	variable	scene	scene-renderhandle-light	scene.md	engine/scene/components.h:99
+scene::RenderHandle::more	variable	scene	scene-renderhandle-more	scene.md	engine/scene/components.h:101
+scene::RenderHandle::more_count	variable	scene	scene-renderhandle-more-count	scene.md	engine/scene/components.h:103
+scene::ActiveCamera	struct	scene	scene-activecamera	scene.md	engine/scene/components.h:109
+scene::ActiveCamera::entity	variable	scene	scene-activecamera-entity	scene.md	engine/scene/components.h:112
+scene::CameraOutput	struct	scene	scene-cameraoutput	scene.md	engine/scene/components.h:118
+scene::CameraOutput::camera	variable	scene	scene-cameraoutput-camera	scene.md	engine/scene/components.h:121
+scene::CameraOutput::valid	variable	scene	scene-cameraoutput-valid	scene.md	engine/scene/components.h:123
 scene::SpawnedLevel	struct	scene	scene-spawnedlevel	scene.md	engine/scene/level_spawner.h:28
 scene::SpawnedLevel::levels	variable	scene	scene-spawnedlevel-levels	scene.md	engine/scene/level_spawner.h:30
 scene::SpawnedLevel::materials	variable	scene	scene-spawnedlevel-materials	scene.md	engine/scene/level_spawner.h:31
@@ -9635,8 +9646,7 @@ scene::SceneComponentId	enum	scene	scene-scenecomponentid	scene.md	engine/scene/
 scene::kLightSourceId	enumerator	scene	scene-klightsourceid	scene.md	engine/scene/scene_components.h:16
 scene::kCameraId	enumerator	scene	scene-kcameraid	scene.md	engine/scene/scene_components.h:17
 scene::kHiddenId	enumerator	scene	scene-khiddenid	scene.md	engine/scene/scene_components.h:18
-scene::kMorphWeightsId	enumerator	scene	scene-kmorphweightsid	scene.md	engine/scene/scene_components.h:19
-scene::RegisterSceneComponents(storage::ComponentRegistry*)	function	scene	scene-registerscenecomponents-storage-componentregistry-star	scene.md	engine/scene/scene_components.h:27
+scene::RegisterSceneComponents(storage::ComponentRegistry*)	function	scene	scene-registerscenecomponents-storage-componentregistry-star	scene.md	engine/scene/scene_components.h:26
 ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:14
 ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:25
 ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:29

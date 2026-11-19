@@ -3032,6 +3032,7 @@ The section ids of a clip blob.
 | <a id="asset-kclipsectiontracks"></a>`kClipSectionTracks` | `17` | The track table, 72 bytes per track. |
 | <a id="asset-kclipsectionkeys"></a>`kClipSectionKeys` | `18` | Key times and values. |
 | <a id="asset-kclipsectionevents"></a>`kClipSectionEvents` | `19` | The events, 16 bytes each. |
+| <a id="asset-kclipsectionweights"></a>`kClipSectionWeights` | `20` | The weight track (glTF coverage Day 9): 16 bytes of counts, the key times, the values. |
 
 ## `ClipKey3` {#asset-clipkey3}
 
@@ -3199,6 +3200,53 @@ u32 payload;
 
 Free for the game.
 
+## `ClipWeightTrack` {#asset-clipweighttrack}
+
+`struct asset::ClipWeightTrack` — defined in `engine/asset/clip.h`
+
+```cpp
+struct ClipWeightTrack { ... }
+```
+
+The morph weights a clip animates (glTF coverage Day 9), as the minter takes them.
+
+They are the weights of the entity that plays the clip, keyed linearly, and stored as they are (`f32`), not reduced or quantized.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible. |
+| Ownership | borrows the spans. |
+
+### `target_count` {#asset-clipweighttrack-target-count}
+
+`variable asset::ClipWeightTrack::target_count` — defined in `engine/asset/clip.h`
+
+```cpp
+u32 target_count;
+```
+
+Weights per key, at most 64; 0 for a clip without weights.
+
+### `times` {#asset-clipweighttrack-times}
+
+`variable asset::ClipWeightTrack::times` — defined in `engine/asset/clip.h`
+
+```cpp
+Span<const f32> times;
+```
+
+Strictly increasing, within [0, duration]; at least one.
+
+### `values` {#asset-clipweighttrack-values}
+
+`variable asset::ClipWeightTrack::values` — defined in `engine/asset/clip.h`
+
+```cpp
+Span<const f32> values;
+```
+
+`times.Size() * target_count`, key by key.
+
 ## `ClipLimits` {#asset-cliplimits}
 
 `struct asset::ClipLimits` — defined in `engine/asset/clip.h`
@@ -3348,6 +3396,16 @@ Span<const ClipEvent> events;
 
 Times non-decreasing.
 
+### `weights` {#asset-clipbuildinput-weights}
+
+`variable asset::ClipBuildInput::weights` — defined in `engine/asset/clip.h`
+
+```cpp
+ClipWeightTrack weights;
+```
+
+The weight track, or none (`target_count` 0).
+
 ### `limits` {#asset-clipbuildinput-limits}
 
 `variable asset::ClipBuildInput::limits` — defined in `engine/asset/clip.h`
@@ -3442,9 +3500,11 @@ Status BuildClipBlob(const TypeRegistry& types, ResourceId id, const ClipBuildIn
 
 Builds a clip blob: reduces the keys of every channel (a deterministic greedy split that keeps the error inside the bounds), folds constant channels into the track table, quantizes, measures the error against the source keys at every source key and at 8 points inside each segment, and records the measured bounds in the header.
 
+A clip with a weight track and no joint tracks may have no skeleton (a null id and a joint count of 0); it then has no dependency and binds to no skeleton.
+
 | Field | Value |
 |---|---|
-| Fails | `Invalid` (no tracks and no events, a duration that is not finite and above 0, a joint at or past the joint count or used twice, keys not strictly increasing or outside [0, duration], a value that is not finite, a rotation that is not unit length, events out of order or past the duration, a null skeleton); `LimitExceeded` (a count above the limits, or a measured error above `limits`). |
+| Fails | `Invalid` (no tracks, no events and no weights, a duration that is not finite and above 0, a weight track whose times or values are out of order, outside the duration, not finite or of the wrong count, a joint at or past the joint count or used twice, keys not strictly increasing or outside [0, duration], a value that is not finite, a rotation that is not unit length, events out of order or past the duration, a null skeleton); `LimitExceeded` (a count above the limits, or a measured error above `limits`). |
 | Ownership | borrows `input` for the call; `*out` is replaced; `*rotation_degrees` and `*translation`, when not null, receive the measured errors (also on a `LimitExceeded` failure). |
 
 ## `ClipView` {#asset-clipview}
@@ -3531,6 +3591,43 @@ True when the clip loops.
 |---|---|
 | Fails | never. |
 
+### `WeightTargetCount()` {#asset-clipview-weighttargetcount-const}
+
+`method asset::ClipView::WeightTargetCount` — defined in `engine/asset/clip.h`
+
+```cpp
+u32 WeightTargetCount() const;
+```
+
+The number of morph weights the clip's weight track animates (0 without one; glTF coverage Day 9).
+
+### `WeightKeyCount()` {#asset-clipview-weightkeycount-const}
+
+`method asset::ClipView::WeightKeyCount` — defined in `engine/asset/clip.h`
+
+```cpp
+u32 WeightKeyCount() const;
+```
+
+The number of keys of the weight track.
+
+### `SampleWeights(f32,f32*,u32)` {#asset-clipview-sampleweights-f32-f32-star-u32-const}
+
+`method asset::ClipView::SampleWeights` — defined in `engine/asset/clip.h`
+
+```cpp
+void SampleWeights(f32 time, f32* out, u32 count) const;
+```
+
+Samples the weight track at `time` (clamped to its first and last key), linearly between keys.
+
+| Field | Value |
+|---|---|
+| Parameter `time` | seconds from the start. |
+| Parameter `out` | receives the weights. |
+| Parameter `count` | the room at `out`; the first `min(count, WeightTargetCount())` are written. |
+| Ownership | `out` is borrowed for the call. |
+
 ### `JointCount()` {#asset-clipview-jointcount-const}
 
 `method asset::ClipView::JointCount` — defined in `engine/asset/clip.h`
@@ -3539,7 +3636,7 @@ True when the clip loops.
 u32 JointCount() const;
 ```
 
-The joint count of the skeleton the clip was made for.
+The joint count of the skeleton the clip was made for (0 for a clip that animates weights only).
 
 ### `TrackCount()` {#asset-clipview-trackcount-const}
 

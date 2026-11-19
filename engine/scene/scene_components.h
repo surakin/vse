@@ -13,13 +13,12 @@ namespace engine_placeholder::scene
 /// The stable ids of the scene's components (never change or reuse one).
 enum SceneComponentId : u32
 {
-    kLightSourceId = 60,   ///< [[scene::LightSource]]: stored.
-    kCameraId = 61,        ///< [[scene::Camera]]: stored.
-    kHiddenId = 62,        ///< [[scene::Hidden]]: a stored tag.
-    kMorphWeightsId = 63,  ///< [[scene::MorphWeights]]: stored (glTF coverage Day 8).
+    kLightSourceId = 60,  ///< [[scene::LightSource]]: stored.
+    kCameraId = 61,       ///< [[scene::Camera]]: stored.
+    kHiddenId = 62,       ///< [[scene::Hidden]]: a stored tag.
 };
 
-/// Registers `light_source`, `camera`, `hidden` and `morph_weights` in `registry`.
+/// Registers `light_source`, `camera` and `hidden` in `registry`.
 ///
 /// - Param registry: the registry to fill; not null.
 /// - Ownership: borrowed for the call.

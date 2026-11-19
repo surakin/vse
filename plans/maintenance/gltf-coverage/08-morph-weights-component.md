@@ -21,7 +21,10 @@
 
 Done on the PC (2026-11-19). **No tests were run** (the user's request; they run after Day 12); only `build-msvc` was built.
 
-- `scene::MorphWeights` (`count`, `Array<f32, 64> weights`), stored as `morph_weights`, id 63 (`kMorphWeightsId`). Levels, saves and
+- **Moved on Day 9:** the component is `animation::MorphWeights`, id 43, registered by `RegisterAnimationComponents`: the animation
+  system writes it, and `animation` lies below `scene` (`ARCHITECTURE.md`). It had been `scene::MorphWeights`, id 63, for the day;
+  nothing stored that id.
+- `MorphWeights` (`count`, `Array<f32, 64> weights`), stored as `morph_weights`. Levels, saves and
   scripts reach it through the component registry like `light_source`, with no code of their own.
 - `scene::RenderSync`: `ApplyMorph` points a morphed object at the component's weights (borrowed, like the joint palette), when the
   object is made or re-added and every frame (4c, for weights that moved in storage); an entity without the component (or one that

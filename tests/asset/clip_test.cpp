@@ -4,6 +4,7 @@
 
 #include "asset/clip.h"
 #include "asset/skeleton.h"
+#include "containers/array.h"
 #include "clip_source.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -695,6 +696,39 @@ TEST_CASE("clip: a flipped byte never crashes the loader or the sampler", "[asse
             }
         }
     }
+}
+
+// glTF coverage Day 9: a clip of morph weights only has no skeleton and no dependency; its weights are sampled linearly
+// between keys and clamped outside them.
+TEST_CASE("clip: a weight track without a skeleton round-trips and samples linearly", "[asset][clip]")
+{
+    TypeRegistry types;
+    const Array<f32, 3> times = {{0.0f, 1.0f, 2.0f}};
+    const Array<f32, 6> values = {{0.0f, 1.0f, 1.0f, 0.0f, 0.5f, 0.5f}};  // two weights per key
+    ClipBuildInput input;
+    input.duration = 2.0f;
+    input.weights.target_count = 2;
+    input.weights.times = Span<const f32>(times.Data(), times.Size());
+    input.weights.values = Span<const f32>(values.Data(), values.Size());
+    Vector<byte> blob;
+    REQUIRE(BuildClipBlob(types, ResourceId::FromValue(0x71), input, &blob).Ok());
+    ClipView view;
+    REQUIRE(view.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok());
+    CHECK(view.JointCount() == 0);
+    CHECK(view.TrackCount() == 0);
+    CHECK(view.Skeleton().IsNone());
+    CHECK(view.WeightTargetCount() == 2);
+    CHECK(view.WeightKeyCount() == 3);
+    Array<f32, 2> w = {{-1.0f, -1.0f}};
+    view.SampleWeights(0.5f, w.Data(), 2);
+    CHECK(w[0] == 0.5f);
+    CHECK(w[1] == 0.5f);
+    view.SampleWeights(5.0f, w.Data(), 2);  // past the last key: the last key
+    CHECK(w[0] == 0.5f);
+    CHECK(w[1] == 0.5f);
+    const Array<f32, 3> backwards = {{0.0f, 2.0f, 1.0f}};
+    input.weights.times = Span<const f32>(backwards.Data(), backwards.Size());
+    CHECK(BuildClipBlob(types, ResourceId::FromValue(0x71), input, &blob).Failed());
 }
 
 }  // namespace engine_placeholder::asset

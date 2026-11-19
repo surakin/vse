@@ -1,6 +1,7 @@
 // The scene's components in the storage registry (Phase 27 Day 456): they register, save and load.
 #include <catch2/catch_test_macros.hpp>
 
+#include "animation/components.h"
 #include "ecs/transform.h"
 #include "scene/components.h"
 #include "scene/scene_components.h"
@@ -51,17 +52,18 @@ TEST_CASE("Scene components: a light, a camera and a hidden tag are saved and lo
     CHECK(found == 1);
 }
 
-// glTF coverage Day 8: morph weights are a stored component; a saved entity keeps its count and weights.
+// glTF coverage Day 8: morph weights are a stored component (the animation module's, which writes them on Day 9); a
+// saved entity keeps its count and weights.
 TEST_CASE("Scene components: morph weights are saved and loaded", "[scene][storage]")
 {
     storage::ComponentRegistry registry;
     REQUIRE(storage::RegisterBuiltinComponents(&registry).Ok());
-    REQUIRE(scene::RegisterSceneComponents(&registry).Ok());
+    REQUIRE(animation::RegisterAnimationComponents(&registry).Ok());
     REQUIRE(registry.FindByName("morph_weights") != nullptr);
     ecs::World world;
     storage::KeyIndex index;
     storage::KeyGenerator generator = storage::KeyGenerator::Seeded(4);
-    scene::MorphWeights weights;
+    animation::MorphWeights weights;
     weights.count = 3;
     weights.weights[0] = 0.25f;
     weights.weights[2] = -1.0f;
@@ -73,8 +75,8 @@ TEST_CASE("Scene components: morph weights are saved and loaded", "[scene][stora
     storage::KeyIndex loaded_index;
     REQUIRE(storage.Load(loaded, loaded_index, storage::LoadOptions(), nullptr).Ok());
     u32 found = 0;
-    loaded.Query<ecs::Read<scene::MorphWeights>>().ForEach(
-        [&](ecs::Entity, const scene::MorphWeights& w)
+    loaded.Query<ecs::Read<animation::MorphWeights>>().ForEach(
+        [&](ecs::Entity, const animation::MorphWeights& w)
         {
             ++found;
             CHECK(w.count == 3);

@@ -49,10 +49,12 @@ enum ClipFlags : u32
 /// The section ids of a clip blob.
 enum ClipSection : u32
 {
-    kClipSectionHeader = 16,  ///< The header, 96 bytes.
-    kClipSectionTracks = 17,  ///< The track table, 72 bytes per track.
-    kClipSectionKeys = 18,    ///< Key times and values.
-    kClipSectionEvents = 19,  ///< The events, 16 bytes each.
+    kClipSectionHeader = 16,   ///< The header, 96 bytes.
+    kClipSectionTracks = 17,   ///< The track table, 72 bytes per track.
+    kClipSectionKeys = 18,     ///< Key times and values.
+    kClipSectionEvents = 19,   ///< The events, 16 bytes each.
+    kClipSectionWeights = 20,  ///< The weight track (glTF coverage Day 9): 16 bytes of counts, the key times, the
+                               ///< values.
 };
 
 /// A translation or scale key.
@@ -94,6 +96,20 @@ struct ClipEvent
     u32 payload = 0;    ///< Free for the game.
 };
 
+/// The morph weights a clip animates (glTF coverage Day 9), as the minter takes them.
+///
+/// They are the weights of the entity that plays the clip, keyed linearly, and stored as they are (`f32`), not reduced
+/// or quantized.
+///
+/// - Thread-safety: thread-compatible.
+/// - Ownership: borrows the spans.
+struct ClipWeightTrack
+{
+    u32 target_count = 0;    ///< Weights per key, at most 64; 0 for a clip without weights.
+    Span<const f32> times;   ///< Strictly increasing, within [0, duration]; at least one.
+    Span<const f32> values;  ///< `times.Size() * target_count`, key by key.
+};
+
 /// The error bounds a minted clip is held to.
 ///
 /// - Thread-safety: immutable value.
@@ -120,6 +136,7 @@ struct ClipBuildInput
     Array<f32, 3> bounds_max = {{0, 0, 0}};  ///< See `bounds_min`.
     Span<const ClipTrackSource> tracks;      ///< At most one per joint.
     Span<const ClipEvent> events;            ///< Times non-decreasing.
+    ClipWeightTrack weights;                 ///< The weight track, or none (`target_count` 0).
     ClipLimits limits;                       ///< The error bounds the clip must meet.
 };
 
@@ -140,10 +157,14 @@ struct ClipSample
 /// bounds), folds constant channels into the track table, quantizes, measures the error against the source keys at
 /// every source key and at 8 points inside each segment, and records the measured bounds in the header.
 ///
-/// - Fails: `Invalid` (no tracks and no events, a duration that is not finite and above 0, a joint at or past the joint
-///   count or used twice, keys not strictly increasing or outside [0, duration], a value that is not finite, a rotation
-///   that is not unit length, events out of order or past the duration, a null skeleton); `LimitExceeded` (a count
-///   above the limits, or a measured error above `limits`).
+/// A clip with a weight track and no joint tracks may have no skeleton (a null id and a joint count of 0); it then has
+/// no dependency and binds to no skeleton.
+///
+/// - Fails: `Invalid` (no tracks, no events and no weights, a duration that is not finite and above 0, a weight track
+///   whose times or values are out of order, outside the duration, not finite or of the wrong count, a joint at or past
+///   the joint count or used twice, keys not strictly increasing or outside [0, duration], a value that is not finite,
+///   a rotation that is not unit length, events out of order or past the duration, a null skeleton); `LimitExceeded` (a
+///   count above the limits, or a measured error above `limits`).
 /// - Ownership: borrows `input` for the call; `*out` is replaced; `*rotation_degrees` and `*translation`, when not
 /// null,
 ///   receive the measured errors (also on a `LimitExceeded` failure).
@@ -181,7 +202,18 @@ public:
     ///
     /// - Fails: never.
     bool Looping() const { return (flags_ & kClipLooping) != 0; }
-    /// The joint count of the skeleton the clip was made for.
+    /// The number of morph weights the clip's weight track animates (0 without one; glTF coverage Day 9).
+    u32 WeightTargetCount() const { return weight_targets_; }
+    /// The number of keys of the weight track.
+    u32 WeightKeyCount() const { return weight_keys_; }
+    /// Samples the weight track at `time` (clamped to its first and last key), linearly between keys.
+    ///
+    /// - Param time: seconds from the start.
+    /// - Param out: receives the weights.
+    /// - Param count: the room at `out`; the first `min(count, WeightTargetCount())` are written.
+    /// - Ownership: `out` is borrowed for the call.
+    void SampleWeights(f32 time, f32* out, u32 count) const;
+    /// The joint count of the skeleton the clip was made for (0 for a clip that animates weights only).
     u32 JointCount() const { return joint_count_; }
     /// The number of animated joints.
     u32 TrackCount() const { return track_count_; }
@@ -249,6 +281,9 @@ private:
     ByteSpan tracks_;
     ByteSpan keys_;
     ByteSpan events_;
+    ByteSpan weights_;  // the weight section's times and values
+    u32 weight_targets_ = 0;
+    u32 weight_keys_ = 0;
 };
 
 }  // namespace engine_placeholder::asset

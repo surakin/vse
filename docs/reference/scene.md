@@ -113,42 +113,6 @@ A tag: the entity's mesh is skipped by culling and never drawn (`ObjectFlags::kH
 |---|---|
 | Thread-safety | thread-compatible plain data. |
 
-## `MorphWeights` {#scene-morphweights}
-
-`struct scene::MorphWeights` — defined in `engine/scene/components.h`
-
-```cpp
-struct MorphWeights { ... }
-```
-
-The weights of the entity's mesh's morph targets (glTF coverage Day 8).
-
-Weight `i` is target `i`'s, the first `count` of them; the rest are 0. Set by levels (glTF's `mesh.weights` and `node.weights`), saves, scripts and the animation system; [`scene::MakeRenderSyncSystem`](#scene-makerendersyncsystem-const-char-star) hands them to the render objects.
-
-| Field | Value |
-|---|---|
-| Thread-safety | thread-compatible plain data. |
-
-### `count` {#scene-morphweights-count}
-
-`variable scene::MorphWeights::count` — defined in `engine/scene/components.h`
-
-```cpp
-u32 count;
-```
-
-How many of `weights` are used; at most [`renderer::kMaxMeshMorphTargets`](renderer.md#renderer-kmaxmeshmorphtargets) (a larger count is clamped and the sync counts it in `SceneSyncReport::invalid`).
-
-### `weights` {#scene-morphweights-weights}
-
-`variable scene::MorphWeights::weights` — defined in `engine/scene/components.h`
-
-```cpp
-Array<f32, renderer::kMaxMeshMorphTargets> weights;
-```
-
-The weights, from target 0.
-
 ## `LightSource` {#scene-lightsource}
 
 `struct scene::LightSource` — defined in `engine/scene/components.h`
@@ -714,7 +678,6 @@ The stable ids of the scene's components (never change or reuse one).
 | <a id="scene-klightsourceid"></a>`kLightSourceId` | `60` | [`scene::LightSource`](#scene-lightsource): stored. |
 | <a id="scene-kcameraid"></a>`kCameraId` | `61` | [`scene::Camera`](#scene-camera): stored. |
 | <a id="scene-khiddenid"></a>`kHiddenId` | `62` | [`scene::Hidden`](#scene-hidden): a stored tag. |
-| <a id="scene-kmorphweightsid"></a>`kMorphWeightsId` | `63` | [`scene::MorphWeights`](#scene-morphweights): stored (glTF coverage Day 8). |
 
 ## `RegisterSceneComponents(storage::ComponentRegistry*)` {#scene-registerscenecomponents-storage-componentregistry-star}
 
@@ -724,7 +687,7 @@ The stable ids of the scene's components (never change or reuse one).
 storage::Status RegisterSceneComponents(storage::ComponentRegistry* registry);
 ```
 
-Registers `light_source`, `camera`, `hidden` and `morph_weights` in `registry`.
+Registers `light_source`, `camera` and `hidden` in `registry`.
 
 | Field | Value |
 |---|---|

@@ -7,6 +7,7 @@
 #include "asset/clip.h"
 #include "asset/resource_id.h"
 #include "asset/skeleton.h"
+#include "containers/array.h"
 #include "containers/vector.h"
 #include "ecs/entity.h"
 #include "ecs/world.h"
@@ -23,6 +24,26 @@ enum ComponentIds : u32
     kAnimationPlayerId = 40,   ///< [[animation::AnimationPlayer]]: stored.
     kSkeletonInstanceId = 41,  ///< [[animation::SkeletonInstance]]: stored (the skeleton id only).
     kRootMotionId = 42,        ///< [[animation::RootMotion]]: derived.
+    kMorphWeightsId = 43,      ///< [[animation::MorphWeights]]: stored (glTF coverage Days 8 and 9).
+};
+
+/// Most morph weights of one entity: the mesh blob's limit on morph targets.
+inline constexpr u32 kMaxMorphWeights = 64;
+
+/// The weights of the entity's mesh's morph targets (glTF coverage Days 8 and 9).
+///
+/// Weight `i` is target `i`'s, the first `count` of them; the rest are 0. Set by levels (glTF's `mesh.weights` and
+/// `node.weights`), saves, scripts, and the animation system when the entity plays a clip with a weight track;
+/// `scene::MakeRenderSyncSystem` hands them to the render objects.
+///
+/// - Thread-safety: thread-compatible plain data; the system writes it from a job that owns the entity's chunk.
+struct MorphWeights
+{
+    /// How many of `weights` are used; at most [[animation::kMaxMorphWeights]] (the render sync clamps a larger count
+    /// and counts it as invalid).
+    u32 count = 0;
+    /// The weights, from target 0.
+    Array<f32, kMaxMorphWeights> weights = {};
 };
 
 /// Plays one clip on an entity: the clip, the time and how it advances. Stored with its entity.

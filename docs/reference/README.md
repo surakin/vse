@@ -31,12 +31,12 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Audio](audio.md) | 28 | 822 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 37 | 1361 |
+| [Assets and resources](asset.md) | 37 | 1370 |
 | [glTF importer](asset_import.md) | 17 | 274 |
-| [Animation runtime](animation.md) | 4 | 85 |
+| [Animation runtime](animation.md) | 4 | 90 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 18 | 429 |
-| [Scene bridge](scene.md) | 4 | 65 |
+| [Scene bridge](scene.md) | 4 | 61 |
 | [The UI Toolkit](ui.md) | 46 | 1421 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 205 |

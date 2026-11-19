@@ -748,21 +748,43 @@ Status ClpAssemble(const TypeRegistry& types, ResourceId id, const ClipBuildInpu
     }
 
     BlobWriter writer(types, types::kAnimation, id, target);
-    TypeInfo info;
-    if (!types.Find(types::kSkeleton, &info))
+    if (!input.skeleton.IsNone())
     {
-        return Status::Make(ErrorCode::TypeMismatch, "the skeleton type is not registered");
+        TypeInfo info;
+        if (!types.Find(types::kSkeleton, &info))
+        {
+            return Status::Make(ErrorCode::TypeMismatch, "the skeleton type is not registered");
+        }
+        Dependency dependency;
+        dependency.id = input.skeleton;
+        dependency.type = types::kSkeleton;
+        dependency.type_version = info.current_version;
+        dependency.role = kClipRoleSkeleton;
+        writer.AddDependency(dependency);
     }
-    Dependency dependency;
-    dependency.id = input.skeleton;
-    dependency.type = types::kSkeleton;
-    dependency.type_version = info.current_version;
-    dependency.role = kClipRoleSkeleton;
-    writer.AddDependency(dependency);
     ENGINE_TRY(writer.AddSection(kClipSectionHeader, ByteSpan(header.Data(), header.Size())));
     ENGINE_TRY(writer.AddSection(kClipSectionTracks, ByteSpan(table.Data(), table.Size())));
     ENGINE_TRY(writer.AddSection(kClipSectionKeys, ByteSpan(keys.Data(), keys.Size())));
     ENGINE_TRY(writer.AddSection(kClipSectionEvents, ByteSpan(events.Data(), events.Size())));
+    if (input.weights.target_count != 0)
+    {
+        // The weight track (glTF coverage Day 9): target count, key count, 8 zero bytes, the times, then the values.
+        const ClipWeightTrack& w = input.weights;
+        Vector<byte> section;
+        section.Resize(16 + (w.times.Size() + w.values.Size()) * 4);
+        MemSet(section.Data(), 0, section.Size());
+        ClpStore(section.Data(), w.target_count, 4);
+        ClpStore(section.Data() + 4, w.times.Size(), 4);
+        for (usize k = 0; k < w.times.Size(); ++k)
+        {
+            ClpStoreF32(section.Data() + 16 + k * 4, w.times[k]);
+        }
+        for (usize k = 0; k < w.values.Size(); ++k)
+        {
+            ClpStoreF32(section.Data() + 16 + (w.times.Size() + k) * 4, w.values[k]);
+        }
+        ENGINE_TRY(writer.AddSection(kClipSectionWeights, ByteSpan(section.Data(), section.Size())));
+    }
     return writer.Finish(out);
 }
 
@@ -780,17 +802,40 @@ Status BuildClipBlob(const TypeRegistry& types, ResourceId id, const ClipBuildIn
     {
         return ClpInvalid("a clip flag is not defined by this version");
     }
-    if (input.skeleton.IsNone() || input.joint_count == 0 || input.joint_count > 256)
+    const ClipWeightTrack& w = input.weights;
+    const bool weights_only = input.tracks.Size() == 0 && w.target_count != 0 && input.skeleton.IsNone() &&
+                              input.joint_count == 0;
+    if (!weights_only && (input.skeleton.IsNone() || input.joint_count == 0 || input.joint_count > 256))
     {
-        return ClpInvalid("a clip needs its skeleton id and a joint count of 1 to 256");
+        return ClpInvalid("a clip needs its skeleton id and a joint count of 1 to 256 (or only a weight track)");
+    }
+    if (w.target_count != 0)
+    {
+        if (w.target_count > 64 || w.times.Size() == 0 || w.times.Size() > kMaxClipKeys ||
+            w.values.Size() != w.times.Size() * w.target_count)
+        {
+            return ClpInvalid("a weight track needs 1 to 64 weights, keys, and one value per weight per key");
+        }
+        for (usize k = 0; k < w.times.Size(); ++k)
+        {
+            if (!IsFinite(w.times[k]) || w.times[k] < 0.0f || w.times[k] > input.duration ||
+                (k > 0 && w.times[k] <= w.times[k - 1]))
+            {
+                return ClpInvalid("the weight track's times must increase within [0, duration]");
+            }
+        }
+        if (!ClpFinite(w.values.Data(), w.values.Size()))
+        {
+            return ClpInvalid("a weight is not finite");
+        }
     }
     if (!ClpFinite(input.bounds_min.Data(), 3) || !ClpFinite(input.bounds_max.Data(), 3))
     {
         return ClpInvalid("the clip bounds are not finite");
     }
-    if (input.tracks.Size() == 0 && input.events.Size() == 0)
+    if (input.tracks.Size() == 0 && input.events.Size() == 0 && w.target_count == 0)
     {
-        return ClpInvalid("a clip needs at least one track or event");
+        return ClpInvalid("a clip needs at least one track, event or weight track");
     }
     if (input.tracks.Size() > kMaxClipTracks || input.events.Size() > kMaxClipEvents)
     {
@@ -996,19 +1041,66 @@ Status ClipView::Open(ByteSpan data, const TypeRegistry& types)
     {
         return ClpCorrupt("a clip header field holds a value this version does not define");
     }
-    if (joints == 0 || joints > 256 || tracks > kMaxClipTracks || tracks > joints || events > kMaxClipEvents ||
-        (tracks == 0 && events == 0))
+    // The weight track (glTF coverage Day 9): checked whole, since sampling reads it without bounds checks.
+    ByteSpan weights;
+    u64 weight_targets = 0;
+    u64 weight_keys = 0;
+    if (blob.FindSection(kClipSectionWeights, &weights))
+    {
+        if (weights.Size() < 16)
+        {
+            return ClpCorrupt("the weight section is too short");
+        }
+        weight_targets = ClpLoad(weights.Data(), 4);
+        weight_keys = ClpLoad(weights.Data() + 4, 4);
+        if (weight_targets == 0 || weight_targets > 64 || weight_keys == 0 || weight_keys > kMaxClipKeys ||
+            ClpLoad(weights.Data() + 8, 8) != 0 ||
+            weights.Size() != 16 + (weight_keys + weight_keys * weight_targets) * 4)
+        {
+            return ClpCorrupt("the weight section's counts are out of range or do not match its size");
+        }
+        for (u64 k = 0; k < weight_keys; ++k)
+        {
+            const f32 t = ClpLoadF32(weights.Data() + 16 + k * 4);
+            if (!IsFinite(t) || t < 0.0f || t > duration ||
+                (k > 0 && !(t > ClpLoadF32(weights.Data() + 16 + (k - 1) * 4))))
+            {
+                return ClpCorrupt("the weight track's times do not increase within the duration");
+            }
+        }
+        for (u64 k = 0; k < weight_keys * weight_targets; ++k)
+        {
+            if (!IsFinite(ClpLoadF32(weights.Data() + 16 + (weight_keys + k) * 4)))
+            {
+                return ClpCorrupt("a weight is not finite");
+            }
+        }
+    }
+    const bool weights_only = joints == 0 && tracks == 0 && weight_targets != 0;
+    if ((!weights_only && (joints == 0 || joints > 256)) || tracks > kMaxClipTracks || tracks > joints ||
+        events > kMaxClipEvents || (tracks == 0 && events == 0 && weight_targets == 0))
     {
         return ClpCorrupt("a clip count is zero, above the limit or inconsistent");
     }
-    if (blob.DependencyCount() != 1)
+    Dependency dep;
+    if (weights_only)
     {
-        return ClpCorrupt("a clip declares exactly one dependency, its skeleton");
+        if (blob.DependencyCount() != 0)
+        {
+            return ClpCorrupt("a clip of weights only declares no dependency");
+        }
     }
-    const Dependency dep = blob.DependencyAt(0);
-    if (dep.type != types::kSkeleton || dep.role != kClipRoleSkeleton)
+    else
     {
-        return ClpCorrupt("the clip dependency is not a skeleton with the skeleton role");
+        if (blob.DependencyCount() != 1)
+        {
+            return ClpCorrupt("a clip declares exactly one dependency, its skeleton");
+        }
+        dep = blob.DependencyAt(0);
+        if (dep.type != types::kSkeleton || dep.role != kClipRoleSkeleton)
+        {
+            return ClpCorrupt("the clip dependency is not a skeleton with the skeleton role");
+        }
     }
     ByteSpan table, keys, evs;
     if (!blob.FindSection(kClipSectionTracks, &table) || table.Size() != tracks * kClpTrackBytes ||
@@ -1128,6 +1220,9 @@ Status ClipView::Open(ByteSpan data, const TypeRegistry& types)
     tracks_ = table;
     keys_ = keys;
     events_ = evs;
+    weights_ = weights;
+    weight_targets_ = static_cast<u32>(weight_targets);
+    weight_keys_ = static_cast<u32>(weight_keys);
     return Status::Success();
 }
 
@@ -1249,6 +1344,51 @@ ClipSample ClipView::Sample(u32 i, f32 time, u32* cursors) const
         }
     }
     return out;
+}
+
+void ClipView::SampleWeights(f32 time, f32* out, u32 count) const
+{
+    const u32 n = count < weight_targets_ ? count : weight_targets_;
+    if (n == 0 || weight_keys_ == 0)
+    {
+        return;
+    }
+    const byte* times = weights_.Data() + 16;
+    const byte* values = times + static_cast<usize>(weight_keys_) * 4;
+    u32 k = 0;  // the last key at or before `time`
+    if (time <= ClpLoadF32(times))
+    {
+        k = 0;
+    }
+    else
+    {
+        u32 lo = 0;
+        u32 hi = weight_keys_;
+        while (hi - lo > 1)
+        {
+            const u32 mid = (lo + hi) / 2;
+            if (ClpLoadF32(times + static_cast<usize>(mid) * 4) <= time)
+            {
+                lo = mid;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+        k = lo;
+    }
+    const u32 next = k + 1 < weight_keys_ ? k + 1 : k;
+    const f32 t0 = ClpLoadF32(times + static_cast<usize>(k) * 4);
+    const f32 t1 = ClpLoadF32(times + static_cast<usize>(next) * 4);
+    f32 a = next != k && t1 > t0 ? (time - t0) / (t1 - t0) : 0.0f;
+    a = a < 0.0f ? 0.0f : (a > 1.0f ? 1.0f : a);
+    for (u32 i = 0; i < n; ++i)
+    {
+        const f32 v0 = ClpLoadF32(values + (static_cast<usize>(k) * weight_targets_ + i) * 4);
+        const f32 v1 = ClpLoadF32(values + (static_cast<usize>(next) * weight_targets_ + i) * 4);
+        out[i] = v0 + (v1 - v0) * a;
+    }
 }
 
 Status ClipView::Bind(const SkeletonView& skeleton) const
