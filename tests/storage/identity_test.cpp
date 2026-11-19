@@ -2,6 +2,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/hash_set.h"
 #include "ecs/transform.h"
 #include "storage/builtin_components.h"
 #include "storage/identity.h"
@@ -26,14 +27,13 @@ Entity MakeKeyed(World& world, EntityKey key)
 
 TEST_CASE("Identity: keys are unique over a million draws, and never null", "[storage][identity]")
 {
-    HashMap<EntityKey, u8, HeapAllocator> seen(HeapAllocator::Default());
+    HashSet<EntityKey, HeapAllocator> seen(HeapAllocator::Default());
     KeyGenerator random;
     for (u32 i = 0; i < 1000000; ++i)
     {
         const EntityKey k = random.Next();
         REQUIRE_FALSE(k.IsNull());
-        REQUIRE(seen.Find(k) == nullptr);
-        seen.Insert(k, u8{1});
+        REQUIRE(seen.Insert(k));  // false would mean the key was drawn before
     }
 }
 

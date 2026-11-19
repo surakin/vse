@@ -67,8 +67,10 @@ tested on both machines, and the physics state hashes are compared across all th
   `platform_neutral_check` on `ENGINE_CHECK_SLOW` in `open_table.h` (now `ENGINE_ASSERT`), `shared_unit_check` on a `GpuMesh*` member in
   `tests/renderer/mesh_topology_test.cpp` (now a `GpuMeshPtr`). `docs/reference` was stale and is regenerated. Day 13 fixed the same three
   on Linux meanwhile (`drop`, `ENGINE_ASSERT`, an owned `GpuMesh`); the rebase keeps Linux's versions and drops the PC's.
-- The MSVC `HashMap` value narrowing (C4244) is still worked around at `tests/storage/identity_test.cpp` (`u8{1}`), the user's decision
-  until the series is done (`KNOWN-ISSUES.md`).
+- The MSVC `HashMap` value narrowing (C4244: `Insert(key, 1)` into a `u8` map converts the `int` inside the template) was worked around at
+  `tests/storage/identity_test.cpp` with `u8{1}`. That map was a set, so after the push it became a `HashSet<EntityKey>` (the user's choice;
+  the audit's own fix for the engine's `u8` sets), and the workaround and its `KNOWN-ISSUES.md` entry are gone. `HashMap::Insert` still
+  makes cl warn for a value of another type; no other call site does that.
 
 **Before and after (Release, `build-msvc-release`):**
 
