@@ -46,8 +46,8 @@ On the PC: the vendored library builds, every script test passes, and the hashes
 | Scene | Linux | Windows PC |
 |---|---|---|
 | `script_sample` (C API, 1,000 entities, 600 frames), partitions 1, 2, 4, 8 | `e3e3ca13a45686f9` (Day 472) | `e3e3ca13a45686f9` at each count, plain and asan |
-| `script_demo --frames 120` (2,000 bodies, 16 partitions), threads 1, 2, 4, 8, 16 | not recorded | `e1f5c33055210a41` at each count, Debug and Release |
-| `tests/script_demo` small game, 150 frames | first run pending | `0xCD4A4433E698FAD7` (MSVC, clang-cl, no JIT) |
+| `script_demo --frames 120` (2,000 bodies, 16 partitions), threads 1, 2, 4, 8, 16 | `e1f5c33055210a41` at 1, 2, 8 and 16 threads (recorded 2026-11-19, `ce90ed09`) | `e1f5c33055210a41` at each count, Debug and Release |
+| `tests/script_demo` small game, 150 frames | `0xCD4A4433E698FAD7` (recorded 2026-11-19: Clang with the JIT, plain, asan and tsan; the test passes) | `0xCD4A4433E698FAD7` (MSVC, clang-cl, no JIT) |
 | thread-count tests (World view 1, 2, 7, 16; parallel system 1, 2, 3, 7, 16; replay) | equal | equal (in the runs below) |
 
 - **Speed (MSVC Release, 16 hardware threads):** `script_demo` scripts 260.7 / 152.7 / 92.9 / 50.2 / 28.6 ms at 1 / 2 / 4 / 8 / 16 threads, physics about 9.6 ms;

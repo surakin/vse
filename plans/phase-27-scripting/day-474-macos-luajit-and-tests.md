@@ -63,11 +63,16 @@ Done, with the deviations and gaps below (all in `KNOWN-ISSUES.md`, entry "Phase
 - **Hashes** (x86-64): `engine_c_script_sample` ends on `e3e3ca13a45686f9` at 1, 2, 4 and 8 partitions, equal to Linux's (Day 472);
   `script_demo` ends on `e1f5c33055210a41` at 1, 2 and 8 threads (equal across thread counts; Linux's Day 475 value was not recorded, so
   the cross-machine comparison of it is open). The PC's values wait for Day 473. arm64: compile-only, nothing compared.
+- **Linux's `script_demo` value, recorded afterwards (2026-11-19, Linux x86-64, Clang Release, `ce90ed09`; 2,000 entities, 16 partitions):**
+  - `--frames 120`, the length the Mac and the PC compared, ends on `e1f5c33055210a41` at 1, 2, 8 and 16 threads, **equal to the Mac's and
+    the PC's**.
+  - At the default 600 frames it ends on `424a6fbf279d2104`, the same at 1, 2, 8 and 16 threads, in Release and Debug, and at this day's
+    commit `6db61d8a` as well. No other machine has run 600 frames.
 
   | Program | Mac x86-64 | Linux | Windows PC |
   |---|---|---|---|
   | `script_sample` (1/2/4/8 partitions) | `e3e3ca13a45686f9` | `e3e3ca13a45686f9` | Day 473 |
-  | `script_demo` (1/2/8 threads) | `e1f5c33055210a41` | not recorded | Day 473 |
+  | `script_demo --frames 120` (1/2/8 threads) | `e1f5c33055210a41` | `e1f5c33055210a41` (recorded 2026-11-19, below) | `e1f5c33055210a41` (Day 473) |
 
 - **JIT on Apple silicon:** the vendored LuaJIT toggles its machine-code pages between writable and executable with `mprotect` unless it
   is built with `LUAJIT_ENABLE_OSX_HRT`, which uses `MAP_JIT` and `pthread_jit_write_protect_np` (a per-thread switch). A signed app with the
@@ -99,4 +104,4 @@ Done, with the deviations and gaps below (all in `KNOWN-ISSUES.md`, entry "Phase
 - Declined: none.
 
 **Done condition:** met for x86-64 except where noted: the Mac builds LuaJIT and passes the script tests; `script_sample`'s hash equals
-Linux's; `script_demo`'s and the PC's comparisons are open (`KNOWN-ISSUES.md`).
+Linux's; `script_demo --frames 120` equals Linux's and the PC's (recorded 2026-11-19).
