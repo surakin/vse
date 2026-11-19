@@ -1,5 +1,6 @@
 #include "script/component_bindings.h"
 
+#include "algorithm.h"
 #include "bytes/byte_reader.h"
 #include "bytes/byte_writer.h"
 #include "cstr/mem_ops.h"
@@ -1091,47 +1092,6 @@ bool ResolveSet(const PartitionContext& context, const Value& names, ecs::Compon
     return true;
 }
 
-void SortIds(Vector<u64>* ids)
-{
-    // A heap sort: no recursion and no allocation; the order is by stable id.
-    u64* a = ids->Data();
-    const usize n = ids->Size();
-    auto sift = [&](usize root, usize end)
-    {
-        while (true)
-        {
-            usize child = root * 2 + 1;
-            if (child >= end)
-            {
-                return;
-            }
-            if (child + 1 < end && a[child] < a[child + 1])
-            {
-                ++child;
-            }
-            if (!(a[root] < a[child]))
-            {
-                return;
-            }
-            const u64 t = a[root];
-            a[root] = a[child];
-            a[child] = t;
-            root = child;
-        }
-    };
-    for (usize i = n / 2; i > 0; --i)
-    {
-        sift(i - 1, n);
-    }
-    for (usize end = n; end > 1; --end)
-    {
-        const u64 t = a[0];
-        a[0] = a[end - 1];
-        a[end - 1] = t;
-        sift(0, end - 1);
-    }
-}
-
 // The entities that have every component of `set`, with a stable id above `after`, in stable id order, at most `limit`;
 // `partition_only` keeps those the calling partition owns.
 Value RunQuery(const PartitionContext& context, const ecs::ComponentSet& set, u64 after, usize limit,
@@ -1159,7 +1119,9 @@ Value RunQuery(const PartitionContext& context, const ecs::ComponentSet& set, u6
             }
         }
     }
-    SortIds(&ids);
+    // Only the first `limit` (the page) are returned: select and sort those (container audit Day 9: every match was
+    // sorted for every page). The ids are unique, so the page is the one a full sort gives.
+    PartialSort(Span<u64>(ids.Data(), ids.Size()), limit, [](u64 x, u64 y) { return x < y; });
     Value out = Value::MakeArray();
     const usize count = ids.Size() < limit ? ids.Size() : limit;
     for (usize i = 0; i < count; ++i)

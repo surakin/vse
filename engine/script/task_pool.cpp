@@ -347,8 +347,9 @@ struct TaskPool::Impl
 
     TaskPoolConfig config;
     UniquePtr<ScriptWorld> world;
-    Vector<Vector<u64>> known;   // per state: the keys defined in it
-    Vector<Vector<u64>> checks;  // per state: a second, independent hash of each defined source, in step with `known`
+    // Per state: the keys defined in it, each with a second, independent hash of its source (container audit Day 9: two
+    // vectors in step, scanned on every task run).
+    Vector<HashMap<u64, u64, HeapAllocator>> known;
     Vector<u64> resets_seen;
     Vector<String<HeapAllocator>> state_errors;  // why a state could not be checked out, per state
 
@@ -370,8 +371,7 @@ struct TaskPool::Impl
         world->AddScript("task_host", CopyShared(ByteSpan(reinterpret_cast<const byte*>(text.Data()), text.Length())));
         for (u32 s = 0; s < config.states; ++s)
         {
-            known.Push(Vector<u64>());
-            checks.Push(Vector<u64>());
+            known.Push(HashMap<u64, u64, HeapAllocator>(HeapAllocator::Default()));
             resets_seen.Push(0);
             state_errors.Push(String<HeapAllocator>(HeapAllocator::Default()));
         }
@@ -386,25 +386,21 @@ struct TaskPool::Impl
         {
             resets_seen[state] = resets;
             known[state].Clear();
-            checks[state].Clear();
         }
-        Vector<u64>& keys = known[state];
-        Vector<u64>& sums = checks[state];
+        HashMap<u64, u64, HeapAllocator>& keys = known[state];
         const u64 check = HashSource(r.mode, r.source.View(), 0x9E3779B97F4A7C15ull) |
                           1;  // a second, independent 52-bit hash
         bool defined = false;
-        for (usize i = 0; i < keys.Size(); ++i)
+        if (const u64* sum = keys.Find(key))
         {
-            if (keys[i] == key)
+            if (*sum != check)
+            {  // two sources share a key: forget everything rather than run the wrong function
+                CallOutput forget;
+                lease->Call("__task_forget", Span<const Value>(), config.budget, &forget);
+                keys.Clear();
+            }
+            else
             {
-                if (sums[i] != check)
-                {  // two sources share a key: forget everything rather than run the wrong function
-                    CallOutput forget;
-                    lease->Call("__task_forget", Span<const Value>(), config.budget, &forget);
-                    keys.Clear();
-                    sums.Clear();
-                    break;
-                }
                 defined = true;
             }
         }
@@ -415,7 +411,6 @@ struct TaskPool::Impl
                 CallOutput forget;
                 lease->Call("__task_forget", Span<const Value>(), config.budget, &forget);
                 keys.Clear();
-                sums.Clear();
             }
             Value announce[1] = {Value::FromInt(static_cast<i64>(key))};
             CallOutput expect;
@@ -438,8 +433,7 @@ struct TaskPool::Impl
                 item->error = ShortError(loaded.message.View());
                 return;
             }
-            keys.Push(key);
-            sums.Push(check);
+            keys.Insert(key, check);
         }
         Value data;
         if (r.mode == TaskMode::Map)

@@ -66,6 +66,10 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - The joint pairs are a set (the "sorted keys" comment fixed); the solver and pair tracker swap instead of copying; the hash grid's inner search is gone.
   - The query, wake and destroy indexes are deferred with reasons (`KNOWN-ISSUES.md`).
   - Physics determinism, hash and joint tests and the spatial suite pass; the rest waits for Day 13. Review: no findings.
+- **Day 9 done (2026-11-19, Linux):**
+  - `Value` maps are indexed past 8 keys (8,000 keys: 4,984 to 123 ns per op); the command overlay, suspended coroutines and task keys are `HashMap`s.
+  - Query pages are selected, not fully sorted; the debugger queue is a `Deque`.
+  - The script suites pass (240 + 5 + 35 + 19 cases); the rest waits for Day 13. Review: no findings.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

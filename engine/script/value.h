@@ -3,7 +3,9 @@
 // state (docs/superpowers/specs/2026-11-18-scripting-design.md, section 4).
 #pragma once
 
+#include "containers/hash_map.h"
 #include "containers/span.h"
+#include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "ecs/entity.h"
 #include "mem/heap_allocator.h"
@@ -267,6 +269,12 @@ private:
     Vector<u8> bytes_;
     Vector<Value> items_;
     Vector<String<HeapAllocator>> keys_;
+    // A map of more than kIndexedKeys keys also has an index from key to position (container audit Day 9: `Set` and
+    // `Find` scanned every key). The views point into `keys_`'s strings, whose bytes do not move when the vector grows
+    // or the value moves; it is built and kept only by non-const calls, so a shared const value is never written.
+    static constexpr usize kIndexedKeys = 8;
+    UniquePtr<HashMap<StringView, u32, HeapAllocator>> key_index_;
+    void IndexKeys();
 };
 
 }  // namespace engine_placeholder::script

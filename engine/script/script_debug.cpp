@@ -1,5 +1,6 @@
 #include "script/script_debug.h"
 
+#include "containers/deque.h"
 #include "cstr/mem_ops.h"
 #include "sync/mutex.h"
 
@@ -119,7 +120,7 @@ public:
     bool stopped = false;
     bool resume = false;
     u32 stop_depth = 0;
-    Vector<Value> requests;
+    Deque<Value> requests;  // first in, first out (container audit Day 9: a Vector drained with Remove(0))
     // Used only by the partition's own thread.
     u32 seen_version = 0xFFFFFFFFu;
     Vector<ScriptDebugger::Breakpoint> local;
@@ -304,8 +305,7 @@ void ScriptDebugger::StopHere(PartitionDebug* p, const SourceLocation& where, u3
         changed_.Wait(lock, [p] { return p->resume || !p->requests.Empty(); });
         if (!p->requests.Empty())
         {
-            Value request = Move(p->requests[0]);
-            p->requests.Remove(0);
+            Value request = p->requests.PopFront();
             lock.Unlock();
             Serve(p, request, inspector);
             lock.Lock();
@@ -394,7 +394,7 @@ void ScriptDebugger::Request(const Value& command)
         if (p != nullptr)
         {
             found = true;
-            p->requests.Push(Value(command));
+            p->requests.PushBack(Value(command));
         }
     }
     if (found)

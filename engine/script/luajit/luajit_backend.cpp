@@ -1029,12 +1029,6 @@ int Trampoline(lua_State* L)
 
 // ------------------------------------------------------------------ protected operations
 
-struct Suspended
-{
-    u64 id = 0;
-    int ref = LUA_NOREF;
-};
-
 enum class Op : int
 {
     OpenLibs,
@@ -2124,33 +2118,27 @@ protected:
         {
             return refused;
         }
-        for (usize i = 0; i < suspended_.Size(); ++i)
+        const int* ref = coroutine != 0 ? suspended_.Find(coroutine) : nullptr;
+        if (ref == nullptr)
         {
-            if (coroutine != 0 && suspended_[i].id == coroutine)
-            {
-                Request r;
-                r.op = Op::Call;
-                r.resume = true;
-                r.ref = suspended_[i].ref;
-                r.args = values;
-                r.out = out;
-                suspended_.Remove(i);
-                return Finish(&r, coroutine, out, budget);
-            }
+            return Outcome(Status::Invalid, "that call is not suspended in this state");
         }
-        return Outcome(Status::Invalid, "that call is not suspended in this state");
+        Request r;
+        r.op = Op::Call;
+        r.resume = true;
+        r.ref = *ref;
+        r.args = values;
+        r.out = out;
+        suspended_.Remove(coroutine);
+        return Finish(&r, coroutine, out, budget);
     }
 
     void DoAbandon(u64 coroutine) override
     {
-        for (usize i = 0; i < suspended_.Size(); ++i)
+        if (const int* ref = suspended_.Find(coroutine))
         {
-            if (suspended_[i].id == coroutine)
-            {
-                Drop(suspended_[i].ref);
-                suspended_.Remove(i);
-                return;
-            }
+            Drop(*ref);
+            suspended_.Remove(coroutine);
         }
     }
 
@@ -2395,10 +2383,7 @@ private:
         accounting_.cap = state_cap_;
         if (o.IsOk() && r->suspended)
         {
-            Suspended s;
-            s.id = id;
-            s.ref = r->new_ref;
-            suspended_.Push(s);
+            suspended_.Insert(id, r->new_ref);
             out->coroutine = id;
             out->wait.kind = r->wait_kind == kWaitSeconds  ? WaitRequest::Kind::Seconds
                              : r->wait_kind == kWaitFrames ? WaitRequest::Kind::Frames
@@ -2423,7 +2408,9 @@ private:
     Accounting accounting_;
     lua_State* L_ = nullptr;
     Vector<UniquePtr<NativeEntry>> natives_;
-    Vector<Suspended> suspended_;
+    // The suspended coroutines: id -> the registry ref of their thread (container audit Day 9: a scan and an
+    // order-keeping removal per resume; nothing walks them in order).
+    HashMap<u64, int, HeapAllocator> suspended_{HeapAllocator::Default()};
     NativeScratch scratch_;
     u64 next_id_ = 1;
 };

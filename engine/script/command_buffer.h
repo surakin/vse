@@ -4,6 +4,8 @@
 #pragma once
 
 #include "containers/span.h"
+#include "containers/hash_map.h"
+#include "int128.h"
 #include "containers/vector.h"
 #include "ecs/entity.h"
 #include "lang/traits.h"
@@ -175,13 +177,10 @@ public:
     usize Size() const { return entries_.Size(); }
 
 private:
-    struct Entry
-    {
-        ecs::Entity entity;
-        u32 field;
-        Value value;
-    };
-    Vector<Entry> entries_;
+    // (entity, field) as one exact key: the entity's 64 bits above the field's 32 (container audit Day 9: a scan per
+    // access). Nothing walks it, so its order does not matter.
+    static u128 KeyOf(ecs::Entity entity, u32 field) { return (u128(entity.ToU64()) << 32) | u128(field); }
+    HashMap<u128, Value, HeapAllocator> entries_{HeapAllocator::Default()};
 };
 
 }  // namespace engine_placeholder::script

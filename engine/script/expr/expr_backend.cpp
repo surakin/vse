@@ -1,5 +1,6 @@
 #include "script/expr/expr_backend.h"
 
+#include "containers/hash_map.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -365,7 +366,8 @@ private:
     Vector<const Function*> names_;          // the latest definition of each name
     Vector<Native> natives_;
     Vector<Global> globals_;
-    Vector<UniquePtr<Coroutine>> coroutines_;
+    HashMap<u64, UniquePtr<Coroutine>, HeapAllocator> coroutines_{
+        HeapAllocator::Default()};  // by id (container audit Day 9)
     u64 next_coroutine_ = 1;
     Text last_error_;
     bool closed_ = false;
@@ -1193,17 +1195,16 @@ usize ExprState::DoMemoryUsed()
                  functions_[i]->consts.Size() * sizeof(Value);
     }
     bytes += globals_.Size() * sizeof(Global);
-    for (usize i = 0; i < coroutines_.Size(); ++i)
+    for (const auto& [id, co] : coroutines_)
     {
-        bytes += sizeof(Coroutine) + coroutines_[i]->stack.Size() * sizeof(Value) +
-                 coroutines_[i]->frames.Size() * sizeof(Frame);
+        bytes += sizeof(Coroutine) + co->stack.Size() * sizeof(Value) + co->frames.Size() * sizeof(Frame);
     }
     return bytes;
 }
 
 void ExprState::DoClose()
 {
-    coroutines_ = Vector<UniquePtr<Coroutine>>();
+    coroutines_.Clear();
     globals_ = Vector<Global>();
     natives_ = Vector<Native>();
     names_ = Vector<const Function*>();
@@ -1213,14 +1214,7 @@ void ExprState::DoClose()
 
 void ExprState::DoAbandon(u64 coroutine)
 {
-    for (usize i = 0; i < coroutines_.Size(); ++i)
-    {
-        if (coroutines_[i]->id == coroutine)
-        {
-            coroutines_.Remove(i);
-            return;
-        }
-    }
+    coroutines_.Remove(coroutine);
 }
 
 Outcome ExprState::StartAndRun(const Function* fn, Span<const Value> args, const Budget& budget, CallOutput* out)
@@ -1254,7 +1248,8 @@ Outcome ExprState::FinishRun(RunResult result, UniquePtr<Coroutine> co, CallOutp
     if (result == RunResult::Yielded)
     {
         out->coroutine = co->id;
-        coroutines_.Push(Move(co));
+        const u64 id = co->id;
+        coroutines_.Insert(id, Move(co));
     }
     return Outcome();
 }
@@ -1306,19 +1301,17 @@ Outcome ExprState::DoResume(u64 coroutine, Span<const Value> values, const Budge
     {
         return Outcome(Status::Unsupported, "script_expr does not count memory");
     }
-    for (usize i = 0; i < coroutines_.Size(); ++i)
+    UniquePtr<Coroutine>* parked = coroutine != 0 ? coroutines_.Find(coroutine) : nullptr;
+    if (parked == nullptr)
     {
-        if (coroutine != 0 && coroutines_[i]->id == coroutine)
-        {
-            UniquePtr<Coroutine> co = Move(coroutines_[i]);
-            coroutines_.Remove(i);
-            co->stack.Push(values.Size() > 0 ? Value(values[0]) : Value());
-            Outcome failure;
-            const RunResult r = Run(co.Get(), budget, &out->results, &out->wait, &failure);
-            return FinishRun(r, Move(co), out, Move(failure));
-        }
+        return Outcome(Status::Invalid, "that call is not suspended in this state");
     }
-    return Outcome(Status::Invalid, "that call is not suspended in this state");
+    UniquePtr<Coroutine> co = Move(*parked);
+    coroutines_.Remove(coroutine);
+    co->stack.Push(values.Size() > 0 ? Value(values[0]) : Value());
+    Outcome failure;
+    const RunResult r = Run(co.Get(), budget, &out->results, &out->wait, &failure);
+    return FinishRun(r, Move(co), out, Move(failure));
 }
 
 // ---- the machine

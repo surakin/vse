@@ -105,27 +105,12 @@ void CommandBuffer::SortIfNeeded()
 
 void Overlay::Put(ecs::Entity entity, u32 field, Value value)
 {
-    for (usize i = 0; i < entries_.Size(); ++i)
-    {
-        if (entries_[i].entity == entity && entries_[i].field == field)
-        {
-            entries_[i].value = Move(value);
-            return;
-        }
-    }
-    entries_.Push(Entry{entity, field, Move(value)});
+    entries_.Insert(KeyOf(entity, field), Move(value));
 }
 
 const Value* Overlay::Find(ecs::Entity entity, u32 field) const
 {
-    for (usize i = 0; i < entries_.Size(); ++i)
-    {
-        if (entries_[i].entity == entity && entries_[i].field == field)
-        {
-            return &entries_[i].value;
-        }
-    }
-    return nullptr;
+    return entries_.Find(KeyOf(entity, field));
 }
 
 }  // namespace engine_placeholder::script

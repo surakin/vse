@@ -74,7 +74,7 @@ Value::Value(const Value& other) : text_(HeapAllocator::Default())
 Value::Value(Value&& other) noexcept
     : kind_(other.kind_), depth_(other.depth_), bool_(other.bool_), int_(other.int_), float_(other.float_),
       entity_(other.entity_), text_(Move(other.text_)), bytes_(Move(other.bytes_)), items_(Move(other.items_)),
-      keys_(Move(other.keys_))
+      keys_(Move(other.keys_)), key_index_(Move(other.key_index_))
 {
     for (u32 i = 0; i < 4; ++i)
     {
@@ -111,6 +111,7 @@ Value& Value::operator=(Value&& other) noexcept
         bytes_ = Move(other.bytes_);
         items_ = Move(other.items_);
         keys_ = Move(other.keys_);
+        key_index_ = Move(other.key_index_);
         other.Clear();
     }
     return *this;
@@ -134,6 +135,7 @@ void Value::Clear()
     bytes_ = Vector<u8>();
     items_ = Vector<Value>();
     keys_ = Vector<String<HeapAllocator>>();
+    key_index_.Reset();
 }
 
 void Value::CopyFrom(const Value& other)
@@ -149,11 +151,7 @@ void Value::CopyFrom(const Value& other)
         lanes_[i] = other.lanes_[i];
     }
     text_ = String<HeapAllocator>(HeapAllocator::Default(), other.text_.View());
-    bytes_.Reserve(other.bytes_.Size());
-    for (usize i = 0; i < other.bytes_.Size(); ++i)
-    {
-        bytes_.Push(other.bytes_[i]);
-    }
+    bytes_.Append(other.bytes_.Data(), other.bytes_.Size());
     items_.Reserve(other.items_.Size());
     for (usize i = 0; i < other.items_.Size(); ++i)
     {
@@ -163,6 +161,21 @@ void Value::CopyFrom(const Value& other)
     for (usize i = 0; i < other.keys_.Size(); ++i)
     {
         keys_.Push(String<HeapAllocator>(HeapAllocator::Default(), other.keys_[i].View()));
+    }
+    key_index_.Reset();
+    if (keys_.Size() > kIndexedKeys)
+    {
+        IndexKeys();
+    }
+}
+
+void Value::IndexKeys()
+{
+    key_index_ = MakeUnique<HashMap<StringView, u32, HeapAllocator>>(HeapAllocator::Default());
+    key_index_->Reserve(keys_.Size());
+    for (usize i = 0; i < keys_.Size(); ++i)
+    {
+        key_index_->Insert(keys_[i].View(), static_cast<u32>(i));
     }
 }
 
@@ -369,6 +382,11 @@ StringView Value::KeyAt(usize index) const
 const Value* Value::Find(StringView key) const
 {
     ENGINE_ASSERT(kind_ == ValueKind::Map, "script::Value::Find: the value is not a map");
+    if (key_index_.Get() != nullptr)
+    {
+        const u32* at = key_index_->Find(key);
+        return at != nullptr ? &items_[*at] : nullptr;
+    }
     for (usize i = 0; i < keys_.Size(); ++i)
     {
         if (keys_[i].View() == key)
@@ -401,17 +419,33 @@ bool Value::Set(StringView key, Value&& item)
     {
         return false;
     }
-    for (usize i = 0; i < keys_.Size(); ++i)
+    usize existing = keys_.Size();
+    if (key_index_.Get() != nullptr)
     {
-        if (keys_[i].View() == key)
+        if (const u32* at = key_index_->Find(key))
         {
-            if (item.depth_ + 1 > depth_)
-            {
-                depth_ = static_cast<u8>(item.depth_ + 1);
-            }
-            items_[i] = Move(item);
-            return true;
+            existing = *at;
         }
+    }
+    else
+    {
+        for (usize i = 0; i < keys_.Size(); ++i)
+        {
+            if (keys_[i].View() == key)
+            {
+                existing = i;
+                break;
+            }
+        }
+    }
+    if (existing < keys_.Size())
+    {
+        if (item.depth_ + 1 > depth_)
+        {
+            depth_ = static_cast<u8>(item.depth_ + 1);
+        }
+        items_[existing] = Move(item);
+        return true;
     }
     if (items_.Size() >= kMaxContainerItems)
     {
@@ -423,6 +457,14 @@ bool Value::Set(StringView key, Value&& item)
     }
     keys_.Push(String<HeapAllocator>(HeapAllocator::Default(), key));
     items_.Push(Move(item));
+    if (key_index_.Get() != nullptr)
+    {
+        key_index_->Insert(keys_[keys_.Size() - 1].View(), static_cast<u32>(keys_.Size() - 1));
+    }
+    else if (keys_.Size() > kIndexedKeys)
+    {
+        IndexKeys();
+    }
     return true;
 }
 
