@@ -496,6 +496,10 @@ Status Font::SetPixelSize(u32 pixels)
     {
         return MakeStatus(Error::InvalidArgument, "the pixel size is 0 or above the sanity limit");
     }
+    if (pixels == impl_->pixel_size)
+    {
+        return Status{};  // already this size: the face and the metrics are current (container audit Day 6)
+    }
     const FT_Error error = FT_Set_Pixel_Sizes(impl_->face, 0, pixels);
     if (error != 0)
     {

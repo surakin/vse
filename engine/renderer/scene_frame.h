@@ -5,6 +5,7 @@
 //! the renderer demo on Phase 24 Day 359 so the C API's surfaces draw worlds with it; the demo and the tests use it
 //! too.
 
+#include "containers/hash_map.h"
 #include "containers/unique_ptr.h"
 #include "renderer/frame_data.h"
 #include "renderer/gbuffer.h"
@@ -220,6 +221,8 @@ public:
     bool LastGBufferOk() const { return gbuffer_ok_; }
 
 private:
+    const text::TextLayout* LabelLayout(StringView text, const text::TextStyle& style, u64 frame);
+    void DropUnusedLabels(u64 frame);
     static bool Build(const FrameContext& context, void* user);
 
     rhi::Device* device_ = nullptr;
@@ -249,7 +252,22 @@ private:
     };
     Vector<Label> labels_;
     Vector<char> label_text_;
-    text::TextLayout label_layout_;
+    text::TextLayout label_layout_;  // the layout of a label the cache cannot hold (a key collision)
+    // The layouts of the labels drawn last frame, by (pixel size, text): a host adds its labels again every frame, and
+    // most are unchanged (container audit Day 6: every label was laid out every frame). Entries a frame does not use
+    // are dropped after it, so the cache holds at most one frame's labels.
+    struct CachedLabel
+    {
+        u64 key = 0;
+        u32 pixel_size = 0;
+        Vector<char> text;
+        text::TextLayout layout;
+        u32 missing = 0;  // glyphs the font lacks
+        u64 used_frame = 0;
+    };
+    Vector<CachedLabel> label_cache_;
+    HashMap<u64, u32, HeapAllocator> label_cache_index_{HeapAllocator::Default()};
+    u64 label_frame_ = 0;
     u64 label_missing_ = 0;
     DeviceResources* resources_ = nullptr;
     bool overlay_on_ = false;

@@ -383,8 +383,9 @@ bool TextRenderer::Record(rhi::CommandList* list, u32 target_width, u32 target_h
     // Write the quads of every page one after another into this frame's slot of the vertex buffer.
     const u32 slot = static_cast<u32>(device_->FrameNumber() % rhi::UniformRing::kSlots);
     const u64 slot_offset = slot_bytes_ * slot;
-    u64 written = 0;  // vertices
-    Vector<u32> first;
+    u64 written = 0;                      // vertices
+    Vector<u32>& first = first_scratch_;  // kept between frames: no allocation once grown (container audit Day 6)
+    first.Clear();
     first.Reserve(batches_.Size());
     for (usize page = 0; page < batches_.Size(); ++page)
     {

@@ -1,5 +1,6 @@
 #include "rhi/vulkan/vk_memory.h"
 
+#include "algorithm.h"
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
 #include "lang/utility.h"
@@ -166,11 +167,9 @@ bool FreeList::Free(u64 offset, u64 size)
         return false;
     }
     // Find the first range starting at or after the end of the freed one.
-    usize i = 0;
-    while (i < ranges_.Size() && ranges_[i].offset < offset)
-    {
-        ++i;
-    }
+    // The ranges are sorted by offset: a binary search (container audit Day 6: a linear scan).
+    const usize i = LowerBound(Span<const Range>(ranges_.Data(), ranges_.Size()), offset,
+                               [](const Range& r, u64 at) { return r.offset < at; });
     const bool touches_next = i < ranges_.Size() && ranges_[i].offset == offset + size;
     const bool overlaps_next = i < ranges_.Size() && ranges_[i].offset < offset + size;
     const bool touches_prev = i > 0 && ranges_[i - 1].offset + ranges_[i - 1].size == offset;

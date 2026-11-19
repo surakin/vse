@@ -1,5 +1,7 @@
 #include "renderer/scene_frame.h"
 
+#include "containers/hash.h"
+
 #include "lang/scalar.h"
 #include "cstr/cstr.h"
 
@@ -28,6 +30,8 @@ void SceneFrame::Destroy()
     overlay_on_ = false;
     labels_.Clear();
     label_text_.Clear();
+    label_cache_.Clear();
+    label_cache_index_.Clear();
     debug_view_.Reset();
     tonemap_.Reset();
     lighting_.Reset();
@@ -145,6 +149,67 @@ bool SceneFrame::OpenLabelFont(ByteSpan data)
     return true;
 }
 
+const text::TextLayout* SceneFrame::LabelLayout(StringView text, const text::TextStyle& style, u64 frame)
+{
+    const u64 key = Fnv1a64Builder().AddWord(style.pixel_size).AddText(text).Value();
+    const u32* at = label_cache_index_.Find(key);
+    if (at != nullptr)
+    {
+        CachedLabel& c = label_cache_[*at];
+        if (c.pixel_size == style.pixel_size && StringView(c.text.Data(), c.text.Size()) == text)
+        {
+            c.used_frame = frame;
+            label_missing_ += c.missing;
+            return &c.layout;
+        }
+        // Another label has this key (a collision, rare): lay this one out without caching it.
+        if (!text::Layout(text, style, text::LayoutOptions{}, &label_layout_).Ok())
+        {
+            return nullptr;
+        }
+        for (usize g = 0; g < label_layout_.glyphs.Size(); ++g)
+        {
+            label_missing_ += label_layout_.glyphs[g].glyph == 0 ? 1u : 0u;
+        }
+        return &label_layout_;
+    }
+    CachedLabel c;
+    if (!text::Layout(text, style, text::LayoutOptions{}, &c.layout).Ok())
+    {
+        return nullptr;
+    }
+    c.key = key;
+    c.pixel_size = style.pixel_size;
+    c.text.Append(text.Data(), text.Length());
+    for (usize g = 0; g < c.layout.glyphs.Size(); ++g)
+    {
+        c.missing += c.layout.glyphs[g].glyph == 0 ? 1u : 0u;
+    }
+    c.used_frame = frame;
+    label_missing_ += c.missing;
+    label_cache_index_.Insert(key, static_cast<u32>(label_cache_.Size()));
+    label_cache_.Push(Move(c));
+    return &label_cache_[label_cache_.Size() - 1].layout;
+}
+
+void SceneFrame::DropUnusedLabels(u64 frame)
+{
+    for (usize i = label_cache_.Size(); i > 0; --i)
+    {
+        if (label_cache_[i - 1].used_frame == frame)
+        {
+            continue;
+        }
+        label_cache_index_.Remove(label_cache_[i - 1].key);
+        const usize last = label_cache_.Size() - 1;
+        if (i - 1 != last)
+        {
+            *label_cache_index_.Find(label_cache_[last].key) = static_cast<u32>(i - 1);
+        }
+        label_cache_.SwapRemove(i - 1);
+    }
+}
+
 void SceneFrame::BeginLabels()
 {
     labels_.Clear();
@@ -165,10 +230,7 @@ bool SceneFrame::AddLabel(StringView utf8, f32 x, f32 y, u32 pixel_size, u32 col
     label.anchor = anchor;
     label.text_begin = static_cast<u32>(label_text_.Size());
     label.text_length = static_cast<u32>(utf8.Length());
-    for (usize i = 0; i < utf8.Length(); ++i)
-    {
-        label_text_.Push(utf8[i]);
-    }
+    label_text_.Append(utf8.Data(), utf8.Length());
     labels_.Push(label);
     return true;
 }
@@ -181,15 +243,9 @@ bool SceneFrame::SetOverlay(bool on, StringView greeting, StringView status)
     }
     overlay_on_ = on;
     greeting_.Clear();
-    for (usize i = 0; i < greeting.Length(); ++i)
-    {
-        greeting_.Push(greeting[i]);
-    }
+    greeting_.Append(greeting.Data(), greeting.Length());
     status_.Clear();
-    for (usize i = 0; i < status.Length(); ++i)
-    {
-        status_.Push(status[i]);
-    }
+    status_.Append(status.Data(), status.Length());
     return true;
 }
 
@@ -277,6 +333,7 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
             self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{},
                              static_cast<f32>(px(16)), static_cast<f32>(px(52)));
         }
+        const u64 frame = ++self->label_frame_;
         for (usize i = 0; i < self->labels_.Size(); ++i)
         {
             const Label& label = self->labels_[i];
@@ -284,22 +341,16 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
             style.pixel_size = label.pixel_size;
             style.color = label.color;
             const StringView text(self->label_text_.Data() + label.text_begin, label.text_length);
-            if (!text::Layout(text, style, text::LayoutOptions{}, &self->label_layout_).Ok())
+            const text::TextLayout* layout = self->LabelLayout(text, style, frame);
+            if (layout == nullptr)
             {
                 continue;
             }
-            for (usize g = 0; g < self->label_layout_.glyphs.Size(); ++g)
-            {
-                if (self->label_layout_.glyphs[g].glyph == 0)
-                {
-                    ++self->label_missing_;
-                }
-            }
-            const f32 width = self->label_layout_.width;
+            const f32 width = layout->width;
             const f32 left = label.anchor == 1 ? label.x : label.anchor == 2 ? label.x - width : label.x - width * 0.5f;
-            self->text_.Add(self->label_layout_, style, Floor(left + 0.5f),
-                            Floor(label.y - self->label_layout_.height * 0.5f + 0.5f));
+            self->text_.Add(*layout, style, Floor(left + 0.5f), Floor(label.y - layout->height * 0.5f + 0.5f));
         }
+        self->DropUnusedLabels(frame);
         self->text_.AddToGraph(context.graph, context.target, context.format, context.width, context.height);
     }
     if (self->compose_.after_scene != nullptr)

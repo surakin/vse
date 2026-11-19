@@ -1,5 +1,7 @@
 #include "renderer/frame_data.h"
 
+#include "algorithm.h"
+
 #include "lang/scalar.h"
 
 #include "log/assert.h"
@@ -267,17 +269,6 @@ u32 FrameResources::WriteJoints(const f32* matrices, u32 count)
     return offset;
 }
 
-int FrameResources::ComparePoints(const void* a, const void* b)
-{
-    const PointEntry* x = static_cast<const PointEntry*>(a);
-    const PointEntry* y = static_cast<const PointEntry*>(b);
-    if (x->distance_squared != y->distance_squared)
-    {
-        return x->distance_squared < y->distance_squared ? -1 : 1;
-    }
-    return x->slot < y->slot ? -1 : (x->slot > y->slot ? 1 : 0);
-}
-
 LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameData& view)
 {
     ENGINE_ASSERT(begun_, "FrameResources::WriteLights: BeginFrame was not called");
@@ -345,7 +336,15 @@ LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameDa
     }
     if (point_scratch_.Size() > 1)
     {
-        SortRaw(point_scratch_.Data(), point_scratch_.Size(), sizeof(PointEntry), &FrameResources::ComparePoints);
+        // Only the nearest that fit are written: select and sort those (container audit Day 6: every visible light was
+        // sorted). The order is total (distance, then slot), so the lights and their order are those of a full sort.
+        const usize room = n < max_lights_ ? max_lights_ - n : 0;
+        PartialSort(Span<PointEntry>(point_scratch_.Data(), point_scratch_.Size()), room,
+                    [](const PointEntry& x, const PointEntry& y)
+                    {
+                        return x.distance_squared < y.distance_squared ||
+                               (x.distance_squared == y.distance_squared && x.slot < y.slot);
+                    });
     }
     for (usize i = 0; i < point_scratch_.Size(); ++i)
     {

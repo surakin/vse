@@ -1,5 +1,6 @@
 #pragma once
 
+#include "algorithm.h"
 #include "containers/vector.h"
 #include "types.h"
 #include "ui/geometry.h"
@@ -129,25 +130,21 @@ struct DrawList
         stats = DrawListStats();
     }
 
-    /// Orders the commands by layer, keeping call order inside a layer (a stable insertion sort that allocates nothing;
-    /// a frame has a handful of commands, and an already ordered list costs one pass). The index data stays where it
-    /// is: a command names its own range.
+    /// Orders the commands by layer, keeping call order inside a layer: an already ordered list costs one pass, and
+    /// any other is merge-sorted through `sort_scratch`, which keeps its capacity, so a frame allocates nothing once it
+    /// has grown (container audit Day 6: it was an insertion sort, quadratic when a popup's commands come early). The
+    /// index data stays where it is: a command names its own range.
     ///
     /// - Fails: never.
     void SortLayers()
     {
-        for (usize i = 1; i < commands.Size(); ++i)
-        {
-            const DrawCommand value = commands[i];
-            usize j = i;
-            while (j > 0 && value.layer < commands[j - 1].layer)
-            {
-                commands[j] = commands[j - 1];
-                --j;
-            }
-            commands[j] = value;
-        }
+        StableSort(
+            Span<DrawCommand>(commands.Data(), commands.Size()),
+            [](const DrawCommand& a, const DrawCommand& b) { return a.layer < b.layer; }, sort_scratch);
     }
+
+    /// The merge buffer of `SortLayers`, kept between frames; its contents mean nothing.
+    Vector<DrawCommand> sort_scratch;
 };
 
 }  // namespace engine_placeholder::ui

@@ -199,17 +199,28 @@ template <typename T> void Sort(Span<T> items)
     Sort(items, [](const T& a, const T& b) { return a < b; });
 }
 
-/// Sorts like `Sort`, but elements that compare equal keep their order. Any movable `T` (container audit Day 3; it
-/// was trivially copyable types only): the scratch buffer is a [[Vector]].
+/// Sorts like `Sort`, but elements that compare equal keep their order, using `scratch` as the merge buffer: a caller
+/// that sorts every frame keeps one scratch vector and allocates nothing once it has grown (container audit Day 6).
+/// An already ordered span costs one pass and no merge.
 ///
 /// - Param less: a strict weak ordering.
-/// - Aborts: the scratch buffer cannot be allocated.
-template <typename T, typename Less> void StableSort(Span<T> items, Less less)
+/// - Param scratch: emptied and used as the buffer; its contents afterwards are unspecified.
+/// - Aborts: the scratch buffer cannot grow.
+template <typename T, typename Less, typename A> void StableSort(Span<T> items, Less less, Vector<T, A>& scratch)
 {
     const usize n = items.Size();
+    T* p = items.Data();
+    bool ordered = true;
+    for (usize i = 1; i < n && ordered; ++i)
+    {
+        ordered = !less(p[i], p[i - 1]);
+    }
+    if (ordered)
+    {
+        return;
+    }
     // Bottom-up merge sort with insertion-sorted runs of 8.
     constexpr usize kRun = 8;
-    T* p = items.Data();
     for (usize i = 0; i < n; i += kRun)
     {
         detail_sort::InsertionSort(p + i, (n - i < kRun) ? n - i : kRun, less);
@@ -218,7 +229,7 @@ template <typename T, typename Less> void StableSort(Span<T> items, Less less)
     {
         return;
     }
-    Vector<T> scratch;
+    scratch.Clear();
     scratch.Reserve(n);
     for (usize width = kRun; width < n; width *= 2)
     {
@@ -246,6 +257,18 @@ template <typename T, typename Less> void StableSort(Span<T> items, Less less)
             p[i] = static_cast<T&&>(scratch[i]);
         }
     }
+    scratch.Clear();
+}
+
+/// Sorts like `Sort`, but elements that compare equal keep their order. Any movable `T` (container audit Day 3; it
+/// was trivially copyable types only); the merge buffer is a [[Vector]] made for the call.
+///
+/// - Param less: a strict weak ordering.
+/// - Aborts: the scratch buffer cannot be allocated.
+template <typename T, typename Less> void StableSort(Span<T> items, Less less)
+{
+    Vector<T> scratch;
+    StableSort(items, less, scratch);
 }
 
 /// Sorts a [[Vector]] (or anything with mutable `Data()` and `Size()`) in place, as `Sort` on its span.

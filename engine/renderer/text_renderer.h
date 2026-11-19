@@ -213,7 +213,8 @@ private:
     u32 pass_width_ = 0;
     u32 pass_height_ = 0;
     bool warned_this_frame_ = false;
-    u64 recorded_frame_ = 0;  // frame number + 1 of the last Record that drew
+    u64 recorded_frame_ = 0;     // frame number + 1 of the last Record that drew
+    Vector<u32> first_scratch_;  // Record's per-page first vertex, kept between frames
     ScopedRegistration registration_;
 };
 

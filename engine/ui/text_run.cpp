@@ -14,10 +14,7 @@ bool TextRun::SetText(StringView text)
         return false;
     }
     text_.Clear();
-    for (usize i = 0; i < text.Length(); ++i)
-    {
-        text_.Push(text[i]);
-    }
+    text_.Append(text.Data(), text.Length());
     full_valid_ = false;
     cut_valid_ = false;
     return true;
@@ -118,14 +115,9 @@ const text::TextLayout& TextRun::Fit(f32 limit_px)
         cut = c.byte_end;
     }
     Vector<char> shown;
-    for (u32 i = 0; i < cut; ++i)
-    {
-        shown.Push(text_[i]);
-    }
-    for (usize i = 0; i < 3; ++i)
-    {
-        shown.Push(kEllipsis[i]);
-    }
+    shown.Reserve(cut + 3);
+    shown.Append(text_.Data(), cut);
+    shown.Append(kEllipsis, 3);
     cut_valid_ = text::Layout(StringView(shown.Data(), shown.Size()), style_, options, &cut_).Ok();
     cut_limit_ = limit_px;
     return cut_valid_ ? cut_ : full_;

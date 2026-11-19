@@ -50,6 +50,10 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - The material pipeline cache and the theme cache are hashed; the theme cache replaces entries instead of emptying itself.
   - Variant names are mapped; the overlay filter, callback snapshots and text field edits are cheaper.
   - Tests deferred to Day 12. Review: 1 finding, fixed.
+- **Day 6 done (2026-11-19, Linux):**
+  - The G-buffer and light sorts are typed (the lights by `PartialSort`); the draw list sorts with a kept scratch.
+  - Unchanged scene labels are not laid out again; `SetPixelSize` returns early; the Vulkan free list frees by binary search.
+  - Bind-group caching and some small allocations deferred (`KNOWN-ISSUES.md`). Tests deferred to Day 12. Review: no findings.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

@@ -278,7 +278,6 @@ private:
         f32 distance_squared;
         u32 slot;
     };
-    static int ComparePoints(const void* a, const void* b);
     Vector<LightData> staged_;          // the written lights, in buffer order (the mapped memory is write-only)
     Vector<PointEntry> point_scratch_;  // visible point lights while sorting; keeps its capacity between frames
     u64 light_stride_ = 0;
