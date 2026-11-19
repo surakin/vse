@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "containers/hash.h"
 
 //! The mouse cursor: the standard shapes, a custom image, and the pointer lock state machine the window backends share.
 //!
@@ -97,27 +98,18 @@ inline CursorImageError ValidateCursorImage(const CursorImage& image)
 /// - Returns: a 64-bit FNV-1a hash; equal images give equal hashes.
 inline u64 HashCursorImage(const CursorImage& image)
 {
-    u64 hash = 1469598103934665603ull;
-    auto mix = [&hash](u64 value)
-    {
-        for (int i = 0; i < 8; ++i)
-        {
-            hash ^= (value >> (i * 8)) & 0xFFu;
-            hash *= 1099511628211ull;
-        }
-    };
-    mix(image.width);
-    mix(image.height);
-    mix(static_cast<u64>(static_cast<u32>(image.hotspot_x)));
-    mix(static_cast<u64>(static_cast<u32>(image.hotspot_y)));
-    mix(image.scale);
+    Fnv1a64Builder hash(kFnv1a64LegacyBasis);
+    hash.AddU64Bytes(image.width);
+    hash.AddU64Bytes(image.height);
+    hash.AddU64Bytes(static_cast<u64>(static_cast<u32>(image.hotspot_x)));
+    hash.AddU64Bytes(static_cast<u64>(static_cast<u32>(image.hotspot_y)));
+    hash.AddU64Bytes(image.scale);
     const usize size = static_cast<usize>(image.width) * image.height * 4;
     for (usize i = 0; i < size; ++i)
     {
-        hash ^= image.rgba[i];
-        hash *= 1099511628211ull;
+        hash.AddByte(image.rgba[i]);
     }
-    return hash;
+    return hash.Value();
 }
 
 /// The request and release rules of the pointer lock, shared by the backends and testable without a display.

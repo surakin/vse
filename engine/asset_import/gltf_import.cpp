@@ -1,4 +1,5 @@
 #include "asset_import/gltf_import.h"
+#include "containers/hash.h"
 #include "asset_import/gltf_level.h"
 
 #include "asset_import/gltf_container.h"
@@ -152,12 +153,7 @@ namespace
 
 u64 HashName(StringView name)
 {
-    u64 hash = 1469598103934665603ull;
-    for (usize i = 0; i < name.Length(); ++i)
-    {
-        hash = (hash ^ static_cast<u8>(name[i])) * 1099511628211ull;
-    }
-    return hash;
+    return Fnv1a64Builder(kFnv1a64LegacyBasis).AddText(name).Value();
 }
 
 struct NameKey

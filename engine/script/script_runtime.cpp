@@ -1,4 +1,5 @@
 #include "script/script_runtime.h"
+#include "containers/hash.h"
 
 #include "algorithm.h"
 #include "jobs/parallel_for.h"
@@ -428,17 +429,9 @@ namespace
 
 u64 ErrorHash(StringView what, StringView message)
 {
-    u64 h = 1469598103934665603ull;
-    const StringView parts[2] = {what, message};
-    for (const StringView& part : parts)
-    {
-        for (usize i = 0; i < part.Length(); ++i)
-        {
-            h = (h ^ static_cast<u8>(part.Data()[i])) * 1099511628211ull;
-        }
-        h = (h ^ 0xFFu) * 1099511628211ull;
-    }
-    return h | 1u;  // never 0
+    Fnv1a64Builder h(kFnv1a64LegacyBasis);
+    h.AddText(what).AddByte(0xFFu).AddText(message).AddByte(0xFFu);
+    return h.Value() | 1u;  // never 0
 }
 
 /// "behavior 'x' on entity 12 ('Name'): on_update failed: message" (no trace, no count).
@@ -1670,12 +1663,7 @@ struct Captured
 
 u64 HashStep(u64 hash, u64 word)
 {
-    for (u32 i = 0; i < 8; ++i)
-    {
-        hash ^= (word >> (8 * i)) & 0xff;
-        hash *= 0x100000001B3ull;
-    }
-    return hash;
+    return Fnv1a64Builder(hash).AddU64Bytes(word).Value();
 }
 
 // Builds the map of a `{ name, value }` list; false when the list is not that.
@@ -1794,7 +1782,7 @@ void ScriptRuntime::CapturePersistent(ecs::World* world, const storage::KeyIndex
             }
         }
     }
-    u64 hash = 0xcbf29ce484222325ull;
+    u64 hash = kFnv1a64Basis;
     const ecs::World& view = *world;
     auto write = [&](ecs::Entity entity, const Value& fields) -> bool
     {

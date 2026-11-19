@@ -1,17 +1,12 @@
 #include "storage/store.h"
+#include "containers/hash.h"
 
 namespace engine_placeholder::storage
 {
 
 u64 HashBytes(ByteSpan bytes)
 {
-    u64 h = 14695981039346656037ull;
-    for (usize i = 0; i < bytes.Size(); ++i)
-    {
-        h ^= static_cast<u64>(bytes[i]);
-        h *= 1099511628211ull;
-    }
-    return h;
+    return Fnv1a64(bytes);
 }
 
 EntityRecord EntityRecord::Clone() const

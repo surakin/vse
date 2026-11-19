@@ -1,4 +1,5 @@
 #include "storage/world_storage.h"
+#include "containers/hash_set.h"
 
 #include "algorithm.h"
 #include "containers/array.h"
@@ -699,12 +700,11 @@ Status WorldStorage::PlanChanged(ecs::World& world, KeyIndex& index, const SaveO
         }
     }
 
-    HashMap<EntityKey, u32, HeapAllocator> queued(HeapAllocator::Default());
+    HashSet<EntityKey, HeapAllocator> queued(HeapAllocator::Default());
     const auto queue_remove = [&](EntityKey key)
     {
-        if (session.hash_of_->Find(key) != nullptr && queued.Find(key) == nullptr)
+        if (session.hash_of_->Find(key) != nullptr && queued.Insert(key))
         {
-            queued.Insert(key, 1);
             plan->removes.Push(key);
         }
     };
@@ -908,9 +908,9 @@ struct LoadState
     bool apply = false;
     usize done = 0;
     usize total = 0;
-    Vector<EntityKey> targets;                     // parent keys named by the records (validation)
-    HashMap<EntityKey, u8, HeapAllocator> loaded;  // keys of the records (validation)
-    Vector<ecs::Entity> created;                   // entities made by this load (apply), to undo
+    Vector<EntityKey> targets;                 // parent keys named by the records (validation)
+    HashSet<EntityKey, HeapAllocator> loaded;  // keys of the records (validation)
+    Vector<ecs::Entity> created;               // entities made by this load (apply), to undo
     LoadState(const ComponentRegistry& r, const CodecLimits& l, const LoadOptions& o, ecs::World& w, KeyIndex& i,
               Report& rep)
         : registry(r), limits(l), options(o), world(w), index(i), report(rep), loaded(HeapAllocator::Default())
@@ -1002,7 +1002,7 @@ Status LoadOne(LoadState& st, const EntityRecord& rec)
         {
             return Status::Make(ErrorCode::LimitExceeded, "the world cannot hold this combination of components");
         }
-        st.loaded.Insert(rec.key, 1);
+        st.loaded.Insert(rec.key);
         return Status::Success();
     }
 
@@ -1174,7 +1174,7 @@ Status WorldStorage::Load(ecs::World& world, KeyIndex& index, const LoadOptions&
     {
         for (usize i = 0; i < state.targets.Size(); ++i)
         {
-            const bool in_load = state.loaded.Find(state.targets[i]) != nullptr;
+            const bool in_load = state.loaded.Contains(state.targets[i]);
             const bool in_world = options.mode != LoadMode::Replace && index.Find(state.targets[i]).IsValid();
             if (!in_load && !in_world)
             {

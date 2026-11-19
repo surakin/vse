@@ -3,6 +3,7 @@
 #pragma once
 
 #include "containers/span.h"
+#include "containers/hash.h"
 #include "types.h"
 
 namespace engine_placeholder::audio
@@ -26,9 +27,9 @@ public:
     BlockHasher() : hash_(kOffsetBasis), valid_(true) {}
 
     /// The FNV-1a 64-bit offset basis.
-    static constexpr u64 kOffsetBasis = 14695981039346656037ull;
+    static constexpr u64 kOffsetBasis = kFnv1a64Basis;
     /// The FNV-1a 64-bit prime.
-    static constexpr u64 kPrime = 1099511628211ull;
+    static constexpr u64 kPrime = kFnv1a64Prime;
 
     /// Feeds one sample.
     ///

@@ -1,5 +1,6 @@
 #include "net/udp_transport.h"
 
+#include "containers/hash_set.h"
 #include "containers/array.h"
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
@@ -305,7 +306,7 @@ struct UdpTransport::Impl
     Vector<UdpRetired> retired[2];
     u64 retired_expiry[2] = {0, 0};
     usize retired_count = 0;
-    HashMap<u64, u8, HeapAllocator> retired_keys;
+    HashSet<u64, HeapAllocator> retired_keys;
     HashMap<Address, u32, HeapAllocator> retired_per_group;
     HashMap<Address, u32, HeapAllocator> retired_per_prefix;
     UdpCounters counters;
@@ -453,7 +454,7 @@ struct UdpTransport::Impl
         r.prefix = PrefixOf(c->peer.GetAddress());
         retired[bucket].Push(r);
         ++retired_count;
-        retired_keys.Insert(r.key, 1);
+        retired_keys.Insert(r.key);
         CountUp(retired_per_group, r.group);
         CountUp(retired_per_prefix, r.prefix);
     }
@@ -1268,7 +1269,7 @@ struct UdpTransport::Impl
                                 : 0;
         }
         PurgeRetired();
-        if (retired_keys.Find(HandshakeKey(from, salt)) != nullptr)
+        if (retired_keys.Contains(HandshakeKey(from, salt)))
         {
             ++counters.dropped_stale;  // a replay of a handshake whose connection already ended
             return;

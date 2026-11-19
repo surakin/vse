@@ -1,4 +1,5 @@
 #include "script/script_world.h"
+#include "containers/hash.h"
 
 #include "algorithm.h"
 #include "containers/hash_map.h"
@@ -632,17 +633,9 @@ namespace
 
 u64 ProfileHash(const ProfileEntry& e)
 {
-    u64 h = 1469598103934665603ull;
-    const StringView parts[2] = {e.chunk.View(), e.name.View()};
-    for (const StringView& part : parts)
-    {
-        for (usize i = 0; i < part.Length(); ++i)
-        {
-            h = (h ^ static_cast<u8>(part.Data()[i])) * 1099511628211ull;
-        }
-        h = (h ^ 0xFFu) * 1099511628211ull;
-    }
-    return (h ^ e.line) * 1099511628211ull;
+    Fnv1a64Builder h(kFnv1a64LegacyBasis);
+    h.AddText(e.chunk.View()).AddByte(0xFFu).AddText(e.name.View()).AddByte(0xFFu);
+    return h.AddWord(e.line).Value();
 }
 
 bool SameFunction(const ProfileEntry& a, const ProfileEntry& b)

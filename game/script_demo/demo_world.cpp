@@ -1,5 +1,6 @@
 // The script demo's world (Phase 27 Day 475). See demo_world.h.
 #include "demo_world.h"
+#include "containers/hash.h"
 
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
@@ -51,9 +52,7 @@ ecs::LocalTransform At(f32 x, f32 y, f32 z)
 
 u64 Mix(u64 h, u64 word)
 {
-    h ^= word;
-    h *= 1099511628211ull;
-    return h;
+    return Fnv1a64Builder(h).AddWord(word).Value();
 }
 
 u64 BitsOf(f32 value)

@@ -2,6 +2,7 @@
 
 #include "algorithm.h"
 #include "cstr/cstr.h"
+#include "containers/hash.h"
 #include "containers/hash_map.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -65,7 +66,7 @@ struct Accounting
     DebugSession* debug = nullptr;
     bool profiling = false;
     Vector<ProfileEntry> profile;
-    UniquePtr<HashMap<u64, u32, HeapAllocator>> profile_index;  // made when profiling starts
+    HashMap<u64, u32, HeapAllocator> profile_index{HeapAllocator::Default()};  // ProfileKey -> the first entry with it
     struct ProfileFrame
     {
         u32 entry = 0;
@@ -903,38 +904,61 @@ void DebugLine(lua_State* L, lua_Debug* ar, Accounting* a)
     }
 }
 
+bool IsNamedC(const lua_Debug& ar)
+{
+    return ar.what != nullptr && ar.what[0] == 'C' && ar.name != nullptr;
+}
+
 u64 ProfileKey(const lua_Debug& ar)
 {
-    u64 h = 14695981039346656037ull;
-    const char* src = ar.short_src;
-    for (usize i = 0; src[i] != '\0'; ++i)
+    Fnv1a64Builder h;
+    h.AddCString(ar.short_src).AddWord(static_cast<u64>(static_cast<i64>(ar.linedefined)));
+    if (IsNamedC(ar))
     {
-        h = (h ^ static_cast<u8>(src[i])) * 1099511628211ull;
+        h.AddCString(ar.name);
     }
-    h = (h ^ static_cast<u64>(static_cast<i64>(ar.linedefined))) * 1099511628211ull;
-    if (ar.what != nullptr && ar.what[0] == 'C' && ar.name != nullptr)
+    return h.Value();
+}
+
+// Whether `e` is the entry of the function `ar` describes (the fields ProfileKey hashes): a hash hit is checked, so two
+// functions whose keys collide are not merged.
+bool SameProfiledFunction(const ProfileEntry& e, const lua_Debug& ar)
+{
+    const u32 line = ar.linedefined > 0 ? static_cast<u32>(ar.linedefined) : 0u;
+    if (e.line != line || e.chunk.View() != StringView(ar.short_src, CStrLength(ar.short_src)))
     {
-        for (usize i = 0; ar.name[i] != '\0'; ++i)
-        {
-            h = (h ^ static_cast<u8>(ar.name[i])) * 1099511628211ull;
-        }
+        return false;
     }
-    return h;
+    return !IsNamedC(ar) || e.name.View() == StringView(ar.name, CStrLength(ar.name));
 }
 
 void ProfileCall(lua_State* L, lua_Debug* ar, Accounting* a)
 {
-    if (!a->profiling || a->profile_index.Get() == nullptr || lua_getinfo(L, "nS", ar) == 0)
+    if (!a->profiling || lua_getinfo(L, "nS", ar) == 0)
     {
         return;
     }
     const u64 key = ProfileKey(*ar);
     u32 entry = 0;
-    if (u32* found = a->profile_index->Find(key))
+    const u32* found = a->profile_index.Find(key);
+    bool known = found != nullptr && SameProfiledFunction(a->profile[*found], *ar);
+    if (known)
     {
         entry = *found;
     }
-    else
+    else if (found != nullptr)
+    {
+        // Another function has this key (a collision, rare): find this one by its fields.
+        for (usize i = 0; i < a->profile.Size() && !known; ++i)
+        {
+            if (SameProfiledFunction(a->profile[i], *ar))
+            {
+                entry = static_cast<u32>(i);
+                known = true;
+            }
+        }
+    }
+    if (!known)
     {
         ProfileEntry e;
         e.chunk = MakeText(StringView(ar->short_src, CStrLength(ar->short_src)));
@@ -945,7 +969,10 @@ void ProfileCall(lua_State* L, lua_Debug* ar, Accounting* a)
         e.line = ar->linedefined > 0 ? static_cast<u32>(ar->linedefined) : 0u;
         entry = static_cast<u32>(a->profile.Size());
         a->profile.Push(Move(e));
-        a->profile_index->Insert(key, entry);
+        if (found == nullptr)
+        {
+            a->profile_index.Insert(key, entry);  // the first entry of a key stays its index entry
+        }
     }
     ++a->profile[entry].calls;
     Accounting::ProfileFrame frame;
@@ -2204,7 +2231,7 @@ protected:
         if (on)
         {
             accounting_.profile.Clear();
-            accounting_.profile_index = MakeUnique<HashMap<u64, u32, HeapAllocator>>(HeapAllocator::Default());
+            accounting_.profile_index.Clear();
         }
         accounting_.profile_stack.Clear();
         return Outcome();

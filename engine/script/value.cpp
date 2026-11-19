@@ -1,4 +1,5 @@
 #include "script/value.h"
+#include "containers/hash.h"
 
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
@@ -15,18 +16,8 @@ namespace
 class Hasher
 {
 public:
-    void Byte(u8 b)
-    {
-        h_ ^= b;
-        h_ *= 1099511628211ull;
-    }
-    void U64(u64 v)
-    {
-        for (u32 i = 0; i < 8; ++i)
-        {
-            Byte(static_cast<u8>(v >> (8 * i)));
-        }
-    }
+    void Byte(u8 b) { h_.AddByte(b); }
+    void U64(u64 v) { h_.AddU64Bytes(v); }
     void F32(f32 v)
     {
         u32 bits = 0;
@@ -47,10 +38,10 @@ public:
             Byte(static_cast<u8>(p[i]));
         }
     }
-    u64 Result() const { return h_; }
+    u64 Result() const { return h_.Value(); }
 
 private:
-    u64 h_ = 1469598103934665603ull;
+    Fnv1a64Builder h_{kFnv1a64LegacyBasis};
 };
 
 bool SameBits(f32 a, f32 b)

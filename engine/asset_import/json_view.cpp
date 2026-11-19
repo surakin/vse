@@ -1,4 +1,5 @@
 #include "asset_import/json_view.h"
+#include "containers/hash.h"
 
 #include "algorithm.h"
 #include "cstr/format.h"
@@ -64,12 +65,7 @@ bool HasRepeatedKey(const yyjson_val* object, StringView* repeated)
     while ((key = yyjson_obj_iter_next(&iter)) != nullptr)
     {
         const StringView text = KeyOf(key);
-        u64 hash = 1469598103934665603ull;
-        for (usize i = 0; i < text.Length(); ++i)
-        {
-            hash = (hash ^ static_cast<u8>(text[i])) * 1099511628211ull;
-        }
-        entries.Push(Entry{hash, key});
+        entries.Push(Entry{Fnv1a64Builder(kFnv1a64LegacyBasis).AddText(text).Value(), key});
     }
     Sort(Span<Entry>(entries.Data(), entries.Size()), [](const Entry& a, const Entry& b) { return a.hash < b.hash; });
     for (usize i = 1; i < entries.Size(); ++i)

@@ -134,19 +134,17 @@ private:
         String<HeapAllocator> path;
         ResourceId id;
         ResourceType type;
-        u32 next_by_path = 0;
-        u32 next_by_id = 0;
+        u32 next_by_id = 0;  // the next entry of the same id, or none
     };
 
-    void ClearIndexes();
     void Clear();
-    void RebuildIndexes();
     void IndexEntry(u32 index);
+    void RelinkId(u32 from, u32 to);
     const Entry* FindByNormalized(StringView normalized) const;
 
     Vector<Entry> entries_;
-    HashMap<u64, u32, HeapAllocator> by_path_;
-    HashMap<u64, u32, HeapAllocator> by_id_;
+    HashMap<String<HeapAllocator>, u32, HeapAllocator> by_path_;  // normalized path -> its entry (paths are unique)
+    HashMap<u64, u32, HeapAllocator> by_id_;                      // id -> the first entry of its chain
 };
 
 }  // namespace engine_placeholder::asset

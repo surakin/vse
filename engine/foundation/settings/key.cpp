@@ -1,4 +1,5 @@
 #include "settings/key.h"
+#include "containers/hash.h"
 
 namespace engine_placeholder::settings
 {
@@ -104,12 +105,7 @@ StringView Key::Name() const
 
 usize Key::Hash() const
 {
-    u64 h = 1469598103934665603ull;
-    for (usize i = 0; i < length_; ++i)
-    {
-        h = (h ^ static_cast<u8>(text_[i])) * 1099511628211ull;
-    }
-    return static_cast<usize>(h);
+    return static_cast<usize>(Fnv1a64Builder(kFnv1a64LegacyBasis).AddText(StringView(text_, length_)).Value());
 }
 
 }  // namespace engine_placeholder::settings

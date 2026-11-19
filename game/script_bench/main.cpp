@@ -9,6 +9,7 @@
 //                [--entities N]   the entity count of `tick` (default: 10000, 100000 and 1000000)
 //                [--ticks N]      timed ticks per measurement (default 5)
 #include "containers/vector.h"
+#include "containers/hash.h"
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
 #include "cstr/number.h"
@@ -154,11 +155,12 @@ struct Rig
                 MemCopy(&bits[0], &t.position.x, 4);
                 MemCopy(&bits[1], &t.position.z, 4);
                 u64 h = e.ToU64() * 0x9E3779B97F4A7C15ull;
-                h = (h ^ static_cast<u64>(c.count)) * 0x100000001B3ull;
-                h = (h ^ static_cast<u64>(c.noise)) * 0x100000001B3ull;
-                h = (h ^ bits[0]) * 0x100000001B3ull;
-                h = (h ^ bits[1]) * 0x100000001B3ull;
-                sum += h;
+                sum += Fnv1a64Builder(h)
+                           .AddWord(static_cast<u64>(c.count))
+                           .AddWord(static_cast<u64>(c.noise))
+                           .AddWord(bits[0])
+                           .AddWord(bits[1])
+                           .Value();
             });
         return sum;
     }

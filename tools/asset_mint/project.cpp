@@ -120,16 +120,6 @@ bool IsIdText(StringView text)
     return true;
 }
 
-u64 HashText(StringView text)
-{
-    u64 h = 1469598103934665603ull;
-    for (usize i = 0; i < text.Length(); ++i)
-    {
-        h = (h ^ static_cast<u8>(text[i])) * 1099511628211ull;
-    }
-    return h;
-}
-
 void Put32(ContentHasher* hasher, u32 value)
 {
     byte b[4];
@@ -410,7 +400,7 @@ struct Project::Impl
     TypeRegistry types;
     Vector<UniquePtr<Source>> sources;  // sorted by `rel`
     HashMap<u64, u32, HeapAllocator> by_id;
-    HashMap<u64, u32, HeapAllocator> by_path;  // keyed by a hash of the resource path; compared on a hit
+    HashMap<String<HeapAllocator>, u32, HeapAllocator> by_path;  // resource path -> its source
     usize load_errors = 0;
     bool loaded = false;
     storage::ComponentRegistry components;
@@ -423,8 +413,8 @@ struct Project::Impl
     }
     i64 FindPath(StringView vpath) const
     {
-        const u32* found = by_path.Find(HashText(vpath));
-        if (found == nullptr || sources[*found]->vpath.View() != vpath)
+        const u32* found = by_path.Find(vpath);
+        if (found == nullptr)
         {
             return -1;
         }
@@ -677,9 +667,8 @@ Status Project::Load(const io::Path& project_file, MintDiagnostics* diagnostics)
                 impl.by_id.Insert(s.id.Value(), index);
             }
         }
-        const u64 key = HashText(s.vpath.View());
-        const u32* same = impl.by_path.Find(key);
-        if (same != nullptr && impl.sources[*same]->vpath.View() == s.vpath.View())
+        const u32* same = impl.by_path.Find(s.vpath.View());
+        if (same != nullptr)
         {
             diagnostics->Error(
                 s.rel.View(), 0,
@@ -688,7 +677,7 @@ Status Project::Load(const io::Path& project_file, MintDiagnostics* diagnostics)
         }
         else
         {
-            impl.by_path.Insert(key, index);
+            impl.by_path.Insert(s.vpath.View(), index);
         }
     }
 

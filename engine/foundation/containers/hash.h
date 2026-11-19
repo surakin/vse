@@ -33,6 +33,11 @@ inline usize MixHash64(u64 x)
 inline constexpr u64 kFnv1a64Basis = 0xcbf29ce484222325ULL;
 /// The FNV-1a 64-bit prime.
 inline constexpr u64 kFnv1a64Prime = 0x100000001b3ULL;
+/// The starting value many modules wrote for FNV-1a before `Fnv1a64` existed: the offset basis with its last digit
+/// missing (`1469598103934665603`). It is kept as a seed (`Fnv1a64Builder(kFnv1a64LegacyBasis)`) where a hash made
+/// from it may be stored or compared (widget ids, settings keys, import names), so that those values do not change;
+/// new code starts at `kFnv1a64Basis`.
+inline constexpr u64 kFnv1a64LegacyBasis = 1469598103934665603ULL;
 
 /// FNV-1a 64-bit built up a piece at a time: `AddBytes` of a buffer gives the same value as `Fnv1a64` of it, and
 /// adding pieces gives the value of their concatenation.
@@ -94,6 +99,19 @@ public:
         for (usize i = 0; text != nullptr && text[i] != '\0'; ++i)
         {
             h_ = (h_ ^ static_cast<u8>(text[i])) * kFnv1a64Prime;
+        }
+        return *this;
+    }
+
+    /// Adds the eight bytes of `value`, least significant first.
+    ///
+    /// - Param value: the value.
+    /// - Returns: this builder.
+    constexpr Fnv1a64Builder& AddU64Bytes(u64 value)
+    {
+        for (u32 i = 0; i < 8; ++i)
+        {
+            h_ = (h_ ^ ((value >> (8 * i)) & 0xffu)) * kFnv1a64Prime;
         }
         return *this;
     }

@@ -1,4 +1,5 @@
 #include "io/path.h"
+#include "containers/hash.h"
 
 #include "log/assert.h"
 #include "cstr/mem_ops.h"
@@ -715,13 +716,12 @@ bool Path::StartsWith(const Path& prefix) const
 
 usize Path::Hash() const
 {
-    u64 h = 14695981039346656037ull ^ static_cast<u64>(style_);
+    Fnv1a64Builder h(kFnv1a64Basis ^ static_cast<u64>(style_));
     for (usize i = 0; i < text_.Size(); ++i)
     {
-        h ^= static_cast<byte>(Fold(style_, text_.Data()[i]));
-        h *= 1099511628211ull;
+        h.AddByte(static_cast<byte>(Fold(style_, text_.Data()[i])));
     }
-    return static_cast<usize>(h);
+    return static_cast<usize>(h.Value());
 }
 
 int Path::Compare(const Path& other) const

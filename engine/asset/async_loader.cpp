@@ -1,4 +1,5 @@
 #include "asset/async_loader.h"
+#include "containers/hash_set.h"
 
 #include "asset/blob.h"
 #include "asset/level.h"
@@ -509,10 +510,10 @@ void AsyncLoader::RunRead(LoadRequest& request)
     // report: the build reads it again and says why it failed (with the chain, or with a fallback).
     const TypeRegistry& types = manager_->Types();
     Vector<ResourceId> pending;
-    HashMap<u64, u8, HeapAllocator> seen(HeapAllocator::Default());  // the ids of `pending`
-    usize head = 0;                                                  // pending[head...] is what is left to read
+    HashSet<u64, HeapAllocator> seen(HeapAllocator::Default());  // the ids of `pending`
+    usize head = 0;                                              // pending[head...] is what is left to read
     pending.Push(request.id);
-    seen.Insert(request.id.Value(), 1);
+    seen.Insert(request.id.Value());
     request.total.Store(1);
     while (head < pending.Size() && !request.IsCancelled())
     {
@@ -542,9 +543,9 @@ void AsyncLoader::RunRead(LoadRequest& request)
                 {
                     continue;
                 }
-                if (seen.Find(dep.id.Value()) == nullptr && !manager_->MayBeLoaded(dep.id))
+                if (!seen.Contains(dep.id.Value()) && !manager_->MayBeLoaded(dep.id))
                 {
-                    seen.Insert(dep.id.Value(), 1);
+                    seen.Insert(dep.id.Value());
                     pending.Push(dep.id);
                     request.total.FetchAdd(1);
                 }

@@ -1,4 +1,5 @@
 #include "asset_import/gltf_names.h"
+#include "containers/hash.h"
 
 #include "algorithm.h"
 #include "cstr/format.h"
@@ -17,12 +18,7 @@ constexpr u32 kMaxPasses = 32;
 
 u64 NameHash(StringView name)
 {
-    u64 h = 1469598103934665603ull;
-    for (usize i = 0; i < name.Length(); ++i)
-    {
-        h = (h ^ static_cast<u8>(name[i])) * 1099511628211ull;
-    }
-    return h;
+    return Fnv1a64Builder(kFnv1a64LegacyBasis).AddText(name).Value();
 }
 
 struct HashedName

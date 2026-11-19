@@ -1,6 +1,7 @@
 #include "script_physics/physics_bindings.h"
 
 #include "containers/hash_map.h"
+#include "containers/hash_set.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
 #include "ecs/world.h"
@@ -688,7 +689,7 @@ Value Overlapping(const physics::Shape& shape, const Vec3& position, const Quate
     Vector<physics::ColliderId> found;
     physics::Overlap(*services->world, shape, position, rotation, filter, &found);
     Value out = Value::MakeArray();
-    HashMap<u64, u8, HeapAllocator> seen(HeapAllocator::Default());
+    HashSet<u64, HeapAllocator> seen(HeapAllocator::Default());
     for (usize i = 0; i < found.Size(); ++i)
     {
         const physics::ColliderRecord* record = services->world->FindCollider(found[i]);
@@ -697,11 +698,11 @@ Value Overlapping(const physics::Shape& shape, const Vec3& position, const Quate
             continue;
         }
         const ecs::Entity e = EntityOfBody(*services->world, record->owner);
-        if (!e.IsValid() || seen.Find(e.ToU64()) != nullptr)
+        if (!e.IsValid() || seen.Contains(e.ToU64()))
         {
             continue;  // a body with several colliders is one entity
         }
-        seen.Insert(e.ToU64(), 1);
+        seen.Insert(e.ToU64());
         out.Push(Value::FromEntity(e));
     }
     return out;

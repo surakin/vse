@@ -9,16 +9,6 @@ namespace engine_placeholder::script
 namespace
 {
 
-u64 KeyHash(StringView key)
-{
-    u64 h = 14695981039346656037ull;
-    for (usize i = 0; i < key.Length(); ++i)
-    {
-        h = (h ^ static_cast<u8>(key[i])) * 1099511628211ull;
-    }
-    return h;
-}
-
 u64 TextHash(ByteSpan bytes)
 {
     asset::ContentHasher hasher;
@@ -88,7 +78,7 @@ Outcome ScriptReloader::Reload(Span<const ModuleReplacement> changes, u64 tick, 
             continue;
         }
         ++report->requested;
-        const u64* last = last_tick_.Find(KeyHash(changes[i].key.View()));
+        const u64* last = last_tick_.Find(changes[i].key.View());
         if (last != nullptr && *last == tick)
         {
             report->deferred.Push(String<HeapAllocator>(HeapAllocator::Default(), changes[i].key.View()));
@@ -141,7 +131,7 @@ Outcome ScriptReloader::Reload(Span<const ModuleReplacement> changes, u64 tick, 
     }
     for (usize i = 0; i < good.Size(); ++i)
     {
-        last_tick_.Insert(KeyHash(good[i].key.View()), tick);
+        last_tick_.Insert(good[i].key.View(), tick);
     }
     report->applied = true;
     return Outcome();

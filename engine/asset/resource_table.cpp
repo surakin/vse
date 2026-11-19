@@ -1,4 +1,5 @@
 #include "asset/resource_table.h"
+#include "containers/hash.h"
 
 #include "algorithm.h"
 #include "bytes/byte_reader.h"
@@ -14,17 +15,6 @@ namespace
 constexpr u32 kNoEntry = 0xffffffffu;
 constexpr u32 kSectionNames = kFirstUserSection;
 
-u64 HashPath(StringView path)
-{
-    u64 hash = 0xcbf29ce484222325ull;  // FNV-1a
-    for (usize i = 0; i < path.Length(); ++i)
-    {
-        hash ^= static_cast<u8>(path[i]);
-        hash *= 0x100000001b3ull;
-    }
-    return hash;
-}
-
 }  // namespace
 
 ResourceTable::ResourceTable() : by_path_(HeapAllocator::Default()), by_id_(HeapAllocator::Default()) {}
@@ -32,49 +22,37 @@ ResourceTable::ResourceTable() : by_path_(HeapAllocator::Default()), by_id_(Heap
 void ResourceTable::IndexEntry(u32 index)
 {
     Entry& entry = entries_[index];
-    const u64 path_hash = HashPath(entry.path.View());
-    const u32* head = by_path_.Find(path_hash);
-    entry.next_by_path = head != nullptr ? *head : kNoEntry;
-    by_path_.Insert(path_hash, index);
+    by_path_.Insert(entry.path.View(), index);
     const u32* id_head = by_id_.Find(entry.id.Value());
     entry.next_by_id = id_head != nullptr ? *id_head : kNoEntry;
     by_id_.Insert(entry.id.Value(), index);
 }
 
-void ResourceTable::ClearIndexes()
-{
-    for (usize i = 0; i < entries_.Size(); ++i)
-    {
-        by_path_.Remove(HashPath(entries_[i].path.View()));
-        by_id_.Remove(entries_[i].id.Value());
-    }
-}
-
 void ResourceTable::Clear()
 {
-    ClearIndexes();
+    by_path_.Clear();
+    by_id_.Clear();
     entries_.Clear();
 }
 
-void ResourceTable::RebuildIndexes()
+// Replaces the reference to entry `from` in its id's chain (the head or the previous entry's link) with `to`.
+void ResourceTable::RelinkId(u32 from, u32 to)
 {
-    for (usize i = 0; i < entries_.Size(); ++i)
+    u32* link = by_id_.Find(entries_[from].id.Value());
+    while (link != nullptr && *link != from)
     {
-        IndexEntry(static_cast<u32>(i));
+        link = *link == kNoEntry ? nullptr : &entries_[*link].next_by_id;
+    }
+    if (link != nullptr)
+    {
+        *link = to;
     }
 }
 
 const ResourceTable::Entry* ResourceTable::FindByNormalized(StringView normalized) const
 {
-    const u32* head = by_path_.Find(HashPath(normalized));
-    for (u32 i = head != nullptr ? *head : kNoEntry; i != kNoEntry; i = entries_[i].next_by_path)
-    {
-        if (entries_[i].path.View() == normalized)
-        {
-            return &entries_[i];
-        }
-    }
-    return nullptr;
+    const u32* at = by_path_.Find(normalized);
+    return at != nullptr ? &entries_[*at] : nullptr;
 }
 
 Status ResourceTable::Add(StringView path, ResourceId id, ResourceType type)
@@ -106,7 +84,7 @@ Status ResourceTable::Add(StringView path, ResourceId id, ResourceType type)
     {
         return Status::Make(ErrorCode::LimitExceeded, "the table holds the most entries it may hold");
     }
-    Entry entry{Move(normalized), id, type, kNoEntry, kNoEntry};
+    Entry entry{Move(normalized), id, type, kNoEntry};
     entries_.Push(Move(entry));
     IndexEntry(static_cast<u32>(entries_.Size() - 1));
     return Status::Success();
@@ -119,17 +97,29 @@ bool ResourceTable::Remove(StringView path)
     {
         return false;
     }
-    for (usize i = 0; i < entries_.Size(); ++i)
+    const u32* found = by_path_.Find(normalized.View());
+    if (found == nullptr)
     {
-        if (entries_[i].path.View() == normalized.View())
-        {
-            ClearIndexes();
-            entries_.Remove(i);
-            RebuildIndexes();
-            return true;
-        }
+        return false;
     }
-    return false;
+    // O(1): unlink the entry, then move the last entry into its place (the table's order reaches no output: listings
+    // and the NAMES blob are sorted).
+    const u32 index = *found;
+    const u32 next = entries_[index].next_by_id;
+    RelinkId(index, next);
+    if (*by_id_.Find(entries_[index].id.Value()) == kNoEntry)
+    {
+        by_id_.Remove(entries_[index].id.Value());
+    }
+    by_path_.Remove(normalized.View());
+    const u32 last = static_cast<u32>(entries_.Size() - 1);
+    if (index != last)
+    {
+        RelinkId(last, index);
+        *by_path_.Find(entries_[last].path.View()) = index;
+    }
+    entries_.SwapRemove(index);
+    return true;
 }
 
 bool ResourceTable::Resolve(StringView path, ResourceId* id) const

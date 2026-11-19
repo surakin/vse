@@ -1,4 +1,5 @@
 #include "net/address.h"
+#include "containers/hash.h"
 
 namespace engine_placeholder::net
 {
@@ -627,17 +628,19 @@ AddressText Address::Format() const
 
 usize Address::HashValue() const
 {
-    u64 h = static_cast<u64>(family_) + 1;
+    // An in-memory map hash only (never stored), so it uses the shared FNV-1a rather than its own multiply-add.
+    Fnv1a64Builder h;
+    h.AddWord(static_cast<u64>(family_) + 1);
     for (usize i = 0; i < 16; ++i)
     {
-        h = h * 0x100000001b3ULL + bytes_[i];
+        h.AddByte(bytes_[i]);
     }
-    h = h * 0x100000001b3ULL + scope_id_;
+    h.AddWord(scope_id_);
     for (usize i = 0; i < scope_name_length_; ++i)
     {
-        h = h * 0x100000001b3ULL + static_cast<u8>(scope_name_[i]);
+        h.AddByte(static_cast<u8>(scope_name_[i]));
     }
-    return detail::MixHash64(h);
+    return detail::MixHash64(h.Value());
 }
 
 bool Address::operator==(const Address& other) const

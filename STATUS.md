@@ -39,6 +39,12 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - `Vector` swap-remove, append, emplace, clone, swap and range-for; bulk `String` append, reserve and clear; `Deque`; `BinaryHeap`.
   - Search (`LowerBound`/`UpperBound`/`BinarySearch`), selection (`NthElement`/`PartialSort`), `StableSort` for any movable type, and sorts of containers.
   - Tests deferred to Day 12; the container tests pass. Review: 3 findings, all fixed.
+- **Day 4 done (2026-11-19, Linux):**
+  - One FNV-1a: 22 files call `Fnv1a64`, with values kept (`kFnv1a64LegacyBasis` for the truncated basis nine copies used).
+  - Hash-only keys fixed: `asset_mint` paths, the LuaJIT profiler, `script_reload`.
+  - `ResourceTable` keyed by `String` with O(1) `Remove`: 1.29 ms down to 378 ns per removal at 10,000 paths (Day 1's flat number was an invalid bench, corrected).
+  - Five `HashSet`s; `Clear()` instead of re-made maps.
+  - Tests deferred to Day 12. Review: 2 findings, both fixed.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

@@ -96,7 +96,7 @@ private:
     ScriptWorld* world_;
     Backend* backend_;
     bool enabled_;
-    HashMap<u64, u64, HeapAllocator> last_tick_;  // key hash -> the tick it was reloaded in
+    HashMap<String<HeapAllocator>, u64, HeapAllocator> last_tick_;  // module key -> the tick it was reloaded in
 };
 
 /// What a poll of the development directory found for one script.

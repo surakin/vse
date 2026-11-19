@@ -1,4 +1,5 @@
 #include "script/task_pool.h"
+#include "containers/hash.h"
 
 #include "containers/shared_bytes.h"
 #include "jobs/parallel_for.h"
@@ -308,15 +309,9 @@ struct Item
     LogBuffer log{64};
 };
 
-u64 HashSource(TaskMode mode, StringView source, u64 basis = 14695981039346656037ull)
+u64 HashSource(TaskMode mode, StringView source, u64 basis = kFnv1a64Basis)
 {
-    u64 h = basis ^ static_cast<u64>(mode);
-    h *= 1099511628211ull;
-    for (usize i = 0; i < source.Length(); ++i)
-    {
-        h ^= static_cast<u8>(source.Data()[i]);
-        h *= 1099511628211ull;
-    }
+    const u64 h = Fnv1a64Builder(basis).AddWord(static_cast<u64>(mode)).AddText(source).Value();
     return h & 0xFFFFFFFFFFFFFull;  // 52 bits: a Lua number holds it exactly
 }
 

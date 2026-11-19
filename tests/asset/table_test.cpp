@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "asset/resource_table.h"
+#include "cstr/format.h"
 #include "bytes/byte_writer.h"
 #include "support.h"
 
@@ -247,6 +248,52 @@ TEST_CASE("A damaged names section is refused and leaves an empty table", "[asse
     REQUIRE(other.Finish(&mesh).Ok());
     REQUIRE(reader.Open(mesh, registry).Ok());
     CHECK(table.ReadNamesBlob(reader).Is(ErrorCode::TypeMismatch));
+}
+
+TEST_CASE("Removing paths in any order keeps every other path and id findable", "[asset][table]")
+{
+    // Container audit Day 4: removal moves the last entry into the removed one's place and relinks the id chains.
+    ResourceTable table;
+    const u32 n = 300;
+    char text[48];
+    for (u32 i = 0; i < n; ++i)
+    {
+        FormatTo(text, sizeof(text), "/meshes/m%u.mesh", i);
+        REQUIRE(table.Add(V(text), Id(1 + i / 3), types::kMesh).Ok());  // three paths per id
+    }
+    Vector<bool> gone;
+    gone.Resize(n);
+    u32 state = 7;
+    for (u32 step = 0; step < n * 2 / 3; ++step)
+    {
+        state = state * 1103515245u + 12345u;
+        const u32 i = (state >> 8) % n;
+        FormatTo(text, sizeof(text), "/meshes/m%u.mesh", i);
+        CHECK(table.Remove(V(text)) == !gone[i]);
+        gone[i] = true;
+    }
+    for (u32 i = 0; i < n; ++i)
+    {
+        FormatTo(text, sizeof(text), "/meshes/m%u.mesh", i);
+        ResourceId id;
+        REQUIRE(table.Resolve(V(text), &id) == !gone[i]);
+        if (!gone[i])
+        {
+            CHECK(id == Id(1 + i / 3));
+        }
+    }
+    for (u32 g = 0; g < n / 3; ++g)
+    {
+        usize live = 0;
+        for (u32 k = 0; k < 3; ++k)
+        {
+            live += gone[g * 3 + k] ? 0 : 1;
+        }
+        Vector<StringView> paths;
+        CHECK(table.PathsOf(Id(1 + g), &paths) == live);
+        ResourceType type;
+        CHECK(table.TypeOf(Id(1 + g), &type) == (live > 0));
+    }
 }
 
 }  // namespace engine_placeholder::asset

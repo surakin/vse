@@ -260,7 +260,7 @@ void Table(const Options& o, Report* report)
         for (u32 i = 0; i < n; ++i)
         {
             char text[64];
-            FormatTo(text, sizeof(text), "meshes/level/item_%u.mesh", i);
+            FormatTo(text, sizeof(text), "/meshes/level/item_%u.mesh", i);
             paths.Push(String<HeapAllocator>(HeapAllocator::Default(), StringView(text)));
         }
         u64 ok = 0;
@@ -284,7 +284,8 @@ void Table(const Options& o, Report* report)
                                        }
                                    });
         char name[64];
-        FormatTo(name, sizeof(name), "asset: remove %u of %u table paths", removed, n);
+        FormatTo(name, sizeof(name), "asset: remove %u of %u table paths%s", removed, n,
+                 ok == static_cast<u64>(n) * o.runs ? "" : " (ADDS REFUSED: invalid case)");
         report->Add("paths", name, n, ms, removed);
         Keep(ok);
     }

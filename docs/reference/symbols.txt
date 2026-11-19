@@ -394,38 +394,40 @@ Deque::Empty() const	function	foundation/containers	deque-empty-const	foundation
 Deque::Capacity() const	function	foundation/containers	deque-capacity-const	foundation-containers.md	engine/foundation/containers/deque.h:252
 kFnv1a64Basis	variable	foundation/containers	kfnv1a64basis	foundation-containers.md	engine/foundation/containers/hash.h:33
 kFnv1a64Prime	variable	foundation/containers	kfnv1a64prime	foundation-containers.md	engine/foundation/containers/hash.h:35
-Fnv1a64Builder	class	foundation/containers	fnv1a64builder	foundation-containers.md	engine/foundation/containers/hash.h:44
-Fnv1a64Builder::Fnv1a64Builder(u64)	function	foundation/containers	fnv1a64builder-fnv1a64builder-u64	foundation-containers.md	engine/foundation/containers/hash.h:50
-Fnv1a64Builder::AddByte(u8)	function	foundation/containers	fnv1a64builder-addbyte-u8	foundation-containers.md	engine/foundation/containers/hash.h:56
-Fnv1a64Builder::AddBytes(ByteSpan)	function	foundation/containers	fnv1a64builder-addbytes-bytespan	foundation-containers.md	engine/foundation/containers/hash.h:66
-Fnv1a64Builder::AddText(StringView)	function	foundation/containers	fnv1a64builder-addtext-stringview	foundation-containers.md	engine/foundation/containers/hash.h:79
-Fnv1a64Builder::AddCString(const char*)	function	foundation/containers	fnv1a64builder-addcstring-const-char-star	foundation-containers.md	engine/foundation/containers/hash.h:92
-Fnv1a64Builder::AddWord(u64)	function	foundation/containers	fnv1a64builder-addword-u64	foundation-containers.md	engine/foundation/containers/hash.h:105
-Fnv1a64Builder::Value() const	function	foundation/containers	fnv1a64builder-value-const	foundation-containers.md	engine/foundation/containers/hash.h:112
-Fnv1a64(ByteSpan)	function	foundation/containers	fnv1a64-bytespan	foundation-containers.md	engine/foundation/containers/hash.h:121
-Fnv1a64(StringView)	function	foundation/containers	fnv1a64-stringview	foundation-containers.md	engine/foundation/containers/hash.h:129
-HashCombine(usize,usize)	function	foundation/containers	hashcombine-usize-usize	foundation-containers.md	engine/foundation/containers/hash.h:139
-Hash<i8>	struct	foundation/containers	hash-lt-i8-gt	foundation-containers.md	engine/foundation/containers/hash.h:152
-Hash<i8>::operator()(i8) const	function	foundation/containers	hash-lt-i8-gt-operator-call-i8-const	foundation-containers.md	engine/foundation/containers/hash.h:155
-Hash<i16>	struct	foundation/containers	hash-lt-i16-gt	foundation-containers.md	engine/foundation/containers/hash.h:158
-Hash<i16>::operator()(i16) const	function	foundation/containers	hash-lt-i16-gt-operator-call-i16-const	foundation-containers.md	engine/foundation/containers/hash.h:161
-Hash<i32>	struct	foundation/containers	hash-lt-i32-gt	foundation-containers.md	engine/foundation/containers/hash.h:164
-Hash<i32>::operator()(i32) const	function	foundation/containers	hash-lt-i32-gt-operator-call-i32-const	foundation-containers.md	engine/foundation/containers/hash.h:167
-Hash<i64>	struct	foundation/containers	hash-lt-i64-gt	foundation-containers.md	engine/foundation/containers/hash.h:170
-Hash<i64>::operator()(i64) const	function	foundation/containers	hash-lt-i64-gt-operator-call-i64-const	foundation-containers.md	engine/foundation/containers/hash.h:173
-Hash<u8>	struct	foundation/containers	hash-lt-u8-gt	foundation-containers.md	engine/foundation/containers/hash.h:176
-Hash<u8>::operator()(u8) const	function	foundation/containers	hash-lt-u8-gt-operator-call-u8-const	foundation-containers.md	engine/foundation/containers/hash.h:179
-Hash<u16>	struct	foundation/containers	hash-lt-u16-gt	foundation-containers.md	engine/foundation/containers/hash.h:182
-Hash<u16>::operator()(u16) const	function	foundation/containers	hash-lt-u16-gt-operator-call-u16-const	foundation-containers.md	engine/foundation/containers/hash.h:185
-Hash<u32>	struct	foundation/containers	hash-lt-u32-gt	foundation-containers.md	engine/foundation/containers/hash.h:188
-Hash<u32>::operator()(u32) const	function	foundation/containers	hash-lt-u32-gt-operator-call-u32-const	foundation-containers.md	engine/foundation/containers/hash.h:191
-Hash<u64>	struct	foundation/containers	hash-lt-u64-gt	foundation-containers.md	engine/foundation/containers/hash.h:194
-Hash<u64>::operator()(u64) const	function	foundation/containers	hash-lt-u64-gt-operator-call-u64-const	foundation-containers.md	engine/foundation/containers/hash.h:197
-Hash	variable	foundation/containers	hash	foundation-containers.md	engine/foundation/containers/hash.h:203
-Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md	engine/foundation/containers/hash.h:213
-Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash.h:216
-Hash<StringView>	struct	foundation/containers	hash-lt-stringview-gt	foundation-containers.md	engine/foundation/containers/hash.h:222
-Hash<StringView>::operator()(StringView) const	function	foundation/containers	hash-lt-stringview-gt-operator-call-stringview-const	foundation-containers.md	engine/foundation/containers/hash.h:225
+kFnv1a64LegacyBasis	variable	foundation/containers	kfnv1a64legacybasis	foundation-containers.md	engine/foundation/containers/hash.h:40
+Fnv1a64Builder	class	foundation/containers	fnv1a64builder	foundation-containers.md	engine/foundation/containers/hash.h:49
+Fnv1a64Builder::Fnv1a64Builder(u64)	function	foundation/containers	fnv1a64builder-fnv1a64builder-u64	foundation-containers.md	engine/foundation/containers/hash.h:55
+Fnv1a64Builder::AddByte(u8)	function	foundation/containers	fnv1a64builder-addbyte-u8	foundation-containers.md	engine/foundation/containers/hash.h:61
+Fnv1a64Builder::AddBytes(ByteSpan)	function	foundation/containers	fnv1a64builder-addbytes-bytespan	foundation-containers.md	engine/foundation/containers/hash.h:71
+Fnv1a64Builder::AddText(StringView)	function	foundation/containers	fnv1a64builder-addtext-stringview	foundation-containers.md	engine/foundation/containers/hash.h:84
+Fnv1a64Builder::AddCString(const char*)	function	foundation/containers	fnv1a64builder-addcstring-const-char-star	foundation-containers.md	engine/foundation/containers/hash.h:97
+Fnv1a64Builder::AddU64Bytes(u64)	function	foundation/containers	fnv1a64builder-addu64bytes-u64	foundation-containers.md	engine/foundation/containers/hash.h:110
+Fnv1a64Builder::AddWord(u64)	function	foundation/containers	fnv1a64builder-addword-u64	foundation-containers.md	engine/foundation/containers/hash.h:123
+Fnv1a64Builder::Value() const	function	foundation/containers	fnv1a64builder-value-const	foundation-containers.md	engine/foundation/containers/hash.h:130
+Fnv1a64(ByteSpan)	function	foundation/containers	fnv1a64-bytespan	foundation-containers.md	engine/foundation/containers/hash.h:139
+Fnv1a64(StringView)	function	foundation/containers	fnv1a64-stringview	foundation-containers.md	engine/foundation/containers/hash.h:147
+HashCombine(usize,usize)	function	foundation/containers	hashcombine-usize-usize	foundation-containers.md	engine/foundation/containers/hash.h:157
+Hash<i8>	struct	foundation/containers	hash-lt-i8-gt	foundation-containers.md	engine/foundation/containers/hash.h:170
+Hash<i8>::operator()(i8) const	function	foundation/containers	hash-lt-i8-gt-operator-call-i8-const	foundation-containers.md	engine/foundation/containers/hash.h:173
+Hash<i16>	struct	foundation/containers	hash-lt-i16-gt	foundation-containers.md	engine/foundation/containers/hash.h:176
+Hash<i16>::operator()(i16) const	function	foundation/containers	hash-lt-i16-gt-operator-call-i16-const	foundation-containers.md	engine/foundation/containers/hash.h:179
+Hash<i32>	struct	foundation/containers	hash-lt-i32-gt	foundation-containers.md	engine/foundation/containers/hash.h:182
+Hash<i32>::operator()(i32) const	function	foundation/containers	hash-lt-i32-gt-operator-call-i32-const	foundation-containers.md	engine/foundation/containers/hash.h:185
+Hash<i64>	struct	foundation/containers	hash-lt-i64-gt	foundation-containers.md	engine/foundation/containers/hash.h:188
+Hash<i64>::operator()(i64) const	function	foundation/containers	hash-lt-i64-gt-operator-call-i64-const	foundation-containers.md	engine/foundation/containers/hash.h:191
+Hash<u8>	struct	foundation/containers	hash-lt-u8-gt	foundation-containers.md	engine/foundation/containers/hash.h:194
+Hash<u8>::operator()(u8) const	function	foundation/containers	hash-lt-u8-gt-operator-call-u8-const	foundation-containers.md	engine/foundation/containers/hash.h:197
+Hash<u16>	struct	foundation/containers	hash-lt-u16-gt	foundation-containers.md	engine/foundation/containers/hash.h:200
+Hash<u16>::operator()(u16) const	function	foundation/containers	hash-lt-u16-gt-operator-call-u16-const	foundation-containers.md	engine/foundation/containers/hash.h:203
+Hash<u32>	struct	foundation/containers	hash-lt-u32-gt	foundation-containers.md	engine/foundation/containers/hash.h:206
+Hash<u32>::operator()(u32) const	function	foundation/containers	hash-lt-u32-gt-operator-call-u32-const	foundation-containers.md	engine/foundation/containers/hash.h:209
+Hash<u64>	struct	foundation/containers	hash-lt-u64-gt	foundation-containers.md	engine/foundation/containers/hash.h:212
+Hash<u64>::operator()(u64) const	function	foundation/containers	hash-lt-u64-gt-operator-call-u64-const	foundation-containers.md	engine/foundation/containers/hash.h:215
+Hash	variable	foundation/containers	hash	foundation-containers.md	engine/foundation/containers/hash.h:221
+Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md	engine/foundation/containers/hash.h:231
+Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash.h:234
+Hash<StringView>	struct	foundation/containers	hash-lt-stringview-gt	foundation-containers.md	engine/foundation/containers/hash.h:240
+Hash<StringView>::operator()(StringView) const	function	foundation/containers	hash-lt-stringview-gt-operator-call-stringview-const	foundation-containers.md	engine/foundation/containers/hash.h:243
 HeterogeneousKey	variable	foundation/containers	heterogeneouskey	foundation-containers.md	engine/foundation/containers/hash_map.h:22
 HashMapEntry	struct	foundation/containers	hashmapentry	foundation-containers.md	engine/foundation/containers/hash_map.h:35
 HashMapEntry::key	variable	foundation/containers	hashmapentry-key	foundation-containers.md	engine/foundation/containers/hash_map.h:37
@@ -3085,51 +3087,51 @@ os::ClipboardRequests::FailAll(ClipboardStatus,u64)	function	platform/window-inp
 os::ClipboardRequests::Take(u32,ClipboardResult*)	function	platform/window-input	os-clipboardrequests-take-u32-clipboardresult-star	platform-window-input.md	engine/platform/clipboard.h:161
 os::ClipboardRequests::Describe(u32,ClipboardKind*,ClipboardFormat*) const	function	platform/window-input	os-clipboardrequests-describe-u32-clipboardkind-star-clipboardformat-star-const	platform-window-input.md	engine/platform/clipboard.h:165
 os::ClipboardRequests::InFlight() const	function	platform/window-input	os-clipboardrequests-inflight-const	platform-window-input.md	engine/platform/clipboard.h:168
-os::CursorShape	enum	platform/window-input	os-cursorshape	platform-window-input.md	engine/platform/cursor.h:14
-os::CursorShape::Arrow	enumerator	platform/window-input	os-cursorshape-arrow	platform-window-input.md	engine/platform/cursor.h:16
-os::CursorShape::IBeam	enumerator	platform/window-input	os-cursorshape-ibeam	platform-window-input.md	engine/platform/cursor.h:17
-os::CursorShape::Hand	enumerator	platform/window-input	os-cursorshape-hand	platform-window-input.md	engine/platform/cursor.h:18
-os::CursorShape::ResizeHorizontal	enumerator	platform/window-input	os-cursorshape-resizehorizontal	platform-window-input.md	engine/platform/cursor.h:19
-os::CursorShape::ResizeVertical	enumerator	platform/window-input	os-cursorshape-resizevertical	platform-window-input.md	engine/platform/cursor.h:20
-os::CursorShape::ResizeDiagonalNWSE	enumerator	platform/window-input	os-cursorshape-resizediagonalnwse	platform-window-input.md	engine/platform/cursor.h:21
-os::CursorShape::ResizeDiagonalNESW	enumerator	platform/window-input	os-cursorshape-resizediagonalnesw	platform-window-input.md	engine/platform/cursor.h:22
-os::CursorShape::ResizeAll	enumerator	platform/window-input	os-cursorshape-resizeall	platform-window-input.md	engine/platform/cursor.h:23
-os::CursorShape::NotAllowed	enumerator	platform/window-input	os-cursorshape-notallowed	platform-window-input.md	engine/platform/cursor.h:24
-os::CursorShape::Hidden	enumerator	platform/window-input	os-cursorshape-hidden	platform-window-input.md	engine/platform/cursor.h:25
-os::CursorShape::Count	enumerator	platform/window-input	os-cursorshape-count	platform-window-input.md	engine/platform/cursor.h:26
-os::kMaxCursorImageSize	variable	platform/window-input	os-kmaxcursorimagesize	platform-window-input.md	engine/platform/cursor.h:30
-os::kMaxCursorImageScale	variable	platform/window-input	os-kmaxcursorimagescale	platform-window-input.md	engine/platform/cursor.h:33
-os::CursorImage	struct	platform/window-input	os-cursorimage	platform-window-input.md	engine/platform/cursor.h:44
-os::CursorImage::rgba	variable	platform/window-input	os-cursorimage-rgba	platform-window-input.md	engine/platform/cursor.h:46
-os::CursorImage::width	variable	platform/window-input	os-cursorimage-width	platform-window-input.md	engine/platform/cursor.h:47
-os::CursorImage::height	variable	platform/window-input	os-cursorimage-height	platform-window-input.md	engine/platform/cursor.h:48
-os::CursorImage::hotspot_x	variable	platform/window-input	os-cursorimage-hotspot-x	platform-window-input.md	engine/platform/cursor.h:49
-os::CursorImage::hotspot_y	variable	platform/window-input	os-cursorimage-hotspot-y	platform-window-input.md	engine/platform/cursor.h:50
-os::CursorImage::scale	variable	platform/window-input	os-cursorimage-scale	platform-window-input.md	engine/platform/cursor.h:51
-os::CursorImageError	enum	platform/window-input	os-cursorimageerror	platform-window-input.md	engine/platform/cursor.h:55
-os::CursorImageError::Ok	enumerator	platform/window-input	os-cursorimageerror-ok	platform-window-input.md	engine/platform/cursor.h:57
-os::CursorImageError::NoPixels	enumerator	platform/window-input	os-cursorimageerror-nopixels	platform-window-input.md	engine/platform/cursor.h:58
-os::CursorImageError::Empty	enumerator	platform/window-input	os-cursorimageerror-empty	platform-window-input.md	engine/platform/cursor.h:59
-os::CursorImageError::TooLarge	enumerator	platform/window-input	os-cursorimageerror-toolarge	platform-window-input.md	engine/platform/cursor.h:60
-os::CursorImageError::HotspotOutside	enumerator	platform/window-input	os-cursorimageerror-hotspotoutside	platform-window-input.md	engine/platform/cursor.h:61
-os::CursorImageError::BadScale	enumerator	platform/window-input	os-cursorimageerror-badscale	platform-window-input.md	engine/platform/cursor.h:62
-os::ValidateCursorImage(const CursorImage&)	function	platform/window-input	os-validatecursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/cursor.h:68
-os::HashCursorImage(const CursorImage&)	function	platform/window-input	os-hashcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/cursor.h:98
-os::PointerLockState	class	platform/window-input	os-pointerlockstate	platform-window-input.md	engine/platform/cursor.h:131
-os::PointerLockState::Action	enum	platform/window-input	os-pointerlockstate-action	platform-window-input.md	engine/platform/cursor.h:135
-os::PointerLockState::Action::Nothing	enumerator	platform/window-input	os-pointerlockstate-action-nothing	platform-window-input.md	engine/platform/cursor.h:137
-os::PointerLockState::Action::Acquire	enumerator	platform/window-input	os-pointerlockstate-action-acquire	platform-window-input.md	engine/platform/cursor.h:138
-os::PointerLockState::Action::Release	enumerator	platform/window-input	os-pointerlockstate-action-release	platform-window-input.md	engine/platform/cursor.h:140
-os::PointerLockState::SetWanted(bool)	function	platform/window-input	os-pointerlockstate-setwanted-bool	platform-window-input.md	engine/platform/cursor.h:144
-os::PointerLockState::SetFocused(bool)	function	platform/window-input	os-pointerlockstate-setfocused-bool	platform-window-input.md	engine/platform/cursor.h:152
-os::PointerLockState::Granted()	function	platform/window-input	os-pointerlockstate-granted	platform-window-input.md	engine/platform/cursor.h:160
-os::PointerLockState::Failed()	function	platform/window-input	os-pointerlockstate-failed	platform-window-input.md	engine/platform/cursor.h:170
-os::PointerLockState::Lost()	function	platform/window-input	os-pointerlockstate-lost	platform-window-input.md	engine/platform/cursor.h:174
-os::PointerLockState::Cleared()	function	platform/window-input	os-pointerlockstate-cleared	platform-window-input.md	engine/platform/cursor.h:182
-os::PointerLockState::Active() const	function	platform/window-input	os-pointerlockstate-active-const	platform-window-input.md	engine/platform/cursor.h:189
-os::PointerLockState::Pending() const	function	platform/window-input	os-pointerlockstate-pending-const	platform-window-input.md	engine/platform/cursor.h:191
-os::PointerLockState::Wanted() const	function	platform/window-input	os-pointerlockstate-wanted-const	platform-window-input.md	engine/platform/cursor.h:193
-os::PointerLockState::Focused() const	function	platform/window-input	os-pointerlockstate-focused-const	platform-window-input.md	engine/platform/cursor.h:195
+os::CursorShape	enum	platform/window-input	os-cursorshape	platform-window-input.md	engine/platform/cursor.h:15
+os::CursorShape::Arrow	enumerator	platform/window-input	os-cursorshape-arrow	platform-window-input.md	engine/platform/cursor.h:17
+os::CursorShape::IBeam	enumerator	platform/window-input	os-cursorshape-ibeam	platform-window-input.md	engine/platform/cursor.h:18
+os::CursorShape::Hand	enumerator	platform/window-input	os-cursorshape-hand	platform-window-input.md	engine/platform/cursor.h:19
+os::CursorShape::ResizeHorizontal	enumerator	platform/window-input	os-cursorshape-resizehorizontal	platform-window-input.md	engine/platform/cursor.h:20
+os::CursorShape::ResizeVertical	enumerator	platform/window-input	os-cursorshape-resizevertical	platform-window-input.md	engine/platform/cursor.h:21
+os::CursorShape::ResizeDiagonalNWSE	enumerator	platform/window-input	os-cursorshape-resizediagonalnwse	platform-window-input.md	engine/platform/cursor.h:22
+os::CursorShape::ResizeDiagonalNESW	enumerator	platform/window-input	os-cursorshape-resizediagonalnesw	platform-window-input.md	engine/platform/cursor.h:23
+os::CursorShape::ResizeAll	enumerator	platform/window-input	os-cursorshape-resizeall	platform-window-input.md	engine/platform/cursor.h:24
+os::CursorShape::NotAllowed	enumerator	platform/window-input	os-cursorshape-notallowed	platform-window-input.md	engine/platform/cursor.h:25
+os::CursorShape::Hidden	enumerator	platform/window-input	os-cursorshape-hidden	platform-window-input.md	engine/platform/cursor.h:26
+os::CursorShape::Count	enumerator	platform/window-input	os-cursorshape-count	platform-window-input.md	engine/platform/cursor.h:27
+os::kMaxCursorImageSize	variable	platform/window-input	os-kmaxcursorimagesize	platform-window-input.md	engine/platform/cursor.h:31
+os::kMaxCursorImageScale	variable	platform/window-input	os-kmaxcursorimagescale	platform-window-input.md	engine/platform/cursor.h:34
+os::CursorImage	struct	platform/window-input	os-cursorimage	platform-window-input.md	engine/platform/cursor.h:45
+os::CursorImage::rgba	variable	platform/window-input	os-cursorimage-rgba	platform-window-input.md	engine/platform/cursor.h:47
+os::CursorImage::width	variable	platform/window-input	os-cursorimage-width	platform-window-input.md	engine/platform/cursor.h:48
+os::CursorImage::height	variable	platform/window-input	os-cursorimage-height	platform-window-input.md	engine/platform/cursor.h:49
+os::CursorImage::hotspot_x	variable	platform/window-input	os-cursorimage-hotspot-x	platform-window-input.md	engine/platform/cursor.h:50
+os::CursorImage::hotspot_y	variable	platform/window-input	os-cursorimage-hotspot-y	platform-window-input.md	engine/platform/cursor.h:51
+os::CursorImage::scale	variable	platform/window-input	os-cursorimage-scale	platform-window-input.md	engine/platform/cursor.h:52
+os::CursorImageError	enum	platform/window-input	os-cursorimageerror	platform-window-input.md	engine/platform/cursor.h:56
+os::CursorImageError::Ok	enumerator	platform/window-input	os-cursorimageerror-ok	platform-window-input.md	engine/platform/cursor.h:58
+os::CursorImageError::NoPixels	enumerator	platform/window-input	os-cursorimageerror-nopixels	platform-window-input.md	engine/platform/cursor.h:59
+os::CursorImageError::Empty	enumerator	platform/window-input	os-cursorimageerror-empty	platform-window-input.md	engine/platform/cursor.h:60
+os::CursorImageError::TooLarge	enumerator	platform/window-input	os-cursorimageerror-toolarge	platform-window-input.md	engine/platform/cursor.h:61
+os::CursorImageError::HotspotOutside	enumerator	platform/window-input	os-cursorimageerror-hotspotoutside	platform-window-input.md	engine/platform/cursor.h:62
+os::CursorImageError::BadScale	enumerator	platform/window-input	os-cursorimageerror-badscale	platform-window-input.md	engine/platform/cursor.h:63
+os::ValidateCursorImage(const CursorImage&)	function	platform/window-input	os-validatecursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/cursor.h:69
+os::HashCursorImage(const CursorImage&)	function	platform/window-input	os-hashcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/cursor.h:99
+os::PointerLockState	class	platform/window-input	os-pointerlockstate	platform-window-input.md	engine/platform/cursor.h:123
+os::PointerLockState::Action	enum	platform/window-input	os-pointerlockstate-action	platform-window-input.md	engine/platform/cursor.h:127
+os::PointerLockState::Action::Nothing	enumerator	platform/window-input	os-pointerlockstate-action-nothing	platform-window-input.md	engine/platform/cursor.h:129
+os::PointerLockState::Action::Acquire	enumerator	platform/window-input	os-pointerlockstate-action-acquire	platform-window-input.md	engine/platform/cursor.h:130
+os::PointerLockState::Action::Release	enumerator	platform/window-input	os-pointerlockstate-action-release	platform-window-input.md	engine/platform/cursor.h:132
+os::PointerLockState::SetWanted(bool)	function	platform/window-input	os-pointerlockstate-setwanted-bool	platform-window-input.md	engine/platform/cursor.h:136
+os::PointerLockState::SetFocused(bool)	function	platform/window-input	os-pointerlockstate-setfocused-bool	platform-window-input.md	engine/platform/cursor.h:144
+os::PointerLockState::Granted()	function	platform/window-input	os-pointerlockstate-granted	platform-window-input.md	engine/platform/cursor.h:152
+os::PointerLockState::Failed()	function	platform/window-input	os-pointerlockstate-failed	platform-window-input.md	engine/platform/cursor.h:162
+os::PointerLockState::Lost()	function	platform/window-input	os-pointerlockstate-lost	platform-window-input.md	engine/platform/cursor.h:166
+os::PointerLockState::Cleared()	function	platform/window-input	os-pointerlockstate-cleared	platform-window-input.md	engine/platform/cursor.h:174
+os::PointerLockState::Active() const	function	platform/window-input	os-pointerlockstate-active-const	platform-window-input.md	engine/platform/cursor.h:181
+os::PointerLockState::Pending() const	function	platform/window-input	os-pointerlockstate-pending-const	platform-window-input.md	engine/platform/cursor.h:183
+os::PointerLockState::Wanted() const	function	platform/window-input	os-pointerlockstate-wanted-const	platform-window-input.md	engine/platform/cursor.h:185
+os::PointerLockState::Focused() const	function	platform/window-input	os-pointerlockstate-focused-const	platform-window-input.md	engine/platform/cursor.h:187
 os::DragAction	enum	platform/window-input	os-dragaction	platform-window-input.md	engine/platform/drag_drop.h:13
 os::DragAction::Nothing	enumerator	platform/window-input	os-dragaction-nothing	platform-window-input.md	engine/platform/drag_drop.h:15
 os::DragAction::Copy	enumerator	platform/window-input	os-dragaction-copy	platform-window-input.md	engine/platform/drag_drop.h:16
@@ -5431,17 +5433,17 @@ physics::ContactSolver::PairImpulse(ColliderId,ColliderId) const	function	physic
 physics::ContactSolver::SaveCache(SnapshotOut*) const	function	physics	physics-contactsolver-savecache-snapshotout-star-const	physics.md	engine/physics/solver.h:142
 physics::ContactSolver::LoadCache(SnapshotIn*)	function	physics	physics-contactsolver-loadcache-snapshotin-star	physics.md	engine/physics/solver.h:150
 physics::ContactSolver::Stats() const	function	physics	physics-contactsolver-stats-const	physics.md	engine/physics/solver.h:154
-physics::StateHasher	class	physics	physics-statehasher	physics.md	engine/physics/state_hash.h:23
-physics::StateHasher::StateHasher()	function	physics	physics-statehasher-statehasher	physics.md	engine/physics/state_hash.h:27
-physics::StateHasher::kOffsetBasis	variable	physics	physics-statehasher-koffsetbasis	physics.md	engine/physics/state_hash.h:30
-physics::StateHasher::kPrime	variable	physics	physics-statehasher-kprime	physics.md	engine/physics/state_hash.h:32
-physics::StateHasher::AddU8(u8)	function	physics	physics-statehasher-addu8-u8	physics.md	engine/physics/state_hash.h:37
-physics::StateHasher::AddU32(u32)	function	physics	physics-statehasher-addu32-u32	physics.md	engine/physics/state_hash.h:42
-physics::StateHasher::AddU64(u64)	function	physics	physics-statehasher-addu64-u64	physics.md	engine/physics/state_hash.h:53
-physics::StateHasher::AddF32(f32)	function	physics	physics-statehasher-addf32-f32	physics.md	engine/physics/state_hash.h:62
-physics::StateHasher::Value() const	function	physics	physics-statehasher-value-const	physics.md	engine/physics/state_hash.h:76
-physics::StateHasher::Valid() const	function	physics	physics-statehasher-valid-const	physics.md	engine/physics/state_hash.h:81
-physics::StateHasher::BitsOf(f32)	function	physics	physics-statehasher-bitsof-f32	physics.md	engine/physics/state_hash.h:86
+physics::StateHasher	class	physics	physics-statehasher	physics.md	engine/physics/state_hash.h:24
+physics::StateHasher::StateHasher()	function	physics	physics-statehasher-statehasher	physics.md	engine/physics/state_hash.h:28
+physics::StateHasher::kOffsetBasis	variable	physics	physics-statehasher-koffsetbasis	physics.md	engine/physics/state_hash.h:31
+physics::StateHasher::kPrime	variable	physics	physics-statehasher-kprime	physics.md	engine/physics/state_hash.h:33
+physics::StateHasher::AddU8(u8)	function	physics	physics-statehasher-addu8-u8	physics.md	engine/physics/state_hash.h:38
+physics::StateHasher::AddU32(u32)	function	physics	physics-statehasher-addu32-u32	physics.md	engine/physics/state_hash.h:43
+physics::StateHasher::AddU64(u64)	function	physics	physics-statehasher-addu64-u64	physics.md	engine/physics/state_hash.h:54
+physics::StateHasher::AddF32(f32)	function	physics	physics-statehasher-addf32-f32	physics.md	engine/physics/state_hash.h:63
+physics::StateHasher::Value() const	function	physics	physics-statehasher-value-const	physics.md	engine/physics/state_hash.h:77
+physics::StateHasher::Valid() const	function	physics	physics-statehasher-valid-const	physics.md	engine/physics/state_hash.h:82
+physics::StateHasher::BitsOf(f32)	function	physics	physics-statehasher-bitsof-f32	physics.md	engine/physics/state_hash.h:87
 physics::BodyLink	struct	physics	physics-bodylink	physics.md	engine/physics/sync.h:16
 physics::BodyLink::id	variable	physics	physics-bodylink-id	physics.md	engine/physics/sync.h:19
 physics::SyncReport	struct	physics	physics-syncreport	physics.md	engine/physics/sync.h:25
@@ -5696,21 +5698,21 @@ audio::AudioSystem::State() const	function	audio	audio-audiosystem-state-const	a
 audio::AudioSystem::CurrentDevice() const	function	audio	audio-audiosystem-currentdevice-const	audio.md	engine/audio/audio_system.h:129
 audio::AudioSystem::Switches() const	function	audio	audio-audiosystem-switches-const	audio.md	engine/audio/audio_system.h:134
 audio::AudioSystem::Transitions() const	function	audio	audio-audiosystem-transitions-const	audio.md	engine/audio/audio_system.h:139
-audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:22
-audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:26
-audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:29
-audio::BlockHasher::kPrime	variable	audio	audio-blockhasher-kprime	audio.md	engine/audio/block_hash.h:31
-audio::BlockHasher::AddSample(f32)	function	audio	audio-blockhasher-addsample-f32	audio.md	engine/audio/block_hash.h:36
-audio::BlockHasher::AddBlock(Span<const f32>)	function	audio	audio-blockhasher-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:41
-audio::BlockHasher::Value() const	function	audio	audio-blockhasher-value-const	audio.md	engine/audio/block_hash.h:44
-audio::BlockHasher::Valid() const	function	audio	audio-blockhasher-valid-const	audio.md	engine/audio/block_hash.h:49
-audio::RenderHash	class	audio	audio-renderhash	audio.md	engine/audio/block_hash.h:63
-audio::RenderHash::AddBlock(Span<const f32>)	function	audio	audio-renderhash-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:69
-audio::RenderHash::Value() const	function	audio	audio-renderhash-value-const	audio.md	engine/audio/block_hash.h:77
-audio::RenderHash::Valid() const	function	audio	audio-renderhash-valid-const	audio.md	engine/audio/block_hash.h:82
-audio::RenderHash::Blocks() const	function	audio	audio-renderhash-blocks-const	audio.md	engine/audio/block_hash.h:85
-audio::RenderHash::Samples() const	function	audio	audio-renderhash-samples-const	audio.md	engine/audio/block_hash.h:88
-audio::HashBlock(Span<const f32>,bool*)	function	audio	audio-hashblock-span-lt-const-f32-gt-bool-star	audio.md	engine/audio/block_hash.h:103
+audio::BlockHasher	class	audio	audio-blockhasher	audio.md	engine/audio/block_hash.h:23
+audio::BlockHasher::BlockHasher()	function	audio	audio-blockhasher-blockhasher	audio.md	engine/audio/block_hash.h:27
+audio::BlockHasher::kOffsetBasis	variable	audio	audio-blockhasher-koffsetbasis	audio.md	engine/audio/block_hash.h:30
+audio::BlockHasher::kPrime	variable	audio	audio-blockhasher-kprime	audio.md	engine/audio/block_hash.h:32
+audio::BlockHasher::AddSample(f32)	function	audio	audio-blockhasher-addsample-f32	audio.md	engine/audio/block_hash.h:37
+audio::BlockHasher::AddBlock(Span<const f32>)	function	audio	audio-blockhasher-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:42
+audio::BlockHasher::Value() const	function	audio	audio-blockhasher-value-const	audio.md	engine/audio/block_hash.h:45
+audio::BlockHasher::Valid() const	function	audio	audio-blockhasher-valid-const	audio.md	engine/audio/block_hash.h:50
+audio::RenderHash	class	audio	audio-renderhash	audio.md	engine/audio/block_hash.h:64
+audio::RenderHash::AddBlock(Span<const f32>)	function	audio	audio-renderhash-addblock-span-lt-const-f32-gt	audio.md	engine/audio/block_hash.h:70
+audio::RenderHash::Value() const	function	audio	audio-renderhash-value-const	audio.md	engine/audio/block_hash.h:78
+audio::RenderHash::Valid() const	function	audio	audio-renderhash-valid-const	audio.md	engine/audio/block_hash.h:83
+audio::RenderHash::Blocks() const	function	audio	audio-renderhash-blocks-const	audio.md	engine/audio/block_hash.h:86
+audio::RenderHash::Samples() const	function	audio	audio-renderhash-samples-const	audio.md	engine/audio/block_hash.h:89
+audio::HashBlock(Span<const f32>,bool*)	function	audio	audio-hashblock-span-lt-const-f32-gt-bool-star	audio.md	engine/audio/block_hash.h:104
 audio::AudioClipPtr	alias	audio	audio-audioclipptr	audio.md	engine/audio/clip.h:17
 audio::AudioClipConstPtr	alias	audio	audio-audioclipconstptr	audio.md	engine/audio/clip.h:19
 audio::ClipStatus	enum	audio	audio-clipstatus	audio.md	engine/audio/clip.h:24

@@ -117,7 +117,7 @@ the time at the smallest: about 1× is linear, and a growth that tracks the size
 | Theme cache (`Resolve`, per widget) | 100 / 1,000 / 4,000 / 8,000 keys | 30 / 266 / 1,053 / 1,074 ns | linear to the cap, then thrash |
 | Script `Value` map, set + find | 16 / 1,000 / 8,000 keys | 80 / 689 / 4,984 ns | quadratic |
 | ECS `SetParent` | 1,000 / 4,000 | 7,452 / 29,491 ns | quadratic (4× size, 16× total) |
-| `ResourceTable::Remove` | 2,000 / 10,000 | 105 / 107 ns | flat: the audit's O(N²) is not seen here (checked on Day 4) |
+| `ResourceTable::Remove` | 2,000 / 10,000 | **corrected on Day 4: 112,764 / 1,291,740 ns** | O(N) per removal (the Day 1 case added paths without the leading `/`, so every `Add` was refused and it timed an empty table; re-measured on Day 4 against the old code) |
 | `MemoryStore::Put`, random order | 2,000 / 10,000 | 681 / 2,975 ns | quadratic |
 | Settings document, parse + read every key | 500 / 2,000 | 1,192 / 3,088 ns | superlinear |
 | Physics joints (`physics_bench --scene joints`) | 551 / 2,201 / 5,501 bodies | 0.057 / 0.234 / 2.366 ms per step | 10× bodies, 41× time (contacts appear at 5,501) |
@@ -137,7 +137,7 @@ the time at the smallest: about 1× is linear, and a growth that tracks the size
 5. The theme cache past ~1,000 keys.
 6. The material cache with many pipelines.
 
-The `DeviceResources` cap is a correctness item. Script waits and events, and `ResourceTable` removal, measure linear: Day 8 keeps their fixes (order-keeping
+The `DeviceResources` cap is a correctness item. Script waits and events measure linear (the `ResourceTable` row was wrong, see the corrected row): Day 8 keeps their fixes (order-keeping
 removes in a scan), but they move down the list. Day 4 records why the table removal is not quadratic.
 
 ## Post-implementation code review

@@ -1,4 +1,5 @@
 #include "ui/widget.h"
+#include "containers/hash.h"
 
 #include "log/assert.h"
 #include "ui/surface.h"
@@ -12,12 +13,7 @@ namespace
 
 u64 HashName(StringView name)
 {
-    u64 h = 1469598103934665603ull;
-    for (usize i = 0; i < name.Length(); ++i)
-    {
-        h = (h ^ static_cast<u8>(name[i])) * 1099511628211ull;
-    }
-    return h;
+    return Fnv1a64Builder(kFnv1a64LegacyBasis).AddText(name).Value();
 }
 
 u64 MixId(u64 parent, u64 key)

@@ -918,6 +918,16 @@ inline constexpr u64 kFnv1a64Prime;
 
 The FNV-1a 64-bit prime.
 
+## `kFnv1a64LegacyBasis` {#kfnv1a64legacybasis}
+
+`variable kFnv1a64LegacyBasis` — defined in `engine/foundation/containers/hash.h`
+
+```cpp
+inline constexpr u64 kFnv1a64LegacyBasis;
+```
+
+The starting value many modules wrote for FNV-1a before `Fnv1a64` existed: the offset basis with its last digit missing (`1469598103934665603`). It is kept as a seed (`Fnv1a64Builder(kFnv1a64LegacyBasis)`) where a hash made from it may be stored or compared (widget ids, settings keys, import names), so that those values do not change; new code starts at `kFnv1a64Basis`.
+
 ## `Fnv1a64Builder` {#fnv1a64builder}
 
 `class Fnv1a64Builder` — defined in `engine/foundation/containers/hash.h`
@@ -1006,6 +1016,21 @@ Adds the bytes of a NUL-terminated string, stopping at the terminator.
 | Field | Value |
 |---|---|
 | Parameter `text` | the string; null adds nothing. |
+| Returns | this builder. |
+
+### `AddU64Bytes(u64)` {#fnv1a64builder-addu64bytes-u64}
+
+`method Fnv1a64Builder::AddU64Bytes` — defined in `engine/foundation/containers/hash.h`
+
+```cpp
+constexpr Fnv1a64Builder& AddU64Bytes(u64 value);
+```
+
+Adds the eight bytes of `value`, least significant first.
+
+| Field | Value |
+|---|---|
+| Parameter `value` | the value. |
 | Returns | this builder. |
 
 ### `AddWord(u64)` {#fnv1a64builder-addword-u64}

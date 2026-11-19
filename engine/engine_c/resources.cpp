@@ -1,4 +1,5 @@
 #include "engine_c/resources.h"
+#include "containers/hash.h"
 
 #include "asset/asset_module.h"
 #include "asset/cpu_loaders.h"
@@ -1288,19 +1289,14 @@ namespace
 
 u64 Mix(u64 hash, u64 value)
 {
-    for (u32 i = 0; i < 8; ++i)
-    {
-        hash ^= (value >> (8 * i)) & 0xFFu;
-        hash *= 0x100000001B3ull;
-    }
-    return hash;
+    return Fnv1a64Builder(hash).AddU64Bytes(value).Value();
 }
 
 }  // namespace
 
 u64 ImportFormatVersionFn()
 {
-    u64 hash = 0xCBF29CE484222325ull;
+    u64 hash = kFnv1a64Basis;
     hash = Mix(hash, 1);  // the layout of this fingerprint
     hash = Mix(hash, ImporterOutputVersion());
     hash = Mix(hash, asset::kContainerVersion);
