@@ -539,9 +539,13 @@ bool ConfigDocument::Set(StringView key_text, StringView value)
     {
         return false;
     }
+    const usize before = lines_.Size();
     const bool changed = SetLine(key, value);
-    Reindex();  // the lines may have moved: an insert shifts every later line
-    return changed;
+    if (lines_.Size() != before)
+    {
+        Reindex();  // a line was inserted: every later line moved
+    }
+    return changed;  // an edit in place keeps every line where it was, and the index with it
 }
 
 bool ConfigDocument::SetLine(const Key& key, StringView value)

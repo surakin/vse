@@ -4109,6 +4109,31 @@ usize operator()(const renderer::detail::PipelineKey& k) const;
 
 Returns a well-mixed hash of the key's fields.
 
+## `Hash<renderer::detail::PipelineKeyRef>` {#hash-lt-renderer-detail-pipelinekeyref-gt}
+
+`struct Hash<renderer::detail::PipelineKeyRef>` — defined in `engine/renderer/material.h`
+
+```cpp
+template <>
+struct Hash<renderer::detail::PipelineKeyRef> { ... }
+```
+
+Hash function for a borrowed pipeline key, equal to the owned key's for the same fields.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe (stateless). |
+
+### `operator()(const renderer::detail::PipelineKeyRef&)` {#hash-lt-renderer-detail-pipelinekeyref-gt-operator-call-const-renderer-detail-pipelinekeyref-amp-const}
+
+`operator Hash<renderer::detail::PipelineKeyRef>::operator()` — defined in `engine/renderer/material.h`
+
+```cpp
+usize operator()(const renderer::detail::PipelineKeyRef& k) const;
+```
+
+Returns a well-mixed hash of the key's fields.
+
 ## `MaterialSystem` {#renderer-materialsystem}
 
 `class renderer::MaterialSystem` — defined in `engine/renderer/material.h`

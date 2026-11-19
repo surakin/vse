@@ -322,13 +322,13 @@ template <class Visit> TraversalStats HashGrid::ForEachOverlappingPair(Visit&& v
     }
     // The oversized items against everything (and each other once). The list position of each oversized slot, made once
     // (container audit Day 8: each oversized pair searched the list for it).
-    Vector<u32> oversized_at;
+    HashMap<u32, u32, HeapAllocator> oversized_at(HeapAllocator::Default());  // slot -> list position, few entries
     if (oversized_.Size() > 1)
     {
-        oversized_at.Resize(slots_.Size());
+        oversized_at.Reserve(oversized_.Size());
         for (usize i = 0; i < oversized_.Size(); ++i)
         {
-            oversized_at[oversized_[i]] = static_cast<u32>(i);
+            oversized_at.Insert(static_cast<u32>(oversized_[i]), static_cast<u32>(i));
         }
     }
     for (usize i = 0; i < oversized_.Size(); ++i)
@@ -344,7 +344,7 @@ template <class Visit> TraversalStats HashGrid::ForEachOverlappingPair(Visit&& v
             if (other.Oversized())
             {
                 // Each oversized pair once: from the one earlier in the list.
-                if (oversized_at[s] < i)
+                if (*oversized_at.Find(static_cast<u32>(s)) < i)
                 {
                     continue;
                 }

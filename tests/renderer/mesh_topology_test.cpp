@@ -596,12 +596,12 @@ struct MeshDuringReset final : Recreatable
     void Release() override {}
     bool Recreate(rhi::Device* device) override
     {
-        made = mesh->CreateFromGeometry(device, *geometry, registry, "refused");
+        made = mesh.CreateFromGeometry(device, *geometry, registry, "refused");
         return true;
     }
     bool Live() const override { return false; }
     const char* RecreatableName() const override { return "mesh during reset"; }
-    GpuMesh* mesh = nullptr;
+    GpuMesh mesh;  // owned: a member may not point into another class's GpuMesh (shared_unit_check)
     const MeshGeometry* geometry = nullptr;
     DeviceResources* registry = nullptr;
     bool made = true;
@@ -647,9 +647,7 @@ TEST_CASE(
 
     // A registry refuses during a reset: the create fails and no buffer, share or id is left behind.
     DeviceResources busy;
-    GpuMesh refused;
     MeshDuringReset maker;
-    maker.mesh = &refused;
     maker.geometry = &geometry;
     maker.registry = &busy;
     REQUIRE(busy.Register(&maker, 0));
@@ -657,7 +655,7 @@ TEST_CASE(
     const usize shares_before = region.UseCount();
     REQUIRE(busy.OnDeviceCreated(device.Get(), device->Epoch()));
     CHECK_FALSE(maker.made);
-    CHECK_FALSE(refused.Valid());
+    CHECK_FALSE(maker.mesh.Valid());
     CHECK(device->Resources().buffers == before.buffers);
     CHECK(region.UseCount() == shares_before);  // the refused mesh holds no share of the bytes
     busy.Unregister(&maker);

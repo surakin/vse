@@ -78,6 +78,12 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - Settings documents are indexed by key (2,000 keys: 3,088 to 314 ns each); the async load queue is a `BinaryHeap`.
   - `asset_mint` level names are indexed; long combining-mark runs are counting-sorted.
   - The resource manager, blob cache, backends and others are deferred (`KNOWN-ISSUES.md`). Review: no findings.
+- **Day 13 done (2026-11-19, Linux): the series is closed on Linux; Day 12 (Windows and macOS) is the user's.**
+  - The gate `container_use_check` is in.
+  - Closing run: `ran 11247 of 11377 tests (phases: all; flavors: all; display: excluded; crash tests: included)`. Four gate failures from the series
+    were fixed; the remaining failures are known from Phase 27.
+  - A renderer frame regression (about 20%) was found against a Day 1 build and fixed: the G-buffer's `qsort` restored, recent-pipeline checks added.
+  - The before/after table is in the day file. Series review: 7 findings (3 fixed, 3 left, 1 no change).
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

@@ -965,14 +965,14 @@ Removes the entry in `slot`; the last entry moves into it.
 
 ```cpp
 template <typename Pred>
-usize RemoveIf(Pred remove);
+usize RemoveIf(Pred drop);
 ```
 
-Removes every entry for which `remove(key, value)` is true, in one pass from the last slot down (so each entry is visited once, whatever moves).
+Removes every entry for which `drop(key, value)` is true, in one pass from the last slot down (so each entry is visited once, whatever moves).
 
 | Field | Value |
 |---|---|
-| Parameter `remove` | called as `remove(const K&, V&)`. |
+| Parameter `drop` | called as `drop(const K&, V&)`. |
 | Returns | how many were removed. |
 
 ### `At(u32)` {#densemap-at-u32}

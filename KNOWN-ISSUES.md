@@ -90,7 +90,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 
 ## Deferred items
 
-- **Container audit (2026-11-19, Linux, read-only; `plans/maintenance/container-audit-2026-11-19.md`): found, not fixed; planned in `plans/maintenance/container-audit.md`.**
+- **Container audit (2026-11-19, Linux; `plans/maintenance/container-audit-2026-11-19.md`): the series (`plans/maintenance/container-audit.md`) ran Days 1-11 and 13 on Linux; what it left:**
   - (4) Deferred from series Day 6:
     - bind groups are not cached by contents: the UI renderer makes one per texture switch and the text renderer one per atlas page per frame, and a
       Vulkan `CreateBindGroup` makes four heap allocations. It needs a reset-safe cache tested with the golden pictures;
@@ -98,6 +98,11 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
     - `text/layout.cpp` makes five vectors per `Arrange`;
     - `combobox` and `value_widgets` make a probe `TextRun` per `Measure`;
     - the `platform/` clipboard paths copy byte by byte.
+  - (7) Seen on series Day 13: the engine's `Sort` (introsort with a Lomuto partition) and `StableSort` move the elements themselves, so on
+    large elements they lose to glibc's `qsort`, which sorts through pointers past 32 bytes. The G-buffer's draw sort keeps `SortRaw` (`qsort`)
+    for that reason: renderer_bench at 50,000 objects measured 0.15 µs per object with the engine's sort against 0.13 with `qsort`.
+  - (8) Not run at the series close (2026-11-19): the `linux-nojit` tree, `-DENGINE_BUILD_SHARED=ON`, `-DENGINE_LIBRARY_WITH_IMPORTER=OFF` and the
+    display tests; Windows and macOS are series Day 12.
   - (6) Deferred from series Day 11:
     - `ResourceManager::Replace`/`Unload` find dependents by scanning every slot (O(n³·d) for a hot reload);
     - the blob cache looks up and evicts by scan, and rewrites its index per `Put`;

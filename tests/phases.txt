@@ -391,6 +391,7 @@ tests/database/                                 19   # Phase 19 Day 251
 tests/storage/                                  19   # Phase 19 Day 256
 test:sqlite_boundary_check*                     19   # the SQLite boundary gate (Day 251)
 test:luajit_boundary_check*                    27   # the LuaJIT boundary gate (Phase 27 Day 445)
+test:container_use_check*                      10   # the container use gate (container audit series Day 13)
 test:database_sql_check*                      19   # the SQL text gate (Day 252)
 tests/scene/visibility_test.cpp                 18   # Phase 18 Day 247
 tests/scene/scene_sync_test.cpp                     17   # Phase 17 Day 233

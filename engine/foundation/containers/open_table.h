@@ -26,8 +26,8 @@ struct MapKeyOf
     template <typename E> const auto& operator()(const E& e) const { return e.key; }
 };
 
-// The range-for iterator of a table: walks the slots, skipping empty ones and tombstones. A debug build
-// (ENGINE_SLOW_CHECKS) checks that the table was not changed while it walks.
+// The range-for iterator of a table: walks the slots, skipping empty ones and tombstones, and aborts if the table was
+// changed while it walks (one integer compare a step; ENGINE_CHECK_SLOW cannot be used in a header).
 template <typename Table, typename Element> class OpenTableIterator
 {
 public:
@@ -41,7 +41,7 @@ public:
 
     OpenTableIterator& operator++()
     {
-        ENGINE_CHECK_SLOW(table_->Changes() == changes_, "HashMap/HashSet: changed while a range-for walked it");
+        ENGINE_ASSERT(table_->Changes() == changes_, "HashMap/HashSet: changed while a range-for walked it");
         ++index_;
         Settle();
         return *this;

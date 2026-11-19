@@ -184,6 +184,33 @@ bool operator==(const PipelineKey& a, const PipelineKey& b)
            a.topology == b.topology && a.restart == b.restart;
 }
 
+bool operator==(const PipelineKey& a, const PipelineKeyRef& b)
+{
+    return a.template_index == b.template_index && a.template_generation == b.template_generation &&
+           a.key_bits == b.key_bits && SameTarget(a.target, *b.target) && SameLayout(a.layout, *b.layout) &&
+           a.topology == b.topology && a.restart == b.restart;
+}
+
+usize HashPipelineKey(u32 template_index, u32 template_generation, u32 key_bits, const PipelineTarget& target,
+                      const VertexLayoutData& layout, rhi::PrimitiveTopology topology, bool restart)
+{
+    Fnv1a64Builder h;
+    h.AddWord(template_index).AddWord(template_generation).AddWord(key_bits);
+    h.AddWord(target.color_count).AddWord(static_cast<u64>(target.depth_format));
+    for (u32 i = 0; i < target.color_count && i < rhi::kMaxColorAttachments; ++i)
+    {
+        h.AddWord(static_cast<u64>(target.color_formats[i]));
+    }
+    h.AddWord(layout.stride).AddWord(layout.skin_stride).AddWord(layout.attribute_count);
+    for (u32 i = 0; i < layout.attribute_count && i < rhi::kMaxVertexAttributes; ++i)
+    {
+        const rhi::VertexAttributeDesc& a = layout.attributes[i];
+        h.AddWord(a.location).AddWord(a.binding).AddWord(static_cast<u64>(a.format)).AddWord(a.offset);
+    }
+    h.AddWord(static_cast<u64>(topology)).AddWord(restart ? 1u : 0u);
+    return engine_placeholder::detail::MixHash64(h.Value());
+}
+
 }  // namespace detail
 
 u64 MakeDrawSortKey(u32 pipeline_index, u32 material_index, u32 mesh_index)
@@ -871,6 +898,19 @@ void MaterialSystem::DestroyTemplate(TemplateId id)
     }
 }
 
+void MaterialSystem::NoteRecentPipeline(u32 slot)
+{
+    for (u32 k = 0; k < kRecentPipelines; ++k)
+    {
+        if (recent_pipelines_[k] == slot)
+        {
+            return;  // already among the recent ones
+        }
+    }
+    recent_pipelines_[recent_next_] = slot;
+    recent_next_ = (recent_next_ + 1) % kRecentPipelines;
+}
+
 detail::PipelineKey MaterialSystem::KeyOf(const PipelineEntry& p)
 {
     detail::PipelineKey key;
@@ -901,6 +941,10 @@ void MaterialSystem::DestroyPipelines(u32 template_index)
             }
             pipeline_index_.Remove(KeyOf(p));
             p = PipelineEntry{};
+            for (u32& recent : recent_pipelines_)
+            {
+                recent = recent == i ? 0xFFFFFFFFu : recent;
+            }
         }
     }
 }
@@ -1828,21 +1872,44 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
     TemplateSlot& t = templates_[m.template_index];
     const Variant& v = t.variants[m.variant_index];
 
-    detail::PipelineKey key;
-    key.template_index = m.template_index;
-    key.template_generation = t.generation;
-    key.key_bits = v.key_bits;
-    key.target = target;
-    key.layout = vertex_layout;
-    key.topology = topology;
-    key.restart = primitive_restart;
-    const u32* indexed = pipeline_index_.Find(key);
-    const u32 hit = indexed != nullptr ? *indexed : pipeline_count_;
+    detail::PipelineKeyRef ref;  // borrowed: the lookup, once per drawn object, copies nothing
+    ref.template_index = m.template_index;
+    ref.template_generation = t.generation;
+    ref.key_bits = v.key_bits;
+    ref.target = &target;
+    ref.layout = &vertex_layout;
+    ref.topology = topology;
+    ref.restart = primitive_restart;
+    // The objects come in draw-key order, so most ask for the pipeline the last one got: compare with it first, and
+    // hash only when it differs (container audit Day 13: hashing the whole key on every object cost more than the old
+    // scan of a few pipelines).
+    u32 hit = pipeline_count_;
+    for (u32 k = 0; k < kRecentPipelines && hit == pipeline_count_; ++k)
+    {
+        const u32 at = recent_pipelines_[k];
+        if (at >= pipeline_count_)
+        {
+            continue;
+        }
+        const PipelineEntry& p = pipelines_[at];
+        if (p.used && p.template_index == m.template_index && p.template_generation == t.generation &&
+            p.key_bits == v.key_bits && p.topology == topology && p.restart == primitive_restart &&
+            SameTarget(p.target, target) && SameLayout(p.layout, vertex_layout))
+        {
+            hit = at;
+        }
+    }
+    if (hit == pipeline_count_)
+    {
+        const u32* indexed = pipeline_index_.Find(ref);
+        hit = indexed != nullptr ? *indexed : pipeline_count_;
+    }
     if (hit != pipeline_count_)
     {
         const u32 i = hit;
         const PipelineEntry& p = pipelines_[i];
         {
+            NoteRecentPipeline(i);
             if (p.pipeline.IsValid())
             {
                 ++stats_.pipeline_hits;
@@ -1965,7 +2032,16 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
     e.topology = topology;
     e.restart = primitive_restart;
     e.pipeline = pipeline;
-    pipeline_index_.Insert(key, slot);
+    detail::PipelineKey key;  // owned, made once for the new entry
+    key.template_index = m.template_index;
+    key.template_generation = t.generation;
+    key.key_bits = v.key_bits;
+    key.target = target;
+    key.layout = vertex_layout;
+    key.topology = topology;
+    key.restart = primitive_restart;
+    pipeline_index_.Insert(Move(key), slot);
+    NoteRecentPipeline(slot);
     if (slot == pipeline_count_)
     {
         ++pipeline_count_;
@@ -1981,27 +2057,3 @@ bool MaterialSystem::Warmup(MaterialId id, const PipelineTarget& target, const V
 }
 
 }  // namespace engine_placeholder::renderer
-
-namespace engine_placeholder
-{
-
-usize Hash<renderer::detail::PipelineKey>::operator()(const renderer::detail::PipelineKey& k) const
-{
-    Fnv1a64Builder h;
-    h.AddWord(k.template_index).AddWord(k.template_generation).AddWord(k.key_bits);
-    h.AddWord(k.target.color_count).AddWord(static_cast<u64>(k.target.depth_format));
-    for (u32 i = 0; i < k.target.color_count && i < rhi::kMaxColorAttachments; ++i)
-    {
-        h.AddWord(static_cast<u64>(k.target.color_formats[i]));
-    }
-    h.AddWord(k.layout.stride).AddWord(k.layout.skin_stride).AddWord(k.layout.attribute_count);
-    for (u32 i = 0; i < k.layout.attribute_count && i < rhi::kMaxVertexAttributes; ++i)
-    {
-        const rhi::VertexAttributeDesc& a = k.layout.attributes[i];
-        h.AddWord(a.location).AddWord(a.binding).AddWord(static_cast<u64>(a.format)).AddWord(a.offset);
-    }
-    h.AddWord(static_cast<u64>(k.topology)).AddWord(k.restart ? 1u : 0u);
-    return detail::MixHash64(h.Value());
-}
-
-}  // namespace engine_placeholder

@@ -48,7 +48,8 @@ The renderer re-sorts and relays out work every frame that does not change betwe
 - **Sorting:**
   - The two sorts are not one sort done twice. Culling (`render_scene.cpp:350`) puts the visible slots in a canonical order that every pass gets, while
     the G-buffer sorts by draw key. The G-buffer's `qsort` through a function pointer became a typed `Sort` with the same total order (the slot breaks
-    every tie), so the draw order, and so the pictures, are unchanged. The cull sort stays.
+    every tie), so the draw order, and so the pictures, are unchanged. The cull sort stays. **Reverted on Day 13:** the typed sort measured slower
+    than glibc's `qsort`, which sorts these ~56-byte entries through pointers; the `qsort` is back.
   - `frame_data.cpp` selects the point lights that fit (`max_lights_` less the directional lights) with `PartialSort` under the same total order
     (distance, then slot), so the same lights in the same order are written; `ComparePoints` is gone.
   - `DrawList::SortLayers` uses a new `StableSort(span, less, scratch)` with the list's own `sort_scratch` vector. An ordered list costs one pass, and

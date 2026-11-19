@@ -7,6 +7,7 @@
 //! system owns every bind group and pipeline, so a draw creates no object. Descriptor sets follow one convention: set 0
 //! is the frame uniform ([[renderer::FrameData]]), set 1 the material, set 2 the per-object storage buffer.
 
+#include "containers/array.h"
 #include "containers/hash_map.h"
 #include "containers/vector.h"
 #include "math/matrix.h"
@@ -230,7 +231,23 @@ struct PipelineKey
     bool restart = false;
 };
 
+// The same fields borrowed, for a lookup that copies nothing (it is made once per drawn object). It hashes and compares
+// as the owned key does.
+struct PipelineKeyRef
+{
+    u32 template_index = 0;
+    u32 template_generation = 0;
+    u32 key_bits = 0;
+    const PipelineTarget* target = nullptr;
+    const VertexLayoutData* layout = nullptr;
+    rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList;
+    bool restart = false;
+};
+
 bool operator==(const PipelineKey& a, const PipelineKey& b);
+bool operator==(const PipelineKey& a, const PipelineKeyRef& b);
+usize HashPipelineKey(u32 template_index, u32 template_generation, u32 key_bits, const PipelineTarget& target,
+                      const VertexLayoutData& layout, rhi::PrimitiveTopology topology, bool restart);
 
 }  // namespace detail
 
@@ -245,7 +262,24 @@ namespace engine_placeholder
 template <> struct Hash<renderer::detail::PipelineKey>
 {
     /// Returns a well-mixed hash of the key's fields.
-    usize operator()(const renderer::detail::PipelineKey& k) const;
+    usize operator()(const renderer::detail::PipelineKey& k) const
+    {
+        return renderer::detail::HashPipelineKey(k.template_index, k.template_generation, k.key_bits, k.target,
+                                                 k.layout, k.topology, k.restart);
+    }
+};
+
+/// Hash function for a borrowed pipeline key, equal to the owned key's for the same fields.
+///
+/// - Thread-safety: thread-safe (stateless).
+template <> struct Hash<renderer::detail::PipelineKeyRef>
+{
+    /// Returns a well-mixed hash of the key's fields.
+    usize operator()(const renderer::detail::PipelineKeyRef& k) const
+    {
+        return renderer::detail::HashPipelineKey(k.template_index, k.template_generation, k.key_bits, *k.target,
+                                                 *k.layout, k.topology, k.restart);
+    }
 };
 
 }  // namespace engine_placeholder
@@ -693,6 +727,11 @@ private:
     Vector<PipelineEntry> pipelines_;
     u32 pipeline_count_ = 0;
     HashMap<detail::PipelineKey, u32, HeapAllocator> pipeline_index_{HeapAllocator::Default()};  // key -> its entry
+    // The entries the last lookups found, checked before hashing: a frame asks for few pipelines, object after object.
+    static constexpr u32 kRecentPipelines = 4;
+    Array<u32, kRecentPipelines> recent_pipelines_{0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};
+    u32 recent_next_ = 0;
+    void NoteRecentPipeline(u32 slot);
     u32 material_high_ = 0;  // one past the highest material slot ever used
     rhi::BindGroupLayoutHandle frame_layout_;
     rhi::BindGroupLayoutHandle object_layout_;

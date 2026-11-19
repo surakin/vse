@@ -171,17 +171,17 @@ public:
         return slot != last ? last : kNone;
     }
 
-    /// Removes every entry for which `remove(key, value)` is true, in one pass from the last slot down (so each entry
+    /// Removes every entry for which `drop(key, value)` is true, in one pass from the last slot down (so each entry
     /// is visited once, whatever moves).
     ///
-    /// - Param remove: called as `remove(const K&, V&)`.
+    /// - Param drop: called as `drop(const K&, V&)`.
     /// - Returns: how many were removed.
-    template <typename Pred> usize RemoveIf(Pred remove)
+    template <typename Pred> usize RemoveIf(Pred drop)
     {
         usize removed = 0;
         for (usize i = entries_.Size(); i > 0; --i)
         {
-            if (remove(static_cast<const K&>(entries_[i - 1].key), entries_[i - 1].value))
+            if (drop(static_cast<const K&>(entries_[i - 1].key), entries_[i - 1].value))
             {
                 RemoveAt(static_cast<u32>(i - 1));
                 ++removed;

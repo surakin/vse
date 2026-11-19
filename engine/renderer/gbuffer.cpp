@@ -602,25 +602,32 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         e.index_count = object.index_count;
     }
 
-    // A total order (the slot breaks every tie), so the result is that of the qsort it replaces; typed, so the
-    // comparison is inlined (container audit Day 6).
-    Sort(Span<SortEntry>(entries, entry_count),
-         [](const SortEntry& x, const SortEntry& y)
-         {
-             if (x.key != y.key)
-             {
-                 return x.key < y.key;
-             }
-             if (x.first_index != y.first_index)
-             {
-                 return x.first_index < y.first_index;
-             }
-             if (x.index_count != y.index_count)
-             {
-                 return x.index_count < y.index_count;
-             }
-             return x.slot < y.slot;
-         });
+    // The C library's qsort, kept on purpose (container audit Day 13): these entries are large (~56 bytes), and glibc
+    // sorts large elements through pointers; a typed introsort or merge sort that moves the entries themselves measured
+    // slower (renderer_bench, 50,000 objects: 0.15 against 0.13 us per object).
+    auto compare = [](const void* a, const void* b)
+    {
+        const SortEntry* x = static_cast<const SortEntry*>(a);
+        const SortEntry* y = static_cast<const SortEntry*>(b);
+        if (x->key != y->key)
+        {
+            return x->key < y->key ? -1 : 1;
+        }
+        if (x->first_index != y->first_index)
+        {
+            return x->first_index < y->first_index ? -1 : 1;
+        }
+        if (x->index_count != y->index_count)
+        {
+            return x->index_count < y->index_count ? -1 : 1;
+        }
+        if (x->slot != y->slot)
+        {
+            return x->slot < y->slot ? -1 : 1;
+        }
+        return 0;
+    };
+    SortRaw(entries, entry_count, sizeof(SortEntry), compare);
     for (u32 i = 0; i < entry_count; ++i)
     {
         slots_[i] = entries[i].slot;

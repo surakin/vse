@@ -198,8 +198,8 @@ The members beyond the example above:
 
 No table is allocated until the first insert, and the table is always a power of two. The order of a walk depends on the hashes and the history of the
 table, so **nothing deterministic may depend on it**: a minted file, a state hash, an event order. Sort the keys first when the order reaches an output.
-Never assign to `key` in a range-for (the entry would no longer be found); do not insert or remove during a walk (a debug build with `ENGINE_SLOW_CHECKS` aborts when the walk takes its next step after a change, so a change at
-the last entry goes unseen).
+Never assign to `key` in a range-for (the entry would no longer be found); do not insert or remove during a walk (the walk aborts when it takes its next step after a change, so a change at the last entry goes
+unseen).
 
 [[HashSet]]`<K, Allocator>` is the same table with no value, for "have I seen this?": `Insert` returns whether the key was new.
 

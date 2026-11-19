@@ -315,7 +315,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
-               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check luajit_boundary_check)
+               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check luajit_boundary_check container_use_check)
     add_subdirectory(tools/${gate})
   endforeach()
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
@@ -413,7 +413,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/macos)  # the macOS-only checks (phase 21): build_defs.h on Apple clang, the headers beside AppKit and Metal
   # The source gates are CMake scripts over the tree, the same on every platform (Day 286, as Windows on Phase 13 Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
-               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check luajit_boundary_check)
+               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check luajit_boundary_check container_use_check)
     add_subdirectory(tools/${gate})
   endforeach()
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
@@ -498,6 +498,7 @@ add_subdirectory(tools/module_deps_check)
 add_subdirectory(tools/ui_widget_style_check)  # Phase 15 Day 195
 add_subdirectory(tools/sqlite_boundary_check)  # Phase 19 Day 251
 add_subdirectory(tools/luajit_boundary_check)  # Phase 27 Day 445
+add_subdirectory(tools/container_use_check)  # container audit series Day 13
 add_subdirectory(tools/database_sql_check)  # Phase 19 Day 252
 add_subdirectory(tools/net_access_check)  # Phase 20 Day 268
 add_subdirectory(tools/shared_unit_check)  # Phase 22: shared units are held by SharedPtr aliases and never pointed at

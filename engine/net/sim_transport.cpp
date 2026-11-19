@@ -1,5 +1,6 @@
 #include "net/sim_transport.h"
 
+#include "containers/deque.h"
 #include "containers/hash_set.h"
 #include "bytes/byte_reader.h"
 #include "bytes/byte_writer.h"
@@ -179,7 +180,7 @@ struct SimulatedTransport::Impl
     usize queue_head = 0;
     EventRec current;
     Vector<Lingering> lingering;
-    Vector<Retired> retired;  // newest last, at most kRetiredMemory
+    Deque<Retired> retired;  // newest last, at most kRetiredMemory (a Deque: the oldest leaves from the front)
 
     u64 Now() const { return net->NowNanos(); }
 
@@ -211,12 +212,12 @@ struct SimulatedTransport::Impl
         {
             if (retired.Size() >= kRetiredMemory)
             {
-                retired.Remove(0);
+                retired.PopFront();
             }
             Retired r;
             r.peer = conn->peer;
             r.nonce = conn->nonce;
-            retired.Push(r);
+            retired.PushBack(r);
         }
         index.Remove(conn->id);
         for (usize i = 0; i < conns.Size(); ++i)
