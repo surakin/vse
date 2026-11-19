@@ -9556,13 +9556,13 @@ scene::kLightSourceId	enumerator	scene	scene-klightsourceid	scene.md	engine/scen
 scene::kCameraId	enumerator	scene	scene-kcameraid	scene.md	engine/scene/scene_components.h:17
 scene::kHiddenId	enumerator	scene	scene-khiddenid	scene.md	engine/scene/scene_components.h:18
 scene::RegisterSceneComponents(storage::ComponentRegistry*)	function	scene	scene-registerscenecomponents-storage-componentregistry-star	scene.md	engine/scene/scene_components.h:26
-ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:13
-ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:24
-ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:28
-ui::Callback::Connect(Function,void*)	function	ui	ui-callback-connect-function-void-star	ui.md	engine/ui/callback.h:35
-ui::Callback::Disconnect(ConnectionId)	function	ui	ui-callback-disconnect-connectionid	ui.md	engine/ui/callback.h:48
-ui::Callback::Invoke(Args...)	function	ui	ui-callback-invoke-args	ui.md	engine/ui/callback.h:62
-ui::Callback::Count() const	function	ui	ui-callback-count-const	ui.md	engine/ui/callback.h:80
+ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:14
+ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:25
+ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:29
+ui::Callback::Connect(Function,void*)	function	ui	ui-callback-connect-function-void-star	ui.md	engine/ui/callback.h:36
+ui::Callback::Disconnect(ConnectionId)	function	ui	ui-callback-disconnect-connectionid	ui.md	engine/ui/callback.h:49
+ui::Callback::Invoke(Args...)	function	ui	ui-callback-invoke-args	ui.md	engine/ui/callback.h:63
+ui::Callback::Count() const	function	ui	ui-callback-count-const	ui.md	engine/ui/callback.h:89
 ui::ImageId	alias	ui	ui-imageid	ui.md	engine/ui/canvas.h:38
 ui::Canvas	class	ui	ui-canvas	ui.md	engine/ui/canvas.h:48
 ui::Canvas::Canvas()	function	ui	ui-canvas-canvas	ui.md	engine/ui/canvas.h:51
@@ -9620,48 +9620,48 @@ ui::LogCapture::Count() const	function	ui	ui-logcapture-count-const	ui.md	engine
 ui::LogCapture::VisibleCount() const	function	ui	ui-logcapture-visiblecount-const	ui.md	engine/ui/debug_overlay.h:57
 ui::LogCapture::VisibleLine(usize) const	function	ui	ui-logcapture-visibleline-usize-const	ui.md	engine/ui/debug_overlay.h:61
 ui::LogCapture::Dropped() const	function	ui	ui-logcapture-dropped-const	ui.md	engine/ui/debug_overlay.h:65
-ui::DebugStats	struct	ui	ui-debugstats	ui.md	engine/ui/debug_overlay.h:83
-ui::DebugStats::frame_ms	variable	ui	ui-debugstats-frame-ms	ui.md	engine/ui/debug_overlay.h:85
-ui::DebugStats::gpu_ms	variable	ui	ui-debugstats-gpu-ms	ui.md	engine/ui/debug_overlay.h:86
-ui::DebugStats::draw_calls	variable	ui	ui-debugstats-draw-calls	ui.md	engine/ui/debug_overlay.h:87
-ui::DebugStats::jobs_pending	variable	ui	ui-debugstats-jobs-pending	ui.md	engine/ui/debug_overlay.h:88
-ui::DebugStats::job_workers	variable	ui	ui-debugstats-job-workers	ui.md	engine/ui/debug_overlay.h:89
-ui::DebugStats::gpu_bytes	variable	ui	ui-debugstats-gpu-bytes	ui.md	engine/ui/debug_overlay.h:90
-ui::FrameGraph	class	ui	ui-framegraph	ui.md	engine/ui/debug_overlay.h:97
-ui::FrameGraph::kSamples	variable	ui	ui-framegraph-ksamples	ui.md	engine/ui/debug_overlay.h:101
-ui::FrameGraph::kFullScaleMs	variable	ui	ui-framegraph-kfullscalems	ui.md	engine/ui/debug_overlay.h:103
-ui::FrameGraph::kHeight	variable	ui	ui-framegraph-kheight	ui.md	engine/ui/debug_overlay.h:105
-ui::FrameGraph::FrameGraph(StringView)	function	ui	ui-framegraph-framegraph-stringview	ui.md	engine/ui/debug_overlay.h:108
-ui::FrameGraph::Push(f32)	function	ui	ui-framegraph-push-f32	ui.md	engine/ui/debug_overlay.h:110
-ui::FrameGraph::Count() const	function	ui	ui-framegraph-count-const	ui.md	engine/ui/debug_overlay.h:114
-ui::FrameGraph::Max() const	function	ui	ui-framegraph-max-const	ui.md	engine/ui/debug_overlay.h:118
-ui::FrameGraph::Average() const	function	ui	ui-framegraph-average-const	ui.md	engine/ui/debug_overlay.h:122
-ui::FrameGraph::Measure(const Constraints&)	function	ui	ui-framegraph-measure-const-constraints-amp	ui.md	engine/ui/debug_overlay.h:124
-ui::FrameGraph::Draw(Canvas&)	function	ui	ui-framegraph-draw-canvas-amp	ui.md	engine/ui/debug_overlay.h:126
-ui::DebugOverlay	class	ui	ui-debugoverlay	ui.md	engine/ui/debug_overlay.h:145
-ui::DebugOverlay::CommandFn	alias	ui	ui-debugoverlay-commandfn	ui.md	engine/ui/debug_overlay.h:150
-ui::DebugOverlay::kWidth	variable	ui	ui-debugoverlay-kwidth	ui.md	engine/ui/debug_overlay.h:153
-ui::DebugOverlay::kPanelHeight	variable	ui	ui-debugoverlay-kpanelheight	ui.md	engine/ui/debug_overlay.h:155
-ui::DebugOverlay::kMargin	variable	ui	ui-debugoverlay-kmargin	ui.md	engine/ui/debug_overlay.h:157
-ui::DebugOverlay::kMaxCommands	variable	ui	ui-debugoverlay-kmaxcommands	ui.md	engine/ui/debug_overlay.h:159
-ui::DebugOverlay::DebugOverlay(StringView)	function	ui	ui-debugoverlay-debugoverlay-stringview	ui.md	engine/ui/debug_overlay.h:162
-ui::DebugOverlay::~DebugOverlay()	function	ui	ui-debugoverlay-tilde-debugoverlay	ui.md	engine/ui/debug_overlay.h:164
-ui::DebugOverlay::Attach(Surface*,UniquePtr<DebugOverlay>,const KeyChord&)	function	ui	ui-debugoverlay-attach-surface-star-uniqueptr-lt-debugoverlay-gt-const-keychord-amp	ui.md	engine/ui/debug_overlay.h:171
-ui::DebugOverlay::Show(bool)	function	ui	ui-debugoverlay-show-bool	ui.md	engine/ui/debug_overlay.h:173
-ui::DebugOverlay::IsShown() const	function	ui	ui-debugoverlay-isshown-const	ui.md	engine/ui/debug_overlay.h:177
-ui::DebugOverlay::SetStats(const DebugStats&)	function	ui	ui-debugoverlay-setstats-const-debugstats-amp	ui.md	engine/ui/debug_overlay.h:179
-ui::DebugOverlay::AddCommand(StringView,StringView,CommandFn,void*)	function	ui	ui-debugoverlay-addcommand-stringview-stringview-commandfn-void-star	ui.md	engine/ui/debug_overlay.h:187
-ui::DebugOverlay::Run(StringView)	function	ui	ui-debugoverlay-run-stringview	ui.md	engine/ui/debug_overlay.h:190
-ui::DebugOverlay::Capture()	function	ui	ui-debugoverlay-capture	ui.md	engine/ui/debug_overlay.h:194
-ui::DebugOverlay::Graph() const	function	ui	ui-debugoverlay-graph-const	ui.md	engine/ui/debug_overlay.h:199
-ui::DebugOverlay::Console() const	function	ui	ui-debugoverlay-console-const	ui.md	engine/ui/debug_overlay.h:204
-ui::DebugOverlay::CommandLine() const	function	ui	ui-debugoverlay-commandline-const	ui.md	engine/ui/debug_overlay.h:209
-ui::DebugOverlay::Counters() const	function	ui	ui-debugoverlay-counters-const	ui.md	engine/ui/debug_overlay.h:214
-ui::DebugOverlay::Refreshes() const	function	ui	ui-debugoverlay-refreshes-const	ui.md	engine/ui/debug_overlay.h:218
-ui::DebugOverlay::Update(f32)	function	ui	ui-debugoverlay-update-f32	ui.md	engine/ui/debug_overlay.h:220
-ui::DebugOverlay::WantsUpdate() const	function	ui	ui-debugoverlay-wantsupdate-const	ui.md	engine/ui/debug_overlay.h:224
-ui::DebugOverlay::Arrange(const Rect&)	function	ui	ui-debugoverlay-arrange-const-rect-amp	ui.md	engine/ui/debug_overlay.h:226
-ui::DebugOverlay::Draw(Canvas&)	function	ui	ui-debugoverlay-draw-canvas-amp	ui.md	engine/ui/debug_overlay.h:228
+ui::DebugStats	struct	ui	ui-debugstats	ui.md	engine/ui/debug_overlay.h:88
+ui::DebugStats::frame_ms	variable	ui	ui-debugstats-frame-ms	ui.md	engine/ui/debug_overlay.h:90
+ui::DebugStats::gpu_ms	variable	ui	ui-debugstats-gpu-ms	ui.md	engine/ui/debug_overlay.h:91
+ui::DebugStats::draw_calls	variable	ui	ui-debugstats-draw-calls	ui.md	engine/ui/debug_overlay.h:92
+ui::DebugStats::jobs_pending	variable	ui	ui-debugstats-jobs-pending	ui.md	engine/ui/debug_overlay.h:93
+ui::DebugStats::job_workers	variable	ui	ui-debugstats-job-workers	ui.md	engine/ui/debug_overlay.h:94
+ui::DebugStats::gpu_bytes	variable	ui	ui-debugstats-gpu-bytes	ui.md	engine/ui/debug_overlay.h:95
+ui::FrameGraph	class	ui	ui-framegraph	ui.md	engine/ui/debug_overlay.h:102
+ui::FrameGraph::kSamples	variable	ui	ui-framegraph-ksamples	ui.md	engine/ui/debug_overlay.h:106
+ui::FrameGraph::kFullScaleMs	variable	ui	ui-framegraph-kfullscalems	ui.md	engine/ui/debug_overlay.h:108
+ui::FrameGraph::kHeight	variable	ui	ui-framegraph-kheight	ui.md	engine/ui/debug_overlay.h:110
+ui::FrameGraph::FrameGraph(StringView)	function	ui	ui-framegraph-framegraph-stringview	ui.md	engine/ui/debug_overlay.h:113
+ui::FrameGraph::Push(f32)	function	ui	ui-framegraph-push-f32	ui.md	engine/ui/debug_overlay.h:115
+ui::FrameGraph::Count() const	function	ui	ui-framegraph-count-const	ui.md	engine/ui/debug_overlay.h:119
+ui::FrameGraph::Max() const	function	ui	ui-framegraph-max-const	ui.md	engine/ui/debug_overlay.h:123
+ui::FrameGraph::Average() const	function	ui	ui-framegraph-average-const	ui.md	engine/ui/debug_overlay.h:127
+ui::FrameGraph::Measure(const Constraints&)	function	ui	ui-framegraph-measure-const-constraints-amp	ui.md	engine/ui/debug_overlay.h:129
+ui::FrameGraph::Draw(Canvas&)	function	ui	ui-framegraph-draw-canvas-amp	ui.md	engine/ui/debug_overlay.h:131
+ui::DebugOverlay	class	ui	ui-debugoverlay	ui.md	engine/ui/debug_overlay.h:150
+ui::DebugOverlay::CommandFn	alias	ui	ui-debugoverlay-commandfn	ui.md	engine/ui/debug_overlay.h:155
+ui::DebugOverlay::kWidth	variable	ui	ui-debugoverlay-kwidth	ui.md	engine/ui/debug_overlay.h:158
+ui::DebugOverlay::kPanelHeight	variable	ui	ui-debugoverlay-kpanelheight	ui.md	engine/ui/debug_overlay.h:160
+ui::DebugOverlay::kMargin	variable	ui	ui-debugoverlay-kmargin	ui.md	engine/ui/debug_overlay.h:162
+ui::DebugOverlay::kMaxCommands	variable	ui	ui-debugoverlay-kmaxcommands	ui.md	engine/ui/debug_overlay.h:164
+ui::DebugOverlay::DebugOverlay(StringView)	function	ui	ui-debugoverlay-debugoverlay-stringview	ui.md	engine/ui/debug_overlay.h:167
+ui::DebugOverlay::~DebugOverlay()	function	ui	ui-debugoverlay-tilde-debugoverlay	ui.md	engine/ui/debug_overlay.h:169
+ui::DebugOverlay::Attach(Surface*,UniquePtr<DebugOverlay>,const KeyChord&)	function	ui	ui-debugoverlay-attach-surface-star-uniqueptr-lt-debugoverlay-gt-const-keychord-amp	ui.md	engine/ui/debug_overlay.h:176
+ui::DebugOverlay::Show(bool)	function	ui	ui-debugoverlay-show-bool	ui.md	engine/ui/debug_overlay.h:178
+ui::DebugOverlay::IsShown() const	function	ui	ui-debugoverlay-isshown-const	ui.md	engine/ui/debug_overlay.h:182
+ui::DebugOverlay::SetStats(const DebugStats&)	function	ui	ui-debugoverlay-setstats-const-debugstats-amp	ui.md	engine/ui/debug_overlay.h:184
+ui::DebugOverlay::AddCommand(StringView,StringView,CommandFn,void*)	function	ui	ui-debugoverlay-addcommand-stringview-stringview-commandfn-void-star	ui.md	engine/ui/debug_overlay.h:192
+ui::DebugOverlay::Run(StringView)	function	ui	ui-debugoverlay-run-stringview	ui.md	engine/ui/debug_overlay.h:195
+ui::DebugOverlay::Capture()	function	ui	ui-debugoverlay-capture	ui.md	engine/ui/debug_overlay.h:199
+ui::DebugOverlay::Graph() const	function	ui	ui-debugoverlay-graph-const	ui.md	engine/ui/debug_overlay.h:204
+ui::DebugOverlay::Console() const	function	ui	ui-debugoverlay-console-const	ui.md	engine/ui/debug_overlay.h:209
+ui::DebugOverlay::CommandLine() const	function	ui	ui-debugoverlay-commandline-const	ui.md	engine/ui/debug_overlay.h:214
+ui::DebugOverlay::Counters() const	function	ui	ui-debugoverlay-counters-const	ui.md	engine/ui/debug_overlay.h:219
+ui::DebugOverlay::Refreshes() const	function	ui	ui-debugoverlay-refreshes-const	ui.md	engine/ui/debug_overlay.h:223
+ui::DebugOverlay::Update(f32)	function	ui	ui-debugoverlay-update-f32	ui.md	engine/ui/debug_overlay.h:225
+ui::DebugOverlay::WantsUpdate() const	function	ui	ui-debugoverlay-wantsupdate-const	ui.md	engine/ui/debug_overlay.h:229
+ui::DebugOverlay::Arrange(const Rect&)	function	ui	ui-debugoverlay-arrange-const-rect-amp	ui.md	engine/ui/debug_overlay.h:231
+ui::DebugOverlay::Draw(Canvas&)	function	ui	ui-debugoverlay-draw-canvas-amp	ui.md	engine/ui/debug_overlay.h:233
 ui::DragAction	alias	ui	ui-dragaction	ui.md	engine/ui/drag_drop.h:16
 ui::DragEntryKind	enum	ui	ui-dragentrykind	ui.md	engine/ui/drag_drop.h:19
 ui::DragEntryKind::Text	enumerator	ui	ui-dragentrykind-text	ui.md	engine/ui/drag_drop.h:21
@@ -10177,134 +10177,134 @@ ui::ClassOf(u32)	function	ui	ui-classof-u32	ui.md	engine/ui/text_words.h:29
 ui::WordStart(StringView,u32)	function	ui	ui-wordstart-stringview-u32	ui.md	engine/ui/text_words.h:37
 ui::WordEnd(StringView,u32)	function	ui	ui-wordend-stringview-u32	ui.md	engine/ui/text_words.h:45
 ui::WordRangeAt(StringView,u32,u32*,u32*)	function	ui	ui-wordrangeat-stringview-u32-u32-star-u32-star	ui.md	engine/ui/text_words.h:54
-ui::WidgetKind	alias	ui	ui-widgetkind	ui.md	engine/ui/theme.h:21
-ui::VariantId	alias	ui	ui-variantid	ui.md	engine/ui/theme.h:23
-ui::widget_kind::kLabel	variable	ui	ui-widget-kind-klabel	ui.md	engine/ui/theme.h:28
-ui::widget_kind::kButton	variable	ui	ui-widget-kind-kbutton	ui.md	engine/ui/theme.h:29
-ui::widget_kind::kCheckbox	variable	ui	ui-widget-kind-kcheckbox	ui.md	engine/ui/theme.h:30
-ui::widget_kind::kRadio	variable	ui	ui-widget-kind-kradio	ui.md	engine/ui/theme.h:31
-ui::widget_kind::kSlider	variable	ui	ui-widget-kind-kslider	ui.md	engine/ui/theme.h:32
-ui::widget_kind::kTextField	variable	ui	ui-widget-kind-ktextfield	ui.md	engine/ui/theme.h:33
-ui::widget_kind::kScrollbar	variable	ui	ui-widget-kind-kscrollbar	ui.md	engine/ui/theme.h:34
-ui::widget_kind::kPanel	variable	ui	ui-widget-kind-kpanel	ui.md	engine/ui/theme.h:35
-ui::widget_kind::kMenu	variable	ui	ui-widget-kind-kmenu	ui.md	engine/ui/theme.h:36
-ui::widget_kind::kTooltip	variable	ui	ui-widget-kind-ktooltip	ui.md	engine/ui/theme.h:37
-ui::widget_kind::kTab	variable	ui	ui-widget-kind-ktab	ui.md	engine/ui/theme.h:38
-ui::widget_kind::kSplitter	variable	ui	ui-widget-kind-ksplitter	ui.md	engine/ui/theme.h:39
-ui::widget_kind::kWindow	variable	ui	ui-widget-kind-kwindow	ui.md	engine/ui/theme.h:40
-ui::widget_kind::kTitleBar	variable	ui	ui-widget-kind-ktitlebar	ui.md	engine/ui/theme.h:41
-ui::widget_kind::kModalDim	variable	ui	ui-widget-kind-kmodaldim	ui.md	engine/ui/theme.h:42
-ui::widget_kind::kDropTarget	variable	ui	ui-widget-kind-kdroptarget	ui.md	engine/ui/theme.h:43
-ui::widget_kind::kDropMarker	variable	ui	ui-widget-kind-kdropmarker	ui.md	engine/ui/theme.h:44
-ui::RegisterWidgetKind(StringView)	function	ui	ui-registerwidgetkind-stringview	ui.md	engine/ui/theme.h:55
-ui::WidgetKindName(WidgetKind)	function	ui	ui-widgetkindname-widgetkind	ui.md	engine/ui/theme.h:59
-ui::RegisterVariant(StringView)	function	ui	ui-registervariant-stringview	ui.md	engine/ui/theme.h:65
-ui::VariantName(VariantId)	function	ui	ui-variantname-variantid	ui.md	engine/ui/theme.h:69
-ui::Opt	struct	ui	ui-opt	ui.md	engine/ui/theme.h:74
-ui::Opt::value	variable	ui	ui-opt-value	ui.md	engine/ui/theme.h:76
-ui::Opt::set	variable	ui	ui-opt-set	ui.md	engine/ui/theme.h:77
-ui::Opt::Opt()	function	ui	ui-opt-opt	ui.md	engine/ui/theme.h:79
-ui::Opt::Opt(T)	function	ui	ui-opt-opt-t	ui.md	engine/ui/theme.h:81
-ui::ColorId	enum	ui	ui-colorid	ui.md	engine/ui/theme.h:85
-ui::ColorId::Text	enumerator	ui	ui-colorid-text	ui.md	engine/ui/theme.h:87
-ui::ColorId::TextDisabled	enumerator	ui	ui-colorid-textdisabled	ui.md	engine/ui/theme.h:88
-ui::ColorId::WindowBackground	enumerator	ui	ui-colorid-windowbackground	ui.md	engine/ui/theme.h:89
-ui::ColorId::Panel	enumerator	ui	ui-colorid-panel	ui.md	engine/ui/theme.h:90
-ui::ColorId::Accent	enumerator	ui	ui-colorid-accent	ui.md	engine/ui/theme.h:91
-ui::ColorId::Danger	enumerator	ui	ui-colorid-danger	ui.md	engine/ui/theme.h:92
-ui::ColorId::Border	enumerator	ui	ui-colorid-border	ui.md	engine/ui/theme.h:93
-ui::ColorId::Count	enumerator	ui	ui-colorid-count	ui.md	engine/ui/theme.h:94
-ui::MetricId	enum	ui	ui-metricid	ui.md	engine/ui/theme.h:97
-ui::MetricId::Padding	enumerator	ui	ui-metricid-padding	ui.md	engine/ui/theme.h:99
-ui::MetricId::Spacing	enumerator	ui	ui-metricid-spacing	ui.md	engine/ui/theme.h:100
-ui::MetricId::BorderWidth	enumerator	ui	ui-metricid-borderwidth	ui.md	engine/ui/theme.h:101
-ui::MetricId::CornerRadius	enumerator	ui	ui-metricid-cornerradius	ui.md	engine/ui/theme.h:102
-ui::MetricId::ScrollbarThickness	enumerator	ui	ui-metricid-scrollbarthickness	ui.md	engine/ui/theme.h:103
-ui::MetricId::MinHitSize	enumerator	ui	ui-metricid-minhitsize	ui.md	engine/ui/theme.h:104
-ui::MetricId::IconSize	enumerator	ui	ui-metricid-iconsize	ui.md	engine/ui/theme.h:105
-ui::MetricId::DragSlop	enumerator	ui	ui-metricid-dragslop	ui.md	engine/ui/theme.h:106
-ui::MetricId::Count	enumerator	ui	ui-metricid-count	ui.md	engine/ui/theme.h:107
-ui::FontId	enum	ui	ui-fontid	ui.md	engine/ui/theme.h:110
-ui::FontId::Body	enumerator	ui	ui-fontid-body	ui.md	engine/ui/theme.h:112
-ui::FontId::Heading	enumerator	ui	ui-fontid-heading	ui.md	engine/ui/theme.h:113
-ui::FontId::Mono	enumerator	ui	ui-fontid-mono	ui.md	engine/ui/theme.h:114
-ui::FontId::Count	enumerator	ui	ui-fontid-count	ui.md	engine/ui/theme.h:115
-ui::FontRef	struct	ui	ui-fontref	ui.md	engine/ui/theme.h:124
-ui::FontRef::family	variable	ui	ui-fontref-family	ui.md	engine/ui/theme.h:126
-ui::FontRef::size	variable	ui	ui-fontref-size	ui.md	engine/ui/theme.h:127
-ui::FontRef::operator==(const FontRef&) const	function	ui	ui-fontref-operator-eq-eq-const-fontref-amp-const	ui.md	engine/ui/theme.h:129
-ui::StateKind	enum	ui	ui-statekind	ui.md	engine/ui/theme.h:133
-ui::StateKind::Normal	enumerator	ui	ui-statekind-normal	ui.md	engine/ui/theme.h:135
-ui::StateKind::Hover	enumerator	ui	ui-statekind-hover	ui.md	engine/ui/theme.h:136
-ui::StateKind::Pressed	enumerator	ui	ui-statekind-pressed	ui.md	engine/ui/theme.h:137
-ui::StateKind::Focused	enumerator	ui	ui-statekind-focused	ui.md	engine/ui/theme.h:138
-ui::StateKind::Disabled	enumerator	ui	ui-statekind-disabled	ui.md	engine/ui/theme.h:139
-ui::StateKind::Checked	enumerator	ui	ui-statekind-checked	ui.md	engine/ui/theme.h:140
-ui::StateKind::Count	enumerator	ui	ui-statekind-count	ui.md	engine/ui/theme.h:141
-ui::kStateHover	variable	ui	ui-kstatehover	ui.md	engine/ui/theme.h:147
-ui::kStatePressed	variable	ui	ui-kstatepressed	ui.md	engine/ui/theme.h:148
-ui::kStateFocused	variable	ui	ui-kstatefocused	ui.md	engine/ui/theme.h:149
-ui::kStateDisabled	variable	ui	ui-kstatedisabled	ui.md	engine/ui/theme.h:150
-ui::kStateChecked	variable	ui	ui-kstatechecked	ui.md	engine/ui/theme.h:151
-ui::kStateDragOver	variable	ui	ui-kstatedragover	ui.md	engine/ui/theme.h:152
-ui::StateStyle	struct	ui	ui-statestyle	ui.md	engine/ui/theme.h:158
-ui::StateStyle::background	variable	ui	ui-statestyle-background	ui.md	engine/ui/theme.h:160
-ui::StateStyle::border_color	variable	ui	ui-statestyle-border-color	ui.md	engine/ui/theme.h:161
-ui::StateStyle::text_color	variable	ui	ui-statestyle-text-color	ui.md	engine/ui/theme.h:162
-ui::StateStyle::border_width	variable	ui	ui-statestyle-border-width	ui.md	engine/ui/theme.h:163
-ui::StateStyle::radius	variable	ui	ui-statestyle-radius	ui.md	engine/ui/theme.h:164
-ui::StateStyle::padding_x	variable	ui	ui-statestyle-padding-x	ui.md	engine/ui/theme.h:165
-ui::StateStyle::padding_y	variable	ui	ui-statestyle-padding-y	ui.md	engine/ui/theme.h:166
-ui::Style	struct	ui	ui-style	ui.md	engine/ui/theme.h:172
-ui::Style::states	variable	ui	ui-style-states	ui.md	engine/ui/theme.h:174
-ui::Style::font	variable	ui	ui-style-font	ui.md	engine/ui/theme.h:176
-ui::Style::At(StateKind)	function	ui	ui-style-at-statekind	ui.md	engine/ui/theme.h:178
-ui::Style::At(StateKind) const	function	ui	ui-style-at-statekind-const	ui.md	engine/ui/theme.h:180
-ui::StyleEntry	struct	ui	ui-styleentry	ui.md	engine/ui/theme.h:186
-ui::StyleEntry::kind	variable	ui	ui-styleentry-kind	ui.md	engine/ui/theme.h:188
-ui::StyleEntry::variant	variable	ui	ui-styleentry-variant	ui.md	engine/ui/theme.h:189
-ui::StyleEntry::style	variable	ui	ui-styleentry-style	ui.md	engine/ui/theme.h:190
-ui::Theme	struct	ui	ui-theme	ui.md	engine/ui/theme.h:198
-ui::Theme::colors	variable	ui	ui-theme-colors	ui.md	engine/ui/theme.h:200
-ui::Theme::metrics	variable	ui	ui-theme-metrics	ui.md	engine/ui/theme.h:201
-ui::Theme::fonts	variable	ui	ui-theme-fonts	ui.md	engine/ui/theme.h:202
-ui::Theme::styles	variable	ui	ui-theme-styles	ui.md	engine/ui/theme.h:203
-ui::Theme::FindStyle(WidgetKind,VariantId) const	function	ui	ui-theme-findstyle-widgetkind-variantid-const	ui.md	engine/ui/theme.h:209
-ui::ThemeBuilder	class	ui	ui-themebuilder	ui.md	engine/ui/theme.h:216
-ui::ThemeBuilder::SetColor(ColorId,u32)	function	ui	ui-themebuilder-setcolor-colorid-u32	ui.md	engine/ui/theme.h:220
-ui::ThemeBuilder::SetMetric(MetricId,f32)	function	ui	ui-themebuilder-setmetric-metricid-f32	ui.md	engine/ui/theme.h:222
-ui::ThemeBuilder::SetFont(FontId,FontRef)	function	ui	ui-themebuilder-setfont-fontid-fontref	ui.md	engine/ui/theme.h:224
-ui::ThemeBuilder::SetStyle(WidgetKind,VariantId,const Style&)	function	ui	ui-themebuilder-setstyle-widgetkind-variantid-const-style-amp	ui.md	engine/ui/theme.h:226
-ui::ThemeBuilder::Build()	function	ui	ui-themebuilder-build	ui.md	engine/ui/theme.h:228
-ui::DefaultLightTheme()	function	ui	ui-defaultlighttheme	ui.md	engine/ui/theme.h:237
-ui::DefaultDarkTheme()	function	ui	ui-defaultdarktheme	ui.md	engine/ui/theme.h:241
-ui::ContrastRatio(u32,u32)	function	ui	ui-contrastratio-u32-u32	ui.md	engine/ui/theme.h:246
-ui::ResolvedStyle	struct	ui	ui-resolvedstyle	ui.md	engine/ui/theme.h:251
-ui::ResolvedStyle::background	variable	ui	ui-resolvedstyle-background	ui.md	engine/ui/theme.h:253
-ui::ResolvedStyle::border_color	variable	ui	ui-resolvedstyle-border-color	ui.md	engine/ui/theme.h:254
-ui::ResolvedStyle::text_color	variable	ui	ui-resolvedstyle-text-color	ui.md	engine/ui/theme.h:255
-ui::ResolvedStyle::border_width	variable	ui	ui-resolvedstyle-border-width	ui.md	engine/ui/theme.h:256
-ui::ResolvedStyle::radius	variable	ui	ui-resolvedstyle-radius	ui.md	engine/ui/theme.h:257
-ui::ResolvedStyle::padding_x	variable	ui	ui-resolvedstyle-padding-x	ui.md	engine/ui/theme.h:258
-ui::ResolvedStyle::padding_y	variable	ui	ui-resolvedstyle-padding-y	ui.md	engine/ui/theme.h:259
-ui::ResolvedStyle::font	variable	ui	ui-resolvedstyle-font	ui.md	engine/ui/theme.h:260
-ui::ThemeStats	struct	ui	ui-themestats	ui.md	engine/ui/theme.h:266
-ui::ThemeStats::resolves	variable	ui	ui-themestats-resolves	ui.md	engine/ui/theme.h:268
-ui::ThemeStats::cache_hits	variable	ui	ui-themestats-cache-hits	ui.md	engine/ui/theme.h:269
-ui::ThemeStats::missing_styles	variable	ui	ui-themestats-missing-styles	ui.md	engine/ui/theme.h:270
-ui::ThemeSet	class	ui	ui-themeset	ui.md	engine/ui/theme.h:284
-ui::ThemeSet::SetTheme(const Theme*)	function	ui	ui-themeset-settheme-const-theme-star	ui.md	engine/ui/theme.h:292
-ui::ThemeSet::GetTheme() const	function	ui	ui-themeset-gettheme-const	ui.md	engine/ui/theme.h:297
-ui::ThemeSet::Revision() const	function	ui	ui-themeset-revision-const	ui.md	engine/ui/theme.h:299
-ui::ThemeSet::Resolve(WidgetKind,VariantId,u32,f32,Span<const Theme* const>)	function	ui	ui-themeset-resolve-widgetkind-variantid-u32-f32-span-lt-const-theme-star-const-gt	ui.md	engine/ui/theme.h:309
-ui::ThemeSet::Resolve(WidgetKind,StringView,u32,f32,Span<const Theme* const>)	function	ui	ui-themeset-resolve-widgetkind-stringview-u32-f32-span-lt-const-theme-star-const-gt	ui.md	engine/ui/theme.h:313
-ui::ThemeSet::Color(ColorId,Span<const Theme* const>) const	function	ui	ui-themeset-color-colorid-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:317
-ui::ThemeSet::Metric(MetricId,f32,Span<const Theme* const>) const	function	ui	ui-themeset-metric-metricid-f32-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:319
-ui::ThemeSet::Font(FontId,f32,Span<const Theme* const>) const	function	ui	ui-themeset-font-fontid-f32-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:321
-ui::ThemeSet::PushOverride(const Theme*)	function	ui	ui-themeset-pushoverride-const-theme-star	ui.md	engine/ui/theme.h:329
-ui::ThemeSet::PopOverride()	function	ui	ui-themeset-popoverride	ui.md	engine/ui/theme.h:331
-ui::ThemeSet::ActiveOverrides() const	function	ui	ui-themeset-activeoverrides-const	ui.md	engine/ui/theme.h:341
-ui::ThemeSet::Stats() const	function	ui	ui-themeset-stats-const	ui.md	engine/ui/theme.h:344
+ui::WidgetKind	alias	ui	ui-widgetkind	ui.md	engine/ui/theme.h:24
+ui::VariantId	alias	ui	ui-variantid	ui.md	engine/ui/theme.h:26
+ui::widget_kind::kLabel	variable	ui	ui-widget-kind-klabel	ui.md	engine/ui/theme.h:31
+ui::widget_kind::kButton	variable	ui	ui-widget-kind-kbutton	ui.md	engine/ui/theme.h:32
+ui::widget_kind::kCheckbox	variable	ui	ui-widget-kind-kcheckbox	ui.md	engine/ui/theme.h:33
+ui::widget_kind::kRadio	variable	ui	ui-widget-kind-kradio	ui.md	engine/ui/theme.h:34
+ui::widget_kind::kSlider	variable	ui	ui-widget-kind-kslider	ui.md	engine/ui/theme.h:35
+ui::widget_kind::kTextField	variable	ui	ui-widget-kind-ktextfield	ui.md	engine/ui/theme.h:36
+ui::widget_kind::kScrollbar	variable	ui	ui-widget-kind-kscrollbar	ui.md	engine/ui/theme.h:37
+ui::widget_kind::kPanel	variable	ui	ui-widget-kind-kpanel	ui.md	engine/ui/theme.h:38
+ui::widget_kind::kMenu	variable	ui	ui-widget-kind-kmenu	ui.md	engine/ui/theme.h:39
+ui::widget_kind::kTooltip	variable	ui	ui-widget-kind-ktooltip	ui.md	engine/ui/theme.h:40
+ui::widget_kind::kTab	variable	ui	ui-widget-kind-ktab	ui.md	engine/ui/theme.h:41
+ui::widget_kind::kSplitter	variable	ui	ui-widget-kind-ksplitter	ui.md	engine/ui/theme.h:42
+ui::widget_kind::kWindow	variable	ui	ui-widget-kind-kwindow	ui.md	engine/ui/theme.h:43
+ui::widget_kind::kTitleBar	variable	ui	ui-widget-kind-ktitlebar	ui.md	engine/ui/theme.h:44
+ui::widget_kind::kModalDim	variable	ui	ui-widget-kind-kmodaldim	ui.md	engine/ui/theme.h:45
+ui::widget_kind::kDropTarget	variable	ui	ui-widget-kind-kdroptarget	ui.md	engine/ui/theme.h:46
+ui::widget_kind::kDropMarker	variable	ui	ui-widget-kind-kdropmarker	ui.md	engine/ui/theme.h:47
+ui::RegisterWidgetKind(StringView)	function	ui	ui-registerwidgetkind-stringview	ui.md	engine/ui/theme.h:58
+ui::WidgetKindName(WidgetKind)	function	ui	ui-widgetkindname-widgetkind	ui.md	engine/ui/theme.h:62
+ui::RegisterVariant(StringView)	function	ui	ui-registervariant-stringview	ui.md	engine/ui/theme.h:68
+ui::VariantName(VariantId)	function	ui	ui-variantname-variantid	ui.md	engine/ui/theme.h:72
+ui::Opt	struct	ui	ui-opt	ui.md	engine/ui/theme.h:77
+ui::Opt::value	variable	ui	ui-opt-value	ui.md	engine/ui/theme.h:79
+ui::Opt::set	variable	ui	ui-opt-set	ui.md	engine/ui/theme.h:80
+ui::Opt::Opt()	function	ui	ui-opt-opt	ui.md	engine/ui/theme.h:82
+ui::Opt::Opt(T)	function	ui	ui-opt-opt-t	ui.md	engine/ui/theme.h:84
+ui::ColorId	enum	ui	ui-colorid	ui.md	engine/ui/theme.h:88
+ui::ColorId::Text	enumerator	ui	ui-colorid-text	ui.md	engine/ui/theme.h:90
+ui::ColorId::TextDisabled	enumerator	ui	ui-colorid-textdisabled	ui.md	engine/ui/theme.h:91
+ui::ColorId::WindowBackground	enumerator	ui	ui-colorid-windowbackground	ui.md	engine/ui/theme.h:92
+ui::ColorId::Panel	enumerator	ui	ui-colorid-panel	ui.md	engine/ui/theme.h:93
+ui::ColorId::Accent	enumerator	ui	ui-colorid-accent	ui.md	engine/ui/theme.h:94
+ui::ColorId::Danger	enumerator	ui	ui-colorid-danger	ui.md	engine/ui/theme.h:95
+ui::ColorId::Border	enumerator	ui	ui-colorid-border	ui.md	engine/ui/theme.h:96
+ui::ColorId::Count	enumerator	ui	ui-colorid-count	ui.md	engine/ui/theme.h:97
+ui::MetricId	enum	ui	ui-metricid	ui.md	engine/ui/theme.h:100
+ui::MetricId::Padding	enumerator	ui	ui-metricid-padding	ui.md	engine/ui/theme.h:102
+ui::MetricId::Spacing	enumerator	ui	ui-metricid-spacing	ui.md	engine/ui/theme.h:103
+ui::MetricId::BorderWidth	enumerator	ui	ui-metricid-borderwidth	ui.md	engine/ui/theme.h:104
+ui::MetricId::CornerRadius	enumerator	ui	ui-metricid-cornerradius	ui.md	engine/ui/theme.h:105
+ui::MetricId::ScrollbarThickness	enumerator	ui	ui-metricid-scrollbarthickness	ui.md	engine/ui/theme.h:106
+ui::MetricId::MinHitSize	enumerator	ui	ui-metricid-minhitsize	ui.md	engine/ui/theme.h:107
+ui::MetricId::IconSize	enumerator	ui	ui-metricid-iconsize	ui.md	engine/ui/theme.h:108
+ui::MetricId::DragSlop	enumerator	ui	ui-metricid-dragslop	ui.md	engine/ui/theme.h:109
+ui::MetricId::Count	enumerator	ui	ui-metricid-count	ui.md	engine/ui/theme.h:110
+ui::FontId	enum	ui	ui-fontid	ui.md	engine/ui/theme.h:113
+ui::FontId::Body	enumerator	ui	ui-fontid-body	ui.md	engine/ui/theme.h:115
+ui::FontId::Heading	enumerator	ui	ui-fontid-heading	ui.md	engine/ui/theme.h:116
+ui::FontId::Mono	enumerator	ui	ui-fontid-mono	ui.md	engine/ui/theme.h:117
+ui::FontId::Count	enumerator	ui	ui-fontid-count	ui.md	engine/ui/theme.h:118
+ui::FontRef	struct	ui	ui-fontref	ui.md	engine/ui/theme.h:127
+ui::FontRef::family	variable	ui	ui-fontref-family	ui.md	engine/ui/theme.h:129
+ui::FontRef::size	variable	ui	ui-fontref-size	ui.md	engine/ui/theme.h:130
+ui::FontRef::operator==(const FontRef&) const	function	ui	ui-fontref-operator-eq-eq-const-fontref-amp-const	ui.md	engine/ui/theme.h:132
+ui::StateKind	enum	ui	ui-statekind	ui.md	engine/ui/theme.h:136
+ui::StateKind::Normal	enumerator	ui	ui-statekind-normal	ui.md	engine/ui/theme.h:138
+ui::StateKind::Hover	enumerator	ui	ui-statekind-hover	ui.md	engine/ui/theme.h:139
+ui::StateKind::Pressed	enumerator	ui	ui-statekind-pressed	ui.md	engine/ui/theme.h:140
+ui::StateKind::Focused	enumerator	ui	ui-statekind-focused	ui.md	engine/ui/theme.h:141
+ui::StateKind::Disabled	enumerator	ui	ui-statekind-disabled	ui.md	engine/ui/theme.h:142
+ui::StateKind::Checked	enumerator	ui	ui-statekind-checked	ui.md	engine/ui/theme.h:143
+ui::StateKind::Count	enumerator	ui	ui-statekind-count	ui.md	engine/ui/theme.h:144
+ui::kStateHover	variable	ui	ui-kstatehover	ui.md	engine/ui/theme.h:150
+ui::kStatePressed	variable	ui	ui-kstatepressed	ui.md	engine/ui/theme.h:151
+ui::kStateFocused	variable	ui	ui-kstatefocused	ui.md	engine/ui/theme.h:152
+ui::kStateDisabled	variable	ui	ui-kstatedisabled	ui.md	engine/ui/theme.h:153
+ui::kStateChecked	variable	ui	ui-kstatechecked	ui.md	engine/ui/theme.h:154
+ui::kStateDragOver	variable	ui	ui-kstatedragover	ui.md	engine/ui/theme.h:155
+ui::StateStyle	struct	ui	ui-statestyle	ui.md	engine/ui/theme.h:161
+ui::StateStyle::background	variable	ui	ui-statestyle-background	ui.md	engine/ui/theme.h:163
+ui::StateStyle::border_color	variable	ui	ui-statestyle-border-color	ui.md	engine/ui/theme.h:164
+ui::StateStyle::text_color	variable	ui	ui-statestyle-text-color	ui.md	engine/ui/theme.h:165
+ui::StateStyle::border_width	variable	ui	ui-statestyle-border-width	ui.md	engine/ui/theme.h:166
+ui::StateStyle::radius	variable	ui	ui-statestyle-radius	ui.md	engine/ui/theme.h:167
+ui::StateStyle::padding_x	variable	ui	ui-statestyle-padding-x	ui.md	engine/ui/theme.h:168
+ui::StateStyle::padding_y	variable	ui	ui-statestyle-padding-y	ui.md	engine/ui/theme.h:169
+ui::Style	struct	ui	ui-style	ui.md	engine/ui/theme.h:175
+ui::Style::states	variable	ui	ui-style-states	ui.md	engine/ui/theme.h:177
+ui::Style::font	variable	ui	ui-style-font	ui.md	engine/ui/theme.h:179
+ui::Style::At(StateKind)	function	ui	ui-style-at-statekind	ui.md	engine/ui/theme.h:181
+ui::Style::At(StateKind) const	function	ui	ui-style-at-statekind-const	ui.md	engine/ui/theme.h:183
+ui::StyleEntry	struct	ui	ui-styleentry	ui.md	engine/ui/theme.h:189
+ui::StyleEntry::kind	variable	ui	ui-styleentry-kind	ui.md	engine/ui/theme.h:191
+ui::StyleEntry::variant	variable	ui	ui-styleentry-variant	ui.md	engine/ui/theme.h:192
+ui::StyleEntry::style	variable	ui	ui-styleentry-style	ui.md	engine/ui/theme.h:193
+ui::Theme	struct	ui	ui-theme	ui.md	engine/ui/theme.h:201
+ui::Theme::colors	variable	ui	ui-theme-colors	ui.md	engine/ui/theme.h:203
+ui::Theme::metrics	variable	ui	ui-theme-metrics	ui.md	engine/ui/theme.h:204
+ui::Theme::fonts	variable	ui	ui-theme-fonts	ui.md	engine/ui/theme.h:205
+ui::Theme::styles	variable	ui	ui-theme-styles	ui.md	engine/ui/theme.h:206
+ui::Theme::FindStyle(WidgetKind,VariantId) const	function	ui	ui-theme-findstyle-widgetkind-variantid-const	ui.md	engine/ui/theme.h:212
+ui::ThemeBuilder	class	ui	ui-themebuilder	ui.md	engine/ui/theme.h:219
+ui::ThemeBuilder::SetColor(ColorId,u32)	function	ui	ui-themebuilder-setcolor-colorid-u32	ui.md	engine/ui/theme.h:223
+ui::ThemeBuilder::SetMetric(MetricId,f32)	function	ui	ui-themebuilder-setmetric-metricid-f32	ui.md	engine/ui/theme.h:225
+ui::ThemeBuilder::SetFont(FontId,FontRef)	function	ui	ui-themebuilder-setfont-fontid-fontref	ui.md	engine/ui/theme.h:227
+ui::ThemeBuilder::SetStyle(WidgetKind,VariantId,const Style&)	function	ui	ui-themebuilder-setstyle-widgetkind-variantid-const-style-amp	ui.md	engine/ui/theme.h:229
+ui::ThemeBuilder::Build()	function	ui	ui-themebuilder-build	ui.md	engine/ui/theme.h:231
+ui::DefaultLightTheme()	function	ui	ui-defaultlighttheme	ui.md	engine/ui/theme.h:240
+ui::DefaultDarkTheme()	function	ui	ui-defaultdarktheme	ui.md	engine/ui/theme.h:244
+ui::ContrastRatio(u32,u32)	function	ui	ui-contrastratio-u32-u32	ui.md	engine/ui/theme.h:249
+ui::ResolvedStyle	struct	ui	ui-resolvedstyle	ui.md	engine/ui/theme.h:254
+ui::ResolvedStyle::background	variable	ui	ui-resolvedstyle-background	ui.md	engine/ui/theme.h:256
+ui::ResolvedStyle::border_color	variable	ui	ui-resolvedstyle-border-color	ui.md	engine/ui/theme.h:257
+ui::ResolvedStyle::text_color	variable	ui	ui-resolvedstyle-text-color	ui.md	engine/ui/theme.h:258
+ui::ResolvedStyle::border_width	variable	ui	ui-resolvedstyle-border-width	ui.md	engine/ui/theme.h:259
+ui::ResolvedStyle::radius	variable	ui	ui-resolvedstyle-radius	ui.md	engine/ui/theme.h:260
+ui::ResolvedStyle::padding_x	variable	ui	ui-resolvedstyle-padding-x	ui.md	engine/ui/theme.h:261
+ui::ResolvedStyle::padding_y	variable	ui	ui-resolvedstyle-padding-y	ui.md	engine/ui/theme.h:262
+ui::ResolvedStyle::font	variable	ui	ui-resolvedstyle-font	ui.md	engine/ui/theme.h:263
+ui::ThemeStats	struct	ui	ui-themestats	ui.md	engine/ui/theme.h:269
+ui::ThemeStats::resolves	variable	ui	ui-themestats-resolves	ui.md	engine/ui/theme.h:271
+ui::ThemeStats::cache_hits	variable	ui	ui-themestats-cache-hits	ui.md	engine/ui/theme.h:272
+ui::ThemeStats::missing_styles	variable	ui	ui-themestats-missing-styles	ui.md	engine/ui/theme.h:273
+ui::ThemeSet	class	ui	ui-themeset	ui.md	engine/ui/theme.h:287
+ui::ThemeSet::SetTheme(const Theme*)	function	ui	ui-themeset-settheme-const-theme-star	ui.md	engine/ui/theme.h:295
+ui::ThemeSet::GetTheme() const	function	ui	ui-themeset-gettheme-const	ui.md	engine/ui/theme.h:300
+ui::ThemeSet::Revision() const	function	ui	ui-themeset-revision-const	ui.md	engine/ui/theme.h:302
+ui::ThemeSet::Resolve(WidgetKind,VariantId,u32,f32,Span<const Theme* const>)	function	ui	ui-themeset-resolve-widgetkind-variantid-u32-f32-span-lt-const-theme-star-const-gt	ui.md	engine/ui/theme.h:312
+ui::ThemeSet::Resolve(WidgetKind,StringView,u32,f32,Span<const Theme* const>)	function	ui	ui-themeset-resolve-widgetkind-stringview-u32-f32-span-lt-const-theme-star-const-gt	ui.md	engine/ui/theme.h:316
+ui::ThemeSet::Color(ColorId,Span<const Theme* const>) const	function	ui	ui-themeset-color-colorid-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:320
+ui::ThemeSet::Metric(MetricId,f32,Span<const Theme* const>) const	function	ui	ui-themeset-metric-metricid-f32-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:322
+ui::ThemeSet::Font(FontId,f32,Span<const Theme* const>) const	function	ui	ui-themeset-font-fontid-f32-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:324
+ui::ThemeSet::PushOverride(const Theme*)	function	ui	ui-themeset-pushoverride-const-theme-star	ui.md	engine/ui/theme.h:332
+ui::ThemeSet::PopOverride()	function	ui	ui-themeset-popoverride	ui.md	engine/ui/theme.h:334
+ui::ThemeSet::ActiveOverrides() const	function	ui	ui-themeset-activeoverrides-const	ui.md	engine/ui/theme.h:344
+ui::ThemeSet::Stats() const	function	ui	ui-themeset-stats-const	ui.md	engine/ui/theme.h:347
 ui::UpdatePolicy	enum	ui	ui-updatepolicy	ui.md	engine/ui/update_policy.h:15
 ui::UpdatePolicy::EveryFrame	enumerator	ui	ui-updatepolicy-everyframe	ui.md	engine/ui/update_policy.h:17
 ui::UpdatePolicy::OnDemand	enumerator	ui	ui-updatepolicy-ondemand	ui.md	engine/ui/update_policy.h:18
@@ -12054,22 +12054,21 @@ renderer::Camera::InverseProjection() const	function	renderer	renderer-camera-in
 renderer::Camera::ViewProjection() const	function	renderer	renderer-camera-viewprojection-const	renderer.md	engine/renderer/camera.h:121
 renderer::Camera::InverseViewProjection() const	function	renderer	renderer-camera-inverseviewprojection-const	renderer.md	engine/renderer/camera.h:124
 renderer::MakeLookAtCamera(const Vec3&,const Vec3&,const Vec3&)	function	renderer	renderer-makelookatcamera-const-vec3-amp-const-vec3-amp-const-vec3-amp	renderer.md	engine/renderer/camera.h:135
-renderer::tiers::kTextures	variable	renderer	renderer-tiers-ktextures	renderer.md	engine/renderer/device_resources.h:19
-renderer::tiers::kMeshes	variable	renderer	renderer-tiers-kmeshes	renderer.md	engine/renderer/device_resources.h:21
-renderer::tiers::kLayouts	variable	renderer	renderer-tiers-klayouts	renderer.md	engine/renderer/device_resources.h:23
-renderer::tiers::kMaterials	variable	renderer	renderer-tiers-kmaterials	renderer.md	engine/renderer/device_resources.h:25
-renderer::tiers::kPasses	variable	renderer	renderer-tiers-kpasses	renderer.md	engine/renderer/device_resources.h:27
-renderer::Recreatable	class	renderer	renderer-recreatable	renderer.md	engine/renderer/device_resources.h:37
-renderer::Recreatable::~Recreatable()	function	renderer	renderer-recreatable-tilde-recreatable	renderer.md	engine/renderer/device_resources.h:40
-renderer::Recreatable::Release()	function	renderer	renderer-recreatable-release	renderer.md	engine/renderer/device_resources.h:43
-renderer::Recreatable::Recreate(rhi::Device*)	function	renderer	renderer-recreatable-recreate-rhi-device-star	renderer.md	engine/renderer/device_resources.h:52
-renderer::Recreatable::Live() const	function	renderer	renderer-recreatable-live-const	renderer.md	engine/renderer/device_resources.h:58
-renderer::Recreatable::RecreatableName() const	function	renderer	renderer-recreatable-recreatablename-const	renderer.md	engine/renderer/device_resources.h:65
-renderer::DeviceResources	class	renderer	renderer-deviceresources	renderer.md	engine/renderer/device_resources.h:79
-renderer::DeviceResources::kMaxOwners	variable	renderer	renderer-deviceresources-kmaxowners	renderer.md	engine/renderer/device_resources.h:83
-renderer::DeviceResources::DeviceResources()	function	renderer	renderer-deviceresources-deviceresources	renderer.md	engine/renderer/device_resources.h:85
-renderer::DeviceResources::DeviceResources(const DeviceResources&)	function	renderer	renderer-deviceresources-deviceresources-const-deviceresources-amp	renderer.md	engine/renderer/device_resources.h:86
-renderer::DeviceResources::operator=(const DeviceResources&)	function	renderer	renderer-deviceresources-operator-eq-const-deviceresources-amp	renderer.md	engine/renderer/device_resources.h:87
+renderer::tiers::kTextures	variable	renderer	renderer-tiers-ktextures	renderer.md	engine/renderer/device_resources.h:21
+renderer::tiers::kMeshes	variable	renderer	renderer-tiers-kmeshes	renderer.md	engine/renderer/device_resources.h:23
+renderer::tiers::kLayouts	variable	renderer	renderer-tiers-klayouts	renderer.md	engine/renderer/device_resources.h:25
+renderer::tiers::kMaterials	variable	renderer	renderer-tiers-kmaterials	renderer.md	engine/renderer/device_resources.h:27
+renderer::tiers::kPasses	variable	renderer	renderer-tiers-kpasses	renderer.md	engine/renderer/device_resources.h:29
+renderer::Recreatable	class	renderer	renderer-recreatable	renderer.md	engine/renderer/device_resources.h:39
+renderer::Recreatable::~Recreatable()	function	renderer	renderer-recreatable-tilde-recreatable	renderer.md	engine/renderer/device_resources.h:42
+renderer::Recreatable::Release()	function	renderer	renderer-recreatable-release	renderer.md	engine/renderer/device_resources.h:45
+renderer::Recreatable::Recreate(rhi::Device*)	function	renderer	renderer-recreatable-recreate-rhi-device-star	renderer.md	engine/renderer/device_resources.h:54
+renderer::Recreatable::Live() const	function	renderer	renderer-recreatable-live-const	renderer.md	engine/renderer/device_resources.h:60
+renderer::Recreatable::RecreatableName() const	function	renderer	renderer-recreatable-recreatablename-const	renderer.md	engine/renderer/device_resources.h:67
+renderer::DeviceResources	class	renderer	renderer-deviceresources	renderer.md	engine/renderer/device_resources.h:81
+renderer::DeviceResources::DeviceResources()	function	renderer	renderer-deviceresources-deviceresources	renderer.md	engine/renderer/device_resources.h:84
+renderer::DeviceResources::DeviceResources(const DeviceResources&)	function	renderer	renderer-deviceresources-deviceresources-const-deviceresources-amp	renderer.md	engine/renderer/device_resources.h:85
+renderer::DeviceResources::operator=(const DeviceResources&)	function	renderer	renderer-deviceresources-operator-eq-const-deviceresources-amp	renderer.md	engine/renderer/device_resources.h:86
 renderer::DeviceResources::Register(Recreatable*,u32)	function	renderer	renderer-deviceresources-register-recreatable-star-u32	renderer.md	engine/renderer/device_resources.h:99
 renderer::DeviceResources::Unregister(Recreatable*)	function	renderer	renderer-deviceresources-unregister-recreatable-star	renderer.md	engine/renderer/device_resources.h:105
 renderer::DeviceResources::Rebind(Recreatable*,Recreatable*)	function	renderer	renderer-deviceresources-rebind-recreatable-star-recreatable-star	renderer.md	engine/renderer/device_resources.h:111
@@ -12081,15 +12080,15 @@ renderer::DeviceResources::CurrentDevice() const	function	renderer	renderer-devi
 renderer::DeviceResources::OnDeviceReleasing(u32)	function	renderer	renderer-deviceresources-ondevicereleasing-u32	renderer.md	engine/renderer/device_resources.h:144
 renderer::DeviceResources::OnDeviceCreated(rhi::Device*,u32)	function	renderer	renderer-deviceresources-ondevicecreated-rhi-device-star-u32	renderer.md	engine/renderer/device_resources.h:152
 renderer::DeviceResources::ObserverName() const	function	renderer	renderer-deviceresources-observername-const	renderer.md	engine/renderer/device_resources.h:157
-renderer::ScopedRegistration	class	renderer	renderer-scopedregistration	renderer.md	engine/renderer/device_resources.h:188
-renderer::ScopedRegistration::ScopedRegistration()	function	renderer	renderer-scopedregistration-scopedregistration	renderer.md	engine/renderer/device_resources.h:191
-renderer::ScopedRegistration::~ScopedRegistration()	function	renderer	renderer-scopedregistration-tilde-scopedregistration	renderer.md	engine/renderer/device_resources.h:193
-renderer::ScopedRegistration::ScopedRegistration(const ScopedRegistration&)	function	renderer	renderer-scopedregistration-scopedregistration-const-scopedregistration-amp	renderer.md	engine/renderer/device_resources.h:194
-renderer::ScopedRegistration::operator=(const ScopedRegistration&)	function	renderer	renderer-scopedregistration-operator-eq-const-scopedregistration-amp	renderer.md	engine/renderer/device_resources.h:195
-renderer::ScopedRegistration::Attach(DeviceResources*,Recreatable*,u32)	function	renderer	renderer-scopedregistration-attach-deviceresources-star-recreatable-star-u32	renderer.md	engine/renderer/device_resources.h:205
-renderer::ScopedRegistration::Adopt(ScopedRegistration*,Recreatable*)	function	renderer	renderer-scopedregistration-adopt-scopedregistration-star-recreatable-star	renderer.md	engine/renderer/device_resources.h:223
-renderer::ScopedRegistration::Reset()	function	renderer	renderer-scopedregistration-reset	renderer.md	engine/renderer/device_resources.h:237
-renderer::ScopedRegistration::Registered() const	function	renderer	renderer-scopedregistration-registered-const	renderer.md	engine/renderer/device_resources.h:249
+renderer::ScopedRegistration	class	renderer	renderer-scopedregistration	renderer.md	engine/renderer/device_resources.h:193
+renderer::ScopedRegistration::ScopedRegistration()	function	renderer	renderer-scopedregistration-scopedregistration	renderer.md	engine/renderer/device_resources.h:196
+renderer::ScopedRegistration::~ScopedRegistration()	function	renderer	renderer-scopedregistration-tilde-scopedregistration	renderer.md	engine/renderer/device_resources.h:198
+renderer::ScopedRegistration::ScopedRegistration(const ScopedRegistration&)	function	renderer	renderer-scopedregistration-scopedregistration-const-scopedregistration-amp	renderer.md	engine/renderer/device_resources.h:199
+renderer::ScopedRegistration::operator=(const ScopedRegistration&)	function	renderer	renderer-scopedregistration-operator-eq-const-scopedregistration-amp	renderer.md	engine/renderer/device_resources.h:200
+renderer::ScopedRegistration::Attach(DeviceResources*,Recreatable*,u32)	function	renderer	renderer-scopedregistration-attach-deviceresources-star-recreatable-star-u32	renderer.md	engine/renderer/device_resources.h:210
+renderer::ScopedRegistration::Adopt(ScopedRegistration*,Recreatable*)	function	renderer	renderer-scopedregistration-adopt-scopedregistration-star-recreatable-star	renderer.md	engine/renderer/device_resources.h:228
+renderer::ScopedRegistration::Reset()	function	renderer	renderer-scopedregistration-reset	renderer.md	engine/renderer/device_resources.h:242
+renderer::ScopedRegistration::Registered() const	function	renderer	renderer-scopedregistration-registered-const	renderer.md	engine/renderer/device_resources.h:254
 renderer::FrameData	struct	renderer	renderer-framedata	renderer.md	engine/renderer/frame_data.h:20
 renderer::FrameData::view	variable	renderer	renderer-framedata-view	renderer.md	engine/renderer/frame_data.h:23
 renderer::FrameData::projection	variable	renderer	renderer-framedata-projection	renderer.md	engine/renderer/frame_data.h:25
@@ -12300,115 +12299,115 @@ renderer::TonemapPass::Live() const	function	renderer	renderer-tonemappass-live-
 renderer::TonemapPass::RecreatableName() const	function	renderer	renderer-tonemappass-recreatablename-const	renderer.md	engine/renderer/lighting.h:329
 renderer::TonemapPass::Valid() const	function	renderer	renderer-tonemappass-valid-const	renderer.md	engine/renderer/lighting.h:333
 renderer::TonemapPass::AddToGraph(RenderGraph*,GraphResource,GraphResource,rhi::Format,f32)	function	renderer	renderer-tonemappass-addtograph-rendergraph-star-graphresource-graphresource-rhi-format-f32	renderer.md	engine/renderer/lighting.h:347
-renderer::kFrameSet	variable	renderer	renderer-kframeset	renderer.md	engine/renderer/material.h:25
-renderer::kMaterialSet	variable	renderer	renderer-kmaterialset	renderer.md	engine/renderer/material.h:27
-renderer::kObjectSet	variable	renderer	renderer-kobjectset	renderer.md	engine/renderer/material.h:29
-renderer::kMaxMaterialParamBytes	variable	renderer	renderer-kmaxmaterialparambytes	renderer.md	engine/renderer/material.h:31
-renderer::kMaxMaterialTextures	variable	renderer	renderer-kmaxmaterialtextures	renderer.md	engine/renderer/material.h:33
-renderer::kMaxMaterialSamplers	variable	renderer	renderer-kmaxmaterialsamplers	renderer.md	engine/renderer/material.h:35
-renderer::TemplateId	struct	renderer	renderer-templateid	renderer.md	engine/renderer/material.h:40
-renderer::TemplateId::index	variable	renderer	renderer-templateid-index	renderer.md	engine/renderer/material.h:43
-renderer::TemplateId::generation	variable	renderer	renderer-templateid-generation	renderer.md	engine/renderer/material.h:45
-renderer::TemplateId::IsValid() const	function	renderer	renderer-templateid-isvalid-const	renderer.md	engine/renderer/material.h:49
-renderer::MaterialId	struct	renderer	renderer-materialid	renderer.md	engine/renderer/material.h:55
-renderer::MaterialId::index	variable	renderer	renderer-materialid-index	renderer.md	engine/renderer/material.h:58
-renderer::MaterialId::generation	variable	renderer	renderer-materialid-generation	renderer.md	engine/renderer/material.h:60
-renderer::MaterialId::IsValid() const	function	renderer	renderer-materialid-isvalid-const	renderer.md	engine/renderer/material.h:64
-renderer::MaterialRenderState	struct	renderer	renderer-materialrenderstate	renderer.md	engine/renderer/material.h:70
-renderer::MaterialRenderState::cull	variable	renderer	renderer-materialrenderstate-cull	renderer.md	engine/renderer/material.h:73
-renderer::MaterialRenderState::depth_test	variable	renderer	renderer-materialrenderstate-depth-test	renderer.md	engine/renderer/material.h:75
-renderer::MaterialRenderState::depth_write	variable	renderer	renderer-materialrenderstate-depth-write	renderer.md	engine/renderer/material.h:77
-renderer::MaterialRenderState::depth_compare	variable	renderer	renderer-materialrenderstate-depth-compare	renderer.md	engine/renderer/material.h:79
-renderer::MaterialRenderState::alpha_blend	variable	renderer	renderer-materialrenderstate-alpha-blend	renderer.md	engine/renderer/material.h:81
-renderer::DefaultTexture	enum	renderer	renderer-defaulttexture	renderer.md	engine/renderer/material.h:85
-renderer::DefaultTexture::White	enumerator	renderer	renderer-defaulttexture-white	renderer.md	engine/renderer/material.h:87
-renderer::DefaultTexture::Black	enumerator	renderer	renderer-defaulttexture-black	renderer.md	engine/renderer/material.h:88
-renderer::DefaultTexture::FlatNormal	enumerator	renderer	renderer-defaulttexture-flatnormal	renderer.md	engine/renderer/material.h:89
-renderer::kObjectIndexLocation	variable	renderer	renderer-kobjectindexlocation	renderer.md	engine/renderer/material.h:94
-renderer::kMaxObjectIndices	variable	renderer	renderer-kmaxobjectindices	renderer.md	engine/renderer/material.h:96
-renderer::TextureDefault	struct	renderer	renderer-texturedefault	renderer.md	engine/renderer/material.h:102
-renderer::TextureDefault::slot	variable	renderer	renderer-texturedefault-slot	renderer.md	engine/renderer/material.h:105
-renderer::TextureDefault::texture	variable	renderer	renderer-texturedefault-texture	renderer.md	engine/renderer/material.h:107
-renderer::MaterialTemplateDesc	struct	renderer	renderer-materialtemplatedesc	renderer.md	engine/renderer/material.h:118
-renderer::MaterialTemplateDesc::name	variable	renderer	renderer-materialtemplatedesc-name	renderer.md	engine/renderer/material.h:121
-renderer::MaterialTemplateDesc::vertex	variable	renderer	renderer-materialtemplatedesc-vertex	renderer.md	engine/renderer/material.h:123
-renderer::MaterialTemplateDesc::fragment	variable	renderer	renderer-materialtemplatedesc-fragment	renderer.md	engine/renderer/material.h:125
-renderer::MaterialTemplateDesc::fragment_permutations	variable	renderer	renderer-materialtemplatedesc-fragment-permutations	renderer.md	engine/renderer/material.h:127
-renderer::MaterialTemplateDesc::state	variable	renderer	renderer-materialtemplatedesc-state	renderer.md	engine/renderer/material.h:129
-renderer::MaterialTemplateDesc::texture_defaults	variable	renderer	renderer-materialtemplatedesc-texture-defaults	renderer.md	engine/renderer/material.h:132
-renderer::MaterialTemplateDesc::texture_default_count	variable	renderer	renderer-materialtemplatedesc-texture-default-count	renderer.md	engine/renderer/material.h:134
-renderer::MaterialTemplateDesc::skinned	variable	renderer	renderer-materialtemplatedesc-skinned	renderer.md	engine/renderer/material.h:139
-renderer::PipelineTarget	struct	renderer	renderer-pipelinetarget	renderer.md	engine/renderer/material.h:145
-renderer::PipelineTarget::color_formats	variable	renderer	renderer-pipelinetarget-color-formats	renderer.md	engine/renderer/material.h:148
-renderer::PipelineTarget::color_count	variable	renderer	renderer-pipelinetarget-color-count	renderer.md	engine/renderer/material.h:150
-renderer::PipelineTarget::depth_format	variable	renderer	renderer-pipelinetarget-depth-format	renderer.md	engine/renderer/material.h:152
-renderer::PipelineLookup	struct	renderer	renderer-pipelinelookup	renderer.md	engine/renderer/material.h:158
-renderer::PipelineLookup::pipeline	variable	renderer	renderer-pipelinelookup-pipeline	renderer.md	engine/renderer/material.h:161
-renderer::PipelineLookup::index	variable	renderer	renderer-pipelinelookup-index	renderer.md	engine/renderer/material.h:163
-renderer::MaterialStats	struct	renderer	renderer-materialstats	renderer.md	engine/renderer/material.h:169
-renderer::MaterialStats::pipeline_hits	variable	renderer	renderer-materialstats-pipeline-hits	renderer.md	engine/renderer/material.h:172
-renderer::MaterialStats::pipeline_misses	variable	renderer	renderer-materialstats-pipeline-misses	renderer.md	engine/renderer/material.h:174
-renderer::MaterialStats::pipelines	variable	renderer	renderer-materialstats-pipelines	renderer.md	engine/renderer/material.h:176
-renderer::MaterialStats::bind_group_rebuilds	variable	renderer	renderer-materialstats-bind-group-rebuilds	renderer.md	engine/renderer/material.h:178
-renderer::MaterialStats::parameter_flushes	variable	renderer	renderer-materialstats-parameter-flushes	renderer.md	engine/renderer/material.h:180
-renderer::MaterialStats::rebuilds	variable	renderer	renderer-materialstats-rebuilds	renderer.md	engine/renderer/material.h:182
-renderer::MaterialSystemDesc	struct	renderer	renderer-materialsystemdesc	renderer.md	engine/renderer/material.h:188
-renderer::MaterialSystemDesc::max_templates	variable	renderer	renderer-materialsystemdesc-max-templates	renderer.md	engine/renderer/material.h:191
-renderer::MaterialSystemDesc::max_materials	variable	renderer	renderer-materialsystemdesc-max-materials	renderer.md	engine/renderer/material.h:193
-renderer::MaterialSystemDesc::max_pipelines	variable	renderer	renderer-materialsystemdesc-max-pipelines	renderer.md	engine/renderer/material.h:195
-renderer::MaterialSystemDesc::resources	variable	renderer	renderer-materialsystemdesc-resources	renderer.md	engine/renderer/material.h:197
-renderer::MaterialSystemDesc::prewarm_pipelines	variable	renderer	renderer-materialsystemdesc-prewarm-pipelines	renderer.md	engine/renderer/material.h:201
-renderer::MakeDrawSortKey(u32,u32,u32)	function	renderer	renderer-makedrawsortkey-u32-u32-u32	renderer.md	engine/renderer/material.h:214
-renderer::MaterialSystem	class	renderer	renderer-materialsystem	renderer.md	engine/renderer/material.h:234
-renderer::MaterialSystem::MaterialSystem(rhi::Device*,const MaterialSystemDesc&)	function	renderer	renderer-materialsystem-materialsystem-rhi-device-star-const-materialsystemdesc-amp	renderer.md	engine/renderer/material.h:245
-renderer::MaterialSystem::~MaterialSystem()	function	renderer	renderer-materialsystem-tilde-materialsystem	renderer.md	engine/renderer/material.h:248
-renderer::MaterialSystem::MaterialSystem(const MaterialSystem&)	function	renderer	renderer-materialsystem-materialsystem-const-materialsystem-amp	renderer.md	engine/renderer/material.h:249
-renderer::MaterialSystem::operator=(const MaterialSystem&)	function	renderer	renderer-materialsystem-operator-eq-const-materialsystem-amp	renderer.md	engine/renderer/material.h:250
-renderer::MaterialSystem::Valid() const	function	renderer	renderer-materialsystem-valid-const	renderer.md	engine/renderer/material.h:254
-renderer::MaterialSystem::CreateTemplate(const MaterialTemplateDesc&)	function	renderer	renderer-materialsystem-createtemplate-const-materialtemplatedesc-amp	renderer.md	engine/renderer/material.h:265
-renderer::MaterialSystem::DestroyTemplate(TemplateId)	function	renderer	renderer-materialsystem-destroytemplate-templateid	renderer.md	engine/renderer/material.h:271
-renderer::MaterialSystem::CreateMaterial(TemplateId,PermutationKey,const char*)	function	renderer	renderer-materialsystem-creatematerial-templateid-permutationkey-const-char-star	renderer.md	engine/renderer/material.h:289
-renderer::MaterialSystem::CloneMaterial(MaterialId,const char*)	function	renderer	renderer-materialsystem-clonematerial-materialid-const-char-star	renderer.md	engine/renderer/material.h:299
-renderer::MaterialSystem::DestroyMaterial(MaterialId)	function	renderer	renderer-materialsystem-destroymaterial-materialid	renderer.md	engine/renderer/material.h:305
-renderer::MaterialSystem::IsAlive(MaterialId) const	function	renderer	renderer-materialsystem-isalive-materialid-const	renderer.md	engine/renderer/material.h:309
-renderer::MaterialSystem::MaterialAtIndex(u32) const	function	renderer	renderer-materialsystem-materialatindex-u32-const	renderer.md	engine/renderer/material.h:315
-renderer::MaterialSystem::FrameBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-framebindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:329
-renderer::MaterialSystem::ObjectBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-objectbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:337
-renderer::MaterialSystem::JointBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-jointbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:346
-renderer::MaterialSystem::kJointSet	variable	renderer	renderer-materialsystem-kjointset	renderer.md	engine/renderer/material.h:348
-renderer::MaterialSystem::ReadsVertexInput(MaterialId,u32) const	function	renderer	renderer-materialsystem-readsvertexinput-materialid-u32-const	renderer.md	engine/renderer/material.h:355
-renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:365
-renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:374
-renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:383
-renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:392
-renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:401
-renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:410
-renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:419
-renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:431
-renderer::MaterialSystem::SetTexture(MaterialId,const char*,const GpuTextureConstPtr&)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-const-gputextureconstptr-amp	renderer.md	engine/renderer/material.h:443
-renderer::MaterialSystem::SetSampler(MaterialId,const char*,const GpuSamplerConstPtr&)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusamplerconstptr-amp	renderer.md	engine/renderer/material.h:454
-renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:465
-renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:470
-renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:476
-renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:484
-renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:491
-renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:495
-renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:498
-renderer::MaterialSystem::ObjectIndexStream() const	function	renderer	renderer-materialsystem-objectindexstream-const	renderer.md	engine/renderer/material.h:508
-renderer::MaterialSystem::ObjectIndexSlot()	function	renderer	renderer-materialsystem-objectindexslot	renderer.md	engine/renderer/material.h:514
-renderer::MaterialSystem::ObjectIndexSlotFor(bool)	function	renderer	renderer-materialsystem-objectindexslotfor-bool	renderer.md	engine/renderer/material.h:521
-renderer::MaterialSystem::AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)	function	renderer	renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32	renderer.md	engine/renderer/material.h:539
-renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:546
-renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:556
-renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:564
-renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:584
-renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:598
-renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:605
-renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:609
-renderer::MaterialSystem::Release()	function	renderer	renderer-materialsystem-release	renderer.md	engine/renderer/material.h:614
-renderer::MaterialSystem::Recreate(rhi::Device*)	function	renderer	renderer-materialsystem-recreate-rhi-device-star	renderer.md	engine/renderer/material.h:622
-renderer::MaterialSystem::Live() const	function	renderer	renderer-materialsystem-live-const	renderer.md	engine/renderer/material.h:623
-renderer::MaterialSystem::RecreatableName() const	function	renderer	renderer-materialsystem-recreatablename-const	renderer.md	engine/renderer/material.h:624
+renderer::kFrameSet	variable	renderer	renderer-kframeset	renderer.md	engine/renderer/material.h:26
+renderer::kMaterialSet	variable	renderer	renderer-kmaterialset	renderer.md	engine/renderer/material.h:28
+renderer::kObjectSet	variable	renderer	renderer-kobjectset	renderer.md	engine/renderer/material.h:30
+renderer::kMaxMaterialParamBytes	variable	renderer	renderer-kmaxmaterialparambytes	renderer.md	engine/renderer/material.h:32
+renderer::kMaxMaterialTextures	variable	renderer	renderer-kmaxmaterialtextures	renderer.md	engine/renderer/material.h:34
+renderer::kMaxMaterialSamplers	variable	renderer	renderer-kmaxmaterialsamplers	renderer.md	engine/renderer/material.h:36
+renderer::TemplateId	struct	renderer	renderer-templateid	renderer.md	engine/renderer/material.h:41
+renderer::TemplateId::index	variable	renderer	renderer-templateid-index	renderer.md	engine/renderer/material.h:44
+renderer::TemplateId::generation	variable	renderer	renderer-templateid-generation	renderer.md	engine/renderer/material.h:46
+renderer::TemplateId::IsValid() const	function	renderer	renderer-templateid-isvalid-const	renderer.md	engine/renderer/material.h:50
+renderer::MaterialId	struct	renderer	renderer-materialid	renderer.md	engine/renderer/material.h:56
+renderer::MaterialId::index	variable	renderer	renderer-materialid-index	renderer.md	engine/renderer/material.h:59
+renderer::MaterialId::generation	variable	renderer	renderer-materialid-generation	renderer.md	engine/renderer/material.h:61
+renderer::MaterialId::IsValid() const	function	renderer	renderer-materialid-isvalid-const	renderer.md	engine/renderer/material.h:65
+renderer::MaterialRenderState	struct	renderer	renderer-materialrenderstate	renderer.md	engine/renderer/material.h:71
+renderer::MaterialRenderState::cull	variable	renderer	renderer-materialrenderstate-cull	renderer.md	engine/renderer/material.h:74
+renderer::MaterialRenderState::depth_test	variable	renderer	renderer-materialrenderstate-depth-test	renderer.md	engine/renderer/material.h:76
+renderer::MaterialRenderState::depth_write	variable	renderer	renderer-materialrenderstate-depth-write	renderer.md	engine/renderer/material.h:78
+renderer::MaterialRenderState::depth_compare	variable	renderer	renderer-materialrenderstate-depth-compare	renderer.md	engine/renderer/material.h:80
+renderer::MaterialRenderState::alpha_blend	variable	renderer	renderer-materialrenderstate-alpha-blend	renderer.md	engine/renderer/material.h:82
+renderer::DefaultTexture	enum	renderer	renderer-defaulttexture	renderer.md	engine/renderer/material.h:86
+renderer::DefaultTexture::White	enumerator	renderer	renderer-defaulttexture-white	renderer.md	engine/renderer/material.h:88
+renderer::DefaultTexture::Black	enumerator	renderer	renderer-defaulttexture-black	renderer.md	engine/renderer/material.h:89
+renderer::DefaultTexture::FlatNormal	enumerator	renderer	renderer-defaulttexture-flatnormal	renderer.md	engine/renderer/material.h:90
+renderer::kObjectIndexLocation	variable	renderer	renderer-kobjectindexlocation	renderer.md	engine/renderer/material.h:95
+renderer::kMaxObjectIndices	variable	renderer	renderer-kmaxobjectindices	renderer.md	engine/renderer/material.h:97
+renderer::TextureDefault	struct	renderer	renderer-texturedefault	renderer.md	engine/renderer/material.h:103
+renderer::TextureDefault::slot	variable	renderer	renderer-texturedefault-slot	renderer.md	engine/renderer/material.h:106
+renderer::TextureDefault::texture	variable	renderer	renderer-texturedefault-texture	renderer.md	engine/renderer/material.h:108
+renderer::MaterialTemplateDesc	struct	renderer	renderer-materialtemplatedesc	renderer.md	engine/renderer/material.h:119
+renderer::MaterialTemplateDesc::name	variable	renderer	renderer-materialtemplatedesc-name	renderer.md	engine/renderer/material.h:122
+renderer::MaterialTemplateDesc::vertex	variable	renderer	renderer-materialtemplatedesc-vertex	renderer.md	engine/renderer/material.h:124
+renderer::MaterialTemplateDesc::fragment	variable	renderer	renderer-materialtemplatedesc-fragment	renderer.md	engine/renderer/material.h:126
+renderer::MaterialTemplateDesc::fragment_permutations	variable	renderer	renderer-materialtemplatedesc-fragment-permutations	renderer.md	engine/renderer/material.h:128
+renderer::MaterialTemplateDesc::state	variable	renderer	renderer-materialtemplatedesc-state	renderer.md	engine/renderer/material.h:130
+renderer::MaterialTemplateDesc::texture_defaults	variable	renderer	renderer-materialtemplatedesc-texture-defaults	renderer.md	engine/renderer/material.h:133
+renderer::MaterialTemplateDesc::texture_default_count	variable	renderer	renderer-materialtemplatedesc-texture-default-count	renderer.md	engine/renderer/material.h:135
+renderer::MaterialTemplateDesc::skinned	variable	renderer	renderer-materialtemplatedesc-skinned	renderer.md	engine/renderer/material.h:140
+renderer::PipelineTarget	struct	renderer	renderer-pipelinetarget	renderer.md	engine/renderer/material.h:146
+renderer::PipelineTarget::color_formats	variable	renderer	renderer-pipelinetarget-color-formats	renderer.md	engine/renderer/material.h:149
+renderer::PipelineTarget::color_count	variable	renderer	renderer-pipelinetarget-color-count	renderer.md	engine/renderer/material.h:151
+renderer::PipelineTarget::depth_format	variable	renderer	renderer-pipelinetarget-depth-format	renderer.md	engine/renderer/material.h:153
+renderer::PipelineLookup	struct	renderer	renderer-pipelinelookup	renderer.md	engine/renderer/material.h:159
+renderer::PipelineLookup::pipeline	variable	renderer	renderer-pipelinelookup-pipeline	renderer.md	engine/renderer/material.h:162
+renderer::PipelineLookup::index	variable	renderer	renderer-pipelinelookup-index	renderer.md	engine/renderer/material.h:164
+renderer::MaterialStats	struct	renderer	renderer-materialstats	renderer.md	engine/renderer/material.h:170
+renderer::MaterialStats::pipeline_hits	variable	renderer	renderer-materialstats-pipeline-hits	renderer.md	engine/renderer/material.h:173
+renderer::MaterialStats::pipeline_misses	variable	renderer	renderer-materialstats-pipeline-misses	renderer.md	engine/renderer/material.h:175
+renderer::MaterialStats::pipelines	variable	renderer	renderer-materialstats-pipelines	renderer.md	engine/renderer/material.h:177
+renderer::MaterialStats::bind_group_rebuilds	variable	renderer	renderer-materialstats-bind-group-rebuilds	renderer.md	engine/renderer/material.h:179
+renderer::MaterialStats::parameter_flushes	variable	renderer	renderer-materialstats-parameter-flushes	renderer.md	engine/renderer/material.h:181
+renderer::MaterialStats::rebuilds	variable	renderer	renderer-materialstats-rebuilds	renderer.md	engine/renderer/material.h:183
+renderer::MaterialSystemDesc	struct	renderer	renderer-materialsystemdesc	renderer.md	engine/renderer/material.h:189
+renderer::MaterialSystemDesc::max_templates	variable	renderer	renderer-materialsystemdesc-max-templates	renderer.md	engine/renderer/material.h:192
+renderer::MaterialSystemDesc::max_materials	variable	renderer	renderer-materialsystemdesc-max-materials	renderer.md	engine/renderer/material.h:194
+renderer::MaterialSystemDesc::max_pipelines	variable	renderer	renderer-materialsystemdesc-max-pipelines	renderer.md	engine/renderer/material.h:196
+renderer::MaterialSystemDesc::resources	variable	renderer	renderer-materialsystemdesc-resources	renderer.md	engine/renderer/material.h:198
+renderer::MaterialSystemDesc::prewarm_pipelines	variable	renderer	renderer-materialsystemdesc-prewarm-pipelines	renderer.md	engine/renderer/material.h:202
+renderer::MakeDrawSortKey(u32,u32,u32)	function	renderer	renderer-makedrawsortkey-u32-u32-u32	renderer.md	engine/renderer/material.h:215
+renderer::MaterialSystem	class	renderer	renderer-materialsystem	renderer.md	engine/renderer/material.h:235
+renderer::MaterialSystem::MaterialSystem(rhi::Device*,const MaterialSystemDesc&)	function	renderer	renderer-materialsystem-materialsystem-rhi-device-star-const-materialsystemdesc-amp	renderer.md	engine/renderer/material.h:246
+renderer::MaterialSystem::~MaterialSystem()	function	renderer	renderer-materialsystem-tilde-materialsystem	renderer.md	engine/renderer/material.h:249
+renderer::MaterialSystem::MaterialSystem(const MaterialSystem&)	function	renderer	renderer-materialsystem-materialsystem-const-materialsystem-amp	renderer.md	engine/renderer/material.h:250
+renderer::MaterialSystem::operator=(const MaterialSystem&)	function	renderer	renderer-materialsystem-operator-eq-const-materialsystem-amp	renderer.md	engine/renderer/material.h:251
+renderer::MaterialSystem::Valid() const	function	renderer	renderer-materialsystem-valid-const	renderer.md	engine/renderer/material.h:255
+renderer::MaterialSystem::CreateTemplate(const MaterialTemplateDesc&)	function	renderer	renderer-materialsystem-createtemplate-const-materialtemplatedesc-amp	renderer.md	engine/renderer/material.h:266
+renderer::MaterialSystem::DestroyTemplate(TemplateId)	function	renderer	renderer-materialsystem-destroytemplate-templateid	renderer.md	engine/renderer/material.h:272
+renderer::MaterialSystem::CreateMaterial(TemplateId,PermutationKey,const char*)	function	renderer	renderer-materialsystem-creatematerial-templateid-permutationkey-const-char-star	renderer.md	engine/renderer/material.h:290
+renderer::MaterialSystem::CloneMaterial(MaterialId,const char*)	function	renderer	renderer-materialsystem-clonematerial-materialid-const-char-star	renderer.md	engine/renderer/material.h:300
+renderer::MaterialSystem::DestroyMaterial(MaterialId)	function	renderer	renderer-materialsystem-destroymaterial-materialid	renderer.md	engine/renderer/material.h:306
+renderer::MaterialSystem::IsAlive(MaterialId) const	function	renderer	renderer-materialsystem-isalive-materialid-const	renderer.md	engine/renderer/material.h:310
+renderer::MaterialSystem::MaterialAtIndex(u32) const	function	renderer	renderer-materialsystem-materialatindex-u32-const	renderer.md	engine/renderer/material.h:316
+renderer::MaterialSystem::FrameBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-framebindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:330
+renderer::MaterialSystem::ObjectBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-objectbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:338
+renderer::MaterialSystem::JointBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-jointbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:347
+renderer::MaterialSystem::kJointSet	variable	renderer	renderer-materialsystem-kjointset	renderer.md	engine/renderer/material.h:349
+renderer::MaterialSystem::ReadsVertexInput(MaterialId,u32) const	function	renderer	renderer-materialsystem-readsvertexinput-materialid-u32-const	renderer.md	engine/renderer/material.h:356
+renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:366
+renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:375
+renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:384
+renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:393
+renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:402
+renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:411
+renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:420
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:432
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,const GpuTextureConstPtr&)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-const-gputextureconstptr-amp	renderer.md	engine/renderer/material.h:444
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,const GpuSamplerConstPtr&)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusamplerconstptr-amp	renderer.md	engine/renderer/material.h:455
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:466
+renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:471
+renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:477
+renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:485
+renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:492
+renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:496
+renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:499
+renderer::MaterialSystem::ObjectIndexStream() const	function	renderer	renderer-materialsystem-objectindexstream-const	renderer.md	engine/renderer/material.h:509
+renderer::MaterialSystem::ObjectIndexSlot()	function	renderer	renderer-materialsystem-objectindexslot	renderer.md	engine/renderer/material.h:515
+renderer::MaterialSystem::ObjectIndexSlotFor(bool)	function	renderer	renderer-materialsystem-objectindexslotfor-bool	renderer.md	engine/renderer/material.h:522
+renderer::MaterialSystem::AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)	function	renderer	renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32	renderer.md	engine/renderer/material.h:540
+renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:547
+renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:557
+renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:565
+renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:585
+renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:599
+renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:606
+renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:610
+renderer::MaterialSystem::Release()	function	renderer	renderer-materialsystem-release	renderer.md	engine/renderer/material.h:615
+renderer::MaterialSystem::Recreate(rhi::Device*)	function	renderer	renderer-materialsystem-recreate-rhi-device-star	renderer.md	engine/renderer/material.h:623
+renderer::MaterialSystem::Live() const	function	renderer	renderer-materialsystem-live-const	renderer.md	engine/renderer/material.h:624
+renderer::MaterialSystem::RecreatableName() const	function	renderer	renderer-materialsystem-recreatablename-const	renderer.md	engine/renderer/material.h:625
 renderer::StandardVertex	struct	renderer	renderer-standardvertex	renderer.md	engine/renderer/mesh.h:25
 renderer::StandardVertex::position	variable	renderer	renderer-standardvertex-position	renderer.md	engine/renderer/mesh.h:28
 renderer::StandardVertex::normal	variable	renderer	renderer-standardvertex-normal	renderer.md	engine/renderer/mesh.h:30

@@ -7,6 +7,7 @@
 //! system owns every bind group and pipeline, so a draw creates no object. Descriptor sets follow one convention: set 0
 //! is the frame uniform ([[renderer::FrameData]]), set 1 the material, set 2 the per-object storage buffer.
 
+#include "containers/hash_map.h"
 #include "containers/vector.h"
 #include "math/matrix.h"
 #include "math/vector.h"
@@ -651,6 +652,7 @@ private:
     Vector<MaterialSlot> materials_;
     Vector<PipelineEntry> pipelines_;
     u32 pipeline_count_ = 0;
+    HashMap<u64, u32, HeapAllocator> pipeline_index_{HeapAllocator::Default()};  // key hash -> first entry with it
     u32 material_high_ = 0;  // one past the highest material slot ever used
     rhi::BindGroupLayoutHandle frame_layout_;
     rhi::BindGroupLayoutHandle object_layout_;

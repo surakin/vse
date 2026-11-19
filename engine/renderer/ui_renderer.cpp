@@ -406,6 +406,7 @@ void UiRenderer::Record(rhi::CommandList* list)
                               "UiRenderer: image %u has no texture now; the commands that draw it are skipped",
                               cmd.texture.id);
                 }
+                break;  // ids are unique: the first match is the image
             }
         }
         if (!fits || x1 <= x0 || y1 <= y0 || cmd.index_count == 0 || !texture.IsValid())

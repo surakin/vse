@@ -549,16 +549,6 @@ Register it with [`rhi::DeviceHost::AddObserver`](rhi.md#rhi-devicehost-addobser
 | Thread-safety | owner-thread-only. |
 | Ownership | borrows the owners; an owner must unregister (see [`renderer::ScopedRegistration`](#renderer-scopedregistration)) before it is destroyed. The registry must outlive every registration. |
 
-### `kMaxOwners` {#renderer-deviceresources-kmaxowners}
-
-`variable renderer::DeviceResources::kMaxOwners` — defined in `engine/renderer/device_resources.h`
-
-```cpp
-static constexpr usize kMaxOwners;
-```
-
-The most owners.
-
 ### `DeviceResources()` {#renderer-deviceresources-deviceresources}
 
 `constructor renderer::DeviceResources::DeviceResources` — defined in `engine/renderer/device_resources.h`
@@ -606,7 +596,7 @@ The owner counts as live if `Live()` says it holds its objects now; one that doe
 | Parameter `owner` | borrowed; must stay alive until `Unregister`. |
 | Parameter `tier` | its order, see the `tiers` namespace. |
 | Returns | true if registered. |
-| Fails | returns false, logging the reason, if the table is full or a reset is running. |
+| Fails | returns false, logging the reason, if a reset is running (any number of owners may register: container audit Day 5 removed the cap of 256). |
 | Ownership | borrowed for the call; nothing is kept unless the description above says so. |
 
 ### `Unregister(Recreatable*)` {#renderer-deviceresources-unregister-recreatable-star}

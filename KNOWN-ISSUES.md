@@ -91,8 +91,6 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 ## Deferred items
 
 - **Container audit (2026-11-19, Linux, read-only; `plans/maintenance/container-audit-2026-11-19.md`): found, not fixed; planned in `plans/maintenance/container-audit.md`.**
-  - (1) `renderer/device_resources.h:83,172` holds at most 256 owners (`Entry entries_[kMaxOwners]`). Every `GpuMesh`, `GpuTexture` and `GpuSampler` registers,
-    and `GpuMesh` creation fails when the table is full (`mesh.cpp:1217-1222`). Seen in the code, not run with a large level. Fixed on series Day 5.
   - (3) `physics/step.cpp:246` says the joint pairs are kept "as sorted keys"; they are never sorted, and are scanned once per broad-phase pair. Fixed on series Day 7.
 
 - **the host locale fix (2026-11-18, the Windows PC, `plans/maintenance/host-locale-independent-import.md`): not built on Linux or the Mac.** Shared files changed: `engine/foundation/cstr/number.h` (`FormatGeneral`, `std::to_chars` with a precision: GCC, Clang and Apple's libc++ not built), the new `engine/foundation/os/locale.h`, `engine/asset_import/{gltf_material,material_source,gltf_summary,gltf_clip}.cpp`, `engine/renderer/render_settings.cpp`, `engine/foundation/settings/desc.cpp`, `tools/asset_mint/level_source.cpp`, the `std_usage_check` lists, and the tests (`tests/support/comma_locale.h`, `tests/asset/gltf_locale_test.cpp`, `level_test.cpp`, `gltf_skin_test.cpp`, `cstr_test.cpp`, `value_test.cpp`, `render_settings_test.cpp`). `engine/foundation/settings/macos/user_defaults_store.cpp` is macOS-only and was not compiled at all. No tsan run. The locale tests skip on a machine without `nb_NO`, `de_DE` or `fr_FR`.

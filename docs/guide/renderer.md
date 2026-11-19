@@ -750,7 +750,9 @@ of this page; the types involved are [[renderer::DeviceResources]] (the registry
 The registry is the device host's observer: `OnDeviceReleasing` releases owners from the highest tier down, `OnDeviceCreated` recreates
 them from the lowest up (0 textures and samplers, 1 meshes, 2 layouts and shaders, 3 materials and pipelines, 4 passes and per-frame
 buffers). A `Recreate` that fails stops the sequence, releases everything that was built and names the owner
-([[renderer::DeviceResources::FailedOwner]]); the host fails the reset and the caller rolls back.
+([[renderer::DeviceResources::FailedOwner]]); the host fails the reset and the caller rolls back. Any number of owners may register
+(every mesh, texture and sampler is one; there was a limit of 256 before the container audit), and registering is O(1); only a registration
+made during a reset is refused.
 
 The new device is of the same backend (the `backend` setting takes effect only at start: there is no run-time switch between
 graphics APIs), but it need not be on the same GPU: a change of `adapter` is the same reset. So `Recreate` reads limits, formats and

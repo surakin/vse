@@ -1,5 +1,7 @@
 #include "renderer/material.h"
 
+#include "containers/hash.h"
+
 #include "cstr/cstr.h"
 #include "lang/new.h"
 
@@ -170,6 +172,28 @@ bool SameTarget(const PipelineTarget& a, const PipelineTarget& b)
     return true;
 }
 
+// The hash of a pipeline cache key: every field the lookup compares (container audit Day 5: the cache was scanned
+// once per drawn object).
+u64 PipelineKeyHash(u32 template_index, u32 generation, u32 key_bits, const PipelineTarget& target,
+                    const VertexLayoutData& layout, rhi::PrimitiveTopology topology, bool restart)
+{
+    Fnv1a64Builder h;
+    h.AddWord(template_index).AddWord(generation).AddWord(key_bits);
+    h.AddWord(target.color_count).AddWord(static_cast<u64>(target.depth_format));
+    for (u32 i = 0; i < target.color_count && i < rhi::kMaxColorAttachments; ++i)
+    {
+        h.AddWord(static_cast<u64>(target.color_formats[i]));
+    }
+    h.AddWord(layout.stride).AddWord(layout.skin_stride).AddWord(layout.attribute_count);
+    for (u32 i = 0; i < layout.attribute_count && i < rhi::kMaxVertexAttributes; ++i)
+    {
+        const rhi::VertexAttributeDesc& a = layout.attributes[i];
+        h.AddWord(a.location).AddWord(a.binding).AddWord(static_cast<u64>(a.format)).AddWord(a.offset);
+    }
+    h.AddWord(static_cast<u64>(topology)).AddWord(restart ? 1u : 0u);
+    return h.Value();
+}
+
 }  // namespace
 
 u64 MakeDrawSortKey(u32 pipeline_index, u32 material_index, u32 mesh_index)
@@ -259,6 +283,7 @@ struct MaterialSystem::PipelineEntry
     rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList;
     bool restart = false;
     rhi::PipelineHandle pipeline;
+    u64 key_hash = 0;  // PipelineKeyHash of the fields above
 };
 
 // ---- system ----
@@ -859,6 +884,7 @@ void MaterialSystem::DestroyTemplate(TemplateId id)
 
 void MaterialSystem::DestroyPipelines(u32 template_index)
 {
+    bool reindex = false;
     for (u32 i = 0; i < pipeline_count_; ++i)
     {
         PipelineEntry& p = pipelines_[i];
@@ -872,7 +898,23 @@ void MaterialSystem::DestroyPipelines(u32 template_index)
             {
                 --stats_.pipelines;
             }
+            const u32* indexed = pipeline_index_.Find(p.key_hash);
+            if (indexed != nullptr && *indexed == i)
+            {
+                pipeline_index_.Remove(p.key_hash);
+                reindex = true;  // another entry of the same hash (a collision) must become the index entry
+            }
             p = PipelineEntry{};
+        }
+    }
+    if (reindex)
+    {
+        for (u32 i = 0; i < pipeline_count_; ++i)
+        {
+            if (pipelines_[i].used && pipeline_index_.Find(pipelines_[i].key_hash) == nullptr)
+            {
+                pipeline_index_.Insert(pipelines_[i].key_hash, i);
+            }
         }
     }
 }
@@ -1800,12 +1842,35 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
     TemplateSlot& t = templates_[m.template_index];
     const Variant& v = t.variants[m.variant_index];
 
-    for (u32 i = 0; i < pipeline_count_; ++i)
+    const u64 key_hash = PipelineKeyHash(m.template_index, t.generation, v.key_bits, target, vertex_layout, topology,
+                                         primitive_restart);
+    const auto matches = [&](const PipelineEntry& p)
     {
+        return p.used && p.key_hash == key_hash && p.template_index == m.template_index &&
+               p.template_generation == t.generation && p.key_bits == v.key_bits && SameTarget(p.target, target) &&
+               SameLayout(p.layout, vertex_layout) && p.topology == topology && p.restart == primitive_restart;
+    };
+    // The index finds the first entry of a hash; another entry with the same hash (a collision, rare) is found by the
+    // scan the cache used before.
+    u32 hit = pipeline_count_;
+    if (const u32* indexed = pipeline_index_.Find(key_hash); indexed != nullptr && matches(pipelines_[*indexed]))
+    {
+        hit = *indexed;
+    }
+    else if (indexed != nullptr)
+    {
+        for (u32 i = 0; i < pipeline_count_ && hit == pipeline_count_; ++i)
+        {
+            if (matches(pipelines_[i]))
+            {
+                hit = i;
+            }
+        }
+    }
+    if (hit != pipeline_count_)
+    {
+        const u32 i = hit;
         const PipelineEntry& p = pipelines_[i];
-        if (p.used && p.template_index == m.template_index && p.template_generation == t.generation &&
-            p.key_bits == v.key_bits && SameTarget(p.target, target) && SameLayout(p.layout, vertex_layout) &&
-            p.topology == topology && p.restart == primitive_restart)
         {
             if (p.pipeline.IsValid())
             {
@@ -1929,6 +1994,11 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
     e.topology = topology;
     e.restart = primitive_restart;
     e.pipeline = pipeline;
+    e.key_hash = key_hash;
+    if (pipeline_index_.Find(key_hash) == nullptr)
+    {
+        pipeline_index_.Insert(key_hash, slot);  // the first entry of a hash stays its index entry
+    }
     if (slot == pipeline_count_)
     {
         ++pipeline_count_;

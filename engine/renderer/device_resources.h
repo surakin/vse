@@ -1,6 +1,8 @@
 #pragma once
 
 #include "rhi/device_host.h"
+#include "containers/hash_map.h"
+#include "containers/vector.h"
 #include "types.h"
 
 //! The registry of everything in the renderer that owns device objects and can rebuild them after the device is
@@ -79,9 +81,6 @@ public:
 class DeviceResources final : public rhi::DeviceObserver
 {
 public:
-    /// The most owners.
-    static constexpr usize kMaxOwners = 256;
-
     DeviceResources() = default;
     DeviceResources(const DeviceResources&) = delete;
     DeviceResources& operator=(const DeviceResources&) = delete;
@@ -94,7 +93,8 @@ public:
     /// - Param owner: borrowed; must stay alive until `Unregister`.
     /// - Param tier: its order, see the `tiers` namespace.
     /// - Returns: true if registered.
-    /// - Fails: returns false, logging the reason, if the table is full or a reset is running.
+    /// - Fails: returns false, logging the reason, if a reset is running (any number of owners may register: container
+    ///   audit Day 5 removed the cap of 256).
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool Register(Recreatable* owner, u32 tier);
 
@@ -111,7 +111,7 @@ public:
     void Rebind(Recreatable* from, Recreatable* to);
 
     /// Returns the number of registered owners.
-    usize Count() const { return count_; }
+    usize Count() const { return entries_.Size(); }
 
     /// Releases the live owners at `first_tier` and above, highest first, leaving the lower tiers alone (a pipeline
     /// rebuild releases tiers 3 and 4 only). `CurrentDevice` is unchanged.
@@ -168,9 +168,14 @@ private:
     void ReleaseLive(u32 first_tier);
     void ReleaseAllLive();
     void Compact();
+    void RemoveAt(usize index);
+    // The entries at `first_tier` and above in visiting order: by tier and registration, ascending (recreate) or
+    // descending (release). Registration is refused during a reset, so the order made at the start of a step stays
+    // valid; entries unregistered meanwhile are skipped by their null owner.
+    void Order(u32 first_tier, bool ascending, Vector<u32>* out) const;
 
-    Entry entries_[kMaxOwners];
-    usize count_ = 0;
+    Vector<Entry> entries_;  // in no particular order: `sequence` keeps it
+    HashMap<Recreatable*, u32, HeapAllocator> index_{HeapAllocator::Default()};  // owner -> its entry
     u32 next_sequence_ = 0;
     rhi::Device* device_ = nullptr;
     bool resetting_ = false;

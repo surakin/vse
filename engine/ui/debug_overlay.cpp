@@ -71,6 +71,7 @@ usize LogCapture::Poll()
 
 void LogCapture::Clear()
 {
+    visible_dirty_ = true;
     lines_.Clear();
     first_ = 0;
     count_ = 0;
@@ -82,6 +83,7 @@ void LogCapture::Clear()
 
 void LogCapture::Append(StringView line)
 {
+    visible_dirty_ = true;
     if (count_ < kMaxLines)
     {
         lines_.Push(OwnedText(line));
@@ -96,6 +98,24 @@ void LogCapture::Append(StringView line)
 void LogCapture::SetFilter(StringView text)
 {
     filter_ = OwnedText(text);
+    visible_dirty_ = true;
+}
+
+void LogCapture::Refilter() const
+{
+    if (!visible_dirty_)
+    {
+        return;
+    }
+    visible_.Clear();
+    for (usize i = 0; i < count_; ++i)
+    {
+        if (Passes(At(i)))
+        {
+            visible_.Push(static_cast<u32>(i));
+        }
+    }
+    visible_dirty_ = false;
 }
 
 const String<HeapAllocator>& LogCapture::At(usize index) const
@@ -114,15 +134,8 @@ usize LogCapture::VisibleCount() const
     {
         return count_;
     }
-    usize n = 0;
-    for (usize i = 0; i < count_; ++i)
-    {
-        if (Passes(At(i)))
-        {
-            ++n;
-        }
-    }
-    return n;
+    Refilter();
+    return visible_.Size();
 }
 
 StringView LogCapture::VisibleLine(usize index) const
@@ -132,21 +145,9 @@ StringView LogCapture::VisibleLine(usize index) const
         ENGINE_ASSERT(index < count_, "LogCapture::VisibleLine: the index is out of range");
         return At(index).View();
     }
-    usize seen = 0;
-    for (usize i = 0; i < count_; ++i)
-    {
-        if (!Passes(At(i)))
-        {
-            continue;
-        }
-        if (seen == index)
-        {
-            return At(i).View();
-        }
-        ++seen;
-    }
-    ENGINE_ASSERT(false, "LogCapture::VisibleLine: the index is out of range");
-    return StringView();
+    Refilter();
+    ENGINE_ASSERT(index < visible_.Size(), "LogCapture::VisibleLine: the index is out of range");
+    return At(visible_[index]).View();
 }
 
 // ---- FrameGraph ----

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "containers/array.h"
 #include "containers/vector.h"
 #include "types.h"
 
@@ -61,31 +62,52 @@ public:
     /// Calls every listener with `args`.
     void Invoke(Args... args)
     {
-        Vector<Entry> snapshot;
-        for (usize i = 0; i < entries_.Size(); ++i)
+        // A listener may connect or disconnect listeners while it runs, so the call walks a copy taken first. The
+        // usual few listeners are copied into the stack (container audit Day 5: the copy was a heap Vector on every
+        // call, even with no listener).
+        const usize n = entries_.Size();
+        if (n == 0)
         {
-            snapshot.Push(entries_[i]);
+            return;
         }
-        for (usize i = 0; i < snapshot.Size(); ++i)
+        if (n <= kInline)
         {
-            if (!Connected(snapshot[i].id))
+            Array<Entry, kInline> copy;
+            for (usize i = 0; i < n; ++i)
             {
-                continue;
+                copy[i] = entries_[i];
             }
-            snapshot[i].function(snapshot[i].user, args...);
+            CallEach(copy.Data(), n, args...);
+            return;
         }
+        Vector<Entry> snapshot;
+        snapshot.Append(entries_.Data(), n);
+        CallEach(snapshot.Data(), n, args...);
     }
 
     /// Returns how many listeners are connected.
     usize Count() const { return entries_.Size(); }
 
 private:
+    static constexpr usize kInline = 4;
+
     struct Entry
     {
         Function function = nullptr;
         void* user = nullptr;
         ConnectionId id = 0;
     };
+
+    void CallEach(const Entry* entries, usize n, Args... args)
+    {
+        for (usize i = 0; i < n; ++i)
+        {
+            if (Connected(entries[i].id))
+            {
+                entries[i].function(entries[i].user, args...);
+            }
+        }
+    }
     bool Connected(ConnectionId id) const
     {
         for (usize i = 0; i < entries_.Size(); ++i)

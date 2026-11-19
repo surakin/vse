@@ -1,5 +1,6 @@
 #include "renderer/device_resources.h"
 
+#include "algorithm.h"
 #include "cstr/format.h"
 
 #include "log/assert.h"
@@ -16,67 +17,93 @@ bool DeviceResources::Register(Recreatable* owner, u32 tier)
                   owner->RecreatableName());
         return false;
     }
-    if (count_ >= kMaxOwners)
-    {
-        RenderLog(LogVerbosity::Error, "DeviceResources: the table of %zu owners is full", kMaxOwners);
-        return false;
-    }
-    Entry& e = entries_[count_++];
+    Entry e;
     e.owner = owner;
     e.tier = tier;
     e.sequence = next_sequence_++;
     e.live = owner->Live();
+    index_.Insert(owner, static_cast<u32>(entries_.Size()));
+    entries_.Push(e);
     return true;
+}
+
+// Removes the entry at `index` in O(1): the last entry takes its place (the order lives in `sequence`).
+void DeviceResources::RemoveAt(usize index)
+{
+    const usize last = entries_.Size() - 1;
+    if (index != last && entries_[last].owner != nullptr)
+    {
+        *index_.Find(entries_[last].owner) = static_cast<u32>(index);
+    }
+    entries_.SwapRemove(index);
 }
 
 void DeviceResources::Compact()
 {
-    usize out = 0;
-    for (usize i = 0; i < count_; ++i)
+    for (usize i = entries_.Size(); i > 0; --i)
     {
-        if (entries_[i].owner != nullptr)
+        if (entries_[i - 1].owner == nullptr)
         {
-            entries_[out++] = entries_[i];
+            RemoveAt(i - 1);
         }
     }
-    count_ = out;
     compact_pending_ = false;
 }
 
 void DeviceResources::Unregister(Recreatable* owner)
 {
-    for (usize i = 0; i < count_; ++i)
+    const u32* at = owner != nullptr ? index_.Find(owner) : nullptr;
+    if (at == nullptr)
     {
-        if (entries_[i].owner == owner)
-        {
-            if (resetting_)
-            {
-                entries_[i].owner = nullptr;  // removed when the reset step ends; the loops skip it
-                entries_[i].live = false;
-                compact_pending_ = true;
-                return;
-            }
-            // Keep registration order for equal tiers: shift down instead of swapping.
-            for (usize j = i + 1; j < count_; ++j)
-            {
-                entries_[j - 1] = entries_[j];
-            }
-            --count_;
-            return;
-        }
+        return;
     }
+    const usize i = *at;
+    index_.Remove(owner);
+    if (resetting_)
+    {
+        entries_[i].owner = nullptr;  // removed when the reset step ends; the loops skip it
+        entries_[i].live = false;
+        compact_pending_ = true;
+        return;
+    }
+    RemoveAt(i);
 }
 
 void DeviceResources::Rebind(Recreatable* from, Recreatable* to)
 {
-    for (usize i = 0; i < count_; ++i)
+    const u32* at = from != nullptr ? index_.Find(from) : nullptr;
+    if (at == nullptr)
     {
-        if (entries_[i].owner == from && from != nullptr)
+        return;
+    }
+    const u32 i = *at;
+    index_.Remove(from);
+    entries_[i].owner = to;
+    if (to != nullptr)
+    {
+        index_.Insert(to, i);
+    }
+}
+
+void DeviceResources::Order(u32 first_tier, bool ascending, Vector<u32>* out) const
+{
+    out->Clear();
+    for (usize i = 0; i < entries_.Size(); ++i)
+    {
+        if (entries_[i].owner != nullptr && entries_[i].tier >= first_tier)
         {
-            entries_[i].owner = to;
-            return;
+            out->Push(static_cast<u32>(i));
         }
     }
+    const Vector<Entry>& entries = entries_;
+    Sort(*out,
+         [&](u32 a, u32 b)
+         {
+             const Entry& x = entries[a];
+             const Entry& y = entries[b];
+             const bool before = x.tier < y.tier || (x.tier == y.tier && x.sequence < y.sequence);
+             return ascending ? before : (!before && (x.tier != y.tier || x.sequence != y.sequence));
+         });
 }
 
 void DeviceResources::ReleaseAllLive()
@@ -99,28 +126,21 @@ bool DeviceResources::RecreateFrom(u32 first_tier)
     resetting_ = true;
     failed_name_[0] = '\0';
     bool ok = true;
-    for (;;)
+    Vector<u32> order;
+    Order(first_tier, true, &order);  // lowest tier first; within a tier the earlier registration first
+    for (u32 at : order)
     {
-        Entry* pick = nullptr;
-        for (usize i = 0; i < count_; ++i)
+        Entry& e = entries_[at];
+        if (e.owner == nullptr || e.live)
         {
-            Entry& e = entries_[i];
-            if (e.owner != nullptr && !e.live && e.tier >= first_tier &&
-                (pick == nullptr || e.tier < pick->tier || (e.tier == pick->tier && e.sequence < pick->sequence)))
-            {
-                pick = &e;
-            }
+            continue;  // unregistered meanwhile, or already live
         }
-        if (pick == nullptr)
+        e.live = true;
+        if (!e.owner->Recreate(device_))
         {
-            break;
-        }
-        pick->live = true;
-        if (!pick->owner->Recreate(device_))
-        {
-            FormatTo(failed_name_, sizeof(failed_name_), "%s", pick->owner->RecreatableName());
+            FormatTo(failed_name_, sizeof(failed_name_), "%s", e.owner->RecreatableName());
             RenderLog(LogVerbosity::Error, "DeviceResources: '%s' could not be recreated", failed_name_);
-            pick->live = false;
+            e.live = false;
             ok = false;
             break;
         }
@@ -137,24 +157,17 @@ bool DeviceResources::RecreateFrom(u32 first_tier)
 void DeviceResources::ReleaseLive(u32 first_tier)
 {
     // Highest tier first; within a tier the later registration first.
-    for (;;)
+    Vector<u32> order;
+    Order(first_tier, false, &order);
+    for (u32 at : order)
     {
-        Entry* pick = nullptr;
-        for (usize i = 0; i < count_; ++i)
+        Entry& e = entries_[at];
+        if (e.owner == nullptr || !e.live)
         {
-            Entry& e = entries_[i];
-            if (e.owner != nullptr && e.live && e.tier >= first_tier &&
-                (pick == nullptr || e.tier > pick->tier || (e.tier == pick->tier && e.sequence > pick->sequence)))
-            {
-                pick = &e;
-            }
+            continue;  // unregistered meanwhile, or not live
         }
-        if (pick == nullptr)
-        {
-            break;
-        }
-        pick->live = false;
-        pick->owner->Release();
+        e.live = false;
+        e.owner->Release();
     }
 }
 

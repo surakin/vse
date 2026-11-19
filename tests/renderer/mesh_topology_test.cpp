@@ -577,10 +577,34 @@ namespace
 // An owner that only fills a slot of the registry.
 struct FillerOwner final : Recreatable
 {
-    void Release() override {}
-    bool Recreate(rhi::Device*) override { return true; }
+    void Release() override { ++releases; }
+    bool Recreate(rhi::Device*) override
+    {
+        ++recreates;
+        return true;
+    }
     bool Live() const override { return false; }
     const char* RecreatableName() const override { return "filler"; }
+    u32 releases = 0;
+    u32 recreates = 0;
+};
+
+// Tries to make a mesh from inside a reset, when the registry refuses registrations (container audit Day 5: the
+// registry has no size cap, so this is the way a registration is refused now).
+struct MeshDuringReset final : Recreatable
+{
+    void Release() override {}
+    bool Recreate(rhi::Device* device) override
+    {
+        made = mesh->CreateFromGeometry(device, *geometry, registry, "refused");
+        return true;
+    }
+    bool Live() const override { return false; }
+    const char* RecreatableName() const override { return "mesh during reset"; }
+    GpuMesh* mesh = nullptr;
+    const MeshGeometry* geometry = nullptr;
+    DeviceResources* registry = nullptr;
+    bool made = true;
 };
 
 }  // namespace
@@ -621,25 +645,55 @@ TEST_CASE(
     CHECK(from_geometry.SortId() != another.SortId());
     CHECK(from_data.SortId() != another.SortId());
 
-    // A registry with no room refuses: the create fails and no buffer, share or id is left behind.
-    DeviceResources full;
-    REQUIRE(full.OnDeviceCreated(device.Get(), device->Epoch()));
-    Vector<UniquePtr<FillerOwner>> fillers;
-    for (usize i = 0; i < DeviceResources::kMaxOwners; ++i)
-    {
-        UniquePtr<FillerOwner> owner = MakeUnique<FillerOwner>();
-        REQUIRE(full.Register(owner.Get(), 0));
-        fillers.Push(static_cast<UniquePtr<FillerOwner>&&>(owner));
-    }
+    // A registry refuses during a reset: the create fails and no buffer, share or id is left behind.
+    DeviceResources busy;
+    GpuMesh refused;
+    MeshDuringReset maker;
+    maker.mesh = &refused;
+    maker.geometry = &geometry;
+    maker.registry = &busy;
+    REQUIRE(busy.Register(&maker, 0));
     const rhi::ResourceCounts before = device->Resources();
     const usize shares_before = region.UseCount();
-    GpuMesh refused;
-    CHECK_FALSE(refused.CreateFromGeometry(device.Get(), geometry, &full, "refused"));
+    REQUIRE(busy.OnDeviceCreated(device.Get(), device->Epoch()));
+    CHECK_FALSE(maker.made);
     CHECK_FALSE(refused.Valid());
     CHECK(device->Resources().buffers == before.buffers);
     CHECK(region.UseCount() == shares_before);  // the refused mesh holds no share of the bytes
-    for (usize i = 0; i < fillers.Size(); ++i)
+    busy.Unregister(&maker);
+}
+
+TEST_CASE("DeviceResources takes any number of owners and resets them all, in tier and registration order",
+          "[renderer][reset]")
+{
+    // Container audit Day 5: the table held at most 256 owners, and a level with more meshes and textures failed to
+    // load.
+    rhi::NullDevicePtr device = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
+    DeviceResources registry;
+    REQUIRE(registry.OnDeviceCreated(device.Get(), device->Epoch()));
+    Vector<UniquePtr<FillerOwner>> owners;
+    for (u32 i = 0; i < 10000; ++i)
     {
-        full.Unregister(fillers[i].Get());
+        owners.Push(MakeUnique<FillerOwner>());
+        REQUIRE(registry.Register(owners[i].Get(), i % 3));
     }
+    CHECK(registry.Count() == 10000);
+    for (u32 i = 0; i < 10000; i += 2)
+    {
+        registry.Unregister(owners[i].Get());  // out of order: the table swaps the last entry in
+    }
+    CHECK(registry.Count() == 5000);
+    REQUIRE(registry.OnDeviceCreated(device.Get(), device->Epoch()));
+    registry.OnDeviceReleasing(device->Epoch());
+    REQUIRE(registry.OnDeviceCreated(device.Get(), device->Epoch()));
+    for (u32 i = 0; i < 10000; ++i)
+    {
+        CHECK(owners[i]->recreates == (i % 2 == 0 ? 0u : 2u));
+        CHECK(owners[i]->releases == (i % 2 == 0 ? 0u : 1u));
+    }
+    for (u32 i = 1; i < 10000; i += 2)
+    {
+        registry.Unregister(owners[i].Get());
+    }
+    CHECK(registry.Count() == 0);
 }

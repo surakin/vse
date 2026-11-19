@@ -68,8 +68,13 @@ private:
     static void Take(const char* line, usize length, void* context);
     const String<HeapAllocator>& At(usize index) const;
     bool Passes(const String<HeapAllocator>& line) const;
+    void Refilter() const;
 
     Vector<String<HeapAllocator>> lines_;
+    // The positions (from the oldest line) of the lines the filter keeps, made again only after a new line, a new
+    // filter or a clear (container audit Day 5: each visible row scanned every line).
+    mutable Vector<u32> visible_;
+    mutable bool visible_dirty_ = true;
     usize first_ = 0;
     usize count_ = 0;
     u64 next_ = 0;

@@ -45,6 +45,11 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   - `ResourceTable` keyed by `String` with O(1) `Remove`: 1.29 ms down to 378 ns per removal at 10,000 paths (Day 1's flat number was an invalid bench, corrected).
   - Five `HashSet`s; `Clear()` instead of re-made maps.
   - Tests deferred to Day 12. Review: 2 findings, both fixed.
+- **Day 5 done (2026-11-19, Linux):**
+  - `DeviceResources` takes any number of owners (O(1) registration, one sort per reset step), tested with 10,000.
+  - The material pipeline cache and the theme cache are hashed; the theme cache replaces entries instead of emptying itself.
+  - Variant names are mapped; the overlay filter, callback snapshots and text field edits are cheaper.
+  - Tests deferred to Day 12. Review: 1 finding, fixed.
 - `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
 
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).

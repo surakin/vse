@@ -48,19 +48,18 @@ public:
             return 0;
         }
         LockGuard<Mutex> lock(mutex_);
-        for (usize i = 0; i < names_.Size(); ++i)
+        if (const u32* known = ids_.Find(name))  // container audit Day 5: a map, not a scan of every name
         {
-            if (names_[i].length == name.Length() && MemCompare(names_[i].text, name.Data(), name.Length()) == 0)
-            {
-                return static_cast<u32>(i + 1);
-            }
+            return *known;
         }
         Name n;
         MemCopy(n.text, name.Data(), name.Length());
         n.text[name.Length()] = '\0';
         n.length = static_cast<u8>(name.Length());
         names_.Push(n);
-        return static_cast<u32>(names_.Size());
+        const u32 id = static_cast<u32>(names_.Size());
+        ids_.Insert(name, id);
+        return id;
     }
     String<HeapAllocator> Get(u32 id)
     {
@@ -74,7 +73,8 @@ public:
 
 private:
     Mutex mutex_;
-    Vector<Name> names_;
+    Vector<Name> names_;                                                                // id - 1 -> the name
+    HashMap<String<HeapAllocator>, u32, HeapAllocator> ids_{HeapAllocator::Default()};  // the name -> its id
 };
 
 NameTable& Kinds()
@@ -542,6 +542,8 @@ bool ThemeSet::SetTheme(const Theme* theme)
     theme_ = theme;
     ++revision_;
     cache_.Clear();
+    cache_index_.Clear();
+    evict_next_ = 0;
     return changed;
 }
 
@@ -597,25 +599,33 @@ ResolvedStyle ThemeSet::Compute(WidgetKind kind, VariantId variant, u32 state, f
     return r;
 }
 
-void ThemeSet::NoteMissing(WidgetKind kind, VariantId variant, StringView name)
+void ThemeSet::NoteMissing(WidgetKind kind, VariantId variant)
 {
     ++stats_.missing_styles;
-    const u64 key = (static_cast<u64>(kind) << 32) | variant;
-    for (usize i = 0; i < logged_missing_.Size(); ++i)
+    if (!logged_missing_.Insert((static_cast<u64>(kind) << 32) | variant))
     {
-        if (logged_missing_[i] == key)
-        {
-            return;
-        }
+        return;  // logged once already; the name is only made for the log line
     }
-    logged_missing_.Push(key);
+    const String<HeapAllocator> name = VariantName(variant);
     const String<HeapAllocator> kind_name = WidgetKindName(kind);
     char line[160];
     FormatTo(line, sizeof(line),
              "ui theme: no style '%.*s' for widget kind '%s'; the default style of the kind is used",
-             static_cast<int>(name.Length()), name.Data(), kind_name.CStr());
+             static_cast<int>(name.Length()), name.CStr(), kind_name.CStr());
     Log(LogCore, LogVerbosity::Warn, StringView(line));
 }
+
+namespace
+{
+
+u128 CacheKey(WidgetKind kind, VariantId variant, u32 state, f32 scale)
+{
+    u32 scale_bits = 0;
+    MemCopy(&scale_bits, &scale, sizeof(scale_bits));
+    return (u128(kind) << 96) | (u128(variant) << 64) | (u128(state) << 32) | u128(scale_bits);
+}
+
+}  // namespace
 
 ResolvedStyle ThemeSet::Resolve(WidgetKind kind, VariantId variant, u32 state, f32 scale,
                                 Span<const Theme* const> overrides)
@@ -626,32 +636,25 @@ ResolvedStyle ThemeSet::Resolve(WidgetKind kind, VariantId variant, u32 state, f
     const bool cacheable = overrides.Size() == 0;
     if (cacheable)
     {
-        for (usize i = 0; i < cache_.Size(); ++i)
+        if (const u32* at = cache_index_.Find(CacheKey(kind, variant, state, scale)))
         {
-            const CacheEntry& e = cache_[i];
-            if (e.kind == kind && e.variant == variant && e.state == state && e.scale == scale)
+            const CacheEntry& e = cache_[*at];
+            ++stats_.cache_hits;
+            if (!e.variant_found)
             {
-                ++stats_.cache_hits;
-                if (!e.variant_found)
-                {
-                    NoteMissing(kind, variant, StringView(VariantName(variant).CStr()));
-                }
-                return e.value;
+                NoteMissing(kind, variant);
             }
+            return e.value;
         }
     }
     bool found = true;
     const ResolvedStyle r = Compute(kind, variant, state, scale, overrides, &found);
     if (!found)
     {
-        NoteMissing(kind, variant, StringView(VariantName(variant).CStr()));
+        NoteMissing(kind, variant);
     }
     if (cacheable)
     {
-        if (cache_.Size() >= kMaxCache)
-        {
-            cache_.Clear();
-        }
         CacheEntry e;
         e.kind = kind;
         e.variant = variant;
@@ -659,7 +662,22 @@ ResolvedStyle ThemeSet::Resolve(WidgetKind kind, VariantId variant, u32 state, f
         e.scale = scale;
         e.variant_found = found;
         e.value = r;
-        cache_.Push(e);
+        e.key = CacheKey(kind, variant, state, scale);
+        if (cache_.Size() < kMaxCache)
+        {
+            cache_index_.Insert(e.key, static_cast<u32>(cache_.Size()));
+            cache_.Push(e);
+        }
+        else
+        {
+            // Full: replace the entries in turn (the oldest made first), instead of emptying the cache and recomputing
+            // every style the next frame.
+            const u32 slot = evict_next_;
+            evict_next_ = (evict_next_ + 1) % static_cast<u32>(kMaxCache);
+            cache_index_.Remove(cache_[slot].key);
+            cache_[slot] = e;
+            cache_index_.Insert(e.key, slot);
+        }
     }
     return r;
 }

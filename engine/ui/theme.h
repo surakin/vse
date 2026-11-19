@@ -1,9 +1,12 @@
 #pragma once
 
+#include "containers/hash_map.h"
+#include "containers/hash_set.h"
 #include "containers/span.h"
 #include "containers/vector.h"
 #include "mem/heap_allocator.h"
 #include "string/string.h"
+#include "int128.h"
 #include "types.h"
 
 //! The look of the toolkit as data: colors, metrics, fonts and per-widget styles that every widget draws from (Phase
@@ -352,10 +355,11 @@ private:
         f32 scale;
         bool variant_found;
         ResolvedStyle value;
+        u128 key;  // CacheKey of the fields above
     };
     ResolvedStyle Compute(WidgetKind kind, VariantId variant, u32 state, f32 scale, Span<const Theme* const> overrides,
                           bool* variant_found) const;
-    void NoteMissing(WidgetKind kind, VariantId variant, StringView name);
+    void NoteMissing(WidgetKind kind, VariantId variant);
 
     Span<const Theme* const> Chain(Span<const Theme* const> overrides) const
     {
@@ -366,7 +370,11 @@ private:
     u64 revision_ = 0;
     Vector<const Theme*> active_;
     Vector<CacheEntry> cache_;
-    Vector<u64> logged_missing_;
+    // The cache's index (container audit Day 5: it was scanned once per widget draw); a full cache replaces its entries
+    // in turn instead of being emptied.
+    HashMap<u128, u32, HeapAllocator> cache_index_{HeapAllocator::Default()};
+    u32 evict_next_ = 0;
+    HashSet<u64, HeapAllocator> logged_missing_{HeapAllocator::Default()};
     ThemeStats stats_;
 };
 

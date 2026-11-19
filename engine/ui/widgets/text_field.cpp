@@ -31,10 +31,7 @@ bool IsSpaceText(StringView s)
 
 void Append(Vector<char>* out, StringView s)
 {
-    for (usize i = 0; i < s.Length(); ++i)
-    {
-        out->Push(s[i]);
-    }
+    out->Append(s.Data(), s.Length());
 }
 
 }  // namespace
@@ -465,16 +462,13 @@ void TextField::MoveCaret(u32 to, bool extend)
 
 void TextField::Apply(u32 at, u32 remove_length, StringView insert)
 {
+    // One allocation and three byte copies (container audit Day 5: it pushed one byte at a time).
+    const u32 tail = Length() - (at + remove_length);
     Vector<char> next;
-    for (u32 i = 0; i < at; ++i)
-    {
-        next.Push(text_[i]);
-    }
+    next.Reserve(at + insert.Length() + tail);
+    next.Append(text_.Data(), at);
     Append(&next, insert);
-    for (u32 i = at + remove_length; i < Length(); ++i)
-    {
-        next.Push(text_[i]);
-    }
+    next.Append(text_.Data() + at + remove_length, tail);
     text_ = static_cast<Vector<char>&&>(next);
 }
 
