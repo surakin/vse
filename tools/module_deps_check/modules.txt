@@ -207,6 +207,7 @@ module game/physics_bench/ game/physics_bench 14
 module game/audio_bench/ game/audio_bench 14
 module game/physics_demo/ game/physics_demo 14
 module game/script_demo/ game/script_demo 14
+module game/script_bench/ game/script_bench 14
 module game/spatial_demo/ game/spatial_demo 14
 module game/storage_demo/ game/storage_demo 14
 module game/asset_demo/ game/asset_demo 14
@@ -337,6 +338,7 @@ target audio_bench game/audio_bench
 target physics_demo_lib game/physics_demo
 target physics_demo game/physics_demo
 target script_demo game/script_demo
+target script_bench game/script_bench
 target spatial_demo game/spatial_demo
 target storage_demo game/storage_demo
 target asset_demo game/asset_demo

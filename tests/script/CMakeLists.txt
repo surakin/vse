@@ -23,6 +23,7 @@ set(SCRIPT_TEST_SOURCES
   event_test.cpp  # Day 459
   latent_test.cpp  # Day 460
   task_test.cpp  # Day 461
+  script_hostile_test.cpp  # Day 476: every kind of misbehaving script at once
   script_load_test.cpp  # Day 463: minted scripts through the resource manager
   script_reload_test.cpp  # Day 464: hot reload
   script_debug_test.cpp  # Day 465: errors, console, profiler, debugger

@@ -479,6 +479,7 @@ add_subdirectory(tests/script)  # Phase 27 Day 445: the script tests (the LuaJIT
 add_subdirectory(tests/script_physics)  # Phase 27 Day 466: the physics bindings tests
 add_subdirectory(tests/script_media)  # Phase 27 Day 468: the audio and input bindings tests
 add_subdirectory(game/script_demo)  # Phase 27 Day 475: the scripted game (Linux so far)
+add_subdirectory(game/script_bench)  # Phase 27 Day 476: the script benchmark and the large stress run (Linux so far)
 add_subdirectory(tests/script_demo)  # Phase 27 Day 475: its tests
 add_subdirectory(engine/engine_c)  # Phase 23: the aggregate shared library (ENGINE_BUILD_SHARED) and, from Day 346, the C API
 add_subdirectory(tools/asset_mint)  # Phase 22 Day 316

@@ -644,3 +644,60 @@ merge, body sync, kinematic drive, physics step, write-back, physics events). Th
 bodies, 16 partitions, scripts only): 1 thread 114.6 ms per frame, 2 threads 57.9 ms, 4 threads 29.8 ms, 8 threads 20.7 ms, 16 threads 12.2 ms, with the same hash at every count (`tests/script_demo` runs 1, 2 and 16 threads under every flavor and compares; it also reloads the
 script in the middle of a run, with the same hash at 1 and 16 threads, and checks that a text that does not compile is refused while the old one runs on). The physics step is about 6 ms and was given the same threads.
 
+## Cost (Phase 27 Day 476)
+
+Measured on the Linux machine (32 hardware threads, a Release build) with `game/script_bench` (`script_bench --scene all`, by hand). The behavior is a `mixer`: per update two component reads and writes, a position read and write and two
+`random.int` calls, on entities that each have a transform and a counter component.
+
+| Measure | Result |
+|---|---|
+| C++ to Lua call (`PartitionLease::Call` of an empty function) | 446 ns |
+| Lua to a pure binding (`num.clamp`) | 340 ns |
+| One state with the behavior host and a small script | 107 KB |
+| One instance holding a table of eight numbers | 869 bytes |
+| One instance parked in a coroutine (`wait_frames` in a loop) | 1,613 bytes |
+| A coroutine woken every tick | 481 ns per wake |
+| An event delivered to a listener instance (100,000 listeners, 10 events a tick) | 6.4 million handler calls per second |
+
+Ticks of the `mixer`, 64 partitions (ms per tick; the second line of each row is ns per entity):
+
+| Entities | 1 thread | 2 | 4 | 8 | 16 |
+|---|---|---|---|---|---|
+| 10,000 | 71.3 | 36.0 | 25.0 | 14.2 | 12.6 |
+| 100,000 | 796 | 419 | 237 | 150 | 125 |
+| 1,000,000 | 13,102 | 6,909 | 3,862 | 2,280 | 1,418 |
+
+At 100,000 entities the speedup is 1.9 on 2 threads, 3.4 on 4, 5.3 on 8 and 6.4 on 16; at a million entities it is 9.2 on 16 threads (one thread is slower per entity there: 13 µs against 8 µs, the cache). The curve flattens because what the scripts
+write is applied by the merge in its fixed order after the partitions finish (not measured separately). **The number of partitions hardly matters**: at 100,000 entities 16, 64, 256 and 1,024 partitions take 795, 786, 787 and
+845 ms on one thread and 149, 145, 139 and 140 ms on 16. The default of 64 stays; use at least four times the thread count (so that the work balances) and not more than 256 (a state costs 107 KB and a partition's commands are merged one after another).
+A million scripted entities take about 2 GB of the process (the script states, the instances and the entities together).
+
+Tasks: `task.parallel_for` over 8,000,000 indices in chunks of 4,096 takes 8.4 ms on 1 thread, 4.8 on 2, 2.6 on 4, 1.6 on 8 and 1.15 on 16 (a speedup of 7.3).
+
+`script_bench --scene check` (and the ctest `script_bench_check`, registered in an optimized build only) fails when a tick of the `mixer` on one thread costs more than 24 µs per entity or a C++ to Lua call more than 1.4 µs: about three times what was
+measured. `script_bench --scene stress` (ctest `script_stress_large`, optimized builds only) runs 20,000 entities for 200 ticks at 1 and 16 threads and compares the state hashes, then one million scripted entities for 60 ticks on 16 threads with spawning, destroying,
+events and a task planner: 110 s, 2.0 GB, no error (the plan said 600 ticks; 60 keep the run to a couple of minutes).
+
+## Limits (Phase 27 Day 476)
+
+What is capped, and what happens at the cap. Nothing here aborts the process; a script that reaches a limit gets a script error or a refusal, and the engine goes on.
+
+| Limit | Value | At the limit |
+|---|---|---|
+| Partitions | 1 to 1,024 (`script.partitions`, default 64) | the setting is refused |
+| Memory of one state | 64 MiB by default (`script.partition_memory`, 1 MiB to 4 GiB) | the call ends `OutOfMemory`, the state is replaced, the instance counts an error |
+| Instructions of one callback | `ScriptRuntimeConfig::budget` (200,000 in the hostile suite) | the callback ends with "instruction budget exceeded" |
+| Waiting coroutines | 65,536 per partition | the new wait is an error of the callback |
+| Tasks queued or held | 1,024 per partition (`script.task_queue_limit`); 16 MiB of source and arguments per tick | `task.run` returns `nil` and the reason |
+| Instructions of one task chunk | 500 million | the task fails; its owner gets the message |
+| Event name | 64 bytes | the emit is refused |
+| Events one partition emits in a tick | 65,536, with a payload weight of 4,194,304 | the rest are dropped and counted |
+| Event chain (a handler's emit that causes another) | 8 hops (`script.event_chain_limit`) | the event is dropped and counted |
+| Value nesting and container size | 16 levels, 65,536 items | the value is refused with a message |
+| Log lines | `script.log_limit` per partition per tick | the rest are counted |
+
+By design (not limits that will move): scripts share no Lua state between entities, an entity cannot call another's function and wait for the answer in the same tick (it sends an event or reads a component), and a script cannot start a thread or take a lock; parallel work
+is `task.*` over pure task states. A failing behavior is disabled (or retried: `script.on_error`) and never stops its neighbors. The hostile-script suite (`tests/script/script_hostile_test.cpp`: an endless loop, a memory hog, endless recursion, a string bomb,
+event, wait and task floods, an event chain, a `pcall` that swallows the budget error, a bad component, `NaN` positions, a conflicting write and a self-destroying entity, at once in 64 partitions on 16 threads) runs for a minute under asan and tsan, and for ten seconds
+otherwise: every callback of the first group ends with an error that is recorded, the others are absorbed, and the well-behaved neighbors run on every tick.
+
