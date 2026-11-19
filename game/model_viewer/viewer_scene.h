@@ -9,6 +9,7 @@
 #include "asset/gpu_loaders.h"
 #include "asset/resource_manager.h"
 #include "asset_import/gltf_import.h"
+#include "containers/hash_map.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "ecs/schedule.h"
@@ -117,6 +118,15 @@ private:
     UniquePtr<animation::AnimationSystem> animation_;
     Vector<asset::Handle<asset::ClipView>> clip_handles_;
     Vector<ClipInfo> clips_;
+    // Per mesh resource, for framing: the box of the vertices without morph targets (a morphed mesh's blob bounds hold
+    // every target at full weight), and of a skinned mesh the bind-pose box of each joint's vertices (joint, box).
+    struct MeshBoxes
+    {
+        Aabb box;
+        Vector<u32> joints;
+        Vector<Aabb> joint_boxes;
+    };
+    HashMap<u64, MeshBoxes, HeapAllocator> mesh_boxes_{HeapAllocator::Default()};
     Vector<ecs::Entity> posed_;    // the entities with a skeleton
     Vector<ecs::Entity> morphed_;  // the entities with morph weights
     usize current_clip_ = 0;

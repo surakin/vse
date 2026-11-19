@@ -5,6 +5,7 @@
 #include "asset/cpu_loaders.h"
 #include "asset/level.h"
 #include "asset/memory_backend.h"
+#include "algorithm.h"
 #include "containers/array.h"
 #include "cstr/format.h"
 #include "log/log.h"
@@ -49,6 +50,7 @@ void ViewerScene::Destroy()
     clips_.Clear();
     posed_.Clear();
     morphed_.Clear();
+    mesh_boxes_.Clear();
     scene_.Reset();
     manager_.Reset();
     backend_.Reset();
@@ -80,6 +82,57 @@ bool ViewerScene::Create(rhi::Device* device, renderer::MaterialSystem* material
         if (r.type == asset::types::kLevel)
         {
             level_id = r.id;
+        }
+        else if (r.type == asset::types::kMesh)
+        {
+            asset::TypeRegistry types;
+            asset::MeshView view;
+            if (view.Open(ByteSpan(r.blob.Data(), r.blob.Size()), types).Failed())
+            {
+                continue;  // the manager reports it when the level loads the mesh
+            }
+            Aabb box;
+            box.min = Vec3(view.BoundsMin()[0], view.BoundsMin()[1], view.BoundsMin()[2]);
+            box.max = Vec3(view.BoundsMax()[0], view.BoundsMax()[1], view.BoundsMax()[2]);
+            u32 position_offset = 0;
+            bool has_position = false;
+            for (u32 a = 0; a < view.AttributeCount(); ++a)
+            {
+                const asset::MeshAttribute attribute = view.Attribute(a);
+                if (attribute.location == asset::kMeshLocationPosition && attribute.binding == 0 &&
+                    attribute.format == rhi::VertexFormat::Float3)
+                {
+                    position_offset = attribute.offset;
+                    has_position = true;
+                }
+            }
+            if (view.MorphTargetCount() != 0 && has_position && view.VertexCount() != 0)
+            {
+                const ByteSpan bytes = view.VertexBytes();
+                for (u32 v = 0; v < view.VertexCount(); ++v)
+                {
+                    f32 p[3];
+                    MemCopy(p, bytes.Data() + static_cast<usize>(v) * view.VertexStride() + position_offset, sizeof(p));
+                    const Vec3 at(p[0], p[1], p[2]);
+                    box.min = v == 0 ? at : Vec3(Min(box.min.x, at.x), Min(box.min.y, at.y), Min(box.min.z, at.z));
+                    box.max = v == 0 ? at : Vec3(Max(box.max.x, at.x), Max(box.max.y, at.y), Max(box.max.z, at.z));
+                }
+            }
+            MeshBoxes boxes;
+            boxes.box = box;
+            for (u32 j = 0; view.Skinned() && j < view.SkinJointCount(); ++j)
+            {
+                const asset::MeshJointBounds jb = view.JointBounds(j);
+                if (jb.used)
+                {
+                    Aabb joint_box;
+                    joint_box.min = Vec3(jb.min[0], jb.min[1], jb.min[2]);
+                    joint_box.max = Vec3(jb.max[0], jb.max[1], jb.max[2]);
+                    boxes.joints.Push(j);
+                    boxes.joint_boxes.Push(joint_box);
+                }
+            }
+            mesh_boxes_.Insert(r.id.Value(), Move(boxes));
         }
         else if (r.type == asset::types::kAnimation)
         {
@@ -359,35 +412,83 @@ void ViewerScene::Update(f32 seconds, jobs::Scheduler* scheduler)
 
 Aabb ViewerScene::Bounds() const
 {
-    // A morphed mesh's bounds hold every target at full weight, so one broken target (deltas a hundred times the
-    // mesh, as a converter wrote them in a file found on 2026-11-20) would frame a box thousands of times too big.
-    // The meshes without targets frame the view when there are any; the morphed ones only when nothing else is.
-    bool plain_exists = false;
-    for (u32 slot = 0; scene_.Get() != nullptr && slot < scene_->SlotCount(); ++slot)
-    {
-        plain_exists = plain_exists ||
-                       (scene_->SlotAlive(slot) && scene_->ObjectAt(slot).mesh->MorphTargetCount() == 0);
-    }
+    // Each mesh entity's box in the world, as it is drawn now. A rigid mesh: its box under the entity's transform (the
+    // vertices' own box for a morphed one: its blob bounds hold every target at full weight, and one broken target,
+    // deltas a hundred times the mesh as a converter wrote them in a file found on 2026-11-20, framed a box thousands
+    // of times the model). A skinned mesh: each joint's bind-pose box moved by its palette matrix, since a file's rest
+    // pose need not be its bind pose (the same file stands up while its bind-pose box lies down).
     Aabb box;
     bool any = false;
-    for (u32 slot = 0; scene_.Get() != nullptr && slot < scene_->SlotCount(); ++slot)
+    const auto add = [&](const Aabb& b)
     {
-        if (!scene_->SlotAlive(slot) || (plain_exists && scene_->ObjectAt(slot).mesh->MorphTargetCount() != 0))
-        {
-            continue;
-        }
-        const Aabb& b = scene_->ObjectAt(slot).bounds.box;
         if (!any)
         {
             box = b;
             any = true;
-            continue;
+            return;
         }
-        box.min = Vec3(b.min.x < box.min.x ? b.min.x : box.min.x, b.min.y < box.min.y ? b.min.y : box.min.y,
-                       b.min.z < box.min.z ? b.min.z : box.min.z);
-        box.max = Vec3(b.max.x > box.max.x ? b.max.x : box.max.x, b.max.y > box.max.y ? b.max.y : box.max.y,
-                       b.max.z > box.max.z ? b.max.z : box.max.z);
+        box.min = Vec3(Min(b.min.x, box.min.x), Min(b.min.y, box.min.y), Min(b.min.z, box.min.z));
+        box.max = Vec3(Max(b.max.x, box.max.x), Max(b.max.y, box.max.y), Max(b.max.z, box.max.z));
+    };
+    if (world_.Get() == nullptr)
+    {
+        return box;
     }
+    world_
+        ->Query<ecs::Read<asset::MeshReference>, ecs::Read<ecs::WorldTransform>,
+                ecs::Without<animation::SkeletonInstance>>()
+        .ForEach(
+            [&](const asset::MeshReference& reference, const ecs::WorldTransform& transform)
+            {
+                const MeshBoxes* local = mesh_boxes_.Find(reference.mesh.id);
+                if (local != nullptr)
+                {
+                    add(TransformAabb(local->box, transform.matrix));
+                }
+            });
+    world_
+        ->Query<ecs::Read<asset::MeshReference>, ecs::Read<ecs::WorldTransform>,
+                ecs::Read<animation::SkeletonInstance>>()
+        .ForEach(
+            [&](const asset::MeshReference& reference, const ecs::WorldTransform& transform,
+                const animation::SkeletonInstance& instance)
+            {
+                const MeshBoxes* local = mesh_boxes_.Find(reference.mesh.id);
+                if (local == nullptr)
+                {
+                    return;
+                }
+                if (local->joints.Empty() || instance.palette.Empty())
+                {
+                    add(TransformAabb(local->box, transform.matrix));
+                    return;
+                }
+                for (usize k = 0; k < local->joints.Size(); ++k)
+                {
+                    if (local->joints[k] >= instance.palette.Size())
+                    {
+                        continue;
+                    }
+                    const animation::Mat3x4& m = instance.palette[local->joints[k]];  // row-major 3x4
+                    const Aabb& jb = local->joint_boxes[k];
+                    Aabb posed;
+                    for (u32 corner = 0; corner < 8; ++corner)
+                    {
+                        const f32 x = (corner & 1) != 0 ? jb.max.x : jb.min.x;
+                        const f32 y = (corner & 2) != 0 ? jb.max.y : jb.min.y;
+                        const f32 z = (corner & 4) != 0 ? jb.max.z : jb.min.z;
+                        const Vec3 at(m[0] * x + m[1] * y + m[2] * z + m[3], m[4] * x + m[5] * y + m[6] * z + m[7],
+                                      m[8] * x + m[9] * y + m[10] * z + m[11]);
+                        posed.min = corner == 0
+                                        ? at
+                                        : Vec3(Min(posed.min.x, at.x), Min(posed.min.y, at.y), Min(posed.min.z, at.z));
+                        posed.max = corner == 0
+                                        ? at
+                                        : Vec3(Max(posed.max.x, at.x), Max(posed.max.y, at.y), Max(posed.max.z, at.z));
+                    }
+                    add(TransformAabb(posed, transform.matrix));
+                }
+            });
     return box;
 }
 

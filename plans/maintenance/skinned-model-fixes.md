@@ -24,8 +24,12 @@ viewer with "a clip of the file could not be loaded". Four engine bugs were behi
   (failed without the fix).
 - [x] **The model viewer**: a clip is given only to the entities that can play it (a skeletal clip to its skeleton's entities, a
   weights-only clip to those with weights); a skinned mesh no clip poses is drawn in its bind pose (the renderer refuses a skinned
-  object with no palette); a clip that fails to load names the loader's reason; the view is framed on the meshes without morph
-  targets when there are any.
+  object with no palette); a clip that fails to load names the loader's reason.
+- [x] **The framing** (asked by the user after the first commit): the view is framed on every mesh as it is drawn. A rigid mesh by its
+  box under its transform (a morphed one by its vertices' own box, computed once at import: its blob bounds hold every target at full
+  weight); a skinned mesh by each joint's bind-pose box (the blob's joint bounds) moved by that joint's palette matrix. The file's rest
+  pose is not its bind pose: the joints' world times their inverse bind matrices is the mesh node's transform for the root and a plain
+  scale for the others, so the drawn character stands while its bind-pose box lies down; framing on that box cut the head off.
 
 ## The file
 
@@ -40,7 +44,9 @@ thousands of times the model. The importer does not warn about such targets.
   excluded; crash tests: excluded; soak: excluded) in 51 s`; failures: `engine_c_surface` (known) and `docs_check` before the
   reference was regenerated.
 - After it: `ctest -L docs` 9 of 9; the animation, skin, clip and weights-only cases under asan and tsan, 70 of 70.
-- The user's model: opens with no warning, textured, in its bind pose (`--screenshot`); the framing cuts off the top (below).
+- The user's model: opens with no warning, textured, in its bind pose (`--screenshot`), and after the framing change the whole
+  character is in the picture. The viewer's ctests (screenshots of the robot, the meadow and a `.gltf`, bad files, the Wayland window)
+  6 of 6.
 
 ## Post-implementation code review
 
@@ -52,6 +58,10 @@ thousands of times the model. The importer does not warn about such targets.
 3. A second node using the skin at another place is drawn at the first one's place: kept, a skeleton has one space; a counted warning
    names it.
 4. The framing leaves out the morphed meshes when others exist, so this model's head (its morphed meshes) is partly out of the
-   picture: recorded in `KNOWN-ISSUES.md`.
+   picture: fixed by the framing change above (it was not the morphed meshes but the bind pose).
+
+The framing change's review: 1 finding, recorded. The renderer culls a skinned object by its bind-pose mesh bounds under the entity's
+transform (`SkinBounds`), so a file like this one, whose rest pose is not its bind pose, can be culled while on screen
+(`KNOWN-ISSUES.md`); the joint bounds moved by the palette, as the viewer now frames, would be the fix.
 
 Not run on the PC or the Mac.
