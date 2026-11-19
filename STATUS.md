@@ -8,6 +8,21 @@ with progress.
 
 Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 
+**Container audit fixes (maintenance series, planned 2026-11-19; `plans/maintenance/container-audit.md`, 12 day files under `plans/maintenance/container-audit/`).**
+- The audit (`plans/maintenance/container-audit-2026-11-19.md`, read-only, nothing timed) found linear scans and quadratic paths across the engine, most chosen because the
+  foundation lacked a container feature. It also found three correctness problems: `DeviceResources`' 256-owner cap, hashed path keys never compared, and an unsorted
+  "sorted" joint list.
+- The Mac's `eefa8c3b` (move-only `HashMap` entries, heterogeneous lookup, `ForEach`, `Hash<StringView>`/`Hash<String>`) is in. On Linux, `foundation_base_tests`
+  builds with Clang and passes 132 cases; its other builds and docs are Day 1's.
+- The series (the user's choice of maintenance series over a phase, with benchmarks first):
+  - Day 1: baselines.
+  - Days 2-3: the foundation (map, set, byte hash, deque, heap, vector, string, sorts).
+  - Day 4: one FNV and string keys.
+  - Days 5-10: the modules.
+  - Day 11: Windows and macOS (the user's).
+  - Day 12: a gate, the after numbers, the full closing runs and an uncapped review.
+- Not started; `CURRENT_PHASE` stays 27, and Phase 28 Day 478 follows the series.
+
 **Live spatial voices (maintenance, 2026-11-18, Linux; `plans/maintenance/host-live-spatial-voices.md`).** C API: push streams (`audio_stream_open_push`, `audio_stream_push`, `audio_stream_push_i16`, `audio_stream_stats`), a `stream` field on `engine_audio_source` so an entity's spatial voice plays a live stream, `ENGINE_CAP_AUDIO_PUSH_STREAMS`; `StreamBuffer::CreatePush` is a lock-free ring read by the mixer voice (oldest frames dropped and counted, optional prefill, never ends, closed by `audio_stream_close`). A live tone equals the clip's at five places; delay at most 256 frames (5.33 ms) on Linux. Windows and Mac figures are theirs (`KNOWN-ISSUES.md`).
 
 **Slot UV transform (maintenance, 2026-11-18, Linux; `plans/maintenance/host-slot-uv-transform.md`).** Material slots `albedo_uv` (`ENGINE_SLOT_VEC4`: scale, offset; default (1,1,0,0)) and `albedo_uv_outside` (linear RGBA; alpha above 0 masks the part outside the picture and keeps the sampled coordinate half a texel inside the edge) on the G-buffer material, settable per mesh slot; `gbuffer.frag` re-minted (SPIR-V here; the DXIL and Metal outputs and the fitting cases on D3D12 and Metal are the PC's and the Mac's, `KNOWN-ISSUES.md`). `host_acceptance_scene` fits 4:3 and 9:16 pictures into the 16:9 screen.
