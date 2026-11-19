@@ -16,7 +16,9 @@ add_library(shader_mint_lib STATIC ${SHADER_MINT_SOURCES})
 target_compile_options(shader_mint_lib PRIVATE ${ENGINE_EXCEPTIONS_COMPILE_OPTIONS})
 target_include_directories(shader_mint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(shader_mint_lib SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json)
-target_link_libraries(shader_mint_lib PUBLIC renderer)
+# Only the renderer's reflection library, not `renderer`: the renderer embeds shader includes this tool generates (the morph pass's
+# shader is in its material system, glTF coverage Day 7), so linking it would make the build a cycle.
+target_link_libraries(shader_mint_lib PUBLIC renderer_reflection)
 
 add_executable(shader_mint main.cpp)
 target_compile_options(shader_mint PRIVATE ${ENGINE_EXCEPTIONS_COMPILE_OPTIONS})

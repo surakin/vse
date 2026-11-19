@@ -656,3 +656,259 @@ TEST_CASE("An emissive colour glows on its own, times its map and strength, and 
         device.Reset();
     }
 }
+
+namespace
+{
+
+// Moves a freshly created mesh's buffers out of their upload state, in one submission (as the demo scene does).
+void PrepareMesh(rhi::Device* device, renderer::GpuMesh* mesh)
+{
+    device->BeginFrame();
+    rhi::CommandList* list = device->CreateCommandList();
+    REQUIRE(list != nullptr);
+    list->Begin();
+    mesh->RecordPrepare(list);
+    list->End();
+    rhi::CommandList* lists[] = {list};
+    REQUIRE(device->Submit(lists, 1) != 0);
+    device->EndFrame();
+    device->WaitIdle();
+    mesh->MarkReady();
+}
+
+// The number of pixels whose colour differs by more than `tolerance` in some channel.
+u32 PixelsThatDiffer(const Vector<u8>& a, const Vector<u8>& b, int tolerance)
+{
+    u32 count = 0;
+    for (usize p = 0; p + 3 < a.Size() && p + 3 < b.Size(); p += 4)
+    {
+        for (usize c = 0; c < 3; ++c)
+        {
+            const int d = static_cast<int>(a[p + c]) - static_cast<int>(b[p + c]);
+            if (d > tolerance || -d > tolerance)
+            {
+                ++count;
+                break;
+            }
+        }
+    }
+    return count;
+}
+
+}  // namespace
+
+// glTF coverage Day 14 (the Mac): morph targets drawn on the GPU (the morph pre-pass of Day 7, shaders/morph.comp). A
+// cube with eight targets (the most applied at once), each moving every vertex 0.075 along x: at weight 0 it draws
+// exactly as the plain cube, with every weight 1 as the plain cube moved by 0.6 (up to the rasterization of the edges),
+// and with every weight 0.5 halfway. Eight targets fill the push block to its last word (it was 160 bytes, past the 128
+// bound, until Day 14).
+TEST_CASE("A morph target moves the mesh on the GPU by its weight", "[scene][render][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);  // with Vulkan's synchronization validation
+        {
+            renderer_demo::FrameSetup setup;
+            setup.device = device.Get();
+            setup.max_objects = 8;
+            setup.max_lights = 8;
+            renderer_demo::DemoFrame frame;
+            REQUIRE(frame.Create(setup));
+            renderer::MaterialSystem* materials = frame.Materials();
+            // A glow and no light: the picture is the cube's silhouette in one colour.
+            const renderer::MaterialId glow = renderer::CreateGBufferMaterial(materials, frame.Templates(),
+                                                                              renderer::GBufferOptions{}, "glow");
+            REQUIRE(materials->SetVec4(glow, "base_color", Vec4(0.2f, 0.2f, 0.2f, 1.0f)));
+            REQUIRE(materials->SetVec4(glow, "emissive_color", Vec4(0.8f, 0.4f, 0.2f, 1.0f)));
+
+            renderer::MeshData data;
+            REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
+            auto plain = MakeShared<renderer::GpuMesh>();
+            REQUIRE(plain->Create(device.Get(), data, "cube"));
+            PrepareMesh(device.Get(), plain.Get());
+
+            // The same cube with eight morph targets: each a delta of (0.075, 0, 0) on every vertex, after the cube's
+            // bytes.
+            renderer::MeshGeometry geometry = data.CopyGeometry();
+            REQUIRE(geometry.bytes.Get() != nullptr);
+            const ByteSpan region = geometry.bytes->Bytes();
+            const usize delta_offset = (region.Size() + 15) / 16 * 16;
+            Vector<byte> bytes;
+            constexpr u32 kTargets = renderer::kMaxActiveMorphTargets;
+            const u32 deltas = geometry.vertex_count * kTargets;
+            bytes.Resize(delta_offset + static_cast<usize>(deltas) * renderer::kMorphDeltaBytes);
+            MemSet(bytes.Data(), 0, bytes.Size());
+            MemCopy(bytes.Data(), region.Data(), region.Size());
+            for (u32 d = 0; d < deltas; ++d)
+            {
+                byte* delta = bytes.Data() + delta_offset + static_cast<usize>(d) * renderer::kMorphDeltaBytes;
+                const u32 v = d % geometry.vertex_count;  // each target's run is sorted by vertex
+                const f32 dx = 0.075f;
+                MemCopy(delta, &v, 4);
+                MemCopy(delta + 4, &dx, 4);  // position x; the rest of the position, the normal and the tangent stay 0
+            }
+            geometry.bytes = MakeShared<OwnedBytes>(static_cast<Vector<byte>&&>(bytes));
+            geometry.morph_delta_offset = delta_offset;
+            geometry.morph_delta_count = deltas;
+            geometry.morph_target_count = kTargets;
+            for (u32 t = 0; t < kTargets; ++t)
+            {
+                geometry.morph_targets[t].first_delta = t * geometry.vertex_count;
+                geometry.morph_targets[t].delta_count = geometry.vertex_count;
+            }
+            geometry.bounds.box.max.x += 0.6f;  // the box and the sphere cover weights up to 1
+            geometry.bounds.sphere.center.x += 0.3f;
+            geometry.bounds.sphere.radius += 0.3f;
+            REQUIRE(geometry.Validate() == nullptr);
+            auto morphed = MakeShared<renderer::GpuMesh>();
+            REQUIRE(morphed->CreateFromGeometry(device.Get(), geometry, nullptr, "morphed cube"));
+            REQUIRE(morphed->MorphTargetCount() == kTargets);
+            PrepareMesh(device.Get(), morphed.Get());
+
+            renderer::Camera camera;
+            camera.SetLookAt(Vec3(0.3f, 1.5f, 3.0f), Vec3(0.3f, 0, 0), Vec3(0, 1, 0));
+            camera.aspect = 1.0f;
+            camera.near_plane = 0.5f;
+            camera.far_plane = 50.0f;
+            const auto draw = [&](renderer::GpuMesh* mesh, f32 x, const f32* weight, Vector<u8>* pixels)
+            {
+                renderer::RenderSceneDesc desc;
+                desc.max_objects = 8;
+                desc.max_lights = 8;
+                renderer::RenderScene scene(desc);
+                renderer::RenderObjectDesc od;
+                od.mesh = mesh;
+                od.material = glow.index;
+                od.transform = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(x, 0, 0));
+                od.morph_weights = weight;
+                od.morph_weight_count = weight != nullptr ? kTargets : 0;
+                scene.AddObject(od);
+                return Render(frame, device.Get(), scene, camera, pixels);
+            };
+            const f32 zero[kTargets] = {};
+            const f32 half[kTargets] = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
+            const f32 one[kTargets] = {1, 1, 1, 1, 1, 1, 1, 1};
+            Vector<u8> base;
+            Vector<u8> moved;
+            Vector<u8> halfway;
+            Vector<u8> picture;
+            REQUIRE(draw(plain.Get(), 0.0f, nullptr, &base));
+            REQUIRE(draw(plain.Get(), 0.6f, nullptr, &moved));
+            REQUIRE(draw(plain.Get(), 0.3f, nullptr, &halfway));
+            const u32 pixels = kSize * kSize;
+            INFO("the plain cube moved by 0.6 differs from the plain cube in " << PixelsThatDiffer(base, moved, 8)
+                                                                               << " pixels");
+            REQUIRE(PixelsThatDiffer(base, moved, 8) > pixels / 20);  // the move is visible
+
+            REQUIRE(draw(morphed.Get(), 0.0f, zero, &picture));
+            CHECK(LargestDifference(base, picture) == 0);  // weight 0: the base shape
+            REQUIRE(draw(morphed.Get(), 0.0f, nullptr, &picture));
+            CHECK(LargestDifference(base, picture) == 0);  // no weights: the base shape
+            REQUIRE(draw(morphed.Get(), 0.0f, one, &picture));
+            INFO("weight 1 against the moved cube: " << PixelsThatDiffer(moved, picture, 8) << " pixels differ");
+            CHECK(PixelsThatDiffer(moved, picture, 8) <= pixels / 200);
+            REQUIRE(draw(morphed.Get(), 0.0f, half, &picture));
+            INFO("weight 0.5 against the cube moved by 0.3: " << PixelsThatDiffer(halfway, picture, 8)
+                                                              << " pixels differ");
+            CHECK(PixelsThatDiffer(halfway, picture, 8) <= pixels / 200);
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+// glTF coverage Day 14 (the Mac): a spot light on the GPU (Day 11: the point-light pass with the cone factor). A spot
+// light 1 m in front of a cube's face, shining at it with a narrow cone, lights the middle of the face as a point light
+// at the same place does (inside the inner cone the factor is 1) and leaves the face's edge, outside the outer cone,
+// black, where the point light still reaches.
+TEST_CASE("A spot light lights inside its cone as a point light does, and nothing outside it", "[scene][render][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);  // with Vulkan's synchronization validation
+        {
+            renderer_demo::FrameSetup setup;
+            setup.device = device.Get();
+            setup.max_objects = 8;
+            setup.max_lights = 8;
+            renderer_demo::DemoFrame frame;
+            REQUIRE(frame.Create(setup));
+            renderer::MaterialSystem* materials = frame.Materials();
+            const renderer::MaterialId white = renderer::CreateGBufferMaterial(materials, frame.Templates(),
+                                                                               renderer::GBufferOptions{}, "white");
+            REQUIRE(materials->SetVec4(white, "base_color", Vec4(0.9f, 0.9f, 0.9f, 1.0f)));
+            renderer::MeshData data;
+            REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
+            auto cube = MakeShared<renderer::GpuMesh>();
+            REQUIRE(cube->Create(device.Get(), data, "cube"));
+            PrepareMesh(device.Get(), cube.Get());
+
+            // Straight at the face at z = 0.5, which fills the middle of the picture.
+            renderer::Camera camera;
+            camera.SetLookAt(Vec3(0, 0, 2.5f), Vec3(0, 0, 0), Vec3(0, 1, 0));
+            camera.aspect = 1.0f;
+            camera.near_plane = 0.5f;
+            camera.far_plane = 50.0f;
+            const auto draw = [&](bool lit, renderer::LightType type, Vector<u8>* pixels)
+            {
+                renderer::RenderSceneDesc desc;
+                desc.max_objects = 8;
+                desc.max_lights = 8;
+                renderer::RenderScene scene(desc);
+                renderer::RenderObjectDesc od;
+                od.mesh = cube.Get();
+                od.material = white.index;
+                od.transform = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(0, 0, 0));
+                scene.AddObject(od);
+                renderer::Light light;
+                light.type = type;
+                light.position = Vec3(0, 0, 1.5f);
+                light.direction = Vec3(0, 0, 1);  // toward the light: it shines along -z, at the face
+                light.radius = 6.0f;
+                light.intensity = 2.0f;
+                light.inner_cone = 0.10f;  // about 0.1 m around the face's middle at full strength
+                light.outer_cone = 0.15f;  // nothing beyond about 0.15 m
+                if (lit)
+                {
+                    scene.AddLight(light);
+                }
+                return Render(frame, device.Get(), scene, camera, pixels);
+            };
+            Vector<u8> dark;
+            Vector<u8> point;
+            Vector<u8> spot;
+            REQUIRE(draw(false, renderer::LightType::Point, &dark));
+            REQUIRE(draw(true, renderer::LightType::Point, &point));
+            REQUIRE(draw(true, renderer::LightType::Spot, &spot));
+            // The face's extent along the middle row: where the point light adds to the picture without a light (so the
+            // test does not depend on the background or on an ambient term).
+            const u32 row = kSize / 2;
+            const auto red = [&](const Vector<u8>& p, u32 x) { return static_cast<int>(p[(row * kSize + x) * 4]); };
+            u32 left = kSize;
+            u32 right = 0;
+            for (u32 x = 0; x < kSize; ++x)
+            {
+                if (red(point, x) > red(dark, x))
+                {
+                    left = x < left ? x : left;
+                    right = x > right ? x : right;
+                }
+            }
+            REQUIRE(left < right);
+            const u32 middle = (left + right) / 2;
+            const u32 edge = left + (right - left) / 10;  // 0.4 m from the middle: about 22 degrees off the axis
+            INFO("face " << left << ".." << right << ": point " << red(point, middle) << " / " << red(point, edge)
+                         << ", spot " << red(spot, middle) << " / " << red(spot, edge));
+            CHECK(red(point, edge) > red(dark, edge));                // the point light reaches the edge
+            CHECK(red(spot, edge) == red(dark, edge));                // the spot light adds nothing there
+            CHECK(red(spot, middle) > red(dark, middle));             // it lights the middle
+            CHECK(Abs(red(spot, middle) - red(point, middle)) <= 1);  // as the point light does, inside the inner cone
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}

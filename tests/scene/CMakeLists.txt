@@ -27,7 +27,13 @@ function(engine_add_scene_tests target flavor suffix label spec)
   target_link_libraries(${target} PRIVATE scene${flavor} renderer_passes${flavor} renderer${flavor} ecs${flavor} rhi_backends${flavor} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/rhi ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tools/asset_mint ${CMAKE_SOURCE_DIR}/shaders)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" "SPIKE_FONT_FILE=\"${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf\"")
-  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}" PROPERTIES LABELS "${label}")
+  # On macOS the GPU cases run through Metal with its API and shader validation on, an error stopping the test, as in tests/renderer
+  # (missing here until glTF coverage Day 14: the scene's GPU cases ran on Metal unvalidated).
+  set(env "")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(env MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert MTL_SHADER_VALIDATION=1)
+  endif()
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}" PROPERTIES LABELS "${label}" ENVIRONMENT "${env}")
 endfunction()
 
 engine_add_scene_tests(scene_tests "" "" "scene" "")

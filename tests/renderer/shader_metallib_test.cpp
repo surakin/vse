@@ -31,6 +31,7 @@
 #include "point_light.vert.dxil.inc"
 #include "point_light.frag.dxil.inc"
 #include "tonemap.frag.dxil.inc"
+#include "morph.comp.dxil.inc"
 #include "text.vert.dxil.inc"
 #include "text.frag.dxil.inc"
 #include "ui.vert.dxil.inc"
@@ -231,6 +232,9 @@ const MintedLibrary kLibraries[] = {
      shaders::kUiVertMetallibByteCount, shaders::kUiVertMetallibEntry, shaders::kUiVertMetallibSpirvFnv},
     {"ui.frag", rhi::ShaderStage::Fragment, shaders::kUiFragSpv, shaders::kUiFragSpvWordCount, shaders::kUiFragMetallib,
      shaders::kUiFragMetallibByteCount, shaders::kUiFragMetallibEntry, shaders::kUiFragMetallibSpirvFnv},
+    {"morph.comp", rhi::ShaderStage::Compute, shaders::kMorphCompSpv, shaders::kMorphCompSpvWordCount,
+     shaders::kMorphCompMetallib, shaders::kMorphCompMetallibByteCount, shaders::kMorphCompMetallibEntry,
+     shaders::kMorphCompMetallibSpirvFnv},  // glTF coverage Day 7
 };
 
 }  // namespace

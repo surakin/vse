@@ -16,7 +16,7 @@ inline constexpr u8 kMorphCompRefl[kMorphCompReflByteCount] = {
     0, 0, 0, 0, 0, 6, 111, 117, 116, 112, 117, 116, 0, 0, 0, 0,
     1, 0, 0, 0, 1, 1, 0, 0, 0, 4, 0, 0, 0, 255, 255, 255,
     255, 4, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 4, 80, 117,
-    115, 104, 160, 0, 0, 0, 9, 0, 0, 0, 12, 118, 101, 114, 116, 101,
+    115, 104, 128, 0, 0, 0, 9, 0, 0, 0, 12, 118, 101, 114, 116, 101,
     120, 95, 99, 111, 117, 110, 116, 0, 0, 0, 0, 4, 0, 0, 0, 0,
     2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 12, 115, 116, 114, 105,
     100, 101, 95, 119, 111, 114, 100, 115, 4, 0, 0, 0, 4, 0, 0, 0,
@@ -34,12 +34,12 @@ inline constexpr u8 kMorphCompRefl[kMorphCompReflByteCount] = {
     0, 0, 0, 0, 0, 12, 116, 97, 114, 103, 101, 116, 95, 99, 111, 117,
     110, 116, 28, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0,
     0, 0, 0, 0, 0, 0, 7, 116, 97, 114, 103, 101, 116, 115, 32, 0,
-    0, 0, 128, 0, 0, 0, 1, 2, 4, 1, 8, 0, 0, 0, 16, 0,
+    0, 0, 96, 0, 0, 0, 1, 2, 4, 1, 6, 0, 0, 0, 16, 0,
     0, 0, 1, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0,
 };
 
 // Block sizes and member offsets, for static_asserts on the C++ structs copied into these blocks.
-inline constexpr u32 kMorphCompPushSize = 160;
+inline constexpr u32 kMorphCompPushSize = 128;
 inline constexpr u32 kMorphCompPushVertexCountOffset = 0;
 inline constexpr u32 kMorphCompPushStrideWordsOffset = 4;
 inline constexpr u32 kMorphCompPushPositionWordOffset = 8;

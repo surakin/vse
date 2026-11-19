@@ -828,9 +828,11 @@ TEST_CASE("gltf clip: channels that cannot play are dropped with a warning, and 
     ImportOptions options;
     options.looping_clips = Span<const StringView>(loops, 1);
     REQUIRE(SkImport(glb, &result, &error, options).Ok());
-    CHECK(result.report.warnings == 2);  // the channel on a node outside the skin, and the weights channel
+    // The channel on a node outside the skin. The weights channel plays since glTF coverage Day 10 (a weights-only clip
+    // of its node).
+    CHECK(result.report.warnings == 1);
     CHECK(NoteSays(result, "animations[0].channels[1]"));
-    CHECK(NoteSays(result, "animations[0].channels[2]"));
+    CHECK_FALSE(NoteSays(result, "animations[0].channels[2]"));
     TypeRegistry types;
     ClipView clip;
     REQUIRE(clip.Open(BlobOf(*Find(result, types::kAnimation)), types).Ok());

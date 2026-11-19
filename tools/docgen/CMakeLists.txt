@@ -75,7 +75,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND DOCGEN_FLAGS_ARGS --flag "${_system_include}${dir}")
   endforeach()
   set(DOCGEN_LINK_ARGS "")
-  foreach(lib renderer_passes renderer ui net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_dx12 rhi_vulkan rhi jobs platform foundation_settings foundation_debug foundation_io foundation_base sentry breakpad_client)
+  foreach(lib renderer_passes renderer renderer_reflection ui net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_dx12 rhi_vulkan rhi jobs platform foundation_settings foundation_debug foundation_io foundation_base sentry breakpad_client)
     list(APPEND DOCGEN_LINK_ARGS --link $<TARGET_LINKER_FILE:${lib}>)
   endforeach()
   # The system libraries those link beyond CMake's standard ones (engine/foundation, engine/platform, engine/net and sentry's CMakeLists.txt), then
@@ -118,7 +118,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND DOCGEN_FLAGS_ARGS --flag -arch --flag ${arch})
   endforeach()
   set(DOCGEN_LINK_ARGS "")
-  foreach(lib renderer_passes renderer ui net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_metal rhi jobs platform
+  foreach(lib renderer_passes renderer renderer_reflection ui net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_metal rhi jobs platform
               foundation_settings foundation_debug foundation_io foundation_base backtrace sentry breakpad_client)
     list(APPEND DOCGEN_LINK_ARGS --link $<TARGET_FILE:${lib}>)
   endforeach()
@@ -133,7 +133,7 @@ else()
   foreach(opt ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
     list(APPEND DOCGEN_FLAGS_ARGS --flag ${opt})
   endforeach()
-  set(DOCGEN_LINK_ARGS --link $<TARGET_FILE:renderer_passes> --link $<TARGET_FILE:renderer> --link $<TARGET_FILE:ui> --link $<TARGET_FILE:net> --link $<TARGET_FILE:storage> --link $<TARGET_FILE:database_sqlite> --link $<TARGET_FILE:database> --link $<TARGET_FILE:sqlite3> --link $<TARGET_FILE:spatial> --link $<TARGET_FILE:ecs> --link $<TARGET_FILE:text> --link $<TARGET_FILE:freetype> --link $<TARGET_FILE:rhi_backends> --link $<TARGET_FILE:rhi_vulkan> --link $<TARGET_FILE:rhi> --link $<TARGET_FILE:jobs> --link $<TARGET_FILE:platform> --link $<TARGET_FILE:foundation_settings> --link $<TARGET_FILE:foundation_debug> --link $<TARGET_FILE:foundation_io> --link $<TARGET_FILE:foundation_base> --link $<TARGET_FILE:backtrace> --link $<TARGET_FILE:sentry> --link $<TARGET_FILE:breakpad_client> --link $<TARGET_FILE:unwind> --link -pthread --link -ldl)
+  set(DOCGEN_LINK_ARGS --link $<TARGET_FILE:renderer_passes> --link $<TARGET_FILE:renderer> --link $<TARGET_FILE:renderer_reflection> --link $<TARGET_FILE:ui> --link $<TARGET_FILE:net> --link $<TARGET_FILE:storage> --link $<TARGET_FILE:database_sqlite> --link $<TARGET_FILE:database> --link $<TARGET_FILE:sqlite3> --link $<TARGET_FILE:spatial> --link $<TARGET_FILE:ecs> --link $<TARGET_FILE:text> --link $<TARGET_FILE:freetype> --link $<TARGET_FILE:rhi_backends> --link $<TARGET_FILE:rhi_vulkan> --link $<TARGET_FILE:rhi> --link $<TARGET_FILE:jobs> --link $<TARGET_FILE:platform> --link $<TARGET_FILE:foundation_settings> --link $<TARGET_FILE:foundation_debug> --link $<TARGET_FILE:foundation_io> --link $<TARGET_FILE:foundation_base> --link $<TARGET_FILE:backtrace> --link $<TARGET_FILE:sentry> --link $<TARGET_FILE:breakpad_client> --link $<TARGET_FILE:unwind> --link -pthread --link -ldl)
   # The system libraries `platform` links (see engine/platform/CMakeLists.txt), asked of pkg-config
   # here instead of borrowed from variables set in another directory's scope.
   find_package(PkgConfig REQUIRED)
@@ -183,7 +183,7 @@ add_custom_target(docs
   COMMAND $<TARGET_FILE:docgen> links --root ${CMAKE_SOURCE_DIR}
   COMMAND $<TARGET_FILE:docgen> samples ${DOCGEN_SAMPLES_ARGS}
   COMMAND $<TARGET_FILE:docgen> lint ${DOCGEN_LINT_ARGS}
-  DEPENDS docgen renderer_passes renderer net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi jobs foundation sentry ${DOCGEN_SAMPLE_LIBRARIES}
+  DEPENDS docgen renderer_passes renderer renderer_reflection net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi jobs foundation sentry ${DOCGEN_SAMPLE_LIBRARIES}
   COMMENT "Regenerating docs/reference and running the documentation checks"
   VERBATIM
   USES_TERMINAL)

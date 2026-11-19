@@ -467,7 +467,7 @@ TEST_CASE("gltf mesh: other attributes are dropped with a counted warning", "[as
     ImportResult result;
     GltfError error;
     REQUIRE(GmImport(w.Glb(), &result, &error).Ok());
-    CHECK(result.report.warnings == 2);  // TEXCOORD_1 and COLOR_0
+    CHECK(result.report.warnings == 1);  // TEXCOORD_1 (COLOR_0 is imported since glTF coverage Day 5)
 }
 
 TEST_CASE("gltf mesh: the scale multiplies the positions", "[asset][gltf]")

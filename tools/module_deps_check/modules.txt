@@ -333,6 +333,7 @@ target rhi_metal rhi/metal
 target rhi_backends rhi/backends
 target renderer renderer
 target renderer_passes renderer
+target renderer_reflection renderer
 target scene scene
 target rhi_demo game/rhi_demo
 target rhi_bench game/rhi_bench

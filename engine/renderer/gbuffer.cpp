@@ -13,6 +13,7 @@
 #include "gbuffer.frag.perm.inc"
 #include "gbuffer.vert.perm.inc"
 #include "gbuffer_debug.frag.dxil.inc"
+#include "morph.comp.refl.inc"  // the push block's size and offsets, checked below
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 #include "cstr/format.h"
@@ -652,6 +653,13 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
                 // The largest |weight| first (ties by target), zero weights skipped, at most kMaxActiveMorphTargets.
                 const u32 count = object.morph_weight_count < mesh->MorphTargetCount() ? object.morph_weight_count
                                                                                        : mesh->MorphTargetCount();
+                // The push block as the CPU fills it: eight header words, then three words per active target, in
+                // exactly the block shaders/morph.comp declares and the pipeline binds (160 bytes against 128 until
+                // glTF coverage Day 14).
+                static_assert(sizeof(MorphJob::push) == shaders::kMorphCompPushSize, "the morph push block's size");
+                static_assert(MaterialSystem::kMorphPushBytes == shaders::kMorphCompPushSize, "the morph push range");
+                static_assert(shaders::kMorphCompPushTargetsOffset == 8 * 4, "the morph push block's header words");
+                static_assert(8 + 3 * kMaxActiveMorphTargets <= shaders::kMorphCompPushSize / 4, "the targets fit");
                 Array<u32, kMaxActiveMorphTargets> chosen = {};
                 u32 chosen_count = 0;
                 u32 nonzero = 0;
@@ -703,9 +711,10 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
                         const f32 w = object.morph_weights[chosen[k]];
                         u32 bits = 0;
                         MemCopy(&bits, &w, 4);
-                        job.push[8 + k * 4] = range.first_delta;
-                        job.push[8 + k * 4 + 1] = range.delta_count;
-                        job.push[8 + k * 4 + 2] = bits;
+                        // Three words per target (shaders/morph.comp): eight fill the 32 words, 128 bytes, exactly.
+                        job.push[8 + k * 3] = range.first_delta;
+                        job.push[8 + k * 3 + 1] = range.delta_count;
+                        job.push[8 + k * 3 + 2] = bits;
                     }
                     morph_bytes_ += bytes;
                     morph_job = static_cast<u32>(morph_jobs_.Size());

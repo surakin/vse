@@ -14,7 +14,8 @@
 //                     the deltas (10 words each: vertex, position xyz, normal xyz, tangent xyz)
 //   set 0, binding 1: RWStructuredBuffer<uint> output: this object's vertices start at out_base_word
 //   push constants (128 bytes): uint vertex_count, stride_words, position_word, normal_word, tangent_word,
-//       delta_base_word, out_base_word, target_count; then eight uint4 (first delta, delta count, weight bits, 0)
+//       delta_base_word, out_base_word, target_count; then eight targets of three words each (first delta, delta count,
+//       weight bits), packed into six uint4 (24 words; glTF coverage Day 14: a uint4 per target made the block 160 bytes)
 
 #include "target_common.slang"  // ENGINE_REGISTER
 
@@ -27,7 +28,7 @@ struct Push {
     uint delta_base_word;
     uint out_base_word;
     uint target_count;
-    uint4 targets[8];  // x first delta, y delta count, z the weight as float bits
+    uint4 targets[6];  // target t's first delta, delta count and weight bits are words 3t, 3t + 1 and 3t + 2
 };
 
 [[vk::binding(0, 0)]] StructuredBuffer<uint> source ENGINE_REGISTER(t0, space0);
@@ -35,6 +36,11 @@ struct Push {
 [[vk::push_constant]] ConstantBuffer<Push> push ENGINE_REGISTER(b0, space15);
 
 static const uint kDeltaWords = 10;
+
+// Word `i` of the packed target words.
+uint TargetWord(uint i) {
+    return push.targets[i / 4][i % 4];
+}
 
 // The index of `vertex`'s delta among `count` deltas from `first`, or 0xffffffff when the target does not move it.
 uint FindDelta(uint first, uint count, uint vertex) {
@@ -75,12 +81,11 @@ void main(uint3 id : SV_DispatchThreadID) {
         output[out_base + k] = source[base + k];
     }
     for (uint t = 0; t < push.target_count && t < 8u; ++t) {
-        uint4 target = push.targets[t];
-        uint d = FindDelta(target.x, target.y, v);
+        uint d = FindDelta(TargetWord(t * 3), TargetWord(t * 3 + 1), v);
         if (d == 0xffffffffu) {
             continue;
         }
-        float w = asfloat(target.z);
+        float w = asfloat(TargetWord(t * 3 + 2));
         uint word = push.delta_base_word + d * kDeltaWords;
         Add(out_base + push.position_word, word + 1, w);
         Add(out_base + push.normal_word, word + 4, w);
