@@ -29,6 +29,10 @@ Atomic<u64> g_chaining_thread{0};   // the thread that finished its report and i
 Atomic<u64> g_reporting_thread{0};  // thread id of the fault being reported, 0 when none
 struct sigaction g_previous[NSIG];
 bool g_installed_signal[NSIG];
+// The host's handlers from before the crash library's (NoteHostSignalHandlers), called once after the dump.
+struct sigaction g_host[NSIG];
+bool g_host_noted[NSIG];
+Atomic<bool> g_host_called{false};
 detail::CrashEvent g_event;  // used only by the thread that owns g_reporting_thread
 
 // SIGNAL-SAFE-BEGIN
@@ -90,6 +94,43 @@ void Chain(int signal_number, siginfo_t* info, void* user_context)
     }
 }
 
+// Calls the handler the host had before the crash library's, once per process, with the fault's own arguments: after
+// the report and the dump, before the original fault ends the process. A handler that is also what the recorder chains
+// to (the library installed nothing over it) already ran in Chain.
+void CallHostHandler(int signal_number, siginfo_t* info, void* user_context)
+{
+    if (!g_host_noted[signal_number] || g_host_called.Exchange(true, MemoryOrder::AcqRel))
+    {
+        return;
+    }
+    const struct sigaction& host = g_host[signal_number];
+    const struct sigaction& chained = g_previous[signal_number];
+    // When the library could not write the dump it puts back the handlers it replaced, the host's among them: the fault
+    // delivered again when the recorder returns reaches the host's handler by itself, so calling it here would be
+    // twice.
+    struct sigaction now;
+    if (::sigaction(signal_number, nullptr, &now) == 0 &&
+        (((now.sa_flags & SA_SIGINFO) != 0 && (host.sa_flags & SA_SIGINFO) != 0 &&
+          now.sa_sigaction == host.sa_sigaction) ||
+         ((now.sa_flags & SA_SIGINFO) == 0 && (host.sa_flags & SA_SIGINFO) == 0 && now.sa_handler == host.sa_handler)))
+    {
+        return;
+    }
+    if ((host.sa_flags & SA_SIGINFO) != 0)
+    {
+        if (host.sa_sigaction != nullptr &&
+            ((chained.sa_flags & SA_SIGINFO) == 0 || chained.sa_sigaction != host.sa_sigaction))
+        {
+            host.sa_sigaction(signal_number, info, user_context);
+        }
+    }
+    else if (host.sa_handler != SIG_DFL && host.sa_handler != SIG_IGN && host.sa_handler != nullptr &&
+             ((chained.sa_flags & SA_SIGINFO) != 0 || chained.sa_handler != host.sa_handler))
+    {
+        host.sa_handler(signal_number);
+    }
+}
+
 void Recorder(int signal_number, siginfo_t* info, void* user_context)
 {
     detail::CrashEventFn fn = g_event_fn.Load(MemoryOrder::Acquire);
@@ -100,9 +141,10 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context)
         u64 expected = 0;
         if (owner == thread && g_chaining_thread.Load(MemoryOrder::Acquire) == thread)
         {
-            // A fault inside the library's own handler (it already has the lock this fault would wait for): give up.
-            // The default action ends the process when the faulting instruction runs again.
-            static const char kText[] = "double fault: the crash library's handler faulted; giving up\n";
+            // A fault inside the library's own handler (it already has the lock this fault would wait for), or inside
+            // the host's handler called after it: give up. The default action ends the process when the faulting
+            // instruction runs again.
+            static const char kText[] = "double fault: a handler after the crash report faulted; giving up\n";
             os::Write(2, kText, sizeof(kText) - 1);
             struct sigaction dfl;
             MemSet(&dfl, 0, sizeof(dfl));
@@ -139,8 +181,23 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context)
             // Skip the recorder itself and the kernel's signal trampoline; the first frame is the one that faulted.
             CaptureStackTrace(event.trace, 2);
             fn(event);
-            g_chaining_thread.Store(thread, MemoryOrder::Release);
+            // A signal the library delivers again after its dump (abort, raise, kill: it re-sends them) is held until
+            // the recorder returns, so the host's handler below still runs; the kernel puts the thread's mask back
+            // when the recorder returns, and the held signal ends the process then. A hardware fault is not held: a
+            // fault inside the library or the host's handler must reach the recorder (SA_NODEFER) or the default
+            // action.
+            const bool from_hardware = info != nullptr && info->si_code > 0 && signal_number != SIGABRT &&
+                                       signal_number != SIGTRAP;
+            if (!from_hardware)
+            {
+                sigset_t hold;
+                sigemptyset(&hold);
+                sigaddset(&hold, signal_number);
+                ::sigprocmask(SIG_BLOCK, &hold, nullptr);
+            }
+            g_chaining_thread.Store(thread, MemoryOrder::Release);  // a fault from here on: give up (above)
             Chain(signal_number, info, user_context);
+            CallHostHandler(signal_number, info, user_context);
             g_chaining_thread.Store(0, MemoryOrder::Release);
             g_reporting_thread.Store(0, MemoryOrder::Release);
             return;
@@ -199,6 +256,22 @@ bool InstallCrashEventHook(CrashEventFn fn)
     return any;
 }
 
+void NoteHostSignalHandlers()
+{
+    g_host_called.Store(false, MemoryOrder::Release);
+    for (int signal_number : kFatalSignals)
+    {
+        struct sigaction current;
+        MemSet(&current, 0, sizeof(current));
+        const bool read = ::sigaction(signal_number, nullptr, &current) == 0;
+        const bool ours = (current.sa_flags & SA_SIGINFO) != 0 && current.sa_sigaction == &Recorder;
+        const bool none = (current.sa_flags & SA_SIGINFO) == 0 &&
+                          (current.sa_handler == SIG_DFL || current.sa_handler == SIG_IGN);
+        g_host_noted[signal_number] = read && !ours && !none;
+        g_host[signal_number] = current;
+    }
+}
+
 bool CrashReportInProgress()
 {
     return g_reporting_thread.Load(MemoryOrder::Acquire) != 0;
@@ -207,6 +280,10 @@ bool CrashReportInProgress()
 void RemoveCrashEventHook()
 {
     g_event_fn.Store(nullptr, MemoryOrder::Release);
+    for (int signal_number : kFatalSignals)
+    {
+        g_host_noted[signal_number] = false;  // the library's close puts the host's handlers back
+    }
     g_reported.Store(false, MemoryOrder::Release);  // a later install may report again
     for (int signal_number : kFatalSignals)
     {

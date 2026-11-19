@@ -165,3 +165,22 @@ answered in the the host notes (`plans/maintenance/`).
 **Rules for every day:** the usual day rules (scoped runs in the platform's flavors, `/code-review high`, `docgen lint` at zero, regenerated
 `docs/reference`, `STATUS.md` and `KNOWN-ISSUES.md`, commit and push). The fault path is signal-safe code (`// SIGNAL-SAFE-BEGIN`/`END`,
 `signal_safety_check`): no allocation, no lock, no C-library formatting in it.
+
+## Done on Linux (2026-11-19, Day 1)
+
+**What changed:**
+- **Linux, `crash_handler_install` and `InstallCrashHandler`:** a handler installed before them for a fatal signal (`SIGSEGV`, `SIGBUS`,
+  `SIGILL`, `SIGFPE`, `SIGABRT`, `SIGTRAP`) now runs at a crash, **after the report and the dump, once, in signal context on the faulting
+  thread**, with the fault's `siginfo` and context. Then the original fault ends the process, which still dies of the original signal.
+- **No earlier handler:** nothing changes. Uninstalling still puts it back.
+- **the host's own repro** (above, run against `libengine.so.1` built from this commit): `prev-ran.txt` is written **and** the engine's
+  `crash-report.txt`, `.envelope` and `.crash` are there; the child dies of signal 11.
+
+**What the host does:**
+- Nothing new. Keep installing its handlers at startup, create the engine, then call `crash_handler_install`.
+- To choose the dump directory, give `{"crash.dump_directory", "<dir>"}` in `engine_create_info.settings`. The report is
+  `<dir>/crash-report.txt`; the envelope and `.crash` go in a `<run id>.run` directory below it.
+- The handler must be async-signal-safe, as it already is.
+- Under AddressSanitizer with `handle_segv=1`, ASan's handler is an earlier handler too, and its report follows the engine's dump.
+
+**Still open:** Windows (Day 2, the PC) and macOS (Day 3, the Mac). There the earlier handler is still replaced (`KNOWN-ISSUES.md`).

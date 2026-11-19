@@ -2,7 +2,8 @@
    the unhandled-exception filter, Day 354); the engine
    installs its handler (through the table) and uninstalls it, and the host's handler is back. (2) A child installs the
    handler and crashes inside a job of the shared engine: it dies of SIGSEGV and leaves an envelope holding a minidump
-   in the dump directory. Plain flavor only. */
+   in the dump directory; where the engine chains to it (Linux), the host's handler installed before it runs after the
+   dump and leaves a marker (the host's request). Plain flavor only. */
 #include <stdio.h>
 #include <string.h>
 
@@ -19,6 +20,13 @@ static const struct engine_test_extension* Load(void)
 /* The crash child (a fork; on Windows a second run of this program): the handler, then a crash inside a job. */
 static void CrashChild(const char* dump_dir)
 {
+#if ENGINE_HOST_HANDLER_CHAINED
+    /* The host's handler, installed before the engine's: it runs after the report and the dump and leaves its mark. */
+    char marker[1100];
+    snprintf(marker, sizeof(marker), "%s/host-handler.marker", dump_dir);
+    host_set_crash_marker(marker);
+    host_install_own_crash_handler();
+#endif
     if (g_table->crash_install(dump_dir) == 1)
     {
         g_table->crash_in_job();
@@ -70,6 +78,14 @@ int main(void)
         printf("crash_host: the crash inside a job left no envelope in %s\n", dump_dir);
         return 1;
     }
+#if ENGINE_HOST_HANDLER_CHAINED
+    if (host_count_files(dump_dir, "host-handler.marker") != 1)
+    {
+        printf("crash_host: the host's handler, installed before the engine's, did not run after the dump\n");
+        return 1;
+    }
+    printf("crash_host: the host's handler ran after the dump\n");
+#endif
     printf("crash_host: handler restored, crash in a job left a dump\n");
     return 0;
 }

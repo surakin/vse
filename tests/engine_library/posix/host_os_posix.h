@@ -4,6 +4,7 @@
 #define HOST_OS_POSIX_H
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <dlfcn.h>
 #include <pthread.h>
 #include <signal.h>
@@ -184,9 +185,26 @@ static inline void host_exit_now(int code)
 
 /* ---- the host's own crash handler (what the engine's must give back) ---- */
 
+/* Where the host's handler leaves a mark that it ran (empty: it leaves none); set before the crash. */
+static char g_host_marker[1100];
+static inline void host_set_crash_marker(const char* path)
+{
+    snprintf(g_host_marker, sizeof(g_host_marker), "%s", path);
+}
 static inline void host_own_handler(int signal_number)
 {
     (void)signal_number;
+    if (g_host_marker[0] != '\0')
+    {
+        const int fd = open(g_host_marker, O_WRONLY | O_CREAT | O_TRUNC, 0600); /* signal-safe calls only */
+        if (fd >= 0)
+        {
+            if (write(fd, "ran\n", 4) < 0)
+            {
+            }
+            close(fd);
+        }
+    }
 }
 /* Installs the host's own handler for the signal the engine's crash handler takes (process_probe.h: SIGSEGV on Linux,
    SIGABRT on macOS, where Breakpad takes faults as Mach exceptions). */

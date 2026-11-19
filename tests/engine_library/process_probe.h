@@ -53,6 +53,11 @@ static inline int ProbeLibraryGone(const char* path)
 #define ENGINE_CRASH_HANDLER_SIGNAL SIGSEGV
 #endif
 
+/* Whether the engine's crash handler calls the host's handler, installed before it, after the report and the dump
+   (the host's request, plans/maintenance/host-crash-handler-chaining.md): Linux so far; Windows and macOS are the
+   series' Days 2 and 3. */
+#define ENGINE_HOST_HANDLER_CHAINED (ENGINE_PLATFORM_LINUX)
+
 /* Whether a process that faulted with the engine's crash handler installed ended as it does after the dump: by SIGSEGV
    on Linux; on macOS Breakpad ends it with _exit(<exception type>), exit code 1 for EXC_BAD_ACCESS (BACKEND.md). */
 static inline int ProbeEndedByFault(int status)

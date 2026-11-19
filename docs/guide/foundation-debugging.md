@@ -326,9 +326,27 @@ deeply. Without it a stack overflow on that thread kills the process with no rep
 
 ### If your program has its own signal handler
 
-Install it **after** `InstallCrashHandler` and call the handler that was there before it (the one `sigaction` returns). A handler
-installed before is replaced by the library's and never runs. `UninstallCrashHandler` removes ours and puts the library's
-predecessor back.
+**Installed before `InstallCrashHandler`** (a host that has its own crash log, as the host does): it still runs. The crash handler notes
+the handler each fatal signal had before the library installed its own, and calls it after its work, in this order: the report (standard
+error and `crash-report.txt`), the dump (the `.envelope` with its minidump), **your handler**, then the original fault ends the process.
+
+- It runs **once**, in signal context, **on the faulting thread**, with the fault's own `siginfo` and context when it was installed with
+  `SA_SIGINFO` (`si_addr` is the fault address), and must be async-signal-safe.
+- Only for **its own signal**: a `SIGSEGV` handler is called for a null write, a `SIGABRT` handler for an `abort()`.
+- When it returns, the fault runs again under the default action and the process dies of the original signal; when it puts the default
+  action back and raises the signal itself (the usual pattern), the process dies there. A signal raised again inside it (an `abort()`)
+  waits until the crash handler returns. A handler that faults itself ends the process with the default action, no second report.
+- `SIG_DFL` and `SIG_IGN` mean there is nothing to call, as before; the crash handler never calls itself, so installing it twice
+  (`AlreadyInstalled`) or again after `UninstallCrashHandler` calls your handler once.
+- **Sanitizers:** a sanitizer's own `SIGSEGV` handler, installed at startup, is such an earlier handler: under AddressSanitizer with
+  `handle_segv=1` (its default) the sanitizer's report follows the dump and the process ends with its exit code. Tests that expect the
+  original signal run with `handle_segv=0`, as the death tests do.
+- Windows and macOS: not yet (the series `plans/maintenance/host-crash-handler-chaining.md`, Days 2 and 3); there the earlier
+  handler is still replaced and does not run.
+
+**Installed after:** it runs first; call the handler that was there before it (the one `sigaction` returns) to get the report and the dump.
+
+`UninstallCrashHandler` removes the crash handler and puts back what was there before it.
 
 ### Reading the exit status
 

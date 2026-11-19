@@ -1652,9 +1652,11 @@ extern "C"
         engine_status (*counter_wait)(engine_handle counter, uint64_t timeout_ms);
 
         /* Installs the engine's crash handler for the process: a crash writes a dump to the directory of the setting
-         * `crash.dump_directory` (empty: the user's crash directory) and the handler that was there before is back
-         * after crash_handler_uninstall (or engine_destroy, which uninstalls). Fails with: STALE_HANDLE,
-         * INVALID_ARGUMENT, ALREADY_EXISTS (installed), IO (the directory), UNSUPPORTED. */
+         * `crash.dump_directory` (give it in engine_create_info.settings; empty: the user's crash directory) and the
+         * handler that was there before is back after crash_handler_uninstall (or engine_destroy, which uninstalls).
+         * On Linux that earlier handler also runs at a crash, after the report and the dump, once, in signal context on
+         * the faulting thread; then the original fault ends the process (Windows, macOS: not yet). Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT, ALREADY_EXISTS (installed), IO (the directory), UNSUPPORTED. */
         engine_status (*crash_handler_install)(engine_handle engine);
 
         /* Removes the engine's crash handler and restores the previous one. Fails with: STALE_HANDLE, INVALID_ARGUMENT,

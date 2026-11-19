@@ -47,6 +47,14 @@ void ReleaseThreadAlternateStack();
 // through.
 void RemoveCrashEventHook();
 
+#if ENGINE_PLATFORM_LINUX
+// Notes, per fatal signal, the handler the host had installed before the crash library's (call it before
+// `sentry_init`): after the report and the dump the recorder calls it once, in signal context on the faulting thread
+// (the host's request, plans/maintenance/host-crash-handler-chaining.md). `SIG_DFL`, `SIG_IGN` and the recorder
+// itself are noted as none. `RemoveCrashEventHook` forgets them.
+void NoteHostSignalHandlers();
+#endif
+
 #if ENGINE_PLATFORM_MACOS
 // macOS (Phase 21 Day 291): the crash library calls its `on_crash` hook with the crashed thread's register context (a
 // ucontext_t, ucontext64_t on arm64), on Breakpad's exception thread for a hardware fault or on the crashing thread for

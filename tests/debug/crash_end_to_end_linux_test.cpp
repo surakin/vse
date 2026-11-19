@@ -16,6 +16,7 @@
 #include "sync/atomic.h"
 #include "os/console.h"
 #include "os/signal.h"
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "sync/thread.h"
@@ -394,13 +395,6 @@ TEST_CASE("A failed assert prints its report, aborts, and the crash report and a
 namespace
 {
 
-void E2eAppHandler(int, siginfo_t*, void*)
-{
-    static const char kText[] = "APP-HANDLER-RAN\n";
-    os::Write(2, kText, sizeof(kText) - 1);
-    _exit(42);
-}
-
 struct sigaction g_after_previous;
 
 void AppHandlerThatChains(int signal_number, siginfo_t* info, void* context)
@@ -449,25 +443,243 @@ TEST_CASE(
     CHECK(envelopes.Size() == 1);
 }
 
+// A host's own crash handler, installed before the crash handler, the way the host installs it: it writes a marker,
+// puts the default action back and raises the signal again (the host's request,
+// plans/maintenance/host-crash-handler-chaining.md).
+void HostSegvHandler(int signal_number)
+{
+    static const char kText[] = "HOST-SEGV-HANDLER-RAN\n";
+    os::Write(2, kText, sizeof(kText) - 1);
+    os::SetSignalHandler(signal_number, SIG_DFL);
+    ::raise(signal_number);
+}
+
+void HostAbrtHandler(int signal_number)
+{
+    static const char kText[] = "HOST-ABRT-HANDLER-RAN\n";
+    os::Write(2, kText, sizeof(kText) - 1);
+    os::SetSignalHandler(signal_number, SIG_DFL);
+    ::raise(signal_number);
+}
+
+void InstallHostHandler(int signal_number, void (*fn)(int))
+{
+    struct sigaction action;
+    MemSet(&action, 0, sizeof(action));
+    action.sa_handler = fn;
+    sigemptyset(&action.sa_mask);
+    sigaction(signal_number, &action, nullptr);
+}
+
+// The address a test faults at: not null, so the handler can tell it from a missing `si_addr`.
+constexpr u64 kFaultAddress = 0x1238;
+
+void HostInfoHandler(int, siginfo_t* info, void*)
+{
+    if (info != nullptr && reinterpret_cast<u64>(info->si_addr) == kFaultAddress)
+    {
+        static const char kText[] = "HOST-SIGINFO-ADDRESS-OK\n";
+        os::Write(2, kText, sizeof(kText) - 1);
+    }
+    else
+    {
+        static const char kText[] = "HOST-SIGINFO-ADDRESS-WRONG\n";
+        os::Write(2, kText, sizeof(kText) - 1);
+    }
+    // Returns: the fault runs again and the default action the crash library left ends the process.
+}
+
+void HostFaultingHandler(int)
+{
+    static const char kText[] = "HOST-HANDLER-ENTERED\n";
+    os::Write(2, kText, sizeof(kText) - 1);
+    *reinterpret_cast<volatile int*>(kFaultAddress) = 1;  // the host's handler itself faults
+}
+
+usize CountOf(StringView text, StringView needle)
+{
+    usize n = 0;
+    for (usize from = 0; from < text.Length();)
+    {
+        const StringView rest = text.Substring(from, text.Length() - from);
+        const usize at = rest.Find(needle);
+        if (at >= rest.Length())
+        {
+            break;
+        }
+        ++n;
+        from += at + needle.Length();
+    }
+    return n;
+}
+
+void CheckHostRanAfterDump(const ChildResult& r, const char* directory, const char* marker, int signal_number)
+{
+    const StringView err = debug_test::StderrView(r);
+    INFO("child stderr: " << Cat(err).CStr());
+    CHECK(err.Contains("=== CRASH REPORT ==="));
+    CHECK(err.Find("=== END OF REPORT ===") < err.Find(StringView(marker)));  // report first, then the host's handler
+    CHECK(CountOf(err, StringView(marker)) == 1);
+    CHECK(r.native_code == signal_number);
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(directory, ".envelope", &envelopes);
+    CHECK(envelopes.Size() == 1);  // the dump was written before the host's handler ran
+}
+
 ENGINE_DEATH_TEST_FN(dt_e2e_app_handler_before)
 {
-    InstallAppHandler(&E2eAppHandler, nullptr);  // installed before the crash handler
+    InstallHostHandler(SIGSEGV, &HostSegvHandler);  // installed before the crash handler
     InstallInto(argument);
     InjectFault(FaultKind::NullWrite);
 }
 
-TEST_CASE("A handler installed before the crash handler is replaced by the library's and does not run",
+TEST_CASE("A handler installed before the crash handler runs once, after the report and the dump",
           "[crash][crashreport][death][debug][linux]")
 {
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_app_handler_before", dir.Path());
+    CheckHostRanAfterDump(r, dir.Path(), "HOST-SEGV-HANDLER-RAN", SIGSEGV);
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_host_two_signals_segv)
+{
+    InstallHostHandler(SIGSEGV, &HostSegvHandler);
+    InstallHostHandler(SIGABRT, &HostAbrtHandler);
+    InstallInto(argument);
+    InjectFault(FaultKind::NullWrite);
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_host_two_signals_abrt)
+{
+    InstallHostHandler(SIGSEGV, &HostSegvHandler);
+    InstallHostHandler(SIGABRT, &HostAbrtHandler);
+    InstallInto(argument);
+    InjectFault(FaultKind::Abort);
+}
+
+TEST_CASE("Earlier handlers on two signals: each runs for its own signal only",
+          "[crash][crashreport][death][debug][linux]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    {
+        TempDir dir;
+        const ChildResult r = RunCrashChild("dt_e2e_host_two_signals_segv", dir.Path());
+        CheckHostRanAfterDump(r, dir.Path(), "HOST-SEGV-HANDLER-RAN", SIGSEGV);
+        CHECK_FALSE(debug_test::StderrView(r).Contains("HOST-ABRT-HANDLER-RAN"));
+    }
+    {
+        TempDir dir;
+        const ChildResult r = RunCrashChild("dt_e2e_host_two_signals_abrt", dir.Path());
+        CheckHostRanAfterDump(r, dir.Path(), "HOST-ABRT-HANDLER-RAN", SIGABRT);
+        CHECK_FALSE(debug_test::StderrView(r).Contains("HOST-SEGV-HANDLER-RAN"));
+    }
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_host_siginfo)
+{
+    struct sigaction action;
+    MemSet(&action, 0, sizeof(action));
+    action.sa_sigaction = &HostInfoHandler;
+    action.sa_flags = SA_SIGINFO;
+    sigemptyset(&action.sa_mask);
+    sigaction(SIGSEGV, &action, nullptr);
+    InstallInto(argument);
+    *reinterpret_cast<volatile int*>(kFaultAddress) = 1;
+}
+
+TEST_CASE("An earlier SA_SIGINFO handler gets the fault's siginfo, with its address",
+          "[crash][crashreport][death][debug][linux]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_host_siginfo", dir.Path());
+    CheckHostRanAfterDump(r, dir.Path(), "HOST-SIGINFO-ADDRESS-OK", SIGSEGV);
+    CHECK_FALSE(debug_test::StderrView(r).Contains("HOST-SIGINFO-ADDRESS-WRONG"));
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_host_handler_faults)
+{
+    InstallHostHandler(SIGSEGV, &HostFaultingHandler);
+    InstallInto(argument);
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("An earlier handler that faults itself ends the process with the original signal, once",
+          "[crash][crashreport][death][debug][linux]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_host_handler_faults", dir.Path());
+    CheckHostRanAfterDump(r, dir.Path(), "HOST-HANDLER-ENTERED", SIGSEGV);
+}
+
+// Gives every run directory under `directory` the mode `mode` (0500: the crash library cannot write its dump there).
+void SetRunDirectoriesMode(const char* directory, mode_t mode)
+{
+    DIR* dir = ::opendir(directory);
+    if (dir == nullptr)
+    {
+        return;
+    }
+    while (const dirent* entry = ::readdir(dir))
+    {
+        const StringView name(entry->d_name, CStrLength(entry->d_name));
+        if (name.Length() > 4 && name.Substring(name.Length() - 4, 4) == StringView(".run"))
+        {
+            ::chmod(Cat(directory, "/", entry->d_name).CStr(), mode);
+        }
+    }
+    ::closedir(dir);
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_host_dump_fails)
+{
+    InstallHostHandler(SIGSEGV, &HostSegvHandler);
+    InstallInto(argument);
+    SetRunDirectoriesMode(argument, 0500);
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("When the dump cannot be written, the earlier handler still runs once, after the report",
+          "[crash][crashreport][death][debug][linux]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_host_dump_fails", dir.Path());
     const StringView err = debug_test::StderrView(r);
     INFO("child stderr: " << Cat(err).CStr());
-    // The documented rule: install your own handler after InstallCrashHandler and chain to the previous one.
-    CHECK(err.Contains("=== CRASH REPORT ==="));
-    CHECK_FALSE(err.Contains("APP-HANDLER-RAN"));
+    CHECK(err.Find("=== END OF REPORT ===") < err.Find(StringView("HOST-SEGV-HANDLER-RAN")));
+    CHECK(CountOf(err, StringView("HOST-SEGV-HANDLER-RAN")) == 1);
     CHECK(r.native_code == SIGSEGV);
+    SetRunDirectoriesMode(dir.Path(), 0700);  // so the directory can be removed
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_host_reinstall)
+{
+    InstallHostHandler(SIGSEGV, &HostSegvHandler);
+    InstallInto(argument);
+    UninstallCrashHandler();
+    InstallInto(argument);
+    CrashHandlerOptions again;
+    again.dump_directory = argument;
+    if (InstallCrashHandler(again) != CrashHandlerResult::AlreadyInstalled)
+    {
+        static const char kText[] = "SECOND-INSTALL-NOT-REFUSED\n";
+        os::Write(2, kText, sizeof(kText) - 1);
+    }
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("Install, uninstall, install: the earlier handler runs once, and a second install does not chain to itself",
+          "[crash][crashreport][death][debug][linux]")
+{
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_host_reinstall", dir.Path());
+    CheckHostRanAfterDump(r, dir.Path(), "HOST-SEGV-HANDLER-RAN", SIGSEGV);
+    CHECK(CountOf(debug_test::StderrView(r), StringView("=== CRASH REPORT ===")) == 1);
+    CHECK_FALSE(debug_test::StderrView(r).Contains("SECOND-INSTALL-NOT-REFUSED"));
 }
 
 ENGINE_DEATH_TEST_FN(dt_e2e_uninstall_then_fault)

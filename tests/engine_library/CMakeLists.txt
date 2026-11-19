@@ -578,6 +578,12 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
     # A time limit (Day 354: the Windows PC saw host_runtime hang once in a full parallel run, 16 minutes before it was stopped; it passed 24 of 24 runs
     # alone, 8 at a time): a hang fails the test instead of holding the run.
     set_tests_properties(engine_c_runtime${suffix} PROPERTIES LABELS "engine_library;${flavor_label}" PASS_REGULAR_EXPRESSION "host_runtime: ok" TIMEOUT 300)
+    if(suffix STREQUAL "_asan")
+      # ASan's own SIGSEGV handler is in place before the engine's, so the engine chains to it after the dump (crash handler chaining,
+      # Day 1) and the crash child would end with ASan's report and exit code instead of the fault: keep ASan out of SIGSEGV, as the
+      # death tests do.
+      set_tests_properties(engine_c_runtime${suffix} PROPERTIES ENVIRONMENT "ASAN_OPTIONS=handle_segv=0")
+    endif()
     engine_label_tests(engine_c_runtime${suffix})
     add_test(NAME engine_c_physics${suffix} COMMAND host_physics${suffix})
     set_tests_properties(engine_c_physics${suffix} PROPERTIES LABELS "engine_library;${flavor_label}" PASS_REGULAR_EXPRESSION "host_physics: ok" TIMEOUT 300)
