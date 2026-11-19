@@ -45,6 +45,8 @@ struct SceneSyncReport
     u64 transforms_set = 0;
     /// Joint palettes pointed at a skinned object (a new object, or a palette that moved or changed length).
     u64 joints_set = 0;
+    /// `SetMorphWeights` calls (glTF coverage Day 8).
+    u64 morph_set = 0;
     /// `SetFlags` calls.
     u64 flags_set = 0;
     /// `SetLight` calls.

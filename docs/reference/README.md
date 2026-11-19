@@ -36,7 +36,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Animation runtime](animation.md) | 4 | 85 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 18 | 429 |
-| [Scene bridge](scene.md) | 4 | 60 |
+| [Scene bridge](scene.md) | 4 | 65 |
 | [The UI Toolkit](ui.md) | 46 | 1421 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 205 |

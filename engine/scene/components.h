@@ -3,6 +3,7 @@
 //! Renderable components: what an entity carries so that the render sync can mirror it into a
 //! [[renderer::RenderScene]].
 
+#include "containers/array.h"
 #include "containers/shared_ptr.h"
 #include "ecs/entity.h"
 #include "math/vector.h"
@@ -48,6 +49,21 @@ struct MeshRenderer
 /// - Thread-safety: thread-compatible plain data.
 struct Hidden
 {
+};
+
+/// The weights of the entity's mesh's morph targets (glTF coverage Day 8).
+///
+/// Weight `i` is target `i`'s, the first `count` of them; the rest are 0. Set by levels (glTF's `mesh.weights` and `node.weights`), saves, scripts and the
+/// animation system; [[scene::MakeRenderSyncSystem]] hands them to the render objects.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct MorphWeights
+{
+    /// How many of `weights` are used; at most [[renderer::kMaxMeshMorphTargets]] (a larger count is clamped and the
+    /// sync counts it in `SceneSyncReport::invalid`).
+    u32 count = 0;
+    /// The weights, from target 0.
+    Array<f32, renderer::kMaxMeshMorphTargets> weights = {};
 };
 
 /// A light at the entity's `WorldTransform`: a point light sits at the entity's position, a directional light points

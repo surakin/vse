@@ -105,6 +105,8 @@ using LightEdited = Query<Changed<LightSource>, Read<LightSource>, Read<ecs::Wor
                           Without<MeshRenderer>>;
 using TransformMoved = Query<Changed<ecs::WorldTransform>, Read<ecs::WorldTransform>, Read<RenderHandle>>;
 using SkinnedPalettes = Query<Read<animation::SkeletonInstance>, Read<RenderHandle>>;
+using MorphedObjects = Query<Read<MorphWeights>, Read<RenderHandle>>;
+using UnmorphedObjects = Query<Read<RenderHandle>, Without<MorphWeights>>;
 using ObjectOrphans = Query<Added<RenderHandle>, Write<RenderHandle>, Without<MeshRenderer>>;
 using LightOrphans = Query<Added<RenderHandle>, Write<RenderHandle>, Without<LightSource>>;
 
@@ -163,6 +165,8 @@ private:
         transform_moved_ = MakeUnique<TransformMoved>(
             context.Query<Changed<ecs::WorldTransform>, Read<ecs::WorldTransform>, Read<RenderHandle>>());
         skinned_ = MakeUnique<SkinnedPalettes>(context.Query<Read<animation::SkeletonInstance>, Read<RenderHandle>>());
+        morphed_ = MakeUnique<MorphedObjects>(context.Query<Read<MorphWeights>, Read<RenderHandle>>());
+        unmorphed_ = MakeUnique<UnmorphedObjects>(context.Query<Read<RenderHandle>, Without<MorphWeights>>());
         object_orphans_ = MakeUnique<ObjectOrphans>(
             context.Query<Added<RenderHandle>, Write<RenderHandle>, Without<MeshRenderer>>());
         light_orphans_ = MakeUnique<LightOrphans>(
@@ -231,6 +235,39 @@ private:
         {
             scene.SetJointMatrices(id, matrices, count);
             ++report.joints_set;
+        }
+    }
+
+    // Points a morphed object at the entity's weights (glTF coverage Day 8), borrowed like a joint palette: only a
+    // changed pointer or count is written. No component (or a mesh without targets) draws the base shape.
+    void ApplyMorph(renderer::RenderScene& scene, const RenderHandle& handle, const MorphWeights* weights,
+                    SceneSyncReport& report)
+    {
+        for (u32 i = 0; i < ObjectCountOf(handle); ++i)
+        {
+            const renderer::ObjectId id = ObjectAt(handle, i);
+            const renderer::RenderObject* object = id.IsValid() ? scene.FindObject(id) : nullptr;
+            if (object == nullptr || (object->mesh->MorphTargetCount() == 0 && object->morph_weights == nullptr))
+            {
+                continue;
+            }
+            const f32* data = nullptr;
+            u32 count = 0;
+            if (weights != nullptr && weights->count != 0 && object->mesh->MorphTargetCount() != 0)
+            {
+                count = weights->count < object->mesh->MorphTargetCount() ? weights->count
+                                                                          : object->mesh->MorphTargetCount();
+                if (weights->count > renderer::kMaxMeshMorphTargets)
+                {
+                    ++report.invalid;
+                }
+                data = weights->weights.Data();
+            }
+            if (object->morph_weights != data || object->morph_weight_count != count)
+            {
+                scene.SetMorphWeights(id, data, count);
+                ++report.morph_set;
+            }
         }
     }
 
@@ -338,6 +375,7 @@ private:
             DropObjects(scene, handle, report);
             AddObjects(scene, mr, world, hidden, report, &handle);
             ApplySkin(scene, handle, context.Peek<animation::SkeletonInstance>(entity), report);
+            ApplyMorph(scene, handle, context.Peek<MorphWeights>(entity), report);
             ++report.readded;
             if (!handle.object.IsValid() && !handle.light.IsValid())
             {
@@ -412,6 +450,7 @@ private:
                 if (handle.object.IsValid())
                 {
                     ApplySkin(scene, handle, context.Peek<animation::SkeletonInstance>(entity), report);
+                    ApplyMorph(scene, handle, context.Peek<MorphWeights>(entity), report);
                     context.Commands().Add<RenderHandle>(entity, handle);
                     pending_.Push(Pending{entity, handle});
                 }
@@ -501,6 +540,11 @@ private:
         // it in place, but a skeleton change or a first fill reallocates it).
         skinned_->ForEach([&](const animation::SkeletonInstance& skeleton, const RenderHandle& handle)
                           { ApplySkin(scene, handle, &skeleton, report); });
+        // 4c. Morph weights: the component may have moved (a storage change), and one that went away leaves the base
+        // shape, never a pointer into storage that is gone.
+        morphed_->ForEach([&](const MorphWeights& weights, const RenderHandle& handle)
+                          { ApplyMorph(scene, handle, &weights, report); });
+        unmorphed_->ForEach([&](const RenderHandle& handle) { ApplyMorph(scene, handle, nullptr, report); });
 
         // 5. New entities.
         CreateMesh(context, scene, yes_, report);
@@ -553,6 +597,8 @@ private:
     UniquePtr<LightEdited> light_edited_;
     UniquePtr<TransformMoved> transform_moved_;
     UniquePtr<SkinnedPalettes> skinned_;
+    UniquePtr<MorphedObjects> morphed_;
+    UniquePtr<UnmorphedObjects> unmorphed_;
     UniquePtr<ObjectOrphans> object_orphans_;
     UniquePtr<LightOrphans> light_orphans_;
     Vector<Pending> pending_;
@@ -574,7 +620,7 @@ ecs::SystemDesc MakeRenderSyncSystem(const char* name)
 {
     ecs::SystemDesc desc(name, ecs::detail::SystemFn(RenderSync()));
     return Move(desc)
-        .Reads<MeshRenderer, LightSource, ecs::WorldTransform, animation::SkeletonInstance>()
+        .Reads<MeshRenderer, LightSource, ecs::WorldTransform, animation::SkeletonInstance, MorphWeights>()
         .Writes<RenderHandle>()
         .WritesResource<SceneLink>()
         .WritesResource<SceneSyncReport>();
