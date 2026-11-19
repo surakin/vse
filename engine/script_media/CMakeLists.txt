@@ -7,6 +7,7 @@ set(SCRIPT_MEDIA_SOURCES
   audio_bindings.cpp  # Day 468
   input_snapshot.cpp  # Day 468
   input_bindings.cpp  # Day 468
+  replay_log.cpp  # Day 469
 )
 set(SCRIPT_MEDIA_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

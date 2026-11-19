@@ -573,3 +573,33 @@ runtime.Services().extensions[script::kServiceInput] = &input;
 The platform has no action-mapping system, so the host fills an `InputMap`: `AddAction("jump", {Key::Space, mouse left})` is down while any binding is, `AddAxis("horizontal", {A, Left}, {D, Right})` is -1, 0 or 1, and `ExternalAxis` values the host read itself (a gamepad stick) are added to the axis of that name. `EmitInputEvents(snapshot, &runtime)` also puts the changes on the bus as `on_input` events (`{kind = "key_down" | "key_up" | "mouse_down" | "mouse_up" | "scroll" | "text", key = , button = , dx = , dy = , text = }`) for every subscriber.
 
 **Replay.** `InputSnapshot::Serialize(&writer)` writes the snapshot (little endian, versioned) and `Deserialize(&reader)` reads it back, replacing the snapshot: a log of the snapshots of a session, fed back tick by tick to a fresh world, gives the scripts the input they had (the test `script_media_test.cpp` replays 24 recorded ticks and compares the scripts' decisions). `Deserialize` refuses a short record, a wrong version, an oversized name or text, and non-finite numbers. Day 469 stores the per-tick snapshot in the replay log.
+
+## Saving scripted state
+
+A script marks the fields of `self` a save keeps with `persist("hp", "inventory")`, called from a behavior callback (usually `on_create`). Everything else is by design
+not saved: closures, userdata, coroutines and any field not marked; a script rebuilds them in `on_load`.
+
+- **What is saved.** Numbers, strings, booleans, vectors, quaternions, byte blobs, entity handles, and plain tables of those (within the `Value` limits: depth 16, 65,536
+  items per container). Inside a table, entries that cannot be saved (functions, threads, userdata) are left out; a field whose value holds such an entry inside a table
+  with a metatable is skipped as a whole (`PersistReport::fields_skipped`) and the instance's other fields are still saved. A field that is `nil` is not saved.
+- **Two components carry it.** `script` (`ScriptComponent`: behavior name, parameters, enabled; id 130) and `script_persist` (`ScriptPersist`: the saved fields as one value
+  record; id 131), both registered by `RegisterScriptComponents(&registry)` and saved by `storage::WorldStorage` like any component: full and incremental saves, versioned
+  (version 1), every length held to the registry's limits. A record that does not decode is refused as `Corrupt` by value; a persistent record must be a map.
+- **Before a save**, between ticks and after `KeyIndex::Sync`, call `ScriptRuntime::CapturePersistent(&world, index, &report)`. It reads each running instance's marked fields
+  from its partition's state and writes them as `script_persist` components; entity handles inside values are written as stable keys. The report counts what it did and
+  carries `state_hash` (a hash of the saved state, equal for equal state at any thread count), `tick` and `sim_time`.
+- **After a load**, call `ScriptRuntime::ResolveLoaded(&world, index, &report)` once, then `ScriptRuntime::RestoreClock(tick, sim_time)` with the values the save
+  reported. `ResolveLoaded` decodes each `script_persist` (entity keys resolved through the index), removes the component and holds the fields until the entity's instance is
+  made. The instance then runs `on_create`, gets the saved fields back (they replace what `on_create` set), runs `on_load`, and only then `on_enable` and `on_start`. A
+  record that does not decode is counted (`LoadReport::corrupt`) and its instance starts without it. A save taken before the first tick after a load writes the held fields
+  back.
+- **Entities.** Entity handles inside persistent fields are written as stable keys and found again after the load (a handle whose entity is not in the world reads as an
+  invalid entity). Handles inside a `script` component's `params` are written as packed ids and are not remapped.
+- **Not saved.** Coroutines and timers waiting at the time (`PersistReport::coroutines_not_saved` counts them) and events queued but not yet delivered: a restored session
+  starts without them. `persist_coroutine` and `on_cancel` are not built (`KNOWN-ISSUES.md`).
+- **Equal runs.** A scripted entity's random stream is seeded from the runtime seed, the entity id and the tick; `RestoreClock` restores the tick, and a world loaded in key
+  order into an empty world gets its entities in that order. A session saved at tick N and continued on any thread count reaches the same hash as the uninterrupted one
+  (`tests/script/script_persist_test.cpp`).
+- **Replay.** `script_media::ReplayLog` records, for every tick, the `InputSnapshot` the scripts read and the world's hash after the tick (`Record`), writes and reads them
+  (`Serialize`, `Deserialize`: a version, a count, rising ticks and every snapshot are checked) and gives snapshots back (`Snapshot`). Feed them to a fresh world; a session
+  recorded at 16 threads replays to the same hashes at 1, 2, 3, 7 and 16, and the reverse (`tests/script_media/script_media_test.cpp`).

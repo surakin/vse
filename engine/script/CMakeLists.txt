@@ -29,6 +29,8 @@ set(SCRIPT_SOURCES
   task_bindings.cpp  # Day 461
   behavior_host.cpp  # Day 457
   script_runtime.cpp  # Day 457
+  value_codec.cpp  # Day 469
+  script_persist.cpp  # Day 469
 )
 if(TARGET luajit)  # the LuaJIT backend (Day 448); LuaJIT builds on Linux x86-64 only so far
   list(APPEND SCRIPT_SOURCES luajit/luajit_backend.cpp luajit/lua_patterns.cpp)

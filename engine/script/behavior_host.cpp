@@ -20,6 +20,7 @@ local tasks = {}  -- tasks[id] = { fn, cancelled }: the coroutines `spawn` made
 local owned = {}  -- owned[serial][id] = true
 local spawn_hooked = {}
 local instance_name = {}  -- instance_name[serial] = the behavior's name
+local persisted = {}  -- persisted[serial] = { field name = true }: the fields `persist` marked (Day 469)
 local reloading = false
 local previous = {}  -- during a reload: previous[name] = the class a behavior had before the reload
 local running_task = nil  -- the spawned task whose code is running now (nil in an ordinary callback)
@@ -71,6 +72,7 @@ end
 function __behavior_drop(serial)
   instances[serial] = nil
   instance_name[serial] = nil
+  persisted[serial] = nil
   handlers[serial] = nil
   spawn_hooked[serial] = nil
   local mine = owned[serial]
@@ -80,6 +82,142 @@ function __behavior_drop(serial)
     end
     owned[serial] = nil
   end
+end
+
+-- Persistence (docs/guide/scripting.md, "Saving scripted state"). `persist("hp", "inventory")` marks fields of `self`
+-- a save keeps; everything else (closures, userdata, coroutines, anything the script rebuilds) is not saved. The engine
+-- reads the marked fields with `__behavior_save` between ticks and gives them back with `__behavior_load`, before
+-- `on_load` and `on_start`.
+local MAX_PERSISTED_FIELDS = 256
+local persist_nodes = 0
+
+function persist(...)
+  if current == nil then
+    error('persist: only a behavior callback can mark fields', 2)
+  end
+  local set = persisted[current]
+  if set == nil then
+    set = { 0 }
+    persisted[current] = set
+  end
+  local names = { ... }
+  for i = 1, table.maxn(names) do
+    local name = names[i]
+    if type(name) ~= 'string' or name == '' or #name > 64 then
+      error('persist: a field name is a non-empty string of at most 64 bytes', 2)
+    end
+    if set[name] == nil then
+      if set[1] >= MAX_PERSISTED_FIELDS then
+        error('persist: too many persistent fields', 2)
+      end
+      set[name] = true
+      set[1] = set[1] + 1
+    end
+  end
+end
+
+-- Copies a value for saving: numbers, strings, booleans and the engine's own values (vectors, entities, bytes: tables
+-- with a metatable) pass through; a plain table is copied without the entries that cannot be saved (functions,
+-- threads, userdata). The budget bounds a table that holds itself.
+local function clean(v, depth)
+  local t = type(v)
+  if t == 'number' or t == 'string' or t == 'boolean' then
+    return v
+  end
+  if t ~= 'table' then
+    return nil
+  end
+  if getmetatable(v) ~= nil then
+    return v
+  end
+  persist_nodes = persist_nodes + 1
+  if depth > 12 or persist_nodes > 100000 then
+    return nil
+  end
+  local copy = {}
+  for k, x in pairs(v) do
+    local tk = type(k)
+    if tk == 'string' or tk == 'number' then
+      local c = clean(x, depth + 1)
+      if c ~= nil then
+        copy[k] = c
+      end
+    end
+  end
+  return copy
+end
+
+local function persisted_names(serial)
+  local names = {}
+  local set = persisted[serial]
+  if set ~= nil then
+    for name in pairs(set) do
+      if type(name) == 'string' then
+        names[#names + 1] = name
+      end
+    end
+    table.sort(names)
+  end
+  return names
+end
+
+-- The marked fields as a list of { name, value } pairs, sorted by name; fields that are nil are left out.
+function __behavior_save(serial)
+  local self = instances[serial]
+  local pairs_out = {}
+  if self == nil then
+    return pairs_out
+  end
+  persist_nodes = 0
+  local names = persisted_names(serial)
+  for i = 1, #names do
+    local c = clean(self[names[i]], 0)
+    if c ~= nil then
+      pairs_out[#pairs_out + 1] = { names[i], c }
+    end
+  end
+  return pairs_out
+end
+
+function __behavior_save_names(serial)
+  return persisted_names(serial)
+end
+
+-- One field, for the engine's fallback when `__behavior_save` as a whole could not cross (a value inside a field is
+-- not a value the engine can hold): the engine asks again field by field and leaves out the ones that fail.
+function __behavior_save_field(serial, name)
+  local self = instances[serial]
+  if self == nil then
+    return nil
+  end
+  persist_nodes = 0
+  return clean(self[name], 0)
+end
+
+-- Puts saved fields back on an instance just made (and marks them persistent again).
+function __behavior_load(serial, saved)
+  local self = instances[serial]
+  if self == nil or type(saved) ~= 'table' then
+    return 0
+  end
+  local set = persisted[serial]
+  if set == nil then
+    set = { 0 }
+    persisted[serial] = set
+  end
+  local n = 0
+  for i = 1, #saved do
+    local name, value = saved[i][1], saved[i][2]
+    if type(name) == 'string' and name ~= '' and #name <= 64 then
+      self[name] = value
+      if set[name] == nil and set[1] < MAX_PERSISTED_FIELDS then
+        set[name] = true
+        set[1] = set[1] + 1
+      end
+      n = n + 1
+    end
+  end
+  return n
 end
 
 -- Hot reload (docs/guide/scripting.md, "Hot reload"): between `begin` and `commit` a redefined behavior remembers the

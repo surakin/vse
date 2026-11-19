@@ -45,6 +45,16 @@ struct Instance
     /// The last error's identity (callback and message) and how many times it happened in a row; 0 means none yet.
     u64 error_hash = 0;
     u64 error_count = 0;
+    /// Persistent fields a load gave this entity: a map, applied (with `on_load`) once the instance exists.
+    Value pending;
+    bool has_pending = false;
+};
+
+/// The persistent fields of an entity that a load queued, until its instance takes them.
+struct LoadedEntry
+{
+    u64 key = 0;
+    Value fields;
 };
 
 /// A new error of one instance, kept until the phase ends and then logged, recorded and sent as an event in partition
@@ -234,6 +244,7 @@ struct ScriptRuntime::Impl
     MergeServices services;
     Vector<UniquePtr<PartitionData>> partitions;
     Vector<Instance> instances;
+    Vector<LoadedEntry> loaded;  // sorted by key
     Vector<FoundScript> found;
     EventBus bus;
     Vector<EventRecord> delivery;
@@ -268,6 +279,8 @@ struct ScriptRuntime::Impl
     void CollectErrors(u32 count);
 
     void Reconcile(ecs::World* world, bool allow_new);
+    void TakeLoaded(Instance* in);
+    usize LoadedAt(u64 key) const;
     void Compact();
     void RunPhase(ecs::World* world, f64 dt, bool destroys_only, jobs::Scheduler* scheduler);
     void RunPartition(ecs::World* world, u32 p, f64 dt, bool destroys_only);
@@ -287,6 +300,40 @@ struct ScriptRuntime::Impl
     Instance* FindInstance(PartitionData* data, u64 key);
     void RunDestroy(PartitionLease* lease, PartitionData* data, Instance* in, f64 dt, bool entity_exists);
 };
+
+usize ScriptRuntime::Impl::LoadedAt(u64 key) const
+{
+    usize lo = 0;
+    usize hi = loaded.Size();
+    while (lo < hi)
+    {
+        const usize mid = (lo + hi) / 2;
+        if (loaded[mid].key < key)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+    return lo;
+}
+
+void ScriptRuntime::Impl::TakeLoaded(Instance* in)
+{
+    if (loaded.Size() == 0)
+    {
+        return;
+    }
+    const usize at = LoadedAt(in->key);
+    if (at < loaded.Size() && loaded[at].key == in->key)
+    {
+        in->pending = Move(loaded[at].fields);
+        in->has_pending = true;
+        loaded.Remove(at);
+    }
+}
 
 void ScriptRuntime::Impl::Reconcile(ecs::World* world, bool allow_new)
 {
@@ -337,6 +384,7 @@ void ScriptRuntime::Impl::Reconcile(ecs::World* world, bool allow_new)
                 in.serial = next_serial++;
                 in.partition = PartitionOf(in.key, partition_count);
                 in.behavior = String<HeapAllocator>(HeapAllocator::Default(), comp->behavior.View());
+                TakeLoaded(&in);
                 merged.Push(Move(in));
             }
             ++j;
@@ -829,6 +877,36 @@ void ScriptRuntime::Impl::RunLive(PartitionLease* lease, PartitionData* data, In
         if (!Call(lease, data, in, "on_create", dt))
         {
             return;
+        }
+        if (in->has_pending)
+        {
+            // A load gave this entity saved fields: they replace what `on_create` set, then `on_load` rebuilds the
+            // rest.
+            Value saved = Move(in->pending);
+            in->pending = Value();
+            in->has_pending = false;
+            Value pairs = Value::MakeArray();
+            for (usize i = 0; i < saved.Size(); ++i)
+            {
+                Value pair = Value::MakeArray();
+                pair.Push(Value::FromText(saved.KeyAt(i)));
+                pair.Push(Value(saved.At(i)));
+                pairs.Push(Move(pair));
+            }
+            Value load_args[2] = {Value::FromInt(static_cast<i64>(in->serial)), Move(pairs)};
+            CallOutput load_out;
+            const Outcome loaded_outcome = lease->Call("__behavior_load", Span<const Value>(load_args, 2),
+                                                       config.budget, &load_out);
+            CheckReset(lease->Partition(), data);
+            if (!loaded_outcome.IsOk())
+            {
+                Fail(data, in, "__behavior_load", loaded_outcome);
+                return;
+            }
+            if (!Call(lease, data, in, "on_load", dt))
+            {
+                return;
+            }
         }
     }
     if (comp.enabled != in->notified_enabled)
@@ -1562,6 +1640,271 @@ void ScriptRuntime::SetProfiling(bool on)
 Outcome ScriptRuntime::ProfileReport(Vector<ProfileEntry>* out, usize top)
 {
     return impl_->scripts->ProfileReport(out, top);
+}
+
+namespace
+{
+
+// What CapturePersistent learned about one instance before it writes the components.
+struct Captured
+{
+    bool have = false;  // fields is a map to write (possibly empty)
+    bool failed = false;
+    bool pending = false;
+    Value fields;
+};
+
+u64 HashStep(u64 hash, u64 word)
+{
+    for (u32 i = 0; i < 8; ++i)
+    {
+        hash ^= (word >> (8 * i)) & 0xff;
+        hash *= 0x100000001B3ull;
+    }
+    return hash;
+}
+
+// Builds the map of a `{ name, value }` list; false when the list is not that.
+bool MapFromPairs(const Value& list, Value* map)
+{
+    *map = Value::MakeMap();
+    if (list.Kind() != ValueKind::Array && !(list.Kind() == ValueKind::Map && list.Size() == 0))
+    {
+        return list.IsNil();
+    }
+    if (list.Kind() == ValueKind::Map)
+    {
+        return true;
+    }
+    for (usize i = 0; i < list.Size(); ++i)
+    {
+        const Value& pair = list.At(i);
+        if (pair.Kind() != ValueKind::Array || pair.Size() != 2 || pair.At(0).Kind() != ValueKind::Text ||
+            !map->Set(pair.At(0).Text(), Value(pair.At(1))))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+}  // namespace
+
+void ScriptRuntime::CapturePersistent(ecs::World* world, const storage::KeyIndex& index, PersistReport* report)
+{
+    Impl& m = *impl_;
+    PersistReport local;
+    PersistReport& rep = report != nullptr ? *report : local;
+    rep = PersistReport();
+    Vector<Captured> captured;
+    captured.Resize(m.instances.Size());
+    for (u32 p = 0; p < m.partitions.Size(); ++p)
+    {
+        if (m.partitions[p].Get() == nullptr)
+        {
+            continue;
+        }
+        PartitionData& data = *m.partitions[p];
+        rep.coroutines_not_saved += data.waiters.Size() + data.event_waiters.Size() + data.task_waiters.Size();
+        if (data.members.Size() == 0)
+        {
+            continue;
+        }
+        PartitionLease lease;
+        Outcome error;
+        const CheckoutStatus got = m.scripts->TryCheckout(p, &lease, &error);
+        for (usize k = 0; k < data.members.Size(); ++k)
+        {
+            const usize at = data.members[k];
+            const Instance& in = m.instances[at];
+            if (!in.alive)
+            {
+                continue;
+            }
+            Captured& c = captured[at];
+            if (!in.created)
+            {
+                if (in.has_pending)
+                {
+                    c.have = true;
+                    c.pending = true;
+                    c.fields = in.pending;
+                }
+                continue;
+            }
+            if (in.failed || got != CheckoutStatus::Ok)
+            {
+                c.failed = true;
+                continue;
+            }
+            Value args[1] = {Value::FromInt(static_cast<i64>(in.serial))};
+            CallOutput out;
+            Outcome outcome = lease.Call("__behavior_save", Span<const Value>(args, 1), m.config.budget, &out);
+            if (outcome.IsOk() && out.results.Size() == 1 && MapFromPairs(out.results[0], &c.fields))
+            {
+                c.have = true;
+                continue;
+            }
+            // Something inside a field cannot cross: ask for the fields one at a time and leave out the ones that fail.
+            CallOutput names;
+            outcome = lease.Call("__behavior_save_names", Span<const Value>(args, 1), m.config.budget, &names);
+            if (!outcome.IsOk() || names.results.Size() != 1)
+            {
+                c.failed = true;
+                continue;
+            }
+            c.fields = Value::MakeMap();
+            c.have = true;
+            const Value& list = names.results[0];
+            for (usize i = 0; list.Kind() == ValueKind::Array && i < list.Size(); ++i)
+            {
+                if (list.At(i).Kind() != ValueKind::Text)
+                {
+                    continue;
+                }
+                Value field_args[2] = {Value::FromInt(static_cast<i64>(in.serial)), list.At(i)};
+                CallOutput field;
+                outcome = lease.Call("__behavior_save_field", Span<const Value>(field_args, 2), m.config.budget,
+                                     &field);
+                if (outcome.IsOk() && field.results.Size() == 1)
+                {
+                    if (!field.results[0].IsNil())
+                    {
+                        c.fields.Set(list.At(i).Text(), Value(field.results[0]));
+                    }
+                }
+                else
+                {
+                    ++rep.fields_skipped;
+                }
+            }
+        }
+    }
+    u64 hash = 0xcbf29ce484222325ull;
+    const ecs::World& view = *world;
+    auto write = [&](ecs::Entity entity, const Value& fields) -> bool
+    {
+        if (!view.Exists(entity))
+        {
+            return false;
+        }
+        if (fields.Size() == 0)
+        {
+            if (view.Get<ScriptPersist>(entity) != nullptr)
+            {
+                world->Remove<ScriptPersist>(entity);
+            }
+            return true;
+        }
+        bytes::ByteWriter writer;
+        EncodeValueRecord(fields, &writer, &index);
+        ScriptPersist record;
+        for (usize i = 0; i < writer.Size(); ++i)
+        {
+            record.blob.Push(static_cast<u8>(writer.Bytes()[i]));
+        }
+        world->Set(entity, Move(record));
+        hash = HashStep(HashStep(hash, entity.ToU64()), fields.Hash());
+        rep.fields_saved += fields.Size();
+        return true;
+    };
+    for (usize i = 0; i < m.instances.Size(); ++i)
+    {
+        const Captured& c = captured[i];
+        if (c.failed)
+        {
+            ++rep.instances_failed;
+        }
+        else if (c.have)
+        {
+            if (write(m.instances[i].entity, c.fields))
+            {  // an instance whose entity the host destroyed since the last tick is not counted
+                if (c.pending)
+                {
+                    ++rep.instances_pending;
+                }
+                else
+                {
+                    ++rep.instances_saved;
+                }
+            }
+        }
+    }
+    for (usize i = 0; i < m.loaded.Size(); ++i)
+    {  // a load that no instance has taken yet is written back, so a second save does not lose it
+        if (write(ecs::Entity::FromU64(m.loaded[i].key), m.loaded[i].fields))
+        {
+            ++rep.instances_pending;
+        }
+    }
+    rep.state_hash = hash;
+    rep.tick = m.tick;
+    rep.sim_time = m.sim_time;
+}
+
+void ScriptRuntime::ResolveLoaded(ecs::World* world, const storage::KeyIndex& index, LoadReport* report)
+{
+    Impl& m = *impl_;
+    LoadReport local;
+    LoadReport& rep = report != nullptr ? *report : local;
+    rep = LoadReport();
+    struct Found
+    {
+        ecs::Entity entity;
+        Vector<u8> blob;
+    };
+    Vector<Found> found;
+    world->Query<ecs::Read<ScriptPersist>>().ForEach(
+        [&](ecs::Entity e, const ScriptPersist& persist)
+        {
+            Found f;
+            f.entity = e;
+            for (usize b = 0; b < persist.blob.Size(); ++b)
+            {
+                f.blob.Push(persist.blob[b]);
+            }
+            found.Push(Move(f));
+        });
+    Sort(Span<Found>(found.Data(), found.Size()),
+         [](const Found& a, const Found& b) { return a.entity.ToU64() < b.entity.ToU64(); });
+    for (usize i = 0; i < found.Size(); ++i)
+    {
+        world->Remove<ScriptPersist>(found[i].entity);
+        bytes::ByteReader reader(ByteSpan(reinterpret_cast<const byte*>(found[i].blob.Data()), found[i].blob.Size()));
+        Value fields;
+        if (DecodeValueRecord(&reader, &fields, &index, ValueLimits()) != ValueRecordStatus::Ok || !reader.AtEnd() ||
+            fields.Kind() != ValueKind::Map)
+        {
+            ++rep.corrupt;
+            continue;
+        }
+        const u64 key = found[i].entity.ToU64();
+        const usize at = m.LoadedAt(key);
+        if (at < m.loaded.Size() && m.loaded[at].key == key)
+        {
+            m.loaded[at].fields = Move(fields);
+        }
+        else
+        {
+            LoadedEntry entry;
+            entry.key = key;
+            entry.fields = Move(fields);
+            m.loaded.Insert(at, Move(entry));
+        }
+        ++rep.queued;
+    }
+}
+
+void ScriptRuntime::Clock(u64* tick, f64* sim_time) const
+{
+    *tick = impl_->tick;
+    *sim_time = impl_->sim_time;
+}
+
+void ScriptRuntime::RestoreClock(u64 tick, f64 sim_time)
+{
+    impl_->tick = tick;
+    impl_->sim_time = sim_time;
 }
 
 void ScriptRuntime::Tick(ecs::World* world, f64 dt, jobs::Scheduler* scheduler)

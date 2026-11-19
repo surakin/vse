@@ -2205,6 +2205,28 @@ script::ScriptDebugger::Handle(const Value&)	function	script	script-scriptdebugg
 script::ScriptDebugger::Detach()	function	script	script-scriptdebugger-detach	script.md	engine/script/script_debug.h:150
 script::ScriptDebugger::StoppedCount() const	function	script	script-scriptdebugger-stoppedcount-const	script.md	engine/script/script_debug.h:155
 script::ScriptDebugger::StopCount() const	function	script	script-scriptdebugger-stopcount-const	script.md	engine/script/script_debug.h:160
+script::ScriptComponentIds	enum	script	script-scriptcomponentids	script.md	engine/script/script_persist.h:15
+script::kScriptComponentId	enumerator	script	script-kscriptcomponentid	script.md	engine/script/script_persist.h:18
+script::kScriptPersistId	enumerator	script	script-kscriptpersistid	script.md	engine/script/script_persist.h:20
+script::kMaxPersistBytes	variable	script	script-kmaxpersistbytes	script.md	engine/script/script_persist.h:25
+script::kMaxBehaviorNameBytes	variable	script	script-kmaxbehaviornamebytes	script.md	engine/script/script_persist.h:27
+script::ScriptPersist	struct	script	script-scriptpersist	script.md	engine/script/script_persist.h:37
+script::ScriptPersist::kComponentName	variable	script	script-scriptpersist-kcomponentname	script.md	engine/script/script_persist.h:40
+script::ScriptPersist::blob	variable	script	script-scriptpersist-blob	script.md	engine/script/script_persist.h:42
+script::RegisterScriptComponents(storage::ComponentRegistry*)	function	script	script-registerscriptcomponents-storage-componentregistry-star	script.md	engine/script/script_persist.h:53
+script::PersistReport	struct	script	script-persistreport	script.md	engine/script/script_persist.h:58
+script::PersistReport::instances_saved	variable	script	script-persistreport-instances-saved	script.md	engine/script/script_persist.h:61
+script::PersistReport::fields_saved	variable	script	script-persistreport-fields-saved	script.md	engine/script/script_persist.h:63
+script::PersistReport::fields_skipped	variable	script	script-persistreport-fields-skipped	script.md	engine/script/script_persist.h:66
+script::PersistReport::instances_failed	variable	script	script-persistreport-instances-failed	script.md	engine/script/script_persist.h:68
+script::PersistReport::instances_pending	variable	script	script-persistreport-instances-pending	script.md	engine/script/script_persist.h:70
+script::PersistReport::coroutines_not_saved	variable	script	script-persistreport-coroutines-not-saved	script.md	engine/script/script_persist.h:73
+script::PersistReport::tick	variable	script	script-persistreport-tick	script.md	engine/script/script_persist.h:75
+script::PersistReport::sim_time	variable	script	script-persistreport-sim-time	script.md	engine/script/script_persist.h:77
+script::PersistReport::state_hash	variable	script	script-persistreport-state-hash	script.md	engine/script/script_persist.h:79
+script::LoadReport	struct	script	script-loadreport	script.md	engine/script/script_persist.h:85
+script::LoadReport::queued	variable	script	script-loadreport-queued	script.md	engine/script/script_persist.h:88
+script::LoadReport::corrupt	variable	script	script-loadreport-corrupt	script.md	engine/script/script_persist.h:90
 script::ReloadProblem	struct	script	script-reloadproblem	script.md	engine/script/script_reload.h:26
 script::ReloadProblem::key	variable	script	script-reloadproblem-key	script.md	engine/script/script_reload.h:29
 script::ReloadProblem::line	variable	script	script-reloadproblem-line	script.md	engine/script/script_reload.h:31
@@ -2231,102 +2253,106 @@ script::ScriptDevWatcher::Active() const	function	script	script-scriptdevwatcher
 script::ScriptDevWatcher::Watch(asset::ResourceId)	function	script	script-scriptdevwatcher-watch-asset-resourceid	script.md	engine/script/script_reload.h:141
 script::ScriptDevWatcher::Poll(Vector<DevChange>*)	function	script	script-scriptdevwatcher-poll-vector-lt-devchange-gt-star	script.md	engine/script/script_reload.h:149
 script::ScriptDevWatcher::Applied(const DevChange&)	function	script	script-scriptdevwatcher-applied-const-devchange-amp	script.md	engine/script/script_reload.h:157
-script::ScriptComponent	struct	script	script-scriptcomponent	script.md	engine/script/script_runtime.h:41
-script::ScriptComponent::kComponentName	variable	script	script-scriptcomponent-kcomponentname	script.md	engine/script/script_runtime.h:44
-script::ScriptComponent::behavior	variable	script	script-scriptcomponent-behavior	script.md	engine/script/script_runtime.h:46
-script::ScriptComponent::params	variable	script	script-scriptcomponent-params	script.md	engine/script/script_runtime.h:48
-script::ScriptComponent::enabled	variable	script	script-scriptcomponent-enabled	script.md	engine/script/script_runtime.h:50
-script::ScriptComponent::ScriptComponent()	function	script	script-scriptcomponent-scriptcomponent	script.md	engine/script/script_runtime.h:53
-script::ScriptComponent::ScriptComponent(StringView,Value,bool)	function	script	script-scriptcomponent-scriptcomponent-stringview-value-bool	script.md	engine/script/script_runtime.h:60
-script::ScriptRuntimeStats	struct	script	script-scriptruntimestats	script.md	engine/script/script_runtime.h:69
-script::ScriptRuntimeStats::ticks	variable	script	script-scriptruntimestats-ticks	script.md	engine/script/script_runtime.h:72
-script::ScriptRuntimeStats::instances	variable	script	script-scriptruntimestats-instances	script.md	engine/script/script_runtime.h:74
-script::ScriptRuntimeStats::created	variable	script	script-scriptruntimestats-created	script.md	engine/script/script_runtime.h:76
-script::ScriptRuntimeStats::started	variable	script	script-scriptruntimestats-started	script.md	engine/script/script_runtime.h:78
-script::ScriptRuntimeStats::fixed_updates	variable	script	script-scriptruntimestats-fixed-updates	script.md	engine/script/script_runtime.h:80
-script::ScriptRuntimeStats::updates	variable	script	script-scriptruntimestats-updates	script.md	engine/script/script_runtime.h:82
-script::ScriptRuntimeStats::destroyed	variable	script	script-scriptruntimestats-destroyed	script.md	engine/script/script_runtime.h:84
-script::ScriptRuntimeStats::errors	variable	script	script-scriptruntimestats-errors	script.md	engine/script/script_runtime.h:86
-script::ScriptRuntimeStats::distinct_errors	variable	script	script-scriptruntimestats-distinct-errors	script.md	engine/script/script_runtime.h:89
-script::ScriptRuntimeStats::disabled_by_error	variable	script	script-scriptruntimestats-disabled-by-error	script.md	engine/script/script_runtime.h:91
-script::ScriptRuntimeStats::skipped_partitions	variable	script	script-scriptruntimestats-skipped-partitions	script.md	engine/script/script_runtime.h:93
-script::ScriptRuntimeStats::commands_applied	variable	script	script-scriptruntimestats-commands-applied	script.md	engine/script/script_runtime.h:95
-script::ScriptRuntimeStats::events_emitted	variable	script	script-scriptruntimestats-events-emitted	script.md	engine/script/script_runtime.h:97
-script::ScriptRuntimeStats::events_delivered	variable	script	script-scriptruntimestats-events-delivered	script.md	engine/script/script_runtime.h:99
-script::ScriptRuntimeStats::waits_resumed	variable	script	script-scriptruntimestats-waits-resumed	script.md	engine/script/script_runtime.h:101
-script::ScriptRuntimeStats::coroutines_waiting	variable	script	script-scriptruntimestats-coroutines-waiting	script.md	engine/script/script_runtime.h:103
-script::ScriptRuntimeStats::tasks_run	variable	script	script-scriptruntimestats-tasks-run	script.md	engine/script/script_runtime.h:105
-script::ScriptRuntimeStats::tasks_failed	variable	script	script-scriptruntimestats-tasks-failed	script.md	engine/script/script_runtime.h:107
-script::ScriptRuntimeStats::task_chunks	variable	script	script-scriptruntimestats-task-chunks	script.md	engine/script/script_runtime.h:109
-script::ScriptRuntimeStats::tasks_held	variable	script	script-scriptruntimestats-tasks-held	script.md	engine/script/script_runtime.h:111
-script::ScriptRuntimeConfig	struct	script	script-scriptruntimeconfig	script.md	engine/script/script_runtime.h:118
-script::ScriptRuntimeConfig::backend	variable	script	script-scriptruntimeconfig-backend	script.md	engine/script/script_runtime.h:121
-script::ScriptRuntimeConfig::bindings	variable	script	script-scriptruntimeconfig-bindings	script.md	engine/script/script_runtime.h:123
-script::ScriptRuntimeConfig::partitions	variable	script	script-scriptruntimeconfig-partitions	script.md	engine/script/script_runtime.h:125
-script::ScriptRuntimeConfig::partition_memory	variable	script	script-scriptruntimeconfig-partition-memory	script.md	engine/script/script_runtime.h:127
-script::ScriptRuntimeConfig::random_seed	variable	script	script-scriptruntimeconfig-random-seed	script.md	engine/script/script_runtime.h:129
-script::ScriptRuntimeConfig::log_limit	variable	script	script-scriptruntimeconfig-log-limit	script.md	engine/script/script_runtime.h:131
-script::ScriptRuntimeConfig::coroutine_limit	variable	script	script-scriptruntimeconfig-coroutine-limit	script.md	engine/script/script_runtime.h:134
-script::ScriptRuntimeConfig::event_chain_limit	variable	script	script-scriptruntimeconfig-event-chain-limit	script.md	engine/script/script_runtime.h:136
-script::ScriptRuntimeConfig::on_error	variable	script	script-scriptruntimeconfig-on-error	script.md	engine/script/script_runtime.h:138
-script::ScriptRuntimeConfig::conflicts	variable	script	script-scriptruntimeconfig-conflicts	script.md	engine/script/script_runtime.h:140
-script::ScriptRuntimeConfig::budget	variable	script	script-scriptruntimeconfig-budget	script.md	engine/script/script_runtime.h:142
-script::ScriptRuntimeConfig::task_states	variable	script	script-scriptruntimeconfig-task-states	script.md	engine/script/script_runtime.h:145
-script::ScriptRuntimeConfig::task_queue_limit	variable	script	script-scriptruntimeconfig-task-queue-limit	script.md	engine/script/script_runtime.h:148
-script::ScriptRuntimeConfig::task_arg_bytes	variable	script	script-scriptruntimeconfig-task-arg-bytes	script.md	engine/script/script_runtime.h:150
-script::ScriptRuntimeConfig::task_budget	variable	script	script-scriptruntimeconfig-task-budget	script.md	engine/script/script_runtime.h:152
-script::ScriptRuntimeConfig::task_state_memory	variable	script	script-scriptruntimeconfig-task-state-memory	script.md	engine/script/script_runtime.h:154
-script::ScriptRuntimeConfig::components	variable	script	script-scriptruntimeconfig-components	script.md	engine/script/script_runtime.h:156
-script::ScriptRuntimeConfig::scene	variable	script	script-scriptruntimeconfig-scene	script.md	engine/script/script_runtime.h:158
-script::ScriptRuntimeConfig::services	variable	script	script-scriptruntimeconfig-services	script.md	engine/script/script_runtime.h:160
-script::ScriptRuntimeConfig::debug_pause_all	variable	script	script-scriptruntimeconfig-debug-pause-all	script.md	engine/script/script_runtime.h:162
-script::ScriptRuntimeConfig::profile	variable	script	script-scriptruntimeconfig-profile	script.md	engine/script/script_runtime.h:164
-script::ScriptRuntimeConfig::host_source	variable	script	script-scriptruntimeconfig-host-source	script.md	engine/script/script_runtime.h:167
-script::ScriptRuntimeConfig::TaskDefaultBudget()	function	script	script-scriptruntimeconfig-taskdefaultbudget	script.md	engine/script/script_runtime.h:170
-script::ScriptRuntimeConfig::DefaultBudget()	function	script	script-scriptruntimeconfig-defaultbudget	script.md	engine/script/script_runtime.h:177
-script::ScriptErrorRecord	struct	script	script-scripterrorrecord	script.md	engine/script/script_runtime.h:189
-script::ScriptErrorRecord::tick	variable	script	script-scripterrorrecord-tick	script.md	engine/script/script_runtime.h:192
-script::ScriptErrorRecord::partition	variable	script	script-scripterrorrecord-partition	script.md	engine/script/script_runtime.h:194
-script::ScriptErrorRecord::entity_key	variable	script	script-scripterrorrecord-entity-key	script.md	engine/script/script_runtime.h:196
-script::ScriptErrorRecord::entity_name	variable	script	script-scripterrorrecord-entity-name	script.md	engine/script/script_runtime.h:198
-script::ScriptErrorRecord::behavior	variable	script	script-scripterrorrecord-behavior	script.md	engine/script/script_runtime.h:200
-script::ScriptErrorRecord::callback	variable	script	script-scripterrorrecord-callback	script.md	engine/script/script_runtime.h:202
-script::ScriptErrorRecord::message	variable	script	script-scripterrorrecord-message	script.md	engine/script/script_runtime.h:204
-script::ScriptErrorRecord::trace	variable	script	script-scripterrorrecord-trace	script.md	engine/script/script_runtime.h:206
-script::ScriptErrorRecord::count	variable	script	script-scripterrorrecord-count	script.md	engine/script/script_runtime.h:208
-script::ConsoleResult	struct	script	script-consoleresult	script.md	engine/script/script_runtime.h:215
-script::ConsoleResult::ok	variable	script	script-consoleresult-ok	script.md	engine/script/script_runtime.h:218
-script::ConsoleResult::status	variable	script	script-consoleresult-status	script.md	engine/script/script_runtime.h:220
-script::ConsoleResult::message	variable	script	script-consoleresult-message	script.md	engine/script/script_runtime.h:222
-script::ConsoleResult::trace	variable	script	script-consoleresult-trace	script.md	engine/script/script_runtime.h:224
-script::ConsoleResult::values	variable	script	script-consoleresult-values	script.md	engine/script/script_runtime.h:226
-script::kConsoleScratch	variable	script	script-kconsolescratch	script.md	engine/script/script_runtime.h:230
-script::LuaBehaviorHostSource()	function	script	script-luabehaviorhostsource	script.md	engine/script/script_runtime.h:238
-script::ScriptRuntime	class	script	script-scriptruntime	script.md	engine/script/script_runtime.h:246
-script::ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp	script.md	engine/script/script_runtime.h:253
-script::ScriptRuntime::~ScriptRuntime()	function	script	script-scriptruntime-tilde-scriptruntime	script.md	engine/script/script_runtime.h:255
-script::ScriptRuntime::ScriptRuntime(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-scriptruntime-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:257
-script::ScriptRuntime::operator=(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-operator-eq-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:259
-script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:260
-script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:261
-script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:267
-script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:274
-script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:279
-script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:283
-script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:287
-script::ScriptRuntime::HasHandler(u64,StringView) const	function	script	script-scriptruntime-hashandler-u64-stringview-const	script.md	engine/script/script_runtime.h:298
-script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:302
-script::ScriptRuntime::Kinds()	function	script	script-scriptruntime-kinds	script.md	engine/script/script_runtime.h:307
-script::ScriptRuntime::RecentErrors() const	function	script	script-scriptruntime-recenterrors-const	script.md	engine/script/script_runtime.h:313
-script::ScriptRuntime::AttachDebugger(DebugTransport*)	function	script	script-scriptruntime-attachdebugger-debugtransport-star	script.md	engine/script/script_runtime.h:323
-script::ScriptRuntime::DetachDebugger()	function	script	script-scriptruntime-detachdebugger	script.md	engine/script/script_runtime.h:328
-script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script	script-scriptruntime-consolerun-u32-stringview-consoleresult-star	script.md	engine/script/script_runtime.h:341
-script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:350
-script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:359
-script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:365
-script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:374
-script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:386
-script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:399
+script::ScriptComponent	struct	script	script-scriptcomponent	script.md	engine/script/script_runtime.h:43
+script::ScriptComponent::kComponentName	variable	script	script-scriptcomponent-kcomponentname	script.md	engine/script/script_runtime.h:46
+script::ScriptComponent::behavior	variable	script	script-scriptcomponent-behavior	script.md	engine/script/script_runtime.h:48
+script::ScriptComponent::params	variable	script	script-scriptcomponent-params	script.md	engine/script/script_runtime.h:50
+script::ScriptComponent::enabled	variable	script	script-scriptcomponent-enabled	script.md	engine/script/script_runtime.h:52
+script::ScriptComponent::ScriptComponent()	function	script	script-scriptcomponent-scriptcomponent	script.md	engine/script/script_runtime.h:55
+script::ScriptComponent::ScriptComponent(StringView,Value,bool)	function	script	script-scriptcomponent-scriptcomponent-stringview-value-bool	script.md	engine/script/script_runtime.h:62
+script::ScriptRuntimeStats	struct	script	script-scriptruntimestats	script.md	engine/script/script_runtime.h:71
+script::ScriptRuntimeStats::ticks	variable	script	script-scriptruntimestats-ticks	script.md	engine/script/script_runtime.h:74
+script::ScriptRuntimeStats::instances	variable	script	script-scriptruntimestats-instances	script.md	engine/script/script_runtime.h:76
+script::ScriptRuntimeStats::created	variable	script	script-scriptruntimestats-created	script.md	engine/script/script_runtime.h:78
+script::ScriptRuntimeStats::started	variable	script	script-scriptruntimestats-started	script.md	engine/script/script_runtime.h:80
+script::ScriptRuntimeStats::fixed_updates	variable	script	script-scriptruntimestats-fixed-updates	script.md	engine/script/script_runtime.h:82
+script::ScriptRuntimeStats::updates	variable	script	script-scriptruntimestats-updates	script.md	engine/script/script_runtime.h:84
+script::ScriptRuntimeStats::destroyed	variable	script	script-scriptruntimestats-destroyed	script.md	engine/script/script_runtime.h:86
+script::ScriptRuntimeStats::errors	variable	script	script-scriptruntimestats-errors	script.md	engine/script/script_runtime.h:88
+script::ScriptRuntimeStats::distinct_errors	variable	script	script-scriptruntimestats-distinct-errors	script.md	engine/script/script_runtime.h:91
+script::ScriptRuntimeStats::disabled_by_error	variable	script	script-scriptruntimestats-disabled-by-error	script.md	engine/script/script_runtime.h:93
+script::ScriptRuntimeStats::skipped_partitions	variable	script	script-scriptruntimestats-skipped-partitions	script.md	engine/script/script_runtime.h:95
+script::ScriptRuntimeStats::commands_applied	variable	script	script-scriptruntimestats-commands-applied	script.md	engine/script/script_runtime.h:97
+script::ScriptRuntimeStats::events_emitted	variable	script	script-scriptruntimestats-events-emitted	script.md	engine/script/script_runtime.h:99
+script::ScriptRuntimeStats::events_delivered	variable	script	script-scriptruntimestats-events-delivered	script.md	engine/script/script_runtime.h:101
+script::ScriptRuntimeStats::waits_resumed	variable	script	script-scriptruntimestats-waits-resumed	script.md	engine/script/script_runtime.h:103
+script::ScriptRuntimeStats::coroutines_waiting	variable	script	script-scriptruntimestats-coroutines-waiting	script.md	engine/script/script_runtime.h:105
+script::ScriptRuntimeStats::tasks_run	variable	script	script-scriptruntimestats-tasks-run	script.md	engine/script/script_runtime.h:107
+script::ScriptRuntimeStats::tasks_failed	variable	script	script-scriptruntimestats-tasks-failed	script.md	engine/script/script_runtime.h:109
+script::ScriptRuntimeStats::task_chunks	variable	script	script-scriptruntimestats-task-chunks	script.md	engine/script/script_runtime.h:111
+script::ScriptRuntimeStats::tasks_held	variable	script	script-scriptruntimestats-tasks-held	script.md	engine/script/script_runtime.h:113
+script::ScriptRuntimeConfig	struct	script	script-scriptruntimeconfig	script.md	engine/script/script_runtime.h:120
+script::ScriptRuntimeConfig::backend	variable	script	script-scriptruntimeconfig-backend	script.md	engine/script/script_runtime.h:123
+script::ScriptRuntimeConfig::bindings	variable	script	script-scriptruntimeconfig-bindings	script.md	engine/script/script_runtime.h:125
+script::ScriptRuntimeConfig::partitions	variable	script	script-scriptruntimeconfig-partitions	script.md	engine/script/script_runtime.h:127
+script::ScriptRuntimeConfig::partition_memory	variable	script	script-scriptruntimeconfig-partition-memory	script.md	engine/script/script_runtime.h:129
+script::ScriptRuntimeConfig::random_seed	variable	script	script-scriptruntimeconfig-random-seed	script.md	engine/script/script_runtime.h:131
+script::ScriptRuntimeConfig::log_limit	variable	script	script-scriptruntimeconfig-log-limit	script.md	engine/script/script_runtime.h:133
+script::ScriptRuntimeConfig::coroutine_limit	variable	script	script-scriptruntimeconfig-coroutine-limit	script.md	engine/script/script_runtime.h:136
+script::ScriptRuntimeConfig::event_chain_limit	variable	script	script-scriptruntimeconfig-event-chain-limit	script.md	engine/script/script_runtime.h:138
+script::ScriptRuntimeConfig::on_error	variable	script	script-scriptruntimeconfig-on-error	script.md	engine/script/script_runtime.h:140
+script::ScriptRuntimeConfig::conflicts	variable	script	script-scriptruntimeconfig-conflicts	script.md	engine/script/script_runtime.h:142
+script::ScriptRuntimeConfig::budget	variable	script	script-scriptruntimeconfig-budget	script.md	engine/script/script_runtime.h:144
+script::ScriptRuntimeConfig::task_states	variable	script	script-scriptruntimeconfig-task-states	script.md	engine/script/script_runtime.h:147
+script::ScriptRuntimeConfig::task_queue_limit	variable	script	script-scriptruntimeconfig-task-queue-limit	script.md	engine/script/script_runtime.h:150
+script::ScriptRuntimeConfig::task_arg_bytes	variable	script	script-scriptruntimeconfig-task-arg-bytes	script.md	engine/script/script_runtime.h:152
+script::ScriptRuntimeConfig::task_budget	variable	script	script-scriptruntimeconfig-task-budget	script.md	engine/script/script_runtime.h:154
+script::ScriptRuntimeConfig::task_state_memory	variable	script	script-scriptruntimeconfig-task-state-memory	script.md	engine/script/script_runtime.h:156
+script::ScriptRuntimeConfig::components	variable	script	script-scriptruntimeconfig-components	script.md	engine/script/script_runtime.h:158
+script::ScriptRuntimeConfig::scene	variable	script	script-scriptruntimeconfig-scene	script.md	engine/script/script_runtime.h:160
+script::ScriptRuntimeConfig::services	variable	script	script-scriptruntimeconfig-services	script.md	engine/script/script_runtime.h:162
+script::ScriptRuntimeConfig::debug_pause_all	variable	script	script-scriptruntimeconfig-debug-pause-all	script.md	engine/script/script_runtime.h:164
+script::ScriptRuntimeConfig::profile	variable	script	script-scriptruntimeconfig-profile	script.md	engine/script/script_runtime.h:166
+script::ScriptRuntimeConfig::host_source	variable	script	script-scriptruntimeconfig-host-source	script.md	engine/script/script_runtime.h:169
+script::ScriptRuntimeConfig::TaskDefaultBudget()	function	script	script-scriptruntimeconfig-taskdefaultbudget	script.md	engine/script/script_runtime.h:172
+script::ScriptRuntimeConfig::DefaultBudget()	function	script	script-scriptruntimeconfig-defaultbudget	script.md	engine/script/script_runtime.h:179
+script::ScriptErrorRecord	struct	script	script-scripterrorrecord	script.md	engine/script/script_runtime.h:191
+script::ScriptErrorRecord::tick	variable	script	script-scripterrorrecord-tick	script.md	engine/script/script_runtime.h:194
+script::ScriptErrorRecord::partition	variable	script	script-scripterrorrecord-partition	script.md	engine/script/script_runtime.h:196
+script::ScriptErrorRecord::entity_key	variable	script	script-scripterrorrecord-entity-key	script.md	engine/script/script_runtime.h:198
+script::ScriptErrorRecord::entity_name	variable	script	script-scripterrorrecord-entity-name	script.md	engine/script/script_runtime.h:200
+script::ScriptErrorRecord::behavior	variable	script	script-scripterrorrecord-behavior	script.md	engine/script/script_runtime.h:202
+script::ScriptErrorRecord::callback	variable	script	script-scripterrorrecord-callback	script.md	engine/script/script_runtime.h:204
+script::ScriptErrorRecord::message	variable	script	script-scripterrorrecord-message	script.md	engine/script/script_runtime.h:206
+script::ScriptErrorRecord::trace	variable	script	script-scripterrorrecord-trace	script.md	engine/script/script_runtime.h:208
+script::ScriptErrorRecord::count	variable	script	script-scripterrorrecord-count	script.md	engine/script/script_runtime.h:210
+script::ConsoleResult	struct	script	script-consoleresult	script.md	engine/script/script_runtime.h:217
+script::ConsoleResult::ok	variable	script	script-consoleresult-ok	script.md	engine/script/script_runtime.h:220
+script::ConsoleResult::status	variable	script	script-consoleresult-status	script.md	engine/script/script_runtime.h:222
+script::ConsoleResult::message	variable	script	script-consoleresult-message	script.md	engine/script/script_runtime.h:224
+script::ConsoleResult::trace	variable	script	script-consoleresult-trace	script.md	engine/script/script_runtime.h:226
+script::ConsoleResult::values	variable	script	script-consoleresult-values	script.md	engine/script/script_runtime.h:228
+script::kConsoleScratch	variable	script	script-kconsolescratch	script.md	engine/script/script_runtime.h:232
+script::LuaBehaviorHostSource()	function	script	script-luabehaviorhostsource	script.md	engine/script/script_runtime.h:240
+script::ScriptRuntime	class	script	script-scriptruntime	script.md	engine/script/script_runtime.h:248
+script::ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntimeconfig-amp	script.md	engine/script/script_runtime.h:255
+script::ScriptRuntime::~ScriptRuntime()	function	script	script-scriptruntime-tilde-scriptruntime	script.md	engine/script/script_runtime.h:257
+script::ScriptRuntime::ScriptRuntime(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-scriptruntime-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:259
+script::ScriptRuntime::operator=(ScriptRuntime&&) noexcept	function	script	script-scriptruntime-operator-eq-scriptruntime-amp-amp-noexcept	script.md	engine/script/script_runtime.h:261
+script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	script-scriptruntime-scriptruntime-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:262
+script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:263
+script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:269
+script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:276
+script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:281
+script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:285
+script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:289
+script::ScriptRuntime::HasHandler(u64,StringView) const	function	script	script-scriptruntime-hashandler-u64-stringview-const	script.md	engine/script/script_runtime.h:300
+script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:304
+script::ScriptRuntime::Kinds()	function	script	script-scriptruntime-kinds	script.md	engine/script/script_runtime.h:309
+script::ScriptRuntime::RecentErrors() const	function	script	script-scriptruntime-recenterrors-const	script.md	engine/script/script_runtime.h:315
+script::ScriptRuntime::AttachDebugger(DebugTransport*)	function	script	script-scriptruntime-attachdebugger-debugtransport-star	script.md	engine/script/script_runtime.h:325
+script::ScriptRuntime::DetachDebugger()	function	script	script-scriptruntime-detachdebugger	script.md	engine/script/script_runtime.h:330
+script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script	script-scriptruntime-consolerun-u32-stringview-consoleresult-star	script.md	engine/script/script_runtime.h:343
+script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:352
+script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:361
+script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:367
+script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:376
+script::ScriptRuntime::CapturePersistent(ecs::World*,const storage::KeyIndex&,PersistReport*)	function	script	script-scriptruntime-capturepersistent-ecs-world-star-const-storage-keyindex-amp-persistreport-star	script.md	engine/script/script_runtime.h:394
+script::ScriptRuntime::ResolveLoaded(ecs::World*,const storage::KeyIndex&,LoadReport*)	function	script	script-scriptruntime-resolveloaded-ecs-world-star-const-storage-keyindex-amp-loadreport-star	script.md	engine/script/script_runtime.h:407
+script::ScriptRuntime::Clock(u64*,f64*) const	function	script	script-scriptruntime-clock-u64-star-f64-star-const	script.md	engine/script/script_runtime.h:416
+script::ScriptRuntime::RestoreClock(u64,f64)	function	script	script-scriptruntime-restoreclock-u64-f64	script.md	engine/script/script_runtime.h:424
+script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:436
+script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:449
 script::OnScriptError	enum	script	script-onscripterror	script.md	engine/script/script_settings.h:16
 script::OnScriptError::Disable	enumerator	script	script-onscripterror-disable	script.md	engine/script/script_settings.h:19
 script::OnScriptError::Retry	enumerator	script	script-onscripterror-retry	script.md	engine/script/script_settings.h:21
@@ -2605,6 +2631,15 @@ script::Value::Depth() const	function	script	script-value-depth-const	script.md	
 script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:245
 script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:250
 script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:253
+script::kValueRecordVersion	variable	script	script-kvaluerecordversion	script.md	engine/script/value_codec.h:16
+script::ValueRecordStatus	enum	script	script-valuerecordstatus	script.md	engine/script/value_codec.h:21
+script::ValueRecordStatus::Ok	enumerator	script	script-valuerecordstatus-ok	script.md	engine/script/value_codec.h:24
+script::ValueRecordStatus::Truncated	enumerator	script	script-valuerecordstatus-truncated	script.md	engine/script/value_codec.h:26
+script::ValueRecordStatus::Corrupt	enumerator	script	script-valuerecordstatus-corrupt	script.md	engine/script/value_codec.h:29
+script::ValueRecordStatus::OverLimit	enumerator	script	script-valuerecordstatus-overlimit	script.md	engine/script/value_codec.h:31
+script::ValueRecordStatusName(ValueRecordStatus)	function	script	script-valuerecordstatusname-valuerecordstatus	script.md	engine/script/value_codec.h:38
+script::EncodeValueRecord(const Value&,bytes::ByteWriter*,const storage::KeyIndex*)	function	script	script-encodevaluerecord-const-value-amp-bytes-bytewriter-star-const-storage-keyindex-star	script.md	engine/script/value_codec.h:51
+script::DecodeValueRecord(bytes::ByteReader*,Value*,const storage::KeyIndex*,const ValueLimits&)	function	script	script-decodevaluerecord-bytes-bytereader-star-value-star-const-storage-keyindex-star-const-valuelimits-amp	script.md	engine/script/value_codec.h:62
 script_physics::CharacterSet	class	script_physics	script-physics-characterset	script_physics.md	engine/script_physics/character_set.h:28
 script_physics::CharacterSet::CharacterSet(physics::PhysicsWorld*)	function	script_physics	script-physics-characterset-characterset-physics-physicsworld-star	script_physics.md	engine/script_physics/character_set.h:35
 script_physics::CharacterSet::~CharacterSet()	function	script_physics	script-physics-characterset-tilde-characterset	script_physics.md	engine/script_physics/character_set.h:37
@@ -2786,6 +2821,25 @@ script_media::InputSnapshot::Deserialize(bytes::ByteReader*)	function	script_med
 script_media::InputSnapshot::Equals(const InputSnapshot&) const	function	script_media	script-media-inputsnapshot-equals-const-inputsnapshot-amp-const	script_media.md	engine/script_media/input_snapshot.h:297
 script_media::InputScriptServices	struct	script_media	script-media-inputscriptservices	script_media.md	engine/script_media/input_snapshot.h:334
 script_media::InputScriptServices::snapshot	variable	script_media	script-media-inputscriptservices-snapshot	script_media.md	engine/script_media/input_snapshot.h:337
+script_media::kReplayLogVersion	variable	script_media	script-media-kreplaylogversion	script_media.md	engine/script_media/replay_log.h:16
+script_media::kMaxReplayTicks	variable	script_media	script-media-kmaxreplayticks	script_media.md	engine/script_media/replay_log.h:18
+script_media::ReplayEntry	struct	script_media	script-media-replayentry	script_media.md	engine/script_media/replay_log.h:24
+script_media::ReplayEntry::tick	variable	script_media	script-media-replayentry-tick	script_media.md	engine/script_media/replay_log.h:27
+script_media::ReplayEntry::input	variable	script_media	script-media-replayentry-input	script_media.md	engine/script_media/replay_log.h:29
+script_media::ReplayEntry::hash	variable	script_media	script-media-replayentry-hash	script_media.md	engine/script_media/replay_log.h:31
+script_media::ReplayLog	class	script_media	script-media-replaylog	script_media.md	engine/script_media/replay_log.h:38
+script_media::ReplayLog::ReplayLog()	function	script_media	script-media-replaylog-replaylog	script_media.md	engine/script_media/replay_log.h:42
+script_media::ReplayLog::Begin(u32,u64,u64)	function	script_media	script-media-replaylog-begin-u32-u64-u64	script_media.md	engine/script_media/replay_log.h:50
+script_media::ReplayLog::Record(u64,const InputSnapshot&,u64)	function	script_media	script-media-replaylog-record-u64-const-inputsnapshot-amp-u64	script_media.md	engine/script_media/replay_log.h:58
+script_media::ReplayLog::RandomSeed() const	function	script_media	script-media-replaylog-randomseed-const	script_media.md	engine/script_media/replay_log.h:63
+script_media::ReplayLog::StartTick() const	function	script_media	script-media-replaylog-starttick-const	script_media.md	engine/script_media/replay_log.h:67
+script_media::ReplayLog::StartHash() const	function	script_media	script-media-replaylog-starthash-const	script_media.md	engine/script_media/replay_log.h:71
+script_media::ReplayLog::Size() const	function	script_media	script-media-replaylog-size-const	script_media.md	engine/script_media/replay_log.h:75
+script_media::ReplayLog::At(usize) const	function	script_media	script-media-replaylog-at-usize-const	script_media.md	engine/script_media/replay_log.h:80
+script_media::ReplayLog::Snapshot(usize,InputSnapshot*) const	function	script_media	script-media-replaylog-snapshot-usize-inputsnapshot-star-const	script_media.md	engine/script_media/replay_log.h:91
+script_media::ReplayLog::Serialize(bytes::ByteWriter*) const	function	script_media	script-media-replaylog-serialize-bytes-bytewriter-star-const	script_media.md	engine/script_media/replay_log.h:98
+script_media::ReplayLog::Deserialize(bytes::ByteReader*)	function	script_media	script-media-replaylog-deserialize-bytes-bytereader-star	script_media.md	engine/script_media/replay_log.h:108
+script_media::ReplayLog::Equals(const ReplayLog&) const	function	script_media	script-media-replaylog-equals-const-replaylog-amp-const	script_media.md	engine/script_media/replay_log.h:113
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:24
 os::CommandLineOption	struct	platform/os	os-commandlineoption	platform-os.md	engine/foundation/os/command_line.h:38
 os::CommandLineOption::name	variable	platform/os	os-commandlineoption-name	platform-os.md	engine/foundation/os/command_line.h:41

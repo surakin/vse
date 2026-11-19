@@ -20,10 +20,12 @@
 #include "script/merge.h"
 #include "script/merge_services.h"
 #include "script/script_debug.h"
+#include "script/script_persist.h"
 #include "script/script_settings.h"
 #include "script/script_world.h"
 #include "lang/utility.h"
 #include "script/value.h"
+#include "storage/identity.h"
 #include "string/string.h"
 #include "string_view.h"
 #include "types.h"
@@ -372,6 +374,54 @@ public:
     /// - Thread-safety: thread-compatible: between ticks.
     /// - Ownership: `out` is borrowed for the call.
     Outcome ProfileReport(Vector<ProfileEntry>* out, usize top);
+
+    /// Writes the persistent fields of every running instance into `script_persist` components, so a save of the world
+    /// carries them (the fields a script marked with `persist(...)`, read from its partition's state; see
+    /// [[script::ScriptPersist]]). An entity whose instance has no persistent fields loses a record it had; an entity
+    /// whose instance has not run yet keeps (and gets written back) the fields a load gave it. Coroutines waiting at
+    /// the time are not saved; the report counts them.
+    ///
+    /// Call it between ticks, after `index.Sync`, and then save the world with the registry that
+    /// [[script::RegisterScriptComponents]] filled.
+    ///
+    /// - Param world: the world the instances live in; not iterated now.
+    /// - Param index: the keys of `world`, synced; entity handles inside values are written as keys.
+    /// - Param report: receives the counts; may be null.
+    /// - Thread-safety: thread-compatible: between ticks.
+    /// - Aborts: `world` is being iterated.
+    /// - Ownership: all pointers are borrowed for the call.
+    /// - Fails: an instance that cannot be read is counted in the report (`instances_failed`) and keeps its old record.
+    void CapturePersistent(ecs::World* world, const storage::KeyIndex& index, PersistReport* report);
+
+    /// Takes the `script_persist` components of a world that was just loaded: each is decoded (entity keys resolved
+    /// through `index`), removed from its entity, and held until the entity's instance is made, which gets the fields
+    /// back before `on_load` and `on_start`. Call it once after a load, before the first tick that sees the entities.
+    ///
+    /// - Param world: the loaded world; not iterated now.
+    /// - Param index: the keys of `world`, synced.
+    /// - Param report: receives the counts; may be null.
+    /// - Thread-safety: thread-compatible: between ticks.
+    /// - Aborts: `world` is being iterated.
+    /// - Ownership: all pointers are borrowed for the call.
+    /// - Fails: a record that does not decode is counted (`corrupt`) and dropped; its instance starts without it.
+    void ResolveLoaded(ecs::World* world, const storage::KeyIndex& index, LoadReport* report);
+
+    /// The tick count and the simulation time the runtime has reached; the per-entity random streams and the timers
+    /// follow them, so a save keeps them ([[script::PersistReport]]).
+    ///
+    /// - Param tick: receives the ticks run.
+    /// - Param sim_time: receives the simulation seconds.
+    /// - Ownership: both pointers are borrowed for the call.
+    /// - Fails: never.
+    void Clock(u64* tick, f64* sim_time) const;
+
+    /// Sets the tick count and the simulation time, for a runtime that continues a saved session: call it once before
+    /// the first tick after a load with the values the save reported, so the random streams go on where they stopped.
+    ///
+    /// - Param tick: the ticks already run.
+    /// - Param sim_time: the simulation seconds already run.
+    /// - Thread-safety: thread-compatible: between ticks.
+    void RestoreClock(u64 tick, f64 sim_time);
 
     /// Runs one tick on `world`: destroys, creates and starts, enables, fixed updates, updates, the merge, and the
     /// destroys the merge caused. The script system calls it; tests may call it directly.

@@ -27,6 +27,7 @@
 #include "script/script_runtime.h"
 #include "script_media/audio_bindings.h"
 #include "script_media/input_bindings.h"
+#include "script_media/replay_log.h"
 #include "storage/builtin_components.h"
 
 using namespace engine_placeholder;
@@ -758,6 +759,37 @@ struct RuntimeRig
         RenderBlock(mixer, &hash);
         PumpAudioEvents(&mixer, &voices, runtime.Get());
     }
+
+    // One frame from a recorded snapshot: the platform's state is not touched.
+    void Replay(InputSnapshot recorded, jobs::Scheduler* scheduler = nullptr)
+    {
+        ++tick;
+        snapshot = Move(recorded);
+        EmitInputEvents(snapshot, runtime.Get());
+        runtime->Tick(&world, 1.0 / 60.0, scheduler);
+        RenderBlock(mixer, &hash);
+        PumpAudioEvents(&mixer, &voices, runtime.Get());
+    }
+
+    // The world's probes and every rendered block so far, as one number.
+    u64 StateHash()
+    {
+        u64 sum = 0;
+        world.Query<ecs::Read<Probe>>().ForEach(
+            [&](ecs::Entity e, const Probe& p)
+            {
+                u32 bits[2];
+                MemCopy(&bits[0], &p.x, 4);
+                MemCopy(&bits[1], &p.y, 4);
+                u64 h = e.ToU64() * 0x9E3779B97F4A7C15ull;
+                h = (h ^ bits[0]) * 0x100000001B3ull;
+                h = (h ^ bits[1]) * 0x100000001B3ull;
+                h = (h ^ static_cast<u64>(p.n)) * 0x100000001B3ull;
+                h = (h ^ static_cast<u64>(p.ended)) * 0x100000001B3ull;
+                sum += h;
+            });
+        return sum ^ (hash.Valid() ? hash.Value() * 31 : 0);
+    }
 };
 
 // A scene of many players; returns the hash of the rendered blocks.
@@ -932,4 +964,129 @@ TEST_CASE("Script media: input events reach the scripts that listen", "[script_m
     REQUIRE(rig.runtime->Stats().errors == 0);
     // Frame 2 delivers its events at the start of its own tick (they were emitted before the tick).
     CHECK(rig.world.Get<Probe>(listener)->n >= 4);
+}
+
+namespace media_test
+{
+
+constexpr u32 kReplayTicks = 40;
+
+// Spawns the scene a replay runs on: players (they use the audio and the random streams) and readers (the input).
+void SpawnReplayScene(RuntimeRig* rig)
+{
+    for (u32 i = 0; i < 24; ++i)
+    {
+        rig->Spawn(StringView("player"));
+    }
+    for (u32 i = 0; i < 24; ++i)
+    {
+        rig->Spawn(StringView("reader"));
+    }
+}
+
+// Runs the session live and records it.
+void Record(usize threads, ReplayLog* log)
+{
+    jobs::Scheduler scheduler(ConfigFor(threads));
+    RuntimeRig rig(16);
+    SpawnReplayScene(&rig);
+    log->Begin(5, 1, 0);
+    for (u32 t = 1; t <= kReplayTicks; ++t)
+    {
+        rig.Frame(LiveInput(t), &scheduler);
+        log->Record(t, rig.snapshot, rig.StateHash());
+    }
+    REQUIRE(rig.runtime->Stats().errors == 0);
+}
+
+// Runs the log on a fresh world and returns how many ticks matched their recorded hash.
+u32 Replay(const ReplayLog& log, usize threads)
+{
+    jobs::Scheduler scheduler(ConfigFor(threads));
+    RuntimeRig rig(16);
+    SpawnReplayScene(&rig);
+    u32 matched = 0;
+    for (usize i = 0; i < log.Size(); ++i)
+    {
+        InputSnapshot recorded;
+        REQUIRE(log.Snapshot(i, &recorded));
+        rig.Replay(Move(recorded), &scheduler);
+        matched += rig.StateHash() == log.At(i).hash ? 1 : 0;
+    }
+    REQUIRE(rig.runtime->Stats().errors == 0);
+    return matched;
+}
+
+}  // namespace media_test
+
+TEST_CASE("Script media: a session recorded at one thread count replays to the same hashes at the others",
+          "[script_media][replay][parallel]")
+{
+    const usize counts[] = {1, 2, 3, 7, 16};
+    ReplayLog first;
+    Record(16, &first);
+    REQUIRE(first.Size() == kReplayTicks);
+    CHECK(first.At(kReplayTicks - 1).hash != first.At(0).hash);
+    for (usize threads : counts)
+    {
+        INFO("replayed at " << threads << " threads");
+        CHECK(Replay(first, threads) == kReplayTicks);
+    }
+    // The other way round: recorded on one thread, replayed on sixteen; and the two logs are the same.
+    ReplayLog second;
+    Record(1, &second);
+    CHECK(second.Equals(first));
+    CHECK(Replay(second, 16) == kReplayTicks);
+}
+
+TEST_CASE("Script media: a log survives its bytes and a damaged log is refused", "[script_media][replay]")
+{
+    ReplayLog log;
+    Record(2, &log);
+    bytes::ByteWriter writer;
+    log.Serialize(&writer);
+    ReplayLog back;
+    bytes::ByteReader reader(writer.Bytes());
+    REQUIRE(back.Deserialize(&reader));
+    CHECK(reader.AtEnd());
+    CHECK(back.Equals(log));
+    CHECK(Replay(back, 3) == kReplayTicks);
+
+    // Every cut is refused and leaves the log alone.
+    for (usize cut = 0; cut < writer.Size(); cut += 97)
+    {
+        bytes::ByteReader shortened(ByteSpan(writer.Bytes().Data(), cut));
+        ReplayLog partial;
+        CHECK_FALSE(partial.Deserialize(&shortened));
+        CHECK(partial.Size() == 0);
+    }
+    Vector<byte> bad;
+    for (usize i = 0; i < writer.Size(); ++i)
+    {
+        bad.Push(writer.Bytes()[i]);
+    }
+    SECTION("an unknown version")
+    {
+        bad[0] = static_cast<byte>(9);
+        bytes::ByteReader r(ByteSpan(bad.Data(), bad.Size()));
+        ReplayLog out;
+        CHECK_FALSE(out.Deserialize(&r));
+    }
+    SECTION("a count far above the bytes")
+    {
+        // version (4), seed (4), start tick (8), start hash (8), then the count's varint
+        bad[24] = static_cast<byte>(0xFF);
+        bad[25] = static_cast<byte>(0xFF);
+        bad[26] = static_cast<byte>(0x7F);
+        bytes::ByteReader r(ByteSpan(bad.Data(), bad.Size()));
+        ReplayLog out;
+        CHECK_FALSE(out.Deserialize(&r));
+    }
+    SECTION("a tick that does not follow the last")
+    {
+        bad[27 + 1] = static_cast<byte>(bad[27 + 1] + 1);  // the first entry's tick
+        bytes::ByteReader r(ByteSpan(bad.Data(), bad.Size()));
+        ReplayLog out;
+        CHECK_FALSE(out.Deserialize(&r));
+    }
 }
