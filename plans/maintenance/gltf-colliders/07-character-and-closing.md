@@ -14,14 +14,17 @@
   - the `step_height` step is climbed; the higher one stops it; the steep ramp stops it;
   - walking off the ledge: not grounded within a frame, then lands below;
   - the same scene driven from Lua (`character.create`, `move`, `is_grounded`) in `tests/script_physics` gives the same final positions.
+    **Not done** (Notes; `KNOWN-ISSUES.md`).
 - [x] **Hostile collision through the whole path** (`tests/asset/gltf_collider_test.cpp`, asan): 2,000 mutated copies of the test file
   (the existing mutation helper of `gltf_json_test.cpp`): every import either succeeds or fails with a message; every success spawns
   through `level_spawn` without a failure other than a documented refusal.
-- [x] **Determinism**: a frame-by-frame position hash of the character scene, committed as a constant, the same at 1 and 4 threads
-  (Windows and macOS compare it on Day 8).
+- [ ] **Determinism**: a frame-by-frame position hash of the character scene, committed as a constant, the same at 1 and 4 threads
+  (Windows and macOS compare it on Day 8). **Partly:** the hash is printed and equal between two worlds, recorded as `81970852f4f13a9f`;
+  not asserted as a constant, and the thread comparison is not done (Notes).
 - [x] **The guides** (the series' narrative, now that it is done): `docs/guide/assets.md` ("Collision from glTF": the two conventions with
   a Blender walk-through by object names, what is drawn, the warnings, the limit); `docs/guide/engine-library.md` (a solid level and a
-  character, a compiling C sample in the guide's tagged-sample form); `docs/guide/physics.md` (parented static bodies, following, scale at
+  character, a compiling C sample in the guide's tagged-sample form: **written as a worked example, untagged, like the guide's other C
+  examples**); `docs/guide/physics.md` (parented static bodies, following, scale at
   creation, the ground thickness rule: a triangle mesh has no inside, characters do not tunnel, a fast dynamic body can; snapshots in
   the same world only).
 - [x] **Closing runs** on Linux: `scripts/test-phase.sh --affected --flavor all` over the series' range and `ctest -L docs`; record the
