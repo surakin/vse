@@ -132,6 +132,18 @@ Bounds SkinBounds(const GpuMesh& mesh, f32 scale)
     return b;
 }
 
+// An object's bounds in object space: its pose's when it is skinned and has a palette the mesh can bound
+// (2026-11-20), else the mesh's, scaled for a skinned mesh by `skin_bounds_scale`.
+Bounds ObjectBounds(const GpuMesh& mesh, f32 scale, const f32* palette, u32 count)
+{
+    Bounds posed;
+    if (mesh.Skinned() && palette != nullptr && mesh.PosedBounds(palette, count, &posed))
+    {
+        return posed;
+    }
+    return SkinBounds(mesh, scale);
+}
+
 }  // namespace
 
 ObjectId RenderScene::AddObject(const RenderObjectDesc& desc)
@@ -173,7 +185,8 @@ ObjectId RenderScene::AddObject(const RenderObjectDesc& desc)
     s.object.skin_bounds_scale = desc.skin_bounds_scale;
     s.object.first_index = desc.first_index;
     s.object.index_count = desc.index_count;
-    s.object.bounds = TransformBounds(SkinBounds(*desc.mesh, desc.skin_bounds_scale), desc.transform);
+    s.local = ObjectBounds(*desc.mesh, desc.skin_bounds_scale, desc.joint_matrices, desc.joint_count);
+    s.object.bounds = TransformBounds(s.local, desc.transform);
     ++object_count_;
     IndexObject(slot);
     return ObjectId{slot, s.generation};
@@ -186,6 +199,7 @@ void RenderScene::RemoveObject(ObjectId id)
     ObjectSlot& s = objects_[id.index];
     s.alive = false;
     s.object = RenderObject();
+    s.local = Bounds();
     s.generation = NextGeneration(s.generation);
     s.next_free = free_object_;
     free_object_ = id.index;
@@ -197,16 +211,22 @@ void RenderScene::SetTransform(ObjectId id, const Mat4& transform)
     ENGINE_ASSERT(FindObject(id) != nullptr, "SetTransform: the id is invalid or stale");
     RenderObject& o = objects_[id.index].object;
     o.transform = transform;
-    o.bounds = TransformBounds(SkinBounds(*o.mesh, o.skin_bounds_scale), transform);
+    MoveBounds(id.index);
+}
+
+void RenderScene::MoveBounds(u32 slot)
+{
+    RenderObject& o = objects_[slot].object;
+    o.bounds = TransformBounds(objects_[slot].local, o.transform);
     CullIndex& index = *cull_index_;
-    if (index.handle[id.index] != spatial::kInvalidSetHandle && UsableBox(o.bounds.box))
+    if (index.handle[slot] != spatial::kInvalidSetHandle && UsableBox(o.bounds.box))
     {
-        index.set.Move(index.handle[id.index], o.bounds.box);
+        index.set.Move(index.handle[slot], o.bounds.box);
     }
     else
     {
-        UnindexObject(id.index);
-        IndexObject(id.index);
+        UnindexObject(slot);
+        IndexObject(slot);
     }
 }
 
@@ -218,6 +238,19 @@ void RenderScene::SetJointMatrices(ObjectId id, const f32* matrices, u32 count)
                   "SetJointMatrices: the mesh is rigid or the count is outside 1 to 256");
     o.joint_matrices = matrices;
     o.joint_count = matrices != nullptr ? count : 0;
+    objects_[id.index].local = ObjectBounds(*o.mesh, o.skin_bounds_scale, o.joint_matrices, o.joint_count);
+    MoveBounds(id.index);
+}
+
+void RenderScene::UpdatePoseBounds(ObjectId id)
+{
+    ENGINE_ASSERT(FindObject(id) != nullptr, "UpdatePoseBounds: the id is invalid or stale");
+    RenderObject& o = objects_[id.index].object;
+    if (o.mesh->Skinned())
+    {
+        objects_[id.index].local = ObjectBounds(*o.mesh, o.skin_bounds_scale, o.joint_matrices, o.joint_count);
+        MoveBounds(id.index);
+    }
 }
 
 void RenderScene::SetMorphWeights(ObjectId id, const f32* weights, u32 count)

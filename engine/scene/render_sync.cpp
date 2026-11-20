@@ -246,6 +246,10 @@ private:
             scene.SetJointMatrices(id, matrices, count);
             ++report.joints_set;
         }
+        else if (matrices != nullptr)
+        {
+            scene.UpdatePoseBounds(id);  // the animation system rewrote the matrices in place
+        }
     }
 
     // Points a morphed object at the entity's weights (glTF coverage Day 8), borrowed like a joint palette: only a

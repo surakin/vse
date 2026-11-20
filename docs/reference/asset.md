@@ -8493,6 +8493,21 @@ The bind-pose box of joint `i`'s influence set.
 |---|---|
 | Aborts | `i` is not below `SkinJointCount()`. |
 
+### `JointBoundsBytes()` {#asset-meshview-jointboundsbytes-const}
+
+`method asset::MeshView::JointBoundsBytes` — defined in `engine/asset/mesh.h`
+
+```cpp
+ByteSpan JointBoundsBytes() const;
+```
+
+The joint bounds section: [`asset::MeshView::SkinJointCount`](#asset-meshview-skinjointcount-const) records of 32 bytes (minimum `f32x3`, maximum `f32x3`, a `u32` that is 1 when the joint has vertices, 4 bytes of padding); empty for a rigid mesh.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | borrowed from the blob. |
+
 ### `CheckSkeleton(const SkeletonView&)` {#asset-meshview-checkskeleton-const-skeletonview-amp-const}
 
 `method asset::MeshView::CheckSkeleton` — defined in `engine/asset/mesh.h`

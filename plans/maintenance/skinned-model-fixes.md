@@ -60,7 +60,28 @@ thousands of times the model. The importer does not warn about such targets.
 4. The framing leaves out the morphed meshes when others exist, so this model's head (its morphed meshes) is partly out of the
    picture: fixed by the framing change above (it was not the morphed meshes but the bind pose).
 
-The framing change's review: 1 finding, recorded. The renderer culls a skinned object by its bind-pose mesh bounds under the entity's
+- [x] **Culling by the pose** (asked by the user after the framing commit): a skinned mesh loaded from a blob carries the blob's
+  joint bounds (`MeshGeometry::joint_bounds_offset`, offsets into its shared bytes, `asset::MeshView::JointBoundsBytes`); the render
+  scene bounds a skinned object by `GpuMesh::PosedBounds` (each joint's box under its palette matrix, grown by what morph targets add
+  under the pose's largest scale) under its transform. `SetJointMatrices` and the new `UpdatePoseBounds` read the palette and cache
+  the object-space bounds; `SetTransform` reuses them, so it never reads a palette `scene::RenderSync` has not refreshed yet (that
+  step moves objects before it hands out new palette pointers). `RenderSync` calls `UpdatePoseBounds` for every skinned entity each
+  frame. A mesh without joint bounds (made from `MeshData`) keeps its bind-pose bounds times `skin_bounds_scale`.
+  - Test: "A skinned object with joint bounds is culled by its pose, not by its bind-pose box": a ribbon posed 100 units away is
+    seen by a camera over the pose and not by one over the bind pose; an in-place palette change followed by `UpdatePoseBounds`
+    moves it back; a move after its palette is freed reads nothing (asan); a morphed copy's box grows by its targets' 3 units. It
+    fails with the pose ignored, and its morph part fails without the padding.
+  - Runs: `ran 1669 of 11530 tests (phases: 3 4 5 17 18 22 27; flavors: plain; display: excluded; crash tests: excluded; soak:
+    excluded) in 49 s`, no failures; before the morph padding, `--flavor asan` `ran 1550 of 11529 tests (...) in 77 s` and
+    `--flavor tsan` `ran 1263 of 11530 tests (...) in 75 s`, no failures; after it the test passes plain and asan; docs 9 of 9. The
+    user's model draws as before (the viewer keeps its own framing, without the morph growth, which this file's broken targets
+    would blow up).
+  - Review: 4 findings. Fixed: `SetTransform` read a palette that may have been freed (found while writing the test); the posed
+    bounds dropped the morph targets' reach. Kept: the bounds of every skinned object are recomputed each frame (they move each
+    frame anyway; a pose-changed flag would need the animation system to report it); a host animating its palettes without
+    `RenderSync` must call `UpdatePoseBounds` (documented on the call).
+
+The framing change's review: 1 finding, recorded (now fixed by the culling change above). The renderer culls a skinned object by its bind-pose mesh bounds under the entity's
 transform (`SkinBounds`), so a file like this one, whose rest pose is not its bind pose, can be culled while on screen
 (`KNOWN-ISSUES.md`); the joint bounds moved by the palette, as the viewer now frames, would be the fix.
 

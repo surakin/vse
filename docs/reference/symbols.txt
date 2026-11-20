@@ -8034,9 +8034,10 @@ asset::MeshView::Skeleton() const	function	asset	asset-meshview-skeleton-const	a
 asset::MeshView::SkeletonHash() const	function	asset	asset-meshview-skeletonhash-const	asset.md	engine/asset/mesh.h:328
 asset::MeshView::SkinJointCount() const	function	asset	asset-meshview-skinjointcount-const	asset.md	engine/asset/mesh.h:330
 asset::MeshView::JointBounds(u32) const	function	asset	asset-meshview-jointbounds-u32-const	asset.md	engine/asset/mesh.h:334
-asset::MeshView::CheckSkeleton(const SkeletonView&) const	function	asset	asset-meshview-checkskeleton-const-skeletonview-amp-const	asset.md	engine/asset/mesh.h:340
-asset::MeshView::CheckIndices() const	function	asset	asset-meshview-checkindices-const	asset.md	engine/asset/mesh.h:345
-asset::MeshView::CheckSkin() const	function	asset	asset-meshview-checkskin-const	asset.md	engine/asset/mesh.h:351
+asset::MeshView::JointBoundsBytes() const	function	asset	asset-meshview-jointboundsbytes-const	asset.md	engine/asset/mesh.h:340
+asset::MeshView::CheckSkeleton(const SkeletonView&) const	function	asset	asset-meshview-checkskeleton-const-skeletonview-amp-const	asset.md	engine/asset/mesh.h:346
+asset::MeshView::CheckIndices() const	function	asset	asset-meshview-checkindices-const	asset.md	engine/asset/mesh.h:351
+asset::MeshView::CheckSkin() const	function	asset	asset-meshview-checkskin-const	asset.md	engine/asset/mesh.h:357
 asset::kMaxMeshColliderVertices	variable	asset	asset-kmaxmeshcollidervertices	asset.md	engine/asset/mesh_collider.h:21
 asset::kMaxMeshColliderTriangles	variable	asset	asset-kmaxmeshcollidertriangles	asset.md	engine/asset/mesh_collider.h:23
 asset::kMeshColliderHeaderBytes	variable	asset	asset-kmeshcolliderheaderbytes	asset.md	engine/asset/mesh_collider.h:25
@@ -12539,119 +12540,123 @@ renderer::kMaxMeshRanges	variable	renderer	renderer-kmaxmeshranges	renderer.md	e
 renderer::MeshRange	struct	renderer	renderer-meshrange	renderer.md	engine/renderer/mesh.h:94
 renderer::MeshRange::first_index	variable	renderer	renderer-meshrange-first-index	renderer.md	engine/renderer/mesh.h:96
 renderer::MeshRange::index_count	variable	renderer	renderer-meshrange-index-count	renderer.md	engine/renderer/mesh.h:97
-renderer::kMaxMeshMorphTargets	variable	renderer	renderer-kmaxmeshmorphtargets	renderer.md	engine/renderer/mesh.h:106
-renderer::kMaxActiveMorphTargets	variable	renderer	renderer-kmaxactivemorphtargets	renderer.md	engine/renderer/mesh.h:108
-renderer::kMorphDeltaBytes	variable	renderer	renderer-kmorphdeltabytes	renderer.md	engine/renderer/mesh.h:110
-renderer::MeshMorphRange	struct	renderer	renderer-meshmorphrange	renderer.md	engine/renderer/mesh.h:115
-renderer::MeshMorphRange::first_delta	variable	renderer	renderer-meshmorphrange-first-delta	renderer.md	engine/renderer/mesh.h:117
-renderer::MeshMorphRange::delta_count	variable	renderer	renderer-meshmorphrange-delta-count	renderer.md	engine/renderer/mesh.h:118
-renderer::MeshGeometry	struct	renderer	renderer-meshgeometry	renderer.md	engine/renderer/mesh.h:128
-renderer::MeshGeometry::layout	variable	renderer	renderer-meshgeometry-layout	renderer.md	engine/renderer/mesh.h:130
-renderer::MeshGeometry::bytes	variable	renderer	renderer-meshgeometry-bytes	renderer.md	engine/renderer/mesh.h:131
-renderer::MeshGeometry::vertex_offset	variable	renderer	renderer-meshgeometry-vertex-offset	renderer.md	engine/renderer/mesh.h:132
-renderer::MeshGeometry::vertex_count	variable	renderer	renderer-meshgeometry-vertex-count	renderer.md	engine/renderer/mesh.h:133
-renderer::MeshGeometry::index_type	variable	renderer	renderer-meshgeometry-index-type	renderer.md	engine/renderer/mesh.h:134
-renderer::MeshGeometry::index_offset	variable	renderer	renderer-meshgeometry-index-offset	renderer.md	engine/renderer/mesh.h:135
-renderer::MeshGeometry::index_count	variable	renderer	renderer-meshgeometry-index-count	renderer.md	engine/renderer/mesh.h:136
-renderer::MeshGeometry::topology	variable	renderer	renderer-meshgeometry-topology	renderer.md	engine/renderer/mesh.h:137
-renderer::MeshGeometry::bounds	variable	renderer	renderer-meshgeometry-bounds	renderer.md	engine/renderer/mesh.h:138
-renderer::MeshGeometry::skin_offset	variable	renderer	renderer-meshgeometry-skin-offset	renderer.md	engine/renderer/mesh.h:139
-renderer::MeshGeometry::skin_joint_count	variable	renderer	renderer-meshgeometry-skin-joint-count	renderer.md	engine/renderer/mesh.h:140
-renderer::MeshGeometry::ranges	variable	renderer	renderer-meshgeometry-ranges	renderer.md	engine/renderer/mesh.h:141
-renderer::MeshGeometry::range_count	variable	renderer	renderer-meshgeometry-range-count	renderer.md	engine/renderer/mesh.h:142
-renderer::MeshGeometry::morph_delta_offset	variable	renderer	renderer-meshgeometry-morph-delta-offset	renderer.md	engine/renderer/mesh.h:144
-renderer::MeshGeometry::morph_delta_count	variable	renderer	renderer-meshgeometry-morph-delta-count	renderer.md	engine/renderer/mesh.h:145
-renderer::MeshGeometry::morph_target_count	variable	renderer	renderer-meshgeometry-morph-target-count	renderer.md	engine/renderer/mesh.h:146
-renderer::MeshGeometry::morph_targets	variable	renderer	renderer-meshgeometry-morph-targets	renderer.md	engine/renderer/mesh.h:147
-renderer::MeshGeometry::Validate() const	function	renderer	renderer-meshgeometry-validate-const	renderer.md	engine/renderer/mesh.h:159
-renderer::MeshData	class	renderer	renderer-meshdata	renderer.md	engine/renderer/mesh.h:169
-renderer::MeshData::MeshData()	function	renderer	renderer-meshdata-meshdata	renderer.md	engine/renderer/mesh.h:172
-renderer::MeshData::~MeshData()	function	renderer	renderer-meshdata-tilde-meshdata	renderer.md	engine/renderer/mesh.h:174
-renderer::MeshData::MeshData(MeshData&&) noexcept	function	renderer	renderer-meshdata-meshdata-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:176
-renderer::MeshData::operator=(MeshData&&) noexcept	function	renderer	renderer-meshdata-operator-eq-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:178
-renderer::MeshData::MeshData(const MeshData&)	function	renderer	renderer-meshdata-meshdata-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:179
-renderer::MeshData::operator=(const MeshData&)	function	renderer	renderer-meshdata-operator-eq-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:180
-renderer::MeshData::Set(const VertexLayoutData&,u32,const void*,u32,rhi::IndexType,const void*,u32,rhi::PrimitiveTopology)	function	renderer	renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology	renderer.md	engine/renderer/mesh.h:202
-renderer::MeshData::SetSkin(const void*,u32)	function	renderer	renderer-meshdata-setskin-const-void-star-u32	renderer.md	engine/renderer/mesh.h:218
-renderer::MeshData::SetRanges(const MeshRange*,u32)	function	renderer	renderer-meshdata-setranges-const-meshrange-star-u32	renderer.md	engine/renderer/mesh.h:229
-renderer::MeshData::RangeCount() const	function	renderer	renderer-meshdata-rangecount-const	renderer.md	engine/renderer/mesh.h:232
-renderer::MeshData::Ranges() const	function	renderer	renderer-meshdata-ranges-const	renderer.md	engine/renderer/mesh.h:235
-renderer::MeshData::Skinned() const	function	renderer	renderer-meshdata-skinned-const	renderer.md	engine/renderer/mesh.h:239
-renderer::MeshData::SkinBytes() const	function	renderer	renderer-meshdata-skinbytes-const	renderer.md	engine/renderer/mesh.h:243
-renderer::MeshData::SkinByteCount() const	function	renderer	renderer-meshdata-skinbytecount-const	renderer.md	engine/renderer/mesh.h:246
-renderer::MeshData::SkinJointCount() const	function	renderer	renderer-meshdata-skinjointcount-const	renderer.md	engine/renderer/mesh.h:250
-renderer::MeshData::Valid() const	function	renderer	renderer-meshdata-valid-const	renderer.md	engine/renderer/mesh.h:254
-renderer::MeshData::Layout() const	function	renderer	renderer-meshdata-layout-const	renderer.md	engine/renderer/mesh.h:256
-renderer::MeshData::Vertices() const	function	renderer	renderer-meshdata-vertices-const	renderer.md	engine/renderer/mesh.h:260
-renderer::MeshData::VertexCount() const	function	renderer	renderer-meshdata-vertexcount-const	renderer.md	engine/renderer/mesh.h:262
-renderer::MeshData::VertexBytes() const	function	renderer	renderer-meshdata-vertexbytes-const	renderer.md	engine/renderer/mesh.h:264
-renderer::MeshData::Indices() const	function	renderer	renderer-meshdata-indices-const	renderer.md	engine/renderer/mesh.h:268
-renderer::MeshData::IndexCount() const	function	renderer	renderer-meshdata-indexcount-const	renderer.md	engine/renderer/mesh.h:270
-renderer::MeshData::IndexFormat() const	function	renderer	renderer-meshdata-indexformat-const	renderer.md	engine/renderer/mesh.h:272
-renderer::MeshData::IndexBytes() const	function	renderer	renderer-meshdata-indexbytes-const	renderer.md	engine/renderer/mesh.h:274
-renderer::MeshData::CopyGeometry() const	function	renderer	renderer-meshdata-copygeometry-const	renderer.md	engine/renderer/mesh.h:280
-renderer::MeshData::GetBounds() const	function	renderer	renderer-meshdata-getbounds-const	renderer.md	engine/renderer/mesh.h:282
-renderer::MeshData::Topology() const	function	renderer	renderer-meshdata-topology-const	renderer.md	engine/renderer/mesh.h:285
-renderer::MeshData::HasPrimitiveRestart() const	function	renderer	renderer-meshdata-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:289
-renderer::MeshData::PositionOffset() const	function	renderer	renderer-meshdata-positionoffset-const	renderer.md	engine/renderer/mesh.h:293
-renderer::MeshData::IndexAt(u32) const	function	renderer	renderer-meshdata-indexat-u32-const	renderer.md	engine/renderer/mesh.h:296
-renderer::MeshData::PositionAt(u32) const	function	renderer	renderer-meshdata-positionat-u32-const	renderer.md	engine/renderer/mesh.h:300
-renderer::MeshDataPtr	alias	renderer	renderer-meshdataptr	renderer.md	engine/renderer/mesh.h:322
-renderer::MeshDataConstPtr	alias	renderer	renderer-meshdataconstptr	renderer.md	engine/renderer/mesh.h:324
-renderer::MakeCubeMesh(f32,MeshData*)	function	renderer	renderer-makecubemesh-f32-meshdata-star	renderer.md	engine/renderer/mesh.h:336
-renderer::MakeSphereMesh(f32,u32,u32,MeshData*)	function	renderer	renderer-makespheremesh-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:352
-renderer::MakePlaneMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanemesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:367
-renderer::MakePlaneStripMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanestripmesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:383
-renderer::MakeColoredMesh(const MeshData&,const u8*,u32,MeshData*)	function	renderer	renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:398
-renderer::MakeUniformColoredMesh(const MeshData&,const u8[4],MeshData*)	function	renderer	renderer-makeuniformcoloredmesh-const-meshdata-amp-const-u8-4-meshdata-star	renderer.md	engine/renderer/mesh.h:409
-renderer::StripJoin	enum	renderer	renderer-stripjoin	renderer.md	engine/renderer/mesh.h:412
-renderer::StripJoin::Restart	enumerator	renderer	renderer-stripjoin-restart	renderer.md	engine/renderer/mesh.h:414
-renderer::StripJoin::Degenerate	enumerator	renderer	renderer-stripjoin-degenerate	renderer.md	engine/renderer/mesh.h:415
-renderer::StripToList(const MeshData&,MeshData*)	function	renderer	renderer-striptolist-const-meshdata-amp-meshdata-star	renderer.md	engine/renderer/mesh.h:428
-renderer::ListToStrip(const MeshData&,StripJoin,MeshData*)	function	renderer	renderer-listtostrip-const-meshdata-amp-stripjoin-meshdata-star	renderer.md	engine/renderer/mesh.h:445
-renderer::GpuMesh	class	renderer	renderer-gpumesh	renderer.md	engine/renderer/mesh.h:457
-renderer::GpuMesh::GpuMesh()	function	renderer	renderer-gpumesh-gpumesh	renderer.md	engine/renderer/mesh.h:460
-renderer::GpuMesh::~GpuMesh()	function	renderer	renderer-gpumesh-tilde-gpumesh	renderer.md	engine/renderer/mesh.h:462
-renderer::GpuMesh::GpuMesh(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-gpumesh-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:464
-renderer::GpuMesh::operator=(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-operator-eq-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:466
-renderer::GpuMesh::GpuMesh(const GpuMesh&)	function	renderer	renderer-gpumesh-gpumesh-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:467
-renderer::GpuMesh::operator=(const GpuMesh&)	function	renderer	renderer-gpumesh-operator-eq-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:468
-renderer::GpuMesh::Create(rhi::Device*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-create-rhi-device-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:479
-renderer::GpuMesh::Destroy()	function	renderer	renderer-gpumesh-destroy	renderer.md	engine/renderer/mesh.h:483
-renderer::GpuMesh::CreateFromGeometry(rhi::Device*,const MeshGeometry&,DeviceResources*,const char*)	function	renderer	renderer-gpumesh-createfromgeometry-rhi-device-star-const-meshgeometry-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/mesh.h:497
-renderer::GpuMesh::MakeRecreatable(DeviceResources*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-makerecreatable-deviceresources-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:513
-renderer::GpuMesh::Release()	function	renderer	renderer-gpumesh-release	renderer.md	engine/renderer/mesh.h:517
-renderer::GpuMesh::Recreate(rhi::Device*)	function	renderer	renderer-gpumesh-recreate-rhi-device-star	renderer.md	engine/renderer/mesh.h:526
-renderer::GpuMesh::Live() const	function	renderer	renderer-gpumesh-live-const	renderer.md	engine/renderer/mesh.h:531
-renderer::GpuMesh::RecreatableName() const	function	renderer	renderer-gpumesh-recreatablename-const	renderer.md	engine/renderer/mesh.h:532
-renderer::GpuMesh::Valid() const	function	renderer	renderer-gpumesh-valid-const	renderer.md	engine/renderer/mesh.h:536
-renderer::GpuMesh::VertexBuffer() const	function	renderer	renderer-gpumesh-vertexbuffer-const	renderer.md	engine/renderer/mesh.h:538
-renderer::GpuMesh::IndexBuffer() const	function	renderer	renderer-gpumesh-indexbuffer-const	renderer.md	engine/renderer/mesh.h:540
-renderer::GpuMesh::SkinBuffer() const	function	renderer	renderer-gpumesh-skinbuffer-const	renderer.md	engine/renderer/mesh.h:542
-renderer::GpuMesh::SkinJointCount() const	function	renderer	renderer-gpumesh-skinjointcount-const	renderer.md	engine/renderer/mesh.h:546
-renderer::GpuMesh::Skinned() const	function	renderer	renderer-gpumesh-skinned-const	renderer.md	engine/renderer/mesh.h:549
-renderer::GpuMesh::IndexCount() const	function	renderer	renderer-gpumesh-indexcount-const	renderer.md	engine/renderer/mesh.h:551
-renderer::GpuMesh::VertexCount() const	function	renderer	renderer-gpumesh-vertexcount-const	renderer.md	engine/renderer/mesh.h:553
-renderer::GpuMesh::IndexFormat() const	function	renderer	renderer-gpumesh-indexformat-const	renderer.md	engine/renderer/mesh.h:555
-renderer::GpuMesh::Layout() const	function	renderer	renderer-gpumesh-layout-const	renderer.md	engine/renderer/mesh.h:557
-renderer::GpuMesh::Topology() const	function	renderer	renderer-gpumesh-topology-const	renderer.md	engine/renderer/mesh.h:560
-renderer::GpuMesh::HasPrimitiveRestart() const	function	renderer	renderer-gpumesh-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:563
-renderer::GpuMesh::GetBounds() const	function	renderer	renderer-gpumesh-getbounds-const	renderer.md	engine/renderer/mesh.h:565
-renderer::GpuMesh::MorphTargetCount() const	function	renderer	renderer-gpumesh-morphtargetcount-const	renderer.md	engine/renderer/mesh.h:568
-renderer::GpuMesh::MorphTarget(u32) const	function	renderer	renderer-gpumesh-morphtarget-u32-const	renderer.md	engine/renderer/mesh.h:571
-renderer::GpuMesh::MorphBuffer() const	function	renderer	renderer-gpumesh-morphbuffer-const	renderer.md	engine/renderer/mesh.h:575
-renderer::GpuMesh::MorphDeltaCount() const	function	renderer	renderer-gpumesh-morphdeltacount-const	renderer.md	engine/renderer/mesh.h:578
-renderer::GpuMesh::RangeCount() const	function	renderer	renderer-gpumesh-rangecount-const	renderer.md	engine/renderer/mesh.h:581
-renderer::GpuMesh::Range(u32) const	function	renderer	renderer-gpumesh-range-u32-const	renderer.md	engine/renderer/mesh.h:584
-renderer::GpuMesh::SortId() const	function	renderer	renderer-gpumesh-sortid-const	renderer.md	engine/renderer/mesh.h:588
-renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-gpumesh-recordprepare-rhi-commandlist-star	renderer.md	engine/renderer/mesh.h:596
-renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:599
-renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:603
-renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:614
-renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-u32-u32-const	renderer.md	engine/renderer/mesh.h:621
-renderer::GpuMesh::DrawWithVertices(rhi::CommandList*,rhi::BufferHandle,u64,u32,u32,u32,u32) const	function	renderer	renderer-gpumesh-drawwithvertices-rhi-commandlist-star-rhi-bufferhandle-u64-u32-u32-u32-u32-const	renderer.md	engine/renderer/mesh.h:632
-renderer::GpuMeshPtr	alias	renderer	renderer-gpumeshptr	renderer.md	engine/renderer/mesh.h:671
-renderer::GpuMeshConstPtr	alias	renderer	renderer-gpumeshconstptr	renderer.md	engine/renderer/mesh.h:673
+renderer::kJointBoundsBytes	variable	renderer	renderer-kjointboundsbytes	renderer.md	engine/renderer/mesh.h:106
+renderer::kMaxMeshMorphTargets	variable	renderer	renderer-kmaxmeshmorphtargets	renderer.md	engine/renderer/mesh.h:108
+renderer::kMaxActiveMorphTargets	variable	renderer	renderer-kmaxactivemorphtargets	renderer.md	engine/renderer/mesh.h:110
+renderer::kMorphDeltaBytes	variable	renderer	renderer-kmorphdeltabytes	renderer.md	engine/renderer/mesh.h:112
+renderer::MeshMorphRange	struct	renderer	renderer-meshmorphrange	renderer.md	engine/renderer/mesh.h:117
+renderer::MeshMorphRange::first_delta	variable	renderer	renderer-meshmorphrange-first-delta	renderer.md	engine/renderer/mesh.h:119
+renderer::MeshMorphRange::delta_count	variable	renderer	renderer-meshmorphrange-delta-count	renderer.md	engine/renderer/mesh.h:120
+renderer::MeshGeometry	struct	renderer	renderer-meshgeometry	renderer.md	engine/renderer/mesh.h:130
+renderer::MeshGeometry::layout	variable	renderer	renderer-meshgeometry-layout	renderer.md	engine/renderer/mesh.h:132
+renderer::MeshGeometry::bytes	variable	renderer	renderer-meshgeometry-bytes	renderer.md	engine/renderer/mesh.h:133
+renderer::MeshGeometry::vertex_offset	variable	renderer	renderer-meshgeometry-vertex-offset	renderer.md	engine/renderer/mesh.h:134
+renderer::MeshGeometry::vertex_count	variable	renderer	renderer-meshgeometry-vertex-count	renderer.md	engine/renderer/mesh.h:135
+renderer::MeshGeometry::index_type	variable	renderer	renderer-meshgeometry-index-type	renderer.md	engine/renderer/mesh.h:136
+renderer::MeshGeometry::index_offset	variable	renderer	renderer-meshgeometry-index-offset	renderer.md	engine/renderer/mesh.h:137
+renderer::MeshGeometry::index_count	variable	renderer	renderer-meshgeometry-index-count	renderer.md	engine/renderer/mesh.h:138
+renderer::MeshGeometry::topology	variable	renderer	renderer-meshgeometry-topology	renderer.md	engine/renderer/mesh.h:139
+renderer::MeshGeometry::bounds	variable	renderer	renderer-meshgeometry-bounds	renderer.md	engine/renderer/mesh.h:140
+renderer::MeshGeometry::skin_offset	variable	renderer	renderer-meshgeometry-skin-offset	renderer.md	engine/renderer/mesh.h:141
+renderer::MeshGeometry::skin_joint_count	variable	renderer	renderer-meshgeometry-skin-joint-count	renderer.md	engine/renderer/mesh.h:142
+renderer::MeshGeometry::joint_bounds_offset	variable	renderer	renderer-meshgeometry-joint-bounds-offset	renderer.md	engine/renderer/mesh.h:146
+renderer::MeshGeometry::has_joint_bounds	variable	renderer	renderer-meshgeometry-has-joint-bounds	renderer.md	engine/renderer/mesh.h:147
+renderer::MeshGeometry::ranges	variable	renderer	renderer-meshgeometry-ranges	renderer.md	engine/renderer/mesh.h:148
+renderer::MeshGeometry::range_count	variable	renderer	renderer-meshgeometry-range-count	renderer.md	engine/renderer/mesh.h:149
+renderer::MeshGeometry::morph_delta_offset	variable	renderer	renderer-meshgeometry-morph-delta-offset	renderer.md	engine/renderer/mesh.h:151
+renderer::MeshGeometry::morph_delta_count	variable	renderer	renderer-meshgeometry-morph-delta-count	renderer.md	engine/renderer/mesh.h:152
+renderer::MeshGeometry::morph_target_count	variable	renderer	renderer-meshgeometry-morph-target-count	renderer.md	engine/renderer/mesh.h:153
+renderer::MeshGeometry::morph_targets	variable	renderer	renderer-meshgeometry-morph-targets	renderer.md	engine/renderer/mesh.h:154
+renderer::MeshGeometry::Validate() const	function	renderer	renderer-meshgeometry-validate-const	renderer.md	engine/renderer/mesh.h:166
+renderer::MeshData	class	renderer	renderer-meshdata	renderer.md	engine/renderer/mesh.h:176
+renderer::MeshData::MeshData()	function	renderer	renderer-meshdata-meshdata	renderer.md	engine/renderer/mesh.h:179
+renderer::MeshData::~MeshData()	function	renderer	renderer-meshdata-tilde-meshdata	renderer.md	engine/renderer/mesh.h:181
+renderer::MeshData::MeshData(MeshData&&) noexcept	function	renderer	renderer-meshdata-meshdata-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:183
+renderer::MeshData::operator=(MeshData&&) noexcept	function	renderer	renderer-meshdata-operator-eq-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:185
+renderer::MeshData::MeshData(const MeshData&)	function	renderer	renderer-meshdata-meshdata-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:186
+renderer::MeshData::operator=(const MeshData&)	function	renderer	renderer-meshdata-operator-eq-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:187
+renderer::MeshData::Set(const VertexLayoutData&,u32,const void*,u32,rhi::IndexType,const void*,u32,rhi::PrimitiveTopology)	function	renderer	renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology	renderer.md	engine/renderer/mesh.h:209
+renderer::MeshData::SetSkin(const void*,u32)	function	renderer	renderer-meshdata-setskin-const-void-star-u32	renderer.md	engine/renderer/mesh.h:225
+renderer::MeshData::SetRanges(const MeshRange*,u32)	function	renderer	renderer-meshdata-setranges-const-meshrange-star-u32	renderer.md	engine/renderer/mesh.h:236
+renderer::MeshData::RangeCount() const	function	renderer	renderer-meshdata-rangecount-const	renderer.md	engine/renderer/mesh.h:239
+renderer::MeshData::Ranges() const	function	renderer	renderer-meshdata-ranges-const	renderer.md	engine/renderer/mesh.h:242
+renderer::MeshData::Skinned() const	function	renderer	renderer-meshdata-skinned-const	renderer.md	engine/renderer/mesh.h:246
+renderer::MeshData::SkinBytes() const	function	renderer	renderer-meshdata-skinbytes-const	renderer.md	engine/renderer/mesh.h:250
+renderer::MeshData::SkinByteCount() const	function	renderer	renderer-meshdata-skinbytecount-const	renderer.md	engine/renderer/mesh.h:253
+renderer::MeshData::SkinJointCount() const	function	renderer	renderer-meshdata-skinjointcount-const	renderer.md	engine/renderer/mesh.h:257
+renderer::MeshData::Valid() const	function	renderer	renderer-meshdata-valid-const	renderer.md	engine/renderer/mesh.h:261
+renderer::MeshData::Layout() const	function	renderer	renderer-meshdata-layout-const	renderer.md	engine/renderer/mesh.h:263
+renderer::MeshData::Vertices() const	function	renderer	renderer-meshdata-vertices-const	renderer.md	engine/renderer/mesh.h:267
+renderer::MeshData::VertexCount() const	function	renderer	renderer-meshdata-vertexcount-const	renderer.md	engine/renderer/mesh.h:269
+renderer::MeshData::VertexBytes() const	function	renderer	renderer-meshdata-vertexbytes-const	renderer.md	engine/renderer/mesh.h:271
+renderer::MeshData::Indices() const	function	renderer	renderer-meshdata-indices-const	renderer.md	engine/renderer/mesh.h:275
+renderer::MeshData::IndexCount() const	function	renderer	renderer-meshdata-indexcount-const	renderer.md	engine/renderer/mesh.h:277
+renderer::MeshData::IndexFormat() const	function	renderer	renderer-meshdata-indexformat-const	renderer.md	engine/renderer/mesh.h:279
+renderer::MeshData::IndexBytes() const	function	renderer	renderer-meshdata-indexbytes-const	renderer.md	engine/renderer/mesh.h:281
+renderer::MeshData::CopyGeometry() const	function	renderer	renderer-meshdata-copygeometry-const	renderer.md	engine/renderer/mesh.h:287
+renderer::MeshData::GetBounds() const	function	renderer	renderer-meshdata-getbounds-const	renderer.md	engine/renderer/mesh.h:289
+renderer::MeshData::Topology() const	function	renderer	renderer-meshdata-topology-const	renderer.md	engine/renderer/mesh.h:292
+renderer::MeshData::HasPrimitiveRestart() const	function	renderer	renderer-meshdata-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:296
+renderer::MeshData::PositionOffset() const	function	renderer	renderer-meshdata-positionoffset-const	renderer.md	engine/renderer/mesh.h:300
+renderer::MeshData::IndexAt(u32) const	function	renderer	renderer-meshdata-indexat-u32-const	renderer.md	engine/renderer/mesh.h:303
+renderer::MeshData::PositionAt(u32) const	function	renderer	renderer-meshdata-positionat-u32-const	renderer.md	engine/renderer/mesh.h:307
+renderer::MeshDataPtr	alias	renderer	renderer-meshdataptr	renderer.md	engine/renderer/mesh.h:329
+renderer::MeshDataConstPtr	alias	renderer	renderer-meshdataconstptr	renderer.md	engine/renderer/mesh.h:331
+renderer::MakeCubeMesh(f32,MeshData*)	function	renderer	renderer-makecubemesh-f32-meshdata-star	renderer.md	engine/renderer/mesh.h:343
+renderer::MakeSphereMesh(f32,u32,u32,MeshData*)	function	renderer	renderer-makespheremesh-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:359
+renderer::MakePlaneMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanemesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:374
+renderer::MakePlaneStripMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanestripmesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:390
+renderer::MakeColoredMesh(const MeshData&,const u8*,u32,MeshData*)	function	renderer	renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:405
+renderer::MakeUniformColoredMesh(const MeshData&,const u8[4],MeshData*)	function	renderer	renderer-makeuniformcoloredmesh-const-meshdata-amp-const-u8-4-meshdata-star	renderer.md	engine/renderer/mesh.h:416
+renderer::StripJoin	enum	renderer	renderer-stripjoin	renderer.md	engine/renderer/mesh.h:419
+renderer::StripJoin::Restart	enumerator	renderer	renderer-stripjoin-restart	renderer.md	engine/renderer/mesh.h:421
+renderer::StripJoin::Degenerate	enumerator	renderer	renderer-stripjoin-degenerate	renderer.md	engine/renderer/mesh.h:422
+renderer::StripToList(const MeshData&,MeshData*)	function	renderer	renderer-striptolist-const-meshdata-amp-meshdata-star	renderer.md	engine/renderer/mesh.h:435
+renderer::ListToStrip(const MeshData&,StripJoin,MeshData*)	function	renderer	renderer-listtostrip-const-meshdata-amp-stripjoin-meshdata-star	renderer.md	engine/renderer/mesh.h:452
+renderer::GpuMesh	class	renderer	renderer-gpumesh	renderer.md	engine/renderer/mesh.h:464
+renderer::GpuMesh::GpuMesh()	function	renderer	renderer-gpumesh-gpumesh	renderer.md	engine/renderer/mesh.h:467
+renderer::GpuMesh::~GpuMesh()	function	renderer	renderer-gpumesh-tilde-gpumesh	renderer.md	engine/renderer/mesh.h:469
+renderer::GpuMesh::GpuMesh(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-gpumesh-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:471
+renderer::GpuMesh::operator=(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-operator-eq-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:473
+renderer::GpuMesh::GpuMesh(const GpuMesh&)	function	renderer	renderer-gpumesh-gpumesh-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:474
+renderer::GpuMesh::operator=(const GpuMesh&)	function	renderer	renderer-gpumesh-operator-eq-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:475
+renderer::GpuMesh::Create(rhi::Device*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-create-rhi-device-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:486
+renderer::GpuMesh::Destroy()	function	renderer	renderer-gpumesh-destroy	renderer.md	engine/renderer/mesh.h:490
+renderer::GpuMesh::CreateFromGeometry(rhi::Device*,const MeshGeometry&,DeviceResources*,const char*)	function	renderer	renderer-gpumesh-createfromgeometry-rhi-device-star-const-meshgeometry-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/mesh.h:504
+renderer::GpuMesh::MakeRecreatable(DeviceResources*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-makerecreatable-deviceresources-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:520
+renderer::GpuMesh::Release()	function	renderer	renderer-gpumesh-release	renderer.md	engine/renderer/mesh.h:524
+renderer::GpuMesh::Recreate(rhi::Device*)	function	renderer	renderer-gpumesh-recreate-rhi-device-star	renderer.md	engine/renderer/mesh.h:533
+renderer::GpuMesh::Live() const	function	renderer	renderer-gpumesh-live-const	renderer.md	engine/renderer/mesh.h:538
+renderer::GpuMesh::RecreatableName() const	function	renderer	renderer-gpumesh-recreatablename-const	renderer.md	engine/renderer/mesh.h:539
+renderer::GpuMesh::Valid() const	function	renderer	renderer-gpumesh-valid-const	renderer.md	engine/renderer/mesh.h:543
+renderer::GpuMesh::VertexBuffer() const	function	renderer	renderer-gpumesh-vertexbuffer-const	renderer.md	engine/renderer/mesh.h:545
+renderer::GpuMesh::IndexBuffer() const	function	renderer	renderer-gpumesh-indexbuffer-const	renderer.md	engine/renderer/mesh.h:547
+renderer::GpuMesh::SkinBuffer() const	function	renderer	renderer-gpumesh-skinbuffer-const	renderer.md	engine/renderer/mesh.h:549
+renderer::GpuMesh::SkinJointCount() const	function	renderer	renderer-gpumesh-skinjointcount-const	renderer.md	engine/renderer/mesh.h:553
+renderer::GpuMesh::Skinned() const	function	renderer	renderer-gpumesh-skinned-const	renderer.md	engine/renderer/mesh.h:556
+renderer::GpuMesh::IndexCount() const	function	renderer	renderer-gpumesh-indexcount-const	renderer.md	engine/renderer/mesh.h:558
+renderer::GpuMesh::VertexCount() const	function	renderer	renderer-gpumesh-vertexcount-const	renderer.md	engine/renderer/mesh.h:560
+renderer::GpuMesh::IndexFormat() const	function	renderer	renderer-gpumesh-indexformat-const	renderer.md	engine/renderer/mesh.h:562
+renderer::GpuMesh::Layout() const	function	renderer	renderer-gpumesh-layout-const	renderer.md	engine/renderer/mesh.h:564
+renderer::GpuMesh::Topology() const	function	renderer	renderer-gpumesh-topology-const	renderer.md	engine/renderer/mesh.h:567
+renderer::GpuMesh::HasPrimitiveRestart() const	function	renderer	renderer-gpumesh-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:570
+renderer::GpuMesh::GetBounds() const	function	renderer	renderer-gpumesh-getbounds-const	renderer.md	engine/renderer/mesh.h:572
+renderer::GpuMesh::PosedBounds(const f32*,u32,Bounds*) const	function	renderer	renderer-gpumesh-posedbounds-const-f32-star-u32-bounds-star-const	renderer.md	engine/renderer/mesh.h:585
+renderer::GpuMesh::MorphTargetCount() const	function	renderer	renderer-gpumesh-morphtargetcount-const	renderer.md	engine/renderer/mesh.h:588
+renderer::GpuMesh::MorphTarget(u32) const	function	renderer	renderer-gpumesh-morphtarget-u32-const	renderer.md	engine/renderer/mesh.h:591
+renderer::GpuMesh::MorphBuffer() const	function	renderer	renderer-gpumesh-morphbuffer-const	renderer.md	engine/renderer/mesh.h:595
+renderer::GpuMesh::MorphDeltaCount() const	function	renderer	renderer-gpumesh-morphdeltacount-const	renderer.md	engine/renderer/mesh.h:598
+renderer::GpuMesh::RangeCount() const	function	renderer	renderer-gpumesh-rangecount-const	renderer.md	engine/renderer/mesh.h:601
+renderer::GpuMesh::Range(u32) const	function	renderer	renderer-gpumesh-range-u32-const	renderer.md	engine/renderer/mesh.h:604
+renderer::GpuMesh::SortId() const	function	renderer	renderer-gpumesh-sortid-const	renderer.md	engine/renderer/mesh.h:608
+renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-gpumesh-recordprepare-rhi-commandlist-star	renderer.md	engine/renderer/mesh.h:616
+renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:619
+renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:623
+renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:634
+renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-u32-u32-const	renderer.md	engine/renderer/mesh.h:641
+renderer::GpuMesh::DrawWithVertices(rhi::CommandList*,rhi::BufferHandle,u64,u32,u32,u32,u32) const	function	renderer	renderer-gpumesh-drawwithvertices-rhi-commandlist-star-rhi-bufferhandle-u64-u32-u32-u32-u32-const	renderer.md	engine/renderer/mesh.h:652
+renderer::GpuMeshPtr	alias	renderer	renderer-gpumeshptr	renderer.md	engine/renderer/mesh.h:691
+renderer::GpuMeshConstPtr	alias	renderer	renderer-gpumeshconstptr	renderer.md	engine/renderer/mesh.h:693
 renderer::kMaxGraphErrors	variable	renderer	renderer-kmaxgrapherrors	renderer.md	engine/renderer/render_graph.h:32
 renderer::kGraphErrorLength	variable	renderer	renderer-kgrapherrorlength	renderer.md	engine/renderer/render_graph.h:34
 renderer::kNeverUsed	variable	renderer	renderer-kneverused	renderer.md	engine/renderer/render_graph.h:36
@@ -12823,28 +12828,29 @@ renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renders
 renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:233
 renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:240
 renderer::RenderScene::SetJointMatrices(ObjectId,const f32*,u32)	function	renderer	renderer-renderscene-setjointmatrices-objectid-const-f32-star-u32	renderer.md	engine/renderer/render_scene.h:250
-renderer::RenderScene::SetMorphWeights(ObjectId,const f32*,u32)	function	renderer	renderer-renderscene-setmorphweights-objectid-const-f32-star-u32	renderer.md	engine/renderer/render_scene.h:259
-renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:267
-renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:270
-renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:272
-renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:275
-renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:278
-renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:281
-renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:290
-renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:296
-renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:303
-renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:311
-renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:314
-renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:316
-renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:319
-renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:322
-renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:332
-renderer::RenderScene::CullMode	enum	renderer	renderer-renderscene-cullmode	renderer.md	engine/renderer/render_scene.h:335
-renderer::RenderScene::CullMode::Bvh	enumerator	renderer	renderer-renderscene-cullmode-bvh	renderer.md	engine/renderer/render_scene.h:337
-renderer::RenderScene::CullMode::Flat	enumerator	renderer	renderer-renderscene-cullmode-flat	renderer.md	engine/renderer/render_scene.h:339
-renderer::RenderScene::SetCullMode(CullMode)	function	renderer	renderer-renderscene-setcullmode-cullmode	renderer.md	engine/renderer/render_scene.h:343
-renderer::RenderScene::GetCullMode() const	function	renderer	renderer-renderscene-getcullmode-const	renderer.md	engine/renderer/render_scene.h:346
-renderer::RenderScene::OptimizeCulling(u32)	function	renderer	renderer-renderscene-optimizeculling-u32	renderer.md	engine/renderer/render_scene.h:350
+renderer::RenderScene::UpdatePoseBounds(ObjectId)	function	renderer	renderer-renderscene-updateposebounds-objectid	renderer.md	engine/renderer/render_scene.h:262
+renderer::RenderScene::SetMorphWeights(ObjectId,const f32*,u32)	function	renderer	renderer-renderscene-setmorphweights-objectid-const-f32-star-u32	renderer.md	engine/renderer/render_scene.h:271
+renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:279
+renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:282
+renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:284
+renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:287
+renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:290
+renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:293
+renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:302
+renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:308
+renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:315
+renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:323
+renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:326
+renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:328
+renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:331
+renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:334
+renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:344
+renderer::RenderScene::CullMode	enum	renderer	renderer-renderscene-cullmode	renderer.md	engine/renderer/render_scene.h:347
+renderer::RenderScene::CullMode::Bvh	enumerator	renderer	renderer-renderscene-cullmode-bvh	renderer.md	engine/renderer/render_scene.h:349
+renderer::RenderScene::CullMode::Flat	enumerator	renderer	renderer-renderscene-cullmode-flat	renderer.md	engine/renderer/render_scene.h:351
+renderer::RenderScene::SetCullMode(CullMode)	function	renderer	renderer-renderscene-setcullmode-cullmode	renderer.md	engine/renderer/render_scene.h:355
+renderer::RenderScene::GetCullMode() const	function	renderer	renderer-renderscene-getcullmode-const	renderer.md	engine/renderer/render_scene.h:358
+renderer::RenderScene::OptimizeCulling(u32)	function	renderer	renderer-renderscene-optimizeculling-u32	renderer.md	engine/renderer/render_scene.h:362
 renderer::kMaxSettings	variable	renderer	renderer-kmaxsettings	renderer.md	engine/renderer/render_settings.h:19
 renderer::kSettingTextBytes	variable	renderer	renderer-ksettingtextbytes	renderer.md	engine/renderer/render_settings.h:21
 renderer::kMaxCapabilities	variable	renderer	renderer-kmaxcapabilities	renderer.md	engine/renderer/render_settings.h:23

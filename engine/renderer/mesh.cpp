@@ -5,6 +5,7 @@
 #include "sync/atomic.h"
 #include "lang/scalar.h"
 
+#include "algorithm.h"
 #include "cstr/format.h"
 #include "lang/new.h"
 
@@ -73,6 +74,10 @@ const char* MeshGeometry::Validate() const
         (skinned && !InRegion(skin_offset, vertex_count, kSkinVertexBytes, total)))
     {
         return "mesh: a section of the geometry lies outside its bytes";
+    }
+    if (has_joint_bounds && (!skinned || !InRegion(joint_bounds_offset, skin_joint_count, kJointBoundsBytes, total)))
+    {
+        return "mesh: joint bounds need a skinned layout and must lie inside the region";
     }
     u32 primitive = 3;
     bool strip = false;
@@ -1271,6 +1276,94 @@ bool GpuMesh::CreateFromGeometry(rhi::Device* device, const MeshGeometry& geomet
         sort_id_ = 0;
         return false;
     }
+    return true;
+}
+
+bool GpuMesh::PosedBounds(const f32* palette, u32 count, Bounds* out) const
+{
+    if (!has_geometry_ || !geometry_.has_joint_bounds || palette == nullptr || !geometry_.bytes ||
+        count < geometry_.skin_joint_count)
+    {
+        return false;
+    }
+    const byte* records = geometry_.bytes->Bytes().Data() + geometry_.joint_bounds_offset;
+    Aabb box;
+    bool any = false;
+    Aabb bind;           // the joints' boxes joined in the bind pose: the mesh's bounds less what morph targets add
+    f32 largest = 0.0f;  // the largest axis scale of the joints' matrices
+    for (u32 j = 0; j < geometry_.skin_joint_count; ++j)
+    {
+        const byte* r = records + static_cast<usize>(j) * kJointBoundsBytes;
+        const u32 used = static_cast<u32>(r[24]) | (static_cast<u32>(r[25]) << 8) | (static_cast<u32>(r[26]) << 16) |
+                         (static_cast<u32>(r[27]) << 24);
+        if (used == 0)
+        {
+            continue;
+        }
+        f32 lo[3];
+        f32 hi[3];
+        MemCopy(lo, r, sizeof(lo));
+        MemCopy(hi, r + 12, sizeof(hi));
+        const f32* m = palette + static_cast<usize>(j) * 12;
+        for (u32 c = 0; c < 3; ++c)
+        {
+            const f32 axis = Sqrt(m[c] * m[c] + m[4 + c] * m[4 + c] + m[8 + c] * m[8 + c]);
+            largest = axis > largest ? axis : largest;
+        }
+        const Vec3 lo_v(lo[0], lo[1], lo[2]);
+        const Vec3 hi_v(hi[0], hi[1], hi[2]);
+        bind.min = !any ? lo_v : Vec3(Min(bind.min.x, lo_v.x), Min(bind.min.y, lo_v.y), Min(bind.min.z, lo_v.z));
+        bind.max = !any ? hi_v : Vec3(Max(bind.max.x, hi_v.x), Max(bind.max.y, hi_v.y), Max(bind.max.z, hi_v.z));
+        for (u32 corner = 0; corner < 8; ++corner)
+        {
+            const f32 x = (corner & 1) != 0 ? hi[0] : lo[0];
+            const f32 y = (corner & 2) != 0 ? hi[1] : lo[1];
+            const f32 z = (corner & 4) != 0 ? hi[2] : lo[2];
+            const Vec3 at(m[0] * x + m[1] * y + m[2] * z + m[3], m[4] * x + m[5] * y + m[6] * z + m[7],
+                          m[8] * x + m[9] * y + m[10] * z + m[11]);
+            if (!IsFinite(at.x) || !IsFinite(at.y) || !IsFinite(at.z))
+            {
+                return false;  // a broken palette: keep the bind-pose bounds
+            }
+            if (!any && corner == 0)
+            {
+                box.min = at;
+                box.max = at;
+                continue;
+            }
+            box.min = Vec3(Min(box.min.x, at.x), Min(box.min.y, at.y), Min(box.min.z, at.z));
+            box.max = Vec3(Max(box.max.x, at.x), Max(box.max.y, at.y), Max(box.max.z, at.z));
+        }
+        any = true;
+    }
+    if (!any)
+    {
+        return false;
+    }
+    if (morph_target_count_ != 0)
+    {
+        // Morph targets move vertices past the joints' boxes by up to what they add to the mesh's own bounds (which
+        // hold every target at full weight): grow the posed box by the most they add on any side, under the largest
+        // scale of the pose.
+        const Aabb& all = bounds_.box;
+        const f32 sides[6] = {all.max.x - bind.max.x, all.max.y - bind.max.y, all.max.z - bind.max.z,
+                              bind.min.x - all.min.x, bind.min.y - all.min.y, bind.min.z - all.min.z};
+        f32 growth = 0.0f;
+        for (const f32 side : sides)
+        {
+            growth = side > growth ? side : growth;
+        }
+        const f32 pad = growth * largest;
+        if (!IsFinite(pad))
+        {
+            return false;
+        }
+        box.min = box.min - Vec3(pad, pad, pad);
+        box.max = box.max + Vec3(pad, pad, pad);
+    }
+    out->box = box;
+    out->sphere.center = box.Center();
+    out->sphere.radius = (box.max - box.min).Length() * 0.5f;
     return true;
 }
 

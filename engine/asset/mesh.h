@@ -332,6 +332,12 @@ public:
     ///
     /// - Aborts: `i` is not below `SkinJointCount()`.
     MeshJointBounds JointBounds(u32 i) const;
+    /// The joint bounds section: [[asset::MeshView::SkinJointCount]] records of 32 bytes (minimum `f32x3`, maximum
+    /// `f32x3`, a `u32` that is 1 when the joint has vertices, 4 bytes of padding); empty for a rigid mesh.
+    ///
+    /// - Fails: never.
+    /// - Ownership: borrowed from the blob.
+    ByteSpan JointBoundsBytes() const { return joint_bounds_; }
 
     /// Checks a loaded skeleton against the record of a skinned mesh.
     ///

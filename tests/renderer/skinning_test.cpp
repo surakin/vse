@@ -5,6 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/array.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "cstr/mem_ops.h"
@@ -372,6 +373,115 @@ TEST_CASE("The culling bounds of a skinned object grow with its bounds scale", "
               2.0f * (a.max.x - a.min.x)) < 1e-4f);
     scene.SetJointMatrices(plain, nullptr, 0);
     CHECK(scene.FindObject(plain)->joint_matrices == nullptr);
+}
+
+// 2026-11-20 (a character whose rest pose is not its bind pose, drawn standing while its bind-pose box lay down): a
+// skinned object with joint bounds is bounded, and culled, by its pose: each joint's box moved by its palette matrix.
+TEST_CASE("A skinned object with joint bounds is culled by its pose, not by its bind-pose box", "[renderer][skinning]")
+{
+    SkinRig rig(4, 8);
+    MeshData data;
+    REQUIRE(MakeSkinnedRibbon(&data));
+    MeshGeometry geometry = data.CopyGeometry();
+    const ByteSpan region = geometry.bytes->Bytes();
+    Vector<byte> bytes;
+    const usize records = (region.Size() + 3) & ~static_cast<usize>(3);
+    bytes.Resize(records + 2 * kJointBoundsBytes);
+    MemSet(bytes.Data(), 0, bytes.Size());
+    MemCopy(bytes.Data(), region.Data(), region.Size());
+    const Aabb bind = geometry.bounds.box;
+    for (u32 j = 0; j < 2; ++j)  // each joint's vertices: the whole ribbon (a box covers them)
+    {
+        byte* r = bytes.Data() + records + j * kJointBoundsBytes;
+        const f32 lo[3] = {bind.min.x, bind.min.y, bind.min.z};
+        const f32 hi[3] = {bind.max.x, bind.max.y, bind.max.z};
+        const u32 used = 1;
+        MemCopy(r, lo, 12);
+        MemCopy(r + 12, hi, 12);
+        MemCopy(r + 24, &used, 4);
+    }
+    geometry.bytes = MakeShared<OwnedBytes>(Move(bytes));
+    geometry.joint_bounds_offset = records;
+    geometry.has_joint_bounds = true;
+    REQUIRE(geometry.Validate() == nullptr);
+    GpuMesh ribbon;
+    REQUIRE(ribbon.CreateFromGeometry(rig.device.Get(), geometry, nullptr, "posed ribbon"));
+
+    // Both joints carry the ribbon 100 units along x.
+    f32 palette[24];
+    IdentityPalette(palette, 2);
+    palette[3] = 100.0f;
+    palette[15] = 100.0f;
+    RenderScene scene(RenderSceneDesc{4, 4});
+    RenderObjectDesc od;
+    od.mesh = &ribbon;
+    od.joint_matrices = palette;
+    od.joint_count = 2;
+    const ObjectId id = scene.AddObject(od);
+    CHECK(Abs(scene.FindObject(id)->bounds.box.min.x - (bind.min.x + 100.0f)) < 1e-4f);
+    CHECK(Abs(scene.FindObject(id)->bounds.box.max.x - (bind.max.x + 100.0f)) < 1e-4f);
+
+    // A camera over the posed ribbon sees it; one over the bind pose does not.
+    Camera over = MakeLookAtCamera(Vec3(100, 10, 0), Vec3(100, 0, 0), Vec3(0, 0, -1));
+    over.aspect = 1.0f;
+    u32 slots[4];
+    CHECK(scene.Cull(Frustum::FromViewProjection(over.ViewProjection()), slots, 4) == 1);
+    CHECK(scene.Cull(SkinFrustum(), slots, 4) == 0);
+
+    // The animation system rewrites the matrices in place: the scene follows when asked.
+    palette[3] = 0.0f;
+    palette[15] = 0.0f;
+    scene.UpdatePoseBounds(id);
+    CHECK(scene.Cull(SkinFrustum(), slots, 4) == 1);
+    CHECK(Abs(scene.FindObject(id)->bounds.box.min.x - bind.min.x) < 1e-4f);
+
+    // A move reuses the bounds the pose gave and does not read the palette, which may be gone by then
+    // (scene::RenderSync moves objects before it hands them their new palettes): with the palette freed, asan would see
+    // a read.
+    UniquePtr<Array<f32, 24>> owned = MakeUnique<Array<f32, 24>>();
+    IdentityPalette(owned->Data(), 2);
+    (*owned)[3] = 100.0f;
+    (*owned)[15] = 100.0f;
+    scene.SetJointMatrices(id, owned->Data(), 2);
+    owned.Reset();
+    scene.SetTransform(id, ModelMatrix(Vec3(0, 0, 5), 1.0f, 0.0f));
+    CHECK(Abs(scene.FindObject(id)->bounds.box.min.x - (bind.min.x + 100.0f)) < 1e-4f);
+    CHECK(Abs(scene.FindObject(id)->bounds.box.min.z - (bind.min.z + 5.0f)) < 1e-4f);
+    scene.SetJointMatrices(id, nullptr, 0);
+
+    // With morph targets the posed box grows by what the targets add to the mesh's bounds (here 3 units past the
+    // joints' boxes on +x), so a face a morph pushes out is not culled.
+    MeshGeometry morphed = geometry;
+    Vector<byte> with_delta;
+    const ByteSpan old_bytes = morphed.bytes->Bytes();
+    with_delta.Resize(old_bytes.Size() + kMorphDeltaBytes);
+    MemSet(with_delta.Data(), 0, with_delta.Size());
+    MemCopy(with_delta.Data(), old_bytes.Data(), old_bytes.Size());
+    morphed.bytes = MakeShared<OwnedBytes>(Move(with_delta));
+    morphed.morph_delta_offset = old_bytes.Size();
+    morphed.morph_delta_count = 1;
+    morphed.morph_target_count = 1;
+    morphed.morph_targets[0].first_delta = 0;
+    morphed.morph_targets[0].delta_count = 1;
+    morphed.bounds.box.max.x += 3.0f;
+    if (morphed.Validate() == nullptr)  // morph targets need the full vertex layout
+    {
+        GpuMesh face;
+        REQUIRE(face.CreateFromGeometry(rig.device.Get(), morphed, nullptr, "posed morphed ribbon"));
+        f32 moved[24];
+        IdentityPalette(moved, 2);
+        moved[3] = 100.0f;
+        moved[15] = 100.0f;
+        Bounds posed;
+        REQUIRE(face.PosedBounds(moved, 2, &posed));
+        CHECK(Abs(posed.box.max.x - (bind.max.x + 103.0f)) < 1e-4f);
+        CHECK(Abs(posed.box.min.x - (bind.min.x + 97.0f)) < 1e-4f);  // the pad is the same on every side
+    }
+    else
+    {
+        WARN("the ribbon's layout cannot hold morph targets: " << morphed.Validate());
+        CHECK(false);
+    }
 }
 
 TEST_CASE("The ranges of one skinned entity share one palette in the frame", "[renderer][skinning][ranges]")

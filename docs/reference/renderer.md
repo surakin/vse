@@ -5297,6 +5297,16 @@ u32 index_count;
 
 The number of indices; a multiple of 3 for a triangle list.
 
+## `kJointBoundsBytes` {#renderer-kjointboundsbytes}
+
+`variable renderer::kJointBoundsBytes` — defined in `engine/renderer/mesh.h`
+
+```cpp
+inline constexpr u32 kJointBoundsBytes;
+```
+
+Bytes of one joint's bind-pose box in [`renderer::MeshGeometry::joint_bounds_offset`](#renderer-meshgeometry-joint-bounds-offset) (the mesh blob's record).
+
 ## `kMaxMeshMorphTargets` {#renderer-kmaxmeshmorphtargets}
 
 `variable renderer::kMaxMeshMorphTargets` — defined in `engine/renderer/mesh.h`
@@ -5485,6 +5495,26 @@ u32 skin_joint_count;
 ```
 
 The skeleton's joint count (1 to 256) for a skinned layout, else 0.
+
+### `joint_bounds_offset` {#renderer-meshgeometry-joint-bounds-offset}
+
+`variable renderer::MeshGeometry::joint_bounds_offset` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u64 joint_bounds_offset;
+```
+
+Where the bind-pose box of each joint's vertices starts in `bytes` (`skin_joint_count` records of [`renderer::kJointBoundsBytes`](#renderer-kjointboundsbytes): minimum `f32x3`, maximum `f32x3`, a `u32` that is 1 when the joint has vertices), when `has_joint_bounds`; a skinned object is then bounded by them under its palette (2026-11-20).
+
+### `has_joint_bounds` {#renderer-meshgeometry-has-joint-bounds}
+
+`variable renderer::MeshGeometry::has_joint_bounds` — defined in `engine/renderer/mesh.h`
+
+```cpp
+bool has_joint_bounds;
+```
+
+Whether `joint_bounds_offset` is set; skinned only.
 
 ### `ranges` {#renderer-meshgeometry-ranges}
 
@@ -6547,6 +6577,25 @@ const Bounds& GetBounds() const;
 ```
 
 Returns the object-space bounds.
+
+### `PosedBounds(const f32*,u32,Bounds*)` {#renderer-gpumesh-posedbounds-const-f32-star-u32-bounds-star-const}
+
+`method renderer::GpuMesh::PosedBounds` — defined in `engine/renderer/mesh.h`
+
+```cpp
+bool PosedBounds(const f32* palette, u32 count, Bounds* out) const;
+```
+
+The bounds of a skinned mesh under a joint palette: each joint's bind-pose box of its vertices moved by that joint's matrix, joined (2026-11-20: a file's rest pose need not be its bind pose, so the bind-pose bounds can miss what is drawn). A mesh with morph targets grows the box by the most its targets add to its own bounds, under the pose's largest scale.
+
+| Field | Value |
+|---|---|
+| Parameter `palette` | `count` row-major 3x4 matrices (12 `f32` each, the layout of `SkeletonInstance::palette`). |
+| Parameter `count` | the matrices at `palette`. |
+| Parameter `out` | receives the bounds in object space. |
+| Returns | false (and `out` untouched) when the mesh has no joint bounds, `palette` is null, `count` is below [`renderer::GpuMesh::SkinJointCount`](#renderer-gpumesh-skinjointcount-const), or no joint has vertices. |
+| Fails | reported by the return value. |
+| Ownership | borrows `palette` for the call. |
 
 ### `MorphTargetCount()` {#renderer-gpumesh-morphtargetcount-const}
 
@@ -8704,7 +8753,7 @@ Replaces an object's flag bits.
 void SetJointMatrices(ObjectId id, const f32* matrices, u32 count);
 ```
 
-Replaces the borrowed joint palette of a skinned object (see [`renderer::RenderObjectDesc::joint_matrices`](#renderer-renderobjectdesc-joint-matrices)). The culling bounds do not change.
+Replaces the borrowed joint palette of a skinned object (see [`renderer::RenderObjectDesc::joint_matrices`](#renderer-renderobjectdesc-joint-matrices)) and bounds it by the pose, as [`renderer::RenderScene::UpdatePoseBounds`](#renderer-renderscene-updateposebounds-objectid).
 
 | Field | Value |
 |---|---|
@@ -8712,6 +8761,22 @@ Replaces the borrowed joint palette of a skinned object (see [`renderer::RenderO
 | Parameter `matrices` | `count` 3x4 matrices, or null to draw nothing until a palette is set. |
 | Parameter `count` | from 1 to 256 when `matrices` is not null. |
 | Aborts | `id` is invalid or stale, or the mesh is rigid. |
+| Thread-safety | thread-compatible. |
+
+### `UpdatePoseBounds(ObjectId)` {#renderer-renderscene-updateposebounds-objectid}
+
+`method renderer::RenderScene::UpdatePoseBounds` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+void UpdatePoseBounds(ObjectId id);
+```
+
+Bounds a skinned object by its palette as it is now ([`renderer::GpuMesh::PosedBounds`](#renderer-gpumesh-posedbounds-const-f32-star-u32-bounds-star-const) under its transform); call it after the palette's matrices change in place (the scene borrows them and cannot see that). The palette is read here, in [`renderer::RenderScene::AddObject`](#renderer-renderscene-addobject-const-renderobjectdesc-amp) and in [`renderer::RenderScene::SetJointMatrices`](#renderer-renderscene-setjointmatrices-objectid-const-f32-star-u32) only; `SetTransform` reuses the bounds they computed. `scene::RenderSync` calls it for every skinned entity each frame. Without joint bounds, a palette or a usable pose, the object keeps its bind-pose bounds (scaled by `skin_bounds_scale`). A rigid object is left alone.
+
+| Field | Value |
+|---|---|
+| Parameter `id` | a live object. |
+| Aborts | `id` is invalid or stale. |
 | Thread-safety | thread-compatible. |
 
 ### `SetMorphWeights(ObjectId,const f32*,u32)` {#renderer-renderscene-setmorphweights-objectid-const-f32-star-u32}

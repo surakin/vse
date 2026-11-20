@@ -108,6 +108,11 @@ Status LoadGpuMesh(const LoadContext& context, GpuMeshAsset* out, void* user)
     }
     geometry.skin_offset = view.Skinned() ? static_cast<u64>(view.SkinBytes().Data() - base) : 0;
     geometry.skin_joint_count = view.Skinned() ? view.SkinJointCount() : 0;
+    if (view.Skinned() && view.JointBoundsBytes().Size() == static_cast<usize>(view.SkinJointCount()) * 32)
+    {
+        geometry.joint_bounds_offset = static_cast<u64>(view.JointBoundsBytes().Data() - base);
+        geometry.has_joint_bounds = true;  // the skinned object is bounded by its pose (2026-11-20)
+    }
     // Morph targets (glTF coverage Day 7): the delta section is uploaded where it is; the runs of the targets are
     // small.
     if (view.MorphTargetCount() != 0)

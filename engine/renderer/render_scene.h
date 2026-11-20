@@ -239,8 +239,8 @@ public:
     /// - Aborts: `id` is invalid or stale.
     void SetFlags(ObjectId id, u32 flags);
 
-    /// Replaces the borrowed joint palette of a skinned object (see [[renderer::RenderObjectDesc::joint_matrices]]).
-    /// The culling bounds do not change.
+    /// Replaces the borrowed joint palette of a skinned object (see [[renderer::RenderObjectDesc::joint_matrices]]) and
+    /// bounds it by the pose, as [[renderer::RenderScene::UpdatePoseBounds]].
     ///
     /// - Param id: a live object whose mesh has a skin stream.
     /// - Param matrices: `count` 3x4 matrices, or null to draw nothing until a palette is set.
@@ -248,6 +248,18 @@ public:
     /// - Aborts: `id` is invalid or stale, or the mesh is rigid.
     /// - Thread-safety: thread-compatible.
     void SetJointMatrices(ObjectId id, const f32* matrices, u32 count);
+
+    /// Bounds a skinned object by its palette as it is now ([[renderer::GpuMesh::PosedBounds]] under its transform);
+    /// call it after the palette's matrices change in place (the scene borrows them and cannot see that). The palette
+    /// is read here, in [[renderer::RenderScene::AddObject]] and in [[renderer::RenderScene::SetJointMatrices]] only;
+    /// `SetTransform` reuses the bounds they computed.
+    /// `scene::RenderSync` calls it for every skinned entity each frame. Without joint bounds, a palette or a usable
+    /// pose, the object keeps its bind-pose bounds (scaled by `skin_bounds_scale`). A rigid object is left alone.
+    ///
+    /// - Param id: a live object.
+    /// - Aborts: `id` is invalid or stale.
+    /// - Thread-safety: thread-compatible.
+    void UpdatePoseBounds(ObjectId id);
 
     /// Replaces the borrowed morph weights of an object (see [[renderer::RenderObjectDesc::morph_weights]]).
     ///
@@ -353,6 +365,7 @@ private:
     struct ObjectSlot
     {
         RenderObject object;
+        Bounds local;  // the object-space bounds last computed (the pose's, read only while the palette is valid)
         u32 generation = 1;
         u32 next_free = 0;
         bool alive = false;
@@ -368,6 +381,8 @@ private:
     struct CullIndex;
     void IndexObject(u32 slot);
     void UnindexObject(u32 slot);
+    // Puts the object's world bounds (its `local` bounds under its transform) in the object and the cull index.
+    void MoveBounds(u32 slot);
     u32 CullFlat(const Frustum& frustum, u32* out_slots) const;
     u32 CullBvh(const Frustum& frustum, u32* out_slots) const;
 
