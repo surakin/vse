@@ -579,7 +579,10 @@ public:
     }
 
     /// Physics (`physics_*`, `body_*`, `joint_reaction`, `character_*`). Vectors are 3 floats, rotations 4 (x, y, z,
-    /// w).
+    /// w). A world has one set of characters, shared with its scripts (2026-11-20): one made by
+    /// ENGINE_COMPONENT_CHARACTER is the one a behavior's `character.*` sees, and one a script made is driven and read
+    /// here. They move inside the fixed physics steps; after a frame the entity's transform takes the capsule's centre,
+    /// interpolated between the last two steps when `physics.interpolate` is on.
     Status SetGravity(const float* gravity) const { return Api()->physics_set_gravity(Get(), gravity); }
     Status ApplyForce(uint64_t key, const float* force, const float* point) const
     {
@@ -624,11 +627,17 @@ public:
     {
         return Api()->joint_reaction(Get(), key, force, torque);
     }
+    /// Sets the velocity the character walks at (`character_move`): it holds until set again and each fixed step
+    /// carries it out, so a frame without a step moves nothing and the distance per second does not depend on the frame
+    /// rate. Not a one-shot move: set a zero velocity to stop. `dt` is checked (in (0, 1]) and otherwise unused.
+    /// `state` receives the last step's state.
     Status MoveCharacter(uint64_t key, const float* velocity, float dt, engine_character_state* state) const
     {
         *state = Init<engine_character_state>();
         return Api()->character_move(Get(), key, velocity, dt, state);
     }
+    /// Asks for a jump (`character_jump`) when the character stands: it starts at the next fixed step. A `speed` of 0
+    /// only reads the last step's state.
     Status JumpCharacter(uint64_t key, float speed, engine_character_state* state) const
     {
         *state = Init<engine_character_state>();
@@ -644,6 +653,8 @@ public:
         }
         return Api()->physics_events(Get(), out, capacity, total);
     }
+    /// Writes the world's physics, its characters' state (vertical speed, ground, held move) included, into `out`;
+    /// `PhysicsRestore` puts it back.
     Status PhysicsSnapshot(Buffer* out) const { return Api()->physics_snapshot(Get(), out->Fill()); }
     Status PhysicsRestore(const void* data, size_t size) const { return Api()->physics_restore(Get(), data, size); }
 

@@ -102,3 +102,10 @@ Eight findings; six fixed, two recorded:
 8. **Recorded, not fixed (`KNOWN-ISSUES.md`, the guides):** the handle `entity.spawn` returns names the entity only within its tick's
    merge. Binding placeholders across ticks is a script-runtime change outside this day's scope.
 
+## Follow-up (2026-11-20): the C++ layer
+
+`include/engine/engine.h` forwarded the changed functions unchanged, without saying so. `World::MoveCharacter` (a held move, `dt` unused),
+`JumpCharacter` (at the next step), the physics section (one set shared with the scripts, the interpolated write-back) and `PhysicsSnapshot`
+(the characters' state) are documented, and the guide's C++ section points at the held move. No code or ABI change. Builds clean; the C++
+layer, ABI and table-coverage tests pass (94 of 94), and `ctest -L docs` passes 9 of 9. Review: the diff is comments only; no findings.
+

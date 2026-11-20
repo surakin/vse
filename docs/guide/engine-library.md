@@ -869,7 +869,9 @@ zeroed struct with its `struct_size` set; the layer also sets it on the out-stru
 **Every function of the table has a member** (or, for `get_extension` and `thread_detach`, a free function) named for what it does, with the table's arguments
 minus the handle the object holds: `Engine` has the settings, `Frame`, the crash handler, jobs, the resource registry, glTF import, surfaces, textures and the
 label font; `World` has entities, components, names, parents, queries, the environment, slot overrides, levels, animation, skeletons and all of physics (gravity,
-forces, impulses, velocities, teleport, ray cast, overlaps, joint reactions, the character, events, snapshot and restore); `Surface`, `Texture`, `Ticket`,
+forces, impulses, velocities, teleport, ray cast, overlaps, joint reactions, the character, events, snapshot and restore; `MoveCharacter` sets a held move
+carried out in each fixed step and `JumpCharacter` jumps at the next step, on the world's one set of characters shared with its scripts, see "The held move"
+and "Scripts with physics"); `Surface`, `Texture`, `Ticket`,
 `ImportTicket` and `Counter` have their own. The ctest `engine_h_covers_table` reads the table in `engine_c.h` and fails when a member is not called by
 `engine.h`, so a function added to the table without a wrapper cannot pass. The layer adds no ABI: `owner.Get()` still gives the raw handle. Declare a world
 after its engine so it is destroyed first (the engine refuses with `IN_USE` while one exists). Test: `host_cpp.cpp` (`engine_c_host_cpp`; it drives components,
