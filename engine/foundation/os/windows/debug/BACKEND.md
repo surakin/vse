@@ -1,6 +1,6 @@
 # Windows debugging backend (Phase 13)
 
-What Phase 13 implements to bring up the debugging facilities on Windows. Day 154 built symbols, modules, the crash context, the debugger
+What Phase 13 implemented to bring up the debugging facilities on Windows. Day 154 built symbols, modules, the crash context, the debugger
 check and thread ids and names; Day 155 the crash handler, the report, death tests and fault injection; Day 156 the post-mortem dumps,
 `crash_extract` and the scripts. Every section below is marked **Built** or not applicable. Linux is the reference
 (`engine/foundation/os/linux/debug/`). Everything else is shared: the facade (`debug/*.cpp`), the assert family, the report
@@ -8,7 +8,7 @@ writer, the log ring, the crash state, the scripts' logic and the tests. See `do
 work and `tests/debug/BACKEND-CONFORMANCE.md` for what each test group needs.
 
 The crash library (sentry-native, Breakpad backend) and libbacktrace both list Windows as supported at the pinned versions
-(audit: `docs/superpowers/specs/2026-11-06-debugging-design.md`, "Platform audit"). **Open decision for Phase 13:** libbacktrace
+(audit: `docs/superpowers/specs/2026-11-06-debugging-design.md`, "Platform audit"). **Decided on Phase 13 Day 154:** libbacktrace
 reads DWARF only, so a clang build with DWARF works as is; an MSVC/PDB build needs a DbgHelp resolver behind
 `ResolveStackTrace`. **Decided on Day 154: DbgHelp for both compilers** (`os/windows/debug/stack_trace_dbghelp.cpp`); libbacktrace is not
 built on Windows, and the facade's formatting is the neutral `debug/stack_trace_format.cpp`. **Rule: DbgHelp is never called while a crash

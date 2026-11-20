@@ -41,7 +41,7 @@ cannot turn it on after Metal starts. Its settings file is `~/Library/Applicatio
 
 | Option | Meaning |
 |---|---|
-| `--backend wayland\|x11\|win32` | display backend; default automatic. Same as `ENGINE_WINDOW_BACKEND` |
+| `--backend wayland\|x11\|win32\|cocoa` | display backend; default automatic. Same as `ENGINE_WINDOW_BACKEND` |
 | `--frames N` | stop after N frames |
 | `--screenshot FILE` | render offscreen with no window and write the last frame to FILE as a binary PPM (960x600 logical units times `--scale`) |
 | `--script WORDS` | run steps without a person (below) |

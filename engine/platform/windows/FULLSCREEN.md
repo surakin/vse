@@ -1,4 +1,4 @@
-# Fullscreen on Windows (checklist for Phase 13)
+# Fullscreen on Windows (built, Phase 13)
 
 `os::Window::SupportsFullscreen`, `SetFullscreen` and `IsFullscreen` are the interface (`engine/platform/window.h`).
 

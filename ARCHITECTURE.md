@@ -4,7 +4,7 @@ The engine's modules, the layer each belongs to, what each may depend on, and ho
 the long-term layer diagram; this file is the **source of truth for dependencies between the modules that exist**. It is measured from the code, not
 written from intent, and each mismatch is listed with what fixes it.
 
-Written 2026-11-07 and brought to the state after Phase 12 (the module layering) the same day, from the `#include` graph of `engine/`, `game/` and `tools/` and the CMake link lines. The rule: **a module
+Written 2026-11-07 and brought to the state after Phase 12 (the module layering) the same day and kept in step with the code since (checked against `module_deps_check` on 2026-11-20), from the `#include` graph of `engine/`, `game/` and `tools/` and the CMake link lines. The rule: **a module
 may include and link only modules in lower layers, or other modules its row allows; never one above it, and no cycles.**
 
 ## 1. Layers
@@ -41,9 +41,9 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 Later phases add modules above the renderer in the order `PLAN.md`'s diagram gives (text, UI, ECS, physics, audio, assets, scripting, Unreal import,
 editor); each gets its row here when its phase is broken into days.
 
-## 2. The measured graph (after Phase 12, 2028-11-7)
+## 2. The measured graph (checked 2026-11-20)
 
-Measured by `module_deps_check` on the whole tree: **172 module edges from includes, plus the CMake link lines, 0 problems.** There is no cycle and no
+Measured by `module_deps_check` on the whole tree: **616 module edges from includes, plus the CMake link lines, 0 problems.** There is no cycle and no
 upward edge. The last two allow-listed edges (rhi/vulkan → rhi/null and renderer → rhi/vulkan) were removed by the RHI backend registry on Phase 13 Day 162;
 the allow list is empty.
 
@@ -133,15 +133,15 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
 | Catch2 | tests only | `tests/` |
 | libbacktrace | `debug/stack_trace_backtrace.cpp` (Linux) | `library_boundary.txt` |
 | sentry-native (Breakpad) | `debug/crash_handler_sentry.cpp` | `library_boundary.txt` |
-| nlohmann/json | `tools/shader_mint/reflect_json.cpp` and its test | `std_container_check` allow list, `PLAN.md` #19 |
+| nlohmann/json | `tools/shader_mint/reflect_json.cpp` and its test | `std_usage_check` allow list, `PLAN.md` #19 |
 
-### Planned modules (Phase 16, standard-library wrappers; not built yet)
+### Standard-library wrappers (Phase 16, built)
 
 `foundation/lang` and `foundation/sync` (layer 0, no dependencies; traits, `Move`, `Limits`, scalar math; `Atomic<T>`, `Mutex`, `Thread`), `foundation/cstr` (also layer 0 in `tools/module_deps_check/modules.txt`, because `types.h` and `lang` need `mem_ops.h`; C strings, formatting, number parsing, raw memory),
-and the wrapper functions that join `foundation/mem` (memory operations), `foundation/os` (console output, process, environment, signals, time) and `engine/jobs` (`CoroutineHandle`). Each row is added to section 1 and to
-`tools/module_deps_check/modules.txt` on the day that builds it (Days 208-215); `docs/superpowers/specs/2026-11-09-std-wrappers-design.md` has the layer reasoning.
+and the wrapper functions that join `foundation/mem` (memory operations), `foundation/os` (console output, process, environment, signals, time) and `engine/jobs` (`CoroutineHandle`). Each row was added to section 1 and to
+`tools/module_deps_check/modules.txt` on the day that built it (Days 208-215); `docs/superpowers/specs/2026-11-09-std-wrappers-design.md` has the layer reasoning.
 
-### Planned modules (Phase 17, ECS)
+### ECS (Phase 17, built)
 
 `engine/ecs` is built (row in section 1; Day 223 started it). The edge `ecs -> jobs` exists since Day 231 (`allow ecs jobs`). `engine/scene` (layer 13, above `ecs` and `renderer`; nothing below includes it) is built from Day 233; the programs moved to layer 14 so they may use it.
 The `scene` row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 233; `docs/superpowers/specs/2026-11-10-ecs-design.md` has the reasoning.
@@ -163,7 +163,7 @@ The row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 2
 
 `engine/script` (layer 13, beside `audio` and `physics`): the language-neutral backend interface (`script::Backend`, `script::State`, budgets, capabilities, wait requests) and the value type that crosses between the engine and a language state (`docs/superpowers/specs/2026-11-18-scripting-design.md`). Day 446 depends only on `foundation` and `ecs` (the entity id); later days add `jobs` (the partitions), `settings` and `asset` (the one same-layer edge, scripts as minted assets; Day 463: `script_assets.h` loads `ScriptView` through the resource manager, `modules.txt` has `allow script asset`). The LuaJIT backend lives in `engine/script/luajit/` (Day 448; the `script` libraries link the vendored `luajit` target where it is built, Linux x86-64 so far) and is the only code that includes LuaJIT's headers (`luajit_boundary_check`); physics, audio and input bindings are separate targets above, so `script` never includes `physics`, `audio` or the platform layer. Day 450 adds the binding registry (`bindings.h`, `standard_bindings.cpp`; typed functions with thread rules, installed into any state) and the tool `tools/script_api_doc` (layer 14, links `script` and the foundation only), which renders `docs/reference/script-api.md`. Days 451-452 add the script world (`script_world.h`: partitions and leases over the backend and the bindings) and the world view (`command_buffer.h`, `merge.h`, `partition_context.h`: per-partition command buffers merged in a fixed order into an `ecs::World`); the only new edge is `script` to the ECS world, below it. Day 456 adds `component.*` and `query.*` over the storage module's component registry (`component_catalog.h`, `component_bindings.h`): the edge `script -> storage` is below it, so it needs no allow line; script-defined components are registered with `storage::ComponentRegistry::RegisterDynamic`. The scene's own components (`light_source`, `camera`, `hidden`) are registered by `scene::RegisterSceneComponents`, so `scene` (above `storage`) names them for scripts without `script` knowing `scene`. Day 457 adds the script component, the behavior host and the script system (`script_runtime.h`, `behavior_host.cpp`): `ScriptRuntime` is an `ecs` world resource and `MakeScriptSystem()` an `ecs::SystemDesc`, so the edge is `script -> ecs`, already allowed. Day 466 adds the separate target `script_physics` (`engine/script_physics`, layer 14, `script_physics -> script, physics`; nothing but the tool `tools/script_api_doc`, layer 15, depends on it): the `physics.*` bindings, their command kinds (ids 100 to 109), the physics components registered in the storage registry (`rigid_body`, `velocity`, `collider`) with their `Validate()` functions as component validators, and the layer-name table (the setting `script.physics_layers`). `script` stays free of `physics`: it offers only the opaque service slots (`script/service_slots.h`: `MergeServices::extensions` for the merge, `PartitionContext::extensions` for the bindings, `ScriptRuntime::Kinds()` for the command kinds) that a target above it fills. Day 468 adds the separate target `script_media` (`engine/script_media`, layer 14, `script_media -> script, audio, platform_input`; the header-only `platform_input` target carries `os::Key` and `os::InputState`, so nothing of the platform's window code is linked): the `audio.*` bindings (command kinds 120 to 127; service slot `kServiceAudio`: the mixer, the clip and stream lookups by name, the music player and the `VoiceTable` that binds the handles scripts hold to mixer voices), the `audio_listener` component, `PumpAudioEvents` (`on_voice_end`), and the `input.*` bindings over the `InputSnapshot` the host captures at the tick start (service slot `kServiceInput`; `Serialize`/`Deserialize` are the replay record of Day 469). Day 469 adds, in `script`, the value record (`value_codec.h`), the `script` and `script_persist` components with their storage codecs (`script_persist.h`: the edge `script -> storage` already exists) and the capture and load calls of `ScriptRuntime`, and, in `script_media`, `ReplayLog` (`replay_log.h`). `script` includes neither `audio` nor a platform header.
 
-### Planned modules (Phase 19, storage; Phase 20, networking)
+### Storage, database and networking (Phases 19 and 20, built)
 
 Storage (settled on Day 250; `engine/storage` is built from Day 256 with the registry and the encoding, the rest follows, `docs/superpowers/specs/2026-11-11-storage-design.md`): `engine/database` (layer 10, built from Day 251 with its SQLite library; the interface follows on Day 252 and the SQLite backend on Days 253-255; the only place that includes the SQLite header is `engine/database/sqlite/`; depends on `foundation` only) and `engine/storage` (the component registry, identities, the record-level `Store`, `MemoryStore`, `SqlStore`, `WorldStorage`; depends on `foundation`, `ecs`, `jobs` and `database`), above `ecs` (its layer is fixed when the row is added); nothing below includes either. The rows arrive in section 1 and `modules.txt` with the code (Days 251 and 256). Networking (settled on Day 266, `docs/superpowers/specs/2026-11-11-networking-design.md`): `engine/net` (addresses, sockets with `linux/` and `windows/` backends, the reactor thread beside `jobs::IoThread`, the transport interface and its simulated, UDP and TCP implementations), above `foundation` (incl. `bytes`) and `jobs`; no ECS, storage or renderer type; the resource system and a network store depend on it, it depends on neither. `PLAN.md` assumptions #25 and #26 have the reasoning.
 

@@ -34,7 +34,7 @@ writable by the user (`/cores` is root's, 755, by default: on the development Ma
 As Linux (same signals). Integer divide by zero does not trap on arm64: `FaultSupported(DivideByZero)` is false there.
 `IllegalInstruction`: `brk`/`udf` on arm64. Expected reasons as Linux. Groups: *fault injection*.
 
-As built (Day 291, `os/macos/debug/fault_injection.cpp`): Linux's, except `BusError`, which writes into a page mapped `PROT_NONE` (macOS
+As built (Day 291, `os/posix/debug/fault_injection_posix.cpp` with the bus error from `os/macos/debug/posix_debug_hooks.cpp`): Linux's, except `BusError`, which writes into a page mapped `PROT_NONE` (macOS
 delivers a protection fault on a mapped page as SIGBUS; it has no `memfd_create`).
 
 ### `IsDebuggerAttached`

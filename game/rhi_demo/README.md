@@ -47,12 +47,14 @@ cannot turn it on after Metal starts. Its settings file is `~/Library/Applicatio
 | `--no-vsync` | present with `Immediate` instead of `Fifo` |
 | `--gpu G` | the GPU to use: an id from `--list-gpus`, an index, or part of its name; a GPU that does not exist fails (exit 1) and never falls back |
 | `--list-gpus` | print the backend and its GPUs, and exit |
-| `--rhi NAME` | the graphics backend: `auto` (default), `vulkan`, `dx12` or `null`; the `renderer.backend` setting |
+| `--rhi NAME` | the graphics backend: `auto` (default), `vulkan`, `dx12`, `metal` or `null`; the `renderer.backend` setting |
+| `--inject-device-loss F` | fault injection: lose the GPU device at frame F (exit code 3) |
+| `--inject-oom N` | fault injection: fail device-memory allocation number N and every one after it |
 | `--validation` | enable the backend's validation layer with synchronization validation (Direct3D 12: GPU-based validation) |
 | `--help` | print the options |
 
 Exit codes: 0 success, 1 a runtime failure (no device, window, swapchain, or a failed draw, or memory growth), 2 a
-usage error. Other environment variables: `ENGINE_RHI_VALIDATION*` (see the RHI guide), `ENGINE_RHI_GPU` to pick a GPU.
+usage error, 3 the device was lost (`--inject-device-loss`). Other environment variables: `ENGINE_RHI_VALIDATION*` (see the RHI guide), `ENGINE_RHI_GPU` to pick a GPU.
 
 ## Controls
 
@@ -77,7 +79,7 @@ The offscreen screenshot target is linear (UNORM), so it looks darker than the w
 | `main.cpp` | options, window loop, offscreen path |
 | `../common/cube_scene.*` | projection, look-at, the cube mesh, `CubeRenderer` (shared with the tests) |
 | `../common/textures.*` | procedural textures, the `.rtex` container |
-| `/shaders/lit.vert`, `lit.frag` | the lighting math |
+| `/shaders/lit.vert.slang`, `lit.frag.slang` | the lighting math |
 | `/tests/rhi/lit_cube_test.cpp` | the golden and analytic lighting tests |
 
 ## Settings options

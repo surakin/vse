@@ -25,5 +25,6 @@ shown. The platform checklists are `os/windows/debug/BACKEND.md` and `os/macos/d
 | `NullWrite` | `AccessViolation` (SIGSEGV) | `AccessViolation` (0xC0000005) | `AccessViolation` (SIGSEGV or SIGBUS: report `AccessViolation`) |
 | `IllegalInstruction` | `IllegalInstruction` (SIGILL) | `IllegalInstruction` (0xC000001D) | `IllegalInstruction` (SIGILL) |
 | `DivideByZero` | `ArithmeticFault` (SIGFPE) | `ArithmeticFault` (0xC0000094) on x86-64; unsupported on arm64 | `ArithmeticFault` on x86-64; unsupported on arm64 |
+| `BusError` | `BusError` (SIGBUS) | unsupported (`FaultSupported` is false; the case skips) | `BusError` (SIGBUS, from a `PROT_NONE` page) |
 | `StackOverflow` | `StackOverflow` when seen in the process, else `AccessViolation` | `StackOverflow` (0xC00000FD) | `AccessViolation` unless the handler saw it |
 | `Abort` | `Abort` (SIGABRT) | `Abort` (exit code 3 plus the marker the child writes from its SIGABRT handler) | `Abort` (SIGABRT) |

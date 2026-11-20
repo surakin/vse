@@ -20,12 +20,12 @@ Arch Linux's, the distribution the development machine uses.
 
 | What | Version used | Kind | Notes | Arch package |
 |---|---|---|---|---|
-| CMake | 3.21 or newer (4.4.5 used) | Required | 3.21 for `CMakePresets.json` with toolchain files. | `cmake` |
-| Clang (`clang++`) | C++20 (23.1.4 used) | Required | The compiler CMake picks first on Linux (GCC is the fallback when no `clang++` is installed; it must build clean too). Also runs the cross-target syntax checks (`*_cross_syntax_windows`, `_macos`). | `clang` |
-| Ninja | 1.13 | Required | The generator the `linux` and `linux-nojit` presets use (the user, 2026-11-20). Make still works for a tree configured without a preset, but Ninja rebuilds faster: after touching `engine/renderer/gbuffer.h`, the plain flavor's target took 12.1 s against Make's 20.7 s, and a no-op 0.05 s against 0.45 s (`-j32`, 2026-11-19). | `ninja` |
+| CMake | 3.21 or newer (4.5.0 used) | Required | 3.21 for `CMakePresets.json` with toolchain files. | `cmake` |
+| Clang (`clang++`) | C++20 (23.1.5 used) | Required | The compiler CMake picks first on Linux (GCC is the fallback when no `clang++` is installed; it must build clean too). Also runs the cross-target syntax checks (`*_cross_syntax_windows`, `_macos`). | `clang` |
+| Ninja | 1.13 | Required | The generator the `linux` and `linux-nojit` presets use (2026-11-20). Make still works for a tree configured without a preset, but Ninja rebuilds faster: after touching `engine/renderer/gbuffer.h`, the plain flavor's target took 12.1 s against Make's 20.7 s, and a no-op 0.05 s against 0.45 s (`-j32`, 2026-11-19). | `ninja` |
 | `sccache` | 0.x | Optional | Set as `CMAKE_C_COMPILER_LAUNCHER` and `CMAKE_CXX_COMPILER_LAUNCHER`. A clean build of a new tree with a warm local cache took 10.4 s against 87 s (Ninja, `-j32`, 2026-11-19). It does not speed up a rebuild after an edit, and with a cold cache it costs nothing. Never required. | `sccache` |
-| `clang-format` | 18 or newer (23.1.4 used) | Required to commit | Formats the code (`scripts/format.sh`, `.clang-format`) and runs in the pre-commit hook (`scripts/install-git-hooks.sh`); 18 is the first version with `.clang-format-ignore`. | `clang` |
-| `clang-tidy`, `run-clang-tidy` | 18 or newer (23.1.4 used) | For checks | `scripts/tidy.sh` (`.clang-tidy`). | `clang` |
+| `clang-format` | 18 or newer (23.1.5 used) | Required to commit | Formats the code (`scripts/format.sh`, `.clang-format`) and runs in the pre-commit hook (`scripts/install-git-hooks.sh`); 18 is the first version with `.clang-format-ignore`. | `clang` |
+| `clang-tidy`, `run-clang-tidy` | 18 or newer (23.1.5 used) | For checks | `scripts/tidy.sh` (`.clang-tidy`). | `clang` |
 | pkg-config | any | Required | Finds the system libraries below. | `pkgconf` |
 | `libwayland-client` (headers) | any current | Required | Wayland backend. | `wayland` |
 | `libxkbcommon` (headers) | any current | Required | Keyboard maps for Wayland. | `libxkbcommon` |
@@ -96,7 +96,7 @@ There is no Windows ThreadSanitizer or UBSan: those flavors run on the Linux mac
 
 **Status (2026-11-13, Phase 21 Day 312): macOS builds and passes everything the Linux build has** (`cmake --preset macos-clang`), with the Cocoa
 window and the Metal graphics backend (no Vulkan on macOS), in plain, asan and tsan; `cmake --preset macos-clang-arm64` builds every target for
-Apple silicon without running anything (`ENGINE_COMPILE_ONLY`). `docs/guide/macos.md` is the guide. The versions below are the developer's 2019
+Apple silicon without running anything (`ENGINE_COMPILE_ONLY`). `docs/guide/macos.md` is the guide. The versions below are a 2019
 MacBook Pro (Intel Core i5-8257U, Intel Iris Plus Graphics 645, macOS 15.8.1), checked again on 2026-11-13; evidence in `docs/superpowers/specs/2026-11-11-macos-port-design.md`. Xcode is **not** needed: the Command Line Tools have the compiler, and
 the Metal shaders are minted through the driver (below). Command-line tools come from [MacPorts](https://www.macports.org) on this machine;
 Homebrew works the same way.
@@ -105,7 +105,7 @@ Homebrew works the same way.
 |---|---|---|---|---|
 | macOS on an x86-64 Mac with a Metal 3 GPU | 15.8.1 (24H32) | Required | The deployment target is macOS 13.3 (Day 284; floating-point `std::to_chars` needs 13.3, Metal 3 needs 13.0). Apple silicon is compiled, not run (no hardware): the `macos-clang-arm64` preset (Day 311). | |
 | Command Line Tools for Xcode | 16.4 (Apple clang 17.0.0, `clang-1700.0.13.5`; macOS SDK 15.5) | Required | The only macOS compiler (Phase 21 rule). Also `lldb` (1700.0.9.502), `dsymutil`, `dwarfdump`, `atos`, `strip`, `nm`, `otool`, `lipo`, `leaks` and Apple's `git` (2.39.5); the crash and symbol scripts use them (Day 292), with `ditto` from macOS itself. Its `clang-format` (Apple 17.0.0) is **not** the formatter: see the next line. | `xcode-select --install` |
-| `clang-format` | 23.1.5 (MacPorts `clang-23`; Linux uses 23.1.4) | Required to commit | `scripts/format.sh` and the pre-commit hook. MacPorts names it `clang-format-mp-23`, and `format.sh` and the hook call `clang-format`, so link it under that name (`ln -s /opt/local/bin/clang-format-mp-23 /usr/local/bin/clang-format`; `port select clang` would also put MacPorts' `clang++` first on `PATH`, which the cross-syntax tests call). 23.1.5 leaves the main line's tree unchanged (`format.sh --check`: 2,656 files, checked on 2026-11-12). The Command Line Tools' Apple `clang-format` 17.0.0 does not do: it formats three constructs unlike 23.1.x (`IsConstructible<D, E&&>` in a requires-clause, `ElfW(Phdr)& ph`, `char (*)[N]`) and does not read `.clang-format-ignore`. | `sudo port install clang-23` |
+| `clang-format` | 23.1.5 (MacPorts `clang-23`; Linux uses 23.1.5) | Required to commit | `scripts/format.sh` and the pre-commit hook. MacPorts names it `clang-format-mp-23`, and `format.sh` and the hook call `clang-format`, so link it under that name (`ln -s /opt/local/bin/clang-format-mp-23 /usr/local/bin/clang-format`; `port select clang` would also put MacPorts' `clang++` first on `PATH`, which the cross-syntax tests call). 23.1.5 leaves the main line's tree unchanged (`format.sh --check`: 2,656 files, checked on 2026-11-12). The Command Line Tools' Apple `clang-format` 17.0.0 does not do: it formats three constructs unlike 23.1.x (`IsConstructible<D, E&&>` in a requires-clause, `ElfW(Phdr)& ph`, `char (*)[N]`) and does not read `.clang-format-ignore`. | `sudo port install clang-23` |
 | `clang-tidy`, `run-clang-tidy` | 23.1.5 (MacPorts `clang-23`) | For checks | `scripts/tidy.sh`; linked as `clang-tidy` and `run-clang-tidy` the same way (`clang-tidy-mp-23`, `run-clang-tidy-mp-23`). Not yet run on the Mac. | `sudo port install clang-23` |
 | CMake | 3.21 or newer (4.4.4 used) | Required | | `sudo port install cmake` (or `cmake-devel`) |
 | Ninja | 1.13.2 | Required | The generator the `macos-clang` and `macos-clang-arm64` presets use. | `sudo port install ninja` |

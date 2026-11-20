@@ -1,6 +1,6 @@
 # Shaders
 
-Shaders are compiled offline to SPIR-V and DXIL and embedded as committed `*.spv.inc` and `*.dxil.inc` files (PLAN.md assumption
+Shaders are compiled offline to SPIR-V and DXIL and embedded as committed `*.spv.inc`, `*.dxil.inc` and `*.metallib.inc` files (and `*.perm.inc` for permuted shaders) (PLAN.md assumption
 #18). Building the engine never needs a shader compiler: a checkout without one uses the committed outputs as they are.
 
 Sources are Slang: `shaders/<name>.vert|frag|comp.slang`, outputs `shaders/<name>.spv.inc` (the SPIR-V words) and `shaders/<name>.refl.inc` (the reflection blob and block constants), compiled by `slangc` and turned into includes by `tools/shader_mint`. The

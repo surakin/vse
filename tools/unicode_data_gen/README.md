@@ -3,7 +3,10 @@
 Dev-time only tool (never linked or shipped in the engine/game binary —
 same category as CMake itself, `PLAN.md` assumption #8). Generates
 `engine/foundation/string/generated/grapheme_break_table.cpp` from Unicode's
-published `GraphemeBreakProperty.txt` and `emoji-data.txt` data files.
+published `GraphemeBreakProperty.txt` and `emoji-data.txt` data files, and
+the three normalization tables beside it (`decomposition_table.cpp`,
+`combining_class_table.cpp`, `composition_exclusions_table.cpp`) from
+`UnicodeData.txt` and `CompositionExclusions.txt`.
 
 The generated output is checked into the repo and is what Foundation code
 actually depends on at runtime — this script is not run as part of the
@@ -30,6 +33,20 @@ curl -s https://www.unicode.org/Public/<version>/ucd/emoji/emoji-data.txt \
 python3 generate_grapheme_table.py \
   downloads/GraphemeBreakProperty.txt downloads/emoji-data.txt \
   <version> ../../engine/foundation/string/generated/grapheme_break_table.cpp
+```
+
+The normalization tables come from the second generator, with its own two
+inputs (also vendored in `downloads/`):
+
+```sh
+curl -s https://www.unicode.org/Public/<version>/ucd/UnicodeData.txt \
+  -o downloads/UnicodeData.txt
+curl -s https://www.unicode.org/Public/<version>/ucd/CompositionExclusions.txt \
+  -o downloads/CompositionExclusions.txt
+
+python3 generate_normalization_tables.py \
+  downloads/UnicodeData.txt downloads/CompositionExclusions.txt \
+  <version> ../../engine/foundation/string/generated
 ```
 
 Then update `/UNICODE_VERSION` to match and commit both the vendored

@@ -85,7 +85,7 @@ lexicographic path order; declarations in source order.
 
 ID = qualified name; for functions append the **normalized parameter type
 list** and trailing qualifiers: `vse::jobs::Counter::Increment(u64)`,
-`jobs::Scheduler::HelpUntil(const std::atomic<int>&,int)`. Normalization: collapse
+`jobs::Scheduler::HelpUntil(const Atomic<int>&,int)`. Normalization: collapse
 whitespace, drop parameter names and default values, keep `const`/`&`/`*`,
 trailing `const`/`noexcept` kept. The outermost `vse::`
 namespace is **omitted** in IDs and display (`jobs::Counter::Increment(u64)`).
@@ -166,7 +166,7 @@ docgen check     [same]
 docgen links     [--root DIR]
 docgen samples   [--root DIR] [--build-dir DIR] [--jobs N]
 docgen lint      [--baseline FILE] [--root DIR]
-docgen dump      FILE.h        # declaration tree (testing aid)
+docgen dump [--all] [--keep-going] FILE.h   # declaration tree (testing aid; --all includes hidden declarations)
 docgen docs      FILE.h        # parsed doc comments + validation (testing aid)
 common: --keep-going  --quiet
 ```

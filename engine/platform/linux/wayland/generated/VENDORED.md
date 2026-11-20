@@ -1,4 +1,4 @@
-# Generated xdg-shell protocol bindings
+# Generated Wayland protocol bindings (xdg-shell first, then the others below)
 
 Upstream protocol spec: `xdg-shell.xml` from the `wayland-protocols`
 package (stable protocol, not unstable/xdg-shell-unstable-v5/v6).
@@ -58,7 +58,7 @@ Generated the same way, from `wayland-protocols` 1.50 with `wayland-scanner` 1.2
 
 ```sh
 P=/usr/share/wayland-protocols
-for f in staging/cursor-shape/cursor-shape-v1 stable/tablet/tablet-v2 unstable/pointer-constraints/pointer-constraints-unstable-v1 unstable/relative-pointer/relative-pointer-unstable-v1; do
+for f in staging/cursor-shape/cursor-shape-v1 stable/tablet/tablet-v2 unstable/pointer-constraints/pointer-constraints-unstable-v1 unstable/relative-pointer/relative-pointer-unstable-v1 unstable/primary-selection/primary-selection-unstable-v1; do
   n=$(basename $f)
   wayland-scanner client-header $P/$f.xml $n-client-protocol.h
   wayland-scanner private-code  $P/$f.xml $n-protocol.c

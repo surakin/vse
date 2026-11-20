@@ -54,8 +54,8 @@ cannot turn it on after Metal starts. Its settings file is `~/Library/Applicatio
 | `--no-vsync` | present with `Immediate` instead of `Fifo` (the same as pressing F1 once the window is open) |
 | `--gpu G` | the GPU to use: an id from `--list-gpus`, an index, or part of its name. A GPU that does not exist or cannot present fails (exit 1); it never falls back to another one |
 | `--list-gpus` | print the backend and its GPUs (id, name, kind, memory, driver, and why one is unsuitable) and exit |
-| `--rhi NAME` | the graphics backend: `auto` (default), `vulkan`, `dx12` or `null`; the `renderer.backend` setting |
-| `--text` | draw the text overlay (a greeting and a status line) over the picture; in screenshot mode it is off unless given (F11 toggles it in the window) |
+| `--rhi NAME` | the graphics backend: `auto` (default), `vulkan`, `dx12`, `metal` or `null`; the `renderer.backend` setting |
+| `--text STRING` | the overlay greeting (default "Hello, world!"); draw the text overlay (a greeting and a status line) over the picture; in screenshot mode it is off unless given (F11 toggles it in the window) |
 | `--prewarm` | after a device reset rebuild every pipeline at once instead of when it is first used |
 | `--script WORDS` | run the live paths without a keyboard (below) |
 | `--validation` | enable the backend's validation layer with synchronization validation (Direct3D 12: GPU-based validation) |
@@ -98,7 +98,7 @@ took. There is no progress display: a device reset takes about 40 ms here (see t
 `plans/phase-08-rhi-reset/day-113-demo-seams-and-measurements.md`).
 
 `--script` takes space-separated steps: `frame:N` (run until N frames were drawn), `set:key=value` (a setting by its name, for example
-`set:present_mode=immediate`), `reset`, `gpu:next`, `loss` (lose the device), `overlay` (toggle the text overlay), `quit`. The keys are off while a script runs. Example:
+`set:present_mode=immediate`), `reset`, `gpu:next`, `loss` (lose the device), `crash:segv`, `crash:abort` and `crash:assert` (crash on purpose), `overlay` (toggle the text overlay), `quit`. The keys are off while a script runs. Example:
 
 ```
 renderer_demo --validation --frames 120 --script "frame:10 set:present_mode=immediate frame:20 reset frame:30 set:shader_quality=low frame:40 loss frame:100 quit"
@@ -134,7 +134,7 @@ is logged), so a checkout without the files still runs.
 |---|---|
 | `main.cpp` | options, the window loop and its keys and script, the offscreen path, the cameras |
 | `demo_scene.*` | the scene: meshes, textures, materials, and the objects, lights and camera as ECS entities (a schedule moves the lights, propagates transforms and mirrors them into the `RenderScene`; also used by the tests) |
-| `demo_frame.*` | material system, per-frame buffers, passes and `Renderer` around them (also used by the tests) |
+| `demo_frame.h` | material system, per-frame buffers, passes and `Renderer` around them (also used by the tests) |
 | `demo_assets.*`, `mint_assets.cpp` | the procedural textures and the tool that writes them |
 | `/tests/rhi/renderer_demo_gpu_test.cpp` | the golden image, draw-order independence and the crossing-planes depth test |
 | `/tests/rhi/golden/renderer_demo.ppm` | the golden image (regenerate with `ENGINE_RHI_UPDATE_GOLDEN=1`, then look at it) |
