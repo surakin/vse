@@ -1074,7 +1074,8 @@ TEST_CASE("The import summary names the nodes, the bounds, the materials and the
     CHECK(summary.Contains(StringView("\"bounds\":{\"min\":[1,2,3],\"max\":[2,3,3]}")));
     CHECK(summary.Contains(StringView("\"materials\":[\"Screen\",\"\"]")));
     CHECK(summary.Contains(StringView("\"animations\":[{\"name\":\"Walk\",\"duration\":2.5}]")));
-    CHECK(summary.Contains(StringView("\"lights\":[]}")));  // a level with no light (glTF coverage Day 12)
+    CHECK(
+        summary.Contains(StringView("\"lights\":[],\"collision\":{")));  // a level with no light (glTF coverage Day 12)
 
     // The import's `scale` applies to positions and bounds, not to durations.
     options.scale = 2.0f;

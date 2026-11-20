@@ -160,6 +160,7 @@ ResourceHost::~ResourceHost()
     }
     skeleton_pins_.Clear();
     clip_pins_.Clear();
+    mesh_collider_pins_.Clear();  // handles release into the manager: before it goes (glTF colliders)
     animation_ = nullptr;
     // The tickets and handles are gone (the engine refuses to be destroyed while any is out). The backend's entries
     // queue the hand-back of their lent bytes as they are destroyed.

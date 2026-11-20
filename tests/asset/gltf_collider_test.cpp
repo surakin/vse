@@ -518,4 +518,70 @@ TEST_CASE("gltf collider: hostile OMI collision is refused naming it", "[asset][
     CHECK(Import(no_shapes, &result, &error).Failed());
 }
 
+// glTF colliders Day 7: hostile collision through the whole import. 2,000 copies of a file with suffix and OMI
+// colliders, each with a few bytes of its JSON changed: every import succeeds or fails with a message, and every level
+// made loads.
+TEST_CASE("gltf collider: mutated collision files never crash the import", "[asset][gltf][collision][hostile]")
+{
+    const Vector<byte> base = OmiGlb(
+        "{\"type\":\"box\",\"box\":{\"size\":[2,4,6]}},{\"type\":\"capsule\",\"capsule\":{\"height\":1.5}},"
+        "{\"type\":\"trimesh\",\"trimesh\":{\"mesh\":0}}",
+        "\"nodes\":[{\"name\":\"ground-col\",\"mesh\":0,\"children\":[1]},"
+        "{\"name\":\"crate\",\"scale\":[1,2,1],\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":0}}}},"
+        "{\"name\":\"post-colonly\",\"mesh\":0,\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":1}}}},"
+        "{\"name\":\"floor\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":2}}}}]",
+        3, ",\"OMI_physics_body\":{\"physicsMaterials\":[{\"dynamicFriction\":0.2}]}");
+    // The JSON chunk: after the 12-byte header and the 8-byte chunk header; its length is at byte 12.
+    u32 json_length = 0;
+    MemCopy(&json_length, base.Data() + 12, sizeof(json_length));
+    REQUIRE(json_length + 20 <= base.Size());
+    static const char kBytes[] = "0123456789-.e,:[]{}\"aAzZ \x01\xff";
+    u64 state = 0x9E3779B97F4A7C15ull;
+    const auto next = [&state](u32 bound)
+    {
+        state = state * 6364136223846793005ull + 1442695040888963407ull;
+        return static_cast<u32>((state >> 33) % bound);
+    };
+    u32 imported = 0;
+    for (u32 round = 0; round < 2000; ++round)
+    {
+        Vector<byte> copy;
+        copy.Resize(base.Size());
+        MemCopy(copy.Data(), base.Data(), base.Size());
+        const u32 changes = 1 + next(4);
+        for (u32 k = 0; k < changes; ++k)
+        {
+            copy[20 + next(json_length)] = static_cast<byte>(kBytes[next(sizeof(kBytes) - 1)]);
+        }
+        ImportResult result;
+        GltfError error;
+        NoGltfSource none;
+        SeededIdSource ids(round + 1);
+        ImportOptions options;
+        options.ids = &ids;
+        options.emit_level = true;
+        const Status status = ImportGltf(ByteSpan(copy.Data(), copy.Size()), none, options, &result, &error);
+        if (status.Failed())
+        {
+            CHECK(error.message[0] != 0);  // a refusal says why
+            continue;
+        }
+        ++imported;
+        if (const ImportedResource* level = FirstOfType(result, types::kLevel))
+        {
+            TypeRegistry types;
+            storage::ComponentRegistry registry;
+            REQUIRE(storage::RegisterBuiltinComponents(&registry).Ok());
+            REQUIRE(RegisterLevelComponents(&registry).Ok());
+            REQUIRE(animation::RegisterAnimationComponents(&registry).Ok());
+            REQUIRE(scene::RegisterSceneComponents(&registry).Ok());
+            ecs::World world;
+            storage::KeyIndex index;
+            CHECK(LoadLevelBlob(ByteSpan(level->blob.Data(), level->blob.Size()), types, registry, world, index).Ok());
+        }
+    }
+    INFO("imports that succeeded: " << imported);
+    CHECK(imported > 0);  // the mutations do not refuse everything (some change only a name or a number)
+}
+
 }  // namespace engine_placeholder::asset

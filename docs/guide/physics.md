@@ -358,6 +358,12 @@ character there and the solver pushes dynamic bodies out of its way, while nothi
 (`began_ground`, `ended_ground`, the walls hit and the last wall normal); `State()` has `on_ground`, `ground_body`, `ground_normal`. The
 walk is the same at 60 and 120 steps per second to a few centimetres (`tests/physics/character_test.cpp`).
 
+**On imported ground** (glTF colliders, 2026-11-20): a triangle mesh has no inside (a body whose centre passes through a triangle is pushed out the
+other side), but the character's move is a swept capsule, so it never passes through a single-sided ground at walking or falling speeds; a fast
+dynamic body can (continuous collision is for convex shapes against meshes): give such grounds a closed volume, or keep them at least as thick as a
+step's fall. Static colliders with a parent (a spawned level's) follow their entity's world position and rotation, not later scale changes. A
+physics snapshot restores into the world it was taken from: the mesh ids in it are that world's.
+
 ## Events, joints as components and debug drawing
 
 **Events.** `PhysicsWorld::Events()` holds what happened in the last `Update` (or the last `Step` called by hand; `Update` clears the lists at

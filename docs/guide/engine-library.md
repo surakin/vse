@@ -815,6 +815,46 @@ A character is a transform plus `engine_character` (radius, height, step height,
 
 The sample is `tests/engine_library/physics_sample.c` (a stack of boxes, a pendulum on a ball joint, a walking and jumping character, a trigger; 600 frames, a rewind at 300; the printed checksum is the same on every build), and `host_physics_joints.c` checks each refusal. The walk-through is the tutorial [Physics in Your Window](../tutorials/physics-in-your-window.md). Not here yet: hull, mesh and compound colliders (the `engine_collider` shapes are the three primitives) and a body made from a resource id; they need the collision assets to be addressable through `resource_add`.
 
+## A solid level and a character (glTF colliders, 2026-11-20)
+
+An artist's `.glb` brings its own collision (`docs/guide/assets.md`, "Collision from glTF": `-col`/`-colonly` object names, or `OMI_physics_*`
+shapes). Import it with `ENGINE_IMPORT_EMIT_LEVEL`, spawn the level, run two frames, and the world is solid: a character dropped above the ground lands
+on it.
+
+```c
+engine_import_options options = { sizeof options };
+options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+api->import_gltf(engine, glb, glb_size, &options, &result);      /* the level is the result's ENGINE_RESOURCE_LEVEL */
+api->level_spawn(world, level, NULL, &root, NULL, 0, NULL);      /* static bodies for every collider of the file */
+
+uint64_t player; api->entity_create(world, &player);
+engine_transform t = { sizeof t, { 0, 3, 0 }, { 0, 0, 0, 1 }, { 1, 1, 1 } };
+api->component_set(world, player, ENGINE_COMPONENT_TRANSFORM, &t);
+engine_character c = { sizeof c, 0.3f, 1.8f, 0.3f, 0.64f, 0.01f, 1.0f };   /* radius, height, step, slope, skin, gravity */
+api->component_set(world, player, ENGINE_COMPONENT_CHARACTER, &c);
+
+for (;;) {
+    const float wish[3] = { input_x * 3.0f, 0, input_z * 3.0f };            /* metres per second */
+    engine_character_state s = { sizeof s };
+    api->character_move(world, player, wish, 1.0f / 60, &s);
+    if (jump_pressed && s.on_ground) api->character_jump(world, player, 5.0f, &s);
+    api->frame(engine, &frame_info, &stats);                               /* stats.colliders_made on the first frame */
+}
+```
+
+What to expect:
+- **Two frames** before the level is solid: the colliders are made at the end of the first frame that propagates the level's world matrices (at that
+  world scale), the bodies in the next. Spawn the level before the player, or let the player fall a frame.
+- **The character** climbs steps up to `step_height`, treats a surface whose normal's y is below `min_ground_y` as a wall, slides along walls, and falls
+  off edges; `character_state.on_ground` says whether it stands.
+- **The ground has no thickness rule for characters**: a triangle mesh has no inside, but the character's move is a swept capsule, so it never passes
+  through a single-sided ground at walking or falling speeds. A fast *dynamic* body can tunnel through a thin mesh (`docs/guide/physics.md`).
+- **Moving the level**: setting the root's transform moves its bodies a frame later; scaling it afterwards is counted
+  (`engine_frame_stats.collider_scale_changes_ignored`) and not followed: spawn it again at the new scale.
+
+**Tested** by `host_character_world.c` (a ground, a wall, a step of `step_height`, one 5 cm higher, a ramp steeper than `min_ground_y`, a ledge: landing,
+stopping, climbing, falling, and two worlds moving the same), `host_import.c` (`TestColliders`, `TestMeshShape`) and `level_spawn_test.cpp`.
+
 ## The C++ layer: `engine.h`
 
 A host written in C++ may include `include/engine/engine.h` beside `engine_c.h` (it includes nothing else: no standard library, no exceptions, no RTTI).
