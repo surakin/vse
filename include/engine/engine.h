@@ -697,7 +697,8 @@ private:
     friend class Engine;
 };
 
-/// What a glTF import made; the five buffers are released with the object.
+/// What a glTF import made; its six buffers (ids, types, paths, warnings, manifest, summary) are released with the
+/// object.
 class ImportResult
 {
 public:

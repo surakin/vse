@@ -1134,16 +1134,17 @@ extern "C"
         engine_buffer warnings; /* UTF-8, one line per warning */
         engine_buffer manifest; /* UTF-8: pass it to the next import of this file as `manifest` to keep the ids */
         /* UTF-8 JSON, the facts about the file that a host needs after adding the blobs back from its own cache and
-         * that no engine call reads from a loaded level (maintenance, 2026-11-18); empty when the file made no level:
-         *   {"version":1,
-         *    "nodes":[{"name":"Spawn","position":[x,y,z],"mesh":-1}, ...],   the level's entities in order, with the
-         *                                                                     names level_spawn gives them
-         * (entity_find) "bounds":{"min":[x,y,z],"max":[x,y,z]} or null,                  of the meshes' POSITION
-         * ranges, world "materials":["Screen", ...],                                     in the file's order, "" if
-         * unnamed "animations":[{"name":"Walk","duration":1.2}, ...],             seconds, the longest sampler input
-         * "lights":[{"name":"Lamp","type":"point","node":"Lamp","position":[x,y,z]}, ...]}   one per level node
-         * with a KHR_lights_punctual light, in level order: its name ("" if unnamed), its glTF type
-         * (point, spot or directional), the entity it is on and its world position.
+         * that no engine call reads from a loaded level (maintenance, 2026-11-18); empty when the file made no level.
+         * An object with these members:
+         * - "version": 1.
+         * - "nodes": the level's entities in order, each {"name":"Spawn","position":[x,y,z],"mesh":-1}, with the
+         *   names level_spawn gives them (entity_find).
+         * - "bounds": {"min":[x,y,z],"max":[x,y,z]} of the meshes' POSITION ranges in the world, or null.
+         * - "materials": the material names in the file's order, "" if unnamed.
+         * - "animations": each {"name":"Walk","duration":1.2}, in seconds (the longest sampler input).
+         * - "lights": one per level node with a KHR_lights_punctual light, in level order, each
+         *   {"name":"Lamp","type":"point","node":"Lamp","position":[x,y,z]}: its name ("" if unnamed), its glTF type
+         *   (point, spot or directional), the entity it is on and its world position.
          * Positions and bounds are in the units of the level (the import's `scale` applied). The host stores this text
          * beside the blobs it caches. Present when struct_size covers it. */
         engine_buffer summary;
@@ -2302,9 +2303,9 @@ extern "C"
          * adds the stored blobs with resource_add_many, giving each its id and path again (the order of `ids` is
          * dependencies first), and loads the level by its id (the level is the resource made with
          * ENGINE_IMPORT_EMIT_LEVEL; store which id it is) with resource_load. Everything a load needs is in the blobs
-         * and the paths, plus `summary` (the node positions, the bounds, the material and animation names: nothing in
-         * the engine reads them back from a loaded level), which the host keeps in its own index with the ids, the
-         * types, the paths and the level's id. */
+         * and the paths, plus `summary` (the node positions, the bounds, the material and animation names, the lights:
+         * nothing in the engine reads them back from a loaded level), which the host keeps in its own index with the
+         * ids, the types, the paths and the level's id. */
 
         /* Copies the complete blob of a resource of the memory backend into `*out` (release it with
          * engine_buffer_release): byte for byte what resource_add takes, so that adding it again gives a resource with
