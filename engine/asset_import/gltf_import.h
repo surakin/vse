@@ -39,8 +39,9 @@ namespace engine_placeholder::asset
 /// (`engine_api.import_format_version`, which also folds in the blob container and type versions). 2: glTF coverage
 /// (PBR maps, colours, morphs, lights); 3: skins in the space of the node that uses them (2026-11-20); 4:
 /// `KHR_materials_pbrSpecularGlossiness` converted to metallic-roughness, no longer ignored when only used
-/// (2026-11-20).
-inline constexpr u32 kGltfImporterOutputVersion = 4;
+/// (2026-11-20); 5: collision (glTF colliders: `MCOL`s,
+/// `static_collider`, `-colonly` meshes not drawn; 2026-11-20).
+inline constexpr u32 kGltfImporterOutputVersion = 5;
 
 /// The steps an import goes through (container, textures and materials, skeletons, meshes, clips);
 /// `ImportOptions::steps_done` counts them.
@@ -72,6 +73,8 @@ struct ImportLimits
     u32 max_animations = 4096;                 ///< `animations`.
     u64 max_pixels = u64{1} << 26;             ///< The pixels of one decoded image (Day 338).
     u64 max_output_bytes = u64{2} << 30;       ///< All blobs of one import.
+    u64 max_collision_triangles = u64{1} << 22;  ///< The triangles of every collider of one import together (glTF
+                                                 ///< colliders Day 3).
 };
 
 /// Reads the files a glTF names by URI.
@@ -148,13 +151,14 @@ private:
 /// The kinds of resource an import makes.
 enum class ImportKind : u8
 {
-    Image,     ///< A decoded glTF image (Day 338).
-    Texture,   ///< A glTF texture (Day 338).
-    Material,  ///< A glTF material (Day 338).
-    Skeleton,  ///< A glTF skin (Day 337).
-    Mesh,      ///< A glTF mesh (Day 336).
-    Clip,      ///< A glTF animation (Day 337).
-    Level,     ///< The default scene (Day 338).
+    Image,         ///< A decoded glTF image (Day 338).
+    Texture,       ///< A glTF texture (Day 338).
+    Material,      ///< A glTF material (Day 338).
+    Skeleton,      ///< A glTF skin (Day 337).
+    Mesh,          ///< A glTF mesh (Day 336).
+    Clip,          ///< A glTF animation (Day 337).
+    Level,         ///< The default scene (Day 338).
+    MeshCollider,  ///< The `MCOL` of a glTF mesh a collider uses, keyed by the mesh index (glTF colliders Day 3).
 };
 
 /// The name of a kind (`mesh`, `texture`, ...), as the manifest text writes it.
@@ -300,7 +304,12 @@ struct ImportReport
     f32 resampling_rotation_degrees = 0;   ///< The largest error (degrees) resampling a cubic-spline rotation channel
                                            ///< made.
     u64 output_bytes = 0;  ///< The bytes of the blobs made so far (checked against `ImportLimits::max_output_bytes`).
-    u32 warnings = 0;      ///< Features dropped or approximated, each described in `notes`.
+    u32 colliders = 0;     ///< Level nodes that got a static collider (glTF colliders Day 3).
+    u32 collision_meshes = 0;             ///< `MCOL` resources made.
+    u64 collision_triangles = 0;          ///< Their triangles together.
+    u32 collision_primitives = 0;         ///< Colliders that are a box, a sphere or a capsule.
+    u32 collision_dropped = 0;            ///< Nodes marked as colliders that got none (each with a warning).
+    u32 warnings = 0;                     ///< Features dropped or approximated, each described in `notes`.
     Vector<String<HeapAllocator>> notes;  ///< One line per warning, naming the glTF object.
 };
 

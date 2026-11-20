@@ -79,6 +79,9 @@ void RegisterImportSettings(settings::Registry* registry)
     Declare(registry, "assets.import.max_output_bytes", static_cast<i64>(d.max_output_bytes), 1024, kMax,
             "ENGINE_ASSETS_IMPORT_MAX_OUTPUT_BYTES", "assets-import-max-output-bytes", "Import: most output bytes",
             "the most bytes of blobs one import may make");
+    Declare(registry, "assets.import.max_collision_triangles", static_cast<i64>(d.max_collision_triangles), 0, kMax,
+            "ENGINE_ASSETS_IMPORT_MAX_COLLISION_TRIANGLES", "assets-import-max-collision-triangles",
+            "Import: most collision triangles", "the most triangles of every collider of one import together");
     const ImportOptions o;
     DeclareFloat(registry, "assets.import.light_intensity_scale", o.light_intensity_scale, 0.0, 1e9,
                  "ENGINE_ASSETS_IMPORT_LIGHT_INTENSITY_SCALE", "assets-import-light-intensity-scale",
@@ -117,6 +120,8 @@ ImportLimits ImportLimitsFromSettings(const settings::Registry& registry)
     limits.max_images = static_cast<u32>(Read(registry, "assets.import.max_images", limits.max_images));
     limits.max_pixels = Read(registry, "assets.import.max_pixels", limits.max_pixels);
     limits.max_output_bytes = Read(registry, "assets.import.max_output_bytes", limits.max_output_bytes);
+    limits.max_collision_triangles = Read(registry, "assets.import.max_collision_triangles",
+                                          limits.max_collision_triangles);
     return limits;
 }
 

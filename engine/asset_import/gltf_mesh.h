@@ -60,6 +60,8 @@ bool GltfMeshHasColors(const JsonValue& mesh);
 /// - Param bindings: the skeleton of each mesh, by glTF mesh index.
 /// - Param result: receives the resources, manifest entries and warnings (appended to).
 /// - Param error: receives the sentence naming the glTF mesh and primitive.
+/// - Param skip: per glTF mesh, true for one that gets no render mesh (only collision-only nodes use it, glTF colliders
+///   Day 3); empty skips none. A skipped mesh keeps its id in the sequence but is not minted or listed.
 /// - Fails: `Invalid` (a mesh without primitives, a primitive without `POSITION` or triangles, mismatched attribute
 ///   counts, an attribute of the wrong type, an index past the vertices, a strip with fewer than three indices, a skin
 ///   joint past the skeleton), `Unsupported` (a primitive mode that is not triangles, morph targets without
@@ -67,6 +69,7 @@ bool GltfMeshHasColors(const JsonValue& mesh);
 /// - Thread-safety: thread-safe for separate calls with separate arguments.
 /// - Ownership: borrows its arguments for the call only; `*result` owns what it receives.
 Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, const TypeRegistry& types,
-                    Span<const MeshSkeletonBinding> bindings, ImportResult* result, GltfError* error);
+                    Span<const MeshSkeletonBinding> bindings, ImportResult* result, GltfError* error,
+                    Span<const bool> skip = Span<const bool>());
 
 }  // namespace engine_placeholder::asset

@@ -1144,6 +1144,10 @@ extern "C"
         uint32_t max_accessors;
         uint32_t max_images;
         uint32_t reserved;
+        /* The triangles of every collider of the import together (glTF colliders, 2026-11-20; 0 takes the setting
+         * `assets.import.max_collision_triangles`, default 4,194,304): an import that would make more fails with
+         * TOO_LARGE. A struct that ends before it is served (the setting applies). */
+        uint64_t max_collision_triangles;
     } engine_import_options;
 
     /* What an import made. Every buffer is the host's to release (engine_buffer_release). */
@@ -1170,8 +1174,11 @@ extern "C"
          * - "lights": one per level node with a KHR_lights_punctual light, in level order, each
          *   {"name":"Lamp","type":"point","node":"Lamp","position":[x,y,z]}: its name ("" if unnamed), its glTF type
          *   (point, spot or directional), the entity it is on and its world position.
-         * Positions and bounds are in the units of the level (the import's `scale` applied). The host stores this text
-         * beside the blobs it caches. Present when struct_size covers it. */
+         * - "collision": {"colliders":N,"meshes":M,"triangles":T,"primitives":P,"dropped":D}: the nodes that got a
+         * static collider (`-col`/`-colonly` names or OMI_physics_*), the MCOL meshes made, their triangles together,
+         * the colliders that are a box, sphere or capsule, and the marked nodes that got none (glTF colliders,
+         * 2026-11-20). Positions and bounds are in the units of the level (the import's `scale` applied). The host
+         * stores this text beside the blobs it caches. Present when struct_size covers it. */
         engine_buffer summary;
     } engine_import_result;
 

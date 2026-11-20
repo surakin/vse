@@ -43,33 +43,33 @@ struct PrimData
     Vector<Target> targets;
 };
 
-struct Vec3
+struct MeshVec3d
 {
     f64 x, y, z;
 };
 
-Vec3 Sub(const Vec3& a, const Vec3& b)
+MeshVec3d Sub(const MeshVec3d& a, const MeshVec3d& b)
 {
-    return Vec3{a.x - b.x, a.y - b.y, a.z - b.z};
+    return MeshVec3d{a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
-Vec3 Cross(const Vec3& a, const Vec3& b)
+MeshVec3d Cross(const MeshVec3d& a, const MeshVec3d& b)
 {
-    return Vec3{a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+    return MeshVec3d{a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
 }
 
-f64 Dot(const Vec3& a, const Vec3& b)
+f64 Dot(const MeshVec3d& a, const MeshVec3d& b)
 {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-Vec3 Position(const MeshVertex& v)
+MeshVec3d Position(const MeshVertex& v)
 {
-    return Vec3{static_cast<f64>(v.position[0]), static_cast<f64>(v.position[1]), static_cast<f64>(v.position[2])};
+    return MeshVec3d{static_cast<f64>(v.position[0]), static_cast<f64>(v.position[1]), static_cast<f64>(v.position[2])};
 }
 
 // True and `v` scaled to unit length when it is long enough to have a direction.
-bool Normalize(Vec3* v)
+bool Normalize(MeshVec3d* v)
 {
     const f64 length = Sqrt(Dot(*v, *v));
     if (!(length > 1e-30))
@@ -273,9 +273,9 @@ void MakeNormals(PrimData* prim)
     }
     for (usize t = 0; t + 2 < prim->indices.Size(); t += 3)
     {
-        const Vec3 p0 = Position(prim->vertices[prim->indices[t]]);
-        const Vec3 face = Cross(Sub(Position(prim->vertices[prim->indices[t + 1]]), p0),
-                                Sub(Position(prim->vertices[prim->indices[t + 2]]), p0));
+        const MeshVec3d p0 = Position(prim->vertices[prim->indices[t]]);
+        const MeshVec3d face = Cross(Sub(Position(prim->vertices[prim->indices[t + 1]]), p0),
+                                     Sub(Position(prim->vertices[prim->indices[t + 2]]), p0));
         for (usize k = 0; k < 3; ++k)
         {
             const usize v = prim->indices[t + k];
@@ -286,10 +286,10 @@ void MakeNormals(PrimData* prim)
     }
     for (usize v = 0; v < prim->vertices.Size(); ++v)
     {
-        Vec3 n{sum[v * 3], sum[v * 3 + 1], sum[v * 3 + 2]};
+        MeshVec3d n{sum[v * 3], sum[v * 3 + 1], sum[v * 3 + 2]};
         if (!Normalize(&n))
         {
-            n = Vec3{0, 0, 1};
+            n = MeshVec3d{0, 0, 1};
         }
         prim->vertices[v].normal = {{static_cast<f32>(n.x), static_cast<f32>(n.y), static_cast<f32>(n.z)}};
     }
@@ -309,8 +309,8 @@ void MakeTangents(PrimData* prim, bool has_uv)
         const MeshVertex& v0 = prim->vertices[prim->indices[t]];
         const MeshVertex& v1 = prim->vertices[prim->indices[t + 1]];
         const MeshVertex& v2 = prim->vertices[prim->indices[t + 2]];
-        const Vec3 e1 = Sub(Position(v1), Position(v0));
-        const Vec3 e2 = Sub(Position(v2), Position(v0));
+        const MeshVec3d e1 = Sub(Position(v1), Position(v0));
+        const MeshVec3d e2 = Sub(Position(v2), Position(v0));
         const f64 du1 = static_cast<f64>(v1.uv[0]) - static_cast<f64>(v0.uv[0]);
         const f64 dv1 = static_cast<f64>(v1.uv[1]) - static_cast<f64>(v0.uv[1]);
         const f64 du2 = static_cast<f64>(v2.uv[0]) - static_cast<f64>(v0.uv[0]);
@@ -321,10 +321,10 @@ void MakeTangents(PrimData* prim, bool has_uv)
             continue;  // a triangle whose texture coordinates collapse has no tangent
         }
         const f64 inv = 1.0 / r;
-        const Vec3 tangent{(e1.x * dv2 - e2.x * dv1) * inv, (e1.y * dv2 - e2.y * dv1) * inv,
-                           (e1.z * dv2 - e2.z * dv1) * inv};
-        const Vec3 bitangent{(e2.x * du1 - e1.x * du2) * inv, (e2.y * du1 - e1.y * du2) * inv,
-                             (e2.z * du1 - e1.z * du2) * inv};
+        const MeshVec3d tangent{(e1.x * dv2 - e2.x * dv1) * inv, (e1.y * dv2 - e2.y * dv1) * inv,
+                                (e1.z * dv2 - e2.z * dv1) * inv};
+        const MeshVec3d bitangent{(e2.x * du1 - e1.x * du2) * inv, (e2.y * du1 - e1.y * du2) * inv,
+                                  (e2.z * du1 - e1.z * du2) * inv};
         for (usize k = 0; k < 3; ++k)
         {
             const usize v = prim->indices[t + k];
@@ -339,22 +339,23 @@ void MakeTangents(PrimData* prim, bool has_uv)
     for (usize v = 0; v < prim->vertices.Size(); ++v)
     {
         MeshVertex& vertex = prim->vertices[v];
-        Vec3 n{static_cast<f64>(vertex.normal[0]), static_cast<f64>(vertex.normal[1]),
-               static_cast<f64>(vertex.normal[2])};
+        MeshVec3d n{static_cast<f64>(vertex.normal[0]), static_cast<f64>(vertex.normal[1]),
+                    static_cast<f64>(vertex.normal[2])};
         if (!Normalize(&n))
         {
-            n = Vec3{0, 0, 1};
+            n = MeshVec3d{0, 0, 1};
         }
-        Vec3 t{sum[v * 6], sum[v * 6 + 1], sum[v * 6 + 2]};
-        t = Vec3{t.x - n.x * Dot(n, t), t.y - n.y * Dot(n, t), t.z - n.z * Dot(n, t)};
+        MeshVec3d t{sum[v * 6], sum[v * 6 + 1], sum[v * 6 + 2]};
+        t = MeshVec3d{t.x - n.x * Dot(n, t), t.y - n.y * Dot(n, t), t.z - n.z * Dot(n, t)};
         bool from_uv = Normalize(&t);
         if (!from_uv)
         {
-            const Vec3 axis = Abs(n.x) < 0.9 ? Vec3{1, 0, 0} : Vec3{0, 1, 0};  // any direction across the normal
-            t = Vec3{axis.x - n.x * Dot(n, axis), axis.y - n.y * Dot(n, axis), axis.z - n.z * Dot(n, axis)};
+            const MeshVec3d axis = Abs(n.x) < 0.9 ? MeshVec3d{1, 0, 0}
+                                                  : MeshVec3d{0, 1, 0};  // any direction across the normal
+            t = MeshVec3d{axis.x - n.x * Dot(n, axis), axis.y - n.y * Dot(n, axis), axis.z - n.z * Dot(n, axis)};
             Normalize(&t);
         }
-        const Vec3 b{sum[v * 6 + 3], sum[v * 6 + 4], sum[v * 6 + 5]};
+        const MeshVec3d b{sum[v * 6 + 3], sum[v * 6 + 4], sum[v * 6 + 5]};
         const f32 sign = from_uv && Dot(Cross(n, t), b) < 0.0 ? -1.0f : 1.0f;
         vertex.tangent = {{static_cast<f32>(t.x), static_cast<f32>(t.y), static_cast<f32>(t.z), sign}};
     }
@@ -781,7 +782,8 @@ bool GltfMeshHasColors(const JsonValue& mesh)
 }
 
 Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, const TypeRegistry& types,
-                    Span<const MeshSkeletonBinding> bindings, ImportResult* result, GltfError* error)
+                    Span<const MeshSkeletonBinding> bindings, ImportResult* result, GltfError* error,
+                    Span<const bool> skip)
 {
     const JsonValue meshes = document.root.Get("meshes");
     const usize mesh_count = meshes.Size();
@@ -826,6 +828,10 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
     const JsonValue materials = document.root.Get("materials");
     for (usize m = 0; m < mesh_count; ++m)
     {
+        if (m < skip.Size() && skip[m])
+        {
+            continue;  // a collision-only mesh: its collider is an MCOL (glTF colliders Day 3)
+        }
         const JsonValue mesh = meshes.At(m);
         const JsonValue primitives = mesh.Get("primitives");
         if (!primitives.IsArray() || primitives.Size() == 0)

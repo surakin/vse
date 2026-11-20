@@ -134,11 +134,14 @@ struct ImportObject
 namespace
 {
 
+// The first version of engine_import_options ended before `max_collision_triangles` (glTF colliders, 2026-11-20).
+constexpr usize kOptionsFirstSize = offsetof(engine_import_options, max_collision_triangles);
+
 // The id seed of the host's options: read only when the host's struct is big enough to hold it (Prepare refuses a
 // smaller one).
 u64 SeedOf(const engine_import_options* given)
 {
-    if (given == nullptr || StructSizeOf(given) < sizeof(engine_import_options))
+    if (given == nullptr || StructSizeOf(given) < kOptionsFirstSize)
     {
         return 0;
     }
@@ -151,11 +154,12 @@ engine_status Prepare(const engine_import_options* given, const ResourceConfig& 
     engine_import_options o = {};
     if (given != nullptr)
     {
-        if (StructSizeOf(given) < sizeof(engine_import_options))
+        if (StructSizeOf(given) < kOptionsFirstSize)
         {
             return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_import_options.struct_size is smaller than the struct");
         }
-        o = *given;
+        // A host of the first version: only what its struct holds is read.
+        MemCopy(&o, given, StructSizeOf(given) < sizeof(o) ? StructSizeOf(given) : sizeof(o));
     }
     if ((o.flags & ~kKnownFlags) != 0)
     {
@@ -187,6 +191,7 @@ engine_status Prepare(const engine_import_options* given, const ResourceConfig& 
         out.limits.max_nodes = c.max_nodes;
         out.limits.max_accessors = c.max_accessors;
         out.limits.max_images = c.max_images;
+        out.limits.max_collision_triangles = c.max_collision_triangles;
     }
     out.light_intensity_scale = c.light_intensity_scale;
     out.sun_intensity_scale = c.sun_intensity_scale;
@@ -206,6 +211,10 @@ engine_status Prepare(const engine_import_options* given, const ResourceConfig& 
     if (o.max_output_bytes != 0)
     {
         out.limits.max_output_bytes = o.max_output_bytes;
+    }
+    if (o.max_collision_triangles != 0)
+    {
+        out.limits.max_collision_triangles = o.max_collision_triangles;
     }
     if (o.max_pixels != 0)
     {
@@ -362,6 +371,7 @@ void ReadImporterSettings(const settings::Registry& registry, ResourceConfig* co
     c.max_nodes = limits.max_nodes;
     c.max_accessors = limits.max_accessors;
     c.max_images = limits.max_images;
+    c.max_collision_triangles = limits.max_collision_triangles;
     asset::ImportOptions light_options;
     asset::ApplyImportLightSettings(registry, &light_options);
     c.light_intensity_scale = light_options.light_intensity_scale;

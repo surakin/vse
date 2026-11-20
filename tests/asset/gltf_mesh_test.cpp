@@ -1316,7 +1316,7 @@ TEST_CASE("The import summary lists the level's lights", "[asset][gltf][level][l
     INFO(result.summary.CStr());
     CHECK(result.summary.View().Contains(
         StringView("\"lights\":[{\"name\":\"Lamp\",\"type\":\"point\",\"node\":\"bulb\",\"position\":[2,6,6]},"
-                   "{\"name\":\"\",\"type\":\"spot\",\"node\":\"torch\",\"position\":[8,0,0]}]}")));
+                   "{\"name\":\"\",\"type\":\"spot\",\"node\":\"torch\",\"position\":[8,0,0]}],\"collision\":{")));
 }
 
 }  // namespace engine_placeholder::asset

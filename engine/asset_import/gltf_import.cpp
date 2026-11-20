@@ -2,6 +2,7 @@
 #include "containers/hash.h"
 #include "asset_import/gltf_level.h"
 
+#include "asset_import/gltf_collision.h"
 #include "asset_import/gltf_container.h"
 #include "asset_import/gltf_clip.h"
 #include "asset_import/gltf_material.h"
@@ -32,9 +33,9 @@ u64 SplitMix(u64* state)
 
 bool ParseKind(StringView name, ImportKind* out)
 {
-    static const ImportKind kinds[] = {ImportKind::Image,    ImportKind::Texture, ImportKind::Material,
-                                       ImportKind::Skeleton, ImportKind::Mesh,    ImportKind::Clip,
-                                       ImportKind::Level};
+    static const ImportKind kinds[] = {ImportKind::Image,    ImportKind::Texture,     ImportKind::Material,
+                                       ImportKind::Skeleton, ImportKind::Mesh,        ImportKind::Clip,
+                                       ImportKind::Level,    ImportKind::MeshCollider};
     for (const ImportKind kind : kinds)
     {
         if (name == StringView(ImportKindName(kind)))
@@ -121,6 +122,7 @@ const char* ImportKindName(ImportKind kind)
     case ImportKind::Mesh: return "mesh";
     case ImportKind::Clip: return "clip";
     case ImportKind::Level: return "level";
+    case ImportKind::MeshCollider: return "mesh_collider";
     }
     return "unknown";
 }
@@ -446,6 +448,15 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
     const TypeRegistry types;
     GltfNodeGraph graph;
     ENGINE_TRY(ReadNodeGraph(document, &graph, error));
+    // Collision (glTF colliders Day 3): read only when the import makes a level, the one thing that uses it.
+    Vector<GltfNodeCollision> collisions;
+    Vector<bool> collision_only;  // per glTF mesh: only collision-only nodes use it, so it gets no render mesh
+    if (options.emit_level)
+    {
+        ENGINE_TRY(ReadCollisionMarks(document, graph, &report, &collisions, error));
+        CollisionOnlyMeshes(graph, Span<const GltfNodeCollision>(collisions.Data(), collisions.Size()), report.meshes,
+                            &collision_only);
+    }
     // Textures and materials first (everything refers to them, nothing to later kinds), then skeletons (meshes and
     // clips refer to them), then the meshes skinned to them, then the clips.
     ENGINE_TRY(ImportMaterials(document, graph, source, options, types, result, error));
@@ -476,14 +487,16 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
         binding.joint_remap = Span<const u32>(skin.joint_of_slot.Data(), skin.joint_of_slot.Size());
     }
     ENGINE_TRY(ImportMeshes(document, options, types, Span<const MeshSkeletonBinding>(bindings.Data(), bindings.Size()),
-                            result, error));
+                            result, error, Span<const bool>(collision_only.Data(), collision_only.Size())));
     ENGINE_TRY(Step(options, error));
     ENGINE_TRY(ImportClips(document, graph, options, types, Span<const ImportedSkin>(skins.Data(), skins.Size()),
                            result, error));
     if (options.emit_level)
     {
+        ENGINE_TRY(ImportColliders(document, options, types, &collisions, result, error));
+        ENGINE_TRY(Step(options, error));
         ENGINE_TRY(ImportLevel(document, graph, options, types, Span<const ImportedSkin>(skins.Data(), skins.Size()),
-                               result, error));
+                               Span<const GltfNodeCollision>(collisions.Data(), collisions.Size()), result, error));
     }
     return Step(options, error);
 }

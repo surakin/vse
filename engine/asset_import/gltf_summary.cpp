@@ -2,6 +2,7 @@
 
 #include "algorithm.h"
 #include "asset_import/gltf_accessor.h"
+#include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/number.h"
 #include "lang/scalar.h"
@@ -400,7 +401,15 @@ void BuildImportSummary(const GltfDocument& document, const GltfNodeGraph& graph
         AppendVector(&out, position);
         out.Append('}');
     }
-    out.Append("]}");
+    // Collision (glTF colliders Day 3): the counts the collider import left in the report.
+    const ImportReport& report = result->report;
+    char counts[192];
+    FormatTo(counts, sizeof(counts),
+             "],\"collision\":{\"colliders\":%u,\"meshes\":%u,\"triangles\":%llu,\"primitives\":%u,\"dropped\":%u}}",
+             static_cast<unsigned>(report.colliders), static_cast<unsigned>(report.collision_meshes),
+             static_cast<unsigned long long>(report.collision_triangles),
+             static_cast<unsigned>(report.collision_primitives), static_cast<unsigned>(report.collision_dropped));
+    out.Append(StringView(counts, CStrLength(counts)));
 }
 
 }  // namespace engine_placeholder::asset

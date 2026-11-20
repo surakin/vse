@@ -8,6 +8,7 @@
 //! with a skin the skeleton instance. Several nodes that use one glTF mesh give several entities that share one mesh
 //! resource. The level is a resource like the others (path `<prefix>/levels/<scene>`), added with the rest by
 //! `ImportIntoBackend`.
+#include "asset_import/gltf_collision.h"
 #include "asset_import/gltf_skin.h"
 
 namespace engine_placeholder::asset
@@ -28,7 +29,10 @@ inline constexpr u32 kMaxLevelDepth = 63;
 /// - Param options: limits, ids, manifest, path prefix, `scale`.
 /// - Param types: the registry the blob is minted with.
 /// - Param skins: the skeletons imported from the file's skins.
-/// - Param result: holds the meshes, materials and skeletons already imported; the level is appended to it.
+/// - Param collisions: per node, its collision ([[asset::ImportColliders]]' output; empty for none): a node with one
+/// gets a
+///   `static_collider`, and a collision-only node gets no mesh reference (glTF colliders Day 3).
+/// - Param result: holds the meshes, materials, skeletons and colliders already imported; the level is appended to it.
 /// - Param error: receives the sentence naming the node or the scene.
 /// - Fails: `Invalid` (a scene root that has a parent, a scene index outside `scenes`, a node transform with a shear),
 ///   `TooLarge` (a hierarchy deeper than [[asset::kMaxLevelDepth]], more entities than a level holds, the output
@@ -36,6 +40,7 @@ inline constexpr u32 kMaxLevelDepth = 63;
 /// - Thread-safety: thread-safe for separate calls with separate arguments.
 /// - Ownership: borrows its arguments for the call only; `*result` owns what it receives.
 Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, const ImportOptions& options,
-                   const TypeRegistry& types, Span<const ImportedSkin> skins, ImportResult* result, GltfError* error);
+                   const TypeRegistry& types, Span<const ImportedSkin> skins, Span<const GltfNodeCollision> collisions,
+                   ImportResult* result, GltfError* error);
 
 }  // namespace engine_placeholder::asset

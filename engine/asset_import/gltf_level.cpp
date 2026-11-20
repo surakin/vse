@@ -72,7 +72,8 @@ Status Refuse(GltfError* error, StringView where, const char* what, ErrorCode co
 }  // namespace
 
 Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, const ImportOptions& options,
-                   const TypeRegistry& types, Span<const ImportedSkin> skins, ImportResult* result, GltfError* error)
+                   const TypeRegistry& types, Span<const ImportedSkin> skins, Span<const GltfNodeCollision> collisions,
+                   ImportResult* result, GltfError* error)
 {
     const JsonValue scenes = document.root.Get("scenes");
     const u32 node_count = static_cast<u32>(graph.nodes.Size());
@@ -217,6 +218,7 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
     const storage::RegisteredComponent* link_component = registry.FindById(storage::kParentLinkId);
     const storage::RegisteredComponent* weights_component = registry.FindById(animation::kMorphWeightsId);
     const storage::RegisteredComponent* light_component = registry.FindById(scene::kLightSourceId);
+    const storage::RegisteredComponent* collider_component = registry.FindById(kStaticColliderId);
 
     // KHR_lights_punctual (glTF coverage Day 12): the file's lights, checked once; a node names one by index.
     Vector<scene::LightSource> lights;
@@ -322,10 +324,12 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
     // What the nodes name, looked up once: the imported id of every glTF mesh and material and the material of each
     // mesh's first primitive (a hostile file has hundreds of thousands of nodes: no scan per node).
     Vector<ResourceId> mesh_ids;
+    Vector<ResourceId> collider_ids;  // the MCOL of each glTF mesh a collider uses (glTF colliders Day 3)
     Vector<ResourceId> material_ids;
     for (usize m = 0; m < meshes.Size(); ++m)
     {
         mesh_ids.Push(ResourceId());
+        collider_ids.Push(ResourceId());
     }
     const JsonValue materials_array = document.root.Get("materials");
     Vector<ResourceId> twin_ids;  // a material's twin on the colour template, for coloured meshes (Day 5)
@@ -341,6 +345,10 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
             if (entries[e].kind == ImportKind::Mesh && entries[e].index < mesh_ids.Size())
             {
                 mesh_ids[entries[e].index] = entries[e].id;
+            }
+            else if (entries[e].kind == ImportKind::MeshCollider && entries[e].index < collider_ids.Size())
+            {
+                collider_ids[entries[e].index] = entries[e].id;
             }
             else if (entries[e].kind == ImportKind::Material && entries[e].index < material_ids.Size())
             {
@@ -440,7 +448,9 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
             }
             pieces.Push(static_cast<Piece&&>(piece));
         }
-        if (node.mesh != kNoGltfIndex)
+        const GltfNodeCollision* collision = n < collisions.Size() ? &collisions[n] : nullptr;
+        const bool draws = collision == nullptr || collision->kind != GltfCollisionKind::Mesh || collision->draw;
+        if (node.mesh != kNoGltfIndex && draws)
         {
             const ResourceId mesh = node.mesh < mesh_ids.Size() ? mesh_ids[node.mesh] : ResourceId();
             if (mesh.IsNone())
@@ -561,6 +571,49 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
                     pieces.Push(static_cast<Piece&&>(weights_piece));
                 }
             }
+        }
+        // The node's collider (glTF colliders Day 3): a static_collider on its entity.
+        if (collision != nullptr && collision->kind != GltfCollisionKind::None && collider_component != nullptr)
+        {
+            StaticCollider collider;
+            collider.half_extents = collision->half_extents;
+            collider.radius = collision->radius;
+            collider.half_height = collision->half_height;
+            collider.friction = collision->friction;
+            collider.restitution = collision->restitution;
+            switch (collision->kind)
+            {
+            case GltfCollisionKind::Box: collider.shape = StaticColliderShape::Box; break;
+            case GltfCollisionKind::Sphere: collider.shape = StaticColliderShape::Sphere; break;
+            case GltfCollisionKind::Capsule: collider.shape = StaticColliderShape::Capsule; break;
+            default:
+            {
+                collider.shape = StaticColliderShape::Mesh;
+                const ResourceId mcol = collision->mesh < collider_ids.Size() ? collider_ids[collision->mesh]
+                                                                              : ResourceId();
+                if (mcol.IsNone())
+                {
+                    return Status::Make(ErrorCode::Other, "a collider names an MCOL the import did not make");
+                }
+                collider.mesh.id = mcol.Value();
+                named.Push(mcol.Value());
+                break;
+            }
+            }
+            Piece collider_piece;
+            collider_piece.id = kStaticColliderId;
+            collider_piece.version = collider_component->Version();
+            bytes::ByteWriter collider_writer;
+            if (collider_component->Encode(&collider, collider_writer, limits).Failed())
+            {
+                return Refuse(error, StringView(where, CStrLength(where)), "has a collider a level cannot hold",
+                              ErrorCode::Invalid);
+            }
+            for (usize b = 0; b < collider_writer.Bytes().Size(); ++b)
+            {
+                collider_piece.bytes.Push(collider_writer.Bytes()[b]);
+            }
+            pieces.Push(static_cast<Piece&&>(collider_piece));
         }
         // The node's light (glTF coverage Day 12): a light_source on its entity.
         const JsonValue light_ref = document.root.Get("nodes").At(n).Get("extensions").Get("KHR_lights_punctual");

@@ -24,14 +24,17 @@ inline constexpr u32 kImportSummaryVersion = 1;
 /// `{"version":1,"nodes":[{"name":"Spawn","position":[x,y,z],"mesh":-1|index},...],"bounds":{"min":[x,y,z],"max":[x,y,z]}`
 /// `(or null when no mesh node has a POSITION
 /// range),"materials":["name",...],"animations":[{"name":"Walk","duration":s},...],`
-/// `"lights":[{"name":"Lamp","type":"point"|"spot"|"directional","node":"Lamp","position":[x,y,z]},...]}`. `nodes`
+/// `"lights":[{"name":"Lamp","type":"point"|"spot"|"directional","node":"Lamp","position":[x,y,z]},...],`
+/// `"collision":{"colliders":N,"meshes":M,"triangles":T,"primitives":P,"dropped":D}}`. `nodes`
 /// lists the entities of the level in the order of the level (names as `level_spawn` gives them, unique; `position` is
 /// the node's world position times `options.scale`); `bounds` is the box of the meshes' POSITION ranges (the accessors'
 /// `min` and `max`) under the nodes' world matrices, times `options.scale`; `materials` and `animations` are in the
 /// file's order (an unnamed one has the name `""`), the `duration` being the longest sampler input range in seconds (0
 /// when the accessors give no range); `lights` has one entry per level node that names a `KHR_lights_punctual` light,
 /// in level order: the light's own name (`""` if unnamed), its glTF type, the entity it is on (`node`, a name of
-/// `nodes`) and its world position times `options.scale`. Numbers are written with 9 significant digits.
+/// `nodes`) and its world position times `options.scale`; `collision` (glTF colliders Day 3) counts the nodes that got
+/// a static collider, the `MCOL`s made, their triangles together, the colliders that are a box, sphere or capsule, and
+/// the nodes marked as colliders that got none. Numbers are written with 9 significant digits.
 ///
 /// - Param document: a parsed glTF.
 /// - Param graph: its node graph.
