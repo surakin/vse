@@ -18,6 +18,7 @@ set(ASSET_IMPORT_SOURCES
   gltf_async.cpp  # Day 338
   import_settings.cpp  # Day 339
   gltf_material.cpp  # Day 338
+  spec_gloss.cpp  # maintenance 2026-11-20: KHR_materials_pbrSpecularGlossiness to metallic-roughness
   material_source.cpp  # Day 338: the material minter moved here from tools/asset_mint
 )
 set(ASSET_IMPORT_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)

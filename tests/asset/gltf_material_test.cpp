@@ -10,6 +10,7 @@
 #include "asset_import/gltf_async.h"
 #include "asset_import/gltf_import.h"
 #include "asset_import/import_settings.h"
+#include "asset_import/spec_gloss.h"
 #include "settings/registry.h"
 #include "settings/settings.h"
 #include "jobs/scheduler.h"
@@ -516,6 +517,206 @@ TEST_CASE("gltf async: an import runs on the job system, reports progress, cance
         REQUIRE(each.resources.Size() == expected.resources.Size());
         CHECK(each.resources[0].id == expected.resources[0].id);
     }
+}
+
+// Maintenance 2026-11-20: KHR_materials_pbrSpecularGlossiness is converted to metallic-roughness.
+namespace
+{
+
+bool Near(f32 a, f32 b, f32 tolerance = 0.002f)
+{
+    return a - b <= tolerance && b - a <= tolerance;
+}
+
+DecodedImage SolidImage(u32 w, u32 h, u8 r, u8 g, u8 b, u8 a)
+{
+    DecodedImage image;
+    image.width = w;
+    image.height = h;
+    image.rgba.Resize(static_cast<usize>(w) * h * 4);
+    for (usize i = 0; i < image.rgba.Size(); i += 4)
+    {
+        image.rgba[i + 0] = static_cast<byte>(r);
+        image.rgba[i + 1] = static_cast<byte>(g);
+        image.rgba[i + 2] = static_cast<byte>(b);
+        image.rgba[i + 3] = static_cast<byte>(a);
+    }
+    return image;
+}
+
+// A float or colour parameter of a material blob (`count` components), false when the material does not set it.
+bool ParamOf(const ImportedResource& material, const char* name, f32* out, usize count)
+{
+    TypeRegistry types;
+    MaterialAssetData data;
+    REQUIRE(LoadMaterialBlob(ByteSpan(material.blob.Data(), material.blob.Size()), types, &data).Ok());
+    for (const MaterialParam& p : data.params)
+    {
+        if (StringView(p.name.text) == StringView(name))
+        {
+            MemCopy(out, data.block.Data() + p.offset, sizeof(f32) * count);
+            return true;
+        }
+    }
+    return false;
+}
+
+const ImportedResource* ByPath(const ImportResult& result, const char* path)
+{
+    for (const ImportedResource& r : result.resources)
+    {
+        if (r.path.View() == StringView(path))
+        {
+            return &r;
+        }
+    }
+    return nullptr;
+}
+
+}  // namespace
+
+TEST_CASE("spec gloss: a sample converts as the Khronos tools convert it", "[asset][gltf]")
+{
+    // A dielectric: the specular colour below 4% gives metallic 0 and the diffuse scaled by 1 / 0.96.
+    SpecGlossSample plastic;
+    plastic.diffuse = {{0.5f, 0.25f, 0.1f, 0.75f}};
+    plastic.specular = {{0.0f, 0.0f, 0.0f}};
+    plastic.glossiness = 0.3f;
+    const MetalRoughSample p = SpecGlossToMetalRough(plastic);
+    CHECK(p.metallic == 0.0f);
+    CHECK(Near(p.base_color[0], 0.5f / 0.96f));
+    CHECK(Near(p.base_color[1], 0.25f / 0.96f));
+    CHECK(Near(p.base_color[3], 0.75f));
+    CHECK(Near(p.roughness, 0.7f));
+    // A metal: a black diffuse and a bright specular colour give metallic 1 and the specular colour as the base.
+    SpecGlossSample gold;
+    gold.diffuse = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    gold.specular = {{1.0f, 0.75f, 0.3f}};
+    gold.glossiness = 1.0f;
+    const MetalRoughSample g = SpecGlossToMetalRough(gold);
+    CHECK(Near(g.metallic, 1.0f));
+    CHECK(Near(g.base_color[0], 1.0f));
+    CHECK(Near(g.base_color[1], 0.75f, 0.01f));
+    CHECK(Near(g.base_color[2], 0.3f, 0.01f));
+    CHECK(g.roughness == 0.0f);
+    CHECK(SpecularIsDielectric({{0.03f, 0.03f, 0.03f}}));
+    CHECK(!SpecularIsDielectric({{0.05f, 0.05f, 0.05f}}));
+    // Between the two the metallic value is strictly inside (0, 1).
+    SpecGlossSample mixed;
+    mixed.diffuse = {{0.3f, 0.3f, 0.3f, 1.0f}};
+    mixed.specular = {{0.3f, 0.3f, 0.3f}};
+    const MetalRoughSample m = SpecGlossToMetalRough(mixed);
+    CHECK(m.metallic > 0.0f);
+    CHECK(m.metallic < 1.0f);
+}
+
+TEST_CASE("spec gloss: textures convert per texel at the larger image's size", "[asset][gltf]")
+{
+    // A black diffuse and a white specular with glossiness 0.6 (alpha 153): metal, roughness 0.4.
+    const DecodedImage diffuse = SolidImage(4, 2, 0, 0, 0, 255);
+    const DecodedImage specular = SolidImage(8, 4, 255, 255, 255, 153);
+    SpecGlossImages in;
+    in.diffuse = &diffuse;
+    in.specular_glossiness = &specular;
+    DecodedImage base;
+    DecodedImage mr;
+    REQUIRE(ConvertSpecGlossImages(in, 1u << 20, &base, &mr).Ok());
+    CHECK(base.width == 8);
+    CHECK(base.height == 4);
+    CHECK(mr.width == 8);
+    CHECK(!base.has_alpha);
+    CHECK(static_cast<u8>(base.rgba[0]) == 255);  // the specular white as the base colour
+    CHECK(static_cast<u8>(mr.rgba[1]) == 102);    // G: roughness 0.4
+    CHECK(static_cast<u8>(mr.rgba[2]) == 255);    // B: metallic 1
+    CHECK(static_cast<u8>(mr.rgba[mr.rgba.Size() - 2]) == 255);
+    // The factors multiply the texels, the opacity comes from the diffuse.
+    in.specular_factor = {{0.0f, 0.0f, 0.0f}};
+    in.diffuse_factor = {{1.0f, 1.0f, 1.0f, 0.5f}};
+    const DecodedImage white = SolidImage(2, 2, 255, 255, 255, 255);
+    in.diffuse = &white;
+    in.specular_glossiness = nullptr;
+    REQUIRE(ConvertSpecGlossImages(in, 1u << 20, &base, nullptr).Ok());
+    CHECK(base.width == 2);
+    CHECK(base.has_alpha);
+    CHECK(static_cast<u8>(base.rgba[3]) == 128);
+    CHECK(static_cast<u8>(base.rgba[0]) == 255);  // 1 / 0.96 clamped
+    // The pixel limit holds for the output.
+    CHECK(ConvertSpecGlossImages(in, 3, &base, nullptr).Is(ErrorCode::TooLarge));
+}
+
+TEST_CASE("gltf material: KHR_materials_pbrSpecularGlossiness imports converted to metallic-roughness", "[asset][gltf]")
+{
+    NoGltfSource none;
+    ImportResult result;
+    GltfError error;
+    // "armor" has both textures: a converted pair; "skin" a dielectric's diffuse texture: the texture as it is and the
+    // factors; "paint" factors only; the extension wins over pbrMetallicRoughness.
+    REQUIRE(MtImport(TexturedGlb(
+                         "\"materials\":[{\"name\":\"armor\",\"extensions\":{\"KHR_materials_pbrSpecularGlossiness\":"
+                         "{\"diffuseTexture\":{\"index\":0},\"specularGlossinessTexture\":{\"index\":0},"
+                         "\"glossinessFactor\":0.5}}},"
+                         "{\"name\":\"skin\",\"extensions\":{\"KHR_materials_pbrSpecularGlossiness\":"
+                         "{\"diffuseTexture\":{\"index\":0},\"specularFactor\":[0,0,0],\"glossinessFactor\":0.25}}},"
+                         "{\"name\":\"paint\",\"pbrMetallicRoughness\":{\"metallicFactor\":0.5},"
+                         "\"extensions\":{\"KHR_materials_pbrSpecularGlossiness\":{\"diffuseFactor\":[0,0,0,1],"
+                         "\"specularFactor\":[1,1,1],\"glossinessFactor\":0.75}}}],",
+                         "\"extensionsUsed\":[\"KHR_materials_pbrSpecularGlossiness\"],"
+                         "\"extensionsRequired\":[\"KHR_materials_pbrSpecularGlossiness\"],"),
+                     none, &result, &error)
+                .Ok());
+    TypeRegistry types;
+    const ImportedResource* base = ByPath(result, "/gltf/textures/armor_base_color");
+    const ImportedResource* mr = ByPath(result, "/gltf/textures/armor_metal_rough");
+    REQUIRE(base != nullptr);
+    REQUIRE(mr != nullptr);
+    TextureView base_view;
+    TextureView mr_view;
+    REQUIRE(base_view.Open(ByteSpan(base->blob.Data(), base->blob.Size()), types).Ok());
+    REQUIRE(mr_view.Open(ByteSpan(mr->blob.Data(), mr->blob.Size()), types).Ok());
+    CHECK(base_view.Format() == rhi::Format::BC7_SRGB);
+    CHECK(mr_view.Format() == rhi::Format::BC7_UNorm);
+    CHECK(base_view.Width() == 8);
+    CHECK(ByPath(result, "/gltf/textures/wall") != nullptr);  // skin's diffuse, as it is
+
+    const ImportedResource* armor = ByPath(result, "/gltf/materials/armor");
+    const ImportedResource* skin = ByPath(result, "/gltf/materials/skin");
+    const ImportedResource* paint = ByPath(result, "/gltf/materials/paint");
+    REQUIRE(armor != nullptr);
+    REQUIRE(skin != nullptr);
+    REQUIRE(paint != nullptr);
+    MaterialAssetData armor_data;
+    REQUIRE(LoadMaterialBlob(ByteSpan(armor->blob.Data(), armor->blob.Size()), types, &armor_data).Ok());
+    CHECK(armor_data.textures.Size() == 2);  // albedo and metallic-roughness, the converted pair
+    f32 v[4] = {};
+    REQUIRE(ParamOf(*armor, "metallic", v, 1));
+    CHECK(v[0] == 1.0f);  // in the texture
+    REQUIRE(ParamOf(*skin, "metallic", v, 1));
+    CHECK(v[0] == 0.0f);
+    REQUIRE(ParamOf(*skin, "roughness", v, 1));
+    CHECK(Near(v[0], 0.75f));
+    REQUIRE(ParamOf(*skin, "base_color", v, 4));
+    CHECK(v[0] == 1.0f);  // 1 / 0.96 clamped
+    REQUIRE(ParamOf(*paint, "metallic", v, 1));
+    CHECK(Near(v[0], 1.0f));  // a black diffuse and a white specular: metal, not pbrMetallicRoughness' 0.5
+    REQUIRE(ParamOf(*paint, "roughness", v, 1));
+    CHECK(Near(v[0], 0.25f));
+    REQUIRE(ParamOf(*paint, "base_color", v, 4));
+    CHECK(Near(v[0], 1.0f));
+
+    // An unlit specular-glossiness material gets the converted base colour only.
+    ImportResult unlit;
+    REQUIRE(MtImport(TexturedGlb("\"materials\":[{\"name\":\"sign\",\"extensions\":{\"KHR_materials_unlit\":{},"
+                                 "\"KHR_materials_pbrSpecularGlossiness\":{\"diffuseTexture\":{\"index\":0},"
+                                 "\"specularGlossinessTexture\":{\"index\":0}}}}],"),
+                     none, &unlit, &error)
+                .Ok());
+    CHECK(ByPath(unlit, "/gltf/textures/sign_base_color") != nullptr);
+    CHECK(ByPath(unlit, "/gltf/textures/sign_metal_rough") == nullptr);
+    const ImportedResource* sign = ByPath(unlit, "/gltf/materials/sign");
+    REQUIRE(sign != nullptr);
+    MaterialAssetData sign_data;
+    REQUIRE(LoadMaterialBlob(ByteSpan(sign->blob.Data(), sign->blob.Size()), types, &sign_data).Ok());
+    CHECK(sign_data.textures.Size() == 1);
 }
 
 }  // namespace engine_placeholder::asset

@@ -602,6 +602,19 @@ TEST_CASE("gltf: the import manifest keeps ids through a reorder and a rename, a
     ImportManifest back;
     REQUIRE(back.Parse(odd_text.View(), &error).Ok());
     CHECK(back.Entries()[0].name.View() == StringView("a b%c\xc3\xa9"));
+    // Keys of ten digits (the maps' and converted textures' keys start at 0x40000000) round trip; past a u32 is
+    // refused.
+    ImportManifest keys;
+    keys.Add(ImportKind::Texture, 0x40000000u, StringView("wall_mr"), ResourceId::FromValue(0x41));
+    keys.Add(ImportKind::Texture, 0xFFFFFFFFu, StringView("last"), ResourceId::FromValue(0x42));
+    String<HeapAllocator> keys_text(HeapAllocator::Default());
+    keys.Format(&keys_text);
+    ImportManifest keys_back;
+    REQUIRE(keys_back.Parse(keys_text.View(), &error).Ok());
+    REQUIRE(keys_back.Entries().Size() == 2);
+    CHECK(keys_back.Entries()[0].index == 0x40000000u);
+    CHECK(keys_back.Entries()[1].index == 0xFFFFFFFFu);
+    CHECK(keys_back.Parse(StringView("gltf-import 1\ntexture 4294967296 0000000000000011 A\n"), &error).Failed());
     // Malformed manifests name the line.
     ImportManifest bad;
     CHECK(bad.Parse(StringView("gltf-import 2\n"), &error).Failed());

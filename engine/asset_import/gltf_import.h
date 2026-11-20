@@ -37,8 +37,10 @@ namespace engine_placeholder::asset
 /// give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that
 /// keeps imported blobs (a disk cache) keys them by this and by the engine's format fingerprint
 /// (`engine_api.import_format_version`, which also folds in the blob container and type versions). 2: glTF coverage
-/// (PBR maps, colours, morphs, lights); 3: skins in the space of the node that uses them (2026-11-20).
-inline constexpr u32 kGltfImporterOutputVersion = 3;
+/// (PBR maps, colours, morphs, lights); 3: skins in the space of the node that uses them (2026-11-20); 4:
+/// `KHR_materials_pbrSpecularGlossiness` converted to metallic-roughness, no longer ignored when only used
+/// (2026-11-20).
+inline constexpr u32 kGltfImporterOutputVersion = 4;
 
 /// The steps an import goes through (container, textures and materials, skeletons, meshes, clips);
 /// `ImportOptions::steps_done` counts them.

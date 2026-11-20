@@ -9,6 +9,7 @@
 #include "asset_import/gltf_names.h"
 #include "asset_import/gltf_skin.h"
 #include "algorithm.h"
+#include "lang/limits.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
@@ -359,12 +360,15 @@ Status ImportManifest::Parse(StringView text, GltfError* error)
         ImportKind kind = ImportKind::Mesh;
         ResourceId id;
         u64 index = 0;
-        bool number = fields[1].Length() != 0 && fields[1].Length() <= 9;
+        // Up to ten digits: the keys of the maps and converted textures start at 0x40000000 (ten digits), and an index
+        // is a u32.
+        bool number = fields[1].Length() != 0 && fields[1].Length() <= 10;
         for (usize i = 0; number && i < fields[1].Length(); ++i)
         {
             number = fields[1][i] >= '0' && fields[1][i] <= '9';
             index = index * 10 + static_cast<u64>(fields[1][i] - '0');
         }
+        number = number && index <= Limits<u32>::Max();
         String<HeapAllocator> name(HeapAllocator::Default());
         if (count < 3 || !ParseKind(fields[0], &kind) || !number || ParseResourceId(fields[2], &id).Failed() ||
             (count == 4 && !UnescapeName(fields[3], &name)))
