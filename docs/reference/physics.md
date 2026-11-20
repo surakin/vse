@@ -6408,6 +6408,16 @@ u32 refused;
 
 Entities whose components were refused (not valid): they get no body, and the call reports them again next time.
 
+### `replaced` {#physics-syncreport-replaced}
+
+`variable physics::SyncReport::replaced` — defined in `engine/physics/sync.h`
+
+```cpp
+u32 replaced;
+```
+
+Static bodies with a parent moved to follow their entity's world transform (glTF colliders Day 1).
+
 ## `SyncBodies(ecs::World&,PhysicsWorld&)` {#physics-syncbodies-ecs-world-amp-physicsworld-amp}
 
 `function physics::SyncBodies` — defined in `engine/physics/sync.h`
@@ -6420,7 +6430,7 @@ Makes the physics world follow the ECS world.
 
 It destroys the bodies of entities that are gone or lost their `RigidBody` or `Collider`, updates a body whose components changed, and creates a body for every new entity.
 
-Entities are visited in entity order (index, then generation), not in chunk order, so two worlds built the same way get the same body ids. A new body starts at the entity's `LocalTransform` and `Velocity` (optional); an entity with a `Parent` is not simulated (a body has no parent). The call changes the ECS world's structure (it adds and removes `BodyLink`), so it runs between iterations, at a sync point.
+Entities are visited in entity order (index, then generation), not in chunk order, so two worlds built the same way get the same body ids. A new body starts at the entity's `LocalTransform` and `Velocity` (optional). An entity with a `Parent` is not simulated, except a **static** body (glTF colliders Day 1): it is placed at the translation and rotation of its `ecs::WorldTransform` (the scale divided out of each column: the caller sizes the shape) and follows it, every call moving the body where the world matrix changed (`PhysicsWorld::SetTransform`, which wakes the bodies touching it, and the movable bodies touching it at the new place are woken too; counted in `replaced`). A world matrix with a column of zero length gives no body (counted as refused). The world matrix is the one the transform propagation last wrote: run it before this call. The call changes the ECS world's structure (it adds and removes `BodyLink`), so it runs between iterations, at a sync point.
 
 | Field | Value |
 |---|---|

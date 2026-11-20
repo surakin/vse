@@ -4,6 +4,9 @@
 #include "ecs/query.h"
 #include "ecs/transform.h"
 #include "algorithm.h"
+#include "lang/scalar.h"
+#include "math/matrix.h"
+#include "physics/query.h"
 
 namespace engine_placeholder::physics
 {
@@ -20,7 +23,62 @@ struct Gathered
     Quaternion rotation;
     Velocity velocity;
     BodyLink link;
+    bool parented = false;  // a static body with a parent, placed by its world transform (glTF colliders Day 1)
+    bool placeable = true;  // false when the world matrix gives no rotation (a column of zero length)
 };
+
+// The translation and rotation of a world matrix, the scale divided out of each column (the caller scales shapes).
+bool PoseOfWorld(const Mat4& m, Vec3* position, Quaternion* rotation)
+{
+    *position = Vec3(m.col[3].x, m.col[3].y, m.col[3].z);
+    Vec3 axes[3];
+    for (u32 c = 0; c < 3; ++c)
+    {
+        const Vec3 column(m.col[c].x, m.col[c].y, m.col[c].z);
+        const f32 length = column.Length();
+        if (!(length > 1e-12f) || !IsFinite(length))
+        {
+            return false;
+        }
+        axes[c] = column * (1.0f / length);
+    }
+    if (axes[0].Cross(axes[1]).Dot(axes[2]) < 0.0f)
+    {
+        axes[2] = axes[2] * -1.0f;  // a mirror: the rotation stays proper, the caller's shape carries the flip
+    }
+    *rotation = Quaternion::FromMat3(Mat3::FromBasis(axes[0], axes[1], axes[2])).Normalized();
+    return true;
+}
+
+// Wakes the movable bodies whose colliders touch a static body's colliders at its new pose (the bodies touching it at
+// the old pose are woken by SetTransform), in collider order.
+void WakeAtNewPose(PhysicsWorld& physics, const Body& body)
+{
+    Vector<ColliderId> touched;
+    PhysicsQueryFilter filter;
+    filter.include_static = false;
+    for (ColliderId c = body.first_collider; c.IsValid();)
+    {
+        const ColliderRecord* record = physics.FindCollider(c);
+        if (record == nullptr)
+        {
+            break;
+        }
+        const Aabb bounds = record->value.shape.Bounds(body.position, body.orientation);
+        const Vec3 centre = (bounds.min + bounds.max) * 0.5f;
+        const Vec3 half = (bounds.max - bounds.min) * 0.5f;
+        Overlap(physics, Shape::MakeBox(Vec3(Max(half.x, 1e-4f), Max(half.y, 1e-4f), Max(half.z, 1e-4f))), centre,
+                Quaternion::Identity(), filter, &touched);
+        for (usize k = 0; k < touched.Size(); ++k)
+        {
+            if (const ColliderRecord* other = physics.FindCollider(touched[k]))
+            {
+                physics.Wake(other->owner);
+            }
+        }
+        c = record->next;
+    }
+}
 
 bool SameSettings(const RigidBody& a, const RigidBody& b)
 {
@@ -62,8 +120,15 @@ SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics)
             continue;  // free, or a body made by hand
         }
         const ecs::Entity entity = body->entity;
-        const bool wanted = ecs.Exists(entity) && ecs.Has<RigidBody>(entity) && ecs.Has<Collider>(entity) &&
-                            ecs.Has<ecs::LocalTransform>(entity) && !ecs.Has<ecs::Parent>(entity);
+        bool wanted = ecs.Exists(entity) && ecs.Has<RigidBody>(entity) && ecs.Has<Collider>(entity);
+        if (wanted && ecs.Has<ecs::Parent>(entity))
+        {  // a static body with a parent is placed by its world transform (glTF colliders Day 1)
+            wanted = ecs.Peek<RigidBody>(entity)->type == BodyType::Static && ecs.Has<ecs::WorldTransform>(entity);
+        }
+        else if (wanted)
+        {
+            wanted = ecs.Has<ecs::LocalTransform>(entity);
+        }
         if (!wanted)
         {
             physics.DestroyBody(id);
@@ -99,6 +164,29 @@ SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics)
             }
             found.Push(g);
         });
+    // Static bodies with a parent: placed by the world transform's position and rotation.
+    auto parented = ecs.Query<ecs::Read<RigidBody>, ecs::Read<Collider>, ecs::Read<ecs::WorldTransform>,
+                              ecs::Read<ecs::Parent>, ecs::Optional<BodyLink>>();
+    parented.ForEach(
+        [&](ecs::Entity entity, const RigidBody& settings, const Collider& collider, const ecs::WorldTransform& placed,
+            const ecs::Parent&, const BodyLink* link)
+        {
+            if (settings.type != BodyType::Static)
+            {
+                return;  // a moving body with a parent is not simulated (a body has no parent)
+            }
+            Gathered g;
+            g.entity = entity;
+            g.settings = settings;
+            g.collider = collider;
+            g.parented = true;
+            g.placeable = PoseOfWorld(placed.matrix, &g.position, &g.rotation);
+            if (link != nullptr)
+            {
+                g.link = *link;
+            }
+            found.Push(g);
+        });
     Sort(Span<Gathered>(found.Data(), found.Size()),
          [](const Gathered& a, const Gathered& b)
          {
@@ -128,6 +216,21 @@ SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics)
                 changed = result == BodyStatus::Ok || changed;
                 refused = result != BodyStatus::Ok || refused;
             }
+            if (g.parented && g.placeable &&
+                (!SameVec(body->position, g.position) || body->orientation.x != g.rotation.x ||
+                 body->orientation.y != g.rotation.y || body->orientation.z != g.rotation.z ||
+                 body->orientation.w != g.rotation.w))
+            {  // follows its entity: a teleport (static bodies have no velocity), the bodies around it woken
+                if (physics.SetTransform(g.link.id, g.position, g.rotation) == BodyStatus::Ok)
+                {
+                    WakeAtNewPose(physics, *physics.Find(g.link.id));
+                    ++report.replaced;
+                }
+                else
+                {
+                    refused = true;
+                }
+            }
             if (refused)
             {
                 ++report.refused;  // the body keeps its last valid state
@@ -136,6 +239,11 @@ SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics)
             {
                 ++report.updated;
             }
+            continue;
+        }
+        if (!g.placeable)
+        {
+            ++report.refused;
             continue;
         }
         BodyDesc desc;

@@ -106,6 +106,14 @@ the missing ones **in entity order** (index, then generation), not chunk order, 
 body ids. An entity with invalid components is counted in `refused` and skipped. The call changes the ECS world's structure, so it runs between iterations.
 `WriteBackTransforms` and the step system (below) write the simulated transforms back.
 
+**A static body with a parent** (glTF colliders Day 1, 2026-11-20) is the one exception to "no `Parent`": it is placed at the translation and
+rotation of its `ecs::WorldTransform`, the scale divided out of each column (the caller sizes the shape; a mirror stays in the shape, the rotation
+stays proper), and it follows that matrix: every call moves the body where the matrix changed (`SetTransform`, a teleport: the bodies touching it
+are woken, at the old place and, by an overlap of its bounds, at the new one; counted in `SyncReport::replaced`). Dynamic and kinematic bodies with
+a parent are still not simulated. The matrix is the one the propagation last wrote, so a schedule that runs the sync before the transform system
+(the C API's) places such a body by the previous frame's matrix. A static body without a parent is not followed, as before. The write-back touches
+dynamic bodies only, so a parented static entity's local transform is never overwritten.
+
 ## The broad phase
 
 `physics::BroadPhase` finds which pairs of colliders may touch, with Phase 18's structures and nothing new: the colliders go into a `spatial::SpatialSet`

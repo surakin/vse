@@ -22,7 +22,9 @@ propagation and before the physics sync.
   restitution) and, once made, the scale it was made at. `level_spawn` adds `ColliderSource` and a static `physics::RigidBody` to each
   entity with `asset::StaticCollider`, after checking every one first (finite, sizes above 0 and at most 1e5 after the spawn scale,
   friction >= 0, restitution 0..1, the `MCOL` mounted and an `MCOL`).
-- [ ] **The resolver** (a system in the C world's schedule, after transform propagation and before the physics sync): for an entity with
+- [ ] **The resolver** (after the frame's transform propagation, so before the next frame's physics sync: the C API frame runs
+  `SyncBodies` before its schedule, Day 1's notes; the collider is made only once the entity has a propagated world matrix, never from the
+  identity default): for an entity with
   `ColliderSource` and no `physics::Collider`, read `ecs::WorldTransform`'s scale (column lengths; a shear within 1e-4 of the columns'
   orthogonality gives no collider, counted), make the scaled shape (box per axis; sphere the largest axis; capsule max(X, Z) radius and Y
   half-height; mesh: the cached physics mesh for (content hash, scale)), set `physics::Collider`. An entity whose world scale later

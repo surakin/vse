@@ -5493,14 +5493,15 @@ physics::StateHasher::AddF32(f32)	function	physics	physics-statehasher-addf32-f3
 physics::StateHasher::Value() const	function	physics	physics-statehasher-value-const	physics.md	engine/physics/state_hash.h:77
 physics::StateHasher::Valid() const	function	physics	physics-statehasher-valid-const	physics.md	engine/physics/state_hash.h:82
 physics::StateHasher::BitsOf(f32)	function	physics	physics-statehasher-bitsof-f32	physics.md	engine/physics/state_hash.h:87
-physics::BodyLink	struct	physics	physics-bodylink	physics.md	engine/physics/sync.h:16
-physics::BodyLink::id	variable	physics	physics-bodylink-id	physics.md	engine/physics/sync.h:19
-physics::SyncReport	struct	physics	physics-syncreport	physics.md	engine/physics/sync.h:25
-physics::SyncReport::created	variable	physics	physics-syncreport-created	physics.md	engine/physics/sync.h:28
-physics::SyncReport::updated	variable	physics	physics-syncreport-updated	physics.md	engine/physics/sync.h:30
-physics::SyncReport::destroyed	variable	physics	physics-syncreport-destroyed	physics.md	engine/physics/sync.h:32
-physics::SyncReport::refused	variable	physics	physics-syncreport-refused	physics.md	engine/physics/sync.h:34
-physics::SyncBodies(ecs::World&,PhysicsWorld&)	function	physics	physics-syncbodies-ecs-world-amp-physicsworld-amp	physics.md	engine/physics/sync.h:52
+physics::BodyLink	struct	physics	physics-bodylink	physics.md	engine/physics/sync.h:17
+physics::BodyLink::id	variable	physics	physics-bodylink-id	physics.md	engine/physics/sync.h:20
+physics::SyncReport	struct	physics	physics-syncreport	physics.md	engine/physics/sync.h:26
+physics::SyncReport::created	variable	physics	physics-syncreport-created	physics.md	engine/physics/sync.h:29
+physics::SyncReport::updated	variable	physics	physics-syncreport-updated	physics.md	engine/physics/sync.h:31
+physics::SyncReport::destroyed	variable	physics	physics-syncreport-destroyed	physics.md	engine/physics/sync.h:33
+physics::SyncReport::refused	variable	physics	physics-syncreport-refused	physics.md	engine/physics/sync.h:35
+physics::SyncReport::replaced	variable	physics	physics-syncreport-replaced	physics.md	engine/physics/sync.h:37
+physics::SyncBodies(ecs::World&,PhysicsWorld&)	function	physics	physics-syncbodies-ecs-world-amp-physicsworld-amp	physics.md	engine/physics/sync.h:60
 physics::WriteBackTransforms(ecs::World&,const PhysicsWorld&,f32)	function	physics	physics-writebacktransforms-ecs-world-amp-const-physicsworld-amp-f32	physics.md	engine/physics/system.h:26
 physics::DriveKinematicBodies(ecs::World&,PhysicsWorld&,f32)	function	physics	physics-drivekinematicbodies-ecs-world-amp-physicsworld-amp-f32	physics.md	engine/physics/system.h:43
 physics::MakePhysicsStepSystem()	function	physics	physics-makephysicsstepsystem	physics.md	engine/physics/system.h:55
