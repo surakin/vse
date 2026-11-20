@@ -10,6 +10,10 @@ off** (errors are values). The first page of the guide explains both.
 > **Status:** under active development, one numbered phase at a time. [STATUS.md](STATUS.md) says where the project is, [KNOWN-ISSUES.md](KNOWN-ISSUES.md) lists what is
 > broken or deferred, and [PLAN.md](PLAN.md) is the roadmap. Linux is the primary platform; Windows and macOS are supported (see [BUILD.md](BUILD.md)).
 
+### Why "Visual Storm Engine"?
+
+'Visual Storm Engine' was the name of the personal engine a dear friend of mine, Sergio Jesús de los Santos, was working on in his spare time. Sadly, he passed away at 35 (fuck cancer, yes, fuck you very much). Carrying this name is a humble homage to my friend. It is also a very cool name. He was THAT good.
+
 ## Build and run
 
 You need a C++20 compiler (Clang is the reference), CMake 3.21 or newer, Ninja, and the platform's window libraries. [BUILD.md](BUILD.md) lists every
