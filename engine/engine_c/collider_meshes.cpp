@@ -167,6 +167,7 @@ bool Make(WorldObject& object, ResourceHost* resources, const ColliderSource& so
     out->layer = static_cast<u8>(source.layer);
     out->group = source.group;
     out->mask = source.mask;
+    out->is_trigger = source.is_trigger;
     return out->Validate() == physics::Validation::Ok;
 }
 

@@ -1882,6 +1882,110 @@ static void TestColliders(engine_handle engine)
     }
 }
 
+/* glTF colliders Day 6: a host gives a static body a mesh collider from an MCOL (ENGINE_SHAPE_MESH). */
+static void TestMeshShape(engine_handle engine)
+{
+    engine_import_options options = Options("/shape");
+    engine_import_result result = NewResult();
+    engine_handle world;
+    uint64_t ground_mcol = 0;
+    uint64_t level = 0;
+    uint64_t floor = 0;
+    uint64_t other = 0;
+    uint32_t i;
+    engine_transform t;
+    engine_rigid_body body;
+    engine_collider collider;
+    engine_collider back;
+    options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+    options.id_seed = 9201;
+    CHECK_STATUS(g_api->import_gltf(engine, kColliders, sizeof(kColliders) - 1, &options, &result), ENGINE_OK);
+    for (i = 0; i < result.resource_count; ++i)
+    {
+        if (TypeAt(&result, i) == ENGINE_RESOURCE_MESH_COLLIDER && ground_mcol == 0)
+        {
+            ground_mcol = IdAt(&result, i); /* the ground's comes first (mesh 0) */
+        }
+        if (TypeAt(&result, i) == ENGINE_RESOURCE_LEVEL)
+        {
+            level = IdAt(&result, i);
+        }
+    }
+    CHECK(ground_mcol != 0 && level != 0);
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->entity_create(world, &floor), ENGINE_OK);
+    memset(&t, 0, sizeof(t));
+    t.struct_size = sizeof(t);
+    t.rotation[3] = 1.0f;
+    t.scale[0] = t.scale[1] = t.scale[2] = 3.0f;
+    CHECK_STATUS(g_api->component_set(world, floor, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    memset(&body, 0, sizeof(body));
+    body.struct_size = sizeof(body);
+    body.type = ENGINE_BODY_STATIC;
+    body.gravity_scale = 1.0f;
+    CHECK_STATUS(g_api->component_set(world, floor, ENGINE_COMPONENT_RIGID_BODY, &body), ENGINE_OK);
+    memset(&collider, 0, sizeof(collider));
+    collider.struct_size = sizeof(collider);
+    collider.shape = ENGINE_SHAPE_MESH;
+    collider.mesh_resource = ground_mcol;
+    collider.rotation[3] = 1.0f;
+    collider.friction = 0.5f;
+    collider.density = 1000.0f;
+    collider.group = 1;
+    collider.mask = 0xFFFFFFFFu;
+    CHECK_STATUS(g_api->component_set(world, floor, ENGINE_COMPONENT_COLLIDER, &collider), ENGINE_OK);
+    memset(&back, 0, sizeof(back));
+    back.struct_size = sizeof(back);
+    CHECK_STATUS(g_api->component_get(world, floor, ENGINE_COMPONENT_COLLIDER, &back), ENGINE_OK);
+    CHECK(back.shape == ENGINE_SHAPE_MESH && back.mesh_resource == ground_mcol);
+    RunFrames(engine, 3, NULL);
+    CHECK(HitsDown(world, 12.0f, 0.0f, NULL) == 1); /* the 5 m ground at the entity's scale 3 */
+    CHECK(HitsDown(world, 16.0f, 0.0f, NULL) == 0);
+    CHECK_STATUS(g_api->component_get(world, floor, ENGINE_COMPONENT_COLLIDER, &back), ENGINE_OK);
+    CHECK(back.shape == ENGINE_SHAPE_MESH);
+    /* static only, whichever is set second */
+    body.type = ENGINE_BODY_DYNAMIC;
+    CHECK_STATUS(g_api->component_set(world, floor, ENGINE_COMPONENT_RIGID_BODY, &body), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->entity_create(world, &other), ENGINE_OK);
+    CHECK_STATUS(g_api->component_set(world, other, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    CHECK_STATUS(g_api->component_set(world, other, ENGINE_COMPONENT_RIGID_BODY, &body), ENGINE_OK);
+    CHECK_STATUS(g_api->component_set(world, other, ENGINE_COMPONENT_COLLIDER, &collider),
+                 ENGINE_ERROR_INVALID_ARGUMENT);
+    /* the resource: not mounted, or not an MCOL */
+    body.type = ENGINE_BODY_STATIC;
+    CHECK_STATUS(g_api->component_set(world, other, ENGINE_COMPONENT_RIGID_BODY, &body), ENGINE_OK);
+    collider.mesh_resource = 0x7777777777ull;
+    CHECK_STATUS(g_api->component_set(world, other, ENGINE_COMPONENT_COLLIDER, &collider), ENGINE_ERROR_NOT_FOUND);
+    collider.mesh_resource = level;
+    CHECK_STATUS(g_api->component_set(world, other, ENGINE_COMPONENT_COLLIDER, &collider), ENGINE_ERROR_TYPE_MISMATCH);
+    /* a host of the first struct: a box still works, a mesh is STRUCT_SIZE, and reading writes no more than it holds */
+    {
+        engine_collider old;
+        memset(&old, 0x5A, sizeof(old));
+        memset(&old, 0, offsetof(engine_collider, reserved));
+        old.struct_size = (uint32_t)offsetof(engine_collider, reserved);
+        old.shape = ENGINE_SHAPE_BOX;
+        old.half_extents[0] = old.half_extents[1] = old.half_extents[2] = 0.5f;
+        old.rotation[3] = 1.0f;
+        old.density = 1000.0f;
+        old.group = 1;
+        old.mask = 0xFFFFFFFFu;
+        CHECK_STATUS(g_api->component_set(world, other, ENGINE_COMPONENT_COLLIDER, &old), ENGINE_OK);
+        old.shape = ENGINE_SHAPE_MESH;
+        CHECK_STATUS(g_api->component_set(world, other, ENGINE_COMPONENT_COLLIDER, &old), ENGINE_ERROR_STRUCT_SIZE);
+        memset(&old, 0x5A, sizeof(old));
+        old.struct_size = (uint32_t)offsetof(engine_collider, reserved);
+        CHECK_STATUS(g_api->component_get(world, other, ENGINE_COMPONENT_COLLIDER, &old), ENGINE_OK);
+        CHECK(old.shape == ENGINE_SHAPE_BOX && old.reserved == 0x5A5A5A5Au);
+    }
+    /* removing the mesh collider removes it whole */
+    CHECK_STATUS(g_api->component_remove(world, floor, ENGINE_COMPONENT_COLLIDER), ENGINE_OK);
+    CHECK_STATUS(g_api->component_get(world, floor, ENGINE_COMPONENT_COLLIDER, &back), ENGINE_ERROR_NOT_FOUND);
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+    ReleaseResult(&result);
+}
+
 int main(void)
 {
     Bytes gltf;
@@ -1921,6 +2025,7 @@ int main(void)
     TestDeepScene(engine);
     TestMorphsAndLights(engine);
     TestColliders(engine);
+    TestMeshShape(engine);
     TestTextures(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     TestResourceCache(&gltf);

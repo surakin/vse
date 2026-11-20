@@ -189,6 +189,8 @@ int main(void)
     FIELD(engine_collider, group);
     FIELD(engine_collider, mask);
     FIELD(engine_collider, is_trigger);
+    FIELD(engine_collider, reserved); /* glTF colliders Day 6 */
+    FIELD(engine_collider, mesh_resource);
     STRUCT(engine_ray_hit);
     FIELD(engine_ray_hit, struct_size);
     FIELD(engine_ray_hit, entity);
@@ -654,5 +656,6 @@ int main(void)
     FIELD(engine_import_options, max_images);
     FIELD(engine_import_options, reserved);
     FIELD(engine_import_options, max_collision_triangles);
+    VALUE(ENGINE_SHAPE_MESH); /* glTF colliders Day 6 */
     return 0;
 }

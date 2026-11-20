@@ -192,6 +192,7 @@ struct ColliderSource
     u32 layer = 0;                                 ///< The collision layer.
     u32 group = 1;                                 ///< The groups it is in.
     u32 mask = 0xFFFFFFFFu;                        ///< The groups it meets.
+    bool is_trigger = false;                       ///< Reports overlaps and does not collide (glTF colliders Day 6).
     u8 state = 0;                                  ///< 0 waiting for a frame, 1 made, 2 refused (counted once).
     bool scale_reported = false;                   ///< A later scale change was counted already.
     Vec3 made_scale = Vec3(1.0f, 1.0f, 1.0f);      ///< The world scale the collider was made with.

@@ -873,13 +873,22 @@ extern "C"
 #define ENGINE_SHAPE_SPHERE 0u  /* `radius` */
 #define ENGINE_SHAPE_BOX 1u     /* `half_extents` */
 #define ENGINE_SHAPE_CAPSULE 2u /* `radius` and `half_height` (of the straight part, along Y) */
+#define ENGINE_SHAPE_MESH                                                                                              \
+    4u /* `mesh_resource`: an MCOL triangle mesh, static bodies only (glTF colliders, 2026-11-20; 3 is kept for a      \
+          hull) */
 
     /* The shape of a physics body (Phase 25 Day 408), in the entity's space: sizes are in metres (above 0, at most
      * 1e5), `offset` and `rotation` (a unit quaternion x, y, z, w) place it on the body. `friction` >= 0, `restitution`
      * in 0..1, `density` in kilograms per cubic metre (1e-3 to 1e9). `layer` is 0..31, `group` and `mask` select which
      * colliders it meets (a pair collides when each one's group is in the other's mask). A trigger (`is_trigger` 1)
-     * reports overlaps and does not collide. Convex hulls, meshes and compounds from resources need the resource
-     * shapes of Day 409 and are refused for now (UNSUPPORTED). */
+     * reports overlaps and does not collide. A mesh (ENGINE_SHAPE_MESH, glTF colliders, 2026-11-20) names an MCOL
+     * resource the host added or an import made (`mesh_resource`; NOT_FOUND when it is not mounted, TYPE_MISMATCH when
+     * it is not an MCOL): it is for static bodies only (a mesh collider on an entity whose body is not static, or a
+     * body type other than static on an entity with a mesh collider, is INVALID_ARGUMENT), it is sized by the entity's
+     * world scale when it is made at the end of the next frame (the collider's `offset` scales with it), and
+     * component_has and queries see it from then on. The two last fields came later: a struct that ends before
+     * `reserved` sets and reads the other shapes as before, and a mesh needs them (STRUCT_SIZE). Convex hulls and
+     * compounds are refused (UNSUPPORTED). */
     typedef struct engine_collider
     {
         uint32_t struct_size;
@@ -896,6 +905,8 @@ extern "C"
         uint32_t group;
         uint32_t mask;
         uint32_t is_trigger;
+        uint32_t reserved;      /* zero */
+        uint64_t mesh_resource; /* ENGINE_SHAPE_MESH: the MCOL's resource id */
     } engine_collider;
 
     /* What a ray cast found. */
@@ -1035,6 +1046,8 @@ extern "C"
 #define ENGINE_RESOURCE_LEVEL ENGINE_RESOURCE_TYPE('L', 'E', 'V', 'L')
 #define ENGINE_RESOURCE_ANIMATION ENGINE_RESOURCE_TYPE('A', 'N', 'I', 'M')
 #define ENGINE_RESOURCE_SKELETON ENGINE_RESOURCE_TYPE('S', 'K', 'E', 'L')
+#define ENGINE_RESOURCE_MESH_COLLIDER                                                                                  \
+    ENGINE_RESOURCE_TYPE('M', 'C', 'O', 'L') /* a static triangle-mesh collider (glTF colliders, 2026-11-20) */
 
 /* Flags of engine_resource_add_info and of resource_remove. */
 #define ENGINE_RESOURCE_BORROW 0x1u /* add, replace: lend the bytes instead of copying them; `release` is required */

@@ -798,6 +798,74 @@ template <class T> engine_status SetOrAdd(ecs::World& world, ecs::Entity entity,
 
 }  // namespace
 
+namespace
+{
+
+// A mesh collider from the host (glTF colliders Day 6): checked now, made at the end of the next frame at the entity's
+// world scale (a ColliderSource, as a spawned level's).
+engine_status SetMeshCollider(WorldObject& object, ecs::Entity entity, const engine_collider* in)
+{
+    if (StructSizeOf(in) < sizeof(engine_collider))
+    {
+        SetLastError("struct_size: a mesh collider needs engine_collider's mesh_resource");
+        return ENGINE_ERROR_STRUCT_SIZE;
+    }
+    if (in->reserved != 0 || in->is_trigger > 1 || in->layer >= 32 || in->mesh_resource == 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                    "a mesh collider needs a resource id, reserved 0, is_trigger 0 or 1 and a layer below 32");
+    }
+    if (const physics::RigidBody* body = object.world.Peek<physics::RigidBody>(entity))
+    {
+        if (body->type != physics::BodyType::Static)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a mesh collider is for a static body only");
+        }
+    }
+    // The other values as a primitive collider would check them (a unit box stands for the shape).
+    physics::Collider probe;
+    probe.shape = physics::Shape::MakeBox(Vec3(1.0f, 1.0f, 1.0f));
+    probe.offset = Vec3(in->offset[0], in->offset[1], in->offset[2]);
+    probe.rotation = Quaternion(in->rotation[0], in->rotation[1], in->rotation[2], in->rotation[3]);
+    probe.material.friction = in->friction;
+    probe.material.restitution = in->restitution;
+    probe.material.density = in->density;
+    if (probe.Validate() != physics::Validation::Ok)
+    {
+        SetLastError("invalid_argument: the collider is refused (%s)", physics::ValidationName(probe.Validate()));
+        return ENGINE_ERROR_INVALID_ARGUMENT;
+    }
+    Runtime* runtime = CurrentRuntime();
+    const asset::MeshColliderView* view = nullptr;
+    asset::ContentHash hash;
+    const engine_status pinned = runtime->Resources()->PinMeshCollider(in->mesh_resource, &view, &hash);
+    if (pinned != ENGINE_OK)
+    {
+        return pinned;
+    }
+    ColliderSource source;
+    source.shape = 0;
+    source.mesh = in->mesh_resource;
+    source.offset = probe.offset;
+    source.rotation = probe.rotation;
+    source.friction = in->friction;
+    source.restitution = in->restitution;
+    source.density = in->density;
+    source.layer = in->layer;
+    source.group = in->group;
+    source.mask = in->mask;
+    source.is_trigger = in->is_trigger != 0;
+    if (object.world.Has<physics::Collider>(entity))
+    {
+        object.world.Remove<physics::Collider>(entity);  // the frame makes the mesh one
+    }
+    object.collider_sources = true;
+    object.physics_used = true;
+    return SetOrAdd(object.world, entity, source);
+}
+
+}  // namespace
+
 engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const void* value)
 {
     if (!KnownKind(kind_value))
@@ -853,7 +921,9 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     }
     else if (kind == ENGINE_COMPONENT_COLLIDER)
     {
-        checked = CheckInStruct(value, sizeof(engine_collider), "engine_collider");
+        // The first version ended before `reserved` and `mesh_resource` (glTF colliders Day 6); a mesh needs them
+        // (below).
+        checked = CheckInStruct(value, offsetof(engine_collider, reserved), "engine_collider");
     }
     else if (kind == ENGINE_COMPONENT_JOINT)
     {
@@ -976,6 +1046,15 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 {
                     return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the body type is not known");
                 }
+                if (in->type != ENGINE_BODY_STATIC)
+                {  // glTF colliders Day 6: a mesh collider is for static bodies only
+                    const ColliderSource* source = object.world.Peek<ColliderSource>(entity);
+                    if (source != nullptr && source->shape == 0)
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                                    "the entity has a mesh collider: its body must be static");
+                    }
+                }
                 physics::RigidBody body;
                 body.type = static_cast<physics::BodyType>(in->type);
                 body.flags = in->flags;
@@ -996,6 +1075,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
             {
                 const engine_collider* in = static_cast<const engine_collider*>(value);
                 physics::Collider collider;
+                if (in->shape == ENGINE_SHAPE_MESH)
+                {
+                    return SetMeshCollider(object, entity, in);
+                }
                 if (in->shape == ENGINE_SHAPE_SPHERE)
                 {
                     collider.shape = physics::Shape::MakeSphere(in->radius);
@@ -1030,6 +1113,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                     return ENGINE_ERROR_INVALID_ARGUMENT;
                 }
                 object.physics_used = true;
+                if (object.world.Has<ColliderSource>(entity))
+                {
+                    object.world.Remove<ColliderSource>(entity);  // a primitive replaces a mesh collider
+                }
                 return SetOrAdd(object.world, entity, collider);
             }
             if (kind == ENGINE_COMPONENT_JOINT)
@@ -2573,7 +2660,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_LABEL             ? sizeof(engine_label)
                          : kind == ENGINE_COMPONENT_VISIBILITY        ? sizeof(engine_visibility)
                          : kind == ENGINE_COMPONENT_RIGID_BODY        ? sizeof(engine_rigid_body)
-                         : kind == ENGINE_COMPONENT_COLLIDER          ? sizeof(engine_collider)
+                         : kind == ENGINE_COMPONENT_COLLIDER          ? offsetof(engine_collider, reserved)
                          : kind == ENGINE_COMPONENT_JOINT             ? sizeof(engine_joint)
                          : kind == ENGINE_COMPONENT_CHARACTER         ? sizeof(engine_character)
                          : kind == ENGINE_COMPONENT_AUDIO_SOURCE      ? offsetof(engine_audio_source, stream)
@@ -2803,7 +2890,32 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
             }
             if (kind == ENGINE_COMPONENT_COLLIDER)
             {
+                const ColliderSource* source = view.Peek<ColliderSource>(entity);
                 const physics::Collider* collider = view.Peek<physics::Collider>(entity);
+                if (source != nullptr && source->shape == 0 && source->state != 2)
+                {  // a mesh collider (glTF colliders Day 6): the host's own values, unscaled
+                    engine_collider result = {};
+                    result.shape = ENGINE_SHAPE_MESH;
+                    result.mesh_resource = source->mesh;
+                    result.offset[0] = source->offset.x;
+                    result.offset[1] = source->offset.y;
+                    result.offset[2] = source->offset.z;
+                    result.rotation[0] = source->rotation.x;
+                    result.rotation[1] = source->rotation.y;
+                    result.rotation[2] = source->rotation.z;
+                    result.rotation[3] = source->rotation.w;
+                    result.friction = source->friction;
+                    result.restitution = source->restitution;
+                    result.density = source->density;
+                    result.layer = source->layer;
+                    result.group = source->group;
+                    result.mask = source->mask;
+                    result.is_trigger = source->is_trigger ? 1u : 0u;
+                    const usize room = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out) : sizeof(result);
+                    result.struct_size = static_cast<u32>(room);
+                    MemCopy(out, &result, room);
+                    return ENGINE_OK;
+                }
                 if (collider == nullptr)
                 {
                     return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no collider");
@@ -2832,7 +2944,10 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                 result.group = collider->group;
                 result.mask = collider->mask;
                 result.is_trigger = collider->is_trigger ? 1u : 0u;
-                MemCopy(out, &result, sizeof(result));
+                // A host of the first version has a struct that ends before `reserved` (glTF colliders Day 6).
+                const usize room = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out) : sizeof(result);
+                result.struct_size = static_cast<u32>(room);
+                MemCopy(out, &result, room);
                 return ENGINE_OK;
             }
             if (kind == ENGINE_COMPONENT_VISIBILITY)
@@ -2971,7 +3086,18 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_LIGHT: status = w.Remove<LightComponent>(entity); break;
                          case ENGINE_COMPONENT_LABEL: status = w.Remove<LabelComponent>(entity); break;
                          case ENGINE_COMPONENT_RIGID_BODY: status = w.Remove<physics::RigidBody>(entity); break;
-                         case ENGINE_COMPONENT_COLLIDER: status = w.Remove<physics::Collider>(entity); break;
+                         case ENGINE_COMPONENT_COLLIDER:
+                         {  // a mesh collider is its source until the frame makes it (glTF colliders Day 6)
+                             const bool had_source = w.Has<ColliderSource>(entity);
+                             if (had_source)
+                             {
+                                 w.Remove<ColliderSource>(entity);
+                             }
+                             status = had_source && !w.Has<physics::Collider>(entity)
+                                          ? ecs::Status::Ok
+                                          : w.Remove<physics::Collider>(entity);
+                             break;
+                         }
                          case ENGINE_COMPONENT_JOINT: status = w.Remove<physics::Joint>(entity); break;
                          case ENGINE_COMPONENT_CHARACTER:
                              status = w.Remove<CharacterComponent>(entity);  // the frame gives the capsule back
