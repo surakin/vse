@@ -99,6 +99,10 @@ int main(void)
     FIELD(engine_frame_stats, physics_us);
     FIELD(engine_frame_stats, physics_bodies);
     FIELD(engine_frame_stats, physics_steps);
+    FIELD(engine_frame_stats, colliders_made); /* glTF colliders, 2026-11-20 */
+    FIELD(engine_frame_stats, colliders_refused);
+    FIELD(engine_frame_stats, collider_scale_changes_ignored);
+    FIELD(engine_frame_stats, collider_triangles_dropped);
     STRUCT(engine_transform);
     FIELD(engine_transform, struct_size);
     FIELD(engine_transform, position);
@@ -644,5 +648,11 @@ int main(void)
     FIELD(engine_morph_weights, struct_size);
     FIELD(engine_morph_weights, count);
     FIELD(engine_morph_weights, weights);
+    STRUCT(engine_import_options); /* glTF colliders, 2026-11-20: max_collision_triangles appended */
+    FIELD(engine_import_options, struct_size);
+    FIELD(engine_import_options, flags);
+    FIELD(engine_import_options, max_images);
+    FIELD(engine_import_options, reserved);
+    FIELD(engine_import_options, max_collision_triangles);
     return 0;
 }

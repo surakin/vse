@@ -24,7 +24,7 @@ else()
   set(ENGINE_C_WITH_IMPORTER_VALUE 0)
 endif()
 
-set(ENGINE_C_SOURCES engine_c.cpp audio_api.cpp host_texture.cpp live_textures.cpp import.cpp resources.cpp runtime.cpp script_api.cpp status_map.cpp surface.cpp surface_scene.cpp)
+set(ENGINE_C_SOURCES engine_c.cpp audio_api.cpp collider_meshes.cpp host_texture.cpp live_textures.cpp import.cpp resources.cpp runtime.cpp script_api.cpp status_map.cpp surface.cpp surface_scene.cpp)
 
 # Phase 27 Day 471: the script runtime of a world. Built in where the script module has a backend (Linux, Windows and macOS: Days 471, 473 and 474); elsewhere the
 # script functions answer UNSUPPORTED and the library reports no ENGINE_CAP_SCRIPT.

@@ -4,6 +4,7 @@
 #include "engine_c/runtime.h"
 
 #include "engine_c/audio_api.h"
+#include "engine_c/collider_meshes.h"
 #include "engine_c/surface.h"
 
 #include "animation/components.h"
@@ -597,6 +598,14 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
             result.physics_us += (os::MonotonicTimeNanos() - physics_start) / 1000;
         }
         object->schedule.Run(object->world, static_cast<f32>(info->delta_seconds));
+        {  // glTF colliders Day 5: the transforms are propagated now, so the waiting colliders can be scaled
+            ColliderResolveCounts colliders;
+            ResolveColliderSources(*object, resources, &colliders);
+            result.colliders_made += colliders.made;
+            result.colliders_refused += colliders.refused;
+            result.collider_scale_changes_ignored += colliders.scale_ignored;
+            result.collider_triangles_dropped += colliders.triangles_dropped;
+        }
         if (object->physics_used)
         {
             physics::SyncJoints(object->world, physics);  // a joint the step broke loses its component now
@@ -2107,6 +2116,28 @@ bool LevelLightValid(const scene::LightSource& source)
            (source.inner_cone >= 0.0f && source.inner_cone < source.outer_cone && source.outer_cone <= 1.5707964f);
 }
 
+// Whether a level's static collider is what a host could set (glTF colliders Day 5): finite, the sizes of its shape
+// above 0 and at most 1e5 m, a known shape, friction >= 0 and restitution 0..1.
+bool LevelColliderValid(const asset::StaticCollider& c)
+{
+    const auto size_ok = [](f32 v) { return Finite(v) && v > 0.0f && v <= 1.0e5f; };
+    if (!(Finite(c.friction) && c.friction >= 0.0f) ||
+        !(Finite(c.restitution) && c.restitution >= 0.0f && c.restitution <= 1.0f))
+    {
+        return false;
+    }
+    switch (c.shape)
+    {
+    case asset::StaticColliderShape::Mesh: return c.mesh.id != 0;
+    case asset::StaticColliderShape::Box:
+        return size_ok(c.half_extents.x) && size_ok(c.half_extents.y) && size_ok(c.half_extents.z);
+    case asset::StaticColliderShape::Sphere: return size_ok(c.radius);
+    case asset::StaticColliderShape::Capsule:
+        return size_ok(c.radius) && Finite(c.half_height) && c.half_height >= 0.0f && c.half_height <= 1.0e5f;
+    }
+    return false;
+}
+
 bool LevelWeightsValid(const animation::MorphWeights& weights)
 {
     if (weights.count > animation::kMaxMorphWeights)
@@ -2224,7 +2255,28 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
             TRY_STATUS(resources->PinSkeleton(instance->skeleton));
         }
     }
-    // The level's lights and weights are checked as component_set checks a host's (maintenance, 2026-11-20).
+    // The level's lights and weights are checked as component_set checks a host's (maintenance, 2026-11-20), and its
+    // colliders (glTF colliders Day 5): a mesh one's MCOL is loaded and pinned here, before the world is touched.
+    bool has_colliders = false;
+    for (usize i = 0; i < source.Size(); ++i)
+    {
+        if (const asset::StaticCollider* collider = scratch.Peek<asset::StaticCollider>(source[i]))
+        {
+            if (!LevelColliderValid(*collider))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                            "a static collider of the level is not valid (not finite, a size not above 0 or over "
+                            "100000 m, a friction below 0, a restitution outside 0..1, a mesh with no MCOL)");
+            }
+            if (collider->shape == asset::StaticColliderShape::Mesh)
+            {
+                const asset::MeshColliderView* view = nullptr;
+                asset::ContentHash hash;
+                TRY_STATUS(resources->PinMeshCollider(collider->mesh.id, &view, &hash));
+            }
+            has_colliders = true;
+        }
+    }
     for (usize i = 0; i < source.Size(); ++i)
     {
         const scene::LightSource* light = scratch.Peek<scene::LightSource>(source[i]);
@@ -2360,6 +2412,28 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                         status = object.world.Add<animation::MorphWeights>(entity, *weights);
                     }
                 }
+                // glTF colliders Day 5: a static body, and its collider made at the end of the frame (world scale).
+                if (const asset::StaticCollider* collider = scratch.Peek<asset::StaticCollider>(source[i]))
+                {
+                    ColliderSource made;
+                    made.shape = static_cast<u32>(collider->shape);
+                    made.mesh = collider->mesh.id;
+                    made.half_extents = collider->half_extents;
+                    made.radius = collider->radius;
+                    made.half_height = collider->half_height;
+                    made.friction = collider->friction;
+                    made.restitution = collider->restitution;
+                    physics::RigidBody body;
+                    body.type = physics::BodyType::Static;
+                    if (status == ecs::Status::Ok)
+                    {
+                        status = object.world.Add<ColliderSource>(entity, made);
+                    }
+                    if (status == ecs::Status::Ok)
+                    {
+                        status = object.world.Add<physics::RigidBody>(entity, body);
+                    }
+                }
                 LightComponent light;
                 if (const scene::LightSource* source_light = scratch.Peek<scene::LightSource>(source[i]);
                     source_light != nullptr && LightOfLevel(*source_light, &light) && status == ecs::Status::Ok)
@@ -2413,6 +2487,7 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                 }
             }
             *root = top.ToU64();
+            object.collider_sources = object.collider_sources || has_colliders;  // resolved at the end of a frame
             for (usize i = 0; i < made.Size() && i < capacity; ++i)
             {
                 keys[i] = made[i].ToU64();

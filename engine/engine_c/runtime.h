@@ -2,6 +2,7 @@
 //! The runtime of one engine (Phase 23 Day 349): its worlds, its counters and its job system, behind the functions of
 //! the C API's table that make and use them. Internal to the module `engine_c`: nothing here reaches the host but
 //! through `engine_c.h`.
+#include "asset/content_hash.h"
 #include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -13,6 +14,7 @@
 #include "jobs/job.h"
 #include "audio/spatial_audio.h"
 #include "physics/character.h"
+#include "math/quaternion.h"
 #include "physics/world.h"
 #include "string_view.h"
 #include "sync/atomic.h"
@@ -170,6 +172,42 @@ struct CharacterEntry
     physics::CharacterEvents events;  ///< What the last character_move found.
 };
 
+/// The unscaled shape of a static collider (glTF colliders Day 5). The frame makes the `physics::Collider` from it at
+/// its end, once the entity's world matrix is known, with the world scale of that moment; a later scale change is
+/// counted and not followed.
+///
+/// - Thread-safety: plain data.
+struct ColliderSource
+{
+    u32 shape = 0;                                 ///< `asset::StaticColliderShape` values: mesh, box, sphere, capsule.
+    u64 mesh = 0;                                  ///< The `MCOL` of a mesh shape.
+    Vec3 half_extents = Vec3(0.0f, 0.0f, 0.0f);    ///< A box's half sizes, unscaled.
+    f32 radius = 0.0f;                             ///< A sphere's or a capsule's radius, unscaled.
+    f32 half_height = 0.0f;                        ///< Half a capsule's straight part, unscaled.
+    Vec3 offset = Vec3(0.0f, 0.0f, 0.0f);          ///< Where the shape sits on the body, unscaled.
+    Quaternion rotation = Quaternion::Identity();  ///< The shape's turn on the body.
+    f32 friction = 0.5f;                           ///< The surface's friction.
+    f32 restitution = 0.0f;                        ///< The surface's bounciness.
+    f32 density = 1000.0f;                         ///< Kilograms per cubic metre.
+    u32 layer = 0;                                 ///< The collision layer.
+    u32 group = 1;                                 ///< The groups it is in.
+    u32 mask = 0xFFFFFFFFu;                        ///< The groups it meets.
+    u8 state = 0;                                  ///< 0 waiting for a frame, 1 made, 2 refused (counted once).
+    bool scale_reported = false;                   ///< A later scale change was counted already.
+    Vec3 made_scale = Vec3(1.0f, 1.0f, 1.0f);      ///< The world scale the collider was made with.
+};
+
+/// A physics mesh a world made from an `MCOL` at one scale (glTF colliders Day 5).
+///
+/// - Thread-safety: plain data.
+struct ColliderMeshEntry
+{
+    asset::ContentHash hash;  ///< The `MCOL`'s content hash.
+    u32 scale[3] = {};        ///< The scale's bit patterns (a mirror is a negative z).
+    u32 mesh = 0;             ///< Its id in the world's `MeshLibrary`.
+    Vec3 extent;              ///< Its `TriangleMesh::Extent()`.
+};
+
 /// A world and the systems that run on it.
 ///
 /// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
@@ -190,6 +228,9 @@ struct WorldObject
     AudioHostPtr spatial_host;
     /// The world's scripts (Phase 27 Day 471): made by the first `script_load`, script component or host function.
     UniquePtr<ScriptHost> scripts;
+    /// The physics meshes made from `MCOL`s (glTF colliders Day 5); a world keeps them until it is destroyed.
+    Vector<ColliderMeshEntry> collider_meshes;
+    bool collider_sources = false;  ///< Whether a collider source was added: the frame resolves them only then.
 };
 
 /// A count of jobs not yet finished.

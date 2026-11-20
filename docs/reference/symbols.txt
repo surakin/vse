@@ -8072,9 +8072,10 @@ asset::MeshColliderView::Open(const SharedBytesPtr&,const TypeRegistry&)	functio
 asset::MeshColliderView::VertexCount() const	function	asset	asset-meshcolliderview-vertexcount-const	asset.md	engine/asset/mesh_collider.h:75
 asset::MeshColliderView::TriangleCount() const	function	asset	asset-meshcolliderview-trianglecount-const	asset.md	engine/asset/mesh_collider.h:78
 asset::MeshColliderView::Id() const	function	asset	asset-meshcolliderview-id-const	asset.md	engine/asset/mesh_collider.h:81
-asset::MeshColliderView::Position(u32) const	function	asset	asset-meshcolliderview-position-u32-const	asset.md	engine/asset/mesh_collider.h:85
-asset::MeshColliderView::Index(u32,u32) const	function	asset	asset-meshcolliderview-index-u32-u32-const	asset.md	engine/asset/mesh_collider.h:89
-asset::MeshColliderView::Material(u32) const	function	asset	asset-meshcolliderview-material-u32-const	asset.md	engine/asset/mesh_collider.h:93
+asset::MeshColliderView::Bytes() const	function	asset	asset-meshcolliderview-bytes-const	asset.md	engine/asset/mesh_collider.h:84
+asset::MeshColliderView::Position(u32) const	function	asset	asset-meshcolliderview-position-u32-const	asset.md	engine/asset/mesh_collider.h:88
+asset::MeshColliderView::Index(u32,u32) const	function	asset	asset-meshcolliderview-index-u32-u32-const	asset.md	engine/asset/mesh_collider.h:92
+asset::MeshColliderView::Material(u32) const	function	asset	asset-meshcolliderview-material-u32-const	asset.md	engine/asset/mesh_collider.h:96
 asset::MountId	alias	asset	asset-mountid	asset.md	engine/asset/mount_table.h:18
 asset::MountTable	class	asset	asset-mounttable	asset.md	engine/asset/mount_table.h:31
 asset::MountTable::MountTable()	function	asset	asset-mounttable-mounttable	asset.md	engine/asset/mount_table.h:34

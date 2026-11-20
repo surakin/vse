@@ -189,6 +189,33 @@ engine_status ResourceHost::PinSkeleton(u64 id)
     return ENGINE_OK;
 }
 
+engine_status ResourceHost::PinMeshCollider(u64 id, const asset::MeshColliderView** view, asset::ContentHash* hash)
+{
+    LockGuard<Mutex> lock(pin_mutex_);
+    asset::Handle<asset::MeshColliderView> handle;
+    const asset::Status loaded = manager_->Load<asset::MeshColliderView>(asset::ResourceId::FromValue(id), &handle);
+    if (!loaded.Ok())
+    {
+        return Fail(FromAssetError(loaded.Code()), loaded.Message());
+    }
+    for (usize i = 0; i < mesh_collider_pins_.Size(); ++i)
+    {
+        if (mesh_collider_pins_[i].handle.Get() == handle.Get())
+        {
+            *view = handle.Get();
+            *hash = mesh_collider_pins_[i].hash;
+            return ENGINE_OK;
+        }
+    }
+    MeshColliderPin pin;
+    pin.hash = asset::HashBytes(handle.Get()->Bytes());
+    *view = handle.Get();
+    *hash = pin.hash;
+    pin.handle = static_cast<asset::Handle<asset::MeshColliderView>&&>(handle);
+    mesh_collider_pins_.Push(static_cast<MeshColliderPin&&>(pin));
+    return ENGINE_OK;
+}
+
 engine_status ResourceHost::ReadLevel(u64 id, Vector<byte>* bytes)
 {
     bytes->Clear();

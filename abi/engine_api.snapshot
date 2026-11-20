@@ -65,7 +65,7 @@ field engine_frame_info.struct_size offset=0 size=4
 field engine_frame_info.flags offset=4 size=4
 field engine_frame_info.delta_seconds offset=8 size=8
 field engine_frame_info.budget_us offset=16 size=8
-struct engine_frame_stats size=80
+struct engine_frame_stats size=96
 field engine_frame_stats.struct_size offset=0 size=4
 field engine_frame_stats.worlds_run offset=4 size=4
 field engine_frame_stats.worlds_skipped offset=8 size=4
@@ -75,6 +75,10 @@ field engine_frame_stats.elapsed_us offset=24 size=8
 field engine_frame_stats.physics_us offset=64 size=8
 field engine_frame_stats.physics_bodies offset=72 size=4
 field engine_frame_stats.physics_steps offset=76 size=4
+field engine_frame_stats.colliders_made offset=80 size=4
+field engine_frame_stats.colliders_refused offset=84 size=4
+field engine_frame_stats.collider_scale_changes_ignored offset=88 size=4
+field engine_frame_stats.collider_triangles_dropped offset=92 size=4
 struct engine_transform size=44
 field engine_transform.struct_size offset=0 size=4
 field engine_transform.position offset=4 size=12
@@ -202,7 +206,7 @@ field engine_import_file.data offset=0 size=8
 field engine_import_file.size offset=8 size=8
 field engine_import_file.release offset=16 size=8
 field engine_import_file.release_user offset=24 size=8
-struct engine_import_options size=128
+struct engine_import_options size=136
 field engine_import_options.struct_size offset=0 size=4
 field engine_import_options.flags offset=4 size=4
 field engine_import_options.scale offset=8 size=4
@@ -619,3 +623,9 @@ struct engine_morph_weights size=264
 field engine_morph_weights.struct_size offset=0 size=4
 field engine_morph_weights.count offset=4 size=4
 field engine_morph_weights.weights offset=8 size=256
+struct engine_import_options size=136
+field engine_import_options.struct_size offset=0 size=4
+field engine_import_options.flags offset=4 size=4
+field engine_import_options.max_images offset=120 size=4
+field engine_import_options.reserved offset=124 size=4
+field engine_import_options.max_collision_triangles offset=128 size=8

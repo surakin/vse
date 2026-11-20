@@ -1725,6 +1725,163 @@ static void TestMorphsAndLights(engine_handle engine)
     ReleaseResult(&result);
 }
 
+/* glTF colliders Day 5: a level with a ground (`ground-col`, 10 x 10 m) and a wall (`wall-colonly`, the plane x = 3)
+ * is solid after it is spawned, follows its root, keeps its creation scale, and the collision triangle limit refuses
+ * an import over it. */
+static const char kColliders[] =
+    "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0,1]}],"
+    "\"nodes\":[{\"name\":\"ground-col\",\"mesh\":0},{\"name\":\"wall-colonly\",\"mesh\":1}],"
+    "\"meshes\":[{\"name\":\"ground\",\"primitives\":[{\"attributes\":{\"POSITION\":0},\"indices\":2}]},"
+    "{\"name\":\"wall\",\"primitives\":[{\"attributes\":{\"POSITION\":1},\"indices\":2}]}],"
+    "\"accessors\":["
+    "{\"bufferView\":0,\"componentType\":5126,\"count\":4,\"type\":\"VEC3\",\"min\":[-5,0,-5],\"max\":[5,0,5]},"
+    "{\"bufferView\":1,\"componentType\":5126,\"count\":4,\"type\":\"VEC3\",\"min\":[3,0,-1],\"max\":[3,2,1]},"
+    "{\"bufferView\":2,\"componentType\":5123,\"count\":6,\"type\":\"SCALAR\"}],"
+    "\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":48},{\"buffer\":0,\"byteOffset\":48,"
+    "\"byteLength\":48},{\"buffer\":0,\"byteOffset\":96,\"byteLength\":12}],"
+    "\"buffers\":[{\"byteLength\":110,\"uri\":\"data:application/octet-stream;base64,"
+    "AACgwAAAAAAAAKDAAACgQAAAAAAAAKDAAACgQAAAAAAAAKBAAACgwAAAAAAAAKBAAABAQAAAAAAAAIC/AABAQAAAAEAAAIC/AABAQAAAAEAAAIA/"
+    "AABAQAAAAAAAAIA/AAACAAEAAAADAAIAAAA=\"}]}";
+
+static void RunFrames(engine_handle engine, int count, engine_frame_stats* last)
+{
+    int i;
+    for (i = 0; i < count; ++i)
+    {
+        engine_frame_info frame;
+        memset(&frame, 0, sizeof(frame));
+        frame.struct_size = sizeof(frame);
+        frame.delta_seconds = 0.02;
+        if (last != NULL)
+        {
+            memset(last, 0, sizeof(*last));
+            last->struct_size = sizeof(*last);
+        }
+        CHECK_STATUS(g_api->frame(engine, &frame, last), ENGINE_OK);
+    }
+}
+
+/* Whether a ray down from (x, 5, z) hits something within 10 m, and where. */
+static int HitsDown(engine_handle world, float x, float z, float* y)
+{
+    const float origin[3] = {x, 5.0f, z};
+    const float down[3] = {0.0f, -1.0f, 0.0f};
+    engine_ray_hit hit;
+    int found = 0;
+    memset(&hit, 0, sizeof(hit));
+    hit.struct_size = sizeof(hit);
+    CHECK_STATUS(g_api->physics_raycast(world, origin, down, 10.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
+    if (y != NULL)
+    {
+        *y = hit.point[1];
+    }
+    return found;
+}
+
+static void TestColliders(engine_handle engine)
+{
+    engine_import_options options = Options("/solid");
+    engine_import_result result = NewResult();
+    engine_handle world;
+    engine_frame_stats stats;
+    uint64_t root = 0;
+    uint64_t level = 0;
+    uint32_t i;
+    float y = -1.0f;
+    char summary[4096];
+    options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+    options.id_seed = 9101;
+    CHECK_STATUS(g_api->import_gltf(engine, kColliders, sizeof(kColliders) - 1, &options, &result), ENGINE_OK);
+    for (i = 0; i < result.resource_count; ++i)
+    {
+        if (TypeAt(&result, i) == ENGINE_RESOURCE_LEVEL)
+        {
+            level = IdAt(&result, i);
+        }
+    }
+    CHECK(level != 0);
+    CHECK(result.summary.size < sizeof(summary));
+    memcpy(summary, result.summary.data, result.summary.size < sizeof(summary) ? result.summary.size : 0);
+    summary[result.summary.size < sizeof(summary) ? result.summary.size : 0] = 0;
+    CHECK(strstr(summary, "\"collision\":{\"colliders\":2,\"meshes\":2,\"triangles\":4") != NULL);
+
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->level_spawn(world, level, NULL, &root, NULL, 0, NULL), ENGINE_OK);
+    RunFrames(engine, 1, &stats); /* the colliders are made at the end of the first frame */
+    CHECK(stats.colliders_made == 2 && stats.colliders_refused == 0);
+    RunFrames(engine, 2, NULL); /* the bodies at the next frame, and a step for the query index */
+    CHECK(HitsDown(world, 0.0f, 0.0f, &y) == 1);
+    CHECK(fabsf(y) < 1e-4f);
+    CHECK(HitsDown(world, 4.9f, 0.0f, NULL) == 1);
+    CHECK(HitsDown(world, 5.5f, 0.0f, NULL) == 0);
+    { /* the wall, sideways */
+        const float origin[3] = {0.0f, 1.0f, 0.0f};
+        const float east[3] = {1.0f, 0.0f, 0.0f};
+        engine_ray_hit hit;
+        int found = 0;
+        memset(&hit, 0, sizeof(hit));
+        hit.struct_size = sizeof(hit);
+        CHECK_STATUS(g_api->physics_raycast(world, origin, east, 10.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
+        CHECK(found == 1 && fabsf(hit.distance - 3.0f) < 1e-3f);
+    }
+    /* the root moves: the colliders follow (the sync places them by the world matrix of the frame before) */
+    {
+        engine_transform t;
+        memset(&t, 0, sizeof(t));
+        t.struct_size = sizeof(t);
+        CHECK_STATUS(g_api->component_get(world, root, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+        t.position[0] = 100.0f;
+        CHECK_STATUS(g_api->component_set(world, root, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+        RunFrames(engine, 3, NULL);
+        CHECK(HitsDown(world, 0.0f, 0.0f, NULL) == 0);
+        CHECK(HitsDown(world, 100.0f, 0.0f, NULL) == 1);
+        /* a later scale change: counted once, the shapes stay */
+        t.scale[0] = t.scale[1] = t.scale[2] = 3.0f;
+        CHECK_STATUS(g_api->component_set(world, root, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+        RunFrames(engine, 1, &stats);
+        CHECK(stats.collider_scale_changes_ignored == 2);
+        RunFrames(engine, 2, &stats);
+        CHECK(stats.collider_scale_changes_ignored == 0);
+        CHECK(HitsDown(world, 106.0f, 0.0f, NULL) == 0); /* 3 x 5 = 15 m would reach it; the shape kept 5 m */
+    }
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+
+    /* a spawn at scale 2: the ground is 20 m across */
+    {
+        engine_spawn_params place;
+        memset(&place, 0, sizeof(place));
+        place.struct_size = sizeof(place);
+        place.scale = 2.0f;
+        memset(&world, 0, sizeof(world));
+        CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+        CHECK_STATUS(g_api->level_spawn(world, level, &place, &root, NULL, 0, NULL), ENGINE_OK);
+        RunFrames(engine, 3, NULL);
+        CHECK(HitsDown(world, 9.0f, 0.0f, NULL) == 1);
+        CHECK(HitsDown(world, 11.0f, 0.0f, NULL) == 0);
+        CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+    }
+    ReleaseResult(&result);
+
+    /* the collision triangle limit */
+    {
+        engine_import_options small = Options("/solid_small");
+        engine_import_result refused = NewResult();
+        small.flags = ENGINE_IMPORT_EMIT_LEVEL;
+        small.id_seed = 9102;
+        small.max_collision_triangles = 1;
+        CHECK_STATUS(g_api->import_gltf(engine, kColliders, sizeof(kColliders) - 1, &small, &refused),
+                     ENGINE_ERROR_TOO_LARGE);
+        /* a host of the first options struct (no max_collision_triangles) is served, with the setting */
+        small.struct_size = (uint32_t)offsetof(engine_import_options, max_collision_triangles);
+        small.path_prefix = S("/solid_old");
+        small.id_seed = 9103;
+        refused = NewResult();
+        CHECK_STATUS(g_api->import_gltf(engine, kColliders, sizeof(kColliders) - 1, &small, &refused), ENGINE_OK);
+        ReleaseResult(&refused);
+    }
+}
+
 int main(void)
 {
     Bytes gltf;
@@ -1763,6 +1920,7 @@ int main(void)
     TestLevel(engine, &gltf);
     TestDeepScene(engine);
     TestMorphsAndLights(engine);
+    TestColliders(engine);
     TestTextures(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     TestResourceCache(&gltf);

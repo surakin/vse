@@ -8850,6 +8850,20 @@ The resource id.
 |---|---|
 | Fails | never. |
 
+### `Bytes()` {#asset-meshcolliderview-bytes-const}
+
+`method asset::MeshColliderView::Bytes` — defined in `engine/asset/mesh_collider.h`
+
+```cpp
+ByteSpan Bytes() const;
+```
+
+The whole blob the view reads (glTF colliders Day 5: a host hashes it to know two loads apart).
+
+| Field | Value |
+|---|---|
+| Fails | never; empty for a view that is not open. |
+
 ### `Position(u32)` {#asset-meshcolliderview-position-u32-const}
 
 `method asset::MeshColliderView::Position` — defined in `engine/asset/mesh_collider.h`

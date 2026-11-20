@@ -554,6 +554,14 @@ extern "C"
                                     the worlds' systems) */
         uint32_t physics_bodies; /* bodies alive in the worlds that ran */
         uint32_t physics_steps;  /* fixed steps the worlds that ran made in this frame */
+        /* glTF colliders (2026-11-20): the static colliders of spawned levels and mesh shapes, made at the end of the
+         * frame that first saw their entity's world matrix, at that world scale */
+        uint32_t colliders_made;    /* colliders made in this frame */
+        uint32_t colliders_refused; /* colliders that could not be made (a shear or zero scale in the entity's world
+                                       matrix, a mesh with no triangle left at that scale, a bad size) */
+        uint32_t collider_scale_changes_ignored; /* colliders whose entity's world scale changed after they were made
+                                                    (each counted once; the collider keeps its shape) */
+        uint32_t collider_triangles_dropped;     /* mesh triangles a world scale made degenerate, left out */
     } engine_frame_stats;
 
     /* The components a host can set on an entity. The numbers are part of the ABI. ENGINE_COMPONENT_BIT(kind) is the
@@ -2020,14 +2028,19 @@ extern "C"
          * import with ENGINE_IMPORT_EMIT_LEVEL made) into a world: a root entity with the transform of `params` (NULL:
          * at the origin), and below it one entity per entity of the level, with its name, transform, parent, mesh
          * reference, skeleton instance, morph weights and light (a glTF's KHR_lights_punctual lights: directional,
-         * point and spot; maintenance, 2026-11-20; an ambient light of a level has no C kind and is left out). The
-         * level is spawned whole or not at all: when it, or a resource it names, is not mounted (or a skeleton cannot
-         * be loaded), nothing is made and the reason is in last_error. A level spawned twice makes two independent
-         * copies. `*root` receives the root entity's key; `keys` (capacity `capacity`, may be NULL with 0) receives the
-         * keys of every entity of the spawn, the root first, and `*total` (may be NULL) the number of them. Fails with:
-         * STALE_HANDLE, INVALID_ARGUMENT (NULL `root`, a bad parameter), STRUCT_SIZE, NOT_FOUND (the level, or a
-         * resource it names, is not mounted), TYPE_MISMATCH (not a level, or a handle that is not a world), UNSUPPORTED
-         * (a level that includes other levels), LIMIT_EXCEEDED (the world refused an entity). */
+         * point and spot; maintenance, 2026-11-20; an ambient light of a level has no C kind and is left out), and for
+         * an entity with a static collider (glTF colliders, 2026-11-20: `-col`/`-colonly` meshes, OMI_physics_* shapes)
+         * a static body: its collider is made at the end of the first frame that propagates the entity's world matrix,
+         * with that world scale (a later scale change is counted in engine_frame_stats and not followed), and the body
+         * at the next frame; it follows the entity's world position and rotation, a frame behind. A level's mesh
+         * colliders (MCOL) are loaded with it. The level is spawned whole or not at all: when it, or a resource it
+         * names, is not mounted (or a skeleton cannot be loaded), nothing is made and the reason is in last_error. A
+         * level spawned twice makes two independent copies. `*root` receives the root entity's key; `keys` (capacity
+         * `capacity`, may be NULL with 0) receives the keys of every entity of the spawn, the root first, and `*total`
+         * (may be NULL) the number of them. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL `root`, a bad parameter),
+         * STRUCT_SIZE, NOT_FOUND (the level, or a resource it names, is not mounted), TYPE_MISMATCH (not a level, or a
+         * handle that is not a world), UNSUPPORTED (a level that includes other levels), LIMIT_EXCEEDED (the world
+         * refused an entity). */
         engine_status (*level_spawn)(engine_handle world, uint64_t level, const engine_spawn_params* params,
                                      uint64_t* root, uint64_t* keys, size_t capacity, size_t* total);
 

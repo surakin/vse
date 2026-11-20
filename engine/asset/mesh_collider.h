@@ -79,6 +79,9 @@ public:
     /// The resource id.
     /// - Fails: never.
     ResourceId Id() const { return id_; }
+    /// The whole blob the view reads (glTF colliders Day 5: a host hashes it to know two loads apart).
+    /// - Fails: never; empty for a view that is not open.
+    ByteSpan Bytes() const { return bytes_ ? bytes_->Bytes() : ByteSpan(); }
     /// Vertex `i`.
     ///
     /// - Aborts: `i` outside `[0, VertexCount())`.

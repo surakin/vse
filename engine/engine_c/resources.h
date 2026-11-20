@@ -5,6 +5,9 @@
 //! `engine_c.h`.
 #include "animation/manager_resolver.h"
 #include "asset/async_loader.h"
+#include "asset/content_hash.h"
+#include "asset/cpu_loaders.h"
+#include "asset/mesh_collider.h"
 #include "asset/memory_backend.h"
 #include "asset/resource_manager.h"
 #include "containers/unique_ptr.h"
@@ -113,6 +116,13 @@ public:
     /// - Returns: ENGINE_OK, NOT_FOUND (not mounted, or the skeleton not loaded), TYPE_MISMATCH (not a clip) or
     ///   INVALID_ARGUMENT (another skeleton's, or joint tracks for an entity without a skeleton), with the text set.
     engine_status PinClip(u64 id, u64 skeleton_id, bool* has_weights = nullptr);
+    /// Loads the mesh collider `id` and keeps it loaded until the host is destroyed (glTF colliders Day 5).
+    ///
+    /// - Param view: receives the view (valid while the host lives).
+    /// - Param hash: receives the content hash of its bytes (computed once per loaded blob), so a replaced resource is
+    ///   told apart from the one a world already turned into a physics mesh.
+    /// - Returns: ENGINE_OK, NOT_FOUND (not mounted) or TYPE_MISMATCH (not an `MCOL`), with the text set.
+    engine_status PinMeshCollider(u64 id, const asset::MeshColliderView** view, asset::ContentHash* hash);
     /// Reads the level blob `id` and checks that everything it names is mounted (Phase 24 Day 364).
     ///
     /// - Param bytes: replaced by a copy of the blob.
@@ -170,7 +180,13 @@ private:
     Mutex pin_mutex_;
     Vector<asset::Handle<asset::SkeletonView>> skeleton_pins_;
     Vector<asset::Handle<asset::ClipView>> clip_pins_;
-    Mutex loader_mutex_;  // the loader belongs to one thread at a time
+    struct MeshColliderPin
+    {
+        asset::Handle<asset::MeshColliderView> handle;
+        asset::ContentHash hash;
+    };
+    Vector<MeshColliderPin> mesh_collider_pins_;  ///< glTF colliders Day 5.
+    Mutex loader_mutex_;                          // the loader belongs to one thread at a time
     UniquePtr<asset::AsyncLoader> loader_;
 
     Mutex table_mutex_;  // guards the two tables
