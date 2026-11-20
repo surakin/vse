@@ -11,6 +11,7 @@
 #include "asset_import/gltf_import.h"
 #include "asset_import/import_settings.h"
 #include "asset_import/spec_gloss.h"
+#include "lang/limits.h"
 #include "settings/registry.h"
 #include "settings/settings.h"
 #include "jobs/scheduler.h"
@@ -640,6 +641,17 @@ TEST_CASE("spec gloss: textures convert per texel at the larger image's size", "
     CHECK(base.has_alpha);
     CHECK(static_cast<u8>(base.rgba[3]) == 128);
     CHECK(static_cast<u8>(base.rgba[0]) == 255);  // 1 / 0.96 clamped
+    // A factor that is not a number (infinity times a zero texel) encodes as 0, never as an index past the table.
+    const DecodedImage black = SolidImage(2, 2, 0, 0, 0, 0);
+    in.diffuse = &black;
+    in.diffuse_factor = {{Limits<f32>::Infinity(), 1.0f, 1.0f, Limits<f32>::Infinity()}};
+    in.specular_factor = {{Limits<f32>::Infinity(), 0.0f, 0.0f}};
+    in.glossiness_factor = Limits<f32>::Infinity();
+    REQUIRE(ConvertSpecGlossImages(in, 1u << 20, &base, &mr).Ok());
+    in.diffuse = &white;
+    in.diffuse_factor = {{1.0f, 1.0f, 1.0f, 0.5f}};
+    in.specular_factor = {{0.0f, 0.0f, 0.0f}};
+    in.glossiness_factor = 1.0f;
     // The pixel limit holds for the output.
     CHECK(ConvertSpecGlossImages(in, 3, &base, nullptr).Is(ErrorCode::TooLarge));
 }
@@ -703,6 +715,13 @@ TEST_CASE("gltf material: KHR_materials_pbrSpecularGlossiness imports converted 
     REQUIRE(ParamOf(*paint, "base_color", v, 4));
     CHECK(Near(v[0], 1.0f));
 
+    // A factor too large for a float is refused, naming it.
+    ImportResult huge;
+    CHECK(MtImport(TexturedGlb("\"materials\":[{\"extensions\":{\"KHR_materials_pbrSpecularGlossiness\":"
+                               "{\"glossinessFactor\":1e39}}}],"),
+                   none, &huge, &error)
+              .Is(ErrorCode::Invalid));
+    CHECK(MtSays(error, "glossinessFactor"));
     // An unlit specular-glossiness material gets the converted base colour only.
     ImportResult unlit;
     REQUIRE(MtImport(TexturedGlb("\"materials\":[{\"name\":\"sign\",\"extensions\":{\"KHR_materials_unlit\":{},"

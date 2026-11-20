@@ -61,6 +61,12 @@ model (37 PNG textures). The user chose the exact conversion, per texel, over a 
 
 The re-import check after the review found the manifest bug above. It was fixed with its own regression test.
 
+**After the commit, an automated security review** found that a factor too large for an `f32` (such as `1e39`) became infinity,
+infinity times a zero texel is NaN, `Clamp` keeps a NaN, and the encoders cast it to a table index (undefined, a read past the table).
+Fixed: the importer refuses a non-finite factor naming it, and `EncodeSrgb`/`EncodeLinear` map NaN to 0. Tests: the conversion of
+infinite factors (the asan build reported `-nan is outside the range of representable values` without the fix) and the refused
+`glossinessFactor: 1e39`. `asset_tests "[gltf]"` plain and asan pass (80 cases); GCC builds clean.
+
 ## Not done
 
 - Not built or run on the PC or the Mac (`KNOWN-ISSUES.md`).

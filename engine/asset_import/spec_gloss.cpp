@@ -63,14 +63,20 @@ void MakeTables(SrgbTables* out)
     }
 }
 
+// A value that is not a number encodes as 0: Clamp keeps a NaN, and a NaN cast to an index is undefined.
+f32 Unit(f32 value)
+{
+    return value >= 0.0f ? Min(value, 1.0f) : 0.0f;
+}
+
 u8 EncodeSrgb(const SrgbTables& tables, f32 linear)
 {
-    return tables.encode[static_cast<u32>(Round(Clamp(linear, 0.0f, 1.0f) * static_cast<f32>(kEncodeSteps - 1)))];
+    return tables.encode[static_cast<u32>(Round(Unit(linear) * static_cast<f32>(kEncodeSteps - 1)))];
 }
 
 u8 EncodeLinear(f32 value)
 {
-    return static_cast<u8>(Round(Clamp(value, 0.0f, 1.0f) * 255.0f));
+    return static_cast<u8>(Round(Unit(value) * 255.0f));
 }
 
 // The image's sample at the centre of texel (x, y) of a w by h output: RGB decoded from sRGB, A linear. Bilinear,

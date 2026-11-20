@@ -131,6 +131,10 @@ Status ReadSpecGloss(const JsonValue& sg, u64 texture_count, MaterialInfo* out, 
             f64 v = 0;
             ENGINE_TRY(diffuse.At(k).AsDouble(&v, error));
             out->sg_diffuse_factor[k] = static_cast<f32>(v);
+            if (!IsFinite(out->sg_diffuse_factor[k]))
+            {
+                return RefuseMaterial(error, diffuse.Path(), StringView("holds a number too large for a float"));
+            }
         }
     }
     const JsonValue specular = sg.Get("specularFactor");
@@ -145,6 +149,10 @@ Status ReadSpecGloss(const JsonValue& sg, u64 texture_count, MaterialInfo* out, 
             f64 v = 0;
             ENGINE_TRY(specular.At(k).AsDouble(&v, error));
             out->sg_specular_factor[k] = static_cast<f32>(v);
+            if (!IsFinite(out->sg_specular_factor[k]))
+            {
+                return RefuseMaterial(error, specular.Path(), StringView("holds a number too large for a float"));
+            }
         }
     }
     if (sg.Get("glossinessFactor").Exists())
@@ -152,6 +160,11 @@ Status ReadSpecGloss(const JsonValue& sg, u64 texture_count, MaterialInfo* out, 
         f64 v = 0;
         ENGINE_TRY(sg.Get("glossinessFactor").AsDouble(&v, error));
         out->sg_glossiness = static_cast<f32>(v);
+        if (!IsFinite(out->sg_glossiness))
+        {
+            return RefuseMaterial(error, sg.Get("glossinessFactor").Path(),
+                                  StringView("is a number too large for a float"));
+        }
     }
     ENGINE_TRY(ReadTextureRef(sg.Get("diffuseTexture"), texture_count, &out->sg_diffuse, report, error));
     ENGINE_TRY(ReadTextureRef(sg.Get("specularGlossinessTexture"), texture_count, &out->sg_specular, report, error));
