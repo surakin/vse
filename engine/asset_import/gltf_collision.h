@@ -71,6 +71,7 @@ Status ReadCollisionMarks(const GltfDocument& document, const GltfNodeGraph& gra
 /// - Param mesh_count: the file's `meshes` count.
 /// - Param out: replaced by one flag per glTF mesh.
 /// - Fails: never.
+/// - Ownership: borrows its arguments for the call only; `*out` is the caller's.
 void CollisionOnlyMeshes(const GltfNodeGraph& graph, Span<const GltfNodeCollision> marks, usize mesh_count,
                          Vector<bool>* out);
 

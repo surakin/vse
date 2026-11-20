@@ -436,6 +436,7 @@ Which glTF meshes only collision-only nodes use: they get no render mesh.
 | Parameter `mesh_count` | the file's `meshes` count. |
 | Parameter `out` | replaced by one flag per glTF mesh. |
 | Fails | never. |
+| Ownership | borrows its arguments for the call only; `*out` is the caller's. |
 
 ## `ImportColliders(const GltfDocument&,const ImportOptions&,const TypeRegistry&,Vector<GltfNodeCollision>*,ImportResult*,GltfError*)` {#asset-importcolliders-const-gltfdocument-amp-const-importoptions-amp-const-typeregistry-amp-vector-lt-gltfnodecollision-gt-star-importresult-star-gltferror-star}
 
