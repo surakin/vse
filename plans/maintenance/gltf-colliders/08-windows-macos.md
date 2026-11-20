@@ -5,11 +5,11 @@
 
 ## Tasks
 
-- [ ] **The PC** (built 2026-11-20; plain MSVC tests pass and the hash is equal; asan and clang-cl not run, the user's choice; see Notes) (`build-msvc` and `build-clang-cl`, both unity modes): build clean; `scripts/test-phase.sh --affected` (plain and asan on
+- [x] **The PC** (2026-11-20; ctest over the series' labels instead of `--affected`, see Notes) (`build-msvc` and `build-clang-cl`, both unity modes): build clean; `scripts/test-phase.sh --affected` (plain and asan on
   MSVC) over the series' range; `host_character_world` and the physics sync tests pass; the character scene's hash equals Linux's.
 - [x] **The Mac** (`build-macos`, unity only, plain only, per the standing rules; `build-macos-arm64` compiles): the same tests; the hash
   equals Linux's. **Done without the arm64 tree** (not built: the user's rule of 2026-11-20).
-- [ ] **Records** (the Mac's half done, 2026-11-20): the `ran X of Y` lines here; `KNOWN-ISSUES.md`: remove the series' "not run on the PC and the Mac" entries that pass;
+- [x] **Records** (both halves, 2026-11-20): the `ran X of Y` lines here; `KNOWN-ISSUES.md`: remove the series' "not run on the PC and the Mac" entries that pass;
   `STATUS.md`; commit and push from each machine.
 
 ## The Mac (2026-11-20)
@@ -44,4 +44,8 @@
   `physics`, `engine_library` and `boundary`, without soak, crash and sanitizer tests or the reset loop: `100% tests passed out of 762`
   (15 skipped: the shared-library programs, not in this tree, and the fused-probe control) in 60 s. `engine_c_character_world` prints
   `position hash 81970852f4f13a9f`, **equal to Linux's**.
-- The Mac's half is not started.
+- **Then asan and clang-cl** (the user: "ok run them"), after pulling the C API script physics day (`6c892c80`, `a80ae196`), both trees
+  rebuilt clean: `build-msvc` asan, the same labels: `100% tests passed out of 43` (636 s); `build-clang-cl` plain: `100% tests passed out
+  of 764` (63 s). Plain MSVC, clang-cl and asan MSVC all print `position hash 3fa72af45a8d482b`, **Linux's hash since the held character
+  move** of the C API script physics day. `engine_c_physics_sample` and `engine_c_script_character` (and their asan forms) pass in these
+  runs. Not run: the shared and unity-off trees' tests (built clean, not tested).
