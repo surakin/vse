@@ -667,6 +667,8 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
         return SnapshotStatus::Corrupt;
     }
     next.scheduler_ = scheduler_;
+    next.pre_step_ = pre_step_;  // the program's hook (the characters' moves) is not world state: it stays installed
+    next.pre_step_user_ = pre_step_user_;
     *this = Move(next);
     // The restored colliders, in the queries' index (the restored world was built without it).
     if (colliders_.Live() != 0)

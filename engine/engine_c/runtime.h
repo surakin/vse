@@ -14,6 +14,7 @@
 #include "jobs/job.h"
 #include "audio/spatial_audio.h"
 #include "physics/character.h"
+#include "physics/character_set.h"
 #include "math/quaternion.h"
 #include "physics/world.h"
 #include "string_view.h"
@@ -143,7 +144,8 @@ struct MeshReference
 };
 
 /// The component of ENGINE_COMPONENT_CHARACTER (Phase 25 Day 409): the shape and rules of a character. The controller
-/// itself is in `WorldObject::characters`.
+/// itself is in the world's `physics::CharacterSet` (`WorldObject::characters`), shared with the scripts' `character.*`
+/// (C API script physics, 2026-11-20).
 ///
 /// - Thread-safety: plain data.
 struct CharacterComponent
@@ -160,17 +162,6 @@ class AudioHost;
 /// A shared handle to the audio host: the runtime holds one, and every table function in flight holds one, so
 /// `audio_close` never frees a host another thread is inside.
 using AudioHostPtr = SharedPtr<AudioHost>;
-
-/// A character controller of a world (Phase 25 Day 409): the entity it belongs to and the controller of its capsule.
-///
-/// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
-struct CharacterEntry
-{
-    u64 key = 0;  ///< The entity (its u64 form).
-    physics::CharacterController controller;
-    physics::CharacterConfig config;
-    physics::CharacterEvents events;  ///< What the last character_move found.
-};
 
 /// The unscaled shape of a static collider (glTF colliders Day 5). The frame makes the `physics::Collider` from it at
 /// its end, once the entity's world matrix is known, with the world scale of that moment; a later scale change is
@@ -218,7 +209,10 @@ struct WorldObject
     ~WorldObject();
     ecs::World world;
     ecs::Schedule schedule;
-    Vector<CharacterEntry> characters;  ///< The characters, in the order they were made (Day 409).
+    /// The world's characters (C API script physics, 2026-11-20): one set for `ENGINE_COMPONENT_CHARACTER` and the
+    /// scripts' `character.*`; made with the world, destroyed before its physics world (it holds the world's pre-step
+    /// hook).
+    UniquePtr<physics::CharacterSet> characters;
     bool physics_used = false;     ///< Whether a body component was set: the frame makes bodies only then (Day 408).
     Environment environment;       ///< What world_set_environment set (the defaults until then).
     bool environment_set = false;  ///< Whether it was called (no default sun once it was).

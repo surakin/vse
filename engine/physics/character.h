@@ -147,6 +147,19 @@ public:
     /// - Fails: never.
     const CharacterState& State() const { return state_; }
 
+    /// Puts back what a snapshot kept (a physics snapshot restore, C API script physics, 2026-11-20): the body the
+    /// character drives and where it stands. The caller has checked that `body` is a kinematic body of the world.
+    ///
+    /// - Param body: the character's body in the restored world.
+    /// - Param state: the kept state.
+    /// - Ownership: the controller keeps the body id.
+    /// - Fails: never.
+    void RestoreState(BodyId body, const CharacterState& state)
+    {
+        body_ = body;
+        state_ = state;
+    }
+
 private:
     BodyId body_;
     CharacterConfig config_;

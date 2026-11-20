@@ -572,3 +572,19 @@ TEST_CASE("Snapshot: a replayed log of extreme inputs leaves the world finite", 
     CHECK(Abs(body->position.y) < 1.0e8f);
     CHECK(Abs(body->position.z) < 1.0e8f);
 }
+
+TEST_CASE("Snapshot: a restore keeps the program's pre-step hook installed", "[physics][snapshot]")
+{
+    // The hook (the characters' moves) is the program's, not world state: a restore that dropped it stopped every
+    // character of a restored world (C API script physics, 2026-11-20).
+    PhysicsWorld world;
+    BuildScene(world);
+    u32 calls = 0;
+    world.SetPreStepHook([](void* user, PhysicsWorld*, f32) { ++*static_cast<u32*>(user); }, &calls);
+    world.Step();
+    const Vector<byte> bytes = Bytes(world);
+    REQUIRE(world.Restore(View(bytes)) == SnapshotStatus::Ok);
+    world.Step();
+    CHECK(calls == 2);
+    world.SetPreStepHook(nullptr, nullptr);
+}

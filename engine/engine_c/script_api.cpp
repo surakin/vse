@@ -20,6 +20,10 @@
 #include "script/script_settings.h"
 #include "script/task_pool.h"
 #include "script/value.h"
+#include "script/service_slots.h"
+#include "script_physics/physics_bindings.h"
+#include "script_physics/physics_events.h"
+#include "settings/setting.h"
 #include "string_view.h"
 #include "sync/atomic.h"
 #endif
@@ -566,6 +570,15 @@ struct ScriptHost::Impl
     Vector<UniquePtr<EventSub>> subs;
     u32 next_sub = 1;
     UniquePtr<script::TaskPool> tasks;
+    // The physics bindings' services (C API script physics, 2026-11-20): the world's physics world and character set.
+    script_physics::PhysicsLayers layers;
+    script_physics::PhysicsScriptServices physics;
+
+    // The bindings every world's scripts get: the standard set and the physics and character set.
+    bool RegisterBindings()
+    {
+        return script::RegisterStandardBindings(&bindings) && script_physics::RegisterPhysicsBindings(&bindings);
+    }
 
     // Makes the backend and the standard bindings (what a task and the runtime both need).
     engine_status EnsureBackend()
@@ -581,7 +594,7 @@ struct ScriptHost::Impl
         }
         if (!standard_bindings)
         {
-            if (!script::RegisterStandardBindings(&bindings))
+            if (!RegisterBindings())
             {
                 return Fail(ENGINE_ERROR_INTERNAL, "the standard script bindings did not register");
             }
@@ -610,6 +623,12 @@ struct ScriptHost::Impl
         config.random_seed = settings.random_seed;
         config.budget = callback_budget;
         runtime = MakeUnique<script::ScriptRuntime>(config);
+        runtime->Services().extensions[script::kServicePhysics] = &physics;
+        if (!script_physics::RegisterPhysicsCommandKinds(&runtime->Kinds()))
+        {
+            runtime = nullptr;
+            return Fail(ENGINE_ERROR_INTERNAL, "the physics command kinds did not register");
+        }
         for (usize i = 0; i < subs.Size(); ++i)
         {
             subs[i]->bus_id = runtime->Events().Subscribe(subs[i]->name.View(), &DeliverEvent, subs[i].Get());
@@ -634,6 +653,16 @@ ScriptHost::Impl* ImplOf(WorldObject& object, const ScriptSettingValues* make_wi
         }
         object.scripts = MakeUnique<ScriptHost>();
         object.scripts->impl = MakeUnique<ScriptHost::Impl>(*make_with);
+        ScriptHost::Impl& impl = *object.scripts->impl;
+        String<HeapAllocator> why(HeapAllocator::Default());
+        // The layer names of `script.physics_layers` (the `default` layer alone when the text is refused).
+        if (!impl.layers.Parse(StringView(make_with->physics_layers.Data(), make_with->physics_layers_length), &why))
+        {
+            impl.layers.Parse(StringView("default"), &why);
+        }
+        impl.physics.world = &object.world.Resource<physics::PhysicsWorld>();
+        impl.physics.layers = &impl.layers;
+        impl.physics.characters = object.characters.Get();
     }
     return object.scripts->impl.Get();
 }
@@ -648,6 +677,7 @@ bool ScriptBuilt()
 void RegisterScriptSettingsInEngine(settings::Registry* registry)
 {
     script::RegisterScriptSettings(registry);
+    script_physics::RegisterPhysicsScriptSettings(registry);
 }
 
 ScriptSettingValues ReadScriptSettings(const settings::Registry& registry)
@@ -659,6 +689,13 @@ ScriptSettingValues ReadScriptSettings(const settings::Registry& registry)
     values.jit_code_kb = script::ScriptJitCodeKb(registry);
     values.random_seed = script::ScriptRandomSeed(registry);
     values.partition_memory = script::ScriptPartitionMemory(registry);
+    const settings::SettingId layers = registry.Find(StringView("script.physics_layers"));
+    if (layers.IsValid())
+    {
+        const usize length = settings::TextSetting(registry, layers)
+                                 .Get(values.physics_layers.Data(), values.physics_layers.Size());
+        values.physics_layers_length = length < values.physics_layers.Size() ? length : 0;  // too long: `default`
+    }
     return values;
 }
 
@@ -668,6 +705,17 @@ void ScriptTickWorld(WorldObject& object, f64 dt)
     if (impl != nullptr && impl->runtime.Get() != nullptr)
     {
         impl->runtime->Tick(&object.world, dt);
+    }
+}
+
+void ScriptPhysicsEvents(WorldObject& object)
+{
+    ScriptHost::Impl* impl = ImplOf(object, nullptr);
+    if (impl != nullptr && impl->runtime.Get() != nullptr)
+    {
+        script_physics::PhysicsEventOptions options;
+        options.characters = object.characters.Get();
+        script_physics::EmitPhysicsEvents(object.world.Resource<physics::PhysicsWorld>(), impl->runtime.Get(), options);
     }
 }
 
@@ -920,7 +968,7 @@ engine_status ScriptRegisterFunctionFn(engine_handle world, engine_string name, 
     }
     if (!impl->standard_bindings)
     {
-        if (!script::RegisterStandardBindings(&impl->bindings))
+        if (!impl->RegisterBindings())
         {
             return Fail(ENGINE_ERROR_INTERNAL, "the standard script bindings did not register");
         }
@@ -1271,6 +1319,8 @@ ScriptSettingValues ReadScriptSettings(const settings::Registry&)
 }
 
 void ScriptTickWorld(WorldObject&, f64) {}
+
+void ScriptPhysicsEvents(WorldObject&) {}
 
 ecs::ComponentId ScriptComponentId()
 {

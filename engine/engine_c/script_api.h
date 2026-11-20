@@ -3,6 +3,7 @@
 //! the table functions. Internal to the module `engine_c`. A library built without the script module (a platform with
 //! no LuaJIT yet) answers every function with UNSUPPORTED and has no `ENGINE_CAP_SCRIPT`.
 #include "build_defs.h"
+#include "containers/array.h"
 #include "containers/unique_ptr.h"
 #include "ecs/entity.h"
 #include "ecs/world.h"
@@ -27,6 +28,9 @@ struct ScriptSettingValues
     u32 jit_code_kb = 0;       ///< `script.jit_code_kb`.
     u32 random_seed = 1;       ///< `script.random_seed`.
     u64 partition_memory = 0;  ///< `script.partition_memory` in bytes (0: the backend's default).
+    /// `script.physics_layers`: the names scripts give physics layers (its first `physics_layers_length` bytes).
+    Array<char, 1024> physics_layers{};
+    usize physics_layers_length = 0;  ///< The text's length (0: the setting is not declared).
 };
 
 /// Declares the `script.*` settings in the engine's registry (nothing in a library without scripts).
@@ -68,6 +72,13 @@ public:
 /// - Param dt: the frame's time in seconds.
 /// - Fails: never; a callback that fails is counted and logged.
 void ScriptTickWorld(WorldObject& object, f64 dt);
+
+/// Hands the frame's physics events (contacts and triggers) to the world's scripts (`on_collision_*`, `on_trigger_*`),
+/// after the physics step (C API script physics, 2026-11-20). Does nothing for a world with no runtime.
+///
+/// - Param object: the world; the runtime's world mutex is held.
+/// - Fails: never.
+void ScriptPhysicsEvents(WorldObject& object);
 
 /// Sets or replaces the script component of an entity.
 ///

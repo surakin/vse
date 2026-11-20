@@ -204,8 +204,10 @@ static uint32_t Checksum(engine_handle world)
     return h;
 }
 
-/* The checksum of the last frame, recorded on Linux (clang and GCC, unity and not, debug and release agree). */
-static const uint32_t kGoldenChecksum = 0x532bfea0u;
+/* The checksum of the last frame, recorded on Linux (clang and GCC, unity and not, debug and release agree). Recorded
+   again on 2026-11-20, when character_move became a held move carried out in each fixed step and the character's
+   transform the interpolated position. */
+static const uint32_t kGoldenChecksum = 0x661cbfc4u;
 
 static uint32_t g_contacts = 0;
 static uint32_t g_triggers = 0;
@@ -307,7 +309,7 @@ int main(void)
     g_api->thread_detach();
     if (g_failures != 0)
     {
-        printf("physics_sample: %d check(s) failed\n", g_failures);
+        printf("physics_sample: %d check(s) failed (checksum %08x)\n", g_failures, (unsigned)second);
         return 1;
     }
     printf("physics_sample: checksum %08x contacts %u triggers %u\n", (unsigned)second, (unsigned)g_contacts,

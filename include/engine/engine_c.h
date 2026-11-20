@@ -963,7 +963,16 @@ extern "C"
     /* A character controller (Phase 25 Day 409): an upright capsule that is moved with character_move, slides along
      * walls, climbs steps and slopes and stays on the ground. The entity needs ENGINE_COMPONENT_TRANSFORM; setting the
      * component (again) puts the capsule at the entity's transform, and the frame writes the capsule's position back to
-     * it (the world matrix follows one frame later). Sizes are in metres. */
+     * it (the world matrix follows one frame later). Sizes are in metres.
+     *
+     * A world has one set of characters, shared with its scripts (2026-11-20): a character made by this component is
+     * the one a behavior's character.* calls see, and one made by character.create is the one character_move and
+     * character_jump drive (an entity has at most one). The characters move inside each fixed physics step, from
+     * the held move (character_move); after the frame's steps the capsule's centre is written to the entity's
+     * transform, interpolated between the last two steps when physics.interpolate is on (the default), so a camera
+     * that follows the entity moves smoothly when frames and steps do not line up. Setting the entity's transform
+     * does not move the character (the write-back replaces it): set this component again, or call
+     * character.set_position from a script. */
     typedef struct engine_character
     {
         uint32_t struct_size;
@@ -975,12 +984,12 @@ extern "C"
         float gravity_scale;
     } engine_character;
 
-    /* What character_move found and where the character stands. */
+    /* What the character's last fixed step found and where it stands. */
     typedef struct engine_character_state
     {
         uint32_t struct_size;
         uint32_t on_ground;
-        uint32_t began_ground; /* from the last character_move */
+        uint32_t began_ground; /* in the last fixed step */
         uint32_t ended_ground;
         uint32_t wall_hits;
         uint64_t ground_entity; /* the entity of the body underfoot (0: none or the world's) */
@@ -2142,16 +2151,20 @@ extern "C"
          * TYPE_MISMATCH, NOT_FOUND (no joint made yet, or it broke). */
         engine_status (*joint_reaction)(engine_handle world, uint64_t key, float* force, float* torque);
 
-        /* Moves a character (ENGINE_COMPONENT_CHARACTER) for the next step: `velocity` (m/s, x y z) is the wish; the
-         * controller adds gravity, slides, climbs steps and keeps it on the ground. `dt` is the time the move covers
-         * (the fixed step, usually 1/60). `state` (struct_size set by the host; may be NULL) receives what happened.
-         * Fails with: STALE_HANDLE, INVALID_ARGUMENT (not finite, dt not in (0, 1]), STRUCT_SIZE, TYPE_MISMATCH,
-         * NOT_FOUND (no character). */
+        /* Sets the velocity a character (ENGINE_COMPONENT_CHARACTER) walks at (m/s, x y z; y is ignored): it holds
+         * until set again, and each fixed step carries it out (the controller adds gravity, slides, climbs steps and
+         * keeps it on the ground), so the distance walked in a second does not depend on the frame rate; a frame
+         * without a step moves nothing. Since 2026-11-20 the move is held and carried out in the steps, no longer once
+         * per call: a host that wants the character to stop sets a zero velocity. `dt` is checked and otherwise
+         * unused. `state` (struct_size set by the host; may be NULL) receives the last step's state. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (not finite, dt not in (0, 1]), STRUCT_SIZE, TYPE_MISMATCH, NOT_FOUND (no
+         * character). */
         engine_status (*character_move)(engine_handle world, uint64_t key, const float* velocity, float dt,
                                         engine_character_state* state);
 
-        /* Gives a character an upward speed (m/s) when it stands on the ground; reads the state without moving when
-         * `speed` is 0. Same failures as character_move. */
+        /* Asks for a jump at an upward speed (m/s) when the character stands on the ground: it starts at the next
+         * fixed step (and waits for one when a frame makes none); reads the state without moving when `speed` is 0.
+         * Same failures as character_move. */
         engine_status (*character_jump)(engine_handle world, uint64_t key, float speed, engine_character_state* state);
 
         /* Copies the events of the last frame (every step of it, in step order; contacts, then triggers, then joint
@@ -2160,8 +2173,9 @@ extern "C"
          * element's struct_size is below the struct's), TYPE_MISMATCH. */
         engine_status (*physics_events)(engine_handle world, engine_physics_event* out, size_t capacity, size_t* total);
 
-        /* Writes the whole state of a world's physics into `*out` (release it with engine_buffer_release): a host can
-         * rewind with physics_restore, also in another process of the same build. Fails with: STALE_HANDLE,
+        /* Writes the whole state of a world's physics into `*out` (release it with engine_buffer_release), with its
+         * characters' state (vertical speed, ground, held move): a host can rewind with physics_restore, also in
+         * another process of the same build. Fails with: STALE_HANDLE,
          * INVALID_ARGUMENT, TYPE_MISMATCH. */
         engine_status (*physics_snapshot)(engine_handle world, engine_buffer* out);
 

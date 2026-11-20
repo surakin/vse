@@ -5,7 +5,6 @@ set(SCRIPT_PHYSICS_SOURCES
   physics_layers.cpp  # Day 466
   physics_components.cpp  # Day 466
   physics_bindings.cpp  # Day 466
-  character_set.cpp  # Day 467
   physics_events.cpp  # Day 467
 )
 set(SCRIPT_PHYSICS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)

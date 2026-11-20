@@ -176,38 +176,43 @@ u32 LastGeneration()
 namespace
 {
 
-// After the step: each character's entity takes the position of its capsule's centre; a character whose entity is gone
-// gives its body back (Day 409).
+// After the frame's steps (Day 409; one set since the C API script physics, 2026-11-20): the characters of destroyed
+// entities give their bodies back, each character's capsule centre is written to its entity's transform (interpolated
+// between the last two steps), and ENGINE_COMPONENT_CHARACTER follows the set, so component_has and queries agree with
+// component_get: a character a script made gets the component, one a script destroyed loses it.
 void FollowCharacters(WorldObject& object)
 {
-    physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
-    usize kept = 0;
-    for (usize i = 0; i < object.characters.Size(); ++i)
+    physics::CharacterSet& characters = *object.characters;
+    characters.Prune(object.world);
+    characters.WriteBack(object.world, true);
+    Vector<ecs::Entity> stale;
+    object.world.Query<ecs::Read<CharacterComponent>>().ForEach(
+        [&](ecs::Entity entity, const CharacterComponent&)
+        {
+            if (characters.Find(entity) == nullptr)
+            {
+                stale.Push(entity);
+            }
+        });
+    for (usize i = 0; i < stale.Size(); ++i)
     {
-        CharacterEntry& entry = object.characters[i];
-        const ecs::Entity entity = ecs::Entity::FromU64(entry.key);
-        if (!object.world.Exists(entity) || !object.world.Has<CharacterComponent>(entity))
-        {
-            entry.controller.Destroy(&physics);
-            continue;
-        }
-        const physics::Body* body = physics.Find(entry.controller.BodyHandle());
-        const ecs::LocalTransform* transform = object.world.Peek<ecs::LocalTransform>(entity);
-        if (body != nullptr && transform != nullptr)
-        {
-            ecs::LocalTransform moved = *transform;
-            moved.position = body->position;
-            object.world.Set<ecs::LocalTransform>(entity, moved);
-        }
-        if (kept != i)
-        {
-            object.characters[kept] = entry;
-        }
-        ++kept;
+        object.world.Remove<CharacterComponent>(stale[i]);
     }
-    while (object.characters.Size() > kept)
+    for (usize i = 0; i < characters.Count(); ++i)
     {
-        object.characters.Pop();
+        const ecs::Entity entity = characters.EntityAt(i);
+        if (!object.world.Has<CharacterComponent>(entity))
+        {
+            const physics::CharacterConfig& config = characters.Find(entity)->Config();
+            CharacterComponent component;
+            component.radius = config.radius;
+            component.height = config.height;
+            component.step_height = config.step_height;
+            component.min_ground_y = config.min_ground_y;
+            component.skin_width = config.skin_width;
+            component.gravity_scale = config.gravity_scale;
+            object.world.Add<CharacterComponent>(entity, component);
+        }
     }
 }
 
@@ -265,12 +270,15 @@ void UpdateWorldAudio(Runtime& runtime, WorldObject& object, f32 dt)
 WorldObject::~WorldObject()
 {
     ReleaseWorldAudio(*this);
+    scripts = nullptr;     // the scripts' services name the character set
+    characters = nullptr;  // before the physics world it hooks into
 }
 
 WorldObject::WorldObject()
 {
     world.SetResource(ecs::TransformReport{});
     world.SetResource(physics::PhysicsWorld());
+    characters = MakeUnique<physics::CharacterSet>(&world.Resource<physics::PhysicsWorld>());
     schedule.Add(physics::MakePhysicsStepSystem());  // writes the transforms the transform system then reads
     schedule.Add(ecs::MakeTransformSystem("transform"));
     schedule.Build();
@@ -611,6 +619,7 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
             physics::SyncJoints(object->world, physics);  // a joint the step broke loses its component now
         }
         FollowCharacters(*object);
+        ScriptPhysicsEvents(*object);  // the step's contacts reach the scripts at their next tick
         UpdateWorldAudio(*runtime, *object, static_cast<f32>(info->delta_seconds));
         result.physics_steps += static_cast<u32>(physics.GetStepStats().steps - steps_before);
         result.physics_bodies += physics.Stats().bodies;
@@ -1203,33 +1212,22 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 config.skin_width = in->skin_width;
                 config.gravity_scale = in->gravity_scale;
                 physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
-                usize index = object.characters.Size();
-                for (usize i = 0; i < object.characters.Size(); ++i)
-                {
-                    if (object.characters[i].key == key)
+                {  // checked first, so a refusal leaves the character as it was
+                    physics::CharacterController probe;
+                    if (probe.Create(&physics, config, transform->position) != physics::BodyStatus::Ok)
                     {
-                        index = i;
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                                    "the character's size or numbers are refused (height "
+                                    "at least 2 * radius, all finite)");
                     }
+                    probe.Destroy(&physics);
                 }
-                physics::CharacterController made;  // a refusal leaves the character as it was
-                if (made.Create(&physics, config, transform->position) != physics::BodyStatus::Ok)
+                // One set for both doors: setting the component (again) puts the capsule at the entity's transform.
+                object.characters->Remove(entity);
+                if (!object.characters->Add(entity, config, transform->position))
                 {
-                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
-                                "the character's size or numbers are refused (height at least 2 * radius, all finite)");
+                    return Fail(ENGINE_ERROR_INTERNAL, "the character could not be made");
                 }
-                if (index == object.characters.Size())
-                {
-                    object.characters.Push(CharacterEntry());
-                }
-                else
-                {
-                    object.characters[index].controller.Destroy(&physics);
-                }
-                CharacterEntry& entry = object.characters[index];
-                entry.key = key;
-                entry.controller = made;
-                entry.config = config;
-                entry.events = physics::CharacterEvents();
                 CharacterComponent component;
                 component.radius = config.radius;
                 component.height = config.height;
@@ -2872,19 +2870,21 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
             }
             if (kind == ENGINE_COMPONENT_CHARACTER)
             {
-                const CharacterComponent* character = view.Peek<CharacterComponent>(entity);
-                if (character == nullptr)
+                // Either door made it (C API script physics, 2026-11-20): the set's controller has the config.
+                const physics::CharacterController* controller = object.characters->Find(entity);
+                if (controller == nullptr)
                 {
                     return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no character");
                 }
+                const physics::CharacterConfig& config = controller->Config();
                 engine_character result = {};
                 result.struct_size = sizeof(engine_character);
-                result.radius = character->radius;
-                result.height = character->height;
-                result.step_height = character->step_height;
-                result.min_ground_y = character->min_ground_y;
-                result.skin_width = character->skin_width;
-                result.gravity_scale = character->gravity_scale;
+                result.radius = config.radius;
+                result.height = config.height;
+                result.step_height = config.step_height;
+                result.min_ground_y = config.min_ground_y;
+                result.skin_width = config.skin_width;
+                result.gravity_scale = config.gravity_scale;
                 MemCopy(out, &result, sizeof(result));
                 return ENGINE_OK;
             }
@@ -3100,7 +3100,8 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          }
                          case ENGINE_COMPONENT_JOINT: status = w.Remove<physics::Joint>(entity); break;
                          case ENGINE_COMPONENT_CHARACTER:
-                             status = w.Remove<CharacterComponent>(entity);  // the frame gives the capsule back
+                             object.characters->Remove(entity);  // the capsule goes now
+                             status = w.Remove<CharacterComponent>(entity);
                              break;
                          case ENGINE_COMPONENT_AUDIO_SOURCE: status = w.Remove<audio::AudioSource>(entity); break;
                          case ENGINE_COMPONENT_AUDIO_LISTENER: status = w.Remove<audio::AudioListener>(entity); break;
@@ -3608,63 +3609,45 @@ engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, cons
 namespace
 {
 
-// The character of an entity, its capsule made again when a restore dropped it. Null, with the failure set, when the
-// entity has no character.
-CharacterEntry* CharacterOf(WorldObject& object, ecs::Entity entity, engine_status* status)
+// The character of an entity, from the world's one set (either door made it; a restore makes its capsule again itself).
+// Null, with the failure set, when the entity has none.
+const physics::CharacterController* CharacterOf(WorldObject& object, ecs::Entity entity, engine_status* status)
 {
-    physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
-    if (object.physics_used)
-    {
-        physics::SyncBodies(object.world, physics);
-    }
-    const ecs::LocalTransform* transform = object.world.Peek<ecs::LocalTransform>(entity);
-    if (!object.world.Has<CharacterComponent>(entity) || transform == nullptr)
+    const physics::CharacterController* controller = object.characters->Find(entity);
+    if (controller == nullptr)
     {
         *status = Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no character");
         return nullptr;
     }
-    const u64 key = entity.ToU64();
-    for (usize i = 0; i < object.characters.Size(); ++i)
-    {
-        CharacterEntry& entry = object.characters[i];
-        if (entry.key != key)
-        {
-            continue;
-        }
-        if (physics.Find(entry.controller.BodyHandle()) == nullptr &&
-            entry.controller.Create(&physics, entry.config, transform->position) != physics::BodyStatus::Ok)
-        {
-            *status = Fail(ENGINE_ERROR_INTERNAL, "the character's body could not be made again");
-            return nullptr;
-        }
-        *status = ENGINE_OK;
-        return &entry;
-    }
-    *status = Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no character");
-    return nullptr;
+    *status = ENGINE_OK;
+    return controller;
 }
 
-void FillCharacterState(WorldObject& object, const CharacterEntry& entry, engine_character_state* out)
+void FillCharacterState(WorldObject& object, ecs::Entity entity, const physics::CharacterController& controller,
+                        engine_character_state* out)
 {
     if (out == nullptr)
     {
         return;
     }
-    const physics::CharacterState& state = entry.controller.State();
+    const physics::CharacterState& state = controller.State();
+    const physics::CharacterEvents* events = object.characters->LastEvents(entity);
+    const physics::CharacterEvents none;
+    const physics::CharacterEvents& e = events != nullptr ? *events : none;
     engine_character_state result = {};
     result.struct_size = sizeof(engine_character_state);
     result.on_ground = state.on_ground ? 1u : 0u;
-    result.began_ground = entry.events.began_ground ? 1u : 0u;
-    result.ended_ground = entry.events.ended_ground ? 1u : 0u;
-    result.wall_hits = entry.events.wall_hits;
+    result.began_ground = e.began_ground ? 1u : 0u;
+    result.ended_ground = e.ended_ground ? 1u : 0u;
+    result.wall_hits = e.wall_hits;
     const physics::Body* ground = object.world.Resource<physics::PhysicsWorld>().Find(state.ground_body);
     result.ground_entity = ground != nullptr && ground->entity.IsValid() ? ground->entity.ToU64() : 0;
     result.ground_normal[0] = state.ground_normal.x;
     result.ground_normal[1] = state.ground_normal.y;
     result.ground_normal[2] = state.ground_normal.z;
-    result.wall_normal[0] = entry.events.wall_normal.x;
-    result.wall_normal[1] = entry.events.wall_normal.y;
-    result.wall_normal[2] = entry.events.wall_normal.z;
+    result.wall_normal[0] = e.wall_normal.x;
+    result.wall_normal[1] = e.wall_normal.y;
+    result.wall_normal[2] = e.wall_normal.z;
     result.vertical_speed = state.vertical_speed;
     MemCopy(out, &result, sizeof(result));
 }
@@ -3749,14 +3732,15 @@ engine_status CharacterMoveFn(engine_handle world, u64 key, const float* velocit
                      [&](WorldObject& object, ecs::Entity entity)
                      {
                          engine_status status = ENGINE_OK;
-                         CharacterEntry* entry = CharacterOf(object, entity, &status);
-                         if (entry == nullptr)
+                         const physics::CharacterController* controller = CharacterOf(object, entity, &status);
+                         if (controller == nullptr)
                          {
                              return status;
                          }
-                         physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
-                         entry->events = entry->controller.Move(&physics, ToVec3(velocity), dt);
-                         FillCharacterState(object, *entry, state);
+                         // The held wish (C API script physics, 2026-11-20): carried out in each fixed step until
+                         // changed, as the scripts' character.move; `dt` is checked and no longer used.
+                         object.characters->SetMove(entity, ToVec3(velocity));
+                         FillCharacterState(object, entity, *controller, state);
                          return ENGINE_OK;
                      });
 }
@@ -3779,16 +3763,16 @@ engine_status CharacterJumpFn(engine_handle world, u64 key, float speed, engine_
                      [&](WorldObject& object, ecs::Entity entity)
                      {
                          engine_status status = ENGINE_OK;
-                         CharacterEntry* entry = CharacterOf(object, entity, &status);
-                         if (entry == nullptr)
+                         const physics::CharacterController* controller = CharacterOf(object, entity, &status);
+                         if (controller == nullptr)
                          {
                              return status;
                          }
-                         if (speed > 0.0f && entry->controller.State().on_ground)
+                         if (speed > 0.0f && controller->State().on_ground)
                          {
-                             entry->controller.Jump(speed);
+                             object.characters->Jump(entity, speed);  // at the start of the next fixed step
                          }
-                         FillCharacterState(object, *entry, state);
+                         FillCharacterState(object, entity, *controller, state);
                          return ENGINE_OK;
                      });
 }
@@ -3857,6 +3841,35 @@ engine_status PhysicsEventsFn(engine_handle world, engine_physics_event* out, si
         });
 }
 
+// A physics snapshot of the C API is the physics world's snapshot, then the character set's, then a footer: the size of
+// the characters' part and a magic number. A buffer without the footer is the physics world's alone.
+constexpr u32 kCharacterTrailerMagic = 0x53524843u;  // "CHRS"
+
+u32 ReadU32Le(const byte* p)
+{
+    return static_cast<u32>(p[0]) | (static_cast<u32>(p[1]) << 8) | (static_cast<u32>(p[2]) << 16) |
+           (static_cast<u32>(p[3]) << 24);
+}
+
+void SplitCharacterTrailer(ByteSpan data, ByteSpan* physics_bytes, ByteSpan* character_bytes)
+{
+    *physics_bytes = data;
+    *character_bytes = ByteSpan();
+    const usize size = data.Size();
+    if (size < 8 || ReadU32Le(data.Data() + size - 4) != kCharacterTrailerMagic)
+    {
+        return;
+    }
+    const usize characters = ReadU32Le(data.Data() + size - 8);
+    if (characters > size - 8)
+    {
+        return;  // not a footer of ours: the physics world refuses the bytes
+    }
+    const usize physics_size = size - 8 - characters;
+    *physics_bytes = ByteSpan(data.Data(), physics_size);
+    *character_bytes = ByteSpan(data.Data() + physics_size, characters);
+}
+
 engine_status PhysicsSnapshotFn(engine_handle world, engine_buffer* out)
 {
     if (out == nullptr)
@@ -3878,6 +3891,11 @@ engine_status PhysicsSnapshotFn(engine_handle world, engine_buffer* out)
                          }
                          bytes::ByteWriter writer;
                          physics.Snapshot(&writer);
+                         // The characters' own state follows, framed by a footer (WriteCharacterTrailer).
+                         const usize physics_size = writer.Size();
+                         object.characters->Snapshot(&writer);
+                         writer.WriteU32(static_cast<u32>(writer.Size() - physics_size));
+                         writer.WriteU32(kCharacterTrailerMagic);
                          const ByteSpan bytes = writer.Bytes();
                          MakeTextBuffer(StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()), out);
                          return ENGINE_OK;
@@ -3894,13 +3912,21 @@ engine_status PhysicsRestoreFn(engine_handle world, const void* data, size_t siz
         world, false, 0,
         [&](WorldObject& object, ecs::Entity)
         {
+            ByteSpan physics_bytes;
+            ByteSpan character_bytes;
+            SplitCharacterTrailer(ByteSpan(static_cast<const byte*>(data), size), &physics_bytes, &character_bytes);
+            if (!character_bytes.Empty() && !physics::CharacterSet::ValidSnapshot(character_bytes))
+            {
+                SetLastError("corrupt: the characters of the physics snapshot are refused");
+                return ENGINE_ERROR_CORRUPT;
+            }
             physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
             if (object.physics_used)
             {
                 physics::SyncBodies(object.world, physics);
                 physics::SyncJoints(object.world, physics);
             }
-            const physics::SnapshotStatus status = physics.Restore(ByteSpan(static_cast<const byte*>(data), size));
+            const physics::SnapshotStatus status = physics.Restore(physics_bytes);
             switch (status)
             {
             case physics::SnapshotStatus::Ok: break;
@@ -3914,6 +3940,11 @@ engine_status PhysicsRestoreFn(engine_handle world, const void* data, size_t siz
                 return ENGINE_ERROR_CORRUPT;
             }
             physics::WriteBackTransforms(object.world, physics, physics.Alpha());
+            if (!character_bytes.Empty())
+            {
+                object.characters->Restore(character_bytes);  // checked above: it cannot refuse
+            }
+            object.characters->Recreate(object.world);  // a character whose body the snapshot does not hold
             FollowCharacters(object);
             return ENGINE_OK;
         });

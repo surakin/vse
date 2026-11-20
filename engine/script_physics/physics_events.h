@@ -10,7 +10,7 @@
 
 #include "physics/world.h"
 #include "script/script_runtime.h"
-#include "script_physics/character_set.h"
+#include "physics/character_set.h"
 #include "types.h"
 
 namespace engine_placeholder::script_physics
@@ -31,7 +31,7 @@ struct PhysicsEventOptions
     u32 layer_mask = 0xFFFFFFFFu;
     /// The characters of the world, so an event that names a character's body names its entity; null when there are
     /// none (a contact with a character's body is then skipped, as it names no entity).
-    const CharacterSet* characters = nullptr;
+    const physics::CharacterSet* characters = nullptr;
 };
 
 /// What an emit pass did.

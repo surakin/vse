@@ -28,6 +28,7 @@ set(PHYSICS_SOURCES
   query.cpp  # Day 403
   query_index.cpp  # query and hierarchy indices, Day 1
   character.cpp  # Day 404
+  character_set.cpp  # Phase 27 Day 467, moved from script_physics (C API script physics, 2026-11-20)
   events.cpp  # Day 405
   debug_draw.cpp  # Day 405
   joint_sync.cpp  # Day 405

@@ -176,6 +176,14 @@ Thread rule: **world-write**. Id: `0xd33878a0`.
 
 Changes the capsule's total height (crouching), feet kept in place.
 
+### `character.set_position`
+
+`(Entity e, Vec3 position) -> void`
+
+Thread rule: **world-write**. Id: `0xa267a3fc`.
+
+Puts the character's capsule centre at `position` at once (a teleport): its vertical speed becomes 0, a pending jump is dropped, the held move stays, and the ground is looked for again at the next step. Setting the entity's transform does not move a character.
+
 ### `character.vertical_speed`
 
 `(Entity e) -> f32`

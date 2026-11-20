@@ -769,7 +769,7 @@ struct CharacterPayload
 };
 
 // The characters of the host, or null with a script error.
-CharacterSet* NeedCharacters(const PhysicsScriptServices* services)
+physics::CharacterSet* NeedCharacters(const PhysicsScriptServices* services)
 {
     if (services->characters == nullptr)
     {
@@ -783,7 +783,7 @@ CharacterSet* NeedCharacters(const PhysicsScriptServices* services)
 const physics::CharacterController* CharacterOf(PartitionContext* context, ecs::Entity e)
 {
     const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
-    const CharacterSet* characters = services != nullptr ? NeedCharacters(services) : nullptr;
+    const physics::CharacterSet* characters = services != nullptr ? NeedCharacters(services) : nullptr;
     if (characters == nullptr)
     {
         return nullptr;
@@ -807,7 +807,7 @@ void CharacterCreate(ecs::Entity e, Value desc)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
-    const CharacterSet* characters = services != nullptr ? NeedCharacters(services) : nullptr;
+    const physics::CharacterSet* characters = services != nullptr ? NeedCharacters(services) : nullptr;
     if (characters == nullptr)
     {
         return;
@@ -817,12 +817,14 @@ void CharacterCreate(ecs::Entity e, Value desc)
         script::RaiseScriptError("the character is described by a table (or nil for the defaults)");
         return;
     }
-    if (e.IsPlaceholder() || !context->world->Has<ecs::LocalTransform>(e))
+    // An entity spawned in this tick (a placeholder) takes a character too: the merge creates it with its transform
+    // first, then this command, in the tick's order (C API script physics, 2026-11-20).
+    if (!e.IsPlaceholder() && !context->world->Has<ecs::LocalTransform>(e))
     {
         script::RaiseScriptError("the entity needs a transform to hold a character");
         return;
     }
-    if (characters->Find(e) != nullptr)
+    if (!e.IsPlaceholder() && characters->Find(e) != nullptr)
     {
         script::RaiseScriptError("the entity already has a character");
         return;
@@ -892,6 +894,22 @@ void CharacterScalar(u16 kind, ecs::Entity e, f32 value, const char* what)
 void CharacterJump(ecs::Entity e, f32 speed)
 {
     CharacterScalar(kCommandCharacterJump, e, speed, "jump speed");
+}
+
+void CharacterSetPosition(ecs::Entity e, Vec3 position)
+{
+    PartitionContext* context = Context();
+    if (context == nullptr || CharacterOf(context, e) == nullptr)
+    {
+        return;
+    }
+    if (!Finite3(position))
+    {
+        script::RaiseScriptError("the position must be finite");
+        return;
+    }
+    const VectorPayload payload = MakeVector(position, nullptr);
+    Record(context, kCommandCharacterPosition, e, &payload, sizeof(payload));
 }
 
 void CharacterSetHeight(ecs::Entity e, f32 height)
@@ -1132,7 +1150,7 @@ bool ApplyRemoveJoint(MergeContext& context, ecs::Entity target, Span<const u8>)
 }
 
 // The characters of the merge's host.
-CharacterSet* CharactersOf(MergeContext& context)
+physics::CharacterSet* CharactersOf(MergeContext& context)
 {
     const script::MergeServices* services = static_cast<const script::MergeServices*>(context.User());
     if (services == nullptr)
@@ -1146,7 +1164,7 @@ CharacterSet* CharactersOf(MergeContext& context)
 
 bool ApplyCharacterCreate(MergeContext& context, ecs::Entity target, Span<const u8> payload)
 {
-    CharacterSet* characters = CharactersOf(context);
+    physics::CharacterSet* characters = CharactersOf(context);
     CharacterPayload p;
     const ecs::LocalTransform* transform = context.World()->Get<ecs::LocalTransform>(target);
     if (characters == nullptr || payload.Size() != sizeof(p) || transform == nullptr)
@@ -1166,13 +1184,13 @@ bool ApplyCharacterCreate(MergeContext& context, ecs::Entity target, Span<const 
 
 bool ApplyCharacterDestroy(MergeContext& context, ecs::Entity target, Span<const u8>)
 {
-    CharacterSet* characters = CharactersOf(context);
+    physics::CharacterSet* characters = CharactersOf(context);
     return characters != nullptr && characters->Remove(target);
 }
 
 bool ApplyCharacterMove(MergeContext& context, ecs::Entity target, Span<const u8> payload)
 {
-    CharacterSet* characters = CharactersOf(context);
+    physics::CharacterSet* characters = CharactersOf(context);
     VectorPayload p;
     return characters != nullptr && ReadPayload(payload, &p) && characters->SetMove(target, PayloadValue(p));
 }
@@ -1191,14 +1209,21 @@ bool ReadScalar(Span<const u8> payload, f32* out)
 
 bool ApplyCharacterJump(MergeContext& context, ecs::Entity target, Span<const u8> payload)
 {
-    CharacterSet* characters = CharactersOf(context);
+    physics::CharacterSet* characters = CharactersOf(context);
     f32 speed = 0.0f;
     return characters != nullptr && ReadScalar(payload, &speed) && characters->Jump(target, speed);
 }
 
+bool ApplyCharacterPosition(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    physics::CharacterSet* characters = CharactersOf(context);
+    VectorPayload p;
+    return characters != nullptr && ReadPayload(payload, &p) && characters->SetPosition(target, PayloadValue(p));
+}
+
 bool ApplyCharacterHeight(MergeContext& context, ecs::Entity target, Span<const u8> payload)
 {
-    CharacterSet* characters = CharactersOf(context);
+    physics::CharacterSet* characters = CharactersOf(context);
     f32 height = 0.0f;
     return characters != nullptr && ReadScalar(payload, &height) && characters->SetHeight(target, height);
 }
@@ -1228,6 +1253,8 @@ bool RegisterPhysicsCommandKinds(CommandKindTable* kinds)
     ok &= kinds->Register(kCommandCharacterJump, CommandKind{"character.jump", &ApplyCharacterJump, false, true});
     ok &= kinds->Register(kCommandCharacterHeight,
                           CommandKind{"character.set_height", &ApplyCharacterHeight, false, true});
+    ok &= kinds->Register(kCommandCharacterPosition,
+                          CommandKind{"character.set_position", &ApplyCharacterPosition, false, true});
     return ok;
 }
 
@@ -1313,6 +1340,12 @@ bool RegisterPhysicsBindings(script::BindingRegistry* registry)
     ok &= registry->Add<&CharacterJump>("character", "jump", ThreadRule::WorldWrite, "e, speed",
                                         "Gives the character an upward speed (m/s) at the start of the next step; "
                                         "check `is_grounded` first for a jump from the ground only.");
+    ok &= registry->Add<&CharacterSetPosition>(
+        "character", "set_position", ThreadRule::WorldWrite, "e, position",
+        "Puts the character's capsule centre at `position` at once (a teleport): "
+        "its vertical speed becomes 0, a pending jump is dropped, the held move "
+        "stays, and the ground is looked for again at the next step. Setting the "
+        "entity's transform does not move a character.");
     ok &= registry->Add<&CharacterSetHeight>("character", "set_height", ThreadRule::WorldWrite, "e, height",
                                              "Changes the capsule's total height (crouching), feet kept in place.");
     ok &= registry->Add<&CharacterExists>("character", "exists", ThreadRule::WorldRead, "e",

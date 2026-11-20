@@ -18,7 +18,9 @@
 #include "script/entity_bindings.h"
 #include "script/luajit/luajit_backend.h"
 #include "script/script_runtime.h"
-#include "script_physics/character_set.h"
+#include "bytes/byte_writer.h"
+#include "physics/character_set.h"
+#include "physics/snapshot.h"
 #include "script_physics/physics_bindings.h"
 #include "script_physics/physics_events.h"
 #include "storage/builtin_components.h"
@@ -179,7 +181,7 @@ struct Rig
     physics::PhysicsWorld physics;
     PhysicsLayers layers;
     PhysicsScriptServices services;
-    UniquePtr<CharacterSet> characters;
+    UniquePtr<physics::CharacterSet> characters;
     UniquePtr<ScriptRuntime> runtime;
     PhysicsEventOptions options;
     PhysicsEventReport last_report;
@@ -214,7 +216,7 @@ struct Rig
         services.layers = &layers;
         if (with_characters)
         {
-            characters = MakeUnique<CharacterSet>(&physics);
+            characters = MakeUnique<physics::CharacterSet>(&physics);
             services.characters = characters.Get();
         }
         ScriptRuntimeConfig config;
@@ -561,7 +563,7 @@ TEST_CASE("Script character: calls that cannot work are errors where they are ma
 TEST_CASE("Script character: standing up under a ceiling waits until there is room", "[script_physics][character]")
 {
     physics::PhysicsWorld physics;
-    CharacterSet set(&physics);
+    physics::CharacterSet set(&physics);
     ecs::World world;
     const ecs::Entity e = world.Create(At(0, 1, 0));
     physics::BodyDesc floor;
@@ -595,7 +597,7 @@ TEST_CASE("Script character: standing up under a ceiling waits until there is ro
 TEST_CASE("Script character: the set refuses what cannot work", "[script_physics][character]")
 {
     physics::PhysicsWorld physics;
-    CharacterSet set(&physics);
+    physics::CharacterSet set(&physics);
     ecs::World world;
     const ecs::Entity e = world.Create(At(0, 1, 0));
     physics::CharacterConfig bad;
@@ -611,6 +613,78 @@ TEST_CASE("Script character: the set refuses what cannot work", "[script_physics
     CHECK(set.Prune(world) == 1);
     CHECK(set.Count() == 0);
     CHECK(physics.Stats().bodies == 0);
+}
+
+TEST_CASE("Script character: a set's snapshot puts the characters back with the world's", "[script_physics][character]")
+{
+    // The physics snapshot holds the bodies; the set's holds the rest (the vertical speed, the ground, the held move).
+    // Restored together, a run continues bit for bit (C API script physics, 2026-11-20).
+    physics::PhysicsWorld physics;
+    physics::BodyDesc floor;
+    floor.settings.type = physics::BodyType::Static;
+    floor.position = Vec3(0, -0.5f, 0);
+    const physics::BodyId floor_id = physics.CreateBody(floor);
+    physics::Collider box;
+    box.shape = physics::Shape::MakeBox(Vec3(20, 0.5f, 20));
+    REQUIRE(physics.AddCollider(floor_id, box) == physics::BodyStatus::Ok);
+    physics::CharacterSet set(&physics);
+    ecs::World world;
+    const ecs::Entity e = world.Create(At(0, 3, 0));
+    const ecs::Entity gone = world.Create(At(4, 3, 0));
+    REQUIRE(set.Add(e, physics::CharacterConfig(), Vec3(0, 3, 0)));
+    REQUIRE(set.Add(gone, physics::CharacterConfig(), Vec3(4, 3, 0)));
+    REQUIRE(set.SetMove(e, Vec3(1, 0, 0)));
+    for (u32 i = 0; i < 20; ++i)
+    {
+        physics.Step();  // falling: the vertical speed is the set's, not the world's
+    }
+    REQUIRE(set.Find(e)->State().vertical_speed < -1.0f);
+    bytes::ByteWriter world_bytes;
+    physics.Snapshot(&world_bytes);
+    bytes::ByteWriter set_bytes;
+    set.Snapshot(&set_bytes);
+    Vector<byte> kept_world;
+    Vector<byte> kept_set;
+    for (usize i = 0; i < world_bytes.Size(); ++i)
+    {
+        kept_world.Push(world_bytes.Bytes()[i]);
+    }
+    for (usize i = 0; i < set_bytes.Size(); ++i)
+    {
+        kept_set.Push(set_bytes.Bytes()[i]);
+    }
+    for (u32 i = 0; i < 60; ++i)
+    {
+        physics.Step();
+    }
+    const Vec3 first = physics.Find(set.Find(e)->BodyHandle())->position;
+    CHECK(set.Find(e)->State().on_ground);
+    // Back to the snapshot, with the held move changed meanwhile and one character removed.
+    REQUIRE(set.SetMove(e, Vec3(-3, 0, 0)));
+    REQUIRE(set.Remove(gone));
+    REQUIRE(physics.Restore(ByteSpan(kept_world.Data(), kept_world.Size())) == physics::SnapshotStatus::Ok);
+    CHECK(physics.Stats().bodies == 3);  // the floor and both characters' bodies of that moment
+    REQUIRE(set.Restore(ByteSpan(kept_set.Data(), kept_set.Size())));
+    CHECK(physics.Stats().bodies == 2);  // the removed character's kept body is destroyed
+    CHECK(set.Recreate(world) == 0);     // the kept body is the character's again
+    for (u32 i = 0; i < 60; ++i)
+    {
+        physics.Step();
+    }
+    const Vec3 second = physics.Find(set.Find(e)->BodyHandle())->position;
+    CHECK(first.x == second.x);
+    CHECK(first.y == second.y);
+    CHECK(first.z == second.z);
+    // Malformed bytes are refused, and nothing changes.
+    CHECK_FALSE(physics::CharacterSet::ValidSnapshot(ByteSpan(kept_set.Data(), kept_set.Size() - 1)));
+    kept_set.Push(byte{0});
+    CHECK_FALSE(physics::CharacterSet::ValidSnapshot(ByteSpan(kept_set.Data(), kept_set.Size())));
+    kept_set.Pop();
+    for (usize i = kept_set.Size() - 4; i < kept_set.Size(); ++i)
+    {
+        kept_set[i] = byte{0xFF};  // the last height becomes a NaN
+    }
+    CHECK_FALSE(set.Restore(ByteSpan(kept_set.Data(), kept_set.Size())));
 }
 
 }  // namespace events_test
