@@ -1,4 +1,4 @@
-# Log devices / Day 2: the file device with rotation
+# Log devices / Day 3: the file device with rotation
 
 **Series:** [log devices](../log-devices.md)
 **Depends on:** Day 1.

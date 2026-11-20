@@ -1,7 +1,7 @@
-# Log devices / Day 4: a capture device for tests, documentation and the closing runs
+# Log devices / Day 5: a capture device for tests, documentation and the closing runs
 
 **Series:** [log devices](../log-devices.md)
-**Depends on:** Days 1 to 3.
+**Depends on:** Days 1 to 4.
 
 ## Tasks
 

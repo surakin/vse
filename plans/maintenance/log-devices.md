@@ -1,6 +1,6 @@
 # Maintenance: log devices
 
-This is not a numbered phase: it is a maintenance series of four days, chosen by the user on 2026-11-20 over inserting a phase. It does not change
+This is not a numbered phase: it is a maintenance series of five days, chosen by the user on 2026-11-20 over inserting a phase. It does not change
 `CURRENT_PHASE` or any phase or day number.
 
 **Origin:** the log core (`engine/foundation/log/log.{h,cpp}`) sends every line through one global function pointer (`g_write_sink`, default
@@ -12,9 +12,9 @@ The user wants a **log device interface**, stdout by default, any other output p
 
 **Decisions (the user, 2026-11-20):** several devices active at once; a maintenance series; the first series builds the interface, the stdout
 device and a **file** device. Memory (capture), network (`engine/net`) and GUI (`engine/ui_window`) devices come later, each in its own layer,
-through the same `AddLogDevice`.
+through the same `AddLogDevice`. Added 2026-11-20 (the user): a **TTY device** that replaces the stdout device when the program runs on a colour-capable terminal, so logs look pretty.
 
-**Goal:** `LogDevice` (an abstract class), a fixed registry of non-owning devices with a minimum level each, `StdoutLogDevice` as the default,
+**Goal:** `LogDevice` (an abstract class), a fixed registry of non-owning devices with a minimum level each, `StdoutLogDevice` as the default, `TtyLogDevice` (coloured) instead of it on a colour-capable terminal,
 `FileLogDevice` with rotation, and settings to choose them.
 
 **Definition of done:**
@@ -27,9 +27,10 @@ through the same `AddLogDevice`.
 ## Days
 
 1. [LogDevice, the registry and the stdout device](log-devices/01-log-device-registry-and-stdout.md)
-2. [The file device with rotation](log-devices/02-file-log-device.md)
-3. [Settings, the C API observer as a device, shutdown](log-devices/03-settings-observer-and-shutdown.md)
-4. [A capture device for tests, documentation and the closing runs](log-devices/04-capture-device-docs-and-closing.md)
+2. [Terminal detection and the TTY device](log-devices/02-terminal-detection-and-tty-device.md)
+3. [The file device with rotation](log-devices/03-file-log-device.md)
+4. [Settings, the C API observer as a device, shutdown](log-devices/04-settings-observer-and-shutdown.md)
+5. [A capture device for tests, documentation and the closing runs](log-devices/05-capture-device-docs-and-closing.md)
 
 ## Rules for every day
 
