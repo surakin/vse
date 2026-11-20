@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTonemapFragMetallibByteCount = 5492;
 
@@ -367,4 +367,4 @@ inline constexpr rhi::ShaderSlotTable kTonemapFragMetallibSlots = {kTonemapFragM
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kTonemapFragMetallibSpirvFnv = 0xd2463a967023f189ull;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

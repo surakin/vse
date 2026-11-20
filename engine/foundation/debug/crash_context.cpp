@@ -5,7 +5,7 @@
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -74,4 +74,4 @@ const CrashContext& GetCrashContext()
     return g_crash_context;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

@@ -8,7 +8,7 @@
 #include "database/database.h"
 #include "settings/registry.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 /// Declares `database.journal_mode`, `database.synchronous`, `database.busy_timeout_ms`, `database.integrity_check` and
@@ -30,4 +30,4 @@ void RegisterDatabaseSettings(settings::Registry* registry);
 /// - Ownership: `registry` is borrowed for the call.
 OpenOptions OptionsFromSettings(const settings::Registry& registry, StringView location);
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

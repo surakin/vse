@@ -13,8 +13,8 @@
 namespace window_cursor_test
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::os;
+using namespace vse;
+using namespace vse::os;
 
 namespace
 {

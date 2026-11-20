@@ -4,7 +4,7 @@
 
 #include "ui/surface.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 TextBlock::TextBlock(StringView name, StringView text) : Widget(name)
@@ -166,4 +166,4 @@ void TextBlock::Draw(Canvas& canvas)
     canvas.DrawText(layout, run_.Style(), Point{x, Bounds().y}, color);
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

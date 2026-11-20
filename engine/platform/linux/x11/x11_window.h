@@ -19,7 +19,7 @@ struct _XDisplay;
 struct _XIC;
 struct _XIM;
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 /// The unit of the size given to [[os::x11::X11Window::Create]].
@@ -238,4 +238,4 @@ private:
     X11DndState dnd_;
 };
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11

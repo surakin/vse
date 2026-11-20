@@ -7,7 +7,7 @@
 //! The Direct3D 12 pipeline cache file's rules (Phase 13 Day 167), as pure functions so they are tested without a GPU:
 //! its name, its header, and the names pipelines are stored under in the `ID3D12PipelineLibrary` it holds.
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 /// FNV-1a over bytes, continuing from `seed` (the offset basis to start).
@@ -113,4 +113,4 @@ bool BuildPipelineLibraryPath(const char* dir, const char* adapter_id, const cha
 /// - Thread-safety: thread-safe. A pure function.
 void PipelineLibraryName(u64 key, wchar_t (&out)[18]);
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

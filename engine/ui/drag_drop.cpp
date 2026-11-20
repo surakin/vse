@@ -3,7 +3,7 @@
 #include "log/assert.h"
 #include "string/utf8_codec.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -190,4 +190,4 @@ os::CursorShape CursorForDragAction(DragAction action)
     return os::CursorShape::Arrow;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

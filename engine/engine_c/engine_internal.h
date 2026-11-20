@@ -4,7 +4,7 @@
 #include "build_defs.h"
 #include "engine/engine_c.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 class Runtime;
@@ -44,4 +44,4 @@ Runtime* CurrentRuntime();
 /// its audio thread first, as `audio_close` asks).
 Runtime* AudioRenderRuntime(engine_handle engine);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

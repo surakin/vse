@@ -3,8 +3,8 @@
 #include "os/session.h"
 #include "string_view.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::os;
+using namespace vse;
+using namespace vse::os;
 
 TEST_CASE("Session state: flags map to a state, locked before idle before inactive", "[os][session]")
 {

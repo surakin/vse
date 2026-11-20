@@ -14,7 +14,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -1088,4 +1088,4 @@ TEST_CASE("The asynchronous operations report refusal, timeout and cancellation,
     CHECK(from.Port() == a_at.Port());
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

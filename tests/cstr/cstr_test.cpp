@@ -14,7 +14,7 @@
 #include "cstr/number.h"
 #include "cstr/varargs.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

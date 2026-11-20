@@ -21,8 +21,8 @@
 namespace window_clipboard_test
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::os;
+using namespace vse;
+using namespace vse::os;
 
 namespace
 {
@@ -471,7 +471,7 @@ TEST_CASE("Wayland: our own selection answers a request locally, when the compos
 namespace
 {
 
-using engine_placeholder::os::x11::X11Window;
+using vse::os::x11::X11Window;
 
 // Pumps both windows until `done()` or ~3 s pass.
 template <typename Pred> bool PumpBoth(X11Window& a, X11Window& b, Pred done)

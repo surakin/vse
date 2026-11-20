@@ -5,7 +5,7 @@
 
 //! A small SPIR-V module reader: the cheap sanity check every backend runs before a module reaches a driver.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// The SPIR-V magic number (the first word of every module in the host's byte order).
@@ -49,4 +49,4 @@ inline bool ShaderEntryNameTooLong(const char* name)
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 const char* ValidateSpirv(const u32* words, usize word_count, ShaderStage stage, const char* entry);
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

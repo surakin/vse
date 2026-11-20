@@ -24,8 +24,8 @@
 namespace gbuffer_rig
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 constexpr u32 kW = 64;
 constexpr u32 kH = 64;

@@ -15,7 +15,7 @@
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -209,7 +209,7 @@ usize HashPipelineKey(u32 template_index, u32 template_generation, u32 key_bits,
         h.AddWord(a.location).AddWord(a.binding).AddWord(static_cast<u64>(a.format)).AddWord(a.offset);
     }
     h.AddWord(static_cast<u64>(topology)).AddWord(restart ? 1u : 0u);
-    return engine_placeholder::detail::MixHash64(h.Value());
+    return vse::detail::MixHash64(h.Value());
 }
 
 }  // namespace detail
@@ -2104,4 +2104,4 @@ bool MaterialSystem::Warmup(MaterialId id, const PipelineTarget& target, const V
     return GetPipeline(id, target, vertex_layout, topology, primitive_restart).pipeline.IsValid();
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

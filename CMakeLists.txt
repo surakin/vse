@@ -37,7 +37,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_TOOLCHAIN_FILE AND NOT
   set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3" CACHE STRING "Minimum macOS version (13.3: floating-point std::to_chars; Metal 3 needs 13.0)")
 endif()
 
-project(engine_placeholder CXX C)
+project(vse CXX C)
 
 # The directory a host that links a pre-built engine puts on its include path: only the C API's public headers (include/engine/*.h), none of the engine's own.
 set(ENGINE_PUBLIC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)

@@ -16,7 +16,7 @@
 #include "store_conformance.h"
 #include "temp_dir.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -418,4 +418,4 @@ TEST_CASE("SqlStore: a world saved to a SQL file loads back equal, and increment
     CHECK(loaded_index.Size() == 299);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

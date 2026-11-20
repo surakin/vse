@@ -8,7 +8,7 @@
 #include "support.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -52,7 +52,7 @@ TEST_CASE("The memory backend passes the conformance suite", "[asset][backend][m
         fx.paths.Push(test::Vp(paths[i]));
         const StringView path = test::Vp(paths[i]);
         MemoryAddOptions options;
-        options.paths = engine_placeholder::Span<const StringView>(&path, 1);
+        options.paths = vse::Span<const StringView>(&path, 1);
         REQUIRE(backend.Add(fx.ids[i], test::AsBytes(fx.blobs[i]), options).Ok());
     }
     test::RunBackendConformance(backend, fx);
@@ -172,7 +172,7 @@ TEST_CASE("AddMany adds every item or none, and says which one was refused", "[a
         one.size = blob.Size();
         if (path != nullptr)
         {
-            one.options.paths = engine_placeholder::Span<const StringView>(path, 1);
+            one.options.paths = vse::Span<const StringView>(path, 1);
         }
         return one;
     };
@@ -184,7 +184,7 @@ TEST_CASE("AddMany adds every item or none, and says which one was refused", "[a
     {
         const MemoryAddItem items[] = {item(test::Rid(40), a, &path_a), item(test::Rid(41), b, nullptr),
                                        item(test::Rid(42), c, &path_c)};
-        REQUIRE(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(items, 3), &failed).Ok());
+        REQUIRE(backend.AddMany(vse::Span<const MemoryAddItem>(items, 3), &failed).Ok());
         CHECK(backend.BytesHeld() == a.Size() + b.Size() + c.Size());
         for (u32 id = 40; id < 43; ++id)
         {
@@ -201,7 +201,7 @@ TEST_CASE("AddMany adds every item or none, and says which one was refused", "[a
     }
     SECTION("an empty batch is nothing")
     {
-        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(), &failed).Ok());
+        CHECK(backend.AddMany(vse::Span<const MemoryAddItem>(), &failed).Ok());
         CHECK(backend.BytesHeld() == 0);
     }
     SECTION("a damaged blob refuses the batch and names it")
@@ -210,7 +210,7 @@ TEST_CASE("AddMany adds every item or none, and says which one was refused", "[a
         damaged[damaged.Size() - 1] = static_cast<byte>(damaged[damaged.Size() - 1] ^ 0x5A);
         const MemoryAddItem items[] = {item(test::Rid(40), a, &path_a), item(test::Rid(41), b, nullptr),
                                        item(test::Rid(42), damaged, nullptr)};
-        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(items, 3), &failed).Is(ErrorCode::Corrupt));
+        CHECK(backend.AddMany(vse::Span<const MemoryAddItem>(items, 3), &failed).Is(ErrorCode::Corrupt));
         CHECK(failed == 2);
         CHECK(backend.BytesHeld() == 0);
         CHECK(backend.Stat(test::Rid(40), &info).Is(ErrorCode::NotFound));
@@ -223,16 +223,13 @@ TEST_CASE("AddMany adds every item or none, and says which one was refused", "[a
         REQUIRE(backend.Add(test::Rid(41), test::AsBytes(b)).Ok());
         const u64 held = backend.BytesHeld();
         const MemoryAddItem live[] = {item(test::Rid(40), a, nullptr), item(test::Rid(41), b, nullptr)};
-        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(live, 2), &failed)
-                  .Is(ErrorCode::DuplicateId));
+        CHECK(backend.AddMany(vse::Span<const MemoryAddItem>(live, 2), &failed).Is(ErrorCode::DuplicateId));
         CHECK(failed == 1);
         const MemoryAddItem twice[] = {item(test::Rid(40), a, nullptr), item(test::Rid(40), a, nullptr)};
-        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(twice, 2), &failed)
-                  .Is(ErrorCode::DuplicateId));
+        CHECK(backend.AddMany(vse::Span<const MemoryAddItem>(twice, 2), &failed).Is(ErrorCode::DuplicateId));
         CHECK(failed == 1);
         const MemoryAddItem same_path[] = {item(test::Rid(40), a, &path_a), item(test::Rid(42), c, &path_a)};
-        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(same_path, 2), &failed)
-                  .Is(ErrorCode::DuplicateId));
+        CHECK(backend.AddMany(vse::Span<const MemoryAddItem>(same_path, 2), &failed).Is(ErrorCode::DuplicateId));
         CHECK(failed == 1);
         CHECK(backend.BytesHeld() == held);
         CHECK(backend.Stat(test::Rid(40), &info).Is(ErrorCode::NotFound));
@@ -240,10 +237,9 @@ TEST_CASE("AddMany adds every item or none, and says which one was refused", "[a
     SECTION("a path of another resource refuses the batch")
     {
         const MemoryAddItem first[] = {item(test::Rid(40), a, &path_a)};
-        REQUIRE(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(first, 1), &failed).Ok());
+        REQUIRE(backend.AddMany(vse::Span<const MemoryAddItem>(first, 1), &failed).Ok());
         const MemoryAddItem second[] = {item(test::Rid(41), b, nullptr), item(test::Rid(42), c, &path_a)};
-        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(second, 2), &failed)
-                  .Is(ErrorCode::DuplicateId));
+        CHECK(backend.AddMany(vse::Span<const MemoryAddItem>(second, 2), &failed).Is(ErrorCode::DuplicateId));
         CHECK(failed == 1);
         CHECK(backend.Stat(test::Rid(41), &info).Is(ErrorCode::NotFound));
     }
@@ -252,8 +248,7 @@ TEST_CASE("AddMany adds every item or none, and says which one was refused", "[a
         HostMemoryBackend small(registry, a.Size() + b.Size() + c.Size() - 1);
         const MemoryAddItem items[] = {item(test::Rid(40), a, nullptr), item(test::Rid(41), b, nullptr),
                                        item(test::Rid(42), c, nullptr)};
-        CHECK(small.AddMany(engine_placeholder::Span<const MemoryAddItem>(items, 3), &failed)
-                  .Is(ErrorCode::LimitExceeded));
+        CHECK(small.AddMany(vse::Span<const MemoryAddItem>(items, 3), &failed).Is(ErrorCode::LimitExceeded));
         CHECK(failed == 3);
         CHECK(small.BytesHeld() == 0);
         CHECK(small.Stat(test::Rid(40), &info).Is(ErrorCode::NotFound));
@@ -262,7 +257,7 @@ TEST_CASE("AddMany adds every item or none, and says which one was refused", "[a
     {
         MemoryAddItem lent = item(test::Rid(40), a, nullptr);
         lent.options.release = [](void*, ByteSpan) {};
-        CHECK(backend.AddMany(engine_placeholder::Span<const MemoryAddItem>(&lent, 1), &failed).Is(ErrorCode::Invalid));
+        CHECK(backend.AddMany(vse::Span<const MemoryAddItem>(&lent, 1), &failed).Is(ErrorCode::Invalid));
         CHECK(backend.BytesHeld() == 0);
     }
 }
@@ -323,13 +318,13 @@ TEST_CASE("Paths: reachable by id only, or by the paths the host gave; a path be
     const Vector<byte> a2 = test::MakeTestBlob(registry, test::Rid(30), 70, 3);
     const StringView paths[] = {test::Vp("/x/a.bk"), test::Vp("/x/alias.bk")};
     MemoryAddOptions with_paths;
-    with_paths.paths = engine_placeholder::Span<const StringView>(paths, 2);
+    with_paths.paths = vse::Span<const StringView>(paths, 2);
     REQUIRE(backend.Add(test::Rid(30), test::AsBytes(a), with_paths).Ok());
     REQUIRE(backend.Add(test::Rid(31), test::AsBytes(b)).Ok());  // by id only
 
     MemoryAddOptions clash;
     const StringView taken = test::Vp("/x/a.bk");
-    clash.paths = engine_placeholder::Span<const StringView>(&taken, 1);
+    clash.paths = vse::Span<const StringView>(&taken, 1);
     const Vector<byte> c = test::MakeTestBlob(registry, test::Rid(32), 50, 4);
     CHECK(backend.Add(test::Rid(32), test::AsBytes(c), clash).Is(ErrorCode::DuplicateId));
     ResourceInfo info;
@@ -337,7 +332,7 @@ TEST_CASE("Paths: reachable by id only, or by the paths the host gave; a path be
 
     MemoryAddOptions malformed;
     const StringView bad = test::Vp("x/../a.bk");
-    malformed.paths = engine_placeholder::Span<const StringView>(&bad, 1);
+    malformed.paths = vse::Span<const StringView>(&bad, 1);
     CHECK(backend.Add(test::Rid(32), test::AsBytes(c), malformed).Failed());
 
     REQUIRE(backend.Replace(test::Rid(30), test::AsBytes(a2)).Ok());  // the paths stay
@@ -478,4 +473,4 @@ TEST_CASE("A forced replace that cannot happen unloads nothing", "[asset][backen
     CHECK(deps.unloaded.Size() == 0);  // the dependents were not unloaded for a change that did not happen
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

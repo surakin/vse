@@ -16,7 +16,7 @@
 #include "physics/state_hash.h"
 #include "physics/world.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -565,4 +565,4 @@ u64 PhysicsWorld::StateHash(bool* valid) const
     return hasher.Value();
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

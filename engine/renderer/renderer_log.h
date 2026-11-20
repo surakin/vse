@@ -8,7 +8,7 @@
 
 //! The renderer: a deferred, render-graph-driven renderer built on the RHI.
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// Logs a printf-style message on the foundation's `LogRender` channel using a 512-byte stack buffer and no allocator.
@@ -43,6 +43,6 @@ inline void RenderLogV(LogVerbosity level, const char* fmt, ...)
 /// Logs a printf-style message on the render channel; expands to a call of [[renderer::RenderLogV]].
 ///
 /// - Param level: verbosity of the message.
-#define RenderLog(level, ...) ::engine_placeholder::renderer::RenderLogV(level, __VA_ARGS__)
+#define RenderLog(level, ...) ::vse::renderer::RenderLogV(level, __VA_ARGS__)
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

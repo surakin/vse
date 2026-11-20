@@ -27,8 +27,8 @@
 #include "spatial/spatial_sync.h"
 #include "spatial/spatial_world.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 
 namespace
 {

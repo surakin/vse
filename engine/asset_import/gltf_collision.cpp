@@ -8,7 +8,7 @@
 #include "cstr/format.h"
 #include "lang/status_try.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -640,4 +640,4 @@ Status ImportColliders(const GltfDocument& document, const ImportOptions& option
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

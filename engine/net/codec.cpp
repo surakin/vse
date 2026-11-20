@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -851,4 +851,4 @@ CodecError NetReader::ReadDeltaQuantized(f32 baseline, f32 min, f32 max, u32 bit
     return Dequantize(static_cast<u64>(level), min, max, bits, out);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -12,7 +12,7 @@
 #include "log/assert.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// The value of a column index that does not exist.
@@ -194,4 +194,4 @@ private:
     u32 entity_count_ = 0;
 };
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

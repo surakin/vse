@@ -12,7 +12,7 @@
 #include "platform/windows/win32_keys.h"
 #include "platform/windows/win32_window.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using os::Key;
 using os::win32::KeyFromWin32;
 using os::win32::Win32KeyMessage;

@@ -2,7 +2,7 @@
 
 #include "os/os.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -256,4 +256,4 @@ usize RateLimiter::BannedAddresses(u64 now) const
     return n;
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

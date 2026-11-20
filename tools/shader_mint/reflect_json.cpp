@@ -10,7 +10,7 @@
 
 #include <nlohmann/json.hpp>
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 namespace
@@ -1073,4 +1073,4 @@ bool CrossCheckSpirv(const renderer::ShaderReflection& reflection, const u32* wo
     return ok;
 }
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

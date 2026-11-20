@@ -6,7 +6,7 @@
 //! The vocabulary of layout (Phase 15, Day 193): constraints, alignment and the per-widget layout properties the
 //! containers read.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A size limit that means "no limit".
@@ -109,4 +109,4 @@ struct LayoutProps
                                      ///< follow the surface size).
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

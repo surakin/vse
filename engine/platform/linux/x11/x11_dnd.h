@@ -10,7 +10,7 @@
 
 struct _XDisplay;
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 /// The receiving half: what the window accepts and the drag over it, if any.
@@ -109,4 +109,4 @@ void DndTick(_XDisplay* display, unsigned long window, X11ClipboardState& cstate
 /// Ends everything before the display closes.
 void DndRelease(_XDisplay* display, unsigned long window, X11ClipboardState& cstate, X11DndState& dnd, u64 now_ns);
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11

@@ -7,7 +7,7 @@
 #include "lang/scalar.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 namespace
@@ -542,4 +542,4 @@ ecs::SystemDesc MakeSpatialSyncSystem(const char* name)
         .WritesResource<SpatialWorld>();
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

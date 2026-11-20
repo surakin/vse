@@ -1,7 +1,7 @@
 #include "net/address.h"
 #include "containers/hash.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -668,4 +668,4 @@ Ordering Address::operator<=>(const Address& other) const
     return ScopeName().Compare(other.ScopeName()) <=> 0;
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

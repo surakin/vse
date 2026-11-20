@@ -9,7 +9,7 @@ The layer has three parts. A **path** (`io::Path`) is just text with rules; it n
 and writing bytes at offsets, so the same calls work for a local file today and a pak entry or a network file later. A **directory** (`io::Directory`) lists
 what is inside a folder. Nothing throws: every operation returns an `io::Status` that you check.
 
-The file layer lives in `engine/foundation/io/` (namespace `engine_placeholder::io`). Design and reasons:
+The file layer lives in `engine/foundation/io/` (namespace `vse::io`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.
 
 ## At a glance
@@ -291,7 +291,7 @@ file->ReadAsync(&request, buffer, length, offset, &OnDone, user);   // returns a
 #include "jobs/file_async.h"
 #include "jobs/job.h"
 #include "jobs/scheduler.h"
-using namespace engine_placeholder;
+using namespace vse;
 
 static jobs::Job Load(jobs::Scheduler* s, io::File* f, Atomic<int>* done) {
     jobs::FileReadAllResult r = co_await jobs::ReadAllAsync(*s, *f);

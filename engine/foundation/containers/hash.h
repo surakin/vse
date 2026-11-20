@@ -9,7 +9,7 @@
 //! `Fnv1a64`, the one byte hash (container audit series, Day 2). Every module that hashes bytes calls `Fnv1a64` instead
 //! of writing FNV-1a out again; its values are the published FNV-1a 64-bit values, so a hash stored in a minted file or
 //! compared across machines does not change.
-namespace engine_placeholder
+namespace vse
 {
 
 namespace detail
@@ -243,4 +243,4 @@ template <> struct Hash<StringView>
     usize operator()(StringView k) const { return detail::MixHash64(Fnv1a64(k)); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

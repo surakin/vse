@@ -12,7 +12,7 @@
 //     current \p{Extended_Pictographic} Extend* run (through `prev`,
 //     possibly `prev` itself being the ZWJ that follows it) are still
 //     "live", used for the emoji ZWJ-sequence rule (GB11).
-namespace engine_placeholder
+namespace vse
 {
 
 namespace
@@ -121,4 +121,4 @@ usize GraphemeClusterCount(StringView sv)
     return count;
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

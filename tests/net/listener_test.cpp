@@ -17,7 +17,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -475,4 +475,4 @@ TEST_CASE(
     CHECK(probe.result.status.Is(ErrorCode::Refused));
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

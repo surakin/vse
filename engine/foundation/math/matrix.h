@@ -8,7 +8,7 @@
 //! Each matrix stores its columns directly. A vector transforms as `v' = M * v`,
 //! and composition is left-multiplication: `M2 * M1` applies `M1` first. This
 //! matches the GLM/OpenGL convention.
-namespace engine_placeholder
+namespace vse
 {
 
 /// 3x3 float matrix stored as three column vectors.
@@ -154,4 +154,4 @@ inline Mat4 operator*(const Mat4& a, const Mat4& b)
     return Mat4::FromColumns(a * b.col[0], a * b.col[1], a * b.col[2], a * b.col[3]);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

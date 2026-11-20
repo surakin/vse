@@ -5,7 +5,7 @@
 #include "ui/surface.h"
 #include "ui/theme.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -453,4 +453,4 @@ void Widget::DrawTree(Canvas& canvas)
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

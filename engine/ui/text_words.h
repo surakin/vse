@@ -11,7 +11,7 @@
 //! point counts as a letter. Offsets are byte offsets into UTF-8 text and fall on code point starts; a caller that must
 //! stay on grapheme boundaries snaps them (the text field does, through `text/cursor.h`).
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// What kind of character a code point is for word movement.
@@ -53,4 +53,4 @@ u32 WordEnd(StringView text, u32 offset);
 /// - Fails: never; an empty text gives 0 and 0.
 void WordRangeAt(StringView text, u32 offset, u32* begin, u32* end);
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -20,7 +20,7 @@
 #include "audio/linux/pipewire_device.h"
 #endif
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -355,4 +355,4 @@ DeviceStatus EnumerateDevices(DeviceKind kind, Vector<DeviceDescription>* out)
     return DeviceStatus::Ok;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

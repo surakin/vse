@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 // macOS's half of os.h (Phase 21 Day 285); the calls macOS shares with Linux are in os/posix/os_posix.cpp.
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 namespace posix
@@ -134,4 +134,4 @@ DynamicLibraryHandle LoadLibrary(StringView path)
     return OpenIn("/usr/lib/", path);
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

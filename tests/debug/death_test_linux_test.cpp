@@ -19,8 +19,8 @@
 #include "cstr/format.h"
 #include "cstr/number.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 // Starts a grandchild that keeps the inherited pipes open for a second, then returns at once: the helper must come back
 // when the child is gone, not when the pipes close.

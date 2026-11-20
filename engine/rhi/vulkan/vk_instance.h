@@ -6,7 +6,7 @@
 
 //! The Vulkan instance, the validation layer policy and the validation message counters.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// Whether to enable the Khronos validation layer for an instance.
@@ -165,4 +165,4 @@ private:
     bool presentable_ = false;
 };
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

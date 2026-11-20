@@ -3,7 +3,7 @@
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -759,4 +759,4 @@ Status ParseGltf(ByteSpan file, GltfSource& source, const ImportLimits& limits, 
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

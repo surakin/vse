@@ -7,7 +7,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/limits.h"
 
-namespace engine_placeholder::bytes
+namespace vse::bytes
 {
 namespace
 {
@@ -321,4 +321,4 @@ TEST_CASE("Bytes: Truncate cuts a partly written value", "[bytes]")
 }
 
 }  // namespace
-}  // namespace engine_placeholder::bytes
+}  // namespace vse::bytes

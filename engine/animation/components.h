@@ -15,7 +15,7 @@
 #include "storage/component_registry.h"
 #include "types.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 
 /// Stable ids of the animation components in the storage registry (the engine's own range, below 1000).
@@ -176,4 +176,4 @@ private:
     const AnimationResolver* resolver_ = nullptr;
 };
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

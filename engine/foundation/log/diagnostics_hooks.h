@@ -14,7 +14,7 @@
 //! behavior is complete on its own: a failed assert prints its message line and aborts, an ensure prints its line and
 //! continues, and a thread starts unregistered.
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Callbacks that complete an assert or error report. Any member may be null.
@@ -94,4 +94,4 @@ inline constexpr usize kMaxThreadEndHooks = 8;
 /// - Thread-safety: thread-safe.
 void NotifyThreadEnd();
 
-}  // namespace engine_placeholder
+}  // namespace vse

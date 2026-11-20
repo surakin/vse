@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -197,4 +197,4 @@ ContentHash HashBytes(ByteSpan bytes)
     return hasher.Finish();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

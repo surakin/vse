@@ -20,8 +20,8 @@
 #include "storage/memory_store.h"
 #include "storage/world_storage.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::script;
+using namespace vse;
+using namespace vse::script;
 
 namespace persist_test
 {

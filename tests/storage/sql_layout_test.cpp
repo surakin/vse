@@ -14,7 +14,7 @@
 #include "temp_dir.h"
 #include "world_compare.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -692,4 +692,4 @@ TEST_CASE("SQL layout: a resource reference is an integer column, queryable like
     CHECK(found[0] == wanted);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

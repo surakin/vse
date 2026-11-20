@@ -5,7 +5,7 @@
 // The per-platform half of the job system (Phase 13 Day 153): which CPUs the process may use, the OS id of a thread,
 // pinning and naming. Internal to engine/jobs; implemented by jobs/<platform>/thread_platform.cpp, so the shared
 // topology and worker pool include no OS header.
-namespace engine_placeholder::jobs::detail
+namespace vse::jobs::detail
 {
 
 /// Writes the logical CPU ids this process may run on, ascending, up to `capacity`.
@@ -29,4 +29,4 @@ bool PinCurrentThread(u32 cpu);
 /// pthread_setname_np, at most 63 bytes, cut on a UTF-8 boundary; Linux: not set, as before Phase 13).
 void NameCurrentThread(const char* name);
 
-}  // namespace engine_placeholder::jobs::detail
+}  // namespace vse::jobs::detail

@@ -7,7 +7,7 @@
 // Small comparison helpers shared across multiple test files (float/vector/
 // quaternion near-equality, raw byte-buffer equality) — kept here instead of
 // duplicated per file since several subsystems' tests need the same ones.
-namespace engine_placeholder::test
+namespace vse::test
 {
 
 inline bool NearlyEqual(f32 a, f32 b, f32 epsilon = 1e-4f)
@@ -43,4 +43,4 @@ inline bool BytesEqual(const u8* a, const u8* b, usize n)
     return true;
 }
 
-}  // namespace engine_placeholder::test
+}  // namespace vse::test

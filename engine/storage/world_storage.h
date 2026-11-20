@@ -12,12 +12,12 @@
 #include "containers/unique_ptr.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 class Scheduler;
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 namespace detail
@@ -153,4 +153,4 @@ private:
     Atomic<bool> writer_active_{false};
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

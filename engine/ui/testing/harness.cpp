@@ -5,7 +5,7 @@
 #include "io/path.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 Harness::Harness(f32 width, f32 height, f32 scale, StringView font_file) : surface_(width, height, scale)
@@ -136,4 +136,4 @@ void Harness::Render(RasterImage* out, u32 clear_abgr)
     RasterizeDrawList(list_, &atlas_, w, h, clear_abgr, out);
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

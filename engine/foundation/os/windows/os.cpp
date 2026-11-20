@@ -21,7 +21,7 @@
 // descriptor function; the UCRT's own descriptors were rejected because a thread suspended inside _write holds a
 // per-descriptor lock that a crash path then waits on forever (Spike A).
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 namespace
@@ -587,4 +587,4 @@ bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length)
     return found;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

@@ -7,7 +7,7 @@
 
 //! The device limits the layers above the RHI depend on.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Limits and optional features of one device, filled in by its backend.
@@ -63,4 +63,4 @@ struct DeviceCaps
     bool object_index_stream = false;
 };
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

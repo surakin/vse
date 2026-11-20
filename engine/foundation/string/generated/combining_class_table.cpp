@@ -4,7 +4,7 @@
 
 #include "string/normalize.h"
 
-namespace engine_placeholder {
+namespace vse {
 
 namespace {
 
@@ -1005,4 +1005,4 @@ u8 CombiningClass(u32 codepoint) {
     return 0;
 }
 
-} // namespace engine_placeholder
+} // namespace vse

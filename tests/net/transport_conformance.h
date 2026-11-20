@@ -22,7 +22,7 @@
 #include "lang/utility.h"
 #include "net/transport.h"
 
-namespace engine_placeholder::net::conformance
+namespace vse::net::conformance
 {
 
 struct Rec
@@ -713,4 +713,4 @@ template <class F> void DestroyingATransportWithTrafficInFlight(F& f)
     SUCCEED("nothing crashed and nothing was delivered to a destroyed transport");
 }
 
-}  // namespace engine_placeholder::net::conformance
+}  // namespace vse::net::conformance

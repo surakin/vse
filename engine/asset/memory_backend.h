@@ -14,7 +14,7 @@
 #include "string/string.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// What the manager reports about the resources that depend on another one (Day 328 supplies it); the backend refuses
@@ -149,4 +149,4 @@ private:
     Vector<ChangeRecord> changes_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

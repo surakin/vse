@@ -5,7 +5,7 @@
 #include "types.h"
 
 //! Numeric limits (Phase 16): the engine's spelling of `<limits>`.
-namespace engine_placeholder
+namespace vse
 {
 
 /// The limits of the arithmetic type `T` (`std::numeric_limits<T>`).
@@ -42,4 +42,4 @@ template <class T> struct Limits
     static constexpr T DenormMin() noexcept { return std::numeric_limits<T>::denorm_min(); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

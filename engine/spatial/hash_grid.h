@@ -15,7 +15,7 @@
 #include "spatial/static_bvh.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// The most cells one item is registered in; an item that would touch more (much larger than a cell) is kept in the
@@ -411,4 +411,4 @@ template <class ItemVisit> TraversalStats HashGrid::TraverseRay(const Ray& ray, 
     return stats;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

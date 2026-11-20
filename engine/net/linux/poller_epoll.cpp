@@ -9,7 +9,7 @@
 #include "os/last_error.h"
 #include "os/os.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -157,4 +157,4 @@ void Poller::Wake()
     [[maybe_unused]] const long ignored = os::Write(static_cast<int>(wake_), &one, sizeof(one));
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

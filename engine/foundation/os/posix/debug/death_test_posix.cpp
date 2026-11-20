@@ -22,7 +22,7 @@
 #include "cstr/mem_ops.h"
 #include "cstr/number.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -613,4 +613,4 @@ void ExitChildProcess(int code)
     ::_exit(code);
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

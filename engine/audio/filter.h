@@ -3,7 +3,7 @@
 
 #include "audio/effect.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The response of a biquad.
@@ -90,4 +90,4 @@ EffectParams OnePoleParams(u32 sample_rate, f32 cutoff_hz);
 /// - Fails: reported by a null result.
 UniquePtr<Effect> MakeOnePoleEffect(u32 channels, u32 ramp_frames);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

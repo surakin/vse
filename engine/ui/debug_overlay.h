@@ -13,7 +13,7 @@
 //! The debug overlay (Phase 15, Day 203): a frame-time graph, counters fed by the program, and a log console with a
 //! command line.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class Surface;
@@ -266,4 +266,4 @@ private:
     f32 bottom_offset_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

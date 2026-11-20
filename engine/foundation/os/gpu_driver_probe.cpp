@@ -5,7 +5,7 @@
 
 #include "cstr/format.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 PFN_vkVoidFunction ProbeVulkanCreateInstance()
@@ -43,4 +43,4 @@ PFN_vkVoidFunction ProbeVulkanCreateInstance()
     return create_instance;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

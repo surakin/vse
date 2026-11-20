@@ -2,7 +2,7 @@
 
 #include "lang/scalar.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 CompoundShapeConstPtr CompoundShape::Create(Span<const CompoundChild> children, const HullLibrary* hulls,
@@ -131,4 +131,4 @@ const CompoundShape* CompoundLibrary::Find(u32 id) const
     return (id >= 1 && id <= compounds_.Size()) ? compounds_[id - 1].Get() : nullptr;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

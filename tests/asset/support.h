@@ -14,7 +14,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset::test
+namespace vse::asset::test
 {
 
 /// The bytes of a C string, without the terminator.
@@ -117,4 +117,4 @@ private:
     io::Path path_;
 };
 
-}  // namespace engine_placeholder::asset::test
+}  // namespace vse::asset::test

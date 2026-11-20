@@ -2,7 +2,7 @@
 
 #include "cstr/format.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -205,4 +205,4 @@ bool CommandLineSource::AddFromProgram(const Key& key, StringView text, StringVi
     return true;
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

@@ -5,7 +5,7 @@
 // this translation.
 #include <xkbcommon/xkbcommon-keysyms.h>
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 Key KeyFromKeysym(u32 keysym)
@@ -75,4 +75,4 @@ Key KeyFromKeysym(u32 keysym)
     }
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

@@ -12,7 +12,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// What `audio_open` makes: a mixer, the clip table and the lock of the control side.
@@ -124,4 +124,4 @@ engine_status AudioBusDuckFn(engine_handle engine, u32 target, u32 source, float
 engine_status AudioSnapshotFn(engine_handle engine, engine_buffer* out);
 engine_status AudioRestoreFn(engine_handle engine, const void* data, size_t size);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

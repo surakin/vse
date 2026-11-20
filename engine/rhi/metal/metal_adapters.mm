@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 namespace
@@ -151,4 +151,4 @@ int PickMetalAdapter(const MetalAdapterSet& set, const char* request, char* reas
     return best;
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

@@ -11,7 +11,7 @@
 #include "asset_import/json_view.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A `bufferViews` entry, range-checked against its buffer.
@@ -129,4 +129,4 @@ Status CleanRelativeUri(StringView uri, String<HeapAllocator>* out, GltfError* e
 /// - Ownership: borrows its arguments for the call only; nothing is retained.
 Status DecodeBase64(StringView text, u64 max_bytes, Vector<byte>* out, GltfError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

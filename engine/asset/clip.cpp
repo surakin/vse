@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -1408,4 +1408,4 @@ Status ClipView::Bind(const SkeletonView& skeleton) const
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

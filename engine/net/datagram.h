@@ -8,7 +8,7 @@
 #include "net/status.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Sends and receives whole datagrams at one local endpoint. Never blocks.
@@ -41,4 +41,4 @@ public:
     virtual Endpoint LocalEndpoint() const = 0;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

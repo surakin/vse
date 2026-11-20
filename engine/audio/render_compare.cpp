@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -150,4 +150,4 @@ CompareResult CompareSummaries(const RenderSummary& a, const RenderSummary& b, c
     return errors.Finish(tolerance);
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

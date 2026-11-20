@@ -45,7 +45,7 @@ for that one file.
 
 **`WaylandConnection`** (new
 `engine/foundation/os/linux/wayland/wayland_connection.h`/`.cpp`, in
-`engine_placeholder::os::wayland`, not exposed through `os.h` — no
+`vse::os::wayland`, not exposed through `os.h` — no
 portable interface exists yet; that's Day 26): `Connect()` wraps
 `wl_display_connect`/`wl_display_get_registry`/a registry listener/
 `wl_display_roundtrip`, returning an invalid (`Valid() == false`)

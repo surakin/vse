@@ -4,7 +4,7 @@
 #include "log/assert.h"
 #include "spatial/internal/binned_sah.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 namespace
@@ -874,4 +874,4 @@ bool DynamicBvh::Validate() const
     return free_slots + live == proxies_.Size();
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

@@ -9,7 +9,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Why a device call failed.
@@ -231,4 +231,4 @@ UniquePtr<AudioDevice> CreateWavFileDevice(const io::Path& path);
 /// - Fails: never.
 bool IsValidDeviceConfig(const DeviceConfig& config);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

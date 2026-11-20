@@ -10,7 +10,7 @@
 #include "storage/storage_options.h"
 #include "string/string.h"
 
-namespace engine_placeholder::storage::detail
+namespace vse::storage::detail
 {
 
 /// One entity encoded.
@@ -83,4 +83,4 @@ struct SavePlan
     u64 removal_epoch = 0;
 };
 
-}  // namespace engine_placeholder::storage::detail
+}  // namespace vse::storage::detail

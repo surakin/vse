@@ -8,7 +8,7 @@
 //! The registry of everything in the renderer that owns device objects and can rebuild them after the device is
 //! replaced.
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The tiers owners register at; lower tiers are created first and released last.
@@ -267,4 +267,4 @@ private:
     Recreatable* owner_ = nullptr;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

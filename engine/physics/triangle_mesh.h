@@ -13,7 +13,7 @@
 #include "spatial/static_bvh.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The most vertices a mesh holds (the limit of the minted `MCOL` asset).
@@ -145,4 +145,4 @@ private:
     Vector<TriangleMeshConstPtr> meshes_;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

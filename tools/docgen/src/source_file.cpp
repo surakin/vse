@@ -7,7 +7,7 @@
 namespace docgen
 {
 
-namespace io = engine_placeholder::io;
+namespace io = vse::io;
 
 namespace
 {
@@ -17,7 +17,7 @@ bool ToPath(StringView text, io::Path* out)
     return io::Path::Parse(text.Empty() ? StringView(".") : text, io::NativePathStyle(), out);
 }
 
-engine_placeholder::u32 g_name_order_seed = 0;
+vse::u32 g_name_order_seed = 0;
 
 StringView Copy(StringView s, ArenaAllocator& arena)
 {
@@ -29,7 +29,7 @@ StringView Copy(StringView s, ArenaAllocator& arena)
 bool LoadSourceFile(StringView path, ArenaAllocator& arena, StringView& out)
 {
     usize size = 0;
-    engine_placeholder::u8* data = nullptr;
+    vse::u8* data = nullptr;
     io::Path file_path;
     if (!ToPath(path, &file_path))
     {
@@ -59,7 +59,7 @@ EntryKind KindOf(StringView path, bool follow_links)
     }
 }
 
-void SetNameOrderSeedForTesting(engine_placeholder::u32 seed)
+void SetNameOrderSeedForTesting(vse::u32 seed)
 {
     g_name_order_seed = seed;
 }
@@ -93,7 +93,7 @@ bool ListNames(StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAl
     }
     if (g_name_order_seed != 0)
     {  // Fisher-Yates with a small LCG: the same seed gives the same order
-        engine_placeholder::u64 state = g_name_order_seed;
+        vse::u64 state = g_name_order_seed;
         for (usize i = names.Size(); i > first + 1; --i)
         {
             state = state * 6364136223846793005ull + 1442695040888963407ull;

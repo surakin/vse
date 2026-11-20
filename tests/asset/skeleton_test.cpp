@@ -10,7 +10,7 @@
 #include "skeleton_source.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -616,4 +616,4 @@ TEST_CASE("skeleton: a skeleton without names loads and finds nothing by name", 
     CHECK(v2.Hash() == view.Hash());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

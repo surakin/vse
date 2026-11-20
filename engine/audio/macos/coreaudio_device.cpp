@@ -22,7 +22,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <dispatch/dispatch.h>
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -747,4 +747,4 @@ UniquePtr<AudioDevice> CreateCoreAudioDevice()
     return MakeUnique<CoreAudioDevice>();
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

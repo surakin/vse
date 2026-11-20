@@ -14,10 +14,10 @@
 
 struct sqlite3_mutex
 {
-    engine_placeholder::RecursiveMutex mutex;
+    vse::RecursiveMutex mutex;
 };
 
-namespace engine_placeholder::database::sqlite_detail
+namespace vse::database::sqlite_detail
 {
 namespace
 {
@@ -118,13 +118,13 @@ int InitializeSqlite()
     return result;
 }
 
-}  // namespace engine_placeholder::database::sqlite_detail
+}  // namespace vse::database::sqlite_detail
 
 extern "C" int sqlite3_os_init()
 {
-    return sqlite3_vfs_register(engine_placeholder::database::sqlite_detail::EngineVfs(), 1);
+    return sqlite3_vfs_register(vse::database::sqlite_detail::EngineVfs(), 1);
 }
 extern "C" int sqlite3_os_end()
 {
-    return sqlite3_vfs_unregister(engine_placeholder::database::sqlite_detail::EngineVfs());
+    return sqlite3_vfs_unregister(vse::database::sqlite_detail::EngineVfs());
 }

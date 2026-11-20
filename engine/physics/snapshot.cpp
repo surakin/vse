@@ -7,7 +7,7 @@
 #include "physics/snapshot_io.h"
 #include "physics/world.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -713,4 +713,4 @@ storage::Status LoadSnapshot(PhysicsWorld* world, const storage::Store& store, s
                : storage::Status::Make(storage::ErrorCode::Corrupt, "the record is not a valid physics snapshot");
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -32,8 +32,8 @@
 #define E2E_UNDER_TSAN 1
 #endif
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 using debug_test::Cat;
 using debug_test::Text;
 

@@ -8,7 +8,7 @@
 #include "rhi/rhi_log.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 DeviceHost::~DeviceHost()
@@ -359,4 +359,4 @@ void DeviceHost::RemoveObserver(DeviceObserver* observer)
     }
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

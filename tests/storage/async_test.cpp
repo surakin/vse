@@ -17,7 +17,7 @@
 #include "temp_dir.h"
 #include "world_compare.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -561,4 +561,4 @@ TEST_CASE("Storage settings: path, layout and autosave are settings and open the
     CHECK(test::KeyedEntities(limited).Size() == 0);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

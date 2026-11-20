@@ -5,7 +5,7 @@
 #include "rhi/rhi_log.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {
@@ -35,7 +35,7 @@ struct ChannelGuard
     }
     ~ChannelGuard()
     {
-        SetWriteSinkForTesting(&engine_placeholder::os::Write);
+        SetWriteSinkForTesting(&vse::os::Write);
         rhi::LogRhi.SetVerbosity(saved_verbosity);
         rhi::LogRhi.SetEnabled(saved_enabled);
     }

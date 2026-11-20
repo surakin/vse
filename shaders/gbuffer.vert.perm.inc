@@ -8,7 +8,7 @@
 #include "renderer/shader_permutation.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGbufferVertPerm1SpvWordCount = 778;
 
@@ -687,4 +687,4 @@ inline constexpr renderer::PermutationEntry kGbufferVertEntries[4] = {
 
 inline constexpr renderer::ShaderPermutations kGbufferVertPermutations = {"gbuffer.vert", kGbufferVertOptions, 2, kGbufferVertModules, 4, kGbufferVertEntries, 4};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

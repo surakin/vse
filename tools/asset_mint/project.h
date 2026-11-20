@@ -32,7 +32,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The version of the tool as the manifest records it: a change re-mints every blob.
@@ -318,4 +318,4 @@ Status RemintDirectory(const io::Path& root, const TypeRegistry& types, const Up
 Status PackDirectory(const io::Path& directory, const io::Path& output, u32 target, bool names,
                      MintDiagnostics* diagnostics);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

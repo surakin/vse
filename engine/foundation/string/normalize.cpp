@@ -7,7 +7,7 @@
 // Hangul syllable arithmetic (UAX #15 / Unicode 3.12), used instead of a
 // table lookup for the whole precomposed-syllable block — a shortcut here
 // would silently produce wrong output for all Hangul text.
-namespace engine_placeholder
+namespace vse
 {
 
 namespace
@@ -217,4 +217,4 @@ void Detail_ComposeInPlace(Vector<u32, ArenaAllocator>& codepoints)
     }
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

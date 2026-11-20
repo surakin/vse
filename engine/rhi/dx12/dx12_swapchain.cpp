@@ -8,7 +8,7 @@
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 namespace
@@ -363,4 +363,4 @@ SwapchainStatus Dx12Swapchain::Present()
     return SwapchainStatus::Lost;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

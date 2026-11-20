@@ -8,7 +8,7 @@
 #include "platform/linux/wayland/wayland_platform_window.h"
 #include "platform/linux/x11/x11_window.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 // Both concrete backends, held by value; only the one that opens is used.
@@ -108,4 +108,4 @@ bool PlatformWindowHost::OpenFromEnvironment(StringView title, u32 width, u32 he
     return Open(requested, title, width, height, input);
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

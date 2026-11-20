@@ -15,7 +15,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The most components one catalog lets scripts define (the ECS holds 128 component types for the whole process, and a
@@ -138,4 +138,4 @@ private:
     Vector<Check> validators_;
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

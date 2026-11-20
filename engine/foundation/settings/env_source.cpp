@@ -4,7 +4,7 @@
 
 #include "os/os.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 bool EnvironmentSnapshot::SameName(StringView a, StringView b) const
@@ -227,4 +227,4 @@ void TextEntryStore::Put(const Key& key, StringView text, StringView origin)
     entries_.Push(static_cast<Entry&&>(e));
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

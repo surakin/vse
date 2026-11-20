@@ -6,7 +6,7 @@
 #include "bytes/byte_writer.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -307,4 +307,4 @@ Status ResourceTable::ReadNamesBlob(const BlobReader& blob)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -5,7 +5,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Converts decibels to a linear gain: `10^(db / 20)`. Control-side maths (libm through `lang/scalar.h`); the mixer
@@ -103,4 +103,4 @@ private:
     Vector<f32> gains_;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

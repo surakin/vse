@@ -10,7 +10,7 @@
 //! needs to the application. No RHI type appears here: the application implements [[ui::ViewportBinding]] over its own
 //! render target (the renderer's `ViewportTarget` is one).
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// What a [[ui::ViewportInput]] reports.
@@ -200,4 +200,4 @@ private:
     u64 resize_count_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

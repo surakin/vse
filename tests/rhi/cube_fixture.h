@@ -21,8 +21,8 @@
 namespace cube_test
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 using gpu_test::Image;
 
 struct Draw

@@ -7,7 +7,7 @@
 //! `vulkan_xlib.h` includes `<X11/Xlib.h>`, whose `Success`, `None` and `Bool` macros break ordinary C++ enums, so
 //! only `vk_xlib_surface.cpp` may include it. This header uses plain types so nothing else sees X11.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// Creates a `VkSurfaceKHR` for an X11 window with `vkCreateXlibSurfaceKHR`.
@@ -21,4 +21,4 @@ namespace engine_placeholder::rhi::vulkan
 /// - Fails: returns `VK_ERROR_EXTENSION_NOT_PRESENT` (-7) if the entry point cannot be resolved, or the driver's error.
 i32 CreateXlibSurface(void* get_instance_proc_addr, void* instance, void* display, u64 window, u64* out_surface);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

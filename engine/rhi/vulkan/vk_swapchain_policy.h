@@ -6,7 +6,7 @@
 //! The choices made when creating a swapchain, as pure functions over plain capability data so they can be tested
 //! without a GPU or a window.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// A surface format choice and whether it was the preferred kind.
@@ -111,4 +111,4 @@ VkCompositeAlphaFlagBitsKHR ChooseCompositeAlpha(VkCompositeAlphaFlagsKHR suppor
 /// - Returns: the usage flags, or 0 if the surface cannot be rendered to.
 VkImageUsageFlags ChooseImageUsage(VkImageUsageFlags supported);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

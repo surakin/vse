@@ -3,7 +3,7 @@
 #include "algorithm.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -208,4 +208,4 @@ void QueryIndex::SortSlots(Vector<u32>* slots)
     Sort(Span<u32>(slots->Data(), slots->Size()), [](u32 a, u32 b) { return a < b; });
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -2,7 +2,7 @@
 
 #include "os/last_error.h"
 
-namespace engine_placeholder::net::posix
+namespace vse::net::posix
 {
 
 ErrorCode ErrorFromErrno(int error)
@@ -54,4 +54,4 @@ ErrorCode ErrorFromErrno(int error)
     }
 }
 
-}  // namespace engine_placeholder::net::posix
+}  // namespace vse::net::posix

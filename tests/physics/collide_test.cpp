@@ -9,9 +9,9 @@
 #include "physics/state_hash.h"
 #include "test_values.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::physics;
-using engine_placeholder::physics::testing::Rng;
+using namespace vse;
+using namespace vse::physics;
+using vse::physics::testing::Rng;
 
 namespace
 {

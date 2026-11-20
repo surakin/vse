@@ -6,7 +6,7 @@
 #include "renderer/renderer_log.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -480,4 +480,4 @@ void GpuSampler::Destroy()
     has_source_ = false;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

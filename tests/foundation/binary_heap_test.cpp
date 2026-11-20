@@ -6,7 +6,7 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

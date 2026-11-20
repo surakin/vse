@@ -5,7 +5,7 @@
 //! The plain geometry types of the UI toolkit: points, rectangles and corner radii in logical units, and the
 //! whole-pixel rectangle the draw list clips with.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A point.
@@ -157,4 +157,4 @@ struct PixelRect
     }
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

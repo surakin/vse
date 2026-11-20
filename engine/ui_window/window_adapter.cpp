@@ -2,7 +2,7 @@
 
 #include "platform/input_event.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 usize WindowAdapter::PumpInto(os::Window& window, Surface& surface)
@@ -339,4 +339,4 @@ bool WindowAdapter::UpdateCursor(os::Window& window, const Surface& surface)
     return true;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

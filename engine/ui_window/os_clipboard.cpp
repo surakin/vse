@@ -1,6 +1,6 @@
 #include "ui_window/os_clipboard.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 void OsClipboard::Offer(os::ClipboardKind kind, StringView text)
@@ -112,4 +112,4 @@ bool OsClipboard::HandleData(u32 request_id)
     return true;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

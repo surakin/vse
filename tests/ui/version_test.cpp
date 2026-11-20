@@ -3,7 +3,7 @@
 #include "platform/input.h"
 #include "ui/version.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 TEST_CASE("The ui library links against the text layer and sees the platform's input types", "[ui]")
 {

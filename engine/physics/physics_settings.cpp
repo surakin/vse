@@ -3,7 +3,7 @@
 #include "settings/setting.h"
 #include "string_view.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 void RegisterPhysicsSettings(settings::Registry* registry)
@@ -259,4 +259,4 @@ StepConfig StepConfigFromSettings(const settings::Registry& registry)
     return config;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

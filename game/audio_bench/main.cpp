@@ -26,8 +26,8 @@
 #include "os/console.h"
 #include "os/os.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::audio;
+using namespace vse;
+using namespace vse::audio;
 
 namespace
 {

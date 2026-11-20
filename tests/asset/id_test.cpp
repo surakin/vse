@@ -6,7 +6,7 @@
 #include "asset/resource_type.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -137,4 +137,4 @@ TEST_CASE("Resource types spell as four characters and register once", "[asset][
     CHECK(info.current_version == 3);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -22,7 +22,7 @@
 #endif
 #include <vulkan/vulkan.h>
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// The environment variable that overrides the Vulkan loader library path (development and tests).
@@ -72,4 +72,4 @@ struct VulkanLoader
 ///   concurrently. May be called repeatedly.
 LoaderStatus LoadVulkanLoader(VulkanLoader* out);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

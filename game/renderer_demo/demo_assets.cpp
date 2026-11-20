@@ -67,12 +67,12 @@ demo::Pixels MakeBumpNormalPixels()
             f32 nx = 0.0f, ny = 0.0f, nz = 1.0f;
             if (r2 < 1.0f)
             {
-                const f32 h = engine_placeholder::Sqrt(1.0f - r2);
+                const f32 h = vse::Sqrt(1.0f - r2);
                 // The normal of a sphere of radius 0.9 (in cell units) at (u, v): proportional to (u, v, height),
                 // height = 0.9 * h.
                 const f32 sx = u / 0.9f;
                 const f32 sy = v / 0.9f;  // v grows toward +V (down the image), which is the bitangent direction
-                const f32 len = engine_placeholder::Sqrt(sx * sx + sy * sy + h * h);
+                const f32 len = vse::Sqrt(sx * sx + sy * sy + h * h);
                 nx = sx / len;
                 ny = sy / len;
                 nz = h / len;

@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 Entity EntityTable::Allocate(EntityLocation where)
@@ -90,4 +90,4 @@ void EntityTable::SetGenerationForTesting(u32 index, u32 generation)
     slots_[index].generation = generation;
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

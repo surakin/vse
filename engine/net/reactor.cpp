@@ -3,7 +3,7 @@
 #include "containers/array.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -627,4 +627,4 @@ void Reactor::Shutdown()
     Release(&ready);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

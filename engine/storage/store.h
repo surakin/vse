@@ -15,7 +15,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// The content hash of a byte string: 64-bit FNV-1a. Stored with each record so a save can tell an unchanged entity
@@ -197,4 +197,4 @@ public:
 /// - Fails: the errors of [[storage::Store::Scan]].
 Status ListKeys(const Store& store, const KeyRange& range, usize limit, Vector<EntityKey>* out);
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

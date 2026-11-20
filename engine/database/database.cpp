@@ -1,6 +1,6 @@
 #include "database/database.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 const char* FeatureName(Feature feature)
@@ -47,4 +47,4 @@ Status Transaction::Commit()
     return status;
 }
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

@@ -21,7 +21,7 @@
 //! appears there (after the shell's next prompt: a shell does not wait for a GUI program); started from Explorer, there
 //! is no console and the writes fail (the log file still has everything).
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// The function a windowed program defines in place of `main`: UTF-8 arguments, the exit code as the result.
@@ -45,7 +45,7 @@ namespace detail
 int RunWindowedProgram(int argc, char** argv, WindowedProgramEntry entry);
 
 }  // namespace detail
-}  // namespace engine_placeholder::os
+}  // namespace vse::os
 
 #if ENGINE_PLATFORM_WINDOWS
 /// Defines the program's entry point as a call of `entry` (see the file comment). Write it once, at global scope.
@@ -56,13 +56,13 @@ int RunWindowedProgram(int argc, char** argv, WindowedProgramEntry entry);
     __pragma(comment(linker, "/SUBSYSTEM:WINDOWS")) extern "C" int __stdcall wWinMain(                                 \
         struct HINSTANCE__*, struct HINSTANCE__*, wchar_t*, int)                                                       \
     {                                                                                                                  \
-        return ::engine_placeholder::os::detail::RunWindowedProgram(0, nullptr, &(entry));                             \
+        return ::vse::os::detail::RunWindowedProgram(0, nullptr, &(entry));                                            \
     }
 #else
 // The same, as `main` (the documentation is on the Windows definition above).
 #define ENGINE_WINDOWED_PROGRAM(entry)                                                                                 \
     int main(int argc, char** argv)                                                                                    \
     {                                                                                                                  \
-        return ::engine_placeholder::os::detail::RunWindowedProgram(argc, argv, &(entry));                             \
+        return ::vse::os::detail::RunWindowedProgram(argc, argv, &(entry));                                            \
     }
 #endif

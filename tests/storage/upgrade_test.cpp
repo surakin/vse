@@ -8,7 +8,7 @@
 #include "storage/component_registry.h"
 #include "storage/storage_settings.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -457,4 +457,4 @@ TEST_CASE("Limits: the four storage limits are settings and reach the codec", "[
 }
 
 }  // namespace
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

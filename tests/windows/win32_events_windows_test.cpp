@@ -16,7 +16,7 @@
 #include "string_view.h"
 #include "lang/initializer_list.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using os::InputEvent;
 using os::InputEventType;
 using os::Key;

@@ -7,7 +7,7 @@
 #include "log/assert.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// A set of [[ecs::ComponentId]]s below [[ecs::kMaxComponentTypes]], stored as two 64-bit words.
@@ -114,9 +114,9 @@ private:
     }
 };
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// The hash of a component set, for `HashMap<ecs::ComponentSet, ...>`.
@@ -129,4 +129,4 @@ template <> struct Hash<ecs::ComponentSet>
     usize operator()(const ecs::ComponentSet& set) const { return static_cast<usize>(set.Hash()); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

@@ -5,7 +5,7 @@
 #include "ecs/query.h"
 #include "physics/sync.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -171,4 +171,4 @@ JointSyncReport SyncJoints(ecs::World& ecs, PhysicsWorld& physics)
     return report;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

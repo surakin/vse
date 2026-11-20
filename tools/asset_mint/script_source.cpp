@@ -6,7 +6,7 @@
 #include "cstr/format.h"
 #include "source_text.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -914,4 +914,4 @@ Status CheckScriptGraph(StringView root_name, const ScriptSource& root, ScriptLo
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

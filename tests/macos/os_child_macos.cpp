@@ -6,7 +6,7 @@
 #include "os/command_line.h"
 #include "os/os.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main(int argc, char** argv)
 {

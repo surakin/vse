@@ -1,6 +1,6 @@
 #include "script/script_runtime.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 // The host every state loads first (Phase 27 Day 457). A behavior is a table of callbacks registered by name; an
@@ -548,4 +548,4 @@ end
 )LUA";
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

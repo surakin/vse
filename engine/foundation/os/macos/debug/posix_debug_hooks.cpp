@@ -12,7 +12,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-namespace engine_placeholder::debug::posix
+namespace vse::debug::posix
 {
 
 bool MakeCloexecPipe(int fds[2])
@@ -106,4 +106,4 @@ void ArmDieWithParent(int watch_fd)
     watcher.Detach();
 }
 
-}  // namespace engine_placeholder::debug::posix
+}  // namespace vse::debug::posix

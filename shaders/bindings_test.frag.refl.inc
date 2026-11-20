@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kBindingsTestFragReflByteCount = 232;
 
@@ -32,4 +32,4 @@ inline constexpr u32 kBindingsTestFragParamsScaleOffset = 0;
 inline constexpr u32 kBindingsTestFragPushSize = 16;
 inline constexpr u32 kBindingsTestFragPushBiasOffset = 0;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

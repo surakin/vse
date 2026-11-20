@@ -30,8 +30,8 @@
 namespace window_backend_test
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::os;
+using namespace vse;
+using namespace vse::os;
 
 #if ENGINE_PLATFORM_LINUX
 namespace
@@ -514,7 +514,7 @@ TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldC
     for (int i = 0; i < 20 && !window.ShouldClose(); ++i)
     {
         window.PumpEvents();
-        engine_placeholder::os::SleepNanos(5'000'000);
+        vse::os::SleepNanos(5'000'000);
     }
     REQUIRE(window.ConnectionLost());
     REQUIRE(window.ShouldClose());
@@ -590,7 +590,7 @@ TEST_CASE("A Wayland window exposes its native display and surface", "[window][w
 TEST_CASE("A closed or never-opened Wayland window has no native info and counts as minimized", "[window][wayland][os]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
-    engine_placeholder::os::wayland::WaylandPlatformWindow closed;
+    vse::os::wayland::WaylandPlatformWindow closed;
     NativeWindowInfo info = closed.GetNativeInfo();
     REQUIRE(info.kind == NativeWindowKind::Invalid);
     REQUIRE(info.display == nullptr);
@@ -603,7 +603,7 @@ TEST_CASE("A closed or never-opened Wayland window has no native info and counts
         SKIP("no Wayland session");
     }
     InputState input;
-    engine_placeholder::os::wayland::WaylandPlatformWindow opened;
+    vse::os::wayland::WaylandPlatformWindow opened;
     REQUIRE(opened.Open("native info close", 200, 200, &input));
     REQUIRE(opened.GetNativeInfo().kind == NativeWindowKind::Wayland);
     opened.Close();

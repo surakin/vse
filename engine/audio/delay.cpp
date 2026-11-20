@@ -5,7 +5,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -550,4 +550,4 @@ UniquePtr<Effect> MakeReverbEffect(u32 channels, const ReverbDesc& desc)
     return UniquePtr<Effect>(Move(effect));
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

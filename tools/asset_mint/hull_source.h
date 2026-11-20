@@ -20,7 +20,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A parsed hull source.
@@ -55,4 +55,4 @@ Status ParseHullSource(StringView text, HullSource* out, HullSourceError* error)
 /// - Ownership: borrows its arguments for the call; `*out` is replaced.
 Status MintHull(StringView text, const TypeRegistry& types, Vector<byte>* out, HullSourceError* error, u32 target = 0);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

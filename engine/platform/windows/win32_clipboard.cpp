@@ -16,7 +16,7 @@
 #include <shlobj.h>    // DROPFILES
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::os::win32
+namespace vse::os::win32
 {
 
 namespace detail
@@ -383,4 +383,4 @@ void Win32Window::ClipboardUpdated()
     QueueEvent(changed);
 }
 
-}  // namespace engine_placeholder::os::win32
+}  // namespace vse::os::win32

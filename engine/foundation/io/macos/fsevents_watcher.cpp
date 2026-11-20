@@ -20,7 +20,7 @@
 #include <CoreServices/CoreServices.h>
 #include <dispatch/dispatch.h>
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -482,4 +482,4 @@ Status OpenNativeWatcher(const Path& directory, UniquePtr<DirectoryWatcher>* out
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

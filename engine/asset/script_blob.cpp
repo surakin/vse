@@ -3,7 +3,7 @@
 #include "asset/content_hash.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -299,4 +299,4 @@ ByteSpan ScriptView::BytecodeFor(StringView key) const
     return ByteSpan(base + 4 + key_size_, bytecode_size_ - 4 - key_size_);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

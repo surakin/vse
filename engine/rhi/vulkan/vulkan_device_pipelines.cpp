@@ -13,7 +13,7 @@
 #include "sync/mutex.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -746,4 +746,4 @@ bool VulkanDevice::LookupPipeline(PipelineHandle pipeline, PipelineInfo* info) c
     return true;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

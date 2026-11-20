@@ -18,7 +18,7 @@
 #include "storage/world_storage.h"
 #include "temp_dir.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -236,4 +236,4 @@ TEST_CASE("Storage benchmark: 1,000,000 entities", "[.][storage-bench]")
     RunSize(1000000);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

@@ -10,7 +10,7 @@
 //! handler can use them; they do take the library's internal lock, so a fault inside them on the same thread is not
 //! survivable. File and line need debug information in the binary (`-g`); without it frames carry the function name
 //! from the symbol table, or only the module and offset.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Most frames a [[debug::StackTrace]] holds.
@@ -150,4 +150,4 @@ usize FormatStackTrace(const StackTrace& trace, char* out, usize capacity,
 /// abi::__cxa_demangle.
 bool DemangleSymbol(const char* mangled, char* out, usize capacity);
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

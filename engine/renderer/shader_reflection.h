@@ -10,7 +10,7 @@
 #include "rhi/limits.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The reflection blob format version this build reads and writes.
@@ -324,4 +324,4 @@ struct VertexLayoutData
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 bool BuildVertexLayout(const ShaderReflection& shader, u32 binding, VertexLayoutData* out, ReflectionError* error);
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -6,7 +6,7 @@
 #include "database/database.h"
 #include "storage/store.h"
 
-namespace engine_placeholder::storage::test
+namespace vse::storage::test
 {
 
 // Creates the version-1 tables in `connection`, stores `records` in them and the metadata `("format_version", "1")`,
@@ -14,4 +14,4 @@ namespace engine_placeholder::storage::test
 // here on purpose.
 database::Status BuildSchemaOne(database::Connection& connection, const Vector<EntityRecord>& records);
 
-}  // namespace engine_placeholder::storage::test
+}  // namespace vse::storage::test

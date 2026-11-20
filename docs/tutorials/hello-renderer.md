@@ -42,8 +42,8 @@ it catches. The real thing is [scene_frame.cpp](../../engine/renderer/scene_fram
 #include "renderer/renderer.h"
 #include "rhi/null/null_device.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 // Everything the frame callback needs.
 struct Frame {

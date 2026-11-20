@@ -30,7 +30,7 @@ struct Symbol
     explicit Symbol(ArenaAllocator& arena) : members(arena) {}
 
     StringView id;         // jobs::Counter::Increment(u64)
-    StringView qualified;  // jobs::Counter::Increment (no leading engine_placeholder::)
+    StringView qualified;  // jobs::Counter::Increment (no leading vse::)
     StringView types;      // functions: normalized parameter types, "u64"
     StringView types_key;  // `types` without spaces, for matching overload hints
     StringView anchor;
@@ -80,7 +80,7 @@ struct SymbolIndex
 // HasErrors().
 void BuildIndex(StringView root, StringView map_path, const ModuleMap& map, ArenaAllocator& arena, SymbolIndex& out);
 
-enum class ResolveStatus : engine_placeholder::u8
+enum class ResolveStatus : vse::u8
 {
     Ok,
     NotFound,

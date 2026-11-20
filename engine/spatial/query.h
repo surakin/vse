@@ -21,7 +21,7 @@
 #include "spatial/static_bvh.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// Which items a query sees: those whose layer bit is in `mask` and, when `filter` is set, for which `filter(key,
@@ -767,4 +767,4 @@ QueryStats ForEachPair(const HashGrid& grid, u32 mask_a, u32 mask_b, const Query
     return stats;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

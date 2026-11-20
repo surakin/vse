@@ -9,7 +9,7 @@
 //! Portable command-line parsing: positional arguments plus `--name` and `--name=value` flags, and, for a program that
 //! declares its options, `--name value` as well, with unknown options and missing values reported. Engine, game and
 //! tool code never touches raw `argc`/`argv` directly (`cmdline_access_check`).
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Records the process `argc`/`argv` so [[os::CommandLine::FromNative]] can read them later.
@@ -390,4 +390,4 @@ private:
     String<Allocator> error_;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

@@ -4,7 +4,7 @@
 #include "log/assert.h"
 #include "string/string.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 const char* ThreadRuleName(ThreadRule rule)
@@ -449,4 +449,4 @@ String<HeapAllocator> BindingRegistry::RenderMarkdown() const
     return String<HeapAllocator>(HeapAllocator::Default(), sb.View());
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

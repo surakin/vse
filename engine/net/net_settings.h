@@ -14,7 +14,7 @@
 #include "settings/registry.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Declares the `net.*` settings, each with an `ENGINE_NET_*` variable and a `--net-*` flag:
@@ -63,4 +63,4 @@ TcpStreamOptions StreamOptionsFromSettings(const settings::Registry& registry);
 /// - Ownership: `registry` is borrowed for the call.
 LinkConfig LinkFromSettings(const settings::Registry& registry);
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

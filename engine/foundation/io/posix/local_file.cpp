@@ -10,7 +10,7 @@
 
 #include "io/file.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -265,4 +265,4 @@ Status File::Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

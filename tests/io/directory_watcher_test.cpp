@@ -12,7 +12,7 @@
 #include "sync/thread.h"
 #include "temp_dir.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

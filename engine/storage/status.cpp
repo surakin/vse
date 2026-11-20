@@ -1,6 +1,6 @@
 #include "storage/status.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 const char* ErrorCodeName(ErrorCode code)
@@ -27,4 +27,4 @@ const char* ErrorCodeName(ErrorCode code)
     return "other";
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

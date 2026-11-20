@@ -9,7 +9,7 @@
 #include "cstr/cstr.h"
 #include "gltf_writer.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -706,4 +706,4 @@ TEST_CASE("gltf: ImportGltf reads a valid file's container and reports what it h
     CHECK(ImportGltf(ByteSpan(junk.Data(), junk.Size()), none, ImportOptions(), &result, &bad).Is(ErrorCode::Invalid));
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -23,7 +23,7 @@
 #include <shlobj.h>  // SHCreateStdEnumFmtEtc
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::os::win32
+namespace vse::os::win32
 {
 
 using namespace detail;
@@ -732,4 +732,4 @@ void* Win32Window::DropTargetForTest() const
     return dnd_.Get() != nullptr && dnd_->registered ? static_cast<IDropTarget*>(&dnd_->target) : nullptr;
 }
 
-}  // namespace engine_placeholder::os::win32
+}  // namespace vse::os::win32

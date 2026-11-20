@@ -9,7 +9,7 @@
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 SettingDesc MakeBool(const char* key, bool def)
@@ -595,4 +595,4 @@ usize FormatValue(const SettingDesc& desc, const Value& value, char* out, usize 
     return n;
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

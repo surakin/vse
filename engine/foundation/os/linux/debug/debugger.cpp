@@ -6,7 +6,7 @@
 #include "sync/atomic.h"
 #include <fcntl.h>
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace detail
@@ -102,4 +102,4 @@ bool IsDebuggerAttached()
     return attached;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

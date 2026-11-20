@@ -10,7 +10,7 @@
 #include "net/status.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// One connected (or connecting) byte stream. Never blocks.
@@ -82,4 +82,4 @@ public:
     virtual Status Connect(const Endpoint& to, UniquePtr<StreamIo>* stream) = 0;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

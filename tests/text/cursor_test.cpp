@@ -5,8 +5,8 @@
 #include "font_support.h"
 #include "text/cursor.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::text;
+using namespace vse;
+using namespace vse::text;
 using text_test::Opened;
 
 namespace

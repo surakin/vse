@@ -13,7 +13,7 @@
 
 //! Draws laid-out text as textured quads in pixel coordinates, from a glyph atlas, with its own pipeline.
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// What a [[renderer::TextRenderer]] is made for.
@@ -218,4 +218,4 @@ private:
     ScopedRegistration registration_;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

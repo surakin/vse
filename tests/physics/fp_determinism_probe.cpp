@@ -5,8 +5,7 @@
 
 int main()
 {
-    engine_placeholder::os::Print("fp_determinism_probe: hash %016llx %s\n",
-                                  static_cast<unsigned long long>(engine_placeholder::physics::ProbeHash()),
-                                  engine_placeholder::physics::ModeReport());
+    vse::os::Print("fp_determinism_probe: hash %016llx %s\n",
+                   static_cast<unsigned long long>(vse::physics::ProbeHash()), vse::physics::ModeReport());
     return 0;
 }

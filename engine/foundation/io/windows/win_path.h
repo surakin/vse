@@ -24,7 +24,7 @@
 //   directory for
 //      `C:foo`, `.` and `..`, lexically as Win32 always does) and gets the `\\?\` (or `\\?\UNC\`) prefix, which lifts
 //      the limit whatever `LongPathsEnabled` says.
-namespace engine_placeholder::io::windows
+namespace vse::io::windows
 {
 
 /// The share mode of every open the backend makes (BACKEND.md, "Sharing"): read, write and delete, so a file can be
@@ -73,4 +73,4 @@ Status RefineNotFound(const WidePath& wide, u32 code);
 /// Returns the status for the calling thread's GetLastError(), refined by [[RefineNotFound]] for the not-found codes.
 Status LastError(const WidePath& wide);
 
-}  // namespace engine_placeholder::io::windows
+}  // namespace vse::io::windows

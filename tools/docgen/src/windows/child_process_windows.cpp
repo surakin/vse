@@ -15,13 +15,13 @@ namespace docgen
 namespace
 {
 
-using engine_placeholder::os::windows::PathToWin32;
-using engine_placeholder::os::windows::Utf8ToUtf16;
+using vse::os::windows::PathToWin32;
+using vse::os::windows::Utf8ToUtf16;
 
 // Appends one argument by the rules CommandLineToArgvW and the C runtime read a command line back with: quoted when it
 // is empty or holds a space, a tab or a quote; inside the quotes a quote is escaped with a backslash, and the
 // backslashes before a quote or before the closing quote are doubled (backslashes elsewhere are literal).
-void AppendArgument(engine_placeholder::StringBuilder<ArenaAllocator>& line, StringView arg)
+void AppendArgument(vse::StringBuilder<ArenaAllocator>& line, StringView arg)
 {
     bool quote = arg.Empty();
     for (usize i = 0; i < arg.Length(); ++i)
@@ -105,7 +105,7 @@ void Release(ChildProcess& child)
 bool StartChild(const Vector<StringView, ArenaAllocator>& args, StringView out_path, StringView err_path,
                 StringView working_dir, ArenaAllocator& arena, ChildProcess* out)
 {
-    engine_placeholder::StringBuilder<ArenaAllocator> line(arena);
+    vse::StringBuilder<ArenaAllocator> line(arena);
     for (usize i = 0; i < args.Size(); ++i)
     {
         if (i > 0)
@@ -178,7 +178,7 @@ bool StartChild(const Vector<StringView, ArenaAllocator>& args, StringView out_p
     }
     ResumeThread(pi.hThread);
     CloseHandle(pi.hThread);
-    out->id = static_cast<engine_placeholder::i64>(pi.dwProcessId);
+    out->id = static_cast<vse::i64>(pi.dwProcessId);
     out->process = pi.hProcess;
     out->job = job;
     return true;
@@ -207,7 +207,7 @@ ChildPoll PollChild(ChildProcess& child, ChildEnd* end)
     else
     {
         end->exited = true;
-        end->exit_code = static_cast<engine_placeholder::i32>(code);
+        end->exit_code = static_cast<vse::i32>(code);
     }
     Release(child);
     return ChildPoll::Ended;

@@ -20,7 +20,7 @@
 #include "string/string.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 struct ResourceHost::ReleaseRecord
@@ -1412,4 +1412,4 @@ engine_status TicketDestroyFn(engine_handle ticket)
     return host->TicketDestroy(ticket);
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

@@ -6,7 +6,7 @@
 
 //! A per-frame bump allocator for small, frequently changing uniform data.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// One allocation from a [[rhi::UniformRing]].
@@ -99,4 +99,4 @@ private:
     Atomic<bool> reported_full_{false};
 };
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

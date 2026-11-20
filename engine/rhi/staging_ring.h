@@ -5,7 +5,7 @@
 
 //! A ring of staging space whose parts are reclaimed when the GPU's timeline passes them.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Hands out ranges of a circular buffer and takes them back in order as fence values complete.
@@ -65,4 +65,4 @@ private:
     u64 unretired_ = 0;  // bytes allocated since the last Retire
 };
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

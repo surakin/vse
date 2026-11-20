@@ -6,8 +6,8 @@
 #include "rhi/handle_pool.h"
 #include "lang/utility.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 namespace
 {
@@ -185,7 +185,7 @@ TEST_CASE("The pool grows past one chunk and keeps pointers stable", "[rhi][pool
     {
         keys.Push((static_cast<u64>(handles[i].index) << 32) | handles[i].generation);
     }
-    Sort(engine_placeholder::Span<u64>(keys.Data(), keys.Size()));
+    Sort(vse::Span<u64>(keys.Data(), keys.Size()));
     usize repeated = 0;
     for (usize i = 1; i < keys.Size(); ++i)
     {

@@ -12,7 +12,7 @@
 #include "storage/status.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// One resource reference found in a stored record.
@@ -50,4 +50,4 @@ Status SkipField(const FieldDesc& field, bytes::ByteReader& in, const CodecLimit
 Status ReadReferences(const RegisteredComponent& component, ByteSpan record, const CodecLimits& limits,
                       Vector<ReferenceValue>* out);
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

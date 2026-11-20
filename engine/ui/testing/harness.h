@@ -10,7 +10,7 @@
 //! The offscreen test harness (Phase 15, Day 192): a surface with no window, a font, an atlas and helpers to send
 //! input, run frames and read rectangles and pixels.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Everything a widget test needs: an offscreen [[ui::Surface]], a font provider that serves one font for every family
@@ -90,4 +90,4 @@ private:
     Surface surface_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

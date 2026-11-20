@@ -4,7 +4,7 @@
 #include "rhi/rhi_log.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 UniformRing::UniformRing(Device* device, u64 bytes_per_frame) : device_(device)
@@ -87,4 +87,4 @@ UniformAllocation UniformRing::Allocate(u64 size)
     return out;
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

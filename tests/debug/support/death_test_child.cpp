@@ -7,6 +7,6 @@
 
 TEST_CASE("death test child entry point", "[.death-child]")
 {
-    engine_placeholder::debug::RunDeathTestChildIfRequested();  // does not return in a child
+    vse::debug::RunDeathTestChildIfRequested();  // does not return in a child
     SUCCEED("not started as a death-test child");
 }

@@ -54,7 +54,7 @@ makes the whole block reusable and `FreeAll()` (or the destructor) gives it back
 #include "mem/arena_allocator.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     ArenaAllocator frame(64 * 1024);          // one block, reserved once
@@ -102,7 +102,7 @@ The same storage as an arena, but you can rewind to a saved position:
 #include "mem/stack_allocator.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     StackAllocator stack(4096);
@@ -137,7 +137,7 @@ at any time, so it suits objects that are created and destroyed one by one (node
 #include "mem/pool_allocator.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     PoolAllocator pool(sizeof(u64), 2);   // two 8-byte slots

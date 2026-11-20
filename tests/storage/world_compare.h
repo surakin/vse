@@ -12,7 +12,7 @@
 #include "storage/component_registry.h"
 #include "storage/identity.h"
 
-namespace engine_placeholder::storage::test
+namespace vse::storage::test
 {
 
 struct EntityImage
@@ -99,4 +99,4 @@ inline void RequireSameWorlds(const ComponentRegistry& registry, ecs::World& a, 
     CHECK(different == 0);
 }
 
-}  // namespace engine_placeholder::storage::test
+}  // namespace vse::storage::test

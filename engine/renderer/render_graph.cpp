@@ -10,7 +10,7 @@
 #include "log/assert.h"
 #include "renderer/transient_pool.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -1616,4 +1616,4 @@ usize RenderGraph::WriteDot(char* out, usize capacity) const
     return w.length;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

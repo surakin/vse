@@ -5,7 +5,7 @@
 
 //! Language-support utilities (Phase 16): the engine's spelling of `<utility>`. This header and the other `lang/`
 //! headers are the only files that include the standard library's language-support headers.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Casts `value` to an rvalue reference (`std::move`).
@@ -59,4 +59,4 @@ template <class T> constexpr const T& AsConst(T& value) noexcept
 /// Names a value of type `T` in an unevaluated context only (`std::declval`); it is never defined.
 template <class T> T&& Declval() noexcept;
 
-}  // namespace engine_placeholder
+}  // namespace vse

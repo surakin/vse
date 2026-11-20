@@ -5,7 +5,7 @@
 #include "physics/world.h"
 #include "settings/registry.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Declares the step settings, each with an environment variable and a flag.
@@ -29,4 +29,4 @@ void RegisterPhysicsSettings(settings::Registry* registry);
 /// - Fails: never.
 StepConfig StepConfigFromSettings(const settings::Registry& registry);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

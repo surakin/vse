@@ -4,7 +4,7 @@
 // backlog. Internal to the file layer.
 #include "io/directory_watcher.h"
 
-namespace engine_placeholder::io::detail
+namespace vse::io::detail
 {
 
 /// The most events kept before the queue collapses into one `Overflow`.
@@ -127,4 +127,4 @@ private:
     bool overflowed_ = false;
 };
 
-}  // namespace engine_placeholder::io::detail
+}  // namespace vse::io::detail

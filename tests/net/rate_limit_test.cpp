@@ -5,7 +5,7 @@
 
 #include "net/rate_limit.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -149,4 +149,4 @@ TEST_CASE("RateLimiter: a table of bans only still accepts a new ban", "[net][li
     CHECK(limiter.IsBanned(RlAddr(199), kSecond + 200));
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

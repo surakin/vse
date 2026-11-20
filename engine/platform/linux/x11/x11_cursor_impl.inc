@@ -3,7 +3,7 @@
 // (their guards stay set) while the macros they define have been removed by x11_disable.h, so it would not compile.
 // Included here, the X11 headers are seen once, with the macros, by both.
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 namespace
@@ -326,4 +326,4 @@ void CursorRelease(_XDisplay* display, unsigned long window, X11CursorState& sta
     XFlush(display);
 }
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11

@@ -1,7 +1,7 @@
 // The neutral half of io/error.h; the per-platform ErrorFromOsCode tables are io/<platform>/error.cpp.
 #include "io/error.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 const char* ErrorName(Error error)
@@ -32,4 +32,4 @@ const char* ErrorName(Error error)
     return "io";
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

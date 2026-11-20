@@ -5,7 +5,7 @@
 #include "math/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Answers how blocked the straight path between two points is.
@@ -45,4 +45,4 @@ struct OcclusionConfig
     f32 occluded_cutoff_hz = 900.0f;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -7,7 +7,7 @@
 #include "cstr/mem_ops.h"
 #include "source_text.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -433,4 +433,4 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
     return built;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

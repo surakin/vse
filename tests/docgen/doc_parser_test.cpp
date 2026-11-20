@@ -66,7 +66,7 @@ struct Parsed
     const ParsedDoc& Doc(usize i = 0) const { return *docs.parsed[i]; }
     Str Emit(usize i = 0)
     {
-        engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+        vse::StringBuilder<ArenaAllocator> sb(arena);
         EmitDoc(Doc(i), sb);
         return DocParserTestStr(sb.View());
     }
@@ -138,9 +138,8 @@ void DocParserTestListFiles(const Str& dir, const char* suffix, StrList& out)
         {
             DocParserTestListFiles(p, suffix, out);
         }
-        else if (p.Size() >= engine_placeholder::CStrLength(suffix) &&
-                 p.Compare(p.Size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix),
-                           suffix) == 0)
+        else if (p.Size() >= vse::CStrLength(suffix) &&
+                 p.Compare(p.Size() - vse::CStrLength(suffix), vse::CStrLength(suffix), suffix) == 0)
         {
             out.Push(p);
         }

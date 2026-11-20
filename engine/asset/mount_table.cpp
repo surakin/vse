@@ -3,7 +3,7 @@
 #include "algorithm.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 MountTable::~MountTable()
@@ -451,4 +451,4 @@ Status MountTable::PollChanges(Vector<ChangeRecord>* changes)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -8,7 +8,7 @@
 #include "rhi/device.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// The host textures on one device.
@@ -84,4 +84,4 @@ private:
     u64 bytes_ = 0;
 };
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

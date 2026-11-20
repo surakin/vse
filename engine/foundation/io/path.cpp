@@ -4,7 +4,7 @@
 #include "log/assert.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -759,4 +759,4 @@ int Path::Compare(const Path& other) const
     }
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

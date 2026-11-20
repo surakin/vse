@@ -8,7 +8,7 @@
 #include "spatial/spatial_world.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// The spatial sync system.
@@ -37,4 +37,4 @@ namespace engine_placeholder::spatial
 /// - Ownership: the system owns its queries; the sets belong to the `SpatialWorld`.
 ecs::SystemDesc MakeSpatialSyncSystem(const char* name);
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

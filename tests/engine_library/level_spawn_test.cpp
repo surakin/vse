@@ -14,7 +14,7 @@
 #include "storage/builtin_components.h"
 #include "animation/components.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

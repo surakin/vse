@@ -16,7 +16,7 @@
 #include "renderer/render_settings.h"
 #include "settings/settings.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 class Renderer;
@@ -32,28 +32,28 @@ inline constexpr u32 kRendererSchemaVersion = 2;
 /// - Aborts: the registry is frozen, or already holds one of the keys.
 /// - Ownership: the registry borrows the setting names (static strings of the renderer).
 /// - Thread-safety: not-thread-safe; call at start-up before any other thread uses the registry.
-void RegisterSharedSettings(::engine_placeholder::settings::Registry* registry);
+void RegisterSharedSettings(::vse::settings::Registry* registry);
 
 /// Adds the migration from the flat-key file of schema 1 (`width = 1920`, no section) to the `renderer.` keys.
 ///
 /// - Ownership: the steps borrow static strings.
 /// - Thread-safety: not-thread-safe; call before the settings are loaded.
-void AddRendererMigrations(::engine_placeholder::settings::MigrationSet* migrations);
+void AddRendererMigrations(::vse::settings::MigrationSet* migrations);
 
 /// Reads the current values of the `renderer.*` settings into a [[renderer::RenderSettings]].
 ///
 /// - Param registry: the registry [[renderer::RegisterSharedSettings]] filled.
 /// - Param snapshot: the values to read.
 /// - Returns: the settings; any that is not registered keeps its default.
-RenderSettings RenderSettingsFromSnapshot(const ::engine_placeholder::settings::Registry& registry,
-                                          const ::engine_placeholder::settings::SettingsSnapshot& snapshot);
+RenderSettings RenderSettingsFromSnapshot(const ::vse::settings::Registry& registry,
+                                          const ::vse::settings::SettingsSnapshot& snapshot);
 
 /// Appends a request for each rendering setting in `settings` that is registered, for [[settings::Settings::Apply]].
 ///
 /// - Ownership: the requests hold values only.
 /// - Thread-safety: thread-compatible.
-void RenderSettingsToChanges(const RenderSettings& settings, const ::engine_placeholder::settings::Registry& registry,
-                             Vector<::engine_placeholder::settings::ChangeRequest>* out);
+void RenderSettingsToChanges(const RenderSettings& settings, const ::vse::settings::Registry& registry,
+                             Vector<::vse::settings::ChangeRequest>* out);
 
 /// The apply function for the `renderer.*` settings: it builds the requested [[renderer::RenderSettings]] from the
 /// renderer's current ones plus the changes and calls [[renderer::Renderer::ApplySettings]]. Pass it to
@@ -70,7 +70,7 @@ void RenderSettingsToChanges(const RenderSettings& settings, const ::engine_plac
 /// - Fails: reports the renderer's refusal as false.
 /// - Ownership: borrows the renderer for the call.
 /// - Thread-safety: owner-thread-only, as [[renderer::Renderer::ApplySettings]].
-bool ApplySharedChange(void* renderer, const ::engine_placeholder::settings::ChangeEvent& event);
+bool ApplySharedChange(void* renderer, const ::vse::settings::ChangeEvent& event);
 
 /// Brings the settings system back in line with the renderer after a queued change failed at the frame boundary: if the
 /// renderer's settings in force differ from the values the settings system holds, the renderer's become the settings
@@ -80,7 +80,7 @@ bool ApplySharedChange(void* renderer, const ::engine_placeholder::settings::Cha
 /// - Returns: whether a correction was needed.
 /// - Ownership: borrows both for the call.
 /// - Thread-safety: owner-thread-only.
-bool SyncSharedFromRenderer(Renderer* renderer, ::engine_placeholder::settings::Settings* settings);
+bool SyncSharedFromRenderer(Renderer* renderer, ::vse::settings::Settings* settings);
 
 /// A [[settings::CapabilityFn]] that asks the renderer's [[renderer::Capabilities]] (`user` is the
 /// [[renderer::Renderer]]).
@@ -91,4 +91,4 @@ bool SyncSharedFromRenderer(Renderer* renderer, ::engine_placeholder::settings::
 /// - Thread-safety: owner-thread-only.
 bool RendererCapability(void* renderer, const char* capability);
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

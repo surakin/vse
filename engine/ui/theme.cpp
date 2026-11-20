@@ -8,7 +8,7 @@
 #include "log/log.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -725,4 +725,4 @@ FontRef ThemeSet::Font(FontId id, f32 scale, Span<const Theme* const> overrides)
     return value;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

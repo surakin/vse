@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 CanvasCall& RecordingCanvas::Add(CanvasCallKind kind, u32 color)
@@ -104,4 +104,4 @@ void RecordingCanvas::EndLayer()
     layers_.Pop();
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

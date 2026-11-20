@@ -9,8 +9,8 @@
 #include "ecs/transform.h"
 #include "lang/scalar.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::audio_physics;
+using namespace vse;
+using namespace vse::audio_physics;
 using Catch::Approx;
 
 namespace

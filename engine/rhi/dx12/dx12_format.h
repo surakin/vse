@@ -7,7 +7,7 @@
 
 //! The RHI's formats as `DXGI_FORMAT`s (Phase 13 Day 165).
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 /// Returns the typed `DXGI_FORMAT` of a format, the one views and copies of a color format use.
@@ -64,4 +64,4 @@ DXGI_FORMAT ToDxgiVertex(VertexFormat format);
 /// - Thread-safety: thread-safe.
 D3D12_RESOURCE_STATES ToD3D12State(ResourceState state);
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

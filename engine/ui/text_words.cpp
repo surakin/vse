@@ -2,7 +2,7 @@
 
 #include "string/utf8_codec.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -146,4 +146,4 @@ void WordRangeAt(StringView text, u32 offset, u32* begin, u32* end)
     *end = e;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

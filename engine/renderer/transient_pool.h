@@ -12,7 +12,7 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// Capacities and aging of a [[renderer::TransientPool]].
@@ -202,4 +202,4 @@ private:
     TransientPoolStats stats_;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

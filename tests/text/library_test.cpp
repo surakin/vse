@@ -2,8 +2,8 @@
 
 #include "text/library.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::text;
+using namespace vse;
+using namespace vse::text;
 
 TEST_CASE("FreeType starts through the engine's allocator and reports the pinned version", "[text]")
 {

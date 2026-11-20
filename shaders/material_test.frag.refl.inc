@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kMaterialTestFragReflByteCount = 385;
 
@@ -44,4 +44,4 @@ inline constexpr u32 kMaterialTestFragMaterialParamsFlagsOffset = 20;
 inline constexpr u32 kMaterialTestFragMaterialParamsEmissiveOffset = 32;
 inline constexpr u32 kMaterialTestFragMaterialParamsUvTransformOffset = 48;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

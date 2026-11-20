@@ -2,7 +2,7 @@
 
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 Status FrameWriter::Header(usize size, byte (&header)[kFrameHeaderBytes]) const
@@ -122,4 +122,4 @@ void FrameReader::Reset()
     failure_ = Status::Success();
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

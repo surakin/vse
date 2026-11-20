@@ -2,7 +2,7 @@
 
 #include "lang/scalar.h"
 
-namespace engine_placeholder::audio_physics
+namespace vse::audio_physics
 {
 
 f32 PhysicsOcclusion::Occlusion(const Vec3& from, const Vec3& to, u32* crossed)
@@ -62,4 +62,4 @@ f32 PhysicsOcclusion::Occlusion(const Vec3& from, const Vec3& to, u32* crossed)
     return occlusion < 0.0 ? 0.0f : (occlusion > 1.0 ? 1.0f : static_cast<f32>(occlusion));
 }
 
-}  // namespace engine_placeholder::audio_physics
+}  // namespace vse::audio_physics

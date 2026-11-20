@@ -8,9 +8,9 @@
 #include "script/script_settings.h"
 #include "settings/registry.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::script;
-using namespace engine_placeholder::script::test;
+using namespace vse;
+using namespace vse::script;
+using namespace vse::script::test;
 
 namespace
 {

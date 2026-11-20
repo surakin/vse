@@ -2,7 +2,7 @@
 
 #include "lang/utility.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 u64 EventPayloadWeight(const Value& payload)
@@ -115,4 +115,4 @@ void EventBus::Take(Vector<EventRecord>* out)
     }
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

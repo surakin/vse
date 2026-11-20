@@ -7,7 +7,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -1023,4 +1023,4 @@ Status SimulatedTransport::Statistics(ConnectionId connection, ConnectionStats* 
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

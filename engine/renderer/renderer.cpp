@@ -12,7 +12,7 @@
 #include "rhi/backend_registry.h"
 #include "cstr/cstr.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 const char* FrameStatusName(FrameStatus status)
@@ -817,4 +817,4 @@ FrameStatus Renderer::RenderFrameImpl(const RenderScene* scene, const Camera* ca
     return result;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

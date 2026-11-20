@@ -15,7 +15,7 @@
 #include "os/os.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -157,4 +157,4 @@ TEST_CASE("bench: ten thousand resources through the memory backend", "[.][asset
               Seconds(start) * 1e3);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

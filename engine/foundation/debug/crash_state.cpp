@@ -6,7 +6,7 @@
 #include "sync/mutex.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -133,4 +133,4 @@ Atomic<u64>* CrashStateCounter(const char* name)
     return entry != nullptr ? &entry->counter : nullptr;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

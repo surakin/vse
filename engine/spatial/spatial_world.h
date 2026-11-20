@@ -11,7 +11,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// The index of a set in a [[spatial::SpatialWorld]]; also the bit position in [[spatial::SpatialMembership::sets]].
@@ -131,4 +131,4 @@ private:
     SpatialWorldStats stats_;
 };
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

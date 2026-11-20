@@ -8,7 +8,7 @@
 #include "string/string.h"
 #include "mem/heap_allocator.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main(int argc, char** argv)
 {

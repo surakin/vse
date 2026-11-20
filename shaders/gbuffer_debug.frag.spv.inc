@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGbufferDebugFragSpvWordCount = 1102;
 
@@ -195,4 +195,4 @@ inline constexpr u32 kGbufferDebugFragSpv[kGbufferDebugFragSpvWordCount] = {
     0x0000000a, 0x000000aa, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

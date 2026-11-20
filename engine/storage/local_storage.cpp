@@ -2,7 +2,7 @@
 
 #include "database/database_settings.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 Status LocalStorage::OpenFromSettings(database::Database& backend, const settings::Registry& settings,
@@ -24,4 +24,4 @@ Status LocalStorage::OpenFromSettings(database::Database& backend, const setting
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

@@ -4,7 +4,7 @@
 
 //! Message boxes (Phase 15, Day 199): common dialogs built from the widgets, shown modally.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class Surface;
@@ -53,4 +53,4 @@ Dialog* ShowMessageBox(Surface* surface, StringView title, StringView text, Mess
 Dialog* ShowConfirm(Surface* surface, StringView title, StringView text, StringView confirm_text,
                     MessageBoxFunction function, void* user);
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

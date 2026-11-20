@@ -2,7 +2,7 @@
 
 #include "os/os.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 namespace
@@ -65,4 +65,4 @@ void PoolAllocator::Free(void* ptr)
     free_list_ = ptr;
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

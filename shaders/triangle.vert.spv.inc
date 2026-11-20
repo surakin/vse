@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTriangleVertSpvWordCount = 151;
 
@@ -37,4 +37,4 @@ inline constexpr u32 kTriangleVertSpv[kTriangleVertSpvWordCount] = {
     0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

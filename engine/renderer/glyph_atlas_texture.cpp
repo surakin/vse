@@ -3,7 +3,7 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 rhi::TextureHandle GlyphAtlasTexture::Page(u32 page) const
@@ -154,4 +154,4 @@ bool GlyphAtlasTexture::Sync()
     return ok;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

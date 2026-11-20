@@ -9,7 +9,7 @@
 #include "script_media/input_snapshot.h"
 #include "types.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 /// The version of the record [[script_media::ReplayLog::Serialize]] writes.
@@ -119,4 +119,4 @@ private:
     Vector<ReplayEntry> entries_;
 };
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

@@ -12,7 +12,7 @@
 //!   - iOS and consoles with their own crash system: [[debug::PostMortemResult::Unsupported]].
 //! The minidump the crash handler writes ([[debug::InstallCrashHandler]]) is separate and always on; a core dump is
 //! bigger and holds the whole process memory, so it is a developer's tool, off by default.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Largest text in a [[debug::PostMortemReport]].
@@ -69,4 +69,4 @@ struct PostMortemReport
 /// when they are absent); macOS: setrlimit(RLIMIT_CORE) and /cores; Android: Enabled with nothing to do.
 PostMortemReport EnablePostMortemDumps(const PostMortemOptions& options);
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

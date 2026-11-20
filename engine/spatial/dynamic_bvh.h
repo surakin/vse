@@ -12,7 +12,7 @@
 #include "spatial/static_bvh.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// A handle to an item of a [[spatial::DynamicBvh]]: a slot index and a generation, so a handle kept after its item was
@@ -373,4 +373,4 @@ TraversalStats DynamicBvh::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& it
     return stats;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

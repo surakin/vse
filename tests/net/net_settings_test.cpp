@@ -6,7 +6,7 @@
 #include "net/net_settings.h"
 #include "settings/registry.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 TEST_CASE("Net settings: the defaults are the defaults of the configuration structs", "[net][settings]")
@@ -78,4 +78,4 @@ TEST_CASE("Net settings: a short time-out keeps the keep-alive and ping inside i
     CHECK(tcp.ping_interval_nanos <= tcp.timeout_nanos / 4);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

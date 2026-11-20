@@ -9,7 +9,7 @@
 #include "physics/query_index.h"
 #include "physics/triangle_mesh.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -791,4 +791,4 @@ bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance
     return found;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -3,7 +3,7 @@
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 TooltipBubble::TooltipBubble() : Widget(StringView("tooltip"))
@@ -53,4 +53,4 @@ void TooltipBubble::Draw(Canvas& canvas)
                     style.text_color);
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -30,8 +30,8 @@
 #include "triangle.vert.refl.inc"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 using rhi::BindingType;
 using rhi::ShaderStage;
 using rhi::VertexFormat;

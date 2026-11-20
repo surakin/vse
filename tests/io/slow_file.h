@@ -12,7 +12,7 @@
 namespace io_test
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 /// A file that behaves like one on a network: bytes live in memory, every request completes on the file's own thread
 /// after a delay, reads come back in chunks of at most `chunk` bytes, the size is unknown until the first read has

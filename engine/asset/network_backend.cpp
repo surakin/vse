@@ -5,7 +5,7 @@
 #include "io/path.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -1185,4 +1185,4 @@ void NetworkBackend::StepFetchLocked()
 
 #undef ENGINE_TRY_FINISH
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

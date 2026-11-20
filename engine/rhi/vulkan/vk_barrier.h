@@ -5,7 +5,7 @@
 
 //! The one table that turns an RHI resource state into Vulkan stages, accesses and image layouts.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// The Vulkan synchronization scope and layout of one [[rhi::ResourceState]].
@@ -65,4 +65,4 @@ bool CmdImageBarrier(const VkDeviceFns& fns, VkCommandBuffer cb, VkImage image, 
                      u32 base_mip, u32 mip_count, u32 base_layer, u32 layer_count, ResourceState before,
                      ResourceState after);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

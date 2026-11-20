@@ -5,7 +5,7 @@
 #include "log/assert.h"
 #include "script/script_world.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -113,4 +113,4 @@ const Value* Overlay::Find(ecs::Entity entity, u32 field) const
     return entries_.Find(KeyOf(entity, field));
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -7,7 +7,7 @@
 #include "storage/builtin_components.h"
 #include "storage/identity.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -401,4 +401,4 @@ TEST_CASE("Identity: CaptureParents counts a parent without a key and drops stal
 }
 
 }  // namespace
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

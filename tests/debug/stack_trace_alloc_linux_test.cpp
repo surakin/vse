@@ -15,8 +15,8 @@
 #include "os/signal.h"
 #include "cstr/format.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 namespace
 {

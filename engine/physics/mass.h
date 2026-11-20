@@ -8,7 +8,7 @@
 #include "physics/shapes.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The mass of a body and how it resists rotation, in the body's own space.
@@ -94,4 +94,4 @@ void PrincipalAxes(const Mat3& symmetric, Vec3* values, Mat3* vectors);
 /// - Fails: never.
 Mat3 InertiaAbout(const MassProperties& properties, const Vec3& offset);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -27,17 +27,16 @@ namespace ui_demo
 
 /// The length of what `snprintf` wrote into a buffer of `capacity` bytes: it returns the length it would have written,
 /// which can pass the buffer.
-inline engine_placeholder::usize FittedLength(int written, engine_placeholder::usize capacity)
+inline vse::usize FittedLength(int written, vse::usize capacity)
 {
     if (written <= 0)
     {
         return 0;
     }
-    return static_cast<engine_placeholder::usize>(written) < capacity ? static_cast<engine_placeholder::usize>(written)
-                                                                      : capacity - 1;
+    return static_cast<vse::usize>(written) < capacity ? static_cast<vse::usize>(written) : capacity - 1;
 }
 
-using namespace engine_placeholder;
+using namespace vse;
 
 /// An orbit camera around the origin that the viewport's input turns: dragging with the look button changes the angles,
 /// the wheel the distance.

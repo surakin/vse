@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 struct MergeAccess
@@ -86,4 +86,4 @@ MergeReport Merge(ecs::World* world, Span<CommandBuffer* const> buffers, const C
     return report;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

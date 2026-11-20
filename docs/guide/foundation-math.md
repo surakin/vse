@@ -40,7 +40,7 @@ The graphics conventions that sit on top of these (the Vulkan clip space, the tr
 #include "math/vector.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     Vec3 right(1.0f, 0.0f, 0.0f);
@@ -84,7 +84,7 @@ moved by the translation) and `w = 0` for a **direction** (it is not).
 #include "math/matrix.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     // Move everything 10 units along X; axes unchanged.
@@ -133,7 +133,7 @@ angles and interpolate smoothly. You almost never touch the components; use the 
 #include "math/quaternion.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     const Vec3 up(0, 1, 0);
@@ -173,7 +173,7 @@ is flattened: the child's position is scaled and rotated by the parent and then 
 #include "math/transform.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     Transform parent;

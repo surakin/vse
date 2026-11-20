@@ -7,7 +7,7 @@
 #include "cstr/number.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -412,4 +412,4 @@ void BuildImportSummary(const GltfDocument& document, const GltfNodeGraph& graph
     out.Append(StringView(counts, CStrLength(counts)));
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

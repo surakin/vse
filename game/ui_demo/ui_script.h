@@ -12,7 +12,7 @@
 namespace ui_demo
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 /// What the program does for the words the script cannot do on the surface alone.
 ///

@@ -9,7 +9,7 @@
 //! The GPU copy of a glyph atlas: one 8-bit coverage texture per CPU page, kept up to date and rebuilt after a device
 //! reset.
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// One R8 texture for each page of a [[text::GlyphAtlas]].
@@ -97,4 +97,4 @@ private:
     ScopedRegistration registration_;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

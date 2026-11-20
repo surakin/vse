@@ -7,7 +7,7 @@
 //! The dialog (Phase 15, Day 199): a window frame with a row of buttons, a default button and a result, shown modally
 //! by `Surface::ShowModal`.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// The results the common dialogs return; a program may use any other integers for its own buttons.
@@ -85,4 +85,4 @@ private:
     Callback<Dialog*, int> on_closed_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

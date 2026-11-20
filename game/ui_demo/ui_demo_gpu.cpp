@@ -175,9 +175,9 @@ void UiDemoGpu::AfterScene(const renderer::FrameContext& context, void* user)
     self->frame_target_ = context.target;
     context.graph->AddPass("clear target", &UiDemoGpu::ClearPass, self)
         .Write(context.target, renderer::GraphUsage::ColorAttachment);
-    self->ui_renderer_.AddToGraph(
-        context.graph, &self->list_, context.target, context.format, context.width, context.height,
-        ::engine_placeholder::Span<const renderer::GraphResource>(&self->viewport_resource_, 1));
+    self->ui_renderer_.AddToGraph(context.graph, &self->list_, context.target, context.format, context.width,
+                                  context.height,
+                                  ::vse::Span<const renderer::GraphResource>(&self->viewport_resource_, 1));
 }
 
 }  // namespace ui_demo

@@ -8,7 +8,7 @@
 //! engine, `engine/text/font_freetype.cpp` (the `platform_neutral_check` library boundary); everything else uses the
 //! types of this module. Every block FreeType allocates comes from the engine's heap through a counting `FT_Memory`, so
 //! the engine's allocation accounting stays true and a failed allocation is testable.
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 /// The version of the FreeType library the engine was built with.
@@ -53,4 +53,4 @@ struct LibraryAllocationStats
 /// memory is the realistic cause); an error while shutting down also returns false, with both outputs filled in.
 bool ProbeLibrary(LibraryVersion* version, LibraryAllocationStats* stats);
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

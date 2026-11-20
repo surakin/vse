@@ -4,7 +4,7 @@
 
 #include "string/grapheme.h"
 
-namespace engine_placeholder {
+namespace vse {
 
 namespace {
 
@@ -1580,4 +1580,4 @@ GraphemeBreakProperty LookupGraphemeBreakProperty(u32 codepoint) {
     return GraphemeBreakProperty::Other;
 }
 
-} // namespace engine_placeholder
+} // namespace vse

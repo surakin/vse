@@ -6,7 +6,7 @@
 #include "math/vector.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -603,4 +603,4 @@ bool ComponentCatalog::Define(StringView name, const Value& fields, String<HeapA
     return true;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

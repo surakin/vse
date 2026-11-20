@@ -14,9 +14,9 @@
 #include "triangle.frag.spv.inc"
 #include "triangle.vert.spv.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::vulkan;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::rhi::vulkan;
 using gpu_test::Image;
 
 namespace
@@ -171,13 +171,13 @@ struct StripScene
 
 bool IsRed(const Image& image, u32 x, u32 y)
 {
-    const engine_placeholder::byte* p = &image.rgba[(static_cast<engine_placeholder::usize>(y) * image.width + x) * 4];
+    const vse::byte* p = &image.rgba[(static_cast<vse::usize>(y) * image.width + x) * 4];
     return p[0] > 200 && p[1] < 50 && p[2] < 50;
 }
 
 bool IsBackground(const Image& image, u32 x, u32 y)
 {
-    const engine_placeholder::byte* p = &image.rgba[(static_cast<engine_placeholder::usize>(y) * image.width + x) * 4];
+    const vse::byte* p = &image.rgba[(static_cast<vse::usize>(y) * image.width + x) * 4];
     return p[0] > 40 && p[0] < 70 && p[1] > 40 && p[1] < 70;  // 0.2 * 255 = 51
 }
 

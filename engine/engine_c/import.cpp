@@ -30,7 +30,7 @@
         }                                                                                                              \
     } while (0)
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 #if ENGINE_C_WITH_IMPORTER
@@ -715,4 +715,4 @@ engine_status ImportDestroyFn(engine_handle ticket)
     return host->Imports().Destroy(ticket);
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

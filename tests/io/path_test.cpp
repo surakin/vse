@@ -4,13 +4,13 @@
 #include "test_text.h"
 #include "temp_dir.h"
 
-using engine_placeholder::StringView;
-using engine_placeholder::usize;
-using engine_placeholder::io::kMaxPathBytes;
-using engine_placeholder::io::Path;
-using engine_placeholder::io::PathBuilder;
-using engine_placeholder::io::PathStyle;
 using io_test::Str;
+using vse::StringView;
+using vse::usize;
+using vse::io::kMaxPathBytes;
+using vse::io::Path;
+using vse::io::PathBuilder;
+using vse::io::PathStyle;
 
 namespace
 {

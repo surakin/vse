@@ -6,7 +6,7 @@
 
 #include "sync/atomic.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 // SIGNAL-SAFE-BEGIN
@@ -277,4 +277,4 @@ void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info)
 }
 
 // SIGNAL-SAFE-END
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

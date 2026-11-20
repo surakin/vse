@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kLitVertReflByteCount = 283;
 
@@ -37,4 +37,4 @@ inline constexpr u32 kLitVertParamsToLightOffset = 128;
 inline constexpr u32 kLitVertParamsLightColorOffset = 144;
 inline constexpr u32 kLitVertParamsAmbientOffset = 160;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

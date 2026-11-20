@@ -39,7 +39,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Where and why a material source was refused.
@@ -108,4 +108,4 @@ using MaterialPathOf = bool (*)(void* user, ResourceId id, String<HeapAllocator>
 Status FormatMaterialBlob(ByteSpan blob, const TypeRegistry& types, MaterialPathOf path_of, void* user,
                           String<HeapAllocator>* out, MaterialSourceError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

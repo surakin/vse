@@ -7,8 +7,8 @@
 #include "permutations.h"
 #include "renderer/shader_permutation.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::shader_mint;
+using namespace vse;
+using namespace vse::shader_mint;
 
 namespace
 {

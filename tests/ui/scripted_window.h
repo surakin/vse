@@ -5,7 +5,7 @@
 
 // A window for the adapter tests of Day 200: events are queued by the test, clipboard and drag calls are recorded, and
 // the data of a request is kept until the test chooses to finish it.
-namespace engine_placeholder
+namespace vse
 {
 
 class ScriptedWindow final : public os::Window
@@ -225,4 +225,4 @@ private:
     usize next_ = 0;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

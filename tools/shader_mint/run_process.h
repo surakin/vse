@@ -6,7 +6,7 @@
 
 #include "text.h"
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 // Appends `arg` to a Windows command line the way CommandLineToArgvW and the C runtime split it back into the same
@@ -20,4 +20,4 @@ void AppendWindowsArgument(Text* line, StringView arg);
 // Returns true if it exited with status 0; otherwise prints how it failed on stderr.
 bool RunProcess(const Vector<Text>& args);
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

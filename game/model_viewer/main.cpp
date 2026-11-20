@@ -34,7 +34,7 @@
 #include "textures.h"
 #include "viewer_scene.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using renderer::Camera;
 using renderer::DeviceResources;
 using renderer::FrameStatus;
@@ -545,7 +545,7 @@ int Usage(const char* program, int code)
 
 int EngineMain(int argc, char** argv)
 {
-    ::engine_placeholder::rhi::RegisterCompiledBackends();
+    ::vse::rhi::RegisterCompiledBackends();
     const debug::ProgramDebugSetup debug_setup = debug::StartProgramDebugging(argc, argv);
     debug::RunCrashTest(debug_setup.crash_test);
     LogRhi.SetVerbosity(LogVerbosity::Info);

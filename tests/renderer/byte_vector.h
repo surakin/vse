@@ -10,12 +10,12 @@
 namespace renderer_test
 {
 
-using ByteVector = engine_placeholder::Vector<engine_placeholder::u8>;
+using ByteVector = vse::Vector<vse::u8>;
 
 /// True when `a` and `b` have the same length and the same bytes.
 inline bool SameBytes(const ByteVector& a, const ByteVector& b)
 {
-    return a.Size() == b.Size() && (a.Size() == 0 || engine_placeholder::MemCompare(a.Data(), b.Data(), a.Size()) == 0);
+    return a.Size() == b.Size() && (a.Size() == 0 || vse::MemCompare(a.Data(), b.Data(), a.Size()) == 0);
 }
 
 }  // namespace renderer_test

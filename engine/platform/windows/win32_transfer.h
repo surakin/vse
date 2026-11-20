@@ -13,7 +13,7 @@
 #include <shellapi.h>  // HDROP
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::os::win32::detail
+namespace vse::os::win32::detail
 {
 
 // Copies bytes into a movable global block (for SetClipboardData and STGMEDIUM); null on failure. The caller owns the
@@ -41,4 +41,4 @@ bool ReadHdrop(HDROP drop, Vector<byte>* out, u32* rejected);
 // false if it is too large.
 bool ReadUnicodeText(const void* block, usize size, Vector<byte>* out, u32* replaced);
 
-}  // namespace engine_placeholder::os::win32::detail
+}  // namespace vse::os::win32::detail

@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -365,4 +365,4 @@ Status RetargetTextureBlob(const TypeRegistry& types, ByteSpan blob, u32 target,
     return BuildTextureBlob(types, view.Id(), input, out, target);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

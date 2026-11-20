@@ -18,7 +18,7 @@
 //! The surface (Phase 15, Day 192): the root of a widget tree with its size, scale, clock, theme, font provider, focus,
 //! pointer capture and popup layer. It knows no window.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class DrawListCanvas;
@@ -579,4 +579,4 @@ private:
     UniquePtr<Widget> tips_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

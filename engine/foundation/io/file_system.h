@@ -10,7 +10,7 @@
 //! Every function returns a [[io::Status]] (or a bool for pure questions) and never throws or aborts on a bad path; the
 //! lexical part of a path stays in [[io::Path]]. Functions follow symbolic links unless their name or comment says
 //! otherwise.
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 /// What a name refers to.
@@ -227,4 +227,4 @@ Status UserStateDirectory(StringView app_name, Path* out);
 /// without an absolute $HOME); Android and iOS: the app-private files directory.
 Status CrashDumpDirectory(Path* out);
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

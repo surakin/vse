@@ -7,10 +7,10 @@
 #include "renderer/renderer.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
-namespace sset = ::engine_placeholder::settings;
+namespace sset = ::vse::settings;
 
 namespace
 {
@@ -319,4 +319,4 @@ bool RendererCapability(void* renderer, const char* capability)
     return static_cast<Renderer*>(renderer)->GetCapabilities().Has(capability);
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -9,7 +9,7 @@
 #include "storage/field.h"
 #include "string/string.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// The values of `storage.layout`.
@@ -57,4 +57,4 @@ bool ColumnsFromSettings(const settings::Registry& registry);
 /// - Ownership: `registry` is borrowed for the call.
 u32 AutosaveSecondsFromSettings(const settings::Registry& registry);
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

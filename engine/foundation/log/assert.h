@@ -43,7 +43,7 @@
 #endif
 #endif
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Signature of the function that receives log and assert output: file
@@ -207,7 +207,7 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 
 }  // namespace detail
 
-}  // namespace engine_placeholder
+}  // namespace vse
 
 // For the static analyzer a failed assertion ends the path (the default handler aborts), so it does not report the code
 // after an assert as reachable with the asserted condition false. The handler can be replaced to continue (tests do);
@@ -232,9 +232,8 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
     {                                                                                                                  \
         if (!(cond)) [[unlikely]]                                                                                      \
         {                                                                                                              \
-            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Assert, __FILE__,         \
-                                                           __LINE__, __func__, #cond,                                  \
-                                                           msg) == ::engine_placeholder::AssertAction::Break)          \
+            if (::vse::detail::AssertFailed(::vse::AssertKind::Assert, __FILE__, __LINE__, __func__, #cond, msg) ==    \
+                ::vse::AssertAction::Break)                                                                            \
             {                                                                                                          \
                 ENGINE_DEBUG_BREAK();                                                                                  \
             }                                                                                                          \
@@ -255,9 +254,8 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 #define ENGINE_ENSURE(cond, msg)                                                                                       \
     (static_cast<bool>(cond) || [](const char* engine_ensure_function_) ENGINE_NOINLINE_LAMBDA -> bool                 \
      {                                                                                                                 \
-         static ::engine_placeholder::detail::EnsureSite engine_ensure_site_{__FILE__, __LINE__, #cond, msg};          \
-         if (::engine_placeholder::detail::EnsureFailed(engine_ensure_site_, engine_ensure_function_) ==               \
-             ::engine_placeholder::AssertAction::Break)                                                                \
+         static ::vse::detail::EnsureSite engine_ensure_site_{__FILE__, __LINE__, #cond, msg};                         \
+         if (::vse::detail::EnsureFailed(engine_ensure_site_, engine_ensure_function_) == ::vse::AssertAction::Break)  \
          {                                                                                                             \
              ENGINE_DEBUG_BREAK();                                                                                     \
          }                                                                                                             \
@@ -269,9 +267,8 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
     {                                                                                                                  \
         if (!(expr)) [[unlikely]]                                                                                      \
         {                                                                                                              \
-            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Verify, __FILE__,         \
-                                                           __LINE__, __func__, #expr,                                  \
-                                                           msg) == ::engine_placeholder::AssertAction::Break)          \
+            if (::vse::detail::AssertFailed(::vse::AssertKind::Verify, __FILE__, __LINE__, __func__, #expr, msg) ==    \
+                ::vse::AssertAction::Break)                                                                            \
             {                                                                                                          \
                 ENGINE_DEBUG_BREAK();                                                                                  \
             }                                                                                                          \
@@ -302,9 +299,8 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
     {                                                                                                                  \
         if (!(cond)) [[unlikely]]                                                                                      \
         {                                                                                                              \
-            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Assert, __FILE__,         \
-                                                           __LINE__, __func__, #cond,                                  \
-                                                           msg) == ::engine_placeholder::AssertAction::Break)          \
+            if (::vse::detail::AssertFailed(::vse::AssertKind::Assert, __FILE__, __LINE__, __func__, #cond, msg) ==    \
+                ::vse::AssertAction::Break)                                                                            \
             {                                                                                                          \
                 ENGINE_DEBUG_BREAK();                                                                                  \
             }                                                                                                          \
@@ -326,13 +322,12 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 #define ENGINE_UNREACHABLE_IMPL_1_(msg)                                                                                \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Unreachable, __FILE__,        \
-                                                       __LINE__, __func__, "",                                         \
-                                                       msg) == ::engine_placeholder::AssertAction::Break)              \
+        if (::vse::detail::AssertFailed(::vse::AssertKind::Unreachable, __FILE__, __LINE__, __func__, "", msg) ==      \
+            ::vse::AssertAction::Break)                                                                                \
         {                                                                                                              \
             ENGINE_DEBUG_BREAK();                                                                                      \
         }                                                                                                              \
-        ::engine_placeholder::detail::UnreachableAbort(); /* a debugger that resumes does not get to continue */       \
+        ::vse::detail::UnreachableAbort(); /* a debugger that resumes does not get to continue */                      \
     } while (false)
 #define ENGINE_UNREACHABLE_IMPL_0_(msg) ENGINE_UNREACHABLE_HINT()
 
@@ -353,9 +348,8 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 #define ENGINE_NOT_IMPLEMENTED()                                                                                       \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::NotImplemented, __FILE__,     \
-                                                       __LINE__, __func__, "", "not implemented") ==                   \
-            ::engine_placeholder::AssertAction::Break)                                                                 \
+        if (::vse::detail::AssertFailed(::vse::AssertKind::NotImplemented, __FILE__, __LINE__, __func__, "",           \
+                                        "not implemented") == ::vse::AssertAction::Break)                              \
         {                                                                                                              \
             ENGINE_DEBUG_BREAK();                                                                                      \
         }                                                                                                              \

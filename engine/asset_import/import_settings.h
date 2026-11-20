@@ -6,7 +6,7 @@
 #include "asset_import/gltf_import.h"
 #include "settings/registry.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Declares `assets.import.max_file_bytes`, `max_json_bytes`, `max_buffer_bytes`, `max_nodes`, `max_accessors`,
@@ -37,4 +37,4 @@ ImportLimits ImportLimitsFromSettings(const settings::Registry& registry);
 /// - Fails: never.
 void ApplyImportLightSettings(const settings::Registry& registry, ImportOptions* options);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

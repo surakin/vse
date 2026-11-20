@@ -7,12 +7,12 @@
 
 #import <QuartzCore/CAMetalLayer.h>
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 class Window;
 }
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 class MetalDevice;
@@ -77,4 +77,4 @@ private:
     bool edr_possible_ = false;  // the screen's EDR, read at the last Apply (Capabilities answers it)
 };
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

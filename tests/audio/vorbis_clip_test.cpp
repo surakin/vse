@@ -11,7 +11,7 @@
 #include "io/file.h"
 #include "io/path.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

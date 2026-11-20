@@ -7,7 +7,7 @@
 #include "cstr/mem_ops.h"
 #include "cstr/cstr.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 namespace
@@ -196,4 +196,4 @@ void PipelineLibraryName(u64 key, wchar_t (&out)[18])
     out[17] = L'\0';
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

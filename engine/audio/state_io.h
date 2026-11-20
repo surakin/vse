@@ -8,7 +8,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Writes the snapshot's value types.
@@ -142,4 +142,4 @@ private:
     bool ok_ = true;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

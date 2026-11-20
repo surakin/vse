@@ -12,7 +12,7 @@
 #include "storage/save_session.h"
 #include "storage/world_storage.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -669,4 +669,4 @@ TEST_CASE("Benchmark: incremental save of 100,000 entities, idle and with 1 perc
         spread.encoded, static_cast<unsigned long long>((t6 - t5) / 1000000), run.chunks_visited, run.encoded);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

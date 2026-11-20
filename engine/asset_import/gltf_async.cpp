@@ -5,7 +5,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 struct ImportTicketState
@@ -110,4 +110,4 @@ UniquePtr<ImportTicket> ImportGltfAsync(jobs::Scheduler& scheduler, Vector<byte>
     return ticket;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -13,7 +13,7 @@
 //! only what can be known without a device, against the RHI-wide ceilings in `rhi/limits.h`; the device's
 //! own limits and handle liveness are checked at creation.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Returns the number of mip levels in a full chain for an image of the given extent: `floor(log2(max)) + 1`.
@@ -561,4 +561,4 @@ struct ComputePipelineDesc
     const char* Validate() const;
 };
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

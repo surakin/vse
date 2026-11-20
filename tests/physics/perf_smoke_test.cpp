@@ -6,8 +6,8 @@
 #include "os/os.h"
 #include "physics/world.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::physics;
+using namespace vse;
+using namespace vse::physics;
 
 TEST_CASE("Perf smoke: 500 bodies falling and landing step in bounded time", "[physics][perf]")
 {

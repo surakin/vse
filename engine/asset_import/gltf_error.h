@@ -11,7 +11,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The reason an import refused its input, with the glTF object it names.
@@ -37,4 +37,4 @@ inline const char* GltfMessage(const GltfError& error, const Status& status)
     return error.message[0] != '\0' ? error.message.Data() : status.Message();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

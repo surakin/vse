@@ -5,7 +5,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// The most bytes (excluding the terminator) in a text value.
@@ -90,4 +90,4 @@ private:
     char text_[kMaxTextBytes + 1] = {};
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

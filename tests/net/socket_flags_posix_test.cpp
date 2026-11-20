@@ -7,7 +7,7 @@
 
 #include "net/socket.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -52,4 +52,4 @@ TEST_CASE("Sockets are non-blocking and close-on-exec from creation, accepted on
 }
 
 }  // namespace
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

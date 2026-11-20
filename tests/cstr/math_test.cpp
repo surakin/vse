@@ -8,7 +8,7 @@
 #include "lang/limits.h"
 #include "lang/scalar.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

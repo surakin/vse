@@ -10,7 +10,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// How `entity.spawn(prefab)` fills in a new entity.
@@ -44,4 +44,4 @@ struct MergeServices
     void* extensions[kMaxServiceExtensions] = {};
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

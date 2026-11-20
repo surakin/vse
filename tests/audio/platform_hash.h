@@ -7,7 +7,7 @@
 #include "build_defs.h"
 #include "types.h"
 
-namespace engine_placeholder::audio::testing
+namespace vse::audio::testing
 {
 
 /// The value committed for this platform: `windows_value` on Windows, `macos_value` on macOS, `linux_value` elsewhere.
@@ -22,4 +22,4 @@ constexpr u64 PlatformHash(u64 linux_value, u64 windows_value)
     return PlatformHash(linux_value, windows_value, linux_value);
 }
 
-}  // namespace engine_placeholder::audio::testing
+}  // namespace vse::audio::testing

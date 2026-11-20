@@ -16,7 +16,7 @@
 #include "support.h"
 #include "texture_source.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -1467,4 +1467,4 @@ TEST_CASE("bc: encode speed per format and quality", "[.][asset-bench]")
     }
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

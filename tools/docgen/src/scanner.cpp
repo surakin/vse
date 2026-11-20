@@ -9,12 +9,11 @@ namespace docgen
 namespace
 {
 
-using engine_placeholder::i32;
+using vse::i32;
 
 bool IsIdentStart(char c)
 {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
-           (static_cast<engine_placeholder::byte>(c) >= 0x80);
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (static_cast<vse::byte>(c) >= 0x80);
 }
 bool IsDigit(char c)
 {
@@ -40,9 +39,8 @@ public:
     void Run()
     {
         // Skip a UTF-8 byte-order mark.
-        if (n_ >= 3 && static_cast<engine_placeholder::byte>(src_[0]) == 0xEF &&
-            static_cast<engine_placeholder::byte>(src_[1]) == 0xBB &&
-            static_cast<engine_placeholder::byte>(src_[2]) == 0xBF)
+        if (n_ >= 3 && static_cast<vse::byte>(src_[0]) == 0xEF && static_cast<vse::byte>(src_[1]) == 0xBB &&
+            static_cast<vse::byte>(src_[2]) == 0xBF)
         {
             pos_ = 3;
             line_start_ = 3;
@@ -123,7 +121,7 @@ private:
         Diagnostic d;
         d.severity = sev;
         d.line = line;
-        d.message = StringView(message, engine_placeholder::CStrLength(message));
+        d.message = StringView(message, vse::CStrLength(message));
         out_.diagnostics.Push(d);
     }
 
@@ -477,8 +475,7 @@ private:
         }
         const usize len = e - b;
         // String/char literal prefixes: u8 u U L R u8R uR UR LR.
-        auto is = [&](const char* s)
-        { return engine_placeholder::CStrLength(s) == len && engine_placeholder::MemCompare(src_ + b, s, len) == 0; };
+        auto is = [&](const char* s) { return vse::CStrLength(s) == len && vse::MemCompare(src_ + b, s, len) == 0; };
         const bool str_prefix = is("u8") || is("u") || is("U") || is("L");
         const bool raw_prefix = is("R") || is("u8R") || is("uR") || is("UR") || is("LR");
         if (e < n_ && src_[e] == '"' && (str_prefix || raw_prefix))
@@ -644,8 +641,7 @@ private:
                 return;
             }
             if (src_[p] == ')' && p + 1 + delim_len < n_ &&
-                engine_placeholder::MemCompare(src_ + p + 1, src_ + delim_begin, delim_len) == 0 &&
-                src_[p + 1 + delim_len] == '"')
+                vse::MemCompare(src_ + p + 1, src_ + delim_begin, delim_len) == 0 && src_[p + 1 + delim_len] == '"')
             {
                 p += delim_len + 2;
                 break;
@@ -835,10 +831,7 @@ private:
         }
         const usize name_len = p - name_b;
         auto is = [&](const char* s)
-        {
-            return engine_placeholder::CStrLength(s) == name_len &&
-                   engine_placeholder::MemCompare(src_ + name_b, s, name_len) == 0;
-        };
+        { return vse::CStrLength(s) == name_len && vse::MemCompare(src_ + name_b, s, name_len) == 0; };
 
         u32 extra_lines = 0;
         usize code_end = p, line_comment = n_, last_ls = line_start_;
@@ -932,10 +925,7 @@ private:
                 }
                 const usize nl = p - nb;
                 auto is = [&](const char* s)
-                {
-                    return engine_placeholder::CStrLength(s) == nl &&
-                           engine_placeholder::MemCompare(src_ + nb, s, nl) == 0;
-                };
+                { return vse::CStrLength(s) == nl && vse::MemCompare(src_ + nb, s, nl) == 0; };
                 u32 extra = 0;
                 usize code_end = p, lc = n_, ls = line_start_;
                 const usize end = DirectiveBody(p, dir_line, extra, code_end, lc, ls);

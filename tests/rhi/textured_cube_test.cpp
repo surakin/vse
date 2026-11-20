@@ -11,8 +11,8 @@
 #include "textures.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 using namespace cube_test;
 using gpu_test::CompareOptions;
 using gpu_test::Image;

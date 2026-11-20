@@ -8,7 +8,7 @@
 #include "lang/limits.h"
 #include "lang/traits.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 namespace
 {
@@ -193,4 +193,4 @@ TEST_CASE("Transaction: commit, scope exit and failures", "[database]")
 }
 
 }  // namespace
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

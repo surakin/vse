@@ -5,7 +5,7 @@
 #include "string/grapheme.h"
 #include "string/utf8_codec.h"
 
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 namespace
@@ -366,4 +366,4 @@ Status Layout(StringView utf8, const TextStyle& style, const LayoutOptions& opti
     return Status{};
 }
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

@@ -8,7 +8,7 @@
 #include "physics/world.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Added to an entity by `SyncBodies`: the body that belongs to it.
@@ -59,4 +59,4 @@ struct SyncReport
 /// - Fails: an entity with invalid components is counted in `refused` and skipped.
 SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

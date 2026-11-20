@@ -15,8 +15,8 @@
 #endif
 #include "cstr/cstr.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 namespace
 {

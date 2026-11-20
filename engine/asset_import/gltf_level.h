@@ -11,7 +11,7 @@
 #include "asset_import/gltf_collision.h"
 #include "asset_import/gltf_skin.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The deepest node hierarchy a level holds, a root being depth 0: one below the ECS's own bound
@@ -43,4 +43,4 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
                    const TypeRegistry& types, Span<const ImportedSkin> skins, Span<const GltfNodeCollision> collisions,
                    ImportResult* result, GltfError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

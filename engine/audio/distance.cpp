@@ -2,7 +2,7 @@
 
 #include "lang/scalar.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 bool IsValid(const Attenuation& a)
@@ -212,4 +212,4 @@ f32 DopplerRatio(f32 speed_of_sound, f32 factor, const Vec3& to_emitter, const V
     return ratio < 0.25f ? 0.25f : (ratio > 4.0f ? 4.0f : ratio);
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

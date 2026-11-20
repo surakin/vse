@@ -13,8 +13,8 @@
 #include "ui/widgets/display.h"
 #include "ui/widgets/label.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::ui;
+using namespace vse;
+using namespace vse::ui;
 
 namespace
 {

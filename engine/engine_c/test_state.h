@@ -3,7 +3,7 @@
 //! module `engine_c`.
 #include "engine_c/engine_test_extension.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// Returns the static table of the boundary tests' operations and singleton addresses.
@@ -12,4 +12,4 @@ namespace engine_placeholder::engine_c
 /// - Fails: never.
 const engine_test_extension* TestStateExtension();
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

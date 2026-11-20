@@ -8,7 +8,7 @@
 #include "spatial/spatial_set.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// The entity's box in its own space, normally copied from its mesh. The sync transforms it by the entity's
@@ -86,4 +86,4 @@ struct SpatialProxy
     }
 };
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

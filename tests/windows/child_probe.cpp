@@ -17,7 +17,7 @@
 #include "io/file_system.h"
 #include "os/windows/win32.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main(int argc, char** argv)
 {
@@ -38,8 +38,8 @@ int main(int argc, char** argv)
     }
     if (argc >= 2 && CStrCompare(argv[1], "--cwd") == 0)
     {
-        engine_placeholder::io::Path dir;
-        if (engine_placeholder::io::CurrentDirectory(&dir).Failed())
+        vse::io::Path dir;
+        if (vse::io::CurrentDirectory(&dir).Failed())
         {
             return 2;
         }

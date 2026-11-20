@@ -10,7 +10,7 @@
 //! The OS clipboard behind the toolkit's [[ui::Clipboard]] (Phase 15, Day 200): asynchronous, with the primary
 //! selection where the platform has one.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A [[ui::Clipboard]] over an [[os::Window]]'s clipboard.
@@ -84,4 +84,4 @@ private:
     Callback<OsClipboard*, os::ClipboardStatus> on_failed_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

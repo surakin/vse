@@ -7,7 +7,7 @@
 //! The events a surface delivers to its widgets (Phase 15, Day 192): pointer, wheel, key, text, focus and tick, as
 //! plain data.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// The key enumeration of the platform layer; the toolkit has no second one.
@@ -63,4 +63,4 @@ struct Event
     f64 time = 0;   ///< The surface clock, in seconds, when the event was delivered.
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

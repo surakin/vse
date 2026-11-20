@@ -6,7 +6,7 @@
 #include "lang/utility.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -1412,4 +1412,4 @@ void Mixer::Render(f32* out, u32 frames)
     }
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

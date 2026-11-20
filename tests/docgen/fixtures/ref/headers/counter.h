@@ -4,7 +4,7 @@
 //!
 //! This overview is shown at the top of the module page.
 
-namespace engine_placeholder {
+namespace vse {
 namespace demo {
 
 /// The kinds of wake-up a counter can perform.
@@ -74,4 +74,4 @@ Counter MakeCounter(unsigned long start);
 using Count = unsigned long;
 
 } // namespace demo
-} // namespace engine_placeholder
+} // namespace vse

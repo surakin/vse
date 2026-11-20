@@ -8,8 +8,8 @@
 #include "sync/thread.h"
 #include "test_rng.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::ecs;
+using namespace vse;
+using namespace vse::ecs;
 
 namespace
 {

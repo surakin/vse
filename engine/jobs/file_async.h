@@ -15,7 +15,7 @@
 //! off the workers).
 //!
 //! The awaitables are not movable once created: await the temporary (`co_await ReadAsync(...)`).
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 class Scheduler;
@@ -134,4 +134,4 @@ private:
 /// - Thread-safety: thread-safe. Await it from a job.
 FileReadAllAwaitable ReadAllAsync(Scheduler& scheduler, io::File& file, u64 max_bytes = u64{1} << 30);
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

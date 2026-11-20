@@ -6,7 +6,7 @@
 //!
 //! A marker records an earlier offset; popping to it discards everything
 //! allocated since.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Bump allocator whose allocations can be discarded in LIFO order by
@@ -61,4 +61,4 @@ private:
     usize offset_ = 0;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

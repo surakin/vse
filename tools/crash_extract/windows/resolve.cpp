@@ -17,10 +17,10 @@
 namespace crash_extract
 {
 
-namespace io = engine_placeholder::io;
-namespace os = engine_placeholder::os;
-using engine_placeholder::MemSet;
-using engine_placeholder::usize;
+namespace io = vse::io;
+namespace os = vse::os;
+using vse::MemSet;
+using vse::usize;
 
 namespace
 {
@@ -87,8 +87,7 @@ int ResolveReport(const char* report, usize report_size, const DumpModule* modul
                 ToWide(pdb_path, pdb_wide, 2048);
                 io::Path pdb_file;
                 io::FileInfo pdb_info;
-                const bool present = io::Path::Parse(engine_placeholder::StringView(pdb_path), io::PathStyle::Windows,
-                                                     &pdb_file) &&
+                const bool present = io::Path::Parse(vse::StringView(pdb_path), io::PathStyle::Windows, &pdb_file) &&
                                      io::Stat(pdb_file, &pdb_info).Ok();
                 if (index < 512 && !loaded[index] && present)
                 {
@@ -100,8 +99,7 @@ int ResolveReport(const char* report, usize report_size, const DumpModule* modul
                     // A frame past the first is a return address: the byte before it is the call (as the engine's own
                     // resolver does).
                     const u64 address = module->base + offset - (number > 0 && offset > 0 ? 1 : 0);
-                    alignas(SYMBOL_INFOW)
-                        engine_placeholder::byte storage[sizeof(SYMBOL_INFOW) + 1024 * sizeof(wchar_t)];
+                    alignas(SYMBOL_INFOW) vse::byte storage[sizeof(SYMBOL_INFOW) + 1024 * sizeof(wchar_t)];
                     SYMBOL_INFOW* symbol = reinterpret_cast<SYMBOL_INFOW*>(storage);
                     MemSet(symbol, 0, sizeof(SYMBOL_INFOW));
                     symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);

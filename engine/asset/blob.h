@@ -33,7 +33,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The size of the fixed header in bytes.
@@ -255,4 +255,4 @@ Status SetBlobTarget(ByteSpan blob, u32 target, Vector<byte>* out);
 /// - Thread-safety: thread-safe.
 Status PeekBlobHeader(ByteSpan header, BlobHeaderInfo* out);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

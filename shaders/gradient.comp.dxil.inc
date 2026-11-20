@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGradientCompDxilByteCount = 3068;
 
@@ -211,4 +211,4 @@ inline constexpr u64 kGradientCompDxilSpirvFnv = 0x4d30b2a62741326full;
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kGradientCompShader = {"gradient.comp", rhi::SpirvBlob(kGradientCompSpv, kGradientCompSpvWordCount), rhi::DxilBlob(kGradientCompDxil, kGradientCompDxilByteCount), rhi::MetalLibBlob(kGradientCompMetallib, kGradientCompMetallibByteCount, kGradientCompMetallibEntry, &kGradientCompMetallibSlots)};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

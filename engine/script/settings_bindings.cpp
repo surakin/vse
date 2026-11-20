@@ -7,7 +7,7 @@
 #include "settings/desc.h"
 #include "string/string.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 // ------------------------------------------------------------------ the policy
@@ -553,4 +553,4 @@ bool RegisterSettingsBindings(BindingRegistry* registry)
     return ok;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -3,7 +3,7 @@
 #include "lang/status_try.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -82,4 +82,4 @@ Status SocketStreamProvider::Connect(const Endpoint& to, UniquePtr<StreamIo>* st
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

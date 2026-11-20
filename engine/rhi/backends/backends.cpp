@@ -11,7 +11,7 @@
 #include "rhi/metal/metal_backend.h"
 #endif
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 bool RegisterCompiledBackends()
@@ -30,4 +30,4 @@ bool RegisterCompiledBackends()
     return ok;
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

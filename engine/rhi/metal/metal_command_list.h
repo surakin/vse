@@ -15,7 +15,7 @@
 
 #import <Metal/Metal.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 class MetalCommandList final : public CommandList
@@ -145,4 +145,4 @@ private:
     u32 labels_on_encoder_ = 0;
 };
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

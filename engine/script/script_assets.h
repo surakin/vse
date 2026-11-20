@@ -11,7 +11,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// Loads script assets through a resource manager and adds them to a script world: the closure first (every script a
@@ -82,4 +82,4 @@ private:
     Vector<Entry> behaviors_;
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

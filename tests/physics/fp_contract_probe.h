@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::physics_test
+namespace vse::physics_test
 {
 
 /// The probe compiled with the project's flags.
@@ -11,4 +11,4 @@ bool ProbeProject(const volatile f32* inputs);
 /// instruction.
 bool ProbeControl(const volatile f32* inputs);
 
-}  // namespace engine_placeholder::physics_test
+}  // namespace vse::physics_test

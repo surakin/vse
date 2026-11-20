@@ -12,7 +12,7 @@
 #include "skeleton_source.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -816,4 +816,4 @@ TEST_CASE("mesh: BuildMeshBlob refuses what the minter would never produce", "[a
     CHECK(BuildMeshBlob(types, id, input, &out).Failed());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

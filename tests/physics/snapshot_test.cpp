@@ -9,8 +9,8 @@
 #include "storage/memory_store.h"
 #include "test_hulls.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::physics;
+using namespace vse;
+using namespace vse::physics;
 
 namespace
 {

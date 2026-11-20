@@ -28,7 +28,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// The most bytes in one line of a settings file.
@@ -148,4 +148,4 @@ private:
     void Reindex();
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

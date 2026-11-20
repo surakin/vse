@@ -4,7 +4,7 @@
 #include "os/os.h"
 #include "string/utf8.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 namespace detail
@@ -498,4 +498,4 @@ const SystemStats* Schedule::StatsOf(const char* name) const
     return nullptr;
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

@@ -27,7 +27,7 @@
 //! workload shows it is needed. Each chunk is one job. The chunk count is
 //! capped at [[jobs::kMaxChunks]] by raising the chunk size; see
 //! [[jobs::EffectiveChunkSize]].
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 /// Work function of a parallel loop: processes the half-open range `[begin, end)` using the `user` context.
@@ -174,4 +174,4 @@ template <typename F> void ParallelForBlocking(Scheduler& scheduler, usize count
     ParallelForBlocking(scheduler, count, chunk_size, &detail::Trampoline<F>, &callable);
 }
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

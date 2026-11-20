@@ -13,7 +13,7 @@
 #include "sync/thread.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 // ---- IoThread -----------------------------------------------------------
@@ -275,4 +275,4 @@ FileReadResult& FileReadResult::operator=(FileReadResult&& o) noexcept
     return *this;
 }
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

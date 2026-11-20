@@ -28,7 +28,7 @@
 #include "sync/atomic.h"
 #endif
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 #if ENGINE_C_WITH_SCRIPT
@@ -1389,4 +1389,4 @@ engine_status ScriptTaskRunFn(engine_handle, const engine_script_task*, engine_v
 
 #endif
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

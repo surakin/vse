@@ -158,7 +158,7 @@ the scheduler keeps running other work.
 ## 8. Interface sketches (names are final unless a day file amends them)
 
 ```cpp
-namespace engine_placeholder::rhi {
+namespace vse::rhi {
 struct AdapterInfo;                       // Day 105: id, name, kind, memory, presentable, suitable + reason
 Result EnumerateAdapters(const DeviceCreateInfo&, AdapterList*);
 class DeviceObserver { OnDeviceReleasing(u32 epoch); OnDeviceCreated(Device*, u32 epoch); };
@@ -169,7 +169,7 @@ class DeviceHost {                        // Day 106
   void AddObserver(DeviceObserver*, u32 tier);
 };
 }
-namespace engine_placeholder::renderer {
+namespace vse::renderer {
 class RenderSettings;                     // Day 104: open registry, Get/Set by SettingId, ==, Serialize/Parse
 SettingsChange DiffSettings(const RenderSettings& from, const RenderSettings& to, const Capabilities&);
 class DeviceResources;                    // Day 108: tiered registry, ScopedRegistration

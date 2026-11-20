@@ -8,7 +8,7 @@
 #include "cstr/mem_ops.h"
 #include "os/locale.h"
 
-namespace engine_placeholder::test
+namespace vse::test
 {
 
 /// Switches the whole locale (`LC_ALL`, as a host does) to the first installed one of a list of decimal-comma locales
@@ -79,4 +79,4 @@ private:
     const char* name_ = nullptr;
 };
 
-}  // namespace engine_placeholder::test
+}  // namespace vse::test

@@ -13,8 +13,8 @@
 #include "triangle.frag.dxil.inc"
 #include "triangle.vert.dxil.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 using gpu_test::CompareOptions;
 using gpu_test::Image;
 
@@ -237,9 +237,8 @@ TEST_CASE("PPM files round-trip and malformed ones are refused", "[rhi][golden][
     CHECK(back.rgba == img.rgba);
     CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_no_such_file.ppm").CStr(), &back));
     const char bad[] = "P6\n4 4\n255\nshort";
-    REQUIRE(engine_placeholder::io::WriteFile(engine_placeholder::io::Path(engine_placeholder::StringView(
-                                                  gpu_test::TempPath("rhi_ppm_bad.ppm").CStr())),
-                                              bad, sizeof(bad) - 1)
+    REQUIRE(vse::io::WriteFile(vse::io::Path(vse::StringView(gpu_test::TempPath("rhi_ppm_bad.ppm").CStr())), bad,
+                               sizeof(bad) - 1)
                 .Ok());
     CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_bad.ppm").CStr(), &back));
 }
@@ -282,7 +281,7 @@ TEST_CASE("The per-backend GPU tests run on every GPU backend this machine has",
 {
     // A parameterized test that silently ran one backend would pass for the other: the list must hold what the registry
     // offers.
-    const engine_placeholder::Vector<Backend> backends = gpu_test::GpuBackends();
+    const vse::Vector<Backend> backends = gpu_test::GpuBackends();
     usize available = 0;
     for (usize i = 0; i < RegisteredBackendCount(); ++i)
     {

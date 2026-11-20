@@ -7,7 +7,7 @@
 
 #import <Metal/Metal.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 // The pixel format of `format`; MTLPixelFormatInvalid for one Metal has no texture format for (RGB32_Float is vertex
@@ -24,4 +24,4 @@ bool MtlFormatSupports(Format format, TextureUsage usage, id<MTLDevice> device);
 // compressed or integer format; 32-bit floats only with supports32BitFloatFiltering), as Vulkan's linear-filter rule.
 bool MtlFormatCanGenerateMips(Format format, id<MTLDevice> device);
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

@@ -6,7 +6,7 @@
 
 //! Drag and drop routing of [[ui::Surface]] (Phase 15, Day 200).
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -455,4 +455,4 @@ void Surface::ExternalDropFailed(StringView message)
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

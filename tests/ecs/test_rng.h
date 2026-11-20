@@ -11,23 +11,20 @@ namespace ecs_test
 class Rng
 {
 public:
-    explicit Rng(engine_placeholder::u64 seed) : state_(seed) {}
-    engine_placeholder::u64 Next()
+    explicit Rng(vse::u64 seed) : state_(seed) {}
+    vse::u64 Next()
     {
         state_ += 0x9E3779B97F4A7C15ull;
-        engine_placeholder::u64 z = state_;
+        vse::u64 z = state_;
         z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
         z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
         return z ^ (z >> 31);
     }
     /// A value in [0, bound), bound > 0.
-    engine_placeholder::u32 Below(engine_placeholder::u32 bound)
-    {
-        return static_cast<engine_placeholder::u32>(Next() % bound);
-    }
+    vse::u32 Below(vse::u32 bound) { return static_cast<vse::u32>(Next() % bound); }
 
 private:
-    engine_placeholder::u64 state_;
+    vse::u64 state_;
 };
 
 }  // namespace ecs_test

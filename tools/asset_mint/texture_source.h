@@ -28,7 +28,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// One `source` record.
@@ -113,4 +113,4 @@ Status BuildRawImage(u32 width, u32 height, ByteSpan rgba, u64 id, Vector<byte>*
 Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegistry& types, Vector<byte>* out,
                    TextureSourceError* error, u32 target = 0, jobs::Scheduler* scheduler = nullptr);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

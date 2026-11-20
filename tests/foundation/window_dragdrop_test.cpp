@@ -21,9 +21,9 @@
 namespace window_dragdrop_test
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::os;
-using engine_placeholder::os::x11::X11Window;
+using namespace vse;
+using namespace vse::os;
+using vse::os::x11::X11Window;
 
 namespace
 {
@@ -152,8 +152,8 @@ struct Peer
     void MakeAware()
     {
         long version = 5;
-        XChangeProperty(display, window, a_aware, kXaAtom, 32, kPropModeReplace,
-                        reinterpret_cast<engine_placeholder::byte*>(&version), 1);
+        XChangeProperty(display, window, a_aware, kXaAtom, 32, kPropModeReplace, reinterpret_cast<vse::byte*>(&version),
+                        1);
         XMapWindow(display, window);
         XFlush(display);
     }
@@ -245,7 +245,7 @@ struct Peer
                 Atom type = 0;
                 int format = 0;
                 unsigned long count = 0, after = 0;
-                engine_placeholder::byte* data = nullptr;
+                vse::byte* data = nullptr;
                 if (XGetWindowProperty(display, window, e.xselection.property, 0, 1 << 20, 1, kAnyPropertyType, &type,
                                        &format, &count, &after, &data) == kSuccess &&
                     data != nullptr)
@@ -567,7 +567,7 @@ TEST_CASE("XDND: an offer of 1000 types is cut at the first 64", "[dragdrop][x11
         }
         types[variant == 0 ? 10 : 900] = peer.a_utf8;
         XChangeProperty(peer.display, peer.window, peer.a_type_list, kXaAtom, 32, kPropModeReplace,
-                        reinterpret_cast<engine_placeholder::byte*>(types.Data()), 1000);
+                        reinterpret_cast<vse::byte*>(types.Data()), 1000);
         peer.status_count = 0;
         peer.Message(target, peer.a_enter, static_cast<long>(peer.window), (5L << 24) | 1, 0, 0, 0);
         peer.SendPosition(target, 5, 5, peer.a_copy);
@@ -720,7 +720,7 @@ TEST_CASE("XDND: an XdndTypeList of the wrong format is ignored", "[dragdrop][x1
     accept.formats = kDropText;
     window.SetDropAccept(accept);
     const unsigned long target = window.NativeWindow();
-    engine_placeholder::byte bytes[64] = {};
+    vse::byte bytes[64] = {};
     XChangeProperty(peer.display, peer.window, peer.a_type_list, kXaAtom, 8, kPropModeReplace, bytes, 64);
     peer.Message(target, peer.a_enter, static_cast<long>(peer.window), (5L << 24) | 1, 0, 0, 0);
     peer.SendPosition(target, 5, 5, peer.a_copy);

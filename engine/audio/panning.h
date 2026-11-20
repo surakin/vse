@@ -5,7 +5,7 @@
 #include "audio/format.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The most channels of any layout.
@@ -29,4 +29,4 @@ inline constexpr u32 kMaxPanChannels = 8;
 /// - Ownership: `gains` is borrowed for the call and must hold `kMaxPanChannels` values.
 void SpeakerGains(ChannelLayout layout, f32 x, f32 y, f32 z, f32 spread, f32* gains);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

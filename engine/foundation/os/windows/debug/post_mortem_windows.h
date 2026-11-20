@@ -7,7 +7,7 @@
 #include "os/windows/win32.h"
 #include "types.h"
 
-namespace engine_placeholder::debug::detail
+namespace vse::debug::detail
 {
 
 // Reads the LocalDumps values WER would use for the program `exe_name` under `root\local_dumps_key` (its own subkey,
@@ -16,4 +16,4 @@ namespace engine_placeholder::debug::detail
 bool DescribeLocalDumps(HKEY root, const wchar_t* local_dumps_key, const wchar_t* exe_name, PostMortemReport* report,
                         u32* dump_type);
 
-}  // namespace engine_placeholder::debug::detail
+}  // namespace vse::debug::detail

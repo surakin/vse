@@ -6,7 +6,7 @@
 #include "asset/cpu_loaders.h"
 #include "asset/resource_manager.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 
 /// Finds skeletons and clips by id among the resources the manager has loaded. It takes no references: something else
@@ -40,4 +40,4 @@ private:
     const asset::ResourceManager* manager_;
 };
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

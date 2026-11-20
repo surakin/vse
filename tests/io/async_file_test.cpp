@@ -23,7 +23,7 @@
 #define IO_TEST_SANITIZED 1
 #endif
 
-using namespace engine_placeholder;  // the allocation hooks below are global and name the engine types
+using namespace vse;  // the allocation hooks below are global and name the engine types
 
 // --- an allocation counter (this test executable only), to prove the local completion path allocates nothing
 // -----------------
@@ -67,7 +67,7 @@ void operator delete[](void* p, usize) noexcept
 }
 #endif
 
-using namespace engine_placeholder;
+using namespace vse;
 using io::Error;
 using io::OpenMode;
 using io_test::SlowFile;

@@ -14,7 +14,7 @@
 #include "string/string.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The name of the stored table a directory may hold at its root (a minted `NAMES` blob).
@@ -100,4 +100,4 @@ private:
     Vector<Item> items_;  // sorted by id
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

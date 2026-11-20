@@ -4,7 +4,7 @@
 #include "cstr/mem_ops.h"
 #include "mem/heap_allocator.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -176,4 +176,4 @@ u64 LoadBufferPool::BytesIdle() const
     return idle_;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

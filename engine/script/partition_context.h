@@ -11,7 +11,7 @@
 #include "script/service_slots.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 struct SettingsAccess;
@@ -152,4 +152,4 @@ private:
     ecs::World* world_;
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

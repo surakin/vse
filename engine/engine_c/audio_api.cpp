@@ -12,7 +12,7 @@
 #include "lang/utility.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 namespace
@@ -1613,4 +1613,4 @@ engine_status AudioRestoreFn(engine_handle engine, const void* data, size_t size
     return Fail(ENGINE_ERROR_INTERNAL, "unknown snapshot status");
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

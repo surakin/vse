@@ -5,7 +5,7 @@ Windows, macOS, mobile, consoles and network-backed files. `plans/phase-09-file-
 
 ## 1. Goal
 
-One path/file/directory layer in `engine/foundation/io/` (namespace `engine_placeholder::io`) replacing scattered `fopen`/`open`/`opendir`/
+One path/file/directory layer in `engine/foundation/io/` (namespace `vse::io`) replacing scattered `fopen`/`open`/`opendir`/
 `stat`/`mkdir`/`rename` calls and string-pasted paths. Phase 11 (settings) is built on it; Phase 22's storage backends implement `io::File`.
 
 ## 2. Inventory (what exists today)
@@ -95,7 +95,7 @@ The generated tables are in Appendix A and become Day 116's test data. Decisions
 ## 5. Class sketches
 
 ```cpp
-namespace engine_placeholder::io {
+namespace vse::io {
 enum class PathStyle : u8 { Posix, Windows };
 class PathView;  class Path;                      // lexical only, no syscalls
 

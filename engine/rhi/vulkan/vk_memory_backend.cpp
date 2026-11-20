@@ -3,7 +3,7 @@
 #include "rhi/vulkan/vk_result.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 VulkanMemoryBackend::VulkanMemoryBackend(const VkDeviceFns* fns, VkDevice device, Atomic<bool>* device_lost)
@@ -93,4 +93,4 @@ void VulkanMemoryBackend::Free(const BackendAllocation& allocation)
     live_.FetchSub(1, MemoryOrder::Relaxed);
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

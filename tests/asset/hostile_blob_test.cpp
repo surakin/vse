@@ -13,7 +13,7 @@
 #include "gltf_writer.h"
 #include "png_writer.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -162,4 +162,4 @@ TEST_CASE("hostile: every blob reader survives mutated and truncated blobs", "[a
     }
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

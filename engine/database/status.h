@@ -8,7 +8,7 @@
 #include "lang/status_try.h"
 #include "types.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 /// What went wrong, in terms every backend can express. The backend's own code and message stay in [[database::Status]]
@@ -93,4 +93,4 @@ private:
     Array<char, kMaxMessageBytes + 1> message_{};
 };
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

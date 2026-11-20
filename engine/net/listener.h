@@ -12,7 +12,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// How a [[net::Listener]] is opened.
@@ -115,4 +115,4 @@ private:
     Atomic<usize> unhandled_{0};
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

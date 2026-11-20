@@ -5,7 +5,7 @@
 
 #include "text.h"
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 // Reads the `// permutation-options: A B C` line from the shader source (it must be in the first 60 lines). Options are
@@ -48,4 +48,4 @@ Text EmitPermutationInc(StringView base, StringView shader_file, StringView sour
                         const Vector<Text>& options, const Vector<u32>& keys, const Vector<u32>& key_module,
                         const Vector<BuiltModule>& modules);
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

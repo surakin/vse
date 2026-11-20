@@ -15,7 +15,7 @@
 
 #import <AppKit/AppKit.h>
 
-namespace engine_placeholder::os::cocoa
+namespace vse::os::cocoa
 {
 
 NSString* StringOfBytes(const byte* data, usize size)
@@ -345,4 +345,4 @@ void CocoaWindow::SetPasteboardForTest(void* pasteboard)
     pasteboard_count_ = native_->pasteboard.changeCount;
 }
 
-}  // namespace engine_placeholder::os::cocoa
+}  // namespace vse::os::cocoa

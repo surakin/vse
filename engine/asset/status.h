@@ -6,7 +6,7 @@
 #include "lang/status_try.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// What went wrong.
@@ -89,4 +89,4 @@ private:
     const char* message_ = "";
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

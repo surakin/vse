@@ -8,7 +8,7 @@
 
 //! The Vulkan source of memory objects for [[rhi::vulkan::MemoryAllocator]].
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// Converts a non-dispatchable Vulkan handle to the opaque 64-bit value the allocator stores.
@@ -74,4 +74,4 @@ private:
     Atomic<u64> live_{0};
 };
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

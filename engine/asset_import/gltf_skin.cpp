@@ -8,7 +8,7 @@
 #include "lang/scalar.h"
 #include "lang/status_try.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -440,4 +440,4 @@ Status ImportSkins(const GltfDocument& document, const GltfNodeGraph& graph, con
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

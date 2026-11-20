@@ -8,7 +8,7 @@
 #include "log/log.h"
 #include "mem/heap_allocator.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 extern "C" void plugin_report(const struct engine_test_extension*, struct plugin_report* out)
 {

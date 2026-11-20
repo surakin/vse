@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kPointLightFragReflByteCount = 527;
 
@@ -54,4 +54,4 @@ inline constexpr u32 kPointLightFragFrameDataCameraPositionOffset = 256;
 inline constexpr u32 kPointLightFragFrameDataViewportOffset = 272;
 inline constexpr u32 kPointLightFragFrameDataTimeOffset = 288;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

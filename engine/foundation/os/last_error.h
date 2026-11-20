@@ -4,7 +4,7 @@
 
 //! The C library's error number (Phase 16): the engine's spelling of `errno`, which is a macro and cannot be named from
 //! other files. The `E*` constants (`EINTR`, `ENOENT`, ...) arrive through this header.
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// The calling thread's last system error (`errno`).
@@ -24,4 +24,4 @@ inline void SetLastError(int value) noexcept
     errno = value;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

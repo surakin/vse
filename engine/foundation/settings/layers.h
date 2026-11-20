@@ -14,7 +14,7 @@
 #include "settings/registry.h"
 #include "string/string.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// Where a layer sits in the precedence order (lowest first). Layers of one role keep the order they were added in,
@@ -173,4 +173,4 @@ private:
 /// 3).
 bool SuggestKey(const Registry& registry, StringView text, Key* out);
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

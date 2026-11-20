@@ -1,6 +1,6 @@
 #include "os/command_line.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 namespace
@@ -24,4 +24,4 @@ void Detail_NativeCommandLineArgs(int* out_argc, char*** out_argv)
     *out_argv = g_argv;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

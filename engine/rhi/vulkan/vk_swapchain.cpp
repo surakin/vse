@@ -7,7 +7,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -503,4 +503,4 @@ TextureHandle VulkanSwapchain::CurrentTexture() const
     return acquired_ ? textures_[current_] : TextureHandle{};
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

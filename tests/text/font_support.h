@@ -11,30 +11,30 @@
 namespace text_test
 {
 
-inline engine_placeholder::io::Path FontPath()
+inline vse::io::Path FontPath()
 {
-    return engine_placeholder::io::Path(engine_placeholder::StringView(TEXT_TEST_FONT_FILE));
+    return vse::io::Path(vse::StringView(TEXT_TEST_FONT_FILE));
 }
 
 /// The shipped font file's bytes (read once per call; the font is small).
-inline engine_placeholder::Vector<engine_placeholder::byte> FontBytes()
+inline vse::Vector<vse::byte> FontBytes()
 {
-    engine_placeholder::Vector<engine_placeholder::byte> bytes;
-    (void)engine_placeholder::io::ReadFile(FontPath(), &bytes);
+    vse::Vector<vse::byte> bytes;
+    (void)vse::io::ReadFile(FontPath(), &bytes);
     return bytes;
 }
 
 /// A library with the shipped font opened from its path.
 struct Opened
 {
-    engine_placeholder::text::FontLibrary library;
-    engine_placeholder::text::Font font;
-    explicit Opened(engine_placeholder::text::Hinting hinting = engine_placeholder::text::Hinting::Light)
+    vse::text::FontLibrary library;
+    vse::text::Font font;
+    explicit Opened(vse::text::Hinting hinting = vse::text::Hinting::Light)
     {
         REQUIRE(library.Initialize().Ok());
-        engine_placeholder::text::FontOptions options;
+        vse::text::FontOptions options;
         options.hinting = hinting;
-        REQUIRE(engine_placeholder::text::Font::OpenFile(library, FontPath(), options, &font).Ok());
+        REQUIRE(vse::text::Font::OpenFile(library, FontPath(), options, &font).Ok());
     }
 };
 

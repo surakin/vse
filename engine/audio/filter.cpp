@@ -4,7 +4,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -455,4 +455,4 @@ UniquePtr<Effect> MakeOnePoleEffect(u32 channels, u32 ramp_frames)
     return UniquePtr<Effect>(Move(effect));
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

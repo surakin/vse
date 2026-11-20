@@ -12,8 +12,8 @@
 #include "rhi/rhi.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 namespace pipeline_cache_file_test
 {

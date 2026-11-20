@@ -12,7 +12,7 @@
 
 #import <Metal/Metal.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 // The header's size in front of the archive's bytes: magic `ENGMTLA1`, a format version, a reserved word, the identity,
@@ -105,4 +105,4 @@ private:
     Stats stats_;
 };
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

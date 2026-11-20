@@ -9,7 +9,7 @@
 #include "spatial/query.h"
 #include "spatial/spatial_set.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -421,4 +421,4 @@ u32 RenderScene::CullFlat(const Frustum& frustum, u32* out_slots) const
     return count;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -41,7 +41,7 @@
 #include "string/string.h"
 #include "textures.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 // Using-declarations, not `using namespace rhi`: this file is merged with the world's in a unity build, where a
 // namespace directive would make names such as `Span` ambiguous there.
 using renderer::Camera;
@@ -104,7 +104,7 @@ DeviceCreateInfo DeviceInfo()
     return info;
 }
 
-void RegisterProgramSettings(::engine_placeholder::settings::Registry* registry)
+void RegisterProgramSettings(::vse::settings::Registry* registry)
 {
     script::RegisterScriptSettings(registry);
     audio::RegisterAudioSettings(registry);
@@ -660,7 +660,7 @@ int Usage(const char* program, int code)
 
 int EngineMain(int argc, char** argv)
 {
-    ::engine_placeholder::rhi::RegisterCompiledBackends();
+    ::vse::rhi::RegisterCompiledBackends();
     const debug::ProgramDebugSetup debug_setup = debug::StartProgramDebugging(argc, argv);
     debug::RunCrashTest(debug_setup.crash_test);
     LogRhi.SetVerbosity(LogVerbosity::Info);

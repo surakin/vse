@@ -23,12 +23,12 @@
 #include "sync/thread.h"
 #include "types.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 class Scheduler;
 }
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// The component of ENGINE_COMPONENT_CAMERA (Phase 24 Day 360).
@@ -503,4 +503,4 @@ char* MakeBlankBuffer(usize size, engine_buffer* out);
 /// - Param status: when not null, receives ENGINE_OK or the failure of the handle.
 WorldObject* FindWorld(Runtime& runtime, engine_handle handle, engine_status* status = nullptr);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

@@ -9,7 +9,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// How a registry entry names and creates a backend.
@@ -73,4 +73,4 @@ UniquePtr<Backend> CreateBackend(StringView name, Outcome* error);
 /// - Fails: never.
 void ClearBackendRegistryForTest();
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

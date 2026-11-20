@@ -12,17 +12,16 @@ namespace spatial_test
 {
 
 // The box with this center and these half extents.
-inline engine_placeholder::Aabb BoxAt(const engine_placeholder::Vec3& c, const engine_placeholder::Vec3& h)
+inline vse::Aabb BoxAt(const vse::Vec3& c, const vse::Vec3& h)
 {
-    return engine_placeholder::Aabb::FromMinMax(c - h, c + h);
+    return vse::Aabb::FromMinMax(c - h, c + h);
 }
 
 // Sorts keys ascending.
-inline void SortKeys(engine_placeholder::Vector<engine_placeholder::spatial::SpatialKey>* keys)
+inline void SortKeys(vse::Vector<vse::spatial::SpatialKey>* keys)
 {
-    engine_placeholder::Sort(
-        engine_placeholder::Span<engine_placeholder::spatial::SpatialKey>(keys->Data(), keys->Size()),
-        [](engine_placeholder::spatial::SpatialKey a, engine_placeholder::spatial::SpatialKey b) { return a < b; });
+    vse::Sort(vse::Span<vse::spatial::SpatialKey>(keys->Data(), keys->Size()),
+              [](vse::spatial::SpatialKey a, vse::spatial::SpatialKey b) { return a < b; });
 }
 
 }  // namespace spatial_test

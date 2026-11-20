@@ -14,7 +14,7 @@
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -596,4 +596,4 @@ TEST_CASE("async: destroying the loader with loads in flight leaves nothing behi
     CHECK(rig.manager->Pool().BytesInUse() == rig.manager->Stats().bytes_resident);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

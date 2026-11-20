@@ -1,6 +1,6 @@
 #include "rhi/vulkan/vk_pipeline_policy.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 VkPrimitiveTopology ToVkTopology(PrimitiveTopology topology)
@@ -241,4 +241,4 @@ bool BuildPipelineCachePath(const char* dir, const PipelineCacheIdentity& identi
     return ok;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

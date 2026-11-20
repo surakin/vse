@@ -15,7 +15,7 @@
 #include <sys/sysctl.h>
 #include <sys/utsname.h>
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 u64 CurrentThreadId()
@@ -124,4 +124,4 @@ void FillPlatformCrashContext(CrashContext& context)
 
 }  // namespace detail
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

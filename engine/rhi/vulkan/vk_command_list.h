@@ -5,7 +5,7 @@
 
 //! The Vulkan implementation of [[rhi::CommandList]].
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 class VulkanDevice;
@@ -115,4 +115,4 @@ private:
     void FlushBindGroups(const char* what);
 };
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

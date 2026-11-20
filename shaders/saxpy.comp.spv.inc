@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kSaxpyCompSpvWordCount = 359;
 
@@ -71,4 +71,4 @@ inline constexpr u32 kSaxpyCompSpv[kSaxpyCompSpvWordCount] = {
     0x00000023, 0x000200f8, 0x00000023, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

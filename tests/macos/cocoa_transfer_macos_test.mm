@@ -19,16 +19,16 @@
 #import <AppKit/AppKit.h>
 #import <CoreGraphics/CoreGraphics.h>
 
-using namespace engine_placeholder;
-using engine_placeholder::os::ClipboardFormat;
-using engine_placeholder::os::ClipboardKind;
-using engine_placeholder::os::ClipboardResult;
-using engine_placeholder::os::ClipboardStatus;
-using engine_placeholder::os::CursorShape;
-using engine_placeholder::os::DragAction;
-using engine_placeholder::os::InputEvent;
-using engine_placeholder::os::InputEventType;
-using engine_placeholder::os::cocoa::CocoaWindow;
+using namespace vse;
+using vse::os::ClipboardFormat;
+using vse::os::ClipboardKind;
+using vse::os::ClipboardResult;
+using vse::os::ClipboardStatus;
+using vse::os::CursorShape;
+using vse::os::DragAction;
+using vse::os::InputEvent;
+using vse::os::InputEventType;
+using vse::os::cocoa::CocoaWindow;
 
 // A drag as AppKit describes it to a destination: a pasteboard, the source's operations, a location.
 @interface FakeDraggingInfo : NSObject <NSDraggingInfo>

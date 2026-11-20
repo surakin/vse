@@ -9,7 +9,7 @@
 namespace renderer_demo
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // A name and the pixels of one demo texture.
 struct DemoTexture

@@ -24,13 +24,13 @@ namespace gpu_test
 
 inline bool GpuRequired()
 {
-    const char* v = engine_placeholder::os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
+    const char* v = vse::os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
     return v != nullptr && v[0] == '1';
 }
 
 struct CapturedMessage
 {
-    engine_placeholder::LogVerbosity severity;
+    vse::LogVerbosity severity;
     engine_test::Text id;
     engine_test::Text text;
 };
@@ -41,7 +41,7 @@ class GpuFixture
 public:
     explicit GpuFixture(bool presentable = false)
     {
-        using namespace engine_placeholder::rhi::vulkan;
+        using namespace vse::rhi::vulkan;
         if (LoadVulkanLoader(&loader_) != LoaderStatus::Ok)
         {
             return;
@@ -61,7 +61,7 @@ public:
 
     ~GpuFixture()
     {
-        using namespace engine_placeholder::rhi::vulkan;
+        using namespace vse::rhi::vulkan;
         instance_ = VulkanInstance{};  // destroy before the final count so messages from vkDestroyInstance are included
         SetValidationCapture(nullptr, nullptr);
         // Skip the check while a failed REQUIRE/SKIP is unwinding: the test already reported its own cause.
@@ -103,21 +103,20 @@ public:
     // Declares that the test deliberately provokes this many validation errors.
     void ExpectErrors(unsigned long long n) { expected_errors_ = n; }
 
-    const engine_placeholder::rhi::vulkan::VulkanLoader& Loader() const { return loader_; }
-    const engine_placeholder::rhi::vulkan::VulkanInstance& Instance() const { return instance_; }
-    const engine_placeholder::Vector<CapturedMessage>& Messages() const { return messages_; }
+    const vse::rhi::vulkan::VulkanLoader& Loader() const { return loader_; }
+    const vse::rhi::vulkan::VulkanInstance& Instance() const { return instance_; }
+    const vse::Vector<CapturedMessage>& Messages() const { return messages_; }
 
 private:
-    static void Capture(void* user, engine_placeholder::LogVerbosity severity, const char* id, const char* text)
+    static void Capture(void* user, vse::LogVerbosity severity, const char* id, const char* text)
     {
-        static_cast<GpuFixture*>(user)->messages_.Push(
-            CapturedMessage{severity, engine_test::MakeText(engine_placeholder::StringView(id)),
-                            engine_test::MakeText(engine_placeholder::StringView(text))});
+        static_cast<GpuFixture*>(user)->messages_.Push(CapturedMessage{
+            severity, engine_test::MakeText(vse::StringView(id)), engine_test::MakeText(vse::StringView(text))});
     }
 
-    engine_placeholder::rhi::vulkan::VulkanLoader loader_;
-    engine_placeholder::rhi::vulkan::VulkanInstance instance_;
-    engine_placeholder::Vector<CapturedMessage> messages_;
+    vse::rhi::vulkan::VulkanLoader loader_;
+    vse::rhi::vulkan::VulkanInstance instance_;
+    vse::Vector<CapturedMessage> messages_;
     unsigned long long expected_errors_ = 0;
 };
 #else
@@ -138,10 +137,10 @@ public:
     }
     void RequireValidation() const { Require(); }
     void ExpectErrors([[maybe_unused]] unsigned long long n) {}
-    const engine_placeholder::Vector<CapturedMessage>& Messages() const { return messages_; }
+    const vse::Vector<CapturedMessage>& Messages() const { return messages_; }
 
 private:
-    engine_placeholder::Vector<CapturedMessage> messages_;
+    vse::Vector<CapturedMessage> messages_;
 };
 #endif
 

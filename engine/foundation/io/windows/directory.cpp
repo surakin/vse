@@ -9,7 +9,7 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -233,4 +233,4 @@ Status GetIdentity(const Path& path, Identity* out)
 
 }  // namespace detail
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

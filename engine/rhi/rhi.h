@@ -9,7 +9,7 @@
 
 //! Creating a device: the one entry point layers above the RHI use to get a backend.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Which backend [[rhi::CreateDevice]] creates.
@@ -140,4 +140,4 @@ void NullAdapters(AdapterList* out);
 /// - Thread-safety: thread-safe.
 DevicePtr CreateDevice(const DeviceCreateInfo& info);
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

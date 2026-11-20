@@ -5,7 +5,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -673,4 +673,4 @@ u64 Value::Hash() const
     return h.Result();
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

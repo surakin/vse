@@ -15,7 +15,7 @@
 #include "sync/thread.h"
 #include "temp_dir.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 namespace
 {
@@ -461,4 +461,4 @@ TEST_CASE("Database benchmark", "[.][database-bench]")
 }
 
 }  // namespace
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

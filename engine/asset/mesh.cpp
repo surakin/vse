@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -1081,9 +1081,9 @@ Status MeshView::CheckSkin() const
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 MeshMorphTargetInfo MeshView::MorphTarget(u32 i) const
@@ -1113,4 +1113,4 @@ MeshMorphDelta MeshView::MorphDelta(u32 k) const
     return out;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

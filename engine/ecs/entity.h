@@ -5,7 +5,7 @@
 #include "containers/hash_map.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// A reference to an entity: a slot index and the slot's generation.
@@ -51,9 +51,9 @@ struct Entity
     constexpr bool operator<(const Entity& other) const { return ToU64() < other.ToU64(); }
 };
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Hash function for [[ecs::Entity]] keys of a [[HashMap]].
@@ -67,4 +67,4 @@ template <> struct Hash<ecs::Entity>
     usize operator()(const ecs::Entity& e) const { return Hash<u64>{}(e.ToU64()); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

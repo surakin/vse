@@ -3,7 +3,7 @@
 
 #include "audio/effect.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// What a delay does.
@@ -108,4 +108,4 @@ EffectParams MakeReverbParams(const ReverbDesc& desc);
 /// - Fails: reported by a null result.
 UniquePtr<Effect> MakeReverbEffect(u32 channels, const ReverbDesc& desc);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

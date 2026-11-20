@@ -7,7 +7,7 @@ whose results are recorded in section 3.
 
 | # | Decision | Verdict |
 |---|---|---|
-| 1 | `engine/foundation/settings/`, namespace `engine_placeholder::settings`, built on `io` | **Confirmed.** Jobs are not needed by the model; background saving is a caller choice (`Settings::Save` is synchronous and takes the write layer's lock). |
+| 1 | `engine/foundation/settings/`, namespace `vse::settings`, built on `io` | **Confirmed.** Jobs are not needed by the model; background saving is a caller choice (`Settings::Save` is synchronous and takes the write layer's lock). |
 | 2 | Dotted keys, at most 3 segments, `[section]` is the prefix; flat keys get the `renderer.` prefix | **Confirmed.** Spike A's sample round-trips with sections. A key segment is `[a-z][a-z0-9_]*`, 1 to 31 characters; the whole key at most 95. |
 | 3 | One `settings::Registry`; the renderer's `SettingsRegistry` becomes a client | **Confirmed.** The apply table (`CostClass`) stays the renderer's: the registry carries an opaque `u32 apply_class` and a name table the owner registers. |
 | 4 | `ConfigStore` abstract, shaped by Spike C | **Confirmed with four amendments** (section 3, Spike C): a separate `Load`, `Keys(prefix)` for enumeration, `Set` is *staged* on a document store and *immediate* on a per-key store (a capability says which), and `Commit` reports partial failure by naming the first key not written. |
@@ -126,7 +126,7 @@ is needed (the file store lists a section; the registry lists a subkey path); (3
 ## 4. Class sketches
 
 ```cpp
-namespace engine_placeholder::settings {
+namespace vse::settings {
 enum class Type : u8 { Bool, Int, Float, Enum, Text };
 struct Value { Type type; /* bool/i64/f64/enum index/text */ };
 struct SettingDesc { const char* key; Type type; Value def; Value min, max; RangePolicy policy; const char* const* enum_names; u32 enum_count;

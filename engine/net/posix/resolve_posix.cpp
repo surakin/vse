@@ -8,7 +8,7 @@
 #include "net/posix/posix_net.h"
 #include "net/resolver.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -96,4 +96,4 @@ Status SystemResolve(StringView host, u16 port, AddressFamily family, EndpointSe
     return out->Empty() ? Status::Of(ErrorCode::NotFound) : Status::Success();
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

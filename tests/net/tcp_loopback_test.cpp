@@ -8,7 +8,7 @@
 #include "net/tcp_transport.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 TEST_CASE("TCP transport: messages, a large message and a close over loopback sockets", "[net][tcp][network]")
@@ -133,4 +133,4 @@ TEST_CASE("TCP transport: a connect to a closed port is refused", "[net][tcp][ne
     CHECK(refused);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -6,7 +6,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset::test
+namespace vse::asset::test
 {
 
 inline u32 PngCrc(const byte* data, usize size, u32 crc = 0xffffffffu)
@@ -160,4 +160,4 @@ inline Vector<byte> MakePng(const PngSpec& spec)
     return file;
 }
 
-}  // namespace engine_placeholder::asset::test
+}  // namespace vse::asset::test

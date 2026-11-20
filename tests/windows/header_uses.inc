@@ -5,10 +5,10 @@ namespace windows_header_test {
 
 // ENGINE_NO_UNIQUE_ADDRESS (debug/compiler.h): cl and clang-cl ignore the standard [[no_unique_address]], which made a UniquePtr with
 // its stateless deleter twice the size of a pointer (found on Phase 13 Day 148; tests/foundation/unique_ptr_test.cpp asserts the same).
-static_assert(sizeof(engine_placeholder::UniquePtr<int>) == sizeof(int*), "the deleter of UniquePtr must take no space");
+static_assert(sizeof(vse::UniquePtr<int>) == sizeof(int*), "the deleter of UniquePtr must take no space");
 
 inline void UseClashingNames() {
-    namespace ep = engine_placeholder;
+    namespace ep = vse;
     ep::os::DynamicLibraryHandle library = ep::os::LoadLibrary(ep::StringView("example.dll"));
     ep::os::UnloadLibrary(library);
     ep::io::Path path;

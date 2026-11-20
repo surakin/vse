@@ -2,7 +2,7 @@
 
 #include "script/value.h"
 
-namespace engine_placeholder::script_physics
+namespace vse::script_physics
 {
 
 namespace
@@ -137,4 +137,4 @@ PhysicsEventReport EmitPhysicsEvents(const physics::PhysicsWorld& world, script:
     return report;
 }
 
-}  // namespace engine_placeholder::script_physics
+}  // namespace vse::script_physics

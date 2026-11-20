@@ -12,7 +12,7 @@
 #include "cstr/mem_ops.h"
 #include "build_defs.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

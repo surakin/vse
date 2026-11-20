@@ -50,7 +50,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Where and why a level source was refused.
@@ -166,4 +166,4 @@ Status FormatWorld(ResourceId id, ecs::World& world, storage::KeyIndex& index, S
                    const LevelReferenceResolver& resolver, const storage::ComponentRegistry& registry,
                    String<HeapAllocator>* out, LevelSourceError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

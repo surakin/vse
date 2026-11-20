@@ -8,7 +8,7 @@
 
 //! The button widgets (Phase 15, Day 195): button, toggle button, check box, radio button and radio group.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class RadioGroup;
@@ -243,4 +243,4 @@ private:
     Callback<RadioGroup*> on_changed_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

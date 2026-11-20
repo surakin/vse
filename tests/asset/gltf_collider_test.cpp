@@ -19,7 +19,7 @@
 #include "storage/builtin_components.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -584,4 +584,4 @@ TEST_CASE("gltf collider: mutated collision files never crash the import", "[ass
     CHECK(imported > 0);  // the mutations do not refuse everything (some change only a name or a number)
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

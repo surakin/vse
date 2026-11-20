@@ -3,7 +3,7 @@
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 void UpgradeChains::Register(ResourceType type, u32 from_version, UpgradeFn step)
@@ -68,4 +68,4 @@ Status UpgradeBlob(const UpgradeChains& chains, const TypeRegistry& types, ByteS
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

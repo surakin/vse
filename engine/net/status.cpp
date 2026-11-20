@@ -1,6 +1,6 @@
 #include "net/status.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 const char* ErrorCodeName(ErrorCode code)
@@ -29,4 +29,4 @@ const char* ErrorCodeName(ErrorCode code)
     return "other";
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

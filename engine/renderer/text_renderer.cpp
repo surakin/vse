@@ -9,7 +9,7 @@
 #include "text.vert.dxil.inc"  // and its .spv.inc
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -438,4 +438,4 @@ bool TextRenderer::Record(rhi::CommandList* list, u32 target_width, u32 target_h
     return ok;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -16,7 +16,7 @@
 #include "settings/key.h"
 #include "types.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// How a setting is identified: small integers handed out in registration order; 0 is never valid.
@@ -176,4 +176,4 @@ private:
     usize LowerBound(StringView key) const;
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

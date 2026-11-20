@@ -19,7 +19,7 @@
 namespace docgen
 {
 
-enum class TokenKind : engine_placeholder::u8
+enum class TokenKind : vse::u8
 {
     Identifier,
     Number,
@@ -29,7 +29,7 @@ enum class TokenKind : engine_placeholder::u8
     Define,  // a `#define` directive; text runs from the macro name to the end of the logical line
 };
 
-enum class DocKind : engine_placeholder::u8
+enum class DocKind : vse::u8
 {
     Declaration,  // `///` lines directly above a declaration
     File,         // `//!` lines (file overview)
@@ -44,7 +44,7 @@ struct DocComment
     u32 last_line;
     // Index of the token this comment documents; -1 for File comments.
     // Trailing: the last token before the comment on its line.
-    engine_placeholder::i32 token = -1;
+    vse::i32 token = -1;
 };
 
 struct Token
@@ -56,7 +56,7 @@ struct Token
     // Index into ScanResult::docs of the `///` comment attached to this
     // token, or -1. (A `///<` comment points back at its token via
     // DocComment::token instead.)
-    engine_placeholder::i32 doc = -1;
+    vse::i32 doc = -1;
 };
 
 struct ScanResult

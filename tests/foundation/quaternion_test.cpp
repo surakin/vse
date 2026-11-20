@@ -5,12 +5,12 @@
 #include "math/vector.h"
 #include "test_helpers.h"
 
-using engine_placeholder::kPi;
-using engine_placeholder::Quaternion;
-using engine_placeholder::Slerp;
-using engine_placeholder::Vec3;
-using engine_placeholder::test::QuaternionNearlyEqual;
-using engine_placeholder::test::Vec3NearlyEqual;
+using vse::kPi;
+using vse::Quaternion;
+using vse::Slerp;
+using vse::Vec3;
+using vse::test::QuaternionNearlyEqual;
+using vse::test::Vec3NearlyEqual;
 
 TEST_CASE("Quaternion multiply matches the Hamilton product", "[math][quaternion]")
 {

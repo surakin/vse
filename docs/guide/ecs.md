@@ -45,7 +45,7 @@ A world owns one; a program normally never touches it.
 #include "ecs/entity_table.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     ecs::EntityTable table;
@@ -93,7 +93,7 @@ A `ecs::ComponentSet` is the 128-bit set of ids that identifies an archetype or 
 #include "ecs/component_set.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Position { float x, y, z; };
 struct Frozen {};
@@ -157,7 +157,7 @@ change**: `Create`, `Destroy`, `Add<T>`, `Remove<T>`, and `Set<T>` when it has t
 #include "ecs/world.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Position { float x, y; };
 struct Frozen {};
@@ -203,7 +203,7 @@ per matching entity with exactly the data you asked for. Include `ecs/query.h` a
 #include "ecs/query.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Position { float x, y; };
 struct Velocity { float x, y; };
@@ -272,7 +272,7 @@ changes and you apply them afterwards, at a **sync point**. Include `ecs/command
 #include "ecs/query.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Health { unsigned hp; };
 struct Burning {};
@@ -326,7 +326,7 @@ A **resource** is one value of a type that belongs to the world as a whole: the 
 #include "ecs/world.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Time { double delta; unsigned frame; };
 
@@ -365,7 +365,7 @@ visits entities in now (archetype, chunk, row), for a caller that must reproduce
 #include "ecs/query.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Position { float x, y; };
 
@@ -424,7 +424,7 @@ A **system** is a function that runs once per frame over the world. A **schedule
 #include "ecs/schedule.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Position { float x, y; };
 struct Velocity { float x, y; };
@@ -534,7 +534,7 @@ parent's depth plus one for a child); use `CreateTransformEntity`, `SetParent` a
 #include "ecs/transform.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     ecs::World world;

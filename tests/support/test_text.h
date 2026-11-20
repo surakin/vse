@@ -18,12 +18,12 @@
 namespace engine_test
 {
 
-using engine_placeholder::HeapAllocator;
-using engine_placeholder::StringView;
-using engine_placeholder::usize;
-using engine_placeholder::Vector;
+using vse::HeapAllocator;
+using vse::StringView;
+using vse::usize;
+using vse::Vector;
 
-using Text = engine_placeholder::String<HeapAllocator>;
+using Text = vse::String<HeapAllocator>;
 
 /// An owned copy of `view`.
 inline Text MakeText(StringView view = StringView())
@@ -46,18 +46,18 @@ inline Text Repeated(usize count, char c)
 inline Text Format(const char* format, ...) ENGINE_PRINTF_FORMAT(1, 2);
 inline Text Format(const char* format, ...)
 {
-    engine_placeholder::VarArgs args;
+    vse::VarArgs args;
     ENGINE_VA_START(args, format);
-    engine_placeholder::VarArgs again;
+    vse::VarArgs again;
     ENGINE_VA_COPY(again, args);
-    const int needed = engine_placeholder::VFormatTo(nullptr, 0, format, args);
+    const int needed = vse::VFormatTo(nullptr, 0, format, args);
     ENGINE_VA_END(args);
     Text out = MakeText();
     if (needed > 0)
     {
         Vector<char> buffer;
         buffer.Resize(static_cast<usize>(needed) + 1);
-        engine_placeholder::VFormatTo(buffer.Data(), buffer.Size(), format, again);
+        vse::VFormatTo(buffer.Data(), buffer.Size(), format, again);
         out.AppendRawBytes(buffer.Data(), static_cast<usize>(needed));
     }
     ENGINE_VA_END(again);
@@ -82,9 +82,9 @@ inline Vector<char> Chars(usize count)
 }
 
 /// A buffer of `count` bytes, all `fill`.
-inline Vector<engine_placeholder::byte> ByteBuffer(usize count, engine_placeholder::byte fill = 0)
+inline Vector<vse::byte> ByteBuffer(usize count, vse::byte fill = 0)
 {
-    Vector<engine_placeholder::byte> buffer;
+    Vector<vse::byte> buffer;
     buffer.Resize(count);
     for (usize i = 0; i < count; ++i)
     {
@@ -94,7 +94,7 @@ inline Vector<engine_placeholder::byte> ByteBuffer(usize count, engine_placehold
 }
 
 /// True if the two byte buffers have the same size and the same bytes.
-inline bool SameBytes(const Vector<engine_placeholder::byte>& a, const Vector<engine_placeholder::byte>& b)
+inline bool SameBytes(const Vector<vse::byte>& a, const Vector<vse::byte>& b)
 {
     if (a.Size() != b.Size())
     {
@@ -126,7 +126,7 @@ template <typename T> class ValueList
 {
 public:
     ValueList() = default;
-    ValueList(engine_placeholder::InitializerList<T> items)
+    ValueList(vse::InitializerList<T> items)
     {
         for (const T& item : items)
         {
@@ -162,7 +162,7 @@ public:
         return n;
     }
     /// Orders the entries ascending by `operator<`.
-    void Sort() { engine_placeholder::Sort(engine_placeholder::Span<T>(items_.Data(), items_.Size())); }
+    void Sort() { vse::Sort(vse::Span<T>(items_.Data(), items_.Size())); }
     bool operator==(const ValueList& other) const
     {
         if (items_.Size() != other.items_.Size())
@@ -201,7 +201,7 @@ public:
     const Text& operator[](usize i) const { return items_[i]; }
     const Text& Back() const { return items_[items_.Size() - 1]; }
     /// True if the list holds exactly `expected`, in order.
-    bool SameAs(engine_placeholder::InitializerList<const char*> expected) const
+    bool SameAs(vse::InitializerList<const char*> expected) const
     {
         if (items_.Size() != expected.size())
         {
@@ -255,7 +255,7 @@ public:
     usize Size() const { return items_.Size(); }
     bool Empty() const { return items_.Empty(); }
     /// True if the set holds exactly `expected` (in any order, without repeats).
-    bool SameAs(engine_placeholder::InitializerList<const char*> expected) const
+    bool SameAs(vse::InitializerList<const char*> expected) const
     {
         if (items_.Size() != expected.size())
         {

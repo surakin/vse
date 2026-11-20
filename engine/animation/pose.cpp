@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 namespace
 {
@@ -184,4 +184,4 @@ void SkinningMatrices(const asset::SkeletonView& skeleton, const ModelPose& pose
     }
 }
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

@@ -3,7 +3,7 @@
 #include "lang/status_try.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 Status SocketDatagramPort::Open(const Endpoint& local, SocketDatagramPort* out, usize receive_buffer_bytes)
@@ -37,4 +37,4 @@ Status SocketDatagramPort::ReceiveFrom(MutableByteSpan buffer, usize* received, 
     return socket_.ReceiveFrom(buffer, received, from);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

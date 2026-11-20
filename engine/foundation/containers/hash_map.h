@@ -13,7 +13,7 @@
 
 //! Open-addressing hash map (linear probing, tombstone deletion) whose slot storage is a [[Vector]]. The hash
 //! functions are in `containers/hash.h`; the set of keys alone is [[HashSet]].
-namespace engine_placeholder
+namespace vse
 {
 
 /// A type `Q` a [[HashMap]] keyed by `K` can be searched with, without making a `K`: not `K` itself, not a pointer, an
@@ -325,4 +325,4 @@ private:
     Table table_;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

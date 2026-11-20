@@ -3,7 +3,7 @@
 // No Windows header: the conversion is plain code over wchar_t, which is 16 bits on Windows.
 static_assert(sizeof(wchar_t) == 2, "the Windows backends assume UTF-16 wchar_t");
 
-namespace engine_placeholder::os::windows
+namespace vse::os::windows
 {
 
 namespace
@@ -341,4 +341,4 @@ usize PathToWin32(StringView utf8_path, wchar_t* out, usize capacity, usize* rep
     return NormalizeLikeWin32(out, upper, root < upper ? root : upper);
 }
 
-}  // namespace engine_placeholder::os::windows
+}  // namespace vse::os::windows

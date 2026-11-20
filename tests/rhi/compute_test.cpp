@@ -11,8 +11,8 @@
 #include "rhi/rhi.h"
 #include "saxpy.comp.dxil.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 namespace compute_test
 {

@@ -36,24 +36,24 @@
 namespace
 {
 
-namespace io = engine_placeholder::io;
-using engine_placeholder::u8;
-using engine_placeholder::Vector;
+namespace io = vse::io;
+using vse::u8;
+using vse::Vector;
 
-constexpr engine_placeholder::u64 kMaxInputBytes = engine_placeholder::u64{1024} * 1024 * 1024;
+constexpr vse::u64 kMaxInputBytes = vse::u64{1024} * 1024 * 1024;
 
 bool ReadWholeFile(const char* path, Vector<u8>* bytes)
 {
     io::Path file;
-    return io::Path::Parse(engine_placeholder::StringView(path), io::NativePathStyle(), &file) &&
+    return io::Path::Parse(vse::StringView(path), io::NativePathStyle(), &file) &&
            io::ReadFile(file, bytes, kMaxInputBytes).Ok();
 }
 
 // The minidump in a file that is either a minidump itself or an envelope holding one.
-bool DumpOf(const Vector<u8>& bytes, const char** data, engine_placeholder::usize* size)
+bool DumpOf(const Vector<u8>& bytes, const char** data, vse::usize* size)
 {
     const char* p = reinterpret_cast<const char*>(bytes.Data());
-    if (bytes.Size() >= 4 && engine_placeholder::MemCompare(p, "MDMP", 4) == 0)
+    if (bytes.Size() >= 4 && vse::MemCompare(p, "MDMP", 4) == 0)
     {
         *data = p;
         *size = bytes.Size();
@@ -69,37 +69,37 @@ bool DumpOf(const Vector<u8>& bytes, const char** data, engine_placeholder::usiz
     return true;
 }
 
-constexpr engine_placeholder::usize kMaxModules = 512;
+constexpr vse::usize kMaxModules = 512;
 crash_extract::DumpModule g_modules[kMaxModules];  // ~800 KiB: static, not on the stack
 
 int ListModules(const char* path)
 {
     Vector<u8> bytes;
     const char* dump = nullptr;
-    engine_placeholder::usize size = 0;
+    vse::usize size = 0;
     if (!ReadWholeFile(path, &bytes) || !DumpOf(bytes, &dump, &size))
     {
-        engine_placeholder::os::PrintError("crash_extract: %s is not a minidump or an envelope holding one\n", path);
+        vse::os::PrintError("crash_extract: %s is not a minidump or an envelope holding one\n", path);
         return 2;
     }
     crash_extract::DumpException exception;
-    engine_placeholder::usize count = 0;
+    vse::usize count = 0;
     if (crash_extract::ReadDumpException(dump, size, &exception) != crash_extract::DumpResult::Ok ||
         crash_extract::ReadDumpModules(dump, size, g_modules, kMaxModules, &count) != crash_extract::DumpResult::Ok)
     {
-        engine_placeholder::os::PrintError("crash_extract: %s is a damaged minidump\n", path);
+        vse::os::PrintError("crash_extract: %s is a damaged minidump\n", path);
         return 2;
     }
     if (exception.present)
     {
-        engine_placeholder::os::Print("exception: thread %u, code 0x%08x, address 0x%016llx\n", exception.thread_id,
-                                      exception.code, static_cast<unsigned long long>(exception.address));
+        vse::os::Print("exception: thread %u, code 0x%08x, address 0x%016llx\n", exception.thread_id, exception.code,
+                       static_cast<unsigned long long>(exception.address));
     }
-    for (engine_placeholder::usize i = 0; i < count && i < kMaxModules; ++i)
+    for (vse::usize i = 0; i < count && i < kMaxModules; ++i)
     {
         const crash_extract::DumpModule& m = g_modules[i];
-        engine_placeholder::os::Print("module: 0x%016llx 0x%08x %s %s\n", static_cast<unsigned long long>(m.base),
-                                      m.size, m.build_id[0] != '\0' ? m.build_id : "-", m.name);
+        vse::os::Print("module: 0x%016llx 0x%08x %s %s\n", static_cast<unsigned long long>(m.base), m.size,
+                       m.build_id[0] != '\0' ? m.build_id : "-", m.name);
     }
     return 0;
 }
@@ -109,7 +109,7 @@ int PrintReport(const char* path)
     Vector<u8> bytes;
     if (!ReadWholeFile(path, &bytes))
     {
-        engine_placeholder::os::PrintError("crash_extract: cannot read %s\n", path);
+        vse::os::PrintError("crash_extract: cannot read %s\n", path);
         return 2;
     }
     crash_extract::Attachment report;
@@ -117,15 +117,15 @@ int PrintReport(const char* path)
         reinterpret_cast<const char*>(bytes.Data()), bytes.Size(), "crash-report.txt", &report);
     if (result == crash_extract::EnvelopeResult::Malformed)
     {
-        engine_placeholder::os::PrintError("crash_extract: %s is not a complete envelope\n", path);
+        vse::os::PrintError("crash_extract: %s is not a complete envelope\n", path);
         return 2;
     }
     if (result != crash_extract::EnvelopeResult::Ok)
     {
-        engine_placeholder::os::PrintError("crash_extract: %s holds no crash report\n", path);
+        vse::os::PrintError("crash_extract: %s holds no crash report\n", path);
         return 1;
     }
-    engine_placeholder::os::PrintBytes(report.data, report.size);
+    vse::os::PrintBytes(report.data, report.size);
     return 0;
 }
 
@@ -136,12 +136,12 @@ int DescribeImage(const char* path)
     if (!ReadWholeFile(path, &bytes) ||
         !crash_extract::ReadImageInfo(reinterpret_cast<const char*>(bytes.Data()), bytes.Size(), &info))
     {
-        engine_placeholder::os::PrintError(
-            "crash_extract: %s is not a Windows image with a CodeView record (link with /DEBUG)\n", path);
+        vse::os::PrintError("crash_extract: %s is not a Windows image with a CodeView record (link with /DEBUG)\n",
+                            path);
         return 2;
     }
     char id[sizeof(info.build_id)];
-    engine_placeholder::usize n = 0;
+    vse::usize n = 0;
     for (; info.build_id[n] != '\0'; ++n)
     {
         id[n] = info.build_id[n] >= 'a' && info.build_id[n] <= 'f' ? static_cast<char>(info.build_id[n] - 32)
@@ -149,11 +149,11 @@ int DescribeImage(const char* path)
     }
     id[n] = '\0';
     const char* pdb = crash_extract::BaseName(info.debug_file);
-    engine_placeholder::os::Print("build id: %s\n", info.build_id);
-    engine_placeholder::os::Print("debug file: %s\n", info.debug_file);
-    engine_placeholder::os::Print("pdb store entry: %s/%s/%s\n", pdb, id, pdb);
-    engine_placeholder::os::Print("image store entry: %s/%08X%x/%s\n", crash_extract::BaseName(path), info.timestamp,
-                                  info.size_of_image, crash_extract::BaseName(path));
+    vse::os::Print("build id: %s\n", info.build_id);
+    vse::os::Print("debug file: %s\n", info.debug_file);
+    vse::os::Print("pdb store entry: %s/%s/%s\n", pdb, id, pdb);
+    vse::os::Print("image store entry: %s/%08X%x/%s\n", crash_extract::BaseName(path), info.timestamp,
+                   info.size_of_image, crash_extract::BaseName(path));
     return 0;
 }
 
@@ -161,27 +161,26 @@ int Resolve(const char* store, const char* dump_path, const char* report_path)
 {
     Vector<u8> bytes;
     const char* dump = nullptr;
-    engine_placeholder::usize size = 0;
+    vse::usize size = 0;
     if (!ReadWholeFile(dump_path, &bytes) || !DumpOf(bytes, &dump, &size))
     {
-        engine_placeholder::os::PrintError("crash_extract: %s is not a minidump or an envelope holding one\n",
-                                           dump_path);
+        vse::os::PrintError("crash_extract: %s is not a minidump or an envelope holding one\n", dump_path);
         return 2;
     }
-    engine_placeholder::usize count = 0;
+    vse::usize count = 0;
     if (crash_extract::ReadDumpModules(dump, size, g_modules, kMaxModules, &count) != crash_extract::DumpResult::Ok)
     {
-        engine_placeholder::os::PrintError("crash_extract: %s is a damaged minidump\n", dump_path);
+        vse::os::PrintError("crash_extract: %s is a damaged minidump\n", dump_path);
         return 2;
     }
     Vector<u8> report_bytes;
     const char* report = nullptr;
-    engine_placeholder::usize report_size = 0;
+    vse::usize report_size = 0;
     if (report_path != nullptr)
     {
         if (!ReadWholeFile(report_path, &report_bytes))
         {
-            engine_placeholder::os::PrintError("crash_extract: cannot read %s\n", report_path);
+            vse::os::PrintError("crash_extract: cannot read %s\n", report_path);
             return 2;
         }
         report = reinterpret_cast<const char*>(report_bytes.Data());
@@ -193,8 +192,7 @@ int Resolve(const char* store, const char* dump_path, const char* report_path)
         if (crash_extract::FindAttachment(reinterpret_cast<const char*>(bytes.Data()), bytes.Size(), "crash-report.txt",
                                           &attached) != crash_extract::EnvelopeResult::Ok)
         {
-            engine_placeholder::os::PrintError("crash_extract: %s holds no crash report; name the report file\n",
-                                               dump_path);
+            vse::os::PrintError("crash_extract: %s holds no crash report; name the report file\n", dump_path);
             return 1;
         }
         report = attached.data;
@@ -204,13 +202,13 @@ int Resolve(const char* store, const char* dump_path, const char* report_path)
                                                    count < kMaxModules ? count : kMaxModules, store);
     if (named < 0)
     {
-        engine_placeholder::os::PrintError(
+        vse::os::PrintError(
             "crash_extract: --resolve needs DbgHelp (Windows); on Linux and macOS use scripts/crash-report.sh\n");
         return 69;
     }
     if (named == 0)
     {
-        engine_placeholder::os::PrintError(
+        vse::os::PrintError(
             "crash_extract: no frame could be named from %s (store the program's symbols with scripts/store-symbols.ps1)\n",
             store);
         return 3;
@@ -224,35 +222,34 @@ int WriteForLldb(const char* input_path, const char* output_path)
 {
     Vector<u8> bytes;
     const char* dump = nullptr;
-    engine_placeholder::usize size = 0;
+    vse::usize size = 0;
     if (!ReadWholeFile(input_path, &bytes) || !DumpOf(bytes, &dump, &size))
     {
-        engine_placeholder::os::PrintError("crash_extract: %s is not a minidump or an envelope holding one\n",
-                                           input_path);
+        vse::os::PrintError("crash_extract: %s is not a minidump or an envelope holding one\n", input_path);
         return 2;
     }
     // Refused like Extract's: an envelope named twice would be replaced by the bare dump.
-    if (engine_placeholder::CStrCompare(output_path, input_path) == 0)
+    if (vse::CStrCompare(output_path, input_path) == 0)
     {
-        engine_placeholder::os::PrintError("crash_extract: the output would overwrite the input\n");
+        vse::os::PrintError("crash_extract: the output would overwrite the input\n");
         return 2;
     }
     // The dump lies inside `bytes`, which is this function's own: completed in place, without a second copy.
     char* writable = reinterpret_cast<char*>(bytes.Data()) + (dump - reinterpret_cast<const char*>(bytes.Data()));
-    engine_placeholder::usize completed = 0;
+    vse::usize completed = 0;
     if (crash_extract::CompleteMacContextFlags(writable, size, &completed) != crash_extract::DumpResult::Ok)
     {
-        engine_placeholder::os::PrintError("crash_extract: %s is a damaged minidump\n", input_path);
+        vse::os::PrintError("crash_extract: %s is a damaged minidump\n", input_path);
         return 2;
     }
     io::Path output;
-    if (!io::Path::Parse(engine_placeholder::StringView(output_path), io::NativePathStyle(), &output) ||
+    if (!io::Path::Parse(vse::StringView(output_path), io::NativePathStyle(), &output) ||
         !io::WriteFileAtomic(output, writable, size).Ok())
     {
-        engine_placeholder::os::PrintError("crash_extract: cannot write %s\n", output_path);
+        vse::os::PrintError("crash_extract: cannot write %s\n", output_path);
         return 2;
     }
-    engine_placeholder::os::Print("%s\n", output_path);
+    vse::os::Print("%s\n", output_path);
     return 0;
 }
 
@@ -263,73 +260,71 @@ int Extract(const char* envelope_path, const char* output_path)
     {
         // Only an input named *.envelope gets a derived name; anything else would end up as foo.dmp.dmp or overwrite
         // the input.
-        const engine_placeholder::usize length = engine_placeholder::CStrLength(envelope_path);
+        const vse::usize length = vse::CStrLength(envelope_path);
         const char* extension = ".envelope";
-        const engine_placeholder::usize extension_length = engine_placeholder::CStrLength(extension);
-        if (length <= extension_length ||
-            engine_placeholder::CStrCompare(envelope_path + length - extension_length, extension) != 0)
+        const vse::usize extension_length = vse::CStrLength(extension);
+        if (length <= extension_length || vse::CStrCompare(envelope_path + length - extension_length, extension) != 0)
         {
-            engine_placeholder::os::PrintError("crash_extract: %s does not end in .envelope; name the output file\n",
-                                               envelope_path);
+            vse::os::PrintError("crash_extract: %s does not end in .envelope; name the output file\n", envelope_path);
             return 2;
         }
-        const engine_placeholder::usize stem = length - extension_length;
+        const vse::usize stem = length - extension_length;
         if (stem + 5 > sizeof(default_output))
         {
-            engine_placeholder::os::PrintError("crash_extract: the path is too long\n");
+            vse::os::PrintError("crash_extract: the path is too long\n");
             return 2;
         }
-        engine_placeholder::MemCopy(default_output, envelope_path, stem);
-        engine_placeholder::MemCopy(default_output + stem, ".dmp", 5);
+        vse::MemCopy(default_output, envelope_path, stem);
+        vse::MemCopy(default_output + stem, ".dmp", 5);
         output_path = default_output;
     }
-    if (engine_placeholder::CStrCompare(output_path, envelope_path) == 0)
+    if (vse::CStrCompare(output_path, envelope_path) == 0)
     {
-        engine_placeholder::os::PrintError("crash_extract: the output would overwrite the envelope\n");
+        vse::os::PrintError("crash_extract: the output would overwrite the envelope\n");
         return 2;
     }
 
     Vector<u8> envelope;
     if (!ReadWholeFile(envelope_path, &envelope))
     {
-        engine_placeholder::os::PrintError("crash_extract: cannot read %s\n", envelope_path);
+        vse::os::PrintError("crash_extract: cannot read %s\n", envelope_path);
         return 2;
     }
     const char* data = reinterpret_cast<const char*>(envelope.Data());
-    const engine_placeholder::usize size = envelope.Size();
+    const vse::usize size = envelope.Size();
     crash_extract::Minidump dump;
     const crash_extract::EnvelopeResult result = crash_extract::FindMinidump(data, size, &dump);
     if (result == crash_extract::EnvelopeResult::Malformed)
     {
-        engine_placeholder::os::PrintError("crash_extract: %s is not a complete envelope\n", envelope_path);
+        vse::os::PrintError("crash_extract: %s is not a complete envelope\n", envelope_path);
         return 2;
     }
     if (result == crash_extract::EnvelopeResult::NoMinidump)
     {
-        engine_placeholder::os::PrintError("crash_extract: %s holds no minidump\n", envelope_path);
+        vse::os::PrintError("crash_extract: %s holds no minidump\n", envelope_path);
         return 1;
     }
     // Written atomically (a temporary file, then a rename), so the output either is complete or does not exist.
     io::Path output;
-    const bool written = io::Path::Parse(engine_placeholder::StringView(output_path), io::NativePathStyle(), &output) &&
+    const bool written = io::Path::Parse(vse::StringView(output_path), io::NativePathStyle(), &output) &&
                          io::WriteFileAtomic(output, dump.data, dump.size).Ok();
     if (!written)
     {
-        engine_placeholder::os::PrintError("crash_extract: cannot write %s\n", output_path);
+        vse::os::PrintError("crash_extract: cannot write %s\n", output_path);
         return 2;
     }
-    engine_placeholder::os::Print("%s\n", output_path);
+    vse::os::Print("%s\n", output_path);
     return 0;
 }
 
 int Usage()
 {
-    engine_placeholder::os::PrintError("usage: crash_extract <envelope> [<output.dmp>]\n"
-                                       "       crash_extract --modules <dump-or-envelope>\n"
-                                       "       crash_extract --report <envelope>\n"
-                                       "       crash_extract --image <exe-or-dll>\n"
-                                       "       crash_extract --resolve <store> <dump-or-envelope> [<report>]\n"
-                                       "       crash_extract --lldb <dump-or-envelope> <output.dmp>\n");
+    vse::os::PrintError("usage: crash_extract <envelope> [<output.dmp>]\n"
+                        "       crash_extract --modules <dump-or-envelope>\n"
+                        "       crash_extract --report <envelope>\n"
+                        "       crash_extract --image <exe-or-dll>\n"
+                        "       crash_extract --resolve <store> <dump-or-envelope> [<report>]\n"
+                        "       crash_extract --lldb <dump-or-envelope> <output.dmp>\n");
     return 64;
 }
 
@@ -338,16 +333,15 @@ int Usage()
 int main(int argc, char** argv)
 {
     // The modes are flags that take no value; what they work on follows as positional arguments.
-    static const engine_placeholder::os::CommandLineOption options[] = {
+    static const vse::os::CommandLineOption options[] = {
         {"modules", false}, {"report", false}, {"image", false}, {"resolve", false}, {"lldb", false}};
-    const engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator> line(
-        engine_placeholder::HeapAllocator::Default(), argc, argv,
-        engine_placeholder::Span<const engine_placeholder::os::CommandLineOption>(options, 5));
+    const vse::os::CommandLine<vse::HeapAllocator> line(vse::HeapAllocator::Default(), argc, argv,
+                                                        vse::Span<const vse::os::CommandLineOption>(options, 5));
     if (!line.Ok() || line.ArgCount() < 1)
     {
         return Usage();
     }
-    const engine_placeholder::usize n = line.ArgCount();
+    const vse::usize n = line.ArgCount();
     if (line.FlagCount() > 1)
     {
         return Usage();  // one mode at a time

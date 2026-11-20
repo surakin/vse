@@ -5,7 +5,7 @@
 //! Fixed-size array with inline storage, the engine's `std::array`: the size is a
 //! compile-time constant and the elements live inside the object. [[Vector]] is
 //! every case where the size is only known at runtime or changes.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Array of exactly `N` elements stored inside the object itself.
@@ -58,4 +58,4 @@ template <typename T, usize N> struct Array
     const T* end() const { return items + N; }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

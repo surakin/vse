@@ -21,7 +21,7 @@
 namespace ui_demo
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 /// The image id the viewport's picture has in the UI renderer.
 constexpr ui::ImageId kViewportImage = 1;

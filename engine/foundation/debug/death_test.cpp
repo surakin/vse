@@ -6,7 +6,7 @@
 
 #include "sync/atomic.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -93,4 +93,4 @@ bool RunDeathTestChildIfRequested()
     ExitChildProcess(0);
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

@@ -4,7 +4,7 @@
 
 #include "algorithm.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -285,4 +285,4 @@ void BroadPhase::Update(const PhysicsWorld& world)
     stats_.pending_static = set_stats.pending_static;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

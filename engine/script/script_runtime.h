@@ -30,7 +30,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// Attaches a behavior to an entity.
@@ -476,4 +476,4 @@ private:
 /// - Fails: never; running it without the resource aborts.
 ecs::SystemDesc MakeScriptSystem();
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -13,7 +13,7 @@
 #include "physics/world.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The characters of one physics world.
@@ -217,4 +217,4 @@ private:
     Vector<Entry> entries_;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

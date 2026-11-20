@@ -5,7 +5,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// What went wrong, in terms every operating system can express. The OS error number stays in [[net::Status]] for logs;
@@ -82,4 +82,4 @@ private:
     i32 os_error_ = 0;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

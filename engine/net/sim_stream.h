@@ -11,7 +11,7 @@
 #include "net/stream.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// What the streams of a [[net::SimStreamNetwork]] do.
@@ -60,4 +60,4 @@ private:
     Vector<ListenerEntry> listeners_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

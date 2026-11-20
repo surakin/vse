@@ -5,7 +5,7 @@
 
 #include "string/normalize.h"
 
-namespace engine_placeholder {
+namespace vse {
 
 namespace {
 
@@ -3203,4 +3203,4 @@ bool LookupCanonicalComposition(u32 first, u32 second, u32* out_composed) {
     return false;
 }
 
-} // namespace engine_placeholder
+} // namespace vse

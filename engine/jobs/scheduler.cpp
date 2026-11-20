@@ -9,7 +9,7 @@
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 namespace
@@ -467,4 +467,4 @@ u64 Scheduler::TotalResumes() const
     return t;
 }
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

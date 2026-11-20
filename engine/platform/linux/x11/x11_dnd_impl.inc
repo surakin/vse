@@ -1,7 +1,7 @@
 // The implementation of x11_dnd.h. Included by x11_window.cpp after x11_clipboard_impl.inc (see x11_cursor_impl.inc for
 // why it is not a translation unit).
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 namespace
@@ -931,4 +931,4 @@ void DndRelease(_XDisplay* display, unsigned long window, X11ClipboardState& cst
     DndCancel(display, window, cstate, dnd, now_ns);
 }
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11

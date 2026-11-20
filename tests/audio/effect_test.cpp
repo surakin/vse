@@ -11,8 +11,8 @@
 #include "lang/scalar.h"
 #include "platform_hash.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::audio;
+using namespace vse;
+using namespace vse::audio;
 
 namespace
 {

@@ -11,7 +11,7 @@
 #include "os/console.h"
 #include "cstr/cstr.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -206,4 +206,4 @@ void RunCrashTest(CrashTestKind kind)
     }
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

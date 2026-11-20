@@ -7,7 +7,7 @@
 #include "io/path.h"
 #include "os/console.h"
 
-namespace engine_placeholder::database_test
+namespace vse::database_test
 {
 
 class TempDir
@@ -32,4 +32,4 @@ private:
     io::Path path_;
 };
 
-}  // namespace engine_placeholder::database_test
+}  // namespace vse::database_test

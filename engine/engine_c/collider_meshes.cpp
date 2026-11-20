@@ -8,7 +8,7 @@
 #include "lang/scalar.h"
 #include "physics/triangle_mesh.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 namespace
@@ -258,4 +258,4 @@ void ResolveColliderSources(WorldObject& object, ResourceHost* resources, Collid
     }
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

@@ -5,14 +5,14 @@
 
 #include "math/geometry.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
-using engine_placeholder::Aabb;
-using engine_placeholder::BoundingSphere;
-using engine_placeholder::Bounds;
-using engine_placeholder::ComputeAabb;
-using engine_placeholder::ComputeBounds;
-using engine_placeholder::TransformBounds;
+using vse::Aabb;
+using vse::BoundingSphere;
+using vse::Bounds;
+using vse::ComputeAabb;
+using vse::ComputeBounds;
+using vse::TransformBounds;
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

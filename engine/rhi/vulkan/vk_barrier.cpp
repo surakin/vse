@@ -1,6 +1,6 @@
 #include "rhi/vulkan/vk_barrier.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -127,4 +127,4 @@ bool CmdImageBarrier(const VkDeviceFns& fns, VkCommandBuffer cb, VkImage image, 
     return true;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

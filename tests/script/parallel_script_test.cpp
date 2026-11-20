@@ -17,8 +17,8 @@
 #include "script/script_world.h"
 #include "storage/builtin_components.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::script;
+using namespace vse;
+using namespace vse::script;
 
 namespace
 {

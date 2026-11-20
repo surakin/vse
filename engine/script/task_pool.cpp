@@ -8,7 +8,7 @@
 #include "script/partition_context.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 // The host every task state loads first. `__task_define` stores a function by key; `__task_run` calls it for one chunk
@@ -697,4 +697,4 @@ usize TaskPool::Execute(Span<const TaskRequest> requests, Vector<TaskOutcome>* o
     return items.Size();
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

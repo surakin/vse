@@ -28,7 +28,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The size of the header section.
@@ -158,4 +158,4 @@ private:
     usize sample_bytes_ = 0;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

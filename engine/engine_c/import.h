@@ -12,7 +12,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 class Runtime;
@@ -98,4 +98,4 @@ engine_status ImportFinishFn(engine_handle ticket, engine_import_result* result)
 engine_status ImportCancelFn(engine_handle ticket);
 engine_status ImportDestroyFn(engine_handle ticket);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

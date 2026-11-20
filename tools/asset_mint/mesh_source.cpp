@@ -5,7 +5,7 @@
 #include "cstr/mem_ops.h"
 #include "source_text.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -429,4 +429,4 @@ Status MintMesh(StringView text, const TypeRegistry& types, const SkeletonView* 
     return built;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

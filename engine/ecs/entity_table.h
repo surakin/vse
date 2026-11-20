@@ -7,7 +7,7 @@
 #include "lang/utility.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// The largest number of entity slots a table holds (index 0 to this minus one).
@@ -153,4 +153,4 @@ private:
     u64 wraps_ = 0;
 };
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

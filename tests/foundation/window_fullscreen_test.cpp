@@ -16,7 +16,7 @@
 #include "platform/linux/x11/x11_window.h"
 #endif
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

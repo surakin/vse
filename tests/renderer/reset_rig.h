@@ -18,7 +18,7 @@
 namespace reset_rig
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // The offscreen render target as a registered owner: it is made again on the new device.
 struct Target final : renderer::Recreatable

@@ -14,7 +14,7 @@ the ECS tier that keeps them in step with entities is described under "Putting e
 
 ## Shapes
 
-Every structure and query works on the shapes of `math/geometry.h` (namespace `engine_placeholder`, part of the foundation), which the renderer uses for
+Every structure and query works on the shapes of `math/geometry.h` (namespace `vse`, part of the foundation), which the renderer uses for
 culling too: they moved there from `renderer/bounds.h` and `renderer/frustum.h`, which keep `renderer::Aabb`, `renderer::Frustum` and the rest as aliases,
 so renderer code did not change.
 
@@ -43,7 +43,7 @@ The tests between them:
 #include "math/geometry.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     const Aabb crate = Aabb::FromMinMax(Vec3(-1, 0, -1), Vec3(1, 2, 1));
@@ -92,8 +92,8 @@ tree (Day 240) is the one to use.
 #include "os/console.h"
 #include "spatial/static_bvh.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 
 int main() {
     // A row of ten crates, keys 0 to 9, two units apart.
@@ -167,8 +167,8 @@ as the static tree's, and the item visitor also receives the handle.
 #include "os/console.h"
 #include "spatial/dynamic_bvh.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 
 int main() {
     DynamicBvh tree;
@@ -250,8 +250,8 @@ far in one direction (jittering particles), 4 for fast straight movers.
 #include "os/console.h"
 #include "spatial/query.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 
 bool NotTheShooter(SpatialKey key, void*) { return key != 1; }
 
@@ -319,8 +319,8 @@ audio's), so the render set never holds an invisible trigger and the reverse.
 #include "os/console.h"
 #include "spatial/query.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 
 int main() {
     SpatialSet world;
@@ -378,8 +378,8 @@ Measured on the Windows PC (Release), 100,000 agents of 1 x 2 x 1 on a 1000 x 10
 #include "os/console.h"
 #include "spatial/pair_tracker.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 
 namespace {
 void Show(int frame, const PairEvents& events) {
@@ -453,8 +453,8 @@ the sets for you.
 #include "spatial/spatial_sync.h"
 #include "spatial/spatial_world.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 
 int main() {
     ecs::World world;
@@ -531,8 +531,8 @@ The sync keeps the sets true with the cost of what changed, not of what exists.
 #include "spatial/entity_query.h"
 #include "spatial/spatial_sync.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 
 struct Health {
     float hp = 10.0f;

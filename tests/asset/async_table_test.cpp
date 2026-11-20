@@ -11,7 +11,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -26,7 +26,7 @@ void AddMany(HostMemoryBackend& backend, const TypeRegistry& registry, u32 count
         const Vector<byte> blob = test::MakeTestBlob(registry, test::Rid(1000 + i), 20, i);
         const StringView p(path, CStrLength(path));
         MemoryAddOptions options;
-        options.paths = engine_placeholder::Span<const StringView>(&p, 1);
+        options.paths = vse::Span<const StringView>(&p, 1);
         REQUIRE(backend.Add(test::Rid(1000 + i), ByteSpan(blob.Data(), blob.Size()), options).Ok());
     }
 }
@@ -46,7 +46,7 @@ TEST_CASE("The fault wrapper passes the conformance suite, with reads in small c
         fx.paths.Push(test::Vp(paths[i]));
         const StringView path = test::Vp(paths[i]);
         MemoryAddOptions options;
-        options.paths = engine_placeholder::Span<const StringView>(&path, 1);
+        options.paths = vse::Span<const StringView>(&path, 1);
         REQUIRE(inner.Add(fx.ids[i], ByteSpan(fx.blobs[i].Data(), fx.blobs[i].Size()), options).Ok());
     }
     FaultyBackend faulty(inner);
@@ -232,4 +232,4 @@ TEST_CASE("The completion function runs once, or SetOnComplete says the read alr
     CHECK(g_completions.Load() == 1);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

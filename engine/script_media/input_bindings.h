@@ -10,7 +10,7 @@
 #include "script_media/input_snapshot.h"
 #include "types.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 /// Adds the `input.*` functions, all `world-read`, against the snapshot.
@@ -57,4 +57,4 @@ struct InputEventReport
 /// - Fails: never.
 InputEventReport EmitInputEvents(const InputSnapshot& snapshot, script::ScriptRuntime* runtime);
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

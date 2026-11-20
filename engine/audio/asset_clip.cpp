@@ -4,7 +4,7 @@
 #include "audio/vorbis.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -109,4 +109,4 @@ asset::Status LoadAudioClip(asset::ResourceManager& manager, asset::ResourceId i
     return asset::Status::Success();
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

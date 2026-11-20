@@ -9,7 +9,7 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// The size of a chunk in bytes (header and columns). Chosen by experiment on Day 222; a compile-time constant.
@@ -123,4 +123,4 @@ private:
     ChunkPoolStats stats_;
 };
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

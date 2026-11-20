@@ -51,7 +51,7 @@ StringView ReturnType(const Decl& d, ArenaAllocator& arena)
     bool found = false;
     for (usize i = 0; i + d.name.Length() < sig.Length(); ++i)
     {
-        if (engine_placeholder::MemCompare(sig.Data() + i, d.name.Data(), d.name.Length()) != 0)
+        if (vse::MemCompare(sig.Data() + i, d.name.Data(), d.name.Length()) != 0)
         {
             continue;
         }
@@ -72,7 +72,7 @@ StringView ReturnType(const Decl& d, ArenaAllocator& arena)
         return StringView();  // cannot tell where the name is: judge nothing rather than the whole signature
     }
     StringView head(sig.Data(), at);
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     usize i = 0;
     while (i < head.Length())
     {
@@ -129,7 +129,7 @@ bool EndsWithWord(StringView s, const char* w)
     {
         return false;
     }
-    if (engine_placeholder::MemCompare(s.Data() + s.Length() - n, w, n) != 0)
+    if (vse::MemCompare(s.Data() + s.Length() - n, w, n) != 0)
     {
         return false;
     }
@@ -154,7 +154,7 @@ bool TakesRawPointer(const Decl& d)
     usize start = 0;
     auto check = [&](StringView p)
     {
-        if (p.Length() > 7 && engine_placeholder::MemCompare(p.Data() + p.Length() - 7, "* const", 7) == 0)
+        if (p.Length() > 7 && vse::MemCompare(p.Data() + p.Length() - 7, "* const", 7) == 0)
         {
             p = StringView(p.Data(), p.Length() - 6);  // `T* const` is still a raw pointer
         }
@@ -166,7 +166,7 @@ bool TakesRawPointer(const Decl& d)
         {
             return false;  // function pointer: a callback, not an owned object
         }
-        return !(p.Length() >= 6 && engine_placeholder::MemCompare(p.Data(), "const ", 6) == 0);
+        return !(p.Length() >= 6 && vse::MemCompare(p.Data(), "const ", 6) == 0);
     };
     for (; i <= t.Length(); ++i)
     {
@@ -304,7 +304,7 @@ bool ParseBaseline(StringView text, ArenaAllocator& arena, Baseline& out, String
     bool header = false;
     auto fail = [&](const char* msg)
     {
-        engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+        vse::StringBuilder<ArenaAllocator> sb(arena);
         sb.AppendUInt(line_no);
         sb.Append(StringView(": "));
         sb.Append(StringView(msg));
@@ -457,7 +457,7 @@ bool RatioHolds(usize doc, usize total, usize base_doc, usize base_total)
 
 StringView Ratio(ArenaAllocator& arena, usize d, usize t)
 {
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     sb.AppendUInt(d);
     sb.Append('/');
     sb.AppendUInt(t);

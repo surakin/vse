@@ -7,7 +7,7 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// What the script system does with an instance whose callback failed (setting `script.on_error`).
@@ -168,4 +168,4 @@ String<HeapAllocator> ScriptDevDirectory(const settings::Registry& registry);
 /// - Fails: never.
 u64 ScriptPartitionMemory(const settings::Registry& registry);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

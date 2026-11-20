@@ -4,7 +4,7 @@
 
 #include "os/windows/utf16.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 AdapterInfo MakeAdapterInfo(const AdapterFacts& facts, bool presentable)
@@ -171,4 +171,4 @@ int PickAdapter(const AdapterSet& set, const char* request, char* reason, usize 
     return -1;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

@@ -7,7 +7,7 @@
 
 #import <Metal/Metal.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 // The adapters and the MTLDevice behind each (the same order).
@@ -33,4 +33,4 @@ AdapterInfo MetalAdapterInfo(id<MTLDevice> device);
 // one (a discrete GPU before an integrated one). -1 with the reason in `reason` when none fits.
 int PickMetalAdapter(const MetalAdapterSet& set, const char* request, char* reason, usize reason_size);
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

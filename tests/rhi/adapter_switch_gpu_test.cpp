@@ -12,8 +12,8 @@
 #include "image_compare.h"
 #include "reset_rig.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 #if ENGINE_PLATFORM_WINDOWS  // the helpers serve the DX12 test only: unused, they would be warnings (errors) elsewhere
 namespace

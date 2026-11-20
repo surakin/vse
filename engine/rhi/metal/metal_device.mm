@@ -21,7 +21,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 namespace
@@ -678,4 +678,4 @@ ResourceCounts MetalDevice::Resources() const
     return c;
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

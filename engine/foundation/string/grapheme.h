@@ -6,7 +6,7 @@
 
 //! Grapheme cluster segmentation (UAX #29): iterate or count user-perceived
 //! characters in UTF-8 text.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Grapheme_Cluster_Break property value of a codepoint (UAX #29), with
@@ -122,4 +122,4 @@ inline GraphemeClusterRange GraphemeClusters(StringView sv)
 /// - Returns: the number of clusters; 0 for empty text.
 usize GraphemeClusterCount(StringView sv);
 
-}  // namespace engine_placeholder
+}  // namespace vse

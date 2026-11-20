@@ -15,8 +15,8 @@
 #include "cstr/format.h"
 #include "cstr/number.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::jobs;
+using namespace vse;
+using namespace vse::jobs;
 
 // The monotonic clock in nanoseconds (os::MonotonicTimeNanos).
 struct Clock

@@ -5,7 +5,7 @@
 #include "algorithm.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -451,4 +451,4 @@ void DrawListCanvas::EndLayer()
     layers_.Pop();
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

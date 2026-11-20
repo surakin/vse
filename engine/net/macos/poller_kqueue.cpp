@@ -18,7 +18,7 @@
 #include "os/last_error.h"
 #include "os/os.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -189,4 +189,4 @@ void Poller::Wake()
     [[maybe_unused]] const int ignored = ::kevent(static_cast<int>(poller_), &wake, 1, nullptr, 0, nullptr);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

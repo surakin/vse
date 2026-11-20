@@ -30,7 +30,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A parsed clip source.
@@ -73,4 +73,4 @@ Status ParseClipSource(StringView text, const SkeletonView& skeleton, ClipSource
 Status MintClip(StringView text, const SkeletonView& skeleton, const TypeRegistry& types, const ClipLimits& limits,
                 Vector<byte>* out, ClipSourceError* error, u32 target = 0);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

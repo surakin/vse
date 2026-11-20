@@ -5,7 +5,7 @@
 #include "string/utf8_codec.h"
 
 //! UTF-8 helpers on StringView: codepoint counting, validation and iteration.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Counts the Unicode codepoints in `sv`.
@@ -117,4 +117,4 @@ inline Utf8CodepointRange Utf8Codepoints(StringView sv)
     return Utf8CodepointRange(sv);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

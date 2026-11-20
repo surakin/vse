@@ -20,7 +20,7 @@
 #include "skeleton_source.h"
 #include "storage/builtin_components.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 namespace
 {
@@ -853,4 +853,4 @@ TEST_CASE("animation: sampling throughput", "[.][animation-bench]")
     }
 }
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

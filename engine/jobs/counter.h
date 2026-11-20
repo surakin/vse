@@ -32,7 +32,7 @@
 //! resumes it, and neither touches the counter afterwards unless it owns the
 //! wake-up. The awaiter therefore cannot finish and destroy the counter while
 //! a decrementer still reads it.
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 /// Counts outstanding work and lets one coroutine wait for it to reach zero.
@@ -232,4 +232,4 @@ inline void Spawn(Counter& counter, Job&& job)
     counter.GetScheduler().Submit(Move(job));
 }
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

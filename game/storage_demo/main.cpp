@@ -36,7 +36,7 @@
 #include "storage/local_storage.h"
 #include "storage/storage_settings.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

@@ -14,7 +14,7 @@
 #include "sync/atomic.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace detail
@@ -156,4 +156,4 @@ private:
     SettingId id_;
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

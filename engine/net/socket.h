@@ -8,7 +8,7 @@
 #include "net/status.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Which half of a connection [[net::Socket::Shutdown]] closes.
@@ -241,4 +241,4 @@ private:
     static Status Open(AddressFamily family, bool datagram, Socket* out);
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -5,7 +5,7 @@
 
 struct lua_State;
 
-namespace engine_placeholder::script::luajit
+namespace vse::script::luajit
 {
 
 /// Replaces `string.find`, `string.match`, `string.gmatch` and `string.gsub` in the `string` table at the top of the
@@ -14,4 +14,4 @@ namespace engine_placeholder::script::luajit
 /// - Fails: never returns a failure; raises only on out-of-memory.
 void InstallSafePatterns(lua_State* L);
 
-}  // namespace engine_placeholder::script::luajit
+}  // namespace vse::script::luajit

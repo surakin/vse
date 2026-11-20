@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -544,4 +544,4 @@ bool SkeletonView::FindJoint(StringView name, u32* index) const
     return false;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

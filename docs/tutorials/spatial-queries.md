@@ -23,7 +23,7 @@
 #include "spatial/query.h"
 #include "spatial/spatial_set.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 static Aabb Cube(f32 x) { return Aabb::FromMinMax(Vec3(x - 1, -1, -1), Vec3(x + 1, 1, 1)); }
 

@@ -4,7 +4,7 @@
 
 #include "ui/surface.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 bool TextRun::SetText(StringView text)
@@ -123,4 +123,4 @@ const text::TextLayout& TextRun::Fit(f32 limit_px)
     return cut_valid_ ? cut_ : full_;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

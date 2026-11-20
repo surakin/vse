@@ -12,7 +12,7 @@
 #include "cstr/format.h"
 #include "support/test_support_posix.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using debug_test::Cat;
 using debug_test::Text;
 

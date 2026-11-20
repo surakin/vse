@@ -5,7 +5,7 @@
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -166,4 +166,4 @@ void AssignIds(const ImportOptions& options, ImportKind kind, Span<const Manifes
     }
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

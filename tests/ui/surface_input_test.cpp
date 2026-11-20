@@ -9,8 +9,8 @@
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/text_field.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::ui;
+using namespace vse;
+using namespace vse::ui;
 
 namespace
 {

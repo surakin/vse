@@ -4,7 +4,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -347,4 +347,4 @@ bool SuggestKey(const Registry& registry, StringView text, Key* out)
     return true;
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

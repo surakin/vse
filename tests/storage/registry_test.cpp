@@ -8,7 +8,7 @@
 #include "storage/builtin_components.h"
 #include "storage/component_registry.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -196,4 +196,4 @@ TEST_CASE("Registry: a component the world holds and nobody registered is listed
 }
 
 }  // namespace
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

@@ -6,7 +6,7 @@
 // THREAD_IDENTIFIER_INFO's 64-bit id cut to its low 31 bits, never 0, the same rule as the job system's
 // (jobs/macos/thread_platform.cpp), so a thread reads the same in a crash report and in the job logs. Internal to
 // os/macos/debug/.
-namespace engine_placeholder::debug::macos
+namespace vse::debug::macos
 {
 
 inline u64 ThreadNumber(u64 id)
@@ -15,4 +15,4 @@ inline u64 ThreadNumber(u64 id)
     return low != 0 ? low : 1;
 }
 
-}  // namespace engine_placeholder::debug::macos
+}  // namespace vse::debug::macos

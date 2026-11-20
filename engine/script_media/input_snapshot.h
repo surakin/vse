@@ -16,7 +16,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 /// What an action or an axis reads: a keyboard key or mouse buttons.
@@ -337,4 +337,4 @@ struct InputScriptServices
     const InputSnapshot* snapshot = nullptr;
 };
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

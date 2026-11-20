@@ -13,7 +13,7 @@
 #include "physics/contact.h"
 #include "types.h"
 
-namespace engine_placeholder::physics::collide_math
+namespace vse::physics::collide_math
 {
 
 constexpr f32 kTiny = 1e-12f;
@@ -307,4 +307,4 @@ bool CompoundPair(const Shape& a, const Pose& pose_a, const Shape& b, const Pose
                   ContactManifold* out);
 bool BoxCapsule(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out);
 
-}  // namespace engine_placeholder::physics::collide_math
+}  // namespace vse::physics::collide_math

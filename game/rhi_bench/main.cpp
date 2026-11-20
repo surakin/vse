@@ -23,8 +23,8 @@
 #include "rhi/uniform_ring.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 namespace
 {
@@ -319,10 +319,9 @@ void BenchPipelines()
 
 int main(int argc, char** argv)
 {
-    ::engine_placeholder::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
-    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(
-        argc, argv);
-    engine_placeholder::debug::RunCrashTest(
+    ::vse::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
+    const vse::debug::ProgramDebugSetup debug_setup = vse::debug::StartProgramDebugging(argc, argv);
+    vse::debug::RunCrashTest(
         debug_setup.crash_test);  // --crash-test=segv|abort|assert|ensure, before any window or device
     long draws = 0;
     long frames = 30;
@@ -333,10 +332,10 @@ int main(int argc, char** argv)
                                                         {"skip-uploads", false},
                                                         {"skip-pipelines", false},
                                                         {"rhi", true},
-                                                        engine_placeholder::debug::kCrashHandlerOption,
-                                                        engine_placeholder::debug::kCrashTestOption};
+                                                        vse::debug::kCrashHandlerOption,
+                                                        vse::debug::kCrashTestOption};
     const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
-                                              engine_placeholder::Span<const os::CommandLineOption>(kCliOptions, 7));
+                                              vse::Span<const os::CommandLineOption>(kCliOptions, 7));
     const char* program = line.ProgramName().Data();
     StringView value;
     if (!line.Ok() || line.ArgCount() != 0 ||

@@ -8,8 +8,8 @@
 #include "cstr/cstr.h"
 #include "support/test_support_posix.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 TEST_CASE("The CPU brand is read from /proc/cpuinfo", "[crashreport][debug][linux]")
 {

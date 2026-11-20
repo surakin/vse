@@ -11,16 +11,14 @@ namespace ui_test
 
 struct Opened
 {
-    engine_placeholder::text::FontLibrary library;
-    engine_placeholder::text::Font font;
+    vse::text::FontLibrary library;
+    vse::text::Font font;
     Opened()
     {
         REQUIRE(library.Initialize().Ok());
-        engine_placeholder::text::FontOptions options;
-        REQUIRE(engine_placeholder::text::Font::OpenFile(
-                    library, engine_placeholder::io::Path(engine_placeholder::StringView(UI_TEST_FONT_FILE)), options,
-                    &font)
-                    .Ok());
+        vse::text::FontOptions options;
+        REQUIRE(
+            vse::text::Font::OpenFile(library, vse::io::Path(vse::StringView(UI_TEST_FONT_FILE)), options, &font).Ok());
     }
 };
 

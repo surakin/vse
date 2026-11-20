@@ -1,6 +1,6 @@
 #include "storage/field_walk.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -128,4 +128,4 @@ Status ReadReferences(const RegisteredComponent& component, ByteSpan record, con
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

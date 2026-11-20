@@ -3,7 +3,7 @@
 #include "physics/broad_phase.h"
 #include "physics/world.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -293,4 +293,4 @@ void PhysicsWorld::UpdateSleep(const Vector<u32>& edges, f32 dt)
     step_stats_.sleeping_bodies = sleeping;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

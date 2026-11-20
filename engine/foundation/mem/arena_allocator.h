@@ -5,7 +5,7 @@
 //! Linear bump allocator backed by a single mmap'd block. Individual
 //! allocations are never freed; Reset rewinds the bump pointer, FreeAll
 //! unmaps the whole block.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Linear bump allocator over one fixed-capacity block of virtual memory.
@@ -60,4 +60,4 @@ private:
     usize offset_ = 0;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

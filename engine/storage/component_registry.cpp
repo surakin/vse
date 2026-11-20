@@ -4,7 +4,7 @@
 #include "ecs/archetype.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 Status RegisteredComponent::Encode(const void* component, bytes::ByteWriter& out, const CodecLimits& limits) const
@@ -436,4 +436,4 @@ void ComponentRegistry::UnregisteredWithData(const ecs::World& world, Vector<ecs
     }
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

@@ -2,7 +2,7 @@
 // its own (see x11_cursor_impl.inc).
 #include <X11/extensions/Xfixes.h>
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 namespace
@@ -929,4 +929,4 @@ void ClipboardRelease(_XDisplay* display, X11ClipboardState& state, u64 now_ns)
     XFlush(display);
 }
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11

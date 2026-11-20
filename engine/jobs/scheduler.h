@@ -49,7 +49,7 @@
 //! join (`HelpUntil` or await) all outstanding work before destroying the
 //! scheduler, or those frames leak. Submitting concurrently with or after
 //! shutdown is a caller bug (asserted once shutdown has completed).
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 class Counter;
@@ -311,4 +311,4 @@ private:
     Atomic<bool> drained_{false};  // Shutdown() finished sweeping
 };
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

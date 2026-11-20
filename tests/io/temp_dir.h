@@ -33,7 +33,7 @@
 namespace io_test
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 inline engine_test::Text Str(StringView v)
 {

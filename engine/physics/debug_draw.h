@@ -8,7 +8,7 @@
 #include "spatial/spatial_debug.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Colors of the debug drawing (0xAABBGGRR).
@@ -53,4 +53,4 @@ struct DebugDrawOptions
 /// - Fails: never.
 u32 DebugDraw(const PhysicsWorld& world, const DebugDrawOptions& options, Vector<spatial::DebugLine>* lines);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

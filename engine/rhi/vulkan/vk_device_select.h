@@ -5,7 +5,7 @@
 
 //! Choosing a physical device and planning its queues, as pure functions over plain data.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// The most physical devices considered; further ones are ignored.
@@ -161,4 +161,4 @@ struct QueuePlan
 /// - Returns: the plan; `graphics_family` is -1 if the device has no usable family.
 QueuePlan PlanQueues(const PhysicalDeviceInfo& info, bool presentable);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

@@ -10,7 +10,7 @@
 #include "containers/array.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The value of a node's parent, mesh or skin when it has none.
@@ -96,4 +96,4 @@ GltfMatrix MatrixFromTrs(const GltfTrs& trs);
 /// - Ownership: borrows its arguments for the call only; nothing is retained.
 bool DecomposeMatrix(const GltfMatrix& matrix, GltfTrs* out);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

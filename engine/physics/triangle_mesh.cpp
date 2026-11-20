@@ -3,7 +3,7 @@
 #include "algorithm.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 namespace
 {
@@ -199,4 +199,4 @@ TriangleMeshConstPtr MeshLibrary::Share(u32 id) const
     return (id >= 1 && id <= meshes_.Size()) ? meshes_[id - 1] : TriangleMeshConstPtr();
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

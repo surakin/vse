@@ -7,7 +7,7 @@
 //! The window frame (Phase 15, Day 199): a panel with a title bar, a content area and an optional footer, that the user
 //! can move and resize inside its parent.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A framed panel: title bar (title text and an optional close button), content, and an optional footer row, in the
@@ -121,4 +121,4 @@ private:
     Callback<WindowFrame*> on_close_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

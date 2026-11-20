@@ -7,7 +7,7 @@
 #include "containers/span.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The ITU-R BS.775 gain for folding a center or surround channel into a front channel: 1/sqrt(2).
@@ -126,4 +126,4 @@ ChannelMatrix BuildChannelMatrix(ChannelLayout from, ChannelLayout to);
 /// - Ownership: borrows both buffers for the call; they must not overlap.
 bool ApplyChannelMatrix(const ChannelMatrix& matrix, Span<const f32> in, Span<f32> out, usize frames);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

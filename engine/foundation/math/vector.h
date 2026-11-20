@@ -8,7 +8,7 @@
 //!
 //! No SIMD or special alignment. Index access uses an explicit switch rather
 //! than relying on struct layout.
-namespace engine_placeholder
+namespace vse
 {
 
 /// 2-component float vector with members `x, y`.
@@ -227,4 +227,4 @@ struct Vec4
     bool operator!=(const Vec4& o) const { return !(*this == o); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

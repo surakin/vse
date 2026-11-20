@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "math/math_util.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -234,4 +234,4 @@ Mat3 InertiaAbout(const MassProperties& properties, const Vec3& offset)
     return out;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

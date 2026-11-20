@@ -1,6 +1,6 @@
 #include "run_process.h"
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 void AppendWindowsArgument(Text* line, StringView arg)
@@ -47,4 +47,4 @@ void AppendWindowsArgument(Text* line, StringView arg)
     line->Append('"');
 }
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

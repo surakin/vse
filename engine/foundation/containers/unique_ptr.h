@@ -9,7 +9,7 @@
 
 //! Owning pointer to one object, the engine's replacement for a raw `new` / `delete` pair.
 //! [[Array]] and [[Vector]] own runs of elements; [[SharedPtr]] shares one object.
-namespace engine_placeholder
+namespace vse
 {
 
 /// The default deleter of [[UniquePtr]]: runs the destructor and returns the storage to the heap.
@@ -172,4 +172,4 @@ UniquePtr<T, Deleter> MakeUnique(Args&&... args)
     return UniquePtr<T, Deleter>(new (mem) T(Forward<Args>(args)...));
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

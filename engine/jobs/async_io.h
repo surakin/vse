@@ -44,7 +44,7 @@
 //! FIFO queue, so a slow request delays the ones behind it (head-of-line
 //! blocking); a pool of I/O threads can replace it later without changing the
 //! awaitable.
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 /// Intrusive node for work queued on the [[jobs::IoThread]]: the foundation's [[io::IoWork]], so the thread is also an
@@ -108,7 +108,7 @@ public:
     /// Gives the id of the I/O thread, for telling it apart from other threads.
     ///
     /// - Returns: the thread id recorded at construction.
-    engine_placeholder::ThreadId ThreadId() const { return thread_id_; }
+    vse::ThreadId ThreadId() const { return thread_id_; }
 
 private:
     void Loop();
@@ -121,7 +121,7 @@ private:
     bool stopping_ = false;
     bool joined_ = false;
     Thread thread_;
-    engine_placeholder::ThreadId thread_id_;
+    vse::ThreadId thread_id_;
 };
 
 struct ReadState;  // heap-allocated per request (defined in async_io.cpp)
@@ -235,4 +235,4 @@ inline constexpr usize kMaxAsyncPathBytes = 1023;
 /// - Thread-safety: thread-safe. Await it from a job.
 ReadFileAwaitable ReadFileAsync(Scheduler& scheduler, StringView path, usize max_bytes = kDefaultMaxReadBytes);
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

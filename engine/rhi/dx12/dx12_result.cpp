@@ -1,6 +1,6 @@
 #include "rhi/dx12/dx12_result.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 const char* HresultName(HRESULT result)
@@ -39,4 +39,4 @@ bool IsDeviceLostResult(HRESULT result)
            result == DXGI_ERROR_DEVICE_HUNG || result == DXGI_ERROR_DRIVER_INTERNAL_ERROR;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

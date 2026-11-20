@@ -8,7 +8,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// How a script call ended.
@@ -81,4 +81,4 @@ struct Outcome
     bool IsOk() const { return status == Status::Ok; }
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

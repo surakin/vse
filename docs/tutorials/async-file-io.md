@@ -30,7 +30,7 @@
 #include "os/console.h"
 #include "sync/atomic.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Report {
     bool ok = false;

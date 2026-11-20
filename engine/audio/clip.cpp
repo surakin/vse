@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 ClipStatus MakeClipView(const ClipDesc& desc, ByteSpan bytes, ClipView* out)
@@ -108,4 +108,4 @@ ClipStatus AudioClip::CreateCopy(const ClipDesc& desc, Span<const f32> samples, 
     return Create(desc, Move(copy), 0, name, out);
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -13,7 +13,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The two directions of a debugger's connection: commands come in as [[script::Value]] maps, events go out as maps. A
@@ -191,4 +191,4 @@ private:
     Atomic<u64> stop_count_{0};
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

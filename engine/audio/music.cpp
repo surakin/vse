@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -505,4 +505,4 @@ void MusicPlayer::Update()
     }
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

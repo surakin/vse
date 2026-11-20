@@ -10,7 +10,7 @@
 //! [[os::Window]]. The header is the same on every platform; the implementation lives in `platform/<platform>/`
 //! (Wayland or X11 on Linux), so a program that includes only this header builds unchanged on each.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Picks and owns the window backend of the running platform, exposing whichever opened as an [[os::Window]].
@@ -68,4 +68,4 @@ private:
     Window* active_ = nullptr;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

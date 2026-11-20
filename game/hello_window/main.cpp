@@ -9,7 +9,7 @@
 #include "os/os.h"
 #include "string/string.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {
@@ -192,7 +192,7 @@ int EngineMain(int, char**)
         }
         if (!have_flag)
         {
-            window_host.OpenFromEnvironment("re-engine", 1280, 720, &input_state);
+            window_host.OpenFromEnvironment("Visual Storm Engine", 1280, 720, &input_state);
         }
         else if (requested == os::WindowBackend::Invalid)
         {
@@ -200,7 +200,7 @@ int EngineMain(int, char**)
         }
         else
         {
-            window_host.Open(requested, "re-engine", 1280, 720, &input_state);
+            window_host.Open(requested, "Visual Storm Engine", 1280, 720, &input_state);
         }
     }
     InputSnapshot prev_input;

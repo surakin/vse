@@ -3,7 +3,7 @@
 #include "types.h"
 
 //! The executable and shared libraries loaded into the running process, for naming the module an address belongs to.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Bytes kept of a module's path.
@@ -44,4 +44,4 @@ void RefreshLoadedModules();
 /// - Thread-safety: thread-safe and async-signal-safe: it reads an immutable table.
 bool FindLoadedModule(u64 address, LoadedModule* out);
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

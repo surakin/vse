@@ -9,7 +9,7 @@
 #include "math/vector.h"
 #include "types.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// A sphere.
@@ -320,4 +320,4 @@ bool Intersect(const Ray& ray, const Sphere& sphere, f32 max_t, f32* t);
 /// origin or beyond `max_t`.
 bool Intersect(const Ray& ray, const Plane& plane, f32 max_t, f32* t);
 
-}  // namespace engine_placeholder
+}  // namespace vse

@@ -1,6 +1,6 @@
 #include "platform/linux/keyboard_events.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 void KeyboardEvents::SetRepeatInfo(i32 rate_per_second, i32 delay_ms)
@@ -154,4 +154,4 @@ void KeyboardEvents::Tick(u64 now_ns)
     }
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

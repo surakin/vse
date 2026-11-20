@@ -11,7 +11,7 @@
 #include "tonemap.frag.dxil.inc"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -612,4 +612,4 @@ void TonemapPass::Record(const PassExecuteContext& context, void* user)
     context.list->EndRendering();
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

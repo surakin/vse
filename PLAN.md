@@ -1,4 +1,4 @@
-# PLAN.md — Master Plan
+# PLAN.md — Master Plan (Visual Storm Engine, VSE)
 
 ## Mission
 

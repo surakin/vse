@@ -8,7 +8,7 @@
 #include "math/matrix.h"
 #include "physics/query.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -278,4 +278,4 @@ SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics)
     return report;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

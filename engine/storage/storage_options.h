@@ -15,7 +15,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// A flag that asks a running save or load to stop. Checked between batches, so a stop takes effect after the batch in
@@ -150,4 +150,4 @@ struct Report
     u64 bytes = 0;               ///< Bytes written to or read from the store.
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

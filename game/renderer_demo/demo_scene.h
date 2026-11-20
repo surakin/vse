@@ -16,15 +16,15 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 class World;
 class Schedule;
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs
 namespace renderer_demo
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // What to build.
 struct SceneOptions

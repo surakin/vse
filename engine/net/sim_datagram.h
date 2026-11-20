@@ -7,7 +7,7 @@
 #include "net/sim_network.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// A datagram port on the simulated network: what the network delivers waits in a queue until the transport takes it.
@@ -66,4 +66,4 @@ private:
     usize head_ = 0;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

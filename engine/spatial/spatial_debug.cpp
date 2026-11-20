@@ -3,7 +3,7 @@
 #include "settings/desc.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 SpatialStats DescribeSet(const SpatialSet& set)
@@ -141,4 +141,4 @@ SpatialSetConfig SetConfigFromSettings(const settings::Registry& registry)
     return config;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

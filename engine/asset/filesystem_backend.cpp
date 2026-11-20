@@ -6,7 +6,7 @@
 #include "io/file.h"
 #include "io/file_system.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -527,4 +527,4 @@ Status FilesystemBackend::Watch(Vector<ChangeRecord>* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

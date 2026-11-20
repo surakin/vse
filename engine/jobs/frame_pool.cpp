@@ -10,7 +10,7 @@
 #include "sync/mutex.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 namespace
@@ -341,4 +341,4 @@ FramePool::Stats FramePool::GetStats() const
     return s;
 }
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

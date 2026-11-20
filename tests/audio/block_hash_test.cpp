@@ -6,8 +6,8 @@
 #include "containers/vector.h"
 #include "lang/limits.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::audio;
+using namespace vse;
+using namespace vse::audio;
 
 TEST_CASE("BlockHasher: known values", "[audio][hash]")
 {

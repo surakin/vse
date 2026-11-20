@@ -2,7 +2,7 @@
 
 #include "net/windows/winsock.h"
 
-namespace engine_placeholder::net::windows
+namespace vse::net::windows
 {
 
 ErrorCode ErrorFromWsa(int error)
@@ -74,4 +74,4 @@ ErrorCode ErrorFromResolveError(int error)
     }
 }
 
-}  // namespace engine_placeholder::net::windows
+}  // namespace vse::net::windows

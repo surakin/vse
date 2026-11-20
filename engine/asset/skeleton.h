@@ -27,7 +27,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The most joints a skeleton holds in v1 (the joint palette of the renderer is sized for it).
@@ -190,4 +190,4 @@ private:
     ByteSpan names_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

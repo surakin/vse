@@ -1,6 +1,6 @@
 #include "os/gpu_driver_probe.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 // The versioned name, not "libvulkan.so": the loader package always installs libvulkan.so.1, while the unversioned
@@ -10,4 +10,4 @@ const char* VulkanLoaderName()
     return "libvulkan.so.1";
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

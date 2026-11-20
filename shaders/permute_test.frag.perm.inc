@@ -8,7 +8,7 @@
 #include "renderer/shader_permutation.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kPermuteTestFragPerm1SpvWordCount = 93;
 
@@ -181,4 +181,4 @@ inline constexpr renderer::PermutationEntry kPermuteTestFragEntries[7] = {
 
 inline constexpr renderer::ShaderPermutations kPermuteTestFragPermutations = {"permute_test.frag", kPermuteTestFragOptions, 4, kPermuteTestFragModules, 6, kPermuteTestFragEntries, 7};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

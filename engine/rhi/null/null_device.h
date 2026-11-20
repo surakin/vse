@@ -10,7 +10,7 @@
 //! It lets the layers above the RHI, and the contract itself, be tested with no GPU. Buffer contents are
 //! kept in host memory so uploads, copies and mapping round-trip; textures keep only their state.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace detail
@@ -230,4 +230,4 @@ NullDevicePtr CreateNullDevice(const NullDeviceOptions& options = NullDeviceOpti
 /// - Thread-safety: thread-safe.
 bool RegisterNullBackend();
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

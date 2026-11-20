@@ -27,8 +27,8 @@
 #include "algorithm.h"
 #include "sync/thread.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::net;
+using namespace vse;
+using namespace vse::net;
 
 namespace
 {

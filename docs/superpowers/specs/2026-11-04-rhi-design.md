@@ -217,7 +217,7 @@ game/rhi_demo/              dogfood app (Day 57 onward)
 shaders/                    GLSL sources and generated *.spv.inc
 ```
 
-Namespace `engine_placeholder::rhi`; headers are included as `"rhi/<name>.h"`
+Namespace `vse::rhi`; headers are included as `"rhi/<name>.h"`
 rooted at `engine/`. Log channel: `rhi::LogRhi` (default verbosity `Warn`).
 
 ## 15. Out of scope for Phase 4

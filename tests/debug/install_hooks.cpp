@@ -5,5 +5,5 @@
 
 namespace
 {
-const int g_hooks_installed = (engine_placeholder::debug::InstallDiagnosticsHooks(), 0);
+const int g_hooks_installed = (vse::debug::InstallDiagnosticsHooks(), 0);
 }  // namespace

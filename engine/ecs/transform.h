@@ -12,7 +12,7 @@
 #include "math/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// The deepest hierarchy: a root has depth 0, its children 1, and so on up to this value.
@@ -174,4 +174,4 @@ u32 DestroyRecursive(World& world, CommandBuffer& commands, Entity root);
 /// - Returns: the system; give it to [[ecs::Schedule::Add]] (add `InStage` or `After` as needed).
 SystemDesc MakeTransformSystem(const char* name);
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

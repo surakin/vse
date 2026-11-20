@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 namespace
@@ -265,4 +265,4 @@ Status SelectionRects(const TextLayout& layout, u32 begin, u32 end, Vector<Selec
     return Status{};
 }
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

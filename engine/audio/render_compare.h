@@ -9,7 +9,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// How far two renders may differ and still count as equal.
@@ -106,4 +106,4 @@ CompareResult CompareSamples(Span<const f32> a, Span<const f32> b, const RenderT
 /// - Thread-safety: thread-safe; pure.
 CompareResult CompareSummaries(const RenderSummary& a, const RenderSummary& b, const RenderTolerance& tolerance);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

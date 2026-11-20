@@ -30,8 +30,8 @@
 
 extern "C" char** environ;
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::settings;
+using namespace vse;
+using namespace vse::settings;
 using namespace settings_test;
 
 namespace

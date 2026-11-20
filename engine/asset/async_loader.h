@@ -22,7 +22,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// How soon a request is served; a lower value goes first, among requests of one priority the earlier one.
@@ -260,4 +260,4 @@ private:
     AsyncLoadStats stats_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -9,7 +9,7 @@
 
 //! Menus (Phase 15, Day 198): the `Menu` model of items, and `MenuView`, the widget a surface shows as a popup for it.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class Menu;
@@ -241,4 +241,4 @@ private:
     Callback<MenuView*, int> on_edge_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -7,7 +7,7 @@
 #include "net/reactor.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Tracks one deadline across the waits of a loop, so that the timeout of an operation covers the whole operation and
@@ -63,4 +63,4 @@ private:
     u64 deadline_ = 0;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

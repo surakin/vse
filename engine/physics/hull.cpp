@@ -2,7 +2,7 @@
 
 #include "lang/scalar.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -162,4 +162,4 @@ ConvexHullConstPtr HullLibrary::Share(u32 id) const
     return (id >= 1 && id <= hulls_.Size()) ? hulls_[id - 1] : ConvexHullConstPtr();
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

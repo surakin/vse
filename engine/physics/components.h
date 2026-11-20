@@ -8,7 +8,7 @@
 #include "physics/validation.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// How a body takes part in the simulation. The numbers are stored and sent through the C API: never renumbered.
@@ -155,4 +155,4 @@ struct Collider
     Validation Validate() const;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

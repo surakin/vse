@@ -11,7 +11,7 @@
 #include "string/string.h"
 #include "support.h"
 
-namespace engine_placeholder::asset::test
+namespace vse::asset::test
 {
 
 inline void AppendText(Vector<byte>* out, StringView text)
@@ -256,4 +256,4 @@ public:
     String<HeapAllocator> last{HeapAllocator::Default()};
 };
 
-}  // namespace engine_placeholder::asset::test
+}  // namespace vse::asset::test

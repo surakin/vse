@@ -8,7 +8,7 @@
 #include "script/script_debug.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 struct PartitionSlot
@@ -868,4 +868,4 @@ PartitionCounters ScriptWorld::Total() const
     return t;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

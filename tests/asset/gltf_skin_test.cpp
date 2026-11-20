@@ -17,7 +17,7 @@
 #include "os/os.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -809,7 +809,7 @@ TEST_CASE("gltf clip: STEP holds the value until the step, and a cubic spline is
     CHECK(NoteSays(result, "cubic-spline channels resampled at 30 Hz"));
     {
         // Maintenance (2026-11-18): the note's numbers do not follow a host's decimal-comma locale.
-        ::engine_placeholder::test::CommaLocale comma;
+        ::vse::test::CommaLocale comma;
         if (comma.Active())
         {
             ImportResult in_comma;
@@ -1228,4 +1228,4 @@ TEST_CASE("gltf skin: a file of 190,000 accessors is read in linear time", "[ass
     CHECK(result.report.accessors == 190000);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

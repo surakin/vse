@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kFillCompReflByteCount = 149;
 
@@ -26,4 +26,4 @@ inline constexpr u32 kFillCompPushSize = 8;
 inline constexpr u32 kFillCompPushKOffset = 0;
 inline constexpr u32 kFillCompPushCountOffset = 4;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

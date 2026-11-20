@@ -12,7 +12,7 @@
 #include "script/value.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// How many entity handles one partition can reserve per tick (the placeholders a script may use before the merge).
@@ -183,4 +183,4 @@ private:
     HashMap<u128, Value, HeapAllocator> entries_{HeapAllocator::Default()};
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -29,7 +29,7 @@
 //
 // A version-1 VFS silently refuses WAL (Day 250 spike (a)), hence iVersion 2 and the four shared-memory methods.
 
-namespace engine_placeholder::database::sqlite_detail
+namespace vse::database::sqlite_detail
 {
 namespace
 {
@@ -772,4 +772,4 @@ long long FileFaultOpsSeen()
     return g_fault_seen.Load();
 }
 
-}  // namespace engine_placeholder::database::sqlite_detail
+}  // namespace vse::database::sqlite_detail

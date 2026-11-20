@@ -9,8 +9,8 @@
 #include "store_doubles.h"
 #include "test_text.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::settings;
+using namespace vse;
+using namespace vse::settings;
 using namespace settings_test;
 
 namespace

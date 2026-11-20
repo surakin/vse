@@ -21,7 +21,7 @@
 //! the clock, random bytes, process figures and library search are macOS's own (`os/macos/os.cpp`). Pages are the
 //! system's size: 4 KiB on x86-64 and 16 KiB on Apple silicon, so no code may assume 4 KiB.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Maximum path length in bytes that [[os::Open]] and [[os::LoadLibrary]] accept.
@@ -215,4 +215,4 @@ bool EnvironmentNamesIgnoreCase();
 /// it is for `getenv`.
 bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length);
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

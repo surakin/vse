@@ -13,11 +13,10 @@
 namespace crash_extract
 {
 
-using engine_placeholder::u32;
-using engine_placeholder::u64;
+using vse::u32;
+using vse::u64;
 
-constexpr engine_placeholder::usize
-    kMaxDumpText = 780;  // a module path (260 UTF-16 units, 3 UTF-8 bytes each) and its terminator
+constexpr vse::usize kMaxDumpText = 780;  // a module path (260 UTF-16 units, 3 UTF-8 bytes each) and its terminator
 
 struct DumpModule
 {
@@ -45,11 +44,10 @@ enum class DumpResult
 
 // Reads the module list: up to `capacity` modules into `out`; `*count` is how many the dump lists (it may be more than
 // `capacity`).
-DumpResult ReadDumpModules(const char* data, engine_placeholder::usize size, DumpModule* out,
-                           engine_placeholder::usize capacity, engine_placeholder::usize* count);
+DumpResult ReadDumpModules(const char* data, vse::usize size, DumpModule* out, vse::usize capacity, vse::usize* count);
 
 // Reads the exception stream; `out->present` is false for a dump without one.
-DumpResult ReadDumpException(const char* data, engine_placeholder::usize size, DumpException* out);
+DumpResult ReadDumpException(const char* data, vse::usize size, DumpException* out);
 
 // Completes, in place, the register flags of a dump Breakpad wrote on an x86-64 Mac (Phase 21 Day 292). Breakpad's
 // macOS writer fills each thread's general registers but sets the context flags to CONTEXT_AMD64 alone, and lldb reads
@@ -57,7 +55,7 @@ DumpResult ReadDumpException(const char* data, engine_placeholder::usize size, D
 // whose flags are exactly CONTEXT_AMD64 gets CONTROL, INTEGER and SEGMENTS; `*completed` counts them. A context or list
 // entry that does not fit (a dump cut short) is skipped, not an error: Malformed is for a damaged header or directory.
 // A dump from another system or processor (an arm64 Mac's is not verified: no hardware) is left alone.
-DumpResult CompleteMacContextFlags(char* data, engine_placeholder::usize size, engine_placeholder::usize* completed);
+DumpResult CompleteMacContextFlags(char* data, vse::usize size, vse::usize* completed);
 
 // What a symbol store files a Windows image and its PDB under.
 struct ImageInfo
@@ -69,7 +67,7 @@ struct ImageInfo
 };
 
 // Reads a PE file (an .exe or .dll). False if it is not one or has no CodeView record.
-bool ReadImageInfo(const char* data, engine_placeholder::usize size, ImageInfo* out);
+bool ReadImageInfo(const char* data, vse::usize size, ImageInfo* out);
 
 // The last component of a path (after the last '/' or '\'), for a file name taken from a dump: never a path to follow.
 const char* BaseName(const char* path);

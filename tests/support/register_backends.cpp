@@ -15,9 +15,9 @@ class RegisterBackendsListener : public Catch::EventListenerBase
 public:
     using Catch::EventListenerBase::EventListenerBase;
 
-    void testRunStarting(const Catch::TestRunInfo&) override { engine_placeholder::rhi::RegisterCompiledBackends(); }
+    void testRunStarting(const Catch::TestRunInfo&) override { vse::rhi::RegisterCompiledBackends(); }
     // A test that empties the registry to try fake backends leaves it full again for the next one.
-    void testCaseStarting(const Catch::TestCaseInfo&) override { engine_placeholder::rhi::RegisterCompiledBackends(); }
+    void testCaseStarting(const Catch::TestCaseInfo&) override { vse::rhi::RegisterCompiledBackends(); }
 };
 
 }  // namespace

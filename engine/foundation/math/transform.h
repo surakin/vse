@@ -7,7 +7,7 @@
 //! Position, rotation and scale (TRS) and composition of two of them.
 //!
 //! Uses the same column-vector convention as matrix.h and quaternion.h.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Position, rotation and scale of an object relative to its parent space.
@@ -55,4 +55,4 @@ inline Transform Compose(const Transform& parent, const Transform& child)
     return result;
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

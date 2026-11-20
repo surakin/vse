@@ -9,7 +9,7 @@
 #include "database/sqlite/sqlite_os.h"
 #include "temp_dir.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 namespace
 {
@@ -155,4 +155,4 @@ TEST_CASE("SQLite crash safety: a transaction that was committed before the cras
 }
 
 }  // namespace
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

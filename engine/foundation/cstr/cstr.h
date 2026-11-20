@@ -8,7 +8,7 @@
 //! NUL-terminated strings (Phase 16): the engine's spelling of the C library's string functions of `<cstring>` and
 //! `<cwchar>`. These work on `const char*` for the places that meet the C world (command lines, environment, system
 //! calls, literals); the owning and viewing string types are `String` and `StringView`.
-namespace engine_placeholder
+namespace vse
 {
 
 /// The number of characters before the terminating NUL (`strlen`).
@@ -184,4 +184,4 @@ inline wchar_t* WMemMove(wchar_t* destination, const wchar_t* source, usize coun
     return std::wmemmove(destination, source, count);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

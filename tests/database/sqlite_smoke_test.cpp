@@ -3,7 +3,7 @@
 #include "database/sqlite/sqlite_version.h"
 #include "cstr/cstr.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 TEST_CASE("SQLite: the vendored library reports the pinned version", "[database][sqlite]")
@@ -14,4 +14,4 @@ TEST_CASE("SQLite: the vendored library reports the pinned version", "[database]
     CHECK(CStrCompare(version, "3.54.1") == 0);
 }
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

@@ -15,7 +15,7 @@
 #include "storage/world_storage.h"
 #include "temp_dir.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -317,4 +317,4 @@ TEST_CASE("Hostile files: a stored record naming a structural component is refus
     }
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

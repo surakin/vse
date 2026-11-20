@@ -9,7 +9,7 @@
 
 //! The combo box (Phase 15, Day 198): a closed box showing one item of a list, and a drop-down list to choose another.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A box that shows the selected item of a [[ui::ListModel]] and opens a drop-down [[ui::ListBox]] (virtualized, so a
@@ -116,4 +116,4 @@ private:
     Callback<ComboBox*> on_selection_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

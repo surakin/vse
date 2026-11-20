@@ -25,12 +25,12 @@ namespace gpu_test
 namespace
 {
 
-int MaxChannelDifference(const engine_placeholder::byte* a, const engine_placeholder::byte* b)
+int MaxChannelDifference(const vse::byte* a, const vse::byte* b)
 {
     int worst = 0;
     for (int c = 0; c < 4; ++c)
     {
-        const int d = engine_placeholder::Abs(static_cast<int>(a[c]) - static_cast<int>(b[c]));
+        const int d = vse::Abs(static_cast<int>(a[c]) - static_cast<int>(b[c]));
         worst = d > worst ? d : worst;
     }
     return worst;
@@ -39,7 +39,7 @@ int MaxChannelDifference(const engine_placeholder::byte* a, const engine_placeho
 // A pixel is an edge pixel when the golden changes by more than `step` between it and a 4-neighbour.
 bool IsEdge(const Image& g, unsigned x, unsigned y, int step)
 {
-    const engine_placeholder::byte* p = g.Pixel(x, y);
+    const vse::byte* p = g.Pixel(x, y);
     if (x > 0 && MaxChannelDifference(p, g.Pixel(x - 1, y)) > step)
     {
         return true;
@@ -77,9 +77,9 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
     if (golden.width != actual.width || golden.height != actual.height)
     {
         char text[128];
-        engine_placeholder::FormatTo(text, sizeof(text), "size differs: golden %ux%u, actual %ux%u", golden.width,
-                                     golden.height, actual.width, actual.height);
-        r.message = engine_test::MakeText(engine_placeholder::StringView(text));
+        vse::FormatTo(text, sizeof(text), "size differs: golden %ux%u, actual %ux%u", golden.width, golden.height,
+                      actual.width, actual.height);
+        r.message = engine_test::MakeText(vse::StringView(text));
         return r;
     }
     Image diff;
@@ -92,16 +92,15 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
     {
         for (unsigned x = 0; x < golden.width; ++x)
         {
-            const engine_placeholder::byte* g = golden.Pixel(x, y);
-            const engine_placeholder::byte* a = actual.Pixel(x, y);
+            const vse::byte* g = golden.Pixel(x, y);
+            const vse::byte* a = actual.Pixel(x, y);
             const int d = MaxChannelDifference(g, a);
             r.max_difference = d > r.max_difference ? d : r.max_difference;
             const bool edge = IsEdge(golden, x, y, options.edge_step);
-            engine_placeholder::byte*
-                out = &diff.rgba[(static_cast<engine_placeholder::usize>(y) * golden.width + x) * 4];
+            vse::byte* out = &diff.rgba[(static_cast<vse::usize>(y) * golden.width + x) * 4];
             const int shown = d * 8 > 255 ? 255 : d * 8;
-            out[0] = static_cast<engine_placeholder::byte>(shown);
-            out[1] = out[2] = static_cast<engine_placeholder::byte>(edge ? shown / 2 : 0);
+            out[0] = static_cast<vse::byte>(shown);
+            out[1] = out[2] = static_cast<vse::byte>(edge ? shown / 2 : 0);
             if (edge)
             {
                 ++r.edge_pixels;
@@ -133,21 +132,20 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
         const engine_test::Text path = DiffPath(name);
         const bool wrote = WritePpm(path.CStr(), diff);
         char text[256];
-        engine_placeholder::FormatTo(
-            text, sizeof(text),
-            "%u interior pixels differ by more than %d, %u of %u edge pixels by more than %d, worst %d%s%s",
-            r.interior_misses, options.tolerance, r.edge_misses, r.edge_pixels, options.edge_tolerance,
-            r.max_difference, wrote ? "; diff image: " : "", wrote ? path.CStr() : "");
-        r.message = engine_test::MakeText(engine_placeholder::StringView(text));
+        vse::FormatTo(text, sizeof(text),
+                      "%u interior pixels differ by more than %d, %u of %u edge pixels by more than %d, worst %d%s%s",
+                      r.interior_misses, options.tolerance, r.edge_misses, r.edge_pixels, options.edge_tolerance,
+                      r.max_difference, wrote ? "; diff image: " : "", wrote ? path.CStr() : "");
+        r.message = engine_test::MakeText(vse::StringView(text));
     }
     // ENGINE_RHI_GOLDEN_REPORT=1 prints every comparison's numbers, passed or not (Phase 21 Day 309: the numbers of a
     // backend's goldens are recorded in its day files).
-    const char* report = engine_placeholder::os::GetEnvironment("ENGINE_RHI_GOLDEN_REPORT");
+    const char* report = vse::os::GetEnvironment("ENGINE_RHI_GOLDEN_REPORT");
     if (report != nullptr && report[0] == '1')
     {
-        engine_placeholder::os::Print("golden %s: %s, worst %d, %u interior over %d, %u of %u edge over %d\n", name,
-                                      r.same ? "same" : "DIFFERENT", r.max_difference, r.interior_misses,
-                                      options.tolerance, r.edge_misses, r.edge_pixels, options.edge_tolerance);
+        vse::os::Print("golden %s: %s, worst %d, %u interior over %d, %u of %u edge over %d\n", name,
+                       r.same ? "same" : "DIFFERENT", r.max_difference, r.interior_misses, options.tolerance,
+                       r.edge_misses, r.edge_pixels, options.edge_tolerance);
     }
     return r;
 }
@@ -158,25 +156,24 @@ bool WritePpm(const char* path, const Image& image)
     {
         return false;
     }
-    namespace io = engine_placeholder::io;
+    namespace io = vse::io;
     io::Path file;
-    if (!io::Path::Parse(engine_placeholder::StringView(path), io::NativePathStyle(), &file))
+    if (!io::Path::Parse(vse::StringView(path), io::NativePathStyle(), &file))
     {
         return false;
     }
     char header[64];
-    const int header_length = engine_placeholder::FormatTo(header, sizeof(header), "P6\n%u %u\n255\n", image.width,
-                                                           image.height);
-    engine_placeholder::Vector<engine_placeholder::byte> bytes;
-    const engine_placeholder::usize pixels = static_cast<engine_placeholder::usize>(image.width) * image.height;
-    bytes.Reserve(static_cast<engine_placeholder::usize>(header_length) + pixels * 3);
+    const int header_length = vse::FormatTo(header, sizeof(header), "P6\n%u %u\n255\n", image.width, image.height);
+    vse::Vector<vse::byte> bytes;
+    const vse::usize pixels = static_cast<vse::usize>(image.width) * image.height;
+    bytes.Reserve(static_cast<vse::usize>(header_length) + pixels * 3);
     for (int i = 0; i < header_length; ++i)
     {
-        bytes.Push(static_cast<engine_placeholder::byte>(header[i]));
+        bytes.Push(static_cast<vse::byte>(header[i]));
     }
-    for (engine_placeholder::usize i = 0; i < pixels; ++i)
+    for (vse::usize i = 0; i < pixels; ++i)
     {
-        for (engine_placeholder::usize c = 0; c < 3; ++c)
+        for (vse::usize c = 0; c < 3; ++c)
         {
             bytes.Push(image.rgba[i * 4 + c]);
         }
@@ -189,8 +186,7 @@ namespace
 
 // Reads the next unsigned integer of a PPM header from `data[*pos..size)`, skipping whitespace and '#' comments. The
 // character after the number (one whitespace after the last) is consumed.
-bool ReadHeaderNumber(const engine_placeholder::byte* data, engine_placeholder::usize size,
-                      engine_placeholder::usize* pos, unsigned* out)
+bool ReadHeaderNumber(const vse::byte* data, vse::usize size, vse::usize* pos, unsigned* out)
 {
     auto next = [&]() -> int { return *pos < size ? data[(*pos)++] : -1; };
     int c = next();
@@ -231,17 +227,16 @@ bool ReadHeaderNumber(const engine_placeholder::byte* data, engine_placeholder::
 
 bool ReadPpm(const char* path, Image* image)
 {
-    namespace io = engine_placeholder::io;
+    namespace io = vse::io;
     io::Path file;
-    engine_placeholder::Vector<engine_placeholder::u8> bytes;
-    if (!io::Path::Parse(engine_placeholder::StringView(path), io::NativePathStyle(), &file) ||
-        io::ReadFile(file, &bytes).Failed())
+    vse::Vector<vse::u8> bytes;
+    if (!io::Path::Parse(vse::StringView(path), io::NativePathStyle(), &file) || io::ReadFile(file, &bytes).Failed())
     {
         return false;
     }
-    const engine_placeholder::byte* data = bytes.Data();
-    const engine_placeholder::usize size = bytes.Size();
-    engine_placeholder::usize pos = 0;
+    const vse::byte* data = bytes.Data();
+    const vse::usize size = bytes.Size();
+    vse::usize pos = 0;
     unsigned w = 0, h = 0, max = 0;
     bool ok = size >= 2 && data[0] == 'P' && data[1] == '6';
     pos = 2;
@@ -255,23 +250,23 @@ bool ReadPpm(const char* path, Image* image)
     }
     image->width = w;
     image->height = h;
-    image->rgba.Assign(static_cast<engine_placeholder::usize>(w) * h * 4, 255);
-    for (engine_placeholder::usize i = 0; i < static_cast<engine_placeholder::usize>(w) * h; ++i)
+    image->rgba.Assign(static_cast<vse::usize>(w) * h * 4, 255);
+    for (vse::usize i = 0; i < static_cast<vse::usize>(w) * h; ++i)
     {
-        engine_placeholder::MemCopy(&image->rgba[i * 4], data + pos + i * 3, 3);
+        vse::MemCopy(&image->rgba[i * 4], data + pos + i * 3, 3);
     }
     return true;
 }
 
 bool UpdatingGoldens()
 {
-    const char* v = engine_placeholder::os::GetEnvironment("ENGINE_RHI_UPDATE_GOLDEN");
+    const char* v = vse::os::GetEnvironment("ENGINE_RHI_UPDATE_GOLDEN");
     return v != nullptr && v[0] == '1';
 }
 
 engine_test::Text TempPath(const char* name)
 {
-    namespace io = engine_placeholder::io;
+    namespace io = vse::io;
     io::Path dir;
     if (io::TempDirectory(&dir).Failed())
     {

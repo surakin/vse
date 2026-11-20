@@ -13,7 +13,7 @@
 #include "string_view.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -135,4 +135,4 @@ bool WritePipelineCacheFile(const char* path, const void* data, usize size)
     return (dir.IsEmpty() || io::CreateDirectories(dir).Ok()) && io::WriteFileAtomic(file_path, data, size, 0644).Ok();
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

@@ -4,7 +4,7 @@
 #include "cstr/mem_ops.h"
 #include "jobs/parallel_for.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -1294,4 +1294,4 @@ Status EncodeImage(BcKind kind, u32 width, u32 height, ByteSpan rgba, const BcEn
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -6,7 +6,7 @@
 #include "debug/compiler.h"
 #include "settings/file_store.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -188,4 +188,4 @@ Status SaveSettingsTo(Settings& settings, const io::Path& path)
     return store.Commit(commit);
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

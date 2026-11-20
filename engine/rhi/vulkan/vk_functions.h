@@ -4,7 +4,7 @@
 
 //! Plain tables of Vulkan function pointers, resolved once per global/instance/device scope.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// Entry points that exist before an instance: `vkCreateInstance` and the instance enumerations.
@@ -99,4 +99,4 @@ bool CheckInstanceVersion(const VkGlobalFns& fns, u32* out_version);
 /// - Param fns: a loaded global table.
 void LogInstanceCapabilities(const VkGlobalFns& fns);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

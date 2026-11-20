@@ -6,8 +6,8 @@
 #include "platform/linux/wayland/wayland_connection.h"
 #include "platform/linux/wayland/wayland_window.h"
 
-using engine_placeholder::os::wayland::WaylandConnection;
-using engine_placeholder::os::wayland::WaylandWindow;
+using vse::os::wayland::WaylandConnection;
+using vse::os::wayland::WaylandWindow;
 
 TEST_CASE("WaylandWindow::Create maps a real, visible toplevel window against a real compositor", "[wayland][os]")
 {
@@ -15,7 +15,7 @@ TEST_CASE("WaylandWindow::Create maps a real, visible toplevel window against a 
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
-    WaylandWindow window = WaylandWindow::Create(conn, "engine_placeholder test window", "engine_placeholder");
+    WaylandWindow window = WaylandWindow::Create(conn, "vse test window", "vse");
     REQUIRE(window.Valid());
     REQUIRE(window.Surface() != nullptr);
     REQUIRE(window.XdgSurface() != nullptr);
@@ -30,7 +30,7 @@ TEST_CASE("WaylandWindow::Create's window does not request close before any clos
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
-    WaylandWindow window = WaylandWindow::Create(conn, "engine_placeholder test window", "engine_placeholder");
+    WaylandWindow window = WaylandWindow::Create(conn, "vse test window", "vse");
     REQUIRE(window.Valid());
     REQUIRE_FALSE(window.ShouldClose());
 }
@@ -64,8 +64,7 @@ TEST_CASE("WaylandWindow::Create truncates an overlong title instead of failing"
     }
     long_title[sizeof(long_title) - 1] = '\0';
 
-    WaylandWindow window = WaylandWindow::Create(
-        conn, engine_placeholder::StringView(long_title, sizeof(long_title) - 1), "engine_placeholder");
+    WaylandWindow window = WaylandWindow::Create(conn, vse::StringView(long_title, sizeof(long_title) - 1), "vse");
     REQUIRE(window.Valid());
 }
 
@@ -75,17 +74,17 @@ TEST_CASE("WaylandWindow move construction/assignment transfers ownership withou
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
-    WaylandWindow a = WaylandWindow::Create(conn, "move test", "engine_placeholder");
+    WaylandWindow a = WaylandWindow::Create(conn, "move test", "vse");
     REQUIRE(a.Valid());
     wl_surface* surface = a.Surface();
 
-    WaylandWindow b(engine_placeholder::Move(a));
+    WaylandWindow b(vse::Move(a));
     REQUIRE_FALSE(a.Valid());
     REQUIRE(b.Valid());
     REQUIRE(b.Surface() == surface);
 
     WaylandWindow c;
-    c = engine_placeholder::Move(b);
+    c = vse::Move(b);
     REQUIRE_FALSE(b.Valid());
     REQUIRE(c.Valid());
     REQUIRE(c.Surface() == surface);
@@ -100,12 +99,12 @@ TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers
     {
         SKIP("compositor does not offer zxdg_decoration_manager_v1");
     }
-    WaylandWindow window = WaylandWindow::Create(conn, "decoration test", "engine_placeholder");
+    WaylandWindow window = WaylandWindow::Create(conn, "decoration test", "vse");
     REQUIRE(window.Valid());
     REQUIRE(window.ServerSideDecorated());
 
     // Survives a move (listener user data re-pointed).
-    WaylandWindow moved(engine_placeholder::Move(window));
+    WaylandWindow moved(vse::Move(window));
     REQUIRE(moved.ServerSideDecorated());
 }
 
@@ -115,11 +114,11 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
-    WaylandWindow window = WaylandWindow::Create(conn, "resize test", "engine_placeholder");
+    WaylandWindow window = WaylandWindow::Create(conn, "resize test", "vse");
     REQUIRE(window.Valid());
-    const engine_placeholder::u32 original_width = window.Width();
-    const engine_placeholder::u32 original_height = window.Height();
-    const engine_placeholder::u64 serial_before = window.ResizeSerial();
+    const vse::u32 original_width = window.Width();
+    const vse::u32 original_height = window.Height();
+    const vse::u64 serial_before = window.ResizeSerial();
 
     // Ask the compositor to maximize: it answers with a configure at
     // the maximized size, which must become the window's size (and the
@@ -136,7 +135,7 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     {
         SKIP("compositor did not resize the window on set_maximized");
     }
-    const engine_placeholder::u64 serial_maximized = window.ResizeSerial();
+    const vse::u64 serial_maximized = window.ResizeSerial();
     REQUIRE(serial_maximized != serial_before);  // a swapchain can tell its images are stale
     xdg_toplevel_unset_maximized(window.XdgToplevel());
     for (int i = 0; i < 5; ++i)
@@ -160,7 +159,7 @@ TEST_CASE("WaylandWindow::Create uses the size hint when the compositor suggests
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
-    WaylandWindow window = WaylandWindow::Create(conn, "hinted", "engine_placeholder", 500, 300);
+    WaylandWindow window = WaylandWindow::Create(conn, "hinted", "vse", 500, 300);
     REQUIRE(window.Valid());
     REQUIRE(window.Width() == 500);
     REQUIRE(window.Height() == 300);
@@ -171,16 +170,16 @@ TEST_CASE("WaylandWindow's resize serial survives a move and is non-zero once si
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
-    WaylandWindow window = WaylandWindow::Create(conn, "serial test", "engine_placeholder");
+    WaylandWindow window = WaylandWindow::Create(conn, "serial test", "vse");
     REQUIRE(window.Valid());
-    const engine_placeholder::u64 serial = window.ResizeSerial();
+    const vse::u64 serial = window.ResizeSerial();
     REQUIRE(serial != 0);  // the initial configure sized it
-    WaylandWindow moved(engine_placeholder::Move(window));
+    WaylandWindow moved(vse::Move(window));
     REQUIRE(moved.ResizeSerial() == serial);
     REQUIRE(window.ResizeSerial() == 0);
 
     // Serials are process-wide: a second window never reports the same value.
-    WaylandWindow other = WaylandWindow::Create(conn, "serial test 2", "engine_placeholder");
+    WaylandWindow other = WaylandWindow::Create(conn, "serial test 2", "vse");
     REQUIRE(other.Valid());
     REQUIRE(other.ResizeSerial() != serial);
 }

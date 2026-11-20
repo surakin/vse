@@ -1,6 +1,6 @@
 #include "net/endpoint.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 Status Endpoint::Parse(StringView text, Endpoint* out)
@@ -121,4 +121,4 @@ Ordering Endpoint::operator<=>(const Endpoint& other) const
     return port_ <=> other.port_;
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -28,7 +28,7 @@
 #include "ui_window/os_clipboard.h"
 #include "ui_window/window_adapter.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

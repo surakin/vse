@@ -11,7 +11,7 @@
 namespace container_bench
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 /// A small deterministic random source (xorshift64*).
 struct Rng

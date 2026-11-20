@@ -9,7 +9,7 @@
 namespace audio_test
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 inline void PutU16(Vector<byte>& v, u32 x)
 {

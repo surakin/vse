@@ -7,7 +7,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// A source of monotonic time in nanoseconds. Timeouts and sleeps of the reactor, and the timers of the transports,
@@ -60,4 +60,4 @@ private:
     Atomic<u64> now_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

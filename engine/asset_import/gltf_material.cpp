@@ -14,7 +14,7 @@
 #include "lang/scalar.h"
 #include "lang/status_try.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -1050,4 +1050,4 @@ Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph,
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

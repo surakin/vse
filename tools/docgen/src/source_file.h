@@ -30,7 +30,7 @@ bool ListNames(StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAl
 
 // Test hook: with a nonzero seed `ListNames` returns the names in a shuffled order (the file system's own order is
 // arbitrary), so a test can prove that a result does not depend on it. 0 (the default) leaves the order alone.
-void SetNameOrderSeedForTesting(engine_placeholder::u32 seed);
+void SetNameOrderSeedForTesting(vse::u32 seed);
 
 // mkdir -p; true if the directory exists afterwards.
 bool EnsureDirectories(StringView path);

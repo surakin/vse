@@ -12,7 +12,7 @@
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

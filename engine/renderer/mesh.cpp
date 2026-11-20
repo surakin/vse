@@ -14,7 +14,7 @@
 #include "renderer/renderer_log.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 VertexLayoutData StandardVertexLayout()
@@ -1631,4 +1631,4 @@ void GpuMesh::Draw(rhi::CommandList* list, u32 instance_count, u32 first_instanc
     list->DrawIndexed(index_count, instance_count, first_index, 0, first_instance);
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

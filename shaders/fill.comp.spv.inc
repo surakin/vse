@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kFillCompSpvWordCount = 280;
 
@@ -58,4 +58,4 @@ inline constexpr u32 kFillCompSpv[kFillCompSpvWordCount] = {
     0x000200f8, 0x0000001e, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

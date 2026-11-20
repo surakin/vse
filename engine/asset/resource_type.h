@@ -7,7 +7,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A resource type: a 32-bit tag written as four characters (`MESH`, `TEXR`, `MATL`, `LEVL`).
@@ -133,4 +133,4 @@ private:
     Vector<TypeInfo> types_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

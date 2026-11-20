@@ -14,7 +14,7 @@
 #include "support.h"
 #include "texture_source.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -491,4 +491,4 @@ TEST_CASE("project file: records, rules and line-numbered errors", "[asset][mint
     CHECK(error.line == 2);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

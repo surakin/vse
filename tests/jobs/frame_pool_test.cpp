@@ -12,8 +12,8 @@
 #include "os/os.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
-using engine_placeholder::jobs::FramePool;
+using namespace vse;
+using vse::jobs::FramePool;
 
 namespace
 {

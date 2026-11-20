@@ -24,7 +24,7 @@
 #include <winioctl.h>
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -1084,4 +1084,4 @@ Status CrashDumpDirectory(Path* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

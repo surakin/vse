@@ -10,7 +10,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 class LoadBufferPool;
@@ -106,4 +106,4 @@ private:
     Array<Vector<u8*>, kClassCount> free_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

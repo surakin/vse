@@ -8,7 +8,7 @@
 #include "string/string.h"
 #include "types.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 TEST_CASE("DenseMap: churn agrees with a HashMap, and slots stay dense", "[containers][dense_map]")
 {

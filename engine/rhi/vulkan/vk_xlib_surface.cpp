@@ -8,7 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_xlib.h>
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 i32 CreateXlibSurface(void* get_instance_proc_addr, void* instance, void* display, u64 window, u64* out_surface)
@@ -34,6 +34,6 @@ i32 CreateXlibSurface(void* get_instance_proc_addr, void* instance, void* displa
     return static_cast<i32>(result);
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan
 
 #include "unity/x11_disable.h"

@@ -16,7 +16,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// One script the reloader did not apply, and why.
@@ -172,4 +172,4 @@ private:
     Vector<Watched> watched_;
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

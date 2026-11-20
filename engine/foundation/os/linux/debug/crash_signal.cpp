@@ -12,7 +12,7 @@
 #include "build_defs.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -373,4 +373,4 @@ void ReleaseThreadAlternateStack()
 
 }  // namespace detail
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

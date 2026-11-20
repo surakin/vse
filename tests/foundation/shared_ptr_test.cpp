@@ -8,18 +8,18 @@
 #include "containers/shared_ptr.h"
 #include "types.h"
 
-using engine_placeholder::LocalSharedPtr;
-using engine_placeholder::MakeShared;
-using engine_placeholder::PlainRefCount;
-using engine_placeholder::SharedPtr;
-using engine_placeholder::usize;
+using vse::LocalSharedPtr;
+using vse::MakeShared;
+using vse::PlainRefCount;
+using vse::SharedPtr;
+using vse::usize;
 
 namespace
 {
 
 struct SharedPtrTestCounted
 {
-    static inline engine_placeholder::Atomic<int> alive{0};
+    static inline vse::Atomic<int> alive{0};
     int value;
     explicit SharedPtrTestCounted(int v = 0) : value(v) { ++alive; }
     SharedPtrTestCounted(const SharedPtrTestCounted&) = delete;
@@ -60,7 +60,7 @@ TEST_CASE("SharedPtr: move transfers the share without touching the count; assig
           "[containers][shared_ptr]")
 {
     SharedPtr<SharedPtrTestCounted> a = MakeShared<SharedPtrTestCounted>(1);
-    SharedPtr<SharedPtrTestCounted> b = engine_placeholder::Move(a);
+    SharedPtr<SharedPtrTestCounted> b = vse::Move(a);
     REQUIRE_FALSE(a);
     REQUIRE(b.UseCount() == 1);
 
@@ -108,10 +108,10 @@ TEST_CASE("SharedPtr: owners on many threads copy and release concurrently, and 
     SharedPtr<SharedPtrTestCounted> shared = MakeShared<SharedPtrTestCounted>(1);
     constexpr int kThreads = 8;
     constexpr int kRounds = 20000;
-    engine_placeholder::Vector<engine_placeholder::Thread> threads;
+    vse::Vector<vse::Thread> threads;
     for (int t = 0; t < kThreads; ++t)
     {
-        threads.Push(engine_placeholder::Thread(
+        threads.Push(vse::Thread(
             [&shared]
             {
                 for (int i = 0; i < kRounds; ++i)
@@ -137,7 +137,7 @@ TEST_CASE("SharedPtr: owners on many threads copy and release concurrently, and 
 TEST_CASE("SharedPtr: the last owner may be released on another thread", "[containers][shared_ptr][threads]")
 {
     SharedPtr<SharedPtrTestCounted> shared = MakeShared<SharedPtrTestCounted>(1);
-    engine_placeholder::Thread t([p = engine_placeholder::Move(shared)]() mutable { p.Reset(); });
+    vse::Thread t([p = vse::Move(shared)]() mutable { p.Reset(); });
     t.Join();
     REQUIRE(SharedPtrTestCounted::alive == 0);
 }

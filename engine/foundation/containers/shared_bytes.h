@@ -9,7 +9,7 @@
 #include "containers/vector.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Immutable bytes with a shared lifetime. A derived class owns the storage (a pooled read buffer, a vector); holders
@@ -92,4 +92,4 @@ inline SharedBytesPtr CopyShared(const Vector<byte>& bytes)
     return CopyShared(ByteSpan(bytes.Data(), bytes.Size()));
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

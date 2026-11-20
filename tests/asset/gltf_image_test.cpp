@@ -8,7 +8,7 @@
 #include "jpeg_samples.h"
 #include "png_writer.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -336,4 +336,4 @@ TEST_CASE("image: truncated and mutated files fail cleanly", "[asset][gltf]")
     }
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

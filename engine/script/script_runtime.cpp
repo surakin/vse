@@ -18,7 +18,7 @@
 #include "script/settings_bindings.h"
 #include "script/task_pool.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 // The runtime's own types are in a named namespace, not an anonymous one: `ScriptRuntime::Impl` (a class with external
@@ -1961,4 +1961,4 @@ ecs::SystemDesc MakeScriptSystem()
         .WritesResource<ScriptRuntime>();
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

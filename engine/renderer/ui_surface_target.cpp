@@ -4,7 +4,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -112,4 +112,4 @@ GraphResource UiSurfaceTarget::Sampled(RenderGraph* graph)
     return frame_resource_;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

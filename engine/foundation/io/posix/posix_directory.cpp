@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -180,4 +180,4 @@ Status GetIdentity(const Path& path, Identity* out)
 
 }  // namespace detail
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

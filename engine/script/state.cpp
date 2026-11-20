@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -39,4 +39,4 @@ void State::CheckOwner() const
                   "script::State: used from a thread that does not own it (hand it over and acquire it)");
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

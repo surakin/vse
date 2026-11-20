@@ -8,7 +8,7 @@
 #include "sync/mutex.h"
 #include <unistd.h>
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -120,4 +120,4 @@ bool FindLoadedModule(u64 address, LoadedModule* out)
     return false;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

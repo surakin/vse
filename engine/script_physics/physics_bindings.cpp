@@ -14,7 +14,7 @@
 #include "script/merge_services.h"
 #include "script/partition_context.h"
 
-namespace engine_placeholder::script_physics
+namespace vse::script_physics
 {
 
 using script::CommandKind;
@@ -1363,4 +1363,4 @@ bool RegisterPhysicsBindings(script::BindingRegistry* registry)
     return ok;
 }
 
-}  // namespace engine_placeholder::script_physics
+}  // namespace vse::script_physics

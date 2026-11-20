@@ -6,8 +6,8 @@
 #include "physics/triangle_mesh.h"
 #include "physics/world.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::physics;
+using namespace vse;
+using namespace vse::physics;
 
 namespace
 {

@@ -8,7 +8,7 @@
 
 //! The menu bar (Phase 15, Day 198): a row of titles, each opening a [[ui::Menu]] below it.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A row of menu titles.
@@ -90,4 +90,4 @@ private:
     f32 height_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

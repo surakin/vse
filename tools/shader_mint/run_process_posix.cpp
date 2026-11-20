@@ -10,7 +10,7 @@
 // tools/docgen/src/child_process_posix.cpp; it repeats glibc's on Linux).
 extern "C" char** environ;
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 bool RunProcess(const Vector<Text>& args)
@@ -32,7 +32,7 @@ bool RunProcess(const Vector<Text>& args)
     do
     {
         waited = waitpid(pid, &status, 0);
-    } while (waited < 0 && engine_placeholder::os::LastError() == EINTR);
+    } while (waited < 0 && vse::os::LastError() == EINTR);
     if (waited < 0)
     {
         os::PrintError("shader_mint: waiting for %s failed\n", argv[0]);
@@ -52,4 +52,4 @@ bool RunProcess(const Vector<Text>& args)
     return true;
 }
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

@@ -3,7 +3,7 @@
 #include "physics/components.h"
 #include "storage/field.h"
 
-namespace engine_placeholder::script_physics
+namespace vse::script_physics
 {
 
 namespace
@@ -118,4 +118,4 @@ void RegisterPhysicsValidators(script::ComponentCatalog* catalog)
     catalog->SetValidator(kColliderId, &CheckCollider);
 }
 
-}  // namespace engine_placeholder::script_physics
+}  // namespace vse::script_physics

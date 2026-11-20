@@ -5,7 +5,7 @@
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 // ---- ScrollBar ----
@@ -503,4 +503,4 @@ void ScrollView::OnDescendantFocused(Widget* widget)
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

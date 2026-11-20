@@ -9,7 +9,7 @@
 
 //! Mutual exclusion (Phase 16): the engine's spelling of `<mutex>` and `<condition_variable>`. Every type forwards
 //! inline to the standard one.
-namespace engine_placeholder
+namespace vse
 {
 
 /// A lock that one thread at a time can hold (`std::mutex`). Not recursive: locking it twice from one thread deadlocks.
@@ -183,4 +183,4 @@ template <class F, class... Args> void CallOnce(OnceFlag& flag, F&& function, Ar
     std::call_once(flag.NativeFlag(), static_cast<F&&>(function), static_cast<Args&&>(args)...);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

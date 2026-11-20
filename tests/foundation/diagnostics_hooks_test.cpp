@@ -13,19 +13,19 @@
 // Phase 12 Day 142: the assert report and the thread registration reach the debugging module through hooks, and are
 // complete without them.
 
-using engine_placeholder::AssertAction;
-using engine_placeholder::AssertInfo;
-using engine_placeholder::AssertKind;
-using engine_placeholder::DefaultAssertHandler;
-using engine_placeholder::FailureReportHooks;
-using engine_placeholder::GetFailureReportHooks;
-using engine_placeholder::NotifyThreadStart;
-using engine_placeholder::SetFailureReportHooks;
-using engine_placeholder::SetThreadStartHook;
-using engine_placeholder::SetWriteSinkForTesting;
-using engine_placeholder::StringView;
-using engine_placeholder::u32;
-using engine_placeholder::usize;
+using vse::AssertAction;
+using vse::AssertInfo;
+using vse::AssertKind;
+using vse::DefaultAssertHandler;
+using vse::FailureReportHooks;
+using vse::GetFailureReportHooks;
+using vse::NotifyThreadStart;
+using vse::SetFailureReportHooks;
+using vse::SetThreadStartHook;
+using vse::SetWriteSinkForTesting;
+using vse::StringView;
+using vse::u32;
+using vse::usize;
 
 namespace
 {
@@ -37,7 +37,7 @@ long CaptureSink(int, const void* buffer, usize length)
 {
     const usize room = sizeof(g_captured) - g_captured_length;
     const usize take = length < room ? length : room;
-    engine_placeholder::MemCopy(g_captured + g_captured_length, buffer, take);
+    vse::MemCopy(g_captured + g_captured_length, buffer, take);
     g_captured_length += take;
     return static_cast<long>(length);
 }
@@ -60,7 +60,7 @@ usize FakeTrace(char* buffer, usize capacity, u32 skip)
     {
         return 0;
     }
-    engine_placeholder::MemCopy(buffer, kText, length);
+    vse::MemCopy(buffer, kText, length);
     return length;
 }
 
@@ -90,7 +90,7 @@ struct HookGuard
     ~HookGuard()
     {
         SetFailureReportHooks(previous);
-        SetWriteSinkForTesting(&engine_placeholder::os::Write);
+        SetWriteSinkForTesting(&vse::os::Write);
     }
 };
 
@@ -163,7 +163,7 @@ char g_started_name[16];
 void RecordStart(const char* name)
 {
     ++g_started;
-    engine_placeholder::CStrCopyN(g_started_name, name != nullptr ? name : "", sizeof(g_started_name) - 1);
+    vse::CStrCopyN(g_started_name, name != nullptr ? name : "", sizeof(g_started_name) - 1);
 }
 }  // namespace
 

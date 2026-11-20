@@ -12,7 +12,7 @@
 namespace docgen
 {
 
-enum class LintRule : engine_placeholder::u8
+enum class LintRule : vse::u8
 {
     Undocumented,
     ThreadSafety,

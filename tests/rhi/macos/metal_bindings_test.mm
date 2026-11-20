@@ -13,10 +13,10 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::metal;
-using namespace engine_placeholder::rhi::metal::test;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::rhi::metal;
+using namespace vse::rhi::metal::test;
 
 namespace
 {
@@ -36,7 +36,7 @@ BindGroupLayoutHandle FragmentLayout(Device& device, bool with_texture = true,
     b[2].type = BindingType::SampledTexture;
     b[2].stages = stages;
     BindGroupLayoutDesc d;
-    d.entries = engine_placeholder::Span<BindingDesc>(b.Data(), with_texture ? 3 : 2);
+    d.entries = vse::Span<BindingDesc>(b.Data(), with_texture ? 3 : 2);
     return device.CreateBindGroupLayout(d);
 }
 
@@ -79,7 +79,7 @@ BindGroupHandle MakeGroup(Device& device, BindGroupLayoutHandle layout, const Re
     e[2].sampler = r.sampler;
     BindGroupDesc d;
     d.layout = layout;
-    d.entries = engine_placeholder::Span<BindGroupEntry>(e.Data(), 3);
+    d.entries = vse::Span<BindGroupEntry>(e.Data(), 3);
     d.transient = transient;
     return device.CreateBindGroup(d);
 }
@@ -163,7 +163,7 @@ TEST_CASE("A pipeline layout that disagrees with the library's slots is rejected
     two[1].stages = ShaderStage::Fragment;
     two[1].stride = 16;
     BindGroupLayoutDesc ld;
-    ld.entries = engine_placeholder::Span<BindingDesc>(two.Data(), 2);
+    ld.entries = vse::Span<BindingDesc>(two.Data(), 2);
     const BindGroupLayoutHandle buffers = device->CreateBindGroupLayout(ld);
     const ShaderSlot same[2] = {{0, 0, 3}, {0, 1, 3}};
     const ShaderSlotTable shared{same, 2, kNoShaderSlot};
@@ -220,14 +220,14 @@ TEST_CASE("The Metal binder skips slots that already hold the resource, and star
     sampler_binding.type = BindingType::Sampler;
     sampler_binding.stages = ShaderStage::Fragment;
     BindGroupLayoutDesc sld;
-    sld.entries = engine_placeholder::Span<BindingDesc>(&sampler_binding, 1);
+    sld.entries = vse::Span<BindingDesc>(&sampler_binding, 1);
     const BindGroupLayoutHandle sampler_layout = device->CreateBindGroupLayout(sld);
     BindGroupEntry sampler_entry;
     sampler_entry.binding = 0;
     sampler_entry.sampler = r.sampler;
     BindGroupDesc sgd;
     sgd.layout = sampler_layout;
-    sgd.entries = engine_placeholder::Span<BindGroupEntry>(&sampler_entry, 1);
+    sgd.entries = vse::Span<BindGroupEntry>(&sampler_entry, 1);
     const BindGroupHandle sampler_group = device->CreateBindGroup(sgd);
     REQUIRE(sampler_group.IsValid());
     @autoreleasepool

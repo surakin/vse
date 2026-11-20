@@ -6,7 +6,7 @@
 #include "settings/settings.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// The number of statuses: the values `0` through `kStatusCount - 1` of `engine_status` are all defined.
@@ -29,4 +29,4 @@ engine_status FromSetError(settings::SetError error);
 /// - Fails: never.
 const char* StatusName(engine_status status);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

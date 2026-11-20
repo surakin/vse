@@ -13,7 +13,7 @@
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -718,4 +718,4 @@ void RegistryConfigStore::StopWatching()
     known_.Clear();
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

@@ -19,6 +19,6 @@ Replace every `std::atomic`, `std::mutex`, `std::lock_guard`, `std::unique_lock`
 
 ## Result
 
-- 115 files ported by `scripts/std-port.py sync` (plus hand fixes: `wait`/`Lock` renames, `engine_placeholder::ThreadId` in jobs). `--affected` plain 1951 tests (X11 window tests known), tsan `ran 1117 of 5000`, asan `ran 1435 of 5000`: all pass apart from the known X11 tests. Windows-only files still hold `std::` concurrency until Day 219.
+- 115 files ported by `scripts/std-port.py sync` (plus hand fixes: `wait`/`Lock` renames, `vse::ThreadId` in jobs). `--affected` plain 1951 tests (X11 window tests known), tsan `ran 1117 of 5000`, asan `ran 1435 of 5000`: all pass apart from the known X11 tests. Windows-only files still hold `std::` concurrency until Day 219.
 - Benchmarks: no dedicated job/log benchmark exists; the jobs throughput test stayed within its 1.3-1.6 s band.
 - Review: see Day 208.

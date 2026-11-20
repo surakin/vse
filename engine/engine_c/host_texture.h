@@ -12,7 +12,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// What the textures of an engine did since the last frame took the counts.
@@ -141,14 +141,14 @@ private:
     TextureCounters counters_;
 };
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 class Registry;
 }
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// Declares the `assets.host_texture.*` settings.
@@ -163,4 +163,4 @@ engine_status TextureResizeFn(engine_handle texture, u32 width, u32 height);
 engine_status TextureDestroyFn(engine_handle texture);
 engine_status TextureReadPixelsFn(engine_handle texture, engine_buffer* out, u32* width, u32* height);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

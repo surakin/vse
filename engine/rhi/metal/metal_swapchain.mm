@@ -17,7 +17,7 @@
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 PresentMode MetalPresentModeFor(PresentMode requested)
@@ -251,4 +251,4 @@ SwapchainStatus MetalSwapchain::Resize(u32 width, u32 height)
     return Reconfigure(d);
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

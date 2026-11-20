@@ -2,7 +2,7 @@
 
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -499,4 +499,4 @@ Status LoadMaterialBlob(ByteSpan bytes, const TypeRegistry& types, MaterialAsset
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

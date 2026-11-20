@@ -8,7 +8,7 @@
 #include "ui/widgets/modal_dim.h"
 #include "ui/widgets/tooltip.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -1369,4 +1369,4 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas)
     return true;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -4,7 +4,7 @@
 
 #include "net/posix/posix_net.h"
 
-namespace engine_placeholder::net::posix
+namespace vse::net::posix
 {
 
 int OpenSocketFd(int domain, int type)
@@ -27,4 +27,4 @@ ErrorCode SendErrorCode(int error)
     return ErrorFromErrno(error);
 }
 
-}  // namespace engine_placeholder::net::posix
+}  // namespace vse::net::posix

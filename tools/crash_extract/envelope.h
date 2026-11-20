@@ -21,21 +21,21 @@ enum class EnvelopeResult
 struct Minidump
 {
     const char* data = nullptr;  // inside the buffer passed to FindMinidump
-    engine_placeholder::usize size = 0;
+    vse::usize size = 0;
 };
 
 // Finds the first minidump item. `data` is borrowed for the call and for as long as `out` is used.
-EnvelopeResult FindMinidump(const char* data, engine_placeholder::usize size, Minidump* out);
+EnvelopeResult FindMinidump(const char* data, vse::usize size, Minidump* out);
 
 // An attachment's payload, inside the buffer passed to FindAttachment.
 struct Attachment
 {
     const char* data = nullptr;
-    engine_placeholder::usize size = 0;
+    vse::usize size = 0;
 };
 
 // Finds the first attachment (not the minidump) whose header names `filename` exactly, such as "crash-report.txt", the
 // report the crash handler attaches (Phase 13 Day 156). NoMinidump means: a well-formed envelope without it.
-EnvelopeResult FindAttachment(const char* data, engine_placeholder::usize size, const char* filename, Attachment* out);
+EnvelopeResult FindAttachment(const char* data, vse::usize size, const char* filename, Attachment* out);
 
 }  // namespace crash_extract

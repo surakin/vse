@@ -13,7 +13,7 @@
 #include "storage/world_storage.h"
 #include "world_compare.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -696,4 +696,4 @@ TEST_CASE("World round trip: derived state is rebuilt by running the systems onc
 }
 
 }  // namespace
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

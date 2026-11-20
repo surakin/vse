@@ -16,7 +16,7 @@ namespace docgen
 struct ChildProcess
 {
     /// POSIX: the process id, which is also the id of its process group. Windows: the process id. -1 when nothing runs.
-    engine_placeholder::i64 id = -1;
+    vse::i64 id = -1;
     /// Windows: the process handle. Unused on POSIX.
     void* process = nullptr;
     /// Windows: the job object holding the process and its descendants (closing it kills them). Unused on POSIX.
@@ -29,7 +29,7 @@ struct ChildEnd
     /// It returned an exit code.
     bool exited = false;
     /// The exit code, when `exited`.
-    engine_placeholder::i32 exit_code = 0;
+    vse::i32 exit_code = 0;
     /// It was ended by a signal (POSIX) or by an exception (Windows: an exit code of 0xC0000000 or more, an NTSTATUS
     /// such as an access violation).
     bool killed = false;
@@ -51,7 +51,7 @@ bool StartChild(const Vector<StringView, ArenaAllocator>& args, StringView out_p
                 StringView working_dir, ArenaAllocator& arena, ChildProcess* out);
 
 /// What [[docgen::PollChild]] found.
-enum class ChildPoll : engine_placeholder::u8
+enum class ChildPoll : vse::u8
 {
     Running,  ///< The child has not ended yet.
     Ended,    ///< It ended; `end` says how and the child is released.

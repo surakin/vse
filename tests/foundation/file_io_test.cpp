@@ -6,10 +6,10 @@
 #include "types.h"
 #include "build_defs.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::u8;
-using engine_placeholder::usize;
-namespace io = engine_placeholder::io;
+using vse::ArenaAllocator;
+using vse::u8;
+using vse::usize;
+namespace io = vse::io;
 
 // The running test program, read through its path: ELF on Linux, a PE image (`MZ`) on Windows (Phase 13 Day 158),
 // Mach-O on macOS (Phase 21 Day 293: a 64-bit image, little-endian 0xFEEDFACF, or a universal one, 0xCAFEBABE).

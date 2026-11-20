@@ -4,7 +4,7 @@
 #include "lang/utility.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 void ReplayLog::Begin(u32 random_seed, u64 start_tick, u64 start_hash)
@@ -130,4 +130,4 @@ bool ReplayLog::Equals(const ReplayLog& other) const
     return true;
 }
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

@@ -9,7 +9,7 @@
 #include "platform/window.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 namespace
@@ -564,4 +564,4 @@ void WaylandWindow::ReleaseAll()
     should_close_ = false;
 }
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

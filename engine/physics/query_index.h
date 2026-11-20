@@ -10,7 +10,7 @@
 //! The query index (query and hierarchy indices series, Day 1): every collider's exact world box in a
 //! `spatial::SpatialSet`, kept current by the world on every change, so the queries ask it for candidates instead of
 //! testing every collider. Private to the physics module.
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 // A collider's place in the world: the body's pose with the collider's offset and rotation. The queries and the index
@@ -110,4 +110,4 @@ private:
     u64 reinsertions_ = 0;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

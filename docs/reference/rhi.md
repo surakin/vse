@@ -5338,7 +5338,7 @@ The kind of resource a binding refers to.
 
 ```cpp
 template <typename T>
-using Span = engine_placeholder::Span<const T>;
+using Span = vse::Span<const T>;
 ```
 
 A read-only view of consecutive `T` owned by the caller: the foundation [`Span`](foundation-containers.md#span) of const elements.

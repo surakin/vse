@@ -43,8 +43,8 @@ single group), an IPv4-mapped address as `::ffff:a.b.c.d`. Parsing the formatted
 
 #include "net/endpoint.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::net;
+using namespace vse;
+using namespace vse::net;
 
 int main() {
     Address a;
@@ -116,8 +116,8 @@ are built on it.
 ```cpp compile standalone
 #include "net/socket.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::net;
+using namespace vse;
+using namespace vse::net;
 
 // Starts a loopback connection and returns true if it is made or under way, and the listener sees it once it is pending.
 bool StartLoopbackConnection() {
@@ -260,8 +260,8 @@ says why it ended. `net::FrameWriter` and `net::FrameReader` are the framing on 
 #include "jobs/task.h"
 #include "net/tcp_stream.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::net;
+using namespace vse;
+using namespace vse::net;
 
 // Sends one frame and waits for the echo of it; returns the echo's size, or 0 on any failure.
 jobs::Task<usize> EchoOnce(TcpStream& stream, ByteSpan frame) {
@@ -293,8 +293,8 @@ jobs::Task<usize> EchoOnce(TcpStream& stream, ByteSpan frame) {
 ```cpp compile standalone
 #include "net/codec.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::net;
+using namespace vse;
+using namespace vse::net;
 
 // Writes a position and a heading into `packet`, reads them back; returns true if they survived within the error bound.
 bool RoundTrip(MutableByteSpan packet) {

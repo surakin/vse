@@ -11,7 +11,7 @@
 #include "net/udp_transport.h"
 #include "transport_conformance.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -682,4 +682,4 @@ TEST_CASE("UDP transport: a message limit the wire cannot carry is lowered, and 
               .Is(ErrorCode::MessageTooLarge));
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

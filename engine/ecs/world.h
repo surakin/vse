@@ -19,7 +19,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 template <class... Terms> class Query;
@@ -868,4 +868,4 @@ template <class T> bool World::RemoveResource()
     return true;
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

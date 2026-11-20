@@ -16,7 +16,7 @@
 //!
 //! Code the project owns does not spell `unsigned char`, `uint8_t` and the like; the `std_usage_check` gate (Phase 16
 //! Day 220, which replaced `std_container_check`) will reject them.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Signed 8-bit integer.
@@ -57,4 +57,4 @@ static_assert(sizeof(byte) == 1 && sizeof(usize) == sizeof(isize), "byte and the
 static_assert(sizeof(f32) == 4 && sizeof(f64) == 8, "the float widths");
 static_assert(static_cast<i8>(-1) < 0 && static_cast<i32>(0xFFFFFFFFu) == -1, "two's complement");
 
-}  // namespace engine_placeholder
+}  // namespace vse

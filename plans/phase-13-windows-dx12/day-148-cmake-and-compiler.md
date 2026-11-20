@@ -109,7 +109,7 @@ test exist, the portable `u128` path compiles under MSVC, and the Linux suite st
   `CreateDirectory`, `SetCurrentDirectory`, `CreateSemaphore`, `near`, `far`, `small`; plus 28 defensive names. `os/windows/win32.h` includes `windows.h`
   between `unity/windows_enable.h` and `windows_disable.h`, which restore those names at once; `interface` is left alone because the COM headers need it.
   `windows_header_check` (every foundation header, then `win32.h`, then uses of the names) compiles; `windows_header_planted` (bare `windows.h`) fails with
-  `'LoadLibraryW': is not a member of 'engine_placeholder::os'` (cl) / `no member named 'LoadLibraryW'` (clang-cl), the reason the wrapper exists.
+  `'LoadLibraryW': is not a member of 'vse::os'` (cl) / `no member named 'LoadLibraryW'` (clang-cl), the reason the wrapper exists.
 - **Shared-code portability:** `ENGINE_PRINTF_FORMAT` replaces the GCC format attribute in the ten files and `ENGINE_TRAP` the `__builtin_trap` of `jobs/job.h`
   (both in `debug/compiler.h`). Two silent MSVC problems found and fixed: **`[[msvc::noinline]]` in `ENGINE_NOINLINE_LAMBDA`'s position is ignored by MSVC** (C4649;
   the lambda was inlined, checked in the generated assembly; `__declspec(noinline)` is honored), and **cl and clang-cl ignore the standard `[[no_unique_address]]`**,

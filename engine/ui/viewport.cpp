@@ -5,7 +5,7 @@
 #include "log/log.h"
 #include "ui/surface.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -286,4 +286,4 @@ void Viewport::OnEvent(Event& event)
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

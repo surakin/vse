@@ -6,15 +6,15 @@
 #include "math/vector.h"
 #include "test_helpers.h"
 
-using engine_placeholder::Compose;
-using engine_placeholder::kPi;
-using engine_placeholder::Quaternion;
-using engine_placeholder::Transform;
-using engine_placeholder::Vec3;
-using engine_placeholder::Vec4;
-using engine_placeholder::test::NearlyEqual;
-using engine_placeholder::test::QuaternionNearlyEqual;
-using engine_placeholder::test::Vec3NearlyEqual;
+using vse::Compose;
+using vse::kPi;
+using vse::Quaternion;
+using vse::Transform;
+using vse::Vec3;
+using vse::Vec4;
+using vse::test::NearlyEqual;
+using vse::test::QuaternionNearlyEqual;
+using vse::test::Vec3NearlyEqual;
 
 TEST_CASE("Compose(parent, child) rotates the child's local offset into parent space before adding it",
           "[math][transform]")

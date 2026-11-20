@@ -13,8 +13,8 @@ namespace
 struct Cursor
 {
     const char* data;
-    engine_placeholder::usize size;
-    engine_placeholder::usize pos;
+    vse::usize size;
+    vse::usize pos;
 };
 
 bool IsSpace(char c)
@@ -22,7 +22,7 @@ bool IsSpace(char c)
     return c == ' ' || c == '\t' || c == '\r';
 }
 
-void SkipSpace(const char* line, engine_placeholder::usize length, engine_placeholder::usize& i)
+void SkipSpace(const char* line, vse::usize length, vse::usize& i)
 {
     while (i < length && IsSpace(line[i]))
     {
@@ -32,8 +32,7 @@ void SkipSpace(const char* line, engine_placeholder::usize length, engine_placeh
 
 // Reads a JSON string starting at line[i] == '"'; leaves i after the closing quote. Returns false if it does not close.
 // The text (without quotes, escapes left as they are) is [begin, begin + length).
-bool ReadString(const char* line, engine_placeholder::usize length, engine_placeholder::usize& i, const char*& begin,
-                engine_placeholder::usize& text_length)
+bool ReadString(const char* line, vse::usize length, vse::usize& i, const char*& begin, vse::usize& text_length)
 {
     if (i >= length || line[i] != '"')
     {
@@ -50,7 +49,7 @@ bool ReadString(const char* line, engine_placeholder::usize length, engine_place
         }
         if (line[i] == '"')
         {
-            text_length = static_cast<engine_placeholder::usize>(line + i - begin);
+            text_length = static_cast<vse::usize>(line + i - begin);
             ++i;
             return true;
         }
@@ -60,7 +59,7 @@ bool ReadString(const char* line, engine_placeholder::usize length, engine_place
 }
 
 // Skips one JSON value (a string, a number, a literal, or a nested object or array) starting at line[i].
-bool SkipValue(const char* line, engine_placeholder::usize length, engine_placeholder::usize& i)
+bool SkipValue(const char* line, vse::usize length, vse::usize& i)
 {
     if (i >= length)
     {
@@ -69,7 +68,7 @@ bool SkipValue(const char* line, engine_placeholder::usize length, engine_placeh
     if (line[i] == '"')
     {
         const char* unused = nullptr;
-        engine_placeholder::usize unused_length = 0;
+        vse::usize unused_length = 0;
         return ReadString(line, length, i, unused, unused_length);
     }
     if (line[i] == '{' || line[i] == '[')
@@ -81,7 +80,7 @@ bool SkipValue(const char* line, engine_placeholder::usize length, engine_placeh
             if (c == '"')
             {
                 const char* unused = nullptr;
-                engine_placeholder::usize unused_length = 0;
+                vse::usize unused_length = 0;
                 if (!ReadString(line, length, i, unused, unused_length))
                 {
                     return false;
@@ -106,7 +105,7 @@ bool SkipValue(const char* line, engine_placeholder::usize length, engine_placeh
         return false;
     }
     // A number or a literal: runs to the next delimiter.
-    const engine_placeholder::usize start = i;
+    const vse::usize start = i;
     while (i < length && line[i] != ',' && line[i] != '}' && !IsSpace(line[i]))
     {
         ++i;
@@ -117,17 +116,17 @@ bool SkipValue(const char* line, engine_placeholder::usize length, engine_placeh
 struct ItemHeader
 {
     bool has_length = false;
-    engine_placeholder::usize payload_length = 0;
+    vse::usize payload_length = 0;
     bool is_minidump = false;
     const char*
         filename = nullptr;  // the attachment's file name, escapes left as they are; null if the header names none
-    engine_placeholder::usize filename_length = 0;
+    vse::usize filename_length = 0;
 };
 
 // Parses a flat item header line such as {"type":"attachment","length":123,"attachment_type":"event.minidump"}.
-bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHeader& header)
+bool ParseItemHeader(const char* line, vse::usize length, ItemHeader& header)
 {
-    engine_placeholder::usize i = 0;
+    vse::usize i = 0;
     SkipSpace(line, length, i);
     if (i >= length || line[i] != '{')
     {
@@ -142,7 +141,7 @@ bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHea
             return true;
         }
         const char* key = nullptr;
-        engine_placeholder::usize key_length = 0;
+        vse::usize key_length = 0;
         if (!ReadString(line, length, i, key, key_length))
         {
             return false;
@@ -154,15 +153,15 @@ bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHea
         }
         ++i;
         SkipSpace(line, length, i);
-        if (key_length == 6 && engine_placeholder::MemCompare(key, "length", 6) == 0)
+        if (key_length == 6 && vse::MemCompare(key, "length", 6) == 0)
         {
             // A non-negative integer that fits; anything else makes the item unusable.
-            engine_placeholder::usize value = 0;
-            engine_placeholder::usize digits = 0;
+            vse::usize value = 0;
+            vse::usize digits = 0;
             while (i < length && line[i] >= '0' && line[i] <= '9')
             {
-                const engine_placeholder::usize digit = static_cast<engine_placeholder::usize>(line[i] - '0');
-                if (value > (static_cast<engine_placeholder::usize>(-1) - digit) / 10)
+                const vse::usize digit = static_cast<vse::usize>(line[i] - '0');
+                if (value > (static_cast<vse::usize>(-1) - digit) / 10)
                 {
                     return false;  // overflow
                 }
@@ -177,17 +176,17 @@ bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHea
             header.has_length = true;
             header.payload_length = value;
         }
-        else if (key_length == 15 && engine_placeholder::MemCompare(key, "attachment_type", 15) == 0)
+        else if (key_length == 15 && vse::MemCompare(key, "attachment_type", 15) == 0)
         {
             const char* text = nullptr;
-            engine_placeholder::usize text_length = 0;
+            vse::usize text_length = 0;
             if (!ReadString(line, length, i, text, text_length))
             {
                 return false;
             }
-            header.is_minidump = text_length == 14 && engine_placeholder::MemCompare(text, "event.minidump", 14) == 0;
+            header.is_minidump = text_length == 14 && vse::MemCompare(text, "event.minidump", 14) == 0;
         }
-        else if (key_length == 8 && engine_placeholder::MemCompare(key, "filename", 8) == 0)
+        else if (key_length == 8 && vse::MemCompare(key, "filename", 8) == 0)
         {
             if (!ReadString(line, length, i, header.filename, header.filename_length))
             {
@@ -210,9 +209,9 @@ bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHea
 }
 
 // The index of the first '\n' at or after `from`, or `size` if there is none.
-engine_placeholder::usize FindNewline(const char* data, engine_placeholder::usize size, engine_placeholder::usize from)
+vse::usize FindNewline(const char* data, vse::usize size, vse::usize from)
 {
-    for (engine_placeholder::usize i = from; i < size; ++i)
+    for (vse::usize i = from; i < size; ++i)
     {
         if (data[i] == '\n')
         {
@@ -225,8 +224,7 @@ engine_placeholder::usize FindNewline(const char* data, engine_placeholder::usiz
 // Walks every item; the first that `wanted` accepts is returned in `out_data`/`out_size`. The whole envelope is checked
 // either way.
 template <typename Wanted>
-EnvelopeResult FindItem(const char* data, engine_placeholder::usize size, Wanted wanted, const char** out_data,
-                        engine_placeholder::usize* out_size)
+EnvelopeResult FindItem(const char* data, vse::usize size, Wanted wanted, const char** out_data, vse::usize* out_size)
 {
     *out_data = nullptr;
     *out_size = 0;
@@ -235,7 +233,7 @@ EnvelopeResult FindItem(const char* data, engine_placeholder::usize size, Wanted
         return EnvelopeResult::Malformed;
     }
     // The envelope header line: skipped (it has nested JSON we do not need).
-    engine_placeholder::usize pos = FindNewline(data, size, 0);
+    vse::usize pos = FindNewline(data, size, 0);
     if (pos >= size)
     {
         return EnvelopeResult::Malformed;  // no newline at all
@@ -244,7 +242,7 @@ EnvelopeResult FindItem(const char* data, engine_placeholder::usize size, Wanted
     bool found = false;
     while (pos < size)
     {
-        const engine_placeholder::usize line_end = FindNewline(data, size, pos);
+        const vse::usize line_end = FindNewline(data, size, pos);
         if (line_end >= size)
         {
             return EnvelopeResult::Malformed;  // an item header with no end of line
@@ -254,8 +252,8 @@ EnvelopeResult FindItem(const char* data, engine_placeholder::usize size, Wanted
         {
             return EnvelopeResult::Malformed;
         }
-        engine_placeholder::usize payload_start = line_end + 1;
-        engine_placeholder::usize payload_length = 0;
+        vse::usize payload_start = line_end + 1;
+        vse::usize payload_length = 0;
         if (header.has_length)
         {
             if (header.payload_length > size - payload_start)
@@ -289,20 +287,20 @@ EnvelopeResult FindItem(const char* data, engine_placeholder::usize size, Wanted
 
 }  // namespace
 
-EnvelopeResult FindMinidump(const char* data, engine_placeholder::usize size, Minidump* out)
+EnvelopeResult FindMinidump(const char* data, vse::usize size, Minidump* out)
 {
     return FindItem(data, size, [](const ItemHeader& h) { return h.is_minidump; }, &out->data, &out->size);
 }
 
-EnvelopeResult FindAttachment(const char* data, engine_placeholder::usize size, const char* filename, Attachment* out)
+EnvelopeResult FindAttachment(const char* data, vse::usize size, const char* filename, Attachment* out)
 {
-    const engine_placeholder::usize name_length = filename != nullptr ? engine_placeholder::CStrLength(filename) : 0;
+    const vse::usize name_length = filename != nullptr ? vse::CStrLength(filename) : 0;
     return FindItem(
         data, size,
         [&](const ItemHeader& h)
         {
             return !h.is_minidump && h.filename != nullptr && h.filename_length == name_length &&
-                   engine_placeholder::MemCompare(h.filename, filename, name_length) == 0;
+                   vse::MemCompare(h.filename, filename, name_length) == 0;
         },
         &out->data, &out->size);
 }

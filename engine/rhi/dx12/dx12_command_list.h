@@ -11,7 +11,7 @@
 
 //! The Direct3D 12 command list (Phase 13 Day 168).
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 /// A [[rhi::CommandList]] recording into one `ID3D12GraphicsCommandList` with its own command allocator.
@@ -179,4 +179,4 @@ private:
     IndexType index_type_ = IndexType::UInt32;
 };
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

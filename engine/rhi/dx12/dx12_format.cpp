@@ -1,6 +1,6 @@
 #include "rhi/dx12/dx12_format.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 DXGI_FORMAT ToDxgi(Format format)
@@ -120,4 +120,4 @@ D3D12_RESOURCE_STATES ToD3D12State(ResourceState state)
     return D3D12_RESOURCE_STATE_COMMON;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

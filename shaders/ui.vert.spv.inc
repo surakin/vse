@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kUiVertSpvWordCount = 677;
 
@@ -124,4 +124,4 @@ inline constexpr u32 kUiVertSpv[kUiVertSpvWordCount] = {
     0x0003003e, 0x00000008, 0x00000036, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

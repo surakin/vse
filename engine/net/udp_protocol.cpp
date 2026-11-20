@@ -1,6 +1,6 @@
 #include "net/udp_protocol.h"
 
-namespace engine_placeholder::net::udp
+namespace vse::net::udp
 {
 
 namespace
@@ -218,4 +218,4 @@ bool ReadPayloadHeader(ByteSpan packet, PayloadHeader* header, ByteSpan* body)
     return true;
 }
 
-}  // namespace engine_placeholder::net::udp
+}  // namespace vse::net::udp

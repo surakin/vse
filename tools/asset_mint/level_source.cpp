@@ -20,7 +20,7 @@
 #include "storage/world_storage.h"
 #include "string/utf8.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -2197,4 +2197,4 @@ Status FormatWorld(ResourceId id, ecs::World& world, storage::KeyIndex& index, S
                               includes, resolver, registry, out, error);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

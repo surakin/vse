@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -711,4 +711,4 @@ Status ExecutableDirectory(Path* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

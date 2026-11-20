@@ -4,7 +4,7 @@
 
 #include "os/windows/win32.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 Error ErrorFromOsCode(i32 os_code)
@@ -68,4 +68,4 @@ Error ErrorFromOsCode(i32 os_code)
     }
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

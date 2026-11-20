@@ -3,7 +3,7 @@
 #include "settings/desc.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 namespace
 {
@@ -64,4 +64,4 @@ OpenOptions OptionsFromSettings(const settings::Registry& registry, StringView l
     return options;
 }
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

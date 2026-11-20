@@ -9,7 +9,7 @@
 #include "log/assert.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 LogChannel LogIo("io", LogVerbosity::Warn);
@@ -741,4 +741,4 @@ Status WriteFileAtomic(const Path& requested, const void* data, usize length, u3
     return result;
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

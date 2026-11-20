@@ -13,7 +13,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// The outcome of [[net::Resolve]].
@@ -87,4 +87,4 @@ jobs::Task<IoResult> ConnectAny(Reactor& reactor, const EndpointSet& endpoints, 
 jobs::Task<IoResult> ConnectTo(Reactor& reactor, Resolver& resolver, StringView host, u16 port, Socket* socket,
                                ConnectOptions options = {});
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

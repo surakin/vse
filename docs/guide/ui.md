@@ -26,7 +26,7 @@ Design and reasons: `docs/superpowers/specs/2026-11-10-ui-design.md`.
 
 ## The model
 
-- The toolkit lives in `engine/ui` (namespace `engine_placeholder::ui`). It is **CPU only**: a retained tree of widgets, layout, themes, input routing and a 2D draw list. It names no
+- The toolkit lives in `engine/ui` (namespace `vse::ui`). It is **CPU only**: a retained tree of widgets, layout, themes, input routing and a 2D draw list. It names no
   RHI type; the renderer (`renderer::UiRenderer`) turns the draw list into one render-graph pass.
 - A **surface** owns a widget tree, a size in **logical units**, a **scale** factor, a clock, a theme and the focus. A window is only one kind of thing that feeds a surface; an offscreen
   texture (an in-world screen) is another, and tests use one without any window.
@@ -136,7 +136,7 @@ A complete "hello UI": a button on an offscreen surface, a click, and the pixels
 #include "ui/testing/harness.h"
 #include "ui/widgets/buttons.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 static void OnClicked(void* user, ui::Button*) { ++*static_cast<int*>(user); }
 

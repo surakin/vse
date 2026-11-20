@@ -13,7 +13,7 @@
 #include "sync/thread.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -132,4 +132,4 @@ TEST_CASE("network backend: a server that stops makes it Offline over loopback s
     CHECK(client.State() == NetworkState::Offline);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

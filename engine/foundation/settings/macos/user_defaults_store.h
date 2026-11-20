@@ -27,7 +27,7 @@
 #include "sync/thread.h"
 #include "types.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// Where a [[settings::UserDefaultsConfigStore]] keeps its values.
@@ -179,4 +179,4 @@ private:
     mutable bool managed_read_ = false;
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

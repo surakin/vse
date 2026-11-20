@@ -7,7 +7,7 @@
 
 //! Recording interface for GPU commands, and the structures its commands take.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// A viewport in framebuffer pixels with a depth range.
@@ -311,4 +311,4 @@ public:
     virtual void PopDebugLabel() = 0;
 };
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

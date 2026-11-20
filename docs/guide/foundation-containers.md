@@ -157,7 +157,7 @@ nothing is allocated from the heap behind your back.
 #include "mem/heap_allocator.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     HashMap<u32, f32, HeapAllocator> health(HeapAllocator::Default());

@@ -14,7 +14,7 @@
 #include "gltf_writer.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -91,7 +91,7 @@ TEST_CASE("gltf locale: an import under a decimal-comma locale succeeds and mint
     INFO(in_c.summary.CStr());
     CHECK(in_c.summary.View().Contains(StringView("[0.5,1.25,-2.75]")));
 
-    ::engine_placeholder::test::CommaLocale comma;
+    ::vse::test::CommaLocale comma;
     if (!comma.Active())
     {
         SKIP("no decimal-comma locale is installed (tried nb_NO, de_DE and fr_FR)");
@@ -139,7 +139,7 @@ TEST_CASE("gltf locale: a material blob prints the same text under a decimal-com
     INFO(in_c.CStr());
     CHECK(in_c.View().Contains(StringView("param roughness float 0.75")));
 
-    ::engine_placeholder::test::CommaLocale comma;
+    ::vse::test::CommaLocale comma;
     if (!comma.Active())
     {
         SKIP("no decimal-comma locale is installed (tried nb_NO, de_DE and fr_FR)");
@@ -149,4 +149,4 @@ TEST_CASE("gltf locale: a material blob prints the same text under a decimal-com
     CHECK(in_comma.View() == in_c.View());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

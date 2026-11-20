@@ -12,7 +12,7 @@
 #include "net/status.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// The size of the length prefix of a frame.
@@ -118,4 +118,4 @@ private:
     Status failure_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

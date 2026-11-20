@@ -36,7 +36,7 @@
 namespace script_demo
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 /// What to build.
 struct DemoOptions

@@ -11,7 +11,7 @@
 #include "settings/registry.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 class Runtime;
@@ -127,4 +127,4 @@ engine_status ScriptEventUnsubscribeFn(engine_handle world, u32 id);
 /// See `engine_api.script_task_run`.
 engine_status ScriptTaskRunFn(engine_handle world, const engine_script_task* task, engine_value_pool* results);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

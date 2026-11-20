@@ -12,7 +12,7 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The vertex the procedural meshes use: position, normal, tangent (xyz plus handedness in w) and one UV set. 48 bytes,
@@ -692,4 +692,4 @@ using GpuMeshPtr = SharedPtr<GpuMesh>;
 /// A read-only share of a [[renderer::GpuMesh]].
 using GpuMeshConstPtr = SharedPtr<const GpuMesh>;
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

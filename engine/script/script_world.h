@@ -15,7 +15,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The most partitions a world can have (the setting's upper bound).
@@ -410,4 +410,4 @@ private:
     Atomic<bool> profiling_{false};
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

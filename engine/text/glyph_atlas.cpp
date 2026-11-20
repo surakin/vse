@@ -3,7 +3,7 @@
 #include "log/assert.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 namespace
@@ -239,4 +239,4 @@ bool GlyphAtlas::TakeDirty(u32 page, Rect* rect)
     return true;
 }
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

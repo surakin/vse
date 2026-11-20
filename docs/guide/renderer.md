@@ -116,8 +116,8 @@ The conventions are right-handed, Y up, camera looking down -Z, depth 0 at the n
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
@@ -186,8 +186,8 @@ changes rarest and material changes next.
 #include "renderer/material.h"
 #include "rhi/null/null_device.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
@@ -251,8 +251,8 @@ in, so a frame's graph allocates nothing from the heap; reset the arena after th
 #include "mem/arena_allocator.h"
 #include "renderer/render_graph.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     ArenaAllocator arena(1u << 20);
@@ -336,8 +336,8 @@ A transient texture must be declared with the usage flags every use needs (a sam
 #include "mem/arena_allocator.h"
 #include "renderer/render_graph.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     ArenaAllocator arena(1u << 20);
@@ -412,8 +412,8 @@ rendering pass, which it cannot do yet (see `KNOWN-ISSUES.md`).
 #include "renderer/renderer.h"
 #include "rhi/null/null_device.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace {
 
@@ -496,8 +496,8 @@ restart or by degenerate triangles, as you choose) and `StripToList` reverses it
 
 #include "renderer/mesh.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     MeshData list, strip, back;
@@ -558,8 +558,8 @@ per-frame cost budget.
 #include "renderer/gbuffer.h"
 #include "rhi/null/null_device.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
@@ -681,8 +681,8 @@ must be an `*_SRGB` format, which is what the swapchain format is chosen to be, 
 
 #include "renderer/lighting.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     SurfacePoint surface;
@@ -742,8 +742,8 @@ frame from submit to idle, lights of radius 2.5 spread over a 24 x 24 plane): 1 
 
 #include "renderer/lighting.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     // A light of radius 10: full strength at the light, a quarter of the way out already much less, and nothing at the radius.
@@ -799,7 +799,7 @@ generated falls back to the levels its source holds.
 #include "renderer/texture.h"
 #include "rhi/device_host.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     rhi::RegisterCompiledBackends(); // once, before any device
@@ -883,7 +883,7 @@ and listed in `ApplyResult::change.unsupported`. A renderer built without a `Dev
 #include "renderer/renderer.h"
 #include "rhi/device_host.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 static bool Build(const renderer::FrameContext&, void*) { return true; }
 

@@ -22,7 +22,7 @@
 #include "settings/memory_store.h"
 #include "settings/migration.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// One setting that changed: its id and the values before and after.
@@ -362,4 +362,4 @@ private:
     Settings* settings_;
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

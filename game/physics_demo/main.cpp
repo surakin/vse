@@ -32,9 +32,9 @@
 #include "settings_main.h"
 #include "textures.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::renderer;
 using namespace physics_demo;
 
 namespace
@@ -405,10 +405,9 @@ int Usage(const char* program, int code)
 
 int EngineMain(int argc, char** argv)
 {
-    ::engine_placeholder::rhi::RegisterCompiledBackends();
-    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(
-        argc, argv);
-    engine_placeholder::debug::RunCrashTest(debug_setup.crash_test);
+    ::vse::rhi::RegisterCompiledBackends();
+    const vse::debug::ProgramDebugSetup debug_setup = vse::debug::StartProgramDebugging(argc, argv);
+    vse::debug::RunCrashTest(debug_setup.crash_test);
     LogRhi.SetVerbosity(LogVerbosity::Info);
     demo::DemoSettings demo_settings;
     char usage_text[2048];
@@ -427,11 +426,11 @@ int EngineMain(int argc, char** argv)
                                                         {"paused", false},
                                                         {"help", false},
                                                         {"-h", false},
-                                                        engine_placeholder::debug::kCrashHandlerOption,
-                                                        engine_placeholder::debug::kCrashTestOption};
+                                                        vse::debug::kCrashHandlerOption,
+                                                        vse::debug::kCrashTestOption};
     const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), demo_settings.RestCount(),
                                               demo_settings.RestArgs(),
-                                              engine_placeholder::Span<const os::CommandLineOption>(kCliOptions, 10));
+                                              vse::Span<const os::CommandLineOption>(kCliOptions, 10));
     const char* program = line.ProgramName().Data();
     Options options;
     if (line.HasFlag("help") || line.HasFlag("-h"))

@@ -16,13 +16,12 @@
 namespace demo
 {
 
-const char* BackendLabel(::engine_placeholder::rhi::Backend backend)
+const char* BackendLabel(::vse::rhi::Backend backend)
 {
     // A named backend keeps its name even where it cannot run (no Vulkan loader); auto is what it resolves to here.
-    const ::engine_placeholder::rhi::BackendDescriptor* d = backend == ::engine_placeholder::rhi::Backend::Auto
-                                                                ? ::engine_placeholder::rhi::ResolveBackend(backend,
-                                                                                                            nullptr, 0)
-                                                                : ::engine_placeholder::rhi::FindBackend(backend);
+    const ::vse::rhi::BackendDescriptor* d = backend == ::vse::rhi::Backend::Auto
+                                                 ? ::vse::rhi::ResolveBackend(backend, nullptr, 0)
+                                                 : ::vse::rhi::FindBackend(backend);
     return d != nullptr ? d->name : "graphics";
 }
 
@@ -33,9 +32,9 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
                          void (*register_more)(sset::Registry*))
 {
     usage_ = String<HeapAllocator>(HeapAllocator::Default(), StringView(usage));
-    const ::engine_placeholder::os::CommandLine<HeapAllocator> native(HeapAllocator::Default(), argc, argv);
+    const ::vse::os::CommandLine<HeapAllocator> native(HeapAllocator::Default(), argc, argv);
     program_ = String<HeapAllocator>(HeapAllocator::Default(), native.ProgramName());
-    ::engine_placeholder::renderer::RegisterSharedSettings(&registry_);
+    ::vse::renderer::RegisterSharedSettings(&registry_);
     sset::RegisterEngineSettings(&registry_);
     sset::RegisterLogSettings(&registry_);
     if (register_more != nullptr)
@@ -43,7 +42,7 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
         register_more(&registry_);  // the program's own modules' settings (the script demo's script and audio)
     }
     settings_ = MakeUnique<sset::Settings>(registry_);
-    ::engine_placeholder::renderer::AddRendererMigrations(&settings_->Migrations());
+    ::vse::renderer::AddRendererMigrations(&settings_->Migrations());
     sset::LoadOptions options;
     options.app_name = app_name;
     options.argc = argc;
@@ -53,13 +52,13 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
     for (usize i = 0; i < report.problems.Size(); ++i)
     {
         const sset::LayerProblem& p = report.problems[i];
-        engine_placeholder::os::PrintError("%s: settings: %s%s%s: %s\n", app_name, p.layer,
-                                           p.key[0] != '\0' ? ": " : "", p.key, p.message);
+        vse::os::PrintError("%s: settings: %s%s%s: %s\n", app_name, p.layer, p.key[0] != '\0' ? ": " : "", p.key,
+                            p.message);
     }
     for (usize i = 0; i < report.notes.Size(); ++i)
     {
         const sset::LayerProblem& n = report.notes[i];
-        engine_placeholder::os::PrintError("%s: settings: %s: %s\n", app_name, n.layer, n.message);
+        vse::os::PrintError("%s: settings: %s: %s\n", app_name, n.layer, n.message);
     }
     const sset::CommandLineResult& cli = settings_->CommandLine();
     rest_storage_.Push(String<HeapAllocator>(HeapAllocator::Default(), native.ProgramName()));
@@ -89,14 +88,13 @@ void DemoSettings::SetLegacy(const char* key, const char* text, const char* flag
     settings_->SetFromCommandLine(StringView(key), StringView(text), StringView(flag));
 }
 
-void DemoSettings::FillDeviceCreateInfo(::engine_placeholder::rhi::DeviceCreateInfo* info)
+void DemoSettings::FillDeviceCreateInfo(::vse::rhi::DeviceCreateInfo* info)
 {
     const SharedPtr<const sset::SettingsSnapshot> shared = settings_->Snapshot();
     auto get = [&](const char* key) -> const sset::Value& { return shared->Get(registry_.Find(StringView(key))); };
     const char* fallback = nullptr;  // a fallback's reason, if one is ever taken (none today: renderer.h)
-    info->backend = ::engine_placeholder::renderer::BackendForSetting(
-        static_cast<u32>(get("renderer.backend").AsEnum()), &fallback);
-    info->validation = static_cast<::engine_placeholder::rhi::ValidationSetting>(get("renderer.validation").AsEnum());
+    info->backend = ::vse::renderer::BackendForSetting(static_cast<u32>(get("renderer.backend").AsEnum()), &fallback);
+    info->validation = static_cast<::vse::rhi::ValidationSetting>(get("renderer.validation").AsEnum());
     info->sync_validation = get("renderer.sync_validation").AsBool();
     info->frames_in_flight = static_cast<u32>(get("renderer.frames_in_flight").AsInt());
     info->pipeline_cache = get("rhi.pipeline_cache").AsBool();
@@ -136,8 +134,8 @@ DemoSettings::Effective DemoSettings::ReadEffective()
     e.immediate = snapshot.Get(id("renderer.present_mode")).AsEnum() == 2;
     e.validation = snapshot.Get(id("renderer.validation")).AsEnum() == 2;
     static const char* const kBackends[] = {"auto", "wayland", "x11", "win32", "cocoa"};
-    engine_placeholder::FormatTo(e.window_backend, sizeof(e.window_backend), "%s",
-                                 kBackends[snapshot.Get(id("platform.window_backend")).AsEnum() % 5]);
+    vse::FormatTo(e.window_backend, sizeof(e.window_backend), "%s",
+                  kBackends[snapshot.Get(id("platform.window_backend")).AsEnum() % 5]);
     return e;
 }
 
@@ -146,17 +144,17 @@ int DemoSettings::Finish()
     const sset::CommandLineResult& cli = settings_->CommandLine();
     if (cli.help)
     {
-        engine_placeholder::os::PrintText(usage_.CStr());
+        vse::os::PrintText(usage_.CStr());
         String<HeapAllocator> help(HeapAllocator::Default());
         sset::FormatSettingsHelp(registry_, &help);
-        engine_placeholder::os::PrintText(help.CStr());
+        vse::os::PrintText(help.CStr());
         return 0;
     }
     if (cli.list_settings)
     {
         String<HeapAllocator> listing(HeapAllocator::Default());
         sset::FormatSettingsListing(*settings_, &listing);
-        engine_placeholder::os::PrintText(listing.CStr());
+        vse::os::PrintText(listing.CStr());
         return 0;
     }
     if (cli.save_settings)
@@ -166,14 +164,14 @@ int DemoSettings::Finish()
         {
             if (!io::Path::Parse(cli.save_path.View(), io::NativePathStyle(), &path))
             {
-                engine_placeholder::os::PrintError("%s: --save-settings: the path is not valid\n", program_.CStr());
+                vse::os::PrintError("%s: --save-settings: the path is not valid\n", program_.CStr());
                 return 1;
             }
             const sset::Status s = sset::SaveSettingsTo(*settings_, path);
             if (s.Failed())
             {
-                engine_placeholder::os::PrintError("%s: --save-settings: could not write %s (%s)\n", program_.CStr(),
-                                                   cli.save_path.CStr(), sset::StoreErrorName(s.error));
+                vse::os::PrintError("%s: --save-settings: could not write %s (%s)\n", program_.CStr(),
+                                    cli.save_path.CStr(), sset::StoreErrorName(s.error));
                 return 1;
             }
         }
@@ -182,9 +180,8 @@ int DemoSettings::Finish()
             const sset::Status s = settings_->Save(sset::SaveOptions{true, false, false});
             if (s.Failed())
             {
-                engine_placeholder::os::PrintError(
-                    "%s: --save-settings: could not write the user's settings file (%s)\n", program_.CStr(),
-                    sset::StoreErrorName(s.error));
+                vse::os::PrintError("%s: --save-settings: could not write the user's settings file (%s)\n",
+                                    program_.CStr(), sset::StoreErrorName(s.error));
                 return 1;
             }
         }

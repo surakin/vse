@@ -14,9 +14,9 @@
 #include "triangle.frag.dxil.inc"
 #include "triangle.vert.dxil.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::metal::test;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::rhi::metal::test;
 
 namespace metal_vertex_format_test
 {

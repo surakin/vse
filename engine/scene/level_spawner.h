@@ -16,7 +16,7 @@
 #include "storage/component_registry.h"
 #include "storage/identity.h"
 
-namespace engine_placeholder::scene
+namespace vse::scene
 {
 
 /// The references a spawned level holds: its levels (itself and the levels it includes), so their closures stay loaded,
@@ -63,4 +63,4 @@ asset::Status SpawnLevel(asset::ResourceManager& manager, asset::ResourceId id,
 /// - Ownership: borrows its arguments for the call.
 void DestroyLevel(SpawnedLevel* level, ecs::World& world, storage::KeyIndex& index);
 
-}  // namespace engine_placeholder::scene
+}  // namespace vse::scene

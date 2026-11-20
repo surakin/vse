@@ -16,7 +16,7 @@
 #include "containers/unique_ptr.h"
 #include "script/backend.h"
 
-namespace engine_placeholder::script::expr
+namespace vse::script::expr
 {
 
 /// Makes the `expr` backend.
@@ -38,4 +38,4 @@ UniquePtr<Backend> CreateExprBackend();
 /// - Fails: returns false when the registry is full.
 bool RegisterExprBackend();
 
-}  // namespace engine_placeholder::script::expr
+}  // namespace vse::script::expr

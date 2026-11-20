@@ -25,7 +25,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Why a write or a read failed.
@@ -504,4 +504,4 @@ private:
     usize bit_ = 0;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

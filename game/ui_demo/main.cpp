@@ -39,9 +39,9 @@
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::renderer;
 
 namespace
 {
@@ -218,11 +218,11 @@ public:
     // last-apply record as it was, which says nothing about this one.
     static bool ApplyWanted(const char* what, const RenderSettings& wanted, Renderer* renderer)
     {
-        Vector<engine_placeholder::settings::ChangeRequest> requests;
+        Vector<vse::settings::ChangeRequest> requests;
         renderer::RenderSettingsToChanges(wanted, g_demo_settings->GetRegistry(), &requests);
         g_demo_settings->Get().SetCapabilityCheck(&renderer::RendererCapability, renderer);
-        const engine_placeholder::settings::SetResult set = g_demo_settings->Get().Apply(
-            requests.Data(), requests.Size(), &renderer::ApplySharedChange, renderer);
+        const vse::settings::SetResult set = g_demo_settings->Get().Apply(requests.Data(), requests.Size(),
+                                                                          &renderer::ApplySharedChange, renderer);
         if (!set.Ok())
         {
             RhiLogV(LogVerbosity::Warn, "ui_demo: %s: the change was refused (error %d)", what,
@@ -708,10 +708,9 @@ bool ParseCount(const char* text, long* out)
 
 int EngineMain(int argc, char** argv)
 {
-    ::engine_placeholder::rhi::RegisterCompiledBackends();
-    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(
-        argc, argv);
-    engine_placeholder::debug::RunCrashTest(debug_setup.crash_test);
+    ::vse::rhi::RegisterCompiledBackends();
+    const vse::debug::ProgramDebugSetup debug_setup = vse::debug::StartProgramDebugging(argc, argv);
+    vse::debug::RunCrashTest(debug_setup.crash_test);
     LogRhi.SetVerbosity(LogVerbosity::Info);
     demo::DemoSettings demo_settings;
     char usage_text[4096];
@@ -733,11 +732,11 @@ int EngineMain(int argc, char** argv)
                                                         {"scale", true},
                                                         {"help", false},
                                                         {"-h", false},
-                                                        engine_placeholder::debug::kCrashHandlerOption,
-                                                        engine_placeholder::debug::kCrashTestOption};
+                                                        vse::debug::kCrashHandlerOption,
+                                                        vse::debug::kCrashTestOption};
     const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), demo_settings.RestCount(),
                                               demo_settings.RestArgs(),
-                                              engine_placeholder::Span<const os::CommandLineOption>(kCliOptions, 12));
+                                              vse::Span<const os::CommandLineOption>(kCliOptions, 12));
     const char* program = line.ProgramName().Data();
     Options options;
     if (line.HasFlag("help") || line.HasFlag("-h"))

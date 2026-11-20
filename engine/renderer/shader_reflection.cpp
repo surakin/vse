@@ -7,7 +7,7 @@
 #include "debug/compiler.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -829,4 +829,4 @@ bool BuildVertexLayout(const ShaderReflection& shader, u32 binding, VertexLayout
     return true;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

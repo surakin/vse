@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTriangleVertReflByteCount = 76;
 
@@ -16,4 +16,4 @@ inline constexpr u8 kTriangleVertRefl[kTriangleVertReflByteCount] = {
     1, 5, 99, 111, 108, 111, 114, 1, 0, 0, 0, 2,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

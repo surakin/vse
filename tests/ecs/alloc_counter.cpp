@@ -9,7 +9,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 #if ENGINE_SANITIZER_THREAD
 #define ECS_TEST_NO_NEW_COUNTER 1

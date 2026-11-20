@@ -7,7 +7,7 @@
 #include "io/file_system.h"
 #include "os/os.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

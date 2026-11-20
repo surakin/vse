@@ -25,7 +25,7 @@
 #define ENGINE_INT128_NAMESPACE int128_portable
 #endif
 
-namespace engine_placeholder
+namespace vse
 {
 
 template <typename K> struct Hash;
@@ -624,4 +624,4 @@ template <> struct Hash<i128>
     usize operator()(const i128& key) const { return key.Hash(); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

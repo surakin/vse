@@ -11,7 +11,7 @@
 //! cluster's start. Combining marks, ZWJ sequences and flags are one step. At a soft wrap the offset where one line
 //! ends and the next begins belongs to the later line (there is no caret affinity). Word movement is not provided
 //! (Phase 15).
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 /// Where a caret is drawn.
@@ -135,4 +135,4 @@ u32 LineBelow(const TextLayout& layout, u32 byte_offset, f32 preferred_x);
 /// - Fails: `OutOfMemory`; `out` is left empty.
 Status SelectionRects(const TextLayout& layout, u32 begin, u32 end, Vector<SelectionRect>* out);
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

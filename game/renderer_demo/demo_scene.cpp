@@ -17,7 +17,7 @@
 namespace renderer_demo
 {
 
-using namespace engine_placeholder::renderer;
+using namespace vse::renderer;
 
 namespace
 {

@@ -3,7 +3,7 @@
 
 #include "conformance.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 struct UnimplementedFixture
@@ -20,4 +20,4 @@ private:
 
 DATABASE_CONFORMANCE_CASES(UnimplementedFixture)
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

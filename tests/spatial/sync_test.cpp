@@ -17,8 +17,8 @@
 #include "spatial_test_rng.h"
 #include "spatial_test_util.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::spatial;
+using namespace vse;
+using namespace vse::spatial;
 using spatial_test::BoxAt;
 using spatial_test::Rng;
 

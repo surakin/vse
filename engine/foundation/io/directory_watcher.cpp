@@ -1,7 +1,7 @@
 // Phase 27 Day 464: DirectoryWatcher::Open chooses between the platform's native backend and the polling one.
 #include "io/directory_watcher.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 Status DirectoryWatcher::Open(const Path& directory, const WatchOptions& options, UniquePtr<DirectoryWatcher>* out)
@@ -25,4 +25,4 @@ Status DirectoryWatcher::Open(const Path& directory, const WatchOptions& options
     return OpenPollingWatcher(directory, options.poll_interval_ms, out);
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

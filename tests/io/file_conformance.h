@@ -8,7 +8,7 @@
 namespace io_test
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 /// A `make(StringView content, bool writable)` callable returns an open `io::FilePtr` holding `content`; `writable`
 /// asks for a file that also accepts writes (a backend that cannot write is only run through the read half).

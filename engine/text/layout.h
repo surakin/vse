@@ -11,7 +11,7 @@
 //! Coordinates are pixels with the origin at the top-left of the first line and y growing down (as the overlay pass
 //! draws). A layout depends only on its input and the font's metrics at the style's size, and the same input gives
 //! byte-identical output.
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 /// How a run of text is drawn: which font, at what size and in what color.
@@ -138,4 +138,4 @@ struct TextLayout
 /// `out` is left empty.
 Status Layout(StringView utf8, const TextStyle& style, const LayoutOptions& options, TextLayout* out);
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

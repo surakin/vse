@@ -98,7 +98,7 @@ struct LinksTestScanned
     Str text;  // the scanned views point into it
     ArenaAllocator arena{usize{1} << 24};
     MdDoc doc{arena};
-    explicit LinksTestScanned(Str t) : text(engine_placeholder::Move(t)) { ScanMarkdown(Sv(text), arena, doc); }
+    explicit LinksTestScanned(Str t) : text(vse::Move(t)) { ScanMarkdown(Sv(text), arena, doc); }
 };
 
 }  // namespace
@@ -301,7 +301,7 @@ TEST_CASE("Links: [[refs]] resolve against the symbol index, with candidates on 
                             "```\n[[in::fence]]\n```\n"},
          {"docs/reference/modules.txt", "module m \"M\"\n  header h/*.h\n"},
          {"h/a.h",
-          "#pragma once\nnamespace engine_placeholder {\nnamespace geo {\n/// A circle.\nstruct Circle { /// Area.\n double Area() const; };\n}\n"
+          "#pragma once\nnamespace vse {\nnamespace geo {\n/// A circle.\nstruct Circle { /// Area.\n double Area() const; };\n}\n"
           "namespace other {\n/// Another circle.\nstruct Circle {};\n}\n}\n"}});
     Checked c(t, true);
     REQUIRE(c.read_ok);
@@ -325,7 +325,7 @@ TEST_CASE("Links: generated reference anchors match what the checker computes", 
         {{"docs/README.md", "# Docs\n[ref](reference/README.md)\n"},
          {"docs/reference/modules.txt", "module m \"M\"\n  header h/*.h\n"},
          {"h/a.h",
-          "#pragma once\nnamespace engine_placeholder {\n/// A thing.\nstruct Thing {\n  /// Makes one.\n  Thing();\n  /// Drops one.\n  ~Thing();\n"
+          "#pragma once\nnamespace vse {\n/// A thing.\nstruct Thing {\n  /// Makes one.\n  Thing();\n  /// Drops one.\n  ~Thing();\n"
           "  /// Compares.\n  bool operator==(const Thing& o) const;\n  /// Adds.\n  void Add(int x, int* p);\n};\n"
           "/// Colors.\nenum class Color { Red, ///< The red one.\n Green ///< The green one.\n};\n}\n"}});
     ArenaAllocator arena{usize{1} << 28};
@@ -420,11 +420,9 @@ TEST_CASE("Links: [review] a docs tree without docs/README.md is an error, not a
 
 TEST_CASE("Links: [review] wrapped [[refs]] resolve", "[docgen][links][refs]")
 {
-    Tree t(
-        {{"docs/README.md", "# Docs\nsee [[geo::\nCircle]] here\n"},
-         {"docs/reference/modules.txt", "module m \"M\"\n  header h/*.h\n"},
-         {"h/a.h",
-          "#pragma once\nnamespace engine_placeholder {\nnamespace geo {\n/// A circle.\nstruct Circle {};\n}\n}\n"}});
+    Tree t({{"docs/README.md", "# Docs\nsee [[geo::\nCircle]] here\n"},
+            {"docs/reference/modules.txt", "module m \"M\"\n  header h/*.h\n"},
+            {"h/a.h", "#pragma once\nnamespace vse {\nnamespace geo {\n/// A circle.\nstruct Circle {};\n}\n}\n"}});
     Checked c(t, true);
     CHECK(c.Errors() == 0);
     CHECK(c.stats.refs == 1);

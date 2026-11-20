@@ -8,7 +8,7 @@
 #include "build_defs.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // The oracle is the compiler's own type, used directly (not through ENGINE_HAS_NATIVE_INT128, which the forced-portable
 // build turns off).

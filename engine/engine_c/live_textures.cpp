@@ -2,7 +2,7 @@
 
 #include "rhi/command_list.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 LiveTextures::~LiveTextures()
@@ -276,4 +276,4 @@ void LiveTextures::Revert()
     }
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

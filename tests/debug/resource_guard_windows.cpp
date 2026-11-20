@@ -60,9 +60,8 @@ bool AnyChildRunning(bool verbose = false)
         const bool ours = times && CompareFileTime(&created, &self_created) >= 0;
         if (verbose)
         {
-            engine_placeholder::os::PrintError(
-                "ChildResourceGuard: listed child %lu '%ls' running %d created after this process %d\n",
-                entry.th32ProcessID, entry.szExeFile, running ? 1 : 0, ours ? 1 : 0);
+            vse::os::PrintError("ChildResourceGuard: listed child %lu '%ls' running %d created after this process %d\n",
+                                entry.th32ProcessID, entry.szExeFile, running ? 1 : 0, ours ? 1 : 0);
         }
         if (ours && running)
         {
@@ -85,7 +84,7 @@ void WarmUpProcessCreation()
         return;
     }
     done = true;
-    (void)engine_placeholder::debug::RunInChild("resource-guard-warm-up");
+    (void)vse::debug::RunInChild("resource-guard-warm-up");
     Sleep(200);
 }
 
@@ -112,7 +111,7 @@ bool ChildResourceGuard::Clean() const
         }
         Sleep(10);
     }
-    engine_placeholder::os::PrintError("ChildResourceGuard: handles before %lu, now %lu, child running %d\n",
-                                       descriptors_before_, CountOpenHandles(), AnyChildRunning(true) ? 1 : 0);
+    vse::os::PrintError("ChildResourceGuard: handles before %lu, now %lu, child running %d\n", descriptors_before_,
+                        CountOpenHandles(), AnyChildRunning(true) ? 1 : 0);
     return false;
 }

@@ -17,7 +17,7 @@
 #include "ui/draw_list_canvas.h"
 #include "lang/scalar.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

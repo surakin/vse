@@ -11,7 +11,7 @@
 //! Watching one directory for changes without reading it again and again: [[io::DirectoryWatcher]]. Phase 27 Day 464
 //! (hot reload). Linux (inotify), Windows (ReadDirectoryChangesW, Day 473) and macOS (FSEvents, Day 474) have a native
 //! backend; every platform has the polling one.
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 /// What happened to a name in the watched directory.
@@ -124,4 +124,4 @@ Status OpenNativeWatcher(const Path& directory, UniquePtr<DirectoryWatcher>* out
 /// - Fails: `NotFound`, `NotADirectory`, `PermissionDenied`, `Invalid`.
 Status OpenPollingWatcher(const Path& directory, u32 interval_ms, UniquePtr<DirectoryWatcher>* out);
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

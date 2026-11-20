@@ -18,7 +18,7 @@
 #include "os/os.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -1012,4 +1012,4 @@ TEST_CASE("A thousand streams carry a frame each", "[network][tcp]")
     }
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

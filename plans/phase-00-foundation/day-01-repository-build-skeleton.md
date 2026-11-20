@@ -39,7 +39,7 @@ list, so noted here where the rest of the CMake setup lives.
 - [x] Choose the placeholder engine name (`PLAN.md` assumption #9) and
   record it in exactly one place: the CMake `project()` name and the
   top-level C++ namespace, so renaming later is a find-and-replace.
-  Chose `engine_placeholder` for both the CMake project name and the
+  Chose `vse` for both the CMake project name and the
   top-level C++ namespace — deliberately unmistakable as a placeholder
   (not `re`/`reengine`, which would have coincidentally matched this
   repo's directory name and could be misread as an actual naming

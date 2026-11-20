@@ -3,7 +3,7 @@
 #include "storage/save_plan.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 namespace
@@ -325,4 +325,4 @@ Status Autosaver::Flush()
     return s;
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

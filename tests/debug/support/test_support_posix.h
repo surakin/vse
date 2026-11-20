@@ -33,11 +33,11 @@ extern "C" char**
 namespace debug_test
 {
 
-using engine_placeholder::StringView;
-using engine_placeholder::u8;
-using engine_placeholder::usize;
-using engine_placeholder::Vector;
 using engine_test::Text;
+using vse::StringView;
+using vse::u8;
+using vse::usize;
+using vse::Vector;
 
 /// The pieces joined into one owned text. Each piece is anything a StringView is made from (a literal, a `const char*`,
 /// a view, a Text).
@@ -49,11 +49,11 @@ template <typename... Parts> Text Cat(const Parts&... parts)
 }
 
 /// What the child captured on standard output / standard error (valid while `r` is).
-inline StringView StdoutView(const engine_placeholder::debug::ChildResult& r)
+inline StringView StdoutView(const vse::debug::ChildResult& r)
 {
     return StringView(r.stdout_text, r.stdout_length);
 }
-inline StringView StderrView(const engine_placeholder::debug::ChildResult& r)
+inline StringView StderrView(const vse::debug::ChildResult& r)
 {
     return StringView(r.stderr_text, r.stderr_length);
 }
@@ -129,8 +129,8 @@ inline ShellRun RunShell(StringView command)
     }
     if (::fcntl(fds[0], F_SETFD, FD_CLOEXEC) != 0 || ::fcntl(fds[1], F_SETFD, FD_CLOEXEC) != 0)
     {
-        engine_placeholder::os::Close(fds[0]);
-        engine_placeholder::os::Close(fds[1]);
+        vse::os::Close(fds[0]);
+        vse::os::Close(fds[1]);
         return run;
     }
     posix_spawn_file_actions_t actions;
@@ -142,17 +142,17 @@ inline ShellRun RunShell(StringView command)
     pid_t pid = 0;
     const int started = posix_spawn(&pid, "/bin/sh", &actions, nullptr, argv, environ);
     posix_spawn_file_actions_destroy(&actions);
-    engine_placeholder::os::Close(fds[1]);
+    vse::os::Close(fds[1]);
     if (started != 0)
     {
-        engine_placeholder::os::Close(fds[0]);
+        vse::os::Close(fds[0]);
         return run;
     }
     char buffer[4096];
     for (;;)
     {
-        const long n = engine_placeholder::os::Read(fds[0], buffer, sizeof(buffer));
-        if (n < 0 && engine_placeholder::os::LastError() == EINTR)
+        const long n = vse::os::Read(fds[0], buffer, sizeof(buffer));
+        if (n < 0 && vse::os::LastError() == EINTR)
         {
             continue;
         }
@@ -162,8 +162,8 @@ inline ShellRun RunShell(StringView command)
         }
         run.output.AppendRawBytes(buffer, static_cast<usize>(n));
     }
-    engine_placeholder::os::Close(fds[0]);
-    while (::waitpid(pid, &run.status, 0) < 0 && engine_placeholder::os::LastError() == EINTR)
+    vse::os::Close(fds[0]);
+    while (::waitpid(pid, &run.status, 0) < 0 && vse::os::LastError() == EINTR)
     {
     }
     return run;
@@ -196,8 +196,7 @@ inline void FindFiles(const char* directory, StringView suffix, engine_test::Tex
     }
     while (const dirent* entry = readdir(dir))
     {
-        if (engine_placeholder::CStrCompare(entry->d_name, ".") == 0 ||
-            engine_placeholder::CStrCompare(entry->d_name, "..") == 0)
+        if (vse::CStrCompare(entry->d_name, ".") == 0 || vse::CStrCompare(entry->d_name, "..") == 0)
         {
             continue;
         }
@@ -224,7 +223,7 @@ inline Text ReadWholeFile(StringView path)
 {
     Vector<u8> bytes;
     Text text = engine_test::MakeText();
-    if (engine_placeholder::io::ReadFile(engine_placeholder::io::Path(path), &bytes).Ok())
+    if (vse::io::ReadFile(vse::io::Path(path), &bytes).Ok())
     {
         text.AppendRawBytes(reinterpret_cast<const char*>(bytes.Data()), bytes.Size());
     }
@@ -234,7 +233,7 @@ inline Text ReadWholeFile(StringView path)
 /// Creates (or empties) the file at `path` and writes `size` bytes of `data` into it; true on success.
 inline bool WriteWholeFile(StringView path, const void* data, usize size)
 {
-    return engine_placeholder::io::WriteFile(engine_placeholder::io::Path(path), data, size).Ok();
+    return vse::io::WriteFile(vse::io::Path(path), data, size).Ok();
 }
 
 }  // namespace debug_test

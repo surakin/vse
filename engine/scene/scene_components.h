@@ -7,7 +7,7 @@
 
 #include "storage/component_registry.h"
 
-namespace engine_placeholder::scene
+namespace vse::scene
 {
 
 /// The stable ids of the scene's components (never change or reuse one).
@@ -25,4 +25,4 @@ enum SceneComponentId : u32
 /// - Fails: `Exists` when an id, a name or a type is registered already (the registry then holds the ones before it).
 storage::Status RegisterSceneComponents(storage::ComponentRegistry* registry);
 
-}  // namespace engine_placeholder::scene
+}  // namespace vse::scene

@@ -16,7 +16,7 @@
 //   Idle:     Windows has no idle hint of its own (GetLastInputInfo would need a limit the engine does not have), so
 //   never reported. Unknown:  the session query fails (a service session, a container without a desktop).
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 SessionState QuerySessionState()
@@ -62,4 +62,4 @@ SessionState QuerySessionState()
     return SessionStateFromFlags(true, active, locked || flag_locked, false);
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

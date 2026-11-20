@@ -14,7 +14,7 @@
 #include "sync/thread.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// What a call may use.
@@ -675,4 +675,4 @@ public:
     virtual UniquePtr<State> CreateState(u64 memory_cap_bytes) = 0;
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

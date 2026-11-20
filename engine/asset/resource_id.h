@@ -10,7 +10,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A stable 64-bit resource id. `ResourceId::None()` (value 0) is the explicit null reference.
@@ -91,4 +91,4 @@ inline constexpr usize kMaxPathSegmentBytes = 255;
 /// - Ownership: `out` receives a new string from the default heap allocator; `path` is not kept.
 Status NormalizePath(StringView path, String<HeapAllocator>* out);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

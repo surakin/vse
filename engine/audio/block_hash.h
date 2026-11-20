@@ -6,7 +6,7 @@
 #include "containers/hash.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// A running FNV-1a 64-bit hash of f32 samples.
@@ -103,4 +103,4 @@ private:
 /// - Ownership: borrows `samples` and `valid` for the call only.
 u64 HashBlock(Span<const f32> samples, bool* valid);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

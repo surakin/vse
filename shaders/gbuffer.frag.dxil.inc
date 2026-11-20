@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGbufferFragDxilByteCount = 6816;
 
@@ -3718,4 +3718,4 @@ inline constexpr u64 kGbufferFragPerm7DxilSpirvFnv = 0x519efb5c9c0a73d4ull;
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kGbufferFragShader = {"gbuffer.frag", rhi::SpirvBlob(kGbufferFragSpv, kGbufferFragSpvWordCount), rhi::DxilBlob(kGbufferFragDxil, kGbufferFragDxilByteCount), rhi::MetalLibBlob(kGbufferFragMetallib, kGbufferFragMetallibByteCount, kGbufferFragMetallibEntry, &kGbufferFragMetallibSlots)};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

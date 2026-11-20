@@ -12,7 +12,7 @@
 #include "script/script_world.h"
 #include "storage/field_walk.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -1338,4 +1338,4 @@ bool RegisterComponentBindings(BindingRegistry* registry)
     return ok;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

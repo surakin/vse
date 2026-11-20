@@ -10,7 +10,7 @@
 #include "spatial/spatial.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// One item of a spatial structure: its box, the caller's key and a layer (a bit index or a mask, the caller's choice;
@@ -304,4 +304,4 @@ TraversalStats StaticBvh::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& ite
     return stats;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

@@ -22,7 +22,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A parsed skeleton source.
@@ -62,4 +62,4 @@ Status ParseSkeletonSource(StringView text, SkeletonSource* out, SkeletonSourceE
 Status MintSkeleton(StringView text, const TypeRegistry& types, Vector<byte>* out, SkeletonSourceError* error,
                     u32 target = 0);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

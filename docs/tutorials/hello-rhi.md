@@ -29,8 +29,8 @@ only the device creation and window handling differ.
 
 #include "rhi/null/null_device.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 int main() {
     NullDevicePtr device = CreateNullDevice();
@@ -101,8 +101,8 @@ The same steps run on the null device, which checks the draw against the pipelin
 #include "triangle.frag.spv.inc"
 #include "triangle.vert.spv.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 int main() {
     NullDevicePtr device = CreateNullDevice();
@@ -203,8 +203,8 @@ The null device accepts and validates the same calls, here with the triangle's s
 #include "triangle.frag.spv.inc"
 #include "triangle.vert.spv.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 int main() {
     NullDevicePtr device = CreateNullDevice();
@@ -314,8 +314,8 @@ The null device accepts the same calls and checks them:
 
 #include "rhi/null/null_device.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 int main() {
     NullDevicePtr device = CreateNullDevice();

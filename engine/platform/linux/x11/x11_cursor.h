@@ -8,7 +8,7 @@
 
 struct _XDisplay;
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 /// The cursor and lock state of one X11 window: plain data, copied when the window moves.
@@ -60,4 +60,4 @@ void CursorHandleGeneric(_XDisplay* display, X11CursorState& state, void* event,
 /// Releases the grab and frees every cursor; the program's wanted state is kept. Call before the display closes.
 void CursorRelease(_XDisplay* display, unsigned long window, X11CursorState& state);
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11

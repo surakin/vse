@@ -16,7 +16,7 @@
 #include "ui/draw_list.h"
 #include "ui/draw_list_canvas.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {
@@ -96,7 +96,7 @@ TEST_CASE("The UI pass matches its golden image", "[rhi][gpu][golden][ui]")
         gpu_test::Image image;
         image.width = kW;
         image.height = kH;
-        image.rgba.Assign(static_cast<engine_placeholder::usize>(kW) * kH * 4, 0);
+        image.rgba.Assign(static_cast<vse::usize>(kW) * kH * 4, 0);
         REQUIRE(device->ReadbackTexture(texture, 0, 0, image.rgba.Data(), image.rgba.Size(),
                                         rhi::ResourceState::ColorAttachment));
 

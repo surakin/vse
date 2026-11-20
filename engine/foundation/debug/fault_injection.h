@@ -6,7 +6,7 @@
 //!
 //! Tests call [[debug::InjectFault]] inside a child process (see death_test.h) and check the reported
 //! [[debug::CrashReason]]; they never name a signal or exception code. Each platform implements the faults it has.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// A kind of fault a test can cause on purpose.
@@ -39,4 +39,4 @@ bool FaultSupported(FaultKind kind);
 /// signals as Linux.
 [[noreturn]] void InjectFault(FaultKind kind);
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

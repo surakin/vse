@@ -8,7 +8,7 @@
 #include "lang/scalar.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// A running FNV-1a 64-bit hash of what is fed to it, byte by byte.
@@ -96,4 +96,4 @@ private:
     bool valid_;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

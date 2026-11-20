@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kMaterialTestFragSpvWordCount = 640;
 
@@ -118,4 +118,4 @@ inline constexpr u32 kMaterialTestFragSpv[kMaterialTestFragSpvWordCount] = {
     0x00000006, 0x0000005e, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

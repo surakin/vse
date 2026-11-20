@@ -3,7 +3,7 @@
 #include "cstr/format.h"
 #include "cstr/cstr.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 const char* ValidateShaderPermutations(const ShaderPermutations& t)
@@ -167,4 +167,4 @@ const PermutationModule* FindPermutation(const ShaderPermutations& table, Permut
     return nullptr;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

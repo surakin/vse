@@ -17,7 +17,7 @@
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 namespace
@@ -875,4 +875,4 @@ bool Dx12Device::RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 coun
     return true;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

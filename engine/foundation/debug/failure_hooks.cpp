@@ -9,7 +9,7 @@
 #include "debug/stack_trace.h"
 #include "log/diagnostics_hooks.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 void UnregisterThreadForCrashHandling()
@@ -69,4 +69,4 @@ void InstallDiagnosticsHooks()
     AddThreadEndHook(&UnregisterThread);
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

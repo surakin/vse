@@ -23,7 +23,7 @@
 #include "settings/setting.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// Declares `ecs.parallel_systems` (bool, default true: used by the parallel scheduler) and `ecs.stats` (bool, default
@@ -810,4 +810,4 @@ private:
     ScheduleStats stats_;
 };
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

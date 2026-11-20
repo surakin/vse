@@ -9,7 +9,7 @@
 //! The window adapter (Phase 15, Day 194): the one place where an [[os::Window]] meets a [[ui::Surface]]. `ui` itself
 //! names no window.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// The pointer lock of a window, offered to a surface (`Surface::SetPointerLockHost`) so a viewport can do mouse look.
@@ -108,4 +108,4 @@ private:
     bool follow_window_scale_ = false;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

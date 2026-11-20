@@ -23,7 +23,7 @@
 #include "rhi/format.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Most layers of an array texture.
@@ -182,4 +182,4 @@ private:
 /// - Ownership: borrows `blob` and `types` for the call; `*out` is replaced.
 Status RetargetTextureBlob(const TypeRegistry& types, ByteSpan blob, u32 target, Vector<byte>* out);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -13,7 +13,7 @@
 // with 0 whenever `capacity` > 0. Invalid input (a malformed UTF-8 sequence, an overlong or surrogate encoding, an
 // unpaired UTF-16 surrogate) becomes U+FFFD and is counted in `*replaced` (if not null); it is never dropped.
 
-namespace engine_placeholder::os::windows
+namespace vse::os::windows
 {
 
 /// Converts UTF-8 to UTF-16.
@@ -32,4 +32,4 @@ usize Utf16ToUtf8(const wchar_t* utf16, usize length, char* out, usize capacity,
 /// nothing usable was written.
 usize PathToWin32(StringView utf8_path, wchar_t* out, usize capacity, usize* replaced = nullptr);
 
-}  // namespace engine_placeholder::os::windows
+}  // namespace vse::os::windows

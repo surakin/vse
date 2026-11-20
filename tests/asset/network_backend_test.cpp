@@ -20,7 +20,7 @@
 #include "settings/registry.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -454,4 +454,4 @@ TEST_CASE("network settings: declared with their defaults", "[asset][network]")
     CHECK_FALSE(static_cast<bool>(cache));
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

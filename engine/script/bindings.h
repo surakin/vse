@@ -18,7 +18,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The thread rule a binding follows. Every binding states one; the registry refuses a binding without.
@@ -669,4 +669,4 @@ bool RegisterStandardBindings(BindingRegistry* registry);
 /// - Fails: returns false, as described.
 bool RegisterRuntimeBindings(BindingRegistry* registry);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

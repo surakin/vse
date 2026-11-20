@@ -16,7 +16,7 @@
 namespace docgen
 {
 
-enum class LabelKind : engine_placeholder::u8
+enum class LabelKind : vse::u8
 {
     Param,
     Returns,
@@ -46,7 +46,7 @@ struct Label
     u32 ref_count = 0;  // [[references]] inside the label's text
 };
 
-enum class BlockKind : engine_placeholder::u8
+enum class BlockKind : vse::u8
 {
     Paragraph,
     List,

@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace engine_placeholder::io::posix
+namespace vse::io::posix
 {
 
 i64 ModifiedUnixNs(const struct stat& st)
@@ -85,4 +85,4 @@ int CopyData(int in, int out)
     return CopyLoop(in, out);
 }
 
-}  // namespace engine_placeholder::io::posix
+}  // namespace vse::io::posix

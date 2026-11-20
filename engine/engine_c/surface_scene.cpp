@@ -9,7 +9,7 @@
 #include "engine_c/runtime.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 namespace
@@ -873,4 +873,4 @@ bool SurfaceScene::Project(const f32* point, f32* out) const
     return true;
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

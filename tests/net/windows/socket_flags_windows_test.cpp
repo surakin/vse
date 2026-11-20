@@ -10,7 +10,7 @@
 #include "os/windows/win32.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -89,4 +89,4 @@ TEST_CASE("Windows: a UDP socket is not reset by an ICMP port unreachable", "[ne
 }
 
 }  // namespace
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

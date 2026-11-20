@@ -10,7 +10,7 @@
 
 //! Threads (Phase 16): the engine's spelling of `<thread>`. Names, priorities and affinity are `os`'s, not this
 //! header's.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Identifies a thread for comparison and hashing (`std::thread::id`).
@@ -103,4 +103,4 @@ inline void SleepForMicroseconds(u64 microseconds)
 
 }  // namespace ThisThread
 
-}  // namespace engine_placeholder
+}  // namespace vse

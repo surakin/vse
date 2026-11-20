@@ -22,10 +22,10 @@ namespace demo
 
 // The name of the backend a device description asks for, for messages: `vulkan` or `dx12`, what `auto` resolves to
 // here, or `graphics` when it resolves to nothing.
-const char* BackendLabel(::engine_placeholder::rhi::Backend backend);
+const char* BackendLabel(::vse::rhi::Backend backend);
 
-using namespace engine_placeholder;
-namespace sset = ::engine_placeholder::settings;
+using namespace vse;
+namespace sset = ::vse::settings;
 
 class DemoSettings
 {
@@ -75,7 +75,7 @@ public:
 
     // Fills the parts of a device description that are settings: the backend, the validation layer, the GPU, the
     // pipeline cache, the frames in flight. The strings it points to belong to this object.
-    void FillDeviceCreateInfo(::engine_placeholder::rhi::DeviceCreateInfo* info);
+    void FillDeviceCreateInfo(::vse::rhi::DeviceCreateInfo* info);
 
     // Handles --help, --list-settings and --save-settings (after the demo has put its own flags into the settings).
     // Returns the exit code if one of them was given, or -1 to carry on.

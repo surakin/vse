@@ -16,7 +16,7 @@
 #include "spatial/spatial_world.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// A ray or sweep hit on an entity.
@@ -219,4 +219,4 @@ void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Ray> rays, 
 void OverlapBatch(const SpatialWorld& spatial, SetId set, Span<const Aabb> boxes, const QueryFilter& filter,
                   Vector<SpatialKey>* keys, Vector<u32>* offsets, jobs::Scheduler* scheduler);
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

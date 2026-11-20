@@ -9,7 +9,7 @@
 //! Drag and drop in the toolkit (Phase 15, Day 200): what is dragged. The routing is in [[ui::Surface]]; the widgets
 //! that start and accept drags override the `Widget` drag virtuals.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// What a drop does with the data; the platform layer's enumeration, so an OS drag needs no translation.
@@ -146,4 +146,4 @@ private:
 /// arrow for `Copy` (the platform layer has no copy cursor).
 os::CursorShape CursorForDragAction(DragAction action);
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

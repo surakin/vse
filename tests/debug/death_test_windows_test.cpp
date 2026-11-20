@@ -14,8 +14,8 @@
 
 #include "os/windows/win32.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 // ---- the abort marker
 // -----------------------------------------------------------------------------------------------------------

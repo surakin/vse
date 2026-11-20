@@ -9,7 +9,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// A bounded single-producer single-consumer ring of `T`.
@@ -101,4 +101,4 @@ private:
     Atomic<u64> tail_{0};
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

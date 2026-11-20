@@ -4,7 +4,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 namespace
@@ -450,4 +450,4 @@ void PairTracker::Recompute(const SpatialSet& set, PairEvents* events)
     removed_.Clear();
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

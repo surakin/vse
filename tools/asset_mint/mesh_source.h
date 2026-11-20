@@ -27,7 +27,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The skin influences a source gave one vertex, before quantization.
@@ -103,4 +103,4 @@ Status ParseMeshSource(StringView text, MeshSource* out, MeshSourceError* error)
 Status MintMesh(StringView text, const TypeRegistry& types, const SkeletonView* skeleton, Vector<byte>* out,
                 MeshSourceError* error, u32 target = 0);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

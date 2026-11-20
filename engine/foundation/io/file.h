@@ -15,7 +15,7 @@
 //! [[io::File]]: an open file as an abstract interface, so the same code reads a local file, a pak entry or a file on a
 //! server. Only the local file exists now. Also the helpers that work through any `File`, the scheme registry that
 //! picks a backend, and [[io::WriteFileAtomic(const Path&,const void*,usize,u32)]].
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 /// The log channel of the file layer (`io`).
@@ -393,4 +393,4 @@ namespace detail
 void SetAtomicWriteFailureStep(int step);
 }  // namespace detail
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

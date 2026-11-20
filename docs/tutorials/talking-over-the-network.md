@@ -25,8 +25,8 @@
 #include "net/tcp_transport.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::net;
+using namespace vse;
+using namespace vse::net;
 
 int main() {
     // Step 1: a simulated network whose time we move ourselves.

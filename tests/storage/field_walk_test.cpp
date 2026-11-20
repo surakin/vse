@@ -6,7 +6,7 @@
 #include "storage/component_registry.h"
 #include "storage/field_walk.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -207,4 +207,4 @@ TEST_CASE("SkipField moves past each kind by exactly its stored size", "[storage
     CHECK(in.Remaining() == 0);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

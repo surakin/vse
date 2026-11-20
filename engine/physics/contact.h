@@ -8,7 +8,7 @@
 #include "physics/components.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Where a shape is: the position of its origin and its orientation, in the world.
@@ -98,4 +98,4 @@ enum class CollideResult : u8
 /// - Fails: never.
 void CombineMaterials(const PhysicsMaterial& a, const PhysicsMaterial& b, ContactManifold* manifold);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

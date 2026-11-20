@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Version of the layout algorithm's observable behavior; bumped when a change would move a widget in an existing
@@ -17,4 +17,4 @@ constexpr u32 kUiLayoutVersion = 1;
 /// - Thread-safety: thread-safe.
 u32 LayoutVersion();
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

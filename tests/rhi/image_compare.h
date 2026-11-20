@@ -37,43 +37,43 @@ public:
     PixelBytes& operator=(PixelBytes&&) noexcept = default;
 
     // Replaces the contents with `count` copies of `fill`.
-    void Assign(engine_placeholder::usize count, engine_placeholder::byte fill)
+    void Assign(vse::usize count, vse::byte fill)
     {
         bytes_.Clear();
         bytes_.Resize(count);
-        for (engine_placeholder::usize i = 0; i < count; ++i)
+        for (vse::usize i = 0; i < count; ++i)
         {
             bytes_[i] = fill;
         }
     }
     // Sets the size, zero-filling new bytes.
-    void Resize(engine_placeholder::usize count) { bytes_.Resize(count); }
-    engine_placeholder::byte* Data() { return bytes_.Data(); }
-    const engine_placeholder::byte* Data() const { return bytes_.Data(); }
-    engine_placeholder::usize Size() const { return bytes_.Size(); }
+    void Resize(vse::usize count) { bytes_.Resize(count); }
+    vse::byte* Data() { return bytes_.Data(); }
+    const vse::byte* Data() const { return bytes_.Data(); }
+    vse::usize Size() const { return bytes_.Size(); }
     bool Empty() const { return bytes_.Empty(); }
-    engine_placeholder::byte& operator[](engine_placeholder::usize i) { return bytes_[i]; }
-    const engine_placeholder::byte& operator[](engine_placeholder::usize i) const { return bytes_[i]; }
+    vse::byte& operator[](vse::usize i) { return bytes_[i]; }
+    const vse::byte& operator[](vse::usize i) const { return bytes_[i]; }
     bool operator==(const PixelBytes& other) const { return engine_test::SameBytes(bytes_, other.bytes_); }
     bool operator!=(const PixelBytes& other) const { return !(*this == other); }
 
-    void assign(engine_placeholder::usize count, engine_placeholder::byte fill) { Assign(count, fill); }
-    void resize(engine_placeholder::usize count) { Resize(count); }
-    engine_placeholder::byte* data() { return Data(); }
-    const engine_placeholder::byte* data() const { return Data(); }
-    engine_placeholder::usize size() const { return Size(); }
+    void assign(vse::usize count, vse::byte fill) { Assign(count, fill); }
+    void resize(vse::usize count) { Resize(count); }
+    vse::byte* data() { return Data(); }
+    const vse::byte* data() const { return Data(); }
+    vse::usize size() const { return Size(); }
     bool empty() const { return Empty(); }
 
 private:
     void CopyFrom(const PixelBytes& other)
     {
         bytes_.Resize(other.bytes_.Size());
-        for (engine_placeholder::usize i = 0; i < other.bytes_.Size(); ++i)
+        for (vse::usize i = 0; i < other.bytes_.Size(); ++i)
         {
             bytes_[i] = other.bytes_[i];
         }
     }
-    engine_placeholder::Vector<engine_placeholder::byte> bytes_;
+    vse::Vector<vse::byte> bytes_;
 };
 
 struct Image
@@ -82,14 +82,8 @@ struct Image
     unsigned height = 0;
     PixelBytes rgba;  // width * height * 4, row 0 at the top
 
-    bool Valid() const
-    {
-        return width > 0 && height > 0 && rgba.Size() == static_cast<engine_placeholder::usize>(width) * height * 4;
-    }
-    const engine_placeholder::byte* Pixel(unsigned x, unsigned y) const
-    {
-        return &rgba[(static_cast<engine_placeholder::usize>(y) * width + x) * 4];
-    }
+    bool Valid() const { return width > 0 && height > 0 && rgba.Size() == static_cast<vse::usize>(width) * height * 4; }
+    const vse::byte* Pixel(unsigned x, unsigned y) const { return &rgba[(static_cast<vse::usize>(y) * width + x) * 4]; }
 };
 
 struct CompareOptions

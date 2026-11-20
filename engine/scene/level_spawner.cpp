@@ -3,7 +3,7 @@
 #include "ecs/transform.h"
 #include "lang/status_try.h"
 
-namespace engine_placeholder::scene
+namespace vse::scene
 {
 namespace
 {
@@ -141,4 +141,4 @@ void DestroyLevel(SpawnedLevel* level, ecs::World& world, storage::KeyIndex& ind
     level->levels.Clear();
 }
 
-}  // namespace engine_placeholder::scene
+}  // namespace vse::scene

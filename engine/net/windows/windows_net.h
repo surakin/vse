@@ -8,7 +8,7 @@
 #include "net/windows/winsock.h"
 #include "net/windows/wsa_error.h"
 
-namespace engine_placeholder::net::windows
+namespace vse::net::windows
 {
 
 // Starts Winsock 2.2 for the process the first time it is called, from any thread; later calls return the first call's
@@ -43,4 +43,4 @@ int ToSockaddr(const Endpoint& endpoint, AddressFamily family, sockaddr_storage*
 // IPv6.
 bool FromSockaddr(const sockaddr_storage& storage, Endpoint* out);
 
-}  // namespace engine_placeholder::net::windows
+}  // namespace vse::net::windows

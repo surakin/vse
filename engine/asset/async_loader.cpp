@@ -11,7 +11,7 @@
 #include "string/string.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -684,4 +684,4 @@ AsyncLoadStats AsyncLoader::Stats() const
     return copy;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -21,7 +21,7 @@
 #include "ui/draw_list.h"
 #include "ui/draw_list_canvas.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using text_test::Opened;
 
 namespace

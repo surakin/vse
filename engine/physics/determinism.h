@@ -5,7 +5,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Hashes the results of a fixed set of expressions that a changed rounding, contraction or flush mode would change.
@@ -45,4 +45,4 @@ bool DenormalsPreserved();
 /// - Ownership: the string is static; the caller does not free it.
 const char* ModeReport();
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

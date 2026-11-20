@@ -16,7 +16,7 @@
 #include "support.h"
 #include "texture_source.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -559,4 +559,4 @@ TEST_CASE("asset_mint_old_versions_fixture: verify names old blobs, remint upgra
     CHECK(stats.upgraded == 0);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

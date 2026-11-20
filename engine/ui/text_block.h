@@ -10,7 +10,7 @@
 
 //! A block of text that sizes itself from its content (Phase 15, Day 193): the base of the label widget.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Draws one string in one font and reports its size to the layout.
@@ -72,4 +72,4 @@ private:
     VariantId variant_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

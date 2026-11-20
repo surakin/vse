@@ -8,7 +8,7 @@
 
 //! The canvas that builds a [[ui::DrawList]] (Phase 15, Day 189).
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A [[ui::Canvas]] that converts logical units to physical pixels, snaps as the canvas contract says, and appends
@@ -89,4 +89,4 @@ private:
     Vector<LayerFrame> layers_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

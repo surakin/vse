@@ -5,7 +5,7 @@
 #include "script/backend.h"
 #include "script/script_settings.h"
 
-namespace engine_placeholder::script::luajit
+namespace vse::script::luajit
 {
 
 /// How a backend's states run scripts.
@@ -66,4 +66,4 @@ UniquePtr<Backend> CreateLuaJitBackend(const LuaJitOptions& options = LuaJitOpti
 /// - Fails: returns false when the registry is full.
 bool RegisterLuaJitBackend();
 
-}  // namespace engine_placeholder::script::luajit
+}  // namespace vse::script::luajit

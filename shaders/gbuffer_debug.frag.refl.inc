@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGbufferDebugFragReflByteCount = 465;
 
@@ -49,4 +49,4 @@ inline constexpr u32 kGbufferDebugFragPushNearPlaneOffset = 68;
 inline constexpr u32 kGbufferDebugFragPushFarPlaneOffset = 72;
 inline constexpr u32 kGbufferDebugFragPushPadOffset = 76;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

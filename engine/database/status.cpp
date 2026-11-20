@@ -2,7 +2,7 @@
 
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 const char* ErrorCodeName(ErrorCode code)
@@ -42,4 +42,4 @@ Status Status::Make(ErrorCode code, i32 backend_code, StringView message)
     return s;
 }
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

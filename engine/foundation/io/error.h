@@ -3,7 +3,7 @@
 #include "types.h"
 
 //! Errors of the file layer, reported as values: [[io::Error]] and [[io::Status]].
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 /// What went wrong, in terms every platform and every `File` backend can express.
@@ -69,4 +69,4 @@ struct Status
     static Status FromOs(i32 code) { return Status{ErrorFromOsCode(code), code}; }
 };
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

@@ -11,7 +11,7 @@
 //! that the program drains with `Window::PollEvent` after `PumpEvents`. Pure data, no display library: the header is
 //! part of the `platform_input` target.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// The kind of an [[os::InputEvent]].
@@ -145,4 +145,4 @@ private:
     u64 dropped_ = 0;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

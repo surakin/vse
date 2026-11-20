@@ -3,7 +3,7 @@
 #include "log/assert.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 ComponentRegistry& ComponentRegistry::Global()
@@ -78,4 +78,4 @@ u64 ComponentRegistry::Refused() const
     return refused_.Load(MemoryOrder::Relaxed);
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

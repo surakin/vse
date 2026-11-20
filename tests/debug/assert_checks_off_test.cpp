@@ -4,7 +4,7 @@
 
 #include "log/assert.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 static_assert(ENGINE_DEBUG_CHECKS == 0, "this file is built with debug checks off");
 static_assert(ENGINE_SLOW_CHECKS == 0, "this file is built with slow checks off");

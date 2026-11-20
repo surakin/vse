@@ -23,7 +23,7 @@
 #include "png_writer.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -738,4 +738,4 @@ TEST_CASE("gltf material: KHR_materials_pbrSpecularGlossiness imports converted 
     CHECK(sign_data.textures.Size() == 1);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

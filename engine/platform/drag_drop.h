@@ -6,7 +6,7 @@
 
 //! Drag and drop between programs: the values shared by every platform backend. The operations are on [[os::Window]].
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// What a drop will do with the data.
@@ -88,4 +88,4 @@ inline constexpr u64 kDragTargetTimeoutNs = 1'000'000'000ull;
 /// - Returns: how many entries were removed.
 u32 LimitPathList(Vector<byte>& paths, usize max_entries);
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

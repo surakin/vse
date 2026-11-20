@@ -8,7 +8,7 @@
 //! The set is the intersection of what Vulkan, Direct3D 12 and Metal can all express. Not every format
 //! is supported by every device or for every usage; ask the device.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// A texture or render-target pixel format.
@@ -155,4 +155,4 @@ inline u64 FormatSliceBytes(Format format, u32 width, u32 height)
     return FormatRowBytes(format, width) * block_rows;
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

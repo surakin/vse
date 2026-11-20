@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -230,4 +230,4 @@ u8 MeshColliderView::Material(u32 t) const
     return static_cast<u8>(Base()[materials_ + t]);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

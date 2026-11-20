@@ -6,7 +6,7 @@
 #include "asset/load_buffer_pool.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 TEST_CASE("Buffers are aligned and pre-touched", "[asset][pool]")
@@ -83,4 +83,4 @@ TEST_CASE("The asset settings declare the two budgets, and declaring twice is ha
     CHECK(MemoryBackendBytesFromSettings(registry) == (u64(512) << 20));
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

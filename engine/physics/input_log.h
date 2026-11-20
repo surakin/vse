@@ -14,7 +14,7 @@
 #include "physics/world.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The kinds of input the log holds. The numbers are written in logs and never renumbered.
@@ -158,4 +158,4 @@ u32 ReplayStep(PhysicsWorld* world, const InputLog& log, usize* cursor);
 /// - Fails: never.
 usize FirstEntryAt(const InputLog& log, u64 step);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

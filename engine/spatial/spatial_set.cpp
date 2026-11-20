@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 namespace
@@ -350,4 +350,4 @@ SpatialSetStats SpatialSet::Stats() const
     return s;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

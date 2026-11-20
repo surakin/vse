@@ -11,8 +11,8 @@
 #include "jobs/frame_pool.h"
 #include "jobs/parallel_for.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::jobs;
+using namespace vse;
+using namespace vse::jobs;
 
 namespace
 {

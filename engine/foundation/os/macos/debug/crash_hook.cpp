@@ -35,7 +35,7 @@
 // (third_party/sentry_native/VENDORED.md).
 extern "C" volatile int breakpad_mac_continue_after_dump;
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -589,7 +589,7 @@ bool RegisterThreadForCrashHandling(const char* name)
     return CrashHandlerInstalled();
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug
 
 #if ENGINE_SANITIZER_ADDRESS
 // ASan on macOS (Phase 21 Day 291): Breakpad copies the crashed thread's stack into the minidump with libc's write(),

@@ -12,7 +12,7 @@
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 namespace
@@ -164,4 +164,4 @@ void WorkerPool::Join()
     }
 }
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

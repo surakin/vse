@@ -9,7 +9,7 @@
 //! The scrolling widgets (Phase 15, Day 196): the scroll bar and the scroll view that the list box and the text field
 //! share.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A scroll bar along one axis, with a value in content units.
@@ -213,4 +213,4 @@ private:
     f32 line_step_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

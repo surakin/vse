@@ -6,7 +6,7 @@
 #include "cstr/mem_ops.h"
 #include "yyjson.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -537,4 +537,4 @@ JsonValue JsonDocument::Root() const
     return value;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

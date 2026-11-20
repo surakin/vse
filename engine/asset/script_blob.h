@@ -29,7 +29,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The size of the header section.
@@ -199,4 +199,4 @@ private:
     u32 key_size_ = 0;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

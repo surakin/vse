@@ -10,7 +10,7 @@
 #include "sync/mutex.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -700,4 +700,4 @@ bool VulkanDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* 
     return true;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

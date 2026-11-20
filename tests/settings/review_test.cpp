@@ -15,8 +15,8 @@
 #include "temp_dir.h"
 #include "test_text.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::settings;
+using namespace vse;
+using namespace vse::settings;
 
 namespace
 {

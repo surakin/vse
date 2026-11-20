@@ -16,7 +16,7 @@
 #include "os/console.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -263,4 +263,4 @@ TEST_CASE("Benchmark: simulated TCP throughput", "[.][net-bench]")
               static_cast<f64>(received) / (1024.0 * 1024.0) / seconds);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

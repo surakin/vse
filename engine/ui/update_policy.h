@@ -8,7 +8,7 @@
 //! When a surface runs a frame (Phase 15, Day 202): every frame, only when something changed, or at a fixed rate. A
 //! screen in the world that nobody touches should cost nothing.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// How often a surface runs a frame.
@@ -77,4 +77,4 @@ private:
     u64 skipped_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

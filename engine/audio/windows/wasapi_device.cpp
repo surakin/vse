@@ -22,7 +22,7 @@
 #include <mmdeviceapi.h>
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -692,4 +692,4 @@ UniquePtr<AudioDevice> CreateWasapiDevice()
     return MakeUnique<WasapiDevice>();
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

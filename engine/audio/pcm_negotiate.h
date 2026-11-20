@@ -5,7 +5,7 @@
 
 #include "audio/device.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The sample format a card plays.
@@ -114,4 +114,4 @@ inline u32 PcmSampleBytes(PcmFormat format)
     return format == PcmFormat::S16 ? 2u : 4u;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

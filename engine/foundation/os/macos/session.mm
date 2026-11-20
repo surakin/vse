@@ -10,7 +10,7 @@
 //   key, Unknown. Locked:   CGSSessionScreenIsLocked true (the key is absent while unlocked). Idle:     the main
 //   display is asleep. No input-time limit: the engine has none to give (as on Windows), and a display that is
 //             awake shows frames.
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 SessionState QuerySessionState()
@@ -36,4 +36,4 @@ SessionState QuerySessionState()
     }
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

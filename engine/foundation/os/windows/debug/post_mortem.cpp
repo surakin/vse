@@ -16,7 +16,7 @@
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -160,4 +160,4 @@ PostMortemReport EnablePostMortemDumps(const PostMortemOptions& options)
     return report;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

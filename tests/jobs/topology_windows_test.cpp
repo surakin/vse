@@ -14,8 +14,8 @@
 #include "jobs/windows/topology_windows.h"
 #include "os/windows/win32.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::jobs;
+using namespace vse;
+using namespace vse::jobs;
 
 namespace
 {

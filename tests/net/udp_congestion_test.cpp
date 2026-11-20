@@ -10,7 +10,7 @@
 #include "net/sim_datagram.h"
 #include "net/udp_transport.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -486,4 +486,4 @@ TEST_CASE("UDP congestion: unreliable traffic lost in a blackout does not close 
     CHECK(r.TotalServerBytes() - before == 20 * 1000);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

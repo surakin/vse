@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 inline namespace ENGINE_INT128_NAMESPACE
@@ -325,4 +325,4 @@ bool i128::FromText(StringView text, u32 base, i128* out)
 
 }  // namespace ENGINE_INT128_NAMESPACE
 
-}  // namespace engine_placeholder
+}  // namespace vse

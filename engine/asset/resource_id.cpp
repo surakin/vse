@@ -4,7 +4,7 @@
 #include "string/normalize.h"
 #include "string/utf8.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 ResourceId GenerateResourceId()
@@ -138,4 +138,4 @@ Status NormalizePath(StringView path, String<HeapAllocator>* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

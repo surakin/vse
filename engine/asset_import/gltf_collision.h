@@ -20,7 +20,7 @@
 #include "math/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The collision a node asks for.
@@ -97,4 +97,4 @@ void CollisionOnlyMeshes(const GltfNodeGraph& graph, Span<const GltfNodeCollisio
 Status ImportColliders(const GltfDocument& document, const ImportOptions& options, const TypeRegistry& types,
                        Vector<GltfNodeCollision>* marks, ImportResult* result, GltfError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

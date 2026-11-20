@@ -17,7 +17,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The most entries a table (and a serialized `NAMES` blob) may hold.
@@ -146,4 +146,4 @@ private:
     HashMap<u64, u32, HeapAllocator> by_id_;  // id -> the slot of the first entry of its chain
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

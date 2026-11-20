@@ -32,8 +32,8 @@
 #include "support/test_support_posix.h"
 #include "sync/thread.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 using debug_test::Cat;
 using debug_test::Text;
 

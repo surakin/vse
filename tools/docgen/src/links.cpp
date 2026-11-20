@@ -282,7 +282,7 @@ private:
                 return false;
             }
         }
-        engine_placeholder::StringBuilder<ArenaAllocator> sb(arena_);
+        vse::StringBuilder<ArenaAllocator> sb(arena_);
         for (usize i = 0; i < segs.Size(); ++i)
         {
             if (i > 0)
@@ -297,7 +297,7 @@ private:
 
     StringView Decode(StringView s)
     {
-        engine_placeholder::StringBuilder<ArenaAllocator> sb(arena_);
+        vse::StringBuilder<ArenaAllocator> sb(arena_);
         for (usize i = 0; i < s.Length(); ++i)
         {
             // "%00" stays literal: a NUL would silently truncate the path handed to stat()

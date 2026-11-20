@@ -43,7 +43,7 @@
 #include "engine_c/test_state.h"
 #endif
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 // The failure text of the calling thread. Plain bytes, so the thread-local has no destructor (nothing to run at thread
@@ -699,9 +699,9 @@ Runtime* CurrentRuntime()
     return state.engine.Get() == nullptr ? nullptr : state.engine->runtime.Get();
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c
 
-using namespace engine_placeholder;
+using namespace vse;
 
 extern "C"
 {
@@ -894,7 +894,7 @@ extern "C"
 // ended or called thread_detach, and the engine is destroyed.
 __attribute__((destructor)) static void EngineLibraryUnloaded()
 {
-    engine_placeholder::jobs::FramePool::DestroyGlobalAtUnload();
+    vse::jobs::FramePool::DestroyGlobalAtUnload();
 }
 #elif ENGINE_C_UNLOAD_HOOK
 // Windows (Day 354): the same, as the destructor of a static object, which the C runtime of engine.dll runs when the
@@ -908,7 +908,7 @@ struct EngineLibraryUnloadHook
     EngineLibraryUnloadHook() = default;
     EngineLibraryUnloadHook(const EngineLibraryUnloadHook&) = delete;
     EngineLibraryUnloadHook& operator=(const EngineLibraryUnloadHook&) = delete;
-    ~EngineLibraryUnloadHook() { engine_placeholder::jobs::FramePool::DestroyGlobalAtUnload(); }
+    ~EngineLibraryUnloadHook() { vse::jobs::FramePool::DestroyGlobalAtUnload(); }
 };
 const EngineLibraryUnloadHook g_engine_library_unload_hook;
 }  // namespace

@@ -3,7 +3,7 @@
 #include "types.h"
 
 //! Asking whether a debugger is attached to the running process.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Reports whether a debugger is attached to this process.
@@ -19,4 +19,4 @@ namespace engine_placeholder::debug
 /// - Backend: Windows: IsDebuggerPresent; macOS: sysctl kern.proc.pid with the P_TRACED flag.
 bool IsDebuggerAttached();
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

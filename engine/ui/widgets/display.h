@@ -9,7 +9,7 @@
 //! The display widgets (Phase 15, Day 195): image, progress bar, separator and panel. Labels are in
 //! `ui/widgets/label.h`, buttons in `ui/widgets/buttons.h`.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// How an [[ui::Image]] fills its bounds.
@@ -137,4 +137,4 @@ private:
     VariantId variant_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

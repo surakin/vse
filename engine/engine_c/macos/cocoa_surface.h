@@ -6,7 +6,7 @@
 // here, so surface.cpp stays C++; the implementation is cocoa_surface.mm (ARC, every entry inside an autorelease pool).
 #include "types.h"
 
-namespace engine_placeholder::engine_c::macos
+namespace vse::engine_c::macos
 {
 
 // The layer a surface draws into. `layer` is retained (+1) while it is bound; `view` is borrowed from the host. Plain
@@ -36,4 +36,4 @@ void ResizeLayer(const CocoaLayer& bound, f32 scale);
 // CocoaLayer.
 void DetachLayer(CocoaLayer* bound);
 
-}  // namespace engine_placeholder::engine_c::macos
+}  // namespace vse::engine_c::macos

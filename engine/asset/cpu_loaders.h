@@ -14,7 +14,7 @@
 #include "asset/skeleton.h"
 #include "asset/texture.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A skeleton is loaded as a [[asset::SkeletonView]] over the manager's buffer.
@@ -105,4 +105,4 @@ void RegisterCpuLoaders(ResourceManager* manager);
 /// - Ownership: borrows `manager` for the call only; nothing is retained.
 void RegisterSkeletonLoader(ResourceManager* manager);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

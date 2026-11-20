@@ -1,6 +1,6 @@
 #include "text/shelf_packer.h"
 
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 ShelfPacker::ShelfPacker(u32 width, u32 height, u32 padding)
@@ -66,4 +66,4 @@ bool ShelfPacker::Place(u32 w, u32 h, Rect* out)
     return true;
 }
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

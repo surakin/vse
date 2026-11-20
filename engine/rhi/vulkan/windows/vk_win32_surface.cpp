@@ -11,7 +11,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_win32.h>
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 i32 CreateWin32Surface(void* get_instance_proc_addr, void* instance, void* hinstance, void* hwnd, u64* out_surface)
@@ -37,4 +37,4 @@ i32 CreateWin32Surface(void* get_instance_proc_addr, void* instance, void* hinst
     return static_cast<i32>(result);
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 RingAllocator::RingAllocator(u64 capacity) : capacity_(capacity) {}
@@ -69,4 +69,4 @@ void RingAllocator::Reclaim(u64 completed)
     groups_.RemoveRange(0, freed);
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

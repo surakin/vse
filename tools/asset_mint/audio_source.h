@@ -28,7 +28,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A parsed audio source.
@@ -77,4 +77,4 @@ Status ParseAudioSource(StringView text, AudioSource* out, AudioSourceError* err
 Status MintAudio(const AudioSource& source, ByteSpan wav_bytes, const TypeRegistry& types, Vector<byte>* out,
                  AudioSourceError* error, u32 target = 0);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

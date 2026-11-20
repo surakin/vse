@@ -28,7 +28,7 @@ A window program in miniature. It runs for at most five seconds, so you can star
 #include "platform/window.h"
 #include "platform/window_host.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     os::InputState input;                          // declared before the host: the host borrows it

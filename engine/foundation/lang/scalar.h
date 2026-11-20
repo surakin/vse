@@ -10,7 +10,7 @@
 //! functions). Vector, matrix and quaternion types are in `math/`; these are the functions on one number. The `f64`
 //! overloads are new: `Sqrt`, `Sin`, `Cos` and `Acos` used to take only `f32`, so a `double` argument now keeps its
 //! precision instead of narrowing.
-namespace engine_placeholder
+namespace vse
 {
 
 /// The square root of `value`; NaN for a negative input (`sqrt`).
@@ -261,4 +261,4 @@ inline bool SignBit(f64 value) noexcept
     return std::signbit(value);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

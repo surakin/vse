@@ -12,7 +12,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The most settings a registry holds.
@@ -508,4 +508,4 @@ using SettingsKeyMigrationFn = const char* (*)(u32 file_version, const char* key
 bool ParseSettings(const char* text, usize length, RenderSettings* settings, SettingsParseReport* report,
                    SettingsKeyMigrationFn migrate = nullptr);
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -5,8 +5,8 @@
 #include "text/glyph_atlas.h"
 #include "text/shelf_packer.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::text;
+using namespace vse;
+using namespace vse::text;
 using text_test::Opened;
 
 namespace

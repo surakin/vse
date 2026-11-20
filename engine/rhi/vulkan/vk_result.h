@@ -4,7 +4,7 @@
 
 //! `VkResult` naming, classification and a logging check helper.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// What a `VkResult` means for the caller.
@@ -44,7 +44,7 @@ VkResultClass ClassifyVkResult(VkResult result);
 /// - Returns: the classification of `result`.
 VkResultClass CheckVkResult(VkResult result, const char* call_text, const char* file, int line);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan
 
 /// Evaluates a Vulkan call and returns its [[rhi::vulkan::VkResultClass]], logging failures with file and line.
-#define ENGINE_VK_CHECK(call) ::engine_placeholder::rhi::vulkan::CheckVkResult((call), #call, __FILE__, __LINE__)
+#define ENGINE_VK_CHECK(call) ::vse::rhi::vulkan::CheckVkResult((call), #call, __FILE__, __LINE__)

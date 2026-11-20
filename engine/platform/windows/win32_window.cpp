@@ -16,7 +16,7 @@
 #include "os/windows/win32.h"
 #include "string/string.h"
 
-namespace engine_placeholder::os::win32
+namespace vse::os::win32
 {
 
 namespace
@@ -1243,4 +1243,4 @@ void Win32Window::SetModalLoopCallback(ModalLoopCallback callback, void* user)
     }
 }
 
-}  // namespace engine_placeholder::os::win32
+}  // namespace vse::os::win32

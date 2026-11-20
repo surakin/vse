@@ -7,7 +7,7 @@
 #include <time.h>
 #include <unistd.h>
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 namespace
@@ -270,4 +270,4 @@ void PipeReader::Close()
     }
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

@@ -6,7 +6,7 @@
 #include "log/log.h"
 #include "platform/linux/key_translate.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 namespace
@@ -274,4 +274,4 @@ u32 XkbKeyboard::Modifiers() const
     return mods;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

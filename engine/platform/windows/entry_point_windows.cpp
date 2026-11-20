@@ -13,7 +13,7 @@
 #include <shellapi.h>
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::os::detail
+namespace vse::os::detail
 {
 
 namespace
@@ -102,4 +102,4 @@ int RunWindowedProgram(int, char**, WindowedProgramEntry entry)
     return entry(count, argv);
 }
 
-}  // namespace engine_placeholder::os::detail
+}  // namespace vse::os::detail

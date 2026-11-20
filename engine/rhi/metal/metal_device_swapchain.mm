@@ -11,7 +11,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 Swapchain* MetalDevice::CreateSwapchain(const SwapchainDesc& desc)
@@ -129,4 +129,4 @@ bool MetalDevice::PresentDrawable(id<CAMetalDrawable> drawable)
     return true;
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

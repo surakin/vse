@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kPermuteTestFragReflByteCount = 51;
 
@@ -15,4 +15,4 @@ inline constexpr u8 kPermuteTestFragRefl[kPermuteTestFragReflByteCount] = {
     0, 0, 0,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

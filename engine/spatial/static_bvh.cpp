@@ -4,7 +4,7 @@
 #include "log/assert.h"
 #include "spatial/internal/binned_sah.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 namespace
@@ -130,4 +130,4 @@ f32 StaticBvh::SahCost() const
     return cost;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

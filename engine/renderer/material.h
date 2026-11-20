@@ -20,7 +20,7 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// Descriptor set of the frame uniform.
@@ -251,9 +251,9 @@ usize HashPipelineKey(u32 template_index, u32 template_generation, u32 key_bits,
 
 }  // namespace detail
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Hash function for the material system's pipeline keys (container audit Day 7).
@@ -282,9 +282,9 @@ template <> struct Hash<renderer::detail::PipelineKeyRef>
     }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// Templates, materials, default textures, bind groups and the pipeline cache.
@@ -786,4 +786,4 @@ private:
     u32 joint_group_count_ = 0;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -13,7 +13,7 @@
 //! `Vertex::flags`, so rectangles, glyphs and images of one frame share one pipeline and a command is split only by
 //! clip, atlas page or image.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// What the fragment shader does with a vertex' primitive (the low two bits of `Vertex::flags`).
@@ -147,4 +147,4 @@ struct DrawList
     Vector<DrawCommand> sort_scratch;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

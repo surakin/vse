@@ -25,7 +25,7 @@
 #include "lang/scalar.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -1320,4 +1320,4 @@ TEST_CASE("The import summary lists the level's lights", "[asset][gltf][level][l
                    "{\"name\":\"\",\"type\":\"spot\",\"node\":\"torch\",\"position\":[8,0,0]}],\"collision\":{")));
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

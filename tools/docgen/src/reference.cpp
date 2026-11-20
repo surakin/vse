@@ -35,8 +35,7 @@ bool HasMarkerLine(StringView body)
     }
     const StringView marker(kGeneratedMarker);
     const usize at = i + 2;
-    if (body.Length() < at + marker.Length() ||
-        engine_placeholder::MemCompare(body.Data() + at, marker.Data(), marker.Length()) != 0)
+    if (body.Length() < at + marker.Length() || vse::MemCompare(body.Data() + at, marker.Data(), marker.Length()) != 0)
     {
         return false;
     }
@@ -45,8 +44,8 @@ bool HasMarkerLine(StringView body)
 
 bool EndsWith(StringView s, const char* suffix)
 {
-    usize n = engine_placeholder::CStrLength(suffix);
-    return s.Length() >= n && engine_placeholder::MemCompare(s.Data() + s.Length() - n, suffix, n) == 0;
+    usize n = vse::CStrLength(suffix);
+    return s.Length() >= n && vse::MemCompare(s.Data() + s.Length() - n, suffix, n) == 0;
 }
 
 bool IsGenerated(const ReferenceBuild& build, StringView name)

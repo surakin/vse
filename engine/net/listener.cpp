@@ -2,7 +2,7 @@
 
 #include "net/time_budget.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 Status Listener::Open(const Endpoint& at, const ListenerOptions& options)
@@ -134,4 +134,4 @@ jobs::Task<IoResult> Listener::Accept(Reactor& reactor, Socket* connection, Endp
     }
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

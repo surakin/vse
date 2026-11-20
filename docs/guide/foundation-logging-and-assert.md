@@ -41,7 +41,7 @@ A message has a **severity**, and a channel prints it when the severity is at le
 #include "log/log.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     Log(LogCore, LogVerbosity::Warn, "this prints: Warn is the default threshold");
@@ -119,7 +119,7 @@ carries on. [[SetAssertHandler]] replaces it; a test uses that to see failures w
 ```cpp compile standalone
 #include "log/assert.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace {
 

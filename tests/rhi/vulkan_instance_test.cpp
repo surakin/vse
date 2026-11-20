@@ -9,8 +9,8 @@
 #include "rhi/vulkan/vk_instance.h"
 #include "cstr/cstr.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi::vulkan;
+using namespace vse;
+using namespace vse::rhi::vulkan;
 
 TEST_CASE("ResolveValidationPolicy: descriptor mode, environment and build type", "[rhi][vulkan]")
 {

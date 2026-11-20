@@ -6,9 +6,9 @@
 #include "log/assert.h"
 #include "sync/thread.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::script;
-using namespace engine_placeholder::script::test;
+using namespace vse;
+using namespace vse::script;
+using namespace vse::script::test;
 
 namespace
 {

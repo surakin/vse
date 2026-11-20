@@ -1,7 +1,7 @@
 #include "storage/store.h"
 #include "containers/hash.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 u64 HashBytes(ByteSpan bytes)
@@ -75,4 +75,4 @@ Status ListKeys(const Store& store, const KeyRange& range, usize limit, Vector<E
     return store.Scan(range, collector);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

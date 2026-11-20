@@ -30,7 +30,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The version of what the glTF importer writes: raised by every change that can make a re-import of the same file
@@ -354,4 +354,4 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
 /// - Ownership: the backend copies the bytes; `result` is not changed.
 Status ImportIntoBackend(HostMemoryBackend& backend, const ImportResult& result);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

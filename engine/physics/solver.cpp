@@ -6,7 +6,7 @@
 #include "physics/snapshot_io.h"
 #include "physics/world.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -1092,4 +1092,4 @@ void ContactSolver::Clear()
     cache_.Clear();
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

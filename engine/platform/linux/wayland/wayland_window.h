@@ -9,7 +9,7 @@
 
 //! Wayland window: a `wl_surface` wrapped as a mapped xdg-shell toplevel.
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 /// A `wl_surface` wrapped as an xdg-shell toplevel window with a solid-fill `wl_shm` buffer so it maps.
@@ -177,4 +177,4 @@ private:
     bool should_close_ = false;
 };
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

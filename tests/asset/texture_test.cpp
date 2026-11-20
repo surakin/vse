@@ -13,7 +13,7 @@
 #include "sync/thread.h"
 #include "texture_source.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -954,4 +954,4 @@ TEST_CASE("texture: a blob uploads to the device from its own bytes and survives
     LogRender.SetEnabled(was);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

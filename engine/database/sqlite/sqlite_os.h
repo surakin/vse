@@ -3,7 +3,7 @@
 //! The SQLite library's start-up: its mutex methods and its virtual file system (internal to `engine/database/sqlite/`,
 //! not a public API).
 
-namespace engine_placeholder::database::sqlite_detail
+namespace vse::database::sqlite_detail
 {
 
 /// Installs the engine's mutex methods, then initializes SQLite, which registers the engine's VFS (`sqlite3_os_init`).
@@ -53,4 +53,4 @@ void ClearFileFaults();
 /// - Thread-safety: thread-safe.
 long long FileFaultOpsSeen();
 
-}  // namespace engine_placeholder::database::sqlite_detail
+}  // namespace vse::database::sqlite_detail

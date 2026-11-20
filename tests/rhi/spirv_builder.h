@@ -10,10 +10,9 @@ namespace spirv_test
 {
 
 // A module with capability Shader, the Logical/GLSL450 memory model and one entry point of `stage` named `entry`.
-inline engine_placeholder::Vector<engine_placeholder::u32> MinimalModule(engine_placeholder::rhi::ShaderStage stage,
-                                                                         const char* entry = "main")
+inline vse::Vector<vse::u32> MinimalModule(vse::rhi::ShaderStage stage, const char* entry = "main")
 {
-    using namespace engine_placeholder;
+    using namespace vse;
     Vector<u32> w;
     w.Push(rhi::kSpirvMagic);
     w.Push(0x00010300u);

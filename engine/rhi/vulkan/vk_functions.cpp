@@ -5,7 +5,7 @@
 
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -166,4 +166,4 @@ void LogInstanceCapabilities(const VkGlobalFns& fns)
     }
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

@@ -9,7 +9,7 @@
 #include "storage/store.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Writes the world's snapshot as one record of a store under `key`, replacing the record that was there.
@@ -38,4 +38,4 @@ storage::Status SaveSnapshot(const PhysicsWorld& world, storage::Store* store, s
 storage::Status LoadSnapshot(PhysicsWorld* world, const storage::Store& store, storage::EntityKey key,
                              SnapshotStatus* detail);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

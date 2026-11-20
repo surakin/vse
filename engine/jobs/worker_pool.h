@@ -14,7 +14,7 @@
 //! pinned to distinct allowed CPUs. One participant spawns no threads. Each
 //! participant thread has a thread-local identity so any code can ask which
 //! participant, if any, it is running on.
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 /// Identity of one job-system participant thread.
@@ -170,4 +170,4 @@ private:
     const Participant* saved_main_identity_ = nullptr;
 };
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

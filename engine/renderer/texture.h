@@ -10,7 +10,7 @@
 
 //! Textures and samplers that keep their source, so they can be made again after the device is replaced.
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The CPU side of a texture: its description and its pixels.
@@ -218,4 +218,4 @@ using GpuSamplerPtr = SharedPtr<GpuSampler>;
 /// A read-only share of a [[renderer::GpuSampler]].
 using GpuSamplerConstPtr = SharedPtr<const GpuSampler>;
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -45,8 +45,8 @@
 #include "os/console.h"
 #include "storage/builtin_components.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::asset;
+using namespace vse;
+using namespace vse::asset;
 
 namespace
 {
@@ -1055,8 +1055,8 @@ private:
     mutable Vector<Vector<byte>> blobs_;  // the inner buffers do not move when the outer grows
 };
 
-// The components a level may hold: the engine's own, the animation ones and the scene ones (an imported level's lights);
-// a game adds its own where it builds its tools.
+// The components a level may hold: the engine's own, the animation ones and the scene ones (an imported level's
+// lights); a game adds its own where it builds its tools.
 bool RegisterLevelRegistry(storage::ComponentRegistry* registry)
 {
     return storage::RegisterBuiltinComponents(registry).Ok() && RegisterLevelComponents(registry).Ok() &&

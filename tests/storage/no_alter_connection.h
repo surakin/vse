@@ -6,7 +6,7 @@
 #include "database/database.h"
 #include "containers/unique_ptr.h"
 
-namespace engine_placeholder::storage::test
+namespace vse::storage::test
 {
 
 class NoAlterConnection final : public database::Connection
@@ -49,4 +49,4 @@ private:
     database::Connection* inner_;
 };
 
-}  // namespace engine_placeholder::storage::test
+}  // namespace vse::storage::test

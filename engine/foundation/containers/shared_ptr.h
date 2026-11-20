@@ -9,7 +9,7 @@
 
 //! Reference-counted owning pointer for objects with several owners. [[UniquePtr]] is the default;
 //! use this only where ownership is genuinely shared.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Reference count safe to change from several threads at once; the default policy of [[SharedPtr]].
@@ -221,4 +221,4 @@ template <typename T, typename Count = AtomicRefCount, typename... Args> SharedP
     return SharedPtr<T, Count>(detail::SharedAdopt(), &storage->value, storage);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

@@ -21,7 +21,7 @@
 #include "net/status.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// The outcome of an asynchronous operation: a status and a byte count.
@@ -91,4 +91,4 @@ jobs::Task<IoResult> Accept(Reactor& reactor, Socket& listener, Socket* connecti
 /// - Returns: Success, or why not ([[net::ErrorCode::Refused]], [[net::ErrorCode::TimedOut]], ...); the count is zero.
 jobs::Task<IoResult> Connect(Reactor& reactor, Socket& socket, const Endpoint& remote, WaitOptions options = {});
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

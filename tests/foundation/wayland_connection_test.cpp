@@ -11,13 +11,13 @@
 #include "lang/utility.h"
 #include "cstr/mem_ops.h"
 
-using engine_placeholder::LogPlatform;
-using engine_placeholder::LogVerbosity;
-using engine_placeholder::SetWriteSinkForTesting;
-using engine_placeholder::StringView;
-using engine_placeholder::usize;
-using engine_placeholder::os::Write;
-using engine_placeholder::os::wayland::WaylandConnection;
+using vse::LogPlatform;
+using vse::LogVerbosity;
+using vse::SetWriteSinkForTesting;
+using vse::StringView;
+using vse::usize;
+using vse::os::Write;
+using vse::os::wayland::WaylandConnection;
 
 namespace
 {
@@ -33,8 +33,7 @@ long WaylandConnectionTestCapturingWriteSink(int fd, const void* buf, usize len)
     {
         copy_len = sizeof(g_WaylandConnectionTest_capture_buffer) - g_WaylandConnectionTest_capture_len;
     }
-    engine_placeholder::MemCopy(g_WaylandConnectionTest_capture_buffer + g_WaylandConnectionTest_capture_len, buf,
-                                copy_len);
+    vse::MemCopy(g_WaylandConnectionTest_capture_buffer + g_WaylandConnectionTest_capture_len, buf, copy_len);
     g_WaylandConnectionTest_capture_len += copy_len;
     return static_cast<long>(len);
 }
@@ -55,7 +54,7 @@ TEST_CASE("WaylandConnection::Connect binds compositor/xdg_wm_base/seat/shm agai
 
 TEST_CASE("WaylandConnection::Connect fails gracefully (no crash) when no compositor is reachable", "[wayland][os]")
 {
-    const char* previous = engine_placeholder::os::GetEnvironment("WAYLAND_DISPLAY");
+    const char* previous = vse::os::GetEnvironment("WAYLAND_DISPLAY");
     ::setenv("WAYLAND_DISPLAY", "engine-test-nonexistent-socket", 1);
 
     WaylandConnection conn = WaylandConnection::Connect();
@@ -99,13 +98,13 @@ TEST_CASE("WaylandConnection move construction/assignment transfers ownership wi
     REQUIRE(a.Valid());
     wl_display* display = a.Display();
 
-    WaylandConnection b(engine_placeholder::Move(a));
+    WaylandConnection b(vse::Move(a));
     REQUIRE_FALSE(a.Valid());
     REQUIRE(b.Valid());
     REQUIRE(b.Display() == display);
 
     WaylandConnection c;
-    c = engine_placeholder::Move(b);
+    c = vse::Move(b);
     REQUIRE_FALSE(b.Valid());
     REQUIRE(c.Valid());
     REQUIRE(c.Display() == display);

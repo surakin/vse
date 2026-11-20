@@ -10,8 +10,8 @@
 #include "rhi/rhi.h"
 #include "cstr/cstr.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace
 {

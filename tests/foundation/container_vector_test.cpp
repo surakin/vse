@@ -9,12 +9,12 @@
 #include "types.h"
 #include "lang/utility.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::AssertAction;
-using engine_placeholder::AssertInfo;
-using engine_placeholder::SetAssertHandler;
-using engine_placeholder::usize;
-using engine_placeholder::Vector;
+using vse::ArenaAllocator;
+using vse::AssertAction;
+using vse::AssertInfo;
+using vse::SetAssertHandler;
+using vse::usize;
+using vse::Vector;
 
 TEST_CASE("Vector: 100k pushes stay correct at every resize boundary and at the end", "[containers][vector_container]")
 {
@@ -200,7 +200,7 @@ AssertAction ThrowFromHandler(const AssertInfo& info)
 // returns true if `fn` triggered an ENGINE_ASSERT failure.
 template <typename Fn> bool TriggersAssert(Fn&& fn)
 {
-    const engine_placeholder::AssertHandler previous = SetAssertHandler(&ThrowFromHandler);
+    const vse::AssertHandler previous = SetAssertHandler(&ThrowFromHandler);
     bool triggered = false;
     try
     {
@@ -267,13 +267,13 @@ struct CountingHeap
     {
         ++allocs;
         live_bytes += size;
-        return engine_placeholder::HeapAllocator::Default().Alloc(size, align);
+        return vse::HeapAllocator::Default().Alloc(size, align);
     }
     void Free(void* ptr, usize size, usize align)
     {
         ++frees;
         live_bytes -= size;
-        engine_placeholder::HeapAllocator::Default().Free(ptr, size, align);
+        vse::HeapAllocator::Default().Free(ptr, size, align);
     }
 };
 
@@ -302,7 +302,7 @@ TEST_CASE("Vector: a Free-capable allocator gets every block back on growth, mov
 
         Vector<usize, CountingHeap> other(heap);
         other.Push(1);
-        v = engine_placeholder::Move(other);  // the old 1000-element block must be released here
+        v = vse::Move(other);  // the old 1000-element block must be released here
         REQUIRE(heap.allocs == heap.frees + 1);
         REQUIRE(v.Size() == 1);
     }
@@ -313,14 +313,14 @@ TEST_CASE("Vector: a Free-capable allocator gets every block back on growth, mov
 TEST_CASE("Vector: the default vector owns heap storage; Resize zero-initializes, shrinks and Clear keeps storage",
           "[containers][vector_container]")
 {
-    Vector<engine_placeholder::u32> v;
+    Vector<vse::u32> v;
     REQUIRE(v.Data() == nullptr);
     REQUIRE(v.TryResize(10));
     REQUIRE(v.Size() == 10);
     for (usize i = 0; i < 10; ++i)
     {
         REQUIRE(v[i] == 0u);
-        v[i] = static_cast<engine_placeholder::u32>(i + 1);
+        v[i] = static_cast<vse::u32>(i + 1);
     }
     v.Resize(12);  // keeps old values, zeroes new ones
     REQUIRE(v[9] == 10u);
@@ -340,11 +340,11 @@ TEST_CASE("Vector: the default vector owns heap storage; Resize zero-initializes
 TEST_CASE("Vector: TryResize and TryReserve report an impossible size without changing the vector",
           "[containers][vector_container]")
 {
-    Vector<engine_placeholder::u64> v;
+    Vector<vse::u64> v;
     v.Resize(4);
     v[0] = 99;
     REQUIRE_FALSE(v.TryResize(static_cast<usize>(-1) / 2));
-    REQUIRE_FALSE(v.TryReserve(static_cast<usize>(-1) / sizeof(engine_placeholder::u64) + 1));
+    REQUIRE_FALSE(v.TryReserve(static_cast<usize>(-1) / sizeof(vse::u64) + 1));
     REQUIRE_FALSE(v.TryResize(static_cast<usize>(1) << 56));  // the heap refuses
     REQUIRE(v.Size() == 4);
     REQUIRE(v[0] == 99u);
@@ -383,7 +383,7 @@ TEST_CASE("Vector: Resize on a vector holding elements grows geometrically", "[c
 
 TEST_CASE("Vector: TryResizeUninitialized sizes a byte buffer without touching it", "[containers][vector_container]")
 {
-    Vector<engine_placeholder::byte> v;
+    Vector<vse::byte> v;
     REQUIRE(v.TryResizeUninitialized(64));
     REQUIRE(v.Size() == 64);
     v[63] = 9;
@@ -474,8 +474,8 @@ TEST_CASE("Vector: RemoveRange removes a run in one pass and keeps the order", "
 // Container audit series Day 3: SwapRemove, Append, Emplace, Clone, Swap and range-for.
 TEST_CASE("Vector: SwapRemove, Append, Emplace, Clone, Swap and range-for", "[containers][vector]")
 {
-    using engine_placeholder::u32;
-    using engine_placeholder::Vector;
+    using vse::u32;
+    using vse::Vector;
     Vector<u32> v;
     for (u32 i = 0; i < 6; ++i)
     {
@@ -492,7 +492,7 @@ TEST_CASE("Vector: SwapRemove, Append, Emplace, Clone, Swap and range-for", "[co
     REQUIRE(v.Size() == 8);
     CHECK(v[4] == 0);
     CHECK(v[5] == 5);
-    const engine_placeholder::Array<u32, 3> more = {7, 8, 9};
+    const vse::Array<u32, 3> more = {7, 8, 9};
     v.Append(more);
     CHECK(v.Size() == 11);
     CHECK(v[10] == 9);
@@ -543,7 +543,7 @@ struct CopiedName
 
 TEST_CASE("Vector: Append of a non-trivial type copies each element", "[containers][vector]")
 {
-    using engine_placeholder::Vector;
+    using vse::Vector;
     Vector<CopiedName> names;
     names.Emplace("a");
     names.Emplace("b");

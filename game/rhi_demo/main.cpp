@@ -26,8 +26,8 @@
 #include "cstr/format.h"
 #include "cstr/number.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 namespace
 {
@@ -662,10 +662,9 @@ int Usage(const char* program, int code)
 // Linux and `wWinMain` (the Windows subsystem, no console window of its own) on Windows.
 int EngineMain(int argc, char** argv)
 {
-    ::engine_placeholder::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
-    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(
-        argc, argv);
-    engine_placeholder::debug::RunCrashTest(
+    ::vse::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
+    const vse::debug::ProgramDebugSetup debug_setup = vse::debug::StartProgramDebugging(argc, argv);
+    vse::debug::RunCrashTest(
         debug_setup.crash_test);              // --crash-test=segv|abort|assert|ensure, before any window or device
     LogRhi.SetVerbosity(LogVerbosity::Info);  // the frame-time line is Info
     demo::DemoSettings demo_settings;
@@ -689,11 +688,11 @@ int EngineMain(int argc, char** argv)
                                                         {"inject-oom", true},
                                                         {"help", false},
                                                         {"-h", false},
-                                                        engine_placeholder::debug::kCrashHandlerOption,
-                                                        engine_placeholder::debug::kCrashTestOption};
+                                                        vse::debug::kCrashHandlerOption,
+                                                        vse::debug::kCrashTestOption};
     const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), demo_settings.RestCount(),
                                               demo_settings.RestArgs(),
-                                              engine_placeholder::Span<const os::CommandLineOption>(kCliOptions, 13));
+                                              vse::Span<const os::CommandLineOption>(kCliOptions, 13));
     const char* program = line.ProgramName().Data();
     Options options;
     const char* frames_env = os::GetEnvironment("RHI_DEMO_FRAMES");

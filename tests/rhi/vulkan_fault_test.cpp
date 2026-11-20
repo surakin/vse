@@ -10,8 +10,8 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "build_defs.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 // Failure injection (Phase 4 Day 66): the error paths real hardware rarely reaches. Every test here ends with the
 // device destroyed and the validation layer silent -- an injected fault must never turn into a leak or a crash.

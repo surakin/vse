@@ -4,7 +4,7 @@
 
 #include "asset/asset_module.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 TEST_CASE("The asset module reports the container version it reads", "[asset]")
@@ -13,4 +13,4 @@ TEST_CASE("The asset module reports the container version it reads", "[asset]")
     CHECK(kContainerVersion >= 1);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

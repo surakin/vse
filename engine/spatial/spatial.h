@@ -9,7 +9,7 @@
 #include "math/geometry.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// The most named spatial sets a world has (`render`, `physics`, `audio`, `gameplay`, ...); an entity joins sets
@@ -20,4 +20,4 @@ inline constexpr u32 kMaxSpatialSets = 8;
 /// structures never interpret it.
 using SpatialKey = u64;
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

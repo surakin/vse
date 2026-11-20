@@ -21,7 +21,7 @@
 #include "net/status.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// How a message is carried.
@@ -190,4 +190,4 @@ public:
     virtual u8 ChannelCount() const = 0;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

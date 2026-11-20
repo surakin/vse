@@ -8,7 +8,7 @@
 //! function: a line of text set once ("gpu: NVIDIA ..., driver 1.2.3") and a counter that is kept up to date ("frame:
 //! 41231"). Both appear in the `--- state ---` section of every report. See [[debug::RegisterCrashStateProvider]] for
 //! the general form.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Longest text a [[debug::SetCrashStateText]] entry keeps, including the terminating null byte.
@@ -42,4 +42,4 @@ Atomic<u64>* CrashStateCounter(const char* name);
 /// - Thread-safety: not-thread-safe. Call only while no report is being written and no thread uses a counter.
 void ResetCrashStateForTesting();
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

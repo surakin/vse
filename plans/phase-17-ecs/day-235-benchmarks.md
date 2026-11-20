@@ -38,7 +38,7 @@ The phase's definition of done: show the data-oriented layout actually wins, wit
 
 - **Fixed (1):** linking the plain `jobs` library into every `ecs_tests` flavor mixed it with `ecs_tsan`; three tsan `Parallel:` tests failed with data races until the link was removed (they pass again: `ecs_tests_tsan` 120 passed, 1 skipped).
 - **Fixed (1):** dead `read_sum` accumulation in `RunChanged`.
-- **Declined (1):** `using namespace engine_placeholder;` in `bench.h` (the demo headers do the same; it is not a documented module).
+- **Declined (1):** `using namespace vse;` in `bench.h` (the demo headers do the same; it is not a documented module).
 - **Recorded, not fixed (1):** churn (0.41x) and hierarchy (0.67x) are slower than the baseline's equivalent; outside the pass conditions, filed in `KNOWN-ISSUES.md`.
 
 Runs: plain `ran 2109 of 5472 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (the two known X11 failures only); asan `ran 1592 of 5472 tests (phases: all; flavors: asan; ...)` clean; tsan `ran 1274 of 5472 tests (phases: all; flavors: tsan; ...)` with one failure: the hardware-GPU scene test aborts inside the ThreadSanitizer runtime (filed in `KNOWN-ISSUES.md`, not investigated). Clang and GCC builds with `-DENGINE_UNITY_BUILD=OFF` of `ecs_bench` and `ecs_tests` are clean; `ctest -L docs` 7 of 7; the gates (`module_deps_check`, `config_access_check`, `std_usage_check`) pass.

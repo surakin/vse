@@ -6,7 +6,7 @@
 #include "net/stream.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Makes and accepts TCP streams. Sockets get `TCP_NODELAY`: the transport frames its own messages.
@@ -45,4 +45,4 @@ private:
     Endpoint local_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

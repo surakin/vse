@@ -4,7 +4,7 @@
 
 // The Windows CPU list, as a function of the data the OS returns, so a test can feed it recorded buffers (several
 // processor groups) on a machine with one group. Internal to engine/jobs (Phase 13 Day 153).
-namespace engine_placeholder::jobs::detail
+namespace vse::jobs::detail
 {
 
 /// Turns a GetLogicalProcessorInformationEx(RelationGroup) buffer into CPU ids `group * 64 + bit`, ascending, for the
@@ -17,4 +17,4 @@ namespace engine_placeholder::jobs::detail
 usize CpusFromGroupRecords(const void* buffer, usize size, const u16* process_groups, usize group_count,
                            u64 primary_mask, u32* out, usize capacity);
 
-}  // namespace engine_placeholder::jobs::detail
+}  // namespace vse::jobs::detail

@@ -10,7 +10,7 @@
 #include "io/file_system.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -247,4 +247,4 @@ TEST_CASE("Watch reports added, replaced and removed files", "[asset][backend][f
     CHECK(changes.Size() == 0);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

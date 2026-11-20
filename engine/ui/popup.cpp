@@ -4,7 +4,7 @@
 
 #include "string/string.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -138,4 +138,4 @@ String<HeapAllocator> ChordText(const KeyChord& chord)
     return out;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

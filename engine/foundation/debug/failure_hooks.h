@@ -4,7 +4,7 @@
 
 //! The debugging module's half of the hooks declared in `log/diagnostics_hooks.h`.
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Installs the assert and thread hooks: a stack trace and crash context for a failed assert, crash-handler
@@ -20,4 +20,4 @@ namespace engine_placeholder::debug
 ///   behavior, each complete.
 void InstallDiagnosticsHooks();
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

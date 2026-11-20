@@ -6,7 +6,7 @@
 //!
 //! Debugging code, the crash handler and the tests speak [[debug::CrashReason]]; the platform backends translate their
 //! own codes (signals, exception codes) into it.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Why a process died or a fault was reported, independent of the operating system.
@@ -35,4 +35,4 @@ enum class CrashReason : u8
 /// - Thread-safety: thread-safe.
 const char* CrashReasonName(CrashReason reason);
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

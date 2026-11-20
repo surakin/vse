@@ -18,7 +18,7 @@
 #include "log/assert.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// A query term: the entities must have `T`; the query function gets it as `const T&`. `T` may not be a tag (use
@@ -894,4 +894,4 @@ template <class... Terms> ecs::Query<Terms...> World::Query()
     return ecs::Query<Terms...>(*this);
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

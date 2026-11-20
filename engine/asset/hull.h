@@ -23,7 +23,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The most vertices a hull holds.
@@ -178,4 +178,4 @@ private:
     usize indices_ = 0;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -22,7 +22,7 @@
 bool RenderTestCountsAllocations();
 unsigned long RenderTestHeapAllocations();
 
-using namespace engine_placeholder;
+using namespace vse;
 using text_test::Opened;
 
 namespace

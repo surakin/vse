@@ -5,7 +5,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 namespace
@@ -480,4 +480,4 @@ bool Intersect(const Ray& ray, const Plane& plane, f32 max_t, f32* t)
     return true;
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

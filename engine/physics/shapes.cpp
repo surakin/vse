@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "physics/check.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 Shape Shape::MakeSphere(f32 radius)
@@ -167,4 +167,4 @@ Aabb Shape::Bounds(const Vec3& position, const Quaternion& rotation) const
     return Aabb{position - extent, position + extent};
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

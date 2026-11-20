@@ -6,7 +6,7 @@
 #include "script/bindings.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// Adds `event.emit(name, payload)`, `event.emit_to(entity, name, payload)` and the two subscription calls the script
@@ -19,4 +19,4 @@ namespace engine_placeholder::script
 /// - Fails: returns false when a name is taken.
 bool RegisterEventBindings(BindingRegistry* registry);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

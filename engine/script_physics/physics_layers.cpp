@@ -2,7 +2,7 @@
 
 #include "settings/setting.h"
 
-namespace engine_placeholder::script_physics
+namespace vse::script_physics
 {
 
 namespace
@@ -186,4 +186,4 @@ bool PhysicsLayersFromSettings(const settings::Registry& registry, PhysicsLayers
     return false;
 }
 
-}  // namespace engine_placeholder::script_physics
+}  // namespace vse::script_physics

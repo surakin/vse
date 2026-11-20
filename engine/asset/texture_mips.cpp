@@ -3,7 +3,7 @@
 #include "asset/block_compress.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -531,4 +531,4 @@ Status GenerateMipChain(rhi::Format format, u32 width, u32 height, ByteSpan leve
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

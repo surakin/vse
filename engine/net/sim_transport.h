@@ -24,7 +24,7 @@
 #include "net/transport.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Limits and times of a [[net::SimulatedTransport]].
@@ -122,4 +122,4 @@ private:
     UniquePtr<Impl> impl_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

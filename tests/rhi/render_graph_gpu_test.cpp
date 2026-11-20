@@ -16,9 +16,9 @@
 #include "rhi/vulkan/vk_instance.h"
 #endif
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::renderer;
 
 namespace
 {

@@ -12,7 +12,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 /// Finds a clip by the name a script uses (`audio.play("explosion")`).
@@ -138,4 +138,4 @@ struct AudioScriptServices
     u32 sample_rate = 48000;
 };
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

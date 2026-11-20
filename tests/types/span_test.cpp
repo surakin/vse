@@ -5,7 +5,7 @@
 #include "string/string.h"
 #include "containers/span.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

@@ -14,7 +14,7 @@
 #include "sync/thread.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// The longest host name the resolver accepts, in bytes (the DNS limit of 253, without the terminating zero).
@@ -115,4 +115,4 @@ private:
     Thread thread_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

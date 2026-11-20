@@ -11,18 +11,18 @@
 namespace docgen
 {
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::StringView;
-using engine_placeholder::u32;
-using engine_placeholder::usize;
-using engine_placeholder::Vector;
+using vse::ArenaAllocator;
+using vse::StringView;
+using vse::u32;
+using vse::usize;
+using vse::Vector;
 
 // memcpy that tolerates (null, 0), which an empty StringView may be.
 inline void CopyBytes(char* dst, const char* src, usize n)
 {
     if (n != 0)
     {
-        engine_placeholder::MemCopy(dst, src, n);
+        vse::MemCopy(dst, src, n);
     }
 }
 
@@ -59,7 +59,7 @@ template <typename T, typename Less> void StableSort(Vector<T, ArenaAllocator>& 
     }
 }
 
-enum class Severity : engine_placeholder::u8
+enum class Severity : vse::u8
 {
     Note,
     Warning,

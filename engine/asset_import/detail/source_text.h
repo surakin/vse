@@ -7,7 +7,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset::srctext
+namespace vse::asset::srctext
 {
 
 /// The fields of one source line.
@@ -89,4 +89,4 @@ inline bool ParseUnsigned(StringView token, u32* out)
     return true;
 }
 
-}  // namespace engine_placeholder::asset::srctext
+}  // namespace vse::asset::srctext

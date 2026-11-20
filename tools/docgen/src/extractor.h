@@ -19,9 +19,9 @@
 namespace docgen
 {
 
-using engine_placeholder::StringBuilder;
+using vse::StringBuilder;
 
-enum class DeclKind : engine_placeholder::u8
+enum class DeclKind : vse::u8
 {
     Namespace,
     Class,  // class / struct / union (see Decl::head_keyword)
@@ -33,14 +33,14 @@ enum class DeclKind : engine_placeholder::u8
     Macro,  // a documented #define
 };
 
-enum class Access : engine_placeholder::u8
+enum class Access : vse::u8
 {
     Public,
     Protected,
     Private
 };
 
-enum DeclFlags : engine_placeholder::u32
+enum DeclFlags : vse::u32
 {
     kFlagStatic = 1u << 0,
     kFlagVirtual = 1u << 1,
@@ -77,9 +77,9 @@ struct Decl
     StringView attributes;       // the declaration's `[[...]]` groups, space separated, or empty
     Access access = Access::Public;
     bool hidden = false;  // inside an anonymous/detail namespace, or not public
-    engine_placeholder::u32 flags = 0;
-    engine_placeholder::i32 doc = -1;           // index into ScanResult::docs (`///`), or -1
-    engine_placeholder::i32 trailing_doc = -1;  // index into ScanResult::docs (`///<`), or -1
+    vse::u32 flags = 0;
+    vse::i32 doc = -1;           // index into ScanResult::docs (`///`), or -1
+    vse::i32 trailing_doc = -1;  // index into ScanResult::docs (`///<`), or -1
     u32 line = 0;
     Decl* parent = nullptr;
     Vector<Decl*, ArenaAllocator> children;
@@ -88,7 +88,7 @@ struct Decl
     StringView param_types;                     // normalized parameter types joined by ',' (names and defaults dropped)
     Vector<StringView, ArenaAllocator> bases;   // class base names, unqualified and without template arguments
 
-    bool Is(engine_placeholder::u32 f) const { return (flags & f) != 0; }
+    bool Is(vse::u32 f) const { return (flags & f) != 0; }
     // Part of the documented public surface (DOC-CONVENTIONS "Visibility").
     bool IsPublic() const { return !hidden; }
 };
@@ -100,7 +100,7 @@ struct ExtractResult
     Decl* root = nullptr;  // the (unnamed) global namespace
     Vector<Diagnostic, ArenaAllocator> diagnostics;
     // One entry per ScanResult::docs: nonzero when some declaration owns the comment.
-    Vector<engine_placeholder::u8, ArenaAllocator> doc_claimed;
+    Vector<vse::u8, ArenaAllocator> doc_claimed;
 
     bool HasErrors() const
     {

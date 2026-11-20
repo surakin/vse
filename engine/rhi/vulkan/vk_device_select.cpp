@@ -8,7 +8,7 @@
 #include "rhi/adapter.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -209,4 +209,4 @@ int SelectPhysicalDeviceFor(const PhysicalDeviceInfo* devices, usize count, bool
     return chosen;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

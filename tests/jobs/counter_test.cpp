@@ -15,8 +15,8 @@
 #include "jobs/scheduler.h"
 #include "lang/utility.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::jobs;
+using namespace vse;
+using namespace vse::jobs;
 
 namespace
 {
@@ -57,7 +57,7 @@ Job AwaiterJob(RaceCell* cell, u32 spin, Atomic<int>* done)
 {
     SpinFor(spin);
     co_await cell->counter;
-    engine_placeholder::DefaultDelete<RaceCell>()(cell);  // frees the cell made by MakeUnique(...).Release()
+    vse::DefaultDelete<RaceCell>()(cell);  // frees the cell made by MakeUnique(...).Release()
     g_race_resumes.FetchAdd(1, MemoryOrder::AcqRel);
     done->FetchAdd(1, MemoryOrder::AcqRel);
 }
@@ -234,7 +234,7 @@ TEST_CASE("Await/decrement race: exactly-once resumption over 100,000 iterations
             Atomic<int> done{0};
             for (int i = 0; i < kPerBatch; ++i)
             {
-                auto* cell = engine_placeholder::MakeUnique<RaceCell>(*s).Release();
+                auto* cell = vse::MakeUnique<RaceCell>(*s).Release();
                 cell->counter.Increment();
                 u32 r = CounterTestNextRand(rng);
                 Job a = AwaiterJob(cell, r % 400, &done);

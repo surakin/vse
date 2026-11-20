@@ -46,8 +46,8 @@
 #include "cstr/mem_ops.h"
 #include "cstr/number.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace
 {
@@ -85,7 +85,7 @@ struct Samples
         double m = v[0];
         for (u32 i = 1; i < n; ++i)
         {
-            m = engine_placeholder::Min(m, v[i]);
+            m = vse::Min(m, v[i]);
         }
         return m;
     }
@@ -763,30 +763,21 @@ int Usage(const char* program)
 
 int main(int argc, char** argv)
 {
-    ::engine_placeholder::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
-    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(
-        argc, argv);
-    engine_placeholder::debug::RunCrashTest(
+    ::vse::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
+    const vse::debug::ProgramDebugSetup debug_setup = vse::debug::StartProgramDebugging(argc, argv);
+    vse::debug::RunCrashTest(
         debug_setup.crash_test);  // --crash-test=segv|abort|assert|ensure, before any window or device
     Options o;
-    static const engine_placeholder::os::CommandLineOption kCliOptions[] = {
-        {"section", true},
-        {"rhi", true},
-        {"device", true},
-        {"frames", true},
-        {"objects", true},
-        {"single", false},
-        {"threads", true},
-        engine_placeholder::debug::kCrashHandlerOption,
-        engine_placeholder::debug::kCrashTestOption};
-    const engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator> line(
-        engine_placeholder::HeapAllocator::Default(), argc, argv,
-        engine_placeholder::Span<const engine_placeholder::os::CommandLineOption>(kCliOptions, 9));
+    static const vse::os::CommandLineOption kCliOptions[] = {
+        {"section", true},           {"rhi", true},     {"device", true},  {"frames", true},
+        {"objects", true},           {"single", false}, {"threads", true}, vse::debug::kCrashHandlerOption,
+        vse::debug::kCrashTestOption};
+    const vse::os::CommandLine<vse::HeapAllocator> line(vse::HeapAllocator::Default(), argc, argv,
+                                                        vse::Span<const vse::os::CommandLineOption>(kCliOptions, 9));
     const char* program = line.ProgramName().Data();
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        engine_placeholder::os::PrintError("%s: %s\n", program,
-                                           line.Ok() ? "unexpected argument" : line.Error().Data());
+        vse::os::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
         return Usage(program);
     }
     StringView value;

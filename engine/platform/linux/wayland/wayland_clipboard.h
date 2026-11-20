@@ -15,7 +15,7 @@
 //! The Wayland clipboard and primary selection: a `wl_data_device` and a `zwp_primary_selection_device_v1` on the seat,
 //! with the transfers done through non-blocking pipes.
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 /// The clipboard of a Wayland seat.
@@ -215,4 +215,4 @@ private:
     wl_buffer* drag_icon_buffer_ = nullptr;
 };
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

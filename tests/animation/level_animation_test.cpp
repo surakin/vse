@@ -15,7 +15,7 @@
 #include "skeleton_source.h"
 #include "storage/builtin_components.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 namespace
 {
@@ -310,4 +310,4 @@ TEST_CASE("level: the animation system finds skeletons and clips in the resource
     CHECK(resolver.FindSkeleton(ResourceId::FromValue(0xb0)) == nullptr);  // unloaded with the clip
 }
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

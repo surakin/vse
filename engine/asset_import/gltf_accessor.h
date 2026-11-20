@@ -10,7 +10,7 @@
 #include "asset_import/gltf_container.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Reads an accessor as floats.
@@ -37,4 +37,4 @@ Status ReadAccessorFloats(const GltfDocument& document, u32 index, Vector<f32>* 
 /// - Ownership: borrows its arguments for the call only; nothing is retained.
 Status ReadAccessorUnsigned(const GltfDocument& document, u32 index, Vector<u32>* out, GltfError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

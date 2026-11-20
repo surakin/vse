@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kLightingFragReflByteCount = 723;
 
@@ -73,4 +73,4 @@ inline constexpr u32 kLightingFragPushPad0Offset = 20;
 inline constexpr u32 kLightingFragPushPad1Offset = 24;
 inline constexpr u32 kLightingFragPushPad2Offset = 28;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

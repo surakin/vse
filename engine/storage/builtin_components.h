@@ -6,7 +6,7 @@
 
 #include "storage/component_registry.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// The stable ids of the engine's components. Never change or reuse one.
@@ -37,4 +37,4 @@ enum BuiltinComponentId : u32
 /// before it).
 Status RegisterBuiltinComponents(ComponentRegistry* registry);
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

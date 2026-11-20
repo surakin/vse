@@ -6,7 +6,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 /// SQL text fixed at compile time. `Connection::Prepare` and `Execute` take nothing else, so SQL cannot be built from
@@ -50,4 +50,4 @@ private:
     StringView text_;
 };
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

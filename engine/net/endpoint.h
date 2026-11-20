@@ -6,7 +6,7 @@
 #include "log/assert.h"
 #include "net/address.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Text of an endpoint in canonical form (`1.2.3.4:80`, `[::1]:80`). Same shape as [[net::AddressText]], with room for
@@ -123,9 +123,9 @@ private:
     usize count_ = 0;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Hash function for [[net::Endpoint]] keys.
@@ -137,4 +137,4 @@ template <> struct Hash<net::Endpoint>
     usize operator()(const net::Endpoint& e) const { return e.HashValue(); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

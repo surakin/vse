@@ -8,7 +8,7 @@
 #include "renderer/shader_permutation.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGbufferFragPerm1SpvWordCount = 1565;
 
@@ -2319,4 +2319,4 @@ inline constexpr renderer::PermutationEntry kGbufferFragEntries[8] = {
 
 inline constexpr renderer::ShaderPermutations kGbufferFragPermutations = {"gbuffer.frag", kGbufferFragOptions, 3, kGbufferFragModules, 8, kGbufferFragEntries, 8};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

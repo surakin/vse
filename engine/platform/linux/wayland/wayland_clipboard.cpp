@@ -8,7 +8,7 @@
 #include "os/os.h"
 #include "platform/linux/wayland/wayland_cursor.h"
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 namespace
@@ -1263,4 +1263,4 @@ bool WaylandClipboard::ListenersComplete()
            zwp_primary_selection_source_v1_interface.event_count == 2;
 }
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

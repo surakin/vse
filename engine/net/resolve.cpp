@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "net/time_budget.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 jobs::Task<ResolveResult> Resolve(Reactor& reactor, Resolver& resolver, StringView host, u16 port, AddressFamily family,
@@ -111,4 +111,4 @@ jobs::Task<IoResult> ConnectTo(Reactor& reactor, Resolver& resolver, StringView 
     co_return co_await ConnectAny(reactor, resolved.endpoints, socket, options);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

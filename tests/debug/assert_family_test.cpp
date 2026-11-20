@@ -14,8 +14,8 @@
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 namespace
 {

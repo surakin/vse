@@ -15,7 +15,7 @@
 #include "cstr/mem_ops.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;  // the allocation hooks below are global and name the engine types
+using namespace vse;  // the allocation hooks below are global and name the engine types
 
 // --- an allocation counter (this test executable only), to prove that scrolling a long list allocates nothing once
 // warm ---------------
@@ -139,8 +139,8 @@ void operator delete(void* p, const NoThrowTag&) noexcept
 }
 #endif
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::ui;
+using namespace vse;
+using namespace vse::ui;
 
 namespace
 {

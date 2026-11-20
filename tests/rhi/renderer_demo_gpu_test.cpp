@@ -17,8 +17,8 @@
 #include "rhi/vulkan/vulkan_device.h"
 #endif
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace
 {
@@ -77,7 +77,7 @@ DemoShot RenderDemo(rhi::Device* device, const renderer_demo::SceneOptions& opti
         device->WaitIdle();
         shot.image.width = kShotW;
         shot.image.height = kShotH;
-        shot.image.rgba.Resize(static_cast<engine_placeholder::usize>(kShotW) * kShotH * 4);
+        shot.image.rgba.Resize(static_cast<vse::usize>(kShotW) * kShotH * 4);
         REQUIRE(device->ReadbackTexture(target, 0, 0, shot.image.rgba.Data(), shot.image.rgba.Size(),
                                         rhi::ResourceState::CopySrc));
     }
@@ -156,8 +156,8 @@ TEST_CASE("The picture does not depend on the order objects were added", "[rhi][
                 REQUIRE(shuffled.ok);
                 // The same draws (same visible count) and exactly the same picture, pixel for pixel.
                 CHECK(shuffled.stats.visible == natural.stats.visible);
-                engine_placeholder::usize differing = 0;
-                for (engine_placeholder::usize i = 0; i < natural.image.rgba.Size(); i += 4)
+                vse::usize differing = 0;
+                for (vse::usize i = 0; i < natural.image.rgba.Size(); i += 4)
                 {
                     if (MemCompare(&natural.image.rgba[i], &shuffled.image.rgba[i], 3) != 0)
                     {
@@ -303,7 +303,7 @@ TEST_CASE("The bump normal map holds unit normals that tilt with the distance fr
     REQUIRE(p.width == 256);
     auto normal = [&p](u32 x, u32 y, f32* n)
     {
-        const engine_placeholder::byte* px = &p.rgba[(static_cast<engine_placeholder::usize>(y) * p.width + x) * 4];
+        const vse::byte* px = &p.rgba[(static_cast<vse::usize>(y) * p.width + x) * 4];
         for (int c = 0; c < 3; ++c)
         {
             n[c] = static_cast<f32>(px[c]) / 255.0f * 2.0f - 1.0f;

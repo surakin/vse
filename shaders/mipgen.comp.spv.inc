@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kMipgenCompSpvWordCount = 708;
 
@@ -129,4 +129,4 @@ inline constexpr u32 kMipgenCompSpv[kMipgenCompSpvWordCount] = {
     0x000200f9, 0x0000002e, 0x000200f8, 0x0000002e, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

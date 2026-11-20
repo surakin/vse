@@ -21,7 +21,7 @@
 #include <shlobj.h>  // DROPFILES
 #include "unity/windows_disable.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using os::ClipboardFormat;
 using os::ClipboardStatus;
 using os::DragAction;

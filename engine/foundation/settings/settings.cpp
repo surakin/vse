@@ -11,7 +11,7 @@
 #include "sync/mutex.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -895,4 +895,4 @@ void Settings::UpdateCrashState()
     crash_entries_used_ = now_used;
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

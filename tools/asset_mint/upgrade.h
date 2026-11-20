@@ -17,7 +17,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// One step: `old_blob` (of version `from`) to `*out` (a blob of version `from + 1`, same type, same id, same target).
@@ -54,4 +54,4 @@ private:
 /// - Ownership: borrows its arguments for the call; `*out` is replaced.
 Status UpgradeBlob(const UpgradeChains& chains, const TypeRegistry& types, ByteSpan blob, Vector<byte>* out);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

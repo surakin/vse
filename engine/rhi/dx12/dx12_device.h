@@ -19,7 +19,7 @@
 
 //! The Direct3D 12 implementation of [[rhi::Device]] (Phase 13, Days 164-172).
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 class Dx12Device;
@@ -750,4 +750,4 @@ private:
     u64 frame_fences_[kTrackedFrames] = {};
 };
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

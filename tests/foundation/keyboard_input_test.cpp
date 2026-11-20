@@ -12,8 +12,8 @@
 namespace keyboard_input_test
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::os;
+using namespace vse;
+using namespace vse::os;
 
 namespace
 {

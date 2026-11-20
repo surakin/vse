@@ -17,7 +17,7 @@
 #include "storage/store.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::storage::conformance
+namespace vse::storage::conformance
 {
 
 inline EntityRecord Rec(u64 key, u8 fill, usize size = 8)
@@ -65,7 +65,7 @@ inline u64 Fingerprint(const Store& s)
     return h ^ all.keys.Size();
 }
 
-}  // namespace engine_placeholder::storage::conformance
+}  // namespace vse::storage::conformance
 
 #define STORE_CONFORMANCE_CASES(Fixture)                                                                               \
     TEST_CASE("Store conformance: put, get, replace and remove round trip [" #Fixture "]", "[storage][store]")         \

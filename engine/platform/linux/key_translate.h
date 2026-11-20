@@ -8,7 +8,7 @@
 //! instead
 //! (`platform/windows/win32_keys.h`).
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Maps an X11/XKB keysym value to an engine [[os::Key]].
@@ -18,4 +18,4 @@ namespace engine_placeholder::os
 /// - Param keysym: keysym value; X11 and XKB share the same numbering.
 Key KeyFromKeysym(u32 keysym);
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

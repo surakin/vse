@@ -3,7 +3,7 @@
 #include "script/partition_context.h"
 #include "script/task_pool.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -105,4 +105,4 @@ bool RegisterTaskBindings(BindingRegistry* registry)
     return ok;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

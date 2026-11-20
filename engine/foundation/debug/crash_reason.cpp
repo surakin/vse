@@ -1,6 +1,6 @@
 #include "debug/crash_reason.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 const char* CrashReasonName(CrashReason reason)
@@ -20,4 +20,4 @@ const char* CrashReasonName(CrashReason reason)
     return "Unknown";
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

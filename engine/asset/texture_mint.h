@@ -16,7 +16,7 @@
 #include "jobs/scheduler.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// What a texture is made as.
@@ -52,4 +52,4 @@ Status MintTextureFromPixels(const TypeRegistry& types, ResourceId id, const Tex
                              u32 height, Span<const ByteSpan> images, Vector<byte>* out, u32 target = 0,
                              jobs::Scheduler* scheduler = nullptr);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

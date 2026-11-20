@@ -1,6 +1,6 @@
 #include "ui/version.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 u32 LayoutVersion()
@@ -8,4 +8,4 @@ u32 LayoutVersion()
     return kUiLayoutVersion;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

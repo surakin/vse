@@ -10,8 +10,8 @@
 #include "containers/vector.h"
 #include "lang/scalar.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::audio;
+using namespace vse;
+using namespace vse::audio;
 
 namespace
 {

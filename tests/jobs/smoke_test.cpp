@@ -4,5 +4,5 @@
 
 TEST_CASE("jobs test target builds and runs", "[jobs]")
 {
-    REQUIRE(sizeof(engine_placeholder::u64) == 8);
+    REQUIRE(sizeof(vse::u64) == 8);
 }

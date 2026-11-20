@@ -5,7 +5,7 @@
 //! The seam between a surface and the window's pointer lock (Phase 15, Day 201): `ui` names no window, so the window
 //! adapter implements this.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// What a surface asks the window for when a widget wants the pointer locked (mouse look).
@@ -31,4 +31,4 @@ public:
     virtual bool SetLocked(bool locked) = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

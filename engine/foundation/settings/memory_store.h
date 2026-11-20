@@ -8,7 +8,7 @@
 #include "containers/shared_ptr.h"
 #include "settings/config_store.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 class MemoryConfigStore;
@@ -131,4 +131,4 @@ private:
     usize count_;
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

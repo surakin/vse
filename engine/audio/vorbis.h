@@ -10,7 +10,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The version of the vendored libvorbis, `major << 16 | minor << 8 | patch` (recorded in clips decoded at mint time,
@@ -174,4 +174,4 @@ private:
     bool looping_ = false;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

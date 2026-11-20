@@ -8,7 +8,7 @@
 // system: os/linux/debug/posix_debug_hooks.cpp and os/macos/debug/posix_debug_hooks.cpp define them. Internal to the
 // debugging backends (module_deps_check: os/posix/debug/ is per-platform code owned by os/linux/debug/ and
 // os/macos/debug/).
-namespace engine_placeholder::debug::posix
+namespace vse::debug::posix
 {
 
 /// The descriptor number a death-test child finds its parent-watch pipe on (macOS), above the standard three.
@@ -45,4 +45,4 @@ void TriggerBusError();
 /// at end of file (the parent never writes; its end closes when it exits or is killed, even with SIGKILL).
 void ArmDieWithParent(int watch_fd);
 
-}  // namespace engine_placeholder::debug::posix
+}  // namespace vse::debug::posix

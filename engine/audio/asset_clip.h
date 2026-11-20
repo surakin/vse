@@ -8,7 +8,7 @@
 #include "audio/clip.h"
 #include "string/string.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Makes a clip from an opened clip blob. An `f32` blob is shared in place (no copy: the clip names the blob's buffer
@@ -38,4 +38,4 @@ ClipStatus MakeClipFromAsset(const asset::AudioClipView& view, StringView name, 
 /// - Ownership: the clip shares the buffer of an `f32` blob, so it stays valid after the manager releases it.
 asset::Status LoadAudioClip(asset::ResourceManager& manager, asset::ResourceId id, StringView name, AudioClipPtr* out);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

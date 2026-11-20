@@ -7,9 +7,9 @@
 #include "physics/world.h"
 #include "test_values.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::physics;
-using engine_placeholder::physics::testing::kNaN;
+using namespace vse;
+using namespace vse::physics;
+using vse::physics::testing::kNaN;
 
 namespace
 {

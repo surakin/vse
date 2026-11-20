@@ -8,7 +8,7 @@
 #include "lang/scalar.h"
 #include "source_text.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -379,4 +379,4 @@ Status MintAudio(const AudioSource& source, ByteSpan wav_bytes, const TypeRegist
     return built;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

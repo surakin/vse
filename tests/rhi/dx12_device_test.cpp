@@ -22,9 +22,9 @@
 #include "gpu_fixture.h"
 #include "test_env.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::dx12;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::rhi::dx12;
 
 namespace
 {

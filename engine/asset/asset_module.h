@@ -6,7 +6,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The blob container version the runtime reads.
@@ -19,4 +19,4 @@ constexpr u32 kContainerVersion = 1;
 /// - Fails: never.
 u32 CurrentContainerVersion();
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

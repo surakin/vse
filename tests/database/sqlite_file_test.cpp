@@ -8,7 +8,7 @@
 #include "io/file.h"
 #include "temp_dir.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 struct SqliteFileFixture
@@ -200,4 +200,4 @@ TEST_CASE("SQLite file: a big transaction spills past the page cache", "[databas
 }
 
 }  // namespace
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

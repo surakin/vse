@@ -4,7 +4,7 @@
 #include "rhi/rhi_log.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 void CpuDescriptorHeap::Initialize(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type)
@@ -292,4 +292,4 @@ u32 GpuDescriptorTables::FreeCount() const
     return n;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

@@ -10,7 +10,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// The address family of an [[net::Address]].
@@ -172,9 +172,9 @@ private:
     Array<char, kMaxScopeNameLength + 1> scope_name_{};
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Hash function for [[net::Address]] keys.
@@ -186,4 +186,4 @@ template <> struct Hash<net::Address>
     usize operator()(const net::Address& a) const { return a.HashValue(); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

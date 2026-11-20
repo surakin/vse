@@ -2,7 +2,7 @@
 
 #include "cstr/cstr.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 Resolver::Resolver(ResolveFn function, usize queue_capacity) : function_(function)
@@ -100,4 +100,4 @@ void Resolver::Shutdown()
     joined_ = true;
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

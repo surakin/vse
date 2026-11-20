@@ -15,7 +15,7 @@
 //! Super, Option does not rename a key, and a trackpad's scroll is 10 points to the notch. Text arrives through the
 //! event stream (`platform/input_event.h`).
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Layout-aware keyboard key identifiers.
@@ -227,4 +227,4 @@ struct InputState
     }
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

@@ -11,8 +11,8 @@
 #include "io/file.h"
 #include "build_defs.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::settings;
+using namespace vse;
+using namespace vse::settings;
 
 namespace
 {

@@ -14,7 +14,7 @@
 #include "ui_demo_gpu.h"
 #include "ui_script.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

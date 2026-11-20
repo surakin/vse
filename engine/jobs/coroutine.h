@@ -7,7 +7,7 @@
 //! `await_ready`/`await_suspend`/`await_resume`, the promise members
 //! `initial_suspend`/`final_suspend`/`get_return_object`), so the aliases keep the standard member functions
 //! (`resume`, `done`, `destroy`, `address`, `from_address`, `promise`, `from_promise`).
-namespace engine_placeholder
+namespace vse
 {
 
 /// A non-owning handle to a suspended coroutine whose promise type is `Promise`; `CoroutineHandle<>` is the type-erased
@@ -21,4 +21,4 @@ using SuspendAlways = std::suspend_always;
 /// An awaiter that never suspends (`std::suspend_never`).
 using SuspendNever = std::suspend_never;
 
-}  // namespace engine_placeholder
+}  // namespace vse

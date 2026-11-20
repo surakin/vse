@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTonemapFragDxilByteCount = 4384;
 
@@ -293,4 +293,4 @@ inline constexpr u64 kTonemapFragDxilSpirvFnv = 0xd2463a967023f189ull;
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kTonemapFragShader = {"tonemap.frag", rhi::SpirvBlob(kTonemapFragSpv, kTonemapFragSpvWordCount), rhi::DxilBlob(kTonemapFragDxil, kTonemapFragDxilByteCount), rhi::MetalLibBlob(kTonemapFragMetallib, kTonemapFragMetallibByteCount, kTonemapFragMetallibEntry, &kTonemapFragMetallibSlots)};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

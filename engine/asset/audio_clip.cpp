@@ -2,7 +2,7 @@
 
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -202,4 +202,4 @@ ByteSpan AudioClipView::Samples() const
     return ByteSpan(bytes_->Bytes().Data() + samples_, sample_bytes_);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -11,14 +11,14 @@ namespace docgen
 namespace
 {
 
-const char kStripPrefix[] = "engine_placeholder::";
+const char kStripPrefix[] = "vse::";
 
 using ::docgen::ArenaCat;
 
 StringView StripOuter(StringView q)
 {
     const usize n = sizeof(kStripPrefix) - 1;
-    if (q.Length() >= n && engine_placeholder::MemCompare(q.Data(), kStripPrefix, n) == 0)
+    if (q.Length() >= n && vse::MemCompare(q.Data(), kStripPrefix, n) == 0)
     {
         return StringView(q.Data() + n, q.Length() - n);
     }
@@ -76,8 +76,7 @@ StringView MakeAnchor(StringView id, ArenaAllocator& arena)
         any = true;
         pending = true;
     };
-    auto is_operator_before = [&](usize i)
-    { return i >= 8 && engine_placeholder::MemCompare(id.Data() + i - 8, "operator", 8) == 0; };
+    auto is_operator_before = [&](usize i) { return i >= 8 && vse::MemCompare(id.Data() + i - 8, "operator", 8) == 0; };
     for (usize i = 0; i < id.Length(); ++i)
     {
         char c = id[i];
@@ -95,7 +94,7 @@ StringView MakeAnchor(StringView id, ArenaAllocator& arena)
         }
         if (const char* w = PunctWord(c))
         {
-            token(w, engine_placeholder::CStrLength(w));
+            token(w, vse::CStrLength(w));
             continue;
         }
         if (c >= 'A' && c <= 'Z')
@@ -546,8 +545,7 @@ bool EndsWithScoped(StringView q, StringView base)
         return false;
     }
     const usize off = q.Length() - base.Length();
-    return engine_placeholder::MemCompare(q.Data() + off, base.Data(), base.Length()) == 0 && q[off - 1] == ':' &&
-           q[off - 2] == ':';
+    return vse::MemCompare(q.Data() + off, base.Data(), base.Length()) == 0 && q[off - 1] == ':' && q[off - 2] == ':';
 }
 
 }  // namespace
@@ -593,7 +591,7 @@ void BuildIndex(StringView root, StringView map_path, const ModuleMap& map, Aren
 StringView RefProblem(ArenaAllocator& arena, ResolveStatus st, StringView target,
                       const Vector<const Symbol*, ArenaAllocator>& cands)
 {
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     sb.Append(StringView(st == ResolveStatus::NotFound ? "unresolved reference '" : "ambiguous reference '"));
     sb.Append(target);
     sb.Append('\'');
@@ -655,8 +653,7 @@ ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symb
             continue;
         }
         // `operator()` / `operator[]` carry their own parentheses: skip over them
-        if (i >= 8 && engine_placeholder::MemCompare(t.Data() + i - 8, "operator", 8) == 0 && i + 1 < t.Length() &&
-            t[i + 1] == ')')
+        if (i >= 8 && vse::MemCompare(t.Data() + i - 8, "operator", 8) == 0 && i + 1 < t.Length() && t[i + 1] == ')')
         {
             ++i;
             continue;

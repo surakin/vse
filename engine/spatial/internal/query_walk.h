@@ -11,7 +11,7 @@
 #include "spatial/static_bvh.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial::detail_query
+namespace vse::spatial::detail_query
 {
 
 inline bool Finite(const Vec3& v)
@@ -77,4 +77,4 @@ inline bool Before(f32 tx, SpatialKey kx, f32 ty, SpatialKey ky)
     return tx < ty || (tx == ty && kx < ky);
 }
 
-}  // namespace engine_placeholder::spatial::detail_query
+}  // namespace vse::spatial::detail_query

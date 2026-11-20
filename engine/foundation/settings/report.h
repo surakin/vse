@@ -6,7 +6,7 @@
 #include "io/path.h"
 #include "settings/settings.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// Writes one line for every setting, sorted by key: the key, the current value, the default, where the value came
@@ -45,4 +45,4 @@ void FormatSettingsHelp(const Registry& registry, String<HeapAllocator>* out);
 /// - Thread-safety: thread-safe.
 Status SaveSettingsTo(Settings& settings, const io::Path& path);
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

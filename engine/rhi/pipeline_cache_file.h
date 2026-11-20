@@ -7,7 +7,7 @@
 //! backend on Phase 13 Day 167, so the Direct3D 12 backend follows the same rules). What the file holds, and how it is
 //! checked, is each backend's own.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 struct DeviceCreateInfo;
@@ -85,4 +85,4 @@ bool ReadPipelineCacheFile(const char* path, Vector<byte>* out);
 /// - Ownership: `data` is borrowed for the call.
 bool WritePipelineCacheFile(const char* path, const void* data, usize size);
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

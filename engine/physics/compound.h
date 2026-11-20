@@ -16,7 +16,7 @@
 #include "physics/validation.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The most children a compound holds.
@@ -129,4 +129,4 @@ inline bool GroupsCollide(u32 group_a, u32 mask_a, u32 group_b, u32 mask_b)
     return (group_a & mask_b) != 0 && (group_b & mask_a) != 0;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

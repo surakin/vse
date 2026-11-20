@@ -14,7 +14,7 @@
 //! A span is a pointer and a length. It owns nothing, allocates nothing and is cheap to pass by value; the viewed
 //! memory must outlive it. Functions that read or write a run of elements take a span, so a caller can hand them a
 //! [[Vector]], an [[Array]], a C array or a pointer and a length without converting.
-namespace engine_placeholder
+namespace vse
 {
 
 /// A view of `Size()` consecutive elements of type `T` starting at `Data()`.
@@ -210,4 +210,4 @@ template <typename T, typename A> void Assign(Vector<T, A>& target, TypeIdentity
     Append(target, items);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

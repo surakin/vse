@@ -1,6 +1,6 @@
 #include "physics/validation.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 const char* ValidationName(Validation value)
@@ -17,4 +17,4 @@ const char* ValidationName(Validation value)
     return "unknown";
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

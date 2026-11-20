@@ -12,7 +12,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 bool VulkanDevice::CreateSurface(const os::NativeWindowInfo& native)
@@ -143,4 +143,4 @@ void VulkanDevice::DestroySwapchain(Swapchain* swapchain)
     swapchain_live_.Store(0, MemoryOrder::Release);
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

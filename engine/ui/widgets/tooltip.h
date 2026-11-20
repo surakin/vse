@@ -6,7 +6,7 @@
 //! The tooltip bubble (Phase 15, Day 198): a short text in a box near the pointer, shown by the surface for a widget
 //! with a tooltip text.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A bubble with wrapped text, drawn in the `tooltip` style. It never takes the pointer (the pointer goes through it).
@@ -32,4 +32,4 @@ private:
     TextRun run_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

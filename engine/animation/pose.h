@@ -9,7 +9,7 @@
 #include "containers/span.h"
 #include "types.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 
 /// The most joints a pose holds (the skeleton format's limit).
@@ -100,4 +100,4 @@ void ModelFromLocal(const asset::SkeletonView& skeleton, const LocalPose& pose, 
 /// - Aborts: `out` is smaller than the joint count, or the counts differ from the skeleton's.
 void SkinningMatrices(const asset::SkeletonView& skeleton, const ModelPose& pose, Span<Mat3x4> out);
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

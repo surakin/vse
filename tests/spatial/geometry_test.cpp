@@ -9,7 +9,7 @@
 #include "math/quaternion.h"
 #include "spatial_test_rng.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using spatial_test::Rng;
 
 namespace
@@ -483,7 +483,7 @@ TEST_CASE("Geometry: an empty box stays empty through a transform and is never i
 TEST_CASE("TransformBounds: the sphere covers the largest stretch of a rotation under a non-uniform scale",
           "[spatial][geometry]")
 {
-    using namespace engine_placeholder;
+    using namespace vse;
     Bounds local;
     local.box = Aabb::FromMinMax(Vec3(-1, -1, -1), Vec3(1, 1, 1));
     local.sphere.center = Vec3(0, 0, 0);

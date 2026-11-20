@@ -21,8 +21,8 @@ namespace hang_watchdog
 namespace
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 void WalkFrom(CONTEXT context, StackTrace& trace)
 {

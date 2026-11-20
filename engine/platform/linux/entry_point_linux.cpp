@@ -3,7 +3,7 @@
 
 #include "os/command_line.h"
 
-namespace engine_placeholder::os::detail
+namespace vse::os::detail
 {
 
 int RunWindowedProgram(int argc, char** argv, WindowedProgramEntry entry)
@@ -12,4 +12,4 @@ int RunWindowedProgram(int argc, char** argv, WindowedProgramEntry entry)
     return entry(argc, argv);
 }
 
-}  // namespace engine_placeholder::os::detail
+}  // namespace vse::os::detail

@@ -6,7 +6,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Makes the device `DeviceKind::Platform` means on Linux: `Open` tries PipeWire (for the default or the name
@@ -25,4 +25,4 @@ UniquePtr<AudioDevice> CreateLinuxPlatformDevice();
 /// - Fails: `OutOfMemory`.
 DeviceStatus EnumerateLinuxDevices(Vector<DeviceDescription>* out);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

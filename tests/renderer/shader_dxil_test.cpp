@@ -38,7 +38,7 @@
 #include "rhi/desc.h"
 #include "string_view.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

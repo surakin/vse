@@ -6,7 +6,7 @@
 #include "script/settings_bindings.h"
 #include "script/task_bindings.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -327,4 +327,4 @@ bool RegisterStandardBindings(BindingRegistry* registry)
     return ok;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -5,7 +5,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 /// The smallest content scale: below 1 the window would draw smaller than 100%.
@@ -98,4 +98,4 @@ inline f32 ContentScaleFromResources(StringView resources)
     return tight >= 0.0f ? tight : (loose >= 0.0f ? loose : kMinContentScale);
 }
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11

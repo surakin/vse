@@ -7,7 +7,7 @@
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 // ---- Menu ----
@@ -635,4 +635,4 @@ void MenuView::OnEvent(Event& event)
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

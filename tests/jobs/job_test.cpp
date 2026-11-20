@@ -8,9 +8,9 @@
 #include "jobs/frame_pool.h"
 #include "jobs/job.h"
 
-using namespace engine_placeholder;
-using engine_placeholder::jobs::FramePool;
-using engine_placeholder::jobs::Job;
+using namespace vse;
+using vse::jobs::FramePool;
+using vse::jobs::Job;
 
 namespace
 {
@@ -51,7 +51,7 @@ Job BigFrame(int* checksum)
     int sum = 0;
     for (int i = 0; i < 4096; ++i)
     {
-        sum += static_cast<engine_placeholder::byte>(buf[i]);
+        sum += static_cast<vse::byte>(buf[i]);
     }
     *checksum = sum;
 }
@@ -216,7 +216,7 @@ TEST_CASE("A frame bigger than the top size class takes the counted fallback and
     int expected = 0;
     for (int i = 0; i < 4096; ++i)
     {
-        expected += static_cast<engine_placeholder::byte>(static_cast<char>(i));
+        expected += static_cast<vse::byte>(static_cast<char>(i));
     }
     REQUIRE(checksum == expected);
     FramePool::Stats finished = Snap();

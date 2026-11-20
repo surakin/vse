@@ -8,7 +8,7 @@
 
 //! Logging for the RHI: the `LogRhi` channel and a printf-style helper.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// The log channel used by the RHI and its backends.
@@ -46,6 +46,6 @@ inline void RhiLogV(LogVerbosity level, const char* fmt, ...)
 /// Logs a printf-style message on the RHI channel; expands to a call of [[rhi::RhiLogV]].
 ///
 /// - Param level: verbosity of the message.
-#define RhiLog(level, ...) ::engine_placeholder::rhi::RhiLogV(level, __VA_ARGS__)
+#define RhiLog(level, ...) ::vse::rhi::RhiLogV(level, __VA_ARGS__)
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

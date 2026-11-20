@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Why a value was refused, or `Ok`.
@@ -29,4 +29,4 @@ enum class Validation : u8
 /// - Fails: never.
 const char* ValidationName(Validation value);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

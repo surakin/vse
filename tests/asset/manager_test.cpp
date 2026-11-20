@@ -20,7 +20,7 @@
 #include "support.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -968,4 +968,4 @@ TEST_CASE("manager: the time counter counts each read and each loader once", "[a
     CHECK(rig.manager->Stats().read_nanos <= wall);  // nested timers used to add the closure to every parent
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

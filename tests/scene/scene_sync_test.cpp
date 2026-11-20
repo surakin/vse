@@ -11,7 +11,7 @@
 #include "rhi/null/null_device.h"
 #include "scene/render_sync.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using scene::ActiveCamera;
 using scene::CameraOutput;
 using scene::Hidden;

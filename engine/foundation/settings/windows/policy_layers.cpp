@@ -9,7 +9,7 @@
 
 #include "cstr/format.h"
 
-namespace engine_placeholder::settings::detail
+namespace vse::settings::detail
 {
 
 void AddPolicyLayers(const LoadOptions& options, LayerStack* stack)
@@ -38,4 +38,4 @@ void AddPolicyLayers(const LoadOptions& options, LayerStack* stack)
     stack->AddLayer("machine policy", LayerRole::Policy, MakeUnique<RegistryConfigStore>(machine));
 }
 
-}  // namespace engine_placeholder::settings::detail
+}  // namespace vse::settings::detail

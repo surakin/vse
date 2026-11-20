@@ -4,7 +4,7 @@
 
 #include "database/sqlite/sqlite_os.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 const char* SqliteVersion()
@@ -18,4 +18,4 @@ const char* SqliteVersion()
     return sqlite3_libversion();
 }
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

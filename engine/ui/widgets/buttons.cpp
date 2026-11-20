@@ -5,7 +5,7 @@
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 // ---- Button ----
@@ -428,4 +428,4 @@ void RadioGroup::Step(RadioButton* from, int delta)
     usable[next]->RequestFocus();
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

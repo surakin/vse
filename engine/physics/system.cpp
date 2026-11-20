@@ -3,7 +3,7 @@
 #include "ecs/query.h"
 #include "ecs/transform.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -125,4 +125,4 @@ ecs::SystemDesc MakePhysicsStepSystem()
         .WritesResource<PhysicsWorld>();
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

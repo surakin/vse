@@ -13,7 +13,7 @@
 #include "platform/input.h"
 #include "platform/window_host.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

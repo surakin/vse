@@ -12,7 +12,7 @@
 #include "lang/utility.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -947,4 +947,4 @@ u32 StreamPump::Run()
     return started;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

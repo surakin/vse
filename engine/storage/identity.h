@@ -14,7 +14,7 @@
 #include "storage/status.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// Draws entity keys: from the operating system's random source, or from a seeded sequence that gives the same keys
@@ -213,4 +213,4 @@ Status CaptureParents(ecs::World& world, const KeyIndex& index, ParentReport* re
 /// - Ownership: both are borrowed for the call.
 Status ApplyParents(ecs::World& world, const KeyIndex& index, MissingPolicy policy, ParentReport* report);
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

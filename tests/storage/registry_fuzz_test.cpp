@@ -8,7 +8,7 @@
 #include "cstr/mem_ops.h"
 #include "storage/component_registry.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -326,4 +326,4 @@ FUZZ_KIND(FuzzIntArray, "array", 4020)
 FUZZ_KIND(EntityRef, "entity_ref", 4021)
 
 }  // namespace
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

@@ -20,7 +20,7 @@
 #include "sync/thread.h"
 #include "types.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 TEST_CASE("macOS: MonotonicTimeNanos never goes backwards across threads", "[os][timing]")
 {

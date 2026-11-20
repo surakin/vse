@@ -6,7 +6,7 @@
 #include "io/file_system.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -246,4 +246,4 @@ Status FileConfigStore::Commit(const CommitOptions& options)
     return result;
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

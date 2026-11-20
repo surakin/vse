@@ -10,7 +10,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// A 128-bit entity identity that survives processes and machines.
@@ -68,9 +68,9 @@ struct ResourceRef
     u64 id = 0;  ///< The resource id (`asset::ResourceId::Value()`); 0 names nothing.
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Hash function for [[storage::EntityKey]] keys of a [[HashMap]].
@@ -87,4 +87,4 @@ template <> struct Hash<storage::EntityKey>
     }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

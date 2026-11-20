@@ -3,9 +3,9 @@
 #include "containers/array.h"
 #include "types.h"
 
-using engine_placeholder::Array;
-using engine_placeholder::u32;
-using engine_placeholder::usize;
+using vse::Array;
+using vse::u32;
+using vse::usize;
 
 namespace
 {
@@ -36,8 +36,8 @@ TEST_CASE("Array: storage is inline, so an object is its members plus the elemen
     Holder h{};
     REQUIRE(h.values.Size() == 6);
     // The elements sit inside the holder's own bytes.
-    const engine_placeholder::byte* lo = reinterpret_cast<const engine_placeholder::byte*>(&h);
-    const engine_placeholder::byte* p = reinterpret_cast<const engine_placeholder::byte*>(h.values.Data());
+    const vse::byte* lo = reinterpret_cast<const vse::byte*>(&h);
+    const vse::byte* p = reinterpret_cast<const vse::byte*>(h.values.Data());
     REQUIRE(p >= lo);
     REQUIRE(p + 6 * sizeof(u32) <= lo + sizeof(Holder));
 }

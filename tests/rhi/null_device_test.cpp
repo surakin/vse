@@ -8,8 +8,8 @@
 #include "rhi/rhi_log.h"
 #include "spirv_builder.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 namespace
 {

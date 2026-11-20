@@ -15,7 +15,7 @@
 #include "asset_import/gltf_names.h"
 #include "containers/span.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The skeleton a glTF mesh is skinned to, resolved by the caller (skeletons are imported from Day 337).
@@ -72,4 +72,4 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
                     Span<const MeshSkeletonBinding> bindings, ImportResult* result, GltfError* error,
                     Span<const bool> skip = Span<const bool>());
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

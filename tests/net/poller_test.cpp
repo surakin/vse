@@ -14,7 +14,7 @@
 #include "os/os.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -199,4 +199,4 @@ TEST_CASE("Benchmark: the poller with 1,000 armed sockets", "[.][net-bench][poll
 }
 
 }  // namespace
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

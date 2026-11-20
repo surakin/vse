@@ -10,7 +10,7 @@
 
 #include "asset_import/gltf_skin.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Imports every animation of a parsed glTF as clips.
@@ -34,4 +34,4 @@ namespace engine_placeholder::asset
 Status ImportClips(const GltfDocument& document, const GltfNodeGraph& graph, const ImportOptions& options,
                    const TypeRegistry& types, Span<const ImportedSkin> skins, ImportResult* result, GltfError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

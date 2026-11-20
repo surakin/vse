@@ -1,6 +1,6 @@
 #include "storage/save_session.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 SaveSession::SaveSession()
@@ -20,4 +20,4 @@ void SaveSession::Reset()
     key_of_->Clear();
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

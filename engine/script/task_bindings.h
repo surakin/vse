@@ -6,7 +6,7 @@
 #include "script/bindings.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// Adds `task.enqueue(mode, source, data, seed, count, chunk)` (returns the handle, or text saying why the request was
@@ -19,4 +19,4 @@ namespace engine_placeholder::script
 /// - Fails: returns false when a name is taken.
 bool RegisterTaskBindings(BindingRegistry* registry);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

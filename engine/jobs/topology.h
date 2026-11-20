@@ -6,7 +6,7 @@
 //!
 //! The platform-specific queries sit behind these functions so that ports
 //! provide their own implementation without touching callers.
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 /// Upper bound on job-system participants (main thread plus workers).
@@ -49,4 +49,4 @@ usize ParseParticipantOverride(const char* text, usize fallback, bool* warned);
 /// - Thread-safety: thread-safe.
 usize DefaultParticipantCount();
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

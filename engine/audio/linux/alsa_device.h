@@ -7,7 +7,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Lists the playback devices under /dev/snd (`hw:<card>,<device>`), the first being the default.
@@ -25,4 +25,4 @@ DeviceStatus EnumerateAlsaDevices(Vector<DeviceDescription>* out);
 /// - Fails: reported by a null result.
 UniquePtr<AudioDevice> CreateAlsaDevice();
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

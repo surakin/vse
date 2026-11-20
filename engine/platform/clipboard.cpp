@@ -1,6 +1,6 @@
 #include "platform/clipboard.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 namespace
@@ -544,4 +544,4 @@ u32 LimitPathList(Vector<byte>& paths, usize max_entries)
     return removed;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

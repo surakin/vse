@@ -17,7 +17,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -640,4 +640,4 @@ UniquePtr<AudioDevice> CreateAlsaDevice()
     return MakeUnique<AlsaDevice>();
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

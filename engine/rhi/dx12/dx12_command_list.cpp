@@ -11,7 +11,7 @@
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 namespace
@@ -967,4 +967,4 @@ void Dx12CommandList::Dispatch(u32 x, u32 y, u32 z)
     list_->Dispatch(x, y, z);
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

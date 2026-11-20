@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGbufferFragReflByteCount = 654;
 
@@ -65,4 +65,4 @@ inline constexpr u32 kGbufferFragMaterialParamsAlbedoUvOffset = 48;
 inline constexpr u32 kGbufferFragMaterialParamsAlbedoUvOutsideOffset = 64;
 inline constexpr u32 kGbufferFragMaterialParamsEmissiveColorOffset = 80;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

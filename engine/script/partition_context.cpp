@@ -1,6 +1,6 @@
 #include "script/partition_context.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -81,4 +81,4 @@ EntityCheck ContextEntityCheck()
     return check;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

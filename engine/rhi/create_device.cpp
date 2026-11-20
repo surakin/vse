@@ -8,7 +8,7 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -295,4 +295,4 @@ bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out)
     return d->enumerate_adapters(resolved, out);
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

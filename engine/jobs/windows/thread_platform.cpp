@@ -13,7 +13,7 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-namespace engine_placeholder::jobs::detail
+namespace vse::jobs::detail
 {
 
 usize CpusFromGroupRecords(const void* buffer, usize size, const u16* process_groups, usize group_count,
@@ -144,4 +144,4 @@ void NameCurrentThread(const char* name)
     SetThreadDescription(GetCurrentThread(), wide);  // shown by debuggers, ETW and crash dumps; failure is harmless
 }
 
-}  // namespace engine_placeholder::jobs::detail
+}  // namespace vse::jobs::detail

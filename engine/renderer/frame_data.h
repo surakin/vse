@@ -10,7 +10,7 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The per-frame uniform block (set 0, binding 0 in the shaders). Laid out as std140: every member is a `mat4` or a
@@ -302,4 +302,4 @@ private:
     u32 objects_written_ = 0;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

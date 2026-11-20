@@ -9,7 +9,7 @@
 #include "net/windows/windows_net.h"
 #include "os/windows/utf16.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 Status SystemResolve(StringView host, u16 port, AddressFamily family, EndpointSet* out)
@@ -84,4 +84,4 @@ Status SystemResolve(StringView host, u16 port, AddressFamily family, EndpointSe
     return out->Empty() ? Status::Of(ErrorCode::NotFound) : Status::Success();
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

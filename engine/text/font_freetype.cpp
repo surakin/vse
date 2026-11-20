@@ -14,7 +14,7 @@
 #include "text/library.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 // Named (not anonymous) because FontLibrary::Impl has a member of this type.
@@ -709,4 +709,4 @@ Status Font::LoadOutline(GlyphId glyph, Outline* out) const
     return Status{};
 }
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

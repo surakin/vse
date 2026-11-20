@@ -8,6 +8,8 @@ with progress.
 
 Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 
+**The engine is named Visual Storm Engine (VSE) (2026-11-20, Linux, the user's decision).** The C++ namespace `engine_placeholder` is now `vse` (lowercase; 5,020 uses in 1,938 files, including the generated tables and the committed shader outputs), the CMake project is `vse`, and the README, `PLAN.md`, `CLAUDE.md` and the hello_window title say Visual Storm Engine. Kept as they were, by the user's choice: the `ENGINE_*` macros, the `engine_c` C API (`engine_c.h`, the ABI snapshot) and `libengine`. Formatted with `scripts/format.sh`, built clean (unity, plain and asan flavors in `build`), `docs` regenerated, `ctest -L docs` passes. Scoped run: `scripts/test-phase.sh --affected` ran everything of the plain flavor (the root `CMakeLists.txt` changed); what failed is in `KNOWN-ISSUES.md` (all seen before the rename). No end-of-day review: a mechanical rename. Not built on the Windows PC or the Mac.
+
 **Container audit fixes (maintenance series, planned 2026-11-19; `plans/maintenance/container-audit.md`, 12 day files under `plans/maintenance/container-audit/`).**
 - The audit (`plans/maintenance/container-audit-2026-11-19.md`, read-only, nothing timed) found linear scans and quadratic paths across the engine, most chosen because the
   foundation lacked a container feature. It also found three correctness problems: `DeviceResources`' 256-owner cap, hashed path keys never compared, and an unsorted
@@ -635,7 +637,7 @@ decorations for clients that request them via `xdg-decoration`. Added
 `WaylandConnection`, and `WaylandWindow` now requests server-side mode
 (`ServerSideDecorated()` reports what the compositor granted). New test
 confirms KWin grants it (113 tests green). Needs your eyeball: titlebar
-with "re-engine" + working close/resize.
+with "Visual Storm Engine" + working close/resize.
 
 **Desk check 2026-11-03:** Day 19 visual confirmation passed (window appears
 on Plasma/Wayland). Remaining desk checks: keyboard, mouse, close button,

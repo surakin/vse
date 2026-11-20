@@ -8,7 +8,7 @@
 #include "physics/state_hash.h"
 #include "types.h"
 
-namespace engine_placeholder::physics::testing
+namespace vse::physics::testing
 {
 
 /// A quiet NaN, for the tests that feed bad numbers.
@@ -86,4 +86,4 @@ inline f32 Wave(f32 t)
     return -4.0f * v * (1.0f - Abs(v));
 }
 
-}  // namespace engine_placeholder::physics::testing
+}  // namespace vse::physics::testing

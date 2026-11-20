@@ -5,7 +5,7 @@
 #include "log/assert.h"
 #include "math/quaternion.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -117,4 +117,4 @@ Camera MakeLookAtCamera(const Vec3& eye, const Vec3& target, const Vec3& up)
     return camera;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

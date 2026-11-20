@@ -7,7 +7,7 @@
 #include "mem/heap_allocator.h"
 #include "os/os.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -2128,4 +2128,4 @@ const UdpCounters& UdpTransport::Counters() const
     return impl_->counters;
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

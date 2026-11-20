@@ -14,7 +14,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 CommandList* MetalDevice::CreateCommandList()
@@ -132,4 +132,4 @@ Format MetalDevice::TextureFormat(TextureHandle texture) const
     return t != nullptr ? t->desc.format : Format::Undefined;
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

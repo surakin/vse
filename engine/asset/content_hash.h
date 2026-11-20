@@ -9,7 +9,7 @@
 #include "containers/span.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A 128-bit content hash.
@@ -30,9 +30,9 @@ struct ContentHash
     friend bool operator!=(const ContentHash& a, const ContentHash& b) { return !(a == b); }
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Hash function for [[asset::ContentHash]] keys of a [[HashMap]] or [[HashSet]] (container audit series, Day 2): the
@@ -53,9 +53,9 @@ template <> struct Hash<asset::ContentHash>
     }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Writes `hash` as 32 lower-case hex digits and a terminating zero.
@@ -102,4 +102,4 @@ private:
 /// - Fails: never.
 ContentHash HashBytes(ByteSpan bytes);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

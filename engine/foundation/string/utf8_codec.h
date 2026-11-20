@@ -4,7 +4,7 @@
 
 //! Raw UTF-8 decode and encode on `const char*` buffers, with no dependency on
 //! the string module.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Result of decoding one UTF-8 sequence.
@@ -38,4 +38,4 @@ DecodedCodepoint DecodeUtf8At(const char* data, usize length, usize offset, bool
 /// - Returns: number of bytes written.
 usize EncodeUtf8(u32 codepoint, char out[4]);
 
-}  // namespace engine_placeholder
+}  // namespace vse

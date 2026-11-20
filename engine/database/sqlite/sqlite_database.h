@@ -4,7 +4,7 @@
 
 #include "database/database.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 /// The database interface on SQLite. Built from the vendored amalgamation (`third_party/sqlite`), reached only through
@@ -47,4 +47,4 @@ public:
     Status Open(const OpenOptions& options, UniquePtr<Connection>* out) override;
 };
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

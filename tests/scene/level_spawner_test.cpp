@@ -21,7 +21,7 @@
 #include "scene/render_sync.h"
 #include "storage/builtin_components.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

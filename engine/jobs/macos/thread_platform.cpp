@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include <sys/sysctl.h>
 
-namespace engine_placeholder::jobs::detail
+namespace vse::jobs::detail
 {
 
 usize QueryAllowedCpus(u32* out, usize capacity)
@@ -73,4 +73,4 @@ void NameCurrentThread(const char* name)
     ::pthread_setname_np(cut);
 }
 
-}  // namespace engine_placeholder::jobs::detail
+}  // namespace vse::jobs::detail

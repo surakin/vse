@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -430,4 +430,4 @@ ValueRecordStatus DecodeValueRecord(bytes::ByteReader* in, Value* out, const sto
     return ValueRecordStatus::Ok;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -6,7 +6,7 @@
 #include "containers/unique_ptr.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The number of floats an effect's parameter block holds.
@@ -84,4 +84,4 @@ public:
     virtual void LoadState(StateIn* in) = 0;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

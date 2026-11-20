@@ -6,7 +6,7 @@
 #include "lang/utility.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -580,4 +580,4 @@ void MemoryAllocator::LogStatsLocked() const
     }
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

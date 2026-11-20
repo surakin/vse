@@ -5,7 +5,7 @@
 #include "os/os.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -185,4 +185,4 @@ Status OpenPollingWatcher(const Path& directory, u32 interval_ms, UniquePtr<Dire
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

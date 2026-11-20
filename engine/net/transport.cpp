@@ -1,6 +1,6 @@
 #include "net/transport.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 const char* ReliabilityName(Reliability reliability)
@@ -30,4 +30,4 @@ const char* DisconnectReasonName(DisconnectReason reason)
     return "Unknown";
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

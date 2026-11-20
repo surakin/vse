@@ -8,7 +8,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "rhi/vulkan/vk_pipeline_policy.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 VulkanCommandList::VulkanCommandList(VulkanDevice* device, VkCommandBuffer buffer) : device_(device), buffer_(buffer) {}
@@ -610,4 +610,4 @@ void VulkanCommandList::Dispatch(u32 x, u32 y, u32 z)
     }
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

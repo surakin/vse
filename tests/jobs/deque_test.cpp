@@ -6,8 +6,8 @@
 
 #include "jobs/deque.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::jobs;
+using namespace vse;
+using namespace vse::jobs;
 
 namespace
 {

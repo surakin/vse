@@ -4,7 +4,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -472,4 +472,4 @@ usize WavReader::ReadFrames(Span<f32> out, usize max_frames)
     return count;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

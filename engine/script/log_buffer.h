@@ -11,7 +11,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The log channel of everything scripts write (`print` and `log.*`); `LogScript`, default verbosity Info.
@@ -129,4 +129,4 @@ usize FlushLogBuffers(Span<LogBuffer* const> buffers);
 /// - Fails: never.
 void WriteScriptLog(ScriptLogLevel level, StringView script, u32 line, StringView text);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

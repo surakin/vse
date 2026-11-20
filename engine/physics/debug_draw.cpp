@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "math/math_util.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -209,4 +209,4 @@ u32 DebugDraw(const PhysicsWorld& world, const DebugDrawOptions& options, Vector
     return static_cast<u32>(lines->Size() - before);
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

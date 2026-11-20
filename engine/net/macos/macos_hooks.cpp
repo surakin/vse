@@ -14,7 +14,7 @@
 #include "os/last_error.h"
 #include "os/os.h"
 
-namespace engine_placeholder::net::posix
+namespace vse::net::posix
 {
 
 namespace
@@ -78,4 +78,4 @@ ErrorCode SendErrorCode(int error)
     return error == EPROTOTYPE ? ErrorCode::Closed : ErrorFromErrno(error);
 }
 
-}  // namespace engine_placeholder::net::posix
+}  // namespace vse::net::posix

@@ -10,7 +10,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The longest event name.
@@ -178,4 +178,4 @@ private:
     Vector<NativeSub> natives_;
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

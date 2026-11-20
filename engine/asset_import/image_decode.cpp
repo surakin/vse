@@ -11,7 +11,7 @@
 // back. The setjmp is in C because MSVC refuses it in a C++ function (C4611).
 extern "C" int engine_asset_png_guard(png_structp png, void (*body)(void*), void* context);
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -297,4 +297,4 @@ Status DecodePixels(ByteSpan bytes, u64 max_pixels, DecodedImage* out, GltfError
     return Refuse(error, "is neither a PNG nor a JPEG");
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

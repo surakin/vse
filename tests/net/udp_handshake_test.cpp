@@ -10,7 +10,7 @@
 #include "net/sim_datagram.h"
 #include "net/udp_transport.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -718,4 +718,4 @@ TEST_CASE("UDP transport: an address that churns handshakes is denied alone", "[
     CHECK(other.Count(EventKind::Opened) == 1);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

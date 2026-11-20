@@ -7,7 +7,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Whether `libpipewire` can be loaded on this machine (it is looked for when asked, not linked).
@@ -33,4 +33,4 @@ DeviceStatus EnumeratePipeWireDevices(Vector<DeviceDescription>* out);
 /// - Fails: reported by a null result.
 UniquePtr<AudioDevice> CreatePipeWireDevice();
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

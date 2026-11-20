@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -849,4 +849,4 @@ u32 HullView::Index(u32 k) const
     return static_cast<u32>(Base()[indices_ + k * 2]) | (static_cast<u32>(Base()[indices_ + k * 2 + 1]) << 8);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

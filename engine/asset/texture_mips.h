@@ -19,7 +19,7 @@
 #include "rhi/format.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The most texels along one side of a texture this version accepts.
@@ -118,4 +118,4 @@ Status ConvertRgba8(rhi::Format format, bool source_srgb, u32 width, u32 height,
 Status GenerateMipChain(rhi::Format format, u32 width, u32 height, ByteSpan level0, const MipOptions& options,
                         Vector<byte>* chain);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

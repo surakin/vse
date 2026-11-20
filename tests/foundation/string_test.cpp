@@ -6,13 +6,13 @@
 #include "test_helpers.h"
 #include "types.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::String;
-using engine_placeholder::StringBuilder;
-using engine_placeholder::StringView;
-using engine_placeholder::u8;
-using engine_placeholder::os::Write;
-using engine_placeholder::test::BytesEqual;
+using vse::ArenaAllocator;
+using vse::String;
+using vse::StringBuilder;
+using vse::StringView;
+using vse::u8;
+using vse::os::Write;
+using vse::test::BytesEqual;
 
 TEST_CASE("StringView: equality, comparison and substring", "[string][stringview]")
 {
@@ -91,7 +91,7 @@ TEST_CASE("StringBuilder: formats ints/floats/strings byte-for-byte correctly", 
 
 TEST_CASE("StringBuilder::AppendHex formats lowercase hex with optional zero padding", "[string]")
 {
-    using namespace engine_placeholder;
+    using namespace vse;
     // Each call gets its own arena; the result is compared by value.
     auto hex = [](u64 v, int digits)
     {
@@ -131,7 +131,7 @@ TEST_CASE("StringView: LastIndexOf, StartsWith, EndsWith and open-ended Substrin
 // Container audit series Day 3: bulk append, Reserve, Clear and range-for over the bytes.
 TEST_CASE("String: bulk append, Reserve, Clear and range-for", "[string]")
 {
-    using namespace engine_placeholder;
+    using namespace vse;
     String<HeapAllocator> s(HeapAllocator::Default());
     s.Reserve(1000);
     for (int i = 0; i < 100; ++i)

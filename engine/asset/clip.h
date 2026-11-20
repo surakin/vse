@@ -26,7 +26,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Most animated joints of one clip.
@@ -286,4 +286,4 @@ private:
     u32 weight_keys_ = 0;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

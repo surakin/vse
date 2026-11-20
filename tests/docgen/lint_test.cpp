@@ -46,7 +46,7 @@ struct Linted
 
     Linted(const Str& header, const Str& strict = "")
     {
-        tree.Put("h/a.h", "#pragma once\nnamespace engine_placeholder {\n" + header + "\n}\n");
+        tree.Put("h/a.h", "#pragma once\nnamespace vse {\n" + header + "\n}\n");
         tree.Put("modules.txt", "module m \"M\"\n  header h/*.h\n" + strict);
         Str map = tree.root + "/modules.txt";
         built = BuildReference(LintTestSv(tree.root), LintTestSv(map), arena, build);

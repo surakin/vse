@@ -5,7 +5,7 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 bool ViewportTarget::Make(rhi::Device* device, u32 width, u32 height, rhi::TextureHandle* color,
@@ -247,4 +247,4 @@ bool ViewportTarget::Recreate(rhi::Device* device)
     return true;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -15,7 +15,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Asks for the earliest frame a command can take effect.
@@ -227,4 +227,4 @@ private:
     i32 playlist_position_ = -1;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

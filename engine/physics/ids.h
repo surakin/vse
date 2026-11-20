@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The id of a body in a [[physics::PhysicsWorld]]: a slot index and a generation (zero is invalid).
@@ -108,4 +108,4 @@ struct JointId
     }
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

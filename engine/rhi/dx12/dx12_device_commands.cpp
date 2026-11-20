@@ -16,7 +16,7 @@
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 // ---- command lists ----
@@ -281,4 +281,4 @@ bool Dx12Device::MipPipelineFor(MipPipeline* out)
     return true;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

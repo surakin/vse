@@ -4,7 +4,7 @@
 
 //! Fixed-size free-list pool allocator backed by a single mmap'd block.
 //! Alloc and Free are O(1) with no bookkeeping storage beyond the slots.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Allocator handing out equally sized slots from one fixed block, with O(1)
@@ -53,4 +53,4 @@ private:
     void* free_list_ = nullptr;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

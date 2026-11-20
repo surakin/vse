@@ -16,8 +16,8 @@
 #include "os/windows/debug/post_mortem_windows.h"
 #include "os/windows/win32.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 namespace
 {

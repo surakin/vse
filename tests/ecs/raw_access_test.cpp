@@ -6,8 +6,8 @@
 #include "ecs/query.h"
 #include "ecs/world.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::ecs;
+using namespace vse;
+using namespace vse::ecs;
 
 namespace
 {

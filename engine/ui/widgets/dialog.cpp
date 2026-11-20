@@ -3,7 +3,7 @@
 #include "ui/layout.h"
 #include "ui/surface.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 Dialog::Dialog(StringView name, StringView title) : WindowFrame(name, title)
@@ -103,4 +103,4 @@ void Dialog::OnEvent(Event& event)
     WindowFrame::OnEvent(event);
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

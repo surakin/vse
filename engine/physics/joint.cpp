@@ -4,7 +4,7 @@
 #include "math/math_util.h"
 #include "physics/check.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 Validation JointDesc::Validate() const
@@ -81,4 +81,4 @@ f32 WrapAngle(f32 angle)
     return angle - kTwoPi * Floor((angle + kPi) / kTwoPi);
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

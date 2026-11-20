@@ -1,6 +1,6 @@
 #include "asset/resource_type.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 void ResourceType::Spell(char (&out)[5]) const
@@ -58,4 +58,4 @@ bool TypeRegistry::Find(ResourceType type, TypeInfo* out) const
     return false;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

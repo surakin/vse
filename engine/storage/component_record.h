@@ -12,7 +12,7 @@
 #include "storage/status.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// A component as stored: the registry's stable id, the version it was written with, and its encoded fields.
@@ -71,4 +71,4 @@ Status WriteComponentRecord(const ComponentRecord& record, const CodecLimits& li
 /// `max_record_bytes`).
 Status ReadComponentRecord(bytes::ByteReader& in, const CodecLimits& limits, ComponentRecord* record);
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

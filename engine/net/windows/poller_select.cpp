@@ -25,7 +25,7 @@
 #include "net/windows/windows_net.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -394,4 +394,4 @@ void Poller::Wake()
     [[maybe_unused]] const Status ignored = armed_->wake_writer.Send(ByteSpan(&one, 1), &sent);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

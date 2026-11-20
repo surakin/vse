@@ -6,7 +6,7 @@
 
 //! The presentable images of one window.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// The outcome of acquiring or presenting a swapchain image.
@@ -165,4 +165,4 @@ public:
     virtual TextureHandle CurrentTexture() const = 0;
 };
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

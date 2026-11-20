@@ -11,7 +11,7 @@
 namespace docgen_test
 {
 
-namespace io = engine_placeholder::io;
+namespace io = vse::io;
 
 inline bool ToPath(const Str& text, io::Path* out)
 {
@@ -22,7 +22,7 @@ inline bool ToPath(const Str& text, io::Path* out)
 inline Str ReadFileText(const Str& path)
 {
     io::Path p;
-    engine_placeholder::Vector<engine_placeholder::u8> bytes;
+    vse::Vector<vse::u8> bytes;
     if (!ToPath(path, &p) || io::ReadFile(p, &bytes).Failed())
     {
         return Str();
@@ -47,14 +47,14 @@ inline StrList ListNamesSorted(const Str& dir)
 {
     StrList names;
     io::Path p;
-    engine_placeholder::Vector<io::DirectoryItem> items;
+    vse::Vector<io::DirectoryItem> items;
     if (!ToPath(dir, &p) || io::ListDirectory(p, true, &items).Failed())
     {
         return names;
     }
-    for (engine_placeholder::usize i = 0; i < items.Size(); ++i)
+    for (vse::usize i = 0; i < items.Size(); ++i)
     {
-        const engine_placeholder::StringView v = items[i].name.View();
+        const vse::StringView v = items[i].name.View();
         if (v.Length() != 0 && v[0] != '.')
         {
             names.Push(v);

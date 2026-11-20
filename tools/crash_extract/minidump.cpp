@@ -10,25 +10,25 @@ namespace crash_extract
 namespace
 {
 
-using engine_placeholder::u8;
+using vse::u8;
 
 constexpr u32 kMinidumpSignature = 0x504d444d;  // "MDMP"
 constexpr u32 kModuleListStream = 4;
 constexpr u32 kExceptionStream = 6;
 constexpr u32 kThreadListStream = 3;
 constexpr u32 kSystemInfoStream = 7;
-constexpr engine_placeholder::usize kThreadBytes = 48;  // MINIDUMP_THREAD
-constexpr u32 kPlatformMacOs = 0x8101;                  // Breakpad's MD_OS_MAC_OS_X
-constexpr u32 kArchitectureAmd64 = 9;                   // PROCESSOR_ARCHITECTURE_AMD64
-constexpr u32 kContextAmd64 = 0x00100000;               // CONTEXT_AMD64, no register group
+constexpr vse::usize kThreadBytes = 48;    // MINIDUMP_THREAD
+constexpr u32 kPlatformMacOs = 0x8101;     // Breakpad's MD_OS_MAC_OS_X
+constexpr u32 kArchitectureAmd64 = 9;      // PROCESSOR_ARCHITECTURE_AMD64
+constexpr u32 kContextAmd64 = 0x00100000;  // CONTEXT_AMD64, no register group
 constexpr u32 kContextAmd64Written = kContextAmd64 |
                                      0x7;  // CONTROL | INTEGER | SEGMENTS: what Breakpad's macOS writer fills
-constexpr engine_placeholder::usize kContextAmd64FlagsOffset = 0x30;
-constexpr engine_placeholder::usize kModuleBytes = 108;  // MINIDUMP_MODULE
-constexpr u32 kRsds = 0x53445352;                        // "RSDS"
-constexpr u32 kBpel = 0x4c457042;                        // "BpEL"
+constexpr vse::usize kContextAmd64FlagsOffset = 0x30;
+constexpr vse::usize kModuleBytes = 108;  // MINIDUMP_MODULE
+constexpr u32 kRsds = 0x53445352;         // "RSDS"
+constexpr u32 kBpel = 0x4c457042;         // "BpEL"
 
-bool Fits(engine_placeholder::usize size, u64 offset, u64 length)
+bool Fits(vse::usize size, u64 offset, u64 length)
 {
     return offset <= size && length <= size - offset;
 }
@@ -36,27 +36,27 @@ bool Fits(engine_placeholder::usize size, u64 offset, u64 length)
 u32 Read32(const char* p)
 {
     u32 v = 0;
-    engine_placeholder::MemCopy(&v, p, sizeof(v));  // little-endian files on little-endian hosts (every target)
+    vse::MemCopy(&v, p, sizeof(v));  // little-endian files on little-endian hosts (every target)
     return v;
 }
 
 void Write32(char* p, u32 v)
 {
-    engine_placeholder::MemCopy(p, &v, sizeof(v));
+    vse::MemCopy(p, &v, sizeof(v));
 }
 
 u64 Read64(const char* p)
 {
     u64 v = 0;
-    engine_placeholder::MemCopy(&v, p, sizeof(v));
+    vse::MemCopy(&v, p, sizeof(v));
     return v;
 }
 
 // Appends one code point as UTF-8 if it fits (keeping room for the terminator).
-void PutCodePoint(char* out, engine_placeholder::usize capacity, engine_placeholder::usize& n, u32 cp)
+void PutCodePoint(char* out, vse::usize capacity, vse::usize& n, u32 cp)
 {
     char bytes[4];
-    engine_placeholder::usize k = 0;
+    vse::usize k = 0;
     if (cp < 0x80)
     {
         bytes[k++] = static_cast<char>(cp);
@@ -83,13 +83,12 @@ void PutCodePoint(char* out, engine_placeholder::usize capacity, engine_placehol
     {
         return;
     }
-    engine_placeholder::MemCopy(out + n, bytes, k);
+    vse::MemCopy(out + n, bytes, k);
     n += k;
 }
 
 // A MINIDUMP_STRING (a byte length, then UTF-16) at `rva`, as UTF-8; an unpaired surrogate becomes U+FFFD.
-bool ReadDumpString(const char* data, engine_placeholder::usize size, u32 rva, char* out,
-                    engine_placeholder::usize capacity)
+bool ReadDumpString(const char* data, vse::usize size, u32 rva, char* out, vse::usize capacity)
 {
     out[0] = '\0';
     if (!Fits(size, rva, 4))
@@ -103,11 +102,10 @@ bool ReadDumpString(const char* data, engine_placeholder::usize size, u32 rva, c
     }
     const char* units = data + rva + 4;
     const u32 count = bytes / 2;
-    engine_placeholder::usize n = 0;
+    vse::usize n = 0;
     for (u32 i = 0; i < count; ++i)
     {
-        u32 cp = static_cast<u8>(units[engine_placeholder::usize{2} * i]) |
-                 (u32{static_cast<u8>(units[engine_placeholder::usize{2} * i + 1])} << 8);
+        u32 cp = static_cast<u8>(units[vse::usize{2} * i]) | (u32{static_cast<u8>(units[vse::usize{2} * i + 1])} << 8);
         if (cp >= 0xD800 && cp < 0xDC00 && i + 1 < count)
         {
             const u32 low = static_cast<u8>(units[2 * i + 2]) | (u32{static_cast<u8>(units[2 * i + 3])} << 8);
@@ -132,8 +130,8 @@ bool ReadDumpString(const char* data, engine_placeholder::usize size, u32 rva, c
 }
 
 // A CodeView record ([data, data + length)) as a build id and a debug file name.
-void ReadCodeView(const char* record, engine_placeholder::usize length, char* build_id,
-                  engine_placeholder::usize id_capacity, char* debug_file, engine_placeholder::usize file_capacity)
+void ReadCodeView(const char* record, vse::usize length, char* build_id, vse::usize id_capacity, char* debug_file,
+                  vse::usize file_capacity)
 {
     build_id[0] = '\0';
     debug_file[0] = '\0';
@@ -148,16 +146,16 @@ void ReadCodeView(const char* record, engine_placeholder::usize length, char* bu
         const u32 data1 = Read32(record + 4);
         const u32 data2 = static_cast<u8>(record[8]) | (u32{static_cast<u8>(record[9])} << 8);
         const u32 data3 = static_cast<u8>(record[10]) | (u32{static_cast<u8>(record[11])} << 8);
-        engine_placeholder::usize n = static_cast<engine_placeholder::usize>(
-            engine_placeholder::FormatTo(build_id, id_capacity, "%08x%04x%04x", data1, data2, data3));
+        vse::usize n = static_cast<vse::usize>(
+            vse::FormatTo(build_id, id_capacity, "%08x%04x%04x", data1, data2, data3));
         for (int i = 0; i < 8 && n + 3 <= id_capacity; ++i)
         {
-            n += static_cast<engine_placeholder::usize>(
-                engine_placeholder::FormatTo(build_id + n, id_capacity - n, "%02x", static_cast<u8>(record[12 + i])));
+            n += static_cast<vse::usize>(
+                vse::FormatTo(build_id + n, id_capacity - n, "%02x", static_cast<u8>(record[12 + i])));
         }
-        engine_placeholder::FormatTo(build_id + n, id_capacity - n, "%x", Read32(record + 20));
-        engine_placeholder::usize k = 0;
-        for (engine_placeholder::usize i = 24; i < length && record[i] != '\0' && k + 1 < file_capacity; ++i)
+        vse::FormatTo(build_id + n, id_capacity - n, "%x", Read32(record + 20));
+        vse::usize k = 0;
+        for (vse::usize i = 24; i < length && record[i] != '\0' && k + 1 < file_capacity; ++i)
         {
             debug_file[k++] = record[i];
         }
@@ -165,17 +163,17 @@ void ReadCodeView(const char* record, engine_placeholder::usize length, char* bu
     }
     else if (signature == kBpel)
     {
-        engine_placeholder::usize n = 0;
-        for (engine_placeholder::usize i = 4; i < length && n + 3 <= id_capacity; ++i)
+        vse::usize n = 0;
+        for (vse::usize i = 4; i < length && n + 3 <= id_capacity; ++i)
         {
-            n += static_cast<engine_placeholder::usize>(
-                engine_placeholder::FormatTo(build_id + n, id_capacity - n, "%02x", static_cast<u8>(record[i])));
+            n += static_cast<vse::usize>(
+                vse::FormatTo(build_id + n, id_capacity - n, "%02x", static_cast<u8>(record[i])));
         }
     }
 }
 
 // Finds a stream by type in the directory; false if the dump is damaged. `*found` says whether the stream is there.
-bool FindStream(const char* data, engine_placeholder::usize size, u32 type, u32* rva, u32* length, bool* found)
+bool FindStream(const char* data, vse::usize size, u32 type, u32* rva, u32* length, bool* found)
 {
     *found = false;
     if (data == nullptr || !Fits(size, 0, 32) || Read32(data) != kMinidumpSignature)
@@ -209,8 +207,7 @@ bool FindStream(const char* data, engine_placeholder::usize size, u32 type, u32*
 
 }  // namespace
 
-DumpResult ReadDumpModules(const char* data, engine_placeholder::usize size, DumpModule* out,
-                           engine_placeholder::usize capacity, engine_placeholder::usize* count)
+DumpResult ReadDumpModules(const char* data, vse::usize size, DumpModule* out, vse::usize capacity, vse::usize* count)
 {
     *count = 0;
     u32 rva = 0;
@@ -257,7 +254,7 @@ DumpResult ReadDumpModules(const char* data, engine_placeholder::usize size, Dum
     return DumpResult::Ok;
 }
 
-DumpResult ReadDumpException(const char* data, engine_placeholder::usize size, DumpException* out)
+DumpResult ReadDumpException(const char* data, vse::usize size, DumpException* out)
 {
     *out = DumpException();
     u32 rva = 0;
@@ -288,8 +285,7 @@ namespace
 
 // Completes one context, given by its location descriptor (size, then RVA, at `location`). A context that is not
 // there or does not fit (a dump cut short) is left alone: the others are still worth reading.
-void CompleteContext(char* data, engine_placeholder::usize size, const char* location,
-                     engine_placeholder::usize* completed)
+void CompleteContext(char* data, vse::usize size, const char* location, vse::usize* completed)
 {
     const u32 context_size = Read32(location);
     const u32 context_rva = Read32(location + 4);
@@ -307,7 +303,7 @@ void CompleteContext(char* data, engine_placeholder::usize size, const char* loc
 
 }  // namespace
 
-DumpResult CompleteMacContextFlags(char* data, engine_placeholder::usize size, engine_placeholder::usize* completed)
+DumpResult CompleteMacContextFlags(char* data, vse::usize size, vse::usize* completed)
 {
     *completed = 0;
     u32 rva = 0;
@@ -357,7 +353,7 @@ DumpResult CompleteMacContextFlags(char* data, engine_placeholder::usize size, e
     return DumpResult::Ok;
 }
 
-bool ReadImageInfo(const char* data, engine_placeholder::usize size, ImageInfo* out)
+bool ReadImageInfo(const char* data, vse::usize size, ImageInfo* out)
 {
     *out = ImageInfo();
     if (data == nullptr || !Fits(size, 0, 64) || data[0] != 'M' || data[1] != 'Z')
@@ -365,7 +361,7 @@ bool ReadImageInfo(const char* data, engine_placeholder::usize size, ImageInfo* 
         return false;
     }
     const u32 pe = Read32(data + 0x3c);
-    if (!Fits(size, pe, 24) || engine_placeholder::MemCompare(data + pe, "PE\0\0", 4) != 0)
+    if (!Fits(size, pe, 24) || vse::MemCompare(data + pe, "PE\0\0", 4) != 0)
     {
         return false;
     }
@@ -386,8 +382,8 @@ bool ReadImageInfo(const char* data, engine_placeholder::usize size, ImageInfo* 
         return false;
     }
     out->size_of_image = Read32(opt + 56);
-    const u32 debug_rva = Read32(opt + directories_at + engine_placeholder::usize{6} * 8);  // data directory 6: debug
-    const u32 debug_size = Read32(opt + directories_at + engine_placeholder::usize{6} * 8 + 4);
+    const u32 debug_rva = Read32(opt + directories_at + vse::usize{6} * 8);  // data directory 6: debug
+    const u32 debug_size = Read32(opt + directories_at + vse::usize{6} * 8 + 4);
     // The debug directory's file offset, through the section that holds its address.
     const u64 table = optional + optional_size;
     if (!Fits(size, table, u64{sections} * 40))

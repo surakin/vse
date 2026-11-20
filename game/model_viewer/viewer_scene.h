@@ -30,7 +30,7 @@
 namespace model_viewer
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 /// What to load.
 struct ViewerOptions

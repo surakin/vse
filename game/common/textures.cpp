@@ -9,7 +9,7 @@
 namespace demo
 {
 
-using namespace engine_placeholder::rhi;
+using namespace vse::rhi;
 
 namespace
 {

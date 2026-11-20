@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kPermuteTestFragDxilByteCount = 2680;
 
@@ -1075,4 +1075,4 @@ inline constexpr u64 kPermuteTestFragPerm5DxilSpirvFnv = 0xa273f699ed927114ull;
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kPermuteTestFragShader = {"permute_test.frag", rhi::SpirvBlob(kPermuteTestFragSpv, kPermuteTestFragSpvWordCount), rhi::DxilBlob(kPermuteTestFragDxil, kPermuteTestFragDxilByteCount), rhi::MetalLibBlob(kPermuteTestFragMetallib, kPermuteTestFragMetallibByteCount, kPermuteTestFragMetallibEntry, &kPermuteTestFragMetallibSlots)};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

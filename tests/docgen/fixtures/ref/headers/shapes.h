@@ -1,6 +1,6 @@
 #pragma once
 
-namespace engine_placeholder {
+namespace vse {
 namespace demo {
 
 /// A base class with a documented virtual.
@@ -26,4 +26,4 @@ public:
 void HelperForTests();
 
 } // namespace demo
-} // namespace engine_placeholder
+} // namespace vse

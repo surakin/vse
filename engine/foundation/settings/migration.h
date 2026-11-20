@@ -13,7 +13,7 @@
 #include "settings/config_store.h"
 #include "settings/registry.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// The version of the settings file format this program writes (`version = 1`).
@@ -114,4 +114,4 @@ u32 StoredSchemaVersion(ConfigStore& store, StringView section);
 /// records what wrote it); with `overwrite` it replaces the ones that are there (a newer file being replaced).
 void StampVersions(const Registry& registry, ConfigStore& store, bool overwrite = false);
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

@@ -3,7 +3,7 @@
 // rather than when the scheduler first includes the header.
 #include "jobs/job.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 namespace
 {
@@ -12,4 +12,4 @@ namespace
     co_return;
 }
 }  // namespace
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

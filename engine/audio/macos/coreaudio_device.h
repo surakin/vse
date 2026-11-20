@@ -8,7 +8,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Lists the devices that have output channels; each name is the device's UID (`kAudioDevicePropertyDeviceUID`), and
@@ -29,4 +29,4 @@ DeviceStatus EnumerateCoreAudioDevices(Vector<DeviceDescription>* out);
 /// - Fails: reported by a null result.
 UniquePtr<AudioDevice> CreateCoreAudioDevice();
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

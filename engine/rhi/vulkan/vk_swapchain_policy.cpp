@@ -2,7 +2,7 @@
 
 #include "rhi/vulkan/vk_format.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 SurfaceFormatChoice ChooseSurfaceFormat(const VkSurfaceFormatKHR* formats, usize count)
@@ -209,4 +209,4 @@ VkImageUsageFlags ChooseImageUsage(VkImageUsageFlags supported)
     return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (supported & VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

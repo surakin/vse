@@ -37,7 +37,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 class ResourceManager;
@@ -739,4 +739,4 @@ template <class T> const T* Handle<T>::Get() const
     return &static_cast<const LoadedValue<T>*>(object)->value;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

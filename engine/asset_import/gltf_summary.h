@@ -12,7 +12,7 @@
 #include "asset_import/gltf_import.h"
 #include "asset_import/gltf_nodes.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The version of the summary's JSON layout (the member `"version"`).
@@ -48,4 +48,4 @@ inline constexpr u32 kImportSummaryVersion = 1;
 void BuildImportSummary(const GltfDocument& document, const GltfNodeGraph& graph, const ImportOptions& options,
                         const Vector<u32>& nodes, const Vector<String<HeapAllocator>>& names, ImportResult* result);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -9,7 +9,7 @@
 #include "sync/mutex.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace detail
@@ -408,4 +408,4 @@ usize Registry::CurrentText(SettingId id, char* out, usize capacity) const
     return t.Length();
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

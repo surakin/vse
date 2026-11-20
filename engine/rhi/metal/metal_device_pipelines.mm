@@ -17,7 +17,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 namespace
@@ -599,4 +599,4 @@ void MetalDevice::Quiesce()
     pipeline_cache_.Save();
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

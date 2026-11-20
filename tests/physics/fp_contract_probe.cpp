@@ -4,7 +4,7 @@
 // never detect fusing.
 #include "fp_contract_probe.h"
 
-namespace engine_placeholder::physics_test
+namespace vse::physics_test
 {
 
 bool FP_PROBE_NAME(const volatile f32* inputs)
@@ -16,4 +16,4 @@ bool FP_PROBE_NAME(const volatile f32* inputs)
     return a * a + c != 0.0f;
 }
 
-}  // namespace engine_placeholder::physics_test
+}  // namespace vse::physics_test

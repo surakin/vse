@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kMipgenCompReflByteCount = 274;
 
@@ -36,4 +36,4 @@ inline constexpr u32 kMipgenCompPushHeightOffset = 4;
 inline constexpr u32 kMipgenCompPushSrgbOffset = 8;
 inline constexpr u32 kMipgenCompPushPadOffset = 12;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

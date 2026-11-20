@@ -20,17 +20,17 @@
 #include "physics/triangle_mesh.h"
 #include "types.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 class Scheduler;
 }
 
-namespace engine_placeholder::bytes
+namespace vse::bytes
 {
 class ByteWriter;
 }
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// What a call on the world did.
@@ -911,4 +911,4 @@ private:
     void DropEventsOf(BodyId id);
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

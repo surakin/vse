@@ -7,7 +7,7 @@
 #include "math/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// A sound at the entity's `ecs::WorldTransform`: the position is the entity's, the axis of its cone is the entity's
@@ -69,4 +69,4 @@ struct AudioListener
     bool active = true;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

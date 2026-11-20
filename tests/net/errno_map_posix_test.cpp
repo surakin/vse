@@ -7,7 +7,7 @@
 #include "net/posix/posix_net.h"
 #include "os/last_error.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -88,4 +88,4 @@ TEST_CASE("A failed send's errno is mapped with the system's quirks", "[net][err
 }
 
 }  // namespace
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

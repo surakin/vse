@@ -15,7 +15,7 @@
 #include "io/file_system.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -513,4 +513,4 @@ TEST_CASE("Pak open and lookup speed", "[.][asset-bench]")
     CHECK(found == kCount);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

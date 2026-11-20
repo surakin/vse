@@ -5,7 +5,7 @@
 #include "lang/scalar.h"
 #include "orbit_camera.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using model_viewer::OrbitCamera;
 
 namespace

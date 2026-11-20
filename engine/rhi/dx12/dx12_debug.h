@@ -7,7 +7,7 @@
 //! The D3D12 debug layer's messages: routed to [[rhi::LogRhi]], counted, and offered to a test's capture hook (Phase 13
 //! Day 164).
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 /// Running totals of debug-layer messages since process start or the last [[rhi::dx12::ResetDebugMessageCounts]].
@@ -59,4 +59,4 @@ void RecordDebugMessage(D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, co
 /// - Thread-safety: thread-safe.
 void NoteLiveObject();
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

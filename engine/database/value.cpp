@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 const char* ValueTypeName(ValueType type)
@@ -137,4 +137,4 @@ ValueView Value::View() const
     return ValueView::Null();
 }
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

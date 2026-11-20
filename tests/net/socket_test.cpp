@@ -10,7 +10,7 @@
 #include "os/os.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -553,4 +553,4 @@ TEST_CASE("A connection reset before it is accepted is skipped or accepted, neve
 }
 
 }  // namespace
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -35,7 +35,7 @@ Planning-grade day: fixes the contract every later day implements. No tool code 
   phase was added.
 - Decisions made while writing: expectations live in sibling `.expect`
   files (inline annotation comments would split/detach doc comments);
-  plain `//` comments never carry meaning; the leading `engine_placeholder::`
+  plain `//` comments never carry meaning; the leading `vse::`
   namespace is omitted from symbol IDs; thread-safety is a fixed category
   vocabulary; `override` members inherit the base summary.
 - Planning-only day: no `/code-review` (CLAUDE.md exempts plan/STATUS-only

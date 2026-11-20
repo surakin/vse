@@ -92,7 +92,7 @@ def emit_cpp(merged, unicode_version, source_files, out_path):
     lines.append("")
     lines.append('#include "grapheme.h"')
     lines.append("")
-    lines.append("namespace engine_placeholder {")
+    lines.append("namespace vse {")
     lines.append("")
     lines.append("namespace {")
     lines.append("")
@@ -131,7 +131,7 @@ def emit_cpp(merged, unicode_version, source_files, out_path):
     lines.append("    return GraphemeBreakProperty::Other;")
     lines.append("}")
     lines.append("")
-    lines.append("} // namespace engine_placeholder")
+    lines.append("} // namespace vse")
     lines.append("")
 
     with open(out_path, "w", encoding="utf-8") as f:

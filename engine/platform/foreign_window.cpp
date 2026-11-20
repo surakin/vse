@@ -3,7 +3,7 @@
 #include "lang/utility.h"
 #include "os/os.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 ForeignWindow::ForeignWindow(const NativeWindowInfo& info, u32 width, u32 height, f32 scale)
@@ -117,4 +117,4 @@ bool ForeignWindow::ClipboardHasFormat(ClipboardKind kind, ClipboardFormat forma
     return hooks_->GetClipboardText(&probe) && probe.Size() != 0;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

@@ -140,7 +140,7 @@ masks:
 #include "rhi/handle.h"
 #include "rhi/enums.h"
 
-using namespace engine_placeholder::rhi;
+using namespace vse::rhi;
 
 int main() {
 BufferUsage usage = BufferUsage::Vertex | BufferUsage::CopyDst;
@@ -186,8 +186,8 @@ aborting, so a test can assert that a bad sequence is caught:
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 int main() {
     LogRhi.SetEnabled(false);  // keep the expected error out of the output
@@ -345,7 +345,7 @@ null, and a GPU backend that is registered but fails is never replaced by null.
 #include "rhi/backends/backends.h"
 #include "rhi/rhi.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     rhi::RegisterCompiledBackends();
@@ -407,7 +407,7 @@ GPU: the caller decides whether to try the best one instead.
 #include "rhi/backends/backends.h"
 #include "rhi/rhi.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     rhi::RegisterCompiledBackends();     // once, before any device
@@ -464,7 +464,7 @@ another thread it aborts.
 #include "rhi/backends/backends.h"
 #include "rhi/device_host.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct CubeOwner final : rhi::DeviceObserver {
     rhi::Device* device = nullptr;

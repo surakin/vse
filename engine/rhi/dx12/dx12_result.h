@@ -5,7 +5,7 @@
 
 //! `HRESULT`s of the D3D12 and DXGI calls the backend makes, as names for logs and as the device-removed test.
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 /// Returns a short name for an `HRESULT` the backend can meet (`S_OK`, `E_OUTOFMEMORY`, `E_INVALIDARG`,
@@ -26,4 +26,4 @@ const char* HresultName(HRESULT result);
 /// - Thread-safety: thread-safe.
 bool IsDeviceLostResult(HRESULT result);
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

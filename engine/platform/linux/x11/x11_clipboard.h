@@ -11,7 +11,7 @@
 
 struct _XDisplay;
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 /// What this window offers on one selection.
@@ -109,4 +109,4 @@ void ClipboardTick(_XDisplay* display, X11ClipboardState& state, u64 now_ns);
 /// Gives up the selections and fails the open requests; call before the display closes.
 void ClipboardRelease(_XDisplay* display, X11ClipboardState& state, u64 now_ns);
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11

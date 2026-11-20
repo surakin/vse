@@ -7,7 +7,7 @@
 #include "cstr/cstr.h"
 #include "gltf_writer.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -206,4 +206,4 @@ TEST_CASE("json: 5,000 mutated and truncated documents never crash and never use
     CHECK(accepted < 5000);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

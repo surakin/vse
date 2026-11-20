@@ -8,7 +8,7 @@
 
 //! The owner of a device and its swapchain, which can destroy and re-create both at run time.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Something that owns device objects and must release and rebuild them when the device is replaced.
@@ -234,4 +234,4 @@ private:
     char error_[160] = {};
 };
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

@@ -6,7 +6,7 @@
 #include "net/udp_transport.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 TEST_CASE("UDP transport: a handshake and messages over loopback sockets", "[net][udp][network]")
@@ -67,4 +67,4 @@ TEST_CASE("UDP transport: a handshake and messages over loopback sockets", "[net
     CHECK(client_got == 5);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -7,7 +7,7 @@
 
 //! Wayland platform window: the Wayland backend packaged as an `os::Window`.
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 /// Wayland backend as an [[os::Window]]: owns the connection, xdg toplevel window and seat input together.
@@ -176,4 +176,4 @@ private:
     void MarkConnectionLost(const char* why);
 };
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

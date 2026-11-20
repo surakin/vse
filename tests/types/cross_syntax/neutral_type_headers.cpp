@@ -5,7 +5,7 @@
 #include "int128.h"
 #include "types.h"
 
-namespace engine_placeholder
+namespace vse
 {
 static_assert(sizeof(u128) == 16, "u128 is 16 bytes on every target");
 inline u128 Probe(u128 a, u128 b)
@@ -20,4 +20,4 @@ inline ByteSpan ProbeSpan(const Vector<byte>& v)
 {
     return ByteSpan(v).Subspan(0, v.Size());
 }
-}  // namespace engine_placeholder
+}  // namespace vse

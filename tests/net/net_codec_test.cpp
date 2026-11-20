@@ -10,7 +10,7 @@
 #include "lang/scalar.h"
 #include "net/codec.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -839,4 +839,4 @@ TEST_CASE("Raw floats keep every bit pattern", "[net][codec]")
     CHECK(d == -2.25);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

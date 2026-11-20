@@ -6,7 +6,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The number of service slots.
@@ -22,4 +22,4 @@ enum ServiceSlot : u32
     kServiceInput = 2,    ///< The input bindings' services (`script_media`: `InputScriptServices`).
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -27,7 +27,7 @@ struct HWND__;
 struct HINSTANCE__;
 struct HICON__;  // HCURSOR is HICON
 
-namespace engine_placeholder::os::win32
+namespace vse::os::win32
 {
 
 struct Win32Dnd;        // OLE drag and drop state (win32_dragdrop.h)
@@ -320,4 +320,4 @@ private:
     Array<byte, 44> saved_placement_ = {};
 };
 
-}  // namespace engine_placeholder::os::win32
+}  // namespace vse::os::win32

@@ -8,7 +8,7 @@
 //! A string laid out in one font, cached (Phase 15, Day 195): what a label, a button and a check box draw their text
 //! from.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class Surface;
@@ -85,4 +85,4 @@ private:
     u64 layout_count_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

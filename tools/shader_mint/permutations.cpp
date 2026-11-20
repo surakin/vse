@@ -6,7 +6,7 @@
 #include "algorithm.h"
 #include "renderer/shader_permutation.h"
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 namespace
@@ -398,7 +398,7 @@ Text EmitPermutationInc(StringView base_view, StringView shader_view, StringView
         &out,
         "#pragma once\n\n#include \"%s.dxil.inc\"\n#include \"%s.refl.inc\"\n#include \"%s.spv.inc\"\n#include \"renderer/shader_permutation.h\"\n#include \"types.h\"\n\n",
         shader_file.CStr(), shader_file.CStr(), shader_file.CStr());
-    out.Append("namespace engine_placeholder::shaders {\n\n");
+    out.Append("namespace vse::shaders {\n\n");
     // The modules other than the base one.
     for (usize m = 1; m < modules.Size(); ++m)
     {
@@ -444,8 +444,8 @@ Text EmitPermutationInc(StringView base_view, StringView shader_view, StringView
         &out,
         "inline constexpr renderer::ShaderPermutations %sPermutations = {\"%s\", %sOptions, %zu, %sModules, %zu, %sEntries, %zu};\n\n",
         b, shader_file.CStr(), b, options.Size(), b, modules.Size(), b, keys.Size());
-    out.Append("} // namespace engine_placeholder::shaders\n");
+    out.Append("} // namespace vse::shaders\n");
     return out;
 }
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

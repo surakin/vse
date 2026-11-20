@@ -3,7 +3,7 @@
 #include "types.h"
 
 //! The current thread's id and the name it gave itself, for crash reports.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Bytes kept of a thread name, including the null byte.
@@ -27,4 +27,4 @@ void SetCrashThreadName(const char* name);
 /// - Thread-safety: thread-safe. Async-signal-safe.
 const char* CrashThreadName();
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

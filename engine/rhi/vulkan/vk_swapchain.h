@@ -6,7 +6,7 @@
 
 //! The Vulkan implementation of [[rhi::Swapchain]].
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 class VulkanDevice;
@@ -81,4 +81,4 @@ private:
     u64 window_serial_ = 0;
 };
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

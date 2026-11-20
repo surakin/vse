@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 f32 DbToGain(f32 db)
@@ -129,9 +129,9 @@ void Limiter::Process(f32* samples, u32 frames)
     min_gain_ = lowest;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 void Limiter::SaveState(StateOut* out) const
@@ -161,4 +161,4 @@ void Limiter::LoadState(StateIn* in)
     }
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

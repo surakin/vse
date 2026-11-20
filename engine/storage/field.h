@@ -19,7 +19,7 @@
 #include "string/utf8.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// The upper bounds a decode (and an encode) holds every length to, so a damaged or hostile record cannot ask for
@@ -825,4 +825,4 @@ template <auto Member> FieldDesc Field(const char* name, FieldOptions options = 
     return d;
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

@@ -13,7 +13,7 @@
 #include "asset_import/gltf_container.h"
 #include "asset_import/gltf_nodes.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Imports the textures and the materials of a parsed glTF.
@@ -38,4 +38,4 @@ namespace engine_placeholder::asset
 Status ImportMaterials(const GltfDocument& document, const GltfNodeGraph& graph, GltfSource& source,
                        const ImportOptions& options, const TypeRegistry& types, ImportResult* result, GltfError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

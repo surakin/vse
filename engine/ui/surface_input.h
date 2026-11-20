@@ -8,7 +8,7 @@
 //! Input for a surface that has no window (Phase 15, Day 202): a screen in the world that the application feeds from a
 //! ray cast, a replay or a test.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A ray: where it starts and which way it goes (the direction need not be a unit vector).
@@ -110,4 +110,4 @@ private:
     Point last_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

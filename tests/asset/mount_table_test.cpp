@@ -10,7 +10,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -22,7 +22,7 @@ Status AddWithPath(HostMemoryBackend& backend, const TypeRegistry& registry, u64
     const Vector<byte> blob = test::MakeTestBlob(registry, test::Rid(id), payload, seed);
     const StringView p = test::Vp(path);
     MemoryAddOptions options;
-    options.paths = engine_placeholder::Span<const StringView>(&p, 1);
+    options.paths = vse::Span<const StringView>(&p, 1);
     return backend.Add(test::Rid(id), test::AsBytes(blob), options);
 }
 
@@ -315,4 +315,4 @@ TEST_CASE("Of two mounts with one priority the later one wins", "[asset][mount]"
     CHECK(info.size == test::MakeTestBlob(registry, test::Rid(1), 300, 2).Size());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

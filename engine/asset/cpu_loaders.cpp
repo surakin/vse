@@ -1,6 +1,6 @@
 #include "asset/cpu_loaders.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -106,4 +106,4 @@ void RegisterCpuLoaders(ResourceManager* manager)
     manager->RegisterLoader<LevelSummary>(&LoadLevel);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

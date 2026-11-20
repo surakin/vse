@@ -22,11 +22,11 @@
 
 #import <AppKit/AppKit.h>
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::metal;
-using namespace engine_placeholder::rhi::metal::test;
-using engine_placeholder::os::cocoa::CocoaWindow;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::rhi::metal;
+using namespace vse::rhi::metal::test;
+using vse::os::cocoa::CocoaWindow;
 
 namespace metal_swapchain_test
 {

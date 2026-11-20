@@ -11,7 +11,7 @@
 #include "platform/window.h"
 #include "types.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// What the host does for the engine's requests on a window the host owns: the cursor, the pointer lock, the clipboard,
@@ -161,4 +161,4 @@ private:
     ClipboardRequests requests_;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

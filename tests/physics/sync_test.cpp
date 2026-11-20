@@ -7,8 +7,8 @@
 #include "lang/scalar.h"
 #include "physics/sync.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::physics;
+using namespace vse;
+using namespace vse::physics;
 
 namespace
 {

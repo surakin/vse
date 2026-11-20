@@ -11,7 +11,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset::test
+namespace vse::asset::test
 {
 
 /// What a backend under test holds: ids[i] has the bytes blobs[i] and the virtual path paths[i].
@@ -140,4 +140,4 @@ inline void RunBackendConformance(ResourceBackend& backend, const ConformanceFix
     CHECK(backend.Watch(&changes).Ok());
 }
 
-}  // namespace engine_placeholder::asset::test
+}  // namespace vse::asset::test

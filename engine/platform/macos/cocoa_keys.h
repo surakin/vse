@@ -16,7 +16,7 @@
 #include "platform/input.h"
 #include "types.h"
 
-namespace engine_placeholder::os::cocoa
+namespace vse::os::cocoa
 {
 
 /// Key codes are below this (they are 7-bit on every Apple keyboard).
@@ -89,4 +89,4 @@ struct CocoaWheel
 /// - Fails: never.
 CocoaWheel CocoaWheelNotches(f64 delta_x, f64 delta_y, bool precise);
 
-}  // namespace engine_placeholder::os::cocoa
+}  // namespace vse::os::cocoa

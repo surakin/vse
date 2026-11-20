@@ -19,7 +19,7 @@
 #include <ole2.h>
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::os::win32
+namespace vse::os::win32
 {
 
 class Win32Window;
@@ -142,4 +142,4 @@ struct Win32Dnd
     bool dragging = false;
 };
 
-}  // namespace engine_placeholder::os::win32
+}  // namespace vse::os::win32

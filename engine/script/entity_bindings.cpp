@@ -6,7 +6,7 @@
 #include "script/merge_services.h"
 #include "script/partition_context.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -517,4 +517,4 @@ bool RegisterEntityBindings(BindingRegistry* registry)
     return ok;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

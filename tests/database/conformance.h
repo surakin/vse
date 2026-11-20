@@ -27,7 +27,7 @@
 #include "database/database.h"
 #include "lang/limits.h"
 
-namespace engine_placeholder::database::conformance
+namespace vse::database::conformance
 {
 
 // --- helpers
@@ -710,10 +710,10 @@ template <class F> void SupportsAgreesWithBehaviour()
 #define DATABASE_CONFORMANCE_CASE(FIXTURE, TITLE, FUNCTION)                                                            \
     TEST_CASE("Database conformance (" #FIXTURE "): " TITLE, "[database][conformance]")                                \
     {                                                                                                                  \
-        ::engine_placeholder::database::conformance::FUNCTION<FIXTURE>();                                              \
+        ::vse::database::conformance::FUNCTION<FIXTURE>();                                                             \
     }
 
-}  // namespace engine_placeholder::database::conformance
+}  // namespace vse::database::conformance
 
 // Registers every case of the suite for one fixture.
 #define DATABASE_CONFORMANCE_CASES(FIXTURE)                                                                            \

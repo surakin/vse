@@ -13,7 +13,7 @@
 #include "physics/character_set.h"
 #include "types.h"
 
-namespace engine_placeholder::script_physics
+namespace vse::script_physics
 {
 
 /// Which events become script events.
@@ -76,4 +76,4 @@ inline constexpr const char* kEventCollisionEnd = "on_collision_end";      ///< 
 inline constexpr const char* kEventTriggerEnter = "on_trigger_enter";      ///< A body entered a trigger volume.
 inline constexpr const char* kEventTriggerExit = "on_trigger_exit";        ///< A body left a trigger volume.
 
-}  // namespace engine_placeholder::script_physics
+}  // namespace vse::script_physics

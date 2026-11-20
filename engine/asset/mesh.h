@@ -32,7 +32,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Most vertices of one mesh.
@@ -389,4 +389,4 @@ private:
     ByteSpan joint_bounds_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

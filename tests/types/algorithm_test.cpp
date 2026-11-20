@@ -6,7 +6,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

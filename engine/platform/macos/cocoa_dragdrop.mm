@@ -17,11 +17,11 @@
 
 #import <AppKit/AppKit.h>
 
-using engine_placeholder::u8;
-using engine_placeholder::os::DragAction;
-using engine_placeholder::os::DragActionBit;
-using engine_placeholder::os::cocoa::CocoaDnd;
-using engine_placeholder::os::cocoa::CocoaWindow;
+using vse::u8;
+using vse::os::DragAction;
+using vse::os::DragActionBit;
+using vse::os::cocoa::CocoaDnd;
+using vse::os::cocoa::CocoaWindow;
 
 namespace
 {
@@ -110,23 +110,21 @@ DragAction ActionOfOperation(NSDragOperation operation)
 {
     NSArray<NSPasteboardType>* types = sender.draggingPasteboard.types;
     u8 offered = 0;
-    const NSUInteger count = types.count < engine_placeholder::os::kMaxDragTypes
-                                 ? types.count
-                                 : engine_placeholder::os::kMaxDragTypes;
+    const NSUInteger count = types.count < vse::os::kMaxDragTypes ? types.count : vse::os::kMaxDragTypes;
     for (NSUInteger i = 0; i < count; ++i)
     {
         NSString* type = types[i];
         if ([type isEqualToString:NSPasteboardTypeString])
         {
-            offered |= engine_placeholder::os::kDropText;
+            offered |= vse::os::kDropText;
         }
         else if ([type isEqualToString:NSPasteboardTypeFileURL])
         {
-            offered |= engine_placeholder::os::kDropFiles;
+            offered |= vse::os::kDropFiles;
         }
         else if (dnd.accept_custom != nil && [type isEqualToString:dnd.accept_custom])
         {
-            offered |= engine_placeholder::os::kDropCustom;
+            offered |= vse::os::kDropCustom;
         }
     }
     return static_cast<u8>(offered & dnd.accept_formats);
@@ -193,26 +191,21 @@ DragAction ActionOfOperation(NSDragOperation operation)
     }
     // Read every accepted format now: the pasteboard is the source's again once the drop is over.
     NSPasteboard* pasteboard = sender.draggingPasteboard;
-    const engine_placeholder::Array<engine_placeholder::os::ClipboardFormat, 3> formats = {
-        {engine_placeholder::os::ClipboardFormat::Text, engine_placeholder::os::ClipboardFormat::FileList,
-         engine_placeholder::os::ClipboardFormat::Custom}};
-    const engine_placeholder::Array<u8, 3> bits = {
-        {engine_placeholder::os::kDropText, engine_placeholder::os::kDropFiles, engine_placeholder::os::kDropCustom}};
-    for (engine_placeholder::usize i = 0; i < 3; ++i)
+    const vse::Array<vse::os::ClipboardFormat, 3> formats = {
+        {vse::os::ClipboardFormat::Text, vse::os::ClipboardFormat::FileList, vse::os::ClipboardFormat::Custom}};
+    const vse::Array<u8, 3> bits = {{vse::os::kDropText, vse::os::kDropFiles, vse::os::kDropCustom}};
+    for (vse::usize i = 0; i < 3; ++i)
     {
-        engine_placeholder::os::cocoa::CocoaDroppedFormat& f = dnd.dropped[i];
-        f = engine_placeholder::os::cocoa::CocoaDroppedFormat{};
+        vse::os::cocoa::CocoaDroppedFormat& f = dnd.dropped[i];
+        f = vse::os::cocoa::CocoaDroppedFormat{};
         if ((dnd.offered & bits[i]) == 0)
         {
             continue;
         }
         f.present = true;
-        NSString* type = i == 2 ? dnd.accept_custom
-                                : engine_placeholder::os::cocoa::PasteboardTypeOf(formats[i],
-                                                                                  engine_placeholder::StringView());
-        f.status = engine_placeholder::os::cocoa::ReadPasteboard(pasteboard, formats[i], type, &f.bytes, &f.replaced,
-                                                                 &f.rejected);
-        if (f.status != engine_placeholder::os::ClipboardStatus::Ok)
+        NSString* type = i == 2 ? dnd.accept_custom : vse::os::cocoa::PasteboardTypeOf(formats[i], vse::StringView());
+        f.status = vse::os::cocoa::ReadPasteboard(pasteboard, formats[i], type, &f.bytes, &f.replaced, &f.rejected);
+        if (f.status != vse::os::ClipboardStatus::Ok)
         {
             f.bytes.Clear();
         }
@@ -251,7 +244,7 @@ DragAction ActionOfOperation(NSDragOperation operation)
 
 @end
 
-namespace engine_placeholder::os::cocoa
+namespace vse::os::cocoa
 {
 
 namespace
@@ -600,4 +593,4 @@ void CocoaWindow::OnDragEnded(DragAction action)
     QueueEvent(event);
 }
 
-}  // namespace engine_placeholder::os::cocoa
+}  // namespace vse::os::cocoa

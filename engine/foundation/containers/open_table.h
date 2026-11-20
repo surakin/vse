@@ -11,7 +11,7 @@
 //! The open-addressing table under [[HashMap]] and [[HashSet]] (container audit series, Day 7): linear probing,
 //! tombstones, a power-of-two capacity and the walk, written once. A set stores its keys, a map stores
 //! `{key, value}` entries; `KeyOf` says where an element's key is.
-namespace engine_placeholder::detail
+namespace vse::detail
 {
 
 // A set's element is its key.
@@ -347,4 +347,4 @@ private:
     u32 changes_ = 0;            // bumped by every insert, erase, clear and rehash; checked by the iterator
 };
 
-}  // namespace engine_placeholder::detail
+}  // namespace vse::detail

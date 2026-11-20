@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTextFragMetallibByteCount = 4556;
 
@@ -308,4 +308,4 @@ inline constexpr rhi::ShaderSlotTable kTextFragMetallibSlots = {kTextFragMetalli
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kTextFragMetallibSpirvFnv = 0x7b9b23325359fa27ull;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

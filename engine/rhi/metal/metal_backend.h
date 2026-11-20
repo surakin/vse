@@ -2,7 +2,7 @@
 
 //! Registering the Metal backend with the backend registry (`rhi/backend_registry.h`).
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Registers the Metal backend (`Backend::Metal`, name `metal`, Metal libraries) with the backend registry. macOS only.
@@ -17,4 +17,4 @@ namespace engine_placeholder::rhi
 /// - Thread-safety: thread-safe.
 bool RegisterMetalBackend();
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

@@ -7,7 +7,7 @@ int g_shared = 0;  // plain int, no synchronization: the race
 
 int main()
 {
-    engine_placeholder::Thread a(
+    vse::Thread a(
         []
         {
             for (int i = 0; i < 100000; ++i)
@@ -15,7 +15,7 @@ int main()
                 ++g_shared;
             }
         });
-    engine_placeholder::Thread b(
+    vse::Thread b(
         []
         {
             for (int i = 0; i < 100000; ++i)

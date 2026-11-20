@@ -18,7 +18,7 @@
 #include "os/command_line.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using namespace container_bench;
 
 namespace container_bench

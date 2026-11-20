@@ -9,7 +9,7 @@
 #include "scene/components.h"
 #include "types.h"
 
-namespace engine_placeholder::scene
+namespace vse::scene
 {
 
 /// The resource that tells the sync which scene to mirror into.
@@ -94,4 +94,4 @@ ecs::SystemDesc MakeRenderSyncSystem(const char* name);
 /// - Thread-safety: thread-compatible.
 ecs::SystemDesc MakeCameraSystem(const char* name);
 
-}  // namespace engine_placeholder::scene
+}  // namespace vse::scene

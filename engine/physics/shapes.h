@@ -9,7 +9,7 @@
 #include "physics/validation.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The kind of a shape. The numbers are stored and sent through the C API: never renumbered, new kinds go at the end.
@@ -118,4 +118,4 @@ struct Shape
     Vec3 LocalHalfExtents() const;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

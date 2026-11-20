@@ -9,8 +9,8 @@
 #include "lang/scalar.h"
 #include "sync/thread.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::audio;
+using namespace vse;
+using namespace vse::audio;
 
 namespace
 {

@@ -10,7 +10,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Why a WAV file was refused.
@@ -180,4 +180,4 @@ private:
     u64 position_ = 0;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -5,7 +5,7 @@
 //! What a crash report says about the program and the machine, collected once at startup.
 //!
 //! Filled before anything can crash, so the crash path only reads fixed buffers: no allocation, no file access.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Bytes kept of the build id as hex text (a 20-byte id is 40 digits), including the null byte.
@@ -86,4 +86,4 @@ bool CrashContextInitialized();
 /// - Thread-safety: thread-safe. Async-signal-safe.
 const CrashContext& GetCrashContext();
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

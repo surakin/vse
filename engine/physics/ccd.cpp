@@ -7,7 +7,7 @@
 #include "physics/collide.h"
 #include "physics/world.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -156,4 +156,4 @@ void PhysicsWorld::SweepContinuous()
     }
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

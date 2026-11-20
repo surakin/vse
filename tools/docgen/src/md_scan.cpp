@@ -308,7 +308,7 @@ private:
         }
         else
         {
-            engine_placeholder::StringBuilder<ArenaAllocator> sb(arena_);
+            vse::StringBuilder<ArenaAllocator> sb(arena_);
             sb.Append(slug);
             sb.Append('-');
             sb.AppendUInt(seen);
@@ -523,7 +523,7 @@ private:
             return t;
         }
         auto glue = [](char c) { return c == ':' || c == '(' || c == ')' || c == ',' || c == '<' || c == '>'; };
-        engine_placeholder::StringBuilder<ArenaAllocator> sb(arena_);
+        vse::StringBuilder<ArenaAllocator> sb(arena_);
         char prev = 0;
         for (usize i = 0; i < t.Length();)
         {
@@ -659,7 +659,7 @@ StringView HeadingSlug(StringView h, ArenaAllocator& arena)
             continue;
         }
         const bool keep = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' ||
-                          static_cast<engine_placeholder::byte>(c) >= 0x80;
+                          static_cast<vse::byte>(c) >= 0x80;
         if (keep)
         {
             buf[n++] = c;

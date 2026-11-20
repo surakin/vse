@@ -9,7 +9,7 @@
 #include "net/sim_transport.h"
 #include "transport_conformance.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -477,4 +477,4 @@ TEST_CASE("Sim transport: a reliable message far beyond the window is neither de
           before);  // and no acknowledgement went back (only keep-alives would, and none are due)
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -6,7 +6,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// What a number outside its range does.
@@ -156,4 +156,4 @@ ValueError ParseValue(const SettingDesc& desc, StringView text, Value* out);
 /// - Aborts: the value's type differs from `desc.type`, or an enum index is outside the names.
 usize FormatValue(const SettingDesc& desc, const Value& value, char* out, usize capacity);
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

@@ -1,6 +1,6 @@
-# Engine
+# Visual Storm Engine (VSE)
 
-A game engine written from scratch in C++20. It opens its own windows (Wayland or X11 on Linux, Win32 on Windows, Cocoa on macOS), draws through its own graphics
+Visual Storm Engine, VSE for short, is a game engine written from scratch in C++20. It opens its own windows (Wayland or X11 on Linux, Win32 on Windows, Cocoa on macOS), draws through its own graphics
 abstraction (Vulkan, Direct3D 12, Metal), runs its work on its own job system, and brings its own ECS, physics, audio, networking, UI toolkit, asset pipeline and
 scripting. Third-party code is kept to a short, justified list (FreeType, LuaJIT, SQLite, Catch2 and a few more), vendored under `third_party/` and built from source.
 

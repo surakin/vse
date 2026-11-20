@@ -31,8 +31,8 @@
 #include "storage/identity.h"
 #include "storage/local_storage.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::storage;
+using namespace vse;
+using namespace vse::storage;
 
 int main() {
     io::Path tmp;

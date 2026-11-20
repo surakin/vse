@@ -5,7 +5,7 @@
 #include "lang/utility.h"
 #include "lang/status_try.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 Status MintTextureFromPixels(const TypeRegistry& types, ResourceId id, const TextureMintSpec& source, u32 width,
@@ -129,4 +129,4 @@ Status MintTextureFromPixels(const TypeRegistry& types, ResourceId id, const Tex
     return BuildTextureBlob(types, id, input, out, target);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

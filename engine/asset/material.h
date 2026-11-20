@@ -18,7 +18,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Bytes of a name (template, parameter, slot, option) including its terminating zero.
@@ -183,4 +183,4 @@ Status BuildMaterialBlob(const TypeRegistry& types, ResourceId id, const Materia
 Status LoadMaterialBlob(ByteSpan bytes, const TypeRegistry& types, MaterialAssetData* out,
                         ResourceId* id_out = nullptr);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

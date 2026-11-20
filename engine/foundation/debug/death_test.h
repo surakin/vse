@@ -10,7 +10,7 @@
 //! function registered with [[ENGINE_DEATH_TEST_FN]]; the parent gets a [[debug::ChildResult]]. A program that wants to
 //! be the child calls [[debug::RunDeathTestChildIfRequested]] early (the test support in tests/debug does it for
 //! Catch2).
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Bytes kept of a child's standard output and of its standard error; the rest is dropped and flagged.
@@ -169,7 +169,7 @@ bool RunDeathTestChildIfRequested();
 /// - Thread-safety: not-thread-safe. Call while no other thread uses the helper.
 void SetDeathTestSupportForTesting(bool supported);
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug
 
 /// Defines a function that can run in a child process, and registers it under its own name.
 ///
@@ -180,7 +180,7 @@ void SetDeathTestSupportForTesting(bool supported);
 // NOLINTBEGIN(bugprone-macro-parentheses): fn_name is the name being declared and stringized
 #define ENGINE_DEATH_TEST_FN(fn_name)                                                                                  \
     static void fn_name(const char* argument);                                                                         \
-    static ::engine_placeholder::debug::DeathTestEntry fn_name##_death_entry{#fn_name, &fn_name};                      \
-    static ::engine_placeholder::debug::DeathTestRegistrar fn_name##_death_registrar{fn_name##_death_entry};           \
+    static ::vse::debug::DeathTestEntry fn_name##_death_entry{#fn_name, &fn_name};                                     \
+    static ::vse::debug::DeathTestRegistrar fn_name##_death_registrar{fn_name##_death_entry};                          \
     static void fn_name([[maybe_unused]] const char* argument)
 // NOLINTEND(bugprone-macro-parentheses)

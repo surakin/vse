@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -123,4 +123,4 @@ DeviceConfig DeviceConfigFromSettings(const AudioSettings& settings)
     return config;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

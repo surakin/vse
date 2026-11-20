@@ -11,7 +11,7 @@
 #include <aclapi.h>
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -232,4 +232,4 @@ bool IsDirectory(const Path& path)
     return DoStat(path, &info, true, false).Ok() && info.type == FileType::Directory;
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

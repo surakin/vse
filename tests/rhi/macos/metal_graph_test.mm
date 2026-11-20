@@ -16,11 +16,11 @@
 #include "rhi/metal/metal_device.h"
 #include "rhi/rhi.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::renderer;
-using namespace engine_placeholder::rhi::metal;
-using namespace engine_placeholder::rhi::metal::test;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::renderer;
+using namespace vse::rhi::metal;
+using namespace vse::rhi::metal::test;
 
 namespace metal_graph_test
 {

@@ -13,8 +13,8 @@
 #include "cstr/mem_ops.h"
 #include "test_text.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace
 {

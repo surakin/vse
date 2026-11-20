@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The lowest sample rate an [[audio::AudioFormat]] may have, in Hz.
@@ -149,4 +149,4 @@ u32 FrameBytes(const AudioFormat& format);
 /// - Thread-safety: thread-safe; pure.
 bool IsValid(const AudioFormat& format);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

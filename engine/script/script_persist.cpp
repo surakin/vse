@@ -3,7 +3,7 @@
 #include "script/script_runtime.h"
 #include "storage/status.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -136,4 +136,4 @@ bool RegisterScriptComponents(storage::ComponentRegistry* registry)
     return ok;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -13,8 +13,8 @@
 namespace settings_test
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::settings;
+using namespace vse;
+using namespace vse::settings;
 
 inline const char* const kConformanceModes[] = {"fifo", "mailbox", "immediate"};
 

@@ -3,7 +3,7 @@
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 LogChannel LogScript("LogScript", LogVerbosity::Info);
@@ -135,4 +135,4 @@ usize FlushLogBuffers(Span<LogBuffer* const> buffers)
     return written;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

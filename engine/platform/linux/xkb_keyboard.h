@@ -11,7 +11,7 @@ struct xkb_state;
 struct xkb_compose_table;
 struct xkb_compose_state;
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Owns a libxkbcommon context, keymap and state used to interpret keycodes.
@@ -114,4 +114,4 @@ private:
     xkb_compose_state* compose_state_ = nullptr;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

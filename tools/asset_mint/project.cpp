@@ -30,7 +30,7 @@
 #include "storage/builtin_components.h"
 #include "texture_source.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -3123,4 +3123,4 @@ Status Project::Unmint(StringView asset, MintDiagnostics* diagnostics, String<He
     return status;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

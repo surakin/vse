@@ -13,7 +13,7 @@
 #include "skeleton_source.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -731,4 +731,4 @@ TEST_CASE("clip: a weight track without a skeleton round-trips and samples linea
     CHECK(BuildClipBlob(types, ResourceId::FromValue(0x71), input, &blob).Failed());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

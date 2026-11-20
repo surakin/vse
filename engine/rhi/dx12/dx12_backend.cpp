@@ -6,7 +6,7 @@
 #include "rhi/dx12/dx12_device.h"
 #include "rhi/rhi.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -63,4 +63,4 @@ bool RegisterDx12Backend()
     return RegisterBackend(d);
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

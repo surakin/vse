@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kUiVertDxilByteCount = 5260;
 
@@ -348,4 +348,4 @@ inline constexpr u64 kUiVertDxilSpirvFnv = 0xf0b1830c79178355ull;
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kUiVertShader = {"ui.vert", rhi::SpirvBlob(kUiVertSpv, kUiVertSpvWordCount), rhi::DxilBlob(kUiVertDxil, kUiVertDxilByteCount), rhi::MetalLibBlob(kUiVertMetallib, kUiVertMetallibByteCount, kUiVertMetallibEntry, &kUiVertMetallibSlots)};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

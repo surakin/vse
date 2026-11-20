@@ -192,8 +192,8 @@ Day 260; `Delete` and `List` work now.
 #include "storage/memory_store.h"
 #include "storage/world_storage.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::storage;
+using namespace vse;
+using namespace vse::storage;
 
 int main() {
     ComponentRegistry registry;
@@ -279,8 +279,8 @@ a batch leaves the old or the new state.
 #include "os/console.h"
 #include "storage/sql_store.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::storage;
+using namespace vse;
+using namespace vse::storage;
 
 int main() {
     database::SqliteDatabase db;

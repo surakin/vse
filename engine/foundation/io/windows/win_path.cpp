@@ -5,7 +5,7 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-namespace engine_placeholder::io::windows
+namespace vse::io::windows
 {
 
 namespace
@@ -242,4 +242,4 @@ HandleGuard::~HandleGuard()
     }
 }
 
-}  // namespace engine_placeholder::io::windows
+}  // namespace vse::io::windows

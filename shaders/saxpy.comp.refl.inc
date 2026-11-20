@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kSaxpyCompReflByteCount = 182;
 
@@ -28,4 +28,4 @@ inline constexpr u32 kSaxpyCompPushSize = 8;
 inline constexpr u32 kSaxpyCompPushAOffset = 0;
 inline constexpr u32 kSaxpyCompPushCountOffset = 4;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

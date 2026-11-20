@@ -1,7 +1,7 @@
 #include "net/async.h"
 #include "net/time_budget.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -110,4 +110,4 @@ jobs::Task<IoResult> Connect(Reactor& reactor, Socket& socket, const Endpoint& r
                              });
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

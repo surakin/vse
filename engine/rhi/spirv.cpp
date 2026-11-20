@@ -1,6 +1,6 @@
 #include "rhi/spirv.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -215,4 +215,4 @@ const char* ValidateSpirv(const u32* words, usize word_count, ShaderStage stage,
     return nullptr;
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

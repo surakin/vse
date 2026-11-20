@@ -8,7 +8,7 @@
 
 //! The splitter (Phase 15, Day 199): panes side by side or one over the other, with handles the user drags.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Two or more panes along one axis, separated by draggable handles.
@@ -128,4 +128,4 @@ private:
     Callback<Splitter*> on_changed_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

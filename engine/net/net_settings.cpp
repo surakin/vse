@@ -3,7 +3,7 @@
 #include "settings/desc.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -201,4 +201,4 @@ LinkConfig LinkFromSettings(const settings::Registry& registry)
     return l;
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

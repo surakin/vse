@@ -17,11 +17,11 @@
 #endif
 #include "build_defs.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 #if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
-using engine_placeholder::rhi::vulkan::ChooseRequestedSurfaceFormat;
-using engine_placeholder::rhi::vulkan::FillSwapchainCaps;
+using vse::rhi::vulkan::ChooseRequestedSurfaceFormat;
+using vse::rhi::vulkan::FillSwapchainCaps;
 #endif
 
 namespace

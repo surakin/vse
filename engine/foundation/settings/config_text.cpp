@@ -4,7 +4,7 @@
 
 #include "string/utf8.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 // Named, not anonymous: ConfigDocument::Line (external linkage, defined below) has members of these types, and GCC
@@ -800,4 +800,4 @@ void ConfigDocument::Serialize(Vector<char>* out, bool skip_unreadable) const
     }
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

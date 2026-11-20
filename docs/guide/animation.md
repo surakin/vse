@@ -55,7 +55,7 @@ applied to the wrong rig.
 #include "asset/skeleton.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;

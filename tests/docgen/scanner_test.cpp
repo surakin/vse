@@ -57,9 +57,8 @@ void ListFiles(const Str& dir, const char* suffix, StrList& out)
         {
             ListFiles(p, suffix, out);
         }
-        else if (p.Size() >= engine_placeholder::CStrLength(suffix) &&
-                 p.Compare(p.Size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix),
-                           suffix) == 0)
+        else if (p.Size() >= vse::CStrLength(suffix) &&
+                 p.Compare(p.Size() - vse::CStrLength(suffix), vse::CStrLength(suffix), suffix) == 0)
         {
             out.Push(p);
         }

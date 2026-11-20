@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -260,4 +260,4 @@ UniquePtr<StreamProvider> SimStreamNetwork::MakeProvider(const Endpoint& local)
     return MakeUnique<SimStreamProvider>(*this, local);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

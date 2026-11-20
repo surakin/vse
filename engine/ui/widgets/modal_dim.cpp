@@ -3,7 +3,7 @@
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 ModalDim::ModalDim() : Widget(StringView("modaldim"))
@@ -20,4 +20,4 @@ void ModalDim::Draw(Canvas& canvas)
     DrawStyleBox(canvas, Bounds(), surface->Themes().Resolve(widget_kind::kModalDim, VariantId(0), 0, scale), scale);
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

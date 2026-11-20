@@ -6,7 +6,7 @@
 #include "net/socket.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// A datagram port over an operating-system UDP socket.
@@ -52,4 +52,4 @@ private:
     Endpoint local_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

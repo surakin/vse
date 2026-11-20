@@ -10,7 +10,7 @@
 //! The texture a UI surface is drawn into so the 3D world can show it (Phase 15, Day 202): a screen on a wall, a
 //! monitor, a floating panel.
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// What a [[renderer::UiSurfaceTarget]] is made of.
@@ -147,4 +147,4 @@ private:
     f32 clear_color_[4] = {0, 0, 0, 1};
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

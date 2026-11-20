@@ -22,7 +22,7 @@ namespace
 
 int Usage()
 {
-    engine_placeholder::os::PrintErrorText(
+    vse::os::PrintErrorText(
         "usage: docgen tokens FILE.h                 (scanner testing aid: dump tokens, docs, diagnostics)\n"
         "       docgen dump [--all] [--keep-going] FILE.h  (declaration tree; --all includes hidden declarations)\n"
         "       docgen docs [--keep-going] FILE.h          (parsed doc comments, validation, undocumented symbols)\n"
@@ -52,9 +52,9 @@ int Tokens(const char* path)
 {
     ArenaAllocator arena(usize{256} << 20);
     StringView src;
-    if (!LoadSourceFile(StringView(path, engine_placeholder::CStrLength(path)), arena, src))
+    if (!LoadSourceFile(StringView(path, vse::CStrLength(path)), arena, src))
     {
-        engine_placeholder::os::PrintError("%s: error: cannot read file\n", path);
+        vse::os::PrintError("%s: error: cannot read file\n", path);
         return 2;
     }
     ScanResult r(arena);
@@ -62,39 +62,39 @@ int Tokens(const char* path)
     for (usize i = 0; i < r.tokens.Size(); ++i)
     {
         const Token& t = r.tokens[i];
-        engine_placeholder::os::Print("%u:%u %s '%.*s'", t.line, t.column, KindName(t.kind),
-                                      static_cast<int>(t.text.Length()), t.text.Data());
+        vse::os::Print("%u:%u %s '%.*s'", t.line, t.column, KindName(t.kind), static_cast<int>(t.text.Length()),
+                       t.text.Data());
         if (t.doc >= 0)
         {
-            engine_placeholder::os::Print(" doc=%d", t.doc);
+            vse::os::Print(" doc=%d", t.doc);
         }
-        engine_placeholder::os::Print("\n");
+        vse::os::Print("\n");
     }
     for (usize i = 0; i < r.docs.Size(); ++i)
     {
         const DocComment& d = r.docs[i];
-        engine_placeholder::os::Print("doc %zu kind=%d lines=%u-%u token=%d text='%.*s'\n", static_cast<size_t>(i),
-                                      static_cast<int>(d.kind), d.first_line, d.last_line, static_cast<int>(d.token),
-                                      static_cast<int>(d.text.Length()), d.text.Data());
+        vse::os::Print("doc %zu kind=%d lines=%u-%u token=%d text='%.*s'\n", static_cast<size_t>(i),
+                       static_cast<int>(d.kind), d.first_line, d.last_line, static_cast<int>(d.token),
+                       static_cast<int>(d.text.Length()), d.text.Data());
     }
     for (usize i = 0; i < r.diagnostics.Size(); ++i)
     {
         const Diagnostic& d = r.diagnostics[i];
-        engine_placeholder::os::PrintError("%s:%u: %s: %.*s\n", path, d.line, SeverityName(d.severity),
-                                           static_cast<int>(d.message.Length()), d.message.Data());
+        vse::os::PrintError("%s:%u: %s: %.*s\n", path, d.line, SeverityName(d.severity),
+                            static_cast<int>(d.message.Length()), d.message.Data());
     }
     return r.HasErrors() ? 1 : 0;
 }
 
 // Prints diagnostics from both phases, sorted by line. Without keep_going
 // only the first error is shown.
-using DiagList = engine_placeholder::Vector<Diagnostic, ArenaAllocator>;
+using DiagList = vse::Vector<Diagnostic, ArenaAllocator>;
 
 bool PrintDiagnostics(const char* path, const DiagList* const* lists, usize list_count, bool keep_going,
                       ArenaAllocator& arena)
 {
     // Each list is already nearly ordered by line, so a stable insertion sort is cheap.
-    engine_placeholder::Vector<const Diagnostic*, ArenaAllocator> all(arena);
+    vse::Vector<const Diagnostic*, ArenaAllocator> all(arena);
     for (usize l = 0; l < list_count; ++l)
     {
         for (usize i = 0; i < lists[l]->Size(); ++i)
@@ -115,15 +115,15 @@ bool PrintDiagnostics(const char* path, const DiagList* const* lists, usize list
             }
             had_error = true;
         }
-        engine_placeholder::os::PrintError("%s:%u: %s: %.*s\n", path, d.line, SeverityName(d.severity),
-                                           static_cast<int>(d.message.Length()), d.message.Data());
+        vse::os::PrintError("%s:%u: %s: %.*s\n", path, d.line, SeverityName(d.severity),
+                            static_cast<int>(d.message.Length()), d.message.Data());
     }
     return had_error;
 }
 
-using Line = engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator>;
-using engine_placeholder::Span;
-using engine_placeholder::os::CommandLineOption;
+using Line = vse::os::CommandLine<vse::HeapAllocator>;
+using vse::Span;
+using vse::os::CommandLineOption;
 
 int Dump(int argc, char** argv)
 {
@@ -131,11 +131,10 @@ int Dump(int argc, char** argv)
     bool keep_going = false;
     const char* path = nullptr;
     static const CommandLineOption options[] = {{"all", false}, {"keep-going", false}};
-    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
-                    Span<const CommandLineOption>(options, 2));
+    const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 2));
     if (!line.Ok())
     {
-        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::os::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     all = line.HasFlag("all");
@@ -147,19 +146,19 @@ int Dump(int argc, char** argv)
     }
     ArenaAllocator arena(usize{256} << 20);
     StringView src;
-    if (!LoadSourceFile(StringView(path, engine_placeholder::CStrLength(path)), arena, src))
+    if (!LoadSourceFile(StringView(path, vse::CStrLength(path)), arena, src))
     {
-        engine_placeholder::os::PrintError("%s: error: cannot read file\n", path);
+        vse::os::PrintError("%s: error: cannot read file\n", path);
         return 2;
     }
     ScanResult scan(arena);
     Scan(src, arena, scan);
     ExtractResult ex(arena);
     Extract(scan, arena, ex);
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     DumpTree(ex, scan, sb, all);
     StringView text = sb.View();
-    engine_placeholder::os::PrintBytes(text.Data(), text.Length());
+    vse::os::PrintBytes(text.Data(), text.Length());
     const DiagList* lists[] = {&scan.diagnostics, &ex.diagnostics};
     return PrintDiagnostics(path, lists, 2, keep_going, arena) ? 1 : 0;
 }
@@ -169,11 +168,10 @@ int Docs(int argc, char** argv)
     bool keep_going = false;
     const char* path = nullptr;
     static const CommandLineOption options[] = {{"keep-going", false}};
-    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
-                    Span<const CommandLineOption>(options, 1));
+    const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 1));
     if (!line.Ok())
     {
-        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::os::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     keep_going = line.HasFlag("keep-going");
@@ -184,9 +182,9 @@ int Docs(int argc, char** argv)
     }
     ArenaAllocator arena(usize{256} << 20);
     StringView src;
-    if (!LoadSourceFile(StringView(path, engine_placeholder::CStrLength(path)), arena, src))
+    if (!LoadSourceFile(StringView(path, vse::CStrLength(path)), arena, src))
     {
-        engine_placeholder::os::PrintError("%s: error: cannot read file\n", path);
+        vse::os::PrintError("%s: error: cannot read file\n", path);
         return 2;
     }
     ScanResult scan(arena);
@@ -195,7 +193,7 @@ int Docs(int argc, char** argv)
     Extract(scan, arena, ex);
     DocResult docs(arena);
     ParseDocs(scan, ex, arena, docs);
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     for (usize i = 0; i < scan.docs.Size(); ++i)
     {
         sb.Append(StringView("== doc "));
@@ -214,12 +212,12 @@ int Docs(int argc, char** argv)
         sb.Append('\n');
     }
     StringView text = sb.View();
-    engine_placeholder::os::PrintBytes(text.Data(), text.Length());
+    vse::os::PrintBytes(text.Data(), text.Length());
     const DiagList* lists[] = {&scan.diagnostics, &ex.diagnostics, &docs.diagnostics};
     return PrintDiagnostics(path, lists, 3, keep_going, arena) ? 1 : 0;
 }
 
-void PrintFileDiags(const engine_placeholder::Vector<FileDiag, ArenaAllocator>& ds, bool quiet)
+void PrintFileDiags(const vse::Vector<FileDiag, ArenaAllocator>& ds, bool quiet)
 {
     for (usize i = 0; i < ds.Size(); ++i)
     {
@@ -228,9 +226,8 @@ void PrintFileDiags(const engine_placeholder::Vector<FileDiag, ArenaAllocator>& 
         {
             continue;
         }
-        engine_placeholder::os::PrintError("%.*s:%u: %s: %.*s\n", static_cast<int>(f.path.Length()), f.path.Data(),
-                                           f.d.line, SeverityName(f.d.severity), static_cast<int>(f.d.message.Length()),
-                                           f.d.message.Data());
+        vse::os::PrintError("%.*s:%u: %s: %.*s\n", static_cast<int>(f.path.Length()), f.path.Data(), f.d.line,
+                            SeverityName(f.d.severity), static_cast<int>(f.d.message.Length()), f.d.message.Data());
     }
 }
 
@@ -243,11 +240,10 @@ int Reference(int argc, char** argv, bool check)
     bool quiet = false;
     static const CommandLineOption options[] = {
         {"root", true}, {"modules", true}, {"out", true}, {"quiet", false}, {"keep-going", false}};
-    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
-                    Span<const CommandLineOption>(options, 5));
+    const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 5));
     if (!line.Ok())
     {
-        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::os::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     if (line.ArgCount() != 1)
@@ -261,18 +257,17 @@ int Reference(int argc, char** argv, bool check)
     ArenaAllocator arena(usize{1} << 30);
     auto join = [&](const char* a, const char* b)
     {
-        usize la = engine_placeholder::CStrLength(a), lb = engine_placeholder::CStrLength(b);
+        usize la = vse::CStrLength(a), lb = vse::CStrLength(b);
         char* buf = static_cast<char*>(arena.Alloc(la + lb + 2, 1));
         CopyBytes(buf, a, la);
         buf[la] = '/';
         CopyBytes(buf + la + 1, b, lb + 1);
         return StringView(buf, la + 1 + lb);
     };
-    StringView root_v(root, engine_placeholder::CStrLength(root));
-    StringView map_path = modules != nullptr ? StringView(modules, engine_placeholder::CStrLength(modules))
+    StringView root_v(root, vse::CStrLength(root));
+    StringView map_path = modules != nullptr ? StringView(modules, vse::CStrLength(modules))
                                              : join(root, "docs/reference/modules.txt");
-    StringView out_dir = out != nullptr ? StringView(out, engine_placeholder::CStrLength(out))
-                                        : join(root, "docs/reference");
+    StringView out_dir = out != nullptr ? StringView(out, vse::CStrLength(out)) : join(root, "docs/reference");
 
     ReferenceBuild build(arena);
     const bool built = BuildReference(root_v, map_path, arena, build);
@@ -282,7 +277,7 @@ int Reference(int argc, char** argv, bool check)
         return build.io_failure ? 2 : 1;
     }
 
-    engine_placeholder::Vector<FileDiag, ArenaAllocator> problems(arena);
+    vse::Vector<FileDiag, ArenaAllocator> problems(arena);
     bool ok = check ? CheckReference(build, out_dir, arena, problems) : WriteReference(build, out_dir, arena, problems);
     PrintFileDiags(problems, false);
     if (!ok)
@@ -291,8 +286,8 @@ int Reference(int argc, char** argv, bool check)
     }
     if (!quiet && !check)
     {
-        engine_placeholder::os::PrintError("docgen: wrote %zu files to %.*s\n", static_cast<size_t>(build.files.Size()),
-                                           static_cast<int>(out_dir.Length()), out_dir.Data());
+        vse::os::PrintError("docgen: wrote %zu files to %.*s\n", static_cast<size_t>(build.files.Size()),
+                            static_cast<int>(out_dir.Length()), out_dir.Data());
     }
     return 0;
 }
@@ -306,11 +301,10 @@ int Links(int argc, char** argv)
     LinkOptions options;
     static const CommandLineOption cli_options[] = {
         {"root", true}, {"modules", true}, {"external", false}, {"quiet", false}};
-    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
-                    Span<const CommandLineOption>(cli_options, 4));
+    const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(cli_options, 4));
     if (!line.Ok())
     {
-        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::os::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     if (line.ArgCount() != 1)
@@ -322,8 +316,8 @@ int Links(int argc, char** argv)
     options.list_external = line.HasFlag("external");
     quiet = line.HasFlag("quiet");
     ArenaAllocator arena(usize{1} << 30);
-    StringView root_v(root, engine_placeholder::CStrLength(root));
-    StringView map_path = modules != nullptr ? StringView(modules, engine_placeholder::CStrLength(modules))
+    StringView root_v(root, vse::CStrLength(root));
+    StringView map_path = modules != nullptr ? StringView(modules, vse::CStrLength(modules))
                                              : ArenaCat(arena, root_v, StringView("/docs/reference/modules.txt"));
     // `[[Symbol]]` references are checked against the index of the module map; a missing default map just skips them.
     const bool have_map = modules != nullptr || KindOf(map_path) != EntryKind::Missing;
@@ -347,11 +341,11 @@ int Links(int argc, char** argv)
         }
         index = &build.index;
     }
-    engine_placeholder::Vector<FileDiag, ArenaAllocator> problems(arena);
+    vse::Vector<FileDiag, ArenaAllocator> problems(arena);
     LinkStats stats;
     if (!CheckLinks(root_v, index, arena, options, problems, stats))
     {
-        engine_placeholder::os::PrintError("docgen: cannot read the documentation tree under %s\n", root);
+        vse::os::PrintError("docgen: cannot read the documentation tree under %s\n", root);
         return 2;
     }
     bool errors = false;
@@ -362,10 +356,10 @@ int Links(int argc, char** argv)
     PrintFileDiags(problems, quiet);
     if (!quiet)
     {
-        engine_placeholder::os::PrintError(
-            "docgen: %zu files, %zu links (%zu external, not fetched), %zu references%s\n",
-            static_cast<size_t>(stats.files), static_cast<size_t>(stats.links), static_cast<size_t>(stats.external),
-            static_cast<size_t>(stats.refs), index == nullptr ? " (not checked: no module map)" : "");
+        vse::os::PrintError("docgen: %zu files, %zu links (%zu external, not fetched), %zu references%s\n",
+                            static_cast<size_t>(stats.files), static_cast<size_t>(stats.links),
+                            static_cast<size_t>(stats.external), static_cast<size_t>(stats.refs),
+                            index == nullptr ? " (not checked: no module map)" : "");
     }
     return errors || header_errors ? 1 : 0;
 }
@@ -381,11 +375,10 @@ int Lint(int argc, char** argv)
     bool quiet = false;
     static const CommandLineOption options[] = {{"root", true},          {"modules", true},          {"baseline", true},
                                                 {"allow-growth", false}, {"update-baseline", false}, {"quiet", false}};
-    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
-                    Span<const CommandLineOption>(options, 6));
+    const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 6));
     if (!line.Ok())
     {
-        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::os::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     if (line.ArgCount() != 1)
@@ -403,8 +396,8 @@ int Lint(int argc, char** argv)
         return Usage();
     }
     ArenaAllocator arena(usize{1} << 30);
-    StringView root_v(root, engine_placeholder::CStrLength(root));
-    StringView map_path = modules != nullptr ? StringView(modules, engine_placeholder::CStrLength(modules))
+    StringView root_v(root, vse::CStrLength(root));
+    StringView map_path = modules != nullptr ? StringView(modules, vse::CStrLength(modules))
                                              : ArenaCat(arena, root_v, StringView("/docs/reference/modules.txt"));
     ReferenceBuild build(arena);
     BuildReference(root_v, map_path, arena, build);
@@ -420,31 +413,30 @@ int Lint(int argc, char** argv)
 
     LintResult result(arena);
     RunLint(build.index, arena, result);
-    engine_placeholder::StringBuilder<ArenaAllocator> table(arena);
+    vse::StringBuilder<ArenaAllocator> table(arena);
     RenderCoverage(result, table);
     if (!quiet)
     {
-        engine_placeholder::os::PrintBytes(table.View().Data(), table.View().Length());
+        vse::os::PrintBytes(table.View().Data(), table.View().Length());
     }
 
     Baseline baseline(arena);
     Baseline* use = nullptr;
     const bool first_baseline = update && baseline_path != nullptr &&
-                                KindOf(StringView(baseline_path, engine_placeholder::CStrLength(baseline_path))) ==
+                                KindOf(StringView(baseline_path, vse::CStrLength(baseline_path))) ==
                                     EntryKind::Missing;  // nothing to compare with yet
     if (baseline_path != nullptr && !first_baseline)
     {
         StringView text;
-        if (!LoadSourceFile(StringView(baseline_path, engine_placeholder::CStrLength(baseline_path)), arena, text))
+        if (!LoadSourceFile(StringView(baseline_path, vse::CStrLength(baseline_path)), arena, text))
         {
-            engine_placeholder::os::PrintError("%s: error: cannot read the baseline\n", baseline_path);
+            vse::os::PrintError("%s: error: cannot read the baseline\n", baseline_path);
             return 2;
         }
         StringView error;
         if (!ParseBaseline(text, arena, baseline, error))
         {
-            engine_placeholder::os::PrintError("%s:%.*s\n", baseline_path, static_cast<int>(error.Length()),
-                                               error.Data());
+            vse::os::PrintError("%s:%.*s\n", baseline_path, static_cast<int>(error.Length()), error.Data());
             return 2;
         }
         use = &baseline;
@@ -455,7 +447,7 @@ int Lint(int argc, char** argv)
         // --allow-growth.
         if (use != nullptr && !allow_growth)
         {
-            engine_placeholder::Vector<FileDiag, ArenaAllocator> growth(arena);
+            vse::Vector<FileDiag, ArenaAllocator> growth(arena);
             CompareToBaseline(result, use, arena, growth);
             bool grew = false;
             for (usize i = 0; i < growth.Size(); ++i)
@@ -471,27 +463,27 @@ int Lint(int argc, char** argv)
             }
             if (grew)
             {
-                engine_placeholder::os::PrintErrorText(
+                vse::os::PrintErrorText(
                     "docgen: refusing to update the baseline: it would record new findings or lower coverage (pass --allow-growth to override)\n");
                 return 1;
             }
         }
-        engine_placeholder::StringBuilder<ArenaAllocator> text(arena);
+        vse::StringBuilder<ArenaAllocator> text(arena);
         RenderBaseline(result, text);
         // atomic: a failed write cannot leave a truncated baseline behind
-        if (!WriteTextAtomic(StringView(baseline_path, engine_placeholder::CStrLength(baseline_path)), text.View()))
+        if (!WriteTextAtomic(StringView(baseline_path, vse::CStrLength(baseline_path)), text.View()))
         {
-            engine_placeholder::os::PrintError("%s: error: cannot write the baseline\n", baseline_path);
+            vse::os::PrintError("%s: error: cannot write the baseline\n", baseline_path);
             return 2;
         }
         if (!quiet)
         {
-            engine_placeholder::os::PrintError("docgen: baseline written to %s (%zu known findings)\n", baseline_path,
-                                               static_cast<size_t>(result.findings.Size()));
+            vse::os::PrintError("docgen: baseline written to %s (%zu known findings)\n", baseline_path,
+                                static_cast<size_t>(result.findings.Size()));
         }
         return 0;
     }
-    engine_placeholder::Vector<FileDiag, ArenaAllocator> problems(arena);
+    vse::Vector<FileDiag, ArenaAllocator> problems(arena);
     CompareToBaseline(result, use, arena, problems);
     bool errors = false;
     for (usize i = 0; i < problems.Size(); ++i)
@@ -505,7 +497,7 @@ int Lint(int argc, char** argv)
 // An absolute path for `p` if it exists (the compiler runs in a scratch directory), otherwise `p` unchanged.
 StringView Absolute(const char* p, ArenaAllocator& arena)
 {
-    return CanonicalOrSame(StringView(p, engine_placeholder::CStrLength(p)), arena);
+    return CanonicalOrSame(StringView(p, vse::CStrLength(p)), arena);
 }
 
 // docgen samples
@@ -515,26 +507,24 @@ int Samples(int argc, char** argv)
     SampleOptions opt(arena);
     const char* root = ".";
     bool quiet = false;
-    engine_placeholder::Vector<StringView, ArenaAllocator> only(arena);
+    vse::Vector<StringView, ArenaAllocator> only(arena);
     static const CommandLineOption options[] = {{"root", true},     {"compiler", true},   {"build-dir", true},
                                                 {"jobs", true},     {"timeout", true},    {"compile-timeout", true},
                                                 {"-I", true, true}, {"flag", true, true}, {"link", true, true},
                                                 {"prelude", true},  {"keep", false},      {"quiet", false}};
-    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
-                    Span<const CommandLineOption>(options, 12));
+    const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 12));
     if (!line.Ok())
     {
-        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::os::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     root = line.OptionOr("root", root);
     const char* compiler = line.OptionOr("compiler", nullptr);
     if (compiler != nullptr)
     {
-        opt.compiler = engine_placeholder::CStrFindChar(compiler, '/') != nullptr
-                           ? AbsoluteKeepingLinks(StringView(compiler, engine_placeholder::CStrLength(compiler)), arena)
-                           : ArenaCat(arena, StringView(compiler, engine_placeholder::CStrLength(compiler)),
-                                      StringView());
+        opt.compiler = vse::CStrFindChar(compiler, '/') != nullptr
+                           ? AbsoluteKeepingLinks(StringView(compiler, vse::CStrLength(compiler)), arena)
+                           : ArenaCat(arena, StringView(compiler, vse::CStrLength(compiler)), StringView());
     }
     if (const char* build_dir = line.OptionOr("build-dir", nullptr))
     {
@@ -542,15 +532,15 @@ int Samples(int argc, char** argv)
     }
     if (const char* jobs = line.OptionOr("jobs", nullptr))
     {
-        opt.jobs = static_cast<u32>(engine_placeholder::CStrToULong(jobs, nullptr, 10));
+        opt.jobs = static_cast<u32>(vse::CStrToULong(jobs, nullptr, 10));
     }
     if (const char* timeout = line.OptionOr("timeout", nullptr))
     {
-        opt.run_timeout_s = static_cast<u32>(engine_placeholder::CStrToULong(timeout, nullptr, 10));
+        opt.run_timeout_s = static_cast<u32>(vse::CStrToULong(timeout, nullptr, 10));
     }
     if (const char* timeout = line.OptionOr("compile-timeout", nullptr))
     {
-        opt.compile_timeout_s = static_cast<u32>(engine_placeholder::CStrToULong(timeout, nullptr, 10));
+        opt.compile_timeout_s = static_cast<u32>(vse::CStrToULong(timeout, nullptr, 10));
     }
     for (usize k = 0; k < line.OptionCount("-I"); ++k)
     {
@@ -582,10 +572,10 @@ int Samples(int argc, char** argv)
     {
         opt.jobs = 1;
     }
-    StringView root_v(root, engine_placeholder::CStrLength(root));
+    StringView root_v(root, vse::CStrLength(root));
     opt.root = root_v;
 
-    engine_placeholder::Vector<StringView, ArenaAllocator> files(arena);
+    vse::Vector<StringView, ArenaAllocator> files(arena);
     if (only.Size() > 0)
     {
         for (usize i = 0; i < only.Size(); ++i)
@@ -595,11 +585,11 @@ int Samples(int argc, char** argv)
     }
     else if (!CollectMarkdownFiles(root_v, arena, files))
     {
-        engine_placeholder::os::PrintError("docgen: cannot read the documentation tree under %s\n", root);
+        vse::os::PrintError("docgen: cannot read the documentation tree under %s\n", root);
         return 2;
     }
-    engine_placeholder::Vector<FileDiag, ArenaAllocator> problems(arena);
-    engine_placeholder::Vector<Sample, ArenaAllocator> samples(arena);
+    vse::Vector<FileDiag, ArenaAllocator> problems(arena);
+    vse::Vector<Sample, ArenaAllocator> samples(arena);
     for (usize i = 0; i < files.Size(); ++i)
     {
         StringView text;
@@ -622,7 +612,7 @@ int Samples(int argc, char** argv)
     if (!RunSamples(opt, samples, arena, problems, stats))
     {
         PrintFileDiags(problems, quiet);
-        engine_placeholder::os::PrintError("docgen: cannot set up the sample build (scratch directory or compiler)\n");
+        vse::os::PrintError("docgen: cannot set up the sample build (scratch directory or compiler)\n");
         return 2;
     }
     bool errors = false;
@@ -633,9 +623,9 @@ int Samples(int argc, char** argv)
     PrintFileDiags(problems, quiet);
     if (!quiet)
     {
-        engine_placeholder::os::PrintError("docgen: %zu samples, %zu compiled, %zu run, %zu failed\n",
-                                           static_cast<size_t>(stats.found), static_cast<size_t>(stats.compiled),
-                                           static_cast<size_t>(stats.ran), static_cast<size_t>(stats.failed));
+        vse::os::PrintError("docgen: %zu samples, %zu compiled, %zu run, %zu failed\n",
+                            static_cast<size_t>(stats.found), static_cast<size_t>(stats.compiled),
+                            static_cast<size_t>(stats.ran), static_cast<size_t>(stats.failed));
     }
     return errors ? 1 : 0;
 }
@@ -644,10 +634,9 @@ int Samples(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-    engine_placeholder::debug::InstallDiagnosticsHooks();  // a failed assert prints its stack trace
+    vse::debug::InstallDiagnosticsHooks();  // a failed assert prints its stack trace
     // The first word is the command; each command declares its own options when it parses them.
-    const engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator> words(
-        engine_placeholder::HeapAllocator::Default(), argc, argv);
+    const vse::os::CommandLine<vse::HeapAllocator> words(vse::HeapAllocator::Default(), argc, argv);
     if (words.ArgCount() < 1)
     {
         return Usage();

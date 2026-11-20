@@ -4,7 +4,7 @@
 
 #include "log/log.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -179,4 +179,4 @@ void AttachLogSettings(Settings* settings)
     settings->AddListener("log", &OnLogChange, nullptr);
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

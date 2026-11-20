@@ -6,7 +6,7 @@
 #include "debug/compiler.h"
 #include "log/log.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 /// The log channel used by the job system.
@@ -43,6 +43,6 @@ inline void JobsLogV(LogVerbosity level, const char* fmt, ...)
 /// Logs a printf-style message on the job-system channel; expands to a call of [[jobs::JobsLogV]].
 ///
 /// - Param level: verbosity of the message.
-#define JobsLog(level, ...) ::engine_placeholder::jobs::JobsLogV(level, __VA_ARGS__)
+#define JobsLog(level, ...) ::vse::jobs::JobsLogV(level, __VA_ARGS__)
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

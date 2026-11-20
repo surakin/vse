@@ -14,7 +14,7 @@
 #include "sync/mutex.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -292,4 +292,4 @@ bool DemangleSymbol(const char* mangled, char* out, usize capacity)
     return fits;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

@@ -6,7 +6,7 @@
 #include "math/quaternion.h"
 #include "math/vector.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Returns whether all three numbers are finite.
@@ -59,4 +59,4 @@ inline bool IsUnitQuaternion(const Quaternion& q)
     return Abs(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w - 1.0f) <= 2e-3f;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

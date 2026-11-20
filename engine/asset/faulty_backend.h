@@ -7,7 +7,7 @@
 #include "containers/array.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The operations a fault can hit.
@@ -73,4 +73,4 @@ private:
     usize chunk_ = 0;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

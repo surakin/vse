@@ -4,7 +4,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 namespace
@@ -400,4 +400,4 @@ bool InputSnapshot::Equals(const InputSnapshot& other) const
     return true;
 }
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

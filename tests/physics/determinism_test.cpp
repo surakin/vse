@@ -7,8 +7,8 @@
 #include "fp_contract_probe.h"
 #include "physics/determinism.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::physics;
+using namespace vse;
+using namespace vse::physics;
 
 namespace
 {

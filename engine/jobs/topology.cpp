@@ -6,7 +6,7 @@
 #include "jobs/jobs_log.h"
 #include "cstr/number.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 LogChannel LogJobs("LogJobs", LogVerbosity::Warn);
@@ -69,4 +69,4 @@ usize DefaultParticipantCount()
     return n;
 }
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

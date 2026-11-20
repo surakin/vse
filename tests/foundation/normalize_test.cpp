@@ -6,16 +6,16 @@
 #include "string/utf8.h"
 #include "types.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::CodepointCount;
-using engine_placeholder::NormalizeNFC;
-using engine_placeholder::NormalizeNFD;
-using engine_placeholder::String;
-using engine_placeholder::StringBuilder;
-using engine_placeholder::StringView;
-using engine_placeholder::u32;
-using engine_placeholder::usize;
-using engine_placeholder::Utf8Codepoints;
+using vse::ArenaAllocator;
+using vse::CodepointCount;
+using vse::NormalizeNFC;
+using vse::NormalizeNFD;
+using vse::String;
+using vse::StringBuilder;
+using vse::StringView;
+using vse::u32;
+using vse::usize;
+using vse::Utf8Codepoints;
 
 namespace
 {
@@ -127,7 +127,7 @@ TEST_CASE("Canonical ordering of a long run of combining marks is stable and the
 {
     // Container audit Day 11: a run longer than 32 marks is ordered by a counting sort (it was an insertion sort,
     // quadratic on hostile input). U+0316 has class 220, U+0301 class 230.
-    using namespace engine_placeholder;
+    using namespace vse;
     ArenaAllocator arena(1 << 20);
     Vector<u32, ArenaAllocator> codepoints(arena);
     codepoints.Push(0x61);  // a starter

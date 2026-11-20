@@ -12,7 +12,7 @@
 #include "storage/memory_store.h"
 #include "storage/world_storage.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -709,4 +709,4 @@ Status LoadLevelBlob(ByteSpan bytes, const TypeRegistry& types, const storage::C
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

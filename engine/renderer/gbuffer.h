@@ -29,7 +29,7 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The albedo target's format (sRGB-encoded on write, decoded on sample).
@@ -548,4 +548,4 @@ private:
     Params params_;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

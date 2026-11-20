@@ -7,9 +7,9 @@
 #include "rhi/dx12/dx12_device.h"
 #include "rhi/rhi.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::dx12;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::rhi::dx12;
 
 namespace dx12_bindings_test
 {

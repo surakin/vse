@@ -2,7 +2,7 @@
 
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 const char* VkResultName(VkResult result)
@@ -73,4 +73,4 @@ VkResultClass CheckVkResult(VkResult result, const char* call_text, const char* 
     return cls;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

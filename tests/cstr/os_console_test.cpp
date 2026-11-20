@@ -9,7 +9,7 @@
 
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

@@ -2,7 +2,7 @@
 
 #include "rhi/spirv.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -534,4 +534,4 @@ const char* ComputePipelineDesc::Validate() const
                            "ComputePipelineDesc: push_constant_bytes exceeds the 128-byte guarantee");
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

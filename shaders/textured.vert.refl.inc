@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTexturedVertReflByteCount = 160;
 
@@ -25,4 +25,4 @@ inline constexpr u8 kTexturedVertRefl[kTexturedVertReflByteCount] = {
 inline constexpr u32 kTexturedVertParamsSize = 64;
 inline constexpr u32 kTexturedVertParamsMvpOffset = 0;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

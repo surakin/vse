@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTexturedFragReflByteCount = 117;
 
@@ -19,4 +19,4 @@ inline constexpr u8 kTexturedFragRefl[kTexturedFragReflByteCount] = {
     255, 0, 0, 0, 0,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

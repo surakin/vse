@@ -20,7 +20,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 namespace
@@ -804,4 +804,4 @@ void MetalBinder::PushCompute(id<MTLComputeCommandEncoder> encoder, const MetalS
     }
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

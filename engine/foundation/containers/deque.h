@@ -9,7 +9,7 @@
 
 //! [[Deque]]: a growable ring of elements, pushed and popped at both ends in O(1) (container audit series, Day 3), for
 //! the queues that were written as `Vector::Remove(0)`.
-namespace engine_placeholder
+namespace vse
 {
 
 template <typename T, typename Allocator> class Deque;
@@ -322,4 +322,4 @@ private:
     usize size_ = 0;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

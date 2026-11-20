@@ -33,7 +33,7 @@ Two concerns are kept separate:
    matching `os.h`'s existing interface-header/per-platform-impl split.
 
 ```cpp
-namespace engine_placeholder::os {
+namespace vse::os {
 
 class CommandLine {
 public:
@@ -71,10 +71,10 @@ public:
 // GetCommandLineW/CommandLineToArgvW, Android via Intent extras).
 void StashNativeCommandLine(int argc, char** argv);
 
-} // namespace engine_placeholder::os
+} // namespace vse::os
 ```
 
-Lives in `namespace engine_placeholder::os` (not a separate top-level
+Lives in `namespace vse::os` (not a separate top-level
 type) — same rationale as `Write`/`Read`/`Open`/`Close`: it wraps a
 process-launch/OS-boundary concern, not a general-purpose foundation
 utility like `String`/`Array`.

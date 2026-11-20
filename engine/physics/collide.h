@@ -9,7 +9,7 @@
 #include "physics/triangle_mesh.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Finds the contact between two shapes, the one entry point of the narrow phase.
@@ -41,4 +41,4 @@ CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const 
                       ContactManifold* manifold, const HullLibrary* hulls = nullptr,
                       const MeshLibrary* meshes = nullptr, const CompoundLibrary* compounds = nullptr);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

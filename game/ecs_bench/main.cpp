@@ -20,7 +20,7 @@
 #include "os/console.h"
 #include "os/os.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using namespace ecs_bench;
 
 namespace

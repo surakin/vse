@@ -11,7 +11,7 @@ three steps, and each step has its own types:
 **Audience:** anyone who puts text on screen or edits text. Steps 1 and 2 run on the CPU and need no window or GPU, which is why the samples below run anywhere. Most game
 code never calls these directly: the UI toolkit ([The UI toolkit](ui.md)) draws its labels and text fields through them.
 
-The text layer lives in `engine/text/` (namespace `engine_placeholder::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
+The text layer lives in `engine/text/` (namespace `vse::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
 FreeType 2.15.0 (vendored, `third_party/freetype/`) reads and rasterizes the fonts; it is named in one file, `engine/text/font_freetype.cpp`, and every
 block it allocates comes from the engine's heap. The demo (`renderer_demo --text`, F11) shows the overlay; the benchmark numbers are at the end.
 
@@ -63,7 +63,7 @@ The whole CPU path, from a file to positioned glyphs and a rasterized bitmap (th
 #include "text/font.h"
 #include "text/layout.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     text::FontLibrary library;

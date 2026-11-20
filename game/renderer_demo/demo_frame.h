@@ -7,8 +7,8 @@
 namespace renderer_demo
 {
 
-using FrameSetup = engine_placeholder::renderer::SceneFrameSetup;
-using FrameCompose = engine_placeholder::renderer::SceneFrameCompose;
-using DemoFrame = engine_placeholder::renderer::SceneFrame;
+using FrameSetup = vse::renderer::SceneFrameSetup;
+using FrameCompose = vse::renderer::SceneFrameCompose;
+using DemoFrame = vse::renderer::SceneFrame;
 
 }  // namespace renderer_demo

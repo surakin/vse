@@ -25,9 +25,9 @@
 #include "script_physics/physics_events.h"
 #include "storage/builtin_components.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::script;
-using namespace engine_placeholder::script_physics;
+using namespace vse;
+using namespace vse::script;
+using namespace vse::script_physics;
 
 // A named namespace: the test files of one unity build must not share names through anonymous namespaces.
 namespace events_test

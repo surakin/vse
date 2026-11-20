@@ -13,7 +13,7 @@
 #include <mach-o/dyld.h>
 #include <unistd.h>
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -172,4 +172,4 @@ Status CrashDumpDirectory(Path* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

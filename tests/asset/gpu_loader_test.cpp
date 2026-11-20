@@ -18,7 +18,7 @@
 #include "support.h"
 #include "texture_source.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -453,4 +453,4 @@ TEST_CASE("gpu loaders: a texture over shared bytes refuses levels that are not 
     CHECK(rig.device->Resources().textures == before.textures + 1);  // nothing left behind
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -6,7 +6,7 @@
 #include "settings/config_store.h"
 #include "settings/config_text.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// Options of a [[settings::FileConfigStore]].
@@ -80,4 +80,4 @@ private:
     StoreError load_error_ = StoreError::None;  // why the last Load could not read the file
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

@@ -1,6 +1,6 @@
 #include "string/utf8_codec.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 namespace
@@ -123,4 +123,4 @@ usize EncodeUtf8(u32 codepoint, char out[4])
     return 4;
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

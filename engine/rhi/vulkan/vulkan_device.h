@@ -21,7 +21,7 @@
 
 //! The Vulkan implementation of [[rhi::Device]].
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 class VulkanDevice;
@@ -673,4 +673,4 @@ private:
     Atomic<ThreadPool*> thread_pools_[kFramePools][kThreadSlots] = {};
 };
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

@@ -10,7 +10,7 @@
 //! Whether the crash handler is installed: the argument `--crash-handler=on|off` wins, then the environment variable
 //! `ENGINE_CRASH_HANDLER` (`1`/`0`, `on`/`off`), then the build's default: on in Debug and RelWithDebInfo builds, off
 //! in Release. A program without a command line (mobile, console) passes none and uses the environment and the default.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// The deliberate fault a program was asked to cause with `--crash-test=...`, for checking the whole crash path by
@@ -102,4 +102,4 @@ ProgramDebugSetup StartProgramDebugging(int argc, const char* const* argv);
 /// - Thread-safety: thread-safe.
 void RunCrashTest(CrashTestKind kind);
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

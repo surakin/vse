@@ -71,8 +71,8 @@ not list such a change as a change when the capability is missing; it lists it a
 #include <cstdio>
 #include "renderer/render_settings.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     RenderSettings current;
@@ -102,8 +102,8 @@ Register it once at start-up, before any thread reads the registry. Strings must
 #include <cstdio>
 #include "renderer/render_settings.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     SettingsRegistry registry; // a program registers into SettingsRegistry::Builtin() instead

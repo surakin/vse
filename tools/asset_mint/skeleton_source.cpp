@@ -7,7 +7,7 @@
 #include "cstr/number.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -229,4 +229,4 @@ Status MintSkeleton(StringView text, const TypeRegistry& types, Vector<byte>* ou
     return built;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

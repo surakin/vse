@@ -3,7 +3,7 @@
 #include "asset/texture.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -114,4 +114,4 @@ Status TransformBlob(const TargetTransforms& transforms, const TransformContext&
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -2,7 +2,7 @@
 
 //! A small owning reference to a COM object, so the DX12 backend needs no WRL `ComPtr` (design spec decision 10).
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 /// Owns one reference to a COM object of type `T` (any type with `AddRef` and `Release`): move-only, released on
@@ -93,4 +93,4 @@ private:
     T* raw_ = nullptr;
 };
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

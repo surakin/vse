@@ -18,7 +18,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The frames of one mixer block: the unit the mixer renders, whatever size the device calls back with.
@@ -931,4 +931,4 @@ private:
 /// - Fails: never.
 MixerConfig MixerConfigFromSettings(const AudioSettings& settings, u32 sample_rate);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

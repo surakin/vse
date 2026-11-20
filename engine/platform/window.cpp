@@ -2,7 +2,7 @@
 
 #include "sync/atomic.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 namespace detail
@@ -93,4 +93,4 @@ BackendPlan PlanCocoaWindowBackends(WindowBackend requested)
     return plan;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

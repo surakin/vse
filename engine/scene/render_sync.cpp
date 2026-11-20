@@ -9,7 +9,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::scene
+namespace vse::scene
 {
 
 namespace
@@ -668,4 +668,4 @@ ecs::SystemDesc MakeCameraSystem(const char* name)
     return Move(desc).Reads<Camera, ecs::WorldTransform>().ReadsResource<ActiveCamera>().WritesResource<CameraOutput>();
 }
 
-}  // namespace engine_placeholder::scene
+}  // namespace vse::scene

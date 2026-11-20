@@ -23,7 +23,7 @@
 #include "text/glyph_atlas.h"
 #include "text/layout.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using text_test::Opened;
 
 namespace

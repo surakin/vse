@@ -13,7 +13,7 @@
 #include "net/tcp_transport.h"
 #include "transport_conformance.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -350,4 +350,4 @@ TEST_CASE("TCP transport: before the Hello a frame larger than a Hello ends the 
     CHECK(rig.server.Count(EventKind::Opened) == 0);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

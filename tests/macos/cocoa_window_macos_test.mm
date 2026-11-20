@@ -14,8 +14,8 @@
 #import <AppKit/AppKit.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-using namespace engine_placeholder;
-using engine_placeholder::os::cocoa::CocoaWindow;
+using namespace vse;
+using vse::os::cocoa::CocoaWindow;
 
 namespace
 {

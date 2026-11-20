@@ -2,7 +2,7 @@
 
 #include "sync/mutex.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 TableTicket::TableTicket() : table_(MakeUnique<ResourceTable>()) {}
@@ -177,4 +177,4 @@ Status ListFromTable(ResourceBackend& backend, StringView prefix, usize max, Vec
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

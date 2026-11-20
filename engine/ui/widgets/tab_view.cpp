@@ -6,7 +6,7 @@
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 TabView::TabView(StringView name) : Widget(name)
@@ -687,4 +687,4 @@ void TabView::OnEvent(Event& event)
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

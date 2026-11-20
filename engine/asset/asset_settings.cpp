@@ -3,7 +3,7 @@
 #include "settings/desc.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -178,4 +178,4 @@ f64 AnimTranslationErrorFromSettings(const settings::Registry& registry)
     return ReadFloat(registry, "assets.anim_translation_error");
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

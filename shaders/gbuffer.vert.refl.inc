@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGbufferVertReflByteCount = 414;
 
@@ -47,4 +47,4 @@ inline constexpr u32 kGbufferVertFrameDataCameraPositionOffset = 256;
 inline constexpr u32 kGbufferVertFrameDataViewportOffset = 272;
 inline constexpr u32 kGbufferVertFrameDataTimeOffset = 288;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

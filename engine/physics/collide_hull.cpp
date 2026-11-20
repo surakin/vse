@@ -6,7 +6,7 @@
 #include "physics/contact.h"
 #include "physics/hull.h"
 
-namespace engine_placeholder::physics::collide_math
+namespace vse::physics::collide_math
 {
 
 namespace
@@ -1042,4 +1042,4 @@ bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other
     return MergeContacts(found.Data(), found_count, out);
 }
 
-}  // namespace engine_placeholder::physics::collide_math
+}  // namespace vse::physics::collide_math

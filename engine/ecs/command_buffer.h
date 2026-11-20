@@ -16,7 +16,7 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 namespace detail
@@ -374,4 +374,4 @@ template <class... Ts, usize... I> void CommandBuffer::DropPack(byte* payload, d
     (reinterpret_cast<Ts*>(payload + layout.offset[I])->~Ts(), ...);
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

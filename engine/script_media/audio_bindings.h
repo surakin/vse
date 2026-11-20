@@ -18,7 +18,7 @@
 #include "storage/component_registry.h"
 #include "types.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 /// The command kinds the audio bindings record (ids the other kinds do not use).
@@ -117,4 +117,4 @@ inline constexpr const char* kEventVoiceEnd = "on_voice_end";
 /// - Fails: never.
 AudioEventReport PumpAudioEvents(audio::Mixer* mixer, VoiceTable* voices, script::ScriptRuntime* runtime);
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

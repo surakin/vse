@@ -4,7 +4,7 @@
 #include "physics/collide_math.h"
 #include "physics/contact.h"
 
-namespace engine_placeholder::physics::collide_math
+namespace vse::physics::collide_math
 {
 
 namespace
@@ -442,4 +442,4 @@ bool BoxCapsule(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, 
     return true;
 }
 
-}  // namespace engine_placeholder::physics::collide_math
+}  // namespace vse::physics::collide_math

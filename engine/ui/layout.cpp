@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -650,4 +650,4 @@ Spacer::Spacer(f32 weight) : Widget(StringView())
     SetProps(p);
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

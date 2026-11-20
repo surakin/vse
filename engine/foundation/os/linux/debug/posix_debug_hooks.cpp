@@ -11,7 +11,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-namespace engine_placeholder::debug::posix
+namespace vse::debug::posix
 {
 
 bool MakeCloexecPipe(int fds[2])
@@ -67,4 +67,4 @@ void ArmDieWithParent(int)
     ::prctl(PR_SET_PDEATHSIG, SIGKILL);
 }
 
-}  // namespace engine_placeholder::debug::posix
+}  // namespace vse::debug::posix

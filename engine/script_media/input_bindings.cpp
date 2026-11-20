@@ -2,7 +2,7 @@
 
 #include "script/partition_context.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 using script::PartitionContext;
@@ -348,4 +348,4 @@ InputEventReport EmitInputEvents(const InputSnapshot& snapshot, script::ScriptRu
     return report;
 }
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

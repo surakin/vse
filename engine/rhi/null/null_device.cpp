@@ -17,7 +17,7 @@
 #include "lang/utility.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace null_impl
@@ -2535,4 +2535,4 @@ ResourceState NullDevice::StateOf(TextureHandle texture) const
     return t != nullptr ? t->state : ResourceState::Undefined;
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

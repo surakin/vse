@@ -13,7 +13,7 @@
 #include "mcol_source.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -235,4 +235,4 @@ TEST_CASE("MCOL: it loads through the resource manager", "[asset][mcol]")
     CHECK(by_path.Get()->VertexCount() == 4);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

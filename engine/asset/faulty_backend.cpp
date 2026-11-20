@@ -2,7 +2,7 @@
 
 #include "sync/thread.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -133,4 +133,4 @@ Status FaultyBackend::Watch(Vector<ChangeRecord>* out)
     return inner_->Watch(out);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

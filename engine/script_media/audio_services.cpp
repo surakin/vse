@@ -1,6 +1,6 @@
 #include "script_media/audio_services.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 void VoiceTable::Add(u64 handle, audio::VoiceId voice, u64 owner_key)
@@ -42,4 +42,4 @@ bool VoiceTable::Remove(u64 handle)
     return true;
 }
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

@@ -10,10 +10,10 @@
 #include "catch_engine_types.h"
 #include "test_text.h"
 
-using engine_placeholder::StringView;
-using engine_placeholder::usize;
-using engine_placeholder::Vector;
 using engine_test::Text;
+using vse::StringView;
+using vse::usize;
+using vse::Vector;
 
 using crash_extract::EnvelopeResult;
 using crash_extract::FindMinidump;
@@ -79,7 +79,7 @@ TEST_CASE("The minidump item of an envelope is found and points at its bytes", "
     Minidump dump;
     REQUIRE(Find(text.View(), &dump) == EnvelopeResult::Ok);
     CHECK(dump.size == ExtractDumpBytes().Length());
-    CHECK(engine_placeholder::MemCompare(dump.data, "MDMP", 4) == 0);
+    CHECK(vse::MemCompare(dump.data, "MDMP", 4) == 0);
     CHECK(StringView(dump.data, dump.size) == ExtractDumpBytes().View());
     // The result points inside the input.
     CHECK(dump.data >= text.CStr());
@@ -162,8 +162,8 @@ TEST_CASE("Cutting a real envelope at every length never reads outside it and on
           "[crash-extract][debug]")
 {
     const Text full = ExtractEnvelope();
-    const engine_placeholder::usize dump_end = full.Length() - 1;  // the payload ends before the final newline
-    for (engine_placeholder::usize length = 0; length <= full.Length(); ++length)
+    const vse::usize dump_end = full.Length() - 1;  // the payload ends before the final newline
+    for (vse::usize length = 0; length <= full.Length(); ++length)
     {
         // A copy of exactly `length` bytes, so any read past its end is outside an allocation (ASan reports it).
         Vector<char> storage;  // reserved to exactly the length, so the capacity ends where the data does
@@ -172,7 +172,7 @@ TEST_CASE("Cutting a real envelope at every length never reads outside it and on
         char* exact = storage.Data();
         if (length != 0)
         {
-            engine_placeholder::MemCopy(exact, full.CStr(), length);
+            vse::MemCopy(exact, full.CStr(), length);
         }
         Minidump dump;
         const EnvelopeResult result = FindMinidump(exact, length, &dump);
@@ -193,17 +193,17 @@ TEST_CASE("Cutting a real envelope at every length never reads outside it and on
 TEST_CASE("Flipping any byte of a real envelope never reads outside it", "[crash-extract][debug]")
 {
     const Text full = ExtractEnvelope();
-    for (engine_placeholder::usize i = 0; i < full.Length(); ++i)
+    for (vse::usize i = 0; i < full.Length(); ++i)
     {
-        const engine_placeholder::Array<engine_placeholder::u8, 3> flips = {{0xff, 0x20, 0x01}};
-        for (const engine_placeholder::u8 flip : flips)
+        const vse::Array<vse::u8, 3> flips = {{0xff, 0x20, 0x01}};
+        for (const vse::u8 flip : flips)
         {
             Vector<char> storage;
             storage.Reserve(full.Length());
             storage.Resize(full.Length());
             char* exact = storage.Data();
-            engine_placeholder::MemCopy(exact, full.CStr(), full.Length());
-            exact[i] = static_cast<char>(static_cast<engine_placeholder::u8>(exact[i]) ^ flip);
+            vse::MemCopy(exact, full.CStr(), full.Length());
+            exact[i] = static_cast<char>(static_cast<vse::u8>(exact[i]) ^ flip);
             Minidump dump;
             const EnvelopeResult result = FindMinidump(exact, full.Length(), &dump);
             if (result == EnvelopeResult::Ok)
@@ -217,7 +217,7 @@ TEST_CASE("Flipping any byte of a real envelope never reads outside it", "[crash
 
 TEST_CASE("Random bytes are rejected without a crash", "[crash-extract][debug]")
 {
-    engine_placeholder::u32 state = 12345;
+    vse::u32 state = 12345;
     for (int round = 0; round < 200; ++round)
     {
         Vector<char> storage;

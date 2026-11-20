@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 namespace
 {
@@ -237,4 +237,4 @@ u32 CollectEvents(const asset::ClipView& clip, f32 from, const TimeAdvance& adva
     return written;
 }
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

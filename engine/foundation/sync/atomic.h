@@ -8,7 +8,7 @@
 //! Atomic variables (Phase 16): the engine's spelling of `<atomic>`. `Atomic<T>` forwards every operation to
 //! `std::atomic<T>` inline, so it costs exactly what the standard type costs. This header and the other `sync/` headers
 //! are the only files that include the standard concurrency headers.
-namespace engine_placeholder
+namespace vse
 {
 
 /// How an atomic operation orders the memory accesses around it (`std::memory_order`).
@@ -206,4 +206,4 @@ inline void AtomicSignalFence(MemoryOrder order) noexcept
     std::atomic_signal_fence(detail_sync::ToStd(order));
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

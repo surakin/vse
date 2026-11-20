@@ -7,7 +7,7 @@
 
 //! The tab view (Phase 15, Day 199): a row of tab headers over a stack of pages, of which one shows.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Tab headers over pages.
@@ -190,4 +190,4 @@ private:
     Callback<TabView*, usize> on_close_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

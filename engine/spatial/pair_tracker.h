@@ -11,7 +11,7 @@
 #include "spatial/spatial_set.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// How a [[spatial::PairTracker]] decides which pairs exist.
@@ -185,4 +185,4 @@ private:
     void Finish(PairEvents* events);
 };
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

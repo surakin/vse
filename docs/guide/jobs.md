@@ -59,7 +59,7 @@ runs jobs on the calling thread until the counter is zero.
 #include "jobs/scheduler.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 static jobs::Job Square(u64* out, u64 value) {
     *out = value * value;
@@ -106,7 +106,7 @@ chunks), runs each chunk as a job and returns when all are done. Your callable r
 #include "os/console.h"
 #include "sync/atomic.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     jobs::Scheduler scheduler(jobs::Scheduler::Config{4, false});
@@ -151,7 +151,7 @@ spawn the children, and `co_await` it: the job is suspended, the worker runs oth
 #include "jobs/scheduler.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 static jobs::Job Leaf(u64* out, u64 value) {
     *out = value + 1;

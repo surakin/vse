@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::ecs::detail
+namespace vse::ecs::detail
 {
 
 /// The indices `I...`.
@@ -21,4 +21,4 @@ template <usize... I> struct MakeIndexList<0, I...>
     using Type = IndexList<I...>;
 };
 
-}  // namespace engine_placeholder::ecs::detail
+}  // namespace vse::ecs::detail

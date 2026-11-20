@@ -8,7 +8,7 @@
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// A record store in memory: a vector of records sorted by key. A batch works on a copy of the records and replaces the
@@ -84,4 +84,4 @@ private:
     u32 fail_in_ = 0;
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

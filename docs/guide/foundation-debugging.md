@@ -89,7 +89,7 @@ and of the libraries it loaded.
 #include "debug/stack_trace.h"
 #include "os/os.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // Writes the call stack of the caller to standard output.
 void PrintMyCallStack() {
@@ -145,7 +145,7 @@ the process dies from the original fault, so its exit status, a core dump and a 
 #include "debug/crash_handler.h"
 #include "debug/stack_trace.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // Call once, early in main.
 void SetUpCrashHandling() {
@@ -579,7 +579,7 @@ runs that code in a child process and reports what happened to it.
 #include "debug/death_test.h"
 #include "debug/fault_injection.h"
 
-using namespace engine_placeholder::debug;
+using namespace vse::debug;
 
 ENGINE_DEATH_TEST_FN(write_through_null) {
     InjectFault(FaultKind::NullWrite);

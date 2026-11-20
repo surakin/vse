@@ -7,7 +7,7 @@
 //! These are the values every backend is required to support. A device may support more, never less;
 //! the descriptors validate against these, and the device validates against its own `DeviceCaps`.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Largest number of bindings in one bind group layout.
@@ -25,4 +25,4 @@ inline constexpr u32 kMaxVertexAttributes = 16;
 /// Largest push-constant range in bytes that any device is required to support.
 inline constexpr u32 kMaxPushConstantBytes = 128;
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

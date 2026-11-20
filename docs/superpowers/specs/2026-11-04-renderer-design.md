@@ -23,7 +23,7 @@ includes `rhi/vulkan/`: the `rhi_boundary_check` gate already scans `engine/`, a
 `engine/renderer/`. Application code that needs a device creates it with `rhi::CreateDevice` and hands the `Device*` to
 the renderer; the renderer does not own the device or the window.
 
-Namespace `engine_placeholder::renderer`; headers are included as `"renderer/<name>.h"` rooted at `engine/`. The renderer logs
+Namespace `vse::renderer`; headers are included as `"renderer/<name>.h"` rooted at `engine/`. The renderer logs
 on the foundation's existing `LogRender` channel through `RenderLog(level, fmt, ...)`, so `--log-level` applies to it
 (`LogRhi` and `LogJobs` have no such hook; a separate renderer channel would have been silent under `--log-level`).
 

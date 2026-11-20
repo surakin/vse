@@ -20,12 +20,12 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 class Scheduler;
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// Most compile errors the graph keeps; later ones are counted but not stored.
@@ -628,4 +628,4 @@ private:
     char (*errors_)[kGraphErrorLength] = nullptr;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

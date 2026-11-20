@@ -4,7 +4,7 @@
 #include "rhi/device.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 LogChannel LogRhi("LogRhi", LogVerbosity::Warn);
@@ -33,4 +33,4 @@ u32 AllocateDeviceSerial()
     return next.FetchAdd(1, MemoryOrder::Relaxed);
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

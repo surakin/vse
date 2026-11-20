@@ -6,7 +6,7 @@
 #include "log/log.h"
 #include "os/os.h"
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 namespace
@@ -345,4 +345,4 @@ void WaylandCursor::Shutdown()
     surface_ = nullptr;
 }
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

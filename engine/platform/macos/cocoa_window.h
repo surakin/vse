@@ -21,7 +21,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::os::cocoa
+namespace vse::os::cocoa
 {
 
 /// Sets up the application object once: `NSApplication` with the regular activation policy, a menu with Quit (Cmd-Q),
@@ -256,4 +256,4 @@ private:
     void* modal_user_ = nullptr;
 };
 
-}  // namespace engine_placeholder::os::cocoa
+}  // namespace vse::os::cocoa

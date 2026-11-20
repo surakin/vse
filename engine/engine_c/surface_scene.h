@@ -19,7 +19,7 @@
 #include "renderer/scene_frame.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 struct WorldObject;
@@ -169,4 +169,4 @@ private:
     u32 last_height_ = 0;
 };
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

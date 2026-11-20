@@ -12,7 +12,7 @@
 #include "spatial/spatial_set.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// How the system chooses.
@@ -219,4 +219,4 @@ private:
     u32 epoch_ = 0;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

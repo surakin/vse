@@ -3,7 +3,7 @@
 #include "script/event_bus.h"
 #include "script/partition_context.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -119,4 +119,4 @@ bool RegisterEventBindings(BindingRegistry* registry)
     return ok;
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

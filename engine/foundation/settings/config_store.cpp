@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 const char* StoreErrorName(StoreError error)
@@ -60,4 +60,4 @@ ValueError FromStored(const SettingDesc& desc, const StoredValue& stored, Value*
     return ParseValue(desc, stored.value.AsText(), out);
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kSaxpyCompDxilByteCount = 3952;
 
@@ -266,4 +266,4 @@ inline constexpr u64 kSaxpyCompDxilSpirvFnv = 0xaf49c4602ffa84c6ull;
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kSaxpyCompShader = {"saxpy.comp", rhi::SpirvBlob(kSaxpyCompSpv, kSaxpyCompSpvWordCount), rhi::DxilBlob(kSaxpyCompDxil, kSaxpyCompDxilByteCount), rhi::MetalLibBlob(kSaxpyCompMetallib, kSaxpyCompMetallibByteCount, kSaxpyCompMetallibEntry, &kSaxpyCompMetallibSlots)};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

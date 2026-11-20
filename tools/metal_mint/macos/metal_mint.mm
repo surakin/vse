@@ -28,7 +28,7 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

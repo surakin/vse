@@ -18,7 +18,7 @@
 #include <winioctl.h>
 #include "unity/windows_disable.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using io::Error;
 using io::OpenMode;
 using io::Path;

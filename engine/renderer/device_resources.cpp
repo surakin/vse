@@ -6,7 +6,7 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 bool DeviceResources::Register(Recreatable* owner, u32 tier)
@@ -201,4 +201,4 @@ bool DeviceResources::OnDeviceCreated(rhi::Device* device, u32 epoch)
     return true;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

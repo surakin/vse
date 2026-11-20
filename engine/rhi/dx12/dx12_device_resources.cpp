@@ -18,7 +18,7 @@
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 namespace
@@ -1147,4 +1147,4 @@ bool Dx12Device::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* ds
     return ok;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

@@ -4,7 +4,7 @@
 
 //! The label widget (Phase 15, Day 195).
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Static text drawn from the `label` style of the theme.
@@ -34,4 +34,4 @@ public:
     Size Measure(const Constraints& constraints) override;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

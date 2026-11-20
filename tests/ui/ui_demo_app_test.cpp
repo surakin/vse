@@ -5,8 +5,8 @@
 #include "ui_demo_app.h"
 #include "ui/testing/harness.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::ui;
+using namespace vse;
+using namespace vse::ui;
 
 namespace
 {

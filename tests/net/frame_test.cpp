@@ -7,7 +7,7 @@
 #include "cstr/mem_ops.h"
 #include "net/frame.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -244,4 +244,4 @@ TEST_CASE("The reader stops after a frame and leaves the following bytes", "[net
     CHECK(reader.Frame().Size() == 1);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

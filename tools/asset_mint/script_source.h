@@ -26,7 +26,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// One `dep` line: a module name and the id of the script that provides it.
@@ -167,4 +167,4 @@ using ScriptLoader = bool (*)(void* context, StringView name, ResourceId expecte
 Status CheckScriptGraph(StringView root_name, const ScriptSource& root, ScriptLoader loader, void* context,
                         ScriptSourceError* error, Vector<ResourceId>* order);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

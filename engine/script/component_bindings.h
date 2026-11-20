@@ -9,7 +9,7 @@
 #include "script/merge.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The command kinds the component bindings record (see [[script::RegisterComponentCommandKinds]]).
@@ -49,4 +49,4 @@ bool RegisterComponentCommandKinds(CommandKindTable* kinds);
 /// - Fails: returns false when a name is taken.
 bool RegisterComponentBindings(BindingRegistry* registry);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

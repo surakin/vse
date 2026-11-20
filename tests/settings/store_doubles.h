@@ -14,8 +14,8 @@
 namespace settings_test
 {
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::settings;
+using namespace vse;
+using namespace vse::settings;
 
 /// Fails the Nth call (counting Load, Get, Set, Remove, Enumerate and Commit; 1-based) with a chosen error, without
 /// touching the inner store (so a failed Commit leaves the durable state as it was), then behaves normally unless

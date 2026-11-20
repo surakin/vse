@@ -9,7 +9,7 @@
 #include <sys/sysctl.h>
 #include <unistd.h>
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -48,4 +48,4 @@ bool IsDebuggerAttached()
     return attached;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

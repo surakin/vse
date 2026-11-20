@@ -8,7 +8,7 @@
 #include "log/log.h"
 #include "os/os.h"
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 namespace
@@ -434,4 +434,4 @@ void WaylandInput::ReleaseAllKeys()
     }
 }
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

@@ -20,7 +20,7 @@
 #include "net/status.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// What a link does to the packets that cross it (one direction).
@@ -204,4 +204,4 @@ private:
     bytes::ByteWriter trace_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

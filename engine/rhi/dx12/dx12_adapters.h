@@ -7,7 +7,7 @@
 
 //! The DXGI adapters the Direct3D 12 backend can use, described as [[rhi::AdapterInfo]] (Phase 13 Day 164).
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 /// The facts about one DXGI adapter that [[rhi::dx12::MakeAdapterInfo]] turns into an [[rhi::AdapterInfo]]; plain data
@@ -99,4 +99,4 @@ bool ListAdapters(IDXGIFactory6* factory, bool presentable, AdapterSet* out);
 /// - Thread-safety: thread-safe.
 int PickAdapter(const AdapterSet& set, const char* request, char* reason, usize reason_size);
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

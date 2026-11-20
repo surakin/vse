@@ -8,7 +8,7 @@
 
 //! The list box (Phase 15, Day 196): a virtualized list of text rows with single or multiple selection.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// The rows of a [[ui::ListBox]].
@@ -209,4 +209,4 @@ private:
     Callback<ListBox*> on_activate_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

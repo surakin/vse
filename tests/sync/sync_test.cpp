@@ -15,7 +15,7 @@
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

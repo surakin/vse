@@ -18,7 +18,7 @@
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// The registry hive a [[settings::RegistryConfigStore]] lives in.
@@ -123,4 +123,4 @@ private:
     Atomic<bool> stopping_{false};
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

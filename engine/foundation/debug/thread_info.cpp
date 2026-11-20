@@ -1,6 +1,6 @@
 #include "debug/thread_info.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -30,4 +30,4 @@ const char* CrashThreadName()
     return t_crash_thread_name;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

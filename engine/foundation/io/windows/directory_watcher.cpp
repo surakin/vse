@@ -13,7 +13,7 @@
 #include "os/windows/win32.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -312,4 +312,4 @@ Status OpenNativeWatcher(const Path& directory, UniquePtr<DirectoryWatcher>* out
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

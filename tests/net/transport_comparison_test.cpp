@@ -13,7 +13,7 @@
 #include "net/udp_transport.h"
 #include "transport_conformance.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -274,4 +274,4 @@ TEST_CASE("Transports: the same scripted conversation looks the same on the simu
     CHECK(SameSeen(sim_client, tcp_client));
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

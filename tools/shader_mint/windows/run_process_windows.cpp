@@ -6,7 +6,7 @@
 #include "os/windows/win32.h"
 #include "run_process.h"
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 bool RunProcess(const Vector<Text>& args)
@@ -63,4 +63,4 @@ bool RunProcess(const Vector<Text>& args)
     return true;
 }
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

@@ -10,7 +10,7 @@
 #include "physics/world.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// A joint between two entities that have bodies; put it on any entity (usually a third one that owns the joint).
@@ -100,4 +100,4 @@ struct JointSyncReport
 /// - Fails: a joint whose description is not valid is counted in `refused` and skipped.
 JointSyncReport SyncJoints(ecs::World& ecs, PhysicsWorld& physics);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

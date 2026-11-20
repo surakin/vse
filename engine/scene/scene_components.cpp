@@ -3,7 +3,7 @@
 #include "scene/components.h"
 #include "storage/field.h"
 
-namespace engine_placeholder::scene
+namespace vse::scene
 {
 
 namespace
@@ -58,4 +58,4 @@ storage::Status RegisterSceneComponents(storage::ComponentRegistry* registry)
     return registry->Register<Hidden>({.id = kHiddenId, .name = "hidden"});
 }
 
-}  // namespace engine_placeholder::scene
+}  // namespace vse::scene

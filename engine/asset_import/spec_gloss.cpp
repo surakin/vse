@@ -5,7 +5,7 @@
 #include "lang/status_try.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -242,4 +242,4 @@ Status ConvertSpecGlossImages(const SpecGlossImages& in, u64 max_pixels, Decoded
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

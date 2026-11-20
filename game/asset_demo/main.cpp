@@ -31,7 +31,7 @@
 #include "settings/registry.h"
 #include "settings/settings.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

@@ -5,12 +5,12 @@
 #include "string/string.h"
 #include "string/utf8.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::CodepointCount;
-using engine_placeholder::GraphemeClusterCount;
-using engine_placeholder::GraphemeClusters;
-using engine_placeholder::StringBuilder;
-using engine_placeholder::StringView;
+using vse::ArenaAllocator;
+using vse::CodepointCount;
+using vse::GraphemeClusterCount;
+using vse::GraphemeClusters;
+using vse::StringBuilder;
+using vse::StringView;
 
 TEST_CASE("plain ASCII: grapheme count == codepoint count == byte count", "[string][grapheme]")
 {

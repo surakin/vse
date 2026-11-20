@@ -5,7 +5,7 @@
 #include "storage/identity.h"
 #include "spatial/components.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 Status RegisterBuiltinComponents(ComponentRegistry* registry)
@@ -43,4 +43,4 @@ Status RegisterBuiltinComponents(ComponentRegistry* registry)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

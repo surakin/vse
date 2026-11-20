@@ -8,7 +8,7 @@
 //! MoltenVK is a third-party layer), so this file and its source are not part of the macOS build, and nothing there may
 //! include it.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Returns the file name of this platform's Vulkan loader library: `libvulkan.so.1` on Linux, `vulkan-1.dll` on
@@ -27,4 +27,4 @@ const char* VulkanLoaderName();
 /// - Ownership: the driver library is deliberately left loaded, so the returned pointer stays valid.
 PFN_vkVoidFunction ProbeVulkanCreateInstance();
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

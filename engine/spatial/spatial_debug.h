@@ -12,7 +12,7 @@
 #include "spatial/spatial_world.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// What a set holds and how good its structures are.
@@ -105,4 +105,4 @@ void RegisterSpatialSettings(settings::Registry* registry);
 /// - Fails: a missing setting leaves the default.
 SpatialSetConfig SetConfigFromSettings(const settings::Registry& registry);
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

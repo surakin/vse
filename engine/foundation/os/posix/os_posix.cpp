@@ -14,7 +14,7 @@
 // The functions of os.h that are the same POSIX calls on Linux and macOS (one difference handled: poll on a device,
 // WriteAllWithTimeout) (Phase 21 Day 285, moved from os/linux/os.cpp). The clock, random bytes, process figures,
 // library loading and the environment pointer are per platform (os/linux/os.cpp, os/macos/os.cpp).
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 namespace posix
@@ -210,4 +210,4 @@ bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length)
     return true;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

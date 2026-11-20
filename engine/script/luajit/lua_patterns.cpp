@@ -8,7 +8,7 @@
 
 #include <lua.hpp>
 
-namespace engine_placeholder::script::luajit
+namespace vse::script::luajit
 {
 
 namespace
@@ -802,4 +802,4 @@ void InstallSafePatterns(lua_State* L)
     }
 }
 
-}  // namespace engine_placeholder::script::luajit
+}  // namespace vse::script::luajit

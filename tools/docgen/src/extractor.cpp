@@ -8,7 +8,7 @@ namespace docgen
 namespace
 {
 
-using engine_placeholder::i32;
+using vse::i32;
 
 constexpr usize kNone = ~usize{0};
 
@@ -180,7 +180,7 @@ private:
 
     StringView Cat(StringView a, const char* mid, StringView b)
     {
-        const usize mid_len = engine_placeholder::CStrLength(mid);
+        const usize mid_len = vse::CStrLength(mid);
         const usize len = a.Length() + mid_len + b.Length();
         char* buf = static_cast<char*>(arena_.Alloc(len + 1, 1));
         ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
@@ -1929,8 +1929,8 @@ void Indent(StringBuilder<ArenaAllocator>& sb, int depth)
     }
 }
 
-void AppendDocLine(StringBuilder<ArenaAllocator>& sb, const char* label, const ScanResult& scan,
-                   engine_placeholder::i32 doc, int depth)
+void AppendDocLine(StringBuilder<ArenaAllocator>& sb, const char* label, const ScanResult& scan, vse::i32 doc,
+                   int depth)
 {
     if (doc < 0)
     {
@@ -1951,7 +1951,7 @@ void AppendDocLine(StringBuilder<ArenaAllocator>& sb, const char* label, const S
 
 struct FlagName
 {
-    engine_placeholder::u32 bit;
+    vse::u32 bit;
     const char* name;
 };
 

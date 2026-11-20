@@ -5,7 +5,7 @@
 #include "physics/collide_math.h"
 #include "physics/compound.h"
 
-namespace engine_placeholder::physics::collide_math
+namespace vse::physics::collide_math
 {
 
 namespace
@@ -80,4 +80,4 @@ bool CompoundPair(const Shape& a, const Pose& pose_a, const Shape& b, const Pose
     return MergeContacts(found.Data(), found_count, out);
 }
 
-}  // namespace engine_placeholder::physics::collide_math
+}  // namespace vse::physics::collide_math

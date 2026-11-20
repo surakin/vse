@@ -7,7 +7,7 @@
 #include "containers/unique_ptr.h"
 #include "io/path.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Serves the entries of one pak by id.
@@ -78,4 +78,4 @@ private:
     const PakBackend* base_ = nullptr;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

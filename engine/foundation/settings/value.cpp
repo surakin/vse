@@ -3,7 +3,7 @@
 #include "log/assert.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 const char* TypeName(Type type)
@@ -113,4 +113,4 @@ bool Value::operator==(const Value& other) const
     return false;
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

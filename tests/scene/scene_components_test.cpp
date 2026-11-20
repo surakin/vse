@@ -10,7 +10,7 @@
 #include "storage/memory_store.h"
 #include "storage/world_storage.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 TEST_CASE("Scene components: a light, a camera and a hidden tag are saved and loaded", "[scene][storage]")
 {

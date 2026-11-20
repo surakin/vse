@@ -17,7 +17,7 @@
 #include "storage/component_record.h"
 #include "storage/identity.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -247,7 +247,7 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
         }
         // glTF lights shine along -Z: +Z points from the surface toward the light. (The math type, named in full: a
         // unity build merges another file's own Vec3 here.)
-        source.direction = ::engine_placeholder::Vec3(0, 0, 1);
+        source.direction = ::vse::Vec3(0, 0, 1);
         if (type == StringView("directional"))
         {
             source.type = renderer::LightType::Directional;
@@ -769,4 +769,4 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

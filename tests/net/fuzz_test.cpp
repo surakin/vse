@@ -21,7 +21,7 @@
 #include "net/udp_transport.h"
 #include "transport_conformance.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -554,4 +554,4 @@ TEST_CASE("Fuzz: random and mutated streams cannot make a TCP server hold more t
     CHECK(server.ConnectionCount() <= cfg.max_connections);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

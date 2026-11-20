@@ -8,7 +8,7 @@
 #include "physics/hull.h"
 #include "types.h"
 
-namespace engine_placeholder::physics::testing
+namespace vse::physics::testing
 {
 
 // One face as the vertex numbers, counter-clockwise seen from outside.
@@ -223,4 +223,4 @@ inline ConvexHullConstPtr TetraHull()
     return MakeHullAuto(v, f);
 }
 
-}  // namespace engine_placeholder::physics::testing
+}  // namespace vse::physics::testing

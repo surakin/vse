@@ -9,17 +9,17 @@
 #include "cstr/mem_ops.h"
 #include "cstr/cstr.h"
 
-using engine_placeholder::AssertAction;
-using engine_placeholder::AssertHandler;
-using engine_placeholder::AssertInfo;
-using engine_placeholder::Log;
-using engine_placeholder::LogCore;
-using engine_placeholder::LogVerbosity;
-using engine_placeholder::SetAssertHandler;
-using engine_placeholder::SetWriteSinkForTesting;
-using engine_placeholder::StringView;
-using engine_placeholder::usize;
-using engine_placeholder::os::Write;
+using vse::AssertAction;
+using vse::AssertHandler;
+using vse::AssertInfo;
+using vse::Log;
+using vse::LogCore;
+using vse::LogVerbosity;
+using vse::SetAssertHandler;
+using vse::SetWriteSinkForTesting;
+using vse::StringView;
+using vse::usize;
+using vse::os::Write;
 
 namespace
 {
@@ -35,7 +35,7 @@ long CapturingWriteSink(int fd, const void* buf, usize len)
     {
         copy_len = sizeof(g_capture_buffer) - g_capture_len;
     }
-    engine_placeholder::MemCopy(g_capture_buffer + g_capture_len, buf, copy_len);
+    vse::MemCopy(g_capture_buffer + g_capture_len, buf, copy_len);
     g_capture_len += copy_len;
     return static_cast<long>(len);
 }
@@ -51,7 +51,7 @@ struct TestAssertFailure
 // Prints the usual line through the default handler (so the output is captured), then unwinds.
 AssertAction ThrowAfterPrinting(const AssertInfo& info)
 {
-    engine_placeholder::DefaultAssertHandler(info);
+    vse::DefaultAssertHandler(info);
     throw TestAssertFailure{info.line};
 }
 
@@ -89,9 +89,9 @@ bool Observe(void* user, const char* channel, LogVerbosity level, StringView mes
     auto* state = static_cast<ObserverState*>(user);
     ++state->calls;
     state->level = level;
-    engine_placeholder::MemCopy(state->channel, channel, engine_placeholder::CStrLength(channel) + 1);
+    vse::MemCopy(state->channel, channel, vse::CStrLength(channel) + 1);
     const usize n = message.Length() < sizeof(state->text) - 1 ? message.Length() : sizeof(state->text) - 1;
-    engine_placeholder::MemCopy(state->text, message.Data(), n);
+    vse::MemCopy(state->text, message.Data(), n);
     state->text[n] = '\0';
     return state->handle;
 }
@@ -104,12 +104,12 @@ TEST_CASE("The log observer sees each emitted line, may take it from the console
     g_capture_len = 0;
     SetWriteSinkForTesting(&CapturingWriteSink);
 
-    engine_placeholder::SetLogObserver(&Observe, &state);
+    vse::SetLogObserver(&Observe, &state);
     Log(LogCore, LogVerbosity::Error, "seen and printed");  // not handled: also on the console
     state.handle = true;
     Log(LogCore, LogVerbosity::Error, "seen and taken");  // handled: not on the console
     Log(LogCore, LogVerbosity::Info, "filtered out");     // the channel's filter comes first
-    engine_placeholder::SetLogObserver(nullptr, nullptr);
+    vse::SetLogObserver(nullptr, nullptr);
     Log(LogCore, LogVerbosity::Error, "after removal");
 
     SetWriteSinkForTesting(&Write);

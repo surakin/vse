@@ -9,7 +9,7 @@
 
 //! Wayland cursor shapes, custom cursor images and the pointer lock for [[os::wayland::WaylandInput]].
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 /// Builds a premultiplied ARGB8888 `wl_shm` buffer from RGBA8 pixels (a cursor image, a drag icon). Returns null on
@@ -116,4 +116,4 @@ private:
     PointerLockState lock_;
 };
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

@@ -9,7 +9,7 @@
 
 //! Canonical Unicode normalization (NFC and NFD) per UAX #15, plus the Unicode
 //! property lookups it is built on.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Looks up the canonical decomposition of a codepoint in the generated tables.
@@ -134,4 +134,4 @@ template <typename Allocator> String<Allocator> NormalizeNFC(Allocator& allocato
     return result;
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

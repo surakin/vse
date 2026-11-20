@@ -10,7 +10,7 @@
 #include "script/luajit/luajit_backend.h"
 #include "script_source.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -402,4 +402,4 @@ TEST_CASE("script graph: order, missing dependencies and cycles are found", "[sc
     CHECK(text.Find(Text("a -> b -> a")) < text.Length());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

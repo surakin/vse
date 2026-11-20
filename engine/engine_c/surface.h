@@ -8,12 +8,12 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 class ForeignWindow;
 }
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 class ResourceHost;
@@ -121,4 +121,4 @@ engine_status SurfaceAcquireFrameFn(engine_handle surface, engine_frame_image* o
 engine_status SurfaceReleaseFrameFn(engine_handle surface, const engine_frame_image* image);
 engine_status SurfaceProjectFn(engine_handle surface, const float* point, float* out);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

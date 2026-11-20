@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "physics/check.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -109,4 +109,4 @@ Validation Collider::Validate() const
     return layer < 32 ? Validation::Ok : Validation::OutOfRange;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

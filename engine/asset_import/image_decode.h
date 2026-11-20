@@ -13,7 +13,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The image formats the importer decodes.
@@ -57,4 +57,4 @@ ImageFormat SniffImageFormat(ByteSpan bytes);
 /// - Ownership: borrows `bytes` for the call only; `*out` owns its pixels.
 Status DecodePixels(ByteSpan bytes, u64 max_pixels, DecodedImage* out, GltfError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

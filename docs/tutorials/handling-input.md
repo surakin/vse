@@ -24,7 +24,7 @@ The edge detection is plain data work, so this part runs without a window:
 #include "os/console.h"
 #include "platform/input.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // Compares two snapshots of the keyboard for one key.
 static const char* Describe(const os::KeyboardState& before, const os::KeyboardState& now, os::Key key) {
@@ -67,7 +67,7 @@ In a program with a window, the same comparison sits inside the frame loop. This
 #include "platform/window.h"
 #include "platform/window_host.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     os::InputState input;

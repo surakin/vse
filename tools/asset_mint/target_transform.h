@@ -18,7 +18,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// What a transform may ask for.
@@ -79,4 +79,4 @@ Status RetagBlob(ByteSpan blob, u32 target, Vector<byte>* out);
 Status TransformBlob(const TargetTransforms& transforms, const TransformContext& context, ByteSpan blob,
                      Vector<byte>* out);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

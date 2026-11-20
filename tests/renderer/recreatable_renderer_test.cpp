@@ -13,8 +13,8 @@
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace
 {

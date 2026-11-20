@@ -9,7 +9,7 @@
 //! heap of
 //! `<cstdlib>`. Every function is an inline forwarder, so the compiler still turns a constant-size [[MemCopy]] into
 //! moves.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Copies `count` bytes from `source` to `destination`; the ranges must not overlap (`memcpy`).
@@ -122,4 +122,4 @@ inline void SortRaw(void* base, usize count, usize element_size, int (*compare)(
     std::qsort(base, count, element_size, compare);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

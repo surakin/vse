@@ -19,7 +19,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// What the cache counted.
@@ -132,4 +132,4 @@ private:
     BlobCacheStats stats_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

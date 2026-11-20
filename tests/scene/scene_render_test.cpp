@@ -13,7 +13,7 @@
 #include "renderer/texture.h"
 #include "scene/render_sync.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using scene::LightSource;
 using scene::MakeRenderSyncSystem;
 using scene::MeshRenderer;

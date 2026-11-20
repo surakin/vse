@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGradientCompSpvWordCount = 263;
 
@@ -55,4 +55,4 @@ inline constexpr u32 kGradientCompSpv[kGradientCompSpvWordCount] = {
     0x00000021, 0x000200f8, 0x00000021, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

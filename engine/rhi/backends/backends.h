@@ -2,7 +2,7 @@
 
 //! The one call that registers every RHI backend this build compiled: library `rhi_backends`.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Registers every backend compiled into this build with the backend registry: the null backend and Vulkan everywhere,
@@ -18,4 +18,4 @@ namespace engine_placeholder::rhi
 /// - Thread-safety: thread-safe.
 bool RegisterCompiledBackends();
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

@@ -7,7 +7,7 @@
 //! [[StringView]], the non-owning text view. It lives in the base layer (it needs nothing but `types.h`) so the OS
 //! primitives, the log and the integer types can take text without depending on the string module; `string/string.h`
 //! includes it, so existing code is unaffected.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Non-owning view of a contiguous range of chars: a pointer and a length.
@@ -197,4 +197,4 @@ private:
     usize length_ = 0;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

@@ -9,7 +9,7 @@
 #include "net/sim_stream.h"
 #include "net/tcp_transport.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -149,4 +149,4 @@ TEST_CASE("Ten thousand simulated TCP connections carry mixed traffic and shut d
     CHECK(server_counts.opened == kSoakConnections);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

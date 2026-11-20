@@ -32,7 +32,7 @@
 #include "storage/component_registry.h"
 #include "types.h"
 
-namespace engine_placeholder::script_physics
+namespace vse::script_physics
 {
 
 /// The command kinds the physics bindings record (ids the built-in kinds do not use).
@@ -127,4 +127,4 @@ bool RegisterPhysicsCommandKinds(script::CommandKindTable* kinds);
 /// - Fails: returns false when a name is taken.
 bool RegisterPhysicsBindings(script::BindingRegistry* registry);
 
-}  // namespace engine_placeholder::script_physics
+}  // namespace vse::script_physics

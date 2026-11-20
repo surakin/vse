@@ -3,7 +3,7 @@
 #include "lang/new.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 ChunkPool::~ChunkPool()
@@ -64,4 +64,4 @@ void ChunkPool::Trim()
     stats_.pooled = 0;
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

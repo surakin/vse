@@ -4,9 +4,9 @@
 #include "types.h"
 #include "cstr/mem_ops.h"
 
-using engine_placeholder::StackAllocator;
-using engine_placeholder::u8;
-using engine_placeholder::usize;
+using vse::StackAllocator;
+using vse::u8;
+using vse::usize;
 
 TEST_CASE("StackAllocator: Push/PopToMarker rewinds and preserves earlier contents", "[mem][stack]")
 {
@@ -27,7 +27,7 @@ TEST_CASE("StackAllocator: Push/PopToMarker rewinds and preserves earlier conten
             break;
         }
         first[i] = p;
-        engine_placeholder::MemSet(p, static_cast<int>(i + 1), kObjSize);
+        vse::MemSet(p, static_cast<int>(i + 1), kObjSize);
     }
     REQUIRE(first_push_ok);
 
@@ -47,7 +47,7 @@ TEST_CASE("StackAllocator: Push/PopToMarker rewinds and preserves earlier conten
         {
             second_first = p;
         }
-        engine_placeholder::MemSet(p, static_cast<int>(100 + i), kObjSize);
+        vse::MemSet(p, static_cast<int>(100 + i), kObjSize);
     }
     REQUIRE(second_push_ok);
 

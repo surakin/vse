@@ -19,7 +19,7 @@
 #include "rhi/pipeline_cache_file.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 namespace
@@ -691,4 +691,4 @@ bool Dx12Device::LookupPipeline(PipelineHandle pipeline, PipelineInfo* out) cons
     return true;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

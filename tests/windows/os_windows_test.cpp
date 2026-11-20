@@ -13,8 +13,8 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-using namespace engine_placeholder;
-namespace win = engine_placeholder::os::windows;
+using namespace vse;
+namespace win = vse::os::windows;
 
 namespace
 {

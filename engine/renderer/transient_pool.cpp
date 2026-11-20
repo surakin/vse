@@ -5,7 +5,7 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -330,4 +330,4 @@ TransientPoolStats TransientPool::Stats() const
     return s;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

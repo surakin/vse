@@ -16,7 +16,7 @@
 //! The retained widget tree (Phase 15, Day 192): a [[ui::Widget]] owns its children, belongs to one [[ui::Surface]] and
 //! draws through the abstract [[ui::Canvas]].
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class Surface;
@@ -383,4 +383,4 @@ private:
     bool clip_children_ = true;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

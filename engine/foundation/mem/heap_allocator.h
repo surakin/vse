@@ -6,7 +6,7 @@
 
 //! General-purpose allocator over the C++ aligned heap, for containers that own
 //! storage no arena owns. Unlike the arena it frees individual blocks.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Stateless heap allocator that frees individual blocks.
@@ -52,4 +52,4 @@ private:
     static usize Aligned(usize align) { return align < 16 ? 16 : align; }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

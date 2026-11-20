@@ -11,7 +11,7 @@
 //! through `end`). `strtod`, `strtof` and printf's floating conversions follow the process locale (`LC_NUMERIC`);
 //! text that is stored or parsed back uses [[FormatShortest]], [[FormatGeneral]] and [[ParseDoubleExact]], which do
 //! not.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Parses a decimal int; 0 when `text` has no number (`atoi`).
@@ -160,4 +160,4 @@ inline ParseDoubleResult ParseDoubleExact(const char* first, const char* last) n
 #endif
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

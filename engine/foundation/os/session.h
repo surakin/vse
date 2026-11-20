@@ -6,7 +6,7 @@
 // a locked screen skips them instead of failing them. The answer comes from the platform (logind on Linux);
 // `os/windows/SESSION.md` and `os/macos/SESSION.md` list what the other ports call.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// The state of the session the program runs in.
@@ -50,4 +50,4 @@ bool SessionCanShowWindows(SessionState state);
 /// - Thread-safety: thread-safe.
 SessionState QuerySessionState();
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

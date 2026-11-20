@@ -3,7 +3,7 @@
 #include "cstr/format.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -334,4 +334,4 @@ Status ReadOnlyConfigStore::Enumerate(StringView prefix, Vector<Key>* out)
     return Status();
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

@@ -8,7 +8,7 @@
 #include "storage/storage_settings.h"
 #include "storage/world_storage.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// Everything a program needs to save worlds to a database file, built from the settings: the connection
@@ -63,4 +63,4 @@ private:
     u32 autosave_seconds_ = 0;
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

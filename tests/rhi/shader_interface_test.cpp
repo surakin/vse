@@ -22,8 +22,8 @@
 #include "lit.vert.spv.inc"
 #include "lit.frag.spv.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 namespace
 {
@@ -151,7 +151,7 @@ Interface Reflect(const u32* words, usize count)
     return out;
 }
 
-using namespace engine_placeholder::shaders;
+using namespace vse::shaders;
 
 struct Expect
 {

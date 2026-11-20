@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTextFragDxilByteCount = 3848;
 
@@ -260,4 +260,4 @@ inline constexpr u64 kTextFragDxilSpirvFnv = 0x7b9b23325359fa27ull;
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kTextFragShader = {"text.frag", rhi::SpirvBlob(kTextFragSpv, kTextFragSpvWordCount), rhi::DxilBlob(kTextFragDxil, kTextFragDxilByteCount), rhi::MetalLibBlob(kTextFragMetallib, kTextFragMetallibByteCount, kTextFragMetallibEntry, &kTextFragMetallibSlots)};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

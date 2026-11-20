@@ -9,7 +9,7 @@
 //! The single-line text field (Phase 15, Day 197): UTF-8 text edited by grapheme cluster with the keyboard and the
 //! mouse, a selection, word movement, undo and redo, and the clipboard.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class TextField;
@@ -271,4 +271,4 @@ private:
     Callback<TextField*> on_focus_lost_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

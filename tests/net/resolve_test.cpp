@@ -13,7 +13,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -439,4 +439,4 @@ TEST_CASE("ConnectAny skips a refusing endpoint and connects to the next; Connec
     CHECK(via_name.IsOpen());
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

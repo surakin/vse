@@ -6,7 +6,7 @@
 
 #include "net/status.h"
 
-namespace engine_placeholder::net::windows
+namespace vse::net::windows
 {
 
 // The portable code of a Winsock error (`WSAGetLastError`, or the `int` that `GetAddrInfoW` returns for a name lookup:
@@ -21,4 +21,4 @@ inline Status StatusFromWsa(int error)
 // answer is TimedOut (the same meanings as POSIX's EAI_ codes).
 ErrorCode ErrorFromResolveError(int error);
 
-}  // namespace engine_placeholder::net::windows
+}  // namespace vse::net::windows

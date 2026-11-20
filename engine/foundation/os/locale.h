@@ -8,7 +8,7 @@
 //! with [[FormatGeneral]], [[FormatShortest]] and [[ParseDoubleExact]], which ignore it. A host program may change it
 //! (Qt and GTK call `setlocale(LC_ALL, "")` at startup), so tests use this wrapper to run the engine under a locale
 //! whose decimal point is `,`.
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Which part of the locale [[os::SetLocale]] changes or reads.
@@ -33,4 +33,4 @@ inline const char* SetLocale(LocaleCategory category, const char* name) noexcept
     return std::setlocale(category == LocaleCategory::All ? LC_ALL : LC_NUMERIC, name);
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

@@ -7,7 +7,7 @@
 #include "text.h"
 #include "types.h"
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 // Parses `json_text` (the whole file) and fills `out`. Returns true on success; on failure `error` says why.
@@ -29,4 +29,4 @@ bool CheckD3D12Registers(const renderer::ShaderReflection& reflection, StringVie
 // Returns false, with `reflection`'s slots unset, and the reason in `error`.
 bool ApplyMetalSlots(renderer::ShaderReflection* reflection, StringView spirv_json, StringView metal_json, Text* error);
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

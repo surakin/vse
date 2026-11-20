@@ -7,7 +7,7 @@
 #include "mem/heap_allocator.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 namespace
@@ -595,4 +595,4 @@ SystemDesc MakeTransformSystem(const char* name)
         .WritesResource<TransformReport>();
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

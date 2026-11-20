@@ -10,7 +10,7 @@
 #include "log/assert.h"
 #include "types.h"
 
-namespace engine_placeholder::bytes
+namespace vse::bytes
 {
 
 /// Appends values to a growing buffer in the canonical encoding: every integer little-endian at its own width; `f32`
@@ -112,4 +112,4 @@ private:
     Vector<byte> buffer_;
 };
 
-}  // namespace engine_placeholder::bytes
+}  // namespace vse::bytes

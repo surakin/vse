@@ -8,7 +8,7 @@
 #include "physics/world.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Writes the transform of every dynamic body that has an entity into the entity's `LocalTransform`.
@@ -54,4 +54,4 @@ u32 DriveKinematicBodies(ecs::World& ecs, PhysicsWorld& physics, f32 dt);
 /// - Fails: never.
 ecs::SystemDesc MakePhysicsStepSystem();
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -18,7 +18,7 @@
 #include "renderer/render_scene.h"
 #include "scene/render_sync.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

@@ -43,7 +43,7 @@ satisfy "a window appears" for this milestone.
 
 **New `WaylandWindow`**
 (`engine/foundation/os/linux/wayland/wayland_window.h`/`.cpp`, same
-`engine_placeholder::os::wayland` namespace as Day 18's
+`vse::os::wayland` namespace as Day 18's
 `WaylandConnection`): `Create()` takes a `WaylandConnection&` plus
 `StringView title`/`app_id`, blocks via `wl_display_roundtrip` until the
 initial `xdg_surface` configure is received/acked, sizes the window from

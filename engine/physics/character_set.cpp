@@ -5,7 +5,7 @@
 #include "lang/utility.h"
 #include "physics/snapshot_io.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -395,4 +395,4 @@ bool CharacterSet::Restore(ByteSpan data)
     return true;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -30,9 +30,9 @@
 #include "script_media/replay_log.h"
 #include "storage/builtin_components.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::script;
-using namespace engine_placeholder::script_media;
+using namespace vse;
+using namespace vse::script;
+using namespace vse::script_media;
 
 // A named namespace: the test files of one unity build must not share names through anonymous namespaces.
 namespace media_test

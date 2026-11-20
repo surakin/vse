@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGbufferFragMetallibByteCount = 9036;
 
@@ -5042,4 +5042,4 @@ inline constexpr rhi::ShaderSlotTable kGbufferFragPerm7MetallibSlots = {kGbuffer
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragPerm7MetallibSpirvFnv = 0x519efb5c9c0a73d4ull;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

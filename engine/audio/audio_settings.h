@@ -5,7 +5,7 @@
 #include "audio/device.h"
 #include "settings/registry.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// The quality of the sample-rate conversion a voice uses (Day 420 implements all three).
@@ -74,4 +74,4 @@ ChannelLayout LayoutForChannelCount(u32 channels);
 /// - Fails: never.
 DeviceConfig DeviceConfigFromSettings(const AudioSettings& settings);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

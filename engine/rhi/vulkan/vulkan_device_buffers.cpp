@@ -8,7 +8,7 @@
 #include "sync/mutex.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -907,4 +907,4 @@ void VulkanDevice::WaitIdle()
     CollectRetired(true);  // the device is idle (or lost), so everything retired is free to release
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

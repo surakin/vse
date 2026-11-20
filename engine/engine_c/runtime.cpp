@@ -38,7 +38,7 @@
 #include "physics/system.h"
 #include "storage/builtin_components.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 namespace
@@ -4135,4 +4135,4 @@ engine_status CounterWaitFn(engine_handle counter, u64 timeout_ms)
     return reached ? ENGINE_OK : Fail(ENGINE_ERROR_NOT_READY, "the jobs of the counter have not finished");
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

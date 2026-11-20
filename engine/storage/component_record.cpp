@@ -1,6 +1,6 @@
 #include "storage/component_record.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 ComponentRecord OpaqueComponent::View() const
@@ -72,4 +72,4 @@ Status ReadComponentRecord(bytes::ByteReader& in, const CodecLimits& limits, Com
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

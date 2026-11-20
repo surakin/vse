@@ -5,7 +5,7 @@
 #include "net/time_budget.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -557,4 +557,4 @@ Status TcpStream::Abort()
     return reactor_->Close(socket_);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

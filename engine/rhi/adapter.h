@@ -5,7 +5,7 @@
 
 //! The GPUs (adapters) a backend can use, as plain data, and the rule that matches a user's request to one of them.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 struct DeviceCreateInfo;
@@ -118,4 +118,4 @@ void SetNullAdapters(const AdapterList* list);
 /// - Ownership: `out` belongs to the caller.
 void DefaultNullAdapters(AdapterList* out);
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

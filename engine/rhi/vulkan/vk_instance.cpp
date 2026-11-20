@@ -11,7 +11,7 @@
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_result.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -377,7 +377,7 @@ VulkanInstance VulkanInstance::Create(const VulkanLoader& loader, const VulkanIn
     app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app.pApplicationName = desc.application_name;
     app.applicationVersion = desc.application_version;
-    app.pEngineName = "engine_placeholder";
+    app.pEngineName = "vse";
     app.engineVersion = 1;
     app.apiVersion = VK_API_VERSION_1_3;
 
@@ -453,4 +453,4 @@ VulkanInstance VulkanInstance::Create(const VulkanLoader& loader, const VulkanIn
     return result;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

@@ -5,11 +5,11 @@
 #include "lang/traits.h"
 #include "lang/utility.h"
 
-using namespace engine_placeholder::debug;
-using engine_placeholder::Declval;
-using engine_placeholder::FalseType;
-using engine_placeholder::TrueType;
-using engine_placeholder::VoidType;
+using namespace vse::debug;
+using vse::Declval;
+using vse::FalseType;
+using vse::TrueType;
+using vse::VoidType;
 
 // The options struct has no way to say where to send a dump: no address, no account, no transport, no upload switch.
 // Each line fails to compile if such a field is ever added under one of these names.

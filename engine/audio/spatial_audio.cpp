@@ -6,7 +6,7 @@
 #include "lang/scalar.h"
 #include "spatial/query.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -525,4 +525,4 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
     }
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -9,7 +9,7 @@
 #include "ui.vert.dxil.inc"  // and its .spv.inc
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -441,4 +441,4 @@ void UiRenderer::Record(rhi::CommandList* list)
     }
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

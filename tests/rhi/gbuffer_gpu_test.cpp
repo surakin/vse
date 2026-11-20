@@ -9,8 +9,8 @@
 
 #include "gbuffer_rig.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 using namespace gbuffer_rig;
 

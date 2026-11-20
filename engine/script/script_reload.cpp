@@ -4,7 +4,7 @@
 #include "containers/shared_bytes.h"
 #include "io/file.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 namespace
 {
@@ -270,4 +270,4 @@ void ScriptDevWatcher::Applied(const DevChange& change)
     }
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

@@ -18,11 +18,11 @@
 #import <Carbon/Carbon.h>
 #import <IOKit/hidsystem/IOLLEvent.h>
 
-using namespace engine_placeholder;
-using engine_placeholder::os::InputEvent;
-using engine_placeholder::os::InputEventType;
-using engine_placeholder::os::Key;
-using engine_placeholder::os::cocoa::CocoaWindow;
+using namespace vse;
+using vse::os::InputEvent;
+using vse::os::InputEventType;
+using vse::os::Key;
+using vse::os::cocoa::CocoaWindow;
 
 namespace
 {

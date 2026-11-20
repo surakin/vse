@@ -21,12 +21,12 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 class Scheduler;
 }
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// What a [[renderer::SceneFrame]] is built from.
@@ -120,9 +120,9 @@ inline usize HashLabel(u32 pixel_size, StringView text)
 
 }  // namespace detail
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Hash function for the scene frame's label keys (container audit Day 7).
@@ -148,9 +148,9 @@ template <> struct Hash<renderer::detail::LabelKeyView>
     }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The frame of a lit scene: owns the material system, the per-frame buffers and the passes, and renders
@@ -344,4 +344,4 @@ private:
     f32 delta_ = 0.0f;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -24,7 +24,7 @@ C string. It is cheap to pass by value.
 #include "os/console.h"
 #include "string_view.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     StringView path = "assets/models/tree.mesh";
@@ -64,7 +64,7 @@ A [[String]] holds its characters in memory from an allocator you give it and is
 #include "os/console.h"
 #include "string/string.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     HeapAllocator& heap = HeapAllocator::Default();
@@ -101,7 +101,7 @@ starts with 'player': yes
 #include "os/console.h"
 #include "string/string.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     ArenaAllocator scratch(512);                      // throwaway memory for one line
@@ -135,7 +135,7 @@ two, most Asian characters three, emoji four. So `Length()` is not "how many let
 #include "string/utf8.h"
 #include "string/utf8_codec.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     StringView text = "caf\xC3\xA9 \xF0\x9F\x8E\x89";    // "café 🎉"
@@ -179,7 +179,7 @@ with one backspace. The engine implements the Unicode rules (UAX #29, Unicode 17
 #include "string/grapheme.h"
 #include "string/utf8.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     StringView text = "e\xCC\x81" "x";               // 'e' + combining acute accent, then 'x'
@@ -215,7 +215,7 @@ The same visible text can be stored in different ways: `é` can be one codepoint
 #include "string/normalize.h"
 #include "string/string.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     HeapAllocator& heap = HeapAllocator::Default();

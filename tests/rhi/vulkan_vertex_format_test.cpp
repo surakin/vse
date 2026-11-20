@@ -15,9 +15,9 @@
 #include "triangle.frag.spv.inc"
 #include "triangle.vert.spv.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::vulkan;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::rhi::vulkan;
 
 namespace
 {

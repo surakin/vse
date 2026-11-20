@@ -16,7 +16,7 @@
 #include "os/console.h"
 #include "os/signal.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -580,4 +580,4 @@ void ExitChildProcess(int code)
     }
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

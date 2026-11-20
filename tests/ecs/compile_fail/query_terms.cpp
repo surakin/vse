@@ -2,7 +2,7 @@
 // refused.
 #include "ecs/query.h"
 
-using namespace engine_placeholder::ecs;
+using namespace vse::ecs;
 
 namespace
 {
@@ -57,7 +57,7 @@ static_assert(sizeof(Q) > 0);
 
 #if CASE == 9
 // A function that does not take the data terms in order is refused where ForEach is called.
-void WrongSignature(engine_placeholder::ecs::World& world)
+void WrongSignature(vse::ecs::World& world)
 {
     auto q = world.Query<Write<A>, Read<B>>();
     q.ForEach([](const B&, A&) {});

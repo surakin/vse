@@ -2,7 +2,7 @@
 
 #include "physics/snapshot_io.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -322,4 +322,4 @@ usize FirstEntryAt(const InputLog& log, u64 step)
     return lo;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

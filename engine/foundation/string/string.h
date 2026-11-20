@@ -10,7 +10,7 @@
 //! StringBuilder for formatting numbers and text.
 //!
 //! Strings are byte sequences, treated as UTF-8 by the helpers in utf8.h.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Owning, growable, always NUL-terminated string whose bytes come from an allocator.
@@ -396,4 +396,4 @@ private:
     String<Allocator> str_;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

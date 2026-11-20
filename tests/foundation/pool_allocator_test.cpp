@@ -3,9 +3,9 @@
 #include "mem/pool_allocator.h"
 #include "types.h"
 
-using engine_placeholder::PoolAllocator;
-using engine_placeholder::u32;
-using engine_placeholder::usize;
+using vse::PoolAllocator;
+using vse::u32;
+using vse::usize;
 
 TEST_CASE("PoolAllocator: random alloc/free churn never aliases two live allocations", "[mem][pool]")
 {

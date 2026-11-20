@@ -11,7 +11,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::script::test
+namespace vse::script::test
 {
 
 /// The language-specific half of the suite: sources that define the functions the cases call.
@@ -418,4 +418,4 @@ inline ConformanceReport RunConformance(Backend& backend, const ConformanceKit& 
     return report;
 }
 
-}  // namespace engine_placeholder::script::test
+}  // namespace vse::script::test

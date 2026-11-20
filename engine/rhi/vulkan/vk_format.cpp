@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -92,4 +92,4 @@ VkImageAspectFlags CopyAspectOf(Format format)
     return props.has_stencil ? 0 : VK_IMAGE_ASPECT_DEPTH_BIT;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

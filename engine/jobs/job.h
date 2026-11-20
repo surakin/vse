@@ -27,7 +27,7 @@
 //!
 //! Frame memory comes from [[jobs::FramePool::Global]], never the global
 //! heap, so frame allocation does not return null.
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 class Counter;
@@ -206,4 +206,4 @@ private:
     Handle handle_;
 };
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

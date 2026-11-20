@@ -3,11 +3,11 @@
 #include "math/vector.h"
 #include "test_helpers.h"
 
-using engine_placeholder::Vec2;
-using engine_placeholder::Vec3;
-using engine_placeholder::test::NearlyEqual;
-using engine_placeholder::test::Vec2NearlyEqual;
-using engine_placeholder::test::Vec3NearlyEqual;
+using vse::Vec2;
+using vse::Vec3;
+using vse::test::NearlyEqual;
+using vse::test::Vec2NearlyEqual;
+using vse::test::Vec3NearlyEqual;
 
 TEST_CASE("Vec2/Vec3 Dot matches hand-calculated values", "[math][vector]")
 {

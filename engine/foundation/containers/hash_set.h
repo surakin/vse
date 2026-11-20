@@ -6,7 +6,7 @@
 
 //! A set of keys over the open-addressing table [[HashMap]] uses (container audit series, Days 2 and 7), for the
 //! membership tests that were written as `HashMap<K, u8>`. The set stores its keys alone.
-namespace engine_placeholder
+namespace vse
 {
 
 /// A set of `K` using open addressing with linear probing: the table of [[HashMap]], holding keys alone.
@@ -149,4 +149,4 @@ private:
     Table table_;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

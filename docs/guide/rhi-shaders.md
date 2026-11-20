@@ -87,7 +87,7 @@ silently ignored (CMake prints a status line saying so).
 
 To add a shader, put `<name>.<vert|frag|comp>.slang` in `shaders/` and add its name to `ENGINE_SHADERS` in
 `shaders/CMakeLists.txt`. The stage comes from the file name; the entry point is called `main`. The array is named
-from the file: `triangle.vert` becomes `kTriangleVertSpv`, in namespace `engine_placeholder::shaders`.
+from the file: `triangle.vert` becomes `kTriangleVertSpv`, in namespace `vse::shaders`.
 
 Pitfalls that cost time and how the sources avoid them (each is explained in `shaders/README.md`): write
 `[[vk::binding(binding, set)]]` explicitly; use `SV_VulkanVertexID`, not `SV_VertexID` (which needs the
@@ -128,8 +128,8 @@ Use it instead of writing a layout by hand:
 #include "lit.frag.refl.inc"
 #include "lit.vert.refl.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     ShaderReflection vs;
@@ -204,8 +204,8 @@ At run time, build a key from names and look it up:
 #include "permute_test.frag.perm.inc"
 #include "renderer/shader_permutation.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 int main() {
     const ShaderPermutations& table = shaders::kPermuteTestFragPermutations;
@@ -257,8 +257,8 @@ Two things to know when writing the shader:
 #include "triangle.frag.spv.inc"
 #include "triangle.vert.spv.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 int main() {
     NullDevicePtr device = CreateNullDevice();
@@ -340,8 +340,8 @@ committed SPIR-V.
 #include "rhi/rhi_log.h"
 #include "triangle.vert.spv.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 
 int main() {
     const ShaderBlobSet triangle{"triangle.vert", SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount), {}};

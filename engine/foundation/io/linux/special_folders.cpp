@@ -8,7 +8,7 @@
 #include "cstr/mem_ops.h"
 #include "os/console.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 namespace
@@ -115,4 +115,4 @@ Status CrashDumpDirectory(Path* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

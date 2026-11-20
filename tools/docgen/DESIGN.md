@@ -84,10 +84,10 @@ lexicographic path order; declarations in source order.
 ## 5. Symbol IDs and anchors
 
 ID = qualified name; for functions append the **normalized parameter type
-list** and trailing qualifiers: `engine_placeholder::jobs::Counter::Increment(u64)`,
+list** and trailing qualifiers: `vse::jobs::Counter::Increment(u64)`,
 `jobs::Scheduler::HelpUntil(const std::atomic<int>&,int)`. Normalization: collapse
 whitespace, drop parameter names and default values, keep `const`/`&`/`*`,
-trailing `const`/`noexcept` kept. The outermost `engine_placeholder::`
+trailing `const`/`noexcept` kept. The outermost `vse::`
 namespace is **omitted** in IDs and display (`jobs::Counter::Increment(u64)`).
 
 Anchor = ID lowercased with every run of non-alphanumeric characters

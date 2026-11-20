@@ -32,7 +32,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Why a [[net::TcpStream]] ended.
@@ -227,4 +227,4 @@ private:
     FrameWriter writer_{0};
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

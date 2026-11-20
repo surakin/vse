@@ -4,7 +4,7 @@
 #include "physics/collide.h"
 #include "physics/world.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -263,4 +263,4 @@ void PhysicsWorld::UpdateTriggerEvents(const Vector<ColliderPair>& pairs)
     triggers_touching_ = Move(next);
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -42,7 +42,7 @@ confirms or amends the decisions below with experiments.
 
 ## Design decisions made while planning (2026-11-07; Day 130 confirms or amends them in the spec)
 
-1. **Where:** `engine/foundation/settings/` (namespace `engine_placeholder::settings`), foundation level, built on `io`. The renderer, the log, the RHI and the demos are clients.
+1. **Where:** `engine/foundation/settings/` (namespace `vse::settings`), foundation level, built on `io`. The renderer, the log, the RHI and the demos are clients.
 2. **Keys are dotted names** (`renderer.present_mode`, at most 3 segments, lowercase letters, digits and `_`); the file format's `[section]` is the key's prefix. Existing flat keys get the `renderer.` prefix now, while no saved file exists to break.
 3. **One registry** (`settings::Registry`), filled at start-up and then read-only. The renderer's `SettingsRegistry` becomes a client (its `CostClass` is one *apply class* table the owner registers); `RenderSettings` stays the renderer's resolved-value struct.
 4. **`ConfigStore` is an abstract class**, shaped by Spike C so a file (whole-document, comments, order, atomic), a registry (per-key, typed, unordered) and a failing store all fit: typed keys and values, capabilities, `Commit`, errors as values. The file store, an in-memory store, a read-only store and test doubles are built; platform stores are Phases 13, 21, 29, 30.

@@ -14,7 +14,7 @@
 #include "physics/ids.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Writes the snapshot's value types.
@@ -219,4 +219,4 @@ inline bool SnapshotFinite(const Quaternion& q)
     return SnapshotFinite(q.x) && SnapshotFinite(q.y) && SnapshotFinite(q.z) && SnapshotFinite(q.w);
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

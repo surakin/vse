@@ -17,8 +17,8 @@
 namespace docgen_test
 {
 
-using engine_placeholder::StringView;
-using engine_placeholder::usize;
+using vse::StringView;
+using vse::usize;
 
 class Str
 {
@@ -126,7 +126,7 @@ public:
         {
             out.Push(fill);
         }
-        *this = engine_placeholder::Move(out);
+        *this = vse::Move(out);
     }
     /// Compares the bytes [start, start + count) (clamped to the end) with `other`: negative, zero or positive.
     int Compare(usize start, usize count, StringView other) const
@@ -154,7 +154,7 @@ public:
         }
         Str out(View().Substring(0, start));
         out += View().Substring(start + count);
-        *this = engine_placeholder::Move(out);
+        *this = vse::Move(out);
     }
     /// Inserts `v` before byte `at`.
     void Insert(usize at, StringView v)
@@ -166,7 +166,7 @@ public:
         Str out(View().Substring(0, at));
         out += v;
         out += View().Substring(at);
-        *this = engine_placeholder::Move(out);
+        *this = vse::Move(out);
     }
     /// The bytes [start, start + count) (clamped to the end), as an owned string.
     Str Substr(usize start, usize count = npos) const
@@ -270,12 +270,12 @@ public:
         if (this != &other)
         {
             StrList copy(other);
-            items_ = engine_placeholder::Move(copy.items_);
+            items_ = vse::Move(copy.items_);
         }
         return *this;
     }
     StrList& operator=(StrList&&) noexcept = default;
-    StrList(engine_placeholder::InitializerList<const char*> items)
+    StrList(vse::InitializerList<const char*> items)
     {
         for (const char* item : items)
         {
@@ -324,7 +324,7 @@ public:
         {
             for (usize j = i; j > 0 && items_[j] < items_[j - 1]; --j)
             {
-                engine_placeholder::Swap(items_[j], items_[j - 1]);
+                vse::Swap(items_[j], items_[j - 1]);
             }
         }
     }
@@ -350,7 +350,7 @@ public:
         {
             --j;
         }
-        engine_placeholder::Swap(items_[i - 1], items_[j]);
+        vse::Swap(items_[i - 1], items_[j]);
         Reverse(i);
         return true;
     }
@@ -362,7 +362,7 @@ public:
         {
             out.Push(items_[(i + by) % items_.Size()]);
         }
-        items_ = engine_placeholder::Move(out.items_);
+        items_ = vse::Move(out.items_);
     }
 
     friend bool operator==(const StrList& a, const StrList& b)
@@ -387,10 +387,10 @@ private:
     {
         for (usize lo = from, hi = items_.Size(); lo + 1 < hi; ++lo, --hi)
         {
-            engine_placeholder::Swap(items_[lo], items_[hi - 1]);
+            vse::Swap(items_[lo], items_[hi - 1]);
         }
     }
-    engine_placeholder::Vector<Str> items_;
+    vse::Vector<Str> items_;
 };
 
 /// Two strings (a relative path and its content, in these tests).
@@ -405,7 +405,7 @@ class StrPairList
 {
 public:
     StrPairList() = default;
-    StrPairList(engine_placeholder::InitializerList<StrPair> items)
+    StrPairList(vse::InitializerList<StrPair> items)
     {
         for (const StrPair& item : items)
         {
@@ -420,7 +420,7 @@ public:
     const StrPair* end() const { return items_.Data() + items_.Size(); }
 
 private:
-    engine_placeholder::Vector<StrPair> items_;
+    vse::Vector<StrPair> items_;
 };
 
 }  // namespace docgen_test
@@ -431,10 +431,7 @@ namespace Catch
 // Catch2 takes whatever `convert` returns as its text type; `auto` keeps the standard type out of this file.
 template <> struct StringMaker<docgen_test::Str>
 {
-    static auto convert(const docgen_test::Str& s)
-    {
-        return StringMaker<engine_placeholder::StringView>::convert(s.View());
-    }
+    static auto convert(const docgen_test::Str& s) { return StringMaker<vse::StringView>::convert(s.View()); }
 };
 
 template <> struct StringMaker<docgen_test::StrList>
@@ -442,7 +439,7 @@ template <> struct StringMaker<docgen_test::StrList>
     static auto convert(const docgen_test::StrList& list)
     {
         docgen_test::Str joined = "{";
-        for (engine_placeholder::usize i = 0; i < list.Size(); ++i)
+        for (vse::usize i = 0; i < list.Size(); ++i)
         {
             joined += i ? ", \"" : "\"";
             joined += list[i].View();

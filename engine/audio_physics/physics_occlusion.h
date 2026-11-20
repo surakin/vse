@@ -8,7 +8,7 @@
 #include "physics/world.h"
 #include "types.h"
 
-namespace engine_placeholder::audio_physics
+namespace vse::audio_physics
 {
 
 /// What the occlusion ray counts and how much each material absorbs.
@@ -77,4 +77,4 @@ private:
     Vector<physics::PhysicsHit> backward_;
 };
 
-}  // namespace engine_placeholder::audio_physics
+}  // namespace vse::audio_physics

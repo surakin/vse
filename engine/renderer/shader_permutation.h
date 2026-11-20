@@ -12,7 +12,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The most options one shader may declare.
@@ -198,4 +198,4 @@ const PermutationModule* FindPermutation(const ShaderPermutations& table, Permut
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 void DescribePermutationKey(const ShaderPermutations& table, PermutationKey key, char* out, usize capacity);
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

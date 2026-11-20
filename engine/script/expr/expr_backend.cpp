@@ -8,7 +8,7 @@
 #include "os/os.h"
 #include "script/backend_registry.h"
 
-namespace engine_placeholder::script::expr
+namespace vse::script::expr
 {
 
 namespace
@@ -1709,4 +1709,4 @@ bool RegisterExprBackend()
     return RegisterBackend(descriptor);
 }
 
-}  // namespace engine_placeholder::script::expr
+}  // namespace vse::script::expr

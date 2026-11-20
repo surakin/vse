@@ -5,7 +5,7 @@
 #include "io/directory.h"
 #include "io/file_system.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 u32 PruneSavedDumps(const io::Path& saved, u32 keep)
@@ -58,4 +58,4 @@ u32 PruneSavedDumps(const io::Path& saved, u32 keep)
     return removed;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

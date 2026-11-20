@@ -8,7 +8,7 @@
 #include "cstr/mem_ops.h"
 #include "types.h"
 
-namespace engine_placeholder::bytes
+namespace vse::bytes
 {
 
 /// Reads values from a span of bytes, in the encoding [[bytes::ByteWriter]] writes. Input is untrusted: a read that
@@ -263,4 +263,4 @@ private:
     usize position_ = 0;
 };
 
-}  // namespace engine_placeholder::bytes
+}  // namespace vse::bytes

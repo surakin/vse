@@ -1,7 +1,7 @@
 #include "settings/key.h"
 #include "containers/hash.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 const char* KeyErrorName(KeyError error)
@@ -108,4 +108,4 @@ usize Key::Hash() const
     return static_cast<usize>(Fnv1a64Builder(kFnv1a64LegacyBasis).AddText(StringView(text_, length_)).Value());
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

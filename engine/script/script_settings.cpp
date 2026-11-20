@@ -2,7 +2,7 @@
 
 #include "settings/setting.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 void RegisterScriptSettings(settings::Registry* registry)
@@ -351,4 +351,4 @@ u64 ScriptPartitionMemory(const settings::Registry& registry)
     return id.IsValid() ? static_cast<u64>(settings::Setting<i64>(registry, id).Get()) : u64{67108864};
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

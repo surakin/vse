@@ -12,7 +12,7 @@
 #include <spa/param/audio/format-utils.h>
 #endif
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 #if ENGINE_AUDIO_HAVE_PIPEWIRE
@@ -475,4 +475,4 @@ UniquePtr<AudioDevice> CreatePipeWireDevice()
 
 #endif
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -7,7 +7,7 @@
 //! A list of listeners without `std::function` (Phase 15, Day 195): a function pointer and a user pointer each,
 //! disconnected by token.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// The token `Connect` returns; 0 is never a valid token.
@@ -123,4 +123,4 @@ private:
     ConnectionId next_id_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

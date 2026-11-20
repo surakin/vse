@@ -4,8 +4,8 @@
 #include "audio/format.h"
 #include "string/string.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::audio;
+using namespace vse;
+using namespace vse::audio;
 
 TEST_CASE("sample format sizes", "[audio][format]")
 {

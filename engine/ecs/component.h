@@ -9,7 +9,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 /// A component type's number: an index into the process-wide registry. Stable for the process, not across processes.
@@ -174,4 +174,4 @@ template <class T> ComponentId ComponentOf()
     return id;
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

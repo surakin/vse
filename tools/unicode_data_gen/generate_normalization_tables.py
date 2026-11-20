@@ -90,7 +90,7 @@ def emit_decomposition_table(decompositions, unicode_version, out_path):
     lines.append("")
     lines.append('#include "normalize.h"')
     lines.append("")
-    lines.append("namespace engine_placeholder {")
+    lines.append("namespace vse {")
     lines.append("")
     lines.append("namespace {")
     lines.append("")
@@ -174,7 +174,7 @@ def emit_decomposition_table(decompositions, unicode_version, out_path):
     lines.append("    return false;")
     lines.append("}")
     lines.append("")
-    lines.append("} // namespace engine_placeholder")
+    lines.append("} // namespace vse")
     lines.append("")
 
     with open(out_path, "w", encoding="utf-8") as f:
@@ -189,7 +189,7 @@ def emit_combining_class_table(combining_classes, unicode_version, out_path):
     lines.append("")
     lines.append('#include "normalize.h"')
     lines.append("")
-    lines.append("namespace engine_placeholder {")
+    lines.append("namespace vse {")
     lines.append("")
     lines.append("namespace {")
     lines.append("")
@@ -227,7 +227,7 @@ def emit_combining_class_table(combining_classes, unicode_version, out_path):
     lines.append("    return 0;")
     lines.append("}")
     lines.append("")
-    lines.append("} // namespace engine_placeholder")
+    lines.append("} // namespace vse")
     lines.append("")
 
     with open(out_path, "w", encoding="utf-8") as f:
@@ -242,7 +242,7 @@ def emit_composition_exclusions_table(exclusions, unicode_version, out_path):
     lines.append("")
     lines.append('#include "normalize.h"')
     lines.append("")
-    lines.append("namespace engine_placeholder {")
+    lines.append("namespace vse {")
     lines.append("")
     lines.append("namespace {")
     lines.append("")
@@ -274,7 +274,7 @@ def emit_composition_exclusions_table(exclusions, unicode_version, out_path):
     lines.append("    return false;")
     lines.append("}")
     lines.append("")
-    lines.append("} // namespace engine_placeholder")
+    lines.append("} // namespace vse")
     lines.append("")
 
     with open(out_path, "w", encoding="utf-8") as f:

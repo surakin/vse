@@ -12,7 +12,7 @@
 //! text. Operations that need the file system (absolute, canonical, exists, symbolic links) live in the file-system
 //! helpers. The rules were fixed by a table of 60 inputs per style
 //! (`docs/superpowers/specs/2026-11-06-file-layer-design.md`, Appendix A) and are tested against it.
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 /// Which path grammar a [[Path]] follows. The grammar is a property of the value, so Windows rules are testable on
@@ -297,4 +297,4 @@ template <usize Capacity> bool PathBuilder<Capacity>::AppendImpl(StringView righ
     return true;
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

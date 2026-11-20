@@ -4,7 +4,7 @@
 #include "cstr/cstr.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -619,4 +619,4 @@ Label* SettingsView::RestartNoteOf(settings::SettingId id) const
     return nullptr;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

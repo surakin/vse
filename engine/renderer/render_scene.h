@@ -13,7 +13,7 @@
 #include "renderer/mesh.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// A generation-checked reference to an object in a [[renderer::RenderScene]], like an RHI handle: the all-zero value
@@ -402,4 +402,4 @@ private:
                          // one
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

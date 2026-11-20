@@ -13,7 +13,7 @@
 //! apart from the separate ones, which are `Unknown` as XKB's `KP_Home` and friends are. Keys the enum has no name for
 //! (Pause, Print Screen, NumLock, the number pad's operators and decimal point) are `Unknown`.
 
-namespace engine_placeholder::os::win32
+namespace vse::os::win32
 {
 
 /// What a `WM_KEYDOWN`, `WM_KEYUP`, `WM_SYSKEYDOWN` or `WM_SYSKEYUP` says about the key, with the character the layout
@@ -52,4 +52,4 @@ inline u32 Win32KeyIndex(u32 scan_code, bool extended)
     return (scan_code & 0xFFu) | (extended ? 0x100u : 0u);
 }
 
-}  // namespace engine_placeholder::os::win32
+}  // namespace vse::os::win32

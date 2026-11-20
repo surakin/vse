@@ -5,8 +5,8 @@
 
 #include "reflect_json.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::shader_mint;
+using namespace vse;
+using namespace vse::shader_mint;
 using renderer::ShaderReflection;
 
 namespace

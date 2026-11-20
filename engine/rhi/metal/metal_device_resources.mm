@@ -22,7 +22,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 namespace
@@ -910,4 +910,4 @@ bool MetalDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* d
         static_cast<u8*>(dst));
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

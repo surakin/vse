@@ -9,7 +9,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Declares `assets.buffer_pool_bytes` (the bound of [[asset::LoadBufferPool]]) and `assets.memory_backend_bytes` (the
@@ -93,4 +93,4 @@ struct MountSpec
 /// - Ownership: `*out` is replaced.
 Status MountSpecsFromSettings(const settings::Registry& registry, Vector<MountSpec>* out);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

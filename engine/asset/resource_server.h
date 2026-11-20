@@ -16,7 +16,7 @@
 #include "settings/registry.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// What a [[asset::ResourceServer]] limits.
@@ -116,4 +116,4 @@ private:
     ResourceServerStats stats_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

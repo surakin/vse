@@ -3,7 +3,7 @@
 #include "source_text.h"
 #include "cstr/format.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -152,4 +152,4 @@ Status MintMeshCollider(StringView text, const TypeRegistry& types, Vector<byte>
     return built;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

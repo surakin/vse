@@ -9,7 +9,7 @@
 
 #include <lua.hpp>
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::bytes
+namespace vse::bytes
 {
 
 /// Why a read failed. A failed read leaves the reader where it was.
@@ -33,4 +33,4 @@ inline const char* ByteErrorName(ByteError error)
     return "invalid";
 }
 
-}  // namespace engine_placeholder::bytes
+}  // namespace vse::bytes

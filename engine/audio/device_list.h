@@ -4,7 +4,7 @@
 #include "audio/device.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// One sound output a backend can open.
@@ -35,4 +35,4 @@ struct DeviceDescription
 /// - Fails: `OutOfMemory`.
 DeviceStatus EnumerateDevices(DeviceKind kind, Vector<DeviceDescription>* out);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

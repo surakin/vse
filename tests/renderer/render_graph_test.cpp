@@ -17,7 +17,7 @@
 #include "cstr/mem_ops.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;  // the allocation hooks below are global and name the engine types
+using namespace vse;  // the allocation hooks below are global and name the engine types
 
 // Counts every heap allocation in this executable so a test can prove a region allocates none. The ThreadSanitizer
 // runtime defines its own operator new (a second definition fails to link), so that flavor skips the counting test.
@@ -185,8 +185,8 @@ void operator delete[](void* p, usize, AlignVal a) noexcept
 }
 #endif
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace
 {

@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// What `PhysicsWorld::Restore` found. The numbers are stored nowhere but are never renumbered.
@@ -24,4 +24,4 @@ enum class SnapshotStatus : u8
 /// - Fails: never.
 const char* SnapshotStatusName(SnapshotStatus status);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

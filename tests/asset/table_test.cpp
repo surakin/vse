@@ -7,7 +7,7 @@
 #include "bytes/byte_writer.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -296,4 +296,4 @@ TEST_CASE("Removing paths in any order keeps every other path and id findable", 
     }
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -16,7 +16,7 @@
 #include <pwd.h>
 #include <unistd.h>
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -696,4 +696,4 @@ void UserDefaultsConfigStore::StopWatching()
     known_.Clear();
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

@@ -1,6 +1,6 @@
 #include "old_schema.h"
 
-namespace engine_placeholder::storage::test
+namespace vse::storage::test
 {
 
 namespace
@@ -96,4 +96,4 @@ database::Status BuildSchemaOne(database::Connection& c, const Vector<EntityReco
     return tx.Commit();
 }
 
-}  // namespace engine_placeholder::storage::test
+}  // namespace vse::storage::test

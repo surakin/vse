@@ -8,7 +8,7 @@
 #include "io/path.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 SceneFrame::SceneFrame() = default;
@@ -356,4 +356,4 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
     return true;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

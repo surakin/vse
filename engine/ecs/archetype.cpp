@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 Archetype::Archetype(u32 index, const ComponentSet& components, const ComponentRegistry& registry, ChunkPool& pool)
@@ -235,4 +235,4 @@ u64 Archetype::AddedTick(const Chunk* chunk, ComponentId id) const
     return column == kNoColumn ? 0 : chunk->added[column - 1];
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

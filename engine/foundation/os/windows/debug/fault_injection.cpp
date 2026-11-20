@@ -8,7 +8,7 @@
 #include <intrin.h>
 #include "build_defs.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -80,4 +80,4 @@ void InjectFault(FaultKind kind)
     os::Abort();
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

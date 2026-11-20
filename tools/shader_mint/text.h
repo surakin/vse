@@ -11,7 +11,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::shader_mint
+namespace vse::shader_mint
 {
 
 using Text = String<HeapAllocator>;
@@ -28,4 +28,4 @@ void Appendf(Text* out, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
 // Replaces `*out` with the formatted text (used for error messages).
 void SetTextf(Text* out, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
-}  // namespace engine_placeholder::shader_mint
+}  // namespace vse::shader_mint

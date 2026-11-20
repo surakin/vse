@@ -7,7 +7,7 @@
 //! The value range the value widgets share (Phase 15, Day 196): clamp, snap to a step exactly, and the clamp-or-reject
 //! choice.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// What a range does with a value outside it.
@@ -85,4 +85,4 @@ struct ValueRange
     }
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

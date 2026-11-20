@@ -13,7 +13,7 @@
 
 //! The device: creates and destroys GPU resources and submits recorded work.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// A point on the device's timeline; later submissions have larger values. 0 means none.
@@ -522,4 +522,4 @@ using DevicePtr = UniquePtr<Device, DeviceDeleter>;
 ShaderHandle CreateShaderFromSet(Device& device, const ShaderBlobSet& set, ShaderStage stage,
                                  const char* debug_name = nullptr);
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

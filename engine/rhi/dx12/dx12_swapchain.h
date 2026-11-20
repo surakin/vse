@@ -8,7 +8,7 @@
 
 //! The Direct3D 12 swapchain (Phase 13 Day 169).
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 class Dx12Device;
@@ -95,4 +95,4 @@ private:
     u64 window_serial_ = 0;
 };
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

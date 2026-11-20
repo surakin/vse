@@ -65,7 +65,7 @@ ChildPoll PollChild(ChildProcess& child, ChildEnd* end)
     int status = 0;
     const pid_t pid = static_cast<pid_t>(child.id);
     pid_t r = waitpid(pid, &status, WNOHANG);
-    while (r < 0 && engine_placeholder::os::LastError() == EINTR)
+    while (r < 0 && vse::os::LastError() == EINTR)
     {
         r = waitpid(pid, &status, WNOHANG);
     }
@@ -104,7 +104,7 @@ void KillChild(ChildProcess& child)
     const pid_t pid = static_cast<pid_t>(child.id);
     kill(-pid, SIGKILL);
     int status = 0;
-    while (waitpid(pid, &status, 0) < 0 && engine_placeholder::os::LastError() == EINTR)
+    while (waitpid(pid, &status, 0) < 0 && vse::os::LastError() == EINTR)
     {
     }
     child.id = -1;

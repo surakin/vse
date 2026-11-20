@@ -14,7 +14,7 @@
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -530,4 +530,4 @@ Status ImportIntoBackend(HostMemoryBackend& backend, const ImportResult& result)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

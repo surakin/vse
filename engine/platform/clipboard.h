@@ -13,7 +13,7 @@
 //! [[os::Window::TakeClipboardResult]] hands over the bytes. A request nobody answers ends with
 //! [[os::ClipboardStatus::Timeout]] after two seconds, so a paste never hangs a program.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Which selection: the one Ctrl+C and Ctrl+V use, or the X11/Wayland "primary" one that selecting text fills and a
@@ -191,4 +191,4 @@ private:
     u32 next_id_ = 1;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

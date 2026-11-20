@@ -5,10 +5,10 @@
 #include "containers/unique_ptr.h"
 #include "types.h"
 
-using engine_placeholder::DefaultDelete;
-using engine_placeholder::MakeUnique;
-using engine_placeholder::UniquePtr;
-using engine_placeholder::usize;
+using vse::DefaultDelete;
+using vse::MakeUnique;
+using vse::UniquePtr;
+using vse::usize;
 
 namespace
 {
@@ -64,13 +64,13 @@ TEST_CASE("UniquePtr: owns one object and destroys it once", "[containers][uniqu
 TEST_CASE("UniquePtr: move leaves the source empty; assignment destroys the old object", "[containers][unique_ptr]")
 {
     UniquePtr<Counted> a = MakeUnique<Counted>(1);
-    UniquePtr<Counted> b = engine_placeholder::Move(a);
+    UniquePtr<Counted> b = vse::Move(a);
     REQUIRE_FALSE(a);
     REQUIRE(b->value == 1);
 
     UniquePtr<Counted> c = MakeUnique<Counted>(2);
     REQUIRE(Counted::alive == 2);
-    c = engine_placeholder::Move(b);  // the object c held is destroyed
+    c = vse::Move(b);  // the object c held is destroyed
     REQUIRE(Counted::alive == 1);
     REQUIRE(c->value == 1);
     c = nullptr;
@@ -124,7 +124,7 @@ TEST_CASE("MakeUnique: a large object is made and freed", "[containers][unique_p
 {
     struct Huge
     {
-        engine_placeholder::byte bytes[static_cast<usize>(1) << 20];
+        vse::byte bytes[static_cast<usize>(1) << 20];
     };
     UniquePtr<Huge> p = MakeUnique<Huge>();
     REQUIRE(p);

@@ -17,7 +17,7 @@
 //! left unset falls to the next level, and the result is scaled to physical pixels. Colors are `0xAABBGGRR` (the draw
 //! list's format); all metrics and font sizes are logical units.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Identifies a widget kind: `label`, `button`, or one a game registers. 0 is invalid.
@@ -376,4 +376,4 @@ private:
     ThemeStats stats_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

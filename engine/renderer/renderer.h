@@ -20,12 +20,12 @@
 #include "rhi/swapchain.h"
 #include "types.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 class Scheduler;
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// How a frame ended.
@@ -445,4 +445,4 @@ private:
     char error_[kGraphErrorLength] = {};
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

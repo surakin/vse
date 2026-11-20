@@ -4,7 +4,7 @@
 #include "lang/utility.h"
 #include "net/frame.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -856,4 +856,4 @@ usize TcpTransport::ConnectionCount() const
     return impl_->conns.Size();
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

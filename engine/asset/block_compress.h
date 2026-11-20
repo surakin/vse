@@ -21,7 +21,7 @@
 #include "rhi/format.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A block-compression scheme the decoders know.
@@ -116,4 +116,4 @@ void EncodeBlock(BcKind kind, const byte* rgba, const BcEncodeOptions& options, 
 Status EncodeImage(BcKind kind, u32 width, u32 height, ByteSpan rgba, const BcEncodeOptions& options,
                    jobs::Scheduler* scheduler, Vector<byte>* blocks);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

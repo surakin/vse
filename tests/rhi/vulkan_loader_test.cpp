@@ -12,8 +12,8 @@
 #include "build_defs.h"
 #include "lang/initializer_list.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi::vulkan;
+using namespace vse;
+using namespace vse::rhi::vulkan;
 
 namespace
 {

@@ -14,7 +14,7 @@
 #include "os/last_error.h"
 #include "os/os.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 using posix::StatusFromErrno;
@@ -646,4 +646,4 @@ Status Socket::SetBroadcast(bool on)
     return SetIntOption(handle_, SOL_SOCKET, SO_BROADCAST, on ? 1 : 0);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

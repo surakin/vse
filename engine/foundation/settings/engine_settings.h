@@ -5,7 +5,7 @@
 
 #include "settings/settings.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// Declares the engine-level settings in `registry`:
@@ -46,4 +46,4 @@ void RegisterLogSettings(Registry* registry);
 /// - Thread-safety: not-thread-safe; call after `Load`.
 void AttachLogSettings(Settings* settings);
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

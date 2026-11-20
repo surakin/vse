@@ -32,6 +32,6 @@ ChildResourceGuard::ChildResourceGuard() : descriptors_before_(CountOpenDescript
 bool ChildResourceGuard::Clean() const
 {
     // -1/ECHILD means no child at all, running or zombie.
-    const bool no_children = waitpid(-1, nullptr, WNOHANG) == -1 && engine_placeholder::os::LastError() == ECHILD;
+    const bool no_children = waitpid(-1, nullptr, WNOHANG) == -1 && vse::os::LastError() == ECHILD;
     return no_children && CountOpenDescriptors() == descriptors_before_;
 }

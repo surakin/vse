@@ -8,7 +8,7 @@
 #include "engine_c/status_map.h"
 #include "string/string.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using engine_c::FromAssetError;
 using engine_c::FromSetError;
 using engine_c::kStatusCount;

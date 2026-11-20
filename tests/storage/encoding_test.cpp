@@ -7,7 +7,7 @@
 #include "lang/limits.h"
 #include "storage/component_registry.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -418,4 +418,4 @@ TEST_CASE("Encoding: integers hold their extremes through the field codecs", "[s
 }
 
 }  // namespace
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

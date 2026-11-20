@@ -10,7 +10,7 @@
 // The hooks the shared POSIX file layer (io/posix/, Phase 21 Day 287) asks of each system: io/linux/posix_hooks.cpp and
 // io/macos/posix_hooks.cpp define them. Internal to the file layer's backends: no other file includes this header
 // (module_deps_check: io/posix/ is per-platform code owned by io/linux/ and io/macos/).
-namespace engine_placeholder::io::posix
+namespace vse::io::posix
 {
 
 /// The modification time of `st` in nanoseconds since the Unix epoch (`st_mtim` on Linux, `st_mtimespec` on macOS).
@@ -49,4 +49,4 @@ Status FromPath(StringView text, Path* out);
 /// error.
 Status CrashAppName(char (&app)[256]);
 
-}  // namespace engine_placeholder::io::posix
+}  // namespace vse::io::posix

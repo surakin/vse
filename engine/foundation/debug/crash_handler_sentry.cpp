@@ -25,7 +25,7 @@
 #include "sync/mutex.h"
 #include "build_defs.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -386,4 +386,4 @@ bool CrashHandlerInstalled()
     return g_crash_handler_installed.Load(MemoryOrder::Acquire);
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

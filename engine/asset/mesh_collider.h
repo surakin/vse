@@ -14,7 +14,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The most vertices a mesh collider holds.
@@ -107,4 +107,4 @@ private:
     usize materials_ = 0;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

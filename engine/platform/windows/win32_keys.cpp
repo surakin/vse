@@ -3,7 +3,7 @@
 
 #include "os/windows/win32.h"
 
-namespace engine_placeholder::os::win32
+namespace vse::os::win32
 {
 
 namespace
@@ -119,4 +119,4 @@ Key KeyFromWin32(const Win32KeyMessage& m)
     return KeyFromCharacter(m.character);
 }
 
-}  // namespace engine_placeholder::os::win32
+}  // namespace vse::os::win32

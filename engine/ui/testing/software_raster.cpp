@@ -4,7 +4,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -265,4 +265,4 @@ void RasterizeDrawList(const DrawList& list, const text::GlyphAtlas* atlas, u32 
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

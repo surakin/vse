@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "physics/state_hash.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -99,4 +99,4 @@ const char* ModeReport()
     return DenormalsPreserved() ? "contraction=off denormals=kept" : "contraction=off denormals=flushed";
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

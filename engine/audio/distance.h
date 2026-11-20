@@ -5,7 +5,7 @@
 #include "math/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// How the gain falls with distance.
@@ -135,4 +135,4 @@ f32 AirCoefficient(f32 cutoff_hz, u32 sample_rate);
 f32 DopplerRatio(f32 speed_of_sound, f32 factor, const Vec3& to_emitter, const Vec3& listener_velocity,
                  const Vec3& emitter_velocity);
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

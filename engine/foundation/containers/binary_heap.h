@@ -8,7 +8,7 @@
 
 //! [[BinaryHeap]]: a priority queue in a [[Vector]] (container audit series, Day 3), for the "pick the best next" loops
 //! that were linear scans.
-namespace engine_placeholder
+namespace vse
 {
 
 /// A binary max-heap of `T` ordered by `Less`: `Top` is an element no other is greater than, `Push` and `Pop` are
@@ -157,4 +157,4 @@ private:
     Less less_;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

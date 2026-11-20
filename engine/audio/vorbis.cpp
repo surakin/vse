@@ -6,7 +6,7 @@
 #include "ogg/ogg.h"
 #include "vorbis/codec.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -702,4 +702,4 @@ VorbisStatus VorbisDecoder::SeekFrame(u64 frame)
     return status == VorbisStatus::EndOfStream ? VorbisStatus::Corrupt : status;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

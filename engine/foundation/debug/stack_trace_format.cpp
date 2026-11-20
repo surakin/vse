@@ -3,7 +3,7 @@
 // os/windows/debug/stack_trace_dbghelp.cpp with DbgHelp on Windows).
 #include "debug/stack_trace.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -152,4 +152,4 @@ usize FormatStackTrace(const StackTrace& trace, char* out, usize capacity, const
     return writer.Length();
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

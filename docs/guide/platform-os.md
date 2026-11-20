@@ -24,7 +24,7 @@ Diagnostics belong in the log ([Logging](foundation-logging-and-assert.md)). You
 ```cpp compile run standalone
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     os::Print("%s has %d lives\n", "player", 3);
@@ -54,7 +54,7 @@ nonces and seeds that must not be guessable; a game's gameplay random numbers wa
 #include "os/console.h"
 #include "os/os.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     const u64 start = os::MonotonicTimeNanos();
@@ -82,7 +82,7 @@ yourself.
 #include "os/console.h"
 #include "os/os.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     const usize size = 16 * 1024 * 1024;                  // 16 MiB of address space
@@ -129,7 +129,7 @@ anything else is a positional argument.
 #include "os/command_line.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     // Synthetic arguments, as a program started with: game --fast --level=3 map.dat
@@ -166,7 +166,7 @@ A program that has options of its own declares them, so that `--name value` work
 #include "os/command_line.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     char a0[] = "tool";

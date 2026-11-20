@@ -114,7 +114,7 @@ starts with `cpp` and carries tags; `docgen samples` does it.
 | Info string | What happens |
 |---|---|
 | ` ```cpp ` (no tags) | illustrative: never built, never run |
-| ` ```cpp compile ` | the body is compiled inside `static void DocSample() { ... }`, after the standard prelude (`docs/samples-prelude.h`: the commonly used engine headers and `using namespace engine_placeholder;`) |
+| ` ```cpp compile ` | the body is compiled inside `static void DocSample() { ... }`, after the standard prelude (`docs/samples-prelude.h`: the commonly used engine headers and `using namespace vse;`) |
 | ` ```cpp compile standalone ` | compiled verbatim as a whole translation unit (use for free functions, classes, `#include`s) |
 | ` ```cpp compile run ` | the body becomes `int main() { ... return 0; }` after the prelude, is linked with the engine libraries and run; an immediately following ` ```output ` block (at most blank lines in between) must equal stdout (trailing whitespace ignored) |
 | ` ```cpp compile run standalone ` | whole translation unit with its own `main` |

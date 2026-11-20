@@ -2,7 +2,7 @@
 
 #include "audio/convert.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -120,4 +120,4 @@ bool LayoutOf(u32 channels, ChannelLayout* out)
     }
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

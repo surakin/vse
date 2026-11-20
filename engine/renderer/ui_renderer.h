@@ -13,7 +13,7 @@
 
 //! Draws a [[ui::DrawList]] on a colour target with one render-graph pass (Phase 15, Day 190).
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// The texture of an application image, read when the pass is recorded.
@@ -213,4 +213,4 @@ private:
     ScopedRegistration registration_;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

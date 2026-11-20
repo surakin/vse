@@ -12,7 +12,7 @@
 #include "rhi/rhi.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -956,4 +956,4 @@ bool ParseSettings(const char* text, usize length, RenderSettings* settings, Set
     return true;
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

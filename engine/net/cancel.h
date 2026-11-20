@@ -5,7 +5,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 class Reactor;
@@ -48,4 +48,4 @@ private:
     Wait* waits_ = nullptr;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

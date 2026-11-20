@@ -1,6 +1,6 @@
 #include "script/script_world.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 // The host of minted scripts (Phase 27 Day 463, reload Day 464). The chunk returns its functions to the backend
@@ -128,4 +128,4 @@ return {
 )LUA";
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

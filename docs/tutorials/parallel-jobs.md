@@ -29,7 +29,7 @@
 #include "os/console.h"
 #include "sync/atomic.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // Step 2: a job. It writes its answer into a slot the caller keeps alive.
 static jobs::Job Square(u64* out, u64 value) {

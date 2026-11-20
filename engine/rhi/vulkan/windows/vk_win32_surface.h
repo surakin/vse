@@ -10,7 +10,7 @@
 //! `vk_xlib_surface.h` does for X11. Whether a queue family can present to the surface is asked through the surface
 //! (`vkGetPhysicalDeviceSurfaceSupportKHR`), as on Linux, so the Win32-specific presentation query is not used.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// Creates a `VkSurfaceKHR` for a Win32 window with `vkCreateWin32SurfaceKHR`.
@@ -24,4 +24,4 @@ namespace engine_placeholder::rhi::vulkan
 /// - Fails: returns `VK_ERROR_EXTENSION_NOT_PRESENT` (-7) if the entry point cannot be resolved, or the driver's error.
 i32 CreateWin32Surface(void* get_instance_proc_addr, void* instance, void* hinstance, void* hwnd, u64* out_surface);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

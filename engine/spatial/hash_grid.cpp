@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 namespace
@@ -295,4 +295,4 @@ HashGridStats HashGrid::Stats() const
     return s;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

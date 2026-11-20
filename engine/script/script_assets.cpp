@@ -1,6 +1,6 @@
 #include "script/script_assets.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 namespace
 {
@@ -123,4 +123,4 @@ void ScriptAssets::Release()
     held_.Clear();
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

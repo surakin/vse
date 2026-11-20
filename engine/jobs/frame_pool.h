@@ -26,7 +26,7 @@
 //! Every block carries a 16-byte header (class index and magic) so
 //! deallocation routes pooled and fallback blocks without address-range
 //! checks and the returned pointer stays 16-byte aligned.
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 /// Thread-safe, size-classed allocator for coroutine frames, with an optional per-thread cache.
@@ -242,4 +242,4 @@ private:
     Atomic<u64> fallback_frees_{0};
 };
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

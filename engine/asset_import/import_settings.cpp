@@ -3,7 +3,7 @@
 #include "settings/desc.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -125,4 +125,4 @@ ImportLimits ImportLimitsFromSettings(const settings::Registry& registry)
     return limits;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

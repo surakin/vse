@@ -12,7 +12,7 @@
 //!
 //! The interface is polled: pump events, then read size, close request and the bound `InputState`.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Which native windowing system a window belongs to, so a graphics layer knows how to read [[os::NativeWindowInfo]].
@@ -383,4 +383,4 @@ BackendPlan PlanWin32WindowBackends(WindowBackend requested);
 /// - Fails: never; an ineligible request is an empty plan.
 BackendPlan PlanCocoaWindowBackends(WindowBackend requested);
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

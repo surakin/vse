@@ -11,7 +11,7 @@
 //! the registers, the stack memory, the module list) into a database directory on the local disk and the process then
 //! dies from the original fault. **Nothing is ever sent anywhere:** the library is built without a network transport
 //! and these options have no address to send to.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// How the crash handler is set up.
@@ -126,4 +126,4 @@ void UnregisterThreadForCrashHandling();
 /// - Thread-safety: thread-safe.
 bool CrashHandlerInstalled();
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

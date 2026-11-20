@@ -3,12 +3,12 @@
 #include "os/gpu_driver_probe.h"
 #include "os/os.h"
 
-using engine_placeholder::StringView;
-using engine_placeholder::os::DynamicLibraryHandle;
-using engine_placeholder::os::GetSymbol;
-using engine_placeholder::os::LoadLibrary;
-using engine_placeholder::os::ProbeVulkanCreateInstance;
-using engine_placeholder::os::UnloadLibrary;
+using vse::StringView;
+using vse::os::DynamicLibraryHandle;
+using vse::os::GetSymbol;
+using vse::os::LoadLibrary;
+using vse::os::ProbeVulkanCreateInstance;
+using vse::os::UnloadLibrary;
 
 TEST_CASE("LoadLibrary returns nullptr for a nonexistent library, without crashing", "[gpu_driver][os]")
 {
@@ -18,7 +18,7 @@ TEST_CASE("LoadLibrary returns nullptr for a nonexistent library, without crashi
 
 TEST_CASE("LoadLibrary returns nullptr for a path too long to fit kMaxPathBytes", "[gpu_driver][os]")
 {
-    char long_path[engine_placeholder::os::kMaxPathBytes + 1];
+    char long_path[vse::os::kMaxPathBytes + 1];
     for (auto& c : long_path)
     {
         c = 'a';
@@ -30,8 +30,7 @@ TEST_CASE("LoadLibrary returns nullptr for a path too long to fit kMaxPathBytes"
 
 TEST_CASE("LoadLibrary/GetSymbol resolve the Vulkan loader's vkGetInstanceProcAddr", "[gpu_driver][os]")
 {
-    DynamicLibraryHandle handle = LoadLibrary(
-        StringView(engine_placeholder::os::VulkanLoaderName()));  // libvulkan.so.1, vulkan-1.dll
+    DynamicLibraryHandle handle = LoadLibrary(StringView(vse::os::VulkanLoaderName()));  // libvulkan.so.1, vulkan-1.dll
     REQUIRE(handle != nullptr);
 
     void* symbol = GetSymbol(handle, "vkGetInstanceProcAddr");

@@ -25,7 +25,7 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 class MetalDevice;
@@ -518,4 +518,4 @@ private:
     UniquePtr<RingAllocator> staging_ring_;
 };
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

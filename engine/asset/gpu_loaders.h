@@ -12,7 +12,7 @@
 #include "renderer/mesh.h"
 #include "renderer/texture.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// What the GPU loaders create objects on. Give the manager a pointer to one that stays alive and unchanged while the
@@ -137,4 +137,4 @@ Status RegisterGpuFallbacks(ResourceManager* manager);
 /// - Ownership: borrows both; nothing is copied.
 void RegisterGpuLoaders(ResourceManager* manager, GpuAssetContext* context);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

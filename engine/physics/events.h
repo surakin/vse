@@ -9,7 +9,7 @@
 #include "physics/ids.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// What happened to a pair of touching colliders.
@@ -131,4 +131,4 @@ struct ContactRecord
     f32 normal_impulse = 0.0f;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

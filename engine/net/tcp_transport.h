@@ -37,7 +37,7 @@
 #include "net/transport.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// The default limits on accepted streams: 100 per second per address (burst 100) and 5,000 per second in total
@@ -167,4 +167,4 @@ private:
     UniquePtr<Impl> impl_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

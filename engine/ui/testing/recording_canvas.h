@@ -7,7 +7,7 @@
 //! A canvas that records the calls instead of drawing them, so a widget test can say "this button drew a rounded rect
 //! with the hover colour" (Phase 15, Day 189).
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// What a recorded call was.
@@ -95,4 +95,4 @@ private:
     u32 clip_depth_ = 0;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

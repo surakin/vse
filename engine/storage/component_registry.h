@@ -17,7 +17,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// How the registry treats a component type.
@@ -309,4 +309,4 @@ private:
     Vector<UniquePtr<RegisteredComponent>> components_;
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

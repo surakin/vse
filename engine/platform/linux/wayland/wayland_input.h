@@ -13,7 +13,7 @@
 
 //! Wayland seat input: keyboard and pointer events from a `wl_seat` into an `InputState`.
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 /// Listens to a `wl_seat` and maintains the keyboard and pointer state of an `InputState`.
@@ -142,4 +142,4 @@ private:
     Key held_[kMaxEvdevCode] = {};
 };
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

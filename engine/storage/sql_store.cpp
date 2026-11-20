@@ -7,7 +7,7 @@
 #include "ecs/component.h"
 #include "storage/component_record.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 namespace detail
@@ -1686,4 +1686,4 @@ Status SqlStore::SetMetadata(StringView name, StringView value)
     return Map(stepped);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

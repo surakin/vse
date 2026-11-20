@@ -11,7 +11,7 @@
 #include "jobs/counter.h"
 #include "jobs/scheduler.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 struct ImportTicketState;
@@ -74,4 +74,4 @@ private:
 UniquePtr<ImportTicket> ImportGltfAsync(jobs::Scheduler& scheduler, Vector<byte> file, GltfSource& source,
                                         const ImportOptions& options);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

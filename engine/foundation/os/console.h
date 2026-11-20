@@ -11,7 +11,7 @@
 //! `fflush`, `abort`, `_Exit` and `getenv` (`os::Exit`, which runs the exit handlers, is in `os/os.h`). Output goes
 //! through the C library's buffered streams, so it interleaves with other users of `stdout` and `stderr` as before.
 //! Writing to a descriptor without buffering is [[os::Write]]; files are the `io` module's.
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Formats and writes to standard output (`printf`).
@@ -126,4 +126,4 @@ inline const char* GetEnvironment(const char* name) noexcept
     return std::getenv(name);
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

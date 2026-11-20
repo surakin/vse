@@ -11,7 +11,7 @@
 #include "spatial/spatial_set.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Which collision layers meet which: 32 layers, each with a word of bits. The matrix is symmetric.
@@ -203,4 +203,4 @@ private:
     BroadPhaseStats stats_;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -12,7 +12,7 @@
 namespace ecs_bench
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // Which implementation to run.
 enum class Impl

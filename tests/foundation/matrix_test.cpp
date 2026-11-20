@@ -4,12 +4,12 @@
 #include "math/vector.h"
 #include "test_helpers.h"
 
-using engine_placeholder::Mat3;
-using engine_placeholder::Mat4;
-using engine_placeholder::Vec3;
-using engine_placeholder::Vec4;
-using engine_placeholder::test::NearlyEqual;
-using engine_placeholder::test::Vec3NearlyEqual;
+using vse::Mat3;
+using vse::Mat4;
+using vse::Vec3;
+using vse::Vec4;
+using vse::test::NearlyEqual;
+using vse::test::Vec3NearlyEqual;
 
 TEST_CASE("Mat3 multiply matches a hand-calculated reference product", "[math][matrix]")
 {

@@ -1231,11 +1231,11 @@ ForEachFailedEnsure(EnsureVisitor,void*)	function	foundation/log	foreachfaileden
 EnsureFailedSiteCount()	function	foundation/log	ensurefailedsitecount	foundation-log.md	engine/foundation/log/assert.h:173
 ResetEnsureStateForTesting()	function	foundation/log	resetensurestatefortesting	foundation-log.md	engine/foundation/log/assert.h:177
 ENGINE_ASSERT	macro	foundation/log	engine-assert	foundation-log.md	engine/foundation/log/assert.h:230
-ENGINE_ENSURE	macro	foundation/log	engine-ensure	foundation-log.md	engine/foundation/log/assert.h:255
-ENGINE_VERIFY	macro	foundation/log	engine-verify	foundation-log.md	engine/foundation/log/assert.h:298
-ENGINE_CHECK_SLOW	macro	foundation/log	engine-check-slow	foundation-log.md	engine/foundation/log/assert.h:324
-ENGINE_UNREACHABLE	macro	foundation/log	engine-unreachable	foundation-log.md	engine/foundation/log/assert.h:347
-ENGINE_NOT_IMPLEMENTED	macro	foundation/log	engine-not-implemented	foundation-log.md	engine/foundation/log/assert.h:353
+ENGINE_ENSURE	macro	foundation/log	engine-ensure	foundation-log.md	engine/foundation/log/assert.h:254
+ENGINE_VERIFY	macro	foundation/log	engine-verify	foundation-log.md	engine/foundation/log/assert.h:295
+ENGINE_CHECK_SLOW	macro	foundation/log	engine-check-slow	foundation-log.md	engine/foundation/log/assert.h:320
+ENGINE_UNREACHABLE	macro	foundation/log	engine-unreachable	foundation-log.md	engine/foundation/log/assert.h:342
+ENGINE_NOT_IMPLEMENTED	macro	foundation/log	engine-not-implemented	foundation-log.md	engine/foundation/log/assert.h:348
 FailureReportHooks	struct	foundation/log	failurereporthooks	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:27
 FailureReportHooks::append_stack_trace	variable	foundation/log	failurereporthooks-append-stack-trace	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:32
 FailureReportHooks::write_crash_context	variable	foundation/log	failurereporthooks-write-crash-context	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:35
@@ -13325,12 +13325,12 @@ renderer::VertexLayoutData::stride	variable	renderer	renderer-vertexlayoutdata-s
 renderer::VertexLayoutData::skin_stride	variable	renderer	renderer-vertexlayoutdata-skin-stride	renderer.md	engine/renderer/shader_reflection.h:309
 renderer::BuildVertexLayout(const ShaderReflection&,u32,VertexLayoutData*,ReflectionError*)	function	renderer	renderer-buildvertexlayout-const-shaderreflection-amp-u32-vertexlayoutdata-star-reflectionerror-star	renderer.md	engine/renderer/shader_reflection.h:325
 renderer::kRendererSchemaVersion	variable	renderer	renderer-krendererschemaversion	renderer.md	engine/renderer/shared_settings.h:26
-renderer::RegisterSharedSettings(::engine_placeholder::settings::Registry*)	function	renderer	renderer-registersharedsettings-engine-placeholder-settings-registry-star	renderer.md	engine/renderer/shared_settings.h:35
-renderer::AddRendererMigrations(::engine_placeholder::settings::MigrationSet*)	function	renderer	renderer-addrenderermigrations-engine-placeholder-settings-migrationset-star	renderer.md	engine/renderer/shared_settings.h:41
-renderer::RenderSettingsFromSnapshot(const::engine_placeholder::settings::Registry&,const::engine_placeholder::settings::SettingsSnapshot&)	function	renderer	renderer-rendersettingsfromsnapshot-const-engine-placeholder-settings-registry-amp-const-engine-placeholder-settings-settingssnapshot-amp	renderer.md	engine/renderer/shared_settings.h:48
-renderer::RenderSettingsToChanges(const RenderSettings&,const::engine_placeholder::settings::Registry&,Vector<::engine_placeholder::settings::ChangeRequest>*)	function	renderer	renderer-rendersettingstochanges-const-rendersettings-amp-const-engine-placeholder-settings-registry-amp-vector-lt-engine-placeholder-settings-changerequest-gt-star	renderer.md	engine/renderer/shared_settings.h:55
-renderer::ApplySharedChange(void*,const::engine_placeholder::settings::ChangeEvent&)	function	renderer	renderer-applysharedchange-void-star-const-engine-placeholder-settings-changeevent-amp	renderer.md	engine/renderer/shared_settings.h:73
-renderer::SyncSharedFromRenderer(Renderer*,::engine_placeholder::settings::Settings*)	function	renderer	renderer-syncsharedfromrenderer-renderer-star-engine-placeholder-settings-settings-star	renderer.md	engine/renderer/shared_settings.h:83
+renderer::RegisterSharedSettings(::vse::settings::Registry*)	function	renderer	renderer-registersharedsettings-vse-settings-registry-star	renderer.md	engine/renderer/shared_settings.h:35
+renderer::AddRendererMigrations(::vse::settings::MigrationSet*)	function	renderer	renderer-addrenderermigrations-vse-settings-migrationset-star	renderer.md	engine/renderer/shared_settings.h:41
+renderer::RenderSettingsFromSnapshot(const::vse::settings::Registry&,const::vse::settings::SettingsSnapshot&)	function	renderer	renderer-rendersettingsfromsnapshot-const-vse-settings-registry-amp-const-vse-settings-settingssnapshot-amp	renderer.md	engine/renderer/shared_settings.h:48
+renderer::RenderSettingsToChanges(const RenderSettings&,const::vse::settings::Registry&,Vector<::vse::settings::ChangeRequest>*)	function	renderer	renderer-rendersettingstochanges-const-rendersettings-amp-const-vse-settings-registry-amp-vector-lt-vse-settings-changerequest-gt-star	renderer.md	engine/renderer/shared_settings.h:55
+renderer::ApplySharedChange(void*,const::vse::settings::ChangeEvent&)	function	renderer	renderer-applysharedchange-void-star-const-vse-settings-changeevent-amp	renderer.md	engine/renderer/shared_settings.h:73
+renderer::SyncSharedFromRenderer(Renderer*,::vse::settings::Settings*)	function	renderer	renderer-syncsharedfromrenderer-renderer-star-vse-settings-settings-star	renderer.md	engine/renderer/shared_settings.h:83
 renderer::RendererCapability(void*,const char*)	function	renderer	renderer-renderercapability-void-star-const-char-star	renderer.md	engine/renderer/shared_settings.h:92
 renderer::TextRendererDesc	struct	renderer	renderer-textrendererdesc	renderer.md	engine/renderer/text_renderer.h:22
 renderer::TextRendererDesc::color_format	variable	renderer	renderer-textrendererdesc-color-format	renderer.md	engine/renderer/text_renderer.h:27

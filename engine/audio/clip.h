@@ -8,7 +8,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 class AudioClip;
@@ -195,4 +195,4 @@ private:
     String<HeapAllocator> name_;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -9,7 +9,7 @@
 #include "rhi/metal/metal_device.h"
 #include "rhi/rhi.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main()
 {

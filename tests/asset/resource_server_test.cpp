@@ -18,7 +18,7 @@
 #include "settings/registry.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -764,4 +764,4 @@ TEST_CASE("resource protocol: every message round trips and bytes after the end 
     CHECK(DecodeProto(ByteSpan(raw, 8), 4096, &out) == ProtoError::Malformed);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

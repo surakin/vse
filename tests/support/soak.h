@@ -12,12 +12,12 @@
 namespace test_support
 {
 
-using engine_placeholder::u32;
+using vse::u32;
 
 /// Whether this run is a test's soak form (ENGINE_TEST_SOAK=1).
 inline bool Soak()
 {
-    const char* value = engine_placeholder::os::GetEnvironment("ENGINE_TEST_SOAK");
+    const char* value = vse::os::GetEnvironment("ENGINE_TEST_SOAK");
     return value != nullptr && value[0] == '1' && value[1] == '\0';
 }
 

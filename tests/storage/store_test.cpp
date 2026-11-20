@@ -5,7 +5,7 @@
 #include "storage/storage_options.h"
 #include "storage/world_storage.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -98,4 +98,4 @@ TEST_CASE("Store: a failed Delete leaves the store as it was", "[storage][store]
 }
 
 }  // namespace
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

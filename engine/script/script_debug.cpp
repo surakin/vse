@@ -4,7 +4,7 @@
 #include "cstr/mem_ops.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -512,4 +512,4 @@ void ScriptDebugger::Detach()
     changed_.NotifyAll();
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

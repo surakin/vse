@@ -5,7 +5,7 @@
 #include "log/assert.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 // ---- one operation
@@ -124,4 +124,4 @@ FileReadAllAwaitable ReadAllAsync(Scheduler& scheduler, io::File& file, u64 max_
     return FileReadAllAwaitable(scheduler, file, max_bytes);
 }
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

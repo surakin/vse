@@ -4,7 +4,7 @@
 #include "physics/collide_math.h"
 #include "physics/contact.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -302,4 +302,4 @@ void CombineMaterials(const PhysicsMaterial& a, const PhysicsMaterial& b, Contac
                                     b.restitution);
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

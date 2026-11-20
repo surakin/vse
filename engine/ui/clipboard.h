@@ -9,7 +9,7 @@
 //! asynchronous, with the primary selection) sits behind the same interface (Day 200), so a widget written against this
 //! does not change.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Where copied text goes and pasted text comes from.
@@ -121,4 +121,4 @@ private:
     bool primary_supported_ = false;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTextVertReflByteCount = 189;
 
@@ -29,4 +29,4 @@ inline constexpr u32 kTextVertParamsPixelToClipOffset = 0;
 inline constexpr u32 kTextVertParamsSrgbTargetOffset = 8;
 inline constexpr u32 kTextVertParamsPadOffset = 12;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

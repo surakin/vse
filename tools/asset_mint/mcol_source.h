@@ -19,7 +19,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A parsed mesh-collider source.
@@ -49,4 +49,4 @@ Status ParseMcolSource(StringView text, McolSource* out, McolSourceError* error)
 Status MintMeshCollider(StringView text, const TypeRegistry& types, Vector<byte>* out, McolSourceError* error,
                         u32 target = 0);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -7,7 +7,7 @@
 //! Channel-based logging with per-channel verbosity (the settings system overrides it, `log.<channel>.verbosity`).
 //!
 //! Needs no allocator; log lines and config parsing use fixed-size stack buffers.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Severity of a log message and the threshold a channel filters by.
@@ -174,4 +174,4 @@ void SetLogObserver(LogObserverFn fn, void* user);
 ///   channel state it reads is unsynchronized.
 void Log(LogChannel& channel, LogVerbosity level, StringView message);
 
-}  // namespace engine_placeholder
+}  // namespace vse

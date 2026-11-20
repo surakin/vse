@@ -11,7 +11,7 @@
 #include "string/string.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Names one mount ([[asset::MountTable::Mount]]).
@@ -139,4 +139,4 @@ private:
     void* ready_user_ = nullptr;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -5,10 +5,10 @@
 #include "string/string.h"
 #include "types.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::StringView;
-using engine_placeholder::usize;
-using engine_placeholder::os::CommandLine;
+using vse::ArenaAllocator;
+using vse::StringView;
+using vse::usize;
+using vse::os::CommandLine;
 
 namespace
 {
@@ -115,7 +115,7 @@ TEST_CASE("CommandLine::FromNative sources args from StashNativeCommandLine", "[
 {
     ArenaAllocator arena(4096);
     const char* argv[] = {"engine_main", "native_arg", "--native_flag"};
-    engine_placeholder::os::StashNativeCommandLine(3, const_cast<char**>(argv));
+    vse::os::StashNativeCommandLine(3, const_cast<char**>(argv));
 
     auto cmd_line = CommandLine<ArenaAllocator>::FromNative(arena);
 
@@ -128,8 +128,8 @@ TEST_CASE("CommandLine::FromNative sources args from StashNativeCommandLine", "[
 namespace
 {
 
-using engine_placeholder::Span;
-using engine_placeholder::os::CommandLineOption;
+using vse::Span;
+using vse::os::CommandLineOption;
 
 constexpr CommandLineOption kOptions[] = {
     {"root", true},

@@ -32,7 +32,7 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The pak format version the runtime reads and the writer writes.
@@ -244,4 +244,4 @@ private:
     Array<char, 160> detail_ = {};
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

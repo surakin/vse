@@ -22,7 +22,7 @@
 #include "platform/linux/x11/x11_dnd_impl.inc"
 #include "platform/linux/x11/x11_cursor_impl.inc"  // x11_cursor.h's functions: see the note at the top of that file
 
-namespace engine_placeholder::os::x11
+namespace vse::os::x11
 {
 
 namespace
@@ -965,6 +965,6 @@ void X11Window::HandleKey(const void* xkey_event, bool pressed, InputState* inpu
     }
 }
 
-}  // namespace engine_placeholder::os::x11
+}  // namespace vse::os::x11
 
 #include "unity/x11_disable.h"

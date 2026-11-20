@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kLitVertSpvWordCount = 394;
 
@@ -77,4 +77,4 @@ inline constexpr u32 kLitVertSpv[kLitVertSpvWordCount] = {
     0x00000005, 0x00000022, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

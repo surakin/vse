@@ -11,7 +11,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script_physics
+namespace vse::script_physics
 {
 
 /// The most layers (the physics module's layer numbers are 0 to 31).
@@ -84,4 +84,4 @@ void RegisterPhysicsScriptSettings(settings::Registry* registry);
 /// - Fails: returns false and leaves `default`, as described.
 bool PhysicsLayersFromSettings(const settings::Registry& registry, PhysicsLayers* layers);
 
-}  // namespace engine_placeholder::script_physics
+}  // namespace vse::script_physics

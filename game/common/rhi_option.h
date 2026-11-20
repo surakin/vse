@@ -12,9 +12,9 @@ namespace demo
 
 // The backend `name` chooses: null, vulkan, dx12, metal or auto. Returns false, leaving `out` alone, for any other
 // name.
-inline bool ParseRhiBackend(const char* name, ::engine_placeholder::rhi::Backend* out)
+inline bool ParseRhiBackend(const char* name, ::vse::rhi::Backend* out)
 {
-    using ::engine_placeholder::rhi::Backend;
+    using ::vse::rhi::Backend;
     static const struct
     {
         const char* name;
@@ -26,7 +26,7 @@ inline bool ParseRhiBackend(const char* name, ::engine_placeholder::rhi::Backend
                   {"auto", Backend::Auto}};
     for (const auto& n : kNames)
     {
-        if (engine_placeholder::CStrCompare(name, n.name) == 0)
+        if (vse::CStrCompare(name, n.name) == 0)
         {
             *out = n.backend;
             return true;
@@ -36,9 +36,9 @@ inline bool ParseRhiBackend(const char* name, ::engine_placeholder::rhi::Backend
 }
 
 // The name `--rhi` takes for a backend, for messages.
-inline const char* RhiBackendName(::engine_placeholder::rhi::Backend backend)
+inline const char* RhiBackendName(::vse::rhi::Backend backend)
 {
-    using ::engine_placeholder::rhi::Backend;
+    using ::vse::rhi::Backend;
     switch (backend)
     {
     case Backend::Null: return "null";

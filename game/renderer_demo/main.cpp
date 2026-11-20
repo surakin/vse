@@ -34,9 +34,9 @@
 #include "cstr/mem_ops.h"
 #include "cstr/number.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::renderer;
 using namespace renderer_demo;
 
 namespace
@@ -621,12 +621,12 @@ int RunWindow(const Options& options, RenderSettings settings)
                 // Through the settings system: the change is validated, layered (and so saved by --save-settings style
                 // code), announced, and the renderer applies it with the cheapest sufficient action; a failure rolls
                 // the setting back.
-                Vector<engine_placeholder::settings::ChangeRequest> requests;
+                Vector<vse::settings::ChangeRequest> requests;
                 renderer::RenderSettingsToChanges(wanted, g_demo_settings->GetRegistry(), &requests);
                 g_demo_settings->Get().SetCapabilityCheck(&renderer::RendererCapability, &renderer);
-                const engine_placeholder::settings::SetResult set = g_demo_settings->Get().Apply(
+                const vse::settings::SetResult set = g_demo_settings->Get().Apply(
                     requests.Data(), requests.Size(), &renderer::ApplySharedChange, &renderer);
-                if (set.error == engine_placeholder::settings::SetError::ApplyFailed)
+                if (set.error == vse::settings::SetError::ApplyFailed)
                 {  // the renderer was asked and said no; the setting is rolled back
                     LogApply(what, renderer.LastApply());
                     return;
@@ -636,7 +636,7 @@ int RunWindow(const Options& options, RenderSettings settings)
                    // change nothing
                     RhiLogV(LogVerbosity::Warn,
                             "renderer_demo: %s: the settings system refused the change (error %d, value %s)", what,
-                            static_cast<int>(set.error), engine_placeholder::settings::ValueErrorName(set.value));
+                            static_cast<int>(set.error), vse::settings::ValueErrorName(set.value));
                     return;
                 }
                 ApplyResult unchanged;  // nothing differed: the renderer reports "ok, nothing to do"
@@ -832,10 +832,9 @@ int RunWindow(const Options& options, RenderSettings settings)
                         // A crash in the middle of a run that already reset the device: the report must show the epoch
                         // and the reset count.
                         const char* kind = word + 6;
-                        engine_placeholder::debug::RunCrashTest(
-                            CStrCompare(kind, "segv") == 0     ? engine_placeholder::debug::CrashTestKind::Segv
-                            : CStrCompare(kind, "assert") == 0 ? engine_placeholder::debug::CrashTestKind::Assert
-                                                               : engine_placeholder::debug::CrashTestKind::Abort);
+                        vse::debug::RunCrashTest(CStrCompare(kind, "segv") == 0     ? vse::debug::CrashTestKind::Segv
+                                                 : CStrCompare(kind, "assert") == 0 ? vse::debug::CrashTestKind::Assert
+                                                                                    : vse::debug::CrashTestKind::Abort);
                     }
                     else if (CStrCompare(word, "overlay") == 0)
                     {  // the F11 key, for scripts: toggles the text overlay
@@ -1040,10 +1039,9 @@ int Usage(const char* program, int code)
 // Linux and `wWinMain` (the Windows subsystem, no console window of its own) on Windows.
 int EngineMain(int argc, char** argv)
 {
-    ::engine_placeholder::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
-    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(
-        argc, argv);
-    engine_placeholder::debug::RunCrashTest(
+    ::vse::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
+    const vse::debug::ProgramDebugSetup debug_setup = vse::debug::StartProgramDebugging(argc, argv);
+    vse::debug::RunCrashTest(
         debug_setup.crash_test);              // --crash-test=segv|abort|assert|ensure, before any window or device
     LogRhi.SetVerbosity(LogVerbosity::Info);  // the frame-time line is Info
     demo::DemoSettings demo_settings;
@@ -1073,11 +1071,11 @@ int EngineMain(int argc, char** argv)
                                                         {"text", true},
                                                         {"help", false},
                                                         {"-h", false},
-                                                        engine_placeholder::debug::kCrashHandlerOption,
-                                                        engine_placeholder::debug::kCrashTestOption};
+                                                        vse::debug::kCrashHandlerOption,
+                                                        vse::debug::kCrashTestOption};
     const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), demo_settings.RestCount(),
                                               demo_settings.RestArgs(),
-                                              engine_placeholder::Span<const os::CommandLineOption>(kCliOptions, 19));
+                                              vse::Span<const os::CommandLineOption>(kCliOptions, 19));
     const char* program = line.ProgramName().Data();
     Options options;
     const char* frames_env = os::GetEnvironment("RENDERER_DEMO_FRAMES");

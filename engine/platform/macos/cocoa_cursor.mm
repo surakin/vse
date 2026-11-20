@@ -16,12 +16,12 @@
 #import <AppKit/AppKit.h>
 #import <CoreGraphics/CoreGraphics.h>
 
-using engine_placeholder::os::cocoa::CocoaWindow;
+using vse::os::cocoa::CocoaWindow;
 
 namespace
 {
 
-engine_placeholder::i32 g_cursor_hide_depth = 0;  // main thread only: hides not yet unhidden, every window together
+vse::i32 g_cursor_hide_depth = 0;  // main thread only: hides not yet unhidden, every window together
 
 }  // namespace
 
@@ -36,7 +36,7 @@ engine_placeholder::i32 g_cursor_hide_depth = 0;  // main thread only: hides not
 }
 @end
 
-namespace engine_placeholder::os::cocoa
+namespace vse::os::cocoa
 {
 
 NSImage* ImageOfPixels(const byte* rgba, u32 width, u32 height, CGFloat scale)
@@ -287,4 +287,4 @@ void CocoaWindow::OnRelativeMotion(f64 dx, f64 dy, u64 flags)
     QueueEvent(event);
 }
 
-}  // namespace engine_placeholder::os::cocoa
+}  // namespace vse::os::cocoa

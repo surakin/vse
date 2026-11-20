@@ -15,7 +15,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The most nested containers a value may hold (a scalar is depth 1, an array of scalars depth 2). Enforced when a
@@ -277,4 +277,4 @@ private:
     void IndexKeys();
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

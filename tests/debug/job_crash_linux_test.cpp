@@ -13,8 +13,8 @@
 #include "catch_engine_types.h"
 #include "support/test_support_posix.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 namespace
 {

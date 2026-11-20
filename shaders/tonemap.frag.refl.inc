@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kTonemapFragReflByteCount = 205;
 
@@ -31,4 +31,4 @@ inline constexpr u32 kTonemapFragPushPad0Offset = 4;
 inline constexpr u32 kTonemapFragPushPad1Offset = 8;
 inline constexpr u32 kTonemapFragPushPad2Offset = 12;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

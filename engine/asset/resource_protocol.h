@@ -30,7 +30,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// The protocol version this code speaks.
@@ -158,4 +158,4 @@ inline ProtoError EncodeProto(const ProtoData& message, MutableByteSpan out, usi
 /// - Ownership: `*out` is replaced; `bytes` is read during the call only.
 ProtoError DecodeProto(ByteSpan bytes, u32 max_read_bytes, ProtoData* out);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

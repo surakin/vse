@@ -9,7 +9,7 @@
 //!
 //! Consistent with matrix.h: `ToMat3` rotates a vector the same way
 //! `RotateVector` does, and `a * b` rotates by `b` first, then by `a`.
-namespace engine_placeholder
+namespace vse
 {
 
 /// Rotation stored as a quaternion `(x, y, z, w)`, with `w` the scalar part.
@@ -199,4 +199,4 @@ inline Quaternion Slerp(const Quaternion& a, const Quaternion& b, f32 t)
                       weight_a * a.z + weight_b * b_adjusted.z, weight_a * a.w + weight_b * b_adjusted.w);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

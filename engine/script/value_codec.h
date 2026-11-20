@@ -9,7 +9,7 @@
 #include "storage/identity.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The version of the value record written by [[script::EncodeValueRecord]].
@@ -62,4 +62,4 @@ void EncodeValueRecord(const Value& value, bytes::ByteWriter* out, const storage
 ValueRecordStatus DecodeValueRecord(bytes::ByteReader* in, Value* out, const storage::KeyIndex* index,
                                     const ValueLimits& limits);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

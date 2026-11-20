@@ -7,7 +7,7 @@
 #include "spatial/spatial_debug.h"
 #include "spatial/spatial_world.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

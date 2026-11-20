@@ -41,7 +41,7 @@
 #include "net/udp_protocol.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// The default limits on handshake packets: 200 per second per address (burst 200) and 20,000 per second in total
@@ -237,4 +237,4 @@ private:
     UniquePtr<Impl> impl_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

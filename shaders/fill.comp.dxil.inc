@@ -6,7 +6,7 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kFillCompDxilByteCount = 3504;
 
@@ -238,4 +238,4 @@ inline constexpr u64 kFillCompDxilSpirvFnv = 0xb9f5d01264970139ull;
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kFillCompShader = {"fill.comp", rhi::SpirvBlob(kFillCompSpv, kFillCompSpvWordCount), rhi::DxilBlob(kFillCompDxil, kFillCompDxilByteCount), rhi::MetalLibBlob(kFillCompMetallib, kFillCompMetallibByteCount, kFillCompMetallibEntry, &kFillCompMetallibSlots)};
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

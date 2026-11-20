@@ -31,7 +31,7 @@
         }                                                                                                              \
     } while (0)
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 namespace
@@ -1956,4 +1956,4 @@ engine_status PixelsDestroyFn(engine_handle ticket)
     return host->PixelsDestroy(ticket);
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

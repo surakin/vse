@@ -9,7 +9,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -317,4 +317,4 @@ FenceValue VulkanDevice::Submit(CommandList* const* lists, usize count)
     return value;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

@@ -12,7 +12,7 @@
 //! The CPU pages are the source of truth; the renderer copies them into GPU textures and can rebuild those textures
 //! from them after a device reset. There is no eviction in this version: a full page adds a page, up to a maximum,
 //! after which glyphs are refused and counted.
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 /// Where one glyph lives in the atlas and how to place it.
@@ -178,4 +178,4 @@ inline GlyphQuad PlaceGlyph(f32 pen_x, f32 pen_y, f32 glyph_x, f32 glyph_y, cons
     return q;
 }
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

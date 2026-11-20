@@ -7,7 +7,7 @@
 //! Popups and accelerators, the plain types (Phase 15, Day 198): where a popup goes relative to its anchor, how it
 //! closes, and the key chords of accelerators.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 class Widget;
@@ -75,4 +75,4 @@ Rect PlacePopup(Size size, const Rect& anchor, Placement placement, const Rect& 
 /// - Fails: `OutOfMemory` aborts like any string.
 String<HeapAllocator> ChordText(const KeyChord& chord);
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kMorphCompReflByteCount = 432;
 
@@ -50,4 +50,4 @@ inline constexpr u32 kMorphCompPushOutBaseWordOffset = 24;
 inline constexpr u32 kMorphCompPushTargetCountOffset = 28;
 inline constexpr u32 kMorphCompPushTargetsOffset = 32;
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

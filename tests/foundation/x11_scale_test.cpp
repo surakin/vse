@@ -2,9 +2,9 @@
 
 #include "platform/linux/x11/x11_scale.h"
 
-using engine_placeholder::os::x11::ContentScaleFromResources;
-using engine_placeholder::os::x11::kMaxContentScale;
-using engine_placeholder::os::x11::kMinContentScale;
+using vse::os::x11::ContentScaleFromResources;
+using vse::os::x11::kMaxContentScale;
+using vse::os::x11::kMinContentScale;
 
 TEST_CASE("Xft.dpi over 96 is the content scale", "[x11][scale]")
 {

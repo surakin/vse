@@ -7,7 +7,7 @@
 //! Keyboard events for the Linux backends that get raw evdev key transitions (Wayland): key down and up, text, and
 //! client-side key repeat.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Turns evdev key presses and releases into [[os::InputEvent]]s: `KeyDown`/`KeyUp`, the `Text` a press produces, and
@@ -94,4 +94,4 @@ private:
     u8 text_length_ = 0;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

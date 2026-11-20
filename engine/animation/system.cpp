@@ -6,7 +6,7 @@
 #include "sync/atomic.h"
 #include "storage/field.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 namespace
 {
@@ -259,4 +259,4 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
     return stats;
 }
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

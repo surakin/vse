@@ -19,7 +19,7 @@
 namespace engine_test
 {
 
-inline std::string ToStd(engine_placeholder::StringView view)
+inline std::string ToStd(vse::StringView view)
 {
     return std::string(view.Data(), view.Length());
 }
@@ -37,75 +37,69 @@ inline bool TestIsUnwinding()
 namespace Catch
 {
 
-template <> struct StringMaker<engine_placeholder::StringView>
+template <> struct StringMaker<vse::StringView>
 {
-    static std::string convert(const engine_placeholder::StringView& view)
-    {
-        return "\"" + engine_test::ToStd(view) + "\"";
-    }
+    static std::string convert(const vse::StringView& view) { return "\"" + engine_test::ToStd(view) + "\""; }
 };
 
 // A String has begin()/end() (container audit Day 3), which makes Catch2 see a range of chars; it prints as text
 // through the StringMaker below instead.
-template <typename A> struct is_range<engine_placeholder::String<A>> : std::false_type
+template <typename A> struct is_range<vse::String<A>> : std::false_type
 {
 };
 
-template <typename A> struct StringMaker<engine_placeholder::String<A>>
+template <typename A> struct StringMaker<vse::String<A>>
 {
-    static std::string convert(const engine_placeholder::String<A>& text)
-    {
-        return "\"" + engine_test::ToStd(text.View()) + "\"";
-    }
+    static std::string convert(const vse::String<A>& text) { return "\"" + engine_test::ToStd(text.View()) + "\""; }
 };
 
-template <> struct StringMaker<engine_placeholder::io::Path>
+template <> struct StringMaker<vse::io::Path>
 {
-    static std::string convert(const engine_placeholder::io::Path& path)
+    static std::string convert(const vse::io::Path& path)
     {
         return "Path(\"" + engine_test::ToStd(path.View()) + "\")";
     }
 };
 
-template <> struct StringMaker<engine_placeholder::io::Error>
+template <> struct StringMaker<vse::io::Error>
 {
-    static std::string convert(engine_placeholder::io::Error error) { return engine_placeholder::io::ErrorName(error); }
+    static std::string convert(vse::io::Error error) { return vse::io::ErrorName(error); }
 };
 
-template <> struct StringMaker<engine_placeholder::io::Status>
+template <> struct StringMaker<vse::io::Status>
 {
-    static std::string convert(const engine_placeholder::io::Status& status)
+    static std::string convert(const vse::io::Status& status)
     {
-        return std::string("Status(") + engine_placeholder::io::ErrorName(status.error) + ")";
+        return std::string("Status(") + vse::io::ErrorName(status.error) + ")";
     }
 };
 
-template <> struct StringMaker<engine_placeholder::u128>
+template <> struct StringMaker<vse::u128>
 {
-    static std::string convert(const engine_placeholder::u128& value)
+    static std::string convert(const vse::u128& value)
     {
-        char text[engine_placeholder::u128::kMaxTextBytes];
+        char text[vse::u128::kMaxTextBytes];
         value.ToText(text, sizeof(text), 10);
         return text;
     }
 };
 
-template <> struct StringMaker<engine_placeholder::i128>
+template <> struct StringMaker<vse::i128>
 {
-    static std::string convert(const engine_placeholder::i128& value)
+    static std::string convert(const vse::i128& value)
     {
-        char text[engine_placeholder::i128::kMaxTextBytes];
+        char text[vse::i128::kMaxTextBytes];
         value.ToText(text, sizeof(text), 10);
         return text;
     }
 };
 
-template <typename T> struct StringMaker<engine_placeholder::Span<T>>
+template <typename T> struct StringMaker<vse::Span<T>>
 {
-    static std::string convert(const engine_placeholder::Span<T>& span)
+    static std::string convert(const vse::Span<T>& span)
     {
         std::string out = "Span[" + std::to_string(span.Size()) + "]{";
-        for (engine_placeholder::usize i = 0; i < span.Size() && i < 16; ++i)
+        for (vse::usize i = 0; i < span.Size() && i < 16; ++i)
         {
             out += (i ? ", " : "") + Catch::Detail::stringify(span[i]);
         }

@@ -14,7 +14,7 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-using engine_placeholder::os::cocoa::CocoaWindow;
+using vse::os::cocoa::CocoaWindow;
 
 namespace
 {
@@ -38,7 +38,7 @@ bool g_in_modal_callback = false;  // the live-resize callback is running: PumpE
     g_quit_requested = true;
     NSAppleEventDescriptor* event = [[NSAppleEventManager sharedAppleEventManager] currentAppleEvent];
     const OSType reason = event != nil ? [[event attributeDescriptorForKeyword:kAEQuitReason] enumCodeValue] : 0;
-    if (engine_placeholder::os::cocoa::QuitReasonEndsSession(reason))
+    if (vse::os::cocoa::QuitReasonEndsSession(reason))
     {
         g_terminate_pending = true;
         return NSTerminateLater;
@@ -56,15 +56,15 @@ bool g_in_modal_callback = false;  // the live-resize callback is running: PumpE
 namespace
 {
 
-engine_placeholder::u32 FirstScalar(NSString* text)
+vse::u32 FirstScalar(NSString* text)
 {
     if (text.length == 0)
     {
         return 0;
     }
     const char* utf8 = text.UTF8String;
-    const engine_placeholder::usize length = [text lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
-    return utf8 != nullptr ? engine_placeholder::DecodeUtf8At(utf8, length, 0).codepoint : 0;
+    const vse::usize length = [text lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    return utf8 != nullptr ? vse::DecodeUtf8At(utf8, length, 0).codepoint : 0;
 }
 
 }  // namespace
@@ -157,8 +157,8 @@ engine_placeholder::u32 FirstScalar(NSString* text)
     NSString* text = [string isKindOfClass:[NSAttributedString class]] ? [(NSAttributedString*)string string] : string;
     if (self.owner != nullptr && text.length != 0)
     {
-        engine_placeholder::Vector<engine_placeholder::byte> utf8;
-        engine_placeholder::os::cocoa::Utf8Of(text, &utf8, nullptr);  // UTF8String gives nothing for a lone surrogate
+        vse::Vector<vse::byte> utf8;
+        vse::os::cocoa::Utf8Of(text, &utf8, nullptr);  // UTF8String gives nothing for a lone surrogate
         self.owner->OnText(reinterpret_cast<const char*>(utf8.Data()), utf8.Size());
     }
 }
@@ -238,7 +238,7 @@ engine_placeholder::u32 FirstScalar(NSString* text)
         self.owner->OnPointerMove(p.x, p.y, inside, event.modifierFlags);
     }
 }
-- (void)reportButton:(NSEvent*)event bit:(engine_placeholder::u32)bit down:(bool)down
+- (void)reportButton:(NSEvent*)event bit:(vse::u32)bit down:(bool)down
 {
     if (down)
     {
@@ -254,13 +254,13 @@ engine_placeholder::u32 FirstScalar(NSString* text)
         self.owner->OnPointerButton(bit, down, p.x, p.y, event.modifierFlags);
     }
 }
-- (engine_placeholder::u32)otherButtonBit:(NSEvent*)event
+- (vse::u32)otherButtonBit:(NSEvent*)event
 {
     switch (event.buttonNumber)
     {
-    case 2: return engine_placeholder::os::kMouseMiddle;
-    case 3: return engine_placeholder::os::kMouseBack;
-    case 4: return engine_placeholder::os::kMouseForward;
+    case 2: return vse::os::kMouseMiddle;
+    case 3: return vse::os::kMouseBack;
+    case 4: return vse::os::kMouseForward;
     default: return 0;  // a sixth button and up: not in the engine's mask
     }
 }
@@ -282,19 +282,19 @@ engine_placeholder::u32 FirstScalar(NSString* text)
 }
 - (void)mouseDown:(NSEvent*)event
 {
-    [self reportButton:event bit:engine_placeholder::os::kMouseLeft down:true];
+    [self reportButton:event bit:vse::os::kMouseLeft down:true];
 }
 - (void)mouseUp:(NSEvent*)event
 {
-    [self reportButton:event bit:engine_placeholder::os::kMouseLeft down:false];
+    [self reportButton:event bit:vse::os::kMouseLeft down:false];
 }
 - (void)rightMouseDown:(NSEvent*)event
 {
-    [self reportButton:event bit:engine_placeholder::os::kMouseRight down:true];
+    [self reportButton:event bit:vse::os::kMouseRight down:true];
 }
 - (void)rightMouseUp:(NSEvent*)event
 {
-    [self reportButton:event bit:engine_placeholder::os::kMouseRight down:false];
+    [self reportButton:event bit:vse::os::kMouseRight down:false];
 }
 - (void)otherMouseDown:(NSEvent*)event
 {
@@ -323,7 +323,7 @@ engine_placeholder::u32 FirstScalar(NSString* text)
 {
     if (self.owner != nullptr)
     {
-        const engine_placeholder::os::cocoa::CocoaWheel wheel = engine_placeholder::os::cocoa::CocoaWheelNotches(
+        const vse::os::cocoa::CocoaWheel wheel = vse::os::cocoa::CocoaWheelNotches(
             event.scrollingDeltaX, event.scrollingDeltaY, event.hasPreciseScrollingDeltas);
         if (wheel.dx != 0.0 || wheel.dy != 0.0)
         {
@@ -439,7 +439,7 @@ engine_placeholder::u32 FirstScalar(NSString* text)
 }
 @end
 
-namespace engine_placeholder::os::cocoa
+namespace vse::os::cocoa
 {
 
 namespace
@@ -1064,4 +1064,4 @@ void CocoaWindow::QueueEvent(InputEvent event)
     events_.Push(event);
 }
 
-}  // namespace engine_placeholder::os::cocoa
+}  // namespace vse::os::cocoa

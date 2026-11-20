@@ -1,6 +1,6 @@
 #include "ecs/command_buffer.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 CommandBuffer::~CommandBuffer()
@@ -172,4 +172,4 @@ void CommandBufferPool::ClearAll()
     }
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

@@ -5,7 +5,7 @@
 #include "cstr/format.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -315,4 +315,4 @@ Status MintClip(StringView text, const SkeletonView& skeleton, const TypeRegistr
     return built;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -8,7 +8,7 @@
 #include "renderer/renderer_log.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -432,4 +432,4 @@ BufferRegion FrameResources::LightRegion() const
     return BufferRegion{light_buffer_, light_stride_ * slot_, static_cast<u64>(max_lights_) * sizeof(LightData)};
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

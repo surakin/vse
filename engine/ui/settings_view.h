@@ -20,7 +20,7 @@
 //! A settings screen generated from the registry (Phase 15, Day 203): one labelled row per setting, the widget chosen
 //! by its type, changes written through `Settings::Apply`.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A settings screen: groups of rows, built from the metadata of a [[settings::Registry]].
@@ -188,4 +188,4 @@ private:
     Callback<SettingsView*> on_restart_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

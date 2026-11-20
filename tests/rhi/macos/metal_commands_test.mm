@@ -18,10 +18,10 @@
 #include "triangle.frag.dxil.inc"
 #include "triangle.vert.dxil.inc"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::metal;
-using namespace engine_placeholder::rhi::metal::test;
+using namespace vse;
+using namespace vse::rhi;
+using namespace vse::rhi::metal;
+using namespace vse::rhi::metal::test;
 
 namespace metal_commands_test
 {
@@ -52,14 +52,14 @@ struct Fill
         b.stages = ShaderStage::Compute;
         b.stride = 4;
         BindGroupLayoutDesc ld;
-        ld.entries = engine_placeholder::Span<BindingDesc>(&b, 1);
+        ld.entries = vse::Span<BindingDesc>(&b, 1);
         layout = device.CreateBindGroupLayout(ld);
         BindGroupEntry e;
         e.binding = 0;
         e.buffer = out;
         BindGroupDesc gd;
         gd.layout = layout;
-        gd.entries = engine_placeholder::Span<BindGroupEntry>(&e, 1);
+        gd.entries = vse::Span<BindGroupEntry>(&e, 1);
         group = device.CreateBindGroup(gd);
         ComputePipelineDesc cp;
         cp.shader = shader;

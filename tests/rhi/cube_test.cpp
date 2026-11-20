@@ -11,8 +11,8 @@
 #include "rhi/uniform_ring.h"
 #include "cstr/mem_ops.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 using gpu_test::CompareOptions;
 using gpu_test::Image;
 using namespace cube_test;

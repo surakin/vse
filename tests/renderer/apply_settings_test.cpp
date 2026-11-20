@@ -13,9 +13,9 @@
 #include "rhi/rhi_log.h"
 #include "string_view.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
-using namespace engine_placeholder::renderer::settings;
+using namespace vse;
+using namespace vse::renderer;
+using namespace vse::renderer::settings;
 
 namespace
 {

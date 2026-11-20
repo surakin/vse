@@ -5,7 +5,7 @@
 
 //! A shelf packer for glyph atlas pages (Phase 14): rectangles go left to right on shelves, a new shelf opens below
 //! when none fits.
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 /// A rectangle of pixels in a page.
@@ -78,4 +78,4 @@ private:
     Vector<Shelf> shelves_;
 };
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

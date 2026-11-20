@@ -2,7 +2,7 @@
 
 #include "jobs/parallel_for.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabb& box, const QueryFilter& filter,
@@ -211,4 +211,4 @@ void OverlapBatch(const SpatialWorld& spatial, SetId set, Span<const Aabb> boxes
     RunLoop(scheduler, boxes.Size(), &FillOverlaps, &state);
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

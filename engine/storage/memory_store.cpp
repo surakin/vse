@@ -2,7 +2,7 @@
 
 #include "algorithm.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 namespace
@@ -280,4 +280,4 @@ bool MemoryStore::CorruptRecord(EntityKey key)
     return true;
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

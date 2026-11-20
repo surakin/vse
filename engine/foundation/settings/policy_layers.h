@@ -6,7 +6,7 @@
 #include "settings/layers.h"
 #include "settings/settings.h"
 
-namespace engine_placeholder::settings::detail
+namespace vse::settings::detail
 {
 
 /// Adds the platform's policy layers to `stack`, lowest first, each with the role [[settings::LayerRole::Policy]].
@@ -18,4 +18,4 @@ namespace engine_placeholder::settings::detail
 /// forced-only user defaults store over the suite (managed preferences); Linux: none yet.
 void AddPolicyLayers(const LoadOptions& options, LayerStack* stack);
 
-}  // namespace engine_placeholder::settings::detail
+}  // namespace vse::settings::detail

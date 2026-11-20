@@ -17,7 +17,7 @@
 #include "platform/linux/x11/x11_window.h"
 #include "os/os.h"
 
-using engine_placeholder::os::x11::X11Window;
+using vse::os::x11::X11Window;
 
 namespace
 {
@@ -32,7 +32,7 @@ template <typename Pred> bool PumpUntil(X11Window& window, Pred done)
         {
             return true;
         }
-        engine_placeholder::os::SleepNanos(10'000'000);
+        vse::os::SleepNanos(10'000'000);
     }
     return false;
 }
@@ -42,7 +42,7 @@ template <typename Pred> bool PumpUntil(X11Window& window, Pred done)
 TEST_CASE("X11Window::Create opens a mapped window on the real X server", "[x11][os]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
-    X11Window window = X11Window::Create("engine_placeholder x11 test", 640, 480);
+    X11Window window = X11Window::Create("vse x11 test", 640, 480);
     REQUIRE(window.Valid());
     REQUIRE(window.NativeDisplay() != nullptr);
     REQUIRE(window.NativeWindow() != 0);
@@ -74,15 +74,14 @@ TEST_CASE("An X11 window follows the desktop's Xft.dpi scale, and a logical size
     int format = 0;
     unsigned long count = 0;
     unsigned long after = 0;
-    engine_placeholder::byte* data = nullptr;
+    vse::byte* data = nullptr;
     float expected = 1.0f;
     if (XGetWindowProperty(display, RootWindow(display, DefaultScreen(display)),
                            XInternAtom(display, "RESOURCE_MANAGER", False), 0, 16384, False, XA_STRING, &type, &format,
                            &count, &after, &data) == Success &&
         data != nullptr)
     {
-        expected = engine_placeholder::os::x11::ContentScaleFromResources(
-            engine_placeholder::StringView(reinterpret_cast<const char*>(data), count));
+        expected = vse::os::x11::ContentScaleFromResources(vse::StringView(reinterpret_cast<const char*>(data), count));
         XFree(data);
     }
     CHECK(window.ContentScale() == expected);
@@ -92,12 +91,11 @@ TEST_CASE("An X11 window follows the desktop's Xft.dpi scale, and a logical size
     CHECK(window.Width() == 640);
     CHECK(window.Height() == 480);
 
-    X11Window scaled = X11Window::Create("scale test logical", 320, 241,
-                                         engine_placeholder::os::x11::SizeUnits::Logical);
+    X11Window scaled = X11Window::Create("scale test logical", 320, 241, vse::os::x11::SizeUnits::Logical);
     REQUIRE(scaled.Valid());
     CHECK(scaled.ContentScale() == expected);
-    CHECK(scaled.Width() == static_cast<engine_placeholder::u32>(320.0f * expected + 0.5f));
-    CHECK(scaled.Height() == static_cast<engine_placeholder::u32>(241.0f * expected + 0.5f));
+    CHECK(scaled.Width() == static_cast<vse::u32>(320.0f * expected + 0.5f));
+    CHECK(scaled.Height() == static_cast<vse::u32>(241.0f * expected + 0.5f));
     // A moved window keeps its scale.
     X11Window moved(static_cast<X11Window&&>(scaled));
     CHECK(moved.ContentScale() == expected);
@@ -163,7 +161,7 @@ TEST_CASE("X11Window ignores unrelated ClientMessages", "[x11][os]")
     for (int i = 0; i < 20; ++i)
     {
         window.PumpEvents(nullptr);
-        engine_placeholder::os::SleepNanos(5'000'000);
+        vse::os::SleepNanos(5'000'000);
     }
     REQUIRE_FALSE(window.ShouldClose());
 }
@@ -190,13 +188,13 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
     REQUIRE(a.Valid());
     unsigned long native = a.NativeWindow();
 
-    X11Window b(engine_placeholder::Move(a));
+    X11Window b(vse::Move(a));
     REQUIRE_FALSE(a.Valid());
     REQUIRE(b.Valid());
     REQUIRE(b.NativeWindow() == native);
 
     X11Window c;
-    c = engine_placeholder::Move(b);
+    c = vse::Move(b);
     REQUIRE_FALSE(b.Valid());
     REQUIRE(c.Valid());
     REQUIRE(c.NativeWindow() == native);
@@ -211,8 +209,8 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
 
 #include "platform/input.h"
 
-using engine_placeholder::os::InputState;
-using engine_placeholder::os::Key;
+using vse::os::InputState;
+using vse::os::Key;
 
 namespace
 {
@@ -310,7 +308,7 @@ void PumpFor(X11Window& window, InputState* input, int iterations = 20)
     for (int i = 0; i < iterations; ++i)
     {
         window.PumpEvents(input);
-        engine_placeholder::os::SleepNanos(5'000'000);
+        vse::os::SleepNanos(5'000'000);
     }
 }
 
@@ -320,7 +318,7 @@ void PumpFor(X11Window& window, InputState* input, int iterations = 20)
 // FocusOut legitimately clears held keys and modifiers, so injecting
 // before it lands makes input tests flaky. Wait until the window is
 // viewable, then drain events for a quiet period.
-X11Window CreateSettled(const char* title, engine_placeholder::u32 w, engine_placeholder::u32 h)
+X11Window CreateSettled(const char* title, vse::u32 w, vse::u32 h)
 {
     X11Window window = X11Window::Create(title, w, h);
     if (!window.Valid())
@@ -339,7 +337,7 @@ X11Window CreateSettled(const char* title, engine_placeholder::u32 w, engine_pla
     for (int i = 0; i < 40; ++i)
     {  // ~200ms of quiet
         window.PumpEvents(&discard);
-        engine_placeholder::os::SleepNanos(5'000'000);
+        vse::os::SleepNanos(5'000'000);
     }
     return window;
 }
@@ -402,7 +400,7 @@ TEST_CASE("X11Window releases the Key a code was pressed as even if modifiers ch
     inj.Key(window.NativeWindow(), code, ShiftMask, false);
     PumpFor(window, &input);
     REQUIRE_FALSE(input.keyboard.IsDown(Key::A));
-    REQUIRE((input.keyboard.modifiers & engine_placeholder::os::kModShift) != 0);
+    REQUIRE((input.keyboard.modifiers & vse::os::kModShift) != 0);
 }
 
 TEST_CASE("X11Window maps event state bits to engine modifiers", "[x11][input][os]")
@@ -418,14 +416,14 @@ TEST_CASE("X11Window maps event state bits to engine modifiers", "[x11][input][o
     REQUIRE(code != 0);
     inj.Key(window.NativeWindow(), code, ShiftMask | ControlMask | Mod1Mask | Mod4Mask, true);
     PumpFor(window, &input);
-    using namespace engine_placeholder::os;
+    using namespace vse::os;
     REQUIRE(input.keyboard.modifiers == (kModShift | kModCtrl | kModAlt | kModSuper));
 }
 
 TEST_CASE("X11Window mirrors pointer position, buttons and scroll into InputState", "[x11][input][os]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
-    using namespace engine_placeholder::os;
+    using namespace vse::os;
     X11Window window = CreateSettled("pointer test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
@@ -493,7 +491,7 @@ TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENG
           "[x11][input][os][layout]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
-    const char* layout = engine_placeholder::os::GetEnvironment("ENGINE_X11_TEST_LAYOUT");
+    const char* layout = vse::os::GetEnvironment("ENGINE_X11_TEST_LAYOUT");
     if (layout == nullptr)
     {
         SKIP("ENGINE_X11_TEST_LAYOUT not set");
@@ -517,9 +515,9 @@ TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENG
     };
     for (const Phys& p : phys)
     {
-        Key expected = engine_placeholder::StringView(layout) == engine_placeholder::StringView("fr")   ? p.fr
-                       : engine_placeholder::StringView(layout) == engine_placeholder::StringView("de") ? p.de
-                                                                                                        : p.us;
+        Key expected = vse::StringView(layout) == vse::StringView("fr")   ? p.fr
+                       : vse::StringView(layout) == vse::StringView("de") ? p.de
+                                                                          : p.us;
         inj.Key(window.NativeWindow(), p.keycode, 0, true);
         PumpFor(window, &input);
         INFO("layout " << layout << " keycode " << p.keycode);
@@ -533,7 +531,7 @@ TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENG
 TEST_CASE("X11Window releases keys and modifiers on a real focus loss but not during WM grabs", "[x11][input][os]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
-    using namespace engine_placeholder::os;
+    using namespace vse::os;
     X11Window window = CreateSettled("focus test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
@@ -565,7 +563,7 @@ TEST_CASE("X11Window releases keys and modifiers on a real focus loss but not du
 TEST_CASE("X11Window reports native info, and none once invalid or moved from", "[x11][os]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
-    using engine_placeholder::os::NativeWindowKind;
+    using vse::os::NativeWindowKind;
     X11Window none;
     REQUIRE(none.GetNativeInfo().kind == NativeWindowKind::Invalid);
     REQUIRE(none.GetNativeInfo().display == nullptr);
@@ -581,7 +579,7 @@ TEST_CASE("X11Window reports native info, and none once invalid or moved from", 
     REQUIRE(info.surface == nullptr);
     REQUIRE_FALSE(window.IsMinimized());
 
-    X11Window moved(engine_placeholder::Move(window));
+    X11Window moved(vse::Move(window));
     REQUIRE(moved.GetNativeInfo().window_id == info.window_id);
     REQUIRE(window.GetNativeInfo().kind == NativeWindowKind::Invalid);
 }
@@ -595,12 +593,12 @@ TEST_CASE("X11Window's resize serial changes on every size change and never repe
 
     // Let the window manager's initial configure burst finish: wait until the serial has been stable for a
     // while, rather than assuming a fixed number of pumps is enough.
-    engine_placeholder::u64 settled = window.ResizeSerial();
+    vse::u64 settled = window.ResizeSerial();
     int stable = 0;
     for (int i = 0; i < 300 && stable < 20; ++i)
     {
         window.PumpEvents(nullptr);
-        engine_placeholder::os::SleepNanos(5'000'000);
+        vse::os::SleepNanos(5'000'000);
         if (window.ResizeSerial() == settled)
         {
             ++stable;
@@ -611,15 +609,15 @@ TEST_CASE("X11Window's resize serial changes on every size change and never repe
             stable = 0;
         }
     }
-    const engine_placeholder::u32 start_w = window.Width();
-    const engine_placeholder::u32 start_h = window.Height();
+    const vse::u32 start_w = window.Width();
+    const vse::u32 start_h = window.Height();
 
     Display* other = XOpenDisplay(nullptr);
     REQUIRE(other != nullptr);
     XResizeWindow(other, window.NativeWindow(), 411, 273);
     XSync(other, False);
     REQUIRE(PumpUntil(window, [&] { return window.Width() == 411 && window.Height() == 273; }));
-    const engine_placeholder::u64 resized = window.ResizeSerial();
+    const vse::u64 resized = window.ResizeSerial();
     REQUIRE(resized != settled);
 
     XResizeWindow(other, window.NativeWindow(), start_w, start_h);  // back to the size it started at
@@ -634,7 +632,7 @@ TEST_CASE("X11Window's resize serial changes on every size change and never repe
     REQUIRE(second.Valid());
     REQUIRE(second.ResizeSerial() != window.ResizeSerial());
 
-    X11Window moved(engine_placeholder::Move(window));
+    X11Window moved(vse::Move(window));
     REQUIRE(moved.ResizeSerial() != 0);
     REQUIRE(window.ResizeSerial() == 0);
     REQUIRE(window.IsMinimized());
@@ -688,13 +686,13 @@ TEST_CASE("X11Window reports itself minimized while its window is unmapped", "[x
 namespace
 {
 
-using engine_placeholder::os::InputEvent;
-using engine_placeholder::os::InputEventQueue;
-using engine_placeholder::os::InputEventType;
+using vse::os::InputEvent;
+using vse::os::InputEventQueue;
+using vse::os::InputEventType;
 
-engine_placeholder::Vector<InputEvent> PollAll(X11Window& window)
+vse::Vector<InputEvent> PollAll(X11Window& window)
 {
-    engine_placeholder::Vector<InputEvent> out;
+    vse::Vector<InputEvent> out;
     InputEvent e;
     while (window.PollEvent(&e))
     {
@@ -742,7 +740,7 @@ TEST_CASE("X11Window queues key, text, pointer and wheel events in order", "[x11
     CHECK(ev[3].y == 44.0);
     CHECK(ev[4].type == InputEventType::PointerButton);
     CHECK(ev[4].down);
-    CHECK(ev[4].button == engine_placeholder::os::kMouseLeft);
+    CHECK(ev[4].button == vse::os::kMouseLeft);
     CHECK(ev[5].type == InputEventType::PointerButton);
     CHECK_FALSE(ev[5].down);
     // The wheel presses are wheel events, never buttons; down is positive, as in InputState.
@@ -805,7 +803,7 @@ TEST_CASE("X11Window queues a Resize event with the new size", "[x11][input][eve
     PumpFor(window, &input, 40);
     bool found = false;
     const auto resized = PollAll(window);
-    for (engine_placeholder::usize i = 0; i < resized.Size(); ++i)
+    for (vse::usize i = 0; i < resized.Size(); ++i)
     {
         if (resized[i].type == InputEventType::Resize && resized[i].width == 411 && resized[i].height == 273)
         {
@@ -842,11 +840,11 @@ TEST_CASE("X11Window drops and counts events when the program never polls", "[x1
 namespace
 {
 
-engine_placeholder::Vector<engine_placeholder::byte> CursorPixels(unsigned int w, unsigned int h)
+vse::Vector<vse::byte> CursorPixels(unsigned int w, unsigned int h)
 {
-    engine_placeholder::Vector<engine_placeholder::byte> px;
-    px.Resize(static_cast<engine_placeholder::usize>(w) * h * 4);
-    for (engine_placeholder::usize i = 0; i < px.Size(); i += 4)
+    vse::Vector<vse::byte> px;
+    px.Resize(static_cast<vse::usize>(w) * h * 4);
+    for (vse::usize i = 0; i < px.Size(); i += 4)
     {
         px[i] = 0x40;
         px[i + 1] = 0x20;
@@ -856,10 +854,9 @@ engine_placeholder::Vector<engine_placeholder::byte> CursorPixels(unsigned int w
     return px;
 }
 
-engine_placeholder::os::CursorImage CursorImageOf(const engine_placeholder::Vector<engine_placeholder::byte>& px,
-                                                  unsigned int w, unsigned int h)
+vse::os::CursorImage CursorImageOf(const vse::Vector<vse::byte>& px, unsigned int w, unsigned int h)
 {
-    engine_placeholder::os::CursorImage image;
+    vse::os::CursorImage image;
     image.rgba = px.Data();
     image.width = w;
     image.height = h;
@@ -888,7 +885,7 @@ TEST_CASE("X11Window sets every cursor shape, repeatedly, without leaking", "[x1
     X11Window window = CreateSettled("cursor shapes", 200, 150);
     REQUIRE(window.Valid());
     REQUIRE(window.SupportsCursorShape());
-    using engine_placeholder::os::CursorShape;
+    using vse::os::CursorShape;
     for (int pass = 0; pass < 2; ++pass)
     {
         for (int i = 0; i < static_cast<int>(CursorShape::Count); ++i)
@@ -932,7 +929,7 @@ TEST_CASE("X11Window sets, replaces and clears a custom cursor image", "[x11][cu
     const auto px = CursorPixels(128, 128);
     CHECK(window.SetCursorImage(CursorImageOf(px, 128, 128)));  // the same image again makes no new cursor
     CHECK(window.CursorObjectCount() == with_image);
-    CHECK(window.SetCursor(engine_placeholder::os::CursorShape::Hand));  // a shape change keeps the image
+    CHECK(window.SetCursor(vse::os::CursorShape::Hand));  // a shape change keeps the image
     window.ClearCursorImage();
     CHECK(window.CursorObjectCount() <= with_image);  // the image's cursor is freed; the Hand cursor the image was
                                                       // hiding is made now, so no more than before
@@ -957,7 +954,7 @@ TEST_CASE("X11Window refuses invalid cursor images and keeps the old one", "[x11
     auto outside = CursorImageOf(good, 16, 16);
     outside.hotspot_x = 16;
     CHECK_FALSE(window.SetCursorImage(outside));
-    engine_placeholder::os::CursorImage none;
+    vse::os::CursorImage none;
     none.width = 4;
     none.height = 4;
     CHECK_FALSE(window.SetCursorImage(none));
@@ -1034,7 +1031,7 @@ TEST_CASE("X11Window reports RelativeMotion only while the pointer is locked", "
     inj.Motion(window.NativeWindow(), 50, 50);
     PumpFor(window, &input);
     const auto moves = PollAll(window);
-    for (engine_placeholder::usize i = 0; i < moves.Size(); ++i)
+    for (vse::usize i = 0; i < moves.Size(); ++i)
     {
         CHECK(moves[i].type != InputEventType::RelativeMotion);  // unlocked: never sent
     }
@@ -1050,10 +1047,10 @@ TEST_CASE("X11Window survives a clipboard requestor that vanished before the ans
     X11Window owner = X11Window::Create("clipboard owner", 200, 100);
     REQUIRE(owner.Valid());
     const char text[] = "still here";
-    engine_placeholder::os::ClipboardOffer offer;
-    offer.data = reinterpret_cast<const engine_placeholder::byte*>(text);
+    vse::os::ClipboardOffer offer;
+    offer.data = reinterpret_cast<const vse::byte*>(text);
     offer.size = sizeof(text) - 1;
-    REQUIRE(owner.SetClipboard(engine_placeholder::os::ClipboardKind::Clipboard, offer));
+    REQUIRE(owner.SetClipboard(vse::os::ClipboardKind::Clipboard, offer));
     for (int round = 0; round < 3; ++round)
     {
         Display* peer = XOpenDisplay(nullptr);
@@ -1066,7 +1063,7 @@ TEST_CASE("X11Window survives a clipboard requestor that vanished before the ans
         for (int i = 0; i < 20; ++i)
         {
             owner.PumpEvents(nullptr);
-            engine_placeholder::os::SleepNanos(5'000'000);
+            vse::os::SleepNanos(5'000'000);
         }
         REQUIRE(owner.Valid());
     }

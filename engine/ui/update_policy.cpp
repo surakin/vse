@@ -1,6 +1,6 @@
 #include "ui/update_policy.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 void SurfaceUpdater::SetPolicy(UpdatePolicy policy, f32 rate)
@@ -43,4 +43,4 @@ UpdateResult SurfaceUpdater::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atl
     return result;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

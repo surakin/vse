@@ -19,7 +19,7 @@
 #include "net/udp_transport.h"
 #include "transport_conformance.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -579,4 +579,4 @@ TEST_CASE("Security: the send budget over all connections is backpressure, not m
     CHECK(accepted * 4096 <= 64 * 1024 + 4096);
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -3,7 +3,7 @@
 #include "lang/utility.h"
 #include "os/console.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -264,4 +264,4 @@ void AudioSystem::Update(u64 now_nanos)
     OpenFallback(now_nanos);
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

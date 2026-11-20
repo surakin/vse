@@ -8,7 +8,7 @@
 #include "engine_c/engine_internal.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// The kind byte of a handle.
@@ -105,4 +105,4 @@ engine_status ResolveSlot(Vector<Slot>& slots, engine_handle handle, HandleKind 
     return ENGINE_OK;
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

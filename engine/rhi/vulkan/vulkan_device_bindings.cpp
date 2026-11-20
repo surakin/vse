@@ -8,7 +8,7 @@
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 namespace
@@ -556,4 +556,4 @@ bool VulkanDevice::LookupSampler(SamplerHandle sampler, VkSampler* vk_sampler) c
     return true;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

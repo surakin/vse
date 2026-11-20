@@ -30,7 +30,7 @@
 //! CAS discards the value. Changing the capacity or the full check must keep
 //! that argument true.
 //! Handles are stored as raw addresses and a null handle is never stored.
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 /// Outcome of one steal attempt on a [[jobs::WorkStealingDeque]].
@@ -175,4 +175,4 @@ private:
     alignas(64) Atomic<void*> slots_[kDefaultCapacity];
 };
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

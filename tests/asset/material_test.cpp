@@ -9,7 +9,7 @@
 #include "material_source.h"
 #include "texture_source.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -368,4 +368,4 @@ TEST_CASE("the builder refuses out-of-range data", "[asset][material]")
     CHECK(BuildMaterialBlob(types, ResourceId::None(), data, &out).Failed());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

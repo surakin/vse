@@ -7,7 +7,7 @@
 // physical desktop's display reports the ssh session, not the desktop's. The engine neither includes systemd headers
 // nor links the library, and a system without it (a container, Alpine) answers Unknown.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 namespace
 {
@@ -85,4 +85,4 @@ SessionState QuerySessionState()
     return state;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

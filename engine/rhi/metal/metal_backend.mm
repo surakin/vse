@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -63,4 +63,4 @@ bool RegisterMetalBackend()
     return RegisterBackend(d);
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

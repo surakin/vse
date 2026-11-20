@@ -12,7 +12,7 @@
 #include "asset_import/gltf_nodes.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// A glTF node that is a joint of a skeleton, and its joint index there.
@@ -87,4 +87,4 @@ struct ImportedSkin
 Status ImportSkins(const GltfDocument& document, const GltfNodeGraph& graph, const ImportOptions& options,
                    const TypeRegistry& types, ImportResult* result, Vector<ImportedSkin>* skins, GltfError* error);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

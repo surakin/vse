@@ -17,8 +17,8 @@
 #include <pthread.h>  // pthread_self: the thread the Objective-C runtime names in its missing-pool reports
 #endif
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace
 {

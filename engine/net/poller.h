@@ -8,7 +8,7 @@
 #include "net/status.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// Interest and readiness bit: the socket can be read (data, a pending connection, or the end of the stream).
@@ -109,4 +109,4 @@ private:
 #endif
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

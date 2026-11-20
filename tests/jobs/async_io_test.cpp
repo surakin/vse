@@ -21,8 +21,8 @@
 #include "temp_dir.h"
 #include "test_text.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::jobs;
+using namespace vse;
+using namespace vse::jobs;
 using engine_test::Text;
 
 namespace

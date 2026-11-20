@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -103,4 +103,4 @@ bool IsValid(const AudioFormat& format)
            ChannelCount(format.layout) != 0 && BytesPerSample(format.format) != 0;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

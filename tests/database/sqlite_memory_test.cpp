@@ -6,7 +6,7 @@
 #include "conformance.h"
 #include "database/sqlite/sqlite_database.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 struct SqliteMemoryFixture
@@ -143,4 +143,4 @@ TEST_CASE("SQLite backend: savepoints need an identifier and the connection clos
 }
 
 }  // namespace
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

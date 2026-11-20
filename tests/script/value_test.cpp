@@ -5,8 +5,8 @@
 #include "lang/scalar.h"
 #include "script/value.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::script;
+using namespace vse;
+using namespace vse::script;
 
 namespace
 {

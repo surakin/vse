@@ -8,7 +8,7 @@
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 namespace detail
@@ -210,4 +210,4 @@ private:
     const ComponentRegistry* registry_ = nullptr;
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

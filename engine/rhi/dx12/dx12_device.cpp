@@ -17,7 +17,7 @@
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 namespace
@@ -807,4 +807,4 @@ ResourceCounts Dx12Device::Resources() const
     return c;
 }
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

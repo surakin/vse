@@ -18,8 +18,8 @@
 #include "cstr/cstr.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 
 namespace
 {

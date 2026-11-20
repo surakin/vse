@@ -15,7 +15,7 @@
 #include "storage/component_record.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -305,7 +305,7 @@ TEST_CASE("Level text prints and mints the same under a decimal-comma locale", "
     INFO(in_c.View().Data());
     CHECK(Contains(in_c.View().Data(), "position = 0.5 -1.25 2.75"));
 
-    ::engine_placeholder::test::CommaLocale comma;
+    ::vse::test::CommaLocale comma;
     if (!comma.Active())
     {
         SKIP("no decimal-comma locale is installed (tried nb_NO, de_DE and fr_FR)");
@@ -899,4 +899,4 @@ TEST_CASE("A level with static colliders lists their MCOL and loads the shapes",
     CHECK(rig.Mint(wrong_type, &refused, &bad_error).Failed());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

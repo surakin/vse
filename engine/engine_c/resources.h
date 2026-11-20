@@ -19,7 +19,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 class Runtime;
@@ -245,4 +245,4 @@ engine_status TicketFinishFn(engine_handle ticket, engine_handle* resource);
 engine_status TicketCancelFn(engine_handle ticket);
 engine_status TicketDestroyFn(engine_handle ticket);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

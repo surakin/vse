@@ -9,7 +9,7 @@
 #include "containers/unique_ptr.h"
 #include "string_view.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -393,4 +393,4 @@ Status BlobCache::WriteIndexLocked()
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

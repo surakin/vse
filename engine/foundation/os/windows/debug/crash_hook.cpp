@@ -24,7 +24,7 @@
 #include "sync/atomic.h"
 #include "build_defs.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -514,4 +514,4 @@ bool RegisterThreadForCrashHandling(const char* name)
     return SetThreadStackGuarantee(&guarantee) != FALSE;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

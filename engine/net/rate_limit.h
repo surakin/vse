@@ -23,7 +23,7 @@
 #include "net/address.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// The key under which the limits count an address: an IPv4 address as it is, an IPv6 address by its /64 (one
@@ -150,4 +150,4 @@ private:
     RateLimiterCounters counters_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

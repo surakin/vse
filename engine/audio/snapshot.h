@@ -7,7 +7,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// How a snapshot is read back: a voice names its clip (and, for a stream, its stream) by the clip's name, and the
@@ -53,4 +53,4 @@ enum class SnapshotStatus : u8
     LiveStream,
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

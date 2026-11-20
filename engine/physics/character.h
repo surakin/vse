@@ -7,7 +7,7 @@
 #include "physics/world.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The shape and the rules of a character.
@@ -166,4 +166,4 @@ private:
     CharacterState state_;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

@@ -76,12 +76,12 @@ bool BlankBetween(StringView text, const Vector<usize, ArenaAllocator>& starts, 
 
 double Now()
 {
-    return static_cast<double>(engine_placeholder::os::MonotonicTimeNanos()) / 1e9;
+    return static_cast<double>(vse::os::MonotonicTimeNanos()) / 1e9;
 }
 
 StringView Num(ArenaAllocator& arena, u32 n)
 {
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     sb.AppendUInt(n);
     return sb.View();
 }
@@ -90,15 +90,15 @@ StringView Num(ArenaAllocator& arena, u32 n)
 StringView Hex(ArenaAllocator& arena, u32 n)
 {
     char text[16];
-    engine_placeholder::FormatTo(text, sizeof(text), "0x%08X", n);
-    return ArenaCat(arena, StringView(text, engine_placeholder::CStrLength(text)), StringView());
+    vse::FormatTo(text, sizeof(text), "0x%08X", n);
+    return ArenaCat(arena, StringView(text, vse::CStrLength(text)), StringView());
 }
 #endif
 
 // The code with `indent` leading columns removed from every line.
 StringView Dedent(StringView code, u32 indent, ArenaAllocator& arena)
 {
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     usize i = 0;
     while (i <= code.Length())
     {
@@ -126,16 +126,14 @@ StringView ReadSmall(StringView path, ArenaAllocator& arena)
 {
     // Captured output can be huge (a template error cascade): the first 1 MiB is kept, the rest dropped.
     constexpr usize kLimit = usize{1} << 20;
-    engine_placeholder::io::Path file_path;
-    engine_placeholder::io::FilePtr file;
-    if (!engine_placeholder::io::Path::Parse(path, engine_placeholder::io::NativePathStyle(), &file_path) ||
-        engine_placeholder::io::File::Open(file_path, engine_placeholder::io::OpenMode::Read,
-                                           engine_placeholder::io::kOpenNone, &file)
-            .Failed())
+    vse::io::Path file_path;
+    vse::io::FilePtr file;
+    if (!vse::io::Path::Parse(path, vse::io::NativePathStyle(), &file_path) ||
+        vse::io::File::Open(file_path, vse::io::OpenMode::Read, vse::io::kOpenNone, &file).Failed())
     {
         return StringView();
     }
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     char buf[4096];
     usize total = 0;
     while (total < kLimit)
@@ -155,7 +153,7 @@ StringView ReadSmall(StringView path, ArenaAllocator& arena)
 // CR LF, and the expected output in the Markdown with LF.
 StringView WithoutCarriageReturns(StringView s, ArenaAllocator& arena)
 {
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     for (usize i = 0; i < s.Length(); ++i)
     {
         if (s[i] == '\r' && i + 1 < s.Length() && s[i + 1] == '\n')
@@ -181,7 +179,7 @@ StringView TrimEnd(StringView s)
 StringView Excerpt(StringView s, u32 max_lines, ArenaAllocator& arena)
 {
     s = TrimEnd(s);
-    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    vse::StringBuilder<ArenaAllocator> sb(arena);
     u32 lines = 0;
     usize i = 0;
     while (i < s.Length() && lines < max_lines)
@@ -203,7 +201,7 @@ StringView Excerpt(StringView s, u32 max_lines, ArenaAllocator& arena)
     return sb.View();
 }
 
-enum class Stage : engine_placeholder::u8
+enum class Stage : vse::u8
 {
     Pending,
     Compiling,
@@ -261,14 +259,14 @@ public:
         // Children run in their own process groups (Windows: job objects), so Ctrl-C would not reach them: stop them
         // ourselves.
         g_stop = 0;
-        void (*const old_int)(int) = engine_placeholder::os::SetSignalHandler(SIGINT, &OnSignal);
-        void (*const old_term)(int) = engine_placeholder::os::SetSignalHandler(SIGTERM, &OnSignal);
+        void (*const old_int)(int) = vse::os::SetSignalHandler(SIGINT, &OnSignal);
+        void (*const old_term)(int) = vse::os::SetSignalHandler(SIGTERM, &OnSignal);
         for (usize i = 0; i < samples.Size(); ++i)
         {
             Task* t = static_cast<Task*>(arena_.Alloc(sizeof(Task), alignof(Task)));
             new (t) Task();
             t->sample = &samples[i];
-            engine_placeholder::StringBuilder<ArenaAllocator> base(arena_);
+            vse::StringBuilder<ArenaAllocator> base(arena_);
             base.Append(scratch_);
             base.Append(StringView("/s"));
             base.AppendUInt(i);
@@ -290,8 +288,8 @@ public:
                 out_.Push(FileDiag{t.sample->path, Diagnostic{Severity::Error, t.sample->line, t.failure}});
             }
         }
-        engine_placeholder::os::SetSignalHandler(SIGINT, old_int == SIG_ERR ? SIG_DFL : old_int);
-        engine_placeholder::os::SetSignalHandler(SIGTERM, old_term == SIG_ERR ? SIG_DFL : old_term);
+        vse::os::SetSignalHandler(SIGINT, old_int == SIG_ERR ? SIG_DFL : old_int);
+        vse::os::SetSignalHandler(SIGTERM, old_term == SIG_ERR ? SIG_DFL : old_term);
         Cleanup();
         return true;
     }
@@ -320,7 +318,7 @@ private:
     // The translation unit for a sample; `#line` makes compiler diagnostics name the Markdown file and line.
     StringView Generate(const Sample& s)
     {
-        engine_placeholder::StringBuilder<ArenaAllocator> sb(arena_);
+        vse::StringBuilder<ArenaAllocator> sb(arena_);
         StringView code = Dedent(s.code, s.indent, arena_);
         auto line_directive = [&]()
         {
@@ -456,7 +454,7 @@ private:
             }
             if (e_end || g_end || !(el == gl))
             {
-                engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+                vse::StringBuilder<ArenaAllocator> sb(arena);
                 sb.Append(StringView("first difference at output line "));
                 sb.AppendUInt(line);
                 sb.Append(StringView(": expected "));
@@ -620,7 +618,7 @@ private:
             }
             if (!progress && done < tasks_.Size())
             {
-                engine_placeholder::os::SleepNanos(2 * 1000 * 1000);
+                vse::os::SleepNanos(2 * 1000 * 1000);
             }
         }
     }
@@ -729,10 +727,9 @@ bool RunSamples(const SampleOptions& options, const Vector<Sample, ArenaAllocato
 
 StringView AbsoluteKeepingLinks(StringView path, ArenaAllocator& arena)
 {
-    engine_placeholder::io::Path parsed;  // (on Windows `C:/...` is absolute too)
+    vse::io::Path parsed;  // (on Windows `C:/...` is absolute too)
     if ((path.Length() > 0 && path.Data()[0] == '/') ||
-        (engine_placeholder::io::Path::Parse(path, engine_placeholder::io::NativePathStyle(), &parsed) &&
-         parsed.IsAbsolute()))
+        (vse::io::Path::Parse(path, vse::io::NativePathStyle(), &parsed) && parsed.IsAbsolute()))
     {
         return ArenaCat(arena, path, StringView());
     }

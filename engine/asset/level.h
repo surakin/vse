@@ -37,7 +37,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Stable ids of the level components in the storage registry (the engine's own range, below 1000).
@@ -287,4 +287,4 @@ Status LoadLevelBlob(ByteSpan bytes, const TypeRegistry& types, const storage::C
                      ecs::World& world, storage::KeyIndex& index, LevelData* data = nullptr,
                      const storage::CodecLimits& limits = storage::CodecLimits());
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

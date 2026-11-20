@@ -4,9 +4,9 @@
 #include "types.h"
 #include "cstr/mem_ops.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::u8;
-using engine_placeholder::usize;
+using vse::ArenaAllocator;
+using vse::u8;
+using vse::usize;
 
 TEST_CASE("ArenaAllocator: 1000 varying-size allocations are non-overlapping and intact", "[mem][arena]")
 {
@@ -35,7 +35,7 @@ TEST_CASE("ArenaAllocator: 1000 varying-size allocations are non-overlapping and
         ptrs[i] = p;
         sizes[i] = size;
         // Unique checksum pattern per allocation.
-        engine_placeholder::MemSet(p, static_cast<int>(i % 256), size);
+        vse::MemSet(p, static_cast<int>(i % 256), size);
     }
     REQUIRE(all_allocs_ok);
 

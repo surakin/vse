@@ -9,7 +9,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The command kinds the entity and transform bindings record (see [[script::RegisterEntityCommandKinds]]).
@@ -77,4 +77,4 @@ bool RegisterEntityCommandKinds(CommandKindTable* kinds);
 /// - Fails: returns false when a name is taken.
 bool RegisterEntityBindings(BindingRegistry* registry);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

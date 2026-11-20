@@ -11,7 +11,7 @@
 #include "physics/ids.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 class PhysicsWorld;
@@ -177,4 +177,4 @@ private:
     SolverStats stats_;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

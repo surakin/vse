@@ -23,7 +23,7 @@
 namespace demo
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 // The camera helpers moved to the renderer (Phase 5 Day 73); these names keep the demo and the RHI tests unchanged.
 using renderer::LookAt;

@@ -6,7 +6,7 @@
 #include "ui/widgets/label.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 Size Label::Measure(const Constraints& constraints)
@@ -221,4 +221,4 @@ void Panel::Draw(Canvas& canvas)
     DrawStyleBox(canvas, Bounds(), surface->Themes().Resolve(widget_kind::kPanel, variant_, State(), scale), scale);
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

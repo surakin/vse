@@ -4,7 +4,7 @@
 #include "mem/arena_allocator.h"
 #include "string/string.h"
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 namespace
@@ -342,4 +342,4 @@ void WaylandConnection::ReleaseAll()
     }
 }
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

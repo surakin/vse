@@ -2,7 +2,7 @@
 
 #include "lang/scalar.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -241,4 +241,4 @@ void SurfaceInput::Lost()
     Post(leave);
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

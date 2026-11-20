@@ -1,6 +1,6 @@
 #include "os/session.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 const char* SessionStateName(SessionState state)
@@ -42,4 +42,4 @@ bool SessionCanShowWindows(SessionState state)
     return state == SessionState::Active || state == SessionState::Unknown;
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

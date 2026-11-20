@@ -8,7 +8,7 @@
 
 //! The widgets that hold a number (Phase 15, Day 196): the slider and the spin box.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A thumb on a track that chooses a value in a range.
@@ -175,4 +175,4 @@ private:
     Callback<SpinBox*> on_changed_;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

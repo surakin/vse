@@ -10,11 +10,10 @@
 
 int main(int argc, char** argv)
 {
-    const engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator> line(
-        engine_placeholder::HeapAllocator::Default(), argc, argv);
+    const vse::os::CommandLine<vse::HeapAllocator> line(vse::HeapAllocator::Default(), argc, argv);
     if (line.ArgCount() != 1)
     {
-        engine_placeholder::os::PrintError("usage: %s <output directory>\n", line.ProgramName().Data());
+        vse::os::PrintError("usage: %s <output directory>\n", line.ProgramName().Data());
         return 2;
     }
     using namespace renderer_demo;
@@ -25,19 +24,19 @@ int main(int argc, char** argv)
         io::Path directory;
         if (!io::Path::Parse(line.Arg(0), io::NativePathStyle(), &directory))
         {
-            engine_placeholder::os::PrintError("renderer_demo_mint: the output directory is not a usable path\n");
+            vse::os::PrintError("renderer_demo_mint: the output directory is not a usable path\n");
             return 1;
         }
         const io::Path path = directory.Join(StringView(textures[i].file));
         const demo::RtexImage image = demo::BuildRtex(textures[i].make(), textures[i].format);
         if (const io::Status status = demo::WriteRtex(path, image); status.Failed())
         {
-            engine_placeholder::os::PrintError("renderer_demo_mint: could not write %.*s: %s\n",
-                                               static_cast<int>(path.View().Length()), path.View().Data(),
-                                               io::ErrorName(status.error));
+            vse::os::PrintError("renderer_demo_mint: could not write %.*s: %s\n",
+                                static_cast<int>(path.View().Length()), path.View().Data(),
+                                io::ErrorName(status.error));
             return 1;
         }
-        engine_placeholder::os::Print("wrote %.*s\n", static_cast<int>(path.View().Length()), path.View().Data());
+        vse::os::Print("wrote %.*s\n", static_cast<int>(path.View().Length()), path.View().Data());
     }
     return 0;
 }

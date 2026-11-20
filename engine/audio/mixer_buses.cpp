@@ -6,7 +6,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -655,4 +655,4 @@ void Mixer::ProcessBuses(f32* out)
     }
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

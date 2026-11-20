@@ -16,7 +16,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The command kind `settings.set` records (see [[script::RegisterSettingsCommandKind]]).
@@ -161,4 +161,4 @@ usize RemoveSettingsSubscriptions(SettingsAccess* access, u64 entity_key);
 /// - Fails: returns false when a name is taken.
 bool RegisterSettingsBindings(BindingRegistry* registry);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

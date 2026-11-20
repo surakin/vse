@@ -11,7 +11,7 @@
 #include "cstr/mem_ops.h"
 #include "io/file.h"
 
-namespace engine_placeholder::asset::test
+namespace vse::asset::test
 {
 
 class MemoryFile : public io::File
@@ -139,4 +139,4 @@ inline io::FilePtr FileOf(const Vector<byte>& bytes, bool sparse = false)
     return io::FilePtr(file.Release());
 }
 
-}  // namespace engine_placeholder::asset::test
+}  // namespace vse::asset::test

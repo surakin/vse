@@ -250,7 +250,7 @@ Idempotent and safe to call concurrently: every caller returns only after the th
 `method jobs::IoThread::ThreadId` — defined in `engine/jobs/async_io.h`
 
 ```cpp
-engine_placeholder::ThreadId ThreadId() const;
+vse::ThreadId ThreadId() const;
 ```
 
 Gives the id of the I/O thread, for telling it apart from other threads.

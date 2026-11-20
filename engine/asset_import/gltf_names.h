@@ -9,7 +9,7 @@
 #include "containers/span.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Cleans a glTF name into one resource-path segment: `/`, `\`, control characters become `_`, `.` and `..` become `_`.
@@ -67,4 +67,4 @@ void AddImportWarning(ImportReport* report, StringView where, StringView what);
 /// - Fails: never.
 void AddImportNote(ImportReport* report, StringView where, StringView what);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

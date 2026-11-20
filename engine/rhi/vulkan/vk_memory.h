@@ -13,7 +13,7 @@
 //! There is no Vulkan type in this header's logic: the allocator talks to a [[rhi::vulkan::MemoryBackend]], which
 //! the Vulkan device implements and the tests replace with a fake.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// The most memory types and heaps the allocator tracks (the Vulkan limits).
@@ -382,4 +382,4 @@ private:
     u64 objects_made_ = 0;
 };
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

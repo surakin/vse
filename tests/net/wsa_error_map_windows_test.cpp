@@ -6,7 +6,7 @@
 #include "containers/array.h"
 #include "net/windows/wsa_error.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -100,4 +100,4 @@ TEST_CASE("GetAddrInfoW results map to the same meanings as POSIX's EAI_ codes",
 }
 
 }  // namespace
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

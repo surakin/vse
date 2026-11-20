@@ -5,7 +5,7 @@
 
 //! Mapping between the portable [[rhi::Format]] and `VkFormat`.
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 /// Returns the `VkFormat` for a portable format, or `VK_FORMAT_UNDEFINED` for `Format::Undefined` and `Format::Count`.
@@ -24,4 +24,4 @@ VkImageAspectFlags AspectsOf(Format format);
 /// split.
 VkImageAspectFlags CopyAspectOf(Format format);
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

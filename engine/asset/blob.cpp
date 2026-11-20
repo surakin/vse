@@ -4,7 +4,7 @@
 #include "cstr/mem_ops.h"
 #include "log/assert.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -438,4 +438,4 @@ Status PeekBlobHeader(ByteSpan header, BlobHeaderInfo* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

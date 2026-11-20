@@ -2,7 +2,7 @@
 
 #include "io/file_system.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -115,4 +115,4 @@ Status PakBackend::ReadTable(ResourceTable* out)
     return reader_.ReadNames(*types_, out);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

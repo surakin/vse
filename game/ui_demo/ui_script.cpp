@@ -11,7 +11,7 @@
 namespace ui_demo
 {
 
-using namespace engine_placeholder::ui;
+using namespace vse::ui;
 
 namespace
 {

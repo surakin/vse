@@ -30,7 +30,7 @@ struct Extracted
 
     Str Dump(bool hidden = false)
     {
-        engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+        vse::StringBuilder<ArenaAllocator> sb(arena);
         DumpTree(ex, scan, sb, hidden);
         StringView v = sb.View();
         return Str(v.Data(), v.Length());
@@ -77,9 +77,8 @@ void ExtractorTestListFiles(const Str& dir, const char* suffix, StrList& out)
         {
             ExtractorTestListFiles(p, suffix, out);
         }
-        else if (p.Size() >= engine_placeholder::CStrLength(suffix) &&
-                 p.Compare(p.Size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix),
-                           suffix) == 0)
+        else if (p.Size() >= vse::CStrLength(suffix) &&
+                 p.Compare(p.Size() - vse::CStrLength(suffix), vse::CStrLength(suffix), suffix) == 0)
         {
             out.Push(p);
         }

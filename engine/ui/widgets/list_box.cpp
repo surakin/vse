@@ -5,7 +5,7 @@
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 ListBox::ListBox(StringView name) : Widget(name)
@@ -775,4 +775,4 @@ void ListBox::OnEvent(Event& event)
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

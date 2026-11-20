@@ -31,7 +31,7 @@
 //!   the glyphs then land on whole pixels as `renderer::TextRenderer` places them.
 //! - A colour is packed RGBA with red in the lowest byte; a fully transparent colour draws nothing.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Names an image the renderer can bind. 0 means "no image"; the meaning of other values belongs to the renderer.
@@ -170,4 +170,4 @@ public:
     }
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -26,7 +26,7 @@ A path is an alias. `asset::NormalizePath` gives its one canonical spelling: UTF
 #include "asset/resource_table.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::ResourceTable table;
@@ -70,7 +70,7 @@ A source of resources implements `asset::ResourceBackend`: `Stat` and `Open` by 
 #include "asset/mount_table.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -123,7 +123,7 @@ A pak holds many blobs in one file and finds them by id. The layout (`engine/ass
 #include "io/file_system.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -184,7 +184,7 @@ ibm spine 1 0 0 0  0 1 0 -1.2  0 0 1 0
 #include "cstr/format.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -240,7 +240,7 @@ skin 2 0 1
 #include "asset/mesh.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -302,7 +302,7 @@ event 0.5 footstep 7
 #include "asset/skeleton.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -388,7 +388,7 @@ In `.tex.src`, `format bc1` (with `srgb true` giving `BC1_SRGB`), `bc4` (red) an
 #include "asset/texture.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -454,7 +454,7 @@ A level (`asset::types::kLevel`, `LEVL`) is the same data as a save: one `storag
 #include "storage/builtin_components.h"
 #include "storage/component_record.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -548,7 +548,7 @@ A loader turns a blob into an object of its C++ type (`RegisterLoader<T>(functio
 #include "os/console.h"
 #include "storage/builtin_components.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -594,7 +594,7 @@ int main() {
 #include "os/console.h"
 #include "storage/builtin_components.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::TypeRegistry types;
@@ -656,7 +656,7 @@ Limits: a path or prefix is at most 1,024 bytes and a page at most 1,024 entries
 #include "asset/resource_protocol.h"
 #include "os/console.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 int main() {
     asset::ProtoData request;

@@ -12,7 +12,7 @@
 #include "containers/array.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// One specular-glossiness sample, linear.
@@ -86,4 +86,4 @@ struct SpecGlossImages
 Status ConvertSpecGlossImages(const SpecGlossImages& in, u64 max_pixels, DecodedImage* base_color,
                               DecodedImage* metal_rough);
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

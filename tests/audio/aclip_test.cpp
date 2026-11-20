@@ -11,8 +11,8 @@
 #include "containers/unique_ptr.h"
 #include "wav_builder.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::asset;
+using namespace vse;
+using namespace vse::asset;
 using namespace audio_test;
 
 namespace

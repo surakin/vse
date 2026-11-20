@@ -3,7 +3,7 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -80,4 +80,4 @@ bool RegisterNullBackend()
     return RegisterBackend(d);
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

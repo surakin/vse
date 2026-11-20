@@ -8,7 +8,7 @@
 #include "engine_c/runtime.h"
 #include "types.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// What one resolve did.
@@ -32,4 +32,4 @@ struct ColliderResolveCounts
 /// - Ownership: borrows its arguments for the call only.
 void ResolveColliderSources(WorldObject& object, ResourceHost* resources, ColliderResolveCounts* counts);
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

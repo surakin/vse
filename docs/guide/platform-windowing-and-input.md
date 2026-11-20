@@ -250,7 +250,7 @@ A graphics layer needs three things from a window that the polled interface does
 
 #include "platform/window.h"
 
-using namespace engine_placeholder::os;
+using namespace vse::os;
 
 // What a presentation layer does with the answer. The enumerators are the only thing a caller needs to know
 // about the platform, and the surface-creation call differs per kind.

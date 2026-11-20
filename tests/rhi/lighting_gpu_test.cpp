@@ -12,8 +12,8 @@
 #include "os/console.h"
 #include "os/os.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::renderer;
+using namespace vse;
+using namespace vse::renderer;
 using namespace gbuffer_rig;
 
 namespace
@@ -145,7 +145,7 @@ LitFrame RenderLit(Rig& rig, const RenderScene& scene, const Camera& camera, f32
 }
 
 // The color the CPU model gives for a flat surface at a world position.
-Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, engine_placeholder::Span<const Light> lights)
+Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, vse::Span<const Light> lights)
 {
     const Vec3 to_eye = eye - world;
     const f32 len = Sqrt(to_eye.x * to_eye.x + to_eye.y * to_eye.y + to_eye.z * to_eye.z);
@@ -186,7 +186,7 @@ Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, Initial
     {
         list.Push(l);
     }
-    return Expected(s, eye, world, engine_placeholder::Span<const Light>(list));
+    return Expected(s, eye, world, vse::Span<const Light>(list));
 }
 
 bool Close(f32 got, f32 want, f32 relative = 0.02f)
@@ -281,8 +281,7 @@ TEST_CASE("A lit plane matches the CPU lighting model, and background pixels sta
                 const Pixel p = Project(cam, probe);
                 const Vec3 world = ReconstructWorldPosition(p.x, p.y, p.depth, kW, kH, fd.inverse_view_projection);
                 // The lights, and the emission the G-buffer's emissive target holds, added once (glTF coverage Day 2).
-                const Vec3 want = Expected(surface, cam.position, world,
-                                           engine_placeholder::Span<const Light>(lights)) +
+                const Vec3 want = Expected(surface, cam.position, world, vse::Span<const Light>(lights)) +
                                   Vec3(0.03f, 0.025f, 0.02f);
                 INFO("probe " << probe.x << " " << probe.z << " want " << want.x << " " << want.y << " " << want.z
                               << " got " << L.Accum(p.x, p.y, 0) << " " << L.Accum(p.x, p.y, 1) << " "
@@ -772,8 +771,7 @@ TEST_CASE("Overlapping point lights sum linearly, and a culled light issues no d
             {
                 Pixel p;
                 const Vec3 world = pr.WorldAt(cam, probe, &p);
-                const Vec3 want = Expected(pr.surface, cam.position, world,
-                                           engine_placeholder::Span<const Light>(lights));
+                const Vec3 want = Expected(pr.surface, cam.position, world, vse::Span<const Light>(lights));
                 INFO("probe " << probe.x << " " << probe.z << " want " << want.x << " got " << L.Accum(p.x, p.y, 0));
                 REQUIRE(want.x > 0.03f);
                 for (u32 c = 0; c < 3; ++c)

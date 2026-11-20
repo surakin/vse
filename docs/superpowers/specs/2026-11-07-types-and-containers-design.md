@@ -69,7 +69,7 @@ facilities (`std::is_convertible_v`, `std::numeric_limits`, `std::align_val_t`),
 ## 5. Class sketches
 
 ```cpp
-namespace engine_placeholder {
+namespace vse {
 using byte = u8;  using isize = std::ptrdiff_t;
 
 struct alignas(16) u128 { u64 lo = 0; u64 hi = 0; /* constexpr ctor from u64, operators, ToText, Hash, ... */ };

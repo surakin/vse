@@ -16,9 +16,9 @@
 #include "temp_dir.h"
 #include "test_text.h"
 
-using namespace engine_placeholder;
-namespace rs = engine_placeholder::renderer;
-namespace st = engine_placeholder::settings;
+using namespace vse;
+namespace rs = vse::renderer;
+namespace st = vse::settings;
 
 namespace
 {

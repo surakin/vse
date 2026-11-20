@@ -10,7 +10,7 @@
 //! Everything it prints is prepared ahead of time (see crash_context.h, the log ring in log.h, and the state providers
 //! below), so writing it allocates nothing and takes no lock and can run inside a crashing process. It writes in small
 //! pieces, one section line at a time, so if something faults in the middle the part already written is intact.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Most state providers that can be registered.
@@ -112,4 +112,4 @@ void WriteCrashContext(const CrashReportSink& sink);
 /// How many of the most recent log lines a report includes.
 constexpr usize kCrashReportLogLines = 32;
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

@@ -14,7 +14,7 @@
 #include "containers/vector.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 namespace
 {
@@ -709,4 +709,4 @@ Status SqliteDatabase::Open(const OpenOptions& options, UniquePtr<Connection>* o
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

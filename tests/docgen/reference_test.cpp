@@ -13,7 +13,7 @@ using docgen_test::Num;
 using docgen_test::Str;
 using docgen_test::StrList;
 using docgen_test::StrPairList;
-namespace io = engine_placeholder::io;
+namespace io = vse::io;
 
 namespace
 {
@@ -232,7 +232,7 @@ TEST_CASE("Symbol IDs drop the outer namespace, normalize parameters and keep qu
     Project p(
         {{"h/a.h",
           "#pragma once\n"
-          "namespace engine_placeholder {\nnamespace n {\n"
+          "namespace vse {\nnamespace n {\n"
           "/// A class.\nclass K {\npublic:\n"
           "  /// Sum.\n  int Sum(const std::atomic<int>&  value,  unsigned long long n = 4, char* const names[], Foo<int, 2> f) const noexcept;\n"
           "  /// Plain.\n  void Plain(void);\n"
@@ -298,7 +298,7 @@ TEST_CASE("Hidden, Internal and namespace-less declarations are indexed correctl
 TEST_CASE("Reference resolution: qualified, partial, hinted, ambiguous, missing", "[docgen][reference][resolve]")
 {
     Project p({{"h/a.h", "#pragma once\n"
-                         "namespace engine_placeholder {\nnamespace jobs {\n"
+                         "namespace vse {\nnamespace jobs {\n"
                          "/// Counter.\nclass Counter {\npublic:\n  /// Ctor.\n  Counter();\n"
                          "  /// Inc.\n  void Increment(unsigned long n = 1);\n"
                          "  /// Help.\n  void Help(int a);\n  /// Help.\n  void Help(Counter& c);\n};\n"
@@ -322,7 +322,7 @@ TEST_CASE("Reference resolution: qualified, partial, hinted, ambiguous, missing"
     };
     r("jobs::Counter", "jobs::Counter");
     r("Counter", "jobs::Counter");  // the class, not its constructor
-    r("engine_placeholder::jobs::Counter", "jobs::Counter");
+    r("vse::jobs::Counter", "jobs::Counter");
     r("Counter::Counter", "jobs::Counter::Counter()");
     r("Counter::Increment", "jobs::Counter::Increment(unsigned long)");
     r("jobs::Counter::Help(int)", "jobs::Counter::Help(int)");
@@ -795,7 +795,7 @@ TEST_CASE("Reference: [review] deleted and defaulted members render as such, not
 {
     Project p(
         {{"h/a.h",
-          "#pragma once\nnamespace engine_placeholder {\n/// A thing.\nstruct T {\n  T() = default;\n  T(const T&) = delete;\n  /// Doc.\n  void F();\n  void G();\n};\n}\n"}},
+          "#pragma once\nnamespace vse {\n/// A thing.\nstruct T {\n  T() = default;\n  T(const T&) = delete;\n  /// Doc.\n  void F();\n  void G();\n};\n}\n"}},
         "module m \"M\"\n  header h/*.h\n");
     Str map = p.dir.path + "/modules.txt";
     Built b(p.dir.path, map);
@@ -825,8 +825,8 @@ TEST_CASE("Reference output and the collected file lists do not depend on direct
         for (int f = 0; f < 6; ++f)
         {
             const Str name = "h/d" + Num(d) + "/f" + Num(f) + ".h";
-            files.Push({name, "#pragma once\nnamespace engine_placeholder {\n/// Thing " + Num(d * 10 + f) +
-                                  ".\nstruct T" + Num(d * 10 + f) + " {};\n}\n"});
+            files.Push({name, "#pragma once\nnamespace vse {\n/// Thing " + Num(d * 10 + f) + ".\nstruct T" +
+                                  Num(d * 10 + f) + " {};\n}\n"});
         }
     }
     for (int m = 0; m < 5; ++m)

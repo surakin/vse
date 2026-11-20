@@ -11,7 +11,7 @@
 #include "renderer/shader_reflection.h"
 #include "asset_import/detail/source_text.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -952,4 +952,4 @@ Status FormatMaterialBlob(ByteSpan blob, const TypeRegistry& types, MaterialPath
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -1,6 +1,6 @@
 #include "asset/asset_module.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 u32 CurrentContainerVersion()
@@ -8,4 +8,4 @@ u32 CurrentContainerVersion()
     return kContainerVersion;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

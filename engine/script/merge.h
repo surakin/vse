@@ -10,7 +10,7 @@
 #include "script/command_buffer.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// What the merge does when two partitions change the same thing of one entity in one tick.
@@ -183,4 +183,4 @@ struct MergeReport
 MergeReport Merge(ecs::World* world, Span<CommandBuffer* const> buffers, const CommandKindTable& kinds,
                   ConflictPolicy policy, void* user = nullptr);
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

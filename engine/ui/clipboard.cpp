@@ -1,6 +1,6 @@
 #include "ui/clipboard.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 void LocalClipboard::SetText(StringView text)
@@ -50,4 +50,4 @@ Clipboard::Ticket LocalClipboard::RequestPrimaryPaste(PasteFunction function, vo
     return 0;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

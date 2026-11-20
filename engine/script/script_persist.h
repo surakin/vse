@@ -8,7 +8,7 @@
 #include "storage/component_registry.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// The stable ids of the script components in the storage registry.
@@ -90,4 +90,4 @@ struct LoadReport
     u64 corrupt = 0;
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

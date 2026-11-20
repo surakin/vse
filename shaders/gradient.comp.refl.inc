@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kGradientCompReflByteCount = 84;
 
@@ -17,4 +17,4 @@ inline constexpr u8 kGradientCompRefl[kGradientCompReflByteCount] = {
     0, 0, 0, 0,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

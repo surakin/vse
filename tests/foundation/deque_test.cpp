@@ -6,7 +6,7 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 TEST_CASE("Deque: both ends, wrap-around and growth while wrapped", "[containers][deque]")
 {

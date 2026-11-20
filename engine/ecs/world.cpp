@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::ecs
+namespace vse::ecs
 {
 
 namespace detail
@@ -583,4 +583,4 @@ ValidationReport World::Validate() const
     return report;
 }
 
-}  // namespace engine_placeholder::ecs
+}  // namespace vse::ecs

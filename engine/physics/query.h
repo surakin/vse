@@ -12,7 +12,7 @@
 #include "physics/world.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Which colliders a query looks at.
@@ -140,4 +140,4 @@ usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& positio
 bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance, const PhysicsQueryFilter& filter,
                   PhysicsHit* hit);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

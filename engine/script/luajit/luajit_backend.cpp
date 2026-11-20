@@ -20,7 +20,7 @@
 // is either a lua_CFunction run under lua_cpcall / lua_pcall / lua_resume, or is called only from one; such a function
 // keeps no owning C++ object alive across a Lua call (owners live in the frame that made the protected call, and are
 // reached through a pointer); and the engine's own checks (limits, bad types) are returned as values and never raised.
-namespace engine_placeholder::script::luajit
+namespace vse::script::luajit
 {
 
 namespace
@@ -2484,4 +2484,4 @@ bool RegisterLuaJitBackend()
     return RegisterBackend(descriptor);
 }
 
-}  // namespace engine_placeholder::script::luajit
+}  // namespace vse::script::luajit

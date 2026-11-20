@@ -7,7 +7,7 @@
 #include "string_view.h"
 #include "types.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 TEST_CASE("Fnv1a64 gives the published FNV-1a 64-bit values", "[containers][hash]")
 {

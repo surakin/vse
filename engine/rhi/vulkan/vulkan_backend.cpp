@@ -7,7 +7,7 @@
 #include "rhi/vulkan/vk_loader.h"
 #include "rhi/vulkan/vulkan_device.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -50,4 +50,4 @@ bool RegisterVulkanBackend()
     return RegisterBackend(d);
 }
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

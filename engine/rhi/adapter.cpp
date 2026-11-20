@@ -3,7 +3,7 @@
 #include "cstr/cstr.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 namespace
@@ -192,4 +192,4 @@ void NullAdapters(AdapterList* out)
 
 }  // namespace detail
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

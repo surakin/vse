@@ -8,7 +8,7 @@
 #include "physics/validation.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The kinds of joint.
@@ -132,4 +132,4 @@ f32 HingeRawAngle(const JointDesc& desc, const Quaternion& orientation_a, const 
 /// - Fails: never.
 f32 WrapAngle(f32 angle);
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

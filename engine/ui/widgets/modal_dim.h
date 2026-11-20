@@ -5,7 +5,7 @@
 //! The shade under a modal dialog (Phase 15, Day 199): it covers the surface, takes every pointer event, and is drawn
 //! in the `modaldim` style.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A full-surface widget that shades what lies beneath a modal dialog and stops the pointer from reaching it. The
@@ -22,4 +22,4 @@ public:
     void Draw(Canvas& canvas) override;
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

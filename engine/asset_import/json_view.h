@@ -16,7 +16,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 class JsonDocument;
@@ -200,4 +200,4 @@ private:
     const void* root_ = nullptr;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

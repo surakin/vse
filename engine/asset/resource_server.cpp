@@ -5,7 +5,7 @@
 #include "os/os.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -474,4 +474,4 @@ void ResourceServer::Serve(Connection& connection, const ProtoData& request)
     }
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

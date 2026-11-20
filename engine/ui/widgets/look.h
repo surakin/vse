@@ -6,7 +6,7 @@
 
 //! Shared drawing of the widgets of Phase 15 Day 195: a resolved style turned into a box, in logical units.
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// Returns whether a packed `0xAABBGGRR` color is not fully transparent.
@@ -109,4 +109,4 @@ inline void DrawStyleBox(Canvas& canvas, const Rect& rect, const ResolvedStyle& 
     }
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

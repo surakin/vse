@@ -7,7 +7,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// Lists the active render endpoints; each name is the endpoint's id, and the system's default output (the console
@@ -27,4 +27,4 @@ DeviceStatus EnumerateWasapiDevices(Vector<DeviceDescription>* out);
 /// - Fails: reported by a null result.
 UniquePtr<AudioDevice> CreateWasapiDevice();
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -13,7 +13,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 /// A capability a backend may lack. Code asks [[database::Connection::Supports]] before relying on one; using a missing
@@ -301,4 +301,4 @@ private:
     bool open_ = false;
 };
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

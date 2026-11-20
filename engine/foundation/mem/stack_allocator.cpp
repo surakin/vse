@@ -2,7 +2,7 @@
 
 #include "os/os.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 StackAllocator::StackAllocator(usize capacity) : capacity_(capacity)
@@ -49,4 +49,4 @@ void StackAllocator::PopToMarker(Marker marker)
     offset_ = marker;
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

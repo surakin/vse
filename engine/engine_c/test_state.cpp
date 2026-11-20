@@ -24,7 +24,7 @@
 #include "mem/heap_allocator.h"
 #include "sync/atomic.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {
@@ -128,8 +128,8 @@ void CrashInJob()
 
 int LoseSurfaceDevice(unsigned long long surface)
 {
-    engine_placeholder::engine_c::Runtime* runtime = engine_placeholder::engine_c::CurrentRuntime();
-    engine_placeholder::engine_c::SurfaceHost* host = runtime != nullptr ? runtime->SurfacesIfCreated() : nullptr;
+    vse::engine_c::Runtime* runtime = vse::engine_c::CurrentRuntime();
+    vse::engine_c::SurfaceHost* host = runtime != nullptr ? runtime->SurfacesIfCreated() : nullptr;
     if (host == nullptr)
     {
         return 0;
@@ -141,7 +141,7 @@ int LoseSurfaceDevice(unsigned long long surface)
 
 }  // namespace
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 const engine_test_extension* TestStateExtension()
@@ -168,4 +168,4 @@ const engine_test_extension* TestStateExtension()
     return &filled;
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

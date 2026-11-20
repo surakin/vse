@@ -6,7 +6,7 @@
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
 
-namespace engine_placeholder::engine_c::macos
+namespace vse::engine_c::macos
 {
 
 namespace
@@ -132,4 +132,4 @@ void DetachLayer(CocoaLayer* bound)
     }
 }
 
-}  // namespace engine_placeholder::engine_c::macos
+}  // namespace vse::engine_c::macos

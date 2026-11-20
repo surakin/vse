@@ -1,6 +1,6 @@
 #include "engine_c/status_map.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 namespace
@@ -84,4 +84,4 @@ const char* StatusName(engine_status status)
     return index < kStatusCount ? kNames[index] : "unknown";
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

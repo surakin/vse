@@ -9,7 +9,7 @@
 #include "net/endpoint.h"
 #include "net/status.h"
 
-namespace engine_placeholder::net::posix
+namespace vse::net::posix
 {
 
 // The portable code of an errno value.
@@ -40,4 +40,4 @@ int SendFlags();
 // connection being torn down is Closed).
 ErrorCode SendErrorCode(int error);
 
-}  // namespace engine_placeholder::net::posix
+}  // namespace vse::net::posix

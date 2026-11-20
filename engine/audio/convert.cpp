@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -309,4 +309,4 @@ bool ApplyChannelMatrix(const ChannelMatrix& matrix, Span<const f32> in, Span<f3
     return true;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -4,7 +4,7 @@
 #include "io/directory.h"
 #include "io/detail/directory_identity.h"
 
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 Directory::Directory(Directory&& other) noexcept : handle_(other.handle_), path_(static_cast<Path&&>(other.path_))
@@ -432,4 +432,4 @@ Status WalkDirectory(const Path& root, const WalkOptions& options, WalkVisitor v
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

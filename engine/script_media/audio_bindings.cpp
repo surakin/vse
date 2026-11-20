@@ -8,7 +8,7 @@
 #include "script/script_world.h"
 #include "storage/field.h"
 
-namespace engine_placeholder::script_media
+namespace vse::script_media
 {
 
 using script::CommandKind;
@@ -839,4 +839,4 @@ AudioEventReport PumpAudioEvents(audio::Mixer* mixer, VoiceTable* voices, script
     return report;
 }
 
-}  // namespace engine_placeholder::script_media
+}  // namespace vse::script_media

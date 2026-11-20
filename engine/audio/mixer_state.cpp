@@ -4,7 +4,7 @@
 #include "audio/state_io.h"
 #include "bytes/byte_reader.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -536,4 +536,4 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
     return SnapshotStatus::Ok;
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

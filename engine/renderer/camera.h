@@ -15,7 +15,7 @@
 #include "math/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// A perspective projection for a right-handed view space and Vulkan clip space (Y down, depth 0..1).
@@ -134,4 +134,4 @@ struct Camera
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 Camera MakeLookAtCamera(const Vec3& eye, const Vec3& target, const Vec3& up);
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

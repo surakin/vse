@@ -4,7 +4,7 @@
 
 //! Type traits (Phase 16): the engine's spelling of `<type_traits>`. Variable templates are `IsX<T>`, type
 //! transformations are aliases `Remove...<T>`; each is exactly the standard facility of the same meaning.
-namespace engine_placeholder
+namespace vse
 {
 
 /// A compile-time constant of type `T` (`std::integral_constant`).
@@ -107,4 +107,4 @@ constexpr bool IsConstantEvaluated() noexcept
     return std::is_constant_evaluated();
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

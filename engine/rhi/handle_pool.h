@@ -10,7 +10,7 @@
 
 //! Slot storage for device-owned resources, addressed by generation-checked handles, with deferred destruction.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// A pool of `T` values addressed by [[rhi::Handle]], with generation checking and a deferred-destruction queue.
@@ -350,4 +350,4 @@ private:
     usize retired_count_ = 0;
 };
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

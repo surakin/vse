@@ -7,7 +7,7 @@
 #include "mem/heap_allocator.h"
 #include "net/endpoint.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 namespace
 {
@@ -649,4 +649,4 @@ TEST_CASE("Status: success, portable codes, the OS error kept as a detail", "[ne
 }
 
 }  // namespace
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

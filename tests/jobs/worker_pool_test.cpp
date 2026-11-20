@@ -19,8 +19,8 @@
 #include "jobs/detail/thread_platform.h"
 #include "jobs/worker_pool.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::jobs;
+using namespace vse;
+using namespace vse::jobs;
 
 namespace
 {

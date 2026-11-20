@@ -12,7 +12,7 @@
 //! and glyph modes, premultiplied blending, the scissor of each command, a target that is not sRGB (colours are written
 //! as given). Image-mode commands are skipped (a software test has no image textures).
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// A CPU image of RGBA8 pixels, rows top to bottom.
@@ -44,4 +44,4 @@ struct RasterImage
 void RasterizeDrawList(const DrawList& list, const text::GlyphAtlas* atlas, u32 width, u32 height, u32 clear_abgr,
                        RasterImage* out);
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

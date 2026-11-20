@@ -4,7 +4,7 @@
 
 #include <sqlite3.h>
 
-namespace engine_placeholder::database::sqlite_detail
+namespace vse::database::sqlite_detail
 {
 
 /// The VFS named `"engine"`: files through `io::File`, locks and the write-ahead-log index in process memory.
@@ -14,4 +14,4 @@ namespace engine_placeholder::database::sqlite_detail
 /// - Fails: never.
 sqlite3_vfs* EngineVfs();
 
-}  // namespace engine_placeholder::database::sqlite_detail
+}  // namespace vse::database::sqlite_detail

@@ -14,7 +14,7 @@
 //! no space; one that is only hidden keeps it. Children read their `LayoutProps` (weight, alignment, minimum and
 //! maximum size, grid cell, anchors).
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 /// The direction a [[ui::BoxLayout]] lays its children along.
@@ -171,4 +171,4 @@ public:
     explicit Spacer(f32 weight = 1.0f);
 };
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -4,7 +4,7 @@
 #include "ui/surface.h"
 #include "ui/widgets/label.h"
 
-namespace engine_placeholder::ui
+namespace vse::ui
 {
 
 namespace
@@ -81,4 +81,4 @@ Dialog* ShowConfirm(Surface* surface, StringView title, StringView text, StringV
     return raw;
 }
 
-}  // namespace engine_placeholder::ui
+}  // namespace vse::ui

@@ -4,8 +4,8 @@
 #include "lang/limits.h"
 #include "physics/state_hash.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::physics;
+using namespace vse;
+using namespace vse::physics;
 
 TEST_CASE("StateHasher: FNV-1a 64 on the published test vectors", "[physics][hash]")
 {

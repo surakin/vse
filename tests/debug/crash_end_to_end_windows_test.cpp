@@ -33,8 +33,8 @@
 
 #include "os/windows/win32.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 using engine_test::MakeText;
 using engine_test::Text;
 using engine_test::TextList;

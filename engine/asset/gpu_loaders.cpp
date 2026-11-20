@@ -3,7 +3,7 @@
 #include "cstr/format.h"
 #include "renderer/shader_permutation.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 GpuMaterial::~GpuMaterial()
@@ -429,4 +429,4 @@ void RegisterGpuLoaders(ResourceManager* manager, GpuAssetContext* context)
     manager->RegisterLoader<GpuMaterialAsset>(&LoadGpuMaterial, context);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

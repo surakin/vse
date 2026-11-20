@@ -16,7 +16,7 @@
 namespace demo
 {
 
-using namespace engine_placeholder;
+using namespace vse;
 
 struct Rgba
 {

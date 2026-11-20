@@ -8,9 +8,9 @@
 #include "string/string.h"
 #include "types.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::HashMap;
-using engine_placeholder::usize;
+using vse::ArenaAllocator;
+using vse::HashMap;
+using vse::usize;
 
 TEST_CASE("HashMap: insert/find/remove stays correct across a 1000-entry churn", "[containers][hash_map]")
 {
@@ -90,8 +90,8 @@ TEST_CASE("HashMap: tombstone accumulation from insert/remove churn still trigge
 
 TEST_CASE("HashMap: insert/remove churn with few live keys does not grow the table", "[containers][hash_map]")
 {
-    engine_placeholder::HeapAllocator heap;
-    HashMap<usize, usize, engine_placeholder::HeapAllocator> map(heap);
+    vse::HeapAllocator heap;
+    HashMap<usize, usize, vse::HeapAllocator> map(heap);
     for (usize k = 0; k < 10; ++k)
     {
         map.Insert(k, k);
@@ -126,15 +126,15 @@ TEST_CASE("HashMap: insert/remove churn with few live keys does not grow the tab
 namespace
 {
 
-using engine_placeholder::HeapAllocator;
-using engine_placeholder::Move;
-using engine_placeholder::StringView;
-using engine_placeholder::u32;
-using Name = engine_placeholder::String<HeapAllocator>;
+using vse::HeapAllocator;
+using vse::Move;
+using vse::StringView;
+using vse::u32;
+using Name = vse::String<HeapAllocator>;
 
 Name MakeName(u32 i)
 {
-    engine_placeholder::Array<char, 16> text{};
+    vse::Array<char, 16> text{};
     usize n = 0;
     text[n++] = 'n';
     do
@@ -245,7 +245,7 @@ TEST_CASE("HashMap: a moved map keeps its entries and the moved-from map can be 
 
 TEST_CASE("HashMap: the StringView hash agrees with the String hash", "[containers][hash_map]")
 {
-    using engine_placeholder::Hash;
+    using vse::Hash;
     const Name name(HeapAllocator::Default(), StringView("sk\xC3\xA5l.lua"));
     CHECK(Hash<Name>{}(name) == Hash<StringView>{}(StringView("sk\xC3\xA5l.lua")));
     CHECK(Hash<StringView>{}(StringView("a")) != Hash<StringView>{}(StringView("b")));
@@ -337,23 +337,23 @@ TEST_CASE("HashMap: a key of another type is converted before it is hashed", "[c
     CHECK(names.Find(StringView("n5")) != nullptr);
     CHECK(names.Emplace("n6", 6u).inserted);
     CHECK(names.Find(MakeName(6)) != nullptr);
-    HashMap<engine_placeholder::u64, u32, HeapAllocator> wide(HeapAllocator::Default());
+    HashMap<vse::u64, u32, HeapAllocator> wide(HeapAllocator::Default());
     for (int i = 0; i < 100; ++i)
     {
         wide.Insert(i, static_cast<u32>(i));
     }
-    for (engine_placeholder::u64 i = 0; i < 100; ++i)
+    for (vse::u64 i = 0; i < 100; ++i)
     {
         REQUIRE(wide.Find(i) != nullptr);
         CHECK(*wide.Find(i) == i);
     }
     // A negative int hashed as an i32 differs from the same value hashed as an i64.
-    HashMap<engine_placeholder::i64, u32, HeapAllocator> signed_keys(HeapAllocator::Default());
+    HashMap<vse::i64, u32, HeapAllocator> signed_keys(HeapAllocator::Default());
     for (int i = -50; i < 0; ++i)
     {
         signed_keys.Insert(i, static_cast<u32>(-i));
     }
-    for (engine_placeholder::i64 i = -50; i < 0; ++i)
+    for (vse::i64 i = -50; i < 0; ++i)
     {
         REQUIRE(signed_keys.Find(i) != nullptr);
         CHECK(*signed_keys.Find(i) == static_cast<u32>(-i));
@@ -371,7 +371,7 @@ TEST_CASE("HashMap: a range-for visits every entry once, through churn", "[conta
     {
         map.Remove(i);
     }
-    engine_placeholder::Vector<u32> seen;
+    vse::Vector<u32> seen;
     seen.Resize(2000);
     for (auto& [key, value] : map)
     {

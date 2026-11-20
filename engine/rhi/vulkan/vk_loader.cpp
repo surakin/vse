@@ -7,7 +7,7 @@
 #include "rhi/rhi_log.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::rhi::vulkan
+namespace vse::rhi::vulkan
 {
 
 const char* LoaderStatusName(LoaderStatus status)
@@ -47,4 +47,4 @@ LoaderStatus LoadVulkanLoader(VulkanLoader* out)
     return LoaderStatus::Ok;
 }
 
-}  // namespace engine_placeholder::rhi::vulkan
+}  // namespace vse::rhi::vulkan

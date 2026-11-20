@@ -12,7 +12,7 @@
 #include "script/script_assets.h"
 #include "sync/thread.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 namespace
 {
@@ -415,4 +415,4 @@ TEST_CASE("script assets: a script whose dependency is not a script is refused",
     CHECK(view.Open(CopyShared(blob), rig.types).Failed());
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

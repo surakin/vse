@@ -15,7 +15,7 @@
 //! the best `k` without sorting the rest (container audit series, Day 3). The sorts also take a [[Vector]] or anything
 //! else with `Data()` and `Size()`.
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Returns the smaller of two values (the first if they are equal).
@@ -641,4 +641,4 @@ template <typename T, typename Less> void PartialSort(Span<T> items, usize count
     Sort(Span<T>(items.Data(), count - 1), less);
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

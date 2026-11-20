@@ -4,7 +4,7 @@
 #include "build_defs.h"
 #include "cstr/cstr.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using namespace ecs_bench;
 
 namespace

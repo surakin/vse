@@ -12,7 +12,7 @@
 // small recorder in front of the library's own handler. It runs on the faulting thread, builds a CrashEvent, hands it
 // to the neutral half to write the report, and then calls the library's handler, which writes the dump. The recorder
 // never replaces the library.
-namespace engine_placeholder::debug::detail
+namespace vse::debug::detail
 {
 
 // What the platform learned about a fault, on the faulting thread.
@@ -81,4 +81,4 @@ void FinishCrashEventHookRemoval();
 void ReportCrashFromExceptionPointers(const void* exception_pointers);
 #endif
 
-}  // namespace engine_placeholder::debug::detail
+}  // namespace vse::debug::detail

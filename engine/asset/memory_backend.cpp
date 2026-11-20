@@ -3,7 +3,7 @@
 #include "asset/blob.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 struct HostMemoryBackend::Entry
 {
@@ -519,4 +519,4 @@ Status HostMemoryBackend::Watch(Vector<ChangeRecord>* out)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

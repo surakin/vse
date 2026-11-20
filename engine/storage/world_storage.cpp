@@ -12,7 +12,7 @@
 #include "storage/save_plan.h"
 #include "storage/save_session.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 using detail::Chosen;
@@ -1240,4 +1240,4 @@ Status WorldStorage::List(const KeyRange& range, usize limit, Vector<EntityKey>*
     return ListKeys(*store_, range, limit, out);
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

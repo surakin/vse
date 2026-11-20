@@ -6,7 +6,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::asset::test
+namespace vse::asset::test
 {
 
 inline const u8 kJpegBaseline444[902] = {
@@ -206,4 +206,4 @@ inline const u8 kJpegGray[433] = {
     0x65, 0x4c, 0xec, 0xff, 0x00, 0x89, 0x6f, 0xfe, 0x3b, 0xfe, 0x7f, 0xcf, 0xeb, 0xff, 0xd9,
 };
 
-}  // namespace engine_placeholder::asset::test
+}  // namespace vse::asset::test

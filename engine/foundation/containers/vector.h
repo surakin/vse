@@ -11,7 +11,7 @@
 //! Growable array that owns its storage: on the heap by default, or from a
 //! caller-supplied allocator such as an arena. The fixed-size, inline
 //! counterpart is [[Array]].
-namespace engine_placeholder
+namespace vse
 {
 
 /// Growable contiguous array of `T`; the default allocator is the heap.
@@ -464,10 +464,10 @@ public:
     /// - Param other: the vector to exchange with.
     void Swap(Vector& other)
     {
-        engine_placeholder::Swap(allocator_, other.allocator_);
-        engine_placeholder::Swap(data_, other.data_);
-        engine_placeholder::Swap(size_, other.size_);
-        engine_placeholder::Swap(capacity_, other.capacity_);
+        vse::Swap(allocator_, other.allocator_);
+        vse::Swap(data_, other.data_);
+        vse::Swap(size_, other.size_);
+        vse::Swap(capacity_, other.capacity_);
     }
 
     /// The first element, for a range-for (`for (T& item : vector)`).
@@ -571,4 +571,4 @@ private:
     usize capacity_ = 0;
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

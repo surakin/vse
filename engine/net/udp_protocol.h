@@ -27,7 +27,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::net::udp
+namespace vse::net::udp
 {
 
 /// The protocol version carried in every packet.
@@ -200,4 +200,4 @@ void WritePayloadHeader(const PayloadHeader& header, Vector<byte>* out);
 /// - Ownership: the outputs are written when true is returned; `body` views `packet`.
 bool ReadPayloadHeader(ByteSpan packet, PayloadHeader* header, ByteSpan* body);
 
-}  // namespace engine_placeholder::net::udp
+}  // namespace vse::net::udp

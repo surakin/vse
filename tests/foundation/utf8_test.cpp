@@ -6,17 +6,17 @@
 #include "string/utf8_codec.h"
 #include "types.h"
 
-using engine_placeholder::ArenaAllocator;
-using engine_placeholder::CodepointCount;
-using engine_placeholder::DecodedCodepoint;
-using engine_placeholder::DecodeUtf8At;
-using engine_placeholder::EncodeUtf8;
-using engine_placeholder::IsValidUtf8;
-using engine_placeholder::StringBuilder;
-using engine_placeholder::StringView;
-using engine_placeholder::u32;
-using engine_placeholder::usize;
-using engine_placeholder::Utf8Codepoints;
+using vse::ArenaAllocator;
+using vse::CodepointCount;
+using vse::DecodedCodepoint;
+using vse::DecodeUtf8At;
+using vse::EncodeUtf8;
+using vse::IsValidUtf8;
+using vse::StringBuilder;
+using vse::StringView;
+using vse::u32;
+using vse::usize;
+using vse::Utf8Codepoints;
 
 TEST_CASE("EncodeUtf8/DecodeUtf8At round-trip at every length-transition boundary", "[string][utf8]")
 {

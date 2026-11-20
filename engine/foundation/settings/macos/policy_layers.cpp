@@ -8,7 +8,7 @@
 #include "containers/unique_ptr.h"
 #include "settings/macos/user_defaults_store.h"
 
-namespace engine_placeholder::settings::detail
+namespace vse::settings::detail
 {
 
 void AddPolicyLayers(const LoadOptions& options, LayerStack* stack)
@@ -21,4 +21,4 @@ void AddPolicyLayers(const LoadOptions& options, LayerStack* stack)
     stack->AddLayer("managed preferences", LayerRole::Policy, MakeUnique<UserDefaultsConfigStore>(managed));
 }
 
-}  // namespace engine_placeholder::settings::detail
+}  // namespace vse::settings::detail

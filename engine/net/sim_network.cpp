@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 namespace
@@ -346,4 +346,4 @@ void SimNetwork::Advance(u64 nanos)
     }
 }
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

@@ -3,7 +3,7 @@
 // this file needs no Apple header; tests/macos/cocoa_input_macos_test.mm checks every one against the SDK's constants.
 #include "platform/macos/cocoa_keys.h"
 
-namespace engine_placeholder::os::cocoa
+namespace vse::os::cocoa
 {
 
 namespace
@@ -321,4 +321,4 @@ CocoaWheel CocoaWheelNotches(f64 delta_x, f64 delta_y, bool precise)
     return wheel;
 }
 
-}  // namespace engine_placeholder::os::cocoa
+}  // namespace vse::os::cocoa

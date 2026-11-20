@@ -7,7 +7,7 @@
 #include "math/geometry.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial::internal
+namespace vse::spatial::internal
 {
 
 /// The number of bins along a node's longest centroid axis.
@@ -167,4 +167,4 @@ u32 SplitBinnedSah(u32* order, u32 begin, u32 end, const Aabb& centroid_box, boo
     return begin + left;
 }
 
-}  // namespace engine_placeholder::spatial::internal
+}  // namespace vse::spatial::internal

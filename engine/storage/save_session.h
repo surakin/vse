@@ -10,7 +10,7 @@
 #include "storage/entity_ref.h"
 #include "types.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// The memory of a series of saves of one world to one store: the world tick and removal clock of the last save, the
@@ -52,4 +52,4 @@ private:
     UniquePtr<HashMap<ecs::Entity, EntityKey, HeapAllocator>> key_of_;
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

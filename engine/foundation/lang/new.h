@@ -7,7 +7,7 @@
 
 //! Allocation-function support (Phase 16): the engine's spelling of the parts of `<new>` that code outside the
 //! allocators needs.
-namespace engine_placeholder
+namespace vse
 {
 
 /// The alignment argument of the aligned `operator new`/`operator delete` overloads (`std::align_val_t`).
@@ -50,7 +50,7 @@ inline void AlignedDelete(void* ptr, usize align) noexcept
     ::operator delete(ptr, AlignVal(align));
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse
 
 /// The byte offset of the member `member` in the standard-layout type `type` (`offsetof`). A macro because it takes a
 /// member name.

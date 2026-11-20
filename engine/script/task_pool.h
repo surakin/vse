@@ -19,7 +19,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 /// A task handle is `(partition + 1) << 40 | sequence`: scripts see it as a number, and it is the same for any thread
@@ -296,4 +296,4 @@ private:
     UniquePtr<Impl> impl_;
 };
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

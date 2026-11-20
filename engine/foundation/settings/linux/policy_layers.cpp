@@ -2,9 +2,9 @@
 // /etc, not designed yet.
 #include "settings/policy_layers.h"
 
-namespace engine_placeholder::settings::detail
+namespace vse::settings::detail
 {
 
 void AddPolicyLayers(const LoadOptions&, LayerStack*) {}
 
-}  // namespace engine_placeholder::settings::detail
+}  // namespace vse::settings::detail

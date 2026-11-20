@@ -10,7 +10,7 @@
 #include "os/os.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1305,4 +1305,4 @@ Status ResourceManager::PollChanges(Vector<ReloadResult>* results)
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

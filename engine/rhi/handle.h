@@ -7,7 +7,7 @@
 //! A handle is a plain 8-byte value. The device validates it on every use, so a handle to a
 //! destroyed resource is detected rather than dereferenced.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// A generation-checked reference to one device-owned resource of the kind named by `Tag`.
@@ -99,4 +99,4 @@ using BindGroupLayoutHandle = Handle<BindGroupLayoutTag>;
 /// Handle to a bind group.
 using BindGroupHandle = Handle<BindGroupTag>;
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

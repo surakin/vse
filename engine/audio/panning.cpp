@@ -2,7 +2,7 @@
 
 #include "lang/scalar.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 namespace
@@ -125,4 +125,4 @@ void SpeakerGains(ChannelLayout layout, f32 x, f32 y, f32 z, f32 spread, f32* ga
     }
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

@@ -14,7 +14,7 @@
 #include <psapi.h>
 #include "unity/windows_disable.h"
 
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 namespace
@@ -118,4 +118,4 @@ bool FindLoadedModule(u64 address, LoadedModule* out)
     return false;
 }
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

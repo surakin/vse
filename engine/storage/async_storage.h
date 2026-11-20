@@ -10,7 +10,7 @@
 #include "storage/memory_store.h"
 #include "storage/world_storage.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 /// A save in progress: the writer job is running (or has finished) and the session still has to learn the outcome.
@@ -187,4 +187,4 @@ private:
     usize completed_ = 0;
 };
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

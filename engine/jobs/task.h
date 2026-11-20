@@ -29,7 +29,7 @@
 //! the task is awaited in the expression that creates it, because the caller's frame is suspended for the whole life of
 //! the task; a task that is stored and awaited later must take its arguments by value. Frames come from
 //! [[jobs::FramePool::Global]], as for jobs.
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 
 namespace detail
@@ -162,4 +162,4 @@ private:
     CoroutineHandle<promise_type> handle_;
 };
 
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs

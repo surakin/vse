@@ -8,7 +8,7 @@
 #include "containers/unique_ptr.h"
 #include "sync/atomic.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// What applying new settings had to do, from cheapest to dearest.
@@ -159,4 +159,4 @@ private:
     u32 transitions_ = 0;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

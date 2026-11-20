@@ -10,7 +10,7 @@
 #include "settings/setting.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 namespace
@@ -425,4 +425,4 @@ engine_status TextureReadPixelsFn(engine_handle texture, engine_buffer* out, u32
                                : textures->ReadPixels(texture, out, width, height);
 }
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

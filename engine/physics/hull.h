@@ -11,7 +11,7 @@
 #include "physics/validation.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// The most vertices a hull holds (the same as the minted `HULL` asset).
@@ -180,4 +180,4 @@ private:
     Vector<ConvexHullConstPtr> hulls_;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

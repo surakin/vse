@@ -8,7 +8,7 @@
 #define ENGINE_REQUIRE_DEATH_TEST_SUPPORT()                                                                            \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (!::engine_placeholder::debug::DeathTestsSupported())                                                       \
+        if (!::vse::debug::DeathTestsSupported())                                                                      \
         {                                                                                                              \
             SKIP("this platform cannot start child processes, so death tests do not run here");                        \
         }                                                                                                              \

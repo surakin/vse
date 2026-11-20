@@ -8,8 +8,8 @@
 #include "ui/draw_list.h"
 #include "ui/draw_list_canvas.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::ui;
+using namespace vse;
+using namespace vse::ui;
 
 namespace
 {

@@ -15,11 +15,11 @@
 #endif
 #include "cstr/cstr.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::rhi;
+using namespace vse;
+using namespace vse::rhi;
 #if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
-using engine_placeholder::rhi::vulkan::GpuKind;
-using engine_placeholder::rhi::vulkan::PhysicalDeviceInfo;
+using vse::rhi::vulkan::GpuKind;
+using vse::rhi::vulkan::PhysicalDeviceInfo;
 #endif
 
 namespace

@@ -6,7 +6,7 @@
 #include "asset/blob.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -345,4 +345,4 @@ TEST_CASE("Random bytes and mutated blobs never crash the reader", "[asset][blob
     CHECK(accepted > 0);  // mutations that touch only section data are valid blobs
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

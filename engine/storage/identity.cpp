@@ -3,7 +3,7 @@
 #include "ecs/transform.h"
 #include "os/os.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 
 namespace
@@ -475,4 +475,4 @@ Status ApplyParents(ecs::World& world, const KeyIndex& index, MissingPolicy poli
     return Status::Success();
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

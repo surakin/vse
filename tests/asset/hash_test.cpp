@@ -6,7 +6,7 @@
 #include "asset/content_hash.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -79,4 +79,4 @@ TEST_CASE("A hasher can be reset and reused; a zero hash is recognised", "[asset
     CHECK(!HashBytes(ByteSpan()).IsZero());
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

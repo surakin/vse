@@ -39,7 +39,7 @@
 #include "sync/thread.h"
 #include "types.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 /// What a wait is for.
@@ -246,4 +246,4 @@ private:
     ThreadId thread_id_;
 };
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

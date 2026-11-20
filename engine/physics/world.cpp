@@ -4,7 +4,7 @@
 #include "physics/check.h"
 #include "physics/query_index.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -595,4 +595,4 @@ PhysicsWorldStats PhysicsWorld::Stats() const
     return stats;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

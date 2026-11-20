@@ -8,11 +8,11 @@
 #include "math/geometry.h"
 #include "renderer/bounds.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
-using engine_placeholder::Containment;
-using engine_placeholder::Frustum;
-using engine_placeholder::Plane;
+using vse::Containment;
+using vse::Frustum;
+using vse::Plane;
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

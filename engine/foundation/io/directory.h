@@ -9,7 +9,7 @@
 
 //! Listing and walking directories without loading a whole tree: [[io::Directory]], [[io::ListDirectory]],
 //! [[io::WalkDirectory]] and [[io::MatchesWildcard]].
-namespace engine_placeholder::io
+namespace vse::io
 {
 
 class Directory;
@@ -172,4 +172,4 @@ using WalkVisitor = WalkAction (*)(void* user, const WalkEntry& entry);
 /// of 0 or over 128, or a null visitor.
 Status WalkDirectory(const Path& root, const WalkOptions& options, WalkVisitor visitor, void* user);
 
-}  // namespace engine_placeholder::io
+}  // namespace vse::io

@@ -3,7 +3,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 MTLPixelFormat ToMtlPixelFormat(Format format, id<MTLDevice> device)
@@ -82,4 +82,4 @@ bool MtlFormatCanGenerateMips(Format format, id<MTLDevice> device)
     return !float32 || device.supports32BitFloatFiltering;
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

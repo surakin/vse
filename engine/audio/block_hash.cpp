@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 void BlockHasher::AddSample(f32 value)
@@ -43,4 +43,4 @@ u64 HashBlock(Span<const f32> samples, bool* valid)
     return hasher.Value();
 }
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

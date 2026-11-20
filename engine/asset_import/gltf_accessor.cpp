@@ -4,7 +4,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -231,4 +231,4 @@ Status ReadAccessorUnsigned(const GltfDocument& document, u32 index, Vector<u32>
     return ReadElements<u32>(document, index, out, error, [type](const byte* p) { return ToUnsigned(p, type); });
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

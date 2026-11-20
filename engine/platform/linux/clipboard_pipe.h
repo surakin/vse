@@ -6,7 +6,7 @@
 //! Non-blocking transfer of clipboard bytes through a pipe, for the Wayland data device: the other program reads or
 //! writes the other end at its own pace.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// Writes a byte string into a pipe's write end without ever blocking, a piece at a time from [[os::PipeWriter::Pump]],
@@ -120,4 +120,4 @@ private:
     State state_ = State::Idle;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

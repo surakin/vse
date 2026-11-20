@@ -13,7 +13,7 @@
 //! face opened from it at one pixel size. FreeType is named only in `font_freetype.cpp`. Errors are values
 //! ([[text::Status]]), never exceptions. There is **no shaping**: one code point is one glyph through the font's cmap
 //! (`docs/superpowers/specs/2026-11-08-text-design.md`, section 3).
-namespace engine_placeholder::text
+namespace vse::text
 {
 
 /// A glyph index inside one font; 0 is `.notdef`, the "missing glyph" box.
@@ -316,4 +316,4 @@ private:
     Impl* impl_ = nullptr;
 };
 
-}  // namespace engine_placeholder::text
+}  // namespace vse::text

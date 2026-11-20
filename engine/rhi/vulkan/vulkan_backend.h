@@ -2,7 +2,7 @@
 
 //! Registering the Vulkan backend with the backend registry (`rhi/backend_registry.h`).
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Registers the Vulkan backend (`Backend::Vulkan`, name `vulkan`, SPIR-V) with the backend registry.
@@ -16,4 +16,4 @@ namespace engine_placeholder::rhi
 /// - Thread-safety: thread-safe.
 bool RegisterVulkanBackend();
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

@@ -4,7 +4,7 @@
 
 //! Signal handlers (Phase 16): the engine's spelling of `std::signal`. The `SIG*` constants and the POSIX `sigaction`
 //! family arrive through this header.
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// A function the system calls with the signal number.
@@ -19,4 +19,4 @@ inline SignalHandler SetSignalHandler(int signal, SignalHandler handler) noexcep
     return std::signal(signal, handler);
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

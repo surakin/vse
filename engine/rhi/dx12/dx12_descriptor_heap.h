@@ -9,7 +9,7 @@
 
 //! CPU (non-shader-visible) descriptor heaps for the views a resource gets when it is created (Phase 13 Day 165).
 
-namespace engine_placeholder::rhi::dx12
+namespace vse::rhi::dx12
 {
 
 /// Hands out single descriptors of one heap type from a growing list of non-shader-visible heaps, with a free list.
@@ -220,4 +220,4 @@ private:
     Vector<Range> ranges_;  // free ranges, sorted by offset, never adjacent
 };
 
-}  // namespace engine_placeholder::rhi::dx12
+}  // namespace vse::rhi::dx12

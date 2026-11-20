@@ -8,7 +8,7 @@
 #include "os/console.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 LogChannel* LogChannel::head_ = nullptr;
@@ -571,4 +571,4 @@ void ResetEnsureStateForTesting()
     }
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

@@ -12,7 +12,7 @@
 
 #include "script/backend.h"
 
-namespace engine_placeholder::script::test
+namespace vse::script::test
 {
 
 struct FakeNative
@@ -195,4 +195,4 @@ inline Capabilities FullCaps()
     return caps;
 }
 
-}  // namespace engine_placeholder::script::test
+}  // namespace vse::script::test

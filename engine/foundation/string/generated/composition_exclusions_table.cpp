@@ -4,7 +4,7 @@
 
 #include "string/normalize.h"
 
-namespace engine_placeholder {
+namespace vse {
 
 namespace {
 
@@ -112,4 +112,4 @@ bool IsCompositionExcluded(u32 codepoint) {
     return false;
 }
 
-} // namespace engine_placeholder
+} // namespace vse

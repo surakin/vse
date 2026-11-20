@@ -18,7 +18,7 @@
 #include "renderer/renderer_log.h"
 #include "cstr/format.h"
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 namespace
@@ -1171,4 +1171,4 @@ void GBufferDebugView::Record(const PassExecuteContext& context, void* user)
     context.list->EndRendering();
 }
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

@@ -10,7 +10,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::animation
+namespace vse::animation
 {
 
 /// The cursor of every channel of every track of the clip being played (the key segment found by the last sample),
@@ -78,4 +78,4 @@ RootMotionDelta RootMotionOver(const asset::ClipView& clip, const asset::Skeleto
 u32 CollectEvents(const asset::ClipView& clip, f32 from, const TimeAdvance& advance, bool include_start,
                   Span<asset::ClipEvent> out, bool* overflow);
 
-}  // namespace engine_placeholder::animation
+}  // namespace vse::animation

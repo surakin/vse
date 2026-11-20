@@ -11,8 +11,8 @@
 #include "script/settings_bindings.h"
 #include "settings/memory_store.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::script;
+using namespace vse;
+using namespace vse::script;
 
 namespace
 {

@@ -4,7 +4,7 @@
 #include "containers/vector.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::storage
+namespace vse::storage
 {
 namespace
 {
@@ -107,4 +107,4 @@ u32 AutosaveSecondsFromSettings(const settings::Registry& registry)
     return static_cast<u32>(settings::Setting<i64>::Find(registry, StringView("storage.autosave_seconds")).Get());
 }
 
-}  // namespace engine_placeholder::storage
+}  // namespace vse::storage

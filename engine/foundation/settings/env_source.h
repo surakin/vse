@@ -4,7 +4,7 @@
 
 #include "settings/layers.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// A copy of the process environment (or a made-up one in a test).
@@ -164,4 +164,4 @@ private:
     CommandLineResult result_;
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

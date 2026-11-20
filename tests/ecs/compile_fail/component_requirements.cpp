@@ -2,7 +2,7 @@
 // refused.
 #include "ecs/component.h"
 
-using namespace engine_placeholder::ecs;
+using namespace vse::ecs;
 
 namespace
 {

@@ -14,8 +14,8 @@
 #include "os/windows/win32.h"
 #include "symbol_search_path.h"  // tests/windows/support
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 namespace stack_trace_windows_test
 {

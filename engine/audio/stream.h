@@ -13,13 +13,13 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-namespace engine_placeholder::jobs
+namespace vse::jobs
 {
 class Scheduler;
 class Counter;
-}  // namespace engine_placeholder::jobs
+}  // namespace vse::jobs
 
-namespace engine_placeholder::audio
+namespace vse::audio
 {
 
 /// How a stream call ended.
@@ -407,4 +407,4 @@ private:
     UniquePtr<jobs::Counter> counter_;
 };
 
-}  // namespace engine_placeholder::audio
+}  // namespace vse::audio

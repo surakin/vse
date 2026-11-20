@@ -3,7 +3,7 @@
 #include "asset/backend.h"
 #include "net/codec.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -270,4 +270,4 @@ ProtoError DecodeProto(ByteSpan bytes, u32 max_read_bytes, ProtoData* out)
     return ProtoError::None;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

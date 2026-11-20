@@ -2,7 +2,7 @@
 
 #include "os/os.h"
 
-namespace engine_placeholder
+namespace vse
 {
 
 ArenaAllocator::ArenaAllocator(usize capacity) : capacity_(capacity)
@@ -52,4 +52,4 @@ void ArenaAllocator::FreeAll()
     }
 }
 
-}  // namespace engine_placeholder
+}  // namespace vse

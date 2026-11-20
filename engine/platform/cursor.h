@@ -8,7 +8,7 @@
 //! Pure data and logic, no display library: the header is part of the `platform_input` target, so the UI and the tests
 //! can use it without a window.
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 /// The cursor shapes every backend can show (where it can: see [[os::Window::SupportsCursorShape]]).
@@ -212,4 +212,4 @@ private:
     bool active_ = false;
 };
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

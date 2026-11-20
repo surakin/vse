@@ -31,11 +31,11 @@ namespace gpu_test
 
 // The GPU backends registered in this program that this machine can use: Vulkan where its loader and a device are
 // found, Direct3D 12 on Windows. The null backend is not a GPU.
-inline engine_placeholder::Vector<engine_placeholder::rhi::Backend> GpuBackends()
+inline vse::Vector<vse::rhi::Backend> GpuBackends()
 {
-    using namespace engine_placeholder::rhi;
-    engine_placeholder::Vector<Backend> out;
-    for (engine_placeholder::usize i = 0; i < RegisteredBackendCount(); ++i)
+    using namespace vse::rhi;
+    vse::Vector<Backend> out;
+    for (vse::usize i = 0; i < RegisteredBackendCount(); ++i)
     {
         const BackendDescriptor& d = RegisteredBackend(i);
         char reason[256];
@@ -49,15 +49,15 @@ inline engine_placeholder::Vector<engine_placeholder::rhi::Backend> GpuBackends(
 
 // The index of `backend` in the renderer's `backend` setting (null, vulkan, dx12, metal, auto:
 // renderer/render_settings.cpp).
-inline engine_placeholder::u32 BackendSettingIndex(engine_placeholder::rhi::Backend backend)
+inline vse::u32 BackendSettingIndex(vse::rhi::Backend backend)
 {
-    return static_cast<engine_placeholder::u32>(backend);  // kBackendNames follows rhi::Backend (static_assert there)
+    return static_cast<vse::u32>(backend);  // kBackendNames follows rhi::Backend (static_assert there)
 }
 
 // The backend's name as a section name and in messages.
-inline const char* BackendTag(engine_placeholder::rhi::Backend backend)
+inline const char* BackendTag(vse::rhi::Backend backend)
 {
-    using engine_placeholder::rhi::Backend;
+    using vse::rhi::Backend;
     return backend == Backend::Vulkan  ? "vulkan"
            : backend == Backend::Dx12  ? "dx12"
            : backend == Backend::Metal ? "metal"
@@ -72,13 +72,13 @@ inline const char* BackendTag(engine_placeholder::rhi::Backend backend)
 class BackendValidation
 {
 public:
-    explicit BackendValidation(engine_placeholder::rhi::Backend backend) : backend_(backend)
+    explicit BackendValidation(vse::rhi::Backend backend) : backend_(backend)
     {
 #if ENGINE_RHI_HAVE_VULKAN
-        engine_placeholder::rhi::vulkan::ResetValidationCounts();
+        vse::rhi::vulkan::ResetValidationCounts();
 #endif
 #if ENGINE_PLATFORM_WINDOWS
-        engine_placeholder::rhi::dx12::ResetDebugMessageCounts();
+        vse::rhi::dx12::ResetDebugMessageCounts();
 #endif
     }
     ~BackendValidation()
@@ -89,16 +89,15 @@ public:
         }
         INFO("backend " << BackendTag(backend_));
 #if ENGINE_RHI_HAVE_VULKAN
-        if (backend_ == engine_placeholder::rhi::Backend::Vulkan)
+        if (backend_ == vse::rhi::Backend::Vulkan)
         {
-            CHECK(engine_placeholder::rhi::vulkan::GetValidationCounts().errors == expected_errors_);
+            CHECK(vse::rhi::vulkan::GetValidationCounts().errors == expected_errors_);
         }
 #endif
 #if ENGINE_PLATFORM_WINDOWS
-        if (backend_ == engine_placeholder::rhi::Backend::Dx12)
+        if (backend_ == vse::rhi::Backend::Dx12)
         {
-            const engine_placeholder::rhi::dx12::DebugMessageCounts
-                c = engine_placeholder::rhi::dx12::GetDebugMessageCounts();
+            const vse::rhi::dx12::DebugMessageCounts c = vse::rhi::dx12::GetDebugMessageCounts();
             CHECK(c.errors == expected_errors_);
             CHECK(c.warnings == 0);
         }
@@ -111,17 +110,16 @@ public:
     void ExpectErrors(unsigned long long n) { expected_errors_ = n; }
 
 private:
-    engine_placeholder::rhi::Backend backend_;
+    vse::rhi::Backend backend_;
     unsigned long long expected_errors_ = 0;
 };
 
 // A device on `backend` with validation on (and Vulkan's synchronization validation), no pipeline cache; skips the test
 // when the machine cannot make one (fails it under ENGINE_RHI_REQUIRE_GPU=1).
-inline engine_placeholder::rhi::DevicePtr
-CreateTestDevice(engine_placeholder::rhi::Backend backend,
-                 engine_placeholder::rhi::DeviceCreateInfo info = engine_placeholder::rhi::DeviceCreateInfo{})
+inline vse::rhi::DevicePtr CreateTestDevice(vse::rhi::Backend backend,
+                                            vse::rhi::DeviceCreateInfo info = vse::rhi::DeviceCreateInfo{})
 {
-    using namespace engine_placeholder::rhi;
+    using namespace vse::rhi;
     info.backend = backend;
     info.validation = ValidationSetting::On;
     info.sync_validation = backend == Backend::Vulkan;
@@ -147,8 +145,8 @@ namespace gpu_test
 // Walks the GPU backends for FOR_EACH_GPU_BACKEND (Vector has no iterators).
 struct BackendCursor
 {
-    engine_placeholder::Vector<engine_placeholder::rhi::Backend> backends = GpuBackends();
-    engine_placeholder::usize next = 0;
+    vse::Vector<vse::rhi::Backend> backends = GpuBackends();
+    vse::usize next = 0;
     // With no GPU backend the body would run zero times and the test pass with nothing checked: skip instead (fail
     // under ENGINE_RHI_REQUIRE_GPU=1), as the Vulkan-only fixtures do.
     BackendCursor()
@@ -163,7 +161,7 @@ struct BackendCursor
         }
     }
     bool Next() { return next++ < backends.Size(); }
-    engine_placeholder::rhi::Backend Current() const { return backends[next - 1]; }
+    vse::rhi::Backend Current() const { return backends[next - 1]; }
 };
 
 }  // namespace gpu_test
@@ -173,7 +171,7 @@ struct BackendCursor
 // NOLINTBEGIN(bugprone-macro-parentheses): var is the name of the declared loop variable
 #define FOR_EACH_GPU_BACKEND(var)                                                                                      \
     for (::gpu_test::BackendCursor gpu_backend_cursor_; gpu_backend_cursor_.Next();)                                   \
-        for (const ::engine_placeholder::rhi::Backend var = gpu_backend_cursor_.Current(), *gpu_backend_once_ = &var;  \
+        for (const ::vse::rhi::Backend var = gpu_backend_cursor_.Current(), *gpu_backend_once_ = &var;                 \
              gpu_backend_once_ != nullptr; gpu_backend_once_ = nullptr)                                                \
     DYNAMIC_SECTION(::gpu_test::BackendTag(var))
 // NOLINTEND(bugprone-macro-parentheses)

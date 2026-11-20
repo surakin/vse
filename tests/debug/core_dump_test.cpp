@@ -8,8 +8,8 @@
 
 #include "cstr/format.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 // Run in a child: enabling raises this process's core limit, which a test program should not keep.
 ENGINE_DEATH_TEST_FN(dt_post_mortem_enable)

@@ -35,8 +35,8 @@
 #include <crtdbg.h>
 #endif
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 namespace
 {

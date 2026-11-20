@@ -19,7 +19,7 @@
 
 #import <Foundation/Foundation.h>
 
-namespace engine_placeholder::rhi::metal
+namespace vse::rhi::metal
 {
 
 namespace
@@ -410,4 +410,4 @@ MetalPipelineCache::Stats MetalPipelineCache::GetStats() const
     return stats_;
 }
 
-}  // namespace engine_placeholder::rhi::metal
+}  // namespace vse::rhi::metal

@@ -8,7 +8,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 /// Values of type `T` in fixed chunks that never move.
@@ -239,4 +239,4 @@ private:
     u32 live_ = 0;
 };
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

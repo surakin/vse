@@ -12,7 +12,7 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// The most bytes in a key.
@@ -86,9 +86,9 @@ private:
     u8 length_ = 0;
 };
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings
 
-namespace engine_placeholder
+namespace vse
 {
 
 /// Hash function for [[settings::Key]] keys of a [[HashMap]] (container audit Day 11): the key's own `Hash()`.
@@ -100,4 +100,4 @@ template <> struct Hash<settings::Key>
     usize operator()(const settings::Key& k) const { return k.Hash(); }
 };
 
-}  // namespace engine_placeholder
+}  // namespace vse

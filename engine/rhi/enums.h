@@ -8,7 +8,7 @@
 //! Flag enums are `u32` scoped enums whose `|`, `&` and `Has` operators are enabled by specializing
 //! [[rhi::EnableFlagOperators]]; there are no raw integer masks in the interface.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 /// Opt-in trait: specialize with `value = true` to give a `u32` scoped enum the flag operators.
@@ -469,6 +469,6 @@ enum class BindingType : u8
 ///
 /// Used in descriptors so they need no allocation. The memory must stay valid for the duration of the
 /// call the descriptor is passed to; backends copy what they keep.
-template <typename T> using Span = engine_placeholder::Span<const T>;
+template <typename T> using Span = vse::Span<const T>;
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

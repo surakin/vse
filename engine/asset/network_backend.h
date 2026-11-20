@@ -35,7 +35,7 @@
 #include "sync/thread.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// Declares the settings of the network backend: `assets.net.timeout_ms` (how long a request, a connection or a
@@ -211,4 +211,4 @@ private:
     Thread thread_;
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -7,7 +7,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-namespace engine_placeholder::jobs::detail
+namespace vse::jobs::detail
 {
 
 usize QueryAllowedCpus(u32* out, usize capacity)
@@ -49,4 +49,4 @@ bool PinCurrentThread(u32 cpu)
 
 void NameCurrentThread(const char*) {}
 
-}  // namespace engine_placeholder::jobs::detail
+}  // namespace vse::jobs::detail

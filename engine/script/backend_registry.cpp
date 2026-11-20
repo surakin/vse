@@ -3,7 +3,7 @@
 #include "cstr/cstr.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::script
+namespace vse::script
 {
 
 namespace
@@ -119,4 +119,4 @@ void ClearBackendRegistryForTest()
     }
 }
 
-}  // namespace engine_placeholder::script
+}  // namespace vse::script

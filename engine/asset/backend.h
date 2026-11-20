@@ -16,7 +16,7 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 /// What a backend can do ([[asset::ResourceBackend::Capabilities]] is a mask of these).
@@ -265,4 +265,4 @@ public:
     }
 };
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

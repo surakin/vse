@@ -14,7 +14,7 @@
 #include "script_media/input_bindings.h"
 #include "script_physics/physics_bindings.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

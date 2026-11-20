@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-namespace engine_placeholder::shaders {
+namespace vse::shaders {
 
 inline constexpr usize kMorphCompSpvWordCount = 1397;
 
@@ -244,4 +244,4 @@ inline constexpr u32 kMorphCompSpv[kMorphCompSpvWordCount] = {
     0x00000049, 0x000200f8, 0x00000035, 0x000100fd, 0x00010038,
 };
 
-} // namespace engine_placeholder::shaders
+} // namespace vse::shaders

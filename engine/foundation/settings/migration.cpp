@@ -4,7 +4,7 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 namespace
@@ -272,4 +272,4 @@ void MigrationSet::Migrate(const Registry& registry, ConfigStore& store, Migrati
     }
 }
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

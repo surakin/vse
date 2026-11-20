@@ -286,7 +286,7 @@ See `docs/guide/foundation-cstr.md`, `foundation-sync.md`, `foundation-types.md`
 
 ## What this project is
 
-A from-scratch, AAA-capable game engine. Read `PLAN.md` first — it is the
+Visual Storm Engine (VSE): a from-scratch, AAA-capable game engine. All engine code lives in the C++ namespace `vse` (lowercase), with a sub-namespace per module (`vse::asset`, `vse::rhi`, ...). Read `PLAN.md` first — it is the
 master index and states the mission, headline objectives, and the
 non-obvious scope assumptions that shape every phase. Each phase has its
 own detailed file under `plans/phase-NN-name.md`, linked from the roadmap

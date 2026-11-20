@@ -330,16 +330,16 @@ TEST_CASE("Samples: [review] a stop request kills running samples and removes th
 {
     SamplesTestTree t;
     t.Put("docs/a.md", "```cpp compile run\nvolatile int spin = 1;\nwhile (spin) {}\n```\n");
-    engine_placeholder::Thread stopper(
+    vse::Thread stopper(
         []
         {
-            engine_placeholder::ThisThread::SleepForMilliseconds(1500);
+            vse::ThisThread::SleepForMilliseconds(1500);
             RequestStop();
         });
-    const engine_placeholder::u64 start = engine_placeholder::os::MonotonicTimeNanos();
+    const vse::u64 start = vse::os::MonotonicTimeNanos();
     Result r(t, "docs/a.md", 1, 60);
     stopper.Join();
-    CHECK(engine_placeholder::os::MonotonicTimeNanos() - start < engine_placeholder::u64{20} * 1000000000u);
+    CHECK(vse::os::MonotonicTimeNanos() - start < vse::u64{20} * 1000000000u);
     CHECK(r.Has("interrupted"));
     CHECK(t.ScratchEntries() == 0);
 }

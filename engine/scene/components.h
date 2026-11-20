@@ -12,7 +12,7 @@
 #include "renderer/render_scene.h"
 #include "types.h"
 
-namespace engine_placeholder::scene
+namespace vse::scene
 {
 
 /// The most mesh slots a [[scene::MeshRenderer]] gives a material of their own.
@@ -127,4 +127,4 @@ struct CameraOutput
     bool valid = false;
 };
 
-}  // namespace engine_placeholder::scene
+}  // namespace vse::scene

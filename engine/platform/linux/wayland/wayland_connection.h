@@ -11,7 +11,7 @@
 
 //! Wayland connection: the compositor connection and the globals the engine binds.
 
-namespace engine_placeholder::os::wayland
+namespace vse::os::wayland
 {
 
 /// Connection to a Wayland compositor plus the bound `wl_compositor`, `xdg_wm_base`, `wl_seat` and `wl_shm` globals.
@@ -103,4 +103,4 @@ private:
     zwp_primary_selection_device_manager_v1* primary_selection_manager_ = nullptr;
 };
 
-}  // namespace engine_placeholder::os::wayland
+}  // namespace vse::os::wayland

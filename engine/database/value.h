@@ -7,7 +7,7 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::database
+namespace vse::database
 {
 
 /// The five storage classes of a value.
@@ -141,4 +141,4 @@ private:
     Vector<byte> bytes_;
 };
 
-}  // namespace engine_placeholder::database
+}  // namespace vse::database

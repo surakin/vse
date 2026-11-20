@@ -11,7 +11,7 @@
 #include "rhi/metal/metal_device.h"
 #include "rhi/rhi.h"
 
-namespace engine_placeholder::rhi::metal::test
+namespace vse::rhi::metal::test
 {
 
 // A description for a Metal device, with the compiled backends registered.
@@ -48,4 +48,4 @@ inline bool ShaderValidationOn()
     return value != nullptr && value[0] != '\0' && value[0] != '0';
 }
 
-}  // namespace engine_placeholder::rhi::metal::test
+}  // namespace vse::rhi::metal::test

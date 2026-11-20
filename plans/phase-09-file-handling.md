@@ -43,7 +43,7 @@ that keeps the port from rotting, the platform checklists, and closes the phase.
 ## Design decisions made while planning (2026-11-06; Day 115 confirms or amends them in the spec)
 
 1. **Where:** `engine/foundation/io/` (headers `path.h`, `file.h`, `directory.h`, `file_system.h`, `error.h`), namespace
-   `engine_placeholder::io`, with the Linux implementation in `engine/foundation/io/linux/`. Foundation-level, so everything above can use it.
+   `vse::io`, with the Linux implementation in `engine/foundation/io/linux/`. Foundation-level, so everything above can use it.
    The existing `os/` keeps what is not about files (time, memory, libraries, console descriptors).
 2. **`Path` is a value type with no syscalls.** UTF-8, `/` as the canonical separator (Windows converts at the boundary), root names and
    drive letters understood by a `PathStyle` (so Windows parsing is tested on Linux), lexical operations only (`Join`, `Parent`, `FileName`,

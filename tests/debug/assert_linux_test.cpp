@@ -17,8 +17,8 @@
 #include <sys/ptrace.h>
 #include <unistd.h>
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 namespace
 {
@@ -120,7 +120,7 @@ TEST_CASE("A debugger that resumes after ENGINE_UNREACHABLE breaks is followed b
 
 TEST_CASE("The tracer line of /proc/self/status decides whether a debugger is attached", "[debug][linux]")
 {
-    using engine_placeholder::debug::detail::StatusShowsTracer;
+    using vse::debug::detail::StatusShowsTracer;
     auto shows = [](const char* text) { return StatusShowsTracer(text, CStrLength(text)); };
     CHECK_FALSE(shows("Name:\tx\nTracerPid:\t0\nUid:\t1000\n"));
     CHECK(shows("Name:\tx\nTracerPid:\t4242\nUid:\t1000\n"));

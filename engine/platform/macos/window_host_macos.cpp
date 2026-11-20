@@ -9,7 +9,7 @@
 #include "platform/macos/cocoa_window.h"
 #include "string/string.h"
 
-namespace engine_placeholder::os
+namespace vse::os
 {
 
 struct PlatformWindowHost::Impl
@@ -65,4 +65,4 @@ bool PlatformWindowHost::OpenFromEnvironment(StringView title, u32 width, u32 he
     return Open(requested, title, width, height, input);
 }
 
-}  // namespace engine_placeholder::os
+}  // namespace vse::os

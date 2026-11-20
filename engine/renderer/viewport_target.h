@@ -10,7 +10,7 @@
 //! The offscreen target of a UI viewport (Phase 15, Day 201): the colour and depth textures the world is drawn into,
 //! shown by the UI pass as an image.
 
-namespace engine_placeholder::renderer
+namespace vse::renderer
 {
 
 /// What a [[renderer::ViewportTarget]] is made of.
@@ -154,4 +154,4 @@ private:
     ScopedRegistration registration_;
 };
 
-}  // namespace engine_placeholder::renderer
+}  // namespace vse::renderer

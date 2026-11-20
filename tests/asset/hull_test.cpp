@@ -10,7 +10,7 @@
 #include "lang/scalar.h"
 #include "support.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 
 namespace
@@ -394,4 +394,4 @@ TEST_CASE("hull: the writer refuses geometry that is not a hull", "[asset][hull]
     CHECK(BuildHullBlob(types, ResourceId::FromValue(1), bad, &out).Code() == ErrorCode::Invalid);
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -3,7 +3,7 @@
 #include "source_text.h"
 #include "cstr/format.h"
 
-namespace engine_placeholder::asset
+namespace vse::asset
 {
 namespace
 {
@@ -119,4 +119,4 @@ Status MintHull(StringView text, const TypeRegistry& types, Vector<byte>* out, H
     return built;
 }
 
-}  // namespace engine_placeholder::asset
+}  // namespace vse::asset

@@ -14,7 +14,7 @@
 #include "lang/traits.h"
 #include "lang/utility.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 
 namespace
 {

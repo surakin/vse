@@ -16,7 +16,7 @@
 // The content view: input (cocoa_window.mm), the cursor (cocoa_cursor.mm), the drag destination and source
 // (cocoa_dragdrop.mm). `owner` is cleared by Close before anything is released.
 @interface EngineMetalView : NSView <NSTextInputClient>
-@property(nonatomic, assign) engine_placeholder::os::cocoa::CocoaWindow* owner;
+@property(nonatomic, assign) vse::os::cocoa::CocoaWindow* owner;
 // The last mouse-down or drag event while a button is held (a drag starts from it); nil when no button is down.
 @property(nonatomic, strong) NSEvent* lastMouseEvent;
 @end
@@ -31,7 +31,7 @@
 @interface EngineMetalView (Dragging) <NSDraggingSource>
 @end
 
-namespace engine_placeholder::os::cocoa
+namespace vse::os::cocoa
 {
 
 // One format of a drop, read while performDragOperation: ran (the dragging pasteboard is valid only then).
@@ -99,4 +99,4 @@ void KeepViewForDrag(EngineMetalView* view);
 // (cocoa_clipboard.mm).
 NSArray<NSURL*>* FileUrlsOf(const byte* paths, usize size);
 
-}  // namespace engine_placeholder::os::cocoa
+}  // namespace vse::os::cocoa

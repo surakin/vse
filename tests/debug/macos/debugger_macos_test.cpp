@@ -11,8 +11,8 @@
 #include "os/os.h"
 #include "support/death_test_skip.h"
 
-using namespace engine_placeholder;
-using namespace engine_placeholder::debug;
+using namespace vse;
+using namespace vse::debug;
 
 ENGINE_DEATH_TEST_FN(dt_mac_traced)
 {

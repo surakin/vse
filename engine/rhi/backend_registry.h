@@ -14,7 +14,7 @@
 //! (`rhi/backends.h`, library `rhi_backends`) once at startup, before it creates a device; test binaries do it from a
 //! Catch2 listener. A device asked of a backend that was never registered fails with an error that says so.
 
-namespace engine_placeholder::rhi
+namespace vse::rhi
 {
 
 enum class Backend : u8;
@@ -136,4 +136,4 @@ const BackendDescriptor* ResolveBackend(Backend backend, char* reason, usize rea
 /// - Thread-safety: thread-safe.
 void ClearBackendRegistryForTest();
 
-}  // namespace engine_placeholder::rhi
+}  // namespace vse::rhi

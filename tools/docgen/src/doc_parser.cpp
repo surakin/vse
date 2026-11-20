@@ -55,7 +55,7 @@ StringView Trim(StringView s)
 
 bool StartsWith(StringView s, const char* p)
 {
-    usize n = engine_placeholder::CStrLength(p);
+    usize n = vse::CStrLength(p);
     if (s.Length() < n)
     {
         return false;
@@ -207,7 +207,7 @@ private:
 
     StringView Msg(const char* prefix, StringView detail)
     {
-        const usize pl = engine_placeholder::CStrLength(prefix);
+        const usize pl = vse::CStrLength(prefix);
         const usize len = pl + 2 + detail.Length() + 1;
         char* buf = static_cast<char*>(arena_.Alloc(len + 1, 1));
         ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
@@ -718,7 +718,7 @@ void Validate(const Decl& d, const ParsedDoc& doc, Vector<Diagnostic, ArenaAlloc
         if (l.kind == LabelKind::Param && !IsParam(d, l.name))
         {
             const char* prefix = "Param name does not match a parameter:";
-            const usize pl = engine_placeholder::CStrLength(prefix);
+            const usize pl = vse::CStrLength(prefix);
             char* buf = static_cast<char*>(arena.Alloc(pl + l.name.Length() + 4, 1));
             ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
             CopyBytes(buf, prefix, pl);

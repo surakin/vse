@@ -19,7 +19,7 @@
 #include "settings/value.h"
 #include "types.h"
 
-namespace engine_placeholder::settings
+namespace vse::settings
 {
 
 /// What went wrong in a store call.
@@ -260,4 +260,4 @@ public:
 /// An owning pointer to a store.
 using ConfigStorePtr = UniquePtr<ConfigStore>;
 
-}  // namespace engine_placeholder::settings
+}  // namespace vse::settings

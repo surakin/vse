@@ -3,7 +3,7 @@
 #include "types.h"
 
 // Linux details of core dumps that tests reach directly.
-namespace engine_placeholder::debug
+namespace vse::debug
 {
 
 /// Describes where a core goes, given the text of `/proc/sys/kernel/core_pattern`.
@@ -27,4 +27,4 @@ void DescribeCorePattern(const char* pattern, char* out, usize capacity);
 /// - Thread-safety: thread-safe.
 bool CorePatternIsPipe(const char* pattern);
 
-}  // namespace engine_placeholder::debug
+}  // namespace vse::debug

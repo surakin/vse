@@ -3,7 +3,7 @@
 #include "lang/scalar.h"
 #include "physics/query.h"
 
-namespace engine_placeholder::physics
+namespace vse::physics
 {
 
 namespace
@@ -353,4 +353,4 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
     return events;
 }
 
-}  // namespace engine_placeholder::physics
+}  // namespace vse::physics

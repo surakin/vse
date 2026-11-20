@@ -13,7 +13,7 @@
 #include "temp_dir.h"
 #include "test_text.h"
 
-using namespace engine_placeholder;
+using namespace vse;
 using io::Error;
 using io::Path;
 using io_test::Str;

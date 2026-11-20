@@ -13,7 +13,7 @@
 #include "spatial/static_bvh.h"
 #include "types.h"
 
-namespace engine_placeholder::spatial
+namespace vse::spatial
 {
 
 /// The structure a set uses for its moving items.
@@ -460,4 +460,4 @@ TraversalStats SpatialSet::ForEachHandleInRegion(const Aabb& static_region, cons
     return total;
 }
 
-}  // namespace engine_placeholder::spatial
+}  // namespace vse::spatial

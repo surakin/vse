@@ -3,7 +3,7 @@
 //! object a later day adds (a world, a loaded resource, an import) takes one when it is created and gives it back when
 //! the host releases it, and `engine_destroy` refuses while any is out.
 
-namespace engine_placeholder::engine_c
+namespace vse::engine_c
 {
 
 /// Counts one more outstanding object on the engine that exists.
@@ -19,4 +19,4 @@ bool EngineObjectAcquire();
 /// - Fails: never; with no engine or a zero count it does nothing.
 void EngineObjectRelease();
 
-}  // namespace engine_placeholder::engine_c
+}  // namespace vse::engine_c

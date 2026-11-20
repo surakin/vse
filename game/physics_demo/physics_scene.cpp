@@ -15,7 +15,7 @@
 #include "scene/components.h"
 #include "scene/render_sync.h"
 
-using namespace engine_placeholder::renderer;
+using namespace vse::renderer;
 
 namespace physics_demo
 {

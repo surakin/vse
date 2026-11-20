@@ -3,7 +3,7 @@
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
 
-namespace engine_placeholder::net
+namespace vse::net
 {
 
 SimDatagramPort::SimDatagramPort(SimNetwork& network, const Endpoint& local) : network_(&network), local_(local)
@@ -61,4 +61,4 @@ void SimDatagramPort::OnPacket(const Endpoint& from, ByteSpan packet)
 
 void SimDatagramPort::OnTick(u64) {}
 
-}  // namespace engine_placeholder::net
+}  // namespace vse::net

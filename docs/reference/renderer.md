@@ -68,7 +68,7 @@ What a compiled shader says about itself: its stage, bindings, uniform and push-
 
 The rendering settings in the engine-wide settings system.
 
-[`renderer::RegisterSharedSettings`](#renderer-registersharedsettings-engine-placeholder-settings-registry-star) declares the built-in rendering settings in a [`settings::Registry`](foundation-settings.md#settings-registry) under the `renderer.` section (`renderer.present_mode`, `renderer.width`, ...), with the types, defaults, ranges and range policies of the renderer's own registry and each setting's [`renderer::CostClass`](#renderer-costclass) as its apply class. A [`settings::Settings`](foundation-settings.md#settings-settings) then loads, layers, validates and saves them, and [`renderer::ApplySharedChange`](#renderer-applysharedchange-void-star-const-engine-placeholder-settings-changeevent-amp) is the apply function that hands a change to [`renderer::Renderer::ApplySettings`](#renderer-renderer-applysettings-const-rendersettings-amp).
+[`renderer::RegisterSharedSettings`](#renderer-registersharedsettings-vse-settings-registry-star) declares the built-in rendering settings in a [`settings::Registry`](foundation-settings.md#settings-registry) under the `renderer.` section (`renderer.present_mode`, `renderer.width`, ...), with the types, defaults, ranges and range policies of the renderer's own registry and each setting's [`renderer::CostClass`](#renderer-costclass) as its apply class. A [`settings::Settings`](foundation-settings.md#settings-settings) then loads, layers, validates and saves them, and [`renderer::ApplySharedChange`](#renderer-applysharedchange-void-star-const-vse-settings-changeevent-amp) is the apply function that hands a change to [`renderer::Renderer::ApplySettings`](#renderer-renderer-applysettings-const-rendersettings-amp).
 
 The renderer's own [`renderer::RenderSettings`](#renderer-rendersettings) stays the value type the renderer works with; this header converts to and from the shared system. Files written before the shared system (flat keys, `version = 1`) load through the schema-1 migration.
 
@@ -13566,12 +13566,12 @@ inline constexpr u32 kRendererSchemaVersion;
 
 The schema version of the `renderer` section: 1 was the flat-key text of `SerializeSettings`, 2 puts the keys under `renderer.`.
 
-## `RegisterSharedSettings(::engine_placeholder::settings::Registry*)` {#renderer-registersharedsettings-engine-placeholder-settings-registry-star}
+## `RegisterSharedSettings(::vse::settings::Registry*)` {#renderer-registersharedsettings-vse-settings-registry-star}
 
 `function renderer::RegisterSharedSettings` — defined in `engine/renderer/shared_settings.h`
 
 ```cpp
-void RegisterSharedSettings(::engine_placeholder::settings::Registry* registry);
+void RegisterSharedSettings(::vse::settings::Registry* registry);
 ```
 
 Declares the built-in rendering settings in `registry` as `renderer.<name>` and gives the `renderer` section its schema version.
@@ -13583,12 +13583,12 @@ Declares the built-in rendering settings in `registry` as `renderer.<name>` and 
 | Thread-safety | not-thread-safe; call at start-up before any other thread uses the registry. |
 | Ownership | the registry borrows the setting names (static strings of the renderer). |
 
-## `AddRendererMigrations(::engine_placeholder::settings::MigrationSet*)` {#renderer-addrenderermigrations-engine-placeholder-settings-migrationset-star}
+## `AddRendererMigrations(::vse::settings::MigrationSet*)` {#renderer-addrenderermigrations-vse-settings-migrationset-star}
 
 `function renderer::AddRendererMigrations` — defined in `engine/renderer/shared_settings.h`
 
 ```cpp
-void AddRendererMigrations(::engine_placeholder::settings::MigrationSet* migrations);
+void AddRendererMigrations(::vse::settings::MigrationSet* migrations);
 ```
 
 Adds the migration from the flat-key file of schema 1 (`width = 1920`, no section) to the `renderer.` keys.
@@ -13598,28 +13598,28 @@ Adds the migration from the flat-key file of schema 1 (`width = 1920`, no sectio
 | Thread-safety | not-thread-safe; call before the settings are loaded. |
 | Ownership | the steps borrow static strings. |
 
-## `RenderSettingsFromSnapshot(const::engine_placeholder::settings::Registry&,const::engine_placeholder::settings::SettingsSnapshot&)` {#renderer-rendersettingsfromsnapshot-const-engine-placeholder-settings-registry-amp-const-engine-placeholder-settings-settingssnapshot-amp}
+## `RenderSettingsFromSnapshot(const::vse::settings::Registry&,const::vse::settings::SettingsSnapshot&)` {#renderer-rendersettingsfromsnapshot-const-vse-settings-registry-amp-const-vse-settings-settingssnapshot-amp}
 
 `function renderer::RenderSettingsFromSnapshot` — defined in `engine/renderer/shared_settings.h`
 
 ```cpp
-RenderSettings RenderSettingsFromSnapshot(const ::engine_placeholder::settings::Registry& registry, const ::engine_placeholder::settings::SettingsSnapshot& snapshot);
+RenderSettings RenderSettingsFromSnapshot(const ::vse::settings::Registry& registry, const ::vse::settings::SettingsSnapshot& snapshot);
 ```
 
 Reads the current values of the `renderer.*` settings into a [`renderer::RenderSettings`](#renderer-rendersettings).
 
 | Field | Value |
 |---|---|
-| Parameter `registry` | the registry [`renderer::RegisterSharedSettings`](#renderer-registersharedsettings-engine-placeholder-settings-registry-star) filled. |
+| Parameter `registry` | the registry [`renderer::RegisterSharedSettings`](#renderer-registersharedsettings-vse-settings-registry-star) filled. |
 | Parameter `snapshot` | the values to read. |
 | Returns | the settings; any that is not registered keeps its default. |
 
-## `RenderSettingsToChanges(const RenderSettings&,const::engine_placeholder::settings::Registry&,Vector<::engine_placeholder::settings::ChangeRequest>*)` {#renderer-rendersettingstochanges-const-rendersettings-amp-const-engine-placeholder-settings-registry-amp-vector-lt-engine-placeholder-settings-changerequest-gt-star}
+## `RenderSettingsToChanges(const RenderSettings&,const::vse::settings::Registry&,Vector<::vse::settings::ChangeRequest>*)` {#renderer-rendersettingstochanges-const-rendersettings-amp-const-vse-settings-registry-amp-vector-lt-vse-settings-changerequest-gt-star}
 
 `function renderer::RenderSettingsToChanges` — defined in `engine/renderer/shared_settings.h`
 
 ```cpp
-void RenderSettingsToChanges(const RenderSettings& settings, const ::engine_placeholder::settings::Registry& registry, Vector<::engine_placeholder::settings::ChangeRequest>* out);
+void RenderSettingsToChanges(const RenderSettings& settings, const ::vse::settings::Registry& registry, Vector<::vse::settings::ChangeRequest>* out);
 ```
 
 Appends a request for each rendering setting in `settings` that is registered, for [`settings::Settings::Apply`](foundation-settings.md#settings-settings-apply-const-changerequest-star-usize-applyfn-void-star).
@@ -13629,12 +13629,12 @@ Appends a request for each rendering setting in `settings` that is registered, f
 | Thread-safety | thread-compatible. |
 | Ownership | the requests hold values only. |
 
-## `ApplySharedChange(void*,const::engine_placeholder::settings::ChangeEvent&)` {#renderer-applysharedchange-void-star-const-engine-placeholder-settings-changeevent-amp}
+## `ApplySharedChange(void*,const::vse::settings::ChangeEvent&)` {#renderer-applysharedchange-void-star-const-vse-settings-changeevent-amp}
 
 `function renderer::ApplySharedChange` — defined in `engine/renderer/shared_settings.h`
 
 ```cpp
-bool ApplySharedChange(void* renderer, const ::engine_placeholder::settings::ChangeEvent& event);
+bool ApplySharedChange(void* renderer, const ::vse::settings::ChangeEvent& event);
 ```
 
 The apply function for the `renderer.*` settings: it builds the requested [`renderer::RenderSettings`](#renderer-rendersettings) from the renderer's current ones plus the changes and calls [`renderer::Renderer::ApplySettings`](#renderer-renderer-applysettings-const-rendersettings-amp). Pass it to [`settings::Settings::Apply`](foundation-settings.md#settings-settings-apply-const-changerequest-star-usize-applyfn-void-star) with the renderer as `user`.
@@ -13650,12 +13650,12 @@ The requested settings are the values the settings system holds (including chang
 | Thread-safety | owner-thread-only, as [`renderer::Renderer::ApplySettings`](#renderer-renderer-applysettings-const-rendersettings-amp). |
 | Ownership | borrows the renderer for the call. |
 
-## `SyncSharedFromRenderer(Renderer*,::engine_placeholder::settings::Settings*)` {#renderer-syncsharedfromrenderer-renderer-star-engine-placeholder-settings-settings-star}
+## `SyncSharedFromRenderer(Renderer*,::vse::settings::Settings*)` {#renderer-syncsharedfromrenderer-renderer-star-vse-settings-settings-star}
 
 `function renderer::SyncSharedFromRenderer` — defined in `engine/renderer/shared_settings.h`
 
 ```cpp
-bool SyncSharedFromRenderer(Renderer* renderer, ::engine_placeholder::settings::Settings* settings);
+bool SyncSharedFromRenderer(Renderer* renderer, ::vse::settings::Settings* settings);
 ```
 
 Brings the settings system back in line with the renderer after a queued change failed at the frame boundary: if the renderer's settings in force differ from the values the settings system holds, the renderer's become the settings system's (no apply function runs, listeners are told). Call it after `RenderFrame` in an application that changes settings inside frames.
