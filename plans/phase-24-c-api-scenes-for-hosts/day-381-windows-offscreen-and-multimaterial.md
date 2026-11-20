@@ -39,7 +39,7 @@ Skipped on the Linux machine by the user (2026-11-17); done on the Windows PC on
   and draws it with `SetDIBitsToDevice` (`gdi32`), and `host_window_can_show` is 1, so `walk_around --offscreen` checks that every picture taken was
   shown.
 - **Pictures.** The golden scene: Direct3D 12 and Vulkan byte for byte the same, both within 2 of the Linux golden (40 of 76 800 values off by more than
-  1), as on Day 369. The the host acceptance picture (1280x720, `HOST_DUMP`): the two backends differ in 2 of 2 764 800 values, by 1. The multi-material
+  1), as on Day 369. The host acceptance picture (1280x720, `HOST_DUMP`): the two backends differ in 2 of 2 764 800 values, by 1. The multi-material
   checks of `host_scene.c` (slot colours by index and by name, an unmounted slot) pass on both. No tolerance was changed.
 - **Not done:** the `-DENGINE_LIBRARY_WITH_IMPORTER=OFF` build (no such tree on the PC); the review's regression test for the stride bound (a
   caller cannot reach it from the tests).

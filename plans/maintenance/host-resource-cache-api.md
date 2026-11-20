@@ -1,11 +1,11 @@
 # Maintenance: C API the host needs to cache imported (minted) assets in its own disk cache
 
-Not a numbered phase. Request from the the host project (2026-11-18), written against the engine at `ed6d8327`. Done 2026-11-18 (see Result).
+Not a numbered phase. Request from the host project (2026-11-18), written against the engine at `ed6d8327`. Done 2026-11-18 (see Result).
 
 ## Why
 
-the host shows user-made worlds and avatars as `.glb` files. Today it hands the bytes to `import_gltf` on every load (a large world can take a second or
-more). the host wants to keep what the import made (the minted blobs) in its own disk cache, keyed by the `.glb`'s SHA-256 and the engine's format
+The host shows user-made worlds and avatars as `.glb` files. Today it hands the bytes to `import_gltf` on every load (a large world can take a second or
+more). The host wants to keep what the import made (the minted blobs) in its own disk cache, keyed by the `.glb`'s SHA-256 and the engine's format
 version, and on the next load add the blobs back with `resource_add` and skip the import.
 
 The write half exists: `resource_add` takes a complete blob (`ENGINE_RESOURCE_CHECK_HASH` verifies it, `UNSUPPORTED_VERSION`/`CORRUPT` refuse a stale or damaged one,
@@ -32,7 +32,7 @@ and a few things around it. The memory backend holds the blobs internally (`asse
    importer's output. Without it the host can only invalidate by the library's file hash or an `UNSUPPORTED_VERSION`/`CORRUPT` on add, which misses output that
    is valid but different (a fixed importer bug).
 
-4. **Facts about the imported file that are not in the blobs (required unless they are already readable from the loaded level; to be checked).** The the host
+4. **Facts about the imported file that are not in the blobs (required unless they are already readable from the loaded level; to be checked).** The host
    specs use these after an import: for a world, the node named `Spawn` (position) and the scene's bounding box on x/z; for an avatar, its height, whether a
    material named `Screen` exists, whether animations `Walk` and `Idle` exist, and the node named `Eye`. `engine_import_result` has none of them. If a loaded and
    spawned level gives them (`entity_name_get`, `query`, transforms, mesh slot names), nothing is missing and the host can read them after loading from the

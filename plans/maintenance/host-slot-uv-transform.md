@@ -1,10 +1,10 @@
 # Maintenance: a UV transform on a material slot, so a host can fit video to a screen without copying pixels
 
-Not a numbered phase. Request from the the host project (2026-11-18), written against the engine at `ed6d8327`. Nothing here is started.
+Not a numbered phase. Request from the host project (2026-11-18), written against the engine at `ed6d8327`. Nothing here is started.
 
 ## Why
 
-the host draws each participant's live video on the `Screen` material slot of their avatar, as a host texture (`ENGINE_SLOT_HOST_TEXTURE` on `albedo_tex`
+The host draws each participant's live video on the `Screen` material slot of their avatar, as a host texture (`ENGINE_SLOT_HOST_TEXTURE` on `albedo_tex`
 through `entity_set_mesh_slot_override`). The screen is a 16:9 quad with 0..1 UVs. Video comes in many shapes: a portrait phone camera, a 4:3 webcam, a
 screen share that changes size mid-call. Today the frame is uploaded at its own size and fills the whole quad, so every non-16:9 picture is stretched.
 

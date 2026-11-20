@@ -151,7 +151,6 @@ tests/test_phase_script 6
 
 # Nothing runs against these.
 plans               -
-claude-memory       -
 .gitignore          -
 CLAUDE.md           -
 .clang-format       -   # formatting never changes what a test does

@@ -77,7 +77,7 @@
   - **The C API:** `crash_host.c` (`engine_crash_across_boundary`, shared builds) installs the host's `SIGSEGV` handler in its crash child
     before `crash_install` and checks the handler's marker beside the envelope (`ENGINE_HOST_HANDLER_CHAINED`, Linux only); without the
     change it fails ("the host's handler ... did not run after the dump").
-  - **the host's repro** from the request, built against `libengine.so.1` of this tree: `prev-ran.txt` and the engine's envelope are both
+  - **The host's repro** from the request, built against `libengine.so.1` of this tree: `prev-ran.txt` and the engine's envelope are both
     there, and the child dies of signal 11.
 - **Docs:**
   - `docs/guide/foundation-debugging.md`, "If your program has its own signal handler": the order, signal context, once, its own signal,

@@ -1,14 +1,14 @@
 # Maintenance: placed (spatial) voices from a live host stream, for a call's participants
 
-Not a numbered phase. Request from the the host project (2026-11-18), written against the engine at `ed6d8327` (Phase 26 audio, Days 415-440 built). Nothing here is started.
+Not a numbered phase. Request from the host project (2026-11-18), written against the engine at `ed6d8327` (Phase 26 audio, Days 415-440 built). Nothing here is started.
 
 ## Why
 
-In the host's 3D call world each participant is an entity (a robot or a custom avatar) that moves. the host wants the engine to mix their voices in the world: louder when
+In the host's 3D call world each participant is an entity (a robot or a custom avatar) that moves. The host wants the engine to mix their voices in the world: louder when
 close, quieter far away, from the right direction, with the engine's rolloff, cone and optional Doppler, heard from the camera entity.
 
-The voices are live. the host receives each participant's microphone as 10 ms blocks of 48 kHz mono 16-bit PCM from the call (WebRTC), on a worker thread, and has no clip
-to give the engine. the host already drives the engine's output itself: it would call `audio_render` from its own playback path and push the stereo result to its audio
+The voices are live. The host receives each participant's microphone as 10 ms blocks of 48 kHz mono 16-bit PCM from the call (WebRTC), on a worker thread, and has no clip
+to give the engine. The host already drives the engine's output itself: it would call `audio_render` from its own playback path and push the stereo result to its audio
 player (the engine opens no device, which suits this).
 
 ## What the engine has now (checked in `engine_c.h`)
@@ -37,7 +37,7 @@ So a stream can be heard but not placed, and a placed source can be placed but n
    finishes or loops the voice. `seek` is never called on a live stream. Without it a host can still return exactly `frames` by padding silence itself; the flag exists so the engine
    can also say how often it happened and does not treat zero as the end.
 
-3. **The live stream's latency, stated and bounded (required, a measurement and a number).** The refill job reads ahead of the audio thread. the host needs the delay between the
+3. **The live stream's latency, stated and bounded (required, a measurement and a number).** The refill job reads ahead of the audio thread. The host needs the delay between the
    host having a 10 ms block and it reaching `audio_render`: the guide should state the read-ahead in frames (and let the host set it, for instance `engine_audio_stream_source.
    read_ahead_frames`, default the current value, lowest allowed one mixer block) so a call keeps the voice delay under about 60 ms in total. Report the measured value on the
    three platforms. This is the main risk of the whole request; if the read-ahead cannot go below roughly 40 ms, say so before building the rest.
@@ -54,7 +54,7 @@ So a stream can be heard but not placed, and a placed source can be placed but n
 
 - Mono sources placed in stereo or surround: the existing spatial mixer does it.
 - Occlusion by the world's geometry: later, if the occlusion flag works with the imported level.
-- Recording or encoding the mix: the host does not send the rendered mix to anyone; each person hears their own copy.
+- Recording or encoding the mix: The host does not send the rendered mix to anyone; each person hears their own copy.
 - Speech processing in the engine (noise gate, gain control): the call already does it before the block reaches the host.
 
 ## What the host does with it

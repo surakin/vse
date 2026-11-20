@@ -1,6 +1,6 @@
 # Maintenance: glTF import fails under a decimal-comma locale
 
-Not a numbered phase. Bug report from the the host project (2026-11-18), against the engine at `6d42892a`. Done 2026-11-18 on the Windows PC (see Result).
+Not a numbered phase. Bug report from the host project (2026-11-18), against the engine at `6d42892a`. Done 2026-11-18 on the Windows PC (see Result).
 
 ## Symptom
 

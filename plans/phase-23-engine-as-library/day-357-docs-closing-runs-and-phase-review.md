@@ -7,7 +7,7 @@ Close the phase.
 
 ## Tasks
 
-- [x] `docs/guide/engine-library.md` finished (building the library, the C API conventions, versioning rules, writing a host, embedding in a native window, the the host path, platform notes, limits); `docs/tutorials/loading-the-engine.md` (a C host that opens a window and clears it, compiled and run by a test), linked from the tutorial index; `docs/reference/` regenerated; `ctest -L docs` passes.
+- [x] `docs/guide/engine-library.md` finished (building the library, the C API conventions, versioning rules, writing a host, embedding in a native window, the host path, platform notes, limits); `docs/tutorials/loading-the-engine.md` (a C host that opens a window and clears it, compiled and run by a test), linked from the tutorial index; `docs/reference/` regenerated; `ctest -L docs` passes.
 - [x] **Closing full run on Linux:** `scripts/test-phase.sh --all --flavor all` with the engine built static and with `ENGINE_BUILD_SHARED=ON`, plus `ctest -L docs` and the demos; quote the final `ran X of Y tests (phases ...)` lines here; `CURRENT_PHASE` stays 23 until Phase 24's first day (Day 358).
 - [x] **Windows PC and Mac:** the closing runs there as well (`windows-msvc` plain and asan, `windows-clang-cl`; `macos-clang` plain, asan, tsan and the arm64 compile), the shared and the static builds; or recorded as open in `KNOWN-ISSUES.md`.
 - [x] **Uncapped end-of-phase review (CLAUDE.md):** `/code-review high --max-findings all` over the whole phase's diff (Days 342-357); verify, fix or decline each finding with a reason; record the count and outcome under "Post-implementation code review".

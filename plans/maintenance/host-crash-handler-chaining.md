@@ -1,15 +1,15 @@
 # Maintenance: the engine's crash handler should chain to the handler that was installed before it
 
-Not a numbered phase. Request from the the host project (2026-11-18). Planned 2026-11-19 (below, "The plan"); the user asked for it to be addressed.
+Not a numbered phase. Request from the host project (2026-11-18). Planned 2026-11-19 (below, "The plan"); the user asked for it to be addressed.
 
 ## Why
 
-the host has its own fault handlers (SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS through backward-cpp on POSIX; an unhandled-exception filter on Windows) plus a
-Rust panic hook. They write the host's crash log (build, account-free metadata, the stderr capture). the host installs them at startup, before any engine exists.
+The host has its own fault handlers (SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS through backward-cpp on POSIX; an unhandled-exception filter on Windows) plus a
+Rust panic hook. They write the host's crash log (build, account-free metadata, the stderr capture). The host installs them at startup, before any engine exists.
 
 The engine exists in the host only while the 3D world view is shown, and the host wants the engine's minidump when the engine crashes. It would call
 `crash_handler_install` after `engine_create`. But the engine's handler does not call the handler that was there before it, so the host's log is lost for
-every crash that happens while the engine's handler is installed. the host wants both: the engine's dump and its own log.
+every crash that happens while the engine's handler is installed. The host wants both: the engine's dump and its own log.
 
 ## What happens now (measured on Linux, 2026-11-18, `libengine.so.1` from master)
 
@@ -160,7 +160,7 @@ handler. Each platform needs its own route; the Linux one is designed below, the
 **Definition of done:** on each platform, a host handler installed before `crash_handler_install` runs after the engine's report and dump, once,
 with the original fault's details, and the process still dies of the original fault; nothing changes when there was no earlier handler;
 uninstall restores it; the tests below pass on the platform's machine; the guide documents the order and the dump directory; the request is
-answered in the the host notes (`plans/maintenance/`).
+answered in the host notes (`plans/maintenance/`).
 
 **Rules for every day:** the usual day rules (scoped runs in the platform's flavors, `/code-review high`, `docgen lint` at zero, regenerated
 `docs/reference`, `STATUS.md` and `KNOWN-ISSUES.md`, commit and push). The fault path is signal-safe code (`// SIGNAL-SAFE-BEGIN`/`END`,
@@ -173,7 +173,7 @@ answered in the the host notes (`plans/maintenance/`).
   `SIGILL`, `SIGFPE`, `SIGABRT`, `SIGTRAP`) now runs at a crash, **after the report and the dump, once, in signal context on the faulting
   thread**, with the fault's `siginfo` and context. Then the original fault ends the process, which still dies of the original signal.
 - **No earlier handler:** nothing changes. Uninstalling still puts it back.
-- **the host's own repro** (above, run against `libengine.so.1` built from this commit): `prev-ran.txt` is written **and** the engine's
+- **The host's own repro** (above, run against `libengine.so.1` built from this commit): `prev-ran.txt` is written **and** the engine's
   `crash-report.txt`, `.envelope` and `.crash` are there; the child dies of signal 11.
 
 **What the host does:**
@@ -201,6 +201,6 @@ answered in the the host notes (`plans/maintenance/`).
 an unhandled-exception filter set before `crash_handler_install` runs after the report and
 the dump, once, on the faulting thread, with the original exception; the process still ends with the original code. An `abort()`
 raises no exception and reaches no filter (as without the engine): a `SIGABRT` handler set before runs after the report and the dump
-instead. the host on Windows: keep setting its filter (and its `SIGABRT` handler) at startup, before `crash_handler_install`; the filter's
+instead. The host on Windows: keep setting its filter (and its `SIGABRT` handler) at startup, before `crash_handler_install`; the filter's
 answer is not followed. Details in [02-windows.md](host-crash-handler-chaining/02-windows.md).
 

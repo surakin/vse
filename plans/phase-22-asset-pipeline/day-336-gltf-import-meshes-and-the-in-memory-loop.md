@@ -3,7 +3,7 @@
 **Phase:** [Phase 22 — Asset Pipeline & Resource System](../phase-22-asset-pipeline.md)
 **Depends on:** Days 315 (`HostMemoryBackend`), 319 (mesh), 328 (the resource manager), 335 (the importer library).
 
-Imports glTF meshes into mesh resources through the library of Day 335 and closes the first loop of the the host use: **`.glb` bytes in, mesh blobs in a `HostMemoryBackend`, the resource manager loads them.**
+Imports glTF meshes into mesh resources through the library of Day 335 and closes the first loop of the host use: **`.glb` bytes in, mesh blobs in a `HostMemoryBackend`, the resource manager loads them.**
 
 ## Tasks
 

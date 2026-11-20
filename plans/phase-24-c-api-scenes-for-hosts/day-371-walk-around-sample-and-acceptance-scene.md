@@ -1,13 +1,13 @@
 # Phase 24 / Day 371 — The Walk-Around Sample & the Acceptance Scene
 
 **Phase:** [Phase 24 — Scenes for Hosts Through the C API](../phase-24-c-api-scenes-for-hosts.md)
-**Depends on:** Days 358-368; the host's sample assets (`assets/worlds/` in the the host repository).
+**Depends on:** Days 358-368; the host's sample assets (`assets/worlds/` in the host repository).
 
 The driving case end to end: a meadow, three robots, live screens, name tags, a first-person camera.
 
 ## Tasks
 
-- [x] Copy the the host sample assets the acceptance scene needs (the meadow glTF with instanced trees, the robot with its 8-joint skeleton and `Walk`/`Idle` clips) into `tests/engine_library/fixtures/scene/` with their provenance and license in a README, and a size budget (the fixtures stay small; if they do not, the test skips without them and the day says so).
+- [x] Copy the host sample assets the acceptance scene needs (the meadow glTF with instanced trees, the robot with its 8-joint skeleton and `Walk`/`Idle` clips) into `tests/engine_library/fixtures/scene/` with their provenance and license in a README, and a size budget (the fixtures stay small; if they do not, the test skips without them and the day says so).
 - [x] The C test host builds the scene through the C API only: import at run time, spawn, three robots (one `Walk`, two `Idle`), each `Screen` slot fed a different generated pattern by its own thread, a first-person camera, labels on the robots' heads, a directional light and ambient term; renders; compares pixels with the golden image and checks the stats (no refused objects, no unresolved entities).
 - [x] `tests/engine_library/walk_around.c`: an interactive sample (keys move the camera, mouse look, the robots walk, a pattern changes over time) that doubles as the tutorial's code; `--frames N` makes it a test.
 - [x] The same scene across a device reset and a surface rebind without the host recreating anything (the definition of done).
@@ -23,7 +23,7 @@ The driving case end to end: a meadow, three robots, live screens, name tags, a 
 
 ## Outcome
 
-Day 371 done on the Linux machine (2026-11-15), tests written and built, **not run**. `tests/engine_library/walk_around.c` (interactive sample and, with `--frames N`, test `engine_c_walk_around`: robots with a skeleton and a clip, three host-texture screens each painted by a host thread, labels, sun and ambient, first-person camera, rebind to a new window with the same checksum, stats checks), the tutorial `docs/tutorials/a-3d-scene-in-your-window.md`, allow-list entries (std usage, file access, command line) and the `tests/phases.txt` line. **Departures from the day file:** the the host sample assets (`assets/worlds/` of the the host repository) are not in the checkout there, so the scene uses the engine's own minted test data (a static mesh with a brick material, the hero skeleton and clip, the skinned mesh) instead of a meadow, trees and a robot with Walk/Idle clips; there is no golden image for the acceptance scene (compared by checksum before and after the rebind, not against a file); the tutorial's code is the sample file (named, not pasted), so the docs tests do not compile it.
+Day 371 done on the Linux machine (2026-11-15), tests written and built, **not run**. `tests/engine_library/walk_around.c` (interactive sample and, with `--frames N`, test `engine_c_walk_around`: robots with a skeleton and a clip, three host-texture screens each painted by a host thread, labels, sun and ambient, first-person camera, rebind to a new window with the same checksum, stats checks), the tutorial `docs/tutorials/a-3d-scene-in-your-window.md`, allow-list entries (std usage, file access, command line) and the `tests/phases.txt` line. **Departures from the day file:** the host sample assets (`assets/worlds/` of the host repository) are not in the checkout there, so the scene uses the engine's own minted test data (a static mesh with a brick material, the hero skeleton and clip, the skinned mesh) instead of a meadow, trees and a robot with Walk/Idle clips; there is no golden image for the acceptance scene (compared by checksum before and after the rebind, not against a file); the tutorial's code is the sample file (named, not pasted), so the docs tests do not compile it.
 
 ## Post-implementation code review
 

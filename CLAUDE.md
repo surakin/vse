@@ -46,15 +46,10 @@ commit; a new upward edge or cycle is not added, even temporarily. The known vio
 re-versions a prerequisite updates `BUILD.md` in the same commit**: a new system library, tool, SDK, optional Windows feature or pinned tool version
 (such as `slangc`). A phase that ports a platform adds that platform's section before its first implementation day.
 
-## Claude memory lives in the repo
+## Claude memory is local, not in the repo
 
-The auto-memory files are `claude-memory/` in this repo, so they move with
-the checkout between machines. Claude Code looks for them under
-`~/.claude/projects/<project path>/memory`, which is a symlink to that
-directory; on a new machine run `scripts/link-claude-memory.sh` once (Windows: `scripts/link-claude-memory.ps1`, which makes a
-directory junction). Memory
-edits show up as ordinary changes under `claude-memory/` and are committed
-and pushed with the work that prompted them.
+The auto-memory files are private working notes: `claude-memory/` is ignored by git and never committed or pushed. Claude Code reads them
+through `~/.claude/projects/<project path>/memory`, which may be a symlink to that directory.
 
 ## Known issues are tracked (required)
 
