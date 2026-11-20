@@ -1,7 +1,10 @@
 #include "log/log.h"
 
 #include "log/diagnostics_hooks.h"
+#include "log/log_device.h"
+#include "log/tty_log_device.h"
 #include "os/os.h"
+#include "os/terminal.h"
 
 #include "sync/atomic.h"
 #include "sync/thread.h"
@@ -192,6 +195,192 @@ void SetLogObserver(LogObserverFn fn, void* user)
     g_observer_fn.Store(fn, MemoryOrder::SeqCst);
 }
 
+long WriteLogConsoleBytes(const char* bytes, usize length)
+{
+    return g_write_sink(1, bytes, length);
+}
+
+void StdoutLogDevice::Write(const LogRecord& record)
+{
+    if (record.trace.Length() == 0)
+    {
+        WriteLogConsoleBytes(record.line.Data(), record.line.Length());
+        return;
+    }
+    // The line and its trace in one write, so another thread's output cannot come between them. `Log` builds them one
+    // after the other in one buffer, so the common case needs no copy.
+    if (record.trace.Data() == record.line.Data() + record.line.Length())
+    {
+        WriteLogConsoleBytes(record.line.Data(), record.line.Length() + record.trace.Length());
+        return;
+    }
+    char text[512 + kLogTraceBytes];
+    usize length = 0;
+    const usize line = record.line.Length() < 512 ? record.line.Length() : 512;
+    MemCopy(text, record.line.Data(), line);
+    length += line;
+    const usize trace = record.trace.Length() < kLogTraceBytes ? record.trace.Length() : kLogTraceBytes;
+    MemCopy(text + length, record.trace.Data(), trace);
+    length += trace;
+    WriteLogConsoleBytes(text, length);
+}
+
+namespace
+{
+
+// ---- the devices
+// -------------------------------------------------------------------------------------------------------
+//
+// A slot is used by a `Log` call between the increment and the decrement of `busy`; `RemoveLogDevice` clears the device
+// first and then waits for `busy` to reach zero, as `SetLogObserver` does. Adding and removing are serialised by a spin
+// flag (rare, short); `Log` takes no lock.
+struct DeviceSlot
+{
+    Atomic<LogDevice*> device{nullptr};
+    Atomic<u8> max_verbosity{0};
+    Atomic<int> busy{0};
+};
+
+DeviceSlot g_devices[kMaxLogDevices];
+Atomic<bool> g_devices_lock{false};
+Atomic<int> g_device_count{0};
+
+void LockDevices()
+{
+    while (g_devices_lock.Exchange(true, MemoryOrder::Acquire))
+    {
+        ThisThread::Yield();
+    }
+}
+
+void UnlockDevices()
+{
+    g_devices_lock.Store(false, MemoryOrder::Release);
+}
+
+StdoutLogDevice g_stdout_device;
+TtyLogDevice g_tty_device;
+Atomic<u8> g_console_mode{static_cast<u8>(ConsoleLogMode::Auto)};
+Atomic<u8> g_auto_colors{0};  // 0 not asked yet, 1 plain, 2 colour: the answer for `Auto`
+
+LogDevice* ConsoleDevice()
+{
+    switch (static_cast<ConsoleLogMode>(g_console_mode.Load(MemoryOrder::Relaxed)))
+    {
+    case ConsoleLogMode::Off: return nullptr;
+    case ConsoleLogMode::Plain: return &g_stdout_device;
+    case ConsoleLogMode::Color: return &g_tty_device;
+    case ConsoleLogMode::Auto: break;
+    }
+    // A test that replaced the write sink wants the plain bytes, whatever the process's own standard output is.
+    if (g_write_sink != &os::Write)
+    {
+        return &g_stdout_device;
+    }
+    u8 colors = g_auto_colors.Load(MemoryOrder::Relaxed);
+    if (colors == 0)
+    {
+        colors = os::DetectTerminalColors(1) != os::TerminalColors::None ? 2 : 1;
+        g_auto_colors.Store(colors, MemoryOrder::Relaxed);
+    }
+    return colors == 2 ? static_cast<LogDevice*>(&g_tty_device) : static_cast<LogDevice*>(&g_stdout_device);
+}
+
+}  // namespace
+
+bool AddLogDevice(LogDevice* device, LogVerbosity max_verbosity)
+{
+    if (device == nullptr)
+    {
+        return false;
+    }
+    bool added = false;
+    LockDevices();
+    DeviceSlot* free_slot = nullptr;
+    bool duplicate = false;
+    for (DeviceSlot& slot : g_devices)
+    {
+        LogDevice* current = slot.device.Load(MemoryOrder::Relaxed);
+        if (current == device)
+        {
+            duplicate = true;
+        }
+        else if (current == nullptr && free_slot == nullptr)
+        {
+            free_slot = &slot;
+        }
+    }
+    if (!duplicate && free_slot != nullptr)
+    {
+        free_slot->max_verbosity.Store(static_cast<u8>(max_verbosity), MemoryOrder::Relaxed);
+        free_slot->device.Store(device, MemoryOrder::SeqCst);
+        g_device_count.FetchAdd(1, MemoryOrder::Relaxed);
+        added = true;
+    }
+    UnlockDevices();
+    return added;
+}
+
+void RemoveLogDevice(LogDevice* device)
+{
+    if (device == nullptr)
+    {
+        return;
+    }
+    LockDevices();
+    DeviceSlot* found = nullptr;
+    for (DeviceSlot& slot : g_devices)
+    {
+        if (slot.device.Load(MemoryOrder::Relaxed) == device)
+        {
+            slot.device.Store(nullptr, MemoryOrder::SeqCst);  // new calls stop using it
+            g_device_count.FetchSub(1, MemoryOrder::Relaxed);
+            found = &slot;
+            break;
+        }
+    }
+    UnlockDevices();
+    if (found != nullptr)
+    {
+        while (found->busy.Load(MemoryOrder::SeqCst) != 0)
+        {
+            ThisThread::Yield();
+        }
+    }
+}
+
+void FlushLogDevices()
+{
+    for (DeviceSlot& slot : g_devices)
+    {
+        if (slot.device.Load(MemoryOrder::SeqCst) == nullptr)
+        {
+            continue;
+        }
+        slot.busy.FetchAdd(1, MemoryOrder::SeqCst);
+        if (LogDevice* device = slot.device.Load(MemoryOrder::SeqCst))
+        {
+            device->Flush();
+        }
+        slot.busy.FetchSub(1, MemoryOrder::SeqCst);
+    }
+    if (LogDevice* console = ConsoleDevice())
+    {
+        console->Flush();
+    }
+}
+
+void SetConsoleLogMode(ConsoleLogMode mode)
+{
+    g_auto_colors.Store(0, MemoryOrder::Relaxed);
+    g_console_mode.Store(static_cast<u8>(mode), MemoryOrder::Relaxed);
+}
+
+ConsoleLogMode GetConsoleLogMode()
+{
+    return static_cast<ConsoleLogMode>(g_console_mode.Load(MemoryOrder::Relaxed));
+}
+
 void Log(LogChannel& channel, LogVerbosity level, StringView message)
 {
     if (!channel.ShouldLog(level))
@@ -205,9 +394,10 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message)
         handled = observer(g_observer_user.Load(MemoryOrder::SeqCst), channel.Name(), level, message);
     }
     g_observer_busy.FetchSub(1, MemoryOrder::SeqCst);
-    char buf[512];
+    char text[512 + kLogTraceBytes];
+    char* const buf = text;
     // Everything but the newline goes into the first 511 bytes, so a long message is cut but the line still ends.
-    constexpr usize kText = sizeof(buf) - 1;
+    constexpr usize kText = 511;
     usize offset = 0;
     offset = AppendStrToBuffer(buf, kText, offset, "[");
     offset = AppendStrToBuffer(buf, kText, offset, channel.Name());
@@ -217,26 +407,48 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message)
     offset = AppendStrToBuffer(buf, kText, offset, message);
     buf[offset++] = '\n';
     RingAppend(buf, offset);
-    if (handled)
+
+    LogRecord record;
+    record.channel = channel.Name();
+    record.level = level;
+    record.message = message;
+    record.line = StringView(buf, offset);
+    if (g_device_count.Load(MemoryOrder::Relaxed) != 0)
     {
-        return;
+        record.timestamp_ns = os::MonotonicTimeNanos();  // only the added devices read it
     }
     if (level == LogVerbosity::Error && g_log_error_traces.Load(MemoryOrder::Relaxed))
     {
-        // Where the error came from, under the line, in the same write so another thread's output cannot come between
-        // them (names stay mangled: demangling allocates).
-        char text[sizeof(buf) + 4096];
-        MemCopy(text, buf, offset);
-        usize length = offset;
+        // Where the error came from, under the line (names stay mangled: demangling allocates).
         const FailureReportHooks* hooks = GetFailureReportHooks();
         if (hooks != nullptr && hooks->append_stack_trace != nullptr)
         {
-            length += hooks->append_stack_trace(text + offset, sizeof(text) - offset, 1);
+            const usize trace = hooks->append_stack_trace(text + offset, kLogTraceBytes, 1);
+            record.trace = StringView(text + offset, trace);
         }
-        g_write_sink(1, text, length);
-        return;
     }
-    g_write_sink(1, buf, offset);
+    // The observer's "handled" keeps the line off the console only; the other devices still get it.
+    if (!handled)
+    {
+        if (LogDevice* console = ConsoleDevice())
+        {
+            console->Write(record);
+        }
+    }
+    for (DeviceSlot& slot : g_devices)
+    {
+        if (slot.device.Load(MemoryOrder::SeqCst) == nullptr)
+        {
+            continue;  // an empty slot costs one load, and a remover is never kept waiting by it
+        }
+        slot.busy.FetchAdd(1, MemoryOrder::SeqCst);
+        LogDevice* device = slot.device.Load(MemoryOrder::SeqCst);  // again: it may have been removed meanwhile
+        if (device != nullptr && static_cast<u8>(level) <= slot.max_verbosity.Load(MemoryOrder::Relaxed))
+        {
+            device->Write(record);
+        }
+        slot.busy.FetchSub(1, MemoryOrder::SeqCst);
+    }
 }
 
 // SIGNAL-SAFE-BEGIN

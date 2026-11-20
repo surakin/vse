@@ -4,6 +4,7 @@
 #include "cstr/mem_ops.h"
 #include "os/console.h"  // ::exit (the C library header os::Abort comes from)
 #include "os/last_error.h"
+#include "os/terminal.h"
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -44,6 +45,16 @@ void Exit(int code)
 long Write(int fd, const void* buf, usize len)
 {
     return ::write(fd, buf, len);
+}
+
+bool IsTerminal(int fd)
+{
+    return ::isatty(fd) != 0;
+}
+
+bool EnableTerminalSequences(int)
+{
+    return true;
 }
 
 long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos)

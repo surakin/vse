@@ -5,6 +5,7 @@
 
 #include "font_support.h"
 #include "log/log.h"
+#include "log/log_device.h"
 #include "os/os.h"
 #include "ui/debug_overlay.h"
 #include "ui/surface.h"
@@ -18,15 +19,11 @@ namespace
 
 LogChannel g_overlay_channel("overlay_test");
 
-long OverlayDiscard(int, const void*, usize length)
-{
-    return static_cast<long>(length);
-}
-
+// The overlay tests log on purpose and do not want the lines on the console.
 struct OverlayQuiet
 {
-    OverlayQuiet() { SetWriteSinkForTesting(&OverlayDiscard); }
-    ~OverlayQuiet() { SetWriteSinkForTesting(&os::Write); }
+    OverlayQuiet() { SetConsoleLogMode(ConsoleLogMode::Off); }
+    ~OverlayQuiet() { SetConsoleLogMode(ConsoleLogMode::Auto); }
 };
 
 void OverlayLog(const char* text)

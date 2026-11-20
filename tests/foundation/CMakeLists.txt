@@ -30,6 +30,8 @@ set(FOUNDATION_BASE_TEST_SOURCES
   quaternion_test.cpp
   transform_test.cpp
   log_test.cpp
+  log_device_test.cpp
+  terminal_test.cpp
   diagnostics_hooks_test.cpp
   command_line_test.cpp
   os_timing_test.cpp

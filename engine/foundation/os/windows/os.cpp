@@ -1,6 +1,7 @@
 #include "os/os.h"
 
 #include "os/console.h"
+#include "os/terminal.h"
 #include "sync/atomic.h"
 #include <fcntl.h>  // the POSIX-named open flags callers pass (_O_RDONLY, ...), from the UCRT
 
@@ -164,6 +165,27 @@ long Write(int fd, const void* buf, usize len)
         return -1;
     }
     return static_cast<long>(written);
+}
+
+bool IsTerminal(int fd)
+{
+    HANDLE h = HandleOf(fd);
+    return h != INVALID_HANDLE_VALUE && h != nullptr && IsConsole(fd, h);
+}
+
+bool EnableTerminalSequences(int fd)
+{
+    HANDLE h = HandleOf(fd);
+    DWORD mode = 0;
+    if (h == INVALID_HANDLE_VALUE || h == nullptr || GetConsoleMode(h, &mode) == 0)
+    {
+        return false;
+    }
+    if ((mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0)
+    {
+        return true;
+    }
+    return SetConsoleMode(h, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
 }
 
 namespace

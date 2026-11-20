@@ -12,16 +12,16 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
 | [Foundation: Containers](foundation-containers.md) | 14 | 316 |
 | [Foundation: Strings](foundation-strings.md) | 6 | 104 |
-| [Foundation: Paths and Files](foundation-io.md) | 6 | 289 |
+| [Foundation: Paths and Files](foundation-io.md) | 7 | 301 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 87 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 5 | 115 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 547 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
 | [Scripting](script.md) | 27 | 831 |
 | [Script physics bindings](script_physics.md) | 3 | 53 |
 | [Script audio and input bindings](script_media.md) | 5 | 132 |
-| [Platform: OS Services](platform-os.md) | 8 | 83 |
+| [Platform: OS Services](platform-os.md) | 9 | 98 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
 | [Text](text.md) | 6 | 221 |

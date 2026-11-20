@@ -75,6 +75,68 @@ Channel verbosity and enabled state are **settings** ([Settings](settings.md)): 
 them; use whatever the settings system offers, for example `--set log.logrender.verbosity=Info`, a settings file or the environment variable
 `ENGINE_SETTING_LOG__LOGRENDER__VERBOSITY`. Programs such as `hello_window` also take a plain `--log-level=info` that sets every channel.
 
+### Log devices
+
+Where a line goes is a **log device** (`log/log_device.h`): an object with a `Write(const LogRecord&)` method that receives every line a channel lets
+through. `Log` writes each line to the **console device** and then to every device added with `AddLogDevice`. A device is yours: the registry only
+borrows it, and `RemoveLogDevice` waits for calls still running, so the device may be destroyed right after.
+
+The console device is chosen with `SetConsoleLogMode` or the setting `log.console`:
+
+| Mode | Console device |
+|---|---|
+| `Auto` (default) | `TtyLogDevice` (coloured) when standard output is a colour-capable terminal, else `StdoutLogDevice` |
+| `Plain` | `StdoutLogDevice`: the line as formatted |
+| `Color` | `TtyLogDevice` whatever standard output is |
+| `Off` | no console output; added devices still receive lines |
+
+`Auto` follows the usual conventions: `NO_COLOR` turns colour off, `CLICOLOR_FORCE` turns it on for a pipe, `TERM=dumb` has none, and the level of
+colour comes from `COLORTERM` and `TERM` (`os/terminal.h`). The coloured device shows control bytes in a message as `^X`, so logged text cannot drive the
+terminal. A test that replaces the write sink always gets the plain device.
+
+A file is a device too: `io::FileLogDevice` (`io/file_log_device.h`) appends lines to a file with a buffer, flushes at once for `Error`, and rotates by
+size (`name.1` is the newest). Through the settings, `log.file.path` (empty means none), `log.file.level`, `log.file.max_bytes` and `log.file.keep` create
+and remove it at run time. A window, a network connection or a test collector are devices the same way: implement `Write` (and `Flush` if it
+buffers), then add it. `Write` runs on the thread that logged, possibly on several at once, and must not call `Log`.
+
+```cpp compile run standalone
+#include "log/log.h"
+#include "log/log_device.h"
+#include "os/console.h"
+
+using namespace vse;
+
+class CountingDevice final : public LogDevice {
+public:
+    void Write(const LogRecord& record) override {
+        ++lines_;
+        os::Print("device got: %.*s", static_cast<int>(record.line.Length()), record.line.Data());
+    }
+    int lines_ = 0;
+};
+
+int main() {
+    SetConsoleLogMode(ConsoleLogMode::Off);          // only our device listens
+    CountingDevice device;
+    AddLogDevice(&device, LogVerbosity::Warn);       // warnings and errors
+    Log(LogCore, LogVerbosity::Warn, "careful");
+    Log(LogCore, LogVerbosity::Error, "broken");
+    RemoveLogDevice(&device);                        // safe to destroy the device after this
+    os::Print("lines: %d\n", device.lines_);
+    return 0;
+}
+```
+
+```output
+device got: [LogCore] WARN: careful
+device got: [LogCore] ERROR: broken
+lines: 2
+```
+
+The crash and assert reports do not go through devices: they write straight to the write sink (standard output), plain, so they stay safe in a signal
+handler. The last 256 lines are kept in the ring for the crash report whatever the devices are. An observer (`SetLogObserver`, the C API's log
+callback) that returns true keeps the line off the console only; added devices still get it.
+
 ### Adding a channel
 
 Define a global in one `.cpp` file and declare it `extern` in a header the module's code includes:

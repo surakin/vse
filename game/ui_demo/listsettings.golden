@@ -1,3 +1,8 @@
+log.console                          auto           default auto         from defaults                           the console log device: auto (colour on a colour terminal), plain, color or off
+log.file.keep                        3              default 3            from defaults                           rotated log files kept (name.1 is the newest)
+log.file.level                       trace          default trace        from defaults                           the least severe level written to the log file
+log.file.max_bytes                   10485760       default 10485760     from defaults                           rotate the log file at this size in bytes (0: never)
+log.file.path                        ""             default ""           from defaults                           append the log to this file (empty: no log file); its directory must exist
 log.io.enabled                       true           default true         from defaults                           whether the channel logs at all
 log.io.verbosity                     warn           default warn         from defaults                           how much the channel logs: error, warn, info, debug or trace
 log.logbuild.enabled                 true           default true         from defaults                           whether the channel logs at all

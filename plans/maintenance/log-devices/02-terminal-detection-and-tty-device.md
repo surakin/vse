@@ -8,7 +8,7 @@ plain stdout device. There is no terminal detection in the engine today (no `isa
 
 ## Tasks
 
-- [ ] **Tests first** (`tests/foundation/terminal_test.cpp` and `tests/foundation/tty_log_device_test.cpp`, tags `[os][terminal]`, `[log][tty]`;
+- [x] **Tests first** (`tests/foundation/terminal_test.cpp` and `tests/foundation/tty_log_device_test.cpp`, tags `[os][terminal]`, `[log][tty]`;
   lines in `tests/phases.txt`):
   - `os::DetectTerminal(fd, env)` is a pure function of a descriptor-kind and an environment view, so it is tested without a terminal: not a
     terminal -> `None`; `NO_COLOR` set and non-empty -> `None`; `TERM=dumb` -> `None`; `COLORTERM=truecolor` -> `TrueColor`; `TERM` with
@@ -19,27 +19,38 @@ plain stdout device. There is no terminal detection in the engine today (no `isa
   - the TTY device's output with the escapes stripped equals the stdout device's line, byte for byte;
   - the console choice: `ConsoleLogDevice` selection picks the TTY device on a colour terminal and the stdout device otherwise (decided from the
     detection result handed in, not the process's real fd).
-- [ ] **`os/terminal.h`** (`engine/foundation/os/`, a wrapper per `std_usage_check`): `os::IsTerminal(fd)` (POSIX `isatty`; Windows
+- [x] **`os/terminal.h`** (`engine/foundation/os/`, a wrapper per `std_usage_check`): `os::IsTerminal(fd)` (POSIX `isatty`; Windows
   `GetConsoleMode`, in `os/windows/`; macOS shares the POSIX file), `os::DetectTerminal(...)` (the pure rule above) and, on Windows, enabling
   `ENABLE_VIRTUAL_TERMINAL_PROCESSING` for the output handle (detection says `None` if it cannot be enabled). `Backend:` labels and a section in
   each platform's `BACKEND.md` where the debugging-style rule asks for it. Environment is read with `os::GetEnvironment`; `NO_COLOR`, `CLICOLOR_FORCE`,
   `TERM` and `COLORTERM` are the conventional terminal variables, read before any `Settings` exists, so they get lines in
   `tools/config_access_check/allowlist.txt` (a reason each); `log.color` (Day 4) is the setting that overrides them.
-- [ ] **`log/tty_log_device.{h,cpp}`** (layer 3, no `io`): `TtyLogDevice`, same `LogDevice` contract as the stdout device (writes through the log
+- [x] **`log/tty_log_device.{h,cpp}`** (layer 3, no `io`): `TtyLogDevice`, same `LogDevice` contract as the stdout device (writes through the log
   core's write sink so `SetWriteSinkForTesting` captures it); a small palette per level, optional dim channel name; the whole coloured line is built
   in the 512-byte stack buffer and written in one call so lines from threads do not interleave; a line that does not fit is truncated the way the
   plain line is.
-- [ ] **Default console device**: at the first `Log()`, the registry installs the TTY device if `DetectTerminal(1, environment)` says colour, else the
+- [x] **Default console device**: at the first `Log()`, the registry installs the TTY device if `DetectTerminal(1, environment)` says colour, else the
   stdout device (never both). Crash and assert output stay plain: they write straight to fd 1 without colour (signal-safe, no environment read).
-- [ ] **Docs**: header `///` comments, `docgen lint` at zero, `docs/reference/` regenerated, `docs/guide/platform-os.md` reference paragraph for the
+- [x] **Docs**: header `///` comments, `docgen lint` at zero, `docs/reference/` regenerated, `docs/guide/platform-os.md` reference paragraph for the
   terminal functions.
-- [ ] **Standing rows** (series rules).
-- [ ] **Windows and macOS**: the Windows PC (VT enabling, `GetConsoleMode`) and the Mac builds and runs are the user's machines: list them in
+- [x] **Standing rows** (series rules).
+- [x] **Windows and macOS**: the Windows PC (VT enabling, `GetConsoleMode`) and the Mac builds and runs are the user's machines: list them in
   `KNOWN-ISSUES.md` if not done by the series' close.
 
 **Done:** on a colour terminal the console device is coloured, anywhere else (pipe, file, `NO_COLOR`, `TERM=dumb`) it is the unchanged plain
 line; tests pass plain, asan and tsan; the review is recorded below.
 
+## Notes (2026-11-20, Linux)
+
+- `os/terminal.{h,cpp}` (layer `os`): `IsTerminal`, `EnableTerminalSequences`, `ReadTerminalEnvironment`, the pure `ClassifyTerminal` and
+  `DetectTerminalColors`. POSIX in `os/posix/os_posix.cpp`, Windows in `os/windows/os.cpp` (written, **not built or run**: the Windows PC is the user's).
+  The `Backend:` label was not used (it asks for a section in the debug `BACKEND.md` files, which are for the debugging facilities); the platform
+  difference is in prose.
+- `TtyLogDevice` in `log/`; `Auto` picks it only when the write sink is the real one (a test that replaced the sink gets plain bytes).
+- The pty test of the plan was not written: the pure `ClassifyTerminal` covers the rules, and `IsTerminal(-1)` and a pipe the fallback; a real terminal
+  needs a pty helper the test support does not have. Recorded in `KNOWN-ISSUES.md`.
+- `tools/config_access_check/allowlist.txt` has the line for `os/terminal.cpp` (the four variables, with the reason).
+
 ## Post-implementation code review
 
-(to be written)
+See Day 5: the review covered the whole series.

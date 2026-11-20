@@ -2,6 +2,7 @@
 
 #include "catch_engine_types.h"
 #include "log/log.h"
+#include "log/log_device.h"
 #include "settings/engine_settings.h"
 #include "settings/memory_store.h"
 #include "settings/report.h"
@@ -220,4 +221,92 @@ TEST_CASE(
     AttachLogSettings(&settings);
     CHECK(g_test_channel.Verbosity() == LogVerbosity::Info);  // no layer set it: the code's choice stands
     g_test_channel.SetVerbosity(LogVerbosity::Warn);
+}
+
+TEST_CASE("Log device settings: the console mode and the file device follow log.console and log.file.*",
+          "[settings][engine][log]")
+{
+    Registry registry;
+    RegisterLogSettings(&registry);
+    for (const char* key : {"log.console", "log.file.path", "log.file.level", "log.file.max_bytes", "log.file.keep"})
+    {
+        INFO(key);
+        REQUIRE(registry.Find(key).IsValid());
+    }
+    io_test::TempDir dir;
+    const io::Path none = dir / "none.cfg";
+    Settings settings(registry);
+    LoadOptions o;
+    o.user_file = &none;
+    o.use_environment = false;
+    settings.Load(o);
+    AttachLogSettings(&settings);
+    CHECK(GetConsoleLogMode() == ConsoleLogMode::Auto);  // no layer set it
+
+    REQUIRE(settings.SetText("log.console", "off").Ok());
+    CHECK(GetConsoleLogMode() == ConsoleLogMode::Off);
+    REQUIRE(settings.SetText("log.console", "color").Ok());
+    CHECK(GetConsoleLogMode() == ConsoleLogMode::Color);
+    REQUIRE(settings.SetText("log.console", "plain").Ok());
+    CHECK(GetConsoleLogMode() == ConsoleLogMode::Plain);
+
+    // A file: lines reach it at its level; clearing the path removes the device and flushes.
+    SetConsoleLogMode(ConsoleLogMode::Off);
+    const io::Path log_file = dir / "engine.log";
+    char native[io::kMaxPathBytes + 1];
+    REQUIRE(log_file.ToNative(native, sizeof(native)));
+    REQUIRE(settings.SetText("log.file.level", "warn").Ok());
+    REQUIRE(settings.SetText("log.file.path", native).Ok());
+    g_test_channel.SetVerbosity(LogVerbosity::Info);
+    Log(g_test_channel, LogVerbosity::Info, "below the file level");
+    g_test_channel.SetVerbosity(LogVerbosity::Warn);
+    Log(g_test_channel, LogVerbosity::Warn, "reaches the file");
+    REQUIRE(settings.SetText("log.file.path", "").Ok());
+    Log(g_test_channel, LogVerbosity::Warn, "after the file is gone");
+    String<HeapAllocator> text(HeapAllocator::Default());
+    REQUIRE(io::ReadTextFile(log_file, &text).Ok());
+    CHECK(text.View().Contains("reaches the file"));
+    CHECK_FALSE(text.View().Contains("below the file level"));
+    CHECK_FALSE(text.View().Contains("after the file is gone"));
+
+    // A path that cannot be opened leaves no file device and does not stop the program.
+    const io::Path missing = dir / "no_such_dir" / "engine.log";
+    REQUIRE(missing.ToNative(native, sizeof(native)));
+    REQUIRE(settings.SetText("log.file.path", native).Ok());
+    Log(g_test_channel, LogVerbosity::Warn, "still fine");
+    REQUIRE(settings.SetText("log.file.path", "").Ok());
+    SetConsoleLogMode(ConsoleLogMode::Auto);
+}
+
+TEST_CASE("Log device settings: attaching a Settings with no log file keeps another one's file",
+          "[settings][engine][log]")
+{
+    Registry registry;
+    RegisterLogSettings(&registry);
+    io_test::TempDir dir;
+    const io::Path none = dir / "none.cfg";
+    LoadOptions o;
+    o.user_file = &none;
+    o.use_environment = false;
+    Settings first(registry);
+    first.Load(o);
+    AttachLogSettings(&first);
+    SetConsoleLogMode(ConsoleLogMode::Off);
+    const io::Path log_file = dir / "first.log";
+    char native[io::kMaxPathBytes + 1];
+    REQUIRE(log_file.ToNative(native, sizeof(native)));
+    REQUIRE(first.SetText("log.file.path", native).Ok());
+
+    Registry other_registry;
+    RegisterLogSettings(&other_registry);
+    Settings second(other_registry);
+    second.Load(o);
+    AttachLogSettings(&second);  // its log.file.path is empty
+    g_test_channel.SetVerbosity(LogVerbosity::Warn);
+    Log(g_test_channel, LogVerbosity::Warn, "still in the first file");
+    REQUIRE(first.SetText("log.file.path", "").Ok());
+    String<HeapAllocator> text(HeapAllocator::Default());
+    REQUIRE(io::ReadTextFile(log_file, &text).Ok());
+    CHECK(text.View().Contains("still in the first file"));
+    SetConsoleLogMode(ConsoleLogMode::Auto);
 }

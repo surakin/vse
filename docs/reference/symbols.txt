@@ -941,6 +941,18 @@ io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile
 io::WriteFile(const Path&,ByteSpan)	function	foundation/io	io-writefile-const-path-amp-bytespan	foundation-io.md	engine/foundation/io/file.h:364
 io::WriteFileAtomic(const Path&,const void*,usize,u32)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize-u32	foundation-io.md	engine/foundation/io/file.h:382
 io::WriteFileAtomic(const Path&,ByteSpan,u32)	function	foundation/io	io-writefileatomic-const-path-amp-bytespan-u32	foundation-io.md	engine/foundation/io/file.h:384
+io::FileLogOptions	struct	foundation/io	io-filelogoptions	foundation-io.md	engine/foundation/io/file_log_device.h:16
+io::FileLogOptions::max_bytes	variable	foundation/io	io-filelogoptions-max-bytes	foundation-io.md	engine/foundation/io/file_log_device.h:19
+io::FileLogOptions::keep	variable	foundation/io	io-filelogoptions-keep	foundation-io.md	engine/foundation/io/file_log_device.h:22
+io::FileLogOptions::flush_level	variable	foundation/io	io-filelogoptions-flush-level	foundation-io.md	engine/foundation/io/file_log_device.h:25
+io::FileLogDevice	class	foundation/io	io-filelogdevice	foundation-io.md	engine/foundation/io/file_log_device.h:37
+io::FileLogDevice::Open(const Path&,const FileLogOptions&,UniquePtr<FileLogDevice>*)	function	foundation/io	io-filelogdevice-open-const-path-amp-const-filelogoptions-amp-uniqueptr-lt-filelogdevice-gt-star	foundation-io.md	engine/foundation/io/file_log_device.h:47
+io::FileLogDevice::~FileLogDevice()	function	foundation/io	io-filelogdevice-tilde-filelogdevice	foundation-io.md	engine/foundation/io/file_log_device.h:50
+io::FileLogDevice::Write(const LogRecord&)	function	foundation/io	io-filelogdevice-write-const-logrecord-amp	foundation-io.md	engine/foundation/io/file_log_device.h:53
+io::FileLogDevice::Flush()	function	foundation/io	io-filelogdevice-flush	foundation-io.md	engine/foundation/io/file_log_device.h:56
+io::FileLogDevice::DroppedLines()	function	foundation/io	io-filelogdevice-droppedlines	foundation-io.md	engine/foundation/io/file_log_device.h:60
+io::FileLogDevice::Rotations()	function	foundation/io	io-filelogdevice-rotations	foundation-io.md	engine/foundation/io/file_log_device.h:64
+io::FileLogDevice::FileLogDevice(const Path&,const FileLogOptions&,FilePtr,u64)	function	foundation/io	io-filelogdevice-filelogdevice-const-path-amp-const-filelogoptions-amp-fileptr-u64	foundation-io.md	engine/foundation/io/file_log_device.h:67
 io::FileType	enum	foundation/io	io-filetype	foundation-io.md	engine/foundation/io/file_system.h:17
 io::FileType::None	enumerator	foundation/io	io-filetype-none	foundation-io.md	engine/foundation/io/file_system.h:19
 io::FileType::Regular	enumerator	foundation/io	io-filetype-regular	foundation-io.md	engine/foundation/io/file_system.h:20
@@ -1281,6 +1293,34 @@ LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundat
 LogObserverFn	alias	foundation/log	logobserverfn	foundation-log.md	engine/foundation/log/log.h:156
 SetLogObserver(LogObserverFn,void*)	function	foundation/log	setlogobserver-logobserverfn-void-star	foundation-log.md	engine/foundation/log/log.h:164
 Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:175
+kLogTraceBytes	variable	foundation/log	klogtracebytes	foundation-log.md	engine/foundation/log/log_device.h:19
+kMaxLogDevices	variable	foundation/log	kmaxlogdevices	foundation-log.md	engine/foundation/log/log_device.h:22
+LogRecord	struct	foundation/log	logrecord	foundation-log.md	engine/foundation/log/log_device.h:25
+LogRecord::channel	variable	foundation/log	logrecord-channel	foundation-log.md	engine/foundation/log/log_device.h:27
+LogRecord::level	variable	foundation/log	logrecord-level	foundation-log.md	engine/foundation/log/log_device.h:28
+LogRecord::message	variable	foundation/log	logrecord-message	foundation-log.md	engine/foundation/log/log_device.h:29
+LogRecord::line	variable	foundation/log	logrecord-line	foundation-log.md	engine/foundation/log/log_device.h:30
+LogRecord::trace	variable	foundation/log	logrecord-trace	foundation-log.md	engine/foundation/log/log_device.h:31
+LogRecord::timestamp_ns	variable	foundation/log	logrecord-timestamp-ns	foundation-log.md	engine/foundation/log/log_device.h:32
+LogDevice	class	foundation/log	logdevice	foundation-log.md	engine/foundation/log/log_device.h:42
+LogDevice::~LogDevice()	function	foundation/log	logdevice-tilde-logdevice	foundation-log.md	engine/foundation/log/log_device.h:45
+LogDevice::Write(const LogRecord&)	function	foundation/log	logdevice-write-const-logrecord-amp	foundation-log.md	engine/foundation/log/log_device.h:49
+LogDevice::Flush()	function	foundation/log	logdevice-flush	foundation-log.md	engine/foundation/log/log_device.h:52
+AddLogDevice(LogDevice*,LogVerbosity)	function	foundation/log	addlogdevice-logdevice-star-logverbosity	foundation-log.md	engine/foundation/log/log_device.h:62
+RemoveLogDevice(LogDevice*)	function	foundation/log	removelogdevice-logdevice-star	foundation-log.md	engine/foundation/log/log_device.h:68
+FlushLogDevices()	function	foundation/log	flushlogdevices	foundation-log.md	engine/foundation/log/log_device.h:72
+ConsoleLogMode	enum	foundation/log	consolelogmode	foundation-log.md	engine/foundation/log/log_device.h:75
+ConsoleLogMode::Auto	enumerator	foundation/log	consolelogmode-auto	foundation-log.md	engine/foundation/log/log_device.h:77
+ConsoleLogMode::Plain	enumerator	foundation/log	consolelogmode-plain	foundation-log.md	engine/foundation/log/log_device.h:78
+ConsoleLogMode::Color	enumerator	foundation/log	consolelogmode-color	foundation-log.md	engine/foundation/log/log_device.h:79
+ConsoleLogMode::Off	enumerator	foundation/log	consolelogmode-off	foundation-log.md	engine/foundation/log/log_device.h:80
+SetConsoleLogMode(ConsoleLogMode)	function	foundation/log	setconsolelogmode-consolelogmode	foundation-log.md	engine/foundation/log/log_device.h:85
+GetConsoleLogMode()	function	foundation/log	getconsolelogmode	foundation-log.md	engine/foundation/log/log_device.h:89
+WriteLogConsoleBytes(const char*,usize)	function	foundation/log	writelogconsolebytes-const-char-star-usize	foundation-log.md	engine/foundation/log/log_device.h:96
+StdoutLogDevice	class	foundation/log	stdoutlogdevice	foundation-log.md	engine/foundation/log/log_device.h:99
+StdoutLogDevice::Write(const LogRecord&)	function	foundation/log	stdoutlogdevice-write-const-logrecord-amp	foundation-log.md	engine/foundation/log/log_device.h:102
+TtyLogDevice	class	foundation/log	ttylogdevice	foundation-log.md	engine/foundation/log/tty_log_device.h:16
+TtyLogDevice::Write(const LogRecord&)	function	foundation/log	ttylogdevice-write-const-logrecord-amp	foundation-log.md	engine/foundation/log/tty_log_device.h:19
 ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:46
 ENGINE_INT128_NAMESPACE::detail128::NativeI	variable	foundation/types	engine-int128-namespace-detail128-nativei	foundation-types.md	engine/foundation/int128.h:48
 ENGINE_INT128_NAMESPACE::detail128::Parts	struct	foundation/types	engine-int128-namespace-detail128-parts	foundation-types.md	engine/foundation/int128.h:51
@@ -3070,6 +3110,21 @@ os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwi
 os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:51
 os::SignalHandler	alias	platform/os	os-signalhandler	platform-os.md	engine/foundation/os/signal.h:11
 os::SetSignalHandler(int,SignalHandler) noexcept	function	platform/os	os-setsignalhandler-int-signalhandler-noexcept	platform-os.md	engine/foundation/os/signal.h:17
+os::TerminalColors	enum	platform/os	os-terminalcolors	platform-os.md	engine/foundation/os/terminal.h:16
+os::TerminalColors::None	enumerator	platform/os	os-terminalcolors-none	platform-os.md	engine/foundation/os/terminal.h:18
+os::TerminalColors::Basic	enumerator	platform/os	os-terminalcolors-basic	platform-os.md	engine/foundation/os/terminal.h:19
+os::TerminalColors::Color256	enumerator	platform/os	os-terminalcolors-color256	platform-os.md	engine/foundation/os/terminal.h:20
+os::TerminalColors::TrueColor	enumerator	platform/os	os-terminalcolors-truecolor	platform-os.md	engine/foundation/os/terminal.h:21
+os::TerminalEnvironment	struct	platform/os	os-terminalenvironment	platform-os.md	engine/foundation/os/terminal.h:25
+os::TerminalEnvironment::no_color	variable	platform/os	os-terminalenvironment-no-color	platform-os.md	engine/foundation/os/terminal.h:27
+os::TerminalEnvironment::clicolor_force	variable	platform/os	os-terminalenvironment-clicolor-force	platform-os.md	engine/foundation/os/terminal.h:28
+os::TerminalEnvironment::term	variable	platform/os	os-terminalenvironment-term	platform-os.md	engine/foundation/os/terminal.h:29
+os::TerminalEnvironment::colorterm	variable	platform/os	os-terminalenvironment-colorterm	platform-os.md	engine/foundation/os/terminal.h:30
+os::IsTerminal(int)	function	platform/os	os-isterminal-int	platform-os.md	engine/foundation/os/terminal.h:39
+os::EnableTerminalSequences(int)	function	platform/os	os-enableterminalsequences-int	platform-os.md	engine/foundation/os/terminal.h:47
+os::ReadTerminalEnvironment()	function	platform/os	os-readterminalenvironment	platform-os.md	engine/foundation/os/terminal.h:52
+os::ClassifyTerminal(bool,const TerminalEnvironment&)	function	platform/os	os-classifyterminal-bool-const-terminalenvironment-amp	platform-os.md	engine/foundation/os/terminal.h:59
+os::DetectTerminalColors(int)	function	platform/os	os-detectterminalcolors-int	platform-os.md	engine/foundation/os/terminal.h:68
 os::ClipboardKind	enum	platform/window-input	os-clipboardkind	platform-window-input.md	engine/platform/clipboard.h:21
 os::ClipboardKind::Clipboard	enumerator	platform/window-input	os-clipboardkind-clipboard	platform-window-input.md	engine/platform/clipboard.h:23
 os::ClipboardKind::Primary	enumerator	platform/window-input	os-clipboardkind-primary	platform-window-input.md	engine/platform/clipboard.h:24

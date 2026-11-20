@@ -2,7 +2,11 @@
 
 #include "cstr/format.h"
 
+#include "containers/unique_ptr.h"
+#include "io/file_log_device.h"
+#include "io/path.h"
 #include "log/log.h"
+#include "log/log_device.h"
 
 namespace vse::settings
 {
@@ -12,6 +16,90 @@ namespace
 
 const char* const kWindowBackends[] = {"auto", "wayland", "x11", "win32", "cocoa"};  // cocoa: Phase 21 Day 295
 const char* const kVerbosities[] = {"error", "warn", "info", "debug", "trace"};
+const char* const kConsoleModes[] = {"auto", "plain", "color", "off"};  // the order of ConsoleLogMode
+
+constexpr const char* kKeyConsole = "log.console";
+constexpr const char* kKeyFilePath = "log.file.path";
+constexpr const char* kKeyFileLevel = "log.file.level";
+constexpr const char* kKeyFileMaxBytes = "log.file.max_bytes";
+constexpr const char* kKeyFileKeep = "log.file.keep";
+
+// The file log device the settings made, one per process. Its destructor removes it from the registry first, so a line
+// logged while the process shuts down never reaches a destroyed device.
+struct FileLogState
+{
+    UniquePtr<io::FileLogDevice> device;
+    ~FileLogState() { Drop(); }
+    void Drop()
+    {
+        if (device != nullptr)
+        {
+            RemoveLogDevice(device.Get());
+            device = nullptr;
+        }
+    }
+};
+
+FileLogState& GetFileLogState()
+{
+    static FileLogState state;
+    return state;
+}
+
+Value Read(const Registry& registry, const char* key)
+{
+    return registry.Current(registry.Find(StringView(key)));
+}
+
+void ApplyConsole(const Registry& registry)
+{
+    if (registry.Find(StringView(kKeyConsole)).IsValid())
+    {
+        SetConsoleLogMode(static_cast<ConsoleLogMode>(Read(registry, kKeyConsole).AsEnum()));
+    }
+}
+
+// Makes the file device what the four `log.file.*` settings say: none for an empty path, else a fresh device on the
+// path (reopening in append mode loses nothing). An unopenable path leaves the process without a file device and says
+// so once on the core channel.
+void ApplyFile(const Registry& registry, bool attaching)
+{
+    if (!registry.Find(StringView(kKeyFilePath)).IsValid())
+    {
+        return;
+    }
+    FileLogState& state = GetFileLogState();
+    const Value path_value = Read(registry, kKeyFilePath);  // the text is borrowed from it
+    const StringView text = path_value.AsText();
+    if (attaching && text.Length() == 0)
+    {
+        return;  // nothing asked for: another Settings' log file stays
+    }
+    state.Drop();
+    if (text.Length() == 0)
+    {
+        return;
+    }
+    io::Path path;
+    if (!io::Path::Parse(text, io::NativePathStyle(), &path))
+    {
+        Log(LogCore, LogVerbosity::Warn, "log.file.path is not a usable path; no log file");
+        return;
+    }
+    io::FileLogOptions options;
+    options.max_bytes = static_cast<u64>(Read(registry, kKeyFileMaxBytes).AsInt());
+    options.keep = static_cast<u32>(Read(registry, kKeyFileKeep).AsInt());
+    UniquePtr<io::FileLogDevice> device;
+    if (!io::FileLogDevice::Open(path, options, &device).Ok())
+    {
+        Log(LogCore, LogVerbosity::Warn, "log.file.path could not be opened; no log file");
+        return;
+    }
+    if (AddLogDevice(device.Get(), static_cast<LogVerbosity>(Read(registry, kKeyFileLevel).AsEnum())))
+    {
+        state.device = static_cast<UniquePtr<io::FileLogDevice>&&>(device);
+    }
+}
 
 struct LogKeys
 {
@@ -52,9 +140,14 @@ void ApplyChannel(LogChannel* channel, StringView what, const Value& value)
 void OnLogChange(void*, const ChangeEvent& event)
 {
     const LogKeys& keys = GetLogKeys();
+    bool console_changed = false;
+    bool file_changed = false;
     for (usize c = 0; c < event.count; ++c)
     {
         const StringView key = event.registry->KeyOf(event.changes[c].id).View();
+        console_changed = console_changed || key == StringView(kKeyConsole);
+        file_changed = file_changed || key == StringView(kKeyFilePath) || key == StringView(kKeyFileLevel) ||
+                       key == StringView(kKeyFileMaxBytes) || key == StringView(kKeyFileKeep);
         for (u32 i = 0; i < keys.count; ++i)
         {
             for (int k = 0; k < 2; ++k)
@@ -70,6 +163,14 @@ void OnLogChange(void*, const ChangeEvent& event)
                 }
             }
         }
+    }
+    if (console_changed)
+    {
+        ApplyConsole(*event.registry);
+    }
+    if (file_changed)
+    {
+        ApplyFile(*event.registry, false);
     }
 }
 
@@ -104,6 +205,35 @@ void RegisterEngineSettings(Registry* registry)
 
 void RegisterLogSettings(Registry* registry)
 {
+    if (!registry->Find(StringView(kKeyConsole)).IsValid())
+    {
+        SettingDesc console = MakeEnum(kKeyConsole, kConsoleModes, 4, 0);
+        console.group = "log";
+        console.description = "the console log device: auto (colour on a colour terminal), plain, color or off";
+        console.flags = kAdvanced;
+        registry->Register(console);
+        SettingDesc path = MakeText(kKeyFilePath, "");
+        path.group = "log";
+        path.description = "append the log to this file (empty: no log file); its directory must exist";
+        path.max_text = 511;
+        path.flags = kAdvanced;
+        registry->Register(path);
+        SettingDesc level = MakeEnum(kKeyFileLevel, kVerbosities, 5, static_cast<u32>(LogVerbosity::Trace));
+        level.group = "log";
+        level.description = "the least severe level written to the log file";
+        level.flags = kAdvanced;
+        registry->Register(level);
+        SettingDesc max_bytes = MakeInt(kKeyFileMaxBytes, 10 * 1024 * 1024, 0, i64{1} << 40);
+        max_bytes.group = "log";
+        max_bytes.description = "rotate the log file at this size in bytes (0: never)";
+        max_bytes.flags = kAdvanced;
+        registry->Register(max_bytes);
+        SettingDesc keep = MakeInt(kKeyFileKeep, 3, 0, 99);
+        keep.group = "log";
+        keep.description = "rotated log files kept (name.1 is the newest)";
+        keep.flags = kAdvanced;
+        registry->Register(keep);
+    }
     LogKeys& keys = GetLogKeys();
     // The key strings live in a table that only grows, so every registry that borrows them stays valid however often
     // this runs.
@@ -176,6 +306,14 @@ void AttachLogSettings(Settings* settings)
             ApplyChannel(channel, "enabled", settings->GetRegistry().Current(en));
         }
     }
+    // The device settings: the console mode only if a layer set it (the code's choice stands otherwise); the file is
+    // opened whenever a path is set.
+    const SettingId console = settings->GetRegistry().Find(StringView(kKeyConsole));
+    if (console.IsValid() && settings->Provenance(console).layer >= 0)
+    {
+        ApplyConsole(settings->GetRegistry());
+    }
+    ApplyFile(settings->GetRegistry(), true);
     settings->AddListener("log", &OnLogChange, nullptr);
 }
 

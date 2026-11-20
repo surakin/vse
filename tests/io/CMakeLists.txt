@@ -9,6 +9,7 @@ set(IO_TEST_SOURCES
   async_file_test.cpp
   share_test.cpp
   directory_watcher_test.cpp  # Phase 27 Day 464
+  file_log_device_test.cpp  # maintenance: log devices
 )
 
 find_package(Threads REQUIRED)
@@ -16,7 +17,7 @@ include(Catch)
 
 # Windows (Phase 13): the whole suite (async_file_test with the job system from Day 153) and the Windows-only cases.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(_io_windows_sources path_test.cpp file_system_test.cpp file_test.cpp directory_test.cpp async_file_test.cpp share_test.cpp directory_watcher_test.cpp io_windows_test.cpp)
+  set(_io_windows_sources path_test.cpp file_system_test.cpp file_test.cpp directory_test.cpp async_file_test.cpp share_test.cpp directory_watcher_test.cpp file_log_device_test.cpp io_windows_test.cpp)
   set(_io_windows_flavors "")
   if(ENGINE_HAVE_ASAN)
     list(APPEND _io_windows_flavors "_asan")

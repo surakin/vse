@@ -125,10 +125,12 @@ set(FOUNDATION_BASE_SOURCES
   foundation.cpp
   os/session.cpp
   os/command_line.cpp
+  os/terminal.cpp
   mem/arena_allocator.cpp
   mem/pool_allocator.cpp
   mem/stack_allocator.cpp
   log/log.cpp
+  log/tty_log_device.cpp
   cstr/number.cpp
   int128.cpp
   math/geometry.cpp
@@ -150,6 +152,7 @@ set(FOUNDATION_IO_SOURCES
   io/directory_watcher_poll.cpp
   ${FOUNDATION_IO_PLATFORM_SOURCES}
   io/file.cpp
+  io/file_log_device.cpp
 )
 
 set(FOUNDATION_DEBUG_SOURCES
