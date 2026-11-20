@@ -2502,19 +2502,19 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                 // glTF colliders Day 5: a static body, and its collider made at the end of the frame (world scale).
                 if (const asset::StaticCollider* collider = scratch.Peek<asset::StaticCollider>(source[i]))
                 {
-                    ColliderSource made;
-                    made.shape = static_cast<u32>(collider->shape);
-                    made.mesh = collider->mesh.id;
-                    made.half_extents = collider->half_extents;
-                    made.radius = collider->radius;
-                    made.half_height = collider->half_height;
-                    made.friction = collider->friction;
-                    made.restitution = collider->restitution;
+                    ColliderSource made_collider;
+                    made_collider.shape = static_cast<u32>(collider->shape);
+                    made_collider.mesh = collider->mesh.id;
+                    made_collider.half_extents = collider->half_extents;
+                    made_collider.radius = collider->radius;
+                    made_collider.half_height = collider->half_height;
+                    made_collider.friction = collider->friction;
+                    made_collider.restitution = collider->restitution;
                     physics::RigidBody body;
                     body.type = physics::BodyType::Static;
                     if (status == ecs::Status::Ok)
                     {
-                        status = object.world.Add<ColliderSource>(entity, made);
+                        status = object.world.Add<ColliderSource>(entity, made_collider);
                     }
                     if (status == ecs::Status::Ok)
                     {
