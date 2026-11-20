@@ -1,5 +1,6 @@
 // Phase 2 Day 35: stress & throughput suite for the whole job system.
 #include "sync/atomic.h"
+#include "log/output.h"
 #include "os/console.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -74,13 +75,13 @@ struct PoolWatch
     void Report(const char* what) const
     {
         FramePool::Stats now = FramePool::Global().GetStats();
-        os::Print("[frame sizes] %s:", what);
+        out::Print("[frame sizes] %s:", what);
         for (usize c = 0; c < FramePool::kClassCount; ++c)
         {
-            os::Print("  <=%zuB: %llu", static_cast<usize>(FramePool::kBlockSizes[c] - FramePool::kHeaderBytes),
-                      static_cast<unsigned long long>(now.pooled_allocs[c] - before.pooled_allocs[c]));
+            out::Print("  <=%zuB: %llu", static_cast<usize>(FramePool::kBlockSizes[c] - FramePool::kHeaderBytes),
+                       static_cast<unsigned long long>(now.pooled_allocs[c] - before.pooled_allocs[c]));
         }
-        os::Print("  fallback: %llu\n", static_cast<unsigned long long>(now.fallback_allocs - before.fallback_allocs));
+        out::Print("  fallback: %llu\n", static_cast<unsigned long long>(now.fallback_allocs - before.fallback_allocs));
     }
     u64 FallbackDelta() const { return FramePool::Global().GetStats().fallback_allocs - before.fallback_allocs; }
 };
@@ -251,8 +252,8 @@ void HelpOrAbort(Scheduler& s, bool (*done)(void*), void* user, int seconds, con
         &w);
     if (w.timed_out)
     {
-        os::Print("WATCHDOG: %s did not complete within %ds (deadlock or lost wakeup)\n", what, seconds);
-        os::Flush();
+        out::Print("WATCHDOG: %s did not complete within %ds (deadlock or lost wakeup)\n", what, seconds);
+        out::Flush();
         os::Abort();
     }
 }
@@ -488,8 +489,8 @@ TEST_CASE("Randomized dependency graphs: exactly-once, ordered joins, no deadloc
         }
         s->Shutdown();
     }
-    os::Print("[stress] %llu graph jobs over %d seeds x 2 configs\n", static_cast<unsigned long long>(total_jobs),
-              kGraphSeeds);
+    out::Print("[stress] %llu graph jobs over %d seeds x 2 configs\n", static_cast<unsigned long long>(total_jobs),
+               kGraphSeeds);
     REQUIRE(FramePool::Global().GetStats().Live() == live_before);
     watch.Report("dependency graphs");
     REQUIRE(watch.FallbackDelta() == 0);
@@ -583,11 +584,11 @@ TEST_CASE("Throughput scales with participant count", "[jobs][stress][throughput
                 }
             }
         }
-        os::Print("\n[throughput] round %d: %d CPU-bound jobs (~60us each), best of 5\n  N   seconds   speedup\n",
-                  round + 1, kJobs);
+        out::Print("\n[throughput] round %d: %d CPU-bound jobs (~60us each), best of 5\n  N   seconds   speedup\n",
+                   round + 1, kJobs);
         for (usize ci = 0; ci < configs.Size(); ++ci)
         {
-            os::Print("  %-3zu %-9.4f %.2fx\n", static_cast<usize>(configs[ci]), best[ci], best[0] / best[ci]);
+            out::Print("  %-3zu %-9.4f %.2fx\n", static_cast<usize>(configs[ci]), best[ci], best[0] / best[ci]);
         }
         ok = true;
         for (usize ci = 0; ci < configs.Size(); ++ci)

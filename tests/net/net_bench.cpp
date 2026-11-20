@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "algorithm.h"
+#include "log/output.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "net/clock.h"
@@ -89,8 +90,8 @@ void BenchRoundTrips(const char* name, Transport* server, Transport* client, Con
         k = k >= micros.Size() ? micros.Size() - 1 : k;
         return static_cast<unsigned long long>(micros[k]);
     };
-    os::Print("net-bench: %s echo %zu B: p50 %llu us, p99 %llu us, p999 %llu us\n", name, size, at(0.5), at(0.99),
-              at(0.999));
+    out::Print("net-bench: %s echo %zu B: p50 %llu us, p99 %llu us, p999 %llu us\n", name, size, at(0.5), at(0.99),
+               at(0.999));
 }
 
 Endpoint AnyLoopback()
@@ -198,10 +199,10 @@ TEST_CASE("Benchmark: CPU per connection with 1000 idle-to-chatty simulated TCP 
         }
     }
     const u64 wall_nanos = wall.NowNanos() - t0;
-    os::Print("net-bench: 1000 sim TCP connections, 10 s simulated: %llu messages, %.1f ms CPU (%.2f%% of one core of "
-              "real time at 10 s), %.1f us per connection-second\n",
-              static_cast<unsigned long long>(delivered), static_cast<f64>(wall_nanos) / 1e6,
-              static_cast<f64>(wall_nanos) / 1e9 / 10.0 * 100.0, static_cast<f64>(wall_nanos) / 1e3 / 1000.0 / 10.0);
+    out::Print("net-bench: 1000 sim TCP connections, 10 s simulated: %llu messages, %.1f ms CPU (%.2f%% of one core of "
+               "real time at 10 s), %.1f us per connection-second\n",
+               static_cast<unsigned long long>(delivered), static_cast<f64>(wall_nanos) / 1e6,
+               static_cast<f64>(wall_nanos) / 1e9 / 10.0 * 100.0, static_cast<f64>(wall_nanos) / 1e3 / 1000.0 / 10.0);
 }
 
 TEST_CASE("Benchmark: simulated TCP throughput", "[.][net-bench]")
@@ -259,8 +260,8 @@ TEST_CASE("Benchmark: simulated TCP throughput", "[.][net-bench]")
         }
     }
     const f64 seconds = static_cast<f64>(wall.NowNanos() - t0) / 1e9;
-    os::Print("net-bench: simulated TCP, 16 KiB messages: %.0f MiB/s of wall time\n",
-              static_cast<f64>(received) / (1024.0 * 1024.0) / seconds);
+    out::Print("net-bench: simulated TCP, 16 KiB messages: %.0f MiB/s of wall time\n",
+               static_cast<f64>(received) / (1024.0 * 1024.0) / seconds);
 }
 
 }  // namespace vse::net

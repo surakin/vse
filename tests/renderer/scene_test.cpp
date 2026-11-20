@@ -1,6 +1,7 @@
 // Phase 5 Day 73: the render scene (object and light lists, culling) and the per-frame/per-object buffers, on the null
 // device, plus a GPU leak test that creates and destroys many meshes.
 #include "lang/new.h"
+#include "log/output.h"
 #include "os/console.h"
 #include "os/os.h"
 #include "containers/vector.h"
@@ -257,7 +258,7 @@ TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][p
     const u64 t0 = os::MonotonicTimeNanos();
     u32 n = scene.Cull(fr, out.Data(), static_cast<u32>(out.Size()));
     const u64 t1 = os::MonotonicTimeNanos();
-    os::Print("cull of 100000 objects: %u visible, %.3f ms\n", n, static_cast<double>(t1 - t0) / 1e6);
+    out::Print("cull of 100000 objects: %u visible, %.3f ms\n", n, static_cast<double>(t1 - t0) / 1e6);
     CHECK(n > 0);
     CHECK(n < 100000);
 }

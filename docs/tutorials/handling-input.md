@@ -21,7 +21,7 @@
 The edge detection is plain data work, so this part runs without a window:
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "platform/input.h"
 
 using namespace vse;
@@ -45,7 +45,7 @@ int main() {
     for (int frame = 0; frame < 4; ++frame) {
         previous = current;                         // copy last frame's snapshot, then let the window update the new one
         current.SetDown(os::Key::W, w_down[frame]);
-        os::Print("frame %d: W is %s\n", frame + 1, Describe(previous, current, os::Key::W));
+        out::Print("frame %d: W is %s\n", frame + 1, Describe(previous, current, os::Key::W));
     }
     return 0;
 }
@@ -61,7 +61,7 @@ frame 4: W is released
 In a program with a window, the same comparison sits inside the frame loop. This part needs a display, so it is only compiled:
 
 ```cpp compile standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "os/os.h"
 #include "platform/input.h"
 #include "platform/window.h"
@@ -84,22 +84,22 @@ int main() {
         window->PumpEvents();
 
         if (input.keyboard.IsDown(os::Key::W) && !previous.IsDown(os::Key::W)) {
-            os::Print("W pressed\n");
+            out::Print("W pressed\n");
         }
         if ((input.keyboard.modifiers & os::kModCtrl) != 0 && input.keyboard.IsDown(os::Key::S)) {
-            os::Print("Ctrl+S held\n");
+            out::Print("Ctrl+S held\n");
         }
         if (input.IsMouseDown(os::kMouseLeft)) {
-            os::Print("left button at %.0f, %.0f\n", input.mouse_x, input.mouse_y);
+            out::Print("left button at %.0f, %.0f\n", input.mouse_x, input.mouse_y);
         }
         if (input.scroll_dy != 0.0) {
-            os::Print("wheel %.1f\n", input.scroll_dy);
+            out::Print("wheel %.1f\n", input.scroll_dy);
         }
 
         os::InputEvent event;
         while (window->PollEvent(&event)) {              // the ordered stream: text and presses that InputState cannot see
             if (event.type == os::InputEventType::Text) {
-                os::Print("typed: %.*s\n", static_cast<int>(event.text_length), event.text);
+                out::Print("typed: %.*s\n", static_cast<int>(event.text_length), event.text);
             }
         }
         if (input.keyboard.IsDown(os::Key::Escape)) {

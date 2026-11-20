@@ -31,6 +31,7 @@ set(FOUNDATION_BASE_TEST_SOURCES
   transform_test.cpp
   log_test.cpp
   log_device_test.cpp
+  log_output_test.cpp
   terminal_test.cpp
   diagnostics_hooks_test.cpp
   command_line_test.cpp

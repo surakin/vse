@@ -58,7 +58,8 @@ Code in `engine/`, `game/`, `tools/` and `tests/` never includes a standard head
 | `snprintf`, `vsnprintf` | `FormatTo`, `VFormatTo` | `cstr/format.h` |
 | `strtod`, `strtoll`, `to_chars` | `ParseDoubleExact`, `FormatShortest`, the number parsers | `cstr/number.h` |
 | `va_list`, `va_start` | `VarArgs`, `ENGINE_VA_START` | `cstr/varargs.h` |
-| `printf`, `fprintf(stderr, ...)`, `puts`, `fflush`, `abort`, `_Exit`, `getenv` | `os::Print`, `os::PrintError`, `os::PrintLine`, `os::Flush`, `os::Abort`, `os::ExitNow`, `os::GetEnvironment` | `os/console.h` |
+| `printf`, `fprintf(stderr, ...)`, `puts` | `out::Print`, `out::PrintError`, `out::PrintLine` | `log/output.h` |
+| `fflush`, `abort`, `_Exit`, `getenv` | `os::Flush`, `os::Abort`, `os::ExitNow`, `os::GetEnvironment` | `os/console.h` |
 | `errno` | `os::LastError`, `os::SetLastError` | `os/last_error.h` |
 | `signal`, `sigaction` | `os::SetSignalHandler` | `os/signal.h` |
 | `exit`, clocks, sleeping | `os::Exit`, `os::MonotonicTimeNanos`, `os::SleepNanos` | `os/os.h` |

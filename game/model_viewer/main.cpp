@@ -4,6 +4,7 @@
 // overlay. `--screenshot out.ppm` draws offscreen instead. See README.md.
 
 #include "asset_import/gltf_import.h"
+#include "log/output.h"
 #include "containers/array.h"
 #include "containers/vector.h"
 #include "cstr/format.h"
@@ -135,12 +136,12 @@ bool OpenModel(const Options& options, ModelFile* model)
 {
     if (!io::Path::Parse(options.file.View(), io::NativePathStyle(), &model->path))
     {
-        os::PrintError("model_viewer: %s is not a path\n", options.file.CStr());
+        out::PrintError("model_viewer: %s is not a path\n", options.file.CStr());
         return false;
     }
     if (!ReadFile(model->path, asset::ImportLimits().max_file_bytes, &model->bytes))
     {
-        os::PrintError("model_viewer: %s cannot be read\n", options.file.CStr());
+        out::PrintError("model_viewer: %s cannot be read\n", options.file.CStr());
         return false;
     }
     model->source = MakeUnique<DirectorySource>(model->path.Parent());
@@ -222,7 +223,7 @@ int RunScreenshot(const Options& options, const RenderSettings& settings, ModelF
         else if (!scene.Create(device.Get(), frame.Materials(), frame.Templates(),
                                SceneOptions(options, model, nullptr)))
         {
-            os::PrintError("model_viewer: %s: %s\n", options.file.CStr(), scene.Error());
+            out::PrintError("model_viewer: %s: %s\n", options.file.CStr(), scene.Error());
         }
         else
         {
@@ -341,7 +342,7 @@ int RunWindow(const Options& options, const RenderSettings& settings, ModelFile*
         else if (!scene.Create(host.GetDevice(), frame.Materials(), frame.Templates(),
                                SceneOptions(options, model, &registry)))
         {
-            os::PrintError("model_viewer: %s: %s\n", options.file.CStr(), scene.Error());
+            out::PrintError("model_viewer: %s: %s\n", options.file.CStr(), scene.Error());
             exit_code = kExitFailure;
         }
         else
@@ -532,11 +533,11 @@ int Usage(const char* program, int code)
 {
     if (code == kExitOk)
     {
-        os::Print(kUsageFormat, program);
+        out::Print(kUsageFormat, program);
     }
     else
     {
-        os::PrintError(kUsageFormat, program);
+        out::PrintError(kUsageFormat, program);
     }
     return code;
 }
@@ -577,9 +578,9 @@ int EngineMain(int argc, char** argv)
     }
     if (!line.Ok() || line.ArgCount() != 1)
     {
-        os::PrintError("%s: %s\n", program,
-                       !line.Ok() ? line.Error().Data()
-                                  : (line.ArgCount() == 0 ? "no model file given" : "only one model file at a time"));
+        out::PrintError("%s: %s\n", program,
+                        !line.Ok() ? line.Error().Data()
+                                   : (line.ArgCount() == 0 ? "no model file given" : "only one model file at a time"));
         return Usage(program, kExitUsage);
     }
     Options options;
@@ -588,7 +589,7 @@ int EngineMain(int argc, char** argv)
     if ((line.TryGetOption("frames", value) && !ParseCount(value, 10000000, &options.frames)) ||
         (line.TryGetOption("clip", value) && !ParseCount(value, 100000, &options.clip)))
     {
-        os::PrintError("%s: a number is out of range\n", program);
+        out::PrintError("%s: a number is out of range\n", program);
         return Usage(program, kExitUsage);
     }
     options.animate = !line.HasFlag("no-animation");

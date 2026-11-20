@@ -1,5 +1,6 @@
 
 #include "cstr/cstr.h"
+#include "log/output.h"
 
 #include "cstr/number.h"
 
@@ -22,7 +23,7 @@ namespace
 
 int Usage()
 {
-    vse::os::PrintErrorText(
+    vse::out::PrintErrorText(
         "usage: docgen tokens FILE.h                 (scanner testing aid: dump tokens, docs, diagnostics)\n"
         "       docgen dump [--all] [--keep-going] FILE.h  (declaration tree; --all includes hidden declarations)\n"
         "       docgen docs [--keep-going] FILE.h          (parsed doc comments, validation, undocumented symbols)\n"
@@ -54,7 +55,7 @@ int Tokens(const char* path)
     StringView src;
     if (!LoadSourceFile(StringView(path, vse::CStrLength(path)), arena, src))
     {
-        vse::os::PrintError("%s: error: cannot read file\n", path);
+        vse::out::PrintError("%s: error: cannot read file\n", path);
         return 2;
     }
     ScanResult r(arena);
@@ -62,26 +63,26 @@ int Tokens(const char* path)
     for (usize i = 0; i < r.tokens.Size(); ++i)
     {
         const Token& t = r.tokens[i];
-        vse::os::Print("%u:%u %s '%.*s'", t.line, t.column, KindName(t.kind), static_cast<int>(t.text.Length()),
-                       t.text.Data());
+        vse::out::Print("%u:%u %s '%.*s'", t.line, t.column, KindName(t.kind), static_cast<int>(t.text.Length()),
+                        t.text.Data());
         if (t.doc >= 0)
         {
-            vse::os::Print(" doc=%d", t.doc);
+            vse::out::Print(" doc=%d", t.doc);
         }
-        vse::os::Print("\n");
+        vse::out::Print("\n");
     }
     for (usize i = 0; i < r.docs.Size(); ++i)
     {
         const DocComment& d = r.docs[i];
-        vse::os::Print("doc %zu kind=%d lines=%u-%u token=%d text='%.*s'\n", static_cast<size_t>(i),
-                       static_cast<int>(d.kind), d.first_line, d.last_line, static_cast<int>(d.token),
-                       static_cast<int>(d.text.Length()), d.text.Data());
+        vse::out::Print("doc %zu kind=%d lines=%u-%u token=%d text='%.*s'\n", static_cast<size_t>(i),
+                        static_cast<int>(d.kind), d.first_line, d.last_line, static_cast<int>(d.token),
+                        static_cast<int>(d.text.Length()), d.text.Data());
     }
     for (usize i = 0; i < r.diagnostics.Size(); ++i)
     {
         const Diagnostic& d = r.diagnostics[i];
-        vse::os::PrintError("%s:%u: %s: %.*s\n", path, d.line, SeverityName(d.severity),
-                            static_cast<int>(d.message.Length()), d.message.Data());
+        vse::out::PrintError("%s:%u: %s: %.*s\n", path, d.line, SeverityName(d.severity),
+                             static_cast<int>(d.message.Length()), d.message.Data());
     }
     return r.HasErrors() ? 1 : 0;
 }
@@ -115,8 +116,8 @@ bool PrintDiagnostics(const char* path, const DiagList* const* lists, usize list
             }
             had_error = true;
         }
-        vse::os::PrintError("%s:%u: %s: %.*s\n", path, d.line, SeverityName(d.severity),
-                            static_cast<int>(d.message.Length()), d.message.Data());
+        vse::out::PrintError("%s:%u: %s: %.*s\n", path, d.line, SeverityName(d.severity),
+                             static_cast<int>(d.message.Length()), d.message.Data());
     }
     return had_error;
 }
@@ -134,7 +135,7 @@ int Dump(int argc, char** argv)
     const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 2));
     if (!line.Ok())
     {
-        vse::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::out::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     all = line.HasFlag("all");
@@ -148,7 +149,7 @@ int Dump(int argc, char** argv)
     StringView src;
     if (!LoadSourceFile(StringView(path, vse::CStrLength(path)), arena, src))
     {
-        vse::os::PrintError("%s: error: cannot read file\n", path);
+        vse::out::PrintError("%s: error: cannot read file\n", path);
         return 2;
     }
     ScanResult scan(arena);
@@ -158,7 +159,7 @@ int Dump(int argc, char** argv)
     vse::StringBuilder<ArenaAllocator> sb(arena);
     DumpTree(ex, scan, sb, all);
     StringView text = sb.View();
-    vse::os::PrintBytes(text.Data(), text.Length());
+    vse::out::PrintBytes(text.Data(), text.Length());
     const DiagList* lists[] = {&scan.diagnostics, &ex.diagnostics};
     return PrintDiagnostics(path, lists, 2, keep_going, arena) ? 1 : 0;
 }
@@ -171,7 +172,7 @@ int Docs(int argc, char** argv)
     const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 1));
     if (!line.Ok())
     {
-        vse::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::out::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     keep_going = line.HasFlag("keep-going");
@@ -184,7 +185,7 @@ int Docs(int argc, char** argv)
     StringView src;
     if (!LoadSourceFile(StringView(path, vse::CStrLength(path)), arena, src))
     {
-        vse::os::PrintError("%s: error: cannot read file\n", path);
+        vse::out::PrintError("%s: error: cannot read file\n", path);
         return 2;
     }
     ScanResult scan(arena);
@@ -212,7 +213,7 @@ int Docs(int argc, char** argv)
         sb.Append('\n');
     }
     StringView text = sb.View();
-    vse::os::PrintBytes(text.Data(), text.Length());
+    vse::out::PrintBytes(text.Data(), text.Length());
     const DiagList* lists[] = {&scan.diagnostics, &ex.diagnostics, &docs.diagnostics};
     return PrintDiagnostics(path, lists, 3, keep_going, arena) ? 1 : 0;
 }
@@ -226,8 +227,8 @@ void PrintFileDiags(const vse::Vector<FileDiag, ArenaAllocator>& ds, bool quiet)
         {
             continue;
         }
-        vse::os::PrintError("%.*s:%u: %s: %.*s\n", static_cast<int>(f.path.Length()), f.path.Data(), f.d.line,
-                            SeverityName(f.d.severity), static_cast<int>(f.d.message.Length()), f.d.message.Data());
+        vse::out::PrintError("%.*s:%u: %s: %.*s\n", static_cast<int>(f.path.Length()), f.path.Data(), f.d.line,
+                             SeverityName(f.d.severity), static_cast<int>(f.d.message.Length()), f.d.message.Data());
     }
 }
 
@@ -243,7 +244,7 @@ int Reference(int argc, char** argv, bool check)
     const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 5));
     if (!line.Ok())
     {
-        vse::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::out::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     if (line.ArgCount() != 1)
@@ -286,8 +287,8 @@ int Reference(int argc, char** argv, bool check)
     }
     if (!quiet && !check)
     {
-        vse::os::PrintError("docgen: wrote %zu files to %.*s\n", static_cast<size_t>(build.files.Size()),
-                            static_cast<int>(out_dir.Length()), out_dir.Data());
+        vse::out::PrintError("docgen: wrote %zu files to %.*s\n", static_cast<size_t>(build.files.Size()),
+                             static_cast<int>(out_dir.Length()), out_dir.Data());
     }
     return 0;
 }
@@ -304,7 +305,7 @@ int Links(int argc, char** argv)
     const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(cli_options, 4));
     if (!line.Ok())
     {
-        vse::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::out::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     if (line.ArgCount() != 1)
@@ -345,7 +346,7 @@ int Links(int argc, char** argv)
     LinkStats stats;
     if (!CheckLinks(root_v, index, arena, options, problems, stats))
     {
-        vse::os::PrintError("docgen: cannot read the documentation tree under %s\n", root);
+        vse::out::PrintError("docgen: cannot read the documentation tree under %s\n", root);
         return 2;
     }
     bool errors = false;
@@ -356,10 +357,10 @@ int Links(int argc, char** argv)
     PrintFileDiags(problems, quiet);
     if (!quiet)
     {
-        vse::os::PrintError("docgen: %zu files, %zu links (%zu external, not fetched), %zu references%s\n",
-                            static_cast<size_t>(stats.files), static_cast<size_t>(stats.links),
-                            static_cast<size_t>(stats.external), static_cast<size_t>(stats.refs),
-                            index == nullptr ? " (not checked: no module map)" : "");
+        vse::out::PrintError("docgen: %zu files, %zu links (%zu external, not fetched), %zu references%s\n",
+                             static_cast<size_t>(stats.files), static_cast<size_t>(stats.links),
+                             static_cast<size_t>(stats.external), static_cast<size_t>(stats.refs),
+                             index == nullptr ? " (not checked: no module map)" : "");
     }
     return errors || header_errors ? 1 : 0;
 }
@@ -378,7 +379,7 @@ int Lint(int argc, char** argv)
     const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 6));
     if (!line.Ok())
     {
-        vse::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::out::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     if (line.ArgCount() != 1)
@@ -417,7 +418,7 @@ int Lint(int argc, char** argv)
     RenderCoverage(result, table);
     if (!quiet)
     {
-        vse::os::PrintBytes(table.View().Data(), table.View().Length());
+        vse::out::PrintBytes(table.View().Data(), table.View().Length());
     }
 
     Baseline baseline(arena);
@@ -430,13 +431,13 @@ int Lint(int argc, char** argv)
         StringView text;
         if (!LoadSourceFile(StringView(baseline_path, vse::CStrLength(baseline_path)), arena, text))
         {
-            vse::os::PrintError("%s: error: cannot read the baseline\n", baseline_path);
+            vse::out::PrintError("%s: error: cannot read the baseline\n", baseline_path);
             return 2;
         }
         StringView error;
         if (!ParseBaseline(text, arena, baseline, error))
         {
-            vse::os::PrintError("%s:%.*s\n", baseline_path, static_cast<int>(error.Length()), error.Data());
+            vse::out::PrintError("%s:%.*s\n", baseline_path, static_cast<int>(error.Length()), error.Data());
             return 2;
         }
         use = &baseline;
@@ -463,7 +464,7 @@ int Lint(int argc, char** argv)
             }
             if (grew)
             {
-                vse::os::PrintErrorText(
+                vse::out::PrintErrorText(
                     "docgen: refusing to update the baseline: it would record new findings or lower coverage (pass --allow-growth to override)\n");
                 return 1;
             }
@@ -473,13 +474,13 @@ int Lint(int argc, char** argv)
         // atomic: a failed write cannot leave a truncated baseline behind
         if (!WriteTextAtomic(StringView(baseline_path, vse::CStrLength(baseline_path)), text.View()))
         {
-            vse::os::PrintError("%s: error: cannot write the baseline\n", baseline_path);
+            vse::out::PrintError("%s: error: cannot write the baseline\n", baseline_path);
             return 2;
         }
         if (!quiet)
         {
-            vse::os::PrintError("docgen: baseline written to %s (%zu known findings)\n", baseline_path,
-                                static_cast<size_t>(result.findings.Size()));
+            vse::out::PrintError("docgen: baseline written to %s (%zu known findings)\n", baseline_path,
+                                 static_cast<size_t>(result.findings.Size()));
         }
         return 0;
     }
@@ -515,7 +516,7 @@ int Samples(int argc, char** argv)
     const Line line(vse::HeapAllocator::Default(), argc, argv, Span<const CommandLineOption>(options, 12));
     if (!line.Ok())
     {
-        vse::os::PrintError("docgen: %s\n", line.Error().Data());
+        vse::out::PrintError("docgen: %s\n", line.Error().Data());
         return Usage();
     }
     root = line.OptionOr("root", root);
@@ -585,7 +586,7 @@ int Samples(int argc, char** argv)
     }
     else if (!CollectMarkdownFiles(root_v, arena, files))
     {
-        vse::os::PrintError("docgen: cannot read the documentation tree under %s\n", root);
+        vse::out::PrintError("docgen: cannot read the documentation tree under %s\n", root);
         return 2;
     }
     vse::Vector<FileDiag, ArenaAllocator> problems(arena);
@@ -612,7 +613,7 @@ int Samples(int argc, char** argv)
     if (!RunSamples(opt, samples, arena, problems, stats))
     {
         PrintFileDiags(problems, quiet);
-        vse::os::PrintError("docgen: cannot set up the sample build (scratch directory or compiler)\n");
+        vse::out::PrintError("docgen: cannot set up the sample build (scratch directory or compiler)\n");
         return 2;
     }
     bool errors = false;
@@ -623,9 +624,9 @@ int Samples(int argc, char** argv)
     PrintFileDiags(problems, quiet);
     if (!quiet)
     {
-        vse::os::PrintError("docgen: %zu samples, %zu compiled, %zu run, %zu failed\n",
-                            static_cast<size_t>(stats.found), static_cast<size_t>(stats.compiled),
-                            static_cast<size_t>(stats.ran), static_cast<size_t>(stats.failed));
+        vse::out::PrintError("docgen: %zu samples, %zu compiled, %zu run, %zu failed\n",
+                             static_cast<size_t>(stats.found), static_cast<size_t>(stats.compiled),
+                             static_cast<size_t>(stats.ran), static_cast<size_t>(stats.failed));
     }
     return errors ? 1 : 0;
 }

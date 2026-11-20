@@ -3,6 +3,7 @@
 // or offscreen (--screenshot). See README.md for the options and the script words.
 
 #include "os/console.h"
+#include "log/output.h"
 #include "lang/scalar.h"
 
 #include "cstr/number.h"
@@ -683,11 +684,11 @@ int Usage(const char* program, int code)
 {
     if (code == kExitOk)
     {
-        os::Print(kUsageFormat, program);
+        out::Print(kUsageFormat, program);
     }
     else
     {
-        os::PrintError(kUsageFormat, program);
+        out::PrintError(kUsageFormat, program);
     }
     return code;
 }
@@ -745,7 +746,7 @@ int EngineMain(int argc, char** argv)
     }
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
+        out::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
         return Usage(program, kExitUsage);
     }
     StringView value;

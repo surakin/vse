@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/vector.h"
+#include "log/output.h"
 #include "ecs/transform.h"
 #include "jobs/scheduler.h"
 #include "os/console.h"
@@ -431,6 +432,7 @@ TEST_CASE("Transform: propagation cost at depth 1, 4 and 16 (recorded, not asser
             const u64 t = os::MonotonicTimeNanos() - t0;
             best = t < best ? t : best;
         }
-        os::Print("transform propagation: depth %u, ~100k entities: %.2f ms\n", depth, static_cast<double>(best) / 1e6);
+        out::Print("transform propagation: depth %u, ~100k entities: %.2f ms\n", depth,
+                   static_cast<double>(best) / 1e6);
     }
 }

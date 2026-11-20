@@ -1,6 +1,7 @@
 // Windows implementation of ChildResourceGuard (Phase 13 Day 154): counts the process's handles and looks for a child
 // process still running.
 #include "resource_guard.h"
+#include "log/output.h"
 
 #include "debug/death_test.h"
 
@@ -60,8 +61,9 @@ bool AnyChildRunning(bool verbose = false)
         const bool ours = times && CompareFileTime(&created, &self_created) >= 0;
         if (verbose)
         {
-            vse::os::PrintError("ChildResourceGuard: listed child %lu '%ls' running %d created after this process %d\n",
-                                entry.th32ProcessID, entry.szExeFile, running ? 1 : 0, ours ? 1 : 0);
+            vse::out::PrintError(
+                "ChildResourceGuard: listed child %lu '%ls' running %d created after this process %d\n",
+                entry.th32ProcessID, entry.szExeFile, running ? 1 : 0, ours ? 1 : 0);
         }
         if (ours && running)
         {
@@ -111,7 +113,7 @@ bool ChildResourceGuard::Clean() const
         }
         Sleep(10);
     }
-    vse::os::PrintError("ChildResourceGuard: handles before %lu, now %lu, child running %d\n", descriptors_before_,
-                        CountOpenHandles(), AnyChildRunning(true) ? 1 : 0);
+    vse::out::PrintError("ChildResourceGuard: handles before %lu, now %lu, child running %d\n", descriptors_before_,
+                         CountOpenHandles(), AnyChildRunning(true) ? 1 : 0);
     return false;
 }

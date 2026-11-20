@@ -11,6 +11,7 @@
 //                 `large`)
 //                 [--long-steps N] the steps of the long run of `large` (default 1000000)
 #include "containers/vector.h"
+#include "log/output.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/number.h"
@@ -86,7 +87,7 @@ void Measure(const char* label, PhysicsWorld& world, u32 count)
     const u64 total = os::MonotonicTimeNanos() - start;
     const StepStats after = world.GetStepStats();
     const PhysicsStats stats = world.AllStats();
-    os::PrintError(
+    out::PrintError(
         "%-26s bodies %6u  step %8.3f ms  broad %7.3f  narrow %7.3f  solve %7.3f  integrate %7.3f  after %7.3f  "
         "contacts %6u  asleep %6u\n",
         label, stats.world.bodies, Ms(total, count), Ms(after.broad_ns - before.broad_ns, count),
@@ -128,7 +129,7 @@ void SceneDrop(u32 n)
     Configure(world);
     const u64 build = os::MonotonicTimeNanos();
     BuildDrop(world, n);
-    os::PrintError("drop %u: built in %.1f ms\n", n, static_cast<double>(os::MonotonicTimeNanos() - build) / 1.0e6);
+    out::PrintError("drop %u: built in %.1f ms\n", n, static_cast<double>(os::MonotonicTimeNanos() - build) / 1.0e6);
     for (u32 i = 0; i < 20; ++i)
     {
         world.Step();  // the bodies fall
@@ -183,9 +184,9 @@ void SceneMesh()
     Validation r = Validation::Ok;
     const u64 start = os::MonotonicTimeNanos();
     TriangleMeshConstPtr mesh = TriangleMesh::Create(spec, &r);
-    os::PrintError("mesh: %u triangles built in %.1f ms (%s)\n", nx * nz * 2,
-                   static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e6,
-                   r == Validation::Ok ? "ok" : "refused");
+    out::PrintError("mesh: %u triangles built in %.1f ms (%s)\n", nx * nz * 2,
+                    static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e6,
+                    r == Validation::Ok ? "ok" : "refused");
     if (r != Validation::Ok)
     {
         return;
@@ -264,8 +265,8 @@ void SceneRays()
         }
     }
     const double seconds = static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9;
-    os::PrintError("rays: %u rays against 5000 bodies in %.3f s = %.0f rays/s (%u hits)\n", rays, seconds,
-                   static_cast<double>(rays) / seconds, hits);
+    out::PrintError("rays: %u rays against 5000 bodies in %.3f s = %.0f rays/s (%u hits)\n", rays, seconds,
+                    static_cast<double>(rays) / seconds, hits);
 }
 
 void SceneCharacters()
@@ -307,8 +308,8 @@ void SceneCharacters()
             }
             world.Step();
         }
-        os::PrintError("characters %5u: move + step %8.3f ms per step\n", n,
-                       static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e6 / static_cast<double>(g_steps));
+        out::PrintError("characters %5u: move + step %8.3f ms per step\n", n,
+                        static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e6 / static_cast<double>(g_steps));
     }
 }
 
@@ -369,15 +370,15 @@ bool SceneLarge(u32 n, u32 long_steps)
             world.Step();
             if (step % 50 == 49 && !Sane(world, bodies, 200.0f))
             {
-                os::PrintError("large: %u bodies insane at step %u\n", n, step);
+                out::PrintError("large: %u bodies insane at step %u\n", n, step);
                 ok = false;
                 break;
             }
         }
         if (world.Stats().bodies != n + 5 || world.Stats().collider_slots != slots)
         {
-            os::PrintError("large: the body or collider count changed (%u bodies, %u slots)\n", world.Stats().bodies,
-                           world.Stats().collider_slots);
+            out::PrintError("large: the body or collider count changed (%u bodies, %u slots)\n", world.Stats().bodies,
+                            world.Stats().collider_slots);
             ok = false;
         }
         Measure("large piled", world, 20);
@@ -412,20 +413,20 @@ bool SceneLarge(u32 n, u32 long_steps)
             world.Step();
             if (step % 50000 == 49999 && !Sane(world, bodies, 40.0f))
             {
-                os::PrintError("large: the long run is insane at step %u\n", step);
+                out::PrintError("large: the long run is insane at step %u\n", step);
                 ok = false;
                 break;
             }
         }
         if (!Sane(world, bodies, 40.0f) || world.Stats().bodies != 105 || world.Stats().collider_slots != slots)
         {
-            os::PrintError("large: the long run ended insane or with changed counts\n");
+            out::PrintError("large: the long run ended insane or with changed counts\n");
             ok = false;
         }
-        os::PrintError("large: %u steps of 100 bodies in %.1f s\n", long_steps,
-                       static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9);
+        out::PrintError("large: %u steps of 100 bodies in %.1f s\n", long_steps,
+                        static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9);
     }
-    os::PrintError("large: %s\n", ok ? "ok" : "FAILED");
+    out::PrintError("large: %s\n", ok ? "ok" : "FAILED");
     return ok;
 }
 
@@ -440,7 +441,7 @@ int main(int argc, char** argv)
                                               Span<const os::CommandLineOption>(kCliOptions, 7));
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError(
+        out::PrintError(
             "usage: %s [--bodies N] [--steps N] [--threads N] [--scene drop|mesh|joints|rays|characters|large|all] [--long-steps N]\n",
             line.ProgramName().Data());
         return 2;
@@ -476,7 +477,7 @@ int main(int argc, char** argv)
     config.pin = false;
     jobs::Scheduler scheduler(config);
     g_scheduler = &scheduler;
-    os::PrintError("physics_bench: %zu thread(s), %u timed steps\n", static_cast<size_t>(g_threads), g_steps);
+    out::PrintError("physics_bench: %zu thread(s), %u timed steps\n", static_cast<size_t>(g_threads), g_steps);
     const bool all = CStrCompare(scene, "all") == 0;
     if (all || CStrCompare(scene, "drop") == 0)
     {

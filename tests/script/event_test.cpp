@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "cstr/cstr.h"
+#include "log/output.h"
 #include "ecs/transform.h"
 #include "jobs/scheduler.h"
 #include "os/console.h"
@@ -334,7 +335,7 @@ TEST_CASE("Events: the throughput of emit and delivery (printed, not asserted)",
     }
     const f64 seconds = static_cast<f64>(os::MonotonicTimeNanos() - begin) * 1e-9;
     const f64 delivered = static_cast<f64>(rig.runtime->Stats().events_delivered);
-    os::Print("events: %.0f handler calls per second (100 subscribers, 10,000 events a tick)\n", delivered / seconds);
+    out::Print("events: %.0f handler calls per second (100 subscribers, 10,000 events a tick)\n", delivered / seconds);
 }
 
 TEST_CASE("Events: a map's keys count toward the payload weight", "[script][event]")

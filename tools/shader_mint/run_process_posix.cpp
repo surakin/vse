@@ -2,6 +2,7 @@
 #include <sys/wait.h>
 
 #include "os/last_error.h"
+#include "log/output.h"
 #include "os/console.h"
 
 #include "run_process.h"
@@ -24,7 +25,7 @@ bool RunProcess(const Vector<Text>& args)
     pid_t pid = 0;
     if (posix_spawnp(&pid, argv[0], nullptr, nullptr, argv.Data(), environ) != 0)
     {
-        os::PrintError("shader_mint: cannot run %s\n", argv[0]);
+        out::PrintError("shader_mint: cannot run %s\n", argv[0]);
         return false;
     }
     int status = 0;
@@ -35,18 +36,18 @@ bool RunProcess(const Vector<Text>& args)
     } while (waited < 0 && vse::os::LastError() == EINTR);
     if (waited < 0)
     {
-        os::PrintError("shader_mint: waiting for %s failed\n", argv[0]);
+        out::PrintError("shader_mint: waiting for %s failed\n", argv[0]);
         return false;
     }
     if (WIFSIGNALED(status))
     {
-        os::PrintError("shader_mint: %s was killed by signal %d\n", argv[0], WTERMSIG(status));
+        out::PrintError("shader_mint: %s was killed by signal %d\n", argv[0], WTERMSIG(status));
         return false;
     }
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
     {
-        os::PrintError("shader_mint: %s exited with status %d\n", argv[0],
-                       WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+        out::PrintError("shader_mint: %s exited with status %d\n", argv[0],
+                        WIFEXITED(status) ? WEXITSTATUS(status) : -1);
         return false;
     }
     return true;

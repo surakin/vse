@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/vector.h"
+#include "log/output.h"
 #include "cstr/mem_ops.h"
 #include "ecs/schedule.h"
 #include "jobs/scheduler.h"
@@ -491,6 +492,6 @@ TEST_CASE("Parallel: scaling of one heavy system (recorded, not asserted)", "[ec
             const u64 t = schedule.StatsOf("heavy")->last_ns;
             best = t < best ? t : best;
         }
-        os::Print("scaling: %zu participants: %.2f ms\n", participants, static_cast<double>(best) / 1e6);
+        out::Print("scaling: %zu participants: %.2f ms\n", participants, static_cast<double>(best) / 1e6);
     }
 }

@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "animation/components.h"
+#include "log/output.h"
 #include "asset/clip.h"
 #include "animation/pose.h"
 #include "animation/sampler.h"
@@ -278,7 +279,7 @@ TEST_CASE("animation: the nlerp rotation differs from slerp by a recorded amount
         const f64 error = Abs(nlerp_angle - slerp_angle) * 57.29577951308232;
         worst = error > worst ? error : worst;
     }
-    os::Print("nlerp versus slerp over 170 degrees: worst angle error %.2f degrees\n", worst);
+    out::Print("nlerp versus slerp over 170 degrees: worst angle error %.2f degrees\n", worst);
     CHECK(worst < 30.0);
     CHECK(worst > 1.0);  // it is not zero: that is why the figure is recorded
 }
@@ -831,7 +832,7 @@ TEST_CASE("animation: sampling throughput", "[.][animation-bench]")
             SampleClip(clip.view, skeleton.view, 0.00002f * static_cast<f32>(i), true, &state, &pose);
         }
         const f64 seconds = static_cast<f64>(os::MonotonicTimeNanos() - start) * 1e-9;
-        os::Print("[animation-bench] %.0f clip samples per second (40 joints, 3 tracks)\n", n / seconds);
+        out::Print("[animation-bench] %.0f clip samples per second (40 joints, 3 tracks)\n", n / seconds);
     }
     const usize workers[2] = {1, 8};
     for (usize wk : workers)
@@ -848,8 +849,8 @@ TEST_CASE("animation: sampling throughput", "[.][animation-bench]")
             animator.Update(&w.world, &scheduler, 0.016f);
         }
         const f64 ms = static_cast<f64>(os::MonotonicTimeNanos() - start) * 1e-6 / frames;
-        os::Print("[animation-bench] 10000 characters of 20 joints: %.2f ms per update at %u workers\n", ms,
-                  static_cast<unsigned>(wk));
+        out::Print("[animation-bench] 10000 characters of 20 joints: %.2f ms per update at %u workers\n", ms,
+                   static_cast<unsigned>(wk));
     }
 }
 

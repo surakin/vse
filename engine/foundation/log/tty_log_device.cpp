@@ -32,6 +32,12 @@ usize Append(char* out, usize offset, const char* text, usize length)
 
 void TtyLogDevice::Write(const LogRecord& record)
 {
+    if (record.kind == LogRecordKind::Output)
+    {
+        // Program output is written as it is: tools print tables, tabs and binary data.
+        WriteLogConsoleBytes(record.line.Data(), record.line.Length(), record.stream);
+        return;
+    }
     // The line is at most 512 bytes and a control byte grows to two, so 1100 hold any coloured line.
     constexpr usize kLineRoom = 1100;
     char out[kLineRoom + kLogTraceBytes];

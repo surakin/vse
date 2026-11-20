@@ -2,6 +2,7 @@
 // A G-buffer frame is lit by LightingPass and tonemapped by TonemapPass; the HDR accumulation target and the display
 // target are read back and compared with the CPU twins of the shader code at probe pixels.
 #include "lang/scalar.h"
+#include "log/output.h"
 #include "lang/initializer_list.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -914,7 +915,7 @@ TEST_CASE("Point light scale: 1, 100 and 1000 lights at 1080p (measured, not ass
                 const ScaleResult r = MeasureLights(rig, scene, cam, 10);
                 CHECK(r.draws == count);  // none culled: all lights are over the visible plane
                 CHECK(r.dropped == 0);
-                os::Print(
+                out::Print(
                     "MEASURE point lights %4u at 1920x1080: %8.3f ms/frame (wall, submit to idle), %u light volume draws, %u culled\n",
                     count, r.ms_per_frame, r.draws, r.culled);
             }

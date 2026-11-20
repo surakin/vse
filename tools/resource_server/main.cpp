@@ -7,6 +7,7 @@
 // --seconds N stops the server after N seconds (the default is to run until it is killed). Its options are its own
 // command line, not engine settings (as net_probe's are); the limits are the defaults of asset::ResourceServerConfig.
 #include "asset/filesystem_backend.h"
+#include "log/output.h"
 #include "asset/pak_backend.h"
 #include "asset/resource_server.h"
 #include "containers/span.h"
@@ -28,7 +29,7 @@ namespace
 
 int Usage()
 {
-    os::PrintError("usage: resource_server (--root DIR | --pak FILE) --listen ADDR:PORT [--seconds N]\n");
+    out::PrintError("usage: resource_server (--root DIR | --pak FILE) --listen ADDR:PORT [--seconds N]\n");
     return 64;
 }
 
@@ -42,7 +43,7 @@ int main(int argc, char** argv)
                                         Span<const os::CommandLineOption>(kOptions, 4));
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("resource_server: %s\n", line.Ok() ? "unexpected argument" : line.Error().Data());
+        out::PrintError("resource_server: %s\n", line.Ok() ? "unexpected argument" : line.Error().Data());
         return Usage();
     }
     const char* root = line.OptionOr("root", nullptr);
@@ -65,14 +66,14 @@ int main(int argc, char** argv)
     net::Endpoint at;
     if (net::Endpoint::Parse(StringView(listen, CStrLength(listen)), &at).Failed())
     {
-        os::PrintError("resource_server: not an address:port: %s\n", listen);
+        out::PrintError("resource_server: not an address:port: %s\n", listen);
         return 64;
     }
     const char* source = root != nullptr ? root : pak;
     io::Path path;
     if (!io::Path::Parse(StringView(source, CStrLength(source)), io::NativePathStyle(), &path))
     {
-        os::PrintError("resource_server: not a path: %s\n", source);
+        out::PrintError("resource_server: not a path: %s\n", source);
         return 64;
     }
 
@@ -84,8 +85,8 @@ int main(int argc, char** argv)
         const asset::Status status = asset::FilesystemBackend::Create(path, types, &directory);
         if (status.Failed())
         {
-            os::PrintError("resource_server: %s: %s: %s\n", source, asset::ErrorCodeName(status.Code()),
-                           status.Message());
+            out::PrintError("resource_server: %s: %s: %s\n", source, asset::ErrorCodeName(status.Code()),
+                            status.Message());
             return 1;
         }
         backend = UniquePtr<asset::ResourceBackend>(directory.Release());
@@ -96,8 +97,8 @@ int main(int argc, char** argv)
         const asset::Status status = asset::PakBackend::Open(path, types, 0, &file);
         if (status.Failed())
         {
-            os::PrintError("resource_server: %s: %s: %s\n", source, asset::ErrorCodeName(status.Code()),
-                           status.Message());
+            out::PrintError("resource_server: %s: %s: %s\n", source, asset::ErrorCodeName(status.Code()),
+                            status.Message());
             return 1;
         }
         backend = UniquePtr<asset::ResourceBackend>(file.Release());
@@ -108,11 +109,11 @@ int main(int argc, char** argv)
     net::TcpTransport transport(provider, clock);
     if (transport.Listen(at).Failed())
     {
-        os::PrintError("resource_server: cannot listen on %s\n", listen);
+        out::PrintError("resource_server: cannot listen on %s\n", listen);
         return 1;
     }
     asset::ResourceServer server(*backend, transport);
-    os::Print("resource_server: serving %s on %s\n", source, provider.LocalEndpoint().Format().chars.Data());
+    out::Print("resource_server: serving %s on %s\n", source, provider.LocalEndpoint().Format().chars.Data());
     const u64 until = seconds_to_run == 0 ? 0 : clock.NowNanos() + static_cast<u64>(seconds_to_run) * 1'000'000'000ull;
     while (until == 0 || clock.NowNanos() < until)
     {
@@ -120,8 +121,8 @@ int main(int argc, char** argv)
         ThisThread::SleepForMilliseconds(1);
     }
     const asset::ResourceServerStats stats = server.Stats();
-    os::Print("resource_server: %llu requests, %llu errors, %llu bytes served\n",
-              static_cast<unsigned long long>(stats.requests), static_cast<unsigned long long>(stats.errors),
-              static_cast<unsigned long long>(stats.bytes_served));
+    out::Print("resource_server: %llu requests, %llu errors, %llu bytes served\n",
+               static_cast<unsigned long long>(stats.requests), static_cast<unsigned long long>(stats.errors),
+               static_cast<unsigned long long>(stats.bytes_served));
     return 0;
 }

@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "cstr/cstr.h"
+#include "log/output.h"
 #include "cstr/mem_ops.h"
 #include "ecs/schedule.h"
 #include "ecs/transform.h"
@@ -246,8 +247,8 @@ TEST_CASE("Parallel script system: the scaling curve over 100,000 scripted entit
             rig.runtime->Tick(&rig.world, 0.1, &scheduler);
         }
         const f64 seconds = static_cast<f64>(os::MonotonicTimeNanos() - begin) * 1e-9;
-        os::Print("scaling: threads %u partitions %u: %.0f entity updates per second\n", static_cast<u32>(r.threads),
-                  r.partitions, 300000.0 / seconds);
+        out::Print("scaling: threads %u partitions %u: %.0f entity updates per second\n", static_cast<u32>(r.threads),
+                   r.partitions, 300000.0 / seconds);
         CHECK(rig.runtime->Stats().errors == 0);
     }
 }

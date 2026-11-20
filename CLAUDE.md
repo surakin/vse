@@ -274,7 +274,8 @@ Every facility has an engine wrapper in the module of its category (`PLAN.md` as
 | traits, `Move`/`Forward`/`Swap`, `Limits`, `Ordering`, `InitializerList`, placement `new`, scalar math | `lang/*.h` | `IsSame<A,B>`, `Move(x)`, `Limits<T>::Max()`, `ConstructAt<T>(p, ...)`, `Sqrt`, `Floor`, `Abs`, `IsNaN` |
 | atomics, mutexes, condition variables, threads | `sync/*.h` | `Atomic<T>` + `MemoryOrder`, `Mutex`, `LockGuard`, `ConditionVariable`, `Thread`, `ThisThread` |
 | raw memory, C strings, formatting, number parsing, variable arguments | `cstr/*.h` | `MemCopy`, `MemSet`, `CStrLength`, `FormatTo`, `ParseDoubleExact`, `SortRaw`, `ENGINE_VA_START` |
-| console, abort/exit, environment, errno, signals, clocks | `os/*.h` | `os::Print`, `os::PrintError`, `os::Abort`, `os::GetEnvironment`, `os::LastError`, `os::SetSignalHandler`, `os::MonotonicTimeNanos` |
+| abort/exit, environment, errno, signals, clocks | `os/*.h` | `os::Abort`, `os::GetEnvironment`, `os::LastError`, `os::SetSignalHandler`, `os::MonotonicTimeNanos` |
+| program output (results, tables, help text, a tool's report) and diagnostics | `log/output.h`, `log/log.h` | `out::Print`, `out::PrintError`, `out::PrintText`, `Log(channel, level, message)`: everything a program prints goes through the log system's devices (`log/log_device.h`), never the C streams |
 | coroutines | `jobs/coroutine.h` | `CoroutineHandle`, `SuspendAlways` |
 | strings, sequences, maps, owned pointers, views, sorting, fixed-width integers | Phase 10 types | `String`/`StringView`/`StringBuilder`, `Vector`, `Array`, `HashMap`, `UniquePtr`/`SharedPtr`, `Span`, `Sort`/`Min`/`Max`, `byte`, `u8`..`u128` |
 

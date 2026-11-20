@@ -1,6 +1,7 @@
 // Phase 5 Day 75: render graph declaration and compilation. Pure CPU: no device is created (resources are described,
 // not allocated; imports use a made-up handle).
 #include "sync/atomic.h"
+#include "log/output.h"
 #include "build_defs.h"
 #include "lang/new.h"
 
@@ -703,7 +704,7 @@ TEST_CASE("A 1000-pass random DAG matches an independent reference", "[renderer]
     REQUIRE(graph.Compile());
     const u64 t1 = os::MonotonicTimeNanos();
     const double ms = static_cast<double>(t1 - t0) / 1e6;
-    os::Print("compile of a %u-pass graph: %.3f ms, %u scheduled\n", kPasses, ms, graph.ScheduleCount());
+    out::Print("compile of a %u-pass graph: %.3f ms, %u scheduled\n", kPasses, ms, graph.ScheduleCount());
 #ifndef RENDER_GRAPH_TEST_SANITIZED
     CHECK(ms <
           100.0);  // about 0.2 ms here; sanitizer builds are too slow for a wall-clock bound, the figure is printed

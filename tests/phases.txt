@@ -121,6 +121,7 @@ tests/foundation/algorithm_test.cpp             0
 tests/foundation/dense_map_test.cpp             0
 tests/foundation/log_test.cpp                   0
 tests/foundation/log_device_test.cpp            0   # maintenance: log devices
+tests/foundation/log_output_test.cpp            0   # maintenance: log everything
 tests/foundation/terminal_test.cpp              0   # maintenance: log devices
 tests/foundation/matrix_test.cpp                0
 tests/foundation/normalize_test.cpp             0

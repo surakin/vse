@@ -9,7 +9,9 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 #include "os/console.h"
+#include "cstr/format.h"
 #include "cstr/mem_ops.h"
+#include "cstr/varargs.h"
 
 namespace vse
 {
@@ -195,13 +197,18 @@ void SetLogObserver(LogObserverFn fn, void* user)
     g_observer_fn.Store(fn, MemoryOrder::SeqCst);
 }
 
-long WriteLogConsoleBytes(const char* bytes, usize length)
+long WriteLogConsoleBytes(const char* bytes, usize length, int fd)
 {
-    return g_write_sink(1, bytes, length);
+    return g_write_sink(fd, bytes, length);
 }
 
 void StdoutLogDevice::Write(const LogRecord& record)
 {
+    if (record.kind == LogRecordKind::Output)
+    {
+        WriteLogConsoleBytes(record.line.Data(), record.line.Length(), record.stream);
+        return;
+    }
     if (record.trace.Length() == 0)
     {
         WriteLogConsoleBytes(record.line.Data(), record.line.Length());
@@ -288,6 +295,30 @@ LogDevice* ConsoleDevice()
 
 }  // namespace
 
+namespace
+{
+
+// Delivers a record to the added devices whose level admits it.
+void DispatchToDevices(const LogRecord& record)
+{
+    for (DeviceSlot& slot : g_devices)
+    {
+        if (slot.device.Load(MemoryOrder::SeqCst) == nullptr)
+        {
+            continue;  // an empty slot costs one load, and a remover is never kept waiting by it
+        }
+        slot.busy.FetchAdd(1, MemoryOrder::SeqCst);
+        LogDevice* device = slot.device.Load(MemoryOrder::SeqCst);  // again: it may have been removed meanwhile
+        if (device != nullptr && static_cast<u8>(record.level) <= slot.max_verbosity.Load(MemoryOrder::Relaxed))
+        {
+            device->Write(record);
+        }
+        slot.busy.FetchSub(1, MemoryOrder::SeqCst);
+    }
+}
+
+}  // namespace
+
 bool AddLogDevice(LogDevice* device, LogVerbosity max_verbosity)
 {
     if (device == nullptr)
@@ -370,6 +401,49 @@ void FlushLogDevices()
     }
 }
 
+void LogF(LogChannel& channel, LogVerbosity level, const char* format, ...)
+{
+    if (!channel.ShouldLog(level))
+    {
+        return;
+    }
+    char message[512];
+    VarArgs args;
+    ENGINE_VA_START(args, format);
+    const int length = VFormatTo(message, sizeof(message), format, args);
+    ENGINE_VA_END(args);
+    if (length < 0)
+    {
+        return;
+    }
+    const usize n = static_cast<usize>(length) < sizeof(message) ? static_cast<usize>(length) : sizeof(message) - 1;
+    Log(channel, level, StringView(message, n));
+}
+
+namespace detail
+{
+
+void EmitOutput(StringView text, int stream)
+{
+    LogRecord record;
+    record.kind = LogRecordKind::Output;
+    record.stream = stream;
+    record.level = LogVerbosity::Info;
+    record.message = text;
+    record.line = text;
+    if (g_device_count.Load(MemoryOrder::Relaxed) != 0)
+    {
+        record.timestamp_ns = os::MonotonicTimeNanos();
+    }
+    if (LogDevice* console = ConsoleDevice())
+    {
+        console->Write(record);
+    }
+    DispatchToDevices(record);
+}
+
+}  // namespace detail
+
 void SetConsoleLogMode(ConsoleLogMode mode)
 {
     g_auto_colors.Store(0, MemoryOrder::Relaxed);
@@ -435,20 +509,7 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message)
             console->Write(record);
         }
     }
-    for (DeviceSlot& slot : g_devices)
-    {
-        if (slot.device.Load(MemoryOrder::SeqCst) == nullptr)
-        {
-            continue;  // an empty slot costs one load, and a remover is never kept waiting by it
-        }
-        slot.busy.FetchAdd(1, MemoryOrder::SeqCst);
-        LogDevice* device = slot.device.Load(MemoryOrder::SeqCst);  // again: it may have been removed meanwhile
-        if (device != nullptr && static_cast<u8>(level) <= slot.max_verbosity.Load(MemoryOrder::Relaxed))
-        {
-            device->Write(record);
-        }
-        slot.busy.FetchSub(1, MemoryOrder::SeqCst);
-    }
+    DispatchToDevices(record);
 }
 
 // SIGNAL-SAFE-BEGIN

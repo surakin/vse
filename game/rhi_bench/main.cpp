@@ -8,6 +8,7 @@
 //             unasked)
 
 #include "os/console.h"
+#include "log/output.h"
 #include "cstr/number.h"
 #include "cstr/cstr.h"
 
@@ -106,7 +107,7 @@ void BenchDraws(Device* device, u32 draws, long frames)
     UniformRing ring(device, static_cast<u64>(draws + 16) * 256);
     if (!MakeTarget(device, &t) || !cube.Create(device, options) || !ring.Valid())
     {
-        os::Print("draws %u: setup failed\n", draws);
+        out::Print("draws %u: setup failed\n", draws);
         device->WaitIdle();
         cube.Destroy();
         if (t.color.IsValid())
@@ -133,7 +134,7 @@ void BenchDraws(Device* device, u32 draws, long frames)
     }
     device->WaitIdle();
     const double wall = Now() - start;
-    os::Print(
+    out::Print(
         "draws        %6u cubes: record %7.3f ms/frame (%6.2f us/draw), submit %6.3f ms, wall %7.3f ms/frame (%.0f draws/s)\n",
         draws, record_total * 1e3 / static_cast<double>(frames),
         record_total * 1e6 / static_cast<double>(frames) / draws, submit_total * 1e3 / static_cast<double>(frames),
@@ -159,7 +160,7 @@ void BenchBarriers(Device* device)
     const TextureHandle texture = device->CreateTexture(td);
     if (!buffer.IsValid() || !texture.IsValid())
     {
-        os::Print("barriers: setup failed\n");
+        out::Print("barriers: setup failed\n");
         if (buffer.IsValid())
         {
             device->DestroyBuffer(buffer);
@@ -205,8 +206,8 @@ void BenchBarriers(Device* device)
         CommandList* lists[] = {list};
         device->Submit(lists, 1);
         device->EndFrame();
-        os::Print("barrier      %s: %.3f us per call (%u recorded)\n", is_texture ? "texture" : "buffer ",
-                  elapsed * 1e6 / kBarriers, kBarriers);
+        out::Print("barrier      %s: %.3f us per call (%u recorded)\n", is_texture ? "texture" : "buffer ",
+                   elapsed * 1e6 / kBarriers, kBarriers);
         device->WaitIdle();
     }
     device->DestroyBuffer(buffer);
@@ -233,7 +234,7 @@ void BenchUploads(Device* device)
         MemSet(data.Data(), 0x5a, data.Size());
         if (!buffer.IsValid())
         {
-            os::Print("upload %llu MiB: buffer creation failed\n", static_cast<unsigned long long>(c.bytes >> 20));
+            out::Print("upload %llu MiB: buffer creation failed\n", static_cast<unsigned long long>(c.bytes >> 20));
             continue;
         }
         device->UploadBuffer(buffer, 0, data.Data(), c.bytes);  // warm up the staging ring
@@ -251,15 +252,15 @@ void BenchUploads(Device* device)
         const double elapsed = Now() - start;
         if (!ok)
         {
-            os::Print("upload       %3llu MiB: an upload failed; no figure\n",
-                      static_cast<unsigned long long>(c.bytes >> 20));
+            out::Print("upload       %3llu MiB: an upload failed; no figure\n",
+                       static_cast<unsigned long long>(c.bytes >> 20));
             device->WaitIdle();
             device->DestroyBuffer(buffer);
             continue;
         }
         const double mib = static_cast<double>(c.bytes >> 20) * c.count;
-        os::Print("upload       %3llu MiB x %3d through the staging ring: %8.1f MiB/s (%.2f ms each)\n",
-                  static_cast<unsigned long long>(c.bytes >> 20), c.count, mib / elapsed, elapsed * 1e3 / c.count);
+        out::Print("upload       %3llu MiB x %3d through the staging ring: %8.1f MiB/s (%.2f ms each)\n",
+                   static_cast<unsigned long long>(c.bytes >> 20), c.count, mib / elapsed, elapsed * 1e3 / c.count);
         device->WaitIdle();
         device->DestroyBuffer(buffer);
     }
@@ -301,17 +302,17 @@ void BenchPipelines()
     if (io::TempDirectory(&temp).Failed() || io::CreateTempDirectory(temp, "rhi-bench-cache", &scratch).Failed() ||
         !scratch.ToNative(dir, sizeof(dir)))
     {
-        os::Print("pipelines: no temp directory\n");
+        out::Print("pipelines: no temp directory\n");
         return;
     }
     const double off = TimePipeline(false, dir);
     const double cold = TimePipeline(true, dir);
     const double warm = TimePipeline(true, dir);
-    os::Print("pipeline     cube create: no cache %.3f ms, cold cache %.3f ms, warm cache %.3f ms\n", off * 1e3,
-              cold * 1e3, warm * 1e3);
+    out::Print("pipeline     cube create: no cache %.3f ms, cold cache %.3f ms, warm cache %.3f ms\n", off * 1e3,
+               cold * 1e3, warm * 1e3);
     if (io::RemoveAll(scratch).Failed())
     {
-        os::Print("(could not remove %s)\n", dir);
+        out::Print("(could not remove %s)\n", dir);
     }
 }
 
@@ -341,7 +342,7 @@ int main(int argc, char** argv)
     if (!line.Ok() || line.ArgCount() != 0 ||
         (line.TryGetOption("rhi", value) && !demo::ParseRhiBackend(value.Data(), &g_backend)))
     {
-        os::PrintError(
+        out::PrintError(
             "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|metal|auto]\n",
             program);
         return 2;
@@ -362,7 +363,7 @@ int main(int argc, char** argv)
     }
     if (draws < 0 || draws > 1000000)
     {
-        os::PrintError("rhi_bench: --draws must be between 1 and 1000000\n");
+        out::PrintError("rhi_bench: --draws must be between 1 and 1000000\n");
         return 2;
     }
     DeviceCreateInfo info;
@@ -371,11 +372,11 @@ int main(int argc, char** argv)
     DevicePtr device = CreateDevice(info);
     if (device == nullptr)
     {
-        os::PrintError("rhi_bench: no device for --rhi %s (see the log above)\n", demo::RhiBackendName(g_backend));
+        out::PrintError("rhi_bench: no device for --rhi %s (see the log above)\n", demo::RhiBackendName(g_backend));
         return 1;
     }
-    os::Print("backend %s, %ux%u target, %ld frames per draw measurement\n", device->BackendName(), kSize, kSize,
-              frames);
+    out::Print("backend %s, %ux%u target, %ld frames per draw measurement\n", device->BackendName(), kSize, kSize,
+               frames);
     if (draws > 0)
     {
         BenchDraws(device.Get(), static_cast<u32>(draws), frames);

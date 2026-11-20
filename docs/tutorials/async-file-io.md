@@ -27,7 +27,7 @@
 #include "jobs/counter.h"
 #include "jobs/job.h"
 #include "jobs/scheduler.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "sync/atomic.h"
 
 using namespace vse;
@@ -75,7 +75,7 @@ int main() {
 
     const char* names[3] = {"hello.txt", "digits.txt", "nothing-here.txt"};
     for (int i = 0; i < 3; ++i) {
-        os::Print("%s: ok=%s size=%zu first=%c\n", names[i], reports[i].ok ? "yes" : "no", reports[i].size,
+        out::Print("%s: ok=%s size=%zu first=%c\n", names[i], reports[i].ok ? "yes" : "no", reports[i].size,
                   reports[i].ok ? static_cast<char>(reports[i].first) : '-');
     }
 

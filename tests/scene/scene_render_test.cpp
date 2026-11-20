@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "backend_fixture.h"
+#include "log/output.h"
 #include "cstr/mem_ops.h"
 #include "demo_frame.h"
 #include "ecs/schedule.h"
@@ -207,10 +208,10 @@ TEST_CASE("An entity-built scene renders the same pixels as the hand-built Rende
             }
             if (!varied)
             {
-                os::PrintError("uniform image %u %u %u %u; visible %u drawn %u rejected %u ok %d err %s\n", expected[0],
-                               expected[1], expected[2], expected[3], frame.GBufferStatistics().visible,
-                               frame.GBufferStatistics().drawn_objects, frame.GBufferStatistics().rejected,
-                               frame.LastGBufferOk() ? 1 : 0, frame.LastError());
+                out::PrintError("uniform image %u %u %u %u; visible %u drawn %u rejected %u ok %d err %s\n",
+                                expected[0], expected[1], expected[2], expected[3], frame.GBufferStatistics().visible,
+                                frame.GBufferStatistics().drawn_objects, frame.GBufferStatistics().rejected,
+                                frame.LastGBufferOk() ? 1 : 0, frame.LastError());
             }
             CHECK(varied);
             device->WaitIdle();

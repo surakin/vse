@@ -9,6 +9,7 @@
 //                [--entities N]   the entity count of `tick` (default: 10000, 100000 and 1000000)
 //                [--ticks N]      timed ticks per measurement (default 5)
 #include "containers/vector.h"
+#include "log/output.h"
 #include "containers/hash.h"
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
@@ -196,7 +197,7 @@ void SceneCalls()
     Outcome error;
     if (rig.runtime->Scripts().TryCheckout(0, &lease, &error) != CheckoutStatus::Ok)
     {
-        os::PrintError("script_bench: no state\n");
+        out::PrintError("script_bench: no state\n");
         ++g_failures;
         return;
     }
@@ -213,7 +214,7 @@ void SceneCalls()
     t0 = os::MonotonicTimeNanos();
     lease.Call("native_ns", Span<const Value>(&n, 1), budget, &out);
     const u64 native_ns = os::MonotonicTimeNanos() - t0;
-    os::Print(
+    out::Print(
         "calls: C to Lua %.0f ns per call; Lua to a pure binding %.0f ns per call (1,000,000 calls of num.clamp)\n",
         static_cast<double>(c_to_lua) / calls, static_cast<double>(native_ns) / 1000000.0);
 }
@@ -228,8 +229,8 @@ void SceneTick(u32 entities, const usize* threads, usize thread_count, u32 parti
         Rig rig(partitions);
         rig.Fill(entities, "mixer", true);
         const u64 ns = TimeTicks(rig, &scheduler, g_ticks);
-        os::Print("tick: %u entities, %u partitions, %zu threads: %.2f ms per tick, %.0f ns per entity\n", entities,
-                  partitions, static_cast<size_t>(threads[k]), Ms(ns), static_cast<double>(ns) / entities);
+        out::Print("tick: %u entities, %u partitions, %zu threads: %.2f ms per tick, %.0f ns per entity\n", entities,
+                   partitions, static_cast<size_t>(threads[k]), Ms(ns), static_cast<double>(ns) / entities);
     }
 }
 
@@ -244,8 +245,8 @@ void ScenePartitions(u32 entities)
             Rig rig(p);
             rig.Fill(entities, "mixer", true);
             const u64 ns = TimeTicks(rig, &scheduler, g_ticks);
-            os::Print("partitions: %u entities, P=%u, %zu threads: %.2f ms per tick\n", entities, p,
-                      static_cast<size_t>(threads), Ms(ns));
+            out::Print("partitions: %u entities, P=%u, %zu threads: %.2f ms per tick\n", entities, p,
+                       static_cast<size_t>(threads), Ms(ns));
         }
     }
 }
@@ -271,9 +272,9 @@ void SceneEvents(u32 entities)
         total += os::MonotonicTimeNanos() - t0;
     }
     const double per_tick = static_cast<double>(total) / g_ticks;
-    os::Print("events: %u listeners, %u events per tick: %.2f ms per tick, %.2f million handler calls per second\n",
-              entities, events, Ms(static_cast<u64>(per_tick)),
-              static_cast<double>(entities) * events / per_tick * 1000.0);
+    out::Print("events: %u listeners, %u events per tick: %.2f ms per tick, %.2f million handler calls per second\n",
+               entities, events, Ms(static_cast<u64>(per_tick)),
+               static_cast<double>(entities) * events / per_tick * 1000.0);
 }
 
 // ---- waits: coroutines that wake every tick
@@ -284,8 +285,8 @@ void SceneWaits(u32 entities)
     Rig rig(64);
     rig.Fill(entities, "sleeper", false);
     const u64 ns = TimeTicks(rig, &scheduler, g_ticks);
-    os::Print("waits: %u coroutines waking every tick: %.2f ms per tick, %.0f ns per wake\n", entities, Ms(ns),
-              static_cast<double>(ns) / entities);
+    out::Print("waits: %u coroutines waking every tick: %.2f ms per tick, %.0f ns per wake\n", entities, Ms(ns),
+               static_cast<double>(ns) / entities);
 }
 
 // ---- tasks: parallel_for over 8 million indices
@@ -298,8 +299,8 @@ void SceneTasks()
         Rig rig(16, static_cast<u32>(threads));
         rig.Fill(1, "tasker", false);
         const u64 ns = TimeTicks(rig, &scheduler, 3);
-        os::Print("tasks: parallel_for over 8,000,000 indices, %zu threads: %.2f ms per round\n",
-                  static_cast<size_t>(threads), Ms(ns));
+        out::Print("tasks: parallel_for over 8,000,000 indices, %zu threads: %.2f ms per round\n",
+                   static_cast<size_t>(threads), Ms(ns));
     }
 }
 
@@ -325,8 +326,8 @@ void SceneMemory()
     {
         Rig rig(1);
         const usize empty = StateBytes(rig);
-        os::Print("memory: one state with the behavior host and the bench script: %zu bytes\n",
-                  static_cast<size_t>(empty));
+        out::Print("memory: one state with the behavior host and the bench script: %zu bytes\n",
+                   static_cast<size_t>(empty));
     }
     const u32 n = 20000;
     Rig base(4);
@@ -338,8 +339,8 @@ void SceneMemory()
     many.Fill(n, "holder", false);
     many.runtime->Tick(&many.world, 0.016, &scheduler);
     const usize after = StateBytes(many);
-    os::Print("memory: %u instances of a behavior holding a table of eight numbers: %.0f bytes per instance\n", n,
-              static_cast<double>(after - before) / (n - 1));
+    out::Print("memory: %u instances of a behavior holding a table of eight numbers: %.0f bytes per instance\n", n,
+               static_cast<double>(after - before) / (n - 1));
     Rig sleepers(4);
     sleepers.Fill(1, "sleeper", false);
     sleepers.runtime->Tick(&sleepers.world, 0.016, &scheduler);
@@ -348,8 +349,8 @@ void SceneMemory()
     sleepers2.Fill(n, "sleeper", false);
     sleepers2.runtime->Tick(&sleepers2.world, 0.016, &scheduler);
     const usize s2 = StateBytes(sleepers2);
-    os::Print("memory: %u waiting coroutines (an instance each): %.0f bytes per instance and coroutine\n", n,
-              static_cast<double>(s2 - s1) / (n - 1));
+    out::Print("memory: %u waiting coroutines (an instance each): %.0f bytes per instance and coroutine\n", n,
+               static_cast<double>(s2 - s1) / (n - 1));
 }
 
 // ---- check: generous bounds; a 3x slowdown fails
@@ -357,7 +358,7 @@ void SceneMemory()
 bool Bound(const char* what, double measured, double limit)
 {
     const bool ok = measured <= limit;
-    os::Print("check: %s %.3f (limit %.3f) %s\n", what, measured, limit, ok ? "ok" : "FAILED");
+    out::Print("check: %s %.3f (limit %.3f) %s\n", what, measured, limit, ok ? "ok" : "FAILED");
     return ok;
 }
 
@@ -445,12 +446,12 @@ void SceneStress()
     // Small scale first: one thread and sixteen compare by hash.
     const StressResult a = RunStress(1, 20000, 200, 64);
     const StressResult b = RunStress(16, 20000, 200, 64);
-    os::Print("stress: 20,000 entities, 200 ticks: hash %016llx (1 thread), %016llx (16 threads), errors %llu %llu\n",
-              static_cast<unsigned long long>(a.hash), static_cast<unsigned long long>(b.hash),
-              static_cast<unsigned long long>(a.errors), static_cast<unsigned long long>(b.errors));
+    out::Print("stress: 20,000 entities, 200 ticks: hash %016llx (1 thread), %016llx (16 threads), errors %llu %llu\n",
+               static_cast<unsigned long long>(a.hash), static_cast<unsigned long long>(b.hash),
+               static_cast<unsigned long long>(a.errors), static_cast<unsigned long long>(b.errors));
     if (a.hash != b.hash || a.errors != 0 || b.errors != 0 || a.updates != b.updates)
     {
-        os::PrintError("script_bench: the small stress run differs between thread counts\n");
+        out::PrintError("script_bench: the small stress run differs between thread counts\n");
         ++g_failures;
         return;
     }
@@ -458,12 +459,12 @@ void SceneStress()
     const u32 big_ticks = 60;
     const u64 t0 = os::MonotonicTimeNanos();
     const StressResult big = RunStress(16, 1000000, big_ticks, 256);
-    os::Print("stress: 1,000,000 entities, %u ticks on 16 threads: %.1f s, updates %llu, errors %llu\n", big_ticks,
-              static_cast<double>(os::MonotonicTimeNanos() - t0) * 1.0e-9, static_cast<unsigned long long>(big.updates),
-              static_cast<unsigned long long>(big.errors));
+    out::Print("stress: 1,000,000 entities, %u ticks on 16 threads: %.1f s, updates %llu, errors %llu\n", big_ticks,
+               static_cast<double>(os::MonotonicTimeNanos() - t0) * 1.0e-9,
+               static_cast<unsigned long long>(big.updates), static_cast<unsigned long long>(big.errors));
     if (big.errors != 0 || big.updates < static_cast<u64>(1000000) * (big_ticks - 1))
     {
-        os::PrintError("script_bench: the large stress run failed its checks\n");
+        out::PrintError("script_bench: the large stress run failed its checks\n");
         ++g_failures;
     }
 }
@@ -478,7 +479,7 @@ int main(int argc, char** argv)
                                               Span<const os::CommandLineOption>(kCliOptions, 5));
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError(
+        out::PrintError(
             "usage: %s [--scene calls|tick|partitions|events|waits|tasks|memory|check|stress|all] [--entities N] [--ticks N]\n",
             line.ProgramName().Data());
         return 2;

@@ -8,6 +8,7 @@
 //                   [--csv PATH]                  also write the rows to a CSV file
 
 #include "bench.h"
+#include "log/output.h"
 
 #include "cstr/cstr.h"
 #include "cstr/format.h"
@@ -44,7 +45,7 @@ void Report::Add(const char* section, const char* name, u64 size, double ms, u64
     row.size = size;
     row.ms = ms;
     row.ns_per = operations > 0 ? ms * 1.0e6 / static_cast<double>(operations) : 0.0;
-    os::Print("%-6s %-56s %10.3f ms %12.1f ns/op\n", section, name, ms, row.ns_per);
+    out::Print("%-6s %-56s %10.3f ms %12.1f ns/op\n", section, name, ms, row.ns_per);
     rows_.Push(Move(row));
 }
 
@@ -62,7 +63,7 @@ int main(int argc, char** argv)
     const char* program = line.ProgramName().Data();
     const auto usage = [&]()
     {
-        os::PrintError("usage: %s [--section micro|paths|all] [--runs N] [--quick] [--csv PATH]\n", program);
+        out::PrintError("usage: %s [--section micro|paths|all] [--runs N] [--quick] [--csv PATH]\n", program);
         return 2;
     };
     if (!line.Ok() || line.ArgCount() != 0)
@@ -127,7 +128,7 @@ int main(int argc, char** argv)
         io::Path file;
         if (!io::Path::Parse(csv, io::NativePathStyle(), &file) || !io::WriteFile(file, text.Data(), text.Size()).Ok())
         {
-            os::PrintError("could not write the CSV file\n");
+            out::PrintError("could not write the CSV file\n");
             return 1;
         }
     }

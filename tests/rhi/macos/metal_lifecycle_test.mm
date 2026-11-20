@@ -4,6 +4,7 @@
 // observer installed and removed with the device. The conformance suite's Metal case is in
 // lifecycle_conformance_test.cpp. macOS only.
 #include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
+#include "log/output.h"
 
 #include "os/console.h"
 #include "os/os.h"
@@ -138,8 +139,8 @@ TEST_CASE("A hundred Metal device resets keep the counts and memory, change the 
         total += reset_ms[i];
         worst = reset_ms[i] > worst ? reset_ms[i] : worst;
     }
-    os::Print("metal reset: %zu resets, mean %.2f ms, worst %.2f ms\n", reset_ms.Size(),
-              total / static_cast<f64>(reset_ms.Size()), worst);
+    out::Print("metal reset: %zu resets, mean %.2f ms, worst %.2f ms\n", reset_ms.Size(),
+               total / static_cast<f64>(reset_ms.Size()), worst);
 }
 
 TEST_CASE("A Metal handle from a destroyed device is not valid on the next one", "[rhi][metal][gpu][reset]")

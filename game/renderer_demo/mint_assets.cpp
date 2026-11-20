@@ -2,6 +2,7 @@
 // files in assets/ are its output, and a test checks that they still are (byte for byte).
 
 #include "os/command_line.h"
+#include "log/output.h"
 #include "os/console.h"
 
 #include "io/file.h"
@@ -13,7 +14,7 @@ int main(int argc, char** argv)
     const vse::os::CommandLine<vse::HeapAllocator> line(vse::HeapAllocator::Default(), argc, argv);
     if (line.ArgCount() != 1)
     {
-        vse::os::PrintError("usage: %s <output directory>\n", line.ProgramName().Data());
+        vse::out::PrintError("usage: %s <output directory>\n", line.ProgramName().Data());
         return 2;
     }
     using namespace renderer_demo;
@@ -24,19 +25,19 @@ int main(int argc, char** argv)
         io::Path directory;
         if (!io::Path::Parse(line.Arg(0), io::NativePathStyle(), &directory))
         {
-            vse::os::PrintError("renderer_demo_mint: the output directory is not a usable path\n");
+            vse::out::PrintError("renderer_demo_mint: the output directory is not a usable path\n");
             return 1;
         }
         const io::Path path = directory.Join(StringView(textures[i].file));
         const demo::RtexImage image = demo::BuildRtex(textures[i].make(), textures[i].format);
         if (const io::Status status = demo::WriteRtex(path, image); status.Failed())
         {
-            vse::os::PrintError("renderer_demo_mint: could not write %.*s: %s\n",
-                                static_cast<int>(path.View().Length()), path.View().Data(),
-                                io::ErrorName(status.error));
+            vse::out::PrintError("renderer_demo_mint: could not write %.*s: %s\n",
+                                 static_cast<int>(path.View().Length()), path.View().Data(),
+                                 io::ErrorName(status.error));
             return 1;
         }
-        vse::os::Print("wrote %.*s\n", static_cast<int>(path.View().Length()), path.View().Data());
+        vse::out::Print("wrote %.*s\n", static_cast<int>(path.View().Length()), path.View().Data());
     }
     return 0;
 }

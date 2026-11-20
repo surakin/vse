@@ -5,6 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "catch_engine_types.h"
+#include "log/output.h"
 #include "debug/death_test.h"
 #include "debug/post_mortem.h"
 #include "support/death_test_skip.h"
@@ -68,9 +69,9 @@ bool UserKeyExists()
 
 void PrintReport(const PostMortemReport& report)
 {
-    os::Print("RESULT=%d;\nDESTINATION=%s;\nNOTE=%s;\n", static_cast<int>(report.result), report.destination,
-              report.note);
-    os::Flush();
+    out::Print("RESULT=%d;\nDESTINATION=%s;\nNOTE=%s;\n", static_cast<int>(report.result), report.destination,
+               report.note);
+    out::Flush();
 }
 
 }  // namespace

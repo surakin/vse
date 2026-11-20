@@ -19,7 +19,7 @@
 ```cpp compile run standalone
 #include "containers/vector.h"
 #include "math/geometry.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "spatial/query.h"
 #include "spatial/spatial_set.h"
 
@@ -39,7 +39,7 @@ int main() {
     // Step 4: what touches the region around x = 20?
     u32 touching = 0;
     spatial::Overlap(set, Aabb::FromMinMax(Vec3(15, -2, -2), Vec3(27, 2, 2)), spatial::QueryFilter(), [&](const spatial::Item& item) {
-        os::Print("overlap: key %u\n", static_cast<u32>(item.key));
+        out::Print("overlap: key %u\n", static_cast<u32>(item.key));
         ++touching;
         return true;
     });
@@ -47,12 +47,12 @@ int main() {
     // Step 5: a ray along +x from x = -5 hits the first wall.
     Vector<spatial::RayHit> hits;
     spatial::Raycast(set, Ray::Make(Vec3(-5, 0, 0), Vec3(1, 0, 0)), 100.0f, spatial::QueryFilter(), spatial::RayMode::Closest, spatial::Order::Ordered, &hits);
-    os::Print("ray: first hit key %u at t = %.1f\n", static_cast<u32>(hits[0].key), static_cast<double>(hits[0].t));
+    out::Print("ray: first hit key %u at t = %.1f\n", static_cast<u32>(hits[0].key), static_cast<double>(hits[0].t));
 
     // Step 6: the two items nearest to x = 28.
     Vector<spatial::NearestHit> nearest;
     spatial::Nearest(set, Vec3(28, 0, 0), 2, 1000.0f, spatial::QueryFilter(), &nearest);
-    os::Print("nearest: keys %u and %u\n", static_cast<u32>(nearest[0].key), static_cast<u32>(nearest[1].key));
+    out::Print("nearest: keys %u and %u\n", static_cast<u32>(nearest[0].key), static_cast<u32>(nearest[1].key));
 
     // Step 7: move the mover far away; it no longer touches the region.
     set.Move(mover, Cube(500.0f));
@@ -61,7 +61,7 @@ int main() {
         ++after;
         return true;
     });
-    os::Print("touching before the move: %u, after: %u\n", touching, after);
+    out::Print("touching before the move: %u, after: %u\n", touching, after);
     return 0;
 }
 ```

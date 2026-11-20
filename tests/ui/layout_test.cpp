@@ -1,4 +1,5 @@
 #include "lang/scalar.h"
+#include "log/output.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -91,9 +92,9 @@ bool Is(const Widget* w, f32 x, f32 y, f32 width, f32 height)
     const bool ok = Near(r.x, x) && Near(r.y, y) && Near(r.w, width) && Near(r.h, height);
     if (!ok)
     {
-        os::Print("  %s is (%g, %g, %g, %g), expected (%g, %g, %g, %g)\n",
-                  w->Name().Length() > 0 ? String<HeapAllocator>(HeapAllocator::Default(), w->Name()).CStr() : "?", r.x,
-                  r.y, r.w, r.h, x, y, width, height);
+        out::Print("  %s is (%g, %g, %g, %g), expected (%g, %g, %g, %g)\n",
+                   w->Name().Length() > 0 ? String<HeapAllocator>(HeapAllocator::Default(), w->Name()).CStr() : "?",
+                   r.x, r.y, r.w, r.h, x, y, width, height);
     }
     return ok;
 }

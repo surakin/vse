@@ -52,7 +52,7 @@ makes the whole block reusable and `FreeAll()` (or the destructor) gives it back
 ```cpp compile run standalone
 #include "containers/vector.h"
 #include "mem/arena_allocator.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -65,13 +65,13 @@ int main() {
             for (u32 i = 0; i < 1000; ++i) {
                 visible.Push(i * frame_number);
             }
-            os::Print("frame %u: %zu items\n", frame_number, visible.Size());
+            out::Print("frame %u: %zu items\n", frame_number, visible.Size());
         }                                      // `visible` is gone before the reset
         frame.Reset();                         // the whole frame's memory is free again
     }
 
     void* block = frame.Alloc(1 << 20, 16);    // asking for more than is left
-    os::Print("1 MiB from a 64 KiB arena: %s\n", block == nullptr ? "nullptr" : "ok");
+    out::Print("1 MiB from a 64 KiB arena: %s\n", block == nullptr ? "nullptr" : "ok");
     return 0;
 }
 ```
@@ -100,7 +100,7 @@ The same storage as an arena, but you can rewind to a saved position:
 
 ```cpp compile run standalone
 #include "mem/stack_allocator.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -114,7 +114,7 @@ int main() {
     stack.PopToMarker(mark);               // both inner blocks are gone, `outer` is untouched
 
     void* reused = stack.Push(200, 16);
-    os::Print("outer kept: %s, inner space reused: %s\n", outer != nullptr ? "yes" : "no", reused == inner_a ? "yes" : "no");
+    out::Print("outer kept: %s, inner space reused: %s\n", outer != nullptr ? "yes" : "no", reused == inner_a ? "yes" : "no");
     (void)inner_b;
     return 0;
 }
@@ -135,7 +135,7 @@ at any time, so it suits objects that are created and destroyed one by one (node
 
 ```cpp compile run standalone
 #include "mem/pool_allocator.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -144,10 +144,10 @@ int main() {
     void* a = pool.Alloc();
     void* b = pool.Alloc();
     void* none = pool.Alloc();
-    os::Print("third allocation: %s\n", none == nullptr ? "nullptr (pool full)" : "ok");
+    out::Print("third allocation: %s\n", none == nullptr ? "nullptr (pool full)" : "ok");
     pool.Free(a);
     void* again = pool.Alloc();
-    os::Print("a freed slot is reused: %s\n", again == a ? "yes" : "no");
+    out::Print("a freed slot is reused: %s\n", again == a ? "yes" : "no");
     (void)b;
     return 0;
 }

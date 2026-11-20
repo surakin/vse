@@ -7,6 +7,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/vector.h"
+#include "log/output.h"
 #include "jobs/scheduler.h"
 #include "lang/scalar.h"
 #include "os/os.h"
@@ -302,12 +303,12 @@ TEST_CASE("Golden: print the table (run by hand)", "[.][golden-print]")
     {
         u64 h[kHashes] = {};
         REQUIRE(Run(static_cast<GoldenScene>(s), 0, h));
-        os::Print("    {GoldenScene::%s, {", SceneName(static_cast<GoldenScene>(s)));
+        out::Print("    {GoldenScene::%s, {", SceneName(static_cast<GoldenScene>(s)));
         for (u32 i = 0; i < kHashes; ++i)
         {
-            os::Print("0x%016llxull%s", static_cast<unsigned long long>(h[i]), i + 1 < kHashes ? ", " : "");
+            out::Print("0x%016llxull%s", static_cast<unsigned long long>(h[i]), i + 1 < kHashes ? ", " : "");
         }
-        os::Print("}},\n");
+        out::Print("}},\n");
     }
 }
 
@@ -368,8 +369,8 @@ TEST_CASE("Golden: cost per body (run by hand)", "[.][golden-cost]")
                 world.Step();
             }
             const f64 seconds = static_cast<f64>(os::MonotonicTimeNanos() - begin) * 1e-9;
-            os::Print("cost: %u bodies %s: %.1f steps/s, %.2f us per body-step\n", n, awake != 0 ? "awake " : "asleep",
-                      60.0 / seconds, seconds / 60.0 / static_cast<f64>(n) * 1e6);
+            out::Print("cost: %u bodies %s: %.1f steps/s, %.2f us per body-step\n", n, awake != 0 ? "awake " : "asleep",
+                       60.0 / seconds, seconds / 60.0 / static_cast<f64>(n) * 1e6);
         }
     }
 }

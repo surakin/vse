@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "cstr/cstr.h"
+#include "log/output.h"
 #include "ecs/transform.h"
 #include "jobs/scheduler.h"
 #include "os/console.h"
@@ -394,7 +395,7 @@ TEST_CASE("Latent waits: the cost of 100,000 waiting coroutines (printed, not as
         rig.runtime->Tick(&rig.world, 0.1);
     }
     const f64 seconds = static_cast<f64>(os::MonotonicTimeNanos() - begin) * 1e-9;
-    os::Print(
+    out::Print(
         "latent: %llu coroutines waiting, %.1f ms per tick with nothing due, %llu bytes of script state per entity\n",
         static_cast<unsigned long long>(rig.runtime->Stats().coroutines_waiting), seconds / 3.0 * 1000.0,
         static_cast<unsigned long long>(rig.runtime->Scripts().Total().memory_bytes / 100000));

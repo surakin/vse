@@ -18,18 +18,18 @@ call.
 
 ## Console output
 
-Program output (not diagnostics) goes through `os/console.h`: `os::Print(format, ...)` (a `printf`-style format), `os::PrintError`, `os::PrintLine(text)`, `os::Flush()`.
-Diagnostics belong in the log ([Logging](foundation-logging-and-assert.md)). You will see `os::Print` in every sample in this guide.
+Program output (not diagnostics) goes through the log system, `log/output.h`: `out::Print(format, ...)` (a `printf`-style format), `out::PrintError`, `out::PrintLine(text)`, `out::Flush()`. It reaches the console and every other log device exactly as written (no prefix, no colour). `os/console.h` keeps `os::Flush` for the C streams a library writes to, `os::Abort`, `os::ExitNow` and `os::GetEnvironment`.
+Diagnostics belong in the log ([Logging](foundation-logging-and-assert.md)). You will see `out::Print` in every sample in this guide.
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
 int main() {
-    os::Print("%s has %d lives\n", "player", 3);
-    os::PrintLine("a whole line of text");
-    os::PrintError("errors go to standard error\n");
+    out::Print("%s has %d lives\n", "player", 3);
+    out::PrintLine("a whole line of text");
+    out::PrintError("errors go to standard error\n");
     return 0;
 }
 ```
@@ -51,7 +51,7 @@ duration (frame time, timeouts). It has no meaning as a date. `os::SleepNanos(n)
 nonces and seeds that must not be guessable; a game's gameplay random numbers want a seeded generator instead.
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "os/os.h"
 
 using namespace vse;
@@ -60,7 +60,7 @@ int main() {
     const u64 start = os::MonotonicTimeNanos();
     os::SleepNanos(2'000'000);                       // 2 ms
     const u64 elapsed = os::MonotonicTimeNanos() - start;
-    os::Print("slept at least 2 ms: %s\n", elapsed >= 2'000'000 ? "yes" : "no");
+    out::Print("slept at least 2 ms: %s\n", elapsed >= 2'000'000 ? "yes" : "no");
     return 0;
 }
 ```
@@ -79,7 +79,7 @@ are backed by real memory only when you touch them, so a large reservation is ch
 yourself.
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "os/os.h"
 
 using namespace vse;
@@ -88,12 +88,12 @@ int main() {
     const usize size = 16 * 1024 * 1024;                  // 16 MiB of address space
     byte* block = static_cast<byte*>(os::ReserveMemory(size));
     if (block == nullptr) {
-        os::Print("the system refused\n");
+        out::Print("the system refused\n");
         return 1;
     }
     block[0] = 42;                                         // touching a page makes it real
     block[size - 1] = 7;
-    os::Print("first %d, last %d\n", block[0], block[size - 1]);
+    out::Print("first %d, last %d\n", block[0], block[size - 1]);
     os::ReleaseMemory(block, size);
     return 0;
 }
@@ -127,7 +127,7 @@ anything else is a positional argument.
 ```cpp compile run standalone
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -143,10 +143,10 @@ int main() {
     os::CommandLine<ArenaAllocator> command_line(arena, 4, argv);
 
     StringView level;
-    os::Print("fast: %s\n", command_line.HasFlag("fast") ? "yes" : "no");
-    os::Print("level option: %s\n", command_line.TryGetOption("level", level) ? level.Data() : "none");
-    os::Print("positional arguments: %zu, first '%s'\n", command_line.ArgCount(), command_line.Arg(0).Data());
-    os::Print("--fast has a value: %s\n", command_line.TryGetOption("fast", level) ? "yes" : "no");
+    out::Print("fast: %s\n", command_line.HasFlag("fast") ? "yes" : "no");
+    out::Print("level option: %s\n", command_line.TryGetOption("level", level) ? level.Data() : "none");
+    out::Print("positional arguments: %zu, first '%s'\n", command_line.ArgCount(), command_line.Arg(0).Data());
+    out::Print("--fast has a value: %s\n", command_line.TryGetOption("fast", level) ? "yes" : "no");
     return 0;
 }
 ```
@@ -164,7 +164,7 @@ A program that has options of its own declares them, so that `--name value` work
 #include "containers/span.h"
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -182,7 +182,7 @@ int main() {
 
     StringView root;
     command_line.TryGetOption("root", root);
-    os::Print("ok: %s, root '%s', quiet %s, positional '%s'\n", command_line.Ok() ? "yes" : "no", root.Data(),
+    out::Print("ok: %s, root '%s', quiet %s, positional '%s'\n", command_line.Ok() ? "yes" : "no", root.Data(),
               command_line.HasFlag("quiet") ? "yes" : "no", command_line.Arg(0).Data());
     return 0;
 }

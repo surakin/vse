@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "backend_fixture.h"
+#include "log/output.h"
 #include "gpu_fixture.h"
 #include "image_compare.h"
 #include "os/console.h"
@@ -98,7 +99,7 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
     const char* print_thread = os::GetEnvironment("ENGINE_RHI_PRINT_TEST_THREAD");
     if (print_thread != nullptr && print_thread[0] == '1')
     {
-        os::Print("test thread (%p)\n", reinterpret_cast<const void*>(::pthread_self()));
+        out::Print("test thread (%p)\n", reinterpret_cast<const void*>(::pthread_self()));
     }
 #endif
     FOR_EACH_GPU_BACKEND(backend)

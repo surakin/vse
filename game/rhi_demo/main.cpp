@@ -4,6 +4,7 @@
 // README.md for the options.
 
 #include "lang/scalar.h"
+#include "log/output.h"
 
 #include "os/console.h"
 #include "cstr/cstr.h"
@@ -279,25 +280,25 @@ int ListGpus()
     const BackendDescriptor* backend = ResolveBackend(info.backend, why, sizeof(why));
     if (backend == nullptr)
     {
-        os::PrintError("rhi_demo: cannot list the GPUs: %s\n", why);
+        out::PrintError("rhi_demo: cannot list the GPUs: %s\n", why);
         return kExitFailure;
     }
     AdapterList list;
     if (!EnumerateAdapters(info, &list))
     {
-        os::PrintError("rhi_demo: cannot list the %s GPUs\n", backend->name);
+        out::PrintError("rhi_demo: cannot list the %s GPUs\n", backend->name);
         return kExitFailure;
     }
-    os::Print("backend %s\n", backend->name);
+    out::Print("backend %s\n", backend->name);
     static const char* const kKinds[] = {"other", "software", "virtual", "integrated", "discrete"};
-    os::Print("%u GPU(s):\n", list.count);
+    out::Print("%u GPU(s):\n", list.count);
     for (u32 i = 0; i < list.count; ++i)
     {
         const AdapterInfo& a = list.items[i];
-        os::Print("  %u  %s  %s  (%s, %llu MiB, driver %s)%s%s\n", i, a.id, a.name, kKinds[static_cast<usize>(a.kind)],
-                  static_cast<unsigned long long>(a.dedicated_memory_bytes >> 20), a.driver,
-                  a.suitable ? "" : "  unsuitable: ",
-                  a.suitable ? "" : (a.unsuitable_reason != nullptr ? a.unsuitable_reason : "?"));
+        out::Print("  %u  %s  %s  (%s, %llu MiB, driver %s)%s%s\n", i, a.id, a.name, kKinds[static_cast<usize>(a.kind)],
+                   static_cast<unsigned long long>(a.dedicated_memory_bytes >> 20), a.driver,
+                   a.suitable ? "" : "  unsuitable: ",
+                   a.suitable ? "" : (a.unsuitable_reason != nullptr ? a.unsuitable_reason : "?"));
     }
     return kExitOk;
 }
@@ -647,11 +648,11 @@ int Usage(const char* program, int code)
 {
     if (code == kExitOk)
     {
-        os::Print(kUsageFormat, program);
+        out::Print(kUsageFormat, program);
     }
     else
     {
-        os::PrintError(kUsageFormat, program);
+        out::PrintError(kUsageFormat, program);
     }
     return code;
 }
@@ -703,7 +704,7 @@ int EngineMain(int argc, char** argv)
     }
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
+        out::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
         return Usage(program, kExitUsage);
     }
     StringView value;

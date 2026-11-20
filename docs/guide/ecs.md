@@ -43,7 +43,7 @@ A world owns one; a program normally never touches it.
 
 ```cpp compile run standalone
 #include "ecs/entity_table.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -52,9 +52,9 @@ int main() {
     const ecs::Entity first = table.Allocate(ecs::EntityLocation{0, 0, 0});
     table.Free(first);
     const ecs::Entity second = table.Allocate(ecs::EntityLocation{0, 0, 0});
-    os::Print("same slot: %s\n", first.index == second.index ? "yes" : "no");
-    os::Print("old id alive: %s\n", table.IsAlive(first) ? "yes" : "no");
-    os::Print("new id alive: %s\n", table.IsAlive(second) ? "yes" : "no");
+    out::Print("same slot: %s\n", first.index == second.index ? "yes" : "no");
+    out::Print("old id alive: %s\n", table.IsAlive(first) ? "yes" : "no");
+    out::Print("new id alive: %s\n", table.IsAlive(second) ? "yes" : "no");
     return 0;
 }
 ```
@@ -91,7 +91,7 @@ A `ecs::ComponentSet` is the 128-bit set of ids that identifies an archetype or 
 ```cpp compile run standalone
 #include "ecs/component.h"
 #include "ecs/component_set.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -105,9 +105,9 @@ int main() {
     ecs::ComponentSet set;
     set.Add(position);
     set.Add(frozen);
-    os::Print("Position: size %zu, tag %s\n", info.size, info.is_tag ? "yes" : "no");
-    os::Print("Frozen is a tag: %s\n", ecs::ComponentRegistry::Global().Info(frozen).is_tag ? "yes" : "no");
-    os::Print("set has %u ids, same id again: %s\n", set.Count(), ecs::ComponentOf<Position>() == position ? "yes" : "no");
+    out::Print("Position: size %zu, tag %s\n", info.size, info.is_tag ? "yes" : "no");
+    out::Print("Frozen is a tag: %s\n", ecs::ComponentRegistry::Global().Info(frozen).is_tag ? "yes" : "no");
+    out::Print("set has %u ids, same id again: %s\n", set.Count(), ecs::ComponentOf<Position>() == position ? "yes" : "no");
     return 0;
 }
 ```
@@ -155,7 +155,7 @@ change**: `Create`, `Destroy`, `Add<T>`, `Remove<T>`, and `Set<T>` when it has t
 
 ```cpp compile run standalone
 #include "ecs/world.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -167,10 +167,10 @@ int main() {
     const ecs::Entity e = world.Create(Position{1, 2});
     world.Add<Frozen>(e, {});
     world.Get<Position>(e)->x = 5;
-    os::Print("x %.0f, frozen %s\n", static_cast<double>(world.Get<Position>(e)->x), world.Has<Frozen>(e) ? "yes" : "no");
+    out::Print("x %.0f, frozen %s\n", static_cast<double>(world.Get<Position>(e)->x), world.Has<Frozen>(e) ? "yes" : "no");
     world.Remove<Frozen>(e);
     world.Destroy(e);
-    os::Print("alive %s, destroy again: %s\n", world.Exists(e) ? "yes" : "no",
+    out::Print("alive %s, destroy again: %s\n", world.Exists(e) ? "yes" : "no",
               world.Destroy(e) == ecs::Status::DeadEntity ? "DeadEntity" : "other");
     return world.Validate().Ok() ? 0 : 1;
 }
@@ -201,7 +201,7 @@ per matching entity with exactly the data you asked for. Include `ecs/query.h` a
 
 ```cpp compile run standalone
 #include "ecs/query.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -222,8 +222,8 @@ int main() {
     });
 
     auto positions = world.Query<ecs::Read<Position>>();
-    positions.ForEach([](ecs::Entity, const Position& p) { os::Print("(%.0f, %.0f)\n", static_cast<double>(p.x), static_cast<double>(p.y)); });
-    os::Print("%u of %u entities with a position moved\n", movers.Count(), positions.Count());
+    positions.ForEach([](ecs::Entity, const Position& p) { out::Print("(%.0f, %.0f)\n", static_cast<double>(p.x), static_cast<double>(p.y)); });
+    out::Print("%u of %u entities with a position moved\n", movers.Count(), positions.Count());
     return 0;
 }
 ```
@@ -270,7 +270,7 @@ changes and you apply them afterwards, at a **sync point**. Include `ecs/command
 ```cpp compile run standalone
 #include "ecs/command_buffer.h"
 #include "ecs/query.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -296,8 +296,8 @@ int main() {
     buffer.Add<Burning>(spawned, {});                       // later commands may name it
 
     const ecs::PlaybackReport report = world.Apply(buffer);
-    os::Print("applied %u, ignored %u, created %u\n", report.applied, report.ignored, report.created);
-    os::Print("%u entities, the spawned one is real: %s\n", healths.Count(), world.Exists(buffer.Resolve(spawned)) ? "yes" : "no");
+    out::Print("applied %u, ignored %u, created %u\n", report.applied, report.ignored, report.created);
+    out::Print("%u entities, the spawned one is real: %s\n", healths.Count(), world.Exists(buffer.Resolve(spawned)) ? "yes" : "no");
     return 0;
 }
 ```
@@ -324,7 +324,7 @@ A **resource** is one value of a type that belongs to the world as a whole: the 
 
 ```cpp compile run standalone
 #include "ecs/world.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -334,8 +334,8 @@ int main() {
     ecs::World world;
     world.SetResource(Time{0.016, 0});
     world.Resource<Time>().frame += 1;                         // read or change it in place
-    os::Print("frame %u, delta %.3f\n", world.Resource<Time>().frame, world.Resource<Time>().delta);
-    os::Print("has Time: %s, has int: %s\n", world.HasResource<Time>() ? "yes" : "no", world.TryResource<int>() != nullptr ? "yes" : "no");
+    out::Print("frame %u, delta %.3f\n", world.Resource<Time>().frame, world.Resource<Time>().delta);
+    out::Print("has Time: %s, has int: %s\n", world.HasResource<Time>() ? "yes" : "no", world.TryResource<int>() != nullptr ? "yes" : "no");
     return 0;
 }
 ```
@@ -363,7 +363,7 @@ visits entities in now (archetype, chunk, row), for a caller that must reproduce
 
 ```cpp compile run standalone
 #include "ecs/query.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -377,17 +377,17 @@ int main() {
     auto moved = world.Query<ecs::Changed<Position>, ecs::Read<Position>>();
     unsigned seen = 0;
     moved.ForEach([&](const Position&) { ++seen; });
-    os::Print("first pass: %u\n", seen);            // a creation counts as a change
+    out::Print("first pass: %u\n", seen);            // a creation counts as a change
 
     moved.Finish();                                  // "I have handled everything so far"
     seen = 0;
     moved.ForEach([&](const Position&) { ++seen; });
-    os::Print("second pass: %u\n", seen);           // nothing new
+    out::Print("second pass: %u\n", seen);           // nothing new
 
     world.Set<Position>(first, Position{1, 1});      // a write after Finish
     seen = 0;
     moved.ForEach([&](const Position&) { ++seen; });
-    os::Print("after a write: %u\n", seen);
+    out::Print("after a write: %u\n", seen);
     return 0;
 }
 ```
@@ -422,7 +422,7 @@ A **system** is a function that runs once per frame over the world. A **schedule
 
 ```cpp compile run standalone
 #include "ecs/schedule.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -458,10 +458,10 @@ int main() {
                      .After("move"));
 
     const ecs::BuildReport report = schedule.Build();
-    os::Print("built: %s\n", report.ok ? "yes" : report.message);
+    out::Print("built: %s\n", report.ok ? "yes" : report.message);
     for (int frame = 0; frame < 3; ++frame) {
         schedule.Run(world, 0.5f);
-        os::Print("frame %d: %u entities\n", frame, world.Query<ecs::Read<Position>>().Count());
+        out::Print("frame %d: %u entities\n", frame, world.Query<ecs::Read<Position>>().Count());
     }
     return 0;
 }
@@ -532,7 +532,7 @@ parent's depth plus one for a child); use `CreateTransformEntity`, `SetParent` a
 ```cpp compile run standalone
 #include "ecs/schedule.h"
 #include "ecs/transform.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -552,12 +552,12 @@ int main() {
     schedule.Build();
     schedule.Run(world, 0.016f);
     ecs::WorldTransform* turret_world = world.Get<ecs::WorldTransform>(turret);
-    os::Print("turret at %.0f %.0f\n", static_cast<double>(turret_world->matrix.col[3].x), static_cast<double>(turret_world->matrix.col[3].y));
+    out::Print("turret at %.0f %.0f\n", static_cast<double>(turret_world->matrix.col[3].x), static_cast<double>(turret_world->matrix.col[3].y));
 
     world.Get<ecs::LocalTransform>(ship)->position = Vec3(20.0f, 0.0f, 0.0f);   // move the parent; the child follows
     schedule.Run(world, 0.016f);
     turret_world = world.Get<ecs::WorldTransform>(turret);
-    os::Print("turret at %.0f %.0f\n", static_cast<double>(turret_world->matrix.col[3].x), static_cast<double>(turret_world->matrix.col[3].y));
+    out::Print("turret at %.0f %.0f\n", static_cast<double>(turret_world->matrix.col[3].x), static_cast<double>(turret_world->matrix.col[3].y));
     return 0;
 }
 ```

@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "asset/filesystem_backend.h"
+#include "log/output.h"
 #include "asset/pak.h"
 #include "asset/pak_backend.h"
 #include "backend_conformance.h"
@@ -508,8 +509,8 @@ TEST_CASE("Pak open and lookup speed", "[.][asset-bench]")
         found += reader.Find(test::Rid(i + 1), &entry) ? 1 : 0;
     }
     const u64 t2 = os::MonotonicTimeNanos();
-    os::Print("open %.2f ms, lookup %.1f ns each (%u found)\n", double(t1 - t0) / 1e6, double(t2 - t1) / kCount,
-              static_cast<unsigned>(found));
+    out::Print("open %.2f ms, lookup %.1f ns each (%u found)\n", double(t1 - t0) / 1e6, double(t2 - t1) / kCount,
+               static_cast<unsigned>(found));
     CHECK(found == kCount);
 }
 

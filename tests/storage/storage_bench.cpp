@@ -5,6 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "database/sqlite/sqlite_database.h"
+#include "log/output.h"
 #include "ecs/transform.h"
 #include "jobs/scheduler.h"
 #include "os/console.h"
@@ -120,8 +121,8 @@ void RunSize(usize count)
         KeyIndex loaded_index;
         t = os::MonotonicTimeNanos();
         REQUIRE(storage.Load(loaded, loaded_index, LoadOptions(), nullptr).Ok());
-        os::Print("bench %zu entities, memory store: save %llu ms, load %llu ms\n", count,
-                  static_cast<unsigned long long>(save), static_cast<unsigned long long>(Ms(t)));
+        out::Print("bench %zu entities, memory store: save %llu ms, load %llu ms\n", count,
+                   static_cast<unsigned long long>(save), static_cast<unsigned long long>(Ms(t)));
     }
     for (const int columns : {0, 1})
     {
@@ -152,9 +153,9 @@ void RunSize(usize count)
         t = os::MonotonicTimeNanos();
         REQUIRE(storage.Load(loaded, loaded_index, LoadOptions(), nullptr).Ok());
         const u64 load = Ms(t);
-        os::Print("bench %zu entities, SQLite %s: save %llu ms, load %llu ms\n", count,
-                  columns != 0 ? "columns+index" : "blob", static_cast<unsigned long long>(save),
-                  static_cast<unsigned long long>(load));
+        out::Print("bench %zu entities, SQLite %s: save %llu ms, load %llu ms\n", count,
+                   columns != 0 ? "columns+index" : "blob", static_cast<unsigned long long>(save),
+                   static_cast<unsigned long long>(load));
 
         // Incremental: idle, then 1 percent written.
         SaveOptions inc;
@@ -164,9 +165,9 @@ void RunSize(usize count)
         Report report;
         t = os::MonotonicTimeNanos();
         REQUIRE(storage.Save(world, index, inc, &report).Ok());
-        os::Print("bench %zu entities, SQLite %s: idle incremental save %llu us (encoded %zu, chunks skipped %zu)\n",
-                  count, columns != 0 ? "columns+index" : "blob", static_cast<unsigned long long>(Us(t)),
-                  report.encoded, report.chunks_skipped);
+        out::Print("bench %zu entities, SQLite %s: idle incremental save %llu us (encoded %zu, chunks skipped %zu)\n",
+                   count, columns != 0 ? "columns+index" : "blob", static_cast<unsigned long long>(Us(t)),
+                   report.encoded, report.chunks_skipped);
         BnRng rng{5};
         for (usize i = 0; i < count / 100; ++i)
         {
@@ -176,9 +177,9 @@ void RunSize(usize count)
         world.EndFrame();
         t = os::MonotonicTimeNanos();
         REQUIRE(storage.Save(world, index, inc, &report).Ok());
-        os::Print("bench %zu entities, SQLite %s: incremental save of ~1 percent %llu ms (encoded %zu, written %zu)\n",
-                  count, columns != 0 ? "columns+index" : "blob", static_cast<unsigned long long>(Ms(t)),
-                  report.encoded, report.created + report.replaced);
+        out::Print("bench %zu entities, SQLite %s: incremental save of ~1 percent %llu ms (encoded %zu, written %zu)\n",
+                   count, columns != 0 ? "columns+index" : "blob", static_cast<unsigned long long>(Ms(t)),
+                   report.encoded, report.created + report.replaced);
         // The same number of writes, but to entities created together (so they share chunks): what the chunk stamps are
         // good at.
         for (usize i = 0; i < count / 100; ++i)
@@ -188,7 +189,7 @@ void RunSize(usize count)
         world.EndFrame();
         t = os::MonotonicTimeNanos();
         REQUIRE(storage.Save(world, index, inc, &report).Ok());
-        os::Print(
+        out::Print(
             "bench %zu entities, SQLite %s: incremental save of 1 percent in neighbouring entities %llu ms (encoded %zu, written %zu)\n",
             count, columns != 0 ? "columns+index" : "blob", static_cast<unsigned long long>(Ms(t)), report.encoded,
             report.created + report.replaced);
@@ -198,8 +199,8 @@ void RunSize(usize count)
             t = os::MonotonicTimeNanos();
             REQUIRE(
                 store->CountWhere("bn_actor", "hp", CompareOp::Greater, database::ValueView::Integer(190), &hits).Ok());
-            os::Print("bench %zu entities, FindKeys on the indexed field: %llu us (%zu hits)\n", count,
-                      static_cast<unsigned long long>(Us(t)), hits);
+            out::Print("bench %zu entities, FindKeys on the indexed field: %llu us (%zu hits)\n", count,
+                       static_cast<unsigned long long>(Us(t)), hits);
         }
         store.Reset();
     }
@@ -220,8 +221,9 @@ void RunSize(usize count)
         REQUIRE(storage.SaveAsync(scheduler, world, index, options, &handle).Ok());
         const u64 encode = Ms(t);
         REQUIRE(handle->Wait(nullptr).Ok());
-        os::Print("bench %zu entities, async save with %zu participants: snapshot and encoding %llu ms, all %llu ms\n",
-                  count, participants, static_cast<unsigned long long>(encode), static_cast<unsigned long long>(Ms(t)));
+        out::Print("bench %zu entities, async save with %zu participants: snapshot and encoding %llu ms, all %llu ms\n",
+                   count, participants, static_cast<unsigned long long>(encode),
+                   static_cast<unsigned long long>(Ms(t)));
     }
 }
 

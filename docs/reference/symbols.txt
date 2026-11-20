@@ -1261,64 +1261,80 @@ ThreadEndHook	alias	foundation/log	threadendhook	foundation-log.md	engine/founda
 AddThreadEndHook(ThreadEndHook)	function	foundation/log	addthreadendhook-threadendhook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:83
 kMaxThreadEndHooks	variable	foundation/log	kmaxthreadendhooks	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:86
 NotifyThreadEnd()	function	foundation/log	notifythreadend	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:95
-LogVerbosity	enum	foundation/log	logverbosity	foundation-log.md	engine/foundation/log/log.h:17
-LogVerbosity::Error	enumerator	foundation/log	logverbosity-error	foundation-log.md	engine/foundation/log/log.h:19
-LogVerbosity::Warn	enumerator	foundation/log	logverbosity-warn	foundation-log.md	engine/foundation/log/log.h:20
-LogVerbosity::Info	enumerator	foundation/log	logverbosity-info	foundation-log.md	engine/foundation/log/log.h:21
-LogVerbosity::Debug	enumerator	foundation/log	logverbosity-debug	foundation-log.md	engine/foundation/log/log.h:22
-LogVerbosity::Trace	enumerator	foundation/log	logverbosity-trace	foundation-log.md	engine/foundation/log/log.h:23
-LogChannel	class	foundation/log	logchannel	foundation-log.md	engine/foundation/log/log.h:35
-LogChannel::LogChannel(const char*,LogVerbosity)	function	foundation/log	logchannel-logchannel-const-char-star-logverbosity	foundation-log.md	engine/foundation/log/log.h:43
-LogChannel::Name() const	function	foundation/log	logchannel-name-const	foundation-log.md	engine/foundation/log/log.h:46
-LogChannel::Verbosity() const	function	foundation/log	logchannel-verbosity-const	foundation-log.md	engine/foundation/log/log.h:48
-LogChannel::Enabled() const	function	foundation/log	logchannel-enabled-const	foundation-log.md	engine/foundation/log/log.h:50
-LogChannel::SetVerbosity(LogVerbosity)	function	foundation/log	logchannel-setverbosity-logverbosity	foundation-log.md	engine/foundation/log/log.h:53
-LogChannel::SetEnabled(bool)	function	foundation/log	logchannel-setenabled-bool	foundation-log.md	engine/foundation/log/log.h:55
-LogChannel::ShouldLog(LogVerbosity) const	function	foundation/log	logchannel-shouldlog-logverbosity-const	foundation-log.md	engine/foundation/log/log.h:62
-LogChannel::Find(StringView)	function	foundation/log	logchannel-find-stringview	foundation-log.md	engine/foundation/log/log.h:70
-LogChannel::First()	function	foundation/log	logchannel-first	foundation-log.md	engine/foundation/log/log.h:77
-LogChannel::Next() const	function	foundation/log	logchannel-next-const	foundation-log.md	engine/foundation/log/log.h:79
-kLogRingSlots	variable	foundation/log	klogringslots	foundation-log.md	engine/foundation/log/log.h:92
-kLogRingLineBytes	variable	foundation/log	klogringlinebytes	foundation-log.md	engine/foundation/log/log.h:94
-RecentLogLineFn	alias	foundation/log	recentloglinefn	foundation-log.md	engine/foundation/log/log.h:98
-ReadRecentLogLines(RecentLogLineFn,void*,usize)	function	foundation/log	readrecentloglines-recentloglinefn-void-star-usize	foundation-log.md	engine/foundation/log/log.h:110
-LogLinesWritten()	function	foundation/log	loglineswritten	foundation-log.md	engine/foundation/log/log.h:116
-ReadLogLinesSince(u64,RecentLogLineFn,void*)	function	foundation/log	readloglinessince-u64-recentloglinefn-void-star	foundation-log.md	engine/foundation/log/log.h:128
-ResetLogRingForTesting()	function	foundation/log	resetlogringfortesting	foundation-log.md	engine/foundation/log/log.h:132
-SetLogErrorTraces(bool)	function	foundation/log	setlogerrortraces-bool	foundation-log.md	engine/foundation/log/log.h:138
-LogErrorTraces()	function	foundation/log	logerrortraces	foundation-log.md	engine/foundation/log/log.h:143
-LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:146
-LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:148
-LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:150
-LogObserverFn	alias	foundation/log	logobserverfn	foundation-log.md	engine/foundation/log/log.h:156
-SetLogObserver(LogObserverFn,void*)	function	foundation/log	setlogobserver-logobserverfn-void-star	foundation-log.md	engine/foundation/log/log.h:164
-Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:175
+LogVerbosity	enum	foundation/log	logverbosity	foundation-log.md	engine/foundation/log/log.h:18
+LogVerbosity::Error	enumerator	foundation/log	logverbosity-error	foundation-log.md	engine/foundation/log/log.h:20
+LogVerbosity::Warn	enumerator	foundation/log	logverbosity-warn	foundation-log.md	engine/foundation/log/log.h:21
+LogVerbosity::Info	enumerator	foundation/log	logverbosity-info	foundation-log.md	engine/foundation/log/log.h:22
+LogVerbosity::Debug	enumerator	foundation/log	logverbosity-debug	foundation-log.md	engine/foundation/log/log.h:23
+LogVerbosity::Trace	enumerator	foundation/log	logverbosity-trace	foundation-log.md	engine/foundation/log/log.h:24
+LogChannel	class	foundation/log	logchannel	foundation-log.md	engine/foundation/log/log.h:36
+LogChannel::LogChannel(const char*,LogVerbosity)	function	foundation/log	logchannel-logchannel-const-char-star-logverbosity	foundation-log.md	engine/foundation/log/log.h:44
+LogChannel::Name() const	function	foundation/log	logchannel-name-const	foundation-log.md	engine/foundation/log/log.h:47
+LogChannel::Verbosity() const	function	foundation/log	logchannel-verbosity-const	foundation-log.md	engine/foundation/log/log.h:49
+LogChannel::Enabled() const	function	foundation/log	logchannel-enabled-const	foundation-log.md	engine/foundation/log/log.h:51
+LogChannel::SetVerbosity(LogVerbosity)	function	foundation/log	logchannel-setverbosity-logverbosity	foundation-log.md	engine/foundation/log/log.h:54
+LogChannel::SetEnabled(bool)	function	foundation/log	logchannel-setenabled-bool	foundation-log.md	engine/foundation/log/log.h:56
+LogChannel::ShouldLog(LogVerbosity) const	function	foundation/log	logchannel-shouldlog-logverbosity-const	foundation-log.md	engine/foundation/log/log.h:63
+LogChannel::Find(StringView)	function	foundation/log	logchannel-find-stringview	foundation-log.md	engine/foundation/log/log.h:71
+LogChannel::First()	function	foundation/log	logchannel-first	foundation-log.md	engine/foundation/log/log.h:78
+LogChannel::Next() const	function	foundation/log	logchannel-next-const	foundation-log.md	engine/foundation/log/log.h:80
+kLogRingSlots	variable	foundation/log	klogringslots	foundation-log.md	engine/foundation/log/log.h:93
+kLogRingLineBytes	variable	foundation/log	klogringlinebytes	foundation-log.md	engine/foundation/log/log.h:95
+RecentLogLineFn	alias	foundation/log	recentloglinefn	foundation-log.md	engine/foundation/log/log.h:99
+ReadRecentLogLines(RecentLogLineFn,void*,usize)	function	foundation/log	readrecentloglines-recentloglinefn-void-star-usize	foundation-log.md	engine/foundation/log/log.h:111
+LogLinesWritten()	function	foundation/log	loglineswritten	foundation-log.md	engine/foundation/log/log.h:117
+ReadLogLinesSince(u64,RecentLogLineFn,void*)	function	foundation/log	readloglinessince-u64-recentloglinefn-void-star	foundation-log.md	engine/foundation/log/log.h:129
+ResetLogRingForTesting()	function	foundation/log	resetlogringfortesting	foundation-log.md	engine/foundation/log/log.h:133
+SetLogErrorTraces(bool)	function	foundation/log	setlogerrortraces-bool	foundation-log.md	engine/foundation/log/log.h:139
+LogErrorTraces()	function	foundation/log	logerrortraces	foundation-log.md	engine/foundation/log/log.h:144
+LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:147
+LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:149
+LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:151
+LogObserverFn	alias	foundation/log	logobserverfn	foundation-log.md	engine/foundation/log/log.h:157
+SetLogObserver(LogObserverFn,void*)	function	foundation/log	setlogobserver-logobserverfn-void-star	foundation-log.md	engine/foundation/log/log.h:165
+Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:176
+LogF(LogChannel&,LogVerbosity,const char*,...)	function	foundation/log	logf-logchannel-amp-logverbosity-const-char-star	foundation-log.md	engine/foundation/log/log.h:185
 kLogTraceBytes	variable	foundation/log	klogtracebytes	foundation-log.md	engine/foundation/log/log_device.h:19
 kMaxLogDevices	variable	foundation/log	kmaxlogdevices	foundation-log.md	engine/foundation/log/log_device.h:22
-LogRecord	struct	foundation/log	logrecord	foundation-log.md	engine/foundation/log/log_device.h:25
-LogRecord::channel	variable	foundation/log	logrecord-channel	foundation-log.md	engine/foundation/log/log_device.h:27
-LogRecord::level	variable	foundation/log	logrecord-level	foundation-log.md	engine/foundation/log/log_device.h:28
-LogRecord::message	variable	foundation/log	logrecord-message	foundation-log.md	engine/foundation/log/log_device.h:29
-LogRecord::line	variable	foundation/log	logrecord-line	foundation-log.md	engine/foundation/log/log_device.h:30
-LogRecord::trace	variable	foundation/log	logrecord-trace	foundation-log.md	engine/foundation/log/log_device.h:31
-LogRecord::timestamp_ns	variable	foundation/log	logrecord-timestamp-ns	foundation-log.md	engine/foundation/log/log_device.h:32
-LogDevice	class	foundation/log	logdevice	foundation-log.md	engine/foundation/log/log_device.h:42
-LogDevice::~LogDevice()	function	foundation/log	logdevice-tilde-logdevice	foundation-log.md	engine/foundation/log/log_device.h:45
-LogDevice::Write(const LogRecord&)	function	foundation/log	logdevice-write-const-logrecord-amp	foundation-log.md	engine/foundation/log/log_device.h:49
-LogDevice::Flush()	function	foundation/log	logdevice-flush	foundation-log.md	engine/foundation/log/log_device.h:52
-AddLogDevice(LogDevice*,LogVerbosity)	function	foundation/log	addlogdevice-logdevice-star-logverbosity	foundation-log.md	engine/foundation/log/log_device.h:62
-RemoveLogDevice(LogDevice*)	function	foundation/log	removelogdevice-logdevice-star	foundation-log.md	engine/foundation/log/log_device.h:68
-FlushLogDevices()	function	foundation/log	flushlogdevices	foundation-log.md	engine/foundation/log/log_device.h:72
-ConsoleLogMode	enum	foundation/log	consolelogmode	foundation-log.md	engine/foundation/log/log_device.h:75
-ConsoleLogMode::Auto	enumerator	foundation/log	consolelogmode-auto	foundation-log.md	engine/foundation/log/log_device.h:77
-ConsoleLogMode::Plain	enumerator	foundation/log	consolelogmode-plain	foundation-log.md	engine/foundation/log/log_device.h:78
-ConsoleLogMode::Color	enumerator	foundation/log	consolelogmode-color	foundation-log.md	engine/foundation/log/log_device.h:79
-ConsoleLogMode::Off	enumerator	foundation/log	consolelogmode-off	foundation-log.md	engine/foundation/log/log_device.h:80
-SetConsoleLogMode(ConsoleLogMode)	function	foundation/log	setconsolelogmode-consolelogmode	foundation-log.md	engine/foundation/log/log_device.h:85
-GetConsoleLogMode()	function	foundation/log	getconsolelogmode	foundation-log.md	engine/foundation/log/log_device.h:89
-WriteLogConsoleBytes(const char*,usize)	function	foundation/log	writelogconsolebytes-const-char-star-usize	foundation-log.md	engine/foundation/log/log_device.h:96
-StdoutLogDevice	class	foundation/log	stdoutlogdevice	foundation-log.md	engine/foundation/log/log_device.h:99
-StdoutLogDevice::Write(const LogRecord&)	function	foundation/log	stdoutlogdevice-write-const-logrecord-amp	foundation-log.md	engine/foundation/log/log_device.h:102
+LogRecordKind	enum	foundation/log	logrecordkind	foundation-log.md	engine/foundation/log/log_device.h:25
+LogRecordKind::Log	enumerator	foundation/log	logrecordkind-log	foundation-log.md	engine/foundation/log/log_device.h:27
+LogRecordKind::Output	enumerator	foundation/log	logrecordkind-output	foundation-log.md	engine/foundation/log/log_device.h:28
+LogRecord	struct	foundation/log	logrecord	foundation-log.md	engine/foundation/log/log_device.h:32
+LogRecord::kind	variable	foundation/log	logrecord-kind	foundation-log.md	engine/foundation/log/log_device.h:34
+LogRecord::stream	variable	foundation/log	logrecord-stream	foundation-log.md	engine/foundation/log/log_device.h:36
+LogRecord::channel	variable	foundation/log	logrecord-channel	foundation-log.md	engine/foundation/log/log_device.h:37
+LogRecord::level	variable	foundation/log	logrecord-level	foundation-log.md	engine/foundation/log/log_device.h:38
+LogRecord::message	variable	foundation/log	logrecord-message	foundation-log.md	engine/foundation/log/log_device.h:39
+LogRecord::line	variable	foundation/log	logrecord-line	foundation-log.md	engine/foundation/log/log_device.h:40
+LogRecord::trace	variable	foundation/log	logrecord-trace	foundation-log.md	engine/foundation/log/log_device.h:41
+LogRecord::timestamp_ns	variable	foundation/log	logrecord-timestamp-ns	foundation-log.md	engine/foundation/log/log_device.h:42
+LogDevice	class	foundation/log	logdevice	foundation-log.md	engine/foundation/log/log_device.h:52
+LogDevice::~LogDevice()	function	foundation/log	logdevice-tilde-logdevice	foundation-log.md	engine/foundation/log/log_device.h:55
+LogDevice::Write(const LogRecord&)	function	foundation/log	logdevice-write-const-logrecord-amp	foundation-log.md	engine/foundation/log/log_device.h:59
+LogDevice::Flush()	function	foundation/log	logdevice-flush	foundation-log.md	engine/foundation/log/log_device.h:62
+AddLogDevice(LogDevice*,LogVerbosity)	function	foundation/log	addlogdevice-logdevice-star-logverbosity	foundation-log.md	engine/foundation/log/log_device.h:72
+RemoveLogDevice(LogDevice*)	function	foundation/log	removelogdevice-logdevice-star	foundation-log.md	engine/foundation/log/log_device.h:78
+FlushLogDevices()	function	foundation/log	flushlogdevices	foundation-log.md	engine/foundation/log/log_device.h:82
+ConsoleLogMode	enum	foundation/log	consolelogmode	foundation-log.md	engine/foundation/log/log_device.h:85
+ConsoleLogMode::Auto	enumerator	foundation/log	consolelogmode-auto	foundation-log.md	engine/foundation/log/log_device.h:87
+ConsoleLogMode::Plain	enumerator	foundation/log	consolelogmode-plain	foundation-log.md	engine/foundation/log/log_device.h:88
+ConsoleLogMode::Color	enumerator	foundation/log	consolelogmode-color	foundation-log.md	engine/foundation/log/log_device.h:89
+ConsoleLogMode::Off	enumerator	foundation/log	consolelogmode-off	foundation-log.md	engine/foundation/log/log_device.h:90
+SetConsoleLogMode(ConsoleLogMode)	function	foundation/log	setconsolelogmode-consolelogmode	foundation-log.md	engine/foundation/log/log_device.h:95
+GetConsoleLogMode()	function	foundation/log	getconsolelogmode	foundation-log.md	engine/foundation/log/log_device.h:99
+WriteLogConsoleBytes(const char*,usize,int)	function	foundation/log	writelogconsolebytes-const-char-star-usize-int	foundation-log.md	engine/foundation/log/log_device.h:107
+StdoutLogDevice	class	foundation/log	stdoutlogdevice	foundation-log.md	engine/foundation/log/log_device.h:110
+StdoutLogDevice::Write(const LogRecord&)	function	foundation/log	stdoutlogdevice-write-const-logrecord-amp	foundation-log.md	engine/foundation/log/log_device.h:113
+out::kMaxFormattedBytes	variable	foundation/log	out-kmaxformattedbytes	foundation-log.md	engine/foundation/log/output.h:21
+out::Print(const char*,...)	function	foundation/log	out-print-const-char-star	foundation-log.md	engine/foundation/log/output.h:27
+out::PrintError(const char*,...)	function	foundation/log	out-printerror-const-char-star	foundation-log.md	engine/foundation/log/output.h:33
+out::PrintText(const char*)	function	foundation/log	out-printtext-const-char-star	foundation-log.md	engine/foundation/log/output.h:38
+out::PrintErrorText(const char*)	function	foundation/log	out-printerrortext-const-char-star	foundation-log.md	engine/foundation/log/output.h:42
+out::PrintLine(const char*)	function	foundation/log	out-printline-const-char-star	foundation-log.md	engine/foundation/log/output.h:46
+out::PrintBytes(const void*,usize)	function	foundation/log	out-printbytes-const-void-star-usize	foundation-log.md	engine/foundation/log/output.h:51
+out::PrintErrorBytes(const void*,usize)	function	foundation/log	out-printerrorbytes-const-void-star-usize	foundation-log.md	engine/foundation/log/output.h:56
+out::Flush()	function	foundation/log	out-flush	foundation-log.md	engine/foundation/log/output.h:60
+out::FlushError()	function	foundation/log	out-flusherror	foundation-log.md	engine/foundation/log/output.h:64
 TtyLogDevice	class	foundation/log	ttylogdevice	foundation-log.md	engine/foundation/log/tty_log_device.h:16
 TtyLogDevice::Write(const LogRecord&)	function	foundation/log	ttylogdevice-write-const-logrecord-amp	foundation-log.md	engine/foundation/log/tty_log_device.h:19
 ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:46
@@ -3054,19 +3070,12 @@ os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount
 os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:211
 os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:220
 os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:230
-os::Print(const char*,...)	function	platform/os	os-print-const-char-star	platform-os.md	engine/foundation/os/console.h:21
-os::PrintError(const char*,...)	function	platform/os	os-printerror-const-char-star	platform-os.md	engine/foundation/os/console.h:35
-os::PrintText(const char*)	function	platform/os	os-printtext-const-char-star	platform-os.md	engine/foundation/os/console.h:48
-os::PrintErrorText(const char*)	function	platform/os	os-printerrortext-const-char-star	platform-os.md	engine/foundation/os/console.h:55
-os::PrintLine(const char*)	function	platform/os	os-printline-const-char-star	platform-os.md	engine/foundation/os/console.h:62
-os::PrintBytes(const void*,usize)	function	platform/os	os-printbytes-const-void-star-usize	platform-os.md	engine/foundation/os/console.h:69
-os::PrintErrorBytes(const void*,usize)	function	platform/os	os-printerrorbytes-const-void-star-usize	platform-os.md	engine/foundation/os/console.h:76
-os::Flush()	function	platform/os	os-flush	platform-os.md	engine/foundation/os/console.h:83
-os::FlushError()	function	platform/os	os-flusherror	platform-os.md	engine/foundation/os/console.h:90
-os::FlushAll()	function	platform/os	os-flushall	platform-os.md	engine/foundation/os/console.h:98
-os::Abort() noexcept	function	platform/os	os-abort-noexcept	platform-os.md	engine/foundation/os/console.h:106
-os::ExitNow(int) noexcept	function	platform/os	os-exitnow-int-noexcept	platform-os.md	engine/foundation/os/console.h:113
-os::GetEnvironment(const char*) noexcept	function	platform/os	os-getenvironment-const-char-star-noexcept	platform-os.md	engine/foundation/os/console.h:124
+os::Flush()	function	platform/os	os-flush	platform-os.md	engine/foundation/os/console.h:20
+os::FlushError()	function	platform/os	os-flusherror	platform-os.md	engine/foundation/os/console.h:27
+os::FlushAll()	function	platform/os	os-flushall	platform-os.md	engine/foundation/os/console.h:35
+os::Abort() noexcept	function	platform/os	os-abort-noexcept	platform-os.md	engine/foundation/os/console.h:43
+os::ExitNow(int) noexcept	function	platform/os	os-exitnow-int-noexcept	platform-os.md	engine/foundation/os/console.h:50
+os::GetEnvironment(const char*) noexcept	function	platform/os	os-getenvironment-const-char-star-noexcept	platform-os.md	engine/foundation/os/console.h:61
 os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	engine/foundation/os/gpu_driver_probe.h:20
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:28
 os::LastError() noexcept	function	platform/os	os-lasterror-noexcept	platform-os.md	engine/foundation/os/last_error.h:13

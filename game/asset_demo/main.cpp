@@ -9,6 +9,7 @@
 //
 // Headless: nothing is drawn.
 #include "asset/async_loader.h"
+#include "log/output.h"
 #include "asset/cpu_loaders.h"
 #include "asset/material.h"
 #include "asset/memory_backend.h"
@@ -75,13 +76,13 @@ private:
 
 int Fail(const char* what)
 {
-    os::PrintError("asset_demo: %s\n", what);
+    out::PrintError("asset_demo: %s\n", what);
     return 1;
 }
 
 int Usage()
 {
-    os::PrintError(
+    out::PrintError(
         "usage: asset_demo --import FILE.gltf|FILE.glb [--async] [--prefix /PATH] [--scale X] [--set KEY=VALUE | --assets-import-*]\n");
     return 64;
 }
@@ -102,7 +103,7 @@ int main(int argc, char** argv)
     const settings::LoadReport report = loaded.Load(load);
     for (usize i = 0; i < report.problems.Size(); ++i)
     {
-        os::PrintError("asset_demo: settings: %s: %s\n", report.problems[i].layer, report.problems[i].message);
+        out::PrintError("asset_demo: settings: %s: %s\n", report.problems[i].layer, report.problems[i].message);
     }
     const settings::CommandLineResult& cli = loaded.CommandLine();
     if (!cli.errors.Empty())
@@ -182,11 +183,11 @@ int main(int argc, char** argv)
     }
     for (usize i = 0; i < result.report.notes.Size(); ++i)
     {
-        os::PrintError("asset_demo: %s\n", result.report.notes[i].CStr());
+        out::PrintError("asset_demo: %s\n", result.report.notes[i].CStr());
     }
     if (status.Failed())
     {
-        os::PrintError("asset_demo: the import was refused: %s\n", asset::GltfMessage(error, status));
+        out::PrintError("asset_demo: the import was refused: %s\n", asset::GltfMessage(error, status));
         return 1;
     }
 
@@ -278,12 +279,12 @@ int main(int argc, char** argv)
     {
         return Fail("a load converted data (load_conversions must be 0)");
     }
-    os::Print(
+    out::Print(
         "asset_demo: imported %u resources (%u meshes, %u skeletons, %u clips, %u textures, %u materials), %u warnings; "
         "loaded %u, load_conversions %u, %u bytes read\n",
         static_cast<unsigned>(result.resources.Size()), meshes, skeletons, clips, textures, materials,
         static_cast<unsigned>(result.report.warnings), static_cast<unsigned>(stats.loads),
         static_cast<unsigned>(stats.load_conversions), static_cast<unsigned>(stats.bytes_read));
-    os::Print("asset_demo: ok\n");
+    out::Print("asset_demo: ok\n");
     return 0;
 }

@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "cstr/mem_ops.h"
+#include "log/output.h"
 #include "os/console.h"
 #include "os/last_error.h"
 #include "os/os.h"
@@ -69,8 +70,8 @@ TEST_CASE("macOS: SleepNanos never returns early; the shortest real sleeps", "[o
                 shortest = slept;
             }
         }
-        os::Print("SleepNanos(%llu ns): shortest of 20 was %llu ns\n", static_cast<unsigned long long>(requested),
-                  static_cast<unsigned long long>(shortest));
+        out::Print("SleepNanos(%llu ns): shortest of 20 was %llu ns\n", static_cast<unsigned long long>(requested),
+                   static_cast<unsigned long long>(shortest));
         CHECK(shortest >= requested);
     }
 }
@@ -139,7 +140,7 @@ TEST_CASE("macOS: LoadLibrary takes absolute paths and bare names, never a relat
 TEST_CASE("macOS: the session query answers, and Unknown outside a window-server session", "[os][session]")
 {
     const os::SessionState state = os::QuerySessionState();
-    os::Print("session state: %s\n", os::SessionStateName(state));
+    out::Print("session state: %s\n", os::SessionStateName(state));
     // Over ssh the process is in no window-server session: Unknown (to be checked by hand, KNOWN-ISSUES.md). At the
     // desk: active, locked, idle or inactive. A second query may differ (the screen can lock between them), so only its
     // being one of the states is checked.

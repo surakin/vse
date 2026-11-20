@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/array.h"
+#include "log/output.h"
 #include "containers/vector.h"
 #include "net/poller.h"
 #include "net/socket.h"
@@ -186,11 +187,11 @@ TEST_CASE("Benchmark: the poller with 1,000 armed sockets", "[.][net-bench][poll
             }
         }
         CHECK(reported == ready * rounds);
-        os::Print("net-bench: poller, %zu armed sockets, %zu ready: %.1f us a wait (%zu waits, %.1f events each), "
-                  "%.2f us a re-arm\n",
-                  kSockets, ready, static_cast<f64>(wait_nanos) / 1000.0 / static_cast<f64>(waits), waits,
-                  static_cast<f64>(reported) / static_cast<f64>(waits),
-                  arms == 0 ? 0.0 : static_cast<f64>(arm_nanos) / 1000.0 / static_cast<f64>(arms));
+        out::Print("net-bench: poller, %zu armed sockets, %zu ready: %.1f us a wait (%zu waits, %.1f events each), "
+                   "%.2f us a re-arm\n",
+                   kSockets, ready, static_cast<f64>(wait_nanos) / 1000.0 / static_cast<f64>(waits), waits,
+                   static_cast<f64>(reported) / static_cast<f64>(waits),
+                   arms == 0 ? 0.0 : static_cast<f64>(arm_nanos) / 1000.0 / static_cast<f64>(arms));
     }
     for (usize i = 0; i < kSockets; ++i)
     {

@@ -9,6 +9,7 @@
 //                [--file PATH]   the database file (default: a scratch file, removed afterwards); sets storage.path
 //                [--columns]     keep the column tables too (storage.layout = columns)
 #include "containers/vector.h"
+#include "log/output.h"
 #include "cstr/cstr.h"
 #include "cstr/number.h"
 #include "database/database_settings.h"
@@ -213,7 +214,7 @@ u32 CompareSpatial(City& a, City& b, f32 half, u32 probes)
 
 bool Fail(const char* what)
 {
-    os::PrintError("storage_demo: FAILED: %s\n", what);
+    out::PrintError("storage_demo: FAILED: %s\n", what);
     return false;
 }
 
@@ -285,9 +286,9 @@ bool Run(u32 entities, u32 frames, const char* file, bool columns)
     {
         return Fail("the keys did not sync");
     }
-    os::Print("storage_demo: %u entities (%u with a parent), a city of %.0f x %.0f units, file %s, layout %s\n",
-              static_cast<u32>(original.index.Size()), static_cast<u32>(made.Size()), static_cast<double>(half * 2),
-              static_cast<double>(half * 2), file, columns ? "columns" : "blob");
+    out::Print("storage_demo: %u entities (%u with a parent), a city of %.0f x %.0f units, file %s, layout %s\n",
+               static_cast<u32>(original.index.Size()), static_cast<u32>(made.Size()), static_cast<double>(half * 2),
+               static_cast<double>(half * 2), file, columns ? "columns" : "blob");
 
     // Save, load into a fresh world, compare.
     UniquePtr<storage::LocalStorage> local;
@@ -303,8 +304,8 @@ bool Run(u32 entities, u32 frames, const char* file, bool columns)
     {
         return Fail(s.Message());
     }
-    os::Print("storage_demo: saved %u entities, %llu bytes\n", static_cast<u32>(saved.created),
-              static_cast<unsigned long long>(saved.bytes));
+    out::Print("storage_demo: saved %u entities, %llu bytes\n", static_cast<u32>(saved.created),
+               static_cast<unsigned long long>(saved.bytes));
 
     City loaded;
     if (!loaded.Setup(&jobs))
@@ -334,17 +335,17 @@ bool Run(u32 entities, u32 frames, const char* file, bool columns)
     {
         return Fail("the loaded world differs from the original");
     }
-    os::Print("storage_demo: the loaded world equals the original (%u bytes of components)\n",
-              static_cast<u32>(image_a.Size()));
+    out::Print("storage_demo: the loaded world equals the original (%u bytes of components)\n",
+               static_cast<u32>(image_a.Size()));
     original.Step(0.0f);  // the same frame on both: the world transforms and the sets are derived again, not stored
     loaded.Step(0.0f);
     const u32 bad = CompareSpatial(original, loaded, half, 200);
     if (bad != 0)
     {
-        os::PrintError("storage_demo: %u of 200 boxes saw different entities\n", bad);
+        out::PrintError("storage_demo: %u of 200 boxes saw different entities\n", bad);
         return Fail("the spatial sets of the loaded world answer differently");
     }
-    os::Print("storage_demo: 200 box queries agree between the original, the loaded world and a scan of the boxes\n");
+    out::Print("storage_demo: 200 box queries agree between the original, the loaded world and a scan of the boxes\n");
     if (columns)
     {
         usize mismatches = 1;
@@ -393,7 +394,7 @@ bool Run(u32 entities, u32 frames, const char* file, bool columns)
     {
         return Fail(s.Message());
     }
-    os::Print("storage_demo: %u frames, %u autosaves\n", frames, static_cast<u32>(autosaver.Completed()));
+    out::Print("storage_demo: %u frames, %u autosaves\n", frames, static_cast<u32>(autosaver.Completed()));
     if (autosaver.Completed() < 2)
     {
         return Fail("the autosaver saved too rarely");
@@ -421,7 +422,7 @@ bool Run(u32 entities, u32 frames, const char* file, bool columns)
     {
         return Fail("the autosaved world differs from the running one");
     }
-    os::Print("storage_demo: the autosaved world equals the running one\n");
+    out::Print("storage_demo: the autosaved world equals the running one\n");
     return true;
 }
 
@@ -443,7 +444,7 @@ int main(int argc, char** argv)
     const char* program = line.ProgramName().Data();
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("usage: %s [--entities N] [--frames N] [--file PATH] [--columns]\n", program);
+        out::PrintError("usage: %s [--entities N] [--frames N] [--file PATH] [--columns]\n", program);
         return 2;
     }
     StringView value;
@@ -477,7 +478,7 @@ int main(int argc, char** argv)
         io::Path tmp;
         if (io::TempDirectory(&tmp).Failed() || io::CreateTempDirectory(tmp, "re_storage_demo", &scratch).Failed())
         {
-            os::PrintError("storage_demo: no scratch directory\n");
+            out::PrintError("storage_demo: no scratch directory\n");
             return 1;
         }
         const io::Path path = scratch / StringView("city.db");
@@ -493,6 +494,6 @@ int main(int argc, char** argv)
     {
         return 1;
     }
-    os::Print("storage_demo: ok\n");
+    out::Print("storage_demo: ok\n");
     return 0;
 }

@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "build_defs.h"
+#include "log/output.h"
 #include "cstr/mem_ops.h"
 #include "demo_frame.h"
 #include "display_session.h"
@@ -147,8 +148,8 @@ TEST_CASE("Spike 1: a renderer on a window's device and swapchain draws an ECS w
     }
     device->WaitIdle();
     const f64 ms = static_cast<f64>(os::MonotonicTimeNanos() - start) / 1e6 / kFrames;
-    os::Print("spike 1: %u of %d frames presented, %.2f ms per frame (sync + record + submit + present)\n", ok_frames,
-              kFrames, ms);
+    out::Print("spike 1: %u of %d frames presented, %.2f ms per frame (sync + record + submit + present)\n", ok_frames,
+               kFrames, ms);
     CHECK(ok_frames == static_cast<u32>(kFrames));
     CHECK(frame.LastGBufferOk());
 
@@ -195,9 +196,9 @@ TEST_CASE("Spike 1: a renderer on a window's device and swapchain draws an ECS w
     {
         varied = MemCompare(&pixels[i], &pixels[0], 4) != 0;
     }
-    os::Print("spike 1: objects %u lights %u visible %u drawn %u first pixel %u %u %u %u\n", render_scene.ObjectCount(),
-              render_scene.LightCount(), offscreen_frame.GBufferStatistics().visible,
-              offscreen_frame.GBufferStatistics().drawn_objects, pixels[0], pixels[1], pixels[2], pixels[3]);
+    out::Print("spike 1: objects %u lights %u visible %u drawn %u first pixel %u %u %u %u\n",
+               render_scene.ObjectCount(), render_scene.LightCount(), offscreen_frame.GBufferStatistics().visible,
+               offscreen_frame.GBufferStatistics().drawn_objects, pixels[0], pixels[1], pixels[2], pixels[3]);
     CHECK(varied);
     device->DestroyTexture(target);
     device->WaitIdle();
@@ -311,7 +312,7 @@ TEST_CASE("Spike 2: the content of one resource is resident on two devices; the 
     f64 mesh_a_ms = 0, texture_a_ms = 0, mesh_b_ms = 0, texture_b_ms = 0;
     REQUIRE(MakeContent(surface_device.Get(), &mesh_a, &texture_a, &mesh_a_ms, &texture_a_ms));
     REQUIRE(MakeContent(resource_device.Get(), &mesh_b, &texture_b, &mesh_b_ms, &texture_b_ms));
-    os::Print(
+    out::Print(
         "spike 2: mesh (33k vertices) %.2f ms on the surface device, %.2f ms on a second device; texture 1024x1024 "
         "%.2f ms and %.2f ms; two devices coexist in one process\n",
         mesh_a_ms, mesh_b_ms, texture_a_ms, texture_b_ms);
@@ -454,10 +455,10 @@ void LiveUploadRun(rhi::Device* device, u32 width, u32 height, int frames)
     const f64 total_ms = NowMs() - start;
     stop.Store(true, MemoryOrder::Release);
     producer.Join();
-    os::Print("spike 3: %ux%u: %d frames in %.0f ms, %llu source updates, %u uploads (one per frame at most), "
-              "%.3f ms per upload (CPU copy + record + submit), worst %.3f ms\n",
-              width, height, frames, total_ms, static_cast<unsigned long long>(updates.Load(MemoryOrder::Relaxed)),
-              uploads, uploads != 0 ? upload_ms_total / uploads : 0.0, upload_ms_worst);
+    out::Print("spike 3: %ux%u: %d frames in %.0f ms, %llu source updates, %u uploads (one per frame at most), "
+               "%.3f ms per upload (CPU copy + record + submit), worst %.3f ms\n",
+               width, height, frames, total_ms, static_cast<unsigned long long>(updates.Load(MemoryOrder::Relaxed)),
+               uploads, uploads != 0 ? upload_ms_total / uploads : 0.0, upload_ms_worst);
     CHECK(uploads > 0);
     CHECK(static_cast<int>(uploads) <= frames);
     CHECK(updates.Load(MemoryOrder::Relaxed) >= uploads);  // never more than one upload per frame, however many updates
@@ -552,8 +553,8 @@ TEST_CASE("Spike 4: the cost of glyphs drawn over a frame (labels projected from
         {
             base_ms = ms;
         }
-        os::Print("spike 4: %4u glyphs over a 1280x720 frame: %.3f ms per frame (%+.3f ms against none)\n", glyphs, ms,
-                  ms - base_ms);
+        out::Print("spike 4: %4u glyphs over a 1280x720 frame: %.3f ms per frame (%+.3f ms against none)\n", glyphs, ms,
+                   ms - base_ms);
     }
     device->WaitIdle();
     device->DestroyTexture(target);
@@ -680,7 +681,7 @@ TEST_CASE("Spike 5: a lit frame rendered on two device instances agrees (the flo
             max_diff = d;
         }
     }
-    os::Print(
+    out::Print(
         "spike 5: two device instances, 128x128 lit sphere: %u of %zu channel values differ, largest difference %u\n",
         differing, a.Size(), max_diff);
     CHECK(max_diff <= 1);

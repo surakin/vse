@@ -11,6 +11,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "debug/crash_context.h"
+#include "log/output.h"
 #include "debug/crash_event_platform.h"
 #include "debug/crash_handler.h"
 #include "debug/crash_report.h"
@@ -77,7 +78,7 @@ void ReportAndCount(const char* directory, bool plant)
     InitCrashContext(0, nullptr);
     if (InstallCrashHandler(options) != CrashHandlerResult::Installed)
     {
-        os::Print("INSTALL-FAILED\n");
+        out::Print("INSTALL-FAILED\n");
         return;
     }
     if (plant)
@@ -100,18 +101,18 @@ void ReportAndCount(const char* directory, bool plant)
     debug::detail::ReportCrashFromExceptionPointers(&pointers);
     _CrtSetAllocHook(nullptr);
     g_counted_thread.Store(0);
-    os::Print("ALLOCS=%ld;\n",
-              g_allocations.Load());  // the ";" ends the number (standard output turns a newline into two bytes)
+    out::Print("ALLOCS=%ld;\n",
+               g_allocations.Load());  // the ";" ends the number (standard output turns a newline into two bytes)
     if (g_allocations.Load() != 0)
     {
         static char text[16384];
         FormatStackTrace(g_first_allocation, text, sizeof(text));  // after the count: resolving allocates
-        os::Print("first allocation:\n%s", text);
+        out::Print("first allocation:\n%s", text);
     }
 #else
     debug::detail::ReportCrashFromExceptionPointers(&pointers);
 #endif
-    os::Flush();
+    out::Flush();
     UninstallCrashHandler();
 }
 

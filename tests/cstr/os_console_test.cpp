@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -39,17 +40,17 @@ template <class F> void Capture(int fd, char* out, usize capacity, F body)
 
 }  // namespace
 
-TEST_CASE("os::Print and friends write to standard output", "[cstr][os]")
+TEST_CASE("out::Print and friends write to standard output", "[cstr][os]")
 {
     char text[256];
     Capture(1, text, sizeof(text),
             []
             {
-                os::Print("a%d|", 1);
-                os::PrintText("b|");
-                os::PrintLine("c");
-                os::PrintBytes("dd", 2);
-                os::Flush();
+                out::Print("a%d|", 1);
+                out::PrintText("b|");
+                out::PrintLine("c");
+                out::PrintBytes("dd", 2);
+                out::Flush();
             });
     CHECK(std::strcmp(text, "a1|b|c\ndd") == 0);
 }
@@ -73,16 +74,16 @@ TEST_CASE("os::FlushAll empties every C stream's buffer, not only the console's"
     unlink(path);
 }
 
-TEST_CASE("os::PrintError and friends write to standard error", "[cstr][os]")
+TEST_CASE("out::PrintError and friends write to standard error", "[cstr][os]")
 {
     char text[256];
     Capture(2, text, sizeof(text),
             []
             {
-                os::PrintError("e%s|", "rr");
-                os::PrintErrorText("t|");
-                os::PrintErrorBytes("bb", 2);
-                os::FlushError();
+                out::PrintError("e%s|", "rr");
+                out::PrintErrorText("t|");
+                out::PrintErrorBytes("bb", 2);
+                out::FlushError();
             });
     CHECK(std::strcmp(text, "err|t|bb") == 0);
 }

@@ -1,6 +1,7 @@
 // The DbgHelp half of resolve.h (Phase 13 Day 156): names a crash report's frames from the PDBs in a symbol store. The
 // tool's one per-platform file (a platform-dir in tools/module_deps_check/modules.txt; ARCHITECTURE.md section 4).
 #include "../resolve.h"
+#include "log/output.h"
 
 #include "io/file_system.h"
 #include "io/path.h"
@@ -117,14 +118,14 @@ int ResolveReport(const char* report, usize report_size, const DumpModule* modul
                             source.FileName != nullptr)
                         {
                             ToUtf8(source.FileName, file, sizeof(file));
-                            os::Print("#%u  %s  %s:%lu  (%s+0x%llx)\n", number, function, file,
-                                      static_cast<unsigned long>(source.LineNumber), BaseName(module_text),
-                                      static_cast<unsigned long long>(offset));
+                            out::Print("#%u  %s  %s:%lu  (%s+0x%llx)\n", number, function, file,
+                                       static_cast<unsigned long>(source.LineNumber), BaseName(module_text),
+                                       static_cast<unsigned long long>(offset));
                         }
                         else
                         {
-                            os::Print("#%u  %s  (%s+0x%llx)\n", number, function, BaseName(module_text),
-                                      static_cast<unsigned long long>(offset));
+                            out::Print("#%u  %s  (%s+0x%llx)\n", number, function, BaseName(module_text),
+                                       static_cast<unsigned long long>(offset));
                         }
                         printed = true;
                         ++named;
@@ -134,7 +135,7 @@ int ResolveReport(const char* report, usize report_size, const DumpModule* modul
         }
         if (!printed)
         {
-            os::Print("%.*s\n", static_cast<int>(length), line);
+            out::Print("%.*s\n", static_cast<int>(length), line);
         }
         pos = end + 1;
     }

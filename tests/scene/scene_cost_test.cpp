@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/vector.h"
+#include "log/output.h"
 #include "ecs/query.h"
 #include "ecs/world.h"
 #include "jobs/scheduler.h"
@@ -83,8 +84,8 @@ TEST_CASE("Culling 100k objects: one thread against chunk-parallel (recorded)", 
         const u64 t = os::MonotonicTimeNanos() - t0;
         best_single = t < best_single ? t : best_single;
     }
-    os::Print("cull, one thread: %u of %u visible, %.3f ms (%.1f ns per object)\n", visible, kCount,
-              Millis(best_single), static_cast<double>(best_single) / kCount);
+    out::Print("cull, one thread: %u of %u visible, %.3f ms (%.1f ns per object)\n", visible, kCount,
+               Millis(best_single), static_cast<double>(best_single) / kCount);
 
     auto query = world.Query<ecs::Read<WorldBounds>>();
     auto per_chunk = [&frustum](ecs::ChunkView& view)
@@ -113,8 +114,8 @@ TEST_CASE("Culling 100k objects: one thread against chunk-parallel (recorded)", 
             const u64 t = os::MonotonicTimeNanos() - t0;
             best = t < best ? t : best;
         }
-        os::Print("cull, chunk-parallel, %zu participants: %llu visible, %.3f ms (%.1f ns per object)\n", participants,
-                  static_cast<unsigned long long>(counted), Millis(best), static_cast<double>(best) / kCount);
+        out::Print("cull, chunk-parallel, %zu participants: %llu visible, %.3f ms (%.1f ns per object)\n", participants,
+                   static_cast<unsigned long long>(counted), Millis(best), static_cast<double>(best) / kCount);
         CHECK(counted == visible);
     }
 }

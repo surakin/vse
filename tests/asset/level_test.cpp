@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "asset/level.h"
+#include "log/output.h"
 #include "comma_locale.h"
 #include "cstr/cstr.h"
 #include "cstr/number.h"
@@ -832,7 +833,7 @@ TEST_CASE("A level of 100,000 entities: load time and the floor of creating the 
         const u64 t1 = os::MonotonicTimeNanos();
         floor = t1 - t0 < floor ? t1 - t0 : floor;
     }
-    os::Print(
+    out::Print(
         "level of %u entities: %zu bytes; mint %.1f ms; load %.1f ms (%.0f ns per entity), of which parsing %.1f ms; "
         "creating the entities alone %.1f ms (%.0f ns per entity)\n",
         static_cast<unsigned>(kCount), static_cast<size_t>(blob.Size()), static_cast<double>(m1 - m0) / 1e6,

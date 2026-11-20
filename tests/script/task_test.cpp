@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "cstr/cstr.h"
+#include "log/output.h"
 #include "cstr/format.h"
 #include "ecs/transform.h"
 #include "jobs/scheduler.h"
@@ -433,6 +434,6 @@ TEST_CASE("Tasks: a million-element parallel_for against the serial loop (printe
         line.Append(StringView(" -> "));
         line.Append(rig.Text(e).View());
         line.Append(StringView("\n"));
-        os::Print("%s", line.CStr());
+        out::Print("%s", line.CStr());
     }
 }

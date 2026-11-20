@@ -1,5 +1,7 @@
 // The script demo's world (Phase 27 Day 475). See demo_world.h.
 #include "demo_world.h"
+#include "log/log.h"
+#include "log/output.h"
 #include "containers/hash.h"
 
 #include "asset/resource_id.h"
@@ -28,6 +30,10 @@ namespace script_demo
 
 namespace
 {
+
+// The demo's own log channel: its diagnostics (a script that did not load, a reload that failed) are log lines, the
+// frame statistics are program output.
+LogChannel LogDemo("script_demo", LogVerbosity::Info);
 
 constexpr f32 kStep = 1.0f / 60.0f;
 
@@ -174,7 +180,7 @@ DemoWorld::DemoWorld(const DemoOptions& options)
         const asset::Status status = assets_->Add(asset::ResourceId::FromValue(kDemoScriptId), &failure);
         if (!status.Ok())
         {
-            os::PrintError("script_demo: the minted script %s did not load\n", kDemoScriptKey);
+            LogF(LogDemo, LogVerbosity::Error, "the minted script %s did not load", kDemoScriptKey);
             ok_ = false;
         }
     }
@@ -325,13 +331,13 @@ bool DemoWorld::ApplyReload(StringView key, SharedBytesPtr bytes, usize size, bo
     *deferred = report.deferred.Size() != 0;
     if (!outcome.IsOk())
     {
-        os::PrintError("script_demo: reload failed: %s\n", outcome.message.CStr());
+        LogF(LogDemo, LogVerbosity::Error, "reload failed: %s", outcome.message.CStr());
     }
     else if (!report.applied)
     {
-        os::PrintError("script_demo: reload not applied: %u compile failures, %u deferred, run failure '%s'\n",
-                       static_cast<unsigned>(report.compile_failures.Size()),
-                       static_cast<unsigned>(report.deferred.Size()), report.run_failure.message.CStr());
+        LogF(LogDemo, LogVerbosity::Warn, "reload not applied: %u compile failures, %u deferred, run failure '%s'",
+             static_cast<unsigned>(report.compile_failures.Size()), static_cast<unsigned>(report.deferred.Size()),
+             report.run_failure.message.CStr());
     }
     return outcome.IsOk() && report.applied && report.compile_failures.Size() == 0;
 }
@@ -370,8 +376,8 @@ u32 DemoWorld::PollReload()
         {
             ++applied;
             ++file_reloads_;
-            os::PrintError("script_demo: reloaded the script from its file (%llu bytes)\n",
-                           static_cast<unsigned long long>(size));
+            LogF(LogDemo, LogVerbosity::Info, "reloaded the script from its file (%llu bytes)",
+                 static_cast<unsigned long long>(size));
         }
         if (!deferred)
         {

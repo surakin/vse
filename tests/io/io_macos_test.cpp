@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "io/error.h"
+#include "log/output.h"
 #include "io/file.h"
 #include "io/file_system.h"
 #include "os/console.h"
@@ -42,8 +43,8 @@ TEST_CASE("io on macOS: a name written in NFC, looked up in NFD, is what the vol
     const bool raw_found = ::access(Str(nfd.View()).CStr(), F_OK) == 0;
     io::FileInfo info;
     CHECK(io::Stat(nfd, &info).Ok() == raw_found);
-    os::Print("NFD lookup of an NFC name on this volume: %s\n",
-              raw_found ? "found (normalization-insensitive)" : "not found");
+    out::Print("NFD lookup of an NFC name on this volume: %s\n",
+               raw_found ? "found (normalization-insensitive)" : "not found");
     // The name lists in the form it was written (APFS keeps it), bytes unchanged by the layer.
     io::Directory listing;
     REQUIRE(io::Directory::Open(dir.Path(), &listing).Ok());
@@ -52,7 +53,7 @@ TEST_CASE("io on macOS: a name written in NFC, looked up in NFD, is what the vol
     REQUIRE(listing.Next(&entry, &found).Ok());
     REQUIRE(found);
     const bool listed_as_nfc = entry.name == StringView("caf\xC3\xA9");
-    os::Print("the name lists as %s\n", listed_as_nfc ? "NFC (as written)" : "another form");
+    out::Print("the name lists as %s\n", listed_as_nfc ? "NFC (as written)" : "another form");
     CHECK((listed_as_nfc || entry.name == StringView("cafe\xCC\x81")));
 }
 
@@ -61,7 +62,7 @@ TEST_CASE("io on macOS: two names differing only in case follow the volume's rul
     TempDir dir;
     const long case_sensitive = ::pathconf(Str(dir.Path().View()).CStr(), _PC_CASE_SENSITIVE);
     REQUIRE(case_sensitive >= 0);
-    os::Print("the temporary volume is case-%s\n", case_sensitive == 1 ? "sensitive" : "insensitive");
+    out::Print("the temporary volume is case-%s\n", case_sensitive == 1 ? "sensitive" : "insensitive");
     REQUIRE(io::WriteFile(dir / "Case.txt", "upper", 5).Ok());
     const Path lower = dir / "case.txt";
     if (case_sensitive == 1)
@@ -110,8 +111,8 @@ TEST_CASE("io on macOS: Sync and WriteFileAtomic reach the medium (F_FULLFSYNC);
             slowest = took;
         }
     }
-    os::Print("WriteFileAtomic of 4 KiB with F_FULLFSYNC: mean %.2f ms, slowest %.2f ms over %d runs\n",
-              static_cast<double>(total) / kRuns / 1e6, static_cast<double>(slowest) / 1e6, kRuns);
+    out::Print("WriteFileAtomic of 4 KiB with F_FULLFSYNC: mean %.2f ms, slowest %.2f ms over %d runs\n",
+               static_cast<double>(total) / kRuns / 1e6, static_cast<double>(slowest) / 1e6, kRuns);
     io::FilePtr file;
     REQUIRE(io::File::Open(target, io::OpenMode::ReadWrite, 0, &file).Ok());
     CHECK(file->Sync().Ok());

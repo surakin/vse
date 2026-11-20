@@ -1,4 +1,5 @@
 #include "audio/audio_system.h"
+#include "log/output.h"
 
 #include "lang/utility.h"
 #include "os/console.h"
@@ -46,7 +47,7 @@ UniquePtr<AudioDevice> AudioSystem::Make(DeviceKind kind)
 void AudioSystem::LogTransition(const char* what)
 {
     transitions_ += 1;
-    os::PrintError("audio: %s\n", what);
+    out::PrintError("audio: %s\n", what);
 }
 
 // Opens the wanted device with the current settings and, when the mixer exists, re-plans it for what was granted.

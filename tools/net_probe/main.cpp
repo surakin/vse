@@ -9,6 +9,7 @@
 // Host names are not resolved by this tool (the resolver needs a reactor; use an address). Its options are its own
 // command line, not engine settings.
 #include "containers/vector.h"
+#include "log/output.h"
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
 #include "cstr/number.h"
@@ -35,10 +36,10 @@ namespace
 
 int Usage()
 {
-    os::PrintError("usage: net_probe echo --transport=udp|tcp --listen=ADDR:PORT [--seconds=N]\n"
-                   "       net_probe ping --transport=udp|tcp --connect=ADDR:PORT [--count=N] [--size=BYTES]\n"
-                   "       net_probe send --transport=udp|tcp --connect=ADDR:PORT --file=PATH\n"
-                   "       net_probe resolve ADDR[:PORT]\n");
+    out::PrintError("usage: net_probe echo --transport=udp|tcp --listen=ADDR:PORT [--seconds=N]\n"
+                    "       net_probe ping --transport=udp|tcp --connect=ADDR:PORT [--count=N] [--size=BYTES]\n"
+                    "       net_probe send --transport=udp|tcp --connect=ADDR:PORT --file=PATH\n"
+                    "       net_probe resolve ADDR[:PORT]\n");
     return 64;
 }
 
@@ -82,7 +83,7 @@ bool ParseEndpoint(const char* text, Endpoint* out)
 {
     if (text == nullptr || Endpoint::Parse(StringView(text), out).Failed())
     {
-        os::PrintError("net_probe: not an address:port: %s\n", text == nullptr ? "(missing)" : text);
+        out::PrintError("net_probe: not an address:port: %s\n", text == nullptr ? "(missing)" : text);
         return false;
     }
     return true;
@@ -102,10 +103,10 @@ int Echo(const Line& line)
     Transport* t = rig.Make(CStrCompare(transport, "tcp") == 0, at);
     if (t == nullptr || t->Listen(rig.local).Failed())
     {
-        os::PrintError("net_probe: cannot listen on %s\n", listen);
+        out::PrintError("net_probe: cannot listen on %s\n", listen);
         return 1;
     }
-    os::Print("net_probe: echo listening on %s\n", rig.local.Format().chars.Data());
+    out::Print("net_probe: echo listening on %s\n", rig.local.Format().chars.Data());
     const u64 until = rig.clock.NowNanos() +
                       (seconds_text != nullptr ? static_cast<u64>(CStrToLong(seconds_text)) : 60) * 1'000'000'000ull;
     u64 messages = 0;
@@ -124,8 +125,8 @@ int Echo(const Line& line)
         }
         ThisThread::Yield();
     }
-    os::Print("net_probe: echoed %llu messages, %llu bytes\n", static_cast<unsigned long long>(messages),
-              static_cast<unsigned long long>(bytes));
+    out::Print("net_probe: echoed %llu messages, %llu bytes\n", static_cast<unsigned long long>(messages),
+               static_cast<unsigned long long>(bytes));
     return 0;
 }
 
@@ -143,7 +144,7 @@ Transport* ConnectTo(Rig* rig, const Line& line, ConnectionId* connection)
     Transport* t = rig->Make(CStrCompare(transport, "tcp") == 0, any);
     if (t == nullptr || t->Connect(to, connection).Failed())
     {
-        os::PrintError("net_probe: cannot connect\n");
+        out::PrintError("net_probe: cannot connect\n");
         return nullptr;
     }
     const u64 until = rig->clock.NowNanos() + 5'000'000'000ull;
@@ -158,13 +159,13 @@ Transport* ConnectTo(Rig* rig, const Line& line, ConnectionId* connection)
             }
             if (e.kind == EventKind::Closed)
             {
-                os::PrintError("net_probe: connection closed (%s)\n", DisconnectReasonName(e.reason));
+                out::PrintError("net_probe: connection closed (%s)\n", DisconnectReasonName(e.reason));
                 return nullptr;
             }
         }
         ThisThread::Yield();
     }
-    os::PrintError("net_probe: connect timed out\n");
+    out::PrintError("net_probe: connect timed out\n");
     return nullptr;
 }
 
@@ -194,7 +195,7 @@ int Ping(const Line& line)
         }
         if (t->Send(c, 0, ByteSpan(payload.Data(), payload.Size()), Reliability::ReliableOrdered).Failed())
         {
-            os::PrintError("net_probe: send failed\n");
+            out::PrintError("net_probe: send failed\n");
             return 1;
         }
         bool got = false;
@@ -209,14 +210,14 @@ int Ping(const Line& line)
         }
         if (!got)
         {
-            os::PrintError("net_probe: no answer to message %u\n", i);
+            out::PrintError("net_probe: no answer to message %u\n", i);
             return 1;
         }
         micros.Push((rig.clock.NowNanos() - start) / 1000);
     }
     if (micros.Size() == 0)
     {
-        os::PrintError("net_probe: --count must be at least 1\n");
+        out::PrintError("net_probe: --count must be at least 1\n");
         return 64;
     }
     Sort(Span<u64>(micros.Data(), micros.Size()));
@@ -226,8 +227,8 @@ int Ping(const Line& line)
         k = k >= micros.Size() ? micros.Size() - 1 : k;
         return static_cast<unsigned long long>(micros[k]);
     };
-    os::Print("net_probe: %u round trips of %zu bytes: p50 %llu us, p99 %llu us, p999 %llu us, max %llu us\n", count,
-              size, at(0.5), at(0.99), at(0.999), static_cast<unsigned long long>(micros[micros.Size() - 1]));
+    out::Print("net_probe: %u round trips of %zu bytes: p50 %llu us, p99 %llu us, p999 %llu us, max %llu us\n", count,
+               size, at(0.5), at(0.99), at(0.999), static_cast<unsigned long long>(micros[micros.Size() - 1]));
     return 0;
 }
 
@@ -241,7 +242,7 @@ int SendFile(const Line& line)
     Vector<u8> data;
     if (io::ReadFile(io::Path(StringView(file)), &data).Failed())
     {
-        os::PrintError("net_probe: cannot read %s\n", file);
+        out::PrintError("net_probe: cannot read %s\n", file);
         return 1;
     }
     Rig rig;
@@ -268,7 +269,7 @@ int SendFile(const Line& line)
             }
             if (s.Failed())
             {
-                os::PrintError("net_probe: send failed\n");
+                out::PrintError("net_probe: send failed\n");
                 return 1;
             }
             sent += n;
@@ -282,15 +283,15 @@ int SendFile(const Line& line)
             }
             else if (e.kind == EventKind::Closed)
             {
-                os::PrintError("net_probe: closed (%s)\n", DisconnectReasonName(e.reason));
+                out::PrintError("net_probe: closed (%s)\n", DisconnectReasonName(e.reason));
                 return 1;
             }
         }
         ThisThread::Yield();
     }
     const f64 seconds = static_cast<f64>(rig.clock.NowNanos() - start) / 1e9;
-    os::Print("net_probe: sent %zu bytes, %zu echoed back in %.3f s (%.1f MiB/s)\n", sent, echoed, seconds,
-              static_cast<f64>(echoed) / (1024.0 * 1024.0) / (seconds > 0 ? seconds : 1e-9));
+    out::Print("net_probe: sent %zu bytes, %zu echoed back in %.3f s (%.1f MiB/s)\n", sent, echoed, seconds,
+               static_cast<f64>(echoed) / (1024.0 * 1024.0) / (seconds > 0 ? seconds : 1e-9));
     return echoed == data.Size() ? 0 : 1;
 }
 
@@ -304,16 +305,16 @@ int ResolveCommand(const Line& line)
     Endpoint e;
     if (Endpoint::Parse(StringView(text), &e).Ok())
     {
-        os::Print("%s\n", e.Format().chars.Data());
+        out::Print("%s\n", e.Format().chars.Data());
         return 0;
     }
     Address a;
     if (Address::Parse(StringView(text), &a).Ok())
     {
-        os::Print("%s\n", a.Format().chars.Data());
+        out::Print("%s\n", a.Format().chars.Data());
         return 0;
     }
-    os::PrintError("net_probe: not an address: %s (host names are not resolved by this tool)\n", text);
+    out::PrintError("net_probe: not an address: %s (host names are not resolved by this tool)\n", text);
     return 1;
 }
 
@@ -326,7 +327,7 @@ int main(int argc, char** argv)
     {
         if (!line.Ok())
         {
-            os::PrintError("net_probe: %s\n", line.Error().Data());
+            out::PrintError("net_probe: %s\n", line.Error().Data());
         }
         return Usage();
     }

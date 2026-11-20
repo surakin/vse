@@ -94,5 +94,5 @@ Status: written. Terms are in alphabetical order; each points to the page that e
 
 **Unity build.** Merging several source files into one translation unit to compile faster. Both unity and non-unity builds must pass. See [Building and testing](building-and-testing.md).
 
-**Wrapped types.** The engine's own replacements for the standard library and the C library (`Vector`, `String`, `Move`, `MemCopy`, `os::Print`, ...). Code does not include a standard header or write `std::`. See [Standard types](foundation-types.md).
+**Wrapped types.** The engine's own replacements for the standard library and the C library (`Vector`, `String`, `Move`, `MemCopy`, `out::Print`, ...). Code does not include a standard header or write `std::`. See [Standard types](foundation-types.md).
 

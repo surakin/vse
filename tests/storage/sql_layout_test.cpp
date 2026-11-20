@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "database/sqlite/sqlite_database.h"
+#include "log/output.h"
 #include "no_alter_connection.h"
 #include "os/console.h"
 #include "os/os.h"
@@ -639,11 +640,11 @@ TEST_CASE("Benchmark: 100,000 entities saved and loaded through the SQL store, b
                     .Ok());
             query_us = (os::MonotonicTimeNanos() - q0) / 1000;
         }
-        os::Print("sql store, 100000 entities, %s: save %llu ms, load %llu ms, query hp > 100 %llu us (%zu hits)\n",
-                  mode == 0 ? "blob only" : (mode == 1 ? "with columns" : "with columns and an index on hp"),
-                  static_cast<unsigned long long>((t1 - t0) / 1000000),
-                  static_cast<unsigned long long>((t2 - t1) / 1000000), static_cast<unsigned long long>(query_us),
-                  found);
+        out::Print("sql store, 100000 entities, %s: save %llu ms, load %llu ms, query hp > 100 %llu us (%zu hits)\n",
+                   mode == 0 ? "blob only" : (mode == 1 ? "with columns" : "with columns and an index on hp"),
+                   static_cast<unsigned long long>((t1 - t0) / 1000000),
+                   static_cast<unsigned long long>((t2 - t1) / 1000000), static_cast<unsigned long long>(query_us),
+                   found);
         rig.store.Reset();
     }
 }

@@ -57,7 +57,7 @@ runs jobs on the calling thread until the counter is zero.
 #include "jobs/counter.h"
 #include "jobs/job.h"
 #include "jobs/scheduler.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -82,7 +82,7 @@ int main() {
     for (usize i = 0; i < results.Size(); ++i) {
         sum += results[i];
     }
-    os::Print("sum of squares 0..99 = %llu\n", static_cast<unsigned long long>(sum));
+    out::Print("sum of squares 0..99 = %llu\n", static_cast<unsigned long long>(sum));
     return 0;                                     // all work was joined before the scheduler is destroyed
 }
 ```
@@ -103,7 +103,7 @@ chunks), runs each chunk as a job and returns when all are done. Your callable r
 #include "containers/vector.h"
 #include "jobs/parallel_for.h"
 #include "jobs/scheduler.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "sync/atomic.h"
 
 using namespace vse;
@@ -127,7 +127,7 @@ int main() {
     };
     jobs::ParallelForBlocking(scheduler, data.Size(), 0, body);   // chunk size 0 = default
 
-    os::Print("total = %llu\n", static_cast<unsigned long long>(total.Load()));
+    out::Print("total = %llu\n", static_cast<unsigned long long>(total.Load()));
     return 0;
 }
 ```
@@ -149,7 +149,7 @@ spawn the children, and `co_await` it: the job is suspended, the worker runs oth
 #include "jobs/counter.h"
 #include "jobs/job.h"
 #include "jobs/scheduler.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -179,7 +179,7 @@ int main() {
     u64 result = 0;
     jobs::Spawn(done, Parent(&result));
     scheduler.HelpUntil(done);
-    os::Print("parent result = %llu\n", static_cast<unsigned long long>(result));
+    out::Print("parent result = %llu\n", static_cast<unsigned long long>(result));
     return 0;
 }
 ```

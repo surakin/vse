@@ -22,7 +22,7 @@
 A window program in miniature. It runs for at most five seconds, so you can start it from a terminal and just close the window.
 
 ```cpp compile standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "os/os.h"
 #include "platform/input.h"
 #include "platform/window.h"
@@ -34,18 +34,18 @@ int main() {
     os::InputState input;                          // declared before the host: the host borrows it
     os::PlatformWindowHost host;
     if (!host.OpenFromEnvironment("Hello window", 1280, 720, &input)) {
-        os::PrintError("no window could be opened\n");
+        out::PrintError("no window could be opened\n");
         return 1;
     }
     os::Window* window = host.Get();
-    os::Print("opened a %ux%u window on %s\n", window->Width(), window->Height(), window->BackendName());
+    out::Print("opened a %ux%u window on %s\n", window->Width(), window->Height(), window->BackendName());
 
     const u64 start = os::MonotonicTimeNanos();
     while (os::MonotonicTimeNanos() - start < 5'000'000'000ull) {
         input.BeginFrame();
         window->PumpEvents();
         if (window->ShouldClose()) {
-            os::Print("close requested\n");
+            out::Print("close requested\n");
             break;
         }
         if (input.keyboard.IsDown(os::Key::Escape)) {

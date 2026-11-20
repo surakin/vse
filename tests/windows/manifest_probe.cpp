@@ -2,6 +2,7 @@
 // cmake/engine.manifest asks for. Prints the active code page (65001 is UTF-8) and the thread's DPI awareness; the
 // ctest matches the line.
 #include "os/windows/win32.h"
+#include "log/output.h"
 
 #include "os/console.h"
 
@@ -24,6 +25,6 @@ int main()
     {
         awareness = "unaware";
     }
-    os::Print("active code page %u; DPI awareness %s\n", code_page, awareness);
+    out::Print("active code page %u; DPI awareness %s\n", code_page, awareness);
     return code_page == 65001 ? 0 : 1;
 }

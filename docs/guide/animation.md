@@ -53,7 +53,7 @@ applied to the wrong rig.
 #include "animation/sampler.h"
 #include "asset/clip.h"
 #include "asset/skeleton.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -99,7 +99,7 @@ int main() {
     animation::ModelFromLocal(skeleton, pose, &model);
     animation::Mat3x4 palette[1];
     animation::SkinningMatrices(skeleton, model, Span<animation::Mat3x4>(palette, 1));
-    os::Print("palette x translation: %.3f\n", palette[0][3]);
+    out::Print("palette x translation: %.3f\n", palette[0][3]);
     return palette[0][3] > 0.99f && palette[0][3] < 1.01f ? 0 : 1;
 }
 ```

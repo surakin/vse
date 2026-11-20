@@ -3,6 +3,7 @@
 // recording on several threads, many bind groups per frame across the shader-visible ring's wrap, and a list that fails
 // cleanly. Windows only.
 #include "lang/scalar.h"
+#include "log/output.h"
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -868,8 +869,8 @@ TEST_CASE("Benchmark: a DX12 list touching 2,000 buffers", "[.][render-bench][dx
         device->EndFrame();
     }
     device->WaitIdle();
-    os::Print("dx12 list, %u buffers x 2 barriers: %.3f ms to record (mean of %u)\n", kBuffers,
-              static_cast<f64>(record_nanos) / 1e6 / kRounds, kRounds);
+    out::Print("dx12 list, %u buffers x 2 barriers: %.3f ms to record (mean of %u)\n", kBuffers,
+               static_cast<f64>(record_nanos) / 1e6 / kRounds, kRounds);
     for (BufferHandle b : buffers)
     {
         device->DestroyBuffer(b);

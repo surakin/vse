@@ -1,6 +1,7 @@
 // RunProcess on Windows (Phase 13 Day 163): CreateProcessW with a command line quoted by AppendWindowsArgument, the
 // standard handles inherited, then a wait for the exit code.
 #include "os/console.h"
+#include "log/output.h"
 
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
@@ -13,7 +14,7 @@ bool RunProcess(const Vector<Text>& args)
 {
     if (args.Empty())
     {
-        os::PrintError("shader_mint: no program to run\n");
+        out::PrintError("shader_mint: no program to run\n");
         return false;
     }
     Text line = MakeText();
@@ -37,7 +38,7 @@ bool RunProcess(const Vector<Text>& args)
     PROCESS_INFORMATION info{};
     if (!CreateProcessW(nullptr, wide.Data(), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &startup, &info))
     {
-        os::PrintError("shader_mint: cannot run %s (Windows error %lu)\n", args[0].CStr(), GetLastError());
+        out::PrintError("shader_mint: cannot run %s (Windows error %lu)\n", args[0].CStr(), GetLastError());
         return false;
     }
     CloseHandle(info.hThread);
@@ -47,17 +48,17 @@ bool RunProcess(const Vector<Text>& args)
     CloseHandle(info.hProcess);
     if (!have_code)
     {
-        os::PrintError("shader_mint: waiting for %s failed\n", args[0].CStr());
+        out::PrintError("shader_mint: waiting for %s failed\n", args[0].CStr());
         return false;
     }
     if (code >= 0xC0000000u)
     {
-        os::PrintError("shader_mint: %s was ended by exception 0x%08lX\n", args[0].CStr(), code);
+        out::PrintError("shader_mint: %s was ended by exception 0x%08lX\n", args[0].CStr(), code);
         return false;
     }
     if (code != 0)
     {
-        os::PrintError("shader_mint: %s exited with status %lu\n", args[0].CStr(), code);
+        out::PrintError("shader_mint: %s exited with status %lu\n", args[0].CStr(), code);
         return false;
     }
     return true;

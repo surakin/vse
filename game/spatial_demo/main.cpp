@@ -9,6 +9,7 @@
 //                [--debug-draw]  also produce the debug lines of the render set and print their count
 //                [--serial]      compute the world boxes on one thread
 #include "containers/vector.h"
+#include "log/output.h"
 #include "cstr/cstr.h"
 #include "cstr/number.h"
 #include "debug/program_setup.h"
@@ -71,7 +72,7 @@ int main(int argc, char** argv)
     const char* program = line.ProgramName().Data();
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("usage: %s [--entities N] [--frames N] [--stats] [--debug-draw] [--serial]\n", program);
+        out::PrintError("usage: %s [--entities N] [--frames N] [--stats] [--debug-draw] [--serial]\n", program);
         return 2;
     }
     StringView value;
@@ -106,7 +107,7 @@ int main(int argc, char** argv)
     schedule.SetScheduler(&jobs);
     if (!schedule.Build().ok)
     {
-        os::PrintError("spatial_demo: the schedule did not build\n");
+        out::PrintError("spatial_demo: the schedule did not build\n");
         return 1;
     }
 
@@ -133,8 +134,8 @@ int main(int argc, char** argv)
             agents.Push(e);
         }
     }
-    os::Print("spatial_demo: %u entities (%u moving agents), a city of %.0f x %.0f units\n", entities,
-              static_cast<u32>(agents.Size()), static_cast<double>(half * 2), static_cast<double>(half * 2));
+    out::Print("spatial_demo: %u entities (%u moving agents), a city of %.0f x %.0f units\n", entities,
+               static_cast<u32>(agents.Size()), static_cast<double>(half * 2), static_cast<double>(half * 2));
 
     // The camera: a pyramid at the edge of the city looking across it, seeing about a tenth of it.
     Frustum view;
@@ -198,12 +199,12 @@ int main(int argc, char** argv)
 
         if (frame % 30 == 0)
         {
-            os::Print("frame %3u  visible %6u  contacts %6u  pick %s  neighbors %u\n", frame, visible, contacts,
-                      picked ? "hit " : "none", near_count);
+            out::Print("frame %3u  visible %6u  contacts %6u  pick %s  neighbors %u\n", frame, visible, contacts,
+                       picked ? "hit " : "none", near_count);
             if (stats)
             {
                 const SpatialStats s = DescribeSet(render);
-                os::Print(
+                out::Print(
                     "          render set: %u static + %u dynamic items, static tree %u nodes depth %u, dynamic tree %u nodes height %u, sah %.2f (built %.2f), moves %llu (%llu reinserted)\n",
                     s.set.static_items, s.set.dynamic_items, s.static_nodes, s.static_depth, s.dynamic_nodes,
                     s.dynamic_height, static_cast<double>(s.dynamic_sah_cost),
@@ -215,14 +216,15 @@ int main(int argc, char** argv)
                 DebugOptions options;
                 options.has_query = true;
                 options.query = BoxOf(Vec3(sweep, 3, 0), Vec3(1, 1, 1));
-                os::Print("          debug lines: %u\n", static_cast<u32>(DebugLines(render, options, &lines)));
+                out::Print("          debug lines: %u\n", static_cast<u32>(DebugLines(render, options, &lines)));
             }
         }
     }
     const SpatialWorldStats& ws = world.Resource<SpatialWorld>().Stats();
-    os::Print("spatial_demo: %u frames, %llu items moved (%llu reinserted), %llu contacts in all, %llu picks\n", frames,
-              static_cast<unsigned long long>(ws.items_moved), static_cast<unsigned long long>(ws.items_reinserted),
-              static_cast<unsigned long long>(total_contacts), static_cast<unsigned long long>(picks));
-    os::Print("spatial_demo: ok\n");
+    out::Print("spatial_demo: %u frames, %llu items moved (%llu reinserted), %llu contacts in all, %llu picks\n",
+               frames, static_cast<unsigned long long>(ws.items_moved),
+               static_cast<unsigned long long>(ws.items_reinserted), static_cast<unsigned long long>(total_contacts),
+               static_cast<unsigned long long>(picks));
+    out::Print("spatial_demo: ok\n");
     return 0;
 }

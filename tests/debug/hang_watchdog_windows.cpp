@@ -1,4 +1,5 @@
 #include "hang_watchdog_windows.h"
+#include "log/output.h"
 
 #include "debug/stack_trace.h"
 
@@ -133,7 +134,7 @@ void NameFrames(const char* text, unsigned long long length)
         if (CStrCompareN(p, "HANG-WATCHDOG", 13) == 0)
         {
             const char* eol = static_cast<const char*>(MemFind(p, '\n', static_cast<usize>(end - p)));
-            os::PrintError("%.*s\n", static_cast<int>((eol != nullptr ? eol : end) - p), p);
+            out::PrintError("%.*s\n", static_cast<int>((eol != nullptr ? eol : end) - p), p);
             continue;
         }
         if (CStrCompareN(p, "HANG-FRAME 0x", 13) != 0)
@@ -144,7 +145,7 @@ void NameFrames(const char* text, unsigned long long length)
         one.frames[0] = CStrToULongLong(p + 13, nullptr, 16);
         one.count = 1;
         FormatStackTrace(one, out, sizeof(out));
-        os::PrintErrorText(out);
+        out::PrintErrorText(out);
     }
 }
 

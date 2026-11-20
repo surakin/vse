@@ -130,6 +130,7 @@ set(FOUNDATION_BASE_SOURCES
   mem/pool_allocator.cpp
   mem/stack_allocator.cpp
   log/log.cpp
+  log/output.cpp
   log/tty_log_device.cpp
   cstr/number.cpp
   int128.cpp

@@ -187,7 +187,7 @@ Day 260; `Delete` and `List` work now.
 
 ```cpp compile run standalone
 #include "ecs/transform.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "storage/builtin_components.h"
 #include "storage/memory_store.h"
 #include "storage/world_storage.h"
@@ -219,7 +219,7 @@ int main() {
     KeyIndex loaded_index;
     Report loaded;
     if (storage.Load(loaded_world, loaded_index, LoadOptions(), &loaded).Failed()) return 1;
-    os::Print("saved %u, loaded %u, keys %u\n", static_cast<u32>(saved.created), static_cast<u32>(loaded.created), static_cast<u32>(loaded_index.Size()));
+    out::Print("saved %u, loaded %u, keys %u\n", static_cast<u32>(saved.created), static_cast<u32>(loaded.created), static_cast<u32>(loaded_index.Size()));
     return 0;
 }
 ```
@@ -276,7 +276,7 @@ a batch leaves the old or the new state.
 
 ```cpp compile run standalone
 #include "database/sqlite/sqlite_database.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "storage/sql_store.h"
 
 using namespace vse;
@@ -292,7 +292,7 @@ int main() {
     if (store->Put(EntityRecord::Make(EntityKey{0, 42}, ByteSpan(bytes, 3))).Failed()) return 1;
     usize count = 0;
     if (store->Count(&count).Failed()) return 1;
-    os::Print("%s holds %u record\n", store->Name(), static_cast<u32>(count));
+    out::Print("%s holds %u record\n", store->Name(), static_cast<u32>(count));
     return 0;
 }
 ```

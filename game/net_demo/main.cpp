@@ -7,6 +7,7 @@
 //   net_demo [--simulated]   use the simulated network instead of loopback sockets
 //            [--large N]     bytes of the large message (default 262144; the simulated transport carries 1 KiB at most)
 #include "containers/unique_ptr.h"
+#include "log/output.h"
 #include "containers/vector.h"
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
@@ -146,7 +147,7 @@ bool Converse(const char* name, World* world, Transport* server, Transport* clie
     ConnectionId cc = 0;
     if (client->Connect(to, &cc).Failed())
     {
-        os::PrintError("net_demo: %s: connect failed\n", name);
+        out::PrintError("net_demo: %s: connect failed\n", name);
         return false;
     }
     Seen server_seen;
@@ -181,7 +182,7 @@ bool Converse(const char* name, World* world, Transport* server, Transport* clie
                                Reliability::ReliableOrdered)
                         .Failed())
                 {
-                    os::PrintError("net_demo: %s: send failed\n", name);
+                    out::PrintError("net_demo: %s: send failed\n", name);
                     return false;
                 }
             }
@@ -196,7 +197,7 @@ bool Converse(const char* name, World* world, Transport* server, Transport* clie
                 if (client->Send(client_conn, 0, ByteSpan(big.Data(), big.Size()), Reliability::ReliableOrdered)
                         .Failed())
                 {
-                    os::PrintError("net_demo: %s: large send failed\n", name);
+                    out::PrintError("net_demo: %s: large send failed\n", name);
                     return false;
                 }
             }
@@ -236,8 +237,8 @@ bool Converse(const char* name, World* world, Transport* server, Transport* clie
                     client_seen.replies == 1 && server_seen.closed == 1 &&
                     server_seen.reason == DisconnectReason::PeerClosed && server_seen.code == 42 &&
                     client_seen.closed == 1 && client_seen.reason == DisconnectReason::LocalClose;
-    os::Print("net_demo: %-9s %s (%u messages in order, large %zu bytes, closed with code %u after %u steps)\n", name,
-              ok ? "ok" : "FAILED", got, server_seen.large_bytes, server_seen.code, steps);
+    out::Print("net_demo: %-9s %s (%u messages in order, large %zu bytes, closed with code %u after %u steps)\n", name,
+               ok ? "ok" : "FAILED", got, server_seen.large_bytes, server_seen.code, steps);
     return ok;
 }
 
@@ -301,7 +302,7 @@ bool RunLoopback(const settings::Registry& registry, usize large)
         if (SocketDatagramPort::Open(any, &server_port).Failed() ||
             SocketDatagramPort::Open(any, &client_port).Failed())
         {
-            os::PrintError("net_demo: no loopback UDP socket here\n");
+            out::PrintError("net_demo: no loopback UDP socket here\n");
             return false;
         }
         const UdpTransportConfig cfg = UdpConfigFromSettings(registry);
@@ -319,7 +320,7 @@ bool RunLoopback(const settings::Registry& registry, usize large)
         TcpTransport client(client_provider, world.GetClock(), cfg);
         if (server.Listen(any).Failed())
         {
-            os::PrintError("net_demo: no loopback TCP socket here\n");
+            out::PrintError("net_demo: no loopback TCP socket here\n");
             return false;
         }
         ok = Converse("tcp", &world, &server, &client, server_provider.LocalEndpoint(), large) && ok;
@@ -342,7 +343,7 @@ int main(int argc, char** argv)
     const char* program = line.ProgramName().Data();
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("usage: %s [--simulated] [--large N]\n", program);
+        out::PrintError("usage: %s [--simulated] [--large N]\n", program);
         return 2;
     }
     simulated = line.HasFlag("simulated");
@@ -354,6 +355,6 @@ int main(int argc, char** argv)
     settings::Registry registry;
     RegisterNetSettings(&registry);
     const bool ok = simulated ? RunSimulated(registry, large) : RunLoopback(registry, large);
-    os::Print(ok ? "net_demo: ok\n" : "net_demo: FAILED\n");
+    out::Print(ok ? "net_demo: ok\n" : "net_demo: FAILED\n");
     return ok ? 0 : 1;
 }

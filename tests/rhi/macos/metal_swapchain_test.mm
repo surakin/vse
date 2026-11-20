@@ -3,6 +3,7 @@
 // as the screen allows, size), counts as a live swapchain, is made again after RecreateSurface, and reports Minimized
 // for a minimized window. The window tests need the console session unlocked (display group). macOS only.
 #include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
+#include "log/output.h"
 
 #include "os/console.h"
 #include "os/os.h"
@@ -108,9 +109,9 @@ TEST_CASE("A Metal swapchain presents into a Cocoa window, holds no drawable bet
     CHECK(caps.present_mode_supported[static_cast<usize>(PresentMode::Immediate)]);
     CHECK_FALSE(caps.present_mode_supported[static_cast<usize>(PresentMode::Mailbox)]);
     // What this screen reports for extended dynamic range (recorded in the day file).
-    os::Print("metal swapchain: screen EDR potential %.2f, now %.2f\n",
-              NSScreen.mainScreen.maximumPotentialExtendedDynamicRangeColorComponentValue,
-              NSScreen.mainScreen.maximumExtendedDynamicRangeColorComponentValue);
+    out::Print("metal swapchain: screen EDR potential %.2f, now %.2f\n",
+               NSScreen.mainScreen.maximumPotentialExtendedDynamicRangeColorComponentValue,
+               NSScreen.mainScreen.maximumExtendedDynamicRangeColorComponentValue);
 
     for (int f = 0; f < 4; ++f)
     {

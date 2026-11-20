@@ -3,6 +3,7 @@
 // weighted matrix sum, rasterized on the CPU), and the image must not change across a device reset of every owner (the
 // mesh with its skin stream, the joint palette buffer, the material system).
 #include "lang/scalar.h"
+#include "log/output.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -369,7 +370,7 @@ TEST_CASE("Skinned instances: CPU prepare and frame time (recorded)", "[.][rende
                 const Layers L = rig.Render(scene, cam);
                 const u64 t1 = os::MonotonicTimeNanos();
                 REQUIRE(L.ok);
-                os::Print(
+                out::Print(
                     "skinned bench (%s): %u instances x 4,900 vertices, 40 joints: whole frame with readback %.2f ms, "
                     "%u drawn, %u draws\n",
                     device->BackendName(), count, static_cast<f64>(t1 - t0) / 1e6, L.stats.drawn_objects,

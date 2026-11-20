@@ -6,6 +6,7 @@
 // edit its copy in the dev directory and the running game reloads it. See README.md.
 
 #include "asset/cpu_loaders.h"
+#include "log/output.h"
 #include "asset/resource_manager.h"
 #include "audio/audio_settings.h"
 #include "audio/audio_system.h"
@@ -126,9 +127,9 @@ struct MintedScripts
         if (!io::Path::Parse(StringView(SCRIPT_DEMO_MINTED_DIR), io::NativePathStyle(), &dir) ||
             !manager->MountPath(StringView("/"), dir, 0).Ok())
         {
-            os::PrintError("script_demo: the minted script directory %s cannot be mounted (build the target "
-                           "script_demo_minted, or run with --built-in)\n",
-                           SCRIPT_DEMO_MINTED_DIR);
+            out::PrintError("script_demo: the minted script directory %s cannot be mounted (build the target "
+                            "script_demo_minted, or run with --built-in)\n",
+                            SCRIPT_DEMO_MINTED_DIR);
             return false;
         }
         return true;
@@ -163,19 +164,19 @@ int RunHeadless(const Options& options, MintedScripts* minted)
         return kExitFailure;
     }
     const long frames = options.frames > 0 ? options.frames : 600;
-    os::Print("script_demo: %u bodies, %u partitions, %zu threads, the %s script\n", world.EntityCount(),
-              demo.partitions, static_cast<size_t>(scheduler.ParticipantCount()),
-              options.built_in ? "built-in" : "minted");
+    out::Print("script_demo: %u bodies, %u partitions, %zu threads, the %s script\n", world.EntityCount(),
+               demo.partitions, static_cast<size_t>(scheduler.ParticipantCount()),
+               options.built_in ? "built-in" : "minted");
     for (long f = 1; f <= frames; ++f)
     {
         world.Frame(&scheduler);
         if (f % options.report == 0 || f == frames)
         {
-            os::Print("frame %ld: scripts %.2f ms, physics %.2f ms, pickups %llu, errors %llu, hash %016llx\n", f,
-                      world.LastScriptSeconds() * 1000.0, world.LastPhysicsSeconds() * 1000.0,
-                      static_cast<unsigned long long>(world.PickupsCollected()),
-                      static_cast<unsigned long long>(world.ScriptStats().errors),
-                      static_cast<unsigned long long>(world.StateHash()));
+            out::Print("frame %ld: scripts %.2f ms, physics %.2f ms, pickups %llu, errors %llu, hash %016llx\n", f,
+                       world.LastScriptSeconds() * 1000.0, world.LastPhysicsSeconds() * 1000.0,
+                       static_cast<unsigned long long>(world.PickupsCollected()),
+                       static_cast<unsigned long long>(world.ScriptStats().errors),
+                       static_cast<unsigned long long>(world.StateHash()));
         }
     }
     return world.ScriptStats().errors == 0 ? kExitOk : kExitFailure;
@@ -647,11 +648,11 @@ int Usage(const char* program, int code)
 {
     if (code == kExitOk)
     {
-        os::Print(kUsageFormat, program, script_demo::kDemoScriptKey);
+        out::Print(kUsageFormat, program, script_demo::kDemoScriptKey);
     }
     else
     {
-        os::PrintError(kUsageFormat, program, script_demo::kDemoScriptKey);
+        out::PrintError(kUsageFormat, program, script_demo::kDemoScriptKey);
     }
     return code;
 }
@@ -698,7 +699,7 @@ int EngineMain(int argc, char** argv)
     }
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
+        out::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
         return Usage(program, kExitUsage);
     }
     Options options;
@@ -710,7 +711,7 @@ int EngineMain(int argc, char** argv)
         (line.TryGetOption("frames", value) && !ParseCount(value, 1, 10000000, &options.frames)) ||
         (line.TryGetOption("report", value) && !ParseCount(value, 1, 10000000, &options.report)))
     {
-        os::PrintError("%s: a number is out of range\n", program);
+        out::PrintError("%s: a number is out of range\n", program);
         return Usage(program, kExitUsage);
     }
     options.headless = line.HasFlag("headless");
@@ -723,7 +724,7 @@ int EngineMain(int argc, char** argv)
     {
         if (value != StringView("platform") && value != StringView("null"))
         {
-            os::PrintError("%s: --audio is platform or null\n", program);
+            out::PrintError("%s: --audio is platform or null\n", program);
             return Usage(program, kExitUsage);
         }
         options.audio = value.Data();

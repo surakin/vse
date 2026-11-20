@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "ecs/transform.h"
+#include "log/output.h"
 #include "os/console.h"
 #include "os/os.h"
 #include "storage/builtin_components.h"
@@ -662,7 +663,7 @@ TEST_CASE("Benchmark: incremental save of 100,000 entities, idle and with 1 perc
     REQUIRE(storage.Save(world, index, options, &run).Ok());
     const u64 t6 = os::MonotonicTimeNanos();
     CHECK(run.replaced == 1000);
-    os::Print(
+    out::Print(
         "incremental save, 100000 entities: first %llu ms; idle %llu us (%zu chunks skipped); 1%% spread %llu ms (%zu chunks, %zu encoded); 1%% in one run %llu ms (%zu chunks, %zu encoded)\n",
         static_cast<unsigned long long>((t1 - t0) / 1000000), static_cast<unsigned long long>((t2 - t1) / 1000),
         idle.chunks_skipped, static_cast<unsigned long long>((t4 - t3) / 1000000), spread.chunks_visited,

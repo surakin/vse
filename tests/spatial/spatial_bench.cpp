@@ -5,6 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/vector.h"
+#include "log/output.h"
 #include "cstr/format.h"
 #include "ecs/schedule.h"
 #include "ecs/transform.h"
@@ -38,7 +39,7 @@ f64 NowMs()
 
 void Say(const char* name, u32 n, f64 value, const char* unit)
 {
-    os::Print("BENCH %-44s n=%-8u %12.4f %s\n", name, n, value, unit);
+    out::Print("BENCH %-44s n=%-8u %12.4f %s\n", name, n, value, unit);
 }
 
 // A city: `n` boxes of about 1 unit spread over a square whose density is fixed (about one item per 8 square units, 3

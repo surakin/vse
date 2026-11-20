@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "cstr/cstr.h"
+#include "log/output.h"
 #include "cstr/format.h"
 #include "os/console.h"
 #include "os/os.h"
@@ -279,7 +280,7 @@ TEST_CASE("JIT: bench of the modes and the code of 256 states", "[.jit_bench]")
         char line[256];
         FormatTo(line, sizeof(line), "%s: %llu ms (ok %d)\n", mode.name,
                  static_cast<unsigned long long>((end - start) / 1000000), o.IsOk() ? 1 : 0);
-        os::PrintText(line);
+        out::PrintText(line);
     }
     const String<HeapAllocator> source = ManyLoops(300);
     u64 total = 0;
@@ -296,5 +297,5 @@ TEST_CASE("JIT: bench of the modes and the code of 256 states", "[.jit_bench]")
     char line[256];
     FormatTo(line, sizeof(line), "256 states, uncapped: %u traces, %llu bytes of machine code in all\n", traces,
              static_cast<unsigned long long>(total));
-    os::PrintText(line);
+    out::PrintText(line);
 }

@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "build_defs.h"
+#include "log/output.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -622,9 +623,9 @@ TEST_CASE("macOS: the time a crashing child takes to end, with and without the c
         const u64 start = os::MonotonicTimeNanos();
         const ChildResult r = RunCrashChild(child, dir.Path());
         const u64 took = os::MonotonicTimeNanos() - start;
-        os::Print("%s: ended in %.0f ms (%s %lld)\n", child, static_cast<double>(took) / 1e6,
-                  r.terminated ? "signal" : "exit code",
-                  static_cast<long long>(r.terminated ? r.native_code : r.exit_code));
+        out::Print("%s: ended in %.0f ms (%s %lld)\n", child, static_cast<double>(took) / 1e6,
+                   r.terminated ? "signal" : "exit code",
+                   static_cast<long long>(r.terminated ? r.native_code : r.exit_code));
         CHECK((r.terminated || r.exited));
         CHECK(took < 30ull * 1000 * 1000 * 1000);
     }

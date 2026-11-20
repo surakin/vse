@@ -15,7 +15,7 @@ solved problems (FreeType for fonts, Catch2 for tests, and a few more, all under
 Two choices shape everything you will read:
 
 - **The standard library is not used.** `std::vector`, `std::string`, `std::move`, `memcpy`, `printf` all have engine replacements (`Vector`, `String`, `Move`,
-  `MemCopy`, `os::Print`). They are small, predictable and the same on every platform. [Standard types](foundation-types.md) is the dictionary.
+  `MemCopy`, `out::Print`). They are small, predictable and the same on every platform. [Standard types](foundation-types.md) is the dictionary.
 - **No exceptions, no run-time type information.** Errors are values (a `bool`, a status, a `nullptr`) or, for bugs, a failed assertion. See
   [Logging and assertions](foundation-logging-and-assert.md).
 

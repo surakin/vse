@@ -1,4 +1,5 @@
 #include "image_compare.h"
+#include "log/output.h"
 
 #include "io/file.h"
 #include "io/file_system.h"
@@ -143,9 +144,9 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
     const char* report = vse::os::GetEnvironment("ENGINE_RHI_GOLDEN_REPORT");
     if (report != nullptr && report[0] == '1')
     {
-        vse::os::Print("golden %s: %s, worst %d, %u interior over %d, %u of %u edge over %d\n", name,
-                       r.same ? "same" : "DIFFERENT", r.max_difference, r.interior_misses, options.tolerance,
-                       r.edge_misses, r.edge_pixels, options.edge_tolerance);
+        vse::out::Print("golden %s: %s, worst %d, %u interior over %d, %u of %u edge over %d\n", name,
+                        r.same ? "same" : "DIFFERENT", r.max_difference, r.interior_misses, options.tolerance,
+                        r.edge_misses, r.edge_pixels, options.edge_tolerance);
     }
     return r;
 }

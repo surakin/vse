@@ -6,6 +6,7 @@
 //                   standard output how much was written and how long it took
 //   blocked-stderr-twice  the same, then a second call at once ("second wrote <n> in <ms> ms")
 #include "log/log.h"
+#include "log/output.h"
 #include "os/command_line.h"
 #include "os/os.h"
 
@@ -29,12 +30,12 @@ int main(int argc, char** argv)
         os::Detail_NativeCommandLineArgs(&n, &v);
         for (int i = 2; i < n; ++i)
         {
-            os::Print("arg %d ", i - 2);
+            out::Print("arg %d ", i - 2);
             for (const char* c = v[i]; *c != '\0'; ++c)
             {
-                os::Print("%02x", static_cast<unsigned>(static_cast<u8>(*c)));
+                out::Print("%02x", static_cast<unsigned>(static_cast<u8>(*c)));
             }
-            os::Print("\n");
+            out::Print("\n");
         }
         return 0;
     }
@@ -50,17 +51,17 @@ int main(int argc, char** argv)
         const u64 start = os::MonotonicTimeNanos();
         const long written = os::WriteAllWithTimeout(2, big, sizeof(big), 200ull * 1000 * 1000);
         const u64 ms = (os::MonotonicTimeNanos() - start) / 1000000;
-        os::Print("wrote %ld of %zu in %llu ms\n", written, sizeof(big), static_cast<unsigned long long>(ms));
+        out::Print("wrote %ld of %zu in %llu ms\n", written, sizeof(big), static_cast<unsigned long long>(ms));
         if (CStrCompare(argv[1], "blocked-stderr-twice") == 0)
         {
             const u64 again = os::MonotonicTimeNanos();
             const long second = os::WriteAllWithTimeout(2, big, sizeof(big), 200ull * 1000 * 1000);
-            os::Print("second wrote %ld in %llu ms\n", second,
-                      static_cast<unsigned long long>((os::MonotonicTimeNanos() - again) / 1000000));
+            out::Print("second wrote %ld in %llu ms\n", second,
+                       static_cast<unsigned long long>((os::MonotonicTimeNanos() - again) / 1000000));
         }
         // The helper thread of the timed-out write is still blocked in the pipe; leave without waiting for it (as a
         // crashed process would).
-        os::Flush();
+        out::Flush();
         os::Exit(0);
     }
     return 3;

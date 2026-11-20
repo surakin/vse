@@ -23,7 +23,7 @@
 #include "net/sim_network.h"
 #include "net/sim_stream.h"
 #include "net/tcp_transport.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 using namespace vse::net;
@@ -84,7 +84,7 @@ int main() {
             }
         }
     }
-    os::Print("server saw %u messages, closed with code %u\n", server_saw, close_code);
+    out::Print("server saw %u messages, closed with code %u\n", server_saw, close_code);
     return (server_saw == 2 && closed && close_code == 42) ? 0 : 1;
 }
 ```

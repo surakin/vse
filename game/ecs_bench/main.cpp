@@ -9,6 +9,7 @@
 //             [--csv PATH]     also write every measurement to a CSV file
 
 #include "bench.h"
+#include "log/output.h"
 
 #include "cstr/cstr.h"
 #include "cstr/format.h"
@@ -34,7 +35,7 @@ void Record(const char* scenario, Impl impl, const Options& options, const Resul
     g_rows.Push(MakeRow(scenario, impl, options, result));
     if (!result.valid)
     {
-        os::PrintError("FAILED: %s (%s) did not validate\n", scenario, impl == Impl::Ecs ? "ecs" : "oop");
+        out::PrintError("FAILED: %s (%s) did not validate\n", scenario, impl == Impl::Ecs ? "ecs" : "oop");
         g_ok = false;
     }
 }
@@ -52,9 +53,9 @@ double Compare(const char* scenario, Options options, Result (*run)(Impl, const 
         g_ok = false;
     }
     const double ratio = e.time.median_ms > 0.0 ? o.time.median_ms / e.time.median_ms : 0.0;
-    os::Print("%-22s %9u  ecs %9.4f ms (p95 %9.4f)  oop %9.4f ms (p95 %9.4f)  x%6.2f  checksum %s\n", scenario,
-              options.entities, e.time.median_ms, e.time.p95_ms, o.time.median_ms, o.time.p95_ms, ratio,
-              match ? "ok" : "MISMATCH");
+    out::Print("%-22s %9u  ecs %9.4f ms (p95 %9.4f)  oop %9.4f ms (p95 %9.4f)  x%6.2f  checksum %s\n", scenario,
+               options.entities, e.time.median_ms, e.time.p95_ms, o.time.median_ms, o.time.p95_ms, ratio,
+               match ? "ok" : "MISMATCH");
     return ratio;
 }
 
@@ -75,7 +76,7 @@ int main(int argc, char** argv)
     const char* program = line.ProgramName().Data();
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("usage: %s [--entities N] [--frames N] [--threads N] [--csv PATH]\n", program);
+        out::PrintError("usage: %s [--entities N] [--frames N] [--threads N] [--csv PATH]\n", program);
         return 2;
     }
     StringView value;
@@ -100,7 +101,7 @@ int main(int argc, char** argv)
         max_threads = 1;
     }
 
-    os::Print("== 1. iteration (four steps, one thread) ==\n");
+    out::Print("== 1. iteration (four steps, one thread) ==\n");
     double ratio_100k = 0.0;
     const u32 sizes[] = {1000, 10000, 100000, 1000000};
     for (u32 n : sizes)
@@ -118,7 +119,7 @@ int main(int argc, char** argv)
         }
     }
 
-    os::Print("== 2. parallel scaling of a heavy system (%u entities) ==\n", options.entities);
+    out::Print("== 2. parallel scaling of a heavy system (%u entities) ==\n", options.entities);
     double efficiency4 = 0.0;
     double base_ms = 0.0;
     {
@@ -126,7 +127,7 @@ int main(int argc, char** argv)
         o.participants = 1;
         const Result oop = RunHeavy(Impl::Oop, o);
         Record("heavy", Impl::Oop, o, oop);
-        os::Print("%-22s oop one thread %9.4f ms\n", "heavy", oop.time.median_ms);
+        out::Print("%-22s oop one thread %9.4f ms\n", "heavy", oop.time.median_ms);
         usize counts[16];
         usize nc = 0;
         for (usize w = 1; w <= max_threads && nc < 15; w *= 2)
@@ -152,9 +153,9 @@ int main(int argc, char** argv)
             {
                 efficiency4 = eff;
             }
-            os::Print("%-22s workers %2llu  ecs %9.4f ms  speedup x%5.2f  efficiency %5.1f%%  checksum %s\n", "heavy",
-                      static_cast<unsigned long long>(counts[k]), e.time.median_ms, speedup, eff * 100.0,
-                      ChecksumsMatch(e.checksum, oop.checksum) ? "ok" : "MISMATCH");
+            out::Print("%-22s workers %2llu  ecs %9.4f ms  speedup x%5.2f  efficiency %5.1f%%  checksum %s\n", "heavy",
+                       static_cast<unsigned long long>(counts[k]), e.time.median_ms, speedup, eff * 100.0,
+                       ChecksumsMatch(e.checksum, oop.checksum) ? "ok" : "MISMATCH");
             if (!ChecksumsMatch(e.checksum, oop.checksum))
             {
                 g_ok = false;
@@ -162,41 +163,42 @@ int main(int argc, char** argv)
         }
     }
 
-    os::Print("== 3. structural churn (10%% created and destroyed, 10%% tag toggled, a frame) ==\n");
+    out::Print("== 3. structural churn (10%% created and destroyed, 10%% tag toggled, a frame) ==\n");
     Compare("churn", options, RunChurn);
-    os::Print("== 4. sparse access (1%% of the entities) ==\n");
+    out::Print("== 4. sparse access (1%% of the entities) ==\n");
     const double sparse_ratio = Compare("sparse", options, RunSparse);
-    os::Print("== 5. Changed<T>, 1%% written a frame ==\n");
+    out::Print("== 5. Changed<T>, 1%% written a frame ==\n");
     Compare("changed_clustered", options, [](Impl i, const Options& o) { return RunChanged(i, o, true); });
     Compare("changed_random", options, [](Impl i, const Options& o) { return RunChanged(i, o, false); });
-    os::Print("== 6. hierarchy propagation ==\n");
+    out::Print("== 6. hierarchy propagation ==\n");
     Compare("hierarchy", options, RunHierarchy);
 
-    os::Print("== 7. memory and lifecycle (%u entities) ==\n", options.entities);
+    out::Print("== 7. memory and lifecycle (%u entities) ==\n", options.entities);
     for (Impl impl : {Impl::Ecs, Impl::Oop})
     {
         const Lifecycle l = RunLifecycle(impl, options);
-        os::Print("%-22s %s  %7.1f bytes/entity  create %7.1f ns  destroy %7.1f ns\n", "lifecycle",
-                  impl == Impl::Ecs ? "ecs" : "oop", l.bytes_per_entity, l.create_ns, l.destroy_ns);
+        out::Print("%-22s %s  %7.1f bytes/entity  create %7.1f ns  destroy %7.1f ns\n", "lifecycle",
+                   impl == Impl::Ecs ? "ecs" : "oop", l.bytes_per_entity, l.create_ns, l.destroy_ns);
     }
 
-    os::Print("== 8. change stamping (%u entities) ==\n", options.entities);
+    out::Print("== 8. change stamping (%u entities) ==\n", options.entities);
     {
         const Stamping st = RunStamping(options);
-        os::Print("%-22s read-only %9.4f ms  write term %9.4f ms  overhead %+.1f%%\n", "stamping", st.read.median_ms,
-                  st.write.median_ms,
-                  st.read.median_ms > 0.0 ? (st.write.median_ms / st.read.median_ms - 1.0) * 100.0 : 0.0);
+        out::Print("%-22s read-only %9.4f ms  write term %9.4f ms  overhead %+.1f%%\n", "stamping", st.read.median_ms,
+                   st.write.median_ms,
+                   st.read.median_ms > 0.0 ? (st.write.median_ms / st.read.median_ms - 1.0) * 100.0 : 0.0);
     }
 
-    os::Print("== pass conditions ==\n");
+    out::Print("== pass conditions ==\n");
     const bool p1 = ratio_100k >= 3.0;
     const bool p2 = efficiency4 >= 0.7 || max_threads < 4;
-    os::Print("iteration at 100k: ecs x%.2f faster than the baseline (need >= 3.0): %s\n", ratio_100k,
-              p1 ? "PASS" : "MISS");
-    os::Print("parallel efficiency at 4 workers: %.1f%% (need >= 70%%): %s\n", efficiency4 * 100.0,
-              p2 ? (max_threads < 4 ? "SKIPPED (fewer than 4 workers)" : "PASS") : "MISS");
-    os::Print("sparse access: ecs x%.2f the baseline's speed (a sparse set is considered when this is below 0.5): %s\n",
-              sparse_ratio, sparse_ratio >= 0.5 ? "no sparse set needed" : "CONSIDER A SPARSE SET");
+    out::Print("iteration at 100k: ecs x%.2f faster than the baseline (need >= 3.0): %s\n", ratio_100k,
+               p1 ? "PASS" : "MISS");
+    out::Print("parallel efficiency at 4 workers: %.1f%% (need >= 70%%): %s\n", efficiency4 * 100.0,
+               p2 ? (max_threads < 4 ? "SKIPPED (fewer than 4 workers)" : "PASS") : "MISS");
+    out::Print(
+        "sparse access: ecs x%.2f the baseline's speed (a sparse set is considered when this is below 0.5): %s\n",
+        sparse_ratio, sparse_ratio >= 0.5 ? "no sparse set needed" : "CONSIDER A SPARSE SET");
 
     if (csv != nullptr)
     {
@@ -205,7 +207,7 @@ int main(int argc, char** argv)
         if (!io::Path::Parse(StringView(csv), io::NativePathStyle(), &file) ||
             !io::WriteFile(file, text.Data(), text.Size()).Ok())
         {
-            os::PrintError("could not write %s\n", csv);
+            out::PrintError("could not write %s\n", csv);
             return 1;
         }
     }

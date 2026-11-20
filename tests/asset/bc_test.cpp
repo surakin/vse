@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "asset/block_compress.h"
+#include "log/output.h"
 #include "asset/texture.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -498,7 +499,7 @@ TEST_CASE("bc: image quality bounds for solid, gradient, checker, noise and norm
     const u64 noise4_mse = BtMse1000(noise, BtRoundTrip(BcKind::Bc4, w, h, noise, options), 1);
     const u64 normals5_mse = BtMse1000(normals, BtRoundTrip(BcKind::Bc5, w, h, normals, options), 2);
     const u64 noise5_mse = BtMse1000(noise, BtRoundTrip(BcKind::Bc5, w, h, noise, options), 2);
-    os::Print(
+    out::Print(
         "bc mse*1000: solid %llu gradient %llu checker %llu noise %llu | bc4 gradient %llu noise %llu | bc5 normals "
         "%llu noise %llu\n",
         static_cast<unsigned long long>(solid_mse), static_cast<unsigned long long>(gradient_mse),
@@ -1340,8 +1341,8 @@ TEST_CASE("bc7: it beats BC1 on the gradient, noise and a photograph-like image,
         INFO(images[i].name);
         const u64 bc1 = BtMse1000(images[i].pixels, BtRoundTrip(BcKind::Bc1, w, h, images[i].pixels, options), 3);
         const u64 bc7 = BtMse1000(images[i].pixels, BtRoundTrip(BcKind::Bc7, w, h, images[i].pixels, options), 3);
-        os::Print("bc7 %s: mse*1000 bc1 %llu bc7 %llu\n", images[i].name, static_cast<unsigned long long>(bc1),
-                  static_cast<unsigned long long>(bc7));
+        out::Print("bc7 %s: mse*1000 bc1 %llu bc7 %llu\n", images[i].name, static_cast<unsigned long long>(bc1),
+                   static_cast<unsigned long long>(bc7));
         CHECK(bc7 < bc1);
     }
     // With alpha: a gradient in alpha survives (the error over four channels stays small).
@@ -1377,12 +1378,12 @@ TEST_CASE("bc7: golden hashes of the encoded standard images at each quality", "
             hashes[i * 3 + q] = BtFnv(blocks.Data(), blocks.Size());
         }
     }
-    os::Print("bc7 golden: %016llx %016llx %016llx %016llx %016llx %016llx %016llx %016llx %016llx\n",
-              static_cast<unsigned long long>(hashes[0]), static_cast<unsigned long long>(hashes[1]),
-              static_cast<unsigned long long>(hashes[2]), static_cast<unsigned long long>(hashes[3]),
-              static_cast<unsigned long long>(hashes[4]), static_cast<unsigned long long>(hashes[5]),
-              static_cast<unsigned long long>(hashes[6]), static_cast<unsigned long long>(hashes[7]),
-              static_cast<unsigned long long>(hashes[8]));
+    out::Print("bc7 golden: %016llx %016llx %016llx %016llx %016llx %016llx %016llx %016llx %016llx\n",
+               static_cast<unsigned long long>(hashes[0]), static_cast<unsigned long long>(hashes[1]),
+               static_cast<unsigned long long>(hashes[2]), static_cast<unsigned long long>(hashes[3]),
+               static_cast<unsigned long long>(hashes[4]), static_cast<unsigned long long>(hashes[5]),
+               static_cast<unsigned long long>(hashes[6]), static_cast<unsigned long long>(hashes[7]),
+               static_cast<unsigned long long>(hashes[8]));
     const u64 golden[9] = {0x734cad1f554f20e5ull, 0x41588fbe40cf4b5bull, 0x41588fbe40cf4b5bull,
                            0xa48b6fd481516288ull, 0xe2301b6d91a73c33ull, 0x57e9a438540fff70ull,
                            0x75adf1fc0db7a332ull, 0xacc088b8b646a1faull, 0xacc088b8b646a1faull};
@@ -1460,8 +1461,8 @@ TEST_CASE("bc: encode speed per format and quality", "[.][asset-bench]")
                 REQUIRE(
                     EncodeImage(kinds[k], w, h, ByteSpan(img.Data(), img.Size()), options, &scheduler, &blocks).Ok());
                 const u64 ns = os::MonotonicTimeNanos() - start;
-                os::Print("%s %-6s %zu workers: %.1f ms, %.2f MP/s\n", names[k], qualities[q], workers[wk],
-                          static_cast<double>(ns) / 1e6, 1.048576 * 1e9 / static_cast<double>(ns));
+                out::Print("%s %-6s %zu workers: %.1f ms, %.2f MP/s\n", names[k], qualities[q], workers[wk],
+                           static_cast<double>(ns) / 1e6, 1.048576 * 1e9 / static_cast<double>(ns));
             }
         }
     }

@@ -10,6 +10,7 @@
 //               `large`)
 //               [--long-blocks N] the blocks of `large` (default 10000000)
 #include "audio/block_hash.h"
+#include "log/output.h"
 #include "audio/clip.h"
 #include "audio/delay.h"
 #include "audio/filter.h"
@@ -67,7 +68,7 @@ AudioClipPtr MakeTone(u32 channels)
     AudioClipPtr clip;
     if (AudioClip::CreateCopy(desc, Span<const f32>(samples.Data(), samples.Size()), "tone", &clip) != ClipStatus::Ok)
     {
-        os::PrintError("audio_bench: clip creation failed\n");
+        out::PrintError("audio_bench: clip creation failed\n");
     }
     return clip;
 }
@@ -126,8 +127,8 @@ Timing TimeBlocks(Mixer& mixer, u32 channels, u32 blocks, StreamPump* pump = nul
 void Report(const char* label, u32 voices, const Timing& t)
 {
     const double deadline_ms = 1000.0 * static_cast<double>(kBlockFrames) / 48000.0;
-    os::PrintError("%-28s %5u voices: %8.4f ms/block (%5.1f%% of the %.2f ms deadline), worst %8.4f ms\n", label,
-                   voices, t.mean_ms, 100.0 * t.mean_ms / deadline_ms, deadline_ms, t.worst_ms);
+    out::PrintError("%-28s %5u voices: %8.4f ms/block (%5.1f%% of the %.2f ms deadline), worst %8.4f ms\n", label,
+                    voices, t.mean_ms, 100.0 * t.mean_ms / deadline_ms, deadline_ms, t.worst_ms);
 }
 
 void Start(Mixer& mixer, const AudioClipPtr& clip, u32 voices, BusId bus, BusId send, f32 send_gain, bool directional)
@@ -283,8 +284,8 @@ bool SceneLarge(u64 blocks)
         {
             if (!(out[i] > -4.0f && out[i] < 4.0f))
             {
-                os::PrintError("large: sample %zu of block %llu is %f\n", static_cast<size_t>(i),
-                               static_cast<unsigned long long>(b), static_cast<double>(out[i]));
+                out::PrintError("large: sample %zu of block %llu is %f\n", static_cast<size_t>(i),
+                                static_cast<unsigned long long>(b), static_cast<double>(out[i]));
                 ok = false;
                 break;
             }
@@ -300,15 +301,15 @@ bool SceneLarge(u64 blocks)
     const MixerStats stats = mixer.Stats();
     if (stats.voices_mixed != 48 || stats.commands_dropped != 0)
     {
-        os::PrintError("large: %u voices mixed (48 expected), %llu commands dropped\n", stats.voices_mixed,
-                       static_cast<unsigned long long>(stats.commands_dropped));
+        out::PrintError("large: %u voices mixed (48 expected), %llu commands dropped\n", stats.voices_mixed,
+                        static_cast<unsigned long long>(stats.commands_dropped));
         ok = false;
     }
-    os::PrintError("large: %llu blocks in %.1f s, %llu commands, %llu late\n", static_cast<unsigned long long>(blocks),
-                   static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9,
-                   static_cast<unsigned long long>(stats.commands_applied),
-                   static_cast<unsigned long long>(stats.late_commands));
-    os::PrintError("large: %s\n", ok ? "ok" : "FAILED");
+    out::PrintError("large: %llu blocks in %.1f s, %llu commands, %llu late\n", static_cast<unsigned long long>(blocks),
+                    static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9,
+                    static_cast<unsigned long long>(stats.commands_applied),
+                    static_cast<unsigned long long>(stats.late_commands));
+    out::PrintError("large: %s\n", ok ? "ok" : "FAILED");
     return ok;
 }
 
@@ -323,9 +324,10 @@ int main(int argc, char** argv)
                                               Span<const os::CommandLineOption>(kCliOptions, 6));
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("usage: %s [--voices N] [--blocks N] [--scene voices|filters|reverb|surround|streams|large|all] "
-                       "[--long-blocks N]\n",
-                       line.ProgramName().Data());
+        out::PrintError(
+            "usage: %s [--voices N] [--blocks N] [--scene voices|filters|reverb|surround|streams|large|all] "
+            "[--long-blocks N]\n",
+            line.ProgramName().Data());
         return 2;
     }
     u32 voices = 0;
@@ -348,7 +350,7 @@ int main(int argc, char** argv)
     {
         long_blocks = static_cast<u64>(CStrToLong(value.Data()));
     }
-    os::PrintError("audio_bench: %u timed blocks of %u frames at 48 kHz\n", g_blocks, static_cast<u32>(kBlockFrames));
+    out::PrintError("audio_bench: %u timed blocks of %u frames at 48 kHz\n", g_blocks, static_cast<u32>(kBlockFrames));
     const bool all = CStrCompare(scene, "all") == 0;
     if (all || CStrCompare(scene, "voices") == 0)
     {

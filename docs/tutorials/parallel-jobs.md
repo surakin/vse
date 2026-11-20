@@ -26,7 +26,7 @@
 #include "jobs/job.h"
 #include "jobs/parallel_for.h"
 #include "jobs/scheduler.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "sync/atomic.h"
 
 using namespace vse;
@@ -77,9 +77,9 @@ int main() {
         serial_total += data[i];
     }
 
-    os::Print("sum of squares 0..99 = %llu\n", static_cast<unsigned long long>(sum_of_squares));
-    os::Print("parallel total = %llu\n", static_cast<unsigned long long>(parallel_total.Load()));
-    os::Print("matches the serial loop: %s\n", parallel_total.Load() == serial_total ? "yes" : "NO");
+    out::Print("sum of squares 0..99 = %llu\n", static_cast<unsigned long long>(sum_of_squares));
+    out::Print("parallel total = %llu\n", static_cast<unsigned long long>(parallel_total.Load()));
+    out::Print("matches the serial loop: %s\n", parallel_total.Load() == serial_total ? "yes" : "NO");
     return 0;
 }
 ```

@@ -43,6 +43,8 @@ struct Seen
     Text line;
     Text trace;
     u64 timestamp;
+    LogRecordKind kind;
+    int stream;
 };
 
 class CaptureLogDevice final : public LogDevice
@@ -51,8 +53,8 @@ public:
     void Write(const LogRecord& r) override
     {
         LockGuard<Mutex> lock(mutex_);
-        seen_.Push(
-            Seen{Text(StringView(r.channel)), r.level, Text(r.message), Text(r.line), Text(r.trace), r.timestamp_ns});
+        seen_.Push(Seen{Text(StringView(r.channel)), r.level, Text(r.message), Text(r.line), Text(r.trace),
+                        r.timestamp_ns, r.kind, r.stream});
     }
     void Flush() override { ++flushes_; }
     usize Count()

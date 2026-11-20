@@ -25,7 +25,7 @@
 #include "io/file_system.h"
 #include "io/path.h"
 #include "jobs/scheduler.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "storage/async_storage.h"
 #include "storage/builtin_components.h"
 #include "storage/identity.h"
@@ -71,7 +71,7 @@ int main() {
     if (storage->Worlds().SaveAsync(scheduler, world, index, SaveOptions(), &save).Failed()) return 1;
     Report saved;
     if (save->Wait(&saved).Failed()) return 1;
-    os::Print("saved %zu entities\n", saved.created);
+    out::Print("saved %zu entities\n", saved.created);
 
     // Step 5: load into a fresh world.
     ecs::World loaded;
@@ -80,7 +80,7 @@ int main() {
     if (storage->Worlds().LoadAsync(scheduler, LoadOptions(), &load).Failed()) return 1;
     Report read;
     if (load->Wait(loaded, loaded_index, &read).Failed()) return 1;
-    os::Print("loaded %zu entities\n", read.created);
+    out::Print("loaded %zu entities\n", read.created);
 
     // Step 6: autosave. Change a few entities, run some frames, and see that only they are written.
     Autosaver autosaver(storage->Worlds(), scheduler, world, index, 0.1);
@@ -92,7 +92,7 @@ int main() {
         world.EndFrame();
     }
     if (autosaver.Flush().Failed()) return 1;
-    os::Print("autosaves: %s\n", autosaver.Completed() >= 2 ? "at least two" : "fewer than two");
+    out::Print("autosaves: %s\n", autosaver.Completed() >= 2 ? "at least two" : "fewer than two");
 
     io::RemoveAll(scratch);
     return 0;

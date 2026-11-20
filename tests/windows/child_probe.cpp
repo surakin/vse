@@ -10,6 +10,7 @@
 //   child_probe --parent SECONDS          starts `child_probe --sleep SECONDS`, prints its process id, then sleeps as
 //   long
 #include "cstr/cstr.h"
+#include "log/output.h"
 #include "cstr/format.h"
 #include "cstr/number.h"
 #include "os/console.h"
@@ -23,7 +24,7 @@ int main(int argc, char** argv)
 {
     if (argc >= 3 && CStrCompare(argv[1], "--stderr") == 0)
     {
-        os::PrintError("%s\n", argv[2]);
+        out::PrintError("%s\n", argv[2]);
         return 0;
     }
     if (argc >= 3 && CStrCompare(argv[1], "--exit") == 0)
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
         {
             return 2;
         }
-        os::Print("%.*s\n", static_cast<int>(dir.View().Length()), dir.View().Data());
+        out::Print("%.*s\n", static_cast<int>(dir.View().Length()), dir.View().Data());
         return 0;
     }
     if (argc >= 3 && CStrCompare(argv[1], "--sleep") == 0)
@@ -65,8 +66,8 @@ int main(int argc, char** argv)
         {
             return 2;
         }
-        os::Print("%lu\n", static_cast<unsigned long>(child.dwProcessId));
-        os::Flush();
+        out::Print("%lu\n", static_cast<unsigned long>(child.dwProcessId));
+        out::Flush();
         CloseHandle(child.hThread);
         CloseHandle(child.hProcess);
         Sleep(static_cast<DWORD>(CStrToInt(argv[2])) * 1000);
@@ -74,7 +75,7 @@ int main(int argc, char** argv)
     }
     for (int i = 1; i < argc; ++i)
     {
-        os::Print("[%s]\n", argv[i]);
+        out::Print("[%s]\n", argv[i]);
     }
     return 0;
 }

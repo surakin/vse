@@ -21,10 +21,20 @@ constexpr usize kLogTraceBytes = 4096;
 /// Number of devices [[AddLogDevice]] accepts at once (the console device is not counted).
 constexpr usize kMaxLogDevices = 8;
 
+/// What a [[LogRecord]] is.
+enum class LogRecordKind : u8
+{
+    Log,    ///< A line of [[Log]]: `[Channel] LEVEL: message` and a newline.
+    Output  ///< A piece of program output ([[out::Print]]): the bytes as written, no prefix, no newline added.
+};
+
 /// One log line as a device receives it. Every pointer is valid for the call only.
 struct LogRecord
 {
-    const char* channel = "";                 ///< Name of the channel that logged.
+    LogRecordKind kind = LogRecordKind::Log;  ///< A log line, or program output (then `channel` is empty, `message` and
+                                              ///< `line` are the text).
+    int stream = 1;            ///< The descriptor the line is for: 1, or 2 for output written to standard error.
+    const char* channel = "";  ///< Name of the channel that logged.
     LogVerbosity level = LogVerbosity::Info;  ///< Severity of the line.
     StringView message;                       ///< The message text alone: no brackets, no newline.
     StringView line;   ///< The whole line, `[Channel] LEVEL: message` and its newline (cut at 512 bytes, newline kept).
@@ -88,12 +98,13 @@ void SetConsoleLogMode(ConsoleLogMode mode);
 /// - Thread-safety: thread-safe.
 ConsoleLogMode GetConsoleLogMode();
 
-/// Writes bytes to the log core's write sink, the one place the console devices write through.
+/// Writes bytes to the log core's write sink (descriptor `fd`: 1, or 2 for standard error), the one place the console
+/// devices write through.
 ///
 /// The sink is standard output unless a test replaced it. Returns the number of bytes written, or a negative value on
 /// error.
 /// - Thread-safety: thread-safe when the sink is.
-long WriteLogConsoleBytes(const char* bytes, usize length);
+long WriteLogConsoleBytes(const char* bytes, usize length, int fd = 1);
 
 /// The plain console device: writes the line as formatted, followed by the trace when there is one, in one write.
 class StdoutLogDevice final : public LogDevice
@@ -101,5 +112,11 @@ class StdoutLogDevice final : public LogDevice
 public:
     void Write(const LogRecord& record) override;
 };
+
+namespace detail
+{
+/// Delivers program output to the console device and the added devices (what [[out::Print]] calls). Not for other use.
+void EmitOutput(StringView text, int stream);
+}  // namespace detail
 
 }  // namespace vse

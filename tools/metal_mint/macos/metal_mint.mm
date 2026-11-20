@@ -17,6 +17,7 @@
 // build only. A missing or failing selector is an error that names KNOWN-ISSUES.md, never a crash. Dev-time only: never
 // linked into the engine (PLAN.md assumption #18).
 #include "cstr/cstr.h"
+#include "log/output.h"
 #include "debug/failure_hooks.h"
 #include "io/file.h"
 #include "io/file_system.h"
@@ -35,7 +36,7 @@ namespace
 
 int Usage()
 {
-    os::PrintErrorText(
+    out::PrintErrorText(
         "usage: metal_mint --source FILE.metal --stage vertex|fragment|compute --out FILE.metallib --info FILE.info\n");
     return 2;
 }
@@ -48,7 +49,7 @@ NSString* Reason(NSError* error)
 
 int Fail(const char* source, NSString* what)
 {
-    os::PrintError("metal_mint: %s: %s\n", source, what.UTF8String);
+    out::PrintError("metal_mint: %s: %s\n", source, what.UTF8String);
     return 1;
 }
 

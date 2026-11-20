@@ -24,7 +24,7 @@ A path is an alias. `asset::NormalizePath` gives its one canonical spelling: UTF
 
 ```cpp compile run standalone
 #include "asset/resource_table.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -40,7 +40,7 @@ int main() {
     table.PathsOf(found, &paths);
     char hex[17];
     asset::FormatResourceId(found, hex);
-    os::Print("%s has %u paths\n", hex, static_cast<unsigned>(paths.Size()));
+    out::Print("%s has %u paths\n", hex, static_cast<unsigned>(paths.Size()));
     return 0;
 }
 ```
@@ -68,7 +68,7 @@ A source of resources implements `asset::ResourceBackend`: `Stat` and `Open` by 
 #include "asset/blob.h"
 #include "asset/memory_backend.h"
 #include "asset/mount_table.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -98,7 +98,7 @@ int main() {
     if (mounts.Resolve("/levels/start.level", &found).Failed()) return 1;
     UniquePtr<asset::ResourceReader> reader;
     if (mounts.Open(found, &reader).Failed()) return 1;
-    os::Print("%u bytes, id matches: %d\n", static_cast<unsigned>(reader->Size()), found == id ? 1 : 0);
+    out::Print("%u bytes, id matches: %d\n", static_cast<unsigned>(reader->Size()), found == id ? 1 : 0);
     return 0;
 }
 ```
@@ -121,7 +121,7 @@ A pak holds many blobs in one file and finds them by id. The layout (`engine/ass
 #include "asset/pak.h"
 #include "asset/pak_backend.h"
 #include "io/file_system.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -151,7 +151,7 @@ int main() {
     if (asset::PakBackend::Open(file_path, types, 0, &pak).Failed()) return 1;
     UniquePtr<asset::ResourceReader> reader;
     if (pak->Open(id, &reader).Failed()) return 1;
-    os::Print("%u entries, %u bytes\n", static_cast<unsigned>(pak->Info().entry_count), static_cast<unsigned>(reader->Size()));
+    out::Print("%u entries, %u bytes\n", static_cast<unsigned>(pak->Info().entry_count), static_cast<unsigned>(reader->Size()));
     io::RemoveAll(dir);
     return 0;
 }
@@ -182,7 +182,7 @@ ibm spine 1 0 0 0  0 1 0 -1.2  0 0 1 0
 ```cpp compile run standalone
 #include "asset/skeleton.h"
 #include "cstr/format.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -202,7 +202,7 @@ int main() {
     if (view.Open(ByteSpan(blob.Data(), blob.Size()), types).Failed()) return 1;
     u32 tip = 0;
     if (!view.FindJoint("tip", &tip)) return 1;
-    os::Print("%u joints, tip is %u, parent %u, inverse bind y %.1f\n", view.JointCount(), tip,
+    out::Print("%u joints, tip is %u, parent %u, inverse bind y %.1f\n", view.JointCount(), tip,
               static_cast<unsigned>(view.Parent(tip)), static_cast<double>(view.InverseBind(tip)[7]));
     return 0;
 }
@@ -238,7 +238,7 @@ skin 2 0 1
 
 ```cpp compile run standalone
 #include "asset/mesh.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -258,7 +258,7 @@ int main() {
     if (asset::BuildMeshBlob(types, asset::ResourceId::FromValue(9), input, &blob).Failed()) return 1;
     asset::MeshView view;
     if (view.Open(ByteSpan(blob.Data(), blob.Size()), types).Failed()) return 1;
-    os::Print("%u vertices of %u bytes, %u indices of %u bytes, %u attributes\n", view.VertexCount(), view.VertexStride(),
+    out::Print("%u vertices of %u bytes, %u indices of %u bytes, %u attributes\n", view.VertexCount(), view.VertexStride(),
               view.IndexCount(), view.IndexBytesPerIndex(), view.AttributeCount());
     return 0;
 }
@@ -300,7 +300,7 @@ event 0.5 footstep 7
 ```cpp compile run standalone
 #include "asset/clip.h"
 #include "asset/skeleton.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -340,7 +340,7 @@ int main() {
     if (view.Open(ByteSpan(blob.Data(), blob.Size()), types).Failed()) return 1;
     if (view.Bind(skeleton).Failed()) return 1;
     const asset::ClipSample half = view.Sample(0, 0.5f);
-    os::Print("x at 0.5 s: %.3f\n", half.translation[0]);
+    out::Print("x at 0.5 s: %.3f\n", half.translation[0]);
     return half.translation[0] > 0.49f && half.translation[0] < 0.51f ? 0 : 1;
 }
 ```
@@ -386,7 +386,7 @@ In `.tex.src`, `format bc1` (with `srgb true` giving `BC1_SRGB`), `bc4` (red) an
 
 ```cpp compile run standalone
 #include "asset/texture.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -413,7 +413,7 @@ int main() {
     asset::TextureView view;
     if (view.Open(ByteSpan(blob.Data(), blob.Size()), types).Failed()) return 1;
     const asset::TextureLevel top = view.Level(0, 0);
-    os::Print("%u mips, row pitch %u, level 1 texel %u\n", view.MipCount(), top.row_pitch,
+    out::Print("%u mips, row pitch %u, level 1 texel %u\n", view.MipCount(), top.row_pitch,
               static_cast<unsigned>(view.Level(0, 1).bytes[0]));
     return view.MipCount() == 3 && top.row_pitch == 256 ? 0 : 1;
 }
@@ -450,7 +450,7 @@ A level (`asset::types::kLevel`, `LEVL`) is the same data as a save: one `storag
 ```cpp compile run standalone
 #include "asset/level.h"
 #include "ecs/transform.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "storage/builtin_components.h"
 #include "storage/component_record.h"
 
@@ -495,7 +495,7 @@ int main() {
     asset::LevelData loaded;
     if (asset::LoadLevelBlob(ByteSpan(blob.Data(), blob.Size()), types, registry, world, index, &loaded).Failed()) return 1;
     const asset::MeshReference* got = world.Peek<asset::MeshReference>(index.Find(key));
-    os::Print("%u entity, %u reference, mesh %llx\n", static_cast<unsigned>(loaded.entities.Size()),
+    out::Print("%u entity, %u reference, mesh %llx\n", static_cast<unsigned>(loaded.entities.Size()),
               static_cast<unsigned>(loaded.references.Size()), static_cast<unsigned long long>(got->mesh.id));
     return got->mesh.id == 0x201 ? 0 : 1;
 }
@@ -545,7 +545,7 @@ A loader turns a blob into an object of its C++ type (`RegisterLoader<T>(functio
 #include "asset/level.h"
 #include "asset/memory_backend.h"
 #include "asset/resource_manager.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "storage/builtin_components.h"
 
 using namespace vse;
@@ -570,7 +570,7 @@ int main() {
     asset::Handle<asset::LevelSummary> level;
     if (manager.Load<asset::LevelSummary>(asset::ResourceId::FromValue(7), &level).Failed()) return 1;
     const asset::ResourceStats stats = manager.Stats();
-    os::Print("%u entities, %u loaded, %u conversions\n", level.Get()->entity_count, static_cast<unsigned>(stats.resident),
+    out::Print("%u entities, %u loaded, %u conversions\n", level.Get()->entity_count, static_cast<unsigned>(stats.resident),
               static_cast<unsigned>(stats.load_conversions));
     return stats.resident == 1 && stats.load_conversions == 0 ? 0 : 1;
 }
@@ -591,7 +591,7 @@ int main() {
 #include "asset/level.h"
 #include "asset/memory_backend.h"
 #include "jobs/scheduler.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "storage/builtin_components.h"
 
 using namespace vse;
@@ -623,7 +623,7 @@ int main() {
     }
     asset::Handle<asset::LevelSummary> level;
     if (ticket.Finish(&level).Failed()) return 1;
-    os::Print("%u entities, %u loaded, %u in the backlog\n", level.Get()->entity_count,
+    out::Print("%u entities, %u loaded, %u in the backlog\n", level.Get()->entity_count,
               static_cast<unsigned>(manager.Stats().resident), static_cast<unsigned>(loader.Stats().ready));
     return level.Get()->entity_count == 0 && loader.Stats().ready == 0 ? 0 : 1;
 }
@@ -654,7 +654,7 @@ Limits: a path or prefix is at most 1,024 bytes and a page at most 1,024 entries
 
 ```cpp compile run standalone
 #include "asset/resource_protocol.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -671,7 +671,7 @@ int main() {
     if (asset::EncodeProto(request, MutableByteSpan(buffer, sizeof(buffer)), &size) != asset::ProtoError::None) return 1;
     asset::ProtoData decoded;
     if (asset::DecodeProto(ByteSpan(buffer, size), 4096, &decoded) != asset::ProtoError::None) return 1;
-    os::Print("read of id %llx, %llu bytes from %llu, in a message of %u bytes\n",
+    out::Print("read of id %llx, %llu bytes from %llu, in a message of %u bytes\n",
               static_cast<unsigned long long>(decoded.id), static_cast<unsigned long long>(decoded.length),
               static_cast<unsigned long long>(decoded.offset), static_cast<unsigned>(size));
     return decoded.request == 7 && decoded.length == 4096 ? 0 : 1;

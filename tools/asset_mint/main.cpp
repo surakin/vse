@@ -15,6 +15,7 @@
 // N (default 0, the development target). It refuses an incomplete closure and lists each missing (blob, dependency)
 // pair. The tool's options are its own command line, not engine settings.
 #include "asset/filesystem_backend.h"
+#include "log/output.h"
 #include "asset/pak.h"
 #include "asset_import/gltf_import.h"
 #include "cstr/number.h"
@@ -53,7 +54,7 @@ namespace
 
 int Usage()
 {
-    os::PrintError(
+    out::PrintError(
         "usage: asset_mint adopt|mint|pack|verify|list|check|remint PROJECT.project [--force] [--workers=N]\n"
         "                  [--quiet] [--verbose] [--skeletons] [--target=N] [--require-current]\n"
         "       asset_mint refs|delete|reid|unmint PROJECT.project ASSET [--with-dependents] [--update-references] [--out=FILE]\n"
@@ -178,13 +179,13 @@ int Pack(const Line& line)
     const Status packed = PackDirectory(directory, output, target, names, &diagnostics);
     for (usize i = 0; i < diagnostics.Lines().Size(); ++i)
     {
-        os::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
+        out::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
     }
     if (packed.Failed())
     {
         return 1;
     }
-    os::Print("packed %s for target %u\n", in_path, static_cast<unsigned>(target));
+    out::Print("packed %s for target %u\n", in_path, static_cast<unsigned>(target));
     return 0;
 }
 
@@ -209,13 +210,13 @@ int MintSkeletonCommand(const Line& line)
     io::FilePtr in;
     if (io::File::Open(source_path, io::OpenMode::Read, io::kOpenNone, &in).Failed())
     {
-        os::PrintError("asset_mint: the source file could not be opened\n");
+        out::PrintError("asset_mint: the source file could not be opened\n");
         return 1;
     }
     Vector<u8> text;
     if (io::ReadAll(*in, &text, u64{1} << 24).Failed())
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     TypeRegistry types;
@@ -227,18 +228,19 @@ int MintSkeletonCommand(const Line& line)
     {
         if (error.line != 0)
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+            out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line),
+                            error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+            out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -246,10 +248,10 @@ int MintSkeletonCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
-    os::Print("minted a skeleton of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a skeleton of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -274,13 +276,13 @@ int MintHullCommand(const Line& line)
     io::FilePtr in;
     if (io::File::Open(source_path, io::OpenMode::Read, io::kOpenNone, &in).Failed())
     {
-        os::PrintError("asset_mint: the source file could not be opened\n");
+        out::PrintError("asset_mint: the source file could not be opened\n");
         return 1;
     }
     Vector<u8> text;
     if (io::ReadAll(*in, &text, u64{1} << 24).Failed())
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     TypeRegistry types;
@@ -292,18 +294,19 @@ int MintHullCommand(const Line& line)
     {
         if (error.line != 0)
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+            out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line),
+                            error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+            out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -311,10 +314,10 @@ int MintHullCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
-    os::Print("minted a hull of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a hull of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -341,14 +344,14 @@ int MintAudioCommand(const Line& line)
     if (io::File::Open(source_path, io::OpenMode::Read, io::kOpenNone, &in).Failed() ||
         io::ReadAll(*in, &text, u64{1} << 24).Failed())
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     AudioSource source;
     AudioSourceError error;
     if (ParseAudioSource(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), &source, &error).Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         return 1;
     }
     io::Path wav_relative;
@@ -356,7 +359,7 @@ int MintAudioCommand(const Line& line)
     if (!io::Path::Parse(source.wav.View(), io::NativePathStyle(), &wav_relative) ||
         !source_path.Parent().TryJoin(wav_relative, &wav_path))
     {
-        os::PrintError("asset_mint: %s: the wav path is not valid\n", in_path);
+        out::PrintError("asset_mint: %s: the wav path is not valid\n", in_path);
         return 1;
     }
     io::FilePtr wav_file;
@@ -364,7 +367,7 @@ int MintAudioCommand(const Line& line)
     if (io::File::Open(wav_path, io::OpenMode::Read, io::kOpenNone, &wav_file).Failed() ||
         io::ReadAll(*wav_file, &wav, u64{1} << 30).Failed())
     {
-        os::PrintError("asset_mint: %s: the wav file could not be read\n", in_path);
+        out::PrintError("asset_mint: %s: the wav file could not be read\n", in_path);
         return 1;
     }
     TypeRegistry types;
@@ -372,13 +375,13 @@ int MintAudioCommand(const Line& line)
     if (MintAudio(source, ByteSpan(reinterpret_cast<const byte*>(wav.Data()), wav.Size()), types, &blob, &error, target)
             .Failed())
     {
-        os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+        out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -386,10 +389,10 @@ int MintAudioCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
-    os::Print("minted an audio clip of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted an audio clip of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -469,7 +472,7 @@ int MintScriptCommand(const Line& line)
     Vector<u8> text;
     if (!ReadTextFile(source_path, &text))
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     ScriptSource source;
@@ -477,7 +480,7 @@ int MintScriptCommand(const Line& line)
     if (ParseScriptSource(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), &source, &error)
             .Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         return 1;
     }
     StringView root_name(in_path, CStrLength(in_path));
@@ -493,7 +496,7 @@ int MintScriptCommand(const Line& line)
     root_name = root_name.Substring(0, dot < root_name.Length() ? dot : root_name.Length());
     if (CheckScriptGraph(root_name, source, &LoadScriptModule, &search, &error, nullptr).Failed())
     {
-        os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+        out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         return 1;
     }
     io::Path script_relative;
@@ -502,7 +505,7 @@ int MintScriptCommand(const Line& line)
     if (!io::Path::Parse(source.lua.View(), io::NativePathStyle(), &script_relative) ||
         !source_path.Parent().TryJoin(script_relative, &script_path) || !ReadTextFile(script_path, &lua))
     {
-        os::PrintError("asset_mint: %s: the lua file could not be read\n", in_path);
+        out::PrintError("asset_mint: %s: the lua file could not be read\n", in_path);
         return 1;
     }
     script::luajit::LuaJitOptions backend_options;
@@ -517,14 +520,14 @@ int MintScriptCommand(const Line& line)
                    &error, target)
             .Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", source.lua.CStr(), static_cast<unsigned>(error.line),
-                       error.message.Data());
+        out::PrintError("asset_mint: %s:%u: %s\n", source.lua.CStr(), static_cast<unsigned>(error.line),
+                        error.message.Data());
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -532,7 +535,7 @@ int MintScriptCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
     StringView dev_out;
@@ -554,15 +557,15 @@ int MintScriptCommand(const Line& line)
             !directory.TryJoin(relative, &dev_file) || io::CreateDirectories(directory).Failed() ||
             io::WriteFileAtomic(dev_file, view.Source().Data(), view.Source().Size()).Failed())
         {
-            os::PrintError("asset_mint: the --dev-out file could not be written\n");
+            out::PrintError("asset_mint: the --dev-out file could not be written\n");
             return 1;
         }
     }
-    os::Print("minted a script of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a script of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 #else
     (void)line;
-    os::PrintError("asset_mint: mint-script is not available in this build (no LuaJIT on this platform)\n");
+    out::PrintError("asset_mint: mint-script is not available in this build (no LuaJIT on this platform)\n");
     return 1;
 #endif
 }
@@ -587,13 +590,13 @@ int MintMcolCommand(const Line& line)
     io::FilePtr in;
     if (io::File::Open(source_path, io::OpenMode::Read, io::kOpenNone, &in).Failed())
     {
-        os::PrintError("asset_mint: the source file could not be opened\n");
+        out::PrintError("asset_mint: the source file could not be opened\n");
         return 1;
     }
     Vector<u8> text;
     if (io::ReadAll(*in, &text, u64{1} << 24).Failed())
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     TypeRegistry types;
@@ -605,18 +608,19 @@ int MintMcolCommand(const Line& line)
     {
         if (error.line != 0)
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+            out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line),
+                            error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+            out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -624,10 +628,10 @@ int MintMcolCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
-    os::Print("minted a mesh collider of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a mesh collider of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -676,7 +680,7 @@ int MintMeshCommand(const Line& line)
     Vector<u8> text;
     if (!ReadWholeFile(in_path, u64{1} << 30, &text))
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     TypeRegistry types;
@@ -686,13 +690,13 @@ int MintMeshCommand(const Line& line)
     {
         if (!ReadWholeFile(skeleton_path, u64{1} << 24, &skeleton_bytes))
         {
-            os::PrintError("asset_mint: the skeleton blob could not be read\n");
+            out::PrintError("asset_mint: the skeleton blob could not be read\n");
             return 1;
         }
         const Status opened = skeleton.Open(ByteSpan(skeleton_bytes.Data(), skeleton_bytes.Size()), types);
         if (opened.Failed())
         {
-            os::PrintError("asset_mint: the skeleton blob: %s: %s\n", ErrorCodeName(opened.Code()), opened.Message());
+            out::PrintError("asset_mint: the skeleton blob: %s: %s\n", ErrorCodeName(opened.Code()), opened.Message());
             return 1;
         }
     }
@@ -704,18 +708,19 @@ int MintMeshCommand(const Line& line)
     {
         if (error.line != 0)
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+            out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line),
+                            error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+            out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -723,10 +728,10 @@ int MintMeshCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
-    os::Print("minted a mesh of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a mesh of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -751,7 +756,7 @@ int MintTextureCommand(const Line& line)
     Vector<u8> text;
     if (!ReadWholeFile(in_path, u64{1} << 24, &text))
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     const StringView text_view(reinterpret_cast<const char*>(text.Data()), text.Size());
@@ -759,7 +764,7 @@ int MintTextureCommand(const Line& line)
     TextureSourceError error;
     if (ParseTextureSource(text_view, &source, &error).Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         return 1;
     }
     const io::Path directory = source_path.Parent();
@@ -774,15 +779,15 @@ int MintTextureCommand(const Line& line)
                              io::NativePathStyle(), &relative) ||
             !directory.TryJoin(relative, &image_path))
         {
-            os::PrintError("asset_mint: %s:%u: the image path is not valid\n", in_path,
-                           static_cast<unsigned>(source.sources[i].line));
+            out::PrintError("asset_mint: %s:%u: the image path is not valid\n", in_path,
+                            static_cast<unsigned>(source.sources[i].line));
             return 1;
         }
         Vector<u8> bytes;
         if (!ReadWholeFilePath(image_path, u64{1} << 31, &bytes))
         {
-            os::PrintError("asset_mint: %s:%u: the image file could not be read\n", in_path,
-                           static_cast<unsigned>(source.sources[i].line));
+            out::PrintError("asset_mint: %s:%u: the image file could not be read\n", in_path,
+                            static_cast<unsigned>(source.sources[i].line));
             return 1;
         }
         files.Push(static_cast<Vector<u8>&&>(bytes));
@@ -804,13 +809,13 @@ int MintTextureCommand(const Line& line)
                     scheduler.Get())
             .Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -818,10 +823,10 @@ int MintTextureCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
-    os::Print("minted a texture of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a texture of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -884,7 +889,7 @@ int MintMaterialCommand(const Line& line)
     Vector<u8> text;
     if (!ReadWholeFile(in_path, u64{1} << 24, &text))
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     TypeRegistry types;
@@ -895,13 +900,13 @@ int MintMaterialCommand(const Line& line)
                      &error, target)
             .Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -909,10 +914,10 @@ int MintMaterialCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
-    os::Print("minted a material of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a material of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -938,7 +943,7 @@ int MintClipCommand(const Line& line)
     Vector<u8> skeleton_bytes;
     if (!ReadWholeFile(in_path, u64{1} << 28, &text) || !ReadWholeFile(skeleton_path, u64{1} << 24, &skeleton_bytes))
     {
-        os::PrintError("asset_mint: the source or the skeleton blob could not be read\n");
+        out::PrintError("asset_mint: the source or the skeleton blob could not be read\n");
         return 1;
     }
     TypeRegistry types;
@@ -946,7 +951,7 @@ int MintClipCommand(const Line& line)
     const Status opened = skeleton.Open(ByteSpan(skeleton_bytes.Data(), skeleton_bytes.Size()), types);
     if (opened.Failed())
     {
-        os::PrintError("asset_mint: the skeleton blob: %s: %s\n", ErrorCodeName(opened.Code()), opened.Message());
+        out::PrintError("asset_mint: the skeleton blob: %s: %s\n", ErrorCodeName(opened.Code()), opened.Message());
         return 1;
     }
     const ClipLimits
@@ -959,18 +964,19 @@ int MintClipCommand(const Line& line)
     {
         if (error.line != 0)
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+            out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line),
+                            error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+            out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         return 1;
     }
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return 1;
     }
     const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
@@ -978,18 +984,18 @@ int MintClipCommand(const Line& line)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return 1;
     }
     ClipView minted;
     if (minted.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok())
     {
-        os::Print("minted a clip of %u bytes (measured error: rotation %.4f degrees, translation %.2e of the range)\n",
-                  static_cast<unsigned>(blob.Size()), static_cast<double>(minted.RotationError()),
-                  static_cast<double>(minted.TranslationError()));
+        out::Print("minted a clip of %u bytes (measured error: rotation %.4f degrees, translation %.2e of the range)\n",
+                   static_cast<unsigned>(blob.Size()), static_cast<double>(minted.RotationError()),
+                   static_cast<double>(minted.TranslationError()));
         return 0;
     }
-    os::Print("minted a clip of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a clip of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -1068,7 +1074,7 @@ bool WriteOutput(const io::Path& output, const void* data, usize size)
     io::FilePtr file;
     if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
     {
-        os::PrintError("asset_mint: the output file could not be created\n");
+        out::PrintError("asset_mint: the output file could not be created\n");
         return false;
     }
     const io::Status written = file->Write(data, size, 0);
@@ -1076,7 +1082,7 @@ bool WriteOutput(const io::Path& output, const void* data, usize size)
     {
         file->Close();
         io::Remove(output);
-        os::PrintError("asset_mint: writing the output failed\n");
+        out::PrintError("asset_mint: writing the output failed\n");
         return false;
     }
     return true;
@@ -1120,21 +1126,21 @@ int MintLevelCommand(const Line& line)
     Vector<u8> text;
     if (!ReadWholeFile(in_path, u64{1} << 26, &text))
     {
-        os::PrintError("asset_mint: the source file could not be read\n");
+        out::PrintError("asset_mint: the source file could not be read\n");
         return 1;
     }
     TypeRegistry types;
     storage::ComponentRegistry registry;
     if (!RegisterLevelRegistry(&registry))
     {
-        os::PrintError("asset_mint: the components could not be registered\n");
+        out::PrintError("asset_mint: the components could not be registered\n");
         return 1;
     }
     ProjectResolver resolver(types);
     const Status opened = resolver.Open(root);
     if (opened.Failed())
     {
-        os::PrintError("asset_mint: the project folder could not be read: %s\n", opened.Message());
+        out::PrintError("asset_mint: the project folder could not be read: %s\n", opened.Message());
         return 1;
     }
     Vector<byte> blob;
@@ -1145,11 +1151,12 @@ int MintLevelCommand(const Line& line)
     {
         if (error.line == 0)
         {
-            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+            out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+            out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line),
+                            error.message.Data());
         }
         return 1;
     }
@@ -1157,7 +1164,7 @@ int MintLevelCommand(const Line& line)
     {
         return 1;
     }
-    os::Print("minted a level of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("minted a level of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -1175,35 +1182,35 @@ int UnmintLevelCommand(const Line& line)
     Vector<u8> blob;
     if (!ReadWholeFile(in_path, u64{1} << 31, &blob))
     {
-        os::PrintError("asset_mint: the level file could not be read\n");
+        out::PrintError("asset_mint: the level file could not be read\n");
         return 1;
     }
     TypeRegistry types;
     storage::ComponentRegistry registry;
     if (!RegisterLevelRegistry(&registry))
     {
-        os::PrintError("asset_mint: the components could not be registered\n");
+        out::PrintError("asset_mint: the components could not be registered\n");
         return 1;
     }
     ProjectResolver resolver(types);
     const Status opened = resolver.Open(root);
     if (opened.Failed())
     {
-        os::PrintError("asset_mint: the project folder could not be read: %s\n", opened.Message());
+        out::PrintError("asset_mint: the project folder could not be read: %s\n", opened.Message());
         return 1;
     }
     String<HeapAllocator> text(HeapAllocator::Default());
     LevelSourceError error;
     if (FormatLevelBlob(ByteSpan(blob.Data(), blob.Size()), types, registry, resolver, &text, &error).Failed())
     {
-        os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
+        out::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         return 1;
     }
     if (!WriteOutput(output, text.View().Data(), text.Length()))
     {
         return 1;
     }
-    os::Print("wrote the text of a level of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    out::Print("wrote the text of a level of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -1293,13 +1300,13 @@ int ProjectCommand(const Line& line)
         {
             for (usize i = 0; i < before.Lines().Size(); ++i)
             {
-                os::PrintError("asset_mint: %s\n", before.Lines()[i].CStr());
+                out::PrintError("asset_mint: %s\n", before.Lines()[i].CStr());
             }
             return 1;
         }
         if (!quiet)
         {
-            os::Print("adopted %u sources\n", static_cast<unsigned>(adopted));
+            out::Print("adopted %u sources\n", static_cast<unsigned>(adopted));
         }
         if (verbose)
         {
@@ -1307,14 +1314,14 @@ int ProjectCommand(const Line& line)
             {
                 if (before.Lines()[i].View().StartsWith(StringView("note:")))
                 {
-                    os::PrintError("asset_mint: %s\n", before.Lines()[i].CStr());
+                    out::PrintError("asset_mint: %s\n", before.Lines()[i].CStr());
                 }
             }
         }
         status = project.Load(project_file, &diagnostics);
         for (usize i = 0; i < diagnostics.Lines().Size(); ++i)
         {
-            os::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
+            out::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
         }
         return status.Ok() ? 0 : 1;
     }
@@ -1328,10 +1335,10 @@ int ProjectCommand(const Line& line)
             status = project.Mint(options, &diagnostics, &stats);
             if (!quiet)
             {
-                os::Print("%u sources: %u minted, %u unchanged, %u blob files written, %u failed\n",
-                          static_cast<unsigned>(stats.sources), static_cast<unsigned>(stats.minted),
-                          static_cast<unsigned>(stats.unchanged), static_cast<unsigned>(stats.rewritten),
-                          static_cast<unsigned>(stats.failed));
+                out::Print("%u sources: %u minted, %u unchanged, %u blob files written, %u failed\n",
+                           static_cast<unsigned>(stats.sources), static_cast<unsigned>(stats.minted),
+                           static_cast<unsigned>(stats.unchanged), static_cast<unsigned>(stats.rewritten),
+                           static_cast<unsigned>(stats.failed));
             }
         }
         else if (command == StringView("remint"))
@@ -1348,8 +1355,8 @@ int ProjectCommand(const Line& line)
             }
             if (status.Ok() && !quiet)
             {
-                os::Print("%u sources minted again; the output is the current version\n",
-                          static_cast<unsigned>(stats.sources));
+                out::Print("%u sources minted again; the output is the current version\n",
+                           static_cast<unsigned>(stats.sources));
             }
         }
         else if (command == StringView("pack"))
@@ -1360,8 +1367,8 @@ int ProjectCommand(const Line& line)
             status = project.Pack(&diagnostics, pack_options);
             if (status.Ok() && !quiet)
             {
-                os::Print("packed the project for target %u\n",
-                          static_cast<unsigned>(pack_options.has_target ? target : project.Config().target));
+                out::Print("packed the project for target %u\n",
+                           static_cast<unsigned>(pack_options.has_target ? target : project.Config().target));
             }
         }
         else if (command == StringView("verify"))
@@ -1373,7 +1380,7 @@ int ProjectCommand(const Line& line)
             status = project.Verify(&diagnostics, verify_options);
             if (status.Ok() && !quiet)
             {
-                os::Print("the output verifies\n");
+                out::Print("the output verifies\n");
             }
         }
         else if (command == StringView("refs"))
@@ -1381,7 +1388,7 @@ int ProjectCommand(const Line& line)
             status = project.Refs(line.Arg(2), &diagnostics, &listing);
             if (status.Ok() && !quiet)
             {
-                os::Print("%s", listing.CStr());
+                out::Print("%s", listing.CStr());
             }
         }
         else if (command == StringView("rename"))
@@ -1420,7 +1427,7 @@ int ProjectCommand(const Line& line)
             }
             else if (status.Ok() && !quiet)
             {
-                os::Print("%s", listing.CStr());
+                out::Print("%s", listing.CStr());
             }
         }
         else if (command == StringView("list"))
@@ -1428,7 +1435,7 @@ int ProjectCommand(const Line& line)
             status = project.List(skeletons, &diagnostics, &listing);
             if (status.Ok() && !quiet)
             {
-                os::Print("%s", listing.CStr());
+                out::Print("%s", listing.CStr());
             }
         }
         else if (command == StringView("check"))
@@ -1436,7 +1443,7 @@ int ProjectCommand(const Line& line)
             status = project.Check(&diagnostics);
             if (status.Ok() && !quiet)
             {
-                os::Print("the project of %u sources is consistent\n", static_cast<unsigned>(project.SourceCount()));
+                out::Print("the project of %u sources is consistent\n", static_cast<unsigned>(project.SourceCount()));
             }
         }
     }
@@ -1448,7 +1455,7 @@ int ProjectCommand(const Line& line)
         if (is_error || verbose ||
             (is_note && !quiet && extra != 0 && command != StringView("refs") && command != StringView("unmint")))
         {
-            os::PrintError("asset_mint: %s\n", text.CStr());
+            out::PrintError("asset_mint: %s\n", text.CStr());
         }
     }
     return status.Ok() && diagnostics.ErrorCount() == 0 ? 0 : 1;
@@ -1469,11 +1476,11 @@ int RemintCommand(const Line& line)
     const Status status = RemintDirectory(directory, types, chains, &diagnostics, &stats);
     for (usize i = 0; i < diagnostics.Lines().Size(); ++i)
     {
-        os::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
+        out::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
     }
-    os::Print("%u blobs: %u current, %u upgraded, %u failed\n", static_cast<unsigned>(stats.blobs),
-              static_cast<unsigned>(stats.current), static_cast<unsigned>(stats.upgraded),
-              static_cast<unsigned>(stats.failed));
+    out::Print("%u blobs: %u current, %u upgraded, %u failed\n", static_cast<unsigned>(stats.blobs),
+               static_cast<unsigned>(stats.current), static_cast<unsigned>(stats.upgraded),
+               static_cast<unsigned>(stats.failed));
     return status.Ok() ? 0 : 1;
 }
 
@@ -1542,7 +1549,7 @@ int ImportGltfCommand(const Line& line)
     if (!ParseFloatOption(line, "scale", &options.scale) || !ParseFloatOption(line, "clip-rate", &options.clip_rate) ||
         !(options.scale > 0.0f && options.scale < 1e9f) || !(options.clip_rate > 0.0f && options.clip_rate <= 1000.0f))
     {
-        os::PrintError("asset_mint: --scale takes a number above 0 and --clip-rate one from above 0 to 1000\n");
+        out::PrintError("asset_mint: --scale takes a number above 0 and --clip-rate one from above 0 to 1000\n");
         return 64;
     }
     StringView prefix;
@@ -1574,7 +1581,7 @@ int ImportGltfCommand(const Line& line)
     Vector<u8> manifest_bytes;
     if (io::Exists(manifest_path) && !ReadWholeFilePath(manifest_path, u64{1} << 26, &manifest_bytes))
     {
-        os::PrintError("asset_mint: the manifest exists but cannot be read; it is not replaced\n");
+        out::PrintError("asset_mint: the manifest exists but cannot be read; it is not replaced\n");
         return 1;
     }
     if (manifest_bytes.Size() != 0)
@@ -1585,7 +1592,7 @@ int ImportGltfCommand(const Line& line)
                        &manifest_error)
                 .Failed())
         {
-            os::PrintError("asset_mint: %s: %s\n", manifest_name.CStr(), manifest_error.message.Data());
+            out::PrintError("asset_mint: %s: %s\n", manifest_name.CStr(), manifest_error.message.Data());
             return 1;
         }
         options.manifest = &manifest;
@@ -1593,7 +1600,7 @@ int ImportGltfCommand(const Line& line)
     Vector<u8> file;
     if (!ReadWholeFilePath(file_path, options.limits.max_file_bytes, &file))
     {
-        os::PrintError("asset_mint: the glTF file could not be read\n");
+        out::PrintError("asset_mint: the glTF file could not be read\n");
         return 1;
     }
     DirectoryGltfSource source(file_path.Parent());
@@ -1603,11 +1610,11 @@ int ImportGltfCommand(const Line& line)
                                                    &error);
     for (usize i = 0; i < result.report.notes.Size(); ++i)
     {
-        os::PrintError("asset_mint: %s: %s\n", in_path, result.report.notes[i].CStr());
+        out::PrintError("asset_mint: %s: %s\n", in_path, result.report.notes[i].CStr());
     }
     if (status.Failed())
     {
-        os::PrintError("asset_mint: %s: %s\n", in_path, asset::GltfMessage(error, status));
+        out::PrintError("asset_mint: %s: %s\n", in_path, asset::GltfMessage(error, status));
         return 1;
     }
     for (usize i = 0; i < result.resources.Size(); ++i)
@@ -1621,7 +1628,7 @@ int ImportGltfCommand(const Line& line)
             !out_dir.TryJoin(relative_path, &blob_path) || io::CreateDirectories(blob_path.Parent()).Failed() ||
             io::WriteFileAtomic(blob_path, r.blob.Data(), r.blob.Size()).Failed())
         {
-            os::PrintError("asset_mint: %s could not be written\n", relative.CStr());
+            out::PrintError("asset_mint: %s could not be written\n", relative.CStr());
             return 1;
         }
     }
@@ -1629,11 +1636,11 @@ int ImportGltfCommand(const Line& line)
     result.manifest.Format(&text);
     if (io::WriteFileAtomic(manifest_path, text.CStr(), text.Length()).Failed())
     {
-        os::PrintError("asset_mint: the manifest could not be written\n");
+        out::PrintError("asset_mint: the manifest could not be written\n");
         return 1;
     }
-    os::Print("imported %u resources from %s (%u warnings)\n", static_cast<unsigned>(result.resources.Size()), in_path,
-              static_cast<unsigned>(result.report.warnings));
+    out::Print("imported %u resources from %s (%u warnings)\n", static_cast<unsigned>(result.resources.Size()), in_path,
+               static_cast<unsigned>(result.report.warnings));
     return 0;
 }
 
@@ -1645,7 +1652,7 @@ int main(int argc, char** argv)
                     Span<const os::CommandLineOption>(kCliOptions, kCliOptionCount));
     if (!line.Ok())
     {
-        os::PrintError("asset_mint: %s\n", line.Error().Data());
+        out::PrintError("asset_mint: %s\n", line.Error().Data());
         return Usage();
     }
     if (line.ArgCount() < 1)

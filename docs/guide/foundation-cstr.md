@@ -21,7 +21,7 @@ These headers wrap the C library and `<cmath>`. Each function is an inline forwa
 | copy a C string safely | `CStrCopyTo(destination, capacity, source)` | a result of `capacity` or more means it was cut |
 | parse a number from text | `ParseDoubleExact(first, last)` | check `ok`, and compare `end` with the end of your text |
 | write a number that is stored or parsed back | `FormatGeneral(buffer, capacity, value, 9)` | never `FormatTo`'s `%g`, `%f`, `%e`: they follow the host's locale |
-| print to the console | `os::Print`, `os::PrintError` | goes to stdout and stderr only; files use `io::File` |
+| print to the console | `out::Print`, `out::PrintError` | goes to stdout and stderr only; files use `io::File` |
 | square root, sine, floor | `Sqrt`, `Sin`, `Floor` | `f32` and `f64` overloads |
 
 ## Which header do I use?
@@ -34,7 +34,7 @@ These headers wrap the C library and `<cmath>`. Each function is an inline forwa
 | to read or write a number as text | `cstr/number.h` | `CStrToInt`, `CStrToDouble`, `ParseDoubleExact`, `FormatShortest`, `FormatGeneral` |
 | a function with `...` arguments | `cstr/varargs.h` | `VarArgs`, `ENGINE_VA_START`, `ENGINE_VA_END` |
 | `sqrt`, `sin`, `floor`, `abs`, `isnan`, ... | `lang/scalar.h` | `Sqrt`, `Sin`, `Floor`, `Abs`, `IsNaN`, ... (`f32` and `f64`) |
-| to print to the console | `os/console.h` | `os::Print`, `os::PrintError`, `os::PrintText`, `os::PrintLine`, `os::PrintBytes`, `os::Flush` |
+| to print to the console | `os/console.h` | `out::Print`, `out::PrintError`, `out::PrintText`, `out::PrintLine`, `out::PrintBytes`, `os::Flush` |
 | to end the process or read the environment | `os/console.h` | `os::Abort`, `os::Exit` (`os/os.h`), `os::ExitNow`, `os::GetEnvironment` |
 | the system error after a failed call | `os/last_error.h` | `os::LastError()`, `os::SetLastError(0)`; the `E*` constants arrive with the header |
 | a signal handler | `os/signal.h` | `os::SetSignalHandler(SIGINT, handler)` |
@@ -66,7 +66,7 @@ if (r.ok && r.end == text + CStrLength(text)) {
 Print to the console:
 
 ```cpp
-os::Print("loaded %u assets in %.2f ms\n", count, elapsed_ms);
+out::Print("loaded %u assets in %.2f ms\n", count, elapsed_ms);
 ```
 
 ## Rules

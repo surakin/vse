@@ -1,4 +1,5 @@
 #include "settings_main.h"
+#include "log/output.h"
 
 #include "os/command_line.h"
 
@@ -52,13 +53,13 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
     for (usize i = 0; i < report.problems.Size(); ++i)
     {
         const sset::LayerProblem& p = report.problems[i];
-        vse::os::PrintError("%s: settings: %s%s%s: %s\n", app_name, p.layer, p.key[0] != '\0' ? ": " : "", p.key,
-                            p.message);
+        vse::out::PrintError("%s: settings: %s%s%s: %s\n", app_name, p.layer, p.key[0] != '\0' ? ": " : "", p.key,
+                             p.message);
     }
     for (usize i = 0; i < report.notes.Size(); ++i)
     {
         const sset::LayerProblem& n = report.notes[i];
-        vse::os::PrintError("%s: settings: %s: %s\n", app_name, n.layer, n.message);
+        vse::out::PrintError("%s: settings: %s: %s\n", app_name, n.layer, n.message);
     }
     const sset::CommandLineResult& cli = settings_->CommandLine();
     rest_storage_.Push(String<HeapAllocator>(HeapAllocator::Default(), native.ProgramName()));
@@ -144,17 +145,17 @@ int DemoSettings::Finish()
     const sset::CommandLineResult& cli = settings_->CommandLine();
     if (cli.help)
     {
-        vse::os::PrintText(usage_.CStr());
+        vse::out::PrintText(usage_.CStr());
         String<HeapAllocator> help(HeapAllocator::Default());
         sset::FormatSettingsHelp(registry_, &help);
-        vse::os::PrintText(help.CStr());
+        vse::out::PrintText(help.CStr());
         return 0;
     }
     if (cli.list_settings)
     {
         String<HeapAllocator> listing(HeapAllocator::Default());
         sset::FormatSettingsListing(*settings_, &listing);
-        vse::os::PrintText(listing.CStr());
+        vse::out::PrintText(listing.CStr());
         return 0;
     }
     if (cli.save_settings)
@@ -164,14 +165,14 @@ int DemoSettings::Finish()
         {
             if (!io::Path::Parse(cli.save_path.View(), io::NativePathStyle(), &path))
             {
-                vse::os::PrintError("%s: --save-settings: the path is not valid\n", program_.CStr());
+                vse::out::PrintError("%s: --save-settings: the path is not valid\n", program_.CStr());
                 return 1;
             }
             const sset::Status s = sset::SaveSettingsTo(*settings_, path);
             if (s.Failed())
             {
-                vse::os::PrintError("%s: --save-settings: could not write %s (%s)\n", program_.CStr(),
-                                    cli.save_path.CStr(), sset::StoreErrorName(s.error));
+                vse::out::PrintError("%s: --save-settings: could not write %s (%s)\n", program_.CStr(),
+                                     cli.save_path.CStr(), sset::StoreErrorName(s.error));
                 return 1;
             }
         }
@@ -180,8 +181,8 @@ int DemoSettings::Finish()
             const sset::Status s = settings_->Save(sset::SaveOptions{true, false, false});
             if (s.Failed())
             {
-                vse::os::PrintError("%s: --save-settings: could not write the user's settings file (%s)\n",
-                                    program_.CStr(), sset::StoreErrorName(s.error));
+                vse::out::PrintError("%s: --save-settings: could not write the user's settings file (%s)\n",
+                                     program_.CStr(), sset::StoreErrorName(s.error));
                 return 1;
             }
         }

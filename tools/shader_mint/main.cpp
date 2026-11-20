@@ -42,6 +42,7 @@
 // needs it, slangc or the JSON library.
 
 #include "cstr/cstr.h"
+#include "log/output.h"
 
 #include "containers/span.h"
 #include "io/file.h"
@@ -66,7 +67,7 @@ namespace
 
 int Usage()
 {
-    vse::os::PrintErrorText(
+    vse::out::PrintErrorText(
         "usage: shader_mint --name IDENT --source FILE --compiler TEXT --spv FILE --reflection FILE "
         "--spv-out FILE --refl-out FILE\n"
         "                   [--dxil FILE --dxil-reflection FILE --dxil-out FILE --dxil-compiler TEXT]\n"
@@ -201,18 +202,18 @@ bool MintModule(const char* spv_path, const char* json_path, const char* metal_j
     Vector<byte> json_bytes;
     if (!ReadAll(spv_path, &spv_bytes))
     {
-        os::PrintError("shader_mint: cannot read %s\n", spv_path);
+        out::PrintError("shader_mint: cannot read %s\n", spv_path);
         return false;
     }
     if (!ReadAll(json_path, &json_bytes))
     {
-        os::PrintError("shader_mint: cannot read %s\n", json_path);
+        out::PrintError("shader_mint: cannot read %s\n", json_path);
         return false;
     }
     if (spv_bytes.Empty() || spv_bytes.Size() % 4 != 0)
     {
-        os::PrintError("shader_mint: %s is not a whole number of 32-bit words (%zu bytes)\n", spv_path,
-                       spv_bytes.Size());
+        out::PrintError("shader_mint: %s is not a whole number of 32-bit words (%zu bytes)\n", spv_path,
+                        spv_bytes.Size());
         return false;
     }
     const usize words = spv_bytes.Size() / 4;
@@ -225,7 +226,7 @@ bool MintModule(const char* spv_path, const char* json_path, const char* metal_j
     }
     if (out->words[0] != 0x07230203u)
     {
-        os::PrintError("shader_mint: %s does not start with the SPIR-V magic number\n", spv_path);
+        out::PrintError("shader_mint: %s does not start with the SPIR-V magic number\n", spv_path);
         return false;
     }
 
@@ -233,12 +234,12 @@ bool MintModule(const char* spv_path, const char* json_path, const char* metal_j
     Text error = MakeText();
     if (!shader_mint::ReflectionFromJson(ToStringView(json_bytes), &out->reflection, &error))
     {
-        os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
+        out::PrintError("shader_mint: %s: %s\n", source, error.CStr());
         return false;
     }
     if (!shader_mint::CrossCheckSpirv(out->reflection, out->words.Data(), words, &error))
     {
-        os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
+        out::PrintError("shader_mint: %s: %s\n", source, error.CStr());
         return false;
     }
     if (metal_json_path != nullptr)
@@ -246,12 +247,12 @@ bool MintModule(const char* spv_path, const char* json_path, const char* metal_j
         Vector<byte> metal_json;
         if (!ReadAll(metal_json_path, &metal_json))
         {
-            os::PrintError("shader_mint: cannot read %s\n", metal_json_path);
+            out::PrintError("shader_mint: cannot read %s\n", metal_json_path);
             return false;
         }
         if (!shader_mint::ApplyMetalSlots(&out->reflection, ToStringView(json_bytes), ToStringView(metal_json), &error))
         {
-            os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
+            out::PrintError("shader_mint: %s: %s\n", source, error.CStr());
             return false;
         }
     }
@@ -260,13 +261,13 @@ bool MintModule(const char* spv_path, const char* json_path, const char* metal_j
     if (blob_size == 0 ||
         renderer::SerializeShaderReflection(out->reflection, out->blob.Data(), blob_size) != blob_size)
     {
-        os::PrintError("shader_mint: %s: the reflection could not be serialized\n", source);
+        out::PrintError("shader_mint: %s: the reflection could not be serialized\n", source);
         return false;
     }
     renderer::ShaderReflection round_trip;
     if (const char* problem = renderer::ParseShaderReflection(out->blob.Data(), blob_size, &round_trip))
     {
-        os::PrintError("shader_mint: %s: the serialized reflection does not parse back: %s\n", source, problem);
+        out::PrintError("shader_mint: %s: the serialized reflection does not parse back: %s\n", source, problem);
         return false;
     }
     return true;
@@ -297,21 +298,22 @@ bool ReadDxil(const char* dxil_path, const char* json_path, const renderer::Shad
     Vector<byte> json_bytes;
     if (!ReadAll(dxil_path, &bytes) || !ReadAll(json_path, &json_bytes))
     {
-        os::PrintError("shader_mint: cannot read %s or %s\n", dxil_path, json_path);
+        out::PrintError("shader_mint: cannot read %s or %s\n", dxil_path, json_path);
         return false;
     }
     // A DXBC container: "DXBC", a 16-byte digest the validator writes (all zero when unsigned), a version, the total
     // size.
     if (bytes.Size() < 32 || bytes[0] != 'D' || bytes[1] != 'X' || bytes[2] != 'B' || bytes[3] != 'C')
     {
-        os::PrintError("shader_mint: %s: %s is not a DXIL container\n", source, dxil_path);
+        out::PrintError("shader_mint: %s: %s is not a DXIL container\n", source, dxil_path);
         return false;
     }
     const u32 recorded = static_cast<u32>(bytes[24]) | (static_cast<u32>(bytes[25]) << 8) |
                          (static_cast<u32>(bytes[26]) << 16) | (static_cast<u32>(bytes[27]) << 24);
     if (recorded != bytes.Size())
     {
-        os::PrintError("shader_mint: %s: %s records %u bytes but has %zu\n", source, dxil_path, recorded, bytes.Size());
+        out::PrintError("shader_mint: %s: %s records %u bytes but has %zu\n", source, dxil_path, recorded,
+                        bytes.Size());
         return false;
     }
     bool signed_container = false;
@@ -321,7 +323,7 @@ bool ReadDxil(const char* dxil_path, const char* json_path, const renderer::Shad
     }
     if (!signed_container)
     {
-        os::PrintError(
+        out::PrintError(
             "shader_mint: %s: the DXIL is not signed by the validator (slangc needs dxil.dll beside dxcompiler.dll)\n",
             source);
         return false;
@@ -329,7 +331,7 @@ bool ReadDxil(const char* dxil_path, const char* json_path, const renderer::Shad
     Text error = MakeText();
     if (!shader_mint::CheckD3D12Registers(reflection, ToStringView(json_bytes), &error))
     {
-        os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
+        out::PrintError("shader_mint: %s: %s\n", source, error.CStr());
         return false;
     }
     out->Resize(bytes.Size());
@@ -362,12 +364,12 @@ bool ReadMetallib(const char* metallib_path, const char* info_path, const char* 
     Vector<byte> info;
     if (!ReadAll(metallib_path, &bytes) || !ReadAll(info_path, &info))
     {
-        os::PrintError("shader_mint: cannot read %s or %s\n", metallib_path, info_path);
+        out::PrintError("shader_mint: cannot read %s or %s\n", metallib_path, info_path);
         return false;
     }
     if (bytes.Size() < 32 || bytes[0] != 'M' || bytes[1] != 'T' || bytes[2] != 'L' || bytes[3] != 'B' || bytes[10] != 0)
     {
-        os::PrintError("shader_mint: %s: %s is not an executable Metal library\n", source, metallib_path);
+        out::PrintError("shader_mint: %s: %s is not an executable Metal library\n", source, metallib_path);
         return false;
     }
     out->metal_entry = MakeText();
@@ -399,7 +401,7 @@ bool ReadMetallib(const char* metallib_path, const char* info_path, const char* 
     }
     if (!IsIdentifier(out->metal_entry.CStr()) || out->metal_compiler.View().Length() == 0)
     {
-        os::PrintError("shader_mint: %s: %s names no entry point or compiler\n", source, info_path);
+        out::PrintError("shader_mint: %s: %s names no entry point or compiler\n", source, info_path);
         return false;
     }
     Appendf(&out->metal_compiler, " on macOS %s", macos.CStr());
@@ -621,7 +623,7 @@ bool ReflText(StringView base, const char* source, const char* compiler, const M
         {
             if (constants[i].View() == constant.View())
             {
-                os::PrintError(
+                out::PrintError(
                     "shader_mint: %s: the generated constant name %s would be defined twice; rename a block or member\n",
                     source, constant.CStr());
                 return false;
@@ -799,17 +801,17 @@ int main(int argc, char** argv)
         Text error = MakeText();
         if (!ReadAll(source_path, &source_bytes) || !ReadAll(manifest_path, &manifest_bytes))
         {
-            os::PrintError("shader_mint: cannot read %s or %s\n", source_path, manifest_path);
+            out::PrintError("shader_mint: cannot read %s or %s\n", source_path, manifest_path);
             return 1;
         }
         if (!shader_mint::ParseOptionDeclaration(ToStringView(source_bytes), &options, &error))
         {
-            os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
+            out::PrintError("shader_mint: %s: %s\n", source, error.CStr());
             return 1;
         }
         if (!shader_mint::ParseManifest(ToStringView(manifest_bytes), options, &keys, &error))
         {
-            os::PrintError("shader_mint: %s: %s\n", manifest_path, error.CStr());
+            out::PrintError("shader_mint: %s: %s\n", manifest_path, error.CStr());
             return 1;
         }
         for (usize k = 0; k < keys.Size(); ++k)
@@ -840,8 +842,8 @@ int main(int argc, char** argv)
             command.Push(MakeText(json_file.View()));
             if (!RunProcess(command))
             {
-                os::PrintError("shader_mint: %s: slangc failed for key %s\n", source,
-                               shader_mint::DescribeKey(options, key).CStr());
+                out::PrintError("shader_mint: %s: slangc failed for key %s\n", source,
+                                shader_mint::DescribeKey(options, key).CStr());
                 return 1;
             }
             if (spirv_val != nullptr)
@@ -853,8 +855,8 @@ int main(int argc, char** argv)
                 validate.Push(MakeText(spv_file.View()));
                 if (!RunProcess(validate))
                 {
-                    os::PrintError("shader_mint: %s: spirv-val rejected key %s\n", source,
-                                   shader_mint::DescribeKey(options, key).CStr());
+                    out::PrintError("shader_mint: %s: spirv-val rejected key %s\n", source,
+                                    shader_mint::DescribeKey(options, key).CStr());
                     return 1;
                 }
             }
@@ -883,8 +885,8 @@ int main(int argc, char** argv)
                 metal_command.Push(MakeText(metal_json.View()));
                 if (!RunProcess(metal_command))
                 {
-                    os::PrintError("shader_mint: %s: slangc failed to build Metal for key %s\n", source,
-                                   shader_mint::DescribeKey(options, key).CStr());
+                    out::PrintError("shader_mint: %s: slangc failed to build Metal for key %s\n", source,
+                                    shader_mint::DescribeKey(options, key).CStr());
                     return 1;
                 }
             }
@@ -892,7 +894,7 @@ int main(int argc, char** argv)
             if (!MintModule(spv_file.CStr(), json_file.CStr(), want_metal_slots ? metal_json.CStr() : nullptr, source,
                             &m))
             {
-                os::PrintError("shader_mint: (while minting key %s)\n", shader_mint::DescribeKey(options, key).CStr());
+                out::PrintError("shader_mint: (while minting key %s)\n", shader_mint::DescribeKey(options, key).CStr());
                 return 1;
             }
             if (want_dxil)
@@ -919,14 +921,14 @@ int main(int argc, char** argv)
                 dxil_command.Push(MakeText(dxil_json.View()));
                 if (!RunProcess(dxil_command))
                 {
-                    os::PrintError("shader_mint: %s: slangc failed to build DXIL for key %s\n", source,
-                                   shader_mint::DescribeKey(options, key).CStr());
+                    out::PrintError("shader_mint: %s: slangc failed to build DXIL for key %s\n", source,
+                                    shader_mint::DescribeKey(options, key).CStr());
                     return 1;
                 }
                 if (!ReadDxil(dxil_file.CStr(), dxil_json.CStr(), m.reflection, source, &m.dxil))
                 {
-                    os::PrintError("shader_mint: (while minting the DXIL of key %s)\n",
-                                   shader_mint::DescribeKey(options, key).CStr());
+                    out::PrintError("shader_mint: (while minting the DXIL of key %s)\n",
+                                    shader_mint::DescribeKey(options, key).CStr());
                     return 1;
                 }
             }
@@ -948,8 +950,8 @@ int main(int argc, char** argv)
                 if (stage.Length() == 0 || !RunProcess(mint_command) ||
                     !ReadMetallib(metallib_file.CStr(), info_file.CStr(), source, &m))
                 {
-                    os::PrintError("shader_mint: %s: metal_mint failed for key %s\n", source,
-                                   shader_mint::DescribeKey(options, key).CStr());
+                    out::PrintError("shader_mint: %s: metal_mint failed for key %s\n", source,
+                                    shader_mint::DescribeKey(options, key).CStr());
                     return 1;
                 }
             }
@@ -1000,7 +1002,7 @@ int main(int argc, char** argv)
         }
         if (!WriteFiles(files.Data(), files.Size()))
         {
-            os::PrintError("shader_mint: failed writing %s, %s, the DXIL or the Metal library\n", spv_out, refl_out);
+            out::PrintError("shader_mint: failed writing %s, %s, the DXIL or the Metal library\n", spv_out, refl_out);
             return 1;
         }
         return 0;
@@ -1079,8 +1081,8 @@ int main(int argc, char** argv)
     }
     if (!WriteFiles(files.Data(), files.Size()))
     {
-        os::PrintError("shader_mint: failed writing %s, %s, %s, the DXIL or the Metal library\n", spv_out, refl_out,
-                       perm_out);
+        out::PrintError("shader_mint: failed writing %s, %s, %s, the DXIL or the Metal library\n", spv_out, refl_out,
+                        perm_out);
         return 1;
     }
     return 0;

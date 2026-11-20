@@ -14,14 +14,14 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Strings](foundation-strings.md) | 6 | 104 |
 | [Foundation: Paths and Files](foundation-io.md) | 7 | 301 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 5 | 115 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 6 | 131 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 547 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
 | [Scripting](script.md) | 27 | 831 |
 | [Script physics bindings](script_physics.md) | 3 | 53 |
 | [Script audio and input bindings](script_media.md) | 5 | 132 |
-| [Platform: OS Services](platform-os.md) | 9 | 98 |
+| [Platform: OS Services](platform-os.md) | 9 | 91 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
 | [Text](text.md) | 6 | 221 |

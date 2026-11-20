@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "conformance.h"
+#include "log/output.h"
 #include "database/database_settings.h"
 #include "database/sqlite/sqlite_database.h"
 #include "database/sqlite/sqlite_os.h"
@@ -456,8 +457,8 @@ TEST_CASE("Database benchmark", "[.][database-bench]")
     reads(*plain);
     const u64 t3 = os::MonotonicTimeNanos();
     auto per_second = [&](u64 ns) { return static_cast<double>(kRows) * 1e9 / static_cast<double>(ns); };
-    os::Print("inserts %.0f/s, cached point reads %.0f/s, uncached point reads %.0f/s\n", per_second(t1 - t0),
-              per_second(t2 - t1), per_second(t3 - t2));
+    out::Print("inserts %.0f/s, cached point reads %.0f/s, uncached point reads %.0f/s\n", per_second(t1 - t0),
+               per_second(t2 - t1), per_second(t3 - t2));
 }
 
 }  // namespace

@@ -41,7 +41,7 @@ The tests between them:
 
 ```cpp compile run standalone
 #include "math/geometry.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -50,14 +50,14 @@ int main() {
     Sphere player;
     player.center = Vec3(1.5f, 1, 0);
     player.radius = 0.6f;
-    os::Print("player touches crate: %s\n", Overlaps(crate, player) ? "yes" : "no");
+    out::Print("player touches crate: %s\n", Overlaps(crate, player) ? "yes" : "no");
 
     f32 t = 0.0f;
     const Ray shot = Ray::Make(Vec3(-10, 1, 0), Vec3(1, 0, 0));
-    if (Intersect(shot, crate, 100.0f, &t)) os::Print("shot hits at x = %.1f\n", shot.At(t).x);
+    if (Intersect(shot, crate, 100.0f, &t)) out::Print("shot hits at x = %.1f\n", shot.At(t).x);
 
     const Aabb both = Union(crate, Aabb::FromMinMax(Vec3(3, 0, 3), Vec3(4, 1, 4)));
-    os::Print("union: %.0f %.0f %.0f to %.0f %.0f %.0f, area %.0f\n", both.min.x, both.min.y, both.min.z, both.max.x, both.max.y, both.max.z, SurfaceArea(both));
+    out::Print("union: %.0f %.0f %.0f to %.0f %.0f %.0f, area %.0f\n", both.min.x, both.min.y, both.min.z, both.max.x, both.max.y, both.max.z, SurfaceArea(both));
     return 0;
 }
 ```
@@ -89,7 +89,7 @@ tree (Day 240) is the one to use.
 
 ```cpp compile run standalone
 #include "containers/vector.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "spatial/static_bvh.h"
 
 using namespace vse;
@@ -109,13 +109,13 @@ int main() {
 
     // Which crates overlap a box from x = 5 to x = 9?
     const Aabb query = Aabb::FromMinMax(Vec3(5, 0, 0), Vec3(9, 1, 1));
-    os::Print("overlapping:");
+    out::Print("overlapping:");
     tree.Traverse([&](const Aabb& node) { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
                   [&](const Item& item) {
-                      if (Overlaps(item.box, query)) os::Print(" %llu", static_cast<unsigned long long>(item.key));
+                      if (Overlaps(item.box, query)) out::Print(" %llu", static_cast<unsigned long long>(item.key));
                       return true;
                   });
-    os::Print("\n");
+    out::Print("\n");
 
     // The first crate a ray from the left hits: lower the limit to each hit, so farther leaves are skipped.
     const Ray ray = Ray::Make(Vec3(-5, 0.5f, 0.5f), Vec3(1, 0, 0));
@@ -130,7 +130,7 @@ int main() {
         }
         return true;
     });
-    os::Print("ray hits crate %llu at t = %.1f\n", static_cast<unsigned long long>(first), best);
+    out::Print("ray hits crate %llu at t = %.1f\n", static_cast<unsigned long long>(first), best);
     return 0;
 }
 ```
@@ -164,7 +164,7 @@ after `Remove` is refused, not mistaken for a later item); `Move` gives the item
 as the static tree's, and the item visitor also receives the handle.
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "spatial/dynamic_bvh.h"
 
 using namespace vse;
@@ -177,19 +177,19 @@ int main() {
 
     // A step of 0.1 stays inside the fat box (a quarter of the largest extent on every side): nothing in the tree changes.
     const bool changed = tree.Move(player, Aabb::FromMinMax(Vec3(0.1f, 0, 0), Vec3(1.1f, 2, 1)));
-    os::Print("small step changed the tree: %s\n", changed ? "yes" : "no");
+    out::Print("small step changed the tree: %s\n", changed ? "yes" : "no");
     // A jump leaves it: the leaf is taken out and put back.
-    os::Print("jump changed the tree: %s\n", tree.Move(player, Aabb::FromMinMax(Vec3(4.5f, 0, 0), Vec3(5.5f, 2, 1))) ? "yes" : "no");
+    out::Print("jump changed the tree: %s\n", tree.Move(player, Aabb::FromMinMax(Vec3(4.5f, 0, 0), Vec3(5.5f, 2, 1))) ? "yes" : "no");
 
     const Aabb near_crate = Aabb::FromMinMax(Vec3(4, 0, 0), Vec3(7, 1, 1));
     tree.Traverse([&](const Aabb& node) { return Overlaps(node, near_crate) ? NodeVisit::Descend : NodeVisit::Reject; },
                   [&](ProxyId, const Item& item) {
-                      if (Overlaps(item.box, near_crate)) os::Print("near the crate: key %llu\n", static_cast<unsigned long long>(item.key));
+                      if (Overlaps(item.box, near_crate)) out::Print("near the crate: key %llu\n", static_cast<unsigned long long>(item.key));
                       return true;
                   });
 
     tree.Remove(crate);
-    os::Print("removed handle still live: %s\n", tree.IsLive(crate) ? "yes" : "no");
+    out::Print("removed handle still live: %s\n", tree.IsLive(crate) ? "yes" : "no");
     return 0;
 }
 ```
@@ -247,7 +247,7 @@ far in one direction (jittering particles), 4 for fast straight movers.
 
 ```cpp compile run standalone
 #include "containers/vector.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "spatial/query.h"
 
 using namespace vse;
@@ -266,18 +266,18 @@ int main() {
     shot.filter = &NotTheShooter;
     Vector<RayHit> hits;
     Raycast(tree, Ray::Make(Vec3(0.5f, 1, 0.5f), Vec3(1, 0, 0)), 100.0f, shot, RayMode::Closest, Order::Traversal, &hits);
-    os::Print("shot hits key %llu at %.1f\n", static_cast<unsigned long long>(hits[0].key), hits[0].t);
+    out::Print("shot hits key %llu at %.1f\n", static_cast<unsigned long long>(hits[0].key), hits[0].t);
 
     // Only scenery: the same ray with a mask of layer 1.
     QueryFilter scenery;
     scenery.mask = 1u << 1;
     Raycast(tree, Ray::Make(Vec3(0.5f, 1, 0.5f), Vec3(1, 0, 0)), 100.0f, scenery, RayMode::Closest, Order::Traversal, &hits);
-    os::Print("scenery hit: key %llu\n", static_cast<unsigned long long>(hits[0].key));
+    out::Print("scenery hit: key %llu\n", static_cast<unsigned long long>(hits[0].key));
 
     // The two items nearest a point, nearest first.
     Vector<NearestHit> near;
     Nearest(tree, Vec3(6, 1, 0.5f), 2, 50.0f, QueryFilter(), &near);
-    os::Print("nearest: %llu (%.1f), %llu (%.1f)\n", static_cast<unsigned long long>(near[0].key), near[0].distance,
+    out::Print("nearest: %llu (%.1f), %llu (%.1f)\n", static_cast<unsigned long long>(near[0].key), near[0].distance,
               static_cast<unsigned long long>(near[1].key), near[1].distance);
     return 0;
 }
@@ -316,7 +316,7 @@ audio's), so the render set never holds an invisible trigger and the reverse.
 
 ```cpp compile run standalone
 #include "containers/vector.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "spatial/query.h"
 
 using namespace vse;
@@ -336,10 +336,10 @@ int main() {
 
     Vector<SpatialKey> near_door;
     OverlapKeys(world, Aabb::FromMinMax(Vec3(9, 0, 0), Vec3(12, 3, 3)), QueryFilter(), Order::Ordered, &near_door);
-    os::Print("near the door:");
-    for (usize i = 0; i < near_door.Size(); ++i) os::Print(" %llu", static_cast<unsigned long long>(near_door[i]));
-    os::Print("\n");
-    os::Print("door is static: %s\n", world.IsStatic(door) ? "yes" : "no");
+    out::Print("near the door:");
+    for (usize i = 0; i < near_door.Size(); ++i) out::Print(" %llu", static_cast<unsigned long long>(near_door[i]));
+    out::Print("\n");
+    out::Print("door is static: %s\n", world.IsStatic(door) ? "yes" : "no");
     return 0;
 }
 ```
@@ -375,7 +375,7 @@ Measured on the Windows PC (Release), 100,000 agents of 1 x 2 x 1 on a 1000 x 10
 **began** and which **ended** overlapping, sorted, so the narrow phase creates and destroys its contacts from events instead of searching every frame.
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "spatial/pair_tracker.h"
 
 using namespace vse;
@@ -383,10 +383,10 @@ using namespace vse::spatial;
 
 namespace {
 void Show(int frame, const PairEvents& events) {
-    os::Print("frame %d:", frame);
-    for (usize i = 0; i < events.begin.Size(); ++i) os::Print(" begin(%llu,%llu)", static_cast<unsigned long long>(events.begin[i].a), static_cast<unsigned long long>(events.begin[i].b));
-    for (usize i = 0; i < events.end.Size(); ++i) os::Print(" end(%llu,%llu)", static_cast<unsigned long long>(events.end[i].a), static_cast<unsigned long long>(events.end[i].b));
-    os::Print("\n");
+    out::Print("frame %d:", frame);
+    for (usize i = 0; i < events.begin.Size(); ++i) out::Print(" begin(%llu,%llu)", static_cast<unsigned long long>(events.begin[i].a), static_cast<unsigned long long>(events.begin[i].b));
+    for (usize i = 0; i < events.end.Size(); ++i) out::Print(" end(%llu,%llu)", static_cast<unsigned long long>(events.end[i].a), static_cast<unsigned long long>(events.end[i].b));
+    out::Print("\n");
 }
 } // namespace
 
@@ -447,7 +447,7 @@ the sets for you.
 #include "ecs/schedule.h"
 #include "ecs/transform.h"
 #include "ecs/world.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "spatial/components.h"
 #include "spatial/query.h"
 #include "spatial/spatial_sync.h"
@@ -478,7 +478,7 @@ int main() {
     const SpatialWorld& spatial = world.Resource<SpatialWorld>();
     Vector<SpatialKey> keys;
     OverlapKeys(*spatial.Set(kRenderSet), Aabb::FromMinMax(Vec3(5, -1, -1), Vec3(15, 1, 1)), QueryFilter(), Order::Ordered, &keys);
-    os::Print("render set: %u item\n", static_cast<unsigned>(keys.Size()));
+    out::Print("render set: %u item\n", static_cast<unsigned>(keys.Size()));
     return 0;
 }
 ```
@@ -527,7 +527,7 @@ The sync keeps the sets true with the cost of what changed, not of what exists.
 #include "ecs/schedule.h"
 #include "ecs/transform.h"
 #include "ecs/world.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "spatial/entity_query.h"
 #include "spatial/spatial_sync.h"
 
@@ -563,7 +563,7 @@ int main() {
     const Aabb blast = Aabb::FromMinMax(Vec3(1, -3, -3), Vec3(7, 3, 3));
     const usize hit = ForEachIn<Health>(world, world.Resource<SpatialWorld>(), kGameplaySet, blast, QueryFilter(),
                                          [](ecs::Entity, Health& h) { h.hp -= 4.0f; });
-    os::Print("%u entities hit\n", static_cast<unsigned>(hit));
+    out::Print("%u entities hit\n", static_cast<unsigned>(hit));
     return 0;
 }
 ```

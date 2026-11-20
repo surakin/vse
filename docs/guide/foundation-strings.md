@@ -21,7 +21,7 @@ A `StringView` is a pointer and a length. It never copies, it does not need a te
 C string. It is cheap to pass by value.
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "string_view.h"
 
 using namespace vse;
@@ -33,9 +33,9 @@ int main() {
     StringView file = path.Substring(slash + 1);                // shares the same memory
     StringView folder = path.Substring(0, slash);
 
-    os::Print("file '%.*s' in '%.*s'\n", static_cast<int>(file.Length()), file.Data(), static_cast<int>(folder.Length()), folder.Data());
-    os::Print("ends with .mesh: %s, contains 'models': %s\n", file.EndsWith(".mesh") ? "yes" : "no", path.Contains("models") ? "yes" : "no");
-    os::Print("equal to a literal: %s\n", file == StringView("tree.mesh") ? "yes" : "no");
+    out::Print("file '%.*s' in '%.*s'\n", static_cast<int>(file.Length()), file.Data(), static_cast<int>(folder.Length()), folder.Data());
+    out::Print("ends with .mesh: %s, contains 'models': %s\n", file.EndsWith(".mesh") ? "yes" : "no", path.Contains("models") ? "yes" : "no");
+    out::Print("equal to a literal: %s\n", file == StringView("tree.mesh") ? "yes" : "no");
     return 0;
 }
 ```
@@ -61,7 +61,7 @@ A [[String]] holds its characters in memory from an allocator you give it and is
 
 ```cpp compile run standalone
 #include "mem/heap_allocator.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "string/string.h"
 
 using namespace vse;
@@ -72,10 +72,10 @@ int main() {
     String<HeapAllocator> name(heap, "player");
     name.Append('_');
     name.Append("one");
-    os::Print("%s has %zu bytes\n", name.CStr(), name.Length());
+    out::Print("%s has %zu bytes\n", name.CStr(), name.Length());
 
     StringView view = name;                    // converts to a view for free
-    os::Print("starts with 'player': %s\n", view.StartsWith("player") ? "yes" : "no");
+    out::Print("starts with 'player': %s\n", view.StartsWith("player") ? "yes" : "no");
     return 0;
 }
 ```
@@ -98,7 +98,7 @@ starts with 'player': yes
 
 ```cpp compile run standalone
 #include "mem/arena_allocator.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "string/string.h"
 
 using namespace vse;
@@ -108,10 +108,10 @@ int main() {
     StringBuilder<ArenaAllocator> line(scratch);
 
     line.Append("entity ").AppendUInt(42).Append(" at (").AppendFloat(1.5, 2).Append(", ").AppendFloat(-0.25, 2).Append(") flags=0x").AppendHex(255, 4);
-    os::PrintLine(line.CStr());
+    out::PrintLine(line.CStr());
 
     line.Append(" ").AppendInt(-7).AppendCodepoint(0x00E9);   // an 'é', encoded as UTF-8
-    os::PrintLine(line.CStr());
+    out::PrintLine(line.CStr());
     return 0;
 }
 ```
@@ -123,7 +123,7 @@ entity 42 at (1.50, -0.25) flags=0x00ff -7é
 
 The builder has `Append(StringView)`, `Append(char)`, `AppendCodepoint`, `AppendInt`, `AppendUInt`, `AppendHex(value, min_digits)` and `AppendFloat(value,
 precision)`. For the occasional formatted message, the logging macros (see [Logging](foundation-logging-and-assert.md)) already format for you, and
-`os::Print` takes a `printf`-style format for console output.
+`out::Print` takes a `printf`-style format for console output.
 
 ## UTF-8
 
@@ -131,7 +131,7 @@ Text is a sequence of **bytes**, but a person sees **characters**. In UTF-8 a ch
 two, most Asian characters three, emoji four. So `Length()` is not "how many letters".
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "string/utf8.h"
 #include "string/utf8_codec.h"
 
@@ -140,19 +140,19 @@ using namespace vse;
 int main() {
     StringView text = "caf\xC3\xA9 \xF0\x9F\x8E\x89";    // "café 🎉"
 
-    os::Print("bytes %zu, codepoints %zu, valid %s\n", text.Length(), CodepointCount(text), IsValidUtf8(text) ? "yes" : "no");
+    out::Print("bytes %zu, codepoints %zu, valid %s\n", text.Length(), CodepointCount(text), IsValidUtf8(text) ? "yes" : "no");
 
     for (u32 codepoint : Utf8Codepoints(text)) {          // decode one codepoint at a time
-        os::Print("U+%04X ", codepoint);
+        out::Print("U+%04X ", codepoint);
     }
-    os::Print("\n");
+    out::Print("\n");
 
     char bytes[4];
     const usize count = EncodeUtf8(0x20AC, bytes);        // the euro sign
-    os::Print("U+20AC is %zu bytes\n", count);
+    out::Print("U+20AC is %zu bytes\n", count);
 
     StringView broken("a\xFF" "b", 3);                     // 0xFF is never valid UTF-8
-    os::Print("broken: valid %s, codepoints %zu\n", IsValidUtf8(broken) ? "yes" : "no", CodepointCount(broken));
+    out::Print("broken: valid %s, codepoints %zu\n", IsValidUtf8(broken) ? "yes" : "no", CodepointCount(broken));
     return 0;
 }
 ```
@@ -175,7 +175,7 @@ indicator codepoints; a family emoji is several joined by invisible joiners. A *
 with one backspace. The engine implements the Unicode rules (UAX #29, Unicode 17.0.0):
 
 ```cpp compile run standalone
-#include "os/console.h"
+#include "log/output.h"
 #include "string/grapheme.h"
 #include "string/utf8.h"
 
@@ -186,10 +186,10 @@ int main() {
 
     usize clusters = 0;
     for (StringView cluster : GraphemeClusters(text)) {
-        os::Print("cluster of %zu bytes\n", cluster.Length());
+        out::Print("cluster of %zu bytes\n", cluster.Length());
         ++clusters;
     }
-    os::Print("%zu codepoints, %zu clusters\n", CodepointCount(text), clusters);
+    out::Print("%zu codepoints, %zu clusters\n", CodepointCount(text), clusters);
     return 0;
 }
 ```
@@ -211,7 +211,7 @@ The same visible text can be stored in different ways: `é` can be one codepoint
 
 ```cpp compile run standalone
 #include "mem/heap_allocator.h"
-#include "os/console.h"
+#include "log/output.h"
 #include "string/normalize.h"
 #include "string/string.h"
 
@@ -222,11 +222,11 @@ int main() {
     StringView composed = "\xC3\xA9";                // U+00E9
     StringView decomposed = "e\xCC\x81";             // U+0065 U+0301
 
-    os::Print("raw equal: %s\n", composed == decomposed ? "yes" : "no");
+    out::Print("raw equal: %s\n", composed == decomposed ? "yes" : "no");
 
     String<HeapAllocator> a = NormalizeNFC(heap, composed);
     String<HeapAllocator> b = NormalizeNFC(heap, decomposed);
-    os::Print("after NFC equal: %s (%zu bytes)\n", a.View() == b.View() ? "yes" : "no", b.Length());
+    out::Print("after NFC equal: %s (%zu bytes)\n", a.View() == b.View() ? "yes" : "no", b.Length());
     return 0;
 }
 ```
@@ -252,7 +252,7 @@ version follow `tools/unicode_data_gen/README.md` and commit the new data and th
 - **Passing `view.Data()` to a function that expects a terminated C string.** A view is not terminated; build a `String` and use `CStr()`.
 - **Slicing at an arbitrary byte.** You can cut a multi-byte character in two; slice at codepoint (or cluster) boundaries.
 - **Comparing user-entered names with `==` without normalizing.** Normalize to NFC first.
-- **Using `printf`, `std::string` or `std::to_string`.** They are not available; use `StringBuilder`, `os::Print` or the log macros.
+- **Using `printf`, `std::string` or `std::to_string`.** They are not available; use `StringBuilder`, `out::Print` or the log macros.
 
 ## See also
 

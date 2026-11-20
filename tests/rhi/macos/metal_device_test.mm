@@ -2,6 +2,7 @@
 // with validation silent, the capabilities, the timeline and frames, bounded waits, loss, and nothing left alive. macOS
 // only; Objective-C++ for the device's own accessors (metal_device.h).
 #include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
+#include "log/output.h"
 
 #include "cstr/cstr.h"
 #include "cstr/format.h"
@@ -78,13 +79,13 @@ TEST_CASE("Metal lists every device with a hex registry id, the same on every en
         NSArray<id<MTLDevice>>* devices = MTLCopyAllDevices();
         for (id<MTLDevice> device in devices)
         {
-            os::Print("metal adapter: %s unified=%d low_power=%d removable=%d headless=%d working_set=%llu "
-                      "argument_buffers_tier=%ld read_write_textures_tier=%ld\n",
-                      device.name.UTF8String, device.hasUnifiedMemory ? 1 : 0, device.isLowPower ? 1 : 0,
-                      device.isRemovable ? 1 : 0, device.isHeadless ? 1 : 0,
-                      static_cast<unsigned long long>(device.recommendedMaxWorkingSetSize),
-                      static_cast<long>(device.argumentBuffersSupport),
-                      static_cast<long>(device.readWriteTextureSupport));
+            out::Print("metal adapter: %s unified=%d low_power=%d removable=%d headless=%d working_set=%llu "
+                       "argument_buffers_tier=%ld read_write_textures_tier=%ld\n",
+                       device.name.UTF8String, device.hasUnifiedMemory ? 1 : 0, device.isLowPower ? 1 : 0,
+                       device.isRemovable ? 1 : 0, device.isHeadless ? 1 : 0,
+                       static_cast<unsigned long long>(device.recommendedMaxWorkingSetSize),
+                       static_cast<long>(device.argumentBuffersSupport),
+                       static_cast<long>(device.readWriteTextureSupport));
         }
     }
 }

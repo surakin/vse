@@ -38,7 +38,7 @@ The graphics conventions that sit on top of these (the Vulkan clip space, the tr
 
 ```cpp compile run standalone
 #include "math/vector.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -47,16 +47,16 @@ int main() {
     Vec3 up(0.0f, 1.0f, 0.0f);
 
     Vec3 forward = right.Cross(up);                    // right-handed: X cross Y = +Z
-    os::Print("X cross Y = (%.0f, %.0f, %.0f)\n", static_cast<f64>(forward.x), static_cast<f64>(forward.y), static_cast<f64>(forward.z));
+    out::Print("X cross Y = (%.0f, %.0f, %.0f)\n", static_cast<f64>(forward.x), static_cast<f64>(forward.y), static_cast<f64>(forward.z));
 
     Vec3 offset = Vec3(3.0f, 4.0f, 0.0f);
-    os::Print("length %.1f, squared %.1f\n", static_cast<f64>(offset.Length()), static_cast<f64>(offset.LengthSquared()));
+    out::Print("length %.1f, squared %.1f\n", static_cast<f64>(offset.Length()), static_cast<f64>(offset.LengthSquared()));
 
     Vec3 direction = offset.Normalized();
-    os::Print("direction (%.1f, %.1f), dot with X %.1f\n", static_cast<f64>(direction.x), static_cast<f64>(direction.y), static_cast<f64>(direction.Dot(right)));
+    out::Print("direction (%.1f, %.1f), dot with X %.1f\n", static_cast<f64>(direction.x), static_cast<f64>(direction.y), static_cast<f64>(direction.Dot(right)));
 
     Vec3 target = Vec3(1.0f, 2.0f, 3.0f) + offset * 0.5f;
-    os::Print("target (%.1f, %.1f, %.1f)\n", static_cast<f64>(target.x), static_cast<f64>(target.y), static_cast<f64>(target.z));
+    out::Print("target (%.1f, %.1f, %.1f)\n", static_cast<f64>(target.x), static_cast<f64>(target.y), static_cast<f64>(target.z));
     return 0;
 }
 ```
@@ -82,7 +82,7 @@ moved by the translation) and `w = 0` for a **direction** (it is not).
 
 ```cpp compile run standalone
 #include "math/matrix.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -98,9 +98,9 @@ int main() {
     Vec4 a = (move * grow) * point;      // grow first, then move
     Vec4 b = (grow * move) * point;      // move first, then grow
     Vec4 c = move * direction;           // translation does not affect a direction
-    os::Print("move*grow: x=%.0f\n", static_cast<f64>(a.x));
-    os::Print("grow*move: x=%.0f\n", static_cast<f64>(b.x));
-    os::Print("direction after move: x=%.0f\n", static_cast<f64>(c.x));
+    out::Print("move*grow: x=%.0f\n", static_cast<f64>(a.x));
+    out::Print("grow*move: x=%.0f\n", static_cast<f64>(b.x));
+    out::Print("direction after move: x=%.0f\n", static_cast<f64>(c.x));
     return 0;
 }
 ```
@@ -131,7 +131,7 @@ angles and interpolate smoothly. You almost never touch the components; use the 
 
 ```cpp compile run standalone
 #include "math/quaternion.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -140,16 +140,16 @@ int main() {
     // A quarter turn about Y turns +X toward -Z (right-handed).
     Quaternion quarter = Quaternion::FromAxisAngle(up, kPi / 2.0f);
     Vec3 turned = quarter.RotateVector(Vec3(1, 0, 0));
-    os::Print("+X turned: (%.1f, %.1f, %.1f)\n", static_cast<f64>(turned.x), static_cast<f64>(turned.y), static_cast<f64>(turned.z));
+    out::Print("+X turned: (%.1f, %.1f, %.1f)\n", static_cast<f64>(turned.x), static_cast<f64>(turned.y), static_cast<f64>(turned.z));
 
     // Two quarter turns make a half turn.
     Vec3 half = (quarter * quarter).RotateVector(Vec3(1, 0, 0));
-    os::Print("+X after two: (%.1f, %.1f, %.1f)\n", static_cast<f64>(half.x), static_cast<f64>(half.y), static_cast<f64>(half.z));
+    out::Print("+X after two: (%.1f, %.1f, %.1f)\n", static_cast<f64>(half.x), static_cast<f64>(half.y), static_cast<f64>(half.z));
 
     // Halfway between no rotation and a quarter turn is an eighth turn.
     Quaternion eighth = Slerp(Quaternion::Identity(), quarter, 0.5f);
     Vec3 mid = eighth.RotateVector(Vec3(1, 0, 0));
-    os::Print("halfway: x=%.2f z=%.2f\n", static_cast<f64>(mid.x), static_cast<f64>(mid.z));
+    out::Print("halfway: x=%.2f z=%.2f\n", static_cast<f64>(mid.x), static_cast<f64>(mid.z));
     return 0;
 }
 ```
@@ -171,7 +171,7 @@ is flattened: the child's position is scaled and rotated by the parent and then 
 
 ```cpp compile run standalone
 #include "math/transform.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -184,12 +184,12 @@ int main() {
     child.position = Vec3(1, 0, 0);          // one unit in front of the parent, in the parent's space
 
     Transform world = Compose(parent, child);
-    os::Print("child in world space: (%.1f, %.1f, %.1f)\n", static_cast<f64>(world.position.x), static_cast<f64>(world.position.y),
+    out::Print("child in world space: (%.1f, %.1f, %.1f)\n", static_cast<f64>(world.position.x), static_cast<f64>(world.position.y),
               static_cast<f64>(world.position.z));
 
     Mat4 matrix = world.ToMatrix();
     Vec4 origin = matrix * Vec4(0, 0, 0, 1);  // the child's own origin lands at its world position
-    os::Print("origin via matrix: x=%.1f z=%.1f\n", static_cast<f64>(origin.x), static_cast<f64>(origin.z));
+    out::Print("origin via matrix: x=%.1f z=%.1f\n", static_cast<f64>(origin.x), static_cast<f64>(origin.z));
     return 0;
 }
 ```

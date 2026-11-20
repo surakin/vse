@@ -4,6 +4,7 @@
 // run with the same environment. Without validation the program reports so and exits 3, which the ctest does not accept
 // either.
 #include "os/console.h"
+#include "log/output.h"
 #include "os/os.h"
 #include "rhi/backends/backends.h"
 #include "rhi/metal/metal_device.h"
@@ -20,23 +21,23 @@ int main()
     rhi::DevicePtr device = rhi::CreateDevice(info);
     if (!device)
     {
-        os::PrintError("metal_validation_planted: no Metal device\n");
+        out::PrintError("metal_validation_planted: no Metal device\n");
         return 2;
     }
     rhi::metal::MetalDevice& metal = static_cast<rhi::metal::MetalDevice&>(*device);
     if (!metal.ValidationEnabled())
     {
-        os::PrintError("metal_validation_planted: Metal's validation is off (MTL_DEBUG_LAYER is not set)\n");
+        out::PrintError("metal_validation_planted: Metal's validation is off (MTL_DEBUG_LAYER is not set)\n");
         return 3;
     }
     @autoreleasepool
     {
         id<MTLCommandBuffer> buffer = [metal.Queue() commandBuffer];
         id<MTLBlitCommandEncoder> blit = [buffer blitCommandEncoder];
-        os::Print("metal_validation_planted: committing with encoder %p still open\n", (__bridge void*)blit);
+        out::Print("metal_validation_planted: committing with encoder %p still open\n", (__bridge void*)blit);
         [buffer commit];  // the planted error: the encoder was never ended
         [buffer waitUntilCompleted];
     }
-    os::Print("metal_validation_planted: the planted call was not caught\n");
+    out::Print("metal_validation_planted: the planted call was not caught\n");
     return 0;
 }

@@ -4,6 +4,7 @@
 // offscreen with --screenshot. See README.md.
 
 #include "containers/vector.h"
+#include "log/output.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/number.h"
@@ -392,11 +393,11 @@ int Usage(const char* program, int code)
 {
     if (code == kExitOk)
     {
-        os::Print(kUsageFormat, program);
+        out::Print(kUsageFormat, program);
     }
     else
     {
-        os::PrintError(kUsageFormat, program);
+        out::PrintError(kUsageFormat, program);
     }
     return code;
 }
@@ -439,7 +440,7 @@ int EngineMain(int argc, char** argv)
     }
     if (!line.Ok() || line.ArgCount() != 0)
     {
-        os::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
+        out::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
         return Usage(program, kExitUsage);
     }
     StringView value;

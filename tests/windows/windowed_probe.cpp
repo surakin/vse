@@ -6,6 +6,7 @@
 // and "stderr ok" to its standard error, then exits with 7, so a parent sees its output, its arguments and its exit
 // code.
 #include "os/console.h"
+#include "log/output.h"
 
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
@@ -20,12 +21,12 @@ namespace
 
 void PrintHex(const char* label, int index, const char* text, usize length)
 {
-    os::Print("%s %d ", label, index);
+    out::Print("%s %d ", label, index);
     for (usize i = 0; i < length; ++i)
     {
-        os::Print("%02x", static_cast<unsigned>(static_cast<u8>(text[i])));
+        out::Print("%02x", static_cast<unsigned>(static_cast<u8>(text[i])));
     }
-    os::Print("\n");
+    out::Print("\n");
 }
 
 usize Length(const char* text)
@@ -52,7 +53,7 @@ int EngineMain(int argc, char** argv)
     {
         PrintHex("stash", static_cast<int>(i), line.Arg(i).Data(), line.Arg(i).Length());
     }
-    os::Flush();
+    out::Flush();
     os::Write(2, "stderr ok\n", 10);
     return 7;
 }

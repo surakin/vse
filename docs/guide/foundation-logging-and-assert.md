@@ -39,7 +39,7 @@ A message has a **severity**, and a channel prints it when the severity is at le
 
 ```cpp compile run standalone
 #include "log/log.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -52,7 +52,7 @@ int main() {
 
     LogCore.SetEnabled(false);                              // or silence it
     Log(LogCore, LogVerbosity::Error, "never shown");
-    os::Print("enabled: %s\n", LogCore.Enabled() ? "yes" : "no");
+    out::Print("enabled: %s\n", LogCore.Enabled() ? "yes" : "no");
     return 0;
 }
 ```
@@ -102,38 +102,40 @@ buffers), then add it. `Write` runs on the thread that logged, possibly on sever
 ```cpp compile run standalone
 #include "log/log.h"
 #include "log/log_device.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
 class CountingDevice final : public LogDevice {
 public:
     void Write(const LogRecord& record) override {
+        if (record.kind != LogRecordKind::Log) return;   // program output also reaches devices
         ++lines_;
-        os::Print("device got: %.*s", static_cast<int>(record.line.Length()), record.line.Data());
+        last_ = record.level;
     }
     int lines_ = 0;
+    LogVerbosity last_ = LogVerbosity::Info;
 };
 
 int main() {
-    SetConsoleLogMode(ConsoleLogMode::Off);          // only our device listens
+    SetConsoleLogMode(ConsoleLogMode::Off);          // the console stays quiet; only our device listens
     CountingDevice device;
     AddLogDevice(&device, LogVerbosity::Warn);       // warnings and errors
+    Log(LogCore, LogVerbosity::Info, "not for us");
     Log(LogCore, LogVerbosity::Warn, "careful");
     Log(LogCore, LogVerbosity::Error, "broken");
     RemoveLogDevice(&device);                        // safe to destroy the device after this
-    os::Print("lines: %d\n", device.lines_);
+    SetConsoleLogMode(ConsoleLogMode::Plain);
+    out::Print("lines: %d, last was an error: %s\n", device.lines_, device.last_ == LogVerbosity::Error ? "yes" : "no");
     return 0;
 }
 ```
 
 ```output
-device got: [LogCore] WARN: careful
-device got: [LogCore] ERROR: broken
-lines: 2
+lines: 2, last was an error: yes
 ```
 
-The crash and assert reports do not go through devices: they write straight to the write sink (standard output), plain, so they stay safe in a signal
+Program output (`out::Print`, `log/output.h`) goes through the same devices as a `LogRecord` of kind `Output`: no prefix, no colour, no escaping, never filtered by a channel, `Info` for a device's level, silenced on the console by `Off` only. The crash and assert reports do not go through devices: they write straight to the write sink (standard output), plain, so they stay safe in a signal
 handler. The last 256 lines are kept in the ring for the crash report whatever the devices are. An observer (`SetLogObserver`, the C API's log
 callback) that returns true keeps the line off the console only; added devices still get it.
 
@@ -230,7 +232,7 @@ the bare message, which is complete on its own.
 - **Putting side effects in `ENGINE_CHECK_SLOW`.** In release builds the condition is not evaluated at all. Use `ENGINE_VERIFY` when the expression must run.
 - **Writing `ENGINE_ASSERT(Load(file), ...)` and expecting the load to happen elsewhere.** `ENGINE_ASSERT` always evaluates its condition, but keep it a *check*, not the work.
 - **Relying on `ENGINE_ENSURE` to stop execution.** It reports once and returns `false`; the code after it must handle the failure.
-- **Printing with `printf` or `std::cout`.** Use `Log` (diagnostics) or `os::Print` (program output).
+- **Printing with `printf` or `std::cout`.** Use `Log` (diagnostics) or `out::Print` (program output): both reach every log device; the C streams are not used.
 - **Logging from a signal handler or a crash path.** Only the functions marked async-signal-safe may be called there ([Debugging](foundation-debugging.md)).
 
 ## See also

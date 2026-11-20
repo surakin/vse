@@ -7,6 +7,7 @@
 //
 // The options are this tool's own command line, not engine settings.
 #include "build_defs.h"
+#include "log/output.h"
 #include "audio/device.h"
 #include "audio/device_list.h"
 #include "containers/vector.h"
@@ -28,9 +29,9 @@ using Line = os::CommandLine<HeapAllocator>;
 
 int Usage()
 {
-    os::PrintError("usage: audio_probe list [--backend=auto|pipewire|alsa|wasapi|coreaudio|null]\n"
-                   "       audio_probe play [--backend=...] [--device=NAME] [--seconds=N] [--frequency=HZ]\n"
-                   "                        [--buffer=FRAMES] [--rate=HZ]\n");
+    out::PrintError("usage: audio_probe list [--backend=auto|pipewire|alsa|wasapi|coreaudio|null]\n"
+                    "       audio_probe play [--backend=...] [--device=NAME] [--seconds=N] [--frequency=HZ]\n"
+                    "                        [--buffer=FRAMES] [--rate=HZ]\n");
     return 64;
 }
 
@@ -112,12 +113,12 @@ int List(DeviceKind kind)
     EnumerateDevices(kind, &devices);
     if (devices.Size() == 0)
     {
-        os::Print("no outputs\n");
+        out::Print("no outputs\n");
     }
     for (u32 i = 0; i < devices.Size(); ++i)
     {
-        os::Print("%s%s  up to %u channels\n", devices[i].name, devices[i].is_default ? " (default)" : "",
-                  devices[i].max_channels);
+        out::Print("%s%s  up to %u channels\n", devices[i].name, devices[i].is_default ? " (default)" : "",
+                   devices[i].max_channels);
     }
     return 0;
 }
@@ -141,27 +142,27 @@ int Play(const Line& line, DeviceKind kind)
     const DeviceStatus opened = device->Open(config);
     if (opened != DeviceStatus::Ok)
     {
-        os::PrintError("audio_probe: open failed (status %u)\n", static_cast<u32>(opened));
+        out::PrintError("audio_probe: open failed (status %u)\n", static_cast<u32>(opened));
         return 2;
     }
     const DeviceInfo info = device->Info();
     tone.channels = ChannelCount(info.layout);
     tone.step = 6.2831853f * static_cast<f32>(frequency) / static_cast<f32>(info.sample_rate);
-    os::Print("granted: %u Hz, %u channels, %u frames per call, latency %u frames\n", info.sample_rate, tone.channels,
-              info.buffer_frames, info.latency_frames);
+    out::Print("granted: %u Hz, %u channels, %u frames per call, latency %u frames\n", info.sample_rate, tone.channels,
+               info.buffer_frames, info.latency_frames);
     if (device->Start() != DeviceStatus::Ok)
     {
-        os::PrintError("audio_probe: start failed\n");
+        out::PrintError("audio_probe: start failed\n");
         return 3;
     }
     ThisThread::SleepForMilliseconds(static_cast<u64>(seconds) * 1000);
     device->Stop();
     const DeviceCounters counters = device->Counters();
-    os::Print("callbacks %llu, underruns %llu, slow %llu, longest %llu us, frames %llu\n",
-              static_cast<unsigned long long>(counters.callbacks), static_cast<unsigned long long>(counters.underruns),
-              static_cast<unsigned long long>(counters.slow_callbacks),
-              static_cast<unsigned long long>(counters.longest_callback_micros),
-              static_cast<unsigned long long>(device->FramesRendered()));
+    out::Print("callbacks %llu, underruns %llu, slow %llu, longest %llu us, frames %llu\n",
+               static_cast<unsigned long long>(counters.callbacks), static_cast<unsigned long long>(counters.underruns),
+               static_cast<unsigned long long>(counters.slow_callbacks),
+               static_cast<unsigned long long>(counters.longest_callback_micros),
+               static_cast<unsigned long long>(device->FramesRendered()));
     device->Close();
     return 0;
 }
@@ -175,7 +176,7 @@ int main(int argc, char** argv)
     {
         if (!line.Ok())
         {
-            os::PrintError("audio_probe: %s\n", line.Error().Data());
+            out::PrintError("audio_probe: %s\n", line.Error().Data());
         }
         return Usage();
     }

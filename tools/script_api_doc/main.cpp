@@ -6,6 +6,7 @@
 //
 // The default path is docs/reference/script-api.md under the current directory (ctest runs it from the source root).
 #include "io/file.h"
+#include "log/output.h"
 #include "io/path.h"
 #include "os/command_line.h"
 #include "os/console.h"
@@ -24,7 +25,7 @@ using Line = os::CommandLine<HeapAllocator>;
 
 int Usage()
 {
-    os::PrintError("usage: script_api_doc (--write | --check | --print) [--file PATH]\n");
+    out::PrintError("usage: script_api_doc (--write | --check | --print) [--file PATH]\n");
     return 64;
 }
 
@@ -35,7 +36,7 @@ int main(int argc, char** argv)
     const Line line(HeapAllocator::Default(), argc, argv, Span<const os::CommandLineOption>(kOptions, 4));
     if (!line.Ok())
     {
-        os::PrintError("script_api_doc: %s\n", line.Error().Data());
+        out::PrintError("script_api_doc: %s\n", line.Error().Data());
         return Usage();
     }
     const bool write = line.HasFlag("write");
@@ -48,37 +49,37 @@ int main(int argc, char** argv)
     script::BindingRegistry registry;
     if (!script::RegisterStandardBindings(&registry))
     {
-        os::PrintError("script_api_doc: the standard bindings do not register\n");
+        out::PrintError("script_api_doc: the standard bindings do not register\n");
         return 2;
     }
     if (!script_physics::RegisterPhysicsBindings(&registry))
     {
-        os::PrintError("script_api_doc: the physics bindings do not register\n");
+        out::PrintError("script_api_doc: the physics bindings do not register\n");
         return 2;
     }
     if (!script_media::RegisterAudioBindings(&registry) || !script_media::RegisterInputBindings(&registry))
     {
-        os::PrintError("script_api_doc: the audio and input bindings do not register\n");
+        out::PrintError("script_api_doc: the audio and input bindings do not register\n");
         return 2;
     }
     const String<HeapAllocator> page = registry.RenderMarkdown();
     if (print)
     {
-        os::Print("%s", page.CStr());
+        out::Print("%s", page.CStr());
         return 0;
     }
     io::Path path;
     if (!io::Path::Parse(StringView(line.OptionOr("file", "docs/reference/script-api.md")), io::NativePathStyle(),
                          &path))
     {
-        os::PrintError("script_api_doc: bad path\n");
+        out::PrintError("script_api_doc: bad path\n");
         return 2;
     }
     if (write)
     {
         if (!io::WriteFileAtomic(path, page.CStr(), page.Length(), 0644).Ok())
         {
-            os::PrintError("script_api_doc: cannot write the page\n");
+            out::PrintError("script_api_doc: cannot write the page\n");
             return 2;
         }
         return 0;
@@ -86,12 +87,12 @@ int main(int argc, char** argv)
     String<HeapAllocator> current(HeapAllocator::Default());
     if (!io::ReadTextFile(path, &current).Ok())
     {
-        os::PrintError("script_api_doc: cannot read docs/reference/script-api.md (run script_api_doc --write)\n");
+        out::PrintError("script_api_doc: cannot read docs/reference/script-api.md (run script_api_doc --write)\n");
         return 1;
     }
     if (current.View() != page.View())
     {
-        os::PrintError("script_api_doc: docs/reference/script-api.md is out of date (run script_api_doc --write)\n");
+        out::PrintError("script_api_doc: docs/reference/script-api.md is out of date (run script_api_doc --write)\n");
         return 1;
     }
     return 0;

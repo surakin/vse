@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "algorithm.h"
+#include "log/output.h"
 #include "ecs/query.h"
 #include "ecs/world.h"
 #include "os/console.h"
@@ -515,8 +516,8 @@ TEST_CASE("World view: the cost of a command", "[.bench]")
     CommandBuffer* order[1] = {&buffer};
     Merge(&world, Span<CommandBuffer* const>(order, 1), kinds, ConflictPolicy::LastWins);
     const u64 t2 = os::MonotonicTimeNanos();
-    os::Print("record %.1f ns per command, merge %.1f ns per command\n", static_cast<double>(t1 - t0) / kN,
-              static_cast<double>(t2 - t1) / kN);
+    out::Print("record %.1f ns per command, merge %.1f ns per command\n", static_cast<double>(t1 - t0) / kN,
+               static_cast<double>(t2 - t1) / kN);
 }
 
 TEST_CASE("CommandBuffer: a null payload with a size is refused, a zero size is fine", "[script][worldview]")

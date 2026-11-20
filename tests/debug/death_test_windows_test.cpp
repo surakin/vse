@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "debug/death_test.h"
+#include "log/output.h"
 #include "resource_guard.h"
 #include "support/death_test_skip.h"
 
@@ -22,7 +23,7 @@ using namespace vse::debug;
 
 ENGINE_DEATH_TEST_FN(dt_win_exit_three)
 {
-    os::Flush();
+    out::Flush();
     os::ExitNow(3);  // the same exit code abort() gives, without the marker
 }
 
@@ -58,13 +59,13 @@ ENGINE_DEATH_TEST_FN(dt_win_report_error_mode)
     JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits{};
     const BOOL in_job = QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation, &limits, sizeof(limits),
                                                   nullptr);
-    os::Print(
+    out::Print(
         "gpfault-box-off=%d critical-box-off=%d abort-msg=%d abort-report=%d job=%d kill-on-close=%d die-on-unhandled=%d\n",
         (mode & SEM_NOGPFAULTERRORBOX) != 0 ? 1 : 0, (mode & SEM_FAILCRITICALERRORS) != 0 ? 1 : 0,
         (abort_flags & _WRITE_ABORT_MSG) != 0 ? 1 : 0, (abort_flags & _CALL_REPORTFAULT) != 0 ? 1 : 0, in_job ? 1 : 0,
         (limits.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE) != 0 ? 1 : 0,
         (limits.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION) != 0 ? 1 : 0);
-    os::Flush();
+    out::Flush();
 }
 
 TEST_CASE("Windows: a death-test child shows no error dialog, writes no abort message and runs in a job that ends it",
@@ -108,8 +109,8 @@ ENGINE_DEATH_TEST_FN(dt_win_hang_with_grandchild)
     {
         os::ExitNow(11);
     }
-    os::Print("grandchild=%lu\n", static_cast<unsigned long>(process.dwProcessId));
-    os::Flush();
+    out::Print("grandchild=%lu\n", static_cast<unsigned long>(process.dwProcessId));
+    out::Flush();
     CloseHandle(process.hThread);
     CloseHandle(process.hProcess);
     Sleep(INFINITE);

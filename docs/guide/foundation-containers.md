@@ -155,7 +155,7 @@ nothing is allocated from the heap behind your back.
 ```cpp compile run standalone
 #include "containers/hash_map.h"
 #include "mem/heap_allocator.h"
-#include "os/console.h"
+#include "log/output.h"
 
 using namespace vse;
 
@@ -168,11 +168,11 @@ int main() {
     if (f32* hp = health.Find(7)) {    // a pointer to the stored value, or nullptr
         *hp -= 30.0f;                  // edit in place
     }
-    os::Print("7 -> %.1f, 9 -> %.1f, 4 -> %s\n", static_cast<f64>(*health.Find(7)), static_cast<f64>(*health.Find(9)),
+    out::Print("7 -> %.1f, 9 -> %.1f, 4 -> %s\n", static_cast<f64>(*health.Find(7)), static_cast<f64>(*health.Find(9)),
               health.Find(4) == nullptr ? "absent" : "present");
 
     health.Remove(9);
-    os::Print("size %zu, removed key is %s\n", health.Size(), health.Find(9) == nullptr ? "gone" : "still there");
+    out::Print("size %zu, removed key is %s\n", health.Size(), health.Find(9) == nullptr ? "gone" : "still there");
     return 0;
 }
 ```

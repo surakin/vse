@@ -1,5 +1,6 @@
 #pragma once
 
+#include "debug/compiler.h"
 #include "log/assert.h"
 #include "string_view.h"
 #include "types.h"
@@ -173,5 +174,14 @@ void SetLogObserver(LogObserverFn fn, void* user);
 /// - Thread-safety: thread-compatible. Formatting uses a stack buffer, but the
 ///   channel state it reads is unsynchronized.
 void Log(LogChannel& channel, LogVerbosity level, StringView message);
+
+/// As [[Log]] with a `printf`-style format: the message is formatted into a 512-byte buffer (a longer one is cut), then
+/// logged.
+///
+/// - Param channel: channel to log on.
+/// - Param level: severity of this message.
+/// - Param format: a `printf` format without the trailing newline.
+/// - Thread-safety: thread-compatible, as [[Log]].
+void LogF(LogChannel& channel, LogVerbosity level, const char* format, ...) ENGINE_PRINTF_FORMAT(3, 4);
 
 }  // namespace vse
