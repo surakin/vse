@@ -20,6 +20,7 @@ namespace crash_extract
 
 namespace io = vse::io;
 namespace os = vse::os;
+namespace out = vse::out;
 using vse::MemSet;
 using vse::usize;
 

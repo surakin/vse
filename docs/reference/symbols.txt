@@ -3070,12 +3070,12 @@ os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount
 os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:211
 os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:220
 os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:230
-os::Flush()	function	platform/os	os-flush	platform-os.md	engine/foundation/os/console.h:20
-os::FlushError()	function	platform/os	os-flusherror	platform-os.md	engine/foundation/os/console.h:27
-os::FlushAll()	function	platform/os	os-flushall	platform-os.md	engine/foundation/os/console.h:35
-os::Abort() noexcept	function	platform/os	os-abort-noexcept	platform-os.md	engine/foundation/os/console.h:43
-os::ExitNow(int) noexcept	function	platform/os	os-exitnow-int-noexcept	platform-os.md	engine/foundation/os/console.h:50
-os::GetEnvironment(const char*) noexcept	function	platform/os	os-getenvironment-const-char-star-noexcept	platform-os.md	engine/foundation/os/console.h:61
+os::Flush()	function	platform/os	os-flush	platform-os.md	engine/foundation/os/console.h:21
+os::FlushError()	function	platform/os	os-flusherror	platform-os.md	engine/foundation/os/console.h:28
+os::FlushAll()	function	platform/os	os-flushall	platform-os.md	engine/foundation/os/console.h:36
+os::Abort() noexcept	function	platform/os	os-abort-noexcept	platform-os.md	engine/foundation/os/console.h:44
+os::ExitNow(int) noexcept	function	platform/os	os-exitnow-int-noexcept	platform-os.md	engine/foundation/os/console.h:51
+os::GetEnvironment(const char*) noexcept	function	platform/os	os-getenvironment-const-char-star-noexcept	platform-os.md	engine/foundation/os/console.h:62
 os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	engine/foundation/os/gpu_driver_probe.h:20
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:28
 os::LastError() noexcept	function	platform/os	os-lasterror-noexcept	platform-os.md	engine/foundation/os/last_error.h:13

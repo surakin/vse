@@ -88,7 +88,7 @@ TEST_CASE("docgen on Windows: a child gets its arguments as given, quotes and ba
     CHECK(
         got.View() ==
         StringView(
-            "[plain]\r\n[two words]\r\n[say \"hi\"]\r\n[trailing\\]\r\n[C:\\dir with space\\]\r\n[a\\\\\"b]\r\n[]\r\n"));
+            "[plain]\n[two words]\n[say \"hi\"]\n[trailing\\]\n[C:\\dir with space\\]\n[a\\\\\"b]\n[]\n"));
 }
 
 TEST_CASE("docgen on Windows: exit codes, and an exception status as how a child was ended", "[docgen][windows]")
@@ -126,11 +126,11 @@ TEST_CASE("docgen on Windows: standard error goes to its own file, or with the o
                                PathOf(arena, err), StringView(), arena, &child));
     REQUIRE(WaitFor(child, &end) == ChildPoll::Ended);
     CHECK(io_test::ReadText(out).View() == StringView(""));
-    CHECK(io_test::ReadText(err).View() == StringView("to stderr\r\n"));
+    CHECK(io_test::ReadText(err).View() == StringView("to stderr\n"));
     REQUIRE(docgen::StartChild(Args(arena, {StringView("--stderr"), StringView("merged")}), PathOf(arena, out),
                                StringView(), StringView(), arena, &child));
     REQUIRE(WaitFor(child, &end) == ChildPoll::Ended);
-    CHECK(io_test::ReadText(out).View() == StringView("merged\r\n"));  // and the file was truncated, not appended to
+    CHECK(io_test::ReadText(out).View() == StringView("merged\n"));  // and the file was truncated, not appended to
 }
 
 TEST_CASE("docgen on Windows: a child runs in the working directory it was given", "[docgen][windows]")
@@ -146,7 +146,7 @@ TEST_CASE("docgen on Windows: a child runs in the working directory it was given
     REQUIRE(WaitFor(child, &end) == ChildPoll::Ended);
     Path printed;
     const engine_test::Text text = io_test::ReadText(out);
-    REQUIRE(Path::Parse(text.View().Substring(0, text.View().IndexOf('\r')), io::PathStyle::Windows, &printed));
+    REQUIRE(Path::Parse(text.View().Substring(0, text.View().IndexOf('\n')), io::PathStyle::Windows, &printed));
     Path expected;
     REQUIRE(io::Canonical(work.Path(), &expected).Ok());
     Path printed_canonical;

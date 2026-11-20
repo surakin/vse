@@ -49,6 +49,7 @@ set_tests_properties(windows_header_check windows_header_planted PROPERTIES RESO
 
 # --- The manifest: an executable built with the engine's options reports what the manifest asked for ----------------------------
 add_executable(windows_manifest_probe manifest_probe.cpp)
+target_link_libraries(windows_manifest_probe PRIVATE foundation_base) # out::Print (log/output.cpp)
 target_compile_options(windows_manifest_probe PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_include_directories(windows_manifest_probe PRIVATE "${CMAKE_SOURCE_DIR}/engine/foundation")
 add_test(NAME windows_manifest COMMAND windows_manifest_probe)
