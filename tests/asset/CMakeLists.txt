@@ -64,7 +64,8 @@ function(engine_add_asset_tests target asset_lib suffix label)
   string(REPLACE "asset" "renderer" renderer_lib ${asset_lib})  # Day 323: the texture test uploads a blob to a null device
   string(REPLACE "asset" "asset_import" import_lib ${asset_lib})  # Day 335: the glTF importer under test
   string(REPLACE "asset" "animation" animation_lib ${asset_lib})  # Day 333: the project side of the minter registers the animation components
-  target_link_libraries(${target} PRIVATE ${import_lib} ${asset_lib} ${animation_lib} renderer_passes${renderer_suffix} ${renderer_lib} Catch2::Catch2WithMain Threads::Threads)
+  string(REPLACE "asset" "physics" physics_lib ${asset_lib})  # glTF colliders Day 2: the MCOL area rule against physics' own
+  target_link_libraries(${target} PRIVATE ${import_lib} ${asset_lib} ${animation_lib} ${physics_lib} renderer_passes${renderer_suffix} ${renderer_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tools/asset_mint ${CMAKE_SOURCE_DIR}/tests/support)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})

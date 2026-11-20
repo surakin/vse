@@ -33,12 +33,23 @@ enum MeshColliderSection : u32
     kMeshColliderSectionMaterials = 19,  ///< One `u8` per triangle.
 };
 
+/// Tells whether a triangle has an area, by the physics module's own rule (glTF colliders Day 2).
+///
+/// The cross product of `b - a` and `c - a` in `f32`, its squared length finite and above `1e-20`: exactly
+/// `physics::TriangleMesh::Create`'s test, so a triangle this accepts never makes a physics mesh refuse the collider.
+///
+/// - Param a: the first corner.
+/// - Param b: the second corner.
+/// - Param c: the third corner.
+/// - Fails: never.
+bool MeshColliderTriangleHasArea(const Array<f32, 3>& a, const Array<f32, 3>& b, const Array<f32, 3>& c);
+
 /// Builds an `MCOL` blob.
 ///
 /// - Param materials: one per triangle, or empty for all zero.
 /// - Ownership: the inputs are read during the call only; `out` is the caller's.
 /// - Fails: `Invalid` for no triangles, a count over the limits, a non-finite position, an index outside the vertices
-/// or a triangle with no area; `LimitExceeded` is not used.
+/// or a triangle with no area ([[asset::MeshColliderTriangleHasArea]]); `LimitExceeded` is not used.
 Status BuildMeshColliderBlob(const TypeRegistry& types, ResourceId id, Span<const Array<f32, 3>> positions,
                              Span<const u32> indices, Span<const u8> materials, Vector<byte>* out, u32 target = 0);
 
@@ -54,8 +65,8 @@ public:
     /// Validates `bytes` as a mesh-collider blob and keeps a share of them.
     ///
     /// - Fails: the errors of [[asset::BlobReader::Open]]; `TypeMismatch` for another type; `Corrupt` for a missing or
-    /// mis-sized section, a count over its limit, a non-finite position, an index outside the vertices or a
-    /// non-zero reserved header field.
+    /// mis-sized section, a count over its limit, a non-finite position, an index outside the vertices, a triangle with
+    /// no area ([[asset::MeshColliderTriangleHasArea]]) or a non-zero reserved header field.
     /// - Ownership: shares `bytes`.
     Status Open(const SharedBytesPtr& bytes, const TypeRegistry& types);
 

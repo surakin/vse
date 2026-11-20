@@ -2,7 +2,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "asset/cpu_loaders.h"
+#include "asset/memory_backend.h"
 #include "asset/mesh_collider.h"
+#include "asset/resource_manager.h"
+#include "physics/triangle_mesh.h"
 #include "cstr/mem_ops.h"
 #include "cstr/cstr.h"
 #include "lang/limits.h"
@@ -152,6 +156,83 @@ TEST_CASE("MCOL: the text source mints and reports a bad line", "[asset][mcol]")
     CHECK(MintMeshCollider(StringView(noid, CStrLength(noid)), types, &blob, &error).Failed());
     const char* material = "id 000000000000000a\nv 0 0 0\nv 1 0 0\nv 0 0 1\nt 0 1 2 300\n";
     CHECK(MintMeshCollider(StringView(material, CStrLength(material)), types, &blob, &error).Failed());
+}
+
+// glTF colliders Day 2: one rule for "a triangle with no area", the physics module's.
+TEST_CASE("MCOL: the area rule is physics' own", "[asset][mcol]")
+{
+    // A triangle of area about 1e-11 (cross squared about 4e-22): the old f64 1e-24 test accepted it, physics does not.
+    CHECK(!MeshColliderTriangleHasArea(McolP(0, 0, 0), McolP(1e-5f, 0, 0), McolP(0, 2e-6f, 0)));
+    CHECK(MeshColliderTriangleHasArea(McolP(0, 0, 0), McolP(1, 0, 0), McolP(0, 1, 0)));
+    CHECK(!MeshColliderTriangleHasArea(McolP(0, 0, 0), McolP(1, 1, 1), McolP(2, 2, 2)));  // collinear
+    CHECK(!MeshColliderTriangleHasArea(McolP(0, 0, 0), McolP(Limits<f32>::Infinity(), 0, 0), McolP(0, 1, 0)));
+    // 1,000 random triangles near the threshold: the same answer as a one-triangle physics mesh.
+    u64 state = 20261120;
+    auto below = [&state](u32 bound)
+    {
+        state = state * 6364136223846793005ull + 1442695040888963407ull;
+        return static_cast<u32>((state >> 33) % bound);
+    };
+    for (u32 n = 0; n < 1000; ++n)
+    {
+        const f32 scale = static_cast<f32>(below(1000) + 1) * 1e-8f;
+        Array<f32, 3> c[3];
+        Vec3 v[3];
+        for (u32 k = 0; k < 3; ++k)
+        {
+            for (u32 a = 0; a < 3; ++a)
+            {
+                c[k][a] = (static_cast<f32>(below(2001)) - 1000.0f) * scale;
+            }
+            v[k] = Vec3(c[k][0], c[k][1], c[k][2]);
+        }
+        const u32 idx[3] = {0, 1, 2};
+        physics::TriangleMeshSpec spec;
+        spec.positions = Span<const Vec3>(v, 3);
+        spec.indices = Span<const u32>(idx, 3);
+        const bool physics_accepts = static_cast<bool>(physics::TriangleMesh::Create(spec, nullptr));
+        CHECK(MeshColliderTriangleHasArea(c[0], c[1], c[2]) == physics_accepts);
+    }
+}
+
+TEST_CASE("MCOL: a blob with a triangle physics would refuse does not open", "[asset][mcol]")
+{
+    const TypeRegistry types;
+    Vector<byte> blob = McolQuad(types);
+    // Move vertex 1 onto vertex 0 in the stored positions, after the builder checked them: Open refuses it.
+    BlobReader reader;
+    REQUIRE(reader.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok());
+    ByteSpan positions;
+    REQUIRE(reader.FindSection(kMeshColliderSectionPositions, &positions));
+    const usize at = static_cast<usize>(positions.Data() - blob.Data());
+    MemCopy(blob.Data() + at + 12, blob.Data() + at, 12);
+    MeshColliderView view;
+    const Status opened = view.Open(CopyShared(ByteSpan(blob.Data(), blob.Size())), types);
+    CHECK(opened.Failed());
+    CHECK(StringView(opened.Message()).Contains(StringView("no area")));  // the area check, not another one
+}
+
+TEST_CASE("MCOL: it loads through the resource manager", "[asset][mcol]")
+{
+    const TypeRegistry types;
+    const Vector<byte> blob = McolQuad(types);
+    HostMemoryBackend backend(types, u64{1} << 20);
+    const StringView paths[1] = {StringView("/colliders/quad")};
+    MemoryAddOptions add;
+    add.paths = Span<const StringView>(paths, 1);
+    REQUIRE(backend.Add(ResourceId::FromValue(9), ByteSpan(blob.Data(), blob.Size()), add).Ok());
+    ManagerConfig config;
+    config.buffer_pool_bytes = u64{1} << 20;
+    ResourceManager manager(types, config);
+    RegisterCpuLoaders(&manager);
+    REQUIRE(manager.Mount(StringView("/"), &backend, 0).Ok());
+    REQUIRE(manager.Mounts().RefreshTables().Ok());
+    Handle<MeshColliderView> by_id;
+    REQUIRE(manager.Load<MeshColliderView>(ResourceId::FromValue(9), &by_id).Ok());
+    CHECK(by_id.Get()->TriangleCount() == 2);
+    Handle<MeshColliderView> by_path;
+    REQUIRE(manager.LoadPath<MeshColliderView>(StringView("/colliders/quad"), &by_path).Ok());
+    CHECK(by_path.Get()->VertexCount() == 4);
 }
 
 }  // namespace engine_placeholder::asset

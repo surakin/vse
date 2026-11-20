@@ -71,6 +71,11 @@ Status LoadTexture(const LoadContext& context, TextureView* out, void*)
     return out->Open(context.Bytes(), context.Types());
 }
 
+Status LoadMeshCollider(const LoadContext& context, MeshColliderView* out, void*)
+{
+    return out->Open(context.Buffer(), context.Types());
+}
+
 Status LoadMaterial(const LoadContext& context, MaterialAssetData* out, void*)
 {
     return LoadMaterialBlob(context.Bytes(), context.Types(), out);
@@ -97,6 +102,7 @@ void RegisterCpuLoaders(ResourceManager* manager)
     manager->RegisterLoader<MeshView>(&LoadMesh);
     manager->RegisterLoader<TextureView>(&LoadTexture);
     manager->RegisterLoader<MaterialAssetData>(&LoadMaterial);
+    manager->RegisterLoader<MeshColliderView>(&LoadMeshCollider);
     manager->RegisterLoader<LevelSummary>(&LoadLevel);
 }
 

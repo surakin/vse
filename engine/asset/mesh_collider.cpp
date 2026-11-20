@@ -83,15 +83,8 @@ Status BuildMeshColliderBlob(const TypeRegistry& types, ResourceId id, Span<cons
                 return McolBad("a mesh collider index is outside the vertices");
             }
         }
-        const Array<f32, 3>& a = positions[indices[t * 3]];
-        const Array<f32, 3>& b = positions[indices[t * 3 + 1]];
-        const Array<f32, 3>& c = positions[indices[t * 3 + 2]];
-        const f64 e1[3] = {f64{b[0]} - a[0], f64{b[1]} - a[1], f64{b[2]} - a[2]};
-        const f64 e2[3] = {f64{c[0]} - a[0], f64{c[1]} - a[1], f64{c[2]} - a[2]};
-        const f64 cx = e1[1] * e2[2] - e1[2] * e2[1];
-        const f64 cy = e1[2] * e2[0] - e1[0] * e2[2];
-        const f64 cz = e1[0] * e2[1] - e1[1] * e2[0];
-        if (!(cx * cx + cy * cy + cz * cz > 1e-24))
+        if (!MeshColliderTriangleHasArea(positions[indices[t * 3]], positions[indices[t * 3 + 1]],
+                                         positions[indices[t * 3 + 2]]))
         {
             return McolBad("a mesh collider triangle has no area");
         }
@@ -127,6 +120,22 @@ Status BuildMeshColliderBlob(const TypeRegistry& types, ResourceId id, Span<cons
     ENGINE_TRY(writer.AddSection(kMeshColliderSectionIndices, ByteSpan(idx.Data(), idx.Size())));
     ENGINE_TRY(writer.AddSection(kMeshColliderSectionMaterials, ByteSpan(mat.Data(), mat.Size())));
     return writer.Finish(out);
+}
+
+bool MeshColliderTriangleHasArea(const Array<f32, 3>& a, const Array<f32, 3>& b, const Array<f32, 3>& c)
+{
+    // physics::TriangleMesh::Create: n = (b - a).Cross(c - a), n.LengthSquared() (x*x + y*y + z*z), finite and > 1e-20.
+    const f32 e1x = b[0] - a[0];
+    const f32 e1y = b[1] - a[1];
+    const f32 e1z = b[2] - a[2];
+    const f32 e2x = c[0] - a[0];
+    const f32 e2y = c[1] - a[1];
+    const f32 e2z = c[2] - a[2];
+    const f32 nx = e1y * e2z - e1z * e2y;
+    const f32 ny = e1z * e2x - e1x * e2z;
+    const f32 nz = e1x * e2y - e1y * e2x;
+    const f32 len2 = nx * nx + ny * ny + nz * nz;
+    return IsFinite(len2) && len2 > 1e-20f;
 }
 
 Status MeshColliderView::Open(const SharedBytesPtr& bytes, const TypeRegistry& types)
@@ -177,6 +186,18 @@ Status MeshColliderView::Open(const SharedBytesPtr& bytes, const TypeRegistry& t
         if (McolLoad32(idx.Data() + k * 4) >= nv)
         {
             return McolCorrupt("a mesh collider index is outside the vertices");
+        }
+    }
+    for (u32 t = 0; t < nt; ++t)
+    {
+        Array<f32, 3> corner[3];
+        for (u32 c = 0; c < 3; ++c)
+        {
+            MemCopy(corner[c].Data(), pos.Data() + usize{McolLoad32(idx.Data() + (usize{t} * 3 + c) * 4)} * 12, 12);
+        }
+        if (!MeshColliderTriangleHasArea(corner[0], corner[1], corner[2]))
+        {
+            return McolCorrupt("a mesh collider triangle has no area");
         }
     }
     bytes_ = bytes;

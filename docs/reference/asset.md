@@ -4208,6 +4208,41 @@ static constexpr u32 kKind;
 
 The code of the C++ type.
 
+## `ResourceTraits<MeshColliderView>` {#asset-resourcetraits-lt-meshcolliderview-gt}
+
+`struct asset::ResourceTraits<MeshColliderView>` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+template <>
+struct ResourceTraits<MeshColliderView> { ... }
+```
+
+A mesh collider is loaded as a [`asset::MeshColliderView`](#asset-meshcolliderview) over the manager's buffer (glTF colliders Day 2).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe, a compile-time constant. |
+
+### `kType` {#asset-resourcetraits-lt-meshcolliderview-gt-ktype}
+
+`variable asset::ResourceTraits<MeshColliderView>::kType` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+static constexpr ResourceType kType;
+```
+
+`MCOL`.
+
+### `kKind` {#asset-resourcetraits-lt-meshcolliderview-gt-kkind}
+
+`variable asset::ResourceTraits<MeshColliderView>::kKind` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+static constexpr u32 kKind;
+```
+
+The code of the C++ type.
+
 ## `ResourceTraits<LevelSummary>` {#asset-resourcetraits-lt-levelsummary-gt}
 
 `struct asset::ResourceTraits<LevelSummary>` — defined in `engine/asset/cpu_loaders.h`
@@ -4251,7 +4286,7 @@ The code of the C++ type.
 void RegisterCpuLoaders(ResourceManager* manager);
 ```
 
-Registers the loaders of audio clips, scripts, skeletons, clips, meshes, textures, materials and levels with `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match, and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
+Registers the loaders of audio clips, scripts, skeletons, clips, meshes, textures, materials, mesh colliders and levels with `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match, and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
 
 | Field | Value |
 |---|---|
@@ -5469,6 +5504,108 @@ Stable ids of the level components in the storage registry (the engine's own ran
 | <a id="asset-kmeshreferenceid"></a>`kMeshReferenceId` | `50` | [`asset::MeshReference`](#asset-meshreference): stored. |
 | <a id="asset-kentitynameid"></a>`kEntityNameId` | `51` | [`asset::EntityName`](#asset-entityname): stored. |
 | <a id="asset-kmeshslotmaterialsid"></a>`kMeshSlotMaterialsId` | `52` | [`asset::MeshSlotMaterials`](#asset-meshslotmaterials): stored (Phase 24 Day 376). |
+| <a id="asset-kstaticcolliderid"></a>`kStaticColliderId` | `53` | [`asset::StaticCollider`](#asset-staticcollider): stored (glTF colliders Day 2). |
+
+## `StaticColliderShape` {#asset-staticcollidershape}
+
+`enum asset::StaticColliderShape` — defined in `engine/asset/level.h`
+
+```cpp
+enum class StaticColliderShape : u8 { ... }
+```
+
+The shape of a [`asset::StaticCollider`](#asset-staticcollider); the values are stored.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="asset-staticcollidershape-mesh"></a>`Mesh` | `0` | A triangle mesh: the `MCOL` named by `mesh`. |
+| <a id="asset-staticcollidershape-box"></a>`Box` | `1` | A box: `half_extents`. |
+| <a id="asset-staticcollidershape-sphere"></a>`Sphere` | `2` | A ball: `radius`. |
+| <a id="asset-staticcollidershape-capsule"></a>`Capsule` | `3` | A capsule along Y: `radius` and `half_height` (of the straight part). |
+
+## `StaticCollider` {#asset-staticcollider}
+
+`struct asset::StaticCollider` — defined in `engine/asset/level.h`
+
+```cpp
+struct StaticCollider { ... }
+```
+
+The stored collision of a level entity (glTF colliders Day 2): one static collider at the entity, sized in the entity's own space. The sizes are unscaled: whoever makes the physics body applies the entity's world scale when the body is made (the C API's `level_spawn`, glTF colliders Day 5). A mesh shape names an `MCOL` resource, so the level's closure (its reference table) includes it.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `shape` {#asset-staticcollider-shape}
+
+`variable asset::StaticCollider::shape` — defined in `engine/asset/level.h`
+
+```cpp
+StaticColliderShape shape;
+```
+
+Which shape.
+
+### `mesh` {#asset-staticcollider-mesh}
+
+`variable asset::StaticCollider::mesh` — defined in `engine/asset/level.h`
+
+```cpp
+storage::ResourceRef mesh;
+```
+
+The `MCOL` of a mesh shape; unset for the others.
+
+### `half_extents` {#asset-staticcollider-half-extents}
+
+`variable asset::StaticCollider::half_extents` — defined in `engine/asset/level.h`
+
+```cpp
+Vec3 half_extents;
+```
+
+A box's half sizes, unscaled.
+
+### `radius` {#asset-staticcollider-radius}
+
+`variable asset::StaticCollider::radius` — defined in `engine/asset/level.h`
+
+```cpp
+f32 radius;
+```
+
+A sphere's or a capsule's radius, unscaled.
+
+### `half_height` {#asset-staticcollider-half-height}
+
+`variable asset::StaticCollider::half_height` — defined in `engine/asset/level.h`
+
+```cpp
+f32 half_height;
+```
+
+Half the straight part of a capsule, along Y, unscaled.
+
+### `friction` {#asset-staticcollider-friction}
+
+`variable asset::StaticCollider::friction` — defined in `engine/asset/level.h`
+
+```cpp
+f32 friction;
+```
+
+The surface's friction, at least 0 (physics' default).
+
+### `restitution` {#asset-staticcollider-restitution}
+
+`variable asset::StaticCollider::restitution` — defined in `engine/asset/level.h`
+
+```cpp
+f32 restitution;
+```
+
+The surface's bounciness, 0 to 1 (physics' default).
 
 ## `kMaxLevelSlotMaterials` {#asset-kmaxlevelslotmaterials}
 
@@ -5758,7 +5895,7 @@ The name (`LevelNameValid`).
 storage::Status RegisterLevelComponents(storage::ComponentRegistry* registry);
 ```
 
-Registers [`asset::MeshReference`](#asset-meshreference) and [`asset::EntityName`](#asset-entityname) with `registry` (the engine's other components are registered by `storage::RegisterBuiltinComponents` and `animation::RegisterAnimationComponents`).
+Registers [`asset::MeshReference`](#asset-meshreference), [`asset::EntityName`](#asset-entityname), [`asset::MeshSlotMaterials`](#asset-meshslotmaterials) and [`asset::StaticCollider`](#asset-staticcollider) with `registry` (the engine's other components are registered by `storage::RegisterBuiltinComponents` and `animation::RegisterAnimationComponents`).
 
 | Field | Value |
 |---|---|
@@ -8597,6 +8734,25 @@ Section ids of an `MCOL` blob.
 | <a id="asset-kmeshcollidersectionindices"></a>`kMeshColliderSectionIndices` | `18` | `u32 x3` per triangle. |
 | <a id="asset-kmeshcollidersectionmaterials"></a>`kMeshColliderSectionMaterials` | `19` | One `u8` per triangle. |
 
+## `MeshColliderTriangleHasArea(const Array<f32,3>&,const Array<f32,3>&,const Array<f32,3>&)` {#asset-meshcollidertrianglehasarea-const-array-lt-f32-3-gt-amp-const-array-lt-f32-3-gt-amp-const-array-lt-f32-3-gt-amp}
+
+`function asset::MeshColliderTriangleHasArea` — defined in `engine/asset/mesh_collider.h`
+
+```cpp
+bool MeshColliderTriangleHasArea(const Array<f32, 3>& a, const Array<f32, 3>& b, const Array<f32, 3>& c);
+```
+
+Tells whether a triangle has an area, by the physics module's own rule (glTF colliders Day 2).
+
+The cross product of `b - a` and `c - a` in `f32`, its squared length finite and above `1e-20`: exactly `physics::TriangleMesh::Create`'s test, so a triangle this accepts never makes a physics mesh refuse the collider.
+
+| Field | Value |
+|---|---|
+| Parameter `a` | the first corner. |
+| Parameter `b` | the second corner. |
+| Parameter `c` | the third corner. |
+| Fails | never. |
+
 ## `BuildMeshColliderBlob(const TypeRegistry&,ResourceId,Span<const Array<f32,3>>,Span<const u32>,Span<const u8>,Vector<byte>*,u32)` {#asset-buildmeshcolliderblob-const-typeregistry-amp-resourceid-span-lt-const-array-lt-f32-3-gt-gt-span-lt-const-u32-gt-span-lt-const-u8-gt-vector-lt-byte-gt-star-u32}
 
 `function asset::BuildMeshColliderBlob` — defined in `engine/asset/mesh_collider.h`
@@ -8610,7 +8766,7 @@ Builds an `MCOL` blob.
 | Field | Value |
 |---|---|
 | Parameter `materials` | one per triangle, or empty for all zero. |
-| Fails | `Invalid` for no triangles, a count over the limits, a non-finite position, an index outside the vertices or a triangle with no area; `LimitExceeded` is not used. |
+| Fails | `Invalid` for no triangles, a count over the limits, a non-finite position, an index outside the vertices or a triangle with no area ([`asset::MeshColliderTriangleHasArea`](#asset-meshcollidertrianglehasarea-const-array-lt-f32-3-gt-amp-const-array-lt-f32-3-gt-amp-const-array-lt-f32-3-gt-amp)); `LimitExceeded` is not used. |
 | Ownership | the inputs are read during the call only; `out` is the caller's. |
 
 ## `MeshColliderView` {#asset-meshcolliderview}
@@ -8649,7 +8805,7 @@ Validates `bytes` as a mesh-collider blob and keeps a share of them.
 
 | Field | Value |
 |---|---|
-| Fails | the errors of [`asset::BlobReader::Open`](#asset-blobreader-open-bytespan-const-typeregistry-amp); `TypeMismatch` for another type; `Corrupt` for a missing or mis-sized section, a count over its limit, a non-finite position, an index outside the vertices or a non-zero reserved header field. |
+| Fails | the errors of [`asset::BlobReader::Open`](#asset-blobreader-open-bytespan-const-typeregistry-amp); `TypeMismatch` for another type; `Corrupt` for a missing or mis-sized section, a count over its limit, a non-finite position, an index outside the vertices, a triangle with no area ([`asset::MeshColliderTriangleHasArea`](#asset-meshcollidertrianglehasarea-const-array-lt-f32-3-gt-amp-const-array-lt-f32-3-gt-amp-const-array-lt-f32-3-gt-amp)) or a non-zero reserved header field. |
 | Ownership | shares `bytes`. |
 
 ### `VertexCount()` {#asset-meshcolliderview-vertexcount-const}

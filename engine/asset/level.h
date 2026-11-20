@@ -28,6 +28,7 @@
 #include "containers/span.h"
 #include "containers/vector.h"
 #include "ecs/world.h"
+#include "math/vector.h"
 #include "mem/heap_allocator.h"
 #include "storage/component_registry.h"
 #include "storage/entity_ref.h"
@@ -45,6 +46,33 @@ enum LevelComponentIds : u32
     kMeshReferenceId = 50,      ///< [[asset::MeshReference]]: stored.
     kEntityNameId = 51,         ///< [[asset::EntityName]]: stored.
     kMeshSlotMaterialsId = 52,  ///< [[asset::MeshSlotMaterials]]: stored (Phase 24 Day 376).
+    kStaticColliderId = 53,     ///< [[asset::StaticCollider]]: stored (glTF colliders Day 2).
+};
+
+/// The shape of a [[asset::StaticCollider]]; the values are stored.
+enum class StaticColliderShape : u8
+{
+    Mesh = 0,     ///< A triangle mesh: the `MCOL` named by `mesh`.
+    Box = 1,      ///< A box: `half_extents`.
+    Sphere = 2,   ///< A ball: `radius`.
+    Capsule = 3,  ///< A capsule along Y: `radius` and `half_height` (of the straight part).
+};
+
+/// The stored collision of a level entity (glTF colliders Day 2): one static collider at the entity, sized in the
+/// entity's own space. The sizes are unscaled: whoever makes the physics body applies the entity's world scale when the
+/// body is made (the C API's `level_spawn`, glTF colliders Day 5). A mesh shape names an `MCOL` resource, so the
+/// level's closure (its reference table) includes it.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct StaticCollider
+{
+    StaticColliderShape shape = StaticColliderShape::Mesh;  ///< Which shape.
+    storage::ResourceRef mesh;                              ///< The `MCOL` of a mesh shape; unset for the others.
+    Vec3 half_extents = Vec3(0.0f, 0.0f, 0.0f);             ///< A box's half sizes, unscaled.
+    f32 radius = 0.0f;                                      ///< A sphere's or a capsule's radius, unscaled.
+    f32 half_height = 0.0f;                                 ///< Half the straight part of a capsule, along Y, unscaled.
+    f32 friction = 0.5f;                                    ///< The surface's friction, at least 0 (physics' default).
+    f32 restitution = 0.0f;                                 ///< The surface's bounciness, 0 to 1 (physics' default).
 };
 
 /// The most mesh slots a level gives a material of their own.
@@ -102,7 +130,8 @@ struct EntityName
     String<HeapAllocator> name = String<HeapAllocator>(HeapAllocator::Default());  ///< The name (`LevelNameValid`).
 };
 
-/// Registers [[asset::MeshReference]] and [[asset::EntityName]] with `registry` (the engine's other components are
+/// Registers [[asset::MeshReference]], [[asset::EntityName]], [[asset::MeshSlotMaterials]] and
+/// [[asset::StaticCollider]] with `registry` (the engine's other components are
 /// registered by `storage::RegisterBuiltinComponents` and `animation::RegisterAnimationComponents`).
 ///
 /// - Param registry: the registry to fill.

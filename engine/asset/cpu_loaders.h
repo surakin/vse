@@ -8,6 +8,7 @@
 #include "asset/level.h"
 #include "asset/material.h"
 #include "asset/mesh.h"
+#include "asset/mesh_collider.h"
 #include "asset/resource_manager.h"
 #include "asset/script_blob.h"
 #include "asset/skeleton.h"
@@ -72,6 +73,14 @@ template <> struct ResourceTraits<ScriptView>
     static constexpr ResourceType kType = types::kScript;                            ///< `SCRP`.
     static constexpr u32 kKind = ResourceType::FromChars('v', 'S', 'C', 'R').Tag();  ///< The code of the C++ type.
 };
+/// A mesh collider is loaded as a [[asset::MeshColliderView]] over the manager's buffer (glTF colliders Day 2).
+///
+/// - Thread-safety: thread-safe, a compile-time constant.
+template <> struct ResourceTraits<MeshColliderView>
+{
+    static constexpr ResourceType kType = types::kMeshCollider;                      ///< `MCOL`.
+    static constexpr u32 kKind = ResourceType::FromChars('v', 'M', 'C', 'L').Tag();  ///< The code of the C++ type.
+};
 /// A level is loaded as its summary (counts and the resources it depends on); spawning it reads the records.
 ///
 /// - Thread-safety: thread-safe, a compile-time constant.
@@ -81,9 +90,9 @@ template <> struct ResourceTraits<LevelSummary>
     static constexpr u32 kKind = ResourceType::FromChars('s', 'L', 'E', 'V').Tag();  ///< The code of the C++ type.
 };
 
-/// Registers the loaders of audio clips, scripts, skeletons, clips, meshes, textures, materials and levels with
-/// `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match,
-/// and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
+/// Registers the loaders of audio clips, scripts, skeletons, clips, meshes, textures, materials, mesh colliders and
+/// levels with `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint
+/// count match, and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
 ///
 /// - Param manager: the manager.
 /// - Ownership: borrows `manager` for the call only; nothing is retained.

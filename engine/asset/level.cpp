@@ -333,6 +333,17 @@ storage::Status RegisterLevelComponents(storage::ComponentRegistry* registry)
         {.id = kEntityNameId,
          .name = "entity_name",
          .fields = {storage::Field<&EntityName::name>("name", storage::FieldOptions::Text(kMaxLevelNameBytes))}}));
+    ENGINE_TRY(registry->Register<StaticCollider>(
+        {.id = kStaticColliderId,
+         .name = "static_collider",
+         .fields = {storage::Field<&StaticCollider::shape>("shape", storage::FieldOptions::Enum(0, 3)),
+                    storage::Field<&StaticCollider::mesh>(
+                        "mesh", storage::FieldOptions::Reference(storage::ResourceTag('M', 'C', 'O', 'L'), true)),
+                    storage::Field<&StaticCollider::half_extents>("half_extents"),
+                    storage::Field<&StaticCollider::radius>("radius"),
+                    storage::Field<&StaticCollider::half_height>("half_height"),
+                    storage::Field<&StaticCollider::friction>("friction"),
+                    storage::Field<&StaticCollider::restitution>("restitution")}}));
     return storage::Status::Success();
 }
 

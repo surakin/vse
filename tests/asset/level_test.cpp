@@ -840,4 +840,63 @@ TEST_CASE("A level of 100,000 entities: load time and the floor of creating the 
         static_cast<double>(floor) / 1e6, static_cast<double>(floor) / kCount);
 }
 
+// glTF colliders Day 2: the static_collider component; its MCOL is part of the level's closure.
+TEST_CASE("A level with static colliders lists their MCOL and loads the shapes", "[asset][level]")
+{
+    Rig rig;
+    rig.resolver.Add(rig.types, "/colliders/ground", 0x501, types::kMeshCollider);
+    const char* text = "id 0000000000000001\n"
+                       "entity ground\n"
+                       "  component static_collider\n"
+                       "    shape = 0\n"
+                       "    mesh = /colliders/ground\n"
+                       "entity wall\n"
+                       "  component static_collider\n"
+                       "    shape = 1\n"
+                       "    mesh = null\n"
+                       "    half_extents = 1 2 0.25\n"
+                       "    friction = 0.8\n";
+    Vector<byte> blob;
+    LevelSourceError error;
+    const Status minted = rig.Mint(text, &blob, &error);
+    INFO(error.message.Data() << " at line " << error.line);
+    REQUIRE(minted.Ok());
+    ecs::World world;
+    storage::KeyIndex index;
+    LevelData data;
+    REQUIRE(LoadLevelBlob(AsBytes(blob), rig.types, rig.registry, world, index, &data).Ok());
+    REQUIRE(data.resources.Size() == 1);
+    CHECK(data.resources[0].id == Rid(0x501));
+    CHECK(data.resources[0].type == types::kMeshCollider);
+    const ecs::Entity ground = index.Find(LevelEntityKey(Rid(kLevelId), Vp("ground")));
+    const ecs::Entity wall = index.Find(LevelEntityKey(Rid(kLevelId), Vp("wall")));
+    REQUIRE(ground.IsValid());
+    REQUIRE(wall.IsValid());
+    const StaticCollider* g = world.Peek<StaticCollider>(ground);
+    REQUIRE(g != nullptr);
+    CHECK(g->shape == StaticColliderShape::Mesh);
+    CHECK(g->mesh.id == 0x501);
+    const StaticCollider* w = world.Peek<StaticCollider>(wall);
+    REQUIRE(w != nullptr);
+    CHECK(w->shape == StaticColliderShape::Box);
+    CHECK(w->half_extents.y == 2.0f);
+    CHECK(w->friction == 0.8f);
+    CHECK(w->restitution == 0.0f);  // the default
+    // A shape value outside the enum is refused by the minter, naming its line.
+    const char* bad = "id 0000000000000001\n"
+                      "entity x\n"
+                      "  component static_collider\n"
+                      "    shape = 9\n";
+    Vector<byte> refused;
+    LevelSourceError bad_error;
+    CHECK(rig.Mint(bad, &refused, &bad_error).Failed());
+    CHECK(bad_error.line == 4);
+    // A mesh field naming something that is not an MCOL is refused.
+    const char* wrong_type = "id 0000000000000001\n"
+                             "entity x\n"
+                             "  component static_collider\n"
+                             "    mesh = /meshes/rock\n";
+    CHECK(rig.Mint(wrong_type, &refused, &bad_error).Failed());
+}
+
 }  // namespace engine_placeholder::asset
