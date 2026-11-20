@@ -629,8 +629,10 @@ position; the projection reports the pixel and the distance along the view direc
 
 ## Lights and the environment (Phase 24 Day 361)
 
-`ENGINE_COMPONENT_LIGHT` (`engine_light`: kind, colour, intensity, radius) makes an entity a light: a **directional** light shines along the entity's world -Z axis (rotate the entity to aim it; the way a camera looks), a
-**point** light sits at the entity's position and reaches nothing beyond `radius`. A surface lights its world with up to 64 lights (the ambient term takes one slot); the rest are counted in `lights_refused` of `surface_state`.
+`ENGINE_COMPONENT_LIGHT` (`engine_light`: kind, colour, intensity, radius, cones) makes an entity a light: a **directional** light shines along the entity's world -Z axis (rotate the entity to aim it; the way a camera looks), a
+**point** light sits at the entity's position and reaches nothing beyond `radius`, and a **spot** light (`ENGINE_LIGHT_SPOT`, maintenance 2026-11-20) is a point light that shines along the entity's -Z only: full strength inside
+`inner_cone`, nothing beyond `outer_cone` (half-angles in radians, `0 <= inner_cone < outer_cone <= pi/2`). The two cone fields were added at the end of the struct: a host built before them (a `struct_size` that ends before
+`inner_cone`) still sets and reads directional and point lights, and gets `STRUCT_SIZE` for a spot light. A surface lights its world with up to 64 lights (the ambient term takes one slot); the rest are counted in `lights_refused` of `surface_state`.
 `world_set_environment(world, &engine_environment)` sets the world's ambient colour and intensity, the sky colour behind the scene (before the tone map) and the exposure; every surface that shows the world uses it.
 
 A world on which the host never calls `world_set_environment` and that has no light entity is drawn with the default sun of Day 359 (and ambient 0.2); once either exists the default sun is gone, so a host that wants a dark scene
@@ -653,7 +655,11 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 - **Skeleton and player.** `ENGINE_COMPONENT_SKELETON_INSTANCE` (`engine_skeleton_instance.skeleton`, a resource id) makes an entity a skinned model: setting it loads the skeleton (`NOT_FOUND` when it is not mounted) and keeps it loaded. A mesh minted with `quality full` and a skin
   section, referenced by the same entity, is drawn skinned (with the surface's default skinned material when the reference names no material); an entity with no clip is drawn in the bind pose, and a skinned mesh on an entity with no skeleton instance is not drawn.
   `ENGINE_COMPONENT_ANIMATION_PLAYER` (`engine_animation_state`) is read only: it shows the clip, the time, the speed and whether a fade or the end is reached.
-- **Playing.** `animation_play(world, entity, clip, &engine_play_params)` (the params may be NULL: play once at speed 1) starts a clip (`ENGINE_PLAY_LOOP`, `speed`, `start_time`, `fade_seconds`); a clip made for another skeleton is `INVALID_ARGUMENT`. With `fade_seconds` above 0 the old clip keeps playing and fades out while the new one fades in.
+- **Morph weights** (maintenance, 2026-11-20). `ENGINE_COMPONENT_MORPH_WEIGHTS` (`engine_morph_weights`: `count` and up to `ENGINE_MORPH_WEIGHTS_MAX` (64) weights) sets how far an entity's morphed mesh moves toward each of its
+  targets; the surface draws it each frame with the entity's current weights, and an entity without the component is drawn in its base shape. A weight is any finite number (0 to 1 is usual).
+- **Playing.** `animation_play(world, entity, clip, &engine_play_params)` (the params may be NULL: play once at speed 1) starts a clip (`ENGINE_PLAY_LOOP`, `speed`, `start_time`, `fade_seconds`); a clip made for another skeleton is `INVALID_ARGUMENT`.
+  A clip of morph weights only (a glTF animation whose channels are all `weights`) has no skeleton and plays on any entity, skinned or not; a clip with weight tracks gives the entity the morph weights component when it has none
+  and writes it every frame. A clip that moves joints, on an entity without a skeleton instance, is `INVALID_ARGUMENT`. With `fade_seconds` above 0 the old clip keeps playing and fades out while the new one fades in.
   `animation_set_speed` (0 pauses), `animation_stop` and `animation_time` read and steer what plays. The frame advances every player before the transforms are propagated, so a frame's pose and its world matrices agree.
 - **Joints.** `skeleton_find_joint(world, entity, "arm", &index)` and `skeleton_joint_transform(world, entity, index, matrix16)` (column-major, in the skeleton entity's space, as the last frame left it; the bind pose before any clip). `entity_attach_to_joint(world, entity,
   skeleton_entity, joint)` makes an entity follow a joint (its own transform becomes relative to the joint); the entities below the attached one lag by a frame. A `skeleton_entity` of 0 detaches.
@@ -665,7 +671,9 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
   share a glTF mesh give entities that share one mesh resource. A node with a shear in its matrix, a hierarchy deeper than 63, a scene root that is also a child, or more nodes than `max_nodes` is refused with a message that names the node. Without the flag no level is made.
 - **Spawning.** `level_spawn(world, level, &engine_spawn_params, &root, keys, capacity, &total)` makes a root entity at the transform of the params (an uniform scale, a rotation, a position; `name_prefix` puts `prefix/` before every name) and the level's entities below it. The
   level is read and every resource it names is checked before the world is touched, and a failure part way undoes what was made, so the spawn is whole or nothing. Spawning twice makes two independent copies. Find a node by name with `entity_find`
-  (`"prefix/name"` for a prefixed spawn) and its skeleton instance, mesh reference and transform are ordinary components.
+  (`"prefix/name"` for a prefixed spawn) and its skeleton instance, mesh reference and transform are ordinary components. A node's morph weights (`node.weights`, or its mesh's) arrive as `ENGINE_COMPONENT_MORPH_WEIGHTS`,
+  and a node's `KHR_lights_punctual` light as `ENGINE_COMPONENT_LIGHT` (directional, point or spot, with the importer's light settings applied; maintenance, 2026-11-20). A level's ambient light (none comes from glTF) has no C kind
+  and is left out.
 - **Limits.** The spawn runs on the calling thread under the world lock, in time proportional to the entities; a very large level is better spawned between frames. A mesh with several primitives gets the material of its first. Levels that include other levels are not spawned (`UNSUPPORTED`).
 
 ## Host textures (Phase 24 Day 365)
@@ -872,7 +880,7 @@ Not in the C API (recorded in `KNOWN-ISSUES.md`): occlusion of sources through t
 
 ## Scripts: loading, calling and host functions (Phase 27 Day 471)
 
-A library built with the script module (`ENGINE_CAP_SCRIPT` in `engine_info.caps`; Linux x86-64 so far, the other platforms answer `UNSUPPORTED`) lets a host put scripts in a world.
+A library built with the script module (`ENGINE_CAP_SCRIPT` in `engine_info.caps`; Linux, Windows and macOS x86-64; a library built without the script module answers `UNSUPPORTED`) lets a host put scripts in a world.
 The world's script runtime is made by the first `script_load`, the first script component or the first host function, from the `script.*` settings read when the engine was created
 (`script.partitions`, `script.budget`, `script.jit`, `script.random_seed`, ...; see [Scripting](scripting.md)).
 

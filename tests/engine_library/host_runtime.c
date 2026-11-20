@@ -4,6 +4,7 @@
    second part runs two host threads at once (the thread rules of engine_c.h); under ThreadSanitizer that is the check
    of the locking. */
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -177,7 +178,7 @@ static void TestWorld(engine_handle engine)
     CHECK(total == kEntities / 4);
     CHECK_STATUS(g_api->query(world, 0, NULL, 0, &total), ENGINE_OK);
     CHECK(total == kEntities);
-    CHECK_STATUS(g_api->query(world, 0x20000u, found, 8, &total), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_MASK_ALL + 1u, found, 8, &total), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->query(world, 0, NULL, 4, &total), ENGINE_ERROR_INVALID_ARGUMENT);
 
     /* a frame runs the transform system: the world matrix is the local one for a root */
@@ -572,6 +573,114 @@ static void TestCrashHandlerRestored(engine_handle engine)
     CHECK_STATUS(g_api->crash_handler_install(engine), ENGINE_OK);
 }
 
+/* Maintenance (2026-11-20): spot lights and morph weights as components; a host of the first engine_light. */
+static void TestLightsAndMorphs(engine_handle engine)
+{
+    engine_handle world;
+    uint64_t key = 0;
+    uint64_t found[4];
+    size_t total = 0;
+    engine_transform t = Transform(0.0f, 0.0f, 0.0f);
+    engine_light light;
+    engine_light back;
+    engine_morph_weights weights;
+    engine_morph_weights read;
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->entity_create(world, &key), ENGINE_OK);
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+
+    /* a spot light round trips with its cones */
+    memset(&light, 0, sizeof(light));
+    light.struct_size = sizeof(light);
+    light.kind = ENGINE_LIGHT_SPOT;
+    light.color[0] = light.color[1] = light.color[2] = 1.0f;
+    light.intensity = 5.0f;
+    light.radius = 8.0f;
+    light.inner_cone = 0.25f;
+    light.outer_cone = 0.5f;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_LIGHT, &light), ENGINE_OK);
+    memset(&back, 0, sizeof(back));
+    back.struct_size = sizeof(back);
+    CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_LIGHT, &back), ENGINE_OK);
+    CHECK(back.kind == ENGINE_LIGHT_SPOT && back.radius == 8.0f && back.inner_cone == 0.25f && back.outer_cone == 0.5f);
+    /* bad cones and a spot without a radius are refused, and the light stays */
+    light.inner_cone = 0.5f;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_LIGHT, &light), ENGINE_ERROR_INVALID_ARGUMENT);
+    light.inner_cone = 0.0f;
+    light.outer_cone = 2.0f;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_LIGHT, &light), ENGINE_ERROR_INVALID_ARGUMENT);
+    light.outer_cone = NAN;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_LIGHT, &light), ENGINE_ERROR_INVALID_ARGUMENT);
+    light.outer_cone = 0.5f;
+    light.radius = 0.0f;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_LIGHT, &light), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_LIGHT, &back), ENGINE_OK);
+    CHECK(back.kind == ENGINE_LIGHT_SPOT && back.outer_cone == 0.5f);
+    /* a host of the first version: its struct ends before the cones; it sets a point light, reads it without an
+       overrun, and cannot make a spot light */
+    {
+        engine_light old;
+        memset(&old, 0x5A, sizeof(old));
+        old.struct_size = (uint32_t)offsetof(engine_light, inner_cone);
+        old.kind = ENGINE_LIGHT_POINT;
+        old.color[0] = old.color[1] = old.color[2] = 1.0f;
+        old.intensity = 2.0f;
+        old.radius = 3.0f;
+        CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_LIGHT, &old), ENGINE_OK);
+        old.kind = ENGINE_LIGHT_SPOT;
+        CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_LIGHT, &old), ENGINE_ERROR_STRUCT_SIZE);
+        memset(&old, 0x5A, sizeof(old));
+        old.struct_size = (uint32_t)offsetof(engine_light, inner_cone);
+        CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_LIGHT, &old), ENGINE_OK);
+        CHECK(old.kind == ENGINE_LIGHT_POINT && old.radius == 3.0f &&
+              old.struct_size == (uint32_t)offsetof(engine_light, inner_cone));
+        {
+            unsigned char untouched[4];
+            memset(untouched, 0x5A, sizeof(untouched));
+            CHECK(memcmp(&old.inner_cone, untouched, sizeof(untouched)) == 0); /* past the host's struct: not written */
+        }
+        old.struct_size = (uint32_t)offsetof(engine_light, radius);
+        CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_LIGHT, &old), ENGINE_ERROR_STRUCT_SIZE);
+    }
+
+    /* morph weights round trip; the query finds them; bad ones are refused */
+    memset(&weights, 0, sizeof(weights));
+    weights.struct_size = sizeof(weights);
+    weights.count = 3;
+    weights.weights[0] = 0.25f;
+    weights.weights[1] = 1.0f;
+    weights.weights[2] = -0.5f;
+    weights.weights[3] = 9.0f; /* beyond `count`: not stored */
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS, &weights), ENGINE_OK);
+    memset(&read, 0, sizeof(read));
+    read.struct_size = sizeof(read);
+    CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS, &read), ENGINE_OK);
+    CHECK(read.count == 3 && read.weights[0] == 0.25f && read.weights[1] == 1.0f && read.weights[2] == -0.5f &&
+          read.weights[3] == 0.0f);
+    CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_BIT(ENGINE_COMPONENT_MORPH_WEIGHTS), found, 4, &total),
+                 ENGINE_OK);
+    CHECK(total == 1 && found[0] == key);
+    CHECK_STATUS(g_api->query(world, ENGINE_COMPONENT_MASK_ALL, NULL, 0, &total), ENGINE_OK);
+    CHECK(total == 0); /* no entity has every component */
+    weights.count = ENGINE_MORPH_WEIGHTS_MAX + 1;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS, &weights),
+                 ENGINE_ERROR_INVALID_ARGUMENT);
+    weights.count = 2;
+    weights.weights[1] = INFINITY;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS, &weights),
+                 ENGINE_ERROR_INVALID_ARGUMENT);
+    weights.struct_size = 8;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS, &weights), ENGINE_ERROR_STRUCT_SIZE);
+    CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS, &read), ENGINE_OK);
+    CHECK(read.count == 3);
+    CHECK_STATUS(g_api->component_remove(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS), ENGINE_OK);
+    CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS, &read), ENGINE_ERROR_NOT_FOUND);
+    /* a kind past the last is still unknown */
+    CHECK_STATUS(g_api->component_get(world, key, (engine_component_kind)(ENGINE_COMPONENT_MORPH_WEIGHTS + 1), &read),
+                 ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+}
+
 int main(void)
 {
     char dump_dir[1024];
@@ -599,6 +708,7 @@ int main(void)
 
     engine = NewEngine(dump_dir);
     TestWorld(engine);
+    TestLightsAndMorphs(engine);
     TestBudget(engine);
     TestJobs(engine);
     TestPendingCounter(engine);

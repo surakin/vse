@@ -30,7 +30,7 @@ value ENGINE_COMPONENT_JOINT 13
 value ENGINE_COMPONENT_CHARACTER 14
 value ENGINE_COMPONENT_AUDIO_SOURCE 15
 value ENGINE_COMPONENT_AUDIO_LISTENER 16
-value ENGINE_COMPONENT_MASK_ALL 131071
+value ENGINE_COMPONENT_MASK_ALL 262143
 value ENGINE_NAME_MAX_BYTES 63
 struct engine_string size=16
 field engine_string.data offset=0 size=8
@@ -602,3 +602,20 @@ value ENGINE_VALUE_MAP 7
 value ENGINE_VALUE_ENTITY 8
 value ENGINE_SCRIPT_FUNCTION_PURE 1
 value ENGINE_CAP_SCRIPT 2048
+value ENGINE_LIGHT_DIRECTIONAL 1
+value ENGINE_LIGHT_POINT 2
+value ENGINE_LIGHT_SPOT 3
+struct engine_light size=36
+field engine_light.struct_size offset=0 size=4
+field engine_light.kind offset=4 size=4
+field engine_light.color offset=8 size=12
+field engine_light.intensity offset=20 size=4
+field engine_light.radius offset=24 size=4
+field engine_light.inner_cone offset=28 size=4
+field engine_light.outer_cone offset=32 size=4
+value ENGINE_COMPONENT_MORPH_WEIGHTS 18
+value ENGINE_MORPH_WEIGHTS_MAX 64
+struct engine_morph_weights size=264
+field engine_morph_weights.struct_size offset=0 size=4
+field engine_morph_weights.count offset=4 size=4
+field engine_morph_weights.weights offset=8 size=256

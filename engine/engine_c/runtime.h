@@ -48,7 +48,12 @@ struct LightComponent
     u32 kind = 1;                       ///< ENGINE_LIGHT_*.
     f32 color[3] = {1.0f, 1.0f, 1.0f};  ///< Linear RGB.
     f32 intensity = 1.0f;               ///< Scale of the colour.
-    f32 radius = 10.0f;                 ///< Reach of a point light.
+    f32 radius = 10.0f;                 ///< Reach of a point or spot light.
+    f32 inner_cone = 0.0f;              ///< A spot light's full-strength half-angle, radians.
+    f32 outer_cone = 0.7853981634f;     ///< A spot light's outer half-angle, radians.
+    /// The axis toward the light in the entity's own space, for a directional or spot light: +Z for a light the host
+    /// sets (it shines along -Z); a spawned level keeps its light's own axis (maintenance, 2026-11-20).
+    f32 axis[3] = {0.0f, 0.0f, 1.0f};
 };
 
 /// The component of ENGINE_COMPONENT_VISIBILITY (Phase 24 Day 362).
@@ -249,17 +254,17 @@ class SurfaceHost;
 /// - Thread-safety: thread-compatible plain data.
 struct ImportLimitValues
 {
-    u64 max_file_bytes = 0;    ///< `assets.import.max_file_bytes`.
-    u64 max_json_bytes = 0;    ///< `assets.import.max_json_bytes`.
-    u64 max_buffer_bytes = 0;  ///< `assets.import.max_buffer_bytes`.
-    u64 max_output_bytes = 0;  ///< `assets.import.max_output_bytes`.
-    u64 max_pixels = 0;        ///< `assets.import.max_pixels`.
-    u32 max_nodes = 0;         ///< `assets.import.max_nodes`.
-    u32 max_accessors = 0;     ///< `assets.import.max_accessors`.
-    u32 max_images = 0;        ///< `assets.import.max_images`.
-    f32 light_intensity_scale = 1.0f;     ///< `assets.import.light_intensity_scale`.
-    f32 sun_intensity_scale = 1e-4f;      ///< `assets.import.sun_intensity_scale`.
-    f32 light_cutoff = 1.0f / 256.0f;     ///< `assets.import.light_cutoff`.
+    u64 max_file_bytes = 0;            ///< `assets.import.max_file_bytes`.
+    u64 max_json_bytes = 0;            ///< `assets.import.max_json_bytes`.
+    u64 max_buffer_bytes = 0;          ///< `assets.import.max_buffer_bytes`.
+    u64 max_output_bytes = 0;          ///< `assets.import.max_output_bytes`.
+    u64 max_pixels = 0;                ///< `assets.import.max_pixels`.
+    u32 max_nodes = 0;                 ///< `assets.import.max_nodes`.
+    u32 max_accessors = 0;             ///< `assets.import.max_accessors`.
+    u32 max_images = 0;                ///< `assets.import.max_images`.
+    f32 light_intensity_scale = 1.0f;  ///< `assets.import.light_intensity_scale`.
+    f32 sun_intensity_scale = 1e-4f;   ///< `assets.import.sun_intensity_scale`.
+    f32 light_cutoff = 1.0f / 256.0f;  ///< `assets.import.light_cutoff`.
 };
 
 /// The settings the resource host is made from (read when the engine is created).

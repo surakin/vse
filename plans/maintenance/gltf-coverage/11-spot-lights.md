@@ -37,6 +37,8 @@ Done on the PC (2026-11-19). **No tests were run** (the user's request; they run
 - **`scene::LightSource` version 2:** `inner_cone` (0) and `outer_cone` (pi/4), with an upgrade step from version 1 that copies the
   record and appends the defaults; `type` is an enum of 0 to 3; the sync passes the cone on and refuses a bad one like the scene.
 - **C API:** `ENGINE_COMPONENT_LIGHT` was not given a spot kind (not in the plan); a host gets spot lights through levels.
+  - **Done since** (2026-11-20, [c-api-gltf-coverage.md](../c-api-gltf-coverage.md)): `ENGINE_LIGHT_SPOT`, `ENGINE_COMPONENT_MORPH_WEIGHTS`, and
+    `level_spawn` brings a level's lights and weights.
 - Minted: `point_light.frag` SPIR-V and DXIL; `lighting.frag` did not change (it does not call `SpotFactor`); Metal waits for Day 14.
 - Tests (written, not run): `A spot light's cone factor is 1 inside the inner cone, 0 outside the outer and rises between`. Not
   written: a picture of a spot light, the version-1 record's upgrade, the shader against the CPU twin.

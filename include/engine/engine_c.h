@@ -219,9 +219,8 @@ extern "C"
               work (maintenance, 2026-11-18) */
 #define ENGINE_CAP_SCRIPT                                                                                              \
     0x800u /* script_load, script_call, script_register_function, script_set_budget, script_stats, the event and task  \
-              functions work, and an                                                                                   \
-              entity can carry ENGINE_COMPONENT_SCRIPT (Phase 27 Day 471; Linux x86-64 so far: elsewhere they fail     \
-              with UNSUPPORTED) */
+              functions work, and an entity can carry ENGINE_COMPONENT_SCRIPT (Phase 27 Day 471): Linux, Windows and   \
+              macOS x86-64; a build without the script module fails them with UNSUPPORTED */
 #define ENGINE_CAP_RESOURCE_CACHE                                                                                      \
     0x200u /* resource_read, resource_add_many (and its asynchronous form) and import_format_version work: set in      \
               every build, with or without the importer (maintenance, 2026-11-18) */
@@ -582,11 +581,13 @@ extern "C"
         ENGINE_COMPONENT_CHARACTER = 14,        /* engine_character: a capsule character controller (Day 409) */
         ENGINE_COMPONENT_AUDIO_SOURCE = 15,     /* engine_audio_source: a sound at the entity's place (Phase 26) */
         ENGINE_COMPONENT_AUDIO_LISTENER = 16,   /* engine_audio_listener: the ears (Phase 26) */
-        ENGINE_COMPONENT_SCRIPT = 17 /* engine_script_component: a behavior of a loaded script (Phase 27 Day 471) */
+        ENGINE_COMPONENT_SCRIPT = 17, /* engine_script_component: a behavior of a loaded script (Phase 27 Day 471) */
+        ENGINE_COMPONENT_MORPH_WEIGHTS = 18 /* engine_morph_weights: the weights of a morphed mesh's targets
+                                               (maintenance, 2026-11-20) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0x1FFFFu
+#define ENGINE_COMPONENT_MASK_ALL 0x3FFFFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -658,6 +659,20 @@ extern "C"
         uint32_t reserved; /* zero */
         uint64_t skeleton;
     } engine_skeleton_instance;
+
+#define ENGINE_MORPH_WEIGHTS_MAX 64u
+
+    /* The weights of a morphed mesh's targets (maintenance, 2026-11-20): the entity's mesh is drawn as its base shape
+     * plus weights[i] times target i's offsets, for the first `count` targets (at most ENGINE_MORPH_WEIGHTS_MAX;
+     * targets beyond `count`, or beyond the mesh's own target count, stay at 0). Each weight is finite (glTF allows any
+     * value; 0 to 1 is usual). An imported level brings the weights its file gives a mesh node, and a clip with weight
+     * tracks (animation_play) writes them every frame. An entity without the component is drawn in its base shape. */
+    typedef struct engine_morph_weights
+    {
+        uint32_t struct_size;
+        uint32_t count;
+        float weights[ENGINE_MORPH_WEIGHTS_MAX];
+    } engine_morph_weights;
 
     /* What animation_play started on an entity, as ENGINE_COMPONENT_ANIMATION_PLAYER returns it (read only: use
      * animation_play, animation_set_speed and animation_stop to change it; removing the component stops the animation).
@@ -800,11 +815,19 @@ extern "C"
 #define ENGINE_LIGHT_DIRECTIONAL                                                                                       \
     1u                        /* shines along the entity's -Z, from infinitely far away (the position is ignored) */
 #define ENGINE_LIGHT_POINT 2u /* shines from the entity's position and reaches nothing beyond `radius` */
+#define ENGINE_LIGHT_SPOT                                                                                              \
+    3u /* a point light that shines along the entity's -Z only, inside `outer_cone` (maintenance, 2026-11-20) */
 
     /* A light (Phase 24 Day 361). A directional light shines along its entity's world -Z axis (the way a camera looks);
-     * a point light sits at the entity's position. The entity needs ENGINE_COMPONENT_TRANSFORM too. `color` is linear
-     * RGB, `intensity` >= 0 scales it, `radius` (> 0, in metres) is where a point light's contribution reaches exactly
-     * zero (ignored for a directional light). A surface lights its world with up to 64 of them; the rest are counted in
+     * a point light sits at the entity's position; a spot light sits there and shines along -Z. The entity needs
+     * ENGINE_COMPONENT_TRANSFORM too. `color` is linear RGB, `intensity` >= 0 scales it, `radius` (> 0, in metres) is
+     * where a point or spot light's contribution reaches exactly zero (ignored for a directional light). A spot light
+     * is at full strength inside `inner_cone` and gives nothing beyond `outer_cone` (half-angles from its axis, in
+     * radians: 0 <= inner_cone < outer_cone <= pi/2); the cones are ignored for the other kinds. The cone fields came
+     * later (maintenance, 2026-11-20): a struct that ends before `inner_cone` sets and reads directional and point
+     * lights as before, a spot light needs them (STRUCT_SIZE), and component_get fills only what the struct holds. A
+     * light that level_spawn made keeps the level's own axis (a glTF light's is -Z, the same); setting the component
+     * again gives it the entity's -Z. A surface lights its world with up to 64 of them; the rest are counted in
      * engine_surface_state.lights_refused. */
     typedef struct engine_light
     {
@@ -813,6 +836,8 @@ extern "C"
         float color[3];
         float intensity;
         float radius;
+        float inner_cone; /* spot: radians, full strength inside */
+        float outer_cone; /* spot: radians, nothing beyond */
     } engine_light;
 
     /* The kinds of engine_rigid_body.type. */
@@ -1939,11 +1964,13 @@ extern "C"
         /* ---- Phase 24 Day 363: skinned meshes and animation ---- */
 
         /* Plays the clip `clip` (a resource id the host added or loaded; `params` may be NULL: play once at speed 1) on
-         * an entity that has an ENGINE_COMPONENT_SKELETON_INSTANCE. The clip is loaded and kept loaded. The frame
-         * advances it before the transforms are propagated and the surfaces draw. Fails with: STALE_HANDLE,
-         * INVALID_ARGUMENT (the entity has no skeleton instance, the clip was not made for its skeleton, a bad
-         * parameter), NOT_FOUND (the clip is not mounted), TYPE_MISMATCH (not a clip, or a handle that is not a world),
-         * STRUCT_SIZE. */
+         * an entity that has an ENGINE_COMPONENT_SKELETON_INSTANCE, or, for a clip of morph weights only (no skeleton;
+         * maintenance, 2026-11-20), on any entity. A clip with weight tracks gives the entity an
+         * ENGINE_COMPONENT_MORPH_WEIGHTS when it has none, and writes it every frame. The clip is loaded and kept
+         * loaded. The frame advances it before the transforms are propagated and the surfaces draw. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (a clip with joint tracks on an entity with no skeleton instance, a clip made
+         * for another skeleton, a bad parameter), NOT_FOUND (the clip is not mounted), TYPE_MISMATCH (not a clip, or a
+         * handle that is not a world), STRUCT_SIZE. */
         engine_status (*animation_play)(engine_handle world, uint64_t key, uint64_t clip,
                                         const engine_play_params* params);
 
@@ -1985,14 +2012,15 @@ extern "C"
         /* Puts the level `level` (a resource of type ENGINE_RESOURCE_LEVEL the host added, for example the one an
          * import with ENGINE_IMPORT_EMIT_LEVEL made) into a world: a root entity with the transform of `params` (NULL:
          * at the origin), and below it one entity per entity of the level, with its name, transform, parent, mesh
-         * reference and skeleton instance. The level is spawned whole or not at all: when it, or a resource it names,
-         * is not mounted (or a skeleton cannot be loaded), nothing is made and the reason is in last_error. A level
-         * spawned twice makes two independent copies. `*root` receives the root entity's key; `keys` (capacity
-         * `capacity`, may be NULL with 0) receives the keys of every entity of the spawn, the root first, and `*total`
-         * (may be NULL) the number of them. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL `root`, a bad parameter),
-         * STRUCT_SIZE, NOT_FOUND (the level, or a resource it names, is not mounted), TYPE_MISMATCH (not a level,
-         * or a handle that is not a world), UNSUPPORTED (a level that includes other levels), LIMIT_EXCEEDED (the
-         * world refused an entity). */
+         * reference, skeleton instance, morph weights and light (a glTF's KHR_lights_punctual lights: directional,
+         * point and spot; maintenance, 2026-11-20; an ambient light of a level has no C kind and is left out). The
+         * level is spawned whole or not at all: when it, or a resource it names, is not mounted (or a skeleton cannot
+         * be loaded), nothing is made and the reason is in last_error. A level spawned twice makes two independent
+         * copies. `*root` receives the root entity's key; `keys` (capacity `capacity`, may be NULL with 0) receives the
+         * keys of every entity of the spawn, the root first, and `*total` (may be NULL) the number of them. Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (NULL `root`, a bad parameter), STRUCT_SIZE, NOT_FOUND (the level, or a
+         * resource it names, is not mounted), TYPE_MISMATCH (not a level, or a handle that is not a world), UNSUPPORTED
+         * (a level that includes other levels), LIMIT_EXCEEDED (the world refused an entity). */
         engine_status (*level_spawn)(engine_handle world, uint64_t level, const engine_spawn_params* params,
                                      uint64_t* root, uint64_t* keys, size_t capacity, size_t* total);
 

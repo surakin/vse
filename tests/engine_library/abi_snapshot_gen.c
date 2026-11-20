@@ -626,5 +626,23 @@ int main(void)
     VALUE(ENGINE_VALUE_ENTITY);
     VALUE(ENGINE_SCRIPT_FUNCTION_PURE);
     VALUE(ENGINE_CAP_SCRIPT);
+    /* maintenance, 2026-11-20: spot lights and morph weights */
+    VALUE(ENGINE_LIGHT_DIRECTIONAL);
+    VALUE(ENGINE_LIGHT_POINT);
+    VALUE(ENGINE_LIGHT_SPOT);
+    STRUCT(engine_light);
+    FIELD(engine_light, struct_size);
+    FIELD(engine_light, kind);
+    FIELD(engine_light, color);
+    FIELD(engine_light, intensity);
+    FIELD(engine_light, radius);
+    FIELD(engine_light, inner_cone);
+    FIELD(engine_light, outer_cone);
+    VALUE(ENGINE_COMPONENT_MORPH_WEIGHTS);
+    VALUE(ENGINE_MORPH_WEIGHTS_MAX);
+    STRUCT(engine_morph_weights);
+    FIELD(engine_morph_weights, struct_size);
+    FIELD(engine_morph_weights, count);
+    FIELD(engine_morph_weights, weights);
     return 0;
 }

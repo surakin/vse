@@ -1,6 +1,6 @@
 # Scripting: a language behind an interface, many threads in front
 
-Status: written (Phase 27 complete on Linux; Windows x64 built and tested on Day 473; the macOS run is Day 474). New to the model? Start with [Why your script runs on many threads](scripting-and-threads.md) and the tutorials [Your first script](../tutorials/your-first-script.md) and [Using every core](../tutorials/using-every-core.md).
+Status: written (Phase 27 complete on Linux; Windows x64 built and tested on Day 473, macOS x86-64 on Day 474). New to the model? Start with [Why your script runs on many threads](scripting-and-threads.md) and the tutorials [Your first script](../tutorials/your-first-script.md) and [Using every core](../tutorials/using-every-core.md).
 
 **The model in six lines.** Gameplay scripts are Lua (LuaJIT), behind a language interface. Entities are split over `P` partitions (64 by default), each with its own script state, and the partitions run at the same time on the job scheduler. A script reads the world as of the tick start and records its changes in a command buffer; at the sync point the buffers are merged in a fixed order, events are delivered and finished tasks resume their waiters. A script never blocks a thread: waits are coroutines on the simulation clock, and parallel work is a pure task. Because nothing depends on the thread count, the world after any tick is the same at 1 thread and at 32, which replay, rollback and the tests rely on. The sections below are the reference: the rules, values, calling, backends, bindings, partitions, the merge, behaviors, events, waits, tasks, assets and hot reload, debugging, physics, audio and input, persistence, the JIT table, cost and limits. The C API for scripts (`script_load`, `script_call`, the script component, events and tasks) is in [The Engine as a Loadable Library](engine-library.md).
 
@@ -630,7 +630,7 @@ in every mode, and only the speed differs (`tests/script/script_jit_test.cpp`; t
 |---|---|---|
 | Linux x86-64 | JIT available, budgeted by default | built and tested (plain, asan, tsan, and the no-JIT build) |
 | Windows x64 | JIT available, budgeted by default | built and tested with MSVC (plain, asan, and the no-JIT build) and `clang-cl` (plain), Day 473; Windows has no ThreadSanitizer |
-| macOS x86-64 | JIT available | Day 474 builds and tests it |
+| macOS x86-64 | JIT available | built and tested with Apple clang (plain), Day 474; arm64 compiles only |
 | Android | JIT allowed | decided in Phase 29 |
 | iOS, consoles | interpreter only | `ENGINE_LUAJIT_JIT=OFF` (Phases 29 and 30) |
 

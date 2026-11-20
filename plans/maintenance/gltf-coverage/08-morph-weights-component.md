@@ -34,6 +34,8 @@ Done on the PC (2026-11-19). **No tests were run** (the user's request; they run
   avoid it, but a removed component leaves no change to track. Recorded for Day 15.
 - **C API:** not done; a host reaches `morph_weights` only if the generic component calls cover registry components, which was not
   checked today (Day 15).
+  - **Done since** (2026-11-20, [c-api-gltf-coverage.md](../c-api-gltf-coverage.md)): `ENGINE_LIGHT_SPOT`, `ENGINE_COMPONENT_MORPH_WEIGHTS`, and
+    `level_spawn` brings a level's lights and weights.
 - Tests (written, not run): `Scene components: morph weights are saved and loaded`. Not written: the sync's pointing and clearing,
   a script that sets a weight, a level that carries them (Day 10 imports them).
 - Docs: `scene/components.h`, `scene_components.h`, `render_sync.h`; `docs/reference` regenerated.

@@ -9,6 +9,7 @@
 #include "animation/components.h"
 #include "audio/components.h"
 #include "animation/pose.h"
+#include "scene/components.h"
 #include "scene/scene_components.h"
 #include "asset/level.h"
 #include "algorithm.h"
@@ -79,13 +80,16 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_AUDIO_SOURCE: return "audio source";
     case ENGINE_COMPONENT_AUDIO_LISTENER: return "audio listener";
     case ENGINE_COMPONENT_SCRIPT: return "script";
+    case ENGINE_COMPONENT_MORPH_WEIGHTS: return "morph weights";
     }
     return "component";
 }
 
+static_assert(animation::kMaxMorphWeights == ENGINE_MORPH_WEIGHTS_MAX, "the C API's morph weights are the engine's");
+
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_SCRIPT;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_MORPH_WEIGHTS;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -109,6 +113,7 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_AUDIO_SOURCE: return ecs::ComponentOf<audio::AudioSource>();
     case ENGINE_COMPONENT_AUDIO_LISTENER: return ecs::ComponentOf<audio::AudioListener>();
     case ENGINE_COMPONENT_SCRIPT: return ScriptComponentId();
+    case ENGINE_COMPONENT_MORPH_WEIGHTS: return ecs::ComponentOf<animation::MorphWeights>();
     }
     return ecs::kInvalidComponent;
 }
@@ -818,7 +823,12 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     }
     else if (kind == ENGINE_COMPONENT_LIGHT)
     {
-        checked = CheckInStruct(value, sizeof(engine_light), "engine_light");
+        // The first version ended before the cones (maintenance, 2026-11-20); a spot light needs them (below).
+        checked = CheckInStruct(value, offsetof(engine_light, inner_cone), "engine_light");
+    }
+    else if (kind == ENGINE_COMPONENT_MORPH_WEIGHTS)
+    {
+        checked = CheckInStruct(value, sizeof(engine_morph_weights), "engine_morph_weights");
     }
     else if (kind == ENGINE_COMPONENT_VISIBILITY)
     {
@@ -1211,9 +1221,22 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
             if (kind == ENGINE_COMPONENT_LIGHT)
             {
                 const engine_light* in = static_cast<const engine_light*>(value);
-                if (in->kind != ENGINE_LIGHT_DIRECTIONAL && in->kind != ENGINE_LIGHT_POINT)
+                if (in->kind != ENGINE_LIGHT_DIRECTIONAL && in->kind != ENGINE_LIGHT_POINT &&
+                    in->kind != ENGINE_LIGHT_SPOT)
                 {
                     return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the light kind is not known");
+                }
+                const bool spot = in->kind == ENGINE_LIGHT_SPOT;
+                if (spot && StructSizeOf(in) < sizeof(engine_light))
+                {
+                    SetLastError("struct_size: a spot light needs engine_light's cone fields");
+                    return ENGINE_ERROR_STRUCT_SIZE;
+                }
+                if (spot && !(Finite(in->inner_cone) && Finite(in->outer_cone) && in->inner_cone >= 0.0f &&
+                              in->inner_cone < in->outer_cone && in->outer_cone <= 1.5707964f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                                "a spot light needs 0 <= inner_cone < outer_cone <= pi/2");
                 }
                 for (const float c : in->color)
                 {
@@ -1226,9 +1249,9 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 {
                     return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the intensity is not finite and >= 0");
                 }
-                if (in->kind == ENGINE_LIGHT_POINT && !(Finite(in->radius) && in->radius > 0.0f))
+                if ((in->kind == ENGINE_LIGHT_POINT || spot) && !(Finite(in->radius) && in->radius > 0.0f))
                 {
-                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a point light needs radius > 0");
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a point or spot light needs radius > 0");
                 }
                 LightComponent light;
                 light.kind = in->kind;
@@ -1236,8 +1259,32 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 light.color[1] = in->color[1];
                 light.color[2] = in->color[2];
                 light.intensity = in->intensity;
-                light.radius = in->kind == ENGINE_LIGHT_POINT ? in->radius : 1.0f;
+                light.radius = in->kind == ENGINE_LIGHT_DIRECTIONAL ? 1.0f : in->radius;
+                if (spot)
+                {
+                    light.inner_cone = in->inner_cone;
+                    light.outer_cone = in->outer_cone;
+                }
                 return SetOrAdd(object.world, entity, light);
+            }
+            if (kind == ENGINE_COMPONENT_MORPH_WEIGHTS)
+            {
+                const engine_morph_weights* in = static_cast<const engine_morph_weights*>(value);
+                if (in->count > ENGINE_MORPH_WEIGHTS_MAX)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "count is above ENGINE_MORPH_WEIGHTS_MAX");
+                }
+                animation::MorphWeights weights;
+                weights.count = in->count;
+                for (u32 i = 0; i < in->count; ++i)
+                {
+                    if (!Finite(in->weights[i]))
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a morph weight is not finite");
+                    }
+                    weights.weights[i] = in->weights[i];
+                }
+                return SetOrAdd(object.world, entity, weights);
             }
             if (kind == ENGINE_COMPONENT_CAMERA)
             {
@@ -1816,36 +1863,39 @@ engine_status AnimationPlayFn(engine_handle world, u64 key, u64 clip, const engi
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "speed, start_time and fade_seconds are finite and >= 0");
     }
-    return WithWorld(world, true, key,
-                     [&](WorldObject& object, ecs::Entity entity)
-                     {
-                         const animation::SkeletonInstance* instance = object.world.Peek<animation::SkeletonInstance>(
-                             entity);
-                         if (instance == nullptr)
-                         {
-                             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the entity has no skeleton instance");
-                         }
-                         Runtime* runtime = CurrentRuntime();
-                         TRY_STATUS(runtime->Resources()->PinClip(clip, instance->skeleton));
-                         animation::AnimationPlayer player;
-                         if (animation::AnimationPlayer* old = object.world.Poke<animation::AnimationPlayer>(entity))
-                         {
-                             if (play.fade_seconds > 0.0f && old->clip != 0 && old->clip != clip)
-                             {
-                                 player.fade_clip = old->clip;
-                                 player.fade_time = old->time;
-                                 player.fade_total = play.fade_seconds;
-                                 player.fade_elapsed = 0.0f;
-                                 player.fade_sampler = Move(old->sampler);
-                             }
-                         }
-                         player.clip = clip;
-                         player.time = play.start_time;
-                         player.speed = play.speed == 0.0f ? 1.0f : play.speed;
-                         player.playing = true;
-                         player.looping = (play.flags & ENGINE_PLAY_LOOP) != 0;
-                         return SetOrAdd(object.world, entity, Move(player));
-                     });
+    return WithWorld(
+        world, true, key,
+        [&](WorldObject& object, ecs::Entity entity)
+        {
+            const animation::SkeletonInstance* instance = object.world.Peek<animation::SkeletonInstance>(entity);
+            Runtime* runtime = CurrentRuntime();
+            // An entity without a skeleton instance plays a clip of morph weights only (maintenance,
+            // 2026-11-20): PinClip refuses a clip with joint tracks for skeleton 0.
+            bool weights = false;
+            TRY_STATUS(runtime->Resources()->PinClip(clip, instance != nullptr ? instance->skeleton : 0, &weights));
+            if (weights && !object.world.Has<animation::MorphWeights>(entity))
+            {  // the animation system writes the weights of an entity that has the component
+                TRY_STATUS(SetOrAdd(object.world, entity, animation::MorphWeights()));
+            }
+            animation::AnimationPlayer player;
+            if (animation::AnimationPlayer* old = object.world.Poke<animation::AnimationPlayer>(entity))
+            {
+                if (play.fade_seconds > 0.0f && old->clip != 0 && old->clip != clip)
+                {
+                    player.fade_clip = old->clip;
+                    player.fade_time = old->time;
+                    player.fade_total = play.fade_seconds;
+                    player.fade_elapsed = 0.0f;
+                    player.fade_sampler = Move(old->sampler);
+                }
+            }
+            player.clip = clip;
+            player.time = play.start_time;
+            player.speed = play.speed == 0.0f ? 1.0f : play.speed;
+            player.playing = true;
+            player.looping = (play.flags & ENGINE_PLAY_LOOP) != 0;
+            return SetOrAdd(object.world, entity, Move(player));
+        });
 }
 
 engine_status AnimationSetSpeedFn(engine_handle world, u64 key, float speed)
@@ -2010,6 +2060,71 @@ engine_status EntityAttachToJointFn(engine_handle world, u64 key, u64 skeleton_k
                      });
 }
 
+namespace
+{
+
+// A level's light as the world's own (maintenance, 2026-11-20): false for an ambient light, which has no C kind.
+bool LightOfLevel(const scene::LightSource& source, LightComponent* out)
+{
+    switch (source.type)
+    {
+    case renderer::LightType::Directional: out->kind = ENGINE_LIGHT_DIRECTIONAL; break;
+    case renderer::LightType::Point: out->kind = ENGINE_LIGHT_POINT; break;
+    case renderer::LightType::Spot: out->kind = ENGINE_LIGHT_SPOT; break;
+    default: return false;
+    }
+    out->color[0] = source.color.x;
+    out->color[1] = source.color.y;
+    out->color[2] = source.color.z;
+    out->intensity = source.intensity;
+    out->radius = out->kind == ENGINE_LIGHT_DIRECTIONAL ? 1.0f : source.radius;
+    out->inner_cone = source.inner_cone;
+    out->outer_cone = source.outer_cone;
+    out->axis[0] = source.direction.x;
+    out->axis[1] = source.direction.y;
+    out->axis[2] = source.direction.z;
+    return true;
+}
+
+// Whether a level's light and weights are what component_set would take: a level blob is the host's input, and the
+// render scene asserts on a light that is not finite or a cone that is not ordered.
+bool LevelLightValid(const scene::LightSource& source)
+{
+    const bool finite = Finite(source.color.x) && Finite(source.color.y) && Finite(source.color.z) &&
+                        Finite(source.intensity) && Finite(source.radius) && Finite(source.direction.x) &&
+                        Finite(source.direction.y) && Finite(source.direction.z) && Finite(source.inner_cone) &&
+                        Finite(source.outer_cone);
+    if (!finite || source.color.x < 0.0f || source.color.y < 0.0f || source.color.z < 0.0f || source.intensity < 0.0f)
+    {
+        return false;
+    }
+    if ((source.type == renderer::LightType::Point || source.type == renderer::LightType::Spot) &&
+        !(source.radius > 0.0f))
+    {
+        return false;
+    }
+    return source.type != renderer::LightType::Spot ||
+           (source.inner_cone >= 0.0f && source.inner_cone < source.outer_cone && source.outer_cone <= 1.5707964f);
+}
+
+bool LevelWeightsValid(const animation::MorphWeights& weights)
+{
+    if (weights.count > animation::kMaxMorphWeights)
+    {
+        return false;
+    }
+    for (u32 i = 0; i < weights.count; ++i)
+    {
+        if (!Finite(weights.weights[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+}  // namespace
+
 engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_params* params, u64* root, u64* keys,
                            size_t capacity, size_t* total)
 {
@@ -2080,10 +2195,11 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
     Vector<byte> blob;
     TRY_STATUS(resources->ReadLevel(level, &blob));
     storage::ComponentRegistry registry;
-    // The scene components too (glTF coverage Day 12: an imported level holds its file's lights as light_source); a
-    // world of the C API does not take them over yet (KNOWN-ISSUES).
+    // The scene components too (glTF coverage Day 12: an imported level holds its file's lights as light_source); the
+    // world takes them over as its own lights (maintenance, 2026-11-20).
     if (storage::RegisterBuiltinComponents(&registry).Failed() || asset::RegisterLevelComponents(&registry).Failed() ||
-        animation::RegisterAnimationComponents(&registry).Failed() || scene::RegisterSceneComponents(&registry).Failed())
+        animation::RegisterAnimationComponents(&registry).Failed() ||
+        scene::RegisterSceneComponents(&registry).Failed())
     {
         return Fail(ENGINE_ERROR_UNSUPPORTED, "the level components could not be registered");
     }
@@ -2106,6 +2222,18 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
         if (const animation::SkeletonInstance* instance = scratch.Peek<animation::SkeletonInstance>(source[i]))
         {
             TRY_STATUS(resources->PinSkeleton(instance->skeleton));
+        }
+    }
+    // The level's lights and weights are checked as component_set checks a host's (maintenance, 2026-11-20).
+    for (usize i = 0; i < source.Size(); ++i)
+    {
+        const scene::LightSource* light = scratch.Peek<scene::LightSource>(source[i]);
+        const animation::MorphWeights* weights = scratch.Peek<animation::MorphWeights>(source[i]);
+        if ((light != nullptr && !LevelLightValid(*light)) || (weights != nullptr && !LevelWeightsValid(*weights)))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                        "a light or the morph weights of an entity of the level are not valid (not finite, a negative "
+                        "colour or intensity, no radius, cones out of order, more than 64 weights)");
         }
     }
     const StringView prefix(place.name_prefix.data, place.name_prefix.length);
@@ -2223,6 +2351,20 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
                     {
                         status = object.world.Add<animation::SkeletonInstance>(entity, Move(instance));
                     }
+                }
+                // Maintenance, 2026-11-20: the node's morph weights and its light.
+                if (const animation::MorphWeights* weights = scratch.Peek<animation::MorphWeights>(source[i]))
+                {
+                    if (status == ecs::Status::Ok)
+                    {
+                        status = object.world.Add<animation::MorphWeights>(entity, *weights);
+                    }
+                }
+                LightComponent light;
+                if (const scene::LightSource* source_light = scratch.Peek<scene::LightSource>(source[i]);
+                    source_light != nullptr && LightOfLevel(*source_light, &light) && status == ecs::Status::Ok)
+                {
+                    status = object.world.Add<LightComponent>(entity, light);
                 }
                 if (status != ecs::Status::Ok)
                 {
@@ -2351,7 +2493,8 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
     const usize wanted = kind == ENGINE_COMPONENT_TRANSFORM           ? sizeof(engine_transform)
                          : kind == ENGINE_COMPONENT_WORLD_TRANSFORM   ? sizeof(engine_world_transform)
                          : kind == ENGINE_COMPONENT_CAMERA            ? sizeof(engine_camera)
-                         : kind == ENGINE_COMPONENT_LIGHT             ? sizeof(engine_light)
+                         : kind == ENGINE_COMPONENT_LIGHT             ? offsetof(engine_light, inner_cone)
+                         : kind == ENGINE_COMPONENT_MORPH_WEIGHTS     ? sizeof(engine_morph_weights)
                          : kind == ENGINE_COMPONENT_LABEL             ? sizeof(engine_label)
                          : kind == ENGINE_COMPONENT_VISIBILITY        ? sizeof(engine_visibility)
                          : kind == ENGINE_COMPONENT_RIGID_BODY        ? sizeof(engine_rigid_body)
@@ -2368,6 +2511,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                        : kind == ENGINE_COMPONENT_WORLD_TRANSFORM   ? "engine_world_transform"
                        : kind == ENGINE_COMPONENT_CAMERA            ? "engine_camera"
                        : kind == ENGINE_COMPONENT_LIGHT             ? "engine_light"
+                       : kind == ENGINE_COMPONENT_MORPH_WEIGHTS     ? "engine_morph_weights"
                        : kind == ENGINE_COMPONENT_LABEL             ? "engine_label"
                        : kind == ENGINE_COMPONENT_VISIBILITY        ? "engine_visibility"
                        : kind == ENGINE_COMPONENT_RIGID_BODY        ? "engine_rigid_body"
@@ -2385,319 +2529,341 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
     {
         return checked;
     }
-    return WithWorld(world, true, key,
-                     [&](WorldObject& object, ecs::Entity entity)
-                     {
-                         const ecs::World& view = object.world;
-                         if (kind == ENGINE_COMPONENT_TRANSFORM)
-                         {
-                             const ecs::LocalTransform* local = view.Peek<ecs::LocalTransform>(entity);
-                             if (local == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no transform");
-                             }
-                             engine_transform result = {};
-                             result.struct_size = sizeof(engine_transform);
-                             result.position[0] = local->position.x;
-                             result.position[1] = local->position.y;
-                             result.position[2] = local->position.z;
-                             result.rotation[0] = local->rotation.x;
-                             result.rotation[1] = local->rotation.y;
-                             result.rotation[2] = local->rotation.z;
-                             result.rotation[3] = local->rotation.w;
-                             result.scale[0] = local->scale.x;
-                             result.scale[1] = local->scale.y;
-                             result.scale[2] = local->scale.z;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_WORLD_TRANSFORM)
-                         {
-                             const ecs::WorldTransform* world_transform = view.Peek<ecs::WorldTransform>(entity);
-                             if (world_transform == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no transform");
-                             }
-                             static_assert(sizeof(Mat4) == 16 * sizeof(float), "a Mat4 is sixteen floats");
-                             engine_world_transform result = {};
-                             result.struct_size = sizeof(engine_world_transform);
-                             MemCopy(result.matrix, &world_transform->matrix, sizeof(result.matrix));
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_SKELETON_INSTANCE)
-                         {
-                             const animation::SkeletonInstance* instance = view.Peek<animation::SkeletonInstance>(
-                                 entity);
-                             if (instance == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no skeleton instance");
-                             }
-                             engine_skeleton_instance result = {};
-                             result.struct_size = sizeof(engine_skeleton_instance);
-                             result.skeleton = instance->skeleton;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_ANIMATION_PLAYER)
-                         {
-                             const animation::AnimationPlayer* player = view.Peek<animation::AnimationPlayer>(entity);
-                             if (player == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no animation player");
-                             }
-                             engine_animation_state result = {};
-                             result.struct_size = sizeof(engine_animation_state);
-                             result.playing = player->playing ? 1u : 0u;
-                             result.looping = player->looping ? 1u : 0u;
-                             result.finished = player->finished ? 1u : 0u;
-                             result.fading = player->fade_clip != 0 ? 1u : 0u;
-                             result.clip = player->clip;
-                             result.time = player->time;
-                             result.speed = player->speed;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_AUDIO_SOURCE)
-                         {
-                             const audio::AudioSource* source = view.Peek<audio::AudioSource>(entity);
-                             if (source == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no audio source");
-                             }
-                             engine_audio_source result = {};
-                             result.struct_size = sizeof(engine_audio_source);
-                             result.clip = AudioHandleOfClip(*CurrentRuntime(), source->clip);
-                             result.bus = source->bus.index;
-                             result.gain = source->gain;
-                             result.pitch = source->pitch;
-                             result.flags = (source->loop ? ENGINE_AUDIO_SOURCE_LOOP : 0u) |
-                                            (source->play_on_start ? ENGINE_AUDIO_SOURCE_PLAY_ON_START : 0u) |
-                                            (source->spatial ? ENGINE_AUDIO_SOURCE_SPATIAL : 0u) |
-                                            (source->doppler ? ENGINE_AUDIO_SOURCE_DOPPLER : 0u) |
-                                            (source->occlusion ? ENGINE_AUDIO_SOURCE_OCCLUSION : 0u);
-                             result.priority = source->priority;
-                             result.model = static_cast<u32>(source->attenuation.model);
-                             result.min_distance = source->attenuation.min_distance;
-                             result.max_distance = source->attenuation.max_distance;
-                             result.rolloff = source->attenuation.rolloff;
-                             result.cone_inner = source->cone.inner_angle;
-                             result.cone_outer = source->cone.outer_angle;
-                             result.cone_outer_gain = source->cone.outer_gain;
-                             result.stream = AudioHandleOfStream(*CurrentRuntime(), source->stream);
-                             // A host of the first version has a struct that ends before `stream`.
-                             const usize room = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out) : sizeof(result);
-                             result.struct_size = static_cast<u32>(room);
-                             MemCopy(out, &result, room);
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_SCRIPT)
-                         {
-                             return ScriptComponentGet(object, entity, out);
-                         }
-                         if (kind == ENGINE_COMPONENT_AUDIO_LISTENER)
-                         {
-                             const audio::AudioListener* listener = view.Peek<audio::AudioListener>(entity);
-                             if (listener == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no audio listener");
-                             }
-                             engine_audio_listener result = {};
-                             result.struct_size = sizeof(engine_audio_listener);
-                             result.gain = listener->gain;
-                             result.active = listener->active ? 1u : 0u;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_RIGID_BODY)
-                         {
-                             const physics::RigidBody* body = view.Peek<physics::RigidBody>(entity);
-                             if (body == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no rigid body");
-                             }
-                             engine_rigid_body result = {};
-                             result.struct_size = sizeof(engine_rigid_body);
-                             result.type = static_cast<u32>(body->type);
-                             result.mass = body->mass;
-                             result.linear_damping = body->linear_damping;
-                             result.angular_damping = body->angular_damping;
-                             result.gravity_scale = body->gravity_scale;
-                             result.flags = body->flags;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_JOINT)
-                         {
-                             const physics::Joint* joint = view.Peek<physics::Joint>(entity);
-                             if (joint == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no joint");
-                             }
-                             engine_joint result = {};
-                             result.struct_size = sizeof(engine_joint);
-                             result.kind = static_cast<u32>(joint->type);
-                             result.entity_a = joint->entity_a.IsValid() ? joint->entity_a.ToU64() : 0;
-                             result.entity_b = joint->entity_b.IsValid() ? joint->entity_b.ToU64() : 0;
-                             result.point_a[0] = joint->point_a.x;
-                             result.point_a[1] = joint->point_a.y;
-                             result.point_a[2] = joint->point_a.z;
-                             result.point_b[0] = joint->point_b.x;
-                             result.point_b[1] = joint->point_b.y;
-                             result.point_b[2] = joint->point_b.z;
-                             result.axis[0] = joint->axis.x;
-                             result.axis[1] = joint->axis.y;
-                             result.axis[2] = joint->axis.z;
-                             result.min_length = joint->min_length;
-                             result.max_length = joint->max_length;
-                             result.hertz = joint->hertz;
-                             result.damping_ratio = joint->damping_ratio;
-                             result.break_force = joint->break_force;
-                             result.break_torque = joint->break_torque;
-                             result.flags = (joint->collide_connected ? ENGINE_JOINT_COLLIDE_CONNECTED : 0u) |
-                                            (joint->enable_limit ? ENGINE_JOINT_LIMIT : 0u) |
-                                            (joint->enable_motor ? ENGINE_JOINT_MOTOR : 0u);
-                             result.lower_angle = joint->lower_angle;
-                             result.upper_angle = joint->upper_angle;
-                             result.motor_speed = joint->motor_speed;
-                             result.max_motor_torque = joint->max_motor_torque;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_CHARACTER)
-                         {
-                             const CharacterComponent* character = view.Peek<CharacterComponent>(entity);
-                             if (character == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no character");
-                             }
-                             engine_character result = {};
-                             result.struct_size = sizeof(engine_character);
-                             result.radius = character->radius;
-                             result.height = character->height;
-                             result.step_height = character->step_height;
-                             result.min_ground_y = character->min_ground_y;
-                             result.skin_width = character->skin_width;
-                             result.gravity_scale = character->gravity_scale;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_COLLIDER)
-                         {
-                             const physics::Collider* collider = view.Peek<physics::Collider>(entity);
-                             if (collider == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no collider");
-                             }
-                             engine_collider result = {};
-                             result.struct_size = sizeof(engine_collider);
-                             result.shape = collider->shape.kind == physics::ShapeKind::Sphere ? ENGINE_SHAPE_SPHERE
-                                            : collider->shape.kind == physics::ShapeKind::Box  ? ENGINE_SHAPE_BOX
-                                                                                               : ENGINE_SHAPE_CAPSULE;
-                             result.radius = collider->shape.radius;
-                             result.half_height = collider->shape.half_height;
-                             result.half_extents[0] = collider->shape.half_extents.x;
-                             result.half_extents[1] = collider->shape.half_extents.y;
-                             result.half_extents[2] = collider->shape.half_extents.z;
-                             result.offset[0] = collider->offset.x;
-                             result.offset[1] = collider->offset.y;
-                             result.offset[2] = collider->offset.z;
-                             result.rotation[0] = collider->rotation.x;
-                             result.rotation[1] = collider->rotation.y;
-                             result.rotation[2] = collider->rotation.z;
-                             result.rotation[3] = collider->rotation.w;
-                             result.friction = collider->material.friction;
-                             result.restitution = collider->material.restitution;
-                             result.density = collider->material.density;
-                             result.layer = collider->layer;
-                             result.group = collider->group;
-                             result.mask = collider->mask;
-                             result.is_trigger = collider->is_trigger ? 1u : 0u;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_VISIBILITY)
-                         {
-                             const VisibilityComponent* visibility = view.Peek<VisibilityComponent>(entity);
-                             if (visibility == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no visibility component");
-                             }
-                             engine_visibility result = {};
-                             result.struct_size = sizeof(engine_visibility);
-                             result.hidden = visibility->hidden;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_LABEL)
-                         {
-                             const LabelComponent* label = view.Peek<LabelComponent>(entity);
-                             if (label == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no label");
-                             }
-                             engine_label result = {};
-                             result.struct_size = sizeof(engine_label);
-                             result.text.length = label->length;  // the bytes stay in the engine (data is NULL)
-                             MemCopy(result.color, label->color, sizeof(result.color));
-                             result.size = label->size;
-                             MemCopy(result.offset, label->offset, sizeof(result.offset));
-                             result.anchor = label->anchor;
-                             result.flags = label->flags;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_LIGHT)
-                         {
-                             const LightComponent* light = view.Peek<LightComponent>(entity);
-                             if (light == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no light");
-                             }
-                             engine_light result = {};
-                             result.struct_size = sizeof(engine_light);
-                             result.kind = light->kind;
-                             result.color[0] = light->color[0];
-                             result.color[1] = light->color[1];
-                             result.color[2] = light->color[2];
-                             result.intensity = light->intensity;
-                             result.radius = light->radius;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         if (kind == ENGINE_COMPONENT_CAMERA)
-                         {
-                             const CameraComponent* camera = view.Peek<CameraComponent>(entity);
-                             if (camera == nullptr)
-                             {
-                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no camera");
-                             }
-                             engine_camera result = {};
-                             result.struct_size = sizeof(engine_camera);
-                             result.flags = camera->flags;
-                             result.fov_y = camera->fov_y;
-                             result.near_plane = camera->near_plane;
-                             result.far_plane = camera->far_plane;
-                             result.aspect = camera->aspect;
-                             MemCopy(out, &result, sizeof(result));
-                             return ENGINE_OK;
-                         }
-                         const MeshReference* reference = view.Peek<MeshReference>(entity);
-                         if (reference == nullptr)
-                         {
-                             return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no mesh reference");
-                         }
-                         engine_mesh_reference result = {};
-                         result.struct_size = sizeof(engine_mesh_reference);
-                         result.mesh = reference->mesh;
-                         result.material = reference->material;
-                         result.material_resource = reference->material_resource;
-                         const u32 written = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out)
-                                                                                : static_cast<u32>(sizeof(result));
-                         result.struct_size = written;  // a host built against an older header gets the fields it knows
-                         MemCopy(out, &result, written);
-                         return ENGINE_OK;
-                     });
+    return WithWorld(
+        world, true, key,
+        [&](WorldObject& object, ecs::Entity entity)
+        {
+            const ecs::World& view = object.world;
+            if (kind == ENGINE_COMPONENT_TRANSFORM)
+            {
+                const ecs::LocalTransform* local = view.Peek<ecs::LocalTransform>(entity);
+                if (local == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no transform");
+                }
+                engine_transform result = {};
+                result.struct_size = sizeof(engine_transform);
+                result.position[0] = local->position.x;
+                result.position[1] = local->position.y;
+                result.position[2] = local->position.z;
+                result.rotation[0] = local->rotation.x;
+                result.rotation[1] = local->rotation.y;
+                result.rotation[2] = local->rotation.z;
+                result.rotation[3] = local->rotation.w;
+                result.scale[0] = local->scale.x;
+                result.scale[1] = local->scale.y;
+                result.scale[2] = local->scale.z;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_WORLD_TRANSFORM)
+            {
+                const ecs::WorldTransform* world_transform = view.Peek<ecs::WorldTransform>(entity);
+                if (world_transform == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no transform");
+                }
+                static_assert(sizeof(Mat4) == 16 * sizeof(float), "a Mat4 is sixteen floats");
+                engine_world_transform result = {};
+                result.struct_size = sizeof(engine_world_transform);
+                MemCopy(result.matrix, &world_transform->matrix, sizeof(result.matrix));
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_SKELETON_INSTANCE)
+            {
+                const animation::SkeletonInstance* instance = view.Peek<animation::SkeletonInstance>(entity);
+                if (instance == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no skeleton instance");
+                }
+                engine_skeleton_instance result = {};
+                result.struct_size = sizeof(engine_skeleton_instance);
+                result.skeleton = instance->skeleton;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_ANIMATION_PLAYER)
+            {
+                const animation::AnimationPlayer* player = view.Peek<animation::AnimationPlayer>(entity);
+                if (player == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no animation player");
+                }
+                engine_animation_state result = {};
+                result.struct_size = sizeof(engine_animation_state);
+                result.playing = player->playing ? 1u : 0u;
+                result.looping = player->looping ? 1u : 0u;
+                result.finished = player->finished ? 1u : 0u;
+                result.fading = player->fade_clip != 0 ? 1u : 0u;
+                result.clip = player->clip;
+                result.time = player->time;
+                result.speed = player->speed;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_AUDIO_SOURCE)
+            {
+                const audio::AudioSource* source = view.Peek<audio::AudioSource>(entity);
+                if (source == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no audio source");
+                }
+                engine_audio_source result = {};
+                result.struct_size = sizeof(engine_audio_source);
+                result.clip = AudioHandleOfClip(*CurrentRuntime(), source->clip);
+                result.bus = source->bus.index;
+                result.gain = source->gain;
+                result.pitch = source->pitch;
+                result.flags = (source->loop ? ENGINE_AUDIO_SOURCE_LOOP : 0u) |
+                               (source->play_on_start ? ENGINE_AUDIO_SOURCE_PLAY_ON_START : 0u) |
+                               (source->spatial ? ENGINE_AUDIO_SOURCE_SPATIAL : 0u) |
+                               (source->doppler ? ENGINE_AUDIO_SOURCE_DOPPLER : 0u) |
+                               (source->occlusion ? ENGINE_AUDIO_SOURCE_OCCLUSION : 0u);
+                result.priority = source->priority;
+                result.model = static_cast<u32>(source->attenuation.model);
+                result.min_distance = source->attenuation.min_distance;
+                result.max_distance = source->attenuation.max_distance;
+                result.rolloff = source->attenuation.rolloff;
+                result.cone_inner = source->cone.inner_angle;
+                result.cone_outer = source->cone.outer_angle;
+                result.cone_outer_gain = source->cone.outer_gain;
+                result.stream = AudioHandleOfStream(*CurrentRuntime(), source->stream);
+                // A host of the first version has a struct that ends before `stream`.
+                const usize room = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out) : sizeof(result);
+                result.struct_size = static_cast<u32>(room);
+                MemCopy(out, &result, room);
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_SCRIPT)
+            {
+                return ScriptComponentGet(object, entity, out);
+            }
+            if (kind == ENGINE_COMPONENT_AUDIO_LISTENER)
+            {
+                const audio::AudioListener* listener = view.Peek<audio::AudioListener>(entity);
+                if (listener == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no audio listener");
+                }
+                engine_audio_listener result = {};
+                result.struct_size = sizeof(engine_audio_listener);
+                result.gain = listener->gain;
+                result.active = listener->active ? 1u : 0u;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_RIGID_BODY)
+            {
+                const physics::RigidBody* body = view.Peek<physics::RigidBody>(entity);
+                if (body == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no rigid body");
+                }
+                engine_rigid_body result = {};
+                result.struct_size = sizeof(engine_rigid_body);
+                result.type = static_cast<u32>(body->type);
+                result.mass = body->mass;
+                result.linear_damping = body->linear_damping;
+                result.angular_damping = body->angular_damping;
+                result.gravity_scale = body->gravity_scale;
+                result.flags = body->flags;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_JOINT)
+            {
+                const physics::Joint* joint = view.Peek<physics::Joint>(entity);
+                if (joint == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no joint");
+                }
+                engine_joint result = {};
+                result.struct_size = sizeof(engine_joint);
+                result.kind = static_cast<u32>(joint->type);
+                result.entity_a = joint->entity_a.IsValid() ? joint->entity_a.ToU64() : 0;
+                result.entity_b = joint->entity_b.IsValid() ? joint->entity_b.ToU64() : 0;
+                result.point_a[0] = joint->point_a.x;
+                result.point_a[1] = joint->point_a.y;
+                result.point_a[2] = joint->point_a.z;
+                result.point_b[0] = joint->point_b.x;
+                result.point_b[1] = joint->point_b.y;
+                result.point_b[2] = joint->point_b.z;
+                result.axis[0] = joint->axis.x;
+                result.axis[1] = joint->axis.y;
+                result.axis[2] = joint->axis.z;
+                result.min_length = joint->min_length;
+                result.max_length = joint->max_length;
+                result.hertz = joint->hertz;
+                result.damping_ratio = joint->damping_ratio;
+                result.break_force = joint->break_force;
+                result.break_torque = joint->break_torque;
+                result.flags = (joint->collide_connected ? ENGINE_JOINT_COLLIDE_CONNECTED : 0u) |
+                               (joint->enable_limit ? ENGINE_JOINT_LIMIT : 0u) |
+                               (joint->enable_motor ? ENGINE_JOINT_MOTOR : 0u);
+                result.lower_angle = joint->lower_angle;
+                result.upper_angle = joint->upper_angle;
+                result.motor_speed = joint->motor_speed;
+                result.max_motor_torque = joint->max_motor_torque;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_CHARACTER)
+            {
+                const CharacterComponent* character = view.Peek<CharacterComponent>(entity);
+                if (character == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no character");
+                }
+                engine_character result = {};
+                result.struct_size = sizeof(engine_character);
+                result.radius = character->radius;
+                result.height = character->height;
+                result.step_height = character->step_height;
+                result.min_ground_y = character->min_ground_y;
+                result.skin_width = character->skin_width;
+                result.gravity_scale = character->gravity_scale;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_COLLIDER)
+            {
+                const physics::Collider* collider = view.Peek<physics::Collider>(entity);
+                if (collider == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no collider");
+                }
+                engine_collider result = {};
+                result.struct_size = sizeof(engine_collider);
+                result.shape = collider->shape.kind == physics::ShapeKind::Sphere ? ENGINE_SHAPE_SPHERE
+                               : collider->shape.kind == physics::ShapeKind::Box  ? ENGINE_SHAPE_BOX
+                                                                                  : ENGINE_SHAPE_CAPSULE;
+                result.radius = collider->shape.radius;
+                result.half_height = collider->shape.half_height;
+                result.half_extents[0] = collider->shape.half_extents.x;
+                result.half_extents[1] = collider->shape.half_extents.y;
+                result.half_extents[2] = collider->shape.half_extents.z;
+                result.offset[0] = collider->offset.x;
+                result.offset[1] = collider->offset.y;
+                result.offset[2] = collider->offset.z;
+                result.rotation[0] = collider->rotation.x;
+                result.rotation[1] = collider->rotation.y;
+                result.rotation[2] = collider->rotation.z;
+                result.rotation[3] = collider->rotation.w;
+                result.friction = collider->material.friction;
+                result.restitution = collider->material.restitution;
+                result.density = collider->material.density;
+                result.layer = collider->layer;
+                result.group = collider->group;
+                result.mask = collider->mask;
+                result.is_trigger = collider->is_trigger ? 1u : 0u;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_VISIBILITY)
+            {
+                const VisibilityComponent* visibility = view.Peek<VisibilityComponent>(entity);
+                if (visibility == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no visibility component");
+                }
+                engine_visibility result = {};
+                result.struct_size = sizeof(engine_visibility);
+                result.hidden = visibility->hidden;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_LABEL)
+            {
+                const LabelComponent* label = view.Peek<LabelComponent>(entity);
+                if (label == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no label");
+                }
+                engine_label result = {};
+                result.struct_size = sizeof(engine_label);
+                result.text.length = label->length;  // the bytes stay in the engine (data is NULL)
+                MemCopy(result.color, label->color, sizeof(result.color));
+                result.size = label->size;
+                MemCopy(result.offset, label->offset, sizeof(result.offset));
+                result.anchor = label->anchor;
+                result.flags = label->flags;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_LIGHT)
+            {
+                const LightComponent* light = view.Peek<LightComponent>(entity);
+                if (light == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no light");
+                }
+                engine_light result = {};
+                result.struct_size = sizeof(engine_light);
+                result.kind = light->kind;
+                result.color[0] = light->color[0];
+                result.color[1] = light->color[1];
+                result.color[2] = light->color[2];
+                result.intensity = light->intensity;
+                result.radius = light->radius;
+                result.inner_cone = light->inner_cone;
+                result.outer_cone = light->outer_cone;
+                // A host of the first version has a struct that ends before the cones.
+                const usize room = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out) : sizeof(result);
+                result.struct_size = static_cast<u32>(room);
+                MemCopy(out, &result, room);
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_MORPH_WEIGHTS)
+            {
+                const animation::MorphWeights* weights = view.Peek<animation::MorphWeights>(entity);
+                if (weights == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no morph weights");
+                }
+                engine_morph_weights result = {};
+                result.struct_size = sizeof(engine_morph_weights);
+                result.count = weights->count < ENGINE_MORPH_WEIGHTS_MAX ? weights->count : ENGINE_MORPH_WEIGHTS_MAX;
+                for (u32 i = 0; i < result.count; ++i)
+                {
+                    result.weights[i] = weights->weights[i];
+                }
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_CAMERA)
+            {
+                const CameraComponent* camera = view.Peek<CameraComponent>(entity);
+                if (camera == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no camera");
+                }
+                engine_camera result = {};
+                result.struct_size = sizeof(engine_camera);
+                result.flags = camera->flags;
+                result.fov_y = camera->fov_y;
+                result.near_plane = camera->near_plane;
+                result.far_plane = camera->far_plane;
+                result.aspect = camera->aspect;
+                MemCopy(out, &result, sizeof(result));
+                return ENGINE_OK;
+            }
+            const MeshReference* reference = view.Peek<MeshReference>(entity);
+            if (reference == nullptr)
+            {
+                return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no mesh reference");
+            }
+            engine_mesh_reference result = {};
+            result.struct_size = sizeof(engine_mesh_reference);
+            result.mesh = reference->mesh;
+            result.material = reference->material;
+            result.material_resource = reference->material_resource;
+            const u32 written = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out)
+                                                                   : static_cast<u32>(sizeof(result));
+            result.struct_size = written;  // a host built against an older header gets the fields it knows
+            MemCopy(out, &result, written);
+            return ENGINE_OK;
+        });
 }
 
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
@@ -2738,6 +2904,7 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_AUDIO_SOURCE: status = w.Remove<audio::AudioSource>(entity); break;
                          case ENGINE_COMPONENT_AUDIO_LISTENER: status = w.Remove<audio::AudioListener>(entity); break;
                          case ENGINE_COMPONENT_SCRIPT: return ScriptComponentRemove(object, entity);
+                         case ENGINE_COMPONENT_MORPH_WEIGHTS: status = w.Remove<animation::MorphWeights>(entity); break;
                          case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
                          case ENGINE_COMPONENT_SKELETON_INSTANCE:
                              status = w.Remove<animation::SkeletonInstance>(entity);
@@ -2842,9 +3009,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[ENGINE_COMPONENT_SCRIPT];
+                         ecs::ComponentId wanted[ENGINE_COMPONENT_MORPH_WEIGHTS];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_SCRIPT; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_MORPH_WEIGHTS; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {

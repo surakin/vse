@@ -35,7 +35,7 @@
   `scene::RegisterSceneComponents`: the model viewer, `asset_mint` and the C API's level spawn.
 - **The model viewer** (decided): the file's lights when it has any, its default sun only when it has none; the ambient term stays.
 - **Not done:** a world of the C API does not take the lights over (its `LightComponent` has no spot and its own direction
-  rule): in `KNOWN-ISSUES.md`. (The summary's lights were done on 2026-11-20, below.) The test is a case in
+  rule): in `KNOWN-ISSUES.md`. (Done since, 2026-11-20: [c-api-gltf-coverage.md](../c-api-gltf-coverage.md).) (The summary's lights were done on 2026-11-20, below.) The test is a case in
   `tests/asset/gltf_mesh_test.cpp` (no new file, so no new `tests/phases.txt` line): each light type, units, a spot's cones, a light with no
   range, determinism, six refusals. `extensionsRequired` naming the extension is covered by the supported list.
 - **Tests:** not run (the user, 2026-11-19); `build-msvc` builds clean. The whole suite runs after this day.

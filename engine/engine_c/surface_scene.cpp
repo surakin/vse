@@ -1,6 +1,7 @@
 #include "animation/components.h"
 #include "engine_c/surface_scene.h"
 
+#include "algorithm.h"
 #include "cstr/mem_ops.h"
 #include "ecs/query.h"
 #include "ecs/transform.h"
@@ -389,22 +390,31 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
             renderer::Light light;
             light.color = Vec3(component.color[0], component.color[1], component.color[2]);
             light.intensity = component.intensity;
-            if (component.kind == ENGINE_LIGHT_POINT)
+            if (component.kind == ENGINE_LIGHT_POINT || component.kind == ENGINE_LIGHT_SPOT)
             {
-                light.type = renderer::LightType::Point;
+                light.type = component.kind == ENGINE_LIGHT_SPOT ? renderer::LightType::Spot
+                                                                 : renderer::LightType::Point;
                 light.position = Vec3(placed.matrix.col[3].x, placed.matrix.col[3].y, placed.matrix.col[3].z);
                 light.radius = component.radius;
+                light.inner_cone = component.inner_cone;
+                light.outer_cone = component.outer_cone;
             }
-            else
-            {  // the light shines along the entity's -Z: the direction toward it is +Z
-                const Vec3 back(placed.matrix.col[2].x, placed.matrix.col[2].y, placed.matrix.col[2].z);
+            if (component.kind != ENGINE_LIGHT_POINT)
+            {  // the axis toward the light (+Z for a host's light, which shines along -Z) under the entity's rotation
+                const Vec3 col0(placed.matrix.col[0].x, placed.matrix.col[0].y, placed.matrix.col[0].z);
+                const Vec3 col1(placed.matrix.col[1].x, placed.matrix.col[1].y, placed.matrix.col[1].z);
+                const Vec3 col2(placed.matrix.col[2].x, placed.matrix.col[2].y, placed.matrix.col[2].z);
+                const Vec3 back = col0 * component.axis[0] + col1 * component.axis[1] + col2 * component.axis[2];
                 const f32 length = back.Length();
                 if (!(length > 1e-12f))
                 {
                     ++report->lights_refused;
                     return;
                 }
-                light.type = renderer::LightType::Directional;
+                if (component.kind == ENGINE_LIGHT_DIRECTIONAL)
+                {
+                    light.type = renderer::LightType::Directional;
+                }
                 light.direction = back * (1.0f / length);
             }
             const u64 key = entity.ToU64();
@@ -583,6 +593,13 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             const bool skinned = mesh != nullptr && mesh->Layout().skin_stride != 0;
             const animation::SkeletonInstance* skeleton = world.world.Peek<animation::SkeletonInstance>(entity);
             const bool posed = skeleton != nullptr && skeleton->palette.Size() > 0;
+            // The entity's morph weights (maintenance, 2026-11-20), as many as the mesh has targets.
+            const animation::MorphWeights* morph = world.world.Peek<animation::MorphWeights>(entity);
+            u32 morph_count = 0;
+            if (morph != nullptr && mesh != nullptr)
+            {
+                morph_count = Min(Min(morph->count, animation::kMaxMorphWeights), mesh->MorphTargetCount());
+            }
             const bool resolved = mesh != nullptr && (!skinned || posed) &&
                                   ResolveMaterial(reference.material_resource, skinned, &material);
             if (!resolved)
@@ -687,6 +704,11 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                     desc.first_index = parts[i].first;
                     desc.index_count = parts[i].count;
                     desc.transform = placed.matrix;
+                    if (morph_count != 0)
+                    {
+                        desc.morph_weights = morph->weights.Data();
+                        desc.morph_weight_count = morph_count;
+                    }
                     if (skinned)
                     {
                         desc.joint_matrices = skeleton->palette[0].Data();
@@ -725,6 +747,17 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                     }
                 }
                 entry->transform = placed.matrix;
+            }
+            if (mesh->MorphTargetCount() != 0)
+            {  // the weights move in storage and change every frame a clip plays: pointed at again each frame
+                for (u32 i = 0; i < entry->count; ++i)
+                {
+                    if (entry->objects[i].IsValid())
+                    {
+                        scene_->SetMorphWeights(entry->objects[i], morph_count != 0 ? morph->weights.Data() : nullptr,
+                                                morph_count);
+                    }
+                }
             }
             if (skinned)
             {  // the palette is rewritten by every animation update

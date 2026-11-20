@@ -171,6 +171,72 @@ static void PlaceAtOrigin(engine_handle world, uint64_t entity)
     CHECK_STATUS(g_api->component_set(world, entity, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
 }
 
+/* The sum of the red channel over the picture: how much light the red mesh reflects. */
+static unsigned long long RedSum(const engine_pixels* pixels)
+{
+    unsigned long long sum = 0;
+    unsigned x;
+    unsigned y;
+    for (y = 0; y < pixels->height; ++y)
+    {
+        for (x = 0; x < pixels->width; ++x)
+        {
+            sum += ((const unsigned char*)pixels->data.data)[(size_t)y * pixels->stride + (size_t)x * 4];
+        }
+    }
+    return sum;
+}
+
+/* Maintenance (2026-11-20): a spot light in front of the mesh lights it when it points at it (along its -Z) and not
+ * when it is turned away; the same light as a point light lights it whichever way it is turned. Seen on Linux: about
+ * 252,600 (toward), 149,900 (away) and 253,700 (point). */
+static void TestSpotLight(engine_handle engine, engine_handle world, engine_handle surface, engine_pixels* pixels)
+{
+    uint64_t lamp = 0;
+    engine_transform t;
+    engine_light light;
+    unsigned long long dark;
+    unsigned long long toward;
+    unsigned long long away;
+    unsigned long long point_away;
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    dark = RedSum(pixels);
+    CHECK_STATUS(g_api->entity_create(world, &lamp), ENGINE_OK);
+    memset(&t, 0, sizeof(t));
+    t.struct_size = sizeof(t);
+    t.position[2] = 1.5f;
+    t.rotation[3] = 1.0f; /* identity: it shines along -Z, at the mesh */
+    t.scale[0] = t.scale[1] = t.scale[2] = 1.0f;
+    CHECK_STATUS(g_api->component_set(world, lamp, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    memset(&light, 0, sizeof(light));
+    light.struct_size = sizeof(light);
+    light.kind = ENGINE_LIGHT_SPOT;
+    light.color[0] = light.color[1] = light.color[2] = 1.0f;
+    light.intensity = 20.0f;
+    light.radius = 10.0f;
+    light.inner_cone = 0.6f;
+    light.outer_cone = 1.2f;
+    CHECK_STATUS(g_api->component_set(world, lamp, ENGINE_COMPONENT_LIGHT, &light), ENGINE_OK);
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    toward = RedSum(pixels);
+    t.rotation[1] = 1.0f; /* half a turn about Y: it shines along +Z, away from the mesh */
+    t.rotation[3] = 0.0f;
+    CHECK_STATUS(g_api->component_set(world, lamp, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    away = RedSum(pixels);
+    light.kind = ENGINE_LIGHT_POINT;
+    CHECK_STATUS(g_api->component_set(world, lamp, ENGINE_COMPONENT_LIGHT, &light), ENGINE_OK);
+    CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
+    point_away = RedSum(pixels);
+    printf("host_offscreen: red sums: no light %llu, spot toward %llu, spot away %llu, point %llu\n", dark, toward,
+           away, point_away);
+    /* (a world with no light of its own is lit by the surface's default: `dark` is printed, not compared) */
+    CHECK(toward > away + away / 4);                /* the spot lights the mesh when it points at it */
+    CHECK(point_away > away + away / 4);            /* a point light does, whichever way it is turned */
+    CHECK(toward > away + (point_away - away) / 2); /* and at the centre of its cone the spot is nearly the point */
+    CHECK_STATUS(g_api->entity_destroy(world, lamp), ENGINE_OK);
+}
+
 int main(void)
 {
     engine_create_info create;
@@ -262,6 +328,7 @@ int main(void)
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
     CHECK(CountColor(&pixels, 0, pixels.width / 2, 1) > 100);
     CHECK(CountColor(&pixels, pixels.width / 2, pixels.width, 1) > 100);
+    TestSpotLight(engine, world, surface, &pixels);
 
     /* a pixel ray works as on a window */
     CHECK_STATUS(g_api->surface_pixel_ray(surface, 80.0f, 60.0f, origin, direction), ENGINE_OK);

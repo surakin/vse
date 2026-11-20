@@ -106,11 +106,13 @@ public:
     /// - Returns: ENGINE_OK, NOT_FOUND (not mounted) or TYPE_MISMATCH (not a skeleton), with the text set.
     engine_status PinSkeleton(u64 id);
     /// Loads the clip `id`, checks that it was made for the skeleton `skeleton_id` (which must be pinned), and keeps it
-    /// loaded until the host is destroyed.
+    /// loaded until the host is destroyed. A clip of morph weights only has no skeleton and fits any entity
+    /// (maintenance, 2026-11-20); `skeleton_id` 0 (an entity without a skeleton instance) takes only such a clip.
     ///
-    /// - Returns: ENGINE_OK, NOT_FOUND (not mounted), TYPE_MISMATCH (not a clip) or INVALID_ARGUMENT (another
-    ///   skeleton's), with the text set.
-    engine_status PinClip(u64 id, u64 skeleton_id);
+    /// - Param has_weights: if not null, set to whether the clip has weight tracks.
+    /// - Returns: ENGINE_OK, NOT_FOUND (not mounted, or the skeleton not loaded), TYPE_MISMATCH (not a clip) or
+    ///   INVALID_ARGUMENT (another skeleton's, or joint tracks for an entity without a skeleton), with the text set.
+    engine_status PinClip(u64 id, u64 skeleton_id, bool* has_weights = nullptr);
     /// Reads the level blob `id` and checks that everything it names is mounted (Phase 24 Day 364).
     ///
     /// - Param bytes: replaced by a copy of the blob.

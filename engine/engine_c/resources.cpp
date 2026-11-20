@@ -272,24 +272,35 @@ engine_status ResourceHost::FindMeshSlot(u64 id, StringView name, u32* index)
     return Fail(ENGINE_ERROR_NOT_FOUND, "the mesh has no slot of that name");
 }
 
-engine_status ResourceHost::PinClip(u64 id, u64 skeleton_id)
+engine_status ResourceHost::PinClip(u64 id, u64 skeleton_id, bool* has_weights)
 {
     LockGuard<Mutex> lock(pin_mutex_);
-    const asset::SkeletonView* skeleton = manager_->Find<asset::SkeletonView>(
-        asset::ResourceId::FromValue(skeleton_id));
-    if (skeleton == nullptr)
-    {
-        return Fail(ENGINE_ERROR_NOT_FOUND, "the skeleton of the entity is not loaded");
-    }
     asset::Handle<asset::ClipView> handle;
     const asset::Status loaded = manager_->Load<asset::ClipView>(asset::ResourceId::FromValue(id), &handle);
     if (!loaded.Ok())
     {
         return Fail(FromAssetError(loaded.Code()), loaded.Message());
     }
-    if (!handle.Get()->Bind(*skeleton).Ok())
+    if (has_weights != nullptr)
     {
-        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the clip was not made for the entity's skeleton");
+        *has_weights = handle.Get()->WeightTargetCount() != 0;
+    }
+    if (!handle.Get()->Skeleton().IsNone())
+    {
+        if (skeleton_id == 0)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the clip moves joints and the entity has no skeleton instance");
+        }
+        const asset::SkeletonView* skeleton = manager_->Find<asset::SkeletonView>(
+            asset::ResourceId::FromValue(skeleton_id));
+        if (skeleton == nullptr)
+        {
+            return Fail(ENGINE_ERROR_NOT_FOUND, "the skeleton of the entity is not loaded");
+        }
+        if (!handle.Get()->Bind(*skeleton).Ok())
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the clip was not made for the entity's skeleton");
+        }
     }
     for (usize i = 0; i < clip_pins_.Size(); ++i)
     {

@@ -1570,6 +1570,161 @@ static void TestResourceCache(const Bytes* gltf)
     }
 }
 
+/* Maintenance (2026-11-20): a spawned level brings its lights (directional, point, spot) and its morph weights, and a
+ * clip of morph weights only plays on an entity without a skeleton instance. */
+static const char kMorphsAndLights[] =
+    "{\"asset\":{\"version\":\"2.0\"},\"extensionsUsed\":[\"KHR_lights_punctual\"],"
+    "\"extensions\":{\"KHR_lights_punctual\":{\"lights\":["
+    "{\"name\":\"sun\",\"type\":\"directional\",\"color\":[1,0.5,0.25],\"intensity\":2},"
+    "{\"name\":\"bulb\",\"type\":\"point\",\"intensity\":10,\"range\":4},"
+    "{\"name\":\"torch\",\"type\":\"spot\",\"intensity\":10,\"range\":6,"
+    "\"spot\":{\"innerConeAngle\":0.2,\"outerConeAngle\":0.6}}]}},"
+    "\"scene\":0,\"scenes\":[{\"nodes\":[0,1,2,3]}],"
+    "\"nodes\":[{\"name\":\"face\",\"mesh\":0},"
+    "{\"name\":\"sun\",\"extensions\":{\"KHR_lights_punctual\":{\"light\":0}}},"
+    "{\"name\":\"bulb\",\"translation\":[0,2,0],\"extensions\":{\"KHR_lights_punctual\":{\"light\":1}}},"
+    "{\"name\":\"torch\",\"extensions\":{\"KHR_lights_punctual\":{\"light\":2}}}],"
+    "\"materials\":[{\"name\":\"skin\"}],"
+    "\"meshes\":[{\"name\":\"face\",\"weights\":[0.5],\"primitives\":[{\"attributes\":{\"POSITION\":0},"
+    "\"targets\":[{\"POSITION\":1}],\"material\":0}]}],"
+    "\"animations\":[{\"name\":\"open\",\"samplers\":[{\"input\":2,\"output\":3,\"interpolation\":\"LINEAR\"}],"
+    "\"channels\":[{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"weights\"}}]}],"
+    "\"accessors\":["
+    "{\"bufferView\":0,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\",\"min\":[0,0,0],\"max\":[1,1,0]},"
+    "{\"bufferView\":1,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\",\"min\":[0,0,1],\"max\":[0,0,1]},"
+    "{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\",\"min\":[0],\"max\":[1]},"
+    "{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"}],"
+    "\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":36},{\"buffer\":0,\"byteOffset\":36,"
+    "\"byteLength\":36},{\"buffer\":0,\"byteOffset\":72,\"byteLength\":8},{\"buffer\":0,\"byteOffset\":80,"
+    "\"byteLength\":8}],"
+    "\"buffers\":[{\"byteLength\":88,\"uri\":\"data:application/octet-stream;base64,"
+    "AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPw=="
+    "\"}]}";
+
+static void TestMorphsAndLights(engine_handle engine)
+{
+    engine_import_options options = Options("/morph");
+    engine_import_result result = NewResult();
+    engine_handle world;
+    uint64_t root = 0;
+    uint64_t level = 0;
+    uint64_t clip = 0;
+    uint64_t face;
+    uint64_t sun;
+    uint64_t bulb;
+    uint64_t torch;
+    uint32_t i;
+    engine_light light;
+    engine_morph_weights weights;
+    options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+    CHECK_STATUS(g_api->import_gltf(engine, kMorphsAndLights, sizeof(kMorphsAndLights) - 1, &options, &result),
+                 ENGINE_OK);
+    for (i = 0; i < result.resource_count; ++i)
+    {
+        if (TypeAt(&result, i) == ENGINE_RESOURCE_LEVEL)
+        {
+            level = IdAt(&result, i);
+        }
+        if (TypeAt(&result, i) == ENGINE_RESOURCE_ANIMATION)
+        {
+            clip = IdAt(&result, i);
+        }
+    }
+    CHECK(level != 0 && clip != 0);
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->level_spawn(world, level, NULL, &root, NULL, 0, NULL), ENGINE_OK);
+    face = Find(world, "face");
+    sun = Find(world, "sun");
+    bulb = Find(world, "bulb");
+    torch = Find(world, "torch");
+    CHECK(face != 0 && sun != 0 && bulb != 0 && torch != 0);
+
+    /* the lights: each kind, with its values (the importer's settings scale the point and spot intensities) */
+    memset(&light, 0, sizeof(light));
+    light.struct_size = sizeof(light);
+    CHECK_STATUS(g_api->component_get(world, sun, ENGINE_COMPONENT_LIGHT, &light), ENGINE_OK);
+    CHECK(light.kind == ENGINE_LIGHT_DIRECTIONAL && light.color[1] == 0.5f && light.intensity > 0.0f);
+    CHECK_STATUS(g_api->component_get(world, bulb, ENGINE_COMPONENT_LIGHT, &light), ENGINE_OK);
+    CHECK(light.kind == ENGINE_LIGHT_POINT && fabsf(light.radius - 4.0f) < 1e-5f);
+    CHECK_STATUS(g_api->component_get(world, torch, ENGINE_COMPONENT_LIGHT, &light), ENGINE_OK);
+    CHECK(light.kind == ENGINE_LIGHT_SPOT && fabsf(light.radius - 6.0f) < 1e-5f &&
+          fabsf(light.inner_cone - 0.2f) < 1e-6f && fabsf(light.outer_cone - 0.6f) < 1e-6f);
+    CHECK_STATUS(g_api->component_get(world, face, ENGINE_COMPONENT_LIGHT, &light), ENGINE_ERROR_NOT_FOUND);
+
+    /* the mesh node's own weights */
+    memset(&weights, 0, sizeof(weights));
+    weights.struct_size = sizeof(weights);
+    CHECK_STATUS(g_api->component_get(world, face, ENGINE_COMPONENT_MORPH_WEIGHTS, &weights), ENGINE_OK);
+    CHECK(weights.count == 1 && weights.weights[0] == 0.5f);
+
+    /* the clip of weights only plays on the face (no skeleton instance) and moves its weight: 0 to 1 over a second */
+    CHECK_STATUS(g_api->animation_play(world, face, clip, NULL), ENGINE_OK);
+    {
+        engine_frame_info frame;
+        memset(&frame, 0, sizeof(frame));
+        frame.struct_size = sizeof(frame);
+        frame.delta_seconds = 0.25;
+        CHECK_STATUS(g_api->frame(engine, &frame, NULL), ENGINE_OK);
+    }
+    CHECK_STATUS(g_api->component_get(world, face, ENGINE_COMPONENT_MORPH_WEIGHTS, &weights), ENGINE_OK);
+    CHECK(weights.count == 1 && weights.weights[0] > 0.1f && weights.weights[0] < 0.4f);
+    /* an entity with no weights gets the component when the clip starts */
+    CHECK_STATUS(g_api->animation_play(world, sun, clip, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->component_get(world, sun, ENGINE_COMPONENT_MORPH_WEIGHTS, &weights), ENGINE_OK);
+    /* drawn on an off-screen surface while the weights move (the surface points its object at them every frame;
+       under AddressSanitizer this checks that it never reads them after they moved); skipped without a device */
+    {
+        engine_surface_info info;
+        engine_surface_state state;
+        engine_handle surface;
+        int f;
+        memset(&info, 0, sizeof(info));
+        info.struct_size = sizeof(info);
+        info.kind = ENGINE_SURFACE_OFFSCREEN;
+        info.width = 64;
+        info.height = 64;
+        info.scale = 1.0f;
+        memset(&surface, 0, sizeof(surface));
+        /* ThreadSanitizer cannot run the GPU driver's threads (tests/rhi/CMakeLists.txt): no surface in that flavor */
+        if (!HOST_IMPORT_TSAN && g_api->surface_create(engine, &info, &surface) == ENGINE_OK)
+        {
+            CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
+            for (f = 0; f < 4; ++f)
+            {
+                engine_frame_info frame;
+                memset(&frame, 0, sizeof(frame));
+                frame.struct_size = sizeof(frame);
+                frame.delta_seconds = 0.1;
+                /* the face gains and loses a component between frames: its weights move to another archetype */
+                if (f % 2 == 0)
+                {
+                    engine_visibility shown;
+                    memset(&shown, 0, sizeof(shown));
+                    shown.struct_size = sizeof(shown);
+                    CHECK_STATUS(g_api->component_set(world, face, ENGINE_COMPONENT_VISIBILITY, &shown), ENGINE_OK);
+                }
+                else
+                {
+                    CHECK_STATUS(g_api->component_remove(world, face, ENGINE_COMPONENT_VISIBILITY), ENGINE_OK);
+                }
+                CHECK_STATUS(g_api->frame(engine, &frame, NULL), ENGINE_OK);
+            }
+            memset(&state, 0, sizeof(state));
+            state.struct_size = sizeof(state);
+            CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+            CHECK(state.objects_drawn == 1 && state.entities_unresolved == 0);
+            CHECK_STATUS(g_api->surface_destroy(surface), ENGINE_OK);
+        }
+        else
+        {
+            printf("host_import: the morph drawing check skipped: no device could be made, or ThreadSanitizer\n");
+        }
+    }
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+    ReleaseResult(&result);
+}
+
 int main(void)
 {
     Bytes gltf;
@@ -1607,6 +1762,7 @@ int main(void)
     TestHostile(engine, &gltf);
     TestLevel(engine, &gltf);
     TestDeepScene(engine);
+    TestMorphsAndLights(engine);
     TestTextures(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     TestResourceCache(&gltf);
