@@ -375,4 +375,147 @@ TEST_CASE("gltf collider: two imports give the same MCOL bytes and ids", "[asset
     CHECK(FirstOfType(three, types::kMeshCollider)->id == a->id);
 }
 
+// glTF colliders Day 4: OMI_physics_body and OMI_physics_shape.
+namespace
+{
+
+Vector<byte> OmiGlb(const char* shapes_json, const char* nodes_json, u32 roots, const char* body_root = "")
+{
+    char extra[2048];
+    FormatTo(extra, sizeof(extra),
+             ",\"extensionsUsed\":[\"OMI_physics_body\",\"OMI_physics_shape\"],"
+             "\"extensionsRequired\":[\"OMI_physics_body\",\"OMI_physics_shape\"],"
+             "\"extensions\":{\"OMI_physics_shape\":{\"shapes\":[%s]}%s}",
+             shapes_json, body_root);
+    return CollisionGlb(nodes_json, roots, false, "slab", extra);
+}
+
+}  // namespace
+
+TEST_CASE("gltf collider: OMI boxes, spheres, capsules and triangle meshes", "[asset][gltf][collision][omi]")
+{
+    ImportResult result;
+    GltfError error;
+    REQUIRE(
+        Import(
+            OmiGlb("{\"type\":\"box\",\"box\":{\"size\":[2,4,6]}},{\"type\":\"sphere\",\"sphere\":{\"radius\":0.25}},"
+                   "{\"type\":\"capsule\",\"capsule\":{\"height\":1.5,\"radiusTop\":0.3,\"radiusBottom\":0.3}},"
+                   "{\"type\":\"trimesh\",\"trimesh\":{\"mesh\":0}},{\"type\":\"sphere\"}",
+                   "\"nodes\":[{\"name\":\"crate\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":0}}}},"
+                   "{\"name\":\"ball\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":1}}}},"
+                   "{\"name\":\"post\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":2}}}},"
+                   "{\"name\":\"floor\",\"mesh\":0,\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":3}}}},"
+                   "{\"name\":\"plain\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":4}}}}]",
+                   5),
+            &result, &error)
+            .Ok());
+    LoadedLevel level(result);
+    const StaticCollider* box = level.world.Peek<StaticCollider>(level.Find("crate"));
+    REQUIRE(box != nullptr);
+    CHECK(box->shape == StaticColliderShape::Box);
+    CHECK(box->half_extents.x == 1.0f);
+    CHECK(box->half_extents.z == 3.0f);
+    const StaticCollider* ball = level.world.Peek<StaticCollider>(level.Find("ball"));
+    REQUIRE(ball != nullptr);
+    CHECK(ball->shape == StaticColliderShape::Sphere);
+    CHECK(ball->radius == 0.25f);
+    const StaticCollider* post = level.world.Peek<StaticCollider>(level.Find("post"));
+    REQUIRE(post != nullptr);
+    CHECK(post->shape == StaticColliderShape::Capsule);
+    CHECK(post->radius == 0.3f);
+    CHECK(post->half_height == 0.75f);  // the specification's height is between the caps' centres
+    const StaticCollider* floor = level.world.Peek<StaticCollider>(level.Find("floor"));
+    REQUIRE(floor != nullptr);
+    CHECK(floor->shape == StaticColliderShape::Mesh);
+    CHECK(level.world.Has<MeshReference>(level.Find("floor")));  // an OMI collider keeps the node's mesh drawn
+    const StaticCollider* plain = level.world.Peek<StaticCollider>(level.Find("plain"));
+    REQUIRE(plain != nullptr);
+    CHECK(plain->radius == 0.5f);  // the specification's default
+    CHECK(result.summary.View().Contains(StringView("\"colliders\":5")));
+    CHECK(result.summary.View().Contains(StringView("\"primitives\":4")));
+}
+
+TEST_CASE("gltf collider: OMI shapes and bodies the engine does not import warn", "[asset][gltf][collision][omi]")
+{
+    ImportResult result;
+    GltfError error;
+    REQUIRE(
+        Import(
+            OmiGlb(
+                "{\"type\":\"cylinder\"},{\"type\":\"convex\",\"convex\":{\"mesh\":0}},{\"type\":\"box\"}",
+                "\"nodes\":[{\"name\":\"can\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":0}}}},"
+                "{\"name\":\"rock\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":1}}}},"
+                "{\"name\":\"prop\",\"extensions\":{\"OMI_physics_body\":{\"motion\":{\"type\":\"dynamic\"},"
+                "\"collider\":{\"shape\":2}}}},"
+                "{\"name\":\"zone\",\"extensions\":{\"OMI_physics_body\":{\"trigger\":{\"shape\":2}}}},"
+                "{\"name\":\"both-col\",\"mesh\":0,\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":2}}}}]",
+                5),
+            &result, &error)
+            .Ok());
+    CHECK(Warned(result, "no collider for"));       // the cylinder
+    CHECK(Warned(result, "convex"));                // the convex shape is a triangle mesh
+    CHECK(Warned(result, "imported as a static"));  // the dynamic body
+    CHECK(Warned(result, "triggers are not imported"));
+    CHECK(Warned(result, "the OMI one is used"));  // a collider name and an OMI collider
+    LoadedLevel level(result);
+    CHECK(!level.world.Has<StaticCollider>(level.Find("can")));
+    CHECK(level.world.Peek<StaticCollider>(level.Find("rock"))->shape == StaticColliderShape::Mesh);
+    CHECK(level.world.Has<StaticCollider>(level.Find("prop")));
+    CHECK(!level.world.Has<StaticCollider>(level.Find("zone")));
+    CHECK(level.world.Peek<StaticCollider>(level.Find("both-col"))->shape == StaticColliderShape::Box);
+}
+
+TEST_CASE("gltf collider: OMI physics materials give friction and restitution", "[asset][gltf][collision][omi]")
+{
+    ImportResult result;
+    GltfError error;
+    REQUIRE(
+        Import(OmiGlb("{\"type\":\"box\"}",
+                      "\"nodes\":[{\"name\":\"ice\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":0,"
+                      "\"physicsMaterial\":0}}}},"
+                      "{\"name\":\"odd\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":0,"
+                      "\"physicsMaterial\":1}}}}]",
+                      2,
+                      ",\"OMI_physics_body\":{\"physicsMaterials\":[{\"dynamicFriction\":0.05,\"restitution\":0.2},"
+                      "{\"dynamicFriction\":-3,\"restitution\":4}]}"),
+               &result, &error)
+            .Ok());
+    LoadedLevel level(result);
+    const StaticCollider* ice = level.world.Peek<StaticCollider>(level.Find("ice"));
+    REQUIRE(ice != nullptr);
+    CHECK(ice->friction == 0.05f);
+    CHECK(ice->restitution == 0.2f);
+    const StaticCollider* odd = level.world.Peek<StaticCollider>(level.Find("odd"));
+    REQUIRE(odd != nullptr);
+    CHECK(odd->friction == 0.0f);
+    CHECK(odd->restitution == 1.0f);
+    CHECK(Warned(result, "clamped"));
+}
+
+TEST_CASE("gltf collider: hostile OMI collision is refused naming it", "[asset][gltf][collision][omi]")
+{
+    ImportResult result;
+    GltfError error;
+    const auto refused = [&](const char* shapes, const char* collider, const char* path_part)
+    {
+        char nodes[512];
+        FormatTo(nodes, sizeof(nodes),
+                 "\"nodes\":[{\"name\":\"x\",\"extensions\":{\"OMI_physics_body\":{\"collider\":%s}}}]", collider);
+        const Status s = Import(OmiGlb(shapes, nodes, 1), &result, &error);
+        CHECK(s.Failed());
+        CHECK(StringView(error.message.Data(), CStrLength(error.message.Data())).Contains(StringView(path_part)));
+    };
+    refused("{\"type\":\"box\"}", "{\"shape\":7}", "shape");                             // index out of range
+    refused("{\"type\":\"box\"}", "{\"shape\":-1}", "shape");                            // the "none" default
+    refused("{\"type\":\"box\",\"box\":{\"size\":[1,-2,1]}}", "{\"shape\":0}", "size");  // a negative size
+    refused("{\"type\":\"sphere\",\"sphere\":{\"radius\":1e30}}", "{\"shape\":0}", "radius");
+    refused("{\"type\":\"trimesh\",\"trimesh\":{\"mesh\":9}}", "{\"shape\":0}", "mesh");  // mesh out of range
+    refused("{\"type\":\"box\"}", "{\"shape\":0,\"physicsMaterial\":3}", "physicsMaterial");
+    // A collider but no shapes array at all.
+    const Vector<byte> no_shapes = CollisionGlb(
+        "\"nodes\":[{\"name\":\"x\",\"extensions\":{\"OMI_physics_body\":{\"collider\":{\"shape\":0}}}}]", 1, false,
+        "slab", ",\"extensionsUsed\":[\"OMI_physics_body\"]");
+    CHECK(Import(no_shapes, &result, &error).Failed());
+}
+
 }  // namespace engine_placeholder::asset

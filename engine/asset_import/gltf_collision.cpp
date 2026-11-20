@@ -67,20 +67,199 @@ SuffixMark ReadSuffix(StringView name)
     return mark;
 }
 
+// A finite number of a JSON object, or its default when absent; refused when present and not finite or below `min`.
+Status OmiNumber(const JsonValue& object, const char* key, f64 fallback, f64 min, f64* out, GltfError* error)
+{
+    *out = fallback;
+    const JsonValue value = object.Get(key);
+    if (!value.Exists())
+    {
+        return Status::Success();
+    }
+    ENGINE_TRY(value.AsDouble(out, error));
+    if (!(*out >= min) || !(*out <= 1.0e5))
+    {
+        return RefuseCollider(error, value.Path(), "is not a finite number in its range (at most 100000 m)");
+    }
+    return Status::Success();
+}
+
+// One node's OMI_physics_body collider and the OMI_physics_shape it names (glTF colliders Day 4).
+Status ReadOmiCollider(const GltfDocument& document, const JsonValue& body, const JsonValue& shapes,
+                       const JsonValue& materials, ImportReport* report, StringView where, GltfNodeCollision* out,
+                       bool* convex, GltfError* error)
+{
+    const JsonValue collider = body.Get("collider");
+    if (!shapes.IsArray())
+    {
+        return RefuseCollider(error, collider.Path(), "names a shape, but the file has no OMI_physics_shape shapes");
+    }
+    u32 shape_index = 0;
+    ENGINE_TRY(collider.RequiredIndex("shape", &shape_index, shapes.Size(), error));
+    const JsonValue shape = shapes.At(shape_index);
+    StringView type;
+    ENGINE_TRY(shape.Get("type").AsString(&type, error));
+    const u64 mesh_count = document.root.Get("meshes").Size();
+    if (type == StringView("box"))
+    {
+        const JsonValue box = shape.Get("box");
+        f64 size[3] = {1.0, 1.0, 1.0};
+        const JsonValue size_value = box.Get("size");
+        if (size_value.Exists())
+        {
+            if (!size_value.IsArray() || size_value.Size() != 3)
+            {
+                return RefuseCollider(error, size_value.Path(), "is not three numbers");
+            }
+            for (usize k = 0; k < 3; ++k)
+            {
+                ENGINE_TRY(size_value.At(k).AsDouble(&size[k], error));
+                if (!(size[k] > 0.0) || !(size[k] <= 2.0e5))
+                {
+                    return RefuseCollider(error, size_value.Path(), "has a size that is not above 0 and finite");
+                }
+            }
+        }
+        out->kind = GltfCollisionKind::Box;
+        out->half_extents = Vec3(static_cast<f32>(size[0] * 0.5), static_cast<f32>(size[1] * 0.5),
+                                 static_cast<f32>(size[2] * 0.5));
+    }
+    else if (type == StringView("sphere"))
+    {
+        f64 radius = 0.5;
+        ENGINE_TRY(OmiNumber(shape.Get("sphere"), "radius", 0.5, 1e-9, &radius, error));
+        out->kind = GltfCollisionKind::Sphere;
+        out->radius = static_cast<f32>(radius);
+    }
+    else if (type == StringView("capsule"))
+    {
+        const JsonValue capsule = shape.Get("capsule");
+        f64 height = 1.0;  // the distance between the two caps' centres (the specification's "mid height")
+        f64 bottom = 0.5;
+        f64 top_radius = 0.5;
+        ENGINE_TRY(OmiNumber(capsule, "height", 1.0, 0.0, &height, error));
+        ENGINE_TRY(OmiNumber(capsule, "radiusBottom", 0.5, 1e-9, &bottom, error));
+        ENGINE_TRY(OmiNumber(capsule, "radiusTop", 0.5, 1e-9, &top_radius, error));
+        if (bottom != top_radius)
+        {
+            AddImportWarning(report, where, StringView("is a capsule with two radii: the larger is used for both"));
+        }
+        out->kind = GltfCollisionKind::Capsule;
+        out->radius = static_cast<f32>(bottom > top_radius ? bottom : top_radius);
+        out->half_height = static_cast<f32>(height * 0.5);
+    }
+    else if (type == StringView("trimesh") || type == StringView("convex"))
+    {
+        u32 mesh = 0;
+        ENGINE_TRY(shape.Get(type == StringView("trimesh") ? "trimesh" : "convex")
+                       .RequiredIndex("mesh", &mesh, mesh_count, error));
+        out->kind = GltfCollisionKind::Mesh;
+        out->mesh = mesh;
+        *convex = type == StringView("convex");
+    }
+    else
+    {
+        AddImportWarning(report, where,
+                         StringView("has an OMI shape this engine has no collider for (a cylinder, or an unknown "
+                                    "type): it is not solid"));
+        ++report->collision_dropped;
+        return Status::Success();
+    }
+    // The physics material: dynamicFriction and restitution (the engine has one friction).
+    const JsonValue material_value = collider.Get("physicsMaterial");
+    if (material_value.Exists())
+    {
+        f64 index = -1;
+        ENGINE_TRY(material_value.AsDouble(&index, error));
+        if (index >= 0)
+        {
+            u32 material = 0;
+            ENGINE_TRY(material_value.AsIndex(&material, materials.IsArray() ? materials.Size() : 0, error));
+            const JsonValue m = materials.At(material);
+            f64 friction = 0.6;
+            f64 restitution = 0.0;
+            ENGINE_TRY(m.Get("dynamicFriction").Exists() ? m.Get("dynamicFriction").AsDouble(&friction, error)
+                                                         : Status::Success());
+            ENGINE_TRY(m.Get("restitution").Exists() ? m.Get("restitution").AsDouble(&restitution, error)
+                                                     : Status::Success());
+            if (!(friction >= 0.0 && friction <= 1.0e3) || !(restitution >= 0.0 && restitution <= 1.0))
+            {
+                AddImportWarning(report, m.Path(),
+                                 StringView("has a friction below 0 or a restitution outside 0 to 1: clamped"));
+                friction = !(friction >= 0.0) ? 0.0 : (friction > 1.0e3 ? 1.0e3 : friction);
+                restitution = !(restitution >= 0.0) ? 0.0 : (restitution > 1.0 ? 1.0 : restitution);
+            }
+            out->friction = static_cast<f32>(friction);
+            out->restitution = static_cast<f32>(restitution);
+        }
+    }
+    return Status::Success();
+}
+
 }  // namespace
 
 Status ReadCollisionMarks(const GltfDocument& document, const GltfNodeGraph& graph, ImportReport* report,
-                          Vector<GltfNodeCollision>* out, GltfError*)
+                          Vector<GltfNodeCollision>* out, GltfError* error)
 {
     out->Clear();
     const JsonValue meshes = document.root.Get("meshes");
+    const JsonValue node_list = document.root.Get("nodes");
+    const usize count = graph.nodes.Size();
+    // Every node's root and world matrix, in one pass (each node is computed once, from its parent's, whatever the
+    // depth: a hostile file of 200,000 nodes in a chain costs 200,000 steps).
+    Vector<u32> top;
+    Vector<GltfMatrix> world;
+    Vector<u8> state;    // 0 not done, 1 done
+    Vector<bool> moves;  // the node or a node above it is an OMI body with a motion other than static (Day 4)
+    moves.Resize(count);
+    top.Resize(count);
+    world.Resize(count);
+    state.Resize(count);
+    Vector<u32> path;
+    for (usize n = 0; n < count; ++n)
+    {
+        path.Clear();
+        u32 at = static_cast<u32>(n);
+        while (state[at] == 0)
+        {
+            path.Push(at);
+            const u32 parent = graph.nodes[at].parent;
+            if (parent == kNoGltfIndex ||
+                path.Size() > count)  // a root (a cycle cannot reach here: the graph has none)
+            {
+                break;
+            }
+            at = parent;
+        }
+        for (usize k = path.Size(); k > 0; --k)
+        {
+            const u32 node = path[k - 1];
+            const u32 parent = graph.nodes[node].parent;
+            const JsonValue motion = node_list.At(node).Get("extensions").Get("OMI_physics_body").Get("motion");
+            StringView type;
+            bool has_type = false;
+            GltfError ignored;
+            const bool own_motion = motion.Exists() && motion.OptionalString("type", &type, &has_type, &ignored).Ok() &&
+                                    has_type && type != StringView("static");
+            if (parent == kNoGltfIndex || state[parent] == 0)
+            {
+                top[node] = node;
+                world[node] = graph.nodes[node].local;
+                moves[node] = own_motion;
+            }
+            else
+            {
+                top[node] = top[parent];
+                world[node] = MultiplyMatrices(world[parent], graph.nodes[node].local);
+                moves[node] = own_motion || moves[parent];
+            }
+            state[node] = 1;
+        }
+    }
     // Only the nodes of the level (under the default scene's roots) are read: the others make no entity. A file the
     // level import will refuse (a bad scene index) marks nothing here; the level import reports it.
-    Vector<bool> in_scene;
-    for (usize n = 0; n < graph.nodes.Size(); ++n)
-    {
-        in_scene.Push(false);
-    }
+    Vector<bool> root;
+    root.Resize(count);
     {
         const JsonValue scenes = document.root.Get("scenes");
         u64 scene_index = 0;
@@ -90,42 +269,59 @@ Status ReadCollisionMarks(const GltfDocument& document, const GltfNodeGraph& gra
                                   .Ok() &&
                               scene_index < scenes.Size();
         const JsonValue roots = scene_ok ? scenes.At(static_cast<usize>(scene_index)).Get("nodes") : JsonValue();
-        Vector<bool> root;
-        for (usize n = 0; n < graph.nodes.Size(); ++n)
-        {
-            root.Push(false);
-        }
         for (usize i = 0; roots.Exists() && i < roots.Size(); ++i)
         {
             u64 index = 0;
-            if (roots.At(i).AsUnsigned(&index, 0xFFFFFFFFull, &ignored).Ok() && index < root.Size())
+            if (roots.At(i).AsUnsigned(&index, 0xFFFFFFFFull, &ignored).Ok() && index < count)
             {
                 root[static_cast<usize>(index)] = true;
             }
         }
-        for (usize n = 0; n < graph.nodes.Size(); ++n)
-        {
-            u32 top = static_cast<u32>(n);
-            for (u32 depth = 0; graph.nodes[top].parent != kNoGltfIndex && depth < 1024; ++depth)
-            {
-                top = graph.nodes[top].parent;
-            }
-            in_scene[n] = root[top];
-        }
     }
-    for (usize n = 0; n < graph.nodes.Size(); ++n)
+    // OMI_physics_* (Day 4): the document's shapes and physics materials.
+    const JsonValue shapes = document.root.Get("extensions").Get("OMI_physics_shape").Get("shapes");
+    const JsonValue materials = document.root.Get("extensions").Get("OMI_physics_body").Get("physicsMaterials");
+    for (usize n = 0; n < count; ++n)
     {
         const GltfNode& node = graph.nodes[n];
         GltfNodeCollision collision;
-        const SuffixMark mark = in_scene[n] ? ReadSuffix(node.name) : SuffixMark();
-        if (mark.marked)
+        if (!root[top[n]])
         {
-            char where[32];
-            NodePath(static_cast<u32>(n), where, sizeof(where));
-            const StringView path(where, CStrLength(where));
+            out->Push(collision);
+            continue;
+        }
+        char where[32];
+        NodePath(static_cast<u32>(n), where, sizeof(where));
+        const StringView path_text(where, CStrLength(where));
+        const SuffixMark mark = ReadSuffix(node.name);
+        const JsonValue body = node_list.At(n).Get("extensions").Get("OMI_physics_body");
+        bool convex = mark.convex;
+        bool marked = false;
+        if (body.Exists() && body.Get("collider").Exists())
+        {
+            ENGINE_TRY(
+                ReadOmiCollider(document, body, shapes, materials, report, path_text, &collision, &convex, error));
+            marked = collision.kind != GltfCollisionKind::None;
+            if (mark.marked)
+            {
+                AddImportWarning(report, path_text,
+                                 StringView("has an OMI_physics_body collider and a collider name: the OMI one is "
+                                            "used"));
+            }
+            // A body with motion, on itself or above it, is not static: it is made static, with a warning.
+            if (moves[n])
+            {
+                AddImportWarning(report, path_text,
+                                 StringView("is a kinematic or dynamic body: it is imported as a static collider "
+                                            "(moving bodies from a file are not imported)"));
+            }
+        }
+        else if (mark.marked)
+        {
             if (node.mesh == kNoGltfIndex)
             {
-                AddImportWarning(report, path, StringView("is named as a collider but has no mesh: it is not solid"));
+                AddImportWarning(report, path_text,
+                                 StringView("is named as a collider but has no mesh: it is not solid"));
                 ++report->collision_dropped;
             }
             else
@@ -133,45 +329,49 @@ Status ReadCollisionMarks(const GltfDocument& document, const GltfNodeGraph& gra
                 collision.kind = GltfCollisionKind::Mesh;
                 collision.draw = mark.draw;
                 collision.mesh = node.mesh;
-                if (mark.convex)
+                marked = true;
+            }
+        }
+        if (body.Exists() && body.Get("trigger").Exists())
+        {
+            AddImportWarning(report, path_text,
+                             StringView("has an OMI_physics_body trigger: triggers are not imported"));
+        }
+        if (marked)
+        {
+            if (convex && collision.kind == GltfCollisionKind::Mesh)
+            {
+                AddImportWarning(report, path_text,
+                                 StringView("asks for convex collision: it is a triangle mesh (convex hulls are not "
+                                            "imported)"));
+            }
+            if (collision.kind == GltfCollisionKind::Mesh && node.skin != kNoGltfIndex && collision.mesh == node.mesh)
+            {
+                AddImportWarning(report, path_text,
+                                 StringView("is skinned: its collider is the mesh's bind-pose shape, it does not "
+                                            "follow the joints"));
+            }
+            if (collision.kind == GltfCollisionKind::Mesh && collision.mesh < meshes.Size())
+            {
+                const JsonValue primitives = meshes.At(collision.mesh).Get("primitives");
+                bool morphed = false;
+                for (usize p = 0; p < primitives.Size(); ++p)
                 {
-                    AddImportWarning(report, path,
-                                     StringView("asks for convex collision: it is a triangle mesh (convex hulls are "
-                                                "not imported)"));
+                    morphed = morphed || primitives.At(p).Get("targets").Exists();
                 }
-                if (node.skin != kNoGltfIndex)
+                if (morphed)
                 {
-                    AddImportWarning(report, path,
-                                     StringView("is skinned: its collider is the mesh's bind-pose shape, it does not "
-                                                "follow the joints"));
+                    AddImportWarning(report, path_text,
+                                     StringView("has morph targets: its collider is the base shape"));
                 }
-                if (node.mesh < meshes.Size())
-                {
-                    const JsonValue primitives = meshes.At(node.mesh).Get("primitives");
-                    bool morphed = false;
-                    for (usize p = 0; p < primitives.Size(); ++p)
-                    {
-                        morphed = morphed || primitives.At(p).Get("targets").Exists();
-                    }
-                    if (morphed)
-                    {
-                        AddImportWarning(report, path, StringView("has morph targets: its collider is the base shape"));
-                    }
-                }
-                // The node at rest: a shear in its world matrix is refused when the body is made.
-                GltfMatrix world = node.local;
-                for (u32 parent = node.parent, depth = 0; parent != kNoGltfIndex && depth < 1024;
-                     parent = graph.nodes[parent].parent, ++depth)
-                {
-                    world = MultiplyMatrices(graph.nodes[parent].local, world);
-                }
-                GltfTrs trs;
-                if (!DecomposeMatrix(world, &trs))
-                {
-                    AddImportWarning(report, path,
-                                     StringView("has a shear or a zero scale in its world transform: it will get no "
-                                                "physics body"));
-                }
+            }
+            // The node at rest: a shear in its world matrix is refused when the body is made.
+            GltfTrs trs;
+            if (!DecomposeMatrix(world[n], &trs))
+            {
+                AddImportWarning(report, path_text,
+                                 StringView("has a shear or a zero scale in its world transform: it will get no "
+                                            "physics body"));
             }
         }
         out->Push(collision);
