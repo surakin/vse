@@ -165,6 +165,8 @@ endfunction()
 add_compile_definitions($<IF:$<CONFIG:Release,MinSizeRel>,ENGINE_CRASH_HANDLER_DEFAULT=0,ENGINE_CRASH_HANDLER_DEFAULT=1>
   ENGINE_BUILD_CONFIG="$<LOWER_CASE:$<CONFIG>>")
 
+# compile_commands.json in every build tree, for clangd and editors (Makefile and Ninja generators only).
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
