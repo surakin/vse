@@ -766,6 +766,10 @@ PLAN.md
 | 34 | First playable demo | Linux, Windows | [plans/phase-34-first-playable-demo.md](plans/phase-34-first-playable-demo.md) | A small real game built with the engine, dogfooding every system |
 | 35 | Feature-parity push | all | [plans/phase-35-feature-parity.md](plans/phase-35-feature-parity.md) | Ongoing: advanced rendering, world streaming, replication on top of Phase 20's transport — scoped when reached |
 
+## Future projects (not scheduled, not phases)
+
+- [WebAssembly and WebGPU port](plans/future/webgpu-wasm.md): evaluated 2026-11-22, feasible, needs two spikes and three decisions from the user first.
+
 ## Progress log
 
 _(Append dated entries here as phases/milestones complete, noting anything
