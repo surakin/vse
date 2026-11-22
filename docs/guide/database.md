@@ -1,7 +1,6 @@
 # The database interface: SQL behind one door
 
-Status: Built: the SQLite library, the interface and its conformance suite, the SQLite backend on `:memory:`, on files
- and complete with settings, statement cache and concurrency tests. Next: the storage layer on top.
+Status: written.
 
 **Audience:** engine programmers who keep structured data in tables (the storage layer, a game's save index, tools). Design and the portable SQL subset:
 `docs/superpowers/specs/2026-11-11-storage-design.md`.

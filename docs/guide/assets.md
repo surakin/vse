@@ -1,6 +1,6 @@
 # Assets and resources: identity, blobs, backends and the resource manager
 
-Status: Built: the material format, its loader and the material minter; BC7 (a decoder for every mode, a mode 6 encoder), block compression (BC1, BC4, BC5 encoders, BC1 to BC5 decoders) and the compressed texture formats; textures with their mip chains, the `.tex.src` source form and the texture minter; animation clips, their source form and minter; the module skeleton and the container version constant; resource ids, paths, types, the content hash, the blob container and the id <-> path table. The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts. The pak format, its writer, reader and backend, and `asset_mint pack`.
+Status: written.
 
 **Audience:** engine and game programmers who load meshes, textures, materials and levels. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-13-asset-pipeline-design.md`.

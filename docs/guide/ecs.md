@@ -1,6 +1,6 @@
 # ECS: entities, components and systems
 
-Status: complete (entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy, removal tracking, the render sync and the measured cost). Not built: serialization, events, more than 128 component types.
+Status: written. Not part of this module: serialization (see [storage](storage.md)) and events.
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first.
 

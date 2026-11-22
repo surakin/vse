@@ -241,10 +241,9 @@ A host that has its content in memory (it downloaded it, unpacked it, generated 
   replace of a loaded resource nothing depends on rebuilds it in place: its handles stay valid.
 - **Loading.** `resource_load` names the resource by path (when `path.length` is not 0) or by id and the type the host expects; it loads the whole closure
   or fails (`MISSING_DEPENDENCY`, `TYPE_MISMATCH`, ...). The handle keeps it loaded and counts as an object of the engine (`destroy` refuses with `IN_USE`
-  until it is released). Nothing of the loaded data is exposed: there is no pointer into a blob. Rendering uses the handle through the frame loop (later days).
+  until it is released). Nothing of the loaded data is exposed: there is no pointer into a blob. Rendering uses the handle through the frame loop (below).
 - **Tickets.** `resource_load_async` returns a ticket at once; the blobs are read on the engine's workers and the objects are built by the host's own calls
-  (`frame`, `ticket_poll`, `ticket_wait`, `ticket_finish`), never by an engine thread on its own, so a program's GPU objects can stay on its render thread
-  when later days add them. `ticket_finish` gives a handle (each call its own) or the load's error; `ticket_cancel` stops the load; `ticket_destroy` ends the
+  (`frame`, `ticket_poll`, `ticket_wait`, `ticket_finish`), never by an engine thread on its own, so a program's GPU objects can stay on its render thread. `ticket_finish` gives a handle (each call its own) or the load's error; `ticket_cancel` stops the load; `ticket_destroy` ends the
   ticket and cancels what has not finished.
 - **Tested** by `host_resources.c`: blobs minted by `asset_mint`, the bad calls of every function, the dependents refused and forced, a texture replaced 24 times
   while a handle is held and another thread runs frames, every release counted (once, off the host's thread), the engine destroyed holding lent buffers, a

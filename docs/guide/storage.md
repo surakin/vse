@@ -1,8 +1,6 @@
 # Storage: components that survive a save
 
-Status: Built: the component registry and the canonical encoding, versions, upgrades, custom codecs, limits and hostile-input tests
-. stable identities and references. Next: the record store (259), the record store (259), saving and loading a world (260-261), the SQL store (262-263). Design:
-`docs/superpowers/specs/2026-11-11-storage-design.md`.
+Status: written.
 
 **Audience:** engine and game programmers who make a component type saveable, and anyone who reads or writes the bytes.
 

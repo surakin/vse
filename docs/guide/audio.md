@@ -80,7 +80,7 @@ outside 8,000 to 384,000 Hz are `Unsupported`.
 The input is hostile by rule: every size is compared with the bytes that remain before it is used, counts times sizes are done in 64 bits, the chunk walk always
 advances by at least 8 bytes, the frame count is capped at `kMaxWavFrames`, and nothing aborts on bad bytes (`WavStatus`). `DecodeWav` makes an `AudioClip`
 with the format conversions (a NaN or infinity in a float file is `BadSamples`); `WavReader` reads frames in order or from a position without allocating, for
-streaming sources (it reads from bytes, the `io::File` source arrives with the stream interface). The tests build their files in memory
+streaming sources (it reads from bytes; `MakeWavFileStream` in `audio/stream.h` reads from an `io::File`). The tests build their files in memory
 (`tests/audio/wav_builder.h`), cut a file at every length and mutate it 6,000 times with a fixed seed.
 
 ## Minted clips

@@ -1,6 +1,6 @@
 # Animation
 
-Status: The runtime that turns a clip and a time into joint matrices: `engine/animation`. It reads the
+Status: written. The runtime that turns a clip and a time into joint matrices: `engine/animation`. It reads the
 views of [assets](assets.md) (`asset::SkeletonView`, `asset::ClipView`) and depends on `ecs`, `storage` and `jobs`; no
 renderer, RHI or platform header.
 

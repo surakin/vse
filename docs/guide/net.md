@@ -1,6 +1,6 @@
 # Networking: addresses, endpoints, errors, sockets, the reactor and TCP streams
 
-Status: Built: addresses, endpoints and the error type, the socket interface with its Linux backend and the access gate, the reactor, the asynchronous operations and timers. name resolution, listeners and the connect helpers, framed TCP streams, the message codec, the transport interface, the simulated network and transport, and the conformance suite, the UDP transport's packet layer and handshake. Next: the UDP transport's channels and reliability and the TCP transport.
+Status: written.
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
@@ -95,7 +95,7 @@ codes lives in the backends and is tested against a table of the numbers.
 
 ## Sockets
 
-`net::Socket` is a move-only handle to a TCP stream, a TCP listener or a UDP socket. It is the whole socket API of the engine; the transports of later days
+`net::Socket` is a move-only handle to a TCP stream, a TCP listener or a UDP socket. It is the whole socket API of the engine; the transports
 are built on it.
 
 - **Everything is non-blocking**, from the moment the socket exists; accepted sockets too. A call that cannot finish returns `WouldBlock` and has done
