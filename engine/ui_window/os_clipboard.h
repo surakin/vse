@@ -7,7 +7,7 @@
 #include "ui/callback.h"
 #include "ui/clipboard.h"
 
-//! The OS clipboard behind the toolkit's [[ui::Clipboard]] (Phase 15, Day 200): asynchronous, with the primary
+//! The OS clipboard behind the toolkit's [[ui::Clipboard]]: asynchronous, with the primary
 //! selection where the platform has one.
 
 namespace vse::ui

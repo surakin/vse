@@ -2,7 +2,7 @@
 
 //! [[asset::ResourceTable]]: the id <-> path map of the engine (the user's decision of 2026-11-13: one table where the
 //! map lives). It is a value type: each backend supplies its own (a stored `NAMES` blob, a pak section, a server's
-//! reply, or one built on demand by scanning a folder), and the mount table merges them by priority (Day 315). The
+//! reply, or one built on demand by scanning a folder), and the mount table merges them by priority. The
 //! load path never uses it: the runtime refers to resources by id, and paths are resolved at the edges.
 
 #include "asset/blob.h"

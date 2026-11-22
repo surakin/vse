@@ -2,7 +2,7 @@
 
 //! The glTF importer: glTF 2.0 files become the engine's resources, in memory.
 //!
-//! Phase 22 Days 335 to 338. Bytes go in, minted blobs come out; [[asset::ImportIntoBackend]] adds them to a
+//! Bytes go in, minted blobs come out; [[asset::ImportIntoBackend]] adds them to a
 //! [[asset::HostMemoryBackend]] that the rest of the engine reads like any other backend. This is a library a program
 //! opts into: no runtime engine module depends on it (the gate `asset_boundary_check`), and `asset_mint import-gltf` is
 //! a thin command over it.
@@ -12,10 +12,9 @@
 //! [[asset::ImportLimits]] before anything is allocated. External files (`.bin` and image URIs) are read through a
 //! [[asset::GltfSource]], so the host decides where bytes come from.
 //!
-//! Built so far (Day 335): the container (`.gltf`, `.glb`, base64 `data:` URIs), the accessors, the limits, the id
+//! Built so far: the container (`.gltf`, `.glb`, base64 `data:` URIs), the accessors, the limits, the id
 //! sources and the import manifest, and `ImportIntoBackend`. [[asset::ImportGltf]] reads and checks the container and
-//! reports what it holds; it imports resources from Day 336 on (meshes), Day 337 (skeletons and animation) and Day 338
-//! (images, textures, materials).
+//! reports what it holds; it imports meshes, skeletons and animation, and images, textures and materials.
 
 #include "asset/memory_backend.h"
 #include "asset/resource_id.h"
@@ -50,7 +49,7 @@ inline constexpr u32 kImportSteps = 5;
 /// The bounds an import is held to.
 ///
 /// Every count and size of a file is checked against them before memory is allocated for
-/// it (they become settings, `assets.import.*`, on Day 339).
+/// it (they are settings, `assets.import.*`).
 ///
 /// - Thread-safety: thread-compatible plain data.
 struct ImportLimits
@@ -71,10 +70,9 @@ struct ImportLimits
     u32 max_materials = 20000;                 ///< `materials`.
     u32 max_skins = 4096;                      ///< `skins`.
     u32 max_animations = 4096;                 ///< `animations`.
-    u64 max_pixels = u64{1} << 26;             ///< The pixels of one decoded image (Day 338).
+    u64 max_pixels = u64{1} << 26;             ///< The pixels of one decoded image.
     u64 max_output_bytes = u64{2} << 30;       ///< All blobs of one import.
-    u64 max_collision_triangles = u64{1} << 22;  ///< The triangles of every collider of one import together (glTF
-                                                 ///< colliders Day 3).
+    u64 max_collision_triangles = u64{1} << 22;  ///< The triangles of every collider of one import together .
 };
 
 /// Reads the files a glTF names by URI.
@@ -151,14 +149,14 @@ private:
 /// The kinds of resource an import makes.
 enum class ImportKind : u8
 {
-    Image,         ///< A decoded glTF image (Day 338).
-    Texture,       ///< A glTF texture (Day 338).
-    Material,      ///< A glTF material (Day 338).
-    Skeleton,      ///< A glTF skin (Day 337).
-    Mesh,          ///< A glTF mesh (Day 336).
-    Clip,          ///< A glTF animation (Day 337).
-    Level,         ///< The default scene (Day 338).
-    MeshCollider,  ///< The `MCOL` of a glTF mesh a collider uses, keyed by the mesh index (glTF colliders Day 3).
+    Image,         ///< A decoded glTF image.
+    Texture,       ///< A glTF texture.
+    Material,      ///< A glTF material.
+    Skeleton,      ///< A glTF skin.
+    Mesh,          ///< A glTF mesh.
+    Clip,          ///< A glTF animation.
+    Level,         ///< The default scene.
+    MeshCollider,  ///< The `MCOL` of a glTF mesh a collider uses, keyed by the mesh index.
 };
 
 /// The name of a kind (`mesh`, `texture`, ...), as the manifest text writes it.
@@ -259,8 +257,8 @@ struct ImportOptions
     Atomic<u32>* steps_done = nullptr;  ///< Receives the number of the import's steps finished (of `kImportSteps`), for
                                         ///< progress.
     f32 scale = 1.0f;                   ///< Positions are multiplied by it (glTF is in metres).
-    /// `KHR_lights_punctual` point and spot intensities (candela) are multiplied by it (glTF coverage Day 12;
-    /// `assets.import.light_intensity_scale`).
+    /// `KHR_lights_punctual` point and spot intensities (candela) are multiplied by it
+    /// (`assets.import.light_intensity_scale`).
     f32 light_intensity_scale = 1.0f;
     /// Directional intensities (lux) are multiplied by it (`assets.import.sun_intensity_scale`: 10,000 lux of
     /// daylight becomes 1).
@@ -268,8 +266,7 @@ struct ImportOptions
     /// A point or spot light without a `range` reaches as far as its scaled intensity over `d^2 + 1` stays at or above
     /// this (`assets.import.light_cutoff`).
     f32 light_cutoff = 1.0f / 256.0f;
-    bool
-        emit_level = false;  ///< Also make a level of the default scene's node tree ([[asset::ImportLevel]], Phase 24).
+    bool emit_level = false;  ///< Also make a level of the default scene's node tree ([[asset::ImportLevel]]).
 };
 
 /// One resource an import made.
@@ -304,7 +301,7 @@ struct ImportReport
     f32 resampling_rotation_degrees = 0;   ///< The largest error (degrees) resampling a cubic-spline rotation channel
                                            ///< made.
     u64 output_bytes = 0;  ///< The bytes of the blobs made so far (checked against `ImportLimits::max_output_bytes`).
-    u32 colliders = 0;     ///< Level nodes that got a static collider (glTF colliders Day 3).
+    u32 colliders = 0;     ///< Level nodes that got a static collider.
     u32 collision_meshes = 0;             ///< `MCOL` resources made.
     u64 collision_triangles = 0;          ///< Their triangles together.
     u32 collision_primitives = 0;         ///< Colliders that are a box, a sphere or a capsule.
@@ -327,9 +324,8 @@ struct ImportResult
 
 /// Imports a glTF file.
 ///
-/// Day 335: reads and checks the container (the JSON, the buffers, the accessors' ranges), fills `result->report` with
-/// what the file holds, and fails with `Unsupported` because no resource kind is imported yet; Days 336 to 338 import
-/// meshes, skeletons and clips, and images, textures and materials.
+/// Reads and checks the container (the JSON, the buffers, the accessors' ranges), fills `result->report` with
+/// what the file holds, and fails with `Unsupported` because no resource kind is imported yet.
 ///
 /// - Param file: the `.gltf` or `.glb` bytes.
 /// - Param source: reads the external files the glTF names (use [[asset::NoGltfSource]] for a `.glb`).

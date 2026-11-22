@@ -1,6 +1,6 @@
 #pragma once
 
-//! The networking settings (Phase 20 Day 281): [[net::RegisterNetSettings]] declares every `net.*` option once, and the
+//! The networking settings: [[net::RegisterNetSettings]] declares every `net.*` option once, and the
 //! `...FromSettings` functions turn the current values into the configuration structs of the transports, the TCP stream
 //! and the simulated network. Nothing in `engine/net` reads the environment or the command line itself
 //! (`config_access_check`): a user sets `net.max_connections` in a settings file, in `ENGINE_NET_MAX_CONNECTIONS` or

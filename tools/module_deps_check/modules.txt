@@ -234,6 +234,7 @@ module tools/file_access_check/ tools/gates 14
 module tools/net_access_check/ tools/gates 14
 module tools/shared_unit_check/ tools/gates 14
 module tools/cmdline_access_check/ tools/gates 14
+module tools/docs_phase_check/ tools/gates 14
 module tools/json_boundary_check/ tools/gates 14
 module tools/abi_check/ tools/gates 14
 module tools/shared_state_check/ tools/gates 14

@@ -1,6 +1,6 @@
 # Building and Testing
 
-Status: written (Phases 0-17; Windows from Phase 13; macOS from Phase 21).
+Status: written.
 
 **Audience:** everyone who changes the engine. [Getting started](getting-started.md) has the first build; this page is what you need to *check your work*:
 the flavors, how to choose and run tests, what each sanitizer catches, and how to write a test.
@@ -78,12 +78,14 @@ Tests use the engine's own types, like the code they test: `String`, `StringView
   `i128` and `Span`, so `CHECK(path == other)` and `CHECK(text == "abc")` show readable values. `String` compares with a `StringView`
   or a string literal directly. `INFO` takes a stream expression, so pass `Catch::Detail::stringify(value)` for an engine type.
 - Pass a callable with a template parameter or a function pointer plus a `void*`, not `std::function`.
-- Use the wrappers of `sync/`: `Thread`, `Mutex`, `ConditionVariable` and `Atomic<T>` (Phase 16; [Synchronization](foundation-sync.md)), not the `std::` ones.
+- Use the wrappers of `sync/`: `Thread`, `Mutex`, `ConditionVariable` and `Atomic<T>` ([Synchronization](foundation-sync.md)), not the `std::` ones.
 - Where Catch2 itself needs `std::` (the text it returns from a printer, `GENERATE` ranges), the use stays local and has a comment.
 
-The `std_usage_check` gate (ctest `std_usage_check`; Phase 16 Day 220, it replaced `std_container_check`) fails on any `#include` of a standard header, any `std::` name, any unqualified C library call (`strlen(`, `memcpy(`, `printf(`, ...) and any raw `unsigned char`/`uint8_t` spelling in `engine/`, `game/`, `tools/` and `tests/`. Its allow list (`tools/std_usage_check/allowlist.txt`) has one line per exception, `path|headers|reason`: the wrapper modules (`lang`, `sync`, `cstr`, the `os` console, error-number and signal headers, `jobs/coroutine.h`) with the standard headers each may include, the documented boundaries (`types.h`, the nlohmann/json files, `tests/support/catch_engine_types.h`) and the oracle tests of the wrappers. An entry that covers no use, or lists a header nobody includes, is stale and fails, so the list only shrinks. A test never needs the standard library: use the wrappers (Windows-only files are listed until Phase 16 Day 219).
+The `std_usage_check` gate (ctest `std_usage_check`, it replaced `std_container_check`) fails on any `#include` of a standard header, any `std::` name, any unqualified C library call (`strlen(`, `memcpy(`, `printf(`, ...) and any raw `unsigned char`/`uint8_t` spelling in `engine/`, `game/`, `tools/` and `tests/`. Its allow list (`tools/std_usage_check/allowlist.txt`) has one line per exception, `path|headers|reason`: the wrapper modules (`lang`, `sync`, `cstr`, the `os` console, error-number and signal headers, `jobs/coroutine.h`) with the standard headers each may include, the documented boundaries (`types.h`, the nlohmann/json files, `tests/support/catch_engine_types.h`) and the oracle tests of the wrappers. An entry that covers no use, or lists a header nobody includes, is stale and fails, so the list only shrinks. A test never needs the standard library: use the wrappers (Windows-only files are listed until the Windows port of the wrappers is done).
 
 The `cmdline_access_check` gate (ctest `cmdline_access_check`) fails on `argv[i]` in `engine/`, `game/`, `tools/` and `tests/`: a program reads its command line with `os::CommandLine`, which accepts `--name value` and `--name=value` for the options it declares and refuses unknown ones (`docs/guide/platform-os.md`). Its allow list (`tools/cmdline_access_check/allowlist.txt`, `path|reason`) names the implementers of the command line, the settings and debugging layers that read the raw arguments before anything exists, the code that builds a child process's `argv` and the test programs that echo a raw one; a stale entry fails.
+
+The `docs_phase_check` gate (ctest `docs_phase_check`) fails when a guide page, the generated reference, `README.md` or a header's doc comment (`///`, `///<`, `//!`) names a development phase or day (`Phase N`, `Day N`): the documentation says what is true, not when it was built. Plain `//` comments are not checked.
 
 ### Test phases and scoped runs
 
@@ -117,12 +119,12 @@ Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; 
 | 10 standard types and containers | 61 | 26 | 26 |
 | 11 settings system | 164 | 127 | 127 |
 | 12 module layering | 19 | - | - |
-| 13 Windows port | 21 on Windows (2026-11-07, Day 150; none on Linux) | 16 on Windows | - |
+| 13 Windows port | 21 on Windows (2026-11-07; none on Linux) | 16 on Windows | - |
 
 The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
 appears or disappears.
 
-**Tests that crash on purpose.** The Phase 7 suite (`tests/debug`) makes processes fault deliberately, and the kernel hands each
+**Tests that crash on purpose.** The debugging suite (`tests/debug`) makes processes fault deliberately, and the kernel hands each
 fault to `systemd-coredump`, which makes a desktop crash reporter (Plasma's systray) raise a notification. Those tests carry the
 ctest label `crash` and `scripts/test-phase.sh` leaves them out of every run but `--all` (which closes a phase), unless you pass
 `--crashes`. The summary line says so (`crash tests: excluded`), so a reduced run is never mistaken for a full one. The script also
@@ -241,7 +243,7 @@ is selected or `engine/foundation` changed; `--display` includes them.
 #### Side phases
 
 A phase the user runs beside the main line on another machine is a **side phase** (the user's rule, confirmed 2026-11-11;
-today Phase 21, the macOS port, on the Mac). It does not change `CURRENT_PHASE`; its tests carry its own label (`phase21`), and the `SIDE_PHASES` file lists
+today the macOS port, on the Mac). It does not change `CURRENT_PHASE`; its tests carry its own label (`phase21`), and the `SIDE_PHASES` file lists
 it (one number per line). `scripts/test-phase.sh --affected` adds every side phase the build has tests of, and the summary marks it:
 `ran 29 of 494 tests (phases: 19 26 (side); ...)` on the Mac, while the Linux machine, which builds no phase-26 tests, leaves it out. `--current`
 and a phase number never add it; `scripts/test-phase.sh 26` runs it alone. `test_phase_labels` fails on any phase of `tests/phases.txt` above
@@ -283,7 +285,7 @@ the validation section of the [RHI guide](rhi.md).
 
 ### Testing a reset
 
-Phase 8 made replacing the device a normal operation, so a test of anything that owns device objects should survive one. Write it like
+Replacing the device is a normal operation, so a test of anything that owns device objects should survive one. Write it like
 this:
 
 1. Use `tests/renderer/reset_rig.h`: a `Rig` holds a `DeviceHost`, a `DeviceResources` registry, an offscreen target (itself a registered
@@ -309,7 +311,7 @@ skipped tests but filed in `KNOWN-ISSUES.md`.
 
 **Measuring a leak across resets.** The memory and handle checks read [[os::ResidentMemoryKiB]] and [[os::OpenHandleCount]] (the resident set
 and the file descriptors on Linux, the working set and the kernel handles on Windows). Compare the lowest reading of an early stretch of resets
-with the lowest of a late one, not two single readings: on Windows (AMD Radeon 860M, Phase 13 Day 161) the process holds one to four more 64 MiB
+with the lowest of a late one, not two single readings: on Windows (AMD Radeon 860M) the process holds one to four more 64 MiB
 device-memory blocks after some resets or losses, while the device's own count (`ResourceCounts::device_memory_bytes`) does not change, and
 gives them back later. The checks allow four such blocks on Windows.
 
@@ -361,7 +363,7 @@ more than a few seconds belongs in a stress label, not in the default run.
 
 The golden-image tests and the checks around them (`golden_test.cpp`, `compute_test.cpp`, `cube_test.cpp`, `textured_cube_test.cpp`,
 `lit_cube_test.cpp` in `tests/rhi/`) run once per GPU backend the machine has: Vulkan on Linux, Vulkan and Direct3D 12 on Windows
-(Phase 13 Day 170), Metal on macOS (Phase 21 Day 306). They use only the RHI interface, through `tests/rhi/backend_fixture.h`:
+, Metal on macOS. They use only the RHI interface, through `tests/rhi/backend_fixture.h`:
 
 ```
 FOR_EACH_GPU_BACKEND(backend) {
@@ -412,7 +414,7 @@ person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 col
   commit it. Never regenerate to make a failing run pass without understanding the difference.
 - **The numbers of a passing run.** `ENGINE_RHI_GOLDEN_REPORT=1` prints one line per comparison, passed or not: the
   worst channel difference and the interior and edge pixels over their tolerances (how a backend's differences are
-  recorded, Phase 21 Day 309).
+  recorded).
 - **Validation.** GPU tests fail on any validation error. With `ENGINE_RHI_VALIDATION_FATAL=1` the whole suite is clean
   except the validation-capture tests in `vulkan_instance_test.cpp`, which provoke errors on purpose and so abort.
 
@@ -484,7 +486,7 @@ answer = 42
 
 ### Building and testing on Windows
 
-Since Phase 13 every layer builds and is tested on Windows x64, with the Vulkan and Direct3D 12 backends; `BUILD.md` lists what to install
+Every layer builds and is tested on Windows x64, with the Vulkan and Direct3D 12 backends; `BUILD.md` lists what to install
 and `docs/guide/windows.md` is the Windows page (building, the demos, validation, crash dumps, where things live). CMake finds MSVC, the Windows SDK, LLVM's `clang-cl` and the Vulkan SDK
 itself (vswhere, the registry, the default install folders), so any terminal works: no Developer Command Prompt and no `vcvars`.
 
@@ -514,22 +516,22 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
   (`file_access_check`, `config_access_check`) and heap, lock and formatting calls in signal-safe code (`signal_safety_check`).
   A gate prints each problem on one line (`message(NOTICE)`), so its self-tests do not depend on the console width or the
   checkout's path.
-- **Two machines.** During Phase 13 the Windows machine ran the Windows build every day, and the shared changes (CMake, the phase map, the
-  gates, `scripts/test-phase.sh`, shared tests) were checked on Linux once, when the phase closed (Day 174); `KNOWN-ISSUES.md` lists what
+- **Two machines.** While Windows was being ported, the Windows machine ran the Windows build every day, and the shared changes (CMake, the phase map, the
+  gates, `scripts/test-phase.sh`, shared tests) were checked on Linux once, at the end; `KNOWN-ISSUES.md` lists what
   waits for a Linux run.
 
 ### Building and testing on macOS
 
-Since Phase 21 every layer builds and is tested on macOS (x86-64, Apple clang), with the Cocoa window and the Metal backend in place of
+Every layer builds and is tested on macOS (x86-64, Apple clang), with the Cocoa window and the Metal backend in place of
 Vulkan; [macOS](macos.md) is the platform's page. `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
 Ninja; no Xcode.
 
 - **Preset.** `cmake --preset macos-clang` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
   `cmake --build --preset macos-clang` and `ctest --preset macos-clang`. The configure takes Apple clang through `xcrun`, so a MacPorts or
   Homebrew clang first on `PATH` is not picked up, and stops with a message without the Command Line Tools. Everything the Linux build has is
-  built, with the Metal backend in place of Vulkan (Day 311).
-- **Apple silicon, compile-only.** `cmake --preset macos-clang-arm64` configures `build-macos-arm64` for arm64 with `ENGINE_COMPILE_ONLY` (Day
-  327): every target builds and nothing built runs, so there is no test discovery and no shader minting (the committed outputs are used). It
+  built, with the Metal backend in place of Vulkan.
+- **Apple silicon, compile-only.** `cmake --preset macos-clang-arm64` configures `build-macos-arm64` for arm64 with `ENGINE_COMPILE_ONLY`:
+  every target builds and nothing built runs, so there is no test discovery and no shader minting (the committed outputs are used). It
   is how the Intel Mac checks arm64 code paths; run it, unity and `-DENGINE_UNITY_BUILD=OFF`, on every macOS day that changes macOS code.
 - **Flavors.** plain, asan (ASan and UBSan) and tsan, as on Linux. Apple clang has no LeakSanitizer: ASan aborts when asked for
   `detect_leaks=1` (`KNOWN-ISSUES.md`), so leak checks run on Linux.
@@ -541,8 +543,7 @@ Ninja; no Xcode.
 - **The gates** run here as on Linux and Windows. Rule 7 of `platform_neutral_check` keeps Apple's headers (the frameworks, `<mach/...>`,
   `<dispatch/...>`, `<objc/...>`, `<sys/sysctl.h>`, `<copyfile.h>`, `<libproc.h>`) and `.mm` files in the macOS directories (a `macos/`
   folder, `engine/rhi/metal/`); `std_usage_check` and `module_deps_check` read `.mm` files and count `#import` as `#include`.
-- **Documentation** (`docgen`, the reference, `ctest -L docs` with its samples) builds and runs on the Mac as on Linux (the samples from
-  Phase 21 Day 311).
+- **Documentation** (`docgen`, the reference, `ctest -L docs` with its samples) builds and runs on the Mac as on Linux (with the samples).
 
 ### Formatting and clang-tidy
 
@@ -565,7 +566,7 @@ committed:
    `ran X of Y tests` line when you report it.
 3. `ctest -L docs` passes if you changed a public header or a guide page.
 4. The gates (`std_usage_check`, `module_deps_check`, `platform_neutral_check`, ...) pass; they run with the normal tests.
-5. `STATUS.md` and, if a test fails or a check is deferred, `KNOWN-ISSUES.md` are updated in the same commit.
+5. If a test fails or a check is deferred, `KNOWN-ISSUES.md` is updated in the same commit.
 6. At the end of a phase, `scripts/test-phase.sh --all --flavor all` runs everything, on every platform the project supports.
 
 Some tests need a live desktop and fail while your session is locked; `KNOWN-ISSUES.md` lists them, so a failure there is not automatically your change.
@@ -582,14 +583,14 @@ of release builds ("Turning a dump into a trace" and "Keeping symbols for releas
 (`crash-report.sh ...`, `A stripped program resolves through a symbol store...`) skip with a printed reason when `lldb`,
 `objcopy` or `strip` is missing. `-DENGINE_SPLIT_DEBUG_INFO=ON` builds with `-g` and splits the debug information of the demos and benches.
 
-## The shared build option (Phase 23)
+## The shared build option
 
 `ENGINE_BUILD_SHARED` (default OFF, `cmake -DENGINE_BUILD_SHARED=ON`) builds the engine as one shared library with hidden symbols and a flat C API instead of
-only the static libraries; the design is in `docs/superpowers/specs/2026-11-16-engine-library-design.md`. On Linux (Phase 23 Day 343) it makes every module and
+only the static libraries; the design is in `docs/superpowers/specs/2026-11-16-engine-library-design.md`. On Linux it makes every module and
 vendored library position independent, compiles with hidden visibility, and adds the targets `engine`, `engine_asan` and `engine_tsan` (`libengine.so.1` and its
 flavors: every module's static library whole-archived, a version script as the export list, `SONAME libengine.so.1`). A C program per flavor links it and runs jobs
-inside it (`engine_shared_link_probe*`; without the option the three tests are skipped stubs, so the phase has the same flavors in every configuration). A
-sanitized library loads only into a program built with the same sanitizer. With the option OFF nothing changes: no compile command differs. On macOS (Day 355)
+inside it (`engine_shared_link_probe*`; without the option the three tests are skipped stubs, so the suite has the same flavors in every configuration). A
+sanitized library loads only into a program built with the same sanitizer. With the option OFF nothing changes: no compile command differs. On macOS
 the same targets build `libengine.1.dylib` (and `libengine_asan.1.dylib`, `libengine_tsan.1.dylib`), with an exported-symbols list in place of the version script
 and the install name `@rpath/libengine.1.dylib`; the shared tree is configured with `cmake --preset macos-clang -B build-macos-shared -DENGINE_BUILD_SHARED=ON`.
-Windows builds it on Day 354. The ctest `engine_shared_option` checks that the option exists and is declared OFF.
+Windows builds it too. The ctest `engine_shared_option` checks that the option exists and is declared OFF.

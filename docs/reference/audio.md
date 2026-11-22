@@ -53,7 +53,7 @@ Loads a clip through a resource manager that has the CPU loaders registered (`as
 enum class ResamplerQuality : u32 { ... }
 ```
 
-The quality of the sample-rate conversion a voice uses (Day 420 implements all three).
+The quality of the sample-rate conversion a voice uses (all three are implemented).
 
 | Enumerator | Value | Description |
 |---|---|---|
@@ -929,7 +929,7 @@ class AudioClip { ... }
 
 A clip: the samples and what they are, held as `f32` so the mixer converts nothing at play time.
 
-A 3-minute stereo clip at 48 kHz is 69 MB as `f32` (35 MB as 16-bit); the spec chose `f32` and long clips stream instead (Day 435), so a clip above `kMaxClipFrames` is refused. The samples live in a [`SharedBytes`](foundation-containers.md#sharedbytes) and are named by an offset, never by a pointer, so a clip over a blob shares the blob's storage. Clips are immutable once made.
+A 3-minute stereo clip at 48 kHz is 69 MB as `f32` (35 MB as 16-bit); the spec chose `f32` and long clips stream instead, so a clip above `kMaxClipFrames` is refused. The samples live in a [`SharedBytes`](foundation-containers.md#sharedbytes) and are named by an offset, never by a pointer, so a clip over a blob shares the blob's storage. Clips are immutable once made.
 
 | Field | Value |
 |---|---|
@@ -1311,7 +1311,7 @@ Whether the sound is placed in the world; false plays it flat (music, interface 
 bool doppler;
 ```
 
-Whether Doppler shift applies (Day 430).
+Whether Doppler shift applies.
 
 ### `occlusion` {#audio-audiosource-occlusion}
 
@@ -1321,7 +1321,7 @@ Whether Doppler shift applies (Day 430).
 bool occlusion;
 ```
 
-Whether occlusion applies (Day 431).
+Whether occlusion applies.
 
 ### `priority` {#audio-audiosource-priority}
 
@@ -4611,7 +4611,7 @@ class Mixer { ... }
 
 The mixer: a voice pool, the command queue and the block renderer.
 
-Positions are 32.32 fixed point in `u64`, so a long clip does not drift; the interpolation (`+ - * /` only) is linear, 4-point Hermite or 16-tap windowed sinc. Voices are summed in slot order, never thread order. The output is not clipped: the master limiter and the device boundary do that (Day 422). A clip's channels are routed to the output layout: a mono clip pans over front left and right (equal power, centre gain 0.7071), a stereo clip on a layout with front left and right balances (centre gain 1), any other pair goes through the conversion table of `audio/convert.h`.
+Positions are 32.32 fixed point in `u64`, so a long clip does not drift; the interpolation (`+ - * /` only) is linear, 4-point Hermite or 16-tap windowed sinc. Voices are summed in slot order, never thread order. The output is not clipped: the master limiter and the device boundary do that. A clip's channels are routed to the output layout: a mono clip pans over front left and right (equal power, centre gain 0.7071), a stereo clip on a layout with front left and right balances (centre gain 1), any other pair goes through the conversion table of `audio/convert.h`.
 
 Two threads use a mixer. The **control thread** (the game) calls `Play`, `Stop`, the setters, `IsPlaying`, `PollEvents` and `SetWatermark`; the **audio thread** (the device callback) calls `RenderBlock`, `TryRenderBlock` and `Render`. The two sides share only the command ring, the event ring and two atomic counters, so no call locks, and the audio side allocates nothing. Every control call returns at once: a `Play` reserves its slot and generation on the control side (so the id can be used before the audio thread has seen the command) and posts the command, which takes effect at its block stamp. Every setter ramps over `MixerConfig::ramp_frames`, ending exactly on the target; a stop fades out before the voice is freed; the order of effect is the order posted.
 
@@ -6208,7 +6208,7 @@ Converts rendered `f32` frames to the card's sample format, interleaved, for wri
 bool LayoutOf(u32 channels, ChannelLayout* out);
 ```
 
-The layout a card's channel count stands for (Day 440: shared by the ALSA and WASAPI backends).
+The layout a card's channel count stands for (shared by the ALSA and WASAPI backends).
 
 | Field | Value |
 |---|---|
@@ -8785,7 +8785,7 @@ Parses and decodes a whole file into a clip of `f32` frames.
 class WavReader { ... }
 ```
 
-Reads frames of a parsed WAV in order and by position, converting each to `f32`: the reader of streaming sources (Day 435).
+Reads frames of a parsed WAV in order and by position, converting each to `f32`: the reader of streaming sources .
 
 | Field | Value |
 |---|---|

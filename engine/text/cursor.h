@@ -4,13 +4,13 @@
 #include "text/layout.h"
 #include "types.h"
 
-//! Cursor positions, hit-testing, movement and selection over a [[text::TextLayout]] (Phase 14).
+//! Cursor positions, hit-testing, movement and selection over a [[text::TextLayout]].
 //!
 //! Offsets are byte offsets into the laid-out UTF-8 text, and the only valid cursor offsets are **grapheme
 //! boundaries**: the start of a cluster, or the length of the text. An offset inside a cluster is snapped to that
 //! cluster's start. Combining marks, ZWJ sequences and flags are one step. At a soft wrap the offset where one line
 //! ends and the next begins belongs to the later line (there is no caret affinity). Word movement is not provided
-//! (Phase 15).
+//!.
 namespace vse::text
 {
 

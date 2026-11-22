@@ -8,7 +8,7 @@
 namespace vse::audio
 {
 
-/// The quality of the sample-rate conversion a voice uses (Day 420 implements all three).
+/// The quality of the sample-rate conversion a voice uses (all three are implemented).
 enum class ResamplerQuality : u32
 {
     /// Linear interpolation: cheapest.

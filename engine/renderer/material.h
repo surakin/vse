@@ -256,7 +256,7 @@ usize HashPipelineKey(u32 template_index, u32 template_generation, u32 key_bits,
 namespace vse
 {
 
-/// Hash function for the material system's pipeline keys (container audit Day 7).
+/// Hash function for the material system's pipeline keys.
 ///
 /// - Thread-safety: thread-safe (stateless).
 template <> struct Hash<renderer::detail::PipelineKey>
@@ -428,7 +428,7 @@ public:
     /// - Fails: never.
     /// - Ownership: the device is borrowed; read it when recording and do not keep it past the frame.
     rhi::Device* Device() const { return device_; }
-    /// Returns the compute pipeline of the morph pass (glTF coverage Day 7; shaders/morph.comp).
+    /// Returns the compute pipeline of the morph pass (shaders/morph.comp).
     ///
     /// It is rebuilt with the system's other device objects on a reset, and invalid where the device could not build
     /// it (morphed objects then draw their base shape). Read it when recording; do not keep it past the frame.

@@ -1,6 +1,6 @@
 #pragma once
 
-//! The spatial set (Phase 18 Day 242): what systems use. One static tree for what does not move, plus a dynamic tree or
+//! The spatial set: what systems use. One static tree for what does not move, plus a dynamic tree or
 //! a hash grid for what does, behind the one query vocabulary of `spatial/query.h`; an item keeps its handle when it
 //! moves between the two sides.
 

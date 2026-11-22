@@ -5,7 +5,7 @@
 #include "ui/layout_types.h"
 #include "ui/widget.h"
 
-//! The container widgets (Phase 15, Day 193): [[ui::BoxLayout]], [[ui::StackLayout]], [[ui::AnchorLayout]],
+//! The container widgets: [[ui::BoxLayout]], [[ui::StackLayout]], [[ui::AnchorLayout]],
 //! [[ui::GridLayout]] and [[ui::Spacer]].
 //!
 //! Layout is two steps per widget. `Measure(constraints)` says what size the widget wants from its content;

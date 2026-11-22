@@ -2,7 +2,7 @@
 
 //! Block compression for the texture minter: decoders for BC1, BC2, BC3, BC4, BC5 and BC7, and encoders for BC1, BC4,
 //! BC5 and BC7, in exact integer arithmetic so the output is byte-identical on every compiler, machine and worker
-//! count. Phase 22 Day 324.
+//! count.
 //!
 //! A block is 4x4 texels, row-major, stored in 8 bytes (BC1, BC4) or 16 bytes (BC2, BC3, BC5, BC7). The decoders give
 //! 8-bit RGBA texels (BC4 puts its channel in red and BC5 its two in red and green; the others read 0 and alpha 255).

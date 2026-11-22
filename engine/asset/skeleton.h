@@ -1,6 +1,6 @@
 #pragma once
 
-//! The skeleton resource (Phase 22 Day 318): the joint hierarchy, the bind pose and the inverse bind matrices that
+//! The skeleton resource: the joint hierarchy, the bind pose and the inverse bind matrices that
 //! skinned meshes and animation clips refer to. [[asset::BuildSkeletonBlob]] writes a `SKEL` blob,
 //! [[asset::SkeletonView]] reads one in place.
 //!

@@ -12,7 +12,7 @@
 //! `Min`, `Max` and `Clamp` take values; `IndexOf` searches a span; `Sort` orders a span in place with a comparison
 //! (not stable, no allocation); `StableSort` keeps equal elements in their order (it allocates a scratch buffer from
 //! the heap); `LowerBound`, `UpperBound` and `BinarySearch` search a sorted span; `NthElement` and `PartialSort` select
-//! the best `k` without sorting the rest (container audit series, Day 3). The sorts also take a [[Vector]] or anything
+//! the best `k` without sorting the rest. The sorts also take a [[Vector]] or anything
 //! else with `Data()` and `Size()`.
 
 namespace vse
@@ -344,7 +344,7 @@ template <typename T> void Sort(Span<T> items)
 }
 
 /// Sorts like `Sort`, but elements that compare equal keep their order, using `scratch` as the merge buffer: a caller
-/// that sorts every frame keeps one scratch vector and allocates nothing once it has grown (container audit Day 6).
+/// that sorts every frame keeps one scratch vector and allocates nothing once it has grown.
 /// An already ordered span costs one pass and no merge.
 ///
 /// - Param less: a strict weak ordering.
@@ -404,7 +404,7 @@ template <typename T, typename Less, typename A> void StableSort(Span<T> items, 
     scratch.Clear();
 }
 
-/// Sorts like `Sort`, but elements that compare equal keep their order. Any movable `T` (container audit Day 3; it
+/// Sorts like `Sort`, but elements that compare equal keep their order. Any movable `T` (it
 /// was trivially copyable types only); the merge buffer is made for the call.
 ///
 /// - Param less: a strict weak ordering.

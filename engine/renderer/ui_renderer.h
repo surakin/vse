@@ -11,7 +11,7 @@
 #include "ui/canvas.h"
 #include "ui/draw_list.h"
 
-//! Draws a [[ui::DrawList]] on a colour target with one render-graph pass (Phase 15, Day 190).
+//! Draws a [[ui::DrawList]] on a colour target with one render-graph pass.
 
 namespace vse::renderer
 {

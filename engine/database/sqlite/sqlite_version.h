@@ -1,6 +1,6 @@
 #pragma once
 
-//! The SQLite backend of the database interface (Phase 19). Nothing in this directory's public headers names a SQLite
+//! The SQLite backend of the database interface. Nothing in this directory's public headers names a SQLite
 //! type; the implementation files here are the only ones that include `sqlite3.h` (`tools/sqlite_boundary_check`).
 
 namespace vse::database

@@ -91,7 +91,7 @@ private:
 namespace vse
 {
 
-/// Hash function for [[settings::Key]] keys of a [[HashMap]] (container audit Day 11): the key's own `Hash()`.
+/// Hash function for [[settings::Key]] keys of a [[HashMap]]: the key's own `Hash()`.
 ///
 /// - Thread-safety: thread-safe (stateless).
 template <> struct Hash<settings::Key>

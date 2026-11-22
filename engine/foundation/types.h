@@ -14,8 +14,8 @@
 //! | floating point | `f32`, `f64` |
 //! | truth | native `bool` |
 //!
-//! Code the project owns does not spell `unsigned char`, `uint8_t` and the like; the `std_usage_check` gate (Phase 16
-//! Day 220, which replaced `std_container_check`) will reject them.
+//! Code the project owns does not spell `unsigned char`, `uint8_t` and the like; the `std_usage_check` gate will reject
+//! them.
 namespace vse
 {
 

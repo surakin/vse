@@ -14,7 +14,7 @@ Pure data and logic, no display library: the header is part of the `platform_inp
 
 Drag and drop between programs: the values shared by every platform backend. The operations are on [`os::Window`](#os-window).
 
-The entry point of a windowed program (Phase 13 Day 158), written once in source so no build file chooses it per platform.
+The entry point of a windowed program, written once in source so no build file chooses it per platform.
 
 A windowed program (a game, a demo) defines `int EngineMain(int argc, char** argv)` and, in one source file at global scope, writes `ENGINE_WINDOWED_PROGRAM(EngineMain)` instead of `main`. The macro expands to the platform's own entry point: `main` on Linux; `main` on macOS too, which sets up the application object (a regular app with a Dock icon and a Quit menu, `platform/macos/cocoa_window.h`) before `EngineMain` runs, so a program run from a terminal is an ordinary app without a bundle; `wWinMain` on Windows, where it makes the program a Windows (GUI) program: no console window opens when it is started from Explorer. Either way `EngineMain` gets UTF-8 arguments, already stashed for [`os::CommandLine::FromNative`](platform-os.md#os-commandline-fromnative-allocator-amp), and its result is the exit code.
 
@@ -28,7 +28,7 @@ The input event stream: what a window backend reports in the order the server de
 
 `InputState` answers "what is down now"; it cannot say that a key was pressed and released between two polls, carries no text, and has no key repeat on Wayland. A UI needs all three, so each window also queues `InputEvent`s that the program drains with `Window::PollEvent` after `PumpEvents`. Pure data, no display library: the header is part of the `platform_input` target.
 
-The Linux backends' key translation (Phase 13 Day 159 moved it here from the neutral layer): X11 and XKB keysyms to [`os::Key`](#os-key), shared by the Wayland and X11 backends. Windows translates scan codes and its layout's characters instead (`platform/windows/win32_keys.h`).
+The Linux backends' key translation (X11 and XKB keysyms to [`os::Key`](#os-key), shared by the Wayland and X11 backends. Windows translates scan codes and its layout's characters instead (`platform/windows/win32_keys.h`).
 
 Keyboard events for the Linux backends that get raw evdev key transitions (Wayland): key down and up, text, and client-side key repeat.
 
@@ -58,11 +58,11 @@ The interface is polled: pump events, then read size, close request and the boun
 
 The window host: picks, opens and owns the display backend of the running platform and exposes it as a [`os::Window`](#os-window). The header is the same on every platform; the implementation lives in `platform/<platform>/` (Wayland or X11 on Linux), so a program that includes only this header builds unchanged on each.
 
-Win32 key messages to [`os::Key`](#os-key) (Phase 13 Day 159), with the meaning the Linux backends give keys: layout-aware.
+Win32 key messages to [`os::Key`](#os-key), with the meaning the Linux backends give keys: layout-aware.
 
 A key that types a character is named by the character the active layout gives it, as XKB names it by its keysym: on a French AZERTY layout the key in the Q position is `Key::A`, and the `&` key is `Key::Num1` only with Shift. The character is computed with the modifiers that choose a level (Shift, Caps Lock, AltGr), not Ctrl or Alt, so Ctrl+A is still `Key::A`. Every other key is named by its virtual-key code and its scan code: left and right Shift by the scan code, left and right Ctrl and Alt by the extended bit, and the navigation keys of the number pad (NumLock off) apart from the separate ones, which are `Unknown` as XKB's `KP_Home` and friends are. Keys the enum has no name for (Pause, Print Screen, NumLock, the number pad's operators and decimal point) are `Unknown`.
 
-The Windows window backend (Phase 13 Day 158): an [`os::Window`](#os-window) over a Win32 top-level window.
+The Windows window backend: an [`os::Window`](#os-window) over a Win32 top-level window.
 
 Sizes are in physical pixels: every engine program is per-monitor DPI aware (version 2, from its manifest; a thread that is not gets the awareness set around the window's creation), so a window on a 150% monitor that asks for 1280x720 gets a 1280x720 client area, and a move to a monitor of another scale keeps the window the same size to the eye (the system's suggested rectangle is applied). Fullscreen is borderless on the window's monitor (`platform/windows/FULLSCREEN.md`). Input fills the bound [`os::InputState`](#os-inputstate) with the meaning the Linux backends give it (`platform/windows/win32_keys.h` for the keys; the guide's "Windows input" for the rest).
 
@@ -1259,7 +1259,7 @@ This is the effective state, so a latched or locked modifier counts, not just a 
 inline constexpr u32 kModShortcut;
 ```
 
-The modifier of the command shortcuts (copy, cut, paste, select all, undo, quit): Command ([`os::kModSuper`](#os-kmodsuper)) on macOS, Control elsewhere (Phase 21 Day 309). Word moves and Ctrl+Tab keep Control on every platform.
+The modifier of the command shortcuts (copy, cut, paste, select all, undo, quit): Command ([`os::kModSuper`](#os-kmodsuper)) on macOS, Control elsewhere. Word moves and Ctrl+Tab keep Control on every platform.
 
 ## `KeyboardState` {#os-keyboardstate}
 
@@ -4642,7 +4642,7 @@ Which native windowing system a window belongs to, so a graphics layer knows how
 | <a id="os-nativewindowkind-wayland"></a>`Wayland` |  | A Wayland surface: `display` is a `wl_display*`, `surface` is a `wl_surface*`. |
 | <a id="os-nativewindowkind-xlib"></a>`Xlib` |  | An X11 window: `display` is a `Display*`, `window_id` is the `Window` (XID). |
 | <a id="os-nativewindowkind-win32"></a>`Win32` |  | A Win32 window: `display` is the `HINSTANCE` of the module that registered the window class, `surface` the `HWND`. |
-| <a id="os-nativewindowkind-cocoa"></a>`Cocoa` |  | A macOS window (Phase 21 Day 295): `display` is the content `NSView*`, `surface` its `CAMetalLayer*`, `window_id` the window number. |
+| <a id="os-nativewindowkind-cocoa"></a>`Cocoa` |  | A macOS window: `display` is the content `NSView*`, `surface` its `CAMetalLayer*`, `window_id` the window number. |
 | <a id="os-nativewindowkind-android"></a>`Android` |  | Reserved for the Android port: `surface` is the `ANativeWindow*`. |
 
 ## `NativeWindowInfo` {#os-nativewindowinfo}
@@ -5240,7 +5240,7 @@ Selects which display backend to use for a window.
 | <a id="os-windowbackend-wayland"></a>`Wayland` |  | Force the Wayland backend (Linux). |
 | <a id="os-windowbackend-x11"></a>`X11` |  | Force the X11 backend (Linux). |
 | <a id="os-windowbackend-win32"></a>`Win32` |  | Force the Win32 backend (Windows). |
-| <a id="os-windowbackend-cocoa"></a>`Cocoa` |  | Force the Cocoa backend (macOS; Phase 21 Day 295). |
+| <a id="os-windowbackend-cocoa"></a>`Cocoa` |  | Force the Cocoa backend (macOS). |
 | <a id="os-windowbackend-invalid"></a>`Invalid` |  | Unrecognized name, or an empty candidate slot. |
 
 ## `ParseWindowBackend(StringView)` {#os-parsewindowbackend-stringview}
@@ -5345,7 +5345,7 @@ Builds the list of backends to try on Windows: `Auto` and `Win32` yield Win32, `
 BackendPlan PlanCocoaWindowBackends(WindowBackend requested);
 ```
 
-Builds the list of backends to try on macOS: `Auto` and `Cocoa` yield Cocoa; `Wayland`, `X11` and `Win32` an empty plan with its `refusal` (Phase 21 Day 295).
+Builds the list of backends to try on macOS: `Auto` and `Cocoa` yield Cocoa; `Wayland`, `X11` and `Win32` an empty plan with its `refusal`.
 
 | Field | Value |
 |---|---|
@@ -5810,7 +5810,7 @@ Returns whether the window is fullscreen: asked for, and its client area covers 
 bool PollEvent(InputEvent* out) override;
 ```
 
-Removes the oldest queued input event (Phase 15 Day 205): keys, text from `WM_CHAR`, the pointer, buttons, the wheel, focus and resize, in the order the window procedure saw them (`platform/BACKEND.md`).
+Removes the oldest queued input event: keys, text from `WM_CHAR`, the pointer, buttons, the wheel, focus and resize, in the order the window procedure saw them (`platform/BACKEND.md`).
 
 | Field | Value |
 |---|---|

@@ -1,12 +1,12 @@
 # The engine as a loadable library
 
 The engine can be built as one shared library (`libengine.so.1`, `libengine.1.dylib` on macOS) that a host program loads at run time and drives through a flat C API, next to the static
-libraries games link today (Phase 23; design in `docs/superpowers/specs/2026-11-16-engine-library-design.md`). The page is the reference for the whole phase: building, what is exported, the C API's conventions, versioning, loading, embedding on each platform, the cost
+libraries games link today (design in `docs/superpowers/specs/2026-11-16-engine-library-design.md`). The page is the reference for the whole phase: building, what is exported, the C API's conventions, versioning, loading, embedding on each platform, the cost
 of the shared build and the limits. To write a host step by step, start with the [tutorial](../tutorials/loading-the-engine.md).
 
 ## Building it
 
-`cmake -DENGINE_BUILD_SHARED=ON` (Linux from Day 343; see `building-and-testing.md`) adds the targets `engine`, `engine_asan` and `engine_tsan`. The option
+`cmake -DENGINE_BUILD_SHARED=ON` (see `building-and-testing.md`) adds the targets `engine`, `engine_asan` and `engine_tsan`. The option
 also compiles every target position independent with hidden symbols, so nothing leaves the library unless it is exported on purpose.
 
 ## What the library exports
@@ -23,17 +23,17 @@ The list that counts is `abi/engine.exports`: the linker's version script is gen
 3. the last commit's list (`git show HEAD:abi/engine.exports`): **a symbol added needs a higher minor version, a symbol removed needs a higher major version**,
    and the version never goes down. A change of the ABI is a decision made in the same diff as the code, not an accident.
 
-The C header `engine_c.h` (Day 346) is checked too: it must compile as C11 with `-pedantic -Werror` and hold no C++ token outside a `#ifdef __cplusplus` block.
+The C header `engine_c.h` is checked too: it must compile as C11 with `-pedantic -Werror` and hold no C++ token outside a `#ifdef __cplusplus` block.
 
 ### Adding an export
 
-1. Declare and define the function in `engine/engine_c/` as `extern "C" ENGINE_API ...` (from Day 346 only `engine_get_api` is exported: a new function is a new member at the end of the `engine_api` table in `engine_c.h`, not a new export; a new
+1. Declare and define the function in `engine/engine_c/` as `extern "C" ENGINE_API ...` (only `engine_get_api` is exported: a new function is a new member at the end of the `engine_api` table in `engine_c.h`, not a new export; a new
    export is for a second entry point, which needs a reason).
 2. Add its name to `abi/engine.exports` and raise the minor version there (and in `engine_abi_version.h`); a removal raises the major version.
 3. Build with `-DENGINE_BUILD_SHARED=ON` and run `ctest -R abi_check`: it names every symbol that differs.
-4. Update the ABI snapshot (Day 347) and the guide when the function is part of the C API's documented surface.
+4. Update the ABI snapshot and the guide when the function is part of the C API's documented surface.
 
-## One of everything (Day 345)
+## One of everything
 
 The engine library is the only place the engine's singletons live. A plugin or a second library that links the static foundation or job system carries its
 own copy of each under hidden visibility: another log (ring, line count, channel list), another `HeapAllocator::Default()`, another set of job counters,
@@ -45,7 +45,7 @@ The rules, and what enforces them:
 - **No mutable static state in a public header.** The gate `shared_state_check` (`tools/shared_state_check`, ctest `shared_state_check*`) fails on a
   `static` non-const object (function scope or `static inline` member), a `thread_local` or a non-const `inline` variable in any header under `engine/`.
   Move the object into the module's `.cpp` (one definition, inside the library) or list the header in `tools/shared_state_check/allowlist.txt` with the reason
-  it is safe (`path|reason`; a stale entry fails). Moved on Day 345: the log channel registry head, `jobs::Counter::PathStats()` and
+  it is safe (`path|reason`; a stale entry fails). Moved: the log channel registry head, `jobs::Counter::PathStats()` and
   `ecs::detail::SystemFn::Fallbacks()`. Allowed with a reason: `HeapAllocator::Default()` (no data), the `ENGINE_ENSURE` site record, `ecs::World`'s component tag
   (the C API forbids C++ component access) and `ENGINE_DEATH_TEST_FN` (expanded in test programs only).
 - **Nothing is freed by the side that did not allocate it.** A buffer the engine hands out comes back through the engine's release function, never the
@@ -54,7 +54,7 @@ The rules, and what enforces them:
   that is still alive. The three per-thread things on the engine's API path were the frame pool's cache, the crash handler's alternate stack and the Vulkan
   backend's command-pool slot; each is plain data now, handed back through `NotifyThreadEnd()` (`log/diagnostics_hooks.h`), which runs the functions added
   with `AddThreadEndHook` (the first use of each registers its own). The job workers, the I/O thread and the end of the scheduler's pool call it; **any other
-  thread that used the engine must call it before it ends** (the C API gives a host thread `engine_api.thread_detach`, Day 346). A thread that does not strands at
+  thread that used the engine must call it before it ends** (the C API gives a host thread `engine_api.thread_detach`). A thread that does not strands at
   most 64 cached blocks per size class and one 128 KiB, mostly untouched, alternate stack, and keeps its Vulkan slot (there are `kThreadSlots` of them, so a
   program that records on many short-lived threads must call it).
 - **The crash handler is installed once, by the engine, and removed at shutdown;** the host's own handlers are back afterwards.
@@ -63,10 +63,10 @@ The tests (`tests/engine_library`, Linux, `-DENGINE_BUILD_SHARED=ON`) are small 
 links only the C API sees the engine's allocator, counters, log and frame pool) with its planted failure (`engine_dup_singletons_planted*`: a plugin that
 links the static foundation is detected, by name), `engine_unload_after_jobs` (plain, asan, tsan: jobs on the calling thread and on a joined host thread,
 the crash handler installed and removed, then `dlclose`: the library must be gone), `engine_owner_*` (plain, asan) and `engine_crash_across_boundary` (the
-host's `SIGSEGV` handler is restored; a crash inside a job leaves an envelope with a minidump). Since Day 346 they reach the library through
+host's `SIGSEGV` handler is restored; a crash inside a job leaves an envelope with a minidump). They reach the library through
 `engine_get_api` and read the state table through the extension `engine.test_state` (`engine/engine_c/engine_test_extension.h`, below).
 
-## The C API (Day 346)
+## The C API
 
 `include/engine/engine_c.h` is the whole surface a host sees: plain C11, one exported function and a table. The convention comment at the top of the header is
 the specification; this is a summary of the rules and their reasons.
@@ -111,7 +111,7 @@ the other API functions on its own thread, must not call `create` or `destroy`, 
 
 **Extensions.** `get_extension(name)` returns a static struct of functions beyond the core, or NULL. The one the library has today is `engine.test_state`
 (`engine_test_extension.h`): the addresses of the engine's singletons and a few operations (run jobs, install a crash handler, allocate and release) that the
-boundary tests of Day 345 need. It is compiled in only when `ENGINE_C_TEST_EXTENSION` is ON (the default while the phase is under way); a release build
+boundary tests need. It is compiled in only when `ENGINE_C_TEST_EXTENSION` is ON (the default); a release build
 returns NULL for it, and the C API never needs it.
 
 **Threads.** Calls are thread-safe unless a comment says otherwise. `thread_detach` is called by a host thread that used the engine, once, just before the
@@ -122,13 +122,13 @@ thread exits (see "One of everything").
 `engine_c` is a static library (plain, asan, tsan; Linux) built always, so a C program can link the C API without the shared library. `host_c`
 (`tests/engine_library/host_c.c`, ctest `engine_c_host*`) is such a program: it creates an engine with settings, a command line and a log callback, reads and
 changes a setting, destroys the engine, and makes every bad call the API documents (null and wrong-size structs, a stale and a never-issued handle, a version
-too new, a second engine, a bad key and a bad value); each must return its documented status. The same C API is what the shared library exports (Day 347
+too new, a second engine, a bad key and a bad value); each must return its documented status. The same C API is what the shared library exports
 loads it with `dlopen`).
 
-## Loading the library (Day 347)
+## Loading the library
 
 `include/engine/engine_loader.h` is header-only plain C that needs nothing but `engine_c.h`: a host copies the two files. `engine_load(path, major, minor,
-&loader)` opens the library (`dlopen` with `RTLD_NOW | RTLD_LOCAL`; on Windows `LoadLibraryExW`, Day 354: below), finds `engine_get_api`, asks for the version
+&loader)` opens the library (`dlopen` with `RTLD_NOW | RTLD_LOCAL`; on Windows `LoadLibraryExW`: below), finds `engine_get_api`, asks for the version
 the host was compiled against and checks that the table says the same; `loader.api` is then the function table. Every refusal leaves a sentence in
 `loader.message` and nothing loaded: a file that is missing or not a library (`ENGINE_ERROR_IO`), a library without the entry point
 (`ENGINE_ERROR_UNSUPPORTED`), another major or a newer minor than the library has, or a table that does not say what it should
@@ -136,7 +136,7 @@ the host was compiled against and checks that the table says the same; `loader.a
 
 `tests/engine_library/host_dl.c` (`engine_host_dl`, plain, asan, tsan) is the reference host: it checks each refusal against stand-in libraries
 (`fake_engine.c`) and the real library asked for a newer minor and another major, then loads the real one, creates an engine, runs jobs through the test
-extension (the frame loop arrives on Day 349), destroys it, unloads, and checks that the library left the address space.
+extension (the frame loop is part of the test extension), destroys it, unloads, and checks that the library left the address space.
 
 ### The ABI snapshot and what a binding may rely on
 
@@ -147,12 +147,12 @@ allowed); anything else fails and names the line. After a legitimate append, run
 struct member or table function is also added to the lists in `abi_snapshot_gen.c`; the struct size line catches one that is missed. The layout is that of a
 64-bit target.
 
-A language binding (Phase 27's Lua, any other) binds through this table and may rely on: functions are only ever appended to `engine_api`, and a field
+A language binding (the scripting module's Lua, any other) binds through this table and may rely on: functions are only ever appended to `engine_api`, and a field
 only to the end of a struct; a status number never changes; a function's meaning never changes within a major version; `struct_size` says how much of a
 struct is real. It may not rely on the text of a message (`last_error`, `loader.message`), on the order of log lines, or on the extensions (`get_extension`
 names other than the ones the guide documents).
 
-## Shutdown, unload and reload (Day 348)
+## Shutdown, unload and reload
 
 **What `engine_destroy` guarantees.** When it returns `ENGINE_OK`:
 
@@ -163,15 +163,15 @@ names other than the ones the guide documents).
 
 What a host must do, and what the engine does not do for it:
 
-- **Give objects back first.** The engine counts the objects its API hands out (the worlds, loaded resources and imports of Days 349 to 351 register with `engine_c/engine_objects.h`). `engine_destroy` with one outstanding returns `ENGINE_ERROR_IN_USE` ("n object(s) of the engine are still outstanding"), changes nothing and may be called again once the host has released them. There is no `force`: cancelling a host's loads behind its back would leave it with handles to nothing.
+- **Give objects back first.** The engine counts the objects its API hands out (the worlds, loaded resources and imports register with `engine_c/engine_objects.h`). `engine_destroy` with one outstanding returns `ENGINE_ERROR_IN_USE` ("n object(s) of the engine are still outstanding"), changes nothing and may be called again once the host has released them. There is no `force`: cancelling a host's loads behind its back would leave it with handles to nothing.
 - **Do not unload while a thread is inside the library.** `engine_destroy` waits for a log callback that is running, but the library cannot stop a host from `dlclose`-ing a library a thread is still executing in. Unload only after destroy has returned and every host thread that called the engine has called `thread_detach` and left it. While destroy waits, the handle is already stale (calls fail with `ENGINE_ERROR_STALE_HANDLE`) and `engine_create` fails with `ENGINE_ERROR_LIMIT_EXCEEDED` until the old engine is gone (`host_inside.c`).
 - **Do not unload while the engine is alive.**
 
 **Unload.** The library is not linked `-z nodelete`: it unloads when its last `dlclose` runs, and the test `engine_reload_cycles*` proves it by loading, creating, running jobs, destroying and unloading 50 times in one process (plain, asan, tsan), checking after every cycle that the library is gone from `/proc/self/maps` and from the dynamic linker, that the process has no thread it did not have, and after the last that the resident size has not grown (plain: within 8 MiB of its size after the fifth cycle; the sanitizers' allocators get 64 MiB). Under asan the leak report at exit is the check for what is really lost. What an unload still has to give back is done by the library's destructor (`EngineLibraryUnloaded`, in the shared library only): the job system's process-wide frame pool, immortal in a program, frees its slabs (`FramePool::DestroyGlobalAtUnload`); without it each cycle kept about 2 MiB.
 
-**Audit.** The things an engine registers, and who removes them: the settings listeners and the `log.*` application (the settings service, at destroy); the log observer (destroy); the log channels' state (destroy restores it); the job scheduler's threads (the scheduler that made them, which joins them when it is destroyed: the engine starts its job system on the first job submitted, Day 349, and the world and counter objects below keep `destroy` from running while any job can still run); the crash handler (`crash_handler_install` and `_uninstall`; destroy removes it if the host did not); the per-thread caches (the thread's own `thread_detach`); the global frame pool (the library's destructor). No static destructor touches another static.
+**Audit.** The things an engine registers, and who removes them: the settings listeners and the `log.*` application (the settings service, at destroy); the log observer (destroy); the log channels' state (destroy restores it); the job scheduler's threads (the scheduler that made them, which joins them when it is destroyed: the engine starts its job system on the first job submitted, and the world and counter objects below keep `destroy` from running while any job can still run); the crash handler (`crash_handler_install` and `_uninstall`; destroy removes it if the host did not); the per-thread caches (the thread's own `thread_detach`); the global frame pool (the library's destructor). No static destructor touches another static.
 
-## The frame loop, worlds, jobs and the crash handler (Day 349)
+## The frame loop, worlds, jobs and the crash handler
 
 The rest of the runtime surface of version 1.0, all reached through the table (`engine_c.h`; `host_runtime.c` is the C program that drives every function).
 
@@ -187,7 +187,7 @@ never expose a pointer: components are read and written by value.
 **Components are a typed, size-prefixed property API.** There are four kinds (`engine_component_kind`; the numbers are the ABI): `TRANSFORM` (`engine_transform`: position, a unit rotation
 quaternion that the engine normalizes, scale), `WORLD_TRANSFORM` (`engine_world_transform`: the column-major matrix; read only: the frame writes it, so a transform set on an entity shows
 as a matrix after the next frame), `NAME` (up to 63 bytes, set and read with `entity_name_set/get`) and `MESH_REFERENCE` (`engine_mesh_reference`: a mesh identifier the host chooses,
-which Day 350's loaded resources name, and a material). A struct goes in with its `struct_size` first (a size below the first version is `STRUCT_SIZE`); a struct comes out the same way. Setting a
+which the loaded resources name, and a material). A struct goes in with its `struct_size` first (a size below the first version is `STRUCT_SIZE`); a struct comes out the same way. Setting a
 transform adds the world transform with it, and removing it takes both. `query(world, mask, keys, capacity, &total)` finds the entities that have every kind of `mask` (`ENGINE_COMPONENT_BIT`),
 writes up to `capacity` keys and reports the total, so a host that is told `total > capacity` calls again with a bigger array; the order is not specified.
 
@@ -220,11 +220,11 @@ matrices, runs a frame with a budget over two worlds, submits 500 jobs and waits
 world and entity, a counter used as a world, a wrong struct size, a name too long, a non-finite transform), runs two host threads each with a world and a counter beside a third that runs frames (the thread-safe subset, under tsan), and,
 in a child process that starts before any thread exists, crashes inside a job and counts the envelope the handler left.
 
-## Host-provided content and loading (Day 350)
+## Host-provided content and loading
 
 A host that has its content in memory (it downloaded it, unpacked it, generated it) hands the minted blobs to the engine and loads them through the table:
 `resource_add`, `resource_replace`, `resource_remove`, `resource_mounted`, and `resource_load` / `resource_load_async` with their handles and tickets
-(`engine_c.h`, "Day 350"). The engine never mints: the host adds blobs that `asset_mint` made (decision of Day 342).
+(`engine_c.h`). The engine never mints: the host adds blobs that `asset_mint` made.
 
 - **One mount.** The engine mounts its `HostMemoryBackend` at `/` at the priority `assets.memory_priority` (default 1000; the mounts of `assets.mounts` have
   the priorities 0, 1, 2, ...), so host content wins over files. The budget is `assets.memory_backend_bytes` and counts lent bytes too; an add past it is
@@ -253,11 +253,11 @@ A host that has its content in memory (it downloaded it, unpacked it, generated 
 Not here: paks and loose files are not mounted by the C API yet (`assets.mounts` is declared but only the memory mount is made), and GPU resources come
 with the renderer's C functions.
 
-## Importing a glTF at run time (Day 351)
+## Importing a glTF at run time
 
 A program that fetches a glTF file from somewhere (a 3D room model from a server, say) hands the bytes to the engine and gets resources it can
 load: `import_gltf` (synchronous) and `import_gltf_async` with its ticket calls (`import_poll`, `import_wait`, `import_finish`, `import_cancel`,
-`import_destroy`), described in `engine_c.h` ("Day 351"). The importer is `engine/asset_import` (Phase 22); the C API is a thin skin over `ImportGltf`,
+`import_destroy`), described in `engine_c.h`. The importer is `engine/asset_import`; the C API is a thin skin over `ImportGltf`,
 `ImportGltfAsync` and `ImportIntoBackend`. The whole path from a C host, in the order a host makes the calls:
 
 1. **Create the engine** and ask `get_info`: `caps & ENGINE_CAP_IMPORT_GLTF` says the library has the importer. A library built with
@@ -335,22 +335,22 @@ the import made and adds it back next time instead of importing again. The suppo
 `resource_read`, the asynchronous form, a host built against the first `engine_import_result`), `host_import_off.c` (the same functions in the library without
 the importer), `host_cpp.cpp` (the C++ layer) and `tests/asset/memory_backend_test.cpp` (the backend's `AddMany`).
 
-## Rendering into a window the host owns (Day 352)
+## Rendering into a window the host owns
 
 An application with its own toolkit (a Qt, GTK or Electron shell, or a C program with a bare Xlib window) keeps its window and has the engine draw into it:
 `surface_create`, `surface_resized`, `surface_rebind`, `surface_set_background`, `surface_state`, `surface_read_pixels`, `pixels_finish`, `pixels_destroy` and
-`surface_destroy`, described in `engine_c.h` ("Day 352"). The engine **never creates, resizes, moves or destroys the host's window**; the host owns its size,
+`surface_destroy`, described in `engine_c.h`. The engine **never creates, resizes, moves or destroys the host's window**; the host owns its size,
 visibility and scale and reports them. In this order:
 
 1. **Ask what the build can do.** `get_info`: `caps & ENGINE_CAP_SURFACE_X11`, `ENGINE_CAP_SURFACE_WAYLAND`, `ENGINE_CAP_SURFACE_WIN32` and `ENGINE_CAP_SURFACE_COCOA`
-   say which window kinds `surface_create` accepts (Linux with the Vulkan backend; Windows with Direct3D 12 and Vulkan, Day 354; macOS with Metal, Day 355), `ENGINE_CAP_READBACK` that `surface_read_pixels` works. A build that cannot answers `UNSUPPORTED` with a sentence in
+   say which window kinds `surface_create` accepts (Linux with the Vulkan backend; Windows with Direct3D 12 and Vulkan; macOS with Metal), `ENGINE_CAP_READBACK` that `surface_read_pixels` works. A build that cannot answers `UNSUPPORTED` with a sentence in
    `last_error`, never a crash.
 2. **Create the surface** from the window's native handles in an `engine_surface_info`: for X11 the `Display*` (`display`) and the `Window` (`window_id`), for
    Wayland the host's own `wl_display*` (`display`) and `wl_surface*` (`surface`): the engine makes **no second connection**, it presents on the host's, so the
    host keeps dispatching its events as it did. The size is in pixels and the scale is the DPI factor (0 means 1). Each surface has a device of its own; the
    surface counts as an object of the engine until `surface_destroy`, and `destroy` of the engine answers `IN_USE` until it is gone. **Destroy the surface
    before the window.**
-3. **Draw.** Every `frame` renders one frame into every surface: a clear to the surface's background color (`surface_set_background`), and, from Day 359, the world bound with `surface_set_world` (next section). The host calls `frame` from its own
+3. **Draw.** Every `frame` renders one frame into every surface: a clear to the surface's background color (`surface_set_background`), and the world bound with `surface_set_world` (next section). The host calls `frame` from its own
    thread, as everywhere in the API.
 4. **Follow the window.** The host tells the engine every change of size or scale with `surface_resized` (what a toolkit does on `ConfigureNotify` or when the
    Wayland surface is configured; **the size reported must be the size the window really has**: on X11 the swapchain takes the server's extent when it is rebuilt).
@@ -360,8 +360,8 @@ visibility and scale and reports them. In this order:
    engine draws nothing and does not crash the engine: on X11 the server reports the destroyed window as having no drawable area, so the surface reads as
    hidden (`visible` 0, `frames_skipped` counting up) and a read-back pending on it stays pending; when the swapchain reports the surface itself lost, `lost` is
    1 and the pending read-backs fail with `UNSUPPORTED`. Either way the host calls `surface_rebind` with the handles of a new window and the engine rebuilds
-   the swapchain on the same device through the reset path of Phase 8 (`RecreateSurface`), `recoveries` goes up and the next frame is drawn there. When the
-   device itself was lost (a driver reset, the GPU removed), `surface_rebind` makes a new device on the surface's adapter instead (Day 369, below). If the
+   the swapchain on the same device through the RHI reset path (`RecreateSurface`), `recoveries` goes up and the next frame is drawn there. When the
+   device itself was lost (a driver reset, the GPU removed), `surface_rebind` makes a new device on the surface's adapter instead (below). If the
    device cannot present to the new window, or no new device can be made yet (`UNSUPPORTED`), the surface stays lost, and the host can try again or destroy
    it.
 6. **Read pixels.** `surface_read_pixels` returns a ticket at once; the next frame that draws the surface fills it; `pixels_finish` takes the RGBA8 image (an
@@ -371,7 +371,7 @@ visibility and scale and reports them. In this order:
    and test path, and is not meant for every frame.
 
 The engine's own window code is not involved: `os::ForeignWindow` (`engine/platform/foreign_window.h`) is an `os::Window` over the host's handles with no events,
-cursor or clipboard of its own (the host owns input; Day 353 forwards it and takes the requests back through callbacks), so the RHI's swapchain code is the same as for the engine's windows. The Vulkan backend creates its
+cursor or clipboard of its own (the host owns input and forwards it; the engine takes the requests back through callbacks), so the RHI's swapchain code is the same as for the engine's windows. The Vulkan backend creates its
 surface from the handles on the host's connection.
 
 **Tested** by `host_surface.c` (a C program with an Xlib window; plain and asan, the tsan flavor is a skipped stub because ThreadSanitizer cannot run the GPU
@@ -382,7 +382,7 @@ raised by the engine) and `surface_rebind` on a new window, a ticket cancelled b
 and rebind to a second window). Both need an unlocked session (`KNOWN-ISSUES.md`) and skip without a display.
 
 
-## Input from the host, requests back, and the host-driven loop (Day 353)
+## Input from the host, requests back, and the host-driven loop
 
 A surface has no window of the engine's own, so the host feeds it input and answers what the engine asks for. Everything is on the surface: `surface_input`
 takes one `engine_input_event` (size-prefixed, with `type`, `time_ns`, `modifiers`, and the fields of its type), and `engine_surface_info.callbacks` points to
@@ -461,12 +461,12 @@ target_link_libraries(app PRIVATE engine::engine)
 
 A host that loads the library with `dlopen` needs only the headers (`engine_loader.h`). **Tested** by `engine_install_consumer`: it installs to a scratch prefix,
 checks that exactly the three headers were installed, and builds and runs `tests/engine_library/consumer` (a program outside the tree: `find_package(Engine)`,
-public headers only) against that prefix. On macOS (Day 355) the package installs `lib/libengine.1.0.dylib` with the links `libengine.1.dylib` and `libengine.dylib`;
-the install name is `@rpath/libengine.1.dylib`: the host's own rpath says where it lives. On Windows (Day 354) the install rule puts `engine.dll` in `bin/` and its
+public headers only) against that prefix. On macOS the package installs `lib/libengine.1.0.dylib` with the links `libengine.1.dylib` and `libengine.dylib`;
+the install name is `@rpath/libengine.1.dylib`: the host's own rpath says where it lives. On Windows the install rule puts `engine.dll` in `bin/` and its
 import library in `lib/`; the consumer test does not run there (`KNOWN-ISSUES.md`). A header that is only for the tests
 (`engine_test_extension.h`) stays in `engine/engine_c/` and is not installed.
 
-## Windows: engine.dll, loading it, and embedding into an HWND (Day 354)
+## Windows: engine.dll, loading it, and embedding into an HWND
 
 **Building it.** `-DENGINE_BUILD_SHARED=ON` on the `windows-msvc` and `windows-clang-cl` presets builds `engine.dll` (and `engine_asan.dll` in the MSVC tree;
 MSVC has no ThreadSanitizer), the same aggregate of the module libraries as on Linux, whole-archived through CMake's `WHOLE_ARCHIVE` feature (`/WHOLEARCHIVE`).
@@ -490,7 +490,7 @@ runs when the DLL is detached (`FreeLibrary`, or process exit).
 the DLL `/MD`): two heaps, two `stdio`, two `errno`. Nothing of one runtime crosses to the other: **no `FILE*`, no allocation, no `errno`** passes the boundary.
 The host's bytes are copied in (or lent with a release callback the engine calls), the engine's memory comes back as an `engine_buffer` the host releases with
 `engine_buffer_release`, which calls the engine's own release function. `engine_other_crt` is such a host: built `/MT` (it depends on `KERNEL32.dll` alone), it
-runs frames, the memory test and the resource test of Day 350 through the loader.
+runs frames, the memory test and the resource test through the loader.
 
 **Unload and reload.** `engine_reload_cycles` runs the 50 load-run-destroy-unload cycles on Windows too (plain and asan): after each `FreeLibrary` the DLL is
 gone from the module list, the thread count is back, and the working set does not grow. The crash handler gives the host's own unhandled-exception filter back
@@ -506,14 +506,14 @@ presented on Vulkan; either way the frames go on and `surface_rebind` recovers o
 
 **The C hosts on Windows.** The hosts of `tests/engine_library` reach the operating system through `host_os.h` (atomics, threads, sleeping, loading a library, a
 directory, a crash in a child process, the host's own crash handler, process facts), with a POSIX side (`posix/host_os_posix.h`: what the hosts called directly
-before, and the process probes of Day 355) and a Windows side (`windows/host_os_windows.h`: Win32, Toolhelp, psapi). `host_quiet_failures()` comes first in every host's `main`: on Windows it sends
+before, and the process probes) and a Windows side (`windows/host_os_windows.h`: Win32, Toolhelp, psapi). `host_quiet_failures()` comes first in every host's `main`: on Windows it sends
 the debug C runtime's asserts and `abort()` to standard error instead of a dialog box. The crash child is a second run of the program on Windows (there is no
 `fork`); a fault inside a job ends it through the coroutine's `unhandled_exception` as an abort, with the dump written (`KNOWN-ISSUES.md`). `host_win32.c`
 (`engine_c_surface_win32`, plain and asan) is the Windows counterpart of `host_surface.c`: its own window class, window procedure and message loop, run with
 Direct3D 12 and with Vulkan, forwarding what its window receives through `surface_input` and answering the cursor and clipboard requests with Win32;
 `surface_input_test.cpp` runs on a Win32 window too (the UI's click, text, cursor and clipboard requests through the host's callbacks).
 
-## macOS: the dylib and embedding into an `NSView` (Day 355)
+## macOS: the dylib and embedding into an `NSView`
 
 **The library.** `-DENGINE_BUILD_SHARED=ON` on `macos-clang` builds `libengine.1.dylib` (and `libengine_asan.1.dylib`, `libengine_tsan.1.dylib`): every module whole-archived as on
 Linux, hidden symbols, and in place of the version script an exported-symbols list generated from `abi/engine.exports` (`engine_shared.exported_symbols`
@@ -538,7 +538,7 @@ code back runs the engine in a helper process.
 
 **Autorelease pools.** Every entry of the C API that touches AppKit or Metal drains a pool of its own: the Metal backend's entry points and the Cocoa surface
 code (`engine/engine_c/macos/cocoa_surface.mm`) wrap their bodies in `@autoreleasepool`, so a host may call from a thread, or a part of its main loop,
-that has none (`MetalSwapchain`'s creation, `Apply` and `Acquire` did not until Day 355; the Cocoa host's test found them). The Cocoa host test runs with
+that has none (`MetalSwapchain`'s creation, `Apply` and `Acquire` did not before; the Cocoa host's test found them). The Cocoa host test runs with
 `OBJC_DEBUG_MISSING_POOLS=YES` and fails on a missing pool on the host's main thread, where it calls the engine outside every pool of its own
 (`macos/run_cocoa_host.cmake`); Apple's own queues (Metal's completion queue, Core Animation) report missing pools too, with no engine frame in their
 stacks, and are counted, not failed.
@@ -586,7 +586,7 @@ CVDisplayLinkStart(link);
   nothing). Metal reports no lost swapchain, and a lost device cannot be forced on Metal, so the `lost` branch is not exercised on the Mac
   (`KNOWN-ISSUES.md`).
 
-**iOS** (Phase 29) links the engine statically: no application may load a library of its own there. `engine_c.h` compiles for `arm64-apple-ios`
+**iOS** links the engine statically: no application may load a library of its own there. `engine_c.h` compiles for `arm64-apple-ios`
 (`engine_c_header_ios`, as C11 and C++20, freestanding: the Mac has no iOS SDK); `engine_loader.h` is not for iOS.
 
 **Tested** by `tests/engine_library/macos/host_cocoa.m` (Objective-C with ARC; `engine_c_cocoa*`, statically linked in plain, asan and tsan, and
@@ -599,11 +599,11 @@ the engine and the rebind to a new one, a read-back cancelled by `surface_destro
 runs its UI rig on a Cocoa window there too. The Linux hosts run on the Mac through the POSIX side of `host_os.h`, with the process probes (`process_probe.h`: Mach and dyld in
 place of `/proc`) and the unload limit above.
 
-## A world on a surface (Phase 24 Day 359)
+## A world on a surface
 
 `surface_set_world(surface, world)` binds a world to a surface (`ENGINE_CAP_WORLD_ON_SURFACE` in `caps`; pass a null world to unbind). Every `frame` then draws, on that surface, the entities of the
-world that have an `engine_mesh_reference` and a transform: the mesh and the material are resources the host added or loaded (Day 350), looked up by id; a material id of 0 is the surface's default grey material.
-The picture is lit by a default sun and seen by a default camera until Day 360 adds `surface_set_camera`.
+world that have an `engine_mesh_reference` and a transform: the mesh and the material are resources the host added or loaded, looked up by id; a material id of 0 is the surface's default grey material.
+The picture is lit by a default sun and seen by a default camera until `surface_set_camera` sets one.
 
 - **Per surface, not per engine.** Each surface owns a `renderer::SceneFrame` (the frame object the renderer demo used, moved into `engine/renderer`), a `RenderScene` and a resource manager over the engine's
   resource host, so two surfaces draw independent pictures and a surface lost with its window loses only its own GPU content, which is rebuilt from the resources on `surface_rebind`.
@@ -614,10 +614,10 @@ The picture is lit by a default sun and seen by a default camera until Day 360 a
   `asset_mint` sources for meshes a surface draws say `quality full`.
 - **Destroy order.** Destroy the surface before the world; a world destroyed first leaves the surface drawing its background with `world_status` `STALE_HANDLE`.
 
-**Tested** by `host_scene.c` (a C program with a window of its own: Xlib on Linux, plain and asan; a Cocoa `NSView` drawn with Metal on macOS, every flavor, Metal's validation on, Day 370): a minted mesh and material added from memory, an entity bound to them, the counts of `surface_state`, an unresolved
+**Tested** by `host_scene.c` (a C program with a window of its own: Xlib on Linux, plain and asan; a Cocoa `NSView` drawn with Metal on macOS, every flavor, Metal's validation on): a minted mesh and material added from memory, an entity bound to them, the counts of `surface_state`, an unresolved
 material, the default material, the world destroyed under the surface and the image compared with the golden `golden/scene_rock_160x120.rgba` (no channel off by more than 4 and at most 0.5% of the values off by more than 1).
 
-## Cameras (Phase 24 Day 360)
+## Cameras
 
 `ENGINE_COMPONENT_CAMERA` (`engine_camera`: `fov_y`, `near_plane`, `far_plane`, `flags`, `aspect`) makes an entity a perspective camera. It looks along the entity's world matrix's -Z with +Y up (scale ignored), so the host's
 whole camera control is setting the entity's transform each frame. `surface_set_camera(surface, entity)` names the camera of a surface (0: the default camera); two surfaces may name two cameras of one world.
@@ -627,7 +627,7 @@ The aspect follows the surface unless `ENGINE_CAMERA_FIXED_ASPECT` is set. A cam
 `surface_pixel_ray` and `surface_project` turn a surface pixel into a world ray and a world point into a pixel with the camera **of the last frame that drew the surface** (they answer `NOT_READY` before one has). The ray starts at the camera
 position; the projection reports the pixel and the distance along the view direction (negative behind the camera). Orthographic cameras are not built (`KNOWN-ISSUES.md`).
 
-## Lights and the environment (Phase 24 Day 361)
+## Lights and the environment
 
 `ENGINE_COMPONENT_LIGHT` (`engine_light`: kind, colour, intensity, radius, cones) makes an entity a light: a **directional** light shines along the entity's world -Z axis (rotate the entity to aim it; the way a camera looks), a
 **point** light sits at the entity's position and reaches nothing beyond `radius`, and a **spot** light (`ENGINE_LIGHT_SPOT`, maintenance 2026-11-20) is a point light that shines along the entity's -Z only: full strength inside
@@ -635,10 +635,10 @@ position; the projection reports the pixel and the distance along the view direc
 `inner_cone`) still sets and reads directional and point lights, and gets `STRUCT_SIZE` for a spot light. A surface lights its world with up to 64 lights (the ambient term takes one slot); the rest are counted in `lights_refused` of `surface_state`.
 `world_set_environment(world, &engine_environment)` sets the world's ambient colour and intensity, the sky colour behind the scene (before the tone map) and the exposure; every surface that shows the world uses it.
 
-A world on which the host never calls `world_set_environment` and that has no light entity is drawn with the default sun of Day 359 (and ambient 0.2); once either exists the default sun is gone, so a host that wants a dark scene
+A world on which the host never calls `world_set_environment` and that has no light entity is drawn with the default sun (and ambient 0.2); once either exists the default sun is gone, so a host that wants a dark scene
 sets an environment with ambient 0. **Not built:** shadows (the renderer has none) and a sky gradient (a flat sky colour only); both are in `KNOWN-ISSUES.md`.
 
-## Hierarchy, names, visibility and material overrides (Phase 24 Day 362)
+## Hierarchy, names, visibility and material overrides
 
 - **Hierarchy.** `entity_set_parent(world, child, parent)` makes a child's transform relative to its parent's (the frame's transform system composes the world matrices); a parent of 0 makes it a root again; a cycle or the entity itself is
   refused with `INVALID_ARGUMENT`. Destroying a parent does not destroy its children: they become roots at the next frame. `entity_get_parent` reads the link.
@@ -650,7 +650,7 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
   **Fitting a picture to a quad** (maintenance, 2026-11-18): `albedo_uv` (`ENGINE_SLOT_VEC4`: scale u, scale v, offset u, offset v; the albedo is sampled at `uv * scale + offset`, default `(1, 1, 0, 0)`) and `albedo_uv_outside` (`ENGINE_SLOT_COLOR`, linear RGBA) let a host show a video frame of any aspect on a 16:9 screen without copying pixels: for a frame of aspect `a` on a screen of aspect `s`, `a > s` scales v by `a / s` and offsets v by `(1 - a / s) / 2`, `a < s` scales u by `s / a` and offsets u by `(1 - s / a) / 2`. With the outside colour's alpha above 0 the part of the quad outside the picture shows its rgb (the shader masks it, the same on every graphics API) and the coordinates inside are kept half a texel from the edge, so filtering never reads across it; with alpha 0 the texture's address mode applies as before. Only the albedo uses the transform. Set it when the frame size changes, not every frame; it costs one material copy, like any override.
   An entity holds up to 8 overrides; `entity_clear_slot_override` removes one or all. The copy is a material of the surface's material system, so it counts against its limit, and it is made again when the base material or the overrides change.
 
-## Skinned meshes and animation (Phase 24 Day 363)
+## Skinned meshes and animation
 
 - **Skeleton and player.** `ENGINE_COMPONENT_SKELETON_INSTANCE` (`engine_skeleton_instance.skeleton`, a resource id) makes an entity a skinned model: setting it loads the skeleton (`NOT_FOUND` when it is not mounted) and keeps it loaded. A mesh minted with `quality full` and a skin
   section, referenced by the same entity, is drawn skinned (with the surface's default skinned material when the reference names no material); an entity with no clip is drawn in the bind pose, and a skinned mesh on an entity with no skeleton instance is not drawn.
@@ -664,7 +664,7 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 - **Joints.** `skeleton_find_joint(world, entity, "arm", &index)` and `skeleton_joint_transform(world, entity, index, matrix16)` (column-major, in the skeleton entity's space, as the last frame left it; the bind pose before any clip). `entity_attach_to_joint(world, entity,
   skeleton_entity, joint)` makes an entity follow a joint (its own transform becomes relative to the joint); the entities below the attached one lag by a frame. A `skeleton_entity` of 0 detaches.
 
-## A glTF scene as a level (Phase 24 Day 364)
+## A glTF scene as a level
 
 - **Making the level.** Import with `ENGINE_IMPORT_EMIT_LEVEL` (the tool: `asset_mint import-gltf --emit-level`) and the default scene's node tree becomes one more resource of the result, of type `ENGINE_RESOURCE_LEVEL`, the last of `ids`: one entity per node reachable from the
   scene's roots, with its name (made valid, at most 48 bytes, made distinct with `_<index>`), its translation, rotation and scale, its parent, the mesh and the material of the mesh's first primitive and, for a skinned node, the skeleton instance. Nodes that
@@ -676,33 +676,33 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
   and is left out.
 - **Limits.** The spawn runs on the calling thread under the world lock, in time proportional to the entities; a very large level is better spawned between frames. A mesh with several primitives gets the material of its first. Levels that include other levels are not spawned (`UNSUPPORTED`).
 
-## Host textures (Phase 24 Day 365)
+## Host textures
 
 - **What one is.** A host texture is a picture the host keeps painting (a video frame, a canvas, a UI layer): `texture_create(engine, &engine_texture_info, &texture)` makes one of a width and a height (RGBA8, `ENGINE_TEXTURE_SRGB` marks it as colour), `texture_update(texture, pixels, stride, info)` gives it new pixels from any thread, `texture_resize` changes its size, `texture_destroy` ends it. Create and destroy count as engine objects: the engine is not destroyed while one lives.
 - **Latest wins.** An update copies the rows (the stride may be larger than a row; the padding is not read) under a short lock into one kept buffer, so the host's memory is free as soon as the call returns. An update that replaces one no device uploaded yet is counted in `engine_frame_stats.updates_replaced`; a producer faster than the frames costs only the copies.
 - **Resize** drops the pixels until the next update (a surface keeps the material's own value meanwhile); an update that carries another `width` and `height` resizes and updates in one step. `texture_read_pixels` returns a copy (`NOT_READY` before the first update). Sizes above `assets.host_texture.max_size` (8192) are `TOO_LARGE`; strides above 16 MiB too.
-- **Settings.** `assets.host_texture.max_size`, `assets.host_texture.upload_budget` (bytes a surface uploads per frame, default 8 MB; used from Day 366).
-- **Not yet.** Nothing draws a host texture before Day 366 (a material slot that names one); `textures_uploaded` and `bytes_uploaded` stay 0 until then.
+- **Settings.** `assets.host_texture.max_size`, `assets.host_texture.upload_budget` (bytes a surface uploads per frame, default 8 MB).
+- **Not yet.** Nothing draws a host texture yet (a material slot that names one); `textures_uploaded` and `bytes_uploaded` stay 0 until then.
 
-## Host textures on a surface (Phase 24 Day 366)
+## Host textures on a surface
 
 - **Binding.** `entity_set_slot_override(world, entity, "albedo_tex", &o)` with `o.kind = ENGINE_SLOT_HOST_TEXTURE` and `o.host_texture` set makes that entity draw the texture's newest pixels in place of the slot (`"normal_tex"` too). Entities that share the material keep theirs; the handle must name a live texture (`STALE_HANDLE` otherwise).
 - **Upload.** Each surface keeps, for each host texture an entity of its world names, one device texture and a ring of three mapped staging buffers; every frame it copies the newest pixels (rows padded to the device's pitch) and uploads them in one submission before the frame is drawn, at most `assets.host_texture.upload_budget` bytes per frame (the first texture of a frame always goes). A texture drawn by two surfaces is uploaded to each device. `surface_state.textures_uploaded` and `texture_bytes_uploaded` count the uploads of the surface; `frame_stats.textures_uploaded` and `bytes_uploaded` those since the previous frame call.
 - **Reverting.** A texture that was destroyed, has no pixels (never updated, or just resized) or did not fit the budget on its first frame leaves the slot at the material's own value for that frame; each such slot of each frame is counted in `frame_stats.slots_reverted`.
 - **Resize** makes a new device texture at the next update, after the device is idle; the material of the entity is rebuilt to point at it.
 
-## Labels: text in the world (Phase 24 Day 367)
+## Labels: text in the world
 
 - **The font.** The engine ships none: give it a font file's bytes once with `label_font_set(engine, data, size)` (TrueType or OpenType, copied, up to 32 MiB). A surface opens it at the first frame that has a label and a font; until then its labels are counted in `surface_state.labels_refused`.
 - **A label** is `ENGINE_COMPONENT_LABEL` (`engine_label`) on an entity with a transform: up to 256 bytes of UTF-8 text (line breaks, combining marks and malformed bytes are laid out by the text layer; a glyph the font lacks shows its `.notdef`), an RGBA colour, a size, an offset in world axes and an anchor (centre, start or end of the text on the point). `size` is pixels, or with `ENGINE_LABEL_SIZE_METRES` the height of the em square in metres, from which the surface computes the pixel size by the distance and the camera's field of view and rounds it to one of 8, 10, 12, 14, 16, 20, 24, 32, 48, 64, 96, 128, 192, 256 (the glyph atlas holds a few rasterizations); every size is clamped to 6..256 pixels.
 - **Where it is drawn.** At the entity's world position plus the offset projected through the frame's camera, over the picture after the tonemap, with no depth test (geometry never hides a label), facing the viewer by construction (constant orientation on screen). A hidden entity's label is not drawn; an entity attached to a joint carries its label with it. A label behind the camera or far off the screen is skipped. A surface draws up to 1024 labels per frame (the text renderer's budget is 8192 glyphs); the rest go to `labels_refused`.
-- **Not here.** A background plate, depth-tested labels and billboard quads (later); text above 256 pixels (Phase 28's outline meshes).
+- **Not here.** A background plate, depth-tested labels and billboard quads (later); text above 256 pixels (outline meshes).
 
-## Surviving rebinds, losses and several surfaces (Phase 24 Day 368)
+## Surviving rebinds, losses and several surfaces
 
 - **What a surface keeps and what it remakes.** A surface's scene (frame object, resident meshes and materials, device textures of host textures, the label font and the text atlas) belongs to the surface's device and is remade by `surface_rebind` from what the engine keeps: the resource host's content, the host textures' newest pixels (kept as the CPU source), the label font's bytes, the world itself. The host recreates nothing: the same world, camera, textures and labels draw on the new window, and the picture is the one before.
 - **Several surfaces.** One world may be bound to several surfaces, each with its own camera (`surface_set_camera`); each uploads the host textures its entities name to its own device (`surface_state.textures_uploaded` per surface), so destroying one surface leaves the others drawing. A world destroyed under a surface leaves it at the background colour with `world_status` `STALE_HANDLE`. A host texture may be destroyed before or after the entities that name it (the slots revert), and the engine refuses to be destroyed while any texture, world or surface lives (`IN_USE`).
-- **A lost device** (Day 369). When the device of a surface is lost, the next frame draws nothing on it (`lost` 1, a pending read-back fails with
+- **A lost device**. When the device of a surface is lost, the next frame draws nothing on it (`lost` 1, a pending read-back fails with
   `UNSUPPORTED`), and `surface_rebind` makes a new device and the scene on it, with the same picture as before. The new device is on the adapter the surface
   started on, never another one. On Direct3D 12 an adapter has one device for the whole process (`D3D12CreateDevice` hands back the one that exists), so
   every surface on the adapter loses its device at once, and a new device exists only once none of them holds the removed one: the first `surface_rebind`
@@ -712,35 +712,35 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
   test extension's `surface_lose_device` (`engine_test_extension.h`); `host_scene.c` loses one surface's device, then one of two surfaces', on both backends.
 - **Not covered by a test yet.** A fault-injection sweep through the frame path and the 5000-frame flat-count run are closing-pass items (`KNOWN-ISSUES.md`).
 
-## Windows: scenes on an `HWND` (Phase 24 Day 369)
+## Windows: scenes on an `HWND`
 
-The scene features of Days 359-368 run on Windows with Direct3D 12 and with Vulkan. The scene hosts' window (`tests/engine_library/host_window.h`, below) is
+The scene features run on Windows with Direct3D 12 and with Vulkan. The scene hosts' window (`tests/engine_library/host_window.h`, below) is
 `windows/host_window_win32.c` there: a window class of the host's, borderless windows of the exact client size (a captioned window has a smallest width), a
 message loop turned by the polls, and the walk-around's key posted as a `WM_KEYDOWN` message to the window. `HOST_SURFACE_API` (`d3d12` or `vulkan`, read by
 `host_surface_api_flags`) chooses the graphics API, so each scene test runs once per backend (`engine_c_scene_d3d12`, `engine_c_scene_vulkan`,
 `engine_c_walk_around_d3d12`, `engine_c_walk_around_vulkan`, plain and asan).
 
 - **Golden images.** On the PC (AMD Radeon 860M), Direct3D 12 and Vulkan draw the golden scene byte for byte the same, and both differ from the golden image
-  made on Linux (NVIDIA, Vulkan) by at most 2 in a channel, 40 of 76 800 values by more than 1: inside the rule of Day 358.
+  made on Linux (NVIDIA, Vulkan) by at most 2 in a channel, 40 of 76 800 values by more than 1: inside the rule above.
 - **One device per adapter.** On Direct3D 12 the surfaces of one adapter share one `ID3D12Device`: each surface's device is its own `rhi::Device`, but
   `D3D12CreateDevice` returns the one that exists. The RHI counts the users of a D3D12 device and only the last one reports the objects still alive at its
-  destruction (before Day 369, destroying a second surface reported the first one's objects as leaks). Losing it loses every surface on the adapter (above).
+  destruction (earlier, destroying a second surface reported the first one's objects as leaks). Losing it loses every surface on the adapter (above).
 - **The walk-around sample** builds and runs on Windows (`walk_around.exe`; `HOST_SURFACE_API=vulkan` for Vulkan).
-- **Off-screen surfaces and multi-material meshes (Day 381)** run on both Windows backends: `engine_c_offscreen` and `engine_c_acceptance_scene` take the
+- **Off-screen surfaces and multi-material meshes** run on both Windows backends: `engine_c_offscreen` and `engine_c_acceptance_scene` take the
   platform's own Direct3D 12, `engine_c_offscreen_vulkan` and `engine_c_acceptance_scene_vulkan` Vulkan (`HOST_SURFACE_API`, read by
   `tests/engine_library/host_surface_api.h`, which the window and the off-screen hosts share), and `engine_c_walk_around_offscreen_d3d12` and `_vulkan`
   show each picture in the window (`host_window_show` is a GDI blit there: the RGBA rows converted to a top-down 32-bit DIB and drawn with
   `SetDIBitsToDevice`). The acceptance picture (1280x720) differs between the two backends in 2 of 2 764 800 values, by 1. A lost device on
   Direct3D 12 loses both surfaces of the adapter, so `host_offscreen.c` rebinds the second when the first's rebind answers `ENGINE_ERROR_UNSUPPORTED`,
-  then the first again (the rule of Day 369, above).
+  then the first again (the rule above).
 
-## The walk-around sample (Phase 24 Day 371)
+## The walk-around sample
 
-`tests/engine_library/walk_around.c` is the phase's driving case as a plain C host: three skinned robots (one walks, two stand), three screens that show a pattern each, painted by a thread of their own through `texture_update`, name tags over the robots, a directional light with an ambient term, and a first-person camera (W A S D, the mouse looks, Escape quits). It builds the scene through the C API alone; `--frames N` makes it a test that draws N frames, stops the painters, rebinds the surface to a new window and checks the picture is the same and that no entity was unresolved. In test mode it also posts a W key press to its own window through the window system (held for ten frames) and checks that the camera moved forward: the host's event loop drives the scene. The walk-through is the tutorial [A 3D Scene in Your Window](../tutorials/a-3d-scene-in-your-window.md).
+`tests/engine_library/walk_around.c` is the driving case as a plain C host: three skinned robots (one walks, two stand), three screens that show a pattern each, painted by a thread of their own through `texture_update`, name tags over the robots, a directional light with an ambient term, and a first-person camera (W A S D, the mouse looks, Escape quits). It builds the scene through the C API alone; `--frames N` makes it a test that draws N frames, stops the painters, rebinds the surface to a new window and checks the picture is the same and that no entity was unresolved. In test mode it also posts a W key press to its own window through the window system (held for ten frames) and checks that the camera moved forward: the host's event loop drives the scene. The walk-through is the tutorial [A 3D Scene in Your Window](../tutorials/a-3d-scene-in-your-window.md).
 
-**Its window, on each platform (Day 370).** The two scene hosts reach their window through `tests/engine_library/host_window.h` (open the window system, open and close a window of a size in pixels, describe it as an `engine_surface_info`, poll and post the few events the walk-around reads): `linux/host_window_x11.c` is Xlib, `windows/host_window_win32.c` Win32 (Day 369, above), `macos/host_window_cocoa.m` an `NSWindow` whose plain content `NSView` gets the engine's `CAMetalLayer` (Day 355). On a Retina display the window is half as many points as the pixels asked, so the golden image of `host_scene.c` is the same 160x120 picture on every platform; on the Mac it is within the golden rule with Metal (seen: a largest difference of 2, 96 of 76,800 values off by more than 1). Host textures reach Metal through the RHI as everywhere (`engine_c/live_textures.*`: a ring of three persistently mapped staging buffers per texture and one buffer-to-texture copy per update): nothing Metal-specific was needed (the walk-around's `textures_uploaded` counts every screen on the Mac). Every call is on the main thread there, as a Cocoa surface requires (the screens' painter threads call only `texture_update`).
+**Its window, on each platform.** The two scene hosts reach their window through `tests/engine_library/host_window.h` (open the window system, open and close a window of a size in pixels, describe it as an `engine_surface_info`, poll and post the few events the walk-around reads): `linux/host_window_x11.c` is Xlib, `windows/host_window_win32.c` Win32 (above), `macos/host_window_cocoa.m` an `NSWindow` whose plain content `NSView` gets the engine's `CAMetalLayer`. On a Retina display the window is half as many points as the pixels asked, so the golden image of `host_scene.c` is the same 160x120 picture on every platform; on the Mac it is within the golden rule with Metal (seen: a largest difference of 2, 96 of 76,800 values off by more than 1). Host textures reach Metal through the RHI as everywhere (`engine_c/live_textures.*`: a ring of three persistently mapped staging buffers per texture and one buffer-to-texture copy per update): nothing Metal-specific was needed (the walk-around's `textures_uploaded` counts every screen on the Mac). Every call is on the main thread there, as a Cocoa surface requires (the screens' painter threads call only `texture_update`).
 
-## Meshes with several materials (Phase 24 Days 374-377)
+## Meshes with several materials
 
 A mesh may have **slots**: index ranges of one mesh, each its own draw (the primitives of an imported glTF mesh, in the
 file's order). The renderer draws one object per slot (`RenderObjectDesc::first_index` and `index_count`), instancing only
@@ -756,7 +756,7 @@ primitives' materials differ). A host sets them through the table:
   parameters) apply to every slot. At most 16 slots; a mesh with more draws whole.
 - Known limit: a glTF primitive without a material inherits the entity's base material (the first primitive's).
 
-## Off-screen surfaces (Phase 24 Days 378-380)
+## Off-screen surfaces
 
 `ENGINE_SURFACE_OFFSCREEN` (capability `ENGINE_CAP_SURFACE_OFFSCREEN`) makes a surface with no window and no window
 system: only `kind`, `flags`, `width`, `height` and `scale` are read. The engine draws into an RGBA8 target of its own
@@ -775,7 +775,7 @@ as on a window surface. Several off-screen surfaces, and a window surface beside
   device, target and ring and binds the same world again.
 - `engine.h`: `Surface::AcquireFrame` and `Surface::ReleaseFrame`.
 
-### Overrides of one mesh slot, and the acceptance scene (Day 383)
+### Overrides of one mesh slot, and the acceptance scene
 
 `entity_set_mesh_slot_override(world, key, mesh_slot, slot, value)` is `entity_set_slot_override` for one mesh slot: a
 robot's `Screen` slot shows a host texture while its body keeps the material's own. It makes the entity draw one part per
@@ -786,7 +786,7 @@ robot's screen its own host texture, draws 1280x720 into an off-screen surface a
 a lost device and a slow host. The glTF importer writes meshes in the full vertex layout, the one the G-buffer shaders
 read (a packed mesh's attributes do not feed them).
 
-## Scenes: conventions and the host's duties (Phase 24 Day 372)
+## Scenes: conventions and the host's duties
 
 | What | Convention |
 |---|---|
@@ -799,13 +799,13 @@ read (a packed mesh's attributes do not feed them).
 
 The host's duties: call `frame` from one thread (each call runs the animation system, the transform and attachment systems of every world, then draws every surface with a bound world, in that order); give `resource_add` content before an entity names it (an entity naming a missing resource draws nothing and is counted in `entities_unresolved`); let any thread call `texture_update`, but not `texture_destroy` while a frame is running on another thread without its own care (a destroyed texture only reverts the slot); give the surface's `scale` (the window's DPI scale) so labels and the UI are the size the user expects; destroy things in the order textures, surfaces, worlds, engine (`IN_USE` otherwise). What was built against the plan: no shadows, no orthographic cameras, no zero-copy GPU textures from the host, no per-vertex morph targets; labels have no depth test and no plate (`KNOWN-ISSUES.md`).
 
-## Physics: bodies, colliders and queries (Phase 25 Day 408)
+## Physics: bodies, colliders and queries
 
 Two components make an entity physical: `ENGINE_COMPONENT_RIGID_BODY` (`engine_rigid_body`: static, kinematic or dynamic, the mass in kilograms or 0 for "from the shape and its density", dampings, a gravity scale) and `ENGINE_COMPONENT_COLLIDER` (`engine_collider`: a sphere, box or capsule, its offset and rotation on the body, friction, restitution, density, a layer and the group and mask that select what it meets, a trigger flag). Both are size-prefixed, validated before anything is stored (`INVALID_ARGUMENT` for a number that is not finite or out of range, with the reason in `last_error`), and read back with `component_get`. **A triangle mesh** (glTF colliders, 2026-11-20): `ENGINE_SHAPE_MESH` with `mesh_resource`, an `MCOL` the host added or an import made (`ENGINE_RESOURCE_MESH_COLLIDER` among the import's results), for static bodies only (a mesh collider on a body that is not static, or a body made non-static under a mesh collider, is `INVALID_ARGUMENT`, whichever is set second); it is made at the end of the next frame at the entity's world scale (as a spawned level's), so `component_has` and queries see it from then on, while `component_get` returns the host's values at once. `mesh_resource` and the `reserved` field before it were appended: a host of the first `engine_collider` still sets and reads the primitives, and gets `STRUCT_SIZE` for a mesh. Convex hulls and compounds are refused with `UNSUPPORTED`. An entity with a transform, a body and a collider and no parent is simulated (a static one with a parent too, placed by its world transform: glTF colliders): the frame makes its body (before it steps, in the order animation input, body sync, physics step, transform system) and writes the body's pose back to the entity's transform, so a host reads motion with `component_get` of the transform. A world that never had a body component pays nothing for physics. `engine_frame_stats` reports `physics_us` (making the bodies), `physics_bodies` and `physics_steps`; a host built before them passes the older `struct_size` and is served.
 
 The table's physics functions take the world and the entity's key: `physics_set_gravity`, `body_apply_force` and `body_apply_impulse` (at a world point, or at the centre of mass when it is NULL), `body_set_velocity` and `body_get_velocity` (either vector may be NULL), `body_teleport` (the body and the entity's transform move at once), `physics_raycast` (the closest hit: the entity's key, the point, the normal facing against the ray and the distance; triggers are not hit) and `physics_overlap_sphere` / `physics_overlap_box` (keys into a host array with a capacity and a total, as `query`). A body is made by the frame or by the first call that needs it, so a call before any frame works; an entity that has no body answers `NOT_FOUND`, a force on a static body `UNSUPPORTED`. Nothing of the engine's memory crosses the boundary. The step rate, gravity, substeps, sleeping and the rest are the `physics.*` settings (`physics.gravity_y`, `physics.step_hz`, ...), read when the engine is created and refused like any setting when unknown or out of range.
 
-## Physics II: joints, characters, events and snapshots (Phase 25 Day 409)
+## Physics II: joints, characters, events and snapshots
 
 Two more components: `ENGINE_COMPONENT_JOINT` (`engine_joint`) and `ENGINE_COMPONENT_CHARACTER` (`engine_character`); the query mask is now `0x3FFF` (a bit above it is refused). The entity that has a joint component is the joint: `entity_a` and `entity_b` are the keys of two entities that are bodies (0 on one side ties the other to the world), `kind` is ball, distance, fixed or hinge, the anchors and the hinge axis are in world space at the time the joint is made, and `flags` carry collide-connected, the hinge limit and the hinge motor. The frame makes the physics joint when both bodies exist (a joint waiting for a body is not an error), a joint whose numbers change (the component set again) is made again, and a joint that breaks (`break_force` or `break_torque` above zero) loses its component by the end of that frame and is reported as an event. `joint_reaction` reads the force and torque the joint carried in the last step and fails with NOT_FOUND for an entity that has no joint in the physics.
 
@@ -878,7 +878,7 @@ after its engine so it is destroyed first (the engine refuses with `IN_USE` whil
 names, parents, queries, physics, a counter and a job through the layer; the surface, texture, import and resource wrappers are compiled by it but not yet run
 through the layer: only the C programs run those functions).
 
-## Writing a host: the short path (Days 346-357)
+## Writing a host: the short path
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.
 2. Ask for the table: `engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &api)`; a newer library serves an older host (the table only grows), an older library refuses a newer host with a status.
@@ -886,9 +886,9 @@ through the layer: only the C programs run those functions).
 4. Drive the engine from your loop (`frame`), or hand it a window (`surface_create`) and forward your events (`surface_input`); results the engine wants to tell you arrive through the callbacks you registered.
 5. Destroy in reverse order: surfaces and worlds, then the engine; unload the library only after `destroy` (the unload and reload tests prove this works any number of times).
 
-## What the shared build costs (Day 356)
+## What the shared build costs
 
-Measured in Release on Linux x86-64 (figures and method: the spec's "Day 356 results"): `libengine.so.1.0` is 7.7 MB; a call through the function table costs 15-100 ns
+Measured in Release on Linux x86-64 (figures and method: the engine-library design spec's results section): `libengine.so.1.0` is 7.7 MB; a call through the function table costs 15-100 ns
 (an empty `frame` 90-99 ns, an entity create and destroy about 33-36 ns, a component get or set 15-28 ns), the same whether the host linked the C layer statically
 or loaded the shared library; the static default, which most programs use, is not slower for the option existing. A resource load is dominated by file I/O,
 which the C layer does not change.
@@ -902,7 +902,7 @@ which the C layer does not change.
 - **One engine per process is the tested case;** several engines in one process share the allocator and the job system by design (`One of everything`).
 - **Platform notes** are in the sections above: the Linux and POSIX loader, `engine.dll` and the HWND on Windows, the dylib and the `NSView` on macOS; iOS links statically.
 
-## Audio: a host-driven mixer (Phase 26 Days 438-439)
+## Audio: a host-driven mixer
 
 `audio_open` (`engine_audio_info`: rate, channels, voice count, limiter) makes a mixer that has **no device and no thread**: the host calls `audio_render(frames, out)` from its own audio callback (or from any thread for an offline render) and gets interleaved floats. `audio_render` takes no lock, allocates nothing and never blocks; one thread at a time may call it, and every other audio function may be called while it runs. The same bytes come out whatever the callback size.
 
@@ -922,7 +922,7 @@ A live stream never ends. When the ring is empty the voice plays silence for the
 
 Not in the C API (recorded in `KNOWN-ISSUES.md`): occlusion of sources through the physics world (the `occlusion` flag is kept but nothing answers it yet) and device selection (the host owns the device).
 
-## Scripts: loading, calling and host functions (Phase 27 Day 471)
+## Scripts: loading, calling and host functions
 
 A library built with the script module (`ENGINE_CAP_SCRIPT` in `engine_info.caps`; Linux, Windows and macOS x86-64; a library built without the script module answers `UNSUPPORTED`) lets a host put scripts in a world.
 The world's script runtime is made by the first `script_load`, the first script component or the first host function, from the `script.*` settings read when the engine was created
@@ -947,7 +947,7 @@ The world's script runtime is made by the first `script_load`, the first script 
   A script's `vec2`, `vec3`, `vec4` and `quat` come out as arrays of numbers.
 - **`script_stats`** reports the partitions, ticks, live instances, updates, errors, calls and host calls, and how many scripts and host functions the world has.
 
-### Events and tasks (Phase 27 Day 472)
+### Events and tasks
 
 - **`script_event_emit`** sends an event from the host (a name of 1 to 64 bytes, the first root of a pool as the payload, a target entity id or 0 for every subscriber). It enters the world's event bus at
   once and is delivered at the start of the world's next script tick, in the bus order (host emits in call order; events the scripts emit follow at the sync points). It needs the runtime

@@ -7,7 +7,7 @@
 #include "ui/surface.h"
 #include "ui/testing/software_raster.h"
 
-//! The offscreen test harness (Phase 15, Day 192): a surface with no window, a font, an atlas and helpers to send
+//! The offscreen test harness: a surface with no window, a font, an atlas and helpers to send
 //! input, run frames and read rectangles and pixels.
 
 namespace vse::ui

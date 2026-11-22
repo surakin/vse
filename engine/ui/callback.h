@@ -4,7 +4,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-//! A list of listeners without `std::function` (Phase 15, Day 195): a function pointer and a user pointer each,
+//! A list of listeners without `std::function`: a function pointer and a user pointer each,
 //! disconnected by token.
 
 namespace vse::ui

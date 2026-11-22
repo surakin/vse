@@ -6,7 +6,7 @@
 #include "ui/theme.h"
 #include "ui/widget.h"
 
-//! The display widgets (Phase 15, Day 195): image, progress bar, separator and panel. Labels are in
+//! The display widgets: image, progress bar, separator and panel. Labels are in
 //! `ui/widgets/label.h`, buttons in `ui/widgets/buttons.h`.
 
 namespace vse::ui

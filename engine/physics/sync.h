@@ -33,7 +33,7 @@ struct SyncReport
     u32 destroyed = 0;
     /// Entities whose components were refused (not valid): they get no body, and the call reports them again next time.
     u32 refused = 0;
-    /// Static bodies with a parent moved to follow their entity's world transform (glTF colliders Day 1).
+    /// Static bodies with a parent moved to follow their entity's world transform.
     u32 replaced = 0;
 };
 
@@ -44,7 +44,7 @@ struct SyncReport
 ///
 /// Entities are visited in entity order (index, then generation), not in chunk order, so two worlds built the same way
 /// get the same body ids. A new body starts at the entity's `LocalTransform` and `Velocity` (optional). An entity with
-/// a `Parent` is not simulated, except a **static** body (glTF colliders Day 1): it is placed at the translation and
+/// a `Parent` is not simulated, except a **static** body: it is placed at the translation and
 /// rotation of its `ecs::WorldTransform` (the scale divided out of each column: the caller sizes the shape) and follows
 /// it, every call moving the body where the world matrix changed (`PhysicsWorld::SetTransform`, which wakes the bodies
 /// touching it, and the movable bodies touching it at the new place are woken too; counted in `replaced`). A world

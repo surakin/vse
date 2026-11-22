@@ -1,7 +1,7 @@
 #pragma once
 
 //! The texture blob (type `TEXR`, version 1): every mip level of every layer, laid out the way the upload wants, built
-//! by [[asset::BuildTextureBlob]] and read zero-copy through [[asset::TextureView]]. Phase 22 Day 323.
+//! by [[asset::BuildTextureBlob]] and read zero-copy through [[asset::TextureView]].
 //!
 //! Sections (ids from 16, little-endian, each 64-byte aligned by the container): 16 header (64 bytes), 17 the level
 //! table (16 bytes per subresource: `u64` offset into the data section, `u32` size, `u32` row pitch; subresource

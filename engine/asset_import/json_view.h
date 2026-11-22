@@ -2,7 +2,7 @@
 
 //! A typed, read-only view of a JSON document for the glTF importer.
 //!
-//! Phase 22 Day 335. The parser is the vendored yyjson
+//! The parser is the vendored yyjson
 //! (`third_party/yyjson`, PLAN.md assumption #19), reached only through this header and `json_view.cpp`: the input may
 //! be hostile (a file fetched from a room), so nothing here throws, aborts or allocates beyond a bound set before
 //! parsing. Every accessor that can fail returns a [[asset::Status]] and names the path of the value it refused

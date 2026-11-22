@@ -51,7 +51,7 @@ struct DeviceCaps
     Format depth_format = Format::D32_Float;
     /// Nanoseconds per GPU timestamp tick; 0 when timestamps are unsupported.
     f32 timestamp_period_ns = 0.0f;
-    /// Whether bindless (descriptor-indexed) resources are supported; reserved, always false in Phase 4.
+    /// Whether bindless (descriptor-indexed) resources are supported; reserved, always false.
     bool supports_bindless = false;
     /// The bytecode format `CreateShader` takes: SPIR-V on Vulkan, DXIL on Direct3D 12. Pick the module from a
     /// [[rhi::ShaderBlobSet]] with it; the null device takes the format its options name (SPIR-V by default).

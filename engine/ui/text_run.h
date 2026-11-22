@@ -5,7 +5,7 @@
 #include "types.h"
 #include "ui/theme.h"
 
-//! A string laid out in one font, cached (Phase 15, Day 195): what a label, a button and a check box draw their text
+//! A string laid out in one font, cached: what a label, a button and a check box draw their text
 //! from.
 
 namespace vse::ui

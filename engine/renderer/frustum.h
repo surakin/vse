@@ -1,7 +1,7 @@
 #pragma once
 
 //! The view frustum and the tests that decide whether an object can be seen. The types moved to `math/geometry.h`
-//! (Phase 18 Day 238), shared with the spatial module; the renderer keeps its names for them here, so no caller
+//!, shared with the spatial module; the renderer keeps its names for them here, so no caller
 //! changes. The frustum is built from a matrix of
 //! [[renderer::PerspectiveVulkan]] (depth 0..1).
 

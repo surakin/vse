@@ -1,11 +1,11 @@
 # Networking: addresses, endpoints, errors, sockets, the reactor and TCP streams
 
-Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270), framed TCP streams (Day 271), the message codec (Day 272), the transport interface, the simulated network and transport, and the conformance suite (Day 273), the UDP transport's packet layer and handshake (Day 274). Next: the UDP transport's channels and reliability (Days 275-276) and the TCP transport (Day 277).
+Status: Built: addresses, endpoints and the error type, the socket interface with its Linux backend and the access gate, the reactor, the asynchronous operations and timers. name resolution, listeners and the connect helpers, framed TCP streams, the message codec, the transport interface, the simulated network and transport, and the conformance suite, the UDP transport's packet layer and handshake. Next: the UDP transport's channels and reliability and the TCP transport.
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
 
-**Trust:** until the encryption outcome of Day 280 is built, the engine's transports are for trusted networks only. Nothing here hides or authenticates data.
+**Trust:** until encryption is built (it is deferred), the engine's transports are for trusted networks only. Nothing here hides or authenticates data.
 
 The module `engine/net` (namespace `net`) is the only place that calls the operating system's socket API (the gate `net_access_check` fails on a socket call or a socket
 header anywhere else). The first half of this page covers the part with no system calls at all: values that name a peer, and the way failures are reported.
@@ -18,7 +18,7 @@ platform and are tested exhaustively on any machine, Windows scope-id rules incl
 |---|---|
 | `Address` | An IPv4 or IPv6 address: four or sixteen bytes in network order and, for IPv6, an optional scope (a numeric interface index or an interface name). |
 | `Endpoint` | An `Address` and a `u16` port. Port 0 means "any port" when binding. |
-| `EndpointSet` | At most 16 endpoints, in order: the shape of a resolver's answer (Day 270). |
+| `EndpointSet` | At most 16 endpoints, in order: the shape of a resolver's answer. |
 | `AddressText`, `EndpointText` | Fixed buffers holding canonical text. Formatting allocates nothing. |
 | `Status`, `ErrorCode` | The result of every fallible call: a portable code and the operating system's error number, kept for logs. |
 
@@ -89,7 +89,7 @@ No network call throws or aborts on a network failure. A call returns a `Status`
 | `Invalid`, `Unsupported`, `Other` | The caller passed something refused; the platform lacks the feature; anything else. |
 
 Branch on the code, never on `OsError()`; the number (`errno` or the Winsock code) is there for logs. The table that maps each operating system's numbers to these
-codes lives in the backends (Days 268 and 278) and is tested against a table of the numbers.
+codes lives in the backends and is tested against a table of the numbers.
 
 `ENGINE_TRY(expr)` returns a failed `Status` from the enclosing function in one line, as it does for `database::Status`.
 
@@ -99,7 +99,7 @@ codes lives in the backends (Days 268 and 278) and is tested against a table of 
 are built on it.
 
 - **Everything is non-blocking**, from the moment the socket exists; accepted sockets too. A call that cannot finish returns `WouldBlock` and has done
-  nothing. Until the reactor of Day 269 exists, a test waits by calling again; the reactor will turn the same calls into `co_await`s.
+  nothing. Until the reactor exists, a test waits by calling again; the reactor will turn the same calls into `co_await`s.
 - **Partial reads and writes are results.** `Send` reports how many bytes the system took, `Receive` how many arrived; a count below the request is not an
   error. On a stream, `Receive` reports the end of the stream (the peer shut down its writing half) as `Closed`, after all the data.
 - **A connect is two steps.** `Connect` returns success if the connection is made at once and `WouldBlock` if it is under way; when the socket is writable,
@@ -147,7 +147,7 @@ system granted: Linux doubles the request and caps it at `net.core.rmem_max`), `
 
 `engine/net/BACKEND.md` is the checklist for a new platform: every `Socket` operation with its rules, the error table, and the quirks of Windows, macOS,
 mobile and consoles. The test `net_backend_lists` keeps it in step with the header. Linux and macOS share `engine/net/posix/`; Windows has its own,
-`engine/net/windows/` (Day 278). macOS adds `engine/net/macos/` (Phase 21 Day 310): its hooks and a kqueue poller.
+`engine/net/windows/`. macOS adds `engine/net/macos/`: its hooks and a kqueue poller.
 
 ### On Windows
 
@@ -168,7 +168,7 @@ inside the backend, and the interface's rules hold on both:
 
 ### On macOS
 
-The same interface and the same tests run on macOS (Phase 21 Day 310), through the POSIX backend with macOS's hooks and a kqueue poller. What differs:
+The same interface and the same tests run on macOS, through the POSIX backend with macOS's hooks and a kqueue poller. What differs:
 
 - Sockets are made non-blocking, close-on-exec and free of `SIGPIPE` (`SO_NOSIGPIPE`) right after they are created or accepted: macOS has no flags for
   it at creation. A program that forks while another thread opens sockets can pass one to its child in that moment; spawn with
@@ -280,7 +280,7 @@ jobs::Task<usize> EchoOnce(TcpStream& stream, ByteSpan frame) {
 `net::NetWriter` writes into a buffer you own (a packet, say) and `net::NetReader` reads it back; both are in `engine/net/codec.h`. Bits are packed from the low bit of the first byte, so a
 32-bit integer written at a byte boundary is the little-endian bytes of `bytes::ByteWriter`, and a ranged integer takes only the bits its range needs.
 
-- **Values.** `WriteBits`, `WriteBool`, `WriteRange(value, min, max)` (the fewest bits; none for a single value), fixed-width integers and raw floats, canonical varints (the Phase 19 encoding, at any bit
+- **Values.** `WriteBits`, `WriteBool`, `WriteRange(value, min, max)` (the fewest bits; none for a single value), fixed-width integers and raw floats, canonical varints (the storage encoding, at any bit
   offset) and zigzag signed varints, strings and byte arrays with a **mandatory maximum length** (checked before anything is allocated: a length that promises more than the message holds is `Truncated`), and
   `AlignToByte` (the padding is zero, and the reader insists on it, so a message has one valid encoding).
 - **Quantized values.** `Quantize`/`WriteQuantized` map a float in `[min, max]` onto `2^bits` levels; the error is at most half a step, `(max - min) / (2 * (2^bits - 1))`, plus one `f32` rounding. A value outside the
@@ -331,14 +331,14 @@ of 256, keep-alive and time-out). It is the specification by example of the inte
 ### The conformance suite
 
 `tests/net/transport_conformance.h` holds the tests once, as templates over a fixture that makes transports (`MakeServer`, `MakeClient`, `ServerEndpoint`, `DeadEndpoint`, `Destroy`, `Pump`, `Lossy`). The
-simulated transport runs them over a clean link and over a hostile one (10% loss, reordering, duplication, corruption); the UDP and TCP transports of Days 274-277 add a fixture each and must pass the same
+simulated transport runs them over a clean link and over a hostile one (10% loss, reordering, duplication, corruption); the UDP and TCP transports add a fixture each and must pass the same
 checks: open and accept, close reasons, a refused connect, reliable streams intact and in order, no duplicates, sequencing, size and channel limits, independent channels, many connections, close during send, no events
 after close, and destruction with traffic in flight.
 
 ## The UDP transport: packets and the handshake
 
 `net::UdpTransport` (`engine/net/udp_transport.h`) runs over a `net::DatagramPort` (`SocketDatagramPort` on a real non-blocking UDP socket, `SimDatagramPort` on the simulated network) and a `net::Clock`, so the same code is tested
-deterministically and over loopback. Day 274 builds the packet layer, the handshake and the connection state machine; Day 275 adds the data plane (next section); congestion control, the round-trip estimate and the application cap are the section after it. The wire format, every integer little-endian, is written out in `engine/net/udp_protocol.h`.
+deterministically and over loopback. The UDP transport builds the packet layer, the handshake and the connection state machine, and adds the data plane (next section); congestion control, the round-trip estimate and the application cap are the section after it. The wire format, every integer little-endian, is written out in `engine/net/udp_protocol.h`.
 
 - **Handshake.** `ConnectRequest` (padded to 1200 bytes) -> `Challenge` (17 bytes: the client's salt and a cookie) -> `ChallengeResponse` (padded again, with the cookie) -> `Accepted` (the connection id). The server **keeps nothing**
   until the response validates: the cookie is `SipHash-2-4` under a secret key of the endpoint (address, scope, port), the client's random salt and the time period (`cookie_period_nanos`, a cookie lives two periods). A request
@@ -348,8 +348,8 @@ deterministically and over loopback. Day 274 builds the packet layer, the handsh
 - **Packets.** A payload packet carries the connection id, a 16-bit sequence, the newest sequence received and 32 bits for the 32 before it (`udp::ReceiveWindow`, `udp::SendLog`). Comparison is wraparound-safe; a sequence seen before, or more
   than 32 behind the newest, is dropped and counted. A packet from an unknown connection id is answered by a 3-byte `Reset`, which closes the client's connection with `DisconnectReason::Reset`. Acknowledgements ride on payloads; a packet that carried a
   message and nothing else to send is acknowledged by an empty packet after `ack_delay_nanos`, and an idle connection sends one per `keepalive_nanos`. `Close` repeats a `Disconnect` packet `close_repeats` times; silence for `timeout_nanos` is `TimedOut`.
-- **Trust.** The cookie stops spoofed-source floods and amplification. It does not authenticate a peer, and nothing is encrypted: until the encryption outcome of Day 280, use the transport on trusted networks only. SipHash is a published keyed hash
-  (the published test vectors are in `tests/net/udp_handshake_test.cpp`), not a replacement for the audited primitive Day 280 decides on.
+- **Trust.** The cookie stops spoofed-source floods and amplification. It does not authenticate a peer, and nothing is encrypted: until encryption is built (it is deferred), use the transport on trusted networks only. SipHash is a published keyed hash
+  (the published test vectors are in `tests/net/udp_handshake_test.cpp`), not a replacement for the audited primitive that encryption would need.
 
 ## The UDP transport: channels, reliability and fragmentation
 
@@ -375,7 +375,7 @@ All four `net::Reliability` kinds work on `net::UdpTransport` (`Supports` is tru
   `rtt_seconds` is the smoothed round trip (gain 1/8), `jitter_seconds` its mean deviation (gain 1/4). A frame times out after `1.5 x srtt + 4 x variance` (30 ms to 2 s, doubling per try); a packet is declared lost by three newer acknowledged ones only once it is older than `1.25 x srtt + 4 x variance`.
 - **Congestion control** (NewReno-style, in bytes; the unit is one 1200-byte packet). The window starts at 10 packets; below `ssthresh` each acknowledged packet adds its size (slow start), above it `1200 x size / window` (congestion avoidance), and only while the window is at least half full. A loss halves the window (never below 2 packets) and sets
   `ssthresh`, once per round trip (losses of packets sent before the last cut are the same event). A time-out sets `ssthresh` to half and the window to 2 packets. Data leaves only while the bytes in flight are below the window (one packet may always be in flight); acknowledgement-only and keep-alive packets are not held back.
-  **Pacing:** once a round trip is known, a token bucket refills at `1.25 x window / srtt` with a burst of 4 packets, so a window opening does not send itself at once. **Application cap:** `max_bandwidth_bytes_per_second` is a second bucket on top (0 for none). The settings system names it `net.max_bandwidth_bytes_per_second` on Day 281.
+  **Pacing:** once a round trip is known, a token bucket refills at `1.25 x window / srtt` with a burst of 4 packets, so a window opening does not send itself at once. **Application cap:** `max_bandwidth_bytes_per_second` is a second bucket on top (0 for none). The settings system names it `net.max_bandwidth_bytes_per_second`.
   The window and flight size are in `ConnectionStats::window_bytes` and `bytes_in_flight`; `UdpConnectionInfo` counts `window_cuts` and `timeouts_fired`.
 - **Backpressure.** `Send` returns `LimitExceeded` when `max_queued_frames` is reached. An unreliable message instead discards the oldest queued unreliable frames to make room (counted in `dropped_unreliable`): a reliable message is delayed by a full queue, an unreliable one is not worth waiting for.
 - **Silence.** An idle connection sends an empty packet every `keepalive_nanos`; silence for `timeout_nanos` ends it with `TimedOut` (a blackout shorter than that is survived, tested at 5 s against the default 10 s). The path MTU is fixed at 1200 bytes; probing for a larger one is left out.
@@ -388,7 +388,7 @@ All four `net::Reliability` kinds work on `net::UdpTransport` (`Supports` is tru
 
 `net::TcpTransport` (`net/tcp_transport.h`) is the same polled `Transport` over one TCP stream per connection, for a store over the network, tools and remote debugging. Like the UDP transport it does no I/O itself: it talks to a `net::StreamProvider` (`net/stream.h`: `Listen`, `Accept`, `Connect`) whose streams are `net::StreamIo` (`FinishConnect`, `Receive`, `Send`, `ShutdownWrite`, all non-blocking) and reads a `net::Clock`. `SocketStreamProvider` (real sockets, `TCP_NODELAY`) and `SimStreamNetwork` (reliable in-order bytes with a latency, a bounded send buffer, an optional read size such as one byte at a time, refusal when nothing listens) are the two providers.
 
-- **Frames.** Every item is a frame of the Day 271 format (a length, then the payload). The payload starts with a type byte: Hello (version, channels, largest message), Data (channel, reliability, bytes), Close (a `u32` code), Ping and Pong (a time stamp, the in-band round-trip sample). A frame longer than the largest message plus 16 bytes ends the connection with `ProtocolError` before any of it is buffered.
+- **Frames.** Every item is a frame of the packet format (a length, then the payload). The payload starts with a type byte: Hello (version, channels, largest message), Data (channel, reliability, bytes), Close (a `u32` code), Ping and Pong (a time stamp, the in-band round-trip sample). A frame longer than the largest message plus 16 bytes ends the connection with `ProtocolError` before any of it is buffered.
 - **Handshake.** The client sends Hello when the stream connects; the server answers with its Hello only after it has read a valid one, so a stream that sends garbage, a wrong version or nothing gets no answer and is dropped (`ProtocolError`, or `TimedOut` after `handshake_timeout_nanos`). The connection opens with the smaller channel count and message size of the two sides.
 - **Reliability.** A stream is reliable and ordered: `Supports` is true for `ReliableOrdered` and `ReliableUnordered` only, `DegradesUnreliable()` is true, and the two unreliable kinds are sent as reliable ordered (never lost, never reordered, which satisfies every guarantee those kinds make).
 - **Budgets.** `max_connections` (a stream over the cap is closed on arrival), `max_send_queue_bytes` per connection (`Send` returns `LimitExceeded`: backpressure, retry later), `read_bytes_per_poll` per connection and pass (one busy peer does not starve the rest), `timeout_nanos` of silence (pings every `ping_interval_nanos` keep a quiet connection alive).
@@ -397,19 +397,19 @@ All four `net::Reliability` kinds work on `net::UdpTransport` (`Supports` is tru
 
 ## What the network layer does not protect against
 
-Nothing is trusted before the handshake is done, every length is checked against a limit before memory is allocated for it, and every parser is fuzzed. Until the encryption outcome of Day 280 is built the transports are for **trusted networks**: they do not authenticate a peer and they do not hide or protect data.
+Nothing is trusted before the handshake is done, every length is checked against a limit before memory is allocated for it, and every parser is fuzzed. Until encryption is built (it is deferred) the transports are for **trusted networks**: they do not authenticate a peer and they do not hide or protect data.
 
 | Threat | Status | How |
 |---|---|---|
 | Spoofed source address, handshake flood | mitigated | A UDP server keeps no state until the client repeats a cookie bound to its address; requests must be full-size, so no answer is larger than the request (no amplification). |
-| State exhaustion (half-open connections, many addresses) | mitigated | `max_connections`, per-address caps, handshake and accept time-outs, the retired-handshake tables of Day 274. |
+| State exhaustion (half-open connections, many addresses) | mitigated | `max_connections`, per-address caps, handshake and accept time-outs, the retired-handshake tables. |
 | Handshake and accept floods | mitigated | `net::RateLimiter` (`net/rate_limit.h`): a token bucket per address (an IPv6 /64 counts as one) and one in total; UDP drops the excess silently, TCP closes the stream on arrival. Settings: `UdpTransportConfig::handshake_limits`, `TcpTransportConfig::accept_limits` (defaults `DefaultHandshakeLimits()`, `DefaultAcceptLimits()`). |
 | Repeat offenders | mitigated (TCP) | A stream that fails its handshake is a strike; three in a minute ban the address for five minutes (the address is real: the stream connected). UDP has **no bans**: before a cookie checks, the source address may be forged, and a ban would let an attacker lock a real address out; bad cookies are only counted (`dropped_bad_cookie`). The table never grows: 4,096 entries, eviction prefers idle entries and never a ban while another entry can go. |
 | Memory exhaustion by size fields | mitigated | Per-connection budgets (`max_receive_buffer_bytes`, `max_reassemblies`, `max_send_queue_bytes`), global budgets (`max_total_receive_buffer_bytes`, `max_total_send_queue_bytes`; a connection that would pass the global receive budget is ended with `ProtocolError`, counted in `budget_closes`), frames bounded by the largest message (a Hello-sized frame before the handshake), and a stream's buffers allocated when first used (`TcpStream`: 4 KiB send ring doubling to its capacity, read and scratch buffers at first use). |
 | Lying acknowledgements, sequence numbers | mitigated | The send log only acknowledges packets it sent; sequences more than 32 behind are dropped, repeats are duplicates, a jump costs nothing. |
 | Slow-loris (a stream that sends a byte and stops) | mitigated | The handshake time-out ends it and counts as a strike; the idle time-out ends an open one. |
 | A peer that asks and never reads | mitigated | A TCP connection whose queued output passes `max_send_queue_bytes` through Pong replies is ended. |
-| Eavesdropping, tampering, replay of payload packets | **not protected** | Until Day 280's outcome is built. Payload packets are not authenticated: a path attacker can inject or drop them. |
+| Eavesdropping, tampering, replay of payload packets | **not protected** | Until encryption is built (it is deferred). Payload packets are not authenticated: a path attacker can inject or drop them. |
 | Spoofing on an untrusted path after the handshake | **not protected** | The connection id and sequence numbers are guessable by an on-path attacker. |
 | A distributed flood from many real addresses | **not protected** | The global buckets bound the rate the server spends work on, not the traffic that arrives; that is the network's job. |
 

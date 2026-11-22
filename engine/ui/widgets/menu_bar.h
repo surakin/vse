@@ -6,7 +6,7 @@
 #include "ui/widget.h"
 #include "ui/widgets/menu.h"
 
-//! The menu bar (Phase 15, Day 198): a row of titles, each opening a [[ui::Menu]] below it.
+//! The menu bar: a row of titles, each opening a [[ui::Menu]] below it.
 
 namespace vse::ui
 {

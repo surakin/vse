@@ -2,7 +2,7 @@
 
 //! Decoding the images of a glTF: PNG and JPEG to RGBA8.
 //!
-//! Phase 22 Day 338. libpng (over zlib) and stb_image's JPEG decoder, vendored under `third_party/`, reached only
+//! Libpng (over zlib) and stb_image's JPEG decoder, vendored under `third_party/`, reached only
 //! through this wrapper. The bytes may be hostile (an image fetched from a room): a decoder fails by return value and
 //! never aborts or exits, the dimensions and the pixel count are checked against the limits before any pixel is
 //! decoded, and the size limits of libpng are set before it reads. Palette, gray and alpha forms expand to RGBA, 16-bit

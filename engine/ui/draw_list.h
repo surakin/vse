@@ -5,7 +5,7 @@
 #include "types.h"
 #include "ui/geometry.h"
 
-//! The 2D draw list (Phase 15, Day 189): the data [[ui::DrawListCanvas]] builds and the renderer draws. Vertices,
+//! The 2D draw list: the data [[ui::DrawListCanvas]] builds and the renderer draws. Vertices,
 //! 32-bit indices and commands; no GPU type.
 //!
 //! Positions are physical pixels with the origin at the top-left of the surface. Every primitive is a quad (4 vertices,
@@ -132,7 +132,7 @@ struct DrawList
 
     /// Orders the commands by layer, keeping call order inside a layer: an already ordered list costs one pass, and
     /// any other is merge-sorted through `sort_scratch`, which keeps its capacity, so a frame allocates nothing once it
-    /// has grown (container audit Day 6: it was an insertion sort, quadratic when a popup's commands come early). The
+    /// has grown (it was an insertion sort, quadratic when a popup's commands come early). The
     /// index data stays where it is: a command names its own range.
     ///
     /// - Fails: never.

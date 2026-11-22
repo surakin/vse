@@ -9,7 +9,7 @@
 #include "rhi/dx12/dx12_device.h"
 #include "types.h"
 
-//! The Direct3D 12 command list (Phase 13 Day 168).
+//! The Direct3D 12 command list.
 
 namespace vse::rhi::dx12
 {

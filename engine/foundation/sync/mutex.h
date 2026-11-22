@@ -7,7 +7,7 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-//! Mutual exclusion (Phase 16): the engine's spelling of `<mutex>` and `<condition_variable>`. Every type forwards
+//! Mutual exclusion: the engine's spelling of `<mutex>` and `<condition_variable>`. Every type forwards
 //! inline to the standard one.
 namespace vse
 {

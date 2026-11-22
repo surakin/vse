@@ -1,6 +1,6 @@
 #pragma once
 
-//! The query vocabulary (Phase 18 Day 241): overlap with a box, sphere or frustum, ray casts (closest, any, all), box
+//! The query vocabulary: overlap with a box, sphere or frustum, ray casts (closest, any, all), box
 //! sweeps, the k nearest items and all overlapping pairs, with layer masks, an optional filter and a documented order.
 //! Free functions over any structure with the two traversals of
 //! [[spatial::StaticBvh]] and [[spatial::DynamicBvh]] (`Traverse` and `TraverseRay`), so the static tree, the dynamic

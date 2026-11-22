@@ -7,7 +7,7 @@
 #include "ui/widgets/list_box.h"
 #include "ui/widgets/text_field.h"
 
-//! The combo box (Phase 15, Day 198): a closed box showing one item of a list, and a drop-down list to choose another.
+//! The combo box: a closed box showing one item of a list, and a drop-down list to choose another.
 
 namespace vse::ui
 {

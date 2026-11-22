@@ -4,7 +4,7 @@
 #include "containers/open_table.h"
 #include "types.h"
 
-//! A set of keys over the open-addressing table [[HashMap]] uses (container audit series, Days 2 and 7), for the
+//! A set of keys over the open-addressing table [[HashMap]] uses, for the
 //! membership tests that were written as `HashMap<K, u8>`. The set stores its keys alone.
 namespace vse
 {

@@ -1,5 +1,5 @@
 #pragma once
-//! The Windows registry as a [[settings::ConfigStore]] (Phase 13 Day 157; `engine/foundation/settings/BACKEND.md`).
+//! The Windows registry as a [[settings::ConfigStore]] (`engine/foundation/settings/BACKEND.md`).
 //!
 //! A store lives under one registry key, `HKCU\Software\<app>` by default. A dotted key's sections are subkeys and its
 //! last segment is the value name: `renderer.width` is the value `width` under `<root>\renderer`. Every value is a

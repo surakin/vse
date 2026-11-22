@@ -6,7 +6,7 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-//! [[BinaryHeap]]: a priority queue in a [[Vector]] (container audit series, Day 3), for the "pick the best next" loops
+//! [[BinaryHeap]]: a priority queue in a [[Vector]], for the "pick the best next" loops
 //! that were linear scans.
 namespace vse
 {

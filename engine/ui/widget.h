@@ -13,7 +13,7 @@
 #include "ui/layout_types.h"
 #include "ui/theme.h"
 
-//! The retained widget tree (Phase 15, Day 192): a [[ui::Widget]] owns its children, belongs to one [[ui::Surface]] and
+//! The retained widget tree: a [[ui::Widget]] owns its children, belongs to one [[ui::Surface]] and
 //! draws through the abstract [[ui::Canvas]].
 
 namespace vse::ui
@@ -167,7 +167,7 @@ public:
     /// Returns the role tag (0 for none): lets a container find the widgets it manages without run-time type
     /// information (a radio group finds its radio buttons).
     u32 Role() const { return role_; }
-    /// Returns the tooltip text a tooltip popup (Day 198) shows after the pointer rests on the widget; empty for none.
+    /// Returns the tooltip text a tooltip popup shows after the pointer rests on the widget; empty for none.
     StringView Tooltip() const { return tooltip_.View(); }
     /// Sets the tooltip text.
     void SetTooltip(StringView tooltip) { tooltip_ = String<HeapAllocator>(HeapAllocator::Default(), tooltip); }

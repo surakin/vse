@@ -1,6 +1,6 @@
 # Paths, files and directories
 
-Status: written (Phase 9; macOS from Phase 21 Day 287).
+Status: written.
 
 **Audience:** every engine, game and tool programmer. All access to files and directories goes through this layer; engine code never calls `fopen`,
 `open`, `stat` or the like (the `file_access_check` gate fails the build if it does).
@@ -392,7 +392,7 @@ src/util/strings.cpp
 
 ## Watching a directory
 
-`io::DirectoryWatcher` (`engine/foundation/io/directory_watcher.h`, Phase 27 Day 464) tells a program that something in one directory changed, so it
+`io::DirectoryWatcher` (`engine/foundation/io/directory_watcher.h`) tells a program that something in one directory changed, so it
 does not read the whole directory again and again. `DirectoryWatcher::Open(directory, options, &watcher)` starts a watch (not recursive); `Poll(&events)` takes the
 queued events; `Wait(timeout_ms)` sleeps until one arrives, `Wake()` (any thread) ends a wait early.
 
@@ -402,16 +402,16 @@ queued events; `Wait(timeout_ms)` sleeps until one arrives, `Wake()` (any thread
   of 4096 events collapses into one `Overflow`.
 - **An event is a hint:** read the file and compare what you find (a content hash), as `script::ScriptDevWatcher` does. An editor that saves by renaming a temporary
   file over the target arrives as a `Renamed` (inotify, `ReadDirectoryChangesW`) or `Created`, not a `Modified`.
-- **Backends:** inotify on Linux; `ReadDirectoryChangesW` on Windows (Day 473: a write is reported as it happens, not only when the file is closed, and a read
+- **Backends:** inotify on Linux; `ReadDirectoryChangesW` on Windows (a write is reported as it happens, not only when the file is closed, and a read
   the system cancels or overflows is an `Overflow`); the polling backend (list the directory every `poll_interval_ms`, compare names, sizes and times; a rename
-  is a `Removed` and a `Created`) on macOS until its FSEvents backend lands on Day 474, and wherever a native watch cannot start (a watch limit, a file system
+  is a `Removed` and a `Created`) on macOS until its FSEvents backend lands, and wherever a native watch cannot start (a watch limit, a file system
   without notifications). `IsNative()` tells which one you got; `WatchOptions::force_polling` picks polling.
 - **Threads:** one thread calls `Poll` and `Wait`; `Wake` is thread-safe. Wake a waiting thread and join it before destroying the watcher.
 - **Failure:** a missing directory fails `Open` with `NotFound`; when the watched directory is removed an `Overflow` is queued and `Poll` then fails with `Invalid`.
 
 ## On macOS
 
-The backend is the POSIX one Linux uses (`io/posix/`, directories included), with a few macOS rules (Phase 21 Days 287-288):
+The backend is the POSIX one Linux uses (`io/posix/`, directories included), with a few macOS rules:
 
 - **Names are compared by the volume, not by `Path`.** The default APFS volume is case-insensitive: `Case.txt` and `case.txt` are one file, and a
   rename that changes only the case is a real rename. It is also normalization-insensitive: a name written in NFC (`é` as one code point) opens by

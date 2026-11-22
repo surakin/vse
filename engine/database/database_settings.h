@@ -1,6 +1,6 @@
 #pragma once
 
-//! The database settings (Phase 19 Day 255): [[database::RegisterDatabaseSettings]] declares them,
+//! The database settings: [[database::RegisterDatabaseSettings]] declares them,
 //! [[database::OptionsFromSettings]] turns them into
 //! [[database::OpenOptions]]. Anything a user can configure about the database is declared here, not read from the
 //! environment by hand.

@@ -5,7 +5,7 @@
 //! The compiler- and architecture-specific constructs of the whole engine, in one place.
 //!
 //! Engine code names no compiler builtin, attribute spelling or inline assembly of its own: it uses these macros, so a
-//! port to another compiler (MSVC and clang-cl since Phase 13) changes this header only. Begun for the debugging
+//! port to another compiler (MSVC and clang-cl are supported) changes this header only. Begun for the debugging
 //! facilities, hence its directory; it is a base-layer header that every layer may include.
 
 /// Stops a debugger at the line that uses it, as if a breakpoint were set there.
@@ -53,7 +53,7 @@
 /// `ENGINE_NO_UNIQUE_ADDRESS Deleter d_;`.
 ///
 /// The standard `[[no_unique_address]]` is ignored by MSVC and by clang-cl (the MSVC ABI keeps it inert for
-/// compatibility); both honor `[[msvc::no_unique_address]]` (found on Phase 13 Day 148).
+/// compatibility); both honor `[[msvc::no_unique_address]]`.
 #if ENGINE_COMPILER_MSVC_ABI
 #define ENGINE_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #else

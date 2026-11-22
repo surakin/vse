@@ -140,7 +140,7 @@ WavStatus ParseWav(ByteSpan bytes, WavInfo* info);
 WavStatus DecodeWav(ByteSpan bytes, StringView name, AudioClipPtr* clip, WavInfo* info);
 
 /// Reads frames of a parsed WAV in order and by position, converting each to `f32`: the reader of streaming sources
-/// (Day 435).
+///.
 ///
 /// - Thread-safety: thread-compatible; one reader belongs to one thread.
 /// - Ownership: borrows the file's bytes; they must outlive the reader.

@@ -1,7 +1,7 @@
 # The database interface: SQL behind one door
 
-Status: Phase 19. Built: the SQLite library (Day 251), the interface and its conformance suite (Day 252), the SQLite backend on `:memory:` (Day 253), on files
-(Day 254) and complete with settings, statement cache and concurrency tests (Day 255). Next: the storage layer on top (Days 256 onward).
+Status: Built: the SQLite library, the interface and its conformance suite, the SQLite backend on `:memory:`, on files
+ and complete with settings, statement cache and concurrency tests. Next: the storage layer on top.
 
 **Audience:** engine programmers who keep structured data in tables (the storage layer, a game's save index, tools). Design and the portable SQL subset:
 `docs/superpowers/specs/2026-11-11-storage-design.md`.

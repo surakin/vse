@@ -2,7 +2,7 @@
 
 #include "ui/widgets/dialog.h"
 
-//! Message boxes (Phase 15, Day 199): common dialogs built from the widgets, shown modally.
+//! Message boxes: common dialogs built from the widgets, shown modally.
 
 namespace vse::ui
 {

@@ -5,7 +5,7 @@
 
 #include "types.h"
 
-//! Allocation-function support (Phase 16): the engine's spelling of the parts of `<new>` that code outside the
+//! Allocation-function support: the engine's spelling of the parts of `<new>` that code outside the
 //! allocators needs.
 namespace vse
 {

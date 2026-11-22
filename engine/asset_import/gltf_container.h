@@ -2,7 +2,7 @@
 
 //! The glTF container: reading a file into a checked document.
 //!
-//! Phase 22 Day 335. `.glb` (the 12-byte header and its chunks) and `.gltf` (JSON with external
+//! `.glb` (the 12-byte header and its chunks) and `.gltf` (JSON with external
 //! files and base64 `data:` URIs) read into a [[asset::GltfDocument]] whose buffers, buffer views and accessors have
 //! been checked against each other and against [[asset::ImportLimits]]. Everything after this point may index the
 //! buffers through the document without checking a range again.

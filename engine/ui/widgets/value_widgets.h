@@ -6,7 +6,7 @@
 #include "ui/widgets/range.h"
 #include "ui/widgets/text_field.h"
 
-//! The widgets that hold a number (Phase 15, Day 196): the slider and the spin box.
+//! The widgets that hold a number: the slider and the spin box.
 
 namespace vse::ui
 {

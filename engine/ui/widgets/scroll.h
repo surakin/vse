@@ -6,7 +6,7 @@
 #include "ui/layout_types.h"
 #include "ui/widget.h"
 
-//! The scrolling widgets (Phase 15, Day 196): the scroll bar and the scroll view that the list box and the text field
+//! The scrolling widgets: the scroll bar and the scroll view that the list box and the text field
 //! share.
 
 namespace vse::ui

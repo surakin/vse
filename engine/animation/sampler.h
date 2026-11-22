@@ -1,7 +1,7 @@
 #pragma once
 
 //! The clip sampler: a clip, a skeleton and a time give a local pose; plus the time advance, the events crossed and the
-//! root motion over a step. Phase 22 Day 321. Nothing is decoded into a table: keys are decoded where they are read.
+//! root motion over a step. Nothing is decoded into a table: keys are decoded where they are read.
 
 #include "animation/pose.h"
 #include "asset/clip.h"

@@ -2,7 +2,7 @@
 
 #include <coroutine>
 
-//! Coroutine support (Phase 16): the engine's spelling of `<coroutine>`, the only header that includes it. The compiler
+//! Coroutine support: the engine's spelling of `<coroutine>`, the only header that includes it. The compiler
 //! looks coroutine machinery up by the standard names (`std::coroutine_handle`, the awaiter members
 //! `await_ready`/`await_suspend`/`await_resume`, the promise members
 //! `initial_suspend`/`final_suspend`/`get_return_object`), so the aliases keep the standard member functions

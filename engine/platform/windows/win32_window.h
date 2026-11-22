@@ -12,7 +12,7 @@
 #include "string_view.h"
 #include "types.h"
 
-//! The Windows window backend (Phase 13 Day 158): an [[os::Window]] over a Win32 top-level window.
+//! The Windows window backend: an [[os::Window]] over a Win32 top-level window.
 //!
 //! Sizes are in physical pixels: every engine program is per-monitor DPI aware (version 2, from its manifest; a thread
 //! that is not gets the awareness set around the window's creation), so a window on a 150% monitor that asks for
@@ -121,7 +121,7 @@ public:
     bool SetFullscreen(bool fullscreen) override;
     /// Returns whether the window is fullscreen: asked for, and its client area covers its monitor.
     bool IsFullscreen() const override { return hwnd_ != nullptr && fullscreen_; }
-    /// Removes the oldest queued input event (Phase 15 Day 205): keys, text from `WM_CHAR`, the pointer, buttons, the
+    /// Removes the oldest queued input event: keys, text from `WM_CHAR`, the pointer, buttons, the
     /// wheel, focus and resize, in the order the window procedure saw them (`platform/BACKEND.md`).
     ///
     /// - Param out: receives the event.

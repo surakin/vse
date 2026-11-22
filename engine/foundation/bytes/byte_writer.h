@@ -1,8 +1,8 @@
 #pragma once
 
 //! [[bytes::ByteWriter]]: the canonical byte encoding, written. Little-endian, fixed-width integers, floats as their
-//! bit patterns, no padding. The matching reader is [[bytes::ByteReader]] (`bytes/byte_reader.h`). Storage (Phase 19)
-//! and networking (Phase 20) share them.
+//! bit patterns, no padding. The matching reader is [[bytes::ByteReader]] (`bytes/byte_reader.h`). Storage
+//! and networking share them.
 
 #include "containers/span.h"
 #include "containers/vector.h"

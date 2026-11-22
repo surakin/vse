@@ -1,9 +1,9 @@
 #pragma once
 
-//! The record store (Phase 19 Day 259): [[storage::Store]] keeps one [[storage::EntityRecord]] per
+//! The record store: [[storage::Store]] keeps one [[storage::EntityRecord]] per
 //! [[storage::EntityKey]], in key order, with all-or-nothing batches and small named metadata. It knows nothing of
-//! components: a record is a key and the bytes the entity container (Day 260) built. Backends:
-//! [[storage::MemoryStore]] (the reference) and, from Day 262, the SQL store.
+//! components: a record is a key and the bytes the entity container built. Backends:
+//! [[storage::MemoryStore]] (the reference) and the SQL store.
 
 #include "bytes/byte_writer.h"
 #include "containers/span.h"
@@ -34,7 +34,7 @@ u64 HashBytes(ByteSpan bytes);
 struct EntityRecord
 {
     EntityKey key;      ///< The entity's key; never null in a store.
-    Vector<byte> blob;  ///< The encoded components (the framing is the entity container's, Day 260).
+    Vector<byte> blob;  ///< The encoded components (the framing is the entity container's).
     u64 hash = 0;       ///< [[storage::HashBytes]] of `blob`, as the writer computed it.
 
     /// Returns a record with this key and a copy of the bytes and hash.

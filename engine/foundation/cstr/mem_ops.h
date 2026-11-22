@@ -5,7 +5,7 @@
 
 #include "types.h"
 
-//! Raw memory operations (Phase 16): the engine's spelling of the C library's `<cstring>` memory functions and the C
+//! Raw memory operations: the engine's spelling of the C library's `<cstring>` memory functions and the C
 //! heap of
 //! `<cstdlib>`. Every function is an inline forwarder, so the compiler still turns a constant-size [[MemCopy]] into
 //! moves.

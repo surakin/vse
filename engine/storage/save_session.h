@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[storage::SaveSession]] (Phase 19 Day 261): what an incremental save remembers between saves of one world to one
+//! [[storage::SaveSession]]: what an incremental save remembers between saves of one world to one
 //! store.
 
 #include "containers/hash_map.h"

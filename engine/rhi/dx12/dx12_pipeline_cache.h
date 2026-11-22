@@ -4,7 +4,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-//! The Direct3D 12 pipeline cache file's rules (Phase 13 Day 167), as pure functions so they are tested without a GPU:
+//! The Direct3D 12 pipeline cache file's rules, as pure functions so they are tested without a GPU:
 //! its name, its header, and the names pipelines are stored under in the `ID3D12PipelineLibrary` it holds.
 
 namespace vse::rhi::dx12

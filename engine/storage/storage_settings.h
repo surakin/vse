@@ -1,6 +1,6 @@
 #pragma once
 
-//! The storage settings (Phase 19 Days 257 and 264): [[storage::RegisterStorageSettings]] declares the four limits that
+//! The storage settings [[storage::RegisterStorageSettings]] declares the four limits that
 //! bound every decode, the path of the database file, the layout and the autosave interval;
 //! [[storage::LimitsFromSettings]] turns the limits into [[storage::CodecLimits]].
 

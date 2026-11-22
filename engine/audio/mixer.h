@@ -353,7 +353,7 @@ struct MixerStats
 ///
 /// Positions are 32.32 fixed point in `u64`, so a long clip does not drift; the interpolation (`+ - * /` only) is
 /// linear, 4-point Hermite or 16-tap windowed sinc. Voices are summed in slot order, never thread order. The output is
-/// not clipped: the master limiter and the device boundary do that (Day 422). A clip's channels are routed to the
+/// not clipped: the master limiter and the device boundary do that. A clip's channels are routed to the
 /// output layout: a mono clip pans over front left and right (equal power, centre gain 0.7071), a stereo clip on a
 /// layout with front left and right balances (centre gain 1), any other pair goes through the conversion table of
 /// `audio/convert.h`.

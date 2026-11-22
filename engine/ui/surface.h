@@ -15,7 +15,7 @@
 #include "ui/theme.h"
 #include "ui/widget.h"
 
-//! The surface (Phase 15, Day 192): the root of a widget tree with its size, scale, clock, theme, font provider, focus,
+//! The surface: the root of a widget tree with its size, scale, clock, theme, font provider, focus,
 //! pointer capture and popup layer. It knows no window.
 
 namespace vse::ui

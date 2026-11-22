@@ -1,6 +1,6 @@
 #pragma once
 
-//! Textures the host fills with its own pixels (Phase 24 Days 365 and 366): a video frame, a canvas, a remote screen.
+//! Textures the host fills with its own pixels: a video frame, a canvas, a remote screen.
 //! A [[engine_c::HostTexture]] keeps the newest pixels on the CPU (the source every device uploads from and rebuilds
 //! from after a reset); [[engine_c::TextureHost]] is the table of them behind the handles of the C API. The upload to a
 //! device belongs to the surface that draws the texture (`surface_scene.cpp`). Internal to the module `engine_c`.

@@ -2,7 +2,7 @@
 
 //! The glTF scene as a level: one entity per node of the default scene.
 //!
-//! Phase 24 Day 364 (the scene output moved out of Phase 22 Day 338). Every node reachable from the default scene's
+//! Every node reachable from the default scene's
 //! root nodes becomes an entity of a level blob: its name, its local transform (translation, rotation, scale), its
 //! parent and, for a node with a mesh, the imported mesh and the material of the mesh's first primitive, and for a node
 //! with a skin the skeleton instance. Several nodes that use one glTF mesh give several entities that share one mesh
@@ -31,7 +31,7 @@ inline constexpr u32 kMaxLevelDepth = 63;
 /// - Param skins: the skeletons imported from the file's skins.
 /// - Param collisions: per node, its collision ([[asset::ImportColliders]]' output; empty for none): a node with one
 /// gets a
-///   `static_collider`, and a collision-only node gets no mesh reference (glTF colliders Day 3).
+///   `static_collider`, and a collision-only node gets no mesh reference.
 /// - Param result: holds the meshes, materials, skeletons and colliders already imported; the level is appended to it.
 /// - Param error: receives the sentence naming the node or the scene.
 /// - Fails: `Invalid` (a scene root that has a parent, a scene index outside `scenes`, a node transform with a shear),

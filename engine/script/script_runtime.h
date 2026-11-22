@@ -115,7 +115,7 @@ struct ScriptRuntimeStats
     u64 waits_resumed = 0;
     /// Coroutines waiting now (after the last phase).
     u64 coroutines_waiting = 0;
-    /// Tasks scripts started that ran (Day 461).
+    /// Tasks scripts started that ran.
     u64 tasks_run = 0;
     /// Tasks that failed (a failing task is an error value for its owner, not a script error).
     u64 tasks_failed = 0;
@@ -296,7 +296,7 @@ public:
     /// - Ownership: borrowed.
     const ScriptRuntimeStats& Stats() const;
     /// What each partition did in the last tick's script phase: its instances and its job's wall time, one entry per
-    /// partition in partition order (Phase 27 Day 475: the script demo's overlay).
+    /// partition in partition order (the script demo's overlay).
     ///
     /// - Param out: receives the entries; not null.
     /// - Thread-safety: thread-compatible: between ticks.

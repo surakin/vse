@@ -1,6 +1,6 @@
 #pragma once
 
-//! The engine's own components, registered for storage (Phase 19 Day 256): the transform and hierarchy of `ecs` and the
+//! The engine's own components, registered for storage: the transform and hierarchy of `ecs` and the
 //! membership and bounds of `spatial`. Ids below 1000 belong to this file; a game registers its own components from
 //! 1000 up.
 

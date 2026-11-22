@@ -4,7 +4,7 @@
 #include "ui/text_run.h"
 #include "ui/widget.h"
 
-//! The window frame (Phase 15, Day 199): a panel with a title bar, a content area and an optional footer, that the user
+//! The window frame: a panel with a title bar, a content area and an optional footer, that the user
 //! can move and resize inside its parent.
 
 namespace vse::ui

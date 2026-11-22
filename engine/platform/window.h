@@ -23,7 +23,7 @@ enum class NativeWindowKind : u8
     Xlib,         ///< An X11 window: `display` is a `Display*`, `window_id` is the `Window` (XID).
     Win32,  ///< A Win32 window: `display` is the `HINSTANCE` of the module that registered the window class, `surface`
             ///< the `HWND`.
-    Cocoa,  ///< A macOS window (Phase 21 Day 295): `display` is the content `NSView*`, `surface` its `CAMetalLayer*`,
+    Cocoa,  ///< A macOS window: `display` is the content `NSView*`, `surface` its `CAMetalLayer*`,
             ///< `window_id` the window number.
     Android,  ///< Reserved for the Android port: `surface` is the `ANativeWindow*`.
 };
@@ -331,7 +331,7 @@ enum class WindowBackend : u8
     Wayland,   ///< Force the Wayland backend (Linux).
     X11,       ///< Force the X11 backend (Linux).
     Win32,     ///< Force the Win32 backend (Windows).
-    Cocoa,     ///< Force the Cocoa backend (macOS; Phase 21 Day 295).
+    Cocoa,     ///< Force the Cocoa backend (macOS).
     Invalid,   ///< Unrecognized name, or an empty candidate slot.
 };
 
@@ -376,7 +376,7 @@ BackendPlan PlanWindowBackends(WindowBackend requested, bool wayland_env_set, bo
 BackendPlan PlanWin32WindowBackends(WindowBackend requested);
 
 /// Builds the list of backends to try on macOS: `Auto` and `Cocoa` yield Cocoa; `Wayland`, `X11` and `Win32` an empty
-/// plan with its `refusal` (Phase 21 Day 295).
+/// plan with its `refusal`.
 ///
 /// - Param requested: the backend asked for.
 /// - Returns: the plan; `count` is 0 when no backend is eligible.

@@ -1,7 +1,7 @@
 #pragma once
 
 //! The mesh blob (type `MESH`, version 1): geometry laid out for the GPU, built by [[asset::BuildMeshBlob]] and read
-//! zero-copy through [[asset::MeshView]]. Phase 22 Day 319.
+//! zero-copy through [[asset::MeshView]].
 //!
 //! Sections (ids from 16, little-endian, each 64-byte aligned by the container): 16 header (96 bytes), 17 attributes
 //! (16 bytes each: location, format, offset, binding), 18 vertex stream 0 (the exact bytes of the vertex buffer), 19
@@ -9,13 +9,13 @@
 //! skinned mesh 22 the skin stream (binding 1: `UInt8x4` joint indices at location 5, `UNorm8x4` weights at location 6,
 //! summing to exactly 255 per vertex) and 23 the bind-pose box of each joint's influence set. A skinned mesh declares
 //! its skeleton as a dependency (role [[asset::kMeshRoleSkinSkeleton]]) and records the skeleton hash and joint count.
-//! Morph targets (glTF coverage Day 6) are sections 40 (the targets, 48 bytes each: a name of up to 31 bytes, the
+//! Morph targets are sections 40 (the targets, 48 bytes each: a name of up to 31 bytes, the
 //! first delta, the delta count) and 41 (the deltas, 40 bytes each: the vertex, then position, normal and tangent
 //! deltas as `f32x3`; a target's deltas sorted by vertex, no repeats). An older reader refused section 40, so a blob
 //! with targets is refused there and one without is unchanged: the version stays 1. The box holds every target at
 //! weights from -1 to 1.
 //!
-//! Per-vertex colours (glTF coverage Day 4) are one more attribute of stream 0, `UNorm8x4` at location 4 after the
+//! Per-vertex colours are one more attribute of stream 0, `UNorm8x4` at location 4 after the
 //! others (offset 24 packed, 48 full): rgb sRGB-encoded, alpha linear, as `gbuffer.vert`'s `VERTEX_COLOR` reads them.
 //! The version-1 reader already took any attribute, so a coloured mesh is still version 1.
 

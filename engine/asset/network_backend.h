@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[asset::NetworkBackend]] (Phase 22 Day 332): a [[asset::ResourceBackend]] whose resources live on a
+//! [[asset::NetworkBackend]]: a [[asset::ResourceBackend]] whose resources live on a
 //! [[asset::ResourceServer]]. It talks the protocol of `resource_protocol.h` over a [[net::Transport]] it is given (the
 //! TCP transport over sockets, or over the simulated streams in tests), keeps the blobs it fetched in a
 //! [[asset::BlobCache]] so a blob is not fetched twice and is served when the server cannot be reached, retries a

@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[asset::ResourceServer]] (Phase 22 Day 331): serves any [[asset::ResourceBackend]] (a directory, a pak, host
+//! [[asset::ResourceServer]]: serves any [[asset::ResourceBackend]] (a directory, a pak, host
 //! memory) to many clients over a [[net::Transport]], speaking the protocol of `resource_protocol.h`. It is read-only
 //! (the protocol has no request that writes), bounded (a read, a page, the requests per connection and per poll have
 //! limits the settings give) and polled: [[asset::ResourceServer::Update]] takes the transport's events, answers the

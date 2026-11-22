@@ -74,8 +74,7 @@ Vec3 ShadeLight(const SurfacePoint& surface, const Vec3& view, const Vec3& light
 
 /// Returns the ambient term: `albedo * (1 - metallic) * ambient * occlusion`.
 ///
-/// Emission is not part of it: the G-buffer's emissive target holds it, and the lighting pass adds it as it is (glTF
-/// coverage Day 2).
+/// Emission is not part of it: the G-buffer's emissive target holds it, and the lighting pass adds it as it is.
 ///
 /// - Param surface: the decoded surface.
 /// - Param ambient: the summed ambient light (linear).
@@ -117,7 +116,7 @@ Vec3 ReconstructWorldPosition(u32 pixel_x, u32 pixel_y, f32 depth, u32 width, u3
 /// - Fails: never.
 f32 PointLightAttenuation(f32 distance, f32 radius);
 
-/// The cone factor of a spot light (glTF coverage Day 11; glTF's KHR_lights_punctual form).
+/// The cone factor of a spot light (glTF's KHR_lights_punctual form).
 ///
 /// With `t = saturate((cos_angle - cos(outer)) / (cos(inner) - cos(outer)))`, it is `t * t`: 1 inside the inner cone
 /// and 0 outside the outer one. The CPU twin of `SpotFactor` in `lighting_common.slang`.

@@ -1,7 +1,7 @@
 #pragma once
 
-//! [[asset::LoadBufferPool]]: reusable, pre-faulted buffers that resources are read into. Phase 22 Day 313 (Spike 5)
-//! measured a read into a fresh buffer at four times the cost of a read into one whose pages were already touched, so
+//! [[asset::LoadBufferPool]]: reusable, pre-faulted buffers that resources are read into. A measurement
+//! found a read into a fresh buffer at four times the cost of a read into one whose pages were already touched, so
 //! the pool touches the pages once, when it creates a buffer, and keeps the buffer for the next load of that size.
 
 #include "asset/status.h"

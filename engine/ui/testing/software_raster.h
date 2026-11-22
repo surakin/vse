@@ -5,7 +5,7 @@
 #include "types.h"
 #include "ui/draw_list.h"
 
-//! A small CPU rasteriser for a [[ui::DrawList]] (Phase 15, Day 192), so widget tests compare pixels without a GPU. For
+//! A small CPU rasteriser for a [[ui::DrawList]], so widget tests compare pixels without a GPU. For
 //! tests only; the renderer is the real thing.
 //!
 //! It follows the UI shader (`shaders/ui.frag.slang`): solid, rounded-rectangle (anti-aliased, with ring and shadow)

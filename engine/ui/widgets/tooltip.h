@@ -3,7 +3,7 @@
 #include "ui/text_run.h"
 #include "ui/widget.h"
 
-//! The tooltip bubble (Phase 15, Day 198): a short text in a box near the pointer, shown by the surface for a widget
+//! The tooltip bubble: a short text in a box near the pointer, shown by the surface for a widget
 //! with a tooltip text.
 
 namespace vse::ui

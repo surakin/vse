@@ -1,6 +1,6 @@
 #pragma once
 
-//! Spawning a level into a world through the resource manager. Phase 22 Day 329.
+//! Spawning a level into a world through the resource manager.
 //!
 //! [[scene::SpawnLevel]] loads a level and its closure (meshes, materials, textures, skeletons, clips, included
 //! levels), creates its entities with [[asset::LoadLevelBlob]], and gives each [[asset::MeshReference]] a

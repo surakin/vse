@@ -1,7 +1,7 @@
 # Storage: components that survive a save
 
-Status: Phase 19. Built: the component registry and the canonical encoding (Day 256), versions, upgrades, custom codecs, limits and hostile-input tests
-(Day 257). stable identities and references (Day 258). Next: the record store (259), the record store (259), saving and loading a world (260-261), the SQL store (262-263). Design:
+Status: Built: the component registry and the canonical encoding, versions, upgrades, custom codecs, limits and hostile-input tests
+. stable identities and references. Next: the record store (259), the record store (259), saving and loading a world (260-261), the SQL store (262-263). Design:
 `docs/superpowers/specs/2026-11-11-storage-design.md`.
 
 **Audience:** engine and game programmers who make a component type saveable, and anyone who reads or writes the bytes.
@@ -40,7 +40,7 @@ baked in. The member's type decides the stored form:
 | an enum | its underlying integer, **checked against a range you declare**: `Field<&T::kind>("kind", FieldOptions::Enum(0, 2))` |
 | `String<HeapAllocator>` | a varint length and UTF-8; validated on write and on read; bounded by `FieldOptions::Text(n)` and `CodecLimits::max_string_bytes` |
 | `Array<T, N>` of any of these | the count `N` as a varint, then the elements; a count that is not `N` is `Corrupt` |
-| `storage::EntityRef` | the target's 128-bit key (16 bytes); resolved to an entity after a load (Day 258) |
+| `storage::EntityRef` | the target's 128-bit key (16 bytes); resolved to an entity after a load |
 
 **A member of any other type does not compile.** There is no silent skip: a type the registry cannot describe is a `static_assert`. C++ has no reflection,
 so a member you forget to list is not detected: list every member, and keep the list in step with the struct.
@@ -55,7 +55,7 @@ A component rebuilt from other data after a load (`WorldTransform`, `HierarchyDe
 "I decided". `registry.UnregisteredWithData(world, &out)` lists the component types present on entities of a world that have **no** registration at all, so
 a component added next month cannot be forgotten silently; run it in a test of your game's world.
 
-`ecs::Parent` is skipped for now; Day 258 stores it as an `EntityRef`.
+`ecs::Parent` is not stored as a plain component; it is stored as a key (see "Identities and references" below).
 
 ## The encoding
 
@@ -63,25 +63,25 @@ a component added next month cannot be forgotten silently; run it in a test of y
 reads them into a constructed component. A failed `Encode` cuts the writer back to where it was. A failed `Decode` may leave the component partly written:
 discard it.
 
-The bytes come from `bytes::ByteWriter` and `bytes::ByteReader` (`foundation/bytes/`), which Phase 20's network code shares:
+The bytes come from `bytes::ByteWriter` and `bytes::ByteReader` (`foundation/bytes/`), which the network code shares:
 
 - integers little-endian at their own width; floats as bit patterns; `bool` one byte;
 - lengths and counts are **unsigned LEB128 varints in their shortest form** (a longer form is refused, so every value has one encoding);
 - the reader is bounds-checked: truncation is `Truncated`, a length above the caller's limit is `TooLong`, a malformed value is `Invalid`; a failed read does
   not move the reader and never reads outside the span.
 
-`storage::CodecLimits` bounds every length (a string, an array). The defaults are generous; Day 264 reads them from the settings.
+`storage::CodecLimits` bounds every length (a string, an array). The defaults are generous; the settings can change them (`LimitsFromSettings`).
 
 ### The format is tested
 
 `tests/storage/encoding_test.cpp` holds a **golden byte string** for a fixed component. A change to the encoding fails it. Changing the stored form of a
-field means raising the component's `version` (and, from Day 257, registering an upgrade), never editing bytes under an old version.
+field means raising the component's `version` (and registering an upgrade), never editing bytes under an old version.
 
 ## The manifest
 
 A store remembers which `(id, name, version)` wrote it. `registry.Manifest(&out)` produces the list; `registry.CheckManifest(recorded)` refuses a registry
 in which an id now has another name or a name another id (`Mismatch`), and a recorded version above the registered one (`TooNew`). A recorded component
-that is not registered now is fine here; the load policy (Day 260) decides what happens to its data.
+that is not registered now is fine here; the load policy decides what happens to its data.
 
 ## Versions and upgrades
 
@@ -127,7 +127,7 @@ same `CodecLimits` and a bounds-checked reader; the same rules apply (every leng
 
 `RegisterStorageSettings(&registry)` declares `storage.max_record_bytes`, `storage.max_string_bytes`, `storage.max_array_elements` and
 `storage.max_components_per_entity`; `LimitsFromSettings(registry)` turns them into the `CodecLimits` every encode and decode takes. A length above a limit is
-`LimitExceeded` and nothing is allocated for it. (`max_components_per_entity` is enforced by the entity container of Day 260.)
+`LimitExceeded` and nothing is allocated for it. (`max_components_per_entity` is enforced by the entity container.)
 
 ## Hostile input is tested
 
@@ -157,7 +157,7 @@ save; `ApplyParents(world, index, policy)` sets the parents after a load, parent
 
 A `Store` keeps one `EntityRecord` (key, container bytes, `HashBytes` of the bytes) per `EntityKey`, in key order: `Put`, `Get`, `Remove`, `Scan(range, visitor)`,
 `Count`, `GetMetadata` / `SetMetadata` (the well-known names are in `storage::metadata`) and `Begin` / `Commit` / `Rollback`. It knows nothing of components;
-`WorldStorage` (Day 260) builds the bytes. All errors are `storage::Status` values.
+`WorldStorage` builds the bytes. All errors are `storage::Status` values.
 
 A batch is all or nothing: what is `Put`, `Remove`d or set after `Begin` becomes visible together at `Commit`, and not at all after `Rollback`. A mutation that
 fails inside a batch leaves it open for the caller to roll back. One thread writes at a time; while its batch is open another thread's mutation is `Busy`. Readers
@@ -178,8 +178,7 @@ A record whose bytes no longer match their hash is `Corrupt` on `Get` and `Scan`
 ## Options
 
 `SaveOptions` (mode `Full` or `Incremental`, a `Selection`, a label, batch size), `LoadOptions` (`Create`, `Replace` or `Merge`, the `UnknownPolicy`, the
-`MissingPolicy`), a `Report` of counts, a `ProgressFn` and a `CancelToken` that is checked between steps. `WorldStorage::Save` and `Load` take them and arrive on
-Day 260; `Delete` and `List` work now.
+`MissingPolicy`), a `Report` of counts, a `ProgressFn` and a `CancelToken` that is checked between steps. `WorldStorage::Save` and `Load` take them.
 
 ## Saving and loading a world
 

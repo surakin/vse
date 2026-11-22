@@ -1,5 +1,5 @@
 #pragma once
-//! The runtime of one engine (Phase 23 Day 349): its worlds, its counters and its job system, behind the functions of
+//! The runtime of one engine: its worlds, its counters and its job system, behind the functions of
 //! the C API's table that make and use them. Internal to the module `engine_c`: nothing here reaches the host but
 //! through `engine_c.h`.
 #include "asset/content_hash.h"
@@ -31,7 +31,7 @@ class Scheduler;
 namespace vse::engine_c
 {
 
-/// The component of ENGINE_COMPONENT_CAMERA (Phase 24 Day 360).
+/// The component of ENGINE_COMPONENT_CAMERA.
 ///
 /// - Thread-safety: plain data.
 struct CameraComponent
@@ -43,7 +43,7 @@ struct CameraComponent
     f32 aspect = 1.0f;        ///< Width over height, used with ENGINE_CAMERA_FIXED_ASPECT.
 };
 
-/// The component of ENGINE_COMPONENT_LIGHT (Phase 24 Day 361).
+/// The component of ENGINE_COMPONENT_LIGHT.
 ///
 /// - Thread-safety: plain data.
 struct LightComponent
@@ -59,7 +59,7 @@ struct LightComponent
     f32 axis[3] = {0.0f, 0.0f, 1.0f};
 };
 
-/// The component of ENGINE_COMPONENT_VISIBILITY (Phase 24 Day 362).
+/// The component of ENGINE_COMPONENT_VISIBILITY.
 ///
 /// - Thread-safety: plain data.
 struct VisibilityComponent
@@ -67,7 +67,7 @@ struct VisibilityComponent
     u32 hidden = 0;  ///< 1 when the entity (and its children) are not drawn.
 };
 
-/// An entity that follows a joint of another entity's skeleton (Phase 24 Day 363).
+/// An entity that follows a joint of another entity's skeleton.
 ///
 /// - Thread-safety: plain data.
 struct JointAttachment
@@ -76,7 +76,7 @@ struct JointAttachment
     u32 joint = 0;
 };
 
-/// The slot overrides of one entity (Phase 24 Day 362): at most 8, replaced by slot name.
+/// The slot overrides of one entity: at most 8, replaced by slot name.
 ///
 /// - Thread-safety: plain data.
 struct SlotOverrides
@@ -97,7 +97,7 @@ struct SlotOverrides
     Item items[kMax];
 };
 
-/// The materials of an entity's mesh slots (Phase 24 Day 377): slot `i` draws with `material[i]`, or with the mesh
+/// The materials of an entity's mesh slots: slot `i` draws with `material[i]`, or with the mesh
 /// reference's material when that is 0. Set by entity_set_mesh_slot_material.
 ///
 /// - Thread-safety: plain data.
@@ -108,7 +108,7 @@ struct SlotMaterialsComponent
     u64 material[kMax] = {};
 };
 
-/// The component of ENGINE_COMPONENT_LABEL (Phase 24 Day 367).
+/// The component of ENGINE_COMPONENT_LABEL.
 ///
 /// - Thread-safety: plain data.
 struct LabelComponent
@@ -143,7 +143,7 @@ struct MeshReference
     u64 material_resource = 0;  ///< The resource id of the material (0: the surface's default material).
 };
 
-/// The component of ENGINE_COMPONENT_CHARACTER (Phase 25 Day 409): the shape and rules of a character. The controller
+/// The component of ENGINE_COMPONENT_CHARACTER: the shape and rules of a character. The controller
 /// itself is in the world's `physics::CharacterSet` (`WorldObject::characters`), shared with the scripts' `character.*`
 /// (C API script physics, 2026-11-20).
 ///
@@ -163,7 +163,7 @@ class AudioHost;
 /// `audio_close` never frees a host another thread is inside.
 using AudioHostPtr = SharedPtr<AudioHost>;
 
-/// The unscaled shape of a static collider (glTF colliders Day 5). The frame makes the `physics::Collider` from it at
+/// The unscaled shape of a static collider. The frame makes the `physics::Collider` from it at
 /// its end, once the entity's world matrix is known, with the world scale of that moment; a later scale change is
 /// counted and not followed.
 ///
@@ -183,13 +183,13 @@ struct ColliderSource
     u32 layer = 0;                                 ///< The collision layer.
     u32 group = 1;                                 ///< The groups it is in.
     u32 mask = 0xFFFFFFFFu;                        ///< The groups it meets.
-    bool is_trigger = false;                       ///< Reports overlaps and does not collide (glTF colliders Day 6).
+    bool is_trigger = false;                       ///< Reports overlaps and does not collide.
     u8 state = 0;                                  ///< 0 waiting for a frame, 1 made, 2 refused (counted once).
     bool scale_reported = false;                   ///< A later scale change was counted already.
     Vec3 made_scale = Vec3(1.0f, 1.0f, 1.0f);      ///< The world scale the collider was made with.
 };
 
-/// A physics mesh a world made from an `MCOL` at one scale (glTF colliders Day 5).
+/// A physics mesh a world made from an `MCOL` at one scale.
 ///
 /// - Thread-safety: plain data.
 struct ColliderMeshEntry
@@ -213,17 +213,17 @@ struct WorldObject
     /// scripts' `character.*`; made with the world, destroyed before its physics world (it holds the world's pre-step
     /// hook).
     UniquePtr<physics::CharacterSet> characters;
-    bool physics_used = false;     ///< Whether a body component was set: the frame makes bodies only then (Day 408).
+    bool physics_used = false;     ///< Whether a body component was set: the frame makes bodies only then.
     Environment environment;       ///< What world_set_environment set (the defaults until then).
     bool environment_set = false;  ///< Whether it was called (no default sun once it was).
-    bool audio_used = false;  ///< Whether an audio component was set: the frame places sounds only then (Phase 26).
+    bool audio_used = false;       ///< Whether an audio component was set: the frame places sounds only then.
     /// The world's sounds and the audio host they play on (the share keeps its mixer alive); remade when the host
     /// changes.
     UniquePtr<audio::SpatialAudio> spatial_audio;
     AudioHostPtr spatial_host;
-    /// The world's scripts (Phase 27 Day 471): made by the first `script_load`, script component or host function.
+    /// The world's scripts: made by the first `script_load`, script component or host function.
     UniquePtr<ScriptHost> scripts;
-    /// The physics meshes made from `MCOL`s (glTF colliders Day 5); a world keeps them until it is destroyed.
+    /// The physics meshes made from `MCOL`s; a world keeps them until it is destroyed.
     Vector<ColliderMeshEntry> collider_meshes;
     bool collider_sources = false;  ///< Whether a collider source was added: the frame resolves them only then.
 };
@@ -357,10 +357,10 @@ public:
     /// - Thread-safety: thread-safe.
     JobHost& EnsureJobs();
 
-    /// The host textures of the engine (Phase 24 Day 365).
+    /// The host textures of the engine.
     TextureHost textures;
 
-    /// The font file the labels are drawn with, and how many times it was set (Phase 24 Day 367).
+    /// The font file the labels are drawn with, and how many times it was set.
     ///
     /// - Param out: receives a copy of the bytes (empty when none was set).
     /// - Returns: the version, 0 while none was set.
@@ -374,7 +374,7 @@ public:
     /// What the `script.*` settings said when the engine was created; a world's script runtime is made from it.
     ScriptSettingValues script_settings;
 
-    /// The host-driven audio (Phase 26 Day 438): made by `audio_open`, destroyed by `audio_close` or with the engine.
+    /// The host-driven audio: made by `audio_open`, destroyed by `audio_close` or with the engine.
     /// `audio_host` is what the audio thread reads; `audio_owner` owns it; both change under `audio_mutex`.
     Mutex audio_mutex;
     AudioHostPtr audio_owner;
@@ -400,7 +400,7 @@ public:
     /// - Thread-safety: thread-safe.
     ResourceHost* ResourcesIfCreated();
 
-    /// The surfaces of the engine (Day 352): made by the first call that needs them.
+    /// The surfaces of the engine: made by the first call that needs them.
     ///
     /// - Thread-safety: thread-safe.
     SurfaceHost* Surfaces();

@@ -2,7 +2,7 @@
 
 //! Names, paths, ids and report lines shared by the importers of each resource kind.
 //!
-//! Phase 22 Days 336-337. Meshes, skeletons and clips each get a resource path `<prefix>/<kind>/<name>` made from the
+//! Meshes, skeletons and clips each get a resource path `<prefix>/<kind>/<name>` made from the
 //! glTF object's name, an id that an earlier import's manifest keeps, and report lines that name the glTF object.
 
 #include "asset_import/gltf_import.h"

@@ -2,7 +2,7 @@
 
 //! The glTF node graph: transforms, parents and the products of a chain of nodes.
 //!
-//! Phase 22 Day 337. Skeletons (Day 337) and levels (Day 338) read the `nodes` array through this: each node's local
+//! Skeletons and levels read the `nodes` array through this: each node's local
 //! matrix, its parent (with cycles and nodes of two parents refused), and the decomposition of a matrix into
 //! translation, rotation and scale, which refuses what those three cannot hold (shear, a degenerate scale).
 

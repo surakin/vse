@@ -7,7 +7,7 @@
 #include "rhi/dx12/d3d12_api.h"
 #include "types.h"
 
-//! CPU (non-shader-visible) descriptor heaps for the views a resource gets when it is created (Phase 13 Day 165).
+//! CPU (non-shader-visible) descriptor heaps for the views a resource gets when it is created.
 
 namespace vse::rhi::dx12
 {
@@ -16,7 +16,7 @@ namespace vse::rhi::dx12
 ///
 /// A resource's views are made when the resource is created and freed with the resource's deferred destruction, so a
 /// freed descriptor is no longer referenced by any command list in flight. Bind groups copy from these into the
-/// shader-visible ring (Day 166).
+/// shader-visible ring.
 ///
 /// - Thread-safety: not-thread-safe; the device calls it under its resource lock.
 /// - Ownership: owns the heaps.
@@ -63,7 +63,7 @@ private:
 };
 
 /// Hands out contiguous ranges of one non-shader-visible heap type: a bind group's views sit next to each other, so
-/// `SetBindGroup` copies them into the frame's ring with one `CopyDescriptorsSimple` (Phase 13 Day 166). Ranges come in
+/// `SetBindGroup` copies them into the frame's ring with one `CopyDescriptorsSimple`. Ranges come in
 /// power-of-two sizes, each with its own free list.
 ///
 /// - Thread-safety: not-thread-safe; the device calls it under its resource lock.
@@ -108,8 +108,7 @@ private:
 };
 
 /// The shader-visible CBV/SRV/UAV heap, split into one region per frame slot: `SetBindGroup` takes a range from the
-/// region of its frame, and `BeginFrame` resets a region once the frame that last used it has finished (Phase 13 Day
-/// 166).
+/// region of its frame, and `BeginFrame` resets a region once the frame that last used it has finished.
 ///
 /// - Thread-safety: thread-safe for `Allocate` (command lists record on several threads); `Reset` belongs to the
 /// submission thread.
@@ -159,7 +158,7 @@ private:
 
 /// Persistent ranges of the shader-visible sampler heap (2048 descriptors at most, D3D12's limit), first fit with
 /// coalescing on free: a bind group's samplers are copied once at creation, and groups with the same samplers share a
-/// table (Phase 13 Day 166).
+/// table.
 ///
 /// - Thread-safety: not-thread-safe; the device calls it under its resource lock.
 /// - Ownership: owns the heap.

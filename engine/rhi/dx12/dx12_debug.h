@@ -4,8 +4,7 @@
 #include "rhi/dx12/d3d12_api.h"
 #include "types.h"
 
-//! The D3D12 debug layer's messages: routed to [[rhi::LogRhi]], counted, and offered to a test's capture hook (Phase 13
-//! Day 164).
+//! The D3D12 debug layer's messages: routed to [[rhi::LogRhi]], counted, and offered to a test's capture hook.
 
 namespace vse::rhi::dx12
 {

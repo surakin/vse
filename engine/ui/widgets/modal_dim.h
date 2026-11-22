@@ -2,7 +2,7 @@
 
 #include "ui/widget.h"
 
-//! The shade under a modal dialog (Phase 15, Day 199): it covers the surface, takes every pointer event, and is drawn
+//! The shade under a modal dialog: it covers the surface, takes every pointer event, and is drawn
 //! in the `modaldim` style.
 
 namespace vse::ui

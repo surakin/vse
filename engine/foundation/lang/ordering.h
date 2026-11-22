@@ -2,7 +2,7 @@
 
 #include <compare>
 
-//! Three-way comparison results (Phase 16): the engine's spelling of `<compare>`. A class that defines `operator<=>`
+//! Three-way comparison results: the engine's spelling of `<compare>`. A class that defines `operator<=>`
 //! returns `Ordering`.
 namespace vse
 {

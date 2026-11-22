@@ -5,7 +5,7 @@
 #include "ui/canvas.h"
 
 //! A canvas that records the calls instead of drawing them, so a widget test can say "this button drew a rounded rect
-//! with the hover colour" (Phase 15, Day 189).
+//! with the hover colour".
 
 namespace vse::ui
 {

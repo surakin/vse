@@ -32,7 +32,7 @@ bool ContractionObserved();
 ///
 /// False when the process runs with flush-to-zero or denormals-are-zero, which a library linked with `-ffast-math` (its
 /// `crtfastmath.o`) or a host calling `_MM_SET_FLUSH_ZERO_MODE` sets for the whole process. The physics step requires
-/// true (the engine itself never sets either mode); the step will check it (Day 390).
+/// true (the engine itself never sets either mode); the step will check it.
 ///
 /// - Returns: true if denormals are preserved.
 /// - Thread-safety: thread-safe; reads no shared state (the mode is per thread).

@@ -347,7 +347,7 @@ private:
 ///
 /// - Thread-safety: thread-compatible. A query object has one user at a time. Running two queries of one world on
 /// different threads is not supported yet: starting an iteration updates the world's (unsynchronized) iteration counter
-/// and write set; the parallel scheduler of Day 231 makes that safe.
+/// and write set; the parallel scheduler makes that safe.
 /// - Ownership: borrows the world, which must outlive the query; owns its list of archetype indices.
 template <class... Terms> class Query
 {

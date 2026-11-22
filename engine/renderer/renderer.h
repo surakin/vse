@@ -109,7 +109,7 @@ using BeforePresentFn = void (*)(rhi::TextureHandle image, void* user);
 /// - Thread-safety: thread-compatible plain data.
 struct RecoveryPolicy
 {
-    /// The most reset attempts for one loss; 0 turns recovery off (the loss is terminal, as before Phase 8).
+    /// The most reset attempts for one loss; 0 turns recovery off (the loss is terminal).
     u32 max_attempts = 3;
     /// Frames to wait before the second attempt; each later attempt waits twice as long as the one before, up to
     /// `max_delay_frames`. The first attempt is made at once, in the frame that found the loss.
@@ -199,8 +199,7 @@ struct RendererStats
     rhi::FenceValue last_fence = 0;
 };
 
-/// The backend the `backend` setting's value asks for: the value itself on every platform (macOS's `auto` is Metal
-/// since Phase 21 Day 309; from Day 298 it was the null backend there, with a note, while Metal was asked for by name).
+/// The backend the `backend` setting's value asks for: the value itself on every platform (macOS's `auto` is Metal).
 /// A GPU backend that is registered but cannot run is never replaced: the device creation then fails and says why.
 ///
 /// - Param setting_value: the `backend` setting's enum value (it follows [[rhi::Backend]]).

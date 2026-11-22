@@ -6,7 +6,7 @@
 #include "build_defs.h"
 #include "types.h"
 
-//! Number conversion (Phase 16): the engine's spelling of `atoi`, `atol`, `strtoul`, `strtod` and `to_chars`. Each
+//! Number conversion: the engine's spelling of `atoi`, `atol`, `strtoul`, `strtod` and `to_chars`. Each
 //! forwards to the C function of the same meaning, including its quirks (leading space skipped, no error report except
 //! through `end`). `strtod`, `strtof` and printf's floating conversions follow the process locale (`LC_NUMERIC`);
 //! text that is stored or parsed back uses [[FormatShortest]], [[FormatGeneral]] and [[ParseDoubleExact]], which do

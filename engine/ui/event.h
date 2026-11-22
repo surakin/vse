@@ -4,7 +4,7 @@
 #include "types.h"
 #include "ui/geometry.h"
 
-//! The events a surface delivers to its widgets (Phase 15, Day 192): pointer, wheel, key, text, focus and tick, as
+//! The events a surface delivers to its widgets: pointer, wheel, key, text, focus and tick, as
 //! plain data.
 
 namespace vse::ui
@@ -34,7 +34,7 @@ enum class EventType : u8
     WindowFocusLost,    ///< Posted to the surface: the window lost the focus; capture is released, popups close, the
                         ///< modifier mirror resets and the focus owner gets `FocusLost`.
     RelativeMotion,  ///< While the pointer is locked: it moved by (`rel_x`, `rel_y`) device units; goes to the widget
-                     ///< that asked for the lock (Day 201), never bubbles.
+                     ///< that asked for the lock, never bubbles.
 };
 
 /// One event.

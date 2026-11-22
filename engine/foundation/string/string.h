@@ -49,7 +49,7 @@ public:
         chars_.Push('\0');
     }
 
-    /// Creates a string holding a copy of `sv` on the allocator's shared default (container audit Day 2: lets a
+    /// Creates a string holding a copy of `sv` on the allocator's shared default (lets a
     /// [[HashMap]] or [[HashSet]] keyed by strings make its key from a view or a literal).
     ///
     /// Only available when the allocator has a static `Default()`, as [[HeapAllocator]] does.
@@ -159,7 +159,7 @@ private:
     Vector<char, Allocator> chars_;
 };
 
-/// Hash function for [[String]] keys of a [[HashMap]] (Phase 27 Day 474): the hash of the contents' [[StringView]], so
+/// Hash function for [[String]] keys of a [[HashMap]]: the hash of the contents' [[StringView]], so
 /// a map keyed by strings is searched with a view, without making a string.
 template <typename Allocator> struct Hash<String<Allocator>>
 {

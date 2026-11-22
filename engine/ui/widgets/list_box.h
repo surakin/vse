@@ -6,7 +6,7 @@
 #include "ui/widget.h"
 #include "ui/widgets/scroll.h"
 
-//! The list box (Phase 15, Day 196): a virtualized list of text rows with single or multiple selection.
+//! The list box: a virtualized list of text rows with single or multiple selection.
 
 namespace vse::ui
 {

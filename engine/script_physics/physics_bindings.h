@@ -116,7 +116,7 @@ bool RegisterPhysicsCommandKinds(script::CommandKindTable* kinds);
 /// `remove_joint`: `world-write`), the reads (`get_velocity`, `get_angular_velocity`, `is_sleeping`, `raycast`,
 /// `raycast_ex`, `shape_cast`, `overlap_sphere`, `overlap_box`, `closest_point`: `world-read`, against the tick-start
 /// physics state) and the layer helpers (`layer`, `layer_mask`: `world-read`), and the `character.*` functions
-/// (Day 467): `create`, `destroy`, `move`, `jump`, `set_height`, `set_position` (C API script physics, 2026-11-20)
+///: `create`, `destroy`, `move`, `jump`, `set_height`, `set_position` (C API script physics, 2026-11-20)
 /// (`world-write`; the moves run inside the physics step
 /// through [[physics::CharacterSet]]) and `exists`, `is_grounded`, `ground_normal`, `ground_velocity`,
 /// `vertical_speed` (`world-read`).

@@ -185,7 +185,7 @@ public:
     ///   `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`, `Busy` (Windows: another program opened the
     ///   file without sharing).
     /// - Backend: Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open
-    /// with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 21 Day 288).
+    /// with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower).
     static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
     /// Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/path` (percent escapes such as
     /// `%20` are decoded; no query or fragment) and a text without a scheme are local files; other schemes go to the

@@ -7,7 +7,7 @@
 #include "text/library.h"
 #include "types.h"
 
-//! Font faces: loading, sizing, glyph lookup, metrics, kerning and outlines (Phase 14).
+//! Font faces: loading, sizing, glyph lookup, metrics, kerning and outlines.
 //!
 //! A [[text::FontLibrary]] owns one FreeType library (and the counting allocator behind it); each [[text::Font]] is one
 //! face opened from it at one pixel size. FreeType is named only in `font_freetype.cpp`. Errors are values
@@ -23,7 +23,7 @@ using GlyphId = u32;
 using char32 = u32;
 
 /// The largest pixel size the atlas rasterizes (`Font::Render` and the glyph atlas refuse more with `Error::TooLarge`).
-/// Larger text is Phase 28's outline meshes.
+/// Larger text is built from outline meshes.
 constexpr u32 kMaxAtlasPixelSize = 128;
 
 /// The largest pixel size a [[text::Font]] accepts at all (metrics, layout and outlines work up to it).
@@ -150,7 +150,7 @@ struct GlyphBitmap
     Vector<byte> pixels;  ///< `width * height` coverage values, 0 (empty) to 255 (full).
 };
 
-/// A glyph outline: closed contours of points, unscaled (the Phase 28 mesh builder's input).
+/// A glyph outline: closed contours of points, unscaled (the mesh builder's input).
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its vectors.

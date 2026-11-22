@@ -1,6 +1,6 @@
 #pragma once
 
-//! The text source form of a texture (`.tex.src`), the raw image container and the texture minter. Phase 22 Day 323. An
+//! The text source form of a texture (`.tex.src`), the raw image container and the texture minter. An
 //! offline tool's code: never linked into the engine; its tests compile it directly.
 //!
 //! Line-oriented text; `#` starts a comment; fields are separated by spaces or tabs:
@@ -14,7 +14,7 @@
 //!     filter box              (or `kaiser`; default box)
 //!     alpha straight          (or `premultiply` or `ignore`; default straight for rgba8, ignore otherwise)
 //!
-//! `id` comes first (written by `asset_mint adopt`, Day 333). The images are raw files: a 24-byte header (`RAW1`,
+//! `id` comes first (written by `asset_mint adopt`). The images are raw files: a 24-byte header (`RAW1`,
 //! width, height, the id as a `u64`, a reserved `u32`) and `width * height * 4` bytes of RGBA8 rows. No PNG.
 
 #include "asset/block_compress.h"

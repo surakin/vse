@@ -1,6 +1,6 @@
 #pragma once
 
-//! The hash grid (Phase 18 Day 242): for many dynamic items of about the same size (crowds, particles). Kept by the
+//! The hash grid: for many dynamic items of about the same size (crowds, particles). Kept by the
 //! spatial design spec's experiment (a): on 100,000 same-size agents the all-pairs query was 2 times faster than the
 //! best BVH and an update a quarter of the cost; it loses on items of very different sizes and on rays, so it is
 //! opt-in.

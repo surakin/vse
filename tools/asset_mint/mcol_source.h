@@ -1,6 +1,6 @@
 #pragma once
 
-//! The text source form of a static mesh collider (`.mcol.src`) and its minter. Phase 25 Day 394. An offline tool's
+//! The text source form of a static mesh collider (`.mcol.src`) and its minter. An offline tool's
 //! code: never linked into the engine; its tests compile it directly.
 //!
 //!     id 0123456789abcdef

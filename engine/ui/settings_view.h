@@ -17,7 +17,7 @@
 #include "ui/widgets/text_field.h"
 #include "ui/widgets/value_widgets.h"
 
-//! A settings screen generated from the registry (Phase 15, Day 203): one labelled row per setting, the widget chosen
+//! A settings screen generated from the registry: one labelled row per setting, the widget chosen
 //! by its type, changes written through `Settings::Apply`.
 
 namespace vse::ui

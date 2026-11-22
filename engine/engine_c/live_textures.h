@@ -1,5 +1,5 @@
 #pragma once
-//! The device side of the host textures a surface draws (Phase 24 Day 366): for each host texture a material slot
+//! The device side of the host textures a surface draws: for each host texture a material slot
 //! names, one texture on the surface's device, a ring of three persistently mapped staging buffers, and the version of
 //! the pixels last uploaded. Internal to the module `engine_c`.
 

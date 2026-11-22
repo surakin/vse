@@ -2,7 +2,7 @@
 
 #include <initializer_list>
 
-//! Brace-initializer lists (Phase 16): the engine's spelling of `<initializer_list>`. The compiler requires the
+//! Brace-initializer lists: the engine's spelling of `<initializer_list>`. The compiler requires the
 //! standard type for
 //! `{a, b, c}` to convert to a parameter, so `InitializerList<T>` is an alias of it, not a distinct type.
 namespace vse

@@ -4,7 +4,7 @@
 #include "ui/event.h"
 #include "ui/geometry.h"
 
-//! Popups and accelerators, the plain types (Phase 15, Day 198): where a popup goes relative to its anchor, how it
+//! Popups and accelerators, the plain types: where a popup goes relative to its anchor, how it
 //! closes, and the key chords of accelerators.
 
 namespace vse::ui

@@ -3,7 +3,7 @@
 #include <type_traits>
 #include <utility>
 
-//! Language-support utilities (Phase 16): the engine's spelling of `<utility>`. This header and the other `lang/`
+//! Language-support utilities: the engine's spelling of `<utility>`. This header and the other `lang/`
 //! headers are the only files that include the standard library's language-support headers.
 namespace vse
 {

@@ -1,7 +1,6 @@
 #pragma once
 
-//! [[asset::ResourceManager]]: ask for a resource by id, get a handle, never know which backend served it. Phase 22 Day
-//! 328.
+//! [[asset::ResourceManager]]: ask for a resource by id, get a handle, never know which backend served it.
 //!
 //! The manager owns the mount table ([[asset::MountTable]]), the pool the blobs are read into
 //! ([[asset::LoadBufferPool]]) and a cache of loaded resources. `Load<T>` reads the blob into one aligned buffer,
@@ -440,7 +439,7 @@ public:
 ///
 /// - Thread-safety: thread-safe. One lock guards the loaded set; a load holds it while it reads, so loads are
 /// serialized
-///   (asynchronous loading is Day 330). A loader must not call back into the manager.
+///   (asynchronous loading is separate). A loader must not call back into the manager.
 /// - Ownership: borrows the type registry and the backends given to `Mount`; owns the backends given to `MountPath` and
 ///   `MountOwned`, the pool, the loaded resources and the loaders. Handles must be gone before the manager.
 class ResourceManager

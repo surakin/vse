@@ -6,7 +6,7 @@
 #include "string_view.h"
 #include "types.h"
 
-//! Drag and drop in the toolkit (Phase 15, Day 200): what is dragged. The routing is in [[ui::Surface]]; the widgets
+//! Drag and drop in the toolkit: what is dragged. The routing is in [[ui::Surface]]; the widgets
 //! that start and accept drags override the `Widget` drag virtuals.
 
 namespace vse::ui

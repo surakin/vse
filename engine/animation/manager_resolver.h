@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[animation::ManagerResolver]]: the animation system's view of the resource manager. Phase 22 Day 329.
+//! [[animation::ManagerResolver]]: the animation system's view of the resource manager.
 
 #include "animation/components.h"
 #include "asset/cpu_loaders.h"

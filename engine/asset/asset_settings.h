@@ -1,7 +1,7 @@
 #pragma once
 
-//! The asset settings (Phase 22 Day 315): [[asset::RegisterAssetSettings]] declares the byte budgets of the load buffer
-//! pool and of the memory backend and (Day 320) the animation error bounds; the readers return them.
+//! The asset settings: [[asset::RegisterAssetSettings]] declares the byte budgets of the load buffer
+//! pool and of the memory backend and the animation error bounds; the readers return them.
 
 #include "asset/resource_id.h"
 #include "containers/vector.h"

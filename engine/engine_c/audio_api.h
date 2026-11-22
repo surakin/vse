@@ -1,5 +1,5 @@
 #pragma once
-//! The audio half of the C API (Phase 26 Day 438): the host-driven mixer of an engine and its table functions. Internal
+//! The audio half of the C API: the host-driven mixer of an engine and its table functions. Internal
 //! to the module `engine_c`. The mixer has no device and no thread; the host renders it from its own audio callback.
 #include "audio/mixer.h"
 #include "audio/music.h"

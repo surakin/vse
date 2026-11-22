@@ -1,6 +1,6 @@
 # Platform: Windowing and Input
 
-Status: written (Phases 1, 13, 15 and 21).
+Status: written.
 
 **Audience:** every programmer who opens a window. Read [Platform: operating system](platform-os.md) first for the console, the clock and the command line.
 
@@ -292,7 +292,7 @@ nothing changes and `IsFullscreen` stays false, so a settings layer treats the `
 - **Windows:** borderless over the window's monitor (`engine/platform/windows/FULLSCREEN.md`): the style loses
   `WS_OVERLAPPEDWINDOW` and the window covers the monitor's rectangle; leaving gives back the saved style and placement. Windows
   never refuses, and the change is synchronous: `IsFullscreen` is true when `SetFullscreen` returns. No exclusive mode.
-- **macOS:** native fullscreen (`toggleFullScreen:`, a Space of its own; `engine/platform/macos/FULLSCREEN.md`, Phase 21 Day 295): the
+- **macOS:** native fullscreen (`toggleFullScreen:`, a Space of its own; `engine/platform/macos/FULLSCREEN.md`): the
   change animates, so `IsFullscreen` follows when it ends, and a request made during the animation is applied after it. A backend that
   does not implement fullscreen keeps the default (`SupportsFullscreen` is false) and the setting is unavailable.
 
@@ -335,7 +335,7 @@ Code: `engine/platform/linux/x11/`. X11 is the fallback for machines without a W
 
 ### Windows specifics
 
-`os::win32::Win32Window` (`platform/windows/win32_window.h`, Phase 13 Day 158) is a top-level window of a class registered once per
+`os::win32::Win32Window` (`platform/windows/win32_window.h`) is a top-level window of a class registered once per
 process and never unregistered. The window procedure reaches the object through the window's user data, which `WM_NCCREATE` sets and
 closing clears before `DestroyWindow`, so a message sent during creation or destruction, or one still queued for a destroyed window,
 never reaches a destroyed object; for the same reason the object cannot move.
@@ -361,7 +361,7 @@ never reaches a destroyed object; for the same reason the object cannot move.
 
 ### macOS specifics
 
-`os::cocoa::CocoaWindow` (`platform/macos/cocoa_window.h`, Phase 21 Day 295) is an `NSWindow` whose content view is backed by a
+`os::cocoa::CocoaWindow` (`platform/macos/cocoa_window.h`) is an `NSWindow` whose content view is backed by a
 `CAMetalLayer`, driven by the program's own loop: `PumpEvents` drains AppKit's event queue without waiting, for every window of the program.
 
 - **The main thread only.** AppKit allows windows on the main thread alone; `Open` on another thread fails with a log line (AppKit would
@@ -386,7 +386,7 @@ never reaches a destroyed object; for the same reason the object cannot move.
 
 ### macOS input
 
-The content view is the window's first responder and fills the [[os::InputState]] and the event stream (Phase 21 Day 296), with the meaning
+The content view is the window's first responder and fills the [[os::InputState]] and the event stream, with the meaning
 the Linux and Windows backends give them.
 
 - **Keys are layout-aware.** A key that types a character is named by what the layout gives it with Shift and Caps Lock
@@ -423,7 +423,7 @@ the Linux and Windows backends give them.
 
 ### macOS cursor, clipboard and drag and drop
 
-Phase 21 Day 297 (`platform/macos/cocoa_cursor.mm`, `cocoa_clipboard.mm`, `cocoa_dragdrop.mm`).
+The macOS backend is in `platform/macos/cocoa_cursor.mm`, `cocoa_clipboard.mm` and `cocoa_dragdrop.mm`.
 
 - **Shapes** are `NSCursor`s (`os::cocoa::SystemCursorFor`). macOS has no diagonal resize cursor before macOS 15: `ResizeDiagonalNWSE` and
   `ResizeDiagonalNESW` are its frame-resize cursors from macOS 15 and the arrow on 13 and 14. It has no four-way arrow at all: `ResizeAll` is
@@ -501,9 +501,9 @@ program). Started from Explorer it has no console: the writes fail and the log f
 
 ### Known limitations
 
-- The event stream is implemented on Linux (Wayland and X11), Windows (Phase 15 Day 205) and macOS (Phase 21 Day 296) (`engine/platform/BACKEND.md`).
-- The cursor shapes, images, the lock, the clipboard and drag and drop are implemented on Linux, Windows (Phase 15 Day 205) and macOS (Phase 21 Day 297) (`engine/platform/BACKEND.md`).
+- The event stream is implemented on Linux (Wayland and X11), Windows and macOS (`engine/platform/BACKEND.md`).
+- The cursor shapes, images, the lock, the clipboard and drag and drop are implemented on Linux, Windows and macOS (`engine/platform/BACKEND.md`).
 - No input-method (IME) composition: a Chinese, Japanese or Korean input method is not supported; dead keys and compose sequences are.
 - The Wayland half is checked against a real compositor only, which cannot be made to send key, pointer and focus events; the key logic is tested through
-  `KeyboardEvents` with a fake clock and real keymaps, and the pointer, focus and wheel handlers by the end-to-end runs of the UI demo (Day 204).
+  `KeyboardEvents` with a fake clock and real keymaps, and the pointer, focus and wheel handlers by the end-to-end runs of the UI demo.
 

@@ -181,7 +181,7 @@ public:
     /// - Thread-safety: thread-safe.
     static FramePool& Global();
 
-    /// Releases the memory of the process-wide pool when the shared engine library is unloaded (Phase 23 Day 348): the
+    /// Releases the memory of the process-wide pool when the shared engine library is unloaded: the
     /// pool is otherwise immortal, and its slabs would outlive the library's own image. Does nothing if the pool was
     /// never used.
     ///

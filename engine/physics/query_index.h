@@ -7,7 +7,7 @@
 #include "spatial/spatial_set.h"
 #include "types.h"
 
-//! The query index (query and hierarchy indices series, Day 1): every collider's exact world box in a
+//! The query index (every collider's exact world box in a
 //! `spatial::SpatialSet`, kept current by the world on every change, so the queries ask it for candidates instead of
 //! testing every collider. Private to the physics module.
 namespace vse::physics

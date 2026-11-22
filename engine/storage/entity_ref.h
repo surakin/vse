@@ -1,8 +1,8 @@
 #pragma once
 
 //! The stored identity of an entity, as a field type: [[storage::EntityKey]] (128 bits) and [[storage::EntityRef]] (a
-//! reference to another entity by key). Day 256 declares the types and their encoding (16 bytes); Day 258 adds key
-//! generation, the key index and the resolution of references on load.
+//! reference to another entity by key). The types encode to 16 bytes; key generation, the key index and the
+//! resolution of references on load are in the same module.
 
 #include "containers/hash_map.h"
 #include "mem/heap_allocator.h"

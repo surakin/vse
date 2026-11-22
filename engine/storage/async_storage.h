@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[storage::AsyncSave]] and [[storage::AsyncLoad]] (Phase 19 Day 264): the handles of
+//! [[storage::AsyncSave]] and [[storage::AsyncLoad]]: the handles of
 //! [[storage::WorldStorage::SaveAsync]] and [[storage::WorldStorage::LoadAsync]], and [[storage::Autosaver]], which
 //! saves the running world every few seconds without stalling the frame.
 

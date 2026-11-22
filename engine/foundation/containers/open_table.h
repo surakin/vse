@@ -8,7 +8,7 @@
 #include "log/assert.h"
 #include "types.h"
 
-//! The open-addressing table under [[HashMap]] and [[HashSet]] (container audit series, Day 7): linear probing,
+//! The open-addressing table under [[HashMap]] and [[HashSet]]: linear probing,
 //! tombstones, a power-of-two capacity and the walk, written once. A set stores its keys, a map stores
 //! `{key, value}` entries; `KeyOf` says where an element's key is.
 namespace vse::detail

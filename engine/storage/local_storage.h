@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[storage::LocalStorage]] (Phase 19 Day 264): a database connection, a SQL store and a [[storage::WorldStorage]]
+//! [[storage::LocalStorage]]: a database connection, a SQL store and a [[storage::WorldStorage]]
 //! opened from the settings.
 
 #include "database/database.h"

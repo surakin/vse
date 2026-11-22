@@ -1,9 +1,8 @@
 #pragma once
 
 //! The frame of a lit scene: the material system, the per-frame buffers, the G-buffer, lighting and tonemap passes, an
-//! optional text overlay, and the [[Renderer]] frame loop that runs them. One object per device. Moved here from
-//! the renderer demo on Phase 24 Day 359 so the C API's surfaces draw worlds with it; the demo and the tests use it
-//! too.
+//! optional text overlay, and the [[Renderer]] frame loop that runs them. One object per device. The C API's surfaces
+//! draw worlds with it; the renderer demo and the tests use it too.
 
 #include "containers/hash_map.h"
 #include "containers/unique_ptr.h"
@@ -125,7 +124,7 @@ inline usize HashLabel(u32 pixel_size, StringView text)
 namespace vse
 {
 
-/// Hash function for the scene frame's label keys (container audit Day 7).
+/// Hash function for the scene frame's label keys.
 ///
 /// - Thread-safety: thread-safe (stateless).
 template <> struct Hash<renderer::detail::LabelKey>
@@ -218,7 +217,7 @@ public:
     /// Renders one frame of `scene` seen by `camera`. See Renderer::RenderFrame.
     FrameStatus Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen);
 
-    /// The text overlay (Phase 14): `greeting` at 32 px and `status` at 14 px below it, drawn after the tonemap while
+    /// The text overlay: `greeting` at 32 px and `status` at 14 px below it, drawn after the tonemap while
     /// `on` is true. Needs `FrameSetup::font_path`. Returns false when the frame has no overlay (no font was given or
     /// it could not be opened).
     ///

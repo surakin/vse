@@ -68,7 +68,7 @@ struct LightSource
     /// For a directional or spot light, the unit vector from the surface toward the light in the entity's own space
     /// (a spot shines along its opposite); the entity's rotation turns it into world space.
     Vec3 direction = Vec3(0, 1, 0);
-    /// For a spot light, the inner half-angle in radians (glTF coverage Day 11; stored from version 2).
+    /// For a spot light, the inner half-angle in radians (stored from version 2).
     f32 inner_cone = 0.0f;
     /// For a spot light, the outer half-angle in radians, above `inner_cone`, at most pi/2.
     f32 outer_cone = 0.7853981634f;

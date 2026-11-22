@@ -8,9 +8,9 @@
 #include "string/string.h"
 #include "types.h"
 
-//! Watching one directory for changes without reading it again and again: [[io::DirectoryWatcher]]. Phase 27 Day 464
-//! (hot reload). Linux (inotify), Windows (ReadDirectoryChangesW, Day 473) and macOS (FSEvents, Day 474) have a native
-//! backend; every platform has the polling one.
+//! Watching one directory for changes without reading it again and again: [[io::DirectoryWatcher]]. Used for hot
+//! reload. Linux (inotify), Windows (ReadDirectoryChangesW) and macOS (FSEvents) have a native backend; every platform
+//! has the polling one.
 namespace vse::io
 {
 

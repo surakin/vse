@@ -53,7 +53,7 @@ struct CollisionFilter
 /// - Thread-safety: thread-compatible plain data.
 struct BroadPhaseConfig
 {
-    /// The dynamic tree's fat margin, as a fraction of a collider's largest extent (the Day 385 spec's default).
+    /// The dynamic tree's fat margin, as a fraction of a collider's largest extent.
     f32 fat_margin = 0.25f;
     /// The pair tracker's end margin.
     ///
@@ -67,7 +67,7 @@ struct BroadPhaseConfig
     f32 ccd_threshold = 0.0f;
     /// Which layers meet.
     CollisionFilter filter;
-    /// Whether two triggers make a pair (Day 395); off by default.
+    /// Whether two triggers make a pair; off by default.
     bool trigger_pairs = false;
 };
 

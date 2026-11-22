@@ -2,7 +2,7 @@
 
 //! Importing glTF skins as skeletons.
 //!
-//! Phase 22 Day 337. Each glTF skin becomes one skeleton resource ([[asset::BuildSkeletonBlob]]): joints parent-first,
+//! Each glTF skin becomes one skeleton resource ([[asset::BuildSkeletonBlob]]): joints parent-first,
 //! a non-joint node between two joints folded into the child's bind-local transform, the transform above a root joint
 //! kept in the root so the skeleton is in the glTF scene's space, inverse bind matrices taken from the skin or
 //! computed.

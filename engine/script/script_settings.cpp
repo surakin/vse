@@ -146,7 +146,7 @@ void RegisterScriptSettings(settings::Registry* registry)
     dev_directory.label = "Script development directory";
     dev_directory.description =
         "a directory a development build reads script sources from, by asset id, instead of the minted blobs (the hot "
-        "reload of Day 464); empty is off, and a shipped configuration leaves it empty";
+        "reload); empty is off, and a shipped configuration leaves it empty";
     dev_directory.group = "script";
     dev_directory.flags = settings::kRestartRequired;
     registry->Register(dev_directory);

@@ -7,7 +7,7 @@
 #include "debug/compiler.h"
 #include "types.h"
 
-//! Formatted text (Phase 16): the engine's spelling of `snprintf`, `vsnprintf`, `swprintf` and `sscanf`. Formatting to
+//! Formatted text: the engine's spelling of `snprintf`, `vsnprintf`, `swprintf` and `sscanf`. Formatting to
 //! a console is [[out::Print]]; this header formats to a buffer.
 namespace vse
 {

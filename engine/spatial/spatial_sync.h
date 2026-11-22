@@ -1,6 +1,6 @@
 #pragma once
 
-//! The spatial sync system (Phase 18 Days 244-245): keeps the sets of a [[spatial::SpatialWorld]] true to the entities
+//! The spatial sync system: keeps the sets of a [[spatial::SpatialWorld]] true to the entities
 //! that carry the components of `spatial/components.h`.
 
 #include "ecs/schedule.h"

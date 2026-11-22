@@ -6,7 +6,7 @@
 #include "types.h"
 #include "ui/geometry.h"
 
-//! The canvas widgets draw on (Phase 15, Day 189): an abstract 2D drawing surface in logical units.
+//! The canvas widgets draw on: an abstract 2D drawing surface in logical units.
 //!
 //! A widget never builds vertices: it calls the operations of [[ui::Canvas]], and the implementation decides what that
 //! means. The implementation of the toolkit is

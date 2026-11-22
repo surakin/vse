@@ -1,6 +1,6 @@
 #pragma once
 
-//! The pak: many resources in one file, found by id ([[asset::PakWriter]], [[asset::PakReader]]). Phase 22 Day 316.
+//! The pak: many resources in one file, found by id ([[asset::PakWriter]], [[asset::PakReader]]).
 //!
 //! All integers are little-endian. The layout, in file order:
 //!

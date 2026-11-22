@@ -72,7 +72,7 @@ struct TextureDesc
     Format format = Format::Undefined;
     /// What the texture will be used for; at least one flag.
     TextureUsage usage = TextureUsage::None;
-    /// Samples per texel; only 1 is supported in Phase 4.
+    /// Samples per texel; only 1 is supported.
     u32 samples = 1;
     /// Optional name shown in debuggers and logs; null for none.
     const char* debug_name = nullptr;
@@ -149,7 +149,7 @@ struct ShaderSlot
 /// [[rhi::ShaderSlotTable]]'s `push_constant_slot` for a module without push constants.
 inline constexpr u32 kNoShaderSlot = 0xffffffffu;
 
-/// The slots of every resource of one shader module, minted beside a Metal library (Phase 21 Day 302): the Metal
+/// The slots of every resource of one shader module, minted beside a Metal library: the Metal
 /// backend binds each bind group's resources at these slots and checks a pipeline's layout against them.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -245,7 +245,7 @@ struct ShaderBlobSet
     ShaderBlob spirv{ShaderFormat::Spirv, nullptr, 0};
     /// The DXIL module, or empty.
     ShaderBlob dxil{ShaderFormat::Dxil, nullptr, 0};
-    /// The Metal library, or empty (Phase 21 Day 299; minted on a Mac).
+    /// The Metal library, or empty (minted on a Mac).
     ShaderBlob metallib{ShaderFormat::MetalLib, nullptr, 0};
 
     /// Returns the blob of one format.
@@ -339,8 +339,7 @@ struct BindingDesc
     /// For a `StorageBuffer` or `ReadOnlyStorageBuffer` binding: the size in bytes of one element as the shader
     /// declares it
     /// (`StructuredBuffer<T>`: `sizeof(T)` in the buffer's std430 layout), at most 2048. Direct3D 12 makes a structured
-    /// view with it, so a bound range starts on a multiple of it; Vulkan ignores it. 0 for every other type. Phase 13
-    /// Day 166.
+    /// view with it, so a bound range starts on a multiple of it; Vulkan ignores it. 0 for every other type.
     u32 stride = 0;
 };
 
@@ -522,7 +521,7 @@ struct GraphicsPipelineDesc
     u32 push_constant_bytes = 0;
     /// Stages that read the push constants; required when `push_constant_bytes` is non-zero.
     ShaderStage push_constant_stages = ShaderStage::None;
-    /// Samples per texel; only 1 is supported in Phase 4.
+    /// Samples per texel; only 1 is supported.
     u32 samples = 1;
     /// Optional name shown in debuggers and logs; null for none.
     const char* debug_name = nullptr;

@@ -1,6 +1,6 @@
 #pragma once
 
-//! Retargeting minted blobs for another platform (Phase 22 Day 334): the `TargetTransform` registry of `asset_mint pack
+//! Retargeting minted blobs for another platform: the `TargetTransform` registry of `asset_mint pack
 //! --target`. A blob is laid out for one target (its header's target tag; 0 is the development target) and a pak holds
 //! blobs of one target only. Packing for another target rewrites the blobs through one optional function per resource
 //! type. An offline tool's code: never linked into the engine or a game.

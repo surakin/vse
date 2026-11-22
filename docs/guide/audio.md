@@ -1,12 +1,12 @@
 # Audio: repeatable on one build, equal within a tolerance across machines
 
-Status: in progress (Phase 26). Built: the module and the render checks (Day 415), the formats, conversions and the clip (Day 416). the WAV parser (Day 417). minted clips (Day 418). Next: the device interface (Day 419).
+Status: in progress. Built: the module and the render checks, the formats, conversions and the clip; the WAV parser; minted clips. Next: the device interface.
 
 **Audience:** engine programmers who write or review audio code, and hosts that compare renders across machines. Read [Math](foundation-math.md) first.
 Design and the experiments behind it: `docs/superpowers/specs/2026-11-17-audio-design.md`.
 
 The audio module (`engine/audio`, namespace `audio`) mixes voices into blocks of interleaved `f32` frames that a device pulls. This page states the rules
-every later day of the phase obeys.
+the module obeys.
 
 ## The rules
 
@@ -64,7 +64,7 @@ accepted and a gain of 1.001 (a difference of about 5e-4) is flagged.
 `audio/clip.h`: an `AudioClip` is immutable decoded interleaved `f32` frames in a `SharedBytes`, named by an offset (never a pointer), with the format (rate and
 layout), the frame count, loop points in frames (`loop_start < loop_end <= frames`; none when `loop_end` is 0) and a name. It is held as `f32` so the mixer
 converts nothing at play time: a 3-minute stereo 48 kHz clip is 69 MB as `f32` (it would be 35 MB as 16-bit; the spec chose `f32`), and long clips stream
-(Day 435) instead; a clip over `kMaxClipFrames` (2^29 frames) is refused. `ClipView` is the validated zero-copy view the mixer reads (`MakeClipView` checks the
+ instead; a clip over `kMaxClipFrames` (2^29 frames) is refused. `ClipView` is the validated zero-copy view the mixer reads (`MakeClipView` checks the
 format, frame count, size, 4-byte alignment, loop points and that every sample is finite); `AudioClip::View()` rebuilds it without validation or allocation, so
 a voice that starts allocates nothing for its clip. Creating a clip allocates and scans the samples once; it is not an audio-thread operation.
 
@@ -79,8 +79,8 @@ outside 8,000 to 384,000 Hz are `Unsupported`.
 
 The input is hostile by rule: every size is compared with the bytes that remain before it is used, counts times sizes are done in 64 bits, the chunk walk always
 advances by at least 8 bytes, the frame count is capped at `kMaxWavFrames`, and nothing aborts on bad bytes (`WavStatus`). `DecodeWav` makes an `AudioClip`
-with the Day 416 conversions (a NaN or infinity in a float file is `BadSamples`); `WavReader` reads frames in order or from a position without allocating, for
-streaming sources (Day 435; it reads from bytes, the `io::File` source arrives with the stream interface). The tests build their files in memory
+with the format conversions (a NaN or infinity in a float file is `BadSamples`); `WavReader` reads frames in order or from a position without allocating, for
+streaming sources (it reads from bytes, the `io::File` source arrives with the stream interface). The tests build their files in memory
 (`tests/audio/wav_builder.h`), cut a file at every length and mutate it 6,000 times with a fixed seed.
 
 ## Minted clips
@@ -120,7 +120,7 @@ The settings (`audio/audio_settings.h`, `RegisterAudioSettings`, `AudioSettingsF
 the output does not depend on the size the device calls back with. `Init(MixerConfig)` allocates everything (the voice pool, the sinc table, the carry block) and
 `RenderBlock` and `Render` allocate nothing. A voice (`VoiceDesc`: a clip, gain 0 to 16, pan -1 to 1, pitch 1/16 to 16, loop, priority, virtual, start frame) is
 started by `Play`, which returns a `VoiceId` (a slot and a generation, so a stale id names nothing), and changed by `Stop`, `SetGain`, `SetPan`, `SetPitch` and
-`SetVirtual`; until the command queue (Day 421) these are control-thread calls that must not overlap a render.
+`SetVirtual`; until the command queue these are control-thread calls that must not overlap a render.
 
 A voice's position is a 32.32 fixed-point `u64`, so a long clip does not drift (an `f32` accumulator stalls after about twelve minutes at 48 kHz). The three
 resamplers, chosen by `audio.resampler_quality`, are linear, 4-point Hermite (the default) and a 16-tap Blackman-windowed sinc with 32 phases; at a whole-frame
@@ -131,8 +131,8 @@ clip is released.
 
 Routing: a mono clip pans over the front pair with the equal-power law `left = Sqrt((1 - p) / 2)`, `right = Sqrt((1 + p) / 2)` (-3 dB, gain 0.7071, at the centre); a
 stereo or multichannel clip on a layout with a front pair balances it (the side away from the pan is attenuated by `Sqrt(1 - |p|)`, the centre is unity); every
-other pairing goes through the conversion table of `audio/convert.h`. Voices are summed in slot order into the block, which is not clipped (the master bus limits,
-Day 422). When the pool is full a new voice stops the one with the lowest (priority, gain, age) if it does not rank below it, and is refused with `Full`
+other pairing goes through the conversion table of `audio/convert.h`. Voices are summed in slot order into the block, which is not clipped (the master bus limits).
+When the pool is full a new voice stops the one with the lowest (priority, gain, age) if it does not rank below it, and is refused with `Full`
 otherwise; a virtual voice advances its position and costs no mixing. The scene hashes of `mixer_test.cpp` are a same-build regression check.
 
 ## Controlling voices
@@ -239,7 +239,7 @@ headers still runs where the library is missing) and then **ALSA** through raw `
 
 ## The Windows backend (WASAPI)
 
-`CreateDevice(DeviceKind::Platform)` on Windows makes a **WASAPI** device in shared mode (`engine/audio/windows/`, Day 440; the
+`CreateDevice(DeviceKind::Platform)` on Windows makes a **WASAPI** device in shared mode (`engine/audio/windows/`; the
 COM headers only there, `windows.h` only through `os/windows/win32.h`). `EnumerateDevices` lists the active render endpoints; a
 name is the endpoint's id (`{0.0.0.00000000}.{guid}`), the system's default output (the console role) is marked, and `default` or
 an empty name opens it. Exclusive mode is not built.
@@ -266,7 +266,7 @@ an empty name opens it. Exclusive mode is not built.
 
 ## The macOS backend (CoreAudio)
 
-`CreateDevice(DeviceKind::Platform)` on macOS makes a **CoreAudio** device (`engine/audio/macos/`, Day 441; Apple's headers only
+`CreateDevice(DeviceKind::Platform)` on macOS makes a **CoreAudio** device (`engine/audio/macos/`; Apple's headers only
 there): an AUHAL output unit (`kAudioUnitSubType_HALOutput`) bound to one device, with a render callback on CoreAudio's I/O
 thread. Plain C APIs (AudioToolbox, CoreAudio, CoreFoundation, libdispatch), no Objective-C. `EnumerateDevices` lists the devices
 that have output channels; a name is the device's UID (`kAudioDevicePropertyDeviceUID`, `BuiltInSpeakerDevice` for a Mac's
@@ -365,7 +365,7 @@ with distance by a table from 20 kHz at the listener to 1.2 kHz at 400 m (`AirCu
 update stopped (so every emitter is visited within `ceil(emitters / budget)` updates), and an emitter beyond the budget keeps
 its last value. `SpatialAudioReport::occlusion_tests` is the cost. The value is smoothed every update with the time constant
 `smooth_seconds`, so a door that opens fades instead of clicking, and is heard as a gain factor down to `occluded_gain` and a
-low-pass (the voice's one-pole of Day 430) falling toward `occluded_cutoff_hz` (the air absorption's cutoff is used when it is
+low-pass (the voice's one-pole) falling toward `occluded_cutoff_hz` (the air absorption's cutoff is used when it is
 already lower).
 
 `audio_physics::PhysicsOcclusion` (`engine/audio_physics`, layer 14: the one target that names both `audio` and `physics`)
@@ -405,13 +405,13 @@ sizes); a seek bisects the index, restarts the library there (one packet only pr
 the target. `LOOPSTART` and `LOOPEND` comment tags (decimal frames, names in any case) become `Info().loop_start` and
 `loop_end` when they satisfy `start < end <= total_frames`; `SetLooping(true)` makes `Decode` wrap by seeking at `loop_end`, with
 no change to a sample (tested over two and a half passes). A wrap costs one seek (a page of decode), so a streaming source decodes
-ahead (Day 435).
+ahead.
 
 ### Compressed clips
 
 An `ACLP` blob has a codec field. `codec = Vorbis` holds the Ogg bytes verbatim (section 17) with the decoded length, rate,
 channels and loop points in the header; `AudioClipView::Open` accepts either, and `MakeClipFromAsset` decodes a Vorbis blob to the
-clip's `f32` samples once (the way for short effects; Day 435 streams music from the same blob). `asset_mint mint-audio` takes an
+clip's `f32` samples once (the way for short effects; a streaming source reads music from the same blob). `asset_mint mint-audio` takes an
 `ogg` line in the source: `compress on` keeps the bytes, `compress off` decodes at mint time to PCM (and records the libvorbis
 version and the hash of the decoded samples in section 18, so a decoder change shows when the clip is minted again), `compress
 auto` (default) keeps the bytes when the decoded PCM would be over 1 MiB. Both are byte-stable for one decoder version. The
@@ -462,7 +462,7 @@ block N plus the commands posted from N on reproduces the render bit for bit (te
 with a delay, a reverb, a filter, a send, a ramp in flight and the limiter). The `MusicPlayer` and the `AudioSystem` are not
 saved: the host rebuilds them and posts their commands again.
 
-**On Windows (Day 440)** the reference levels match: the buses scene's rows (blocks 10, 30, 50) and the thousand-voice scene's
+**On Windows** the reference levels match: the buses scene's rows (blocks 10, 30, 50) and the thousand-voice scene's
 block 19 come out as committed to the six digits recorded, under cl and clang-cl; the same-build hashes differ from Linux's, and
 Windows' own are committed (`tests/audio/platform_hash.h`).
 
@@ -477,7 +477,7 @@ add under 1 percent.
 ## Cost and limits
 
 Measured by `game/audio_bench` (Release, Clang, Linux, AMD Ryzen 9 7950X3D, one thread, stereo output at 48 kHz, 256-frame blocks, so a
-5.33 ms deadline; Day 442). Every voice loops a mono clip with a random pan and pitch, and every voice is mixed (the mixer does not
+5.33 ms deadline). Every voice loops a mono clip with a random pan and pitch, and every voice is mixed (the mixer does not
 virtualise by itself: `AudioSystem` ranks emitters and makes the quiet ones virtual).
 
 | Scene | 100 voices | 1,000 voices | 4,000 voices |
@@ -508,5 +508,5 @@ the audio thread; `KNOWN-ISSUES.md`).
 
 ## Where the tests are
 
-`tests/audio` (phase 26): `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
+`tests/audio`: `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
 perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers). `effect_test.cpp` (the filter responses, the clamps, the ring-out, the delay taps, the reverb decay and stereo field, the inserts, the committed echo and reverb scene hashes). `backend_test.cpp` (the negotiation tables, the conversion, the lists, a real device rendered at its pace, a stalled callback, destroying a running device; the hardware tests print a warning and skip without a sound device). `system_test.cpp` (a fake card: another granted rate mid-clip, a lost device and its recovery, every setting in turn, 100 resets). `spatial_test.cpp` (the distance models at ten distances, the cone, the sync: ranking, determinism, 10,000 emitters with one moved, a destroyed entity, the listener's velocity). `panning_test.cpp` (the documented gains per layout, constant power at 360 azimuths, smoothness, the 5.1 mix with the LFE send, a ramp without a step). `doppler_test.cpp` (the formula, teleports, a flyby, the cutoff table, the one-pole low-pass, the committed flyby hash). `occlusion_test.cpp` (a test double: open, behind a wall, the level, a door fading, the rate limit, the round-robin and the budget); `snapshot_test.cpp` (save, restore and replay bit for bit, refusals, stream voices, the committed scene hashes, the callback sizes, the cost). `tests/audio_physics` (the real physics world: thin and thick walls, two walls, layers and absorptions, the level through the system).

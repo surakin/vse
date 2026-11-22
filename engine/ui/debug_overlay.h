@@ -10,7 +10,7 @@
 #include "ui/widgets/list_box.h"
 #include "ui/widgets/text_field.h"
 
-//! The debug overlay (Phase 15, Day 203): a frame-time graph, counters fed by the program, and a log console with a
+//! The debug overlay: a frame-time graph, counters fed by the program, and a log console with a
 //! command line.
 
 namespace vse::ui

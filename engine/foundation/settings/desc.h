@@ -72,11 +72,11 @@ struct SettingDesc
     const char* group = nullptr;
     /// The capability the setting needs, or null if it always works.
     const char* capability = nullptr;
-    /// The environment variable that supplies the setting (Day 134), or null.
+    /// The environment variable that supplies the setting, or null.
     const char* env = nullptr;
-    /// A command-line flag that sets it, without the leading dashes (Day 138), or null.
+    /// A command-line flag that sets it, without the leading dashes, or null.
     const char* flag = nullptr;
-    /// Older keys this setting was known by (Day 136); at most 8.
+    /// Older keys this setting was known by; at most 8.
     const char* const* deprecated_keys = nullptr;
     /// How many names `deprecated_keys` holds.
     u32 deprecated_count = 0;

@@ -1,6 +1,6 @@
 # Platform: OS Layer
 
-Status: written (Phase 1; Windows from Phase 13; macOS from Phase 21 Day 285).
+Status: written.
 
 **Audience:** engine programmers. Read [Standard types](foundation-types.md) and [Memory](foundation-memory.md) first.
 
@@ -235,7 +235,7 @@ so the debugger or crash handler sees it.
 
 ## Porting notes (Windows, macOS, mobile, console)
 
-**Windows** (Phase 13; `engine/foundation/os/windows/`). Win32 is the platform contract; the C runtime is used where it is the plain
+**Windows** (`engine/foundation/os/windows/`). Win32 is the platform contract; the C runtime is used where it is the plain
 choice (`std::exit`), never for descriptors.
 
 - **Strings at the boundary.** The engine is UTF-8; Win32 takes UTF-16. `os/windows/utf16.h` converts in both directions into caller
@@ -243,7 +243,7 @@ choice (`std::exit`), never for descriptors.
   long absolute paths the `\\?\` prefix, so they work whatever `LongPathsEnabled` says.
 - **Descriptors** are a table of handles of the engine's own (0-2 the standard handles, 256 more slots claimed without a lock). The C
   runtime's descriptors were rejected because a thread stopped inside `_write` holds a lock that a crash report on another thread would
-  wait on forever (Phase 13 Day 147, Spike A). Console output is converted to UTF-16 and written with `WriteConsoleW`; the console's code
+  wait on forever (Spike A). Console output is converted to UTF-16 and written with `WriteConsoleW`; the console's code
   page is left alone, because changing it would outlast the program in the user's shell.
 - **`argv` is UTF-8** because every executable carries `cmake/engine.manifest`, which sets the process code page to UTF-8; the C runtime
   builds `argv` with it, and `os::StashNativeCommandLine` keeps it as on Linux. A test starts a child with non-ASCII arguments, quotes and
@@ -255,7 +255,7 @@ choice (`std::exit`), never for descriptors.
 - **`include os/windows/win32.h`, never `<windows.h>`**: it removes the macros whose names are engine identifiers (`LoadLibrary`, `near`,
   `far`, ...), so Windows code calls the explicit `...W` functions.
 
-**macOS** (Phase 21; `engine/foundation/os/macos/`, with `os/posix/` shared with Linux). The descriptor, memory, sleep, symbol and
+**macOS** (`engine/foundation/os/macos/`, with `os/posix/` shared with Linux). The descriptor, memory, sleep, symbol and
 environment functions are the same POSIX calls as on Linux and live once, in `os/posix/os_posix.cpp`; each system's `os.cpp` adds the
 rest.
 
@@ -283,7 +283,7 @@ handler where the file layer may not run.
 
 ## Descriptors, not files
 
-After Phase 9 the OS layer no longer reads or lists files. `os::Read`, `os::Write`, `os::Close` and `os::WriteAllWithTimeout` are
+The OS layer no longer reads or lists files. `os::Read`, `os::Write`, `os::Close` and `os::WriteAllWithTimeout` are
 **descriptor primitives for the console, pipes, sockets and the signal-safe layer**; `os::Open` and `os::CreateFileForWriting` stay only
 for two callers that cannot use the file layer: the debugger check that reads `/proc/self/status` (the assert-failure path calls it while
 the heap may be inconsistent) and the crash report, which opens its file inside the fault handler. Everything else uses

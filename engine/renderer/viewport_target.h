@@ -7,7 +7,7 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-//! The offscreen target of a UI viewport (Phase 15, Day 201): the colour and depth textures the world is drawn into,
+//! The offscreen target of a UI viewport: the colour and depth textures the world is drawn into,
 //! shown by the UI pass as an image.
 
 namespace vse::renderer

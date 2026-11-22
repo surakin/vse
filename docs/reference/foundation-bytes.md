@@ -8,7 +8,7 @@ The result of a read from a [`bytes::ByteReader`](#bytes-bytereader).
 
 [`bytes::ByteReader`](#bytes-bytereader): the canonical byte encoding, read back with every access bounds-checked. The matching writer is [`bytes::ByteWriter`](#bytes-bytewriter).
 
-[`bytes::ByteWriter`](#bytes-bytewriter): the canonical byte encoding, written. Little-endian, fixed-width integers, floats as their bit patterns, no padding. The matching reader is [`bytes::ByteReader`](#bytes-bytereader) (`bytes/byte_reader.h`). Storage (Phase 19) and networking (Phase 20) share them.
+[`bytes::ByteWriter`](#bytes-bytewriter): the canonical byte encoding, written. Little-endian, fixed-width integers, floats as their bit patterns, no padding. The matching reader is [`bytes::ByteReader`](#bytes-bytereader) (`bytes/byte_reader.h`). Storage and networking share them.
 
 ## `ByteError` {#bytes-byteerror}
 

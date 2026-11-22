@@ -1,7 +1,7 @@
 #pragma once
 
 //! Poses and what is done with them: the local pose of every joint, the blends, the additive pose, the model-space walk
-//! and the skinning palette. Phase 22 Day 321. A pose is a fixed structure of 256 joints (the palette limit): every
+//! and the skinning palette. A pose is a fixed structure of 256 joints (the palette limit): every
 //! operation works in place on storage the caller owns and allocates nothing.
 
 #include "asset/skeleton.h"

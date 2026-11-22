@@ -1,7 +1,6 @@
 #pragma once
 
-//! The text source of a material (`.mat.src`) and its minter. Phase 22 Day 326; part of the importer library since Day
-//! 338.
+//! The text source of a material (`.mat.src`) and its minter. Part of the importer library.
 //!
 //! `asset_import` is linked by the offline tool and by a host that imports glTF at run time, never by the runtime
 //! engine.

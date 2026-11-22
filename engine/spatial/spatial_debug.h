@@ -1,6 +1,6 @@
 #pragma once
 
-//! Observing the spatial module (Phase 18 Day 248): statistics of a set, line segments for drawing its structure, and
+//! Observing the spatial module: statistics of a set, line segments for drawing its structure, and
 //! the settings that control the sync. The module holds no renderer type: a program turns the lines into a line pass.
 
 #include "containers/span.h"

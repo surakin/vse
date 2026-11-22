@@ -1,6 +1,6 @@
 #pragma once
 
-//! The resource protocol, version 1 (Phase 22 Day 331): the messages a resource client and a [[asset::ResourceServer]]
+//! The resource protocol, version 1: the messages a resource client and a [[asset::ResourceServer]]
 //! exchange over a [[net::Transport]]. Every message is one transport message, encoded with [[net::NetWriter]] (and so
 //! decoded with [[net::NetReader]], which refuses a second encoding of one message). A message starts with its type and
 //! a request id the response repeats, so responses may interleave.

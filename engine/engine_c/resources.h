@@ -1,5 +1,5 @@
 #pragma once
-//! The resources of one engine (Phase 23 Day 350): the memory backend that holds the content a host adds, the resource
+//! The resources of one engine: the memory backend that holds the content a host adds, the resource
 //! manager that loads it, the asynchronous loader, the release of lent bytes on an engine worker, and the handles and
 //! tickets the C API hands out. Internal to the module `engine_c`: nothing here reaches the host but through
 //! `engine_c.h`.
@@ -91,7 +91,7 @@ public:
     /// - Thread-safety: thread-safe.
     ImportHost& Imports() { return *imports_; }
 
-    /// The type registry and the memory backend a surface's own manager is built over (Phase 24 Day 359): the content a
+    /// The type registry and the memory backend a surface's own manager is built over: the content a
     /// host added is read through them on the surface's device.
     ///
     /// - Thread-safety: thread-safe (set at construction).
@@ -99,7 +99,7 @@ public:
     /// See `Types`.
     asset::HostMemoryBackend& Memory() { return *memory_; }
 
-    /// The animation system's view of this host's manager (Phase 24 Day 363): skeletons and clips pinned with
+    /// The animation system's view of this host's manager: skeletons and clips pinned with
     /// `PinSkeleton` and `PinClip` are found through it.
     ///
     /// - Thread-safety: thread-safe.
@@ -116,21 +116,21 @@ public:
     /// - Returns: ENGINE_OK, NOT_FOUND (not mounted, or the skeleton not loaded), TYPE_MISMATCH (not a clip) or
     ///   INVALID_ARGUMENT (another skeleton's, or joint tracks for an entity without a skeleton), with the text set.
     engine_status PinClip(u64 id, u64 skeleton_id, bool* has_weights = nullptr);
-    /// Loads the mesh collider `id` and keeps it loaded until the host is destroyed (glTF colliders Day 5).
+    /// Loads the mesh collider `id` and keeps it loaded until the host is destroyed.
     ///
     /// - Param view: receives the view (valid while the host lives).
     /// - Param hash: receives the content hash of its bytes (computed once per loaded blob), so a replaced resource is
     ///   told apart from the one a world already turned into a physics mesh.
     /// - Returns: ENGINE_OK, NOT_FOUND (not mounted) or TYPE_MISMATCH (not an `MCOL`), with the text set.
     engine_status PinMeshCollider(u64 id, const asset::MeshColliderView** view, asset::ContentHash* hash);
-    /// Reads the level blob `id` and checks that everything it names is mounted (Phase 24 Day 364).
+    /// Reads the level blob `id` and checks that everything it names is mounted.
     ///
     /// - Param bytes: replaced by a copy of the blob.
     /// - Returns: ENGINE_OK, NOT_FOUND (the level or a resource it names is not mounted), TYPE_MISMATCH (not a level),
     ///   UNSUPPORTED (it includes other levels) or INVALID_ARGUMENT (damaged), with the text set.
     engine_status ReadLevel(u64 id, Vector<byte>* bytes);
 
-    /// Finds the mesh slot named `name` of the mesh `id` (Phase 24 Day 377).
+    /// Finds the mesh slot named `name` of the mesh `id`.
     ///
     /// - Param index: receives the slot's index.
     /// - Returns: ENGINE_OK, NOT_FOUND (the mesh is not mounted, or has no such slot), TYPE_MISMATCH (not a mesh), with
@@ -185,7 +185,7 @@ private:
         asset::Handle<asset::MeshColliderView> handle;
         asset::ContentHash hash;
     };
-    Vector<MeshColliderPin> mesh_collider_pins_;  ///< glTF colliders Day 5.
+    Vector<MeshColliderPin> mesh_collider_pins_;  ///< Pins of the mesh colliders.
     Mutex loader_mutex_;                          // the loader belongs to one thread at a time
     UniquePtr<asset::AsyncLoader> loader_;
 

@@ -15,8 +15,8 @@ namespace vse::physics
 /// Finds the contact between two shapes, the one entry point of the narrow phase.
 ///
 /// The table, by the kinds of A and B (either order; the result is the same as for the other order, flipped):
-/// every pair of sphere, capsule and box is built by a closed form or the separating axis (Days 391-392) and every pair
-/// with a convex hull by GJK and EPA (Day 393). A pair without a test returns `Unsupported` and leaves the manifold
+/// every pair of sphere, capsule and box is built by a closed form or the separating axis and every pair
+/// with a convex hull by GJK and EPA. A pair without a test returns `Unsupported` and leaves the manifold
 /// alone. Only `+ - * /` and `Sqrt` are used, so the result is bit-identical on every machine.
 ///
 /// - Param a: shape A.

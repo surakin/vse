@@ -6,7 +6,7 @@
 #include "ui/surface.h"
 #include "ui_window/os_clipboard.h"
 
-//! The window adapter (Phase 15, Day 194): the one place where an [[os::Window]] meets a [[ui::Surface]]. `ui` itself
+//! The window adapter: the one place where an [[os::Window]] meets a [[ui::Surface]]. `ui` itself
 //! names no window.
 
 namespace vse::ui

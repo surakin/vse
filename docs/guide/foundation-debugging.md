@@ -1,7 +1,6 @@
 # Foundation: Debugging
 
-Status: written (Phase 7 on Linux; Phase 13 added Windows; macOS from Phase 21: stack traces and the crash context on Day 290, the crash handler and
-death tests on Day 291, dumps on Day 292; see [porting](porting-debugging.md)).
+Status: written (Linux, Windows and macOS; see [porting](porting-debugging.md)).
 
 **Audience:** every engine programmer who has to find out why a program crashed, or who writes a test for code that is supposed to crash. Read
 [Logging and Assertions](foundation-logging-and-assert.md) first: assertions are where most crashes start.
@@ -123,7 +122,7 @@ What to know:
 - **An assertion failure prints a trace.** A failed `ENGINE_ASSERT` and the first failure of each `ENGINE_ENSURE` site print
   the trace under the message, starting at the failing function, in one write. The names are left mangled (demangling
   allocates, and an assertion can fail inside the allocator): pipe the output through `c++filt` to read them.
-- **Linux reads DWARF (libbacktrace); Windows reads the PDBs through DbgHelp** (Phase 13 Day 154). DbgHelp is single-threaded,
+- **Linux reads DWARF (libbacktrace); Windows reads the PDBs through DbgHelp**. DbgHelp is single-threaded,
   so every call takes one lock, and it is never used while a crash is being reported: a crash report on Windows records raw
   addresses and module offsets (`#0  0x00007ff6...  C:\path\program.exe+0x1a2b3`), and the names are found afterwards (by the crash
   script, a debugger or a test parent). On Windows
@@ -203,7 +202,7 @@ to, is its own tool that reads the file.
 
 ### On macOS
 
-The crash handler is the same library and the same report (Phase 21 Day 291), with these differences:
+The crash handler is the same library and the same report, with these differences:
 
 - **Mach exceptions, not signals.** Breakpad catches a fault as a Mach exception on its own thread while the crashed thread is suspended; an abort
   comes through its `SIGABRT` handler. The report is built from the crashed thread's registers, so it names that thread, its reason and its stack,
@@ -341,14 +340,14 @@ error and `crash-report.txt`), the dump (the `.envelope` with its minidump), **y
 - **Sanitizers:** a sanitizer's own `SIGSEGV` handler, installed at startup, is such an earlier handler: under AddressSanitizer with
   `handle_segv=1` (its default) the sanitizer's report follows the dump and the process ends with its exit code. Tests that expect the
   original signal run with `handle_segv=0`, as the death tests do.
-- **macOS** (crash handler chaining, Day 3): the same order and the same rules. A fault reaches the crash handler as a Mach exception on the
+- **macOS** (crash handler chaining): the same order and the same rules. A fault reaches the crash handler as a Mach exception on the
   crash library's own thread, and the report is written there; then, when your handler exists for the fault's signal, the fault is handed
   back to the kernel, which delivers it as that signal on the faulting thread, where your handler runs (with the kernel's `siginfo`). An
   `abort()` is handled on the aborting thread; your `SIGABRT` handler runs after the library's handler has returned. Without a handler for the
   crash's signal nothing changes: the library ends the process with `_exit(<exception type>)` (exit code 1 for an access fault, 5 for an
   abort), not a signal; with one, the process dies of the signal. This rests on a local change to the vendored Breakpad
   (`third_party/sentry_native/VENDORED.md`).
-- **Windows** (crash handler chaining, Day 2): a `SIGABRT` handler set before runs after the report and the dump for an `abort()`;
+- **Windows** (crash handler chaining): a `SIGABRT` handler set before runs after the report and the dump for an `abort()`;
   faults reach your unhandled-exception filter instead (the next section).
 
 **Installed after:** it runs first; call the handler that was there before it (the one `sigaction` returns) to get the report and the dump.
@@ -613,9 +612,9 @@ child and closes every descriptor it opened.
 
 | Platform | How the child is started | Notes |
 |---|---|---|
-| Linux | `posix_spawn` of `/proc/self/exe` | implemented (Phase 7) |
-| macOS | `posix_spawn` | Phase 21; the POSIX code is shared with Linux |
-| Windows | `CreateProcess` | Phase 13; exit statuses such as `0xC0000005` map to a [[debug::CrashReason]] |
+| Linux | `posix_spawn` of `/proc/self/exe` | implemented |
+| macOS | `posix_spawn` | the POSIX code is shared with Linux |
+| Windows | `CreateProcess` | exit statuses such as `0xC0000005` map to a [[debug::CrashReason]] |
 | iOS, consoles | not possible | [[debug::DeathTestsSupported]] is false and death tests skip with a printed reason |
 
 A fault shows up as an exit status, and a stack overflow is an access violation as far as the status can tell, so a death
@@ -649,7 +648,7 @@ builds with GCC and Clang on Linux, with MSVC and clang-cl on Windows, and with 
 | [[ENGINE_NO_UNIQUE_ADDRESS]] | an empty member that takes no space | `[[no_unique_address]]` | `[[msvc::no_unique_address]]` | `[[msvc::no_unique_address]]` |
 | [[ENGINE_COMPILER_BARRIER]] | no reordering or tail call across this point | an empty `asm` with a memory clobber | `_ReadWriteBarrier` | `_ReadWriteBarrier` |
 
-Two of these were found by building with MSVC (Phase 13 Day 148), and both fail silently: MSVC ignores `[[msvc::noinline]]` placed
+Two of these were found by building with MSVC, and both fail silently: MSVC ignores `[[msvc::noinline]]` placed
 between a lambda's parameters and its `->` and inlines the lambda anyway, and both MSVC and clang-cl ignore the standard
 `[[no_unique_address]]`, which made a `UniquePtr` twice the size of a pointer.
 

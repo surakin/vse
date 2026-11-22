@@ -1,6 +1,6 @@
 #pragma once
 
-//! The minted triangle mesh of a static physics collider (`MCOL`, Phase 25 Day 394): positions, triangle indices and a
+//! The minted triangle mesh of a static physics collider (`MCOL`): positions, triangle indices and a
 //! material index per triangle. The bounding-volume hierarchy is built by the physics module when the mesh is added
 //! (deterministically, from these bytes). The reader treats the bytes as hostile.
 
@@ -33,7 +33,7 @@ enum MeshColliderSection : u32
     kMeshColliderSectionMaterials = 19,  ///< One `u8` per triangle.
 };
 
-/// Tells whether a triangle has an area, by the physics module's own rule (glTF colliders Day 2).
+/// Tells whether a triangle has an area, by the physics module's own rule.
 ///
 /// The cross product of `b - a` and `c - a` in `f32`, its squared length finite and above `1e-20`: exactly
 /// `physics::TriangleMesh::Create`'s test, so a triangle this accepts never makes a physics mesh refuse the collider.
@@ -79,7 +79,7 @@ public:
     /// The resource id.
     /// - Fails: never.
     ResourceId Id() const { return id_; }
-    /// The whole blob the view reads (glTF colliders Day 5: a host hashes it to know two loads apart).
+    /// The whole blob the view reads (a host hashes it to know two loads apart).
     /// - Fails: never; empty for a view that is not open.
     ByteSpan Bytes() const { return bytes_ ? bytes_->Bytes() : ByteSpan(); }
     /// Vertex `i`.

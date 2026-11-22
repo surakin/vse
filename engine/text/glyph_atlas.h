@@ -7,7 +7,7 @@
 #include "text/shelf_packer.h"
 #include "types.h"
 
-//! The glyph atlas (Phase 14): rasterized glyphs packed into 8-bit coverage pages held in CPU memory.
+//! The glyph atlas: rasterized glyphs packed into 8-bit coverage pages held in CPU memory.
 //!
 //! The CPU pages are the source of truth; the renderer copies them into GPU textures and can rebuild those textures
 //! from them after a device reset. There is no eviction in this version: a full page adds a page, up to a maximum,

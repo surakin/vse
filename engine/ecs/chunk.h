@@ -12,7 +12,7 @@
 namespace vse::ecs
 {
 
-/// The size of a chunk in bytes (header and columns). Chosen by experiment on Day 222; a compile-time constant.
+/// The size of a chunk in bytes (header and columns). Chosen by experiment; a compile-time constant.
 inline constexpr usize kChunkBytes = 32 * 1024;
 
 /// The most components (tags included) an archetype holds.

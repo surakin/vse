@@ -105,7 +105,7 @@ struct InstallProfile
         return p;
     }
 
-    /// A task state (Day 461): pure bindings only, no world access.
+    /// A task state: pure bindings only, no world access.
     ///
     /// - Fails: never.
     static InstallProfile Task()

@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[storage::ComponentRegistry]] (Phase 19 Day 256): how each component type is stored. A component is registered once
+//! [[storage::ComponentRegistry]]: how each component type is stored. A component is registered once
 //! with a stable numeric id written in code, a unique name, a version and a list of fields ([[storage::Field]]); the
 //! registry encodes and decodes one component value to and from the canonical bytes, finds a registration by id, name
 //! or ECS type, and lists the component types a world holds that nobody registered.

@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-//! Creating a Win32 presentation surface (Phase 13 Day 160), kept in its own translation unit under a Windows
+//! Creating a Win32 presentation surface, kept in its own translation unit under a Windows
 //! directory.
 //!
 //! `vulkan_win32.h` needs `<windows.h>`'s types, which only the Windows directories may include

@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[asset::AsyncLoader]] (Phase 22 Day 330): loading without stalling the frame. A request reads its blob and the
+//! [[asset::AsyncLoader]]: loading without stalling the frame. A request reads its blob and the
 //! blobs of its closure on the scheduler's workers (into the manager's buffer pool); the owner thread's `Update` then
 //! builds the objects, GPU uploads included, within a time and byte budget, so a frame's cost is bounded. At most
 //! `assets.max_inflight` requests read at once, the others wait by priority, and past `assets.max_queued` a request

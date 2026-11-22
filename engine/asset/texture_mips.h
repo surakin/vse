@@ -1,7 +1,7 @@
 #pragma once
 
 //! Mip generation for the texture minter: a deterministic filter in exact integer arithmetic, so the same input gives
-//! byte-identical output on every compiler, machine and thread count. Phase 22 Day 323.
+//! byte-identical output on every compiler, machine and thread count.
 //!
 //! The formats are `R8_UNorm`, `RG8_UNorm`, `RGBA8_UNorm`, `RGBA8_SRGB`, `R16_Float`, `RGBA16_Float`. An sRGB texture
 //! is filtered in linear light (a 16-bit linear value per channel, through a fixed table). Half-float texels are exact

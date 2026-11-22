@@ -1,5 +1,5 @@
 #pragma once
-//! The audio clip resource (Phase 26 Day 418): decoded interleaved samples with a rate, a channel count and loop
+//! The audio clip resource: decoded interleaved samples with a rate, a channel count and loop
 //! points, minted offline from a WAV file. [[asset::BuildAudioClipBlob]] writes an `ACLP` blob,
 //! [[asset::AudioClipView]] reads one in place (the audio module makes its clip from the view without copying `f32`
 //! samples).

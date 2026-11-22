@@ -1,6 +1,6 @@
 #pragma once
 
-//! Bounding volumes used for culling. The types and functions moved to `math/geometry.h` (Phase 18 Day 238), shared
+//! Bounding volumes used for culling. The types and functions moved to `math/geometry.h`, shared
 //! with the spatial module; the renderer keeps its names for them here, so no caller changes.
 
 #include "math/geometry.h"

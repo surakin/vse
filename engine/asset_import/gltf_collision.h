@@ -1,13 +1,13 @@
 #pragma once
 
-//! Collision from a glTF (glTF colliders Days 3 and 4): which nodes are static colliders, and their triangle meshes
+//! Collision from a glTF : which nodes are static colliders, and their triangle meshes
 //! minted as `MCOL` resources.
 //!
 //! Two conventions are read. **Node-name suffixes** (case-sensitive, at the end of the node's name after a trailing
 //! `.` and digits are set aside, as Blender numbers duplicates): `-col` (the node's mesh is drawn and is a
 //! triangle-mesh collider), `-colonly` (a collider only: not drawn), `-convcol` and `-convcolonly` (the same, a convex
 //! hull asked for: imported as a triangle mesh, with a warning). And the `OMI_physics_body` / `OMI_physics_shape`
-//! extensions (Day 4). Collision is read only when the import makes a level, the one thing that uses it.
+//! extensions. Collision is read only when the import makes a level, the one thing that uses it.
 
 #include "asset/resource_id.h"
 #include "asset/status.h"
@@ -58,7 +58,7 @@ struct GltfNodeCollision
 /// - Param report: receives the warnings.
 /// - Param out: replaced by one entry per node.
 /// - Param error: receives the sentence naming the JSON path.
-/// - Fails: `Invalid` for an extension that does not parse (Day 4); never for a name.
+/// - Fails: `Invalid` for an extension that does not parse; never for a name.
 /// - Thread-safety: thread-safe for separate calls with separate arguments.
 /// - Ownership: borrows its arguments for the call only.
 Status ReadCollisionMarks(const GltfDocument& document, const GltfNodeGraph& graph, ImportReport* report,

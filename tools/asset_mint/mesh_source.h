@@ -1,6 +1,6 @@
 #pragma once
 
-//! The text source form of a mesh (`.mesh.src`) and the mesh minter. Phase 22 Day 319. An offline tool's code: never
+//! The text source form of a mesh (`.mesh.src`) and the mesh minter. An offline tool's code: never
 //! linked into the engine; its tests compile it directly.
 //!
 //! Line-oriented text; `#` starts a comment; fields are separated by spaces or tabs:
@@ -14,7 +14,7 @@
 //!     slot NAME FIRST COUNT             (a material slot: a range of indices)
 //!     skin VERTEX JOINT WEIGHT [JOINT WEIGHT ...]
 //!
-//! `id` comes first (written by `asset_mint adopt`, Day 333). All `v` records come before the first `i`, `skin` or
+//! `id` comes first (written by `asset_mint adopt`). All `v` records come before the first `i`, `skin` or
 //! `lod`/`slot` record that refers to them.
 
 #include "asset/mesh.h"
@@ -41,7 +41,7 @@ struct MeshSourceSkin
     Array<f64, 12> weight = {};  ///< Weights.
 };
 
-/// A `morph` record and its `d` records (glTF coverage Day 6).
+/// A `morph` record and its `d` records.
 ///
 /// - Thread-safety: thread-compatible.
 struct MeshSourceMorph

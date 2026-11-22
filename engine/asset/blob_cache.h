@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[asset::BlobCache]] (Phase 22 Day 332): a directory of blobs named by their content hash, with an index of which
+//! [[asset::BlobCache]]: a directory of blobs named by their content hash, with an index of which
 //! resource id had which hash last, bounded in bytes with least-recently-used eviction. The network backend keeps the
 //! small blobs it fetched in it, so they are not fetched twice and are served when the server cannot be reached.
 //!

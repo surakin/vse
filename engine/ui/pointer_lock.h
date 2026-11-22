@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-//! The seam between a surface and the window's pointer lock (Phase 15, Day 201): `ui` names no window, so the window
+//! The seam between a surface and the window's pointer lock: `ui` names no window, so the window
 //! adapter implements this.
 
 namespace vse::ui

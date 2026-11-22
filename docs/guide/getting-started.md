@@ -1,6 +1,6 @@
 # Getting Started
 
-Status: written (Linux, Windows and macOS).
+Status: written.
 
 **Audience:** a new developer. This page takes you from a fresh checkout to a running window and a passing test, then tells you how the repository is
 organized and what the rules of the house are. Everything after it in the [guide](README.md) assumes you have read it.
@@ -42,7 +42,7 @@ change the generator of an existing tree.
 The first build compiles everything, so expect it to take a while. Our own targets are built as *unity builds* (several source files merged into one translation unit) to be fast;
 `-DENGINE_UNITY_BUILD=OFF` compiles each file alone, and both must keep working. Warnings are errors on every compiler: a clean build is the rule, not a goal.
 
-**On Windows** (Phase 13 Day 161), from any terminal: the toolchain files find MSVC, the Windows SDK and the Vulkan SDK themselves, so no
+**On Windows**, from any terminal: the toolchain files find MSVC, the Windows SDK and the Vulkan SDK themselves, so no
 Developer Command Prompt is needed.
 
 ```
@@ -51,7 +51,7 @@ cmake --build --preset windows-msvc
 ctest --preset windows-msvc
 ```
 
-**On macOS** (Phase 21), with the Command Line Tools (no Xcode), CMake and Ninja; the graphics backend is Metal. [macOS](macos.md) has the rest.
+**On macOS**, with the Command Line Tools (no Xcode), CMake and Ninja; the graphics backend is Metal. [macOS](macos.md) has the rest.
 
 ```
 cmake --preset macos-clang             # the build tree is build-macos

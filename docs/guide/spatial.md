@@ -1,8 +1,8 @@
 # Spatial partitioning: what is near what
 
-Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
-(Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243), the components, the `SpatialWorld` resource and the entity lifecycle (Day 244), moves and the parallel sync (Day 245), entity-facing and batched
-queries (Day 246), the renderer's culling (Day 247), statistics, debug lines, settings, the benchmark and the demo (Day 248). Next: the closing run and review (Day 249).
+Status: in progress. Built: the shared shapes, the static and dynamic bounding-volume hierarchies, the query vocabulary
+, the hash grid and the spatial set, the pair tracker, the components, the `SpatialWorld` resource and the entity lifecycle, moves and the parallel sync, entity-facing and batched
+queries, the renderer's culling, statistics, debug lines, settings, the benchmark and the demo. Next: the closing run and review.
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -85,7 +85,7 @@ union: -1 0 -1 to 4 2 4, area 90
 
 `spatial::StaticBvh` (`spatial/static_bvh.h`) is for things that do not move: built once from a list of `spatial::Item`s (a box, your 64-bit key and a
 layer), then queried any number of times, from any number of threads at once. Rebuild it when the set of items changes; for things that move, the dynamic
-tree (Day 240) is the one to use.
+tree is the one to use.
 
 ```cpp compile run standalone
 #include "containers/vector.h"
@@ -153,7 +153,7 @@ How it is built and what that buys:
   middle instead, so every tree fits the traversal's fixed stack of 64 entries and no traversal allocates.
 - **Cost.** Building 100,000 boxes takes about 40 ms in a Release build on the Windows PC (the build is single-threaded).
 
-The two traversals are the building blocks the query functions of Day 241 are made of: `Traverse` takes a node test (reject, descend, or accept the whole
+The two traversals are the building blocks the query functions are made of: `Traverse` takes a node test (reject, descend, or accept the whole
 subtree) and an item visitor; `TraverseRay` visits the leaves a ray reaches, nearest first, and lets the visitor shorten the ray. Both return
 `TraversalStats` (nodes tested, items visited).
 
@@ -220,7 +220,7 @@ How it stays fast while things move:
   nothing (tested with an allocation counter). 100,000 items take 128 bytes each, nodes, fat and tight boxes included. `Optimize` on a quiet frame
   (nothing inserted, removed or re-inserted since its last call) returns at once. `Validate()` checks every invariant, for tests.
 
-**Choosing the predictive margin (Day 240, Release, the Windows PC).** 10,000 agents of 1 x 2 x 1 for 60 frames, each step 0.1:
+**Choosing the predictive margin (Release, the Windows PC).** 10,000 agents of 1 x 2 x 1 for 60 frames, each step 0.1:
 
 | Motion | `predictive` | Re-inserted per move | Cost per move | Nodes tested per 10-unit query |
 |---|---|---|---|---|
@@ -516,7 +516,7 @@ The sync keeps the sets true with the cost of what changed, not of what exists.
 - **Static trees.** A set's static tree is rebuilt only in a frame in which its static items changed (an add, a removal, a tag change): a static world costs the
   `Changed` queries and no structure calls (tested: 100 frames, the counters do not move). Queries stay exact between a change and the rebuild.
 - **Cost.** Change detection is per chunk (see [ECS](ecs.md)), so a frame in which a few entities of every chunk moved still looks at every row once: 100,000
-  entities with 1 percent moving cost about 7.6 ms a frame in a Release build with two sets (transforms included) and 100 percent about 175 ms on one thread and 93 ms with 8 workers (after Day 249; Day 248, after the Day 245 figures of 73 and 740 ms were re-measured with the final code); most
+  entities with 1 percent moving cost about 7.6 ms a frame in a Release build with two sets (transforms included) and 100 percent about 175 ms on one thread and 93 ms with 8 workers; most
   of the time is the dynamic tree reinserting boxes that left their margin (about 0.85 microseconds per moved item and set when agents move 0.3 of their size a frame). A crowd of same-size agents belongs in a set made with `DynamicKind::Grid`, whose updates are about eight times cheaper (10 ms against 87 ms for 100,000 moves, `spatial_bench`). The spec's 80 ms single-thread target for 100,000 all-moving agents is missed (design spec, section 4.1).
 
 ## Asking questions from gameplay code
@@ -583,7 +583,7 @@ int main() {
 
 ## Culling for the renderer
 
-`renderer::RenderScene::Cull` finds the objects a camera may see. Since Phase 18 Day 247 it keeps each object's world box in a `spatial::SpatialSet`
+`renderer::RenderScene::Cull` finds the objects a camera may see. It keeps each object's world box in a `spatial::SpatialSet`
 (the dynamic tree; the scene updates it in `AddObject`, `RemoveObject` and `SetTransform`) and walks the tree with the frustum, so the cost follows what is
 visible instead of how many objects exist. The old scan over every slot stays as the reference.
 
@@ -606,9 +606,9 @@ Four settings are declared by `spatial::RegisterSpatialSettings(&registry)`: `sp
 
 The benchmark is `tests/spatial/spatial_bench.cpp`: run `spatial_tests "[spatial-bench]"` from a Release build; it prints the culling gain, the static queries, the moving-agent cost with a tree and with a grid, the sync with 1 to 8 workers and the margin sweep. Results against the pass conditions are in the design spec, section 4.1. `game/spatial_demo` (`--stats`, `--debug-draw`, `--frames`, `--entities`, `--serial`) runs 50,000 entities through the sync with a culling query, the contacts of the physics set, a ray pick and a neighbor query each frame.
 
-On macOS (Intel Core i5-8257U, 4 cores, 8 threads; Release; Phase 21 Day 294) moving 100,000 agents costs 171 ms a frame in a tree and 34 ms in a grid (Linux:
+On macOS (Intel Core i5-8257U, 4 cores, 8 threads; Release) moving 100,000 agents costs 171 ms a frame in a tree and 34 ms in a grid (Linux:
 87 ms and 10 ms), culling 1,000,000 static items is 53 times faster than a flat scan, and the sync with all of them moving takes 322 ms on one worker and 174 ms on
-two to eight (the moves bound it); the rest of the figures are in `plans/phase-21-macos-metal/day-294-cpu-modules.md`.
+two to eight (the moves bound it).
 
 ## See also
 

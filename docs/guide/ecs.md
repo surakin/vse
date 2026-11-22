@@ -1,13 +1,13 @@
 # ECS: entities, components and systems
 
-Status: complete for Phase 17 (Days 223-235: entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy, removal tracking, the render sync and the measured cost). Not built: serialization, events, more than 128 component types.
+Status: complete (entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy, removal tracking, the render sync and the measured cost). Not built: serialization, events, more than 128 component types.
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first.
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
-benchmark the phase must pass: `docs/superpowers/specs/2026-11-10-ecs-design.md`. The ECS includes no renderer, RHI or platform header;
-the bridge to the renderer is the `engine/scene` module (Day 233).
+benchmark it must pass: `docs/superpowers/specs/2026-11-10-ecs-design.md`. The ECS includes no renderer, RHI or platform header;
+the bridge to the renderer is the `engine/scene` module.
 
 In plain words: instead of a `Monster` object that owns its position, health and sprite, you have an id (the entity) and separate small records of data
 (the components) attached to it. Entities with the same set of components are stored together, one array per component, so a loop over "every entity
@@ -71,7 +71,7 @@ new id alive: yes
 - A slot's generation is 32 bits and never 0. After 2^32 - 1 reuses of one slot it wraps to 1 (counted in `Stats().generation_wraps`); an id older
   than a whole wrap could match again. At one reuse per frame that takes about two years of continuous running on one slot.
 - Reading (`IsAlive`, `Location` on a const table) is safe from several threads at once; `Allocate`, `Free` and a mutable `Location` need exclusive
-  access (the world takes them at sync points or through its command buffer, Day 228).
+  access (the world takes them at sync points or through its command buffer).
 - A pointer from `Location` is valid until the next `Allocate`.
 
 ## Components
@@ -413,7 +413,7 @@ visited. A query is told about chunks, not rows; if you need exactness, store a 
 - **Terms.** `Changed<T>` and `Added<T>` require `T`, hand the function nothing, may sit beside `Read<T>`/`Write<T>` of the same component, and combine with
   every other term. All filters of a query must pass. `Count()` ignores them (it counts matching entities).
 - **Cost.** Marking is one 8-byte store per written column per chunk visited (a chunk of 4,000 rows costs one store, not 4,000), and a filter is one load and
-  compare per chunk. The measured overhead on the 1M-entity benchmark is recorded on Day 235.
+  compare per chunk. The measured overhead on the 1M-entity benchmark is recorded under "Measured cost" below.
 
 ## Systems and schedules
 
@@ -486,7 +486,7 @@ frame 2: 1 entities
   constraints that exist only for data. A later system's command on an entity an earlier one destroyed is skipped and counted
   (`Stats().commands_ignored`). At the end of the frame the schedule calls `World::Advance()`.
 - **Declared access.** A query or resource the system did not declare is reported (`ENGINE_ENSURE`) and counted in `Stats().access_violations`. Today it is a
-  check; the parallel scheduler (Day 231) relies on it to decide which systems may run at once.
+  check; the parallel scheduler relies on it to decide which systems may run at once.
 - **Run condition.** `RunIf(fn)` with a `bool(SystemContext&)` function skips the system in frames where it returns false.
 - **Statistics and settings.** With the setting `ecs.stats` (environment `ENGINE_ECS_STATS`, flag `--ecs-stats`; or `schedule.SetStatsEnabled(true)`), each
   system's run time, entities visited and chunks skipped by `Changed`/`Added` are in `schedule.StatsOf("name")`. `RegisterEcsSettings` declares
@@ -578,7 +578,7 @@ turret at 20 2
   (`depth_repaired`); an entity whose chain loops keeps its previous matrix (`unresolved`). Writing `Parent` directly with `world.Set` works but is repaired a frame late.
 - **Destroying a subtree.** `DestroyRecursive(world, commands, root)` records the destruction of the root and every descendant into a command buffer and returns how many,
   deepest first and, within a depth, in the order a query over `Parent` visits them.
-- **Cost** (query and hierarchy indices series, Day 2). `SetParent`, `ClearParent` and `DestroyRecursive` keep a children index beside the hierarchy (a world resource),
+- **Cost** (query and hierarchy indices series). `SetParent`, `ClearParent` and `DestroyRecursive` keep a children index beside the hierarchy (a world resource),
   so a call costs the child's subtree: about 200 ns per `SetParent` when building a wide tree of 1,000 or 4,000 entities (5 and 19 µs when each call walked every link).
   The index follows these calls' own writes; when `Parent` changed any other way (a raw `Set` or `Get`, a removal, a destruction, the propagation's repair of an
   orphan) the world's `ComponentVersion<Parent>()` moved, and the next call makes the index again with one pass (`TransformReport::index_rebuilds`).
@@ -624,7 +624,7 @@ Include `scene/render_sync.h` and link `scene` (module `engine/scene`, above `ec
 
 `game/ecs_bench` runs the workload of the design spec (section 6) on the ECS and on a naive object-oriented baseline (heap-allocated objects, virtual `Update`, optional components behind owning
 pointers, visited in shuffled order) with the same arithmetic, and compares a checksum so neither side can win by doing less. Numbers below: AMD Ryzen 9 7950X3D (16 cores, 32 threads), Linux 7.2,
-clang 23.1.4, Release (`-O3 -DNDEBUG`), unity build, commit `daa73b1` plus the Day 235 files; median of 100 frames after 20 warm-up frames.
+clang 23.1.4, Release (`-O3 -DNDEBUG`), unity build, commit `daa73b1` plus the benchmark files; median of 100 frames after 20 warm-up frames.
 Run it yourself with `ecs_bench [--entities N] [--frames N] [--threads N] [--csv PATH]`.
 
 | Scenario (100k entities unless noted) | ECS | Baseline | Ratio |
@@ -649,13 +649,13 @@ Run it yourself with `ecs_bench [--entities N] [--frames N] [--threads N] [--csv
 - **Churn and hierarchy are slower than the baseline's equivalent.** A structural change moves a row between chunks (and a destroy swaps the last row in); the baseline replaces a pointer. Propagation recomputes
   every world matrix of a changed tree, parent before child, in depth order across chunks; the baseline walks its tree once. Both are listed in `KNOWN-ISSUES.md`.
 - A sparse set was **not** added: the sparse case is 200x faster than the baseline, far from the 2x slower that the spec set as the threshold.
-- **On Windows** (AMD Ryzen AI 7 350, 8 cores, MSVC Release; Phase 17 Day 236): iteration at 100k 0.40 ms against 9.1 ms (22.7x), sparse access 119x, 4 workers at
+- **On Windows** (AMD Ryzen AI 7 350, 8 cores, MSVC Release): iteration at 100k 0.40 ms against 9.1 ms (22.7x), sparse access 119x, 4 workers at
   96 percent efficiency, 110 bytes per entity (baseline 232). Churn (1.45x) and hierarchy propagation (3.8x) beat the baseline there, because its heap allocations
-  cost more with that system's allocator (155 ns a create against 35 ns on Linux). The full table is in `plans/phase-17-ecs/day-236-docs-closing-run-and-review.md`.
-- **On macOS** (Intel Core i5-8257U, 4 cores, 8 threads, a 2019 MacBook Pro; Apple clang 17, Release; Phase 21 Day 294, one run while Spotlight was indexing): iteration
+  cost more with that system's allocator (155 ns a create against 35 ns on Linux).
+- **On macOS** (Intel Core i5-8257U, 4 cores, 8 threads, a 2019 MacBook Pro; Apple clang 17, Release; one run while Spotlight was indexing): iteration
   at 100k 0.85 ms against 16.9 ms (19.8x), at 1M 9.1 ms against 338 ms (37x), sparse access 518x; 4 workers at 82 percent efficiency, 8 at 61 percent (8 threads
   on 4 cores); 110 bytes per entity (baseline 232). Churn beats the baseline (1.5x), as on Windows; hierarchy propagation does not (0.89x). Every pass condition holds.
-  The rest of the figures are in `plans/phase-21-macos-metal/day-294-cpu-modules.md`. Again on Day 311 (idle machine): iteration at 100k 0.88 ms against
+  Again on an idle machine: iteration at 100k 0.88 ms against
   19.0 ms (21.5x), 4 workers at 80 percent, sparse access 529x; the pass conditions hold.
 
 ## Common mistakes

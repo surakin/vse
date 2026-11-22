@@ -3,7 +3,7 @@
 #include "types.h"
 #include "ui/geometry.h"
 
-//! The vocabulary of layout (Phase 15, Day 193): constraints, alignment and the per-widget layout properties the
+//! The vocabulary of layout: constraints, alignment and the per-widget layout properties the
 //! containers read.
 
 namespace vse::ui

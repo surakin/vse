@@ -1,6 +1,6 @@
 #pragma once
 
-//! The wire format and the small algorithms of the UDP transport (Phase 20 Day 274): packet kinds and headers,
+//! The wire format and the small algorithms of the UDP transport: packet kinds and headers,
 //! wraparound-safe sequence numbers, the acknowledgement window, and the keyed hash behind the handshake cookie.
 //! Everything here is a pure function or a small value type, tested without a network.
 //!

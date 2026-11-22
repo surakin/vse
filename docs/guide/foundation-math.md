@@ -1,6 +1,6 @@
 # Foundation: Math
 
-Status: written (Phase 0).
+Status: written.
 
 **Audience:** every engine programmer. Read [Standard types](foundation-types.md) first (`f32`, the scalar functions `Sqrt`, `Sin`, ...).
 

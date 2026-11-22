@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-//! Numeric limits (Phase 16): the engine's spelling of `<limits>`.
+//! Numeric limits: the engine's spelling of `<limits>`.
 namespace vse
 {
 

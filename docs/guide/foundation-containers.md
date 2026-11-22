@@ -1,6 +1,6 @@
 # Foundation: Containers
 
-Status: written (Phases 0 and 10).
+Status: written.
 
 **Audience:** every engine programmer. Read [Standard types](foundation-types.md) (the vocabulary) and [Memory](foundation-memory.md) (what an allocator is) first.
 

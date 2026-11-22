@@ -3,7 +3,7 @@
 #include "containers/vector.h"
 #include "types.h"
 
-//! A shelf packer for glyph atlas pages (Phase 14): rectangles go left to right on shelves, a new shelf opens below
+//! A shelf packer for glyph atlas pages: rectangles go left to right on shelves, a new shelf opens below
 //! when none fits.
 namespace vse::text
 {

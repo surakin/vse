@@ -1,5 +1,5 @@
 #pragma once
-//! The count of objects the C API has handed out (Phase 23 Day 348). Internal to the module `engine_c`: every kind of
+//! The count of objects the C API has handed out. Internal to the module `engine_c`: every kind of
 //! object a later day adds (a world, a loaded resource, an import) takes one when it is created and gives it back when
 //! the host releases it, and `engine_destroy` refuses while any is out.
 

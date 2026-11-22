@@ -8,7 +8,7 @@
 #include "ui/theme.h"
 #include "ui/widget.h"
 
-//! A block of text that sizes itself from its content (Phase 15, Day 193): the base of the label widget.
+//! A block of text that sizes itself from its content: the base of the label widget.
 
 namespace vse::ui
 {

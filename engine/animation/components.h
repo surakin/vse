@@ -1,6 +1,6 @@
 #pragma once
 
-//! The animation components and the system that plays them. Phase 22 Day 321.
+//! The animation components and the system that plays them.
 
 #include "animation/pose.h"
 #include "animation/sampler.h"
@@ -24,13 +24,13 @@ enum ComponentIds : u32
     kAnimationPlayerId = 40,   ///< [[animation::AnimationPlayer]]: stored.
     kSkeletonInstanceId = 41,  ///< [[animation::SkeletonInstance]]: stored (the skeleton id only).
     kRootMotionId = 42,        ///< [[animation::RootMotion]]: derived.
-    kMorphWeightsId = 43,      ///< [[animation::MorphWeights]]: stored (glTF coverage Days 8 and 9).
+    kMorphWeightsId = 43,      ///< [[animation::MorphWeights]]: stored.
 };
 
 /// Most morph weights of one entity: the mesh blob's limit on morph targets.
 inline constexpr u32 kMaxMorphWeights = 64;
 
-/// The weights of the entity's mesh's morph targets (glTF coverage Days 8 and 9).
+/// The weights of the entity's mesh's morph targets.
 ///
 /// Weight `i` is target `i`'s, the first `count` of them; the rest are 0. Set by levels (glTF's `mesh.weights` and
 /// `node.weights`), saves, scripts, and the animation system when the entity plays a clip with a weight track;
@@ -111,7 +111,7 @@ struct AnimationEvents
     Vector<AnimationEvent> events;  ///< The events.
 };
 
-/// Finds the views an update needs. Implemented by the resource manager's animation adapter (Day 329) or a test; called
+/// Finds the views an update needs. Implemented by the resource manager's animation adapter or a test; called
 /// from several jobs at once, so it must be safe to read concurrently.
 ///
 /// - Thread-safety: thread-safe for concurrent calls.

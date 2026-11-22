@@ -1,6 +1,6 @@
 #pragma once
 
-//! The upgrade chains of `asset_mint remint` (Phase 22 Day 334): one function per resource type and version that turns
+//! The upgrade chains of `asset_mint remint`: one function per resource type and version that turns
 //! a blob of that version into a blob of the next. The runtime reads the current version only; a blob of an older one
 //! is refused (`UnsupportedVersion`, naming `asset_mint remint`) and is rewritten here. Where the source is available
 //! the tool mints it again instead (the result is then the fresh mint by construction); the chains are for blobs that

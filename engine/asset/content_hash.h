@@ -1,7 +1,7 @@
 #pragma once
 
 //! [[asset::ContentHash]]: the 128-bit content hash of a blob (SHA-256 truncated to its first 16 bytes, the choice of
-//! Phase 22 Day 313, Spike 2). It names blobs in the network cache, lets `verify` and the packer detect corruption and
+//! a measured comparison). It names blobs in the network cache, lets `verify` and the packer detect corruption and
 //! identifies a base pak. It is not on the load path of a local file, and it is not a security feature (the engine's
 //! networking is for trusted networks).
 
@@ -35,7 +35,7 @@ struct ContentHash
 namespace vse
 {
 
-/// Hash function for [[asset::ContentHash]] keys of a [[HashMap]] or [[HashSet]] (container audit series, Day 2): the
+/// Hash function for [[asset::ContentHash]] keys of a [[HashMap]] or [[HashSet]]: the
 /// first eight bytes of the digest, mixed (a digest is already uniform).
 ///
 /// - Thread-safety: thread-safe (stateless).

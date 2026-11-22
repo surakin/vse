@@ -7,7 +7,7 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-//! [[Deque]]: a growable ring of elements, pushed and popped at both ends in O(1) (container audit series, Day 3), for
+//! [[Deque]]: a growable ring of elements, pushed and popped at both ends in O(1), for
 //! the queues that were written as `Vector::Remove(0)`.
 namespace vse
 {

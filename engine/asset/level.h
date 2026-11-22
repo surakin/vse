@@ -2,7 +2,7 @@
 
 //! The level blob (type `LEVL`, version 1): entities as the storage module's records, the table of every resource
 //! they name, and the list of levels it includes. Built by [[asset::BuildLevelBlob]], read by
-//! [[asset::ParseLevelBlob]] and put into a world by [[asset::LoadLevelBlob]]. Phase 22 Day 327.
+//! [[asset::ParseLevelBlob]] and put into a world by [[asset::LoadLevelBlob]].
 //!
 //! A level is the same data a save is: one [[storage::EntityRecord]] per entity (the entity container of
 //! `storage::WorldStorage`: a count, then framed component records encoded by the [[storage::ComponentRegistry]]), so
@@ -45,8 +45,8 @@ enum LevelComponentIds : u32
 {
     kMeshReferenceId = 50,      ///< [[asset::MeshReference]]: stored.
     kEntityNameId = 51,         ///< [[asset::EntityName]]: stored.
-    kMeshSlotMaterialsId = 52,  ///< [[asset::MeshSlotMaterials]]: stored (Phase 24 Day 376).
-    kStaticColliderId = 53,     ///< [[asset::StaticCollider]]: stored (glTF colliders Day 2).
+    kMeshSlotMaterialsId = 52,  ///< [[asset::MeshSlotMaterials]]: stored.
+    kStaticColliderId = 53,     ///< [[asset::StaticCollider]]: stored.
 };
 
 /// The shape of a [[asset::StaticCollider]]; the values are stored.
@@ -58,9 +58,9 @@ enum class StaticColliderShape : u8
     Capsule = 3,  ///< A capsule along Y: `radius` and `half_height` (of the straight part).
 };
 
-/// The stored collision of a level entity (glTF colliders Day 2): one static collider at the entity, sized in the
+/// The stored collision of a level entity: one static collider at the entity, sized in the
 /// entity's own space. The sizes are unscaled: whoever makes the physics body applies the entity's world scale when the
-/// body is made (the C API's `level_spawn`, glTF colliders Day 5). A mesh shape names an `MCOL` resource, so the
+/// body is made (the C API's `level_spawn`). A mesh shape names an `MCOL` resource, so the
 /// level's closure (its reference table) includes it.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -78,7 +78,7 @@ struct StaticCollider
 /// The most mesh slots a level gives a material of their own.
 inline constexpr u32 kMaxLevelSlotMaterials = 16;
 
-/// The stored form of what draws an entity: a mesh and a material named by id. The level spawner (Day 329) turns it
+/// The stored form of what draws an entity: a mesh and a material named by id. The level spawner turns it
 /// into a `scene::MeshRenderer` with the loaded geometry; the level never holds a pointer.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -91,8 +91,8 @@ struct MeshReference
 
 /// The materials of an entity's mesh slots (the primitives of a glTF mesh), named by id: slot `i` of the mesh draws
 /// with `slot[i]`, or with the entity's [[asset::MeshReference::material]] when `slot[i]` is 0. An entity without this
-/// component draws all of its mesh with the one material, as before. Added in Phase 24 Day 376 as a component of its
-/// own, so no level written before it changes.
+/// component draws all of its mesh with the one material. It is a component of its own, so no level
+/// written before it changes.
 ///
 /// - Thread-safety: thread-compatible plain data.
 struct MeshSlotMaterials
@@ -269,7 +269,7 @@ Status ParseLevelBlob(ByteSpan bytes, const TypeRegistry& types, const storage::
 
 /// Creates the level's entities in `world`: parses the blob, then loads its records the way `storage::WorldStorage`
 /// does, so the world is untouched when the blob or any record is bad. References are left as the ids the components
-/// hold; the resource manager resolves them (Day 328). Derived state (transforms, bounds) is not stored: run the
+/// hold; the resource manager resolves them. Derived state (transforms, bounds) is not stored: run the
 /// systems once afterwards.
 ///
 /// - Param bytes: the blob.

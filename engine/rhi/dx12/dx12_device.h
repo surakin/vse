@@ -17,7 +17,7 @@
 #include "rhi/staging_ring.h"
 #include "mem/heap_allocator.h"
 
-//! The Direct3D 12 implementation of [[rhi::Device]] (Phase 13, Days 164-172).
+//! The Direct3D 12 implementation of [[rhi::Device]].
 
 namespace vse::rhi::dx12
 {
@@ -216,7 +216,7 @@ public:
     bool LookupTexture(TextureHandle texture, TextureInfo* out) const;
 
     /// Returns the D3D12 state a texture is in after everything submitted so far (D3D12 has no "undefined"
-    /// before-state, so the device keeps this: uploads, readbacks and, from Day 168, each submitted command list update
+    /// before-state, so the device keeps this: uploads, readbacks and each submitted command list update
     /// it).
     ///
     /// - Param texture: a live texture.
@@ -324,7 +324,7 @@ public:
     bool RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 count, u32 push_bytes, ShaderStage push_stages,
                           bool compute, RootLayout* out);
 
-    /// What command recording needs to know about a live pipeline (Day 168 records with it).
+    /// What command recording needs to know about a live pipeline (command recording uses it).
     ///
     /// - Thread-safety: thread-compatible plain data (a snapshot).
     /// - Ownership: the D3D12 objects are borrowed; valid until the pipeline is destroyed and its frame has finished.

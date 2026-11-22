@@ -1,7 +1,7 @@
 #pragma once
 
-//! The loaders of the resource types that need no GPU, and the traits that tie their C++ types to resource types. Phase
-//! 22 Day 328. Day 329 registers GPU-backed loaders for meshes, textures and materials over these.
+//! The loaders of the resource types that need no GPU, and the traits that tie their C++ types to resource types.
+//! The GPU-backed loaders for meshes, textures and materials are registered over these.
 
 #include "asset/audio_clip.h"
 #include "asset/clip.h"
@@ -73,7 +73,7 @@ template <> struct ResourceTraits<ScriptView>
     static constexpr ResourceType kType = types::kScript;                            ///< `SCRP`.
     static constexpr u32 kKind = ResourceType::FromChars('v', 'S', 'C', 'R').Tag();  ///< The code of the C++ type.
 };
-/// A mesh collider is loaded as a [[asset::MeshColliderView]] over the manager's buffer (glTF colliders Day 2).
+/// A mesh collider is loaded as a [[asset::MeshColliderView]] over the manager's buffer.
 ///
 /// - Thread-safety: thread-safe, a compile-time constant.
 template <> struct ResourceTraits<MeshColliderView>

@@ -1,6 +1,6 @@
 # Foundation: Standard Types
 
-Status: written (Phases 10 and 16).
+Status: written.
 
 **Audience:** every engine programmer; read this page first. It is the vocabulary the other foundation pages assume.
 
@@ -64,7 +64,7 @@ Code in `engine/`, `game/`, `tools/` and `tests/` never includes a standard head
 | `signal`, `sigaction` | `os::SetSignalHandler` | `os/signal.h` |
 | `exit`, clocks, sleeping | `os::Exit`, `os::MonotonicTimeNanos`, `os::SleepNanos` | `os/os.h` |
 | `<coroutine>` | `CoroutineHandle`, `SuspendAlways`, `SuspendNever` | `engine/jobs/coroutine.h` |
-| `std::string`, `string_view`, `vector`, `array`, `map`, `unique_ptr`, `shared_ptr`, `sort`, `min`, `max` | `String`, `StringView`, `Vector`, `Array`, `HashMap`, `UniquePtr`, `SharedPtr`, `Sort`, `Min`, `Max` | the Phase 10 types below |
+| `std::string`, `string_view`, `vector`, `array`, `map`, `unique_ptr`, `shared_ptr`, `sort`, `min`, `max` | `String`, `StringView`, `Vector`, `Array`, `HashMap`, `UniquePtr`, `SharedPtr`, `Sort`, `Min`, `Max` | the types below |
 | files and directories | `io::File`, `io::Path`, `io::Directory` | `io/` |
 
 Details per category: [Synchronization](foundation-sync.md), [C strings, memory, formatting and the console](foundation-cstr.md), [Math](foundation-math.md), [Containers](foundation-containers.md), [Strings](foundation-strings.md).
@@ -147,7 +147,7 @@ exempt from the gate: `tests/windows/discovery/` (toolchain probes built outside
 
 ## Language support: `lang/`
 
-Phase 16 wraps the standard library's language-support headers in `engine/foundation/lang/` (layer 0): `utility.h` (`Move`, `Forward`, `Exchange`, `Swap`, `AsConst`, `Declval`), `traits.h` (`IsSame<A, B>`, `IsConvertible`, `IsIntegral`, `EnableIf`, `Conditional`, `RemoveReference`, `Decay`, ...: variable templates for the `_v` forms, aliases for the `_t` forms), `limits.h` (`Limits<T>::Max()`, `Min()`, `Lowest()`, `Epsilon()`, `Infinity()`, `QuietNaN()`), `ordering.h` (`Ordering`, the result of `operator<=>`), `initializer_list.h` (`InitializerList<T>`) and `new.h` (`AlignVal`, `NoThrowTag`, `kNoThrow`, `ConstructAt`, `Launder`, `AlignedNew`). Where the compiler requires the standard type by name (`std::initializer_list`, `std::strong_ordering`, `std::align_val_t`), the engine name is an alias of it.
+The engine wraps the standard library's language-support headers in `engine/foundation/lang/` (layer 0): `utility.h` (`Move`, `Forward`, `Exchange`, `Swap`, `AsConst`, `Declval`), `traits.h` (`IsSame<A, B>`, `IsConvertible`, `IsIntegral`, `EnableIf`, `Conditional`, `RemoveReference`, `Decay`, ...: variable templates for the `_v` forms, aliases for the `_t` forms), `limits.h` (`Limits<T>::Max()`, `Min()`, `Lowest()`, `Epsilon()`, `Infinity()`, `QuietNaN()`), `ordering.h` (`Ordering`, the result of `operator<=>`), `initializer_list.h` (`InitializerList<T>`) and `new.h` (`AlignVal`, `NoThrowTag`, `kNoThrow`, `ConstructAt`, `Launder`, `AlignedNew`). Where the compiler requires the standard type by name (`std::initializer_list`, `std::strong_ordering`, `std::align_val_t`), the engine name is an alias of it.
 
 ## Common mistakes
 

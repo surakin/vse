@@ -40,13 +40,13 @@ the pages in the order below; each builds on the ones before it. The generated [
 ## Game objects
 
 18. [ecs](ecs.md): entities, components, archetypes and the world.
-19. [spatial](spatial.md): what is near what: shapes, bounding-volume hierarchies, spatial sets (Phase 18).
-20. [database](database.md): the database interface, SqlText, values and the conformance suite (Phase 19).
-21. [storage](storage.md): the component registry and the canonical encoding (Phase 19).
-22. [net](net.md): addresses, endpoints and network errors (Phase 20).
-23. [assets](assets.md): asset identity, blobs, backends and the resource manager (Phase 22).
-24. [animation](animation.md): poses, the clip sampler, skinning matrices and the animation system (Phase 22).
-25. [physics](physics.md): rigid bodies that agree to the bit: the determinism rules, the probe and the state hash (Phase 25).
-26. [audio](audio.md): the repeatability rules, the block hash and the tolerance comparison (Phase 26).
-27. [scripting](scripting.md): the multithreaded script runtime: partitions, behaviors, events, latent waits, tasks, hot reload, physics and audio bindings, persistence, the C API, cost and limits (Phase 27).
-28. [scripting and threads](scripting-and-threads.md): why your script runs on many threads and what that means for you (Phase 27).
+19. [spatial](spatial.md): what is near what: shapes, bounding-volume hierarchies, spatial sets.
+20. [database](database.md): the database interface, SqlText, values and the conformance suite.
+21. [storage](storage.md): the component registry and the canonical encoding.
+22. [net](net.md): addresses, endpoints and network errors.
+23. [assets](assets.md): asset identity, blobs, backends and the resource manager.
+24. [animation](animation.md): poses, the clip sampler, skinning matrices and the animation system.
+25. [physics](physics.md): rigid bodies that agree to the bit: the determinism rules, the probe and the state hash.
+26. [audio](audio.md): the repeatability rules, the block hash and the tolerance comparison.
+27. [scripting](scripting.md): the multithreaded script runtime: partitions, behaviors, events, latent waits, tasks, hot reload, physics and audio bindings, persistence, the C API, cost and limits.
+28. [scripting and threads](scripting-and-threads.md): why your script runs on many threads and what that means for you.

@@ -2,7 +2,7 @@
 
 #include <cstdarg>
 
-//! Variable argument lists (Phase 16): the engine's spelling of `<cstdarg>`. The macros wrap the language's `va_*`
+//! Variable argument lists: the engine's spelling of `<cstdarg>`. The macros wrap the language's `va_*`
 //! macros, which are macros and cannot be functions.
 namespace vse
 {

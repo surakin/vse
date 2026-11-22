@@ -1,6 +1,6 @@
 #pragma once
 
-//! Stable identities for entities (Phase 19 Day 258): [[storage::KeyGenerator]] draws keys,
+//! Stable identities for entities: [[storage::KeyGenerator]] draws keys,
 //! [[storage::EntityKeyComponent]] gives an entity one, [[storage::KeyIndex]] maps keys to entities and back, and
 //! [[storage::ResolveReference]], [[storage::CaptureParents]] and [[storage::ApplyParents]] turn stored references back
 //! into entities.

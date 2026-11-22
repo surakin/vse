@@ -1,6 +1,6 @@
 # Foundation: Strings and Unicode
 
-Status: written (Phase 0).
+Status: written.
 
 **Audience:** every engine programmer. Read [Standard types](foundation-types.md), [Memory](foundation-memory.md) and
 [Containers](foundation-containers.md) first: the string types are built from them.

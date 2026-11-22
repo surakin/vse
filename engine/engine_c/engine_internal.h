@@ -1,5 +1,5 @@
 #pragma once
-//! What the files of the module `engine_c` share (Phase 23 Day 349): the failure text of the calling thread and the way
+//! What the files of the module `engine_c` share: the failure text of the calling thread and the way
 //! from a handle to the engine's runtime. Internal to the module.
 #include "build_defs.h"
 #include "engine/engine_c.h"

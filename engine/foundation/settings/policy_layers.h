@@ -1,6 +1,6 @@
 #pragma once
 
-//! The platform's policy layers (Phase 13 Day 157): what [[settings::Settings::Load]] adds when
+//! The platform's policy layers: what [[settings::Settings::Load]] adds when
 //! [[settings::LoadOptions::use_policy]] is set. Called by `Load` only; a program sets the options instead. Windows:
 //! the group-policy registry keys; macOS: managed preferences; Linux: none yet.
 #include "settings/layers.h"

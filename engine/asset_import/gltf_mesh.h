@@ -2,7 +2,7 @@
 
 //! Importing glTF meshes into mesh blobs.
 //!
-//! Phase 22 Day 336. Each glTF mesh becomes one engine mesh resource whose material slots are the glTF primitives,
+//! Each glTF mesh becomes one engine mesh resource whose material slots are the glTF primitives,
 //! built through [[asset::BuildMeshBlob]]: what is imported is exactly what a `.mesh.src` of the same data would mint.
 //! Missing attributes are made deterministically (normals, tangents, zero texture coordinates); what the mesh format
 //! cannot hold (morph targets, vertex colors, a second texture-coordinate set) is refused or dropped with a counted
@@ -18,7 +18,7 @@
 namespace vse::asset
 {
 
-/// The skeleton a glTF mesh is skinned to, resolved by the caller (skeletons are imported from Day 337).
+/// The skeleton a glTF mesh is skinned to, resolved by the caller.
 ///
 /// - Thread-safety: thread-compatible plain data.
 struct MeshSkeletonBinding
@@ -33,7 +33,7 @@ struct MeshSkeletonBinding
 
 /// The manifest key base of a material's colour-template twin.
 ///
-/// The twin `<name>_color` has this plus the glTF material index as its key (glTF coverage Day 5). A material used by
+/// The twin `<name>_color` has this plus the glTF material index as its key. A material used by
 /// coloured and uncoloured meshes has both; the twin keeps its id on a re-import.
 inline constexpr u32 kGltfColorTwinKey = 0x40000000u;
 
@@ -60,8 +60,8 @@ bool GltfMeshHasColors(const JsonValue& mesh);
 /// - Param bindings: the skeleton of each mesh, by glTF mesh index.
 /// - Param result: receives the resources, manifest entries and warnings (appended to).
 /// - Param error: receives the sentence naming the glTF mesh and primitive.
-/// - Param skip: per glTF mesh, true for one that gets no render mesh (only collision-only nodes use it, glTF colliders
-///   Day 3); empty skips none. A skipped mesh keeps its id in the sequence but is not minted or listed.
+/// - Param skip: per glTF mesh, true for one that gets no render mesh (only collision-only nodes use it); empty
+///   skips none. A skipped mesh keeps its id in the sequence but is not minted or listed.
 /// - Fails: `Invalid` (a mesh without primitives, a primitive without `POSITION` or triangles, mismatched attribute
 ///   counts, an attribute of the wrong type, an index past the vertices, a strip with fewer than three indices, a skin
 ///   joint past the skeleton), `Unsupported` (a primitive mode that is not triangles, morph targets without

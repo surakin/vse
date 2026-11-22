@@ -1,6 +1,6 @@
 #pragma once
 
-//! The text source form of an audio clip (`.audio.src`) and the audio minter. Phase 26 Day 418. An offline tool's code:
+//! The text source form of an audio clip (`.audio.src`) and the audio minter. An offline tool's code:
 //! never linked into the engine; its tests compile it directly. It is the one place a WAV file is read for the engine
 //! (the runtime reads the minted blob only).
 //!

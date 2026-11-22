@@ -4,7 +4,7 @@
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/window_frame.h"
 
-//! The dialog (Phase 15, Day 199): a window frame with a row of buttons, a default button and a result, shown modally
+//! The dialog: a window frame with a row of buttons, a default button and a result, shown modally
 //! by `Surface::ShowModal`.
 
 namespace vse::ui

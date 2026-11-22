@@ -162,7 +162,7 @@ Whether [`State::Eval`](#script-state-eval-stringview-stringview-const-budget-am
 struct WaitRequest { ... }
 ```
 
-Why a call suspended, and what resumes it. The scheduler (Day 460) owns the clock: the backend only reports the request.
+Why a call suspended, and what resumes it. The scheduler owns the clock: the backend only reports the request.
 
 | Field | Value |
 |---|---|
@@ -185,7 +185,7 @@ What the suspended call waits for.
 | <a id="script-waitrequest-kind-seconds"></a>`Seconds` |  | Simulation seconds. |
 | <a id="script-waitrequest-kind-frames"></a>`Frames` |  | A number of frames. |
 | <a id="script-waitrequest-kind-event"></a>`Event` |  | A named event. |
-| <a id="script-waitrequest-kind-task"></a>`Task` |  | A parallel task (Day 461). |
+| <a id="script-waitrequest-kind-task"></a>`Task` |  | A parallel task. |
 
 ### `kind` {#script-waitrequest-kind-2}
 
@@ -1503,7 +1503,7 @@ The main thread's state: every binding runs.
 static InstallProfile Task();
 ```
 
-A task state (Day 461): pure bindings only, no world access.
+A task state: pure bindings only, no world access.
 
 | Field | Value |
 |---|---|
@@ -5557,7 +5557,7 @@ Coroutines waiting now (after the last phase).
 u64 tasks_run;
 ```
 
-Tasks scripts started that ran (Day 461).
+Tasks scripts started that ran.
 
 ### `tasks_failed` {#script-scriptruntimestats-tasks-failed}
 
@@ -6186,7 +6186,7 @@ The counts so far.
 void LastPartitionLoad(Vector<PartitionLoad>* out) const;
 ```
 
-What each partition did in the last tick's script phase: its instances and its job's wall time, one entry per partition in partition order (Phase 27 Day 475: the script demo's overlay).
+What each partition did in the last tick's script phase: its instances and its job's wall time, one entry per partition in partition order (the script demo's overlay).
 
 | Field | Value |
 |---|---|

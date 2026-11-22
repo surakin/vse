@@ -2,7 +2,7 @@
 
 //! The material blob (type `MATL`, version 1): a template name, shader permutation options, the parameter block in the
 //! template's uniform layout, texture bindings by resource id, sampler descriptions and render-state overrides.
-//! Built by [[asset::BuildMaterialBlob]] and read by [[asset::LoadMaterialBlob]]. Phase 22 Day 326.
+//! Built by [[asset::BuildMaterialBlob]] and read by [[asset::LoadMaterialBlob]].
 //!
 //! Sections (ids from [[asset::kFirstUserSection]]): 16 the header (96 bytes: flags, counts, the state overrides and
 //! the 48-byte template name), 17 the parameter block (the bytes copied into the material's uniform buffer, laid out as
@@ -129,7 +129,7 @@ struct MaterialStateOverride
     bool alpha_blend = false;        ///< Source-alpha blending.
 };
 
-/// The CPU description of a material: what the minter builds and the loader returns. The resource manager (Day 329)
+/// The CPU description of a material: what the minter builds and the loader returns. The resource manager
 /// turns it into a `renderer::MaterialId`.
 ///
 /// - Thread-safety: thread-compatible.

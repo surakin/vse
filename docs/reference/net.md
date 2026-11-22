@@ -34,7 +34,7 @@ A frame is a 4-byte big-endian length followed by that many payload bytes. A fra
 
 [`net::Listener`](#net-listener): a listening socket with the accept loop's policy: back off when the process is out of descriptors, and a cap on connections that were accepted but are not yet handled.
 
-The networking settings (Phase 20 Day 281): [`net::RegisterNetSettings`](#net-registernetsettings-settings-registry-star) declares every `net.*` option once, and the `...FromSettings` functions turn the current values into the configuration structs of the transports, the TCP stream and the simulated network. Nothing in `engine/net` reads the environment or the command line itself (`config_access_check`): a user sets `net.max_connections` in a settings file, in `ENGINE_NET_MAX_CONNECTIONS` or with `--net-max-connections`.
+The networking settings: [`net::RegisterNetSettings`](#net-registernetsettings-settings-registry-star) declares every `net.*` option once, and the `...FromSettings` functions turn the current values into the configuration structs of the transports, the TCP stream and the simulated network. Nothing in `engine/net` reads the environment or the command line itself (`config_access_check`): a user sets `net.max_connections` in a settings file, in `ENGINE_NET_MAX_CONNECTIONS` or with `--net-max-connections`.
 
 [`net::Poller`](#net-poller): the platform's readiness primitive, one per [`net::Reactor`](#net-reactor). The only file of the readiness code that differs between operating systems (epoll on Linux, `select` on Windows, kqueue on macOS).
 
@@ -97,7 +97,7 @@ Every end of a stream has a [`net::CloseReason`](#net-closereason): the peer clo
 
 One coroutine may receive and one may flush at a time; they may run in parallel with each other. [`net::TcpStream::Send`](#net-tcpstream-send-bytespan) may be called from any thread. [`net::TcpStream::Close`](#net-tcpstream-close) and [`net::TcpStream::Abort`](#net-tcpstream-abort) are for when no receive or flush is outstanding (cancel them with their [`net::CancelToken`](#net-canceltoken) and wait for them first).
 
-[`net::TcpTransport`](#net-tcptransport): the [`net::Transport`](#net-transport) interface over byte streams (Phase 20 Day 277), for what needs reliable ordered delivery: a store over the network, tools, remote debugging.
+[`net::TcpTransport`](#net-tcptransport): the [`net::Transport`](#net-transport) interface over byte streams, for what needs reliable ordered delivery: a store over the network, tools, remote debugging.
 
 **Wire.** Everything is a frame of [`net::FrameWriter`](#net-framewriter) (a 4-byte big-endian length, then the payload). The first byte of a payload is its type: `Hello` (protocol version, channel count, largest message), `Data` (channel, reliability kind, message), `Close` (code), `Ping` and `Pong` (a time stamp for the round trip). Each side sends its `Hello` first (the server answers only after it has read a valid client `Hello`, so a stranger that speaks something else gets nothing back), and a frame of any other type before the peer's `Hello` is a protocol violation. The channel count and message size in force are the smaller of the two sides'.
 
@@ -109,7 +109,7 @@ One coroutine may receive and one may flush at a time; they may run in parallel 
 
 [`net::TimeBudget`](#net-timebudget): the time left of one operation that waits several times.
 
-[`net::Transport`](#net-transport): the interface everything above networking uses to exchange messages with peers, whatever carries them (the in-process [`net::SimulatedTransport`](#net-simulatedtransport), the UDP transport of Days 274-276, the TCP transport of Day 277).
+[`net::Transport`](#net-transport): the interface everything above networking uses to exchange messages with peers, whatever carries them (the in-process [`net::SimulatedTransport`](#net-simulatedtransport), the UDP transport, the TCP transport).
 
 A transport is **polled**: the application calls [`net::Transport::Poll`](#net-transport-poll-event-star) once or more per frame and receives [`net::Event`](#net-event)s (a connection opened, a message arrived, a connection closed with its reason); nothing calls back into the application and no thread of the application's is blocked. A message is delivered whole, or not at all, and never corrupted or duplicated into delivery twice. What survives loss depends on the [`net::Reliability`](#net-reliability) the sender chose, per message, on one of a fixed number of channels per connection. The channels are independent: a lost reliable message on one channel does not hold back the messages of another.
 
@@ -119,7 +119,7 @@ A transport is **polled**: the application calls [`net::Transport::Poll`](#net-t
 
 [`net::SocketDatagramPort`](#net-socketdatagramport): a [`net::DatagramPort`](#net-datagramport) on a real, non-blocking UDP socket.
 
-The wire format and the small algorithms of the UDP transport (Phase 20 Day 274): packet kinds and headers, wraparound-safe sequence numbers, the acknowledgement window, and the keyed hash behind the handshake cookie. Everything here is a pure function or a small value type, tested without a network.
+The wire format and the small algorithms of the UDP transport: packet kinds and headers, wraparound-safe sequence numbers, the acknowledgement window, and the keyed hash behind the handshake cookie. Everything here is a pure function or a small value type, tested without a network.
 
 **Format.** One datagram is one packet. All integers are little-endian. The first byte is the kind in its low three bits, a flag (0x08, payloads only: the acknowledgement fields are valid), a reserved bit that must be zero (0x10), and the protocol version in its high three (anything else is dropped).
 
@@ -137,13 +137,13 @@ Reset              [kind][u16 connection_id]
 
 The two requests that a stranger can send are padded to the full size, and every answer to a stranger is far smaller than the request, so the server cannot be used to amplify traffic towards a forged source address.
 
-[`net::UdpTransport`](#net-udptransport): the game-traffic transport over UDP datagrams (Phase 20 Days 274-276). Day 274 builds the first third: the packet format, a handshake that costs a server no state before the client proves it owns its address, the connection state machine and the sequence/acknowledgement machinery of every packet. Day 275 adds the four reliability kinds on independent channels, several small messages per packet and fragmentation of large ones; congestion control and the refined round-trip estimate follow on Day 276, behind the same [`net::Transport`](#net-transport) interface.
+[`net::UdpTransport`](#net-udptransport): the game-traffic transport over UDP datagrams. It provides the packet format, a handshake that costs a server no state before the client proves it owns its address, the connection state machine and the sequence/acknowledgement machinery of every packet. It also has the four reliability kinds on independent channels, several small messages per packet and fragmentation of large ones; congestion control and the refined round-trip estimate, behind the same [`net::Transport`](#net-transport) interface.
 
 **Data.** A message becomes one frame, or fragments of 1024 bytes for a message that does not fit a packet. Frames of all channels are packed into packets (resent frames first, then channels in ascending order, so a lower channel number is a higher priority). A packet's acknowledgement acknowledges its reliable frames; a frame is sent again when its packet is three or more packets behind an acknowledged one and was not acknowledged, or when its time-out (from the round-trip estimate, doubling per try) passes. Reliable-ordered delivery keeps a bounded reorder buffer per channel; a peer whose gap exceeds it, or that exceeds the reassembly and reorder byte budget, is disconnected with [`net::DisconnectReason::ProtocolError`](#net-disconnectreason-protocolerror). Fragments are declared up front (index, count, total size) and checked exactly: sizes, overlap and total are validated before any memory is committed.
 
 **Handshake** (the wire format is in `net/udp_protocol.h`). The client sends a ConnectRequest padded to a full datagram. The server answers with a small Challenge holding a cookie, a keyed hash of the client's endpoint, the client's random salt and the current time period, and **keeps nothing**. The client repeats the cookie in a ChallengeResponse (padded again); only then does the server create the connection and answer Accepted with the connection id. Requests that are not full-size are dropped, so no answer is larger than the request that caused it. A forged source address cannot complete the exchange and so cannot make the server hold a connection or flood a third party. A cookie is valid for the period it was made in and the next one. Handshake packets are repeated with a doubling delay until answered or the connect time-out.
 
-**Trust.** The cookie stops spoofed-source floods and amplification. It does not authenticate a peer and nothing is encrypted: until the encryption outcome of Day 280 is built this transport is for trusted networks only.
+**Trust.** The cookie stops spoofed-source floods and amplification. It does not authenticate a peer and nothing is encrypted: this transport is for trusted networks only.
 
 **Time and I/O.** The transport reads a [`net::Clock`](#net-clock) and moves datagrams through a [`net::DatagramPort`](#net-datagramport), so it runs unchanged over a real socket ([`net::SocketDatagramPort`](#net-socketdatagramport)) and over the simulated network ([`net::SimDatagramPort`](#net-simdatagramport)). It is polled: [`net::UdpTransport::Poll`](#net-udptransport-poll-event-star) receives, runs the timers and returns events.
 
@@ -5302,7 +5302,7 @@ class Socket { ... }
 
 A move-only handle to a TCP stream, a TCP listener or a UDP socket.
 
-Every socket is non-blocking and not inherited by child processes from the moment it exists. A call that cannot finish returns [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock) and did nothing; wait for readiness (the reactor of Day 269, or a poll in a test) and call again. Partial reads and writes are normal results: a count below the request is not an error. An interrupted system call is retried inside the backend. A write to a peer that has gone never raises a signal; it reports [`net::ErrorCode::Closed`](#net-errorcode-closed) or [`net::ErrorCode::Reset`](#net-errorcode-reset).
+Every socket is non-blocking and not inherited by child processes from the moment it exists. A call that cannot finish returns [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock) and did nothing; wait for readiness (the reactor, or a poll in a test) and call again. Partial reads and writes are normal results: a count below the request is not an error. An interrupted system call is retried inside the backend. A write to a peer that has gone never raises a signal; it reports [`net::ErrorCode::Closed`](#net-errorcode-closed) or [`net::ErrorCode::Reset`](#net-errorcode-reset).
 
 A socket has an address family from the moment it is opened. An IPv6 socket accepts IPv4 endpoints as IPv4-mapped addresses and an IPv4 socket refuses IPv6 endpoints (except an IPv4-mapped one, which is unmapped), and an IPv4-mapped peer address is reported as IPv4. A closed or default-constructed socket answers every operation with [`net::ErrorCode::Invalid`](#net-errorcode-invalid); none crashes.
 

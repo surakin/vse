@@ -229,6 +229,12 @@ or format with the C library (`tools/signal_safety_check` enforces it).
 New modules are added to `docs/reference/modules.txt` in the same day.
 Planning-only commits are exempt, as are days that change no public header.
 
+## Published documentation never names phases or days (required, 2026-11-22)
+
+Phases and days only guide development: `plans/`, `PLAN.md`, `STATUS.md`, `KNOWN-ISSUES.md` and the design specs under `docs/superpowers/` keep them. **Everything a user reads does not**: the guide pages (`docs/guide/`), the tutorials, the generated
+reference (`docs/reference/`), `docs/DOC-CONVENTIONS.md`, `README.md` and the doc comments (`///`, `///<`, `//!`) of the headers, from which the reference is generated. Write what is true ("on Windows", "deferred", "built on the job scheduler"),
+never when it was built or in which phase. The gate `docs_phase_check` (`tools/docs_phase_check`; ctest `docs_phase_check`) fails on `Phase N`, `Day N` and a wrapped `Phase`/`Day` at the end of a line in those places. Plain `//` comments in code may still name them.
+
 ## Tutorials and user-facing guides wait for the phase to be done (required, 2026-11-19)
 
 **Do not write tutorials, getting-started material, glossaries, troubleshooting pages or other user-friendly narrative documentation for a phase that is still in progress.** The design keeps changing until the phase closes, so

@@ -1,6 +1,6 @@
 #pragma once
 
-//! The one place the Direct3D 12 and DXGI headers are included (Phase 13 Day 164).
+//! The one place the Direct3D 12 and DXGI headers are included.
 //!
 //! `os/windows/win32.h` brings `<windows.h>` between the unity guards; the D3D12 and DXGI headers go inside their own
 //! pair here, so their macros do not leak into the next file of a unity batch (CLAUDE.md, "Unity builds"). The backend

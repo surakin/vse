@@ -1,5 +1,5 @@
 #pragma once
-//! The surfaces of one engine (Phase 23 Day 352): windows the host owns, that the engine renders into on the host's
+//! The surfaces of one engine: windows the host owns, that the engine renders into on the host's
 //! connection, and the pixel read-backs of their frames. Internal to the module `engine_c`: nothing here reaches the
 //! host but through `engine_c.h`.
 #include "containers/unique_ptr.h"
@@ -44,7 +44,7 @@ public:
     engine_status Resized(engine_handle surface, u32 width, u32 height, float scale);
     engine_status Rebind(engine_handle surface, const engine_surface_info* info);
     /// Loses the device of a surface on purpose (the RHI's `InjectDeviceLoss`), for the tests of the recovery: the next
-    /// frame finds it lost and the host recovers with `Rebind`, which makes a new device (Phase 24 Day 369). Reached
+    /// frame finds it lost and the host recovers with `Rebind`, which makes a new device. Reached
     /// only through the test extension `engine.test_state`.
     ///
     /// - Fails: `STALE_HANDLE` for a surface that does not exist.
@@ -64,7 +64,7 @@ public:
     /// The world ray of a surface pixel and the projection of a world point, with the camera of the last frame.
     engine_status PixelRay(engine_handle surface, f32 x, f32 y, f32* origin, f32* direction);
     engine_status Project(engine_handle surface, const f32* point, f32* out);
-    /// The newest finished frame of an off-screen surface, and giving it back (Phase 24 Day 379).
+    /// The newest finished frame of an off-screen surface, and giving it back.
     engine_status AcquireFrame(engine_handle surface, engine_frame_image* out);
     engine_status ReleaseFrame(engine_handle surface, const engine_frame_image* image);
 

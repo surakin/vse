@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[storage::MemoryStore]]: the reference record store (Phase 19 Day 259), correct and simple rather than fast. Every
+//! [[storage::MemoryStore]]: the reference record store, correct and simple rather than fast. Every
 //! other store is compared with it.
 
 #include "containers/hash_map.h"

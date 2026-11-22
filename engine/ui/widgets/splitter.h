@@ -6,7 +6,7 @@
 #include "ui/layout.h"
 #include "ui/widget.h"
 
-//! The splitter (Phase 15, Day 199): panes side by side or one over the other, with handles the user drags.
+//! The splitter: panes side by side or one over the other, with handles the user drags.
 
 namespace vse::ui
 {

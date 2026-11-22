@@ -1,6 +1,6 @@
 # Render settings
 
-Status: written (Phase 8; shared settings system from Phase 11).
+Status: written.
 
 **Audience:** renderer programmers, and anyone who adds a rendering option or a settings screen. Read [Renderer](renderer.md) and [The RHI](rhi.md) ("Lifecycle and reset")
 first if the terms below are new.
@@ -11,7 +11,7 @@ and a **cost class** that says how much a change costs. The engine can then comp
 without restarting the program. You touch this page when you add an option, build a settings screen, or wonder why a change made the screen flicker.
 
 Two layers exist, and this page covers both. `RenderSettings` (header `engine/renderer/render_settings.h`) is the value type the renderer works with. The engine-wide
-settings system (Phase 11, see "Rendering settings in the shared system" below) stores the same options in the user's settings file and applies them through the renderer.
+settings system (see "Rendering settings in the shared system" below) stores the same options in the user's settings file and applies them through the renderer.
 If you only read or change settings from game code, go to the shared-system section.
 
 ## At a glance
@@ -195,10 +195,10 @@ present_mode = "mailbox"
 width = 1920
 ```
 
-The Phase 8 text above (`version = 1` and flat keys) is **schema 1** of the `renderer` section: `renderer::AddRendererMigrations(&settings.Migrations())` renames each flat key to its `renderer.` key when such a file
+The text above (`version = 1` and flat keys) is **schema 1** of the `renderer` section: `renderer::AddRendererMigrations(&settings.Migrations())` renames each flat key to its `renderer.` key when such a file
 is loaded, and the file keeps its comments and is rewritten in schema 2 the next time the application saves. `ParseSettings` and `SerializeSettings` are unchanged and still read and write schema 1 for tools that use them.
 
 ## See also
 
-[renderer](renderer.md), [rhi](rhi.md), `plans/phase-08-rhi-reset.md`, the design in
+[renderer](renderer.md), [rhi](rhi.md), the design in
 `docs/superpowers/specs/2026-11-06-rhi-reset-design.md`.

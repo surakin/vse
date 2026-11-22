@@ -6,7 +6,7 @@
 #include "types.h"
 
 //! The engine's hash functions: `Hash<K>`, the function object [[HashMap]] and [[HashSet]] use for their keys, and
-//! `Fnv1a64`, the one byte hash (container audit series, Day 2). Every module that hashes bytes calls `Fnv1a64` instead
+//! `Fnv1a64`, the one byte hash. Every module that hashes bytes calls `Fnv1a64` instead
 //! of writing FNV-1a out again; its values are the published FNV-1a 64-bit values, so a hash stored in a minted file or
 //! compared across machines does not change.
 namespace vse
@@ -217,7 +217,7 @@ template <> struct Hash<u64>
 
 /// Hash function for `usize` and `isize` keys where they are types of their own: on macOS `usize` is `unsigned long`
 /// and `u64` is `unsigned long long` (Linux and Windows make them the same type, so there the `u64` and `i64` hashes
-/// serve). Phase 21 Day 285.
+/// serve).
 template <typename K>
     requires((IsSame<K, usize> && !IsSame<usize, u64>) || (IsSame<K, isize> && !IsSame<isize, i64>))
 struct Hash<K>
@@ -234,7 +234,7 @@ template <typename T> struct Hash<T*>
     usize operator()(T* k) const { return detail::MixHash64(reinterpret_cast<u64>(k)); }
 };
 
-/// Hash function for [[StringView]] keys (Phase 27 Day 474): `Fnv1a64` over the bytes, then mixed. A string type that
+/// Hash function for [[StringView]] keys: `Fnv1a64` over the bytes, then mixed. A string type that
 /// hashes as a key gives the same value as the view of its contents, so a map keyed by strings can be searched with a
 /// view (`String<A>`'s hash is in `string/string.h`).
 template <> struct Hash<StringView>

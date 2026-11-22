@@ -5,7 +5,7 @@
 //! The G-buffer holds four color targets and a depth target (renderer spec R11): albedo (`RGBA8_SRGB`: rgb albedo, a
 //! baked occlusion), the world-space normal (`RG16_Float`, octahedral-encoded by [[renderer::OctEncode]]), the material
 //! (`RGBA8_UNorm`: roughness, metallic, a free channel written 0, flags / 255), the emitted radiance (`RGBA16_Float`,
-//! linear rgb, not limited to 1; glTF coverage Day 2) and `D32_Float` depth (0 at the near plane, 1 at the far plane,
+//! linear rgb, not limited to 1) and `D32_Float` depth (0 at the near plane, 1 at the far plane,
 //! no reverse-Z). The shaders are `gbuffer.vert` and `gbuffer.frag`; the fragment shader has
 //! permutations for a normal map, an alpha test and per-vertex colors, and [[renderer::CreateGBufferMaterial]] picks
 //! the matching vertex and fragment modules so the two never disagree.
@@ -303,7 +303,7 @@ struct GBufferStats
     /// Skinned objects not drawn because the frame's joint palette had no room for their matrices (the budget is
     /// `renderer.joint_palette_bytes`); each is skipped whole, never drawn with a stale or partial pose.
     u32 skinned_dropped = 0;
-    /// Objects drawn with their morph targets applied this frame (glTF coverage Day 7).
+    /// Objects drawn with their morph targets applied this frame.
     ///
     /// One per mesh and weights, so an entity whose mesh has several material slots counts once.
     u32 morphed_objects = 0;

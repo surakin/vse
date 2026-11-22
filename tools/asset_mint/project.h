@@ -1,6 +1,6 @@
 #pragma once
 
-//! The project side of `asset_mint` (Phase 22 Day 333): the project file (`assets.project`), the discovery of sources,
+//! The project side of `asset_mint`: the project file (`assets.project`), the discovery of sources,
 //! the dependency order, incremental and parallel minting, packing, verifying, listing and checking. An offline tool's
 //! code: never linked into the engine; its tests compile it directly.
 //!

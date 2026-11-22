@@ -95,7 +95,7 @@ DeviceStatus NegotiatePcm(const PcmCaps& caps, u32 want_rate, u32 want_channels,
 /// - Fails: never.
 void ConvertForPcm(PcmFormat format, const f32* in, u32 samples, void* out);
 
-/// The layout a card's channel count stands for (Day 440: shared by the ALSA and WASAPI backends).
+/// The layout a card's channel count stands for (shared by the ALSA and WASAPI backends).
 ///
 /// - Param channels: the channel count the card plays.
 /// - Param out: receives the layout; not written when there is none.

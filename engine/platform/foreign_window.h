@@ -1,6 +1,6 @@
 #pragma once
 
-//! A window the host program owns (Phase 23 Day 352): the engine renders into it and never creates, resizes or destroys
+//! A window the host program owns: the engine renders into it and never creates, resizes or destroys
 //! it. The host gives its native handles (an X11 `Display*` and `Window`, a Wayland `wl_display*` and `wl_surface*`)
 //! and tells the engine the size and scale whenever they change; the RHI makes its presentation surface from the
 //! handles, on the host's own connection (the engine opens none of its own).
@@ -71,7 +71,7 @@ public:
 
 /// A [[os::Window]] over native handles the host owns.
 ///
-/// It has no events, no cursor and no clipboard (the host owns input; Day 353 forwards it). `Valid` is true until the
+/// It has no events, no cursor and no clipboard (the host owns input and forwards it). `Valid` is true until the
 /// host calls `Close`.
 ///
 /// - Thread-safety: thread-compatible, like every window: the host's frame thread calls `SetSize` and the engine's

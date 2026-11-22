@@ -5,7 +5,7 @@
 #include "ui/draw_list.h"
 #include "ui/surface.h"
 
-//! When a surface runs a frame (Phase 15, Day 202): every frame, only when something changed, or at a fixed rate. A
+//! When a surface runs a frame: every frame, only when something changed, or at a fixed rate. A
 //! screen in the world that nobody touches should cost nothing.
 
 namespace vse::ui

@@ -1,5 +1,5 @@
 #pragma once
-//! The convex hull resource (Phase 25 Day 393): the vertices, the face polygons with their planes and the mass data of
+//! The convex hull resource: the vertices, the face polygons with their planes and the mass data of
 //! a convex hull, for the physics module's collision shape. [[asset::BuildHullGeometry]] computes the hull of a point
 //! cloud, [[asset::BuildHullBlob]] writes a `HULL` blob, [[asset::HullView]] reads one in place.
 //!

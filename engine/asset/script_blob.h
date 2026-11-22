@@ -1,5 +1,5 @@
 #pragma once
-//! The script resource (Phase 27 Day 462): the source text of a script with the facts the minter found in it, so a
+//! The script resource: the source text of a script with the facts the minter found in it, so a
 //! load never parses to learn them. [[asset::BuildScriptBlob]] writes an `SCRP` blob, [[asset::ScriptView]] reads one
 //! in place (the source is a range of the loaded buffer, shared, never copied).
 //!

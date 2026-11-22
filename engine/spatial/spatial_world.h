@@ -1,6 +1,6 @@
 #pragma once
 
-//! The spatial world (Phase 18 Day 244): a resource holding the world's named spatial sets, so independent systems
+//! The spatial world: a resource holding the world's named spatial sets, so independent systems
 //! (rendering, physics, audio, gameplay) each find their set without coordinating.
 
 #include "containers/array.h"

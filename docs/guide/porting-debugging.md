@@ -1,6 +1,6 @@
 # Porting the debugging facilities to another platform
 
-Status: written (Linux is the reference; Windows was ported in Phase 13; macOS in Phase 21, Days 290-292).
+Status: written.
 
 **Audience:** the engineer bringing the debugging facilities to a new platform. Read [Foundation: Debugging](foundation-debugging.md) first;
 it explains what each facility does for the person using it. Ordinary engine programmers do not need this page.
@@ -15,8 +15,8 @@ designed in (an `Unsupported` answer, skipped death tests) and have no work here
 | Platform | State | Checklist |
 |---|---|---|
 | Linux | reference implementation | `engine/foundation/os/linux/debug/` |
-| Windows | done (Phase 13 Days 154-156) | `engine/foundation/os/windows/debug/BACKEND.md` |
-| macOS | done (Phase 21 Days 290-292) | `engine/foundation/os/macos/debug/BACKEND.md` |
+| Windows | done | `engine/foundation/os/windows/debug/BACKEND.md` |
+| macOS | done | `engine/foundation/os/macos/debug/BACKEND.md` |
 | iOS, consoles | designed in: `Unsupported`, death tests skip | none |
 
 Read, in order: this page; the checklist for your platform (`engine/foundation/os/windows/debug/BACKEND.md` or
@@ -70,15 +70,15 @@ Crash report    from the library's on_crash hook, on Breakpad's handler thread a
                 (no DbgHelp while a crash is reported); a gate filter so a second crashing thread waits instead of ending the process
 Post-mortem     WER LocalDumps under HKLM only (the per-user key is ignored, measured): read, never written; Limited with the values to set
 Symbol store    PDB and image in the WinDbg layout (store-symbols.ps1); crash-report.ps1 and crash_extract --resolve name the frames
-Symbols         DbgHelp from the PDBs (decided and built on Phase 13 Day 154; libbacktrace is not built on Windows): capture with
+Symbols         DbgHelp from the PDBs (libbacktrace is not built on Windows): capture with
                 RtlCaptureStackBackTrace, names and lines with SymFromAddrW / SymGetLineFromAddrW64, inlined frames with
                 SymAddrIncludeInlineTrace; every DbgHelp call under one lock, never from the crash hook
 Modules         EnumProcessModulesEx + GetModuleInformation + GetModuleFileNameExW, the same immutable table as Linux
 ```
 
-Done on Day 154: symbols, modules, the crash context, the debugger check, thread ids and names (`os/windows/debug/`). Done on Day 155:
-the crash hook and the report, the crash gate, death tests and fault injection (`BusError` has no Windows form), the no-upload check and
-the allocation check. Done on Day 156: post-mortem dumps (read-only), `crash_extract` on Windows, the symbol store and the PowerShell scripts.
+Done: symbols, modules, the crash context, the debugger check, thread ids and names (`os/windows/debug/`); the crash hook and the report,
+the crash gate, death tests and fault injection (`BusError` has no Windows form), the no-upload check and the allocation check; post-mortem
+dumps (read-only), `crash_extract` on Windows, the symbol store and the PowerShell scripts.
 The Windows order of work is complete; what is left is the Linux run of the shared changes at the phase close.
 
 The traps: an exception filter may call only a few APIs and must not allocate; fast-fail crashes (`__fastfail`, `/GS` failures)
@@ -104,7 +104,7 @@ Symbols         DWARF in a dSYM next to the binary (libbacktrace needs it for fi
 The traps: the hardened runtime and notarization restrict what a handler may do; `dsymutil` and `strip` replace `objcopy`; the
 symbol store holds dSYM bundles named by UUID.
 
-**As built (Phase 21 Days 290-292; the crash handler itself is described in `os/macos/debug/BACKEND.md`):**
+**As built (the crash handler itself is described in `os/macos/debug/BACKEND.md`):**
 
 - **dSYMs.** The linker leaves the DWARF in the object files; `engine_dsym(<target>)` (root `CMakeLists.txt`, on by default as `ENGINE_DSYM`)
   runs `dsymutil` after linking and puts `<binary>.dSYM` next to the binary, where libbacktrace looks. Without it a frame names its function
@@ -117,7 +117,7 @@ symbol store holds dSYM bundles named by UUID.
 - **Thread ids** are `pthread_threadid_np`'s low 31 bits, never 0: the same number the job system logs.
 - **Crash context:** build id = the main image's `LC_UUID` (32 hex digits), `kern.osproductversion`, `machdep.cpu.brand_string` (`Apple M1` and so
   on, on Apple silicon), `hw.logicalcpu`, `hw.memsize`, `_NSGetExecutablePath` (no `realpath`: the context may be filled on the assert path).
-- **Breakpad's macOS minidumps differ in two ways** that a reader must allow for (Day 292): the module and thread lists have 4 bytes of padding
+- **Breakpad's macOS minidumps differ in two ways** that a reader must allow for: the module and thread lists have 4 bytes of padding
   after their count (the list is exactly 4 bytes longer than its entries; Breakpad's own reader assumes the same), and each x86-64 context's
   flags name the processor and no register group, though the general registers are written. `crash_extract` reads the padded lists, and
   `crash_extract --lldb` completes the flags (CONTROL, INTEGER, SEGMENTS) in a copy, without which `lldb` puts every thread at pc 0. An

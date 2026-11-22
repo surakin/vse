@@ -2,7 +2,7 @@
 
 //! Minting a texture blob from decoded pixels.
 //!
-//! Phase 22 Day 338. The core of the texture minter, in the engine so that `asset_mint` (from `.tex.src` and raw
+//! The core of the texture minter, in the engine so that `asset_mint` (from `.tex.src` and raw
 //! images) and the glTF importer (from decoded PNG and JPEG) make identical blobs: 8-bit RGBA layers are premultiplied
 //! if asked, converted to the storage format, filtered into a mip chain in exact integer arithmetic and, for the BC
 //! formats, block-compressed, all deterministically.

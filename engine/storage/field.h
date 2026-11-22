@@ -1,6 +1,6 @@
 #pragma once
 
-//! Field descriptions (Phase 19 Day 256): [[storage::Field]] describes one member of a component by pointer to member,
+//! Field descriptions: [[storage::Field]] describes one member of a component by pointer to member,
 //! and carries the functions that write it to and read it from the canonical encoding (`foundation/bytes/`). A member
 //! whose type has no encoding fails to compile: nothing is skipped silently.
 
@@ -34,7 +34,7 @@ struct CodecLimits
     u64 max_string_bytes = 1u << 20;    ///< The most bytes of one string field.
     u64 max_array_elements = 1u << 16;  ///< The most elements of one array field.
     u64 max_components_per_entity = 128;  ///< The most component records of one entity (checked by the entity
-                                          ///< container, Day 260).
+                                          ///< container).
 };
 
 /// The kinds of field the registry can store.

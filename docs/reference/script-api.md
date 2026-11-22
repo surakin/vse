@@ -950,7 +950,7 @@ Returns the value of a setting as of the tick start: a bool, an integer, a float
 
 Thread rule: **world-write**. Id: `0x2e01d96c`.
 
-Subscribes the running entity's script to changes of the setting `prefix` or anything below it; at the sync point after a change the global function named `function` is called (by the event delivery of Day 459) with the key. Removed when the entity is destroyed.
+Subscribes the running entity's script to changes of the setting `prefix` or anything below it; at the sync point after a change the global function named `function` is called (by the event delivery) with the key. Removed when the entity is destroyed.
 
 ### `settings.set`
 

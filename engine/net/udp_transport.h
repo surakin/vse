@@ -1,10 +1,10 @@
 #pragma once
 
-//! [[net::UdpTransport]]: the game-traffic transport over UDP datagrams (Phase 20 Days 274-276). Day 274 builds the
-//! first third: the packet format, a handshake that costs a server no state before the client proves it owns its
-//! address, the connection state machine and the sequence/acknowledgement machinery of every packet. Day 275 adds the
+//! [[net::UdpTransport]]: the game-traffic transport over UDP datagrams. It provides the
+//! packet format, a handshake that costs a server no state before the client proves it owns its
+//! address, the connection state machine and the sequence/acknowledgement machinery of every packet. It also has the
 //! four reliability kinds on independent channels, several small messages per packet and fragmentation of large ones;
-//! congestion control and the refined round-trip estimate follow on Day 276, behind the same [[net::Transport]]
+//! congestion control and the refined round-trip estimate, behind the same [[net::Transport]]
 //! interface.
 //!
 //! **Data.** A message becomes one frame, or fragments of 1024 bytes for a message that does not fit a packet. Frames
@@ -26,7 +26,7 @@
 //! with a doubling delay until answered or the connect time-out.
 //!
 //! **Trust.** The cookie stops spoofed-source floods and amplification. It does not authenticate a peer and nothing
-//! is encrypted: until the encryption outcome of Day 280 is built this transport is for trusted networks only.
+//! is encrypted: this transport is for trusted networks only.
 //!
 //! **Time and I/O.** The transport reads a [[net::Clock]] and moves datagrams through a [[net::DatagramPort]], so it
 //! runs unchanged over a real socket ([[net::SocketDatagramPort]]) and over the simulated network

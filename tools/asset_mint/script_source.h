@@ -1,6 +1,6 @@
 #pragma once
 
-//! The text source form of a script (`.script.src`) and the script minter. Phase 27 Day 462. An offline tool's code:
+//! The text source form of a script (`.script.src`) and the script minter. An offline tool's code:
 //! never linked into the engine; its tests compile it directly.
 //!
 //! Line-oriented text; `#` starts a comment; fields are separated by spaces or tabs:

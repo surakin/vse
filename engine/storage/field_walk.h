@@ -1,6 +1,6 @@
 #pragma once
 
-//! Walking the stored bytes of a record without building the component (Phase 22 Day 327): [[storage::SkipField]]
+//! Walking the stored bytes of a record without building the component: [[storage::SkipField]]
 //! measures one field, [[storage::ReadReferences]] lists the resource references of a record. The level minter, the
 //! level loader and the text form read records this way.
 

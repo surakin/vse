@@ -35,9 +35,9 @@ struct AudioSource
     bool play_on_start = true;
     /// Whether the sound is placed in the world; false plays it flat (music, interface sounds).
     bool spatial = true;
-    /// Whether Doppler shift applies (Day 430).
+    /// Whether Doppler shift applies.
     bool doppler = true;
-    /// Whether occlusion applies (Day 431).
+    /// Whether occlusion applies.
     bool occlusion = true;
     /// Higher survives when voices are scarce and breaks a tie of loudness.
     i32 priority = 0;

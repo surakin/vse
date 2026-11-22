@@ -1,6 +1,6 @@
 # The Render Hardware Interface (RHI)
 
-Status: written (Phase 4; Direct3D 12 backend added in Phase 13; Metal backend added in Phase 21).
+Status: written.
 
 **Audience:** engine and renderer programmers. Read [Standard types](foundation-types.md) and [Containers](foundation-containers.md) first. If you only want to
 draw things with materials, start with the [renderer guide](renderer.md): the renderer sits on top of the RHI and hides most of this page. You come here
@@ -40,7 +40,6 @@ This page is long because it is also the reference for the backends. You do not 
 - `engine/rhi/*.h`
 - `engine/rhi/vulkan/`, `engine/rhi/dx12/` and `engine/rhi/metal/` (backend internals)
 - `docs/superpowers/specs/2026-11-04-rhi-design.md` (design decisions D1-D8)
-- `plans/phase-04-vulkan-rhi.md`
 
 ## API reference
 
@@ -223,7 +222,7 @@ errors: 1
 [[rhi::CreateDevice]] and talk to [[rhi::Device]] and [[rhi::CommandList]] only. The reverse holds too: the
 backend-agnostic headers directly under `engine/rhi/` never include a Vulkan, Wayland, X11 or backend-directory
 header. Both rules are checked by the `rhi_boundary_check` ctest (see "Building and Testing"); the one allowed
-exception is the Phase 1 GPU driver probe, listed with its reason in `tools/rhi_boundary_check/allowlist.txt`.
+exception is the GPU driver probe, listed with its reason in `tools/rhi_boundary_check/allowlist.txt`.
 
 **Programming errors abort; bad descriptions and the environment fail softly.** The RHI sorts every problem into one of
 three kinds, and the headers say which with `Aborts:` and `Fails:` labels.
@@ -276,15 +275,14 @@ demo with exit code 3 and a message, a failed allocation with exit code 1.
 ### Platform notes
 
 The backends each platform builds, besides the `null` test backend everywhere: Vulkan on Linux, Vulkan and Direct3D 12 on Windows (see "The DX12 backend" below), and Metal on
-macOS (see "The Metal backend" below): macOS has no Vulkan (MoltenVK would be a third-party layer, Phase 21 decision 8), so `rhi_vulkan` is not built there. The Metal backend is
-built from Phase 21 Day 300, and from Day 309 it is what `Auto` picks there (from Day 298 to Day 308 the setting's `auto` was the null backend on macOS, and Metal was
-asked for by name). The tests that run once per GPU backend run through it; the Vulkan-only tests skip. The Vulkan backend needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
+macOS (see "The Metal backend" below): macOS has no Vulkan (MoltenVK would be a third-party layer), so `rhi_vulkan` is not built there. The Metal backend is
+built there and is what `Auto` picks. The tests that run once per GPU backend run through it; the Vulkan-only tests skip. The Vulkan backend needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
 semaphores, and presents through `VK_KHR_wayland_surface` or `VK_KHR_xlib_surface` on Linux and `VK_KHR_win32_surface`
 on Windows, depending on the window ([[os::Window]]); "Vulkan on Windows" below has the Windows details. With the NVIDIA proprietary driver, ThreadSanitizer cannot run GPU tests (the driver's threads crash
 inside its interceptors), and the X11 presentation path leaks inside a library the driver unloads; see "Building and
 Testing" for how the sanitizer flavors cover this.
 
-The Phase 4 portability review,
+The portability review,
 `docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, lists for every concept how each backend implements it
 and which shims they need; the points that shape how you write code today are the clip-space convention (Y down,
 depth 0..1, with the flip in the projection), the copy alignment above, explicit resource states, and bind groups
@@ -304,7 +302,7 @@ comparing later work, not a promise, and are never asserted in CI.
 | Upload through the staging ring, 1 MiB x 256 and 64 MiB x 8 | 14-18 GiB/s (a memcpy plus one GPU copy; bound by host memory bandwidth) |
 | Cube pipeline creation (shaders, pipeline, buffers) | 5.6-5.8 ms with the cache off, 4.9-5.0 ms on a cold cache, 3.6 ms on a warm one |
 
-On macOS (Phase 21 Day 311; Metal on the Intel Iris Plus 645 of a 2019 MacBook Pro, macOS 15.8.1, Release, validation off): 0.64-0.89 us per
+On macOS (Metal on the Intel Iris Plus 645 of a 2019 MacBook Pro, macOS 15.8.1, Release, validation off): 0.64-0.89 us per
 draw (1000 and 10000 cubes, a transient bind group each), barriers 0.02-0.05 us (recorded, nothing to encode between Metal encoders), uploads
 3.8 GiB/s (1 MiB) and 6.6 GiB/s (64 MiB), the cube pipeline 1.8-1.9 ms with or without the pipeline archive.
 
@@ -314,7 +312,7 @@ Recording is thread-compatible per list, so scale by recording lists on several 
 `CreateBindGroup` and the handle lookups behind `SetPipeline`/`SetVertexBuffer`) at about 11%, `CreateBindGroup`
 itself at 8%, and the rest spread across the list's own methods. Per-draw transient bind groups are therefore the
 first thing to drop when draw counts grow: put per-object data in one buffer and index it, or bind it once per group of
-draws. See the Phase 5 notes in `plans/phase-05-renderer-core.md`.
+draws.
 
 ### Backends and the registry
 
@@ -326,7 +324,7 @@ library and reach backends only through this registry, so the renderer links `rh
 
 Registration is one explicit call, never a global constructor: a program calls [[rhi::RegisterCompiledBackends]]
 (`rhi/backends/backends.h`, library `rhi_backends`) at startup, before it creates a device. It registers the null backend everywhere,
-Vulkan on Linux and Windows, Direct3D 12 on Windows and Metal on macOS (which has no Vulkan: Phase 21 decision 8). Test binaries do it from a Catch2 listener
+Vulkan on Linux and Windows, Direct3D 12 on Windows and Metal on macOS (which has no Vulkan). Test binaries do it from a Catch2 listener
 (`tests/support/register_backends.cpp`). Forgetting the call is not a silent "no GPU": the device creation fails with
 `the vulkan backend is not registered in this program (link rhi_backends and call rhi::RegisterCompiledBackends ...)`.
 
@@ -334,8 +332,7 @@ Vulkan on Linux and Windows, Direct3D 12 on Windows and Metal on macOS (which ha
 rank ([[rhi::PickAutoBackend]]): Direct3D 12 (rank 20) on Windows, Metal (30) on macOS, Vulkan (10) on Linux; the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
 cannot run here (no Vulkan loader, for example) fails with the backend's own reason ([[rhi::ResolveBackend]]). The renderer's
 `backend` setting (`auto`, `null`, `vulkan`, `dx12`, `metal`) goes through the same rule when the program starts; it is not changed at run time
-(a change waits for the next start, see the render settings guide). From Phase 21 Day 298 to Day 308 there was one exception, on macOS: the setting's `auto` in a
-program with no backend `Auto` may pick was the null backend, with a logged note ([[renderer::BackendForSetting]]); `rhi::PickAutoBackend` itself still never picks
+(a change waits for the next start, see the render settings guide). `rhi::PickAutoBackend` never picks
 null, and a GPU backend that is registered but fails is never replaced by null.
 
 ```cpp compile standalone run
@@ -434,7 +431,7 @@ created on null-integrated
 ```
 
 `Device::Adapter` reports the adapter a device was created on. On a machine with one GPU everything above still works; the
-list has one entry. Direct3D 12 and Metal map onto the same struct: see the portability notes in the Phase 13 and 21 plans.
+list has one entry. Direct3D 12 and Metal map onto the same struct.
 
 ### Lifecycle and reset
 
@@ -975,7 +972,7 @@ test at teardown if any validation error was reported. A test that provokes an e
 
 ### Vulkan on Windows
 
-The same backend runs on Windows (Phase 13 Day 160). What differs:
+The same backend runs on Windows. What differs:
 
 - **The loader** is `vulkan-1.dll`, which every Vulkan driver installs into System32; a program needs no SDK to run. It is opened
   through `os::LoadLibrary`, whose search order never includes the current directory.
@@ -994,9 +991,9 @@ The same backend runs on Windows (Phase 13 Day 160). What differs:
 
 ### The DX12 backend
 
-Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `rhi_dx12`, registered by
+Direct3D 12 is the native backend on Windows, library `rhi_dx12`, registered by
 [[rhi::RegisterCompiledBackends]] as `dx12`. Ask for it with `DeviceCreateInfo::backend = rhi::Backend::Dx12` or the `backend` setting;
-`Auto` picks it on Windows (rank 20, above Vulkan's 10) since it passed the Phase 4 and Phase 5 suites (Day 172). Its shaders are the minted DXIL
+`Auto` picks it on Windows (rank 20, above Vulkan's 10) since it passes the same suites. Its shaders are the minted DXIL
 ([[rhi::DeviceCaps::shader_format]] `Dxil`), and its devices read the object index from the renderer's index stream
 ([[rhi::DeviceCaps::object_index_stream]]).
 
@@ -1018,7 +1015,7 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
 - **Fences and waits.** One direct queue runs everything, with one fence whose value grows with each submission. Every wait is bounded:
   it waits in slices of 100 ms and checks for a removed device between them, so a hung or removed GPU ends the wait instead of the
   program.
-- **Resources** (Day 165) are committed resources, one heap each. `GpuOnly` buffers live on the default heap, `CpuToGpu` on the upload
+- **Resources** are committed resources, one heap each. `GpuOnly` buffers live on the default heap, `CpuToGpu` on the upload
   heap and `GpuToCpu` on the readback heap; both of those are mapped once for the buffer's life (D3D12 allows it, and its upload and
   readback heaps are coherent, so [[rhi::Device::FlushMappedBuffer]] does nothing), and they keep a fixed state: an upload-heap buffer
   cannot be a storage (unordered-access) buffer. A buffer with `Uniform` usage is rounded up to 256 bytes, so every constant-buffer view
@@ -1027,7 +1024,7 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   a depth level is copied whole, as D3D12 requires. D3D12 has no "undefined" before-state, so the device records each texture's actual
   state after everything submitted, and uses it where the RHI says `Undefined`. Creating 1000 small buffers takes about 310 ms here
   against Vulkan's 22 ms (the Vulkan backend sub-allocates); placed resources are filed for when a measurement asks for them.
-- **Bindings** (Day 166). A pipeline layout becomes a root signature (version 1.1, cached by the layouts' content and the push range): per
+- **Bindings**. A pipeline layout becomes a root signature (version 1.1, cached by the layouts' content and the push range): per
   bind group one CBV/SRV/UAV descriptor table and one sampler table, with registers numbered as the bindings in `space<slot>`, and the push
   constants as root constants at `b0, space15` (shaders/target_common.slang). A bind group keeps its views together in a CPU heap;
   `SetBindGroup` copies them into the current frame's part of one shader-visible heap (131072 descriptors per frame, three frames),
@@ -1035,13 +1032,13 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   and the shader-visible sampler heap holds 2048: a group's samplers are copied once into a table that every group with the same
   samplers in the same order shares. A uniform buffer view covers the bound range rounded up to 256 bytes; a writable storage buffer
   must be `GpuOnly`.
-- **Pipelines** (Day 167). A shader takes the minted DXIL (`ShaderBlobSet::For(Caps().shader_format)`; SPIR-V is refused with the shader's
+- **Pipelines**. A shader takes the minted DXIL (`ShaderBlobSet::For(Caps().shader_format)`; SPIR-V is refused with the shader's
   name) and keeps a copy. Vertex inputs are `TEXCOORD<location>`, the convention every shader is minted with. The clip-space Y flip in the
   D3D12 build puts every vertex where Vulkan puts it on the render target, so the winding there, and `front_face`, are the same as on
   Vulkan. D3D12 refuses color factors in an alpha blend; on the alpha channel they mean their alpha counterparts, as Vulkan treats them.
   A strip with `primitive_restart` gets two states, cutting at `0xFFFFFFFF` and at `0xFFFF`, because D3D12 fixes the cut value in the
   pipeline and the index size comes with the draw.
-- **Command lists** (Day 168). Each list has its own command allocator; the lists of a frame slot are handed out again once that slot's
+- **Command lists**. Each list has its own command allocator; the lists of a frame slot are handed out again once that slot's
   frame has finished, so lists record on any number of threads at once. `Submit` runs each list in its own `ExecuteCommandLists`, which
   returns every buffer to `COMMON`: a list tracks its buffers from there (promoted implicitly on use, transitioned explicitly from the
   tracked state), so a buffer barrier's `before` is not needed. Textures keep their state between lists: a list records the state its
@@ -1051,12 +1048,12 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   Y). Debug labels are `BeginEvent` with PIX's ANSI string encoding. The debug layer's "clear value does not match" hint is logged as
   information: a texture is created without knowing what its passes clear to. Measured (Release, validation off): a cube draw with its
   transient bind group records in 0.40 us on DX12 against 0.74 to 1.00 us on Vulkan on the same PC.
-- **`GenerateMips`** (Day 168) runs `shaders/mipgen.comp` once per level: a bilinear sample of the level above at each texel centre, every
+- **`GenerateMips`** runs `shaders/mipgen.comp` once per level: a bilinear sample of the level above at each texel centre, every
   layer at once. A texture that can have mips generated (`Sampled`, `CopySrc` and `CopyDst`, more than one level, 2D, one sample, a format
   with typed storage) is created with unordered access; an sRGB one through a typeless resource, read through its sRGB view and written
   through a linear view with the shader encoding sRGB. 3D, multisampled and depth textures are refused ([[rhi::Device::CanGenerateMips]]
   answers for the format).
-- **The swapchain** (Day 169) is a flip-discard DXGI swap chain of three buffers on the device's Win32 window, with a frame-latency
+- **The swapchain** is a flip-discard DXGI swap chain of three buffers on the device's Win32 window, with a frame-latency
   waitable object (at most `FramesInFlight` frames queued) that `Acquire` waits on for at most half a second (a window Windows is not
   composing then counts as `Minimized`, as on Vulkan; a minimized window returns at once). The buffers are linear (`B8G8R8A8_UNORM` by
   default) and an sRGB format is their render-target view. `Fifo` presents with a sync interval of 1; `Immediate` with 0 and tearing when
@@ -1065,12 +1062,12 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   to an SDR desktop too); HDR10 waits for a 10-bit RHI format. A resize or format change is `ResizeBuffers` after the GPU is idle and every
   reference to the old buffers is gone; each present is followed by a fence signal, so waiting for the device waits for the presents too.
   DXGI's Alt+Enter is off: fullscreen is the window's borderless mode. `RecreateSurface` only changes the window (DXGI has no surface object).
-- **Golden images** (Day 170): every Phase 4 golden (triangle, cube, textured cube, lit cube, the compute results) matches through
+- **Golden images**: every golden (triangle, cube, textured cube, lit cube, the compute results) matches through
   Direct3D 12 with the tolerances unchanged, on the Radeon 860M and on WARP. On the 860M the triangle and the cube are pixel-identical to
   Vulkan's images; the textured and lit cubes differ from them by at most 7 and 6 levels on a few pixels, and both backends are equally
   far from the NVIDIA-made goldens, so the remaining differences are the driver's, not the backend's. `ENGINE_RHI_GPU` picks the adapter
   as on Vulkan.
-- **The pipeline cache** (Day 167) is an `ID3D12PipelineLibrary` in `<cache dir>/pipelines_<adapter id>_<driver>.bin` (the same
+- **The pipeline cache** is an `ID3D12PipelineLibrary` in `<cache dir>/pipelines_<adapter id>_<driver>.bin` (the same
   directory rule as Vulkan's). Each pipeline is stored under a name hashed from its shaders, its root signature's serialized bytes and
   its whole fixed state. The file starts with a header (magic, format version, adapter and driver identity, size, hash) and the list of
   stored names, and is checked before D3D12 reads any of it; a truncated, damaged or foreign file, or one the runtime refuses, is
@@ -1082,9 +1079,9 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
 
 ### The Metal backend
 
-Metal is the native backend on macOS (Phase 21, Days 300-309), library `rhi_metal` (Objective-C++ with ARC, the one place Metal is named: `rhi_boundary_check`),
+Metal is the native backend on macOS, library `rhi_metal` (Objective-C++ with ARC, the one place Metal is named: `rhi_boundary_check`),
 registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetalBackend]]). Ask for it with `DeviceCreateInfo::backend = rhi::Backend::Metal` or
-`--rhi metal`; `Auto` picks it on macOS (rank 30, from Day 309). Its shaders are the minted Metal libraries
+`--rhi metal`; `Auto` picks it on macOS (rank 30). Its shaders are the minted Metal libraries
 ([[rhi::DeviceCaps::shader_format]] `MetalLib`, see [Shaders](rhi-shaders.md)), and it reads the object index from the renderer's index stream
 ([[rhi::DeviceCaps::object_index_stream]]): Metal's instance id leaves out the base instance.
 
@@ -1101,7 +1098,7 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   device unusable (removed, access revoked, timeout, page fault, internal) marks it lost, as [[rhi::Device::DeviceLost]] reports. A device observer
   (`MTLCopyAllDevicesWithObserver`) does the same when the system removes the GPU or asks to (an external GPU unplugged). `InjectDeviceLoss` records a loss
   the same way, since Metal has no call that removes a device, and every later submission, upload, readback and present is refused; destroying a lost device
-  does not wait. `Auto` picks Metal on macOS from Phase 21 Day 309.
+  does not wait. `Auto` picks Metal on macOS from
 - **Capabilities.** 8 color attachments, 16384 for 2D textures, 256-byte constant-buffer offsets, no row-pitch alignment beyond the texel size for copies; the pixel
   formats are asked with the device's family (`D24S8` only where the GPU has it, BC formats where it decodes them), and the G-buffer formats all pass.
 - **Memory.** GPU-only buffers and every texture are `Private`; readback memory (`GpuToCpu`) is `Shared`, so a persistent mapping sees the GPU's
@@ -1114,12 +1111,12 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   tests the `Managed` path through a test hook (`rhi::metal::ForceManagedStorageForTest`), which is all of its coverage until a Mac with a discrete
   GPU runs the suites.
 - **Bindings.** Resources are bound directly (`setVertexBuffer:`, `setFragmentTexture:`, ... at the slots of each stage's minted slot
-  table, [[rhi::ShaderSlotTable]]), not through argument buffers (Phase 21 decision 9; this Iris Plus 645 has argument-buffer tier 1). A
+  table, [[rhi::ShaderSlotTable]]), not through argument buffers (the Iris Plus 645 tested here has argument-buffer tier 1). A
   pipeline matches each stage's table against its bind group layouts when it is created: a resource the shader binds that the layout of its set
   lacks, or that is not visible to the stage, or two resources at one slot, fail the creation with the reason. Groups hold their resources by
   handle and are resolved when they are bound, and a slot that already holds the resource gets no second call (a new encoder starts empty).
   Push constants are `setVertexBytes:`/`setFragmentBytes:` at the table's push-constant slot. Equal sampler descriptions share one Metal sampler;
-  `ClampToBorder` uses Metal's border colors, which macOS has (iOS before 14 does not: Phase 29).
+  `ClampToBorder` uses Metal's border colors, which macOS has (iOS before 14 does not).
 - **Pipelines.** A shader is an `MTLLibrary` made from the minted bytes and the function its blob names, with a copy of its slot table. A
   render pipeline puts vertex buffer binding `b` at buffer slot `30 - b` (the top of the table, clear of the shader's own buffers, which Slang
   numbers from 0; the creation fails if they would meet). Cull mode, winding, fill mode and the depth-stencil state are set on the encoder when

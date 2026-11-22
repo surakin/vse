@@ -59,7 +59,7 @@ struct Capabilities
     bool eval = false;
 };
 
-/// Why a call suspended, and what resumes it. The scheduler (Day 460) owns the clock: the backend only reports the
+/// Why a call suspended, and what resumes it. The scheduler owns the clock: the backend only reports the
 /// request.
 ///
 /// - Thread-safety: thread-compatible.
@@ -77,7 +77,7 @@ struct WaitRequest
         Frames,
         /// A named event.
         Event,
-        /// A parallel task (Day 461).
+        /// A parallel task.
         Task,
     };
 

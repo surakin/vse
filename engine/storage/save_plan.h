@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[storage::detail::SavePlan]] (Phase 19 Day 264): what a save decided and encoded from the world, before the store
+//! [[storage::detail::SavePlan]]: what a save decided and encoded from the world, before the store
 //! is touched.
 
 #include "bytes/byte_writer.h"

@@ -336,6 +336,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tools/shared_unit_check)  # Phase 22 (the shared-ownership gate; its own line, as net_access_check)
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
+  add_subdirectory(tools/docs_phase_check)  # the documentation phase gate (its own line, as net_access_check)
   add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
   add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
   add_subdirectory(tools/abi_check)  # Phase 23 Day 354: engine.dll exports exactly abi/engine.exports (dumpbin /exports); the C header is C
@@ -448,6 +449,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tools/shared_unit_check)  # Phase 22 (the shared-ownership gate; its own line, as net_access_check)
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
+  add_subdirectory(tools/docs_phase_check)  # the documentation phase gate (its own line, as net_access_check)
   add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
   add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
   add_subdirectory(engine/engine_c)  # Phase 23 Day 355: the C API and the shared library (libengine.dylib) on macOS
@@ -533,6 +535,7 @@ add_subdirectory(tools/database_sql_check)  # Phase 19 Day 252
 add_subdirectory(tools/net_access_check)  # Phase 20 Day 268
 add_subdirectory(tools/shared_unit_check)  # Phase 22: shared units are held by SharedPtr aliases and never pointed at
 add_subdirectory(tools/cmdline_access_check)  # programs read their command line through os::CommandLine, never by indexing argv
+add_subdirectory(tools/docs_phase_check)  # the published docs never name development phases or days
 add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
 add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
 add_subdirectory(tools/abi_check)  # Phase 23 Day 344: the shared library exports exactly abi/engine.exports; the C header is C

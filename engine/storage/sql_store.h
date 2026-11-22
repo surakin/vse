@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[storage::SqlStore]] (Phase 19 Day 262): the record store on a SQL database, through the database interface only.
+//! [[storage::SqlStore]]: the record store on a SQL database, through the database interface only.
 
 #include "database/database.h"
 #include "storage/component_registry.h"

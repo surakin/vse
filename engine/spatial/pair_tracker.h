@@ -1,6 +1,6 @@
 #pragma once
 
-//! The pair tracker (Phase 18 Day 243): which pairs of items began and which ended overlapping since the last update.
+//! The pair tracker: which pairs of items began and which ended overlapping since the last update.
 //! The contract physics' narrow phase builds on. Deterministic: the events come out sorted, whatever order the items
 //! moved in.
 

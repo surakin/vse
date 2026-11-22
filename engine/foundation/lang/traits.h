@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-//! Type traits (Phase 16): the engine's spelling of `<type_traits>`. Variable templates are `IsX<T>`, type
+//! Type traits: the engine's spelling of `<type_traits>`. Variable templates are `IsX<T>`, type
 //! transformations are aliases `Remove...<T>`; each is exactly the standard facility of the same meaning.
 namespace vse
 {

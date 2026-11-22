@@ -2,7 +2,7 @@
 
 //! Importing glTF images, textures and materials.
 //!
-//! Phase 22 Day 338. Images (a URI, a `data:` URI or a buffer view) decode to RGBA8; each glTF texture becomes one
+//! Images (a URI, a `data:` URI or a buffer view) decode to RGBA8; each glTF texture becomes one
 //! texture resource per way it is used (sRGB color for the base color, linear data for the normal map; BC7 block
 //! compression, mip chain) minted by [[asset::MintTextureFromPixels]]; each glTF material becomes one material resource
 //! of the standard G-buffer template, minted from a generated `.mat.src` by [[asset::MintMaterial]]. What the template

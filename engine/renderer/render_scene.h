@@ -83,7 +83,7 @@ struct RenderObjectDesc
     const f32* joint_matrices = nullptr;
     /// The number of matrices at `joint_matrices`; at most 256.
     u32 joint_count = 0;
-    /// The weights of a mesh's morph targets, one per target from target 0 (glTF coverage Day 7); null for none, which
+    /// The weights of a mesh's morph targets, one per target from target 0; null for none, which
     /// draws the base shape. Borrowed like `joint_matrices`: valid until the frame that reads it has been prepared.
     const f32* morph_weights = nullptr;
     /// The number of weights at `morph_weights`; at most the mesh's target count.
@@ -121,7 +121,7 @@ struct RenderObject
     const f32* joint_matrices = nullptr;
     /// The number of matrices at `joint_matrices`; at most 256.
     u32 joint_count = 0;
-    /// The weights of a mesh's morph targets, one per target from target 0 (glTF coverage Day 7); null for none, which
+    /// The weights of a mesh's morph targets, one per target from target 0; null for none, which
     /// draws the base shape. Borrowed like `joint_matrices`: valid until the frame that reads it has been prepared.
     const f32* morph_weights = nullptr;
     /// The number of weights at `morph_weights`; at most the mesh's target count.
@@ -141,7 +141,7 @@ enum class LightType : u8
     Directional = 0,  ///< Infinitely far away; only `direction` matters.
     Point,            ///< A point with a radius of influence.
     Ambient,          ///< A uniform light from every direction; only `color` and `intensity` matter.
-    Spot,             ///< A point light limited to a cone around `-direction` (glTF coverage Day 11).
+    Spot,             ///< A point light limited to a cone around `-direction`.
 };
 
 /// A light. Directional and ambient lights are lit by the fullscreen part of the deferred lighting pass, point lights

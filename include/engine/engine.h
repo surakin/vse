@@ -462,7 +462,7 @@ public:
     }
     Status RemoveComponent(uint64_t key, uint32_t kind) const { return Api()->component_remove(Get(), key, kind); }
 
-    /// Scripts (Phase 27 Day 471; `ENGINE_CAP_SCRIPT`): `ScriptLoad` adds a script to the world, `ScriptCall` calls a
+    /// Scripts (`ENGINE_CAP_SCRIPT`): `ScriptLoad` adds a script to the world, `ScriptCall` calls a
     /// global function with a value pool in and out, `ScriptRegisterFunction` makes a host function callable from
     /// scripts (before the first script), `ScriptSetBudget` limits calls, `ScriptStats` reads the counters. Script
     /// components are `ENGINE_COMPONENT_SCRIPT` with `SetComponent`.

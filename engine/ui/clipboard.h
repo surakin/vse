@@ -4,9 +4,9 @@
 #include "string_view.h"
 #include "types.h"
 
-//! The clipboard as the toolkit sees it (Phase 15, Day 197): set text, ask for text and be called back. The in-process
+//! The clipboard as the toolkit sees it: set text, ask for text and be called back. The in-process
 //! implementation serves offscreen surfaces and tests; the OS-backed one (`ui::OsClipboard` in `ui_window`:
-//! asynchronous, with the primary selection) sits behind the same interface (Day 200), so a widget written against this
+//! asynchronous, with the primary selection) sits behind the same interface, so a widget written against this
 //! does not change.
 
 namespace vse::ui

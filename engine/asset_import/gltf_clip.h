@@ -2,7 +2,7 @@
 
 //! Importing glTF animations as clips.
 //!
-//! Phase 22 Day 337. Each glTF animation yields one clip per skeleton it animates, named `<animation>_<skin>`:
+//! Each glTF animation yields one clip per skeleton it animates, named `<animation>_<skin>`:
 //! translation, rotation and scale channels on joint nodes become tracks. `LINEAR` keys map to keys, `STEP` becomes a
 //! pair of keys at the step (the later one a tick after), `CUBICSPLINE` is resampled to linear keys at the clip rate
 //! and the error that made is measured and reported. Channels on nodes that are no joint, and `weights` channels, are

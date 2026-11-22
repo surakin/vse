@@ -5,7 +5,7 @@
 #include "ui/event.h"
 #include "ui/surface.h"
 
-//! Input for a surface that has no window (Phase 15, Day 202): a screen in the world that the application feeds from a
+//! Input for a surface that has no window: a screen in the world that the application feeds from a
 //! ray cast, a replay or a test.
 
 namespace vse::ui

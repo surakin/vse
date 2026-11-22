@@ -1,6 +1,6 @@
 #pragma once
 
-//! Identification of the renderer library; the first real symbol of Phase 5 (the camera and scene arrive on Day 73).
+//! Identification of the renderer library; the first real symbol of the renderer module.
 
 namespace vse::renderer
 {

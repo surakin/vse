@@ -1,5 +1,5 @@
 #pragma once
-//! The script half of the C API (Phase 27 Day 471): a world's script runtime, the values that cross the boundary and
+//! The script half of the C API: a world's script runtime, the values that cross the boundary and
 //! the table functions. Internal to the module `engine_c`. A library built without the script module (a platform with
 //! no LuaJIT yet) answers every function with UNSUPPORTED and has no `ENGINE_CAP_SCRIPT`.
 #include "build_defs.h"

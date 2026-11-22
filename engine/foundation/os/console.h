@@ -7,7 +7,7 @@
 #include "debug/compiler.h"
 #include "types.h"
 
-//! Process control (Phase 16): the engine's spelling of `fflush`, `abort`, `_Exit` and `getenv` (`os::Exit`, which runs
+//! Process control: the engine's spelling of `fflush`, `abort`, `_Exit` and `getenv` (`os::Exit`, which runs
 //! the exit handlers, is in `os/os.h`). A program's output is not here: it goes through the log system (`out::Print`,
 //! `log/output.h`), which sends it to the console and every other log device; what is left here is flushing the C
 //! streams that libraries write to. Writing to a descriptor without buffering is [[os::Write]]; files are the `io`

@@ -2,7 +2,7 @@
 
 #include "build_defs.h"
 
-//! The entry point of a windowed program (Phase 13 Day 158), written once in source so no build file chooses it per
+//! The entry point of a windowed program, written once in source so no build file chooses it per
 //! platform.
 //!
 //! A windowed program (a game, a demo) defines `int EngineMain(int argc, char** argv)` and, in one source file at

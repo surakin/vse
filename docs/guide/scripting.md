@@ -1,6 +1,6 @@
 # Scripting: a language behind an interface, many threads in front
 
-Status: written (Phase 27 complete on Linux; Windows x64 built and tested on Day 473, macOS x86-64 on Day 474). New to the model? Start with [Why your script runs on many threads](scripting-and-threads.md) and the tutorials [Your first script](../tutorials/your-first-script.md) and [Using every core](../tutorials/using-every-core.md).
+Status: written.
 
 **The model in six lines.** Gameplay scripts are Lua (LuaJIT), behind a language interface. Entities are split over `P` partitions (64 by default), each with its own script state, and the partitions run at the same time on the job scheduler. A script reads the world as of the tick start and records its changes in a command buffer; at the sync point the buffers are merged in a fixed order, events are delivered and finished tasks resume their waiters. A script never blocks a thread: waits are coroutines on the simulation clock, and parallel work is a pure task. Because nothing depends on the thread count, the world after any tick is the same at 1 thread and at 32, which replay, rollback and the tests rely on. The sections below are the reference: the rules, values, calling, backends, bindings, partitions, the merge, behaviors, events, waits, tasks, assets and hot reload, debugging, physics, audio and input, persistence, the JIT table, cost and limits. The C API for scripts (`script_load`, `script_call`, the script component, events and tasks) is in [The Engine as a Loadable Library](engine-library.md).
 
@@ -8,14 +8,14 @@ Status: written (Phase 27 complete on Linux; Windows x64 built and tested on Day
 `docs/superpowers/specs/2026-11-18-scripting-design.md`.
 
 The script module (`engine/script`, namespace `script`) asks of a language only what this page lists. Nothing here names Lua: LuaJIT is one implementation of
-the interface, the tiny test language of Day 447 is another, and the engine, the bindings and the conformance suite see only `script/backend.h`,
+the interface, the tiny test language is another, and the engine, the bindings and the conformance suite see only `script/backend.h`,
 `script/value.h` and `script/status.h`.
 
 ## The rules
 
 1. **A state has one owner thread at a time.** A `State` is created owned by the thread that created it. `HandOver()` gives it up as the last use before a
    synchronization point (a job boundary) and `Acquire()` takes it on the next thread. Every other call checks the owner in builds with debug checks and aborts
-   on a use from another thread. There is no lock: a partition's state is used by one job at a time (Day 451).
+   on a use from another thread. There is no lock: a partition's state is used by one job at a time.
 2. **Only values cross.** A `Value` is copied deeply; nothing in it points into a state, so it can move to another thread or another state. A script never holds
    an engine pointer and the engine never holds a script object.
 3. **Errors are values.** Every call returns an `Outcome`: a `Status` (`Ok`, `SyntaxError`, `RuntimeError`, `BudgetExceeded`, `OutOfMemory`, `Invalid`,
@@ -75,7 +75,7 @@ files of that directory include LuaJIT's headers (`luajit_boundary_check`).
 
 - **Memory:** Lua allocates from the engine heap through a counting allocator, so the cap passed to `CreateState` (default 256 MiB) is exact for Lua objects; an allocation
   that would cross it is a Lua out-of-memory error, which comes back as `Status::OutOfMemory` and leaves the state usable (after `Collect`). Cleanup after such an error is
-  given a small slack so it can run at a full cap. The machine code of the JIT is outside this count (Day 449 decides the budget mode).
+  given a small slack so it can run at a full cap. The machine code of the JIT is outside this count (the budget mode decides how it is limited).
 - **Calls:** every `Call` runs the function as a coroutine, so `wait(seconds)`, `wait_frames(n)` and `wait_event(name)` suspend it; the call returns with
   `out.wait` and `out.coroutine`, and `Resume` passes the value `wait` returns inside the script. A path may be dotted (`game.on_update`).
 - **Errors:** a script error comes back as a value: `RuntimeError` with the message (`chunk:line: text`; cut to 4 KiB) and a trace of function and line (cut to 16 KiB); a
@@ -129,9 +129,9 @@ of one of Lua's libraries (`math`, `string`, `table`): registering it would repl
   (`the entity 7:1 no longer exists`), including one the script kept in a table or a global. A handle nested inside a `Value` is not checked; the function that uses it must.
 - **Every binding states a thread rule:** `Pure` (any state, any thread), `WorldRead` (the tick-start view), `WorldWrite` (the command buffer), `MainThreadOnly`. `Add` refuses an unmarked binding.
 - **Installing:** `registry.Install(state, profile, &error)` registers the bindings the profile allows. `InstallProfile::Main` installs all; `Partition` installs all, but a `MainThreadOnly` function
-  raises `... is main-thread-only and cannot be called from a partition job`; `Task` installs only `Pure` ones (the task state of Day 461 has no world access). Installing only reads the
+  raises `... is main-thread-only and cannot be called from a partition job`; `Task` installs only `Pure` ones (the task state has no world access). Installing only reads the
   registry, so many threads may install into their own states at once. The returned `Installation` holds the records the state's native functions point at and must outlive the state.
-- **Value types in scripts.** A vector, quaternion or entity is a table tagged with a metatable (the Day 448 representation), not a userdata or cdata. The reason: `ffi` is removed from the sandbox,
+- **Value types in scripts.** A vector, quaternion or entity is a table tagged with a metatable , not a userdata or cdata. The reason: `ffi` is removed from the sandbox,
   userdata cannot be built from Lua without it, and a tagged table round trips as a `Value` without a registry of handles. The metatables carry `+`, `-`, unary `-`, `*` (by a number, componentwise,
   quaternion times quaternion, quaternion times vec3 rotates), `/` (by a number), `==` and `tostring` (`vec3(1, 2, 3)`); `getmetatable` returns `false`, so a script cannot change them.
   The cost is a table per value; a script that makes millions of vectors a frame should use the `vec3.*` functions on scalars or the engine's batch bindings (later days).
@@ -170,13 +170,13 @@ Scripts reach settings only through `settings.*` (`engine/script/settings_bindin
 - **The allow list** is a `SettingsPolicy` the host fills: by default every script may set `game.*` only, and `script.*` and `renderer.*` are read-only. A prefix is a dotted prefix (`game` covers `game` and `game.volume`,
   not `gamepad.x`); `SetScriptWritable(chunk_name, prefixes)` gives one script its own list, which replaces the default for it.
 - **Changes** (`settings.on_change(prefix, function_name)`) record a subscription in the partition (a function crosses as its global name, since a Lua function never leaves its state). After the merge the driver
-  calls `CollectSettingChanges(registry, before, after, partitions)`, which lists, in the order partition, subscription, key, who is owed a call; the event delivery of Day 459 makes the calls in the next
+  calls `CollectSettingChanges(registry, before, after, partitions)`, which lists, in the order partition, subscription, key, who is owed a call; the event delivery makes the calls in the next
   phase. `RemoveSettingsSubscriptions` drops an entity's subscriptions when it is destroyed.
 - **Errors from bindings.** A binding reports a failure with `script::RaiseScriptError(message)`; the call's results are dropped and the script sees `name: message`.
 
 ## Entities and transforms
 
-`entity.*` and `transform.*` (`engine/script/entity_bindings.h`) work on the Phase 17 components `LocalTransform`, `WorldTransform` and `Parent`.
+`entity.*` and `transform.*` (`engine/script/entity_bindings.h`) work on the components `LocalTransform`, `WorldTransform` and `Parent`.
 
 - **Reads** (`entity.valid/self/name/find`, `transform.get/position/rotation/scale/world`) are `world-read`: the tick-start world, plus the script's own writes of this tick through the `Overlay` (a script that sets a
   position reads it back at once; another entity's read never sees it). `transform.world` is the matrix of the last propagation (the tick start). `entity.valid` accepts anything and returns false for a dead handle or a
@@ -187,8 +187,8 @@ Scripts reach settings only through `settings.*` (`engine/script/settings_bindin
   in `MergeReport::skipped`.
 - **Names and prefabs** are the scene's, not the script module's: a host fills `SceneServices` (`name_of`, `find`, `has_prefab`; the level's `asset::EntityName` is adapted by the host) and, for `entity.spawn("name")`, the merge's
   `MergeServices::prefabs` (`PrefabSource`). Without them `entity.name` and `entity.find` return nil and a prefab spawn is an error. `entity.find` costs a search of the scene: keep the result.
-- **`self`:** `entity.self()` is the entity whose script runs (the `current_entity_key` of the job's context); the callbacks of Day 457 also pass it as their first argument.
-- **The merge** applies the commands one at a time in `(partition, entity id, sequence)` order. A batched structural pass (one pass per component type) is not done: the Phase 17 structural path is used per command
+- **`self`:** `entity.self()` is the entity whose script runs (the `current_entity_key` of the job's context); the callbacks also pass it as their first argument.
+- **The merge** applies the commands one at a time in `(partition, entity id, sequence)` order. A batched structural pass (one pass per component type) is not done: the ordinary structural path is used per command
   (recorded in `KNOWN-ISSUES.md`).
 - The test `entity_bindings_test.cpp` runs 300 entities for 120 ticks (move, rotate, spawn children, parent, destroy): one world hash on 1 and 8 threads.
 
@@ -212,9 +212,9 @@ and only then records a command. The host gives scripts a `ComponentCatalog` (`P
 - **Queries** are `world-read` and return arrays of entities in stable id order as of the tick start, so the answer never depends on the thread count. `query.each({"a", "b"})` returns the entities of the calling partition
   (`PartitionOf(id, partitions)`, with `PartitionContext::partitions`), the common case: a partition touches only its own entities and the cost shrinks with the partition count. `query.all` returns every match and is the
   expensive call: it walks the whole world. A call returns at most 60,000 entities (a script value holds 65,536 values); more is an error, and `query.page(names, after, limit)` walks any world in pages (`after` is the last
-  entity of the previous page, or nil). `query.each` over all partitions covers `query.all`, each entity once. A callback form (`query.each(names, fn)`) waits for the callbacks of Day 459.
+  entity of the previous page, or nil). `query.each` over all partitions covers `query.all`, each entity once. A callback form (`query.each(names, fn)`) waits for the callbacks.
 - **Render components:** `light_source`, `camera` and `hidden` are registered by `scene::RegisterSceneComponents` (`engine/scene/scene_components.h`) and work through the same calls. `MeshRenderer` holds a shared GPU mesh,
-  which has no stored form; a script names a mesh by its asset id with the resource bindings of Day 463 (`KNOWN-ISSUES.md`).
+  which has no stored form; a script names a mesh by its asset id with the resource bindings.
 - **Cost** (Linux x86-64, plain build, 100,001 entities with one tag): `query.each` of one of 16 partitions (6,250 entities) about 6.5 ms, `query.page` of 60,000 about 54 ms, a `query.all` that overflows (100,001 matches,
   refused) about 14 ms. Each call walks the archetypes and sorts the ids; a world with fewer archetypes and an `each` per partition is the fast path.
 - The tests `component_bindings_test.cpp` (reflection, validation, definitions, a save and a load through `WorldStorage`, queries, 40 ticks of queries and writes: one hash on 1 and 8 threads) and
@@ -228,7 +228,7 @@ load or the order entities were made in. Committed values are in `tests/script/s
 
 - **One holder at a time.** A job takes a partition with `TryCheckout` (or `Checkout`, which treats a held partition as a program error) and gets a `PartitionLease`; an atomic owner token makes the
   second taker get `Busy`, and the lease's destructor (or `Release`) hands the partition back. Taking and releasing also acquire and hand over the state (`State::Acquire`, `HandOver`), so the debug
-  owner check of Day 446 follows the job's worker thread. A lease belongs to the thread that took it: do not hold one across a suspension point of a job, which may resume on another thread.
+  owner check follows the job's worker thread. A lease belongs to the thread that took it: do not hold one across a suspension point of a job, which may resume on another thread.
 - **States are lazy and identical.** A partition's state is made at its first checkout: the bindings installed with the world's `InstallProfile`, then every script in the order it was added. A script
   added later is loaded into the existing states at their next checkout. A script that does not load makes the checkout `Failed` (with its outcome) and leaves the partition free.
 - **Memory.** Each state has the cap `script.partition_memory` (default 64 MiB; the cap is a limit, not a reservation). `PartitionLease::Call` runs a call and counts it; a call that ends
@@ -307,7 +307,7 @@ an instance is destroyed, a behavior change, 10,000 instances for three ticks, a
 
 ## The parallel script system
 
-`ScriptRuntime::Tick(world, dt, scheduler)` runs each phase as one job per partition on the Phase 2 scheduler (`jobs::ParallelForBlocking` with a chunk of one partition, so the work-stealing
+`ScriptRuntime::Tick(world, dt, scheduler)` runs each phase as one job per partition on the job scheduler (`jobs::ParallelForBlocking` with a chunk of one partition, so the work-stealing
 scheduler balances uneven partitions; the main thread helps while it waits). `MakeScriptSystem()` passes `SystemContext::JobScheduler()`, which is set when the system is alone in its wave (it
 always is: it declares every component) and the schedule has a scheduler with several participants. With no scheduler, one participant, or a call from inside a job, the partitions run one after
 another and the result is the same.
@@ -358,12 +358,12 @@ behavior('door', {
   `ENGINE_SCRIPT_EVENT_CHAIN_LIMIT`) it is dropped and counted (`EventBus::Dropped`), so two scripts cannot answer each other forever.
 - **Lifetime.** Subscriptions belong to the instance: they end when it is destroyed, and a failed or disabled instance gets no events (an event is not kept for it). `emit_to` checks that the target is a live entity when the script calls it.
 - **Native code.** `ScriptRuntime::Events()` is the bus: `Emit`, `Subscribe(name, handler, user)` (an empty name receives everything) and `Unsubscribe`. The engine's own events (`on_collision_*` and
-  `on_trigger_*` from physics (Day 467), `on_input`, `on_asset_loaded`) are native emits with these names, added by the days that own them; `on_setting_change` stays a settings subscription for now.
+  `on_trigger_*` from physics, `on_input`, `on_asset_loaded`) are native emits with these names, added by the days that own them; `on_setting_change` stays a settings subscription for now.
 - **Cost** (Linux x86-64, 8 threads, 100 subscribers, 10,000 events a tick, no payload work): about 5.6 million handler calls per second, emit and delivery included.
-- **For Phase 32 (Blueprint-shaped events).** Event dispatchers map to named events with a target; "call an event on another actor" maps to `emit_to`. An interface call that returns a value is
+- **For Blueprint-shaped events.** Event dispatchers map to named events with a target; "call an event on another actor" maps to `emit_to`. An interface call that returns a value is
   deliberately absent: it would need a synchronous call into another entity's partition, which the threading model forbids. The shape that fits is a request event answered by a reply event
   one tick later (`event.emit_to(other, 'get_health', { reply_to = self.entity })`), which the importer can generate for interface calls whose result is used in a later node. Latent nodes map to
-  the waits of Day 460.
+  the waits.
 
 The test `event_test.cpp` checks the one-tick latency, `once` and `off`, targeted events and the sender, the chain limit, cleanup on destroy, native emit and subscribe, a handler error, and equal
 state at 1, 2, 7 and 16 threads.
@@ -434,7 +434,7 @@ local parts = wait_task(task.parallel_for(1000000, 'local s = 0 for i = first, l
   source and arguments a partition may queue in a tick). The budget of a chunk is `ScriptRuntimeConfig::task_budget` (500 million instructions); a chunk that exceeds it fails like any call. A task state
   that runs out of memory is replaced. A task whose owner is destroyed is dropped (queued, running or finished), and a result never reaches a destroyed owner.
 - **Not built:** a task that spans several ticks (it holds the tick it runs in), cancelling a queued task by handle, tasks started from native code (the pool is `script::TaskPool`, used by the runtime),
-  and minted script assets as task functions (Days 462 and 463 add the asset kind; today the function is source text, cached by a hash of it).
+  and minted script assets as task functions (today the function is source text, cached by a hash of it).
 
 The test `task_test.cpp` checks `run`, `map`, a million-index `parallel_for` against its known sum, errors as values, the globals and the world being out of reach, a closure refused, random numbers that depend
 only on the seed, the queue and size limits, taking a result once and only by its owner, dropping with the owner, and equal results at 1, 2, 7 and 16 threads with 1, 3 and 16 states.
@@ -443,13 +443,13 @@ only on the seed, the queue and size limits, taking a result once and only by it
 
 A script reaches the engine as a `SCRP` asset (`asset/script_blob.h`, `docs/guide/assets.md`, "Scripts"): `asset_mint mint-script` validates the Lua source (syntax, banned libraries found statically, literal `require` names, lifecycle callbacks that are functions), rewrites `require("assets.weapon")` to an id lookup (`__require("<hex id>")`), refuses a missing dependency or a cycle, lists the behaviors the source defines, and can add a bytecode chunk keyed by the language, its version and the processor.
 
-**Loading** (`script/script_assets.h`, Day 463). `ScriptAssets assets(world, manager); assets.Add(id)` loads script `id` through the resource manager (`asset::RegisterCpuLoaders` registers the `ScriptView` loader), which loads the whole dependency closure or fails with its own status (`MissingDependency` and the chain in `LoadFailure`, `DependencyCycle`, `DependencyTypeMismatch`, `Corrupt`): nothing of a closure that did not load is added to the world. Each script is added after the scripts it requires, once; adding an id twice does nothing. The text stays in the manager's loaded buffer and every partition's state compiles from that same shared range. `assets.Release()` (or the destructor) lets the manager unload the scripts when nothing else holds them; a state keeps what it compiled until it is reset. `ScriptOf(name)` names the script that defines a behavior, from the entry points the minter found.
+**Loading** (`script/script_assets.h`). `ScriptAssets assets(world, manager); assets.Add(id)` loads script `id` through the resource manager (`asset::RegisterCpuLoaders` registers the `ScriptView` loader), which loads the whole dependency closure or fails with its own status (`MissingDependency` and the chain in `LoadFailure`, `DependencyCycle`, `DependencyTypeMismatch`, `Corrupt`): nothing of a closure that did not load is added to the world. Each script is added after the scripts it requires, once; adding an id twice does nothing. The text stays in the manager's loaded buffer and every partition's state compiles from that same shared range. `assets.Release()` (or the destructor) lets the manager unload the scripts when nothing else holds them; a state keeps what it compiled until it is reset. `ScriptOf(name)` names the script that defines a behavior, from the entry points the minter found.
 
 **Modules.** The world adds a minted script with `ScriptWorld::AddModule`. A state compiles the text without running it and gives the function to the module host (`State::DefineModule`: no source is spliced into a wrapper; the host's functions are pinned in the registry by `State::LoadHost` and called by `@name`, so a script cannot reach or replace them), and then runs each script once, at its place in the load order, so a script's requires have run before it. A script's value is what its chunk returns (`true` when nothing, as in Lua). `__require("<key>")` works only while a script loads and only for a key in that script's declared dependencies (the `dep` lines of its source); anything else, and a `require` from a function that runs after the load, is an error naming the rule. A script that fails to compile or run makes the checkout of the partition fail with that outcome (by value); the other scripts of that closure are not run in that state.
 
 ## Hot reload
 
-A development facility (`script/script_reload.h`, Day 464): edit a script and the running world picks it up between ticks. It is off unless `script.hot_reload` is on (restart required, default off); a disabled `ScriptReloader::Reload` does nothing and says so in its report.
+A development facility (`script/script_reload.h`): edit a script and the running world picks it up between ticks. It is off unless `script.hot_reload` is on (restart required, default off); a disabled `ScriptReloader::Reload` does nothing and says so in its report.
 
 **What happens.** `ScriptReloader::Reload(changes, tick, &report)` first compiles each new text in a scratch state: a text that does not compile is reported (key, line, message) and its old version keeps running, while the others go on. Then `ScriptWorld::ReloadModules` replaces the texts in two phases, in every partition at once and on the calling thread, which must be between ticks with no partition held (an ownership check fails the call with `Invalid` otherwise). Phase one runs the changed scripts, and every script that requires one of them, again in load order, with the old behavior classes and module values still in place; a script that fails there, in any partition, aborts the whole reload and every partition stays on the old version. Phase two commits: each instance of a behavior the new text redefined moves to the new class, after the old class's `on_reload_save(self)` (returning a table) and before the new class's `on_reload_restore(self, saved)`; without hooks the instance keeps its own fields and just gets the new callbacks. A hook that fails is counted in the report (`hook_errors`, the first message) and the reload goes on. A tick never sees two versions.
 
@@ -469,7 +469,7 @@ The tests `script_reload_test.cpp` check the hooks, a reload without hooks, a sy
 
 ## Debugging
 
-Day 465 (`script/script_debug.h`, `script/script_runtime.h`): what a script author sees when something goes wrong, and how to stop the world and look.
+`script/script_debug.h` and `script/script_runtime.h`: what a script author sees when something goes wrong, and how to stop the world and look.
 
 **Errors.** A callback that fails is reported once per distinct error per instance (the same callback with the same message again is a repeat). The log gets one line, `behavior 'door' on entity 4294967296 ('Hero'): on_update failed: errors:3: boom` (the message is the language's own `script:line: message`; the entity's name comes from `SceneServices::name_of` and is left out when there is none), and a second line with the script's stack trace. A repeat is only counted; the log shows the count at every power of ten (`... (repeated 10 times)`). Every distinct error is also an engine event, `on_script_error`, sent at the end of the phase in partition order with the payload `{behavior, entity, entity_name, callback, message, trace, partition, tick}` (a script subscribes with `event.on('on_script_error', fn)`; a native subscriber through `ScriptRuntime::Events()`), a record in `ScriptRuntime::RecentErrors()` (the last 64, with the running `count`), and a count in `ScriptRuntimeStats::distinct_errors` (`errors` counts every failure).
 
@@ -487,7 +487,7 @@ The tests `script_debug_test.cpp` check the error text and the repeat counts, th
 
 ## Physics
 
-Day 466 (`script_physics/physics_bindings.h`, `script_physics/physics_layers.h`): scripts drive and question the physics world. The bindings are the separate target `script_physics` (layer 14, above `script` and `physics`), so `script` still never includes `physics`. A host wires it in these steps:
+`script_physics/physics_bindings.h` and `script_physics/physics_layers.h`: scripts drive and question the physics world. The bindings are the separate target `script_physics` (layer 14, above `script` and `physics`), so `script` still never includes `physics`. A host wires it in these steps:
 
 ```cpp
 script_physics::RegisterPhysicsScriptSettings(&settings_registry);  // script.physics_layers (the layer names)
@@ -520,9 +520,7 @@ runtime.Services().extensions[script::kServicePhysics] = &services;
 
 The test `script_physics_test.cpp` runs this order and checks that an observer script reads velocity `N - 1` in tick `N` while an impulse recorded in tick `N` is in the body when the step runs; it also checks that 256 scripts pushing one body from 64 partitions leave the same physics state hash at 1, 2, 3, 7 and 16 threads, and that 300 scripts raycasting and overlapping from 16 threads at once agree (under tsan too).
 
-Not here yet: contact and trigger events and the character controller are Day 467.
-
-**Contact and trigger events (Day 467).** After each physics step the host calls `script_physics::EmitPhysicsEvents(physics_world, &runtime, options)`; the events reach the scripts that listen at the start of the next script phase, through the event bus:
+**Contact and trigger events.** After each physics step the host calls `script_physics::EmitPhysicsEvents(physics_world, &runtime, options)`; the events reach the scripts that listen at the start of the next script phase, through the event bus:
 
 ```lua
 behavior('crate', {
@@ -540,11 +538,11 @@ end })
 
 The names are `on_collision_begin`, `on_collision_stay` (only when `StepConfig::stay_events` is on), `on_collision_end`, `on_trigger_enter` and `on_trigger_exit`. Both entities of a contact get their own event (the one with the smaller stable id first), with `normal` pointing from `self` toward `other`; a trigger event goes to the trigger's entity, `other` being the body that entered or left. The order is the physics step's fixed event order, so a log of the deliveries is the same at any thread count (tested at 1 and 16 threads, with equal `StateHash`). **Filtering:** an event is built only for an entity that has a handler (`ScriptRuntime::HasHandler`: one lookup per receiver, so 100,000 events with no listener put nothing on the bus), and `PhysicsEventOptions::layer_mask` keeps out events whose other collider is on a layer not in the mask; `contacts` and `triggers` turn a kind off. A handler that runs several times in one tick sees the world's value of its own components each time, so count in a field of `self` and write the total.
 
-**Characters (Day 467).** `character.create(e, config)` makes a kinematic capsule at the entity's transform (`{radius, height, step_height, min_ground_y, skin_width, gravity_scale}` or nil for the defaults); `character.move(e, velocity)` sets the horizontal velocity it walks at until set again, `jump(e, speed)` gives it an upward speed, `set_height(e, h)` crouches with the feet kept, `set_position(e, p)` teleports it (the capsule's centre moves there at the merge, the vertical speed and the body's speed become zero, a pending jump is dropped, the held move stays; `transform.set_position` on its entity does not move it), `destroy(e)` removes it. Reads: `exists`, `is_grounded`, `ground_normal` (nil in the air), `ground_velocity` (the platform's velocity) and `vertical_speed`, as of the last step. `character.create` accepts an entity `entity.spawn` returned in the same callback (the merge makes the entity first); `exists` is true from the next tick. The calls are merge commands; the moves themselves run inside the physics step: `physics::CharacterSet` (`physics/character_set.h`, in the physics module since 2026-11-20; made by the host over its `PhysicsWorld`, in `PhysicsScriptServices::characters`) installs a pre-step hook (`PhysicsWorld::SetPreStepHook`) that moves every character at the start of each fixed step, so a frame with three steps moves it three times. The host calls `CharacterSet::Prune(ecs)` at the sync point (a character whose entity is gone goes away) and `CharacterSet::WriteBack(ecs)` after the step (a kinematic body is not written back by `WriteBackTransforms`; `WriteBack(ecs, true)` writes the position interpolated between the last two steps). A C API world does all of this itself, with one set shared by the scripts and the C functions ([The Engine as a Loadable Library](engine-library.md), "Scripts with physics"). The events of a character's body name its entity when `PhysicsEventOptions::characters` is set. Raycast vehicles, ragdolls and the like are library scripts built from these primitives (the demo, Day 475), not engine features.
+**Characters.** `character.create(e, config)` makes a kinematic capsule at the entity's transform (`{radius, height, step_height, min_ground_y, skin_width, gravity_scale}` or nil for the defaults); `character.move(e, velocity)` sets the horizontal velocity it walks at until set again, `jump(e, speed)` gives it an upward speed, `set_height(e, h)` crouches with the feet kept, `set_position(e, p)` teleports it (the capsule's centre moves there at the merge, the vertical speed and the body's speed become zero, a pending jump is dropped, the held move stays; `transform.set_position` on its entity does not move it), `destroy(e)` removes it. Reads: `exists`, `is_grounded`, `ground_normal` (nil in the air), `ground_velocity` (the platform's velocity) and `vertical_speed`, as of the last step. `character.create` accepts an entity `entity.spawn` returned in the same callback (the merge makes the entity first); `exists` is true from the next tick. The calls are merge commands; the moves themselves run inside the physics step: `physics::CharacterSet` (`physics/character_set.h`, in the physics module since 2026-11-20; made by the host over its `PhysicsWorld`, in `PhysicsScriptServices::characters`) installs a pre-step hook (`PhysicsWorld::SetPreStepHook`) that moves every character at the start of each fixed step, so a frame with three steps moves it three times. The host calls `CharacterSet::Prune(ecs)` at the sync point (a character whose entity is gone goes away) and `CharacterSet::WriteBack(ecs)` after the step (a kinematic body is not written back by `WriteBackTransforms`; `WriteBack(ecs, true)` writes the position interpolated between the last two steps). A C API world does all of this itself, with one set shared by the scripts and the C functions ([The Engine as a Loadable Library](engine-library.md), "Scripts with physics"). The events of a character's body name its entity when `PhysicsEventOptions::characters` is set. Raycast vehicles, ragdolls and the like are library scripts built from these primitives (the demo), not engine features.
 
 ## Audio and input
 
-Day 468 (`script_media/audio_bindings.h`, `script_media/audio_services.h`, `script_media/input_bindings.h`, `script_media/input_snapshot.h`): scripts play sounds and read the player's input. The bindings are the separate target `script_media` (layer 14, above `script`, `audio` and the platform's header-only input types), so `script` still includes neither `audio` nor a platform header. The service slots are `script::kServiceAudio` and `script::kServiceInput`. A host wires it in these steps:
+`script_media/audio_bindings.h`, `script_media/audio_services.h`, `script_media/input_bindings.h` and `script_media/input_snapshot.h`: scripts play sounds and read the player's input. The bindings are the separate target `script_media` (layer 14, above `script`, `audio` and the platform's header-only input types), so `script` still includes neither `audio` nor a platform header. The service slots are `script::kServiceAudio` and `script::kServiceInput`. A host wires it in these steps:
 
 ```cpp
 script_media::RegisterAudioComponents(&registry);           // audio_listener in the storage registry
@@ -574,7 +572,7 @@ runtime.Services().extensions[script::kServiceInput] = &input;
 
 The platform has no action-mapping system, so the host fills an `InputMap`: `AddAction("jump", {Key::Space, mouse left})` is down while any binding is, `AddAxis("horizontal", {A, Left}, {D, Right})` is -1, 0 or 1, and `ExternalAxis` values the host read itself (a gamepad stick) are added to the axis of that name. `EmitInputEvents(snapshot, &runtime)` also puts the changes on the bus as `on_input` events (`{kind = "key_down" | "key_up" | "mouse_down" | "mouse_up" | "scroll" | "text", key = , button = , dx = , dy = , text = }`) for every subscriber.
 
-**Replay.** `InputSnapshot::Serialize(&writer)` writes the snapshot (little endian, versioned) and `Deserialize(&reader)` reads it back, replacing the snapshot: a log of the snapshots of a session, fed back tick by tick to a fresh world, gives the scripts the input they had (the test `script_media_test.cpp` replays 24 recorded ticks and compares the scripts' decisions). `Deserialize` refuses a short record, a wrong version, an oversized name or text, and non-finite numbers. Day 469 stores the per-tick snapshot in the replay log.
+**Replay.** `InputSnapshot::Serialize(&writer)` writes the snapshot (little endian, versioned) and `Deserialize(&reader)` reads it back, replacing the snapshot: a log of the snapshots of a session, fed back tick by tick to a fresh world, gives the scripts the input they had (the test `script_media_test.cpp` replays 24 recorded ticks and compares the scripts' decisions). `Deserialize` refuses a short record, a wrong version, an oversized name or text, and non-finite numbers. The replay log stores the per-tick snapshot.
 
 ## Saving scripted state
 
@@ -629,15 +627,15 @@ in every mode, and only the speed differs (`tests/script/script_jit_test.cpp`; t
 | Platform | Mode | Notes |
 |---|---|---|
 | Linux x86-64 | JIT available, budgeted by default | built and tested (plain, asan, tsan, and the no-JIT build) |
-| Windows x64 | JIT available, budgeted by default | built and tested with MSVC (plain, asan, and the no-JIT build) and `clang-cl` (plain), Day 473; Windows has no ThreadSanitizer |
-| macOS x86-64 | JIT available | built and tested with Apple clang (plain), Day 474; arm64 compiles only |
-| Android | JIT allowed | decided in Phase 29 |
-| iOS, consoles | interpreter only | `ENGINE_LUAJIT_JIT=OFF` (Phases 29 and 30) |
+| Windows x64 | JIT available, budgeted by default | built and tested with MSVC (plain, asan, and the no-JIT build) and `clang-cl` (plain); Windows has no ThreadSanitizer |
+| macOS x86-64 | JIT available | built and tested with Apple clang (plain); arm64 compiles only |
+| Android | JIT allowed | not decided yet |
+| iOS, consoles | interpreter only | `ENGINE_LUAJIT_JIT=OFF` |
 
 **The `script_nojit` flavor.** The preset `linux-nojit` (tree `build-nojit`) configures `-DENGINE_LUAJIT_JIT=OFF`; the phase runs on it with
 `scripts/test-phase.sh 27 --no-display --build-dir build-nojit`. Tests that expect the compiler check `luajit::JitCompiledIn()` first.
 
-## The script demo (Phase 27 Day 475)
+## The script demo
 
 `game/script_demo` is a whole game in Lua over the full frame: 2,000 dynamic bodies with a `wander`, `flock` or `flee` behavior, a kinematic player the script walks around a square, 16 trigger pickups that count the bodies entering them
 (`on_trigger_enter`, then `event.emit('pickup_collected')`, which the host counts), and a `planner` that searches a field with `task.parallel_for` every ten ticks and moves a marker to the best cell. The frame is the documented order (scripts and
@@ -649,11 +647,11 @@ merge, body sync, kinematic drive, physics step, write-back, physics events). Th
 bodies, 16 partitions, scripts only): 1 thread 114.6 ms per frame, 2 threads 57.9 ms, 4 threads 29.8 ms, 8 threads 20.7 ms, 16 threads 12.2 ms, with the same hash at every count (`tests/script_demo` runs 1, 2 and 16 threads under every flavor and compares; it also reloads the
 script in the middle of a run, with the same hash at 1 and 16 threads, and checks that a text that does not compile is refused while the old one runs on). The physics step is about 6 ms and was given the same threads.
 
-On the Windows PC (16 hardware threads, MSVC Release, 120 frames, Day 473, before `--headless` existed): 1 thread 260.7 ms, 2 threads 152.7 ms, 4 threads 92.9 ms, 8 threads 50.2 ms, 16 threads 28.6 ms; physics about 9.6 ms;
+On the Windows PC (16 hardware threads, MSVC Release, 120 frames, before `--headless` existed): 1 thread 260.7 ms, 2 threads 152.7 ms, 4 threads 92.9 ms, 8 threads 50.2 ms, 16 threads 28.6 ms; physics about 9.6 ms;
 state hash `e1f5c33055210a41` at every count and in the Debug build. **Measure in an optimized build on Windows:** a Debug build links the C runtime's debug heap (`/MDd`), whose one lock every
 Lua allocation takes, so the same frame costs 1,145 ms at 1 thread and still 851 ms at 16.
 
-## Cost (Phase 27 Day 476)
+## Cost
 
 Measured on the Linux machine (32 hardware threads, a Release build) with `game/script_bench` (`script_bench --scene all`, by hand). The behavior is a `mixer`: per update two component reads and writes, a position read and write and two
 `random.int` calls, on entities that each have a transform and a counter component.
@@ -687,7 +685,7 @@ Tasks: `task.parallel_for` over 8,000,000 indices in chunks of 4,096 takes 8.4 m
 measured. `script_bench --scene stress` (ctest `script_stress_large`, optimized builds only) runs 20,000 entities for 200 ticks at 1 and 16 threads and compares the state hashes, then one million scripted entities for 60 ticks on 16 threads with spawning, destroying,
 events and a task planner: 110 s, 2.0 GB, no error (the plan said 600 ticks; 60 keep the run to a couple of minutes).
 
-## Limits (Phase 27 Day 476)
+## Limits
 
 What is capped, and what happens at the cap. Nothing here aborts the process; a script that reaches a limit gets a script error or a refusal, and the engine goes on.
 

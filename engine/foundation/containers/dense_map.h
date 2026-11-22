@@ -9,9 +9,9 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-//! [[DenseMap]]: a map whose entries sit densely in slots, with a hash index from key to slot (container audit series,
-//! Day 7): for the caches and tables that iterate in a stable order or hand out slot numbers, which were written as a
-//! `Vector` plus a `HashMap` of positions with the swap-remove fix-up repeated at every site.
+//! [[DenseMap]]: a map whose entries sit densely in slots, with a hash index from key to slot: for the caches and
+//! tables that iterate in a stable order or hand out slot numbers, which were written as a `Vector` plus a `HashMap` of
+//! positions with the swap-remove fix-up repeated at every site.
 namespace vse
 {
 

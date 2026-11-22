@@ -1,8 +1,8 @@
 #pragma once
 
-//! One stored component of one entity, framed: [[storage::ComponentRecord]] (id, version, bytes) and its read and write
-//! (Phase 19 Day 257). The entity container of Day 260 is a count followed by these. A record the process does not know
-//! is carried as [[storage::OpaqueComponent]] and written back unchanged.
+//! One stored component of one entity, framed: [[storage::ComponentRecord]] (id, version, bytes) and its read and
+//! write. The entity container is a count followed by these. A record the process does not know is carried as
+//! [[storage::OpaqueComponent]] and written back unchanged.
 
 #include "bytes/byte_reader.h"
 #include "bytes/byte_writer.h"

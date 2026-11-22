@@ -9,8 +9,7 @@
 #include "int128.h"
 #include "types.h"
 
-//! The look of the toolkit as data: colors, metrics, fonts and per-widget styles that every widget draws from (Phase
-//! 15, Day 191).
+//! The look of the toolkit as data: colors, metrics, fonts and per-widget styles that every widget draws from.
 //!
 //! A [[ui::Theme]] is plain data. A widget asks a [[ui::ThemeSet]] for its look by kind, variant and state; the set
 //! walks a chain (the built-in default, the surface's theme, the overrides of the widget and its ancestors), a value
@@ -212,7 +211,7 @@ struct Theme
     const Style* FindStyle(WidgetKind kind, VariantId variant) const;
 };
 
-/// Builds a [[ui::Theme]] in code (a data file loader arrives with Phase 22).
+/// Builds a [[ui::Theme]] in code (a data file loader is separate).
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns the theme until `Build`.

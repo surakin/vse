@@ -66,6 +66,7 @@ tools/file_access_check 9
 tools/net_access_check 20
 tools/shared_unit_check 22
 tools/cmdline_access_check 22
+tools/docs_phase_check 3
 tools/json_boundary_check 22
 tools/asset_boundary_check 22
 tests/engine_library 23

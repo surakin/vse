@@ -1,6 +1,6 @@
 # Windows
 
-Status: written (Phase 13; input, clipboard and drag and drop from Phase 15 Day 205).
+Status: written.
 
 **Audience:** anyone who builds, runs or debugs the engine on Windows x64. Read [Getting started](getting-started.md) and
 [Building and testing](building-and-testing.md) first: everything in the other guides applies, and this page is only what is different on Windows.
@@ -25,7 +25,6 @@ mistake is starting from the wrong shell.
 - `BUILD.md` ("Windows"): the prerequisites, each with the version in use and how to install it.
 - `cmake/toolchains/windows-msvc.cmake`, `windows-clang-cl.cmake`, `CMakePresets.json`.
 - `docs/superpowers/specs/2026-11-07-windows-port-design.md`: the decisions of the port, the DX12 backend's model, the measurements.
-- `plans/phase-13-windows-dx12.md`.
 
 ## Prerequisites
 
@@ -122,7 +121,7 @@ differs from the dump's. See `docs/guide/foundation-debugging.md` and `docs/guid
 
 ## Input, the cursor, the clipboard and drag and drop
 
-Since Phase 15 Day 205 the Win32 window gives the same input event stream as the Linux backends (`engine/platform/BACKEND.md`, the `windows` section): keys
+The Win32 window gives the same input event stream as the Linux backends (`engine/platform/BACKEND.md`, the `windows` section): keys
 with repeat, text from `WM_CHAR` (dead keys and AltGr are the system's; no IME composition), the pointer, the wheel in notches, focus and resize. The cursor shapes
 are the system's; a custom image keeps its pixel size. The pointer lock is `ClipCursor` plus raw mouse input. The clipboard is `CF_UNICODETEXT`, `CF_HDROP` and
 registered custom formats, with no primary selection, and file lists keep only local drive paths (`os::win32::AcceptLocalPath`). Drag and drop is OLE; a drag
@@ -138,7 +137,7 @@ out of the window is modal (`BeginDrag` returns when it ends), so keep a modal-l
 | Data, cache and state | `%LOCALAPPDATA%\<app>` (`cache`, `state`) |
 | The pipeline cache | `%LOCALAPPDATA%\<app>\cache`: Vulkan's `pipeline_cache_<vendor>_<device>_<uuid>.bin`, DX12's `pipelines_<adapter id>_<driver>.bin` |
 | Crash dumps | `%LOCALAPPDATA%\<app>\crashes` |
-| The socket backend | `engine/net/windows/` (Winsock 2, Phase 20 Day 278; `docs/guide/net.md`, "On Windows") |
+| The socket backend | `engine/net/windows/` (Winsock 2; `docs/guide/net.md`, "On Windows") |
 
 Paths are UTF-16 at the system boundary and UTF-8 everywhere in the engine; the file layer adds the `\\?\` prefix past 248 characters, so long
 paths work without the system's long-path setting (`docs/guide/io.md`).

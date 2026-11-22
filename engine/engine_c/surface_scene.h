@@ -1,5 +1,5 @@
 #pragma once
-//! What a surface draws a world with (Phase 24 Day 359): a frame object (the G-buffer, lighting and tonemap passes and
+//! What a surface draws a world with: a frame object (the G-buffer, lighting and tonemap passes and
 //! the renderer) on the surface's device and swapchain, a render scene mirrored from the world's mesh references, and a
 //! resource manager of its own that makes the world's meshes and materials resident on that device. Internal to the
 //! module `engine_c`.

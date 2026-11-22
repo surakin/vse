@@ -2,7 +2,7 @@
 
 #include <csignal>
 
-//! Signal handlers (Phase 16): the engine's spelling of `std::signal`. The `SIG*` constants and the POSIX `sigaction`
+//! Signal handlers: the engine's spelling of `std::signal`. The `SIG*` constants and the POSIX `sigaction`
 //! family arrive through this header.
 namespace vse::os
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-//! [[net::TcpTransport]]: the [[net::Transport]] interface over byte streams (Phase 20 Day 277), for what needs
+//! [[net::TcpTransport]]: the [[net::Transport]] interface over byte streams, for what needs
 //! reliable ordered delivery: a store over the network, tools, remote debugging.
 //!
 //! **Wire.** Everything is a frame of [[net::FrameWriter]] (a 4-byte big-endian length, then the payload). The first

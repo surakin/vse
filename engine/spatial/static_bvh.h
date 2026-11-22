@@ -1,6 +1,6 @@
 #pragma once
 
-//! The static bounding-volume hierarchy (Phase 18 Day 239): for items that do not move, built once top-down with the
+//! The static bounding-volume hierarchy: for items that do not move, built once top-down with the
 //! binned surface-area heuristic and queried a great deal. Generic over a 64-bit key; it knows nothing of the ECS.
 
 #include "containers/array.h"

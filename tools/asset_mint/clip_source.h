@@ -1,6 +1,6 @@
 #pragma once
 
-//! The text source form of an animation clip (`.anim.src`) and the clip minter. Phase 22 Day 320. An offline tool's
+//! The text source form of an animation clip (`.anim.src`) and the clip minter. An offline tool's
 //! code: never linked into the engine; its tests compile it directly.
 //!
 //! Line-oriented text; `#` starts a comment; fields are separated by spaces or tabs:

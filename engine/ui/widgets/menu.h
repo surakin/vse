@@ -7,7 +7,7 @@
 #include "ui/text_run.h"
 #include "ui/widget.h"
 
-//! Menus (Phase 15, Day 198): the `Menu` model of items, and `MenuView`, the widget a surface shows as a popup for it.
+//! The menu model, `Menu` (a list of items), and `MenuView`, the widget a surface shows as a popup for it.
 
 namespace vse::ui
 {

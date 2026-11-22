@@ -6,7 +6,7 @@
 #include "ui/canvas.h"
 #include "ui/draw_list.h"
 
-//! The canvas that builds a [[ui::DrawList]] (Phase 15, Day 189).
+//! The canvas that builds a [[ui::DrawList]].
 
 namespace vse::ui
 {

@@ -46,7 +46,7 @@ A backend that validates every call against the RHI contract and draws nothing.
 
 It lets the layers above the RHI, and the contract itself, be tested with no GPU. Buffer contents are kept in host memory so uploads, copies and mapping round-trip; textures keep only their state.
 
-Where a backend keeps its on-disk pipeline cache, and how the file is read and written (moved out of the Vulkan backend on Phase 13 Day 167, so the Direct3D 12 backend follows the same rules). What the file holds, and how it is checked, is each backend's own.
+Where a backend keeps its on-disk pipeline cache, and how the file is read and written (shared by the Vulkan and Direct3D 12 backends, so both follow the same rules). What the file holds, and how it is checked, is each backend's own.
 
 Creating a device: the one entry point layers above the RHI use to get a backend.
 
@@ -594,7 +594,7 @@ Must not be called while a device exists.
 bool RegisterCompiledBackends();
 ```
 
-Registers every backend compiled into this build with the backend registry: the null backend and Vulkan everywhere, Direct3D 12 on Windows (Phase 13 Day 164).
+Registers every backend compiled into this build with the backend registry: the null backend and Vulkan everywhere, Direct3D 12 on Windows.
 
 A program calls this once at startup, before [`rhi::CreateDevice`](#rhi-createdevice-const-devicecreateinfo-amp), [`rhi::EnumerateAdapters`](#rhi-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star) or a [`rhi::DeviceHost`](#rhi-devicehost); calling it again changes nothing. Registration is explicit, never a global constructor, so a program that does not link a backend cannot pick it by accident and one that forgets the call fails with a clear error.
 
@@ -768,7 +768,7 @@ Nanoseconds per GPU timestamp tick; 0 when timestamps are unsupported.
 bool supports_bindless;
 ```
 
-Whether bindless (descriptor-indexed) resources are supported; reserved, always false in Phase 4.
+Whether bindless (descriptor-indexed) resources are supported; reserved, always false.
 
 ### `shader_format` {#rhi-devicecaps-shader-format}
 
@@ -1710,7 +1710,7 @@ What the texture will be used for; at least one flag.
 u32 samples;
 ```
 
-Samples per texel; only 1 is supported in Phase 4.
+Samples per texel; only 1 is supported.
 
 ### `debug_name` {#rhi-texturedesc-debug-name}
 
@@ -1981,7 +1981,7 @@ inline constexpr u32 kNoShaderSlot;
 struct ShaderSlotTable { ... }
 ```
 
-The slots of every resource of one shader module, minted beside a Metal library (Phase 21 Day 302): the Metal backend binds each bind group's resources at these slots and checks a pipeline's layout against them.
+The slots of every resource of one shader module, minted beside a Metal library: the Metal backend binds each bind group's resources at these slots and checks a pipeline's layout against them.
 
 | Field | Value |
 |---|---|
@@ -2216,7 +2216,7 @@ The DXIL module, or empty.
 ShaderBlob metallib;
 ```
 
-The Metal library, or empty (Phase 21 Day 299; minted on a Mac).
+The Metal library, or empty (minted on a Mac).
 
 ### `For(ShaderFormat)` {#rhi-shaderblobset-for-shaderformat-const}
 
@@ -2416,7 +2416,7 @@ Array size; 1 for a non-array binding.
 u32 stride;
 ```
 
-For a `StorageBuffer` or `ReadOnlyStorageBuffer` binding: the size in bytes of one element as the shader declares it (`StructuredBuffer<T>`: `sizeof(T)` in the buffer's std430 layout), at most 2048. Direct3D 12 makes a structured view with it, so a bound range starts on a multiple of it; Vulkan ignores it. 0 for every other type. Phase 13 Day 166.
+For a `StorageBuffer` or `ReadOnlyStorageBuffer` binding: the size in bytes of one element as the shader declares it (`StructuredBuffer<T>`: `sizeof(T)` in the buffer's std430 layout), at most 2048. Direct3D 12 makes a structured view with it, so a bound range starts on a multiple of it; Vulkan ignores it. 0 for every other type.
 
 ## `BindGroupLayoutDesc` {#rhi-bindgrouplayoutdesc}
 
@@ -3059,7 +3059,7 @@ Stages that read the push constants; required when `push_constant_bytes` is non-
 u32 samples;
 ```
 
-Samples per texel; only 1 is supported in Phase 4.
+Samples per texel; only 1 is supported.
 
 ### `debug_name` {#rhi-graphicspipelinedesc-debug-name}
 
@@ -4878,7 +4878,7 @@ The bytecode format of a shader module ([`rhi::ShaderDesc`](#rhi-shaderdesc)); e
 |---|---|---|
 | <a id="rhi-shaderformat-spirv"></a>`Spirv` | `0` | SPIR-V words (Vulkan). |
 | <a id="rhi-shaderformat-dxil"></a>`Dxil` |  | A DXIL container (Direct3D 12). |
-| <a id="rhi-shaderformat-metallib"></a>`MetalLib` |  | A Metal library (`.metallib`, AIR, minted offline: Phase 21 Day 299) with its entry name (Metal). |
+| <a id="rhi-shaderformat-metallib"></a>`MetalLib` |  | A Metal library (`.metallib`, AIR, minted offline) with its entry name (Metal). |
 
 ## `ShaderFormatName(ShaderFormat)` {#rhi-shaderformatname-shaderformat}
 
@@ -5290,7 +5290,7 @@ Returns whether the shader reads `format` as an unsigned integer vector (otherwi
 constexpr u32 VertexFormatAlignment(VertexFormat format);
 ```
 
-Returns the byte alignment an attribute of `format` needs inside its vertex: the smaller of its size and 4, which is 4 for every format today. Direct3D 12 refuses an input layout whose attribute offset is not a multiple of that (a 16-bit or 8-bit format aligned only to its component size fails `CreateInputLayout`, measured on the Windows PC, Phase 22 Day 317), and Metal documents a multiple of 4 for an attribute offset (not yet run on the Mac), so the RHI demands it on every backend.
+Returns the byte alignment an attribute of `format` needs inside its vertex: the smaller of its size and 4, which is 4 for every format today. Direct3D 12 refuses an input layout whose attribute offset is not a multiple of that (a 16-bit or 8-bit format aligned only to its component size fails `CreateInputLayout`, measured on Windows), and Metal documents a multiple of 4 for an attribute offset (not yet run on the Mac), so the RHI demands it on every backend.
 
 | Field | Value |
 |---|---|
@@ -7281,7 +7281,7 @@ A backend exists in a program only once its library registered it ([`rhi::Regist
 | <a id="rhi-backend-null"></a>`Null` | `0` | The validating no-GPU device ([`rhi::NullDevice`](#rhi-nulldevice)). |
 | <a id="rhi-backend-vulkan"></a>`Vulkan` |  | The Vulkan 1.3 backend, loaded at run time from the system's Vulkan loader. |
 | <a id="rhi-backend-dx12"></a>`Dx12` |  | The Direct3D 12 backend (Windows). |
-| <a id="rhi-backend-metal"></a>`Metal` |  | The Metal backend (macOS, Phase 21: what `Auto` picks there from Day 309). |
+| <a id="rhi-backend-metal"></a>`Metal` |  | The Metal backend (macOS: what `Auto` picks there). |
 | <a id="rhi-backend-auto"></a>`Auto` |  | The platform's preferred backend among those registered and available ([`rhi::PickAutoBackend`](#rhi-pickautobackend-char-star-usize)). |
 
 ## `ValidationSetting` {#rhi-validationsetting}
@@ -7396,7 +7396,7 @@ struct DeviceCreateInfo { ... }
 
 What [`rhi::CreateDevice`](#rhi-createdevice-const-devicecreateinfo-amp) needs to know.
 
-The device is headless unless a presentation window is supplied (added with the swapchain on Day 56).
+The device is headless unless a presentation window is supplied.
 
 | Field | Value |
 |---|---|

@@ -5,7 +5,7 @@
 #include "lang/traits.h"
 #include "types.h"
 
-//! Atomic variables (Phase 16): the engine's spelling of `<atomic>`. `Atomic<T>` forwards every operation to
+//! Atomic variables: the engine's spelling of `<atomic>`. `Atomic<T>` forwards every operation to
 //! `std::atomic<T>` inline, so it costs exactly what the standard type costs. This header and the other `sync/` headers
 //! are the only files that include the standard concurrency headers.
 namespace vse

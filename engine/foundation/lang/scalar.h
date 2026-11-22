@@ -5,7 +5,7 @@
 #include "lang/traits.h"
 #include "types.h"
 
-//! Scalar math (Phase 16): the engine's spelling of `<cmath>`. Every function forwards inline to the standard one of
+//! Scalar math: the engine's spelling of `<cmath>`. Every function forwards inline to the standard one of
 //! the same meaning and has `f32` and `f64` forms (an integer argument converts to `f64`, as for the standard
 //! functions). Vector, matrix and quaternion types are in `math/`; these are the functions on one number. The `f64`
 //! overloads are new: `Sqrt`, `Sin`, `Cos` and `Acos` used to take only `f32`, so a `double` argument now keeps its

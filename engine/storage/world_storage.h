@@ -1,7 +1,7 @@
 #pragma once
 
-//! [[storage::WorldStorage]]: saves a world's entities to a [[storage::Store]] and loads them back (Phase 19). `Save`
-//! and `Load` of whole worlds (Day 260), the incremental form (Day 261) and the asynchronous forms (Day 264).
+//! [[storage::WorldStorage]]: saves a world's entities to a [[storage::Store]] and loads them back. `Save`
+//! and `Load` of whole worlds, the incremental form and the asynchronous forms.
 
 #include "ecs/world.h"
 #include "storage/component_registry.h"

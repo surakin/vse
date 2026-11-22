@@ -3,7 +3,7 @@
 //! Where setting values live: the abstract [[settings::ConfigStore]] and the values it holds.
 //!
 //! The settings system reads and writes through this interface and never assumes a file. A store is a flat collection
-//! of `key -> value` entries. Implementations: a text file (Day 133), memory, read-only shipped defaults (all in the
+//! of `key -> value` entries. Implementations: a text file, memory, read-only shipped defaults (all in the
 //! foundation); the Windows registry and macOS's user defaults (built), Android `SharedPreferences` and console save
 //! data follow in the platform phases.
 //!

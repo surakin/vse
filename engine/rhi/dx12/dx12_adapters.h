@@ -5,7 +5,7 @@
 #include "rhi/dx12/d3d12_api.h"
 #include "types.h"
 
-//! The DXGI adapters the Direct3D 12 backend can use, described as [[rhi::AdapterInfo]] (Phase 13 Day 164).
+//! The DXGI adapters the Direct3D 12 backend can use, described as [[rhi::AdapterInfo]].
 
 namespace vse::rhi::dx12
 {

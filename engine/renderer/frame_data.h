@@ -92,7 +92,7 @@ struct LightData
     /// xyz: the direction from the surface toward the light; w: the type (0 directional, 1 point or spot).
     ///
     /// A directional light's is a unit vector. A spot light's is that unit vector times the cone's angle scale, `1 /
-    /// (cos(inner) - cos(outer))` (glTF coverage Day 11); a point light's is zero.
+    /// (cos(inner) - cos(outer))`; a point light's is zero.
     Vec4 direction;
     /// rgb: the light's color times its intensity (linear); w: a spot light's angle offset, `-cos(outer)` times the
     /// angle scale (0 otherwise).

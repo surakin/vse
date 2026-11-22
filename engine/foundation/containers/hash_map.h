@@ -54,10 +54,10 @@ template <typename V> struct HashMapEmplaced
 /// `K` needs `operator==` and a `Hash<K>` specialization. Keys and values are stored by value, constructed when they
 /// are inserted (copied or moved in) and destroyed when they are removed, when the table is rehashed into a new one
 /// (they are moved across) and with the map; neither needs a default constructor, and either may be move-only (a
-/// [[String]] key, Phase 27 Day 474). A key can also be looked up by a type `Q` it compares equal to (`K == Q`) whose
+/// [[String]] key). A key can also be looked up by a type `Q` it compares equal to (`K == Q`) whose
 /// `Hash<Q>` agrees with `Hash<K>` for equal keys: a [[StringView]] for a [[String]] key.
 ///
-/// The table (shared with [[HashSet]], container audit Day 7) is a power of two in size (a probe step is a mask, not a
+/// The table (shared with [[HashSet]]) is a power of two in size (a probe step is a mask, not a
 /// division) and is made by the first insert, not by the constructor; it rehashes when the load factor, counting
 /// tombstones, reaches 0.7: into twice the slots if the live entries alone fill at least half of that, otherwise into
 /// the same number (which clears the tombstones left by removals). Growth invalidates pointers returned by `Find`.

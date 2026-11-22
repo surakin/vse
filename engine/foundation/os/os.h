@@ -9,7 +9,7 @@
 //! directories belong to the file layer ([[io::File]], [[io::Directory]], [[io::Path]]); the descriptor functions here
 //! are for the console, pipes, sockets and the signal-safe code of the debugging facilities.
 //!
-//! **Windows** (Phase 13). Descriptors are the engine's own: 0, 1 and 2 are the standard handles, and [[os::Open]]
+//! **Windows**. Descriptors are the engine's own: 0, 1 and 2 are the standard handles, and [[os::Open]]
 //! hands out 3 and up from a fixed table of 256 handles, claimed without a lock so the crash path can use it (the C
 //! runtime's descriptors are not used: a thread stopped inside one holds a lock a crash report would wait on). `long`
 //! is 32 bits there, so one [[os::Write]] or [[os::Read]] moves at most 2^31 - 1 bytes and reports a short count, which
@@ -17,7 +17,7 @@
 //! console's code page is never changed (that would outlive the program in the user's shell). Paths are UTF-8 and
 //! become UTF-16 at the call, with `/` turned into `\` and the `\\?\` prefix added to long absolute paths.
 //!
-//! **macOS** (Phase 21). The descriptor, memory, sleep and library calls are the POSIX ones Linux uses (`os/posix/`);
+//! **macOS**. The descriptor, memory, sleep and library calls are the POSIX ones Linux uses (`os/posix/`);
 //! the clock, random bytes, process figures and library search are macOS's own (`os/macos/os.cpp`). Pages are the
 //! system's size: 4 KiB on x86-64 and 16 KiB on Apple silicon, so no code may assume 4 KiB.
 

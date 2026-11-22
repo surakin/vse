@@ -142,7 +142,7 @@ struct WorldStats
 ///
 /// Structural calls (`Create`, `Destroy`, `Add`, `Remove`, `Set` that adds) move rows, so a pointer from `Get` or a
 /// span from a chunk is valid only until the next structural call. They may not be made while the world is being
-/// iterated (`BeginIteration` / `EndIteration`, used by queries); a command buffer (Day 228) defers them.
+/// iterated (`BeginIteration` / `EndIteration`, used by queries); a command buffer defers them.
 ///
 /// - Thread-safety: thread-compatible. Const members may run on several threads while no thread makes a structural
 /// call.

@@ -13,7 +13,7 @@ class VulkanDevice;
 /// Records into one primary `VkCommandBuffer` taken from the creating thread's command pool.
 ///
 /// Copies, barriers, rendering passes, graphics pipelines and draws are recorded today; the commands that need bind
-/// groups, push constants or compute pipelines log an error and record nothing until those exist (Days 60 and 62).
+/// groups, push constants or compute pipelines log an error and record nothing until those exist.
 ///
 /// - Thread-safety: thread-compatible; record from one thread, different lists on different threads at once.
 /// - Ownership: owned by the [[rhi::vulkan::VulkanDevice]] that made it; use it only within the frame it was created

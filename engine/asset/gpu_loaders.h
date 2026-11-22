@@ -1,7 +1,7 @@
 #pragma once
 
-//! The loaders of the resource types that live on the GPU: meshes, textures and materials. Phase 22 Day 329.
-//! [[asset::RegisterGpuLoaders]] registers them over the CPU loaders of Day 328, so the same ids load as objects that
+//! The loaders of the resource types that live on the GPU: meshes, textures and materials.
+//! [[asset::RegisterGpuLoaders]] registers them over the CPU loaders, so the same ids load as objects that
 //! own device resources, made recreatable: a device reset rebuilds them from the manager's own bytes.
 
 #include "asset/cpu_loaders.h"

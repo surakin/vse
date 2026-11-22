@@ -23,7 +23,7 @@ enum class ShutdownMode : u8
 ///
 /// Every socket is non-blocking and not inherited by child processes from the moment it exists. A call that cannot
 /// finish returns
-/// [[net::ErrorCode::WouldBlock]] and did nothing; wait for readiness (the reactor of Day 269, or a poll in a test) and
+/// [[net::ErrorCode::WouldBlock]] and did nothing; wait for readiness (the reactor, or a poll in a test) and
 /// call again. Partial reads and writes are normal results: a count below the request is not an error. An interrupted
 /// system call is retried inside the backend. A write to a peer that has gone never raises a signal; it reports
 /// [[net::ErrorCode::Closed]] or [[net::ErrorCode::Reset]].

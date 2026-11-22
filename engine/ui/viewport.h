@@ -6,7 +6,7 @@
 #include "ui/geometry.h"
 #include "ui/widget.h"
 
-//! The viewport widget (Phase 15, Day 201): a rectangle that shows a rendered 3D world and hands the input a camera
+//! The viewport widget: a rectangle that shows a rendered 3D world and hands the input a camera
 //! needs to the application. No RHI type appears here: the application implements [[ui::ViewportBinding]] over its own
 //! render target (the renderer's `ViewportTarget` is one).
 

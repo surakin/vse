@@ -131,7 +131,7 @@ enum class ShaderFormat : u8
 {
     Spirv = 0,  ///< SPIR-V words (Vulkan).
     Dxil,       ///< A DXIL container (Direct3D 12).
-    MetalLib,   ///< A Metal library (`.metallib`, AIR, minted offline: Phase 21 Day 299) with its entry name (Metal).
+    MetalLib,   ///< A Metal library (`.metallib`, AIR, minted offline) with its entry name (Metal).
 };
 
 /// Returns the lowercase name of a shader format (`spirv`, `dxil`, `metallib`), for logs.
@@ -404,9 +404,8 @@ constexpr bool VertexFormatIsInteger(VertexFormat format)
 
 /// Returns the byte alignment an attribute of `format` needs inside its vertex: the smaller of its size and 4, which is
 /// 4 for every format today. Direct3D 12 refuses an input layout whose attribute offset is not a multiple of that (a
-/// 16-bit or 8-bit format aligned only to its component size fails `CreateInputLayout`, measured on the Windows PC,
-/// Phase 22 Day 317), and Metal documents a multiple of 4 for an attribute offset (not yet run on the Mac), so the RHI
-/// demands it on every backend.
+/// 16-bit or 8-bit format aligned only to its component size fails `CreateInputLayout`, measured on Windows), and Metal
+/// documents a multiple of 4 for an attribute offset (not yet run on the Mac), so the RHI demands it on every backend.
 ///
 /// - Param format: a value below `VertexFormat::Count`; any other value returns 0.
 constexpr u32 VertexFormatAlignment(VertexFormat format)

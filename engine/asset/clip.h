@@ -1,7 +1,7 @@
 #pragma once
 
 //! The animation clip blob (type `ANIM`, version 1): per-joint keyframe tracks and events for one skeleton, built by
-//! [[asset::BuildClipBlob]] and read in place through [[asset::ClipView]]. Phase 22 Day 320.
+//! [[asset::BuildClipBlob]] and read in place through [[asset::ClipView]].
 //!
 //! Sections (little-endian, ids from 16): 16 header (96 bytes: duration, sample rate hint, flags, joint count, track
 //! count, event count, the skeleton hash, the measured error bounds, the bound box), 17 the track table (72 bytes per
@@ -53,7 +53,7 @@ enum ClipSection : u32
     kClipSectionTracks = 17,   ///< The track table, 72 bytes per track.
     kClipSectionKeys = 18,     ///< Key times and values.
     kClipSectionEvents = 19,   ///< The events, 16 bytes each.
-    kClipSectionWeights = 20,  ///< The weight track (glTF coverage Day 9): 16 bytes of counts, the key times, the
+    kClipSectionWeights = 20,  ///< The weight track: 16 bytes of counts, the key times, the
                                ///< values.
 };
 
@@ -96,7 +96,7 @@ struct ClipEvent
     u32 payload = 0;    ///< Free for the game.
 };
 
-/// The morph weights a clip animates (glTF coverage Day 9), as the minter takes them.
+/// The morph weights a clip animates, as the minter takes them.
 ///
 /// They are the weights of the entity that plays the clip, keyed linearly, and stored as they are (`f32`), not reduced
 /// or quantized.
@@ -202,7 +202,7 @@ public:
     ///
     /// - Fails: never.
     bool Looping() const { return (flags_ & kClipLooping) != 0; }
-    /// The number of morph weights the clip's weight track animates (0 without one; glTF coverage Day 9).
+    /// The number of morph weights the clip's weight track animates (0 without one).
     u32 WeightTargetCount() const { return weight_targets_; }
     /// The number of keys of the weight track.
     u32 WeightKeyCount() const { return weight_keys_; }

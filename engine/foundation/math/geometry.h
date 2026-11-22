@@ -1,6 +1,6 @@
 #pragma once
 
-//! Shapes and the tests between them (Phase 18 Day 238): boxes, spheres, planes, rays and the view frustum, shared by
+//! Shapes and the tests between them: boxes, spheres, planes, rays and the view frustum, shared by
 //! the renderer's culling and the spatial module. Moved here from `engine/renderer/bounds.h` and `frustum.h`, which
 //! keep `using` aliases. Boxes and spheres are closed sets: shapes that only touch overlap, and a ray that grazes a
 //! face or an edge hits it.

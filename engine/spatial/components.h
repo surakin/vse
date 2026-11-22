@@ -1,6 +1,6 @@
 #pragma once
 
-//! The ECS side of the spatial module (Phase 18 Day 244): the components that put an entity into the spatial sets. The
+//! The ECS side of the spatial module: the components that put an entity into the spatial sets. The
 //! sync system of `spatial/spatial_sync.h` reads them; no other code writes `WorldBounds` or `SpatialProxy`.
 
 #include "containers/array.h"

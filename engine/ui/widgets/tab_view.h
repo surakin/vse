@@ -5,7 +5,7 @@
 #include "ui/text_run.h"
 #include "ui/widget.h"
 
-//! The tab view (Phase 15, Day 199): a row of tab headers over a stack of pages, of which one shows.
+//! The tab view: a row of tab headers over a stack of pages, of which one shows.
 
 namespace vse::ui
 {

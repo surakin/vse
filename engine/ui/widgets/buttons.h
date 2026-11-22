@@ -6,7 +6,7 @@
 #include "ui/theme.h"
 #include "ui/widget.h"
 
-//! The button widgets (Phase 15, Day 195): button, toggle button, check box, radio button and radio group.
+//! The button widgets: button, toggle button, check box, radio button and radio group.
 
 namespace vse::ui
 {
@@ -20,7 +20,7 @@ class RadioGroup;
 /// listeners then run. The look is the `button` style of the theme in the widget's state (normal, hover, pressed,
 /// focused, disabled; a toggle's checked state too) and a variant such as `primary`; a state change repaints the widget
 /// and does not touch layout. A disabled button gets no input. The default-button flag only marks the button a dialog
-/// should press on Enter; the dialog (Day 203) acts on it.
+/// should press on Enter; the dialog acts on it.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its text; borrows the icon's image.

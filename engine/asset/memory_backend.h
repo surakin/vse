@@ -1,7 +1,7 @@
 #pragma once
 
 //! [[asset::HostMemoryBackend]]: a real backend for resources whose bytes the host application provides at run time
-//! (the content a host that embeds the engine registers through Phase 23's C API), with no file, pak or server behind
+//! (the content a host that embeds the engine registers through the C API), with no file, pak or server behind
 //! it.
 
 #include "asset/backend.h"
@@ -17,7 +17,7 @@
 namespace vse::asset
 {
 
-/// What the manager reports about the resources that depend on another one (Day 328 supplies it); the backend refuses
+/// What the manager reports about the resources that depend on another one; the backend refuses
 /// to remove or replace a resource that has dependents unless the host forces it.
 ///
 /// - Thread-safety: thread-compatible; the functions are called from the thread that changes the backend, one at a
@@ -38,7 +38,7 @@ struct MemoryAddOptions
 {
     Span<const StringView> paths;  ///< Paths the backend's table reports for the resource (none: reachable by id only).
     const ContentHash* expected_hash = nullptr;  ///< A hash the host promises; a blob that differs is refused.
-    /// Lends the bytes instead of copying them (Phase 23 Day 350): the backend reads the host's memory in place, which
+    /// Lends the bytes instead of copying them: the backend reads the host's memory in place, which
     /// must stay valid and unchanged until `release` runs, and calls `release(release_user, bytes)` exactly once, when
     /// the last holder of the resource (the backend, or a reader of a replaced or removed one) lets go, on the thread
     /// that lets go. A call that fails never calls it (the host keeps the bytes). Null copies the bytes.
@@ -60,7 +60,7 @@ struct MemoryAddItem
 
 /// Resources provided by the host.
 ///
-/// The bytes of every resource are a complete blob (Day 314): `Add` checks the container, that the blob's own id is the
+/// The bytes of every resource are a complete blob: `Add` checks the container, that the blob's own id is the
 /// id the host passed, that the content hash verifies and, when the host passes one, that it equals the host's hash.
 /// Bytes are copied into memory the backend owns. A replace never tears a read: an open reader keeps the bytes it
 /// opened. Every add, replace and remove leaves a

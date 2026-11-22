@@ -32,7 +32,7 @@ inline constexpr u32 kImportSummaryVersion = 1;
 /// file's order (an unnamed one has the name `""`), the `duration` being the longest sampler input range in seconds (0
 /// when the accessors give no range); `lights` has one entry per level node that names a `KHR_lights_punctual` light,
 /// in level order: the light's own name (`""` if unnamed), its glTF type, the entity it is on (`node`, a name of
-/// `nodes`) and its world position times `options.scale`; `collision` (glTF colliders Day 3) counts the nodes that got
+/// `nodes`) and its world position times `options.scale`; `collision` counts the nodes that got
 /// a static collider, the `MCOL`s made, their triangles together, the colliders that are a box, sphere or capsule, and
 /// the nodes marked as colliders that got none. Numbers are written with 9 significant digits.
 ///

@@ -1,7 +1,7 @@
 # The Renderer
 
 **Audience:** engine and game programmers who draw things. Read [The RHI](rhi.md) first for the device, buffers and command lists this page builds on.
-**Covers:** the renderer core (Phase 5), resetting the device at run time (Phase 8) the Direct3D 12 notes (Phase 13) and the Metal notes (Phase 21).
+**Covers:** the renderer core, resetting the device at run time the Direct3D 12 notes and the Metal notes.
 
 The renderer turns a description of a world (objects with a mesh, a material and a position, plus lights, seen by a camera) into a picture. You do not call
 Vulkan or Direct3D: you fill a scene, give the renderer a callback that says which passes to run, and it does the rest each frame.
@@ -57,7 +57,6 @@ Then test it: reset the device with `tests/renderer/reset_rig.h` and compare `De
 
 - `engine/renderer/*.h`
 - `docs/superpowers/specs/2026-11-04-renderer-design.md` (decisions R1-R11)
-- `plans/phase-05-renderer-core.md`
 
 ## API reference
 
@@ -469,7 +468,7 @@ rendered 3, skipped 1
 
 ### Packed vertex formats
 
-Besides `Float1`-`Float4`, `UInt1`-`UInt4` and `UNorm8x4`, an attribute can be stored packed (Phase 22 Day 317): `Float16x2`/`Float16x4` (half), `UNorm16x2`/`UNorm16x4`, `SNorm16x2`/`SNorm16x4`, `SNorm8x4` (packed normals and tangents) and, for joint indices, `UInt8x4` and `UInt16x4`. The shader still declares a `float2`/`float4` (or `uint4`) input and the hardware converts as it fetches, so a minted mesh holds the compact bytes and nothing is converted at load. `rhi::VertexFormatFeedsInput` is the rule the material system applies when it builds a pipeline: float-class storage feeds a float input of the same width, integer storage a uint input of the same width. An attribute's offset must be a multiple of 4 bytes, whatever its component size (`rhi::VertexFormatAlignment`): Direct3D 12 refuses a 16-bit or 8-bit attribute aligned only to its component size, and Metal documents 4 as well; `GraphicsPipelineDesc::Validate` checks it. All of these are mandatory vertex-buffer formats in Vulkan, Direct3D 12 and Metal; the Vulkan device reports them through `VulkanDevice::SupportsVertexFormat` and a test checks every one.
+Besides `Float1`-`Float4`, `UInt1`-`UInt4` and `UNorm8x4`, an attribute can be stored packed: `Float16x2`/`Float16x4` (half), `UNorm16x2`/`UNorm16x4`, `SNorm16x2`/`SNorm16x4`, `SNorm8x4` (packed normals and tangents) and, for joint indices, `UInt8x4` and `UInt16x4`. The shader still declares a `float2`/`float4` (or `uint4`) input and the hardware converts as it fetches, so a minted mesh holds the compact bytes and nothing is converted at load. `rhi::VertexFormatFeedsInput` is the rule the material system applies when it builds a pipeline: float-class storage feeds a float input of the same width, integer storage a uint input of the same width. An attribute's offset must be a multiple of 4 bytes, whatever its component size (`rhi::VertexFormatAlignment`): Direct3D 12 refuses a 16-bit or 8-bit attribute aligned only to its component size, and Metal documents 4 as well; `GraphicsPipelineDesc::Validate` checks it. All of these are mandatory vertex-buffer formats in Vulkan, Direct3D 12 and Metal; the Vulkan device reports them through `VulkanDevice::SupportsVertexFormat` and a test checks every one.
 
 ### Vertex colors and primitive topology
 
@@ -524,7 +523,7 @@ five targets (the library is `renderer_passes`; the shaders are `gbuffer.vert` a
 | albedo | `RGBA8_SRGB` | rgb linear albedo (the attachment encodes sRGB on write), a = baked occlusion |
 | normal | `RG16_Float` | world-space normal, octahedral (`OctEncode` / `OctDecode`) |
 | material | `RGBA8_UNorm` | r roughness, g metallic, b free (written 0), a flags / 255 (bit 0: unlit) |
-| emissive | `RGBA16_Float` | rgb emitted radiance, linear and not limited to 1 (glTF coverage Day 2); the fullscreen lighting pass adds it once |
+| emissive | `RGBA16_Float` | rgb emitted radiance, linear and not limited to 1; the fullscreen lighting pass adds it once |
 | depth | `D32_Float` | 0 at the near plane, 1 at the far plane, no reverse-Z |
 
 `CheckGBufferFormats` asks the device for every format with the usage the pass needs and names the first one it lacks; call
@@ -594,7 +593,7 @@ a vertex color material reads the color attribute: yes
 
 ### Morph targets
 
-A mesh with morph targets (glTF coverage Day 7; the blob's sections 40 and 41, read by the GPU loader into
+A mesh with morph targets (the blob's sections 40 and 41, read by the GPU loader into
 `MeshGeometry::morph_*`) keeps one read-only storage buffer, `GpuMesh::MorphBuffer`: its base vertices followed by its deltas
 (`kMorphDeltaBytes` each). It is uploaded from the blob's bytes where they are, and again after a device reset. An object
 draws its morphed shape when its render object has `morph_weights` (`RenderObjectDesc::morph_weights`,
@@ -941,7 +940,7 @@ A **lost surface** on a healthy device (the swapchain returns `Lost` but `Device
 success), counts in `RendererStats::recoveries` and `recovery_failures`, and shows `recovering (attempt N)` in the crash report. A
 settings change asked for during the lost frame is applied at the first frame boundary after the recovery, not lost.
 
-On Metal (Phase 21 Day 309) the loss comes from a command buffer's error or from the system removing the GPU (the device observer), and the
+On Metal the loss comes from a command buffer's error or from the system removing the GPU (the device observer), and the
 recovery is the same reset: a new `MTLDevice` from `MTLCopyAllDevices`, every owner rebuilt from its CPU-side source.
 
 **What the application should show.** While frames return `Skipped` the window keeps its last picture; show a short "graphics device
@@ -992,7 +991,7 @@ off, a 1280x720 offscreen target, the demo scene with 300 point lights (except w
 after each frame outside the timer so the numbers are CPU time. Two runs agree within a few percent. They are a baseline, not
 a promise, and are never asserted in CI. Do not tune on a Debug build: it is five to seven times slower here.
 
-`renderer_bench --section gpu` (glTF coverage Day 1) times the whole frame from submission to the end of `WaitIdle`, with no
+`renderer_bench --section gpu` times the whole frame from submission to the end of `WaitIdle`, with no
 point lights, at 1,000 and 10,000 objects: the GPU work is inside the number, so a change of the geometry shader shows as a
 change of these medians. The RHI has no timestamp queries, so no pass is timed alone. On the Windows PC (Release, 2026-11-19)
 the two map samples the G-buffer gained left the medians where they were: 0.94-0.95 ms (Direct3D 12) and 0.84 ms (Vulkan) at
@@ -1009,7 +1008,7 @@ the two map samples the G-buffer gained left the medians where they were: 0.94-0
 | Point lights: 100 / 1000 / 4000 / 16000 | +0.01 / +0.15 / +0.9 / +3.1 ms; about 0.1-0.2 us of CPU per light |
 | Transient pool, 100 frames | 5 textures created, 520 reuses (99% hit rate), none destroyed |
 
-On macOS (Phase 21 Day 311; Metal on the Iris Plus 645, Intel i5-8257U, Release): the graph 0.07-0.09 us per pass; a frame of 1000 objects
+On macOS (Metal on the Iris Plus 645, Intel i5-8257U, Release): the graph 0.07-0.09 us per pass; a frame of 1000 objects
 1.4-1.5 ms, 10000 about 7.1 ms, 50000 about 25 ms (0.5 us per object; the laptop's CPU, and Metal's encoding of the same 16 draws); 16000 point
 lights 13.9 ms; the transient pool the same 99% hit rate.
 
@@ -1055,15 +1054,13 @@ past 100000 objects.
 ### Platform notes
 
 The renderer is written and tested on Linux with the Vulkan backend (and the null device, which every non-GPU test uses), and on Windows
-with Vulkan and Direct3D 12 (Phase 13), and on macOS with Metal (Phase 21: the backend from Day 300, the renderer's GPU suites through it
-from Day 307, as on the other backends, since they run once per GPU backend). The renderer needs nothing of its own for Metal: the minted
+with Vulkan and Direct3D 12, and on macOS with Metal (the renderer's GPU suites run through it, as on the other backends, since they run once per GPU backend). The renderer needs nothing of its own for Metal: the minted
 shader libraries carry their slots, a pass is a render encoder (so a pass that samples what an earlier one wrote is ordered by the encoder
-boundary), and a depth texture is sampled as `depth32_float` itself. The `backend` setting's `auto` on macOS is Metal from Day 309 (from Day 298 it was
-the null backend there, [[renderer::BackendForSetting]]); `renderer_demo`'s scripted and named ctests on macOS run on Metal. The points that shape code are in the [renderer portability
+boundary), and a depth texture is sampled as `depth32_float` itself. The `backend` setting's `auto` on macOS is Metal ([[renderer::BackendForSetting]]); `renderer_demo`'s scripted and named ctests on macOS run on Metal. The points that shape code are in the [renderer portability
 review](../superpowers/specs/2026-11-04-renderer-portability-review.md); a deferred G-buffer is a poor fit for tile-based mobile GPUs
-unless the passes are merged (Phase 29).
+unless the passes are merged.
 
-**On Direct3D 12** (Phase 13) the renderer runs unchanged; what differs is below it:
+**On Direct3D 12** the renderer runs unchanged; what differs is below it:
 
 - **Projection.** The projection functions keep Vulkan's clip space; the D3D12 build of each shader negates clip-space Y
   (`ENGINE_CLIP`, `shaders/target_common.slang`), so the same matrices, viewports and winding work on both.
@@ -1082,10 +1079,10 @@ Culling through a bounding-volume hierarchy (`RenderScene::SetCullMode`): see [S
 
 ## See also
 
-- [ECS: Rendering](ecs.md#rendering): entities mirrored into a `RenderScene` by `scene::MakeRenderSyncSystem` (`engine/scene`); the renderer demo's scene is built that way since Phase 17 Day 234 (`DemoScene` keeps its interface), and the renderer's own tests still fill a `RenderScene` directly.
+- [ECS: Rendering](ecs.md#rendering): entities mirrored into a `RenderScene` by `scene::MakeRenderSyncSystem` (`engine/scene`); the renderer demo's scene is built that way (`DemoScene` keeps its interface), and the renderer's own tests still fill a `RenderScene` directly.
 - Culling 100k objects costs 0.57 ms on one thread in a Release build (5.7 ns an object), 0.08 ms with eight workers as a chunk-parallel frustum test over an ECS bounds component (`scene_tests "[cost]"`); `GBufferPass::Prepare` keeps its single-thread path, and `RenderScene::Cull` can instead walk a bounding-volume hierarchy (see above); a precomputed visible-list overload was not built.
 - [The RHI](rhi.md) and the [renderer design](../superpowers/specs/2026-11-04-renderer-design.md).
-- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13, 21 and 29 add.
+- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what the Windows, macOS and mobile ports add.
 - [Shaders: from Slang to a shader module](rhi-shaders.md) and [Tutorial: From a Scene to a Lit Frame](../tutorials/hello-renderer.md).
 
 ## What the renderer adds to a crash report

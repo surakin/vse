@@ -1,5 +1,5 @@
 #pragma once
-//! The glTF import of one engine (Phase 23 Day 351): `import_gltf` and the tickets of `import_gltf_async`. The importer
+//! The glTF import of one engine: `import_gltf` and the tickets of `import_gltf_async`. The importer
 //! (`engine/asset_import`) is built into the library only when the build option `ENGINE_LIBRARY_WITH_IMPORTER` is on
 //! (the default); without it every call fails with UNSUPPORTED and this header and the table are the same. Internal to
 //! the module `engine_c`: only `import.cpp` includes the importer.

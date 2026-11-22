@@ -7,7 +7,7 @@
 #include "types.h"
 #include "ui/draw_list.h"
 
-//! The texture a UI surface is drawn into so the 3D world can show it (Phase 15, Day 202): a screen on a wall, a
+//! The texture a UI surface is drawn into so the 3D world can show it: a screen on a wall, a
 //! monitor, a floating panel.
 
 namespace vse::renderer

@@ -5,7 +5,7 @@
 
 #include "types.h"
 
-//! NUL-terminated strings (Phase 16): the engine's spelling of the C library's string functions of `<cstring>` and
+//! NUL-terminated strings: the engine's spelling of the C library's string functions of `<cstring>` and
 //! `<cwchar>`. These work on `const char*` for the places that meet the C world (command lines, environment, system
 //! calls, literals); the owning and viewing string types are `String` and `StringView`.
 namespace vse

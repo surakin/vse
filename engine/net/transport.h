@@ -1,7 +1,7 @@
 #pragma once
 
 //! [[net::Transport]]: the interface everything above networking uses to exchange messages with peers, whatever carries
-//! them (the in-process [[net::SimulatedTransport]], the UDP transport of Days 274-276, the TCP transport of Day 277).
+//! them (the in-process [[net::SimulatedTransport]], the UDP transport, the TCP transport).
 //!
 //! A transport is **polled**: the application calls [[net::Transport::Poll]] once or more per frame and receives
 //! [[net::Event]]s (a connection opened, a message arrived, a connection closed with its reason); nothing calls back

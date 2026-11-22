@@ -1,6 +1,6 @@
 # Foundation: Logging and Assertions
 
-Status: written (Phases 0, 7 and 11).
+Status: written.
 
 **Audience:** every engine programmer. Two tools report what the program is doing and what went wrong: **logging** for things a human reads, and
 **assertions** for conditions the code relies on. Read [Strings](foundation-strings.md) first if `StringView` is new to you.

@@ -1,6 +1,6 @@
 #pragma once
 
-//! Entity-facing queries (Phase 18 Day 246): the questions of `spatial/query.h` asked of a named set of a
+//! Entity-facing queries: the questions of `spatial/query.h` asked of a named set of a
 //! [[spatial::SpatialWorld]] and answered in entities, a join with component access, and ray and overlap batches that
 //! run as jobs. A key is `Entity::ToU64`, which is how the sync adds entities.
 

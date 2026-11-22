@@ -1,6 +1,6 @@
 # Foundation: C Strings, Memory, Formatting, Scalar Math and the Console
 
-Status: written (Phase 16).
+Status: written.
 
 **Audience:** every engine programmer. For text you own and grow, use `String` and `StringBuilder` ([Strings](foundation-strings.md)); this page is for the
 lower level: raw bytes, NUL-terminated C strings, fixed buffers, number parsing, scalar math and the console.

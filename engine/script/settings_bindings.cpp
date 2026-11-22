@@ -548,7 +548,7 @@ bool RegisterSettingsBindings(BindingRegistry* registry)
         "settings", "on_change", ThreadRule::WorldWrite, "prefix, function",
         "Subscribes the running entity's script to changes of the setting `prefix` or "
         "anything below it; at the sync point after a change the global function named "
-        "`function` is called (by the event delivery of Day 459) with the key. Removed "
+        "`function` is called (by the event delivery) with the key. Removed "
         "when the entity is destroyed.");
     return ok;
 }

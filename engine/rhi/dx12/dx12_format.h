@@ -5,7 +5,7 @@
 #include "rhi/format.h"
 #include "types.h"
 
-//! The RHI's formats as `DXGI_FORMAT`s (Phase 13 Day 165).
+//! The RHI's formats as `DXGI_FORMAT`s.
 
 namespace vse::rhi::dx12
 {
@@ -20,8 +20,7 @@ DXGI_FORMAT ToDxgi(Format format);
 
 /// Returns the format a texture's resource is created with: the typed format, except a depth format that is also
 /// sampled, which is created typeless (`R32_TYPELESS` for `D32_Float`, `R24G8_TYPELESS`, `R32G8X24_TYPELESS`) so that a
-/// depth view and a shader view of different types can both exist (the Phase 4 portability review, "typeless formats
-/// for sampled depth").
+/// depth view and a shader view of different types can both exist .
 ///
 /// - Param format: the texture's format.
 /// - Param usage: its usage.

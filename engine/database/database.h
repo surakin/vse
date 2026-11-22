@@ -1,6 +1,6 @@
 #pragma once
 
-//! The database interface (Phase 19 Day 252): [[database::Database]] opens a [[database::Connection]], a connection
+//! The database interface: [[database::Database]] opens a [[database::Connection]], a connection
 //! prepares [[database::Statement]]s and runs transactions. Upper layers never know the backend: SQLite and the
 //! in-memory database implement the same interface and pass one conformance suite. SQL is [[database::SqlText]] (a
 //! literal) and data is bound, never formatted into the text. Errors are [[database::Status]] values.

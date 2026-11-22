@@ -1,5 +1,5 @@
 #pragma once
-//! Handles of the objects the C API hands out (Phase 23 Days 349 and 350): worlds, counters, loaded resources and load
+//! Handles of the objects the C API hands out: worlds, counters, loaded resources and load
 //! tickets. A handle is kind (8 bits), generation (32 bits), slot + 1 (24 bits); the generation counts for the whole
 //! process, so the handle of an object of an earlier engine is stale in a later one. Internal to the module `engine_c`.
 #include "containers/vector.h"
@@ -26,7 +26,7 @@ enum HandleKind : u64
     kKindLastIssued = kKindAddMany
 };
 
-/// The sizes of the structs that grew after Phase 23 (`engine_frame_stats`, `engine_surface_state`,
+/// The sizes of the structs that grew after the first C API version (`engine_frame_stats`, `engine_surface_state`,
 /// `engine_mesh_reference`) as that version had them: a host built against it passes a `struct_size` of this many
 /// bytes and is served, the library reading or writing only that many (the "Structs" rule of `engine_c.h`).
 constexpr u32 kFrameStatsFirstSize = 32;

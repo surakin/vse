@@ -1,6 +1,6 @@
 # Animation
 
-Status: Phase 22 Day 321. The runtime that turns a clip and a time into joint matrices: `engine/animation`. It reads the
+Status: The runtime that turns a clip and a time into joint matrices: `engine/animation`. It reads the
 views of [assets](assets.md) (`asset::SkeletonView`, `asset::ClipView`) and depends on `ecs`, `storage` and `jobs`; no
 renderer, RHI or platform header.
 
@@ -43,7 +43,7 @@ scheduler, dt)` advances and samples every entity with a player and an instance 
 publishes the events into the world's `AnimationEvents` resource (when it exists) in entity order. Each entity's result
 depends only on its own components, so the palettes are the same at one worker or eight.
 
-The system resolves ids through an `AnimationResolver` (the resource manager's animation adapter of Day 329, or a test). An entity whose
+The system resolves ids through an `AnimationResolver` (the resource manager's animation adapter, or a test). An entity whose
 skeleton or clip is not loaded, or whose clip was made for another skeleton (`ClipView::Bind` refuses the id, the hash
 or the joint count), is skipped and counted in `AnimationStats::refused`, with one warning line per update; nothing is
 applied to the wrong rig.

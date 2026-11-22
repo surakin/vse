@@ -6,7 +6,7 @@
 #include "rhi/swapchain.h"
 #include "types.h"
 
-//! The Direct3D 12 swapchain (Phase 13 Day 169).
+//! The Direct3D 12 swapchain.
 
 namespace vse::rhi::dx12
 {

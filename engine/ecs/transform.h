@@ -136,9 +136,9 @@ Entity CreateTransformEntity(World& world, const LocalTransform& local);
 
 /// Makes `parent` the parent of `child`, keeping the depths of the child and of all its descendants right.
 ///
-/// The cost is the child's subtree (a children index kept beside the hierarchy, query and hierarchy indices series Day
-/// 2), plus one pass over every entity that has a `Parent` when `Parent` changed outside these calls since the last one
-/// (a raw `Set<Parent>`, a removal, a destruction, the propagation's repair of an orphan; see
+/// The cost is the child's subtree (a children index kept beside the hierarchy), plus one pass over every entity that
+/// has a `Parent` when `Parent` changed outside these calls since the last one (a raw `Set<Parent>`, a removal, a
+/// destruction, the propagation's repair of an orphan; see
 /// [[ecs::World::ComponentVersion]]).
 ///
 /// - Param parent: the new parent; it need not have transforms.

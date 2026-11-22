@@ -93,8 +93,7 @@ public:
     /// - Param owner: borrowed; must stay alive until `Unregister`.
     /// - Param tier: its order, see the `tiers` namespace.
     /// - Returns: true if registered.
-    /// - Fails: returns false, logging the reason, if a reset is running (any number of owners may register: container
-    ///   audit Day 5 removed the cap of 256).
+    /// - Fails: returns false, logging the reason, if a reset is running (any number of owners may register).
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool Register(Recreatable* owner, u32 tier);
 

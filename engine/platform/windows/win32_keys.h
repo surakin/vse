@@ -3,7 +3,7 @@
 #include "platform/input.h"
 #include "types.h"
 
-//! Win32 key messages to [[os::Key]] (Phase 13 Day 159), with the meaning the Linux backends give keys: layout-aware.
+//! Win32 key messages to [[os::Key]], with the meaning the Linux backends give keys: layout-aware.
 //!
 //! A key that types a character is named by the character the active layout gives it, as XKB names it by its keysym: on
 //! a French AZERTY layout the key in the Q position is `Key::A`, and the `&` key is `Key::Num1` only with Shift. The

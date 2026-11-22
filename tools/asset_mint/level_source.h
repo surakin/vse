@@ -1,7 +1,7 @@
 #pragma once
 
 //! The text source form of a level (`.level.src`), the level minter and the formatter that prints a level back as text.
-//! Phase 22 Day 327. An offline tool's code: never linked into the engine; its tests compile it directly.
+//! An offline tool's code: never linked into the engine; its tests compile it directly.
 //!
 //! Line-oriented text; `#` starts a comment (outside a quoted string); fields are separated by spaces or tabs;
 //! indentation means nothing:

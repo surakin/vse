@@ -2,7 +2,7 @@
 
 //! The asynchronous glTF import.
 //!
-//! Phase 22 Day 338. [[asset::ImportGltfAsync]] runs [[asset::ImportGltf]] as a job on the job system and returns a
+//! [[asset::ImportGltfAsync]] runs [[asset::ImportGltf]] as a job on the job system and returns a
 //! ticket to poll, wait on, cancel and take the result from; the destructor cancels and waits, so a ticket never
 //! outlives its job. Several imports may run at once: they share nothing.
 

@@ -3,9 +3,9 @@
 #include "containers/vector.h"
 #include "types.h"
 
-//! Where a backend keeps its on-disk pipeline cache, and how the file is read and written (moved out of the Vulkan
-//! backend on Phase 13 Day 167, so the Direct3D 12 backend follows the same rules). What the file holds, and how it is
-//! checked, is each backend's own.
+//! Where a backend keeps its on-disk pipeline cache, and how the file is read and written (shared by the Vulkan and
+//! Direct3D 12 backends, so both follow the same rules). What the file holds, and how it is checked, is each backend's
+//! own.
 
 namespace vse::rhi
 {

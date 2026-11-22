@@ -367,7 +367,7 @@ Creates a string holding a copy of `sv`.
 explicit String(StringView sv) requires requires { Allocator::Default(); };
 ```
 
-Creates a string holding a copy of `sv` on the allocator's shared default (container audit Day 2: lets a [`HashMap`](foundation-containers.md#hashmap) or [`HashSet`](foundation-containers.md#hashset) keyed by strings make its key from a view or a literal).
+Creates a string holding a copy of `sv` on the allocator's shared default (lets a [`HashMap`](foundation-containers.md#hashmap) or [`HashSet`](foundation-containers.md#hashset) keyed by strings make its key from a view or a literal).
 
 Only available when the allocator has a static `Default()`, as [`HeapAllocator`](foundation-memory.md#heapallocator) does.
 
@@ -560,7 +560,7 @@ template <typename Allocator>
 struct Hash<String<Allocator>> { ... }
 ```
 
-Hash function for [`String`](#string) keys of a [`HashMap`](foundation-containers.md#hashmap) (Phase 27 Day 474): the hash of the contents' [`StringView`](#stringview), so a map keyed by strings is searched with a view, without making a string.
+Hash function for [`String`](#string) keys of a [`HashMap`](foundation-containers.md#hashmap): the hash of the contents' [`StringView`](#stringview), so a map keyed by strings is searched with a view, without making a string.
 
 ### `operator()(const String<Allocator>&)` {#hash-lt-string-lt-allocator-gt-gt-operator-call-const-string-lt-allocator-gt-amp-const}
 

@@ -6,7 +6,7 @@
 #include "ui/text_run.h"
 #include "ui/widget.h"
 
-//! The single-line text field (Phase 15, Day 197): UTF-8 text edited by grapheme cluster with the keyboard and the
+//! The single-line text field: UTF-8 text edited by grapheme cluster with the keyboard and the
 //! mouse, a selection, word movement, undo and redo, and the clipboard.
 
 namespace vse::ui
@@ -23,7 +23,7 @@ using TextValidator = bool (*)(void* user, const TextField* field, StringView pr
 /// Offsets are byte offsets into the UTF-8 text and are always on grapheme boundaries (`text::NextBoundary` and
 /// `text::PreviousBoundary` over the field's layout): a combining mark, a flag, a ZWJ sequence or a Hangul syllable
 /// moves and deletes as one unit. Only `Text` events insert, so a key the field does not know does nothing; there is no
-/// input method and no complex-script shaping (Phase 14 scope). Ctrl+Left and Ctrl+Right move by word
+/// input method and no complex-script shaping (out of scope). Ctrl+Left and Ctrl+Right move by word
 /// ([[ui::WordStart]], [[ui::WordEnd]]). The field scrolls sideways to keep the caret in view.
 ///
 /// The keys are Left, Right, Home, End (Shift extends the selection, Ctrl moves by word), Backspace, Delete (Ctrl: by

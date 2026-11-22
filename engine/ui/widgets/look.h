@@ -4,7 +4,7 @@
 #include "ui/event.h"
 #include "ui/theme.h"
 
-//! Shared drawing of the widgets of Phase 15 Day 195: a resolved style turned into a box, in logical units.
+//! Shared drawing of the widgets of the toolkit: a resolved style turned into a box, in logical units.
 
 namespace vse::ui
 {

@@ -26,7 +26,7 @@ bool CanPinThreads();
 bool PinCurrentThread(u32 cpu);
 
 /// Gives the calling thread a name debuggers and profilers show (Windows: SetThreadDescription; macOS:
-/// pthread_setname_np, at most 63 bytes, cut on a UTF-8 boundary; Linux: not set, as before Phase 13).
+/// pthread_setname_np, at most 63 bytes, cut on a UTF-8 boundary; Linux: not set).
 void NameCurrentThread(const char* name);
 
 }  // namespace vse::jobs::detail

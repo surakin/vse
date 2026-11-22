@@ -116,7 +116,7 @@ ClipStatus MakeClipView(const ClipDesc& desc, ByteSpan bytes, ClipView* out);
 /// A clip: the samples and what they are, held as `f32` so the mixer converts nothing at play time.
 ///
 /// A 3-minute stereo clip at 48 kHz is 69 MB as `f32` (35 MB as 16-bit); the spec chose `f32` and long clips stream
-/// instead (Day 435), so a clip above `kMaxClipFrames` is refused. The samples live in a [[SharedBytes]] and are named
+/// instead, so a clip above `kMaxClipFrames` is refused. The samples live in a [[SharedBytes]] and are named
 /// by an offset, never by a pointer, so a clip over a blob shares the blob's storage. Clips are immutable once made.
 ///
 /// - Thread-safety: thread-safe to read once made.

@@ -1,6 +1,6 @@
 #pragma once
 
-//! The dynamic bounding-volume hierarchy (Phase 18 Day 240): for items that move, updated at a cost proportional to
+//! The dynamic bounding-volume hierarchy: for items that move, updated at a cost proportional to
 //! what moved. An incremental tree of fat boxes (Box2D's `b2DynamicTree` design) with a bulk top-down build and an
 //! incremental optimizer that keep its quality up under motion.
 
@@ -36,7 +36,7 @@ struct DynamicBvhConfig
     /// experiment (b)). An item of zero size gets no margin.
     f32 fat_margin = 0.25f;
     /// How far the fat box also reaches along the last movement, as a multiple of that displacement (Box2D's predictive
-    /// margin). 0 turns it off; the default is what the Day 240 measurement chose (`docs/guide/spatial.md`, "The
+    /// margin). 0 turns it off; the default is what measurement chose (`docs/guide/spatial.md`, "The
     /// dynamic BVH").
     f32 predictive = 2.0f;
     /// [[spatial::DynamicBvh::Optimize]] rebuilds the whole tree when its SAH cost has grown past this multiple of the

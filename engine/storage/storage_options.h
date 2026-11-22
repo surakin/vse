@@ -1,9 +1,9 @@
 #pragma once
 
-//! What a save or a load is told and what it answers (Phase 19 Day 259): [[storage::Selection]],
+//! What a save or a load is told and what it answers: [[storage::Selection]],
 //! [[storage::SaveOptions]], [[storage::LoadOptions]],
 //! [[storage::Report]], a progress callback and a [[storage::CancelToken]]. [[storage::WorldStorage]] takes them from
-//! Day 260.
+//!
 
 #include "containers/vector.h"
 #include "ecs/entity.h"
@@ -76,7 +76,7 @@ class SaveSession;
 enum class SaveMode : u8
 {
     Full,        ///< Every selected entity; records of entities that no longer exist are removed.
-    Incremental  ///< Only entities that changed since the last save of this session (Day 261).
+    Incremental  ///< Only entities that changed since the last save of this session.
 };
 
 /// A progress callback: `done` of `total` entities handled so far. Called between batches on the saving or loading

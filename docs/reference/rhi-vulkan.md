@@ -40,7 +40,7 @@ Registering the Vulkan backend with the backend registry (`rhi/backend_registry.
 
 The Vulkan implementation of [`rhi::Device`](rhi.md#rhi-device).
 
-Creating a Win32 presentation surface (Phase 13 Day 160), kept in its own translation unit under a Windows directory.
+Creating a Win32 presentation surface, kept in its own translation unit under a Windows directory.
 
 `vulkan_win32.h` needs `<windows.h>`'s types, which only the Windows directories may include (`platform_neutral_check` rule 4), so only `vk_win32_surface.cpp` includes it. This header uses plain types, as `vk_xlib_surface.h` does for X11. Whether a queue family can present to the surface is asked through the surface (`vkGetPhysicalDeviceSurfaceSupportKHR`), as on Linux, so the Win32-specific presentation query is not used.
 
@@ -178,7 +178,7 @@ class VulkanCommandList final : public CommandList { ... }
 
 Records into one primary `VkCommandBuffer` taken from the creating thread's command pool.
 
-Copies, barriers, rendering passes, graphics pipelines and draws are recorded today; the commands that need bind groups, push constants or compute pipelines log an error and record nothing until those exist (Days 60 and 62).
+Copies, barriers, rendering passes, graphics pipelines and draws are recorded today; the commands that need bind groups, push constants or compute pipelines log an error and record nothing until those exist.
 
 | Field | Value |
 |---|---|
@@ -1008,7 +1008,7 @@ int transfer_family;
 
 A dedicated transfer-only family if the device has one, otherwise the same as `graphics_family`.
 
-Phase 4 submits all work, including uploads, to the graphics queue; this records where an asynchronous transfer queue would go.
+All work, including uploads, is submitted to the graphics queue; this records where an asynchronous transfer queue would go.
 
 ## `PlanQueues(const PhysicalDeviceInfo&,bool)` {#rhi-vulkan-planqueues-const-physicaldeviceinfo-amp-bool}
 
@@ -1113,7 +1113,7 @@ struct VkDeviceFns { ... }
 
 Entry points resolved against a `VkDevice` through `vkGetDeviceProcAddr`, skipping the loader trampoline.
 
-Covers everything the backend uses through the end of Phase 4. Same layout rules as [`rhi::vulkan::VkGlobalFns`](#rhi-vulkan-vkglobalfns).
+Covers everything the backend uses. Same layout rules as [`rhi::vulkan::VkGlobalFns`](#rhi-vulkan-vkglobalfns).
 
 | Field | Value |
 |---|---|
@@ -1195,7 +1195,7 @@ bool CheckInstanceVersion(const VkGlobalFns& fns, u32* out_version);
 
 Reads the instance-level Vulkan version and checks it against [`rhi::vulkan::kRequiredVulkanVersion`](#rhi-vulkan-krequiredvulkanversion).
 
-A loader without `vkEnumerateInstanceVersion` is Vulkan 1.0 and is rejected. The version is logged. This checks the loader's instance version only; a physical device can still be older, so device selection (Day 50) checks `VkPhysicalDeviceProperties::apiVersion` as well.
+A loader without `vkEnumerateInstanceVersion` is Vulkan 1.0 and is rejected. The version is logged. This checks the loader's instance version only; a physical device can still be older, so device selection checks `VkPhysicalDeviceProperties::apiVersion` as well.
 
 | Field | Value |
 |---|---|
@@ -3571,7 +3571,7 @@ class VulkanDevice final : public Device { ... }
 
 The Vulkan 1.3 device: one physical GPU, one logical device and one graphics+compute queue.
 
-Created by [`rhi::CreateDevice`](rhi.md#rhi-createdevice-const-devicecreateinfo-amp) (or [`rhi::vulkan::VulkanDevice::Create`](#rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp)). All work, including uploads, runs on the single graphics queue; a dedicated transfer family is recorded in the queue plan but unused in Phase 4.
+Created by [`rhi::CreateDevice`](rhi.md#rhi-createdevice-const-devicecreateinfo-amp) (or [`rhi::vulkan::VulkanDevice::Create`](#rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp)). All work, including uploads, runs on the single graphics queue; a dedicated transfer family is recorded in the queue plan but unused.
 
 | Field | Value |
 |---|---|

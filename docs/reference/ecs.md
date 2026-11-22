@@ -524,7 +524,7 @@ The tick of the last addition to the column of `id` in `chunk`, or 0 when there 
 inline constexpr usize kChunkBytes;
 ```
 
-The size of a chunk in bytes (header and columns). Chosen by experiment on Day 222; a compile-time constant.
+The size of a chunk in bytes (header and columns). Chosen by experiment; a compile-time constant.
 
 ## `kMaxArchetypeComponents` {#ecs-kmaxarchetypecomponents}
 
@@ -2427,7 +2427,7 @@ The query remembers the archetypes that match and how many archetypes the world 
 
 | Field | Value |
 |---|---|
-| Thread-safety | thread-compatible. A query object has one user at a time. Running two queries of one world on different threads is not supported yet: starting an iteration updates the world's (unsynchronized) iteration counter and write set; the parallel scheduler of Day 231 makes that safe. |
+| Thread-safety | thread-compatible. A query object has one user at a time. Running two queries of one world on different threads is not supported yet: starting an iteration updates the world's (unsynchronized) iteration counter and write set; the parallel scheduler makes that safe. |
 | Ownership | borrows the world, which must outlive the query; owns its list of archetype indices. |
 
 ### `Query(World&)` {#ecs-query-query-world-amp}
@@ -4085,7 +4085,7 @@ HierarchyStatus SetParent(World& world, Entity child, Entity parent);
 
 Makes `parent` the parent of `child`, keeping the depths of the child and of all its descendants right.
 
-The cost is the child's subtree (a children index kept beside the hierarchy, query and hierarchy indices series Day 2), plus one pass over every entity that has a `Parent` when `Parent` changed outside these calls since the last one (a raw `Set<Parent>`, a removal, a destruction, the propagation's repair of an orphan; see [`ecs::World::ComponentVersion`](#ecs-world-componentversion-const)).
+The cost is the child's subtree (a children index kept beside the hierarchy), plus one pass over every entity that has a `Parent` when `Parent` changed outside these calls since the last one (a raw `Set<Parent>`, a removal, a destruction, the propagation's repair of an orphan; see [`ecs::World::ComponentVersion`](#ecs-world-componentversion-const)).
 
 | Field | Value |
 |---|---|
@@ -4406,7 +4406,7 @@ class World { ... }
 
 Entities with components, grouped into archetypes.
 
-Structural calls (`Create`, `Destroy`, `Add`, `Remove`, `Set` that adds) move rows, so a pointer from `Get` or a span from a chunk is valid only until the next structural call. They may not be made while the world is being iterated (`BeginIteration` / `EndIteration`, used by queries); a command buffer (Day 228) defers them.
+Structural calls (`Create`, `Destroy`, `Add`, `Remove`, `Set` that adds) move rows, so a pointer from `Get` or a span from a chunk is valid only until the next structural call. They may not be made while the world is being iterated (`BeginIteration` / `EndIteration`, used by queries); a command buffer defers them.
 
 | Field | Value |
 |---|---|

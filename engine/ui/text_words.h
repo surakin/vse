@@ -3,7 +3,7 @@
 #include "string_view.h"
 #include "types.h"
 
-//! Word boundaries for editing widgets (Phase 15, Day 197): a word is a run of letters, digits and underscore; a run of
+//! Word boundaries for editing widgets: a word is a run of letters, digits and underscore; a run of
 //! punctuation is a word of its own; white space separates.
 //!
 //! The classes come from code point ranges, not a full Unicode table (the foundation has none): ASCII, the Latin-1 and

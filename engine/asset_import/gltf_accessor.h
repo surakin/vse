@@ -2,7 +2,7 @@
 
 //! Reading accessors as floats or unsigned integers.
 //!
-//! Phase 22 Day 335: the elements of an accessor as floats or as unsigned integers, with the stride,
+//! The elements of an accessor as floats or as unsigned integers, with the stride,
 //! the matrix column padding, `normalized` and sparse overrides applied. The ranges were checked when the document was
 //! parsed
 //! ([[asset::ParseGltf]]); a sparse index is checked here, against the accessor's count.

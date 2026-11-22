@@ -34,7 +34,7 @@ struct VkInstanceFns
 
 /// Entry points resolved against a `VkDevice` through `vkGetDeviceProcAddr`, skipping the loader trampoline.
 ///
-/// Covers everything the backend uses through the end of Phase 4. Same layout rules as [[rhi::vulkan::VkGlobalFns]].
+/// Covers everything the backend uses. Same layout rules as [[rhi::vulkan::VkGlobalFns]].
 ///
 /// - Thread-safety: thread-compatible plain data; immutable once loaded.
 struct VkDeviceFns
@@ -80,7 +80,7 @@ inline constexpr u32 kRequiredVulkanVersion = VK_API_VERSION_1_3;
 ///
 /// A loader without `vkEnumerateInstanceVersion` is Vulkan 1.0 and is rejected. The version is logged. This
 /// checks the loader's instance version only; a physical device can still be older, so device selection
-/// (Day 50) checks `VkPhysicalDeviceProperties::apiVersion` as well.
+/// checks `VkPhysicalDeviceProperties::apiVersion` as well.
 ///
 /// - Param fns: a loaded global table.
 /// - Param out_version: receives the version (`VK_MAKE_API_VERSION` encoding) when the query succeeds, 1.0 for a 1.0

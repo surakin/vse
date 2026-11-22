@@ -60,25 +60,25 @@ private:
 /// The types of this phase.
 namespace types
 {
-/// A mesh (Day 319).
+/// A mesh.
 inline constexpr ResourceType kMesh = ResourceType::FromChars('M', 'E', 'S', 'H');
-/// A texture (Day 323).
+/// A texture.
 inline constexpr ResourceType kTexture = ResourceType::FromChars('T', 'E', 'X', 'R');
-/// A material (Day 326).
+/// A material.
 inline constexpr ResourceType kMaterial = ResourceType::FromChars('M', 'A', 'T', 'L');
-/// A level (Day 327).
+/// A level.
 inline constexpr ResourceType kLevel = ResourceType::FromChars('L', 'E', 'V', 'L');
-/// An animation clip: per-joint keyframe tracks and events for one skeleton (Day 320).
+/// An animation clip: per-joint keyframe tracks and events for one skeleton.
 inline constexpr ResourceType kAnimation = ResourceType::FromChars('A', 'N', 'I', 'M');
-/// A skeleton: the joint hierarchy, bind pose and inverse bind matrices (Day 318).
+/// A skeleton: the joint hierarchy, bind pose and inverse bind matrices.
 inline constexpr ResourceType kSkeleton = ResourceType::FromChars('S', 'K', 'E', 'L');
-/// A convex hull for physics (Phase 25 Day 393).
+/// A convex hull for physics.
 inline constexpr ResourceType kHull = ResourceType::FromChars('H', 'U', 'L', 'L');
-/// A triangle mesh for static physics colliders (Phase 25 Day 394).
+/// A triangle mesh for static physics colliders.
 inline constexpr ResourceType kMeshCollider = ResourceType::FromChars('M', 'C', 'O', 'L');
-/// A decoded audio clip: interleaved samples with a rate, a layout and loop points (Phase 26 Day 418).
+/// A decoded audio clip: interleaved samples with a rate, a layout and loop points.
 inline constexpr ResourceType kAudioClip = ResourceType::FromChars('A', 'C', 'L', 'P');
-/// A script: its source text, the entry points the minter found and its dependencies (Phase 27 Day 462).
+/// A script: its source text, the entry points the minter found and its dependencies.
 inline constexpr ResourceType kScript = ResourceType::FromChars('S', 'C', 'R', 'P');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).
 inline constexpr ResourceType kNames = ResourceType::FromChars('N', 'A', 'M', 'E');

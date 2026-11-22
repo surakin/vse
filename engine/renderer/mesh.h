@@ -147,7 +147,7 @@ struct MeshGeometry
     bool has_joint_bounds = false;                 ///< Whether `joint_bounds_offset` is set; skinned only.
     Array<MeshRange, kMaxMeshRanges> ranges = {};  ///< The material slots' index ranges; the first `range_count`.
     u32 range_count = 0;  ///< 0 for a mesh drawn whole; otherwise each range lies inside `index_count`.
-    /// Where the morph deltas start in `bytes` (`morph_delta_count * kMorphDeltaBytes` bytes; glTF coverage Day 7).
+    /// Where the morph deltas start in `bytes` (`morph_delta_count * kMorphDeltaBytes` bytes).
     u64 morph_delta_offset = 0;
     u32 morph_delta_count = 0;   ///< The number of deltas.
     u32 morph_target_count = 0;  ///< 0 for a mesh without morph targets; at most [[renderer::kMaxMeshMorphTargets]].
@@ -583,7 +583,7 @@ public:
     /// - Fails: reported by the return value.
     /// - Ownership: borrows `palette` for the call.
     bool PosedBounds(const f32* palette, u32 count, Bounds* out) const;
-    /// Returns the number of morph targets (0 without; glTF coverage Day 7).
+    /// Returns the number of morph targets (0 without).
     /// - Fails: never.
     u32 MorphTargetCount() const { return morph_target_count_; }
     /// Returns morph target `i`'s run of deltas.

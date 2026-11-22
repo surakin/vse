@@ -1,9 +1,9 @@
 #pragma once
 
-//! The scene's components in the storage registry (Phase 27 Day 456): [[scene::LightSource]], [[scene::Camera]] and
+//! The scene's components in the storage registry: [[scene::LightSource]], [[scene::Camera]] and
 //! [[scene::Hidden]], so that levels, saves and scripts (`component.add(e, "light_source", {...})`) can name them.
 //! [[scene::MeshRenderer]] holds a shared GPU mesh, which has no stored form; a mesh is named by its asset id and built
-//! by the level spawner or, for scripts, by the resource bindings (Phase 27 Day 463).
+//! by the level spawner or, for scripts, by the resource bindings.
 
 #include "storage/component_registry.h"
 

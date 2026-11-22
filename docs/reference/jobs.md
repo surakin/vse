@@ -19,7 +19,7 @@ The bytes live in an arena owned by the [`jobs::FileReadResult`](#jobs-filereadr
 
 Shutdown drains: requests already queued are still executed, then the I/O thread is joined, and a read issued after that completes immediately with `ok == false`. Awaiting coroutines are only guaranteed to run if the caller joins its outstanding work before destroying the scheduler (see [`jobs::Scheduler::Shutdown`](#jobs-scheduler-shutdown)): the scheduler shuts the I/O thread down first, but a continuation still queued when the workers stop is destroyed unrun. A request blocked in the OS (an `open()` on a FIFO nobody writes to) blocks shutdown until the OS call returns. There is one I/O thread and one FIFO queue, so a slow request delays the ones behind it (head-of-line blocking); a pool of I/O threads can replace it later without changing the awaitable.
 
-Coroutine support (Phase 16): the engine's spelling of `<coroutine>`, the only header that includes it. The compiler looks coroutine machinery up by the standard names (`std::coroutine_handle`, the awaiter members `await_ready`/`await_suspend`/`await_resume`, the promise members `initial_suspend`/`final_suspend`/`get_return_object`), so the aliases keep the standard member functions (`resume`, `done`, `destroy`, `address`, `from_address`, `promise`, `from_promise`).
+Coroutine support: the engine's spelling of `<coroutine>`, the only header that includes it. The compiler looks coroutine machinery up by the standard names (`std::coroutine_handle`, the awaiter members `await_ready`/`await_suspend`/`await_resume`, the promise members `initial_suspend`/`final_suspend`/`get_return_object`), so the aliases keep the standard member functions (`resume`, `done`, `destroy`, `address`, `from_address`, `promise`, `from_promise`).
 
 The join primitive of the job system.
 
@@ -1602,7 +1602,7 @@ It uses the default [`jobs::FramePool::Config`](#jobs-framepool-config) with thr
 static void DestroyGlobalAtUnload();
 ```
 
-Releases the memory of the process-wide pool when the shared engine library is unloaded (Phase 23 Day 348): the pool is otherwise immortal, and its slabs would outlive the library's own image. Does nothing if the pool was never used.
+Releases the memory of the process-wide pool when the shared engine library is unloaded: the pool is otherwise immortal, and its slabs would outlive the library's own image. Does nothing if the pool was never used.
 
 | Field | Value |
 |---|---|

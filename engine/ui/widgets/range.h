@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-//! The value range the value widgets share (Phase 15, Day 196): clamp, snap to a step exactly, and the clamp-or-reject
+//! The value range the value widgets share: clamp, snap to a step exactly, and the clamp-or-reject
 //! choice.
 
 namespace vse::ui

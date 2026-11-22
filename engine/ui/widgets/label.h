@@ -2,7 +2,7 @@
 
 #include "ui/text_block.h"
 
-//! The label widget (Phase 15, Day 195).
+//! The label widget.
 
 namespace vse::ui
 {

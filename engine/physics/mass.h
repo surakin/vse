@@ -14,8 +14,8 @@ namespace vse::physics
 /// The mass of a body and how it resists rotation, in the body's own space.
 ///
 /// The inertia tensor is stored as its diagonal in the **principal frame** plus the rotation from that frame to the
-/// body's space, so the world tensor is two matrix products. Every shape of Day 387 has its principal axes along its
-/// own axes (`principal_rotation` is the identity); a compound shape or a hull from Days 393-395 may not.
+/// body's space, so the world tensor is two matrix products. Every primitive shape has its principal axes along its
+/// own axes (`principal_rotation` is the identity); a compound shape or a hull may not.
 ///
 /// - Thread-safety: thread-compatible plain data.
 struct MassProperties

@@ -5,7 +5,7 @@
 #include "text/font.h"
 #include "types.h"
 
-//! Text layout (Phase 14): UTF-8 in, positioned glyphs, grapheme clusters and lines out. No shaping, no bidirectional
+//! Text layout: UTF-8 in, positioned glyphs, grapheme clusters and lines out. No shaping, no bidirectional
 //! text, no vertical text.
 //!
 //! Coordinates are pixels with the origin at the top-left of the first line and y growing down (as the overlay pass
