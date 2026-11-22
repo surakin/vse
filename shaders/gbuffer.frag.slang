@@ -18,7 +18,7 @@
 //       T = normalize(world tangent.xyz - N * dot(N, tangent.xyz)), B = cross(N, T) * tangent.w,
 //       N = normalize(T * t.x + B * t.y + N * t.z)
 //   emissive_from_albedo (float, default 0): the albedo above (picture, base colour, uv fit and bars) is also emitted, times this
-//       value, so a display glows with its own picture; an unlit material still writes no emissive
+//       value (vertex colours included, as the albedo above), so a display glows with its own picture; an unlit material still writes no emissive
 //   emissive (glTF): emissive_color.rgb * emissive_color.a * sample(emissive_tex, uv).rgb (the strength in a is
 //       KHR_materials_emissive_strength; the texture is sRGB, decoded on sample; an unset slot is white); an unlit
 //       material writes no emissive (its colour is the base colour)

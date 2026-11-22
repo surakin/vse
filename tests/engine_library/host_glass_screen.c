@@ -376,7 +376,7 @@ int main(void)
     SetEnvironment(world, 0.0f, 0.5f, 0.0f, 5.0f, 1);
     Rotate(world, root, 78.0f);
     PixelAt(engine, surface, W / 2, H / 2, c);
-    CHECK(c[1] == head[1] || c[1] < 10);
+    CHECK(c[1] < 5); /* the reflection stayed 0: black, not the 138 an applied 5.0 would give */
 
     CHECK_STATUS(g_api->surface_destroy(surface), ENGINE_OK);
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);

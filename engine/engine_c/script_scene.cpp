@@ -570,7 +570,7 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "Changes fields of the light of entity `e` at the sync point: any of `color` (a vec3, linear RGB, at least "
         "0), `intensity` (at least 0), `radius` (above 0; a point or spot light's reach), `inner_cone` and "
         "`outer_cone` (a spot light's half-angles in radians, 0 <= inner < outer <= pi/2). A field left out keeps its "
-        "value. The entity must already have a light (a level's light, one the host made, or `light.create`); an "
+        "value. Each call is checked against the light as of the tick start, so set both cones of a spot light in one call. The entity must already have a light (a level's light, one the host made, or `light.create`); an "
         "unknown field, a value out of range or an entity without a light is an error. A directional or spot light "
         "shines along its entity's -Z, so `transform.set_rotation` aims it.");
     ok &= registry->Add<&LightCreate>(
