@@ -7695,6 +7695,7 @@ The slots. The numbers are fixed: a target owns its slot for good.
 | <a id="script-kservicephysics"></a>`kServicePhysics` | `0` | The physics bindings' services (`script_physics`: `PhysicsScriptServices`). |
 | <a id="script-kserviceaudio"></a>`kServiceAudio` | `1` | The audio bindings' services (`script_media`: `AudioScriptServices`). |
 | <a id="script-kserviceinput"></a>`kServiceInput` | `2` | The input bindings' services (`script_media`: `InputScriptServices`). |
+| <a id="script-kservicescene"></a>`kServiceScene` | `3` | The scene bindings' services (`engine_c`: `SceneScriptServices`): environment and lights. |
 
 ## `kCommandSettingsSet` {#script-kcommandsettingsset}
 

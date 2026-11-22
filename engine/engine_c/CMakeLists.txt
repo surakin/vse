@@ -30,6 +30,7 @@ set(ENGINE_C_SOURCES engine_c.cpp audio_api.cpp collider_meshes.cpp host_texture
 # script functions answer UNSUPPORTED and the library reports no ENGINE_CAP_SCRIPT.
 if(TARGET script AND TARGET luajit)
   set(ENGINE_C_WITH_SCRIPT_VALUE 1)
+  list(APPEND ENGINE_C_SOURCES script_scene.cpp)  # environment.set, light.set, light.create
 else()
   set(ENGINE_C_WITH_SCRIPT_VALUE 0)
 endif()

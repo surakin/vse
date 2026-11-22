@@ -2663,6 +2663,7 @@ script::ServiceSlot	enum	script	script-serviceslot	script.md	engine/script/servi
 script::kServicePhysics	enumerator	script	script-kservicephysics	script.md	engine/script/service_slots.h:20
 script::kServiceAudio	enumerator	script	script-kserviceaudio	script.md	engine/script/service_slots.h:21
 script::kServiceInput	enumerator	script	script-kserviceinput	script.md	engine/script/service_slots.h:22
+script::kServiceScene	enumerator	script	script-kservicescene	script.md	engine/script/service_slots.h:23
 script::kCommandSettingsSet	variable	script	script-kcommandsettingsset	script.md	engine/script/settings_bindings.h:23
 script::kMaxSettingsSubscriptionsPerEntity	variable	script	script-kmaxsettingssubscriptionsperentity	script.md	engine/script/settings_bindings.h:26
 script::kMaxSettingsSubscriptions	variable	script	script-kmaxsettingssubscriptions	script.md	engine/script/settings_bindings.h:28

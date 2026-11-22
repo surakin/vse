@@ -21,6 +21,7 @@
 #include "script/task_pool.h"
 #include "script/value.h"
 #include "script/service_slots.h"
+#include "engine_c/script_scene.h"
 #include "script_physics/physics_bindings.h"
 #include "script_physics/physics_events.h"
 #include "settings/setting.h"
@@ -573,11 +574,14 @@ struct ScriptHost::Impl
     // The physics bindings' services (C API script physics, 2026-11-20): the world's physics world and character set.
     script_physics::PhysicsLayers layers;
     script_physics::PhysicsScriptServices physics;
+    // The scene bindings' services: the world's environment and lights (`environment.*`, `light.*`).
+    SceneScriptServices scene;
 
     // The bindings every world's scripts get: the standard set and the physics and character set.
     bool RegisterBindings()
     {
-        return script::RegisterStandardBindings(&bindings) && script_physics::RegisterPhysicsBindings(&bindings);
+        return script::RegisterStandardBindings(&bindings) && script_physics::RegisterPhysicsBindings(&bindings) &&
+               RegisterSceneBindings(&bindings);
     }
 
     // Makes the backend and the standard bindings (what a task and the runtime both need).
@@ -624,10 +628,16 @@ struct ScriptHost::Impl
         config.budget = callback_budget;
         runtime = MakeUnique<script::ScriptRuntime>(config);
         runtime->Services().extensions[script::kServicePhysics] = &physics;
+        runtime->Services().extensions[script::kServiceScene] = &scene;
         if (!script_physics::RegisterPhysicsCommandKinds(&runtime->Kinds()))
         {
             runtime = nullptr;
             return Fail(ENGINE_ERROR_INTERNAL, "the physics command kinds did not register");
+        }
+        if (!RegisterSceneCommandKinds(&runtime->Kinds()))
+        {
+            runtime = nullptr;
+            return Fail(ENGINE_ERROR_INTERNAL, "the scene command kinds did not register");
         }
         for (usize i = 0; i < subs.Size(); ++i)
         {
@@ -663,6 +673,7 @@ ScriptHost::Impl* ImplOf(WorldObject& object, const ScriptSettingValues* make_wi
         impl.physics.world = &object.world.Resource<physics::PhysicsWorld>();
         impl.physics.layers = &impl.layers;
         impl.physics.characters = object.characters.Get();
+        impl.scene.object = &object;
     }
     return object.scripts->impl.Get();
 }
