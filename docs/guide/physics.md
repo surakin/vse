@@ -1,6 +1,6 @@
 # Physics: rigid bodies that agree to the bit
 
-Status: in progress. Built: the determinism foundation. Next: shapes, mass and the components.
+Status: written.
 
 **Audience:** engine programmers who write or review physics code, and hosts that compare simulations across machines. Read [Math](foundation-math.md) and
 [Spatial partitioning](spatial.md) first. Design and the experiments behind it: `docs/superpowers/specs/2026-11-16-physics-design.md`.

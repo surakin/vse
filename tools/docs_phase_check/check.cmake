@@ -27,7 +27,7 @@ function(read_lines path out)
   set(${out} "${content}" PARENT_SCOPE)
 endfunction()
 
-set(ref_re "(^|[^A-Za-z0-9_])(Phases?|Days?) [0-9]+|(^|[^A-Za-z0-9_])(Phase|Day)[ \t]*$")
+set(ref_re "(^|[^A-Za-z0-9_])(Phases?|Days?) [0-9]+|(^|[^A-Za-z0-9_])(Phases?|Days?)[ \t]*$")
 
 set(pages "")
 foreach(dir docs/guide docs/tutorials docs/reference)

@@ -1,6 +1,6 @@
 # Audio: repeatable on one build, equal within a tolerance across machines
 
-Status: in progress. Built: the module and the render checks, the formats, conversions and the clip; the WAV parser; minted clips. Next: the device interface.
+Status: written.
 
 **Audience:** engine programmers who write or review audio code, and hosts that compare renders across machines. Read [Math](foundation-math.md) first.
 Design and the experiments behind it: `docs/superpowers/specs/2026-11-17-audio-design.md`.
@@ -210,8 +210,7 @@ changes at once). Inserts keep running on a silent bus, so a reverb tail is not 
   time to fall 60 dB (`MakeReverbParams` computes the per-line gains `10^(-3 length / (decay rate))`); with no damping a
   test measures it within 5 percent. The rate and the size are fixed when the effect is made. Presets: `SmallRoom`,
   `Hall`, `Cave` (`ReverbPresetDesc`).
-- **Voice inserts are not built:** inserts are on buses; a voice that needs a filter (occlusion, air absorption, Days
-  430-431) uses a bus of its own.
+- **Voice inserts are not built:** inserts are on buses; a voice that needs a filter (occlusion, air absorption) uses a bus of its own.
 
 ## The Linux backend
 

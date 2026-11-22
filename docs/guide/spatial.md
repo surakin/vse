@@ -1,8 +1,6 @@
 # Spatial partitioning: what is near what
 
-Status: in progress. Built: the shared shapes, the static and dynamic bounding-volume hierarchies, the query vocabulary
-, the hash grid and the spatial set, the pair tracker, the components, the `SpatialWorld` resource and the entity lifecycle, moves and the parallel sync, entity-facing and batched
-queries, the renderer's culling, statistics, debug lines, settings, the benchmark and the demo. Next: the closing run and review.
+Status: written.
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
