@@ -16,7 +16,7 @@ Everything third-party that ships inside the engine or a tool (Catch2, libbacktr
 ## Linux (x86-64): supported
 
 The reference platform. Wayland is the primary display backend and X11 the fallback; both are needed for the full test suite. Package names below are
-Arch Linux's, the distribution the development machine uses.
+Arch Linux's, the distribution the development machine uses. `docs/guide/linux.md` is the guide.
 
 | What | Version used | Kind | Notes | Arch package |
 |---|---|---|---|---|

@@ -3,8 +3,8 @@
 End-user documentation for the engine. **New to the engine? Start with the
 [guide](guide/README.md), which lists its pages in reading order.** Every
 guide page and every tutorial is written. See [DOC-CONVENTIONS.md](DOC-CONVENTIONS.md) for how
-pages are structured and when a day's work counts as documented. Per platform: [Windows](guide/windows.md) and
-[macOS](guide/macos.md) (Linux is the default the other pages describe).
+pages are structured and when a day's work counts as documented. Per platform: [Linux](guide/linux.md), [Windows](guide/windows.md) and
+[macOS](guide/macos.md).
 
 Internal design history is for contributors, not engine users: the specs in
 `docs/superpowers/specs/` —

@@ -130,6 +130,10 @@ Never test a compiler's or system's own predefined macro (`_WIN32`, `__linux__`,
 A new platform, compiler or processor changes that header only. Rule 6 of the `platform_neutral_check` gate fails on a raw macro; the exceptions are the header itself,
 `tests/windows/discovery/` and generated code. See `docs/guide/foundation-types.md`.
 
+## Linux is the reference platform (`docs/guide/linux.md`, `BUILD.md`)
+
+Linux x86-64 is where every system is built and proven first: Wayland primary, X11 fallback, the Vulkan backend, and the plain, asan and tsan flavors. The guide page lists its build, tests, crash tools and file locations; the sections below are what Windows and macOS add.
+
 ## Windows is a supported platform (Phase 13, required)
 
 Windows x64 builds and runs everything, with the Vulkan and Direct3D 12 backends (`docs/guide/windows.md`, `BUILD.md`).

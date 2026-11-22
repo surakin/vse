@@ -51,6 +51,8 @@ cmake --build --preset windows-msvc
 ctest --preset windows-msvc
 ```
 
+**On Linux**, with Clang (or GCC), CMake, Ninja and the Wayland and X11 client libraries; the graphics backend is Vulkan. [Linux](linux.md) has the rest.
+
 **On macOS**, with the Command Line Tools (no Xcode), CMake and Ninja; the graphics backend is Metal. [macOS](macos.md) has the rest.
 
 ```

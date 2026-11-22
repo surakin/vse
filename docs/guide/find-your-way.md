@@ -10,7 +10,7 @@ Status: written. A way into the documentation by what you want to do. Each line 
 | understand the words used here | [Glossary](glossary.md) |
 | know why there is no `std::vector` | [Standard types](foundation-types.md) |
 | run the tests that matter for my change | [Building and testing](building-and-testing.md) |
-| build on Windows or macOS | [Windows](windows.md), [macOS](macos.md) |
+| build on Linux, Windows or macOS | [Linux](linux.md), [Windows](windows.md), [macOS](macos.md) |
 
 ## Put something on the screen
 
