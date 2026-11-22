@@ -576,6 +576,7 @@ struct ScriptHost::Impl
     script_physics::PhysicsScriptServices physics;
     // The scene bindings' services: the world's environment and lights (`environment.*`, `light.*`).
     SceneScriptServices scene;
+    SceneNames scene_names;  // `entity.name` and `entity.find`
 
     // The bindings every world's scripts get: the standard set and the physics and character set.
     bool RegisterBindings()
@@ -626,6 +627,7 @@ struct ScriptHost::Impl
         config.partition_memory = settings.partition_memory;
         config.random_seed = settings.random_seed;
         config.budget = callback_budget;
+        config.scene = &scene_names.services;
         runtime = MakeUnique<script::ScriptRuntime>(config);
         runtime->Services().extensions[script::kServicePhysics] = &physics;
         runtime->Services().extensions[script::kServiceScene] = &scene;

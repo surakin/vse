@@ -315,6 +315,115 @@ static void TestState(engine_handle engine)
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
 }
 
+static const char kGround[] =
+    "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],"
+    "\"nodes\":[{\"name\":\"ground-col\",\"mesh\":0}],"
+    "\"meshes\":[{\"name\":\"ground\",\"primitives\":[{\"attributes\":{\"POSITION\":0},\"indices\":1}]}],"
+    "\"accessors\":["
+    "{\"bufferView\":0,\"componentType\":5126,\"count\":4,\"type\":\"VEC3\",\"min\":[-5,0,-5],\"max\":[5,0,5]},"
+    "{\"bufferView\":1,\"componentType\":5123,\"count\":6,\"type\":\"SCALAR\"}],"
+    "\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":48},{\"buffer\":0,\"byteOffset\":96,"
+    "\"byteLength\":12}],"
+    "\"buffers\":[{\"byteLength\":110,\"uri\":\"data:application/octet-stream;base64,"
+    "AACgwAAAAAAAAKDAAACgQAAAAAAAAKDAAACgQAAAAAAAAKBAAACgwAAAAAAAAKBAAABAQAAAAAAAAIC/AABAQAAAAEAAAIC/AABAQAAAAEAAAIA/"
+    "AABAQAAAAAAAAIA/AAACAAEAAAADAAIAAAA=\"}]}";
+
+static uint64_t ImportGround(engine_handle engine)
+{
+    engine_import_options options;
+    engine_import_result result;
+    uint64_t level = 0;
+    uint32_t i;
+    memset(&options, 0, sizeof(options));
+    options.struct_size = sizeof(options);
+    options.flags = ENGINE_IMPORT_EMIT_LEVEL;
+    options.id_seed = 5151;
+    memset(&result, 0, sizeof(result));
+    result.struct_size = sizeof(result);
+    CHECK_STATUS(g_api->import_gltf(engine, kGround, sizeof(kGround) - 1, &options, &result), ENGINE_OK);
+    for (i = 0; i < result.resource_count; ++i)
+    {
+        uint32_t type;
+        memcpy(&type, (const char*)result.types.data + i * sizeof(type), sizeof(type));
+        if (type == ENGINE_RESOURCE_LEVEL)
+        {
+            memcpy(&level, (const char*)result.ids.data + i * sizeof(level), sizeof(level));
+        }
+    }
+    engine_buffer_release(&result.ids);
+    engine_buffer_release(&result.types);
+    engine_buffer_release(&result.paths);
+    engine_buffer_release(&result.warnings);
+    engine_buffer_release(&result.manifest);
+    engine_buffer_release(&result.summary);
+    return level;
+}
+
+/* entity.find and entity.name in a C API world: a node of an imported level and an entity the host named. A script
+   finds each by name, moves it, and reads its name; the host reads the moved position back. */
+static const char kFindScript[] =
+    "behavior('finder', {\n"
+    "  on_update = function(self, dt)\n"
+    "    local ground = entity.find('ground-col')\n"
+    "    local probe = entity.find('Probe')\n"
+    "    local nothing = entity.find('no-such-entity')\n"
+    "    if ground ~= nil and probe ~= nil and nothing == nil then\n"
+    "      transform.set_position(probe, vec3.new(1, 2, 3))\n"
+    "      transform.set_position(ground, vec3.new(0, 7, 0))\n"
+    "      host.report(1, entity.name(ground) == 'ground-col' and 1 or 0, entity.name(probe) == 'Probe' and 1 or 0)\n"
+    "    end\n"
+    "  end,\n"
+    "})\n";
+
+static void TestFind(engine_handle engine)
+{
+    engine_handle world;
+    engine_script_load load;
+    engine_script_component component;
+    engine_transform t;
+    engine_spawn_params spawn;
+    uint64_t level = ImportGround(engine);
+    uint64_t root = 0;
+    uint64_t script = 0;
+    uint64_t probe = 0;
+    uint64_t holder = 0;
+    uint64_t ground = 0;
+    memset(g_rows, 0, sizeof(g_rows));
+    CHECK(level != 0);
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    memset(&spawn, 0, sizeof(spawn));
+    spawn.struct_size = sizeof(spawn);
+    spawn.rotation[3] = 1.0f;
+    spawn.scale = 1.0f;
+    CHECK_STATUS(g_api->level_spawn(world, level, &spawn, &root, NULL, 0, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->entity_find(world, Str("ground-col"), &ground), ENGINE_OK);
+    probe = PlaceEntity(world);
+    CHECK_STATUS(g_api->entity_name_set(world, probe, Str("Probe")), ENGINE_OK);
+    CHECK_STATUS(g_api->script_register_function(world, Str("host.report"), 3, 0, &HostReport, NULL), ENGINE_OK);
+    memset(&load, 0, sizeof(load));
+    load.struct_size = sizeof(load);
+    load.name = Str("finder");
+    load.source = Str(kFindScript);
+    CHECK_STATUS(g_api->script_load(world, &load, &script), ENGINE_OK);
+    holder = PlaceEntity(world);
+    memset(&component, 0, sizeof(component));
+    component.struct_size = sizeof(component);
+    component.enabled = 1;
+    strcpy(component.behavior, "finder");
+    CHECK_STATUS(g_api->component_set(world, holder, ENGINE_COMPONENT_SCRIPT, &component), ENGINE_OK);
+    Frame(engine);
+    Frame(engine);
+    CHECK(g_rows[1].seen && Near(g_rows[1].v[0], 1.0) && Near(g_rows[1].v[1], 1.0)); /* found, and entity.name agrees */
+    memset(&t, 0, sizeof(t));
+    t.struct_size = sizeof(t);
+    CHECK_STATUS(g_api->component_get(world, probe, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    CHECK(Near(t.position[0], 1.0) && Near(t.position[1], 2.0) && Near(t.position[2], 3.0));
+    CHECK_STATUS(g_api->component_get(world, ground, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    CHECK(Near(t.position[1], 7.0));
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+}
+
 /* An empty world has the sky as its picture: a script that sets sky_color changes it. */
 static void TestPicture(engine_handle engine)
 {
@@ -429,6 +538,10 @@ int main(void)
         return 0;
     }
     TestState(engine);
+    if ((info.caps & ENGINE_CAP_IMPORT_GLTF) != 0)
+    {
+        TestFind(engine);
+    }
     if (getenv("HOST_SCRIPT_SCENE_NO_PICTURE") == NULL) /* ThreadSanitizer cannot run the GPU driver's threads */
     {
         TestPicture(engine);

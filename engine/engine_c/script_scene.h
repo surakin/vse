@@ -5,7 +5,9 @@
 //! its lights; the changes are commands applied at the sync point, so every surface shows them from its next frame.
 #include "ecs/entity.h"
 #include "script/bindings.h"
+#include "script/entity_bindings.h"
 #include "script/merge.h"
+#include "sync/mutex.h"
 #include "types.h"
 
 namespace vse::engine_c
@@ -30,6 +32,23 @@ enum SceneCommandKind : u16
 struct SceneScriptServices
 {
     WorldObject* object = nullptr;  ///< The world whose environment and lights the bindings change.
+};
+
+/// The names a world's scripts see (`entity.name` and `entity.find`): the entity names of the C API, the ones
+/// `entity_name_set` writes and `level_spawn` gives its nodes. An entity made by a script's `entity.spawn` is named
+/// from the merge on, if at all.
+///
+/// - Thread-safety: the functions may be called from every partition at once (a lookup holds `mutex`: a query is not
+///   made by two threads at once).
+/// - Ownership: the world is borrowed per call; `services.user` points at this object, which must stay where it is.
+struct SceneNames
+{
+    SceneNames();
+    SceneNames(const SceneNames&) = delete;
+    SceneNames& operator=(const SceneNames&) = delete;
+
+    Mutex mutex;                     ///< Guards the query of a lookup.
+    script::SceneServices services;  ///< Give its address to `ScriptRuntimeConfig::scene`.
 };
 
 /// Registers `environment.set`, `light.set` and `light.create`.

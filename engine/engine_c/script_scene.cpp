@@ -3,7 +3,9 @@
 #include "engine_c/runtime.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
+#include "ecs/query.h"
 #include "ecs/world.h"
+#include "sync/mutex.h"
 #include "lang/scalar.h"
 #include "script/merge_services.h"
 #include "script/partition_context.h"
@@ -498,7 +500,44 @@ bool ApplyLightCreate(MergeContext& context, ecs::Entity target, Span<const u8> 
     return LightValid(light, &why) && context.World()->Add(target, light) == ecs::Status::Ok;
 }
 
+usize SceneNameOf(void*, const ecs::World& world, ecs::Entity entity, char* out, usize capacity)
+{
+    const EntityName* name = world.Peek<EntityName>(entity);
+    if (name == nullptr)
+    {
+        return 0;
+    }
+    const usize length = name->length < capacity ? name->length : capacity;
+    MemCopy(out, name->text, length);
+    return length;
+}
+
+ecs::Entity SceneFindByName(void* user, const ecs::World& world, StringView name)
+{
+    SceneNames* self = static_cast<SceneNames*>(user);
+    LockGuard<Mutex> lock(self->mutex);
+    ecs::Entity found;
+    // The scripts read the tick-start world: nothing writes it while they run, and the query only reads.
+    auto query = const_cast<ecs::World&>(world).Query<ecs::Read<EntityName>>();
+    query.ForEach(
+        [&](ecs::Entity entity, const EntityName& candidate)
+        {
+            if (!found.IsValid() && StringView(candidate.text, candidate.length) == name)
+            {
+                found = entity;
+            }
+        });
+    return found;
+}
+
 }  // namespace
+
+SceneNames::SceneNames()
+{
+    services.name_of = &SceneNameOf;
+    services.find = &SceneFindByName;
+    services.user = this;
+}
 
 bool RegisterSceneCommandKinds(CommandKindTable* kinds)
 {

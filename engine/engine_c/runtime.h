@@ -134,6 +134,16 @@ struct Environment
     f32 reflection_intensity = 0.0f;
 };
 
+/// The component of ENGINE_COMPONENT_NAME: what `entity_name_set` writes and `level_spawn` gives the nodes of a level
+/// (`name_prefix` + `/` + the node's name); `entity_find` and the scripts' `entity.find` and `entity.name` read it.
+///
+/// - Thread-safety: plain data.
+struct EntityName
+{
+    u8 length = 0;
+    char text[ENGINE_NAME_MAX_BYTES] = {};
+};
+
 /// The component of ENGINE_COMPONENT_MESH_REFERENCE: what an entity draws.
 ///
 /// - Thread-safety: plain data.

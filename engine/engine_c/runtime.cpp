@@ -44,13 +44,7 @@ namespace vse::engine_c
 namespace
 {
 
-// The components the C API owns (the transform pair is the ECS's own; MeshReference is in runtime.h).
-struct EntityName
-{
-    u8 length = 0;
-    char text[ENGINE_NAME_MAX_BYTES] = {};
-};
-
+// The components the C API owns (the transform pair is the ECS's own; MeshReference and EntityName are in runtime.h).
 constexpr usize kMaxSlots = 1u << 16;  // worlds, and counters, each
 
 Atomic<u32> g_generation{0};
