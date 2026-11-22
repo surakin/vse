@@ -71,6 +71,26 @@ Vec3 ShadeLight(const SurfacePoint& s, const Vec3& view, const Vec3& light, cons
     return Vec3(out[0], out[1], out[2]);
 }
 
+Vec3 ShadeSkyReflection(const SurfacePoint& s, const Vec3& view, const Vec3& sky, f32 intensity)
+{
+    if (intensity <= 0.0f)
+    {
+        return Vec3(0, 0, 0);
+    }
+    const f32 nv = Saturate(Dot(s.normal, view));
+    const f32 fresnel = Pow(1.0f - nv, 5.0f);
+    const f32 albedo[3] = {s.albedo.x, s.albedo.y, s.albedo.z};
+    const f32 sky_rgb[3] = {sky.x, sky.y, sky.z};
+    f32 out[3];
+    for (int c = 0; c < 3; ++c)
+    {
+        const f32 f0 = 0.04f + (albedo[c] - 0.04f) * s.metallic;
+        const f32 ceiling = FMax(1.0f - s.roughness, f0);
+        out[c] = sky_rgb[c] * intensity * (f0 + (ceiling - f0) * fresnel) * s.occlusion;
+    }
+    return Vec3(out[0], out[1], out[2]);
+}
+
 Vec3 ShadeAmbient(const SurfacePoint& s, const Vec3& ambient)
 {
     const f32 k = (1.0f - s.metallic) * s.occlusion;
@@ -331,7 +351,10 @@ LightSummary LightingPass::Prepare(const RenderScene& scene, const FrameData& vi
 {
     added_ = false;
     const LightSummary summary = frame_->WriteLights(scene, view);
-    push_.ambient = Vec4(summary.ambient, 0.0f);
+    push_.ambient = Vec4(summary.ambient, sky_reflection_);
+    push_.sky[0] = background_.x;
+    push_.sky[1] = background_.y;
+    push_.sky[2] = background_.z;
     push_.directional_count = summary.directional_count;
     // One draw per visible point light, in buffer order (nearest first), scissored to its screen rectangle.
     point_draws_.Clear();

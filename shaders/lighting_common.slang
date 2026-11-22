@@ -67,6 +67,21 @@ float3 ShadeAmbient(Surface s, float3 ambient) {
     return s.albedo * (1.0 - s.metallic) * ambient * s.occlusion;
 }
 
+// The constant environment reflection: the sky colour times `intensity` times a Fresnel term (Schlick, with the
+// roughness-aware ceiling of Lagarde), so a smooth dielectric shows about 4% of the sky head on and nearly all of it at a
+// glancing angle. No cube map and no screen-space work; `intensity` 0 adds nothing. The CPU twin is
+// renderer::ShadeSkyReflection.
+float3 ShadeSkyReflection(Surface s, float3 V, float3 sky, float intensity) {
+    if (intensity <= 0.0) {
+        return float3(0.0, 0.0, 0.0);
+    }
+    float nv = saturate(dot(s.normal, V));
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), s.albedo, s.metallic);
+    float3 ceiling = max(float3(1.0 - s.roughness, 1.0 - s.roughness, 1.0 - s.roughness), F0);
+    float3 F = F0 + (ceiling - F0) * pow(1.0 - nv, 5.0);
+    return sky * intensity * F * s.occlusion;
+}
+
 float PointAttenuation(float distance_to_light, float radius) {
     float r = distance_to_light / radius;
     float window = saturate(1.0 - r * r * r * r);

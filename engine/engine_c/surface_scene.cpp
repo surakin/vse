@@ -376,7 +376,8 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
         ambient_ = scene_->AddLight(ambient);
     }
     frame_.SetEnvironment(environment.exposure,
-                          Vec3(environment.sky_color[0], environment.sky_color[1], environment.sky_color[2]));
+                          Vec3(environment.sky_color[0], environment.sky_color[1], environment.sky_color[2]),
+                          environment.reflection_intensity);
     for (auto& [entity, e] : light_entries_)
     {
         e.seen = false;

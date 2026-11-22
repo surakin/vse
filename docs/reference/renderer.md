@@ -2128,7 +2128,7 @@ MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplat
 
 Creates a G-buffer material with the options' shader modules and sensible parameters.
 
-The parameters start as base color white, roughness 0.5, metallic 0, emissive colour black, alpha cutoff 0.5 and occlusion 1, `albedo_uv` (1, 1, 0, 0), `albedo_uv_outside` (0, 0, 0, 0) and occlusion strength 1; change them with the material system's setters (`base_color`, `roughness`, `metallic`, `emissive_color`, `alpha_cutoff`, `occlusion`, `flags`, `albedo_uv`, `albedo_uv_outside`, `occlusion_strength`), and the textures `albedo_tex`, `normal_tex`, `metallic_roughness_tex`, `occlusion_tex` and `emissive_tex` (glTF's maps: the first two linear, roughness times the green channel, metallic times the blue, occlusion times `1 + occlusion_strength * (red - 1)`; the emissive map sRGB, the emitted radiance `emissive_color.rgb * emissive_color.a * emissive_tex.rgb`, with the strength in `a`; unset they are white, so the parameters alone decide; all three read the mesh's coordinates untransformed, as the normal map does). `albedo_uv` is (scale u, scale v, offset u, offset v): the albedo is sampled at uv * scale + offset. When `albedo_uv_outside` has alpha above 0, coordinates outside 0..1 show its rgb (linear) instead of the texture, and coordinates inside are kept half a texel from the edge so that filtering never reads the other side; with alpha 0 the sampler's address mode applies as before.
+The parameters start as base color white, roughness 0.5, metallic 0, emissive colour black, alpha cutoff 0.5 and occlusion 1, `albedo_uv` (1, 1, 0, 0), `albedo_uv_outside` (0, 0, 0, 0), occlusion strength 1 and `emissive_from_albedo` 0; change them with the material system's setters (`base_color`, `roughness`, `metallic`, `emissive_color`, `alpha_cutoff`, `occlusion`, `flags`, `albedo_uv`, `albedo_uv_outside`, `occlusion_strength`, `emissive_from_albedo`), and the textures `albedo_tex`, `normal_tex`, `metallic_roughness_tex`, `occlusion_tex` and `emissive_tex` (glTF's maps: the first two linear, roughness times the green channel, metallic times the blue, occlusion times `1 + occlusion_strength * (red - 1)`; the emissive map sRGB, the emitted radiance `emissive_color.rgb * emissive_color.a * emissive_tex.rgb`, with the strength in `a`; unset they are white, so the parameters alone decide; all three read the mesh's coordinates untransformed, as the normal map does). `albedo_uv` is (scale u, scale v, offset u, offset v): the albedo is sampled at uv * scale + offset. When `albedo_uv_outside` has alpha above 0, coordinates outside 0..1 show its rgb (linear) instead of the texture, and coordinates inside are kept half a texel from the edge so that filtering never reads the other side; with alpha 0 the sampler's address mode applies as before. `emissive_from_albedo` (a float, default 0) makes the albedo glow: the emitted light also gets `albedo * emissive_from_albedo`, with the picture's fit and bars (a lit display); an unlit material emits nothing.
 
 | Field | Value |
 |---|---|
@@ -2954,6 +2954,25 @@ The diffuse BRDF is the albedo times `1 - metallic` (the 1/pi of a Lambertian su
 | Returns | the linear RGB contribution; zero when the surface faces away from the light. |
 | Fails | never. |
 
+## `ShadeSkyReflection(const SurfacePoint&,const Vec3&,const Vec3&,f32)` {#renderer-shadeskyreflection-const-surfacepoint-amp-const-vec3-amp-const-vec3-amp-f32}
+
+`function renderer::ShadeSkyReflection` — defined in `engine/renderer/lighting.h`
+
+```cpp
+Vec3 ShadeSkyReflection(const SurfacePoint& surface, const Vec3& view, const Vec3& sky, f32 intensity);
+```
+
+Returns the constant environment reflection: `sky * intensity * F * occlusion`, where F is Schlick's Fresnel from `F0` (0.04 for a dielectric, the albedo for a metal) up to `max(1 - roughness, F0)` at a glancing angle (the roughness-aware ceiling), so a smooth dielectric shows about 4% of the sky head on and nearly all of it at a glancing angle. Mirrors `lighting_common.slang`.
+
+| Field | Value |
+|---|---|
+| Parameter `surface` | the decoded surface. |
+| Parameter `view` | unit vector from the surface toward the viewer. |
+| Parameter `sky` | the linear colour of the sky. |
+| Parameter `intensity` | not negative; 0 gives zero. |
+| Returns | the linear RGB contribution. |
+| Fails | never. |
+
 ## `ShadeAmbient(const SurfacePoint&,const Vec3&)` {#renderer-shadeambient-const-surfacepoint-amp-const-vec3-amp}
 
 `function renderer::ShadeAmbient` — defined in `engine/renderer/lighting.h`
@@ -3316,6 +3335,21 @@ Sets the linear colour the accumulation target is cleared to: what shows where n
 | Field | Value |
 |---|---|
 | Parameter `color` | linear RGB, not negative. |
+| Fails | never. |
+
+### `SetSkyReflection(f32)` {#renderer-lightingpass-setskyreflection-f32}
+
+`method renderer::LightingPass::SetSkyReflection` — defined in `engine/renderer/lighting.h`
+
+```cpp
+void SetSkyReflection(f32 intensity);
+```
+
+Sets how much of the background colour (the sky) the lit surfaces reflect: the sky times `intensity` times a Fresnel term (about 4% head on for a smooth dielectric, nearly all at a glancing angle). 0, the default, adds nothing. Takes effect from the next `Prepare`.
+
+| Field | Value |
+|---|---|
+| Parameter `intensity` | not negative. |
 | Fails | never. |
 
 ### `PointDrawsPlanned()` {#renderer-lightingpass-pointdrawsplanned-const}
@@ -11989,12 +12023,12 @@ void SetTime(f32 seconds, f32 delta_seconds);
 
 Sets the clock the next frame's FrameData carries.
 
-### `SetEnvironment(f32,const Vec3&)` {#renderer-sceneframe-setenvironment-f32-const-vec3-amp}
+### `SetEnvironment(f32,const Vec3&,f32)` {#renderer-sceneframe-setenvironment-f32-const-vec3-amp-f32}
 
 `method renderer::SceneFrame::SetEnvironment` — defined in `engine/renderer/scene_frame.h`
 
 ```cpp
-void SetEnvironment(f32 exposure, const Vec3& background);
+void SetEnvironment(f32 exposure, const Vec3& background, f32 sky_reflection = 0.0f);
 ```
 
 Sets the exposure of the tone map and the linear colour behind the scene for the next frames.
@@ -12003,6 +12037,7 @@ Sets the exposure of the tone map and the linear colour behind the scene for the
 |---|---|
 | Parameter `exposure` | positive. |
 | Parameter `background` | linear RGB, not negative. |
+| Parameter `sky_reflection` | how much of the background the lit surfaces reflect, not negative; 0 reflects nothing. |
 | Fails | never. |
 
 ### `Render(const RenderScene*,const Camera*,const FrameTarget*)` {#renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star}

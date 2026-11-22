@@ -29,6 +29,7 @@ constexpr u32 kEnvAmbientColor = 1u << 0;
 constexpr u32 kEnvAmbientIntensity = 1u << 1;
 constexpr u32 kEnvSkyColor = 1u << 2;
 constexpr u32 kEnvExposure = 1u << 3;
+constexpr u32 kEnvReflection = 1u << 4;
 constexpr u32 kLightColor = 1u << 0;
 constexpr u32 kLightIntensity = 1u << 1;
 constexpr u32 kLightRadius = 1u << 2;
@@ -45,6 +46,7 @@ struct EnvironmentPayload
     f32 ambient_intensity;
     f32 sky_color[3];
     f32 exposure;
+    f32 reflection_intensity;
 };
 
 struct LightPayload
@@ -198,6 +200,11 @@ bool EnvironmentValid(const EnvironmentPayload& p)
         script::RaiseScriptError("the environment's `ambient_intensity` must be finite and at least 0");
         return false;
     }
+    if ((p.mask & kEnvReflection) != 0 && !(SceneFinite(p.reflection_intensity) && p.reflection_intensity >= 0.0f))
+    {
+        script::RaiseScriptError("the environment's `reflection_intensity` must be finite and at least 0");
+        return false;
+    }
     if ((p.mask & kEnvExposure) != 0 && !(SceneFinite(p.exposure) && p.exposure > 0.0f))
     {
         script::RaiseScriptError("the environment's `exposure` must be finite and above 0");
@@ -218,7 +225,8 @@ void EnvironmentSet(Value fields)
         script::RaiseScriptError("environment.set takes a table of fields");
         return;
     }
-    static const char* const kAllowed[] = {"ambient_color", "ambient_intensity", "sky_color", "exposure", nullptr};
+    static const char* const kAllowed[] = {"ambient_color", "ambient_intensity",    "sky_color",
+                                           "exposure",      "reflection_intensity", nullptr};
     if (!SceneKnownKeys(fields, StringView("environment"), kAllowed))
     {
         return;
@@ -232,6 +240,8 @@ void EnvironmentSet(Value fields)
                        &p.mask) ||
         !SceneReadNumber(fields, StringView("environment"), StringView("exposure"), kEnvExposure, &p.exposure,
                          &p.mask) ||
+        !SceneReadNumber(fields, StringView("environment"), StringView("reflection_intensity"), kEnvReflection,
+                         &p.reflection_intensity, &p.mask) ||
         !EnvironmentValid(p))
     {
         return;
@@ -258,6 +268,7 @@ Value EnvironmentGet()
     map.Set("ambient_intensity", Value::FromFloat(e.ambient_intensity));
     map.Set("sky_color", Value::FromVec3(Vec3(e.sky_color[0], e.sky_color[1], e.sky_color[2])));
     map.Set("exposure", Value::FromFloat(e.exposure));
+    map.Set("reflection_intensity", Value::FromFloat(e.reflection_intensity));
     return map;
 }
 
@@ -289,6 +300,10 @@ bool ApplyEnvironmentSet(MergeContext& context, ecs::Entity, Span<const u8> payl
     if ((p.mask & kEnvExposure) != 0)
     {
         e.exposure = p.exposure;
+    }
+    if ((p.mask & kEnvReflection) != 0)
+    {
+        e.reflection_intensity = p.reflection_intensity;
     }
     services->object->environment_set = true;  // as `world_set_environment`: the default sun goes
     return true;
@@ -502,14 +517,15 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "environment", "set", ThreadRule::WorldWrite, "fields",
         "Changes the world's environment at the sync point; every surface that shows the world uses it from its next "
         "frame. `fields` is a table with any of `ambient_color` (a vec3, linear RGB, at least 0), `ambient_intensity` "
-        "(at least 0), `sky_color` (a vec3, at least 0) and `exposure` (above 0); a field left out keeps its value, "
-        "and calling it every tick is fine. An unknown field or a value out of range is an error naming it. As "
+        "(at least 0), `sky_color` (a vec3, at least 0), `exposure` (above 0) and `reflection_intensity` (at least 0: "
+        "how much of the sky the lit surfaces reflect with a Fresnel term, 0 by default); a field left out keeps its "
+        "value, and calling it every tick is fine. An unknown field or a value out of range is an error naming it. As "
         "`world_set_environment` in the C API, it also removes the default sun of a world with no light. When the "
         "host and a script both set the environment, the later write wins: the host's call happens between frames, "
         "the script's at the sync point inside the next frame.");
     ok &= registry->Add<&EnvironmentGet>("environment", "get", ThreadRule::WorldRead, "",
-                                         "Returns a table with `ambient_color`, `ambient_intensity`, `sky_color` and "
-                                         "`exposure` as of the tick start.");
+                                         "Returns a table with `ambient_color`, `ambient_intensity`, `sky_color`, "
+                                         "`exposure` and `reflection_intensity` as of the tick start.");
     ok &= registry->Add<&LightSet>(
         "light", "set", ThreadRule::WorldWrite, "e, fields",
         "Changes fields of the light of entity `e` at the sync point: any of `color` (a vec3, linear RGB, at least "

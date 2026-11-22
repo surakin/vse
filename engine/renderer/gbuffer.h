@@ -231,17 +231,20 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 /// Creates a G-buffer material with the options' shader modules and sensible parameters.
 ///
 /// The parameters start as base color white, roughness 0.5, metallic 0, emissive colour black, alpha cutoff 0.5 and
-/// occlusion 1, `albedo_uv` (1, 1, 0, 0), `albedo_uv_outside` (0, 0, 0, 0) and occlusion strength 1; change them with
-/// the material system's setters (`base_color`, `roughness`, `metallic`, `emissive_color`, `alpha_cutoff`, `occlusion`,
-/// `flags`, `albedo_uv`, `albedo_uv_outside`, `occlusion_strength`), and the textures `albedo_tex`, `normal_tex`,
-/// `metallic_roughness_tex`, `occlusion_tex` and `emissive_tex` (glTF's maps: the first two linear, roughness times the
-/// green channel, metallic times the blue, occlusion times `1 + occlusion_strength * (red - 1)`; the emissive map sRGB,
-/// the emitted radiance `emissive_color.rgb * emissive_color.a * emissive_tex.rgb`, with the strength in `a`; unset
-/// they are white, so the parameters alone decide; all three read the mesh's coordinates untransformed, as the normal
-/// map does). `albedo_uv` is (scale u, scale v, offset u, offset v): the albedo is sampled at uv * scale + offset. When
-/// `albedo_uv_outside` has alpha above 0, coordinates outside 0..1 show its rgb (linear) instead of the texture, and
-/// coordinates inside are kept half a texel from the edge so that filtering never reads the other side; with alpha 0
-/// the sampler's address mode applies as before.
+/// occlusion 1, `albedo_uv` (1, 1, 0, 0), `albedo_uv_outside` (0, 0, 0, 0), occlusion strength 1 and
+/// `emissive_from_albedo` 0; change them with the material system's setters (`base_color`, `roughness`, `metallic`,
+/// `emissive_color`, `alpha_cutoff`, `occlusion`, `flags`, `albedo_uv`, `albedo_uv_outside`, `occlusion_strength`,
+/// `emissive_from_albedo`), and the textures `albedo_tex`, `normal_tex`, `metallic_roughness_tex`, `occlusion_tex` and
+/// `emissive_tex` (glTF's maps: the first two linear, roughness times the green channel, metallic times the blue,
+/// occlusion times `1 + occlusion_strength * (red - 1)`; the emissive map sRGB, the emitted radiance
+/// `emissive_color.rgb * emissive_color.a * emissive_tex.rgb`, with the strength in `a`; unset they are white, so the
+/// parameters alone decide; all three read the mesh's coordinates untransformed, as the normal map does). `albedo_uv`
+/// is (scale u, scale v, offset u, offset v): the albedo is sampled at uv * scale + offset. When `albedo_uv_outside`
+/// has alpha above 0, coordinates outside 0..1 show its rgb (linear) instead of the texture, and coordinates inside are
+/// kept half a texel from the edge so that filtering never reads the other side; with alpha 0 the sampler's address
+/// mode applies as before. `emissive_from_albedo` (a float, default 0) makes the albedo glow: the emitted light also
+/// gets `albedo * emissive_from_albedo`, with the picture's fit and bars (a lit display); an unlit material emits
+/// nothing.
 ///
 /// - Param materials: the system.
 /// - Param templates: from [[renderer::CreateGBufferTemplates]].

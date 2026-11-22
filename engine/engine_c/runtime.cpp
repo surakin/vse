@@ -1580,7 +1580,8 @@ u32 KindOfSlot(StringView name)
         return ENGINE_SLOT_COLOR;
     }
     if (name == StringView("roughness") || name == StringView("metallic") || name == StringView("alpha_cutoff") ||
-        name == StringView("occlusion") || name == StringView("occlusion_strength"))
+        name == StringView("occlusion") || name == StringView("occlusion_strength") ||
+        name == StringView("emissive_from_albedo"))
     {
         return ENGINE_SLOT_FLOAT;
     }
@@ -1707,10 +1708,11 @@ engine_status SetSlotOverride(engine_handle world, u64 key, engine_string slot, 
     const u32 expected = KindOfSlot(name);
     if (expected == 0)
     {
-        SetLastError("invalid_argument: the material has no slot '%.*s' (base_color, roughness, metallic, "
-                     "emissive_color, alpha_cutoff, occlusion, occlusion_strength, albedo_tex, normal_tex, "
-                     "metallic_roughness_tex, occlusion_tex, emissive_tex, albedo_uv, albedo_uv_outside)",
-                     static_cast<int>(slot.length < 40 ? slot.length : 40), slot.data != nullptr ? slot.data : "");
+        SetLastError(
+            "invalid_argument: the material has no slot '%.*s' (base_color, roughness, metallic, "
+            "emissive_color, alpha_cutoff, occlusion, occlusion_strength, albedo_tex, normal_tex, "
+            "metallic_roughness_tex, occlusion_tex, emissive_tex, albedo_uv, albedo_uv_outside, emissive_from_albedo)",
+            static_cast<int>(slot.length < 40 ? slot.length : 40), slot.data != nullptr ? slot.data : "");
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }
     const bool host_texture = expected == ENGINE_SLOT_TEXTURE && value->kind == ENGINE_SLOT_HOST_TEXTURE;
@@ -2587,7 +2589,8 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
 
 engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environment* environment)
 {
-    const engine_status checked = CheckInStruct(environment, sizeof(engine_environment), "engine_environment");
+    const engine_status checked = CheckInStruct(environment, offsetof(engine_environment, reflection_intensity),
+                                                "engine_environment");
     if (checked != ENGINE_OK)
     {
         return checked;
@@ -2614,6 +2617,11 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the exposure is not finite and > 0");
     }
+    const bool has_reflection = StructSizeOf(environment) >= sizeof(engine_environment);
+    if (has_reflection && !(Finite(environment->reflection_intensity) && environment->reflection_intensity >= 0.0f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the reflection intensity is not finite and >= 0");
+    }
     Runtime* runtime = CurrentRuntime();
     if (runtime == nullptr)
     {
@@ -2627,6 +2635,7 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
         return found;
     }
     Environment value;
+    value.reflection_intensity = has_reflection ? environment->reflection_intensity : 0.0f;
     for (int i = 0; i < 3; ++i)
     {
         value.ambient_color[i] = environment->ambient_color[i];

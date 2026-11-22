@@ -131,6 +131,7 @@ struct Environment
     f32 ambient_intensity = 0.2f;
     f32 sky_color[3] = {0.0f, 0.0f, 0.0f};
     f32 exposure = 1.0f;
+    f32 reflection_intensity = 0.0f;
 };
 
 /// The component of ENGINE_COMPONENT_MESH_REFERENCE: what an entity draws.

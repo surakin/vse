@@ -17,6 +17,8 @@
 //   N = normalize(world normal); NORMAL_MAP: t = sample(normal_tex, uv).xyz * 2 - 1,
 //       T = normalize(world tangent.xyz - N * dot(N, tangent.xyz)), B = cross(N, T) * tangent.w,
 //       N = normalize(T * t.x + B * t.y + N * t.z)
+//   emissive_from_albedo (float, default 0): the albedo above (picture, base colour, uv fit and bars) is also emitted, times this
+//       value, so a display glows with its own picture; an unlit material still writes no emissive
 //   emissive (glTF): emissive_color.rgb * emissive_color.a * sample(emissive_tex, uv).rgb (the strength in a is
 //       KHR_materials_emissive_strength; the texture is sRGB, decoded on sample; an unset slot is white); an unlit
 //       material writes no emissive (its colour is the base colour)
@@ -44,6 +46,7 @@ struct MaterialParams {
     float alpha_cutoff;
     float occlusion;
     uint flags;
+    float emissive_from_albedo;  // adds albedo * this to the emitted light (0: nothing): a lit display; uses albedo_uv
     float4 albedo_uv;          // scale u, scale v, offset u, offset v
     float4 albedo_uv_outside;  // linear rgb shown outside the picture; a = 0: no mask (the sampler's address mode rules)
     float4 emissive_color;     // linear rgb times the strength in a (glTF's emissiveFactor and emissiveStrength)
@@ -117,7 +120,8 @@ FragmentOutput main(FragmentInput input) {
                              float(material.flags) / 255.0);
     const bool unlit = (material.flags & 1u) != 0u;
     const float3 emitted = material.emissive_color.rgb * material.emissive_color.a *
-                           emissive_tex.Sample(linear_sampler, input.uv).rgb;
+                               emissive_tex.Sample(linear_sampler, input.uv).rgb +
+                           albedo * material.emissive_from_albedo;
     // Alpha is the surface's: an alpha-blended material blends each target by its own output alpha, so 0 here would
     // drop the glow of a blended surface.
     output.emissive = float4(unlit ? float3(0.0, 0.0, 0.0) : emitted, alpha);

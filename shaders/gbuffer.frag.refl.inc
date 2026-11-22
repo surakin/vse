@@ -6,7 +6,7 @@
 
 namespace vse::shaders {
 
-inline constexpr usize kGbufferFragReflByteCount = 654;
+inline constexpr usize kGbufferFragReflByteCount = 695;
 
 inline constexpr u8 kGbufferFragRefl[kGbufferFragReflByteCount] = {
     83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
@@ -28,7 +28,7 @@ inline constexpr u8 kGbufferFragRefl[kGbufferFragReflByteCount] = {
     105, 118, 101, 95, 116, 101, 120, 1, 0, 0, 0, 6, 0, 0, 0, 2,
     1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0,
     4, 0, 0, 0, 1, 0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97,
-    108, 80, 97, 114, 97, 109, 115, 96, 0, 0, 0, 10, 0, 0, 0, 10,
+    108, 80, 97, 114, 97, 109, 115, 96, 0, 0, 0, 11, 0, 0, 0, 10,
     98, 97, 115, 101, 95, 99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0,
     0, 0, 1, 0, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 9, 114,
     111, 117, 103, 104, 110, 101, 115, 115, 16, 0, 0, 0, 4, 0, 0, 0,
@@ -42,14 +42,17 @@ inline constexpr u8 kGbufferFragRefl[kGbufferFragReflByteCount] = {
     0, 9, 111, 99, 99, 108, 117, 115, 105, 111, 110, 32, 0, 0, 0, 4,
     0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5,
     102, 108, 97, 103, 115, 36, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 9, 97, 108, 98, 101, 100, 111,
-    95, 117, 118, 48, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 17, 97, 108, 98, 101, 100, 111, 95, 117,
-    118, 95, 111, 117, 116, 115, 105, 100, 101, 64, 0, 0, 0, 16, 0, 0,
-    0, 1, 0, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 14, 101, 109,
-    105, 115, 115, 105, 118, 101, 95, 99, 111, 108, 111, 114, 80, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 20, 101, 109, 105, 115, 115, 105,
+    118, 101, 95, 102, 114, 111, 109, 95, 97, 108, 98, 101, 100, 111, 40, 0,
+    0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 9, 97, 108, 98, 101, 100, 111, 95, 117, 118, 48, 0, 0, 0,
     16, 0, 0, 0, 1, 0, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0, 0, 0,
+    17, 97, 108, 98, 101, 100, 111, 95, 117, 118, 95, 111, 117, 116, 115, 105,
+    100, 101, 64, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 14, 101, 109, 105, 115, 115, 105, 118, 101, 95,
+    99, 111, 108, 111, 114, 80, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255,
+    255, 255, 255, 0, 0, 0, 0,
 };
 
 // Block sizes and member offsets, for static_asserts on the C++ structs copied into these blocks.
@@ -61,6 +64,7 @@ inline constexpr u32 kGbufferFragMaterialParamsOcclusionStrengthOffset = 24;
 inline constexpr u32 kGbufferFragMaterialParamsAlphaCutoffOffset = 28;
 inline constexpr u32 kGbufferFragMaterialParamsOcclusionOffset = 32;
 inline constexpr u32 kGbufferFragMaterialParamsFlagsOffset = 36;
+inline constexpr u32 kGbufferFragMaterialParamsEmissiveFromAlbedoOffset = 40;
 inline constexpr u32 kGbufferFragMaterialParamsAlbedoUvOffset = 48;
 inline constexpr u32 kGbufferFragMaterialParamsAlbedoUvOutsideOffset = 64;
 inline constexpr u32 kGbufferFragMaterialParamsEmissiveColorOffset = 80;

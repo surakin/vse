@@ -6,7 +6,7 @@
 
 namespace vse::shaders {
 
-inline constexpr usize kLightingFragReflByteCount = 723;
+inline constexpr usize kLightingFragReflByteCount = 726;
 
 inline constexpr u8 kLightingFragRefl[kLightingFragReflByteCount] = {
     83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
@@ -48,13 +48,13 @@ inline constexpr u8 kLightingFragRefl[kLightingFragReflByteCount] = {
     0, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4, 1, 0, 0, 0, 0,
     0, 0, 0, 0, 17, 100, 105, 114, 101, 99, 116, 105, 111, 110, 97, 108,
     95, 99, 111, 117, 110, 116, 16, 0, 0, 0, 4, 0, 0, 0, 0, 2,
-    1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 112, 97, 100, 48, 20,
-    0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0,
-    0, 0, 0, 4, 112, 97, 100, 49, 24, 0, 0, 0, 4, 0, 0, 0,
-    0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 112, 97, 100,
-    50, 28, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 2, 0, 0, 0, 0,
-    0, 0, 0,
+    1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 115, 107, 121, 95, 114,
+    20, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 5, 115, 107, 121, 95, 103, 24, 0, 0, 0, 4, 0,
+    0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 115,
+    107, 121, 95, 98, 28, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 2, 0,
+    0, 0, 0, 0, 0, 0,
 };
 
 // Block sizes and member offsets, for static_asserts on the C++ structs copied into these blocks.
@@ -69,8 +69,8 @@ inline constexpr u32 kLightingFragFrameDataTimeOffset = 288;
 inline constexpr u32 kLightingFragPushSize = 32;
 inline constexpr u32 kLightingFragPushAmbientOffset = 0;
 inline constexpr u32 kLightingFragPushDirectionalCountOffset = 16;
-inline constexpr u32 kLightingFragPushPad0Offset = 20;
-inline constexpr u32 kLightingFragPushPad1Offset = 24;
-inline constexpr u32 kLightingFragPushPad2Offset = 28;
+inline constexpr u32 kLightingFragPushSkyROffset = 20;
+inline constexpr u32 kLightingFragPushSkyGOffset = 24;
+inline constexpr u32 kLightingFragPushSkyBOffset = 28;
 
 } // namespace vse::shaders

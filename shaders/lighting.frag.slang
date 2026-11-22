@@ -9,6 +9,7 @@
 //   N     = OctDecode(normal.rg); albedo.rgb, occlusion = albedo.a; roughness, metallic = material.rg; flags = material.a * 255 (bit 0: unlit)
 //   V     = normalize(camera_position - world)
 //   color = ShadeAmbient(ambient) + sum over directional lights of ShadeLight(L = light.direction, radiance = light.color)
+//           + ShadeSkyReflection(sky colour, intensity)        (the constant environment reflection, 0 by default)
 //           + emissive.rgb                                     (the G-buffer's emissive target, added here once)
 // The lighting model is in lighting_common.slang.
 //
@@ -17,7 +18,7 @@
 //   set 0, binding 0: uniform buffer FrameData (renderer::FrameData, 304 bytes)
 //   set 1, binding 0: albedo; 1: normal; 2: material; 3: depth (sampled textures, read with Load); 4: storage buffer of
 //       LightData (48 bytes each, directional lights first); 5: emissive (sampled texture, read with Load)
-//   push constants (32 bytes): float4 ambient (rgb); uint directional_count; 3 pad
+//   push constants (32 bytes): float4 ambient (rgb; a = sky reflection intensity); uint directional_count; float sky_r, sky_g, sky_b
 
 #include "target_common.slang"  // ENGINE_REGISTER
 #include "gbuffer_common.slang"
@@ -48,11 +49,11 @@ struct LightData {
 [[vk::binding(5, 1)]] Texture2D<float4> emissive_tex ENGINE_REGISTER(t5, space1);
 
 struct Push {
-    float4 ambient;
+    float4 ambient;            // rgb: the ambient light; a: the sky reflection's intensity (0: no reflection)
     uint directional_count;
-    uint pad0;
-    uint pad1;
-    uint pad2;
+    float sky_r;               // linear rgb of the sky the lit surfaces reflect (three scalars: a float3 would move to offset 32)
+    float sky_g;
+    float sky_b;
 };
 [[vk::push_constant]] ConstantBuffer<Push> push ENGINE_REGISTER(b0, space15);
 
@@ -99,6 +100,7 @@ FragmentOutput main(FragmentInput input) {
     for (uint i = 0u; i < push.directional_count; ++i) {
         color += ShadeLight(s, V, lights[i].direction.xyz, lights[i].color.rgb);
     }
+    color += ShadeSkyReflection(s, V, float3(push.sky_r, push.sky_g, push.sky_b), push.ambient.a);
     color += emissive_tex.Load(int3(pixel, 0)).rgb;
     output.color = float4(color, 1.0);
     return output;

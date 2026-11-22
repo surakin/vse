@@ -205,13 +205,15 @@ public:
     ///
     /// - Param exposure: positive.
     /// - Param background: linear RGB, not negative.
+    /// - Param sky_reflection: how much of the background the lit surfaces reflect, not negative; 0 reflects nothing.
     /// - Fails: never.
-    void SetEnvironment(f32 exposure, const Vec3& background)
+    void SetEnvironment(f32 exposure, const Vec3& background, f32 sky_reflection = 0.0f)
     {
         exposure_ = exposure;
         if (lighting_)
         {
             lighting_->SetBackground(background);
+            lighting_->SetSkyReflection(sky_reflection);
         }
     }
     /// Renders one frame of `scene` seen by `camera`. See Renderer::RenderFrame.

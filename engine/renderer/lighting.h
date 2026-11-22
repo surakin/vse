@@ -72,6 +72,19 @@ struct SurfacePoint
 /// - Fails: never.
 Vec3 ShadeLight(const SurfacePoint& surface, const Vec3& view, const Vec3& light, const Vec3& radiance);
 
+/// Returns the constant environment reflection: `sky * intensity * F * occlusion`, where F is Schlick's Fresnel from
+/// `F0` (0.04 for a dielectric, the albedo for a metal) up to `max(1 - roughness, F0)` at a glancing angle (the
+/// roughness-aware ceiling), so a smooth dielectric shows about 4% of the sky head on and nearly all of it at a
+/// glancing angle. Mirrors `lighting_common.slang`.
+///
+/// - Param surface: the decoded surface.
+/// - Param view: unit vector from the surface toward the viewer.
+/// - Param sky: the linear colour of the sky.
+/// - Param intensity: not negative; 0 gives zero.
+/// - Returns: the linear RGB contribution.
+/// - Fails: never.
+Vec3 ShadeSkyReflection(const SurfacePoint& surface, const Vec3& view, const Vec3& sky, f32 intensity);
+
 /// Returns the ambient term: `albedo * (1 - metallic) * ambient * occlusion`.
 ///
 /// Emission is not part of it: the G-buffer's emissive target holds it, and the lighting pass adds it as it is.
@@ -239,6 +252,14 @@ public:
     /// - Fails: never.
     void SetBackground(const Vec3& color) { background_ = color; }
 
+    /// Sets how much of the background colour (the sky) the lit surfaces reflect: the sky times `intensity` times a
+    /// Fresnel term (about 4% head on for a smooth dielectric, nearly all at a glancing angle). 0, the default, adds
+    /// nothing. Takes effect from the next `Prepare`.
+    ///
+    /// - Param intensity: not negative.
+    /// - Fails: never.
+    void SetSkyReflection(f32 intensity) { sky_reflection_ = intensity; }
+
     /// Returns the number of light volume draws planned by the last `Prepare`.
     /// - Fails: never.
     u32 PointDrawsPlanned() const { return static_cast<u32>(point_draws_.Size()); }
@@ -261,9 +282,9 @@ public:
 private:
     struct Push
     {
-        Vec4 ambient;
+        Vec4 ambient;  // w: the sky reflection's intensity
         u32 directional_count = 0;
-        u32 pad[3] = {};
+        f32 sky[3] = {};
     };
     static void Record(const PassExecuteContext& context, void* user);
     void Build();
@@ -289,6 +310,7 @@ private:
     BufferRegion lights_;
     Vector<PointDraw> point_draws_;
     Vec3 background_ = Vec3(0.0f, 0.0f, 0.0f);
+    f32 sky_reflection_ = 0.0f;
     Atomic<u32> point_draws_recorded_{0};
     u32 prepared_width_ = 0;
     u32 prepared_height_ = 0;

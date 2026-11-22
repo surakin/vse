@@ -132,7 +132,7 @@ static const char kScript[] =
     "    local env = environment.get()\n"
     "    if t == 1 then\n"
     "      -- the defaults, then a light and a sky: nothing of it is visible in this tick\n"
-    "      report(1, env.ambient_color.x, env.ambient_intensity, env.sky_color.z, env.exposure)\n"
+    "      report(1, env.ambient_color.x, env.ambient_intensity, env.sky_color.z, env.exposure, env.reflection_intensity)\n"
     "      light.create(self.me, 'directional', {color = vec3.new(1, 0.5, 0.25), intensity = 2})\n"
     "      environment.set({sky_color = vec3.new(0.1, 0.2, 0.3), exposure = 2})\n"
     "      self.child = entity.spawn(nil)\n"
@@ -143,9 +143,9 @@ static const char kScript[] =
     "                  env.ambient_intensity)\n"
     "      light.set(self.me, {intensity = 0.5})\n"
     "    elseif t == 3 then\n"
-    "      environment.set({ambient_intensity = 0.7})\n"
+    "      environment.set({ambient_intensity = 0.7, reflection_intensity = 0.25})\n"
     "    elseif t == 4 then\n"
-    "      report(4, env.sky_color.y, env.exposure, env.ambient_intensity, env.ambient_color.x)\n"
+    "      report(4, env.sky_color.y, env.exposure, env.ambient_intensity, env.ambient_color.x, env.reflection_intensity)\n"
     "    elseif t == 5 then\n"
     "      -- the errors\n"
     "      local a = fails(environment.set, {bogus = 1})\n"
@@ -264,13 +264,13 @@ static void TestState(engine_handle engine)
     }
     /* tick 1: the defaults (white ambient at 0.2, a black sky, exposure 1) */
     CHECK(g_rows[1].seen && Near(g_rows[1].v[0], 1.0) && Near(g_rows[1].v[1], 0.2) && Near(g_rows[1].v[2], 0.0) &&
-          Near(g_rows[1].v[3], 1.0));
+          Near(g_rows[1].v[3], 1.0) && Near(g_rows[1].v[4], 0.0));
     /* tick 2: the sky is set, the ambient light kept; the child's light.set before its light existed was an error */
     CHECK(g_rows[2].seen && Near(g_rows[2].v[0], 0.1) && Near(g_rows[2].v[1], 0.2) && Near(g_rows[2].v[2], 0.3) &&
           Near(g_rows[2].v[3], 2.0) && Near(g_rows[2].v[4], 1.0) && Near(g_rows[2].v[5], 0.2));
     /* tick 4: a one-field call kept the rest */
     CHECK(g_rows[4].seen && Near(g_rows[4].v[0], 0.2) && Near(g_rows[4].v[1], 2.0) && Near(g_rows[4].v[2], 0.7) &&
-          Near(g_rows[4].v[3], 1.0));
+          Near(g_rows[4].v[3], 1.0) && Near(g_rows[4].v[4], 0.25));
     /* tick 5: every error named its field (or its reason) */
     CHECK(g_rows[5].seen);
     for (k = 0; k < 9; ++k)

@@ -783,7 +783,12 @@ extern "C"
      * multiplies it), and the coordinates inside are kept half a texel from the picture's edge so that filtering never
      * reads across it (the same on every graphics API); with alpha 0 the texture's address mode applies. The normal
      * map keeps the mesh's own coordinates. To fit a frame of aspect a on a screen of aspect s: for a > s scale v by
-     * a / s and offset v by (1 - a / s) / 2; for a < s scale u by s / a and offset u by (1 - s / a) / 2. */
+     * a / s and offset v by (1 - a / s) / 2; for a < s scale u by s / a and offset u by (1 - s / a) / 2.
+     *
+     * A display that glows (maintenance, 2026-11-22): ENGINE_SLOT_FLOAT for "emissive_from_albedo" (default 0) makes
+     * the albedo emit: the surface adds albedo * this value to its emitted light, after the lights, where the albedo is
+     * the picture as fitted by "albedo_uv" and "albedo_uv_outside" times base_color; the bars glow with their own
+     * colour (black stays black). */
     typedef struct engine_slot_override
     {
         uint32_t struct_size;
@@ -1030,6 +1035,10 @@ extern "C"
         float ambient_intensity; /* >= 0 */
         float sky_color[3];      /* linear RGB behind the scene, before the tone map */
         float exposure;          /* > 0: the tone map's scale */
+        /* >= 0: how much of sky_color the lit surfaces reflect, times a Fresnel term (about 4% head on for a smooth
+         * dielectric, nearly all of it at a glancing angle; a constant colour, no cube map). 0 reflects nothing. The
+         * first version of the struct ended before this field: a struct_size that does not cover it means 0. */
+        float reflection_intensity;
     } engine_environment;
 
     /* A job: called once, on one of the engine's worker threads (never on the thread that submitted it), with the
