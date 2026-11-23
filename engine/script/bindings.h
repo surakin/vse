@@ -259,6 +259,15 @@ template <> struct Codec<Vec3>
     static Vec3 Get(const Value& v) { return v.AsVec3(); }
     static Value Put(Vec3 x) { return Value::FromVec3(x); }
 };
+/// A world position crosses as a three-component vector in double precision.
+template <> struct Codec<Vec3d>
+{
+    static constexpr const char* kName = "Vec3";
+    static constexpr bool kIsEntity = false;
+    static bool Check(const Value& v) { return v.Kind() == ValueKind::Vec3; }
+    static Vec3d Get(const Value& v) { return v.AsVec3d(); }
+    static Value Put(Vec3d x) { return Value::FromVec3d(x); }
+};
 template <> struct Codec<Vec4>
 {
     static constexpr const char* kName = "Vec4";

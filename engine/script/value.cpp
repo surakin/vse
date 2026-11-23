@@ -80,6 +80,10 @@ Value::Value(Value&& other) noexcept
     {
         lanes_[i] = other.lanes_[i];
     }
+    for (u32 i = 0; i < 3; ++i)
+    {
+        wide_[i] = other.wide_[i];
+    }
     other.Clear();
 }
 
@@ -107,6 +111,10 @@ Value& Value::operator=(Value&& other) noexcept
         {
             lanes_[i] = other.lanes_[i];
         }
+        for (u32 i = 0; i < 3; ++i)
+        {
+            wide_[i] = other.wide_[i];
+        }
         text_ = Move(other.text_);
         bytes_ = Move(other.bytes_);
         items_ = Move(other.items_);
@@ -130,6 +138,10 @@ void Value::Clear()
     {
         lanes_[i] = 0.0f;
     }
+    for (u32 i = 0; i < 3; ++i)
+    {
+        wide_[i] = 0.0;
+    }
     entity_ = ecs::Entity();
     text_ = String<HeapAllocator>(HeapAllocator::Default());
     bytes_ = Vector<u8>();
@@ -149,6 +161,10 @@ void Value::CopyFrom(const Value& other)
     for (u32 i = 0; i < 4; ++i)
     {
         lanes_[i] = other.lanes_[i];
+    }
+    for (u32 i = 0; i < 3; ++i)
+    {
+        wide_[i] = other.wide_[i];
     }
     text_ = String<HeapAllocator>(HeapAllocator::Default(), other.text_.View());
     bytes_.Append(other.bytes_.Data(), other.bytes_.Size());
@@ -222,11 +238,16 @@ Value Value::FromVec2(Vec2 value)
 
 Value Value::FromVec3(Vec3 value)
 {
+    return FromVec3d(Vec3d(value));
+}
+
+Value Value::FromVec3d(Vec3d value)
+{
     Value v;
     v.kind_ = ValueKind::Vec3;
-    v.lanes_[0] = value.x;
-    v.lanes_[1] = value.y;
-    v.lanes_[2] = value.z;
+    v.wide_[0] = value.x;
+    v.wide_[1] = value.y;
+    v.wide_[2] = value.z;
     return v;
 }
 
@@ -325,7 +346,13 @@ Vec2 Value::AsVec2() const
 Vec3 Value::AsVec3() const
 {
     ENGINE_ASSERT(kind_ == ValueKind::Vec3, "script::Value::AsVec3: the value is not a Vec3");
-    return Vec3(lanes_[0], lanes_[1], lanes_[2]);
+    return AsVec3d().Narrow();
+}
+
+Vec3d Value::AsVec3d() const
+{
+    ENGINE_ASSERT(kind_ == ValueKind::Vec3, "script::Value::AsVec3d: the value is not a Vec3");
+    return Vec3d(wide_[0], wide_[1], wide_[2]);
 }
 
 Vec4 Value::AsVec4() const
@@ -501,7 +528,7 @@ static ValueCheck CheckNode(const Value& v, CheckState& state)
         }
         break;
     case ValueKind::Vec3:
-        if (finite && (!IsFinite(v.AsVec3().x) || !IsFinite(v.AsVec3().y) || !IsFinite(v.AsVec3().z)))
+        if (finite && (!IsFinite(v.AsVec3d().x) || !IsFinite(v.AsVec3d().y) || !IsFinite(v.AsVec3d().z)))
         {
             return ValueCheck::NotFinite;
         }
@@ -579,8 +606,10 @@ bool Value::Equals(const Value& other) const
     case ValueKind::Int: return int_ == other.int_;
     case ValueKind::Float: return SameBits(float_, other.float_);
     case ValueKind::Text: return text_.View() == other.text_.View();
-    case ValueKind::Vec2:
     case ValueKind::Vec3:
+        return SameBits(wide_[0], other.wide_[0]) && SameBits(wide_[1], other.wide_[1]) &&
+               SameBits(wide_[2], other.wide_[2]);
+    case ValueKind::Vec2:
     case ValueKind::Vec4:
     case ValueKind::Quat:
         for (u32 i = 0; i < 4; ++i)
@@ -633,9 +662,9 @@ static void HashNode(const Value& v, Hasher& h)
         h.F32(v.AsVec2().y);
         break;
     case ValueKind::Vec3:
-        h.F32(v.AsVec3().x);
-        h.F32(v.AsVec3().y);
-        h.F32(v.AsVec3().z);
+        h.F64(v.AsVec3d().x);
+        h.F64(v.AsVec3d().y);
+        h.F64(v.AsVec3d().z);
         break;
     case ValueKind::Vec4:
         h.F32(v.AsVec4().x);

@@ -13,7 +13,7 @@ namespace vse::script
 {
 
 /// The version of the value record written by [[script::EncodeValueRecord]].
-inline constexpr u8 kValueRecordVersion = 1;
+inline constexpr u8 kValueRecordVersion = 2;
 
 /// What reading a value record found.
 ///

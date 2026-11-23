@@ -2203,30 +2203,30 @@ script::BindingInfo::doc	variable	script	script-bindinginfo-doc	script.md	engine
 script::BindingInfo::rule	variable	script	script-bindinginfo-rule	script.md	engine/script/bindings.h:142
 script::BindingInfo::arity	variable	script	script-bindinginfo-arity	script.md	engine/script/bindings.h:144
 script::BindingInfo::BindingInfo()	function	script	script-bindinginfo-bindinginfo	script.md	engine/script/bindings.h:147
-script::Installation	class	script	script-installation	script.md	engine/script/bindings.h:483
-script::Installation::Installed() const	function	script	script-installation-installed-const	script.md	engine/script/bindings.h:489
-script::Installation::Refusing() const	function	script	script-installation-refusing-const	script.md	engine/script/bindings.h:493
-script::Installation::Skipped() const	function	script	script-installation-skipped-const	script.md	engine/script/bindings.h:497
-script::Installation::~Installation()	function	script	script-installation-tilde-installation	script.md	engine/script/bindings.h:500
-script::Installation::Installation(const Installation&)	function	script	script-installation-installation-const-installation-amp	script.md	engine/script/bindings.h:501
-script::Installation::operator=(const Installation&)	function	script	script-installation-operator-eq-const-installation-amp	script.md	engine/script/bindings.h:502
-script::Installation::Installation()	function	script	script-installation-installation	script.md	engine/script/bindings.h:504
-script::BindingRegistry	class	script	script-bindingregistry	script.md	engine/script/bindings.h:532
-script::BindingRegistry::BindingRegistry()	function	script	script-bindingregistry-bindingregistry	script.md	engine/script/bindings.h:536
-script::BindingRegistry::~BindingRegistry()	function	script	script-bindingregistry-tilde-bindingregistry	script.md	engine/script/bindings.h:538
-script::BindingRegistry::BindingRegistry(const BindingRegistry&)	function	script	script-bindingregistry-bindingregistry-const-bindingregistry-amp	script.md	engine/script/bindings.h:539
-script::BindingRegistry::operator=(const BindingRegistry&)	function	script	script-bindingregistry-operator-eq-const-bindingregistry-amp	script.md	engine/script/bindings.h:540
-script::BindingRegistry::Add(StringView,StringView,ThreadRule,StringView,StringView,Outcome*)	function	script	script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star	script.md	engine/script/bindings.h:556
-script::BindingRegistry::AddDynamic(StringView,StringView,ThreadRule,StringView,StringView,Outcome(*)(void*,Span<const Value>,Vector<Value>*),void*,Outcome*)	function	script	script-bindingregistry-adddynamic-stringview-stringview-threadrule-stringview-stringview-outcome-star-void-star-span-lt-const-value-gt-vector-lt-value-gt-star-void-star-outcome-star	script.md	engine/script/bindings.h:583
-script::BindingRegistry::Count() const	function	script	script-bindingregistry-count-const	script.md	engine/script/bindings.h:590
-script::BindingRegistry::At(usize) const	function	script	script-bindingregistry-at-usize-const	script.md	engine/script/bindings.h:595
-script::BindingRegistry::Find(StringView) const	function	script	script-bindingregistry-find-stringview-const	script.md	engine/script/bindings.h:602
-script::BindingRegistry::FindById(u32) const	function	script	script-bindingregistry-findbyid-u32-const	script.md	engine/script/bindings.h:609
-script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:621
-script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:629
-script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:648
-script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:659
-script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:670
+script::Installation	class	script	script-installation	script.md	engine/script/bindings.h:492
+script::Installation::Installed() const	function	script	script-installation-installed-const	script.md	engine/script/bindings.h:498
+script::Installation::Refusing() const	function	script	script-installation-refusing-const	script.md	engine/script/bindings.h:502
+script::Installation::Skipped() const	function	script	script-installation-skipped-const	script.md	engine/script/bindings.h:506
+script::Installation::~Installation()	function	script	script-installation-tilde-installation	script.md	engine/script/bindings.h:509
+script::Installation::Installation(const Installation&)	function	script	script-installation-installation-const-installation-amp	script.md	engine/script/bindings.h:510
+script::Installation::operator=(const Installation&)	function	script	script-installation-operator-eq-const-installation-amp	script.md	engine/script/bindings.h:511
+script::Installation::Installation()	function	script	script-installation-installation	script.md	engine/script/bindings.h:513
+script::BindingRegistry	class	script	script-bindingregistry	script.md	engine/script/bindings.h:541
+script::BindingRegistry::BindingRegistry()	function	script	script-bindingregistry-bindingregistry	script.md	engine/script/bindings.h:545
+script::BindingRegistry::~BindingRegistry()	function	script	script-bindingregistry-tilde-bindingregistry	script.md	engine/script/bindings.h:547
+script::BindingRegistry::BindingRegistry(const BindingRegistry&)	function	script	script-bindingregistry-bindingregistry-const-bindingregistry-amp	script.md	engine/script/bindings.h:548
+script::BindingRegistry::operator=(const BindingRegistry&)	function	script	script-bindingregistry-operator-eq-const-bindingregistry-amp	script.md	engine/script/bindings.h:549
+script::BindingRegistry::Add(StringView,StringView,ThreadRule,StringView,StringView,Outcome*)	function	script	script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star	script.md	engine/script/bindings.h:565
+script::BindingRegistry::AddDynamic(StringView,StringView,ThreadRule,StringView,StringView,Outcome(*)(void*,Span<const Value>,Vector<Value>*),void*,Outcome*)	function	script	script-bindingregistry-adddynamic-stringview-stringview-threadrule-stringview-stringview-outcome-star-void-star-span-lt-const-value-gt-vector-lt-value-gt-star-void-star-outcome-star	script.md	engine/script/bindings.h:592
+script::BindingRegistry::Count() const	function	script	script-bindingregistry-count-const	script.md	engine/script/bindings.h:599
+script::BindingRegistry::At(usize) const	function	script	script-bindingregistry-at-usize-const	script.md	engine/script/bindings.h:604
+script::BindingRegistry::Find(StringView) const	function	script	script-bindingregistry-find-stringview-const	script.md	engine/script/bindings.h:611
+script::BindingRegistry::FindById(u32) const	function	script	script-bindingregistry-findbyid-u32-const	script.md	engine/script/bindings.h:618
+script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:630
+script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:638
+script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:657
+script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:668
+script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:679
 script::kPlaceholdersPerPartition	variable	script	script-kplaceholdersperpartition	script.md	engine/script/command_buffer.h:19
 script::CommandRecord	struct	script	script-commandrecord	script.md	engine/script/command_buffer.h:24
 script::CommandRecord::order_key	variable	script	script-commandrecord-order-key	script.md	engine/script/command_buffer.h:27
@@ -2859,36 +2859,38 @@ script::Value::FromFloat(f64)	function	script	script-value-fromfloat-f64	script.
 script::Value::FromText(StringView)	function	script	script-value-fromtext-stringview	script.md	engine/script/value.h:133
 script::Value::FromVec2(Vec2)	function	script	script-value-fromvec2-vec2	script.md	engine/script/value.h:135
 script::Value::FromVec3(Vec3)	function	script	script-value-fromvec3-vec3	script.md	engine/script/value.h:137
-script::Value::FromVec4(Vec4)	function	script	script-value-fromvec4-vec4	script.md	engine/script/value.h:139
-script::Value::FromQuat(Quaternion)	function	script	script-value-fromquat-quaternion	script.md	engine/script/value.h:141
-script::Value::FromEntity(ecs::Entity)	function	script	script-value-fromentity-ecs-entity	script.md	engine/script/value.h:143
-script::Value::FromBytes(Span<const u8>)	function	script	script-value-frombytes-span-lt-const-u8-gt	script.md	engine/script/value.h:147
-script::Value::MakeArray()	function	script	script-value-makearray	script.md	engine/script/value.h:149
-script::Value::MakeMap()	function	script	script-value-makemap	script.md	engine/script/value.h:151
-script::Value::Kind() const	function	script	script-value-kind-const	script.md	engine/script/value.h:154
-script::Value::IsNil() const	function	script	script-value-isnil-const	script.md	engine/script/value.h:158
-script::Value::IsNumber() const	function	script	script-value-isnumber-const	script.md	engine/script/value.h:162
-script::Value::AsBool() const	function	script	script-value-asbool-const	script.md	engine/script/value.h:167
-script::Value::AsInt() const	function	script	script-value-asint-const	script.md	engine/script/value.h:171
-script::Value::AsFloat() const	function	script	script-value-asfloat-const	script.md	engine/script/value.h:175
-script::Value::ToDouble() const	function	script	script-value-todouble-const	script.md	engine/script/value.h:179
-script::Value::Text() const	function	script	script-value-text-const	script.md	engine/script/value.h:183
-script::Value::AsVec2() const	function	script	script-value-asvec2-const	script.md	engine/script/value.h:187
-script::Value::AsVec3() const	function	script	script-value-asvec3-const	script.md	engine/script/value.h:191
-script::Value::AsVec4() const	function	script	script-value-asvec4-const	script.md	engine/script/value.h:195
-script::Value::AsQuat() const	function	script	script-value-asquat-const	script.md	engine/script/value.h:199
-script::Value::AsEntity() const	function	script	script-value-asentity-const	script.md	engine/script/value.h:203
-script::Value::Bytes() const	function	script	script-value-bytes-const	script.md	engine/script/value.h:207
-script::Value::Size() const	function	script	script-value-size-const	script.md	engine/script/value.h:212
-script::Value::At(usize) const	function	script	script-value-at-usize-const	script.md	engine/script/value.h:216
-script::Value::KeyAt(usize) const	function	script	script-value-keyat-usize-const	script.md	engine/script/value.h:220
-script::Value::Find(StringView) const	function	script	script-value-find-stringview-const	script.md	engine/script/value.h:225
-script::Value::Push(Value&&)	function	script	script-value-push-value-amp-amp	script.md	engine/script/value.h:233
-script::Value::Set(StringView,Value&&)	function	script	script-value-set-stringview-value-amp-amp	script.md	engine/script/value.h:240
-script::Value::Depth() const	function	script	script-value-depth-const	script.md	engine/script/value.h:243
-script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:247
-script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:252
-script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:255
+script::Value::FromVec3d(Vec3d)	function	script	script-value-fromvec3d-vec3d	script.md	engine/script/value.h:139
+script::Value::FromVec4(Vec4)	function	script	script-value-fromvec4-vec4	script.md	engine/script/value.h:141
+script::Value::FromQuat(Quaternion)	function	script	script-value-fromquat-quaternion	script.md	engine/script/value.h:143
+script::Value::FromEntity(ecs::Entity)	function	script	script-value-fromentity-ecs-entity	script.md	engine/script/value.h:145
+script::Value::FromBytes(Span<const u8>)	function	script	script-value-frombytes-span-lt-const-u8-gt	script.md	engine/script/value.h:149
+script::Value::MakeArray()	function	script	script-value-makearray	script.md	engine/script/value.h:151
+script::Value::MakeMap()	function	script	script-value-makemap	script.md	engine/script/value.h:153
+script::Value::Kind() const	function	script	script-value-kind-const	script.md	engine/script/value.h:156
+script::Value::IsNil() const	function	script	script-value-isnil-const	script.md	engine/script/value.h:160
+script::Value::IsNumber() const	function	script	script-value-isnumber-const	script.md	engine/script/value.h:164
+script::Value::AsBool() const	function	script	script-value-asbool-const	script.md	engine/script/value.h:169
+script::Value::AsInt() const	function	script	script-value-asint-const	script.md	engine/script/value.h:173
+script::Value::AsFloat() const	function	script	script-value-asfloat-const	script.md	engine/script/value.h:177
+script::Value::ToDouble() const	function	script	script-value-todouble-const	script.md	engine/script/value.h:181
+script::Value::Text() const	function	script	script-value-text-const	script.md	engine/script/value.h:185
+script::Value::AsVec2() const	function	script	script-value-asvec2-const	script.md	engine/script/value.h:189
+script::Value::AsVec3() const	function	script	script-value-asvec3-const	script.md	engine/script/value.h:193
+script::Value::AsVec3d() const	function	script	script-value-asvec3d-const	script.md	engine/script/value.h:197
+script::Value::AsVec4() const	function	script	script-value-asvec4-const	script.md	engine/script/value.h:201
+script::Value::AsQuat() const	function	script	script-value-asquat-const	script.md	engine/script/value.h:205
+script::Value::AsEntity() const	function	script	script-value-asentity-const	script.md	engine/script/value.h:209
+script::Value::Bytes() const	function	script	script-value-bytes-const	script.md	engine/script/value.h:213
+script::Value::Size() const	function	script	script-value-size-const	script.md	engine/script/value.h:218
+script::Value::At(usize) const	function	script	script-value-at-usize-const	script.md	engine/script/value.h:222
+script::Value::KeyAt(usize) const	function	script	script-value-keyat-usize-const	script.md	engine/script/value.h:226
+script::Value::Find(StringView) const	function	script	script-value-find-stringview-const	script.md	engine/script/value.h:231
+script::Value::Push(Value&&)	function	script	script-value-push-value-amp-amp	script.md	engine/script/value.h:239
+script::Value::Set(StringView,Value&&)	function	script	script-value-set-stringview-value-amp-amp	script.md	engine/script/value.h:246
+script::Value::Depth() const	function	script	script-value-depth-const	script.md	engine/script/value.h:249
+script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:253
+script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:258
+script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:261
 script::kValueRecordVersion	variable	script	script-kvaluerecordversion	script.md	engine/script/value_codec.h:16
 script::ValueRecordStatus	enum	script	script-valuerecordstatus	script.md	engine/script/value_codec.h:21
 script::ValueRecordStatus::Ok	enumerator	script	script-valuerecordstatus-ok	script.md	engine/script/value_codec.h:24
@@ -6429,7 +6431,7 @@ audio::MusicPlayer::CurrentStartFrame() const	function	audio	audio-musicplayer-c
 audio::MusicPlayer::PlaylistPosition() const	function	audio	audio-musicplayer-playlistposition-const	audio.md	engine/audio/music.h:177
 audio::OcclusionQuery	class	audio	audio-occlusionquery	audio.md	engine/audio/occlusion.h:15
 audio::OcclusionQuery::~OcclusionQuery()	function	audio	audio-occlusionquery-tilde-occlusionquery	audio.md	engine/audio/occlusion.h:18
-audio::OcclusionQuery::Occlusion(const Vec3&,const Vec3&,u32*)	function	audio	audio-occlusionquery-occlusion-const-vec3-amp-const-vec3-amp-u32-star	audio.md	engine/audio/occlusion.h:28
+audio::OcclusionQuery::Occlusion(const Vec3d&,const Vec3d&,u32*)	function	audio	audio-occlusionquery-occlusion-const-vec3d-amp-const-vec3d-amp-u32-star	audio.md	engine/audio/occlusion.h:28
 audio::OcclusionConfig	struct	audio	audio-occlusionconfig	audio.md	engine/audio/occlusion.h:34
 audio::OcclusionConfig::tests_per_second	variable	audio	audio-occlusionconfig-tests-per-second	audio.md	engine/audio/occlusion.h:37
 audio::OcclusionConfig::max_tests_per_update	variable	audio	audio-occlusionconfig-max-tests-per-update	audio.md	engine/audio/occlusion.h:39
@@ -6714,7 +6716,7 @@ audio_physics::PhysicsOcclusionConfig::default_thickness	variable	audio_physics	
 audio_physics::PhysicsOcclusionConfig::PhysicsOcclusionConfig()	function	audio_physics	audio-physics-physicsocclusionconfig-physicsocclusionconfig	audio_physics.md	engine/audio_physics/physics_occlusion.h:32
 audio_physics::PhysicsOcclusion	class	audio_physics	audio-physics-physicsocclusion	audio_physics.md	engine/audio_physics/physics_occlusion.h:48
 audio_physics::PhysicsOcclusion::PhysicsOcclusion(const physics::PhysicsWorld*,const PhysicsOcclusionConfig&)	function	audio_physics	audio-physics-physicsocclusion-physicsocclusion-const-physics-physicsworld-star-const-physicsocclusionconfig-amp	audio_physics.md	engine/audio_physics/physics_occlusion.h:57
-audio_physics::PhysicsOcclusion::Occlusion(const Vec3&,const Vec3&,u32*)	function	audio_physics	audio-physics-physicsocclusion-occlusion-const-vec3-amp-const-vec3-amp-u32-star	audio_physics.md	engine/audio_physics/physics_occlusion.h:71
+audio_physics::PhysicsOcclusion::Occlusion(const Vec3d&,const Vec3d&,u32*)	function	audio_physics	audio-physics-physicsocclusion-occlusion-const-vec3d-amp-const-vec3d-amp-u32-star	audio_physics.md	engine/audio_physics/physics_occlusion.h:71
 net::AddressFamily	enum	net	net-addressfamily	net.md	engine/net/address.h:17
 net::AddressFamily::None	enumerator	net	net-addressfamily-none	net.md	engine/net/address.h:19
 net::AddressFamily::V4	enumerator	net	net-addressfamily-v4	net.md	engine/net/address.h:20

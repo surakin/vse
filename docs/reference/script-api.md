@@ -982,7 +982,7 @@ Takes a finished task's result (the host behind `task.result`): returns `{ statu
 
 ### `terrain.height`
 
-`(f32 x, f32 z) -> Value`
+`(f64 x, f64 z) -> Value`
 
 Thread rule: **world-read**. Id: `0xd17f4b3b`.
 
@@ -990,7 +990,7 @@ Returns the ground height at the world point (x, z) as of the tick start, or nil
 
 ### `terrain.normal`
 
-`(f32 x, f32 z) -> Value`
+`(f64 x, f64 z) -> Value`
 
 Thread rule: **world-read**. Id: `0x7787ab63`.
 
@@ -1174,7 +1174,7 @@ Returns the cross product `a x b` (right-handed).
 
 ### `vec3.distance`
 
-`(Vec3 a, Vec3 b) -> f32`
+`(Vec3 a, Vec3 b) -> f64`
 
 Thread rule: **pure**. Id: `0xcf06392f`.
 
@@ -1182,7 +1182,7 @@ Returns the distance between two points.
 
 ### `vec3.dot`
 
-`(Vec3 a, Vec3 b) -> f32`
+`(Vec3 a, Vec3 b) -> f64`
 
 Thread rule: **pure**. Id: `0x6716462b`.
 
@@ -1190,7 +1190,7 @@ Returns the dot product.
 
 ### `vec3.length`
 
-`(Vec3 a) -> f32`
+`(Vec3 a) -> f64`
 
 Thread rule: **pure**. Id: `0x323ba768`.
 
@@ -1198,7 +1198,7 @@ Returns the Euclidean length.
 
 ### `vec3.lerp`
 
-`(Vec3 a, Vec3 b, f32 t) -> Vec3`
+`(Vec3 a, Vec3 b, f64 t) -> Vec3`
 
 Thread rule: **pure**. Id: `0x3d9fc98d`.
 
@@ -1206,7 +1206,7 @@ Interpolates linearly between two vectors.
 
 ### `vec3.new`
 
-`(f32 x, f32 y, f32 z) -> Vec3`
+`(f64 x, f64 y, f64 z) -> Vec3`
 
 Thread rule: **pure**. Id: `0x984f8042`.
 

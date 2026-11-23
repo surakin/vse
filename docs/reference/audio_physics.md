@@ -100,12 +100,12 @@ Makes the query over a world.
 | Fails | never. |
 | Ownership | borrows `world`. |
 
-### `Occlusion(const Vec3&,const Vec3&,u32*)` {#audio-physics-physicsocclusion-occlusion-const-vec3-amp-const-vec3-amp-u32-star}
+### `Occlusion(const Vec3d&,const Vec3d&,u32*)` {#audio-physics-physicsocclusion-occlusion-const-vec3d-amp-const-vec3d-amp-u32-star}
 
 `method audio_physics::PhysicsOcclusion::Occlusion` — defined in `engine/audio_physics/physics_occlusion.h`
 
 ```cpp
-f32 Occlusion(const Vec3& from, const Vec3& to, u32* crossed) override;
+f32 Occlusion(const Vec3d& from, const Vec3d& to, u32* crossed) override;
 ```
 
 Tests the path.

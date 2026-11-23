@@ -68,7 +68,7 @@ public:
     /// - Returns: 0 for an open path to 1 for a blocked one.
     /// - Fails: returns 0 for a zero-length path or a null world.
     /// - Ownership: `crossed` is borrowed for the call.
-    f32 Occlusion(const Vec3& from, const Vec3& to, u32* crossed) override;
+    f32 Occlusion(const Vec3d& from, const Vec3d& to, u32* crossed) override;
 
 private:
     const physics::PhysicsWorld* world_;

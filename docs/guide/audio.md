@@ -318,7 +318,7 @@ the queued commands.
 `AudioSource` and `AudioListener` (`audio/components.h`) are ECS components read together with `ecs::WorldTransform`; the
 entity's local -Z is its forward axis. `SpatialAudio::Update(world, dt)` (`audio/spatial_audio.h`) is the sync:
 
-1. The active listener with the lowest entity id is the ears. Its velocity is the change of position over `dt` (a jump
+1. The active listener with the lowest entity id is the ears. Listener and emitter positions are the transforms' exact double-precision `position`; distances, Doppler speeds and occlusion rays are taken from the double-precision difference and then narrowed, so sound is the same far from the origin as near it. Its velocity is the change of position over `dt` (a jump
    larger than `teleport_distance` is a teleport, not a speed).
 2. Every source is an item of a `spatial::SpatialSet`, a dynamic box of its **audible radius** (the distance at which its
    gain falls to `audibility_threshold`). An entity that did not change its position or radius does not touch the set or

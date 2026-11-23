@@ -46,7 +46,7 @@ struct ListenerState
     /// Whether an active listener was found.
     bool valid = false;
     /// The world position.
-    Vec3 position;
+    Vec3d position;
     /// The forward direction (unit).
     Vec3 forward = Vec3(0.0f, 0.0f, -1.0f);
     /// The right direction (unit).
@@ -167,7 +167,7 @@ private:
         spatial::SetHandle handle = spatial::kInvalidSetHandle;
         VoiceId voice;
         const void* stream_sent = nullptr;  ///< The stream the voice was started on (a new one restarts the voice).
-        Vec3 position;
+        Vec3d position;
         f32 radius = -1.0f;
         f32 gain_sent = -1.0f;
         Vec3 velocity;

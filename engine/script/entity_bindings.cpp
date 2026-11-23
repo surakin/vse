@@ -41,7 +41,7 @@ bool ReadLocal(const PartitionContext& context, ecs::Entity entity, ecs::LocalTr
         const Value* position = context.overlay->Find(entity, kFieldPosition);
         if (position != nullptr)
         {
-            out->position = position->AsVec3();
+            out->position = position->AsVec3d();
         }
         const Value* rotation = context.overlay->Find(entity, kFieldRotation);
         if (rotation != nullptr)
@@ -223,17 +223,17 @@ Value TransformGet(ecs::Entity e)
         return Value();
     }
     Value out = Value::MakeMap();
-    out.Set("position", Value::FromVec3(local.position.Narrow()));  // scripts see single precision until their own day
+    out.Set("position", Value::FromVec3d(local.position));
     out.Set("rotation", Value::FromQuat(local.rotation));
     out.Set("scale", Value::FromVec3(local.scale));
     return out;
 }
 
-Vec3 TransformPosition(ecs::Entity e)
+Vec3d TransformPosition(ecs::Entity e)
 {
     PartitionContext* context = Context();
     ecs::LocalTransform local;
-    return context != nullptr && NeedLocal(*context, e, &local) ? local.position.Narrow() : Vec3();
+    return context != nullptr && NeedLocal(*context, e, &local) ? local.position : Vec3d();
 }
 
 Quaternion TransformRotation(ecs::Entity e)
@@ -280,12 +280,17 @@ void PutOverlay(PartitionContext* context, ecs::Entity e, u32 field, Value value
     }
 }
 
+bool Finite3(Vec3d v)
+{
+    return v.x > -1.0e30 && v.x < 1.0e30 && v.y > -1.0e30 && v.y < 1.0e30 && v.z > -1.0e30 && v.z < 1.0e30;
+}
+
 bool Finite3(Vec3 v)
 {
     return v.x > -1.0e30f && v.x < 1.0e30f && v.y > -1.0e30f && v.y < 1.0e30f && v.z > -1.0e30f && v.z < 1.0e30f;
 }
 
-void TransformSetPosition(ecs::Entity e, Vec3 position)
+void TransformSetPosition(ecs::Entity e, Vec3d position)
 {
     PartitionContext* context = Context();
     ecs::LocalTransform local;
@@ -300,7 +305,7 @@ void TransformSetPosition(ecs::Entity e, Vec3 position)
     }
     if (Record(context, kCommandSetPosition, e, &position, sizeof(position)))
     {
-        PutOverlay(context, e, kFieldPosition, Value::FromVec3(position));
+        PutOverlay(context, e, kFieldPosition, Value::FromVec3d(position));
     }
 }
 
@@ -346,7 +351,7 @@ void TransformSetScale(ecs::Entity e, Vec3 scale)
     }
 }
 
-void TransformTranslate(ecs::Entity e, Vec3 delta)
+void TransformTranslate(ecs::Entity e, Vec3d delta)
 {
     PartitionContext* context = Context();
     ecs::LocalTransform local;
@@ -354,7 +359,7 @@ void TransformTranslate(ecs::Entity e, Vec3 delta)
     {
         return;
     }
-    TransformSetPosition(e, (local.position + Vec3d(delta)).Narrow());
+    TransformSetPosition(e, local.position + delta);
 }
 
 // ------------------------------------------------------------------ the merge
@@ -371,7 +376,7 @@ template <class T> bool ReadPayload(Span<const u8> payload, T* out)
 
 bool ApplySetPosition(MergeContext& context, ecs::Entity target, Span<const u8> payload)
 {
-    Vec3 value;
+    Vec3d value;
     ecs::LocalTransform* local = ReadPayload(payload, &value) ? context.World()->Get<ecs::LocalTransform>(target)
                                                               : nullptr;
     if (local == nullptr)

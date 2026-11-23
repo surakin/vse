@@ -21,15 +21,15 @@ namespace
 class WallDouble final : public OcclusionQuery
 {
 public:
-    f32 Occlusion(const Vec3& from, const Vec3&, u32* crossed) override
+    f32 Occlusion(const Vec3d& from, const Vec3d&, u32* crossed) override
     {
         calls += 1;
-        positions.Push(from.x);
+        positions.Push(static_cast<f32>(from.x));
         if (crossed != nullptr)
         {
-            *crossed = from.x > wall_x ? 1u : 0u;
+            *crossed = from.x > static_cast<f64>(wall_x) ? 1u : 0u;
         }
-        return from.x > wall_x ? level : 0.0f;
+        return from.x > static_cast<f64>(wall_x) ? level : 0.0f;
     }
     f32 wall_x = 5.0f;
     f32 level = 1.0f;
@@ -39,9 +39,7 @@ public:
 
 ecs::WorldTransform OcAt(f32 x, f32 y, f32 z)
 {
-    ecs::WorldTransform t;
-    t.matrix = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(x, y, z));
-    return t;
+    return ecs::WorldTransform::FromMatrix(Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(x, y, z)));
 }
 
 AudioClipConstPtr OcClip()

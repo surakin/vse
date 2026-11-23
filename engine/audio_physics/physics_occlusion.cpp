@@ -5,7 +5,7 @@
 namespace vse::audio_physics
 {
 
-f32 PhysicsOcclusion::Occlusion(const Vec3& from, const Vec3& to, u32* crossed)
+f32 PhysicsOcclusion::Occlusion(const Vec3d& from, const Vec3d& to, u32* crossed)
 {
     if (crossed != nullptr)
     {
@@ -15,7 +15,7 @@ f32 PhysicsOcclusion::Occlusion(const Vec3& from, const Vec3& to, u32* crossed)
     {
         return 0.0f;
     }
-    const Vec3 delta = to - from;
+    const Vec3 delta = (to - from).Narrow();  // the difference in double precision, narrowed once
     const f32 length = delta.Length();
     if (!(length > 1e-4f) || !IsFinite(length))
     {

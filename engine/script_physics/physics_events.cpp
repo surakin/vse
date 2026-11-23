@@ -91,7 +91,7 @@ PhysicsEventReport EmitPhysicsEvents(const physics::PhysicsWorld& world, script:
                 }
                 script::Value payload = script::Value::MakeMap();
                 payload.Set("other", script::Value::FromEntity(side.other));
-                payload.Set("point", script::Value::FromVec3(event.point.Narrow()));
+                payload.Set("point", script::Value::FromVec3d(event.point));
                 payload.Set("normal", script::Value::FromVec3(event.normal * side.sign));
                 payload.Set("depth", script::Value::FromFloat(event.depth));
                 payload.Set("impulse", script::Value::FromFloat(event.normal_impulse));

@@ -167,6 +167,35 @@ TEST_CASE("Entity bindings: a spawned entity can be used at once and exists afte
     CHECK(Near3(found, 2, 2, 3));
 }
 
+TEST_CASE("Entity bindings: a position far from the origin is read and written without narrowing",
+          "[script][entity][far]")
+{
+    // 1e12 + 0.25 is exact in double precision and not representable in single precision (spacing 65536 there).
+    EntityRig rig;
+    CallOutput out;
+    REQUIRE(rig.Run("local e = entity.spawn(nil) transform.set_position(e, vec3.new(1e12 + 0.25, 2, 3)) "
+                    "transform.translate(e, vec3.new(0.5, 0, 0)) "
+                    "local p = transform.position(e) "
+                    "return e, p, vec3.distance(p, vec3.new(1e12, 2, 3))",
+                    &out)
+                .IsOk());
+    REQUIRE(out.results.Size() == 3);
+    CHECK(out.results[1].AsVec3d().x == 1.0e12 + 0.75);
+    CHECK(out.results[1].AsVec3d().y == 2.0);
+    CHECK(out.results[2].AsFloat() == 0.75);
+    rig.Merge();
+    Vec3d found;
+    rig.world.Query<ecs::Read<ecs::LocalTransform>>().ForEach(
+        [&](ecs::Entity e, const ecs::LocalTransform& t)
+        {
+            if (e != rig.self)
+            {
+                found = t.position;
+            }
+        });
+    CHECK(found.x == 1.0e12 + 0.75);
+}
+
 TEST_CASE("Entity bindings: valid, self and dead handles", "[script][entity]")
 {
     EntityRig rig;

@@ -267,7 +267,7 @@ TEST_CASE("Value record: every cut of a record is refused, and bytes that lie ar
     SECTION("a count far above the bytes that follow")
     {
         // version, mode, array tag, a count of 60,000 and nothing after it
-        const u8 lie[] = {1, 0, 12, 0xE0, 0xD4, 0x03};
+        const u8 lie[] = {kValueRecordVersion, 0, 12, 0xE0, 0xD4, 0x03};
         Vector<u8> v;
         for (u8 byte_value : lie)
         {
@@ -279,7 +279,7 @@ TEST_CASE("Value record: every cut of a record is refused, and bytes that lie ar
     SECTION("nesting past the depth limit")
     {
         Vector<u8> v;
-        v.Push(1);
+        v.Push(kValueRecordVersion);
         v.Push(0);
         for (u32 i = 0; i < 40; ++i)
         {

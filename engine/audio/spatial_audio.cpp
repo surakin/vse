@@ -31,7 +31,12 @@ bool SameVec(const Vec3& a, const Vec3& b)
     return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
-bool Finite(const Vec3& v)
+bool SameVec(const Vec3d& a, const Vec3d& b)
+{
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+bool Finite(const Vec3d& v)
 {
     return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
 }
@@ -205,7 +210,7 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
             }
             best = e;
             listener_.valid = true;
-            listener_.position = Column(t.matrix, 3);
+            listener_.position = t.position;
             listener_.right = UnitOr(Column(t.matrix, 0), Vec3(1.0f, 0.0f, 0.0f));
             listener_.up = UnitOr(Column(t.matrix, 1), Vec3(0.0f, 1.0f, 0.0f));
             listener_.forward = UnitOr(Column(t.matrix, 2) * -1.0f, Vec3(0.0f, 0.0f, -1.0f));
@@ -218,7 +223,7 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
     listener_.velocity = Vec3(0.0f, 0.0f, 0.0f);
     if (listener_.valid && previous.valid && dt > 0.0f)
     {
-        const Vec3 jump = listener_.position - previous.position;
+        const Vec3 jump = (listener_.position - previous.position).Narrow();
         listener_.velocity = jump.Length() > config_.teleport_distance ? Vec3(0.0f, 0.0f, 0.0f) : jump * (1.0f / dt);
     }
     else if (listener_.valid && previous.valid)
@@ -248,7 +253,7 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
                 em->handle = spatial::kInvalidSetHandle;
                 em->radius = -1.0f;
             }
-            const Vec3 position = Column(t.matrix, 3);
+            const Vec3d position = t.position;
             const f32 radius = src.spatial && IsValid(src.attenuation)
                                    ? AudibleRadius(src.attenuation,
                                                    config_.audibility_threshold / (src.gain > 1e-6f ? src.gain : 1e-6f))
@@ -260,7 +265,7 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
             }
             if (em->radius >= 0.0f && SameVec(em->position, position) == false && Finite(position))
             {
-                const Vec3 jump = position - em->position;
+                const Vec3 jump = (position - em->position).Narrow();
                 if (dt > 0.0f)
                 {
                     em->velocity = jump.Length() > config_.teleport_distance ? Vec3(0.0f, 0.0f, 0.0f)
@@ -275,8 +280,8 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
             em->radius = radius;
             if (src.spatial && Finite(position))
             {
-                const Vec3 r(radius, radius, radius);
-                Aabb box = Aabb::FromMinMax(position - r, position + r);
+                const Vec3d r(radius, radius, radius);
+                Aabbd box = Aabbd::FromMinMax(position - r, position + r);
                 if (em->handle == spatial::kInvalidSetHandle)
                 {
                     em->handle = set_.AddDynamic(box, e.ToU64(), 1);
@@ -364,7 +369,7 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
         }
         else
         {
-            const Vec3 to_emitter = Column(t->matrix, 3) - listener_.position;
+            const Vec3 to_emitter = (t->position - listener_.position).Narrow();
             const f32 d2 = to_emitter.LengthSquared();
             const f32 d = Sqrt(d2);
             loudness *= DistanceGain(src->attenuation, d);

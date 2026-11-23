@@ -35,9 +35,7 @@ AudioClipConstPtr SpClip(u32 frames)
 
 ecs::WorldTransform At(f32 x, f32 y, f32 z)
 {
-    ecs::WorldTransform t;
-    t.matrix = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(x, y, z));
-    return t;
+    return ecs::WorldTransform::FromMatrix(Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(x, y, z)));
 }
 
 audio::AudioSource Source(const AudioClipConstPtr& clip)
@@ -173,6 +171,30 @@ TEST_CASE("spatial audio: an emitter gets a voice with the distance gain and a p
     rig.Block();
     CHECK(rig.mixer.Stats().voices_mixed == 0);
     CHECK(rig.mixer.Stats().voices_virtual == 1);
+}
+
+TEST_CASE("spatial audio: a listener and an emitter far from the origin hear each other as they do at the origin",
+          "[audio][spatial][far]")
+{
+    // At 1e9 single-precision positions are 64 apart, so a 30 m distance would read as 0 or 64: the exact positions
+    // keep it 30.
+    const f64 far_x = 1.0e9;
+    Rig rig;
+    ecs::WorldTransform listener_at;
+    listener_at.position = Vec3d(far_x, 3.0, 0.0);
+    rig.world.Create(AudioListener(), listener_at);
+    audio::AudioSource s = Source(SpClip(48000));
+    s.attenuation.min_distance = 1.0f;
+    s.attenuation.max_distance = 50.0f;
+    ecs::WorldTransform near_at;
+    near_at.position = Vec3d(far_x + 30.0, 3.0, 0.0);
+    ecs::WorldTransform away_at;
+    away_at.position = Vec3d(far_x + 70.0, 3.0, 0.0);
+    const ecs::Entity near_e = rig.world.Create(s, near_at);
+    const ecs::Entity away_e = rig.world.Create(s, away_at);
+    rig.audio.Update(rig.world, 0.016f);
+    CHECK(rig.audio.IsAudible(near_e));
+    CHECK_FALSE(rig.audio.IsAudible(away_e));
 }
 
 TEST_CASE("spatial audio: no listener means no spatial sound, a flat source still plays", "[audio][spatial]")

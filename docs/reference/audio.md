@@ -5820,12 +5820,12 @@ virtual ~OcclusionQuery() = default;
 
 _Defaulted._
 
-### `Occlusion(const Vec3&,const Vec3&,u32*)` {#audio-occlusionquery-occlusion-const-vec3-amp-const-vec3-amp-u32-star}
+### `Occlusion(const Vec3d&,const Vec3d&,u32*)` {#audio-occlusionquery-occlusion-const-vec3d-amp-const-vec3d-amp-u32-star}
 
 `method audio::OcclusionQuery::Occlusion` — defined in `engine/audio/occlusion.h`
 
 ```cpp
-virtual f32 Occlusion(const Vec3& from, const Vec3& to, u32* crossed) = 0;
+virtual f32 Occlusion(const Vec3d& from, const Vec3d& to, u32* crossed) = 0;
 ```
 
 Tests the path from `from` to `to`.
@@ -6671,7 +6671,7 @@ Whether an active listener was found.
 `variable audio::ListenerState::position` — defined in `engine/audio/spatial_audio.h`
 
 ```cpp
-Vec3 position;
+Vec3d position;
 ```
 
 The world position.

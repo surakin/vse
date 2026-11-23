@@ -41,7 +41,7 @@ enum class ValueKind : u8
     Text,
     /// Two `f32`.
     Vec2,
-    /// Three `f32`.
+    /// Three `f64` (a position travels without narrowing; `AsVec3` narrows to `f32` for the many users that want it).
     Vec3,
     /// Four `f32`.
     Vec4,
@@ -135,6 +135,8 @@ public:
     static Value FromVec2(Vec2 value);
     /// Makes a three-component vector.
     static Value FromVec3(Vec3 value);
+    /// Makes a three-component vector from double-precision numbers (a world position).
+    static Value FromVec3d(Vec3d value);
     /// Makes a four-component vector.
     static Value FromVec4(Vec4 value);
     /// Makes a rotation.
@@ -189,6 +191,10 @@ public:
     ///
     /// - Aborts: the kind is not `Vec3`.
     Vec3 AsVec3() const;
+    /// The three-component vector without narrowing.
+    ///
+    /// - Aborts: the kind is not `Vec3`.
+    Vec3d AsVec3d() const;
     /// The four-component vector.
     ///
     /// - Aborts: the kind is not `Vec4`.
@@ -264,6 +270,7 @@ private:
     i64 int_ = 0;
     f64 float_ = 0.0;
     f32 lanes_[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    f64 wide_[3] = {0.0, 0.0, 0.0};  // the lanes of a `Vec3`
     ecs::Entity entity_;
     String<HeapAllocator> text_;
     Vector<u8> bytes_;

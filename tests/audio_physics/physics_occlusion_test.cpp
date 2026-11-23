@@ -119,8 +119,8 @@ TEST_CASE("physics occlusion: behind a thick wall the voice is quieter than behi
         source.loop = true;
         source.attenuation.min_distance = 100.0f;
         source.attenuation.max_distance = 1000.0f;
-        ecs::WorldTransform there;
-        there.matrix = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(10, 0, 0));
+        const ecs::WorldTransform there = ecs::WorldTransform::FromMatrix(
+            Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(10, 0, 0)));
         const ecs::Entity e = ecs_world.Create(source, there);
         for (u32 i = 0; i < 40; ++i)
         {

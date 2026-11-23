@@ -27,38 +27,39 @@ f32 NumSqrt(f32 x)
     return x < 0.0f ? 0.0f : Sqrt(x);
 }
 
-Vec3 VecNew(f32 x, f32 y, f32 z)
+// The vector library works in double precision, like Lua's numbers, so positions far from the origin keep their digits.
+Vec3d VecNew(f64 x, f64 y, f64 z)
 {
-    return Vec3(x, y, z);
+    return Vec3d(x, y, z);
 }
 
-f32 VecDot(Vec3 a, Vec3 b)
+f64 VecDot(Vec3d a, Vec3d b)
 {
     return a.Dot(b);
 }
 
-Vec3 VecCross(Vec3 a, Vec3 b)
+Vec3d VecCross(Vec3d a, Vec3d b)
 {
     return a.Cross(b);
 }
 
-f32 VecLength(Vec3 a)
+f64 VecLength(Vec3d a)
 {
     return a.Length();
 }
 
-f32 VecDistance(Vec3 a, Vec3 b)
+f64 VecDistance(Vec3d a, Vec3d b)
 {
     return (a - b).Length();
 }
 
-Vec3 VecNormalize(Vec3 a)
+Vec3d VecNormalize(Vec3d a)
 {
-    const f32 length = a.Length();
-    return length > 0.0f ? Vec3(a.x / length, a.y / length, a.z / length) : Vec3(0.0f, 0.0f, 0.0f);
+    const f64 length = a.Length();
+    return length > 0.0 ? Vec3d(a.x / length, a.y / length, a.z / length) : Vec3d(0.0, 0.0, 0.0);
 }
 
-Vec3 VecLerp(Vec3 a, Vec3 b, f32 t)
+Vec3d VecLerp(Vec3d a, Vec3d b, f64 t)
 {
     return a + (b - a) * t;
 }
@@ -68,9 +69,9 @@ Quaternion QuatIdentity()
     return Quaternion::Identity();
 }
 
-Quaternion QuatFromAxisAngle(Vec3 axis, f32 radians)
+Quaternion QuatFromAxisAngle(Vec3d axis, f32 radians)
 {
-    return axis.Length() > 0.0f ? Quaternion::FromAxisAngle(axis, radians) : Quaternion::Identity();
+    return axis.Length() > 0.0 ? Quaternion::FromAxisAngle(axis.Narrow(), radians) : Quaternion::Identity();
 }
 
 Quaternion QuatMul(Quaternion a, Quaternion b)
@@ -78,9 +79,9 @@ Quaternion QuatMul(Quaternion a, Quaternion b)
     return a * b;
 }
 
-Vec3 QuatRotate(Quaternion q, Vec3 v)
+Vec3d QuatRotate(Quaternion q, Vec3d v)
 {
-    return q.RotateVector(v);
+    return Vec3d(q.RotateVector(v.Narrow()));  // a rotation is single precision: rotate offsets, not far positions
 }
 
 f32 NumSign(f32 x)

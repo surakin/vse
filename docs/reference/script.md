@@ -8946,7 +8946,7 @@ The kind of a [`script::Value`](#script-value).
 | <a id="script-valuekind-float"></a>`Float` |  | A 64-bit float. |
 | <a id="script-valuekind-text"></a>`Text` |  | UTF-8 text (not validated; the bytes are kept). |
 | <a id="script-valuekind-vec2"></a>`Vec2` |  | Two `f32`. |
-| <a id="script-valuekind-vec3"></a>`Vec3` |  | Three `f32`. |
+| <a id="script-valuekind-vec3"></a>`Vec3` |  | Three `f64` (a position travels without narrowing; `AsVec3` narrows to `f32` for the many users that want it). |
 | <a id="script-valuekind-vec4"></a>`Vec4` |  | Four `f32`. |
 | <a id="script-valuekind-quat"></a>`Quat` |  | A rotation: four `f32` (x, y, z, w). |
 | <a id="script-valuekind-entity"></a>`Entity` |  | An entity id (index and generation). |
@@ -9182,6 +9182,16 @@ static Value FromVec3(Vec3 value);
 
 Makes a three-component vector.
 
+### `FromVec3d(Vec3d)` {#script-value-fromvec3d-vec3d}
+
+`method script::Value::FromVec3d` — defined in `engine/script/value.h`
+
+```cpp
+static Value FromVec3d(Vec3d value);
+```
+
+Makes a three-component vector from double-precision numbers (a world position).
+
 ### `FromVec4(Vec4)` {#script-value-fromvec4-vec4}
 
 `method script::Value::FromVec4` — defined in `engine/script/value.h`
@@ -9377,6 +9387,20 @@ Vec3 AsVec3() const;
 ```
 
 The three-component vector.
+
+| Field | Value |
+|---|---|
+| Aborts | the kind is not `Vec3`. |
+
+### `AsVec3d()` {#script-value-asvec3d-const}
+
+`method script::Value::AsVec3d` — defined in `engine/script/value.h`
+
+```cpp
+Vec3d AsVec3d() const;
+```
+
+The three-component vector without narrowing.
 
 | Field | Value |
 |---|---|

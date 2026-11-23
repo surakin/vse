@@ -65,11 +65,11 @@ void Encode(const Value& v, bytes::ByteWriter* out, const storage::KeyIndex* ind
     }
     case ValueKind::Vec3:
     {
-        const Vec3 a = v.AsVec3();
+        const Vec3d a = v.AsVec3d();
         out->WriteU8(kVec3);
-        out->WriteF32(a.x);
-        out->WriteF32(a.y);
-        out->WriteF32(a.z);
+        out->WriteF64(a.x);
+        out->WriteF64(a.y);
+        out->WriteF64(a.z);
         break;
     }
     case ValueKind::Vec4:
@@ -231,12 +231,29 @@ ValueRecordStatus Decode(Reader* r, Value* out, u32 depth)
         *out = Value::FromText(text.View());
         return ValueRecordStatus::Ok;
     }
-    case kVec2:
     case kVec3:
+    {
+        f64 d[3] = {0.0, 0.0, 0.0};
+        for (u32 i = 0; i < 3; ++i)
+        {
+            e = r->in->ReadF64(&d[i]);
+            if (e != bytes::ByteError::Ok)
+            {
+                return Fail(e);
+            }
+            if (r->limits.require_finite && !IsFinite(d[i]))
+            {
+                return ValueRecordStatus::OverLimit;
+            }
+        }
+        *out = Value::FromVec3d(Vec3d(d[0], d[1], d[2]));
+        return ValueRecordStatus::Ok;
+    }
+    case kVec2:
     case kVec4:
     case kQuat:
     {
-        const u32 count = tag == kVec2 ? 2 : (tag == kVec3 ? 3 : 4);
+        const u32 count = tag == kVec2 ? 2 : 4;
         for (u32 i = 0; i < count; ++i)
         {
             e = r->in->ReadF32(&f[i]);
@@ -252,10 +269,6 @@ ValueRecordStatus Decode(Reader* r, Value* out, u32 depth)
         if (tag == kVec2)
         {
             *out = Value::FromVec2(Vec2{f[0], f[1]});
-        }
-        else if (tag == kVec3)
-        {
-            *out = Value::FromVec3(Vec3{f[0], f[1], f[2]});
         }
         else if (tag == kVec4)
         {

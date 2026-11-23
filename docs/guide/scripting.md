@@ -28,7 +28,7 @@ the interface, the tiny test language is another, and the engine, the bindings a
 
 ## Values
 
-`script::Value` is one of: nil, a boolean, a 64-bit integer, a 64-bit float, text, `Vec2`, `Vec3`, `Vec4`, a rotation, an entity id, a byte blob, an array or a
+`script::Value` is one of: nil, a boolean, a 64-bit integer, a 64-bit float, text, `Vec2`, `Vec3` (three 64-bit floats, so a world position far from the origin is not narrowed; `AsVec3()` narrows to single precision for code that wants it, `AsVec3d()` is exact), `Vec4`, a rotation, an entity id, a byte blob, an array or a
 map. A map keeps its entries in insertion order (so iteration is the same on every machine and in every run) and `Set` on an existing key replaces the value in
 place. Containers nest at most 16 deep (`kMaxValueDepth`) and hold at most 65,536 items (`kMaxContainerItems`); `Push` and `Set` return `false` and leave the item
 alone when a limit would be crossed, so copying, comparing and destroying a value use bounded recursion whatever came in.
@@ -118,7 +118,7 @@ f32 Clamp(f32 x, f32 lo, f32 hi);
 registry.Add<&Clamp>("num", "clamp", script::ThreadRule::Pure, "x, lo, hi", "Limits `x` to the range `lo` to `hi`.");
 ```
 
-The registry derives everything from the signature: the argument checks and conversions (`f32`, `f64`, `i32`, `i64`, `bool`, `StringView`, `Vec2`, `Vec3`, `Vec4`, `Quaternion`, `Mat4` (an array of 16 numbers, column-major), `ecs::Entity`, `Value`; a result of
+The registry derives everything from the signature: the argument checks and conversions (`f32`, `f64`, `i32`, `i64`, `bool`, `StringView`, `Vec2`, `Vec3`, `Vec3d` (a world position, exact), `Vec4`, `Quaternion`, `Mat4` (an array of 16 numbers, column-major), `ecs::Entity`, `Value`; a result of
 any of them or `void`), the error messages, the signature text and the documentation page [`script-api.md`](../reference/script-api.md), which `tools/script_api_doc` renders and the ctest
 `docs_script_api` keeps current. The function's stable id is a hash of `ns.name`; two bindings with the same id are refused. Names are lower case (`num.clamp`), and a namespace must not be the name
 of one of Lua's libraries (`math`, `string`, `table`): registering it would replace the library.

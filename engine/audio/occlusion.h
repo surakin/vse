@@ -25,7 +25,7 @@ public:
     /// - Returns: 0 for an open path to 1 for one that is blocked completely.
     /// - Fails: returns 0 when it cannot answer.
     /// - Ownership: `crossed` is borrowed for the call.
-    virtual f32 Occlusion(const Vec3& from, const Vec3& to, u32* crossed) = 0;
+    virtual f32 Occlusion(const Vec3d& from, const Vec3d& to, u32* crossed) = 0;
 };
 
 /// How occlusion is tested, smoothed and heard.

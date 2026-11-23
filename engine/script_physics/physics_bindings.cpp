@@ -70,6 +70,11 @@ void Raise(StringView a, StringView b = StringView(), StringView c = StringView(
     script::RaiseScriptError(text.View());
 }
 
+bool Finite3d(const Vec3d& v)
+{
+    return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
+}
+
 bool Finite3(const Vec3& v)
 {
     return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
@@ -110,8 +115,8 @@ bool Record(PartitionContext* context, u16 kind, ecs::Entity target, const void*
 struct VectorPayload
 {
     f32 value[3];
-    f32 point[3];
     u32 at_point;
+    f64 point[3];  // a world position, kept exact
 };
 
 struct ScalarPayload
@@ -119,15 +124,15 @@ struct ScalarPayload
     f32 value;
 };
 
-VectorPayload MakeVector(const Vec3& value, const Vec3* point)
+VectorPayload MakeVector(const Vec3& value, const Vec3d* point)
 {
     VectorPayload p;
     p.value[0] = value.x;
     p.value[1] = value.y;
     p.value[2] = value.z;
-    p.point[0] = point != nullptr ? point->x : 0.0f;
-    p.point[1] = point != nullptr ? point->y : 0.0f;
-    p.point[2] = point != nullptr ? point->z : 0.0f;
+    p.point[0] = point != nullptr ? point->x : 0.0;
+    p.point[1] = point != nullptr ? point->y : 0.0;
+    p.point[2] = point != nullptr ? point->z : 0.0;
     p.at_point = point != nullptr ? 1u : 0u;
     return p;
 }
@@ -135,7 +140,7 @@ VectorPayload MakeVector(const Vec3& value, const Vec3* point)
 // ------------------------------------------------------------------ writes
 
 // A force, an impulse or a torque for a dynamic body.
-void RecordPush(u16 kind, ecs::Entity e, const Vec3& value, const Vec3* point, const char* what)
+void RecordPush(u16 kind, ecs::Entity e, const Vec3& value, const Vec3d* point, const char* what)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
@@ -143,7 +148,7 @@ void RecordPush(u16 kind, ecs::Entity e, const Vec3& value, const Vec3* point, c
     {
         return;
     }
-    if (!Finite3(value) || (point != nullptr && !Finite3(*point)))
+    if (!Finite3(value) || (point != nullptr && !Finite3d(*point)))
     {
         Raise("the ", StringView(what), " must be finite");
         return;
@@ -167,7 +172,7 @@ void PhysicsAddForce(ecs::Entity e, Vec3 force)
     RecordPush(kCommandPhysicsForce, e, force, nullptr, "force");
 }
 
-void PhysicsAddForceAt(ecs::Entity e, Vec3 force, Vec3 point)
+void PhysicsAddForceAt(ecs::Entity e, Vec3 force, Vec3d point)
 {
     RecordPush(kCommandPhysicsForce, e, force, &point, "force");
 }
@@ -177,7 +182,7 @@ void PhysicsAddImpulse(ecs::Entity e, Vec3 impulse)
     RecordPush(kCommandPhysicsImpulse, e, impulse, nullptr, "impulse");
 }
 
-void PhysicsAddImpulseAt(ecs::Entity e, Vec3 impulse, Vec3 point)
+void PhysicsAddImpulseAt(ecs::Entity e, Vec3 impulse, Vec3d point)
 {
     RecordPush(kCommandPhysicsImpulse, e, impulse, &point, "impulse");
 }
@@ -544,13 +549,13 @@ Value HitValue(const physics::PhysicsWorld& world, const physics::PhysicsHit& hi
 {
     Value map = Value::MakeMap();
     map.Set("entity", Value::FromEntity(EntityOfBody(world, hit.body)));
-    map.Set("point", Value::FromVec3(hit.point.Narrow()));
+    map.Set("point", Value::FromVec3d(hit.point));
     map.Set("normal", Value::FromVec3(hit.normal));
     map.Set("distance", Value::FromFloat(hit.distance));
     return map;
 }
 
-Value Raycast(const Vec3& origin, const Vec3& direction, f32 max_distance, const Value& layers, ecs::Entity ignore)
+Value Raycast(const Vec3d& origin, const Vec3& direction, f32 max_distance, const Value& layers, ecs::Entity ignore)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
@@ -558,7 +563,7 @@ Value Raycast(const Vec3& origin, const Vec3& direction, f32 max_distance, const
     {
         return Value();
     }
-    if (!Finite3(origin) || !Finite3(direction) || direction.LengthSquared() == 0.0f || !IsFinite(max_distance) ||
+    if (!Finite3d(origin) || !Finite3(direction) || direction.LengthSquared() == 0.0f || !IsFinite(max_distance) ||
         !(max_distance > 0.0f))
     {
         script::RaiseScriptError("the ray needs a finite origin, a direction that is not zero and a length above zero");
@@ -578,12 +583,12 @@ Value Raycast(const Vec3& origin, const Vec3& direction, f32 max_distance, const
     return HitValue(*services->world, hit);
 }
 
-Value PhysicsRaycast(Vec3 origin, Vec3 direction, f32 max_distance, Value layers)
+Value PhysicsRaycast(Vec3d origin, Vec3 direction, f32 max_distance, Value layers)
 {
     return Raycast(origin, direction, max_distance, layers, ecs::Entity());
 }
 
-Value PhysicsRaycastEx(Vec3 origin, Vec3 direction, f32 max_distance, Value layers, Value ignore)
+Value PhysicsRaycastEx(Vec3d origin, Vec3 direction, f32 max_distance, Value layers, Value ignore)
 {
     if (!ignore.IsNil() && ignore.Kind() != ValueKind::Entity)
     {
@@ -607,7 +612,7 @@ bool TerrainFilter(PartitionContext* context, const PhysicsScriptServices** serv
     return MakeFilter(context, *services, Value(), ecs::Entity(), filter, &ignored);
 }
 
-Value TerrainHeightOf(f32 x, f32 z)
+Value TerrainHeightOf(f64 x, f64 z)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = nullptr;
@@ -629,7 +634,7 @@ Value TerrainHeightOf(f32 x, f32 z)
     return Value::FromFloat(static_cast<f32>(height));
 }
 
-Value TerrainNormalOf(f32 x, f32 z)
+Value TerrainNormalOf(f64 x, f64 z)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = nullptr;
@@ -651,7 +656,7 @@ Value TerrainNormalOf(f32 x, f32 z)
     return Value::FromVec3(normal);
 }
 
-Value TerrainRaycast(Vec3 origin, Vec3 direction, f32 max_distance)
+Value TerrainRaycast(Vec3d origin, Vec3 direction, f32 max_distance)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = nullptr;
@@ -660,7 +665,7 @@ Value TerrainRaycast(Vec3 origin, Vec3 direction, f32 max_distance)
     {
         return Value();
     }
-    if (!Finite3(origin) || !Finite3(direction) || direction.LengthSquared() == 0.0f || !IsFinite(max_distance) ||
+    if (!Finite3d(origin) || !Finite3(direction) || direction.LengthSquared() == 0.0f || !IsFinite(max_distance) ||
         !(max_distance > 0.0f))
     {
         script::RaiseScriptError("the ray needs a finite origin, a direction that is not zero and a length above zero");
@@ -722,7 +727,8 @@ bool ParseShape(const Value& desc, physics::Shape* shape)
     return true;
 }
 
-Value PhysicsShapeCast(Value shape_desc, Vec3 position, Quaternion rotation, Vec3 direction, f32 distance, Value layers)
+Value PhysicsShapeCast(Value shape_desc, Vec3d position, Quaternion rotation, Vec3 direction, f32 distance,
+                       Value layers)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
@@ -731,7 +737,7 @@ Value PhysicsShapeCast(Value shape_desc, Vec3 position, Quaternion rotation, Vec
     {
         return Value();
     }
-    if (!Finite3(position) || !Finite3(direction) || direction.LengthSquared() == 0.0f || !IsFinite(distance) ||
+    if (!Finite3d(position) || !Finite3(direction) || direction.LengthSquared() == 0.0f || !IsFinite(distance) ||
         !(distance > 0.0f))
     {
         script::RaiseScriptError("the cast needs a finite position, a direction that is not zero and a distance above "
@@ -753,7 +759,7 @@ Value PhysicsShapeCast(Value shape_desc, Vec3 position, Quaternion rotation, Vec
 }
 
 // The entities whose colliders overlap a shape, once each, by collider id.
-Value Overlapping(const physics::Shape& shape, const Vec3& position, const Quaternion& rotation, const Value& layers)
+Value Overlapping(const physics::Shape& shape, const Vec3d& position, const Quaternion& rotation, const Value& layers)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
@@ -789,9 +795,9 @@ Value Overlapping(const physics::Shape& shape, const Vec3& position, const Quate
     return out;
 }
 
-Value PhysicsOverlapSphere(Vec3 center, f32 radius, Value layers)
+Value PhysicsOverlapSphere(Vec3d center, f32 radius, Value layers)
 {
-    if (!Finite3(center) || !IsFinite(radius) || !(radius > 0.0f))
+    if (!Finite3d(center) || !IsFinite(radius) || !(radius > 0.0f))
     {
         script::RaiseScriptError("the sphere needs a finite centre and a radius above zero");
         return Value();
@@ -799,10 +805,10 @@ Value PhysicsOverlapSphere(Vec3 center, f32 radius, Value layers)
     return Overlapping(physics::Shape::MakeSphere(radius), center, Quaternion::Identity(), layers);
 }
 
-Value PhysicsOverlapBox(Vec3 center, Vec3 half_extents, Quaternion rotation, Value layers)
+Value PhysicsOverlapBox(Vec3d center, Vec3 half_extents, Quaternion rotation, Value layers)
 {
     const physics::Shape box = physics::Shape::MakeBox(half_extents);
-    if (!Finite3(center) || box.Validate() != physics::Validation::Ok)
+    if (!Finite3d(center) || box.Validate() != physics::Validation::Ok)
     {
         script::RaiseScriptError("the box needs a finite centre and half extents above zero");
         return Value();
@@ -810,7 +816,7 @@ Value PhysicsOverlapBox(Vec3 center, Vec3 half_extents, Quaternion rotation, Val
     return Overlapping(box, center, rotation, layers);
 }
 
-Value PhysicsClosestPoint(Vec3 point, f32 max_distance, Value layers)
+Value PhysicsClosestPoint(Vec3d point, f32 max_distance, Value layers)
 {
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
@@ -818,7 +824,7 @@ Value PhysicsClosestPoint(Vec3 point, f32 max_distance, Value layers)
     {
         return Value();
     }
-    if (!Finite3(point) || !IsFinite(max_distance) || !(max_distance > 0.0f))
+    if (!Finite3d(point) || !IsFinite(max_distance) || !(max_distance > 0.0f))
     {
         script::RaiseScriptError("the query needs a finite point and a distance above zero");
         return Value();
@@ -977,19 +983,19 @@ void CharacterJump(ecs::Entity e, f32 speed)
     CharacterScalar(kCommandCharacterJump, e, speed, "jump speed");
 }
 
-void CharacterSetPosition(ecs::Entity e, Vec3 position)
+void CharacterSetPosition(ecs::Entity e, Vec3d position)
 {
     PartitionContext* context = Context();
     if (context == nullptr || CharacterOf(context, e) == nullptr)
     {
         return;
     }
-    if (!Finite3(position))
+    if (!Finite3d(position))
     {
         script::RaiseScriptError("the position must be finite");
         return;
     }
-    const VectorPayload payload = MakeVector(position, nullptr);
+    const VectorPayload payload = MakeVector(Vec3(0.0f, 0.0f, 0.0f), &position);
     Record(context, kCommandCharacterPosition, e, &payload, sizeof(payload));
 }
 
@@ -1099,9 +1105,9 @@ Vec3 PayloadValue(const VectorPayload& p)
     return Vec3(p.value[0], p.value[1], p.value[2]);
 }
 
-Vec3 PayloadPoint(const VectorPayload& p)
+Vec3d PayloadPoint(const VectorPayload& p)
 {
-    return Vec3(p.point[0], p.point[1], p.point[2]);
+    return Vec3d(p.point[0], p.point[1], p.point[2]);
 }
 
 bool ApplyForce(MergeContext& context, ecs::Entity target, Span<const u8> payload)
@@ -1113,7 +1119,7 @@ bool ApplyForce(MergeContext& context, ecs::Entity target, Span<const u8> payloa
     {
         return false;
     }
-    const Vec3d point = p.at_point != 0 ? Vec3d(PayloadPoint(p)) : world->WorldCenter(id);
+    const Vec3d point = p.at_point != 0 ? PayloadPoint(p) : world->WorldCenter(id);
     return world->ApplyForce(id, PayloadValue(p), point) == physics::BodyStatus::Ok;
 }
 
@@ -1126,7 +1132,7 @@ bool ApplyImpulse(MergeContext& context, ecs::Entity target, Span<const u8> payl
     {
         return false;
     }
-    const Vec3d point = p.at_point != 0 ? Vec3d(PayloadPoint(p)) : world->WorldCenter(id);
+    const Vec3d point = p.at_point != 0 ? PayloadPoint(p) : world->WorldCenter(id);
     return world->ApplyImpulse(id, PayloadValue(p), point) == physics::BodyStatus::Ok;
 }
 
@@ -1260,7 +1266,7 @@ bool ApplyCharacterCreate(MergeContext& context, ecs::Entity target, Span<const 
     config.min_ground_y = p.min_ground_y;
     config.skin_width = p.skin_width;
     config.gravity_scale = p.gravity_scale;
-    return characters->Add(target, config, transform->position.Narrow());
+    return characters->Add(target, config, transform->position);
 }
 
 bool ApplyCharacterDestroy(MergeContext& context, ecs::Entity target, Span<const u8>)
@@ -1299,7 +1305,7 @@ bool ApplyCharacterPosition(MergeContext& context, ecs::Entity target, Span<cons
 {
     physics::CharacterSet* characters = CharactersOf(context);
     VectorPayload p;
-    return characters != nullptr && ReadPayload(payload, &p) && characters->SetPosition(target, PayloadValue(p));
+    return characters != nullptr && ReadPayload(payload, &p) && characters->SetPosition(target, PayloadPoint(p));
 }
 
 bool ApplyCharacterHeight(MergeContext& context, ecs::Entity target, Span<const u8> payload)

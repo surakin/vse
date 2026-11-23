@@ -20,9 +20,7 @@ namespace
 
 ecs::WorldTransform DpAt(f32 x, f32 y, f32 z)
 {
-    ecs::WorldTransform t;
-    t.matrix = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(x, y, z));
-    return t;
+    return ecs::WorldTransform::FromMatrix(Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(x, y, z)));
 }
 
 AudioClipConstPtr DpClip(u32 frames, bool tone)

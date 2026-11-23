@@ -264,9 +264,9 @@ void PushValue(lua_State* L, const Value& v)
         return;
     case ValueKind::Vec3:
         Tagged(L, kTagVec3, 0, 3);
-        SetNumberField(L, "x", v.AsVec3().x);
-        SetNumberField(L, "y", v.AsVec3().y);
-        SetNumberField(L, "z", v.AsVec3().z);
+        SetNumberField(L, "x", v.AsVec3d().x);
+        SetNumberField(L, "y", v.AsVec3d().y);
+        SetNumberField(L, "z", v.AsVec3d().z);
         return;
     case ValueKind::Vec4:
         Tagged(L, kTagVec4, 0, 4);
@@ -443,7 +443,7 @@ bool ReadValue(lua_State* L, int index, Value* out, Marshal* m, u32 depth)
         {
             return Fail(m, "a vec3 needs numeric x, y and z");
         }
-        *out = Value::FromVec3(Vec3{static_cast<f32>(a), static_cast<f32>(b), static_cast<f32>(c)});
+        *out = Value::FromVec3d(Vec3d(a, b, c));
         return true;
     case kTagVec4:
     case kTagQuat:
