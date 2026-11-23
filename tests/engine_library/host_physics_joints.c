@@ -77,7 +77,7 @@ static float PositionY(engine_handle world, uint64_t key)
     memset(&t, 0, sizeof(t));
     t.struct_size = sizeof(t);
     CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
-    return t.position[1];
+    return (float)t.position[1];
 }
 
 static void SetBody(engine_handle world, uint64_t key, uint32_t type, float mass)
@@ -363,8 +363,8 @@ static void TestPendulumAndBreak(engine_handle engine)
         memset(&t, 0, sizeof(t));
         t.struct_size = sizeof(t);
         CHECK_STATUS(g_api->component_get(world, ball, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
-        dist = sqrtf(t.position[0] * t.position[0] + (t.position[1] - 5.0f) * (t.position[1] - 5.0f) +
-                     t.position[2] * t.position[2]);
+        dist = sqrtf((float)(t.position[0] * t.position[0] + (t.position[1] - 5.0f) * (t.position[1] - 5.0f) +
+                     t.position[2] * t.position[2]));
         if (dist > peak + 0.0f && i > 5)
         {
             peak = dist;
@@ -450,7 +450,7 @@ static void TestCharacter(engine_handle engine)
         CHECK_STATUS(g_api->component_get(world, hero, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
         if (t.position[1] > peak)
         {
-            peak = t.position[1];
+            peak = (float)t.position[1];
         }
     }
     CHECK(peak > 1.5f);

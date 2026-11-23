@@ -176,7 +176,7 @@ static float PositionOf(engine_handle world, uint64_t key, int axis)
     memset(&t, 0, sizeof(t));
     t.struct_size = sizeof(t);
     CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
-    return t.position[axis];
+    return (float)t.position[axis];
 }
 
 static uint64_t PlaceEntity(engine_handle world, float x, float y, float z)

@@ -268,7 +268,7 @@ TEST_CASE("Spatial sync: a non-finite or empty box is refused and counted, bits 
 {
     WcRig rig;
     SpatialBounds nan_box = WcUnit();
-    nan_box.local.max.x = Limits<f64>::QuietNaN();
+    nan_box.local.max.x = Limits<f32>::QuietNaN();
     rig.world.Create(WcAt(0, 0, 0), ecs::WorldTransform{}, nan_box, WcIn(kBit(kRenderSet)));
     SpatialBounds empty_box;
     empty_box.local = Aabb::Empty();

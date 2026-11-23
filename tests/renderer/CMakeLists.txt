@@ -59,7 +59,7 @@ include(Catch)
 # TSan flavor excludes them (the proprietary NVIDIA driver's threads crash ThreadSanitizer).
 function(engine_add_renderer_tests target suffix label spec)
   string(REGEX REPLACE "^renderer_tests" "" flavor "${target}")
-  add_executable(${target} ${RENDERER_TEST_SOURCES} ${RENDERER_HEADER_CHECK_SOURCES} ${CMAKE_SOURCE_DIR}/tests/support/register_backends.cpp)
+  add_executable(${target} ${RENDERER_TEST_SOURCES} ${RENDERER_HEADER_CHECK_SOURCES} ${CMAKE_SOURCE_DIR}/tests/support/register_backends.cpp ${CMAKE_SOURCE_DIR}/tests/support/crash_handler_listener.cpp)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target}) # before the discovery below, which runs the program (Windows: the runtime DLLs beside it)
   endif()
@@ -67,7 +67,7 @@ function(engine_add_renderer_tests target suffix label spec)
   # itself does not depend on any backend, and tests/renderer is scanned by rhi_boundary_check, so a test cannot name Vulkan.
   target_link_libraries(${target} PRIVATE scene${flavor} ecs${flavor} renderer_passes${flavor} renderer${flavor} rhi_backends${flavor} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/rhi ${CMAKE_SOURCE_DIR}/tests/text)
-  target_compile_definitions(${target} PRIVATE TEXT_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf" ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" SETTINGS_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/settings/fixtures")
+  target_compile_definitions(${target} PRIVATE TEXT_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf" ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" SETTINGS_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/settings/fixtures" ENGINE_TEST_CRASH_DIR="${ENGINE_TEST_TMP_DIR}/crash-dumps/${target}")
   # On macOS the GPU suites run through Metal (Phase 21 Day 307) with its API and shader validation on, an error stopping the test.
   set(env "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/renderer_tests-${label}")
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")

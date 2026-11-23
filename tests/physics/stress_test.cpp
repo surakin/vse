@@ -103,7 +103,7 @@ TEST_CASE("Stress: random bodies dropped in a box do not explode", "[physics][st
     for (usize i = 0; i < bodies.Size(); ++i)
     {
         const Body* b = world.Find(bodies[i]);
-        start_energy += b->mass.mass * 9.81f * b->position.y;
+        start_energy += static_cast<f32>(b->mass.mass * 9.81f * b->position.y);
     }
     for (u32 step = 0; step < 250; ++step)
     {
@@ -120,7 +120,7 @@ TEST_CASE("Stress: random bodies dropped in a box do not explode", "[physics][st
     {
         const Body* b = world.Find(bodies[i]);
         const Vec3& v = b->linear_velocity;
-        end_energy += b->mass.mass * (0.5f * (v.x * v.x + v.y * v.y + v.z * v.z) + 9.81f * b->position.y);
+        end_energy += static_cast<f32>(b->mass.mass * (0.5f * (v.x * v.x + v.y * v.y + v.z * v.z) + 9.81f * b->position.y));
     }
     REQUIRE(end_energy < start_energy * 1.02f);
 }

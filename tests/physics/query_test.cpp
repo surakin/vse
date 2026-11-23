@@ -53,7 +53,7 @@ TEST_CASE("Query: rays hit each shape where the geometry says", "[physics][query
     REQUIRE(QRay(world, Vec3(0, 0, 0), Vec3(0, 0, 1), &h));
     CHECK(QNear(h.distance, 4.0f));
     CHECK(QNear(h.normal.z, -1.0f));
-    CHECK(QNear(h.point.z, 4.0f));
+    CHECK(QNear(static_cast<f32>(h.point.z), 4.0f));
     CHECK(h.triangle == kNoTriangle);
     CHECK(QRay(world, Vec3(0, 0.999f, 0), Vec3(0, 0, 1), &h));   // grazing, inside the radius
     CHECK(!QRay(world, Vec3(0, 1.001f, 0), Vec3(0, 0, 1), &h));  // grazing, outside it
@@ -223,7 +223,7 @@ TEST_CASE("Query: a ray agrees with a marched probe over random shapes", "[physi
             PhysicsHit near;
             REQUIRE(ClosestPoint(world, h.point, 0.5f, filter, &near));
             CHECK(near.distance < 2e-3f);
-            CHECK(QNear(h.point.x, o.x + dir.x * h.distance, 1e-4f));
+            CHECK(QNear(static_cast<f32>(h.point.x), o.x + dir.x * h.distance, 1e-4f));
         }
     }
 }
@@ -336,11 +336,11 @@ TEST_CASE("Query: the closest point on a surface", "[physics][query]")
     PhysicsHit h;
     REQUIRE(ClosestPoint(world, Vec3(0, 0, 0), 20.0f, PhysicsQueryFilter(), &h));
     CHECK(QNear(h.distance, 4.0f));
-    CHECK(QNear(h.point.z, 4.0f));
+    CHECK(QNear(static_cast<f32>(h.point.z), 4.0f));
     CHECK(QNear(h.normal.z, -1.0f, 1e-2f));
     REQUIRE(ClosestPoint(world, Vec3(7, 0.2f, 0.1f), 20.0f, PhysicsQueryFilter(), &h));
     CHECK(QNear(h.distance, 2.0f));
-    CHECK(QNear(h.point.x, 9.0f));
+    CHECK(QNear(static_cast<f32>(h.point.x), 9.0f));
     REQUIRE(ClosestPoint(world, Vec3(0, 0, 5), 20.0f, PhysicsQueryFilter(), &h));  // inside
     CHECK(h.distance == 0.0f);
     CHECK(!ClosestPoint(world, Vec3(0, 0, 0), 2.0f, PhysicsQueryFilter(), &h));  // too far

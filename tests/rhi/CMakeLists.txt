@@ -103,7 +103,7 @@ include(Catch)
 # GPU threading is covered by the ASan flavor plus validation layers, and TSan covers the GPU-free
 # multithreaded tests (null device) and the pure logic. With a Mesa software driver, run the whole binary by hand.
 function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suffix label spec)
-  add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES} ${CMAKE_SOURCE_DIR}/tests/support/register_backends.cpp)
+  add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES} ${CMAKE_SOURCE_DIR}/tests/support/register_backends.cpp ${CMAKE_SOURCE_DIR}/tests/support/crash_handler_listener.cpp)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target}) # before the discovery below, which runs the program (Windows: the runtime DLLs beside it)
   endif()
@@ -119,7 +119,7 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
   endif()
   target_link_libraries(${target} PRIVATE ${asset_lib} ${scene_lib} ${ecs_lib} ${ui_lib} ${passes_lib} ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} ${rhi_backends_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/game/ui_demo ${CMAKE_SOURCE_DIR}/tests/renderer ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support)
-  target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
+  target_compile_definitions(${target} PRIVATE ENGINE_TEST_CRASH_DIR="${ENGINE_TEST_TMP_DIR}/crash-dumps/${target}" ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
     ENGINE_RENDERER_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/renderer_demo/assets"
     ENGINE_TEXT_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf"

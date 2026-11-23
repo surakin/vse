@@ -21,13 +21,13 @@ find_package(Threads REQUIRED)
 include(Catch)
 
 function(engine_add_scene_tests target flavor suffix label spec)
-  add_executable(${target} ${SCENE_TEST_SOURCES} ${CMAKE_SOURCE_DIR}/tests/support/register_backends.cpp)
+  add_executable(${target} ${SCENE_TEST_SOURCES} ${CMAKE_SOURCE_DIR}/tests/support/register_backends.cpp ${CMAKE_SOURCE_DIR}/tests/support/crash_handler_listener.cpp)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()
   target_link_libraries(${target} PRIVATE scene${flavor} renderer_passes${flavor} renderer${flavor} ecs${flavor} rhi_backends${flavor} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/rhi ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tools/asset_mint ${CMAKE_SOURCE_DIR}/shaders)
-  target_compile_definitions(${target} PRIVATE ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" "SPIKE_FONT_FILE=\"${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf\"")
+  target_compile_definitions(${target} PRIVATE ENGINE_TEST_CRASH_DIR="${ENGINE_TEST_TMP_DIR}/crash-dumps/${target}" ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" "SPIKE_FONT_FILE=\"${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf\"")
   # On macOS the GPU cases run through Metal with its API and shader validation on, an error stopping the test, as in tests/renderer
   # (missing here until glTF coverage Day 14: the scene's GPU cases ran on Metal unvalidated).
   set(env "")

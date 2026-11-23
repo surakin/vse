@@ -113,10 +113,10 @@ TEST_CASE("Height field contact: a sphere rolls down a tilted plane as down the 
         }
         const Body* body = world.Find(ball);
         REQUIRE(body != nullptr);
-        (variant == 0 ? field_x : box_x) = body->position.x;
+        (variant == 0 ? field_x : box_x) = static_cast<f32>(body->position.x);
         // It stays on the surface the whole way: its centre is one radius above the plane.
-        const f32 plane = field->HeightAt(body->position.x, 0.0f) + radius / Cos(angle);
-        CHECK(FNear(body->position.y, plane, 0.03f));
+        const f32 plane = field->HeightAt(static_cast<f32>(body->position.x), 0.0f) + radius / Cos(angle);
+        CHECK(FNear(static_cast<f32>(body->position.y), plane, 0.03f));
     }
     // It went downhill (toward -x) and by about the same distance on both.
     CHECK(field_x < -1.0f);
@@ -184,7 +184,7 @@ TEST_CASE("Height field contact: a sphere comes to rest in a bowl", "[physics][h
     CHECK(Abs(body->position.x) < 0.6f);
     CHECK(Abs(body->position.z) < 0.6f);
     CHECK(body->linear_velocity.Length() < 0.3f);
-    CHECK(body->position.y > bowl->HeightAt(body->position.x, body->position.z) - 0.05f);
+    CHECK(static_cast<f32>(body->position.y) > bowl->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.05f);
 }
 
 TEST_CASE("Height field contact: nothing falls through a field of 64 by 64 random bumps in ten seconds",
@@ -219,14 +219,14 @@ TEST_CASE("Height field contact: nothing falls through a field of 64 by 64 rando
             {
                 const Body* body = world.Find(bodies[k]);
                 REQUIRE(body != nullptr);
-                REQUIRE(body->position.y > field->HeightAt(body->position.x, body->position.z) - 0.1f);
+                REQUIRE(static_cast<f32>(body->position.y) > field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.1f);
             }
         }
     }
     for (usize k = 0; k < bodies.Size(); ++k)
     {
         const Body* body = world.Find(bodies[k]);
-        CHECK(body->position.y > field->HeightAt(body->position.x, body->position.z) - 0.1f);
+        CHECK(static_cast<f32>(body->position.y) > field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.1f);
     }
 }
 
@@ -253,7 +253,7 @@ TEST_CASE("Height field contact: a fast small sphere does not tunnel through the
     }
     const Body* body = world.Find(bullet);
     REQUIRE(body != nullptr);
-    CHECK(body->position.y > field->HeightAt(body->position.x, body->position.z) - 0.05f);
+    CHECK(static_cast<f32>(body->position.y) > field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.05f);
 }
 
 TEST_CASE("Height field character: walks up a ramp, stops at the slope limit, crosses a diagonal smoothly",
@@ -278,7 +278,7 @@ TEST_CASE("Height field character: walks up a ramp, stops at the slope limit, cr
         CHECK(body->position.x > -15.0f + 7.0f);
         CHECK(walker.State().on_ground);
         // The capsule's centre sits half its height above the surface (to the slope's cosine).
-        CHECK(FNear(body->position.y - ramp->HeightAt(body->position.x, 0.0f), 0.9f, 0.25f));
+        CHECK(FNear(static_cast<f32>(body->position.y) - ramp->HeightAt(static_cast<f32>(body->position.x), 0.0f), 0.9f, 0.25f));
     }
     {
         // A ramp steeper than the limit (a normal.y of 0.64 is about 50 degrees): it does not climb it.
@@ -310,14 +310,14 @@ TEST_CASE("Height field character: walks up a ramp, stops at the slope limit, cr
             walker.Move(&world, Vec3(0, 0, 0), dt);
             world.Step();
         }
-        f32 previous = world.Find(walker.BodyHandle())->position.y;
+        f32 previous = static_cast<f32>(world.Find(walker.BodyHandle())->position.y);
         f32 lowest = 1e9f;
         f32 highest = -1e9f;
         for (u32 i = 0; i < 180; ++i)
         {
             walker.Move(&world, Vec3(2.0f, 0, 2.0f), dt);
             world.Step();
-            const f32 y = world.Find(walker.BodyHandle())->position.y;
+            const f32 y = static_cast<f32>(world.Find(walker.BodyHandle())->position.y);
             lowest = Min(lowest, y - previous);
             highest = Max(highest, y - previous);
             previous = y;

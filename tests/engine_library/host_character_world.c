@@ -139,9 +139,9 @@ static Lane Walk(engine_handle engine, engine_handle world, uint64_t key, float 
                 *hash = (*hash ^ bytes[i]) * 1099511628211ull;
             }
         }
-        lane.x = t.position[0];
-        lane.y = t.position[1];
-        lane.z = t.position[2];
+        lane.x = (float)t.position[0];
+        lane.y = (float)t.position[1];
+        lane.z = (float)t.position[2];
     }
     memset(&state, 0, sizeof(state));
     state.struct_size = sizeof(state);

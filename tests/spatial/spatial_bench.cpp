@@ -55,7 +55,7 @@ struct City
         for (u32 i = 0; i < n; ++i)
         {
             boxes.Push(
-                BoxAt(Vec3d(rng.Float(-half, half), rng.Float(0, 3), rng.Float(-half, half)), Vec3d(0.5f, 0.5f, 0.5f)));
+                BoxAt(Vec3d(rng.Float(static_cast<f32>(-half), static_cast<f32>(half)), rng.Float(0, 3), rng.Float(static_cast<f32>(-half), static_cast<f32>(half))), Vec3d(0.5f, 0.5f, 0.5f)));
         }
     }
 };
@@ -154,7 +154,7 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         t = NowMs();
         for (u32 q = 0; q < queries; ++q)
         {
-            const Aabbd box = BoxAt(Vec3d(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
+            const Aabbd box = BoxAt(Vec3d(rng.Float(static_cast<f32>(-city.half), static_cast<f32>(city.half)), 1.5f, rng.Float(static_cast<f32>(-city.half), static_cast<f32>(city.half))),
                                     Vec3d(2, 2, 2));
             Overlap(set, box, QueryFilter(),
                     [&](const Item&)
@@ -167,7 +167,7 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         t = NowMs();
         for (u32 q = 0; q < queries; ++q)
         {
-            const Aabbd box = BoxAt(Vec3d(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
+            const Aabbd box = BoxAt(Vec3d(rng.Float(static_cast<f32>(-city.half), static_cast<f32>(city.half)), 1.5f, rng.Float(static_cast<f32>(-city.half), static_cast<f32>(city.half))),
                                     Vec3d(20, 20, 20));  // the spec's 40-unit query
             Overlap(set, box, QueryFilter(),
                     [&](const Item&)
@@ -181,7 +181,7 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         t = NowMs();
         for (u32 q = 0; q < queries; ++q)
         {
-            const Rayd ray = Rayd::Make(Vec3d(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
+            const Rayd ray = Rayd::Make(Vec3d(rng.Float(static_cast<f32>(-city.half), static_cast<f32>(city.half)), 1.5f, rng.Float(static_cast<f32>(-city.half), static_cast<f32>(city.half))),
                                         Vec3d(1, 0, 0.1f));
             Raycast(set, ray, 50.0f, QueryFilter(), RayMode::Closest, Order::Ordered, &hits);
             sink += static_cast<u32>(hits.Size());
@@ -297,7 +297,7 @@ TEST_CASE("Spatial benchmark: 100,000 moving agents through the ECS sync, 1, 2, 
         for (u32 i = 0; i < kAgents; ++i)
         {
             ecs::LocalTransform local;
-            local.position = Vec3d(rng.Float(-half, half), 0, rng.Float(-half, half));
+            local.position = Vec3d(rng.Float(static_cast<f32>(-half), static_cast<f32>(half)), 0, rng.Float(static_cast<f32>(-half), static_cast<f32>(half)));
             SpatialBounds bounds;
             bounds.local = spatial_test::LocalBoxAt(Vec3(0, 0, 0), Vec3(0.5f, 0.5f, 0.5f));
             SpatialMembership membership;

@@ -121,6 +121,7 @@ void TerrainPass::Build()
     {
         RenderLog(LogVerbosity::Warn,
                   "TerrainPass: creating the shaders, layout, sampler or buffer failed; no terrain is drawn");
+        Release();  // a pass that cannot draw holds nothing, so Live() (false) is true to what it holds
         return;
     }
     tile_mapped_ = static_cast<byte*>(device->MapBuffer(tile_buffer_));
@@ -149,6 +150,7 @@ void TerrainPass::Build()
     if (!pipeline_.IsValid())
     {
         RenderLog(LogVerbosity::Warn, "TerrainPass: creating the pipeline failed; no terrain is drawn");
+        Release();
         return;
     }
 }
@@ -223,11 +225,7 @@ void TerrainPass::Release()
 bool TerrainPass::Recreate(rhi::Device* device)
 {
     device_ = device;
-    Build();
-    if (!pipeline_.IsValid())
-    {
-        Release();
-    }
+    Build();  // releases what it made when it fails
     return true;
 }
 

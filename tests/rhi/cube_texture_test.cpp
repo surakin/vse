@@ -115,15 +115,15 @@ TEST_CASE("A cube texture is sampled by direction, per face and per mip level", 
         {
             continue;  // a backend that has no cube textures yet refuses them (checked on the null device)
         }
-        constexpr u32 kSize = 4;
+        constexpr u32 kCubeSize = 4;
         constexpr u32 kMips = 3;
-        const TextureHandle cube = device->CreateTexture(CubeDesc(kSize, kMips));
+        const TextureHandle cube = device->CreateTexture(CubeDesc(kCubeSize, kMips));
         REQUIRE(cube.IsValid());
         for (u32 face = 0; face < 6; ++face)
         {
             for (u32 mip = 0; mip < kMips; ++mip)
             {
-                const u32 extent = kSize >> mip;
+                const u32 extent = kCubeSize >> mip;
                 Vector<u8> texels;
                 texels.Resize(extent * extent * 4);
                 u8 color[4];

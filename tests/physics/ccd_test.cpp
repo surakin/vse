@@ -60,7 +60,7 @@ TEST_CASE("Ccd: a bullet passes a 1 cm wall without the flag and stops at it wit
         {
             world.Step();
         }
-        const f32 x = world.Find(bullet)->position.x;
+        const f32 x = static_cast<f32>(world.Find(bullet)->position.x);
         if (flagged)
         {
             CHECK(x < 10.0f);  // never beyond the wall's face
@@ -166,7 +166,7 @@ TEST_CASE("Ccd: a ball rolling over the seam of two static boxes is not disturbe
         {
             world.Step();
         }
-        end[run] = world.Find(ball)->position.x;
+        end[run] = static_cast<f32>(world.Find(ball)->position.x);
         CHECK(world.Find(ball)->position.y > 0.4f);
     }
     CHECK(Abs(end[0] - end[1]) < 0.05f);

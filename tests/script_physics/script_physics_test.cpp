@@ -349,7 +349,7 @@ TEST_CASE("Script physics: the gravity scale changes the component the sync foll
     {
         rig.physics.Step();
     }
-    CHECK(Near(rig.BodyFor(floating)->position.y, 10.0f));
+    CHECK(Near(static_cast<f32>(rig.BodyFor(floating)->position.y), 10.0f));
     CHECK(rig.BodyFor(falling)->position.y < 9.0f);
 }
 
@@ -655,7 +655,7 @@ TEST_CASE("Script physics: a script moves a kinematic body by its transform and 
     CHECK(rig.physics.Find(platform_id)->position.x == 0.0f);  // not yet: the drive does it
     CHECK(physics::DriveKinematicBodies(rig.world, rig.physics, 1.0f / 60.0f) == 1);
     rig.physics.Step();
-    CHECK(Near(rig.physics.Find(platform_id)->position.x, 0.5f));
+    CHECK(Near(static_cast<f32>(rig.physics.Find(platform_id)->position.x), 0.5f));
     CHECK(rig.physics.Find(platform_id)->settings.type == physics::BodyType::Kinematic);
 }
 

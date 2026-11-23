@@ -24,7 +24,7 @@ struct TerrainParams {
     float4 fade;           // fade start, fade end, last mip of the layer array, unused
 };
 
-[[vk::binding(3, 1)]] ConstantBuffer<TerrainParams> terrain ENGINE_REGISTER(b1, space1);
+[[vk::binding(3, 1)]] ConstantBuffer<TerrainParams> terrain ENGINE_REGISTER(b3, space1);
 [[vk::binding(4, 1)]] Texture2D<float4> splat_tex ENGINE_REGISTER(t4, space1);
 [[vk::binding(5, 1)]] Texture2DArray<float4> layer_tex ENGINE_REGISTER(t5, space1);
 [[vk::binding(6, 1)]] SamplerState repeat_sampler ENGINE_REGISTER(s6, space1);

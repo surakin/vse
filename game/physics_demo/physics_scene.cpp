@@ -413,7 +413,7 @@ f32 PhysicsScene::LowestBodyY() const
         const ecs::LocalTransform* t = world_->Peek<ecs::LocalTransform>(bodies_[i]);
         if (t != nullptr && (!any || t->position.y < lowest))
         {
-            lowest = t->position.y;
+            lowest = static_cast<f32>(t->position.y);
             any = true;
         }
     }

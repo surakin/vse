@@ -318,7 +318,7 @@ struct Rig
         engine_transform t = {};
         t.struct_size = sizeof(t);
         REQUIRE(api->component_get(world, counter.entity, ENGINE_COMPONENT_TRANSFORM, &t) == ENGINE_OK);
-        return t.position[0];
+        return static_cast<f32>(t.position[0]);
     }
 
     ui::Harness h;

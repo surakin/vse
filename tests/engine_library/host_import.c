@@ -1773,7 +1773,7 @@ static int HitsDown(engine_handle world, float x, float z, float* y)
     CHECK_STATUS(g_api->physics_raycast(world, origin, down, 10.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
     if (y != NULL)
     {
-        *y = hit.point[1];
+        *y = (float)hit.point[1];
     }
     return found;
 }

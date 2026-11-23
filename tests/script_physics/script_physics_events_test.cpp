@@ -503,7 +503,7 @@ TEST_CASE("Script character: a script walks up a gentle ramp", "[script_physics]
     {
         rig.Frame();
     }
-    const f32 start = rig.world.Get<ecs::LocalTransform>(e)->position.y;
+    const f32 start = static_cast<f32>(rig.world.Get<ecs::LocalTransform>(e)->position.y);
     for (u32 frame = 0; frame < 90; ++frame)
     {
         rig.Frame();

@@ -178,7 +178,7 @@ TEST_CASE("Joint: a rigid distance joint holds its length under load", "[physics
     {
         world.Step();
     }
-    const f32 length = (world.Find(ball)->position - anchor).Length();
+    const f32 length = static_cast<f32>((world.Find(ball)->position - anchor).Length());
     CHECK(Abs(length - 3.0f) < 0.02f);
 }
 
@@ -199,11 +199,11 @@ TEST_CASE("Joint: a spring joint oscillates at its frequency", "[physics][joint]
     desc.damping_ratio = 0.0f;
     Join(world, desc);
     Vector<f32> crossings;
-    f32 previous = world.Find(ball)->position.y - (anchor.y - rest);
+    f32 previous = static_cast<f32>(world.Find(ball)->position.y - (anchor.y - rest));
     for (int i = 1; i <= 900; ++i)
     {
         world.Step();
-        const f32 y = world.Find(ball)->position.y - (anchor.y - rest);
+        const f32 y = static_cast<f32>(world.Find(ball)->position.y - (anchor.y - rest));
         if (previous < 0.0f && y >= 0.0f)
         {
             crossings.Push((static_cast<f32>(i - 1) + (-previous) / (y - previous)) / 60.0f);
@@ -230,7 +230,7 @@ TEST_CASE("Joint: a rope stops a falling body at its longest", "[physics][joint]
     {
         world.Step();
     }
-    const f32 length = (world.Find(ball)->position - anchor).Length();
+    const f32 length = static_cast<f32>((world.Find(ball)->position - anchor).Length());
     INFO("length " << length);
     CHECK(Abs(length - 3.0f) < 0.05f);
 }
@@ -289,7 +289,7 @@ TEST_CASE("Joint: connected bodies collide only when asked to", "[physics][joint
         {
             world.Step();
         }
-        const f32 gap = world.Find(b)->position.x - world.Find(a)->position.x;
+        const f32 gap = static_cast<f32>(world.Find(b)->position.x - world.Find(a)->position.x);
         INFO("variant " << variant << " gap " << gap);
         if (variant == 0)
         {

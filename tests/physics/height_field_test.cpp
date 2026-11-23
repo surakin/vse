@@ -465,7 +465,7 @@ TEST_CASE("Queries: rays, overlaps and the closest point meet a height field in 
     PhysicsHit hit;
     REQUIRE(RayCast(world, Vec3(1, 10, 1), Vec3(0, -1, 0), 100.0f, filter, &hit));
     CHECK(HfNear(hit.distance, 8.0f));
-    CHECK(HfNear(hit.point.y, 2.0f));
+    CHECK(HfNear(static_cast<f32>(hit.point.y), 2.0f));
     CHECK(HfNear(hit.normal.y, 1.0f));
     CHECK(hit.triangle < field->TriangleCount());
     // From below the surface: hit from below, the normal faces the ray.
@@ -506,8 +506,8 @@ TEST_CASE("Height field: a body resting on it stays, and a snapshot holds the sh
     // The surface is at 1.0 (16384/65535 * 4); the ball rests on it.
     const Body* body = world.Find(ball_id);
     REQUIRE(body != nullptr);
-    CHECK(HfNear(body->position.y, 1.5f, 0.05f));
-    CHECK(HfNear(body->position.x, 2.0f, 0.05f));
+    CHECK(HfNear(static_cast<f32>(body->position.y), 1.5f, 0.05f));
+    CHECK(HfNear(static_cast<f32>(body->position.x), 2.0f, 0.05f));
     // Save and restore into the same world: the shape and the library match.
     bytes::ByteWriter writer;
     world.Snapshot(&writer);

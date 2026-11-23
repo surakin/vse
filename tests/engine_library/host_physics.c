@@ -86,7 +86,7 @@ static float PositionY(engine_handle world, uint64_t key)
     memset(&t, 0, sizeof(t));
     t.struct_size = sizeof(t);
     CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
-    return t.position[1];
+    return (float)t.position[1];
 }
 
 static void SetBody(engine_handle world, uint64_t key, uint32_t type, float mass)

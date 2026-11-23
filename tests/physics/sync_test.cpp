@@ -256,8 +256,8 @@ TEST_CASE("Sync: a static body with a parent is made at its world transform", "[
     REQUIRE(rig.world.Has<BodyLink>(child));
     const Body* body = rig.physics.Find(rig.world.Get<BodyLink>(child)->id);
     REQUIRE(body != nullptr);
-    CHECK(Near(body->position.x, 10.0f));  // (1, 0, 0) turned 90 degrees about Y is (0, 0, -1)
-    CHECK(Near(body->position.z, -1.0f));
+    CHECK(Near(static_cast<f32>(body->position.x), 10.0f));  // (1, 0, 0) turned 90 degrees about Y is (0, 0, -1)
+    CHECK(Near(static_cast<f32>(body->position.z), -1.0f));
     CHECK(Near(Abs(body->orientation.y), Abs(parent_at.rotation.y)));
     CHECK(Near(Abs(body->orientation.w), Abs(parent_at.rotation.w)));
 }
@@ -303,7 +303,7 @@ TEST_CASE("Sync: a parented static body follows its parent and wakes what rests 
     CHECK(report.replaced == 1);
     const Body* body = rig.physics.Find(rig.world.Get<BodyLink>(floor)->id);
     REQUIRE(body != nullptr);
-    CHECK(Near(body->position.y, 0.1f));
+    CHECK(Near(static_cast<f32>(body->position.y), 0.1f));
     CHECK(!rig.physics.Find(ball_id)->sleeping);
 }
 
@@ -320,7 +320,7 @@ TEST_CASE("Sync: the scale of the world transform does not reach the body", "[ph
     rig.Frame();
     const Body* body = rig.physics.Find(rig.world.Get<BodyLink>(child)->id);
     REQUIRE(body != nullptr);
-    CHECK(Near(body->position.x, 2.0f));     // the position is the world one
+    CHECK(Near(static_cast<f32>(body->position.x), 2.0f));     // the position is the world one
     CHECK(Near(body->orientation.w, 1.0f));  // the rotation is a unit one, no scale in it
     const ColliderRecord* record = rig.physics.FindCollider(body->first_collider);
     REQUIRE(record != nullptr);

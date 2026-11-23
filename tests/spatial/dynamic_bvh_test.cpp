@@ -23,7 +23,7 @@ namespace
 
 Aabbd RandomBox(Rng& rng, f64 extent)
 {
-    return BoxAt(rng.Point(-extent, extent), Vec3d(rng.Float(0.1f, 3), rng.Float(0.1f, 3), rng.Float(0.1f, 3)));
+    return BoxAt(rng.Point(static_cast<f32>(-extent), static_cast<f32>(extent)), Vec3d(rng.Float(0.1f, 3), rng.Float(0.1f, 3), rng.Float(0.1f, 3)));
 }
 
 // The model: what the tree should hold.

@@ -40,6 +40,11 @@ bool SameBits(f32 a, f32 b)
     return MemCompare(&a, &b, sizeof(f32)) == 0;
 }
 
+bool SameBits(f64 a, f64 b)
+{
+    return MemCompare(&a, &b, sizeof(f64)) == 0;
+}
+
 bool SameHit(const PhysicsHit& a, const PhysicsHit& b)
 {
     return a.collider == b.collider && a.body == b.body && SameBits(a.point.x, b.point.x) &&
