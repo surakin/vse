@@ -170,17 +170,18 @@ TEST_CASE("Entity bindings: a spawned entity can be used at once and exists afte
 TEST_CASE("Entity bindings: a position far from the origin is read and written without narrowing",
           "[script][entity][far]")
 {
-    // 1e12 + 0.25 is exact in double precision and not representable in single precision (spacing 65536 there).
+    // 1e11 + 0.25 is exact in double precision and not representable in single precision (spacing 8192 there); 1e12 is
+    // the world limit a script position may not pass.
     EntityRig rig;
     CallOutput out;
-    REQUIRE(rig.Run("local e = entity.spawn(nil) transform.set_position(e, vec3.new(1e12 + 0.25, 2, 3)) "
+    REQUIRE(rig.Run("local e = entity.spawn(nil) transform.set_position(e, vec3.new(1e11 + 0.25, 2, 3)) "
                     "transform.translate(e, vec3.new(0.5, 0, 0)) "
                     "local p = transform.position(e) "
-                    "return e, p, vec3.distance(p, vec3.new(1e12, 2, 3))",
+                    "return e, p, vec3.distance(p, vec3.new(1e11, 2, 3))",
                     &out)
                 .IsOk());
     REQUIRE(out.results.Size() == 3);
-    CHECK(out.results[1].AsVec3d().x == 1.0e12 + 0.75);
+    CHECK(out.results[1].AsVec3d().x == 1.0e11 + 0.75);
     CHECK(out.results[1].AsVec3d().y == 2.0);
     CHECK(out.results[2].AsFloat() == 0.75);
     rig.Merge();
@@ -193,7 +194,19 @@ TEST_CASE("Entity bindings: a position far from the origin is read and written w
                 found = t.position;
             }
         });
-    CHECK(found.x == 1.0e12 + 0.75);
+    CHECK(found.x == 1.0e11 + 0.75);
+}
+
+TEST_CASE("Entity bindings: a position past the world limit is refused and the entity stays", "[script][entity][far]")
+{
+    EntityRig rig;
+    CallOutput out;
+    const Outcome refused = rig.Run("local e = entity.spawn(nil) transform.set_position(e, vec3.new(1e12 + 1, 2, 3))",
+                                    &out);
+    CHECK_FALSE(refused.IsOk());
+    const Outcome edge = rig.Run("local e = entity.spawn(nil) transform.set_position(e, vec3.new(1e12, 2, 3)) return e",
+                                 &out);
+    CHECK(edge.IsOk());
 }
 
 TEST_CASE("Entity bindings: valid, self and dead handles", "[script][entity]")

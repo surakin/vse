@@ -5,6 +5,7 @@
 
 #include "backend_fixture.h"
 #include "containers/vector.h"
+#include "cstr/mem_ops.h"
 #include "cube_sample.comp.dxil.inc"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
@@ -219,6 +220,78 @@ TEST_CASE("A cube texture is sampled by direction, per face and per mip level", 
         device->DestroyShader(cs);
         device->DestroyBuffer(out);
         device->DestroySampler(sampler);
+        device->DestroyTexture(cube);
+    }
+}
+
+TEST_CASE("Every face of a cube texture is copied from a buffer and back", "[rhi][gpu][cube]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        DevicePtr device = gpu_test::CreateTestDevice(backend);
+        if (!device->Caps().cube_textures)
+        {
+            continue;
+        }
+        constexpr u32 kFaceSize = 64;  // a 256-byte row meets every backend's pitch alignment
+        constexpr u32 kFaceBytes = kFaceSize * kFaceSize * 4;
+        Vector<u8> pattern;
+        pattern.Resize(6 * kFaceBytes);
+        for (u32 i = 0; i < pattern.Size(); ++i)
+        {
+            pattern[i] = static_cast<u8>((i / kFaceBytes) * 40 + (i * 7) % 31);
+        }
+        const TextureHandle cube = device->CreateTexture(CubeDesc(kFaceSize, 1));
+        REQUIRE(cube.IsValid());
+        BufferDesc bd;
+        bd.size = pattern.Size();
+        bd.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;
+        bd.location = MemoryLocation::GpuOnly;
+        const BufferHandle in = device->CreateBuffer(bd);
+        const BufferHandle out = device->CreateBuffer(bd);
+        REQUIRE(in.IsValid());
+        REQUIRE(out.IsValid());
+        REQUIRE(device->UploadBuffer(in, 0, pattern.Data(), pattern.Size()).ok);
+
+        device->BeginFrame();
+        CommandList* list = device->CreateCommandList();
+        list->Begin();
+        list->Barrier(in, ResourceState::Undefined, ResourceState::CopySrc);
+        list->Barrier(out, ResourceState::Undefined, ResourceState::CopyDst);
+        list->Barrier(cube, ResourceState::Undefined, ResourceState::CopyDst);
+        for (u32 face = 0; face < 6; ++face)
+        {
+            BufferTextureCopy region;
+            region.buffer_offset = static_cast<u64>(face) * kFaceBytes;
+            region.array_layer = face;
+            list->CopyBufferToTexture(in, cube, region);
+        }
+        list->Barrier(cube, ResourceState::CopyDst, ResourceState::CopySrc);
+        for (u32 face = 0; face < 6; ++face)
+        {
+            BufferTextureCopy region;
+            region.buffer_offset = static_cast<u64>(face) * kFaceBytes;
+            region.array_layer = face;
+            list->CopyTextureToBuffer(cube, out, region);
+        }
+        list->Barrier(out, ResourceState::CopyDst, ResourceState::CopySrc);
+        list->End();
+        CommandList* lists[] = {list};
+        REQUIRE(device->Submit(lists, 1) != 0);
+        device->EndFrame();
+
+        Vector<u8> got;
+        got.Resize(pattern.Size());
+        REQUIRE(device->ReadbackBuffer(out, 0, got.Data(), got.Size()));
+        for (u32 face = 0; face < 6; ++face)
+        {
+            INFO("face " << face);
+            CHECK(MemCompare(got.Data() + face * kFaceBytes, pattern.Data() + face * kFaceBytes, kFaceBytes) == 0);
+        }
+        device->WaitIdle();
+        device->DestroyBuffer(in);
+        device->DestroyBuffer(out);
         device->DestroyTexture(cube);
     }
 }

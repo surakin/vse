@@ -589,7 +589,7 @@ format the device can blit (check [[rhi::Device::CanGenerateMips]]); for other f
 order +X, -X, +Y, -Y, +Z, -Z, each face an array layer, so `UploadTexture(tex, mip, face, ...)` fills one face of one level.
 A cube can only be sampled and copied (no storage, no render target) and has no array form. A shader reads it as
 `TextureCube`; the binding is a plain `SampledTexture` (the dimension belongs to the texture, not the layout). Check
-`DeviceCaps::cube_textures` first: the Vulkan backend and the null device report true, and `CreateTexture` fails for a
+`DeviceCaps::cube_textures` first: the Vulkan and Metal backends and the null device report true, and `CreateTexture` fails for a
 cube on a device that reports false.
 
 Samplers are cheap to describe and are shared: `CreateSampler` returns the same handle for equal descriptors and

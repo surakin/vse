@@ -313,6 +313,7 @@ void MetalDevice::FillCaps()
     caps_.max_texture_dimension_2d = 16384;  // the Mac2 family
     caps_.max_texture_dimension_3d = 2048;
     caps_.max_texture_array_layers = 2048;
+    caps_.cube_textures = true;
     caps_.max_color_attachments = 8;
     caps_.max_push_constant_bytes = kMaxPushConstantBytes;  // setBytes: takes up to 4 KiB
     caps_.min_uniform_buffer_offset_alignment = 256;        // constant buffers on macOS

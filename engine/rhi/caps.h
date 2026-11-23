@@ -57,8 +57,8 @@ struct DeviceCaps
     /// [[rhi::ShaderBlobSet]] with it; the null device takes the format its options name (SPIR-V by default).
     ShaderFormat shader_format = ShaderFormat::Spirv;
     /// Whether cube textures (`TextureDimension::Cube`: six square faces, sampled and copied) can be created: true on
-    /// the Vulkan backend and the null device; the default (and a backend without them) is false, and `CreateTexture`
-    /// then fails for a cube.
+    /// the Vulkan and Metal backends and the null device; the default (and a backend without them) is false, and
+    /// `CreateTexture` then fails for a cube.
     bool cube_textures = false;
     /// Whether vertex shaders read the per-draw object index from an instance-rate vertex attribute rather than the
     /// draw's first instance: true on Direct3D 12, whose shaders have no base instance. When set, a pipeline that draws

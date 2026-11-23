@@ -644,9 +644,10 @@ TextureHandle MetalDevice::CreateTexture(const TextureDesc& desc)
         RhiLog(LogVerbosity::Error, "CreateTexture: %s", why);
         return {};
     }
-    if (desc.dimension == TextureDimension::Cube && !caps_.cube_textures)
+    const bool is_cube = desc.dimension == TextureDimension::Cube;
+    if (is_cube && !caps_.cube_textures)
     {
-        RhiLog(LogVerbosity::Error, "CreateTexture: cube textures are not supported on this backend yet");
+        RhiLog(LogVerbosity::Error, "CreateTexture: cube textures are not supported on this device");
         return {};
     }
     if (!FormatSupport(desc.format, desc.usage))
@@ -661,7 +662,7 @@ TextureHandle MetalDevice::CreateTexture(const TextureDesc& desc)
         return {};
     }
     const bool is3d = desc.dimension == TextureDimension::Tex3D;
-    const bool array = !is3d && desc.array_layers > 1;
+    const bool array = !is3d && !is_cube && desc.array_layers > 1;
     const bool ms = desc.samples > 1;
     TextureRes res;
     res.desc = desc;
@@ -672,6 +673,11 @@ TextureHandle MetalDevice::CreateTexture(const TextureDesc& desc)
         if (is3d)
         {
             d.textureType = MTLTextureType3D;
+        }
+        else if (is_cube)
+        {
+            // Six faces are the slices 0 to 5; a cube's arrayLength is 1 (cube arrays are not in the RHI).
+            d.textureType = MTLTextureTypeCube;
         }
         else if (ms)
         {

@@ -18,6 +18,12 @@ namespace vse::rhi::metal
 namespace
 {
 
+// The slices a texture has: a cube's `arrayLength` is 1, and its six faces are the slices 0 to 5.
+NSUInteger SliceCount(id<MTLTexture> t)
+{
+    return t.textureType == MTLTextureTypeCube ? 6 : t.arrayLength;
+}
+
 MTLLoadAction LoadOf(LoadOp op)
 {
     return op == LoadOp::Load ? MTLLoadActionLoad : op == LoadOp::Clear ? MTLLoadActionClear : MTLLoadActionDontCare;
@@ -225,7 +231,7 @@ void MetalCommandList::CopyBufferToTexture(BufferHandle src, TextureHandle dst, 
             Fail("CopyBufferToTexture", "a buffer or texture is invalid or destroyed");
             return;
         }
-        ENGINE_ASSERT(region.mip_level < t.mipmapLevelCount && region.array_layer < t.arrayLength,
+        ENGINE_ASSERT(region.mip_level < t.mipmapLevelCount && region.array_layer < SliceCount(t),
                       "CopyBufferToTexture: mip or layer out of range");
         const FormatProperties& fp = FormatInfo(format);
         const u32 width = MipExtent(static_cast<u32>(t.width), region.mip_level);
@@ -269,7 +275,7 @@ void MetalCommandList::CopyTextureToBuffer(TextureHandle src, BufferHandle dst, 
             Fail("CopyTextureToBuffer", "a buffer or texture is invalid or destroyed");
             return;
         }
-        ENGINE_ASSERT(region.mip_level < t.mipmapLevelCount && region.array_layer < t.arrayLength,
+        ENGINE_ASSERT(region.mip_level < t.mipmapLevelCount && region.array_layer < SliceCount(t),
                       "CopyTextureToBuffer: mip or layer out of range");
         ENGINE_ASSERT(t.sampleCount == 1, "CopyTextureToBuffer: a multisampled texture cannot be copied (resolve it)");
         const FormatProperties& fp = FormatInfo(format);
