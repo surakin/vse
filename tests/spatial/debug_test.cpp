@@ -11,9 +11,9 @@ using namespace vse;
 
 namespace
 {
-Aabb UnitBoxAt(f32 x)
+Aabbd UnitBoxAt(f64 x)
 {
-    return Aabb{Vec3(x, 0, 0), Vec3(x + 1, 1, 1)};
+    return Aabbd{Vec3d(x, 0, 0), Vec3d(x + 1, 1, 1)};
 }
 }  // namespace
 
@@ -22,11 +22,11 @@ TEST_CASE("Spatial debug: DescribeSet counts the items and the tree", "[spatial]
     spatial::SpatialSet set;
     for (u32 i = 0; i < 100; ++i)
     {
-        set.AddDynamic(UnitBoxAt(static_cast<f32>(i) * 3.0f), i, 0);
+        set.AddDynamic(UnitBoxAt(static_cast<f64>(i) * 3.0f), i, 0);
     }
     for (u32 i = 0; i < 20; ++i)
     {
-        set.AddStatic(UnitBoxAt(static_cast<f32>(i) * 3.0f + 1000.0f), 1000 + i, 0);
+        set.AddStatic(UnitBoxAt(static_cast<f64>(i) * 3.0f + 1000.0f), 1000 + i, 0);
     }
     set.RebuildStatic();
     const spatial::SpatialStats stats = spatial::DescribeSet(set);
@@ -47,7 +47,7 @@ TEST_CASE("Spatial debug: a box has 12 edges and DebugLines draws every item and
     spatial::SpatialSet set;
     for (u32 i = 0; i < 50; ++i)
     {
-        set.AddDynamic(UnitBoxAt(static_cast<f32>(i) * 3.0f), i, 0);
+        set.AddDynamic(UnitBoxAt(static_cast<f64>(i) * 3.0f), i, 0);
     }
     spatial::DebugOptions items_only;
     items_only.nodes = false;
@@ -65,8 +65,8 @@ TEST_CASE("Spatial debug: a box has 12 edges and DebugLines draws every item and
     query.items = false;
     query.has_query = true;
     query.query = UnitBoxAt(5);
-    const Aabb hits[2] = {UnitBoxAt(1), UnitBoxAt(2)};
-    query.hits = Span<const Aabb>(hits, 2);
+    const Aabbd hits[2] = {UnitBoxAt(1), UnitBoxAt(2)};
+    query.hits = Span<const Aabbd>(hits, 2);
     CHECK(spatial::DebugLines(set, query, &lines) == 3 * 12);
 
     spatial::DebugOptions crowded;  // the query and its hits survive a cap the structure would fill

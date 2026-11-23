@@ -11,7 +11,7 @@ namespace
 
 constexpr u32 kSetSlotMask = 0x00FFFFFFu;
 
-bool SetFinite(const Aabb& b)
+bool SetFinite(const Aabbd& b)
 {
     return IsFinite(b.min.x) && IsFinite(b.min.y) && IsFinite(b.min.z) && IsFinite(b.max.x) && IsFinite(b.max.y) &&
            IsFinite(b.max.z);
@@ -44,7 +44,7 @@ i32 SpatialSet::SlotOf(SetHandle handle) const
     return static_cast<i32>(slot);
 }
 
-u32 SpatialSet::TakeSlot(const Aabb& box, SpatialKey key, u32 layer)
+u32 SpatialSet::TakeSlot(const Aabbd& box, SpatialKey key, u32 layer)
 {
     u32 slot;
     if (free_slot_ != kNull)
@@ -109,7 +109,7 @@ void SpatialSet::RemovePending(u32 slot)
     }
 }
 
-SetHandle SpatialSet::AddStatic(const Aabb& box, SpatialKey key, u32 layer)
+SetHandle SpatialSet::AddStatic(const Aabbd& box, SpatialKey key, u32 layer)
 {
     ENGINE_ASSERT(!box.IsEmpty() && SetFinite(box), "SpatialSet::AddStatic: the box is empty or not finite");
     if (count_ >= kMaxDynamicProxies)
@@ -122,7 +122,7 @@ SetHandle SpatialSet::AddStatic(const Aabb& box, SpatialKey key, u32 layer)
     return HandleOf(slot);
 }
 
-SetHandle SpatialSet::AddDynamic(const Aabb& box, SpatialKey key, u32 layer)
+SetHandle SpatialSet::AddDynamic(const Aabbd& box, SpatialKey key, u32 layer)
 {
     ENGINE_ASSERT(!box.IsEmpty() && SetFinite(box), "SpatialSet::AddDynamic: the box is empty or not finite");
     if (count_ >= kMaxDynamicProxies)
@@ -176,7 +176,7 @@ bool SpatialSet::Remove(SetHandle handle)
     return true;
 }
 
-bool SpatialSet::Move(SetHandle handle, const Aabb& box)
+bool SpatialSet::Move(SetHandle handle, const Aabbd& box)
 {
     const i32 found = SlotOf(handle);
     if (found < 0)

@@ -17,9 +17,9 @@ inline constexpr u32 kSahBins = 16;
 /// pending sibling per level plus the root) every tree fits. A node that would go deeper is split in its middle.
 inline constexpr u32 kMaxBuildDepth = 60;
 
-// Grows `box` to contain `other` (both non-empty, or `box` the infinite Aabb::Empty(), which min and max handle
+// Grows `box` to contain `other` (both non-empty, or `box` the infinite Aabbd::Empty(), which min and max handle
 // exactly): Union without its checks.
-inline void GrowBox(Aabb& box, const Aabb& other)
+inline void GrowBox(Aabbd& box, const Aabbd& other)
 {
     box.min.x = other.min.x < box.min.x ? other.min.x : box.min.x;
     box.min.y = other.min.y < box.min.y ? other.min.y : box.min.y;
@@ -29,9 +29,9 @@ inline void GrowBox(Aabb& box, const Aabb& other)
     box.max.z = other.max.z > box.max.z ? other.max.z : box.max.z;
 }
 
-inline void GrowBox(Aabb& box, const Vec3& p)
+inline void GrowBox(Aabbd& box, const Vec3d& p)
 {
-    GrowBox(box, Aabb::FromMinMax(p, p));
+    GrowBox(box, Aabbd::FromMinMax(p, p));
 }
 
 // The number of halvings a node of `count` items needs to reach leaves of at most `leaf_size`.
@@ -47,9 +47,9 @@ inline u32 SplitsNeeded(u32 count, u32 leaf_size)
     return splits;
 }
 
-inline u32 SahBinOf(f32 centroid, f32 low, f32 scale)
+inline u32 SahBinOf(f64 centroid, f64 low, f64 scale)
 {
-    const f32 position = (centroid - low) * scale;
+    const f64 position = (centroid - low) * scale;
     if (!(position > 0.0f))
     {
         return 0;  // also a NaN
@@ -66,12 +66,12 @@ inline u32 SahBinOf(f32 centroid, f32 low, f32 scale)
 // item i's box and centroid; `scratch` has room for `end` indices and `bins` for `end` bytes (both indexed by position,
 // like `order`).
 template <class BoxOf, class CentroidOf>
-u32 SplitBinnedSah(u32* order, u32 begin, u32 end, const Aabb& centroid_box, bool middle, u32* scratch, u8* bins,
+u32 SplitBinnedSah(u32* order, u32 begin, u32 end, const Aabbd& centroid_box, bool middle, u32* scratch, u8* bins,
                    BoxOf&& box_of, CentroidOf&& centroid_of)
 {
     const u32 count = end - begin;
     const u32 mid = begin + count / 2;
-    const Vec3 extent = centroid_box.Extents();
+    const Vec3d extent = centroid_box.Extents();
     u32 axis = 0;
     if (extent.y > extent[axis])
     {
@@ -86,13 +86,13 @@ u32 SplitBinnedSah(u32* order, u32 begin, u32 end, const Aabb& centroid_box, boo
         return mid;
     }
 
-    const f32 low = centroid_box.min[axis];
-    const f32 scale = static_cast<f32>(kSahBins) / extent[axis];
-    Array<Aabb, kSahBins> bin_box;
+    const f64 low = centroid_box.min[axis];
+    const f64 scale = static_cast<f64>(kSahBins) / extent[axis];
+    Array<Aabbd, kSahBins> bin_box;
     Array<u32, kSahBins> bin_count;
     for (u32 b = 0; b < kSahBins; ++b)
     {
-        bin_box[b] = Aabb::Empty();
+        bin_box[b] = Aabbd::Empty();
         bin_count[b] = 0;
     }
     for (u32 i = begin; i < end; ++i)
@@ -103,9 +103,9 @@ u32 SplitBinnedSah(u32* order, u32 begin, u32 end, const Aabb& centroid_box, boo
         ++bin_count[b];
     }
     // The cost of plane k (bins 0..k on the left): items times area on both sides.
-    Array<f32, kSahBins> right_area;
+    Array<f64, kSahBins> right_area;
     Array<u32, kSahBins> right_count;
-    Aabb acc = Aabb::Empty();
+    Aabbd acc = Aabbd::Empty();
     u32 acc_count = 0;
     for (u32 b = kSahBins - 1; b > 0; --b)
     {
@@ -118,8 +118,8 @@ u32 SplitBinnedSah(u32* order, u32 begin, u32 end, const Aabb& centroid_box, boo
         right_count[b] = acc_count;
     }
     u32 best_plane = kSahBins;
-    f32 best_cost = 0.0f;
-    acc = Aabb::Empty();
+    f64 best_cost = 0.0f;
+    acc = Aabbd::Empty();
     acc_count = 0;
     for (u32 k = 0; k + 1 < kSahBins; ++k)
     {
@@ -133,7 +133,7 @@ u32 SplitBinnedSah(u32* order, u32 begin, u32 end, const Aabb& centroid_box, boo
         {
             continue;
         }
-        const f32 cost = static_cast<f32>(acc_count) * SurfaceArea(acc) + static_cast<f32>(rc) * right_area[k + 1];
+        const f64 cost = static_cast<f64>(acc_count) * SurfaceArea(acc) + static_cast<f64>(rc) * right_area[k + 1];
         if (best_plane == kSahBins || cost < best_cost)
         {
             best_plane = k;

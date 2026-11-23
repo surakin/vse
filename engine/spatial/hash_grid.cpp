@@ -14,7 +14,7 @@ namespace
 constexpr i32 kCellLimit = 1 << 20;
 constexpr u32 kGridSlotMask = 0x00FFFFFFu;
 
-bool GridFinite(const Aabb& b)
+bool GridFinite(const Aabbd& b)
 {
     return IsFinite(b.min.x) && IsFinite(b.min.y) && IsFinite(b.min.z) && IsFinite(b.max.x) && IsFinite(b.max.y) &&
            IsFinite(b.max.z);
@@ -22,24 +22,24 @@ bool GridFinite(const Aabb& b)
 
 }  // namespace
 
-HashGrid::HashGrid(f32 cell_size) : cell_size_(cell_size), inverse_(1.0f), cell_index_(HeapAllocator::Default())
+HashGrid::HashGrid(f64 cell_size) : cell_size_(cell_size), inverse_(1.0f), cell_index_(HeapAllocator::Default())
 {
     ENGINE_ASSERT(cell_size > 0.0f && IsFinite(cell_size), "HashGrid: the cell size must be above 0 and finite");
     inverse_ = 1.0f / cell_size;
 }
 
-i32 HashGrid::CellOf(f32 v) const
+i32 HashGrid::CellOf(f64 v) const
 {
     // Clamped before the conversion, so a coordinate far outside (or infinite) never overflows; such a cell is beyond
     // every stored item's range.
-    f32 c = Floor(v * inverse_);
-    if (!(c >= static_cast<f32>(-kCellLimit - 1)))
+    f64 c = Floor(v * inverse_);
+    if (!(c >= static_cast<f64>(-kCellLimit - 1)))
     {
-        c = static_cast<f32>(-kCellLimit - 1);  // also a NaN
+        c = static_cast<f64>(-kCellLimit - 1);  // also a NaN
     }
-    if (c > static_cast<f32>(kCellLimit))
+    if (c > static_cast<f64>(kCellLimit))
     {
-        c = static_cast<f32>(kCellLimit);
+        c = static_cast<f64>(kCellLimit);
     }
     return static_cast<i32>(c);
 }
@@ -51,7 +51,7 @@ u64 HashGrid::KeyOf(i32 x, i32 y, i32 z)
            ((static_cast<u64>(z + kCellLimit) & mask) << 42);
 }
 
-bool HashGrid::RangeOf(const Aabb& box, Array<i32, 3>* lo, Array<i32, 3>* hi) const
+bool HashGrid::RangeOf(const Aabbd& box, Array<i32, 3>* lo, Array<i32, 3>* hi) const
 {
     u64 cells = 1;
     for (u32 k = 0; k < 3; ++k)
@@ -169,7 +169,7 @@ i32 HashGrid::SlotOf(ProxyId proxy) const
     return static_cast<i32>(slot);
 }
 
-ProxyId HashGrid::Insert(const Aabb& box, SpatialKey key, u32 layer)
+ProxyId HashGrid::Insert(const Aabbd& box, SpatialKey key, u32 layer)
 {
     ENGINE_ASSERT(!box.IsEmpty() && GridFinite(box), "HashGrid::Insert: the box is empty or not finite");
     if (count_ >= kMaxDynamicProxies)
@@ -216,7 +216,7 @@ bool HashGrid::Remove(ProxyId proxy)
     return true;
 }
 
-bool HashGrid::Move(ProxyId proxy, const Aabb& box)
+bool HashGrid::Move(ProxyId proxy, const Aabbd& box)
 {
     const i32 found = SlotOf(proxy);
     if (found < 0)

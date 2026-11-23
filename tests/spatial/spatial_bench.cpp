@@ -46,40 +46,40 @@ void Say(const char* name, u32 n, f64 value, const char* unit)
 // units tall).
 struct City
 {
-    Vector<Aabb> boxes;
-    f32 half = 0.0f;
+    Vector<Aabbd> boxes;
+    f64 half = 0.0f;
     explicit City(u32 n, u64 seed)
     {
         Rng rng(seed);
-        half = Sqrt(static_cast<f32>(n) * 8.0f) * 0.5f;
+        half = Sqrt(static_cast<f64>(n) * 8.0f) * 0.5f;
         for (u32 i = 0; i < n; ++i)
         {
             boxes.Push(
-                BoxAt(Vec3(rng.Float(-half, half), rng.Float(0, 3), rng.Float(-half, half)), Vec3(0.5f, 0.5f, 0.5f)));
+                BoxAt(Vec3d(rng.Float(-half, half), rng.Float(0, 3), rng.Float(-half, half)), Vec3d(0.5f, 0.5f, 0.5f)));
         }
     }
 };
 
 // A camera that sees about `fraction` of the square: a pyramid looking down -z from the edge, widened until the share
 // of boxes seen is about right.
-Frustum ViewOf(const City& city, f32 fraction)
+Frustumd ViewOf(const City& city, f64 fraction)
 {
-    const f32 side = city.half * 2.0f * Sqrt(fraction);
-    const Vec3 apex(0, 1.5f, city.half);
-    const f32 reach = side;  // the far plane
-    const f32 w = 0.5f * side / reach;
-    Frustum f;
-    const f32 inv = 1.0f / Sqrt(1.0f + w * w);
-    f.planes[0] = Plane::FromPointNormal(apex, Vec3(inv, 0, -w * inv));
-    f.planes[1] = Plane::FromPointNormal(apex, Vec3(-inv, 0, -w * inv));
-    f.planes[2] = Plane::FromPointNormal(apex - Vec3(0, 100, 0), Vec3(0, 1, 0));
-    f.planes[3] = Plane::FromPointNormal(apex + Vec3(0, 100, 0), Vec3(0, -1, 0));
-    f.planes[4] = Plane::FromPointNormal(apex + Vec3(0, 0, -0.1f), Vec3(0, 0, -1));
-    f.planes[5] = Plane::FromPointNormal(apex + Vec3(0, 0, -reach), Vec3(0, 0, 1));
+    const f64 side = city.half * 2.0f * Sqrt(fraction);
+    const Vec3d apex(0, 1.5f, city.half);
+    const f64 reach = side;  // the far plane
+    const f64 w = 0.5f * side / reach;
+    Frustumd f;
+    const f64 inv = 1.0f / Sqrt(1.0f + w * w);
+    f.planes[0] = Planed::FromPointNormal(apex, Vec3d(inv, 0, -w * inv));
+    f.planes[1] = Planed::FromPointNormal(apex, Vec3d(-inv, 0, -w * inv));
+    f.planes[2] = Planed::FromPointNormal(apex - Vec3d(0, 100, 0), Vec3d(0, 1, 0));
+    f.planes[3] = Planed::FromPointNormal(apex + Vec3d(0, 100, 0), Vec3d(0, -1, 0));
+    f.planes[4] = Planed::FromPointNormal(apex + Vec3d(0, 0, -0.1f), Vec3d(0, 0, -1));
+    f.planes[5] = Planed::FromPointNormal(apex + Vec3d(0, 0, -reach), Vec3d(0, 0, 1));
     return f;
 }
 
-u32 FlatCount(const City& city, const Frustum& f)
+u32 FlatCount(const City& city, const Frustumd& f)
 {
     u32 n = 0;
     for (usize i = 0; i < city.boxes.Size(); ++i)
@@ -109,7 +109,7 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         set.RebuildStatic();
         Say("static build", n, NowMs() - t0, "ms");
 
-        const Frustum f1 = ViewOf(city, 0.01f);
+        const Frustumd f1 = ViewOf(city, 0.01f);
         u32 flat = 0, tree = 0;
         const u32 reps = n >= 100000 ? 20 : 200;
         f64 t = NowMs();
@@ -133,13 +133,13 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         Say("cull flat scan, ~1% visible", n, flat_ms, "ms");
         Say("cull tree, ~1% visible", n, tree_ms, "ms");
         Say("cull gain (flat / tree)", n, flat_ms / tree_ms, "x");
-        CHECK(tree <= flat);  // the tree tests the exact box, the flat scan the conservative box test of Frustum: same
+        CHECK(tree <= flat);  // the tree tests the exact box, the flat scan the conservative box test of Frustumd: same
                               // or fewer (never more here)
         CHECK(tree >= flat * 9 / 10);
 
         // A quiet scene (a camera that sees nothing new): the cost of a static set with nothing to do is zero structure
         // calls (Day 245); here, a cull of a small view against the flat scan.
-        const Frustum f0 = ViewOf(city, 0.0004f);
+        const Frustumd f0 = ViewOf(city, 0.0004f);
         t = NowMs();
         for (u32 r = 0; r < reps; ++r)
         {
@@ -154,8 +154,8 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         t = NowMs();
         for (u32 q = 0; q < queries; ++q)
         {
-            const Aabb box = BoxAt(Vec3(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
-                                   Vec3(2, 2, 2));
+            const Aabbd box = BoxAt(Vec3d(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
+                                    Vec3d(2, 2, 2));
             Overlap(set, box, QueryFilter(),
                     [&](const Item&)
                     {
@@ -167,8 +167,8 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         t = NowMs();
         for (u32 q = 0; q < queries; ++q)
         {
-            const Aabb box = BoxAt(Vec3(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
-                                   Vec3(20, 20, 20));  // the spec's 40-unit query
+            const Aabbd box = BoxAt(Vec3d(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
+                                    Vec3d(20, 20, 20));  // the spec's 40-unit query
             Overlap(set, box, QueryFilter(),
                     [&](const Item&)
                     {
@@ -181,8 +181,8 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         t = NowMs();
         for (u32 q = 0; q < queries; ++q)
         {
-            const Ray ray = Ray::Make(Vec3(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
-                                      Vec3(1, 0, 0.1f));
+            const Rayd ray = Rayd::Make(Vec3d(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)),
+                                        Vec3d(1, 0, 0.1f));
             Raycast(set, ray, 50.0f, QueryFilter(), RayMode::Closest, Order::Ordered, &hits);
             sink += static_cast<u32>(hits.Size());
         }
@@ -223,9 +223,9 @@ TEST_CASE("Spatial benchmark: moving agents, tree against grid, with the pair fe
                 {
                     for (u32 i = 0; i < moving; ++i)
                     {
-                        Aabb& b = city.boxes[i];
-                        const Vec3 d(rng.Float(-0.3f, 0.3f), 0, rng.Float(-0.3f, 0.3f));
-                        b = Aabb::FromMinMax(b.min + d, b.max + d);
+                        Aabbd& b = city.boxes[i];
+                        const Vec3d d(rng.Float(-0.3f, 0.3f), 0, rng.Float(-0.3f, 0.3f));
+                        b = Aabbd::FromMinMax(b.min + d, b.max + d);
                         set.Move(handles[i], b);
                     }
                 }
@@ -246,9 +246,9 @@ TEST_CASE("Spatial benchmark: moving agents, tree against grid, with the pair fe
             tracker.Update(set, &events);  // the first update creates every pair
             for (u32 i = 0; i < n; ++i)
             {
-                Aabb& b = city.boxes[i];
-                const Vec3 d(rng.Float(-0.3f, 0.3f), 0, rng.Float(-0.3f, 0.3f));
-                b = Aabb::FromMinMax(b.min + d, b.max + d);
+                Aabbd& b = city.boxes[i];
+                const Vec3d d(rng.Float(-0.3f, 0.3f), 0, rng.Float(-0.3f, 0.3f));
+                b = Aabbd::FromMinMax(b.min + d, b.max + d);
                 set.Move(handles[i], b);
                 tracker.Touch(handles[i]);
             }
@@ -293,13 +293,13 @@ TEST_CASE("Spatial benchmark: 100,000 moving agents through the ECS sync, 1, 2, 
         BenchRig rig(workers == 1 ? nullptr : &jobs);
         Rng rng(9);
         Vector<ecs::Entity> agents;
-        const f32 half = Sqrt(static_cast<f32>(kAgents) * 8.0f) * 0.5f;
+        const f64 half = Sqrt(static_cast<f64>(kAgents) * 8.0f) * 0.5f;
         for (u32 i = 0; i < kAgents; ++i)
         {
             ecs::LocalTransform local;
-            local.position = Vec3(rng.Float(-half, half), 0, rng.Float(-half, half));
+            local.position = Vec3d(rng.Float(-half, half), 0, rng.Float(-half, half));
             SpatialBounds bounds;
-            bounds.local = BoxAt(Vec3(0, 0, 0), Vec3(0.5f, 0.5f, 0.5f));
+            bounds.local = spatial_test::LocalBoxAt(Vec3(0, 0, 0), Vec3(0.5f, 0.5f, 0.5f));
             SpatialMembership membership;
             membership.sets = 3;
             agents.Push(rig.world.Create(local, ecs::WorldTransform{}, bounds, membership));
@@ -313,7 +313,7 @@ TEST_CASE("Spatial benchmark: 100,000 moving agents through the ECS sync, 1, 2, 
             for (u32 i = 0; i < kAgents; ++i)
             {
                 ecs::LocalTransform* l = rig.world.Get<ecs::LocalTransform>(agents[i]);
-                l->position = l->position + Vec3(rng.Float(-0.3f, 0.3f), 0, rng.Float(-0.3f, 0.3f));
+                l->position = l->position + Vec3d(rng.Float(-0.3f, 0.3f), 0, rng.Float(-0.3f, 0.3f));
             }
             rig.schedule.Run(rig.world, 0.016f);
         }
@@ -330,9 +330,9 @@ TEST_CASE("Spatial benchmark: the dynamic tree's margin against the cost of movi
           "[.][spatial-bench]")
 {
     constexpr u32 kAgents = 100000;
-    for (f32 margin : {0.0f, 0.25f, 0.5f, 1.0f})
+    for (f64 margin : {0.0f, 0.25f, 0.5f, 1.0f})
     {
-        for (f32 predictive : {0.0f, 2.0f})
+        for (f64 predictive : {0.0f, 2.0f})
         {
             SpatialSetConfig config;
             config.bvh.fat_margin = margin;
@@ -345,10 +345,10 @@ TEST_CASE("Spatial benchmark: the dynamic tree's margin against the cost of movi
                 handles.Push(set.AddDynamic(city.boxes[i], i, 0));
             }
             Rng rng(4);
-            Vec3 velocity[1024];
+            Vec3d velocity[1024];
             for (u32 i = 0; i < 1024; ++i)
             {
-                velocity[i] = Vec3(rng.Float(-0.3f, 0.3f), 0, rng.Float(-0.3f, 0.3f));
+                velocity[i] = Vec3d(rng.Float(-0.3f, 0.3f), 0, rng.Float(-0.3f, 0.3f));
             }
             const u32 frames = 6;
             f64 t0 = 0;
@@ -360,10 +360,10 @@ TEST_CASE("Spatial benchmark: the dynamic tree's margin against the cost of movi
                 }
                 for (u32 i = 0; i < kAgents; ++i)
                 {
-                    Aabb& b = city.boxes[i];
-                    const Vec3 d = velocity[i & 1023];  // agents keep their heading: the predictive margin has
-                                                        // something to predict
-                    b = Aabb::FromMinMax(b.min + d, b.max + d);
+                    Aabbd& b = city.boxes[i];
+                    const Vec3d d = velocity[i & 1023];  // agents keep their heading: the predictive margin has
+                                                         // something to predict
+                    b = Aabbd::FromMinMax(b.min + d, b.max + d);
                     set.Move(handles[i], b);
                 }
             }

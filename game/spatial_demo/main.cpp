@@ -138,18 +138,18 @@ int main(int argc, char** argv)
                static_cast<u32>(agents.Size()), static_cast<double>(half * 2), static_cast<double>(half * 2));
 
     // The camera: a pyramid at the edge of the city looking across it, seeing about a tenth of it.
-    Frustum view;
+    Frustumd view;
     {
-        const Vec3 apex(0, 3.0f, half);
+        const Vec3d apex(0, 3.0f, half);
         const f32 reach = half * 0.7f;
         const f32 w = 0.45f;
         const f32 inv = 1.0f / Sqrt(1.0f + w * w);
-        view.planes[0] = Plane::FromPointNormal(apex, Vec3(inv, 0, -w * inv));
-        view.planes[1] = Plane::FromPointNormal(apex, Vec3(-inv, 0, -w * inv));
-        view.planes[2] = Plane::FromPointNormal(apex - Vec3(0, 50, 0), Vec3(0, 1, 0));
-        view.planes[3] = Plane::FromPointNormal(apex + Vec3(0, 50, 0), Vec3(0, -1, 0));
-        view.planes[4] = Plane::FromPointNormal(apex + Vec3(0, 0, -0.1f), Vec3(0, 0, -1));
-        view.planes[5] = Plane::FromPointNormal(apex + Vec3(0, 0, -reach), Vec3(0, 0, 1));
+        view.planes[0] = Planed::FromPointNormal(apex, Vec3d(inv, 0, -w * inv));
+        view.planes[1] = Planed::FromPointNormal(apex, Vec3d(-inv, 0, -w * inv));
+        view.planes[2] = Planed::FromPointNormal(apex - Vec3d(0, 50, 0), Vec3d(0, 1, 0));
+        view.planes[3] = Planed::FromPointNormal(apex + Vec3d(0, 50, 0), Vec3d(0, -1, 0));
+        view.planes[4] = Planed::FromPointNormal(apex + Vec3d(0, 0, -0.1f), Vec3d(0, 0, -1));
+        view.planes[5] = Planed::FromPointNormal(apex + Vec3d(0, 0, -reach), Vec3d(0, 0, 1));
     }
 
     Vector<ecs::Entity> neighbors;
@@ -186,15 +186,16 @@ int main(int argc, char** argv)
 
         // A "mouse ray" that sweeps across the city; the entity under it and its neighbors within a radius.
         const f32 sweep = -half + (2.0f * half) * (static_cast<f32>(frame % 60) / 60.0f);
-        const Ray ray = Ray::Make(Vec3(sweep, 3.0f, half), Vec3(0, 0, -1));
+        const Rayd ray = Rayd::Make(Vec3d(sweep, 3.0f, half), Vec3d(0, 0, -1));
         EntityHit hit;
         u32 near_count = 0;
         const bool picked = RaycastEntity(spatial, kRenderSet, ray, half * 2.0f, QueryFilter(), &hit);
         if (picked)
         {
             ++picks;
-            near_count = static_cast<u32>(
-                OverlapEntities(spatial, kRenderSet, BoxOf(hit.point, Vec3(5, 5, 5)), QueryFilter(), &neighbors));
+            near_count = static_cast<u32>(OverlapEntities(
+                spatial, kRenderSet, Aabbd::FromMinMax(hit.point - Vec3d(5, 5, 5), hit.point + Vec3d(5, 5, 5)),
+                QueryFilter(), &neighbors));
         }
 
         if (frame % 30 == 0)

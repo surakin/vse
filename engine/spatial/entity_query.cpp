@@ -5,7 +5,7 @@
 namespace vse::spatial
 {
 
-usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabb& box, const QueryFilter& filter,
+usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabbd& box, const QueryFilter& filter,
                       Vector<ecs::Entity>* out)
 {
     out->Clear();
@@ -23,7 +23,7 @@ usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabb& box, c
     return out->Size();
 }
 
-bool RaycastEntity(const SpatialWorld& spatial, SetId set, const Ray& ray, f32 max_t, const QueryFilter& filter,
+bool RaycastEntity(const SpatialWorld& spatial, SetId set, const Rayd& ray, f64 max_t, const QueryFilter& filter,
                    EntityHit* hit)
 {
     const SpatialSet* s = spatial.Set(set);
@@ -43,8 +43,8 @@ bool RaycastEntity(const SpatialWorld& spatial, SetId set, const Ray& ray, f32 m
     return true;
 }
 
-bool SweepEntity(const SpatialWorld& spatial, SetId set, const Aabb& box, const Vec3& motion, const QueryFilter& filter,
-                 EntityHit* hit)
+bool SweepEntity(const SpatialWorld& spatial, SetId set, const Aabbd& box, const Vec3d& motion,
+                 const QueryFilter& filter, EntityHit* hit)
 {
     const SpatialSet* s = spatial.Set(set);
     if (s == nullptr)
@@ -63,7 +63,7 @@ bool SweepEntity(const SpatialWorld& spatial, SetId set, const Aabb& box, const 
     return true;
 }
 
-usize NearestEntities(const SpatialWorld& spatial, SetId set, const Vec3& point, u32 k, f32 max_distance,
+usize NearestEntities(const SpatialWorld& spatial, SetId set, const Vec3d& point, u32 k, f64 max_distance,
                       const QueryFilter& filter, Vector<EntityDistance>* out)
 {
     out->Clear();
@@ -90,9 +90,9 @@ namespace
 struct RayBatch
 {
     const SpatialSet* set;
-    const Ray* rays;
+    const Rayd* rays;
     BatchRayHit* out;
-    f32 max_t;
+    f64 max_t;
     const QueryFilter* filter;
 };
 
@@ -120,7 +120,7 @@ void RunRays(void* user, usize begin, usize end)
 struct OverlapBatchState
 {
     const SpatialSet* set;
-    const Aabb* boxes;
+    const Aabbd* boxes;
     const QueryFilter* filter;
     u32* counts;         // phase 1: keys per query
     const u32* offsets;  // phase 2: where each query's keys go
@@ -180,7 +180,7 @@ void RunLoop(jobs::Scheduler* scheduler, usize count, jobs::ParallelForFn fn, vo
 
 }  // namespace
 
-void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Ray> rays, f32 max_t, const QueryFilter& filter,
+void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Rayd> rays, f64 max_t, const QueryFilter& filter,
                   Span<BatchRayHit> out, jobs::Scheduler* scheduler)
 {
     ENGINE_ASSERT(out.Size() == rays.Size(), "RaycastBatch: out and rays differ in size");
@@ -188,7 +188,7 @@ void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Ray> rays, 
     RunLoop(scheduler, rays.Size(), &RunRays, &batch);
 }
 
-void OverlapBatch(const SpatialWorld& spatial, SetId set, Span<const Aabb> boxes, const QueryFilter& filter,
+void OverlapBatch(const SpatialWorld& spatial, SetId set, Span<const Aabbd> boxes, const QueryFilter& filter,
                   Vector<SpatialKey>* keys, Vector<u32>* offsets, jobs::Scheduler* scheduler)
 {
     keys->Clear();

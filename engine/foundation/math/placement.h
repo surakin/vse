@@ -3,6 +3,7 @@
 //! A placement in a world that is larger than single precision can hold: a rotation-and-scale part in `f32` and a
 //! translation in `f64`.
 
+#include "math/geometry.h"
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "types.h"
@@ -49,5 +50,15 @@ struct Placement
     /// - Fails: never.
     Mat4 RelativeTo(const Vec3d& origin) const;
 };
+
+/// The world-space box of a box in a placed object's own space, in double precision: the center goes through
+/// [[Placement::TransformPoint]], the half extents grow by the absolute values of the linear part (the tight box of the
+/// transformed box, as `TransformAabb` does in single precision).
+///
+/// - Param local: the box in the object's space; not empty.
+/// - Param placement: where the object is.
+/// - Returns: the world box; exact to `f64` rounding however far from the origin the object is.
+/// - Fails: never.
+Aabbd PlaceAabb(const Aabb& local, const Placement& placement);
 
 }  // namespace vse

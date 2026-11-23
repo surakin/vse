@@ -26,7 +26,7 @@ namespace vse::spatial
 struct PairTrackerConfig
 {
     /// The end margin, as a fraction of an item's largest extent; 0 or more, finite.
-    f32 margin = 0.1f;
+    f64 margin = 0.1f;
     /// For each layer (0 to 31), the layers it meets: bit `j` of entry `i` set means items of layer `i` and layer `j`
     /// form pairs. All set by default.
     Array<u32, 32> meets;
@@ -171,8 +171,8 @@ private:
     Vector<SetHandle> touched_;
     Vector<SpatialKey> removed_;
     PairTrackerConfig config_;
-    f32 largest_static_margin_ = 0.0f;   // of any static item ever touched
-    f32 largest_dynamic_margin_ = 0.0f;  // of any dynamic item ever touched
+    f64 largest_static_margin_ = 0.0f;   // of any static item ever touched
+    f64 largest_dynamic_margin_ = 0.0f;  // of any dynamic item ever touched
     PairTrackerStats stats_;
     // Scratch, kept between updates so a steady frame allocates nothing.
     Vector<KeyPair> begin_;

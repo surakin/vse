@@ -1,5 +1,7 @@
 #include "math/placement.h"
 
+#include "lang/scalar.h"
+
 namespace vse
 {
 
@@ -39,6 +41,23 @@ Mat4 Placement::RelativeTo(const Vec3d& origin) const
     const Vec3 t = (position - origin).Narrow();
     m.col[3] = Vec4(t.x, t.y, t.z, 1.0f);
     return m;
+}
+
+Aabbd PlaceAabb(const Aabb& local, const Placement& placement)
+{
+    const Vec3d center = placement.TransformPoint(Vec3d(local.Center()));
+    const Vec3d half(local.HalfExtents());
+    f64 reach[3] = {0.0, 0.0, 0.0};
+    for (int row = 0; row < 3; ++row)
+    {
+        for (int col = 0; col < 3; ++col)
+        {
+            reach[row] += Abs(static_cast<f64>(placement.linear.col[col][static_cast<u32>(row)])) *
+                          half[static_cast<usize>(col)];
+        }
+    }
+    const Vec3d extent(reach[0], reach[1], reach[2]);
+    return Aabbd::FromMinMax(center - extent, center + extent);
 }
 
 }  // namespace vse

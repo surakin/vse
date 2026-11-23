@@ -9,14 +9,14 @@ namespace vse::physics
 namespace
 {
 
-bool BoxesEqual(const Aabb& a, const Aabb& b)
+bool BoxesEqual(const Aabbd& a, const Aabbd& b)
 {
     return a.min.x == b.min.x && a.min.y == b.min.y && a.min.z == b.min.z && a.max.x == b.max.x && a.max.y == b.max.y &&
            a.max.z == b.max.z;
 }
 
 // A box the set takes: not empty, corners finite (the set aborts on anything else).
-bool Takeable(const Aabb& box)
+bool Takeable(const Aabbd& box)
 {
     return !box.IsEmpty() && IsFinite(box.min.x) && IsFinite(box.min.y) && IsFinite(box.min.z) && IsFinite(box.max.x) &&
            IsFinite(box.max.y) && IsFinite(box.max.z);
@@ -79,7 +79,7 @@ void QueryIndex::Update(ColliderId id, const ColliderRecord& collider, const Bod
     {
         Drop(id.index);  // the slot was reused
     }
-    const Aabb box = ColliderBounds(*body, record->value);
+    const Aabbd box = ColliderBounds(*body, record->value);
     const bool is_static = body->settings.type == BodyType::Static;
     if (e.generation != 0 && !e.unindexed && e.is_static == is_static)
     {
@@ -179,7 +179,7 @@ void QueryIndex::Rebuild(const PhysicsWorld& world)
     set_.RebuildStatic();
 }
 
-bool QueryIndex::Holds(u32 slot, u32 generation, const Aabb& box) const
+bool QueryIndex::Holds(u32 slot, u32 generation, const Aabbd& box) const
 {
     if (slot >= entries_.Size())
     {

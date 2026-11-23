@@ -70,7 +70,7 @@ public:
     template <class Test> void Collect(Test&& test, Vector<u32>* slots) const
     {
         slots->Clear();
-        set_.Traverse([&](const Aabb& node)
+        set_.Traverse([&](const Aabbd& node)
                       { return test(node) ? spatial::NodeVisit::Descend : spatial::NodeVisit::Reject; },
                       [&](spatial::SetHandle, const spatial::Item& item)
                       {
@@ -84,7 +84,7 @@ public:
     }
 
     // Whether the index holds `slot`'s collider of generation `generation` with exactly `box` (for the slow check).
-    bool Holds(u32 slot, u32 generation, const Aabb& box) const;
+    bool Holds(u32 slot, u32 generation, const Aabbd& box) const;
 
     QueryIndexStats Stats() const;
 

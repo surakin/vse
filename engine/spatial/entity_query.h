@@ -27,9 +27,9 @@ struct EntityHit
     /// The entity.
     ecs::Entity entity;
     /// The parameter along the ray (units of the direction's length), or the fraction of the sweep's motion.
-    f32 t = 0.0f;
+    f64 t = 0.0f;
     /// The point where the ray met the box (`origin + direction * t`); for a sweep, the box's center at `t`.
-    Vec3 point = Vec3(0, 0, 0);
+    Vec3d point = Vec3d(0, 0, 0);
 };
 
 /// An entity and its distance from a query point.
@@ -40,7 +40,7 @@ struct EntityDistance
     /// The entity.
     ecs::Entity entity;
     /// The distance from the point to the entity's box (0 when the point is inside).
-    f32 distance = 0.0f;
+    f64 distance = 0.0f;
 };
 
 /// The entities of a set whose boxes overlap `box`, sorted by entity id.
@@ -57,7 +57,7 @@ struct EntityDistance
 /// - Fails: a set id that names none finds nothing.
 /// - Thread-safety: thread-safe against other queries; not against the sync.
 /// - Ownership: `out` is borrowed for the call.
-usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabb& box, const QueryFilter& filter,
+usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabbd& box, const QueryFilter& filter,
                       Vector<ecs::Entity>* out);
 
 /// The nearest entity a ray meets within `max_t`.
@@ -72,7 +72,7 @@ usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabb& box, c
 /// - Fails: a bad ray, a negative `max_t` or a set id that names none finds nothing.
 /// - Thread-safety: thread-safe against other queries; not against the sync.
 /// - Ownership: `hit` is borrowed for the call.
-bool RaycastEntity(const SpatialWorld& spatial, SetId set, const Ray& ray, f32 max_t, const QueryFilter& filter,
+bool RaycastEntity(const SpatialWorld& spatial, SetId set, const Rayd& ray, f64 max_t, const QueryFilter& filter,
                    EntityHit* hit);
 
 /// The first entity a box meets while moving by `motion` (see [[spatial::SweepBox]]).
@@ -87,8 +87,8 @@ bool RaycastEntity(const SpatialWorld& spatial, SetId set, const Ray& ray, f32 m
 /// - Fails: a set id that names none finds nothing.
 /// - Thread-safety: thread-safe against other queries; not against the sync.
 /// - Ownership: `hit` is borrowed for the call.
-bool SweepEntity(const SpatialWorld& spatial, SetId set, const Aabb& box, const Vec3& motion, const QueryFilter& filter,
-                 EntityHit* hit);
+bool SweepEntity(const SpatialWorld& spatial, SetId set, const Aabbd& box, const Vec3d& motion,
+                 const QueryFilter& filter, EntityHit* hit);
 
 /// The `k` entities nearest to a point, nearest first.
 ///
@@ -103,7 +103,7 @@ bool SweepEntity(const SpatialWorld& spatial, SetId set, const Aabb& box, const 
 /// - Fails: a set id that names none finds nothing.
 /// - Thread-safety: thread-safe against other queries; not against the sync.
 /// - Ownership: `out` is borrowed for the call.
-usize NearestEntities(const SpatialWorld& spatial, SetId set, const Vec3& point, u32 k, f32 max_distance,
+usize NearestEntities(const SpatialWorld& spatial, SetId set, const Vec3d& point, u32 k, f64 max_distance,
                       const QueryFilter& filter, Vector<EntityDistance>* out);
 
 namespace detail
@@ -147,7 +147,7 @@ template <class T> T& Fetch(ecs::World& world, ecs::Entity entity)
 /// - Thread-safety: thread-compatible.
 /// - Ownership: borrows `world`, `spatial` and `fn` for the call.
 template <class... Ts, class Fn>
-usize ForEachIn(ecs::World& world, const SpatialWorld& spatial, SetId set, const Aabb& region,
+usize ForEachIn(ecs::World& world, const SpatialWorld& spatial, SetId set, const Aabbd& region,
                 const QueryFilter& filter, Fn&& fn)
 {
     Vector<ecs::Entity> hits;
@@ -182,7 +182,7 @@ struct BatchRayHit
     /// The nearest item's key (an entity id) when `hit`.
     SpatialKey key = 0;
     /// The parameter of the hit.
-    f32 t = 0.0f;
+    f64 t = 0.0f;
 };
 
 /// Casts many rays against a set for their nearest hit, split across the job system when a scheduler is given; `out[i]`
@@ -199,7 +199,7 @@ struct BatchRayHit
 /// - Fails: a set id that names none answers "no hit" for every ray.
 /// - Thread-safety: owner-thread-only when it uses the scheduler; the set must not change meanwhile.
 /// - Ownership: borrows every argument for the call.
-void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Ray> rays, f32 max_t, const QueryFilter& filter,
+void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Rayd> rays, f64 max_t, const QueryFilter& filter,
                   Span<BatchRayHit> out, jobs::Scheduler* scheduler);
 
 /// Asks many box overlap questions of a set. The keys of query `i` are `keys[offsets[i]]` up to `keys[offsets[i + 1]]`,
@@ -216,7 +216,7 @@ void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Ray> rays, 
 /// - Fails: a set id that names none gives every query zero keys.
 /// - Thread-safety: owner-thread-only when it uses the scheduler; the set must not change meanwhile.
 /// - Ownership: borrows every argument for the call.
-void OverlapBatch(const SpatialWorld& spatial, SetId set, Span<const Aabb> boxes, const QueryFilter& filter,
+void OverlapBatch(const SpatialWorld& spatial, SetId set, Span<const Aabbd> boxes, const QueryFilter& filter,
                   Vector<SpatialKey>* keys, Vector<u32>* offsets, jobs::Scheduler* scheduler);
 
 }  // namespace vse::spatial

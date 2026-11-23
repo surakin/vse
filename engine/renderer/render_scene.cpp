@@ -372,7 +372,7 @@ u32 RenderScene::Cull(const Frustum& frustum, u32* out_slots, u32 capacity) cons
 u32 RenderScene::CullBvh(const Frustum& frustum, u32* out_slots) const
 {
     u32 count = 0;
-    const spatial::QueryStats stats = spatial::Overlap(cull_index_->set, frustum, spatial::QueryFilter(),
+    const spatial::QueryStats stats = spatial::Overlap(cull_index_->set, Frustumd(frustum), spatial::QueryFilter(),
                                                        [&](const spatial::Item& item)
                                                        {
                                                            const u32 slot = static_cast<u32>(item.key);

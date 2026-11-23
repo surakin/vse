@@ -71,7 +71,7 @@ The entity's box in world space: derived from `SpatialBounds` and `WorldTransfor
 `variable spatial::WorldBounds::box` — defined in `engine/spatial/components.h`
 
 ```cpp
-Aabb box;
+Aabbd box;
 ```
 
 The world-space box.
@@ -267,7 +267,7 @@ How a [`spatial::DynamicBvh`](#spatial-dynamicbvh) trades update cost against qu
 `variable spatial::DynamicBvhConfig::fat_margin` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-f32 fat_margin;
+f64 fat_margin;
 ```
 
 The fat margin, as a fraction of the item's largest extent: a leaf stores the box grown by this much on every side, and a move that stays inside it changes nothing (`spatial.fat_margin`; 0.25 from the spatial design spec, experiment (b)). An item of zero size gets no margin.
@@ -277,7 +277,7 @@ The fat margin, as a fraction of the item's largest extent: a leaf stores the bo
 `variable spatial::DynamicBvhConfig::predictive` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-f32 predictive;
+f64 predictive;
 ```
 
 How far the fat box also reaches along the last movement, as a multiple of that displacement (Box2D's predictive margin). 0 turns it off; the default is what measurement chose (`docs/guide/spatial.md`, "The dynamic BVH").
@@ -287,7 +287,7 @@ How far the fat box also reaches along the last movement, as a multiple of that 
 `variable spatial::DynamicBvhConfig::rebuild_threshold` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-f32 rebuild_threshold;
+f64 rebuild_threshold;
 ```
 
 [`spatial::DynamicBvh::Optimize`](#spatial-dynamicbvh-optimize-u32) rebuilds the whole tree when its SAH cost has grown past this multiple of the cost after the last full build.
@@ -361,7 +361,7 @@ Bytes of the node pool and the item slots (their sizes, not their capacities).
 `variable spatial::DynamicBvhStats::sah_cost` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-f32 sah_cost;
+f64 sah_cost;
 ```
 
 The SAH cost now, as [`spatial::StaticBvh::SahCost`](#spatial-staticbvh-sahcost-const) weighs it (1 per inner node, 1 per leaf, by area).
@@ -371,7 +371,7 @@ The SAH cost now, as [`spatial::StaticBvh::SahCost`](#spatial-staticbvh-sahcost-
 `variable spatial::DynamicBvhStats::built_sah_cost` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-f32 built_sah_cost;
+f64 built_sah_cost;
 ```
 
 The SAH cost right after the last full build or rebuild.
@@ -507,12 +507,12 @@ DynamicBvh& operator=(const DynamicBvh&) = delete;
 
 _Deleted._
 
-### `Insert(const Aabb&,SpatialKey,u32)` {#spatial-dynamicbvh-insert-const-aabb-amp-spatialkey-u32}
+### `Insert(const Aabbd&,SpatialKey,u32)` {#spatial-dynamicbvh-insert-const-aabbd-amp-spatialkey-u32}
 
 `method spatial::DynamicBvh::Insert` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-ProxyId Insert(const Aabb& box, SpatialKey key, u32 layer);
+ProxyId Insert(const Aabbd& box, SpatialKey key, u32 layer);
 ```
 
 Adds an item.
@@ -541,12 +541,12 @@ Removes an item.
 | Returns | false for a handle whose item is gone (counted in `stale_refused`). |
 | Fails | as the return says. |
 
-### `Move(ProxyId,const Aabb&)` {#spatial-dynamicbvh-move-proxyid-const-aabb-amp}
+### `Move(ProxyId,const Aabbd&)` {#spatial-dynamicbvh-move-proxyid-const-aabbd-amp}
 
 `method spatial::DynamicBvh::Move` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-bool Move(ProxyId proxy, const Aabb& box);
+bool Move(ProxyId proxy, const Aabbd& box);
 ```
 
 Gives an item a new box.
@@ -642,7 +642,7 @@ Returns the item of a live handle (its tight box, key and layer).
 `method spatial::DynamicBvh::FatBox` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-const Aabb& FatBox(ProxyId proxy) const;
+const Aabbd& FatBox(ProxyId proxy) const;
 ```
 
 Returns the fat box a live handle's leaf stores.
@@ -677,7 +677,7 @@ Returns the root's height (0 for a single leaf and for an empty tree).
 `method spatial::DynamicBvh::Bounds` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-Aabb Bounds() const;
+Aabbd Bounds() const;
 ```
 
 Returns the box of the whole tree (fat boxes), or [`AabbT::Empty`](foundation-math.md#aabbt-empty) when it is empty.
@@ -687,7 +687,7 @@ Returns the box of the whole tree (fat boxes), or [`AabbT::Empty`](foundation-ma
 `method spatial::DynamicBvh::SahCost` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
-f32 SahCost() const;
+f64 SahCost() const;
 ```
 
 Returns the tree's SAH cost now (one pass over the nodes).
@@ -726,7 +726,7 @@ template <class NodeTest, class ItemVisit>
 TraversalStats Traverse(NodeTest&& node_test, ItemVisit&& item_visit) const;
 ```
 
-Visits the tree depth first, as [`spatial::StaticBvh::Traverse`](#spatial-staticbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const): `node_test(const Aabb&)` sees the inner boxes and each leaf's fat box and returns a [`spatial::NodeVisit`](#spatial-nodevisit); `item_visit(ProxyId, const Item&)` sees each accepted leaf's item (with its tight box) and returns false to stop.
+Visits the tree depth first, as [`spatial::StaticBvh::Traverse`](#spatial-staticbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const): `node_test(const Aabbd&)` sees the inner boxes and each leaf's fat box and returns a [`spatial::NodeVisit`](#spatial-nodevisit); `item_visit(ProxyId, const Item&)` sees each accepted leaf's item (with its tight box) and returns false to stop.
 
 | Field | Value |
 |---|---|
@@ -735,16 +735,16 @@ Visits the tree depth first, as [`spatial::StaticBvh::Traverse`](#spatial-static
 | Returns | what the traversal did. |
 | Fails | never; a subtree that does not fit the stack is skipped and counted in `refused`. |
 
-### `TraverseRay(const Ray&,f32,ItemVisit&&)` {#spatial-dynamicbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const}
+### `TraverseRay(const Rayd&,f64,ItemVisit&&)` {#spatial-dynamicbvh-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const}
 
 `method spatial::DynamicBvh::TraverseRay` — defined in `engine/spatial/dynamic_bvh.h`
 
 ```cpp
 template <class ItemVisit>
-TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
+TraversalStats TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const;
 ```
 
-Visits the leaves a ray reaches, nearest child first, as [`spatial::StaticBvh::TraverseRay`](#spatial-staticbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const): `item_visit(ProxyId, const Item&, f32& max_t)` may lower `max_t` and returns false to stop.
+Visits the leaves a ray reaches, nearest child first, as [`spatial::StaticBvh::TraverseRay`](#spatial-staticbvh-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const): `item_visit(ProxyId, const Item&, f64& max_t)` may lower `max_t` and returns false to stop.
 
 | Field | Value |
 |---|---|
@@ -783,7 +783,7 @@ The entity.
 `variable spatial::EntityHit::t` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-f32 t;
+f64 t;
 ```
 
 The parameter along the ray (units of the direction's length), or the fraction of the sweep's motion.
@@ -793,7 +793,7 @@ The parameter along the ray (units of the direction's length), or the fraction o
 `variable spatial::EntityHit::point` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-Vec3 point;
+Vec3d point;
 ```
 
 The point where the ray met the box (`origin + direction * t`); for a sweep, the box's center at `t`.
@@ -827,17 +827,17 @@ The entity.
 `variable spatial::EntityDistance::distance` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-f32 distance;
+f64 distance;
 ```
 
 The distance from the point to the entity's box (0 when the point is inside).
 
-## `OverlapEntities(const SpatialWorld&,SetId,const Aabb&,const QueryFilter&,Vector<ecs::Entity>*)` {#spatial-overlapentities-const-spatialworld-amp-setid-const-aabb-amp-const-queryfilter-amp-vector-lt-ecs-entity-gt-star}
+## `OverlapEntities(const SpatialWorld&,SetId,const Aabbd&,const QueryFilter&,Vector<ecs::Entity>*)` {#spatial-overlapentities-const-spatialworld-amp-setid-const-aabbd-amp-const-queryfilter-amp-vector-lt-ecs-entity-gt-star}
 
 `function spatial::OverlapEntities` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabb& box, const QueryFilter& filter, Vector<ecs::Entity>* out);
+usize OverlapEntities(const SpatialWorld& spatial, SetId set, const Aabbd& box, const QueryFilter& filter, Vector<ecs::Entity>* out);
 ```
 
 The entities of a set whose boxes overlap `box`, sorted by entity id.
@@ -856,12 +856,12 @@ The entities are those of the last sync; one destroyed since may still be listed
 | Thread-safety | thread-safe against other queries; not against the sync. |
 | Ownership | `out` is borrowed for the call. |
 
-## `RaycastEntity(const SpatialWorld&,SetId,const Ray&,f32,const QueryFilter&,EntityHit*)` {#spatial-raycastentity-const-spatialworld-amp-setid-const-ray-amp-f32-const-queryfilter-amp-entityhit-star}
+## `RaycastEntity(const SpatialWorld&,SetId,const Rayd&,f64,const QueryFilter&,EntityHit*)` {#spatial-raycastentity-const-spatialworld-amp-setid-const-rayd-amp-f64-const-queryfilter-amp-entityhit-star}
 
 `function spatial::RaycastEntity` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-bool RaycastEntity(const SpatialWorld& spatial, SetId set, const Ray& ray, f32 max_t, const QueryFilter& filter, EntityHit* hit);
+bool RaycastEntity(const SpatialWorld& spatial, SetId set, const Rayd& ray, f64 max_t, const QueryFilter& filter, EntityHit* hit);
 ```
 
 The nearest entity a ray meets within `max_t`.
@@ -870,7 +870,7 @@ The nearest entity a ray meets within `max_t`.
 |---|---|
 | Parameter `spatial` | the world's sets. |
 | Parameter `set` | the set to ask. |
-| Parameter `ray` | the ray (see [`spatial::Raycast`](#spatial-raycast-const-tree-amp-const-ray-amp-f32-const-queryfilter-amp-raymode-order-vector-lt-rayhit-gt-star) for the input rules). |
+| Parameter `ray` | the ray (see [`spatial::Raycast`](#spatial-raycast-const-tree-amp-const-rayd-amp-f64-const-queryfilter-amp-raymode-order-vector-lt-rayhit-gt-star) for the input rules). |
 | Parameter `max_t` | the longest parameter to look at. |
 | Parameter `filter` | the layer mask and key filter. |
 | Parameter `hit` | receives the hit when there is one. |
@@ -879,15 +879,15 @@ The nearest entity a ray meets within `max_t`.
 | Thread-safety | thread-safe against other queries; not against the sync. |
 | Ownership | `hit` is borrowed for the call. |
 
-## `SweepEntity(const SpatialWorld&,SetId,const Aabb&,const Vec3&,const QueryFilter&,EntityHit*)` {#spatial-sweepentity-const-spatialworld-amp-setid-const-aabb-amp-const-vec3-amp-const-queryfilter-amp-entityhit-star}
+## `SweepEntity(const SpatialWorld&,SetId,const Aabbd&,const Vec3d&,const QueryFilter&,EntityHit*)` {#spatial-sweepentity-const-spatialworld-amp-setid-const-aabbd-amp-const-vec3d-amp-const-queryfilter-amp-entityhit-star}
 
 `function spatial::SweepEntity` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-bool SweepEntity(const SpatialWorld& spatial, SetId set, const Aabb& box, const Vec3& motion, const QueryFilter& filter, EntityHit* hit);
+bool SweepEntity(const SpatialWorld& spatial, SetId set, const Aabbd& box, const Vec3d& motion, const QueryFilter& filter, EntityHit* hit);
 ```
 
-The first entity a box meets while moving by `motion` (see [`spatial::SweepBox`](#spatial-sweepbox-const-tree-amp-const-aabb-amp-const-vec3-amp-const-queryfilter-amp-rayhit-star)).
+The first entity a box meets while moving by `motion` (see [`spatial::SweepBox`](#spatial-sweepbox-const-tree-amp-const-aabbd-amp-const-vec3d-amp-const-queryfilter-amp-rayhit-star)).
 
 | Field | Value |
 |---|---|
@@ -902,12 +902,12 @@ The first entity a box meets while moving by `motion` (see [`spatial::SweepBox`]
 | Thread-safety | thread-safe against other queries; not against the sync. |
 | Ownership | `hit` is borrowed for the call. |
 
-## `NearestEntities(const SpatialWorld&,SetId,const Vec3&,u32,f32,const QueryFilter&,Vector<EntityDistance>*)` {#spatial-nearestentities-const-spatialworld-amp-setid-const-vec3-amp-u32-f32-const-queryfilter-amp-vector-lt-entitydistance-gt-star}
+## `NearestEntities(const SpatialWorld&,SetId,const Vec3d&,u32,f64,const QueryFilter&,Vector<EntityDistance>*)` {#spatial-nearestentities-const-spatialworld-amp-setid-const-vec3d-amp-u32-f64-const-queryfilter-amp-vector-lt-entitydistance-gt-star}
 
 `function spatial::NearestEntities` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-usize NearestEntities(const SpatialWorld& spatial, SetId set, const Vec3& point, u32 k, f32 max_distance, const QueryFilter& filter, Vector<EntityDistance>* out);
+usize NearestEntities(const SpatialWorld& spatial, SetId set, const Vec3d& point, u32 k, f64 max_distance, const QueryFilter& filter, Vector<EntityDistance>* out);
 ```
 
 The `k` entities nearest to a point, nearest first.
@@ -926,13 +926,13 @@ The `k` entities nearest to a point, nearest first.
 | Thread-safety | thread-safe against other queries; not against the sync. |
 | Ownership | `out` is borrowed for the call. |
 
-## `ForEachIn(ecs::World&,const SpatialWorld&,SetId,const Aabb&,const QueryFilter&,Fn&&)` {#spatial-foreachin-ecs-world-amp-const-spatialworld-amp-setid-const-aabb-amp-const-queryfilter-amp-fn-amp-amp}
+## `ForEachIn(ecs::World&,const SpatialWorld&,SetId,const Aabbd&,const QueryFilter&,Fn&&)` {#spatial-foreachin-ecs-world-amp-const-spatialworld-amp-setid-const-aabbd-amp-const-queryfilter-amp-fn-amp-amp}
 
 `function spatial::ForEachIn` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
 template <class... Ts, class Fn>
-usize ForEachIn(ecs::World& world, const SpatialWorld& spatial, SetId set, const Aabb& region, const QueryFilter& filter, Fn&& fn);
+usize ForEachIn(ecs::World& world, const SpatialWorld& spatial, SetId set, const Aabbd& region, const QueryFilter& filter, Fn&& fn);
 ```
 
 Calls `fn(entity, components...)` for every entity of the set that overlaps `region` and has all the components, in entity id order. A component type written `const T` is read (`const T&`), a plain `T` is written (`T&`, and the chunk is stamped as written like `World::Get`). Entities without one of the components are skipped.
@@ -991,17 +991,17 @@ The nearest item's key (an entity id) when `hit`.
 `variable spatial::BatchRayHit::t` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-f32 t;
+f64 t;
 ```
 
 The parameter of the hit.
 
-## `RaycastBatch(const SpatialWorld&,SetId,Span<const Ray>,f32,const QueryFilter&,Span<BatchRayHit>,jobs::Scheduler*)` {#spatial-raycastbatch-const-spatialworld-amp-setid-span-lt-const-ray-gt-f32-const-queryfilter-amp-span-lt-batchrayhit-gt-jobs-scheduler-star}
+## `RaycastBatch(const SpatialWorld&,SetId,Span<const Rayd>,f64,const QueryFilter&,Span<BatchRayHit>,jobs::Scheduler*)` {#spatial-raycastbatch-const-spatialworld-amp-setid-span-lt-const-rayd-gt-f64-const-queryfilter-amp-span-lt-batchrayhit-gt-jobs-scheduler-star}
 
 `function spatial::RaycastBatch` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Ray> rays, f32 max_t, const QueryFilter& filter, Span<BatchRayHit> out, jobs::Scheduler* scheduler);
+void RaycastBatch(const SpatialWorld& spatial, SetId set, Span<const Rayd> rays, f64 max_t, const QueryFilter& filter, Span<BatchRayHit> out, jobs::Scheduler* scheduler);
 ```
 
 Casts many rays against a set for their nearest hit, split across the job system when a scheduler is given; `out[i]` answers `rays[i]`, identical to the sequential run.
@@ -1020,12 +1020,12 @@ Casts many rays against a set for their nearest hit, split across the job system
 | Thread-safety | owner-thread-only when it uses the scheduler; the set must not change meanwhile. |
 | Ownership | borrows every argument for the call. |
 
-## `OverlapBatch(const SpatialWorld&,SetId,Span<const Aabb>,const QueryFilter&,Vector<SpatialKey>*,Vector<u32>*,jobs::Scheduler*)` {#spatial-overlapbatch-const-spatialworld-amp-setid-span-lt-const-aabb-gt-const-queryfilter-amp-vector-lt-spatialkey-gt-star-vector-lt-u32-gt-star-jobs-scheduler-star}
+## `OverlapBatch(const SpatialWorld&,SetId,Span<const Aabbd>,const QueryFilter&,Vector<SpatialKey>*,Vector<u32>*,jobs::Scheduler*)` {#spatial-overlapbatch-const-spatialworld-amp-setid-span-lt-const-aabbd-gt-const-queryfilter-amp-vector-lt-spatialkey-gt-star-vector-lt-u32-gt-star-jobs-scheduler-star}
 
 `function spatial::OverlapBatch` — defined in `engine/spatial/entity_query.h`
 
 ```cpp
-void OverlapBatch(const SpatialWorld& spatial, SetId set, Span<const Aabb> boxes, const QueryFilter& filter, Vector<SpatialKey>* keys, Vector<u32>* offsets, jobs::Scheduler* scheduler);
+void OverlapBatch(const SpatialWorld& spatial, SetId set, Span<const Aabbd> boxes, const QueryFilter& filter, Vector<SpatialKey>* keys, Vector<u32>* offsets, jobs::Scheduler* scheduler);
 ```
 
 Asks many box overlap questions of a set. The keys of query `i` are `keys[offsets[i]]` up to `keys[offsets[i + 1]]`, each query's keys sorted, the same as the sequential run.
@@ -1165,12 +1165,12 @@ Box and sphere overlaps and the all-pairs query use the cells (each result repor
 | Thread-safety | thread-compatible. Changes need exclusive access; the const queries may run on any number of threads at once between changes. |
 | Ownership | owns its cells and items. |
 
-### `HashGrid(f32)` {#spatial-hashgrid-hashgrid-f32}
+### `HashGrid(f64)` {#spatial-hashgrid-hashgrid-f64}
 
 `constructor spatial::HashGrid::HashGrid` — defined in `engine/spatial/hash_grid.h`
 
 ```cpp
-explicit HashGrid(f32 cell_size);
+explicit HashGrid(f64 cell_size);
 ```
 
 Makes an empty grid.
@@ -1200,12 +1200,12 @@ HashGrid& operator=(const HashGrid&) = delete;
 
 _Deleted._
 
-### `Insert(const Aabb&,SpatialKey,u32)` {#spatial-hashgrid-insert-const-aabb-amp-spatialkey-u32}
+### `Insert(const Aabbd&,SpatialKey,u32)` {#spatial-hashgrid-insert-const-aabbd-amp-spatialkey-u32}
 
 `method spatial::HashGrid::Insert` — defined in `engine/spatial/hash_grid.h`
 
 ```cpp
-ProxyId Insert(const Aabb& box, SpatialKey key, u32 layer);
+ProxyId Insert(const Aabbd& box, SpatialKey key, u32 layer);
 ```
 
 Adds an item.
@@ -1234,12 +1234,12 @@ Removes an item.
 | Returns | false for a handle whose item is gone (counted). |
 | Fails | as the return says. |
 
-### `Move(ProxyId,const Aabb&)` {#spatial-hashgrid-move-proxyid-const-aabb-amp}
+### `Move(ProxyId,const Aabbd&)` {#spatial-hashgrid-move-proxyid-const-aabbd-amp}
 
 `method spatial::HashGrid::Move` — defined in `engine/spatial/hash_grid.h`
 
 ```cpp
-bool Move(ProxyId proxy, const Aabb& box);
+bool Move(ProxyId proxy, const Aabbd& box);
 ```
 
 Gives an item a new box.
@@ -1305,7 +1305,7 @@ Returns the number of items.
 `method spatial::HashGrid::CellSize` — defined in `engine/spatial/hash_grid.h`
 
 ```cpp
-f32 CellSize() const;
+f64 CellSize() const;
 ```
 
 Returns the cell edge.
@@ -1320,13 +1320,13 @@ HashGridStats Stats() const;
 
 Returns the counts (one pass over the cells).
 
-### `ForEachInRegion(const Aabb&,Exact&&,Visit&&)` {#spatial-hashgrid-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const}
+### `ForEachInRegion(const Aabbd&,Exact&&,Visit&&)` {#spatial-hashgrid-foreachinregion-const-aabbd-amp-exact-amp-amp-visit-amp-amp-const}
 
 `method spatial::HashGrid::ForEachInRegion` — defined in `engine/spatial/hash_grid.h`
 
 ```cpp
 template <class Exact, class Visit>
-TraversalStats ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const;
+TraversalStats ForEachInRegion(const Aabbd& region, Exact&& exact, Visit&& visit) const;
 ```
 
 Visits each item whose box overlaps `region` and passes `exact(const Item&)`, once each, using the cells the region touches.
@@ -1369,27 +1369,27 @@ Visits the items as [`spatial::DynamicBvh::Traverse`](#spatial-dynamicbvh-traver
 
 | Field | Value |
 |---|---|
-| Parameter `node_test` | `NodeVisit(const Aabb&)`. |
+| Parameter `node_test` | `NodeVisit(const Aabbd&)`. |
 | Parameter `item_visit` | `bool(ProxyId, const Item&)`; returns false to stop. |
 | Returns | what the scan did. |
 | Fails | never. |
 
-### `TraverseRay(const Ray&,f32,ItemVisit&&)` {#spatial-hashgrid-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const}
+### `TraverseRay(const Rayd&,f64,ItemVisit&&)` {#spatial-hashgrid-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const}
 
 `method spatial::HashGrid::TraverseRay` — defined in `engine/spatial/hash_grid.h`
 
 ```cpp
 template <class ItemVisit>
-TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
+TraversalStats TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const;
 ```
 
-Visits the items a ray reaches, as [`spatial::DynamicBvh::TraverseRay`](#spatial-dynamicbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const) does, by scanning them in slot order (not nearest first).
+Visits the items a ray reaches, as [`spatial::DynamicBvh::TraverseRay`](#spatial-dynamicbvh-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const) does, by scanning them in slot order (not nearest first).
 
 | Field | Value |
 |---|---|
 | Parameter `ray` | the ray. |
 | Parameter `max_t` | the farthest parameter to consider. |
-| Parameter `item_visit` | `bool(ProxyId, const Item&, f32& max_t)`; may lower `max_t`, returns false to stop. |
+| Parameter `item_visit` | `bool(ProxyId, const Item&, f64& max_t)`; may lower `max_t`, returns false to stop. |
 | Returns | what the scan did. |
 | Fails | never. |
 
@@ -1414,7 +1414,7 @@ A pair is made when two boxes overlap and kept until they have separated by more
 `variable spatial::PairTrackerConfig::margin` — defined in `engine/spatial/pair_tracker.h`
 
 ```cpp
-f32 margin;
+f64 margin;
 ```
 
 The end margin, as a fraction of an item's largest extent; 0 or more, finite.
@@ -1864,7 +1864,7 @@ The item's key.
 `variable spatial::RayHit::t` — defined in `engine/spatial/query.h`
 
 ```cpp
-f32 t;
+f64 t;
 ```
 
 The parameter of the hit along the ray, in units of the direction's length; 0 when the ray starts inside.
@@ -1877,7 +1877,7 @@ The parameter of the hit along the ray, in units of the direction's length; 0 wh
 struct NearestHit { ... }
 ```
 
-One result of [`spatial::Nearest`](#spatial-nearest-const-tree-amp-const-vec3-amp-u32-f32-const-queryfilter-amp-vector-lt-nearesthit-gt-star).
+One result of [`spatial::Nearest`](#spatial-nearest-const-tree-amp-const-vec3d-amp-u32-f64-const-queryfilter-amp-vector-lt-nearesthit-gt-star).
 
 | Field | Value |
 |---|---|
@@ -1898,7 +1898,7 @@ The item's key.
 `variable spatial::NearestHit::distance` — defined in `engine/spatial/query.h`
 
 ```cpp
-f32 distance;
+f64 distance;
 ```
 
 The distance from the query point to the item's box (0 when the point is inside).
@@ -2018,13 +2018,13 @@ Adds a traversal's counts to a query's (an internal helper of the query function
 | Fails | never. |
 | Ownership | `stats` is borrowed for the call. |
 
-## `Overlap(const Tree&,const Aabb&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-tree-amp-const-aabb-amp-const-queryfilter-amp-visit-amp-amp}
+## `Overlap(const Tree&,const Aabbd&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-tree-amp-const-aabbd-amp-const-queryfilter-amp-visit-amp-amp}
 
 `function spatial::Overlap` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Tree, class Visit>
-QueryStats Overlap(const Tree& tree, const Aabb& box, const QueryFilter& filter, Visit&& visit);
+QueryStats Overlap(const Tree& tree, const Aabbd& box, const QueryFilter& filter, Visit&& visit);
 ```
 
 Visits every item whose box overlaps `box`, in traversal order.
@@ -2038,13 +2038,13 @@ Visits every item whose box overlaps `box`, in traversal order.
 | Returns | what the query did. |
 | Fails | an empty box finds nothing; a box with a NaN finds nothing and sets `refused_input` (infinite corners are allowed: a box from minus to plus infinity finds everything). |
 
-## `Overlap(const Tree&,const Sphere&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-tree-amp-const-sphere-amp-const-queryfilter-amp-visit-amp-amp}
+## `Overlap(const Tree&,const Sphered&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-tree-amp-const-sphered-amp-const-queryfilter-amp-visit-amp-amp}
 
 `function spatial::Overlap` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Tree, class Visit>
-QueryStats Overlap(const Tree& tree, const Sphere& sphere, const QueryFilter& filter, Visit&& visit);
+QueryStats Overlap(const Tree& tree, const Sphered& sphere, const QueryFilter& filter, Visit&& visit);
 ```
 
 Visits every item whose box overlaps `sphere`, in traversal order.
@@ -2058,13 +2058,13 @@ Visits every item whose box overlaps `sphere`, in traversal order.
 | Returns | what the query did. |
 | Fails | a negative radius finds nothing; a sphere whose center is not finite, or whose radius is a NaN, finds nothing and sets `refused_input`. |
 
-## `Overlap(const Tree&,const Frustum&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-tree-amp-const-frustum-amp-const-queryfilter-amp-visit-amp-amp}
+## `Overlap(const Tree&,const Frustumd&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-tree-amp-const-frustumd-amp-const-queryfilter-amp-visit-amp-amp}
 
 `function spatial::Overlap` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Tree, class Visit>
-QueryStats Overlap(const Tree& tree, const Frustum& frustum, const QueryFilter& filter, Visit&& visit);
+QueryStats Overlap(const Tree& tree, const Frustumd& frustum, const QueryFilter& filter, Visit&& visit);
 ```
 
 Visits every item whose box may be inside `frustum` (conservative, as [`FrustumT::TestAabb`](foundation-math.md#frustumt-testaabb-const-aabbt-lt-s-gt-amp-const)), in traversal order. Below a node entirely inside the frustum no node is tested; each item's own box still is (one plane test per item).
@@ -2092,7 +2092,7 @@ Collects the keys of the items an overlap query finds (any shape `Overlap` takes
 | Field | Value |
 |---|---|
 | Parameter `tree` | the structure. |
-| Parameter `shape` | an `Aabb`, a `Sphere` or a `Frustum`. |
+| Parameter `shape` | an `Aabbd`, a `Sphered` or a `Frustumd`. |
 | Parameter `filter` | which items count. |
 | Parameter `order` | `Traversal`, or `Ordered` for ascending keys. |
 | Parameter `out` | receives the keys (cleared first); its capacity is reused, so a warm vector makes the query allocate nothing. |
@@ -2100,13 +2100,13 @@ Collects the keys of the items an overlap query finds (any shape `Overlap` takes
 | Fails | as `Overlap` for the shape. |
 | Ownership | `out` is borrowed for the call. |
 
-## `Raycast(const Tree&,const Ray&,f32,const QueryFilter&,RayMode,Order,Vector<RayHit>*)` {#spatial-raycast-const-tree-amp-const-ray-amp-f32-const-queryfilter-amp-raymode-order-vector-lt-rayhit-gt-star}
+## `Raycast(const Tree&,const Rayd&,f64,const QueryFilter&,RayMode,Order,Vector<RayHit>*)` {#spatial-raycast-const-tree-amp-const-rayd-amp-f64-const-queryfilter-amp-raymode-order-vector-lt-rayhit-gt-star}
 
 `function spatial::Raycast` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Tree>
-QueryStats Raycast(const Tree& tree, const Ray& ray, f32 max_t, const QueryFilter& filter, RayMode mode, Order order, Vector<RayHit>* hits);
+QueryStats Raycast(const Tree& tree, const Rayd& ray, f64 max_t, const QueryFilter& filter, RayMode mode, Order order, Vector<RayHit>* hits);
 ```
 
 Casts a ray and collects what it hits, as `mode` says.
@@ -2124,13 +2124,13 @@ Casts a ray and collects what it hits, as `mode` says.
 | Fails | a ray that is not finite or a NaN `max_t` finds nothing and sets `refused_input` (an infinite `max_t` is allowed: the ray is unbounded); a negative `max_t` finds nothing. |
 | Ownership | `hits` is borrowed for the call. |
 
-## `SweepBox(const Tree&,const Aabb&,const Vec3&,const QueryFilter&,RayHit*)` {#spatial-sweepbox-const-tree-amp-const-aabb-amp-const-vec3-amp-const-queryfilter-amp-rayhit-star}
+## `SweepBox(const Tree&,const Aabbd&,const Vec3d&,const QueryFilter&,RayHit*)` {#spatial-sweepbox-const-tree-amp-const-aabbd-amp-const-vec3d-amp-const-queryfilter-amp-rayhit-star}
 
 `function spatial::SweepBox` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Tree>
-QueryStats SweepBox(const Tree& tree, const Aabb& box, const Vec3& motion, const QueryFilter& filter, RayHit* hit);
+QueryStats SweepBox(const Tree& tree, const Aabbd& box, const Vec3d& motion, const QueryFilter& filter, RayHit* hit);
 ```
 
 Sweeps a box along `motion` and finds the first item it would touch: the item whose box the moving box meets at the smallest fraction of the motion (on a tie, the smaller key). Exact for boxes against boxes (a ray against each box grown by the moving box's half extents).
@@ -2146,13 +2146,13 @@ Sweeps a box along `motion` and finds the first item it would touch: the item wh
 | Fails | an empty box finds nothing; a box or motion that is not finite finds nothing and sets `refused_input`. |
 | Ownership | `hit` is borrowed for the call; it is written only when there is a hit. |
 
-## `Nearest(const Tree&,const Vec3&,u32,f32,const QueryFilter&,Vector<NearestHit>*)` {#spatial-nearest-const-tree-amp-const-vec3-amp-u32-f32-const-queryfilter-amp-vector-lt-nearesthit-gt-star}
+## `Nearest(const Tree&,const Vec3d&,u32,f64,const QueryFilter&,Vector<NearestHit>*)` {#spatial-nearest-const-tree-amp-const-vec3d-amp-u32-f64-const-queryfilter-amp-vector-lt-nearesthit-gt-star}
 
 `function spatial::Nearest` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Tree>
-QueryStats Nearest(const Tree& tree, const Vec3& point, u32 k, f32 max_distance, const QueryFilter& filter, Vector<NearestHit>* out);
+QueryStats Nearest(const Tree& tree, const Vec3d& point, u32 k, f64 max_distance, const QueryFilter& filter, Vector<NearestHit>* out);
 ```
 
 Finds the `k` items nearest a point, nearest first (on equal distance, the smaller key): a depth-first search that skips every node farther than the k-th best found so far (or than `max_distance`). The results are kept sorted by insertion, so each candidate costs up to `k` steps: meant for a small `k` (a few dozen); for many results use an overlap query and sort.
@@ -2213,13 +2213,13 @@ Collects the overlapping pairs of `ForEachPair`, in the order asked for.
 | Fails | never. |
 | Ownership | `out` is borrowed for the call. |
 
-## `Overlap(const HashGrid&,const Aabb&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-hashgrid-amp-const-aabb-amp-const-queryfilter-amp-visit-amp-amp}
+## `Overlap(const HashGrid&,const Aabbd&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-hashgrid-amp-const-aabbd-amp-const-queryfilter-amp-visit-amp-amp}
 
 `function spatial::Overlap` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Visit>
-QueryStats Overlap(const HashGrid& grid, const Aabb& box, const QueryFilter& filter, Visit&& visit);
+QueryStats Overlap(const HashGrid& grid, const Aabbd& box, const QueryFilter& filter, Visit&& visit);
 ```
 
 The box overlap of [`spatial::HashGrid`](#spatial-hashgrid): through its cells, each item once.
@@ -2233,13 +2233,13 @@ The box overlap of [`spatial::HashGrid`](#spatial-hashgrid): through its cells, 
 | Returns | what the query did. |
 | Fails | as `Overlap` for a box. |
 
-## `Overlap(const HashGrid&,const Sphere&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-hashgrid-amp-const-sphere-amp-const-queryfilter-amp-visit-amp-amp}
+## `Overlap(const HashGrid&,const Sphered&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-hashgrid-amp-const-sphered-amp-const-queryfilter-amp-visit-amp-amp}
 
 `function spatial::Overlap` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Visit>
-QueryStats Overlap(const HashGrid& grid, const Sphere& sphere, const QueryFilter& filter, Visit&& visit);
+QueryStats Overlap(const HashGrid& grid, const Sphered& sphere, const QueryFilter& filter, Visit&& visit);
 ```
 
 The sphere overlap of [`spatial::HashGrid`](#spatial-hashgrid): through the cells of the sphere's box, each item once.
@@ -2253,13 +2253,13 @@ The sphere overlap of [`spatial::HashGrid`](#spatial-hashgrid): through the cell
 | Returns | what the query did. |
 | Fails | as `Overlap` for a sphere. |
 
-## `Overlap(const SpatialSet&,const Aabb&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-spatialset-amp-const-aabb-amp-const-queryfilter-amp-visit-amp-amp}
+## `Overlap(const SpatialSet&,const Aabbd&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-spatialset-amp-const-aabbd-amp-const-queryfilter-amp-visit-amp-amp}
 
 `function spatial::Overlap` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Visit>
-QueryStats Overlap(const SpatialSet& set, const Aabb& box, const QueryFilter& filter, Visit&& visit);
+QueryStats Overlap(const SpatialSet& set, const Aabbd& box, const QueryFilter& filter, Visit&& visit);
 ```
 
 The box overlap of [`spatial::SpatialSet`](#spatial-spatialset): the static parts and the dynamic side (through a grid's cells when it is one), each item once.
@@ -2273,13 +2273,13 @@ The box overlap of [`spatial::SpatialSet`](#spatial-spatialset): the static part
 | Returns | what the query did. |
 | Fails | as `Overlap` for a box. |
 
-## `Overlap(const SpatialSet&,const Sphere&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-spatialset-amp-const-sphere-amp-const-queryfilter-amp-visit-amp-amp}
+## `Overlap(const SpatialSet&,const Sphered&,const QueryFilter&,Visit&&)` {#spatial-overlap-const-spatialset-amp-const-sphered-amp-const-queryfilter-amp-visit-amp-amp}
 
 `function spatial::Overlap` — defined in `engine/spatial/query.h`
 
 ```cpp
 template <class Visit>
-QueryStats Overlap(const SpatialSet& set, const Sphere& sphere, const QueryFilter& filter, Visit&& visit);
+QueryStats Overlap(const SpatialSet& set, const Sphered& sphere, const QueryFilter& filter, Visit&& visit);
 ```
 
 The sphere overlap of [`spatial::SpatialSet`](#spatial-spatialset), as its box overlap with the sphere's box and the exact sphere test.
@@ -2403,7 +2403,7 @@ Height of the dynamic tree.
 `variable spatial::SpatialStats::dynamic_sah_cost` — defined in `engine/spatial/spatial_debug.h`
 
 ```cpp
-f32 dynamic_sah_cost;
+f64 dynamic_sah_cost;
 ```
 
 The dynamic tree's SAH cost now (the quality metric: grows as it degrades).
@@ -2413,7 +2413,7 @@ The dynamic tree's SAH cost now (the quality metric: grows as it degrades).
 `variable spatial::SpatialStats::dynamic_built_sah_cost` — defined in `engine/spatial/spatial_debug.h`
 
 ```cpp
-f32 dynamic_built_sah_cost;
+f64 dynamic_built_sah_cost;
 ```
 
 And right after its last full build.
@@ -2493,7 +2493,7 @@ A line segment of the debug drawing, with a packed 0xAABBGGRR color.
 `variable spatial::DebugLine::a` — defined in `engine/spatial/spatial_debug.h`
 
 ```cpp
-Vec3 a;
+Vec3d a;
 ```
 
 One end.
@@ -2503,7 +2503,7 @@ One end.
 `variable spatial::DebugLine::b` — defined in `engine/spatial/spatial_debug.h`
 
 ```cpp
-Vec3 b;
+Vec3d b;
 ```
 
 The other end.
@@ -2617,7 +2617,7 @@ Draw `query` too.
 `variable spatial::DebugOptions::query` — defined in `engine/spatial/spatial_debug.h`
 
 ```cpp
-Aabb query;
+Aabbd query;
 ```
 
 A query volume to show.
@@ -2627,17 +2627,17 @@ A query volume to show.
 `variable spatial::DebugOptions::hits` — defined in `engine/spatial/spatial_debug.h`
 
 ```cpp
-Span<const Aabb> hits;
+Span<const Aabbd> hits;
 ```
 
 Boxes of the items a query found, drawn in the hit color.
 
-## `AppendBoxLines(const Aabb&,u32,Vector<DebugLine>*)` {#spatial-appendboxlines-const-aabb-amp-u32-vector-lt-debugline-gt-star}
+## `AppendBoxLines(const Aabbd&,u32,Vector<DebugLine>*)` {#spatial-appendboxlines-const-aabbd-amp-u32-vector-lt-debugline-gt-star}
 
 `function spatial::AppendBoxLines` — defined in `engine/spatial/spatial_debug.h`
 
 ```cpp
-void AppendBoxLines(const Aabb& box, u32 color, Vector<DebugLine>* out);
+void AppendBoxLines(const Aabbd& box, u32 color, Vector<DebugLine>* out);
 ```
 
 Appends the 12 edges of a box.
@@ -2755,7 +2755,7 @@ The dynamic tree's margins and rebuild threshold (for `Bvh`).
 `variable spatial::SpatialSetConfig::grid_cell_size` — defined in `engine/spatial/spatial_set.h`
 
 ```cpp
-f32 grid_cell_size;
+f64 grid_cell_size;
 ```
 
 The grid's cell edge (for `Grid`): 2 to 4 times the items' size.
@@ -2916,12 +2916,12 @@ SpatialSet& operator=(const SpatialSet&) = delete;
 
 _Deleted._
 
-### `AddStatic(const Aabb&,SpatialKey,u32)` {#spatial-spatialset-addstatic-const-aabb-amp-spatialkey-u32}
+### `AddStatic(const Aabbd&,SpatialKey,u32)` {#spatial-spatialset-addstatic-const-aabbd-amp-spatialkey-u32}
 
 `method spatial::SpatialSet::AddStatic` — defined in `engine/spatial/spatial_set.h`
 
 ```cpp
-SetHandle AddStatic(const Aabb& box, SpatialKey key, u32 layer);
+SetHandle AddStatic(const Aabbd& box, SpatialKey key, u32 layer);
 ```
 
 Adds an item that does not move; it joins the static tree at the next `RebuildStatic`.
@@ -2934,12 +2934,12 @@ Adds an item that does not move; it joins the static tree at the next `RebuildSt
 | Returns | its handle, or [`spatial::kInvalidSetHandle`](#spatial-kinvalidsethandle) when the set holds [`spatial::kMaxDynamicProxies`](#spatial-kmaxdynamicproxies) items. |
 | Aborts | `box` is empty or not finite. |
 
-### `AddDynamic(const Aabb&,SpatialKey,u32)` {#spatial-spatialset-adddynamic-const-aabb-amp-spatialkey-u32}
+### `AddDynamic(const Aabbd&,SpatialKey,u32)` {#spatial-spatialset-adddynamic-const-aabbd-amp-spatialkey-u32}
 
 `method spatial::SpatialSet::AddDynamic` — defined in `engine/spatial/spatial_set.h`
 
 ```cpp
-SetHandle AddDynamic(const Aabb& box, SpatialKey key, u32 layer);
+SetHandle AddDynamic(const Aabbd& box, SpatialKey key, u32 layer);
 ```
 
 Adds an item that moves.
@@ -2968,12 +2968,12 @@ Removes an item.
 | Returns | false for a handle whose item is gone (counted). |
 | Fails | as the return says. |
 
-### `Move(SetHandle,const Aabb&)` {#spatial-spatialset-move-sethandle-const-aabb-amp}
+### `Move(SetHandle,const Aabbd&)` {#spatial-spatialset-move-sethandle-const-aabbd-amp}
 
 `method spatial::SpatialSet::Move` — defined in `engine/spatial/spatial_set.h`
 
 ```cpp
-bool Move(SetHandle handle, const Aabb& box);
+bool Move(SetHandle handle, const Aabbd& box);
 ```
 
 Gives a dynamic item a new box.
@@ -3193,37 +3193,37 @@ Visits the items as [`spatial::StaticBvh::Traverse`](#spatial-staticbvh-traverse
 
 | Field | Value |
 |---|---|
-| Parameter `node_test` | `NodeVisit(const Aabb&)`. |
+| Parameter `node_test` | `NodeVisit(const Aabbd&)`. |
 | Parameter `item_visit` | `bool(SetHandle, const Item&)`; returns false to stop. |
 | Returns | what the traversal did. |
 | Fails | never. |
 
-### `TraverseRay(const Ray&,f32,ItemVisit&&)` {#spatial-spatialset-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const}
+### `TraverseRay(const Rayd&,f64,ItemVisit&&)` {#spatial-spatialset-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const}
 
 `method spatial::SpatialSet::TraverseRay` — defined in `engine/spatial/spatial_set.h`
 
 ```cpp
 template <class ItemVisit>
-TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
+TraversalStats TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const;
 ```
 
-Visits the items a ray reaches over all three parts, as [`spatial::StaticBvh::TraverseRay`](#spatial-staticbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const) does; a `max_t` lowered by the visitor carries over.
+Visits the items a ray reaches over all three parts, as [`spatial::StaticBvh::TraverseRay`](#spatial-staticbvh-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const) does; a `max_t` lowered by the visitor carries over.
 
 | Field | Value |
 |---|---|
 | Parameter `ray` | the ray. |
 | Parameter `max_t` | the farthest parameter to consider. |
-| Parameter `item_visit` | `bool(SetHandle, const Item&, f32& max_t)`; may lower `max_t`, returns false to stop. |
+| Parameter `item_visit` | `bool(SetHandle, const Item&, f64& max_t)`; may lower `max_t`, returns false to stop. |
 | Returns | what the traversal did. |
 | Fails | never. |
 
-### `ForEachInRegion(const Aabb&,Exact&&,Visit&&)` {#spatial-spatialset-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const}
+### `ForEachInRegion(const Aabbd&,Exact&&,Visit&&)` {#spatial-spatialset-foreachinregion-const-aabbd-amp-exact-amp-amp-visit-amp-amp-const}
 
 `method spatial::SpatialSet::ForEachInRegion` — defined in `engine/spatial/spatial_set.h`
 
 ```cpp
 template <class Exact, class Visit>
-TraversalStats ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const;
+TraversalStats ForEachInRegion(const Aabbd& region, Exact&& exact, Visit&& visit) const;
 ```
 
 Visits each item whose box overlaps `region` and passes `exact`, once each, using the grid's cells when the dynamic side is a grid.
@@ -3236,16 +3236,16 @@ Visits each item whose box overlaps `region` and passes `exact`, once each, usin
 | Returns | what the walk did. |
 | Fails | never. |
 
-### `ForEachHandleInRegion(const Aabb&,Visit&&)` {#spatial-spatialset-foreachhandleinregion-const-aabb-amp-visit-amp-amp-const}
+### `ForEachHandleInRegion(const Aabbd&,Visit&&)` {#spatial-spatialset-foreachhandleinregion-const-aabbd-amp-visit-amp-amp-const}
 
 `method spatial::SpatialSet::ForEachHandleInRegion` — defined in `engine/spatial/spatial_set.h`
 
 ```cpp
 template <class Visit>
-TraversalStats ForEachHandleInRegion(const Aabb& region, Visit&& visit) const;
+TraversalStats ForEachHandleInRegion(const Aabbd& region, Visit&& visit) const;
 ```
 
-As [`spatial::SpatialSet::ForEachInRegion`](#spatial-spatialset-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const) with no extra test, passing each item's handle too (what the pair tracker needs).
+As [`spatial::SpatialSet::ForEachInRegion`](#spatial-spatialset-foreachinregion-const-aabbd-amp-exact-amp-amp-visit-amp-amp-const) with no extra test, passing each item's handle too (what the pair tracker needs).
 
 | Field | Value |
 |---|---|
@@ -3254,13 +3254,13 @@ As [`spatial::SpatialSet::ForEachInRegion`](#spatial-spatialset-foreachinregion-
 | Returns | what the walk did. |
 | Fails | never. |
 
-### `ForEachHandleInRegion(const Aabb&,const Aabb&,Visit&&)` {#spatial-spatialset-foreachhandleinregion-const-aabb-amp-const-aabb-amp-visit-amp-amp-const}
+### `ForEachHandleInRegion(const Aabbd&,const Aabbd&,Visit&&)` {#spatial-spatialset-foreachhandleinregion-const-aabbd-amp-const-aabbd-amp-visit-amp-amp-const}
 
 `method spatial::SpatialSet::ForEachHandleInRegion` — defined in `engine/spatial/spatial_set.h`
 
 ```cpp
 template <class Visit>
-TraversalStats ForEachHandleInRegion(const Aabb& static_region, const Aabb& dynamic_region, Visit&& visit) const;
+TraversalStats ForEachHandleInRegion(const Aabbd& static_region, const Aabbd& dynamic_region, Visit&& visit) const;
 ```
 
 As the one-region form with a region of its own for each side: the static items (tree and pending list) are looked for in `static_region` and the dynamic items in `dynamic_region`. The pair tracker uses it so that one huge static item, whose margin is large, does not make every search of a dynamic item reach far among the dynamic ones.
@@ -3744,7 +3744,7 @@ One item of a spatial structure: its box, the caller's key and a layer (a bit in
 `variable spatial::Item::box` — defined in `engine/spatial/static_bvh.h`
 
 ```cpp
-Aabb box;
+Aabbd box;
 ```
 
 The item's box; may have zero size, must not be empty, and its corners must be finite.
@@ -3905,7 +3905,7 @@ One node: its box, and two numbers whose meaning depends on the kind (use the ac
 `variable spatial::StaticBvh::Node::box` — defined in `engine/spatial/static_bvh.h`
 
 ```cpp
-Aabb box;
+Aabbd box;
 ```
 
 The box enclosing every item below the node.
@@ -4058,7 +4058,7 @@ Returns the number of levels: 1 for a tree of one leaf, 0 for an empty tree.
 `method spatial::StaticBvh::Bounds` — defined in `engine/spatial/static_bvh.h`
 
 ```cpp
-Aabb Bounds() const;
+Aabbd Bounds() const;
 ```
 
 Returns the box of the whole tree, or [`AabbT::Empty`](foundation-math.md#aabbt-empty) when there are no items.
@@ -4103,7 +4103,7 @@ Returns the first item index of the subtree under `node` (its items are this ind
 `method spatial::StaticBvh::SahCost` — defined in `engine/spatial/static_bvh.h`
 
 ```cpp
-f32 SahCost() const;
+f64 SahCost() const;
 ```
 
 Returns the tree's surface-area-heuristic cost, a quality measure: the expected number of node and item tests of a query, per the root's area (1 per inner node and 1 per item of a leaf, each weighted by its box's area over the root's). Lower is better; 0 for an empty tree.
@@ -4117,7 +4117,7 @@ template <class NodeTest, class ItemVisit>
 TraversalStats Traverse(NodeTest&& node_test, ItemVisit&& item_visit) const;
 ```
 
-Visits the tree depth first with an explicit stack: `node_test(const Aabb&)` returns a [`spatial::NodeVisit`](#spatial-nodevisit) for each node reached, and `item_visit(const Item&)` is called for each item of an accepted leaf or subtree; it returns false to stop.
+Visits the tree depth first with an explicit stack: `node_test(const Aabbd&)` returns a [`spatial::NodeVisit`](#spatial-nodevisit) for each node reached, and `item_visit(const Item&)` is called for each item of an accepted leaf or subtree; it returns false to stop.
 
 | Field | Value |
 |---|---|
@@ -4126,16 +4126,16 @@ Visits the tree depth first with an explicit stack: `node_test(const Aabb&)` ret
 | Returns | what the traversal did. |
 | Fails | never; a subtree that does not fit the stack is skipped and counted in `refused` (no tree `Build` makes has one). |
 
-### `TraverseRay(const Ray&,f32,ItemVisit&&)` {#spatial-staticbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const}
+### `TraverseRay(const Rayd&,f64,ItemVisit&&)` {#spatial-staticbvh-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const}
 
 `method spatial::StaticBvh::TraverseRay` — defined in `engine/spatial/static_bvh.h`
 
 ```cpp
 template <class ItemVisit>
-TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
+TraversalStats TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const;
 ```
 
-Visits the leaves a ray reaches, nearest child first: `item_visit(const Item&, f32& max_t)` is called for each item of each leaf whose box the ray enters before `max_t`; it may lower `max_t` (a closest-hit search) and returns false to stop.
+Visits the leaves a ray reaches, nearest child first: `item_visit(const Item&, f64& max_t)` is called for each item of each leaf whose box the ray enters before `max_t`; it may lower `max_t` (a closest-hit search) and returns false to stop.
 
 | Field | Value |
 |---|---|

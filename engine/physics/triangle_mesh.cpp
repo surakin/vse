@@ -121,8 +121,8 @@ TriangleMeshConstPtr TriangleMesh::Create(const TriangleMeshSpec& spec, Validati
         i = j;
     }
     mesh->bvh_.Build(Span<const spatial::Item>(items.Data(), items.Size()));
-    mesh->bounds_ = mesh->bvh_.Bounds();
-    mesh->extent_ = Vec3(1e-3f, 1e-3f, 1e-3f);  // a flat mesh still has a box a shape can validate
+    mesh->bounds_ = mesh->bvh_.Bounds().Narrow();  // the boxes are unions of single-precision ones: exact
+    mesh->extent_ = Vec3(1e-3f, 1e-3f, 1e-3f);     // a flat mesh still has a box a shape can validate
     for (usize v = 0; v < nv; ++v)
     {
         mesh->extent_ = Vec3(FMax(mesh->extent_.x, Abs(mesh->vertices_[v].x)),
@@ -165,11 +165,12 @@ u32 TriangleMesh::Neighbor(u32 t, u32 edge) const
 u32 TriangleMesh::QueryBox(const Aabb& box, Vector<u32>* out) const
 {
     const usize first = out->Size();
-    bvh_.Traverse([&](const Aabb& node)
-                  { return Overlaps(node, box) ? spatial::NodeVisit::Descend : spatial::NodeVisit::Reject; },
+    const Aabbd wide = box;
+    bvh_.Traverse([&](const Aabbd& node)
+                  { return Overlaps(node, wide) ? spatial::NodeVisit::Descend : spatial::NodeVisit::Reject; },
                   [&](const spatial::Item& item)
                   {
-                      if (Overlaps(item.box, box))
+                      if (Overlaps(item.box, wide))
                       {
                           out->Push(static_cast<u32>(item.key));
                       }

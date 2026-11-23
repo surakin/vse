@@ -55,7 +55,7 @@ public:
     ///
     /// - Param cell_size: the edge of a cell, above 0 and finite.
     /// - Aborts: `cell_size` is not above 0 or not finite.
-    explicit HashGrid(f32 cell_size);
+    explicit HashGrid(f64 cell_size);
     HashGrid(const HashGrid&) = delete;
     HashGrid& operator=(const HashGrid&) = delete;
 
@@ -68,7 +68,7 @@ public:
     /// holds
     ///   [[spatial::kMaxDynamicProxies]] items.
     /// - Aborts: `box` is empty or not finite.
-    ProxyId Insert(const Aabb& box, SpatialKey key, u32 layer);
+    ProxyId Insert(const Aabbd& box, SpatialKey key, u32 layer);
 
     /// Removes an item.
     ///
@@ -83,7 +83,7 @@ public:
     /// - Param box: the new box; not empty, corners finite.
     /// - Returns: whether its cells changed (false when it stayed in the same cells, or for a stale handle, counted).
     /// - Aborts: `box` is empty or not finite.
-    bool Move(ProxyId proxy, const Aabb& box);
+    bool Move(ProxyId proxy, const Aabbd& box);
 
     /// Removes every item; the cells stay (empty) and every handle becomes stale.
     void Clear();
@@ -100,7 +100,7 @@ public:
     /// Returns the number of items.
     u32 ProxyCount() const { return count_; }
     /// Returns the cell edge.
-    f32 CellSize() const { return cell_size_; }
+    f64 CellSize() const { return cell_size_; }
     /// Returns the counts (one pass over the cells).
     HashGridStats Stats() const;
 
@@ -113,7 +113,7 @@ public:
     /// - Returns: what the walk did (`nodes_tested` counts the cells looked at).
     /// - Fails: never.
     template <class Exact, class Visit>
-    TraversalStats ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const;
+    TraversalStats ForEachInRegion(const Aabbd& region, Exact&& exact, Visit&& visit) const;
 
     /// Visits every pair of items whose boxes overlap, once each (the smaller key first), using the cells.
     ///
@@ -125,7 +125,7 @@ public:
     /// Visits the items as [[spatial::DynamicBvh::Traverse]] does, by scanning them (the node test sees each item's
     /// box): the generic queries use it.
     ///
-    /// - Param node_test: `NodeVisit(const Aabb&)`.
+    /// - Param node_test: `NodeVisit(const Aabbd&)`.
     /// - Param item_visit: `bool(ProxyId, const Item&)`; returns false to stop.
     /// - Returns: what the scan did.
     /// - Fails: never.
@@ -137,10 +137,10 @@ public:
     ///
     /// - Param ray: the ray.
     /// - Param max_t: the farthest parameter to consider.
-    /// - Param item_visit: `bool(ProxyId, const Item&, f32& max_t)`; may lower `max_t`, returns false to stop.
+    /// - Param item_visit: `bool(ProxyId, const Item&, f64& max_t)`; may lower `max_t`, returns false to stop.
     /// - Returns: what the scan did.
     /// - Fails: never.
-    template <class ItemVisit> TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
+    template <class ItemVisit> TraversalStats TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const;
 
 private:
     static constexpr u32 kNull = 0xFFFFFFFFu;
@@ -163,17 +163,18 @@ private:
         bool Oversized() const { return (state & kOversizedBit) != 0; }
     };
 
-    i32 CellOf(f32 v) const;
+    i32 CellOf(f64 v) const;
     static u64 KeyOf(i32 x, i32 y, i32 z);
-    bool RangeOf(const Aabb& box, Array<i32, 3>* lo, Array<i32, 3>* hi) const;  // false: too many cells or out of range
+    bool RangeOf(const Aabbd& box, Array<i32, 3>* lo,
+                 Array<i32, 3>* hi) const;  // false: too many cells or out of range
     void Register(u32 slot);
     void Unregister(u32 slot);
     i32 SlotOf(ProxyId proxy) const;
     const Cell* FindCell(i32 x, i32 y, i32 z) const;
     ProxyId IdOf(u32 slot) const { return slot | (slots_[slot].Generation() << 24); }
 
-    f32 cell_size_;
-    f32 inverse_;
+    f64 cell_size_;
+    f64 inverse_;
     HashMap<u64, u32, HeapAllocator> cell_index_;
     Vector<Cell> cells_;
     Vector<Slot> slots_;
@@ -186,7 +187,7 @@ private:
 };
 
 template <class Exact, class Visit>
-TraversalStats HashGrid::ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const
+TraversalStats HashGrid::ForEachInRegion(const Aabbd& region, Exact&& exact, Visit&& visit) const
 {
     TraversalStats stats;
     if (region.IsEmpty())
@@ -199,7 +200,7 @@ TraversalStats HashGrid::ForEachInRegion(const Aabb& region, Exact&& exact, Visi
     {
         for (u32 k = 0; k < 3; ++k)
         {
-            const f32 low = item.box.min[k] > region.min[k] ? item.box.min[k] : region.min[k];
+            const f64 low = item.box.min[k] > region.min[k] ? item.box.min[k] : region.min[k];
             if (CellOf(low) != cell.at[k])
             {
                 return false;
@@ -386,7 +387,8 @@ TraversalStats HashGrid::Traverse(NodeTest&& node_test, ItemVisit&& item_visit) 
     return stats;
 }
 
-template <class ItemVisit> TraversalStats HashGrid::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const
+template <class ItemVisit>
+TraversalStats HashGrid::TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const
 {
     TraversalStats stats;
     for (usize s = 0; s < slots_.Size(); ++s)

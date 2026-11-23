@@ -68,12 +68,12 @@ void ModelOverlap(const Vector<SetModelItem>& model, const Shape& shape, const Q
     SortKeys(out);
 }
 
-f32 ModelRay(const Vector<SetModelItem>& model, const Ray& ray, f32 max_t, SpatialKey* key)
+f64 ModelRay(const Vector<SetModelItem>& model, const Rayd& ray, f64 max_t, SpatialKey* key)
 {
-    f32 best = -1.0f;
+    f64 best = -1.0f;
     for (usize i = 0; i < model.Size(); ++i)
     {
-        f32 t = 0.0f;
+        f64 t = 0.0f;
         if (!model[i].live || !Intersect(ray, model[i].item.box, max_t, &t))
         {
             continue;
@@ -113,24 +113,24 @@ template <class Structure> void CompareAll(Rng& rng, const Structure& s, const V
         {
             f.mask = 1u << rng.Below(3);
         }
-        const Aabb box = BoxAt(rng.Point(-60, 60), Vec3(rng.Float(0, 20), rng.Float(0, 20), rng.Float(0, 20)));
+        const Aabbd box = BoxAt(rng.Point(-60, 60), Vec3d(rng.Float(0, 20), rng.Float(0, 20), rng.Float(0, 20)));
         OverlapKeys(s, box, f, Order::Ordered, &got);
         ModelOverlap(model, box, f, &want);
         CHECK(SameSet(got, want));
-        Sphere sphere;
+        Sphered sphere;
         sphere.center = rng.Point(-60, 60);
         sphere.radius = rng.Float(0, 20);
         OverlapKeys(s, sphere, f, Order::Ordered, &got);
         ModelOverlap(model, sphere, f, &want);
         CHECK(SameSet(got, want));
-        Vec3 d = rng.Point(-1, 1);
+        Vec3d d = rng.Point(-1, 1);
         if (d.LengthSquared() < 1e-3f)
         {
-            d = Vec3(0, 0, 1);
+            d = Vec3d(0, 0, 1);
         }
-        const Ray ray = Ray::Make(rng.Point(-70, 70), d);
+        const Rayd ray = Rayd::Make(rng.Point(-70, 70), d);
         SpatialKey key = 0;
-        const f32 t = ModelRay(model, ray, 200, &key);
+        const f64 t = ModelRay(model, ray, 200, &key);
         Raycast(s, ray, 200, QueryFilter(), RayMode::Closest, Order::Traversal, &hits);
         REQUIRE(hits.Size() == (t >= 0.0f ? 1u : 0u));
         if (t >= 0.0f)
@@ -148,19 +148,19 @@ template <class Structure> void CompareAll(Rng& rng, const Structure& s, const V
     }
 }
 
-Aabb RandomItemBox(Rng& rng)
+Aabbd RandomItemBox(Rng& rng)
 {
     const u32 kind = rng.Below(20);
     if (kind == 0)
     {
         return BoxAt(rng.Point(-50, 50),
-                     Vec3(rng.Float(10, 30), rng.Float(10, 30), rng.Float(10, 30)));  // oversized for cells of 4
+                     Vec3d(rng.Float(10, 30), rng.Float(10, 30), rng.Float(10, 30)));  // oversized for cells of 4
     }
     if (kind == 1)
     {
-        return BoxAt(Vec3(rng.Float(-1, 1) * 1e7f, 0, 0), Vec3(1, 1, 1));  // beyond the grid's cells
+        return BoxAt(Vec3d(rng.Float(-1, 1) * 1e7f, 0, 0), Vec3d(1, 1, 1));  // beyond the grid's cells
     }
-    return BoxAt(rng.Point(-50, 50), Vec3(rng.Float(0, 2), rng.Float(0, 2), rng.Float(0, 2)));
+    return BoxAt(rng.Point(-50, 50), Vec3d(rng.Float(0, 2), rng.Float(0, 2), rng.Float(0, 2)));
 }
 
 }  // namespace
@@ -217,8 +217,8 @@ TEST_CASE("HashGrid: 100,000 random operations against a flat model, oversized a
     const ProxyId gone = model[live[0]].handle;
     REQUIRE(grid.Remove(gone));
     CHECK_FALSE(grid.Remove(gone));
-    CHECK_FALSE(grid.Move(gone, BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1))));
-    const ProxyId reused = grid.Insert(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 999999, 0);
+    CHECK_FALSE(grid.Move(gone, BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1))));
+    const ProxyId reused = grid.Insert(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 999999, 0);
     CHECK(reused != gone);
     CHECK_FALSE(grid.IsLive(gone));
     CHECK(grid.Stats().stale_refused == 2);
@@ -265,7 +265,7 @@ TEST_CASE("SpatialSet: a mixed set answers like a brute force through changes, m
             else if (r < 80)
             {
                 SetModelItem& m = model[live[rng.Below(static_cast<u32>(live.Size()))]];
-                const Aabb moved = BoxAt(m.item.box.Center() + rng.Point(-2, 2), m.item.box.HalfExtents());
+                const Aabbd moved = BoxAt(m.item.box.Center() + rng.Point(-2, 2), m.item.box.HalfExtents());
                 if (m.is_static)
                 {
                     CHECK_FALSE(set.Move(m.handle, moved));  // refused: static
@@ -320,7 +320,7 @@ TEST_CASE("SpatialSet: RebuildStatic does not change any result", "[spatial][set
         SetModelItem m;
         m.live = true;
         m.is_static = i % 3 != 0;
-        m.item.box = BoxAt(rng.Point(-40, 40), Vec3(rng.Float(0, 3), rng.Float(0, 3), rng.Float(0, 3)));
+        m.item.box = BoxAt(rng.Point(-40, 40), Vec3d(rng.Float(0, 3), rng.Float(0, 3), rng.Float(0, 3)));
         m.item.key = i;
         m.handle = m.is_static ? set.AddStatic(m.item.box, i, 0) : set.AddDynamic(m.item.box, i, 0);
         model.Push(m);
@@ -349,7 +349,7 @@ TEST_CASE("SpatialSet: RebuildStatic does not change any result", "[spatial][set
     for (u32 q = 0; q < 50; ++q)
     {
         Vector<SpatialKey> keys;
-        OverlapKeys(set, BoxAt(probe.Point(-40, 40), Vec3(8, 8, 8)), QueryFilter(), Order::Ordered, &keys);
+        OverlapKeys(set, BoxAt(probe.Point(-40, 40), Vec3d(8, 8, 8)), QueryFilter(), Order::Ordered, &keys);
         before.Push(static_cast<Vector<SpatialKey>&&>(keys));
     }
     set.RebuildStatic();
@@ -358,7 +358,7 @@ TEST_CASE("SpatialSet: RebuildStatic does not change any result", "[spatial][set
     Vector<SpatialKey> keys;
     for (u32 q = 0; q < 50; ++q)
     {
-        OverlapKeys(set, BoxAt(again.Point(-40, 40), Vec3(8, 8, 8)), QueryFilter(), Order::Ordered, &keys);
+        OverlapKeys(set, BoxAt(again.Point(-40, 40), Vec3d(8, 8, 8)), QueryFilter(), Order::Ordered, &keys);
         CHECK(SameSet(keys, before[q]));
     }
     CompareAll(rng, set, model, 20);
@@ -369,13 +369,13 @@ TEST_CASE("SpatialSet: sets are independent, and the traversal order is static, 
 {
     SpatialSet render;
     SpatialSet physics;
-    const SetHandle crate = render.AddStatic(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 10, 0);
-    physics.AddDynamic(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 20, 0);
+    const SetHandle crate = render.AddStatic(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 10, 0);
+    physics.AddDynamic(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 20, 0);
     Vector<SpatialKey> keys;
-    OverlapKeys(render, BoxAt(Vec3(0, 0, 0), Vec3(2, 2, 2)), QueryFilter(), Order::Ordered, &keys);
+    OverlapKeys(render, BoxAt(Vec3d(0, 0, 0), Vec3d(2, 2, 2)), QueryFilter(), Order::Ordered, &keys);
     REQUIRE(keys.Size() == 1);
     CHECK(keys[0] == 10);
-    OverlapKeys(physics, BoxAt(Vec3(0, 0, 0), Vec3(2, 2, 2)), QueryFilter(), Order::Ordered, &keys);
+    OverlapKeys(physics, BoxAt(Vec3d(0, 0, 0), Vec3d(2, 2, 2)), QueryFilter(), Order::Ordered, &keys);
     REQUIRE(keys.Size() == 1);
     CHECK(keys[0] == 20);
     CHECK_FALSE((physics.IsLive(crate) && physics.ItemOf(crate).key == 10));
@@ -384,19 +384,19 @@ TEST_CASE("SpatialSet: sets are independent, and the traversal order is static, 
     SpatialSet set;
     for (u32 i = 0; i < 5; ++i)
     {
-        set.AddStatic(BoxAt(Vec3(static_cast<f32>(i), 0, 0), Vec3(0.4f, 0.4f, 0.4f)), 100 + i, 0);
+        set.AddStatic(BoxAt(Vec3d(static_cast<f64>(i), 0, 0), Vec3d(0.4f, 0.4f, 0.4f)), 100 + i, 0);
     }
     set.RebuildStatic();
     for (u32 i = 0; i < 3; ++i)
     {
-        set.AddStatic(BoxAt(Vec3(static_cast<f32>(i), 2, 0), Vec3(0.4f, 0.4f, 0.4f)), 200 + i, 0);
+        set.AddStatic(BoxAt(Vec3d(static_cast<f64>(i), 2, 0), Vec3d(0.4f, 0.4f, 0.4f)), 200 + i, 0);
     }
     for (u32 i = 0; i < 4; ++i)
     {
-        set.AddDynamic(BoxAt(Vec3(static_cast<f32>(i), 4, 0), Vec3(0.4f, 0.4f, 0.4f)), 300 + i, 0);
+        set.AddDynamic(BoxAt(Vec3d(static_cast<f64>(i), 4, 0), Vec3d(0.4f, 0.4f, 0.4f)), 300 + i, 0);
     }
     Vector<SpatialKey> order;
-    Overlap(set, BoxAt(Vec3(2, 2, 0), Vec3(10, 10, 10)), QueryFilter(),
+    Overlap(set, BoxAt(Vec3d(2, 2, 0), Vec3d(10, 10, 10)), QueryFilter(),
             [&](const Item& item)
             {
                 order.Push(item.key);
@@ -419,15 +419,15 @@ TEST_CASE("HashGrid: the all-pairs and update cost on 100,000 agents against the
     Rng rng(242400);
     constexpr u32 kAgents = 100000;
     Vector<Item> items;
-    Vector<Vec3> velocity;
+    Vector<Vec3d> velocity;
     for (u32 i = 0; i < kAgents; ++i)
     {
         Item it;
-        it.box = BoxAt(Vec3(rng.Float(0, 1000), 1, rng.Float(0, 1000)), Vec3(0.5f, 1, 0.5f));
+        it.box = BoxAt(Vec3d(rng.Float(0, 1000), 1, rng.Float(0, 1000)), Vec3d(0.5f, 1, 0.5f));
         it.key = i;
         items.Push(it);
-        const f32 angle = rng.Float(0, 6.283f);
-        velocity.Push(Vec3(Cos(angle) * 0.1f, 0, Sin(angle) * 0.1f));
+        const f64 angle = rng.Float(0, 6.283f);
+        velocity.Push(Vec3d(Cos(angle) * 0.1f, 0, Sin(angle) * 0.1f));
     }
     HashGrid grid(4.0f);
     Vector<ProxyId> ids;
@@ -486,7 +486,7 @@ TEST_CASE("SpatialSet: a set with a dynamic tree does not check the grid's cell 
     g_set_asserts = 0;
     {
         SpatialSet set(config);
-        set.AddDynamic(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 1, 0);
+        set.AddDynamic(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 1, 0);
         CHECK(set.ItemCount() == 1);
     }
     CHECK(g_set_asserts == 0);
@@ -496,4 +496,56 @@ TEST_CASE("SpatialSet: a set with a dynamic tree does not check the grid's cell 
     }
     SetAssertHandler(previous);
     CHECK(g_set_asserts == 1);
+}
+
+// Double precision (maintenance series): the same scene 100,000 km from the origin answers every query alike.
+TEST_CASE("SpatialSet: a scene 100,000 km away gives the same overlaps, rays and nearest as at the origin",
+          "[spatial][double]")
+{
+    const Vec3d far(1.0e8, -2.0e7, 5.0e7);
+    SpatialSetConfig config;
+    SpatialSet near_set(config);
+    SpatialSet far_set(config);
+    Rng rng(777);
+    for (u32 i = 0; i < 300; ++i)
+    {
+        const Vec3 c = rng.Point(-40.0f, 40.0f);
+        const Vec3 h(rng.Float(0.2f, 2.0f), rng.Float(0.2f, 2.0f), rng.Float(0.2f, 2.0f));
+        const Aabbd box = BoxAt(Vec3d(c), Vec3d(h));
+        const Aabbd moved = Aabbd::FromMinMax(box.min + far, box.max + far);
+        if (i % 3 == 0)
+        {
+            near_set.AddStatic(box, i, 0);
+            far_set.AddStatic(moved, i, 0);
+        }
+        else
+        {
+            near_set.AddDynamic(box, i, 0);
+            far_set.AddDynamic(moved, i, 0);
+        }
+    }
+    near_set.RebuildStatic();
+    far_set.RebuildStatic();
+    for (u32 q = 0; q < 50; ++q)
+    {
+        const Vec3 c = rng.Point(-40.0f, 40.0f);
+        const Aabbd region = BoxAt(Vec3d(c), Vec3d(6, 6, 6));
+        const Aabbd far_region = Aabbd::FromMinMax(region.min + far, region.max + far);
+        Vector<SpatialKey> a;
+        Vector<SpatialKey> b;
+        OverlapKeys(near_set, region, QueryFilter(), Order::Ordered, &a);
+        OverlapKeys(far_set, far_region, QueryFilter(), Order::Ordered, &b);
+        CHECK(SameSet(a, b));
+        const Vec3d dir = Vec3d(rng.Point(-1.0f, 1.0f)) + Vec3d(0.01, 0.01, 0.01);
+        Vector<RayHit> ha;
+        Vector<RayHit> hb;
+        Raycast(near_set, Rayd::Make(Vec3d(c), dir), 200.0, QueryFilter(), RayMode::Closest, Order::Ordered, &ha);
+        Raycast(far_set, Rayd::Make(Vec3d(c) + far, dir), 200.0, QueryFilter(), RayMode::Closest, Order::Ordered, &hb);
+        REQUIRE(ha.Size() == hb.Size());
+        for (usize i = 0; i < ha.Size(); ++i)
+        {
+            CHECK(ha[i].key == hb[i].key);
+            CHECK(Abs(ha[i].t - hb[i].t) < 1.0e-4);  // the distances agree to the offset's rounding
+        }
+    }
 }

@@ -438,7 +438,7 @@ template <class F> void ForEachCollider(const PhysicsWorld& world, const Physics
 }
 
 // Whether two boxes touch (faces count), as every query's box test writes it.
-bool BoxesTouch(const Aabb& box, const Aabb& region)
+bool BoxesTouch(const Aabbd& box, const Aabbd& region)
 {
     return !(box.min.x > region.max.x || box.max.x < region.min.x || box.min.y > region.max.y ||
              box.max.y < region.min.y || box.min.z > region.max.z || box.max.z < region.min.z);
@@ -494,17 +494,17 @@ void ForEachCandidate(const PhysicsWorld& world, const PhysicsQueryFilter& filte
     }
 }
 
-bool BoxOverlapsRay(const Aabb& box, const Vec3& o, const Vec3& d, f32 tmax)
+bool BoxOverlapsRay(const Aabbd& box, const Vec3& o, const Vec3& d, f64 tmax)
 {
-    f32 t0 = 0.0f;
-    f32 t1 = tmax;
-    const f32 oo[3] = {o.x, o.y, o.z};
-    const f32 dd[3] = {d.x, d.y, d.z};
-    const f32 lo[3] = {box.min.x, box.min.y, box.min.z};
-    const f32 hi[3] = {box.max.x, box.max.y, box.max.z};
+    f64 t0 = 0.0;
+    f64 t1 = tmax;
+    const f64 oo[3] = {o.x, o.y, o.z};
+    const f64 dd[3] = {d.x, d.y, d.z};
+    const f64 lo[3] = {box.min.x, box.min.y, box.min.z};
+    const f64 hi[3] = {box.max.x, box.max.y, box.max.z};
     for (u32 i = 0; i < 3; ++i)
     {
-        if (Abs(dd[i]) < 1e-12f)
+        if (Abs(dd[i]) < 1e-12)
         {
             if (oo[i] < lo[i] || oo[i] > hi[i])
             {
@@ -512,11 +512,11 @@ bool BoxOverlapsRay(const Aabb& box, const Vec3& o, const Vec3& d, f32 tmax)
             }
             continue;
         }
-        f32 a = (lo[i] - oo[i]) / dd[i];
-        f32 b = (hi[i] - oo[i]) / dd[i];
+        f64 a = (lo[i] - oo[i]) / dd[i];
+        f64 b = (hi[i] - oo[i]) / dd[i];
         if (a > b)
         {
-            const f32 t = a;
+            const f64 t = a;
             a = b;
             b = t;
         }
@@ -569,7 +569,7 @@ bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& directio
     PhysicsHit best;
     f32 reach = max_distance;  // shrinks to the closest hit so far: later colliders only count if nearer
     ForEachCandidate(
-        world, filter, [&](const Aabb& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
+        world, filter, [&](const Aabbd& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
             PhysicsHit h;
@@ -602,7 +602,7 @@ bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& d
     PhysicsHit best;
     f32 reach = max_distance;
     ForEachCandidate(
-        world, filter, [&](const Aabb& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
+        world, filter, [&](const Aabbd& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
             PhysicsHit h;
@@ -685,7 +685,7 @@ usize RayCastAll(const PhysicsWorld& world, const Vec3& origin, const Vec3& dire
     }
     const Libraries libs = LibrariesOf(world);
     ForEachCandidate(
-        world, filter, [&](const Aabb& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
+        world, filter, [&](const Aabbd& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
             PhysicsHit h;
@@ -724,7 +724,7 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
     swept.min = Vec3(Min(start.min.x, end.min.x), Min(start.min.y, end.min.y), Min(start.min.z, end.min.z));
     swept.max = Vec3(Max(start.max.x, end.max.x), Max(start.max.y, end.max.y), Max(start.max.z, end.max.z));
     ForEachCandidate(
-        world, filter, [&](const Aabb& box) { return BoxesTouch(box, swept); },
+        world, filter, [&](const Aabbd& box) { return BoxesTouch(box, swept); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
             const Pose target = PoseOf(body, record.value);
@@ -813,7 +813,7 @@ usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& positio
     pose.rotation = rotation;
     const Aabb mine = shape.Bounds(position, rotation);
     ForEachCandidate(
-        world, filter, [&](const Aabb& box) { return BoxesTouch(box, mine); },
+        world, filter, [&](const Aabbd& box) { return BoxesTouch(box, mine); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
             const Pose target = PoseOf(body, record.value);
@@ -856,7 +856,7 @@ bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance
     const f32 grow = 2.0f * max_distance + 2.0f * kProbe;
     const Aabb reach{point - Vec3(grow, grow, grow), point + Vec3(grow, grow, grow)};
     ForEachCandidate(
-        world, filter, [&](const Aabb& box) { return BoxesTouch(box, reach); },
+        world, filter, [&](const Aabbd& box) { return BoxesTouch(box, reach); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
             const Pose target = PoseOf(body, record.value);

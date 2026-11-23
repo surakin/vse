@@ -15,16 +15,16 @@ namespace
 constexpr u32 kSiblingStack = 128;
 constexpr u32 kSlotMask = 0x00FFFFFFu;
 
-bool FiniteBox(const Aabb& b)
+bool FiniteBox(const Aabbd& b)
 {
     return IsFinite(b.min.x) && IsFinite(b.min.y) && IsFinite(b.min.z) && IsFinite(b.max.x) && IsFinite(b.max.y) &&
            IsFinite(b.max.z);
 }
 
-f32 LargestExtent(const Aabb& b)
+f64 LargestExtent(const Aabbd& b)
 {
-    const Vec3 e = b.Extents();
-    f32 m = e.x;
+    const Vec3d e = b.Extents();
+    f64 m = e.x;
     if (e.y > m)
     {
         m = e.y;
@@ -91,14 +91,14 @@ i32 DynamicBvh::SlotOf(ProxyId proxy) const
     return static_cast<i32>(slot);
 }
 
-Aabb DynamicBvh::FatOf(const Aabb& tight, const Vec3& displacement) const
+Aabbd DynamicBvh::FatOf(const Aabbd& tight, const Vec3d& displacement) const
 {
-    Aabb fat = Expand(tight, config_.fat_margin * LargestExtent(tight));
+    Aabbd fat = Expand(tight, config_.fat_margin * LargestExtent(tight));
     if (config_.predictive > 0.0f)
     {
         for (u32 k = 0; k < 3; ++k)
         {
-            const f32 reach = displacement[k] * config_.predictive;
+            const f64 reach = displacement[k] * config_.predictive;
             if (reach > 0.0f)
             {
                 fat.max[k] += reach;
@@ -112,7 +112,7 @@ Aabb DynamicBvh::FatOf(const Aabb& tight, const Vec3& displacement) const
     return fat;
 }
 
-ProxyId DynamicBvh::Insert(const Aabb& box, SpatialKey key, u32 layer)
+ProxyId DynamicBvh::Insert(const Aabbd& box, SpatialKey key, u32 layer)
 {
     ENGINE_ASSERT(!box.IsEmpty() && FiniteBox(box), "DynamicBvh::Insert: the box is empty or not finite");
     if (proxy_count_ >= kMaxDynamicProxies)
@@ -132,7 +132,7 @@ ProxyId DynamicBvh::Insert(const Aabb& box, SpatialKey key, u32 layer)
         proxies_.Push(Proxy{});
     }
     const u32 leaf = AllocateNode();
-    nodes_[leaf].box = FatOf(box, Vec3(0, 0, 0));
+    nodes_[leaf].box = FatOf(box, Vec3d(0, 0, 0));
     nodes_[leaf].child2 = slot;
     Proxy& p = proxies_[slot];
     p.item.box = box;
@@ -167,7 +167,7 @@ bool DynamicBvh::Remove(ProxyId proxy)
     return true;
 }
 
-bool DynamicBvh::Move(ProxyId proxy, const Aabb& box)
+bool DynamicBvh::Move(ProxyId proxy, const Aabbd& box)
 {
     const i32 found = SlotOf(proxy);
     if (found < 0)
@@ -178,16 +178,16 @@ bool DynamicBvh::Move(ProxyId proxy, const Aabb& box)
     ENGINE_ASSERT(!box.IsEmpty() && FiniteBox(box), "DynamicBvh::Move: the box is empty or not finite");
     ++counters_.moves;
     Proxy& p = proxies_[static_cast<u32>(found)];
-    const Vec3 displacement = box.Center() - p.item.box.Center();
+    const Vec3d displacement = box.Center() - p.item.box.Center();
     p.item.box = box;
     const u32 leaf = p.node;
-    const Aabb fresh = FatOf(box, displacement);
-    const Aabb& stored = nodes_[leaf].box;
+    const Aabbd fresh = FatOf(box, displacement);
+    const Aabbd& stored = nodes_[leaf].box;
     if (Contains(stored, box))
     {
         // Still inside the fat box. Keep it unless it has become far larger than needed (an item that moved fast and
         // stopped, or shrank): Box2D's "huge box" rule, four margins beyond the fresh fat box.
-        const Aabb huge = Expand(fresh, 4.0f * config_.fat_margin * LargestExtent(box));
+        const Aabbd huge = Expand(fresh, 4.0f * config_.fat_margin * LargestExtent(box));
         if (Contains(huge, stored))
         {
             ++counters_.moves_inside_fat;
@@ -212,12 +212,12 @@ void DynamicBvh::InsertLeaf(u32 leaf)
     }
     // The sibling of least total cost: the area of the new parent plus the growth of every ancestor (branch and bound:
     // a subtree is skipped when even the leaf's own area plus the growth so far cannot beat the best).
-    const Aabb leaf_box = nodes_[leaf].box;
-    const f32 leaf_area = SurfaceArea(leaf_box);
+    const Aabbd leaf_box = nodes_[leaf].box;
+    const f64 leaf_area = SurfaceArea(leaf_box);
     u32 best = root_;
-    f32 best_cost = SurfaceArea(Union(nodes_[root_].box, leaf_box));
+    f64 best_cost = SurfaceArea(Union(nodes_[root_].box, leaf_box));
     Array<u32, kSiblingStack> stack;
-    Array<f32, kSiblingStack> inherited;
+    Array<f64, kSiblingStack> inherited;
     u32 top = 0;
     stack[top] = root_;
     inherited[top++] = 0.0f;
@@ -225,9 +225,9 @@ void DynamicBvh::InsertLeaf(u32 leaf)
     {
         --top;
         const u32 n = stack[top];
-        const f32 inherited_cost = inherited[top];
-        const f32 direct = SurfaceArea(Union(nodes_[n].box, leaf_box));
-        const f32 cost = direct + inherited_cost;
+        const f64 inherited_cost = inherited[top];
+        const f64 direct = SurfaceArea(Union(nodes_[n].box, leaf_box));
+        const f64 cost = direct + inherited_cost;
         if (cost < best_cost)
         {
             best = n;
@@ -237,7 +237,7 @@ void DynamicBvh::InsertLeaf(u32 leaf)
         {
             continue;
         }
-        const f32 child_inherited = inherited_cost + direct - SurfaceArea(nodes_[n].box);
+        const f64 child_inherited = inherited_cost + direct - SurfaceArea(nodes_[n].box);
         if (leaf_area + child_inherited < best_cost && top + 2 <= kSiblingStack)
         {
             stack[top] = nodes_[n].child2;
@@ -455,7 +455,7 @@ void DynamicBvh::Build(Span<const Item> items, Span<ProxyId> proxies)
     Clear();
     for (usize i = 0; i < items.Size(); ++i)
     {
-        const Aabb& box = items[i].box;
+        const Aabbd& box = items[i].box;
         ENGINE_ASSERT(!box.IsEmpty() && FiniteBox(box), "DynamicBvh::Build: an item's box is empty or not finite");
         u32 slot;
         if (free_proxy_ != kNull)
@@ -485,7 +485,7 @@ void DynamicBvh::Build(Span<const Item> items, Span<ProxyId> proxies)
     {
         if (proxies_[s].Live())
         {
-            fat_[s] = FatOf(proxies_[s].item.box, Vec3(0, 0, 0));
+            fat_[s] = FatOf(proxies_[s].item.box, Vec3d(0, 0, 0));
         }
     }
     RebuildFrom(true);
@@ -560,7 +560,7 @@ u32 DynamicBvh::BuildRange(u32 begin, u32 end, u32 level)
         proxies_[slot].node = leaf;
         return leaf;
     }
-    Aabb centroid_box = Aabb::Empty();
+    Aabbd centroid_box = Aabbd::Empty();
     for (u32 i = begin; i < end; ++i)
     {
         internal::GrowBox(centroid_box, centroids_[order_[i]]);
@@ -568,7 +568,7 @@ u32 DynamicBvh::BuildRange(u32 begin, u32 end, u32 level)
     const bool middle = level + internal::SplitsNeeded(count, 1) >= internal::kMaxBuildDepth;
     const u32 mid = internal::SplitBinnedSah(
         order_.Data(), begin, end, centroid_box, middle, scratch_.Data(), bins_.Data(),
-        [this](u32 s) -> const Aabb& { return fat_[s]; }, [this](u32 s) -> const Vec3& { return centroids_[s]; });
+        [this](u32 s) -> const Aabbd& { return fat_[s]; }, [this](u32 s) -> const Vec3d& { return centroids_[s]; });
     const u32 node = AllocateNode();
     const u32 left = BuildRange(begin, mid, level + 1);
     const u32 right = BuildRange(mid, end, level + 1);
@@ -663,7 +663,7 @@ void DynamicBvh::Optimize(u32 budget)
         return;
     }
     changes_ = 0;
-    const f32 cost = SahCost();
+    const f64 cost = SahCost();
     if (built_cost_ > 0.0f && cost > built_cost_ * config_.rebuild_threshold)
     {
         Rebuild();
@@ -708,7 +708,7 @@ const Item& DynamicBvh::ItemOf(ProxyId proxy) const
     return proxies_[static_cast<u32>(slot)].item;
 }
 
-const Aabb& DynamicBvh::FatBox(ProxyId proxy) const
+const Aabbd& DynamicBvh::FatBox(ProxyId proxy) const
 {
     const i32 slot = SlotOf(proxy);
     ENGINE_ASSERT(slot >= 0, "DynamicBvh::FatBox: the handle is not live");
@@ -720,20 +720,20 @@ u32 DynamicBvh::Height() const
     return root_ == kNull ? 0u : static_cast<u32>(nodes_[root_].height);
 }
 
-Aabb DynamicBvh::Bounds() const
+Aabbd DynamicBvh::Bounds() const
 {
-    return root_ == kNull ? Aabb::Empty() : nodes_[root_].box;
+    return root_ == kNull ? Aabbd::Empty() : nodes_[root_].box;
 }
 
-f32 DynamicBvh::SahCost() const
+f64 DynamicBvh::SahCost() const
 {
     if (root_ == kNull)
     {
         return 0.0f;
     }
-    const f32 root_area = SurfaceArea(nodes_[root_].box);
-    const f32 inverse = root_area > 0.0f ? 1.0f / root_area : 0.0f;
-    f32 cost = 0.0f;
+    const f64 root_area = SurfaceArea(nodes_[root_].box);
+    const f64 inverse = root_area > 0.0f ? 1.0f / root_area : 0.0f;
+    f64 cost = 0.0f;
     for (usize i = 0; i < nodes_.Size(); ++i)
     {
         if (nodes_[i].height < 0)

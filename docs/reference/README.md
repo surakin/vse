@@ -13,7 +13,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Containers](foundation-containers.md) | 14 | 316 |
 | [Foundation: Strings](foundation-strings.md) | 6 | 104 |
 | [Foundation: Paths and Files](foundation-io.md) | 7 | 301 |
-| [Foundation: Math](foundation-math.md) | 7 | 195 |
+| [Foundation: Math](foundation-math.md) | 7 | 196 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 6 | 131 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 18 | 547 |

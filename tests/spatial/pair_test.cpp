@@ -67,15 +67,15 @@ bool PairHas(const Vector<KeyPair>& v, SpatialKey a, SpatialKey b)
     return false;
 }
 
-f32 PairMargin(const Aabb& box, f32 fraction)
+f64 PairMargin(const Aabbd& box, f64 fraction)
 {
-    const Vec3 e = box.Extents();
+    const Vec3d e = box.Extents();
     return fraction * Max(e.x, Max(e.y, e.z));
 }
 
 // The pairs a brute force finds: boxes grown by `fraction` of their size (0 for the touching pairs), the layer matrix
 // and the static-static rule applied.
-void BrutePairs(const Vector<PairItem>& items, const PairTrackerConfig& config, f32 fraction, Vector<KeyPair>* out)
+void BrutePairs(const Vector<PairItem>& items, const PairTrackerConfig& config, f64 fraction, Vector<KeyPair>* out)
 {
     out->Clear();
     for (usize i = 0; i < items.Size(); ++i)
@@ -119,7 +119,7 @@ void PairDifference(const Vector<KeyPair>& after, const Vector<KeyPair>& before,
     }
 }
 
-PairTrackerConfig PairMatrix(f32 margin)
+PairTrackerConfig PairMatrix(f64 margin)
 {
     PairTrackerConfig c;
     c.margin = margin;
@@ -147,7 +147,7 @@ struct PairScene
         p.is_static = is_static;
         p.item.key = next_key++;
         p.item.layer = rng.Below(3);
-        p.item.box = BoxAt(rng.Point(-30, 30), Vec3(rng.Float(0.5f, 4), rng.Float(0.5f, 4), rng.Float(0.5f, 4)));
+        p.item.box = BoxAt(rng.Point(-30, 30), Vec3d(rng.Float(0.5f, 4), rng.Float(0.5f, 4), rng.Float(0.5f, 4)));
         p.handle = is_static ? set.AddStatic(p.item.box, p.item.key, p.item.layer)
                              : set.AddDynamic(p.item.box, p.item.key, p.item.layer);
         REQUIRE(p.handle != kInvalidSetHandle);
@@ -198,7 +198,7 @@ struct PairScene
                 {
                     continue;
                 }
-                const Vec3 c = p.item.box.Center() + rng.Point(-3, 3);
+                const Vec3d c = p.item.box.Center() + rng.Point(-3, 3);
                 p.item.box = BoxAt(c, p.item.box.HalfExtents());
                 set.Move(p.handle, p.item.box);
                 tracker.Touch(p.handle);
@@ -340,7 +340,7 @@ TEST_CASE("PairTracker: the same inputs give the same events, with a tree and wi
 TEST_CASE("PairTracker: with a margin the pairs sit between the touching pairs and the near pairs", "[spatial][pairs]")
 {
     Rng rng(243004);
-    const f32 margin = 0.25f;
+    const f64 margin = 0.25f;
     PairScene scene(PairMatrix(margin));
     Vector<KeyPair> touching;
     Vector<KeyPair> near_pairs;
@@ -387,14 +387,14 @@ TEST_CASE("PairTracker: two static items never pair, a static and a dynamic one 
     SpatialSet set;
     PairTracker tracker;
     PairEvents events;
-    const SetHandle a = set.AddStatic(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 1, 0);
-    const SetHandle b = set.AddStatic(BoxAt(Vec3(0.5f, 0, 0), Vec3(1, 1, 1)), 2, 0);
+    const SetHandle a = set.AddStatic(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 1, 0);
+    const SetHandle b = set.AddStatic(BoxAt(Vec3d(0.5f, 0, 0), Vec3d(1, 1, 1)), 2, 0);
     tracker.Touch(a);
     tracker.Touch(b);
     tracker.Update(set, &events);
     CHECK(events.begin.Size() == 0);
     CHECK(tracker.PairCount() == 0);
-    const SetHandle c = set.AddDynamic(BoxAt(Vec3(0.2f, 0, 0), Vec3(1, 1, 1)), 3, 0);
+    const SetHandle c = set.AddDynamic(BoxAt(Vec3d(0.2f, 0, 0), Vec3d(1, 1, 1)), 3, 0);
     tracker.Touch(c);
     tracker.Update(set, &events);
     REQUIRE(events.begin.Size() == 2);
@@ -418,8 +418,8 @@ TEST_CASE("PairTracker: removing an item ends its pairs in the same update, and 
     config.margin = 0.0f;
     PairTracker tracker(config);
     PairEvents events;
-    const SetHandle a = set.AddDynamic(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 10, 0);
-    const SetHandle b = set.AddDynamic(BoxAt(Vec3(0.5f, 0, 0), Vec3(1, 1, 1)), 20, 0);
+    const SetHandle a = set.AddDynamic(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 10, 0);
+    const SetHandle b = set.AddDynamic(BoxAt(Vec3d(0.5f, 0, 0), Vec3d(1, 1, 1)), 20, 0);
     tracker.Touch(a);
     tracker.Touch(b);
     tracker.Update(set, &events);
@@ -434,7 +434,7 @@ TEST_CASE("PairTracker: removing an item ends its pairs in the same update, and 
     CHECK(events.end[0].b == 20);
     CHECK(events.begin.Size() == 0);
     // A new item at the same place has a new key: a new pair, nothing inherited.
-    const SetHandle c = set.AddDynamic(BoxAt(Vec3(0.5f, 0, 0), Vec3(1, 1, 1)), 30, 0);
+    const SetHandle c = set.AddDynamic(BoxAt(Vec3d(0.5f, 0, 0), Vec3d(1, 1, 1)), 30, 0);
     tracker.Touch(c);
     tracker.Update(set, &events);
     REQUIRE(events.begin.Size() == 1);
@@ -444,7 +444,7 @@ TEST_CASE("PairTracker: removing an item ends its pairs in the same update, and 
     // events.
     tracker.Remove(30);
     set.Remove(c);
-    const SetHandle d = set.AddDynamic(BoxAt(Vec3(0.5f, 0, 0), Vec3(1, 1, 1)), 30, 0);
+    const SetHandle d = set.AddDynamic(BoxAt(Vec3d(0.5f, 0, 0), Vec3d(1, 1, 1)), 30, 0);
     tracker.Touch(d);
     tracker.Update(set, &events);
     CHECK(events.begin.Size() == 0);
@@ -476,7 +476,7 @@ TEST_CASE("PairTracker: the layer matrix decides which pairs exist", "[spatial][
     layers[4] = 2;
     for (u32 i = 0; i < 5; ++i)
     {
-        tracker.Touch(set.AddDynamic(BoxAt(Vec3(0.1f * static_cast<f32>(i), 0, 0), Vec3(1, 1, 1)), i + 1, layers[i]));
+        tracker.Touch(set.AddDynamic(BoxAt(Vec3d(0.1f * static_cast<f64>(i), 0, 0), Vec3d(1, 1, 1)), i + 1, layers[i]));
     }
     tracker.Update(set, &events);
     u32 expected = 0;
@@ -506,10 +506,10 @@ TEST_CASE("PairTracker: 100,000 dynamic objects with 1 percent moving a frame (r
     PairTracker tracker(config);
     PairEvents events;
     Vector<SetHandle> handles;
-    Vector<Aabb> boxes;
+    Vector<Aabbd> boxes;
     for (u32 i = 0; i < kObjects; ++i)
     {
-        const Aabb box = BoxAt(Vec3(rng.Float(0, 1000), 1, rng.Float(0, 1000)), Vec3(0.5f, 1, 0.5f));
+        const Aabbd box = BoxAt(Vec3d(rng.Float(0, 1000), 1, rng.Float(0, 1000)), Vec3d(0.5f, 1, 0.5f));
         boxes.Push(box);
         handles.Push(set.AddDynamic(box, i + 1, 0));
         tracker.Touch(handles[i]);
@@ -525,7 +525,7 @@ TEST_CASE("PairTracker: 100,000 dynamic objects with 1 percent moving a frame (r
         for (u32 k = 0; k < kObjects / 100; ++k)
         {
             const u32 i = rng.Below(kObjects);
-            boxes[i] = BoxAt(boxes[i].Center() + Vec3(rng.Float(-1, 1), 0, rng.Float(-1, 1)), boxes[i].HalfExtents());
+            boxes[i] = BoxAt(boxes[i].Center() + Vec3d(rng.Float(-1, 1), 0, rng.Float(-1, 1)), boxes[i].HalfExtents());
             set.Move(handles[i], boxes[i]);
             tracker.Touch(handles[i]);
         }
@@ -556,18 +556,18 @@ TEST_CASE("PairTracker: after a Recompute an Update still finds partners with la
     config.margin = 0.25f;
     PairTracker tracker(config);
     PairEvents events;
-    set.AddDynamic(BoxAt(Vec3(0, 0, 0), Vec3(5, 5, 5)), 1, 0);
+    set.AddDynamic(BoxAt(Vec3d(0, 0, 0), Vec3d(5, 5, 5)), 1, 0);
     for (u32 i = 0; i < 16; ++i)
     {
-        set.AddDynamic(BoxAt(Vec3(100.0f + 10.0f * static_cast<f32>(i), 0, 50), Vec3(0.5f, 0.5f, 0.5f)), 100 + i,
+        set.AddDynamic(BoxAt(Vec3d(100.0f + 10.0f * static_cast<f64>(i), 0, 50), Vec3d(0.5f, 0.5f, 0.5f)), 100 + i,
                        0);  // so the tree has structure
     }
-    const SetHandle b = set.AddDynamic(BoxAt(Vec3(5.5f, 0, 0), Vec3(0.5f, 0.5f, 0.5f)), 2, 0);
+    const SetHandle b = set.AddDynamic(BoxAt(Vec3d(5.5f, 0, 0), Vec3d(0.5f, 0.5f, 0.5f)), 2, 0);
     tracker.Recompute(set, &events);
     REQUIRE(events.begin.Size() == 1);
     set.Move(
-        b, BoxAt(Vec3(7.0f, 0, 0),
-                 Vec3(0.5f, 0.5f, 0.5f)));  // its left face is 1.5 from A's right face at 5: gap 1.5? A.hi=5, B.lo=6.5
+        b, BoxAt(Vec3d(7.0f, 0, 0),
+                 Vec3d(0.5f, 0.5f, 0.5f)));  // its left face is 1.5 from A's right face at 5: gap 1.5? A.hi=5, B.lo=6.5
     tracker.Touch(b);
     tracker.Update(set, &events);
     CHECK(events.end.Size() == 0);
@@ -582,23 +582,23 @@ TEST_CASE("PairTracker: a pair stays while the boxes are apart by less than the 
     config.margin = 0.25f;  // boxes of extent 2: a margin of 0.5 each, so the pair ends at a gap of 1.0
     PairTracker tracker(config);
     PairEvents events;
-    const SetHandle a = set.AddDynamic(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 1, 0);
-    const SetHandle b = set.AddDynamic(BoxAt(Vec3(1.5f, 0, 0), Vec3(1, 1, 1)), 2, 0);
+    const SetHandle a = set.AddDynamic(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 1, 0);
+    const SetHandle b = set.AddDynamic(BoxAt(Vec3d(1.5f, 0, 0), Vec3d(1, 1, 1)), 2, 0);
     tracker.Touch(a);
     tracker.Touch(b);
     tracker.Update(set, &events);
     CHECK(events.begin.Size() == 1);
-    set.Move(b, BoxAt(Vec3(2.9f, 0, 0), Vec3(1, 1, 1)));  // gap 0.9: apart, within the margins
+    set.Move(b, BoxAt(Vec3d(2.9f, 0, 0), Vec3d(1, 1, 1)));  // gap 0.9: apart, within the margins
     tracker.Touch(b);
     tracker.Update(set, &events);
     CHECK(events.end.Size() == 0);
     CHECK(tracker.Has(1, 2));
-    set.Move(b, BoxAt(Vec3(3.1f, 0, 0), Vec3(1, 1, 1)));  // gap 1.1: past both margins
+    set.Move(b, BoxAt(Vec3d(3.1f, 0, 0), Vec3d(1, 1, 1)));  // gap 1.1: past both margins
     tracker.Touch(b);
     tracker.Update(set, &events);
     CHECK(events.end.Size() == 1);
     CHECK_FALSE(tracker.Has(1, 2));
-    set.Move(b, BoxAt(Vec3(2.9f, 0, 0), Vec3(1, 1, 1)));  // back within the margins but not touching: no pair is made
+    set.Move(b, BoxAt(Vec3d(2.9f, 0, 0), Vec3d(1, 1, 1)));  // back within the margins but not touching: no pair is made
     tracker.Touch(b);
     tracker.Update(set, &events);
     CHECK(events.begin.Size() == 0);
@@ -612,18 +612,19 @@ TEST_CASE("PairTracker: a large static item's margin still holds its pairs", "[s
     const PairTrackerConfig config;
     PairTracker tracker(config);
     PairEvents events;
-    const SetHandle floor = set.AddStatic(BoxAt(Vec3(0, -0.5f, 0), Vec3(20, 0.5f, 20)), 1, 0);  // margin about 4
-    const SetHandle ball = set.AddDynamic(BoxAt(Vec3(0, 0.5f, 0), Vec3(0.5f, 0.5f, 0.5f)), 2, 0);
+    const SetHandle floor = set.AddStatic(BoxAt(Vec3d(0, -0.5f, 0), Vec3d(20, 0.5f, 20)), 1, 0);  // margin about 4
+    const SetHandle ball = set.AddDynamic(BoxAt(Vec3d(0, 0.5f, 0), Vec3d(0.5f, 0.5f, 0.5f)), 2, 0);
     tracker.Touch(floor);
     tracker.Touch(ball);
     tracker.Update(set, &events);
     CHECK(events.begin.Size() == 1);
-    set.Move(ball, BoxAt(Vec3(0, 3.0f, 0), Vec3(0.5f, 0.5f, 0.5f)));  // 2.5 above the floor: inside the floor's margin
+    set.Move(ball,
+             BoxAt(Vec3d(0, 3.0f, 0), Vec3d(0.5f, 0.5f, 0.5f)));  // 2.5 above the floor: inside the floor's margin
     tracker.Touch(ball);
     tracker.Update(set, &events);
     CHECK(events.end.Size() == 0);
     CHECK(tracker.Has(1, 2));
-    set.Move(ball, BoxAt(Vec3(0, 6.0f, 0), Vec3(0.5f, 0.5f, 0.5f)));  // 5.5 above: outside it
+    set.Move(ball, BoxAt(Vec3d(0, 6.0f, 0), Vec3d(0.5f, 0.5f, 0.5f)));  // 5.5 above: outside it
     tracker.Touch(ball);
     tracker.Update(set, &events);
     CHECK(events.end.Size() == 1);

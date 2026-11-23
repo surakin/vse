@@ -29,10 +29,10 @@ AssertAction CountBvhAssert(const AssertInfo&)
     return AssertAction::Continue;
 }
 
-Item MakeItem(const Vec3& c, const Vec3& h, SpatialKey key)
+Item MakeItem(const Vec3d& c, const Vec3d& h, SpatialKey key)
 {
     Item item;
-    item.box = Aabb::FromMinMax(c - h, c + h);
+    item.box = Aabbd::FromMinMax(c - h, c + h);
     item.key = key;
     item.layer = static_cast<u32>(key % 3);
     return item;
@@ -48,13 +48,13 @@ void MakeScene(Rng& rng, u32 kind, Vector<Item>* out)
     case 0:
         for (u32 i = 0; i < n; ++i)
         {
-            out->Push(MakeItem(rng.Point(-50, 50), Vec3(rng.Float(0, 4), rng.Float(0, 4), rng.Float(0, 4)), i));
+            out->Push(MakeItem(rng.Point(-50, 50), Vec3d(rng.Float(0, 4), rng.Float(0, 4), rng.Float(0, 4)), i));
         }
         break;
     case 1:
     {
         const u32 clusters = 1 + rng.Below(5);
-        Vector<Vec3> centers;
+        Vector<Vec3d> centers;
         for (u32 c = 0; c < clusters; ++c)
         {
             centers.Push(rng.Point(-50, 50));
@@ -62,26 +62,26 @@ void MakeScene(Rng& rng, u32 kind, Vector<Item>* out)
         for (u32 i = 0; i < n; ++i)
         {
             out->Push(MakeItem(centers[rng.Below(clusters)] + rng.Point(-3, 3),
-                               Vec3(rng.Float(0, 1), rng.Float(0, 1), rng.Float(0, 1)), i));
+                               Vec3d(rng.Float(0, 1), rng.Float(0, 1), rng.Float(0, 1)), i));
         }
         break;
     }
     case 2:
     {
-        const Vec3 c = rng.Point(-10, 10);
+        const Vec3d c = rng.Point(-10, 10);
         for (u32 i = 0; i < n; ++i)
         {
-            out->Push(MakeItem(c, Vec3(1, 1, 1), i));
+            out->Push(MakeItem(c, Vec3d(1, 1, 1), i));
         }
         break;
     }
     case 3:
         for (u32 i = 0; i < n; ++i)
         {
-            out->Push(MakeItem(Vec3(static_cast<f32>(i) * 2.0f - 300.0f, 0, 0), Vec3(0.5f, 0.5f, 0.5f), i));
+            out->Push(MakeItem(Vec3d(static_cast<f64>(i) * 2.0f - 300.0f, 0, 0), Vec3d(0.5f, 0.5f, 0.5f), i));
         }
         break;
-    case 4: out->Push(MakeItem(rng.Point(-5, 5), Vec3(1, 2, 3), 0)); break;
+    case 4: out->Push(MakeItem(rng.Point(-5, 5), Vec3d(1, 2, 3), 0)); break;
     default: break;
     }
 }
@@ -104,11 +104,11 @@ bool SameKeys(Vector<SpatialKey>& a, Vector<SpatialKey>& b)
     return true;
 }
 
-void QueryBox(const StaticBvh& bvh, const Aabb& query, Vector<SpatialKey>* out)
+void QueryBox(const StaticBvh& bvh, const Aabbd& query, Vector<SpatialKey>* out)
 {
     out->Clear();
     const TraversalStats stats = bvh.Traverse(
-        [&](const Aabb& node) { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
+        [&](const Aabbd& node) { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
         [&](const Item& item)
         {
             if (Overlaps(item.box, query))
@@ -120,7 +120,7 @@ void QueryBox(const StaticBvh& bvh, const Aabb& query, Vector<SpatialKey>* out)
     CHECK(stats.refused == 0);
 }
 
-void BruteBox(Span<const Item> items, const Aabb& query, Vector<SpatialKey>* out)
+void BruteBox(Span<const Item> items, const Aabbd& query, Vector<SpatialKey>* out)
 {
     out->Clear();
     for (usize i = 0; i < items.Size(); ++i)
@@ -133,13 +133,13 @@ void BruteBox(Span<const Item> items, const Aabb& query, Vector<SpatialKey>* out
 }
 
 // The closest hit: its parameter, or -1 for none.
-f32 RayBvh(const StaticBvh& bvh, const Ray& ray, f32 max_t, SpatialKey* key)
+f64 RayBvh(const StaticBvh& bvh, const Rayd& ray, f64 max_t, SpatialKey* key)
 {
-    f32 best = -1.0f;
+    f64 best = -1.0f;
     const TraversalStats stats = bvh.TraverseRay(ray, max_t,
-                                                 [&](const Item& item, f32& limit)
+                                                 [&](const Item& item, f64& limit)
                                                  {
-                                                     f32 t = 0.0f;
+                                                     f64 t = 0.0f;
                                                      if (Intersect(ray, item.box, limit, &t) &&
                                                          (best < 0.0f || t < best))
                                                      {
@@ -153,12 +153,12 @@ f32 RayBvh(const StaticBvh& bvh, const Ray& ray, f32 max_t, SpatialKey* key)
     return best;
 }
 
-f32 RayBrute(Span<const Item> items, const Ray& ray, f32 max_t)
+f64 RayBrute(Span<const Item> items, const Rayd& ray, f64 max_t)
 {
-    f32 best = -1.0f;
+    f64 best = -1.0f;
     for (usize i = 0; i < items.Size(); ++i)
     {
-        f32 t = 0.0f;
+        f64 t = 0.0f;
         if (Intersect(ray, items[i].box, max_t, &t) && (best < 0.0f || t < best))
         {
             best = t;
@@ -167,11 +167,11 @@ f32 RayBrute(Span<const Item> items, const Ray& ray, f32 max_t)
     return best;
 }
 
-f32 RayOf(Span<const Item> items, SpatialKey key, const Ray& ray, f32 max_t)
+f64 RayOf(Span<const Item> items, SpatialKey key, const Rayd& ray, f64 max_t)
 {
     for (usize i = 0; i < items.Size(); ++i)
     {
-        f32 t = 0.0f;
+        f64 t = 0.0f;
         if (items[i].key == key && Intersect(ray, items[i].box, max_t, &t))
         {
             return t;
@@ -201,14 +201,14 @@ void CheckStructure(const StaticBvh& bvh, Span<const Item> items)
     {
         seen[i] = 0;
     }
-    TraversalStats stats = bvh.Traverse([](const Aabb&) { return NodeVisit::Descend; },
+    TraversalStats stats = bvh.Traverse([](const Aabbd&) { return NodeVisit::Descend; },
                                         [&](const Item& item)
                                         {
                                             ++seen[static_cast<usize>(item.key)];
                                             return true;
                                         });
     CHECK(stats.refused == 0);
-    stats = bvh.Traverse([](const Aabb&) { return NodeVisit::AcceptAll; },
+    stats = bvh.Traverse([](const Aabbd&) { return NodeVisit::AcceptAll; },
                          [&](const Item& item)
                          {
                              ++seen[static_cast<usize>(item.key)];
@@ -258,23 +258,23 @@ TEST_CASE("StaticBvh: box queries and closest rays equal a brute-force scan on 1
         CheckStructure(bvh, Span<const Item>(items.Data(), items.Size()));
         for (u32 q = 0; q < 8; ++q)
         {
-            const Vec3 c = rng.Point(-60, 60);
-            const Vec3 h(rng.Float(0, 20), rng.Float(0, 20), rng.Float(0, 20));
-            const Aabb query = Aabb::FromMinMax(c - h, c + h);
+            const Vec3d c = rng.Point(-60, 60);
+            const Vec3d h(rng.Float(0, 20), rng.Float(0, 20), rng.Float(0, 20));
+            const Aabbd query = Aabbd::FromMinMax(c - h, c + h);
             QueryBox(bvh, query, &got);
             BruteBox(Span<const Item>(items.Data(), items.Size()), query, &want);
             INFO("seed " << seed << " kind " << kind << " query " << q);
             CHECK(SameKeys(got, want));
 
-            Vec3 direction = rng.Point(-1, 1);
+            Vec3d direction = rng.Point(-1, 1);
             if (direction.LengthSquared() < 1e-3f)
             {
-                direction = Vec3(1, 0.5f, 0);
+                direction = Vec3d(1, 0.5f, 0);
             }
-            const Ray ray = Ray::Make(rng.Point(-70, 70), direction);
+            const Rayd ray = Rayd::Make(rng.Point(-70, 70), direction);
             SpatialKey key = ~0ull;
-            const f32 t = RayBvh(bvh, ray, 500.0f, &key);
-            const f32 brute = RayBrute(Span<const Item>(items.Data(), items.Size()), ray, 500.0f);
+            const f64 t = RayBvh(bvh, ray, 500.0f, &key);
+            const f64 brute = RayBrute(Span<const Item>(items.Data(), items.Size()), ray, 500.0f);
             CHECK(t == brute);
             if (t >= 0.0f)
             {
@@ -296,7 +296,7 @@ TEST_CASE("StaticBvh: degenerate inputs build within the stack and answer exactl
     {
         for (u32 i = 0; i < 2000; ++i)
         {
-            items.Push(MakeItem(rng.Point(-20, 20), Vec3(0, 0, 0), i));
+            items.Push(MakeItem(rng.Point(-20, 20), Vec3d(0, 0, 0), i));
         }
     }
     SECTION("boxes sharing faces (a grid of touching cubes)")
@@ -308,18 +308,18 @@ TEST_CASE("StaticBvh: degenerate inputs build within the stack and answer exactl
             {
                 for (u32 z = 0; z < 12; ++z)
                 {
-                    items.Push(MakeItem(Vec3(static_cast<f32>(x), static_cast<f32>(y), static_cast<f32>(z)),
-                                        Vec3(0.5f, 0.5f, 0.5f), key++));
+                    items.Push(MakeItem(Vec3d(static_cast<f64>(x), static_cast<f64>(y), static_cast<f64>(z)),
+                                        Vec3d(0.5f, 0.5f, 0.5f), key++));
                 }
             }
         }
     }
     SECTION("geometric spacing (a pure SAH build would go deeper than the stack)")
     {
-        f32 x = 1.0f;
+        f64 x = 1.0f;
         for (u32 i = 0; i < 300; ++i)
         {
-            items.Push(MakeItem(Vec3(x, 0, 0), Vec3(0.25f, 0.25f, 0.25f), i));
+            items.Push(MakeItem(Vec3d(x, 0, 0), Vec3d(0.25f, 0.25f, 0.25f), i));
             x *= 1.3f;
         }
     }
@@ -327,8 +327,8 @@ TEST_CASE("StaticBvh: degenerate inputs build within the stack and answer exactl
     CheckStructure(bvh, Span<const Item>(items.Data(), items.Size()));
     for (u32 q = 0; q < 50; ++q)
     {
-        const Vec3 c = rng.Point(-25, 25);
-        const Aabb query = Aabb::FromMinMax(c - Vec3(3, 3, 3), c + Vec3(3, 3, 3));
+        const Vec3d c = rng.Point(-25, 25);
+        const Aabbd query = Aabbd::FromMinMax(c - Vec3d(3, 3, 3), c + Vec3d(3, 3, 3));
         QueryBox(bvh, query, &got);
         BruteBox(Span<const Item>(items.Data(), items.Size()), query, &want);
         CHECK(SameKeys(got, want));
@@ -340,16 +340,16 @@ TEST_CASE("StaticBvh: 100,000 identical boxes build in bounded depth", "[spatial
     Vector<Item> items;
     for (u32 i = 0; i < 100000; ++i)
     {
-        items.Push(MakeItem(Vec3(3, 4, 5), Vec3(1, 1, 1), i));
+        items.Push(MakeItem(Vec3d(3, 4, 5), Vec3d(1, 1, 1), i));
     }
     StaticBvh bvh;
     bvh.Build(Span<const Item>(items.Data(), items.Size()));
     CHECK(bvh.Depth() <= 17);  // halved down to leaves of 4: 25,000 leaves, 15 splits
     CHECK(bvh.ItemCount() == 100000);
     Vector<SpatialKey> got;
-    QueryBox(bvh, Aabb::FromMinMax(Vec3(3.5f, 4.5f, 5.5f), Vec3(3.6f, 4.6f, 5.6f)), &got);
+    QueryBox(bvh, Aabbd::FromMinMax(Vec3d(3.5f, 4.5f, 5.5f), Vec3d(3.6f, 4.6f, 5.6f)), &got);
     CHECK(got.Size() == 100000);
-    QueryBox(bvh, Aabb::FromMinMax(Vec3(10, 10, 10), Vec3(11, 11, 11)), &got);
+    QueryBox(bvh, Aabbd::FromMinMax(Vec3d(10, 10, 10), Vec3d(11, 11, 11)), &got);
     CHECK(got.Size() == 0);
 }
 
@@ -360,7 +360,7 @@ TEST_CASE("StaticBvh: the same items build the same tree, and Clear empties it",
     MakeScene(rng, 0, &items);
     for (u32 i = 0; i < 2000; ++i)
     {
-        items.Push(MakeItem(rng.Point(-80, 80), Vec3(rng.Float(0, 3), rng.Float(0, 3), rng.Float(0, 3)), 1000 + i));
+        items.Push(MakeItem(rng.Point(-80, 80), Vec3d(rng.Float(0, 3), rng.Float(0, 3), rng.Float(0, 3)), 1000 + i));
     }
     StaticBvh a;
     StaticBvh b;
@@ -372,7 +372,7 @@ TEST_CASE("StaticBvh: the same items build the same tree, and Clear empties it",
     {
         CHECK(a.Items()[i].key == b.Items()[i].key);
     }
-    CHECK(sizeof(StaticBvh::Node) == 32);
+    CHECK(sizeof(StaticBvh::Node) == 56);  // 32 in single precision: six doubles and two words
     // Building again over the same object gives the same tree too.
     a.Build(Span<const Item>(items.Data(), items.Size()));
     CHECK(MemCompare(a.Nodes().Data(), b.Nodes().Data(), a.NodeCount() * sizeof(StaticBvh::Node)) == 0);
@@ -381,7 +381,7 @@ TEST_CASE("StaticBvh: the same items build the same tree, and Clear empties it",
     CHECK(a.ItemCount() == 0);
     CHECK(a.Depth() == 0);
     CHECK(a.SahCost() == 0.0f);
-    const TraversalStats none = a.Traverse([](const Aabb&) { return NodeVisit::Descend; },
+    const TraversalStats none = a.Traverse([](const Aabbd&) { return NodeVisit::Descend; },
                                            [](const Item&) { return true; });
     CHECK(none.nodes_tested == 0);
 }
@@ -392,12 +392,13 @@ TEST_CASE("StaticBvh: the SAH cost is within 10 percent of the best of five shuf
     Vector<Item> items;
     for (u32 i = 0; i < 5000; ++i)
     {
-        items.Push(MakeItem(rng.Point(-200, 200), Vec3(rng.Float(0.2f, 6), rng.Float(0.2f, 6), rng.Float(0.2f, 6)), i));
+        items.Push(
+            MakeItem(rng.Point(-200, 200), Vec3d(rng.Float(0.2f, 6), rng.Float(0.2f, 6), rng.Float(0.2f, 6)), i));
     }
     StaticBvh bvh;
     bvh.Build(Span<const Item>(items.Data(), items.Size()));
-    const f32 cost = bvh.SahCost();
-    f32 best = 0.0f;
+    const f64 cost = bvh.SahCost();
+    f64 best = 0.0f;
     for (u32 restart = 0; restart < 5; ++restart)
     {
         Vector<Item> shuffled;
@@ -414,7 +415,7 @@ TEST_CASE("StaticBvh: the SAH cost is within 10 percent of the best of five shuf
         }
         StaticBvh other;
         other.Build(Span<const Item>(shuffled.Data(), shuffled.Size()));
-        const f32 c = other.SahCost();
+        const f64 c = other.SahCost();
         if (restart == 0 || c < best)
         {
             best = c;
@@ -430,7 +431,7 @@ TEST_CASE("StaticBvh: the build time and quality of 100,000 boxes (recorded, not
     Vector<Item> items;
     for (u32 i = 0; i < 100000; ++i)
     {
-        items.Push(MakeItem(rng.Point(-2000, 2000), Vec3(rng.Float(4, 20), rng.Float(2, 40), rng.Float(4, 20)), i));
+        items.Push(MakeItem(rng.Point(-2000, 2000), Vec3d(rng.Float(4, 20), rng.Float(2, 40), rng.Float(4, 20)), i));
     }
     StaticBvh bvh;
     const u64 start = os::MonotonicTimeNanos();
@@ -441,20 +442,20 @@ TEST_CASE("StaticBvh: the build time and quality of 100,000 boxes (recorded, not
     WARN("StaticBvh: 100,000 boxes built in " << ms << " ms; " << bvh.NodeCount() << " nodes, depth " << bvh.Depth()
                                               << ", SAH cost " << bvh.SahCost() << ", " << bytes << " bytes per item");
     CHECK(bvh.Depth() <= 60);
-    CHECK(bytes <= 64.0);
+    CHECK(bytes <= 128.0);  // 64 in single precision
 }
 
 TEST_CASE("StaticBvh: Build refuses a box that is not finite", "[spatial][bvh]")
 {
     // A NaN corner makes a box that is neither empty nor containable: no node box would enclose it and no query could
     // find it.
-    const f32 nan = Limits<f32>::QuietNaN();
-    const f32 inf = Limits<f32>::Infinity();
+    const f64 nan = Limits<f64>::QuietNaN();
+    const f64 inf = Limits<f64>::Infinity();
     for (u32 bad = 0; bad < 3; ++bad)
     {
         Vector<Item> items;
-        items.Push(MakeItem(Vec3(0, 0, 0), Vec3(1, 1, 1), 0));
-        Item odd = MakeItem(Vec3(5, 0, 0), Vec3(1, 1, 1), 1);
+        items.Push(MakeItem(Vec3d(0, 0, 0), Vec3d(1, 1, 1), 0));
+        Item odd = MakeItem(Vec3d(5, 0, 0), Vec3d(1, 1, 1), 1);
         if (bad == 0)
         {
             odd.box.min.x = nan;

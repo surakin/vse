@@ -29,7 +29,7 @@ struct SpatialBounds
 struct WorldBounds
 {
     /// The world-space box.
-    Aabb box;
+    Aabbd box;
 };
 
 /// Which sets an entity is in and on which layer. An entity needs `SpatialBounds`, a `WorldTransform` and this to be in

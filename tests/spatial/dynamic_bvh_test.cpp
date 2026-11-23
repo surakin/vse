@@ -21,9 +21,9 @@ using spatial_test::Rng;
 namespace
 {
 
-Aabb RandomBox(Rng& rng, f32 extent)
+Aabbd RandomBox(Rng& rng, f64 extent)
 {
-    return BoxAt(rng.Point(-extent, extent), Vec3(rng.Float(0.1f, 3), rng.Float(0.1f, 3), rng.Float(0.1f, 3)));
+    return BoxAt(rng.Point(-extent, extent), Vec3d(rng.Float(0.1f, 3), rng.Float(0.1f, 3), rng.Float(0.1f, 3)));
 }
 
 // The model: what the tree should hold.
@@ -31,7 +31,7 @@ struct ModelItem
 {
     bool live = false;
     ProxyId id = kInvalidProxy;
-    Aabb box;
+    Aabbd box;
     SpatialKey key = 0;
 };
 
@@ -58,10 +58,10 @@ bool Same(Vector<SpatialKey>& a, Vector<SpatialKey>& b)
     return true;
 }
 
-void TreeBox(const DynamicBvh& tree, const Aabb& q, Vector<SpatialKey>* out)
+void TreeBox(const DynamicBvh& tree, const Aabbd& q, Vector<SpatialKey>* out)
 {
     out->Clear();
-    const TraversalStats stats = tree.Traverse([&](const Aabb& node)
+    const TraversalStats stats = tree.Traverse([&](const Aabbd& node)
                                                { return Overlaps(node, q) ? NodeVisit::Descend : NodeVisit::Reject; },
                                                [&](ProxyId, const Item& item)
                                                {
@@ -74,7 +74,7 @@ void TreeBox(const DynamicBvh& tree, const Aabb& q, Vector<SpatialKey>* out)
     CHECK(stats.refused == 0);
 }
 
-void ModelBox(const Vector<ModelItem>& model, const Aabb& q, Vector<SpatialKey>* out)
+void ModelBox(const Vector<ModelItem>& model, const Aabbd& q, Vector<SpatialKey>* out)
 {
     out->Clear();
     for (usize i = 0; i < model.Size(); ++i)
@@ -86,13 +86,13 @@ void ModelBox(const Vector<ModelItem>& model, const Aabb& q, Vector<SpatialKey>*
     }
 }
 
-f32 TreeRay(const DynamicBvh& tree, const Ray& ray, f32 max_t)
+f64 TreeRay(const DynamicBvh& tree, const Rayd& ray, f64 max_t)
 {
-    f32 best = -1.0f;
+    f64 best = -1.0f;
     const TraversalStats stats = tree.TraverseRay(ray, max_t,
-                                                  [&](ProxyId, const Item& item, f32& limit)
+                                                  [&](ProxyId, const Item& item, f64& limit)
                                                   {
-                                                      f32 t = 0.0f;
+                                                      f64 t = 0.0f;
                                                       if (Intersect(ray, item.box, limit, &t) &&
                                                           (best < 0.0f || t < best))
                                                       {
@@ -105,12 +105,12 @@ f32 TreeRay(const DynamicBvh& tree, const Ray& ray, f32 max_t)
     return best;
 }
 
-f32 ModelRay(const Vector<ModelItem>& model, const Ray& ray, f32 max_t)
+f64 ModelRay(const Vector<ModelItem>& model, const Rayd& ray, f64 max_t)
 {
-    f32 best = -1.0f;
+    f64 best = -1.0f;
     for (usize i = 0; i < model.Size(); ++i)
     {
-        f32 t = 0.0f;
+        f64 t = 0.0f;
         if (model[i].live && Intersect(ray, model[i].box, max_t, &t) && (best < 0.0f || t < best))
         {
             best = t;
@@ -125,16 +125,16 @@ void CompareQueries(Rng& rng, const DynamicBvh& tree, const Vector<ModelItem>& m
     Vector<SpatialKey> want;
     for (u32 q = 0; q < queries; ++q)
     {
-        const Aabb query = BoxAt(rng.Point(-60, 60), Vec3(rng.Float(0, 15), rng.Float(0, 15), rng.Float(0, 15)));
+        const Aabbd query = BoxAt(rng.Point(-60, 60), Vec3d(rng.Float(0, 15), rng.Float(0, 15), rng.Float(0, 15)));
         TreeBox(tree, query, &got);
         ModelBox(model, query, &want);
         CHECK(Same(got, want));
-        Vec3 d = rng.Point(-1, 1);
+        Vec3d d = rng.Point(-1, 1);
         if (d.LengthSquared() < 1e-3f)
         {
-            d = Vec3(0, 1, 0);
+            d = Vec3d(0, 1, 0);
         }
-        const Ray ray = Ray::Make(rng.Point(-70, 70), d);
+        const Rayd ray = Rayd::Make(rng.Point(-70, 70), d);
         CHECK(TreeRay(tree, ray, 400.0f) == ModelRay(model, ray, 400.0f));
     }
 }
@@ -251,8 +251,8 @@ TEST_CASE("DynamicBvh: 100,000 random inserts, removes and moves keep the tree e
         else
         {
             ModelItem& m = model[live[rng.Below(static_cast<u32>(live.Size()))]];
-            const Vec3 c = m.box.Center();
-            const Vec3 h = m.box.HalfExtents();
+            const Vec3d c = m.box.Center();
+            const Vec3d h = m.box.HalfExtents();
             if (kind < 85)
             {
                 m.box = BoxAt(c + rng.Point(-0.3f, 0.3f), h);  // a small step, often inside the fat box
@@ -263,7 +263,7 @@ TEST_CASE("DynamicBvh: 100,000 random inserts, removes and moves keep the tree e
             }
             else
             {
-                m.box = BoxAt(c, Vec3(rng.Float(0.05f, 3), rng.Float(0.05f, 3), rng.Float(0.05f, 3)));  // a new size
+                m.box = BoxAt(c, Vec3d(rng.Float(0.05f, 3), rng.Float(0.05f, 3), rng.Float(0.05f, 3)));  // a new size
             }
             tree.Move(m.id, m.box);
         }
@@ -294,13 +294,13 @@ TEST_CASE("DynamicBvh: 100,000 random inserts, removes and moves keep the tree e
 TEST_CASE("DynamicBvh: a stale handle is refused and counted, even after its slot is reused", "[spatial][dbvh]")
 {
     DynamicBvh tree;
-    const ProxyId a = tree.Insert(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 1, 0);
-    const ProxyId b = tree.Insert(BoxAt(Vec3(5, 0, 0), Vec3(1, 1, 1)), 2, 0);
+    const ProxyId a = tree.Insert(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 1, 0);
+    const ProxyId b = tree.Insert(BoxAt(Vec3d(5, 0, 0), Vec3d(1, 1, 1)), 2, 0);
     REQUIRE(tree.Remove(a));
     CHECK_FALSE(tree.IsLive(a));
     CHECK_FALSE(tree.Remove(a));
-    CHECK_FALSE(tree.Move(a, BoxAt(Vec3(9, 9, 9), Vec3(1, 1, 1))));
-    const ProxyId c = tree.Insert(BoxAt(Vec3(-5, 0, 0), Vec3(1, 1, 1)), 3,
+    CHECK_FALSE(tree.Move(a, BoxAt(Vec3d(9, 9, 9), Vec3d(1, 1, 1))));
+    const ProxyId c = tree.Insert(BoxAt(Vec3d(-5, 0, 0), Vec3d(1, 1, 1)), 3,
                                   0);  // reuses a's slot, with a new generation
     CHECK((c & kMaxDynamicProxies) == (a & kMaxDynamicProxies));
     CHECK(c != a);
@@ -314,7 +314,7 @@ TEST_CASE("DynamicBvh: a stale handle is refused and counted, even after its slo
     CHECK_FALSE(tree.IsLive(c));
     CHECK(tree.ProxyCount() == 0);
     REQUIRE(tree.Validate());
-    const ProxyId d = tree.Insert(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 4, 0);
+    const ProxyId d = tree.Insert(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 4, 0);
     CHECK(d != a);
     CHECK(d != b);
     CHECK(d != c);
@@ -330,18 +330,18 @@ TEST_CASE("DynamicBvh: a move inside the fat box changes nothing", "[spatial][db
     {
         ids.Push(tree.Insert(RandomBox(rng, 30), i, 0));
     }
-    const ProxyId id = tree.Insert(BoxAt(Vec3(0, 0, 0), Vec3(2, 2, 2)), 999, 0);  // largest extent 4, margin 1
-    const Aabb fat = tree.FatBox(id);
-    CHECK(fat.min == Vec3(-3, -3, -3));
+    const ProxyId id = tree.Insert(BoxAt(Vec3d(0, 0, 0), Vec3d(2, 2, 2)), 999, 0);  // largest extent 4, margin 1
+    const Aabbd fat = tree.FatBox(id);
+    CHECK(fat.min == Vec3d(-3, -3, -3));
     const DynamicBvhStats before = tree.Stats();
-    CHECK_FALSE(tree.Move(id, BoxAt(Vec3(0.5f, 0, 0), Vec3(2, 2, 2))));
-    CHECK_FALSE(tree.Move(id, BoxAt(Vec3(0.5f, -0.9f, 0.9f), Vec3(2, 2, 2))));
+    CHECK_FALSE(tree.Move(id, BoxAt(Vec3d(0.5f, 0, 0), Vec3d(2, 2, 2))));
+    CHECK_FALSE(tree.Move(id, BoxAt(Vec3d(0.5f, -0.9f, 0.9f), Vec3d(2, 2, 2))));
     const DynamicBvhStats after = tree.Stats();
     CHECK(after.moves_inside_fat == before.moves_inside_fat + 2);
     CHECK(after.reinserts == before.reinserts);
     CHECK(tree.FatBox(id).min == fat.min);
-    CHECK(tree.ItemOf(id).box.min == Vec3(-1.5f, -2.9f, -1.1f));  // the tight box follows
-    CHECK(tree.Move(id, BoxAt(Vec3(5, 0, 0), Vec3(2, 2, 2))));    // out of the fat box: re-inserted
+    CHECK(tree.ItemOf(id).box.min == BoxAt(Vec3d(0.5f, -0.9f, 0.9f), Vec3d(2, 2, 2)).min);  // the tight box follows
+    CHECK(tree.Move(id, BoxAt(Vec3d(5, 0, 0), Vec3d(2, 2, 2))));  // out of the fat box: re-inserted
     CHECK(tree.Stats().reinserts == before.reinserts + 1);
     REQUIRE(tree.Validate());
 }
@@ -353,20 +353,20 @@ TEST_CASE("DynamicBvh: everything moving for 1,000 frames stays within 2x of a f
     constexpr u32 kCount = 1000;
     DynamicBvh tree;
     Vector<ProxyId> ids;
-    Vector<Aabb> boxes;
-    Vector<Vec3> velocity;
+    Vector<Aabbd> boxes;
+    Vector<Vec3d> velocity;
     for (u32 i = 0; i < kCount; ++i)
     {
-        boxes.Push(BoxAt(rng.Point(-100, 100), Vec3(0.5f, 1, 0.5f)));
+        boxes.Push(BoxAt(rng.Point(-100, 100), Vec3d(0.5f, 1, 0.5f)));
         velocity.Push(rng.Point(-0.3f, 0.3f));
         ids.Push(tree.Insert(boxes[i], i, 0));
     }
-    f32 worst_ratio = 0.0f;
+    f64 worst_ratio = 0.0f;
     for (u32 frame = 1; frame <= 1000; ++frame)
     {
         for (u32 i = 0; i < kCount; ++i)
         {
-            Vec3 c = boxes[i].Center() + velocity[i];
+            Vec3d c = boxes[i].Center() + velocity[i];
             for (u32 k = 0; k < 3; ++k)
             {
                 if (c[k] < -100 || c[k] > 100)
@@ -398,7 +398,7 @@ TEST_CASE("DynamicBvh: everything moving for 1,000 frames stays within 2x of a f
             DynamicBvh fresh;
             fresh.Build(Span<const Item>(items.Data(), items.Size()),
                         Span<ProxyId>(fresh_ids.Data(), fresh_ids.Size()));
-            const f32 ratio = tree.SahCost() / fresh.SahCost();
+            const f64 ratio = tree.SahCost() / fresh.SahCost();
             if (ratio > worst_ratio)
             {
                 worst_ratio = ratio;
@@ -422,7 +422,7 @@ TEST_CASE("DynamicBvh: moves and queries allocate nothing once the pool has grow
     Rng rng(240006);
     DynamicBvh tree;
     Vector<ProxyId> ids;
-    Vector<Aabb> boxes;
+    Vector<Aabbd> boxes;
     for (u32 i = 0; i < 2000; ++i)
     {
         boxes.Push(RandomBox(rng, 60));
@@ -445,8 +445,8 @@ TEST_CASE("DynamicBvh: moves and queries allocate nothing once the pool has grow
     }
     for (u32 q = 0; q < 100; ++q)
     {
-        const Aabb query = BoxAt(rng.Point(-60, 60), Vec3(5, 5, 5));
-        tree.Traverse([&](const Aabb& node) { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
+        const Aabbd query = BoxAt(rng.Point(-60, 60), Vec3d(5, 5, 5));
+        tree.Traverse([&](const Aabbd& node) { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
                       [&](ProxyId, const Item& item)
                       {
                           hits += Overlaps(item.box, query) ? 1u : 0u;
@@ -464,7 +464,7 @@ TEST_CASE("DynamicBvh: the move cost and the margin choices (recorded, not gated
     // and jittering (a new random direction every frame, where the last movement predicts nothing).
     for (u32 motion = 0; motion < 2; ++motion)
     {
-        for (const f32 predictive : {0.0f, 1.0f, 2.0f, 4.0f})
+        for (const f64 predictive : {0.0f, 1.0f, 2.0f, 4.0f})
         {
             Rng rng(240007);
             DynamicBvhConfig config;
@@ -472,18 +472,18 @@ TEST_CASE("DynamicBvh: the move cost and the margin choices (recorded, not gated
             DynamicBvh tree(config);
             constexpr u32 kAgents = 10000;
             Vector<ProxyId> ids;
-            Vector<Aabb> boxes;
-            Vector<Vec3> velocity;
+            Vector<Aabbd> boxes;
+            Vector<Vec3d> velocity;
             Vector<Item> items;
             for (u32 i = 0; i < kAgents; ++i)
             {
                 Item it;
-                it.box = BoxAt(Vec3(rng.Float(0, 1000), 1, rng.Float(0, 1000)), Vec3(0.5f, 1, 0.5f));
+                it.box = BoxAt(Vec3d(rng.Float(0, 1000), 1, rng.Float(0, 1000)), Vec3d(0.5f, 1, 0.5f));
                 it.key = i;
                 items.Push(it);
                 boxes.Push(it.box);
-                const f32 angle = rng.Float(0, 6.283f);
-                velocity.Push(Vec3(Cos(angle) * 0.1f, 0, Sin(angle) * 0.1f));
+                const f64 angle = rng.Float(0, 6.283f);
+                velocity.Push(Vec3d(Cos(angle) * 0.1f, 0, Sin(angle) * 0.1f));
             }
             ids.Resize(kAgents);
             tree.Build(Span<const Item>(items.Data(), items.Size()), Span<ProxyId>(ids.Data(), ids.Size()));
@@ -494,8 +494,8 @@ TEST_CASE("DynamicBvh: the move cost and the margin choices (recorded, not gated
                 {
                     if (motion == 1)
                     {
-                        const f32 turn = rng.Float(0, 6.283f);
-                        velocity[i] = Vec3(Cos(turn) * 0.1f, 0, Sin(turn) * 0.1f);
+                        const f64 turn = rng.Float(0, 6.283f);
+                        velocity[i] = Vec3d(Cos(turn) * 0.1f, 0, Sin(turn) * 0.1f);
                     }
                     boxes[i] = BoxAt(boxes[i].Center() + velocity[i], boxes[i].HalfExtents());
                 }
@@ -511,8 +511,8 @@ TEST_CASE("DynamicBvh: the move cost and the margin choices (recorded, not gated
             u64 tested = 0;
             for (u32 q = 0; q < 2000; ++q)
             {
-                const Aabb query = BoxAt(Vec3(rng.Float(0, 1000), 1, rng.Float(0, 1000)), Vec3(5, 2, 5));
-                tested += tree.Traverse([&](const Aabb& node)
+                const Aabbd query = BoxAt(Vec3d(rng.Float(0, 1000), 1, rng.Float(0, 1000)), Vec3d(5, 2, 5));
+                tested += tree.Traverse([&](const Aabbd& node)
                                         { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
                                         [](ProxyId, const Item&) { return true; })
                               .nodes_tested;
@@ -528,7 +528,7 @@ TEST_CASE("DynamicBvh: the move cost and the margin choices (recorded, not gated
     }
 }
 
-TEST_CASE("DynamicBvh: 100,000 items take at most 128 bytes each, tight boxes included", "[spatial][dbvh]")
+TEST_CASE("DynamicBvh: 100,000 items take at most 256 bytes each, tight boxes included", "[spatial][dbvh]")
 {
     Rng rng(240008);
     DynamicBvh tree;
@@ -539,7 +539,7 @@ TEST_CASE("DynamicBvh: 100,000 items take at most 128 bytes each, tight boxes in
     const DynamicBvhStats stats = tree.Stats();
     const f64 per_item = static_cast<f64>(stats.memory_bytes) / static_cast<f64>(stats.proxies);
     INFO("bytes per item " << per_item);
-    CHECK(per_item <= 128.0);  // the spatial design spec, pass condition 6
+    CHECK(per_item <= 256.0);  // the spatial design spec's 128 bytes, doubled: the boxes are double precision
 }
 
 TEST_CASE("DynamicBvh: Optimize does nothing, and costs no pass over the nodes, when nothing changed",
@@ -562,8 +562,8 @@ TEST_CASE("DynamicBvh: Optimize does nothing, and costs no pass over the nodes, 
     CHECK_FALSE(tree.Move(ids[0], tree.ItemOf(ids[0]).box));  // a move inside the fat box is no change either
     tree.Optimize(64);
     CHECK(tree.Stats().partial_rebuilds + tree.Stats().full_rebuilds == after_first);
-    tree.Move(ids[1], Aabb::FromMinMax(Vec3(500, 500, 500),
-                                       Vec3(501, 501, 501)));  // re-inserted: the next Optimize works again
+    tree.Move(ids[1], Aabbd::FromMinMax(Vec3d(500, 500, 500),
+                                        Vec3d(501, 501, 501)));  // re-inserted: the next Optimize works again
     tree.Optimize(64);
     CHECK(tree.Stats().partial_rebuilds + tree.Stats().full_rebuilds == after_first + 1);
     REQUIRE(tree.Validate());

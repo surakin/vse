@@ -26,10 +26,10 @@ using spatial_test::Rng;
 namespace
 {
 
-ecs::LocalTransform WcAt(f32 x, f32 y, f32 z)
+ecs::LocalTransform WcAt(f64 x, f64 y, f64 z)
 {
     ecs::LocalTransform t;
-    t.position = Vec3(x, y, z);
+    t.position = Vec3d(x, y, z);
     return t;
 }
 
@@ -49,7 +49,7 @@ constexpr u32 kBit(SetId id)
 SpatialBounds WcUnit()
 {
     SpatialBounds b;
-    b.local = BoxAt(Vec3(0, 0, 0), Vec3(0.5f, 0.5f, 0.5f));
+    b.local = spatial_test::LocalBoxAt(Vec3(0, 0, 0), Vec3(0.5f, 0.5f, 0.5f));
     return b;
 }
 
@@ -69,11 +69,11 @@ struct WcRig
     }
     void Frame() { schedule.Run(world, 0.016f); }
     SpatialWorld& Spatial() { return world.Resource<SpatialWorld>(); }
-    ecs::Entity Spawn(f32 x, f32 y, f32 z, u32 sets, u32 layer = 0)
+    ecs::Entity Spawn(f64 x, f64 y, f64 z, u32 sets, u32 layer = 0)
     {
         return world.Create(WcAt(x, y, z), ecs::WorldTransform{}, WcUnit(), WcIn(sets, layer));
     }
-    ecs::Entity SpawnStatic(f32 x, f32 y, f32 z, u32 sets)
+    ecs::Entity SpawnStatic(f64 x, f64 y, f64 z, u32 sets)
     {
         return world.Create(WcAt(x, y, z), ecs::WorldTransform{}, WcUnit(), WcIn(sets), SpatialStatic{});
     }
@@ -81,7 +81,7 @@ struct WcRig
     Vector<SpatialKey> Keys(SetId id)
     {
         Vector<SpatialKey> keys;
-        OverlapKeys(*Spatial().Set(id), BoxAt(Vec3(0, 0, 0), Vec3(1e6f, 1e6f, 1e6f)), QueryFilter(), Order::Ordered,
+        OverlapKeys(*Spatial().Set(id), BoxAt(Vec3d(0, 0, 0), Vec3d(1e6f, 1e6f, 1e6f)), QueryFilter(), Order::Ordered,
                     &keys);
         return keys;
     }
@@ -127,7 +127,7 @@ TEST_CASE("SpatialWorld: it starts with the four well-known sets and creates, fi
     const SetId crowd = spatial.CreateSet("crowd", grid);
     CHECK(crowd == 4);
     CHECK(spatial.Find("crowd") == crowd);
-    spatial.Set(crowd)->AddDynamic(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 7, 0);
+    spatial.Set(crowd)->AddDynamic(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 7, 0);
     CHECK(spatial.Set(crowd)->Stats().dynamic_items == 1);
     spatial.CreateSet("a");
     spatial.CreateSet("b");
@@ -239,8 +239,8 @@ TEST_CASE("Spatial sync: removing a component, destroying the entity or changing
     QueryFilter on_three;
     on_three.mask = 1u << 3;
     Vector<SpatialKey> keys;
-    OverlapKeys(*rig.Spatial().Set(kRenderSet), BoxAt(Vec3(0, 0, 0), Vec3(1e6f, 1e6f, 1e6f)), on_three, Order::Ordered,
-                &keys);
+    OverlapKeys(*rig.Spatial().Set(kRenderSet), BoxAt(Vec3d(0, 0, 0), Vec3d(1e6f, 1e6f, 1e6f)), on_three,
+                Order::Ordered, &keys);
     REQUIRE(keys.Size() == 1);
     CHECK(keys[0] == a.ToU64());
     CHECK(rig.ItemCount(kRenderSet) == 1);
@@ -268,12 +268,12 @@ TEST_CASE("Spatial sync: a non-finite or empty box is refused and counted, bits 
 {
     WcRig rig;
     SpatialBounds nan_box = WcUnit();
-    nan_box.local.max.x = Limits<f32>::QuietNaN();
+    nan_box.local.max.x = Limits<f64>::QuietNaN();
     rig.world.Create(WcAt(0, 0, 0), ecs::WorldTransform{}, nan_box, WcIn(kBit(kRenderSet)));
     SpatialBounds empty_box;
     empty_box.local = Aabb::Empty();
     rig.world.Create(WcAt(0, 0, 0), ecs::WorldTransform{}, empty_box, WcIn(kBit(kRenderSet)));
-    rig.world.Create(WcAt(Limits<f32>::QuietNaN(), 0, 0), ecs::WorldTransform{}, WcUnit(), WcIn(kBit(kRenderSet)));
+    rig.world.Create(WcAt(Limits<f64>::QuietNaN(), 0, 0), ecs::WorldTransform{}, WcUnit(), WcIn(kBit(kRenderSet)));
     rig.Frame();
     CHECK(rig.ItemCount(kRenderSet) == 0);
     CHECK(rig.Spatial().Stats().refused_bounds == 3);
@@ -461,7 +461,7 @@ TEST_CASE("Spatial sync: a box that turns bad after the join is refused and coun
     rig.Frame();
     rig.Frame();
     REQUIRE(rig.ItemCount(kRenderSet) == 1);
-    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3(Limits<f32>::QuietNaN(), 0, 0);
+    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3d(Limits<f64>::QuietNaN(), 0, 0);
     rig.world.Get<SpatialMembership>(e)->sets = static_cast<u8>(kBit(kRenderSet) | kBit(kAudioSet));
     rig.world.Stamp<SpatialMembership>(e);
     rig.Frame();  // would abort in SpatialSet::AddDynamic without the check

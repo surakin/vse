@@ -37,7 +37,7 @@ void StaticBvh::Build(Span<const Item> items)
     bins_.Resize(n);
     for (usize i = 0; i < n; ++i)
     {
-        const Aabb& box = items[i].box;
+        const Aabbd& box = items[i].box;
         ENGINE_ASSERT(!box.IsEmpty(), "StaticBvh::Build: an item has an empty box");
         ENGINE_ASSERT(IsFinite(box.min.x) && IsFinite(box.min.y) && IsFinite(box.min.z) && IsFinite(box.max.x) &&
                           IsFinite(box.max.y) && IsFinite(box.max.z),
@@ -50,7 +50,7 @@ void StaticBvh::Build(Span<const Item> items)
     BuildNode(0, static_cast<u32>(n), 1);
     // The scratch is not kept: a built tree holds only its nodes and items.
     order_ = Vector<u32>();
-    centroids_ = Vector<Vec3>();
+    centroids_ = Vector<Vec3d>();
     scratch_ = Vector<u32>();
     bins_ = Vector<u8>();
     source_ = Span<const Item>();
@@ -64,8 +64,8 @@ u32 StaticBvh::BuildNode(u32 begin, u32 end, u32 level)
     {
         depth_ = level;
     }
-    Aabb box = Aabb::Empty();
-    Aabb centroid_box = Aabb::Empty();
+    Aabbd box = Aabbd::Empty();
+    Aabbd centroid_box = Aabbd::Empty();
     for (u32 i = begin; i < end; ++i)
     {
         internal::GrowBox(box, source_[order_[i]].box);
@@ -88,8 +88,8 @@ u32 StaticBvh::BuildNode(u32 begin, u32 end, u32 level)
     // The middle split when the tree would otherwise grow deeper than its traversal stack.
     const bool middle = level + internal::SplitsNeeded(count, kStaticBvhLeafSize) >= internal::kMaxBuildDepth;
     const u32 mid = internal::SplitBinnedSah(
-        order_.Data(), begin, end, centroid_box, middle, scratch_.Data(), bins_.Data(), [this](u32 i) -> const Aabb&
-        { return source_[i].box; }, [this](u32 i) -> const Vec3& { return centroids_[i]; });
+        order_.Data(), begin, end, centroid_box, middle, scratch_.Data(), bins_.Data(), [this](u32 i) -> const Aabbd&
+        { return source_[i].box; }, [this](u32 i) -> const Vec3d& { return centroids_[i]; });
     const u32 left_child = BuildNode(begin, mid, level + 1);
     const u32 right_child = BuildNode(mid, end, level + 1);
     ENGINE_ASSERT(left_child == index + 1, "StaticBvh: the left child must follow its parent");
@@ -111,21 +111,21 @@ u32 StaticBvh::FirstItem(u32 node) const
     return nodes_[node].a;
 }
 
-f32 StaticBvh::SahCost() const
+f64 StaticBvh::SahCost() const
 {
     if (nodes_.Size() == 0)
     {
         return 0.0f;
     }
-    const f32 root_area = SurfaceArea(nodes_[0].box);
+    const f64 root_area = SurfaceArea(nodes_[0].box);
     // A tree of zero-size boxes at one point has no area to weigh by: every node then counts in full.
-    const f32 inverse = root_area > 0.0f ? 1.0f / root_area : 0.0f;
-    f32 cost = 0.0f;
+    const f64 inverse = root_area > 0.0f ? 1.0f / root_area : 0.0f;
+    f64 cost = 0.0f;
     for (usize i = 0; i < nodes_.Size(); ++i)
     {
         const Node& node = nodes_[i];
-        const f32 weight = root_area > 0.0f ? SurfaceArea(node.box) * inverse : 1.0f;
-        cost += node.IsLeaf() ? weight * static_cast<f32>(node.ItemCount()) : weight;
+        const f64 weight = root_area > 0.0f ? SurfaceArea(node.box) * inverse : 1.0f;
+        cost += node.IsLeaf() ? weight * static_cast<f64>(node.ItemCount()) : weight;
     }
     return cost;
 }

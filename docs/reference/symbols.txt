@@ -1144,13 +1144,14 @@ Mat4::FromColumns(const Vec4&,const Vec4&,const Vec4&,const Vec4&)	function	foun
 Mat4::Transpose() const	function	foundation/math	mat4-transpose-const	foundation-math.md	engine/foundation/math/matrix.h:131
 operator*(const Mat4&,const Vec4&)	function	foundation/math	operator-star-const-mat4-amp-const-vec4-amp	foundation-math.md	engine/foundation/math/matrix.h:146
 operator*(const Mat4&,const Mat4&)	function	foundation/math	operator-star-const-mat4-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/matrix.h:152
-Placement	struct	foundation/math	placement	foundation-math.md	engine/foundation/math/placement.h:17
-Placement::linear	variable	foundation/math	placement-linear	foundation-math.md	engine/foundation/math/placement.h:20
-Placement::position	variable	foundation/math	placement-position	foundation-math.md	engine/foundation/math/placement.h:22
-Placement::From(const Vec3d&,const Mat4&)	function	foundation/math	placement-from-const-vec3d-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/placement.h:29
-Placement::TransformPoint(const Vec3d&) const	function	foundation/math	placement-transformpoint-const-vec3d-amp-const	foundation-math.md	engine/foundation/math/placement.h:35
-Placement::Compose(const Placement&) const	function	foundation/math	placement-compose-const-placement-amp-const	foundation-math.md	engine/foundation/math/placement.h:43
-Placement::RelativeTo(const Vec3d&) const	function	foundation/math	placement-relativeto-const-vec3d-amp-const	foundation-math.md	engine/foundation/math/placement.h:50
+Placement	struct	foundation/math	placement	foundation-math.md	engine/foundation/math/placement.h:18
+Placement::linear	variable	foundation/math	placement-linear	foundation-math.md	engine/foundation/math/placement.h:21
+Placement::position	variable	foundation/math	placement-position	foundation-math.md	engine/foundation/math/placement.h:23
+Placement::From(const Vec3d&,const Mat4&)	function	foundation/math	placement-from-const-vec3d-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/placement.h:30
+Placement::TransformPoint(const Vec3d&) const	function	foundation/math	placement-transformpoint-const-vec3d-amp-const	foundation-math.md	engine/foundation/math/placement.h:36
+Placement::Compose(const Placement&) const	function	foundation/math	placement-compose-const-placement-amp-const	foundation-math.md	engine/foundation/math/placement.h:44
+Placement::RelativeTo(const Vec3d&) const	function	foundation/math	placement-relativeto-const-vec3d-amp-const	foundation-math.md	engine/foundation/math/placement.h:51
+PlaceAabb(const Aabb&,const Placement&)	function	foundation/math	placeaabb-const-aabb-amp-const-placement-amp	foundation-math.md	engine/foundation/math/placement.h:62
 Quaternion	struct	foundation/math	quaternion	foundation-math.md	engine/foundation/math/quaternion.h:22
 Quaternion::x	variable	foundation/math	quaternion-x	foundation-math.md	engine/foundation/math/quaternion.h:25
 Quaternion::y	variable	foundation/math	quaternion-y	foundation-math.md	engine/foundation/math/quaternion.h:27
@@ -4748,9 +4749,9 @@ spatial::DynamicBvh	class	spatial	spatial-dynamicbvh	spatial.md	engine/spatial/d
 spatial::DynamicBvh::DynamicBvh(const DynamicBvhConfig&)	function	spatial	spatial-dynamicbvh-dynamicbvh-const-dynamicbvhconfig-amp	spatial.md	engine/spatial/dynamic_bvh.h:91
 spatial::DynamicBvh::DynamicBvh(const DynamicBvh&)	function	spatial	spatial-dynamicbvh-dynamicbvh-const-dynamicbvh-amp	spatial.md	engine/spatial/dynamic_bvh.h:92
 spatial::DynamicBvh::operator=(const DynamicBvh&)	function	spatial	spatial-dynamicbvh-operator-eq-const-dynamicbvh-amp	spatial.md	engine/spatial/dynamic_bvh.h:93
-spatial::DynamicBvh::Insert(const Aabb&,SpatialKey,u32)	function	spatial	spatial-dynamicbvh-insert-const-aabb-amp-spatialkey-u32	spatial.md	engine/spatial/dynamic_bvh.h:102
+spatial::DynamicBvh::Insert(const Aabbd&,SpatialKey,u32)	function	spatial	spatial-dynamicbvh-insert-const-aabbd-amp-spatialkey-u32	spatial.md	engine/spatial/dynamic_bvh.h:102
 spatial::DynamicBvh::Remove(ProxyId)	function	spatial	spatial-dynamicbvh-remove-proxyid	spatial.md	engine/spatial/dynamic_bvh.h:109
-spatial::DynamicBvh::Move(ProxyId,const Aabb&)	function	spatial	spatial-dynamicbvh-move-proxyid-const-aabb-amp	spatial.md	engine/spatial/dynamic_bvh.h:118
+spatial::DynamicBvh::Move(ProxyId,const Aabbd&)	function	spatial	spatial-dynamicbvh-move-proxyid-const-aabbd-amp	spatial.md	engine/spatial/dynamic_bvh.h:118
 spatial::DynamicBvh::Build(Span<const Item>,Span<ProxyId>)	function	spatial	spatial-dynamicbvh-build-span-lt-const-item-gt-span-lt-proxyid-gt	spatial.md	engine/spatial/dynamic_bvh.h:125
 spatial::DynamicBvh::Rebuild()	function	spatial	spatial-dynamicbvh-rebuild	spatial.md	engine/spatial/dynamic_bvh.h:128
 spatial::DynamicBvh::Optimize(u32)	function	spatial	spatial-dynamicbvh-optimize-u32	spatial.md	engine/spatial/dynamic_bvh.h:136
@@ -4765,7 +4766,7 @@ spatial::DynamicBvh::SahCost() const	function	spatial	spatial-dynamicbvh-sahcost
 spatial::DynamicBvh::Stats() const	function	spatial	spatial-dynamicbvh-stats-const	spatial.md	engine/spatial/dynamic_bvh.h:165
 spatial::DynamicBvh::Validate() const	function	spatial	spatial-dynamicbvh-validate-const	spatial.md	engine/spatial/dynamic_bvh.h:173
 spatial::DynamicBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:183
-spatial::DynamicBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:194
+spatial::DynamicBvh::TraverseRay(const Rayd&,f64,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:194
 spatial::EntityHit	struct	spatial	spatial-entityhit	spatial.md	engine/spatial/entity_query.h:25
 spatial::EntityHit::entity	variable	spatial	spatial-entityhit-entity	spatial.md	engine/spatial/entity_query.h:28
 spatial::EntityHit::t	variable	spatial	spatial-entityhit-t	spatial.md	engine/spatial/entity_query.h:30
@@ -4773,17 +4774,17 @@ spatial::EntityHit::point	variable	spatial	spatial-entityhit-point	spatial.md	en
 spatial::EntityDistance	struct	spatial	spatial-entitydistance	spatial.md	engine/spatial/entity_query.h:38
 spatial::EntityDistance::entity	variable	spatial	spatial-entitydistance-entity	spatial.md	engine/spatial/entity_query.h:41
 spatial::EntityDistance::distance	variable	spatial	spatial-entitydistance-distance	spatial.md	engine/spatial/entity_query.h:43
-spatial::OverlapEntities(const SpatialWorld&,SetId,const Aabb&,const QueryFilter&,Vector<ecs::Entity>*)	function	spatial	spatial-overlapentities-const-spatialworld-amp-setid-const-aabb-amp-const-queryfilter-amp-vector-lt-ecs-entity-gt-star	spatial.md	engine/spatial/entity_query.h:60
-spatial::RaycastEntity(const SpatialWorld&,SetId,const Ray&,f32,const QueryFilter&,EntityHit*)	function	spatial	spatial-raycastentity-const-spatialworld-amp-setid-const-ray-amp-f32-const-queryfilter-amp-entityhit-star	spatial.md	engine/spatial/entity_query.h:75
-spatial::SweepEntity(const SpatialWorld&,SetId,const Aabb&,const Vec3&,const QueryFilter&,EntityHit*)	function	spatial	spatial-sweepentity-const-spatialworld-amp-setid-const-aabb-amp-const-vec3-amp-const-queryfilter-amp-entityhit-star	spatial.md	engine/spatial/entity_query.h:90
-spatial::NearestEntities(const SpatialWorld&,SetId,const Vec3&,u32,f32,const QueryFilter&,Vector<EntityDistance>*)	function	spatial	spatial-nearestentities-const-spatialworld-amp-setid-const-vec3-amp-u32-f32-const-queryfilter-amp-vector-lt-entitydistance-gt-star	spatial.md	engine/spatial/entity_query.h:106
-spatial::ForEachIn(ecs::World&,const SpatialWorld&,SetId,const Aabb&,const QueryFilter&,Fn&&)	function	spatial	spatial-foreachin-ecs-world-amp-const-spatialworld-amp-setid-const-aabb-amp-const-queryfilter-amp-fn-amp-amp	spatial.md	engine/spatial/entity_query.h:149
+spatial::OverlapEntities(const SpatialWorld&,SetId,const Aabbd&,const QueryFilter&,Vector<ecs::Entity>*)	function	spatial	spatial-overlapentities-const-spatialworld-amp-setid-const-aabbd-amp-const-queryfilter-amp-vector-lt-ecs-entity-gt-star	spatial.md	engine/spatial/entity_query.h:60
+spatial::RaycastEntity(const SpatialWorld&,SetId,const Rayd&,f64,const QueryFilter&,EntityHit*)	function	spatial	spatial-raycastentity-const-spatialworld-amp-setid-const-rayd-amp-f64-const-queryfilter-amp-entityhit-star	spatial.md	engine/spatial/entity_query.h:75
+spatial::SweepEntity(const SpatialWorld&,SetId,const Aabbd&,const Vec3d&,const QueryFilter&,EntityHit*)	function	spatial	spatial-sweepentity-const-spatialworld-amp-setid-const-aabbd-amp-const-vec3d-amp-const-queryfilter-amp-entityhit-star	spatial.md	engine/spatial/entity_query.h:90
+spatial::NearestEntities(const SpatialWorld&,SetId,const Vec3d&,u32,f64,const QueryFilter&,Vector<EntityDistance>*)	function	spatial	spatial-nearestentities-const-spatialworld-amp-setid-const-vec3d-amp-u32-f64-const-queryfilter-amp-vector-lt-entitydistance-gt-star	spatial.md	engine/spatial/entity_query.h:106
+spatial::ForEachIn(ecs::World&,const SpatialWorld&,SetId,const Aabbd&,const QueryFilter&,Fn&&)	function	spatial	spatial-foreachin-ecs-world-amp-const-spatialworld-amp-setid-const-aabbd-amp-const-queryfilter-amp-fn-amp-amp	spatial.md	engine/spatial/entity_query.h:149
 spatial::BatchRayHit	struct	spatial	spatial-batchrayhit	spatial.md	engine/spatial/entity_query.h:178
 spatial::BatchRayHit::hit	variable	spatial	spatial-batchrayhit-hit	spatial.md	engine/spatial/entity_query.h:181
 spatial::BatchRayHit::key	variable	spatial	spatial-batchrayhit-key	spatial.md	engine/spatial/entity_query.h:183
 spatial::BatchRayHit::t	variable	spatial	spatial-batchrayhit-t	spatial.md	engine/spatial/entity_query.h:185
-spatial::RaycastBatch(const SpatialWorld&,SetId,Span<const Ray>,f32,const QueryFilter&,Span<BatchRayHit>,jobs::Scheduler*)	function	spatial	spatial-raycastbatch-const-spatialworld-amp-setid-span-lt-const-ray-gt-f32-const-queryfilter-amp-span-lt-batchrayhit-gt-jobs-scheduler-star	spatial.md	engine/spatial/entity_query.h:202
-spatial::OverlapBatch(const SpatialWorld&,SetId,Span<const Aabb>,const QueryFilter&,Vector<SpatialKey>*,Vector<u32>*,jobs::Scheduler*)	function	spatial	spatial-overlapbatch-const-spatialworld-amp-setid-span-lt-const-aabb-gt-const-queryfilter-amp-vector-lt-spatialkey-gt-star-vector-lt-u32-gt-star-jobs-scheduler-star	spatial.md	engine/spatial/entity_query.h:219
+spatial::RaycastBatch(const SpatialWorld&,SetId,Span<const Rayd>,f64,const QueryFilter&,Span<BatchRayHit>,jobs::Scheduler*)	function	spatial	spatial-raycastbatch-const-spatialworld-amp-setid-span-lt-const-rayd-gt-f64-const-queryfilter-amp-span-lt-batchrayhit-gt-jobs-scheduler-star	spatial.md	engine/spatial/entity_query.h:202
+spatial::OverlapBatch(const SpatialWorld&,SetId,Span<const Aabbd>,const QueryFilter&,Vector<SpatialKey>*,Vector<u32>*,jobs::Scheduler*)	function	spatial	spatial-overlapbatch-const-spatialworld-amp-setid-span-lt-const-aabbd-gt-const-queryfilter-amp-vector-lt-spatialkey-gt-star-vector-lt-u32-gt-star-jobs-scheduler-star	spatial.md	engine/spatial/entity_query.h:219
 spatial::kMaxCellsPerItem	variable	spatial	spatial-kmaxcellsperitem	spatial.md	engine/spatial/hash_grid.h:23
 spatial::HashGridStats	struct	spatial	spatial-hashgridstats	spatial.md	engine/spatial/hash_grid.h:28
 spatial::HashGridStats::items	variable	spatial	spatial-hashgridstats-items	spatial.md	engine/spatial/hash_grid.h:30
@@ -4795,22 +4796,22 @@ spatial::HashGridStats::moves	variable	spatial	spatial-hashgridstats-moves	spati
 spatial::HashGridStats::moves_same_cells	variable	spatial	spatial-hashgridstats-moves-same-cells	spatial.md	engine/spatial/hash_grid.h:36
 spatial::HashGridStats::stale_refused	variable	spatial	spatial-hashgridstats-stale-refused	spatial.md	engine/spatial/hash_grid.h:37
 spatial::HashGrid	class	spatial	spatial-hashgrid	spatial.md	engine/spatial/hash_grid.h:51
-spatial::HashGrid::HashGrid(f32)	function	spatial	spatial-hashgrid-hashgrid-f32	spatial.md	engine/spatial/hash_grid.h:58
+spatial::HashGrid::HashGrid(f64)	function	spatial	spatial-hashgrid-hashgrid-f64	spatial.md	engine/spatial/hash_grid.h:58
 spatial::HashGrid::HashGrid(const HashGrid&)	function	spatial	spatial-hashgrid-hashgrid-const-hashgrid-amp	spatial.md	engine/spatial/hash_grid.h:59
 spatial::HashGrid::operator=(const HashGrid&)	function	spatial	spatial-hashgrid-operator-eq-const-hashgrid-amp	spatial.md	engine/spatial/hash_grid.h:60
-spatial::HashGrid::Insert(const Aabb&,SpatialKey,u32)	function	spatial	spatial-hashgrid-insert-const-aabb-amp-spatialkey-u32	spatial.md	engine/spatial/hash_grid.h:71
+spatial::HashGrid::Insert(const Aabbd&,SpatialKey,u32)	function	spatial	spatial-hashgrid-insert-const-aabbd-amp-spatialkey-u32	spatial.md	engine/spatial/hash_grid.h:71
 spatial::HashGrid::Remove(ProxyId)	function	spatial	spatial-hashgrid-remove-proxyid	spatial.md	engine/spatial/hash_grid.h:78
-spatial::HashGrid::Move(ProxyId,const Aabb&)	function	spatial	spatial-hashgrid-move-proxyid-const-aabb-amp	spatial.md	engine/spatial/hash_grid.h:86
+spatial::HashGrid::Move(ProxyId,const Aabbd&)	function	spatial	spatial-hashgrid-move-proxyid-const-aabbd-amp	spatial.md	engine/spatial/hash_grid.h:86
 spatial::HashGrid::Clear()	function	spatial	spatial-hashgrid-clear	spatial.md	engine/spatial/hash_grid.h:89
 spatial::HashGrid::IsLive(ProxyId) const	function	spatial	spatial-hashgrid-islive-proxyid-const	spatial.md	engine/spatial/hash_grid.h:94
 spatial::HashGrid::ItemOf(ProxyId) const	function	spatial	spatial-hashgrid-itemof-proxyid-const	spatial.md	engine/spatial/hash_grid.h:99
 spatial::HashGrid::ProxyCount() const	function	spatial	spatial-hashgrid-proxycount-const	spatial.md	engine/spatial/hash_grid.h:101
 spatial::HashGrid::CellSize() const	function	spatial	spatial-hashgrid-cellsize-const	spatial.md	engine/spatial/hash_grid.h:103
 spatial::HashGrid::Stats() const	function	spatial	spatial-hashgrid-stats-const	spatial.md	engine/spatial/hash_grid.h:105
-spatial::HashGrid::ForEachInRegion(const Aabb&,Exact&&,Visit&&) const	function	spatial	spatial-hashgrid-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:115
+spatial::HashGrid::ForEachInRegion(const Aabbd&,Exact&&,Visit&&) const	function	spatial	spatial-hashgrid-foreachinregion-const-aabbd-amp-exact-amp-amp-visit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:115
 spatial::HashGrid::ForEachOverlappingPair(Visit&&) const	function	spatial	spatial-hashgrid-foreachoverlappingpair-visit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:123
 spatial::HashGrid::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-hashgrid-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:132
-spatial::HashGrid::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-hashgrid-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:143
+spatial::HashGrid::TraverseRay(const Rayd&,f64,ItemVisit&&) const	function	spatial	spatial-hashgrid-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:143
 spatial::PairTrackerConfig	struct	spatial	spatial-pairtrackerconfig	spatial.md	engine/spatial/pair_tracker.h:26
 spatial::PairTrackerConfig::margin	variable	spatial	spatial-pairtrackerconfig-margin	spatial.md	engine/spatial/pair_tracker.h:29
 spatial::PairTrackerConfig::meets	variable	spatial	spatial-pairtrackerconfig-meets	spatial.md	engine/spatial/pair_tracker.h:32
@@ -4867,19 +4868,19 @@ spatial::QueryStats::results	variable	spatial	spatial-querystats-results	spatial
 spatial::QueryStats::stopped	variable	spatial	spatial-querystats-stopped	spatial.md	engine/spatial/query.h:115
 spatial::QueryStats::refused_input	variable	spatial	spatial-querystats-refused-input	spatial.md	engine/spatial/query.h:118
 spatial::detail_query::Count(QueryStats*,const TraversalStats&)	function	spatial	spatial-detail-query-count-querystats-star-const-traversalstats-amp	spatial.md	engine/spatial/query.h:130
-spatial::Overlap(const Tree&,const Aabb&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-aabb-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:148
-spatial::Overlap(const Tree&,const Sphere&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-sphere-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:186
-spatial::Overlap(const Tree&,const Frustum&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-frustum-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:224
+spatial::Overlap(const Tree&,const Aabbd&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-aabbd-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:148
+spatial::Overlap(const Tree&,const Sphered&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-sphered-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:186
+spatial::Overlap(const Tree&,const Frustumd&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-frustumd-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:224
 spatial::OverlapKeys(const Tree&,const Shape&,const QueryFilter&,Order,Vector<SpatialKey>*)	function	spatial	spatial-overlapkeys-const-tree-amp-const-shape-amp-const-queryfilter-amp-order-vector-lt-spatialkey-gt-star	spatial.md	engine/spatial/query.h:272
-spatial::Raycast(const Tree&,const Ray&,f32,const QueryFilter&,RayMode,Order,Vector<RayHit>*)	function	spatial	spatial-raycast-const-tree-amp-const-ray-amp-f32-const-queryfilter-amp-raymode-order-vector-lt-rayhit-gt-star	spatial.md	engine/spatial/query.h:303
-spatial::SweepBox(const Tree&,const Aabb&,const Vec3&,const QueryFilter&,RayHit*)	function	spatial	spatial-sweepbox-const-tree-amp-const-aabb-amp-const-vec3-amp-const-queryfilter-amp-rayhit-star	spatial.md	engine/spatial/query.h:377
-spatial::Nearest(const Tree&,const Vec3&,u32,f32,const QueryFilter&,Vector<NearestHit>*)	function	spatial	spatial-nearest-const-tree-amp-const-vec3-amp-u32-f32-const-queryfilter-amp-vector-lt-nearesthit-gt-star	spatial.md	engine/spatial/query.h:442
+spatial::Raycast(const Tree&,const Rayd&,f64,const QueryFilter&,RayMode,Order,Vector<RayHit>*)	function	spatial	spatial-raycast-const-tree-amp-const-rayd-amp-f64-const-queryfilter-amp-raymode-order-vector-lt-rayhit-gt-star	spatial.md	engine/spatial/query.h:303
+spatial::SweepBox(const Tree&,const Aabbd&,const Vec3d&,const QueryFilter&,RayHit*)	function	spatial	spatial-sweepbox-const-tree-amp-const-aabbd-amp-const-vec3d-amp-const-queryfilter-amp-rayhit-star	spatial.md	engine/spatial/query.h:377
+spatial::Nearest(const Tree&,const Vec3d&,u32,f64,const QueryFilter&,Vector<NearestHit>*)	function	spatial	spatial-nearest-const-tree-amp-const-vec3d-amp-u32-f64-const-queryfilter-amp-vector-lt-nearesthit-gt-star	spatial.md	engine/spatial/query.h:442
 spatial::ForEachPair(const Tree&,u32,u32,const QueryFilter&,Visit&&)	function	spatial	spatial-foreachpair-const-tree-amp-u32-u32-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:513
 spatial::PairKeys(const Tree&,u32,u32,const QueryFilter&,Order,Vector<KeyPair>*)	function	spatial	spatial-pairkeys-const-tree-amp-u32-u32-const-queryfilter-amp-order-vector-lt-keypair-gt-star	spatial.md	engine/spatial/query.h:574
-spatial::Overlap(const HashGrid&,const Aabb&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-hashgrid-amp-const-aabb-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:604
-spatial::Overlap(const HashGrid&,const Sphere&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-hashgrid-amp-const-sphere-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:638
-spatial::Overlap(const SpatialSet&,const Aabb&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-spatialset-amp-const-aabb-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:675
-spatial::Overlap(const SpatialSet&,const Sphere&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-spatialset-amp-const-sphere-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:709
+spatial::Overlap(const HashGrid&,const Aabbd&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-hashgrid-amp-const-aabbd-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:604
+spatial::Overlap(const HashGrid&,const Sphered&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-hashgrid-amp-const-sphered-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:638
+spatial::Overlap(const SpatialSet&,const Aabbd&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-spatialset-amp-const-aabbd-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:675
+spatial::Overlap(const SpatialSet&,const Sphered&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-spatialset-amp-const-sphered-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:709
 spatial::ForEachPair(const HashGrid&,u32,u32,const QueryFilter&,Visit&&)	function	spatial	spatial-foreachpair-const-hashgrid-amp-u32-u32-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:747
 spatial::kMaxSpatialSets	variable	spatial	spatial-kmaxspatialsets	spatial.md	engine/spatial/spatial.h:17
 spatial::SpatialKey	alias	spatial	spatial-spatialkey	spatial.md	engine/spatial/spatial.h:21
@@ -4911,7 +4912,7 @@ spatial::DebugOptions::max_lines	variable	spatial	spatial-debugoptions-max-lines
 spatial::DebugOptions::has_query	variable	spatial	spatial-debugoptions-has-query	spatial.md	engine/spatial/spatial_debug.h:67
 spatial::DebugOptions::query	variable	spatial	spatial-debugoptions-query	spatial.md	engine/spatial/spatial_debug.h:68
 spatial::DebugOptions::hits	variable	spatial	spatial-debugoptions-hits	spatial.md	engine/spatial/spatial_debug.h:69
-spatial::AppendBoxLines(const Aabb&,u32,Vector<DebugLine>*)	function	spatial	spatial-appendboxlines-const-aabb-amp-u32-vector-lt-debugline-gt-star	spatial.md	engine/spatial/spatial_debug.h:79
+spatial::AppendBoxLines(const Aabbd&,u32,Vector<DebugLine>*)	function	spatial	spatial-appendboxlines-const-aabbd-amp-u32-vector-lt-debugline-gt-star	spatial.md	engine/spatial/spatial_debug.h:79
 spatial::DebugLines(const SpatialSet&,const DebugOptions&,Vector<DebugLine>*)	function	spatial	spatial-debuglines-const-spatialset-amp-const-debugoptions-amp-vector-lt-debugline-gt-star	spatial.md	engine/spatial/spatial_debug.h:89
 spatial::RegisterSpatialSettings(settings::Registry*)	function	spatial	spatial-registerspatialsettings-settings-registry-star	spatial.md	engine/spatial/spatial_debug.h:99
 spatial::SetConfigFromSettings(const settings::Registry&)	function	spatial	spatial-setconfigfromsettings-const-settings-registry-amp	spatial.md	engine/spatial/spatial_debug.h:106
@@ -4936,10 +4937,10 @@ spatial::SpatialSet	class	spatial	spatial-spatialset	spatial.md	engine/spatial/s
 spatial::SpatialSet::SpatialSet(const SpatialSetConfig&)	function	spatial	spatial-spatialset-spatialset-const-spatialsetconfig-amp	spatial.md	engine/spatial/spatial_set.h:81
 spatial::SpatialSet::SpatialSet(const SpatialSet&)	function	spatial	spatial-spatialset-spatialset-const-spatialset-amp	spatial.md	engine/spatial/spatial_set.h:82
 spatial::SpatialSet::operator=(const SpatialSet&)	function	spatial	spatial-spatialset-operator-eq-const-spatialset-amp	spatial.md	engine/spatial/spatial_set.h:83
-spatial::SpatialSet::AddStatic(const Aabb&,SpatialKey,u32)	function	spatial	spatial-spatialset-addstatic-const-aabb-amp-spatialkey-u32	spatial.md	engine/spatial/spatial_set.h:93
-spatial::SpatialSet::AddDynamic(const Aabb&,SpatialKey,u32)	function	spatial	spatial-spatialset-adddynamic-const-aabb-amp-spatialkey-u32	spatial.md	engine/spatial/spatial_set.h:102
+spatial::SpatialSet::AddStatic(const Aabbd&,SpatialKey,u32)	function	spatial	spatial-spatialset-addstatic-const-aabbd-amp-spatialkey-u32	spatial.md	engine/spatial/spatial_set.h:93
+spatial::SpatialSet::AddDynamic(const Aabbd&,SpatialKey,u32)	function	spatial	spatial-spatialset-adddynamic-const-aabbd-amp-spatialkey-u32	spatial.md	engine/spatial/spatial_set.h:102
 spatial::SpatialSet::Remove(SetHandle)	function	spatial	spatial-spatialset-remove-sethandle	spatial.md	engine/spatial/spatial_set.h:109
-spatial::SpatialSet::Move(SetHandle,const Aabb&)	function	spatial	spatial-spatialset-move-sethandle-const-aabb-amp	spatial.md	engine/spatial/spatial_set.h:118
+spatial::SpatialSet::Move(SetHandle,const Aabbd&)	function	spatial	spatial-spatialset-move-sethandle-const-aabbd-amp	spatial.md	engine/spatial/spatial_set.h:118
 spatial::SpatialSet::MakeDynamic(SetHandle)	function	spatial	spatial-spatialset-makedynamic-sethandle	spatial.md	engine/spatial/spatial_set.h:126
 spatial::SpatialSet::MakeStatic(SetHandle)	function	spatial	spatial-spatialset-makestatic-sethandle	spatial.md	engine/spatial/spatial_set.h:133
 spatial::SpatialSet::RebuildStatic()	function	spatial	spatial-spatialset-rebuildstatic	spatial.md	engine/spatial/spatial_set.h:137
@@ -4956,10 +4957,10 @@ spatial::SpatialSet::StaticTree() const	function	spatial	spatial-spatialset-stat
 spatial::SpatialSet::DynamicTree() const	function	spatial	spatial-spatialset-dynamictree-const	spatial.md	engine/spatial/spatial_set.h:176
 spatial::SpatialSet::Grid() const	function	spatial	spatial-spatialset-grid-const	spatial.md	engine/spatial/spatial_set.h:179
 spatial::SpatialSet::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-spatialset-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:188
-spatial::SpatialSet::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-spatialset-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:199
-spatial::SpatialSet::ForEachInRegion(const Aabb&,Exact&&,Visit&&) const	function	spatial	spatial-spatialset-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:209
-spatial::SpatialSet::ForEachHandleInRegion(const Aabb&,Visit&&) const	function	spatial	spatial-spatialset-foreachhandleinregion-const-aabb-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:219
-spatial::SpatialSet::ForEachHandleInRegion(const Aabb&,const Aabb&,Visit&&) const	function	spatial	spatial-spatialset-foreachhandleinregion-const-aabb-amp-const-aabb-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:231
+spatial::SpatialSet::TraverseRay(const Rayd&,f64,ItemVisit&&) const	function	spatial	spatial-spatialset-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:199
+spatial::SpatialSet::ForEachInRegion(const Aabbd&,Exact&&,Visit&&) const	function	spatial	spatial-spatialset-foreachinregion-const-aabbd-amp-exact-amp-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:209
+spatial::SpatialSet::ForEachHandleInRegion(const Aabbd&,Visit&&) const	function	spatial	spatial-spatialset-foreachhandleinregion-const-aabbd-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:219
+spatial::SpatialSet::ForEachHandleInRegion(const Aabbd&,const Aabbd&,Visit&&) const	function	spatial	spatial-spatialset-foreachhandleinregion-const-aabbd-amp-const-aabbd-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:231
 spatial::MakeSpatialSyncSystem(const char*)	function	spatial	spatial-makespatialsyncsystem-const-char-star	spatial.md	engine/spatial/spatial_sync.h:38
 spatial::SetId	alias	spatial	spatial-setid	spatial.md	engine/spatial/spatial_world.h:18
 spatial::kInvalidSetId	variable	spatial	spatial-kinvalidsetid	spatial.md	engine/spatial/spatial_world.h:21
@@ -5037,7 +5038,7 @@ spatial::StaticBvh::Items() const	function	spatial	spatial-staticbvh-items-const
 spatial::StaticBvh::FirstItem(u32) const	function	spatial	spatial-staticbvh-firstitem-u32-const	spatial.md	engine/spatial/static_bvh.h:136
 spatial::StaticBvh::SahCost() const	function	spatial	spatial-staticbvh-sahcost-const	spatial.md	engine/spatial/static_bvh.h:141
 spatial::StaticBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:152
-spatial::StaticBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:164
+spatial::StaticBvh::TraverseRay(const Rayd&,f64,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverseray-const-rayd-amp-f64-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:164
 physics::CollisionFilter	struct	physics	physics-collisionfilter	physics.md	engine/physics/broad_phase.h:20
 physics::CollisionFilter::meets	variable	physics	physics-collisionfilter-meets	physics.md	engine/physics/broad_phase.h:23
 physics::CollisionFilter::CollisionFilter()	function	physics	physics-collisionfilter-collisionfilter	physics.md	engine/physics/broad_phase.h:26

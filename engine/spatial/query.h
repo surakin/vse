@@ -75,7 +75,7 @@ struct RayHit
     /// The item's key.
     SpatialKey key = 0;
     /// The parameter of the hit along the ray, in units of the direction's length; 0 when the ray starts inside.
-    f32 t = 0.0f;
+    f64 t = 0.0f;
 };
 
 /// One result of [[spatial::Nearest]].
@@ -86,7 +86,7 @@ struct NearestHit
     /// The item's key.
     SpatialKey key = 0;
     /// The distance from the query point to the item's box (0 when the point is inside).
-    f32 distance = 0.0f;
+    f64 distance = 0.0f;
 };
 
 /// Two items whose boxes overlap, the smaller key first.
@@ -146,7 +146,7 @@ inline void Count(QueryStats* stats, const TraversalStats& t)
 /// allowed: a box from minus to plus
 ///   infinity finds everything).
 template <class Tree, class Visit>
-QueryStats Overlap(const Tree& tree, const Aabb& box, const QueryFilter& filter, Visit&& visit)
+QueryStats Overlap(const Tree& tree, const Aabbd& box, const QueryFilter& filter, Visit&& visit)
 {
     QueryStats stats;
     if (detail_query::HasNaN(box))
@@ -159,7 +159,7 @@ QueryStats Overlap(const Tree& tree, const Aabb& box, const QueryFilter& filter,
         return stats;
     }
     detail_query::Count(&stats, detail_query::Walk(
-                                    tree, [&](const Aabb& node)
+                                    tree, [&](const Aabbd& node)
                                     { return Overlaps(node, box) ? NodeVisit::Descend : NodeVisit::Reject; },
                                     [&](const Item& item)
                                     {
@@ -184,7 +184,7 @@ QueryStats Overlap(const Tree& tree, const Aabb& box, const QueryFilter& filter,
 /// - Fails: a negative radius finds nothing; a sphere whose center is not finite, or whose radius is a NaN, finds
 /// nothing and sets `refused_input`.
 template <class Tree, class Visit>
-QueryStats Overlap(const Tree& tree, const Sphere& sphere, const QueryFilter& filter, Visit&& visit)
+QueryStats Overlap(const Tree& tree, const Sphered& sphere, const QueryFilter& filter, Visit&& visit)
 {
     QueryStats stats;
     if (!detail_query::Finite(sphere.center) || detail_query::HasNaN(sphere.radius))
@@ -197,7 +197,7 @@ QueryStats Overlap(const Tree& tree, const Sphere& sphere, const QueryFilter& fi
         return stats;
     }
     detail_query::Count(&stats, detail_query::Walk(
-                                    tree, [&](const Aabb& node)
+                                    tree, [&](const Aabbd& node)
                                     { return Overlaps(node, sphere) ? NodeVisit::Descend : NodeVisit::Reject; },
                                     [&](const Item& item)
                                     {
@@ -222,10 +222,10 @@ QueryStats Overlap(const Tree& tree, const Sphere& sphere, const QueryFilter& fi
 /// - Returns: what the query did.
 /// - Fails: a frustum with a plane that is not finite finds nothing and sets `refused_input`.
 template <class Tree, class Visit>
-QueryStats Overlap(const Tree& tree, const Frustum& frustum, const QueryFilter& filter, Visit&& visit)
+QueryStats Overlap(const Tree& tree, const Frustumd& frustum, const QueryFilter& filter, Visit&& visit)
 {
     QueryStats stats;
-    for (const Plane& plane : frustum.planes)
+    for (const Planed& plane : frustum.planes)
     {
         if (!detail_query::Finite(plane.normal) || !IsFinite(plane.d))
         {
@@ -235,7 +235,7 @@ QueryStats Overlap(const Tree& tree, const Frustum& frustum, const QueryFilter& 
     }
     detail_query::Count(&stats, detail_query::Walk(
                                     tree,
-                                    [&](const Aabb& node)
+                                    [&](const Aabbd& node)
                                     {
                                         switch (frustum.TestAabb(node))
                                         {
@@ -261,7 +261,7 @@ QueryStats Overlap(const Tree& tree, const Frustum& frustum, const QueryFilter& 
 /// Collects the keys of the items an overlap query finds (any shape `Overlap` takes), in the order asked for.
 ///
 /// - Param tree: the structure.
-/// - Param shape: an `Aabb`, a `Sphere` or a `Frustum`.
+/// - Param shape: an `Aabbd`, a `Sphered` or a `Frustumd`.
 /// - Param filter: which items count.
 /// - Param order: `Traversal`, or `Ordered` for ascending keys.
 /// - Param out: receives the keys (cleared first); its capacity is reused, so a warm vector makes the query allocate
@@ -301,7 +301,7 @@ QueryStats OverlapKeys(const Tree& tree, const Shape& shape, const QueryFilter& 
 /// - Fails: a ray that is not finite or a NaN `max_t` finds nothing and sets `refused_input` (an infinite `max_t` is
 /// allowed: the ray is unbounded); a negative `max_t` finds nothing.
 template <class Tree>
-QueryStats Raycast(const Tree& tree, const Ray& ray, f32 max_t, const QueryFilter& filter, RayMode mode, Order order,
+QueryStats Raycast(const Tree& tree, const Rayd& ray, f64 max_t, const QueryFilter& filter, RayMode mode, Order order,
                    Vector<RayHit>* hits)
 {
     hits->Clear();
@@ -319,10 +319,10 @@ QueryStats Raycast(const Tree& tree, const Ray& ray, f32 max_t, const QueryFilte
     bool found = false;
     detail_query::Count(&stats,
                         detail_query::WalkRay(tree, ray, max_t,
-                                              [&](const Item& item, f32& limit)
+                                              [&](const Item& item, f64& limit)
                                               {
                                                   ++stats.items_tested;
-                                                  f32 t = 0.0f;
+                                                  f64 t = 0.0f;
                                                   if (!Intersect(ray, item.box, limit, &t) || !filter.Accepts(item))
                                                   {
                                                       return true;
@@ -375,7 +375,7 @@ QueryStats Raycast(const Tree& tree, const Ray& ray, f32 max_t, const QueryFilte
 /// - Fails: an empty box finds nothing; a box or motion that is not finite finds nothing and sets `refused_input`.
 /// - Ownership: `hit` is borrowed for the call; it is written only when there is a hit.
 template <class Tree>
-QueryStats SweepBox(const Tree& tree, const Aabb& box, const Vec3& motion, const QueryFilter& filter, RayHit* hit)
+QueryStats SweepBox(const Tree& tree, const Aabbd& box, const Vec3d& motion, const QueryFilter& filter, RayHit* hit)
 {
     QueryStats stats;
     if ((!detail_query::Finite(box) && !box.IsEmpty()) || !detail_query::Finite(motion))
@@ -387,22 +387,22 @@ QueryStats SweepBox(const Tree& tree, const Aabb& box, const Vec3& motion, const
     {
         return stats;
     }
-    const Vec3 half = box.HalfExtents();
+    const Vec3d half = box.HalfExtents();
     const bool moves = motion.x != 0.0f || motion.y != 0.0f || motion.z != 0.0f;
-    const Ray ray = Ray::Make(box.Center(), moves ? motion : Vec3(1, 0, 0));
-    const f32 reach = moves ? 1.0f : 0.0f;
-    auto grown = [&](const Aabb& b) { return Aabb::FromMinMax(b.min - half, b.max + half); };
-    f32 best_t = reach;
+    const Rayd ray = Rayd::Make(box.Center(), moves ? motion : Vec3d(1, 0, 0));
+    const f64 reach = moves ? 1.0f : 0.0f;
+    auto grown = [&](const Aabbd& b) { return Aabbd::FromMinMax(b.min - half, b.max + half); };
+    f64 best_t = reach;
     SpatialKey best_key = 0;
     bool found = false;
     detail_query::Count(
         &stats, detail_query::Walk(
-                    tree, [&](const Aabb& node)
+                    tree, [&](const Aabbd& node)
                     { return Intersect(ray, grown(node), best_t, nullptr) ? NodeVisit::Descend : NodeVisit::Reject; },
                     [&](const Item& item)
                     {
                         ++stats.items_tested;
-                        f32 t = 0.0f;
+                        f64 t = 0.0f;
                         if (!Intersect(ray, grown(item.box), best_t, &t) || !filter.Accepts(item))
                         {
                             return true;
@@ -440,7 +440,7 @@ QueryStats SweepBox(const Tree& tree, const Aabb& box, const Vec3& motion, const
 /// - Fails: a point or distance that is not finite (an infinite `max_distance` is allowed) finds nothing and sets
 /// `refused_input`.
 template <class Tree>
-QueryStats Nearest(const Tree& tree, const Vec3& point, u32 k, f32 max_distance, const QueryFilter& filter,
+QueryStats Nearest(const Tree& tree, const Vec3d& point, u32 k, f64 max_distance, const QueryFilter& filter,
                    Vector<NearestHit>* out)
 {
     out->Clear();
@@ -456,16 +456,16 @@ QueryStats Nearest(const Tree& tree, const Vec3& point, u32 k, f32 max_distance,
     }
     // `out` is kept sorted with squared distances while searching (an insertion into a short sorted array: k is small),
     // then turned into distances.
-    const f32 max2 = max_distance * max_distance;
+    const f64 max2 = max_distance * max_distance;
     auto bound = [&]() { return out->Size() < k ? max2 : (*out)[out->Size() - 1].distance; };
     detail_query::Count(&stats,
                         detail_query::Walk(
-                            tree, [&](const Aabb& node)
+                            tree, [&](const Aabbd& node)
                             { return Distance2(point, node) <= bound() ? NodeVisit::Descend : NodeVisit::Reject; },
                             [&](const Item& item)
                             {
                                 ++stats.items_tested;
-                                const f32 d2 = Distance2(point, item.box);
+                                const f64 d2 = Distance2(point, item.box);
                                 if (d2 > max2 || !filter.Accepts(item))
                                 {
                                     return true;
@@ -521,17 +521,17 @@ QueryStats ForEachPair(const Tree& tree, u32 mask_a, u32 mask_b, const QueryFilt
     // key only.
     detail_query::Count(
         &stats, detail_query::Walk(
-                    tree, [](const Aabb&) { return NodeVisit::AcceptAll; },
+                    tree, [](const Aabbd&) { return NodeVisit::AcceptAll; },
                     [&](const Item& first)
                     {
                         if ((!in(mask_a, first) && !in(mask_b, first)) || !passes(first))
                         {
                             return true;
                         }
-                        const Aabb box = first.box;
+                        const Aabbd box = first.box;
                         detail_query::Count(
                             &stats, detail_query::Walk(
-                                        tree, [&](const Aabb& node)
+                                        tree, [&](const Aabbd& node)
                                         { return Overlaps(node, box) ? NodeVisit::Descend : NodeVisit::Reject; },
                                         [&](const Item& second)
                                         {
@@ -602,7 +602,7 @@ QueryStats PairKeys(const Tree& tree, u32 mask_a, u32 mask_b, const QueryFilter&
 /// - Returns: what the query did.
 /// - Fails: as `Overlap` for a box.
 template <class Visit>
-QueryStats Overlap(const HashGrid& grid, const Aabb& box, const QueryFilter& filter, Visit&& visit)
+QueryStats Overlap(const HashGrid& grid, const Aabbd& box, const QueryFilter& filter, Visit&& visit)
 {
     QueryStats stats;
     if (detail_query::HasNaN(box))
@@ -636,7 +636,7 @@ QueryStats Overlap(const HashGrid& grid, const Aabb& box, const QueryFilter& fil
 /// - Returns: what the query did.
 /// - Fails: as `Overlap` for a sphere.
 template <class Visit>
-QueryStats Overlap(const HashGrid& grid, const Sphere& sphere, const QueryFilter& filter, Visit&& visit)
+QueryStats Overlap(const HashGrid& grid, const Sphered& sphere, const QueryFilter& filter, Visit&& visit)
 {
     QueryStats stats;
     if (!detail_query::Finite(sphere.center) || detail_query::HasNaN(sphere.radius))
@@ -648,9 +648,9 @@ QueryStats Overlap(const HashGrid& grid, const Sphere& sphere, const QueryFilter
     {
         return stats;
     }
-    const Vec3 r(sphere.radius, sphere.radius, sphere.radius);
+    const Vec3d r(sphere.radius, sphere.radius, sphere.radius);
     const TraversalStats t = grid.ForEachInRegion(
-        Aabb::FromMinMax(sphere.center - r, sphere.center + r),
+        Aabbd::FromMinMax(sphere.center - r, sphere.center + r),
         [&](const Item& item) { return Overlaps(item.box, sphere) && filter.Accepts(item); },
         [&](const Item& item)
         {
@@ -673,7 +673,7 @@ QueryStats Overlap(const HashGrid& grid, const Sphere& sphere, const QueryFilter
 /// - Returns: what the query did.
 /// - Fails: as `Overlap` for a box.
 template <class Visit>
-QueryStats Overlap(const SpatialSet& set, const Aabb& box, const QueryFilter& filter, Visit&& visit)
+QueryStats Overlap(const SpatialSet& set, const Aabbd& box, const QueryFilter& filter, Visit&& visit)
 {
     QueryStats stats;
     if (detail_query::HasNaN(box))
@@ -707,7 +707,7 @@ QueryStats Overlap(const SpatialSet& set, const Aabb& box, const QueryFilter& fi
 /// - Returns: what the query did.
 /// - Fails: as `Overlap` for a sphere.
 template <class Visit>
-QueryStats Overlap(const SpatialSet& set, const Sphere& sphere, const QueryFilter& filter, Visit&& visit)
+QueryStats Overlap(const SpatialSet& set, const Sphered& sphere, const QueryFilter& filter, Visit&& visit)
 {
     QueryStats stats;
     if (!detail_query::Finite(sphere.center) || detail_query::HasNaN(sphere.radius))
@@ -719,9 +719,9 @@ QueryStats Overlap(const SpatialSet& set, const Sphere& sphere, const QueryFilte
     {
         return stats;
     }
-    const Vec3 r(sphere.radius, sphere.radius, sphere.radius);
+    const Vec3d r(sphere.radius, sphere.radius, sphere.radius);
     const TraversalStats t = set.ForEachInRegion(
-        Aabb::FromMinMax(sphere.center - r, sphere.center + r),
+        Aabbd::FromMinMax(sphere.center - r, sphere.center + r),
         [&](const Item& item) { return Overlaps(item.box, sphere) && filter.Accepts(item); },
         [&](const Item& item)
         {

@@ -28,10 +28,10 @@ namespace
 struct SyItem
 {
     SpatialKey key = 0;
-    Aabb box;
+    Aabbd box;
 };
 
-bool SyBoxSame(const Aabb& a, const Aabb& b)
+bool SyBoxSame(const Aabbd& a, const Aabbd& b)
 {
     return a.min.x == b.min.x && a.min.y == b.min.y && a.min.z == b.min.z && a.max.x == b.max.x && a.max.y == b.max.y &&
            a.max.z == b.max.z;
@@ -65,12 +65,12 @@ struct SyRig
         }
         return false;
     }
-    ecs::Entity Spawn(const Vec3& at, bool is_static = false, u32 sets = 3)
+    ecs::Entity Spawn(const Vec3d& at, bool is_static = false, u32 sets = 3)
     {
         ecs::LocalTransform local;
         local.position = at;
         SpatialBounds bounds;
-        bounds.local = BoxAt(Vec3(0, 0, 0), Vec3(0.5f, 0.5f, 0.5f));
+        bounds.local = spatial_test::LocalBoxAt(Vec3(0, 0, 0), Vec3(0.5f, 0.5f, 0.5f));
         SpatialMembership membership;
         membership.sets = static_cast<u8>(sets);
         const ecs::Entity e = world.Create(local, ecs::WorldTransform{}, bounds, membership);
@@ -86,7 +86,7 @@ struct SyRig
     {
         Vector<SyItem> items;
         const SpatialSet& set = *Spatial().Set(id);
-        Overlap(set, BoxAt(Vec3(0, 0, 0), Vec3(1e6f, 1e6f, 1e6f)), QueryFilter(),
+        Overlap(set, BoxAt(Vec3d(0, 0, 0), Vec3d(1e6f, 1e6f, 1e6f)), QueryFilter(),
                 [&](const Item& item)
                 {
                     SyItem s;
@@ -122,8 +122,8 @@ struct SyRig
                 }
                 SyItem s;
                 s.key = live[i].ToU64();
-                s.box = TransformAabb(world.Get<SpatialBounds>(live[i])->local,
-                                      world.Get<ecs::WorldTransform>(live[i])->matrix);
+                s.box = PlaceAabb(world.Get<SpatialBounds>(live[i])->local,
+                                  world.Get<ecs::WorldTransform>(live[i])->ToPlacement());
                 want.Push(s);
             }
             for (usize i = 1; i < want.Size(); ++i)
@@ -201,7 +201,7 @@ void SyRunScript(SyRig& rig, Vector<ecs::Entity>* live, u64 seed, u32 frames, bo
             else if (!rig.IsStatic(e))
             {
                 SpatialBounds b;
-                b.local = BoxAt(Vec3(0, 0, 0), rng.Point(0.2f, 1.5f));
+                b.local = spatial_test::LocalBoxAt(Vec3(0, 0, 0), rng.Point(0.2f, 1.5f));
                 rig.world.Get<SpatialBounds>(e)->local = b.local;
             }
         }
@@ -228,16 +228,16 @@ TEST_CASE("Spatial sync: after 200 random frames the sets equal a brute-force re
 TEST_CASE("Spatial sync: moving a parent moves every child's item", "[spatial][sync]")
 {
     SyRig rig;
-    const ecs::Entity parent = rig.Spawn(Vec3(10, 0, 0));
-    const ecs::Entity kid = rig.Spawn(Vec3(1, 0, 0));
-    const ecs::Entity grandkid = rig.Spawn(Vec3(0, 1, 0));
+    const ecs::Entity parent = rig.Spawn(Vec3d(10, 0, 0));
+    const ecs::Entity kid = rig.Spawn(Vec3d(1, 0, 0));
+    const ecs::Entity grandkid = rig.Spawn(Vec3d(0, 1, 0));
     REQUIRE(ecs::SetParent(rig.world, kid, parent) == ecs::HierarchyStatus::Ok);
     REQUIRE(ecs::SetParent(rig.world, grandkid, kid) == ecs::HierarchyStatus::Ok);
     for (u32 i = 0; i < 4; ++i)
     {
         rig.Frame();
     }
-    rig.world.Get<ecs::LocalTransform>(parent)->position = Vec3(30, 0, 0);
+    rig.world.Get<ecs::LocalTransform>(parent)->position = Vec3d(30, 0, 0);
     for (u32 i = 0; i < 2; ++i)
     {
         rig.Frame();
@@ -257,7 +257,7 @@ TEST_CASE("Spatial sync: a static scene costs no structure calls", "[spatial][sy
     SyRig rig;
     for (u32 i = 0; i < 300; ++i)
     {
-        rig.Spawn(Vec3(static_cast<f32>(i), 0, 0), i % 3 == 0);
+        rig.Spawn(Vec3d(static_cast<f64>(i), 0, 0), i % 3 == 0);
     }
     for (u32 i = 0; i < 4; ++i)
     {
@@ -282,12 +282,12 @@ TEST_CASE("Spatial sync: a static scene costs no structure calls", "[spatial][sy
 TEST_CASE("Spatial sync: removing a component in the frame the entity moved leaves no item", "[spatial][sync]")
 {
     SyRig rig;
-    const ecs::Entity e = rig.Spawn(Vec3(1, 0, 0));
+    const ecs::Entity e = rig.Spawn(Vec3d(1, 0, 0));
     for (u32 i = 0; i < 3; ++i)
     {
         rig.Frame();
     }
-    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3(9, 0, 0);
+    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3d(9, 0, 0);
     REQUIRE(rig.world.Remove<SpatialMembership>(e) == ecs::Status::Ok);
     for (u32 i = 0; i < 3; ++i)
     {
@@ -370,12 +370,12 @@ TEST_CASE("Spatial sync: a static entity that moved and then loses the tag is fo
           "[spatial][sync]")
 {
     SyRig rig;
-    const ecs::Entity e = rig.Spawn(Vec3(1, 0, 0), true);
+    const ecs::Entity e = rig.Spawn(Vec3d(1, 0, 0), true);
     for (u32 i = 0; i < 3; ++i)
     {
         rig.Frame();
     }
-    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3(40, 0, 0);  // refused by the static item
+    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3d(40, 0, 0);  // refused by the static item
     for (u32 i = 0; i < 2; ++i)
     {
         rig.Frame();
@@ -394,13 +394,13 @@ TEST_CASE("Spatial sync: a static entity that moved and then loses the tag is fo
 TEST_CASE("Spatial sync: a member whose transform turns non-finite keeps its item and is counted", "[spatial][sync]")
 {
     SyRig rig;
-    const ecs::Entity e = rig.Spawn(Vec3(1, 0, 0));
+    const ecs::Entity e = rig.Spawn(Vec3d(1, 0, 0));
     for (u32 i = 0; i < 3; ++i)
     {
         rig.Frame();
     }
     const u64 before = rig.Spatial().Stats().refused_bounds;
-    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3(Limits<f32>::QuietNaN(), 0, 0);
+    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3d(Limits<f64>::QuietNaN(), 0, 0);
     for (u32 i = 0; i < 2; ++i)
     {
         rig.Frame();
@@ -415,13 +415,13 @@ TEST_CASE(
     "[spatial][sync]")
 {
     SyRig rig;
-    const ecs::Entity e = rig.Spawn(Vec3(1, 0, 0), false, 3);
+    const ecs::Entity e = rig.Spawn(Vec3d(1, 0, 0), false, 3);
     for (u32 i = 0; i < 3; ++i)
     {
         rig.Frame();
     }
     REQUIRE(rig.Items(kPhysicsSet).Size() == 1);
-    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3(Limits<f32>::QuietNaN(), 0, 0);
+    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3d(Limits<f64>::QuietNaN(), 0, 0);
     rig.world.Get<SpatialMembership>(e)->sets = 1;  // render only
     for (u32 i = 0; i < 3; ++i)
     {

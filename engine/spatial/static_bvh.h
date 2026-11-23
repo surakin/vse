@@ -20,7 +20,7 @@ namespace vse::spatial
 struct Item
 {
     /// The item's box; may have zero size, must not be empty, and its corners must be finite.
-    Aabb box;
+    Aabbd box;
     /// The caller's key (an entity id, an index); never interpreted.
     SpatialKey key = 0;
     /// The caller's layer value.
@@ -84,7 +84,7 @@ public:
     struct Node
     {
         /// The box enclosing every item below the node.
-        Aabb box;
+        Aabbd box;
         /// A leaf: the first item. An inner node: the index of the right child (the left one is the next node).
         u32 a = 0;
         /// A leaf: the item count with [[spatial::StaticBvh::kLeafBit]] set. An inner node: the number of items below
@@ -123,7 +123,7 @@ public:
     /// Returns the number of levels: 1 for a tree of one leaf, 0 for an empty tree.
     u32 Depth() const { return depth_; }
     /// Returns the box of the whole tree, or [[AabbT::Empty]] when there are no items.
-    Aabb Bounds() const { return nodes_.Size() != 0 ? nodes_[0].box : Aabb::Empty(); }
+    Aabbd Bounds() const { return nodes_.Size() != 0 ? nodes_[0].box : Aabbd::Empty(); }
     /// Returns the nodes in depth-first order (node 0 is the root).
     Span<const Node> Nodes() const { return Span<const Node>(nodes_.Data(), nodes_.Size()); }
     /// Returns the items in leaf order.
@@ -138,9 +138,9 @@ public:
     /// Returns the tree's surface-area-heuristic cost, a quality measure: the expected number of node and item tests of
     /// a query, per the root's area (1 per inner node and 1 per item of a leaf, each weighted by its box's area over
     /// the root's). Lower is better; 0 for an empty tree.
-    f32 SahCost() const;
+    f64 SahCost() const;
 
-    /// Visits the tree depth first with an explicit stack: `node_test(const Aabb&)` returns a [[spatial::NodeVisit]]
+    /// Visits the tree depth first with an explicit stack: `node_test(const Aabbd&)` returns a [[spatial::NodeVisit]]
     /// for each node reached, and `item_visit(const Item&)` is called for each item of an accepted leaf or subtree; it
     /// returns false to stop.
     ///
@@ -152,7 +152,7 @@ public:
     template <class NodeTest, class ItemVisit>
     TraversalStats Traverse(NodeTest&& node_test, ItemVisit&& item_visit) const;
 
-    /// Visits the leaves a ray reaches, nearest child first: `item_visit(const Item&, f32& max_t)` is called for each
+    /// Visits the leaves a ray reaches, nearest child first: `item_visit(const Item&, f64& max_t)` is called for each
     /// item of each leaf whose box the ray enters before `max_t`; it may lower `max_t` (a closest-hit search) and
     /// returns false to stop.
     ///
@@ -161,7 +161,7 @@ public:
     /// - Param item_visit: the item visitor.
     /// - Returns: what the traversal did.
     /// - Fails: never; as [[spatial::StaticBvh::Traverse]].
-    template <class ItemVisit> TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
+    template <class ItemVisit> TraversalStats TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const;
 
 private:
     u32 BuildNode(u32 begin, u32 end, u32 level);
@@ -171,7 +171,7 @@ private:
     // Build scratch: the item indices being partitioned, their centroids, a buffer for the stable partition and the
     // bins.
     Vector<u32> order_;
-    Vector<Vec3> centroids_;
+    Vector<Vec3d> centroids_;
     Vector<u32> scratch_;
     Vector<u8> bins_;  // the bin of each position of order_ during one node's split
     Span<const Item> source_;
@@ -226,14 +226,14 @@ TraversalStats StaticBvh::Traverse(NodeTest&& node_test, ItemVisit&& item_visit)
 }
 
 template <class ItemVisit>
-TraversalStats StaticBvh::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const
+TraversalStats StaticBvh::TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const
 {
     TraversalStats stats;
     if (nodes_.Size() == 0)
     {
         return stats;
     }
-    f32 t_root = 0.0f;
+    f64 t_root = 0.0f;
     ++stats.nodes_tested;
     if (!Intersect(ray, nodes_[0].box, max_t, &t_root))
     {
@@ -242,7 +242,7 @@ TraversalStats StaticBvh::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& ite
     // Each entry carries the parameter at which the ray enters the node, so a node beyond a closer hit found meanwhile
     // is skipped when popped.
     Array<u32, kTraversalStackDepth> stack;
-    Array<f32, kTraversalStackDepth> enter;
+    Array<f64, kTraversalStackDepth> enter;
     u32 top = 0;
     stack[top] = 0;
     enter[top++] = t_root;
@@ -270,8 +270,8 @@ TraversalStats StaticBvh::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& ite
         }
         const u32 left = index + 1;
         const u32 right = node.a;
-        f32 t_left = 0.0f;
-        f32 t_right = 0.0f;
+        f64 t_left = 0.0f;
+        f64 t_right = 0.0f;
         stats.nodes_tested += 2;
         const bool hit_left = Intersect(ray, nodes_[left].box, max_t, &t_left);
         const bool hit_right = Intersect(ray, nodes_[right].box, max_t, &t_right);

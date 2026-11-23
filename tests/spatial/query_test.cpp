@@ -37,7 +37,7 @@ void MakeScene(Rng& rng, u32 count, Scene* scene)
     for (u32 i = 0; i < count; ++i)
     {
         Item it;
-        it.box = BoxAt(rng.Point(-40, 40), Vec3(rng.Float(0, 4), rng.Float(0, 4), rng.Float(0, 4)));
+        it.box = BoxAt(rng.Point(-40, 40), Vec3d(rng.Float(0, 4), rng.Float(0, 4), rng.Float(0, 4)));
         it.key = 1000 + i * 7;  // keys are not indices
         it.layer = rng.Below(4);
         scene->items.Push(it);
@@ -64,15 +64,15 @@ QueryFilter RandomFilter(Rng& rng)
     return f;
 }
 
-Frustum FrustumAt(const Vec3& apex, f32 far_distance)
+Frustumd FrustumAt(const Vec3d& apex, f64 far_distance)
 {
-    Frustum f;
-    f.planes[0] = Plane::FromPointNormal(apex, Vec3(0.766f, 0, -0.643f));
-    f.planes[1] = Plane::FromPointNormal(apex, Vec3(-0.766f, 0, -0.643f));
-    f.planes[2] = Plane::FromPointNormal(apex, Vec3(0, 0.866f, -0.5f));
-    f.planes[3] = Plane::FromPointNormal(apex, Vec3(0, -0.866f, -0.5f));
-    f.planes[4] = Plane::FromPointNormal(apex + Vec3(0, 0, -1), Vec3(0, 0, -1));
-    f.planes[5] = Plane::FromPointNormal(apex + Vec3(0, 0, -far_distance), Vec3(0, 0, 1));
+    Frustumd f;
+    f.planes[0] = Planed::FromPointNormal(apex, Vec3d(0.766f, 0, -0.643f));
+    f.planes[1] = Planed::FromPointNormal(apex, Vec3d(-0.766f, 0, -0.643f));
+    f.planes[2] = Planed::FromPointNormal(apex, Vec3d(0, 0.866f, -0.5f));
+    f.planes[3] = Planed::FromPointNormal(apex, Vec3d(0, -0.866f, -0.5f));
+    f.planes[4] = Planed::FromPointNormal(apex + Vec3d(0, 0, -1), Vec3d(0, 0, -1));
+    f.planes[5] = Planed::FromPointNormal(apex + Vec3d(0, 0, -far_distance), Vec3d(0, 0, 1));
     return f;
 }
 
@@ -90,7 +90,7 @@ void BruteOverlap(const Vector<Item>& items, const Shape& shape, const QueryFilt
     SortKeys(out);
 }
 
-void BruteOverlap(const Vector<Item>& items, const Frustum& frustum, const QueryFilter& f, Vector<SpatialKey>* out)
+void BruteOverlap(const Vector<Item>& items, const Frustumd& frustum, const QueryFilter& f, Vector<SpatialKey>* out)
 {
     out->Clear();
     for (usize i = 0; i < items.Size(); ++i)
@@ -124,12 +124,12 @@ bool HitBefore(const RayHit& x, const RayHit& y)
     return x.t < y.t || (x.t == y.t && x.key < y.key);
 }
 
-void BruteRayAll(const Vector<Item>& items, const Ray& ray, f32 max_t, const QueryFilter& f, Vector<RayHit>* out)
+void BruteRayAll(const Vector<Item>& items, const Rayd& ray, f64 max_t, const QueryFilter& f, Vector<RayHit>* out)
 {
     out->Clear();
     for (usize i = 0; i < items.Size(); ++i)
     {
-        f32 t = 0.0f;
+        f64 t = 0.0f;
         if (f.Accepts(items[i]) && Intersect(ray, items[i].box, max_t, &t))
         {
             RayHit h;
@@ -141,16 +141,16 @@ void BruteRayAll(const Vector<Item>& items, const Ray& ray, f32 max_t, const Que
     Sort(Span<RayHit>(out->Data(), out->Size()), &HitBefore);
 }
 
-bool BruteSweep(const Vector<Item>& items, const Aabb& box, const Vec3& motion, const QueryFilter& f, RayHit* hit)
+bool BruteSweep(const Vector<Item>& items, const Aabbd& box, const Vec3d& motion, const QueryFilter& f, RayHit* hit)
 {
-    const Vec3 half = box.HalfExtents();
+    const Vec3d half = box.HalfExtents();
     const bool moves = motion.x != 0 || motion.y != 0 || motion.z != 0;
-    const Ray ray = Ray::Make(box.Center(), moves ? motion : Vec3(1, 0, 0));
+    const Rayd ray = Rayd::Make(box.Center(), moves ? motion : Vec3d(1, 0, 0));
     bool found = false;
     for (usize i = 0; i < items.Size(); ++i)
     {
-        f32 t = 0.0f;
-        if (!f.Accepts(items[i]) || !Intersect(ray, Aabb::FromMinMax(items[i].box.min - half, items[i].box.max + half),
+        f64 t = 0.0f;
+        if (!f.Accepts(items[i]) || !Intersect(ray, Aabbd::FromMinMax(items[i].box.min - half, items[i].box.max + half),
                                                moves ? 1.0f : 0.0f, &t))
         {
             continue;
@@ -167,13 +167,13 @@ bool BruteSweep(const Vector<Item>& items, const Aabb& box, const Vec3& motion, 
     return found;
 }
 
-void BruteNearest(const Vector<Item>& items, const Vec3& p, u32 k, f32 max_distance, const QueryFilter& f,
+void BruteNearest(const Vector<Item>& items, const Vec3d& p, u32 k, f64 max_distance, const QueryFilter& f,
                   Vector<NearestHit>* out)
 {
     out->Clear();
     for (usize i = 0; i < items.Size(); ++i)
     {
-        const f32 d = Sqrt(Distance2(p, items[i].box));
+        const f64 d = Sqrt(Distance2(p, items[i].box));
         if (!f.Accepts(items[i]) || d > max_distance)
         {
             continue;
@@ -224,29 +224,30 @@ template <class Tree> void CheckTree(Rng& rng, const Tree& tree, const Vector<It
     Vector<SpatialKey> got;
     Vector<SpatialKey> want;
     const QueryFilter f = RandomFilter(rng);
-    const Aabb box = BoxAt(rng.Point(-45, 45), Vec3(rng.Float(0, 15), rng.Float(0, 15), rng.Float(0, 15)));
+    const Aabbd box = BoxAt(rng.Point(-45, 45), Vec3d(rng.Float(0, 15), rng.Float(0, 15), rng.Float(0, 15)));
     OverlapKeys(tree, box, f, Order::Ordered, &got);
     BruteOverlap(items, box, f, &want);
     CHECK(SameSortedKeys(got, want));
 
-    Sphere sphere;
+    Sphered sphere;
     sphere.center = rng.Point(-45, 45);
     sphere.radius = rng.Float(0, 15);
     OverlapKeys(tree, sphere, f, Order::Ordered, &got);
     BruteOverlap(items, sphere, f, &want);
     CHECK(SameSortedKeys(got, want));
 
-    const Frustum frustum = FrustumAt(Vec3(rng.Float(-30, 30), rng.Float(-30, 30), rng.Float(0, 50)), rng.Float(5, 80));
+    const Frustumd frustum = FrustumAt(Vec3d(rng.Float(-30, 30), rng.Float(-30, 30), rng.Float(0, 50)),
+                                       rng.Float(5, 80));
     OverlapKeys(tree, frustum, f, Order::Ordered, &got);
     BruteOverlap(items, frustum, f, &want);
     CHECK(SameSortedKeys(got, want));
 
-    Vec3 d = rng.Point(-1, 1);
+    Vec3d d = rng.Point(-1, 1);
     if (d.LengthSquared() < 1e-3f)
     {
-        d = Vec3(1, 0, 0);
+        d = Vec3d(1, 0, 0);
     }
-    const Ray ray = Ray::Make(rng.Point(-50, 50), d);
+    const Rayd ray = Rayd::Make(rng.Point(-50, 50), d);
     Vector<RayHit> hits;
     Vector<RayHit> brute;
     BruteRayAll(items, ray, 120.0f, f, &brute);
@@ -276,8 +277,8 @@ template <class Tree> void CheckTree(Rng& rng, const Tree& tree, const Vector<It
         CHECK(real);
     }
 
-    const Aabb mover = BoxAt(rng.Point(-50, 50), Vec3(rng.Float(0, 3), rng.Float(0, 3), rng.Float(0, 3)));
-    const Vec3 motion = rng.Point(-60, 60);
+    const Aabbd mover = BoxAt(rng.Point(-50, 50), Vec3d(rng.Float(0, 3), rng.Float(0, 3), rng.Float(0, 3)));
+    const Vec3d motion = rng.Point(-60, 60);
     RayHit sweep;
     RayHit brute_sweep;
     const bool hit = SweepBox(tree, mover, motion, f, &sweep).results == 1;
@@ -291,9 +292,9 @@ template <class Tree> void CheckTree(Rng& rng, const Tree& tree, const Vector<It
 
     Vector<NearestHit> near;
     Vector<NearestHit> brute_near;
-    const Vec3 p = rng.Point(-50, 50);
+    const Vec3d p = rng.Point(-50, 50);
     const u32 k = 1 + rng.Below(8);
-    const f32 max_distance = rng.Below(3) == 0 ? rng.Float(1, 20) : Limits<f32>::Infinity();
+    const f64 max_distance = rng.Below(3) == 0 ? rng.Float(1, 20) : Limits<f64>::Infinity();
     Nearest(tree, p, k, max_distance, f, &near);
     BruteNearest(items, p, k, max_distance, f, &brute_near);
     REQUIRE(near.Size() == brute_near.Size());
@@ -337,12 +338,12 @@ TEST_CASE("Queries: masks and filters exclude exactly what they should, and a vi
     DynamicBvh tree;
     for (u32 i = 0; i < 64; ++i)
     {
-        tree.Insert(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), i, i % 4);  // all overlapping
+        tree.Insert(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), i, i % 4);  // all overlapping
     }
     Vector<SpatialKey> got;
     QueryFilter layer2;
     layer2.mask = 1u << 2;
-    OverlapKeys(tree, BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), layer2, Order::Ordered, &got);
+    OverlapKeys(tree, BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), layer2, Order::Ordered, &got);
     REQUIRE(got.Size() == 16);
     for (usize i = 0; i < got.Size(); ++i)
     {
@@ -350,7 +351,7 @@ TEST_CASE("Queries: masks and filters exclude exactly what they should, and a vi
     }
     QueryFilter odd;
     odd.filter = &OddKey;
-    OverlapKeys(tree, BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), odd, Order::Ordered, &got);
+    OverlapKeys(tree, BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), odd, Order::Ordered, &got);
     REQUIRE(got.Size() == 32);
     for (usize i = 0; i < got.Size(); ++i)
     {
@@ -358,15 +359,15 @@ TEST_CASE("Queries: masks and filters exclude exactly what they should, and a vi
     }
     QueryFilter none;
     none.mask = 0;
-    OverlapKeys(tree, BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), none, Order::Ordered, &got);
+    OverlapKeys(tree, BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), none, Order::Ordered, &got);
     CHECK(got.Size() == 0);
     // A layer of 32 or more matches no mask.
-    tree.Insert(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 999, 40);
-    OverlapKeys(tree, BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), QueryFilter(), Order::Ordered, &got);
+    tree.Insert(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 999, 40);
+    OverlapKeys(tree, BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), QueryFilter(), Order::Ordered, &got);
     CHECK(got.Size() == 64);
 
     u32 seen = 0;
-    QueryStats stats = Overlap(tree, BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), QueryFilter(),
+    QueryStats stats = Overlap(tree, BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), QueryFilter(),
                                [&](const Item&) { return ++seen < 3; });
     CHECK(seen == 3);
     CHECK(stats.results == 3);
@@ -413,16 +414,17 @@ TEST_CASE("Queries: a sweep never reports a hit past the first contact found by 
     {
         Scene scene;
         MakeScene(rng, 40, &scene);
-        const Aabb mover = BoxAt(rng.Point(-50, 50), Vec3(rng.Float(0.2f, 3), rng.Float(0.2f, 3), rng.Float(0.2f, 3)));
-        const Vec3 motion = rng.Point(-80, 80);
+        const Aabbd mover = BoxAt(rng.Point(-50, 50),
+                                  Vec3d(rng.Float(0.2f, 3), rng.Float(0.2f, 3), rng.Float(0.2f, 3)));
+        const Vec3d motion = rng.Point(-80, 80);
         RayHit hit;
         const bool found = SweepBox(scene.fixed, mover, motion, QueryFilter(), &hit).results == 1;
         // The first step at which the moved box overlaps any item.
-        f32 first = -1.0f;
+        f64 first = -1.0f;
         for (u32 s = 0; s <= kSteps && first < 0.0f; ++s)
         {
-            const f32 frac = static_cast<f32>(s) / kSteps;
-            const Aabb moved = Aabb::FromMinMax(mover.min + motion * frac, mover.max + motion * frac);
+            const f64 frac = static_cast<f64>(s) / kSteps;
+            const Aabbd moved = Aabbd::FromMinMax(mover.min + motion * frac, mover.max + motion * frac);
             for (usize i = 0; i < scene.items.Size(); ++i)
             {
                 if (Overlaps(moved, scene.items[i].box))
@@ -437,7 +439,7 @@ TEST_CASE("Queries: a sweep never reports a hit past the first contact found by 
             REQUIRE(found);
             CHECK(hit.t <= first + 1e-5f);  // never later than the first sampled contact
             // At the reported time the box touches the item (within rounding).
-            const Aabb at = Aabb::FromMinMax(mover.min + motion * hit.t, mover.max + motion * hit.t);
+            const Aabbd at = Aabbd::FromMinMax(mover.min + motion * hit.t, mover.max + motion * hit.t);
             bool touches = false;
             for (usize i = 0; i < scene.items.Size(); ++i)
             {
@@ -453,11 +455,11 @@ TEST_CASE("Queries: a sweep never reports a hit past the first contact found by 
     Scene scene;
     MakeScene(rng, 0, &scene);
     DynamicBvh tree;
-    tree.Insert(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 5, 0);
+    tree.Insert(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 5, 0);
     RayHit hit;
-    CHECK(SweepBox(tree, BoxAt(Vec3(0.5f, 0, 0), Vec3(1, 1, 1)), Vec3(0, 0, 0), QueryFilter(), &hit).results == 1);
+    CHECK(SweepBox(tree, BoxAt(Vec3d(0.5f, 0, 0), Vec3d(1, 1, 1)), Vec3d(0, 0, 0), QueryFilter(), &hit).results == 1);
     CHECK(hit.t == 0.0f);
-    CHECK(SweepBox(tree, BoxAt(Vec3(9, 0, 0), Vec3(1, 1, 1)), Vec3(0, 0, 0), QueryFilter(), &hit).results == 0);
+    CHECK(SweepBox(tree, BoxAt(Vec3d(9, 0, 0), Vec3d(1, 1, 1)), Vec3d(0, 0, 0), QueryFilter(), &hit).results == 0);
 }
 
 TEST_CASE("Queries: empty trees, point queries and NaN input are defined", "[spatial][query]")
@@ -467,55 +469,56 @@ TEST_CASE("Queries: empty trees, point queries and NaN input are defined", "[spa
     Vector<SpatialKey> keys;
     Vector<RayHit> hits;
     Vector<NearestHit> near;
-    CHECK(
-        OverlapKeys(empty_static, BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), QueryFilter(), Order::Ordered, &keys).results ==
-        0);
-    CHECK(Raycast(empty_dynamic, Ray::Make(Vec3(0, 0, 0), Vec3(1, 0, 0)), 10, QueryFilter(), RayMode::All,
+    CHECK(OverlapKeys(empty_static, BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), QueryFilter(), Order::Ordered, &keys)
+              .results == 0);
+    CHECK(Raycast(empty_dynamic, Rayd::Make(Vec3d(0, 0, 0), Vec3d(1, 0, 0)), 10, QueryFilter(), RayMode::All,
                   Order::Ordered, &hits)
               .results == 0);
-    CHECK(Nearest(empty_static, Vec3(0, 0, 0), 3, 10, QueryFilter(), &near).results == 0);
+    CHECK(Nearest(empty_static, Vec3d(0, 0, 0), 3, 10, QueryFilter(), &near).results == 0);
 
     DynamicBvh tree;
-    tree.Insert(BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), 1, 0);
-    tree.Insert(BoxAt(Vec3(2, 0, 0), Vec3(1, 1, 1)), 2, 0);  // from x = 1 to 3: it shares the face x = 1 with the first
+    tree.Insert(BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), 1, 0);
+    tree.Insert(BoxAt(Vec3d(2, 0, 0), Vec3d(1, 1, 1)), 2,
+                0);  // from x = 1 to 3: it shares the face x = 1 with the first
     // A zero-size box is a point: it finds the boxes it is in (and touches).
-    OverlapKeys(tree, BoxAt(Vec3(0.5f, 0, 0), Vec3(0, 0, 0)), QueryFilter(), Order::Ordered, &keys);
+    OverlapKeys(tree, BoxAt(Vec3d(0.5f, 0, 0), Vec3d(0, 0, 0)), QueryFilter(), Order::Ordered, &keys);
     REQUIRE(keys.Size() == 1);
     CHECK(keys[0] == 1);
-    OverlapKeys(tree, BoxAt(Vec3(1, 0, 0), Vec3(0, 0, 0)), QueryFilter(), Order::Ordered, &keys);  // on the shared face
+    OverlapKeys(tree, BoxAt(Vec3d(1, 0, 0), Vec3d(0, 0, 0)), QueryFilter(), Order::Ordered,
+                &keys);  // on the shared face
     CHECK(keys.Size() == 2);
     // An infinite box finds everything; the empty box nothing.
-    const f32 inf = Limits<f32>::Infinity();
-    CHECK(OverlapKeys(tree, Aabb::FromMinMax(Vec3(-inf, -inf, -inf), Vec3(inf, inf, inf)), QueryFilter(),
+    const f64 inf = Limits<f64>::Infinity();
+    CHECK(OverlapKeys(tree, Aabbd::FromMinMax(Vec3d(-inf, -inf, -inf), Vec3d(inf, inf, inf)), QueryFilter(),
                       Order::Ordered, &keys)
               .results == 2);
-    CHECK(OverlapKeys(tree, Aabb::Empty(), QueryFilter(), Order::Ordered, &keys).results == 0);
+    CHECK(OverlapKeys(tree, Aabbd::Empty(), QueryFilter(), Order::Ordered, &keys).results == 0);
     // NaN input: no results, and the refusal says so.
-    const f32 nan = Limits<f32>::QuietNaN();
-    QueryStats stats = OverlapKeys(tree, BoxAt(Vec3(nan, 0, 0), Vec3(1, 1, 1)), QueryFilter(), Order::Ordered, &keys);
+    const f64 nan = Limits<f64>::QuietNaN();
+    QueryStats stats = OverlapKeys(tree, BoxAt(Vec3d(nan, 0, 0), Vec3d(1, 1, 1)), QueryFilter(), Order::Ordered, &keys);
     CHECK(stats.refused_input);
     CHECK(keys.Size() == 0);
-    Sphere bad;
+    Sphered bad;
     bad.radius = nan;
     CHECK(OverlapKeys(tree, bad, QueryFilter(), Order::Ordered, &keys).refused_input);
-    CHECK(Raycast(tree, Ray::Make(Vec3(nan, 0, 0), Vec3(1, 0, 0)), 10, QueryFilter(), RayMode::Closest,
+    CHECK(Raycast(tree, Rayd::Make(Vec3d(nan, 0, 0), Vec3d(1, 0, 0)), 10, QueryFilter(), RayMode::Closest,
                   Order::Traversal, &hits)
               .refused_input);
-    CHECK(Raycast(tree, Ray::Make(Vec3(-5, 0, 0), Vec3(1, 0, 0)), nan, QueryFilter(), RayMode::Closest,
+    CHECK(Raycast(tree, Rayd::Make(Vec3d(-5, 0, 0), Vec3d(1, 0, 0)), nan, QueryFilter(), RayMode::Closest,
                   Order::Traversal, &hits)
               .refused_input);
     CHECK(hits.Size() == 0);
     RayHit hit;
-    CHECK(SweepBox(tree, BoxAt(Vec3(0, 0, 0), Vec3(1, 1, 1)), Vec3(nan, 0, 0), QueryFilter(), &hit).refused_input);
-    CHECK(Nearest(tree, Vec3(0, nan, 0), 2, 10, QueryFilter(), &near).refused_input);
+    CHECK(SweepBox(tree, BoxAt(Vec3d(0, 0, 0), Vec3d(1, 1, 1)), Vec3d(nan, 0, 0), QueryFilter(), &hit).refused_input);
+    CHECK(Nearest(tree, Vec3d(0, nan, 0), 2, 10, QueryFilter(), &near).refused_input);
     CHECK(near.Size() == 0);
     // An unbounded ray and a negative limit.
-    CHECK(
-        Raycast(tree, Ray::Make(Vec3(-5, 0, 0), Vec3(1, 0, 0)), inf, QueryFilter(), RayMode::All, Order::Ordered, &hits)
-            .results == 2);
-    CHECK(
-        Raycast(tree, Ray::Make(Vec3(-5, 0, 0), Vec3(1, 0, 0)), -1, QueryFilter(), RayMode::All, Order::Ordered, &hits)
-            .results == 0);
+    CHECK(Raycast(tree, Rayd::Make(Vec3d(-5, 0, 0), Vec3d(1, 0, 0)), inf, QueryFilter(), RayMode::All, Order::Ordered,
+                  &hits)
+              .results == 2);
+    CHECK(Raycast(tree, Rayd::Make(Vec3d(-5, 0, 0), Vec3d(1, 0, 0)), -1, QueryFilter(), RayMode::All, Order::Ordered,
+                  &hits)
+              .results == 0);
 }
 
 TEST_CASE("Queries: with warm result vectors, queries allocate nothing", "[spatial][query]")
@@ -539,14 +542,14 @@ TEST_CASE("Queries: with warm result vectors, queries allocate nothing", "[spati
     u32 total = 0;
     for (u32 q = 0; q < 50; ++q)
     {
-        const Aabb box = BoxAt(rng.Point(-40, 40), Vec3(6, 6, 6));
+        const Aabbd box = BoxAt(rng.Point(-40, 40), Vec3d(6, 6, 6));
         total += OverlapKeys(scene.fixed, box, QueryFilter(), Order::Ordered, &keys).results;
         total += OverlapKeys(scene.moving, FrustumAt(rng.Point(-20, 20), 40), QueryFilter(), Order::Traversal, &keys)
                      .results;
-        total += Raycast(scene.moving, Ray::Make(rng.Point(-40, 40), Vec3(1, 0.2f, 0.1f)), 100, QueryFilter(),
+        total += Raycast(scene.moving, Rayd::Make(rng.Point(-40, 40), Vec3d(1, 0.2f, 0.1f)), 100, QueryFilter(),
                          RayMode::All, Order::Ordered, &hits)
                      .results;
-        total += Nearest(scene.fixed, rng.Point(-40, 40), 8, Limits<f32>::Infinity(), QueryFilter(), &near).results;
+        total += Nearest(scene.fixed, rng.Point(-40, 40), 8, Limits<f64>::Infinity(), QueryFilter(), &near).results;
         RayHit hit;
         total += SweepBox(scene.fixed, box, rng.Point(-30, 30), QueryFilter(), &hit).results;
     }
@@ -565,9 +568,9 @@ TEST_CASE("Queries: 8 threads querying one tree at once get the single-threaded 
     // The single-threaded answers: a checksum of each query's ordered keys.
     struct Probe
     {
-        Aabb box;
-        Ray ray;
-        Vec3 point;
+        Aabbd box;
+        Rayd ray;
+        Vec3d point;
         u64 expected = 0;
     };
     Vector<Probe> probes;
@@ -589,7 +592,7 @@ TEST_CASE("Queries: 8 threads querying one tree at once get the single-threaded 
         {
             sum = (sum ^ (*hits)[i].key) * 1099511628211ull;
         }
-        Nearest(scene.moving, p.point, 6, Limits<f32>::Infinity(), QueryFilter(), near);
+        Nearest(scene.moving, p.point, 6, Limits<f64>::Infinity(), QueryFilter(), near);
         for (usize i = 0; i < near->Size(); ++i)
         {
             sum = (sum ^ (*near)[i].key) * 1099511628211ull;
@@ -603,13 +606,13 @@ TEST_CASE("Queries: 8 threads querying one tree at once get the single-threaded 
         for (u32 q = 0; q < kQueries; ++q)
         {
             Probe p;
-            p.box = BoxAt(rng.Point(-40, 40), Vec3(rng.Float(1, 12), rng.Float(1, 12), rng.Float(1, 12)));
-            Vec3 d = rng.Point(-1, 1);
+            p.box = BoxAt(rng.Point(-40, 40), Vec3d(rng.Float(1, 12), rng.Float(1, 12), rng.Float(1, 12)));
+            Vec3d d = rng.Point(-1, 1);
             if (d.LengthSquared() < 1e-3f)
             {
-                d = Vec3(0, 0, 1);
+                d = Vec3d(0, 0, 1);
             }
-            p.ray = Ray::Make(rng.Point(-50, 50), d);
+            p.ray = Rayd::Make(rng.Point(-50, 50), d);
             p.point = rng.Point(-50, 50);
             p.expected = run(p, &keys, &hits, &near);
             probes.Push(p);

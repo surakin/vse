@@ -71,9 +71,9 @@ bool Contains(const Vector<KeyPair>& v, SpatialKey a, SpatialKey b)
     return lo < v.Size() && PairEqual(v[lo], probe);
 }
 
-f32 MarginOf(const Aabb& box, f32 fraction)
+f64 MarginOf(const Aabbd& box, f64 fraction)
 {
-    const Vec3 e = box.Extents();
+    const Vec3d e = box.Extents();
     return fraction * Max(e.x, Max(e.y, e.z));
 }
 
@@ -199,7 +199,7 @@ void PairTracker::Clear()
 // end (into end_). Entries are directed (both orientations are added).
 void PairTracker::Gather(const SpatialSet& set, const Vector<SetHandle>& touched, bool use_margin)
 {
-    const f32 fraction = use_margin ? config_.margin : 0.0f;
+    const f64 fraction = use_margin ? config_.margin : 0.0f;
     // The largest margin of any item ever touched bounds how far a partner's grown box can reach (counted with the
     // configured margin even when this call makes pairs without one, so a later `Update` finds partners the recompute
     // saw).
@@ -209,8 +209,8 @@ void PairTracker::Gather(const SpatialSet& set, const Vector<SetHandle>& touched
         {
             continue;
         }
-        const f32 m = MarginOf(set.ItemOf(touched[i]).box, config_.margin);
-        f32& largest = set.IsStatic(touched[i]) ? largest_static_margin_ : largest_dynamic_margin_;
+        const f64 m = MarginOf(set.ItemOf(touched[i]).box, config_.margin);
+        f64& largest = set.IsStatic(touched[i]) ? largest_static_margin_ : largest_dynamic_margin_;
         if (m > largest)
         {
             largest = m;
@@ -225,12 +225,12 @@ void PairTracker::Gather(const SpatialSet& set, const Vector<SetHandle>& touched
         }
         const Item self = set.ItemOf(handle);
         const bool self_static = set.IsStatic(handle);
-        const f32 self_margin = MarginOf(self.box, fraction);
-        const Aabb self_grown = Expand(self.box, self_margin);
+        const f64 self_margin = MarginOf(self.box, fraction);
+        const Aabbd self_grown = Expand(self.box, self_margin);
         // The static partners reach as far as the largest static margin and the dynamic ones as far as the largest
         // dynamic margin: one huge static box (a floor) does not widen the search among the dynamic items.
-        const Aabb static_region = Expand(self.box, self_margin + largest_static_margin_);
-        const Aabb dynamic_region = Expand(self.box, self_margin + largest_dynamic_margin_);
+        const Aabbd static_region = Expand(self.box, self_margin + largest_static_margin_);
+        const Aabbd dynamic_region = Expand(self.box, self_margin + largest_dynamic_margin_);
         near_.Clear();
         ++stats_.touched;
         // The regions reach every partner: an item's margin is at most the largest of its class ever touched (an item
@@ -400,7 +400,7 @@ void PairTracker::Recompute(const SpatialSet& set, PairEvents* events)
         old.Push(adjacent_[i]);
     }
     Vector<SetHandle> all;
-    set.Traverse([](const Aabb&) { return NodeVisit::Descend; },
+    set.Traverse([](const Aabbd&) { return NodeVisit::Descend; },
                  [&](SetHandle h, const Item&)
                  {
                      all.Push(h);

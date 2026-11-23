@@ -34,7 +34,7 @@ struct SpatialSetConfig
     /// The dynamic tree's margins and rebuild threshold (for `Bvh`).
     DynamicBvhConfig bvh;
     /// The grid's cell edge (for `Grid`): 2 to 4 times the items' size.
-    f32 grid_cell_size = 4.0f;
+    f64 grid_cell_size = 4.0f;
 };
 
 /// A handle to an item of a [[spatial::SpatialSet]] (a slot and a generation, like [[spatial::ProxyId]]); it stays the
@@ -90,7 +90,7 @@ public:
     /// - Returns: its handle, or [[spatial::kInvalidSetHandle]] when the set holds [[spatial::kMaxDynamicProxies]]
     /// items.
     /// - Aborts: `box` is empty or not finite.
-    SetHandle AddStatic(const Aabb& box, SpatialKey key, u32 layer);
+    SetHandle AddStatic(const Aabbd& box, SpatialKey key, u32 layer);
 
     /// Adds an item that moves.
     ///
@@ -99,7 +99,7 @@ public:
     /// - Param layer: the caller's layer.
     /// - Returns: its handle, or [[spatial::kInvalidSetHandle]] when the set (or its dynamic structure) is full.
     /// - Aborts: `box` is empty or not finite.
-    SetHandle AddDynamic(const Aabb& box, SpatialKey key, u32 layer);
+    SetHandle AddDynamic(const Aabbd& box, SpatialKey key, u32 layer);
 
     /// Removes an item.
     ///
@@ -115,7 +115,7 @@ public:
     /// - Returns: whether the dynamic structure changed; false for a stale handle, and for a static item (refused and
     /// counted: make it dynamic first).
     /// - Aborts: `box` is empty or not finite.
-    bool Move(SetHandle handle, const Aabb& box);
+    bool Move(SetHandle handle, const Aabbd& box);
 
     /// Makes a static item dynamic (it leaves the static side at once; its tree entry is skipped until the next
     /// `RebuildStatic`).
@@ -181,7 +181,7 @@ public:
     /// Visits the items as [[spatial::StaticBvh::Traverse]] does, over the static tree, the pending static items and
     /// the dynamic side in that order.
     ///
-    /// - Param node_test: `NodeVisit(const Aabb&)`.
+    /// - Param node_test: `NodeVisit(const Aabbd&)`.
     /// - Param item_visit: `bool(SetHandle, const Item&)`; returns false to stop.
     /// - Returns: what the traversal did.
     /// - Fails: never.
@@ -193,10 +193,10 @@ public:
     ///
     /// - Param ray: the ray.
     /// - Param max_t: the farthest parameter to consider.
-    /// - Param item_visit: `bool(SetHandle, const Item&, f32& max_t)`; may lower `max_t`, returns false to stop.
+    /// - Param item_visit: `bool(SetHandle, const Item&, f64& max_t)`; may lower `max_t`, returns false to stop.
     /// - Returns: what the traversal did.
     /// - Fails: never.
-    template <class ItemVisit> TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
+    template <class ItemVisit> TraversalStats TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const;
 
     /// Visits each item whose box overlaps `region` and passes `exact`, once each, using the grid's cells when the
     /// dynamic side is a grid.
@@ -207,7 +207,7 @@ public:
     /// - Returns: what the walk did.
     /// - Fails: never.
     template <class Exact, class Visit>
-    TraversalStats ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const;
+    TraversalStats ForEachInRegion(const Aabbd& region, Exact&& exact, Visit&& visit) const;
 
     /// As [[spatial::SpatialSet::ForEachInRegion]] with no extra test, passing each item's handle too (what the pair
     /// tracker needs).
@@ -216,7 +216,7 @@ public:
     /// - Param visit: `bool(SetHandle, const Item&)`; returns false to stop.
     /// - Returns: what the walk did.
     /// - Fails: never.
-    template <class Visit> TraversalStats ForEachHandleInRegion(const Aabb& region, Visit&& visit) const;
+    template <class Visit> TraversalStats ForEachHandleInRegion(const Aabbd& region, Visit&& visit) const;
 
     /// As the one-region form with a region of its own for each side: the static items (tree and pending list) are
     /// looked for in `static_region` and the dynamic items in `dynamic_region`. The pair tracker uses it so that one
@@ -229,7 +229,7 @@ public:
     /// - Returns: what the walk did.
     /// - Fails: never.
     template <class Visit>
-    TraversalStats ForEachHandleInRegion(const Aabb& static_region, const Aabb& dynamic_region, Visit&& visit) const;
+    TraversalStats ForEachHandleInRegion(const Aabbd& static_region, const Aabbd& dynamic_region, Visit&& visit) const;
 
 private:
     static constexpr u32 kNull = 0xFFFFFFFFu;
@@ -250,7 +250,7 @@ private:
 
     i32 SlotOf(SetHandle handle) const;
     SetHandle HandleOf(u32 slot) const { return slot | (slots_[slot].Generation() << 24); }
-    u32 TakeSlot(const Aabb& box, SpatialKey key, u32 layer);
+    u32 TakeSlot(const Aabbd& box, SpatialKey key, u32 layer);
     bool InsertDynamic(u32 slot);
     void RemoveDynamic(u32 slot);
     void RemovePending(u32 slot);
@@ -337,11 +337,11 @@ TraversalStats SpatialSet::Traverse(NodeTest&& node_test, ItemVisit&& item_visit
 }
 
 template <class ItemVisit>
-TraversalStats SpatialSet::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const
+TraversalStats SpatialSet::TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const
 {
     TraversalStats total;
     bool stop = false;
-    f32 limit = max_t;  // shared by the three parts: a closer hit found in one shortens the ray for the next
+    f64 limit = max_t;  // shared by the three parts: a closer hit found in one shortens the ray for the next
     auto add = [&](const TraversalStats& s)
     {
         total.nodes_tested += s.nodes_tested;
@@ -349,7 +349,7 @@ TraversalStats SpatialSet::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& it
         total.refused += s.refused;
     };
     add(static_.TraverseRay(ray, limit,
-                            [&](const Item& entry, f32& t)
+                            [&](const Item& entry, f64& t)
                             {
                                 if (!TreeEntryLive(entry.key))
                                 {
@@ -374,7 +374,7 @@ TraversalStats SpatialSet::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& it
     }
     if (!stop)
     {
-        auto dynamic_visit = [&](ProxyId, const Item& entry, f32& t)
+        auto dynamic_visit = [&](ProxyId, const Item& entry, f64& t)
         {
             const u32 slot = static_cast<u32>(entry.key);
             const bool go_on = item_visit(HandleOf(slot), slots_[slot].item, limit);
@@ -390,23 +390,23 @@ TraversalStats SpatialSet::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& it
 }
 
 template <class Exact, class Visit>
-TraversalStats SpatialSet::ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const
+TraversalStats SpatialSet::ForEachInRegion(const Aabbd& region, Exact&& exact, Visit&& visit) const
 {
     return ForEachHandleInRegion(region, [&](SetHandle, const Item& item) { return !exact(item) || visit(item); });
 }
 
-template <class Visit> TraversalStats SpatialSet::ForEachHandleInRegion(const Aabb& region, Visit&& visit) const
+template <class Visit> TraversalStats SpatialSet::ForEachHandleInRegion(const Aabbd& region, Visit&& visit) const
 {
     return ForEachHandleInRegion(region, region, visit);
 }
 
 template <class Visit>
-TraversalStats SpatialSet::ForEachHandleInRegion(const Aabb& static_region, const Aabb& dynamic_region,
+TraversalStats SpatialSet::ForEachHandleInRegion(const Aabbd& static_region, const Aabbd& dynamic_region,
                                                  Visit&& visit) const
 {
     // The static parts through the tree and the pending list; the dynamic side through its tree or its grid's cells.
     TraversalStats total = static_.Traverse(
-        [&](const Aabb& node) { return Overlaps(node, static_region) ? NodeVisit::Descend : NodeVisit::Reject; },
+        [&](const Aabbd& node) { return Overlaps(node, static_region) ? NodeVisit::Descend : NodeVisit::Reject; },
         [&](const Item& entry)
         {
             if (!TreeEntryLive(entry.key))
@@ -434,7 +434,7 @@ TraversalStats SpatialSet::ForEachHandleInRegion(const Aabb& static_region, cons
     if (config_.dynamic == DynamicKind::Bvh)
     {
         const TraversalStats tree = dynamic_.Traverse(
-            [&](const Aabb& node) { return Overlaps(node, dynamic_region) ? NodeVisit::Descend : NodeVisit::Reject; },
+            [&](const Aabbd& node) { return Overlaps(node, dynamic_region) ? NodeVisit::Descend : NodeVisit::Reject; },
             [&](ProxyId, const Item& entry)
             {
                 const u32 slot = static_cast<u32>(entry.key);

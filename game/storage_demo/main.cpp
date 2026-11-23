@@ -185,7 +185,7 @@ u32 CompareSpatial(City& a, City& b, f32 half, u32 probes)
     for (u32 i = 0; i < probes; ++i)
     {
         const Vec3 center(rng.Range(-half, half), 2.0f, rng.Range(-half, half));
-        const Aabb box = BoxOf(center, Vec3(rng.Range(2, 40), 6, rng.Range(2, 40)));
+        const Aabbd box = BoxOf(center, Vec3(rng.Range(2, 40), 6, rng.Range(2, 40)));
         Vector<ecs::Entity> ha, hb;
         spatial::OverlapEntities(a.world.Resource<spatial::SpatialWorld>(), spatial::kRenderSet, box,
                                  spatial::QueryFilter(), &ha);

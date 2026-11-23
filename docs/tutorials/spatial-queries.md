@@ -25,20 +25,20 @@
 
 using namespace vse;
 
-static Aabb Cube(f32 x) { return Aabb::FromMinMax(Vec3(x - 1, -1, -1), Vec3(x + 1, 1, 1)); }
+static Aabbd Cube(f64 x) { return Aabbd::FromMinMax(Vec3d(x - 1, -1, -1), Vec3d(x + 1, 1, 1)); }
 
 int main() {
     spatial::SpatialSet set;
     // Step 2: four walls along the x axis (keys 0 to 3) and one mover (key 100).
     for (u32 i = 0; i < 4; ++i) {
-        set.AddStatic(Cube(static_cast<f32>(i) * 10.0f), i, 0);
+        set.AddStatic(Cube(static_cast<f64>(i) * 10.0f), i, 0);
     }
     const spatial::SetHandle mover = set.AddDynamic(Cube(25.0f), 100, 0);
     set.RebuildStatic(); // step 3
 
     // Step 4: what touches the region around x = 20?
     u32 touching = 0;
-    spatial::Overlap(set, Aabb::FromMinMax(Vec3(15, -2, -2), Vec3(27, 2, 2)), spatial::QueryFilter(), [&](const spatial::Item& item) {
+    spatial::Overlap(set, Aabbd::FromMinMax(Vec3d(15, -2, -2), Vec3d(27, 2, 2)), spatial::QueryFilter(), [&](const spatial::Item& item) {
         out::Print("overlap: key %u\n", static_cast<u32>(item.key));
         ++touching;
         return true;
@@ -46,18 +46,18 @@ int main() {
 
     // Step 5: a ray along +x from x = -5 hits the first wall.
     Vector<spatial::RayHit> hits;
-    spatial::Raycast(set, Ray::Make(Vec3(-5, 0, 0), Vec3(1, 0, 0)), 100.0f, spatial::QueryFilter(), spatial::RayMode::Closest, spatial::Order::Ordered, &hits);
+    spatial::Raycast(set, Rayd::Make(Vec3d(-5, 0, 0), Vec3d(1, 0, 0)), 100.0f, spatial::QueryFilter(), spatial::RayMode::Closest, spatial::Order::Ordered, &hits);
     out::Print("ray: first hit key %u at t = %.1f\n", static_cast<u32>(hits[0].key), static_cast<double>(hits[0].t));
 
     // Step 6: the two items nearest to x = 28.
     Vector<spatial::NearestHit> nearest;
-    spatial::Nearest(set, Vec3(28, 0, 0), 2, 1000.0f, spatial::QueryFilter(), &nearest);
+    spatial::Nearest(set, Vec3d(28, 0, 0), 2, 1000.0f, spatial::QueryFilter(), &nearest);
     out::Print("nearest: keys %u and %u\n", static_cast<u32>(nearest[0].key), static_cast<u32>(nearest[1].key));
 
     // Step 7: move the mover far away; it no longer touches the region.
     set.Move(mover, Cube(500.0f));
     u32 after = 0;
-    spatial::Overlap(set, Aabb::FromMinMax(Vec3(15, -2, -2), Vec3(27, 2, 2)), spatial::QueryFilter(), [&](const spatial::Item&) {
+    spatial::Overlap(set, Aabbd::FromMinMax(Vec3d(15, -2, -2), Vec3d(27, 2, 2)), spatial::QueryFilter(), [&](const spatial::Item&) {
         ++after;
         return true;
     });

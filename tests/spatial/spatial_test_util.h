@@ -12,7 +12,12 @@ namespace spatial_test
 {
 
 // The box with this center and these half extents.
-inline vse::Aabb BoxAt(const vse::Vec3& c, const vse::Vec3& h)
+inline vse::Aabbd BoxAt(const vse::Vec3d& c, const vse::Vec3d& h)
+{
+    return vse::Aabbd::FromMinMax(c - h, c + h);
+}
+// The same in single precision, for an entity's own-space box.
+inline vse::Aabb LocalBoxAt(const vse::Vec3& c, const vse::Vec3& h)
 {
     return vse::Aabb::FromMinMax(c - h, c + h);
 }

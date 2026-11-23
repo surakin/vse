@@ -16,9 +16,12 @@ Every structure and query works on the shapes of `math/geometry.h` (namespace `v
 culling too: they moved there from `renderer/bounds.h` and `renderer/frustum.h`, which keep `renderer::Aabb`, `renderer::Frustum` and the rest as aliases,
 so renderer code did not change.
 
+The structures and queries work in **double precision** (`Aabbd`, `Rayd`, `Sphered`, `Frustumd`, `Vec3d`, `f64` distances), so a world far from the origin keeps its
+accuracy; a single-precision shape widens to its double form exactly. The ECS sync writes `WorldBounds` in double precision (`PlaceAabb` of the entity's own-space `SpatialBounds::local`, which stays single precision, by its `WorldTransform`). Boxes cost twice the memory of the single-precision form (a static node is 56 bytes, a dynamic item about 200).
+
 | Shape | Type | Notes |
 |---|---|---|
-| axis-aligned box | `Aabb` | `min`/`max` corners; `Aabb::Empty()` is the box whose union with any box is that box; `box.IsEmpty()` |
+| axis-aligned box | `Aabb`, `Aabbd` | `min`/`max` corners; `Aabb::Empty()` is the box whose union with any box is that box; `box.IsEmpty()` |
 | sphere | `Sphere` (the renderer's `BoundingSphere` is the same type) | `center`, `radius` |
 | box and sphere of one object | `Bounds` | the renderer tests the sphere first |
 | plane | `Plane` | `dot(normal, p) + d = 0`, inside where the value is not negative; `Plane::FromPointNormal` |
@@ -98,7 +101,7 @@ int main() {
     Vector<Item> items;
     for (u32 i = 0; i < 10; ++i) {
         Item item;
-        item.box = Aabb::FromMinMax(Vec3(2.0f * i, 0, 0), Vec3(2.0f * i + 1, 1, 1));
+        item.box = Aabbd::FromMinMax(Vec3d(2.0f * i, 0, 0), Vec3d(2.0f * i + 1, 1, 1));
         item.key = i;
         items.Push(item);
     }
@@ -106,9 +109,9 @@ int main() {
     tree.Build(Span<const Item>(items.Data(), items.Size()));
 
     // Which crates overlap a box from x = 5 to x = 9?
-    const Aabb query = Aabb::FromMinMax(Vec3(5, 0, 0), Vec3(9, 1, 1));
+    const Aabbd query = Aabbd::FromMinMax(Vec3d(5, 0, 0), Vec3d(9, 1, 1));
     out::Print("overlapping:");
-    tree.Traverse([&](const Aabb& node) { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
+    tree.Traverse([&](const Aabbd& node) { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
                   [&](const Item& item) {
                       if (Overlaps(item.box, query)) out::Print(" %llu", static_cast<unsigned long long>(item.key));
                       return true;
@@ -116,11 +119,11 @@ int main() {
     out::Print("\n");
 
     // The first crate a ray from the left hits: lower the limit to each hit, so farther leaves are skipped.
-    const Ray ray = Ray::Make(Vec3(-5, 0.5f, 0.5f), Vec3(1, 0, 0));
+    const Rayd ray = Rayd::Make(Vec3d(-5, 0.5f, 0.5f), Vec3d(1, 0, 0));
     SpatialKey first = 0;
-    f32 best = -1.0f;
-    tree.TraverseRay(ray, 100.0f, [&](const Item& item, f32& max_t) {
-        f32 t = 0.0f;
+    f64 best = -1.0f;
+    tree.TraverseRay(ray, 100.0f, [&](const Item& item, f64& max_t) {
+        f64 t = 0.0f;
         if (Intersect(ray, item.box, max_t, &t) && (best < 0.0f || t < best)) {
             best = t;
             first = item.key;
@@ -170,17 +173,17 @@ using namespace vse::spatial;
 
 int main() {
     DynamicBvh tree;
-    const ProxyId player = tree.Insert(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(1, 2, 1)), 1, 0);
-    const ProxyId crate = tree.Insert(Aabb::FromMinMax(Vec3(5, 0, 0), Vec3(6, 1, 1)), 2, 0);
+    const ProxyId player = tree.Insert(Aabbd::FromMinMax(Vec3d(0, 0, 0), Vec3d(1, 2, 1)), 1, 0);
+    const ProxyId crate = tree.Insert(Aabbd::FromMinMax(Vec3d(5, 0, 0), Vec3d(6, 1, 1)), 2, 0);
 
     // A step of 0.1 stays inside the fat box (a quarter of the largest extent on every side): nothing in the tree changes.
-    const bool changed = tree.Move(player, Aabb::FromMinMax(Vec3(0.1f, 0, 0), Vec3(1.1f, 2, 1)));
+    const bool changed = tree.Move(player, Aabbd::FromMinMax(Vec3d(0.1f, 0, 0), Vec3d(1.1f, 2, 1)));
     out::Print("small step changed the tree: %s\n", changed ? "yes" : "no");
     // A jump leaves it: the leaf is taken out and put back.
-    out::Print("jump changed the tree: %s\n", tree.Move(player, Aabb::FromMinMax(Vec3(4.5f, 0, 0), Vec3(5.5f, 2, 1))) ? "yes" : "no");
+    out::Print("jump changed the tree: %s\n", tree.Move(player, Aabbd::FromMinMax(Vec3d(4.5f, 0, 0), Vec3d(5.5f, 2, 1))) ? "yes" : "no");
 
-    const Aabb near_crate = Aabb::FromMinMax(Vec3(4, 0, 0), Vec3(7, 1, 1));
-    tree.Traverse([&](const Aabb& node) { return Overlaps(node, near_crate) ? NodeVisit::Descend : NodeVisit::Reject; },
+    const Aabbd near_crate = Aabbd::FromMinMax(Vec3d(4, 0, 0), Vec3d(7, 1, 1));
+    tree.Traverse([&](const Aabbd& node) { return Overlaps(node, near_crate) ? NodeVisit::Descend : NodeVisit::Reject; },
                   [&](ProxyId, const Item& item) {
                       if (Overlaps(item.box, near_crate)) out::Print("near the crate: key %llu\n", static_cast<unsigned long long>(item.key));
                       return true;
@@ -255,26 +258,26 @@ bool NotTheShooter(SpatialKey key, void*) { return key != 1; }
 
 int main() {
     DynamicBvh tree;
-    tree.Insert(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(1, 2, 1)), 1, 0); // the shooter, layer 0 (characters)
-    tree.Insert(Aabb::FromMinMax(Vec3(4, 0, 0), Vec3(5, 2, 1)), 2, 0); // an enemy
-    tree.Insert(Aabb::FromMinMax(Vec3(8, 0, 0), Vec3(9, 3, 1)), 3, 1); // a wall, layer 1 (scenery)
+    tree.Insert(Aabbd::FromMinMax(Vec3d(0, 0, 0), Vec3d(1, 2, 1)), 1, 0); // the shooter, layer 0 (characters)
+    tree.Insert(Aabbd::FromMinMax(Vec3d(4, 0, 0), Vec3d(5, 2, 1)), 2, 0); // an enemy
+    tree.Insert(Aabbd::FromMinMax(Vec3d(8, 0, 0), Vec3d(9, 3, 1)), 3, 1); // a wall, layer 1 (scenery)
 
     // The first thing a shot from the shooter hits, ignoring the shooter itself.
     QueryFilter shot;
     shot.filter = &NotTheShooter;
     Vector<RayHit> hits;
-    Raycast(tree, Ray::Make(Vec3(0.5f, 1, 0.5f), Vec3(1, 0, 0)), 100.0f, shot, RayMode::Closest, Order::Traversal, &hits);
+    Raycast(tree, Rayd::Make(Vec3d(0.5f, 1, 0.5f), Vec3d(1, 0, 0)), 100.0f, shot, RayMode::Closest, Order::Traversal, &hits);
     out::Print("shot hits key %llu at %.1f\n", static_cast<unsigned long long>(hits[0].key), hits[0].t);
 
     // Only scenery: the same ray with a mask of layer 1.
     QueryFilter scenery;
     scenery.mask = 1u << 1;
-    Raycast(tree, Ray::Make(Vec3(0.5f, 1, 0.5f), Vec3(1, 0, 0)), 100.0f, scenery, RayMode::Closest, Order::Traversal, &hits);
+    Raycast(tree, Rayd::Make(Vec3d(0.5f, 1, 0.5f), Vec3d(1, 0, 0)), 100.0f, scenery, RayMode::Closest, Order::Traversal, &hits);
     out::Print("scenery hit: key %llu\n", static_cast<unsigned long long>(hits[0].key));
 
     // The two items nearest a point, nearest first.
     Vector<NearestHit> near;
-    Nearest(tree, Vec3(6, 1, 0.5f), 2, 50.0f, QueryFilter(), &near);
+    Nearest(tree, Vec3d(6, 1, 0.5f), 2, 50.0f, QueryFilter(), &near);
     out::Print("nearest: %llu (%.1f), %llu (%.1f)\n", static_cast<unsigned long long>(near[0].key), near[0].distance,
               static_cast<unsigned long long>(near[1].key), near[1].distance);
     return 0;
@@ -322,18 +325,18 @@ using namespace vse::spatial;
 
 int main() {
     SpatialSet world;
-    world.AddStatic(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(10, 3, 1)), 1, 0);              // a wall
-    const SetHandle door = world.AddStatic(Aabb::FromMinMax(Vec3(10, 0, 0), Vec3(12, 3, 1)), 2, 0);
-    const SetHandle guard = world.AddDynamic(Aabb::FromMinMax(Vec3(5, 0, 2), Vec3(6, 2, 3)), 3, 0);
+    world.AddStatic(Aabbd::FromMinMax(Vec3d(0, 0, 0), Vec3d(10, 3, 1)), 1, 0);              // a wall
+    const SetHandle door = world.AddStatic(Aabbd::FromMinMax(Vec3d(10, 0, 0), Vec3d(12, 3, 1)), 2, 0);
+    const SetHandle guard = world.AddDynamic(Aabbd::FromMinMax(Vec3d(5, 0, 2), Vec3d(6, 2, 3)), 3, 0);
     world.RebuildStatic(); // the wall and the door go into the static tree
 
     // The door opens: it moves now, so it becomes dynamic (same handle).
     world.MakeDynamic(door);
-    world.Move(door, Aabb::FromMinMax(Vec3(10, 0, 0), Vec3(11, 3, 2)));
-    world.Move(guard, Aabb::FromMinMax(Vec3(10, 0, 1), Vec3(11, 2, 2)));
+    world.Move(door, Aabbd::FromMinMax(Vec3d(10, 0, 0), Vec3d(11, 3, 2)));
+    world.Move(guard, Aabbd::FromMinMax(Vec3d(10, 0, 1), Vec3d(11, 2, 2)));
 
     Vector<SpatialKey> near_door;
-    OverlapKeys(world, Aabb::FromMinMax(Vec3(9, 0, 0), Vec3(12, 3, 3)), QueryFilter(), Order::Ordered, &near_door);
+    OverlapKeys(world, Aabbd::FromMinMax(Vec3d(9, 0, 0), Vec3d(12, 3, 3)), QueryFilter(), Order::Ordered, &near_door);
     out::Print("near the door:");
     for (usize i = 0; i < near_door.Size(); ++i) out::Print(" %llu", static_cast<unsigned long long>(near_door[i]));
     out::Print("\n");
@@ -395,14 +398,14 @@ int main() {
     PairTracker pairs(config);
     PairEvents events;
 
-    const SetHandle a = world.AddDynamic(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(2, 2, 2)), 1, 0);
-    const SetHandle b = world.AddDynamic(Aabb::FromMinMax(Vec3(5, 0, 0), Vec3(7, 2, 2)), 2, 0);
+    const SetHandle a = world.AddDynamic(Aabbd::FromMinMax(Vec3d(0, 0, 0), Vec3d(2, 2, 2)), 1, 0);
+    const SetHandle b = world.AddDynamic(Aabbd::FromMinMax(Vec3d(5, 0, 0), Vec3d(7, 2, 2)), 2, 0);
     pairs.Touch(a); // every added item is touched once
     pairs.Touch(b);
     pairs.Update(world, &events);
     Show(1, events);
 
-    world.Move(b, Aabb::FromMinMax(Vec3(1, 0, 0), Vec3(3, 2, 2))); // b moves into a
+    world.Move(b, Aabbd::FromMinMax(Vec3d(1, 0, 0), Vec3d(3, 2, 2))); // b moves into a
     pairs.Touch(b);                                                  // only moved items are re-queried
     pairs.Update(world, &events);
     Show(2, events);
@@ -468,14 +471,14 @@ int main() {
     SpatialMembership membership;
     membership.sets = (1u << kRenderSet) | (1u << kPhysicsSet); // in the render set and the physics set
     ecs::LocalTransform at;
-    at.position = Vec3(10, 0, 0);
+    at.position = Vec3d(10, 0, 0);
     world.Create(at, ecs::WorldTransform{}, bounds, membership);
 
     schedule.Run(world, 0.016f);
 
     const SpatialWorld& spatial = world.Resource<SpatialWorld>();
     Vector<SpatialKey> keys;
-    OverlapKeys(*spatial.Set(kRenderSet), Aabb::FromMinMax(Vec3(5, -1, -1), Vec3(15, 1, 1)), QueryFilter(), Order::Ordered, &keys);
+    OverlapKeys(*spatial.Set(kRenderSet), Aabbd::FromMinMax(Vec3d(5, -1, -1), Vec3d(15, 1, 1)), QueryFilter(), Order::Ordered, &keys);
     out::Print("render set: %u item\n", static_cast<unsigned>(keys.Size()));
     return 0;
 }
@@ -505,7 +508,7 @@ The sync keeps the sets true with the cost of what changed, not of what exists.
 
 - **Order in a frame.** Propagate the transforms, then run the sync (a later stage, or later in the same one), then any system that queries the sets. A query that runs
   before the sync in a frame sees the previous frame's sets (documented, not an error).
-- **Moves.** The sync recomputes `WorldBounds` (`TransformAabb` of `SpatialBounds::local` by the `WorldTransform`) for the chunks whose transform or local box changed,
+- **Moves.** The sync recomputes `WorldBounds` (`PlaceAabb` of `SpatialBounds::local` by the `WorldTransform`, in double precision) for the chunks whose transform or local box changed,
   and writes a value only when it differs, so `Changed<WorldBounds>` filters in other systems stay exact. It then calls `SpatialSet::Move` for the entities whose box
   differs from their item: the moved entities are listed in chunk order, then each set applies the list to itself as one job (a set is written by one thread, in list order, and sets are independent), so the result does not depend on how jobs were scheduled; with k sets the speedup is at most k.
   A static entity does not move; if one does, the set counts a refused move (`SpatialSetStats::static_moves_refused`) and keeps the old box.
@@ -551,14 +554,14 @@ int main() {
     membership.sets = 1u << kGameplaySet;
     for (int i = 0; i < 5; ++i) {
         ecs::LocalTransform at;
-        at.position = Vec3(static_cast<float>(i) * 2.0f, 0, 0);
+        at.position = Vec3d(static_cast<float>(i) * 2.0f, 0, 0);
         world.Create(at, ecs::WorldTransform{}, bounds, membership, Health{});
     }
     schedule.Run(world, 0.016f);
     schedule.Run(world, 0.016f);
 
     // Everything within 3 units of x = 4 loses health: the spatial query picks the entities, the join fetches their components.
-    const Aabb blast = Aabb::FromMinMax(Vec3(1, -3, -3), Vec3(7, 3, 3));
+    const Aabbd blast = Aabbd::FromMinMax(Vec3d(1, -3, -3), Vec3d(7, 3, 3));
     const usize hit = ForEachIn<Health>(world, world.Resource<SpatialWorld>(), kGameplaySet, blast, QueryFilter(),
                                          [](ecs::Entity, Health& h) { h.hp -= 4.0f; });
     out::Print("%u entities hit\n", static_cast<unsigned>(hit));

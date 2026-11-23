@@ -23,7 +23,7 @@ using ecs::With;
 using ecs::Without;
 using ecs::Write;
 
-bool FiniteSyncBox(const Aabb& box)
+bool FiniteSyncBox(const Aabbd& box)
 {
     return IsFinite(box.min.x) && IsFinite(box.min.y) && IsFinite(box.min.z) && IsFinite(box.max.x) &&
            IsFinite(box.max.y) && IsFinite(box.max.z) && !box.IsEmpty();
@@ -50,7 +50,7 @@ using BoundsByLocal = Query<Changed<SpatialBounds>, Read<SpatialBounds>, Read<ec
                             LazyWrite<WorldBounds>>;
 using MovedBounds = Query<Changed<WorldBounds>, Read<WorldBounds>, Read<SpatialProxy>>;
 
-bool SameBox(const Aabb& a, const Aabb& b)
+bool SameBox(const Aabbd& a, const Aabbd& b)
 {
     return a.min.x == b.min.x && a.min.y == b.min.y && a.min.z == b.min.z && a.max.x == b.max.x && a.max.y == b.max.y &&
            a.max.z == b.max.z;
@@ -124,7 +124,7 @@ private:
         return static_cast<u32>(sets) & all;
     }
 
-    static void AddItem(SpatialWorld& spatial, SetId id, Entity entity, const Aabb& box, u32 layer, bool is_static,
+    static void AddItem(SpatialWorld& spatial, SetId id, Entity entity, const Aabbd& box, u32 layer, bool is_static,
                         SetHandle& out)
     {
         SpatialSet* set = spatial.Set(id);
@@ -169,7 +169,7 @@ private:
     // `count_unknown` is true on the looks that happen once per change (a join, an edit), so a set bit that names no
     // set is counted once.
     void Reconcile(SpatialWorld& spatial, Entity entity, const SpatialMembership& membership, SpatialProxy& proxy,
-                   const Aabb& box, bool is_static, bool count_unknown)
+                   const Aabbd& box, bool is_static, bool count_unknown)
     {
         SpatialWorldStats& stats = spatial.MutableStats();
         const u32 want = ValidSets(spatial, membership.sets, count_unknown && proxy.requested != membership.sets,
@@ -234,7 +234,7 @@ private:
             {
                 return;
             }
-            const Aabb box = TransformAabb(bounds.local, w.matrix);
+            const Aabbd box = PlaceAabb(bounds.local, w.ToPlacement());
             if (!FiniteSyncBox(bounds.local) || !FiniteSyncBox(box) || m.layer >= 32)
             {
                 ++spatial.MutableStats().refused_bounds;  // nothing is added or moved, but the sets the entity no
@@ -267,7 +267,7 @@ private:
         q.join->ForEach(
             [&](Entity entity, const SpatialBounds& bounds, const ecs::WorldTransform& w, const SpatialMembership& m)
             {
-                const Aabb box = TransformAabb(bounds.local, w.matrix);
+                const Aabbd box = PlaceAabb(bounds.local, w.ToPlacement());
                 if (!FiniteSyncBox(bounds.local) || !FiniteSyncBox(box) || m.layer >= 32)
                 {
                     ++stats.refused_bounds;
@@ -318,7 +318,7 @@ private:
             u64 bad = 0;
             for (usize i = 0; i < locals.Size(); ++i)
             {
-                const Aabb box = TransformAabb(locals[i].local, worlds[i].matrix);
+                const Aabbd box = PlaceAabb(locals[i].local, worlds[i].ToPlacement());
                 if (!FiniteSyncBox(box))
                 {
                     ++bad;  // the item keeps its old box
@@ -518,7 +518,7 @@ private:
     UniquePtr<MovedBounds> moved_;
     struct MoveEntry
     {
-        Aabb box;
+        Aabbd box;
         Array<SetHandle, kMaxSpatialSets> handle;
     };
     Vector<MoveEntry> moves_;  // reused between frames

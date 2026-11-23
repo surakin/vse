@@ -34,14 +34,14 @@ struct DynamicBvhConfig
     /// The fat margin, as a fraction of the item's largest extent: a leaf stores the box grown by this much on every
     /// side, and a move that stays inside it changes nothing (`spatial.fat_margin`; 0.25 from the spatial design spec,
     /// experiment (b)). An item of zero size gets no margin.
-    f32 fat_margin = 0.25f;
+    f64 fat_margin = 0.25f;
     /// How far the fat box also reaches along the last movement, as a multiple of that displacement (Box2D's predictive
     /// margin). 0 turns it off; the default is what measurement chose (`docs/guide/spatial.md`, "The
     /// dynamic BVH").
-    f32 predictive = 2.0f;
+    f64 predictive = 2.0f;
     /// [[spatial::DynamicBvh::Optimize]] rebuilds the whole tree when its SAH cost has grown past this multiple of the
     /// cost after the last full build.
-    f32 rebuild_threshold = 1.3f;
+    f64 rebuild_threshold = 1.3f;
 };
 
 /// What a [[spatial::DynamicBvh]] holds and what it has done.
@@ -54,9 +54,9 @@ struct DynamicBvhStats
     u32 node_capacity = 0;  ///< Nodes in the pool, used and free.
     u32 height = 0;         ///< The root's height: 0 for one leaf, 0 for an empty tree.
     u64 memory_bytes = 0;   ///< Bytes of the node pool and the item slots (their sizes, not their capacities).
-    f32 sah_cost = 0.0f;    ///< The SAH cost now, as [[spatial::StaticBvh::SahCost]] weighs it (1 per inner node, 1 per
+    f64 sah_cost = 0.0f;    ///< The SAH cost now, as [[spatial::StaticBvh::SahCost]] weighs it (1 per inner node, 1 per
                             ///< leaf, by area).
-    f32 built_sah_cost = 0.0f;  ///< The SAH cost right after the last full build or rebuild.
+    f64 built_sah_cost = 0.0f;  ///< The SAH cost right after the last full build or rebuild.
     u64 moves = 0;              ///< Calls of `Move` with a live handle.
     u64 moves_inside_fat = 0;   ///< Moves that stayed inside the fat box and changed nothing.
     u64 reinserts = 0;          ///< Moves that took the leaf out and put it back.
@@ -99,7 +99,7 @@ public:
     /// - Param layer: the caller's layer value.
     /// - Returns: the item's handle, or [[spatial::kInvalidProxy]] when the tree is full (counted in `refused_full`).
     /// - Aborts: `box` is empty or not finite.
-    ProxyId Insert(const Aabb& box, SpatialKey key, u32 layer);
+    ProxyId Insert(const Aabbd& box, SpatialKey key, u32 layer);
 
     /// Removes an item.
     ///
@@ -115,7 +115,7 @@ public:
     /// - Returns: whether the tree changed (the leaf was re-inserted); false when the box stayed inside the fat box, or
     /// for a stale handle (counted).
     /// - Aborts: `box` is empty or not finite.
-    bool Move(ProxyId proxy, const Aabb& box);
+    bool Move(ProxyId proxy, const Aabbd& box);
 
     /// Replaces the whole tree with these items, built top-down.
     ///
@@ -151,16 +151,16 @@ public:
     ///
     /// - Aborts: `proxy` is not live.
     /// - Ownership: the reference is valid until the next change of the tree (any call that is not const).
-    const Aabb& FatBox(ProxyId proxy) const;
+    const Aabbd& FatBox(ProxyId proxy) const;
 
     /// Returns the number of items.
     u32 ProxyCount() const { return proxy_count_; }
     /// Returns the root's height (0 for a single leaf and for an empty tree).
     u32 Height() const;
     /// Returns the box of the whole tree (fat boxes), or [[AabbT::Empty]] when it is empty.
-    Aabb Bounds() const;
+    Aabbd Bounds() const;
     /// Returns the tree's SAH cost now (one pass over the nodes).
-    f32 SahCost() const;
+    f64 SahCost() const;
     /// Returns the counts and the quality measures; `sah_cost` is measured now (one pass over the nodes).
     DynamicBvhStats Stats() const;
 
@@ -172,7 +172,7 @@ public:
     /// - Fails: returns false at the first broken invariant.
     bool Validate() const;
 
-    /// Visits the tree depth first, as [[spatial::StaticBvh::Traverse]]: `node_test(const Aabb&)` sees the inner boxes
+    /// Visits the tree depth first, as [[spatial::StaticBvh::Traverse]]: `node_test(const Aabbd&)` sees the inner boxes
     /// and each leaf's fat box and returns a [[spatial::NodeVisit]]; `item_visit(ProxyId, const Item&)` sees each
     /// accepted leaf's item (with its tight box) and returns false to stop.
     ///
@@ -184,20 +184,20 @@ public:
     TraversalStats Traverse(NodeTest&& node_test, ItemVisit&& item_visit) const;
 
     /// Visits the leaves a ray reaches, nearest child first, as [[spatial::StaticBvh::TraverseRay]]:
-    /// `item_visit(ProxyId, const Item&, f32& max_t)` may lower `max_t` and returns false to stop.
+    /// `item_visit(ProxyId, const Item&, f64& max_t)` may lower `max_t` and returns false to stop.
     ///
     /// - Param ray: the ray ([[RayT::Make]]).
     /// - Param max_t: the farthest parameter to consider.
     /// - Param item_visit: the item visitor.
     /// - Returns: what the traversal did.
     /// - Fails: never; as [[spatial::DynamicBvh::Traverse]].
-    template <class ItemVisit> TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
+    template <class ItemVisit> TraversalStats TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const;
 
 private:
     static constexpr u32 kNull = 0xFFFFFFFFu;
     struct Node
     {
-        Aabb box;            // inner: the children's box; leaf: the item's fat box
+        Aabbd box;           // inner: the children's box; leaf: the item's fat box
         u32 parent = kNull;  // free: the next free node
         u32 child1 = kNull;  // kNull for a leaf
         u32 child2 = kNull;  // leaf: the proxy slot
@@ -222,7 +222,7 @@ private:
     u32 Balance(u32 node);
     void Refit(u32 from);
     i32 SlotOf(ProxyId proxy) const;  // -1 for a stale or invalid handle
-    Aabb FatOf(const Aabb& tight, const Vec3& displacement) const;
+    Aabbd FatOf(const Aabbd& tight, const Vec3d& displacement) const;
     void RebuildFrom(bool fat_ready);
     void RebuildSubtree(u32 subtree);
     u32 BuildRange(u32 begin, u32 end, u32 level);
@@ -236,13 +236,13 @@ private:
     u32 proxy_count_ = 0;
     u32 optimize_cursor_ = 0;
     u32 changes_ = 0;  // inserts, removes and re-inserts since the last Optimize or full build
-    f32 built_cost_ = 0.0f;
+    f64 built_cost_ = 0.0f;
     DynamicBvhStats counters_;
     // Build scratch, kept so a rebuild after the first allocates nothing: leaf slots being partitioned, their fat boxes
     // and centroids by slot, partition buffers, and the stack of a subtree walk.
     Vector<u32> order_;
-    Vector<Aabb> fat_;
-    Vector<Vec3> centroids_;
+    Vector<Aabbd> fat_;
+    Vector<Vec3d> centroids_;
     Vector<u32> scratch_;
     Vector<u8> bins_;
     Vector<u32> walk_;
@@ -302,21 +302,21 @@ TraversalStats DynamicBvh::Traverse(NodeTest&& node_test, ItemVisit&& item_visit
 }
 
 template <class ItemVisit>
-TraversalStats DynamicBvh::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const
+TraversalStats DynamicBvh::TraverseRay(const Rayd& ray, f64 max_t, ItemVisit&& item_visit) const
 {
     TraversalStats stats;
     if (root_ == kNull)
     {
         return stats;
     }
-    f32 t_root = 0.0f;
+    f64 t_root = 0.0f;
     ++stats.nodes_tested;
     if (!Intersect(ray, nodes_[root_].box, max_t, &t_root))
     {
         return stats;
     }
     Array<u32, kTraversalStackDepth> stack;
-    Array<f32, kTraversalStackDepth> enter;
+    Array<f64, kTraversalStackDepth> enter;
     u32 top = 0;
     stack[top] = root_;
     enter[top++] = t_root;
@@ -340,8 +340,8 @@ TraversalStats DynamicBvh::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& it
             }
             continue;
         }
-        f32 t1 = 0.0f;
-        f32 t2 = 0.0f;
+        f64 t1 = 0.0f;
+        f64 t2 = 0.0f;
         stats.nodes_tested += 2;
         const bool hit1 = Intersect(ray, nodes_[node.child1].box, max_t, &t1);
         const bool hit2 = Intersect(ray, nodes_[node.child2].box, max_t, &t2);

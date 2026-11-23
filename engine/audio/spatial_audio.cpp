@@ -312,7 +312,7 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
     candidates_.Clear();
     if (listener_.valid)
     {
-        Sphere ears;
+        Sphered ears;
         ears.center = listener_.position;
         ears.radius = 0.0f;
         spatial::QueryFilter filter;

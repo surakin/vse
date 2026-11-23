@@ -1251,6 +1251,23 @@ Returns the matrix of this placement relative to `origin`: the `f32` linear part
 | Parameter `origin` | the world position that becomes the origin of the result (the camera, for rendering). |
 | Fails | never. |
 
+## `PlaceAabb(const Aabb&,const Placement&)` {#placeaabb-const-aabb-amp-const-placement-amp}
+
+`function PlaceAabb` — defined in `engine/foundation/math/placement.h`
+
+```cpp
+Aabbd PlaceAabb(const Aabb& local, const Placement& placement);
+```
+
+The world-space box of a box in a placed object's own space, in double precision: the center goes through [`Placement::TransformPoint`](#placement-transformpoint-const-vec3d-amp-const), the half extents grow by the absolute values of the linear part (the tight box of the transformed box, as `TransformAabb` does in single precision).
+
+| Field | Value |
+|---|---|
+| Parameter `local` | the box in the object's space; not empty. |
+| Parameter `placement` | where the object is. |
+| Returns | the world box; exact to `f64` rounding however far from the origin the object is. |
+| Fails | never. |
+
 ## `Quaternion` {#quaternion}
 
 `struct Quaternion` — defined in `engine/foundation/math/quaternion.h`

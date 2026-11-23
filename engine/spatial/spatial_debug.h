@@ -25,8 +25,8 @@ struct SpatialStats
     u32 static_depth = 0;               ///< Depth of the static tree.
     u32 dynamic_nodes = 0;              ///< Nodes of the dynamic tree (0 for a grid).
     u32 dynamic_height = 0;             ///< Height of the dynamic tree.
-    f32 dynamic_sah_cost = 0.0f;        ///< The dynamic tree's SAH cost now (the quality metric: grows as it degrades).
-    f32 dynamic_built_sah_cost = 0.0f;  ///< And right after its last full build.
+    f64 dynamic_sah_cost = 0.0f;        ///< The dynamic tree's SAH cost now (the quality metric: grows as it degrades).
+    f64 dynamic_built_sah_cost = 0.0f;  ///< And right after its last full build.
     u64 moves = 0;                      ///< Moves of dynamic items.
     u64 reinserts = 0;                  ///< Of those, the moves that re-inserted a leaf.
     u64 full_rebuilds = 0;              ///< Full rebuilds of the dynamic tree.
@@ -45,8 +45,8 @@ SpatialStats DescribeSet(const SpatialSet& set);
 /// - Thread-safety: thread-compatible plain data.
 struct DebugLine
 {
-    Vec3 a;         ///< One end.
-    Vec3 b;         ///< The other end.
+    Vec3d a;        ///< One end.
+    Vec3d b;        ///< The other end.
     u32 color = 0;  ///< 0xAABBGGRR.
 };
 
@@ -65,8 +65,8 @@ struct DebugOptions
     bool items = true;       ///< The boxes of the items.
     u32 max_lines = 100000;  ///< Stops adding lines past this many (a drawing of a huge set would flood the line pass).
     bool has_query = false;  ///< Draw `query` too.
-    Aabb query;              ///< A query volume to show.
-    Span<const Aabb> hits;   ///< Boxes of the items a query found, drawn in the hit color.
+    Aabbd query;             ///< A query volume to show.
+    Span<const Aabbd> hits;  ///< Boxes of the items a query found, drawn in the hit color.
 };
 
 /// Appends the 12 edges of a box.
@@ -76,7 +76,7 @@ struct DebugOptions
 /// - Param out: receives the lines.
 /// - Fails: never.
 /// - Ownership: `out` is borrowed for the call.
-void AppendBoxLines(const Aabb& box, u32 color, Vector<DebugLine>* out);
+void AppendBoxLines(const Aabbd& box, u32 color, Vector<DebugLine>* out);
 
 /// Produces line segments that show a set: the node boxes, the item boxes, a query volume and its hits.
 ///

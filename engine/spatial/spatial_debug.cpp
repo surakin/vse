@@ -27,12 +27,13 @@ SpatialStats DescribeSet(const SpatialSet& set)
     return s;
 }
 
-void AppendBoxLines(const Aabb& box, u32 color, Vector<DebugLine>* out)
+void AppendBoxLines(const Aabbd& box, u32 color, Vector<DebugLine>* out)
 {
-    const Vec3 lo = box.min;
-    const Vec3 hi = box.max;
-    const Vec3 c[8] = {Vec3(lo.x, lo.y, lo.z), Vec3(hi.x, lo.y, lo.z), Vec3(hi.x, hi.y, lo.z), Vec3(lo.x, hi.y, lo.z),
-                       Vec3(lo.x, lo.y, hi.z), Vec3(hi.x, lo.y, hi.z), Vec3(hi.x, hi.y, hi.z), Vec3(lo.x, hi.y, hi.z)};
+    const Vec3d lo = box.min;
+    const Vec3d hi = box.max;
+    const Vec3d c[8] = {Vec3d(lo.x, lo.y, lo.z), Vec3d(hi.x, lo.y, lo.z), Vec3d(hi.x, hi.y, lo.z),
+                        Vec3d(lo.x, hi.y, lo.z), Vec3d(lo.x, lo.y, hi.z), Vec3d(hi.x, lo.y, hi.z),
+                        Vec3d(hi.x, hi.y, hi.z), Vec3d(lo.x, hi.y, hi.z)};
     const u32 edges[12][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6},
                               {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
     for (const auto& e : edges)
@@ -61,7 +62,7 @@ usize DebugLines(const SpatialSet& set, const DebugOptions& options, Vector<Debu
     if (options.nodes)
     {
         set.Traverse(
-            [&](const Aabb& node)
+            [&](const Aabbd& node)
             {
                 if (!room())
                 {
@@ -81,7 +82,7 @@ usize DebugLines(const SpatialSet& set, const DebugOptions& options, Vector<Debu
     }
     else if (options.items)
     {
-        set.Traverse([](const Aabb&) { return NodeVisit::Descend; },
+        set.Traverse([](const Aabbd&) { return NodeVisit::Descend; },
                      [&](SetHandle, const Item& item)
                      {
                          if (room())
@@ -136,7 +137,7 @@ SpatialSetConfig SetConfigFromSettings(const settings::Registry& registry)
     const settings::SettingId id = registry.Find(StringView("spatial.fat_margin"));
     if (id.IsValid())
     {
-        config.bvh.fat_margin = static_cast<f32>(settings::Setting<f64>(registry, id).Get());
+        config.bvh.fat_margin = static_cast<f64>(settings::Setting<f64>(registry, id).Get());
     }
     return config;
 }
