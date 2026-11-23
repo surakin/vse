@@ -216,6 +216,11 @@ public:
         sky.color = background;
         SetSky(sky, sky_reflection);
     }
+    /// Sets the exposure of the tone map for the next frames, leaving the sky as it is.
+    ///
+    /// - Param exposure: positive.
+    /// - Fails: never.
+    void SetExposure(f32 exposure) { exposure_ = exposure; }
     /// Sets the sky for the next frames: a flat colour (the lit surfaces reflect it as `SetEnvironment` says), a
     /// procedural gradient with a sun, or nothing. A per-frame value: no pipeline or resource is rebuilt.
     ///

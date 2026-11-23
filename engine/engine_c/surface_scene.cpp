@@ -375,9 +375,36 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
     {
         ambient_ = scene_->AddLight(ambient);
     }
-    frame_.SetEnvironment(environment.exposure,
-                          Vec3(environment.sky_color[0], environment.sky_color[1], environment.sky_color[2]),
-                          environment.reflection_intensity);
+    if (environment.sky_mode == ENGINE_SKY_PROCEDURAL)
+    {
+        renderer::SkySettings sky;
+        sky.mode = renderer::SkyMode::Procedural;
+        sky.zenith = Vec3(environment.sky_zenith[0], environment.sky_zenith[1], environment.sky_zenith[2]);
+        sky.horizon = Vec3(environment.sky_horizon[0], environment.sky_horizon[1], environment.sky_horizon[2]);
+        sky.ground = Vec3(environment.sky_ground[0], environment.sky_ground[1], environment.sky_ground[2]);
+        sky.sun_direction = Vec3(environment.sun_direction[0], environment.sun_direction[1],
+                                 environment.sun_direction[2]);
+        sky.sun_color = Vec3(environment.sun_color[0], environment.sun_color[1], environment.sun_color[2]);
+        sky.sun_size = environment.sun_size;
+        sky.horizon_blend = environment.sky_horizon_blend;
+        sky.exposure = environment.sky_exposure;
+        sky.ambient_intensity = environment.sky_ambient_intensity;
+        frame_.SetExposure(environment.exposure);
+        frame_.SetSky(sky, environment.reflection_intensity);
+    }
+    else if (environment.sky_mode == ENGINE_SKY_NONE)
+    {
+        renderer::SkySettings sky;
+        sky.mode = renderer::SkyMode::None;
+        frame_.SetExposure(environment.exposure);
+        frame_.SetSky(sky, environment.reflection_intensity);
+    }
+    else
+    {
+        frame_.SetEnvironment(environment.exposure,
+                              Vec3(environment.sky_color[0], environment.sky_color[1], environment.sky_color[2]),
+                              environment.reflection_intensity);
+    }
     for (auto& [entity, e] : light_entries_)
     {
         e.seen = false;

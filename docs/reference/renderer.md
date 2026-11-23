@@ -12077,6 +12077,21 @@ Sets the exposure of the tone map and the linear colour behind the scene for the
 | Parameter `sky_reflection` | how much of the background the lit surfaces reflect, not negative; 0 reflects nothing. |
 | Fails | never. |
 
+### `SetExposure(f32)` {#renderer-sceneframe-setexposure-f32}
+
+`method renderer::SceneFrame::SetExposure` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+void SetExposure(f32 exposure);
+```
+
+Sets the exposure of the tone map for the next frames, leaving the sky as it is.
+
+| Field | Value |
+|---|---|
+| Parameter `exposure` | positive. |
+| Fails | never. |
+
 ### `SetSky(const SkySettings&,f32)` {#renderer-sceneframe-setsky-const-skysettings-amp-f32}
 
 `method renderer::SceneFrame::SetSky` — defined in `engine/renderer/scene_frame.h`

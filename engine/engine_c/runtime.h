@@ -132,6 +132,16 @@ struct Environment
     f32 sky_color[3] = {0.0f, 0.0f, 0.0f};
     f32 exposure = 1.0f;
     f32 reflection_intensity = 0.0f;
+    u32 sky_mode = 0;  // ENGINE_SKY_*
+    f32 sky_zenith[3] = {0.18f, 0.35f, 0.75f};
+    f32 sky_horizon[3] = {0.65f, 0.75f, 0.9f};
+    f32 sky_ground[3] = {0.25f, 0.24f, 0.22f};
+    f32 sun_direction[3] = {0.4f, 0.6f, 0.3f};
+    f32 sun_color[3] = {8.0f, 7.2f, 6.0f};
+    f32 sun_size = 0.05f;
+    f32 sky_horizon_blend = 0.1f;
+    f32 sky_exposure = 1.0f;
+    f32 sky_ambient_intensity = 1.0f;
 };
 
 /// The component of ENGINE_COMPONENT_NAME: what `entity_name_set` writes and `level_spawn` gives the nodes of a level

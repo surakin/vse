@@ -2611,10 +2611,56 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the exposure is not finite and > 0");
     }
-    const bool has_reflection = StructSizeOf(environment) >= sizeof(engine_environment);
+    const bool has_reflection = StructSizeOf(environment) >=
+                                offsetof(engine_environment, reflection_intensity) + sizeof(float);
+    const bool has_sky = StructSizeOf(environment) >= sizeof(engine_environment);
     if (has_reflection && !(Finite(environment->reflection_intensity) && environment->reflection_intensity >= 0.0f))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the reflection intensity is not finite and >= 0");
+    }
+    if (has_sky)
+    {
+        if (environment->sky_mode > ENGINE_SKY_PROCEDURAL)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky mode is not an ENGINE_SKY_* value");
+        }
+        if (environment->sky_mode == ENGINE_SKY_PROCEDURAL)
+        {
+            const float* colors[5] = {environment->sky_zenith, environment->sky_horizon, environment->sky_ground,
+                                      environment->sun_color, environment->sun_direction};
+            for (int k = 0; k < 4; ++k)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    if (!(Finite(colors[k][i]) && colors[k][i] >= 0.0f))
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a sky or sun colour is not finite and >= 0");
+                    }
+                }
+            }
+            const float* d = environment->sun_direction;
+            if (!(Finite(d[0]) && Finite(d[1]) && Finite(d[2]) && d[0] * d[0] + d[1] * d[1] + d[2] * d[2] > 1e-12f))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sun direction is not finite and non-zero");
+            }
+            if (!(Finite(environment->sun_size) && environment->sun_size > 0.0f && environment->sun_size <= 1.5707964f))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sun size is not in (0, pi / 2]");
+            }
+            if (!(Finite(environment->sky_horizon_blend) && environment->sky_horizon_blend > 0.0f &&
+                  environment->sky_horizon_blend <= 1.0f))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky horizon blend is not in (0, 1]");
+            }
+            if (!(Finite(environment->sky_exposure) && environment->sky_exposure > 0.0f))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky exposure is not finite and > 0");
+            }
+            if (!(Finite(environment->sky_ambient_intensity) && environment->sky_ambient_intensity >= 0.0f))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky ambient intensity is not finite and >= 0");
+            }
+        }
     }
     Runtime* runtime = CurrentRuntime();
     if (runtime == nullptr)
@@ -2629,6 +2675,22 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
         return found;
     }
     Environment value;
+    if (has_sky)
+    {
+        value.sky_mode = environment->sky_mode;
+        for (int i = 0; i < 3; ++i)
+        {
+            value.sky_zenith[i] = environment->sky_zenith[i];
+            value.sky_horizon[i] = environment->sky_horizon[i];
+            value.sky_ground[i] = environment->sky_ground[i];
+            value.sun_direction[i] = environment->sun_direction[i];
+            value.sun_color[i] = environment->sun_color[i];
+        }
+        value.sun_size = environment->sun_size;
+        value.sky_horizon_blend = environment->sky_horizon_blend;
+        value.sky_exposure = environment->sky_exposure;
+        value.sky_ambient_intensity = environment->sky_ambient_intensity;
+    }
     value.reflection_intensity = has_reflection ? environment->reflection_intensity : 0.0f;
     for (int i = 0; i < 3; ++i)
     {

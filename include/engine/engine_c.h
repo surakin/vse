@@ -1040,7 +1040,28 @@ extern "C"
          * first version of the struct ended before this field: a struct_size that does not cover it means 0. The
          * reflection is added on top of the diffuse and the lights, with no energy conservation. */
         float reflection_intensity;
+        /* The sky behind the scene (Phase 28): ENGINE_SKY_COLOR draws the flat sky_color (the default and what a
+         * struct_size that does not cover these fields means), ENGINE_SKY_NONE draws black, ENGINE_SKY_PROCEDURAL a
+         * gradient from sky_ground (straight down) through sky_horizon to sky_zenith (straight up) with a sun disc of
+         * sun_size radians (> 0, at most pi / 2) toward sun_direction (not zero) of radiance sun_color, and a band of
+         * sky_horizon_blend (> 0, at most 1) below the horizon. All colours linear, >= 0; sky_exposure > 0 scales the
+         * whole sky. A procedural sky also lights the world: surfaces reflect it (reflection_intensity) and take
+         * sky_ambient_intensity (>= 0) times its blurred colour as ambient light, replacing the ambient colour above
+         * when that is above 0. The fields of a mode that is not used are not checked. */
+        uint32_t sky_mode;
+        float sky_zenith[3];
+        float sky_horizon[3];
+        float sky_ground[3];
+        float sun_direction[3];
+        float sun_color[3];
+        float sun_size;
+        float sky_horizon_blend;
+        float sky_exposure;
+        float sky_ambient_intensity;
     } engine_environment;
+#define ENGINE_SKY_COLOR 0u
+#define ENGINE_SKY_NONE 1u
+#define ENGINE_SKY_PROCEDURAL 2u
 
     /* A job: called once, on one of the engine's worker threads (never on the thread that submitted it), with the
      * `user` pointer given to jobs_submit. While it runs it may call, through the table it was given: status_name,

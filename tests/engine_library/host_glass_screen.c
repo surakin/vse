@@ -111,6 +111,23 @@ static void SetEnvironment(engine_handle world, float sky_r, float sky_g, float 
     CHECK_STATUS(g_api->world_set_environment(world, &e), ENGINE_OK);
 }
 
+/* the flat sky colour is green; a procedural sky of one red colour (no sun) or no sky at all replaces it */
+static void SetSky(engine_handle world, uint32_t mode, int old_size)
+{
+    engine_environment e;
+    memset(&e, 0, sizeof(e));
+    e.struct_size = old_size ? (uint32_t)offsetof(engine_environment, reflection_intensity) + sizeof(float) : sizeof(e);
+    e.sky_color[1] = 0.5f;
+    e.exposure = 1.0f;
+    e.sky_mode = mode;
+    e.sky_zenith[0] = e.sky_horizon[0] = e.sky_ground[0] = 0.5f;
+    e.sun_direction[1] = 1.0f;
+    e.sun_size = 0.05f;
+    e.sky_horizon_blend = 0.1f;
+    e.sky_exposure = 1.0f;
+    CHECK_STATUS(g_api->world_set_environment(world, &e), ENGINE_OK);
+}
+
 static void SetFloat(engine_handle world, uint64_t key, const char* slot, float v)
 {
     engine_slot_override o;
@@ -377,6 +394,31 @@ int main(void)
     Rotate(world, root, 78.0f);
     PixelAt(engine, surface, W / 2, H / 2, c);
     CHECK(c[1] < 5); /* the reflection stayed 0: black, not the 138 an applied 5.0 would give */
+
+    /* 4. the sky: a procedural sky replaces the flat colour, none is black, an old struct keeps the flat colour */
+    Rotate(world, root, 0.0f);
+    SetSky(world, ENGINE_SKY_COLOR, 0);
+    PixelAt(engine, surface, 1, 1, c);
+    CHECK(c[1] > 60 && c[0] < 10 && c[2] < 10);
+    SetSky(world, ENGINE_SKY_PROCEDURAL, 0);
+    PixelAt(engine, surface, 1, 1, c);
+    CHECK(c[0] > 60 && c[1] < 10 && c[2] < 10);
+    SetSky(world, ENGINE_SKY_NONE, 0);
+    PixelAt(engine, surface, 1, 1, c);
+    CHECK(c[0] < 8 && c[1] < 8 && c[2] < 8);
+    SetSky(world, ENGINE_SKY_PROCEDURAL, 1); /* the struct ends before the sky fields: the flat colour stays */
+    PixelAt(engine, surface, 1, 1, c);
+    CHECK(c[1] > 60 && c[0] < 10);
+    {
+        engine_environment bad;
+        memset(&bad, 0, sizeof(bad));
+        bad.struct_size = sizeof(bad);
+        bad.exposure = 1.0f;
+        bad.sky_mode = ENGINE_SKY_PROCEDURAL; /* sun_size 0 and the other fields are not valid */
+        CHECK(g_api->world_set_environment(world, &bad) == ENGINE_ERROR_INVALID_ARGUMENT);
+        bad.sky_mode = 7;
+        CHECK(g_api->world_set_environment(world, &bad) == ENGINE_ERROR_INVALID_ARGUMENT);
+    }
 
     CHECK_STATUS(g_api->surface_destroy(surface), ENGINE_OK);
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);

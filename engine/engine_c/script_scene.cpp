@@ -32,6 +32,16 @@ constexpr u32 kEnvAmbientIntensity = 1u << 1;
 constexpr u32 kEnvSkyColor = 1u << 2;
 constexpr u32 kEnvExposure = 1u << 3;
 constexpr u32 kEnvReflection = 1u << 4;
+constexpr u32 kEnvSkyMode = 1u << 5;
+constexpr u32 kEnvSkyZenith = 1u << 6;
+constexpr u32 kEnvSkyHorizon = 1u << 7;
+constexpr u32 kEnvSkyGround = 1u << 8;
+constexpr u32 kEnvSunDirection = 1u << 9;
+constexpr u32 kEnvSunColor = 1u << 10;
+constexpr u32 kEnvSunSize = 1u << 11;
+constexpr u32 kEnvSkyHorizonBlend = 1u << 12;
+constexpr u32 kEnvSkyExposure = 1u << 13;
+constexpr u32 kEnvSkyAmbient = 1u << 14;
 constexpr u32 kLightColor = 1u << 0;
 constexpr u32 kLightIntensity = 1u << 1;
 constexpr u32 kLightRadius = 1u << 2;
@@ -49,6 +59,16 @@ struct EnvironmentPayload
     f32 sky_color[3];
     f32 exposure;
     f32 reflection_intensity;
+    f32 sky_mode;  // ENGINE_SKY_*, a whole number
+    f32 sky_zenith[3];
+    f32 sky_horizon[3];
+    f32 sky_ground[3];
+    f32 sun_direction[3];
+    f32 sun_color[3];
+    f32 sun_size;
+    f32 sky_horizon_blend;
+    f32 sky_exposure;
+    f32 sky_ambient_intensity;
 };
 
 struct LightPayload
@@ -212,6 +232,57 @@ bool EnvironmentValid(const EnvironmentPayload& p)
         script::RaiseScriptError("the environment's `exposure` must be finite and above 0");
         return false;
     }
+    if ((p.mask & kEnvSkyMode) != 0 && !(p.sky_mode == 0.0f || p.sky_mode == 1.0f || p.sky_mode == 2.0f))
+    {
+        script::RaiseScriptError(
+            "the environment's `sky_mode` must be 0 (the flat `sky_color`), 1 (none) or 2 (procedural)");
+        return false;
+    }
+    const struct
+    {
+        u32 bit;
+        const f32* value;
+        const char* name;
+    } colors[] = {{kEnvSkyZenith, p.sky_zenith, "sky_zenith"},
+                  {kEnvSkyHorizon, p.sky_horizon, "sky_horizon"},
+                  {kEnvSkyGround, p.sky_ground, "sky_ground"},
+                  {kEnvSunColor, p.sun_color, "sun_color"}};
+    for (const auto& c : colors)
+    {
+        if ((p.mask & c.bit) != 0 && !SceneColorValid(c.value))
+        {
+            script::RaiseScriptError("a sky or sun colour of the environment must be finite and at least 0");
+            return false;
+        }
+    }
+    if ((p.mask & kEnvSunDirection) != 0 &&
+        !(p.sun_direction[0] * p.sun_direction[0] + p.sun_direction[1] * p.sun_direction[1] +
+              p.sun_direction[2] * p.sun_direction[2] >
+          1e-12f))
+    {
+        script::RaiseScriptError("the environment's `sun_direction` must not be zero");
+        return false;
+    }
+    if ((p.mask & kEnvSunSize) != 0 && !(p.sun_size > 0.0f && p.sun_size <= kMaxSpotCone))
+    {
+        script::RaiseScriptError("the environment's `sun_size` must be in (0, pi / 2]");
+        return false;
+    }
+    if ((p.mask & kEnvSkyHorizonBlend) != 0 && !(p.sky_horizon_blend > 0.0f && p.sky_horizon_blend <= 1.0f))
+    {
+        script::RaiseScriptError("the environment's `sky_horizon_blend` must be in (0, 1]");
+        return false;
+    }
+    if ((p.mask & kEnvSkyExposure) != 0 && !(p.sky_exposure > 0.0f))
+    {
+        script::RaiseScriptError("the environment's `sky_exposure` must be above 0");
+        return false;
+    }
+    if ((p.mask & kEnvSkyAmbient) != 0 && !(p.sky_ambient_intensity >= 0.0f))
+    {
+        script::RaiseScriptError("the environment's `sky_ambient_intensity` must be at least 0");
+        return false;
+    }
     return true;
 }
 
@@ -227,8 +298,11 @@ void EnvironmentSet(Value fields)
         script::RaiseScriptError("environment.set takes a table of fields");
         return;
     }
-    static const char* const kAllowed[] = {"ambient_color", "ambient_intensity",    "sky_color",
-                                           "exposure",      "reflection_intensity", nullptr};
+    static const char* const kAllowed[] = {
+        "ambient_color", "ambient_intensity", "sky_color",         "exposure",     "reflection_intensity",
+        "sky_mode",      "sky_zenith",        "sky_horizon",       "sky_ground",   "sun_direction",
+        "sun_color",     "sun_size",          "sky_horizon_blend", "sky_exposure", "sky_ambient_intensity",
+        nullptr};
     if (!SceneKnownKeys(fields, StringView("environment"), kAllowed))
     {
         return;
@@ -244,6 +318,26 @@ void EnvironmentSet(Value fields)
                          &p.mask) ||
         !SceneReadNumber(fields, StringView("environment"), StringView("reflection_intensity"), kEnvReflection,
                          &p.reflection_intensity, &p.mask) ||
+        !SceneReadNumber(fields, StringView("environment"), StringView("sky_mode"), kEnvSkyMode, &p.sky_mode,
+                         &p.mask) ||
+        !SceneReadVec3(fields, StringView("environment"), StringView("sky_zenith"), kEnvSkyZenith, p.sky_zenith,
+                       &p.mask) ||
+        !SceneReadVec3(fields, StringView("environment"), StringView("sky_horizon"), kEnvSkyHorizon, p.sky_horizon,
+                       &p.mask) ||
+        !SceneReadVec3(fields, StringView("environment"), StringView("sky_ground"), kEnvSkyGround, p.sky_ground,
+                       &p.mask) ||
+        !SceneReadVec3(fields, StringView("environment"), StringView("sun_direction"), kEnvSunDirection,
+                       p.sun_direction, &p.mask) ||
+        !SceneReadVec3(fields, StringView("environment"), StringView("sun_color"), kEnvSunColor, p.sun_color,
+                       &p.mask) ||
+        !SceneReadNumber(fields, StringView("environment"), StringView("sun_size"), kEnvSunSize, &p.sun_size,
+                         &p.mask) ||
+        !SceneReadNumber(fields, StringView("environment"), StringView("sky_horizon_blend"), kEnvSkyHorizonBlend,
+                         &p.sky_horizon_blend, &p.mask) ||
+        !SceneReadNumber(fields, StringView("environment"), StringView("sky_exposure"), kEnvSkyExposure,
+                         &p.sky_exposure, &p.mask) ||
+        !SceneReadNumber(fields, StringView("environment"), StringView("sky_ambient_intensity"), kEnvSkyAmbient,
+                         &p.sky_ambient_intensity, &p.mask) ||
         !EnvironmentValid(p))
     {
         return;
@@ -271,6 +365,16 @@ Value EnvironmentGet()
     map.Set("sky_color", Value::FromVec3(Vec3(e.sky_color[0], e.sky_color[1], e.sky_color[2])));
     map.Set("exposure", Value::FromFloat(e.exposure));
     map.Set("reflection_intensity", Value::FromFloat(e.reflection_intensity));
+    map.Set("sky_mode", Value::FromFloat(static_cast<f32>(e.sky_mode)));
+    map.Set("sky_zenith", Value::FromVec3(Vec3(e.sky_zenith[0], e.sky_zenith[1], e.sky_zenith[2])));
+    map.Set("sky_horizon", Value::FromVec3(Vec3(e.sky_horizon[0], e.sky_horizon[1], e.sky_horizon[2])));
+    map.Set("sky_ground", Value::FromVec3(Vec3(e.sky_ground[0], e.sky_ground[1], e.sky_ground[2])));
+    map.Set("sun_direction", Value::FromVec3(Vec3(e.sun_direction[0], e.sun_direction[1], e.sun_direction[2])));
+    map.Set("sun_color", Value::FromVec3(Vec3(e.sun_color[0], e.sun_color[1], e.sun_color[2])));
+    map.Set("sun_size", Value::FromFloat(e.sun_size));
+    map.Set("sky_horizon_blend", Value::FromFloat(e.sky_horizon_blend));
+    map.Set("sky_exposure", Value::FromFloat(e.sky_exposure));
+    map.Set("sky_ambient_intensity", Value::FromFloat(e.sky_ambient_intensity));
     return map;
 }
 
@@ -306,6 +410,46 @@ bool ApplyEnvironmentSet(MergeContext& context, ecs::Entity, Span<const u8> payl
     if ((p.mask & kEnvReflection) != 0)
     {
         e.reflection_intensity = p.reflection_intensity;
+    }
+    if ((p.mask & kEnvSkyMode) != 0)
+    {
+        e.sky_mode = static_cast<u32>(p.sky_mode);
+    }
+    if ((p.mask & kEnvSkyZenith) != 0)
+    {
+        MemCopy(e.sky_zenith, p.sky_zenith, sizeof(e.sky_zenith));
+    }
+    if ((p.mask & kEnvSkyHorizon) != 0)
+    {
+        MemCopy(e.sky_horizon, p.sky_horizon, sizeof(e.sky_horizon));
+    }
+    if ((p.mask & kEnvSkyGround) != 0)
+    {
+        MemCopy(e.sky_ground, p.sky_ground, sizeof(e.sky_ground));
+    }
+    if ((p.mask & kEnvSunDirection) != 0)
+    {
+        MemCopy(e.sun_direction, p.sun_direction, sizeof(e.sun_direction));
+    }
+    if ((p.mask & kEnvSunColor) != 0)
+    {
+        MemCopy(e.sun_color, p.sun_color, sizeof(e.sun_color));
+    }
+    if ((p.mask & kEnvSunSize) != 0)
+    {
+        e.sun_size = p.sun_size;
+    }
+    if ((p.mask & kEnvSkyHorizonBlend) != 0)
+    {
+        e.sky_horizon_blend = p.sky_horizon_blend;
+    }
+    if ((p.mask & kEnvSkyExposure) != 0)
+    {
+        e.sky_exposure = p.sky_exposure;
+    }
+    if ((p.mask & kEnvSkyAmbient) != 0)
+    {
+        e.sky_ambient_intensity = p.sky_ambient_intensity;
     }
     services->object->environment_set = true;  // as `world_set_environment`: the default sun goes
     return true;
@@ -557,14 +701,20 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "Changes the world's environment at the sync point; every surface that shows the world uses it from its next "
         "frame. `fields` is a table with any of `ambient_color` (a vec3, linear RGB, at least 0), `ambient_intensity` "
         "(at least 0), `sky_color` (a vec3, at least 0), `exposure` (above 0) and `reflection_intensity` (at least 0: "
-        "how much of the sky the lit surfaces reflect with a Fresnel term, 0 by default); a field left out keeps its "
+        "how much of the sky the lit surfaces reflect with a Fresnel term, 0 by default) and the sky: `sky_mode` (0 "
+        "draws the flat `sky_color`, 1 nothing, 2 a procedural sky), `sky_zenith`, `sky_horizon`, `sky_ground`, "
+        "`sun_color` (vec3s, at least 0), `sun_direction` (a vec3, not zero), `sun_size` (radians, above 0, at most "
+        "pi/2), `sky_horizon_blend` (above 0, at most 1), `sky_exposure` (above 0) and `sky_ambient_intensity` (at "
+        "least 0: the sky's blurred colour as ambient light, replacing `ambient_color` when above 0); a field left out keeps its "
         "value, and calling it every tick is fine. An unknown field or a value out of range is an error naming it. As "
         "`world_set_environment` in the C API, it also removes the default sun of a world with no light. When the "
         "host and a script both set the environment, the later write wins: the host's call happens between frames, "
         "the script's at the sync point inside the next frame.");
-    ok &= registry->Add<&EnvironmentGet>("environment", "get", ThreadRule::WorldRead, "",
-                                         "Returns a table with `ambient_color`, `ambient_intensity`, `sky_color`, "
-                                         "`exposure` and `reflection_intensity` as of the tick start.");
+    ok &= registry->Add<&EnvironmentGet>(
+        "environment", "get", ThreadRule::WorldRead, "",
+        "Returns a table with `ambient_color`, `ambient_intensity`, `sky_color`, "
+        "`exposure`, `reflection_intensity` and the sky fields (`sky_mode` ... `sky_ambient_intensity`) as of the tick "
+        "start.");
     ok &= registry->Add<&LightSet>(
         "light", "set", ThreadRule::WorldWrite, "e, fields",
         "Changes fields of the light of entity `e` at the sync point: any of `color` (a vec3, linear RGB, at least "

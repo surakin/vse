@@ -143,14 +143,21 @@ static const char kScript[] =
     "                  env.ambient_intensity)\n"
     "      light.set(self.me, {intensity = 0.5})\n"
     "    elseif t == 3 then\n"
-    "      environment.set({ambient_intensity = 0.7, reflection_intensity = 0.25})\n"
+    "      environment.set({ambient_intensity = 0.7, reflection_intensity = 0.25, sky_mode = 2,\n"
+    "                       sky_zenith = vec3.new(0.4, 0.5, 0.6), sun_size = 0.1, sky_exposure = 1.5,\n"
+    "                       sky_ambient_intensity = 0.5})\n"
     "    elseif t == 4 then\n"
     "      report(4, env.sky_color.y, env.exposure, env.ambient_intensity, env.ambient_color.x, env.reflection_intensity)\n"
+    "      report(10, env.sky_mode, env.sky_zenith.x, env.sky_zenith.z, env.sun_size, env.sky_exposure,\n"
+    "                 env.sky_ambient_intensity, env.sky_horizon.y, env.sky_horizon_blend)\n"
     "    elseif t == 5 then\n"
     "      -- the errors\n"
     "      local a = fails(environment.set, {bogus = 1})\n"
     "      local b = fails(environment.set, {exposure = -1})\n"
     "      local c = fails(environment.set, {sky_color = 1})\n"
+    "      report(11, has(fails(environment.set, {sky_mode = 3}), 'sky_mode'),\n"
+    "                 has(fails(environment.set, {sun_size = 0}), 'sun_size'),\n"
+    "                 has(fails(environment.set, {sun_direction = vec3.new(0, 0, 0)}), 'sun_direction'))\n"
     "      local d = fails(light.set, self.me, {intensity = -1})\n"
     "      local e = fails(light.set, self.me, {color = vec3.new(1, -1, 1)})\n"
     "      local f = fails(light.set, self.me, {nope = 1})\n"
@@ -281,6 +288,11 @@ static void TestState(engine_handle engine)
         }
         CHECK(Near(g_rows[5].v[k], 1.0));
     }
+    /* the sky fields: set at tick 3, read at tick 4; the defaults of the others */
+    CHECK(g_rows[10].seen && Near(g_rows[10].v[0], 2.0) && Near(g_rows[10].v[1], 0.4) && Near(g_rows[10].v[2], 0.6) &&
+          Near(g_rows[10].v[3], 0.1) && Near(g_rows[10].v[4], 1.5) && Near(g_rows[10].v[5], 0.5) &&
+          Near(g_rows[10].v[6], 0.75) && Near(g_rows[10].v[7], 0.1));
+    CHECK(g_rows[11].seen && Near(g_rows[11].v[0], 1.0) && Near(g_rows[11].v[1], 1.0) && Near(g_rows[11].v[2], 1.0));
     CHECK(g_rows[6].seen && Near(g_rows[6].v[0], 1.0));
 
     /* the child's light (made in tick 1 on an entity spawned in that tick) is the one tick 2 set */
