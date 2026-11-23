@@ -13,8 +13,14 @@ namespace vse::ecs
 namespace
 {
 
-bool SameMatrix(const Mat4& a, const Mat4& b)
+bool SameWorld(const WorldTransform& wa, const WorldTransform& wb)
 {
+    if (wa.position != wb.position)
+    {
+        return false;
+    }
+    const Mat4& a = wa.matrix;
+    const Mat4& b = wb.matrix;
     for (int c = 0; c < 4; ++c)
     {
         if (a.col[c].x != b.col[c].x || a.col[c].y != b.col[c].y || a.col[c].z != b.col[c].z ||
@@ -159,10 +165,69 @@ void RebaseDepths(World& world, const Vector<Below>& below, u32 root_depth)
 
 }  // namespace
 
+Placement LocalTransform::ToPlacement() const
+{
+    Transform t;
+    t.rotation = rotation;
+    t.scale = scale;
+    return Placement::From(position, t.ToMatrix());
+}
+
+Placement WorldTransform::ToPlacement() const
+{
+    return Placement::From(position, matrix);
+}
+
+WorldTransform WorldTransform::FromPlacement(const Placement& placement)
+{
+    WorldTransform w;
+    w.matrix = placement.RelativeTo(Vec3d(0, 0, 0));
+    w.position = placement.position;
+    return w;
+}
+
+WorldTransform WorldTransform::FromMatrix(const Mat4& m)
+{
+    WorldTransform w;
+    w.matrix = m;
+    w.position = Vec3d(m.col[3].x, m.col[3].y, m.col[3].z);
+    return w;
+}
+
+namespace
+{
+
+// The world transform of `local` under `above` (null for a root): the rotation and scale multiply in single
+// precision, the translation is `above.position + above.linear * local.position` in double precision.
+WorldTransform ComposeWorld(const WorldTransform* above, const LocalTransform& local)
+{
+    WorldTransform w;
+    if (above == nullptr)
+    {
+        w.matrix = local.ToMatrix();
+        w.position = local.position;
+        return w;
+    }
+    w.matrix = above->matrix * local.ToMatrix();
+    const Mat4& a = above->matrix;
+    const Vec3d& p = local.position;
+    w.position = Vec3d(above->position.x + static_cast<f64>(a.col[0].x) * p.x + static_cast<f64>(a.col[1].x) * p.y +
+                           static_cast<f64>(a.col[2].x) * p.z,
+                       above->position.y + static_cast<f64>(a.col[0].y) * p.x + static_cast<f64>(a.col[1].y) * p.y +
+                           static_cast<f64>(a.col[2].y) * p.z,
+                       above->position.z + static_cast<f64>(a.col[0].z) * p.x + static_cast<f64>(a.col[1].z) * p.y +
+                           static_cast<f64>(a.col[2].z) * p.z);
+    w.matrix.col[3] = Vec4(static_cast<f32>(w.position.x), static_cast<f32>(w.position.y),
+                           static_cast<f32>(w.position.z), 1.0f);
+    return w;
+}
+
+}  // namespace
+
 Mat4 LocalTransform::ToMatrix() const
 {
     Transform t;
-    t.position = position;
+    t.position = position.Narrow();
     t.rotation = rotation;
     t.scale = scale;
     return t.ToMatrix();
@@ -174,7 +239,7 @@ LocalTransform Decompose(const Mat4& m)
     const Vec3 x(m.col[0].x, m.col[0].y, m.col[0].z);
     const Vec3 y(m.col[1].x, m.col[1].y, m.col[1].z);
     const Vec3 z(m.col[2].x, m.col[2].y, m.col[2].z);
-    out.position = Vec3(m.col[3].x, m.col[3].y, m.col[3].z);
+    out.position = Vec3d(m.col[3].x, m.col[3].y, m.col[3].z);
     out.scale = Vec3(x.Length(), y.Length(), z.Length());
     if (out.scale.x > 0.0f && out.scale.y > 0.0f && out.scale.z > 0.0f)
     {
@@ -190,7 +255,7 @@ LocalTransform Decompose(const Mat4& m)
 LocalTransform LookAt(const Vec3& eye, const Vec3& target, const Vec3& up)
 {
     LocalTransform out;
-    out.position = eye;
+    out.position = eye;  // widened (exact)
     const Vec3 toward = target - eye;
     if (toward.LengthSquared() == 0.0f)
     {
@@ -387,10 +452,10 @@ public:
                                          u64 wrote = 0;
                                          for (usize i = 0; i < locals.Size(); ++i)
                                          {
-                                             const Mat4 m = locals[i].ToMatrix();
-                                             if (!SameMatrix(worlds[i].matrix, m))
+                                             const WorldTransform w = ComposeWorld(nullptr, locals[i]);
+                                             if (!SameWorld(worlds[i], w))
                                              {
-                                                 worlds[i].matrix = m;
+                                                 worlds[i] = w;
                                                  any = true;
                                                  ++wrote;
                                              }
@@ -528,10 +593,10 @@ private:
                         continue;
                     }
                     const WorldTransform* above = context.Peek<WorldTransform>(link->entity);
-                    const Mat4 m = above == nullptr ? local->ToMatrix() : above->matrix * local->ToMatrix();
-                    if (!SameMatrix(mine->matrix, m))
+                    const WorldTransform w = ComposeWorld(above, *local);
+                    if (!SameWorld(*mine, w))
                     {
-                        mine->matrix = m;
+                        *mine = w;
                         flags_[i] = 1;
                         ++wrote;
                     }

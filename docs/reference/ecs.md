@@ -3801,10 +3801,10 @@ An entity's place relative to its parent (or to the world for a root): scale, th
 `variable ecs::LocalTransform::position` — defined in `engine/ecs/transform.h`
 
 ```cpp
-Vec3 position;
+Vec3d position;
 ```
 
-Translation, applied last.
+Translation, applied last. Double precision: a world root far from the origin keeps its position.
 
 ### `rotation` {#ecs-localtransform-rotation}
 
@@ -3834,7 +3834,21 @@ Per-axis scale, applied first.
 Mat4 ToMatrix() const;
 ```
 
-The matrix that scales, then rotates, then translates (column-vector convention, as in `math/transform.h`).
+The matrix that scales, then rotates, then translates (column-vector convention, as in `math/transform.h`); the translation is `position` narrowed to single precision.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `ToPlacement()` {#ecs-localtransform-toplacement-const}
+
+`method ecs::LocalTransform::ToPlacement` — defined in `engine/ecs/transform.h`
+
+```cpp
+Placement ToPlacement() const;
+```
+
+The same transform as a [`Placement`](foundation-math.md#placement): the rotation and scale in single precision, the position exact.
 
 | Field | Value |
 |---|---|
@@ -3863,7 +3877,59 @@ An entity's place in the world: its parents' matrices times its own. Written by 
 Mat4 matrix;
 ```
 
-The local-to-world matrix.
+The local-to-world matrix: the rotation and scale, and the translation as `position` narrowed to single precision (exact only near the origin). Readers that work in single precision use it; the renderer's camera-relative path and the physics bodies use `position`.
+
+### `position` {#ecs-worldtransform-position}
+
+`variable ecs::WorldTransform::position` — defined in `engine/ecs/transform.h`
+
+```cpp
+Vec3d position;
+```
+
+The exact world position of the entity's origin (the translation of the world transform in double precision). Written with `matrix` by the propagation.
+
+### `ToPlacement()` {#ecs-worldtransform-toplacement-const}
+
+`method ecs::WorldTransform::ToPlacement` — defined in `engine/ecs/transform.h`
+
+```cpp
+Placement ToPlacement() const;
+```
+
+The transform as a [`Placement`](foundation-math.md#placement) (the linear block of `matrix` and the exact position).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `FromPlacement(const Placement&)` {#ecs-worldtransform-fromplacement-const-placement-amp}
+
+`method ecs::WorldTransform::FromPlacement` — defined in `engine/ecs/transform.h`
+
+```cpp
+static WorldTransform FromPlacement(const Placement& placement);
+```
+
+Makes the world transform of a placement (its `matrix` gets the position narrowed).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `FromMatrix(const Mat4&)` {#ecs-worldtransform-frommatrix-const-mat4-amp}
+
+`method ecs::WorldTransform::FromMatrix` — defined in `engine/ecs/transform.h`
+
+```cpp
+static WorldTransform FromMatrix(const Mat4& matrix);
+```
+
+Makes the world transform of a single-precision matrix: `matrix` is it, `position` its translation widened (for code that places an entity by hand, without the propagation).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ## `Parent` {#ecs-parent}
 

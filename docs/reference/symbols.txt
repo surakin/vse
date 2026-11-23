@@ -4577,41 +4577,46 @@ ecs::Schedule::StatsOf(const char*) const	function	ecs	ecs-schedule-statsof-cons
 ecs::Schedule::Stats() const	function	ecs	ecs-schedule-stats-const	ecs.md	engine/ecs/schedule.h:772
 ecs::Schedule::ParallelRequested() const	function	ecs	ecs-schedule-parallelrequested-const	ecs.md	engine/ecs/schedule.h:776
 ecs::Schedule::HeapFallbacks()	function	ecs	ecs-schedule-heapfallbacks	ecs.md	engine/ecs/schedule.h:779
-ecs::kMaxHierarchyDepth	variable	ecs	ecs-kmaxhierarchydepth	ecs.md	engine/ecs/transform.h:19
-ecs::LocalTransform	struct	ecs	ecs-localtransform	ecs.md	engine/ecs/transform.h:25
-ecs::LocalTransform::position	variable	ecs	ecs-localtransform-position	ecs.md	engine/ecs/transform.h:28
-ecs::LocalTransform::rotation	variable	ecs	ecs-localtransform-rotation	ecs.md	engine/ecs/transform.h:30
-ecs::LocalTransform::scale	variable	ecs	ecs-localtransform-scale	ecs.md	engine/ecs/transform.h:32
-ecs::LocalTransform::ToMatrix() const	function	ecs	ecs-localtransform-tomatrix-const	ecs.md	engine/ecs/transform.h:36
-ecs::WorldTransform	struct	ecs	ecs-worldtransform	ecs.md	engine/ecs/transform.h:44
-ecs::WorldTransform::matrix	variable	ecs	ecs-worldtransform-matrix	ecs.md	engine/ecs/transform.h:47
-ecs::Parent	struct	ecs	ecs-parent	ecs.md	engine/ecs/transform.h:55
-ecs::Parent::entity	variable	ecs	ecs-parent-entity	ecs.md	engine/ecs/transform.h:58
-ecs::HierarchyDepth	struct	ecs	ecs-hierarchydepth	ecs.md	engine/ecs/transform.h:66
-ecs::HierarchyDepth::depth	variable	ecs	ecs-hierarchydepth-depth	ecs.md	engine/ecs/transform.h:69
-ecs::TransformReport	struct	ecs	ecs-transformreport	ecs.md	engine/ecs/transform.h:77
-ecs::TransformReport::frames	variable	ecs	ecs-transformreport-frames	ecs.md	engine/ecs/transform.h:80
-ecs::TransformReport::recomputed	variable	ecs	ecs-transformreport-recomputed	ecs.md	engine/ecs/transform.h:82
-ecs::TransformReport::written	variable	ecs	ecs-transformreport-written	ecs.md	engine/ecs/transform.h:84
-ecs::TransformReport::dangling_fixed	variable	ecs	ecs-transformreport-dangling-fixed	ecs.md	engine/ecs/transform.h:86
-ecs::TransformReport::depth_repaired	variable	ecs	ecs-transformreport-depth-repaired	ecs.md	engine/ecs/transform.h:88
-ecs::TransformReport::unresolved	variable	ecs	ecs-transformreport-unresolved	ecs.md	engine/ecs/transform.h:90
-ecs::TransformReport::index_rebuilds	variable	ecs	ecs-transformreport-index-rebuilds	ecs.md	engine/ecs/transform.h:93
-ecs::TransformReport::refused_depth	variable	ecs	ecs-transformreport-refused-depth	ecs.md	engine/ecs/transform.h:95
-ecs::HierarchyStatus	enum	ecs	ecs-hierarchystatus	ecs.md	engine/ecs/transform.h:99
-ecs::HierarchyStatus::Ok	enumerator	ecs	ecs-hierarchystatus-ok	ecs.md	engine/ecs/transform.h:102
-ecs::HierarchyStatus::DeadEntity	enumerator	ecs	ecs-hierarchystatus-deadentity	ecs.md	engine/ecs/transform.h:104
-ecs::HierarchyStatus::SelfParent	enumerator	ecs	ecs-hierarchystatus-selfparent	ecs.md	engine/ecs/transform.h:106
-ecs::HierarchyStatus::Cycle	enumerator	ecs	ecs-hierarchystatus-cycle	ecs.md	engine/ecs/transform.h:108
-ecs::HierarchyStatus::TooDeep	enumerator	ecs	ecs-hierarchystatus-toodeep	ecs.md	engine/ecs/transform.h:111
-ecs::HierarchyStatus::Refused	enumerator	ecs	ecs-hierarchystatus-refused	ecs.md	engine/ecs/transform.h:113
-ecs::Decompose(const Mat4&)	function	ecs	ecs-decompose-const-mat4-amp	ecs.md	engine/ecs/transform.h:122
-ecs::LookAt(const Vec3&,const Vec3&,const Vec3&)	function	ecs	ecs-lookat-const-vec3-amp-const-vec3-amp-const-vec3-amp	ecs.md	engine/ecs/transform.h:129
-ecs::CreateTransformEntity(World&,const LocalTransform&)	function	ecs	ecs-createtransformentity-world-amp-const-localtransform-amp	ecs.md	engine/ecs/transform.h:135
-ecs::SetParent(World&,Entity,Entity)	function	ecs	ecs-setparent-world-amp-entity-entity	ecs.md	engine/ecs/transform.h:147
-ecs::ClearParent(World&,Entity)	function	ecs	ecs-clearparent-world-amp-entity	ecs.md	engine/ecs/transform.h:153
-ecs::DestroyRecursive(World&,CommandBuffer&,Entity)	function	ecs	ecs-destroyrecursive-world-amp-commandbuffer-amp-entity	ecs.md	engine/ecs/transform.h:160
-ecs::MakeTransformSystem(const char*)	function	ecs	ecs-maketransformsystem-const-char-star	ecs.md	engine/ecs/transform.h:175
+ecs::kMaxHierarchyDepth	variable	ecs	ecs-kmaxhierarchydepth	ecs.md	engine/ecs/transform.h:20
+ecs::LocalTransform	struct	ecs	ecs-localtransform	ecs.md	engine/ecs/transform.h:26
+ecs::LocalTransform::position	variable	ecs	ecs-localtransform-position	ecs.md	engine/ecs/transform.h:29
+ecs::LocalTransform::rotation	variable	ecs	ecs-localtransform-rotation	ecs.md	engine/ecs/transform.h:31
+ecs::LocalTransform::scale	variable	ecs	ecs-localtransform-scale	ecs.md	engine/ecs/transform.h:33
+ecs::LocalTransform::ToMatrix() const	function	ecs	ecs-localtransform-tomatrix-const	ecs.md	engine/ecs/transform.h:38
+ecs::LocalTransform::ToPlacement() const	function	ecs	ecs-localtransform-toplacement-const	ecs.md	engine/ecs/transform.h:41
+ecs::WorldTransform	struct	ecs	ecs-worldtransform	ecs.md	engine/ecs/transform.h:49
+ecs::WorldTransform::matrix	variable	ecs	ecs-worldtransform-matrix	ecs.md	engine/ecs/transform.h:54
+ecs::WorldTransform::position	variable	ecs	ecs-worldtransform-position	ecs.md	engine/ecs/transform.h:57
+ecs::WorldTransform::ToPlacement() const	function	ecs	ecs-worldtransform-toplacement-const	ecs.md	engine/ecs/transform.h:61
+ecs::WorldTransform::FromPlacement(const Placement&)	function	ecs	ecs-worldtransform-fromplacement-const-placement-amp	ecs.md	engine/ecs/transform.h:64
+ecs::WorldTransform::FromMatrix(const Mat4&)	function	ecs	ecs-worldtransform-frommatrix-const-mat4-amp	ecs.md	engine/ecs/transform.h:68
+ecs::Parent	struct	ecs	ecs-parent	ecs.md	engine/ecs/transform.h:76
+ecs::Parent::entity	variable	ecs	ecs-parent-entity	ecs.md	engine/ecs/transform.h:79
+ecs::HierarchyDepth	struct	ecs	ecs-hierarchydepth	ecs.md	engine/ecs/transform.h:87
+ecs::HierarchyDepth::depth	variable	ecs	ecs-hierarchydepth-depth	ecs.md	engine/ecs/transform.h:90
+ecs::TransformReport	struct	ecs	ecs-transformreport	ecs.md	engine/ecs/transform.h:98
+ecs::TransformReport::frames	variable	ecs	ecs-transformreport-frames	ecs.md	engine/ecs/transform.h:101
+ecs::TransformReport::recomputed	variable	ecs	ecs-transformreport-recomputed	ecs.md	engine/ecs/transform.h:103
+ecs::TransformReport::written	variable	ecs	ecs-transformreport-written	ecs.md	engine/ecs/transform.h:105
+ecs::TransformReport::dangling_fixed	variable	ecs	ecs-transformreport-dangling-fixed	ecs.md	engine/ecs/transform.h:107
+ecs::TransformReport::depth_repaired	variable	ecs	ecs-transformreport-depth-repaired	ecs.md	engine/ecs/transform.h:109
+ecs::TransformReport::unresolved	variable	ecs	ecs-transformreport-unresolved	ecs.md	engine/ecs/transform.h:111
+ecs::TransformReport::index_rebuilds	variable	ecs	ecs-transformreport-index-rebuilds	ecs.md	engine/ecs/transform.h:114
+ecs::TransformReport::refused_depth	variable	ecs	ecs-transformreport-refused-depth	ecs.md	engine/ecs/transform.h:116
+ecs::HierarchyStatus	enum	ecs	ecs-hierarchystatus	ecs.md	engine/ecs/transform.h:120
+ecs::HierarchyStatus::Ok	enumerator	ecs	ecs-hierarchystatus-ok	ecs.md	engine/ecs/transform.h:123
+ecs::HierarchyStatus::DeadEntity	enumerator	ecs	ecs-hierarchystatus-deadentity	ecs.md	engine/ecs/transform.h:125
+ecs::HierarchyStatus::SelfParent	enumerator	ecs	ecs-hierarchystatus-selfparent	ecs.md	engine/ecs/transform.h:127
+ecs::HierarchyStatus::Cycle	enumerator	ecs	ecs-hierarchystatus-cycle	ecs.md	engine/ecs/transform.h:129
+ecs::HierarchyStatus::TooDeep	enumerator	ecs	ecs-hierarchystatus-toodeep	ecs.md	engine/ecs/transform.h:132
+ecs::HierarchyStatus::Refused	enumerator	ecs	ecs-hierarchystatus-refused	ecs.md	engine/ecs/transform.h:134
+ecs::Decompose(const Mat4&)	function	ecs	ecs-decompose-const-mat4-amp	ecs.md	engine/ecs/transform.h:143
+ecs::LookAt(const Vec3&,const Vec3&,const Vec3&)	function	ecs	ecs-lookat-const-vec3-amp-const-vec3-amp-const-vec3-amp	ecs.md	engine/ecs/transform.h:150
+ecs::CreateTransformEntity(World&,const LocalTransform&)	function	ecs	ecs-createtransformentity-world-amp-const-localtransform-amp	ecs.md	engine/ecs/transform.h:156
+ecs::SetParent(World&,Entity,Entity)	function	ecs	ecs-setparent-world-amp-entity-entity	ecs.md	engine/ecs/transform.h:168
+ecs::ClearParent(World&,Entity)	function	ecs	ecs-clearparent-world-amp-entity	ecs.md	engine/ecs/transform.h:174
+ecs::DestroyRecursive(World&,CommandBuffer&,Entity)	function	ecs	ecs-destroyrecursive-world-amp-commandbuffer-amp-entity	ecs.md	engine/ecs/transform.h:181
+ecs::MakeTransformSystem(const char*)	function	ecs	ecs-maketransformsystem-const-char-star	ecs.md	engine/ecs/transform.h:196
 ecs::RemovedComponent	struct	ecs	ecs-removedcomponent	ecs.md	engine/ecs/world.h:32
 ecs::RemovedComponent::entity	variable	ecs	ecs-removedcomponent-entity	ecs.md	engine/ecs/world.h:35
 ecs::RemovedComponent::value	variable	ecs	ecs-removedcomponent-value	ecs.md	engine/ecs/world.h:37
@@ -9600,31 +9605,32 @@ storage::FieldKind::String	enumerator	storage	storage-fieldkind-string	storage.m
 storage::FieldKind::Array	enumerator	storage	storage-fieldkind-array	storage.md	engine/storage/field.h:62
 storage::FieldKind::EntityRef	enumerator	storage	storage-fieldkind-entityref	storage.md	engine/storage/field.h:63
 storage::FieldKind::ResourceRef	enumerator	storage	storage-fieldkind-resourceref	storage.md	engine/storage/field.h:64
-storage::FieldOptions	struct	storage	storage-fieldoptions	storage.md	engine/storage/field.h:71
-storage::FieldOptions::has_range	variable	storage	storage-fieldoptions-has-range	storage.md	engine/storage/field.h:73
-storage::FieldOptions::range_min	variable	storage	storage-fieldoptions-range-min	storage.md	engine/storage/field.h:75
-storage::FieldOptions::range_max	variable	storage	storage-fieldoptions-range-max	storage.md	engine/storage/field.h:76
-storage::FieldOptions::max_bytes	variable	storage	storage-fieldoptions-max-bytes	storage.md	engine/storage/field.h:77
-storage::FieldOptions::is_reference	variable	storage	storage-fieldoptions-is-reference	storage.md	engine/storage/field.h:79
-storage::FieldOptions::ref_type	variable	storage	storage-fieldoptions-ref-type	storage.md	engine/storage/field.h:81
-storage::FieldOptions::nullable	variable	storage	storage-fieldoptions-nullable	storage.md	engine/storage/field.h:83
-storage::FieldOptions::Enum(i64,i64)	function	storage	storage-fieldoptions-enum-i64-i64	storage.md	engine/storage/field.h:86
-storage::FieldOptions::Reference(u32,bool)	function	storage	storage-fieldoptions-reference-u32-bool	storage.md	engine/storage/field.h:99
-storage::FieldOptions::Text(u64)	function	storage	storage-fieldoptions-text-u64	storage.md	engine/storage/field.h:108
-storage::ResourceTag(char,char,char,char)	function	storage	storage-resourcetag-char-char-char-char	storage.md	engine/storage/field.h:119
-storage::FieldDesc	struct	storage	storage-fielddesc	storage.md	engine/storage/field.h:350
-storage::FieldDesc::name	variable	storage	storage-fielddesc-name	storage.md	engine/storage/field.h:352
-storage::FieldDesc::kind	variable	storage	storage-fielddesc-kind	storage.md	engine/storage/field.h:353
-storage::FieldDesc::options	variable	storage	storage-fielddesc-options	storage.md	engine/storage/field.h:354
-storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	storage.md	engine/storage/field.h:355
-storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:356
-storage::FieldDesc::element_kind	variable	storage	storage-fielddesc-element-kind	storage.md	engine/storage/field.h:358
-storage::FieldDesc::element_count	variable	storage	storage-fielddesc-element-count	storage.md	engine/storage/field.h:359
-storage::FieldDesc::element_size	variable	storage	storage-fielddesc-element-size	storage.md	engine/storage/field.h:360
-storage::FieldDesc::memory_offset	variable	storage	storage-fielddesc-memory-offset	storage.md	engine/storage/field.h:361
-storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:366
-storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:370
-storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:793
+storage::FieldKind::Vec3d	enumerator	storage	storage-fieldkind-vec3d	storage.md	engine/storage/field.h:66
+storage::FieldOptions	struct	storage	storage-fieldoptions	storage.md	engine/storage/field.h:72
+storage::FieldOptions::has_range	variable	storage	storage-fieldoptions-has-range	storage.md	engine/storage/field.h:74
+storage::FieldOptions::range_min	variable	storage	storage-fieldoptions-range-min	storage.md	engine/storage/field.h:76
+storage::FieldOptions::range_max	variable	storage	storage-fieldoptions-range-max	storage.md	engine/storage/field.h:77
+storage::FieldOptions::max_bytes	variable	storage	storage-fieldoptions-max-bytes	storage.md	engine/storage/field.h:78
+storage::FieldOptions::is_reference	variable	storage	storage-fieldoptions-is-reference	storage.md	engine/storage/field.h:80
+storage::FieldOptions::ref_type	variable	storage	storage-fieldoptions-ref-type	storage.md	engine/storage/field.h:82
+storage::FieldOptions::nullable	variable	storage	storage-fieldoptions-nullable	storage.md	engine/storage/field.h:84
+storage::FieldOptions::Enum(i64,i64)	function	storage	storage-fieldoptions-enum-i64-i64	storage.md	engine/storage/field.h:87
+storage::FieldOptions::Reference(u32,bool)	function	storage	storage-fieldoptions-reference-u32-bool	storage.md	engine/storage/field.h:100
+storage::FieldOptions::Text(u64)	function	storage	storage-fieldoptions-text-u64	storage.md	engine/storage/field.h:109
+storage::ResourceTag(char,char,char,char)	function	storage	storage-resourcetag-char-char-char-char	storage.md	engine/storage/field.h:120
+storage::FieldDesc	struct	storage	storage-fielddesc	storage.md	engine/storage/field.h:355
+storage::FieldDesc::name	variable	storage	storage-fielddesc-name	storage.md	engine/storage/field.h:357
+storage::FieldDesc::kind	variable	storage	storage-fielddesc-kind	storage.md	engine/storage/field.h:358
+storage::FieldDesc::options	variable	storage	storage-fielddesc-options	storage.md	engine/storage/field.h:359
+storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	storage.md	engine/storage/field.h:360
+storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:361
+storage::FieldDesc::element_kind	variable	storage	storage-fielddesc-element-kind	storage.md	engine/storage/field.h:363
+storage::FieldDesc::element_count	variable	storage	storage-fielddesc-element-count	storage.md	engine/storage/field.h:364
+storage::FieldDesc::element_size	variable	storage	storage-fielddesc-element-size	storage.md	engine/storage/field.h:365
+storage::FieldDesc::memory_offset	variable	storage	storage-fielddesc-memory-offset	storage.md	engine/storage/field.h:366
+storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:371
+storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:375
+storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:823
 storage::ReferenceValue	struct	storage	storage-referencevalue	storage.md	engine/storage/field_walk.h:22
 storage::ReferenceValue::field_index	variable	storage	storage-referencevalue-field-index	storage.md	engine/storage/field_walk.h:24
 storage::ReferenceValue::field	variable	storage	storage-referencevalue-field	storage.md	engine/storage/field_walk.h:25

@@ -1260,7 +1260,7 @@ bool ApplyCharacterCreate(MergeContext& context, ecs::Entity target, Span<const 
     config.min_ground_y = p.min_ground_y;
     config.skin_width = p.skin_width;
     config.gravity_scale = p.gravity_scale;
-    return characters->Add(target, config, transform->position);
+    return characters->Add(target, config, transform->position.Narrow());
 }
 
 bool ApplyCharacterDestroy(MergeContext& context, ecs::Entity target, Span<const u8>)

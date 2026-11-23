@@ -309,7 +309,7 @@ u32 CharacterSet::Recreate(const ecs::World& ecs)
         }
         const ecs::LocalTransform* transform = ecs.Peek<ecs::LocalTransform>(entry.entity);
         if (transform != nullptr &&
-            entry.controller.Create(world_, entry.controller.Config(), transform->position) == BodyStatus::Ok)
+            entry.controller.Create(world_, entry.controller.Config(), transform->position.Narrow()) == BodyStatus::Ok)
         {
             ++made;
         }

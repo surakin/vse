@@ -8,6 +8,7 @@
 #include "ecs/schedule.h"
 #include "ecs/world.h"
 #include "math/matrix.h"
+#include "math/placement.h"
 #include "math/quaternion.h"
 #include "math/vector.h"
 #include "types.h"
@@ -24,16 +25,20 @@ inline constexpr u32 kMaxHierarchyDepth = 64;
 /// - Ownership: owns nothing.
 struct LocalTransform
 {
-    /// Translation, applied last.
-    Vec3 position;
+    /// Translation, applied last. Double precision: a world root far from the origin keeps its position.
+    Vec3d position;
     /// Orientation, applied after scale.
     Quaternion rotation = Quaternion::Identity();
     /// Per-axis scale, applied first.
     Vec3 scale = Vec3(1.0f, 1.0f, 1.0f);
 
-    /// The matrix that scales, then rotates, then translates (column-vector convention, as in `math/transform.h`).
+    /// The matrix that scales, then rotates, then translates (column-vector convention, as in `math/transform.h`);
+    /// the translation is `position` narrowed to single precision.
     /// - Fails: never.
     Mat4 ToMatrix() const;
+    /// The same transform as a [[Placement]]: the rotation and scale in single precision, the position exact.
+    /// - Fails: never.
+    Placement ToPlacement() const;
 };
 
 /// An entity's place in the world: its parents' matrices times its own. Written by the propagation system; read by
@@ -43,8 +48,24 @@ struct LocalTransform
 /// - Ownership: owns nothing.
 struct WorldTransform
 {
-    /// The local-to-world matrix.
+    /// The local-to-world matrix: the rotation and scale, and the translation as `position` narrowed to single
+    /// precision (exact only near the origin). Readers that work in single precision use it; the renderer's
+    /// camera-relative path and the physics bodies use `position`.
     Mat4 matrix = Mat4::Identity();
+    /// The exact world position of the entity's origin (the translation of the world transform in double precision).
+    /// Written with `matrix` by the propagation.
+    Vec3d position;
+
+    /// The transform as a [[Placement]] (the linear block of `matrix` and the exact position).
+    /// - Fails: never.
+    Placement ToPlacement() const;
+    /// Makes the world transform of a placement (its `matrix` gets the position narrowed).
+    /// - Fails: never.
+    static WorldTransform FromPlacement(const Placement& placement);
+    /// Makes the world transform of a single-precision matrix: `matrix` is it, `position` its translation widened
+    /// (for code that places an entity by hand, without the propagation).
+    /// - Fails: never.
+    static WorldTransform FromMatrix(const Mat4& matrix);
 };
 
 /// Makes an entity a child of `entity`. Set it with [[ecs::SetParent]], not with a raw `Set<Parent>` (which the

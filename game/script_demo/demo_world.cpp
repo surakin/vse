@@ -390,7 +390,7 @@ u32 DemoWorld::PollReload()
 Vec3 DemoWorld::MarkerPosition() const
 {
     const ecs::LocalTransform* t = static_cast<const ecs::World&>(world_).Get<ecs::LocalTransform>(marker_);
-    return t != nullptr ? t->position : Vec3(0.0f, 0.0f, 0.0f);
+    return t != nullptr ? t->position.Narrow() : Vec3(0.0f, 0.0f, 0.0f);
 }
 
 u64 DemoWorld::StateHash() const

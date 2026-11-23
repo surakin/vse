@@ -45,6 +45,7 @@ usize FixedSize(FieldKind kind, usize memory_size)
     case FieldKind::Vec4:
     case FieldKind::Quat:
     case FieldKind::EntityRef: return 16;
+    case FieldKind::Vec3d:
     case FieldKind::Aabb: return 24;
     case FieldKind::Mat4: return 64;
     case FieldKind::Enum: return memory_size;

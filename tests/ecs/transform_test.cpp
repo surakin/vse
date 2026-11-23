@@ -3,6 +3,7 @@
 #include "containers/vector.h"
 #include "log/output.h"
 #include "ecs/transform.h"
+#include "lang/scalar.h"
 #include "jobs/scheduler.h"
 #include "os/console.h"
 #include "os/os.h"
@@ -85,7 +86,18 @@ TEST_CASE("Transform: a chain of ten parents composes to the analytic matrix", "
         expected = expected * local.ToMatrix();
     }
     rig.Frame();
-    CHECK(SameMat(rig.Matrix(chain[9]), expected));
+    // The rotation and scale compose as before; the translation is composed in double precision, so it agrees with
+    // the single-precision chain to its rounding error.
+    const Mat4 got = rig.Matrix(chain[9]);
+    for (int c = 0; c < 3; ++c)
+    {
+        CHECK(got.col[c].x == expected.col[c].x);
+        CHECK(got.col[c].y == expected.col[c].y);
+        CHECK(got.col[c].z == expected.col[c].z);
+    }
+    CHECK(Abs(got.col[3].x - expected.col[3].x) < 1.0e-4f);
+    CHECK(Abs(got.col[3].y - expected.col[3].y) < 1.0e-4f);
+    CHECK(Abs(got.col[3].z - expected.col[3].z) < 1.0e-4f);
     CHECK(rig.world.Get<HierarchyDepth>(chain[9])->depth == 9);
     CHECK(rig.Report().unresolved == 0);
 }
@@ -435,4 +447,33 @@ TEST_CASE("Transform: propagation cost at depth 1, 4 and 16 (recorded, not asser
         out::Print("transform propagation: depth %u, ~100k entities: %.2f ms\n", depth,
                    static_cast<double>(best) / 1e6);
     }
+}
+
+TEST_CASE("Transform: a chain 10,000 km from the origin keeps its position exact in double precision",
+          "[ecs][transform][double]")
+{
+    Rig rig;
+    LocalTransform root_local;
+    root_local.position = Vec3d(1.0e7, 2.0e6, -3.0e6);
+    const Entity root = CreateTransformEntity(rig.world, root_local);
+    Entity parent = root;
+    Vec3d expected = root_local.position;
+    for (u32 i = 0; i < 5; ++i)
+    {
+        LocalTransform local;
+        local.position = Vec3d(0.001, 0.002, 0.003);  // millimetres, identity rotation and scale
+        const Entity child = CreateTransformEntity(rig.world, local);
+        REQUIRE(SetParent(rig.world, child, parent) == HierarchyStatus::Ok);
+        expected = expected + local.position;
+        parent = child;
+    }
+    rig.Frame();
+    const WorldTransform* w = rig.world.Get<WorldTransform>(parent);
+    REQUIRE(w != nullptr);
+    CHECK(w->position == expected);
+    // A single-precision chain would have lost the millimetres (steps of one metre at 10,000 km).
+    CHECK(w->position.x - root_local.position.x > 0.00499);
+    CHECK(w->position.x - root_local.position.x < 0.00501);
+    // The matrix carries the narrowed position.
+    CHECK(w->matrix.col[3].x == static_cast<f32>(expected.x));
 }

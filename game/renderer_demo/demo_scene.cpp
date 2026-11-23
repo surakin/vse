@@ -421,9 +421,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         scene::MeshRenderer mr;
         mr.mesh = meshes[p.mesh];
         mr.material = ids[p.material].index;
-        ecs::WorldTransform placed;
-        placed.matrix = p.transform;
-        world_->Create(placed, mr);
+        world_->Create(ecs::WorldTransform::FromMatrix(p.transform), mr);
     }
     expected_objects_ = static_cast<u32>(order.Size());
     if (options.screen)
@@ -433,9 +431,9 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         mr.material = screen_material_.index;
         const f32 sx = options.screen_width / kTileSize;
         const f32 sz = options.screen_height / kTileSize;
-        ecs::WorldTransform placed;
-        placed.matrix = Mat4::FromBasis(Vec3(sx, 0, 0), Vec3(0, 0, 1), Vec3(0, -sz, 0), options.screen_center);
-        world_->Create(placed, mr);
+        world_->Create(ecs::WorldTransform::FromMatrix(
+                           Mat4::FromBasis(Vec3(sx, 0, 0), Vec3(0, 0, 1), Vec3(0, -sz, 0), options.screen_center)),
+                       mr);
         ++expected_objects_;
     }
 

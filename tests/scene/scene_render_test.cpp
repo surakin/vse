@@ -26,14 +26,14 @@ namespace
 
 constexpr u32 kSize = 96;
 
-struct Placement
+struct SpherePlacement
 {
     f32 x, y, z;
     u32 material;  // index into the two materials
     bool sphere;
 };
 
-const Placement kPlacements[] = {
+const SpherePlacement kPlacements[] = {
     {-2.0f, 0.0f, 0.0f, 0, false}, {0.0f, 0.0f, -1.0f, 1, true},  {2.0f, 0.5f, 0.0f, 0, true},
     {0.0f, -1.5f, 0.5f, 1, false}, {-1.0f, 1.2f, -0.5f, 1, true},
 };
@@ -143,7 +143,7 @@ TEST_CASE("An entity-built scene renders the same pixels as the hand-built Rende
             desc.max_objects = 64;
             desc.max_lights = 8;
             renderer::RenderScene by_hand(desc);
-            for (const Placement& p : kPlacements)
+            for (const SpherePlacement& p : kPlacements)
             {
                 renderer::RenderObjectDesc od;
                 od.mesh = p.sphere ? sphere.Get() : cube.Get();
@@ -171,7 +171,7 @@ TEST_CASE("An entity-built scene renders the same pixels as the hand-built Rende
             schedule.Add(ecs::MakeTransformSystem("transforms"));
             schedule.Add(MakeRenderSyncSystem("render_sync").InStage(ecs::kRender));
             REQUIRE(schedule.Build().ok);
-            for (const Placement& p : kPlacements)
+            for (const SpherePlacement& p : kPlacements)
             {
                 ecs::LocalTransform local;
                 local.position = Vec3(p.x, p.y, p.z);

@@ -517,8 +517,8 @@ void AttachWorld(WorldObject& object, ResourceHost* resources)
         {
             continue;
         }
-        ecs::WorldTransform placed;
-        placed.matrix = base->matrix * joint * local->ToMatrix();
+        // Placed by single-precision matrices until the C API's own double-precision day.
+        const ecs::WorldTransform placed = ecs::WorldTransform::FromMatrix(base->matrix * joint * local->ToMatrix());
         object.world.Set<ecs::WorldTransform>(pending[i].entity, placed);
     }
 }
@@ -1216,7 +1216,7 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
                 {  // checked first, so a refusal leaves the character as it was
                     physics::CharacterController probe;
-                    if (probe.Create(&physics, config, transform->position) != physics::BodyStatus::Ok)
+                    if (probe.Create(&physics, config, transform->position.Narrow()) != physics::BodyStatus::Ok)
                     {
                         return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
                                     "the character's size or numbers are refused (height "
@@ -1226,7 +1226,7 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 }
                 // One set for both doors: setting the component (again) puts the capsule at the entity's transform.
                 object.characters->Remove(entity);
-                if (!object.characters->Add(entity, config, transform->position))
+                if (!object.characters->Add(entity, config, transform->position.Narrow()))
                 {
                     return Fail(ENGINE_ERROR_INTERNAL, "the character could not be made");
                 }

@@ -123,7 +123,7 @@ public:
             const ecs::LocalTransform* t = world_.Peek<ecs::LocalTransform>(visuals_[i].entity);
             if (t != nullptr)
             {
-                visit(visuals_[i].kind, t->position);
+                visit(visuals_[i].kind, t->position.Narrow());
             }
         }
     }

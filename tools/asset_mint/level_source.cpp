@@ -499,6 +499,25 @@ bool ParseElement(storage::FieldKind kind, usize memory_size, const storage::Fie
         out.WriteF64(value);
         return true;
     }
+    case FieldKind::Vec3d:
+    {
+        for (u32 i = 0; i < 3; ++i)
+        {
+            f64 value = 0;
+            if (!cursor.Next(&token))
+            {
+                SetMsg(msg, "3 numbers are expected");
+                return false;
+            }
+            if (!ParseF64(token, &value))
+            {
+                LV_MSG(msg, "'%.*s' is not a finite number", static_cast<int>(token.Length()), token.Data());
+                return false;
+            }
+            out.WriteF64(value);
+        }
+        return true;
+    }
     case FieldKind::Bool:
     {
         if (!cursor.Next(&token) || (token != StringView("true") && token != StringView("false")))
@@ -1783,6 +1802,24 @@ bool FormatElement(storage::FieldKind kind, usize memory_size, const storage::Fi
                 out->Append(' ');
             }
             AppendGeneral(out, static_cast<f64>(value), 9);
+        }
+        return true;
+    }
+    case FieldKind::Vec3d:
+    {
+        for (u32 i = 0; i < 3; ++i)
+        {
+            f64 value = 0;
+            if (in.ReadF64(&value) != bytes::ByteError::Ok || !IsFinite(value))
+            {
+                SetMsg(msg, "a float is truncated or not finite");
+                return false;
+            }
+            if (i != 0)
+            {
+                out->Append(' ');
+            }
+            AppendGeneral(out, value, 17);
         }
         return true;
     }

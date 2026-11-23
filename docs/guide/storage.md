@@ -35,6 +35,7 @@ baked in. The member's type decides the stored form:
 | `f32`, `f64` | the bit pattern (a NaN payload, `-0` and denormals survive) |
 | `bool` | one byte, 0 or 1 (anything else is `Corrupt` on read) |
 | `Vec2`, `Vec3`, `Vec4`, `Quaternion`, `Mat4`, `Aabb` | their `f32`s in order (a matrix column by column) |
+| `Vec3d` | three `f64` (a world position) |
 | an enum | its underlying integer, **checked against a range you declare**: `Field<&T::kind>("kind", FieldOptions::Enum(0, 2))` |
 | `String<HeapAllocator>` | a varint length and UTF-8; validated on write and on read; bounded by `FieldOptions::Text(n)` and `CodecLimits::max_string_bytes` |
 | `Array<T, N>` of any of these | the count `N` as a varint, then the elements; a count that is not `N` is `Corrupt` |

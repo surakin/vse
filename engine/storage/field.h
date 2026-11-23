@@ -63,6 +63,7 @@ enum class FieldKind : u8
     EntityRef,    ///< An [[storage::EntityRef]]: 16 bytes.
     ResourceRef,  ///< A [[storage::ResourceRef]], or a `u64` declared with [[storage::FieldOptions::Reference]]: 8
                   ///< bytes.
+    Vec3d,        ///< Three `f64` (a world position).
 };
 
 /// Per-field settings that the type alone does not give.
@@ -220,6 +221,10 @@ template <class V> constexpr FieldKind KindOf()
     else if constexpr (IsSame<V, Vec3>)
     {
         return FieldKind::Vec3;
+    }
+    else if constexpr (IsSame<V, Vec3d>)
+    {
+        return FieldKind::Vec3d;
     }
     else if constexpr (IsSame<V, Vec4>)
     {
@@ -452,6 +457,12 @@ Status EncodeValue(const V& value, const FieldDesc& desc, bytes::ByteWriter& out
     {
         EncodeVec3(value, out);
     }
+    else if constexpr (IsSame<V, Vec3d>)
+    {
+        out.WriteF64(value.x);
+        out.WriteF64(value.y);
+        out.WriteF64(value.z);
+    }
     else if constexpr (IsSame<V, Vec4>)
     {
         EncodeVec4(value, out);
@@ -618,6 +629,25 @@ template <class V> Status DecodeValue(V* value, const FieldDesc& desc, bytes::By
     {
         return DecodeVec3(value, in);
     }
+    else if constexpr (IsSame<V, Vec3d>)
+    {
+        Vec3d r;
+        bytes::ByteError e = in.ReadF64(&r.x);
+        if (e == bytes::ByteError::Ok)
+        {
+            e = in.ReadF64(&r.y);
+        }
+        if (e == bytes::ByteError::Ok)
+        {
+            e = in.ReadF64(&r.z);
+        }
+        if (e != bytes::ByteError::Ok)
+        {
+            return FromByteError(e);
+        }
+        *value = r;
+        return Status::Success();
+    }
     else if constexpr (IsSame<V, Vec4>)
     {
         return DecodeVec4(value, in);
@@ -778,7 +808,7 @@ template <class C, class V> struct MemberTraits<V C::*>
 }  // namespace detail
 
 /// Describes the member `Member` of a component (`Field<&Health::current>("current")`). The member's type decides the
-/// kind: integers, floats, `bool`, `Vec2`, `Vec3`, `Vec4`, `Quaternion`, `Mat4`, `Aabb`, enums,
+/// kind: integers, floats, `bool`, `Vec2`, `Vec3`, `Vec3d`, `Vec4`, `Quaternion`, `Mat4`, `Aabb`, enums,
 /// `String<HeapAllocator>`, `Array<T, N>` of those, [[storage::EntityRef]] and [[storage::EntityKey]]. Any other type
 /// is a compile error.
 ///

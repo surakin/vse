@@ -223,7 +223,7 @@ Value TransformGet(ecs::Entity e)
         return Value();
     }
     Value out = Value::MakeMap();
-    out.Set("position", Value::FromVec3(local.position));
+    out.Set("position", Value::FromVec3(local.position.Narrow()));  // scripts see single precision until their own day
     out.Set("rotation", Value::FromQuat(local.rotation));
     out.Set("scale", Value::FromVec3(local.scale));
     return out;
@@ -233,7 +233,7 @@ Vec3 TransformPosition(ecs::Entity e)
 {
     PartitionContext* context = Context();
     ecs::LocalTransform local;
-    return context != nullptr && NeedLocal(*context, e, &local) ? local.position : Vec3();
+    return context != nullptr && NeedLocal(*context, e, &local) ? local.position.Narrow() : Vec3();
 }
 
 Quaternion TransformRotation(ecs::Entity e)
@@ -354,7 +354,7 @@ void TransformTranslate(ecs::Entity e, Vec3 delta)
     {
         return;
     }
-    TransformSetPosition(e, local.position + delta);
+    TransformSetPosition(e, (local.position + Vec3d(delta)).Narrow());
 }
 
 // ------------------------------------------------------------------ the merge

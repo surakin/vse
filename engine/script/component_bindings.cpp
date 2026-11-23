@@ -254,6 +254,20 @@ bool ReadFieldValue(const FieldDesc& f, bytes::ByteReader& in, Value* out)
         *out = Value::FromVec3(Vec3(v[0], v[1], v[2]));
         return true;
     }
+    case FieldKind::Vec3d:
+    {
+        // A world position: scripts see it narrowed to single precision until their own double-precision day.
+        f64 v[3];
+        for (f64& lane : v)
+        {
+            if (in.ReadF64(&lane) != bytes::ByteError::Ok)
+            {
+                return false;
+            }
+        }
+        *out = Value::FromVec3(Vec3d(v[0], v[1], v[2]).Narrow());
+        return true;
+    }
     case FieldKind::Vec4:
     {
         f32 v[4];
@@ -558,6 +572,26 @@ bool WriteFieldValue(const FieldDesc& f, const Value& v, bytes::ByteWriter& out,
         for (f32 l : lanes)
         {
             out.WriteF32(l);
+        }
+        return true;
+    }
+    case FieldKind::Vec3d:
+    {
+        if (v.Kind() != ValueKind::Vec3)
+        {
+            *why = "a vec3";
+            return false;
+        }
+        const Vec3 x = v.AsVec3();
+        const f32 lanes[3] = {x.x, x.y, x.z};
+        if (!FiniteVec(lanes, 3))
+        {
+            *why = "finite numbers";
+            return false;
+        }
+        for (f32 l : lanes)
+        {
+            out.WriteF64(static_cast<f64>(l));
         }
         return true;
     }

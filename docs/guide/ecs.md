@@ -529,6 +529,8 @@ Include `ecs/transform.h`. An entity with a place in the world carries a **`Loca
 **`WorldTransform`** (the 4x4 matrix the renderer reads). A child names its parent with **`Parent`** and carries a **`HierarchyDepth`** (0 for a root, the
 parent's depth plus one for a child); use `CreateTransformEntity`, `SetParent` and `ClearParent` and the depth is kept for you.
 
+The translation is double precision: `LocalTransform::position` is a `Vec3d`, and `WorldTransform` holds the exact `position` (`Vec3d`) beside its `matrix`, whose translation is that position narrowed to single precision (exact only near the origin). The propagation composes the translation in double precision and the rotation and scale in single precision (`LocalTransform::ToPlacement`, `Placement::Compose`), so a chain of entities 10,000 km from the origin keeps its millimetre offsets. Code that works in single precision reads `matrix`; code that needs the exact place reads `position`.
+
 ```cpp compile run standalone
 #include "ecs/schedule.h"
 #include "ecs/transform.h"

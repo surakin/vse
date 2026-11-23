@@ -13,6 +13,8 @@ Status RegisterBuiltinComponents(ComponentRegistry* registry)
     ENGINE_TRY(registry->Register<ecs::LocalTransform>(
         {.id = kLocalTransformId,
          .name = "local_transform",
+         .version = 2,         // the position became three f64
+         .oldest_version = 2,  // current version only: older saves are re-minted offline
          .fields = {Field<&ecs::LocalTransform::position>("position"),
                     Field<&ecs::LocalTransform::rotation>("rotation"), Field<&ecs::LocalTransform::scale>("scale")}}));
     ENGINE_TRY(registry->Register<ecs::WorldTransform>(

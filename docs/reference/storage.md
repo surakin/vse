@@ -1533,6 +1533,7 @@ The kinds of field the registry can store.
 | <a id="storage-fieldkind-array"></a>`Array` |  | A fixed-size [`Array`](foundation-containers.md#array): its count as a varint, then the elements. |
 | <a id="storage-fieldkind-entityref"></a>`EntityRef` |  | An [`storage::EntityRef`](#storage-entityref): 16 bytes. |
 | <a id="storage-fieldkind-resourceref"></a>`ResourceRef` |  | A [`storage::ResourceRef`](#storage-resourceref), or a `u64` declared with [`storage::FieldOptions::Reference`](#storage-fieldoptions-reference-u32-bool): 8 bytes. |
+| <a id="storage-fieldkind-vec3d"></a>`Vec3d` |  | Three `f64` (a world position). |
 
 ## `FieldOptions` {#storage-fieldoptions}
 
@@ -1801,7 +1802,7 @@ template <auto Member>
 FieldDesc Field(const char* name, FieldOptions options = FieldOptions());
 ```
 
-Describes the member `Member` of a component (`Field<&Health::current>("current")`). The member's type decides the kind: integers, floats, `bool`, `Vec2`, `Vec3`, `Vec4`, `Quaternion`, `Mat4`, `Aabb`, enums, `String<HeapAllocator>`, `Array<T, N>` of those, [`storage::EntityRef`](#storage-entityref) and [`storage::EntityKey`](#storage-entitykey). Any other type is a compile error.
+Describes the member `Member` of a component (`Field<&Health::current>("current")`). The member's type decides the kind: integers, floats, `bool`, `Vec2`, `Vec3`, `Vec3d`, `Vec4`, `Quaternion`, `Mat4`, `Aabb`, enums, `String<HeapAllocator>`, `Array<T, N>` of those, [`storage::EntityRef`](#storage-entityref) and [`storage::EntityKey`](#storage-entitykey). Any other type is a compile error.
 
 The member is a template argument, not a run-time value, so the encode and decode functions are plain function pointers with the member baked in.
 

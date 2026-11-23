@@ -257,6 +257,28 @@ TEST_CASE("World round trip: the store keeps the format, the manifest and the la
     }
 }
 
+TEST_CASE("World round trip: entities 1,000 km away keep their f64 position through a save and a load",
+          "[storage][world][double]")
+{
+    Rig rig;
+    World world;
+    KeyIndex index;
+    Populate(world, index, 10, 2);
+    ecs::LocalTransform local;
+    local.position = Vec3d(1.0e6 + 0.001, -2.0e6 + 0.002, 3.0e6 + 0.003);
+    const EntityKey key = KeyGenerator::Seeded(77).Next();
+    const Entity far = world.Create(local);
+    REQUIRE(index.Assign(world, far, key).Ok());
+    WorldStorage storage(rig.registry, rig.store);
+    REQUIRE(storage.Save(world, index, SaveOptions(), nullptr).Ok());
+    World target;
+    KeyIndex target_index;
+    REQUIRE(storage.Load(target, target_index, LoadOptions(), nullptr).Ok());
+    const ecs::LocalTransform* loaded = target.Get<ecs::LocalTransform>(target_index.Find(key));
+    REQUIRE(loaded != nullptr);
+    CHECK(loaded->position == local.position);
+}
+
 Vector<EntityKey> AllKeys(MemoryStore& store)
 {
     Vector<EntityKey> keys;

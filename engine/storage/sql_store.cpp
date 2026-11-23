@@ -595,6 +595,7 @@ u32 PartsOf(FieldKind kind)
     case FieldKind::ResourceRef:
     case FieldKind::Enum: return 1;
     case FieldKind::Vec2: return 2;
+    case FieldKind::Vec3d:
     case FieldKind::Vec3: return 3;
     case FieldKind::Vec4:
     case FieldKind::Quat: return 4;
@@ -738,6 +739,7 @@ Status ExtractCells(const SqlTable& table, ByteSpan blob, const CodecLimits& lim
             }
             case FieldKind::F32: cell.number = FloatAt(p); break;
             case FieldKind::F64: cell.number = DoubleAt(p); break;
+            case FieldKind::Vec3d: cell.number = DoubleAt(p + usize{8} * column.part); break;
             default: cell.number = FloatAt(p + usize{4} * column.part); break;  // a vector part
             }
             if (cell.real && IsNaN(cell.number))

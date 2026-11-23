@@ -29,7 +29,7 @@ bool WriteOne(const PhysicsWorld& physics, f32 alpha, const BodyLink& link, ecs:
     {
         return false;
     }
-    const bool same = SameValue(transform.position, position) && transform.rotation.x == rotation.x &&
+    const bool same = SameValue(transform.position.Narrow(), position) && transform.rotation.x == rotation.x &&
                       transform.rotation.y == rotation.y && transform.rotation.z == rotation.z &&
                       transform.rotation.w == rotation.w;
     if (same)
@@ -87,7 +87,7 @@ u32 DriveKinematicBodies(ecs::World& ecs, PhysicsWorld& physics, f32 dt)
                 return;
             }
             Velocity velocity;
-            velocity.linear = (transform.position - body->position) * (1.0f / dt);
+            velocity.linear = (transform.position - body->position).Narrow() * (1.0f / dt);
             // The turn from the pose to the target, as an angular velocity (twice the vector part of the quaternion:
             // exact for small turns, which is what one step makes).
             Quaternion turn = transform.rotation * body->orientation.Conjugate();

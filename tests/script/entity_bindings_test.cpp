@@ -161,7 +161,7 @@ TEST_CASE("Entity bindings: a spawned entity can be used at once and exists afte
         {
             if (e != rig.self)
             {
-                found = t.position;
+                found = t.position.Narrow();
             }
         });
     CHECK(Near3(found, 2, 2, 3));
@@ -205,9 +205,9 @@ TEST_CASE("Entity bindings: transforms read, write and see the script's own writ
     CHECK(Abs(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w - 1.0f) < 1.0e-5f);  // normalized
     CHECK(out.results[4].Size() == 16);
     // The world still holds the old value until the merge.
-    CHECK(Near3(rig.world.Get<ecs::LocalTransform>(rig.self)->position, 0, 0, 0));
+    CHECK(Near3(rig.world.Get<ecs::LocalTransform>(rig.self)->position.Narrow(), 0, 0, 0));
     CHECK(rig.Merge().applied == 3);
-    CHECK(Near3(rig.world.Get<ecs::LocalTransform>(rig.self)->position, 5, 0, 0));
+    CHECK(Near3(rig.world.Get<ecs::LocalTransform>(rig.self)->position.Narrow(), 5, 0, 0));
     CHECK(Near3(rig.world.Get<ecs::LocalTransform>(rig.self)->scale, 2, 2, 2));
 }
 
@@ -434,8 +434,13 @@ struct MoveSim
         world.Query<ecs::Read<ecs::LocalTransform>>().ForEach(
             [&](ecs::Entity e, const ecs::LocalTransform& t)
             {
-                const f32 v[] = {t.position.x, t.position.y, t.position.z, t.rotation.x,
-                                 t.rotation.y, t.rotation.z, t.rotation.w};
+                const f32 v[] = {static_cast<f32>(t.position.x),
+                                 static_cast<f32>(t.position.y),
+                                 static_cast<f32>(t.position.z),
+                                 t.rotation.x,
+                                 t.rotation.y,
+                                 t.rotation.z,
+                                 t.rotation.w};
                 u64 h = e.ToU64() * 0x9E3779B97F4A7C15ull;
                 for (f32 f : v)
                 {

@@ -152,7 +152,7 @@ SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics)
             g.entity = entity;
             g.settings = settings;
             g.collider = collider;
-            g.position = transform.position;
+            g.position = transform.position.Narrow();
             g.rotation = transform.rotation;
             if (velocity != nullptr)
             {

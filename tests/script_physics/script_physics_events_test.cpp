@@ -523,7 +523,7 @@ TEST_CASE("Script character: a jump leaves the ground and the character lands ag
     for (u32 frame = 0; frame < 120; ++frame)
     {
         rig.Frame();
-        highest = FMax(highest, rig.world.Get<ecs::LocalTransform>(e)->position.y);
+        highest = FMax(highest, static_cast<f32>(rig.world.Get<ecs::LocalTransform>(e)->position.y));
     }
     CHECK(highest > 1.8f);  // 5 m/s upward under gravity rises about a metre and a quarter
     CHECK(Abs(rig.world.Get<ecs::LocalTransform>(e)->position.y - 0.9f) < 0.1f);

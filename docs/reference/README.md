@@ -25,7 +25,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
 | [Text](text.md) | 6 | 221 |
-| [ECS](ecs.md) | 12 | 415 |
+| [ECS](ecs.md) | 12 | 420 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
 | [Physics](physics.md) | 32 | 833 |
 | [Audio](audio.md) | 28 | 822 |
@@ -35,7 +35,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [glTF importer](asset_import.md) | 19 | 321 |
 | [Animation runtime](animation.md) | 4 | 90 |
 | [Database](database.md) | 9 | 161 |
-| [Storage](storage.md) | 18 | 429 |
+| [Storage](storage.md) | 18 | 430 |
 | [Scene bridge](scene.md) | 4 | 73 |
 | [The UI Toolkit](ui.md) | 46 | 1421 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
