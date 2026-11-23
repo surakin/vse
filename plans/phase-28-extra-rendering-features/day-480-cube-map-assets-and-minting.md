@@ -7,7 +7,7 @@ A cube map is a minted asset like any texture: six faces in, one blob out, loade
 
 ## Tasks
 
-- [ ] `asset_mint mint-texture` accepts `kind = cube` from six raw RGBA images (the existing `texture_mint` param layout: 1 layer for 2D, 6 for a cube) and from one equirectangular raw image (`kind = cube-from-equirect`, a face size, a deterministic resampling in float with a fixed order of operations); the stored format is the one Day 478 picked (RGBA16F for HDR, RGBA8 for LDR).
+- [ ] `asset_mint mint-texture` accepts `kind = cube` from six raw RGBA images (the existing `texture_mint` param layout: 1 layer for 2D, 6 for a cube) and from one equirectangular raw image (`kind = cube-from-equirect`, a face size, a deterministic resampling in float with a fixed order of operations); the stored format is the one Day 478 picked (`RGBA16_Float` for HDR from raw little-endian half-float RGBA input, `RGBA8_UNorm` sRGB for LDR from raw 8-bit RGBA).
 - [ ] Minted mips of a cube: a box-filtered chain per face with the edges handled across faces (a seam test: the mean colour of the last mip equals the mean of the faces within a tolerance, and no face edge is darker than its neighbour in the test cube).
 - [ ] The texture blob header and `asset::texture.h` already know `Cube` and 6 layers: add the loader path in `asset/gpu_loaders.cpp` that creates a cube `GpuTexture` and a CPU-side `TextureData` the reset path re-uploads (CLAUDE.md: keep the CPU source, register at the tier, never cache a handle).
 - [ ] A fallback cube (a 1-pixel-per-face grey cube) next to the existing fallbacks, so a missing cube is never an error mid-frame (`no broken dependencies`: the id is reported, the fallback is drawn).

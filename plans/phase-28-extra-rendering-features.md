@@ -1,6 +1,6 @@
 # Phase 28 — Extra Rendering Features
 
-**Status: planned (added 2026-11-23, the user; day files written the same day, Days 478-505). `CURRENT_PHASE` is 27 until Day 478 starts the phase. Next: Day 478.**
+**Status: planned (added 2026-11-23, the user; day files written the same day, Days 478-505). Day 478 done 2026-11-23 (design spec and spikes; `CURRENT_PHASE` is 28). Next: Day 479.**
 
 **Depends on:** Phase 5 (the renderer core: the G-buffer, the lighting pass, `SceneFrame`), Phase 8 (the RHI reset: every new GPU owner keeps its CPU source and rebuilds), Phase 17 (ECS components), Phase 18 (spatial: culling and the hierarchy), Phase 22 (asset pipeline: minted heightmaps, cube maps), Phase 24 (scenes for hosts: the C API's worlds), Phase 25 (physics, for a height-field collider, if the user wants one).
 **Goal:** the rendering features a game world needs beyond meshes and lights: terrain from height maps, mesh instancing at scale (flat and hierarchical), and a sky drawn behind the world.
