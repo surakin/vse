@@ -9,6 +9,7 @@
 #include "asset/pak.h"
 #include "asset/pak_backend.h"
 #include "cstr/cstr.h"
+#include "lang/utility.h"
 #include "cstr/format.h"
 #include "log/log.h"
 #include "material_source.h"
@@ -451,6 +452,59 @@ TEST_CASE("gpu loaders: a texture over shared bytes refuses levels that are not 
                                                Span<const renderer::TextureLevelSpan>(&good, 1), nullptr, "d"));
     CHECK_FALSE(refused.Valid());
     CHECK(rig.device->Resources().textures == before.textures + 1);  // nothing left behind
+}
+
+// Phase 28 Day 480: a cube map blob loads as a cube texture on the device and survives a device reset.
+TEST_CASE("gpu loaders: a cube map loads as a cube texture and a device reset recreates it", "[asset][gpu][cube]")
+{
+    GpuRig rig;
+    Vector<Vector<byte>> faces;
+    for (u32 face = 0; face < 6; ++face)
+    {
+        Vector<byte> pixels;
+        pixels.Resize(4 * 4 * 8);
+        for (usize i = 0; i < pixels.Size(); i += 2)
+        {
+            pixels[i] = 0x00;
+            pixels[i + 1] = static_cast<byte>(0x30 + face);  // a distinct small half float per face
+        }
+        Vector<byte> raw;
+        REQUIRE(BuildRawHalfImage(4, 4, AsBytes(pixels), 0, &raw).Ok());
+        faces.Push(Move(raw));
+    }
+    Vector<ByteSpan> spans;
+    for (usize i = 0; i < faces.Size(); ++i)
+    {
+        spans.Push(AsBytes(faces[i]));
+    }
+    const char* text = "id 0000000000000102\nkind cube\ninput rgba16f\nformat rgba16f\nsource a\nsource b\nsource c\n"
+                       "source d\nsource e\nsource f\n";
+    Vector<byte> blob;
+    TextureSourceError error;
+    REQUIRE(MintTexture(StringView(text, CStrLength(text)), Span<const ByteSpan>(spans.Data(), spans.Size()),
+                        rig.blobs.types, &blob, &error)
+                .Ok());
+    REQUIRE(rig.backend.Add(Rid(0x102), AsBytes(blob)).Ok());
+    Handle<GpuTextureAsset> cube;
+    REQUIRE(rig.manager->Load<GpuTextureAsset>(Rid(0x102), &cube).Ok());
+    REQUIRE(cube.Get()->texture->Valid());
+    CHECK(cube.Get()->texture->Desc().dimension == rhi::TextureDimension::Cube);
+    CHECK(cube.Get()->texture->Desc().array_layers == 6);
+    CHECK(cube.Get()->texture->Desc().mip_levels == 3);
+    CHECK(rig.manager->Stats().load_conversions == 0);
+
+    const rhi::ResourceCounts before = rig.device->Resources();
+    rig.registry.OnDeviceReleasing(rig.device->Epoch());
+    rhi::NullDevicePtr second = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
+    REQUIRE(rig.registry.OnDeviceCreated(second.Get(), second->Epoch()));
+    CHECK(second->Resources().textures == before.textures);
+    CHECK(cube.Get()->texture->Valid());
+    CHECK(cube.Get()->texture->Desc().dimension == rhi::TextureDimension::Cube);
+
+    rig.context.device = second.Get();
+    cube.Reset();
+    rig.registry.OnDeviceReleasing(second->Epoch());
+    second.Reset();
 }
 
 }  // namespace vse::asset

@@ -299,7 +299,7 @@ TextureLevel TextureView::Level(u32 layer, u32 mip) const
 rhi::TextureDesc TextureView::Desc(rhi::TextureUsage usage) const
 {
     rhi::TextureDesc desc;
-    desc.dimension = rhi::TextureDimension::Tex2D;
+    desc.dimension = kind_ == TextureKind::Cube ? rhi::TextureDimension::Cube : rhi::TextureDimension::Tex2D;
     desc.width = width_;
     desc.height = height_;
     desc.mip_levels = mip_count_;

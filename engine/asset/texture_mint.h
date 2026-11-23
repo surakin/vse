@@ -52,4 +52,24 @@ Status MintTextureFromPixels(const TypeRegistry& types, ResourceId id, const Tex
                              u32 height, Span<const ByteSpan> images, Vector<byte>* out, u32 target = 0,
                              jobs::Scheduler* scheduler = nullptr);
 
+/// Mints a texture blob from tightly packed half-float RGBA layers (a high-dynamic-range image).
+///
+/// The format is `RGBA16_Float`, the mip chain is filtered in exact integer arithmetic like the 8-bit one, and nothing
+/// is converted.
+///
+/// - Param types: the registry; it must hold `TEXR`.
+/// - Param id: the texture's id.
+/// - Param spec: kind, mips, filter; `format` must be `RGBA16_Float` and `alpha` must not be `Premultiply`.
+/// - Param width: texels across (1 to 16384).
+/// - Param height: texels down.
+/// - Param images: one `width * height * 8` byte layer per layer of the kind; every texel finite.
+/// - Param out: replaced by the blob.
+/// - Param target: the API layout of the blob (0 for the default).
+/// - Fails: `Invalid` (another format, a layer of another size, a cube that is not square, a mip count above the full
+///   chain), `Corrupt` for an infinite or NaN texel, `LimitExceeded` (memory), and what [[asset::BuildTextureBlob]]
+///   reports.
+/// - Ownership: borrows its arguments for the call only; `*out` is replaced.
+Status MintTextureFromHalfPixels(const TypeRegistry& types, ResourceId id, const TextureMintSpec& spec, u32 width,
+                                 u32 height, Span<const ByteSpan> images, Vector<byte>* out, u32 target = 0);
+
 }  // namespace vse::asset

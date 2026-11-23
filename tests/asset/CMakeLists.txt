@@ -26,6 +26,7 @@ set(ASSET_TEST_SOURCES
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/mesh_source.cpp  # Day 319: the mesh minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/clip_source.cpp  # Day 320: the clip minter under test
   texture_test.cpp  # Day 323
+  cube_map_test.cpp  # Phase 28 Day 480
   bc_test.cpp  # Day 324
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/texture_source.cpp  # Day 323: the texture minter under test
   material_test.cpp  # Day 326

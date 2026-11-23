@@ -13,9 +13,15 @@
 //!     mips full               (or a count; default full)
 //!     filter box              (or `kaiser`; default box)
 //!     alpha straight          (or `premultiply` or `ignore`; default straight for rgba8, ignore otherwise)
+//!     input rgba8             (or `rgba16f`: the raw files hold half-float RGBA, a high-dynamic-range image; needs
+//!                              `format rgba16f`; default rgba8)
+//!     projection faces        (or `equirect`, for a cube with `input rgba16f`: one latitude-longitude source file is
+//!                              converted into the six faces, `face_size` texels across; default faces)
+//!     face_size 512           (1 to 4096; with `projection equirect` only)
 //!
 //! `id` comes first (written by `asset_mint adopt`). The images are raw files: a 24-byte header (`RAW1`,
-//! width, height, the id as a `u64`, a reserved `u32`) and `width * height * 4` bytes of RGBA8 rows. No PNG.
+//! width, height, the id as a `u64`, a reserved `u32`) and `width * height * 4` bytes of RGBA8 rows, or, with the magic
+//! `RAWH`, `width * height * 8` bytes of half-float RGBA rows. No PNG.
 
 #include "asset/block_compress.h"
 #include "asset/resource_id.h"
@@ -54,6 +60,9 @@ struct TextureSource
     u32 mips = 0;                                   ///< The `mips` record (0: the full chain).
     MipFilter filter = MipFilter::Box;              ///< The `filter` record.
     MipAlpha alpha = MipAlpha::Straight;            ///< The `alpha` record.
+    bool half_input = false;                        ///< `input rgba16f`: the raw files are half-float images.
+    bool equirect = false;                          ///< `projection equirect`: one latitude-longitude source.
+    u32 face_size = 0;                              ///< The `face_size` record (0 when not given).
 };
 
 /// Where and why a texture source or image was refused.
@@ -65,16 +74,17 @@ struct TextureSourceError
     Array<char, 96> message = {};  ///< A sentence.
 };
 
-/// An RGBA8 image read from a raw file.
+/// An RGBA8 or half-float RGBA image read from a raw file.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: borrows the file bytes.
 struct RawImage
 {
-    u32 width = 0;    ///< Texels across.
-    u32 height = 0;   ///< Texels down.
-    u64 id = 0;       ///< The id field of the header (0 when none).
-    ByteSpan pixels;  ///< `width * height * 4` bytes.
+    u32 width = 0;      ///< Texels across.
+    u32 height = 0;     ///< Texels down.
+    u64 id = 0;         ///< The id field of the header (0 when none).
+    bool half = false;  ///< The magic was `RAWH`: half-float texels.
+    ByteSpan pixels;    ///< `width * height * 4` bytes, or `* 8` when `half`.
 };
 
 /// Parses a texture source.
@@ -88,7 +98,9 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
 
 /// Reads the header of a raw image.
 ///
-/// - Fails: `Corrupt` for a bad magic, a size outside 1 to 16384 or pixel bytes that are not `width * height * 4`.
+/// - Fails: `Corrupt` for a bad magic, a size outside 1 to 16384 or pixel bytes that are not `width * height * 4`
+/// (`RAWH`:
+///   `* 8`).
 /// - Ownership: borrows `bytes`; the image keeps a span into it.
 Status ParseRawImage(ByteSpan bytes, RawImage* out);
 
@@ -98,6 +110,12 @@ Status ParseRawImage(ByteSpan bytes, RawImage* out);
 /// - Fails: `Invalid` for a size outside 1 to 16384 or pixels of the wrong size.
 /// - Ownership: borrows `rgba`; `*out` is replaced.
 Status BuildRawImage(u32 width, u32 height, ByteSpan rgba, u64 id, Vector<byte>* out);
+
+/// Writes a half-float raw image (`RAWH`: `width * height * 8` bytes of half-float RGBA).
+///
+/// - Fails: `Invalid` for a size outside 1 to 16384 or pixels of the wrong size.
+/// - Ownership: borrows `rgba16f`; `*out` is replaced.
+Status BuildRawHalfImage(u32 width, u32 height, ByteSpan rgba16f, u64 id, Vector<byte>* out);
 
 /// Mints a texture: parses the source, premultiplies and converts each image to the stored format, makes the mip
 /// chains, and builds the blob laid out for `target`.

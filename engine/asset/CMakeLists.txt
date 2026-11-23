@@ -29,6 +29,7 @@ set(ASSET_SOURCES
   texture.cpp  # Day 323
   block_compress.cpp  # Day 324
   texture_mint.cpp  # Day 338
+  cube_map.cpp  # Phase 28 Day 480
   material.cpp  # Day 326
   level.cpp  # Day 327
   resource_manager.cpp  # Day 328

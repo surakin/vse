@@ -3,6 +3,7 @@
 #include "asset/block_compress.h"
 #include "asset/texture_mint.h"
 #include "cstr/cstr.h"
+#include "asset/cube_map.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 #include "source_text.h"
@@ -57,6 +58,9 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
     bool have_mips = false;
     bool have_filter = false;
     bool have_alpha = false;
+    bool have_input = false;
+    bool have_projection = false;
+    bool have_face_size = false;
     bool alpha_given = false;
     rhi::Format base = rhi::Format::RGBA8_UNorm;
     u32 line_number = 0;
@@ -137,6 +141,18 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
         else if (kind == StringView("alpha"))
         {
             seen = &have_alpha;
+        }
+        else if (kind == StringView("input"))
+        {
+            seen = &have_input;
+        }
+        else if (kind == StringView("projection"))
+        {
+            seen = &have_projection;
+        }
+        else if (kind == StringView("face_size"))
+        {
+            seen = &have_face_size;
         }
         else
         {
@@ -262,6 +278,45 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
                 return TxFail(error, line_number, "filter is box or kaiser");
             }
         }
+        else if (kind == StringView("input"))
+        {
+            if (v == StringView("rgba8"))
+            {
+                out->half_input = false;
+            }
+            else if (v == StringView("rgba16f"))
+            {
+                out->half_input = true;
+            }
+            else
+            {
+                return TxFail(error, line_number, "input is rgba8 or rgba16f");
+            }
+        }
+        else if (kind == StringView("projection"))
+        {
+            if (v == StringView("faces"))
+            {
+                out->equirect = false;
+            }
+            else if (v == StringView("equirect"))
+            {
+                out->equirect = true;
+            }
+            else
+            {
+                return TxFail(error, line_number, "projection is faces or equirect");
+            }
+        }
+        else if (kind == StringView("face_size"))
+        {
+            u32 n = 0;
+            if (!srctext::ParseUnsigned(v, &n) || n < 1 || n > 4096)
+            {
+                return TxFail(error, line_number, "face_size is a count from 1 to 4096");
+            }
+            out->face_size = n;
+        }
         else
         {
             if (v == StringView("straight"))
@@ -288,10 +343,26 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
         return TxFail(error, 0, "the texture source has no id line (asset_mint adopt writes it)");
     }
     const usize n = out->sources.Size();
-    const bool count_ok = out->kind == TextureKind::Tex2D ? n == 1 : (out->kind == TextureKind::Cube ? n == 6 : n >= 1);
+    if (out->equirect && (out->kind != TextureKind::Cube || !out->half_input || out->face_size == 0))
+    {
+        return TxFail(error, 0, "projection equirect needs kind cube, input rgba16f and a face_size");
+    }
+    if (!out->equirect && out->face_size != 0)
+    {
+        return TxFail(error, 0, "face_size is for projection equirect");
+    }
+    if (out->half_input && base != rhi::Format::RGBA16_Float)
+    {
+        return TxFail(error, 0, "input rgba16f needs format rgba16f");
+    }
+    const bool count_ok = out->equirect
+                              ? n == 1
+                              : (out->kind == TextureKind::Tex2D ? n == 1
+                                                                 : (out->kind == TextureKind::Cube ? n == 6 : n >= 1));
     if (!count_ok)
     {
-        return TxFail(error, 0, "the number of source records does not fit the kind (1 for 2d, 6 for a cube)");
+        return TxFail(error, 0,
+                      "the number of source records does not fit the kind (1 for 2d, 6 for a cube, 1 for equirect)");
     }
     const bool half = base == rhi::Format::R16_Float || base == rhi::Format::RGBA16_Float;
     if (out->srgb && (base == rhi::Format::R8_UNorm || base == rhi::Format::RG8_UNorm ||
@@ -324,32 +395,42 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
 Status ParseRawImage(ByteSpan bytes, RawImage* out)
 {
     *out = RawImage();
-    if (bytes.Size() < kRawHeaderBytes || bytes[0] != 'R' || bytes[1] != 'A' || bytes[2] != 'W' || bytes[3] != '1')
+    const bool rgba8 = bytes.Size() >= kRawHeaderBytes && bytes[0] == 'R' && bytes[1] == 'A' && bytes[2] == 'W' &&
+                       bytes[3] == '1';
+    const bool half = bytes.Size() >= kRawHeaderBytes && bytes[0] == 'R' && bytes[1] == 'A' && bytes[2] == 'W' &&
+                      bytes[3] == 'H';
+    if (!rgba8 && !half)
     {
-        return Status::Make(ErrorCode::Corrupt, "the raw image has no RAW1 header");
+        return Status::Make(ErrorCode::Corrupt, "the raw image has no RAW1 or RAWH header");
     }
     const u64 w = TxLoad(bytes.Data() + 4, 4);
     const u64 h = TxLoad(bytes.Data() + 8, 4);
-    if (w == 0 || h == 0 || w > kMaxTextureSize || h > kMaxTextureSize || bytes.Size() - kRawHeaderBytes != w * h * 4)
+    const u64 texel = half ? 8 : 4;
+    if (w == 0 || h == 0 || w > kMaxTextureSize || h > kMaxTextureSize ||
+        bytes.Size() - kRawHeaderBytes != w * h * texel)
     {
         return Status::Make(ErrorCode::Corrupt, "the raw image size is outside 1 to 16384 or its pixels do not fit it");
     }
     out->width = static_cast<u32>(w);
     out->height = static_cast<u32>(h);
     out->id = TxLoad(bytes.Data() + 12, 8);
-    out->pixels = ByteSpan(bytes.Data() + kRawHeaderBytes, static_cast<usize>(w * h * 4));
+    out->half = half;
+    out->pixels = ByteSpan(bytes.Data() + kRawHeaderBytes, static_cast<usize>(w * h * texel));
     return Status::Success();
 }
 
-Status BuildRawImage(u32 width, u32 height, ByteSpan rgba, u64 id, Vector<byte>* out)
+namespace
+{
+
+Status BuildRawFile(char magic, u32 texel_bytes, u32 width, u32 height, ByteSpan pixels, u64 id, Vector<byte>* out)
 {
     if (width == 0 || height == 0 || width > kMaxTextureSize || height > kMaxTextureSize ||
-        rgba.Size() != static_cast<u64>(width) * height * 4)
+        pixels.Size() != static_cast<u64>(width) * height * texel_bytes)
     {
         return Status::Make(ErrorCode::Invalid, "the raw image size is outside 1 to 16384 or the pixels do not fit it");
     }
     Vector<byte> result;
-    if (!result.TryResize(kRawHeaderBytes + rgba.Size()))
+    if (!result.TryResize(kRawHeaderBytes + pixels.Size()))
     {
         return Status::Make(ErrorCode::LimitExceeded, "out of memory");
     }
@@ -357,14 +438,26 @@ Status BuildRawImage(u32 width, u32 height, ByteSpan rgba, u64 id, Vector<byte>*
     p[0] = 'R';
     p[1] = 'A';
     p[2] = 'W';
-    p[3] = '1';
+    p[3] = static_cast<byte>(magic);
     TxStore(p + 4, width, 4);
     TxStore(p + 8, height, 4);
     TxStore(p + 12, id, 8);
     TxStore(p + 20, 0, 4);
-    MemCopy(p + kRawHeaderBytes, rgba.Data(), rgba.Size());
+    MemCopy(p + kRawHeaderBytes, pixels.Data(), pixels.Size());
     *out = static_cast<Vector<byte>&&>(result);
     return Status::Success();
+}
+
+}  // namespace
+
+Status BuildRawImage(u32 width, u32 height, ByteSpan rgba, u64 id, Vector<byte>* out)
+{
+    return BuildRawFile('1', 4, width, height, rgba, id, out);
+}
+
+Status BuildRawHalfImage(u32 width, u32 height, ByteSpan rgba16f, u64 id, Vector<byte>* out)
+{
+    return BuildRawFile('H', 8, width, height, rgba16f, id, out);
 }
 
 Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegistry& types, Vector<byte>* out,
@@ -391,11 +484,17 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
         {
             return TxFail(error, line, "the raw image file is malformed");
         }
+        if (raw.half != source.half_input)
+        {
+            return TxFail(error, line,
+                          source.half_input ? "the raw image is RAW1, but the source says input rgba16f"
+                                            : "the raw image is RAWH, but the source says input rgba8");
+        }
         if (layer == 0)
         {
             width = raw.width;
             height = raw.height;
-            if (source.kind == TextureKind::Cube && width != height)
+            if (source.kind == TextureKind::Cube && !source.equirect && width != height)
             {
                 return TxFail(error, line, "a cube map's faces must be square");
             }
@@ -423,9 +522,32 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
     spec.mips = source.mips;
     spec.filter = source.filter;
     spec.alpha = source.alpha;
-    const Status built = MintTextureFromPixels(types, source.id, spec, width, height,
-                                               Span<const ByteSpan>(layers.Data(), layers.Size()), out, target,
-                                               scheduler);
+    Status built = Status::Success();
+    if (source.equirect)
+    {
+        Vector<Vector<byte>> faces;
+        built = EquirectangularToCubeFaces(layers[0], width, height, source.face_size, &faces);
+        if (built.Ok())
+        {
+            Vector<ByteSpan> face_spans;
+            for (usize face = 0; face < faces.Size(); ++face)
+            {
+                face_spans.Push(ByteSpan(faces[face].Data(), faces[face].Size()));
+            }
+            built = MintTextureFromHalfPixels(types, source.id, spec, source.face_size, source.face_size,
+                                              Span<const ByteSpan>(face_spans.Data(), face_spans.Size()), out, target);
+        }
+    }
+    else if (source.half_input)
+    {
+        built = MintTextureFromHalfPixels(types, source.id, spec, width, height,
+                                          Span<const ByteSpan>(layers.Data(), layers.Size()), out, target);
+    }
+    else
+    {
+        built = MintTextureFromPixels(types, source.id, spec, width, height,
+                                      Span<const ByteSpan>(layers.Data(), layers.Size()), out, target, scheduler);
+    }
     if (built.Failed())
     {
         TxSetError(error, 0, built.Message());

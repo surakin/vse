@@ -155,8 +155,8 @@ public:
     /// - Aborts: `layer` is not below `Layers()` or `mip` not below `MipCount()`.
     TextureLevel Level(u32 layer, u32 mip) const;
 
-    /// The description of the texture to create for this blob: a 2D texture (a cube is a 6-layer array), the stored
-    /// mip count, and `usage`.
+    /// The description of the texture to create for this blob: a 2D texture or a cube (an array texture is a 2D array),
+    /// the stored mip count, and `usage`.
     ///
     /// - Param usage: how the texture will be used (the upload adds the copy-destination flag).
     rhi::TextureDesc Desc(rhi::TextureUsage usage) const;

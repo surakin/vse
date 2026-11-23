@@ -8,6 +8,47 @@
 namespace vse::asset
 {
 
+namespace
+{
+
+// Wraps the chains (one tight mip chain per layer) in a blob.
+Status BuildFromChains(const TypeRegistry& types, ResourceId id, const TextureMintSpec& source, u32 width, u32 height,
+                       const Vector<Vector<byte>>& chains, u32 stored, Vector<byte>* out, u32 target)
+{
+    Vector<ByteSpan> spans;
+    if (!spans.TryReserve(chains.Size() * stored))
+    {
+        return Status::Make(ErrorCode::LimitExceeded, "out of memory");
+    }
+    for (usize layer = 0; layer < chains.Size(); ++layer)
+    {
+        usize offset = 0;
+        u32 w = width;
+        u32 h = height;
+        for (u32 mip = 0; mip < stored; ++mip)
+        {
+            const usize bytes = static_cast<usize>(TightLevelBytes(source.format, w, h));
+            spans.Push(ByteSpan(chains[layer].Data() + offset, bytes));
+            offset += bytes;
+            w = w > 1 ? w / 2 : 1;
+            h = h > 1 ? h / 2 : 1;
+        }
+    }
+    TextureBuildInput input;
+    input.kind = source.kind;
+    input.format = source.format;
+    input.width = width;
+    input.height = height;
+    input.layers = static_cast<u32>(chains.Size());
+    input.mip_count = stored;
+    input.subresources = Span<const ByteSpan>(spans.Data(), spans.Size());
+    input.filter = source.filter;
+    input.alpha = source.alpha;
+    return BuildTextureBlob(types, id, input, out, target);
+}
+
+}  // namespace
+
 Status MintTextureFromPixels(const TypeRegistry& types, ResourceId id, const TextureMintSpec& source, u32 width,
                              u32 height, Span<const ByteSpan> images, Vector<byte>* out, u32 target,
                              jobs::Scheduler* scheduler)
@@ -97,36 +138,53 @@ Status MintTextureFromPixels(const TypeRegistry& types, ResourceId id, const Tex
             chains[layer] = Move(packed);
         }
     }
-    Vector<ByteSpan> spans;
-    if (!spans.TryReserve(chains.Size() * stored))
+    return BuildFromChains(types, id, source, width, height, chains, stored, out, target);
+}
+
+Status MintTextureFromHalfPixels(const TypeRegistry& types, ResourceId id, const TextureMintSpec& source, u32 width,
+                                 u32 height, Span<const ByteSpan> images, Vector<byte>* out, u32 target)
+{
+    if (source.format != rhi::Format::RGBA16_Float)
+    {
+        return Status::Make(ErrorCode::Invalid, "half-float pixels mint to the RGBA16_Float format only");
+    }
+    if (width == 0 || height == 0 || width > kMaxTextureSize || height > kMaxTextureSize)
+    {
+        return Status::Make(ErrorCode::Invalid, "the texture size is outside 1 to 16384");
+    }
+    if (source.kind == TextureKind::Cube && width != height)
+    {
+        return Status::Make(ErrorCode::Invalid, "a cube map's faces must be square");
+    }
+    if (source.alpha == MipAlpha::Premultiply)
+    {
+        return Status::Make(ErrorCode::Invalid, "half-float pixels are not premultiplied by the minter");
+    }
+    const u32 full = FullMipCount(width, height);
+    if (source.mips > full)
+    {
+        return Status::Make(ErrorCode::Invalid, "the mip count is above the full chain of the image");
+    }
+    const u32 stored = source.mips == 0 ? full : source.mips;
+    Vector<Vector<byte>> chains;
+    if (!chains.TryReserve(images.Size()))
     {
         return Status::Make(ErrorCode::LimitExceeded, "out of memory");
     }
-    for (usize layer = 0; layer < chains.Size(); ++layer)
+    for (usize layer = 0; layer < images.Size(); ++layer)
     {
-        usize offset = 0;
-        u32 w = width;
-        u32 h = height;
-        for (u32 mip = 0; mip < stored; ++mip)
+        if (images[layer].Size() != static_cast<u64>(width) * height * 8)
         {
-            const usize bytes = static_cast<usize>(TightLevelBytes(source.format, w, h));
-            spans.Push(ByteSpan(chains[layer].Data() + offset, bytes));
-            offset += bytes;
-            w = w > 1 ? w / 2 : 1;
-            h = h > 1 ? h / 2 : 1;
+            return Status::Make(ErrorCode::Invalid, "the image has a different size from the first one");
         }
+        MipOptions options;
+        options.filter = source.filter;
+        options.alpha = source.alpha;
+        Vector<byte> chain;
+        ENGINE_TRY(GenerateMipChain(rhi::Format::RGBA16_Float, width, height, images[layer], options, &chain));
+        chains.Push(Move(chain));
     }
-    TextureBuildInput input;
-    input.kind = source.kind;
-    input.format = source.format;
-    input.width = width;
-    input.height = height;
-    input.layers = static_cast<u32>(chains.Size());
-    input.mip_count = stored;
-    input.subresources = Span<const ByteSpan>(spans.Data(), spans.Size());
-    input.filter = source.filter;
-    input.alpha = source.alpha;
-    return BuildTextureBlob(types, id, input, out, target);
+    return BuildFromChains(types, id, source, width, height, chains, stored, out, target);
 }
 
 }  // namespace vse::asset

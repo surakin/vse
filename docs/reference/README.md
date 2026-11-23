@@ -31,7 +31,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Audio](audio.md) | 28 | 822 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 37 | 1390 |
+| [Assets and resources](asset.md) | 38 | 1397 |
 | [glTF importer](asset_import.md) | 19 | 321 |
 | [Animation runtime](animation.md) | 4 | 90 |
 | [Database](database.md) | 9 | 161 |

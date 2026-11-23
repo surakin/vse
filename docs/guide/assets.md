@@ -366,9 +366,14 @@ srgb true              # rgba8: store sRGB; half floats: the source is sRGB
 mips full              # or a count
 filter box             # or kaiser
 alpha straight         # or premultiply, ignore
+input rgba8            # or rgba16f: the raw files hold half-float RGBA (needs format rgba16f)
+projection faces       # or equirect (a cube from one latitude-longitude image; needs input rgba16f)
+face_size 512          # with projection equirect only: texels across a face, 1 to 4096
 ```
 
-A raw image is `RAW1`, width, height, an id field and a reserved `u32` (24 bytes, little-endian), then `width * height * 4` bytes of RGBA8: no PNG. Errors name the line; a missing `id` line names `asset_mint adopt`.
+A raw image is `RAW1`, width, height, an id field and a reserved `u32` (24 bytes, little-endian), then `width * height * 4` bytes of RGBA8: no PNG. With the magic `RAWH` the pixels are `width * height * 8` bytes of half-float RGBA (`input rgba16f`): a high-dynamic-range image, kept as it is (values above 1 stay above 1) and filtered like the 8-bit ones. Errors name the line; a missing `id` line names `asset_mint adopt`.
+
+**Cube maps.** A cube is six square faces in the order +X -X +Y -Y +Z -Z; `TextureView::Desc` makes a `Cube` texture of it, which a shader reads with a direction. The face directions are those of Vulkan, Direct3D 12 and Metal (`asset::CubeFaceDirection`). `projection equirect` makes the faces from one latitude-longitude image (`asset::EquirectangularToCubeFaces`): its center column looks along -Z, its columns run toward +X, its top row is straight up; the conversion is bilinear and uses only `+ - * /`, the square root and a fixed polynomial for the angles, so the faces are the same bytes on every machine. A texture that is missing from the project loads the 2D fallback, not a cube: code that needs a cube checks the loaded texture's dimension.
 
 ### Block compression
 

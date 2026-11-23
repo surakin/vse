@@ -7709,6 +7709,12 @@ asset::ResourceTraits<LevelSummary>::kType	variable	asset	asset-resourcetraits-l
 asset::ResourceTraits<LevelSummary>::kKind	variable	asset	asset-resourcetraits-lt-levelsummary-gt-kkind	asset.md	engine/asset/cpu_loaders.h:90
 asset::RegisterCpuLoaders(ResourceManager*)	function	asset	asset-registercpuloaders-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:99
 asset::RegisterSkeletonLoader(ResourceManager*)	function	asset	asset-registerskeletonloader-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:106
+asset::kMaxCubeFaceSize	variable	asset	asset-kmaxcubefacesize	asset.md	engine/asset/cube_map.h:18
+asset::HalfBitsToFloat(u32,f32*)	function	asset	asset-halfbitstofloat-u32-f32-star	asset.md	engine/asset/cube_map.h:27
+asset::FloatToHalfBits(f32)	function	asset	asset-floattohalfbits-f32	asset.md	engine/asset/cube_map.h:33
+asset::CubeFaceDirection(u32,f32,f32)	function	asset	asset-cubefacedirection-u32-f32-f32	asset.md	engine/asset/cube_map.h:46
+asset::DeterministicAtan2(f32,f32)	function	asset	asset-deterministicatan2-f32-f32	asset.md	engine/asset/cube_map.h:52
+asset::EquirectangularToCubeFaces(ByteSpan,u32,u32,u32,Vector<Vector<byte>>*)	function	asset	asset-equirectangulartocubefaces-bytespan-u32-u32-u32-vector-lt-vector-lt-byte-gt-gt-star	asset.md	engine/asset/cube_map.h:68
 asset::FaultOp	enum	asset	asset-faultop	asset.md	engine/asset/faulty_backend.h:14
 asset::FaultOp::Stat	enumerator	asset	asset-faultop-stat	asset.md	engine/asset/faulty_backend.h:16
 asset::FaultOp::Open	enumerator	asset	asset-faultop-open	asset.md	engine/asset/faulty_backend.h:17
@@ -8708,6 +8714,7 @@ asset::TextureMintSpec::mips	variable	asset	asset-texturemintspec-mips	asset.md	
 asset::TextureMintSpec::filter	variable	asset	asset-texturemintspec-filter	asset.md	engine/asset/texture_mint.h:32
 asset::TextureMintSpec::alpha	variable	asset	asset-texturemintspec-alpha	asset.md	engine/asset/texture_mint.h:33
 asset::MintTextureFromPixels(const TypeRegistry&,ResourceId,const TextureMintSpec&,u32,u32,Span<const ByteSpan>,Vector<byte>*,u32,jobs::Scheduler*)	function	asset	asset-minttexturefrompixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32-jobs-scheduler-star	asset.md	engine/asset/texture_mint.h:51
+asset::MintTextureFromHalfPixels(const TypeRegistry&,ResourceId,const TextureMintSpec&,u32,u32,Span<const ByteSpan>,Vector<byte>*,u32)	function	asset	asset-minttexturefromhalfpixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32	asset.md	engine/asset/texture_mint.h:72
 asset::kMaxTextureSize	variable	asset	asset-kmaxtexturesize	asset.md	engine/asset/texture_mips.h:26
 asset::MipFilter	enum	asset	asset-mipfilter	asset.md	engine/asset/texture_mips.h:29
 asset::MipFilter::Box	enumerator	asset	asset-mipfilter-box	asset.md	engine/asset/texture_mips.h:31
