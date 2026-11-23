@@ -125,6 +125,71 @@ void Shapes(const PhysicsWorld& world, const DebugDrawOptions& options, Vector<s
     }
 }
 
+// The triangle edges of the cells of every height field that lie under another collider's box.
+void FieldCells(const PhysicsWorld& world, Vector<spatial::DebugLine>* lines)
+{
+    constexpr u32 kMaxTriangles = 64;
+    const u32 slots = world.Stats().collider_slots;
+    for (u32 fs = 0; fs < slots; ++fs)
+    {
+        const ColliderRecord* field_record = world.FindCollider(world.ColliderAtSlot(fs));
+        if (field_record == nullptr || field_record->value.shape.kind != ShapeKind::HeightField)
+        {
+            continue;
+        }
+        const Body* field_body = world.Find(field_record->owner);
+        const HeightField* field = world.HeightFields().Find(field_record->value.shape.height_field);
+        if (field_body == nullptr || field == nullptr)
+        {
+            continue;
+        }
+        const Vec3 field_center = field_body->position + field_body->orientation.ToMat3() * field_record->value.offset;
+        const Mat3 fr = (field_body->orientation * field_record->value.rotation).ToMat3();
+        for (u32 os = 0; os < slots; ++os)
+        {
+            const ColliderRecord* other = world.FindCollider(world.ColliderAtSlot(os));
+            const Body* other_body = other != nullptr ? world.Find(other->owner) : nullptr;
+            if (other == nullptr || other_body == nullptr || other->value.shape.kind == ShapeKind::HeightField ||
+                other_body->settings.type == BodyType::Static)
+            {
+                continue;
+            }
+            const Vec3 oc = other_body->position + other_body->orientation.ToMat3() * other->value.offset;
+            const Aabb box = other->value.shape.Bounds(oc, other_body->orientation * other->value.rotation);
+            const Vec3 half = (box.max - box.min) * 0.5f +
+                              Vec3(field->CellSize(), field->CellSize(), field->CellSize());
+            const Vec3 d = (box.min + box.max) * 0.5f - field_center;
+            const Vec3 local_center(fr.col[0].Dot(d), fr.col[1].Dot(d), fr.col[2].Dot(d));
+            const Vec3 local_half(Abs(fr.col[0].x) * half.x + Abs(fr.col[0].y) * half.y + Abs(fr.col[0].z) * half.z,
+                                  Abs(fr.col[1].x) * half.x + Abs(fr.col[1].y) * half.y + Abs(fr.col[1].z) * half.z,
+                                  Abs(fr.col[2].x) * half.x + Abs(fr.col[2].y) * half.y + Abs(fr.col[2].z) * half.z);
+            Vector<u32> triangles;
+            field->QueryBox(Aabb::FromMinMax(local_center - local_half, local_center + local_half), &triangles,
+                            kMaxTriangles);
+            for (usize i = 0; i < triangles.Size(); ++i)
+            {
+                Vec3 a;
+                Vec3 b;
+                Vec3 c;
+                field->Triangle(triangles[i], &a, &b, &c);
+                const Vec3 wa = field_center + fr * a;
+                const Vec3 wb = field_center + fr * b;
+                const Vec3 wc = field_center + fr * c;
+                Line(lines, wa, wb, kDebugStaticColor);  // the diagonal of an even triangle, the x edge of an odd one
+                if ((triangles[i] & 1u) == 0)
+                {
+                    Line(lines, wb, wc, kDebugStaticColor);
+                    Line(lines, wc, wa, kDebugStaticColor);
+                }
+                else
+                {
+                    Line(lines, wb, wc, kDebugStaticColor);
+                }
+            }
+        }
+    }
+}
+
 void Boxes(const PhysicsWorld& world, Vector<spatial::DebugLine>* lines)
 {
     const u32 slots = world.Stats().collider_slots;
@@ -194,6 +259,10 @@ u32 DebugDraw(const PhysicsWorld& world, const DebugDrawOptions& options, Vector
     if (options.shapes)
     {
         Shapes(world, options, lines);
+    }
+    if (options.field_cells)
+    {
+        FieldCells(world, lines);
     }
     if (options.boxes)
     {

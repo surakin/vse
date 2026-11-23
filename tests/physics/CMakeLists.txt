@@ -13,6 +13,7 @@ set(PHYSICS_TEST_SOURCES
   hull_collide_test.cpp  # Day 393
   mesh_collide_test.cpp  # Day 394
   height_field_test.cpp  # Phase 28 Day 491
+  height_field_collision_test.cpp  # Phase 28 Day 492
   compound_test.cpp  # Day 395
   solver_test.cpp  # Day 396
   stability_test.cpp  # Day 397

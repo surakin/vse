@@ -2328,7 +2328,7 @@ What `DebugDraw` draws.
 bool shapes;
 ```
 
-The outline of every collider (a hull, mesh or compound is drawn as its local box).
+The outline of every collider (a hull, mesh, height field or compound is drawn as its local box).
 
 ### `contacts` {#physics-debugdrawoptions-contacts}
 
@@ -2369,6 +2369,16 @@ bool boxes;
 ```
 
 The box of every collider as the broad phase sees it.
+
+### `field_cells` {#physics-debugdrawoptions-field-cells}
+
+`variable physics::DebugDrawOptions::field_cells` — defined in `engine/physics/debug_draw.h`
+
+```cpp
+bool field_cells;
+```
+
+The cells of a height field under the boxes of the other colliders (a cell's triangle edges, at most 64 triangles near each other collider), so the surface a body rests on is seen; the field's own outline is its box.
 
 ### `normal_length` {#physics-debugdrawoptions-normal-length}
 

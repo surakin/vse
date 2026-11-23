@@ -24,7 +24,7 @@ inline constexpr u32 kDebugBroadPhaseColor = 0xFF804020u;  ///< A collider's box
 /// - Thread-safety: thread-compatible plain data.
 struct DebugDrawOptions
 {
-    /// The outline of every collider (a hull, mesh or compound is drawn as its local box).
+    /// The outline of every collider (a hull, mesh, height field or compound is drawn as its local box).
     bool shapes = true;
     /// The points of the contacts of the last step, each with a short line along the normal.
     bool contacts = true;
@@ -34,6 +34,9 @@ struct DebugDrawOptions
     bool islands = true;
     /// The box of every collider as the broad phase sees it.
     bool boxes = false;
+    /// The cells of a height field under the boxes of the other colliders (a cell's triangle edges, at most 64
+    /// triangles near each other collider), so the surface a body rests on is seen; the field's own outline is its box.
+    bool field_cells = true;
     /// The length of a contact normal's line, in metres.
     f32 normal_length = 0.3f;
 };

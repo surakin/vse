@@ -1,6 +1,7 @@
-// Golden state hashes (Phase 25 Day 407): six reference scenes run for 600 steps, the hash of the state taken every
-// 100th step, compared with the values committed here. The same values must come out of every Linux configuration
-// (compiler, unity, optimisation, sanitizer) and every thread count, and, on Days 410-411, out of Windows and macOS.
+// Golden state hashes (Phase 25 Day 407, the terrain scene Phase 28 Day 492): seven reference scenes run for 600 steps,
+// the hash of the state taken every 100th step, compared with the values committed here. The same values must come out
+// of every Linux configuration (compiler, unity, optimisation, sanitizer) and every thread count, and, on Days 410-411,
+// out of Windows and macOS.
 //
 // To regenerate after a deliberate change of the step: run `physics_tests "[golden-print]"` and paste the table it
 // prints.
@@ -13,6 +14,7 @@
 #include "os/os.h"
 #include "os/console.h"
 #include "physics/character.h"
+#include "physics/height_field.h"
 #include "physics/world.h"
 #include "test_hulls.h"
 
@@ -34,6 +36,7 @@ enum class GoldenScene : u32
     Bridge,
     Walker,
     Bullet,
+    Terrain,
     Count
 };
 
@@ -47,6 +50,7 @@ const char* SceneName(GoldenScene scene)
     case GoldenScene::Bridge: return "Bridge";
     case GoldenScene::Walker: return "Walker";
     case GoldenScene::Bullet: return "Bullet";
+    case GoldenScene::Terrain: return "Terrain";
     case GoldenScene::Count: break;
     }
     return "?";
@@ -210,6 +214,44 @@ void BuildBullet(PhysicsWorld& world)
     }
 }
 
+// A hundred bodies dropped onto a bumpy height field (Phase 28 Day 492): heights from an integer hash, so the field is
+// the same on every machine.
+void BuildTerrain(PhysicsWorld& world)
+{
+    Vector<u16> samples;
+    for (u32 z = 0; z < 33; ++z)
+    {
+        for (u32 x = 0; x < 33; ++x)
+        {
+            u32 h = (x / 2) * 73856093u ^ (z / 2) * 19349663u;
+            h ^= h >> 13;
+            h *= 0x5bd1e995u;
+            h ^= h >> 15;
+            samples.Push(static_cast<u16>(h % 40000u));
+        }
+    }
+    Validation v = Validation::Ok;
+    const HeightFieldConstPtr field = HeightField::CreateFromSamples(Span<const u16>(samples.Data(), samples.Size()),
+                                                                     33, 33, 0.0f, 2.0f, 1.0f, &v);
+    REQUIRE(field);
+    Add(world, BodyType::Static, Shape::MakeHeightField(world.HeightFields().Add(field), field->Extent()),
+        Vec3(0, 0, 0));
+    Rng rng;
+    for (u32 i = 0; i < 100; ++i)
+    {
+        const f32 rx = rng.Next();
+        const f32 ry = rng.Next();
+        const f32 rz = rng.Next();
+        const Vec3 at(-13.0f + 26.0f * rx, 3.0f + 0.5f * static_cast<f32>(i % 20) + ry, -13.0f + 26.0f * rz);
+        switch (i % 3)
+        {
+        case 0: Add(world, BodyType::Dynamic, Shape::MakeSphere(0.25f + 0.1f * rng.Next()), at); break;
+        case 1: Add(world, BodyType::Dynamic, Shape::MakeBox(Vec3(0.3f, 0.2f + 0.1f * rng.Next(), 0.3f)), at); break;
+        default: Add(world, BodyType::Dynamic, Shape::MakeCapsule(0.25f, 0.2f), at); break;
+        }
+    }
+}
+
 // Runs a scene and returns the hashes after steps 100, 200, ... 600.
 bool Run(GoldenScene scene, usize participants, u64 (&hashes)[kHashes])
 {
@@ -225,6 +267,7 @@ bool Run(GoldenScene scene, usize participants, u64 (&hashes)[kHashes])
     case GoldenScene::Pile: BuildPile(world); break;
     case GoldenScene::Bridge: BuildBridge(world); break;
     case GoldenScene::Bullet: BuildBullet(world); break;
+    case GoldenScene::Terrain: BuildTerrain(world); break;
     case GoldenScene::Walker:
         Ground(world);
         for (u32 i = 0; i < 4; ++i)
@@ -292,6 +335,9 @@ const Golden kGolden[] = {
     {GoldenScene::Bullet,
      {0x2b9257f67ee21a43ull, 0x34732a8636b0acd1ull, 0x5186016ce427ffdcull, 0x6cdacefee51fca81ull, 0x262d5d81d3b2501cull,
       0x390632fda4fe9522ull}},
+    {GoldenScene::Terrain,
+     {0x29ecbc8aee371089ull, 0x4400a63c04996767ull, 0x059045060cf7fa2bull, 0x0f1e2c1748851fffull, 0xa6d77a6ff0550debull,
+      0x52eeeb961668c74full}},
 };
 // GOLDEN-END
 

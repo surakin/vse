@@ -5191,8 +5191,9 @@ physics::DebugDrawOptions::contacts	variable	physics	physics-debugdrawoptions-co
 physics::DebugDrawOptions::joints	variable	physics	physics-debugdrawoptions-joints	physics.md	engine/physics/debug_draw.h:32
 physics::DebugDrawOptions::islands	variable	physics	physics-debugdrawoptions-islands	physics.md	engine/physics/debug_draw.h:34
 physics::DebugDrawOptions::boxes	variable	physics	physics-debugdrawoptions-boxes	physics.md	engine/physics/debug_draw.h:36
-physics::DebugDrawOptions::normal_length	variable	physics	physics-debugdrawoptions-normal-length	physics.md	engine/physics/debug_draw.h:38
-physics::DebugDraw(const PhysicsWorld&,const DebugDrawOptions&,Vector<spatial::DebugLine>*)	function	physics	physics-debugdraw-const-physicsworld-amp-const-debugdrawoptions-amp-vector-lt-spatial-debugline-gt-star	physics.md	engine/physics/debug_draw.h:54
+physics::DebugDrawOptions::field_cells	variable	physics	physics-debugdrawoptions-field-cells	physics.md	engine/physics/debug_draw.h:39
+physics::DebugDrawOptions::normal_length	variable	physics	physics-debugdrawoptions-normal-length	physics.md	engine/physics/debug_draw.h:41
+physics::DebugDraw(const PhysicsWorld&,const DebugDrawOptions&,Vector<spatial::DebugLine>*)	function	physics	physics-debugdraw-const-physicsworld-amp-const-debugdrawoptions-amp-vector-lt-spatial-debugline-gt-star	physics.md	engine/physics/debug_draw.h:57
 physics::ProbeHash()	function	physics	physics-probehash	physics.md	engine/physics/determinism.h:20
 physics::ContractionObserved()	function	physics	physics-contractionobserved	physics.md	engine/physics/determinism.h:29
 physics::DenormalsPreserved()	function	physics	physics-denormalspreserved	physics.md	engine/physics/determinism.h:39

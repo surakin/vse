@@ -924,6 +924,8 @@ namespace
 // which is a parameter (a member would be a pointer into another class's storage).
 struct MeshTriangles
 {
+    // Whether the surface has solid ground below it only (a height field): a body is always pushed out upward.
+    static constexpr bool kSolidBelow = false;
     static u32 Query(const TriangleMesh& mesh, const Aabb& box, Vector<u32>* out) { return mesh.QueryBox(box, out); }
     static void Corners(const TriangleMesh& mesh, u32 t, Vec3* a, Vec3* b, Vec3* c)
     {
@@ -942,6 +944,7 @@ struct MeshTriangles
 
 struct FieldTriangles
 {
+    static constexpr bool kSolidBelow = true;
     // At most this many triangles are asked for: the pair tests 256 of them, so a huge shape over a huge map does not
     // list the whole map.
     static constexpr u32 kMaxListed = 1024;
@@ -1026,6 +1029,25 @@ bool TrianglesPair(const Object& source, const Pose& mesh_pose, const Shape& oth
                 tm.points[0].position_b = pb;
                 tm.points[0].position_a = up ? pb + face * depth : pb - face * depth;
                 tm.points[0].depth = depth;
+                tm.points[0].feature_id = id;
+            }
+        }
+        // A height field is solid below its surface, with no underside: a body that sank deep enough for its contact to
+        // point down (a fast one, or one pushed into a steep face) is brought out upward instead of falling through.
+        if constexpr (Triangles::kSolidBelow)
+        {
+            if (tm.normal.Dot(face) < 0.0f)
+            {
+                const Vec3 low = Support(cb, Negate(face));
+                const f32 plane = wa.Dot(face);
+                const f32 up_depth = plane - (low.Dot(face) - cb.radius);
+                const Vec3 pb = low - face * cb.radius;
+                const u32 id = tm.points[0].feature_id;
+                tm.count = 1;
+                tm.normal = face;
+                tm.points[0].position_b = pb;
+                tm.points[0].position_a = pb + face * up_depth;
+                tm.points[0].depth = up_depth;
                 tm.points[0].feature_id = id;
             }
         }
