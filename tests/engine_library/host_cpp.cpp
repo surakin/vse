@@ -60,7 +60,7 @@ static void RunRest(const engine_api* api, Engine& engine)
 
     const float gravity[3] = {0.0f, -3.0f, 0.0f};
     CHECK(world.SetGravity(gravity));
-    const float origin[3] = {0.0f, 5.0f, 0.0f};
+    const double origin[3] = {0.0, 5.0, 0.0};
     const float down[3] = {0.0f, -1.0f, 0.0f};
     engine_ray_hit hit;
     bool hit_any = true;

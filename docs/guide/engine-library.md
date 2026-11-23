@@ -874,6 +874,16 @@ A terrain is a height map drawn at an entity's place, with an optional static he
 
 **Tested** by `host_terrain.c` (the samples, the resource, every refusal, the component read back, the ground, a ball that comes to rest on the collider, the collider and its body removed with the component, and, when a device exists, a pixel of the drawn terrain against the sky).
 
+## Large worlds: positions in double precision
+
+The engine keeps every world position in double precision, so a world reaches 1e12 metres from the origin with sub-millimetre steps. A `float` has 24 bits: 100,000 km from the origin it steps by 8 m. The C API therefore passes every world position as `double`:
+
+- **Components.** `engine_transform::position` is three doubles (`rotation` and `scale` stay `float`); `engine_world_transform::position` is the exact world position of an entity's origin (its `matrix` translation is that position narrowed). `engine_spawn_params::position` is three doubles.
+- **Queries and bodies.** `terrain_height` takes and returns doubles; `physics_raycast` takes a double origin and `engine_ray_hit::point` is three doubles; `physics_overlap_sphere` and `physics_overlap_box` take a double centre; `body_apply_force` and `body_apply_impulse` take a double point; `body_teleport` a double position; `engine_physics_event::point` is three doubles. Directions, velocities, rotations and sizes stay `float`. A coordinate that is not finite or lies beyond 1e12 metres is `INVALID_ARGUMENT`.
+- **Surfaces.** `surface_pixel_ray` returns the ray's origin (the camera's exact place) as three doubles and `surface_project` takes a double point. A surface draws relative to a render origin that follows the camera in steps of 4,096 metres, so a camera 100,000 km out draws with the precision of one near the origin.
+- **Scripts.** A script's vector value carries doubles; the C API's value (`engine_value`) already did.
+- **C++.** `engine.h` takes `double` in the same places.
+
 ## The C++ layer: `engine.h`
 
 A host written in C++ may include `include/engine/engine.h` beside `engine_c.h` (it includes nothing else: no standard library, no exceptions, no RTTI).

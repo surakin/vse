@@ -15,6 +15,7 @@ namespace vse::engine_c
 namespace
 {
 
+constexpr f64 kRenderRebaseStep = 4096.0;  // metres the camera may drift from the render origin before it is re-based
 constexpr u32 kMaxObjects = 4096;
 constexpr u32 kMaxLights = 64;
 
@@ -221,7 +222,7 @@ void SurfaceScene::SyncTerrains(WorldObject& world, SceneFrameReport* report)
             const u64 key = entity.ToU64();
             renderer::TerrainObject object;
             object.source = ResolveTerrainSource(terrain.height_map);
-            object.world = placed.matrix;
+            object.world = scene::RelativeMatrix(placed, link_.origin);
             object.material.layer_count = terrain.layer_count;
             for (u32 i = 0; i < renderer::kMaxTerrainLayers; ++i)
             {
@@ -439,8 +440,8 @@ void SurfaceScene::SyncLabels(WorldObject& world, const renderer::Camera& camera
                 ++report->labels_refused;
                 return;
             }
-            const Vec3 point(placed.matrix.col[3].x + label.offset[0], placed.matrix.col[3].y + label.offset[1],
-                             placed.matrix.col[3].z + label.offset[2]);
+            const Vec3 relative = (placed.position - link_.origin).Narrow();  // relative to the render origin
+            const Vec3 point(relative.x + label.offset[0], relative.y + label.offset[1], relative.z + label.offset[2]);
             const Vec4 clip = view_projection * Vec4(point.x, point.y, point.z, 1.0f);
             if (!(clip.w > 0.0f))
             {
@@ -559,7 +560,7 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
             {
                 light.type = component.kind == ENGINE_LIGHT_SPOT ? renderer::LightType::Spot
                                                                  : renderer::LightType::Point;
-                light.position = Vec3(placed.matrix.col[3].x, placed.matrix.col[3].y, placed.matrix.col[3].z);
+                light.position = (placed.position - link_.origin).Narrow();
                 light.radius = component.radius;
                 light.inner_cone = component.inner_cone;
                 light.outer_cone = component.outer_cone;
@@ -688,7 +689,25 @@ bool IsHidden(const ecs::World& world, ecs::Entity entity)
 
 // The camera an entity stands for, or false when the entity is not a usable camera (destroyed, no camera component, no
 // world matrix, or a matrix whose axes collapse).
-bool CameraOfEntity(const ecs::World& world, u64 key, f32 aspect_of_surface, renderer::Camera* out)
+// The exact world position of a camera entity (false: it is not a working camera entity).
+bool CameraWorldPosition(const ecs::World& world, u64 key, Vec3d* out)
+{
+    const ecs::Entity entity = ecs::Entity::FromU64(key);
+    if (!world.Exists(entity) || world.Peek<CameraComponent>(entity) == nullptr)
+    {
+        return false;
+    }
+    const ecs::WorldTransform* placed = world.Peek<ecs::WorldTransform>(entity);
+    if (placed == nullptr)
+    {
+        return false;
+    }
+    *out = placed->position;
+    return true;
+}
+
+// `origin` is the render origin: the camera is placed relative to it, like everything the scene draws.
+bool CameraOfEntity(const ecs::World& world, u64 key, f32 aspect_of_surface, const Vec3d& origin, renderer::Camera* out)
 {
     const ecs::Entity entity = ecs::Entity::FromU64(key);
     if (!world.Exists(entity))
@@ -718,7 +737,7 @@ bool CameraOfEntity(const ecs::World& world, u64 key, f32 aspect_of_surface, ren
     }
     right = right * (1.0f / right_length);
     const Vec3 up = back.Cross(right);
-    out->position = Vec3(m.col[3].x, m.col[3].y, m.col[3].z);
+    out->position = (placed->position - origin).Narrow();
     out->rotation = Mat3::FromBasis(right, up, back);
     out->fov_y = component->fov_y;
     out->near_plane = component->near_plane;
@@ -734,6 +753,14 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
 {
     SceneFrameReport report;
     live_.BeginFrame();
+    // The render origin follows the camera (re-based in steps, so a camera near the world origin keeps it at zero and a
+    // far one draws with the precision of one near the origin).
+    link_.rebase_step = kRenderRebaseStep;
+    Vec3d camera_world;
+    if (camera_entity != 0 && CameraWorldPosition(world.world, camera_entity, &camera_world))
+    {
+        scene::UpdateRenderOrigin(link_, camera_world);
+    }
     const f32 aspect = height != 0 ? static_cast<f32>(width) / static_cast<f32>(height) : 1.0f;
     for (auto& [entity, e] : entries_)
     {
@@ -748,6 +775,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
         [&](ecs::Entity entity, const MeshReference& reference, const ecs::WorldTransform& placed)
         {
             const u64 key = entity.ToU64();
+            const Mat4 relative_matrix = scene::RelativeMatrix(placed, link_.origin);
             Entry* entry = entries_.Find(key);  // container audit Day 10: a scan of every entry, per drawn entity
             if (IsHidden(world.world, entity))
             {
@@ -868,7 +896,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                     desc.material = parts[i].material;
                     desc.first_index = parts[i].first;
                     desc.index_count = parts[i].count;
-                    desc.transform = placed.matrix;
+                    desc.transform = relative_matrix;
                     if (morph_count != 0)
                     {
                         desc.morph_weights = morph->weights.Data();
@@ -900,18 +928,18 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                 }
                 entry->mesh = reference.mesh;
                 entry->material = reference.material_resource;
-                entry->transform = placed.matrix;
+                entry->transform = relative_matrix;
             }
-            else if (MemCompare(&entry->transform, &placed.matrix, sizeof(Mat4)) != 0)
+            else if (MemCompare(&entry->transform, &relative_matrix, sizeof(Mat4)) != 0)
             {
                 for (u32 i = 0; i < entry->count; ++i)
                 {
                     if (entry->objects[i].IsValid())
                     {
-                        scene_->SetTransform(entry->objects[i], placed.matrix);
+                        scene_->SetTransform(entry->objects[i], relative_matrix);
                     }
                 }
-                entry->transform = placed.matrix;
+                entry->transform = relative_matrix;
             }
             if (mesh->MorphTargetCount() != 0)
             {  // the weights move in storage and change every frame a clip plays: pointed at again each frame
@@ -975,17 +1003,20 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     SyncLights(world, &report);
     SyncTerrains(world, &report);
     renderer::Camera camera;  // the default camera unless the host named one that works
-    camera.SetLookAt(Vec3(0.0f, 1.5f, 5.0f), Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f));
+    const Vec3 default_eye = (Vec3d(0.0, 1.5, 5.0) - link_.origin).Narrow();
+    const Vec3 default_target = (Vec3d(0.0, 0.0, 0.0) - link_.origin).Narrow();
+    camera.SetLookAt(default_eye, default_target, Vec3(0.0f, 1.0f, 0.0f));
     camera.aspect = aspect;
     camera.near_plane = 0.1f;
     camera.far_plane = 200.0f;
     report.camera_status = ENGINE_OK;
-    if (camera_entity != 0 && !CameraOfEntity(world.world, camera_entity, aspect, &camera))
+    if (camera_entity != 0 && !CameraOfEntity(world.world, camera_entity, aspect, link_.origin, &camera))
     {
         report.camera_status = ENGINE_ERROR_NOT_FOUND;  // the default camera stays
     }
     SyncLabels(world, camera, width, height, &report);
     last_camera_ = camera;
+    last_origin_ = link_.origin;
     last_width_ = width;
     last_height_ = height;
     frame_.SetTime(seconds, delta_seconds);
@@ -994,7 +1025,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     return report;
 }
 
-bool SurfaceScene::PixelRay(f32 x, f32 y, f32* origin, f32* direction) const
+bool SurfaceScene::PixelRay(f32 x, f32 y, f64* origin, f32* direction) const
 {
     if (last_width_ == 0 || last_height_ == 0)
     {
@@ -1008,22 +1039,22 @@ bool SurfaceScene::PixelRay(f32 x, f32 y, f32* origin, f32* direction) const
     const Vec3 near_point(near_h.x / near_h.w, near_h.y / near_h.w, near_h.z / near_h.w);
     const Vec3 far_point(far_h.x / far_h.w, far_h.y / far_h.w, far_h.z / far_h.w);
     const Vec3 toward = (far_point - near_point).Normalized();
-    origin[0] = last_camera_.position.x;
-    origin[1] = last_camera_.position.y;
-    origin[2] = last_camera_.position.z;
+    origin[0] = last_origin_.x + static_cast<f64>(last_camera_.position.x);
+    origin[1] = last_origin_.y + static_cast<f64>(last_camera_.position.y);
+    origin[2] = last_origin_.z + static_cast<f64>(last_camera_.position.z);
     direction[0] = toward.x;
     direction[1] = toward.y;
     direction[2] = toward.z;
     return true;
 }
 
-bool SurfaceScene::Project(const f32* point, f32* out) const
+bool SurfaceScene::Project(const Vec3d& point, f32* out) const
 {
     if (last_width_ == 0 || last_height_ == 0)
     {
         return false;
     }
-    const Vec3 p(point[0], point[1], point[2]);
+    const Vec3 p = (point - last_origin_).Narrow();  // the difference in double precision, then single
     out[2] = (p - last_camera_.position).Dot(last_camera_.Forward());
     const Vec4 clip = last_camera_.ViewProjection() * Vec4(p.x, p.y, p.z, 1.0f);
     if (clip.w > 0.0f)

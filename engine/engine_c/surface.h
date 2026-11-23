@@ -5,6 +5,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "engine/engine_c.h"
+#include "math/vector.h"
 #include "sync/mutex.h"
 #include "types.h"
 
@@ -62,8 +63,8 @@ public:
     /// Names the camera entity of the bound world (0: the default camera).
     engine_status SetCamera(engine_handle surface, u64 camera_entity);
     /// The world ray of a surface pixel and the projection of a world point, with the camera of the last frame.
-    engine_status PixelRay(engine_handle surface, f32 x, f32 y, f32* origin, f32* direction);
-    engine_status Project(engine_handle surface, const f32* point, f32* out);
+    engine_status PixelRay(engine_handle surface, f32 x, f32 y, f64* origin, f32* direction);
+    engine_status Project(engine_handle surface, const Vec3d& point, f32* out);
     /// The newest finished frame of an off-screen surface, and giving it back.
     engine_status AcquireFrame(engine_handle surface, engine_frame_image* out);
     engine_status ReleaseFrame(engine_handle surface, const engine_frame_image* image);
@@ -116,9 +117,9 @@ engine_status PixelsFinishFn(engine_handle ticket, engine_pixels* out);
 engine_status PixelsDestroyFn(engine_handle ticket);
 engine_status SurfaceSetWorldFn(engine_handle surface, engine_handle world);
 engine_status SurfaceSetCameraFn(engine_handle surface, u64 camera_entity);
-engine_status SurfacePixelRayFn(engine_handle surface, float x, float y, float* origin, float* direction);
+engine_status SurfacePixelRayFn(engine_handle surface, float x, float y, double* origin, float* direction);
 engine_status SurfaceAcquireFrameFn(engine_handle surface, engine_frame_image* out);
 engine_status SurfaceReleaseFrameFn(engine_handle surface, const engine_frame_image* image);
-engine_status SurfaceProjectFn(engine_handle surface, const float* point, float* out);
+engine_status SurfaceProjectFn(engine_handle surface, const double* point, float* out);
 
 }  // namespace vse::engine_c

@@ -186,6 +186,36 @@ static unsigned long long RunWorld(engine_handle engine, uint64_t seed, int repo
     memset(&world, 0, sizeof(world));
     CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
     CHECK_STATUS(g_api->level_spawn(world, level, NULL, &root, NULL, 0, NULL), ENGINE_OK);
+    /* the double precision series: a second spawn 1,000 km away puts its root at the exact place */
+    {
+        engine_spawn_params far_spawn;
+        engine_transform root_at;
+        engine_handle far_world;
+        uint64_t far_root = 0;
+        uint64_t unused = 0;
+        memset(&far_world, 0, sizeof(far_world));
+        CHECK_STATUS(g_api->world_create(engine, &far_world), ENGINE_OK);
+        memset(&far_spawn, 0, sizeof(far_spawn));
+        far_spawn.struct_size = sizeof(far_spawn);
+        far_spawn.position[0] = 1.0e6 + 0.25;
+        far_spawn.position[1] = 0.5;
+        far_spawn.position[2] = -1.0e6 - 0.125;
+        far_spawn.scale = 1.0f;
+        CHECK_STATUS(g_api->level_spawn(far_world, level, &far_spawn, &far_root, NULL, 0, NULL), ENGINE_OK);
+        memset(&root_at, 0, sizeof(root_at));
+        root_at.struct_size = sizeof(root_at);
+        CHECK_STATUS(g_api->component_get(far_world, far_root, ENGINE_COMPONENT_TRANSFORM, &root_at), ENGINE_OK);
+        CHECK(root_at.position[0] == 1.0e6 + 0.25 && root_at.position[1] == 0.5 &&
+              root_at.position[2] == -1.0e6 - 0.125);
+        far_spawn.flags = 0x80u;
+        CHECK_STATUS(g_api->level_spawn(far_world, level, &far_spawn, &unused, NULL, 0, NULL),
+                     ENGINE_ERROR_INVALID_ARGUMENT);
+        far_spawn.flags = 0;
+        far_spawn.position[0] = 3.0e12;
+        CHECK_STATUS(g_api->level_spawn(far_world, level, &far_spawn, &unused, NULL, 0, NULL),
+                     ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->world_destroy(far_world), ENGINE_OK);
+    }
     Frame(engine);
     Frame(engine); /* the colliders, then the bodies */
 

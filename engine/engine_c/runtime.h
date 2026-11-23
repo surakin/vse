@@ -515,16 +515,16 @@ engine_status EntityAttachToJointFn(engine_handle world, u64 key, u64 skeleton_k
 engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_params* params, u64* root, u64* keys,
                            size_t capacity, size_t* total);
 engine_status PhysicsSetGravityFn(engine_handle world, const float* gravity);
-engine_status BodyApplyForceFn(engine_handle world, u64 key, const float* force, const float* point);
-engine_status BodyApplyImpulseFn(engine_handle world, u64 key, const float* impulse, const float* point);
+engine_status BodyApplyForceFn(engine_handle world, u64 key, const float* force, const double* point);
+engine_status BodyApplyImpulseFn(engine_handle world, u64 key, const float* impulse, const double* point);
 engine_status BodySetVelocityFn(engine_handle world, u64 key, const float* linear, const float* angular);
 engine_status BodyGetVelocityFn(engine_handle world, u64 key, float* linear, float* angular);
-engine_status BodyTeleportFn(engine_handle world, u64 key, const float* position, const float* rotation);
-engine_status PhysicsRaycastFn(engine_handle world, const float* origin, const float* direction, float max_distance,
+engine_status BodyTeleportFn(engine_handle world, u64 key, const double* position, const float* rotation);
+engine_status PhysicsRaycastFn(engine_handle world, const double* origin, const float* direction, float max_distance,
                                u32 layer_mask, engine_ray_hit* hit, int* found);
-engine_status PhysicsOverlapSphereFn(engine_handle world, const float* center, float radius, u32 layer_mask, u64* keys,
+engine_status PhysicsOverlapSphereFn(engine_handle world, const double* center, float radius, u32 layer_mask, u64* keys,
                                      size_t capacity, size_t* total);
-engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, const float* half_extents, u32 layer_mask,
+engine_status PhysicsOverlapBoxFn(engine_handle world, const double* center, const float* half_extents, u32 layer_mask,
                                   u64* keys, size_t capacity, size_t* total);
 engine_status JointReactionFn(engine_handle world, u64 key, float* force, float* torque);
 engine_status CharacterMoveFn(engine_handle world, u64 key, const float* velocity, float dt,
@@ -540,7 +540,7 @@ engine_status EntityClearMeshSlotMaterialsFn(engine_handle world, u64 key);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
 /// See `engine_api.terrain_height`.
-engine_status TerrainHeightFn(engine_handle world, float x, float z, float* out_height);
+engine_status TerrainHeightFn(engine_handle world, double x, double z, double* out_height);
 engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size);
 engine_status EntityNameSetFn(engine_handle world, u64 key, engine_string name);
 engine_status EntityNameGetFn(engine_handle world, u64 key, engine_buffer* out);

@@ -79,11 +79,11 @@ field engine_frame_stats.colliders_made offset=80 size=4
 field engine_frame_stats.colliders_refused offset=84 size=4
 field engine_frame_stats.collider_scale_changes_ignored offset=88 size=4
 field engine_frame_stats.collider_triangles_dropped offset=92 size=4
-struct engine_transform size=44
+struct engine_transform size=64
 field engine_transform.struct_size offset=0 size=4
-field engine_transform.position offset=4 size=12
-field engine_transform.rotation offset=16 size=16
-field engine_transform.scale offset=32 size=12
+field engine_transform.position offset=8 size=24
+field engine_transform.rotation offset=32 size=16
+field engine_transform.scale offset=48 size=12
 struct engine_rigid_body size=28
 field engine_rigid_body.struct_size offset=0 size=4
 field engine_rigid_body.type offset=4 size=4
@@ -142,14 +142,21 @@ field engine_character_state.ground_entity offset=24 size=8
 field engine_character_state.ground_normal offset=32 size=12
 field engine_character_state.wall_normal offset=44 size=12
 field engine_character_state.vertical_speed offset=56 size=4
-struct engine_physics_event size=56
+struct engine_physics_event size=64
 field engine_physics_event.struct_size offset=0 size=4
 field engine_physics_event.kind offset=4 size=4
 field engine_physics_event.entity_a offset=8 size=8
 field engine_physics_event.entity_b offset=16 size=8
-field engine_physics_event.point offset=24 size=12
-field engine_physics_event.normal offset=36 size=12
-field engine_physics_event.value offset=48 size=4
+field engine_physics_event.point offset=24 size=24
+field engine_physics_event.normal offset=48 size=12
+field engine_physics_event.value offset=60 size=4
+struct engine_spawn_params size=72
+field engine_spawn_params.struct_size offset=0 size=4
+field engine_spawn_params.flags offset=4 size=4
+field engine_spawn_params.position offset=8 size=24
+field engine_spawn_params.rotation offset=32 size=16
+field engine_spawn_params.scale offset=48 size=4
+field engine_spawn_params.name_prefix offset=56 size=16
 struct engine_collider size=96
 field engine_collider.struct_size offset=0 size=4
 field engine_collider.shape offset=4 size=4
@@ -167,13 +174,13 @@ field engine_collider.mask offset=76 size=4
 field engine_collider.is_trigger offset=80 size=4
 field engine_collider.reserved offset=84 size=4
 field engine_collider.mesh_resource offset=88 size=8
-struct engine_ray_hit size=48
+struct engine_ray_hit size=56
 field engine_ray_hit.struct_size offset=0 size=4
 field engine_ray_hit.entity offset=8 size=8
-field engine_ray_hit.point offset=16 size=12
-field engine_ray_hit.normal offset=28 size=12
-field engine_ray_hit.distance offset=40 size=4
-struct engine_world_transform size=68
+field engine_ray_hit.point offset=16 size=24
+field engine_ray_hit.normal offset=40 size=12
+field engine_ray_hit.distance offset=52 size=4
+struct engine_world_transform size=96
 field engine_world_transform.struct_size offset=0 size=4
 field engine_world_transform.matrix offset=4 size=64
 struct engine_mesh_reference size=24
@@ -478,6 +485,7 @@ field engine_api.resource_add_wait offset=1096 size=8
 field engine_api.resource_add_finish offset=1104 size=8
 field engine_api.resource_add_destroy offset=1112 size=8
 field engine_api.import_format_version offset=1120 size=8
+field engine_api.terrain_height offset=1240 size=8
 struct engine_audio_info size=24
 field engine_audio_info.struct_size offset=0 size=4
 field engine_audio_info.sample_rate offset=4 size=4

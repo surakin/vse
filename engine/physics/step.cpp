@@ -521,7 +521,9 @@ bool PhysicsWorld::Interpolated(BodyId id, f32 alpha, Vec3d* position, Quaternio
         return true;
     }
     const f32 t = alpha < 0.0f ? 0.0f : (alpha > 1.0f ? 1.0f : alpha);
-    *position = body->previous_position * static_cast<f64>(1.0f - t) + body->position * static_cast<f64>(t);
+    // previous + (current - previous) * t: exact when the two are equal (the form `a * (1 - t) + b * t` in single
+    // precision weights lost up to 2^-25 of the position, 3 mm at 100 km).
+    *position = body->previous_position + (body->position - body->previous_position) * static_cast<f64>(t);
     const Quaternion& a = body->previous_orientation;
     const Quaternion& b = body->orientation;
     const f32 dot = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;

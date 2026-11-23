@@ -18,6 +18,7 @@
 #include "renderer/camera.h"
 #include "renderer/render_scene.h"
 #include "renderer/scene_frame.h"
+#include "scene/render_sync.h"
 #include "types.h"
 
 namespace vse::engine_c
@@ -85,11 +86,11 @@ public:
     /// Turns a surface pixel into a world ray with the camera of the last frame.
     ///
     /// - Returns: false when no frame has drawn yet.
-    bool PixelRay(f32 x, f32 y, f32* origin, f32* direction) const;
+    bool PixelRay(f32 x, f32 y, f64* origin, f32* direction) const;
     /// Projects a world point with the camera of the last frame (`out`: pixel x, pixel y, distance along the view).
     ///
     /// - Returns: false when no frame has drawn yet.
-    bool Project(const f32* point, f32* out) const;
+    bool Project(const Vec3d& point, f32* out) const;
 
 private:
     static constexpr u32 kMaxParts = 16;  // the most mesh slots an entity gives a material of their own
@@ -195,6 +196,8 @@ private:
     renderer::MaterialId default_material_;
     renderer::MaterialId default_skinned_material_;  // for meshes with a skin stream (Day 363)
     renderer::Camera last_camera_;                   // the camera of the last frame, for PixelRay and Project
+    Vec3d last_origin_ = Vec3d(0, 0, 0);             // the render origin `last_camera_` is relative to
+    scene::SceneLink link_;                          // the render origin (the scene pointer stays null)
     u32 last_width_ = 0;
     u32 last_height_ = 0;
 };

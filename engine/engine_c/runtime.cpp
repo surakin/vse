@@ -794,6 +794,25 @@ engine_status CheckInStruct(const void* value, usize first_version, const char* 
     return ENGINE_OK;
 }
 
+// A double position: finite and within the world's limit (1e12 metres, as the physics module's).
+bool WorldPositionValid(const double* v)
+{
+    constexpr double kLimit = 1.0e12;
+    for (int i = 0; i < 3; ++i)
+    {
+        if (!(v[i] - v[i] == 0.0) || v[i] > kLimit || v[i] < -kLimit)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+Vec3d ToVec3d(const double* v)
+{
+    return Vec3d(v[0], v[1], v[2]);
+}
+
 template <class T> engine_status SetOrAdd(ecs::World& world, ecs::Entity entity, T value)
 {
     const ecs::Status status = world.Has<T>(entity) ? world.Set<T>(entity, Move(value))
@@ -1579,12 +1598,9 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 return SetOrAdd(object.world, entity, reference);
             }
             const engine_transform* in = static_cast<const engine_transform*>(value);
-            for (const float f : in->position)
+            if (!WorldPositionValid(in->position))
             {
-                if (!Finite(f))
-                {
-                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position is not finite");
-                }
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position is not finite or is beyond 1e12 metres");
             }
             for (const float f : in->scale)
             {
@@ -1613,7 +1629,7 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
             }
             const float inverse = 1.0f / Sqrt(length_squared);
             ecs::LocalTransform local;
-            local.position = Vec3(in->position[0], in->position[1], in->position[2]);
+            local.position = ToVec3d(in->position);
             local.rotation = Quaternion{rotation.x * inverse, rotation.y * inverse, rotation.z * inverse,
                                         rotation.w * inverse};
             local.scale = Vec3(in->scale[0], in->scale[1], in->scale[2]);
@@ -2438,12 +2454,9 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
         {
             place.scale = 1.0f;
         }
-        for (const float v : place.position)
+        if (!WorldPositionValid(place.position))
         {
-            if (!Finite(v))
-            {
-                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position is not finite");
-            }
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position is not finite or is beyond 1e12 metres");
         }
         const float length2 = place.rotation[0] * place.rotation[0] + place.rotation[1] * place.rotation[1] +
                               place.rotation[2] * place.rotation[2] + place.rotation[3] * place.rotation[3];
@@ -2568,7 +2581,7 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
             }
             made.Push(top);
             ecs::LocalTransform at;
-            at.position = Vec3(place.position[0], place.position[1], place.position[2]);
+            at.position = ToVec3d(place.position);
             const float rotation_length2 = place.rotation[0] * place.rotation[0] +
                                            place.rotation[1] * place.rotation[1] +
                                            place.rotation[2] * place.rotation[2] +
@@ -2958,6 +2971,9 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                 engine_world_transform result = {};
                 result.struct_size = sizeof(engine_world_transform);
                 MemCopy(result.matrix, &world_transform->matrix, sizeof(result.matrix));
+                result.position[0] = world_transform->position.x;
+                result.position[1] = world_transform->position.y;
+                result.position[2] = world_transform->position.z;
                 MemCopy(out, &result, sizeof(result));
                 return ENGINE_OK;
             }
@@ -3416,13 +3432,16 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                      });
 }
 
-engine_status TerrainHeightFn(engine_handle world, float x, float z, float* out_height)
+engine_status TerrainHeightFn(engine_handle world, double x, double z, double* out_height)
 {
-    if (out_height == nullptr || !Finite(x) || !Finite(z))
+    constexpr double kLimit = 1.0e12;  // the world's limit, as the physics module's
+    if (out_height == nullptr || !(x - x == 0.0) || !(z - z == 0.0) || x > kLimit || x < -kLimit || z > kLimit ||
+        z < -kLimit)
     {
-        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_height` is NULL or a coordinate is not finite");
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                    "`out_height` is NULL or a coordinate is not finite or is beyond 1e12 metres");
     }
-    *out_height = 0.0f;
+    *out_height = 0.0;
     return WithWorld(
         world, false, 0,
         [&](WorldObject& object, ecs::Entity)
@@ -3430,7 +3449,7 @@ engine_status TerrainHeightFn(engine_handle world, float x, float z, float* out_
             ResourceHost* resources = CurrentRuntime()->Resources();
             bool found = false;
             u64 best = 0;
-            f32 height = 0.0f;
+            f64 height = 0.0;
             auto query = object.world.Query<ecs::Read<TerrainComponent>>();
             query.ForEach(
                 [&](ecs::Entity entity, const TerrainComponent& terrain)
@@ -3443,15 +3462,18 @@ engine_status TerrainHeightFn(engine_handle world, float x, float z, float* out_
                     // A root's local transform is its placement and is current before any frame; a child's placement
                     // is the world matrix the last frame computed.
                     Mat4 placed = Mat4::Identity();
+                    Vec3d placed_at(0.0, 0.0, 0.0);  // the exact translation
                     const ecs::LocalTransform* local = object.world.Peek<ecs::LocalTransform>(entity);
                     const ecs::WorldTransform* world_transform = object.world.Peek<ecs::WorldTransform>(entity);
                     if (local != nullptr && !object.world.Has<ecs::Parent>(entity))
                     {
                         placed = local->ToMatrix();
+                        placed_at = local->position;
                     }
                     else if (world_transform != nullptr)
                     {
                         placed = world_transform->matrix;
+                        placed_at = world_transform->position;
                     }
                     const asset::HeightMapView* view = nullptr;
                     if (resources->PinHeightMap(terrain.height_map, &view, nullptr) != ENGINE_OK)
@@ -3459,10 +3481,12 @@ engine_status TerrainHeightFn(engine_handle world, float x, float z, float* out_
                         return;
                     }
                     // The terrain's placement is a translation and a turn about y: its inverse is the transposed turn.
-                    const f32 dx = x - placed.col[3][0];
-                    const f32 dz = z - placed.col[3][2];
-                    const f32 lx = placed.col[0][0] * dx + placed.col[0][2] * dz;
-                    const f32 lz = placed.col[2][0] * dx + placed.col[2][2] * dz;
+                    const f64 dx = x - placed_at.x;  // the offset in double precision, then single in the map's space
+                    const f64 dz = z - placed_at.z;
+                    const f32 lx = static_cast<f32>(static_cast<f64>(placed.col[0][0]) * dx +
+                                                    static_cast<f64>(placed.col[0][2]) * dz);
+                    const f32 lz = static_cast<f32>(static_cast<f64>(placed.col[2][0]) * dx +
+                                                    static_cast<f64>(placed.col[2][2]) * dz);
                     const asset::HeightMapHeader& header = view->Header();
                     if (lx < 0.0f || lz < 0.0f || lx > static_cast<f32>(header.width - 1) * header.cell_size ||
                         lz > static_cast<f32>(header.height - 1) * header.cell_size)
@@ -3471,7 +3495,7 @@ engine_status TerrainHeightFn(engine_handle world, float x, float z, float* out_
                     }
                     found = true;
                     best = key;
-                    height = placed.col[3][1] + view->HeightAt(lx, lz);
+                    height = placed_at.y + static_cast<f64>(view->HeightAt(lx, lz));
                 });
             if (!found)
             {
@@ -3680,7 +3704,7 @@ physics::PhysicsQueryFilter FilterOf(u32 layer_mask)
     return filter;
 }
 
-engine_status OverlapKeys(WorldObject& object, const physics::Shape& shape, const Vec3& center, u32 layer_mask,
+engine_status OverlapKeys(WorldObject& object, const physics::Shape& shape, const Vec3d& center, u32 layer_mask,
                           u64* keys, size_t capacity, size_t* total)
 {
     physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
@@ -3727,9 +3751,9 @@ engine_status PhysicsSetGravityFn(engine_handle world, const float* gravity)
                      });
 }
 
-engine_status BodyApplyForceFn(engine_handle world, u64 key, const float* force, const float* point)
+engine_status BodyApplyForceFn(engine_handle world, u64 key, const float* force, const double* point)
 {
-    if (force == nullptr || !FiniteArray(force, 3) || (point != nullptr && !FiniteArray(point, 3)))
+    if (force == nullptr || !FiniteArray(force, 3) || (point != nullptr && !WorldPositionValid(point)))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the force or the point is NULL or not finite");
     }
@@ -3745,16 +3769,16 @@ engine_status BodyApplyForceFn(engine_handle world, u64 key, const float* force,
                          physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
                          const physics::Body* body = physics.Find(id);
                          const Vec3d at = point != nullptr
-                                              ? Vec3d(ToVec3(point))
+                                              ? ToVec3d(point)
                                               : body->position +
                                                     Vec3d(body->orientation.RotateVector(body->mass.center));
                          return FromBody(physics.ApplyForce(id, ToVec3(force), at));
                      });
 }
 
-engine_status BodyApplyImpulseFn(engine_handle world, u64 key, const float* impulse, const float* point)
+engine_status BodyApplyImpulseFn(engine_handle world, u64 key, const float* impulse, const double* point)
 {
-    if (impulse == nullptr || !FiniteArray(impulse, 3) || (point != nullptr && !FiniteArray(point, 3)))
+    if (impulse == nullptr || !FiniteArray(impulse, 3) || (point != nullptr && !WorldPositionValid(point)))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the impulse or the point is NULL or not finite");
     }
@@ -3770,7 +3794,7 @@ engine_status BodyApplyImpulseFn(engine_handle world, u64 key, const float* impu
                          physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
                          const physics::Body* body = physics.Find(id);
                          const Vec3d at = point != nullptr
-                                              ? Vec3d(ToVec3(point))
+                                              ? ToVec3d(point)
                                               : body->position +
                                                     Vec3d(body->orientation.RotateVector(body->mass.center));
                          return FromBody(physics.ApplyImpulse(id, ToVec3(impulse), at));
@@ -3829,9 +3853,9 @@ engine_status BodyGetVelocityFn(engine_handle world, u64 key, float* linear, flo
                      });
 }
 
-engine_status BodyTeleportFn(engine_handle world, u64 key, const float* position, const float* rotation)
+engine_status BodyTeleportFn(engine_handle world, u64 key, const double* position, const float* rotation)
 {
-    if ((position != nullptr && !FiniteArray(position, 3)) || (rotation != nullptr && !FiniteArray(rotation, 4)))
+    if ((position != nullptr && !WorldPositionValid(position)) || (rotation != nullptr && !FiniteArray(rotation, 4)))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position or the rotation is not finite");
     }
@@ -3846,7 +3870,7 @@ engine_status BodyTeleportFn(engine_handle world, u64 key, const float* position
                          }
                          physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
                          const physics::Body* body = physics.Find(id);
-                         const Vec3d at = position != nullptr ? Vec3d(ToVec3(position)) : body->position;
+                         const Vec3d at = position != nullptr ? ToVec3d(position) : body->position;
                          const Quaternion turn = rotation != nullptr
                                                      ? Quaternion(rotation[0], rotation[1], rotation[2], rotation[3])
                                                      : body->orientation;
@@ -3867,7 +3891,7 @@ engine_status BodyTeleportFn(engine_handle world, u64 key, const float* position
                      });
 }
 
-engine_status PhysicsRaycastFn(engine_handle world, const float* origin, const float* direction, float max_distance,
+engine_status PhysicsRaycastFn(engine_handle world, const double* origin, const float* direction, float max_distance,
                                u32 layer_mask, engine_ray_hit* hit, int* found)
 {
     if (origin == nullptr || direction == nullptr || hit == nullptr || found == nullptr)
@@ -3879,7 +3903,7 @@ engine_status PhysicsRaycastFn(engine_handle world, const float* origin, const f
     {
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_ray_hit.struct_size is smaller than the struct");
     }
-    if (!FiniteArray(origin, 3) || !FiniteArray(direction, 3) || !(Finite(max_distance) && max_distance > 0.0f) ||
+    if (!WorldPositionValid(origin) || !FiniteArray(direction, 3) || !(Finite(max_distance) && max_distance > 0.0f) ||
         (direction[0] == 0.0f && direction[1] == 0.0f && direction[2] == 0.0f))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the ray is not finite, has no direction or no length");
@@ -3893,17 +3917,16 @@ engine_status PhysicsRaycastFn(engine_handle world, const float* origin, const f
                              physics::SyncBodies(object.world, physics);
                          }
                          physics::PhysicsHit result;
-                         if (!physics::RayCast(physics, ToVec3(origin), ToVec3(direction), max_distance,
+                         if (!physics::RayCast(physics, ToVec3d(origin), ToVec3(direction), max_distance,
                                                FilterOf(layer_mask), &result))
                          {
                              return ENGINE_OK;
                          }
                          const physics::Body* body = physics.Find(result.body);
                          hit->entity = body == nullptr ? 0 : body->entity.ToU64();
-                         const Vec3 at = result.point.Narrow();  // the C API's points are single precision for now
-                         hit->point[0] = at.x;
-                         hit->point[1] = at.y;
-                         hit->point[2] = at.z;
+                         hit->point[0] = result.point.x;
+                         hit->point[1] = result.point.y;
+                         hit->point[2] = result.point.z;
                          hit->normal[0] = result.normal.x;
                          hit->normal[1] = result.normal.y;
                          hit->normal[2] = result.normal.z;
@@ -3913,7 +3936,7 @@ engine_status PhysicsRaycastFn(engine_handle world, const float* origin, const f
                      });
 }
 
-engine_status PhysicsOverlapSphereFn(engine_handle world, const float* center, float radius, u32 layer_mask, u64* keys,
+engine_status PhysicsOverlapSphereFn(engine_handle world, const double* center, float radius, u32 layer_mask, u64* keys,
                                      size_t capacity, size_t* total)
 {
     if (total == nullptr)
@@ -3921,7 +3944,7 @@ engine_status PhysicsOverlapSphereFn(engine_handle world, const float* center, f
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`total` is NULL");
     }
     *total = 0;
-    if (center == nullptr || !FiniteArray(center, 3) || !(Finite(radius) && radius > 0.0f && radius <= 1.0e5f))
+    if (center == nullptr || !WorldPositionValid(center) || !(Finite(radius) && radius > 0.0f && radius <= 1.0e5f))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the centre or the radius is NULL, not finite or not positive");
     }
@@ -3932,12 +3955,12 @@ engine_status PhysicsOverlapSphereFn(engine_handle world, const float* center, f
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         return OverlapKeys(object, physics::Shape::MakeSphere(radius), ToVec3(center), layer_mask,
+                         return OverlapKeys(object, physics::Shape::MakeSphere(radius), ToVec3d(center), layer_mask,
                                             keys, capacity, total);
                      });
 }
 
-engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, const float* half_extents, u32 layer_mask,
+engine_status PhysicsOverlapBoxFn(engine_handle world, const double* center, const float* half_extents, u32 layer_mask,
                                   u64* keys, size_t capacity, size_t* total)
 {
     if (total == nullptr)
@@ -3945,7 +3968,7 @@ engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, cons
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`total` is NULL");
     }
     *total = 0;
-    if (center == nullptr || half_extents == nullptr || !FiniteArray(center, 3) || !FiniteArray(half_extents, 3) ||
+    if (center == nullptr || half_extents == nullptr || !WorldPositionValid(center) || !FiniteArray(half_extents, 3) ||
         !(half_extents[0] > 0.0f && half_extents[1] > 0.0f && half_extents[2] > 0.0f) || half_extents[0] > 1.0e5f ||
         half_extents[1] > 1.0e5f || half_extents[2] > 1.0e5f)
     {
@@ -3959,7 +3982,7 @@ engine_status PhysicsOverlapBoxFn(engine_handle world, const float* center, cons
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         return OverlapKeys(object, physics::Shape::MakeBox(ToVec3(half_extents)), ToVec3(center),
+                         return OverlapKeys(object, physics::Shape::MakeBox(ToVec3(half_extents)), ToVec3d(center),
                                             layer_mask, keys, capacity, total);
                      });
 }
@@ -4020,15 +4043,14 @@ u64 KeyOf(ecs::Entity entity)
 void FillEvent(engine_physics_event* out, u32 kind, ecs::Entity a, ecs::Entity b, const Vec3d& at, const Vec3& normal,
                f32 value)
 {
-    const Vec3 point = at.Narrow();  // the C API's points are single precision for now
     engine_physics_event event = {};
     event.struct_size = sizeof(engine_physics_event);
     event.kind = kind;
     event.entity_a = KeyOf(a);
     event.entity_b = KeyOf(b);
-    event.point[0] = point.x;
-    event.point[1] = point.y;
-    event.point[2] = point.z;
+    event.point[0] = at.x;
+    event.point[1] = at.y;
+    event.point[2] = at.z;
     event.normal[0] = normal.x;
     event.normal[1] = normal.y;
     event.normal[2] = normal.z;

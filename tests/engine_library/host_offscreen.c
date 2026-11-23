@@ -252,7 +252,7 @@ int main(void)
     engine_surface_info info;
     engine_mesh_reference reference;
     const float background[4] = {0.0f, 0.0f, 0.4f, 1.0f};
-    float origin[3];
+    double origin[3];
     float direction[3];
     engine_input_event event;
     engine_handle ticket;

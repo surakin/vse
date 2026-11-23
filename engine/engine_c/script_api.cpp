@@ -294,7 +294,7 @@ struct Writer
             }
             else if (value.Kind() == ValueKind::Vec3)
             {
-                const Vec3 a = value.AsVec3();
+                const Vec3d a = value.AsVec3d();
                 lanes[0] = a.x;
                 lanes[1] = a.y;
                 lanes[2] = a.z;

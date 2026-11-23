@@ -207,7 +207,7 @@ static uint32_t Checksum(engine_handle world)
 /* The checksum of the last frame, recorded on Linux (clang and GCC, unity and not, debug and release agree). Recorded
    again on 2026-11-20, when character_move became a held move carried out in each fixed step and the character's
    transform the interpolated position. */
-static const uint32_t kGoldenChecksum = 0x7e65470fu;
+static const uint32_t kGoldenChecksum = 0xf013d004u;
 
 static uint32_t g_contacts = 0;
 static uint32_t g_triggers = 0;

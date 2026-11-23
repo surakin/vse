@@ -99,7 +99,9 @@ static void Place(engine_handle world, uint64_t entity, const float* position, c
     engine_transform t;
     memset(&t, 0, sizeof(t));
     t.struct_size = sizeof(t);
-    memcpy(t.position, position, sizeof(t.position));
+    t.position[0] = position[0];
+    t.position[1] = position[1];
+    t.position[2] = position[2];
     t.rotation[3] = 1.0f;
     if (rotation != NULL)
     {

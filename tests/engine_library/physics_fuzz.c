@@ -117,6 +117,8 @@ static void Fuzz(engine_handle engine, engine_handle world, int calls)
     {
         float v[4];
         float w[4];
+        double vd[4];
+        double wd[4];
         uint64_t keys[8];
         size_t total = 0;
         engine_physics_event events[8];
@@ -126,6 +128,8 @@ static void Fuzz(engine_handle engine, engine_handle world, int calls)
         {
             v[k] = F();
             w[k] = F();
+            vd[k] = v[k];
+            wd[k] = w[k];
         }
         switch (Rand() % 24)
         {
@@ -180,23 +184,23 @@ static void Fuzz(engine_handle engine, engine_handle world, int calls)
             break;
         }
         case 14:
-            g_api->body_apply_force(world, Key(), v, (Rand() & 1) ? w : NULL);
-            g_api->body_apply_impulse(world, Key(), v, (Rand() & 1) ? w : NULL);
+            g_api->body_apply_force(world, Key(), v, (Rand() & 1) ? wd : NULL);
+            g_api->body_apply_impulse(world, Key(), v, (Rand() & 1) ? wd : NULL);
             break;
         case 15:
             g_api->body_set_velocity(world, Key(), v, (Rand() & 1) ? w : NULL);
             g_api->body_get_velocity(world, Key(), v, w);
             break;
-        case 16: g_api->body_teleport(world, Key(), v, (Rand() & 1) ? w : NULL); break;
+        case 16: g_api->body_teleport(world, Key(), vd, (Rand() & 1) ? w : NULL); break;
         case 17:
         {
             engine_ray_hit hit;
             int found = 0;
             memset(&hit, 0, sizeof(hit));
             hit.struct_size = sizeof(hit);
-            g_api->physics_raycast(world, v, w, F(), Rand(), &hit, &found);
-            g_api->physics_overlap_sphere(world, v, F(), Rand(), keys, 8, &total);
-            g_api->physics_overlap_box(world, v, w, Rand(), keys, 8, &total);
+            g_api->physics_raycast(world, vd, w, F(), Rand(), &hit, &found);
+            g_api->physics_overlap_sphere(world, vd, F(), Rand(), keys, 8, &total);
+            g_api->physics_overlap_box(world, vd, w, Rand(), keys, 8, &total);
             g_api->physics_set_gravity(world, v);
             break;
         }

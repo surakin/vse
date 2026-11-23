@@ -504,7 +504,7 @@ public:
         return Api()->script_task_run(Get(), &task, results);
     }
     /// The ground height at a world point (engine_api.terrain_height).
-    Status TerrainHeight(float x, float z, float* out_height) const
+    Status TerrainHeight(double x, double z, double* out_height) const
     {
         return Api()->terrain_height(Get(), x, z, out_height);
     }
@@ -595,11 +595,11 @@ public:
     /// here. They move inside the fixed physics steps; after a frame the entity's transform takes the capsule's centre,
     /// interpolated between the last two steps when `physics.interpolate` is on.
     Status SetGravity(const float* gravity) const { return Api()->physics_set_gravity(Get(), gravity); }
-    Status ApplyForce(uint64_t key, const float* force, const float* point) const
+    Status ApplyForce(uint64_t key, const float* force, const double* point) const
     {
         return Api()->body_apply_force(Get(), key, force, point);
     }
-    Status ApplyImpulse(uint64_t key, const float* impulse, const float* point) const
+    Status ApplyImpulse(uint64_t key, const float* impulse, const double* point) const
     {
         return Api()->body_apply_impulse(Get(), key, impulse, point);
     }
@@ -611,11 +611,11 @@ public:
     {
         return Api()->body_get_velocity(Get(), key, linear, angular);
     }
-    Status Teleport(uint64_t key, const float* position, const float* rotation) const
+    Status Teleport(uint64_t key, const double* position, const float* rotation) const
     {
         return Api()->body_teleport(Get(), key, position, rotation);
     }
-    Status RayCast(const float* origin, const float* direction, float max_distance, uint32_t layer_mask,
+    Status RayCast(const double* origin, const float* direction, float max_distance, uint32_t layer_mask,
                    engine_ray_hit* hit, bool* found) const
     {
         *hit = Init<engine_ray_hit>();
@@ -624,12 +624,12 @@ public:
         *found = any != 0;
         return status;
     }
-    Status OverlapSphere(const float* center, float radius, uint32_t layer_mask, uint64_t* keys, size_t capacity,
+    Status OverlapSphere(const double* center, float radius, uint32_t layer_mask, uint64_t* keys, size_t capacity,
                          size_t* total) const
     {
         return Api()->physics_overlap_sphere(Get(), center, radius, layer_mask, keys, capacity, total);
     }
-    Status OverlapBox(const float* center, const float* half_extents, uint32_t layer_mask, uint64_t* keys,
+    Status OverlapBox(const double* center, const float* half_extents, uint32_t layer_mask, uint64_t* keys,
                       size_t capacity, size_t* total) const
     {
         return Api()->physics_overlap_box(Get(), center, half_extents, layer_mask, keys, capacity, total);
@@ -847,11 +847,11 @@ public:
     inline Status ReadPixels(PixelsTicket* out) const;
     inline Status SetWorld(const World& world) const;
     Status SetCamera(uint64_t camera_entity) const { return Api()->surface_set_camera(Get(), camera_entity); }
-    Status PixelRay(float x, float y, float* origin, float* direction) const
+    Status PixelRay(float x, float y, double* origin, float* direction) const
     {
         return Api()->surface_pixel_ray(Get(), x, y, origin, direction);
     }
-    Status Project(const float* point, float* out) const { return Api()->surface_project(Get(), point, out); }
+    Status Project(const double* point, float* out) const { return Api()->surface_project(Get(), point, out); }
     /// The newest finished frame of an off-screen surface (`surface_acquire_frame`); give it back with
     /// [[ReleaseFrame]].
     Status AcquireFrame(engine_frame_image* out) const

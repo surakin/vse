@@ -174,6 +174,13 @@ int main(void)
     FIELD(engine_physics_event, point);
     FIELD(engine_physics_event, normal);
     FIELD(engine_physics_event, value);
+    STRUCT(engine_spawn_params);
+    FIELD(engine_spawn_params, struct_size);
+    FIELD(engine_spawn_params, flags);
+    FIELD(engine_spawn_params, position);
+    FIELD(engine_spawn_params, rotation);
+    FIELD(engine_spawn_params, scale);
+    FIELD(engine_spawn_params, name_prefix);
     STRUCT(engine_collider);
     FIELD(engine_collider, struct_size);
     FIELD(engine_collider, shape);
@@ -502,6 +509,7 @@ int main(void)
     FIELD(engine_api, resource_add_finish);
     FIELD(engine_api, resource_add_destroy);
     FIELD(engine_api, import_format_version);
+    FIELD(engine_api, terrain_height);
     STRUCT(engine_audio_info);
     FIELD(engine_audio_info, struct_size);
     FIELD(engine_audio_info, sample_rate);

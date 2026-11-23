@@ -599,11 +599,13 @@ extern "C"
 #define ENGINE_COMPONENT_MASK_ALL 0x7FFFFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
-    /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
+    /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). The
+     * position is double precision, as inside the engine: a world reaches 1e12 metres from the origin (a position
+     * beyond it, or not finite, is INVALID_ARGUMENT); rotation and scale stay single precision. */
     typedef struct engine_transform
     {
         uint32_t struct_size;
-        float position[3];
+        double position[3];
         float rotation[4];
         float scale[3];
     } engine_transform;
@@ -612,7 +614,8 @@ extern "C"
     typedef struct engine_world_transform
     {
         uint32_t struct_size;
-        float matrix[16];
+        float matrix[16];   /* its translation is `position` narrowed: exact only near the origin */
+        double position[3]; /* the exact world position of the entity's origin */
     } engine_world_transform;
 
     /* The mesh an entity draws. `mesh` is the resource id of a mesh the host added or loaded (Day 350) and
@@ -793,7 +796,7 @@ extern "C"
     {
         uint32_t struct_size;
         uint32_t flags; /* zero */
-        float position[3];
+        double position[3];
         float rotation[4];
         float scale;
         uint32_t reserved; /* zero */
@@ -967,7 +970,7 @@ extern "C"
     {
         uint32_t struct_size;
         uint64_t entity; /* the key of the entity whose collider was hit */
-        float point[3];
+        double point[3];
         float normal[3]; /* facing against the ray */
         float distance;  /* along the ray */
     } engine_ray_hit;
@@ -1068,7 +1071,7 @@ extern "C"
         uint32_t kind; /* ENGINE_PHYSICS_* */
         uint64_t entity_a;
         uint64_t entity_b;
-        float point[3];
+        double point[3];
         float normal[3];
         float value;
     } engine_physics_event;
@@ -2024,13 +2027,13 @@ extern "C"
          * and the size of the last frame that drew the surface (the camera as of the frame, not as of this call), so a
          * host that moved the camera since asks again after the next `frame`. Fails with: STALE_HANDLE,
          * INVALID_ARGUMENT, NOT_READY (no frame has drawn a scene on this surface yet), TYPE_MISMATCH. */
-        engine_status (*surface_pixel_ray)(engine_handle surface, float x, float y, float* origin, float* direction);
+        engine_status (*surface_pixel_ray)(engine_handle surface, float x, float y, double* origin, float* direction);
 
         /* The inverse: projects the world point `point` (three floats) with the camera of the last frame. `out`
          * receives three floats: the pixel x and y (as above) and the distance along the camera's viewing direction in
          * metres (negative behind the camera, where x and y are not meaningful). Fails with: STALE_HANDLE,
          * INVALID_ARGUMENT, NOT_READY, TYPE_MISMATCH. */
-        engine_status (*surface_project)(engine_handle surface, const float* point, float* out);
+        engine_status (*surface_project)(engine_handle surface, const double* point, float* out);
 
         /* ---- Phase 24 Day 361: lights and the environment ---- */
 
@@ -2192,11 +2195,11 @@ extern "C"
          * centre of mass). The entity needs ENGINE_COMPONENT_RIGID_BODY and ENGINE_COMPONENT_COLLIDER, and a frame must
          * have made its body. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL force, not finite), TYPE_MISMATCH,
          * NOT_FOUND (no entity, or no body yet), UNSUPPORTED (a static body). */
-        engine_status (*body_apply_force)(engine_handle world, uint64_t key, const float* force, const float* point);
+        engine_status (*body_apply_force)(engine_handle world, uint64_t key, const float* force, const double* point);
 
         /* As body_apply_force for an impulse (newton seconds): the velocity changes at once. */
         engine_status (*body_apply_impulse)(engine_handle world, uint64_t key, const float* impulse,
-                                            const float* point);
+                                            const double* point);
 
         /* Sets the velocity of a body (metres and radians per second; either may be NULL to leave it). */
         engine_status (*body_set_velocity)(engine_handle world, uint64_t key, const float* linear,
@@ -2207,21 +2210,22 @@ extern "C"
 
         /* Moves a body and its entity's transform to a place at once (position x, y, z; rotation a unit quaternion x,
          * y, z, w; either may be NULL to leave it). */
-        engine_status (*body_teleport)(engine_handle world, uint64_t key, const float* position, const float* rotation);
+        engine_status (*body_teleport)(engine_handle world, uint64_t key, const double* position,
+                                       const float* rotation);
 
         /* Casts a ray against the colliders of a world: `direction` need not be unit, `max_distance` > 0. `layer_mask`
          * selects the layers (0xFFFFFFFF: all); triggers are not hit. `*hit` (struct_size set by the host) receives
          * the closest hit, and `*found` is 1 when there was one, else 0. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
          * STRUCT_SIZE, TYPE_MISMATCH. */
-        engine_status (*physics_raycast)(engine_handle world, const float* origin, const float* direction,
+        engine_status (*physics_raycast)(engine_handle world, const double* origin, const float* direction,
                                          float max_distance, uint32_t layer_mask, engine_ray_hit* hit, int* found);
 
         /* Finds the entities whose colliders overlap a sphere (`center`, `radius` > 0) or a box (`center`,
          * `half_extents` > 0, axis aligned); keys to `keys` up to `capacity`, the number to `*total`, as for query.
          * Triggers are not counted. */
-        engine_status (*physics_overlap_sphere)(engine_handle world, const float* center, float radius,
+        engine_status (*physics_overlap_sphere)(engine_handle world, const double* center, float radius,
                                                 uint32_t layer_mask, uint64_t* keys, size_t capacity, size_t* total);
-        engine_status (*physics_overlap_box)(engine_handle world, const float* center, const float* half_extents,
+        engine_status (*physics_overlap_box)(engine_handle world, const double* center, const float* half_extents,
                                              uint32_t layer_mask, uint64_t* keys, size_t capacity, size_t* total);
 
         /* ---- Phase 25 Day 409: joints, characters, events and snapshots ---- */
@@ -2631,7 +2635,8 @@ extern "C"
          * frame computed; before any frame, its local transform), the same surface the collider and the renderer use
          * (two triangles a cell). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a non-finite coordinate),
          * NOT_FOUND (no terrain covers the point, or its height map is not mounted). */
-        engine_status (*terrain_height)(engine_handle world, float x, float z, float* out_height);
+        engine_status (*terrain_height)(engine_handle world, double x, double z, double* out_height);
+
     } engine_api;
 
     /* Returns the function table.

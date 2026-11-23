@@ -311,7 +311,7 @@ static int ClassOf(const unsigned char* p)
 static int ScanScreenRow(engine_handle surface, const engine_frame_image* image, float wx, float wy, float wz,
                          int* left_bar, int* picture, int* right_bar, int* broken)
 {
-    const float point[3] = {wx, wy, wz};
+    const double point[3] = {wx, wy, wz};
     float out[3] = {0, 0, 0};
     int cx;
     int y;
@@ -368,7 +368,7 @@ static int ScanScreenRow(engine_handle surface, const engine_frame_image* image,
 static int PixelAt(engine_handle surface, const engine_frame_image* image, float wx, float wy, float wz,
                    unsigned char* rgb)
 {
-    const float point[3] = {wx, wy, wz};
+    const double point[3] = {wx, wy, wz};
     float out[3] = {0, 0, 0};
     int x;
     int y;

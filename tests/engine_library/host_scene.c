@@ -360,7 +360,7 @@ static int Brightness(const engine_pixels* pixels, unsigned x, unsigned y)
 /* The brightness of the triangle's middle, found with surface_project, after one frame. */
 static int TriangleBrightness(engine_handle engine, engine_handle surface, engine_pixels* pixels)
 {
-    const float middle[3] = {0.0f, -0.2f, 0.0f};
+    const double middle[3] = {0.0f, -0.2f, 0.0f};
     float at[3];
     CHECK_STATUS(FrameAndRead(engine, surface, pixels), ENGINE_OK);
     CHECK_STATUS(g_api->surface_project(surface, middle, at), ENGINE_OK);
@@ -378,7 +378,7 @@ static engine_string Str(const char* text)
 /* The colour of the pixel the world point projects to, in the last frame the surface drew. */
 static void ColorAt(engine_handle surface, const engine_pixels* pixels, float x, float y, float z, int* rgb)
 {
-    const float point[3] = {x, y, z};
+    const double point[3] = {x, y, z};
     float at[3];
     const unsigned char* p;
     CHECK_STATUS(g_api->surface_project(surface, point, at), ENGINE_OK);
@@ -778,12 +778,12 @@ int main(void)
 
     /* Day 360: a camera entity decides what the surface shows */
     {
-        float origin[3];
+        double origin[3];
         float direction[3];
-        float point[3] = {1.0f, 0.0f, 0.0f};
+        double point[3] = {1.0, 0.0, 0.0};
         float out[3];
         float again[3];
-        float far_point[3];
+        double far_point[3];
         unsigned long long before;
         engine_camera read_back;
         CHECK_STATUS(g_api->entity_create(world, &cam), ENGINE_OK);
@@ -815,12 +815,12 @@ int main(void)
         CHECK(fabsf(out[0] - 80.0f) < 0.5f && fabsf(out[1] - 60.0f) < 0.5f);
         /* the ray of a pixel passes through what projects to that pixel */
         CHECK_STATUS(g_api->surface_pixel_ray(surface, 105.98f, 60.0f, origin, direction), ENGINE_OK);
-        CHECK(fabsf(origin[2] - 4.0f) < 0.001f && direction[2] < 0.0f);
+        CHECK(fabs(origin[2] - 4.0f) < 0.001f && direction[2] < 0.0f);
         /* the direction is a unit vector: walk along it to the plane z = 0 */
         far_point[0] = origin[0] + direction[0] * (4.0f / -direction[2]);
         far_point[1] = origin[1] + direction[1] * (4.0f / -direction[2]);
         far_point[2] = origin[2] + direction[2] * (4.0f / -direction[2]);
-        CHECK(fabsf(far_point[0] - 1.0f) < 0.02f && fabsf(far_point[1]) < 0.02f && fabsf(far_point[2]) < 0.05f);
+        CHECK(fabs(far_point[0] - 1.0f) < 0.02f && fabs(far_point[1]) < 0.02f && fabs(far_point[2]) < 0.05f);
         CHECK_STATUS(g_api->surface_project(surface, far_point, again), ENGINE_OK);
         CHECK(fabsf(again[0] - 105.98f) < 0.1f && fabsf(again[1] - 60.0f) < 0.1f);
         CHECK_STATUS(g_api->surface_pixel_ray(surface, 1.0f, 1.0f, NULL, direction), ENGINE_ERROR_INVALID_ARGUMENT);
@@ -828,6 +828,42 @@ int main(void)
         point[2] = 10.0f;
         CHECK_STATUS(g_api->surface_project(surface, point, out), ENGINE_OK);
         CHECK(out[2] < 0.0f);
+        /* the double precision series: the camera 100,000 km away looks at a point 4 m in front of it and sees it at
+           the middle of the picture; its ray starts at its exact place (a float steps by 8 m there) */
+        {
+            const double far = 1.0e8 + 0.25;
+            engine_transform t64;
+            double far_origin[3];
+            double far_point64[3];
+            float far_direction[3];
+            memset(&t64, 0, sizeof(t64));
+            t64.struct_size = sizeof(t64);
+            t64.position[0] = far;
+            t64.position[1] = 2.0;
+            t64.position[2] = far + 4.0;
+            t64.rotation[3] = 1.0f;
+            t64.scale[0] = t64.scale[1] = t64.scale[2] = 1.0f;
+            CHECK_STATUS(g_api->component_set(world, cam, ENGINE_COMPONENT_TRANSFORM, &t64), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            far_point64[0] = far;
+            far_point64[1] = 2.0;
+            far_point64[2] = far;
+            CHECK_STATUS(g_api->surface_project(surface, far_point64, out), ENGINE_OK);
+            CHECK(fabsf(out[0] - 80.0f) < 0.5f && fabsf(out[1] - 60.0f) < 0.5f && fabsf(out[2] - 4.0f) < 0.01f);
+            far_point64[0] = far + 1.0;
+            CHECK_STATUS(g_api->surface_project(surface, far_point64, out), ENGINE_OK);
+            CHECK(fabsf(out[0] - 105.98f) < 0.5f &&
+                  fabsf(out[1] - 60.0f) < 0.5f); /* one metre right: as at the origin */
+            CHECK_STATUS(g_api->surface_pixel_ray(surface, 80.0f, 60.0f, far_origin, far_direction), ENGINE_OK);
+            CHECK(far_origin[0] == far && far_origin[1] == 2.0 && far_origin[2] == far + 4.0);
+            CHECK(far_direction[2] < -0.99f);
+            far_point64[0] = 3.0e12;
+            CHECK_STATUS(g_api->surface_project(surface, far_point64, out), ENGINE_ERROR_INVALID_ARGUMENT);
+            CHECK_STATUS(g_api->surface_pixel_ray(surface, 80.0f, 60.0f, NULL, far_direction),
+                         ENGINE_ERROR_INVALID_ARGUMENT);
+            PlaceAt(world, cam, 0.0f, 0.0f, 4.0f);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        }
         /* a moved camera changes the image */
         before = Checksum(&pixels);
         PlaceAt(world, cam, 1.5f, 0.0f, 4.0f);
@@ -1131,7 +1167,7 @@ int main(void)
         CHECK_STATUS(g_api->surface_set_background(second, background), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_world(second, world), ENGINE_OK);
         {
-            float ray_origin[3];
+            double ray_origin[3];
             float ray_direction[3];
             unsigned long long first_picture;
             CHECK_STATUS(g_api->surface_pixel_ray(second, 1.0f, 1.0f, ray_origin, ray_direction),
@@ -1389,7 +1425,7 @@ int main(void)
         engine_label label;
         Blob font = ReadWholeFile(LABEL_FONT_DIR, LABEL_FONT_NAME);
         float at[3];
-        const float origin[3] = {0.0f, 0.0f, 0.0f};
+        const double origin[3] = {0.0, 0.0, 0.0};
         int near_count;
         int far_count;
         char longtext[300];
@@ -1440,7 +1476,7 @@ int main(void)
         PlaceAt(world4, tag, 0.0f, 0.0f, -20.0f);
         CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
         {
-            const float far_point[3] = {0.0f, 0.0f, -20.0f};
+            const double far_point[3] = {0.0, 0.0, -20.0};
             CHECK_STATUS(g_api->surface_project(surface, far_point, at), ENGINE_OK);
             far_count = CountText(&pixels, (int)at[0], (int)at[1], 20);
             CHECK(far_count > near_count * 8 / 10 && far_count < near_count * 12 / 10);
@@ -1450,7 +1486,7 @@ int main(void)
             PlaceAt(world4, tag, 0.0f, 0.0f, -4.0f);
             CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
             {
-                const float close_point[3] = {0.0f, 0.0f, -4.0f};
+                const double close_point[3] = {0.0, 0.0, -4.0};
                 CHECK_STATUS(g_api->surface_project(surface, close_point, at), ENGINE_OK);
                 near_count = CountText(&pixels, (int)at[0], (int)at[1], 40);
             }

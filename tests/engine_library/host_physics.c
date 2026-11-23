@@ -154,6 +154,8 @@ static void TestArguments(engine_handle engine)
     engine_rigid_body b;
     engine_collider c;
     float v3[3] = {0.0f, 1.0f, 0.0f};
+    double p3[3] = {0.0, 1.0, 0.0}; /* the same as a position */
+    double nan_p3[3];
     float nan3[3];
     float q[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     engine_ray_hit hit;
@@ -169,6 +171,9 @@ static void TestArguments(engine_handle engine)
     nan3[0] = nanf("");
     nan3[1] = 0.0f;
     nan3[2] = 0.0f;
+    nan_p3[0] = nan("");
+    nan_p3[1] = 0.0;
+    nan_p3[2] = 0.0;
 
     /* the components */
     memset(&b, 0, sizeof(b));
@@ -252,42 +257,42 @@ static void TestArguments(engine_handle engine)
     CHECK_STATUS(g_api->body_apply_impulse(world, key, v3, NULL), ENGINE_ERROR_NOT_FOUND);
     CHECK_STATUS(g_api->body_set_velocity(world, key, v3, NULL), ENGINE_ERROR_NOT_FOUND);
     CHECK_STATUS(g_api->body_get_velocity(world, key, v3, NULL), ENGINE_ERROR_NOT_FOUND);
-    CHECK_STATUS(g_api->body_teleport(world, key, v3, q), ENGINE_ERROR_NOT_FOUND);
+    CHECK_STATUS(g_api->body_teleport(world, key, p3, q), ENGINE_ERROR_NOT_FOUND);
 
     /* arguments */
     CHECK_STATUS(g_api->physics_set_gravity(world, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->physics_set_gravity(world, nan3), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->body_apply_force(world, key, NULL, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->body_apply_force(world, key, nan3, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
-    CHECK_STATUS(g_api->body_apply_force(world, key, v3, nan3), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->body_apply_force(world, key, v3, nan_p3), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->body_apply_impulse(world, key, nan3, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->body_set_velocity(world, key, nan3, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
-    CHECK_STATUS(g_api->body_teleport(world, key, nan3, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->body_teleport(world, key, nan_p3, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->body_apply_force(world, gone, v3, NULL), ENGINE_ERROR_STALE_HANDLE);
     CHECK_STATUS(g_api->body_apply_force(world, 0, v3, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
     memset(&hit, 0, sizeof(hit));
     hit.struct_size = sizeof(hit);
     CHECK_STATUS(g_api->physics_raycast(world, NULL, v3, 10.0f, 0xFFFFFFFFu, &hit, &found),
                  ENGINE_ERROR_INVALID_ARGUMENT);
-    CHECK_STATUS(g_api->physics_raycast(world, v3, nan3, 10.0f, 0xFFFFFFFFu, &hit, &found),
+    CHECK_STATUS(g_api->physics_raycast(world, p3, nan3, 10.0f, 0xFFFFFFFFu, &hit, &found),
                  ENGINE_ERROR_INVALID_ARGUMENT);
     {
         const float zero[3] = {0.0f, 0.0f, 0.0f};
-        CHECK_STATUS(g_api->physics_raycast(world, v3, zero, 10.0f, 0xFFFFFFFFu, &hit, &found),
+        CHECK_STATUS(g_api->physics_raycast(world, p3, zero, 10.0f, 0xFFFFFFFFu, &hit, &found),
                      ENGINE_ERROR_INVALID_ARGUMENT);
     }
-    CHECK_STATUS(g_api->physics_raycast(world, v3, v3, 0.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_ERROR_INVALID_ARGUMENT);
-    CHECK_STATUS(g_api->physics_raycast(world, v3, v3, 10.0f, 0xFFFFFFFFu, NULL, &found),
+    CHECK_STATUS(g_api->physics_raycast(world, p3, v3, 0.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->physics_raycast(world, p3, v3, 10.0f, 0xFFFFFFFFu, NULL, &found),
                  ENGINE_ERROR_INVALID_ARGUMENT);
     hit.struct_size = 4;
-    CHECK_STATUS(g_api->physics_raycast(world, v3, v3, 10.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_ERROR_STRUCT_SIZE);
-    CHECK_STATUS(g_api->physics_overlap_sphere(world, v3, 1.0f, 0xFFFFFFFFu, keys, 4, NULL),
+    CHECK_STATUS(g_api->physics_raycast(world, p3, v3, 10.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_ERROR_STRUCT_SIZE);
+    CHECK_STATUS(g_api->physics_overlap_sphere(world, p3, 1.0f, 0xFFFFFFFFu, keys, 4, NULL),
                  ENGINE_ERROR_INVALID_ARGUMENT);
-    CHECK_STATUS(g_api->physics_overlap_sphere(world, v3, -1.0f, 0xFFFFFFFFu, keys, 4, &total),
+    CHECK_STATUS(g_api->physics_overlap_sphere(world, p3, -1.0f, 0xFFFFFFFFu, keys, 4, &total),
                  ENGINE_ERROR_INVALID_ARGUMENT);
-    CHECK_STATUS(g_api->physics_overlap_sphere(world, v3, 1.0f, 0xFFFFFFFFu, NULL, 4, &total),
+    CHECK_STATUS(g_api->physics_overlap_sphere(world, p3, 1.0f, 0xFFFFFFFFu, NULL, 4, &total),
                  ENGINE_ERROR_INVALID_ARGUMENT);
-    CHECK_STATUS(g_api->physics_overlap_box(world, v3, nan3, 0xFFFFFFFFu, keys, 4, &total),
+    CHECK_STATUS(g_api->physics_overlap_box(world, p3, nan3, 0xFFFFFFFFu, keys, 4, &total),
                  ENGINE_ERROR_INVALID_ARGUMENT);
 
     /* handles of the wrong kind or no longer valid */
@@ -295,14 +300,14 @@ static void TestArguments(engine_handle engine)
     CHECK_STATUS(g_api->counter_create(engine, &counter), ENGINE_OK);
     CHECK_STATUS(g_api->physics_set_gravity(counter, v3), ENGINE_ERROR_TYPE_MISMATCH);
     CHECK_STATUS(g_api->body_apply_force(counter, key, v3, NULL), ENGINE_ERROR_TYPE_MISMATCH);
-    CHECK_STATUS(g_api->physics_overlap_sphere(counter, v3, 1.0f, 0xFFFFFFFFu, keys, 4, &total),
+    CHECK_STATUS(g_api->physics_overlap_sphere(counter, p3, 1.0f, 0xFFFFFFFFu, keys, 4, &total),
                  ENGINE_ERROR_TYPE_MISMATCH);
     CHECK_STATUS(g_api->counter_destroy(counter), ENGINE_OK);
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
     CHECK_STATUS(g_api->physics_set_gravity(world, v3), ENGINE_ERROR_STALE_HANDLE);
     CHECK_STATUS(g_api->body_apply_force(world, key, v3, NULL), ENGINE_ERROR_STALE_HANDLE);
     hit.struct_size = sizeof(hit);
-    CHECK_STATUS(g_api->physics_raycast(world, v3, v3, 1.0f, 1u, &hit, &found), ENGINE_ERROR_STALE_HANDLE);
+    CHECK_STATUS(g_api->physics_raycast(world, p3, v3, 1.0f, 1u, &hit, &found), ENGINE_ERROR_STALE_HANDLE);
 }
 
 static void TestBallBounces(engine_handle engine)
@@ -390,15 +395,15 @@ static void TestImpulseAndQueries(engine_handle engine)
     float linear[3] = {0.0f, 0.0f, 0.0f};
     float angular[3] = {0.0f, 0.0f, 0.0f};
     float down[3] = {0.0f, -1.0f, 0.0f};
-    float origin[3] = {0.0f, 5.0f, 0.0f};
-    float centre[3] = {0.0f, 0.5f, 0.0f};
+    double origin[3] = {0.0, 5.0, 0.0};
+    double centre[3] = {0.0, 0.5, 0.0};
     float half[3] = {0.25f, 0.25f, 0.25f};
-    float to[3] = {7.0f, 0.5f, 0.0f};
+    double to[3] = {7.0, 0.5, 0.0};
     engine_ray_hit hit;
     int found = 0;
     size_t total = 0;
     uint64_t keys[4];
-    float pos[3] = {3.0f, 2.0f, 1.0f};
+    double pos[3] = {3.0, 2.0, 1.0};
     engine_transform t;
     engine_frame_info info;
     engine_frame_stats stats;
@@ -449,8 +454,7 @@ static void TestImpulseAndQueries(engine_handle engine)
     origin[0] = 4.0f;
     CHECK_STATUS(g_api->physics_raycast(world, origin, down, 100.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
     CHECK(found == 1 && hit.entity == floor_key);
-    CHECK(fabsf(hit.distance - 5.0f) < 1.0e-3f && fabsf(hit.point[1]) < 1.0e-3f &&
-          fabsf(hit.normal[1] - 1.0f) < 1.0e-4f);
+    CHECK(fabsf(hit.distance - 5.0f) < 1.0e-3f && fabs(hit.point[1]) < 1.0e-3 && fabsf(hit.normal[1] - 1.0f) < 1.0e-4f);
     CHECK_STATUS(g_api->physics_raycast(world, origin, down, 2.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
     CHECK(found == 0); /* too short */
     CHECK_STATUS(g_api->physics_raycast(world, origin, down, 100.0f, 0x2u, &hit, &found), ENGINE_OK);
@@ -482,6 +486,111 @@ static void TestImpulseAndQueries(engine_handle engine)
     stats.struct_size = sizeof(stats);
     CHECK_STATUS(g_api->frame(engine, &info, &stats), ENGINE_OK);
     CHECK(stats.worlds_run == 0 && stats.physics_bodies == 0);
+}
+
+/* The double precision series: a C host places, moves and queries entities 100,000 km from the origin exactly (a
+   float steps by 8 m there). */
+static void SetTransformFar(engine_handle world, uint64_t key, double x, double y, double z)
+{
+    engine_transform t;
+    memset(&t, 0, sizeof(t));
+    t.struct_size = sizeof(t);
+    t.position[0] = x;
+    t.position[1] = y;
+    t.position[2] = z;
+    t.rotation[3] = 1.0f;
+    t.scale[0] = t.scale[1] = t.scale[2] = 1.0f;
+    CHECK_STATUS(g_api->component_set(world, key, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+}
+
+static void TestFarWorld(engine_handle engine)
+{
+    const double far_x = 1.0e8 + 0.25;
+    engine_handle world;
+    uint64_t floor_key = 0;
+    uint64_t ball = 0;
+    engine_collider c = MakeCollider(ENGINE_SHAPE_BOX);
+    engine_collider b = MakeCollider(ENGINE_SHAPE_SPHERE);
+    engine_transform t;
+    engine_world_transform w;
+    engine_ray_hit hit;
+    double origin[3];
+    float down[3] = {0.0f, -1.0f, 0.0f};
+    double moved[3];
+    double centre[3];
+    int found = 0;
+    size_t total = 0;
+    uint64_t keys[4];
+
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->entity_create(world, &floor_key), ENGINE_OK);
+    SetTransformFar(world, floor_key, far_x, -0.5, 0.0);
+    SetBody(world, floor_key, ENGINE_BODY_STATIC, 0.0f);
+    c.half_extents[0] = 20.0f;
+    c.half_extents[1] = 0.5f;
+    c.half_extents[2] = 20.0f;
+    CHECK_STATUS(g_api->component_set(world, floor_key, ENGINE_COMPONENT_COLLIDER, &c), ENGINE_OK);
+    CHECK_STATUS(g_api->entity_create(world, &ball), ENGINE_OK);
+    SetTransformFar(world, ball, far_x + 1.5, 3.0, 0.0);
+    SetBody(world, ball, ENGINE_BODY_DYNAMIC, 0.0f);
+    CHECK_STATUS(g_api->component_set(world, ball, ENGINE_COMPONENT_COLLIDER, &b), ENGINE_OK);
+
+    /* the exact position reads back */
+    memset(&t, 0, sizeof(t));
+    t.struct_size = sizeof(t);
+    CHECK_STATUS(g_api->component_get(world, floor_key, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    CHECK(t.position[0] == far_x);
+
+    /* the ball falls onto the floor and rests there, still exactly at its x */
+    Frames(engine, 180, 1.0 / 60.0);
+    memset(&t, 0, sizeof(t));
+    t.struct_size = sizeof(t);
+    CHECK_STATUS(g_api->component_get(world, ball, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    CHECK(fabs(t.position[0] - (far_x + 1.5)) < 1.0e-3);
+    CHECK(t.position[1] > 0.45 && t.position[1] < 0.55);
+    memset(&w, 0, sizeof(w));
+    w.struct_size = sizeof(w);
+    CHECK_STATUS(g_api->component_get(world, ball, ENGINE_COMPONENT_WORLD_TRANSFORM, &w), ENGINE_OK);
+    CHECK(fabs(w.position[0] - (far_x + 1.5)) < 1.0e-3);
+
+    /* a ray at a quarter metre resolution: the hit point keeps it (a float point would be 8 m off) */
+    origin[0] = far_x + 0.25;
+    origin[1] = 5.0;
+    origin[2] = 0.0;
+    memset(&hit, 0, sizeof(hit));
+    hit.struct_size = sizeof(hit);
+    CHECK_STATUS(g_api->physics_raycast(world, origin, down, 100.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
+    CHECK(found == 1);
+    CHECK(hit.entity == floor_key);
+    CHECK(hit.point[0] == origin[0]);
+    CHECK(fabs(hit.point[1]) < 1.0e-4);
+
+    /* an overlap at the ball finds it, one 10 km along does not */
+    centre[0] = far_x + 1.5;
+    centre[1] = 0.5;
+    centre[2] = 0.0;
+    CHECK_STATUS(g_api->physics_overlap_sphere(world, centre, 0.25f, 0xFFFFFFFFu, keys, 4, &total), ENGINE_OK);
+    CHECK(total == 1 && keys[0] == ball);
+    centre[0] += 1.0e4;
+    CHECK_STATUS(g_api->physics_overlap_sphere(world, centre, 0.25f, 0xFFFFFFFFu, keys, 4, &total), ENGINE_OK);
+    CHECK(total == 0);
+
+    /* a teleport to an exact place and a read back */
+    moved[0] = far_x + 7.125;
+    moved[1] = 2.0;
+    moved[2] = 0.5;
+    CHECK_STATUS(g_api->body_teleport(world, ball, moved, NULL), ENGINE_OK);
+    memset(&t, 0, sizeof(t));
+    t.struct_size = sizeof(t);
+    CHECK_STATUS(g_api->component_get(world, ball, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
+    CHECK(t.position[0] == moved[0] && t.position[1] == moved[1] && t.position[2] == moved[2]);
+
+    /* a world beyond the limit is refused */
+    origin[0] = 2.0e12;
+    CHECK_STATUS(g_api->physics_raycast(world, origin, down, 100.0f, 0xFFFFFFFFu, &hit, &found),
+                 ENGINE_ERROR_INVALID_ARGUMENT);
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
 }
 
 static void TestSettings(void)
@@ -533,6 +642,7 @@ int main(void)
     TestArguments(engine);
     TestBallBounces(engine);
     TestImpulseAndQueries(engine);
+    TestFarWorld(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     TestSettings();
     g_api->thread_detach();

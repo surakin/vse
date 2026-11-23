@@ -1038,7 +1038,7 @@ engine_status SurfaceHost::SetCamera(engine_handle surface, u64 camera_entity)
     return ENGINE_OK;
 }
 
-engine_status SurfaceHost::PixelRay(engine_handle surface, f32 x, f32 y, f32* origin, f32* direction)
+engine_status SurfaceHost::PixelRay(engine_handle surface, f32 x, f32 y, f64* origin, f32* direction)
 {
     LockGuard<Mutex> lock(mutex_);
     SurfaceSlot* slot = nullptr;
@@ -1051,7 +1051,7 @@ engine_status SurfaceHost::PixelRay(engine_handle surface, f32 x, f32 y, f32* or
     return ENGINE_OK;
 }
 
-engine_status SurfaceHost::Project(engine_handle surface, const f32* point, f32* out)
+engine_status SurfaceHost::Project(engine_handle surface, const Vec3d& point, f32* out)
 {
     LockGuard<Mutex> lock(mutex_);
     SurfaceSlot* slot = nullptr;
@@ -1881,7 +1881,7 @@ engine_status SurfaceSetCameraFn(engine_handle surface, u64 camera_entity)
     return host->SetCamera(surface, camera_entity);
 }
 
-engine_status SurfacePixelRayFn(engine_handle surface, float x, float y, float* origin, float* direction)
+engine_status SurfacePixelRayFn(engine_handle surface, float x, float y, double* origin, float* direction)
 {
     if (origin == nullptr || direction == nullptr)
     {
@@ -1910,7 +1910,7 @@ engine_status SurfaceReleaseFrameFn(engine_handle surface, const engine_frame_im
     return host->ReleaseFrame(surface, image);
 }
 
-engine_status SurfaceProjectFn(engine_handle surface, const float* point, float* out)
+engine_status SurfaceProjectFn(engine_handle surface, const double* point, float* out)
 {
     if (point == nullptr || out == nullptr)
     {
@@ -1918,14 +1918,14 @@ engine_status SurfaceProjectFn(engine_handle surface, const float* point, float*
     }
     for (int i = 0; i < 3; ++i)
     {
-        if (!(point[i] - point[i] == 0.0f))
+        if (!(point[i] - point[i] == 0.0) || point[i] > 1.0e12 || point[i] < -1.0e12)
         {
-            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the point is not finite");
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the point is not finite or is beyond 1e12 metres");
         }
     }
     SurfaceHost* host = nullptr;
     TRY_SURFACE(HostOfObject(surface, &host));
-    return host->Project(surface, point, out);
+    return host->Project(surface, Vec3d(point[0], point[1], point[2]), out);
 }
 
 engine_status SurfaceStateFn(engine_handle surface, engine_surface_state* out)

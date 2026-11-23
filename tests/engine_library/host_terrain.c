@@ -114,7 +114,7 @@ static void Physics(engine_handle engine)
     engine_rigid_body body;
     engine_transform at;
     engine_buffer blob;
-    float height = -1.0f;
+    double height = -1.0;
     float expected;
     uint64_t keys[4];
     size_t total = 0;
@@ -239,10 +239,10 @@ static void Physics(engine_handle engine)
     /* the ground, before a frame (from the local transform) and after one */
     expected = Ground(30.0f, 40.0f, 10.0f, 1.0f, 20.0f);
     CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, &height), ENGINE_OK);
-    CHECK(fabsf(height - expected) < 1e-3f);
+    CHECK(fabs(height - expected) < 1e-3f);
     Frames(engine, 3);
     CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, &height), ENGINE_OK);
-    CHECK(fabsf(height - expected) < 1e-3f);
+    CHECK(fabs(height - expected) < 1e-3f);
     CHECK_STATUS(g_api->terrain_height(world, 9.0f, 40.0f, &height), ENGINE_ERROR_NOT_FOUND);  /* west of the map */
     CHECK_STATUS(g_api->terrain_height(world, 30.0f, 85.0f, &height), ENGINE_ERROR_NOT_FOUND); /* past its far edge */
     CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
@@ -270,6 +270,28 @@ static void Physics(engine_handle engine)
     printf("host_terrain: ball at (%.2f, %.3f, %.2f), ground %.3f\n", at.position[0], at.position[1], at.position[2],
            height);
     CHECK(at.position[1] > height + 0.45f && at.position[1] < height + 0.6f);
+
+    /* the double precision series: the same terrain 100,000 km away reads the same ground (a float coordinate steps by
+       8 m there) */
+    {
+        const double far = 1.0e8;
+        engine_transform moved;
+        double far_height = 0.0;
+        memset(&moved, 0, sizeof(moved));
+        moved.struct_size = sizeof(moved);
+        moved.position[0] = 10.0 + far;
+        moved.position[1] = 1.0;
+        moved.position[2] = 20.0 + far;
+        moved.rotation[3] = 1.0f;
+        moved.scale[0] = moved.scale[1] = moved.scale[2] = 1.0f;
+        CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &moved), ENGINE_OK);
+        CHECK_STATUS(g_api->terrain_height(world, 30.0 + far, 40.0 + far, &far_height), ENGINE_OK);
+        CHECK(fabs(far_height - (double)expected) < 1e-3);
+        CHECK_STATUS(g_api->terrain_height(world, 9.0 + far, 40.0 + far, &far_height), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->terrain_height(world, 30.0 + far, 40.0 + far, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->terrain_height(world, 3.0e12, 0.0, &far_height), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &moved), ENGINE_OK);
+    }
 
     /* taking the terrain off takes its collider and its body with it */
     CHECK_STATUS(g_api->component_remove(world, terrain, ENGINE_COMPONENT_TERRAIN), ENGINE_OK);

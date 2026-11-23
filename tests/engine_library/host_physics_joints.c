@@ -438,7 +438,7 @@ static void TestCharacter(engine_handle engine)
     t.struct_size = sizeof(t);
     CHECK_STATUS(g_api->component_get(world, hero, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
     CHECK(t.position[0] > 2.5f && t.position[0] < 3.2f); /* 1.5 s at 2 m/s */
-    CHECK(fabsf(t.position[1] - 0.9f) < 0.1f);           /* the capsule's centre, 0.9 above the floor */
+    CHECK(fabs(t.position[1] - 0.9f) < 0.1f);            /* the capsule's centre, 0.9 above the floor */
     CHECK_STATUS(g_api->character_move(world, hero, still, 1.0f / 60.0f, &st), ENGINE_OK);
     CHECK(st.on_ground == 1 && st.ground_entity == floor_key && st.ground_normal[1] > 0.99f);
     /* a jump leaves the ground and comes back */
@@ -454,7 +454,7 @@ static void TestCharacter(engine_handle engine)
         }
     }
     CHECK(peak > 1.5f);
-    CHECK(fabsf(t.position[1] - 0.9f) < 0.1f);
+    CHECK(fabs(t.position[1] - 0.9f) < 0.1f);
     CHECK_STATUS(g_api->character_move(world, hero, still, 1.0f / 60.0f, &st), ENGINE_OK);
     CHECK(st.on_ground == 1);
     /* destroying the entity gives the capsule back: the next frame runs without it */

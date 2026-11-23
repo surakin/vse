@@ -1043,7 +1043,7 @@ static void TestLevel(engine_handle engine, const Bytes* gltf)
         memset(&t, 0, sizeof(t));
         t.struct_size = sizeof(t);
         CHECK_STATUS(g_api->component_get(world, tip, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
-        CHECK(fabsf(t.position[1] - 1.0f) < 1e-5f);
+        CHECK(fabs(t.position[1] - 1.0f) < 1e-5f);
     }
     /* a second spawn is a second, independent copy: the prefix tells the names apart */
     memset(&place, 0, sizeof(place));
@@ -1764,7 +1764,7 @@ static void RunFrames(engine_handle engine, int count, engine_frame_stats* last)
 /* Whether a ray down from (x, 5, z) hits something within 10 m, and where. */
 static int HitsDown(engine_handle world, float x, float z, float* y)
 {
-    const float origin[3] = {x, 5.0f, z};
+    const double origin[3] = {x, 5.0, z};
     const float down[3] = {0.0f, -1.0f, 0.0f};
     engine_ray_hit hit;
     int found = 0;
@@ -1816,7 +1816,7 @@ static void TestColliders(engine_handle engine)
     CHECK(HitsDown(world, 4.9f, 0.0f, NULL) == 1);
     CHECK(HitsDown(world, 5.5f, 0.0f, NULL) == 0);
     { /* the wall, sideways */
-        const float origin[3] = {0.0f, 1.0f, 0.0f};
+        const double origin[3] = {0.0, 1.0, 0.0};
         const float east[3] = {1.0f, 0.0f, 0.0f};
         engine_ray_hit hit;
         int found = 0;
