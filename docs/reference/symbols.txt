@@ -12675,6 +12675,39 @@ renderer::GlyphAtlasTexture::Release()	function	renderer	renderer-glyphatlastext
 renderer::GlyphAtlasTexture::Recreate(rhi::Device*)	function	renderer	renderer-glyphatlastexture-recreate-rhi-device-star	renderer.md	engine/renderer/glyph_atlas_texture.h:83
 renderer::GlyphAtlasTexture::Live() const	function	renderer	renderer-glyphatlastexture-live-const	renderer.md	engine/renderer/glyph_atlas_texture.h:84
 renderer::GlyphAtlasTexture::RecreatableName() const	function	renderer	renderer-glyphatlastexture-recreatablename-const	renderer.md	engine/renderer/glyph_atlas_texture.h:85
+renderer::InstanceCullParams	struct	renderer	renderer-instancecullparams	renderer.md	engine/renderer/instance_cull.h:29
+renderer::InstanceCullParams::frustum	variable	renderer	renderer-instancecullparams-frustum	renderer.md	engine/renderer/instance_cull.h:32
+renderer::InstanceCullParams::render_origin	variable	renderer	renderer-instancecullparams-render-origin	renderer.md	engine/renderer/instance_cull.h:34
+renderer::InstanceCullParams::camera_position	variable	renderer	renderer-instancecullparams-camera-position	renderer.md	engine/renderer/instance_cull.h:36
+renderer::InstanceCullParams::mesh_radius	variable	renderer	renderer-instancecullparams-mesh-radius	renderer.md	engine/renderer/instance_cull.h:38
+renderer::InstanceCullParams::max_distance	variable	renderer	renderer-instancecullparams-max-distance	renderer.md	engine/renderer/instance_cull.h:40
+renderer::InstanceCullParams::min_size_ratio	variable	renderer	renderer-instancecullparams-min-size-ratio	renderer.md	engine/renderer/instance_cull.h:43
+renderer::InstanceSizeRatio(f32,f32,f32)	function	renderer	renderer-instancesizeratio-f32-f32-f32	renderer.md	engine/renderer/instance_cull.h:50
+renderer::InstanceRun	struct	renderer	renderer-instancerun	renderer.md	engine/renderer/instance_cull.h:55
+renderer::InstanceRun::chunk	variable	renderer	renderer-instancerun-chunk	renderer.md	engine/renderer/instance_cull.h:57
+renderer::InstanceRun::first	variable	renderer	renderer-instancerun-first	renderer.md	engine/renderer/instance_cull.h:58
+renderer::InstanceRun::count	variable	renderer	renderer-instancerun-count	renderer.md	engine/renderer/instance_cull.h:59
+renderer::InstanceCullStats	struct	renderer	renderer-instancecullstats	renderer.md	engine/renderer/instance_cull.h:65
+renderer::InstanceCullStats::chunks_tested	variable	renderer	renderer-instancecullstats-chunks-tested	renderer.md	engine/renderer/instance_cull.h:67
+renderer::InstanceCullStats::chunks_skipped	variable	renderer	renderer-instancecullstats-chunks-skipped	renderer.md	engine/renderer/instance_cull.h:68
+renderer::InstanceCullStats::chunks_accepted	variable	renderer	renderer-instancecullstats-chunks-accepted	renderer.md	engine/renderer/instance_cull.h:69
+renderer::InstanceCullStats::chunks_partial	variable	renderer	renderer-instancecullstats-chunks-partial	renderer.md	engine/renderer/instance_cull.h:70
+renderer::InstanceCullStats::instances_tested	variable	renderer	renderer-instancecullstats-instances-tested	renderer.md	engine/renderer/instance_cull.h:71
+renderer::InstanceCullStats::instances_emitted	variable	renderer	renderer-instancecullstats-instances-emitted	renderer.md	engine/renderer/instance_cull.h:72
+renderer::InstanceCullStats::runs	variable	renderer	renderer-instancecullstats-runs	renderer.md	engine/renderer/instance_cull.h:73
+renderer::InstanceCullResult	struct	renderer	renderer-instancecullresult	renderer.md	engine/renderer/instance_cull.h:79
+renderer::InstanceCullResult::runs	variable	renderer	renderer-instancecullresult-runs	renderer.md	engine/renderer/instance_cull.h:81
+renderer::InstanceCullResult::stats	variable	renderer	renderer-instancecullresult-stats	renderer.md	engine/renderer/instance_cull.h:82
+renderer::CullInstances(const InstanceSet&,const InstanceCullParams&,jobs::Scheduler*,InstanceCullResult*)	function	renderer	renderer-cullinstances-const-instanceset-amp-const-instancecullparams-amp-jobs-scheduler-star-instancecullresult-star	renderer.md	engine/renderer/instance_cull.h:96
+renderer::CompactInstances(const InstanceSet&,Span<const InstanceRun>,const Vec3d&,Vector<InstanceRecord>*)	function	renderer	renderer-compactinstances-const-instanceset-amp-span-lt-const-instancerun-gt-const-vec3d-amp-vector-lt-instancerecord-gt-star	renderer.md	engine/renderer/instance_cull.h:108
+renderer::InstanceHit	struct	renderer	renderer-instancehit	renderer.md	engine/renderer/instance_query.h:19
+renderer::InstanceHit::id	variable	renderer	renderer-instancehit-id	renderer.md	engine/renderer/instance_query.h:21
+renderer::InstanceHit::chunk	variable	renderer	renderer-instancehit-chunk	renderer.md	engine/renderer/instance_query.h:22
+renderer::InstanceHit::slot	variable	renderer	renderer-instancehit-slot	renderer.md	engine/renderer/instance_query.h:23
+renderer::InstanceHit::t	variable	renderer	renderer-instancehit-t	renderer.md	engine/renderer/instance_query.h:24
+renderer::InstanceQuery	class	renderer	renderer-instancequery	renderer.md	engine/renderer/instance_query.h:31
+renderer::InstanceQuery::Refresh(const InstanceSet&,f32)	function	renderer	renderer-instancequery-refresh-const-instanceset-amp-f32	renderer.md	engine/renderer/instance_query.h:41
+renderer::InstanceQuery::Raycast(const InstanceSet&,const Rayd&,f64,InstanceHit*) const	function	renderer	renderer-instancequery-raycast-const-instanceset-amp-const-rayd-amp-f64-instancehit-star-const	renderer.md	engine/renderer/instance_query.h:52
 renderer::kInstanceChunkSize	variable	renderer	renderer-kinstancechunksize	renderer.md	engine/renderer/instance_set.h:31
 renderer::kMaxInstances	variable	renderer	renderer-kmaxinstances	renderer.md	engine/renderer/instance_set.h:33
 renderer::kMaxInstanceCoordinate	variable	renderer	renderer-kmaxinstancecoordinate	renderer.md	engine/renderer/instance_set.h:35
@@ -12730,11 +12763,12 @@ renderer::InstanceSet::ChunkCount() const	function	renderer	renderer-instanceset
 renderer::InstanceSet::Chunk(u32) const	function	renderer	renderer-instanceset-chunk-u32-const	renderer.md	engine/renderer/instance_set.h:203
 renderer::InstanceSet::Records(u32) const	function	renderer	renderer-instanceset-records-u32-const	renderer.md	engine/renderer/instance_set.h:207
 renderer::InstanceSet::Extras(u32) const	function	renderer	renderer-instanceset-extras-u32-const	renderer.md	engine/renderer/instance_set.h:211
-renderer::InstanceSet::ChunkVolumeSum() const	function	renderer	renderer-instanceset-chunkvolumesum-const	renderer.md	engine/renderer/instance_set.h:213
-renderer::InstanceSet::MemoryBytes() const	function	renderer	renderer-instanceset-memorybytes-const	renderer.md	engine/renderer/instance_set.h:215
-renderer::InstanceSet::Version() const	function	renderer	renderer-instanceset-version-const	renderer.md	engine/renderer/instance_set.h:217
-renderer::InstanceSet::InstanceSet(const InstanceSetDesc&)	function	renderer	renderer-instanceset-instanceset-const-instancesetdesc-amp	renderer.md	engine/renderer/instance_set.h:240
-renderer::InstanceSetPtr	alias	renderer	renderer-instancesetptr	renderer.md	engine/renderer/instance_set.h:268
+renderer::InstanceSet::IdAt(u32,u32) const	function	renderer	renderer-instanceset-idat-u32-u32-const	renderer.md	engine/renderer/instance_set.h:216
+renderer::InstanceSet::ChunkVolumeSum() const	function	renderer	renderer-instanceset-chunkvolumesum-const	renderer.md	engine/renderer/instance_set.h:218
+renderer::InstanceSet::MemoryBytes() const	function	renderer	renderer-instanceset-memorybytes-const	renderer.md	engine/renderer/instance_set.h:220
+renderer::InstanceSet::Version() const	function	renderer	renderer-instanceset-version-const	renderer.md	engine/renderer/instance_set.h:222
+renderer::InstanceSet::InstanceSet(const InstanceSetDesc&)	function	renderer	renderer-instanceset-instanceset-const-instancesetdesc-amp	renderer.md	engine/renderer/instance_set.h:245
+renderer::InstanceSetPtr	alias	renderer	renderer-instancesetptr	renderer.md	engine/renderer/instance_set.h:273
 renderer::kLightAccumFormat	variable	renderer	renderer-klightaccumformat	renderer.md	engine/renderer/lighting.h:43
 renderer::SurfacePoint	struct	renderer	renderer-surfacepoint	renderer.md	engine/renderer/lighting.h:48
 renderer::SurfacePoint::albedo	variable	renderer	renderer-surfacepoint-albedo	renderer.md	engine/renderer/lighting.h:51

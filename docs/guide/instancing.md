@@ -24,7 +24,22 @@ Every edit returns an `InstanceStatus` and never aborts on a bad value:
 
 An `InstanceId` is a table index and a generation: removing an instance, or clearing the set, makes its id `StaleId` for good, even when the table entry is reused.
 
+## Culling
+
+`CullInstances(set, params, scheduler, &result)` (`renderer/instance_cull.h`) finds the visible instances. A chunk whose box, grown by the mesh's radius times the chunk's largest scale, is outside the frustum is skipped; a chunk wholly inside is emitted as one run with no per-instance test; a chunk that straddles a plane tests each instance (a sphere at its place, the mesh radius times its largest scale). The result is a list of `InstanceRun`s (a chunk, the first slot, a count) in chunk and slot order. It equals testing every instance alone, as a set, and it is the same for any number of threads: groups of 32 chunks are culled in parallel and joined in chunk order.
+
+`InstanceCullParams` carries the frustum, the viewer's place, the mesh radius and two optional limits: `max_distance` (0 for none) and `min_size_ratio`, the smallest radius-to-distance ratio worth drawing (`InstanceSizeRatio` converts a pixel size, the viewport height and the field of view). A set culled by size tests every instance of a chunk that is not rejected, because a chunk's smallest scale is not kept.
+
+The frustum and the camera are in the space whose origin is `render_origin`, a world position in `f64` (the camera's place once the renderer is camera-relative; zero until then). `CompactInstances` writes the records of the runs relative to it, each position computed in `f64` and then narrowed, so a set 10,000 km from the world origin gives records as precise as one at the origin.
+
+`InstanceCullStats` counts what the cull did: chunks tested, skipped, accepted whole and tested one by one, and the instances tested and emitted.
+
+## Rays
+
+`InstanceQuery` (`renderer/instance_query.h`) answers "which instance does this ray hit, by bounds". It keeps the set's chunk boxes in a `spatial::StaticBvh` (rebuilt by `Refresh` when the set's version has changed, a pass over the chunks) and tests the instances of the chunks the ray crosses by their own boxes.
+
 ## Cost
+
 
 Edits never repack chunks: a chunk emptied by removals is reused, but one left with a few instances stays, and an instance moved far from every other starts a chunk of its own. Each chunk reserves room for 256 records, so call `Rebuild` after heavy editing of a scattered set to pack them again.
 

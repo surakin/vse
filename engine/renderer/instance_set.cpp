@@ -576,6 +576,18 @@ Span<const InstanceExtra> InstanceSet::Extras(u32 index) const
                                      chunks_[index].count);
 }
 
+InstanceId InstanceSet::IdAt(u32 chunk, u32 slot) const
+{
+    InstanceId id;
+    if (chunk >= chunks_.Size() || slot >= chunks_[chunk].count)
+    {
+        return id;
+    }
+    id.index = handles_[static_cast<usize>(chunk) * kInstanceChunkSize + slot];
+    id.generation = slots_[id.index].generation;
+    return id;
+}
+
 f64 InstanceSet::ChunkVolumeSum() const
 {
     f64 sum = 0.0;

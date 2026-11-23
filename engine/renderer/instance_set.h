@@ -209,6 +209,11 @@ public:
     ///
     /// - Aborts: `index` is not below `ChunkCount()`.
     Span<const InstanceExtra> Extras(u32 index) const;
+    /// Returns the id of the instance in a slot of a chunk.
+    ///
+    /// - Returns: the id, or an invalid id (generation 0) when the chunk or slot is out of range.
+    /// - Fails: never.
+    InstanceId IdAt(u32 chunk, u32 slot) const;
     /// Returns the sum of the volumes of the non-empty chunks' boxes: the measure of how well the chunks fit.
     f64 ChunkVolumeSum() const;
     /// Returns the bytes the set's arrays hold, counting reserved space.

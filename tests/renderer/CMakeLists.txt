@@ -20,6 +20,7 @@ set(RENDERER_TEST_SOURCES
   terrain_tiles_test.cpp  # Phase 28 Day 487
   terrain_material_test.cpp  # Phase 28 Day 489
   instance_set_test.cpp  # Phase 28 Day 495
+  instance_cull_test.cpp  # Phase 28 Day 496
   renderer_fault_test.cpp
   render_settings_test.cpp
   device_resources_test.cpp
