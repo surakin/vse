@@ -9996,6 +9996,36 @@ inline constexpr SettingId kJointPaletteBytes;
 
 The joint palette's room per frame in bytes (default 16 MiB, about 350,000 joints; 48 to 768 MiB): read when the program makes its `FrameResources`, so a change takes effect at the next start. `DeviceReset`, restart required.
 
+## `kTerrainFirstRange` {#renderer-settings-kterrainfirstrange}
+
+`variable renderer::settings::kTerrainFirstRange` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+inline constexpr SettingId kTerrainFirstRange;
+```
+
+The terrain's finest level range in metres (`TerrainSelectSettings::first_range`; 16 to 100000, default 128), read by the frame each time it draws terrains. `Dynamic`.
+
+## `kTerrainMorphFraction` {#renderer-settings-kterrainmorphfraction}
+
+`variable renderer::settings::kTerrainMorphFraction` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+inline constexpr SettingId kTerrainMorphFraction;
+```
+
+The fraction of each level's range over which a terrain tile morphs into the next level (`morph_fraction`; 0 to 0.9, default 0.3). `Dynamic`.
+
+## `kTerrainMaxDistance` {#renderer-settings-kterrainmaxdistance}
+
+`variable renderer::settings::kTerrainMaxDistance` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+inline constexpr SettingId kTerrainMaxDistance;
+```
+
+The distance beyond which terrain tiles are not drawn (`max_distance`; 0 to 1e6, 0 is no limit). `Dynamic`.
+
 ## `RegisterBuiltinSettings(SettingsRegistry*)` {#renderer-registerbuiltinsettings-settingsregistry-star}
 
 `function renderer::RegisterBuiltinSettings` — defined in `engine/renderer/render_settings.h`
@@ -12396,10 +12426,10 @@ Sets how the scene's terrains choose their tiles (the ranges at which the levels
 `method renderer::SceneFrame::TerrainSelect` — defined in `engine/renderer/scene_frame.h`
 
 ```cpp
-const TerrainSelectSettings& TerrainSelect() const;
+TerrainSelectSettings TerrainSelect() const;
 ```
 
-Returns the terrain tile settings last set.
+Returns the terrain tile settings in force: the ones last set with `SetTerrainSelect`, or until then the `terrain_*` render settings of the renderer (read at each call, so `Renderer::ApplySettings` changes them).
 
 | Field | Value |
 |---|---|

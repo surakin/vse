@@ -161,6 +161,7 @@ ResourceHost::~ResourceHost()
     skeleton_pins_.Clear();
     clip_pins_.Clear();
     mesh_collider_pins_.Clear();  // handles release into the manager: before it goes (glTF colliders)
+    height_map_pins_.Clear();
     animation_ = nullptr;
     // The tickets and handles are gone (the engine refuses to be destroyed while any is out). The backend's entries
     // queue the hand-back of their lent bytes as they are destroyed.
@@ -215,6 +216,85 @@ engine_status ResourceHost::PinMeshCollider(u64 id, const asset::MeshColliderVie
     pin.handle = static_cast<asset::Handle<asset::MeshColliderView>&&>(handle);
     mesh_collider_pins_.Push(static_cast<MeshColliderPin&&>(pin));
     return ENGINE_OK;
+}
+
+engine_status ResourceHost::PinHeightMap(u64 id, const asset::HeightMapView** view, asset::ContentHash* hash)
+{
+    LockGuard<Mutex> lock(pin_mutex_);
+    asset::Handle<asset::HeightMapView> handle;
+    const asset::Status loaded = manager_->Load<asset::HeightMapView>(asset::ResourceId::FromValue(id), &handle);
+    if (!loaded.Ok())
+    {
+        return Fail(FromAssetError(loaded.Code()), loaded.Message());
+    }
+    for (usize i = 0; i < height_map_pins_.Size(); ++i)
+    {
+        if (height_map_pins_[i].handle.Get() == handle.Get())
+        {
+            if (view != nullptr)
+            {
+                *view = handle.Get();
+            }
+            if (hash != nullptr)
+            {
+                *hash = height_map_pins_[i].hash;
+            }
+            return ENGINE_OK;
+        }
+    }
+    HeightMapPin pin;
+    pin.hash = asset::HashBytes(handle.Get()->Bytes()->Bytes());
+    if (view != nullptr)
+    {
+        *view = handle.Get();
+    }
+    if (hash != nullptr)
+    {
+        *hash = pin.hash;
+    }
+    pin.handle = static_cast<asset::Handle<asset::HeightMapView>&&>(handle);
+    height_map_pins_.Push(static_cast<HeightMapPin&&>(pin));
+    return ENGINE_OK;
+}
+
+engine_status ResourceHost::AddHeightMap(u64 id, const u16* samples, u32 width, u32 height, f32 range_min,
+                                         f32 range_max, f32 cell_size)
+{
+    if (id == 0 || samples == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a height map needs an id and samples");
+    }
+    asset::HeightMapHeader header;
+    header.width = width;
+    header.height = height;
+    header.range_min = range_min;
+    header.range_max = range_max;
+    header.cell_size = cell_size;
+    if (width < asset::kMinHeightMapSide || height < asset::kMinHeightMapSide || width > asset::kMaxHeightMapSide ||
+        height > asset::kMaxHeightMapSide)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a height map is 2 to 8192 samples a side");
+    }
+    Vector<byte> little;  // the blob's samples are little-endian
+    little.Resize(usize{width} * height * 2);
+    for (usize i = 0; i < usize{width} * height; ++i)
+    {
+        little[2 * i] = static_cast<byte>(samples[i] & 0xFFu);
+        little[2 * i + 1] = static_cast<byte>(samples[i] >> 8);
+    }
+    Vector<byte> blob;
+    const asset::Status built = asset::BuildHeightMapBlob(types_, asset::ResourceId::FromValue(id), header,
+                                                          ByteSpan(little.Data(), little.Size()), &blob);
+    if (built.Failed())
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, built.Message());
+    }
+    engine_resource_add_info info = {};
+    info.struct_size = sizeof(info);
+    info.id = id;
+    info.bytes = blob.Data();
+    info.size = blob.Size();
+    return Add(&info);  // copies the bytes (no BORROW)
 }
 
 engine_status ResourceHost::ReadLevel(u64 id, Vector<byte>* bytes)
@@ -1256,6 +1336,14 @@ engine_status ResourceAddFn(engine_handle engine, const engine_resource_add_info
     ResourceHost* host = nullptr;
     TRY_C(HostOfEngine(engine, &host));
     return host->Add(info);
+}
+
+engine_status HeightMapCreateFn(engine_handle engine, u64 id, const u16* samples, u32 width, u32 height, f32 range_min,
+                                f32 range_max, f32 cell_size)
+{
+    ResourceHost* host = nullptr;
+    TRY_C(HostOfEngine(engine, &host));
+    return host->AddHeightMap(id, samples, width, height, range_min, range_max, cell_size);
 }
 
 engine_status ResourceReplaceFn(engine_handle engine, const engine_resource_add_info* info, engine_buffer* dependents)

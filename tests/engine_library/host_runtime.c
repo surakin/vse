@@ -676,7 +676,7 @@ static void TestLightsAndMorphs(engine_handle engine)
     CHECK_STATUS(g_api->component_remove(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS), ENGINE_OK);
     CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_MORPH_WEIGHTS, &read), ENGINE_ERROR_NOT_FOUND);
     /* a kind past the last is still unknown */
-    CHECK_STATUS(g_api->component_get(world, key, (engine_component_kind)(ENGINE_COMPONENT_MORPH_WEIGHTS + 1), &read),
+    CHECK_STATUS(g_api->component_get(world, key, (engine_component_kind)(ENGINE_COMPONENT_TERRAIN + 1), &read),
                  ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
 }

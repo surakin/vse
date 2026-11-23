@@ -856,6 +856,24 @@ What to expect:
 **Tested** by `host_character_world.c` (a ground, a wall, a step of `step_height`, one 5 cm higher, a ramp steeper than `min_ground_y`, a ledge: landing,
 stopping, climbing, falling, and two worlds moving the same), `host_import.c` (`TestColliders`, `TestMeshShape`) and `level_spawn_test.cpp`.
 
+## Terrain
+
+A terrain is a height map drawn at an entity's place, with an optional static height-field collider made from the same samples (see [Terrain](terrain.md) for the data, the surface and the settings).
+
+- **The height map.** `ENGINE_RESOURCE_HEIGHT_MAP` is a resource of the memory backend like a mesh: a host adds an `HGHT` blob it minted (`resource_add`), or gives the engine samples and lets it make the blob: `height_map_create(engine, id, samples, width, height, range_min, range_max, cell_size)` takes
+  `width * height` `u16` samples (2 to 8192 a side, rows from z = 0; sample `s` is the height `range_min + s / 65535 * (range_max - range_min)`), copies them into a blob and adds it under `id`. The engine keeps the blob (`resource_read` returns it), which is the CPU source a surface and a
+  physics world are rebuilt from after a rebind; the host's own samples may be freed at once. `ALREADY_EXISTS` for an id in use, `INVALID_ARGUMENT` for a size, range or cell size the format refuses.
+- **The component.** `ENGINE_COMPONENT_TERRAIN` (`engine_terrain`) names the height map, up to four layers (`engine_terrain_layer`: tiling, tint, roughness, metallic), an optional layer array texture and splat map (texture resources), the slope rule and the distance fade. The entity's world
+  transform must be a translation and a turn about the y axis; the map's first sample is at the entity's origin and the map extends along +x and +z. A surface bound to the entity's world draws it; a terrain that does not resolve (a height map not mounted, a texture that is not a texture, a transform with a scale or a tilt)
+  is counted in `engine_surface_state.entities_unresolved`. Setting checks the resources: `NOT_FOUND` for one that is not mounted, `TYPE_MISMATCH` for one of another type, `INVALID_ARGUMENT` for a value out of range. Replacing the height map's resource makes the next frame draw the new heights.
+- **The collider.** With `ENGINE_TERRAIN_COLLIDER` in `flags` the engine adds a static rigid body (when the entity has none) and a height-field collider of the same samples, made at the end of the next frame (as a mesh collider is), with the component's `friction` and `restitution`. The entity must not have another
+  collider (`INVALID_ARGUMENT`), nor a body that is not static, and its world transform must have no scale. `ENGINE_SHAPE_HEIGHT_FIELD` (`engine_collider.mesh_resource` names the height map) is the same shape set by hand on an entity with a static body. `component_get` of `ENGINE_COMPONENT_COLLIDER` reads it back as
+  `ENGINE_SHAPE_HEIGHT_FIELD`. Taking the terrain component off removes the collider and the body it made.
+- **The ground.** `terrain_height(world, x, z, &y)` reads the surface at a world point: the first terrain entity (by key) whose map covers it, at the entity's current placement (a root's own transform, a child's last computed world matrix), the same two-triangle surface the renderer draws and the collider collides with. `NOT_FOUND` for a point no
+  terrain covers. Scripts of the world read the same ground through `terrain.height`, `terrain.normal` and `terrain.raycast` (they see the terrains that have the collider, as of the tick start).
+
+**Tested** by `host_terrain.c` (the samples, the resource, every refusal, the component read back, the ground, a ball that comes to rest on the collider, the collider and its body removed with the component, and, when a device exists, a pixel of the drawn terrain against the sky).
+
 ## The C++ layer: `engine.h`
 
 A host written in C++ may include `include/engine/engine.h` beside `engine_c.h` (it includes nothing else: no standard library, no exceptions, no RTTI).

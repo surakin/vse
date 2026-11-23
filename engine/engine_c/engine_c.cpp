@@ -880,6 +880,8 @@ extern "C"
             &engine_c::ScriptEventSubscribeFn,
             &engine_c::ScriptEventUnsubscribeFn,
             &engine_c::ScriptTaskRunFn,
+            &engine_c::HeightMapCreateFn,
+            &engine_c::TerrainHeightFn,
         };
         *out = &table;
         return ENGINE_OK;

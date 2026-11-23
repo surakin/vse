@@ -656,6 +656,31 @@ int main(void)
     FIELD(engine_import_options, max_images);
     FIELD(engine_import_options, reserved);
     FIELD(engine_import_options, max_collision_triangles);
-    VALUE(ENGINE_SHAPE_MESH); /* glTF colliders Day 6 */
+    VALUE(ENGINE_SHAPE_MESH);         /* glTF colliders Day 6 */
+    VALUE(ENGINE_SHAPE_HEIGHT_FIELD); /* Phase 28 Day 493 */
+    VALUE(ENGINE_COMPONENT_TERRAIN);
+    VALUE(ENGINE_TERRAIN_LAYERS_MAX);
+    VALUE(ENGINE_TERRAIN_COLLIDER);
+    VALUE(ENGINE_RESOURCE_HEIGHT_MAP);
+    STRUCT(engine_terrain_layer);
+    FIELD(engine_terrain_layer, tiling);
+    FIELD(engine_terrain_layer, tint);
+    FIELD(engine_terrain_layer, roughness);
+    FIELD(engine_terrain_layer, metallic);
+    STRUCT(engine_terrain);
+    FIELD(engine_terrain, struct_size);
+    FIELD(engine_terrain, flags);
+    FIELD(engine_terrain, height_map);
+    FIELD(engine_terrain, layer_texture);
+    FIELD(engine_terrain, splat_texture);
+    FIELD(engine_terrain, layer_count);
+    FIELD(engine_terrain, slope_layer);
+    FIELD(engine_terrain, slope_start);
+    FIELD(engine_terrain, slope_end);
+    FIELD(engine_terrain, fade_start);
+    FIELD(engine_terrain, fade_end);
+    FIELD(engine_terrain, layers);
+    FIELD(engine_terrain, friction);
+    FIELD(engine_terrain, restitution);
     return 0;
 }

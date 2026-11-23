@@ -7,6 +7,7 @@
 #include "asset/async_loader.h"
 #include "asset/content_hash.h"
 #include "asset/cpu_loaders.h"
+#include "asset/height_map.h"
 #include "asset/mesh_collider.h"
 #include "asset/memory_backend.h"
 #include "asset/resource_manager.h"
@@ -123,6 +124,20 @@ public:
     ///   told apart from the one a world already turned into a physics mesh.
     /// - Returns: ENGINE_OK, NOT_FOUND (not mounted) or TYPE_MISMATCH (not an `MCOL`), with the text set.
     engine_status PinMeshCollider(u64 id, const asset::MeshColliderView** view, asset::ContentHash* hash);
+    /// Loads the height map `id` and keeps it loaded until the host is destroyed.
+    ///
+    /// - Param view: receives the view (valid while the host lives); may be null.
+    /// - Param hash: receives the content hash of its bytes; may be null.
+    /// - Returns: ENGINE_OK, NOT_FOUND (not mounted) or TYPE_MISMATCH (not an `HGHT`), with the text set.
+    engine_status PinHeightMap(u64 id, const asset::HeightMapView** view, asset::ContentHash* hash);
+    /// Makes the blob of a height map from samples the host holds and adds it to the memory backend (the engine's CPU
+    /// copy a surface and a physics world are rebuilt from).
+    ///
+    /// - Param id: the resource id the map gets; not zero.
+    /// - Param samples: `width * height` `u16` samples, rows from z = 0.
+    /// - Returns: ENGINE_OK, INVALID_ARGUMENT (the header is refused), ALREADY_EXISTS or the errors of `Add`.
+    engine_status AddHeightMap(u64 id, const u16* samples, u32 width, u32 height, f32 range_min, f32 range_max,
+                               f32 cell_size);
     /// Reads the level blob `id` and checks that everything it names is mounted.
     ///
     /// - Param bytes: replaced by a copy of the blob.
@@ -186,7 +201,13 @@ private:
         asset::ContentHash hash;
     };
     Vector<MeshColliderPin> mesh_collider_pins_;  ///< Pins of the mesh colliders.
-    Mutex loader_mutex_;                          // the loader belongs to one thread at a time
+    struct HeightMapPin
+    {
+        asset::Handle<asset::HeightMapView> handle;
+        asset::ContentHash hash;
+    };
+    Vector<HeightMapPin> height_map_pins_;  ///< Pins of the height maps.
+    Mutex loader_mutex_;                    // the loader belongs to one thread at a time
     UniquePtr<asset::AsyncLoader> loader_;
 
     Mutex table_mutex_;  // guards the two tables
@@ -234,6 +255,9 @@ engine_status ResourceAddWaitFn(engine_handle ticket, u64 timeout_ms);
 engine_status ResourceAddFinishFn(engine_handle ticket, usize* failed_index);
 engine_status ResourceAddDestroyFn(engine_handle ticket);
 u64 ImportFormatVersionFn();
+/// See `engine_api.height_map_create`.
+engine_status HeightMapCreateFn(engine_handle engine, u64 id, const u16* samples, u32 width, u32 height, f32 range_min,
+                                f32 range_max, f32 cell_size);
 engine_status ResourceLoadFn(engine_handle engine, u64 id, engine_string path, u32 type, engine_handle* out);
 engine_status ResourceReleaseFn(engine_handle resource);
 engine_status ResourceStatusFn(engine_handle resource, engine_resource_info* out);

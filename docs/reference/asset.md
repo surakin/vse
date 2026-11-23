@@ -4257,6 +4257,41 @@ static constexpr u32 kKind;
 
 The code of the C++ type.
 
+## `ResourceTraits<HeightMapView>` {#asset-resourcetraits-lt-heightmapview-gt}
+
+`struct asset::ResourceTraits<HeightMapView>` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+template <>
+struct ResourceTraits<HeightMapView> { ... }
+```
+
+A height map is loaded as a [`asset::HeightMapView`](#asset-heightmapview) over the manager's buffer.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe, a compile-time constant. |
+
+### `kType` {#asset-resourcetraits-lt-heightmapview-gt-ktype}
+
+`variable asset::ResourceTraits<HeightMapView>::kType` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+static constexpr ResourceType kType;
+```
+
+`HGHT`.
+
+### `kKind` {#asset-resourcetraits-lt-heightmapview-gt-kkind}
+
+`variable asset::ResourceTraits<HeightMapView>::kKind` — defined in `engine/asset/cpu_loaders.h`
+
+```cpp
+static constexpr u32 kKind;
+```
+
+The code of the C++ type.
+
 ## `ResourceTraits<LevelSummary>` {#asset-resourcetraits-lt-levelsummary-gt}
 
 `struct asset::ResourceTraits<LevelSummary>` — defined in `engine/asset/cpu_loaders.h`
@@ -4300,7 +4335,7 @@ The code of the C++ type.
 void RegisterCpuLoaders(ResourceManager* manager);
 ```
 
-Registers the loaders of audio clips, scripts, skeletons, clips, meshes, textures, materials, mesh colliders and levels with `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match, and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
+Registers the loaders of audio clips, scripts, skeletons, clips, meshes, textures, materials, mesh colliders, height maps and levels with `manager`. A skinned mesh is published only when its skeleton is loaded and its recorded hash and joint count match, and a clip only when its skeleton is the one it was made for (`DependencyTypeMismatch` otherwise).
 
 | Field | Value |
 |---|---|

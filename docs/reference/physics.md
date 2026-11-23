@@ -5766,6 +5766,52 @@ A ray that starts inside a solid collider hits it at distance zero with the norm
 | Thread-safety | thread-safe against other queries, while no step or change runs. |
 | Ownership | `hit` is the caller's; nothing is kept. |
 
+## `TerrainRayCast(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-terrainraycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
+
+`function physics::TerrainRayCast` — defined in `engine/physics/query.h`
+
+```cpp
+bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
+```
+
+Casts a ray at the height-field colliders only (terrain) and returns the closest hit; as [`physics::RayCast`](#physics-raycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star) otherwise.
+
+| Field | Value |
+|---|---|
+| Parameter `world` | the world. |
+| Parameter `origin` | where the ray starts. |
+| Parameter `direction` | any non-zero direction (it is normalized). |
+| Parameter `max_distance` | the length of the ray, above zero. |
+| Parameter `filter` | what to hit. |
+| Parameter `hit` | receives the closest hit (may be null). |
+| Returns | true if a height field was hit. |
+| Fails | a non-finite or zero input returns false. |
+| Thread-safety | thread-safe against other queries, while no step or change runs. |
+| Ownership | `hit` is the caller's; nothing is kept. |
+
+## `TerrainHeight(const PhysicsWorld&,f32,f32,const PhysicsQueryFilter&,f32*,Vec3*)` {#physics-terrainheight-const-physicsworld-amp-f32-f32-const-physicsqueryfilter-amp-f32-star-vec3-star}
+
+`function physics::TerrainHeight` — defined in `engine/physics/query.h`
+
+```cpp
+bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFilter& filter, f32* height, Vec3* normal);
+```
+
+Finds the ground under a point: the highest surface of the height-field colliders that cover (`x`, `z`).
+
+| Field | Value |
+|---|---|
+| Parameter `world` | the world. |
+| Parameter `x` | the world x of the point. |
+| Parameter `z` | the world z of the point. |
+| Parameter `filter` | what to consider. |
+| Parameter `height` | receives the surface's world y (may be null). |
+| Parameter `normal` | receives the surface's unit normal, pointing up (may be null). |
+| Returns | true if a height field covers the point. |
+| Fails | a non-finite coordinate, or no field under the point, returns false. |
+| Thread-safety | thread-safe against other queries, while no step or change runs. |
+| Ownership | the outputs are the caller's. |
+
 ## `RayCastAll(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,Vector<PhysicsHit>*)` {#physics-raycastall-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-vector-lt-physicshit-gt-star}
 
 `function physics::RayCastAll` — defined in `engine/physics/query.h`

@@ -75,6 +75,37 @@ struct PhysicsHit
 bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
              const PhysicsQueryFilter& filter, PhysicsHit* hit);
 
+/// Casts a ray at the height-field colliders only (terrain) and returns the closest hit; as [[physics::RayCast]]
+/// otherwise.
+///
+/// - Param world: the world.
+/// - Param origin: where the ray starts.
+/// - Param direction: any non-zero direction (it is normalized).
+/// - Param max_distance: the length of the ray, above zero.
+/// - Param filter: what to hit.
+/// - Param hit: receives the closest hit (may be null).
+/// - Returns: true if a height field was hit.
+/// - Thread-safety: thread-safe against other queries, while no step or change runs.
+/// - Ownership: `hit` is the caller's; nothing is kept.
+/// - Fails: a non-finite or zero input returns false.
+bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
+                    const PhysicsQueryFilter& filter, PhysicsHit* hit);
+
+/// Finds the ground under a point: the highest surface of the height-field colliders that cover (`x`, `z`).
+///
+/// - Param world: the world.
+/// - Param x: the world x of the point.
+/// - Param z: the world z of the point.
+/// - Param filter: what to consider.
+/// - Param height: receives the surface's world y (may be null).
+/// - Param normal: receives the surface's unit normal, pointing up (may be null).
+/// - Returns: true if a height field covers the point.
+/// - Thread-safety: thread-safe against other queries, while no step or change runs.
+/// - Ownership: the outputs are the caller's.
+/// - Fails: a non-finite coordinate, or no field under the point, returns false.
+bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFilter& filter, f32* height,
+                   Vec3* normal);
+
 /// Casts a ray and returns every hit, nearest first (ties by collider key).
 ///
 /// - Param world: the world.

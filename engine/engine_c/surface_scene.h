@@ -5,6 +5,7 @@
 //! module `engine_c`.
 
 #include "containers/dense_map.h"
+#include "asset/content_hash.h"
 #include "asset/cpu_loaders.h"
 #include "asset/gpu_loaders.h"
 #include "asset/resource_manager.h"
@@ -124,6 +125,25 @@ private:
         rhi::TextureHandle host_handles[SlotOverrides::kMax];    // the device textures bound for host textures
         bool seen = false;
     };
+    // A terrain of the world as the render scene has it.
+    struct TerrainEntry
+    {
+        u64 entity = 0;
+        renderer::TerrainId id;
+        bool seen = false;
+    };
+    // The renderer's data of one height map at one content: remade when a replaced resource changes the hash.
+    struct TerrainSource
+    {
+        u64 id = 0;
+        asset::ContentHash hash;
+        renderer::TerrainSourcePtr source;
+    };
+    struct Texture
+    {
+        u64 id = 0;
+        asset::Handle<asset::GpuTextureAsset> handle;
+    };
     struct Mesh
     {
         u64 id = 0;
@@ -136,6 +156,12 @@ private:
     };
 
     void SyncLights(WorldObject& world, SceneFrameReport* report);
+    // Mirrors the world's terrain components into the render scene (adds, updates and removes).
+    void SyncTerrains(WorldObject& world, SceneFrameReport* report);
+    // The renderer's source of the height map `id`, or an empty pointer.
+    renderer::TerrainSourcePtr ResolveTerrainSource(u64 id);
+    // The texture resource `id` as a device texture, or an empty pointer.
+    renderer::GpuTexturePtr ResolveTexture(u64 id);
     // Projects the world's labels through the frame's camera and queues them for the text pass.
     void SyncLabels(WorldObject& world, const renderer::Camera& camera, u32 width, u32 height,
                     SceneFrameReport* report);
@@ -159,6 +185,10 @@ private:
     renderer::LightId sun_;              // the default sun of a world with no light and no environment
     DenseMap<u64, Mesh> meshes_;         // by resource id; released in the order they were made
     DenseMap<u64, Material> materials_;  // by resource id
+    ResourceHost* resources_ = nullptr;
+    DenseMap<u64, TerrainEntry> terrain_entries_;  // by entity
+    Vector<TerrainSource> terrain_sources_;        // by height-map id
+    DenseMap<u64, Texture> textures_;              // by resource id (a terrain's layers and splat map)
     Runtime* runtime_ = nullptr;
     u64 label_font_version_ = 0;  // of the font this surface's frame opened
     LiveTextures live_;           // the device side of the host textures the world's slots name

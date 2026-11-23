@@ -30,7 +30,7 @@ value ENGINE_COMPONENT_JOINT 13
 value ENGINE_COMPONENT_CHARACTER 14
 value ENGINE_COMPONENT_AUDIO_SOURCE 15
 value ENGINE_COMPONENT_AUDIO_LISTENER 16
-value ENGINE_COMPONENT_MASK_ALL 262143
+value ENGINE_COMPONENT_MASK_ALL 524287
 value ENGINE_NAME_MAX_BYTES 63
 struct engine_string size=16
 field engine_string.data offset=0 size=8
@@ -324,7 +324,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=1232
+struct engine_api size=1248
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -632,3 +632,28 @@ field engine_import_options.max_images offset=120 size=4
 field engine_import_options.reserved offset=124 size=4
 field engine_import_options.max_collision_triangles offset=128 size=8
 value ENGINE_SHAPE_MESH 4
+value ENGINE_SHAPE_HEIGHT_FIELD 5
+value ENGINE_COMPONENT_TERRAIN 19
+value ENGINE_TERRAIN_LAYERS_MAX 4
+value ENGINE_TERRAIN_COLLIDER 1
+value ENGINE_RESOURCE_HEIGHT_MAP 1414022984
+struct engine_terrain_layer size=24
+field engine_terrain_layer.tiling offset=0 size=4
+field engine_terrain_layer.tint offset=4 size=12
+field engine_terrain_layer.roughness offset=16 size=4
+field engine_terrain_layer.metallic offset=20 size=4
+struct engine_terrain size=160
+field engine_terrain.struct_size offset=0 size=4
+field engine_terrain.flags offset=4 size=4
+field engine_terrain.height_map offset=8 size=8
+field engine_terrain.layer_texture offset=16 size=8
+field engine_terrain.splat_texture offset=24 size=8
+field engine_terrain.layer_count offset=32 size=4
+field engine_terrain.slope_layer offset=36 size=4
+field engine_terrain.slope_start offset=40 size=4
+field engine_terrain.slope_end offset=44 size=4
+field engine_terrain.fade_start offset=48 size=4
+field engine_terrain.fade_end offset=52 size=4
+field engine_terrain.layers offset=56 size=96
+field engine_terrain.friction offset=152 size=4
+field engine_terrain.restitution offset=156 size=4

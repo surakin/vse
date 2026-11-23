@@ -27,11 +27,11 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 415 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
-| [Physics](physics.md) | 32 | 831 |
+| [Physics](physics.md) | 32 | 833 |
 | [Audio](audio.md) | 28 | 822 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 40 | 1440 |
+| [Assets and resources](asset.md) | 40 | 1443 |
 | [glTF importer](asset_import.md) | 19 | 321 |
 | [Animation runtime](animation.md) | 4 | 90 |
 | [Database](database.md) | 9 | 161 |
@@ -41,7 +41,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 205 |
 | [The Render Hardware Interface](rhi.md) | 21 | 827 |
-| [The renderer](renderer.md) | 31 | 1481 |
+| [The renderer](renderer.md) | 31 | 1484 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 441 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |
 | [The Metal backend (macOS)](rhi-metal.md) | 1 | 1 |

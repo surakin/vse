@@ -311,6 +311,21 @@ void SceneFrame::SetTerrainSelect(const TerrainSelectSettings& settings)
                       settings.morph_fraction < 1.0f && settings.max_distance >= 0.0f,
                   "SceneFrame::SetTerrainSelect: a setting is out of range");
     terrain_select_ = settings;
+    terrain_select_set_ = true;
+}
+
+TerrainSelectSettings SceneFrame::TerrainSelect() const
+{
+    if (terrain_select_set_ || !renderer_)
+    {
+        return terrain_select_;
+    }
+    const RenderSettings& values = renderer_->Settings();
+    TerrainSelectSettings select;
+    select.first_range = values.GetFloat(settings::kTerrainFirstRange);
+    select.morph_fraction = values.GetFloat(settings::kTerrainMorphFraction);
+    select.max_distance = values.GetFloat(settings::kTerrainMaxDistance);
+    return select;
 }
 
 FrameStatus SceneFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen)
@@ -341,7 +356,7 @@ void SceneFrame::PrepareTerrains(const RenderScene& scene, const Camera& camera,
                          w.col[1][0] * d.x + w.col[1][1] * d.y + w.col[1][2] * d.z,
                          w.col[2][0] * d.x + w.col[2][1] * d.y + w.col[2][2] * d.z);
         const Frustum frustum = Frustum::FromViewProjection(camera.ViewProjection() * w);
-        TerrainSelectSettings select = terrain_select_;
+        TerrainSelectSettings select = TerrainSelect();
         select.first_range = FMax(select.first_range, 3.0f * static_cast<f32>(kTerrainTileCells) * source.cell_size);
         tile_scratch_.Clear();
         source.tiles.Select(local, &frustum, select, &tile_scratch_);

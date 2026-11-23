@@ -26,7 +26,7 @@ bool IsHidden(const ecs::World& world, ecs::Entity entity);
 
 SurfaceScene::SurfaceScene(rhi::Device* device, rhi::Swapchain* swapchain, ResourceHost* resources,
                            renderer::BeforePresentFn before_present, void* before_present_user)
-    : device_(device)
+    : device_(device), resources_(resources)
 {
     renderer::SceneFrameSetup setup;
     setup.device = device;
@@ -82,12 +82,15 @@ SurfaceScene::~SurfaceScene()
     // Reverse order of creation: what the scene points at (meshes), then the frame, then the manager's backend mount.
     entries_.Clear();
     light_entries_.Clear();
+    terrain_entries_.Clear();
+    terrain_sources_.Clear();
     while (instances_.Size() != 0)
     {
         DestroyInstance(instances_.Size() - 1);
     }
     scene_ = nullptr;
     live_.Release();
+    textures_.Clear();
     meshes_.Clear();
     materials_.Clear();
     frame_.Destroy();
@@ -147,6 +150,140 @@ bool SurfaceScene::ResolveMaterial(u64 id, bool skinned, u32* index)
     }
     *index = materials_.Emplace(id, static_cast<Material&&>(made)).value->handle.Get()->material->id.index;
     return true;
+}
+
+renderer::TerrainSourcePtr SurfaceScene::ResolveTerrainSource(u64 id)
+{
+    const asset::HeightMapView* view = nullptr;
+    asset::ContentHash hash;
+    if (resources_ == nullptr || resources_->PinHeightMap(id, &view, &hash) != ENGINE_OK)
+    {
+        return renderer::TerrainSourcePtr();  // not mounted (yet): the next frame asks again
+    }
+    for (usize i = 0; i < terrain_sources_.Size(); ++i)
+    {
+        if (terrain_sources_[i].id == id && terrain_sources_[i].hash == hash)
+        {
+            return terrain_sources_[i].source;
+        }
+    }
+    renderer::TerrainSourcePtr made;
+    if (!asset::MakeTerrainSource(device_, *view, nullptr, &made) || !made->Valid())
+    {
+        return renderer::TerrainSourcePtr();
+    }
+    for (usize i = 0; i < terrain_sources_.Size(); ++i)
+    {
+        if (terrain_sources_[i].id == id)
+        {  // the resource was replaced: the entries that name the old data get the new one at their next update
+            terrain_sources_[i].hash = hash;
+            terrain_sources_[i].source = made;
+            return made;
+        }
+    }
+    TerrainSource entry;
+    entry.id = id;
+    entry.hash = hash;
+    entry.source = made;
+    terrain_sources_.Push(entry);
+    return made;
+}
+
+renderer::GpuTexturePtr SurfaceScene::ResolveTexture(u64 id)
+{
+    if (const Texture* known = textures_.Find(id))
+    {
+        return known->handle.Get()->texture;
+    }
+    Texture made;
+    made.id = id;
+    if (!manager_->Load<asset::GpuTextureAsset>(asset::ResourceId::FromValue(id), &made.handle).Ok())
+    {
+        return renderer::GpuTexturePtr();
+    }
+    return textures_.Emplace(id, static_cast<Texture&&>(made)).value->handle.Get()->texture;
+}
+
+void SurfaceScene::SyncTerrains(WorldObject& world, SceneFrameReport* report)
+{
+    for (auto& [entity, e] : terrain_entries_)
+    {
+        e.seen = false;
+    }
+    auto query = world.world.Query<ecs::Read<TerrainComponent>, ecs::Read<ecs::WorldTransform>>();
+    query.ForEach(
+        [&](ecs::Entity entity, const TerrainComponent& terrain, const ecs::WorldTransform& placed)
+        {
+            if (IsHidden(world.world, entity))
+            {
+                return;
+            }
+            const u64 key = entity.ToU64();
+            renderer::TerrainObject object;
+            object.source = ResolveTerrainSource(terrain.height_map);
+            object.world = placed.matrix;
+            object.material.layer_count = terrain.layer_count;
+            for (u32 i = 0; i < renderer::kMaxTerrainLayers; ++i)
+            {
+                object.material.layers[i].tiling = terrain.tiling[i];
+                object.material.layers[i].tint = Vec3(terrain.tint[i][0], terrain.tint[i][1], terrain.tint[i][2]);
+                object.material.layers[i].roughness = terrain.roughness[i];
+                object.material.layers[i].metallic = terrain.metallic[i];
+            }
+            object.material.slope_layer = terrain.slope_layer;
+            object.material.slope_start = terrain.slope_start;
+            object.material.slope_end = terrain.slope_end;
+            object.material.fade_start = terrain.fade_start;
+            object.material.fade_end = terrain.fade_end;
+            if (terrain.layer_texture != 0)
+            {
+                object.material.layer_array = ResolveTexture(terrain.layer_texture);
+            }
+            if (terrain.splat_texture != 0)
+            {
+                object.material.splat = ResolveTexture(terrain.splat_texture);
+            }
+            const bool usable = object.source && object.source->Valid() && renderer::TerrainWorldValid(object.world) &&
+                                (terrain.layer_texture == 0 || object.material.layer_array) &&
+                                (terrain.splat_texture == 0 || object.material.splat) &&
+                                renderer::TerrainMaterialInvalid(object.material) == nullptr;
+            if (!usable)
+            {
+                ++report->entities_unresolved;  // an entry it had stays unseen and is removed below
+                return;
+            }
+            TerrainEntry* entry = terrain_entries_.Find(key);
+            if (entry == nullptr)
+            {
+                const renderer::TerrainId id = scene_->AddTerrain(object);
+                if (!id.IsValid())
+                {
+                    ++report->entities_unresolved;  // the scene has no room for another terrain
+                    return;
+                }
+                TerrainEntry made;
+                made.entity = key;
+                made.id = id;
+                made.seen = true;
+                terrain_entries_.Emplace(key, made);
+                return;
+            }
+            scene_->SetTerrain(entry->id, object);
+            entry->seen = true;
+        });
+    for (u32 i = 0; i < terrain_entries_.Size();)
+    {
+        TerrainEntry& e = terrain_entries_.At(i);
+        if (!e.seen)
+        {
+            scene_->RemoveTerrain(e.id);
+            terrain_entries_.RemoveAt(i);
+        }
+        else
+        {
+            ++i;
+        }
+    }
 }
 
 void SurfaceScene::DestroyInstance(usize index)
@@ -836,6 +973,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     live_.Flush();     // the copies the slots asked for, before the frame samples the textures
     live_.EndFrame();  // textures no slot names any more are dropped
     SyncLights(world, &report);
+    SyncTerrains(world, &report);
     renderer::Camera camera;  // the default camera unless the host named one that works
     camera.SetLookAt(Vec3(0.0f, 1.5f, 5.0f), Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f));
     camera.aspect = aspect;

@@ -337,6 +337,26 @@ void RegisterBuiltinSettings(SettingsRegistry* registry)
         d.restart_required = true;
         add(d, settings::kJointPaletteBytes);
     }
+    {
+        SettingDesc d;
+        d.name = "terrain_first_range";
+        d.type = SettingType::Float;
+        d.cost = CostClass::Dynamic;
+        d.default_float = 128.0f;
+        d.min_float = 16.0f;
+        d.max_float = 100000.0f;
+        add(d, settings::kTerrainFirstRange);
+        d.name = "terrain_morph_fraction";
+        d.default_float = 0.3f;
+        d.min_float = 0.0f;
+        d.max_float = 0.9f;
+        add(d, settings::kTerrainMorphFraction);
+        d.name = "terrain_max_distance";
+        d.default_float = 0.0f;
+        d.min_float = 0.0f;
+        d.max_float = 1000000.0f;
+        add(d, settings::kTerrainMaxDistance);
+    }
 }
 
 RenderSettings::RenderSettings(const SettingsRegistry& registry) : registry_(&registry) {}

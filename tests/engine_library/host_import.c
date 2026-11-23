@@ -24,7 +24,7 @@ static const engine_api* g_api = NULL;
 /* engine_api.import_format_version of this source tree. A change means a blob container or type version, or the
    importer's output version (asset::kGltfImporterOutputVersion), moved: that invalidates every host's cache of imported
    blobs, so the number is updated here on purpose, in the commit that moved it. */
-#define EXPECTED_FORMAT_VERSION 0xb71b1cc62ce8f2a3ull
+#define EXPECTED_FORMAT_VERSION 0xae616b492f1df2bfull
 
 #define CHECK(condition)                                                                                               \
     do                                                                                                                 \

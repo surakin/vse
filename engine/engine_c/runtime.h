@@ -164,6 +164,30 @@ struct MeshReference
     u64 material_resource = 0;  ///< The resource id of the material (0: the surface's default material).
 };
 
+/// The component of ENGINE_COMPONENT_TERRAIN: a height-map terrain and its surface.
+///
+/// - Thread-safety: plain data.
+struct TerrainComponent
+{
+    u64 height_map = 0;     ///< The resource id of the height map (`HGHT`).
+    u64 layer_texture = 0;  ///< The resource id of the layer array texture, or 0.
+    u64 splat_texture = 0;  ///< The resource id of the splat map, or 0.
+    u32 flags = 0;          ///< `ENGINE_TERRAIN_*`.
+    u32 layer_count = 1;    ///< The layers used, 1 to 4.
+    i32 slope_layer = -1;   ///< The layer steep faces use, or -1.
+    f32 slope_start = 0.35f;
+    f32 slope_end = 0.55f;
+    f32 fade_start = 150.0f;
+    f32 fade_end = 300.0f;
+    f32 tiling[4] = {8.0f, 8.0f, 8.0f, 8.0f};
+    f32 tint[4][3] = {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}};
+    f32 roughness[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    f32 metallic[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    f32 friction = 0.5f;     ///< The collider's friction.
+    f32 restitution = 0.0f;  ///< The collider's bounciness.
+    bool made_body = false;  ///< The static body was made with the terrain (and goes with it).
+};
+
 /// The component of ENGINE_COMPONENT_CHARACTER: the shape and rules of a character. The controller
 /// itself is in the world's `physics::CharacterSet` (`WorldObject::characters`), shared with the scripts' `character.*`
 /// (C API script physics, 2026-11-20).
@@ -191,8 +215,8 @@ using AudioHostPtr = SharedPtr<AudioHost>;
 /// - Thread-safety: plain data.
 struct ColliderSource
 {
-    u32 shape = 0;                                 ///< `asset::StaticColliderShape` values: mesh, box, sphere, capsule.
-    u64 mesh = 0;                                  ///< The `MCOL` of a mesh shape.
+    u32 shape = 0;  ///< `asset::StaticColliderShape` values: mesh, box, sphere, capsule; 4 a height field.
+    u64 mesh = 0;   ///< The `MCOL` of a mesh shape, or the `HGHT` of a height field.
     Vec3 half_extents = Vec3(0.0f, 0.0f, 0.0f);    ///< A box's half sizes, unscaled.
     f32 radius = 0.0f;                             ///< A sphere's or a capsule's radius, unscaled.
     f32 half_height = 0.0f;                        ///< Half a capsule's straight part, unscaled.
@@ -210,6 +234,15 @@ struct ColliderSource
     Vec3 made_scale = Vec3(1.0f, 1.0f, 1.0f);      ///< The world scale the collider was made with.
 };
 
+/// The `ColliderSource::shape` of a height field (the values below it are `asset::StaticColliderShape`'s).
+inline constexpr u32 kColliderShapeHeightField = 4;
+
+/// Whether a source's shape is one that only static bodies carry (a mesh or a height field).
+inline bool IsStaticOnlyShape(u32 shape)
+{
+    return shape == 0 || shape == kColliderShapeHeightField;
+}
+
 /// A physics mesh a world made from an `MCOL` at one scale.
 ///
 /// - Thread-safety: plain data.
@@ -219,6 +252,17 @@ struct ColliderMeshEntry
     u32 scale[3] = {};        ///< The scale's bit patterns (a mirror is a negative z).
     u32 mesh = 0;             ///< Its id in the world's `MeshLibrary`.
     Vec3 extent;              ///< Its `TriangleMesh::Extent()`.
+};
+
+/// A physics height field a world made from an `HGHT`.
+///
+/// - Thread-safety: plain data.
+struct ColliderFieldEntry
+{
+    asset::ContentHash hash;  ///< The `HGHT`'s content hash.
+    u32 field = 0;            ///< Its id in the world's `HeightFieldLibrary`.
+    Vec3 extent;              ///< Its `HeightField::Extent()`.
+    Vec3 centre;              ///< Where the map's centre is in the asset's space (half the map's size, y 0).
 };
 
 /// A world and the systems that run on it.
@@ -246,6 +290,7 @@ struct WorldObject
     UniquePtr<ScriptHost> scripts;
     /// The physics meshes made from `MCOL`s; a world keeps them until it is destroyed.
     Vector<ColliderMeshEntry> collider_meshes;
+    Vector<ColliderFieldEntry> collider_fields;  ///< The height fields made from `HGHT`s.
     bool collider_sources = false;  ///< Whether a collider source was added: the frame resolves them only then.
 };
 
@@ -494,6 +539,8 @@ engine_status EntitySetMeshSlotMaterialByNameFn(engine_handle world, u64 key, en
 engine_status EntityClearMeshSlotMaterialsFn(engine_handle world, u64 key);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
+/// See `engine_api.terrain_height`.
+engine_status TerrainHeightFn(engine_handle world, float x, float z, float* out_height);
 engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size);
 engine_status EntityNameSetFn(engine_handle world, u64 key, engine_string name);
 engine_status EntityNameGetFn(engine_handle world, u64 key, engine_buffer* out);

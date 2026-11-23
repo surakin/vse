@@ -8,6 +8,7 @@
 #include "ecs/transform.h"
 #include "jobs/scheduler.h"
 #include "lang/scalar.h"
+#include "physics/height_field.h"
 #include "physics/joint_sync.h"
 #include "physics/query.h"
 #include "physics/sync.h"
@@ -920,4 +921,54 @@ TEST_CASE("Script physics: queries from many threads at once (the physics world 
             ++checked;
         });
     CHECK(checked == 300);
+}
+
+TEST_CASE("Script physics: terrain.height, normal and raycast read the height-field colliders of the tick start",
+          "[script_physics][queries][terrain]")
+{
+    PhysRig rig;
+    // A 41 by 21 sample map rising 0.3 m for each metre along x, one metre a cell, centred on its entity at (20, 0,
+    // 10).
+    Vector<u16> samples;
+    for (u32 z = 0; z < 21; ++z)
+    {
+        for (u32 x = 0; x < 41; ++x)
+        {
+            samples.Push(static_cast<u16>(x * 65535u / 40u));
+        }
+    }
+    const physics::HeightFieldConstPtr field = physics::HeightField::CreateFromSamples(
+        Span<const u16>(samples.Data(), samples.Size()), 41, 21, 0.0f, 12.0f, 1.0f, nullptr);
+    REQUIRE(field);
+    physics::Collider collider;
+    collider.shape = physics::Shape::MakeHeightField(rig.physics.HeightFields().Add(field), field->Extent());
+    const ecs::Entity ground = rig.Add(Vec3(20.0f, 0.0f, 10.0f), physics::BodyType::Static, collider);
+    rig.Add(Vec3(25.0f, 15.0f, 10.0f), physics::BodyType::Static, BoxCollider(Vec3(1.0f, 1.0f, 1.0f)));
+    rig.Sync();
+    rig.physics.Step();
+
+    CallOutput out;
+    REQUIRE(rig.Read("local n = terrain.normal(25, 10)\n"
+                     "local r = terrain.raycast(vec3.new(25, 30, 10), vec3.new(0, -1, 0), 100)\n"
+                     "return terrain.height(25, 10), n.y, r.distance, r.entity, r.normal.y,\n"
+                     "       terrain.height(500, 10) == nil, terrain.normal(500, 10) == nil,\n"
+                     "       terrain.raycast(vec3.new(25, 30, 10), vec3.new(0, -1, 0), 10) == nil",
+                     &out)
+                .IsOk());
+    REQUIRE(out.results.Size() == 8);
+    CHECK(Near(static_cast<f32>(out.results[0].ToDouble()), 7.5f));
+    CHECK(static_cast<f32>(out.results[1].ToDouble()) > 0.9f);
+    CHECK(Near(static_cast<f32>(out.results[2].ToDouble()), 22.5f));  // the terrain, not the box above it
+    CHECK(out.results[3].AsEntity().ToU64() == ground.ToU64());
+    CHECK(static_cast<f32>(out.results[4].ToDouble()) > 0.9f);
+    CHECK(out.results[5].AsBool());
+    CHECK(out.results[6].AsBool());
+    CHECK(out.results[7].AsBool());
+
+    // Bad arguments are errors that name the problem; a world without physics says so.
+    CHECK_FALSE(rig.Read("return terrain.height(0/0, 1)", &out).IsOk());
+    CHECK_FALSE(rig.Read("return terrain.raycast(vec3.new(0, 1, 0), vec3.new(0, 0, 0), 5)", &out).IsOk());
+    CHECK_FALSE(rig.Read("return terrain.raycast(vec3.new(0, 1, 0), vec3.new(0, -1, 0), 0)", &out).IsOk());
+    rig.context.extensions[kServicePhysics] = nullptr;
+    CHECK_FALSE(rig.Read("return terrain.height(25, 10)", &out).IsOk());
 }

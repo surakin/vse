@@ -450,12 +450,17 @@ test:engine_c_character_world*                  25   # a character lands, climbs
 test:engine_c_script_character*                 27   # a Lua behavior in a C API world makes, walks, jumps and teleports a character on an imported ground; the script and the C API agree; a held move walks alike at 30, 60 and 120 fps (C API script physics, 2026-11-20)
 test:engine_c_script_scene*                     27   # a Lua behavior in a C API world sets the sky and the lights: subset calls keep the rest, errors name the field, the host's environment call and the script's order, the picture follows the sky (2026-11-22)
 test:engine_c_glass_screen*                     27   # a quad emits its albedo (emissive_from_albedo, with albedo_uv and bars) and reflects the sky by a Fresnel term (reflection_intensity) in a world with no light (2026-11-22)
+test:engine_c_terrain*                           28   # a C host makes a height map from samples, a terrain with the collider flag, reads the ground, drops a ball on it, draws it and reads every refusal (Phase 28 Day 493)
 test:engine_c_audio*                            26   # a C program plays host-supplied clips through the host-driven audio of the table and renders the mix itself (Phase 26 Day 438)
 testopt:script_bench_check                     27   # only in a Release or RelWithDebInfo build: the regression bounds of the script benchmark (Phase 27 Day 476)
 testopt:script_stress_large                    27   # only in a Release or RelWithDebInfo build: a million scripted entities with churn, events and tasks, state checked (Phase 27 Day 476)
 testopt:physics_bench_large                     25   # only in a Release or RelWithDebInfo build: the stress run, 50000 bodies and a million steps, state checked (Phase 25 Day 413)
 testopt:audio_bench_large                       26   # only in a Release or RelWithDebInfo build: two million blocks of a looping scene with random parameter changes, output checked (ten million by hand) (Phase 26 Day 442)
 test:physics_demo_screenshot                    25   # random shapes falling onto a floor through the ECS, drawn offscreen
+test:render_features_demo_hash_1                    28   # the terrain scene's physics hash after 300 steps at 1 threads
+test:render_features_demo_hash_2                    28   # the terrain scene's physics hash after 300 steps at 2 threads
+test:render_features_demo_hash_4                    28   # the terrain scene's physics hash after 300 steps at 4 threads
+test:render_features_demo_hash_16                    28   # the terrain scene's physics hash after 300 steps at 16 threads
 test:script_demo_screenshot                     27   # Phase 27 Day 475: the scripted game drawn offscreen with its overlay
 test:script_demo_window_*                       27   # Phase 27 Day 475: the scripted game in a window, 1,000 frames with validation
 test:engine_c_offscreen*                          24   # a C program with no window system makes off-screen surfaces, draws a world on them, resizes, reads the pictures back and destroys them with a read-back waiting (Phase 24 Day 378)

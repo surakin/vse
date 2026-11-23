@@ -76,6 +76,7 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_AUDIO_LISTENER: return "audio listener";
     case ENGINE_COMPONENT_SCRIPT: return "script";
     case ENGINE_COMPONENT_MORPH_WEIGHTS: return "morph weights";
+    case ENGINE_COMPONENT_TERRAIN: return "terrain";
     }
     return "component";
 }
@@ -84,7 +85,7 @@ static_assert(animation::kMaxMorphWeights == ENGINE_MORPH_WEIGHTS_MAX, "the C AP
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_MORPH_WEIGHTS;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_TERRAIN;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -109,6 +110,7 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_AUDIO_LISTENER: return ecs::ComponentOf<audio::AudioListener>();
     case ENGINE_COMPONENT_SCRIPT: return ScriptComponentId();
     case ENGINE_COMPONENT_MORPH_WEIGHTS: return ecs::ComponentOf<animation::MorphWeights>();
+    case ENGINE_COMPONENT_TERRAIN: return ecs::ComponentOf<TerrainComponent>();
     }
     return ecs::kInvalidComponent;
 }
@@ -839,15 +841,17 @@ engine_status SetMeshCollider(WorldObject& object, ecs::Entity entity, const eng
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }
     Runtime* runtime = CurrentRuntime();
+    const bool field = in->shape == ENGINE_SHAPE_HEIGHT_FIELD;
     const asset::MeshColliderView* view = nullptr;
     asset::ContentHash hash;
-    const engine_status pinned = runtime->Resources()->PinMeshCollider(in->mesh_resource, &view, &hash);
+    const engine_status pinned = field ? runtime->Resources()->PinHeightMap(in->mesh_resource, nullptr, nullptr)
+                                       : runtime->Resources()->PinMeshCollider(in->mesh_resource, &view, &hash);
     if (pinned != ENGINE_OK)
     {
         return pinned;
     }
     ColliderSource source;
-    source.shape = 0;
+    source.shape = field ? kColliderShapeHeightField : 0;
     source.mesh = in->mesh_resource;
     source.offset = probe.offset;
     source.rotation = probe.rotation;
@@ -909,6 +913,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     else if (kind == ENGINE_COMPONENT_MORPH_WEIGHTS)
     {
         checked = CheckInStruct(value, sizeof(engine_morph_weights), "engine_morph_weights");
+    }
+    else if (kind == ENGINE_COMPONENT_TERRAIN)
+    {
+        checked = CheckInStruct(value, sizeof(engine_terrain), "engine_terrain");
     }
     else if (kind == ENGINE_COMPONENT_VISIBILITY)
     {
@@ -1052,10 +1060,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 if (in->type != ENGINE_BODY_STATIC)
                 {  // glTF colliders Day 6: a mesh collider is for static bodies only
                     const ColliderSource* source = object.world.Peek<ColliderSource>(entity);
-                    if (source != nullptr && source->shape == 0)
+                    if (source != nullptr && IsStaticOnlyShape(source->shape))
                     {
                         return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
-                                    "the entity has a mesh collider: its body must be static");
+                                    "the entity has a mesh or height-field collider: its body must be static");
                     }
                 }
                 physics::RigidBody body;
@@ -1078,7 +1086,7 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
             {
                 const engine_collider* in = static_cast<const engine_collider*>(value);
                 physics::Collider collider;
-                if (in->shape == ENGINE_SHAPE_MESH)
+                if (in->shape == ENGINE_SHAPE_MESH || in->shape == ENGINE_SHAPE_HEIGHT_FIELD)
                 {
                     return SetMeshCollider(object, entity, in);
                 }
@@ -1354,6 +1362,162 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                     light.outer_cone = in->outer_cone;
                 }
                 return SetOrAdd(object.world, entity, light);
+            }
+            if (kind == ENGINE_COMPONENT_TERRAIN)
+            {
+                const engine_terrain* in = static_cast<const engine_terrain*>(value);
+                if ((in->flags & ~ENGINE_TERRAIN_COLLIDER) != 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the terrain has an unknown flag bit");
+                }
+                if (in->height_map == 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a terrain needs a height map resource");
+                }
+                if (in->layer_count < 1 || in->layer_count > ENGINE_TERRAIN_LAYERS_MAX)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "layer_count is not 1 to ENGINE_TERRAIN_LAYERS_MAX");
+                }
+                if (in->slope_layer < -1 || in->slope_layer >= static_cast<i32>(in->layer_count))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "slope_layer is not -1 or one of the layers");
+                }
+                if (!(Finite(in->slope_start) && Finite(in->slope_end) && in->slope_start >= 0.0f &&
+                      in->slope_end > in->slope_start && in->slope_end <= 1.0f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                                "the slope range needs 0 <= slope_start < slope_end <= 1");
+                }
+                if (!(Finite(in->fade_start) && Finite(in->fade_end) && in->fade_start >= 0.0f &&
+                      in->fade_end > in->fade_start))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the fade range needs 0 <= fade_start < fade_end");
+                }
+                for (u32 i = 0; i < in->layer_count; ++i)
+                {
+                    const engine_terrain_layer& l = in->layers[i];
+                    if (!(Finite(l.tiling) && l.tiling > 0.0f && Finite(l.tint[0]) && l.tint[0] >= 0.0f &&
+                          Finite(l.tint[1]) && l.tint[1] >= 0.0f && Finite(l.tint[2]) && l.tint[2] >= 0.0f &&
+                          Finite(l.roughness) && l.roughness >= 0.0f && l.roughness <= 1.0f && Finite(l.metallic) &&
+                          l.metallic >= 0.0f && l.metallic <= 1.0f))
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                                    "a layer needs tiling > 0, tint >= 0 and roughness and metallic in 0 to 1");
+                    }
+                }
+                if (!(Finite(in->friction) && in->friction >= 0.0f && Finite(in->restitution) &&
+                      in->restitution >= 0.0f && in->restitution <= 1.0f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "friction >= 0 and restitution in 0 to 1 are needed");
+                }
+                ResourceHost* resources = CurrentRuntime()->Resources();
+                const engine_status pinned = resources->PinHeightMap(in->height_map, nullptr, nullptr);
+                if (pinned != ENGINE_OK)
+                {
+                    return pinned;
+                }
+                const u64 textures[2] = {in->layer_texture, in->splat_texture};
+                for (const u64 texture : textures)
+                {
+                    if (texture == 0)
+                    {
+                        continue;
+                    }
+                    engine_resource_info info = {};
+                    info.struct_size = sizeof(info);
+                    const engine_status mounted = resources->Mounted(texture, &info);
+                    if (mounted != ENGINE_OK)
+                    {
+                        return mounted;
+                    }
+                    if (info.type != ENGINE_RESOURCE_TEXTURE)
+                    {
+                        return Fail(ENGINE_ERROR_TYPE_MISMATCH, "a terrain texture is not a texture resource");
+                    }
+                }
+                const TerrainComponent* before = object.world.Peek<TerrainComponent>(entity);
+                const bool had_collider = before != nullptr && (before->flags & ENGINE_TERRAIN_COLLIDER) != 0;
+                bool made_body = before != nullptr && before->made_body;
+                const bool wants_collider = (in->flags & ENGINE_TERRAIN_COLLIDER) != 0;
+                if (wants_collider && !had_collider &&
+                    (object.world.Has<physics::Collider>(entity) || object.world.Has<ColliderSource>(entity)))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the entity has a collider already");
+                }
+                if (wants_collider)
+                {
+                    const physics::RigidBody* body = object.world.Peek<physics::RigidBody>(entity);
+                    if (body != nullptr && body->type != physics::BodyType::Static)
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a terrain collider needs a static body");
+                    }
+                }
+                TerrainComponent terrain;
+                terrain.height_map = in->height_map;
+                terrain.layer_texture = in->layer_texture;
+                terrain.splat_texture = in->splat_texture;
+                terrain.flags = in->flags;
+                terrain.layer_count = in->layer_count;
+                terrain.slope_layer = in->slope_layer;
+                terrain.slope_start = in->slope_start;
+                terrain.slope_end = in->slope_end;
+                terrain.fade_start = in->fade_start;
+                terrain.fade_end = in->fade_end;
+                for (u32 i = 0; i < ENGINE_TERRAIN_LAYERS_MAX; ++i)
+                {
+                    terrain.tiling[i] = in->layers[i].tiling;
+                    terrain.tint[i][0] = in->layers[i].tint[0];
+                    terrain.tint[i][1] = in->layers[i].tint[1];
+                    terrain.tint[i][2] = in->layers[i].tint[2];
+                    terrain.roughness[i] = in->layers[i].roughness;
+                    terrain.metallic[i] = in->layers[i].metallic;
+                }
+                terrain.friction = in->friction;
+                terrain.restitution = in->restitution;
+                if (had_collider)
+                {  // the collider of the last set is made again below, or goes
+                    if (object.world.Has<ColliderSource>(entity))
+                    {
+                        object.world.Remove<ColliderSource>(entity);
+                    }
+                    if (object.world.Has<physics::Collider>(entity))
+                    {
+                        object.world.Remove<physics::Collider>(entity);
+                    }
+                    if (!wants_collider && made_body && object.world.Has<physics::RigidBody>(entity))
+                    {
+                        object.world.Remove<physics::RigidBody>(entity);
+                        made_body = false;
+                    }
+                }
+                if (wants_collider)
+                {
+                    if (!object.world.Has<physics::RigidBody>(entity))
+                    {
+                        physics::RigidBody body;
+                        body.type = physics::BodyType::Static;
+                        const ecs::Status added = object.world.Add<physics::RigidBody>(entity, body);
+                        if (added != ecs::Status::Ok)
+                        {
+                            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the terrain's body could not be added");
+                        }
+                        made_body = true;
+                    }
+                    ColliderSource source;
+                    source.shape = kColliderShapeHeightField;
+                    source.mesh = in->height_map;
+                    source.friction = in->friction;
+                    source.restitution = in->restitution;
+                    const ecs::Status added = object.world.Add<ColliderSource>(entity, source);
+                    if (added != ecs::Status::Ok)
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the terrain's collider could not be added");
+                    }
+                    object.collider_sources = true;
+                    object.physics_used = true;
+                }
+                terrain.made_body = made_body;
+                return SetOrAdd(object.world, entity, terrain);
             }
             if (kind == ENGINE_COMPONENT_MORPH_WEIGHTS)
             {
@@ -2720,6 +2884,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          : kind == ENGINE_COMPONENT_CAMERA            ? sizeof(engine_camera)
                          : kind == ENGINE_COMPONENT_LIGHT             ? offsetof(engine_light, inner_cone)
                          : kind == ENGINE_COMPONENT_MORPH_WEIGHTS     ? sizeof(engine_morph_weights)
+                         : kind == ENGINE_COMPONENT_TERRAIN           ? sizeof(engine_terrain)
                          : kind == ENGINE_COMPONENT_LABEL             ? sizeof(engine_label)
                          : kind == ENGINE_COMPONENT_VISIBILITY        ? sizeof(engine_visibility)
                          : kind == ENGINE_COMPONENT_RIGID_BODY        ? sizeof(engine_rigid_body)
@@ -2737,6 +2902,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                        : kind == ENGINE_COMPONENT_CAMERA            ? "engine_camera"
                        : kind == ENGINE_COMPONENT_LIGHT             ? "engine_light"
                        : kind == ENGINE_COMPONENT_MORPH_WEIGHTS     ? "engine_morph_weights"
+                       : kind == ENGINE_COMPONENT_TERRAIN           ? "engine_terrain"
                        : kind == ENGINE_COMPONENT_LABEL             ? "engine_label"
                        : kind == ENGINE_COMPONENT_VISIBILITY        ? "engine_visibility"
                        : kind == ENGINE_COMPONENT_RIGID_BODY        ? "engine_rigid_body"
@@ -2957,10 +3123,11 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
             {
                 const ColliderSource* source = view.Peek<ColliderSource>(entity);
                 const physics::Collider* collider = view.Peek<physics::Collider>(entity);
-                if (source != nullptr && source->shape == 0 && source->state != 2)
-                {  // a mesh collider (glTF colliders Day 6): the host's own values, unscaled
+                if (source != nullptr && IsStaticOnlyShape(source->shape) && source->state != 2)
+                {  // a mesh or height-field collider (glTF colliders Day 6): the host's own values, unscaled
                     engine_collider result = {};
-                    result.shape = ENGINE_SHAPE_MESH;
+                    result.shape = source->shape == kColliderShapeHeightField ? ENGINE_SHAPE_HEIGHT_FIELD
+                                                                              : ENGINE_SHAPE_MESH;
                     result.mesh_resource = source->mesh;
                     result.offset[0] = source->offset.x;
                     result.offset[1] = source->offset.y;
@@ -2987,9 +3154,11 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                 }
                 engine_collider result = {};
                 result.struct_size = sizeof(engine_collider);
-                result.shape = collider->shape.kind == physics::ShapeKind::Sphere ? ENGINE_SHAPE_SPHERE
-                               : collider->shape.kind == physics::ShapeKind::Box  ? ENGINE_SHAPE_BOX
-                                                                                  : ENGINE_SHAPE_CAPSULE;
+                result.shape = collider->shape.kind == physics::ShapeKind::Sphere        ? ENGINE_SHAPE_SPHERE
+                               : collider->shape.kind == physics::ShapeKind::Box         ? ENGINE_SHAPE_BOX
+                               : collider->shape.kind == physics::ShapeKind::Mesh        ? ENGINE_SHAPE_MESH
+                               : collider->shape.kind == physics::ShapeKind::HeightField ? ENGINE_SHAPE_HEIGHT_FIELD
+                                                                                         : ENGINE_SHAPE_CAPSULE;
                 result.radius = collider->shape.radius;
                 result.half_height = collider->shape.half_height;
                 result.half_extents[0] = collider->shape.half_extents.x;
@@ -3067,6 +3236,39 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                 const usize room = StructSizeOf(out) < sizeof(result) ? StructSizeOf(out) : sizeof(result);
                 result.struct_size = static_cast<u32>(room);
                 MemCopy(out, &result, room);
+                return ENGINE_OK;
+            }
+            if (kind == ENGINE_COMPONENT_TERRAIN)
+            {
+                const TerrainComponent* terrain = view.Peek<TerrainComponent>(entity);
+                if (terrain == nullptr)
+                {
+                    return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no terrain");
+                }
+                engine_terrain result = {};
+                result.struct_size = sizeof(engine_terrain);
+                result.flags = terrain->flags;
+                result.height_map = terrain->height_map;
+                result.layer_texture = terrain->layer_texture;
+                result.splat_texture = terrain->splat_texture;
+                result.layer_count = terrain->layer_count;
+                result.slope_layer = terrain->slope_layer;
+                result.slope_start = terrain->slope_start;
+                result.slope_end = terrain->slope_end;
+                result.fade_start = terrain->fade_start;
+                result.fade_end = terrain->fade_end;
+                for (u32 i = 0; i < ENGINE_TERRAIN_LAYERS_MAX; ++i)
+                {
+                    result.layers[i].tiling = terrain->tiling[i];
+                    result.layers[i].tint[0] = terrain->tint[i][0];
+                    result.layers[i].tint[1] = terrain->tint[i][1];
+                    result.layers[i].tint[2] = terrain->tint[i][2];
+                    result.layers[i].roughness = terrain->roughness[i];
+                    result.layers[i].metallic = terrain->metallic[i];
+                }
+                result.friction = terrain->friction;
+                result.restitution = terrain->restitution;
+                MemCopy(out, &result, sizeof(result));
                 return ENGINE_OK;
             }
             if (kind == ENGINE_COMPONENT_MORPH_WEIGHTS)
@@ -3172,6 +3374,30 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          case ENGINE_COMPONENT_AUDIO_LISTENER: status = w.Remove<audio::AudioListener>(entity); break;
                          case ENGINE_COMPONENT_SCRIPT: return ScriptComponentRemove(object, entity);
                          case ENGINE_COMPONENT_MORPH_WEIGHTS: status = w.Remove<animation::MorphWeights>(entity); break;
+                         case ENGINE_COMPONENT_TERRAIN:
+                         {
+                             const TerrainComponent* terrain = w.Peek<TerrainComponent>(entity);
+                             const bool collided = terrain != nullptr &&
+                                                   (terrain->flags & ENGINE_TERRAIN_COLLIDER) != 0;
+                             const bool body = terrain != nullptr && terrain->made_body;
+                             status = w.Remove<TerrainComponent>(entity);
+                             if (status == ecs::Status::Ok && collided)
+                             {  // what the flag made goes with it
+                                 if (w.Has<ColliderSource>(entity))
+                                 {
+                                     w.Remove<ColliderSource>(entity);
+                                 }
+                                 if (w.Has<physics::Collider>(entity))
+                                 {
+                                     w.Remove<physics::Collider>(entity);
+                                 }
+                                 if (body && w.Has<physics::RigidBody>(entity))
+                                 {
+                                     w.Remove<physics::RigidBody>(entity);
+                                 }
+                             }
+                             break;
+                         }
                          case ENGINE_COMPONENT_VISIBILITY: status = w.Remove<VisibilityComponent>(entity); break;
                          case ENGINE_COMPONENT_SKELETON_INSTANCE:
                              status = w.Remove<animation::SkeletonInstance>(entity);
@@ -3188,6 +3414,72 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                          }
                          return ENGINE_OK;
                      });
+}
+
+engine_status TerrainHeightFn(engine_handle world, float x, float z, float* out_height)
+{
+    if (out_height == nullptr || !Finite(x) || !Finite(z))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_height` is NULL or a coordinate is not finite");
+    }
+    *out_height = 0.0f;
+    return WithWorld(
+        world, false, 0,
+        [&](WorldObject& object, ecs::Entity)
+        {
+            ResourceHost* resources = CurrentRuntime()->Resources();
+            bool found = false;
+            u64 best = 0;
+            f32 height = 0.0f;
+            auto query = object.world.Query<ecs::Read<TerrainComponent>>();
+            query.ForEach(
+                [&](ecs::Entity entity, const TerrainComponent& terrain)
+                {
+                    const u64 key = entity.ToU64();
+                    if (found && key > best)
+                    {
+                        return;
+                    }
+                    // A root's local transform is its placement and is current before any frame; a child's placement
+                    // is the world matrix the last frame computed.
+                    Mat4 placed = Mat4::Identity();
+                    const ecs::LocalTransform* local = object.world.Peek<ecs::LocalTransform>(entity);
+                    const ecs::WorldTransform* world_transform = object.world.Peek<ecs::WorldTransform>(entity);
+                    if (local != nullptr && !object.world.Has<ecs::Parent>(entity))
+                    {
+                        placed = local->ToMatrix();
+                    }
+                    else if (world_transform != nullptr)
+                    {
+                        placed = world_transform->matrix;
+                    }
+                    const asset::HeightMapView* view = nullptr;
+                    if (resources->PinHeightMap(terrain.height_map, &view, nullptr) != ENGINE_OK)
+                    {
+                        return;
+                    }
+                    // The terrain's placement is a translation and a turn about y: its inverse is the transposed turn.
+                    const f32 dx = x - placed.col[3][0];
+                    const f32 dz = z - placed.col[3][2];
+                    const f32 lx = placed.col[0][0] * dx + placed.col[0][2] * dz;
+                    const f32 lz = placed.col[2][0] * dx + placed.col[2][2] * dz;
+                    const asset::HeightMapHeader& header = view->Header();
+                    if (lx < 0.0f || lz < 0.0f || lx > static_cast<f32>(header.width - 1) * header.cell_size ||
+                        lz > static_cast<f32>(header.height - 1) * header.cell_size)
+                    {
+                        return;
+                    }
+                    found = true;
+                    best = key;
+                    height = placed.col[3][1] + view->HeightAt(lx, lz);
+                });
+            if (!found)
+            {
+                return Fail(ENGINE_ERROR_NOT_FOUND, "no terrain covers the point");
+            }
+            *out_height = height;
+            return ENGINE_OK;
+        });
 }
 
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind_value, int* out)
@@ -3276,9 +3568,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[ENGINE_COMPONENT_MORPH_WEIGHTS];
+                         ecs::ComponentId wanted[ENGINE_COMPONENT_TERRAIN];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_MORPH_WEIGHTS; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_TERRAIN; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {

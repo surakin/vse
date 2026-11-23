@@ -6,6 +6,7 @@
 #include "ecs/query.h"
 #include "ecs/transform.h"
 #include "lang/scalar.h"
+#include "physics/height_field.h"
 #include "physics/triangle_mesh.h"
 
 namespace vse::engine_c
@@ -127,6 +128,54 @@ bool MeshFor(WorldObject& object, ResourceHost& resources, u64 id, const Vec3& s
     return true;
 }
 
+// The physics height field of an `HGHT`: from the world's cache, or made over the map's own samples (read in place) and
+// added to its library.
+bool FieldFor(WorldObject& object, ResourceHost& resources, u64 id, u32* field, Vec3* extent, Vec3* centre)
+{
+    const asset::HeightMapView* view = nullptr;
+    asset::ContentHash hash;
+    if (resources.PinHeightMap(id, &view, &hash) != ENGINE_OK)
+    {
+        return false;
+    }
+    for (usize i = 0; i < object.collider_fields.Size(); ++i)
+    {
+        const ColliderFieldEntry& e = object.collider_fields[i];
+        if (MemCompare(e.hash.bytes, hash.bytes, sizeof(hash.bytes)) == 0)
+        {
+            *field = e.field;
+            *extent = e.extent;
+            *centre = e.centre;
+            return true;
+        }
+    }
+    physics::HeightFieldSpec spec;
+    spec.bytes = view->Bytes();
+    spec.offset = view->MipOffset(0);
+    spec.width = view->Header().width;
+    spec.height = view->Header().height;
+    spec.range_min = view->Header().range_min;
+    spec.range_max = view->Header().range_max;
+    spec.cell_size = view->Header().cell_size;
+    const physics::HeightFieldConstPtr made = physics::HeightField::Create(spec, nullptr);
+    if (!made)
+    {
+        return false;
+    }
+    physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
+    ColliderFieldEntry entry;
+    entry.hash = hash;
+    entry.field = physics.HeightFields().Add(made);
+    entry.extent = made->Extent();
+    entry.centre = Vec3(0.5f * static_cast<f32>(spec.width - 1) * spec.cell_size, 0.0f,
+                        0.5f * static_cast<f32>(spec.height - 1) * spec.cell_size);
+    object.collider_fields.Push(entry);
+    *field = entry.field;
+    *extent = entry.extent;
+    *centre = entry.centre;
+    return true;
+}
+
 // The physics collider of a source at a scale, or false.
 bool Make(WorldObject& object, ResourceHost* resources, const ColliderSource& source, const Vec3& scale,
           physics::Collider* out, u32* dropped)
@@ -150,6 +199,34 @@ bool Make(WorldObject& object, ResourceHost* resources, const ColliderSource& so
         }
         out->shape = physics::Shape::MakeMesh(mesh, extent);
         break;
+    }
+    case kColliderShapeHeightField:
+    {
+        // The terrain's own metres: a turn about y and a translation only (the renderer draws no other placement).
+        const auto one = [](f32 v) { return Abs(v - 1.0f) <= 1e-4f; };
+        if (resources == nullptr || !one(sx) || !one(sy) || !one(sz))
+        {
+            return false;
+        }
+        u32 field = 0;
+        Vec3 extent;
+        Vec3 centre;
+        if (!FieldFor(object, *resources, source.mesh, &field, &extent, &centre))
+        {
+            return false;
+        }
+        out->shape = physics::Shape::MakeHeightField(field, extent);
+        // The field is centred on the map and the entity's origin is the map's first sample.
+        out->offset = Vec3(source.offset.x + centre.x, source.offset.y + centre.y, source.offset.z + centre.z);
+        out->rotation = source.rotation;
+        out->material.friction = source.friction;
+        out->material.restitution = source.restitution;
+        out->material.density = source.density;
+        out->layer = static_cast<u8>(source.layer);
+        out->group = source.group;
+        out->mask = source.mask;
+        out->is_trigger = source.is_trigger;
+        return out->Validate() == physics::Validation::Ok;
     }
     case 1:
         out->shape = physics::Shape::MakeBox(

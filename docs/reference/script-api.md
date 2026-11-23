@@ -978,6 +978,32 @@ Thread rule: **world-write**. Id: `0xafa7bb2d`.
 
 Takes a finished task's result (the host behind `task.result`): returns `{ status, value }`.
 
+## terrain
+
+### `terrain.height`
+
+`(f32 x, f32 z) -> Value`
+
+Thread rule: **world-read**. Id: `0xd17f4b3b`.
+
+Returns the ground height at the world point (x, z) as of the tick start, or nil when no terrain with a collider covers it.
+
+### `terrain.normal`
+
+`(f32 x, f32 z) -> Value`
+
+Thread rule: **world-read**. Id: `0x7787ab63`.
+
+Returns the ground's unit normal (pointing up) at (x, z), or nil.
+
+### `terrain.raycast`
+
+`(Vec3 origin, Vec3 direction, f32 max_distance) -> Value`
+
+Thread rule: **world-read**. Id: `0xf44f465b`.
+
+Casts a ray at the terrain only (a ray from below hits it too); returns nil or {entity=, point=, normal=, distance=}.
+
 ## time
 
 ### `time.dt`

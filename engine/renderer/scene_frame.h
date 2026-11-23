@@ -239,9 +239,10 @@ public:
     /// - Param settings: `first_range` above 0, `morph_fraction` in [0, 1), `max_distance` not negative.
     /// - Aborts: a setting is out of range.
     void SetTerrainSelect(const TerrainSelectSettings& settings);
-    /// Returns the terrain tile settings last set.
+    /// Returns the terrain tile settings in force: the ones last set with `SetTerrainSelect`, or until then the
+    /// `terrain_*` render settings of the renderer (read at each call, so `Renderer::ApplySettings` changes them).
     /// - Fails: never.
-    const TerrainSelectSettings& TerrainSelect() const { return terrain_select_; }
+    TerrainSelectSettings TerrainSelect() const;
     /// Returns the sky last set.
     /// - Fails: never.
     const SkySettings& Sky() const { return sky_settings_; }
@@ -331,6 +332,7 @@ private:
     UniquePtr<SkyPass> sky_;
     UniquePtr<TerrainPass> terrain_;
     TerrainSelectSettings terrain_select_;
+    bool terrain_select_set_ = false;  // SetTerrainSelect was called: the render settings no longer decide
     Vector<TerrainTile> tile_scratch_;
     void PrepareTerrains(const RenderScene& scene, const Camera& camera, u64 frame_index);
     GpuTexturePtr environment_cube_;  // the procedural sky's cube, for the lighting pass

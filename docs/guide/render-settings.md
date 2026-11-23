@@ -43,12 +43,14 @@ The names refer to renderer objects explained in [The RHI](rhi.md) and [Renderer
 | Class | Meaning | Built-in examples |
 |---|---|---|
 | `None` | no GPU work | (none yet; a later setting that only a UI reads) |
-| `Dynamic` | the next frame reads a new parameter | `gbuffer_debug_layer`, `render_scale`, and the sky (`SceneFrame::SetSky`, a value set on the scene frame, not a registry setting) |
+| `Dynamic` | the next frame reads a new parameter | `gbuffer_debug_layer`, `render_scale`, `terrain_first_range`, `terrain_morph_fraction`, `terrain_max_distance`, and the sky (`SceneFrame::SetSky`, a value set on the scene frame, not a registry setting) |
 | `Swapchain` | recreate the swapchain and what depends on its size or format | `present_mode`, `width`, `height`, `fullscreen`, `swapchain_format`, `hdr` |
 | `PipelineRebuild` | recreate pipelines, material bind groups and passes; the device stays | `shader_quality` |
 | `DeviceReset` | destroy and create the device; every device-dependent object is rebuilt | `adapter`, `validation`, `sync_validation`, `frames_in_flight`, `joint_palette_bytes` |
 
 `render_scale` and `shader_quality` are marked `mechanism_only`: they exist to exercise the mechanism and nothing reads them yet.
+
+The three `terrain_*` settings choose the tiles of a terrain (`TerrainSelectSettings`): `terrain_first_range` (metres, 16 to 100000, default 128) is the distance inside which the finest level is used, `terrain_morph_fraction` (0 to 0.9, default 0.3) the part of each level's range over which a tile morphs into the next, and `terrain_max_distance` (0 to 1,000,000, default 0: no limit) the distance beyond which nothing is drawn. The scene frame reads them from the renderer each time it draws terrains, so a change through `Renderer::ApplySettings` shows on the next frame; `SceneFrame::SetTerrainSelect` sets the three directly and from then on the render settings no longer decide. A terrain whose cell size would make the first range too small for the one-level neighbour rule has it raised.
 
 `backend` takes `null`, `vulkan`, `dx12` or `auto` (the default: Direct3D 12 on Windows, Vulkan elsewhere). It is, with `joint_palette_bytes` (the size of the joint palette buffers, fixed when the program makes its `FrameResources`), one of the two settings
 that takes effect only when the program starts (`SettingDesc::restart_required`): there is no run-time switch between graphics APIs,

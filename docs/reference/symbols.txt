@@ -5481,10 +5481,12 @@ physics::PhysicsHit::normal	variable	physics	physics-physicshit-normal	physics.m
 physics::PhysicsHit::distance	variable	physics	physics-physicshit-distance	physics.md	engine/physics/query.h:55
 physics::PhysicsHit::triangle	variable	physics	physics-physicshit-triangle	physics.md	engine/physics/query.h:57
 physics::RayCast(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-raycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:75
-physics::RayCastAll(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,Vector<PhysicsHit>*)	function	physics	physics-raycastall-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-vector-lt-physicshit-gt-star	physics.md	engine/physics/query.h:90
-physics::ShapeCast(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-shapecast-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:110
-physics::Overlap(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const PhysicsQueryFilter&,Vector<ColliderId>*)	function	physics	physics-overlap-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-physicsqueryfilter-amp-vector-lt-colliderid-gt-star	physics.md	engine/physics/query.h:125
-physics::ClosestPoint(const PhysicsWorld&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-closestpoint-const-physicsworld-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:140
+physics::TerrainRayCast(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-terrainraycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:91
+physics::TerrainHeight(const PhysicsWorld&,f32,f32,const PhysicsQueryFilter&,f32*,Vec3*)	function	physics	physics-terrainheight-const-physicsworld-amp-f32-f32-const-physicsqueryfilter-amp-f32-star-vec3-star	physics.md	engine/physics/query.h:106
+physics::RayCastAll(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,Vector<PhysicsHit>*)	function	physics	physics-raycastall-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-vector-lt-physicshit-gt-star	physics.md	engine/physics/query.h:121
+physics::ShapeCast(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-shapecast-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:141
+physics::Overlap(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const PhysicsQueryFilter&,Vector<ColliderId>*)	function	physics	physics-overlap-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-physicsqueryfilter-amp-vector-lt-colliderid-gt-star	physics.md	engine/physics/query.h:156
+physics::ClosestPoint(const PhysicsWorld&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-closestpoint-const-physicsworld-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:171
 physics::ShapeKind	enum	physics	physics-shapekind	physics.md	engine/physics/shapes.h:18
 physics::ShapeKind::Sphere	enumerator	physics	physics-shapekind-sphere	physics.md	engine/physics/shapes.h:20
 physics::ShapeKind::Box	enumerator	physics	physics-shapekind-box	physics.md	engine/physics/shapes.h:21
@@ -7729,35 +7731,38 @@ asset::ContentHasher::Update(ByteSpan)	function	asset	asset-contenthasher-update
 asset::ContentHasher::Finish()	function	asset	asset-contenthasher-finish	asset.md	engine/asset/content_hash.h:84
 asset::ContentHasher::Reset()	function	asset	asset-contenthasher-reset	asset.md	engine/asset/content_hash.h:88
 asset::HashBytes(ByteSpan)	function	asset	asset-hashbytes-bytespan	asset.md	engine/asset/content_hash.h:103
-asset::ResourceTraits<SkeletonView>	struct	asset	asset-resourcetraits-lt-skeletonview-gt	asset.md	engine/asset/cpu_loaders.h:23
-asset::ResourceTraits<SkeletonView>::kType	variable	asset	asset-resourcetraits-lt-skeletonview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:25
-asset::ResourceTraits<SkeletonView>::kKind	variable	asset	asset-resourcetraits-lt-skeletonview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:26
-asset::ResourceTraits<ClipView>	struct	asset	asset-resourcetraits-lt-clipview-gt	asset.md	engine/asset/cpu_loaders.h:31
-asset::ResourceTraits<ClipView>::kType	variable	asset	asset-resourcetraits-lt-clipview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:33
-asset::ResourceTraits<ClipView>::kKind	variable	asset	asset-resourcetraits-lt-clipview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:34
-asset::ResourceTraits<MeshView>	struct	asset	asset-resourcetraits-lt-meshview-gt	asset.md	engine/asset/cpu_loaders.h:39
-asset::ResourceTraits<MeshView>::kType	variable	asset	asset-resourcetraits-lt-meshview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:41
-asset::ResourceTraits<MeshView>::kKind	variable	asset	asset-resourcetraits-lt-meshview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:42
-asset::ResourceTraits<TextureView>	struct	asset	asset-resourcetraits-lt-textureview-gt	asset.md	engine/asset/cpu_loaders.h:47
-asset::ResourceTraits<TextureView>::kType	variable	asset	asset-resourcetraits-lt-textureview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:49
-asset::ResourceTraits<TextureView>::kKind	variable	asset	asset-resourcetraits-lt-textureview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:50
-asset::ResourceTraits<MaterialAssetData>	struct	asset	asset-resourcetraits-lt-materialassetdata-gt	asset.md	engine/asset/cpu_loaders.h:55
-asset::ResourceTraits<MaterialAssetData>::kType	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-ktype	asset.md	engine/asset/cpu_loaders.h:57
-asset::ResourceTraits<MaterialAssetData>::kKind	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-kkind	asset.md	engine/asset/cpu_loaders.h:58
-asset::ResourceTraits<AudioClipView>	struct	asset	asset-resourcetraits-lt-audioclipview-gt	asset.md	engine/asset/cpu_loaders.h:63
-asset::ResourceTraits<AudioClipView>::kType	variable	asset	asset-resourcetraits-lt-audioclipview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:65
-asset::ResourceTraits<AudioClipView>::kKind	variable	asset	asset-resourcetraits-lt-audioclipview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:66
-asset::ResourceTraits<ScriptView>	struct	asset	asset-resourcetraits-lt-scriptview-gt	asset.md	engine/asset/cpu_loaders.h:71
-asset::ResourceTraits<ScriptView>::kType	variable	asset	asset-resourcetraits-lt-scriptview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:73
-asset::ResourceTraits<ScriptView>::kKind	variable	asset	asset-resourcetraits-lt-scriptview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:74
-asset::ResourceTraits<MeshColliderView>	struct	asset	asset-resourcetraits-lt-meshcolliderview-gt	asset.md	engine/asset/cpu_loaders.h:79
-asset::ResourceTraits<MeshColliderView>::kType	variable	asset	asset-resourcetraits-lt-meshcolliderview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:81
-asset::ResourceTraits<MeshColliderView>::kKind	variable	asset	asset-resourcetraits-lt-meshcolliderview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:82
-asset::ResourceTraits<LevelSummary>	struct	asset	asset-resourcetraits-lt-levelsummary-gt	asset.md	engine/asset/cpu_loaders.h:87
-asset::ResourceTraits<LevelSummary>::kType	variable	asset	asset-resourcetraits-lt-levelsummary-gt-ktype	asset.md	engine/asset/cpu_loaders.h:89
-asset::ResourceTraits<LevelSummary>::kKind	variable	asset	asset-resourcetraits-lt-levelsummary-gt-kkind	asset.md	engine/asset/cpu_loaders.h:90
-asset::RegisterCpuLoaders(ResourceManager*)	function	asset	asset-registercpuloaders-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:99
-asset::RegisterSkeletonLoader(ResourceManager*)	function	asset	asset-registerskeletonloader-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:106
+asset::ResourceTraits<SkeletonView>	struct	asset	asset-resourcetraits-lt-skeletonview-gt	asset.md	engine/asset/cpu_loaders.h:24
+asset::ResourceTraits<SkeletonView>::kType	variable	asset	asset-resourcetraits-lt-skeletonview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:26
+asset::ResourceTraits<SkeletonView>::kKind	variable	asset	asset-resourcetraits-lt-skeletonview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:27
+asset::ResourceTraits<ClipView>	struct	asset	asset-resourcetraits-lt-clipview-gt	asset.md	engine/asset/cpu_loaders.h:32
+asset::ResourceTraits<ClipView>::kType	variable	asset	asset-resourcetraits-lt-clipview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:34
+asset::ResourceTraits<ClipView>::kKind	variable	asset	asset-resourcetraits-lt-clipview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:35
+asset::ResourceTraits<MeshView>	struct	asset	asset-resourcetraits-lt-meshview-gt	asset.md	engine/asset/cpu_loaders.h:40
+asset::ResourceTraits<MeshView>::kType	variable	asset	asset-resourcetraits-lt-meshview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:42
+asset::ResourceTraits<MeshView>::kKind	variable	asset	asset-resourcetraits-lt-meshview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:43
+asset::ResourceTraits<TextureView>	struct	asset	asset-resourcetraits-lt-textureview-gt	asset.md	engine/asset/cpu_loaders.h:48
+asset::ResourceTraits<TextureView>::kType	variable	asset	asset-resourcetraits-lt-textureview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:50
+asset::ResourceTraits<TextureView>::kKind	variable	asset	asset-resourcetraits-lt-textureview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:51
+asset::ResourceTraits<MaterialAssetData>	struct	asset	asset-resourcetraits-lt-materialassetdata-gt	asset.md	engine/asset/cpu_loaders.h:56
+asset::ResourceTraits<MaterialAssetData>::kType	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-ktype	asset.md	engine/asset/cpu_loaders.h:58
+asset::ResourceTraits<MaterialAssetData>::kKind	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-kkind	asset.md	engine/asset/cpu_loaders.h:59
+asset::ResourceTraits<AudioClipView>	struct	asset	asset-resourcetraits-lt-audioclipview-gt	asset.md	engine/asset/cpu_loaders.h:64
+asset::ResourceTraits<AudioClipView>::kType	variable	asset	asset-resourcetraits-lt-audioclipview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:66
+asset::ResourceTraits<AudioClipView>::kKind	variable	asset	asset-resourcetraits-lt-audioclipview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:67
+asset::ResourceTraits<ScriptView>	struct	asset	asset-resourcetraits-lt-scriptview-gt	asset.md	engine/asset/cpu_loaders.h:72
+asset::ResourceTraits<ScriptView>::kType	variable	asset	asset-resourcetraits-lt-scriptview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:74
+asset::ResourceTraits<ScriptView>::kKind	variable	asset	asset-resourcetraits-lt-scriptview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:75
+asset::ResourceTraits<MeshColliderView>	struct	asset	asset-resourcetraits-lt-meshcolliderview-gt	asset.md	engine/asset/cpu_loaders.h:80
+asset::ResourceTraits<MeshColliderView>::kType	variable	asset	asset-resourcetraits-lt-meshcolliderview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:82
+asset::ResourceTraits<MeshColliderView>::kKind	variable	asset	asset-resourcetraits-lt-meshcolliderview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:83
+asset::ResourceTraits<HeightMapView>	struct	asset	asset-resourcetraits-lt-heightmapview-gt	asset.md	engine/asset/cpu_loaders.h:88
+asset::ResourceTraits<HeightMapView>::kType	variable	asset	asset-resourcetraits-lt-heightmapview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:90
+asset::ResourceTraits<HeightMapView>::kKind	variable	asset	asset-resourcetraits-lt-heightmapview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:91
+asset::ResourceTraits<LevelSummary>	struct	asset	asset-resourcetraits-lt-levelsummary-gt	asset.md	engine/asset/cpu_loaders.h:96
+asset::ResourceTraits<LevelSummary>::kType	variable	asset	asset-resourcetraits-lt-levelsummary-gt-ktype	asset.md	engine/asset/cpu_loaders.h:98
+asset::ResourceTraits<LevelSummary>::kKind	variable	asset	asset-resourcetraits-lt-levelsummary-gt-kkind	asset.md	engine/asset/cpu_loaders.h:99
+asset::RegisterCpuLoaders(ResourceManager*)	function	asset	asset-registercpuloaders-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:109
+asset::RegisterSkeletonLoader(ResourceManager*)	function	asset	asset-registerskeletonloader-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:116
 asset::kMaxCubeFaceSize	variable	asset	asset-kmaxcubefacesize	asset.md	engine/asset/cube_map.h:18
 asset::HalfBitsToFloat(u32,f32*)	function	asset	asset-halfbitstofloat-u32-f32-star	asset.md	engine/asset/cube_map.h:27
 asset::FloatToHalfBits(f32)	function	asset	asset-floattohalfbits-f32	asset.md	engine/asset/cube_map.h:33
@@ -13187,64 +13192,67 @@ renderer::settings::kShaderQuality	variable	renderer	renderer-settings-kshaderqu
 renderer::settings::kGBufferDebugLayer	variable	renderer	renderer-settings-kgbufferdebuglayer	renderer.md	engine/renderer/render_settings.h:204
 renderer::settings::kRenderScale	variable	renderer	renderer-settings-krenderscale	renderer.md	engine/renderer/render_settings.h:206
 renderer::settings::kJointPaletteBytes	variable	renderer	renderer-settings-kjointpalettebytes	renderer.md	engine/renderer/render_settings.h:209
-renderer::RegisterBuiltinSettings(SettingsRegistry*)	function	renderer	renderer-registerbuiltinsettings-settingsregistry-star	renderer.md	engine/renderer/render_settings.h:217
-renderer::SetStatus	enum	renderer	renderer-setstatus	renderer.md	engine/renderer/render_settings.h:220
-renderer::SetStatus::Ok	enumerator	renderer	renderer-setstatus-ok	renderer.md	engine/renderer/render_settings.h:222
-renderer::SetStatus::Clamped	enumerator	renderer	renderer-setstatus-clamped	renderer.md	engine/renderer/render_settings.h:223
-renderer::SetStatus::OutOfRange	enumerator	renderer	renderer-setstatus-outofrange	renderer.md	engine/renderer/render_settings.h:224
-renderer::SetStatus::WrongType	enumerator	renderer	renderer-setstatus-wrongtype	renderer.md	engine/renderer/render_settings.h:225
-renderer::SetStatus::UnknownId	enumerator	renderer	renderer-setstatus-unknownid	renderer.md	engine/renderer/render_settings.h:226
-renderer::SetStatus::BadText	enumerator	renderer	renderer-setstatus-badtext	renderer.md	engine/renderer/render_settings.h:227
-renderer::RenderSettings	class	renderer	renderer-rendersettings	renderer.md	engine/renderer/render_settings.h:237
-renderer::RenderSettings::RenderSettings(const SettingsRegistry&)	function	renderer	renderer-rendersettings-rendersettings-const-settingsregistry-amp	renderer.md	engine/renderer/render_settings.h:243
-renderer::RenderSettings::Registry() const	function	renderer	renderer-rendersettings-registry-const	renderer.md	engine/renderer/render_settings.h:247
-renderer::RenderSettings::GetBool(SettingId) const	function	renderer	renderer-rendersettings-getbool-settingid-const	renderer.md	engine/renderer/render_settings.h:253
-renderer::RenderSettings::GetInt(SettingId) const	function	renderer	renderer-rendersettings-getint-settingid-const	renderer.md	engine/renderer/render_settings.h:258
-renderer::RenderSettings::GetEnum(SettingId) const	function	renderer	renderer-rendersettings-getenum-settingid-const	renderer.md	engine/renderer/render_settings.h:263
-renderer::RenderSettings::GetFloat(SettingId) const	function	renderer	renderer-rendersettings-getfloat-settingid-const	renderer.md	engine/renderer/render_settings.h:268
-renderer::RenderSettings::GetText(SettingId) const	function	renderer	renderer-rendersettings-gettext-settingid-const	renderer.md	engine/renderer/render_settings.h:274
-renderer::RenderSettings::SetBool(SettingId,bool)	function	renderer	renderer-rendersettings-setbool-settingid-bool	renderer.md	engine/renderer/render_settings.h:280
-renderer::RenderSettings::SetInt(SettingId,i64)	function	renderer	renderer-rendersettings-setint-settingid-i64	renderer.md	engine/renderer/render_settings.h:285
-renderer::RenderSettings::SetEnum(SettingId,u32)	function	renderer	renderer-rendersettings-setenum-settingid-u32	renderer.md	engine/renderer/render_settings.h:290
-renderer::RenderSettings::SetFloat(SettingId,f32)	function	renderer	renderer-rendersettings-setfloat-settingid-f32	renderer.md	engine/renderer/render_settings.h:295
-renderer::RenderSettings::SetText(SettingId,const char*)	function	renderer	renderer-rendersettings-settext-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:302
-renderer::RenderSettings::SetFromString(SettingId,const char*)	function	renderer	renderer-rendersettings-setfromstring-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:310
-renderer::RenderSettings::ValueToString(SettingId,char*,usize) const	function	renderer	renderer-rendersettings-valuetostring-settingid-char-star-usize-const	renderer.md	engine/renderer/render_settings.h:320
-renderer::RenderSettings::Generation() const	function	renderer	renderer-rendersettings-generation-const	renderer.md	engine/renderer/render_settings.h:324
-renderer::RenderSettings::SetGeneration(u64)	function	renderer	renderer-rendersettings-setgeneration-u64	renderer.md	engine/renderer/render_settings.h:327
-renderer::RenderSettings::operator==(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-eq-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:333
-renderer::RenderSettings::operator!=(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-not-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:336
-renderer::Capabilities	class	renderer	renderer-capabilities	renderer.md	engine/renderer/render_settings.h:360
-renderer::Capabilities::Add(const char*)	function	renderer	renderer-capabilities-add-const-char-star	renderer.md	engine/renderer/render_settings.h:366
-renderer::Capabilities::Has(const char*) const	function	renderer	renderer-capabilities-has-const-char-star-const	renderer.md	engine/renderer/render_settings.h:370
-renderer::Capabilities::SetAdapterCount(u32)	function	renderer	renderer-capabilities-setadaptercount-u32	renderer.md	engine/renderer/render_settings.h:376
-renderer::Capabilities::AdapterCount() const	function	renderer	renderer-capabilities-adaptercount-const	renderer.md	engine/renderer/render_settings.h:378
-renderer::UnsupportedSetting	struct	renderer	renderer-unsupportedsetting	renderer.md	engine/renderer/render_settings.h:389
-renderer::UnsupportedSetting::id	variable	renderer	renderer-unsupportedsetting-id	renderer.md	engine/renderer/render_settings.h:392
-renderer::UnsupportedSetting::capability	variable	renderer	renderer-unsupportedsetting-capability	renderer.md	engine/renderer/render_settings.h:394
-renderer::SettingsChange	struct	renderer	renderer-settingschange	renderer.md	engine/renderer/render_settings.h:400
-renderer::SettingsChange::cost	variable	renderer	renderer-settingschange-cost	renderer.md	engine/renderer/render_settings.h:403
-renderer::SettingsChange::changed_count	variable	renderer	renderer-settingschange-changed-count	renderer.md	engine/renderer/render_settings.h:405
-renderer::SettingsChange::changed	variable	renderer	renderer-settingschange-changed	renderer.md	engine/renderer/render_settings.h:407
-renderer::SettingsChange::unsupported_count	variable	renderer	renderer-settingschange-unsupported-count	renderer.md	engine/renderer/render_settings.h:409
-renderer::SettingsChange::unsupported	variable	renderer	renderer-settingschange-unsupported	renderer.md	engine/renderer/render_settings.h:411
-renderer::SettingsChange::restart_count	variable	renderer	renderer-settingschange-restart-count	renderer.md	engine/renderer/render_settings.h:413
-renderer::SettingsChange::restart	variable	renderer	renderer-settingschange-restart	renderer.md	engine/renderer/render_settings.h:417
-renderer::SettingsChange::Any() const	function	renderer	renderer-settingschange-any-const	renderer.md	engine/renderer/render_settings.h:421
-renderer::DiffSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-diffsettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:433
-renderer::ResolveSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-resolvesettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:443
-renderer::SerializeSettings(const RenderSettings&,char*,usize)	function	renderer	renderer-serializesettings-const-rendersettings-amp-char-star-usize	renderer.md	engine/renderer/render_settings.h:457
-renderer::SettingsProblem	struct	renderer	renderer-settingsproblem	renderer.md	engine/renderer/render_settings.h:462
-renderer::SettingsProblem::line	variable	renderer	renderer-settingsproblem-line	renderer.md	engine/renderer/render_settings.h:465
-renderer::SettingsProblem::message	variable	renderer	renderer-settingsproblem-message	renderer.md	engine/renderer/render_settings.h:467
-renderer::SettingsParseReport	struct	renderer	renderer-settingsparsereport	renderer.md	engine/renderer/render_settings.h:473
-renderer::SettingsParseReport::version	variable	renderer	renderer-settingsparsereport-version	renderer.md	engine/renderer/render_settings.h:476
-renderer::SettingsParseReport::error_count	variable	renderer	renderer-settingsparsereport-error-count	renderer.md	engine/renderer/render_settings.h:478
-renderer::SettingsParseReport::errors	variable	renderer	renderer-settingsparsereport-errors	renderer.md	engine/renderer/render_settings.h:480
-renderer::SettingsParseReport::warning_count	variable	renderer	renderer-settingsparsereport-warning-count	renderer.md	engine/renderer/render_settings.h:482
-renderer::SettingsParseReport::warnings	variable	renderer	renderer-settingsparsereport-warnings	renderer.md	engine/renderer/render_settings.h:484
-renderer::SettingsKeyMigrationFn	alias	renderer	renderer-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:491
-renderer::ParseSettings(const char*,usize,RenderSettings*,SettingsParseReport*,SettingsKeyMigrationFn)	function	renderer	renderer-parsesettings-const-char-star-usize-rendersettings-star-settingsparsereport-star-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:508
+renderer::settings::kTerrainFirstRange	variable	renderer	renderer-settings-kterrainfirstrange	renderer.md	engine/renderer/render_settings.h:212
+renderer::settings::kTerrainMorphFraction	variable	renderer	renderer-settings-kterrainmorphfraction	renderer.md	engine/renderer/render_settings.h:215
+renderer::settings::kTerrainMaxDistance	variable	renderer	renderer-settings-kterrainmaxdistance	renderer.md	engine/renderer/render_settings.h:217
+renderer::RegisterBuiltinSettings(SettingsRegistry*)	function	renderer	renderer-registerbuiltinsettings-settingsregistry-star	renderer.md	engine/renderer/render_settings.h:225
+renderer::SetStatus	enum	renderer	renderer-setstatus	renderer.md	engine/renderer/render_settings.h:228
+renderer::SetStatus::Ok	enumerator	renderer	renderer-setstatus-ok	renderer.md	engine/renderer/render_settings.h:230
+renderer::SetStatus::Clamped	enumerator	renderer	renderer-setstatus-clamped	renderer.md	engine/renderer/render_settings.h:231
+renderer::SetStatus::OutOfRange	enumerator	renderer	renderer-setstatus-outofrange	renderer.md	engine/renderer/render_settings.h:232
+renderer::SetStatus::WrongType	enumerator	renderer	renderer-setstatus-wrongtype	renderer.md	engine/renderer/render_settings.h:233
+renderer::SetStatus::UnknownId	enumerator	renderer	renderer-setstatus-unknownid	renderer.md	engine/renderer/render_settings.h:234
+renderer::SetStatus::BadText	enumerator	renderer	renderer-setstatus-badtext	renderer.md	engine/renderer/render_settings.h:235
+renderer::RenderSettings	class	renderer	renderer-rendersettings	renderer.md	engine/renderer/render_settings.h:245
+renderer::RenderSettings::RenderSettings(const SettingsRegistry&)	function	renderer	renderer-rendersettings-rendersettings-const-settingsregistry-amp	renderer.md	engine/renderer/render_settings.h:251
+renderer::RenderSettings::Registry() const	function	renderer	renderer-rendersettings-registry-const	renderer.md	engine/renderer/render_settings.h:255
+renderer::RenderSettings::GetBool(SettingId) const	function	renderer	renderer-rendersettings-getbool-settingid-const	renderer.md	engine/renderer/render_settings.h:261
+renderer::RenderSettings::GetInt(SettingId) const	function	renderer	renderer-rendersettings-getint-settingid-const	renderer.md	engine/renderer/render_settings.h:266
+renderer::RenderSettings::GetEnum(SettingId) const	function	renderer	renderer-rendersettings-getenum-settingid-const	renderer.md	engine/renderer/render_settings.h:271
+renderer::RenderSettings::GetFloat(SettingId) const	function	renderer	renderer-rendersettings-getfloat-settingid-const	renderer.md	engine/renderer/render_settings.h:276
+renderer::RenderSettings::GetText(SettingId) const	function	renderer	renderer-rendersettings-gettext-settingid-const	renderer.md	engine/renderer/render_settings.h:282
+renderer::RenderSettings::SetBool(SettingId,bool)	function	renderer	renderer-rendersettings-setbool-settingid-bool	renderer.md	engine/renderer/render_settings.h:288
+renderer::RenderSettings::SetInt(SettingId,i64)	function	renderer	renderer-rendersettings-setint-settingid-i64	renderer.md	engine/renderer/render_settings.h:293
+renderer::RenderSettings::SetEnum(SettingId,u32)	function	renderer	renderer-rendersettings-setenum-settingid-u32	renderer.md	engine/renderer/render_settings.h:298
+renderer::RenderSettings::SetFloat(SettingId,f32)	function	renderer	renderer-rendersettings-setfloat-settingid-f32	renderer.md	engine/renderer/render_settings.h:303
+renderer::RenderSettings::SetText(SettingId,const char*)	function	renderer	renderer-rendersettings-settext-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:310
+renderer::RenderSettings::SetFromString(SettingId,const char*)	function	renderer	renderer-rendersettings-setfromstring-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:318
+renderer::RenderSettings::ValueToString(SettingId,char*,usize) const	function	renderer	renderer-rendersettings-valuetostring-settingid-char-star-usize-const	renderer.md	engine/renderer/render_settings.h:328
+renderer::RenderSettings::Generation() const	function	renderer	renderer-rendersettings-generation-const	renderer.md	engine/renderer/render_settings.h:332
+renderer::RenderSettings::SetGeneration(u64)	function	renderer	renderer-rendersettings-setgeneration-u64	renderer.md	engine/renderer/render_settings.h:335
+renderer::RenderSettings::operator==(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-eq-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:341
+renderer::RenderSettings::operator!=(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-not-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:344
+renderer::Capabilities	class	renderer	renderer-capabilities	renderer.md	engine/renderer/render_settings.h:368
+renderer::Capabilities::Add(const char*)	function	renderer	renderer-capabilities-add-const-char-star	renderer.md	engine/renderer/render_settings.h:374
+renderer::Capabilities::Has(const char*) const	function	renderer	renderer-capabilities-has-const-char-star-const	renderer.md	engine/renderer/render_settings.h:378
+renderer::Capabilities::SetAdapterCount(u32)	function	renderer	renderer-capabilities-setadaptercount-u32	renderer.md	engine/renderer/render_settings.h:384
+renderer::Capabilities::AdapterCount() const	function	renderer	renderer-capabilities-adaptercount-const	renderer.md	engine/renderer/render_settings.h:386
+renderer::UnsupportedSetting	struct	renderer	renderer-unsupportedsetting	renderer.md	engine/renderer/render_settings.h:397
+renderer::UnsupportedSetting::id	variable	renderer	renderer-unsupportedsetting-id	renderer.md	engine/renderer/render_settings.h:400
+renderer::UnsupportedSetting::capability	variable	renderer	renderer-unsupportedsetting-capability	renderer.md	engine/renderer/render_settings.h:402
+renderer::SettingsChange	struct	renderer	renderer-settingschange	renderer.md	engine/renderer/render_settings.h:408
+renderer::SettingsChange::cost	variable	renderer	renderer-settingschange-cost	renderer.md	engine/renderer/render_settings.h:411
+renderer::SettingsChange::changed_count	variable	renderer	renderer-settingschange-changed-count	renderer.md	engine/renderer/render_settings.h:413
+renderer::SettingsChange::changed	variable	renderer	renderer-settingschange-changed	renderer.md	engine/renderer/render_settings.h:415
+renderer::SettingsChange::unsupported_count	variable	renderer	renderer-settingschange-unsupported-count	renderer.md	engine/renderer/render_settings.h:417
+renderer::SettingsChange::unsupported	variable	renderer	renderer-settingschange-unsupported	renderer.md	engine/renderer/render_settings.h:419
+renderer::SettingsChange::restart_count	variable	renderer	renderer-settingschange-restart-count	renderer.md	engine/renderer/render_settings.h:421
+renderer::SettingsChange::restart	variable	renderer	renderer-settingschange-restart	renderer.md	engine/renderer/render_settings.h:425
+renderer::SettingsChange::Any() const	function	renderer	renderer-settingschange-any-const	renderer.md	engine/renderer/render_settings.h:429
+renderer::DiffSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-diffsettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:441
+renderer::ResolveSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-resolvesettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:451
+renderer::SerializeSettings(const RenderSettings&,char*,usize)	function	renderer	renderer-serializesettings-const-rendersettings-amp-char-star-usize	renderer.md	engine/renderer/render_settings.h:465
+renderer::SettingsProblem	struct	renderer	renderer-settingsproblem	renderer.md	engine/renderer/render_settings.h:470
+renderer::SettingsProblem::line	variable	renderer	renderer-settingsproblem-line	renderer.md	engine/renderer/render_settings.h:473
+renderer::SettingsProblem::message	variable	renderer	renderer-settingsproblem-message	renderer.md	engine/renderer/render_settings.h:475
+renderer::SettingsParseReport	struct	renderer	renderer-settingsparsereport	renderer.md	engine/renderer/render_settings.h:481
+renderer::SettingsParseReport::version	variable	renderer	renderer-settingsparsereport-version	renderer.md	engine/renderer/render_settings.h:484
+renderer::SettingsParseReport::error_count	variable	renderer	renderer-settingsparsereport-error-count	renderer.md	engine/renderer/render_settings.h:486
+renderer::SettingsParseReport::errors	variable	renderer	renderer-settingsparsereport-errors	renderer.md	engine/renderer/render_settings.h:488
+renderer::SettingsParseReport::warning_count	variable	renderer	renderer-settingsparsereport-warning-count	renderer.md	engine/renderer/render_settings.h:490
+renderer::SettingsParseReport::warnings	variable	renderer	renderer-settingsparsereport-warnings	renderer.md	engine/renderer/render_settings.h:492
+renderer::SettingsKeyMigrationFn	alias	renderer	renderer-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:499
+renderer::ParseSettings(const char*,usize,RenderSettings*,SettingsParseReport*,SettingsKeyMigrationFn)	function	renderer	renderer-parsesettings-const-char-star-usize-rendersettings-star-settingsparsereport-star-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:516
 renderer::FrameStatus	enum	renderer	renderer-framestatus	renderer.md	engine/renderer/renderer.h:32
 renderer::FrameStatus::Ok	enumerator	renderer	renderer-framestatus-ok	renderer.md	engine/renderer/renderer.h:34
 renderer::FrameStatus::Skipped	enumerator	renderer	renderer-framestatus-skipped	renderer.md	engine/renderer/renderer.h:35
@@ -13391,27 +13399,27 @@ renderer::SceneFrame::SetEnvironment(f32,const Vec3&,f32)	function	renderer	rend
 renderer::SceneFrame::SetExposure(f32)	function	renderer	renderer-sceneframe-setexposure-f32	renderer.md	engine/renderer/scene_frame.h:224
 renderer::SceneFrame::SetSky(const SkySettings&,f32)	function	renderer	renderer-sceneframe-setsky-const-skysettings-amp-f32	renderer.md	engine/renderer/scene_frame.h:235
 renderer::SceneFrame::SetTerrainSelect(const TerrainSelectSettings&)	function	renderer	renderer-sceneframe-setterrainselect-const-terrainselectsettings-amp	renderer.md	engine/renderer/scene_frame.h:241
-renderer::SceneFrame::TerrainSelect() const	function	renderer	renderer-sceneframe-terrainselect-const	renderer.md	engine/renderer/scene_frame.h:244
-renderer::SceneFrame::Sky() const	function	renderer	renderer-sceneframe-sky-const	renderer.md	engine/renderer/scene_frame.h:247
-renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:249
-renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:256
-renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:260
-renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:264
-renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:267
-renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:269
-renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:276
-renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:280
-renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:284
-renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:291
-renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:295
-renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:299
-renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:304
-renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:306
-renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:308
-renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:310
-renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:312
-renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:314
-renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:318
+renderer::SceneFrame::TerrainSelect() const	function	renderer	renderer-sceneframe-terrainselect-const	renderer.md	engine/renderer/scene_frame.h:245
+renderer::SceneFrame::Sky() const	function	renderer	renderer-sceneframe-sky-const	renderer.md	engine/renderer/scene_frame.h:248
+renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:250
+renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:257
+renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:261
+renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:265
+renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:268
+renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:270
+renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:277
+renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:281
+renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:285
+renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:292
+renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:296
+renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:300
+renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:305
+renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:307
+renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:309
+renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:311
+renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:313
+renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:315
+renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:319
 renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:19
 renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:21
 renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:26

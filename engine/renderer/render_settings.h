@@ -207,6 +207,14 @@ inline constexpr SettingId kRenderScale{14};
 /// The joint palette's room per frame in bytes (default 16 MiB, about 350,000 joints; 48 to 768 MiB): read when the
 /// program makes its `FrameResources`, so a change takes effect at the next start. `DeviceReset`, restart required.
 inline constexpr SettingId kJointPaletteBytes{15};
+/// The terrain's finest level range in metres (`TerrainSelectSettings::first_range`; 16 to 100000, default 128), read
+/// by the frame each time it draws terrains. `Dynamic`.
+inline constexpr SettingId kTerrainFirstRange{16};
+/// The fraction of each level's range over which a terrain tile morphs into the next level (`morph_fraction`; 0 to
+/// 0.9, default 0.3). `Dynamic`.
+inline constexpr SettingId kTerrainMorphFraction{17};
+/// The distance beyond which terrain tiles are not drawn (`max_distance`; 0 to 1e6, 0 is no limit). `Dynamic`.
+inline constexpr SettingId kTerrainMaxDistance{18};
 }  // namespace settings
 
 /// Registers the built-in settings (the ids in the `settings` namespace) into an empty registry, in id order.

@@ -7,6 +7,7 @@
 #include "physics/character.h"
 #include "physics/debug_draw.h"
 #include "physics/height_field.h"
+#include "physics/query.h"
 #include "physics/world.h"
 #include "test_values.h"
 
@@ -347,4 +348,50 @@ TEST_CASE("Height field debug draw: the cells under a body are drawn", "[physics
     AddField(empty, field);
     Vector<spatial::DebugLine> none;
     CHECK(DebugDraw(empty, options, &none) == DebugDraw(empty, DebugDrawOptions(), &none) - 0);
+}
+
+TEST_CASE("Terrain queries: the ground under a point, the ray at the terrain only", "[physics][heightfield][query]")
+{
+    PhysicsWorld world;
+    const HeightFieldConstPtr field = TiltedField(0.3f);  // 0.3 m up for each metre along x, centred on the body
+    BodyDesc desc;
+    desc.settings.type = BodyType::Static;
+    desc.position = Vec3(20.0f, 0.0f, 10.0f);  // the map covers x 0 to 40 and z 0 to 20 of the world
+    const BodyId id = world.CreateBody(desc);
+    Collider collider;
+    collider.shape = Shape::MakeHeightField(world.HeightFields().Add(field), field->Extent());
+    REQUIRE(world.AddCollider(id, collider) == BodyStatus::Ok);
+    // A box above the ground that an ordinary ray hits first.
+    BodyDesc box_desc;
+    box_desc.settings.type = BodyType::Static;
+    box_desc.position = Vec3(25.0f, 15.0f, 10.0f);
+    const BodyId box = world.CreateBody(box_desc);
+    Collider box_collider;
+    box_collider.shape = Shape::MakeBox(Vec3(1.0f, 1.0f, 1.0f));
+    REQUIRE(world.AddCollider(box, box_collider) == BodyStatus::Ok);
+
+    const PhysicsQueryFilter filter;
+    f32 height = 0.0f;
+    Vec3 normal;
+    REQUIRE(TerrainHeight(world, 25.0f, 10.0f, filter, &height, &normal));
+    CHECK(FNear(height, 7.5f, 1e-3f));
+    CHECK(normal.y > 0.9f);
+    CHECK(FNear(normal.x, -0.3f / Sqrt(1.09f), 1e-3f));
+    CHECK(FNear(height, field->HeightAtMap(25.0f, 10.0f), 0.0f));  // the surface the renderer draws, bit for bit
+    CHECK_FALSE(TerrainHeight(world, 41.0f, 10.0f, filter, &height, &normal));  // past the map's east edge
+    CHECK_FALSE(TerrainHeight(world, 25.0f, -1.0f, filter, &height, &normal));
+    CHECK_FALSE(TerrainHeight(world, nanf(""), 10.0f, filter, &height, &normal));
+
+    PhysicsHit hit;
+    REQUIRE(RayCast(world, Vec3(25.0f, 30.0f, 10.0f), Vec3(0.0f, -1.0f, 0.0f), 100.0f, filter, &hit));
+    CHECK(hit.body.index == box.index);  // the ordinary ray stops at the box
+    REQUIRE(TerrainRayCast(world, Vec3(25.0f, 30.0f, 10.0f), Vec3(0.0f, -1.0f, 0.0f), 100.0f, filter, &hit));
+    CHECK(hit.body.index == id.index);
+    CHECK(FNear(hit.distance, 30.0f - 7.5f, 1e-3f));
+    CHECK(hit.normal.y > 0.9f);
+    // From below the surface the ray hits it from below, and a short ray finds nothing.
+    REQUIRE(TerrainRayCast(world, Vec3(25.0f, -5.0f, 10.0f), Vec3(0.0f, 1.0f, 0.0f), 100.0f, filter, &hit));
+    CHECK(FNear(hit.distance, 12.5f, 1e-3f));
+    CHECK_FALSE(TerrainRayCast(world, Vec3(25.0f, 30.0f, 10.0f), Vec3(0.0f, -1.0f, 0.0f), 10.0f, filter, &hit));
+    CHECK_FALSE(TerrainRayCast(world, Vec3(25.0f, 30.0f, 10.0f), Vec3(0.0f, 0.0f, 0.0f), 100.0f, filter, &hit));
 }

@@ -590,12 +590,13 @@ extern "C"
         ENGINE_COMPONENT_AUDIO_SOURCE = 15,     /* engine_audio_source: a sound at the entity's place (Phase 26) */
         ENGINE_COMPONENT_AUDIO_LISTENER = 16,   /* engine_audio_listener: the ears (Phase 26) */
         ENGINE_COMPONENT_SCRIPT = 17, /* engine_script_component: a behavior of a loaded script (Phase 27 Day 471) */
-        ENGINE_COMPONENT_MORPH_WEIGHTS = 18 /* engine_morph_weights: the weights of a morphed mesh's targets
-                                               (maintenance, 2026-11-20) */
+        ENGINE_COMPONENT_MORPH_WEIGHTS = 18, /* engine_morph_weights: the weights of a morphed mesh's targets
+                                                (maintenance, 2026-11-20) */
+        ENGINE_COMPONENT_TERRAIN = 19 /* engine_terrain: a height-map terrain drawn at the entity's place (Phase 28) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0x3FFFFu
+#define ENGINE_COMPONENT_MASK_ALL 0x7FFFFu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -681,6 +682,50 @@ extern "C"
         uint32_t count;
         float weights[ENGINE_MORPH_WEIGHTS_MAX];
     } engine_morph_weights;
+
+#define ENGINE_TERRAIN_LAYERS_MAX 4u
+#define ENGINE_TERRAIN_COLLIDER 0x1u /* engine_terrain.flags: also make the terrain a static height-field collider */
+
+    /* One layer of a terrain's surface: `tiling` is the metres across one repeat of the layer's texture (above 0),
+     * `tint` multiplies the albedo (not negative), `roughness` and `metallic` are 0 to 1. */
+    typedef struct engine_terrain_layer
+    {
+        float tiling;
+        float tint[3];
+        float roughness;
+        float metallic;
+    } engine_terrain_layer;
+
+    /* A terrain (Phase 28): the height map `height_map` (a resource of type ENGINE_RESOURCE_HEIGHT_MAP the host added,
+     * or made with height_map_create) drawn at the entity's world transform, which must be a translation and a turn
+     * about the y axis (a scaled or tilted terrain is not drawn). The map's first sample is at the entity's origin and
+     * the map extends along +x and +z. `layer_texture` is a texture resource (an array of 2 to 4 RGBA8 sRGB layers, at
+     * least `layer_count`) or 0 for flat grey; `splat_texture` is the weights of the layers (an RGBA8 texture across
+     * the terrain) or 0 for layer 0 alone. `slope_layer` (-1 for none, else a layer below `layer_count`) replaces the
+     * weights where the surface leans between `slope_start` and `slope_end` (0 to 1, start below end); the detail fades
+     * into the layer's average between `fade_start` and `fade_end` metres from the camera (start below end). A
+     * resource that is not mounted or of another type is NOT_FOUND or TYPE_MISMATCH when set; one that is replaced or
+     * not drawable (a terrain with no usable height map) draws nothing and counts in
+     * engine_surface_state.entities_unresolved. With ENGINE_TERRAIN_COLLIDER the engine makes the terrain a static body
+     * with a height-field collider of the same samples at the end of the next frame (the entity must have no other
+     * collider, and its world transform no scale); `friction` and `restitution` are the collider's. */
+    typedef struct engine_terrain
+    {
+        uint32_t struct_size;
+        uint32_t flags; /* ENGINE_TERRAIN_* */
+        uint64_t height_map;
+        uint64_t layer_texture;
+        uint64_t splat_texture;
+        uint32_t layer_count; /* 1 to ENGINE_TERRAIN_LAYERS_MAX */
+        int32_t slope_layer;
+        float slope_start;
+        float slope_end;
+        float fade_start;
+        float fade_end;
+        engine_terrain_layer layers[ENGINE_TERRAIN_LAYERS_MAX];
+        float friction;
+        float restitution;
+    } engine_terrain;
 
     /* What animation_play started on an entity, as ENGINE_COMPONENT_ANIMATION_PLAYER returns it (read only: use
      * animation_play, animation_set_speed and animation_stop to change it; removing the component stops the animation).
@@ -881,6 +926,9 @@ extern "C"
 #define ENGINE_SHAPE_MESH                                                                                              \
     4u /* `mesh_resource`: an MCOL triangle mesh, static bodies only (glTF colliders, 2026-11-20; 3 is kept for a      \
           hull) */
+#define ENGINE_SHAPE_HEIGHT_FIELD                                                                                      \
+    5u /* `mesh_resource`: an ENGINE_RESOURCE_HEIGHT_MAP, static bodies only; the field's first sample is at the       \
+          entity's origin (Phase 28) */
 
     /* The shape of a physics body (Phase 25 Day 408), in the entity's space: sizes are in metres (above 0, at most
      * 1e5), `offset` and `rotation` (a unit quaternion x, y, z, w) place it on the body. `friction` >= 0, `restitution`
@@ -1086,6 +1134,7 @@ extern "C"
 #define ENGINE_RESOURCE_LEVEL ENGINE_RESOURCE_TYPE('L', 'E', 'V', 'L')
 #define ENGINE_RESOURCE_ANIMATION ENGINE_RESOURCE_TYPE('A', 'N', 'I', 'M')
 #define ENGINE_RESOURCE_SKELETON ENGINE_RESOURCE_TYPE('S', 'K', 'E', 'L')
+#define ENGINE_RESOURCE_HEIGHT_MAP ENGINE_RESOURCE_TYPE('H', 'G', 'H', 'T') /* 16-bit terrain heights (Phase 28) */
 #define ENGINE_RESOURCE_MESH_COLLIDER                                                                                  \
     ENGINE_RESOURCE_TYPE('M', 'C', 'O', 'L') /* a static triangle-mesh collider (glTF colliders, 2026-11-20) */
 
@@ -2564,6 +2613,25 @@ extern "C"
          * UNSUPPORTED. */
         engine_status (*script_task_run)(engine_handle world, const engine_script_task* task,
                                          engine_value_pool* results);
+
+        /* ---- Terrain (Phase 28) ---- */
+
+        /* Makes a height map resource from 16-bit samples the host holds and adds it to the memory backend under `id`
+         * (not 0): `samples` is `width * height` values (2 to 8192 a side, rows from z = 0, sample value s is the
+         * height range_min + s / 65535 * (range_max - range_min)), `cell_size` the metres between samples (above 0).
+         * The engine keeps the blob (resource_read returns it), so a surface rebuilds the terrain from it after a
+         * rebind; the host's samples are copied. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a size, a range
+         * or cell size the format refuses), ALREADY_EXISTS (the id), LIMIT_EXCEEDED (the backend's budget). Any thread.
+         */
+        engine_status (*height_map_create)(engine_handle engine, uint64_t id, const uint16_t* samples, uint32_t width,
+                                           uint32_t height, float range_min, float range_max, float cell_size);
+
+        /* Reads the ground height at the world point (`x`, `z`) into `*out_height`: the surface of the first terrain
+         * entity (by entity key) whose map covers the point, at the entity's current world placement (the one the last
+         * frame computed; before any frame, its local transform), the same surface the collider and the renderer use
+         * (two triangles a cell). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a non-finite coordinate),
+         * NOT_FOUND (no terrain covers the point, or its height map is not mounted). */
+        engine_status (*terrain_height)(engine_handle world, float x, float z, float* out_height);
     } engine_api;
 
     /* Returns the function table.

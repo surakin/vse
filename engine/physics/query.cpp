@@ -589,6 +589,91 @@ bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& directio
     return found;
 }
 
+bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
+                    const PhysicsQueryFilter& filter, PhysicsHit* hit)
+{
+    Vec3 d;
+    if (!Finite(origin) || !Unit(direction, &d) || !IsFinite(max_distance) || !(max_distance > 0.0f))
+    {
+        return false;
+    }
+    const Libraries libs = LibrariesOf(world);
+    bool found = false;
+    PhysicsHit best;
+    f32 reach = max_distance;
+    ForEachCandidate(
+        world, filter, [&](const Aabb& box) { return BoxOverlapsRay(box, origin, d, max_distance); },
+        [&](ColliderId id, const ColliderRecord& record, const Body& body)
+        {
+            PhysicsHit h;
+            if (record.value.shape.kind == ShapeKind::HeightField &&
+                RayOne(libs, id, record, body, origin, d, reach, &h) &&
+                (!found || h.distance < best.distance ||
+                 (h.distance == best.distance && id.ToKey() < best.collider.ToKey())))
+            {
+                best = h;
+                found = true;
+                reach = h.distance;
+            }
+        });
+    if (found && hit != nullptr)
+    {
+        *hit = best;
+    }
+    return found;
+}
+
+bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFilter& filter, f32* height, Vec3* normal)
+{
+    if (!IsFinite(x) || !IsFinite(z))
+    {
+        return false;
+    }
+    const Libraries libs = LibrariesOf(world);
+    bool found = false;
+    f32 best = 0.0f;
+    Vec3 best_normal = Vec3(0.0f, 1.0f, 0.0f);
+    ForEachCollider(
+        world, filter,
+        [&](ColliderId id, const ColliderRecord& record, const Body& body)
+        {
+            if (record.value.shape.kind != ShapeKind::HeightField)
+            {
+                return;
+            }
+            const Pose pose = PoseOf(body, record.value);
+            const Aabb box = record.value.shape.Bounds(pose.position, pose.rotation);
+            if (x < box.min.x || x > box.max.x || z < box.min.z || z > box.max.z)
+            {
+                return;
+            }
+            const Vec3 origin(x, box.max.y + 1.0f, z);
+            PhysicsHit h;
+            if (RayOne(libs, id, record, body, origin, Vec3(0.0f, -1.0f, 0.0f), box.max.y - box.min.y + 2.0f, &h))
+            {
+                const f32 y = origin.y - h.distance;
+                if (!found || y > best)
+                {  // the highest ground where maps overlap
+                    found = true;
+                    best = y;
+                    best_normal = h.normal;
+                }
+            }
+        });
+    if (found)
+    {
+        if (height != nullptr)
+        {
+            *height = best;
+        }
+        if (normal != nullptr)
+        {
+            *normal = best_normal;
+        }
+    }
+    return found;
+}
+
 usize RayCastAll(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
                  const PhysicsQueryFilter& filter, Vector<PhysicsHit>* hits)
 {

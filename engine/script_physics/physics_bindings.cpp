@@ -593,6 +593,87 @@ Value PhysicsRaycastEx(Vec3 origin, Vec3 direction, f32 max_distance, Value laye
     return Raycast(origin, direction, max_distance, layers, ignore.IsNil() ? ecs::Entity() : ignore.AsEntity());
 }
 
+// The terrain functions read the physics world's height-field colliders as of the tick start (a terrain made with the
+// height-field collider; one without a collider is not seen here).
+bool TerrainFilter(PartitionContext* context, const PhysicsScriptServices** services,
+                   physics::PhysicsQueryFilter* filter)
+{
+    *services = context != nullptr ? NeedServices(context) : nullptr;
+    if (*services == nullptr)
+    {
+        return false;
+    }
+    physics::BodyId ignored;
+    return MakeFilter(context, *services, Value(), ecs::Entity(), filter, &ignored);
+}
+
+Value TerrainHeightOf(f32 x, f32 z)
+{
+    PartitionContext* context = Context();
+    const PhysicsScriptServices* services = nullptr;
+    physics::PhysicsQueryFilter filter;
+    if (!TerrainFilter(context, &services, &filter))
+    {
+        return Value();
+    }
+    if (!IsFinite(x) || !IsFinite(z))
+    {
+        script::RaiseScriptError("the point needs finite x and z");
+        return Value();
+    }
+    f32 height = 0.0f;
+    if (!physics::TerrainHeight(*services->world, x, z, filter, &height, nullptr))
+    {
+        return Value();
+    }
+    return Value::FromFloat(height);
+}
+
+Value TerrainNormalOf(f32 x, f32 z)
+{
+    PartitionContext* context = Context();
+    const PhysicsScriptServices* services = nullptr;
+    physics::PhysicsQueryFilter filter;
+    if (!TerrainFilter(context, &services, &filter))
+    {
+        return Value();
+    }
+    if (!IsFinite(x) || !IsFinite(z))
+    {
+        script::RaiseScriptError("the point needs finite x and z");
+        return Value();
+    }
+    Vec3 normal;
+    if (!physics::TerrainHeight(*services->world, x, z, filter, nullptr, &normal))
+    {
+        return Value();
+    }
+    return Value::FromVec3(normal);
+}
+
+Value TerrainRaycast(Vec3 origin, Vec3 direction, f32 max_distance)
+{
+    PartitionContext* context = Context();
+    const PhysicsScriptServices* services = nullptr;
+    physics::PhysicsQueryFilter filter;
+    if (!TerrainFilter(context, &services, &filter))
+    {
+        return Value();
+    }
+    if (!Finite3(origin) || !Finite3(direction) || direction.LengthSquared() == 0.0f || !IsFinite(max_distance) ||
+        !(max_distance > 0.0f))
+    {
+        script::RaiseScriptError("the ray needs a finite origin, a direction that is not zero and a length above zero");
+        return Value();
+    }
+    physics::PhysicsHit hit;
+    if (!physics::TerrainRayCast(*services->world, origin, direction, max_distance, filter, &hit))
+    {
+        return Value();
+    }
+    return HitValue(*services->world, hit);
+}
+
 // A shape from a table: `{kind="sphere", radius=}`, `{kind="box", half_extents=}` or `{kind="capsule", half_height=,
 // radius=}`.
 bool ParseShape(const Value& desc, physics::Shape* shape)
@@ -1310,6 +1391,15 @@ bool RegisterPhysicsBindings(script::BindingRegistry* registry)
         "physics", "raycast", ThreadRule::WorldRead, "origin, direction, max_distance, layers",
         "Casts a ray against the physics world as of the tick start; `layers` is nil (all), a layer name or an array "
         "of names. Returns nil, or {entity=, point=, normal=, distance=} of the nearest hit.");
+    ok &= registry->Add<&TerrainHeightOf>("terrain", "height", ThreadRule::WorldRead, "x, z",
+                                          "Returns the ground height at the world point (x, z) as of the tick start, "
+                                          "or nil when no terrain with a collider covers it.");
+    ok &= registry->Add<&TerrainNormalOf>("terrain", "normal", ThreadRule::WorldRead, "x, z",
+                                          "Returns the ground's unit normal (pointing up) at (x, z), or nil.");
+    ok &= registry->Add<&TerrainRaycast>(
+        "terrain", "raycast", ThreadRule::WorldRead, "origin, direction, max_distance",
+        "Casts a ray at the terrain only (a ray from below hits it too); returns nil or "
+        "{entity=, point=, normal=, distance=}.");
     ok &= registry->Add<&PhysicsRaycastEx>("physics", "raycast_ex", ThreadRule::WorldRead,
                                            "origin, direction, max_distance, layers, ignore",
                                            "As raycast, skipping the colliders of the entity `ignore` (or nil).");

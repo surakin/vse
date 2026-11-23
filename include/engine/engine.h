@@ -315,6 +315,12 @@ public:
     }
     inline Status AddResourcesAsync(const engine_resource_add_info* infos, size_t count, AddTicket* out) const;
     static uint64_t ImportFormatVersion(const engine_api* api) { return api->import_format_version(); }
+    /// Makes a height map resource from 16-bit samples (engine_api.height_map_create).
+    Status HeightMapCreate(uint64_t id, const uint16_t* samples, uint32_t width, uint32_t height, float range_min,
+                           float range_max, float cell_size) const
+    {
+        return Api()->height_map_create(Get(), id, samples, width, height, range_min, range_max, cell_size);
+    }
 
     /// Imports a glTF file held in memory, at once or in the background (`import_gltf`, `import_gltf_async`).
     Status ImportGltf(const void* bytes, size_t size, const engine_import_options& options,
@@ -496,6 +502,11 @@ public:
     Status ScriptTaskRun(const engine_script_task& task, engine_value_pool* results) const
     {
         return Api()->script_task_run(Get(), &task, results);
+    }
+    /// The ground height at a world point (engine_api.terrain_height).
+    Status TerrainHeight(float x, float z, float* out_height) const
+    {
+        return Api()->terrain_height(Get(), x, z, out_height);
     }
     Status HasComponent(uint64_t key, uint32_t kind, bool* out) const
     {
