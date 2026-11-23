@@ -17,6 +17,7 @@
 ## Notes
 
 - Written 2026-11-23.
+- Day 1 picks: the scene is stored in `f64` world space and culled with an `f64` frustum (no subtraction in the cull: measured the same cost as `f32`); the subtraction happens where the GPU data is written (`WriteObjects`, the instance compaction, the terrain uniforms): 0.43 ms for 100,000 objects.
 
 ## Post-implementation code review
 

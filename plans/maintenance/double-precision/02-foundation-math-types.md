@@ -16,6 +16,7 @@
 ## Notes
 
 - Written 2026-11-23.
+- Day 1 picks (spec `2026-11-23-double-precision-design.md`): separate types, not a template: `Vec3d`, `Aabbd`, `Sphered`, `Placement` (an `f32` linear block plus a `Vec3d` position, `RelativeTo(origin)`), an `f64` `Frustum`; implicit widening, explicit named narrowing.
 
 ## Post-implementation code review
 

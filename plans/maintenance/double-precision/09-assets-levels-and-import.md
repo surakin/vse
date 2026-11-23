@@ -16,6 +16,7 @@
 ## Notes
 
 - Written 2026-11-23.
+- Day 1: only the level type version and placements change; mesh, skeleton, clip, texture and height-map blobs are object-space and stay; `import_format_version` moves with the level version.
 
 ## Post-implementation code review
 

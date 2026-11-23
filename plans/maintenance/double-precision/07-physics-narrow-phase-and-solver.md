@@ -16,6 +16,7 @@
 ## Notes
 
 - Written 2026-11-23.
+- Day 1 pick (A): manifolds, solver and joints stay `f32` and body-relative. If the per-pair `f64` subtraction costs more than 5% of the narrow phase, amend the spec here before going on.
 
 ## Post-implementation code review
 

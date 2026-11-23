@@ -16,6 +16,7 @@
 ## Notes
 
 - Written 2026-11-23.
+- Day 1 picks: `LocalTransform` keeps its `Quaternion` and `Vec3 scale` and gets a `Vec3d position`; `WorldTransform` becomes a `Placement`; the storage `FieldKind` gains `Vec3d` and `Aabbd`.
 
 ## Post-implementation code review
 

@@ -16,6 +16,7 @@
 ## Notes
 
 - Written 2026-11-23.
+- Day 1 pick (A): body positions and broad-phase boxes in `f64`; contacts built body-relative in `f32`; snapshot version 3; golden hashes re-baselined once here. Baseline of the real step: `physics_bench --scene drop --bodies 5000 --threads 1`: 17.8 ms falling, 32.0 landing, in the day file with the after numbers.
 
 ## Post-implementation code review
 

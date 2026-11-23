@@ -16,6 +16,7 @@
 ## Notes
 
 - Written 2026-11-23.
+- Day 1: 24 `float[3]` fields in `engine_c.h`; each struct that carries a world position gets an `f64` sibling by sized-struct growth; old entry points narrow and say so in their docs.
 
 ## Post-implementation code review
 
