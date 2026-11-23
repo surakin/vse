@@ -31,7 +31,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Audio](audio.md) | 28 | 822 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 38 | 1401 |
+| [Assets and resources](asset.md) | 39 | 1436 |
 | [glTF importer](asset_import.md) | 19 | 321 |
 | [Animation runtime](animation.md) | 4 | 90 |
 | [Database](database.md) | 9 | 161 |
@@ -40,7 +40,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [The UI Toolkit](ui.md) | 46 | 1421 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 205 |
-| [The Render Hardware Interface](rhi.md) | 21 | 826 |
+| [The Render Hardware Interface](rhi.md) | 21 | 827 |
 | [The renderer](renderer.md) | 27 | 1365 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 441 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |

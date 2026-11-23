@@ -78,6 +78,8 @@ inline constexpr ResourceType kHull = ResourceType::FromChars('H', 'U', 'L', 'L'
 inline constexpr ResourceType kMeshCollider = ResourceType::FromChars('M', 'C', 'O', 'L');
 /// A decoded audio clip: interleaved samples with a rate, a layout and loop points.
 inline constexpr ResourceType kAudioClip = ResourceType::FromChars('A', 'C', 'L', 'P');
+/// A height map: 16-bit terrain heights with their mip chain and a block min/max pyramid.
+inline constexpr ResourceType kHeightMap = ResourceType::FromChars('H', 'G', 'H', 'T');
 /// A script: its source text, the entry points the minter found and its dependencies.
 inline constexpr ResourceType kScript = ResourceType::FromChars('S', 'C', 'R', 'P');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).

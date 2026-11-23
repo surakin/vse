@@ -7787,6 +7787,40 @@ asset::kFallbackTextureId	variable	asset	asset-kfallbacktextureid	asset.md	engin
 asset::kFallbackMaterialId	variable	asset	asset-kfallbackmaterialid	asset.md	engine/asset/gpu_loaders.h:118
 asset::RegisterGpuFallbacks(ResourceManager*)	function	asset	asset-registergpufallbacks-resourcemanager-star	asset.md	engine/asset/gpu_loaders.h:128
 asset::RegisterGpuLoaders(ResourceManager*,GpuAssetContext*)	function	asset	asset-registergpuloaders-resourcemanager-star-gpuassetcontext-star	asset.md	engine/asset/gpu_loaders.h:138
+asset::kHeightMapHeaderBytes	variable	asset	asset-kheightmapheaderbytes	asset.md	engine/asset/height_map.h:34
+asset::kMinHeightMapSide	variable	asset	asset-kminheightmapside	asset.md	engine/asset/height_map.h:36
+asset::kMaxHeightMapSide	variable	asset	asset-kmaxheightmapside	asset.md	engine/asset/height_map.h:38
+asset::kHeightMapBlockCells	variable	asset	asset-kheightmapblockcells	asset.md	engine/asset/height_map.h:40
+asset::HeightMapSection	enum	asset	asset-heightmapsection	asset.md	engine/asset/height_map.h:43
+asset::kHeightMapSectionHeader	enumerator	asset	asset-kheightmapsectionheader	asset.md	engine/asset/height_map.h:45
+asset::kHeightMapSectionHeights	enumerator	asset	asset-kheightmapsectionheights	asset.md	engine/asset/height_map.h:46
+asset::kHeightMapSectionBlocks	enumerator	asset	asset-kheightmapsectionblocks	asset.md	engine/asset/height_map.h:47
+asset::HeightMapHeader	struct	asset	asset-heightmapheader	asset.md	engine/asset/height_map.h:53
+asset::HeightMapHeader::width	variable	asset	asset-heightmapheader-width	asset.md	engine/asset/height_map.h:55
+asset::HeightMapHeader::height	variable	asset	asset-heightmapheader-height	asset.md	engine/asset/height_map.h:56
+asset::HeightMapHeader::range_min	variable	asset	asset-heightmapheader-range-min	asset.md	engine/asset/height_map.h:57
+asset::HeightMapHeader::range_max	variable	asset	asset-heightmapheader-range-max	asset.md	engine/asset/height_map.h:58
+asset::HeightMapHeader::cell_size	variable	asset	asset-heightmapheader-cell-size	asset.md	engine/asset/height_map.h:59
+asset::HeightMapMipCount(u32,u32)	function	asset	asset-heightmapmipcount-u32-u32	asset.md	engine/asset/height_map.h:66
+asset::BuildHeightMapBlob(const TypeRegistry&,ResourceId,const HeightMapHeader&,ByteSpan,Vector<byte>*,u32)	function	asset	asset-buildheightmapblob-const-typeregistry-amp-resourceid-const-heightmapheader-amp-bytespan-vector-lt-byte-gt-star-u32	asset.md	engine/asset/height_map.h:78
+asset::HeightMapView	class	asset	asset-heightmapview	asset.md	engine/asset/height_map.h:85
+asset::HeightMapView::HeightMapView()	function	asset	asset-heightmapview-heightmapview	asset.md	engine/asset/height_map.h:89
+asset::HeightMapView::Open(const SharedBytesPtr&,const TypeRegistry&)	function	asset	asset-heightmapview-open-const-sharedbytesptr-amp-const-typeregistry-amp	asset.md	engine/asset/height_map.h:98
+asset::HeightMapView::Header() const	function	asset	asset-heightmapview-header-const	asset.md	engine/asset/height_map.h:102
+asset::HeightMapView::Id() const	function	asset	asset-heightmapview-id-const	asset.md	engine/asset/height_map.h:106
+asset::HeightMapView::Bytes() const	function	asset	asset-heightmapview-bytes-const	asset.md	engine/asset/height_map.h:111
+asset::HeightMapView::MipCount() const	function	asset	asset-heightmapview-mipcount-const	asset.md	engine/asset/height_map.h:115
+asset::HeightMapView::MipWidth(u32) const	function	asset	asset-heightmapview-mipwidth-u32-const	asset.md	engine/asset/height_map.h:120
+asset::HeightMapView::MipHeight(u32) const	function	asset	asset-heightmapview-mipheight-u32-const	asset.md	engine/asset/height_map.h:125
+asset::HeightMapView::MipOffset(u32) const	function	asset	asset-heightmapview-mipoffset-u32-const	asset.md	engine/asset/height_map.h:130
+asset::HeightMapView::Sample(u32,u32) const	function	asset	asset-heightmapview-sample-u32-u32-const	asset.md	engine/asset/height_map.h:136
+asset::HeightMapView::SampleToHeight(u16) const	function	asset	asset-heightmapview-sampletoheight-u16-const	asset.md	engine/asset/height_map.h:140
+asset::HeightMapView::HeightAt(f32,f32) const	function	asset	asset-heightmapview-heightat-f32-f32-const	asset.md	engine/asset/height_map.h:149
+asset::HeightMapView::NormalAt(f32,f32) const	function	asset	asset-heightmapview-normalat-f32-f32-const	asset.md	engine/asset/height_map.h:157
+asset::HeightMapView::BlocksX() const	function	asset	asset-heightmapview-blocksx-const	asset.md	engine/asset/height_map.h:161
+asset::HeightMapView::BlocksZ() const	function	asset	asset-heightmapview-blocksz-const	asset.md	engine/asset/height_map.h:165
+asset::HeightMapView::BlockMin(u32,u32) const	function	asset	asset-heightmapview-blockmin-u32-u32-const	asset.md	engine/asset/height_map.h:169
+asset::HeightMapView::BlockMax(u32,u32) const	function	asset	asset-heightmapview-blockmax-u32-u32-const	asset.md	engine/asset/height_map.h:173
 asset::kMaxHullVertices	variable	asset	asset-kmaxhullvertices	asset.md	engine/asset/hull.h:30
 asset::kMaxHullFaces	variable	asset	asset-kmaxhullfaces	asset.md	engine/asset/hull.h:32
 asset::kMaxHullFaceVertices	variable	asset	asset-kmaxhullfacevertices	asset.md	engine/asset/hull.h:34
@@ -8539,18 +8573,19 @@ asset::types::kSkeleton	variable	asset	asset-types-kskeleton	asset.md	engine/ass
 asset::types::kHull	variable	asset	asset-types-khull	asset.md	engine/asset/resource_type.h:76
 asset::types::kMeshCollider	variable	asset	asset-types-kmeshcollider	asset.md	engine/asset/resource_type.h:78
 asset::types::kAudioClip	variable	asset	asset-types-kaudioclip	asset.md	engine/asset/resource_type.h:80
-asset::types::kScript	variable	asset	asset-types-kscript	asset.md	engine/asset/resource_type.h:82
-asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:84
-asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:90
-asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:92
-asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:93
-asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:94
-asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:103
-asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:107
-asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:113
-asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:121
-asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:125
-asset::TypeRegistry::At(usize) const	function	asset	asset-typeregistry-at-usize-const	asset.md	engine/asset/resource_type.h:130
+asset::types::kHeightMap	variable	asset	asset-types-kheightmap	asset.md	engine/asset/resource_type.h:82
+asset::types::kScript	variable	asset	asset-types-kscript	asset.md	engine/asset/resource_type.h:84
+asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:86
+asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:92
+asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:94
+asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:95
+asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:96
+asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:105
+asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:109
+asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:115
+asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:123
+asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:127
+asset::TypeRegistry::At(usize) const	function	asset	asset-typeregistry-at-usize-const	asset.md	engine/asset/resource_type.h:132
 asset::kScriptHeaderBytes	variable	asset	asset-kscriptheaderbytes	asset.md	engine/asset/script_blob.h:36
 asset::kMaxScriptSourceBytes	variable	asset	asset-kmaxscriptsourcebytes	asset.md	engine/asset/script_blob.h:38
 asset::kMaxScriptEntries	variable	asset	asset-kmaxscriptentries	asset.md	engine/asset/script_blob.h:40
@@ -12017,21 +12052,22 @@ rhi::Format::BC5_UNorm	enumerator	rhi	rhi-format-bc5-unorm	rhi.md	engine/rhi/for
 rhi::Format::BC7_UNorm	enumerator	rhi	rhi-format-bc7-unorm	rhi.md	engine/rhi/format.h:43
 rhi::Format::BC7_SRGB	enumerator	rhi	rhi-format-bc7-srgb	rhi.md	engine/rhi/format.h:44
 rhi::Format::BC4_UNorm	enumerator	rhi	rhi-format-bc4-unorm	rhi.md	engine/rhi/format.h:45
-rhi::Format::Count	enumerator	rhi	rhi-format-count	rhi.md	engine/rhi/format.h:46
-rhi::FormatProperties	struct	rhi	rhi-formatproperties	rhi.md	engine/rhi/format.h:52
-rhi::FormatProperties::name	variable	rhi	rhi-formatproperties-name	rhi.md	engine/rhi/format.h:55
-rhi::FormatProperties::bytes_per_block	variable	rhi	rhi-formatproperties-bytes-per-block	rhi.md	engine/rhi/format.h:60
-rhi::FormatProperties::block_width	variable	rhi	rhi-formatproperties-block-width	rhi.md	engine/rhi/format.h:62
-rhi::FormatProperties::block_height	variable	rhi	rhi-formatproperties-block-height	rhi.md	engine/rhi/format.h:64
-rhi::FormatProperties::channels	variable	rhi	rhi-formatproperties-channels	rhi.md	engine/rhi/format.h:66
-rhi::FormatProperties::is_depth	variable	rhi	rhi-formatproperties-is-depth	rhi.md	engine/rhi/format.h:68
-rhi::FormatProperties::has_stencil	variable	rhi	rhi-formatproperties-has-stencil	rhi.md	engine/rhi/format.h:70
-rhi::FormatProperties::is_srgb	variable	rhi	rhi-formatproperties-is-srgb	rhi.md	engine/rhi/format.h:72
-rhi::FormatProperties::is_compressed	variable	rhi	rhi-formatproperties-is-compressed	rhi.md	engine/rhi/format.h:74
-rhi::FormatInfo(Format)	function	rhi	rhi-formatinfo-format	rhi.md	engine/rhi/format.h:115
-rhi::MipExtent(u32,u32)	function	rhi	rhi-mipextent-u32-u32	rhi.md	engine/rhi/format.h:127
-rhi::FormatRowBytes(Format,u32)	function	rhi	rhi-formatrowbytes-format-u32	rhi.md	engine/rhi/format.h:138
-rhi::FormatSliceBytes(Format,u32,u32)	function	rhi	rhi-formatslicebytes-format-u32-u32	rhi.md	engine/rhi/format.h:151
+rhi::Format::R16_UNorm	enumerator	rhi	rhi-format-r16-unorm	rhi.md	engine/rhi/format.h:46
+rhi::Format::Count	enumerator	rhi	rhi-format-count	rhi.md	engine/rhi/format.h:47
+rhi::FormatProperties	struct	rhi	rhi-formatproperties	rhi.md	engine/rhi/format.h:53
+rhi::FormatProperties::name	variable	rhi	rhi-formatproperties-name	rhi.md	engine/rhi/format.h:56
+rhi::FormatProperties::bytes_per_block	variable	rhi	rhi-formatproperties-bytes-per-block	rhi.md	engine/rhi/format.h:61
+rhi::FormatProperties::block_width	variable	rhi	rhi-formatproperties-block-width	rhi.md	engine/rhi/format.h:63
+rhi::FormatProperties::block_height	variable	rhi	rhi-formatproperties-block-height	rhi.md	engine/rhi/format.h:65
+rhi::FormatProperties::channels	variable	rhi	rhi-formatproperties-channels	rhi.md	engine/rhi/format.h:67
+rhi::FormatProperties::is_depth	variable	rhi	rhi-formatproperties-is-depth	rhi.md	engine/rhi/format.h:69
+rhi::FormatProperties::has_stencil	variable	rhi	rhi-formatproperties-has-stencil	rhi.md	engine/rhi/format.h:71
+rhi::FormatProperties::is_srgb	variable	rhi	rhi-formatproperties-is-srgb	rhi.md	engine/rhi/format.h:73
+rhi::FormatProperties::is_compressed	variable	rhi	rhi-formatproperties-is-compressed	rhi.md	engine/rhi/format.h:75
+rhi::FormatInfo(Format)	function	rhi	rhi-formatinfo-format	rhi.md	engine/rhi/format.h:117
+rhi::MipExtent(u32,u32)	function	rhi	rhi-mipextent-u32-u32	rhi.md	engine/rhi/format.h:129
+rhi::FormatRowBytes(Format,u32)	function	rhi	rhi-formatrowbytes-format-u32	rhi.md	engine/rhi/format.h:140
+rhi::FormatSliceBytes(Format,u32,u32)	function	rhi	rhi-formatslicebytes-format-u32-u32	rhi.md	engine/rhi/format.h:153
 rhi::Handle	struct	rhi	rhi-handle	rhi.md	engine/rhi/handle.h:23
 rhi::Handle::index	variable	rhi	rhi-handle-index	rhi.md	engine/rhi/handle.h:26
 rhi::Handle::generation	variable	rhi	rhi-handle-generation	rhi.md	engine/rhi/handle.h:28

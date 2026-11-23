@@ -8,6 +8,7 @@ pages are structured and when a day's work counts as documented. Per platform: [
 Internal design history is for contributors, not engine users: the specs in
 `docs/superpowers/specs/` —
 [the sky box, cube textures and sky lighting](superpowers/specs/2026-11-23-sky-box-design.md),
+[terrain](superpowers/specs/2026-11-23-terrain-design.md),
 [job system](superpowers/specs/2026-08-13-job-system-design.md),
 [script physics in a C API world](superpowers/specs/2026-11-20-c-api-script-physics-design.md),
 [colliders from an imported glTF](superpowers/specs/2026-11-20-gltf-colliders-design.md),

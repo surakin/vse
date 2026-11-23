@@ -41,6 +41,7 @@ constexpr FormatPair kFormats[] = {
     {Format::BC7_UNorm, VK_FORMAT_BC7_UNORM_BLOCK},
     {Format::BC7_SRGB, VK_FORMAT_BC7_SRGB_BLOCK},
     {Format::BC4_UNorm, VK_FORMAT_BC4_UNORM_BLOCK},
+    {Format::R16_UNorm, VK_FORMAT_R16_UNORM},
 };
 
 }  // namespace

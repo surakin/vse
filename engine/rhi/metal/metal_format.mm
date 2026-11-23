@@ -37,6 +37,7 @@ MTLPixelFormat ToMtlPixelFormat(Format format, id<MTLDevice> device)
     case Format::BC7_UNorm: return bc ? MTLPixelFormatBC7_RGBAUnorm : MTLPixelFormatInvalid;
     case Format::BC7_SRGB: return bc ? MTLPixelFormatBC7_RGBAUnorm_sRGB : MTLPixelFormatInvalid;
     case Format::BC4_UNorm: return bc ? MTLPixelFormatBC4_RUnorm : MTLPixelFormatInvalid;
+    case Format::R16_UNorm: return MTLPixelFormatR16Unorm;
     case Format::RGB32_Float:  // vertex data only: Metal has no three-channel 32-bit texture format
     case Format::Undefined:
     case Format::Count: break;

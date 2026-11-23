@@ -425,6 +425,14 @@ int main() {
 }
 ```
 
+## Height maps (`HGHT`)
+
+A height map (`asset::types::kHeightMap`) is the data of a terrain: 16-bit samples over a height range, their mip chain and a pyramid of block minima and maxima. `asset::BuildHeightMapBlob` writes one from `width * height` little-endian `u16` samples (each side 2 to 8192), a height range (`range_min` for sample 0, `range_max` for 65535, minimum not above maximum), and a cell size in metres; the result is deterministic. Three sections follow the header: the levels packed from level 0 (each half the one before, rounded down to at least 1, a sample being the rounded mean of the four above it with the edge repeated), and, for each block of 8 by 8 cells of level 0, the smallest and largest sample the block touches, edges included.
+
+`asset::HeightMapView` reads a blob in place (`Open` checks the sizes, the level count and that no block has its minimum above its maximum; the samples themselves are not scanned). `Sample`, `MipOffset` and `MipWidth` give the data to a GPU texture (`rhi::Format::R16_UNorm`) or a collider; `HeightAt(x, z)` is the height by the two triangles of a cell, each cell cut from its minimum-x, minimum-z corner to its maximum-x, maximum-z corner, with the point clamped to the map and only `+ - * /` in the arithmetic, so a collider and a CPU query agree to the bit on every machine; `NormalAt` is the surface normal by central differences one sample either side, as the terrain shader derives it.
+
+`asset_mint mint-heightmap SOURCE.hgt.src OUTPUT.blob` mints a map from a text source (`id`, `source` naming a raw file of `width * height` 16-bit little-endian samples with no header, `width`, `height`, `range_min`, `range_max`, `cell_size`); the same source and tool give the same bytes.
+
 ## Materials
 
 A material (`asset::types::kMaterial`, `MATL`) names a built-in template, the fragment permutation options it enables, a parameter block, texture bindings, sampler descriptions and render-state overrides. `asset::BuildMaterialBlob` writes it and `asset::LoadMaterialBlob` reads it back into an `asset::MaterialAssetData` (the GPU-backed material loader turns that into a `renderer::MaterialId`). The parameter block is stored in the template's std140 layout, so creating the material copies one block. The header's `kMaterialSkinnable` flag is set from the template (`gbuffer_skinned` and `gbuffer_skinned_color`), so a loader knows a material may be drawn on a skinned mesh without opening the template.

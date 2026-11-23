@@ -41,6 +41,7 @@
 #include "hull_source.h"
 #include "mcol_source.h"
 #include "skeleton_source.h"
+#include "height_source.h"
 #include "texture_source.h"
 #include "os/command_line.h"
 #include "os/console.h"
@@ -71,6 +72,7 @@ int Usage()
         "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
         "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
         "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n"
+        "       asset_mint mint-heightmap SOURCE.hgt.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]\n"
         "       asset_mint mint-level SOURCE.level.src OUTPUT.blob [--root=DIR] [--target=N]\n"
         "       asset_mint unmint-level LEVEL.blob OUTPUT.level.src [--root=DIR]\n");
@@ -827,6 +829,79 @@ int MintTextureCommand(const Line& line)
         return 1;
     }
     out::Print("minted a texture of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+}
+
+int MintHeightMapCommand(const Line& line)
+{
+    static const char* const allowed[] = {"target"};
+    u32 target = 0;
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 1) || !TargetOption(line, &target))
+    {
+        return Usage();
+    }
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
+    io::Path source_path;
+    io::Path output;
+    if (!io::Path::Parse(StringView(in_path, CStrLength(in_path)), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    Vector<u8> text;
+    if (!ReadWholeFile(in_path, u64{1} << 24, &text))
+    {
+        out::PrintError("asset_mint: the source file could not be read\n");
+        return 1;
+    }
+    const StringView text_view(reinterpret_cast<const char*>(text.Data()), text.Size());
+    HeightMapSource source;
+    HeightMapSourceError error;
+    if (ParseHeightMapSource(text_view, &source, &error).Failed())
+    {
+        out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        return 1;
+    }
+    io::Path samples_path;
+    io::Path relative;
+    if (!io::Path::Parse(StringView(source.source.Data(), CStrLength(source.source.Data())), io::NativePathStyle(),
+                         &relative) ||
+        !source_path.Parent().TryJoin(relative, &samples_path))
+    {
+        out::PrintError("asset_mint: %s:%u: the sample path is not valid\n", in_path,
+                        static_cast<unsigned>(source.source_line));
+        return 1;
+    }
+    Vector<u8> samples;
+    if (!ReadWholeFilePath(samples_path, u64{1} << 28, &samples))
+    {
+        out::PrintError("asset_mint: %s:%u: the sample file could not be read\n", in_path,
+                        static_cast<unsigned>(source.source_line));
+        return 1;
+    }
+    TypeRegistry types;
+    Vector<byte> blob;
+    if (MintHeightMap(text_view, ByteSpan(samples.Data(), samples.Size()), types, &blob, &error, target).Failed())
+    {
+        out::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
+        return 1;
+    }
+    io::FilePtr file;
+    if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
+    {
+        out::PrintError("asset_mint: the output file could not be created\n");
+        return 1;
+    }
+    const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
+    if (written.Failed() || file->Close().Failed())
+    {
+        file->Close();
+        io::Remove(output);
+        out::PrintError("asset_mint: writing the output failed\n");
+        return 1;
+    }
+    out::Print("minted a height map of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -1691,6 +1766,10 @@ int main(int argc, char** argv)
     if (command == StringView("mint-texture"))
     {
         return MintTextureCommand(line);
+    }
+    if (command == StringView("mint-heightmap"))
+    {
+        return MintHeightMapCommand(line);
     }
     if (command == StringView("mint-material"))
     {
