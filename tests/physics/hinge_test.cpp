@@ -280,7 +280,7 @@ TEST_CASE("Hinge: a bridge of hinged planks holds a load", "[physics][joint][hin
     f32 speed = 0.0f;
     for (u32 i = 0; i < count; ++i)
     {
-        lowest = FMin(lowest, world.Find(planks[i])->position.y);
+        lowest = FMin(lowest, static_cast<f32>(world.Find(planks[i])->position.y));
         speed = FMax(speed, world.Find(planks[i])->linear_velocity.Length());
     }
     INFO("lowest " << lowest << " speed " << speed << " load y " << world.Find(load)->position.y);
@@ -319,7 +319,7 @@ TEST_CASE("Hinge: the state hash of a hinge scene equals the committed constant"
     const u64 first = run(600);
     CHECK(first == run(600));
     CHECK(first != run(599));
-    CHECK(first == 0xf159eb48d1b6d124ull);
+    CHECK(first == 0xebde560bdeb9a442ull);
 }
 
 TEST_CASE("Hinge: an axis against the frame's Z turns the frame by an exact half turn (no libm)",

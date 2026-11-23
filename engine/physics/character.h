@@ -82,7 +82,7 @@ public:
     /// - Returns: `Ok`, or `Invalid` for a bad config (radius or height too small, a non-finite number).
     /// - Ownership: the controller keeps the world's body id.
     /// - Fails: as the return says.
-    BodyStatus Create(PhysicsWorld* world, const CharacterConfig& config, const Vec3& position);
+    BodyStatus Create(PhysicsWorld* world, const CharacterConfig& config, const Vec3d& position);
 
     /// Changes the capsule's total height (crouching, standing up): the body is made again with the new capsule, its
     /// feet where they were (the centre moves by half the change), and the ground state and the kept vertical speed

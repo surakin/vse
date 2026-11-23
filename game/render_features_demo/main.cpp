@@ -128,8 +128,8 @@ int main(int argc, char** argv)
     }
     bool valid = false;
     const u64 hash = world.StateHash(&valid);
-    const Vec3 p = world.Find(sphere)->position;
-    const Vec3 q = world.Find(box)->position;
+    const Vec3 p = world.Find(sphere)->position.Narrow();
+    const Vec3 q = world.Find(box)->position.Narrow();
     const bool on_ground = p.y > field->HeightAt(p.x, p.z) - 0.1f && q.y > field->HeightAt(q.x, q.z) - 0.1f;
     out::Print("render_features_demo: %u steps, %u threads, state hash 0x%016llx %s\n", steps, threads,
                static_cast<unsigned long long>(hash), valid && on_ground ? "ok" : "FAILED");

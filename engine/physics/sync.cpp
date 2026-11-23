@@ -19,7 +19,7 @@ struct Gathered
     ecs::Entity entity;
     RigidBody settings;
     Collider collider;
-    Vec3 position;
+    Vec3d position;
     Quaternion rotation;
     Velocity velocity;
     BodyLink link;
@@ -28,9 +28,9 @@ struct Gathered
 };
 
 // The translation and rotation of a world matrix, the scale divided out of each column (the caller scales shapes).
-bool PoseOfWorld(const Mat4& m, Vec3* position, Quaternion* rotation)
+bool PoseOfWorld(const Mat4& m, const Vec3d& place, Vec3d* position, Quaternion* rotation)
 {
-    *position = Vec3(m.col[3].x, m.col[3].y, m.col[3].z);
+    *position = place;
     Vec3 axes[3];
     for (u32 c = 0; c < 3; ++c)
     {
@@ -64,9 +64,9 @@ void WakeAtNewPose(PhysicsWorld& physics, const Body& body)
         {
             break;
         }
-        const Aabb bounds = record->value.shape.Bounds(body.position, body.orientation);
-        const Vec3 centre = (bounds.min + bounds.max) * 0.5f;
-        const Vec3 half = (bounds.max - bounds.min) * 0.5f;
+        const Aabbd bounds = record->value.shape.Bounds(body.position, body.orientation);
+        const Vec3d centre = (bounds.min + bounds.max) * 0.5;
+        const Vec3 half = ((bounds.max - bounds.min) * 0.5).Narrow();
         Overlap(physics, Shape::MakeBox(Vec3(Max(half.x, 1e-4f), Max(half.y, 1e-4f), Max(half.z, 1e-4f))), centre,
                 Quaternion::Identity(), filter, &touched);
         for (usize k = 0; k < touched.Size(); ++k)
@@ -87,6 +87,11 @@ bool SameSettings(const RigidBody& a, const RigidBody& b)
 }
 
 bool SameVec(const Vec3& a, const Vec3& b)
+{
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+bool SameVec(const Vec3d& a, const Vec3d& b)
 {
     return a.x == b.x && a.y == b.y && a.z == b.z;
 }
@@ -152,7 +157,7 @@ SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics)
             g.entity = entity;
             g.settings = settings;
             g.collider = collider;
-            g.position = transform.position.Narrow();
+            g.position = transform.position;
             g.rotation = transform.rotation;
             if (velocity != nullptr)
             {
@@ -180,7 +185,7 @@ SyncReport SyncBodies(ecs::World& ecs, PhysicsWorld& physics)
             g.settings = settings;
             g.collider = collider;
             g.parented = true;
-            g.placeable = PoseOfWorld(placed.matrix, &g.position, &g.rotation);
+            g.placeable = PoseOfWorld(placed.matrix, placed.position, &g.position, &g.rotation);
             if (link != nullptr)
             {
                 g.link = *link;

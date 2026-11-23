@@ -14,7 +14,7 @@ namespace
 {
 
 constexpr u32 kMagic = 0x4e534850u;  // "PHSN"
-constexpr u32 kVersion = 2;
+constexpr u32 kVersion = 3;
 constexpr usize kMaxSlots = 1u << 24;
 
 // ---- pools -----------------------------------------------------------------------------------------------------
@@ -145,9 +145,9 @@ void WriteBody(SnapshotOut& out, const Body& b)
     out.F32(b.settings.linear_damping);
     out.F32(b.settings.angular_damping);
     out.F32(b.settings.gravity_scale);
-    out.V3(b.position);
+    out.V3d(b.position);
     out.Q(b.orientation);
-    out.V3(b.previous_position);
+    out.V3d(b.previous_position);
     out.Q(b.previous_orientation);
     out.V3(b.linear_velocity);
     out.V3(b.angular_velocity);
@@ -175,9 +175,9 @@ void ReadBody(SnapshotIn& in, Body* b)
     b->settings.linear_damping = in.F32();
     b->settings.angular_damping = in.F32();
     b->settings.gravity_scale = in.F32();
-    b->position = in.V3();
+    b->position = in.V3d();
     b->orientation = in.Q();
-    b->previous_position = in.V3();
+    b->previous_position = in.V3d();
     b->previous_orientation = in.Q();
     b->linear_velocity = in.V3();
     b->angular_velocity = in.V3();

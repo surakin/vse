@@ -5091,7 +5091,7 @@ physics::CharacterState::ground_body	variable	physics	physics-characterstate-gro
 physics::CharacterState::ground_normal	variable	physics	physics-characterstate-ground-normal	physics.md	engine/physics/character.h:59
 physics::CharacterState::vertical_speed	variable	physics	physics-characterstate-vertical-speed	physics.md	engine/physics/character.h:61
 physics::CharacterController	class	physics	physics-charactercontroller	physics.md	engine/physics/character.h:73
-physics::CharacterController::Create(PhysicsWorld*,const CharacterConfig&,const Vec3&)	function	physics	physics-charactercontroller-create-physicsworld-star-const-characterconfig-amp-const-vec3-amp	physics.md	engine/physics/character.h:85
+physics::CharacterController::Create(PhysicsWorld*,const CharacterConfig&,const Vec3d&)	function	physics	physics-charactercontroller-create-physicsworld-star-const-characterconfig-amp-const-vec3d-amp	physics.md	engine/physics/character.h:85
 physics::CharacterController::SetHeight(PhysicsWorld*,f32)	function	physics	physics-charactercontroller-setheight-physicsworld-star-f32	physics.md	engine/physics/character.h:98
 physics::CharacterController::Config() const	function	physics	physics-charactercontroller-config-const	physics.md	engine/physics/character.h:104
 physics::CharacterController::Destroy(PhysicsWorld*)	function	physics	physics-charactercontroller-destroy-physicsworld-star	physics.md	engine/physics/character.h:111
@@ -5106,7 +5106,7 @@ physics::CharacterSet::CharacterSet(PhysicsWorld*)	function	physics	physics-char
 physics::CharacterSet::~CharacterSet()	function	physics	physics-characterset-tilde-characterset	physics.md	engine/physics/character_set.h:38
 physics::CharacterSet::CharacterSet(const CharacterSet&)	function	physics	physics-characterset-characterset-const-characterset-amp	physics.md	engine/physics/character_set.h:40
 physics::CharacterSet::operator=(const CharacterSet&)	function	physics	physics-characterset-operator-eq-const-characterset-amp	physics.md	engine/physics/character_set.h:41
-physics::CharacterSet::Add(ecs::Entity,const CharacterConfig&,const Vec3&)	function	physics	physics-characterset-add-ecs-entity-const-characterconfig-amp-const-vec3-amp	physics.md	engine/physics/character_set.h:51
+physics::CharacterSet::Add(ecs::Entity,const CharacterConfig&,const Vec3d&)	function	physics	physics-characterset-add-ecs-entity-const-characterconfig-amp-const-vec3d-amp	physics.md	engine/physics/character_set.h:51
 physics::CharacterSet::Remove(ecs::Entity)	function	physics	physics-characterset-remove-ecs-entity	physics.md	engine/physics/character_set.h:58
 physics::CharacterSet::Prune(const ecs::World&)	function	physics	physics-characterset-prune-const-ecs-world-amp	physics.md	engine/physics/character_set.h:65
 physics::CharacterSet::SetMove(ecs::Entity,const Vec3&)	function	physics	physics-characterset-setmove-ecs-entity-const-vec3-amp	physics.md	engine/physics/character_set.h:73
@@ -5119,20 +5119,23 @@ physics::CharacterSet::Count() const	function	physics	physics-characterset-count
 physics::CharacterSet::EntityAt(usize) const	function	physics	physics-characterset-entityat-usize-const	physics.md	engine/physics/character_set.h:127
 physics::CharacterSet::WriteBack(ecs::World&) const	function	physics	physics-characterset-writeback-ecs-world-amp-const	physics.md	engine/physics/character_set.h:136
 physics::CharacterSet::WriteBack(ecs::World&,bool) const	function	physics	physics-characterset-writeback-ecs-world-amp-bool-const	physics.md	engine/physics/character_set.h:146
-physics::CharacterSet::SetPosition(ecs::Entity,const Vec3&)	function	physics	physics-characterset-setposition-ecs-entity-const-vec3-amp	physics.md	engine/physics/character_set.h:155
+physics::CharacterSet::SetPosition(ecs::Entity,const Vec3d&)	function	physics	physics-characterset-setposition-ecs-entity-const-vec3d-amp	physics.md	engine/physics/character_set.h:155
 physics::CharacterSet::LastEvents(ecs::Entity) const	function	physics	physics-characterset-lastevents-ecs-entity-const	physics.md	engine/physics/character_set.h:162
 physics::CharacterSet::Recreate(const ecs::World&)	function	physics	physics-characterset-recreate-const-ecs-world-amp	physics.md	engine/physics/character_set.h:169
 physics::CharacterSet::Snapshot(bytes::ByteWriter*) const	function	physics	physics-characterset-snapshot-bytes-bytewriter-star-const	physics.md	engine/physics/character_set.h:177
 physics::CharacterSet::ValidSnapshot(ByteSpan)	function	physics	physics-characterset-validsnapshot-bytespan	physics.md	engine/physics/character_set.h:185
 physics::CharacterSet::Restore(ByteSpan)	function	physics	physics-characterset-restore-bytespan	physics.md	engine/physics/character_set.h:195
 physics::FiniteVec3(const Vec3&)	function	physics	physics-finitevec3-const-vec3-amp	physics.md	engine/physics/check.h:15
-physics::kMaxCoordinate	variable	physics	physics-kmaxcoordinate	physics.md	engine/physics/check.h:22
-physics::kMaxExtent	variable	physics	physics-kmaxextent	physics.md	engine/physics/check.h:26
-physics::InsideExtent(const Vec3&)	function	physics	physics-insideextent-const-vec3-amp	physics.md	engine/physics/check.h:31
-physics::kMinMass	variable	physics	physics-kminmass	physics.md	engine/physics/check.h:37
-physics::kMaxMass	variable	physics	physics-kmaxmass	physics.md	engine/physics/check.h:40
-physics::InsideWorld(const Vec3&)	function	physics	physics-insideworld-const-vec3-amp	physics.md	engine/physics/check.h:45
-physics::IsUnitQuaternion(const Quaternion&)	function	physics	physics-isunitquaternion-const-quaternion-amp	physics.md	engine/physics/check.h:53
+physics::FiniteVec3(const Vec3d&)	function	physics	physics-finitevec3-const-vec3d-amp	physics.md	engine/physics/check.h:23
+physics::kMaxCoordinate	variable	physics	physics-kmaxcoordinate	physics.md	engine/physics/check.h:30
+physics::kMaxExtent	variable	physics	physics-kmaxextent	physics.md	engine/physics/check.h:34
+physics::InsideExtent(const Vec3&)	function	physics	physics-insideextent-const-vec3-amp	physics.md	engine/physics/check.h:39
+physics::kMinMass	variable	physics	physics-kminmass	physics.md	engine/physics/check.h:45
+physics::kMaxMass	variable	physics	physics-kmaxmass	physics.md	engine/physics/check.h:48
+physics::InsideWorld(const Vec3&)	function	physics	physics-insideworld-const-vec3-amp	physics.md	engine/physics/check.h:53
+physics::kMaxWorldCoordinate	variable	physics	physics-kmaxworldcoordinate	physics.md	engine/physics/check.h:60
+physics::InsideWorld(const Vec3d&)	function	physics	physics-insideworld-const-vec3d-amp	physics.md	engine/physics/check.h:65
+physics::IsUnitQuaternion(const Quaternion&)	function	physics	physics-isunitquaternion-const-quaternion-amp	physics.md	engine/physics/check.h:73
 physics::Collide(const Shape&,const Pose&,const Shape&,const Pose&,f32,ContactManifold*,const HullLibrary*,const MeshLibrary*,const CompoundLibrary*,const HeightFieldLibrary*)	function	physics	physics-collide-const-shape-amp-const-pose-amp-const-shape-amp-const-pose-amp-f32-contactmanifold-star-const-hulllibrary-star-const-meshlibrary-star-const-compoundlibrary-star-const-heightfieldlibrary-star	physics.md	engine/physics/collide.h:43
 physics::BodyType	enum	physics	physics-bodytype	physics.md	engine/physics/components.h:17
 physics::BodyType::Static	enumerator	physics	physics-bodytype-static	physics.md	engine/physics/components.h:19
@@ -5400,26 +5403,27 @@ physics::InputEntry::kind	variable	physics	physics-inputentry-kind	physics.md	en
 physics::InputEntry::body	variable	physics	physics-inputentry-body	physics.md	engine/physics/input_log.h:42
 physics::InputEntry::a	variable	physics	physics-inputentry-a	physics.md	engine/physics/input_log.h:44
 physics::InputEntry::b	variable	physics	physics-inputentry-b	physics.md	engine/physics/input_log.h:46
-physics::InputEntry::q	variable	physics	physics-inputentry-q	physics.md	engine/physics/input_log.h:48
-physics::InputEntry::desc	variable	physics	physics-inputentry-desc	physics.md	engine/physics/input_log.h:50
-physics::InputEntry::has_collider	variable	physics	physics-inputentry-has-collider	physics.md	engine/physics/input_log.h:52
-physics::InputEntry::collider	variable	physics	physics-inputentry-collider	physics.md	engine/physics/input_log.h:54
-physics::InputLog	class	physics	physics-inputlog	physics.md	engine/physics/input_log.h:61
-physics::InputLog::Entries() const	function	physics	physics-inputlog-entries-const	physics.md	engine/physics/input_log.h:66
-physics::InputLog::Add(const InputEntry&)	function	physics	physics-inputlog-add-const-inputentry-amp	physics.md	engine/physics/input_log.h:73
-physics::InputLog::Save(bytes::ByteWriter*) const	function	physics	physics-inputlog-save-bytes-bytewriter-star-const	physics.md	engine/physics/input_log.h:80
-physics::InputLog::Load(ByteSpan)	function	physics	physics-inputlog-load-bytespan	physics.md	engine/physics/input_log.h:88
-physics::InputRecorder	class	physics	physics-inputrecorder	physics.md	engine/physics/input_log.h:99
-physics::InputRecorder::InputRecorder(PhysicsWorld*,InputLog*)	function	physics	physics-inputrecorder-inputrecorder-physicsworld-star-inputlog-star	physics.md	engine/physics/input_log.h:107
-physics::InputRecorder::ApplyForce(BodyId,const Vec3&,const Vec3&)	function	physics	physics-inputrecorder-applyforce-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/input_log.h:111
-physics::InputRecorder::ApplyImpulse(BodyId,const Vec3&,const Vec3&)	function	physics	physics-inputrecorder-applyimpulse-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/input_log.h:114
-physics::InputRecorder::SetVelocity(BodyId,const Velocity&)	function	physics	physics-inputrecorder-setvelocity-bodyid-const-velocity-amp	physics.md	engine/physics/input_log.h:117
-physics::InputRecorder::SetTransform(BodyId,const Vec3&,const Quaternion&)	function	physics	physics-inputrecorder-settransform-bodyid-const-vec3-amp-const-quaternion-amp	physics.md	engine/physics/input_log.h:120
-physics::InputRecorder::Wake(BodyId)	function	physics	physics-inputrecorder-wake-bodyid	physics.md	engine/physics/input_log.h:123
-physics::InputRecorder::CreateBody(const BodyDesc&,const Collider&,BodyStatus*)	function	physics	physics-inputrecorder-createbody-const-bodydesc-amp-const-collider-amp-bodystatus-star	physics.md	engine/physics/input_log.h:131
-physics::InputRecorder::DestroyBody(BodyId)	function	physics	physics-inputrecorder-destroybody-bodyid	physics.md	engine/physics/input_log.h:134
-physics::ReplayStep(PhysicsWorld*,const InputLog&,usize*)	function	physics	physics-replaystep-physicsworld-star-const-inputlog-amp-usize-star	physics.md	engine/physics/input_log.h:151
-physics::FirstEntryAt(const InputLog&,u64)	function	physics	physics-firstentryat-const-inputlog-amp-u64	physics.md	engine/physics/input_log.h:159
+physics::InputEntry::p	variable	physics	physics-inputentry-p	physics.md	engine/physics/input_log.h:48
+physics::InputEntry::q	variable	physics	physics-inputentry-q	physics.md	engine/physics/input_log.h:50
+physics::InputEntry::desc	variable	physics	physics-inputentry-desc	physics.md	engine/physics/input_log.h:52
+physics::InputEntry::has_collider	variable	physics	physics-inputentry-has-collider	physics.md	engine/physics/input_log.h:54
+physics::InputEntry::collider	variable	physics	physics-inputentry-collider	physics.md	engine/physics/input_log.h:56
+physics::InputLog	class	physics	physics-inputlog	physics.md	engine/physics/input_log.h:63
+physics::InputLog::Entries() const	function	physics	physics-inputlog-entries-const	physics.md	engine/physics/input_log.h:68
+physics::InputLog::Add(const InputEntry&)	function	physics	physics-inputlog-add-const-inputentry-amp	physics.md	engine/physics/input_log.h:75
+physics::InputLog::Save(bytes::ByteWriter*) const	function	physics	physics-inputlog-save-bytes-bytewriter-star-const	physics.md	engine/physics/input_log.h:82
+physics::InputLog::Load(ByteSpan)	function	physics	physics-inputlog-load-bytespan	physics.md	engine/physics/input_log.h:90
+physics::InputRecorder	class	physics	physics-inputrecorder	physics.md	engine/physics/input_log.h:101
+physics::InputRecorder::InputRecorder(PhysicsWorld*,InputLog*)	function	physics	physics-inputrecorder-inputrecorder-physicsworld-star-inputlog-star	physics.md	engine/physics/input_log.h:109
+physics::InputRecorder::ApplyForce(BodyId,const Vec3&,const Vec3d&)	function	physics	physics-inputrecorder-applyforce-bodyid-const-vec3-amp-const-vec3d-amp	physics.md	engine/physics/input_log.h:113
+physics::InputRecorder::ApplyImpulse(BodyId,const Vec3&,const Vec3d&)	function	physics	physics-inputrecorder-applyimpulse-bodyid-const-vec3-amp-const-vec3d-amp	physics.md	engine/physics/input_log.h:116
+physics::InputRecorder::SetVelocity(BodyId,const Velocity&)	function	physics	physics-inputrecorder-setvelocity-bodyid-const-velocity-amp	physics.md	engine/physics/input_log.h:119
+physics::InputRecorder::SetTransform(BodyId,const Vec3d&,const Quaternion&)	function	physics	physics-inputrecorder-settransform-bodyid-const-vec3d-amp-const-quaternion-amp	physics.md	engine/physics/input_log.h:122
+physics::InputRecorder::Wake(BodyId)	function	physics	physics-inputrecorder-wake-bodyid	physics.md	engine/physics/input_log.h:125
+physics::InputRecorder::CreateBody(const BodyDesc&,const Collider&,BodyStatus*)	function	physics	physics-inputrecorder-createbody-const-bodydesc-amp-const-collider-amp-bodystatus-star	physics.md	engine/physics/input_log.h:133
+physics::InputRecorder::DestroyBody(BodyId)	function	physics	physics-inputrecorder-destroybody-bodyid	physics.md	engine/physics/input_log.h:136
+physics::ReplayStep(PhysicsWorld*,const InputLog&,usize*)	function	physics	physics-replaystep-physicsworld-star-const-inputlog-amp-usize-star	physics.md	engine/physics/input_log.h:153
+physics::FirstEntryAt(const InputLog&,u64)	function	physics	physics-firstentryat-const-inputlog-amp-u64	physics.md	engine/physics/input_log.h:161
 physics::JointType	enum	physics	physics-jointtype	physics.md	engine/physics/joint.h:15
 physics::JointType::Ball	enumerator	physics	physics-jointtype-ball	physics.md	engine/physics/joint.h:17
 physics::JointType::Distance	enumerator	physics	physics-jointtype-distance	physics.md	engine/physics/joint.h:18
@@ -5524,13 +5528,13 @@ physics::PhysicsHit::point	variable	physics	physics-physicshit-point	physics.md	
 physics::PhysicsHit::normal	variable	physics	physics-physicshit-normal	physics.md	engine/physics/query.h:53
 physics::PhysicsHit::distance	variable	physics	physics-physicshit-distance	physics.md	engine/physics/query.h:55
 physics::PhysicsHit::triangle	variable	physics	physics-physicshit-triangle	physics.md	engine/physics/query.h:57
-physics::RayCast(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-raycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:75
-physics::TerrainRayCast(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-terrainraycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:91
-physics::TerrainHeight(const PhysicsWorld&,f32,f32,const PhysicsQueryFilter&,f32*,Vec3*)	function	physics	physics-terrainheight-const-physicsworld-amp-f32-f32-const-physicsqueryfilter-amp-f32-star-vec3-star	physics.md	engine/physics/query.h:106
-physics::RayCastAll(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,Vector<PhysicsHit>*)	function	physics	physics-raycastall-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-vector-lt-physicshit-gt-star	physics.md	engine/physics/query.h:121
-physics::ShapeCast(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-shapecast-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:141
-physics::Overlap(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const PhysicsQueryFilter&,Vector<ColliderId>*)	function	physics	physics-overlap-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-physicsqueryfilter-amp-vector-lt-colliderid-gt-star	physics.md	engine/physics/query.h:156
-physics::ClosestPoint(const PhysicsWorld&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-closestpoint-const-physicsworld-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:171
+physics::RayCast(const PhysicsWorld&,const Vec3d&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-raycast-const-physicsworld-amp-const-vec3d-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:75
+physics::TerrainRayCast(const PhysicsWorld&,const Vec3d&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-terrainraycast-const-physicsworld-amp-const-vec3d-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:91
+physics::TerrainHeight(const PhysicsWorld&,f64,f64,const PhysicsQueryFilter&,f64*,Vec3*)	function	physics	physics-terrainheight-const-physicsworld-amp-f64-f64-const-physicsqueryfilter-amp-f64-star-vec3-star	physics.md	engine/physics/query.h:106
+physics::RayCastAll(const PhysicsWorld&,const Vec3d&,const Vec3&,f32,const PhysicsQueryFilter&,Vector<PhysicsHit>*)	function	physics	physics-raycastall-const-physicsworld-amp-const-vec3d-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-vector-lt-physicshit-gt-star	physics.md	engine/physics/query.h:121
+physics::ShapeCast(const PhysicsWorld&,const Shape&,const Vec3d&,const Quaternion&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-shapecast-const-physicsworld-amp-const-shape-amp-const-vec3d-amp-const-quaternion-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:141
+physics::Overlap(const PhysicsWorld&,const Shape&,const Vec3d&,const Quaternion&,const PhysicsQueryFilter&,Vector<ColliderId>*)	function	physics	physics-overlap-const-physicsworld-amp-const-shape-amp-const-vec3d-amp-const-quaternion-amp-const-physicsqueryfilter-amp-vector-lt-colliderid-gt-star	physics.md	engine/physics/query.h:156
+physics::ClosestPoint(const PhysicsWorld&,const Vec3d&,f32,const PhysicsQueryFilter&,PhysicsHit*)	function	physics	physics-closestpoint-const-physicsworld-amp-const-vec3d-amp-f32-const-physicsqueryfilter-amp-physicshit-star	physics.md	engine/physics/query.h:171
 physics::ShapeKind	enum	physics	physics-shapekind	physics.md	engine/physics/shapes.h:18
 physics::ShapeKind::Sphere	enumerator	physics	physics-shapekind-sphere	physics.md	engine/physics/shapes.h:20
 physics::ShapeKind::Box	enumerator	physics	physics-shapekind-box	physics.md	engine/physics/shapes.h:21
@@ -5557,7 +5561,9 @@ physics::Shape::MakeHeightField(u32,const Vec3&)	function	physics	physics-shape-
 physics::Shape::MakeCompound(u32,const Vec3&)	function	physics	physics-shape-makecompound-u32-const-vec3-amp	physics.md	engine/physics/shapes.h:108
 physics::Shape::Validate() const	function	physics	physics-shape-validate-const	physics.md	engine/physics/shapes.h:115
 physics::Shape::Bounds(const Vec3&,const Quaternion&) const	function	physics	physics-shape-bounds-const-vec3-amp-const-quaternion-amp-const	physics.md	engine/physics/shapes.h:123
-physics::Shape::LocalHalfExtents() const	function	physics	physics-shape-localhalfextents-const	physics.md	engine/physics/shapes.h:130
+physics::Shape::Bounds(const Vec3d&,const Quaternion&) const	function	physics	physics-shape-bounds-const-vec3d-amp-const-quaternion-amp-const	physics.md	engine/physics/shapes.h:132
+physics::Shape::BoundsExtent(const Quaternion&) const	function	physics	physics-shape-boundsextent-const-quaternion-amp-const	physics.md	engine/physics/shapes.h:139
+physics::Shape::LocalHalfExtents() const	function	physics	physics-shape-localhalfextents-const	physics.md	engine/physics/shapes.h:146
 physics::SlotPool	class	physics	physics-slotpool	physics.md	engine/physics/slot_pool.h:21
 physics::SlotPool::kChunkSize	variable	physics	physics-slotpool-kchunksize	physics.md	engine/physics/slot_pool.h:25
 physics::SlotPool::Acquire(u32*,u32*)	function	physics	physics-slotpool-acquire-u32-star-u32-star	physics.md	engine/physics/slot_pool.h:34
@@ -5582,29 +5588,32 @@ physics::SnapshotOut::F64(f64)	function	physics	physics-snapshotout-f64-f64	phys
 physics::SnapshotOut::Bool(bool)	function	physics	physics-snapshotout-bool-bool	physics.md	engine/physics/snapshot_io.h:42
 physics::SnapshotOut::Count(usize)	function	physics	physics-snapshotout-count-usize	physics.md	engine/physics/snapshot_io.h:44
 physics::SnapshotOut::V3(const Vec3&)	function	physics	physics-snapshotout-v3-const-vec3-amp	physics.md	engine/physics/snapshot_io.h:46
-physics::SnapshotOut::Q(const Quaternion&)	function	physics	physics-snapshotout-q-const-quaternion-amp	physics.md	engine/physics/snapshot_io.h:53
-physics::SnapshotOut::M3(const Mat3&)	function	physics	physics-snapshotout-m3-const-mat3-amp	physics.md	engine/physics/snapshot_io.h:61
-physics::SnapshotOut::Id(u32,u32)	function	physics	physics-snapshotout-id-u32-u32	physics.md	engine/physics/snapshot_io.h:68
-physics::SnapshotIn	class	physics	physics-snapshotin	physics.md	engine/physics/snapshot_io.h:82
-physics::SnapshotIn::SnapshotIn(ByteSpan)	function	physics	physics-snapshotin-snapshotin-bytespan	physics.md	engine/physics/snapshot_io.h:86
-physics::SnapshotIn::Ok() const	function	physics	physics-snapshotin-ok-const	physics.md	engine/physics/snapshot_io.h:89
-physics::SnapshotIn::Fail()	function	physics	physics-snapshotin-fail	physics.md	engine/physics/snapshot_io.h:91
-physics::SnapshotIn::Remaining() const	function	physics	physics-snapshotin-remaining-const	physics.md	engine/physics/snapshot_io.h:93
-physics::SnapshotIn::U8()	function	physics	physics-snapshotin-u8	physics.md	engine/physics/snapshot_io.h:95
-physics::SnapshotIn::U32()	function	physics	physics-snapshotin-u32	physics.md	engine/physics/snapshot_io.h:102
-physics::SnapshotIn::U64()	function	physics	physics-snapshotin-u64	physics.md	engine/physics/snapshot_io.h:109
-physics::SnapshotIn::F32()	function	physics	physics-snapshotin-f32	physics.md	engine/physics/snapshot_io.h:116
-physics::SnapshotIn::F64()	function	physics	physics-snapshotin-f64	physics.md	engine/physics/snapshot_io.h:123
-physics::SnapshotIn::Bool()	function	physics	physics-snapshotin-bool	physics.md	engine/physics/snapshot_io.h:131
-physics::SnapshotIn::Count(usize)	function	physics	physics-snapshotin-count-usize	physics.md	engine/physics/snapshot_io.h:138
-physics::SnapshotIn::V3()	function	physics	physics-snapshotin-v3	physics.md	engine/physics/snapshot_io.h:150
-physics::SnapshotIn::Q()	function	physics	physics-snapshotin-q	physics.md	engine/physics/snapshot_io.h:158
-physics::SnapshotIn::M3()	function	physics	physics-snapshotin-m3	physics.md	engine/physics/snapshot_io.h:167
-physics::WriteColliderValue(SnapshotOut&,const Collider&)	function	physics	physics-writecollidervalue-snapshotout-amp-const-collider-amp	physics.md	engine/physics/snapshot_io.h:192
-physics::ReadColliderValue(SnapshotIn&,Collider*)	function	physics	physics-readcollidervalue-snapshotin-amp-collider-star	physics.md	engine/physics/snapshot_io.h:197
-physics::SnapshotFinite(f32)	function	physics	physics-snapshotfinite-f32	physics.md	engine/physics/snapshot_io.h:203
-physics::SnapshotFinite(const Vec3&)	function	physics	physics-snapshotfinite-const-vec3-amp	physics.md	engine/physics/snapshot_io.h:210
-physics::SnapshotFinite(const Quaternion&)	function	physics	physics-snapshotfinite-const-quaternion-amp	physics.md	engine/physics/snapshot_io.h:217
+physics::SnapshotOut::V3d(const Vec3d&)	function	physics	physics-snapshotout-v3d-const-vec3d-amp	physics.md	engine/physics/snapshot_io.h:53
+physics::SnapshotOut::Q(const Quaternion&)	function	physics	physics-snapshotout-q-const-quaternion-amp	physics.md	engine/physics/snapshot_io.h:60
+physics::SnapshotOut::M3(const Mat3&)	function	physics	physics-snapshotout-m3-const-mat3-amp	physics.md	engine/physics/snapshot_io.h:68
+physics::SnapshotOut::Id(u32,u32)	function	physics	physics-snapshotout-id-u32-u32	physics.md	engine/physics/snapshot_io.h:75
+physics::SnapshotIn	class	physics	physics-snapshotin	physics.md	engine/physics/snapshot_io.h:89
+physics::SnapshotIn::SnapshotIn(ByteSpan)	function	physics	physics-snapshotin-snapshotin-bytespan	physics.md	engine/physics/snapshot_io.h:93
+physics::SnapshotIn::Ok() const	function	physics	physics-snapshotin-ok-const	physics.md	engine/physics/snapshot_io.h:96
+physics::SnapshotIn::Fail()	function	physics	physics-snapshotin-fail	physics.md	engine/physics/snapshot_io.h:98
+physics::SnapshotIn::Remaining() const	function	physics	physics-snapshotin-remaining-const	physics.md	engine/physics/snapshot_io.h:100
+physics::SnapshotIn::U8()	function	physics	physics-snapshotin-u8	physics.md	engine/physics/snapshot_io.h:102
+physics::SnapshotIn::U32()	function	physics	physics-snapshotin-u32	physics.md	engine/physics/snapshot_io.h:109
+physics::SnapshotIn::U64()	function	physics	physics-snapshotin-u64	physics.md	engine/physics/snapshot_io.h:116
+physics::SnapshotIn::F32()	function	physics	physics-snapshotin-f32	physics.md	engine/physics/snapshot_io.h:123
+physics::SnapshotIn::F64()	function	physics	physics-snapshotin-f64	physics.md	engine/physics/snapshot_io.h:130
+physics::SnapshotIn::Bool()	function	physics	physics-snapshotin-bool	physics.md	engine/physics/snapshot_io.h:138
+physics::SnapshotIn::Count(usize)	function	physics	physics-snapshotin-count-usize	physics.md	engine/physics/snapshot_io.h:145
+physics::SnapshotIn::V3()	function	physics	physics-snapshotin-v3	physics.md	engine/physics/snapshot_io.h:157
+physics::SnapshotIn::V3d()	function	physics	physics-snapshotin-v3d	physics.md	engine/physics/snapshot_io.h:165
+physics::SnapshotIn::Q()	function	physics	physics-snapshotin-q	physics.md	engine/physics/snapshot_io.h:173
+physics::SnapshotIn::M3()	function	physics	physics-snapshotin-m3	physics.md	engine/physics/snapshot_io.h:182
+physics::WriteColliderValue(SnapshotOut&,const Collider&)	function	physics	physics-writecollidervalue-snapshotout-amp-const-collider-amp	physics.md	engine/physics/snapshot_io.h:207
+physics::ReadColliderValue(SnapshotIn&,Collider*)	function	physics	physics-readcollidervalue-snapshotin-amp-collider-star	physics.md	engine/physics/snapshot_io.h:212
+physics::SnapshotFinite(f32)	function	physics	physics-snapshotfinite-f32	physics.md	engine/physics/snapshot_io.h:218
+physics::SnapshotFinite(const Vec3&)	function	physics	physics-snapshotfinite-const-vec3-amp	physics.md	engine/physics/snapshot_io.h:225
+physics::SnapshotFinite(const Vec3d&)	function	physics	physics-snapshotfinite-const-vec3d-amp	physics.md	engine/physics/snapshot_io.h:232
+physics::SnapshotFinite(const Quaternion&)	function	physics	physics-snapshotfinite-const-quaternion-amp	physics.md	engine/physics/snapshot_io.h:239
 physics::SnapshotStatus	enum	physics	physics-snapshotstatus	physics.md	engine/physics/snapshot_status.h:10
 physics::SnapshotStatus::Ok	enumerator	physics	physics-snapshotstatus-ok	physics.md	engine/physics/snapshot_status.h:12
 physics::SnapshotStatus::BadMagic	enumerator	physics	physics-snapshotstatus-badmagic	physics.md	engine/physics/snapshot_status.h:13
@@ -5658,9 +5667,10 @@ physics::StateHasher::AddU8(u8)	function	physics	physics-statehasher-addu8-u8	ph
 physics::StateHasher::AddU32(u32)	function	physics	physics-statehasher-addu32-u32	physics.md	engine/physics/state_hash.h:43
 physics::StateHasher::AddU64(u64)	function	physics	physics-statehasher-addu64-u64	physics.md	engine/physics/state_hash.h:54
 physics::StateHasher::AddF32(f32)	function	physics	physics-statehasher-addf32-f32	physics.md	engine/physics/state_hash.h:63
-physics::StateHasher::Value() const	function	physics	physics-statehasher-value-const	physics.md	engine/physics/state_hash.h:77
-physics::StateHasher::Valid() const	function	physics	physics-statehasher-valid-const	physics.md	engine/physics/state_hash.h:82
-physics::StateHasher::BitsOf(f32)	function	physics	physics-statehasher-bitsof-f32	physics.md	engine/physics/state_hash.h:87
+physics::StateHasher::AddF64(f64)	function	physics	physics-statehasher-addf64-f64	physics.md	engine/physics/state_hash.h:79
+physics::StateHasher::Value() const	function	physics	physics-statehasher-value-const	physics.md	engine/physics/state_hash.h:95
+physics::StateHasher::Valid() const	function	physics	physics-statehasher-valid-const	physics.md	engine/physics/state_hash.h:100
+physics::StateHasher::BitsOf(f32)	function	physics	physics-statehasher-bitsof-f32	physics.md	engine/physics/state_hash.h:105
 physics::BodyLink	struct	physics	physics-bodylink	physics.md	engine/physics/sync.h:17
 physics::BodyLink::id	variable	physics	physics-bodylink-id	physics.md	engine/physics/sync.h:20
 physics::SyncReport	struct	physics	physics-syncreport	physics.md	engine/physics/sync.h:26
@@ -5828,19 +5838,19 @@ physics::PhysicsWorld::ColliderAtSlot(u32) const	function	physics	physics-physic
 physics::PhysicsWorld::JointAtSlot(u32) const	function	physics	physics-physicsworld-jointatslot-u32-const	physics.md	engine/physics/world.h:433
 physics::PhysicsWorld::WorldCenter(BodyId) const	function	physics	physics-physicsworld-worldcenter-bodyid-const	physics.md	engine/physics/world.h:440
 physics::PhysicsWorld::SetVelocity(BodyId,const Velocity&)	function	physics	physics-physicsworld-setvelocity-bodyid-const-velocity-amp	physics.md	engine/physics/world.h:449
-physics::PhysicsWorld::ApplyImpulse(BodyId,const Vec3&,const Vec3&)	function	physics	physics-physicsworld-applyimpulse-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/world.h:459
-physics::PhysicsWorld::ApplyForce(BodyId,const Vec3&,const Vec3&)	function	physics	physics-physicsworld-applyforce-bodyid-const-vec3-amp-const-vec3-amp	physics.md	engine/physics/world.h:468
+physics::PhysicsWorld::ApplyImpulse(BodyId,const Vec3&,const Vec3d&)	function	physics	physics-physicsworld-applyimpulse-bodyid-const-vec3-amp-const-vec3d-amp	physics.md	engine/physics/world.h:459
+physics::PhysicsWorld::ApplyForce(BodyId,const Vec3&,const Vec3d&)	function	physics	physics-physicsworld-applyforce-bodyid-const-vec3-amp-const-vec3d-amp	physics.md	engine/physics/world.h:468
 physics::PhysicsWorld::CreateJoint(const JointDesc&,BodyStatus*)	function	physics	physics-physicsworld-createjoint-const-jointdesc-amp-bodystatus-star	physics.md	engine/physics/world.h:479
 physics::PhysicsWorld::DestroyJoint(JointId)	function	physics	physics-physicsworld-destroyjoint-jointid	physics.md	engine/physics/world.h:486
 physics::PhysicsWorld::FindJoint(JointId) const	function	physics	physics-physicsworld-findjoint-jointid-const	physics.md	engine/physics/world.h:494
 physics::PhysicsWorld::JointCount() const	function	physics	physics-physicsworld-jointcount-const	physics.md	engine/physics/world.h:498
 physics::PhysicsWorld::JointReaction(JointId,Vec3*,Vec3*) const	function	physics	physics-physicsworld-jointreaction-jointid-vec3-star-vec3-star-const	physics.md	engine/physics/world.h:508
-physics::PhysicsWorld::MakeBallJoint(BodyId,BodyId,const Vec3&) const	function	physics	physics-physicsworld-makeballjoint-bodyid-bodyid-const-vec3-amp-const	physics.md	engine/physics/world.h:517
-physics::PhysicsWorld::MakeDistanceJoint(BodyId,BodyId,const Vec3&,const Vec3&) const	function	physics	physics-physicsworld-makedistancejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const	physics.md	engine/physics/world.h:527
-physics::PhysicsWorld::MakeFixedJoint(BodyId,BodyId,const Vec3&) const	function	physics	physics-physicsworld-makefixedjoint-bodyid-bodyid-const-vec3-amp-const	physics.md	engine/physics/world.h:536
-physics::PhysicsWorld::MakeHingeJoint(BodyId,BodyId,const Vec3&,const Vec3&) const	function	physics	physics-physicsworld-makehingejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const	physics.md	engine/physics/world.h:547
+physics::PhysicsWorld::MakeBallJoint(BodyId,BodyId,const Vec3d&) const	function	physics	physics-physicsworld-makeballjoint-bodyid-bodyid-const-vec3d-amp-const	physics.md	engine/physics/world.h:517
+physics::PhysicsWorld::MakeDistanceJoint(BodyId,BodyId,const Vec3d&,const Vec3d&) const	function	physics	physics-physicsworld-makedistancejoint-bodyid-bodyid-const-vec3d-amp-const-vec3d-amp-const	physics.md	engine/physics/world.h:527
+physics::PhysicsWorld::MakeFixedJoint(BodyId,BodyId,const Vec3d&) const	function	physics	physics-physicsworld-makefixedjoint-bodyid-bodyid-const-vec3d-amp-const	physics.md	engine/physics/world.h:536
+physics::PhysicsWorld::MakeHingeJoint(BodyId,BodyId,const Vec3d&,const Vec3&) const	function	physics	physics-physicsworld-makehingejoint-bodyid-bodyid-const-vec3d-amp-const-vec3-amp-const	physics.md	engine/physics/world.h:547
 physics::PhysicsWorld::JointAngle(JointId,f32*) const	function	physics	physics-physicsworld-jointangle-jointid-f32-star-const	physics.md	engine/physics/world.h:556
-physics::PhysicsWorld::SetTransform(BodyId,const Vec3&,const Quaternion&)	function	physics	physics-physicsworld-settransform-bodyid-const-vec3-amp-const-quaternion-amp	physics.md	engine/physics/world.h:568
+physics::PhysicsWorld::SetTransform(BodyId,const Vec3d&,const Quaternion&)	function	physics	physics-physicsworld-settransform-bodyid-const-vec3d-amp-const-quaternion-amp	physics.md	engine/physics/world.h:568
 physics::PhysicsWorld::RefreshInertia(Body*)	function	physics	physics-physicsworld-refreshinertia-body-star	physics.md	engine/physics/world.h:575
 physics::PhysicsWorld::Stats() const	function	physics	physics-physicsworld-stats-const	physics.md	engine/physics/world.h:581
 physics::PhysicsWorld::SetStepConfig(const StepConfig&)	function	physics	physics-physicsworld-setstepconfig-const-stepconfig-amp	physics.md	engine/physics/world.h:589
@@ -5850,7 +5860,7 @@ physics::PhysicsWorld::PreStepHook	alias	physics	physics-physicsworld-prestephoo
 physics::PhysicsWorld::SetPreStepHook(PreStepHook,void*)	function	physics	physics-physicsworld-setprestephook-prestephook-void-star	physics.md	engine/physics/world.h:620
 physics::PhysicsWorld::Step()	function	physics	physics-physicsworld-step	physics.md	engine/physics/world.h:633
 physics::PhysicsWorld::Alpha() const	function	physics	physics-physicsworld-alpha-const	physics.md	engine/physics/world.h:639
-physics::PhysicsWorld::Interpolated(BodyId,f32,Vec3*,Quaternion*) const	function	physics	physics-physicsworld-interpolated-bodyid-f32-vec3-star-quaternion-star-const	physics.md	engine/physics/world.h:654
+physics::PhysicsWorld::Interpolated(BodyId,f32,Vec3d*,Quaternion*) const	function	physics	physics-physicsworld-interpolated-bodyid-f32-vec3d-star-quaternion-star-const	physics.md	engine/physics/world.h:654
 physics::PhysicsWorld::SetScheduler(jobs::Scheduler*)	function	physics	physics-physicsworld-setscheduler-jobs-scheduler-star	physics.md	engine/physics/world.h:664
 physics::PhysicsWorld::IsSleeping(BodyId) const	function	physics	physics-physicsworld-issleeping-bodyid-const	physics.md	engine/physics/world.h:670
 physics::PhysicsWorld::IslandOf(BodyId,u32*) const	function	physics	physics-physicsworld-islandof-bodyid-u32-star-const	physics.md	engine/physics/world.h:684

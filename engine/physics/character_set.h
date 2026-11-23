@@ -48,7 +48,7 @@ public:
     /// - Param position: where the capsule's centre starts.
     /// - Returns: false (and nothing is made) for an invalid entity, an entity that has a character, or a bad config.
     /// - Fails: returns false, as described.
-    bool Add(ecs::Entity entity, const CharacterConfig& config, const Vec3& position);
+    bool Add(ecs::Entity entity, const CharacterConfig& config, const Vec3d& position);
 
     /// Destroys an entity's character.
     ///
@@ -152,7 +152,7 @@ public:
     /// - Param position: the new centre, finite.
     /// - Returns: false for no such character, a non-finite position, or a position the world refuses.
     /// - Fails: returns false, as described.
-    bool SetPosition(ecs::Entity entity, const Vec3& position);
+    bool SetPosition(ecs::Entity entity, const Vec3d& position);
     /// What the last fixed step's move found for an entity's character (ground begun or ended, walls).
     ///
     /// - Param entity: the entity.

@@ -37,6 +37,11 @@ bool Finite(const Vec3& v)
     return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
 }
 
+bool Finite(const Vec3d& v)
+{
+    return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
+}
+
 // The ray against a sphere at `center`; `from_y` and `to_y` limit the hit point's y when set (the caps of a capsule).
 bool RaySphere(const Vec3& o, const Vec3& d, f32 tmax, const Vec3& center, f32 r, LocalHit* out)
 {
@@ -400,10 +405,14 @@ Libraries LibrariesOf(const PhysicsWorld& world)
     return Libraries{&world.Hulls(), &world.Meshes(), &world.Compounds(), &world.HeightFields()};
 }
 
-// The same pose the query index boxes (query_index.h), so a box a query computes equals the one the index holds.
-Pose PoseOf(const Body& body, const Collider& collider)
+// The collider's pose seen from `anchor` (the query's own origin): the difference of the two positions is taken in
+// double precision and narrowed once, so the narrow phase works in small numbers wherever the query is.
+Pose PoseFrom(const Body& body, const Collider& collider, const Vec3d& anchor)
 {
-    return ColliderPose(body, collider);
+    Pose pose;
+    pose.position = (ColliderCenter(body, collider) - anchor).Narrow();
+    pose.rotation = body.orientation * collider.rotation;
+    return pose;
 }
 
 bool Unit(const Vec3& v, Vec3* out)
@@ -494,7 +503,7 @@ void ForEachCandidate(const PhysicsWorld& world, const PhysicsQueryFilter& filte
     }
 }
 
-bool BoxOverlapsRay(const Aabbd& box, const Vec3& o, const Vec3& d, f64 tmax)
+bool BoxOverlapsRay(const Aabbd& box, const Vec3d& o, const Vec3& d, f64 tmax)
 {
     f64 t0 = 0.0;
     f64 t1 = tmax;
@@ -531,32 +540,33 @@ bool BoxOverlapsRay(const Aabbd& box, const Vec3& o, const Vec3& d, f64 tmax)
 }
 
 // One ray against one collider; fills a hit in the world.
-bool RayOne(const Libraries& libs, ColliderId id, const ColliderRecord& record, const Body& body, const Vec3& o,
+bool RayOne(const Libraries& libs, ColliderId id, const ColliderRecord& record, const Body& body, const Vec3d& o,
             const Vec3& d, f32 tmax, PhysicsHit* hit)
 {
-    const Pose pose = PoseOf(body, record.value);
-    if (!BoxOverlapsRay(record.value.shape.Bounds(pose.position, pose.rotation), o, d, tmax))
+    const Vec3d center = ColliderCenter(body, record.value);
+    const Quaternion rotation = body.orientation * record.value.rotation;
+    if (!BoxOverlapsRay(record.value.shape.Bounds(center, rotation), o, d, tmax))
     {
         return false;
     }
-    const Quaternion inv = pose.rotation.Conjugate();
+    const Quaternion inv = rotation.Conjugate();
     LocalHit local;
-    if (!RayLocal(record.value.shape, libs, inv.RotateVector(o - pose.position), inv.RotateVector(d), tmax, &local))
+    if (!RayLocal(record.value.shape, libs, inv.RotateVector((o - center).Narrow()), inv.RotateVector(d), tmax, &local))
     {
         return false;
     }
     hit->collider = id;
     hit->body = record.owner;
     hit->distance = local.t;
-    hit->point = o + d * local.t;
-    hit->normal = pose.rotation.RotateVector(local.normal);
+    hit->point = o + Vec3d(d * local.t);
+    hit->normal = rotation.RotateVector(local.normal);
     hit->triangle = local.triangle;
     return true;
 }
 
 }  // namespace
 
-bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
+bool RayCast(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance,
              const PhysicsQueryFilter& filter, PhysicsHit* hit)
 {
     Vec3 d;
@@ -589,7 +599,7 @@ bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& directio
     return found;
 }
 
-bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
+bool TerrainRayCast(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance,
                     const PhysicsQueryFilter& filter, PhysicsHit* hit)
 {
     Vec3 d;
@@ -623,7 +633,7 @@ bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& d
     return found;
 }
 
-bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFilter& filter, f32* height, Vec3* normal)
+bool TerrainHeight(const PhysicsWorld& world, f64 x, f64 z, const PhysicsQueryFilter& filter, f64* height, Vec3* normal)
 {
     if (!IsFinite(x) || !IsFinite(z))
     {
@@ -631,35 +641,34 @@ bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFi
     }
     const Libraries libs = LibrariesOf(world);
     bool found = false;
-    f32 best = 0.0f;
+    f64 best = 0.0;
     Vec3 best_normal = Vec3(0.0f, 1.0f, 0.0f);
-    ForEachCollider(
-        world, filter,
-        [&](ColliderId id, const ColliderRecord& record, const Body& body)
-        {
-            if (record.value.shape.kind != ShapeKind::HeightField)
-            {
-                return;
-            }
-            const Pose pose = PoseOf(body, record.value);
-            const Aabb box = record.value.shape.Bounds(pose.position, pose.rotation);
-            if (x < box.min.x || x > box.max.x || z < box.min.z || z > box.max.z)
-            {
-                return;
-            }
-            const Vec3 origin(x, box.max.y + 1.0f, z);
-            PhysicsHit h;
-            if (RayOne(libs, id, record, body, origin, Vec3(0.0f, -1.0f, 0.0f), box.max.y - box.min.y + 2.0f, &h))
-            {
-                const f32 y = origin.y - h.distance;
-                if (!found || y > best)
-                {  // the highest ground where maps overlap
-                    found = true;
-                    best = y;
-                    best_normal = h.normal;
-                }
-            }
-        });
+    ForEachCollider(world, filter,
+                    [&](ColliderId id, const ColliderRecord& record, const Body& body)
+                    {
+                        if (record.value.shape.kind != ShapeKind::HeightField)
+                        {
+                            return;
+                        }
+                        const Aabbd box = ColliderBounds(body, record.value);
+                        if (x < box.min.x || x > box.max.x || z < box.min.z || z > box.max.z)
+                        {
+                            return;
+                        }
+                        const Vec3d origin(x, box.max.y + 1.0, z);
+                        PhysicsHit h;
+                        if (RayOne(libs, id, record, body, origin, Vec3(0.0f, -1.0f, 0.0f),
+                                   static_cast<f32>(box.max.y - box.min.y + 2.0), &h))
+                        {
+                            const f64 y = origin.y - static_cast<f64>(h.distance);
+                            if (!found || y > best)
+                            {  // the highest ground where maps overlap
+                                found = true;
+                                best = y;
+                                best_normal = h.normal;
+                            }
+                        }
+                    });
     if (found)
     {
         if (height != nullptr)
@@ -674,7 +683,7 @@ bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFi
     return found;
 }
 
-usize RayCastAll(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
+usize RayCastAll(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance,
                  const PhysicsQueryFilter& filter, Vector<PhysicsHit>* hits)
 {
     hits->Clear();
@@ -699,7 +708,7 @@ usize RayCastAll(const PhysicsWorld& world, const Vec3& origin, const Vec3& dire
     return hits->Size();
 }
 
-bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& position, const Quaternion& rotation,
+bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3d& position, const Quaternion& rotation,
                const Vec3& direction, f32 distance, const PhysicsQueryFilter& filter, PhysicsHit* hit)
 {
     Vec3 d;
@@ -718,17 +727,17 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
     bool found = false;
     PhysicsHit best;
     best.distance = kBig;
-    const Aabb start = shape.Bounds(position, rotation);
-    const Aabb end = shape.Bounds(position + d * distance, rotation);
-    Aabb swept;
-    swept.min = Vec3(Min(start.min.x, end.min.x), Min(start.min.y, end.min.y), Min(start.min.z, end.min.z));
-    swept.max = Vec3(Max(start.max.x, end.max.x), Max(start.max.y, end.max.y), Max(start.max.z, end.max.z));
+    const Aabbd start = shape.Bounds(position, rotation);
+    const Aabbd end = shape.Bounds(position + Vec3d(d * distance), rotation);
+    Aabbd swept;
+    swept.min = Vec3d(Min(start.min.x, end.min.x), Min(start.min.y, end.min.y), Min(start.min.z, end.min.z));
+    swept.max = Vec3d(Max(start.max.x, end.max.x), Max(start.max.y, end.max.y), Max(start.max.z, end.max.z));
     ForEachCandidate(
         world, filter, [&](const Aabbd& box) { return BoxesTouch(box, swept); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
-            const Pose target = PoseOf(body, record.value);
-            const Aabb box = record.value.shape.Bounds(target.position, target.rotation);
+            const Aabbd box = ColliderBounds(body, record.value);
+            const Pose target = PoseFrom(body, record.value, position);
             if (box.min.x > swept.max.x || box.max.x < swept.min.x || box.min.y > swept.max.y ||
                 box.max.y < swept.min.y || box.min.z > swept.max.z || box.max.z < swept.min.z)
             {
@@ -737,7 +746,7 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
             const auto touches = [&](f32 t, ContactManifold* manifold)
             {
                 Pose pose;
-                pose.position = position + d * (distance * t);
+                pose.position = d * (distance * t);
                 pose.rotation = rotation;
                 return Collide(shape, pose, record.value.shape, target, 0.0f, manifold, libs.hulls, libs.meshes,
                                libs.compounds, libs.fields) == CollideResult::Contact;
@@ -787,7 +796,7 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
                 best.body = record.owner;
                 best.distance = moved;
                 best.normal = manifold.count > 0 ? manifold.normal * -1.0f : d * -1.0f;
-                best.point = manifold.count > 0 ? manifold.points[0].position_b : position + d * moved;
+                best.point = position + Vec3d(manifold.count > 0 ? manifold.points[0].position_b : d * moved);
                 best.triangle = kNoTriangle;
                 found = true;
             }
@@ -799,7 +808,7 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
     return found;
 }
 
-usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& position, const Quaternion& rotation,
+usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3d& position, const Quaternion& rotation,
               const PhysicsQueryFilter& filter, Vector<ColliderId>* out)
 {
     out->Clear();
@@ -809,15 +818,15 @@ usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& positio
     }
     const Libraries libs = LibrariesOf(world);
     Pose pose;
-    pose.position = position;
+    pose.position = Vec3(0.0f, 0.0f, 0.0f);  // the query's own frame: the targets are placed relative to `position`
     pose.rotation = rotation;
-    const Aabb mine = shape.Bounds(position, rotation);
+    const Aabbd mine = shape.Bounds(position, rotation);
     ForEachCandidate(
         world, filter, [&](const Aabbd& box) { return BoxesTouch(box, mine); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
-            const Pose target = PoseOf(body, record.value);
-            const Aabb box = record.value.shape.Bounds(target.position, target.rotation);
+            const Aabbd box = ColliderBounds(body, record.value);
+            const Pose target = PoseFrom(body, record.value, position);
             if (box.min.x > mine.max.x || box.max.x < mine.min.x || box.min.y > mine.max.y || box.max.y < mine.min.y ||
                 box.min.z > mine.max.z || box.max.z < mine.min.z)
             {
@@ -835,7 +844,7 @@ usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& positio
     return out->Size();
 }
 
-bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance, const PhysicsQueryFilter& filter,
+bool ClosestPoint(const PhysicsWorld& world, const Vec3d& point, f32 max_distance, const PhysicsQueryFilter& filter,
                   PhysicsHit* hit)
 {
     if (!Finite(point) || !IsFinite(max_distance) || !(max_distance > 0.0f))
@@ -846,20 +855,20 @@ bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance
     constexpr f32 kProbe = 1e-4f;
     const Shape probe = Shape::MakeSphere(kProbe);
     Pose probe_pose;
-    probe_pose.position = point;
+    probe_pose.position = Vec3(0.0f, 0.0f, 0.0f);  // the query's own frame
     bool found = false;
     PhysicsHit best;
     best.distance = kBig;
     // ClosestPoint has no box test of its own (the narrow phase measures the gap): the candidates are the colliders
     // whose box is within twice the distance, so a narrow-phase gap would have to be off by more than the distance
     // itself for a collider to be left out.
-    const f32 grow = 2.0f * max_distance + 2.0f * kProbe;
-    const Aabb reach{point - Vec3(grow, grow, grow), point + Vec3(grow, grow, grow)};
+    const f64 grow = static_cast<f64>(2.0f * max_distance + 2.0f * kProbe);
+    const Aabbd reach{point - Vec3d(grow, grow, grow), point + Vec3d(grow, grow, grow)};
     ForEachCandidate(
         world, filter, [&](const Aabbd& box) { return BoxesTouch(box, reach); },
         [&](ColliderId id, const ColliderRecord& record, const Body& body)
         {
-            const Pose target = PoseOf(body, record.value);
+            const Pose target = PoseFrom(body, record.value, point);
             ContactManifold manifold;
             if (Collide(probe, probe_pose, record.value.shape, target, max_distance, &manifold, libs.hulls, libs.meshes,
                         libs.compounds, libs.fields) != CollideResult::Contact ||
@@ -880,7 +889,7 @@ bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance
                 best.collider = id;
                 best.body = record.owner;
                 best.distance = distance;
-                best.point = manifold.points[0].position_b;
+                best.point = point + Vec3d(manifold.points[0].position_b);
                 best.normal = manifold.normal * -1.0f;
                 found = true;
             }

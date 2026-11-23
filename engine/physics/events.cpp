@@ -2,6 +2,7 @@
 #include "lang/utility.h"
 #include "physics/broad_phase.h"
 #include "physics/collide.h"
+#include "physics/query_index.h"
 #include "physics/world.h"
 
 namespace vse::physics
@@ -223,10 +224,10 @@ void PhysicsWorld::UpdateTriggerEvents(const Vector<ColliderPair>& pairs)
         else
         {
             Pose pose_a;
-            pose_a.position = ba->position + ba->orientation.ToMat3() * ra->value.offset;
+            pose_a.position = ColliderPose(*ba, ra->value).position;
             pose_a.rotation = ba->orientation * ra->value.rotation;
             Pose pose_b;
-            pose_b.position = bb->position + bb->orientation.ToMat3() * rb->value.offset;
+            pose_b.position = ColliderPose(*bb, rb->value).position;
             pose_b.rotation = bb->orientation * rb->value.rotation;
             ContactManifold manifold;
             inside = Collide(ra->value.shape, pose_a, rb->value.shape, pose_b, 0.0f, &manifold, &hulls_, &meshes_,

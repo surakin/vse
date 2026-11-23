@@ -544,7 +544,7 @@ Value HitValue(const physics::PhysicsWorld& world, const physics::PhysicsHit& hi
 {
     Value map = Value::MakeMap();
     map.Set("entity", Value::FromEntity(EntityOfBody(world, hit.body)));
-    map.Set("point", Value::FromVec3(hit.point));
+    map.Set("point", Value::FromVec3(hit.point.Narrow()));
     map.Set("normal", Value::FromVec3(hit.normal));
     map.Set("distance", Value::FromFloat(hit.distance));
     return map;
@@ -621,12 +621,12 @@ Value TerrainHeightOf(f32 x, f32 z)
         script::RaiseScriptError("the point needs finite x and z");
         return Value();
     }
-    f32 height = 0.0f;
+    f64 height = 0.0;
     if (!physics::TerrainHeight(*services->world, x, z, filter, &height, nullptr))
     {
         return Value();
     }
-    return Value::FromFloat(height);
+    return Value::FromFloat(static_cast<f32>(height));
 }
 
 Value TerrainNormalOf(f32 x, f32 z)
@@ -1113,7 +1113,7 @@ bool ApplyForce(MergeContext& context, ecs::Entity target, Span<const u8> payloa
     {
         return false;
     }
-    const Vec3 point = p.at_point != 0 ? PayloadPoint(p) : world->WorldCenter(id);
+    const Vec3d point = p.at_point != 0 ? Vec3d(PayloadPoint(p)) : world->WorldCenter(id);
     return world->ApplyForce(id, PayloadValue(p), point) == physics::BodyStatus::Ok;
 }
 
@@ -1126,7 +1126,7 @@ bool ApplyImpulse(MergeContext& context, ecs::Entity target, Span<const u8> payl
     {
         return false;
     }
-    const Vec3 point = p.at_point != 0 ? PayloadPoint(p) : world->WorldCenter(id);
+    const Vec3d point = p.at_point != 0 ? Vec3d(PayloadPoint(p)) : world->WorldCenter(id);
     return world->ApplyImpulse(id, PayloadValue(p), point) == physics::BodyStatus::Ok;
 }
 

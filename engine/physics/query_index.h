@@ -15,19 +15,25 @@ namespace vse::physics
 
 // A collider's place in the world: the body's pose with the collider's offset and rotation. The queries and the index
 // compute boxes from it with the same code, so a box the index holds equals the one a query computes, bit for bit.
+// The pose is in single precision (the narrow phase's own frame; it is made body-relative on the next day of the
+// series), so far from the origin it is rounded; the box below is exact.
+inline Vec3d ColliderCenter(const Body& body, const Collider& collider)
+{
+    return body.position + Vec3d(body.orientation.ToMat3() * collider.offset);
+}
+
 inline Pose ColliderPose(const Body& body, const Collider& collider)
 {
     Pose pose;
-    pose.position = body.position + body.orientation.ToMat3() * collider.offset;
+    pose.position = ColliderCenter(body, collider).Narrow();
     pose.rotation = body.orientation * collider.rotation;
     return pose;
 }
 
 // A collider's exact world box (no margin, no sweep).
-inline Aabb ColliderBounds(const Body& body, const Collider& collider)
+inline Aabbd ColliderBounds(const Body& body, const Collider& collider)
 {
-    const Pose pose = ColliderPose(body, collider);
-    return collider.shape.Bounds(pose.position, pose.rotation);
+    return collider.shape.Bounds(ColliderCenter(body, collider), body.orientation * collider.rotation);
 }
 
 // What the index did, for the tests.

@@ -657,7 +657,7 @@ TEST_CASE("Script character: a set's snapshot puts the characters back with the 
     {
         physics.Step();
     }
-    const Vec3 first = physics.Find(set.Find(e)->BodyHandle())->position;
+    const Vec3 first = physics.Find(set.Find(e)->BodyHandle())->position.Narrow();
     CHECK(set.Find(e)->State().on_ground);
     // Back to the snapshot, with the held move changed meanwhile and one character removed.
     REQUIRE(set.SetMove(e, Vec3(-3, 0, 0)));
@@ -671,7 +671,7 @@ TEST_CASE("Script character: a set's snapshot puts the characters back with the 
     {
         physics.Step();
     }
-    const Vec3 second = physics.Find(set.Find(e)->BodyHandle())->position;
+    const Vec3 second = physics.Find(set.Find(e)->BodyHandle())->position.Narrow();
     CHECK(first.x == second.x);
     CHECK(first.y == second.y);
     CHECK(first.z == second.z);

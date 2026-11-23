@@ -9,7 +9,7 @@ namespace
 {
 
 constexpr u32 kLogMagic = 0x474c5048u;  // "HPLG"
-constexpr u32 kLogVersion = 1;
+constexpr u32 kLogVersion = 2;
 
 void WriteDesc(SnapshotOut& out, const BodyDesc& d)
 {
@@ -19,7 +19,7 @@ void WriteDesc(SnapshotOut& out, const BodyDesc& d)
     out.F32(d.settings.linear_damping);
     out.F32(d.settings.angular_damping);
     out.F32(d.settings.gravity_scale);
-    out.V3(d.position);
+    out.V3d(d.position);
     out.Q(d.orientation);
     out.V3(d.velocity.linear);
     out.V3(d.velocity.angular);
@@ -34,7 +34,7 @@ void ReadDesc(SnapshotIn& in, BodyDesc* d)
     d->settings.linear_damping = in.F32();
     d->settings.angular_damping = in.F32();
     d->settings.gravity_scale = in.F32();
-    d->position = in.V3();
+    d->position = in.V3d();
     d->orientation = in.Q();
     d->velocity.linear = in.V3();
     d->velocity.angular = in.V3();
@@ -68,6 +68,7 @@ void InputLog::Save(bytes::ByteWriter* writer) const
         out.Id(e.body.index, e.body.generation);
         out.V3(e.a);
         out.V3(e.b);
+        out.V3d(e.p);
         out.Q(e.q);
         WriteDesc(out, e.desc);
         out.Bool(e.has_collider);
@@ -108,13 +109,15 @@ SnapshotStatus InputLog::Load(ByteSpan data)
         e.body.generation = in.U32();
         e.a = in.V3();
         e.b = in.V3();
+        e.p = in.V3d();
         e.q = in.Q();
         ReadDesc(in, &e.desc);
         e.has_collider = in.Bool();
         ReadColliderValue(in, &e.collider);
         if (kind > static_cast<u32>(InputKind::DestroyBody) || !SnapshotFinite(e.a) || !SnapshotFinite(e.b) ||
-            !SnapshotFinite(e.q) || !SnapshotFinite(e.desc.position) || !SnapshotFinite(e.desc.orientation) ||
-            !SnapshotFinite(e.desc.velocity.linear) || !SnapshotFinite(e.desc.velocity.angular) ||
+            !SnapshotFinite(e.p) || !SnapshotFinite(e.q) || !SnapshotFinite(e.desc.position) ||
+            !SnapshotFinite(e.desc.orientation) || !SnapshotFinite(e.desc.velocity.linear) ||
+            !SnapshotFinite(e.desc.velocity.angular) ||
             (!entries_.Empty() && e.step < entries_[entries_.Size() - 1].step))
         {
             in.Fail();
@@ -142,7 +145,7 @@ void InputRecorder::Log(InputEntry* entry)
     log_->Add(*entry);
 }
 
-BodyStatus InputRecorder::ApplyForce(BodyId id, const Vec3& force, const Vec3& point)
+BodyStatus InputRecorder::ApplyForce(BodyId id, const Vec3& force, const Vec3d& point)
 {
     const BodyStatus status = world_->ApplyForce(id, force, point);
     if (status == BodyStatus::Ok)
@@ -151,13 +154,13 @@ BodyStatus InputRecorder::ApplyForce(BodyId id, const Vec3& force, const Vec3& p
         e.kind = InputKind::ApplyForce;
         e.body = id;
         e.a = force;
-        e.b = point;
+        e.p = point;
         Log(&e);
     }
     return status;
 }
 
-BodyStatus InputRecorder::ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3& point)
+BodyStatus InputRecorder::ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3d& point)
 {
     const BodyStatus status = world_->ApplyImpulse(id, impulse, point);
     if (status == BodyStatus::Ok)
@@ -166,7 +169,7 @@ BodyStatus InputRecorder::ApplyImpulse(BodyId id, const Vec3& impulse, const Vec
         e.kind = InputKind::ApplyImpulse;
         e.body = id;
         e.a = impulse;
-        e.b = point;
+        e.p = point;
         Log(&e);
     }
     return status;
@@ -187,7 +190,7 @@ BodyStatus InputRecorder::SetVelocity(BodyId id, const Velocity& velocity)
     return status;
 }
 
-BodyStatus InputRecorder::SetTransform(BodyId id, const Vec3& position, const Quaternion& orientation)
+BodyStatus InputRecorder::SetTransform(BodyId id, const Vec3d& position, const Quaternion& orientation)
 {
     const BodyStatus status = world_->SetTransform(id, position, orientation);
     if (status == BodyStatus::Ok)
@@ -195,7 +198,7 @@ BodyStatus InputRecorder::SetTransform(BodyId id, const Vec3& position, const Qu
         InputEntry e;
         e.kind = InputKind::SetTransform;
         e.body = id;
-        e.a = position;
+        e.p = position;
         e.q = orientation;
         Log(&e);
     }
@@ -273,8 +276,8 @@ u32 ReplayStep(PhysicsWorld* world, const InputLog& log, usize* cursor)
         }
         switch (e.kind)
         {
-        case InputKind::ApplyForce: world->ApplyForce(e.body, e.a, e.b); break;
-        case InputKind::ApplyImpulse: world->ApplyImpulse(e.body, e.a, e.b); break;
+        case InputKind::ApplyForce: world->ApplyForce(e.body, e.a, e.p); break;
+        case InputKind::ApplyImpulse: world->ApplyImpulse(e.body, e.a, e.p); break;
         case InputKind::SetVelocity:
         {
             Velocity v;
@@ -283,7 +286,7 @@ u32 ReplayStep(PhysicsWorld* world, const InputLog& log, usize* cursor)
             world->SetVelocity(e.body, v);
             break;
         }
-        case InputKind::SetTransform: world->SetTransform(e.body, e.a, e.q); break;
+        case InputKind::SetTransform: world->SetTransform(e.body, e.p, e.q); break;
         case InputKind::Wake: world->Wake(e.body); break;
         case InputKind::CreateBody:
         {

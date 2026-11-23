@@ -43,22 +43,22 @@ TEST_CASE("Step: free fall matches the same recurrence bit for bit and the close
     PhysicsWorld world;
     const BodyId id = MakeBall(world, Vec3(0, 100, 0), Vec3(0, 0, 0));
     const f32 dt = StepSeconds();
-    f32 y = 100.0f;
+    f64 y = 100.0;  // positions are double precision; the velocity is single
     f32 v = 0.0f;
     for (int i = 1; i <= 120; ++i)
     {
         world.Step();
         v = v + (-9.81f) * dt;
         v = v * (1.0f / (1.0f + 0.0f * dt));
-        y = y + v * dt;
+        y = y + static_cast<f64>(v * dt);
         REQUIRE(world.Find(id)->position.y == y);
         REQUIRE(world.Find(id)->linear_velocity.y == v);
     }
     // Semi-implicit Euler: y_n = y_0 - g dt^2 n (n + 1) / 2.
-    const f32 closed = 100.0f - 9.81f * dt * dt * (120.0f * 121.0f / 2.0f);
-    CHECK(Abs(y - closed) < 2e-3f);
+    const f64 closed = 100.0 - static_cast<f64>(9.81f * dt * dt * (120.0f * 121.0f / 2.0f));
+    CHECK(Abs(y - closed) < 2e-3);
     // The continuous solution is within g dt t / 2 of it.
-    CHECK(Abs(y - (100.0f - 0.5f * 9.81f * 4.0f)) < 0.5f * 9.81f * dt * 2.0f + 1e-2f);
+    CHECK(Abs(y - static_cast<f64>(100.0f - 0.5f * 9.81f * 4.0f)) < static_cast<f64>(0.5f * 9.81f * dt * 2.0f + 1e-2f));
     CHECK(world.GetStepStats().steps == 120);
 }
 
@@ -113,14 +113,14 @@ TEST_CASE("Step: a spinning body keeps a unit quaternion over 100000 steps and s
     c.shape = Shape::MakeBox(Vec3(0.5f, 0.5f, 0.5f));
     c.offset = Vec3(0, 2, 0);  // the centre of mass is not the origin
     REQUIRE(world.AddCollider(id, c) == BodyStatus::Ok);
-    const Vec3 center = world.WorldCenter(id);
+    const Vec3 center = world.WorldCenter(id).Narrow();
     for (int i = 0; i < 100000; ++i)
     {
         world.Step();
     }
     const Quaternion q = world.Find(id)->orientation;
     CHECK(Abs(q.LengthSquared() - 1.0f) < 2e-6f);
-    const Vec3 after = world.WorldCenter(id);
+    const Vec3 after = world.WorldCenter(id).Narrow();
     CHECK(Abs(after.x - center.x) < 2e-3f);
     CHECK(Abs(after.y - center.y) < 2e-3f);
     CHECK(Abs(after.z - center.z) < 2e-3f);
@@ -199,7 +199,7 @@ TEST_CASE("Interpolation: the blend of the last two states, no blend after a tel
     world.SetStepConfig(config);
     const BodyId id = MakeBall(world, Vec3(0, 0, 0), Vec3(6, 0, 0));
     world.Step();  // 6 m/s for 1/60 s: 0.1 m
-    Vec3 p;
+    Vec3d p;
     Quaternion q;
     REQUIRE(world.Interpolated(id, 0.0f, &p, &q));
     CHECK(p.x == 0.0f);
@@ -271,7 +271,7 @@ TEST_CASE("Step: the state hash of a 600-step scene is stable and equals the com
     const u64 first = RunScene(600);
     CHECK(first == RunScene(600));
     CHECK(first != RunScene(599));
-    CHECK(first == 0x25109949efc555a6ull);
+    CHECK(first == 0x79eda110a53a3725ull);
 }
 
 TEST_CASE("Hash: a state with a NaN is reported invalid", "[physics][step][hash]")
@@ -336,7 +336,7 @@ TEST_CASE("System: the schedule steps the world and writes back the dynamic tran
     const ecs::LocalTransform* t = world.Get<ecs::LocalTransform>(falling);
     CHECK(t->position.y < 10.0f);
     // The transform is the blend of the last two states by the accumulator's fraction (here almost the previous state).
-    Vec3 blended;
+    Vec3d blended;
     Quaternion unused;
     REQUIRE(world.Resource<PhysicsWorld>().Interpolated(body->id, world.Resource<PhysicsWorld>().Alpha(), &blended,
                                                         &unused));

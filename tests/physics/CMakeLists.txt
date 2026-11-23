@@ -29,6 +29,7 @@ set(PHYSICS_TEST_SOURCES
   snapshot_test.cpp  # Day 406
   golden_test.cpp  # Day 407
   stress_test.cpp  # Day 412
+  far_world_test.cpp  # double precision, Day 6
   perf_smoke_test.cpp  # Day 412
 )
 

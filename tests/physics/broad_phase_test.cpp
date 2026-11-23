@@ -39,11 +39,11 @@ BodyId Add(PhysicsWorld& world, BodyType type, const Vec3& position, const Colli
     return id;
 }
 
-Aabb BoxOf(const PhysicsWorld& world, ColliderId id)
+Aabbd BoxOf(const PhysicsWorld& world, ColliderId id)
 {
     const ColliderRecord* record = world.FindCollider(id);
     const Body* body = world.Find(record->owner);
-    const Vec3 origin = body->position + body->orientation.ToMat3() * record->value.offset;
+    const Vec3d origin = body->position + Vec3d(body->orientation.ToMat3() * record->value.offset);
     return record->value.shape.Bounds(origin, body->orientation * record->value.rotation);
 }
 

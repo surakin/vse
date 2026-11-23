@@ -185,7 +185,7 @@ private:
     {
         u32 generation = 0;  // 0: the slot has no collider in the set
         spatial::SetHandle handle = spatial::kInvalidSetHandle;
-        Aabb box;
+        Aabbd box;
         bool is_static = false;
         u8 layer = 0;
     };

@@ -48,7 +48,7 @@ struct PhysicsHit
     /// Its body.
     BodyId body;
     /// The point of contact, in the world.
-    Vec3 point = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3d point = Vec3d(0.0, 0.0, 0.0);
     /// The surface normal there, facing against the ray or the cast.
     Vec3 normal = Vec3(0.0f, 1.0f, 0.0f);
     /// How far along the ray or the cast the hit is (0 when the origin or the shape starts inside).
@@ -72,7 +72,7 @@ struct PhysicsHit
 /// - Thread-safety: thread-safe against other queries, while no step or change runs.
 /// - Ownership: `hit` is the caller's; nothing is kept.
 /// - Fails: a non-finite or zero input returns false.
-bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
+bool RayCast(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance,
              const PhysicsQueryFilter& filter, PhysicsHit* hit);
 
 /// Casts a ray at the height-field colliders only (terrain) and returns the closest hit; as [[physics::RayCast]]
@@ -88,7 +88,7 @@ bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& directio
 /// - Thread-safety: thread-safe against other queries, while no step or change runs.
 /// - Ownership: `hit` is the caller's; nothing is kept.
 /// - Fails: a non-finite or zero input returns false.
-bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
+bool TerrainRayCast(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance,
                     const PhysicsQueryFilter& filter, PhysicsHit* hit);
 
 /// Finds the ground under a point: the highest surface of the height-field colliders that cover (`x`, `z`).
@@ -103,7 +103,7 @@ bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& d
 /// - Thread-safety: thread-safe against other queries, while no step or change runs.
 /// - Ownership: the outputs are the caller's.
 /// - Fails: a non-finite coordinate, or no field under the point, returns false.
-bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFilter& filter, f32* height,
+bool TerrainHeight(const PhysicsWorld& world, f64 x, f64 z, const PhysicsQueryFilter& filter, f64* height,
                    Vec3* normal);
 
 /// Casts a ray and returns every hit, nearest first (ties by collider key).
@@ -118,7 +118,7 @@ bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFi
 /// - Thread-safety: thread-safe against other queries, while no step or change runs.
 /// - Ownership: `hits` is the caller's.
 /// - Fails: a bad input returns zero hits.
-usize RayCastAll(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance,
+usize RayCastAll(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance,
                  const PhysicsQueryFilter& filter, Vector<PhysicsHit>* hits);
 
 /// Sweeps a shape along a direction and returns the first collider it touches.
@@ -138,7 +138,7 @@ usize RayCastAll(const PhysicsWorld& world, const Vec3& origin, const Vec3& dire
 /// - Thread-safety: thread-safe against other queries, while no step or change runs.
 /// - Ownership: `hit` is the caller's.
 /// - Fails: an invalid shape or input returns false.
-bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& position, const Quaternion& rotation,
+bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3d& position, const Quaternion& rotation,
                const Vec3& direction, f32 distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
 
 /// Finds the colliders a shape touches at a pose.
@@ -153,7 +153,7 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
 /// - Thread-safety: thread-safe against other queries, while no step or change runs.
 /// - Ownership: `out` is the caller's.
 /// - Fails: an invalid shape returns zero.
-usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& position, const Quaternion& rotation,
+usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3d& position, const Quaternion& rotation,
               const PhysicsQueryFilter& filter, Vector<ColliderId>* out);
 
 /// Finds the point on a collider's surface nearest to a point.
@@ -168,7 +168,7 @@ usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& positio
 /// - Thread-safety: thread-safe against other queries, while no step or change runs.
 /// - Ownership: `hit` is the caller's.
 /// - Fails: a bad input returns false.
-bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance, const PhysicsQueryFilter& filter,
+bool ClosestPoint(const PhysicsWorld& world, const Vec3d& point, f32 max_distance, const PhysicsQueryFilter& filter,
                   PhysicsHit* hit);
 
 }  // namespace vse::physics

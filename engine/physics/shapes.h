@@ -122,6 +122,22 @@ struct Shape
     /// - Fails: never.
     Aabb Bounds(const Vec3& position, const Quaternion& rotation) const;
 
+    /// Returns the same box for a double-precision position (the extent is added to the position in `f64`, so the box
+    /// is exact far from the origin).
+    ///
+    /// - Param position: where the shape's origin is, in the world.
+    /// - Param rotation: its orientation (a unit quaternion).
+    /// - Returns: the box; for a shape that is not valid, an empty box at `position`.
+    /// - Fails: never.
+    Aabbd Bounds(const Vec3d& position, const Quaternion& rotation) const;
+
+    /// Returns how far the shape's box reaches from its origin on each axis once it is rotated (zero for a shape that
+    /// is not valid).
+    ///
+    /// - Param rotation: its orientation (a unit quaternion).
+    /// - Fails: never.
+    Vec3 BoundsExtent(const Quaternion& rotation) const;
+
     /// Returns the half extents of the box around the shape in its own space (the capsule's are `radius, half_height +
     /// radius, radius`).
     ///

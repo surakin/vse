@@ -55,7 +55,7 @@ struct Walker
             world.Step();
         }
     }
-    Vec3 Position() const { return world.Find(controller.BodyHandle())->position; }
+    Vec3 Position() const { return world.Find(controller.BodyHandle())->position.Narrow(); }
 };
 
 }  // namespace

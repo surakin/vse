@@ -32,7 +32,7 @@ struct Mover
     }
 
     // Sweeps the capsule from `from` by `delta`; returns true on a hit, `fraction` the part of the move made before it.
-    bool Cast(const Vec3& from, const Vec3& delta, bool dynamic, PhysicsHit* hit) const
+    bool Cast(const Vec3d& from, const Vec3& delta, bool dynamic, PhysicsHit* hit) const
     {
         const f32 length = Sqrt(delta.LengthSquared());
         if (!(length > 1e-7f))
@@ -45,9 +45,10 @@ struct Mover
 
     // Collide and slide: moves from `from` by `delta` along the walls it meets (at most four planes in turn, two at a
     // crease). Returns the end point; `walls` counts the steep planes met and `last_normal` the last one.
-    Vec3 Slide(const Vec3& from, const Vec3& delta, bool upright_walls, u32* walls, Vec3* last_normal, f32* moved) const
+    Vec3d Slide(const Vec3d& from, const Vec3& delta, bool upright_walls, u32* walls, Vec3* last_normal,
+                f32* moved) const
     {
-        Vec3 position = from;
+        Vec3d position = from;
         Vec3 remaining = delta;
         Vec3 planes[2];
         u32 plane_count = 0;
@@ -62,13 +63,13 @@ struct Mover
             PhysicsHit hit;
             if (!Cast(position, remaining, false, &hit))
             {
-                position = position + remaining;
+                position = position + Vec3d(remaining);
                 total += length;
                 break;
             }
             const f32 free = FMax(0.0f, hit.distance - skin);
             const Vec3 direction = remaining * (1.0f / length);
-            position = position + direction * free;
+            position = position + Vec3d(direction * free);
             total += free;
             Vec3 plane = hit.normal;
             if (hit.normal.y < min_ground_y)
@@ -120,7 +121,7 @@ struct Mover
 
 }  // namespace
 
-BodyStatus CharacterController::Create(PhysicsWorld* world, const CharacterConfig& config, const Vec3& position)
+BodyStatus CharacterController::Create(PhysicsWorld* world, const CharacterConfig& config, const Vec3d& position)
 {
     if (!IsFinite(config.radius) || !IsFinite(config.height) || !IsFinite(config.step_height) ||
         !IsFinite(config.min_ground_y) || !IsFinite(config.skin_width) || !IsFinite(config.gravity_scale) ||
@@ -167,7 +168,7 @@ BodyStatus CharacterController::SetHeight(PhysicsWorld* world, f32 height)
     const CharacterState kept = state_;
     CharacterConfig config = config_;
     config.height = height;
-    const Vec3 feet_kept = body->position + Vec3(0.0f, 0.5f * (height - config_.height), 0.0f);
+    const Vec3d feet_kept = body->position + Vec3d(0.0, 0.5 * static_cast<f64>(height - config_.height), 0.0);
     if (height > config_.height)
     {
         // Standing up: the taller capsule must not start inside a ceiling or a wall.
@@ -231,7 +232,7 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
     mover.self = body_;
     mover.skin = config_.skin_width;
     mover.min_ground_y = config_.min_ground_y;
-    const Vec3 start = body->position;
+    const Vec3d start = body->position;
     const bool was_grounded = state_.on_ground;
     // The velocity of what the character stands on, at the character.
     Vec3 platform(0.0f, 0.0f, 0.0f);
@@ -240,7 +241,7 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
         const Body* ground = world->Find(state_.ground_body);
         if (ground != nullptr && ground->settings.type != BodyType::Static)
         {
-            platform = ground->linear_velocity + ground->angular_velocity.Cross(start - ground->position);
+            platform = ground->linear_velocity + ground->angular_velocity.Cross((start - ground->position).Narrow());
         }
     }
     // Gravity while in the air.
@@ -258,7 +259,7 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
     f32 moved = 0.0f;
     Vec3 wall_normal(0.0f, 0.0f, 0.0f);
     Vec3 scratch_normal(0.0f, 0.0f, 0.0f);  // the walls of the step-up and of the vertical move are not reported
-    Vec3 position = mover.Slide(start, horizontal, true, &walls, &wall_normal, &moved);
+    Vec3d position = mover.Slide(start, horizontal, true, &walls, &wall_normal, &moved);
     const f32 wanted = Sqrt(horizontal.LengthSquared());
     // 2. A ledge in the way: up, forward, down.
     bool stepped = false;
@@ -271,9 +272,9 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
         const f32 up_free = blocked_up ? FMax(0.0f, up.distance - config_.skin_width) : config_.step_height;
         if (up_free > 1e-4f)
         {
-            const Vec3 raised = start + Vec3(0.0f, up_free, 0.0f);
+            const Vec3d raised = start + Vec3d(0.0, static_cast<f64>(up_free), 0.0);
             f32 forward_moved = 0.0f;
-            const Vec3 across = mover.Slide(raised, horizontal, true, nullptr, &scratch_normal, &forward_moved);
+            const Vec3d across = mover.Slide(raised, horizontal, true, nullptr, &scratch_normal, &forward_moved);
             // Is there a step to climb at all? Walk the raised capsule on by a radius more: it must get past the edge
             // and find flat ground no higher than the step height (a ramp's edge or a wall fails this). A tread
             // shorter than the radius fails it too (KNOWN-ISSUES.md).
@@ -282,7 +283,7 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
             {
                 const Vec3 probe_delta = horizontal * ((wanted + kStepProbe * config_.radius) / wanted);
                 f32 probe_moved = 0.0f;
-                const Vec3 beyond = mover.Slide(raised, probe_delta, true, nullptr, &scratch_normal, &probe_moved);
+                const Vec3d beyond = mover.Slide(raised, probe_delta, true, nullptr, &scratch_normal, &probe_moved);
                 PhysicsHit top;
                 climbable = probe_moved >= wanted + kStepProbe * config_.radius - 1e-3f &&
                             mover.Cast(beyond, Vec3(0.0f, -(up_free + config_.skin_width), 0.0f), false, &top) &&
@@ -294,7 +295,9 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
                 if (mover.Cast(across, Vec3(0.0f, -(up_free + config_.skin_width), 0.0f), false, &down) &&
                     down.normal.y > kStepLandingY)
                 {
-                    const Vec3 landed = across + Vec3(0.0f, -FMax(0.0f, down.distance - config_.skin_width), 0.0f);
+                    const Vec3d landed = across +
+                                         Vec3d(0.0, -static_cast<f64>(FMax(0.0f, down.distance - config_.skin_width)),
+                                               0.0);
                     if (landed.y > position.y + 1e-3f)
                     {
                         position = landed;
@@ -309,9 +312,9 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
     // 3. The vertical move (gravity, a jump, a lift), sliding down what is too steep to stand on.
     const f32 vertical = (state_.vertical_speed + platform.y) * dt;
     u32 ignored_walls = 0;
-    const f32 y_before = position.y;
+    const f64 y_before = position.y;
     position = mover.Slide(position, Vec3(0.0f, vertical, 0.0f), false, &ignored_walls, &scratch_normal, nullptr);
-    if (state_.vertical_speed > 0.0f && position.y - y_before < 0.5f * vertical)
+    if (state_.vertical_speed > 0.0f && position.y - y_before < 0.5 * static_cast<f64>(vertical))
     {
         state_.vertical_speed = 0.0f;  // a ceiling stopped the rise: the jump ends there instead of hanging on it
     }
@@ -323,7 +326,7 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
         if (mover.Cast(position, Vec3(0.0f, -config_.step_height, 0.0f), false, &snap) &&
             snap.normal.y >= config_.min_ground_y)
         {
-            position.y -= FMax(0.0f, snap.distance - config_.skin_width);
+            position.y -= static_cast<f64>(FMax(0.0f, snap.distance - config_.skin_width));
         }
     }
     // 5. Where the character stands now (dynamic bodies count as ground).
@@ -348,7 +351,7 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
     events.wall_normal = wall_normal;
     // The body carries the character there in the step, pushing what is in the way.
     Velocity v;
-    v.linear = (position - start) * (1.0f / dt);
+    v.linear = (position - start).Narrow() * (1.0f / dt);
     world->SetVelocity(body_, v);
     return events;
 }

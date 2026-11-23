@@ -371,13 +371,14 @@ TEST_CASE("Terrain queries: the ground under a point, the ray at the terrain onl
     REQUIRE(world.AddCollider(box, box_collider) == BodyStatus::Ok);
 
     const PhysicsQueryFilter filter;
-    f32 height = 0.0f;
+    f64 height = 0.0;
     Vec3 normal;
     REQUIRE(TerrainHeight(world, 25.0f, 10.0f, filter, &height, &normal));
-    CHECK(FNear(height, 7.5f, 1e-3f));
+    CHECK(FNear(static_cast<f32>(height), 7.5f, 1e-3f));
     CHECK(normal.y > 0.9f);
     CHECK(FNear(normal.x, -0.3f / Sqrt(1.09f), 1e-3f));
-    CHECK(FNear(height, field->HeightAtMap(25.0f, 10.0f), 0.0f));  // the surface the renderer draws, bit for bit
+    CHECK(FNear(static_cast<f32>(height), field->HeightAtMap(25.0f, 10.0f),
+                0.0f));  // the surface the renderer draws, bit for bit
     CHECK_FALSE(TerrainHeight(world, 41.0f, 10.0f, filter, &height, &normal));  // past the map's east edge
     CHECK_FALSE(TerrainHeight(world, 25.0f, -1.0f, filter, &height, &normal));
     CHECK_FALSE(TerrainHeight(world, nanf(""), 10.0f, filter, &height, &normal));

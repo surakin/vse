@@ -122,7 +122,7 @@ f32 EffectiveMass(const Body& a, const Body& b, const Vec3& ra, const Vec3& rb, 
 
 Vec3 CenterOfMass(const Body& b)
 {
-    return b.position + b.orientation.ToMat3() * b.mass.center;
+    return (b.position + Vec3d(b.orientation.ToMat3() * b.mass.center)).Narrow();
 }
 
 // The soft constraint of a spring of `hertz` and `ratio` solved over `h` (Box2D's formulation: the constraint reacts
@@ -161,8 +161,8 @@ JointAnchors ComputeAnchors(const JointRecord& joint, const Body& a, const Body&
     JointAnchors out;
     out.ra = ma * (joint.desc.anchor_a - a.mass.center);
     out.rb = mb * (joint.desc.anchor_b - b.mass.center);
-    const Vec3 com_a = a.position + ma * a.mass.center;
-    const Vec3 com_b = b.position + mb * b.mass.center;
+    const Vec3 com_a = (a.position + Vec3d(ma * a.mass.center)).Narrow();
+    const Vec3 com_b = (b.position + Vec3d(mb * b.mass.center)).Narrow();
     out.separation = (com_b + out.rb) - (com_a + out.ra);
     return out;
 }
@@ -654,7 +654,7 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
             row.rb = p.position_b - com_b;
             row.feature = p.feature_id;
             row.depth = p.depth;
-            row.local_a = inv_a.RotateVector(p.position_a - body_a->position);
+            row.local_a = inv_a.RotateVector(p.position_a - body_a->position.Narrow());
             row.normal_mass = EffectiveMass(*body_a, *body_b, row.ra, row.rb, m.normal);
             row.tangent_mass[0] = EffectiveMass(*body_a, *body_b, row.ra, row.rb, c.tangent[0]);
             row.tangent_mass[1] = EffectiveMass(*body_a, *body_b, row.ra, row.rb, c.tangent[1]);

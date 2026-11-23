@@ -40,10 +40,12 @@ struct InputEntry
     InputKind kind = InputKind::ApplyForce;
     /// The body it was applied to.
     BodyId body;
-    /// The vector (force, impulse, linear velocity, position).
+    /// The vector (force, impulse, linear velocity).
     Vec3 a = Vec3(0.0f, 0.0f, 0.0f);
-    /// The point (force, impulse) or the angular velocity.
+    /// The angular velocity.
     Vec3 b = Vec3(0.0f, 0.0f, 0.0f);
+    /// The point (force, impulse) or the position (`SetTransform`), in the world.
+    Vec3d p = Vec3d(0.0, 0.0, 0.0);
     /// The orientation (`SetTransform`).
     Quaternion q = Quaternion::Identity();
     /// The body made (`CreateBody`).
@@ -108,16 +110,16 @@ public:
 
     /// `PhysicsWorld::ApplyForce`, logged when it succeeds.
     /// - Fails: as the world's.
-    BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3& point);
+    BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3d& point);
     /// `PhysicsWorld::ApplyImpulse`, logged when it succeeds.
     /// - Fails: as the world's.
-    BodyStatus ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3& point);
+    BodyStatus ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3d& point);
     /// `PhysicsWorld::SetVelocity`, logged when it succeeds.
     /// - Fails: as the world's.
     BodyStatus SetVelocity(BodyId id, const Velocity& velocity);
     /// `PhysicsWorld::SetTransform`, logged when it succeeds.
     /// - Fails: as the world's.
-    BodyStatus SetTransform(BodyId id, const Vec3& position, const Quaternion& orientation);
+    BodyStatus SetTransform(BodyId id, const Vec3d& position, const Quaternion& orientation);
     /// `PhysicsWorld::Wake`, logged when it succeeds.
     /// - Fails: as the world's.
     BodyStatus Wake(BodyId id);

@@ -14,6 +14,11 @@ bool SameValue(const Vec3& a, const Vec3& b)
     return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
+bool SameValue(const Vec3d& a, const Vec3d& b)
+{
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
 // Writes the interpolated pose of a dynamic body into a transform; true when the transform's value changed (a body
 // at rest leaves its transform and its chunk's change stamp alone).
 bool WriteOne(const PhysicsWorld& physics, f32 alpha, const BodyLink& link, ecs::LocalTransform& transform)
@@ -23,13 +28,13 @@ bool WriteOne(const PhysicsWorld& physics, f32 alpha, const BodyLink& link, ecs:
     {
         return false;
     }
-    Vec3 position;
+    Vec3d position;
     Quaternion rotation;
     if (!physics.Interpolated(link.id, alpha, &position, &rotation))
     {
         return false;
     }
-    const bool same = SameValue(transform.position.Narrow(), position) && transform.rotation.x == rotation.x &&
+    const bool same = SameValue(transform.position, position) && transform.rotation.x == rotation.x &&
                       transform.rotation.y == rotation.y && transform.rotation.z == rotation.z &&
                       transform.rotation.w == rotation.w;
     if (same)

@@ -28,7 +28,7 @@ spatial::PairTrackerConfig TrackerConfig(const BroadPhaseConfig& config)
     return out;
 }
 
-bool SameBox(const Aabb& a, const Aabb& b)
+bool SameBox(const Aabbd& a, const Aabbd& b)
 {
     return a.min.x == b.min.x && a.min.y == b.min.y && a.min.z == b.min.z && a.max.x == b.max.x && a.max.y == b.max.y &&
            a.max.z == b.max.z;
@@ -36,19 +36,19 @@ bool SameBox(const Aabb& a, const Aabb& b)
 
 // The world box of a collider: its shape at the body's place, and for a continuous body also where the body goes in one
 // step.
-Aabb WorldBox(const Body& body, const Collider& collider, f32 step_seconds, f32 ccd_threshold)
+Aabbd WorldBox(const Body& body, const Collider& collider, f32 step_seconds, f32 ccd_threshold)
 {
     const Mat3 r = body.orientation.ToMat3();
-    const Vec3 origin = body.position + r * collider.offset;
-    Aabb box = collider.shape.Bounds(origin, body.orientation * collider.rotation);
+    const Vec3d origin = body.position + Vec3d(r * collider.offset);
+    Aabbd box = collider.shape.Bounds(origin, body.orientation * collider.rotation);
     if (body.settings.type != BodyType::Static && IsContinuousBody(body, collider, step_seconds, ccd_threshold))
     {
         // A speed the host set can be absurd (the step limits it only after the broad phase): the sweep stays inside
         // the world, so the box stays finite.
         const auto limited = [](f32 v) { return Max(-kMaxCoordinate, Min(kMaxCoordinate, v)); };
-        const Vec3 move(limited(body.linear_velocity.x * step_seconds), limited(body.linear_velocity.y * step_seconds),
-                        limited(body.linear_velocity.z * step_seconds));
-        box = Union(box, Aabb{box.min + move, box.max + move});
+        const Vec3d move(limited(body.linear_velocity.x * step_seconds), limited(body.linear_velocity.y * step_seconds),
+                         limited(body.linear_velocity.z * step_seconds));
+        box = Union(box, Aabbd{box.min + move, box.max + move});
     }
     return box;
 }
@@ -144,7 +144,7 @@ void BroadPhase::Update(const PhysicsWorld& world)
         {
             Remove(slot);  // the slot was reused by another collider
         }
-        const Aabb box = WorldBox(*body, record->value, config_.step_seconds, config_.ccd_threshold);
+        const Aabbd box = WorldBox(*body, record->value, config_.step_seconds, config_.ccd_threshold);
         const bool is_static = body->settings.type == BodyType::Static;
         const u8 layer = record->value.layer;
         if (t.generation == 0)

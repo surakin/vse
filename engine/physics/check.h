@@ -17,6 +17,14 @@ inline bool FiniteVec3(const Vec3& v)
     return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
 }
 
+/// Returns whether all three numbers are finite.
+///
+/// - Fails: never.
+inline bool FiniteVec3(const Vec3d& v)
+{
+    return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
+}
+
 /// The largest coordinate a body may be put at, in metres (10,000 km): beyond it the boxes of the broad phase and the
 /// arithmetic of the step lose all meaning, so a position past it is refused like a position that is not finite.
 inline constexpr f32 kMaxCoordinate = 1.0e7f;
@@ -45,6 +53,18 @@ inline constexpr f32 kMaxMass = 1.0e15f;
 inline bool InsideWorld(const Vec3& v)
 {
     return Abs(v.x) <= kMaxCoordinate && Abs(v.y) <= kMaxCoordinate && Abs(v.z) <= kMaxCoordinate;
+}
+
+/// The largest coordinate of a body's position, in metres: positions are double precision (about 6.7 astronomical
+/// units from the origin).
+inline constexpr f64 kMaxWorldCoordinate = 1.0e12;
+
+/// Returns whether all three numbers are finite and within `kMaxWorldCoordinate` of the origin.
+///
+/// - Fails: never.
+inline bool InsideWorld(const Vec3d& v)
+{
+    return Abs(v.x) <= kMaxWorldCoordinate && Abs(v.y) <= kMaxWorldCoordinate && Abs(v.z) <= kMaxWorldCoordinate;
 }
 
 /// Returns whether the numbers are finite and the length is 1 within 1e-3.

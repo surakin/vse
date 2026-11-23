@@ -16,6 +16,11 @@ bool FiniteVector(const Vec3& v)
     return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
 }
 
+bool FiniteVector(const Vec3d& v)
+{
+    return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
+}
+
 // One character as `CharacterSet::Snapshot` keeps it.
 struct KeptCharacter
 {
@@ -126,7 +131,7 @@ const CharacterSet::Entry* CharacterSet::FindEntry(ecs::Entity entity) const
     return at < entries_.Size() && entries_[at].key == key ? &entries_[at] : nullptr;
 }
 
-bool CharacterSet::Add(ecs::Entity entity, const CharacterConfig& config, const Vec3& position)
+bool CharacterSet::Add(ecs::Entity entity, const CharacterConfig& config, const Vec3d& position)
 {
     if (!entity.IsValid() || entity.IsPlaceholder() || FindEntry(entity) != nullptr || !FiniteVector(position))
     {
@@ -260,7 +265,7 @@ u32 CharacterSet::WriteBack(ecs::World& ecs, bool interpolate) const
     for (usize i = 0; i < entries_.Size(); ++i)
     {
         const Entry& entry = entries_[i];
-        Vec3 position;
+        Vec3d position;
         Quaternion rotation;
         if (!world_->Interpolated(entry.controller.BodyHandle(), alpha, &position, &rotation))
         {
@@ -275,7 +280,7 @@ u32 CharacterSet::WriteBack(ecs::World& ecs, bool interpolate) const
     return written;
 }
 
-bool CharacterSet::SetPosition(ecs::Entity entity, const Vec3& position)
+bool CharacterSet::SetPosition(ecs::Entity entity, const Vec3d& position)
 {
     Entry* entry = FindEntry(entity);
     if (entry == nullptr || !FiniteVector(position) ||
@@ -309,7 +314,7 @@ u32 CharacterSet::Recreate(const ecs::World& ecs)
         }
         const ecs::LocalTransform* transform = ecs.Peek<ecs::LocalTransform>(entry.entity);
         if (transform != nullptr &&
-            entry.controller.Create(world_, entry.controller.Config(), transform->position.Narrow()) == BodyStatus::Ok)
+            entry.controller.Create(world_, entry.controller.Config(), transform->position) == BodyStatus::Ok)
         {
             ++made;
         }

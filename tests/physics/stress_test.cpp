@@ -250,7 +250,7 @@ TEST_CASE("Stress: a body sent a million metres away and back", "[physics][stres
     }
     REQUIRE(StressSane(world, bodies, 1.0e7f));
     // Past the world's bounds is refused, not simulated.
-    REQUIRE(world.SetTransform(ball, Vec3(1.0e9f, 0, 0), Quaternion::Identity()) != BodyStatus::Ok);
+    REQUIRE(world.SetTransform(ball, Vec3d(1.0e13, 0, 0), Quaternion::Identity()) != BodyStatus::Ok);
     REQUIRE(world.SetTransform(ball, Vec3(0, 3, 0), Quaternion::Identity()) == BodyStatus::Ok);
     for (u32 step = 0; step < 120; ++step)
     {

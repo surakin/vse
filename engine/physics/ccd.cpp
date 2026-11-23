@@ -18,9 +18,9 @@ constexpr u32 kMaxSamples = 256;
 // Bisection steps once a sample overlaps.
 constexpr u32 kBisections = 24;
 
-Vec3 LerpPoint(const Vec3& a, const Vec3& b, f32 t)
+Vec3d LerpPoint(const Vec3d& a, const Vec3d& b, f32 t)
 {
-    return a * (1.0f - t) + b * t;
+    return a * static_cast<f64>(1.0f - t) + b * static_cast<f64>(t);
 }
 
 // The normalized linear blend of two orientations, the short way round.
@@ -73,11 +73,11 @@ void PhysicsWorld::SweepContinuous()
             {
                 continue;
             }
-            const Vec3 p0 = mover->previous_position;
-            const Vec3 p1 = mover->position;
+            const Vec3d p0 = mover->previous_position;
+            const Vec3d p1 = mover->position;
             const Quaternion q0 = mover->previous_orientation;
             const Quaternion q1 = mover->orientation;
-            const Vec3 travel = p1 - p0;
+            const Vec3 travel = (p1 - p0).Narrow();
             const f32 length = Sqrt(travel.LengthSquared());
             const Vec3 half = mine->value.shape.LocalHalfExtents();
             const f32 smallest = 2.0f * Min(half.x, Min(half.y, half.z));
@@ -90,13 +90,14 @@ void PhysicsWorld::SweepContinuous()
             }
             ++step_stats_.ccd_queries;
             Pose pose_target;
-            pose_target.position = target->position + target->orientation.ToMat3() * other->value.offset;
+            pose_target.position = (target->position + Vec3d(target->orientation.ToMat3() * other->value.offset))
+                                       .Narrow();
             pose_target.rotation = target->orientation * other->value.rotation;
             const auto overlaps = [&](f32 t, f32 margin)
             {
                 const Quaternion q = BlendOrientation(q0, q1, t);
                 Pose pose;
-                pose.position = LerpPoint(p0, p1, t) + q.ToMat3() * mine->value.offset;
+                pose.position = (LerpPoint(p0, p1, t) + Vec3d(q.ToMat3() * mine->value.offset)).Narrow();
                 pose.rotation = q * mine->value.rotation;
                 ContactManifold manifold;
                 return Collide(mine->value.shape, pose, other->value.shape, pose_target, margin, &manifold, &hulls_,

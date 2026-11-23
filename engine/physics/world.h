@@ -64,7 +64,7 @@ struct BodyDesc
     /// The body's type, mass override, damping and flags.
     RigidBody settings;
     /// Where the body's origin is.
-    Vec3 position = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3d position = Vec3d(0.0, 0.0, 0.0);
     /// How it is turned (a unit quaternion).
     Quaternion orientation = Quaternion::Identity();
     /// Its speed.
@@ -86,12 +86,12 @@ struct Body
     /// Type, mass override, damping, flags.
     RigidBody settings;
     /// The origin of the body in the world.
-    Vec3 position = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3d position = Vec3d(0.0, 0.0, 0.0);
     /// The body's orientation.
     Quaternion orientation = Quaternion::Identity();
     /// The origin and orientation before the last step, for the interpolated write-back (equal to the current ones
     /// after a teleport).
-    Vec3 previous_position = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3d previous_position = Vec3d(0.0, 0.0, 0.0);
     /// The orientation before the last step.
     Quaternion previous_orientation = Quaternion::Identity();
     /// The linear velocity of the centre of mass.
@@ -437,7 +437,7 @@ public:
     /// - Param id: the body.
     /// - Returns: the point; the origin for a stale id.
     /// - Fails: never.
-    Vec3 WorldCenter(BodyId id) const;
+    Vec3d WorldCenter(BodyId id) const;
 
     /// Sets the linear and angular velocity. A static body is refused; a kinematic body keeps what is set (it is moved
     /// by it).
@@ -456,7 +456,7 @@ public:
     /// - Param point: where it acts, in the world, finite.
     /// - Returns: `Ok`, `StaleId`, `Invalid` or `WrongType`.
     /// - Fails: as the return says.
-    BodyStatus ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3& point);
+    BodyStatus ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3d& point);
 
     /// Adds a force at a world point, kept until the next step takes it.
     ///
@@ -465,7 +465,7 @@ public:
     /// - Param point: where it acts, in the world, finite.
     /// - Returns: `Ok`, `StaleId`, `Invalid` or `WrongType`.
     /// - Fails: as the return says.
-    BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3& point);
+    BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3d& point);
 
     /// Makes a joint between two bodies (or a body and the world).
     ///
@@ -514,7 +514,7 @@ public:
     /// - Param world_point: where the joint is.
     /// - Returns: the description (unchanged defaults when a body is stale).
     /// - Fails: stale bodies leave the anchors at zero.
-    JointDesc MakeBallJoint(BodyId a, BodyId b, const Vec3& world_point) const;
+    JointDesc MakeBallJoint(BodyId a, BodyId b, const Vec3d& world_point) const;
 
     /// Describes a rigid distance joint between two world points on the bodies, with the length they have now.
     ///
@@ -524,7 +524,7 @@ public:
     /// - Param point_b: the anchor on body B, in the world.
     /// - Returns: the description.
     /// - Fails: stale bodies leave the anchors at zero.
-    JointDesc MakeDistanceJoint(BodyId a, BodyId b, const Vec3& point_a, const Vec3& point_b) const;
+    JointDesc MakeDistanceJoint(BodyId a, BodyId b, const Vec3d& point_a, const Vec3d& point_b) const;
 
     /// Describes a fixed joint at a world point that keeps the bodies' orientations relative to each other as they are.
     ///
@@ -533,7 +533,7 @@ public:
     /// - Param world_point: where the joint is.
     /// - Returns: the description.
     /// - Fails: stale bodies leave the anchors at zero.
-    JointDesc MakeFixedJoint(BodyId a, BodyId b, const Vec3& world_point) const;
+    JointDesc MakeFixedJoint(BodyId a, BodyId b, const Vec3d& world_point) const;
 
     /// Describes a hinge at a world point about a world axis, at rest now (its angle is zero), with no limit, motor or
     /// spring: set them in the description.
@@ -544,7 +544,7 @@ public:
     /// - Param world_axis: the axis the bodies turn about, non-zero (normalized here).
     /// - Returns: the description.
     /// - Fails: stale bodies leave the anchors at zero; a zero axis becomes Y.
-    JointDesc MakeHingeJoint(BodyId a, BodyId b, const Vec3& world_point, const Vec3& world_axis) const;
+    JointDesc MakeHingeJoint(BodyId a, BodyId b, const Vec3d& world_point, const Vec3& world_axis) const;
 
     /// The angle of a hinge, in radians, counted across full turns.
     ///
@@ -565,7 +565,7 @@ public:
     /// - Param orientation: the new orientation, a unit quaternion.
     /// - Returns: `Ok`, `StaleId` or `Invalid`.
     /// - Fails: as the return says.
-    BodyStatus SetTransform(BodyId id, const Vec3& position, const Quaternion& orientation);
+    BodyStatus SetTransform(BodyId id, const Vec3d& position, const Quaternion& orientation);
 
     /// Recomputes a body's world inverse inertia from its orientation (the step does it after turning bodies).
     ///
@@ -651,7 +651,7 @@ public:
     /// - Returns: false for a stale id (the outputs are not written).
     /// - Ownership: the outputs are the caller's; nothing is kept.
     /// - Fails: as the return says.
-    bool Interpolated(BodyId id, f32 alpha, Vec3* position, Quaternion* orientation) const;
+    bool Interpolated(BodyId id, f32 alpha, Vec3d* position, Quaternion* orientation) const;
 
     /// Gives the step a job scheduler for its parallel parts (the narrow phase and the integration of free bodies);
     /// without one, or with `StepConfig::threads` of 1, the step runs inline. The result does not depend on either.

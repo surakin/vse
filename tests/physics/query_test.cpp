@@ -305,7 +305,7 @@ TEST_CASE("Query: overlaps are sorted and equal a brute-force pass", "[physics][
             Pose a;
             a.position = at;
             Pose b;
-            b.position = body->position;
+            b.position = body->position.Narrow();
             b.rotation = body->orientation;
             ContactManifold m;
             if (Collide(shape, a, record->value.shape, b, 0.0f, &m, &world.Hulls(), &world.Meshes(),

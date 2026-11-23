@@ -192,7 +192,7 @@ TEST_CASE("World: an offset collider moves the centre of mass", "[physics][world
     Collider c = UnitBox();
     c.offset = Vec3(0, 2, 0);
     REQUIRE(world.AddCollider(id, c) == BodyStatus::Ok);
-    const Vec3 center = world.WorldCenter(id);
+    const Vec3 center = world.WorldCenter(id).Narrow();
     CHECK(center.x == 1.0f);
     CHECK(center.y == 2.0f);
     // The same push through the origin now turns the body, because the origin is not the centre.

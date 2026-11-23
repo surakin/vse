@@ -94,7 +94,7 @@ TEST_CASE("Sleep: a resting stack falls asleep after the set time and costs no c
     CHECK(world.GetStepStats().islands == 1);
     CHECK(world.GetStepStats().islands_slept == 1);
     // A sleeping body stands still, to the bit, for as long as it sleeps.
-    const Vec3 at = world.Find(stack[2])->position;
+    const Vec3d at = world.Find(stack[2])->position;
     for (u32 i = 0; i < 120; ++i)
     {
         world.Step();
@@ -424,7 +424,7 @@ TEST_CASE("Sleep: puts a body and its island to sleep at once, and wakes like an
     CHECK_FALSE(world.IsSleeping(apart));
     CHECK(world.Find(lower)->linear_velocity.y == 0.0f);
     // Nothing moves while it sleeps.
-    const Vec3 at = world.Find(upper)->position;
+    const Vec3d at = world.Find(upper)->position;
     world.Step();
     CHECK(world.Find(upper)->position.y == at.y);
     // A body that was never stepped has no island and sleeps alone.

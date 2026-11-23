@@ -80,16 +80,16 @@ TEST_CASE("Joint: a pendulum has the period of a physical pendulum and keeps its
     {
         const Body* b = world.Find(bob);
         return 0.5f * mass * b->linear_velocity.LengthSquared() + 0.5f * inertia * b->angular_velocity.LengthSquared() +
-               mass * 9.81f * b->position.y;
+               mass * 9.81f * static_cast<f32>(b->position.y);
     };
     const f32 e0 = energy();
     f32 worst = 0.0f;
     Vector<f32> crossings;
-    f32 previous = world.Find(bob)->position.x - pivot.x;
+    f32 previous = static_cast<f32>(world.Find(bob)->position.x) - pivot.x;
     for (int i = 1; i <= 600; ++i)
     {
         world.Step();
-        const f32 x = world.Find(bob)->position.x - pivot.x;
+        const f32 x = static_cast<f32>(world.Find(bob)->position.x) - pivot.x;
         if (previous > 0.0f && x <= 0.0f)
         {
             // The time of the downward crossing, by linear interpolation inside the step.
@@ -154,8 +154,8 @@ TEST_CASE("Joint: a chain of ten links hangs straight and settles", "[physics][j
     for (u32 i = 0; i < 10; ++i)
     {
         const Body* b = world.Find(links[i]);
-        sideways = FMax(sideways, Abs(b->position.x));
-        stretch = FMax(stretch, Abs(b->position.y - (top.y - 0.25f - 0.5f * static_cast<f32>(i))));
+        sideways = FMax(sideways, Abs(static_cast<f32>(b->position.x)));
+        stretch = FMax(stretch, Abs(static_cast<f32>(b->position.y) - (top.y - 0.25f - 0.5f * static_cast<f32>(i))));
     }
     INFO("sideways " << sideways << " stretch " << stretch);
     CHECK(sideways < 0.5f);
@@ -379,5 +379,5 @@ TEST_CASE("Joint: the state hash of a joint scene equals the committed constant"
     const u64 first = run(600);
     CHECK(first == run(600));
     CHECK(first != run(599));
-    CHECK(first == 0xa2253470c556a2d0ull);
+    CHECK(first == 0xad0fffc8778b814full);
 }

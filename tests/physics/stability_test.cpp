@@ -49,7 +49,7 @@ struct Settle
 
 Settle Run(PhysicsWorld& world, const Vector<BodyId>& bodies, u32 steps)
 {
-    Vector<Vec3> start;
+    Vector<Vec3d> start;
     for (usize i = 0; i < bodies.Size(); ++i)
     {
         start.Push(world.Find(bodies[i])->position);
@@ -63,7 +63,7 @@ Settle Run(PhysicsWorld& world, const Vector<BodyId>& bodies, u32 steps)
     for (usize i = 0; i < bodies.Size(); ++i)
     {
         const Body* b = world.Find(bodies[i]);
-        const Vec3 moved = b->position - start[i];
+        const Vec3 moved = (b->position - start[i]).Narrow();
         s.max_drift = FMax(s.max_drift, Sqrt(moved.x * moved.x + moved.z * moved.z));
         s.max_sag = FMax(s.max_sag, -moved.y);
         s.max_speed = FMax(s.max_speed, b->linear_velocity.Length());

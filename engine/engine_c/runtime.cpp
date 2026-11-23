@@ -3744,9 +3744,10 @@ engine_status BodyApplyForceFn(engine_handle world, u64 key, const float* force,
                          }
                          physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
                          const physics::Body* body = physics.Find(id);
-                         const Vec3 at = point != nullptr
-                                             ? ToVec3(point)
-                                             : body->position + body->orientation.RotateVector(body->mass.center);
+                         const Vec3d at = point != nullptr
+                                              ? Vec3d(ToVec3(point))
+                                              : body->position +
+                                                    Vec3d(body->orientation.RotateVector(body->mass.center));
                          return FromBody(physics.ApplyForce(id, ToVec3(force), at));
                      });
 }
@@ -3768,9 +3769,10 @@ engine_status BodyApplyImpulseFn(engine_handle world, u64 key, const float* impu
                          }
                          physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
                          const physics::Body* body = physics.Find(id);
-                         const Vec3 at = point != nullptr
-                                             ? ToVec3(point)
-                                             : body->position + body->orientation.RotateVector(body->mass.center);
+                         const Vec3d at = point != nullptr
+                                              ? Vec3d(ToVec3(point))
+                                              : body->position +
+                                                    Vec3d(body->orientation.RotateVector(body->mass.center));
                          return FromBody(physics.ApplyImpulse(id, ToVec3(impulse), at));
                      });
 }
@@ -3844,7 +3846,7 @@ engine_status BodyTeleportFn(engine_handle world, u64 key, const float* position
                          }
                          physics::PhysicsWorld& physics = object.world.Resource<physics::PhysicsWorld>();
                          const physics::Body* body = physics.Find(id);
-                         const Vec3 at = position != nullptr ? ToVec3(position) : body->position;
+                         const Vec3d at = position != nullptr ? Vec3d(ToVec3(position)) : body->position;
                          const Quaternion turn = rotation != nullptr
                                                      ? Quaternion(rotation[0], rotation[1], rotation[2], rotation[3])
                                                      : body->orientation;
@@ -3898,9 +3900,10 @@ engine_status PhysicsRaycastFn(engine_handle world, const float* origin, const f
                          }
                          const physics::Body* body = physics.Find(result.body);
                          hit->entity = body == nullptr ? 0 : body->entity.ToU64();
-                         hit->point[0] = result.point.x;
-                         hit->point[1] = result.point.y;
-                         hit->point[2] = result.point.z;
+                         const Vec3 at = result.point.Narrow();  // the C API's points are single precision for now
+                         hit->point[0] = at.x;
+                         hit->point[1] = at.y;
+                         hit->point[2] = at.z;
                          hit->normal[0] = result.normal.x;
                          hit->normal[1] = result.normal.y;
                          hit->normal[2] = result.normal.z;

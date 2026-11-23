@@ -260,14 +260,15 @@ namespace
 {
 
 // A world point in the frame of a body (the origin and axes of the body), or in the world for no body.
-Vec3 ToLocal(const Body* body, const Vec3& point)
+Vec3 ToLocal(const Body* body, const Vec3d& point)
 {
-    return body == nullptr ? point : body->orientation.Conjugate().RotateVector(point - body->position);
+    return body == nullptr ? point.Narrow()
+                           : body->orientation.Conjugate().RotateVector((point - body->position).Narrow());
 }
 
 }  // namespace
 
-JointDesc PhysicsWorld::MakeBallJoint(BodyId a, BodyId b, const Vec3& world_point) const
+JointDesc PhysicsWorld::MakeBallJoint(BodyId a, BodyId b, const Vec3d& world_point) const
 {
     JointDesc desc;
     desc.type = JointType::Ball;
@@ -278,7 +279,7 @@ JointDesc PhysicsWorld::MakeBallJoint(BodyId a, BodyId b, const Vec3& world_poin
     return desc;
 }
 
-JointDesc PhysicsWorld::MakeDistanceJoint(BodyId a, BodyId b, const Vec3& point_a, const Vec3& point_b) const
+JointDesc PhysicsWorld::MakeDistanceJoint(BodyId a, BodyId b, const Vec3d& point_a, const Vec3d& point_b) const
 {
     JointDesc desc;
     desc.type = JointType::Distance;
@@ -286,7 +287,7 @@ JointDesc PhysicsWorld::MakeDistanceJoint(BodyId a, BodyId b, const Vec3& point_
     desc.body_b = b;
     desc.anchor_a = ToLocal(a.IsValid() ? Find(a) : nullptr, point_a);
     desc.anchor_b = ToLocal(b.IsValid() ? Find(b) : nullptr, point_b);
-    const Vec3 d = point_b - point_a;
+    const Vec3 d = (point_b - point_a).Narrow();
     const f32 length = Sqrt(d.LengthSquared());
     desc.length = length > 1e-6f ? length : 1e-6f;
     desc.min_length = desc.length;
@@ -309,7 +310,7 @@ BodyStatus PhysicsWorld::JointAngle(JointId id, f32* angle) const
     return BodyStatus::Ok;
 }
 
-JointDesc PhysicsWorld::MakeHingeJoint(BodyId a, BodyId b, const Vec3& world_point, const Vec3& world_axis) const
+JointDesc PhysicsWorld::MakeHingeJoint(BodyId a, BodyId b, const Vec3d& world_point, const Vec3& world_axis) const
 {
     JointDesc desc = MakeFixedJoint(a, b, world_point);
     desc.type = JointType::Hinge;
@@ -335,7 +336,7 @@ JointDesc PhysicsWorld::MakeHingeJoint(BodyId a, BodyId b, const Vec3& world_poi
     return desc;
 }
 
-JointDesc PhysicsWorld::MakeFixedJoint(BodyId a, BodyId b, const Vec3& world_point) const
+JointDesc PhysicsWorld::MakeFixedJoint(BodyId a, BodyId b, const Vec3d& world_point) const
 {
     JointDesc desc = MakeBallJoint(a, b, world_point);
     desc.type = JointType::Fixed;
@@ -490,12 +491,12 @@ JointId PhysicsWorld::JointAtSlot(u32 index) const
     return JointId{index, joints_.LiveGeneration(index)};
 }
 
-Vec3 PhysicsWorld::WorldCenter(BodyId id) const
+Vec3d PhysicsWorld::WorldCenter(BodyId id) const
 {
     const Body* body = Find(id);
     if (body == nullptr)
     {
-        return Vec3(0.0f, 0.0f, 0.0f);
+        return Vec3d(0.0, 0.0, 0.0);
     }
     return body->position + body->orientation.ToMat3() * body->mass.center;
 }
@@ -521,7 +522,7 @@ BodyStatus PhysicsWorld::SetVelocity(BodyId id, const Velocity& velocity)
     return BodyStatus::Ok;
 }
 
-BodyStatus PhysicsWorld::ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3& point)
+BodyStatus PhysicsWorld::ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3d& point)
 {
     Body* body = Find(id);
     if (body == nullptr)
@@ -538,12 +539,12 @@ BodyStatus PhysicsWorld::ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3
     }
     WakeIsland(body);
     body->linear_velocity = body->linear_velocity + impulse * body->inverse_mass;
-    const Vec3 arm = point - WorldCenter(id);
+    const Vec3 arm = (point - WorldCenter(id)).Narrow();
     body->angular_velocity = body->angular_velocity + body->inverse_inertia_world * arm.Cross(impulse);
     return BodyStatus::Ok;
 }
 
-BodyStatus PhysicsWorld::ApplyForce(BodyId id, const Vec3& force, const Vec3& point)
+BodyStatus PhysicsWorld::ApplyForce(BodyId id, const Vec3& force, const Vec3d& point)
 {
     Body* body = Find(id);
     if (body == nullptr)
@@ -560,11 +561,11 @@ BodyStatus PhysicsWorld::ApplyForce(BodyId id, const Vec3& force, const Vec3& po
     }
     WakeIsland(body);
     body->force = body->force + force;
-    body->torque = body->torque + (point - WorldCenter(id)).Cross(force);
+    body->torque = body->torque + (point - WorldCenter(id)).Narrow().Cross(force);
     return BodyStatus::Ok;
 }
 
-BodyStatus PhysicsWorld::SetTransform(BodyId id, const Vec3& position, const Quaternion& orientation)
+BodyStatus PhysicsWorld::SetTransform(BodyId id, const Vec3d& position, const Quaternion& orientation)
 {
     Body* body = Find(id);
     if (body == nullptr)

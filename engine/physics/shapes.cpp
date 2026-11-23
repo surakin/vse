@@ -145,11 +145,11 @@ Vec3 Shape::LocalHalfExtents() const
     return Vec3(0.0f, 0.0f, 0.0f);
 }
 
-Aabb Shape::Bounds(const Vec3& position, const Quaternion& rotation) const
+Vec3 Shape::BoundsExtent(const Quaternion& rotation) const
 {
     if (Validate() != Validation::Ok)
     {
-        return Aabb{position, position};
+        return Vec3(0.0f, 0.0f, 0.0f);
     }
     const Mat3 r = rotation.ToMat3();
     Vec3 extent;
@@ -178,7 +178,19 @@ Aabb Shape::Bounds(const Vec3& position, const Quaternion& rotation) const
         break;
     }
     }
+    return extent;
+}
+
+Aabb Shape::Bounds(const Vec3& position, const Quaternion& rotation) const
+{
+    const Vec3 extent = BoundsExtent(rotation);
     return Aabb{position - extent, position + extent};
+}
+
+Aabbd Shape::Bounds(const Vec3d& position, const Quaternion& rotation) const
+{
+    const Vec3d extent(BoundsExtent(rotation));
+    return Aabbd{position - extent, position + extent};
 }
 
 }  // namespace vse::physics

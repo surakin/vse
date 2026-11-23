@@ -645,12 +645,12 @@ The character sweeps its capsule against static and kinematic bodies (dynamic bo
 | Thread-safety | thread-compatible; one controller is used by one thread. |
 | Ownership | the controller holds the id of a body of the world it was created in; it does not own the world. |
 
-### `Create(PhysicsWorld*,const CharacterConfig&,const Vec3&)` {#physics-charactercontroller-create-physicsworld-star-const-characterconfig-amp-const-vec3-amp}
+### `Create(PhysicsWorld*,const CharacterConfig&,const Vec3d&)` {#physics-charactercontroller-create-physicsworld-star-const-characterconfig-amp-const-vec3d-amp}
 
 `method physics::CharacterController::Create` — defined in `engine/physics/character.h`
 
 ```cpp
-BodyStatus Create(PhysicsWorld* world, const CharacterConfig& config, const Vec3& position);
+BodyStatus Create(PhysicsWorld* world, const CharacterConfig& config, const Vec3d& position);
 ```
 
 Creates the character's body (kinematic, one upright capsule collider) in a world; a body the controller already had is destroyed first.
@@ -872,12 +872,12 @@ CharacterSet& operator=(const CharacterSet&) = delete;
 
 _Deleted._
 
-### `Add(ecs::Entity,const CharacterConfig&,const Vec3&)` {#physics-characterset-add-ecs-entity-const-characterconfig-amp-const-vec3-amp}
+### `Add(ecs::Entity,const CharacterConfig&,const Vec3d&)` {#physics-characterset-add-ecs-entity-const-characterconfig-amp-const-vec3d-amp}
 
 `method physics::CharacterSet::Add` — defined in `engine/physics/character_set.h`
 
 ```cpp
-bool Add(ecs::Entity entity, const CharacterConfig& config, const Vec3& position);
+bool Add(ecs::Entity entity, const CharacterConfig& config, const Vec3d& position);
 ```
 
 Makes a character for an entity: a kinematic capsule body (the events name it through [`physics::CharacterSet::EntityOfBody`](#physics-characterset-entityofbody-bodyid-const)).
@@ -1089,12 +1089,12 @@ Copies each character's position into its entity's `LocalTransform`, interpolate
 | Fails | an entity that is gone or has no `LocalTransform` is skipped. |
 | Aborts | called while the ECS world is being iterated. |
 
-### `SetPosition(ecs::Entity,const Vec3&)` {#physics-characterset-setposition-ecs-entity-const-vec3-amp}
+### `SetPosition(ecs::Entity,const Vec3d&)` {#physics-characterset-setposition-ecs-entity-const-vec3d-amp}
 
 `method physics::CharacterSet::SetPosition` — defined in `engine/physics/character_set.h`
 
 ```cpp
-bool SetPosition(ecs::Entity entity, const Vec3& position);
+bool SetPosition(ecs::Entity entity, const Vec3d& position);
 ```
 
 Puts an entity's character somewhere else at once (a teleport; C API script physics, 2026-11-20): the capsule's centre moves to `position`, the body's speed and the kept vertical speed become zero, a pending jump is dropped, and the held move stays. The character is in the air (no ground, no platform) until the next step looks.
@@ -1201,6 +1201,20 @@ Returns whether all three numbers are finite.
 |---|---|
 | Fails | never. |
 
+## `FiniteVec3(const Vec3d&)` {#physics-finitevec3-const-vec3d-amp}
+
+`function physics::FiniteVec3` — defined in `engine/physics/check.h`
+
+```cpp
+inline bool FiniteVec3(const Vec3d& v);
+```
+
+Returns whether all three numbers are finite.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ## `kMaxCoordinate` {#physics-kmaxcoordinate}
 
 `variable physics::kMaxCoordinate` — defined in `engine/physics/check.h`
@@ -1264,6 +1278,30 @@ inline bool InsideWorld(const Vec3& v);
 ```
 
 Returns whether all three numbers are finite and within `kMaxCoordinate` of the origin.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+## `kMaxWorldCoordinate` {#physics-kmaxworldcoordinate}
+
+`variable physics::kMaxWorldCoordinate` — defined in `engine/physics/check.h`
+
+```cpp
+inline constexpr f64 kMaxWorldCoordinate;
+```
+
+The largest coordinate of a body's position, in metres: positions are double precision (about 6.7 astronomical units from the origin).
+
+## `InsideWorld(const Vec3d&)` {#physics-insideworld-const-vec3d-amp}
+
+`function physics::InsideWorld` — defined in `engine/physics/check.h`
+
+```cpp
+inline bool InsideWorld(const Vec3d& v);
+```
+
+Returns whether all three numbers are finite and within `kMaxWorldCoordinate` of the origin.
 
 | Field | Value |
 |---|---|
@@ -4298,7 +4336,7 @@ The body it was applied to.
 Vec3 a;
 ```
 
-The vector (force, impulse, linear velocity, position).
+The vector (force, impulse, linear velocity).
 
 ### `b` {#physics-inputentry-b}
 
@@ -4308,7 +4346,17 @@ The vector (force, impulse, linear velocity, position).
 Vec3 b;
 ```
 
-The point (force, impulse) or the angular velocity.
+The angular velocity.
+
+### `p` {#physics-inputentry-p}
+
+`variable physics::InputEntry::p` — defined in `engine/physics/input_log.h`
+
+```cpp
+Vec3d p;
+```
+
+The point (force, impulse) or the position (`SetTransform`), in the world.
 
 ### `q` {#physics-inputentry-q}
 
@@ -4460,12 +4508,12 @@ Makes a recorder.
 | Fails | never. |
 | Ownership | borrows both; they must outlive the recorder. |
 
-### `ApplyForce(BodyId,const Vec3&,const Vec3&)` {#physics-inputrecorder-applyforce-bodyid-const-vec3-amp-const-vec3-amp}
+### `ApplyForce(BodyId,const Vec3&,const Vec3d&)` {#physics-inputrecorder-applyforce-bodyid-const-vec3-amp-const-vec3d-amp}
 
 `method physics::InputRecorder::ApplyForce` — defined in `engine/physics/input_log.h`
 
 ```cpp
-BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3& point);
+BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3d& point);
 ```
 
 `PhysicsWorld::ApplyForce`, logged when it succeeds.
@@ -4474,12 +4522,12 @@ BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3& point);
 |---|---|
 | Fails | as the world's. |
 
-### `ApplyImpulse(BodyId,const Vec3&,const Vec3&)` {#physics-inputrecorder-applyimpulse-bodyid-const-vec3-amp-const-vec3-amp}
+### `ApplyImpulse(BodyId,const Vec3&,const Vec3d&)` {#physics-inputrecorder-applyimpulse-bodyid-const-vec3-amp-const-vec3d-amp}
 
 `method physics::InputRecorder::ApplyImpulse` — defined in `engine/physics/input_log.h`
 
 ```cpp
-BodyStatus ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3& point);
+BodyStatus ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3d& point);
 ```
 
 `PhysicsWorld::ApplyImpulse`, logged when it succeeds.
@@ -4502,12 +4550,12 @@ BodyStatus SetVelocity(BodyId id, const Velocity& velocity);
 |---|---|
 | Fails | as the world's. |
 
-### `SetTransform(BodyId,const Vec3&,const Quaternion&)` {#physics-inputrecorder-settransform-bodyid-const-vec3-amp-const-quaternion-amp}
+### `SetTransform(BodyId,const Vec3d&,const Quaternion&)` {#physics-inputrecorder-settransform-bodyid-const-vec3d-amp-const-quaternion-amp}
 
 `method physics::InputRecorder::SetTransform` — defined in `engine/physics/input_log.h`
 
 ```cpp
-BodyStatus SetTransform(BodyId id, const Vec3& position, const Quaternion& orientation);
+BodyStatus SetTransform(BodyId id, const Vec3d& position, const Quaternion& orientation);
 ```
 
 `PhysicsWorld::SetTransform`, logged when it succeeds.
@@ -5706,7 +5754,7 @@ Its body.
 `variable physics::PhysicsHit::point` — defined in `engine/physics/query.h`
 
 ```cpp
-Vec3 point;
+Vec3d point;
 ```
 
 The point of contact, in the world.
@@ -5741,12 +5789,12 @@ u32 triangle;
 
 The triangle for a mesh or height field collider, else `kNoTriangle`.
 
-## `RayCast(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-raycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
+## `RayCast(const PhysicsWorld&,const Vec3d&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-raycast-const-physicsworld-amp-const-vec3d-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
 
 `function physics::RayCast` — defined in `engine/physics/query.h`
 
 ```cpp
-bool RayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
+bool RayCast(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
 ```
 
 Casts a ray and returns the closest hit.
@@ -5766,15 +5814,15 @@ A ray that starts inside a solid collider hits it at distance zero with the norm
 | Thread-safety | thread-safe against other queries, while no step or change runs. |
 | Ownership | `hit` is the caller's; nothing is kept. |
 
-## `TerrainRayCast(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-terrainraycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
+## `TerrainRayCast(const PhysicsWorld&,const Vec3d&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-terrainraycast-const-physicsworld-amp-const-vec3d-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
 
 `function physics::TerrainRayCast` — defined in `engine/physics/query.h`
 
 ```cpp
-bool TerrainRayCast(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
+bool TerrainRayCast(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
 ```
 
-Casts a ray at the height-field colliders only (terrain) and returns the closest hit; as [`physics::RayCast`](#physics-raycast-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star) otherwise.
+Casts a ray at the height-field colliders only (terrain) and returns the closest hit; as [`physics::RayCast`](#physics-raycast-const-physicsworld-amp-const-vec3d-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star) otherwise.
 
 | Field | Value |
 |---|---|
@@ -5789,12 +5837,12 @@ Casts a ray at the height-field colliders only (terrain) and returns the closest
 | Thread-safety | thread-safe against other queries, while no step or change runs. |
 | Ownership | `hit` is the caller's; nothing is kept. |
 
-## `TerrainHeight(const PhysicsWorld&,f32,f32,const PhysicsQueryFilter&,f32*,Vec3*)` {#physics-terrainheight-const-physicsworld-amp-f32-f32-const-physicsqueryfilter-amp-f32-star-vec3-star}
+## `TerrainHeight(const PhysicsWorld&,f64,f64,const PhysicsQueryFilter&,f64*,Vec3*)` {#physics-terrainheight-const-physicsworld-amp-f64-f64-const-physicsqueryfilter-amp-f64-star-vec3-star}
 
 `function physics::TerrainHeight` — defined in `engine/physics/query.h`
 
 ```cpp
-bool TerrainHeight(const PhysicsWorld& world, f32 x, f32 z, const PhysicsQueryFilter& filter, f32* height, Vec3* normal);
+bool TerrainHeight(const PhysicsWorld& world, f64 x, f64 z, const PhysicsQueryFilter& filter, f64* height, Vec3* normal);
 ```
 
 Finds the ground under a point: the highest surface of the height-field colliders that cover (`x`, `z`).
@@ -5812,12 +5860,12 @@ Finds the ground under a point: the highest surface of the height-field collider
 | Thread-safety | thread-safe against other queries, while no step or change runs. |
 | Ownership | the outputs are the caller's. |
 
-## `RayCastAll(const PhysicsWorld&,const Vec3&,const Vec3&,f32,const PhysicsQueryFilter&,Vector<PhysicsHit>*)` {#physics-raycastall-const-physicsworld-amp-const-vec3-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-vector-lt-physicshit-gt-star}
+## `RayCastAll(const PhysicsWorld&,const Vec3d&,const Vec3&,f32,const PhysicsQueryFilter&,Vector<PhysicsHit>*)` {#physics-raycastall-const-physicsworld-amp-const-vec3d-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-vector-lt-physicshit-gt-star}
 
 `function physics::RayCastAll` — defined in `engine/physics/query.h`
 
 ```cpp
-usize RayCastAll(const PhysicsWorld& world, const Vec3& origin, const Vec3& direction, f32 max_distance, const PhysicsQueryFilter& filter, Vector<PhysicsHit>* hits);
+usize RayCastAll(const PhysicsWorld& world, const Vec3d& origin, const Vec3& direction, f32 max_distance, const PhysicsQueryFilter& filter, Vector<PhysicsHit>* hits);
 ```
 
 Casts a ray and returns every hit, nearest first (ties by collider key).
@@ -5835,12 +5883,12 @@ Casts a ray and returns every hit, nearest first (ties by collider key).
 | Thread-safety | thread-safe against other queries, while no step or change runs. |
 | Ownership | `hits` is the caller's. |
 
-## `ShapeCast(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-shapecast-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
+## `ShapeCast(const PhysicsWorld&,const Shape&,const Vec3d&,const Quaternion&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-shapecast-const-physicsworld-amp-const-shape-amp-const-vec3d-amp-const-quaternion-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
 
 `function physics::ShapeCast` — defined in `engine/physics/query.h`
 
 ```cpp
-bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& position, const Quaternion& rotation, const Vec3& direction, f32 distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
+bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3d& position, const Quaternion& rotation, const Vec3& direction, f32 distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
 ```
 
 Sweeps a shape along a direction and returns the first collider it touches.
@@ -5862,12 +5910,12 @@ The time of impact is found by sampling the sweep and bisecting the first overla
 | Thread-safety | thread-safe against other queries, while no step or change runs. |
 | Ownership | `hit` is the caller's. |
 
-## `Overlap(const PhysicsWorld&,const Shape&,const Vec3&,const Quaternion&,const PhysicsQueryFilter&,Vector<ColliderId>*)` {#physics-overlap-const-physicsworld-amp-const-shape-amp-const-vec3-amp-const-quaternion-amp-const-physicsqueryfilter-amp-vector-lt-colliderid-gt-star}
+## `Overlap(const PhysicsWorld&,const Shape&,const Vec3d&,const Quaternion&,const PhysicsQueryFilter&,Vector<ColliderId>*)` {#physics-overlap-const-physicsworld-amp-const-shape-amp-const-vec3d-amp-const-quaternion-amp-const-physicsqueryfilter-amp-vector-lt-colliderid-gt-star}
 
 `function physics::Overlap` — defined in `engine/physics/query.h`
 
 ```cpp
-usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& position, const Quaternion& rotation, const PhysicsQueryFilter& filter, Vector<ColliderId>* out);
+usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3d& position, const Quaternion& rotation, const PhysicsQueryFilter& filter, Vector<ColliderId>* out);
 ```
 
 Finds the colliders a shape touches at a pose.
@@ -5885,12 +5933,12 @@ Finds the colliders a shape touches at a pose.
 | Thread-safety | thread-safe against other queries, while no step or change runs. |
 | Ownership | `out` is the caller's. |
 
-## `ClosestPoint(const PhysicsWorld&,const Vec3&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-closestpoint-const-physicsworld-amp-const-vec3-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
+## `ClosestPoint(const PhysicsWorld&,const Vec3d&,f32,const PhysicsQueryFilter&,PhysicsHit*)` {#physics-closestpoint-const-physicsworld-amp-const-vec3d-amp-f32-const-physicsqueryfilter-amp-physicshit-star}
 
 `function physics::ClosestPoint` — defined in `engine/physics/query.h`
 
 ```cpp
-bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
+bool ClosestPoint(const PhysicsWorld& world, const Vec3d& point, f32 max_distance, const PhysicsQueryFilter& filter, PhysicsHit* hit);
 ```
 
 Finds the point on a collider's surface nearest to a point.
@@ -6172,6 +6220,38 @@ Returns the smallest axis-aligned box around the shape after it is rotated and m
 | Parameter `position` | where the shape's origin is. |
 | Parameter `rotation` | its orientation (a unit quaternion). |
 | Returns | the box; for a shape that is not valid, an empty box at `position`. |
+| Fails | never. |
+
+### `Bounds(const Vec3d&,const Quaternion&)` {#physics-shape-bounds-const-vec3d-amp-const-quaternion-amp-const}
+
+`method physics::Shape::Bounds` — defined in `engine/physics/shapes.h`
+
+```cpp
+Aabbd Bounds(const Vec3d& position, const Quaternion& rotation) const;
+```
+
+Returns the same box for a double-precision position (the extent is added to the position in `f64`, so the box is exact far from the origin).
+
+| Field | Value |
+|---|---|
+| Parameter `position` | where the shape's origin is, in the world. |
+| Parameter `rotation` | its orientation (a unit quaternion). |
+| Returns | the box; for a shape that is not valid, an empty box at `position`. |
+| Fails | never. |
+
+### `BoundsExtent(const Quaternion&)` {#physics-shape-boundsextent-const-quaternion-amp-const}
+
+`method physics::Shape::BoundsExtent` — defined in `engine/physics/shapes.h`
+
+```cpp
+Vec3 BoundsExtent(const Quaternion& rotation) const;
+```
+
+Returns how far the shape's box reaches from its origin on each axis once it is rotated (zero for a shape that is not valid).
+
+| Field | Value |
+|---|---|
+| Parameter `rotation` | its orientation (a unit quaternion). |
 | Fails | never. |
 
 ### `LocalHalfExtents()` {#physics-shape-localhalfextents-const}
@@ -6534,6 +6614,16 @@ void V3(const Vec3& v);
 
 Writes a vector.
 
+### `V3d(const Vec3d&)` {#physics-snapshotout-v3d-const-vec3d-amp}
+
+`method physics::SnapshotOut::V3d` — defined in `engine/physics/snapshot_io.h`
+
+```cpp
+void V3d(const Vec3d& v);
+```
+
+Writes a double-precision vector.
+
 ### `Q(const Quaternion&)` {#physics-snapshotout-q-const-quaternion-amp}
 
 `method physics::SnapshotOut::Q` — defined in `engine/physics/snapshot_io.h`
@@ -6707,6 +6797,16 @@ Vec3 V3();
 
 Reads a vector.
 
+### `V3d()` {#physics-snapshotin-v3d}
+
+`method physics::SnapshotIn::V3d` — defined in `engine/physics/snapshot_io.h`
+
+```cpp
+Vec3d V3d();
+```
+
+Reads a double-precision vector.
+
 ### `Q()` {#physics-snapshotin-q}
 
 `method physics::SnapshotIn::Q` — defined in `engine/physics/snapshot_io.h`
@@ -6780,6 +6880,20 @@ inline bool SnapshotFinite(const Vec3& v);
 ```
 
 Whether all three components are finite.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+## `SnapshotFinite(const Vec3d&)` {#physics-snapshotfinite-const-vec3d-amp}
+
+`function physics::SnapshotFinite` — defined in `engine/physics/snapshot_io.h`
+
+```cpp
+inline bool SnapshotFinite(const Vec3d& v);
+```
+
+Whether a position is finite and at most 1e12 in size.
 
 | Field | Value |
 |---|---|
@@ -7360,6 +7474,20 @@ Feeds a float by its bit pattern, with -0.0 as +0.0.
 | Field | Value |
 |---|---|
 | Parameter `value` | the float; a NaN or an infinity clears `Valid()`. |
+
+### `AddF64(f64)` {#physics-statehasher-addf64-f64}
+
+`method physics::StateHasher::AddF64` — defined in `engine/physics/state_hash.h`
+
+```cpp
+void AddF64(f64 value);
+```
+
+Feeds a double by its bit pattern, with -0.0 as +0.0.
+
+| Field | Value |
+|---|---|
+| Parameter `value` | the double; a NaN or an infinity clears `Valid()`. |
 
 ### `Value()` {#physics-statehasher-value-const}
 
@@ -8053,7 +8181,7 @@ The body's type, mass override, damping and flags.
 `variable physics::BodyDesc::position` — defined in `engine/physics/world.h`
 
 ```cpp
-Vec3 position;
+Vec3d position;
 ```
 
 Where the body's origin is.
@@ -8137,7 +8265,7 @@ Type, mass override, damping, flags.
 `variable physics::Body::position` — defined in `engine/physics/world.h`
 
 ```cpp
-Vec3 position;
+Vec3d position;
 ```
 
 The origin of the body in the world.
@@ -8157,7 +8285,7 @@ The body's orientation.
 `variable physics::Body::previous_position` — defined in `engine/physics/world.h`
 
 ```cpp
-Vec3 previous_position;
+Vec3d previous_position;
 ```
 
 The origin and orientation before the last step, for the interpolated write-back (equal to the current ones after a teleport).
@@ -9257,7 +9385,7 @@ The id of the joint now in a slot (its generation is 0, so it is not valid, when
 `method physics::PhysicsWorld::WorldCenter` — defined in `engine/physics/world.h`
 
 ```cpp
-Vec3 WorldCenter(BodyId id) const;
+Vec3d WorldCenter(BodyId id) const;
 ```
 
 Returns the world position of a body's centre of mass.
@@ -9285,12 +9413,12 @@ Sets the linear and angular velocity. A static body is refused; a kinematic body
 | Returns | `Ok`, `StaleId`, `Invalid` or `WrongType`. |
 | Fails | as the return says. |
 
-### `ApplyImpulse(BodyId,const Vec3&,const Vec3&)` {#physics-physicsworld-applyimpulse-bodyid-const-vec3-amp-const-vec3-amp}
+### `ApplyImpulse(BodyId,const Vec3&,const Vec3d&)` {#physics-physicsworld-applyimpulse-bodyid-const-vec3-amp-const-vec3d-amp}
 
 `method physics::PhysicsWorld::ApplyImpulse` — defined in `engine/physics/world.h`
 
 ```cpp
-BodyStatus ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3& point);
+BodyStatus ApplyImpulse(BodyId id, const Vec3& impulse, const Vec3d& point);
 ```
 
 Adds an impulse at a world point: the velocity changes at once by `impulse / mass` and the angular velocity by the torque it makes.
@@ -9303,12 +9431,12 @@ Adds an impulse at a world point: the velocity changes at once by `impulse / mas
 | Returns | `Ok`, `StaleId`, `Invalid` or `WrongType`. |
 | Fails | as the return says. |
 
-### `ApplyForce(BodyId,const Vec3&,const Vec3&)` {#physics-physicsworld-applyforce-bodyid-const-vec3-amp-const-vec3-amp}
+### `ApplyForce(BodyId,const Vec3&,const Vec3d&)` {#physics-physicsworld-applyforce-bodyid-const-vec3-amp-const-vec3d-amp}
 
 `method physics::PhysicsWorld::ApplyForce` — defined in `engine/physics/world.h`
 
 ```cpp
-BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3& point);
+BodyStatus ApplyForce(BodyId id, const Vec3& force, const Vec3d& point);
 ```
 
 Adds a force at a world point, kept until the next step takes it.
@@ -9405,12 +9533,12 @@ The force and torque a joint carried in the last step.
 | Fails | as the return says. |
 | Ownership | the outputs are the caller's; nothing is kept. |
 
-### `MakeBallJoint(BodyId,BodyId,const Vec3&)` {#physics-physicsworld-makeballjoint-bodyid-bodyid-const-vec3-amp-const}
+### `MakeBallJoint(BodyId,BodyId,const Vec3d&)` {#physics-physicsworld-makeballjoint-bodyid-bodyid-const-vec3d-amp-const}
 
 `method physics::PhysicsWorld::MakeBallJoint` — defined in `engine/physics/world.h`
 
 ```cpp
-JointDesc MakeBallJoint(BodyId a, BodyId b, const Vec3& world_point) const;
+JointDesc MakeBallJoint(BodyId a, BodyId b, const Vec3d& world_point) const;
 ```
 
 Describes a ball joint at a world point: the anchors are the point seen from each body.
@@ -9423,12 +9551,12 @@ Describes a ball joint at a world point: the anchors are the point seen from eac
 | Returns | the description (unchanged defaults when a body is stale). |
 | Fails | stale bodies leave the anchors at zero. |
 
-### `MakeDistanceJoint(BodyId,BodyId,const Vec3&,const Vec3&)` {#physics-physicsworld-makedistancejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const}
+### `MakeDistanceJoint(BodyId,BodyId,const Vec3d&,const Vec3d&)` {#physics-physicsworld-makedistancejoint-bodyid-bodyid-const-vec3d-amp-const-vec3d-amp-const}
 
 `method physics::PhysicsWorld::MakeDistanceJoint` — defined in `engine/physics/world.h`
 
 ```cpp
-JointDesc MakeDistanceJoint(BodyId a, BodyId b, const Vec3& point_a, const Vec3& point_b) const;
+JointDesc MakeDistanceJoint(BodyId a, BodyId b, const Vec3d& point_a, const Vec3d& point_b) const;
 ```
 
 Describes a rigid distance joint between two world points on the bodies, with the length they have now.
@@ -9442,12 +9570,12 @@ Describes a rigid distance joint between two world points on the bodies, with th
 | Returns | the description. |
 | Fails | stale bodies leave the anchors at zero. |
 
-### `MakeFixedJoint(BodyId,BodyId,const Vec3&)` {#physics-physicsworld-makefixedjoint-bodyid-bodyid-const-vec3-amp-const}
+### `MakeFixedJoint(BodyId,BodyId,const Vec3d&)` {#physics-physicsworld-makefixedjoint-bodyid-bodyid-const-vec3d-amp-const}
 
 `method physics::PhysicsWorld::MakeFixedJoint` — defined in `engine/physics/world.h`
 
 ```cpp
-JointDesc MakeFixedJoint(BodyId a, BodyId b, const Vec3& world_point) const;
+JointDesc MakeFixedJoint(BodyId a, BodyId b, const Vec3d& world_point) const;
 ```
 
 Describes a fixed joint at a world point that keeps the bodies' orientations relative to each other as they are.
@@ -9460,12 +9588,12 @@ Describes a fixed joint at a world point that keeps the bodies' orientations rel
 | Returns | the description. |
 | Fails | stale bodies leave the anchors at zero. |
 
-### `MakeHingeJoint(BodyId,BodyId,const Vec3&,const Vec3&)` {#physics-physicsworld-makehingejoint-bodyid-bodyid-const-vec3-amp-const-vec3-amp-const}
+### `MakeHingeJoint(BodyId,BodyId,const Vec3d&,const Vec3&)` {#physics-physicsworld-makehingejoint-bodyid-bodyid-const-vec3d-amp-const-vec3-amp-const}
 
 `method physics::PhysicsWorld::MakeHingeJoint` — defined in `engine/physics/world.h`
 
 ```cpp
-JointDesc MakeHingeJoint(BodyId a, BodyId b, const Vec3& world_point, const Vec3& world_axis) const;
+JointDesc MakeHingeJoint(BodyId a, BodyId b, const Vec3d& world_point, const Vec3& world_axis) const;
 ```
 
 Describes a hinge at a world point about a world axis, at rest now (its angle is zero), with no limit, motor or spring: set them in the description.
@@ -9497,12 +9625,12 @@ The angle of a hinge, in radians, counted across full turns.
 | Fails | as the return says. |
 | Ownership | `angle` is the caller's; nothing is kept. |
 
-### `SetTransform(BodyId,const Vec3&,const Quaternion&)` {#physics-physicsworld-settransform-bodyid-const-vec3-amp-const-quaternion-amp}
+### `SetTransform(BodyId,const Vec3d&,const Quaternion&)` {#physics-physicsworld-settransform-bodyid-const-vec3d-amp-const-quaternion-amp}
 
 `method physics::PhysicsWorld::SetTransform` — defined in `engine/physics/world.h`
 
 ```cpp
-BodyStatus SetTransform(BodyId id, const Vec3& position, const Quaternion& orientation);
+BodyStatus SetTransform(BodyId id, const Vec3d& position, const Quaternion& orientation);
 ```
 
 Moves a body to a place without a step between.
@@ -9655,12 +9783,12 @@ Returns how far the accumulator is into the next step, from 0 to 1: the blend fa
 | Returns | the fraction. |
 | Fails | never. |
 
-### `Interpolated(BodyId,f32,Vec3*,Quaternion*)` {#physics-physicsworld-interpolated-bodyid-f32-vec3-star-quaternion-star-const}
+### `Interpolated(BodyId,f32,Vec3d*,Quaternion*)` {#physics-physicsworld-interpolated-bodyid-f32-vec3d-star-quaternion-star-const}
 
 `method physics::PhysicsWorld::Interpolated` — defined in `engine/physics/world.h`
 
 ```cpp
-bool Interpolated(BodyId id, f32 alpha, Vec3* position, Quaternion* orientation) const;
+bool Interpolated(BodyId id, f32 alpha, Vec3d* position, Quaternion* orientation) const;
 ```
 
 Returns where a body is drawn: the blend of its last two states by `alpha`.

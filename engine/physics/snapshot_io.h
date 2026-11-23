@@ -49,6 +49,13 @@ public:
         F32(v.y);
         F32(v.z);
     }
+    /// Writes a double-precision vector.
+    void V3d(const Vec3d& v)
+    {
+        F64(v.x);
+        F64(v.y);
+        F64(v.z);
+    }
     /// Writes a quaternion.
     void Q(const Quaternion& q)
     {
@@ -154,6 +161,14 @@ public:
         const f32 z = F32();
         return Vec3(x, y, z);
     }
+    /// Reads a double-precision vector.
+    Vec3d V3d()
+    {
+        const f64 x = F64();
+        const f64 y = F64();
+        const f64 z = F64();
+        return Vec3d(x, y, z);
+    }
     /// Reads a quaternion.
     Quaternion Q()
     {
@@ -210,6 +225,13 @@ inline bool SnapshotFinite(f32 v)
 inline bool SnapshotFinite(const Vec3& v)
 {
     return SnapshotFinite(v.x) && SnapshotFinite(v.y) && SnapshotFinite(v.z);
+}
+/// Whether a position is finite and at most 1e12 in size.
+///
+/// - Fails: never.
+inline bool SnapshotFinite(const Vec3d& v)
+{
+    return Abs(v.x) <= 1.0e12 && Abs(v.y) <= 1.0e12 && Abs(v.z) <= 1.0e12;
 }
 /// Whether the four components are finite.
 ///

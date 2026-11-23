@@ -79,7 +79,7 @@ void Shapes(const PhysicsWorld& world, const DebugDrawOptions& options, Vector<s
             continue;
         }
         const Mat3 rb = body->orientation.ToMat3();
-        const Vec3 center = body->position + rb * record->value.offset;
+        const Vec3 center = (body->position + Vec3d(rb * record->value.offset)).Narrow();
         const Quaternion rotation = body->orientation * record->value.rotation;
         const Mat3 r = rotation.ToMat3();
         u32 color = kDebugStaticColor;
@@ -143,7 +143,9 @@ void FieldCells(const PhysicsWorld& world, Vector<spatial::DebugLine>* lines)
         {
             continue;
         }
-        const Vec3 field_center = field_body->position + field_body->orientation.ToMat3() * field_record->value.offset;
+        const Vec3 field_center = (field_body->position +
+                                   Vec3d(field_body->orientation.ToMat3() * field_record->value.offset))
+                                      .Narrow();
         const Mat3 fr = (field_body->orientation * field_record->value.rotation).ToMat3();
         for (u32 os = 0; os < slots; ++os)
         {
@@ -154,7 +156,8 @@ void FieldCells(const PhysicsWorld& world, Vector<spatial::DebugLine>* lines)
             {
                 continue;
             }
-            const Vec3 oc = other_body->position + other_body->orientation.ToMat3() * other->value.offset;
+            const Vec3 oc = (other_body->position + Vec3d(other_body->orientation.ToMat3() * other->value.offset))
+                                .Narrow();
             const Aabb box = other->value.shape.Bounds(oc, other_body->orientation * other->value.rotation);
             const Vec3 half = (box.max - box.min) * 0.5f +
                               Vec3(field->CellSize(), field->CellSize(), field->CellSize());
@@ -201,7 +204,7 @@ void Boxes(const PhysicsWorld& world, Vector<spatial::DebugLine>* lines)
         {
             continue;
         }
-        const Vec3 center = body->position + body->orientation.ToMat3() * record->value.offset;
+        const Vec3 center = (body->position + Vec3d(body->orientation.ToMat3() * record->value.offset)).Narrow();
         const Aabb box = record->value.shape.Bounds(center, body->orientation * record->value.rotation);
         const Vec3 half = (box.max - box.min) * 0.5f;
         Box(lines, (box.min + box.max) * 0.5f, Mat3::Identity(), half, kDebugBroadPhaseColor);
@@ -225,7 +228,7 @@ void Contacts(const PhysicsWorld& world, const DebugDrawOptions& options, Vector
 Vec3 WorldAnchor(const PhysicsWorld& world, BodyId id, const Vec3& local)
 {
     const Body* body = id.IsValid() ? world.Find(id) : nullptr;
-    return body != nullptr ? body->position + body->orientation.ToMat3() * local : local;
+    return body != nullptr ? (body->position + Vec3d(body->orientation.ToMat3() * local)).Narrow() : local;
 }
 
 void Joints(const PhysicsWorld& world, Vector<spatial::DebugLine>* lines)

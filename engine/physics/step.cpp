@@ -131,15 +131,15 @@ void PhysicsWorld::IntegratePosition(Body* body, f32 dt)
     {
         // The centre of mass moves by the new velocity, the body turns about it.
         const Vec3 offset = body->orientation.ToMat3() * body->mass.center;
-        const Vec3 center = body->position + offset + body->linear_velocity * dt;
+        const Vec3d center = body->position + Vec3d(offset) + Vec3d(body->linear_velocity * dt);
         body->orientation = Turn(body->orientation, body->angular_velocity, dt);
-        body->position = center - body->orientation.ToMat3() * body->mass.center;
+        body->position = center - Vec3d(body->orientation.ToMat3() * body->mass.center);
         RefreshInertia(body);
     }
     else if (body->settings.type == BodyType::Kinematic)
     {
         // A kinematic body is moved by its velocity, about its origin; nothing pushes it.
-        body->position = body->position + body->linear_velocity * dt;
+        body->position = body->position + Vec3d(body->linear_velocity * dt);
         body->orientation = Turn(body->orientation, body->angular_velocity, dt);
     }
 }
@@ -336,10 +336,10 @@ void PhysicsWorld::Step()
         {
             PairWork& w = work[k];
             Pose pose_a;
-            pose_a.position = w.ba->position + w.ba->orientation.ToMat3() * w.ra->value.offset;
+            pose_a.position = ColliderPose(*w.ba, w.ra->value).position;
             pose_a.rotation = w.ba->orientation * w.ra->value.rotation;
             Pose pose_b;
-            pose_b.position = w.bb->position + w.bb->orientation.ToMat3() * w.rb->value.offset;
+            pose_b.position = ColliderPose(*w.bb, w.rb->value).position;
             pose_b.rotation = w.bb->orientation * w.rb->value.rotation;
             w.touching = Collide(w.ra->value.shape, pose_a, w.rb->value.shape, pose_b, step_config_.contact_margin,
                                  &w.input.manifold, &hulls_, &meshes_, &compounds_,
@@ -507,7 +507,7 @@ void PhysicsWorld::Step()
     ++step_stats_.steps;
 }
 
-bool PhysicsWorld::Interpolated(BodyId id, f32 alpha, Vec3* position, Quaternion* orientation) const
+bool PhysicsWorld::Interpolated(BodyId id, f32 alpha, Vec3d* position, Quaternion* orientation) const
 {
     const Body* body = Find(id);
     if (body == nullptr)
@@ -521,7 +521,7 @@ bool PhysicsWorld::Interpolated(BodyId id, f32 alpha, Vec3* position, Quaternion
         return true;
     }
     const f32 t = alpha < 0.0f ? 0.0f : (alpha > 1.0f ? 1.0f : alpha);
-    *position = body->previous_position * (1.0f - t) + body->position * t;
+    *position = body->previous_position * static_cast<f64>(1.0f - t) + body->position * static_cast<f64>(t);
     const Quaternion& a = body->previous_orientation;
     const Quaternion& b = body->orientation;
     const f32 dot = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
@@ -544,9 +544,9 @@ u64 PhysicsWorld::StateHash(bool* valid) const
         {
             continue;
         }
-        hasher.AddF32(body->position.x);
-        hasher.AddF32(body->position.y);
-        hasher.AddF32(body->position.z);
+        hasher.AddF64(body->position.x);
+        hasher.AddF64(body->position.y);
+        hasher.AddF64(body->position.z);
         hasher.AddF32(body->orientation.x);
         hasher.AddF32(body->orientation.y);
         hasher.AddF32(body->orientation.z);

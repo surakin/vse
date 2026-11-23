@@ -114,6 +114,10 @@ a parent are still not simulated. The matrix is the one the propagation last wro
 (the C API's) places such a body by the previous frame's matrix. A static body without a parent is not followed, as before. The write-back touches
 dynamic bodies only, so a parented static entity's local transform is never overwritten.
 
+## Double precision: positions far from the origin
+
+A body's position, its previous position, the broad phase's boxes and every point a query takes or returns are `f64` (`Vec3d`, `Aabbd`); orientations, velocities, forces, masses, extents and normals stay `f32`. A body may stand anywhere within `kMaxWorldCoordinate` (1e12 m) of the origin, so a scene 10,000 km away moves, is found by the broad phase and is hit by rays as exactly as the same scene at the origin: the integration adds `f32` velocity times the step to the `f64` position, `Shape::Bounds(Vec3d, rotation)` adds the box's own `f32` extent to the position in `f64`, and a ray, shape cast, overlap or closest-point query puts the other colliders in its own frame (the difference of two positions is taken in `f64` and narrowed once) before the narrow phase sees them. `PhysicsHit::point` is a `Vec3d`; the normal and the distance stay `f32`. `StateHash` feeds positions as `f64`, snapshots write them as `f64`, and `InputRecorder` logs positions and points as `f64`. The contact solver still works in single precision in world coordinates, so bodies resting on one another far from the origin round to the `f32` grid until it is made body-relative.
+
 ## The broad phase
 
 `physics::BroadPhase` finds which pairs of colliders may touch, with the spatial module's structures and nothing new: the colliders go into a `spatial::SpatialSet`
@@ -408,7 +412,7 @@ compound libraries are content, not state, and are not in the snapshot: a snapsh
 
 `Restore(bytes)` builds a world of its own from the bytes, checks everything and swaps it in only then, so a refusal leaves the world as it was.
 The data is not trusted: counts are bounded by the bytes left, every float must be finite and within a bound the step can survive (positions
-within `kMaxCoordinate`, sizes, offsets and anchors within `kMaxExtent`, masses between a nanogram and 1e15 kilograms), quaternions must be unit,
+within `kMaxWorldCoordinate`, sizes, offsets and anchors within `kMaxExtent`, masses between a nanogram and 1e15 kilograms), quaternions must be unit,
 collider chains, owners and joint bodies must name live slots, the configuration must pass `SetStepConfig`, and trailing bytes are refused. The
 answer is a `SnapshotStatus`: `Ok`, `BadMagic`, `UnknownVersion`, `Truncated`, `Corrupt`, `LibraryMismatch` or `OutOfMemory`. The same bounds are
 checked by `Validate()` of `RigidBody`, `PhysicsMaterial`, `Collider`, `Shape` and `JointDesc` when a program creates the objects, so a world that

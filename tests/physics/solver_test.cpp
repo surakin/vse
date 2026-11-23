@@ -220,10 +220,10 @@ TEST_CASE("Solver: the order of the contacts does not change the result", "[phys
                 const Body* bj = world.Find(bodies[j]);
                 ContactInput in;
                 Pose pa;
-                pa.position = bi->position;
+                pa.position = bi->position.Narrow();
                 pa.rotation = bi->orientation;
                 Pose pb;
-                pb.position = bj->position;
+                pb.position = bj->position.Narrow();
                 pb.rotation = bj->orientation;
                 if (Collide(world.FindCollider(colliders[i])->value.shape, pa,
                             world.FindCollider(colliders[j])->value.shape, pb, 0.02f,

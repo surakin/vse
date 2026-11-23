@@ -73,6 +73,24 @@ public:
         AddU32(BitsOf(value));
     }
 
+    /// Feeds a double by its bit pattern, with -0.0 as +0.0.
+    ///
+    /// - Param value: the double; a NaN or an infinity clears `Valid()`.
+    void AddF64(f64 value)
+    {
+        if (!IsFinite(value))
+        {
+            valid_ = false;
+        }
+        if (value == 0.0)
+        {
+            value = 0.0;  // -0.0 compares equal to 0.0 and is replaced by the positive zero
+        }
+        u64 bits = 0;
+        MemCopy(&bits, &value, sizeof(bits));
+        AddU64(bits);
+    }
+
     /// Returns the hash of everything fed so far.
     u64 Value() const { return hash_; }
 
