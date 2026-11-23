@@ -335,15 +335,15 @@ void PhysicsWorld::Step()
         for (usize k = begin; k < end; ++k)
         {
             PairWork& w = work[k];
-            Pose pose_a;
-            pose_a.position = ColliderPose(*w.ba, w.ra->value).position;
-            pose_a.rotation = w.ba->orientation * w.ra->value.rotation;
-            Pose pose_b;
-            pose_b.position = ColliderPose(*w.bb, w.rb->value).position;
-            pose_b.rotation = w.bb->orientation * w.rb->value.rotation;
+            // Both shapes are placed relative to the first body's origin (the difference taken in double precision),
+            // and the manifold keeps that origin as its anchor.
+            const Vec3d anchor = w.ba->position;
+            const Pose pose_a = PoseFrom(*w.ba, w.ra->value, anchor);
+            const Pose pose_b = PoseFrom(*w.bb, w.rb->value, anchor);
             w.touching = Collide(w.ra->value.shape, pose_a, w.rb->value.shape, pose_b, step_config_.contact_margin,
                                  &w.input.manifold, &hulls_, &meshes_, &compounds_,
                                  &height_fields_) == CollideResult::Contact;
+            w.input.manifold.anchor = anchor;
         }
     };
     // Collides the queued pairs (in blocks of 32, whatever the thread count), then applies the contacts in order: a

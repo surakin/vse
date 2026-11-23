@@ -2132,7 +2132,7 @@ The depth is how far the shapes overlap along the normal: positive when they pen
 Vec3 position_a;
 ```
 
-The point on the surface of shape A, in the world.
+The point on the surface of shape A, in the world, measured from the manifold's `anchor`.
 
 ### `position_b` {#physics-contactpoint-position-b}
 
@@ -2142,7 +2142,7 @@ The point on the surface of shape A, in the world.
 Vec3 position_b;
 ```
 
-The point on the surface of shape B, in the world.
+The point on the surface of shape B, in the world, measured from the manifold's `anchor`.
 
 ### `depth` {#physics-contactpoint-depth}
 
@@ -2179,6 +2179,16 @@ The contact between two shapes: up to four points sharing one normal.
 | Field | Value |
 |---|---|
 | Thread-safety | thread-compatible plain data. |
+
+### `anchor` {#physics-contactmanifold-anchor}
+
+`variable physics::ContactManifold::anchor` — defined in `engine/physics/contact.h`
+
+```cpp
+Vec3d anchor;
+```
+
+The world point the contact points are measured from (the origin of body A for a contact the step made; zero for a manifold `Collide` returns, whose poses are the caller's). Keeping the points near it keeps them exact far from the world's origin; add it back for a world position.
 
 ### `normal` {#physics-contactmanifold-normal}
 
@@ -2632,7 +2642,7 @@ The number of points in the manifold (0 for an end).
 `variable physics::ContactEvent::point` — defined in `engine/physics/events.h`
 
 ```cpp
-Vec3 point;
+Vec3d point;
 ```
 
 The deepest point, on the surface of `a`, in the world.
@@ -4729,6 +4739,16 @@ Vec3 anchor_b;
 ```
 
 The anchor on body B, in its frame (in the world for a joint to the world).
+
+### `world_origin` {#physics-jointdesc-world-origin}
+
+`variable physics::JointDesc::world_origin` — defined in `engine/physics/joint.h`
+
+```cpp
+Vec3d world_origin;
+```
+
+Where the world is, for a joint to the world: the anchors and frames of the world side are measured from this point (so a joint to the world far from the origin keeps its precision). Ignored when both bodies exist.
 
 ### `frame_a` {#physics-jointdesc-frame-a}
 

@@ -1,10 +1,12 @@
-// Bodies, the broad phase, queries and snapshots far from the origin (double precision, Day 6): positions are `f64`, so
-// a scene 10,000 km away moves, is found and is saved as exactly as the same scene at the origin. The narrow phase and
-// the solver are still single precision in world coordinates (the next day), so nothing here rests on a surface.
+// Bodies, the broad phase, queries, contacts and joints far from the origin (double precision, Days 6 and 7): positions
+// are `f64` and contacts and joints are measured from a nearby anchor, so a scene 10,000 km away moves, collides, rests
+// and is saved as the same scene at the origin does.
 #include <catch2/catch_test_macros.hpp>
 
+#include "algorithm.h"
 #include "bytes/byte_writer.h"
 #include "lang/scalar.h"
+#include "physics/character.h"
 #include "physics/query.h"
 #include "physics/world.h"
 
@@ -29,7 +31,104 @@ BodyId FarBall(PhysicsWorld& world, const Vec3d& position, BodyType type, f32 ra
     return id;
 }
 
+BodyId FarBox(PhysicsWorld& world, BodyType type, const Vec3& half, const Vec3d& at)
+{
+    BodyDesc desc;
+    desc.settings.type = type;
+    desc.position = at;
+    const BodyId id = world.CreateBody(desc);
+    Collider c;
+    c.shape = Shape::MakeBox(half);
+    c.material.friction = 0.6f;
+    REQUIRE(world.AddCollider(id, c) == BodyStatus::Ok);
+    return id;
+}
+
+// A floor, a stack of ten boxes, a pyramid, a plank bridge, a pendulum hung from the world and a bullet at a thin wall,
+// everything placed relative to `base`.
+void BuildFarScene(PhysicsWorld& world, const Vec3d& base, Vector<BodyId>* bodies)
+{
+    FarBox(world, BodyType::Static, Vec3(60.0f, 0.5f, 60.0f), base + Vec3d(0, -0.5, 0));
+    for (u32 i = 0; i < 10; ++i)
+    {
+        bodies->Push(FarBox(world, BodyType::Dynamic, Vec3(0.5f, 0.5f, 0.5f),
+                            base + Vec3d(0.01 * static_cast<f64>(i % 3), 0.5 + static_cast<f64>(i), 0)));
+    }
+    for (u32 row = 0; row < 4; ++row)
+    {
+        for (u32 i = 0; i < 4 - row; ++i)
+        {
+            bodies->Push(FarBox(world, BodyType::Dynamic, Vec3(0.5f, 0.5f, 0.5f),
+                                base + Vec3d(10.0 + 0.5 * static_cast<f64>(row) + static_cast<f64>(i),
+                                             0.5 + static_cast<f64>(row), 0)));
+        }
+    }
+    const Vec3d deck = base + Vec3d(-20.0, 5.0, 0.0);
+    BodyId previous = FarBox(world, BodyType::Static, Vec3(0.5f, 0.5f, 1.0f), deck + Vec3d(-0.5, 0, 0));
+    for (u32 i = 0; i < 8; ++i)
+    {
+        const BodyId plank = FarBox(world, BodyType::Dynamic, Vec3(0.45f, 0.08f, 0.9f),
+                                    deck + Vec3d(0.5 + static_cast<f64>(i), 0, 0));
+        REQUIRE(world
+                    .CreateJoint(
+                        world.MakeHingeJoint(previous, plank, deck + Vec3d(static_cast<f64>(i), 0, 0), Vec3(0, 0, 1)))
+                    .IsValid());
+        bodies->Push(plank);
+        previous = plank;
+    }
+    const BodyId right = FarBox(world, BodyType::Static, Vec3(0.5f, 0.5f, 1.0f), deck + Vec3d(8.5, 0, 0));
+    REQUIRE(world.CreateJoint(world.MakeHingeJoint(previous, right, deck + Vec3d(8.0, 0, 0), Vec3(0, 0, 1))).IsValid());
+    // A pendulum hung from the world.
+    const Vec3d pivot = base + Vec3d(0.0, 8.0, 20.0);
+    const BodyId bob = FarBox(world, BodyType::Dynamic, Vec3(0.2f, 0.2f, 0.2f), pivot + Vec3d(3.0, 0, 0));
+    REQUIRE(world.CreateJoint(world.MakeBallJoint(bob, BodyId(), pivot)).IsValid());
+    bodies->Push(bob);
+    // A bullet and a thin wall.
+    FarBox(world, BodyType::Static, Vec3(0.05f, 3.0f, 3.0f), base + Vec3d(30.0, 3.0, -20.0));
+    BodyDesc desc;
+    desc.settings.type = BodyType::Dynamic;
+    desc.position = base + Vec3d(10.0, 2.0, -20.0);
+    const BodyId bullet = world.CreateBody(desc);
+    Collider c;
+    c.shape = Shape::MakeSphere(0.05f);
+    REQUIRE(world.AddCollider(bullet, c) == BodyStatus::Ok);
+    Velocity v;
+    v.linear = Vec3(250, 0, 0);
+    REQUIRE(world.SetVelocity(bullet, v) == BodyStatus::Ok);
+    bodies->Push(bullet);
+}
+
 }  // namespace
+
+TEST_CASE("Far world: stacks, a bridge, a pendulum and a bullet 10,000 km away behave like the ones at the origin",
+          "[physics][far-world]")
+{
+    PhysicsWorld here;
+    PhysicsWorld far;
+    Vector<BodyId> a;
+    Vector<BodyId> b;
+    BuildFarScene(here, Vec3d(0, 0, 0), &a);
+    BuildFarScene(far, kFar, &b);
+    for (u32 step = 0; step < 600; ++step)
+    {
+        here.Step();
+        far.Step();
+    }
+    REQUIRE(a.Size() == b.Size());
+    f64 worst = 0.0;
+    for (usize i = 0; i < a.Size(); ++i)
+    {
+        const Vec3d p = here.Find(a[i])->position;
+        const Vec3d q = far.Find(b[i])->position - kFar;
+        worst = Max(worst, Max(Abs(p.x - q.x), Max(Abs(p.y - q.y), Abs(p.z - q.z))));
+    }
+    INFO("worst difference " << worst);
+    CHECK(worst < 1e-2);
+    // The scene itself is sane: the stack stands, the bullet stopped at the wall.
+    CHECK(far.Find(b[9])->position.y - kFar.y > 8.0);
+    CHECK(far.Find(b[b.Size() - 1])->position.x - kFar.x < 30.0);
+    CHECK(far.GetSolverStats().max_penetration < 0.05f);
+}
 
 TEST_CASE("Far world: a body in free fall 10,000 km away falls exactly like the one at the origin",
           "[physics][far-world]")
@@ -144,4 +243,36 @@ TEST_CASE("Far world: a snapshot keeps a position 10,000 km away to the bit", "[
     CHECK(body->position.x == kFar.x + 0.001);
     CHECK(body->position.y == kFar.y);
     CHECK(restored.StateHash() == world.StateHash());
+}
+
+TEST_CASE("Far world: a character walks, steps up a ledge and stands 10,000 km away as at the origin",
+          "[physics][far-world][character]")
+{
+    PhysicsWorld here;
+    PhysicsWorld far;
+    CharacterController walker_here;
+    CharacterController walker_far;
+    for (PhysicsWorld* world : {&here, &far})
+    {
+        const Vec3d base = world == &here ? Vec3d(0, 0, 0) : kFar;
+        FarBox(*world, BodyType::Static, Vec3(60.0f, 0.5f, 60.0f), base + Vec3d(0, -0.5, 0));
+        FarBox(*world, BodyType::Static, Vec3(1.0f, 0.1f, 2.0f), base + Vec3d(5.0, 0.1, 0.0));  // a ledge 0.2 m high
+        CharacterController& controller = world == &here ? walker_here : walker_far;
+        REQUIRE(controller.Create(world, CharacterConfig(), base + Vec3d(0, 0.95, 0)) == BodyStatus::Ok);
+    }
+    const f32 dt = 1.0f / 60.0f;
+    for (u32 i = 0; i < 240; ++i)
+    {
+        walker_here.Move(&here, Vec3(2, 0, 0), dt);
+        here.Step();
+        walker_far.Move(&far, Vec3(2, 0, 0), dt);
+        far.Step();
+    }
+    const Vec3d p = here.Find(walker_here.BodyHandle())->position;
+    const Vec3d q = far.Find(walker_far.BodyHandle())->position - kFar;
+    CHECK(walker_far.State().on_ground);
+    CHECK(q.x > 6.0);  // it went over the ledge
+    CHECK(Abs(p.x - q.x) < 1e-3);
+    CHECK(Abs(p.y - q.y) < 1e-3);
+    CHECK(Abs(p.z - q.z) < 1e-3);
 }

@@ -405,16 +405,6 @@ Libraries LibrariesOf(const PhysicsWorld& world)
     return Libraries{&world.Hulls(), &world.Meshes(), &world.Compounds(), &world.HeightFields()};
 }
 
-// The collider's pose seen from `anchor` (the query's own origin): the difference of the two positions is taken in
-// double precision and narrowed once, so the narrow phase works in small numbers wherever the query is.
-Pose PoseFrom(const Body& body, const Collider& collider, const Vec3d& anchor)
-{
-    Pose pose;
-    pose.position = (ColliderCenter(body, collider) - anchor).Narrow();
-    pose.rotation = body.orientation * collider.rotation;
-    return pose;
-}
-
 bool Unit(const Vec3& v, Vec3* out)
 {
     const f32 n2 = v.LengthSquared();

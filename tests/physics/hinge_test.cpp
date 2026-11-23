@@ -319,7 +319,7 @@ TEST_CASE("Hinge: the state hash of a hinge scene equals the committed constant"
     const u64 first = run(600);
     CHECK(first == run(600));
     CHECK(first != run(599));
-    CHECK(first == 0xebde560bdeb9a442ull);
+    CHECK(first == 0xc19246faadd6330bull);
 }
 
 TEST_CASE("Hinge: an axis against the frame's Z turns the frame by an exact half turn (no libm)",

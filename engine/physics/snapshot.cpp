@@ -14,7 +14,7 @@ namespace
 {
 
 constexpr u32 kMagic = 0x4e534850u;  // "PHSN"
-constexpr u32 kVersion = 3;
+constexpr u32 kVersion = 4;
 constexpr usize kMaxSlots = 1u << 24;
 
 // ---- pools -----------------------------------------------------------------------------------------------------
@@ -236,6 +236,7 @@ void WriteJoint(SnapshotOut& out, const JointRecord& j)
     out.Id(d.body_b.index, d.body_b.generation);
     out.V3(d.anchor_a);
     out.V3(d.anchor_b);
+    out.V3d(d.world_origin);
     out.Q(d.frame_a);
     out.Q(d.frame_b);
     out.F32(d.length);
@@ -276,6 +277,7 @@ void ReadJoint(SnapshotIn& in, JointRecord* j)
     d.body_b.generation = in.U32();
     d.anchor_a = in.V3();
     d.anchor_b = in.V3();
+    d.world_origin = in.V3d();
     d.frame_a = in.Q();
     d.frame_b = in.Q();
     d.length = in.F32();
@@ -326,6 +328,7 @@ void WriteContact(SnapshotOut& out, const ContactRecord& r)
     out.Id(r.b.index, r.b.generation);
     out.Id(r.body_a.index, r.body_a.generation);
     out.Id(r.body_b.index, r.body_b.generation);
+    out.V3d(r.manifold.anchor);
     out.V3(r.manifold.normal);
     out.U32(r.manifold.count);
     for (u32 k = 0; k < r.manifold.count; ++k)
@@ -351,6 +354,11 @@ void ReadContact(SnapshotIn& in, ContactRecord* r)
     r->body_a.generation = in.U32();
     r->body_b.index = in.U32();
     r->body_b.generation = in.U32();
+    r->manifold.anchor = in.V3d();
+    if (!SnapshotFinite(r->manifold.anchor))
+    {
+        in.Fail();
+    }
     r->manifold.normal = in.V3();
     r->manifold.count = in.U32();
     if (r->manifold.count > 4)

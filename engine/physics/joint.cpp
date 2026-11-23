@@ -9,10 +9,11 @@ namespace vse::physics
 
 Validation JointDesc::Validate() const
 {
-    if (!FiniteVec3(anchor_a) || !FiniteVec3(anchor_b) || !IsUnitQuaternion(frame_a) || !IsUnitQuaternion(frame_b) ||
-        !IsFinite(length) || !IsFinite(min_length) || !IsFinite(max_length) || !IsFinite(hertz) ||
-        !IsFinite(damping_ratio) || !IsFinite(break_force) || !IsFinite(break_torque) || !IsFinite(lower_angle) ||
-        !IsFinite(upper_angle) || !IsFinite(motor_speed) || !IsFinite(max_motor_torque))
+    if (!FiniteVec3(anchor_a) || !FiniteVec3(anchor_b) || !FiniteVec3(world_origin) || !InsideWorld(world_origin) ||
+        !IsUnitQuaternion(frame_a) || !IsUnitQuaternion(frame_b) || !IsFinite(length) || !IsFinite(min_length) ||
+        !IsFinite(max_length) || !IsFinite(hertz) || !IsFinite(damping_ratio) || !IsFinite(break_force) ||
+        !IsFinite(break_torque) || !IsFinite(lower_angle) || !IsFinite(upper_angle) || !IsFinite(motor_speed) ||
+        !IsFinite(max_motor_torque))
     {
         return Validation::NotFinite;
     }

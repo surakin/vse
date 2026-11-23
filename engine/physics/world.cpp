@@ -259,10 +259,11 @@ BodyStatus PhysicsWorld::JointReaction(JointId id, Vec3* force, Vec3* torque) co
 namespace
 {
 
-// A world point in the frame of a body (the origin and axes of the body), or in the world for no body.
+// A world point in the frame of a body (the origin and axes of the body); for no body (the world) it is zero: the
+// world side of a joint is measured from `JointDesc::world_origin`, which the caller sets.
 Vec3 ToLocal(const Body* body, const Vec3d& point)
 {
-    return body == nullptr ? point.Narrow()
+    return body == nullptr ? Vec3(0.0f, 0.0f, 0.0f)
                            : body->orientation.Conjugate().RotateVector((point - body->position).Narrow());
 }
 
@@ -276,6 +277,7 @@ JointDesc PhysicsWorld::MakeBallJoint(BodyId a, BodyId b, const Vec3d& world_poi
     desc.body_b = b;
     desc.anchor_a = ToLocal(a.IsValid() ? Find(a) : nullptr, world_point);
     desc.anchor_b = ToLocal(b.IsValid() ? Find(b) : nullptr, world_point);
+    desc.world_origin = world_point;
     return desc;
 }
 
@@ -287,6 +289,7 @@ JointDesc PhysicsWorld::MakeDistanceJoint(BodyId a, BodyId b, const Vec3d& point
     desc.body_b = b;
     desc.anchor_a = ToLocal(a.IsValid() ? Find(a) : nullptr, point_a);
     desc.anchor_b = ToLocal(b.IsValid() ? Find(b) : nullptr, point_b);
+    desc.world_origin = a.IsValid() ? point_b : point_a;
     const Vec3 d = (point_b - point_a).Narrow();
     const f32 length = Sqrt(d.LengthSquared());
     desc.length = length > 1e-6f ? length : 1e-6f;

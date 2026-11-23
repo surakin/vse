@@ -271,7 +271,7 @@ TEST_CASE("Step: the state hash of a 600-step scene is stable and equals the com
     const u64 first = RunScene(600);
     CHECK(first == RunScene(600));
     CHECK(first != RunScene(599));
-    CHECK(first == 0x79eda110a53a3725ull);
+    CHECK(first == 0x51f82412ee6bd9b5ull);
 }
 
 TEST_CASE("Hash: a state with a NaN is reported invalid", "[physics][step][hash]")

@@ -140,7 +140,7 @@ void PhysicsWorld::UpdateContactEvents(const Vector<ContactInput>& inputs, const
                 }
             }
             e.points = r.manifold.count;
-            e.point = r.manifold.points[deepest].position_a;
+            e.point = r.manifold.anchor + Vec3d(r.manifold.points[deepest].position_a);
             e.normal = r.manifold.normal;
             e.depth = r.manifold.points[deepest].depth;
             e.normal_impulse = r.normal_impulse;
@@ -223,12 +223,8 @@ void PhysicsWorld::UpdateTriggerEvents(const Vector<ColliderPair>& pairs)
         }
         else
         {
-            Pose pose_a;
-            pose_a.position = ColliderPose(*ba, ra->value).position;
-            pose_a.rotation = ba->orientation * ra->value.rotation;
-            Pose pose_b;
-            pose_b.position = ColliderPose(*bb, rb->value).position;
-            pose_b.rotation = bb->orientation * rb->value.rotation;
+            const Pose pose_a = PoseFrom(*ba, ra->value, ba->position);
+            const Pose pose_b = PoseFrom(*bb, rb->value, ba->position);
             ContactManifold manifold;
             inside = Collide(ra->value.shape, pose_a, rb->value.shape, pose_b, 0.0f, &manifold, &hulls_, &meshes_,
                              &compounds_, &height_fields_) == CollideResult::Contact;

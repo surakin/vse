@@ -30,6 +30,16 @@ inline Pose ColliderPose(const Body& body, const Collider& collider)
     return pose;
 }
 
+// The collider's pose seen from `anchor` (the query's own origin): the difference of the two positions is taken in
+// double precision and narrowed once, so the narrow phase works in small numbers wherever the query is.
+inline Pose PoseFrom(const Body& body, const Collider& collider, const Vec3d& anchor)
+{
+    Pose pose;
+    pose.position = (ColliderCenter(body, collider) - anchor).Narrow();
+    pose.rotation = body.orientation * collider.rotation;
+    return pose;
+}
+
 // A collider's exact world box (no margin, no sweep).
 inline Aabbd ColliderBounds(const Body& body, const Collider& collider)
 {

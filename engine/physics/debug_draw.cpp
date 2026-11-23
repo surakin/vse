@@ -219,16 +219,17 @@ void Contacts(const PhysicsWorld& world, const DebugDrawOptions& options, Vector
         const ContactRecord& record = contacts[i];
         for (u32 k = 0; k < record.manifold.count; ++k)
         {
-            const Vec3 point = record.manifold.points[k].position_a;
+            const Vec3 point = (record.manifold.anchor + Vec3d(record.manifold.points[k].position_a)).Narrow();
             Line(lines, point, point + record.manifold.normal * options.normal_length, kDebugContactColor);
         }
     }
 }
 
-Vec3 WorldAnchor(const PhysicsWorld& world, BodyId id, const Vec3& local)
+Vec3 WorldAnchor(const PhysicsWorld& world, BodyId id, const Vec3& local, const Vec3d& world_origin)
 {
     const Body* body = id.IsValid() ? world.Find(id) : nullptr;
-    return body != nullptr ? (body->position + Vec3d(body->orientation.ToMat3() * local)).Narrow() : local;
+    return body != nullptr ? (body->position + Vec3d(body->orientation.ToMat3() * local)).Narrow()
+                           : (world_origin + Vec3d(local)).Narrow();
 }
 
 void Joints(const PhysicsWorld& world, Vector<spatial::DebugLine>* lines)
@@ -241,8 +242,8 @@ void Joints(const PhysicsWorld& world, Vector<spatial::DebugLine>* lines)
         {
             continue;
         }
-        const Vec3 a = WorldAnchor(world, joint->desc.body_a, joint->desc.anchor_a);
-        const Vec3 b = WorldAnchor(world, joint->desc.body_b, joint->desc.anchor_b);
+        const Vec3 a = WorldAnchor(world, joint->desc.body_a, joint->desc.anchor_a, joint->desc.world_origin);
+        const Vec3 b = WorldAnchor(world, joint->desc.body_b, joint->desc.anchor_b, joint->desc.world_origin);
         Line(lines, a, b, kDebugJointColor);
         if (joint->desc.type == JointType::Hinge)
         {

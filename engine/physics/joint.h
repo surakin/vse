@@ -40,6 +40,9 @@ struct JointDesc
     Vec3 anchor_a = Vec3(0.0f, 0.0f, 0.0f);
     /// The anchor on body B, in its frame (in the world for a joint to the world).
     Vec3 anchor_b = Vec3(0.0f, 0.0f, 0.0f);
+    /// Where the world is, for a joint to the world: the anchors and frames of the world side are measured from this
+    /// point (so a joint to the world far from the origin keeps its precision). Ignored when both bodies exist.
+    Vec3d world_origin = Vec3d(0.0, 0.0, 0.0);
     /// The orientation of the joint's frame in body A (fixed joints).
     Quaternion frame_a = Quaternion::Identity();
     /// The orientation of the joint's frame in body B (in the world for a joint to the world).

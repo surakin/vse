@@ -5,6 +5,7 @@
 #include "lang/scalar.h"
 #include "physics/broad_phase.h"
 #include "physics/collide.h"
+#include "physics/query_index.h"
 #include "physics/world.h"
 
 namespace vse::physics
@@ -89,15 +90,14 @@ void PhysicsWorld::SweepContinuous()
                 continue;
             }
             ++step_stats_.ccd_queries;
-            Pose pose_target;
-            pose_target.position = (target->position + Vec3d(target->orientation.ToMat3() * other->value.offset))
-                                       .Narrow();
-            pose_target.rotation = target->orientation * other->value.rotation;
+            // Everything is placed relative to where the mover started the step (the differences taken in double
+            // precision).
+            const Pose pose_target = PoseFrom(*target, other->value, p0);
             const auto overlaps = [&](f32 t, f32 margin)
             {
                 const Quaternion q = BlendOrientation(q0, q1, t);
                 Pose pose;
-                pose.position = (LerpPoint(p0, p1, t) + Vec3d(q.ToMat3() * mine->value.offset)).Narrow();
+                pose.position = (LerpPoint(p0, p1, t) - p0).Narrow() + q.ToMat3() * mine->value.offset;
                 pose.rotation = q * mine->value.rotation;
                 ContactManifold manifold;
                 return Collide(mine->value.shape, pose, other->value.shape, pose_target, margin, &manifold, &hulls_,

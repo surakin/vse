@@ -10,6 +10,6 @@ target_link_libraries(render_features_demo PRIVATE physics jobs foundation)
 foreach(threads 1 2 4 16)
   add_test(NAME render_features_demo_hash_${threads} COMMAND render_features_demo --headless --steps 300 --threads ${threads})
   set_tests_properties(render_features_demo_hash_${threads} PROPERTIES LABELS "demo"
-    PASS_REGULAR_EXPRESSION "state hash 0xfcca005c39a038f4 ok")
+    PASS_REGULAR_EXPRESSION "state hash 0x9775bdf39b48677a ok")
   engine_label_tests(render_features_demo_hash_${threads})
 endforeach()

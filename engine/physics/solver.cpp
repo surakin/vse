@@ -46,7 +46,8 @@ struct ContactSolver::BodyState
 {
     Body* body = nullptr;
     Quaternion q0 = Quaternion::Identity();
-    Vec3 com0 = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3d origin = Vec3d(0.0, 0.0, 0.0);  // the body's position when the solve began
+    Vec3 com0 = Vec3(0.0f, 0.0f, 0.0f);   // the centre of mass seen from the origin when it began
     Vec3 dp = Vec3(0.0f, 0.0f, 0.0f);
     Quaternion dq = Quaternion::Identity();
     bool moves = false;
@@ -120,9 +121,10 @@ f32 EffectiveMass(const Body& a, const Body& b, const Vec3& ra, const Vec3& rb, 
     return k > 1e-12f ? 1.0f / k : 0.0f;
 }
 
-Vec3 CenterOfMass(const Body& b)
+// The centre of mass seen from the body's origin: the solver works in small, body-relative numbers.
+Vec3 CenterOffset(const Body& b)
 {
-    return (b.position + Vec3d(b.orientation.ToMat3() * b.mass.center)).Narrow();
+    return b.orientation.ToMat3() * b.mass.center;
 }
 
 // The soft constraint of a spring of `hertz` and `ratio` solved over `h` (Box2D's formulation: the constraint reacts
@@ -161,8 +163,12 @@ JointAnchors ComputeAnchors(const JointRecord& joint, const Body& a, const Body&
     JointAnchors out;
     out.ra = ma * (joint.desc.anchor_a - a.mass.center);
     out.rb = mb * (joint.desc.anchor_b - b.mass.center);
-    const Vec3 com_a = (a.position + Vec3d(ma * a.mass.center)).Narrow();
-    const Vec3 com_b = (b.position + Vec3d(mb * b.mass.center)).Narrow();
+    // The two sides are measured from each other: the difference of the positions is taken in double precision. The
+    // world side of a joint to the world sits at `world_origin`.
+    const Vec3d position_a = joint.desc.body_a.IsValid() ? a.position : joint.desc.world_origin;
+    const Vec3d position_b = joint.desc.body_b.IsValid() ? b.position : joint.desc.world_origin;
+    const Vec3 com_a = ma * a.mass.center;
+    const Vec3 com_b = (position_b - position_a).Narrow() + mb * b.mass.center;
     out.separation = (com_b + out.rb) - (com_a + out.ra);
     return out;
 }
@@ -585,7 +591,8 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
             BodyState st;
             st.body = body;
             st.q0 = body->orientation;
-            st.com0 = CenterOfMass(*body);
+            st.origin = body->position;
+            st.com0 = CenterOffset(*body);
             st.moves = body->settings.type != BodyType::Static;
             states.Push(st);
         }
@@ -631,8 +638,9 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
         c.bias_rate = with_static ? static_bias : dynamic_bias;
         c.mass_scale = with_static ? static_mass_scale : dynamic_mass_scale;
         c.impulse_scale = with_static ? static_impulse_scale : dynamic_impulse_scale;
-        const Vec3 com_a = states[c.sa].com0;
-        const Vec3 com_b = states[c.sb].com0;
+        // The points are measured from the manifold's anchor: so is each body's centre of mass.
+        const Vec3 com_a = (states[c.sa].origin - m.anchor).Narrow() + states[c.sa].com0;
+        const Vec3 com_b = (states[c.sb].origin - m.anchor).Narrow() + states[c.sb].com0;
         const Quaternion inv_a = body_a->orientation.Conjugate();
         Vec3 mean(0.0f, 0.0f, 0.0f);
         for (u32 k = 0; k < m.count; ++k)
@@ -654,7 +662,7 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
             row.rb = p.position_b - com_b;
             row.feature = p.feature_id;
             row.depth = p.depth;
-            row.local_a = inv_a.RotateVector(p.position_a - body_a->position.Narrow());
+            row.local_a = inv_a.RotateVector(p.position_a - (body_a->position - m.anchor).Narrow());
             row.normal_mass = EffectiveMass(*body_a, *body_b, row.ra, row.rb, m.normal);
             row.tangent_mass[0] = EffectiveMass(*body_a, *body_b, row.ra, row.rb, c.tangent[0]);
             row.tangent_mass[1] = EffectiveMass(*body_a, *body_b, row.ra, row.rb, c.tangent[1]);
@@ -858,7 +866,7 @@ void ContactSolver::Solve(PhysicsWorld* world, Span<const ContactInput> inputs, 
             }
             PhysicsWorld::LimitVelocity(config.max_velocity, st.body);
             PhysicsWorld::IntegratePosition(st.body, h);
-            st.dp = CenterOfMass(*st.body) - st.com0;
+            st.dp = (Vec3d(CenterOffset(*st.body)) + (st.body->position - st.origin) - Vec3d(st.com0)).Narrow();
             st.dq = st.body->orientation * st.q0.Conjugate();
         }
         for (u32 it = 0; it < config.iterations; ++it)

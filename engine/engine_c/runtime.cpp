@@ -4017,9 +4017,10 @@ u64 KeyOf(ecs::Entity entity)
     return entity.IsValid() ? entity.ToU64() : 0;
 }
 
-void FillEvent(engine_physics_event* out, u32 kind, ecs::Entity a, ecs::Entity b, const Vec3& point, const Vec3& normal,
+void FillEvent(engine_physics_event* out, u32 kind, ecs::Entity a, ecs::Entity b, const Vec3d& at, const Vec3& normal,
                f32 value)
 {
+    const Vec3 point = at.Narrow();  // the C API's points are single precision for now
     engine_physics_event event = {};
     event.struct_size = sizeof(engine_physics_event);
     event.kind = kind;

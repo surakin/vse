@@ -128,7 +128,7 @@ TEST_CASE("Script demo: the game runs, and its state hash is the same at 1, 2 an
 // is waiting for the Windows and macOS runs, KNOWN-ISSUES.md). The scripts use `+ - * /`, `sqrt` and `floor` only and
 // physics is bit-exact by design, so every machine must give this value: the cross-machine check of the scripting
 // phase. A machine that differs has found a real divergence (KNOWN-ISSUES.md names the machines that have run it).
-constexpr u64 kCrossMachineHash = 0x6223DFFC07E3F7F9ull;
+constexpr u64 kCrossMachineHash = 0x04D98E8A59BB0C83ull;
 
 TEST_CASE("Script demo: the state hash after 150 frames is the same on every machine", "[script_demo][cross_machine]")
 {

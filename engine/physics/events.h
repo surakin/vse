@@ -42,7 +42,7 @@ struct ContactEvent
     /// The number of points in the manifold (0 for an end).
     u32 points = 0;
     /// The deepest point, on the surface of `a`, in the world.
-    Vec3 point = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3d point = Vec3d(0.0, 0.0, 0.0);
     /// The normal, from `a` toward `b`.
     Vec3 normal = Vec3(0.0f, 0.0f, 0.0f);
     /// The depth of the deepest point (negative while the shapes are still apart by less than the contact margin).

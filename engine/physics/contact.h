@@ -31,9 +31,9 @@ struct Pose
 /// - Thread-safety: thread-compatible plain data.
 struct ContactPoint
 {
-    /// The point on the surface of shape A, in the world.
+    /// The point on the surface of shape A, in the world, measured from the manifold's `anchor`.
     Vec3 position_a = Vec3(0.0f, 0.0f, 0.0f);
-    /// The point on the surface of shape B, in the world.
+    /// The point on the surface of shape B, in the world, measured from the manifold's `anchor`.
     Vec3 position_b = Vec3(0.0f, 0.0f, 0.0f);
     /// Penetration (positive) or separation (negative), in metres.
     f32 depth = 0.0f;
@@ -49,6 +49,10 @@ struct ContactPoint
 /// - Thread-safety: thread-compatible plain data.
 struct ContactManifold
 {
+    /// The world point the contact points are measured from (the origin of body A for a contact the step made; zero for
+    /// a manifold `Collide` returns, whose poses are the caller's). Keeping the points near it keeps them exact far
+    /// from the world's origin; add it back for a world position.
+    Vec3d anchor = Vec3d(0.0, 0.0, 0.0);
     /// The unit normal, pointing from shape A toward shape B.
     Vec3 normal = Vec3(0.0f, 1.0f, 0.0f);
     /// The number of points used, 0 to 4.
