@@ -9,6 +9,7 @@
 #include "renderer/frame_data.h"
 #include "renderer/gbuffer.h"
 #include "renderer/lighting.h"
+#include "renderer/sky.h"
 #include "renderer/material.h"
 #include "renderer/renderer.h"
 #include "renderer/text_renderer.h"
@@ -210,12 +211,25 @@ public:
     void SetEnvironment(f32 exposure, const Vec3& background, f32 sky_reflection = 0.0f)
     {
         exposure_ = exposure;
-        if (lighting_)
-        {
-            lighting_->SetBackground(background);
-            lighting_->SetSkyReflection(sky_reflection);
-        }
+        SkySettings sky;
+        sky.mode = SkyMode::Color;
+        sky.color = background;
+        SetSky(sky, sky_reflection);
     }
+    /// Sets the sky for the next frames: a flat colour (the lit surfaces reflect it as `SetEnvironment` says), a
+    /// procedural gradient with a sun, or nothing. A per-frame value: no pipeline or resource is rebuilt.
+    ///
+    /// Mode `Color` clears the accumulation target to `settings.color`; `Procedural` clears it to black and draws the
+    /// sky where the depth buffer holds the far plane; `None` clears to black. A procedural sky's reflection colour is
+    /// its horizon colour times its exposure.
+    ///
+    /// - Param settings: valid settings ([[renderer::SkySettingsValid]]).
+    /// - Param sky_reflection: how much of the sky the lit surfaces reflect, not negative.
+    /// - Aborts: the settings are invalid.
+    void SetSky(const SkySettings& settings, f32 sky_reflection = 0.0f);
+    /// Returns the sky last set.
+    /// - Fails: never.
+    const SkySettings& Sky() const { return sky_settings_; }
     /// Renders one frame of `scene` seen by `camera`. See Renderer::RenderFrame.
     FrameStatus Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen);
 
@@ -299,6 +313,9 @@ private:
     UniquePtr<GBufferPass> gbuffer_;
     UniquePtr<LightingPass> lighting_;
     UniquePtr<TonemapPass> tonemap_;
+    UniquePtr<SkyPass> sky_;
+    SkySettings sky_settings_;
+    f32 sky_reflection_ = 0.0f;
     UniquePtr<GBufferDebugView> debug_view_;
     UniquePtr<Renderer> renderer_;
     GBufferTemplates templates_;

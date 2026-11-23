@@ -32,6 +32,7 @@ void SceneFrame::Destroy()
     label_text_.Clear();
     label_cache_.Clear();
     debug_view_.Reset();
+    sky_.Reset();
     tonemap_.Reset();
     lighting_.Reset();
     gbuffer_.Reset();
@@ -86,9 +87,10 @@ bool SceneFrame::Create(const SceneFrameSetup& setup)
     gbuffer_ = MakeUnique<GBufferPass>(setup.device, materials_.Get(), frame_.Get());
     lighting_ = MakeUnique<LightingPass>(setup.device, materials_.Get(), frame_.Get());
     tonemap_ = MakeUnique<TonemapPass>(setup.device);
+    sky_ = MakeUnique<SkyPass>(setup.device, materials_.Get(), frame_.Get());
     debug_view_ = MakeUnique<GBufferDebugView>(setup.device);
     const bool registered = lighting_->RegisterWith(setup.resources) && tonemap_->RegisterWith(setup.resources) &&
-                            debug_view_->RegisterWith(setup.resources);
+                            sky_->RegisterWith(setup.resources) && debug_view_->RegisterWith(setup.resources);
     if (!registered || !templates_.plain.IsValid() || !templates_.colored.IsValid() || !lighting_->Valid() ||
         !tonemap_->Valid() || !debug_view_->Valid())
     {
@@ -255,6 +257,31 @@ void SceneFrame::Rebind(rhi::Device* device, rhi::Swapchain* swapchain)
     renderer_->Rebind(device, swapchain);
 }
 
+void SceneFrame::SetSky(const SkySettings& settings, f32 sky_reflection)
+{
+    ENGINE_ASSERT(SkySettingsValid(settings), "SceneFrame::SetSky: the sky settings are invalid");
+    sky_settings_ = settings;
+    sky_reflection_ = sky_reflection;
+    if (lighting_)
+    {
+        // What the lit surfaces reflect, and what the accumulation target clears to behind a flat colour.
+        Vec3 reflected = settings.color;
+        Vec3 background = settings.color;
+        if (settings.mode == SkyMode::None)
+        {
+            reflected = background = Vec3(0.0f, 0.0f, 0.0f);
+        }
+        else if (settings.mode == SkyMode::Procedural)
+        {
+            reflected = settings.horizon * settings.exposure;
+            background = Vec3(0.0f, 0.0f, 0.0f);
+        }
+        lighting_->SetBackground(background);
+        lighting_->SetSkyReflection(sky_reflection);
+        lighting_->SetSkyReflectionColor(reflected);
+    }
+}
+
 FrameStatus SceneFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen)
 {
     return renderer_->RenderFrame(scene, camera, offscreen);
@@ -292,6 +319,7 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
     }
     self->gbuffer_stats_ = self->gbuffer_->Stats();
     self->light_summary_ = self->lighting_->Prepare(*context.scene, data);
+    self->sky_->Prepare(self->sky_settings_);
     self->frame_->Flush();
 
     const GBufferTargets targets = self->gbuffer_->AddToGraph(context.graph, scene_width, scene_height);
@@ -305,6 +333,7 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
     else
     {
         const GraphResource accum = self->lighting_->AddToGraph(context.graph, targets, scene_width, scene_height);
+        self->sky_->AddToGraph(context.graph, targets, accum);
         self->tonemap_->AddToGraph(context.graph, accum, scene_target, scene_format, self->exposure_);
     }
     const bool has_labels = self->labels_.Size() != 0;

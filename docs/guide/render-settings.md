@@ -43,7 +43,7 @@ The names refer to renderer objects explained in [The RHI](rhi.md) and [Renderer
 | Class | Meaning | Built-in examples |
 |---|---|---|
 | `None` | no GPU work | (none yet; a later setting that only a UI reads) |
-| `Dynamic` | the next frame reads a new parameter | `gbuffer_debug_layer`, `render_scale` |
+| `Dynamic` | the next frame reads a new parameter | `gbuffer_debug_layer`, `render_scale`, and the sky (`SceneFrame::SetSky`, a value set on the scene frame, not a registry setting) |
 | `Swapchain` | recreate the swapchain and what depends on its size or format | `present_mode`, `width`, `height`, `fullscreen`, `swapchain_format`, `hdr` |
 | `PipelineRebuild` | recreate pipelines, material bind groups and passes; the device stays | `shader_quality` |
 | `DeviceReset` | destroy and create the device; every device-dependent object is rebuilt | `adapter`, `validation`, `sync_validation`, `frames_in_flight`, `joint_palette_bytes` |

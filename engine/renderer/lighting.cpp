@@ -352,9 +352,9 @@ LightSummary LightingPass::Prepare(const RenderScene& scene, const FrameData& vi
     added_ = false;
     const LightSummary summary = frame_->WriteLights(scene, view);
     push_.ambient = Vec4(summary.ambient, sky_reflection_);
-    push_.sky[0] = background_.x;
-    push_.sky[1] = background_.y;
-    push_.sky[2] = background_.z;
+    push_.sky[0] = reflected_sky_.x;
+    push_.sky[1] = reflected_sky_.y;
+    push_.sky[2] = reflected_sky_.z;
     push_.directional_count = summary.directional_count;
     // One draw per visible point light, in buffer order (nearest first), scissored to its screen rectangle.
     point_draws_.Clear();

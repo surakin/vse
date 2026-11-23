@@ -250,7 +250,19 @@ public:
     ///
     /// - Param color: linear RGB, not negative.
     /// - Fails: never.
-    void SetBackground(const Vec3& color) { background_ = color; }
+    void SetBackground(const Vec3& color)
+    {
+        background_ = color;
+        reflected_sky_ = color;
+    }
+
+    /// Sets the colour of the sky the lit surfaces reflect, when it is not the background (a procedural sky is drawn
+    /// over a black background). `SetBackground` sets it to the background colour. Takes effect from the next
+    /// `Prepare`.
+    ///
+    /// - Param color: linear RGB, not negative.
+    /// - Fails: never.
+    void SetSkyReflectionColor(const Vec3& color) { reflected_sky_ = color; }
 
     /// Sets how much of the background colour (the sky) the lit surfaces reflect: the sky times `intensity` times a
     /// Fresnel term (about 4% head on for a smooth dielectric, nearly all at a glancing angle). 0, the default, adds
@@ -310,6 +322,7 @@ private:
     BufferRegion lights_;
     Vector<PointDraw> point_draws_;
     Vec3 background_ = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3 reflected_sky_ = Vec3(0.0f, 0.0f, 0.0f);
     f32 sky_reflection_ = 0.0f;
     Atomic<u32> point_draws_recorded_{0};
     u32 prepared_width_ = 0;

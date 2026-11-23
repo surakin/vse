@@ -16,6 +16,7 @@ set(RENDERER_TEST_SOURCES
   gbuffer_test.cpp
   skinning_test.cpp  # Phase 22 Day 322
   lighting_test.cpp
+  sky_test.cpp
   renderer_fault_test.cpp
   render_settings_test.cpp
   device_resources_test.cpp

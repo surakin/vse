@@ -675,6 +675,17 @@ a factor `pi` to match.
 `clamp(x (2.51 x + 0.03) / (x (2.43 x + 0.59) + 0.14), 0, 1)` (`TonemapAces`). It does not encode sRGB itself; the target
 must be an `*_SRGB` format, which is what the swapchain format is chosen to be, so the hardware does the encoding.
 
+### The sky
+
+[[renderer::SkySettings]] says what shows where no surface was drawn: `SkyMode::Color` (the default; the flat colour the
+accumulation target is cleared to), `Procedural` (a gradient from `ground` through `horizon` to `zenith` by the ray's
+elevation, a soft band of `horizon_blend` below the horizon, and a sun disc of `sun_size` radians with a soft edge) or `None`
+(black). [[renderer::SkyPass]] draws the procedural sky after the lighting pass: it rebuilds each pixel's view ray from the
+frame block's inverse view-projection and draws only where the depth buffer holds the far plane, so no draw order matters.
+[[renderer::SkyColor]] is the CPU twin of the shader. Set it with `SceneFrame::SetSky` (a per-frame value: nothing is rebuilt);
+`SceneFrame::SetEnvironment` keeps working and sets a flat colour. A procedural sky's reflection on lit surfaces uses its horizon
+colour times its exposure.
+
 ```cpp compile standalone run
 #include <cstdio>
 
@@ -834,7 +845,7 @@ valid: yes, handle changed: yes
 | Owner | `Release` | `Recreate` | Kept on the CPU |
 |---|---|---|---|
 | [[renderer::MaterialSystem]] (tier 3) | destroys layouts, default textures and sampler, shaders, parameter buffers, bind groups and pipelines | rebuilds them in that order; pipelines lazily on first use, or all at once with `MaterialSystemDesc::prewarm_pipelines` | template descriptors and reflection, parameter values, owner bindings, pipeline descriptors |
-| [[renderer::GBufferDebugView]], [[renderer::LightingPass]], [[renderer::TonemapPass]] (tier 4) | destroys shaders, layouts, sampler, pipelines | rebuilds them; the tonemap and debug pipelines are made by the next frame for the output format it has then | the embedded SPIR-V |
+| [[renderer::GBufferDebugView]], [[renderer::LightingPass]], [[renderer::SkyPass]], [[renderer::TonemapPass]] (tier 4) | destroys shaders, layouts, sampler, pipelines | rebuilds them; the tonemap and debug pipelines are made by the next frame for the output format it has then | the embedded SPIR-V |
 | [[renderer::FrameResources]] (tier 4) | unmaps and destroys the frame, object and light buffers | creates them again at the same capacities | nothing: every frame rewrites all of it from the scene |
 | [[renderer::TransientPool]] (tier 4) | destroys every pooled texture and buffer | nothing; the next frame takes what it needs | nothing (contents are per frame) |
 | [[renderer::GBufferPass]] | nothing: it holds only per-frame lists | | |

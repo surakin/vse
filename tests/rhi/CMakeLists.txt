@@ -41,6 +41,7 @@ set(RHI_TEST_SOURCES
   vulkan_vertex_format_test.cpp  # Phase 22 Day 317
   gbuffer_gpu_test.cpp
   lighting_gpu_test.cpp
+  sky_gpu_test.cpp
   skinning_gpu_test.cpp  # Phase 22 Day 322
   bc_gpu_test.cpp  # Phase 22 Days 324-325: the GPU decode of the BC formats against the asset decoder
   renderer_demo_gpu_test.cpp

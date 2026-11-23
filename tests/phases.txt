@@ -202,6 +202,7 @@ tests/renderer/gbuffer_test.cpp                       5
 tests/renderer/skinning_test.cpp                     22
 tests/renderer/geometry_test.cpp                      5
 tests/renderer/lighting_test.cpp                      5
+tests/renderer/sky_test.cpp                           28
 tests/renderer/lsan_options.cpp                       5
 tests/renderer/material_test.cpp                      5
 tests/renderer/mesh_topology_test.cpp                 5
@@ -217,6 +218,7 @@ tests/shader_mint/                              5
 tests/rhi/shader_interface_test.cpp             5   # asserts the Slang shaders' reflected interface (Days 69-71)
 tests/rhi/gbuffer_gpu_test.cpp                  5
 tests/rhi/lighting_gpu_test.cpp                 5
+tests/rhi/sky_gpu_test.cpp                      28
 tests/rhi/skinning_gpu_test.cpp                      22
 tests/rhi/bc_gpu_test.cpp                            22  # the GPU decode of BC1/4/5/7 (written on the Windows PC, 2026-11-15)
 tests/rhi/render_graph_gpu_test.cpp             5

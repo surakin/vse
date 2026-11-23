@@ -23,6 +23,7 @@ set(RENDERER_SOURCES
 set(RENDERER_PASS_SOURCES
   gbuffer.cpp
   lighting.cpp
+  sky.cpp
   text_renderer.cpp
   ui_renderer.cpp
   viewport_target.cpp
