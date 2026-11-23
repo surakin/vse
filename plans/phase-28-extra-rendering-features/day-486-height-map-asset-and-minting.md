@@ -7,6 +7,8 @@ A height map is a minted asset: samples in, a blob with the data the renderer an
 
 ## Tasks
 
+- [ ] **Added by Day 485's spike:** `rhi::Format::R16_UNorm` (Vulkan, Direct3D 12 and Metal names, format table, size rules, null-device test, guide line). **Dropped by it:** the stored normal map (the normals come from four height taps in the shader); read the normal-map wording of the tasks below as removed.
+
 - [ ] `asset::HeightMapData` (a shared unit: add it to `tools/shared_unit_check/units.txt` with `HeightMapDataPtr` and `HeightMapDataConstPtr` aliases in the same commit; CLAUDE.md "Shared representations"): width and height in samples (each at least 2, at most 8192), the world size and the height range, `u16` samples as a `SharedBytes` region by offset, the normal map region, and the min/max pyramid region (one `u16` pair per 32x32 block, then coarser).
 - [ ] `asset_mint mint-heightmap` reads a source of 16-bit samples (a raw little-endian `.r16` plus a params file for the size, the world extents and the height range; the engine reads no PNG at run time and the minter reads none either, as the texture minter), checks the sizes, derives the normals with a fixed-order Sobel-like kernel in integer or fixed-order float arithmetic, and builds the pyramid; byte-identical on repeat runs and at any thread count (a golden hash).
 - [ ] The blob layout, version and hostile-input checks follow the texture blob: a header with magic and version, sizes checked against the blob length with overflow-safe arithmetic, every offset inside the blob, a refusal of a height range that is not finite or has min above max.

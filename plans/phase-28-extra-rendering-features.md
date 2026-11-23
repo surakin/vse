@@ -62,3 +62,5 @@ Terrain streaming of world cells, foliage painting tools, virtual texturing, GPU
 ## Open questions
 
 None for the user now; Day 478 may start.
+
+- **Terrain spikes (Day 485, 2026-11-23):** tile quadtree; `R16_UNorm` height texture (a new RHI format, added Day 486); height-grid collider with a block min/max pyramid; normals from four height taps, no stored normal map. See `docs/superpowers/specs/2026-11-23-terrain-design.md`.
