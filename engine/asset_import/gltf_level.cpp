@@ -412,20 +412,19 @@ Status ImportLevel(const GltfDocument& document, const GltfNodeGraph& graph, con
         }
         {
             const f64 scale = static_cast<f64>(options.scale);
-            for (u32 axis = 0; axis < 3; ++axis)  // a double outside f32's range would convert to infinity
+            for (u32 axis = 0; axis < 3; ++axis)  // a scale outside f32's range would convert to infinity
             {
                 const f64 t = trs.translation[axis] * scale;
                 const f64 sc = trs.scale[axis];
-                if (!(t > -3.0e38 && t < 3.0e38 && sc > -3.0e38 && sc < 3.0e38))
+                // A translation is kept in double precision, up to the world's limit (1e12 m, as the physics module's).
+                if (!(t > -1.0e12 && t < 1.0e12 && sc > -3.0e38 && sc < 3.0e38))
                 {
                     return Refuse(error, StringView(where, CStrLength(where)),
                                   "has a translation or scale too large for a level", ErrorCode::Invalid);
                 }
             }
             ecs::LocalTransform local;
-            local.position.x = static_cast<f32>(trs.translation[0] * scale);
-            local.position.y = static_cast<f32>(trs.translation[1] * scale);
-            local.position.z = static_cast<f32>(trs.translation[2] * scale);
+            local.position = Vec3d(trs.translation[0] * scale, trs.translation[1] * scale, trs.translation[2] * scale);
             local.rotation.x = static_cast<f32>(trs.rotation[0]);
             local.rotation.y = static_cast<f32>(trs.rotation[1]);
             local.rotation.z = static_cast<f32>(trs.rotation[2]);

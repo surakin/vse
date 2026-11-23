@@ -7,6 +7,7 @@
 #include "asset/cpu_loaders.h"
 #include "asset/memory_backend.h"
 #include "animation/components.h"
+#include "ecs/transform.h"
 #include "ecs/schedule.h"
 #include "asset/level.h"
 #include "asset/material.h"
@@ -1155,6 +1156,54 @@ TEST_CASE("A level of a two-primitive mesh names each slot's material", "[asset]
             CHECK(slots.At(0).id == red.Value());
             CHECK(slots.At(1).id == blue.Value());
             CHECK(slots.At(2).id == 0);
+        });
+    CHECK(found == 1);
+}
+
+// Double precision Day 9: a node far from the origin keeps its translation in the level's transform.
+TEST_CASE("A level keeps a node's translation in double precision", "[asset][gltf][level][far]")
+{
+    GltfWriter w;
+    const f32 positions[9] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
+    const u16 indices[3] = {0, 1, 2};
+    const u32 pos = GmAcc(&w, positions, 9, 5126, "VEC3");
+    const u32 idx = GmAcc(&w, indices, 3, 5123, "SCALAR");
+    char json[600];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"name\":\"tri\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}],"
+             "\"nodes\":[{\"name\":\"thing\",\"mesh\":0,\"translation\":[1000000.25,2,-1000000.125]}],"
+             "\"scenes\":[{\"nodes\":[0]}],\"scene\":0",
+             pos, idx);
+    w.AddRoot(json);
+    ImportOptions options;
+    options.emit_level = true;
+    ImportResult result;
+    GltfError error;
+    REQUIRE(GmImport(w.Glb(), &result, &error, options).Ok());
+    const ImportedResource* level = nullptr;
+    for (usize i = 0; i < result.resources.Size(); ++i)
+    {
+        if (result.resources[i].type == types::kLevel)
+        {
+            level = &result.resources[i];
+        }
+    }
+    REQUIRE(level != nullptr);
+    TypeRegistry types = test::MakeBackendRegistry();
+    storage::ComponentRegistry registry;
+    REQUIRE(storage::RegisterBuiltinComponents(&registry).Ok());
+    REQUIRE(RegisterLevelComponents(&registry).Ok());
+    REQUIRE(animation::RegisterAnimationComponents(&registry).Ok());
+    ecs::World world;
+    storage::KeyIndex index;
+    REQUIRE(LoadLevelBlob(ByteSpan(level->blob.Data(), level->blob.Size()), types, registry, world, index).Ok());
+    u32 found = 0;
+    world.Query<ecs::Read<MeshReference>, ecs::Read<ecs::LocalTransform>>().ForEach(
+        [&](ecs::Entity, const MeshReference&, const ecs::LocalTransform& t)
+        {
+            ++found;
+            CHECK(t.position.x == 1000000.25);
+            CHECK(t.position.z == -1000000.125);
         });
     CHECK(found == 1);
 }

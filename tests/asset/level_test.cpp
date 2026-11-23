@@ -252,6 +252,37 @@ TEST_CASE("A level source mints to a blob that loads into a world with its refer
     CHECK(world.Peek<MeshReference>(tree)->material.id == 0);
 }
 
+TEST_CASE("A level placed far from the origin keeps its positions exactly", "[asset][level][far]")
+{
+    // 1,000 km and 1e11 m plus fractions a single-precision float cannot hold.
+    const char* text = "id 0000000000000001\n"
+                       "entity far\n"
+                       "  component local_transform\n"
+                       "    position = 1000000.25 2 -1000000.125\n"
+                       "entity farther\n"
+                       "  component local_transform\n"
+                       "    position = 100000000000.0625 0 0\n";
+    Rig rig;
+    Vector<byte> blob;
+    LevelSourceError error;
+    INFO(error.message.Data() << " at line " << error.line);
+    REQUIRE(rig.Mint(text, &blob, &error).Ok());
+    ecs::World world;
+    storage::KeyIndex index;
+    REQUIRE(LoadLevelBlob(AsBytes(blob), rig.types, rig.registry, world, index).Ok());
+    const ecs::Entity far_e = index.Find(LevelEntityKey(Rid(kLevelId), Vp("far")));
+    const ecs::Entity farther = index.Find(LevelEntityKey(Rid(kLevelId), Vp("farther")));
+    REQUIRE(far_e.IsValid());
+    REQUIRE(farther.IsValid());
+    const ecs::LocalTransform* a = world.Peek<ecs::LocalTransform>(far_e);
+    const ecs::LocalTransform* b = world.Peek<ecs::LocalTransform>(farther);
+    REQUIRE(a != nullptr);
+    REQUIRE(b != nullptr);
+    CHECK(a->position.x == 1000000.25);
+    CHECK(a->position.z == -1000000.125);
+    CHECK(b->position.x == 100000000000.0625);
+}
+
 TEST_CASE("Text, blob and world print back to the same canonical text", "[asset][level]")
 {
     Rig rig;

@@ -960,7 +960,7 @@ The text of a refusal, for a log: `error` when set, else the status's own messag
 inline constexpr u32 kGltfImporterOutputVersion;
 ```
 
-The version of what the glTF importer writes: raised by every change that can make a re-import of the same file give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that keeps imported blobs (a disk cache) keys them by this and by the engine's format fingerprint (`engine_api.import_format_version`, which also folds in the blob container and type versions). 2: glTF coverage (PBR maps, colours, morphs, lights); 3: skins in the space of the node that uses them (2026-11-20); 4: `KHR_materials_pbrSpecularGlossiness` converted to metallic-roughness, no longer ignored when only used (2026-11-20); 5: collision (glTF colliders: `MCOL`s, `static_collider`, `-colonly` meshes not drawn; 2026-11-20).
+The version of what the glTF importer writes: raised by every change that can make a re-import of the same file give other blobs (a fixed bug, a new field, other ids or paths, a changed default), and never otherwise. A host that keeps imported blobs (a disk cache) keys them by this and by the engine's format fingerprint (`engine_api.import_format_version`, which also folds in the blob container and type versions). 2: glTF coverage (PBR maps, colours, morphs, lights); 3: skins in the space of the node that uses them (2026-11-20); 4: `KHR_materials_pbrSpecularGlossiness` converted to metallic-roughness, no longer ignored when only used (2026-11-20); 5: collision (glTF colliders: `MCOL`s, `static_collider`, `-colonly` meshes not drawn; 2026-11-20); 6: node translations kept in double precision, level version 2 (2026-11-23).
 
 ## `kImportSteps` {#asset-kimportsteps}
 

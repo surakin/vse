@@ -1,7 +1,8 @@
 #pragma once
 
-//! The level blob (type `LEVL`, version 1): entities as the storage module's records, the table of every resource
-//! they name, and the list of levels it includes. Built by [[asset::BuildLevelBlob]], read by
+//! The level blob (type `LEVL`, version 2: entity positions are double precision): entities as the storage module's
+//! records, the table of every resource they name, and the list of levels it includes. Built by
+//! [[asset::BuildLevelBlob]], read by
 //! [[asset::ParseLevelBlob]] and put into a world by [[asset::LoadLevelBlob]].
 //!
 //! A level is the same data a save is: one [[storage::EntityRecord]] per entity (the entity container of

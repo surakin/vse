@@ -85,10 +85,8 @@ TEST_CASE("docgen on Windows: a child gets its arguments as given, quotes and ba
     CHECK(end.exited);
     CHECK(end.exit_code == 0);
     const engine_test::Text got = io_test::ReadText(out);
-    CHECK(
-        got.View() ==
-        StringView(
-            "[plain]\n[two words]\n[say \"hi\"]\n[trailing\\]\n[C:\\dir with space\\]\n[a\\\\\"b]\n[]\n"));
+    CHECK(got.View() ==
+          StringView("[plain]\n[two words]\n[say \"hi\"]\n[trailing\\]\n[C:\\dir with space\\]\n[a\\\\\"b]\n[]\n"));
 }
 
 TEST_CASE("docgen on Windows: exit codes, and an exception status as how a child was ended", "[docgen][windows]")

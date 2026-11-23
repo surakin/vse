@@ -39,8 +39,9 @@ namespace vse::asset
 /// (PBR maps, colours, morphs, lights); 3: skins in the space of the node that uses them (2026-11-20); 4:
 /// `KHR_materials_pbrSpecularGlossiness` converted to metallic-roughness, no longer ignored when only used
 /// (2026-11-20); 5: collision (glTF colliders: `MCOL`s,
-/// `static_collider`, `-colonly` meshes not drawn; 2026-11-20).
-inline constexpr u32 kGltfImporterOutputVersion = 5;
+/// `static_collider`, `-colonly` meshes not drawn; 2026-11-20); 6: node translations kept in double precision, level
+/// version 2 (2026-11-23).
+inline constexpr u32 kGltfImporterOutputVersion = 6;
 
 /// The steps an import goes through (container, textures and materials, skeletons, meshes, clips);
 /// `ImportOptions::steps_done` counts them.
