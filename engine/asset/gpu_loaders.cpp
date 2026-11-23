@@ -429,4 +429,42 @@ void RegisterGpuLoaders(ResourceManager* manager, GpuAssetContext* context)
     manager->RegisterLoader<GpuMaterialAsset>(&LoadGpuMaterial, context);
 }
 
+bool MakeHeightTexture(rhi::Device* device, const HeightMapView& view, renderer::DeviceResources* resources,
+                       renderer::GpuTexturePtr* out)
+{
+    out->Reset();
+    if (device == nullptr || view.Bytes() == nullptr || view.MipCount() == 0)
+    {
+        return false;
+    }
+    rhi::TextureDesc desc;
+    desc.width = view.Header().width;
+    desc.height = view.Header().height;
+    desc.mip_levels = view.MipCount();
+    desc.format = rhi::Format::R16_UNorm;
+    desc.usage = rhi::TextureUsage::Sampled;
+    Vector<renderer::TextureLevelSpan> levels;
+    if (!levels.TryReserve(view.MipCount()))
+    {
+        return false;
+    }
+    for (u32 mip = 0; mip < view.MipCount(); ++mip)
+    {
+        renderer::TextureLevelSpan span;
+        span.offset = view.MipOffset(mip);
+        span.bytes = static_cast<u64>(view.MipWidth(mip)) * view.MipHeight(mip) * 2;
+        span.mip = mip;
+        levels.Push(span);
+    }
+    renderer::GpuTexturePtr texture = MakeShared<renderer::GpuTexture>();
+    if (!texture->CreateFromSharedLevels(device, desc, view.Bytes(),
+                                         Span<const renderer::TextureLevelSpan>(levels.Data(), levels.Size()),
+                                         resources, "height map"))
+    {
+        return false;
+    }
+    *out = texture;
+    return true;
+}
+
 }  // namespace vse::asset

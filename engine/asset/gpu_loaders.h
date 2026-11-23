@@ -5,6 +5,7 @@
 //! own device resources, made recreatable: a device reset rebuilds them from the manager's own bytes.
 
 #include "asset/cpu_loaders.h"
+#include "asset/height_map.h"
 #include "asset/resource_manager.h"
 #include "renderer/device_resources.h"
 #include "renderer/gbuffer.h"
@@ -111,6 +112,20 @@ template <> struct ResourceTraits<GpuMaterialAsset>
     static constexpr ResourceType kType = types::kMaterial;                          ///< `MATL`.
     static constexpr u32 kKind = ResourceType::FromChars('g', 'M', 'A', 'T').Tag();  ///< The code of the C++ type.
 };
+
+/// Makes the height texture of a height map (`R16_UNorm`, all mip levels) straight from the blob's bytes.
+///
+/// The texture shares the view's bytes, so a device reset uploads it again from the same samples.
+///
+/// - Param device: the device.
+/// - Param view: an open height map.
+/// - Param resources: the registry the texture registers with, or null.
+/// - Param out: set to the texture on success.
+/// - Returns: true on success.
+/// - Fails: returns false, leaving `*out` empty, for an empty view or when the device refuses the texture.
+/// - Ownership: shares the view's bytes; `*out` is written.
+bool MakeHeightTexture(rhi::Device* device, const HeightMapView& view, renderer::DeviceResources* resources,
+                       renderer::GpuTexturePtr* out);
 
 /// The ids of the fallback resources ([[asset::RegisterGpuFallbacks]]); they are in no mount.
 inline constexpr u64 kFallbackMeshId = 0xfa11bac000000001ull;      ///< The unit cube.

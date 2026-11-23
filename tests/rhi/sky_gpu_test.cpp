@@ -414,14 +414,14 @@ TEST_CASE("A cube sky turns with its rotation, takes tint and exposure, draws HD
             bright.tint = Vec3(0.5f, 1.0f, 2.0f);
             bright.exposure = 1.5f;
             frame = RenderSky(rig, scene, cam, bright);
-            CHECK(Close(frame.Accum(32, 32, 0), 1.5f));
-            CHECK(Close(frame.Accum(32, 32, 1), 1.5f));
-            CHECK(Close(frame.Accum(32, 32, 2), 1.5f));
+            CHECK(SkyClose(frame.Accum(32, 32, 0), 1.5f));
+            CHECK(SkyClose(frame.Accum(32, 32, 1), 1.5f));
+            CHECK(SkyClose(frame.Accum(32, 32, 2), 1.5f));
             bright.tint = Vec3(1, 1, 1);
             bright.exposure = 1.0f;
             frame = RenderSky(rig, scene, cam, bright);
-            CHECK(Close(frame.Accum(32, 32, 0), 2.0f));
-            CHECK(Close(frame.Accum(5, 60, 2), 0.5f));
+            CHECK(SkyClose(frame.Accum(32, 32, 0), 2.0f));
+            CHECK(SkyClose(frame.Accum(5, 60, 2), 0.5f));
 
             // LDR sRGB: a texel of 128 is 0.2158 linear.
             Vector<byte> ldr;
@@ -434,7 +434,7 @@ TEST_CASE("A cube sky turns with its rotation, takes tint and exposure, draws HD
             dim.mode = SkyMode::Cube;
             dim.cube = SkyMakeCube(device.Get(), rhi::Format::RGBA8_SRGB, 4, Move(ldr));
             frame = RenderSky(rig, scene, cam, dim);
-            CHECK(Close(frame.Accum(32, 32, 0), 0.2158f));
+            CHECK(SkyClose(frame.Accum(32, 32, 0), 0.2158f));
 
             // No cube: the procedural sky is drawn, as it would be for the mode Procedural.
             SkySettings none;
@@ -443,9 +443,9 @@ TEST_CASE("A cube sky turns with its rotation, takes tint and exposure, draws HD
             SkySettings procedural = none;
             procedural.mode = SkyMode::Procedural;
             const Vec3 want = SkyColor(procedural, PixelRay(cam, 10, 10));
-            CHECK(Close(frame.Accum(10, 10, 0), want.x));
-            CHECK(Close(frame.Accum(10, 10, 1), want.y));
-            CHECK(Close(frame.Accum(10, 10, 2), want.z));
+            CHECK(SkyClose(frame.Accum(10, 10, 0), want.x));
+            CHECK(SkyClose(frame.Accum(10, 10, 1), want.y));
+            CHECK(SkyClose(frame.Accum(10, 10, 2), want.z));
             device->WaitIdle();
         }
         device->WaitIdle();

@@ -35,6 +35,8 @@ set(ENGINE_SHADERS
   tonemap.frag
   sky.frag
   sky_cube.frag
+  terrain.vert
+  terrain.frag
   mipgen.comp
   morph.comp
   text.vert

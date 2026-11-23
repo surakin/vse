@@ -7748,45 +7748,46 @@ asset::FilesystemBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-fi
 asset::FilesystemBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-filesystembackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/filesystem_backend.h:67
 asset::FilesystemBackend::ReadTable(ResourceTable*)	function	asset	asset-filesystembackend-readtable-resourcetable-star	asset.md	engine/asset/filesystem_backend.h:68
 asset::FilesystemBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-filesystembackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/filesystem_backend.h:69
-asset::GpuAssetContext	struct	asset	asset-gpuassetcontext	asset.md	engine/asset/gpu_loaders.h:23
-asset::GpuAssetContext::device	variable	asset	asset-gpuassetcontext-device	asset.md	engine/asset/gpu_loaders.h:25
-asset::GpuAssetContext::resources	variable	asset	asset-gpuassetcontext-resources	asset.md	engine/asset/gpu_loaders.h:26
-asset::GpuAssetContext::materials	variable	asset	asset-gpuassetcontext-materials	asset.md	engine/asset/gpu_loaders.h:27
-asset::GpuAssetContext::templates	variable	asset	asset-gpuassetcontext-templates	asset.md	engine/asset/gpu_loaders.h:28
-asset::GpuMeshAsset	struct	asset	asset-gpumeshasset	asset.md	engine/asset/gpu_loaders.h:38
-asset::GpuMeshAsset::view	variable	asset	asset-gpumeshasset-view	asset.md	engine/asset/gpu_loaders.h:40
-asset::GpuMeshAsset::bytes	variable	asset	asset-gpumeshasset-bytes	asset.md	engine/asset/gpu_loaders.h:41
-asset::GpuMeshAsset::geometry	variable	asset	asset-gpumeshasset-geometry	asset.md	engine/asset/gpu_loaders.h:42
-asset::GpuMeshAsset::mesh	variable	asset	asset-gpumeshasset-mesh	asset.md	engine/asset/gpu_loaders.h:43
-asset::GpuTextureAsset	struct	asset	asset-gputextureasset	asset.md	engine/asset/gpu_loaders.h:51
-asset::GpuTextureAsset::view	variable	asset	asset-gputextureasset-view	asset.md	engine/asset/gpu_loaders.h:53
-asset::GpuTextureAsset::bytes	variable	asset	asset-gputextureasset-bytes	asset.md	engine/asset/gpu_loaders.h:54
-asset::GpuTextureAsset::texture	variable	asset	asset-gputextureasset-texture	asset.md	engine/asset/gpu_loaders.h:55
-asset::GpuMaterial	struct	asset	asset-gpumaterial	asset.md	engine/asset/gpu_loaders.h:65
-asset::GpuMaterial::GpuMaterial()	function	asset	asset-gpumaterial-gpumaterial	asset.md	engine/asset/gpu_loaders.h:67
-asset::GpuMaterial::GpuMaterial(const GpuMaterial&)	function	asset	asset-gpumaterial-gpumaterial-const-gpumaterial-amp	asset.md	engine/asset/gpu_loaders.h:68
-asset::GpuMaterial::operator=(const GpuMaterial&)	function	asset	asset-gpumaterial-operator-eq-const-gpumaterial-amp	asset.md	engine/asset/gpu_loaders.h:69
-asset::GpuMaterial::~GpuMaterial()	function	asset	asset-gpumaterial-tilde-gpumaterial	asset.md	engine/asset/gpu_loaders.h:71
-asset::GpuMaterial::materials	variable	asset	asset-gpumaterial-materials	asset.md	engine/asset/gpu_loaders.h:73
-asset::GpuMaterial::id	variable	asset	asset-gpumaterial-id	asset.md	engine/asset/gpu_loaders.h:74
-asset::GpuMaterial::flags	variable	asset	asset-gpumaterial-flags	asset.md	engine/asset/gpu_loaders.h:75
-asset::GpuMaterialPtr	alias	asset	asset-gpumaterialptr	asset.md	engine/asset/gpu_loaders.h:79
-asset::GpuMaterialAsset	struct	asset	asset-gpumaterialasset	asset.md	engine/asset/gpu_loaders.h:85
-asset::GpuMaterialAsset::material	variable	asset	asset-gpumaterialasset-material	asset.md	engine/asset/gpu_loaders.h:87
-asset::ResourceTraits<GpuMeshAsset>	struct	asset	asset-resourcetraits-lt-gpumeshasset-gt	asset.md	engine/asset/gpu_loaders.h:93
-asset::ResourceTraits<GpuMeshAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:95
-asset::ResourceTraits<GpuMeshAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:96
-asset::ResourceTraits<GpuTextureAsset>	struct	asset	asset-resourcetraits-lt-gputextureasset-gt	asset.md	engine/asset/gpu_loaders.h:101
-asset::ResourceTraits<GpuTextureAsset>::kType	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:103
-asset::ResourceTraits<GpuTextureAsset>::kKind	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:104
-asset::ResourceTraits<GpuMaterialAsset>	struct	asset	asset-resourcetraits-lt-gpumaterialasset-gt	asset.md	engine/asset/gpu_loaders.h:109
-asset::ResourceTraits<GpuMaterialAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:111
-asset::ResourceTraits<GpuMaterialAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:112
-asset::kFallbackMeshId	variable	asset	asset-kfallbackmeshid	asset.md	engine/asset/gpu_loaders.h:116
-asset::kFallbackTextureId	variable	asset	asset-kfallbacktextureid	asset.md	engine/asset/gpu_loaders.h:117
-asset::kFallbackMaterialId	variable	asset	asset-kfallbackmaterialid	asset.md	engine/asset/gpu_loaders.h:118
-asset::RegisterGpuFallbacks(ResourceManager*)	function	asset	asset-registergpufallbacks-resourcemanager-star	asset.md	engine/asset/gpu_loaders.h:128
-asset::RegisterGpuLoaders(ResourceManager*,GpuAssetContext*)	function	asset	asset-registergpuloaders-resourcemanager-star-gpuassetcontext-star	asset.md	engine/asset/gpu_loaders.h:138
+asset::GpuAssetContext	struct	asset	asset-gpuassetcontext	asset.md	engine/asset/gpu_loaders.h:24
+asset::GpuAssetContext::device	variable	asset	asset-gpuassetcontext-device	asset.md	engine/asset/gpu_loaders.h:26
+asset::GpuAssetContext::resources	variable	asset	asset-gpuassetcontext-resources	asset.md	engine/asset/gpu_loaders.h:27
+asset::GpuAssetContext::materials	variable	asset	asset-gpuassetcontext-materials	asset.md	engine/asset/gpu_loaders.h:28
+asset::GpuAssetContext::templates	variable	asset	asset-gpuassetcontext-templates	asset.md	engine/asset/gpu_loaders.h:29
+asset::GpuMeshAsset	struct	asset	asset-gpumeshasset	asset.md	engine/asset/gpu_loaders.h:39
+asset::GpuMeshAsset::view	variable	asset	asset-gpumeshasset-view	asset.md	engine/asset/gpu_loaders.h:41
+asset::GpuMeshAsset::bytes	variable	asset	asset-gpumeshasset-bytes	asset.md	engine/asset/gpu_loaders.h:42
+asset::GpuMeshAsset::geometry	variable	asset	asset-gpumeshasset-geometry	asset.md	engine/asset/gpu_loaders.h:43
+asset::GpuMeshAsset::mesh	variable	asset	asset-gpumeshasset-mesh	asset.md	engine/asset/gpu_loaders.h:44
+asset::GpuTextureAsset	struct	asset	asset-gputextureasset	asset.md	engine/asset/gpu_loaders.h:52
+asset::GpuTextureAsset::view	variable	asset	asset-gputextureasset-view	asset.md	engine/asset/gpu_loaders.h:54
+asset::GpuTextureAsset::bytes	variable	asset	asset-gputextureasset-bytes	asset.md	engine/asset/gpu_loaders.h:55
+asset::GpuTextureAsset::texture	variable	asset	asset-gputextureasset-texture	asset.md	engine/asset/gpu_loaders.h:56
+asset::GpuMaterial	struct	asset	asset-gpumaterial	asset.md	engine/asset/gpu_loaders.h:66
+asset::GpuMaterial::GpuMaterial()	function	asset	asset-gpumaterial-gpumaterial	asset.md	engine/asset/gpu_loaders.h:68
+asset::GpuMaterial::GpuMaterial(const GpuMaterial&)	function	asset	asset-gpumaterial-gpumaterial-const-gpumaterial-amp	asset.md	engine/asset/gpu_loaders.h:69
+asset::GpuMaterial::operator=(const GpuMaterial&)	function	asset	asset-gpumaterial-operator-eq-const-gpumaterial-amp	asset.md	engine/asset/gpu_loaders.h:70
+asset::GpuMaterial::~GpuMaterial()	function	asset	asset-gpumaterial-tilde-gpumaterial	asset.md	engine/asset/gpu_loaders.h:72
+asset::GpuMaterial::materials	variable	asset	asset-gpumaterial-materials	asset.md	engine/asset/gpu_loaders.h:74
+asset::GpuMaterial::id	variable	asset	asset-gpumaterial-id	asset.md	engine/asset/gpu_loaders.h:75
+asset::GpuMaterial::flags	variable	asset	asset-gpumaterial-flags	asset.md	engine/asset/gpu_loaders.h:76
+asset::GpuMaterialPtr	alias	asset	asset-gpumaterialptr	asset.md	engine/asset/gpu_loaders.h:80
+asset::GpuMaterialAsset	struct	asset	asset-gpumaterialasset	asset.md	engine/asset/gpu_loaders.h:86
+asset::GpuMaterialAsset::material	variable	asset	asset-gpumaterialasset-material	asset.md	engine/asset/gpu_loaders.h:88
+asset::ResourceTraits<GpuMeshAsset>	struct	asset	asset-resourcetraits-lt-gpumeshasset-gt	asset.md	engine/asset/gpu_loaders.h:94
+asset::ResourceTraits<GpuMeshAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:96
+asset::ResourceTraits<GpuMeshAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:97
+asset::ResourceTraits<GpuTextureAsset>	struct	asset	asset-resourcetraits-lt-gputextureasset-gt	asset.md	engine/asset/gpu_loaders.h:102
+asset::ResourceTraits<GpuTextureAsset>::kType	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:104
+asset::ResourceTraits<GpuTextureAsset>::kKind	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:105
+asset::ResourceTraits<GpuMaterialAsset>	struct	asset	asset-resourcetraits-lt-gpumaterialasset-gt	asset.md	engine/asset/gpu_loaders.h:110
+asset::ResourceTraits<GpuMaterialAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:112
+asset::ResourceTraits<GpuMaterialAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:113
+asset::MakeHeightTexture(rhi::Device*,const HeightMapView&,renderer::DeviceResources*,renderer::GpuTexturePtr*)	function	asset	asset-makeheighttexture-rhi-device-star-const-heightmapview-amp-renderer-deviceresources-star-renderer-gputextureptr-star	asset.md	engine/asset/gpu_loaders.h:127
+asset::kFallbackMeshId	variable	asset	asset-kfallbackmeshid	asset.md	engine/asset/gpu_loaders.h:131
+asset::kFallbackTextureId	variable	asset	asset-kfallbacktextureid	asset.md	engine/asset/gpu_loaders.h:132
+asset::kFallbackMaterialId	variable	asset	asset-kfallbackmaterialid	asset.md	engine/asset/gpu_loaders.h:133
+asset::RegisterGpuFallbacks(ResourceManager*)	function	asset	asset-registergpufallbacks-resourcemanager-star	asset.md	engine/asset/gpu_loaders.h:143
+asset::RegisterGpuLoaders(ResourceManager*,GpuAssetContext*)	function	asset	asset-registergpuloaders-resourcemanager-star-gpuassetcontext-star	asset.md	engine/asset/gpu_loaders.h:153
 asset::kHeightMapHeaderBytes	variable	asset	asset-kheightmapheaderbytes	asset.md	engine/asset/height_map.h:35
 asset::kMinHeightMapSide	variable	asset	asset-kminheightmapside	asset.md	engine/asset/height_map.h:37
 asset::kMaxHeightMapSide	variable	asset	asset-kmaxheightmapside	asset.md	engine/asset/height_map.h:39
@@ -13491,6 +13492,31 @@ renderer::SkyPass::RecreatableName() const	function	renderer	renderer-skypass-re
 renderer::SkyPass::Valid() const	function	renderer	renderer-skypass-valid-const	renderer.md	engine/renderer/sky.h:151
 renderer::SkyPass::Prepare(const SkySettings&)	function	renderer	renderer-skypass-prepare-const-skysettings-amp	renderer.md	engine/renderer/sky.h:161
 renderer::SkyPass::AddToGraph(RenderGraph*,const GBufferTargets&,GraphResource)	function	renderer	renderer-skypass-addtograph-rendergraph-star-const-gbuffertargets-amp-graphresource	renderer.md	engine/renderer/sky.h:172
+renderer::kMaxTerrainDrawTiles	variable	renderer	renderer-kmaxterraindrawtiles	renderer.md	engine/renderer/terrain_pass.h:28
+renderer::TerrainDraw	struct	renderer	renderer-terraindraw	renderer.md	engine/renderer/terrain_pass.h:33
+renderer::TerrainDraw::height	variable	renderer	renderer-terraindraw-height	renderer.md	engine/renderer/terrain_pass.h:35
+renderer::TerrainDraw::samples_x	variable	renderer	renderer-terraindraw-samples-x	renderer.md	engine/renderer/terrain_pass.h:36
+renderer::TerrainDraw::samples_z	variable	renderer	renderer-terraindraw-samples-z	renderer.md	engine/renderer/terrain_pass.h:37
+renderer::TerrainDraw::cell_size	variable	renderer	renderer-terraindraw-cell-size	renderer.md	engine/renderer/terrain_pass.h:38
+renderer::TerrainDraw::range_min	variable	renderer	renderer-terraindraw-range-min	renderer.md	engine/renderer/terrain_pass.h:39
+renderer::TerrainDraw::range_max	variable	renderer	renderer-terraindraw-range-max	renderer.md	engine/renderer/terrain_pass.h:40
+renderer::TerrainDraw::world	variable	renderer	renderer-terraindraw-world	renderer.md	engine/renderer/terrain_pass.h:41
+renderer::TerrainDraw::select	variable	renderer	renderer-terraindraw-select	renderer.md	engine/renderer/terrain_pass.h:42
+renderer::TerrainPass	class	renderer	renderer-terrainpass	renderer.md	engine/renderer/terrain_pass.h:49
+renderer::TerrainPass::TerrainPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-terrainpass-terrainpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/terrain_pass.h:60
+renderer::TerrainPass::~TerrainPass()	function	renderer	renderer-terrainpass-tilde-terrainpass	renderer.md	engine/renderer/terrain_pass.h:62
+renderer::TerrainPass::TerrainPass(const TerrainPass&)	function	renderer	renderer-terrainpass-terrainpass-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:63
+renderer::TerrainPass::operator=(const TerrainPass&)	function	renderer	renderer-terrainpass-operator-eq-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:64
+renderer::TerrainPass::RegisterWith(DeviceResources*)	function	renderer	renderer-terrainpass-registerwith-deviceresources-star	renderer.md	engine/renderer/terrain_pass.h:72
+renderer::TerrainPass::Release()	function	renderer	renderer-terrainpass-release	renderer.md	engine/renderer/terrain_pass.h:75
+renderer::TerrainPass::Recreate(rhi::Device*)	function	renderer	renderer-terrainpass-recreate-rhi-device-star	renderer.md	engine/renderer/terrain_pass.h:82
+renderer::TerrainPass::Live() const	function	renderer	renderer-terrainpass-live-const	renderer.md	engine/renderer/terrain_pass.h:83
+renderer::TerrainPass::RecreatableName() const	function	renderer	renderer-terrainpass-recreatablename-const	renderer.md	engine/renderer/terrain_pass.h:84
+renderer::TerrainPass::Valid() const	function	renderer	renderer-terrainpass-valid-const	renderer.md	engine/renderer/terrain_pass.h:88
+renderer::TerrainPass::Prepare(const TerrainDraw&,Span<const TerrainTile>,u64)	function	renderer	renderer-terrainpass-prepare-const-terraindraw-amp-span-lt-const-terraintile-gt-u64	renderer.md	engine/renderer/terrain_pass.h:96
+renderer::TerrainPass::Clear()	function	renderer	renderer-terrainpass-clear	renderer.md	engine/renderer/terrain_pass.h:100
+renderer::TerrainPass::AddToGraph(RenderGraph*,const GBufferTargets&)	function	renderer	renderer-terrainpass-addtograph-rendergraph-star-const-gbuffertargets-amp	renderer.md	engine/renderer/terrain_pass.h:110
+renderer::TerrainPass::DrawnTiles() const	function	renderer	renderer-terrainpass-drawntiles-const	renderer.md	engine/renderer/terrain_pass.h:114
 renderer::kTerrainTileCells	variable	renderer	renderer-kterraintilecells	renderer.md	engine/renderer/terrain_tiles.h:23
 renderer::kMaxTerrainLevels	variable	renderer	renderer-kmaxterrainlevels	renderer.md	engine/renderer/terrain_tiles.h:25
 renderer::TerrainTilesDesc	struct	renderer	renderer-terraintilesdesc	renderer.md	engine/renderer/terrain_tiles.h:30

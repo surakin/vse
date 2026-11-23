@@ -25,6 +25,7 @@ set(RENDERER_PASS_SOURCES
   gbuffer.cpp
   lighting.cpp
   sky.cpp
+  terrain_pass.cpp  # Phase 28 Day 488
   text_renderer.cpp
   ui_renderer.cpp
   viewport_target.cpp

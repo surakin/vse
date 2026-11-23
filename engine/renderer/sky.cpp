@@ -6,6 +6,7 @@
 #include "lang/scalar.h"
 #include "lang/utility.h"
 #include "log/assert.h"
+#include "renderer/lighting.h"
 #include "renderer/renderer_log.h"
 #include "sky.frag.dxil.inc"
 #include "sky_cube.frag.dxil.inc"

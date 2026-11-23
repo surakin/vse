@@ -5164,6 +5164,28 @@ static constexpr u32 kKind;
 
 The code of the C++ type.
 
+## `MakeHeightTexture(rhi::Device*,const HeightMapView&,renderer::DeviceResources*,renderer::GpuTexturePtr*)` {#asset-makeheighttexture-rhi-device-star-const-heightmapview-amp-renderer-deviceresources-star-renderer-gputextureptr-star}
+
+`function asset::MakeHeightTexture` — defined in `engine/asset/gpu_loaders.h`
+
+```cpp
+bool MakeHeightTexture(rhi::Device* device, const HeightMapView& view, renderer::DeviceResources* resources, renderer::GpuTexturePtr* out);
+```
+
+Makes the height texture of a height map (`R16_UNorm`, all mip levels) straight from the blob's bytes.
+
+The texture shares the view's bytes, so a device reset uploads it again from the same samples.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device. |
+| Parameter `view` | an open height map. |
+| Parameter `resources` | the registry the texture registers with, or null. |
+| Parameter `out` | set to the texture on success. |
+| Returns | true on success. |
+| Fails | returns false, leaving `*out` empty, for an empty view or when the device refuses the texture. |
+| Ownership | shares the view's bytes; `*out` is written. |
+
 ## `kFallbackMeshId` {#asset-kfallbackmeshid}
 
 `variable asset::kFallbackMeshId` — defined in `engine/asset/gpu_loaders.h`
