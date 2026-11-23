@@ -33,9 +33,9 @@ the file-time and durable-sync hooks of `io/posix/posix_io.h`, the executable pa
 - **macOS (Phase 21, built on Days 287-288):** the POSIX backend shared with Linux (`io/posix/`); case- and normalization-insensitive default
   volumes (the layer does not fold); `F_FULLFSYNC` for durability; `fcopyfile`; the default executor for asynchronous work (`dispatch_io` measured
   slower); `~/Library` user directories from `$HOME` or `NSSearchPathForDirectoriesInDomains`.
-- **Android and iOS (Phase 29):** app-private directories as the user directories; the asset bundle is a read-only archive opened as a `File` backend
+- **Android and iOS (Phase 31):** app-private directories as the user directories; the asset bundle is a read-only archive opened as a `File` backend
   with a scheme (`RegisterFileScheme`), not a path; no `Writable` capability there.
-- **Consoles (Phase 30):** title storage and save-data APIs behind the same `File`; the install directory is read-only; asynchronous requests map to the
+- **Consoles (Phase 32):** title storage and save-data APIs behind the same `File`; the install directory is read-only; asynchronous requests map to the
   platform's I/O queue.
 
 ## Sharing (every platform)

@@ -185,9 +185,9 @@ examples, benchmarks, `external/crashpad`, `external/libunwindstack-ndk`, `ndk/`
 - **macOS (Phase 21):** supported (macOS 15+, Apple Clang or LLVM Clang 15+); Breakpad backend available; libbacktrace
   needs the dSYM next to the binary; code signing and entitlements for the handler apply to the Crashpad backend only;
   `sysctl` `P_TRACED` for debugger detection; `posix_spawn` death tests shared with Linux.
-- **Android / iOS (Phase 29):** Android API 21+, NDK 23+, default backend `inproc` (no minidump); iOS is not in the
+- **Android / iOS (Phase 31):** Android API 21+, NDK 23+, default backend `inproc` (no minidump); iOS is not in the
   supported list (the support matrix marks Breakpad untested there): designed in, `Unsupported` where needed.
-- **Consoles (Phase 30):** separate sentry repos for PlayStation, Xbox and Switch, under NDA.
+- **Consoles (Phase 32):** separate sentry repos for PlayStation, Xbox and Switch, under NDA.
 
 The neutral-interface design (a `CrashReason` enum plus the raw platform code, an opaque native context, `u64` thread ids,
 a sink type instead of a descriptor, `Unsupported` results) is unchanged from the plan and fits all of the above.
@@ -206,12 +206,12 @@ a sink type instead of a descriptor, `Unsupported` results) is unchanged from th
 
 Checked in `third_party/sentry_native/` (0.17.6) and `third_party/libbacktrace/` (commit `0b9b49c`).
 
-| | Linux (built and tested) | Windows (Phase 13) | macOS (Phase 21) | Android / iOS (Phase 29) | Consoles (Phase 30) |
+| | Linux (built and tested) | Windows (Phase 13) | macOS (Phase 21) | Android / iOS (Phase 31) | Consoles (Phase 32) |
 |---|---|---|---|---|---|
 | sentry-native Breakpad backend | supported | supported (README matrix) | supported (README matrix) | "(✓)": builds, untested upstream | separate repos, NDA |
 | Transport `none` | supported | supported | supported | supported | n/a |
 | Default backend upstream | Crashpad | Crashpad (Breakpad for Xbox/WINGDK) | Crashpad | `inproc` (writes no minidump) | n/a |
-| What we set | `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`, static library | the same; no handler executable with Breakpad (Crashpad would need one and uses winhttp, not libcurl); `SENTRY_THREAD_STACK_GUARANTEE_*` exist for stack overflow | the same | `breakpad` is untested there; a Phase 29 decision | not decided |
+| What we set | `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`, static library | the same; no handler executable with Breakpad (Crashpad would need one and uses winhttp, not libcurl); `SENTRY_THREAD_STACK_GUARANTEE_*` exist for stack overflow | the same | `breakpad` is untested there; a Phase 31 decision | not decided |
 | `on_crash` hook arguments | `uctx` is **null**, hook runs in a **helper thread** (read from `sentry_backend_breakpad.cpp` and Breakpad's `exception_handler.cc`) | `uctx` carries the `EXCEPTION_POINTERS` | `uctx` carries the user context (non-system Breakpad) | untested | n/a |
 | libbacktrace object format | ELF (`elf.c`, built) | PE/COFF (`pecoff.c` + `alloc.c`, vendored, not built) | Mach-O (`macho.c`, vendored, not built) | ELF (Android), Mach-O (iOS) | n/a |
 | Symbols | DWARF | **DWARF only**: PDB is not read | DWARF in a dSYM next to the binary | DWARF | n/a |
@@ -227,14 +227,14 @@ What each platform needs that Linux does not:
   and notarization restrict handlers; `PR_SET_PDEATHSIG` does not exist (death-test children need another way to die with the
   parent).
 - **Android / iOS:** Breakpad is untested upstream on both; Android's default backend writes no minidump; iOS has no supported
-  list entry. Both are "designed in" (`Unsupported`, skipped death tests) and decided in Phase 29.
-- **Consoles:** the crash libraries are under NDA; the neutral facade forwards to them; decided in Phase 30.
+  list entry. Both are "designed in" (`Unsupported`, skipped death tests) and decided in Phase 31.
+- **Consoles:** the crash libraries are under NDA; the neutral facade forwards to them; decided in Phase 32.
 
 Known gaps and the decision each needs: **(1)** PDB symbols on Windows (Phase 13: clang with DWARF, or a DbgHelp resolver behind
 `ResolveStackTrace`); **(2)** file and line on macOS need the dSYM (Phase 21: ship or locate it); **(3)** the Windows and macOS
 crash report is written from `on_crash`, so the Linux recorder (`os/linux/debug/crash_signal.cpp`) has no counterpart and
-`detail::InstallCrashEventHook` is not implemented there; **(4)** Android and iOS minidumps (Phase 29); **(5)** consoles
-(Phase 30). The lists per function are `engine/foundation/os/windows/debug/BACKEND.md` and
+`detail::InstallCrashEventHook` is not implemented there; **(4)** Android and iOS minidumps (Phase 31); **(5)** consoles
+(Phase 32). The lists per function are `engine/foundation/os/windows/debug/BACKEND.md` and
 `engine/foundation/os/macos/debug/BACKEND.md`, kept in step with the headers by `debug_backend_lists`.
 
 **Correction to section 9 (as built).** Days 96 and 97 do write the report from a small signal recorder placed in front of

@@ -11,7 +11,7 @@ The event model scripts and, later, Blueprint's event graphs land on.
 - [x] Threading: an emit from a partition goes into the partition's outbox; the sync point delivers all outboxes in `(sender partition, sender entity id, sequence)` order into each subscriber's partition inbox; handlers run in the **next phase** (never inside the sender's call, never concurrently with the sender's partition); a handler's own emits are delivered the phase after (a loop guard counts and caps chains per tick: setting `script.event_chain_limit`).
 - [x] Subscription lifetime: unsubscribed when the instance or entity is destroyed; a subscription to an entity's event holds a handle that is checked on delivery.
 - [x] Native subscribers: C++ systems can emit and subscribe through the same bus (the Day 466 physics events and Day 468 input events use it), with the same delivery order.
-- [x] Blueprint-shaped semantics noted for Phase 32 in the guide: event dispatchers, interface calls (`event.call(entity, interface, fn)` as a synchronous-looking call that is delivered at the sync point and answered by an event; a true synchronous cross-entity call is deliberately absent: it would break the threading model), what maps cleanly and what does not.
+- [x] Blueprint-shaped semantics noted for Phase 34 in the guide: event dispatchers, interface calls (`event.call(entity, interface, fn)` as a synchronous-looking call that is delivered at the sync point and answered by an event; a true synchronous cross-entity call is deliberately absent: it would break the threading model), what maps cleanly and what does not.
 - [x] Tests: ordering, delivery latency (always the next phase), chain limit, unsubscribe on destroy, equal delivery logs at 1 and 16 threads, a million events per second throughput check.
 - [x] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors (this phase runs script code on several threads on nearly every day, so tsan is not optional); quote each run's final `ran X of Y tests (phases ...)` line in this file and never say "all tests pass" for a reduced run. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with both compilers and unity on and off; `-DENGINE_BUILD_SHARED=ON` and `-DENGINE_LIBRARY_WITH_IMPORTER=OFF` still build.
 - [ ] **Three machines (CLAUDE.md):** built and tested on the machine the day is done on (Linux); shared code (CMake, the gates, tests, headers) is checked on the Windows PC and the Mac no later than Days 473-474, and `KNOWN-ISSUES.md` lists what waits for those runs.
@@ -24,7 +24,7 @@ The event model scripts and, later, Blueprint's event graphs land on.
 
 ## Notes
 
-The bindings' `event` table is read-only, so the host publishes its own `event` table that falls back to it. `event.call` and the engine events (on_tick, on_collision, on_trigger, on_input, on_asset_loaded) are deferred to the days that own them (KNOWN-ISSUES.md). The Phase 32 notes are in the guide.
+The bindings' `event` table is read-only, so the host publishes its own `event` table that falls back to it. `event.call` and the engine events (on_tick, on_collision, on_trigger, on_input, on_asset_loaded) are deferred to the days that own them (KNOWN-ISSUES.md). The Phase 34 notes are in the guide.
 
 ## Post-implementation code review
 

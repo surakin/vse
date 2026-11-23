@@ -167,4 +167,4 @@ version newer than the program's is read in compatibility mode (known keys only)
 
 ## 8. Platform sections
 
-`engine/foundation/settings/BACKEND.md` lists what a platform `ConfigStore` implements: Windows registry (Phase 13: sections are subkeys under `HKCU\Software\<app>`, values typed `REG_DWORD`/`REG_SZ`, capability `kCapPerKeyWrites`), macOS `NSUserDefaults`/plist (Phase 21), Android `SharedPreferences` (Phase 29), console save data (Phase 30). The `settings_backend_lists` ctest and a `settings_cross_syntax_windows|macos` check arrive on Day 139, as for Phases 7-9.
+`engine/foundation/settings/BACKEND.md` lists what a platform `ConfigStore` implements: Windows registry (Phase 13: sections are subkeys under `HKCU\Software\<app>`, values typed `REG_DWORD`/`REG_SZ`, capability `kCapPerKeyWrites`), macOS `NSUserDefaults`/plist (Phase 21), Android `SharedPreferences` (Phase 31), console save data (Phase 32). The `settings_backend_lists` ctest and a `settings_cross_syntax_windows|macos` check arrive on Day 139, as for Phases 7-9.

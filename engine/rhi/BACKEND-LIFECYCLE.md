@@ -37,7 +37,7 @@ that is already removed when it is made counts as a failure.
 Metal, as built (Day 309): `MTLCopyAllDevices` matched against `adapter`, then `ENGINE_RHI_GPU`, else a discrete GPU before an integrated
 one; one `MTLCommandQueue` and an `MTLSharedEvent` timeline. There is no validation switch at run time (Metal reads `MTL_DEBUG_LAYER` when
 the process starts), so `validation` is advisory: a request that differs from the process is logged as taking effect at the next start,
-and `sync_validation` has no counterpart (Metal tracks hazards). iOS will use `MTLCreateSystemDefaultDevice` (Phase 29).
+and `sync_validation` has no counterpart (Metal tracks hazards). iOS will use `MTLCreateSystemDefaultDevice` (Phase 31).
 
 ### `EnumerateAdapters`
 Lists the adapters without creating a device: stable id, name, kind, device-local memory, driver text, whether it can present to the

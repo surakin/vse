@@ -1,6 +1,6 @@
 # Phase 26 — Audio
 
-**Paused (2026-11-17): the Phase 24 addendum (Days 373-384) runs first; this phase resumes at Day 415 and `CURRENT_PHASE` returns to 26 then. Phases 25, 26 and 29 moved up 12 days that day.**
+**Paused (2026-11-17): the Phase 24 addendum (Days 373-384) runs first; this phase resumes at Day 415 and `CURRENT_PHASE` returns to 26 then. Phases 25, 26 and 31 moved up 12 days that day.**
 
 **Status: in progress (day files written 2026-11-17; Day 414 done 2026-11-17: the design spec and six spikes; `CURRENT_PHASE` is 26). Next: Day 415.**
 
@@ -51,7 +51,7 @@ Order reasoning: the spec and the spikes (414) settle the Linux backend, the res
 - **The audio thread never allocates, locks or does I/O.** Commands arrive through a lock-free ring, events leave through another, streams are decoded ahead on a job and read from a ring.
 - **Everything configurable is a setting** (`audio.*`, Phase 11); the device and the rate change at run time through one reset path (like the RHI), and a lost device falls back to the null device.
 - **Extras, all in scope (user, 2026-11-17):** compressed formats (Ogg Vorbis through vendored libogg and libvorbis, hostile-input rules around them, small committed fixtures), Doppler and occlusion, streaming music with cross-fades, layers and playlists, buses and effects (biquad filters, delay, reverb).
-- **Hosts and ports (user, 2026-11-17):** a C API in two days with a host-driven mode (`audio_render` pulls the mix into the host's own audio callback), then a Windows day and a macOS day that add their backends and check the hashes. Android and iOS stay in Phase 29, the consoles in Phase 30.
+- **Hosts and ports (user, 2026-11-17):** a C API in two days with a host-driven mode (`audio_render` pulls the mix into the host's own audio callback), then a Windows day and a macOS day that add their backends and check the hashes. Android and iOS stay in Phase 31, the consoles in Phase 32.
 - **Units:** metres, seconds, linear gain (decibel helpers on the control side), +Y up, the listener looks along -Z.
 
 ## Notes / open questions (settled in the Day 414 spec)

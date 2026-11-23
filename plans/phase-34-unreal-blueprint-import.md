@@ -1,6 +1,6 @@
-# Phase 32 — Unreal Blueprint Import
+# Phase 34 — Unreal Blueprint Import
 
-**Depends on:** Phase 31 (Unreal asset & level import) for the shared
+**Depends on:** Phase 33 (Unreal asset & level import) for the shared
 Unreal DLL embedding/package-loading setup, and Phase 27 (Scripting:
 Lua/LuaJIT) as the execution target.
 **Goal:** bring in gameplay *logic* authored as Unreal Blueprints, not
@@ -30,7 +30,7 @@ in the abstract:
 
 - **(a) Graph-level transpilation (recommended default).** Read the
   Blueprint's node graph as live loaded `UEdGraph`/`UK2Node_*` objects
-  via the same Unreal DLL embedding Phase 31 sets up — no raw byte parsing
+  via the same Unreal DLL embedding Phase 33 sets up — no raw byte parsing
   needed, UE's own reflection gives us the graph structure directly — and
   transpile it into Lua source (or precompiled LuaJIT bytecode), node by
   node, run through Phase 27's scripting subsystem. Higher fidelity,
@@ -43,7 +43,7 @@ in the abstract:
 
 ## Sub-tracks (to be expanded into day-by-day tasks when started)
 
-1. Blueprint graph export (built on Phase 31's Unreal DLL embedding — walk
+1. Blueprint graph export (built on Phase 33's Unreal DLL embedding — walk
    the loaded `UEdGraph`/`UK2Node_*` objects via UE's own reflection).
 2. Node coverage: start with event nodes (BeginPlay, Tick), flow control
    (branch, sequence), variable get/set, function calls, casts, basic math
@@ -95,7 +95,7 @@ What this means for fidelity: a Blueprint whose logic is "react to events, chang
 
 ## Notes / open questions
 
-- Inherits Phase 31's EULA review blocker (root `PLAN.md` assumption #6) —
+- Inherits Phase 33's EULA review blocker (root `PLAN.md` assumption #6) —
   this phase also links the Unreal DLL, so it can't start until that's
   resolved either.
 - Full day-by-day breakdown deferred until Phase 27 is complete and real

@@ -8,7 +8,7 @@ pass/material machinery, not a separate rendering path.
 the foundation string module's grapheme clustering (Days 10-12) for
 correct cursor/line-break behavior — the shared text layer every later
 UI need (in-game HUD, debug overlays, the Phase 15 UI system and through it
-the Phase 33 editor's widgets)
+the Phase 30 editor's widgets)
 builds on instead of each hand-rolling its own.
 **Scope cut (2026-11-08, developer decision):** "a simple hello world is enough until the UI is implemented". 3D text and colored glyphs (emoji) moved to
 [the 3D text project](future/3d-text-and-color-glyphs.md); this phase keeps only the 2D path, plus grapheme-aware cursor placement and hit-testing because the

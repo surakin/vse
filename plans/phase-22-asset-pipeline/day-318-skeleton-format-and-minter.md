@@ -3,7 +3,7 @@
 **Phase:** [Phase 22 — Asset Pipeline & Resource System](../phase-22-asset-pipeline.md)
 **Depends on:** Days 314-317 (blob container, the vertex formats); Phase 5 (`math` types).
 
-A skeleton is a resource of its own: the joint hierarchy, the bind pose and the inverse bind matrices that skinned meshes and animation clips both refer to by id. Added on 2026-11-13 (the user): skeletal assets are part of Phase 22, so Phase 31 (Unreal import) has a format to write into.
+A skeleton is a resource of its own: the joint hierarchy, the bind pose and the inverse bind matrices that skinned meshes and animation clips both refer to by id. Added on 2026-11-13 (the user): skeletal assets are part of Phase 22, so Phase 33 (Unreal import) has a format to write into.
 
 ## Tasks
 

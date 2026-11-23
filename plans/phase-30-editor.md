@@ -1,4 +1,4 @@
-# Phase 33 — Editor Tooling
+# Phase 30 — Editor Tooling
 
 **Depends on:** Phase 15 (UI system), Phase 17 (ECS), Phase 22 (Asset pipeline), Phase 27
 (Scripting: Lua/LuaJIT) — the editor is built using the engine's own

@@ -62,7 +62,7 @@ identical bytes, resource counts return to zero, and the tests pass in three fla
 3. **`FlushMappedBuffer` on a Managed readback buffer could overwrite the GPU's results.** Fixed by the same change: only `CpuToGpu` memory
    is ever Managed.
 4. **Depth levels were copied whole and refused above 16 MiB.** Fixed: depth levels go in bands like color.
-5. **`synchronizeResource:` and `MTLStorageModeManaged` would not compile for iOS (Phase 29).** Fixed: the first is gone, the second is
+5. **`synchronizeResource:` and `MTLStorageModeManaged` would not compile for iOS (Phase 31).** Fixed: the first is gone, the second is
    behind `ENGINE_PLATFORM_MACOS`.
 6. **A lost device's upload failures were not logged, and multisampled textures reached the blits.** Fixed: logged; asserted (a contract
    error, as on the other backends).

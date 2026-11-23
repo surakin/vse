@@ -150,7 +150,7 @@ to revisit it when a host names the need.
 A game as a loadable library that the host reloads while running is **not in this phase**. The C ABI makes it possible (a game would be a second library
 that receives the function table through `engine_get_api`, exactly as a host does), and the `engine_reload_cycles` tests already prove the engine itself
 unloads and reloads cleanly. What it would need: a game-side entry-point contract, ownership of components registered by a module that is about to unload
-(their type descriptors point into its code), a quiesce point where no job of the module is running, and a state hand-over format. That is Phase 24-29
+(their type descriptors point into its code), a quiesce point where no job of the module is running, and a state hand-over format. That is Phase 24-31
 scope and is decided with the first host that asks.
 
 ### The suites against the shared build: a deviation from the day file

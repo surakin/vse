@@ -138,6 +138,6 @@ Six components (key, transform, bounds, membership, an actor with four fields, a
 - `ByteWriter` and `ByteReader` (the bounds-checked canonical encoding) live in `foundation/bytes/`, below both `storage` and Phase 20's `net`, so the two share one reader; this amends the module row of section 2 (`storage` uses it, does not own it).
 - Phase 22 (assets): `ComponentRegistry`, `ByteWriter`/`ByteReader`, the version and upgrade rules and `EntityKey` are the level and prefab format's building blocks; the asset format is minted, immutable and deterministic, not stored in a database.
 - Phase 20 (networking): a network store implements `storage::Store`'s record operations; nothing in `WorldStorage` changes.
-- Phase 33 (editor): scenes are saved through `WorldStorage`; `FindKeys` serves the editor's queries.
+- Phase 30 (editor): scenes are saved through `WorldStorage`; `FindKeys` serves the editor's queries.
 - Phase 35 (world streaming): cells are selections by key set; `Merge` loads them into a running world.
 - Phase 18 (spatial): spatial membership and bounds components are stored; proxies and world bounds are derived and rebuilt on load.
