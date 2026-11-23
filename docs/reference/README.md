@@ -41,7 +41,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 205 |
 | [The Render Hardware Interface](rhi.md) | 21 | 826 |
-| [The renderer](renderer.md) | 27 | 1357 |
+| [The renderer](renderer.md) | 27 | 1360 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 441 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |
 | [The Metal backend (macOS)](rhi-metal.md) | 1 | 1 |

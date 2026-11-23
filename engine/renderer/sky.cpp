@@ -5,6 +5,7 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 #include "sky.frag.dxil.inc"
+#include "sky_cube.frag.dxil.inc"
 
 namespace vse::renderer
 {
@@ -55,7 +56,7 @@ bool SkySettingsValid(const SkySettings& s)
            SkyNonNegative(s.ground) && SkyNonNegative(s.sun_color) && SkyFinite(s.sun_direction) &&
            s.sun_direction.LengthSquared() > 1e-12f && IsFinite(s.sun_size) && s.sun_size > 0.0f &&
            s.sun_size <= kSkyHalfPi && IsFinite(s.horizon_blend) && s.horizon_blend > 0.0f && s.horizon_blend <= 1.0f &&
-           IsFinite(s.exposure) && s.exposure > 0.0f && IsFinite(s.rotation);
+           IsFinite(s.exposure) && s.exposure > 0.0f && IsFinite(s.rotation) && SkyNonNegative(s.tint);
 }
 
 Vec3 SkyColor(const SkySettings& s, const Vec3& direction)
@@ -77,6 +78,13 @@ Vec3 SkyColor(const SkySettings& s, const Vec3& direction)
     const f32 c = d.Dot(s.sun_direction.Normalized());
     color = color + s.sun_color * SkySmoothStep(cos_outer, cos_inner, c);
     return color * s.exposure;
+}
+
+Vec3 SkyCubeDirection(const SkySettings& s, const Vec3& d)
+{
+    const f32 c = Cos(s.rotation);
+    const f32 sn = Sin(s.rotation);
+    return Vec3(c * d.x - sn * d.z, d.y, sn * d.x + c * d.z);
 }
 
 SkyPass::SkyPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame)
@@ -117,6 +125,36 @@ void SkyPass::Build()
     if (!pipeline_.IsValid())
     {
         RenderLog(LogVerbosity::Warn, "SkyPass: creating the pipeline failed; no sky is drawn");
+        return;
+    }
+    if (!device->Caps().cube_textures)
+    {
+        return;  // the cube sky falls back to the procedural one
+    }
+    cube_fragment_ = rhi::CreateShaderFromSet(*device, shaders::kSkyCubeFragShader, rhi::ShaderStage::Fragment);
+    rhi::BindingDesc cube_bindings[3] = {{0, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
+                                         {1, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
+                                         {2, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1}};
+    rhi::BindGroupLayoutDesc cld;
+    cld.entries = rhi::Span<rhi::BindingDesc>(cube_bindings, 3);
+    cube_layout_ = device->CreateBindGroupLayout(cld);
+    rhi::SamplerDesc sd;
+    sd.address_u = sd.address_v = sd.address_w = rhi::AddressMode::ClampToEdge;
+    sd.debug_name = "sky cube";
+    sampler_ = device->CreateSampler(sd);
+    if (cube_fragment_.IsValid() && cube_layout_.IsValid() && sampler_.IsValid())
+    {
+        rhi::GraphicsPipelineDesc cp = gp;
+        cp.fragment_shader = cube_fragment_;
+        cp.bind_group_layouts[1] = cube_layout_;
+        cp.push_constant_bytes = sizeof(CubePush);
+        cp.debug_name = "sky cube";
+        cube_pipeline_ = device->CreateGraphicsPipeline(cp);
+    }
+    if (!cube_pipeline_.IsValid())
+    {
+        RenderLog(LogVerbosity::Warn,
+                  "SkyPass: the cube sky is not available on this device; the procedural sky is used");
     }
 }
 
@@ -131,6 +169,22 @@ void SkyPass::Release()
     if (device_ == nullptr)
     {
         return;
+    }
+    if (cube_pipeline_.IsValid())
+    {
+        device_->DestroyPipeline(cube_pipeline_);
+    }
+    if (sampler_.IsValid())
+    {
+        device_->DestroySampler(sampler_);
+    }
+    if (cube_layout_.IsValid())
+    {
+        device_->DestroyBindGroupLayout(cube_layout_);
+    }
+    if (cube_fragment_.IsValid())
+    {
+        device_->DestroyShader(cube_fragment_);
     }
     if (pipeline_.IsValid())
     {
@@ -148,6 +202,10 @@ void SkyPass::Release()
     {
         device_->DestroyShader(vertex_);
     }
+    cube_pipeline_ = {};
+    sampler_ = {};
+    cube_layout_ = {};
+    cube_fragment_ = {};
     pipeline_ = {};
     layout_ = {};
     fragment_ = {};
@@ -171,10 +229,26 @@ bool SkyPass::Recreate(rhi::Device* device)
 void SkyPass::Prepare(const SkySettings& s)
 {
     ENGINE_ASSERT(SkySettingsValid(s), "SkyPass::Prepare: the sky settings are invalid");
-    draw_ = s.mode == SkyMode::Procedural && pipeline_.IsValid();
+    cube_.Reset();
+    draw_cube_ = false;
+    draw_ = (s.mode == SkyMode::Procedural || s.mode == SkyMode::Cube) && pipeline_.IsValid();
     if (!draw_)
     {
         return;
+    }
+    if (s.mode == SkyMode::Cube && cube_pipeline_.IsValid() && s.cube && s.cube->Valid() &&
+        s.cube->Desc().dimension == rhi::TextureDimension::Cube)
+    {
+        draw_cube_ = true;
+        cube_ = s.cube;
+        cube_push_.tint_exposure[0] = s.tint.x * s.exposure;
+        cube_push_.tint_exposure[1] = s.tint.y * s.exposure;
+        cube_push_.tint_exposure[2] = s.tint.z * s.exposure;
+        cube_push_.tint_exposure[3] = 0.0f;
+        cube_push_.yaw[0] = Cos(s.rotation);
+        cube_push_.yaw[1] = Sin(s.rotation);
+        cube_push_.yaw[2] = 0.0f;
+        cube_push_.yaw[3] = 0.0f;
     }
     const Vec3 sun = s.sun_direction.Normalized();
     const Vec3* colors[3] = {&s.zenith, &s.horizon, &s.ground};
@@ -223,12 +297,20 @@ void SkyPass::Record(const PassExecuteContext& context, void* user)
         return;
     }
     const rhi::TextureDesc& desc = context.graph->TextureDescOf(self->accum_);
-    rhi::BindGroupEntry e;
-    e.binding = 0;
-    e.texture = context.graph->ResolvedTexture(self->targets_.depth);
+    const bool cube = self->draw_cube_ && self->cube_ && self->cube_->Valid();
+    rhi::BindGroupEntry e[3];
+    e[0].binding = 0;
+    e[0].texture = context.graph->ResolvedTexture(self->targets_.depth);
+    if (cube)
+    {
+        e[1].binding = 1;
+        e[1].texture = self->cube_->Handle();  // read now: a reset may have remade it
+        e[2].binding = 2;
+        e[2].sampler = self->sampler_;
+    }
     rhi::BindGroupDesc gd;
-    gd.layout = self->layout_;
-    gd.entries = rhi::Span<rhi::BindGroupEntry>(&e, 1);
+    gd.layout = cube ? self->cube_layout_ : self->layout_;
+    gd.entries = rhi::Span<rhi::BindGroupEntry>(e, cube ? 3 : 1);
     gd.transient = true;
     const rhi::BindGroupHandle group = self->device_->CreateBindGroup(gd);
     rhi::RenderingDesc rd;
@@ -237,13 +319,20 @@ void SkyPass::Record(const PassExecuteContext& context, void* user)
     rd.color[0].load = rhi::LoadOp::Load;
     rhi::CommandList* list = context.list;
     list->BeginRendering(rd);
-    list->SetPipeline(self->pipeline_);
+    list->SetPipeline(cube ? self->cube_pipeline_ : self->pipeline_);
     list->SetViewport(
         rhi::Viewport{0.0f, 0.0f, static_cast<f32>(desc.width), static_cast<f32>(desc.height), 0.0f, 1.0f});
     list->SetScissor(rhi::ScissorRect{0, 0, desc.width, desc.height});
     list->SetBindGroup(kFrameSet, self->frame_group_);
     list->SetBindGroup(1, group);
-    list->SetPushConstants(0, &self->push_, sizeof(Push));
+    if (cube)
+    {
+        list->SetPushConstants(0, &self->cube_push_, sizeof(CubePush));
+    }
+    else
+    {
+        list->SetPushConstants(0, &self->push_, sizeof(Push));
+    }
     list->Draw(3, 1, 0, 0);
     list->EndRendering();
 }

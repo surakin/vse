@@ -6,6 +6,7 @@
 
 #include "renderer/frame_data.h"
 #include "renderer/lighting.h"
+#include "containers/shared_bytes.h"
 #include "renderer/render_graph.h"
 #include "renderer/sky.h"
 #include "rhi/null/null_device.h"
@@ -149,6 +150,79 @@ TEST_CASE("The sky pass joins the graph only for the procedural mode and survive
         CHECK(sky.Recreate(device.Get()));
         CHECK(sky.Live());
         CHECK(sky.Valid());
+    }
+    device.Reset();
+}
+
+TEST_CASE("The cube direction turns the view by minus the rotation about +Y", "[renderer][sky]")
+{
+    SkySettings s;
+    CHECK(SkyNear(SkyCubeDirection(s, Vec3(1, 2, 3)), Vec3(1, 2, 3)));
+    s.rotation = 1.57079632679f;
+    // A quarter turn: the sky's +X now looks along -Z, so the view direction -Z reads the cube's +X.
+    CHECK(SkyNear(SkyCubeDirection(s, Vec3(0, 0, -1)), Vec3(1, 0, 0), 1e-5f));
+    CHECK(SkyNear(SkyCubeDirection(s, Vec3(0, 1, 0)), Vec3(0, 1, 0), 1e-5f));
+    CHECK(SkyNear(SkyCubeDirection(s, Vec3(1, 0, 0)), Vec3(0, 0, 1), 1e-5f));
+    s.tint = Vec3(-1, 0, 0);
+    CHECK_FALSE(SkySettingsValid(s));
+}
+
+TEST_CASE("A cube sky is drawn from a cube texture and falls back without one", "[renderer][sky]")
+{
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
+    {
+        MaterialSystem sys(device.Get(), MaterialSystemDesc{});
+        FrameResources frame(device.Get(), 4);
+        SkyPass pass(device.Get(), &sys, &frame);
+        REQUIRE(pass.Valid());
+        frame.BeginFrame(0);
+
+        rhi::TextureDesc desc;
+        desc.dimension = rhi::TextureDimension::Cube;
+        desc.width = 4;
+        desc.height = 4;
+        desc.array_layers = 6;
+        desc.format = rhi::Format::RGBA8_UNorm;
+        desc.usage = rhi::TextureUsage::Sampled;
+        Vector<byte> bytes;
+        bytes.Resize(6 * 4 * 4 * 4);
+        Vector<TextureLevelSpan> levels;
+        for (u32 face = 0; face < 6; ++face)
+        {
+            TextureLevelSpan span;
+            span.offset = face * 64;
+            span.bytes = 64;
+            span.row_pitch = 16;
+            span.layer = face;
+            levels.Push(span);
+        }
+        GpuTexturePtr cube = MakeShared<GpuTexture>();
+        REQUIRE(cube->CreateFromSharedLevels(device.Get(), desc, MakeShared<OwnedBytes>(Move(bytes)),
+                                             Span<const TextureLevelSpan>(levels.Data(), levels.Size()), nullptr,
+                                             "cube"));
+
+        SkySettings sky;
+        sky.mode = SkyMode::Cube;
+        sky.cube = cube;
+        ArenaAllocator arena(1 << 16);
+        {
+            RenderGraph graph(&arena, RenderGraphDesc{});
+            const GBufferTargets targets{};
+            const GraphResource accum{};
+            pass.Prepare(sky);
+            CHECK(pass.AddToGraph(&graph, targets, accum));  // a cube draws
+            sky.cube.Reset();
+            pass.Prepare(sky);
+            CHECK(pass.AddToGraph(&graph, targets, accum));  // no cube: the procedural sky draws
+        }
+        // The pass survives a release and a recreate with the cube still assigned.
+        sky.cube = cube;
+        pass.Release();
+        CHECK(pass.Recreate(device.Get()));
+        CHECK(pass.Valid());
+        pass.Prepare(sky);
+        RenderGraph graph(&arena, RenderGraphDesc{});
+        CHECK(pass.AddToGraph(&graph, GBufferTargets{}, GraphResource{}));
     }
     device.Reset();
 }

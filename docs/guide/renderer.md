@@ -686,6 +686,23 @@ frame block's inverse view-projection and draws only where the depth buffer hold
 `SceneFrame::SetEnvironment` keeps working and sets a flat colour. A procedural sky's reflection on lit surfaces uses its horizon
 colour times its exposure.
 
+`SkyMode::Cube` draws an environment cube map: set `SkySettings::cube` (a [[renderer::GpuTexturePtr]] of a cube texture, for
+example one loaded from a minted cube asset), and the sky samples it along the view ray at mip 0, multiplied by `tint` and
+`exposure`. `rotation` turns the sky about +Y (right-handed): after a quarter turn the cube's +X face looks along -Z
+([[renderer::SkyCubeDirection]] is the CPU twin of the lookup). A cube that is null, not created, not a cube or on a device
+without cube textures draws the procedural sky instead, never garbage. Swapping the texture between frames needs no pipeline
+rebuild; the old one is released when the pass takes the next frame's settings. The faces are in the order +X, -X, +Y, -Y, +Z,
+-Z, and a face texel (u, v), each -1 to 1 from the left and top edges, looks along:
+
+| Face | Direction of texel (u, v) |
+|---|---|
+| +X | (1, -v, -u) |
+| -X | (-1, -v, u) |
+| +Y | (u, 1, v) |
+| -Y | (u, -1, -v) |
+| +Z | (u, -v, 1) |
+| -Z | (-u, -v, -1) |
+
 ```cpp compile standalone run
 #include <cstdio>
 

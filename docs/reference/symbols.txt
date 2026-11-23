@@ -13410,38 +13410,41 @@ renderer::RenderSettingsToChanges(const RenderSettings&,const::vse::settings::Re
 renderer::ApplySharedChange(void*,const::vse::settings::ChangeEvent&)	function	renderer	renderer-applysharedchange-void-star-const-vse-settings-changeevent-amp	renderer.md	engine/renderer/shared_settings.h:73
 renderer::SyncSharedFromRenderer(Renderer*,::vse::settings::Settings*)	function	renderer	renderer-syncsharedfromrenderer-renderer-star-vse-settings-settings-star	renderer.md	engine/renderer/shared_settings.h:83
 renderer::RendererCapability(void*,const char*)	function	renderer	renderer-renderercapability-void-star-const-char-star	renderer.md	engine/renderer/shared_settings.h:92
-renderer::SkyMode	enum	renderer	renderer-skymode	renderer.md	engine/renderer/sky.h:24
-renderer::SkyMode::None	enumerator	renderer	renderer-skymode-none	renderer.md	engine/renderer/sky.h:26
-renderer::SkyMode::Color	enumerator	renderer	renderer-skymode-color	renderer.md	engine/renderer/sky.h:27
-renderer::SkyMode::Procedural	enumerator	renderer	renderer-skymode-procedural	renderer.md	engine/renderer/sky.h:28
-renderer::SkyMode::Cube	enumerator	renderer	renderer-skymode-cube	renderer.md	engine/renderer/sky.h:29
-renderer::SkySettings	struct	renderer	renderer-skysettings	renderer.md	engine/renderer/sky.h:35
-renderer::SkySettings::mode	variable	renderer	renderer-skysettings-mode	renderer.md	engine/renderer/sky.h:37
-renderer::SkySettings::color	variable	renderer	renderer-skysettings-color	renderer.md	engine/renderer/sky.h:38
-renderer::SkySettings::zenith	variable	renderer	renderer-skysettings-zenith	renderer.md	engine/renderer/sky.h:39
-renderer::SkySettings::horizon	variable	renderer	renderer-skysettings-horizon	renderer.md	engine/renderer/sky.h:40
-renderer::SkySettings::ground	variable	renderer	renderer-skysettings-ground	renderer.md	engine/renderer/sky.h:41
-renderer::SkySettings::sun_direction	variable	renderer	renderer-skysettings-sun-direction	renderer.md	engine/renderer/sky.h:42
-renderer::SkySettings::sun_color	variable	renderer	renderer-skysettings-sun-color	renderer.md	engine/renderer/sky.h:43
-renderer::SkySettings::sun_size	variable	renderer	renderer-skysettings-sun-size	renderer.md	engine/renderer/sky.h:44
-renderer::SkySettings::horizon_blend	variable	renderer	renderer-skysettings-horizon-blend	renderer.md	engine/renderer/sky.h:45
-renderer::SkySettings::exposure	variable	renderer	renderer-skysettings-exposure	renderer.md	engine/renderer/sky.h:46
-renderer::SkySettings::rotation	variable	renderer	renderer-skysettings-rotation	renderer.md	engine/renderer/sky.h:47
-renderer::SkySettingsValid(const SkySettings&)	function	renderer	renderer-skysettingsvalid-const-skysettings-amp	renderer.md	engine/renderer/sky.h:57
-renderer::SkyColor(const SkySettings&,const Vec3&)	function	renderer	renderer-skycolor-const-skysettings-amp-const-vec3-amp	renderer.md	engine/renderer/sky.h:70
-renderer::SkyPass	class	renderer	renderer-skypass	renderer.md	engine/renderer/sky.h:76
-renderer::SkyPass::SkyPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-skypass-skypass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/sky.h:86
-renderer::SkyPass::~SkyPass()	function	renderer	renderer-skypass-tilde-skypass	renderer.md	engine/renderer/sky.h:88
-renderer::SkyPass::SkyPass(const SkyPass&)	function	renderer	renderer-skypass-skypass-const-skypass-amp	renderer.md	engine/renderer/sky.h:89
-renderer::SkyPass::operator=(const SkyPass&)	function	renderer	renderer-skypass-operator-eq-const-skypass-amp	renderer.md	engine/renderer/sky.h:90
-renderer::SkyPass::RegisterWith(DeviceResources*)	function	renderer	renderer-skypass-registerwith-deviceresources-star	renderer.md	engine/renderer/sky.h:98
-renderer::SkyPass::Release()	function	renderer	renderer-skypass-release	renderer.md	engine/renderer/sky.h:101
-renderer::SkyPass::Recreate(rhi::Device*)	function	renderer	renderer-skypass-recreate-rhi-device-star	renderer.md	engine/renderer/sky.h:109
-renderer::SkyPass::Live() const	function	renderer	renderer-skypass-live-const	renderer.md	engine/renderer/sky.h:110
-renderer::SkyPass::RecreatableName() const	function	renderer	renderer-skypass-recreatablename-const	renderer.md	engine/renderer/sky.h:111
-renderer::SkyPass::Valid() const	function	renderer	renderer-skypass-valid-const	renderer.md	engine/renderer/sky.h:115
-renderer::SkyPass::Prepare(const SkySettings&)	function	renderer	renderer-skypass-prepare-const-skysettings-amp	renderer.md	engine/renderer/sky.h:121
-renderer::SkyPass::AddToGraph(RenderGraph*,const GBufferTargets&,GraphResource)	function	renderer	renderer-skypass-addtograph-rendergraph-star-const-gbuffertargets-amp-graphresource	renderer.md	engine/renderer/sky.h:132
+renderer::SkyMode	enum	renderer	renderer-skymode	renderer.md	engine/renderer/sky.h:25
+renderer::SkyMode::None	enumerator	renderer	renderer-skymode-none	renderer.md	engine/renderer/sky.h:27
+renderer::SkyMode::Color	enumerator	renderer	renderer-skymode-color	renderer.md	engine/renderer/sky.h:28
+renderer::SkyMode::Procedural	enumerator	renderer	renderer-skymode-procedural	renderer.md	engine/renderer/sky.h:29
+renderer::SkyMode::Cube	enumerator	renderer	renderer-skymode-cube	renderer.md	engine/renderer/sky.h:30
+renderer::SkySettings	struct	renderer	renderer-skysettings	renderer.md	engine/renderer/sky.h:36
+renderer::SkySettings::mode	variable	renderer	renderer-skysettings-mode	renderer.md	engine/renderer/sky.h:38
+renderer::SkySettings::cube	variable	renderer	renderer-skysettings-cube	renderer.md	engine/renderer/sky.h:39
+renderer::SkySettings::tint	variable	renderer	renderer-skysettings-tint	renderer.md	engine/renderer/sky.h:40
+renderer::SkySettings::color	variable	renderer	renderer-skysettings-color	renderer.md	engine/renderer/sky.h:41
+renderer::SkySettings::zenith	variable	renderer	renderer-skysettings-zenith	renderer.md	engine/renderer/sky.h:42
+renderer::SkySettings::horizon	variable	renderer	renderer-skysettings-horizon	renderer.md	engine/renderer/sky.h:43
+renderer::SkySettings::ground	variable	renderer	renderer-skysettings-ground	renderer.md	engine/renderer/sky.h:44
+renderer::SkySettings::sun_direction	variable	renderer	renderer-skysettings-sun-direction	renderer.md	engine/renderer/sky.h:45
+renderer::SkySettings::sun_color	variable	renderer	renderer-skysettings-sun-color	renderer.md	engine/renderer/sky.h:46
+renderer::SkySettings::sun_size	variable	renderer	renderer-skysettings-sun-size	renderer.md	engine/renderer/sky.h:47
+renderer::SkySettings::horizon_blend	variable	renderer	renderer-skysettings-horizon-blend	renderer.md	engine/renderer/sky.h:48
+renderer::SkySettings::exposure	variable	renderer	renderer-skysettings-exposure	renderer.md	engine/renderer/sky.h:49
+renderer::SkySettings::rotation	variable	renderer	renderer-skysettings-rotation	renderer.md	engine/renderer/sky.h:50
+renderer::SkySettingsValid(const SkySettings&)	function	renderer	renderer-skysettingsvalid-const-skysettings-amp	renderer.md	engine/renderer/sky.h:61
+renderer::SkyColor(const SkySettings&,const Vec3&)	function	renderer	renderer-skycolor-const-skysettings-amp-const-vec3-amp	renderer.md	engine/renderer/sky.h:74
+renderer::SkyCubeDirection(const SkySettings&,const Vec3&)	function	renderer	renderer-skycubedirection-const-skysettings-amp-const-vec3-amp	renderer.md	engine/renderer/sky.h:84
+renderer::SkyPass	class	renderer	renderer-skypass	renderer.md	engine/renderer/sky.h:90
+renderer::SkyPass::SkyPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-skypass-skypass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/sky.h:100
+renderer::SkyPass::~SkyPass()	function	renderer	renderer-skypass-tilde-skypass	renderer.md	engine/renderer/sky.h:102
+renderer::SkyPass::SkyPass(const SkyPass&)	function	renderer	renderer-skypass-skypass-const-skypass-amp	renderer.md	engine/renderer/sky.h:103
+renderer::SkyPass::operator=(const SkyPass&)	function	renderer	renderer-skypass-operator-eq-const-skypass-amp	renderer.md	engine/renderer/sky.h:104
+renderer::SkyPass::RegisterWith(DeviceResources*)	function	renderer	renderer-skypass-registerwith-deviceresources-star	renderer.md	engine/renderer/sky.h:112
+renderer::SkyPass::Release()	function	renderer	renderer-skypass-release	renderer.md	engine/renderer/sky.h:115
+renderer::SkyPass::Recreate(rhi::Device*)	function	renderer	renderer-skypass-recreate-rhi-device-star	renderer.md	engine/renderer/sky.h:123
+renderer::SkyPass::Live() const	function	renderer	renderer-skypass-live-const	renderer.md	engine/renderer/sky.h:124
+renderer::SkyPass::RecreatableName() const	function	renderer	renderer-skypass-recreatablename-const	renderer.md	engine/renderer/sky.h:125
+renderer::SkyPass::Valid() const	function	renderer	renderer-skypass-valid-const	renderer.md	engine/renderer/sky.h:129
+renderer::SkyPass::Prepare(const SkySettings&)	function	renderer	renderer-skypass-prepare-const-skysettings-amp	renderer.md	engine/renderer/sky.h:139
+renderer::SkyPass::AddToGraph(RenderGraph*,const GBufferTargets&,GraphResource)	function	renderer	renderer-skypass-addtograph-rendergraph-star-const-gbuffertargets-amp-graphresource	renderer.md	engine/renderer/sky.h:150
 renderer::TextRendererDesc	struct	renderer	renderer-textrendererdesc	renderer.md	engine/renderer/text_renderer.h:22
 renderer::TextRendererDesc::color_format	variable	renderer	renderer-textrendererdesc-color-format	renderer.md	engine/renderer/text_renderer.h:27
 renderer::TextRendererDesc::max_glyphs	variable	renderer	renderer-textrendererdesc-max-glyphs	renderer.md	engine/renderer/text_renderer.h:30

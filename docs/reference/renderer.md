@@ -13810,6 +13810,26 @@ SkyMode mode;
 
 How the sky is drawn.
 
+### `cube` {#renderer-skysettings-cube}
+
+`variable renderer::SkySettings::cube` — defined in `engine/renderer/sky.h`
+
+```cpp
+GpuTexturePtr cube;
+```
+
+The environment cube map of mode `Cube`; null or not ready draws `Procedural`.
+
+### `tint` {#renderer-skysettings-tint}
+
+`variable renderer::SkySettings::tint` — defined in `engine/renderer/sky.h`
+
+```cpp
+Vec3 tint;
+```
+
+Multiplies the cube map colour; not negative.
+
 ### `color` {#renderer-skysettings-color}
 
 `variable renderer::SkySettings::color` — defined in `engine/renderer/sky.h`
@@ -13908,7 +13928,7 @@ Scale of the whole sky.
 f32 rotation;
 ```
 
-Turn about +Y in radians, for the cube map.
+Turns the cube map about +Y in radians, right-handed: its +X face then looks toward (cos, 0, -sin).
 
 ## `SkySettingsValid(const SkySettings&)` {#renderer-skysettingsvalid-const-skysettings-amp}
 
@@ -13923,7 +13943,7 @@ Checks the settings.
 | Field | Value |
 |---|---|
 | Parameter `settings` | any value. |
-| Returns | true when every number is finite, colours are not negative, the sun direction is not zero, the sun size is in (0, pi/2], the horizon blend is in (0, 1] and the exposure is positive. |
+| Returns | true when every number is finite, colours and the tint are not negative, the sun direction is not zero, the sun size is in (0, pi/2], the horizon blend is in (0, 1] and the exposure is positive. |
 | Fails | never. |
 
 ## `SkyColor(const SkySettings&,const Vec3&)` {#renderer-skycolor-const-skysettings-amp-const-vec3-amp}
@@ -13943,6 +13963,24 @@ Above the horizon the colour runs from `horizon` to `zenith` by a smooth step of
 | Parameter `settings` | valid settings. |
 | Parameter `direction` | the view direction; need not be unit, not zero. |
 | Returns | the linear colour. |
+| Fails | never. |
+| Thread-safety | thread-safe. |
+
+## `SkyCubeDirection(const SkySettings&,const Vec3&)` {#renderer-skycubedirection-const-skysettings-amp-const-vec3-amp}
+
+`function renderer::SkyCubeDirection` — defined in `engine/renderer/sky.h`
+
+```cpp
+Vec3 SkyCubeDirection(const SkySettings& settings, const Vec3& direction);
+```
+
+The direction to sample the cube map with for a view direction: the view direction turned by `-rotation` about +Y, so `rotation` turns the sky itself. The CPU twin of the cube sky shader's lookup.
+
+| Field | Value |
+|---|---|
+| Parameter `settings` | valid settings. |
+| Parameter `direction` | the view direction (any length). |
+| Returns | the direction in the cube map's own space, of the same length. |
 | Fails | never. |
 | Thread-safety | thread-safe. |
 
@@ -14103,8 +14141,9 @@ Takes the frame's sky. Call after `FrameResources::BeginFrame`.
 
 | Field | Value |
 |---|---|
-| Parameter `settings` | valid settings; only mode `Procedural` draws. |
+| Parameter `settings` | valid settings; the modes `Procedural` and `Cube` draw. A `Cube` sky whose texture is null, not created, not a cube or on a device without cube textures draws the procedural sky instead. The pass keeps a share of the cube until the next `Prepare`; a texture swapped between frames needs no pipeline rebuild. |
 | Aborts | the settings are invalid. |
+| Ownership | shares `settings.cube`. |
 
 ### `AddToGraph(RenderGraph*,const GBufferTargets&,GraphResource)` {#renderer-skypass-addtograph-rendergraph-star-const-gbuffertargets-amp-graphresource}
 
@@ -14114,7 +14153,7 @@ Takes the frame's sky. Call after `FrameResources::BeginFrame`.
 bool AddToGraph(RenderGraph* graph, const GBufferTargets& targets, GraphResource accum);
 ```
 
-Declares the sky pass: a pass that reads depth and adds to the accumulation target. Does nothing unless the prepared mode is `Procedural`.
+Declares the sky pass: a pass that reads depth and adds to the accumulation target. Does nothing unless the prepared mode is `Procedural` or `Cube`.
 
 | Field | Value |
 |---|---|

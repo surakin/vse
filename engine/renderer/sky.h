@@ -14,6 +14,7 @@
 #include "renderer/gbuffer.h"
 #include "renderer/material.h"
 #include "renderer/render_graph.h"
+#include "renderer/texture.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
@@ -34,7 +35,9 @@ enum class SkyMode : u8
 /// - Thread-safety: thread-compatible plain data.
 struct SkySettings
 {
-    SkyMode mode = SkyMode::Color;                ///< How the sky is drawn.
+    SkyMode mode = SkyMode::Color;  ///< How the sky is drawn.
+    GpuTexturePtr cube;             ///< The environment cube map of mode `Cube`; null or not ready draws `Procedural`.
+    Vec3 tint = Vec3(1.0f, 1.0f, 1.0f);           ///< Multiplies the cube map colour; not negative.
     Vec3 color = Vec3(0.0f, 0.0f, 0.0f);          ///< The flat colour of mode `Color`.
     Vec3 zenith = Vec3(0.18f, 0.35f, 0.75f);      ///< The colour straight up (procedural).
     Vec3 horizon = Vec3(0.65f, 0.75f, 0.9f);      ///< The colour at the horizon (procedural).
@@ -44,14 +47,15 @@ struct SkySettings
     f32 sun_size = 0.05f;                         ///< The disc's angular radius in radians.
     f32 horizon_blend = 0.1f;  ///< The elevation below the horizon where the ground colour is reached.
     f32 exposure = 1.0f;       ///< Scale of the whole sky.
-    f32 rotation = 0.0f;       ///< Turn about +Y in radians, for the cube map.
+    f32 rotation = 0.0f;  ///< Turns the cube map about +Y in radians, right-handed: its +X face then looks toward (cos,
+                          ///< 0, -sin).
 };
 
 /// Checks the settings.
 ///
 /// - Param settings: any value.
-/// - Returns: true when every number is finite, colours are not negative, the sun direction is not zero, the sun size
-/// is
+/// - Returns: true when every number is finite, colours and the tint are not negative, the sun direction is not zero,
+/// the sun size is
 ///   in (0, pi/2], the horizon blend is in (0, 1] and the exposure is positive.
 /// - Fails: never.
 bool SkySettingsValid(const SkySettings& settings);
@@ -68,6 +72,16 @@ bool SkySettingsValid(const SkySettings& settings);
 /// - Fails: never.
 /// - Thread-safety: thread-safe.
 Vec3 SkyColor(const SkySettings& settings, const Vec3& direction);
+
+/// The direction to sample the cube map with for a view direction: the view direction turned by `-rotation` about +Y,
+/// so `rotation` turns the sky itself. The CPU twin of the cube sky shader's lookup.
+///
+/// - Param settings: valid settings.
+/// - Param direction: the view direction (any length).
+/// - Returns: the direction in the cube map's own space, of the same length.
+/// - Fails: never.
+/// - Thread-safety: thread-safe.
+Vec3 SkyCubeDirection(const SkySettings& settings, const Vec3& direction);
 
 /// Draws the sky into the light accumulation target after the lighting pass.
 ///
@@ -116,12 +130,16 @@ public:
 
     /// Takes the frame's sky. Call after `FrameResources::BeginFrame`.
     ///
-    /// - Param settings: valid settings; only mode `Procedural` draws.
+    /// - Param settings: valid settings; the modes `Procedural` and `Cube` draw. A `Cube` sky whose texture is null,
+    /// not
+    ///   created, not a cube or on a device without cube textures draws the procedural sky instead. The pass keeps a
+    ///   share of the cube until the next `Prepare`; a texture swapped between frames needs no pipeline rebuild.
     /// - Aborts: the settings are invalid.
+    /// - Ownership: shares `settings.cube`.
     void Prepare(const SkySettings& settings);
 
     /// Declares the sky pass: a pass that reads depth and adds to the accumulation target. Does nothing unless the
-    /// prepared mode is `Procedural`.
+    /// prepared mode is `Procedural` or `Cube`.
     ///
     /// - Param graph: the frame's graph.
     /// - Param targets: the G-buffer targets (the depth is read).
@@ -140,6 +158,11 @@ private:
         f32 sun[4];        // unit direction, exposure
         f32 sun_color[4];  // rgb, 0
     };
+    struct CubePush
+    {
+        f32 tint_exposure[4];  // rgb: tint * exposure
+        f32 yaw[4];            // cos(rotation), sin(rotation), 0, 0
+    };
     static void Record(const PassExecuteContext& context, void* user);
     void Build();
 
@@ -151,6 +174,13 @@ private:
     rhi::ShaderHandle fragment_;
     rhi::BindGroupLayoutHandle layout_;
     rhi::PipelineHandle pipeline_;
+    rhi::ShaderHandle cube_fragment_;
+    rhi::BindGroupLayoutHandle cube_layout_;
+    rhi::PipelineHandle cube_pipeline_;
+    rhi::SamplerHandle sampler_;
+    GpuTexturePtr cube_;  // the texture of the prepared frame; read through Handle() when recording
+    CubePush cube_push_ = {};
+    bool draw_cube_ = false;
     rhi::BindGroupHandle frame_group_;
     GBufferTargets targets_;
     GraphResource accum_;
