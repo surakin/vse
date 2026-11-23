@@ -108,6 +108,6 @@ here first if implementation proves one wrong.
 - Physical-core/SMT-aware placement is deliberately not done (logical
   CPUs only). Revisit if profiling on a hyperthreaded machine shows
   siblings contending.
-- Windows/macOS/console ports (Phases 13, 21, 29 and 30) will need their own
+- Windows/macOS/console ports (Phases 13, 21, 28 and 29) will need their own
   affinity/topology queries behind the same participant interface; the
   Linux-specific calls are confined to Day 29.

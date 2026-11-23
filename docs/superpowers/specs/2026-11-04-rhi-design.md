@@ -136,7 +136,7 @@ above the backend. Viewport and scissor are dynamic state.
 semaphores are core features, so the backend has exactly one code path. A
 device that lacks them is rejected at selection with the reasons logged.
 
-> **Risk (Phase 29 — Android):** many Android devices ship Vulkan 1.1 or
+> **Risk (Phase 28 — Android):** many Android devices ship Vulkan 1.1 or
 > 1.2 drivers. Reaching them means mapping each of the three features to
 > its `KHR`/`EXT` extension form (`VK_KHR_dynamic_rendering`,
 > `VK_KHR_synchronization2`, `VK_KHR_timeline_semaphore`) in the backend.

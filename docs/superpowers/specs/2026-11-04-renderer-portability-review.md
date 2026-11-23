@@ -31,7 +31,7 @@ built layer.
 | **Light volumes.** One additive, front-face-culled, scissored sphere per light, generated from `SV_VulkanVertexID` | `gl_VertexIndex` | `SV_VertexID` (base vertex is 0 for non-indexed draws, so `SV_VulkanVertexID` and `SV_VertexID` agree) | `[[vertex_id]]` | Fits. Front-face culling needs the winding flip in the D3D12 projection to be consistent with the Y flip above; the backend's golden cube tests catch it |
 | **Blending, scissor, per-light dynamic state.** | native | `OMSetBlendState` is baked into the PSO and the scissor is dynamic | same | Fits |
 | **Transient resources.** Pooled by description, no memory aliasing | each its own image | placed resources in a heap would allow aliasing; not needed for correctness | `MTLHeap` aliasing is possible, same | Fits (aliasing is an optimization filed in KNOWN-ISSUES) |
-| **Tile-based GPUs (Phase 29: iOS, Android).** The deferred pipeline writes the G-buffer to memory and reads it in a second pass | works, slowly on tilers | n/a | Apple GPUs can keep the G-buffer in tile memory (`memoryless` attachments, programmable blending) if the geometry and lighting passes are one render pass | Shim, later: merging the passes is a graph feature (adjacent passes that read what the previous wrote at the same pixel), not a renderer rewrite. Filed for Phase 29, where a forward path may be the better answer on mobile |
+| **Tile-based GPUs (Phase 28: iOS, Android).** The deferred pipeline writes the G-buffer to memory and reads it in a second pass | works, slowly on tilers | n/a | Apple GPUs can keep the G-buffer in tile memory (`memoryless` attachments, programmable blending) if the geometry and lighting passes are one render pass | Shim, later: merging the passes is a graph feature (adjacent passes that read what the previous wrote at the same pixel), not a renderer rewrite. Filed for Phase 28, where a forward path may be the better answer on mobile |
 | **Compute shaders and buffer sizes.** `fill.comp` and `saxpy.comp` call `RWStructuredBuffer.GetDimensions` | native | native | **Not available** in Metal Shading Language: slangc rejects both ("unavailable features in entry point") | Change deferred: both are RHI compute test shaders, listed with the reason in `shaders/portability.cmake`. The Metal backend passes the element count as a constant and these two shaders get that change with it. No renderer shader uses it |
 
 ## 2. What the shaders look like on the other targets
@@ -65,7 +65,7 @@ installed it also compiles the HLSL to DXIL; it is not installed on the developm
 - **Metal buffer-slot mapping** (Phase 21): read slots from the compiled reflection.
 - **Projection variants** (Phases 13 and 21): a `PerspectiveD3D` (Y up) or a per-backend flip; the cube and demo golden images are
   the oracle.
-- **Passes sharing a tile** (Phase 29): graph-level merging for Apple/Android tilers.
+- **Passes sharing a tile** (Phase 28): graph-level merging for Apple/Android tilers.
 - **`fill.comp`/`saxpy.comp` on Metal** (Phase 21): pass the length instead of `GetDimensions`.
 - **`dxc` DXIL check** (Phase 13): the optional step in `shaders_portability` has not run on a machine with `dxc`.
 

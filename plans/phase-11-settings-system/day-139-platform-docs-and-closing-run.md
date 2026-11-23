@@ -22,7 +22,7 @@ Make the store interface something Windows, macOS and the mobile and console tar
 
 ## Result
 
-Backend checklist (`engine/foundation/settings/BACKEND.md`, `settings_backend_lists`, `settings_cross_syntax_windows|macos`), `RegistryShapedConfigStore` passing the conformance suite, plan notes in Phases 13, 21, 15, 27, 29 and 30, the guide's "Which API do I use?" table and "Keeping configuration in one place", `CLAUDE.md` rule, `PLAN.md` assumption #22, and the `config_access_check` gate (allow list with a reason per entry, planted, clean, stale and no-reason self-tests) are done. `debug_backend_lists` now skips `engine/foundation/settings/` as it skips `io/`.
+Backend checklist (`engine/foundation/settings/BACKEND.md`, `settings_backend_lists`, `settings_cross_syntax_windows|macos`), `RegistryShapedConfigStore` passing the conformance suite, plan notes in Phases 13, 21, 15, 27, 28 and 29, the guide's "Which API do I use?" table and "Keeping configuration in one place", `CLAUDE.md` rule, `PLAN.md` assumption #22, and the `config_access_check` gate (allow list with a reason per entry, planted, clean, stale and no-reason self-tests) are done. `debug_backend_lists` now skips `engine/foundation/settings/` as it skips `io/`.
 
 Closing run: `ran 3441 of 3441 tests (phases: all; flavors: all; display: included; crash tests: included) in 73 s`; the only failure is the known `X11Window::Create` test (KNOWN-ISSUES). `ctest -L docs` passes; docgen lint at zero. Both demos ran 1000 frames with `--validation` on Wayland and X11 (exit 0); the `--save-settings`/`--settings` round trip is the ctest `*_settings_save_reproduce`.
 

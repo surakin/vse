@@ -3,7 +3,7 @@
 **Depends on:** Phase 5 (Renderer core) complete on Linux, Phases 6-11 (test scoping, debugging facilities, RHI reset, file layer, standard types,
 settings) complete, and **Phase 12 (module layering)** complete: the foundation is a set of layered libraries with no dependency cycle, so each Windows
 backend below is built and tested as soon as its layer is ported (`ARCHITECTURE.md`). This phase ports the stack built so far (foundation, file layer, settings, job system, debugging facilities, platform layer, RHI,
-renderer, shaders, demos, tools and gates); it builds no new engine features. Unreal import (Phases 31-32) is deliberately sequenced after multiplatform
+renderer, shaders, demos, tools and gates); it builds no new engine features. Unreal import (Phases 30-31) is deliberately sequenced after multiplatform
 support, so it isn't part of what this phase ports.
 **Goal:** everything that runs on Linux today runs on Windows, with DX12 as the native RHI backend and the existing Vulkan backend also running on
 Windows. Moved ahead of Font, UI, ECS and the rest on 2026-11-05 so the RHI and platform abstractions are tested against a second backend while they are

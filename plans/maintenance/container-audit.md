@@ -15,7 +15,7 @@ The commit says it was pushed before its last review fixes were built. On Linux,
 other builds and `docs/reference` wait for Day 1.
 
 **Depends on:** Phase 10 (containers), Phase 16 (wrappers), and the modules each day touches. Phase 27 is closed on Linux, and the series runs before
-Phase 28's Day 478 unless the user orders otherwise.
+the next phase's first day unless the user orders otherwise.
 
 **Goal:**
 - Give the foundation the containers and algorithms whose absence caused the slow choices.

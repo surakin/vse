@@ -51,7 +51,7 @@ Order reasoning: the spec and the spikes (414) settle the Linux backend, the res
 - **The audio thread never allocates, locks or does I/O.** Commands arrive through a lock-free ring, events leave through another, streams are decoded ahead on a job and read from a ring.
 - **Everything configurable is a setting** (`audio.*`, Phase 11); the device and the rate change at run time through one reset path (like the RHI), and a lost device falls back to the null device.
 - **Extras, all in scope (user, 2026-11-17):** compressed formats (Ogg Vorbis through vendored libogg and libvorbis, hostile-input rules around them, small committed fixtures), Doppler and occlusion, streaming music with cross-fades, layers and playlists, buses and effects (biquad filters, delay, reverb).
-- **Hosts and ports (user, 2026-11-17):** a C API in two days with a host-driven mode (`audio_render` pulls the mix into the host's own audio callback), then a Windows day and a macOS day that add their backends and check the hashes. Android and iOS stay in Phase 29, the consoles in Phase 30.
+- **Hosts and ports (user, 2026-11-17):** a C API in two days with a host-driven mode (`audio_render` pulls the mix into the host's own audio callback), then a Windows day and a macOS day that add their backends and check the hashes. Android and iOS stay in Phase 28, the consoles in Phase 29.
 - **Units:** metres, seconds, linear gain (decibel helpers on the control side), +Y up, the listener looks along -Z.
 
 ## Notes / open questions (settled in the Day 414 spec)
@@ -59,5 +59,5 @@ Order reasoning: the spec and the spikes (414) settle the Linux backend, the res
 - Settled on Day 414 (spec `docs/superpowers/specs/2026-11-17-audio-design.md`): the Linux backend is *recommended* as PipeWire through `libpipewire` plus a raw-kernel ALSA fallback, **awaiting the user's confirmation before Day 425**; resampler default Hermite; 256 mixed voices; tolerance 1e-5 / -100 dB; `audio_physics` is a separate target. Originally open: the Linux backend, the default resampler quality, the Vorbis test-stream source and licence, the pinned library versions, how far libvorbis output differs between builds (compared within the tolerance).
 - Voice limit and virtualisation rule from the voice-cost spike.
 - Not in this phase: HRTF and ambisonics, MIDI and synthesis, voice chat and capture (input devices), MP3 and other codecs, a loudness-normalised master, occlusion by diffraction, audio middleware import (FMOD or Wwise banks), exclusive-mode WASAPI.
-- This is the largest phase planned so far (30 days); Phase 28 (3D text) moved from Days 414-429 to Days 444-459 and then, when Phase 27 was planned (2026-11-17), to Days 478-493.
+- This is the largest phase planned so far (30 days); 3D text moved from Days 414-429 to Days 444-459 and then, when Phase 27 was planned (2026-11-17), to Days 478-493 (on 2026-11-23 it became a future project, `plans/future/3d-text-and-color-glyphs.md`).
 - The Windows and macOS days (440-441) check the scenes against the Linux tables within the tolerance; Day 437 gives the Linux reference. arm64 macOS compiles but cannot be run.

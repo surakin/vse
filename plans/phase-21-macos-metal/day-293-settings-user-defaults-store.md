@@ -104,7 +104,7 @@ byte-identical to Linux's. `UserDefaultsConfigStore` passes the store conformanc
    managed file has answers at once.
 7. **Fixed: `Enumerate` and `IsPresent` converted every value** just to list keys: a key-only path.
 8. **Declined: the watch logic repeats the registry store's** (`RememberOwn`, the comparison, the stop sequence). Sharing it means changing
-   the Windows store, which cannot be built or tested here; to be considered when Phase 29 adds a third store.
+   the Windows store, which cannot be built or tested here; to be considered when Phase 28 adds a third store.
 9. **Fixed: the poll called `CFPreferencesSynchronize` every 250 ms**, the call `Commit` documents as the flush, under the store's lock. It is
    gone: the listener test, which writes with `defaults write` from another process, passed 3 of 3 without it.
 10. **`STATUS.md` was not yet in the diff:** updated in this commit.

@@ -1,7 +1,7 @@
 # Text design (Phase 14)
 
 Status: decided 2026-11-08 (Day 175) from the experiments below. Scope: the 2D text layer — fonts, glyph rasterization, an atlas, layout, cursor and
-hit-testing, and an overlay pass that draws it. **Not in this phase:** 3D text, large 2D outline meshes and colored glyphs (Phase 28), widgets (Phase 15),
+hit-testing, and an overlay pass that draws it. **Not in this phase:** 3D text, large 2D outline meshes and colored glyphs (the 3D text project), widgets (Phase 15),
 complex-script shaping (`PLAN.md` assumption #17). The developer's bar for the phase: "a simple hello world is enough until the UI is implemented".
 
 ## 1. Modules
@@ -24,7 +24,7 @@ library and faces are not thread-safe).
 ## 3. What a glyph is
 
 One Unicode code point maps to one glyph through the font's cmap. **No shaping.** A grapheme cluster of several code points draws as its component glyphs:
-combining marks and ZWJ/variation selectors have zero advance and sit where the pen is; an emoji ZWJ sequence draws its parts or `.notdef` (Phase 28 handles
+combining marks and ZWJ/variation selectors have zero advance and sit where the pen is; an emoji ZWJ sequence draws its parts or `.notdef` (the 3D text project handles
 colored glyphs). The cursor still treats the cluster as one unit (Day 179). Kerning comes from the font's `kern` table through `FT_Get_Kerning`; GPOS-only
 fonts (Noto Sans has no `kern` table) get none, and the guide says so. Layout produces glyph ids and pen positions independent of how a glyph is drawn.
 
@@ -36,8 +36,8 @@ fonts (Noto Sans has no `kern` table) get none, and the guide says so. Layout pr
   (1 MiB, with shelf-packing waste); 256 px would need a 2048x2048 page (4 MiB) for ASCII alone. Rasterization cost per glyph is 7 us at 16 px and 14 us at 128 px (36 us at
   512): rasterization time is not the constraint, atlas area is.
 - Metrics, layout and outlines work at any size up to a sanity limit of 2048 px; only `Render` and the atlas refuse sizes above the maximum (a `too_large` status,
-  counted). Above the maximum the text renderer draws the glyph from the maximum-size raster scaled up (blurry, counted in `Stats`, logged once) until Phase 28
-  draws such text as filled 2D outline meshes. Pen positions do not depend on the path, so nothing moves when Phase 28 lands.
+  counted). Above the maximum the text renderer draws the glyph from the maximum-size raster scaled up (blurry, counted in `Stats`, logged once) until the 3D text project
+  draws such text as filled 2D outline meshes. Pen positions do not depend on the path, so nothing moves when the 3D text project lands.
 - No quantization of requested sizes in v1; a program that animates size should expect one raster set per distinct size (no eviction in v1, below).
 
 ## 5. The atlas
@@ -45,7 +45,7 @@ fonts (Noto Sans has no `kern` table) get none, and the guide says so. Layout pr
 R8 coverage pages, 1024x1024, one shelf packer per page with 1 px padding, glyphs placed on demand. The CPU pages are the source of truth: the GPU texture is a
 copy that can be rebuilt. A full page adds a page (one draw per page, as Phase 5 Day 84 says) up to a documented maximum; beyond it the glyph is not added and a
 counter increments — never a crash. **No eviction in v1.** Dirty rectangles per page are tracked so a frame uploads only what changed. An RGBA page can be added later
-(Phase 28) without changing the keys.
+(the 3D text project) without changing the keys.
 
 ## 6. Reset and loss (CLAUDE.md, "The RHI can be reset at run time")
 
@@ -53,7 +53,7 @@ counter increments — never a crash. **No eviction in v1.** Dirty rectangles pe
 (re-upload every page from the CPU copy) and never caches a handle past a frame; the text renderer binds the atlas by owner, not by raw handle (Day 180 amendment: the planned text material in `MaterialSystem` became `renderer::TextRenderer` on the raw RHI; the shaders are `text.vert` / `text.frag`, SPIR-V only until the Windows PC mints DXIL). Its tests reset the
 device through `tests/renderer/reset_rig.h` and compare `Device::Resources()` counts, and recover from a forced device loss.
 
-## 7. Seams kept for Phase 28
+## 7. Seams kept for the 3D text project
 
 The `Font` exposes outline access (`LoadOutline`: contours with on/off-curve points in font units) behind the FreeType boundary; layout yields glyph ids and pen
 positions independent of drawing; the atlas can add an RGBA page; the font is the single owner of the face, so a mesh builder reads outlines from the same object

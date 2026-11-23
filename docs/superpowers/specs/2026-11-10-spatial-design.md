@@ -7,7 +7,7 @@ Written 2026-11-10 (Phase 18 Day 237). Plan: `plans/phase-18-spatial-partitionin
 Physics' broad phase, the renderer's culling, audio emitter lookup, gameplay proximity and ray queries, and tools all need "what is near this box, ray, frustum". One module with exact, tested, deterministic structures, and an ECS tier that keeps them in step with entities at the cost of what moved, is built once and measured once, instead of four private grids.
 
 Goals: static and dynamic BVHs behind one query vocabulary; named spatial sets so the renderer's tree does not hold physics triggers; a deterministic begin/end pair feed for physics; renderer culling through the render set with output identical to the flat scan.
-Non-goals: a narrow phase or collision shapes beyond the box and sphere used as bounds (Phase 25), navigation meshes, a 2D variant, GPU-side culling, world-cell streaming (Phase 35), serialization of trees (rebuilt on load).
+Non-goals: a narrow phase or collision shapes beyond the box and sphere used as bounds (Phase 25), navigation meshes, a 2D variant, GPU-side culling, world-cell streaming (Phase 34), serialization of trees (rebuilt on load).
 Anti-goal: a structure that is fast in a benchmark but cannot be kept exact against a brute force under random operations.
 
 ## 2. Decisions
@@ -148,7 +148,7 @@ The miss: the dynamic tree re-inserts 0.8 to 0.9 us per move at this speed (agen
 
 - **Phase 25 (physics):** consumes `PairTracker` begin/end events and the set's layer masks; fat margins never leak into pair events; the narrow phase and the shapes are its own. `plans/phase-25-physics.md` already states this and needs no change.
 - **Phase 17 Day 233 (`RenderSync`/`RenderScene`):** the bridge is unchanged; `RenderScene::Cull` uses a spatial index of its own (Day 247). The visible-list overload and visibility system originally planned were not built. `RenderSync` does not assume it alone decides what is drawn (its note already says so).
-- **Phase 28 (3D text):** needs nothing from here; its text entities become spatial members when they carry bounds.
+- **the 3D text project (3D text):** needs nothing from here; its text entities become spatial members when they carry bounds.
 
 ## 6. Open points the days settle
 

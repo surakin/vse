@@ -7,7 +7,7 @@
 #      gives the reason (a demo's import mode, a host program).
 #   3. The decoders (png.h, zlib.h, stb_image.h, and the png, zlib and stb_jpeg targets) are reached only from engine/asset_import/image_decode.cpp,
 #      its C helper png_guard.c (libpng's setjmp, which MSVC refuses in C++) and its CMake file, or an allow-list entry (FreeType's color bitmaps,
-#      Phase 28).
+#      the 3D text project).
 #   4. The Ogg Vorbis libraries' headers (ogg/ogg.h, vorbis/codec.h, vorbis/vorbisfile.h, vorbis/vorbisenc.h) are included only by
 #      engine/audio/vorbis.cpp, and the `ogg` and `vorbis` targets are linked only by engine/audio/CMakeLists.txt (Phase 26 Day 434): the audio
 #      module and, through its facade, asset_mint reach the codec; nothing else does.

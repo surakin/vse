@@ -1,4 +1,9 @@
-# Phase 28 — 3D Text, Large 2D Text & Colored Glyphs
+# Future project — 3D Text, Large 2D Text & Colored Glyphs
+
+**Status: a future project, not scheduled (the user, 2026-11-23: "it's not that urgent").** It was Phase 28 (Days 478-493). Its day files are written and stay as they were,
+but the days are numbered 1 to 16 within the project: it takes the next phase number and the next free day numbers when it is scheduled, and its plan, `PLAN.md`'s
+roadmap and the references to it are renumbered then. Nothing in the engine depends on it: the 2D text path draws text above the atlas's largest size from the largest
+raster, scaled up (blurry, counted, logged once), until this project is built. Phase and day numbers below that name another phase are those phases' own.
 
 **Depends on:** Phase 14 (Font & Text: FreeType, text layout, the 2D text path) and Phase 5 (Renderer core: `MeshData`/`GpuMesh`, the material
 system, vertex colors and triangle strips from Phase 5 Day 78). Phase 17 (ECS and its scene bridge, which 3D text entities use). Phase 15 (UI) does not need it and does not wait for it.
@@ -10,24 +15,24 @@ the unsupported formats falling back to the monochrome outline or `.notdef` in a
 
 ## Days
 
-478. [Design Spec, Decisions & Phase Setup](phase-28-3d-text-and-color-glyphs/day-478-design-spec-and-setup.md)
-479. [Flattening Glyph Outlines](phase-28-3d-text-and-color-glyphs/day-479-flatten-outlines.md)
-480. [Contour Orientation, Nesting & Overlap Removal](phase-28-3d-text-and-color-glyphs/day-480-contour-cleanup.md)
-481. [Triangulating Polygons with Holes](phase-28-3d-text-and-color-glyphs/day-481-triangulation.md)
-482. [Large 2D Glyph Meshes: Cache & Edge Ramp](phase-28-3d-text-and-color-glyphs/day-482-large-2d-glyph-meshes.md)
-483. [Large 2D Text on the GPU](phase-28-3d-text-and-color-glyphs/day-483-large-2d-text-rendering.md)
-484. [Extruding Glyph Geometry](phase-28-3d-text-and-color-glyphs/day-484-extrusion.md)
-485. [Beveled Extrusion](phase-28-3d-text-and-color-glyphs/day-485-bevel.md)
-486. [3D Text Meshes Through the Renderer](phase-28-3d-text-and-color-glyphs/day-486-text-3d-mesh-and-rendering.md)
-487. [Test Font Builder & COLR v0 Layers](phase-28-3d-text-and-color-glyphs/day-487-test-fonts-and-colr.md)
-488. [COLR Layers on the 2D and 3D Paths](phase-28-3d-text-and-color-glyphs/day-488-colr-on-2d-and-3d.md)
-489. [Vendor zlib & libpng, Enable PNG in FreeType](phase-28-3d-text-and-color-glyphs/day-489-vendor-libpng.md)
-490. [Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType](phase-28-3d-text-and-color-glyphs/day-490-color-bitmap-glyphs.md)
-491. [RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D](phase-28-3d-text-and-color-glyphs/day-491-rgba-atlas-and-bitmap-drawing.md)
-492. [`text3d_demo`, Settings Screen & Integration](phase-28-3d-text-and-color-glyphs/day-492-demo-and-integration.md)
-493. [Docs, Windows PC, Closing Full Run & Phase Review](phase-28-3d-text-and-color-glyphs/day-493-docs-closing-run-and-review.md)
+1. [Design Spec, Decisions & Phase Setup](3d-text-and-color-glyphs/day-01-design-spec-and-setup.md)
+2. [Flattening Glyph Outlines](3d-text-and-color-glyphs/day-02-flatten-outlines.md)
+3. [Contour Orientation, Nesting & Overlap Removal](3d-text-and-color-glyphs/day-03-contour-cleanup.md)
+4. [Triangulating Polygons with Holes](3d-text-and-color-glyphs/day-04-triangulation.md)
+5. [Large 2D Glyph Meshes: Cache & Edge Ramp](3d-text-and-color-glyphs/day-05-large-2d-glyph-meshes.md)
+6. [Large 2D Text on the GPU](3d-text-and-color-glyphs/day-06-large-2d-text-rendering.md)
+7. [Extruding Glyph Geometry](3d-text-and-color-glyphs/day-07-extrusion.md)
+8. [Beveled Extrusion](3d-text-and-color-glyphs/day-08-bevel.md)
+9. [3D Text Meshes Through the Renderer](3d-text-and-color-glyphs/day-09-text-3d-mesh-and-rendering.md)
+10. [Test Font Builder & COLR v0 Layers](3d-text-and-color-glyphs/day-10-test-fonts-and-colr.md)
+11. [COLR Layers on the 2D and 3D Paths](3d-text-and-color-glyphs/day-11-colr-on-2d-and-3d.md)
+12. [Vendor zlib & libpng, Enable PNG in FreeType](3d-text-and-color-glyphs/day-12-vendor-libpng.md)
+13. [Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType](3d-text-and-color-glyphs/day-13-color-bitmap-glyphs.md)
+14. [RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D](3d-text-and-color-glyphs/day-14-rgba-atlas-and-bitmap-drawing.md)
+15. [`text3d_demo`, Settings Screen & Integration](3d-text-and-color-glyphs/day-15-demo-and-integration.md)
+16. [Docs, Windows PC, Closing Full Run & Phase Review](3d-text-and-color-glyphs/day-16-docs-closing-run-and-review.md)
 
-Order reasoning: geometry first, pure CPU and testable without a GPU (flatten 479, cleanup 480, triangulate 481), because both consumers share it; the large 2D path (482-483) comes before 3D because it replaces a Phase 14 stand-in and is smaller; extrusion and bevel (484-485) precede the renderer integration (486); colors start with COLR (487-488), which needs no new decoder, and the bitmap formats (489-491) come last because they need libpng vendored behind FreeType.
+Order reasoning: geometry first, pure CPU and testable without a GPU (flatten 2, cleanup 3, triangulate 4), because both consumers share it; the large 2D path (5-6) comes before 3D because it replaces a Phase 14 stand-in and is smaller; extrusion and bevel (7-8) precede the renderer integration (9); colors start with COLR (10-11), which needs no new decoder, and the bitmap formats (12-14) come last because they need libpng vendored behind FreeType.
 
 ## Key deliverables (the original list; the days above break it down)
 
@@ -54,5 +59,5 @@ Carried over unchanged from the Phase 14 plan as it stood before the split:
   units (font units or world units); contour winding rules for fonts that mix conventions. Hinting is irrelevant to the 3D path (outlines load unhinted).
 - Phase 14 must keep the seams this phase needs (recorded in its design spec): the font object exposes outline loading as well as bitmap rendering,
   the layout produces glyph ids and pen positions independent of how a glyph is drawn, and the atlas can hold an RGBA page later.
-- Day files written 2026-11-10 (Days 478-493). Day 478 settles the open questions above with the planner's defaults and experiments. **User decision (2026-11-10): vendor libpng** (with zlib) behind FreeType, so `CBDT`/`sbix` PNG strikes decode through FreeType; a deliberate exception to the zero-third-party line, written into `PLAN.md` assumption #17 and `CLAUDE.md` on Day 489.
-- Phase 16's Day 219 (Windows PC) is still open; Day 493 also needs the Windows PC, for DXIL minting and the Windows closing run.
+- Day files written 2026-11-10 (Days 1-16). Day 1 settles the open questions above with the planner's defaults and experiments. **User decision (2026-11-10): vendor libpng** (with zlib) behind FreeType, so `CBDT`/`sbix` PNG strikes decode through FreeType; a deliberate exception to the zero-third-party line, written into `PLAN.md` assumption #17 and `CLAUDE.md` on Day 12.
+- Phase 16's Day 219 (Windows PC) is still open; Day 16 also needs the Windows PC, for DXIL minting and the Windows closing run.
