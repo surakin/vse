@@ -13,6 +13,7 @@ set(ENGINE_SHADERS
   fullscreen.vert
   bindings_test.frag
   fill.comp
+  cube_sample.comp
   saxpy.comp
   gradient.comp
   cube.vert

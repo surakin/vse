@@ -23,8 +23,13 @@ struct NullDeviceState;
 /// - Thread-safety: thread-compatible plain data.
 struct NullDeviceOptions
 {
-    /// Creates options with the RHI-guaranteed minimum limits, except that the sampler anisotropy limit is 16.
-    NullDeviceOptions() { caps.max_sampler_anisotropy = 16.0f; }
+    /// Creates options with the RHI-guaranteed minimum limits, except that the sampler anisotropy limit is 16 and cube
+    /// textures are supported.
+    NullDeviceOptions()
+    {
+        caps.max_sampler_anisotropy = 16.0f;
+        caps.cube_textures = true;
+    }
 
     /// The limits the device reports and validates against.
     DeviceCaps caps;

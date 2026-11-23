@@ -780,6 +780,16 @@ ShaderFormat shader_format;
 
 The bytecode format `CreateShader` takes: SPIR-V on Vulkan, DXIL on Direct3D 12. Pick the module from a [`rhi::ShaderBlobSet`](#rhi-shaderblobset) with it; the null device takes the format its options name (SPIR-V by default).
 
+### `cube_textures` {#rhi-devicecaps-cube-textures}
+
+`variable rhi::DeviceCaps::cube_textures` — defined in `engine/rhi/caps.h`
+
+```cpp
+bool cube_textures;
+```
+
+Whether cube textures (`TextureDimension::Cube`: six square faces, sampled and copied) can be created: true on the Vulkan backend and the null device; the default (and a backend without them) is false, and `CreateTexture` then fails for a cube.
+
 ### `object_index_stream` {#rhi-devicecaps-object-index-stream}
 
 `variable rhi::DeviceCaps::object_index_stream` — defined in `engine/rhi/caps.h`
@@ -1630,7 +1640,7 @@ Describes a texture to create.
 TextureDimension dimension;
 ```
 
-2D, 3D or (reserved) cube.
+2D, 3D or cube: a cube has square faces, `array_layers` 6, depth 1 and only sampled and copy usage (no cube arrays).
 
 ### `width` {#rhi-texturedesc-width}
 
@@ -5205,7 +5215,7 @@ The shape of a texture.
 |---|---|---|
 | <a id="rhi-texturedimension-tex2d"></a>`Tex2D` | `0` | A 2D image, optionally an array. |
 | <a id="rhi-texturedimension-tex3d"></a>`Tex3D` |  | A volume. |
-| <a id="rhi-texturedimension-cube"></a>`Cube` |  | A cube map; reserved, rejected until a backend supports it. |
+| <a id="rhi-texturedimension-cube"></a>`Cube` |  | A cube map: six square faces (`array_layers` is 6), sampled and copied only; see `DeviceCaps::cube_textures`. |
 
 ## `VertexFormat` {#rhi-vertexformat}
 
@@ -6186,7 +6196,7 @@ Options for [`rhi::CreateNullDevice`](#rhi-createnulldevice-const-nulldeviceopti
 NullDeviceOptions();
 ```
 
-Creates options with the RHI-guaranteed minimum limits, except that the sampler anisotropy limit is 16.
+Creates options with the RHI-guaranteed minimum limits, except that the sampler anisotropy limit is 16 and cube textures are supported.
 
 ### `caps` {#rhi-nulldeviceoptions-caps}
 

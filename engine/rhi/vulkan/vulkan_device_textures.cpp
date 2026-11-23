@@ -161,11 +161,7 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDesc& desc)
         RhiLog(LogVerbosity::Error, "CreateTexture: %s", why);
         return {};
     }
-    if (desc.dimension == TextureDimension::Cube)
-    {
-        RhiLog(LogVerbosity::Error, "CreateTexture: cube textures are not supported yet");
-        return {};
-    }
+    const bool is_cube = desc.dimension == TextureDimension::Cube;
     const bool is3d = desc.dimension == TextureDimension::Tex3D;
     if (desc.width > (is3d ? caps_.max_texture_dimension_3d : caps_.max_texture_dimension_2d) ||
         desc.height > (is3d ? caps_.max_texture_dimension_3d : caps_.max_texture_dimension_2d) ||
@@ -185,7 +181,7 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDesc& desc)
         VkImageFormatProperties limits{};
         const VkResult q = instance_.Fns().GetPhysicalDeviceImageFormatProperties(
             physical_, ToVkFormat(desc.format), is3d ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-            ToVkImageUsage(desc.usage), 0, &limits);
+            ToVkImageUsage(desc.usage), is_cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0, &limits);
         if (q != VK_SUCCESS || desc.width > limits.maxExtent.width || desc.height > limits.maxExtent.height ||
             (is3d && desc.depth > limits.maxExtent.depth) || desc.mip_levels > limits.maxMipLevels ||
             desc.array_layers > limits.maxArrayLayers)
@@ -198,6 +194,7 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDesc& desc)
     }
     VkImageCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    info.flags = is_cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
     info.imageType = is3d ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
     info.format = ToVkFormat(desc.format);
     info.extent = {desc.width, desc.height, is3d ? desc.depth : 1};
@@ -270,8 +267,9 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDesc& desc)
     VkImageViewCreateInfo view_info{};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = image;
-    view_info.viewType = is3d ? VK_IMAGE_VIEW_TYPE_3D
-                              : (desc.array_layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D);
+    view_info.viewType = is_cube ? VK_IMAGE_VIEW_TYPE_CUBE
+                         : is3d  ? VK_IMAGE_VIEW_TYPE_3D
+                                 : (desc.array_layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D);
     view_info.format = info.format;
     view_info.subresourceRange = {view_aspects, 0, desc.mip_levels, 0, desc.array_layers};
     bool ok = true;

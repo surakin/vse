@@ -334,7 +334,7 @@ bool ClassifyBinding(const json& parameter_type, const std::string& name, Bindin
                 "' is a ByteAddressBuffer, which needs a raw view the RHI does not make; use StructuredBuffer<uint>";
             return false;
         }
-        if (shape == "texture2D")
+        if (shape == "texture2D" || shape == "textureCube")
         {
             out->type = access.empty() || access == "read" ? rhi::BindingType::SampledTexture
                                                            : rhi::BindingType::StorageTexture;

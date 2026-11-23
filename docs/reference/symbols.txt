@@ -11506,7 +11506,8 @@ rhi::DeviceCaps::depth_format	variable	rhi	rhi-devicecaps-depth-format	rhi.md	en
 rhi::DeviceCaps::timestamp_period_ns	variable	rhi	rhi-devicecaps-timestamp-period-ns	rhi.md	engine/rhi/caps.h:53
 rhi::DeviceCaps::supports_bindless	variable	rhi	rhi-devicecaps-supports-bindless	rhi.md	engine/rhi/caps.h:55
 rhi::DeviceCaps::shader_format	variable	rhi	rhi-devicecaps-shader-format	rhi.md	engine/rhi/caps.h:58
-rhi::DeviceCaps::object_index_stream	variable	rhi	rhi-devicecaps-object-index-stream	rhi.md	engine/rhi/caps.h:63
+rhi::DeviceCaps::cube_textures	variable	rhi	rhi-devicecaps-cube-textures	rhi.md	engine/rhi/caps.h:62
+rhi::DeviceCaps::object_index_stream	variable	rhi	rhi-devicecaps-object-index-stream	rhi.md	engine/rhi/caps.h:67
 rhi::Viewport	struct	rhi	rhi-viewport	rhi.md	engine/rhi/command_list.h:16
 rhi::Viewport::x	variable	rhi	rhi-viewport-x	rhi.md	engine/rhi/command_list.h:19
 rhi::Viewport::y	variable	rhi	rhi-viewport-y	rhi.md	engine/rhi/command_list.h:21
@@ -11570,144 +11571,144 @@ rhi::BufferDesc::location	variable	rhi	rhi-bufferdesc-location	rhi.md	engine/rhi
 rhi::BufferDesc::debug_name	variable	rhi	rhi-bufferdesc-debug-name	rhi.md	engine/rhi/desc.h:40
 rhi::BufferDesc::Validate() const	function	rhi	rhi-bufferdesc-validate-const	rhi.md	engine/rhi/desc.h:50
 rhi::TextureDesc	struct	rhi	rhi-texturedesc	rhi.md	engine/rhi/desc.h:57
-rhi::TextureDesc::dimension	variable	rhi	rhi-texturedesc-dimension	rhi.md	engine/rhi/desc.h:60
-rhi::TextureDesc::width	variable	rhi	rhi-texturedesc-width	rhi.md	engine/rhi/desc.h:62
-rhi::TextureDesc::height	variable	rhi	rhi-texturedesc-height	rhi.md	engine/rhi/desc.h:64
-rhi::TextureDesc::depth	variable	rhi	rhi-texturedesc-depth	rhi.md	engine/rhi/desc.h:66
-rhi::TextureDesc::mip_levels	variable	rhi	rhi-texturedesc-mip-levels	rhi.md	engine/rhi/desc.h:68
-rhi::TextureDesc::array_layers	variable	rhi	rhi-texturedesc-array-layers	rhi.md	engine/rhi/desc.h:70
-rhi::TextureDesc::format	variable	rhi	rhi-texturedesc-format	rhi.md	engine/rhi/desc.h:72
-rhi::TextureDesc::usage	variable	rhi	rhi-texturedesc-usage	rhi.md	engine/rhi/desc.h:74
-rhi::TextureDesc::samples	variable	rhi	rhi-texturedesc-samples	rhi.md	engine/rhi/desc.h:76
-rhi::TextureDesc::debug_name	variable	rhi	rhi-texturedesc-debug-name	rhi.md	engine/rhi/desc.h:78
-rhi::TextureDesc::Validate() const	function	rhi	rhi-texturedesc-validate-const	rhi.md	engine/rhi/desc.h:85
-rhi::SamplerDesc	struct	rhi	rhi-samplerdesc	rhi.md	engine/rhi/desc.h:92
-rhi::SamplerDesc::mag_filter	variable	rhi	rhi-samplerdesc-mag-filter	rhi.md	engine/rhi/desc.h:95
-rhi::SamplerDesc::min_filter	variable	rhi	rhi-samplerdesc-min-filter	rhi.md	engine/rhi/desc.h:97
-rhi::SamplerDesc::mip_filter	variable	rhi	rhi-samplerdesc-mip-filter	rhi.md	engine/rhi/desc.h:99
-rhi::SamplerDesc::address_u	variable	rhi	rhi-samplerdesc-address-u	rhi.md	engine/rhi/desc.h:101
-rhi::SamplerDesc::address_v	variable	rhi	rhi-samplerdesc-address-v	rhi.md	engine/rhi/desc.h:103
-rhi::SamplerDesc::address_w	variable	rhi	rhi-samplerdesc-address-w	rhi.md	engine/rhi/desc.h:105
-rhi::SamplerDesc::border_color	variable	rhi	rhi-samplerdesc-border-color	rhi.md	engine/rhi/desc.h:107
-rhi::SamplerDesc::max_anisotropy	variable	rhi	rhi-samplerdesc-max-anisotropy	rhi.md	engine/rhi/desc.h:109
-rhi::SamplerDesc::compare_enable	variable	rhi	rhi-samplerdesc-compare-enable	rhi.md	engine/rhi/desc.h:111
-rhi::SamplerDesc::compare_op	variable	rhi	rhi-samplerdesc-compare-op	rhi.md	engine/rhi/desc.h:113
-rhi::SamplerDesc::min_lod	variable	rhi	rhi-samplerdesc-min-lod	rhi.md	engine/rhi/desc.h:115
-rhi::SamplerDesc::max_lod	variable	rhi	rhi-samplerdesc-max-lod	rhi.md	engine/rhi/desc.h:117
-rhi::SamplerDesc::debug_name	variable	rhi	rhi-samplerdesc-debug-name	rhi.md	engine/rhi/desc.h:119
-rhi::SamplerDesc::Validate() const	function	rhi	rhi-samplerdesc-validate-const	rhi.md	engine/rhi/desc.h:126
-rhi::ShaderSlot	struct	rhi	rhi-shaderslot	rhi.md	engine/rhi/desc.h:135
-rhi::ShaderSlot::set	variable	rhi	rhi-shaderslot-set	rhi.md	engine/rhi/desc.h:138
-rhi::ShaderSlot::binding	variable	rhi	rhi-shaderslot-binding	rhi.md	engine/rhi/desc.h:140
-rhi::ShaderSlot::slot	variable	rhi	rhi-shaderslot-slot	rhi.md	engine/rhi/desc.h:142
-rhi::ShaderSlot::type	variable	rhi	rhi-shaderslot-type	rhi.md	engine/rhi/desc.h:144
-rhi::ShaderSlot::count	variable	rhi	rhi-shaderslot-count	rhi.md	engine/rhi/desc.h:146
-rhi::kNoShaderSlot	variable	rhi	rhi-knoshaderslot	rhi.md	engine/rhi/desc.h:150
-rhi::ShaderSlotTable	struct	rhi	rhi-shaderslottable	rhi.md	engine/rhi/desc.h:157
-rhi::ShaderSlotTable::slots	variable	rhi	rhi-shaderslottable-slots	rhi.md	engine/rhi/desc.h:160
-rhi::ShaderSlotTable::count	variable	rhi	rhi-shaderslottable-count	rhi.md	engine/rhi/desc.h:162
-rhi::ShaderSlotTable::push_constant_slot	variable	rhi	rhi-shaderslottable-push-constant-slot	rhi.md	engine/rhi/desc.h:164
-rhi::ShaderSlotTable::threadgroup_size	variable	rhi	rhi-shaderslottable-threadgroup-size	rhi.md	engine/rhi/desc.h:167
-rhi::ShaderBlob	struct	rhi	rhi-shaderblob	rhi.md	engine/rhi/desc.h:175
-rhi::ShaderBlob::format	variable	rhi	rhi-shaderblob-format	rhi.md	engine/rhi/desc.h:178
-rhi::ShaderBlob::bytes	variable	rhi	rhi-shaderblob-bytes	rhi.md	engine/rhi/desc.h:180
-rhi::ShaderBlob::size	variable	rhi	rhi-shaderblob-size	rhi.md	engine/rhi/desc.h:182
-rhi::ShaderBlob::entry	variable	rhi	rhi-shaderblob-entry	rhi.md	engine/rhi/desc.h:185
-rhi::ShaderBlob::slots	variable	rhi	rhi-shaderblob-slots	rhi.md	engine/rhi/desc.h:188
-rhi::ShaderBlob::Empty() const	function	rhi	rhi-shaderblob-empty-const	rhi.md	engine/rhi/desc.h:193
-rhi::SpirvBlob(const u32*,usize)	function	rhi	rhi-spirvblob-const-u32-star-usize	rhi.md	engine/rhi/desc.h:203
-rhi::DxilBlob(const u8*,usize)	function	rhi	rhi-dxilblob-const-u8-star-usize	rhi.md	engine/rhi/desc.h:215
-rhi::MetalLibBlob(const u8*,usize,const char*,const ShaderSlotTable*)	function	rhi	rhi-metallibblob-const-u8-star-usize-const-char-star-const-shaderslottable-star	rhi.md	engine/rhi/desc.h:229
-rhi::ShaderBlobSet	struct	rhi	rhi-shaderblobset	rhi.md	engine/rhi/desc.h:240
-rhi::ShaderBlobSet::name	variable	rhi	rhi-shaderblobset-name	rhi.md	engine/rhi/desc.h:243
-rhi::ShaderBlobSet::spirv	variable	rhi	rhi-shaderblobset-spirv	rhi.md	engine/rhi/desc.h:245
-rhi::ShaderBlobSet::dxil	variable	rhi	rhi-shaderblobset-dxil	rhi.md	engine/rhi/desc.h:247
-rhi::ShaderBlobSet::metallib	variable	rhi	rhi-shaderblobset-metallib	rhi.md	engine/rhi/desc.h:249
-rhi::ShaderBlobSet::For(ShaderFormat) const	function	rhi	rhi-shaderblobset-for-shaderformat-const	rhi.md	engine/rhi/desc.h:256
-rhi::ShaderDesc	struct	rhi	rhi-shaderdesc	rhi.md	engine/rhi/desc.h:279
-rhi::ShaderDesc::stage	variable	rhi	rhi-shaderdesc-stage	rhi.md	engine/rhi/desc.h:282
-rhi::ShaderDesc::format	variable	rhi	rhi-shaderdesc-format	rhi.md	engine/rhi/desc.h:284
-rhi::ShaderDesc::bytes	variable	rhi	rhi-shaderdesc-bytes	rhi.md	engine/rhi/desc.h:286
-rhi::ShaderDesc::size	variable	rhi	rhi-shaderdesc-size	rhi.md	engine/rhi/desc.h:288
-rhi::ShaderDesc::entry	variable	rhi	rhi-shaderdesc-entry	rhi.md	engine/rhi/desc.h:290
-rhi::ShaderDesc::debug_name	variable	rhi	rhi-shaderdesc-debug-name	rhi.md	engine/rhi/desc.h:292
-rhi::ShaderDesc::slots	variable	rhi	rhi-shaderdesc-slots	rhi.md	engine/rhi/desc.h:296
-rhi::ShaderDesc::SetCode(const ShaderBlob&)	function	rhi	rhi-shaderdesc-setcode-const-shaderblob-amp	rhi.md	engine/rhi/desc.h:303
-rhi::ShaderDesc::Validate() const	function	rhi	rhi-shaderdesc-validate-const	rhi.md	engine/rhi/desc.h:323
-rhi::BindingDesc	struct	rhi	rhi-bindingdesc	rhi.md	engine/rhi/desc.h:329
-rhi::BindingDesc::binding	variable	rhi	rhi-bindingdesc-binding	rhi.md	engine/rhi/desc.h:332
-rhi::BindingDesc::type	variable	rhi	rhi-bindingdesc-type	rhi.md	engine/rhi/desc.h:334
-rhi::BindingDesc::stages	variable	rhi	rhi-bindingdesc-stages	rhi.md	engine/rhi/desc.h:336
-rhi::BindingDesc::count	variable	rhi	rhi-bindingdesc-count	rhi.md	engine/rhi/desc.h:338
-rhi::BindingDesc::stride	variable	rhi	rhi-bindingdesc-stride	rhi.md	engine/rhi/desc.h:343
-rhi::BindGroupLayoutDesc	struct	rhi	rhi-bindgrouplayoutdesc	rhi.md	engine/rhi/desc.h:350
-rhi::BindGroupLayoutDesc::entries	variable	rhi	rhi-bindgrouplayoutdesc-entries	rhi.md	engine/rhi/desc.h:353
-rhi::BindGroupLayoutDesc::debug_name	variable	rhi	rhi-bindgrouplayoutdesc-debug-name	rhi.md	engine/rhi/desc.h:355
-rhi::BindGroupLayoutDesc::Validate() const	function	rhi	rhi-bindgrouplayoutdesc-validate-const	rhi.md	engine/rhi/desc.h:362
-rhi::BindGroupEntry	struct	rhi	rhi-bindgroupentry	rhi.md	engine/rhi/desc.h:368
-rhi::BindGroupEntry::binding	variable	rhi	rhi-bindgroupentry-binding	rhi.md	engine/rhi/desc.h:371
-rhi::BindGroupEntry::array_element	variable	rhi	rhi-bindgroupentry-array-element	rhi.md	engine/rhi/desc.h:373
-rhi::BindGroupEntry::buffer	variable	rhi	rhi-bindgroupentry-buffer	rhi.md	engine/rhi/desc.h:375
-rhi::BindGroupEntry::offset	variable	rhi	rhi-bindgroupentry-offset	rhi.md	engine/rhi/desc.h:377
-rhi::BindGroupEntry::size	variable	rhi	rhi-bindgroupentry-size	rhi.md	engine/rhi/desc.h:379
-rhi::BindGroupEntry::texture	variable	rhi	rhi-bindgroupentry-texture	rhi.md	engine/rhi/desc.h:381
-rhi::BindGroupEntry::sampler	variable	rhi	rhi-bindgroupentry-sampler	rhi.md	engine/rhi/desc.h:383
-rhi::BindGroupDesc	struct	rhi	rhi-bindgroupdesc	rhi.md	engine/rhi/desc.h:394
-rhi::BindGroupDesc::layout	variable	rhi	rhi-bindgroupdesc-layout	rhi.md	engine/rhi/desc.h:397
-rhi::BindGroupDesc::transient	variable	rhi	rhi-bindgroupdesc-transient	rhi.md	engine/rhi/desc.h:400
-rhi::BindGroupDesc::entries	variable	rhi	rhi-bindgroupdesc-entries	rhi.md	engine/rhi/desc.h:402
-rhi::BindGroupDesc::debug_name	variable	rhi	rhi-bindgroupdesc-debug-name	rhi.md	engine/rhi/desc.h:404
-rhi::BindGroupDesc::Validate() const	function	rhi	rhi-bindgroupdesc-validate-const	rhi.md	engine/rhi/desc.h:411
-rhi::VertexBindingDesc	struct	rhi	rhi-vertexbindingdesc	rhi.md	engine/rhi/desc.h:417
-rhi::VertexBindingDesc::stride	variable	rhi	rhi-vertexbindingdesc-stride	rhi.md	engine/rhi/desc.h:420
-rhi::VertexBindingDesc::per_instance	variable	rhi	rhi-vertexbindingdesc-per-instance	rhi.md	engine/rhi/desc.h:422
-rhi::VertexAttributeDesc	struct	rhi	rhi-vertexattributedesc	rhi.md	engine/rhi/desc.h:428
-rhi::VertexAttributeDesc::location	variable	rhi	rhi-vertexattributedesc-location	rhi.md	engine/rhi/desc.h:431
-rhi::VertexAttributeDesc::binding	variable	rhi	rhi-vertexattributedesc-binding	rhi.md	engine/rhi/desc.h:433
-rhi::VertexAttributeDesc::format	variable	rhi	rhi-vertexattributedesc-format	rhi.md	engine/rhi/desc.h:435
-rhi::VertexAttributeDesc::offset	variable	rhi	rhi-vertexattributedesc-offset	rhi.md	engine/rhi/desc.h:437
-rhi::BlendState	struct	rhi	rhi-blendstate	rhi.md	engine/rhi/desc.h:443
-rhi::BlendState::enable	variable	rhi	rhi-blendstate-enable	rhi.md	engine/rhi/desc.h:446
-rhi::BlendState::src_color	variable	rhi	rhi-blendstate-src-color	rhi.md	engine/rhi/desc.h:448
-rhi::BlendState::dst_color	variable	rhi	rhi-blendstate-dst-color	rhi.md	engine/rhi/desc.h:450
-rhi::BlendState::color_op	variable	rhi	rhi-blendstate-color-op	rhi.md	engine/rhi/desc.h:452
-rhi::BlendState::src_alpha	variable	rhi	rhi-blendstate-src-alpha	rhi.md	engine/rhi/desc.h:454
-rhi::BlendState::dst_alpha	variable	rhi	rhi-blendstate-dst-alpha	rhi.md	engine/rhi/desc.h:456
-rhi::BlendState::alpha_op	variable	rhi	rhi-blendstate-alpha-op	rhi.md	engine/rhi/desc.h:458
-rhi::ColorTargetDesc	struct	rhi	rhi-colortargetdesc	rhi.md	engine/rhi/desc.h:464
-rhi::ColorTargetDesc::format	variable	rhi	rhi-colortargetdesc-format	rhi.md	engine/rhi/desc.h:467
-rhi::ColorTargetDesc::blend	variable	rhi	rhi-colortargetdesc-blend	rhi.md	engine/rhi/desc.h:469
-rhi::ColorTargetDesc::write_mask	variable	rhi	rhi-colortargetdesc-write-mask	rhi.md	engine/rhi/desc.h:471
-rhi::GraphicsPipelineDesc	struct	rhi	rhi-graphicspipelinedesc	rhi.md	engine/rhi/desc.h:481
-rhi::GraphicsPipelineDesc::vertex_shader	variable	rhi	rhi-graphicspipelinedesc-vertex-shader	rhi.md	engine/rhi/desc.h:484
-rhi::GraphicsPipelineDesc::fragment_shader	variable	rhi	rhi-graphicspipelinedesc-fragment-shader	rhi.md	engine/rhi/desc.h:486
-rhi::GraphicsPipelineDesc::vertex_bindings	variable	rhi	rhi-graphicspipelinedesc-vertex-bindings	rhi.md	engine/rhi/desc.h:488
-rhi::GraphicsPipelineDesc::vertex_attributes	variable	rhi	rhi-graphicspipelinedesc-vertex-attributes	rhi.md	engine/rhi/desc.h:490
-rhi::GraphicsPipelineDesc::topology	variable	rhi	rhi-graphicspipelinedesc-topology	rhi.md	engine/rhi/desc.h:492
-rhi::GraphicsPipelineDesc::primitive_restart	variable	rhi	rhi-graphicspipelinedesc-primitive-restart	rhi.md	engine/rhi/desc.h:497
-rhi::GraphicsPipelineDesc::cull_mode	variable	rhi	rhi-graphicspipelinedesc-cull-mode	rhi.md	engine/rhi/desc.h:499
-rhi::GraphicsPipelineDesc::front_face	variable	rhi	rhi-graphicspipelinedesc-front-face	rhi.md	engine/rhi/desc.h:501
-rhi::GraphicsPipelineDesc::wireframe	variable	rhi	rhi-graphicspipelinedesc-wireframe	rhi.md	engine/rhi/desc.h:503
-rhi::GraphicsPipelineDesc::depth_test	variable	rhi	rhi-graphicspipelinedesc-depth-test	rhi.md	engine/rhi/desc.h:505
-rhi::GraphicsPipelineDesc::depth_write	variable	rhi	rhi-graphicspipelinedesc-depth-write	rhi.md	engine/rhi/desc.h:507
-rhi::GraphicsPipelineDesc::depth_compare	variable	rhi	rhi-graphicspipelinedesc-depth-compare	rhi.md	engine/rhi/desc.h:509
-rhi::GraphicsPipelineDesc::color_targets	variable	rhi	rhi-graphicspipelinedesc-color-targets	rhi.md	engine/rhi/desc.h:511
-rhi::GraphicsPipelineDesc::color_target_count	variable	rhi	rhi-graphicspipelinedesc-color-target-count	rhi.md	engine/rhi/desc.h:513
-rhi::GraphicsPipelineDesc::depth_format	variable	rhi	rhi-graphicspipelinedesc-depth-format	rhi.md	engine/rhi/desc.h:515
-rhi::GraphicsPipelineDesc::bind_group_layouts	variable	rhi	rhi-graphicspipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:517
-rhi::GraphicsPipelineDesc::bind_group_layout_count	variable	rhi	rhi-graphicspipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:519
-rhi::GraphicsPipelineDesc::push_constant_bytes	variable	rhi	rhi-graphicspipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:521
-rhi::GraphicsPipelineDesc::push_constant_stages	variable	rhi	rhi-graphicspipelinedesc-push-constant-stages	rhi.md	engine/rhi/desc.h:523
-rhi::GraphicsPipelineDesc::samples	variable	rhi	rhi-graphicspipelinedesc-samples	rhi.md	engine/rhi/desc.h:525
-rhi::GraphicsPipelineDesc::debug_name	variable	rhi	rhi-graphicspipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:527
-rhi::GraphicsPipelineDesc::Validate() const	function	rhi	rhi-graphicspipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:534
-rhi::ComputePipelineDesc	struct	rhi	rhi-computepipelinedesc	rhi.md	engine/rhi/desc.h:542
-rhi::ComputePipelineDesc::shader	variable	rhi	rhi-computepipelinedesc-shader	rhi.md	engine/rhi/desc.h:545
-rhi::ComputePipelineDesc::bind_group_layouts	variable	rhi	rhi-computepipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:547
-rhi::ComputePipelineDesc::bind_group_layout_count	variable	rhi	rhi-computepipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:549
-rhi::ComputePipelineDesc::push_constant_bytes	variable	rhi	rhi-computepipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:551
-rhi::ComputePipelineDesc::debug_name	variable	rhi	rhi-computepipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:553
-rhi::ComputePipelineDesc::Validate() const	function	rhi	rhi-computepipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:560
+rhi::TextureDesc::dimension	variable	rhi	rhi-texturedesc-dimension	rhi.md	engine/rhi/desc.h:61
+rhi::TextureDesc::width	variable	rhi	rhi-texturedesc-width	rhi.md	engine/rhi/desc.h:63
+rhi::TextureDesc::height	variable	rhi	rhi-texturedesc-height	rhi.md	engine/rhi/desc.h:65
+rhi::TextureDesc::depth	variable	rhi	rhi-texturedesc-depth	rhi.md	engine/rhi/desc.h:67
+rhi::TextureDesc::mip_levels	variable	rhi	rhi-texturedesc-mip-levels	rhi.md	engine/rhi/desc.h:69
+rhi::TextureDesc::array_layers	variable	rhi	rhi-texturedesc-array-layers	rhi.md	engine/rhi/desc.h:71
+rhi::TextureDesc::format	variable	rhi	rhi-texturedesc-format	rhi.md	engine/rhi/desc.h:73
+rhi::TextureDesc::usage	variable	rhi	rhi-texturedesc-usage	rhi.md	engine/rhi/desc.h:75
+rhi::TextureDesc::samples	variable	rhi	rhi-texturedesc-samples	rhi.md	engine/rhi/desc.h:77
+rhi::TextureDesc::debug_name	variable	rhi	rhi-texturedesc-debug-name	rhi.md	engine/rhi/desc.h:79
+rhi::TextureDesc::Validate() const	function	rhi	rhi-texturedesc-validate-const	rhi.md	engine/rhi/desc.h:86
+rhi::SamplerDesc	struct	rhi	rhi-samplerdesc	rhi.md	engine/rhi/desc.h:93
+rhi::SamplerDesc::mag_filter	variable	rhi	rhi-samplerdesc-mag-filter	rhi.md	engine/rhi/desc.h:96
+rhi::SamplerDesc::min_filter	variable	rhi	rhi-samplerdesc-min-filter	rhi.md	engine/rhi/desc.h:98
+rhi::SamplerDesc::mip_filter	variable	rhi	rhi-samplerdesc-mip-filter	rhi.md	engine/rhi/desc.h:100
+rhi::SamplerDesc::address_u	variable	rhi	rhi-samplerdesc-address-u	rhi.md	engine/rhi/desc.h:102
+rhi::SamplerDesc::address_v	variable	rhi	rhi-samplerdesc-address-v	rhi.md	engine/rhi/desc.h:104
+rhi::SamplerDesc::address_w	variable	rhi	rhi-samplerdesc-address-w	rhi.md	engine/rhi/desc.h:106
+rhi::SamplerDesc::border_color	variable	rhi	rhi-samplerdesc-border-color	rhi.md	engine/rhi/desc.h:108
+rhi::SamplerDesc::max_anisotropy	variable	rhi	rhi-samplerdesc-max-anisotropy	rhi.md	engine/rhi/desc.h:110
+rhi::SamplerDesc::compare_enable	variable	rhi	rhi-samplerdesc-compare-enable	rhi.md	engine/rhi/desc.h:112
+rhi::SamplerDesc::compare_op	variable	rhi	rhi-samplerdesc-compare-op	rhi.md	engine/rhi/desc.h:114
+rhi::SamplerDesc::min_lod	variable	rhi	rhi-samplerdesc-min-lod	rhi.md	engine/rhi/desc.h:116
+rhi::SamplerDesc::max_lod	variable	rhi	rhi-samplerdesc-max-lod	rhi.md	engine/rhi/desc.h:118
+rhi::SamplerDesc::debug_name	variable	rhi	rhi-samplerdesc-debug-name	rhi.md	engine/rhi/desc.h:120
+rhi::SamplerDesc::Validate() const	function	rhi	rhi-samplerdesc-validate-const	rhi.md	engine/rhi/desc.h:127
+rhi::ShaderSlot	struct	rhi	rhi-shaderslot	rhi.md	engine/rhi/desc.h:136
+rhi::ShaderSlot::set	variable	rhi	rhi-shaderslot-set	rhi.md	engine/rhi/desc.h:139
+rhi::ShaderSlot::binding	variable	rhi	rhi-shaderslot-binding	rhi.md	engine/rhi/desc.h:141
+rhi::ShaderSlot::slot	variable	rhi	rhi-shaderslot-slot	rhi.md	engine/rhi/desc.h:143
+rhi::ShaderSlot::type	variable	rhi	rhi-shaderslot-type	rhi.md	engine/rhi/desc.h:145
+rhi::ShaderSlot::count	variable	rhi	rhi-shaderslot-count	rhi.md	engine/rhi/desc.h:147
+rhi::kNoShaderSlot	variable	rhi	rhi-knoshaderslot	rhi.md	engine/rhi/desc.h:151
+rhi::ShaderSlotTable	struct	rhi	rhi-shaderslottable	rhi.md	engine/rhi/desc.h:158
+rhi::ShaderSlotTable::slots	variable	rhi	rhi-shaderslottable-slots	rhi.md	engine/rhi/desc.h:161
+rhi::ShaderSlotTable::count	variable	rhi	rhi-shaderslottable-count	rhi.md	engine/rhi/desc.h:163
+rhi::ShaderSlotTable::push_constant_slot	variable	rhi	rhi-shaderslottable-push-constant-slot	rhi.md	engine/rhi/desc.h:165
+rhi::ShaderSlotTable::threadgroup_size	variable	rhi	rhi-shaderslottable-threadgroup-size	rhi.md	engine/rhi/desc.h:168
+rhi::ShaderBlob	struct	rhi	rhi-shaderblob	rhi.md	engine/rhi/desc.h:176
+rhi::ShaderBlob::format	variable	rhi	rhi-shaderblob-format	rhi.md	engine/rhi/desc.h:179
+rhi::ShaderBlob::bytes	variable	rhi	rhi-shaderblob-bytes	rhi.md	engine/rhi/desc.h:181
+rhi::ShaderBlob::size	variable	rhi	rhi-shaderblob-size	rhi.md	engine/rhi/desc.h:183
+rhi::ShaderBlob::entry	variable	rhi	rhi-shaderblob-entry	rhi.md	engine/rhi/desc.h:186
+rhi::ShaderBlob::slots	variable	rhi	rhi-shaderblob-slots	rhi.md	engine/rhi/desc.h:189
+rhi::ShaderBlob::Empty() const	function	rhi	rhi-shaderblob-empty-const	rhi.md	engine/rhi/desc.h:194
+rhi::SpirvBlob(const u32*,usize)	function	rhi	rhi-spirvblob-const-u32-star-usize	rhi.md	engine/rhi/desc.h:204
+rhi::DxilBlob(const u8*,usize)	function	rhi	rhi-dxilblob-const-u8-star-usize	rhi.md	engine/rhi/desc.h:216
+rhi::MetalLibBlob(const u8*,usize,const char*,const ShaderSlotTable*)	function	rhi	rhi-metallibblob-const-u8-star-usize-const-char-star-const-shaderslottable-star	rhi.md	engine/rhi/desc.h:230
+rhi::ShaderBlobSet	struct	rhi	rhi-shaderblobset	rhi.md	engine/rhi/desc.h:241
+rhi::ShaderBlobSet::name	variable	rhi	rhi-shaderblobset-name	rhi.md	engine/rhi/desc.h:244
+rhi::ShaderBlobSet::spirv	variable	rhi	rhi-shaderblobset-spirv	rhi.md	engine/rhi/desc.h:246
+rhi::ShaderBlobSet::dxil	variable	rhi	rhi-shaderblobset-dxil	rhi.md	engine/rhi/desc.h:248
+rhi::ShaderBlobSet::metallib	variable	rhi	rhi-shaderblobset-metallib	rhi.md	engine/rhi/desc.h:250
+rhi::ShaderBlobSet::For(ShaderFormat) const	function	rhi	rhi-shaderblobset-for-shaderformat-const	rhi.md	engine/rhi/desc.h:257
+rhi::ShaderDesc	struct	rhi	rhi-shaderdesc	rhi.md	engine/rhi/desc.h:280
+rhi::ShaderDesc::stage	variable	rhi	rhi-shaderdesc-stage	rhi.md	engine/rhi/desc.h:283
+rhi::ShaderDesc::format	variable	rhi	rhi-shaderdesc-format	rhi.md	engine/rhi/desc.h:285
+rhi::ShaderDesc::bytes	variable	rhi	rhi-shaderdesc-bytes	rhi.md	engine/rhi/desc.h:287
+rhi::ShaderDesc::size	variable	rhi	rhi-shaderdesc-size	rhi.md	engine/rhi/desc.h:289
+rhi::ShaderDesc::entry	variable	rhi	rhi-shaderdesc-entry	rhi.md	engine/rhi/desc.h:291
+rhi::ShaderDesc::debug_name	variable	rhi	rhi-shaderdesc-debug-name	rhi.md	engine/rhi/desc.h:293
+rhi::ShaderDesc::slots	variable	rhi	rhi-shaderdesc-slots	rhi.md	engine/rhi/desc.h:297
+rhi::ShaderDesc::SetCode(const ShaderBlob&)	function	rhi	rhi-shaderdesc-setcode-const-shaderblob-amp	rhi.md	engine/rhi/desc.h:304
+rhi::ShaderDesc::Validate() const	function	rhi	rhi-shaderdesc-validate-const	rhi.md	engine/rhi/desc.h:324
+rhi::BindingDesc	struct	rhi	rhi-bindingdesc	rhi.md	engine/rhi/desc.h:330
+rhi::BindingDesc::binding	variable	rhi	rhi-bindingdesc-binding	rhi.md	engine/rhi/desc.h:333
+rhi::BindingDesc::type	variable	rhi	rhi-bindingdesc-type	rhi.md	engine/rhi/desc.h:335
+rhi::BindingDesc::stages	variable	rhi	rhi-bindingdesc-stages	rhi.md	engine/rhi/desc.h:337
+rhi::BindingDesc::count	variable	rhi	rhi-bindingdesc-count	rhi.md	engine/rhi/desc.h:339
+rhi::BindingDesc::stride	variable	rhi	rhi-bindingdesc-stride	rhi.md	engine/rhi/desc.h:344
+rhi::BindGroupLayoutDesc	struct	rhi	rhi-bindgrouplayoutdesc	rhi.md	engine/rhi/desc.h:351
+rhi::BindGroupLayoutDesc::entries	variable	rhi	rhi-bindgrouplayoutdesc-entries	rhi.md	engine/rhi/desc.h:354
+rhi::BindGroupLayoutDesc::debug_name	variable	rhi	rhi-bindgrouplayoutdesc-debug-name	rhi.md	engine/rhi/desc.h:356
+rhi::BindGroupLayoutDesc::Validate() const	function	rhi	rhi-bindgrouplayoutdesc-validate-const	rhi.md	engine/rhi/desc.h:363
+rhi::BindGroupEntry	struct	rhi	rhi-bindgroupentry	rhi.md	engine/rhi/desc.h:369
+rhi::BindGroupEntry::binding	variable	rhi	rhi-bindgroupentry-binding	rhi.md	engine/rhi/desc.h:372
+rhi::BindGroupEntry::array_element	variable	rhi	rhi-bindgroupentry-array-element	rhi.md	engine/rhi/desc.h:374
+rhi::BindGroupEntry::buffer	variable	rhi	rhi-bindgroupentry-buffer	rhi.md	engine/rhi/desc.h:376
+rhi::BindGroupEntry::offset	variable	rhi	rhi-bindgroupentry-offset	rhi.md	engine/rhi/desc.h:378
+rhi::BindGroupEntry::size	variable	rhi	rhi-bindgroupentry-size	rhi.md	engine/rhi/desc.h:380
+rhi::BindGroupEntry::texture	variable	rhi	rhi-bindgroupentry-texture	rhi.md	engine/rhi/desc.h:382
+rhi::BindGroupEntry::sampler	variable	rhi	rhi-bindgroupentry-sampler	rhi.md	engine/rhi/desc.h:384
+rhi::BindGroupDesc	struct	rhi	rhi-bindgroupdesc	rhi.md	engine/rhi/desc.h:395
+rhi::BindGroupDesc::layout	variable	rhi	rhi-bindgroupdesc-layout	rhi.md	engine/rhi/desc.h:398
+rhi::BindGroupDesc::transient	variable	rhi	rhi-bindgroupdesc-transient	rhi.md	engine/rhi/desc.h:401
+rhi::BindGroupDesc::entries	variable	rhi	rhi-bindgroupdesc-entries	rhi.md	engine/rhi/desc.h:403
+rhi::BindGroupDesc::debug_name	variable	rhi	rhi-bindgroupdesc-debug-name	rhi.md	engine/rhi/desc.h:405
+rhi::BindGroupDesc::Validate() const	function	rhi	rhi-bindgroupdesc-validate-const	rhi.md	engine/rhi/desc.h:412
+rhi::VertexBindingDesc	struct	rhi	rhi-vertexbindingdesc	rhi.md	engine/rhi/desc.h:418
+rhi::VertexBindingDesc::stride	variable	rhi	rhi-vertexbindingdesc-stride	rhi.md	engine/rhi/desc.h:421
+rhi::VertexBindingDesc::per_instance	variable	rhi	rhi-vertexbindingdesc-per-instance	rhi.md	engine/rhi/desc.h:423
+rhi::VertexAttributeDesc	struct	rhi	rhi-vertexattributedesc	rhi.md	engine/rhi/desc.h:429
+rhi::VertexAttributeDesc::location	variable	rhi	rhi-vertexattributedesc-location	rhi.md	engine/rhi/desc.h:432
+rhi::VertexAttributeDesc::binding	variable	rhi	rhi-vertexattributedesc-binding	rhi.md	engine/rhi/desc.h:434
+rhi::VertexAttributeDesc::format	variable	rhi	rhi-vertexattributedesc-format	rhi.md	engine/rhi/desc.h:436
+rhi::VertexAttributeDesc::offset	variable	rhi	rhi-vertexattributedesc-offset	rhi.md	engine/rhi/desc.h:438
+rhi::BlendState	struct	rhi	rhi-blendstate	rhi.md	engine/rhi/desc.h:444
+rhi::BlendState::enable	variable	rhi	rhi-blendstate-enable	rhi.md	engine/rhi/desc.h:447
+rhi::BlendState::src_color	variable	rhi	rhi-blendstate-src-color	rhi.md	engine/rhi/desc.h:449
+rhi::BlendState::dst_color	variable	rhi	rhi-blendstate-dst-color	rhi.md	engine/rhi/desc.h:451
+rhi::BlendState::color_op	variable	rhi	rhi-blendstate-color-op	rhi.md	engine/rhi/desc.h:453
+rhi::BlendState::src_alpha	variable	rhi	rhi-blendstate-src-alpha	rhi.md	engine/rhi/desc.h:455
+rhi::BlendState::dst_alpha	variable	rhi	rhi-blendstate-dst-alpha	rhi.md	engine/rhi/desc.h:457
+rhi::BlendState::alpha_op	variable	rhi	rhi-blendstate-alpha-op	rhi.md	engine/rhi/desc.h:459
+rhi::ColorTargetDesc	struct	rhi	rhi-colortargetdesc	rhi.md	engine/rhi/desc.h:465
+rhi::ColorTargetDesc::format	variable	rhi	rhi-colortargetdesc-format	rhi.md	engine/rhi/desc.h:468
+rhi::ColorTargetDesc::blend	variable	rhi	rhi-colortargetdesc-blend	rhi.md	engine/rhi/desc.h:470
+rhi::ColorTargetDesc::write_mask	variable	rhi	rhi-colortargetdesc-write-mask	rhi.md	engine/rhi/desc.h:472
+rhi::GraphicsPipelineDesc	struct	rhi	rhi-graphicspipelinedesc	rhi.md	engine/rhi/desc.h:482
+rhi::GraphicsPipelineDesc::vertex_shader	variable	rhi	rhi-graphicspipelinedesc-vertex-shader	rhi.md	engine/rhi/desc.h:485
+rhi::GraphicsPipelineDesc::fragment_shader	variable	rhi	rhi-graphicspipelinedesc-fragment-shader	rhi.md	engine/rhi/desc.h:487
+rhi::GraphicsPipelineDesc::vertex_bindings	variable	rhi	rhi-graphicspipelinedesc-vertex-bindings	rhi.md	engine/rhi/desc.h:489
+rhi::GraphicsPipelineDesc::vertex_attributes	variable	rhi	rhi-graphicspipelinedesc-vertex-attributes	rhi.md	engine/rhi/desc.h:491
+rhi::GraphicsPipelineDesc::topology	variable	rhi	rhi-graphicspipelinedesc-topology	rhi.md	engine/rhi/desc.h:493
+rhi::GraphicsPipelineDesc::primitive_restart	variable	rhi	rhi-graphicspipelinedesc-primitive-restart	rhi.md	engine/rhi/desc.h:498
+rhi::GraphicsPipelineDesc::cull_mode	variable	rhi	rhi-graphicspipelinedesc-cull-mode	rhi.md	engine/rhi/desc.h:500
+rhi::GraphicsPipelineDesc::front_face	variable	rhi	rhi-graphicspipelinedesc-front-face	rhi.md	engine/rhi/desc.h:502
+rhi::GraphicsPipelineDesc::wireframe	variable	rhi	rhi-graphicspipelinedesc-wireframe	rhi.md	engine/rhi/desc.h:504
+rhi::GraphicsPipelineDesc::depth_test	variable	rhi	rhi-graphicspipelinedesc-depth-test	rhi.md	engine/rhi/desc.h:506
+rhi::GraphicsPipelineDesc::depth_write	variable	rhi	rhi-graphicspipelinedesc-depth-write	rhi.md	engine/rhi/desc.h:508
+rhi::GraphicsPipelineDesc::depth_compare	variable	rhi	rhi-graphicspipelinedesc-depth-compare	rhi.md	engine/rhi/desc.h:510
+rhi::GraphicsPipelineDesc::color_targets	variable	rhi	rhi-graphicspipelinedesc-color-targets	rhi.md	engine/rhi/desc.h:512
+rhi::GraphicsPipelineDesc::color_target_count	variable	rhi	rhi-graphicspipelinedesc-color-target-count	rhi.md	engine/rhi/desc.h:514
+rhi::GraphicsPipelineDesc::depth_format	variable	rhi	rhi-graphicspipelinedesc-depth-format	rhi.md	engine/rhi/desc.h:516
+rhi::GraphicsPipelineDesc::bind_group_layouts	variable	rhi	rhi-graphicspipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:518
+rhi::GraphicsPipelineDesc::bind_group_layout_count	variable	rhi	rhi-graphicspipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:520
+rhi::GraphicsPipelineDesc::push_constant_bytes	variable	rhi	rhi-graphicspipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:522
+rhi::GraphicsPipelineDesc::push_constant_stages	variable	rhi	rhi-graphicspipelinedesc-push-constant-stages	rhi.md	engine/rhi/desc.h:524
+rhi::GraphicsPipelineDesc::samples	variable	rhi	rhi-graphicspipelinedesc-samples	rhi.md	engine/rhi/desc.h:526
+rhi::GraphicsPipelineDesc::debug_name	variable	rhi	rhi-graphicspipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:528
+rhi::GraphicsPipelineDesc::Validate() const	function	rhi	rhi-graphicspipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:535
+rhi::ComputePipelineDesc	struct	rhi	rhi-computepipelinedesc	rhi.md	engine/rhi/desc.h:543
+rhi::ComputePipelineDesc::shader	variable	rhi	rhi-computepipelinedesc-shader	rhi.md	engine/rhi/desc.h:546
+rhi::ComputePipelineDesc::bind_group_layouts	variable	rhi	rhi-computepipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:548
+rhi::ComputePipelineDesc::bind_group_layout_count	variable	rhi	rhi-computepipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:550
+rhi::ComputePipelineDesc::push_constant_bytes	variable	rhi	rhi-computepipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:552
+rhi::ComputePipelineDesc::debug_name	variable	rhi	rhi-computepipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:554
+rhi::ComputePipelineDesc::Validate() const	function	rhi	rhi-computepipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:561
 rhi::FenceValue	alias	rhi	rhi-fencevalue	rhi.md	engine/rhi/device.h:20
 rhi::UploadTicket	struct	rhi	rhi-uploadticket	rhi.md	engine/rhi/device.h:25
 rhi::UploadTicket::fence	variable	rhi	rhi-uploadticket-fence	rhi.md	engine/rhi/device.h:29
@@ -11944,40 +11945,40 @@ rhi::TextureDimension	enum	rhi	rhi-texturedimension	rhi.md	engine/rhi/enums.h:30
 rhi::TextureDimension::Tex2D	enumerator	rhi	rhi-texturedimension-tex2d	rhi.md	engine/rhi/enums.h:306
 rhi::TextureDimension::Tex3D	enumerator	rhi	rhi-texturedimension-tex3d	rhi.md	engine/rhi/enums.h:307
 rhi::TextureDimension::Cube	enumerator	rhi	rhi-texturedimension-cube	rhi.md	engine/rhi/enums.h:308
-rhi::VertexFormat	enum	rhi	rhi-vertexformat	rhi.md	engine/rhi/enums.h:312
-rhi::VertexFormat::Float1	enumerator	rhi	rhi-vertexformat-float1	rhi.md	engine/rhi/enums.h:314
-rhi::VertexFormat::Float2	enumerator	rhi	rhi-vertexformat-float2	rhi.md	engine/rhi/enums.h:315
-rhi::VertexFormat::Float3	enumerator	rhi	rhi-vertexformat-float3	rhi.md	engine/rhi/enums.h:316
-rhi::VertexFormat::Float4	enumerator	rhi	rhi-vertexformat-float4	rhi.md	engine/rhi/enums.h:317
-rhi::VertexFormat::UInt1	enumerator	rhi	rhi-vertexformat-uint1	rhi.md	engine/rhi/enums.h:318
-rhi::VertexFormat::UInt2	enumerator	rhi	rhi-vertexformat-uint2	rhi.md	engine/rhi/enums.h:319
-rhi::VertexFormat::UInt3	enumerator	rhi	rhi-vertexformat-uint3	rhi.md	engine/rhi/enums.h:320
-rhi::VertexFormat::UInt4	enumerator	rhi	rhi-vertexformat-uint4	rhi.md	engine/rhi/enums.h:321
-rhi::VertexFormat::UNorm8x4	enumerator	rhi	rhi-vertexformat-unorm8x4	rhi.md	engine/rhi/enums.h:322
-rhi::VertexFormat::Float16x2	enumerator	rhi	rhi-vertexformat-float16x2	rhi.md	engine/rhi/enums.h:323
-rhi::VertexFormat::Float16x4	enumerator	rhi	rhi-vertexformat-float16x4	rhi.md	engine/rhi/enums.h:324
-rhi::VertexFormat::UNorm16x2	enumerator	rhi	rhi-vertexformat-unorm16x2	rhi.md	engine/rhi/enums.h:325
-rhi::VertexFormat::UNorm16x4	enumerator	rhi	rhi-vertexformat-unorm16x4	rhi.md	engine/rhi/enums.h:326
-rhi::VertexFormat::SNorm16x2	enumerator	rhi	rhi-vertexformat-snorm16x2	rhi.md	engine/rhi/enums.h:327
-rhi::VertexFormat::SNorm16x4	enumerator	rhi	rhi-vertexformat-snorm16x4	rhi.md	engine/rhi/enums.h:328
-rhi::VertexFormat::SNorm8x4	enumerator	rhi	rhi-vertexformat-snorm8x4	rhi.md	engine/rhi/enums.h:329
-rhi::VertexFormat::UInt8x4	enumerator	rhi	rhi-vertexformat-uint8x4	rhi.md	engine/rhi/enums.h:330
-rhi::VertexFormat::UInt16x4	enumerator	rhi	rhi-vertexformat-uint16x4	rhi.md	engine/rhi/enums.h:331
-rhi::VertexFormat::Count	enumerator	rhi	rhi-vertexformat-count	rhi.md	engine/rhi/enums.h:332
-rhi::VertexFormatSize(VertexFormat)	function	rhi	rhi-vertexformatsize-vertexformat	rhi.md	engine/rhi/enums.h:338
-rhi::VertexFormatComponents(VertexFormat)	function	rhi	rhi-vertexformatcomponents-vertexformat	rhi.md	engine/rhi/enums.h:368
-rhi::VertexFormatIsInteger(VertexFormat)	function	rhi	rhi-vertexformatisinteger-vertexformat	rhi.md	engine/rhi/enums.h:399
-rhi::VertexFormatAlignment(VertexFormat)	function	rhi	rhi-vertexformatalignment-vertexformat	rhi.md	engine/rhi/enums.h:411
-rhi::VertexFormatFeedsInput(VertexFormat,VertexFormat)	function	rhi	rhi-vertexformatfeedsinput-vertexformat-vertexformat	rhi.md	engine/rhi/enums.h:445
-rhi::BindingType	enum	rhi	rhi-bindingtype	rhi.md	engine/rhi/enums.h:453
-rhi::BindingType::UniformBuffer	enumerator	rhi	rhi-bindingtype-uniformbuffer	rhi.md	engine/rhi/enums.h:455
-rhi::BindingType::StorageBuffer	enumerator	rhi	rhi-bindingtype-storagebuffer	rhi.md	engine/rhi/enums.h:456
-rhi::BindingType::SampledTexture	enumerator	rhi	rhi-bindingtype-sampledtexture	rhi.md	engine/rhi/enums.h:457
-rhi::BindingType::Sampler	enumerator	rhi	rhi-bindingtype-sampler	rhi.md	engine/rhi/enums.h:458
-rhi::BindingType::StorageTexture	enumerator	rhi	rhi-bindingtype-storagetexture	rhi.md	engine/rhi/enums.h:459
-rhi::BindingType::ReadOnlyStorageBuffer	enumerator	rhi	rhi-bindingtype-readonlystoragebuffer	rhi.md	engine/rhi/enums.h:463
-rhi::BindingType::Count	enumerator	rhi	rhi-bindingtype-count	rhi.md	engine/rhi/enums.h:464
-rhi::Span	alias	rhi	rhi-span	rhi.md	engine/rhi/enums.h:471
+rhi::VertexFormat	enum	rhi	rhi-vertexformat	rhi.md	engine/rhi/enums.h:313
+rhi::VertexFormat::Float1	enumerator	rhi	rhi-vertexformat-float1	rhi.md	engine/rhi/enums.h:315
+rhi::VertexFormat::Float2	enumerator	rhi	rhi-vertexformat-float2	rhi.md	engine/rhi/enums.h:316
+rhi::VertexFormat::Float3	enumerator	rhi	rhi-vertexformat-float3	rhi.md	engine/rhi/enums.h:317
+rhi::VertexFormat::Float4	enumerator	rhi	rhi-vertexformat-float4	rhi.md	engine/rhi/enums.h:318
+rhi::VertexFormat::UInt1	enumerator	rhi	rhi-vertexformat-uint1	rhi.md	engine/rhi/enums.h:319
+rhi::VertexFormat::UInt2	enumerator	rhi	rhi-vertexformat-uint2	rhi.md	engine/rhi/enums.h:320
+rhi::VertexFormat::UInt3	enumerator	rhi	rhi-vertexformat-uint3	rhi.md	engine/rhi/enums.h:321
+rhi::VertexFormat::UInt4	enumerator	rhi	rhi-vertexformat-uint4	rhi.md	engine/rhi/enums.h:322
+rhi::VertexFormat::UNorm8x4	enumerator	rhi	rhi-vertexformat-unorm8x4	rhi.md	engine/rhi/enums.h:323
+rhi::VertexFormat::Float16x2	enumerator	rhi	rhi-vertexformat-float16x2	rhi.md	engine/rhi/enums.h:324
+rhi::VertexFormat::Float16x4	enumerator	rhi	rhi-vertexformat-float16x4	rhi.md	engine/rhi/enums.h:325
+rhi::VertexFormat::UNorm16x2	enumerator	rhi	rhi-vertexformat-unorm16x2	rhi.md	engine/rhi/enums.h:326
+rhi::VertexFormat::UNorm16x4	enumerator	rhi	rhi-vertexformat-unorm16x4	rhi.md	engine/rhi/enums.h:327
+rhi::VertexFormat::SNorm16x2	enumerator	rhi	rhi-vertexformat-snorm16x2	rhi.md	engine/rhi/enums.h:328
+rhi::VertexFormat::SNorm16x4	enumerator	rhi	rhi-vertexformat-snorm16x4	rhi.md	engine/rhi/enums.h:329
+rhi::VertexFormat::SNorm8x4	enumerator	rhi	rhi-vertexformat-snorm8x4	rhi.md	engine/rhi/enums.h:330
+rhi::VertexFormat::UInt8x4	enumerator	rhi	rhi-vertexformat-uint8x4	rhi.md	engine/rhi/enums.h:331
+rhi::VertexFormat::UInt16x4	enumerator	rhi	rhi-vertexformat-uint16x4	rhi.md	engine/rhi/enums.h:332
+rhi::VertexFormat::Count	enumerator	rhi	rhi-vertexformat-count	rhi.md	engine/rhi/enums.h:333
+rhi::VertexFormatSize(VertexFormat)	function	rhi	rhi-vertexformatsize-vertexformat	rhi.md	engine/rhi/enums.h:339
+rhi::VertexFormatComponents(VertexFormat)	function	rhi	rhi-vertexformatcomponents-vertexformat	rhi.md	engine/rhi/enums.h:369
+rhi::VertexFormatIsInteger(VertexFormat)	function	rhi	rhi-vertexformatisinteger-vertexformat	rhi.md	engine/rhi/enums.h:400
+rhi::VertexFormatAlignment(VertexFormat)	function	rhi	rhi-vertexformatalignment-vertexformat	rhi.md	engine/rhi/enums.h:412
+rhi::VertexFormatFeedsInput(VertexFormat,VertexFormat)	function	rhi	rhi-vertexformatfeedsinput-vertexformat-vertexformat	rhi.md	engine/rhi/enums.h:446
+rhi::BindingType	enum	rhi	rhi-bindingtype	rhi.md	engine/rhi/enums.h:454
+rhi::BindingType::UniformBuffer	enumerator	rhi	rhi-bindingtype-uniformbuffer	rhi.md	engine/rhi/enums.h:456
+rhi::BindingType::StorageBuffer	enumerator	rhi	rhi-bindingtype-storagebuffer	rhi.md	engine/rhi/enums.h:457
+rhi::BindingType::SampledTexture	enumerator	rhi	rhi-bindingtype-sampledtexture	rhi.md	engine/rhi/enums.h:458
+rhi::BindingType::Sampler	enumerator	rhi	rhi-bindingtype-sampler	rhi.md	engine/rhi/enums.h:459
+rhi::BindingType::StorageTexture	enumerator	rhi	rhi-bindingtype-storagetexture	rhi.md	engine/rhi/enums.h:460
+rhi::BindingType::ReadOnlyStorageBuffer	enumerator	rhi	rhi-bindingtype-readonlystoragebuffer	rhi.md	engine/rhi/enums.h:464
+rhi::BindingType::Count	enumerator	rhi	rhi-bindingtype-count	rhi.md	engine/rhi/enums.h:465
+rhi::Span	alias	rhi	rhi-span	rhi.md	engine/rhi/enums.h:472
 rhi::Format	enum	rhi	rhi-format	rhi.md	engine/rhi/format.h:18
 rhi::Format::Undefined	enumerator	rhi	rhi-format-undefined	rhi.md	engine/rhi/format.h:20
 rhi::Format::R8_UNorm	enumerator	rhi	rhi-format-r8-unorm	rhi.md	engine/rhi/format.h:21
@@ -12070,88 +12071,88 @@ rhi::kMaxVertexBindings	variable	rhi	rhi-kmaxvertexbindings	rhi.md	engine/rhi/li
 rhi::kMaxVertexAttributes	variable	rhi	rhi-kmaxvertexattributes	rhi.md	engine/rhi/limits.h:24
 rhi::kMaxPushConstantBytes	variable	rhi	rhi-kmaxpushconstantbytes	rhi.md	engine/rhi/limits.h:26
 rhi::NullDeviceOptions	struct	rhi	rhi-nulldeviceoptions	rhi.md	engine/rhi/null/null_device.h:24
-rhi::NullDeviceOptions::NullDeviceOptions()	function	rhi	rhi-nulldeviceoptions-nulldeviceoptions	rhi.md	engine/rhi/null/null_device.h:27
-rhi::NullDeviceOptions::caps	variable	rhi	rhi-nulldeviceoptions-caps	rhi.md	engine/rhi/null/null_device.h:30
-rhi::NullDeviceOptions::abort_on_error	variable	rhi	rhi-nulldeviceoptions-abort-on-error	rhi.md	engine/rhi/null/null_device.h:32
-rhi::NullDeviceOptions::simulated_latency_frames	variable	rhi	rhi-nulldeviceoptions-simulated-latency-frames	rhi.md	engine/rhi/null/null_device.h:35
-rhi::NullDeviceOptions::max_buffer_bytes	variable	rhi	rhi-nulldeviceoptions-max-buffer-bytes	rhi.md	engine/rhi/null/null_device.h:37
-rhi::NullDeviceOptions::lose_device_at_frame	variable	rhi	rhi-nulldeviceoptions-lose-device-at-frame	rhi.md	engine/rhi/null/null_device.h:40
-rhi::NullDeviceOptions::lose_device_at_submit	variable	rhi	rhi-nulldeviceoptions-lose-device-at-submit	rhi.md	engine/rhi/null/null_device.h:42
-rhi::NullDeviceOptions::lose_device_at_present	variable	rhi	rhi-nulldeviceoptions-lose-device-at-present	rhi.md	engine/rhi/null/null_device.h:44
-rhi::NullDeviceOptions::strikes_left	variable	rhi	rhi-nulldeviceoptions-strikes-left	rhi.md	engine/rhi/null/null_device.h:46
-rhi::NullDeviceOptions::fail_surface_recreate	variable	rhi	rhi-nulldeviceoptions-fail-surface-recreate	rhi.md	engine/rhi/null/null_device.h:48
-rhi::NullDeviceOptions::fail_swapchain_create	variable	rhi	rhi-nulldeviceoptions-fail-swapchain-create	rhi.md	engine/rhi/null/null_device.h:50
-rhi::NullDeviceOptions::adapter	variable	rhi	rhi-nulldeviceoptions-adapter	rhi.md	engine/rhi/null/null_device.h:53
-rhi::NullDeviceOptions::DefaultAdapter()	function	rhi	rhi-nulldeviceoptions-defaultadapter	rhi.md	engine/rhi/null/null_device.h:56
-rhi::NullDeviceStats	struct	rhi	rhi-nulldevicestats	rhi.md	engine/rhi/null/null_device.h:67
-rhi::NullDeviceStats::buffers	variable	rhi	rhi-nulldevicestats-buffers	rhi.md	engine/rhi/null/null_device.h:70
-rhi::NullDeviceStats::textures	variable	rhi	rhi-nulldevicestats-textures	rhi.md	engine/rhi/null/null_device.h:72
-rhi::NullDeviceStats::samplers	variable	rhi	rhi-nulldevicestats-samplers	rhi.md	engine/rhi/null/null_device.h:74
-rhi::NullDeviceStats::shaders	variable	rhi	rhi-nulldevicestats-shaders	rhi.md	engine/rhi/null/null_device.h:76
-rhi::NullDeviceStats::bind_group_layouts	variable	rhi	rhi-nulldevicestats-bind-group-layouts	rhi.md	engine/rhi/null/null_device.h:78
-rhi::NullDeviceStats::bind_groups	variable	rhi	rhi-nulldevicestats-bind-groups	rhi.md	engine/rhi/null/null_device.h:80
-rhi::NullDeviceStats::pipelines	variable	rhi	rhi-nulldevicestats-pipelines	rhi.md	engine/rhi/null/null_device.h:82
-rhi::NullDeviceStats::pending_destruction	variable	rhi	rhi-nulldevicestats-pending-destruction	rhi.md	engine/rhi/null/null_device.h:84
-rhi::NullDeviceStats::command_lists	variable	rhi	rhi-nulldevicestats-command-lists	rhi.md	engine/rhi/null/null_device.h:86
-rhi::NullDevicePtr	alias	rhi	rhi-nulldeviceptr	rhi.md	engine/rhi/null/null_device.h:92
-rhi::NullDevice	class	rhi	rhi-nulldevice	rhi.md	engine/rhi/null/null_device.h:104
-rhi::NullDevice::NullDevice(const NullDeviceOptions&)	function	rhi	rhi-nulldevice-nulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:110
-rhi::NullDevice::~NullDevice()	function	rhi	rhi-nulldevice-tilde-nulldevice	rhi.md	engine/rhi/null/null_device.h:113
-rhi::NullDevice::BackendName() const	function	rhi	rhi-nulldevice-backendname-const	rhi.md	engine/rhi/null/null_device.h:115
-rhi::NullDevice::Adapter() const	function	rhi	rhi-nulldevice-adapter-const	rhi.md	engine/rhi/null/null_device.h:116
-rhi::NullDevice::ListAdapters(AdapterList*) const	function	rhi	rhi-nulldevice-listadapters-adapterlist-star-const	rhi.md	engine/rhi/null/null_device.h:117
-rhi::NullDevice::Epoch() const	function	rhi	rhi-nulldevice-epoch-const	rhi.md	engine/rhi/null/null_device.h:118
-rhi::NullDevice::Resources() const	function	rhi	rhi-nulldevice-resources-const	rhi.md	engine/rhi/null/null_device.h:119
-rhi::NullDevice::InFrame() const	function	rhi	rhi-nulldevice-inframe-const	rhi.md	engine/rhi/null/null_device.h:120
-rhi::NullDevice::Caps() const	function	rhi	rhi-nulldevice-caps-const	rhi.md	engine/rhi/null/null_device.h:121
-rhi::NullDevice::CreateBuffer(const BufferDesc&)	function	rhi	rhi-nulldevice-createbuffer-const-bufferdesc-amp	rhi.md	engine/rhi/null/null_device.h:122
-rhi::NullDevice::DestroyBuffer(BufferHandle)	function	rhi	rhi-nulldevice-destroybuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:123
-rhi::NullDevice::CreateTexture(const TextureDesc&)	function	rhi	rhi-nulldevice-createtexture-const-texturedesc-amp	rhi.md	engine/rhi/null/null_device.h:124
-rhi::NullDevice::DestroyTexture(TextureHandle)	function	rhi	rhi-nulldevice-destroytexture-texturehandle	rhi.md	engine/rhi/null/null_device.h:125
-rhi::NullDevice::CreateSampler(const SamplerDesc&)	function	rhi	rhi-nulldevice-createsampler-const-samplerdesc-amp	rhi.md	engine/rhi/null/null_device.h:126
-rhi::NullDevice::DestroySampler(SamplerHandle)	function	rhi	rhi-nulldevice-destroysampler-samplerhandle	rhi.md	engine/rhi/null/null_device.h:127
-rhi::NullDevice::CreateShader(const ShaderDesc&)	function	rhi	rhi-nulldevice-createshader-const-shaderdesc-amp	rhi.md	engine/rhi/null/null_device.h:128
-rhi::NullDevice::DestroyShader(ShaderHandle)	function	rhi	rhi-nulldevice-destroyshader-shaderhandle	rhi.md	engine/rhi/null/null_device.h:129
-rhi::NullDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi	rhi-nulldevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi.md	engine/rhi/null/null_device.h:130
-rhi::NullDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi	rhi-nulldevice-destroybindgrouplayout-bindgrouplayouthandle	rhi.md	engine/rhi/null/null_device.h:131
-rhi::NullDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi	rhi-nulldevice-createbindgroup-const-bindgroupdesc-amp	rhi.md	engine/rhi/null/null_device.h:132
-rhi::NullDevice::DestroyBindGroup(BindGroupHandle)	function	rhi	rhi-nulldevice-destroybindgroup-bindgrouphandle	rhi.md	engine/rhi/null/null_device.h:133
-rhi::NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi	rhi-nulldevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:134
-rhi::NullDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi	rhi-nulldevice-createcomputepipeline-const-computepipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:135
-rhi::NullDevice::DestroyPipeline(PipelineHandle)	function	rhi	rhi-nulldevice-destroypipeline-pipelinehandle	rhi.md	engine/rhi/null/null_device.h:136
-rhi::NullDevice::MapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-mapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:137
-rhi::NullDevice::UnmapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-unmapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:138
-rhi::NullDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-nulldevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/null/null_device.h:139
-rhi::NullDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-nulldevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/null/null_device.h:140
-rhi::NullDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi	rhi-nulldevice-createswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/null/null_device.h:141
-rhi::NullDevice::DestroySwapchain(Swapchain*)	function	rhi	rhi-nulldevice-destroyswapchain-swapchain-star	rhi.md	engine/rhi/null/null_device.h:142
-rhi::NullDevice::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-nulldevice-formatsupport-format-textureusage-const	rhi.md	engine/rhi/null/null_device.h:143
-rhi::NullDevice::CanGenerateMips(Format) const	function	rhi	rhi-nulldevice-cangeneratemips-format-const	rhi.md	engine/rhi/null/null_device.h:144
-rhi::NullDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-nulldevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/null/null_device.h:145
-rhi::NullDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-nulldevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/null/null_device.h:146
-rhi::NullDevice::CreateCommandList()	function	rhi	rhi-nulldevice-createcommandlist	rhi.md	engine/rhi/null/null_device.h:147
-rhi::NullDevice::Submit(CommandList* const*,usize)	function	rhi	rhi-nulldevice-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/null/null_device.h:148
-rhi::NullDevice::WaitFence(FenceValue,u64)	function	rhi	rhi-nulldevice-waitfence-fencevalue-u64	rhi.md	engine/rhi/null/null_device.h:149
-rhi::NullDevice::CompletedFence() const	function	rhi	rhi-nulldevice-completedfence-const	rhi.md	engine/rhi/null/null_device.h:150
-rhi::NullDevice::BeginFrame()	function	rhi	rhi-nulldevice-beginframe	rhi.md	engine/rhi/null/null_device.h:151
-rhi::NullDevice::EndFrame()	function	rhi	rhi-nulldevice-endframe	rhi.md	engine/rhi/null/null_device.h:152
-rhi::NullDevice::FrameNumber() const	function	rhi	rhi-nulldevice-framenumber-const	rhi.md	engine/rhi/null/null_device.h:153
-rhi::NullDevice::WaitIdle()	function	rhi	rhi-nulldevice-waitidle	rhi.md	engine/rhi/null/null_device.h:154
-rhi::NullDevice::DeviceLost() const	function	rhi	rhi-nulldevice-devicelost-const	rhi.md	engine/rhi/null/null_device.h:155
-rhi::NullDevice::InjectDeviceLoss()	function	rhi	rhi-nulldevice-injectdeviceloss	rhi.md	engine/rhi/null/null_device.h:156
-rhi::NullDevice::ErrorCount() const	function	rhi	rhi-nulldevice-errorcount-const	rhi.md	engine/rhi/null/null_device.h:159
-rhi::NullDevice::LastError(char*,usize) const	function	rhi	rhi-nulldevice-lasterror-char-star-usize-const	rhi.md	engine/rhi/null/null_device.h:167
-rhi::NullDevice::ResetErrors()	function	rhi	rhi-nulldevice-reseterrors	rhi.md	engine/rhi/null/null_device.h:170
-rhi::NullDevice::Statistics() const	function	rhi	rhi-nulldevice-statistics-const	rhi.md	engine/rhi/null/null_device.h:173
-rhi::NullDevice::PeekBuffer(BufferHandle,u64,void*,u64) const	function	rhi	rhi-nulldevice-peekbuffer-bufferhandle-u64-void-star-u64-const	rhi.md	engine/rhi/null/null_device.h:184
-rhi::NullDevice::StateOf(BufferHandle) const	function	rhi	rhi-nulldevice-stateof-bufferhandle-const	rhi.md	engine/rhi/null/null_device.h:190
-rhi::NullDevice::StateOf(TextureHandle) const	function	rhi	rhi-nulldevice-stateof-texturehandle-const	rhi.md	engine/rhi/null/null_device.h:196
-rhi::NullDevice::SimulateDeviceLoss()	function	rhi	rhi-nulldevice-simulatedeviceloss	rhi.md	engine/rhi/null/null_device.h:199
-rhi::NullDevice::CountPresent()	function	rhi	rhi-nulldevice-countpresent	rhi.md	engine/rhi/null/null_device.h:203
-rhi::NullDevice::SimulateSurfaceLoss()	function	rhi	rhi-nulldevice-simulatesurfaceloss	rhi.md	engine/rhi/null/null_device.h:208
-rhi::NullDevice::RecreateSurface(const os::Window*)	function	rhi	rhi-nulldevice-recreatesurface-const-os-window-star	rhi.md	engine/rhi/null/null_device.h:210
-rhi::CreateNullDevice(const NullDeviceOptions&)	function	rhi	rhi-createnulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:222
-rhi::RegisterNullBackend()	function	rhi	rhi-registernullbackend	rhi.md	engine/rhi/null/null_device.h:231
+rhi::NullDeviceOptions::NullDeviceOptions()	function	rhi	rhi-nulldeviceoptions-nulldeviceoptions	rhi.md	engine/rhi/null/null_device.h:28
+rhi::NullDeviceOptions::caps	variable	rhi	rhi-nulldeviceoptions-caps	rhi.md	engine/rhi/null/null_device.h:35
+rhi::NullDeviceOptions::abort_on_error	variable	rhi	rhi-nulldeviceoptions-abort-on-error	rhi.md	engine/rhi/null/null_device.h:37
+rhi::NullDeviceOptions::simulated_latency_frames	variable	rhi	rhi-nulldeviceoptions-simulated-latency-frames	rhi.md	engine/rhi/null/null_device.h:40
+rhi::NullDeviceOptions::max_buffer_bytes	variable	rhi	rhi-nulldeviceoptions-max-buffer-bytes	rhi.md	engine/rhi/null/null_device.h:42
+rhi::NullDeviceOptions::lose_device_at_frame	variable	rhi	rhi-nulldeviceoptions-lose-device-at-frame	rhi.md	engine/rhi/null/null_device.h:45
+rhi::NullDeviceOptions::lose_device_at_submit	variable	rhi	rhi-nulldeviceoptions-lose-device-at-submit	rhi.md	engine/rhi/null/null_device.h:47
+rhi::NullDeviceOptions::lose_device_at_present	variable	rhi	rhi-nulldeviceoptions-lose-device-at-present	rhi.md	engine/rhi/null/null_device.h:49
+rhi::NullDeviceOptions::strikes_left	variable	rhi	rhi-nulldeviceoptions-strikes-left	rhi.md	engine/rhi/null/null_device.h:51
+rhi::NullDeviceOptions::fail_surface_recreate	variable	rhi	rhi-nulldeviceoptions-fail-surface-recreate	rhi.md	engine/rhi/null/null_device.h:53
+rhi::NullDeviceOptions::fail_swapchain_create	variable	rhi	rhi-nulldeviceoptions-fail-swapchain-create	rhi.md	engine/rhi/null/null_device.h:55
+rhi::NullDeviceOptions::adapter	variable	rhi	rhi-nulldeviceoptions-adapter	rhi.md	engine/rhi/null/null_device.h:58
+rhi::NullDeviceOptions::DefaultAdapter()	function	rhi	rhi-nulldeviceoptions-defaultadapter	rhi.md	engine/rhi/null/null_device.h:61
+rhi::NullDeviceStats	struct	rhi	rhi-nulldevicestats	rhi.md	engine/rhi/null/null_device.h:72
+rhi::NullDeviceStats::buffers	variable	rhi	rhi-nulldevicestats-buffers	rhi.md	engine/rhi/null/null_device.h:75
+rhi::NullDeviceStats::textures	variable	rhi	rhi-nulldevicestats-textures	rhi.md	engine/rhi/null/null_device.h:77
+rhi::NullDeviceStats::samplers	variable	rhi	rhi-nulldevicestats-samplers	rhi.md	engine/rhi/null/null_device.h:79
+rhi::NullDeviceStats::shaders	variable	rhi	rhi-nulldevicestats-shaders	rhi.md	engine/rhi/null/null_device.h:81
+rhi::NullDeviceStats::bind_group_layouts	variable	rhi	rhi-nulldevicestats-bind-group-layouts	rhi.md	engine/rhi/null/null_device.h:83
+rhi::NullDeviceStats::bind_groups	variable	rhi	rhi-nulldevicestats-bind-groups	rhi.md	engine/rhi/null/null_device.h:85
+rhi::NullDeviceStats::pipelines	variable	rhi	rhi-nulldevicestats-pipelines	rhi.md	engine/rhi/null/null_device.h:87
+rhi::NullDeviceStats::pending_destruction	variable	rhi	rhi-nulldevicestats-pending-destruction	rhi.md	engine/rhi/null/null_device.h:89
+rhi::NullDeviceStats::command_lists	variable	rhi	rhi-nulldevicestats-command-lists	rhi.md	engine/rhi/null/null_device.h:91
+rhi::NullDevicePtr	alias	rhi	rhi-nulldeviceptr	rhi.md	engine/rhi/null/null_device.h:97
+rhi::NullDevice	class	rhi	rhi-nulldevice	rhi.md	engine/rhi/null/null_device.h:109
+rhi::NullDevice::NullDevice(const NullDeviceOptions&)	function	rhi	rhi-nulldevice-nulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:115
+rhi::NullDevice::~NullDevice()	function	rhi	rhi-nulldevice-tilde-nulldevice	rhi.md	engine/rhi/null/null_device.h:118
+rhi::NullDevice::BackendName() const	function	rhi	rhi-nulldevice-backendname-const	rhi.md	engine/rhi/null/null_device.h:120
+rhi::NullDevice::Adapter() const	function	rhi	rhi-nulldevice-adapter-const	rhi.md	engine/rhi/null/null_device.h:121
+rhi::NullDevice::ListAdapters(AdapterList*) const	function	rhi	rhi-nulldevice-listadapters-adapterlist-star-const	rhi.md	engine/rhi/null/null_device.h:122
+rhi::NullDevice::Epoch() const	function	rhi	rhi-nulldevice-epoch-const	rhi.md	engine/rhi/null/null_device.h:123
+rhi::NullDevice::Resources() const	function	rhi	rhi-nulldevice-resources-const	rhi.md	engine/rhi/null/null_device.h:124
+rhi::NullDevice::InFrame() const	function	rhi	rhi-nulldevice-inframe-const	rhi.md	engine/rhi/null/null_device.h:125
+rhi::NullDevice::Caps() const	function	rhi	rhi-nulldevice-caps-const	rhi.md	engine/rhi/null/null_device.h:126
+rhi::NullDevice::CreateBuffer(const BufferDesc&)	function	rhi	rhi-nulldevice-createbuffer-const-bufferdesc-amp	rhi.md	engine/rhi/null/null_device.h:127
+rhi::NullDevice::DestroyBuffer(BufferHandle)	function	rhi	rhi-nulldevice-destroybuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:128
+rhi::NullDevice::CreateTexture(const TextureDesc&)	function	rhi	rhi-nulldevice-createtexture-const-texturedesc-amp	rhi.md	engine/rhi/null/null_device.h:129
+rhi::NullDevice::DestroyTexture(TextureHandle)	function	rhi	rhi-nulldevice-destroytexture-texturehandle	rhi.md	engine/rhi/null/null_device.h:130
+rhi::NullDevice::CreateSampler(const SamplerDesc&)	function	rhi	rhi-nulldevice-createsampler-const-samplerdesc-amp	rhi.md	engine/rhi/null/null_device.h:131
+rhi::NullDevice::DestroySampler(SamplerHandle)	function	rhi	rhi-nulldevice-destroysampler-samplerhandle	rhi.md	engine/rhi/null/null_device.h:132
+rhi::NullDevice::CreateShader(const ShaderDesc&)	function	rhi	rhi-nulldevice-createshader-const-shaderdesc-amp	rhi.md	engine/rhi/null/null_device.h:133
+rhi::NullDevice::DestroyShader(ShaderHandle)	function	rhi	rhi-nulldevice-destroyshader-shaderhandle	rhi.md	engine/rhi/null/null_device.h:134
+rhi::NullDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi	rhi-nulldevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi.md	engine/rhi/null/null_device.h:135
+rhi::NullDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi	rhi-nulldevice-destroybindgrouplayout-bindgrouplayouthandle	rhi.md	engine/rhi/null/null_device.h:136
+rhi::NullDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi	rhi-nulldevice-createbindgroup-const-bindgroupdesc-amp	rhi.md	engine/rhi/null/null_device.h:137
+rhi::NullDevice::DestroyBindGroup(BindGroupHandle)	function	rhi	rhi-nulldevice-destroybindgroup-bindgrouphandle	rhi.md	engine/rhi/null/null_device.h:138
+rhi::NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi	rhi-nulldevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:139
+rhi::NullDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi	rhi-nulldevice-createcomputepipeline-const-computepipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:140
+rhi::NullDevice::DestroyPipeline(PipelineHandle)	function	rhi	rhi-nulldevice-destroypipeline-pipelinehandle	rhi.md	engine/rhi/null/null_device.h:141
+rhi::NullDevice::MapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-mapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:142
+rhi::NullDevice::UnmapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-unmapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:143
+rhi::NullDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-nulldevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/null/null_device.h:144
+rhi::NullDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-nulldevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/null/null_device.h:145
+rhi::NullDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi	rhi-nulldevice-createswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/null/null_device.h:146
+rhi::NullDevice::DestroySwapchain(Swapchain*)	function	rhi	rhi-nulldevice-destroyswapchain-swapchain-star	rhi.md	engine/rhi/null/null_device.h:147
+rhi::NullDevice::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-nulldevice-formatsupport-format-textureusage-const	rhi.md	engine/rhi/null/null_device.h:148
+rhi::NullDevice::CanGenerateMips(Format) const	function	rhi	rhi-nulldevice-cangeneratemips-format-const	rhi.md	engine/rhi/null/null_device.h:149
+rhi::NullDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-nulldevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/null/null_device.h:150
+rhi::NullDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-nulldevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/null/null_device.h:151
+rhi::NullDevice::CreateCommandList()	function	rhi	rhi-nulldevice-createcommandlist	rhi.md	engine/rhi/null/null_device.h:152
+rhi::NullDevice::Submit(CommandList* const*,usize)	function	rhi	rhi-nulldevice-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/null/null_device.h:153
+rhi::NullDevice::WaitFence(FenceValue,u64)	function	rhi	rhi-nulldevice-waitfence-fencevalue-u64	rhi.md	engine/rhi/null/null_device.h:154
+rhi::NullDevice::CompletedFence() const	function	rhi	rhi-nulldevice-completedfence-const	rhi.md	engine/rhi/null/null_device.h:155
+rhi::NullDevice::BeginFrame()	function	rhi	rhi-nulldevice-beginframe	rhi.md	engine/rhi/null/null_device.h:156
+rhi::NullDevice::EndFrame()	function	rhi	rhi-nulldevice-endframe	rhi.md	engine/rhi/null/null_device.h:157
+rhi::NullDevice::FrameNumber() const	function	rhi	rhi-nulldevice-framenumber-const	rhi.md	engine/rhi/null/null_device.h:158
+rhi::NullDevice::WaitIdle()	function	rhi	rhi-nulldevice-waitidle	rhi.md	engine/rhi/null/null_device.h:159
+rhi::NullDevice::DeviceLost() const	function	rhi	rhi-nulldevice-devicelost-const	rhi.md	engine/rhi/null/null_device.h:160
+rhi::NullDevice::InjectDeviceLoss()	function	rhi	rhi-nulldevice-injectdeviceloss	rhi.md	engine/rhi/null/null_device.h:161
+rhi::NullDevice::ErrorCount() const	function	rhi	rhi-nulldevice-errorcount-const	rhi.md	engine/rhi/null/null_device.h:164
+rhi::NullDevice::LastError(char*,usize) const	function	rhi	rhi-nulldevice-lasterror-char-star-usize-const	rhi.md	engine/rhi/null/null_device.h:172
+rhi::NullDevice::ResetErrors()	function	rhi	rhi-nulldevice-reseterrors	rhi.md	engine/rhi/null/null_device.h:175
+rhi::NullDevice::Statistics() const	function	rhi	rhi-nulldevice-statistics-const	rhi.md	engine/rhi/null/null_device.h:178
+rhi::NullDevice::PeekBuffer(BufferHandle,u64,void*,u64) const	function	rhi	rhi-nulldevice-peekbuffer-bufferhandle-u64-void-star-u64-const	rhi.md	engine/rhi/null/null_device.h:189
+rhi::NullDevice::StateOf(BufferHandle) const	function	rhi	rhi-nulldevice-stateof-bufferhandle-const	rhi.md	engine/rhi/null/null_device.h:195
+rhi::NullDevice::StateOf(TextureHandle) const	function	rhi	rhi-nulldevice-stateof-texturehandle-const	rhi.md	engine/rhi/null/null_device.h:201
+rhi::NullDevice::SimulateDeviceLoss()	function	rhi	rhi-nulldevice-simulatedeviceloss	rhi.md	engine/rhi/null/null_device.h:204
+rhi::NullDevice::CountPresent()	function	rhi	rhi-nulldevice-countpresent	rhi.md	engine/rhi/null/null_device.h:208
+rhi::NullDevice::SimulateSurfaceLoss()	function	rhi	rhi-nulldevice-simulatesurfaceloss	rhi.md	engine/rhi/null/null_device.h:213
+rhi::NullDevice::RecreateSurface(const os::Window*)	function	rhi	rhi-nulldevice-recreatesurface-const-os-window-star	rhi.md	engine/rhi/null/null_device.h:215
+rhi::CreateNullDevice(const NullDeviceOptions&)	function	rhi	rhi-createnulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:227
+rhi::RegisterNullBackend()	function	rhi	rhi-registernullbackend	rhi.md	engine/rhi/null/null_device.h:236
 rhi::PipelineCacheDirChoice	enum	rhi	rhi-pipelinecachedirchoice	rhi.md	engine/rhi/pipeline_cache_file.h:16
 rhi::PipelineCacheDirChoice::NotConfigured	enumerator	rhi	rhi-pipelinecachedirchoice-notconfigured	rhi.md	engine/rhi/pipeline_cache_file.h:18
 rhi::PipelineCacheDirChoice::Chosen	enumerator	rhi	rhi-pipelinecachedirchoice-chosen	rhi.md	engine/rhi/pipeline_cache_file.h:19

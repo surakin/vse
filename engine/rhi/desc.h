@@ -56,7 +56,8 @@ struct BufferDesc
 /// - Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
 struct TextureDesc
 {
-    /// 2D, 3D or (reserved) cube.
+    /// 2D, 3D or cube: a cube has square faces, `array_layers` 6, depth 1 and only sampled and copy usage (no cube
+    /// arrays).
     TextureDimension dimension = TextureDimension::Tex2D;
     /// Width in texels; must be non-zero.
     u32 width = 0;

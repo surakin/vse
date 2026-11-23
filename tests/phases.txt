@@ -54,6 +54,9 @@ flavors 25  macos: plain,asan,tsan
 flavors 26  linux: plain,asan,tsan # tests/audio (Day 415)
 flavors 26  windows: plain,asan
 flavors 26  macos: plain,asan,tsan
+flavors 28  linux: plain,asan,tsan # tests/rhi/cube_texture_test.cpp (Day 479)
+flavors 28  windows: plain,asan
+flavors 28  macos: plain,asan,tsan
 flavors 27  linux: plain,asan,tsan # tests/script (Day 445)
 flavors 27  macos: plain,asan,tsan # LuaJIT and the script tests on the Mac (Day 474)
 flavors 27  windows: plain,asan # Day 473: LuaJIT with MSVC and clang-cl (no ThreadSanitizer on Windows)
@@ -172,6 +175,7 @@ tests/rhi/vulkan_commands_test.cpp              4
 tests/rhi/vulkan_compute_test.cpp               4
 tests/rhi/compute_test.cpp                      4   # once per GPU backend (Phase 13 Day 170)
 tests/rhi/cube_test.cpp                         4
+tests/rhi/cube_texture_test.cpp                 28  # cube textures in the RHI (Phase 28 Day 479)
 tests/rhi/vulkan_device_test.cpp                4
 tests/rhi/vulkan_fault_test.cpp                 4
 tests/rhi/vulkan_frame_test.cpp                 4

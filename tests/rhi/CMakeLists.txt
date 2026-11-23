@@ -33,6 +33,7 @@ set(RHI_TEST_SOURCES
   vulkan_compute_test.cpp
   compute_test.cpp
   cube_test.cpp
+  cube_texture_test.cpp  # Phase 28 Day 479
   textured_cube_test.cpp
   lit_cube_test.cpp
   render_graph_gpu_test.cpp

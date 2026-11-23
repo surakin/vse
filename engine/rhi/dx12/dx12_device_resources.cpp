@@ -620,6 +620,11 @@ TextureHandle Dx12Device::CreateTexture(const TextureDesc& desc)
         RhiLog(LogVerbosity::Error, "CreateTexture: %s", why);
         return {};
     }
+    if (desc.dimension == TextureDimension::Cube && !caps_.cube_textures)
+    {
+        RhiLog(LogVerbosity::Error, "CreateTexture: cube textures are not supported on this backend yet");
+        return {};
+    }
     if (!FormatSupport(desc.format, desc.usage))
     {
         RhiLog(LogVerbosity::Error, "CreateTexture: the format %s cannot be used with these usages on this device",

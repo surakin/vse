@@ -305,7 +305,8 @@ enum class TextureDimension : u8
 {
     Tex2D = 0,  ///< A 2D image, optionally an array.
     Tex3D,      ///< A volume.
-    Cube,       ///< A cube map; reserved, rejected until a backend supports it.
+    Cube,       ///< A cube map: six square faces (`array_layers` is 6), sampled and copied only; see
+                ///< `DeviceCaps::cube_textures`.
 };
 
 /// The data type and width of one vertex attribute.

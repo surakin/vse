@@ -310,10 +310,13 @@ TEST_CASE("TextureDesc validation", "[rhi][desc]")
         d.array_layers = 1;
         CHECK(d.Validate() == nullptr);
     }
-    SECTION("cube is reserved")
+    SECTION("cube needs six layers")
     {
         d.dimension = TextureDimension::Cube;
-        CHECK(Rejects(d.Validate(), "TextureDesc: cube"));
+        CHECK(Rejects(d.Validate(), "TextureDesc: a cube texture has exactly 6 layers"));
+        d.array_layers = 6;
+        d.usage = TextureUsage::Sampled;
+        CHECK(d.Validate() == nullptr);
     }
     SECTION("undefined format")
     {

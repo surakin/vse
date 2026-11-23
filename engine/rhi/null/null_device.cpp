@@ -1358,6 +1358,11 @@ TextureHandle NullDevice::CreateTexture(const TextureDesc& desc)
         return TextureHandle{};
     }
     const DeviceCaps& caps = s.options.caps;
+    if (desc.dimension == TextureDimension::Cube && !caps.cube_textures)
+    {
+        s.Error("CreateTexture: cube textures are not supported by this device");
+        return TextureHandle{};
+    }
     u32 limit = desc.dimension == TextureDimension::Tex3D ? caps.max_texture_dimension_3d
                                                           : caps.max_texture_dimension_2d;
     u32 biggest = desc.width > desc.height ? desc.width : desc.height;

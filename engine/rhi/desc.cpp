@@ -111,13 +111,29 @@ const char* BufferDesc::Validate() const
 
 const char* TextureDesc::Validate() const
 {
-    if (dimension == TextureDimension::Cube)
-    {
-        return "TextureDesc: cube textures are not supported yet";
-    }
     if (static_cast<u8>(dimension) > static_cast<u8>(TextureDimension::Cube))
     {
         return "TextureDesc: unknown dimension";
+    }
+    if (dimension == TextureDimension::Cube)
+    {
+        if (width != height)
+        {
+            return "TextureDesc: a cube texture's faces must be square";
+        }
+        if (depth != 1)
+        {
+            return "TextureDesc: cube textures must have depth 1";
+        }
+        if (array_layers != 6)
+        {
+            return "TextureDesc: a cube texture has exactly 6 layers (cube arrays are not supported)";
+        }
+        const TextureUsage cube_usage = TextureUsage::Sampled | TextureUsage::CopySrc | TextureUsage::CopyDst;
+        if (Any(static_cast<TextureUsage>(static_cast<u32>(usage) & ~static_cast<u32>(cube_usage))))
+        {
+            return "TextureDesc: a cube texture can only be sampled and copied";
+        }
     }
     if (width == 0 || height == 0 || depth == 0)
     {
