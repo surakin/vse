@@ -85,7 +85,8 @@ MTLSamplerAddressMode AddressOf(AddressMode a)
 #if ENGINE_PLATFORM_MACOS
         return MTLSamplerAddressModeClampToBorderColor;
 #else
-        return MTLSamplerAddressModeClampToEdge;  // iOS before 14 has no border color (Phase 31 decides)
+        return MTLSamplerAddressModeClampToEdge;  // iOS before 14 has no border color (the future Android and iOS port
+                                                  // decides)
 #endif
     }
     return MTLSamplerAddressModeRepeat;

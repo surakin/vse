@@ -6,6 +6,6 @@
 - **Inactive:** the same dictionary has `kCGSessionOnConsoleKey` false when another user's session holds the console (fast user switching).
 - **Idle:** a sleeping main display (`CGDisplayIsAsleep(CGMainDisplayID())`). The input-time route (`CGEventSourceSecondsSinceLastEventType`) needs a limit the engine does not have, so it is not used (Day 285; Windows decided the same).
 - **Unknown:** `CGSessionCopyCurrentDictionary` returns null (an SSH login without a window server).
-- iOS and Android (Phases 31): iOS uses `UIApplication.isProtectedDataAvailable` (device locked) and the scene's activation state; Android uses `KeyguardManager.isKeyguardLocked` and `PowerManager.isInteractive`. Consoles (Phase 32): the suspend or constrained state the platform reports, else `Unknown`.
+- iOS and Android (the future Android and iOS port): iOS uses `UIApplication.isProtectedDataAvailable` (device locked) and the scene's activation state; Android uses `KeyguardManager.isKeyguardLocked` and `PowerManager.isInteractive`. Consoles (the future console ports): the suspend or constrained state the platform reports, else `Unknown`.
 - Map the flags with `SessionStateFromFlags`.
 - Test: `tests/foundation/session_state_test.cpp` runs unchanged.

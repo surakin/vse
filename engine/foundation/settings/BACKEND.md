@@ -66,10 +66,10 @@ store, the memory stores, the environment and command-line layers and everything
   the file, as on Windows (measured: 0.17 ms per defaults write against about 40 ms for a durable file save). **Not built:** a `System` layer from
   the application bundle's registered defaults. A program registers those itself at run time (`registerDefaults:` is not stored anywhere), so they are
   the program's own shipped defaults, which `LoadOptions::shipped` already is.
-- **Android (Phase 31):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
+- **Android (the future Android and iOS port):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
   `OnSharedPreferenceChangeListener` for notifications.
-- **iOS (Phase 31):** `NSUserDefaults` as on macOS.
-- **Consoles (Phase 32):** the platform's save-data API behind the same store; mind size limits and commit latency (`Commit` may be slow: the service
+- **iOS (the future Android and iOS port):** `NSUserDefaults` as on macOS.
+- **Consoles (the future console ports):** the platform's save-data API behind the same store; mind size limits and commit latency (`Commit` may be slow: the service
   never calls it from a frame).
 - **The environment** (`EnvironmentSnapshot::Capture`) is the one other platform-bound piece: Windows reads `GetEnvironmentStringsW` (UTF-16 to UTF-8), macOS
   `_NSGetEnviron`; consoles may return an empty snapshot. Windows variable names ignore case (`os::EnvironmentNamesIgnoreCase`): the snapshot holds

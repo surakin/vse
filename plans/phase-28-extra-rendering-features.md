@@ -46,7 +46,7 @@ Sky box (478-484), terrain with the height-field collider (485-493), instanced a
 3. **Hierarchical instanced meshes.** Instances arranged in a tree (a forest of trees with branches, a city of buildings with parts): a node's transform composes its children's, culling takes whole subtrees, and a level of detail picks a simpler mesh far away (to impostors as a stretch). Built on feature 2 and on the spatial module's tree. Open: whether a hierarchy node is an entity or a row in the instance buffer.
 4. **Sky box rendering.** Drawn behind everything: a cube map (minted from six images or an equirectangular one), and a procedural sky from the existing environment settings (`sky_color`, exposure). The same cube map feeds the reflection term that today is a flat sky colour (`reflection_intensity`), with a prefiltered mip chain for rough surfaces. Open: sun disk and atmospheric scattering are out unless the user asks.
 
-## Out of scope (stays in Phase 35, feature parity)
+## Out of scope (stays in Phase 33, feature parity)
 
 Terrain streaming of world cells, foliage painting tools, virtual texturing, GPU occlusion culling beyond what feature 2 needs.
 

@@ -1,4 +1,4 @@
-# Phase 31 — Android and iOS Ports
+# Future project: Android and iOS ports
 
 **Depends on:** Phase 4 (Vulkan RHI) for Android — reuses the Vulkan
 backend directly; Phase 21 (the Metal backend) for iOS. Neither needs the

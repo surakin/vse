@@ -1,4 +1,4 @@
-# Phase 33 — Unreal Asset & Level Import
+# Phase 31 — Unreal Asset & Level Import
 
 **Depends on:** Phase 22 (Asset pipeline) — this importer's job is to
 produce Phase 22's engine-native formats from Unreal source data. Also
@@ -91,7 +91,7 @@ kind:
 
 ## Explicitly out of scope for this phase
 
-Blueprint gameplay logic (Phase 34), Landscape/terrain, foliage systems,
+Blueprint gameplay logic (Phase 32), Landscape/terrain, foliage systems,
 Niagara/particle systems, Sequencer/cinematics, and cooked/shipped-game
 formats. Each of these would be its own follow-on import track, scoped
 against real demand once the core import path works.

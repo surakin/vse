@@ -42,7 +42,7 @@
 ## Notes / open questions
 
 - **Sockets are the operating system's own API** (like Win32 and POSIX file calls), so using them is not a third-party dependency; only QUIC and TLS can add one, and each such dependency needs its own entry in `PLAN.md` (assumption #26 states the rule and the open decision).
-- **Platforms:** Linux and Windows first; macOS is designed in (the same BSD socket interface, `kqueue`), and mobile and consoles need their socket backends and permission/lifecycle handling (Phases 31 and 32 list them). Nothing in the transport interface may assume a desktop OS.
+- **Platforms:** Linux and Windows first; macOS is designed in (the same BSD socket interface, `kqueue`), and mobile and consoles need their socket backends and permission/lifecycle handling (the future mobile and console ports list them). Nothing in the transport interface may assume a desktop OS.
 - **No packet sniffing, raw sockets or anything that needs privileges**: ordinary unprivileged sockets only.
 - **Determinism and tests:** the simulated transport is deterministic (seeded) so a networking bug can be replayed; the real-socket tests use only loopback and ephemeral ports and are labelled so a sandbox without network access skips them with the reason.
 - Out of scope for this phase: game-level replication and prediction, matchmaking and relay servers, NAT traversal, voice, HTTP and WebSocket clients (a possible later addition on top of TCP+TLS), and any web or browser platform.

@@ -172,11 +172,11 @@ Present on 2026-11-10: the Command Line Tools (Apple clang 17.0.0), CMake 4.4.4 
   back through `makeLibrary(URL:)` with its vertex entry usable. The undocumented `serializeToURL:error:` of an ordinary library is not to be used.
 - **From the Phase 4 portability review** (`docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, section 5) — Days 301-305: encoder splitting
   around passes, copies and dispatches; barriers as no-ops, `memoryBarrier` or an encoder split by tracking mode; threadgroup size from shader reflection
-  at pipeline creation; `Managed` storage with `FlushMappedBuffer` as `didModifyRange`; `ClampToBorder` rejected with a log on iOS (Phase 31; supported on
+  at pipeline creation; `Managed` storage with `FlushMappedBuffer` as `didModifyRange`; `ClampToBorder` rejected with a log on iOS (the future Android and iOS port; supported on
   macOS); `nextDrawable()` as `Acquire`; the clip-space Y flip in the shader path.
 - **From Phase 5** (`docs/superpowers/specs/2026-11-04-renderer-portability-review.md`, Day 84) — Days 299, 307: `fill.comp` and `saxpy.comp` call
   `GetDimensions` on a buffer (pass the count); `main` becomes `main_0`; slangc flattens sets to `[[buffer(n)]]` slots, read from reflection; the per-object
-  index; graph barriers as no-ops on tracked resources; the G-buffer's tile-memory concerns are Phase 31's (Apple silicon), not this phase's.
+  index; graph barriers as no-ops on tracked resources; the G-buffer's tile-memory concerns are the future Android and iOS port's (Apple silicon), not this phase's.
 - **Debugging facilities backend (Phase 7, made ready on Day 101)** — Days 290-292: everything in `engine/foundation/os/macos/debug/BACKEND.md`;
   re-vendor Breakpad's macOS private headers (`KNOWN-ISSUES.md`, Phase 7 Day 95); the conformance groups of `tests/debug/BACKEND-CONFORMANCE.md` pass or skip
   with a reason; `debug_backend_lists` and `debug_cross_syntax_macos` still pass; the stack-trace and crash-handler sources the cross-syntax check does not
@@ -207,9 +207,9 @@ Present on 2026-11-10: the Command Line Tools (Apple clang 17.0.0), CMake 4.4.4 
 - **Pending, the user's decision (2026-11-10):** the `.metallib` minting route is the undocumented `-[MTLLibrary serializeToURL:error:]` until the user has a new Mac; then it is decided again, and the new Mac also runs the spike's open task (loading on Apple silicon and another macOS version).
 - **Confirmed by the user (2026-11-11):** the side-phase rule (CLAUDE.md, written on Day 283; the tooling is Day 286). **Still proposed:** the answer
   to `PLAN.md` assumption #11 (a macOS day in every later phase, Day 312); not building Vulkan on macOS (decision 8).
-- The iOS platform layer (UIKit, touch) and the LuaJIT interpreter-only build for iOS are Phase 31, which reuses this phase's Metal backend.
+- The iOS platform layer (UIKit, touch) and the LuaJIT interpreter-only build for iOS are the future Android and iOS port, which reuses this phase's Metal backend.
 - **HDR:** EDR (`wantsExtendedDynamicRangeContent`, `RGBA16Float`, extended linear sRGB) maps `HdrMode::ScRgbLinear`; the MacBook's built-in display is not
   an EDR display, so HDR stays checked by the policy tests only (Day 305 records it).
 - **Not in this phase:** argument buffers and residency sets (unless Day 302 measures a need), `MTLHeap` placement, indirect command buffers, mesh
-  shaders, MetalFX, Apple silicon tile features (memoryless attachments, imageblocks: Phase 31), notarization and code signing beyond ad hoc, app
+  shaders, MetalFX, Apple silicon tile features (memoryless attachments, imageblocks: the future Android and iOS port), notarization and code signing beyond ad hoc, app
   bundles for the demos, IME marked-text composition.

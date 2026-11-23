@@ -51,7 +51,7 @@ Order reasoning: the spec and the spikes (414) settle the Linux backend, the res
 - **The audio thread never allocates, locks or does I/O.** Commands arrive through a lock-free ring, events leave through another, streams are decoded ahead on a job and read from a ring.
 - **Everything configurable is a setting** (`audio.*`, Phase 11); the device and the rate change at run time through one reset path (like the RHI), and a lost device falls back to the null device.
 - **Extras, all in scope (user, 2026-11-17):** compressed formats (Ogg Vorbis through vendored libogg and libvorbis, hostile-input rules around them, small committed fixtures), Doppler and occlusion, streaming music with cross-fades, layers and playlists, buses and effects (biquad filters, delay, reverb).
-- **Hosts and ports (user, 2026-11-17):** a C API in two days with a host-driven mode (`audio_render` pulls the mix into the host's own audio callback), then a Windows day and a macOS day that add their backends and check the hashes. Android and iOS stay in Phase 31, the consoles in Phase 32.
+- **Hosts and ports (user, 2026-11-17):** a C API in two days with a host-driven mode (`audio_render` pulls the mix into the host's own audio callback), then a Windows day and a macOS day that add their backends and check the hashes. Android and iOS stay in the future Android and iOS port, the consoles in the future console ports.
 - **Units:** metres, seconds, linear gain (decibel helpers on the control side), +Y up, the listener looks along -Z.
 
 ## Notes / open questions (settled in the Day 414 spec)

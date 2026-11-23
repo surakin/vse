@@ -85,7 +85,7 @@ GCC 15, LuaJIT built from the pin below). Where a spike moved a plan default or 
   partition keyed by the simulation clock, then by `(entity id, sequence)` for ties). Nothing blocks a thread.
 - **100,000 waiting coroutines cost 490 bytes each (49 MB total) and 32 ms to create; a resume is 73 ns** (6.75 million resumes in 0.49 s, including the naive
   scan of every waiter each tick that the real scheduler replaces with a heap). Yield across `pcall` works in LuaJIT (`pcall(function() yield() end)`).
-- What Blueprint needs from it (so Phase 34 can land on it): `Delay` is `wait`; `Timeline` is a `wait_frames(1)` loop that reads the clock; an async action is a
+- What Blueprint needs from it (so Phase 32 can land on it): `Delay` is `wait`; `Timeline` is a `wait_frames(1)` loop that reads the clock; an async action is a
   call that returns a completion handle plus `wait_event(handle)`; `Latent` nodes in a graph become straight-line code in one coroutine. The coroutine is
   owned by the script instance; destroying the entity destroys it (checked: the reference is released at the sync point).
 

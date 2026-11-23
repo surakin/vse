@@ -1,4 +1,4 @@
-# Phase 35+ — Feature-Parity Push
+# Phase 33+ — Feature-Parity Push
 
 **Depends on:** a working engine core and at least one real demo (Phase
 27) to ground priorities against real usage rather than a feature
@@ -17,7 +17,7 @@ detail only once reached, against real priorities at that time.
 - Animation systems (blend trees, IK, state machines, retargeting, morph
   targets, compute pre-skinning) beyond Phase 22's skeleton and clip formats,
   sampler, blending and GPU skinning.
-- Landscape/terrain and foliage systems (deferred out of Phase 33).
+- Landscape/terrain and foliage systems (deferred out of Phase 31).
 - Niagara-equivalent particle/VFX system.
 - Further Unreal import coverage: latent Blueprint nodes, Sequencer/
   cinematics, cooked-game import if ever justified.

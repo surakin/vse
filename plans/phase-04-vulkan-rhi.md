@@ -81,7 +81,7 @@ includes Wayland/X11 headers.
 
 ## Notes / open questions
 
-- **Android risk (Phase 31):** the 1.3 baseline excludes many Android
+- **Android risk (the future Android and iOS port):** the 1.3 baseline excludes many Android
   devices; the extension paths (KHR/EXT equivalents) are the plan, noted
   in the spec.
 - Golden images differ by vendor at triangle edges; tests compare away
