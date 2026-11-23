@@ -9,6 +9,7 @@
 #include "renderer/mesh.h"
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
+#include "lang/limits.h"
 #include "scene/render_sync.h"
 
 using namespace vse;
@@ -564,6 +565,15 @@ TEST_CASE("Scene sync: the render origin follows the camera and objects 1 mm apa
     CHECK(scene::UpdateRenderOrigin(link, far));
     CHECK(link.generation == 1);
     CHECK_FALSE(scene::UpdateRenderOrigin(link, far + Vec3d(500, 0, 0)));  // within one step
+    {
+        // A NaN or infinite camera does not move the origin or count a re-base.
+        const Vec3d before = link.origin;
+        const u64 generation = link.generation;
+        CHECK_FALSE(scene::UpdateRenderOrigin(link, Vec3d(Limits<f64>::QuietNaN(), 0.0, 0.0)));
+        CHECK_FALSE(scene::UpdateRenderOrigin(link, Vec3d(0.0, Limits<f64>::Infinity(), 0.0)));
+        CHECK(link.origin == before);
+        CHECK(link.generation == generation);
+    }
     rig.Frame();
     const f32 x0 = rig.ObjectOf(first)->transform.col[3].x;
     const f32 x1 = rig.ObjectOf(second)->transform.col[3].x;

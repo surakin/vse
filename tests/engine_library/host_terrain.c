@@ -290,6 +290,9 @@ static void Physics(engine_handle engine)
         CHECK_STATUS(g_api->terrain_height(world, 9.0 + far, 40.0 + far, &far_height), ENGINE_ERROR_NOT_FOUND);
         CHECK_STATUS(g_api->terrain_height(world, 30.0 + far, 40.0 + far, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
         CHECK_STATUS(g_api->terrain_height(world, 3.0e12, 0.0, &far_height), ENGINE_ERROR_INVALID_ARGUMENT);
+        moved.position[0] = 10.0; /* back where it was */
+        moved.position[1] = 1.0;
+        moved.position[2] = 20.0;
         CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &moved), ENGINE_OK);
     }
 

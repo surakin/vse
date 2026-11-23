@@ -207,6 +207,7 @@ int main(void)
     STRUCT(engine_world_transform);
     FIELD(engine_world_transform, struct_size);
     FIELD(engine_world_transform, matrix);
+    FIELD(engine_world_transform, position);
     STRUCT(engine_mesh_reference);
     FIELD(engine_mesh_reference, struct_size);
     FIELD(engine_mesh_reference, material);

@@ -2023,13 +2023,14 @@ extern "C"
         engine_status (*surface_set_camera)(engine_handle surface, uint64_t camera_entity);
 
         /* Turns the surface pixel (`x`, `y`) (top left is (0, 0); fractions allowed, the pixel centre is +0.5) into a
-         * world ray for picking: `origin` and `direction` (unit length) receive three floats each. It reads the camera
-         * and the size of the last frame that drew the surface (the camera as of the frame, not as of this call), so a
-         * host that moved the camera since asks again after the next `frame`. Fails with: STALE_HANDLE,
-         * INVALID_ARGUMENT, NOT_READY (no frame has drawn a scene on this surface yet), TYPE_MISMATCH. */
+         * world ray for picking: `origin` receives three doubles (the camera's exact world position) and `direction`
+         * (unit length) three floats. It reads the camera and the size of the last frame that drew the surface (the
+         * camera as of the frame, not as of this call), so a host that moved the camera since asks again after the next
+         * `frame`. Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_READY (no frame has drawn a scene on this surface
+         * yet), TYPE_MISMATCH. */
         engine_status (*surface_pixel_ray)(engine_handle surface, float x, float y, double* origin, float* direction);
 
-        /* The inverse: projects the world point `point` (three floats) with the camera of the last frame. `out`
+        /* The inverse: projects the world point `point` (three doubles) with the camera of the last frame. `out`
          * receives three floats: the pixel x and y (as above) and the distance along the camera's viewing direction in
          * metres (negative behind the camera, where x and y are not meaningful). Fails with: STALE_HANDLE,
          * INVALID_ARGUMENT, NOT_READY, TYPE_MISMATCH. */
@@ -2633,8 +2634,8 @@ extern "C"
         /* Reads the ground height at the world point (`x`, `z`) into `*out_height`: the surface of the first terrain
          * entity (by entity key) whose map covers the point, at the entity's current world placement (the one the last
          * frame computed; before any frame, its local transform), the same surface the collider and the renderer use
-         * (two triangles a cell). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a non-finite coordinate),
-         * NOT_FOUND (no terrain covers the point, or its height map is not mounted). */
+         * (two triangles a cell). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a coordinate that is not finite or
+         * lies beyond 1e12 metres), NOT_FOUND (no terrain covers the point, or its height map is not mounted). */
         engine_status (*terrain_height)(engine_handle world, double x, double z, double* out_height);
 
     } engine_api;

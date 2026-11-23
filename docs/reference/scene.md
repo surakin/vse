@@ -559,7 +559,7 @@ The render scene; null makes the sync do nothing (counted in `SceneSyncReport::n
 Vec3d origin;
 ```
 
-The render origin: the world position that is (0, 0, 0) in the render scene. Everything the sync writes to the scene (objects, lights, terrains) and the camera system's camera is relative to it, narrowed to `f32`, so a world far from the world origin renders with the precision of a world near it. Zero until [`scene::UpdateRenderOrigin`](#scene-updaterenderorigin-scenelink-amp-const-vec3d-amp) moves it.
+The render origin: the world position that is (0, 0, 0) in the render scene. Everything the sync writes to the scene (objects, lights, terrains) and the camera system's camera is relative to it, narrowed to `f32`, so a world far from the world origin renders with the precision of a world near it. Zero until [`scene::UpdateRenderOrigin`](#scene-updaterenderorigin-scenelink-amp-const-vec3d-amp) moves it; change it only through that function (the sync notices a re-base by `generation`).
 
 ### `rebase_step` {#scene-scenelink-rebase-step}
 

@@ -631,7 +631,7 @@ Value TerrainHeightOf(f64 x, f64 z)
     {
         return Value();
     }
-    return Value::FromFloat(static_cast<f32>(height));
+    return Value::FromFloat(height);
 }
 
 Value TerrainNormalOf(f64 x, f64 z)

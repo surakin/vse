@@ -21,7 +21,7 @@ constexpr u32 kBisections = 24;
 
 Vec3d LerpPoint(const Vec3d& a, const Vec3d& b, f32 t)
 {
-    return a * static_cast<f64>(1.0f - t) + b * static_cast<f64>(t);
+    return a + (b - a) * static_cast<f64>(t);  // not a*(1-t) + b*t: that loses |p| * 2^-25 far from the origin
 }
 
 // The normalized linear blend of two orientations, the short way round.

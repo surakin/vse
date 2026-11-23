@@ -663,6 +663,10 @@ bool UpdateRenderOrigin(SceneLink& link, const Vec3d& camera)
     {
         return false;
     }
+    if (!(camera.x - camera.x == 0.0) || !(camera.y - camera.y == 0.0) || !(camera.z - camera.z == 0.0))
+    {
+        return false;  // a NaN or infinite camera never moves the origin
+    }
     const Vec3d d = camera - link.origin;
     if (Abs(d.x) <= step && Abs(d.y) <= step && Abs(d.z) <= step)
     {

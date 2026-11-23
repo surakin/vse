@@ -831,7 +831,7 @@ int main(void)
         /* the double precision series: the camera 100,000 km away looks at a point 4 m in front of it and sees it at
            the middle of the picture; its ray starts at its exact place (a float steps by 8 m there) */
         {
-            const double far = 1.0e8 + 0.25;
+            const double far = 1.0e8 + 0.001; /* not a float's multiple: the ray origin must be the exact place */
             engine_transform t64;
             double far_origin[3];
             double far_point64[3];

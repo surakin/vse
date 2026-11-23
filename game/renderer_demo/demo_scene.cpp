@@ -119,7 +119,7 @@ struct DemoClock
 // A point light's orbit: its base position and phase.
 struct Orbit
 {
-    Vec3 base;
+    Vec3d base;  // world position, the scene's offset included
     f32 phase;
 };
 
@@ -407,7 +407,9 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     world_ = MakeUnique<ecs::World>();
     schedule_ = MakeUnique<ecs::Schedule>();
     world_->SetResource(ecs::TransformReport{});
-    world_->SetResource(scene::SceneLink{scene_.Get()});
+    scene::SceneLink link{scene_.Get()};
+    link.origin = options.origin_offset;
+    world_->SetResource(link);
     world_->SetResource(scene::SceneSyncReport{});
     world_->SetResource(scene::ActiveCamera{});
     world_->SetResource(scene::CameraOutput{});
@@ -421,7 +423,9 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         scene::MeshRenderer mr;
         mr.mesh = meshes[p.mesh];
         mr.material = ids[p.material].index;
-        world_->Create(ecs::WorldTransform::FromMatrix(p.transform), mr);
+        ecs::WorldTransform w = ecs::WorldTransform::FromMatrix(p.transform);
+        w.position = w.position + options.origin_offset;
+        world_->Create(w, mr);
     }
     expected_objects_ = static_cast<u32>(order.Size());
     if (options.screen)
@@ -431,9 +435,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         mr.material = screen_material_.index;
         const f32 sx = options.screen_width / kTileSize;
         const f32 sz = options.screen_height / kTileSize;
-        world_->Create(ecs::WorldTransform::FromMatrix(
-                           Mat4::FromBasis(Vec3(sx, 0, 0), Vec3(0, 0, 1), Vec3(0, -sz, 0), options.screen_center)),
-                       mr);
+        ecs::WorldTransform w = ecs::WorldTransform::FromMatrix(
+            Mat4::FromBasis(Vec3(sx, 0, 0), Vec3(0, 0, 1), Vec3(0, -sz, 0), options.screen_center));
+        w.position = w.position + options.origin_offset;
+        world_->Create(w, mr);
         ++expected_objects_;
     }
 
@@ -458,7 +463,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         const f32 base_x = lr.Range(-width * 0.5f, width * 0.5f);
         const f32 base_y = lr.Range(0.8f, 2.2f);
         const f32 base_z = lr.Range(-depth * 0.5f, depth * 0.5f);
-        const Vec3 base(base_x, base_y, base_z);
+        const Vec3d base = Vec3d(base_x, base_y, base_z) + options.origin_offset;
         scene::LightSource l;
         l.type = LightType::Point;
         l.radius = lr.Range(3.0f, 5.5f);
@@ -477,6 +482,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     ecs::LocalTransform eye = ecs::LookAt(Vec3(radius_ * 0.55f, radius_ * 0.5f, radius_ * 0.85f), Vec3(0, 0.5f, 0),
                                           Vec3(0, 1, 0));
     scene::Camera lens;
+    eye.position = eye.position + options.origin_offset;
     lens.fov_y = 0.9f;
     lens.near_plane = 0.1f;
     lens.far_plane = radius_ * 6.0f + 60.0f;
@@ -497,8 +503,8 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
                     [&](ecs::LocalTransform& t, const Orbit& o)
                     {
                         const f32 a = clock.seconds * 0.5f + o.phase;
-                        t.position = Vec3(o.base.x + 1.2f * Cos(a), o.base.y + 0.3f * Sin(a * 1.7f),
-                                          o.base.z + 1.2f * Sin(a));
+                        t.position = Vec3d(o.base.x + 1.2f * Cos(a), o.base.y + 0.3f * Sin(a * 1.7f),
+                                           o.base.z + 1.2f * Sin(a));
                     });
             })
             .ReadsResource<DemoClock>()

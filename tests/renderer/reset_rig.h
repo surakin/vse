@@ -63,6 +63,7 @@ struct Rig
     rhi::DeviceCreateInfo info;
     renderer::RenderSettings initial;
     renderer::ScopedRegistration target_registration;
+    Vec3d origin_offset = Vec3d(0, 0, 0);  // set before Create to stand the scene far from the origin
     bool screen = false;              // set before Create to add the scene's standing screen (SceneOptions::screen)
     const char* font_path = nullptr;  // set before Create to give the frame the text overlay (DemoFrame::SetOverlay)
 
@@ -107,6 +108,7 @@ struct Rig
         so.asset_dir = asset_dir;
         so.resources = &registry;
         so.screen = screen;
+        so.origin_offset = origin_offset;
         if (!scene.Create(host.GetDevice(), frame.Materials(), frame.Templates(), so))
         {
             return false;

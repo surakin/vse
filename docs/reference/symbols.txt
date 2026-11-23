@@ -9939,32 +9939,32 @@ scene::SpawnLevel(asset::ResourceManager&,asset::ResourceId,const storage::Compo
 scene::DestroyLevel(SpawnedLevel*,ecs::World&,storage::KeyIndex&)	function	scene	scene-destroylevel-spawnedlevel-star-ecs-world-amp-storage-keyindex-amp	scene.md	engine/scene/level_spawner.h:64
 scene::SceneLink	struct	scene	scene-scenelink	scene.md	engine/scene/render_sync.h:21
 scene::SceneLink::scene	variable	scene	scene-scenelink-scene	scene.md	engine/scene/render_sync.h:24
-scene::SceneLink::origin	variable	scene	scene-scenelink-origin	scene.md	engine/scene/render_sync.h:29
-scene::SceneLink::rebase_step	variable	scene	scene-scenelink-rebase-step	scene.md	engine/scene/render_sync.h:32
-scene::SceneLink::generation	variable	scene	scene-scenelink-generation	scene.md	engine/scene/render_sync.h:34
-scene::UpdateRenderOrigin(SceneLink&,const Vec3d&)	function	scene	scene-updaterenderorigin-scenelink-amp-const-vec3d-amp	scene.md	engine/scene/render_sync.h:46
-scene::RelativeMatrix(const ecs::WorldTransform&,const Vec3d&)	function	scene	scene-relativematrix-const-ecs-worldtransform-amp-const-vec3d-amp	scene.md	engine/scene/render_sync.h:52
-scene::SceneSyncReport	struct	scene	scene-scenesyncreport	scene.md	engine/scene/render_sync.h:57
-scene::SceneSyncReport::frames	variable	scene	scene-scenesyncreport-frames	scene.md	engine/scene/render_sync.h:60
-scene::SceneSyncReport::no_scene	variable	scene	scene-scenesyncreport-no-scene	scene.md	engine/scene/render_sync.h:62
-scene::SceneSyncReport::objects_added	variable	scene	scene-scenesyncreport-objects-added	scene.md	engine/scene/render_sync.h:64
-scene::SceneSyncReport::objects_removed	variable	scene	scene-scenesyncreport-objects-removed	scene.md	engine/scene/render_sync.h:66
-scene::SceneSyncReport::lights_added	variable	scene	scene-scenesyncreport-lights-added	scene.md	engine/scene/render_sync.h:68
-scene::SceneSyncReport::lights_removed	variable	scene	scene-scenesyncreport-lights-removed	scene.md	engine/scene/render_sync.h:70
-scene::SceneSyncReport::readded	variable	scene	scene-scenesyncreport-readded	scene.md	engine/scene/render_sync.h:72
-scene::SceneSyncReport::transforms_set	variable	scene	scene-scenesyncreport-transforms-set	scene.md	engine/scene/render_sync.h:74
-scene::SceneSyncReport::joints_set	variable	scene	scene-scenesyncreport-joints-set	scene.md	engine/scene/render_sync.h:76
-scene::SceneSyncReport::morph_set	variable	scene	scene-scenesyncreport-morph-set	scene.md	engine/scene/render_sync.h:78
-scene::SceneSyncReport::flags_set	variable	scene	scene-scenesyncreport-flags-set	scene.md	engine/scene/render_sync.h:80
-scene::SceneSyncReport::lights_set	variable	scene	scene-scenesyncreport-lights-set	scene.md	engine/scene/render_sync.h:82
-scene::SceneSyncReport::refused_full	variable	scene	scene-scenesyncreport-refused-full	scene.md	engine/scene/render_sync.h:84
-scene::SceneSyncReport::terrains_added	variable	scene	scene-scenesyncreport-terrains-added	scene.md	engine/scene/render_sync.h:86
-scene::SceneSyncReport::terrains_removed	variable	scene	scene-scenesyncreport-terrains-removed	scene.md	engine/scene/render_sync.h:88
-scene::SceneSyncReport::terrains_set	variable	scene	scene-scenesyncreport-terrains-set	scene.md	engine/scene/render_sync.h:90
-scene::SceneSyncReport::invalid	variable	scene	scene-scenesyncreport-invalid	scene.md	engine/scene/render_sync.h:92
-scene::MakeRenderSyncSystem(const char*)	function	scene	scene-makerendersyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:119
-scene::MakeCameraSystem(const char*)	function	scene	scene-makecamerasystem-const-char-star	scene.md	engine/scene/render_sync.h:130
-scene::MakeTerrainSyncSystem(const char*)	function	scene	scene-maketerrainsyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:142
+scene::SceneLink::origin	variable	scene	scene-scenelink-origin	scene.md	engine/scene/render_sync.h:30
+scene::SceneLink::rebase_step	variable	scene	scene-scenelink-rebase-step	scene.md	engine/scene/render_sync.h:33
+scene::SceneLink::generation	variable	scene	scene-scenelink-generation	scene.md	engine/scene/render_sync.h:35
+scene::UpdateRenderOrigin(SceneLink&,const Vec3d&)	function	scene	scene-updaterenderorigin-scenelink-amp-const-vec3d-amp	scene.md	engine/scene/render_sync.h:47
+scene::RelativeMatrix(const ecs::WorldTransform&,const Vec3d&)	function	scene	scene-relativematrix-const-ecs-worldtransform-amp-const-vec3d-amp	scene.md	engine/scene/render_sync.h:53
+scene::SceneSyncReport	struct	scene	scene-scenesyncreport	scene.md	engine/scene/render_sync.h:58
+scene::SceneSyncReport::frames	variable	scene	scene-scenesyncreport-frames	scene.md	engine/scene/render_sync.h:61
+scene::SceneSyncReport::no_scene	variable	scene	scene-scenesyncreport-no-scene	scene.md	engine/scene/render_sync.h:63
+scene::SceneSyncReport::objects_added	variable	scene	scene-scenesyncreport-objects-added	scene.md	engine/scene/render_sync.h:65
+scene::SceneSyncReport::objects_removed	variable	scene	scene-scenesyncreport-objects-removed	scene.md	engine/scene/render_sync.h:67
+scene::SceneSyncReport::lights_added	variable	scene	scene-scenesyncreport-lights-added	scene.md	engine/scene/render_sync.h:69
+scene::SceneSyncReport::lights_removed	variable	scene	scene-scenesyncreport-lights-removed	scene.md	engine/scene/render_sync.h:71
+scene::SceneSyncReport::readded	variable	scene	scene-scenesyncreport-readded	scene.md	engine/scene/render_sync.h:73
+scene::SceneSyncReport::transforms_set	variable	scene	scene-scenesyncreport-transforms-set	scene.md	engine/scene/render_sync.h:75
+scene::SceneSyncReport::joints_set	variable	scene	scene-scenesyncreport-joints-set	scene.md	engine/scene/render_sync.h:77
+scene::SceneSyncReport::morph_set	variable	scene	scene-scenesyncreport-morph-set	scene.md	engine/scene/render_sync.h:79
+scene::SceneSyncReport::flags_set	variable	scene	scene-scenesyncreport-flags-set	scene.md	engine/scene/render_sync.h:81
+scene::SceneSyncReport::lights_set	variable	scene	scene-scenesyncreport-lights-set	scene.md	engine/scene/render_sync.h:83
+scene::SceneSyncReport::refused_full	variable	scene	scene-scenesyncreport-refused-full	scene.md	engine/scene/render_sync.h:85
+scene::SceneSyncReport::terrains_added	variable	scene	scene-scenesyncreport-terrains-added	scene.md	engine/scene/render_sync.h:87
+scene::SceneSyncReport::terrains_removed	variable	scene	scene-scenesyncreport-terrains-removed	scene.md	engine/scene/render_sync.h:89
+scene::SceneSyncReport::terrains_set	variable	scene	scene-scenesyncreport-terrains-set	scene.md	engine/scene/render_sync.h:91
+scene::SceneSyncReport::invalid	variable	scene	scene-scenesyncreport-invalid	scene.md	engine/scene/render_sync.h:93
+scene::MakeRenderSyncSystem(const char*)	function	scene	scene-makerendersyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:120
+scene::MakeCameraSystem(const char*)	function	scene	scene-makecamerasystem-const-char-star	scene.md	engine/scene/render_sync.h:131
+scene::MakeTerrainSyncSystem(const char*)	function	scene	scene-maketerrainsyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:143
 scene::SceneComponentId	enum	scene	scene-scenecomponentid	scene.md	engine/scene/scene_components.h:14
 scene::kLightSourceId	enumerator	scene	scene-klightsourceid	scene.md	engine/scene/scene_components.h:16
 scene::kCameraId	enumerator	scene	scene-kcameraid	scene.md	engine/scene/scene_components.h:17

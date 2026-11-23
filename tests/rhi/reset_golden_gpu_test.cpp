@@ -90,6 +90,46 @@ TEST_CASE("The demo picture is identical before and after a device reset and sti
     }
 }
 
+TEST_CASE("The demo picture 100,000 km from the world origin equals the picture at the origin",
+          "[rhi][gpu][golden][large-world]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        gpu_test::Image images[2];
+        bool made = true;
+        for (int far = 0; far < 2 && made; ++far)
+        {
+            reset_rig::Rig rig;
+            rig.target.width = kResetShotW;
+            rig.target.height = kResetShotH;
+            // Objects, lights and the camera all stand 1e8 + 0.25 m away on every axis; the render origin sits there
+            // too, so only the double precision positions differ from the near scene.
+            const f64 offset = far != 0 ? 1.0e8 + 0.25 : 0.0;
+            rig.origin_offset = Vec3d(offset, offset, offset);
+            made = rig.Create(backend, 540, 300, false, nullptr, ENGINE_RENDERER_DEMO_ASSET_DIR, /*validation=*/true);
+            if (made)
+            {
+                REQUIRE(rig.Render() == FrameStatus::Ok);
+                REQUIRE(rig.Read(&images[far]));
+            }
+            rig.TearDown();
+        }
+        if (!made)
+        {
+            SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
+        }
+        gpu_test::CompareOptions co;
+        co.tolerance = 2;
+        co.edge_tolerance = 32;
+        co.max_edge_miss = 0.05;
+        co.max_interior_miss = 0.0005;
+        const gpu_test::CompareResult result = gpu_test::Compare(images[0], images[1], co, "large_world_far");
+        INFO(result.message.CStr());
+        CHECK(result.same);
+    }
+}
+
 TEST_CASE("Resets in a loop on a real device leave the counts, memory and descriptors where they were",
           "[rhi][gpu][reset]")
 {

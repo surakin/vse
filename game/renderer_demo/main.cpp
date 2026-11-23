@@ -67,6 +67,7 @@ struct Options
     bool validation = false;
     long objects = 540;
     long lights = 300;
+    f64 origin_offset = 0.0;  // --origin-offset: the scene stands this many world units from the origin on every axis
     int gbuffer_layer = -1;
     long inject_device_loss = 0;
     long inject_oom = 0;
@@ -233,6 +234,7 @@ SceneOptions SceneOptionsFor(const Options& options)
     SceneOptions so;
     so.objects = static_cast<u32>(options.objects);
     so.lights = static_cast<u32>(options.lights);
+    so.origin_offset = Vec3d(options.origin_offset, options.origin_offset, options.origin_offset);
     so.asset_dir = RENDERER_DEMO_ASSET_DIR;
     return so;
 }
@@ -1004,12 +1006,13 @@ const char kUsageFormat[] =
     "usage: %s [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
     "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos|emissive]\n"
     "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]\n"
-    "       [--script WORDS] [--text STRING]\n"
+    "       [--script WORDS] [--text STRING] [--origin-offset METRES]\n"
     "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
     "  --frames N        stop after N frames (also RENDERER_DEMO_FRAMES=N)\n"
     "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 640x360)\n"
     "  --objects N       total objects including 49 ground tiles, 64 to 20000 (default 540)\n"
     "  --lights N        point lights, 0 to 16000 (default 300)\n"
+    "  --origin-offset M stand the scene M metres from the world origin on every axis, 0 to 1e12 (default 0)\n"
     "  --gbuffer L       show a G-buffer layer instead of the lit picture\n"
     "  --no-vsync        present without waiting for the display\n"
     "  --validation      enable the validation layer with synchronization validation\n"
@@ -1062,6 +1065,7 @@ int EngineMain(int argc, char** argv)
                                                         {"validation", false},
                                                         {"objects", true},
                                                         {"lights", true},
+                                                        {"origin-offset", true},
                                                         {"gbuffer", true},
                                                         {"inject-device-loss", true},
                                                         {"inject-oom", true},
@@ -1076,7 +1080,7 @@ int EngineMain(int argc, char** argv)
                                                         vse::debug::kCrashTestOption};
     const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), demo_settings.RestCount(),
                                               demo_settings.RestArgs(),
-                                              vse::Span<const os::CommandLineOption>(kCliOptions, 19));
+                                              vse::Span<const os::CommandLineOption>(kCliOptions, 20));
     const char* program = line.ProgramName().Data();
     Options options;
     const char* frames_env = os::GetEnvironment("RENDERER_DEMO_FRAMES");
@@ -1113,6 +1117,16 @@ int EngineMain(int argc, char** argv)
     if (line.TryGetOption("lights", value) && !ParseCount(value.Data(), &options.lights, 16000))
     {
         return Usage(program, kExitUsage);
+    }
+    if (line.TryGetOption("origin-offset", value))
+    {
+        const char* text = value.Data();
+        const ParseDoubleResult parsed = ParseDoubleExact(text, text + CStrLength(text));
+        if (!parsed.ok || parsed.end != text + CStrLength(text) || !(parsed.value >= 0.0) || parsed.value > 1.0e12)
+        {
+            return Usage(program, kExitUsage);
+        }
+        options.origin_offset = parsed.value;
     }
     if (line.TryGetOption("gbuffer", value))
     {

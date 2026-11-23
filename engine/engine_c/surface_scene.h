@@ -197,6 +197,7 @@ private:
     renderer::MaterialId default_skinned_material_;  // for meshes with a skin stream (Day 363)
     renderer::Camera last_camera_;                   // the camera of the last frame, for PixelRay and Project
     Vec3d last_origin_ = Vec3d(0, 0, 0);             // the render origin `last_camera_` is relative to
+    Vec3d last_camera_world_ = Vec3d(0, 0, 0);       // the camera's exact world position (PixelRay's origin)
     scene::SceneLink link_;                          // the render origin (the scene pointer stays null)
     u32 last_width_ = 0;
     u32 last_height_ = 0;

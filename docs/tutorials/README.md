@@ -17,3 +17,4 @@ Goal-oriented walkthroughs. Every tutorial is written; each one has a program yo
 - [Sound in Your Window](audio-in-your-window.md)
 - [Your First Script](your-first-script.md)
 - [Using Every Core with Scripts](using-every-core.md)
+- [Big Worlds: What Is `f64`, What Is `f32`, and Why](big-worlds.md)

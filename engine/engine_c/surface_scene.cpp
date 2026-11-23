@@ -756,9 +756,11 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     // The render origin follows the camera (re-based in steps, so a camera near the world origin keeps it at zero and a
     // far one draws with the precision of one near the origin).
     link_.rebase_step = kRenderRebaseStep;
-    Vec3d camera_world;
+    Vec3d camera_world(0.0, 1.5, 5.0);  // the default camera's place unless the host's camera works
+    bool have_camera_world = false;
     if (camera_entity != 0 && CameraWorldPosition(world.world, camera_entity, &camera_world))
     {
+        have_camera_world = true;
         scene::UpdateRenderOrigin(link_, camera_world);
     }
     const f32 aspect = height != 0 ? static_cast<f32>(width) / static_cast<f32>(height) : 1.0f;
@@ -1016,6 +1018,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     }
     SyncLabels(world, camera, width, height, &report);
     last_camera_ = camera;
+    last_camera_world_ = (have_camera_world && report.camera_status == ENGINE_OK) ? camera_world : Vec3d(0.0, 1.5, 5.0);
     last_origin_ = link_.origin;
     last_width_ = width;
     last_height_ = height;
@@ -1039,9 +1042,9 @@ bool SurfaceScene::PixelRay(f32 x, f32 y, f64* origin, f32* direction) const
     const Vec3 near_point(near_h.x / near_h.w, near_h.y / near_h.w, near_h.z / near_h.w);
     const Vec3 far_point(far_h.x / far_h.w, far_h.y / far_h.w, far_h.z / far_h.w);
     const Vec3 toward = (far_point - near_point).Normalized();
-    origin[0] = last_origin_.x + static_cast<f64>(last_camera_.position.x);
-    origin[1] = last_origin_.y + static_cast<f64>(last_camera_.position.y);
-    origin[2] = last_origin_.z + static_cast<f64>(last_camera_.position.z);
+    origin[0] = last_camera_world_.x;
+    origin[1] = last_camera_world_.y;
+    origin[2] = last_camera_world_.z;
     direction[0] = toward.x;
     direction[1] = toward.y;
     direction[2] = toward.z;

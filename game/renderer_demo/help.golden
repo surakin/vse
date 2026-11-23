@@ -1,12 +1,13 @@
 usage: PROGRAM [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]
        [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos|emissive]
        [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]
-       [--script WORDS] [--text STRING]
+       [--script WORDS] [--text STRING] [--origin-offset METRES]
   --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)
   --frames N        stop after N frames (also RENDERER_DEMO_FRAMES=N)
   --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 640x360)
   --objects N       total objects including 49 ground tiles, 64 to 20000 (default 540)
   --lights N        point lights, 0 to 16000 (default 300)
+  --origin-offset M stand the scene M metres from the world origin on every axis, 0 to 1e12 (default 0)
   --gbuffer L       show a G-buffer layer instead of the lit picture
   --no-vsync        present without waiting for the display
   --validation      enable the validation layer with synchronization validation

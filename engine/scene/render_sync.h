@@ -25,7 +25,8 @@ struct SceneLink
     /// The render origin: the world position that is (0, 0, 0) in the render scene. Everything the sync writes to the
     /// scene (objects, lights, terrains) and the camera system's camera is relative to it, narrowed to `f32`, so a
     /// world far from the world origin renders with the precision of a world near it. Zero until
-    /// [[scene::UpdateRenderOrigin]] moves it.
+    /// [[scene::UpdateRenderOrigin]] moves it; change it only through that function (the sync notices a re-base by
+    /// `generation`).
     Vec3d origin = Vec3d(0, 0, 0);
     /// How far the camera may drift from `origin` (on any axis) before [[scene::UpdateRenderOrigin]] re-bases it, and
     /// the grid the new origin snaps to, in world units; 0 keeps the origin at zero (the default).

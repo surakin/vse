@@ -30,6 +30,7 @@
 #include "math/quaternion.h"
 #include "mem/heap_allocator.h"
 #include "os/os.h"
+#include "physics/check.h"
 #include "physics/components.h"
 #include "physics/joint_sync.h"
 #include "physics/query.h"
@@ -517,8 +518,11 @@ void AttachWorld(WorldObject& object, ResourceHost* resources)
         {
             continue;
         }
-        // Placed by single-precision matrices until the C API's own double-precision day.
-        const ecs::WorldTransform placed = ecs::WorldTransform::FromMatrix(base->matrix * joint * local->ToMatrix());
+        // The joint and the local transform are in the skeleton's own space (single precision, small numbers); the
+        // skeleton's place is exact.
+        const Mat4 own = joint * local->ToMatrix();
+        const ecs::WorldTransform placed = ecs::WorldTransform::FromPlacement(
+            base->ToPlacement().Compose(Placement::From(Vec3d(own.col[3].x, own.col[3].y, own.col[3].z), own)));
         object.world.Set<ecs::WorldTransform>(pending[i].entity, placed);
     }
 }
@@ -794,10 +798,10 @@ engine_status CheckInStruct(const void* value, usize first_version, const char* 
     return ENGINE_OK;
 }
 
-// A double position: finite and within the world's limit (1e12 metres, as the physics module's).
+// A double position: finite and within the world's limit (`physics::kMaxWorldCoordinate`).
 bool WorldPositionValid(const double* v)
 {
-    constexpr double kLimit = 1.0e12;
+    constexpr double kLimit = physics::kMaxWorldCoordinate;
     for (int i = 0; i < 3; ++i)
     {
         if (!(v[i] - v[i] == 0.0) || v[i] > kLimit || v[i] < -kLimit)
@@ -3434,7 +3438,7 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
 
 engine_status TerrainHeightFn(engine_handle world, double x, double z, double* out_height)
 {
-    constexpr double kLimit = 1.0e12;  // the world's limit, as the physics module's
+    constexpr double kLimit = physics::kMaxWorldCoordinate;
     if (out_height == nullptr || !(x - x == 0.0) || !(z - z == 0.0) || x > kLimit || x < -kLimit || z > kLimit ||
         z < -kLimit)
     {

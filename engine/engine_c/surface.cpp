@@ -3,6 +3,7 @@
 #include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
 #include "engine_c/handles.h"
+#include "physics/check.h"
 #include "engine_c/resources.h"
 #include "engine_c/runtime.h"
 #include "engine_c/surface_scene.h"
@@ -1918,7 +1919,8 @@ engine_status SurfaceProjectFn(engine_handle surface, const double* point, float
     }
     for (int i = 0; i < 3; ++i)
     {
-        if (!(point[i] - point[i] == 0.0) || point[i] > 1.0e12 || point[i] < -1.0e12)
+        if (!(point[i] - point[i] == 0.0) || point[i] > physics::kMaxWorldCoordinate ||
+            point[i] < -physics::kMaxWorldCoordinate)
         {
             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the point is not finite or is beyond 1e12 metres");
         }

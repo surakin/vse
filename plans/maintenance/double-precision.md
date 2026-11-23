@@ -23,7 +23,7 @@ doubles.
 - Every day's boxes are checked.
 - A scene, a simulation, a saved world and a C host 100,000 km from the origin behave like the same ones at the origin (positions equal after subtracting the offset, pictures equal within tolerance).
 - Physics and script state hashes are equal at 1 to 32 threads on Linux; the Windows and macOS checks are listed for the user.
-- The ABI grew only by appended fields and new entries; `engine_h_coverage` and the snapshot pass; `docgen lint` is at zero; `ctest -L docs` passes.
+- The C API's positions are `double` in place (the only client is rebuilt with the header); `engine_h_coverage` and the snapshot pass; `docgen lint` is at zero; `ctest -L docs` passes.
 
 ## What stays `f32`
 

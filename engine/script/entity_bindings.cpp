@@ -282,7 +282,10 @@ void PutOverlay(PartitionContext* context, ecs::Entity e, u32 field, Value value
 
 bool Finite3(Vec3d v)
 {
-    return v.x > -1.0e30 && v.x < 1.0e30 && v.y > -1.0e30 && v.y < 1.0e30 && v.z > -1.0e30 && v.z < 1.0e30;
+    // The world's limit: the same as the physics module's `kMaxWorldCoordinate`, so a position a script sets is one a
+    // body can follow.
+    constexpr f64 kLimit = 1.0e12;
+    return v.x >= -kLimit && v.x <= kLimit && v.y >= -kLimit && v.y <= kLimit && v.z >= -kLimit && v.z <= kLimit;
 }
 
 bool Finite3(Vec3 v)

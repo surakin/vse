@@ -47,6 +47,10 @@ struct SceneOptions
     // frame with `MaterialSystem::SetTexture(ScreenMaterial(), "albedo_tex", handle)`), facing +z, `screen_width` by
     // `screen_height` world units, its middle at `screen_center`.
     bool screen = false;
+    // Where the scene stands, in world units (double precision): every object, light and the camera is placed this far
+    // from the world origin and the render origin sits there too, so the picture equals the one at zero offset (up to
+    // rounding). A scene far from the origin is the test of the large-world path.
+    Vec3d origin_offset = Vec3d(0, 0, 0);
     Vec3 screen_center = Vec3(0, 2.1f, -3.6f);
     f32 screen_width = 4.8f;
     f32 screen_height = 3.0f;
