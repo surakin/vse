@@ -25,6 +25,7 @@
 #include "containers/span.h"
 #include "containers/vector.h"
 #include "math/vector.h"
+#include "renderer/terrain_tiles.h"
 #include "types.h"
 
 namespace vse::asset
@@ -155,6 +156,13 @@ public:
     /// - Param z: metres along z from the first sample.
     /// - Aborts: the view is empty.
     Vec3 NormalAt(f32 x, f32 z) const;
+
+    /// What the renderer's tile quadtree is built from: the size, the range and the block pyramid, copied.
+    ///
+    /// - Param out: replaced.
+    /// - Aborts: the view is empty.
+    /// - Ownership: copies the pyramid; `*out` is written.
+    void MakeTilesDesc(renderer::TerrainTilesDesc* out) const;
 
     /// Blocks across the pyramid.
     /// - Fails: never.

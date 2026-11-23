@@ -369,6 +369,29 @@ Vec3 HeightMapView::NormalAt(f32 x, f32 z) const
     return Vec3(-dx / length, 1.0f / length, -dz / length);
 }
 
+void HeightMapView::MakeTilesDesc(renderer::TerrainTilesDesc* out) const
+{
+    ENGINE_ASSERT(bytes_, "HeightMapView::MakeTilesDesc: the view is empty");
+    *out = renderer::TerrainTilesDesc();
+    out->samples_x = header_.width;
+    out->samples_z = header_.height;
+    out->cell_size = header_.cell_size;
+    out->range_min = header_.range_min;
+    out->range_max = header_.range_max;
+    out->blocks_x = blocks_x_;
+    out->blocks_z = blocks_z_;
+    out->block_min.Resize(static_cast<usize>(blocks_x_) * blocks_z_);
+    out->block_max.Resize(out->block_min.Size());
+    for (u32 bz = 0; bz < blocks_z_; ++bz)
+    {
+        for (u32 bx = 0; bx < blocks_x_; ++bx)
+        {
+            out->block_min[static_cast<usize>(bz) * blocks_x_ + bx] = BlockMin(bx, bz);
+            out->block_max[static_cast<usize>(bz) * blocks_x_ + bx] = BlockMax(bx, bz);
+        }
+    }
+}
+
 u16 HeightMapView::BlockMin(u32 bx, u32 bz) const
 {
     ENGINE_ASSERT(bytes_ && bx < blocks_x_ && bz < blocks_z_, "HeightMapView::BlockMin: out of range");

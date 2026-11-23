@@ -799,6 +799,12 @@ d = 10.0  attenuation 0.00000
 d = 12.0  attenuation 0.00000
 ```
 
+### Terrain tiles
+
+`renderer::TerrainTiles` is the quadtree a terrain is drawn from. The terrain is cut into tiles of 32 by 32 cells; a node of level `L` covers `2^L` tiles across and is drawn with the same 32 by 32 grid stretched over them, so a higher level is a coarser picture. `Build` takes a `TerrainTilesDesc` (the sample counts, the cell size, the height range and the box of every block of 8 by 8 cells; `asset::HeightMapView::MakeTilesDesc` fills it from a height map) and keeps a box for every node, tight in height, in plain arrays with no pointers.
+
+`Select(camera, frustum, settings, &tiles)` chooses the tiles to draw, everything in the terrain's own space (metres from the first sample, y up; a placed terrain moves the camera and the frustum into it first). A node is split while the camera is nearer to its box than the range of the level below (`first_range * 2^(level - 1)`); a node whose box is outside the frustum, or beyond `max_distance`, is dropped with all that is under it. The chosen tiles cover each visible cell exactly once, neighbouring tiles differ by at most one level while `first_range` is at least three tile widths (`TerrainSelectSettingsValid`), and the list is sorted by level, then row, then column, so the same arguments give the same list on every thread and every run. `TerrainMorphStart` and `TerrainLevelRange` give the distances at which a tile morphs toward the next level. A selection on a 4097 by 4097 map took about 30 microseconds on the reference machine.
+
 ### Surviving a reset
 
 The device can be destroyed and created again while the program runs (a settings change, a lost device; see the RHI guide, "Lifecycle and

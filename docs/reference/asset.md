@@ -5586,6 +5586,22 @@ The unit surface normal at a point: the central differences of the heights one s
 | Parameter `z` | metres along z from the first sample. |
 | Aborts | the view is empty. |
 
+### `MakeTilesDesc(renderer::TerrainTilesDesc*)` {#asset-heightmapview-maketilesdesc-renderer-terraintilesdesc-star-const}
+
+`method asset::HeightMapView::MakeTilesDesc` — defined in `engine/asset/height_map.h`
+
+```cpp
+void MakeTilesDesc(renderer::TerrainTilesDesc* out) const;
+```
+
+What the renderer's tile quadtree is built from: the size, the range and the block pyramid, copied.
+
+| Field | Value |
+|---|---|
+| Parameter `out` | replaced. |
+| Aborts | the view is empty. |
+| Ownership | copies the pyramid; `*out` is written. |
+
 ### `BlocksX()` {#asset-heightmapview-blocksx-const}
 
 `method asset::HeightMapView::BlocksX` — defined in `engine/asset/height_map.h`

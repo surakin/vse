@@ -8,6 +8,7 @@
 #include "lang/limits.h"
 #include "lang/scalar.h"
 #include "height_source.h"
+#include "renderer/terrain_tiles.h"
 #include "support.h"
 
 namespace vse::asset
@@ -205,6 +206,33 @@ TEST_CASE("height map: NormalAt of a ramp and of a flat map", "[asset][height_ma
     CHECK(up.x == 0.0f);
     CHECK(up.y == 1.0f);
     CHECK(up.z == 0.0f);
+}
+
+TEST_CASE("height map: the view makes the description of the tile quadtree", "[asset][height_map]")
+{
+    TypeRegistry types;
+    const Vector<byte> blob = HmBlob(65, 65, HmRandom);
+    HeightMapView view;
+    REQUIRE(view.Open(HmShare(blob), types).Ok());
+    renderer::TerrainTilesDesc desc;
+    view.MakeTilesDesc(&desc);
+    CHECK(desc.samples_x == 65);
+    CHECK(desc.blocks_x == view.BlocksX());
+    CHECK(desc.block_min.Size() == static_cast<usize>(view.BlocksX()) * view.BlocksZ());
+    CHECK(desc.block_max[0] == view.BlockMax(0, 0));
+    renderer::TerrainTiles tiles;
+    REQUIRE(tiles.Build(desc));
+    CHECK(tiles.TilesX() == 2);
+    // the root's top is the largest sample's height
+    u32 hi = 0;
+    for (u32 z = 0; z < 65; ++z)
+    {
+        for (u32 x = 0; x < 65; ++x)
+        {
+            hi = view.Sample(x, z) > hi ? view.Sample(x, z) : hi;
+        }
+    }
+    CHECK(tiles.NodeBounds(tiles.LevelCount() - 1, 0, 0).max.y == view.SampleToHeight(static_cast<u16>(hi)));
 }
 
 TEST_CASE("height map: building is deterministic", "[asset][height_map]")
