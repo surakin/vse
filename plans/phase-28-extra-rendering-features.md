@@ -17,9 +17,13 @@
 
 Terrain streaming of world cells, foliage painting tools, virtual texturing, GPU occlusion culling beyond what feature 2 needs.
 
-## Open questions for the user before the day files are written
+## Decisions (the user, 2026-11-23)
 
-- Which of the four come first, and is the procedural sky enough for the first day of the sky box?
-- Is a height-field collider part of this phase or of a physics follow-up?
-- CPU-driven culling and draws first, or the GPU-driven path from the start?
-- Does the hierarchy of feature 3 live in ECS entities or in its own packed structure?
+- A **height-field collider is required** (`engine/physics`): it is a day of this phase, built on the terrain's height data, deterministic like the rest of physics.
+- The **instance hierarchy has its own packed structure**, not ECS entities; the entities that own an instanced mesh hold a handle to it.
+- **CPU-driven culling and draws first** (the recommendation, accepted in principle); the instance data is shaped so a GPU-driven path can be added later. A GPU path becomes its own day only if a measurement asks for it.
+
+## Open questions
+
+- Sky box: is the procedural sky (gradient from `sky_color`, optional sun disk) enough for its first day, with the cube map on a later day that replaces it and feeds the reflection term? Or the cube map from the start?
+- Which feature comes first?
