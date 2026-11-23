@@ -32,4 +32,5 @@ Sample the minted cube in the sky pass.
 
 ## Post-implementation code review
 
-(To be filled in when the day is done.)
+Combined `/code-review high` over Days 479-484 (one review after Day 484, 2026-11-23): 4 findings, all nits, none fixed. (1) The sky ranges are checked in the C API, the script binding and `SkySettingsValid`: declined for now, the three agree and the day's tests pin the rules; a shared check is the fix if one drifts. (2) The script `sky_mode` is a float compared exactly and borrows `kMaxSpotCone` for the sun size: declined (same limit, pi / 2, on purpose; the C API uses the same number). (3) No cube sky from a host or script: real and deferred, recorded in `KNOWN-ISSUES.md`. (4) Prepare and Record each test the cube: no fault found, a released cube gives black reflection.
+
