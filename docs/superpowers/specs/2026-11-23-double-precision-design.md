@@ -35,15 +35,26 @@ The C API has 24 `float[3]` fields in `engine_c.h` (transform position, collider
 
 ## Spike 1: the type
 
-Candidates: separate types (`Vec3d`, `Aabbd`, `Sphered`, a placement type) beside the existing `f32` ones, or a template `Vec3T<Scalar>` with `Vec3 = Vec3T<f32>`.
+Candidates: separate types (`Vec3d`, `Aabbd`, ... beside the existing `f32` ones), or a template on the scalar with `Vec3 = Vec3T<f32>` and `Vec3d = Vec3T<f64>`.
 Compile time of 3,000 functions using five vector operations on each of two scalar types, at `-O0` (the development build): separate structs 2.56 s, template 2.58 s: no
-difference. **Pick: separate types.** The 3,417 uses outside `engine/` and every `f32` use inside it stay valid and unchanged; an `f64` position is opted into where the rule
-says so; a template adds mixed-scalar overload ambiguity (`Vec3T<f32> + Vec3T<f64>`) that the compiler would have to be told how to resolve, where separate types make each
-mixed operation a visible, named call.
+difference. **Pick: the template (the user's decision, 2026-11-23, over the recommendation of separate types).** One definition of each operation serves both precisions, so a fix
+or a new operation is made once and the two cannot drift apart. The existing code is unaffected: `Vec3` stays the name of the `f32` vector (an alias), and there is no forward
+declaration of `Vec2`, `Vec3`, `Vec4`, `Aabb`, `Sphere`, `Frustum` or `Plane` anywhere (git grep), and one explicit specialisation of a type on them (`script::Codec<Vec3>`), which keeps
+working through the alias.
 
-The new types (Day 2): `Vec3d` (with an implicit constructor from `Vec3`, an explicit `Narrow()` to `Vec3`), `Aabbd`, `Sphered`, a `Frustum` with `f64` planes, and **`Placement`**:
-a rotation-and-scale part as the existing `f32` `Mat4` linear block (its translation column unused) plus a `Vec3d` position, with `RelativeTo(Vec3d origin)` giving the `f32` `Mat4`
-the GPU gets. `LocalTransform` keeps `Quaternion` and `Vec3 scale` and gets a `Vec3d position`.
+The cost of the template, and how the design contains it:
+- **Mixed arithmetic is explicit.** `Vec3T<f32> + Vec3T<f64>` has no implicit meaning in a template: the operators are defined for equal scalars, plus the mixed forms that are
+  exact (`Vec3d` with `Vec3` gives `Vec3d`: the `f32` side widens exactly); the narrowing of a `Vec3d` to `Vec3` is a named call (`Narrow`), never an operator or a conversion.
+- **Argument deduction.** A function template taking `Vec3T<S>` deduces from either; non-template functions keep taking `Vec3` (the `f32` alias) so a caller that passes a `Vec3d` to one
+  is a compile error, which is the point.
+- **Compile-time and error text.** Measured equal above; diagnostics name `Vec3T<float>` where they named `Vec3`, which clang prints through the alias.
+- **Explicit instantiation.** The non-inline members (`Normalized`, `Length`, anything out of line) are explicitly instantiated for `f32` and `f64` in `math/` so no other module instantiates them
+  (one definition, one place to port; the wrapper rule for math functions through `lang/scalar.h` holds for both).
+
+The types (Day 2): `Vec2T`, `Vec3T`, `Vec4T`, `AabbT`, `SphereT`, `PlaneT`, `FrustumT` templated on the scalar, with the aliases `Vec3 = Vec3T<f32>`, `Vec3d = Vec3T<f64>`, `Aabb`, `Aabbd`, `Sphere`,
+`Sphered`, `Frustum`, `Frustumd`, and so on. `Mat4` and `Quaternion` stay `f32` (rotation and scale are `f32` by the rule). **`Placement`** is a plain struct (not a template): a rotation-and-scale part as the existing `f32`
+`Mat4` linear block (its translation column unused) plus a `Vec3d` position, with `RelativeTo(Vec3d origin)` giving the `f32` `Mat4` the GPU gets. `LocalTransform` keeps `Quaternion` and `Vec3 scale` and gets a
+`Vec3d position`.
 
 ## Spike 2: physics
 
@@ -109,5 +120,5 @@ hashes and the script state hashes that contain positions); the GPU formats, the
 
 ## Days
 
-No day is added or removed. The day files carry the picks: Day 2 builds `Vec3d`, `Aabbd`, `Sphered`, `Placement` and the `f64` `Frustum`; Day 3 `LocalTransform` and the storage kinds;
+No day is added or removed. The day files carry the picks: Day 2 builds the scalar templates (`Vec3T` and the rest, aliased as `Vec3`, `Vec3d`, `Aabbd`, `Frustumd`, ...) and `Placement`; Day 3 `LocalTransform` and the storage kinds;
 Day 4 the `f64` scene with the subtraction at the write; Days 6 and 7 option (A) with the measurement that can amend it.
