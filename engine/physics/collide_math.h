@@ -8,6 +8,7 @@
 #include "math/vector.h"
 #include "physics/compound.h"
 #include "physics/hull.h"
+#include "physics/height_field.h"
 #include "physics/triangle_mesh.h"
 #include "physics/shapes.h"
 #include "physics/contact.h"
@@ -301,10 +302,14 @@ bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, 
 // A static mesh against any other shape (Day 394), the mesh being shape A: the contacts of the triangles near B.
 bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other, const Pose& other_pose, f32 margin,
               const HullLibrary* hulls, const MeshLibrary* meshes, ContactManifold* out);
+// A static height field against any other shape, the field being shape A: the contacts of the triangles of the cells
+// near B.
+bool HeightFieldPair(const Shape& field_shape, const Pose& field_pose, const Shape& other, const Pose& other_pose,
+                     f32 margin, const HullLibrary* hulls, const HeightFieldLibrary* fields, ContactManifold* out);
 // Compounds (Day 395): each child, or pair of children, collided on its own and merged; either shape may be a compound.
 bool CompoundPair(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
                   const HullLibrary* hulls, const MeshLibrary* meshes, const CompoundLibrary* compounds,
-                  ContactManifold* out);
+                  ContactManifold* out, const HeightFieldLibrary* fields);
 bool BoxCapsule(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f32 margin, ContactManifold* out);
 
 }  // namespace vse::physics::collide_math

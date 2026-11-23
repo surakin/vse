@@ -14,7 +14,7 @@ namespace
 {
 
 constexpr u32 kMagic = 0x4e534850u;  // "PHSN"
-constexpr u32 kVersion = 1;
+constexpr u32 kVersion = 2;
 constexpr usize kMaxSlots = 1u << 24;
 
 // ---- pools -----------------------------------------------------------------------------------------------------
@@ -418,6 +418,7 @@ void WriteColliderValue(SnapshotOut& out, const Collider& c)
     out.U32(c.shape.hull);
     out.U32(c.shape.mesh);
     out.U32(c.shape.compound);
+    out.U32(c.shape.height_field);
     out.V3(c.offset);
     out.Q(c.rotation);
     out.F32(c.material.friction);
@@ -440,6 +441,7 @@ void ReadColliderValue(SnapshotIn& in, Collider* c)
     c->shape.hull = in.U32();
     c->shape.mesh = in.U32();
     c->shape.compound = in.U32();
+    c->shape.height_field = in.U32();
     c->offset = in.V3();
     c->rotation = in.Q();
     c->material.friction = in.F32();
@@ -642,6 +644,7 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
     // are made again here (with the libraries of this world), exactly as `RecomputeMass` made them the first time.
     next.hulls_ = Move(hulls_);
     next.meshes_ = Move(meshes_);
+    next.height_fields_ = Move(height_fields_);
     next.compounds_ = Move(compounds_);
     bool masses_ok = true;
     for (u32 slot = 0; slot < body_slots; ++slot)
@@ -663,6 +666,7 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
     {
         hulls_ = Move(next.hulls_);
         meshes_ = Move(next.meshes_);
+        height_fields_ = Move(next.height_fields_);
         compounds_ = Move(next.compounds_);
         return SnapshotStatus::Corrupt;
     }

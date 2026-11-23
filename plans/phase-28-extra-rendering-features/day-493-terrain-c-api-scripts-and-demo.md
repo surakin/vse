@@ -7,6 +7,7 @@ Reach every host and show it.
 
 ## Tasks
 
+- [ ] **Moved from Day 491:** the C API names the height-field shape (a constant, creation from a terrain resource, and read-back: `runtime.cpp` reports every kind but sphere and box as a capsule today) and the debug drawer draws the field's surface, not only its bound box.
 - [ ] **Moved from Day 490:** the level reference (a stored terrain component naming the height map and the material, `level_spawner` spawning it, a loader for the height-map asset type), the `terrain.*` settings (`first_range`, `morph_fraction`, `max_distance`, registered with the render settings; `SceneFrame::SetTerrainSelect` already takes them) and the terrain's registration in the spatial module (static bounds, the debug drawer showing tiles, ray queries by the tile bounds until the collider exists).
 - [ ] C API: `engine_world_create_terrain` (a height-map asset id or host-provided 16-bit samples with a size and extents, a material, a transform), `engine_world_destroy_terrain`, the collider flag (create the height-field shape together with the terrain, one call), and `engine_world_terrain_height(world, x, z)` for hosts that place things on the ground; ABI growth rules and the snapshot update.
 - [ ] Scripts: `terrain.height(x, z)` and `terrain.normal(x, z)` (pure reads of the tick-start world), `terrain.raycast(origin, dir, max)` through the physics query service slot; marked `world-read` or `pure`; `docs/reference/script-api.md` regenerated.

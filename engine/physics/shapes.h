@@ -26,6 +26,8 @@ enum class ShapeKind : u8
                    ///< Static bodies only.
     Compound = 5,  ///< Several shapes with local transforms from the world's `CompoundLibrary`: `compound` (its id) and
                    ///< `half_extents` (its bound).
+    HeightField = 6,  ///< A grid of heights from the world's `HeightFieldLibrary`: `height_field` (its id) and
+                      ///< `half_extents` (its bound). Static bodies only.
 };
 
 /// A shape as a tagged value: the kind says which fields count. The shape lives in the space of its collider (its
@@ -48,6 +50,8 @@ struct Shape
     u32 mesh = 0;
     /// For a compound, its id in the world's `CompoundLibrary`, at least 1.
     u32 compound = 0;
+    /// For a height field, its id in the world's `HeightFieldLibrary`, at least 1.
+    u32 height_field = 0;
 
     /// Makes a sphere.
     ///
@@ -86,6 +90,14 @@ struct Shape
     /// - Returns: the shape (not checked: see `Validate`; the library is not consulted here).
     /// - Fails: never.
     static Shape MakeMesh(u32 mesh, const Vec3& extent);
+
+    /// Makes a height field shape (static bodies only).
+    ///
+    /// - Param field: the field's id in the `HeightFieldLibrary` (`HeightFieldLibrary::Add` returned it).
+    /// - Param extent: the field's `HeightField::Extent()`: its bound about the shape's origin.
+    /// - Returns: the shape (not checked: see `Validate`; the library is not consulted here).
+    /// - Fails: never.
+    static Shape MakeHeightField(u32 field, const Vec3& extent);
 
     /// Makes a compound shape.
     ///

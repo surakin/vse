@@ -220,7 +220,7 @@ bool SphereBox(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, f
 
 CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
                       ContactManifold* manifold, const HullLibrary* hulls, const MeshLibrary* meshes,
-                      const CompoundLibrary* compounds)
+                      const CompoundLibrary* compounds, const HeightFieldLibrary* fields)
 {
     if (a.Validate() != Validation::Ok || b.Validate() != Validation::Ok || !IsFinite(margin) || margin < 0.0f)
     {
@@ -228,12 +228,26 @@ CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const 
     }
     if (a.kind == ShapeKind::Compound || b.kind == ShapeKind::Compound)
     {
-        return CompoundPair(a, pose_a, b, pose_b, margin, hulls, meshes, compounds, manifold) ? CollideResult::Contact
-                                                                                              : CollideResult::None;
+        return CompoundPair(a, pose_a, b, pose_b, margin, hulls, meshes, compounds, manifold, fields)
+                   ? CollideResult::Contact
+                   : CollideResult::None;
     }
-    if (a.kind == ShapeKind::Mesh && b.kind == ShapeKind::Mesh)
+    const bool a_static_soup = a.kind == ShapeKind::Mesh || a.kind == ShapeKind::HeightField;
+    const bool b_static_soup = b.kind == ShapeKind::Mesh || b.kind == ShapeKind::HeightField;
+    if (a_static_soup && b_static_soup)
     {
-        return CollideResult::Unsupported;  // meshes are static: two of them never need a contact
+        return CollideResult::Unsupported;  // meshes and fields are static: two of them never need a contact
+    }
+    if (a.kind == ShapeKind::HeightField || b.kind == ShapeKind::HeightField)
+    {
+        const bool field_is_a = a.kind == ShapeKind::HeightField;
+        const bool hit = field_is_a ? HeightFieldPair(a, pose_a, b, pose_b, margin, hulls, fields, manifold)
+                                    : HeightFieldPair(b, pose_b, a, pose_a, margin, hulls, fields, manifold);
+        if (hit && !field_is_a)
+        {
+            manifold->Flip();
+        }
+        return hit ? CollideResult::Contact : CollideResult::None;
     }
     if (a.kind == ShapeKind::Mesh || b.kind == ShapeKind::Mesh)
     {
@@ -256,7 +270,7 @@ CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const 
     const u8 kb = static_cast<u8>(b.kind);
     if (ka > kb)
     {
-        const CollideResult result = Collide(b, pose_b, a, pose_a, margin, manifold, hulls, meshes, compounds);
+        const CollideResult result = Collide(b, pose_b, a, pose_a, margin, manifold, hulls, meshes, compounds, fields);
         if (result == CollideResult::Contact)
         {
             manifold->Flip();

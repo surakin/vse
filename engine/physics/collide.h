@@ -4,6 +4,7 @@
 
 #include "physics/compound.h"
 #include "physics/contact.h"
+#include "physics/height_field.h"
 #include "physics/hull.h"
 #include "physics/shapes.h"
 #include "physics/triangle_mesh.h"
@@ -35,10 +36,13 @@ namespace vse::physics
 /// - Param compounds: the library the compound shapes' ids refer to; may be null when neither shape is a compound (a
 /// compound that is not in it gives `None`). A compound is collided child by child and the contacts merge (their
 /// feature ids carry the child indices).
+/// - Param fields: the library the height field shapes' ids refer to; may be null when neither shape is a height field
+/// (a field that is not in it gives `None`). A field against a field or a mesh is `Unsupported`.
 /// - Ownership: `manifold` is the caller's and the libraries are borrowed; nothing is kept.
 /// - Fails: an invalid shape returns `None`.
 CollideResult Collide(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
                       ContactManifold* manifold, const HullLibrary* hulls = nullptr,
-                      const MeshLibrary* meshes = nullptr, const CompoundLibrary* compounds = nullptr);
+                      const MeshLibrary* meshes = nullptr, const CompoundLibrary* compounds = nullptr,
+                      const HeightFieldLibrary* fields = nullptr);
 
 }  // namespace vse::physics

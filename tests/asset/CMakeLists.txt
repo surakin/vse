@@ -29,6 +29,7 @@ set(ASSET_TEST_SOURCES
   cube_map_test.cpp  # Phase 28 Day 480
   height_map_test.cpp  # Phase 28 Day 486
   terrain_splat_test.cpp  # Phase 28 Day 489
+  terrain_collider_test.cpp  # Phase 28 Day 491
   bc_test.cpp  # Day 324
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/height_source.cpp  # Phase 28 Day 486: the height map minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/texture_source.cpp  # Day 323: the texture minter under test

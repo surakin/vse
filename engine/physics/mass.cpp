@@ -112,6 +112,7 @@ f32 ShapeVolume(const Shape& shape, const HullLibrary* hulls)
         return hull != nullptr ? hull->Volume() : 0.0f;
     }
     case ShapeKind::Mesh:
+    case ShapeKind::HeightField:
     case ShapeKind::Compound: return 0.0f;  // a mesh has no mass; a compound's comes from its children
     }
     return 0.0f;
@@ -124,7 +125,7 @@ MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrar
     {
         return out;
     }
-    if (shape.kind == ShapeKind::Mesh || shape.kind == ShapeKind::Compound)
+    if (shape.kind == ShapeKind::Mesh || shape.kind == ShapeKind::HeightField || shape.kind == ShapeKind::Compound)
     {
         return out;  // see CompoundShape::Mass
     }
@@ -172,6 +173,7 @@ MassProperties MassFromDensity(const Shape& shape, f32 density, const HullLibrar
         break;
     }
     case ShapeKind::Mesh:
+    case ShapeKind::HeightField:
     case ShapeKind::Compound: break;
     case ShapeKind::Hull:
     {

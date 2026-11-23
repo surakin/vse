@@ -342,7 +342,8 @@ void PhysicsWorld::Step()
             pose_b.position = w.bb->position + w.bb->orientation.ToMat3() * w.rb->value.offset;
             pose_b.rotation = w.bb->orientation * w.rb->value.rotation;
             w.touching = Collide(w.ra->value.shape, pose_a, w.rb->value.shape, pose_b, step_config_.contact_margin,
-                                 &w.input.manifold, &hulls_, &meshes_, &compounds_) == CollideResult::Contact;
+                                 &w.input.manifold, &hulls_, &meshes_, &compounds_,
+                                 &height_fields_) == CollideResult::Contact;
         }
     };
     // Collides the queued pairs (in blocks of 32, whatever the thread count), then applies the contacts in order: a

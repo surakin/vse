@@ -24,7 +24,7 @@ Pose ChildPose(const Pose& pose, const CompoundChild& child)
 
 bool CompoundPair(const Shape& a, const Pose& pose_a, const Shape& b, const Pose& pose_b, f32 margin,
                   const HullLibrary* hulls, const MeshLibrary* meshes, const CompoundLibrary* compounds,
-                  ContactManifold* out)
+                  ContactManifold* out, const HeightFieldLibrary* fields)
 {
     const CompoundShape* ca = a.kind == ShapeKind::Compound && compounds != nullptr ? compounds->Find(a.compound)
                                                                                     : nullptr;
@@ -61,7 +61,7 @@ bool CompoundPair(const Shape& a, const Pose& pose_a, const Shape& b, const Pose
                 continue;
             }
             ContactManifold m;
-            if (physics::Collide(shape_a, child_a, shape_b, child_b, margin, &m, hulls, meshes, compounds) !=
+            if (physics::Collide(shape_a, child_a, shape_b, child_b, margin, &m, hulls, meshes, compounds, fields) !=
                 CollideResult::Contact)
             {
                 continue;

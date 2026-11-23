@@ -283,7 +283,7 @@ TEST_CASE("Snapshot: a version, a magic and a truncation are told apart", "[phys
     bad[0] = static_cast<byte>(bad[0] ^ 0x55);
     CHECK(target.Restore(View(bad)) == SnapshotStatus::BadMagic);
     bad = Bytes(a);
-    bad[4] = 2;
+    bad[4] = 99;
     CHECK(target.Restore(View(bad)) == SnapshotStatus::UnknownVersion);
     CHECK(target.Restore(ByteSpan()) == SnapshotStatus::Truncated);
     // Every proper prefix is refused, and the world is untouched each time.

@@ -17,6 +17,7 @@
 #include "physics/slot_pool.h"
 #include "physics/snapshot_status.h"
 #include "physics/solver.h"
+#include "physics/height_field.h"
 #include "physics/triangle_mesh.h"
 #include "types.h"
 
@@ -806,6 +807,21 @@ public:
     /// - Fails: never.
     const MeshLibrary& Meshes() const { return meshes_; }
 
+    /// Returns the height fields that `Shape::MakeHeightField` shapes of this world refer to; add a field here before
+    /// a collider uses it.
+    ///
+    /// - Returns: the library.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    HeightFieldLibrary& HeightFields() { return height_fields_; }
+
+    /// Returns the height field library, read only.
+    ///
+    /// - Returns: the library.
+    /// - Ownership: owned by the world.
+    /// - Fails: never.
+    const HeightFieldLibrary& HeightFields() const { return height_fields_; }
+
     /// Returns the compounds that `Shape::MakeCompound` shapes of this world refer to; add a compound here before a
     /// collider uses it.
     ///
@@ -864,6 +880,14 @@ private:
                    shape.half_extents.y >= mesh->Extent().y * 0.9999f &&
                    shape.half_extents.z >= mesh->Extent().z * 0.9999f;
         }
+        if (shape.kind == ShapeKind::HeightField)
+        {
+            const HeightField* field = height_fields_.Find(shape.height_field);
+            return body_type == BodyType::Static && field != nullptr &&
+                   shape.half_extents.x >= field->Extent().x * 0.9999f &&
+                   shape.half_extents.y >= field->Extent().y * 0.9999f &&
+                   shape.half_extents.z >= field->Extent().z * 0.9999f;
+        }
         if (shape.kind == ShapeKind::Compound)
         {
             const CompoundShape* compound = compounds_.Find(shape.compound);
@@ -889,6 +913,7 @@ private:
     SlotPool<JointRecord> joints_;
     HullLibrary hulls_;
     MeshLibrary meshes_;
+    HeightFieldLibrary height_fields_;
     CompoundLibrary compounds_;
     UniquePtr<BroadPhase> broad_;
     // Every collider's world box, for the queries (query_index.h); made by the first collider, kept current by every

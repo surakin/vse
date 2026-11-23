@@ -230,7 +230,7 @@ void PhysicsWorld::UpdateTriggerEvents(const Vector<ColliderPair>& pairs)
             pose_b.rotation = bb->orientation * rb->value.rotation;
             ContactManifold manifold;
             inside = Collide(ra->value.shape, pose_a, rb->value.shape, pose_b, 0.0f, &manifold, &hulls_, &meshes_,
-                             &compounds_) == CollideResult::Contact;
+                             &compounds_, &height_fields_) == CollideResult::Contact;
         }
         if (inside)
         {

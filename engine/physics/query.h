@@ -53,14 +53,14 @@ struct PhysicsHit
     Vec3 normal = Vec3(0.0f, 1.0f, 0.0f);
     /// How far along the ray or the cast the hit is (0 when the origin or the shape starts inside).
     f32 distance = 0.0f;
-    /// The triangle for a mesh collider, else `kNoTriangle`.
+    /// The triangle for a mesh or height field collider, else `kNoTriangle`.
     u32 triangle = 0xFFFFFFFFu;
 };
 
 /// Casts a ray and returns the closest hit.
 ///
-/// A ray that starts inside a solid collider hits it at distance zero with the normal opposite the ray. A mesh has no
-/// inside. Ties go to the smaller collider key.
+/// A ray that starts inside a solid collider hits it at distance zero with the normal opposite the ray. A mesh or a
+/// height field has no inside (a ray from below the surface hits it from below). Ties go to the smaller collider key.
 ///
 /// - Param world: the world.
 /// - Param origin: where the ray starts.

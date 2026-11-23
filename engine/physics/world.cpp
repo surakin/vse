@@ -421,7 +421,9 @@ BodyStatus PhysicsWorld::SetSettings(BodyId id, const RigidBody& settings)
         return BodyStatus::Invalid;
     }
     const ColliderRecord* held = FindCollider(body->first_collider);
-    if (held != nullptr && held->value.shape.kind == ShapeKind::Mesh && settings.type != BodyType::Static)
+    if (held != nullptr &&
+        (held->value.shape.kind == ShapeKind::Mesh || held->value.shape.kind == ShapeKind::HeightField) &&
+        settings.type != BodyType::Static)
     {
         return BodyStatus::Invalid;  // a mesh collider stays on a static body
     }

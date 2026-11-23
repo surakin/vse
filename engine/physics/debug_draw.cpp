@@ -119,6 +119,7 @@ void Shapes(const PhysicsWorld& world, const DebugDrawOptions& options, Vector<s
         case ShapeKind::Box:
         case ShapeKind::Hull:
         case ShapeKind::Mesh:
+        case ShapeKind::HeightField:
         case ShapeKind::Compound: Box(lines, center, r, shape.half_extents, color); break;
         }
     }

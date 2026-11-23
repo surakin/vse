@@ -29,6 +29,7 @@ struct Libraries
     const HullLibrary* hulls;
     const MeshLibrary* meshes;
     const CompoundLibrary* compounds;
+    const HeightFieldLibrary* fields;
 };
 
 bool Finite(const Vec3& v)
@@ -313,6 +314,21 @@ bool RayLocal(const Shape& shape, const Libraries& libs, const Vec3& o, const Ve
         }
         return hit;
     }
+    case ShapeKind::HeightField:
+    {
+        const HeightField* field = libs.fields != nullptr ? libs.fields->Find(shape.height_field) : nullptr;
+        f32 t = 0.0f;
+        u32 tri = 0;
+        if (field == nullptr || !field->RayCast(o, d, tmax, &t, &tri))
+        {
+            return false;
+        }
+        out->t = t;
+        out->triangle = tri;
+        const Vec3 n = field->Normal(tri);
+        out->normal = n.Dot(d) > 0.0f ? n * -1.0f : n;
+        return true;
+    }
     case ShapeKind::Compound:
     {
         const CompoundShape* compound = libs.compounds != nullptr ? libs.compounds->Find(shape.compound) : nullptr;
@@ -381,7 +397,7 @@ bool Passes(const PhysicsQueryFilter& filter, const ColliderRecord& record, cons
 
 Libraries LibrariesOf(const PhysicsWorld& world)
 {
-    return Libraries{&world.Hulls(), &world.Meshes(), &world.Compounds()};
+    return Libraries{&world.Hulls(), &world.Meshes(), &world.Compounds(), &world.HeightFields()};
 }
 
 // The same pose the query index boxes (query_index.h), so a box a query computes equals the one the index holds.
@@ -602,9 +618,9 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
                const Vec3& direction, f32 distance, const PhysicsQueryFilter& filter, PhysicsHit* hit)
 {
     Vec3 d;
-    if (shape.Validate() != Validation::Ok || shape.kind == ShapeKind::Mesh || shape.kind == ShapeKind::Compound ||
-        !Finite(position) || !Unit(direction, &d) || !IsFinite(distance) || !(distance > 0.0f) ||
-        distance > 2.0f * kMaxCoordinate)
+    if (shape.Validate() != Validation::Ok || shape.kind == ShapeKind::Mesh || shape.kind == ShapeKind::HeightField ||
+        shape.kind == ShapeKind::Compound || !Finite(position) || !Unit(direction, &d) || !IsFinite(distance) ||
+        !(distance > 0.0f) || distance > 2.0f * kMaxCoordinate)
     {
         return false;
     }
@@ -639,7 +655,7 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3& positi
                 pose.position = position + d * (distance * t);
                 pose.rotation = rotation;
                 return Collide(shape, pose, record.value.shape, target, 0.0f, manifold, libs.hulls, libs.meshes,
-                               libs.compounds) == CollideResult::Contact;
+                               libs.compounds, libs.fields) == CollideResult::Contact;
             };
             ContactManifold manifold;
             f32 toi = -1.0f;
@@ -724,7 +740,7 @@ usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3& positio
             }
             ContactManifold manifold;
             if (Collide(shape, pose, record.value.shape, target, 0.0f, &manifold, libs.hulls, libs.meshes,
-                        libs.compounds) == CollideResult::Contact)
+                        libs.compounds, libs.fields) == CollideResult::Contact)
             {
                 out->Push(id);
             }
@@ -761,7 +777,7 @@ bool ClosestPoint(const PhysicsWorld& world, const Vec3& point, f32 max_distance
             const Pose target = PoseOf(body, record.value);
             ContactManifold manifold;
             if (Collide(probe, probe_pose, record.value.shape, target, max_distance, &manifold, libs.hulls, libs.meshes,
-                        libs.compounds) != CollideResult::Contact ||
+                        libs.compounds, libs.fields) != CollideResult::Contact ||
                 manifold.count == 0)
             {
                 return;

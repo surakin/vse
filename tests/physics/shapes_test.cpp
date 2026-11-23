@@ -40,6 +40,7 @@ Vec3 SurfacePoint(const Shape& shape, f32 u, f32 v)
     case ShapeKind::Box:
     case ShapeKind::Hull:
     case ShapeKind::Mesh:
+    case ShapeKind::HeightField:
     case ShapeKind::Compound: break;
     }
     // A point of the box's boundary: the direction scaled to the box's faces.

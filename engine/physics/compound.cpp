@@ -19,7 +19,8 @@ CompoundShapeConstPtr CompoundShape::Create(Span<const CompoundChild> children, 
     for (usize i = 0; i < children.Size(); ++i)
     {
         const CompoundChild& c = children[i];
-        if (c.shape.kind == ShapeKind::Mesh || c.shape.kind == ShapeKind::Compound ||
+        if (c.shape.kind == ShapeKind::Mesh || c.shape.kind == ShapeKind::HeightField ||
+            c.shape.kind == ShapeKind::Compound ||
             (c.shape.kind == ShapeKind::Hull && (hulls == nullptr || hulls->Find(c.shape.hull) == nullptr)))
         {
             r = Validation::OutOfRange;

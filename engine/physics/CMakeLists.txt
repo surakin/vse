@@ -19,6 +19,7 @@ set(PHYSICS_SOURCES
   hull.cpp  # Day 393
   collide_hull.cpp  # Day 393
   triangle_mesh.cpp  # Day 394
+  height_field.cpp  # Phase 28 Day 491
   compound.cpp  # Day 395
   collide_compound.cpp  # Day 395
   solver.cpp  # Day 396

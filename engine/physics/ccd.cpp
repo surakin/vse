@@ -100,7 +100,7 @@ void PhysicsWorld::SweepContinuous()
                 pose.rotation = q * mine->value.rotation;
                 ContactManifold manifold;
                 return Collide(mine->value.shape, pose, other->value.shape, pose_target, margin, &manifold, &hulls_,
-                               &meshes_, &compounds_) == CollideResult::Contact;
+                               &meshes_, &compounds_, &height_fields_) == CollideResult::Contact;
             };
             if (overlaps(0.0f, step_config_.contact_margin))
             {

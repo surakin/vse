@@ -69,6 +69,7 @@ Core MakeCore(const Shape& shape, const Pose& pose, const HullLibrary* hulls)
         break;
     case ShapeKind::Compound:  // never reached: composites go through their own pair functions
     case ShapeKind::Mesh:
+    case ShapeKind::HeightField:
     case ShapeKind::Hull:
         c.kind = CoreKind::Hull;
         c.hull = hulls != nullptr ? hulls->Share(shape.hull) : ConvexHullConstPtr();
@@ -916,12 +917,54 @@ bool ConvexPair(const Shape& a, const Pose& pa, const Shape& b, const Pose& pb, 
     return CoresContact(ca, cb, margin, out);
 }
 
-bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other, const Pose& other_pose, f32 margin,
-              const HullLibrary* hulls, const MeshLibrary* meshes, ContactManifold* out)
+namespace
 {
-    const TriangleMesh* mesh = meshes != nullptr ? meshes->Find(mesh_shape.mesh) : nullptr;
+
+// How `TrianglesPair` reads the triangles of a mesh and of a height field: static functions over the shared object,
+// which is a parameter (a member would be a pointer into another class's storage).
+struct MeshTriangles
+{
+    static u32 Query(const TriangleMesh& mesh, const Aabb& box, Vector<u32>* out) { return mesh.QueryBox(box, out); }
+    static void Corners(const TriangleMesh& mesh, u32 t, Vec3* a, Vec3* b, Vec3* c)
+    {
+        *a = mesh.Vertex(mesh.Index(t, 0));
+        *b = mesh.Vertex(mesh.Index(t, 1));
+        *c = mesh.Vertex(mesh.Index(t, 2));
+    }
+    static Vec3 Normal(const TriangleMesh& mesh, u32 t) { return mesh.Normal(t); }
+    // Whether the triangle across edge `e` of `t` is (nearly) coplanar with it.
+    static bool FlatAcross(const TriangleMesh& mesh, u32 t, u32 e)
+    {
+        const u32 nb = mesh.Neighbor(t, e);
+        return nb != kNoTriangle && mesh.Normal(nb).Dot(mesh.Normal(t)) > 0.99f;
+    }
+};
+
+struct FieldTriangles
+{
+    // At most this many triangles are asked for: the pair tests 256 of them, so a huge shape over a huge map does not
+    // list the whole map.
+    static constexpr u32 kMaxListed = 1024;
+    static u32 Query(const HeightField& field, const Aabb& box, Vector<u32>* out)
+    {
+        return field.QueryBox(box, out, kMaxListed);
+    }
+    static void Corners(const HeightField& field, u32 t, Vec3* a, Vec3* b, Vec3* c) { field.Triangle(t, a, b, c); }
+    static Vec3 Normal(const HeightField& field, u32 t) { return field.Normal(t); }
+    static bool FlatAcross(const HeightField& field, u32 t, u32 e)
+    {
+        const u32 nb = field.Neighbor(t, e);
+        return nb != kNoFieldTriangle && field.Normal(nb).Dot(field.Normal(t)) > 0.99f;
+    }
+};
+
+// A static triangle soup (placed by `mesh_pose`) against one other shape.
+template <typename Triangles, typename Object>
+bool TrianglesPair(const Object& source, const Pose& mesh_pose, const Shape& other, const Pose& other_pose, f32 margin,
+                   const HullLibrary* hulls, ContactManifold* out)
+{
     const Core cb = MakeCore(other, other_pose, hulls);
-    if (mesh == nullptr || (cb.kind == CoreKind::Hull && !cb.hull))
+    if (cb.kind == CoreKind::Hull && !cb.hull)
     {
         return false;
     }
@@ -935,7 +978,7 @@ bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other
                           Abs(rot.col[1].x) * half.x + Abs(rot.col[1].y) * half.y + Abs(rot.col[1].z) * half.z,
                           Abs(rot.col[2].x) * half.x + Abs(rot.col[2].y) * half.y + Abs(rot.col[2].z) * half.z);
     Vector<u32> triangles;
-    mesh->QueryBox(Aabb::FromMinMax(local_centre - local_half, local_centre + local_half), &triangles);
+    Triangles::Query(source, Aabb::FromMinMax(local_centre - local_half, local_centre + local_half), &triangles);
 
     constexpr u32 kMaxFound = 64;
     constexpr u32 kMaxTriangles = 256;
@@ -945,10 +988,14 @@ bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other
     for (u32 k = 0; k < tested && found_count < kMaxFound; ++k)
     {
         const u32 t = triangles[k];
-        const Vec3 wa = mesh_pose.position + rot * mesh->Vertex(mesh->Index(t, 0));
-        const Vec3 wb = mesh_pose.position + rot * mesh->Vertex(mesh->Index(t, 1));
-        const Vec3 wc = mesh_pose.position + rot * mesh->Vertex(mesh->Index(t, 2));
-        const Vec3 face = rot * mesh->Normal(t);
+        Vec3 la;
+        Vec3 lb;
+        Vec3 lc;
+        Triangles::Corners(source, t, &la, &lb, &lc);
+        const Vec3 wa = mesh_pose.position + rot * la;
+        const Vec3 wb = mesh_pose.position + rot * lb;
+        const Vec3 wc = mesh_pose.position + rot * lc;
+        const Vec3 face = rot * Triangles::Normal(source, t);
         const Core tc = TriangleCore(wa, wb, wc, face);
         ContactManifold tm;
         if (!CoresContact(tc, cb, margin, &tm))
@@ -1009,8 +1056,7 @@ bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other
                 {
                     if (w[(e + 2) % 3] < 1e-3f)
                     {
-                        const u32 nb = mesh->Neighbor(t, e);
-                        flat = flat || (nb != kNoTriangle && mesh->Normal(nb).Dot(mesh->Normal(t)) > 0.99f);
+                        flat = flat || Triangles::FlatAcross(source, t, e);
                     }
                 }
             }
@@ -1040,6 +1086,22 @@ bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other
         }
     }
     return MergeContacts(found.Data(), found_count, out);
+}
+
+}  // namespace
+
+bool MeshPair(const Shape& mesh_shape, const Pose& mesh_pose, const Shape& other, const Pose& other_pose, f32 margin,
+              const HullLibrary* hulls, const MeshLibrary* meshes, ContactManifold* out)
+{
+    const TriangleMesh* mesh = meshes != nullptr ? meshes->Find(mesh_shape.mesh) : nullptr;
+    return mesh != nullptr && TrianglesPair<MeshTriangles>(*mesh, mesh_pose, other, other_pose, margin, hulls, out);
+}
+
+bool HeightFieldPair(const Shape& field_shape, const Pose& field_pose, const Shape& other, const Pose& other_pose,
+                     f32 margin, const HullLibrary* hulls, const HeightFieldLibrary* fields, ContactManifold* out)
+{
+    const HeightField* field = fields != nullptr ? fields->Find(field_shape.height_field) : nullptr;
+    return field != nullptr && TrianglesPair<FieldTriangles>(*field, field_pose, other, other_pose, margin, hulls, out);
 }
 
 }  // namespace vse::physics::collide_math
