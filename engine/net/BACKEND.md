@@ -59,9 +59,9 @@ directories may call the operating system's socket API; the gate `net_access_che
   (`EINVAL`): it is reported as aborted, which `Accept` skips. **An `accept` that fails for lack of a descriptor drops the waiting connection** (Linux leaves it queued): the listener's
   back-off still recovers, with the next connection. Name resolution is the shared `getaddrinfo` code, with no difference seen. Loopback moves sent bytes
   to the peer after `send` returns, so a socket found full can become writable a moment later.
-- **Android and iOS (Phase 28):** the same POSIX backend; the application lifecycle closes or suspends sockets when it moves to the background, which the
-  transports above must survive (Phase 28 lists it); no raw sockets.
-- **Consoles (Phase 29):** the vendor's BSD-style socket API behind the same interface; certification rules on listening sockets and on the ports in use.
+- **Android and iOS (Phase 29):** the same POSIX backend; the application lifecycle closes or suspends sockets when it moves to the background, which the
+  transports above must survive (Phase 29 lists it); no raw sockets.
+- **Consoles (Phase 30):** the vendor's BSD-style socket API behind the same interface; certification rules on listening sockets and on the ports in use.
 
 ## Operations
 

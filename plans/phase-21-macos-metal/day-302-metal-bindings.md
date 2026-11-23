@@ -14,7 +14,7 @@ The RHI's bind groups (sets 0/1/2: frame, material, objects) on Metal. Planned d
 - [x] **Bind groups:** hold their resources by RHI handle (not raw `id<MTLBuffer>` past a frame: the reset rule); `SetBindGroup` issues the set calls for
       the bound stages, skipping unchanged slots; push constants as `setVertexBytes:`/`setFragmentBytes:` up to 4 KiB.
 - [x] **Samplers:** `MTLSamplerDescriptor` from `SamplerDesc` (anisotropy, compare functions, `ClampToBorder` with border colors supported on macOS;
-      the iOS refusal noted for Phase 28); cached by description.
+      the iOS refusal noted for Phase 29); cached by description.
 - [x] **Measure:** (Day 309: argument buffers tier 1, read-write textures tier 1; `rhi_bench`, which binds groups per draw, 0.64-0.89 us per draw on Metal against 0.73-0.87 on the Radeon 860M (D3D12) and 0.5-0.6 on the RTX 3060 (Vulkan): direct binding stays, decision 9 confirmed) ([the Day 309 run](day-309-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (deferred to Day 309: `SetBindGroup` is timed through command lists, which come on Day 304; the argument-buffer tier is printed by `metal_device_test`) `SetBindGroup` cost with direct binding against the Vulkan and DX12 numbers in `rhi_bench` (different machines; recorded, no target),
       and the argument-buffer tier this device reports; amend decision 9 only if direct binding is clearly the bottleneck in the renderer benchmark (then
       a follow-up day is inserted, renumbering per CLAUDE.md).

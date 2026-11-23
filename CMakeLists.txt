@@ -33,7 +33,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_CROSSCOMPILING AND NOT
   set(CMAKE_CXX_COMPILER "${_engine_xcrun_clangxx}")
   set(CMAKE_C_COMPILER "${_engine_xcrun_clang}")
 endif()
-if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_TOOLCHAIN_FILE AND NOT CMAKE_SYSTEM_NAME)  # not for a cross build (iOS, Phase 28)
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_TOOLCHAIN_FILE AND NOT CMAKE_SYSTEM_NAME)  # not for a cross build (iOS, Phase 29)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3" CACHE STRING "Minimum macOS version (13.3: floating-point std::to_chars; Metal 3 needs 13.0)")
 endif()
 
@@ -103,9 +103,9 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS on ${CMAKE_SYSTEM_PROCESSOR} (${CMAKE_OSX_ARCHITECTURES}): x86-64 and arm64 (compile-only) are the supported "
                       "architectures (plans/phase-21-macos-metal.md)")
 elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
-  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 28 (plans/phase-28-android-ios.md)")
+  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 29 (plans/phase-29-android-ios.md)")
 else()
-  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR} is not a supported target (x86-64 Linux, x86-64 Windows; consoles: Phase 29)")
+  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR} is not a supported target (x86-64 Linux, x86-64 Windows; consoles: Phase 30)")
 endif()
 
 # Every executable gets a GNU build id (a hash of its contents) so a crash report and a minidump name the exact binary.

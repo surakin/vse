@@ -2,7 +2,7 @@
 
 > Drafted 2026-11-15 from a host session at the user's request; placed as Phase 24 the same day (every later phase moved up one) and broken into day files (Days 358-372) at the user's request.
 
-**Addendum (2026-11-17, the user: "fold it into phase 24"): Days 373-384 add off-screen surfaces and multi-material meshes for hosts (from a draft written from a host session; the draft file is gone). Phases 25, 26 and 28 moved up 12 days. The addendum is planned, not started; `CURRENT_PHASE` stays 26 until Day 373 sets it to 24 and Day 415 sets it back.**
+**Addendum (2026-11-17, the user: "fold it into phase 24"): Days 373-384 add off-screen surfaces and multi-material meshes for hosts (from a draft written from a host session; the draft file is gone). Phases 25, 26 and 29 moved up 12 days. The addendum is planned, not started; `CURRENT_PHASE` stays 26 until Day 373 sets it to 24 and Day 415 sets it back.**
 
 **Status: started (Day 358, 2026-11-15; `CURRENT_PHASE` 24); the spec and the five spikes are done (`docs/superpowers/specs/2026-11-16-c-api-scenes-design.md`). Before that: planned (2026-11-15): the day files are written (Days 358-372, `plans/phase-24-c-api-scenes-for-hosts/`), so the phase can start once Phase 23 closes (Day 357); the 3D text project (3D text) moved to Days 385-400 to make room (+15).** Placed right after Phase 23 because it builds on its C ABI, surfaces and host-provided content, and because its first user (the host's 3D call rooms) needs nothing from physics, audio or scripting.
 

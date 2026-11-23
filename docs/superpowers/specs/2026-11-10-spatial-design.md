@@ -7,7 +7,7 @@ Written 2026-11-10 (Phase 18 Day 237). Plan: `plans/phase-18-spatial-partitionin
 Physics' broad phase, the renderer's culling, audio emitter lookup, gameplay proximity and ray queries, and tools all need "what is near this box, ray, frustum". One module with exact, tested, deterministic structures, and an ECS tier that keeps them in step with entities at the cost of what moved, is built once and measured once, instead of four private grids.
 
 Goals: static and dynamic BVHs behind one query vocabulary; named spatial sets so the renderer's tree does not hold physics triggers; a deterministic begin/end pair feed for physics; renderer culling through the render set with output identical to the flat scan.
-Non-goals: a narrow phase or collision shapes beyond the box and sphere used as bounds (Phase 25), navigation meshes, a 2D variant, GPU-side culling, world-cell streaming (Phase 34), serialization of trees (rebuilt on load).
+Non-goals: a narrow phase or collision shapes beyond the box and sphere used as bounds (Phase 25), navigation meshes, a 2D variant, GPU-side culling, world-cell streaming (Phase 35), serialization of trees (rebuilt on load).
 Anti-goal: a structure that is fast in a benchmark but cannot be kept exact against a brute force under random operations.
 
 ## 2. Decisions
