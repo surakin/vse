@@ -226,3 +226,35 @@ TEST_CASE("A cube sky is drawn from a cube texture and falls back without one", 
     }
     device.Reset();
 }
+
+TEST_CASE("The procedural sky makes a small environment cube, again only when its gradient changes", "[renderer][sky]")
+{
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
+    SkySettings sky = Procedural();
+    GpuTexturePtr cube = MakeSkyEnvironmentCube(device.Get(), nullptr, sky);
+    REQUIRE(cube);
+    CHECK(cube->Valid());
+    CHECK(cube->Desc().dimension == rhi::TextureDimension::Cube);
+    CHECK(cube->Desc().format == rhi::Format::RGBA16_Float);
+    CHECK(cube->Desc().array_layers == 6);
+    CHECK(cube->Desc().mip_levels == 5);
+
+    // The sun and the sun-only settings do not change the cube; the gradient and the exposure do.
+    SkySettings other = sky;
+    other.sun_color = Vec3(1, 1, 1);
+    other.sun_direction = Vec3(0, 1, 0);
+    other.rotation = 1.0f;
+    CHECK(SkyEnvironmentSame(sky, other));
+    other.zenith = Vec3(0.9f, 0.9f, 0.9f);
+    CHECK_FALSE(SkyEnvironmentSame(sky, other));
+    other = sky;
+    other.exposure = 2.0f;
+    CHECK_FALSE(SkyEnvironmentSame(sky, other));
+
+    rhi::NullDeviceOptions options;
+    options.caps.cube_textures = false;
+    rhi::NullDevicePtr without = rhi::CreateNullDevice(options);
+    CHECK_FALSE(MakeSkyEnvironmentCube(without.Get(), nullptr, sky));
+    cube.Reset();
+    device.Reset();
+}

@@ -56,7 +56,16 @@ Vec3 PixelRay(const Camera& cam, u32 x, u32 y)
     return far_point - cam.position;
 }
 
-SkyFrame RenderSky(Rig& rig, const RenderScene& scene, const Camera& camera, const SkySettings& sky)
+// What the lighting pass is given besides the scene: the environment cube and the two intensities.
+struct SkyLighting
+{
+    GpuTexturePtr cube;
+    f32 ambient = 0.0f;
+    f32 reflection = 0.0f;
+};
+
+SkyFrame RenderSky(Rig& rig, const RenderScene& scene, const Camera& camera, const SkySettings& sky,
+                   const SkyLighting& sky_lighting = SkyLighting{})
 {
     SkyFrame out;
     GBufferPass gbuffer(rig.device, rig.sys, rig.frame);
@@ -72,6 +81,8 @@ SkyFrame RenderSky(Rig& rig, const RenderScene& scene, const Camera& camera, con
     const FrameData frame_data = MakeFrameData(camera, kW, kH, 0, 0, f);
     rig.frame->WriteFrameData(frame_data);
     out.ok = gbuffer.Prepare(scene, Frustum::FromViewProjection(camera.ViewProjection()));
+    lighting.SetSkyReflection(sky_lighting.reflection);
+    lighting.SetEnvironmentCube(sky_lighting.cube, sky_lighting.ambient, sky.rotation);
     lighting.Prepare(scene, frame_data);
     sky_pass.Prepare(sky);
     rig.frame->Flush();
@@ -435,6 +446,350 @@ TEST_CASE("A cube sky turns with its rotation, takes tint and exposure, draws HD
             CHECK(Close(frame.Accum(10, 10, 0), want.x));
             CHECK(Close(frame.Accum(10, 10, 1), want.y));
             CHECK(Close(frame.Accum(10, 10, 2), want.z));
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+namespace
+{
+
+// A cube of `mips` levels (4 texels a face at level 0) whose face f at level m is flat `colors[m * 6 + f]`.
+GpuTexturePtr SkyColorCube(rhi::Device* device, u32 mips, const Vec3* colors)
+{
+    rhi::TextureDesc desc;
+    desc.dimension = rhi::TextureDimension::Cube;
+    desc.width = 4;
+    desc.height = 4;
+    desc.array_layers = 6;
+    desc.mip_levels = mips;
+    desc.format = rhi::Format::RGBA16_Float;
+    desc.usage = rhi::TextureUsage::Sampled;
+    Vector<byte> bytes;
+    Vector<renderer::TextureLevelSpan> spans;
+    for (u32 face = 0; face < 6; ++face)
+    {
+        for (u32 mip = 0; mip < mips; ++mip)
+        {
+            const u32 size = 4u >> mip;
+            renderer::TextureLevelSpan span;
+            span.offset = bytes.Size();
+            span.bytes = size * size * 8;
+            span.row_pitch = size * 8;
+            span.mip = mip;
+            span.layer = face;
+            spans.Push(span);
+            const Vec3 c = colors[mip * 6 + face];
+            // Half floats of the values used here (multiples of 1/8 up to 8), by their bit patterns.
+            auto half = [](f32 v) -> u16
+            {
+                if (v == 0.0f)
+                {
+                    return 0;
+                }
+                int exponent = 0;
+                f32 m = v;
+                while (m >= 2.0f)
+                {
+                    m *= 0.5f;
+                    ++exponent;
+                }
+                while (m < 1.0f)
+                {
+                    m *= 2.0f;
+                    --exponent;
+                }
+                return static_cast<u16>(((exponent + 15) << 10) | static_cast<u32>((m - 1.0f) * 1024.0f));
+            };
+            for (u32 i = 0; i < size * size; ++i)
+            {
+                const u16 t[4] = {half(c.x), half(c.y), half(c.z), 0x3C00};
+                for (u32 k = 0; k < 4; ++k)
+                {
+                    bytes.Push(static_cast<byte>(t[k] & 0xff));
+                    bytes.Push(static_cast<byte>(t[k] >> 8));
+                }
+            }
+        }
+    }
+    GpuTexturePtr cube = MakeShared<GpuTexture>();
+    SharedBytesPtr region = MakeShared<OwnedBytes>(Move(bytes));
+    REQUIRE(cube->CreateFromSharedLevels(device, desc, region,
+                                         vse::Span<const renderer::TextureLevelSpan>(spans.Data(), spans.Size()),
+                                         nullptr, "color cube"));
+    return cube;
+}
+
+// A 40 x 40 plane at y = 0 with a grey-brown dielectric of the given roughness.
+struct SkyLitPlane
+{
+    GpuMesh plane;
+    RenderScene scene{RenderSceneDesc{}};
+    SurfacePoint surface;
+};
+
+void SkyMakePlane(Rig& rig, SkyLitPlane* out, f32 roughness, bool flat_ambient)
+{
+    MeshData d;
+    REQUIRE(MakePlaneMesh(40.0f, 40.0f, 1, 1, &d) == nullptr);
+    REQUIRE(out->plane.Create(rig.device, d, "ground"));
+    rig.Prepare(&out->plane);
+    const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
+    rig.sys->SetVec4(m, "base_color", Vec4(0.6f, 0.5f, 0.4f, 1.0f));
+    rig.sys->SetFloat(m, "roughness", roughness);
+    rig.sys->SetFloat(m, "metallic", 0.0f);
+    rig.sys->SetFloat(m, "occlusion", 1.0f);
+    rig.sys->SetVec4(m, "emissive_color", Vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    RenderObjectDesc od;
+    od.mesh = &out->plane;
+    od.material = m.index;
+    out->scene.AddObject(od);
+    if (flat_ambient)
+    {
+        Light ambient;
+        ambient.type = LightType::Ambient;
+        ambient.color = Vec3(0.5f, 0.5f, 0.5f);
+        out->scene.AddLight(ambient);
+    }
+    out->surface.albedo = Vec3(0.6f, 0.5f, 0.4f);
+    out->surface.roughness = roughness;
+    out->surface.metallic = 0.0f;
+    out->surface.occlusion = 1.0f;
+    out->surface.normal = Vec3(0, 1, 0);
+}
+
+Vec3 SkyViewTo(const Camera& cam, u32 x, u32 y)
+{
+    // From the plane point under pixel (x, y) toward the eye: the ray hits y = 0.
+    const Vec3 ray = PixelRay(cam, x, y);
+    const f32 t = -cam.position.y / ray.y;
+    return (cam.position - (cam.position + ray * t)).Normalized();
+}
+
+}  // namespace
+
+TEST_CASE("The sky cube lights and is reflected by a surface, replacing the flat ambient light", "[rhi][gpu][sky]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        if (!device->Caps().cube_textures)
+        {
+            continue;
+        }
+        {
+            Rig rig;
+            REQUIRE(rig.Create(device.Get()));
+            SkyLitPlane lit;
+            SkyMakePlane(rig, &lit, 0.5f, true);
+            const Camera cam = HorizontalCamera();
+            const Vec3 sky_color(2.0f, 1.0f, 0.5f);
+            Vec3 flat[6];
+            for (Vec3& c : flat)
+            {
+                c = sky_color;
+            }
+            SkyLighting sl;
+            sl.cube = SkyColorCube(device.Get(), 1, flat);
+            sl.ambient = 1.0f;
+            sl.reflection = 1.0f;
+            SkySettings none;
+            none.mode = SkyMode::None;
+            const SkyFrame frame = RenderSky(rig, lit.scene, cam, none, sl);
+            REQUIRE(frame.ok);
+            // Plane pixels under the horizon, near and far.
+            const u32 pixels[3][2] = {{32, 60}, {20, 52}, {44, 56}};
+            for (const auto& p : pixels)
+            {
+                const Vec3 v = SkyViewTo(cam, p[0], p[1]);
+                const Vec3 want = ShadeAmbient(lit.surface, sky_color) +
+                                  ShadeSkyReflection(lit.surface, v, sky_color, 1.0f);
+                INFO("pixel " << p[0] << " " << p[1]);
+                CHECK(SkyClose(frame.Accum(p[0], p[1], 0), want.x));
+                CHECK(SkyClose(frame.Accum(p[0], p[1], 1), want.y));
+                CHECK(SkyClose(frame.Accum(p[0], p[1], 2), want.z));
+            }
+            // With the sky's ambient intensity at 0 the flat ambient light (0.5) is back, and the reflection stays.
+            sl.ambient = 0.0f;
+            const SkyFrame flat_frame = RenderSky(rig, lit.scene, cam, none, sl);
+            const Vec3 v = SkyViewTo(cam, 32, 60);
+            const Vec3 want = ShadeAmbient(lit.surface, Vec3(0.5f, 0.5f, 0.5f)) +
+                              ShadeSkyReflection(lit.surface, v, sky_color, 1.0f);
+            CHECK(SkyClose(flat_frame.Accum(32, 60, 0), want.x));
+            CHECK(SkyClose(flat_frame.Accum(32, 60, 2), want.z));
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+TEST_CASE("A smooth surface reflects the face of the sky cube its mirror direction hits", "[rhi][gpu][sky]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        if (!device->Caps().cube_textures)
+        {
+            continue;
+        }
+        {
+            Rig rig;
+            REQUIRE(rig.Create(device.Get()));
+            SkyLitPlane lit;
+            SkyMakePlane(rig, &lit, 0.05f, false);
+            const Vec3 faces[6] = {Vec3(4, 0, 0), Vec3(0, 4, 0), Vec3(0, 0, 4),
+                                   Vec3(4, 4, 0), Vec3(0, 4, 4), Vec3(4, 0, 4)};
+            SkyLighting sl;
+            sl.cube = SkyColorCube(device.Get(), 1, faces);
+            sl.reflection = 1.0f;
+            SkySettings none;
+            none.mode = SkyMode::None;
+            // A camera 6 up looking along -Z and down: pixels give mirror directions toward -Z and up.
+            Camera cam = MakeLookAtCamera(Vec3(0, 6, 0), Vec3(0, 0, -6), Vec3(0, 1, 0));
+            cam.aspect = 1.0f;
+            cam.near_plane = 0.1f;
+            cam.far_plane = 100.0f;
+            const SkyFrame frame = RenderSky(rig, lit.scene, cam, none, sl);
+            REQUIRE(frame.ok);
+            u32 faces_seen[6] = {};
+            u32 checked = 0;
+            for (u32 y = 8; y < kH; y += 8)
+            {
+                for (u32 x = 16; x < 56; x += 16)
+                {
+                    const Vec3 v = SkyViewTo(cam, x, y);
+                    const Vec3 r = Vec3(-v.x, v.y, -v.z);  // reflect(-V, up): the horizontal parts flip, y stays
+                    u32 face = 0;
+                    f32 u = 0;
+                    f32 w = 0;
+                    if (!SkyDirectionToFace(r, &face, &u, &w) || Abs(u) > 0.7f || Abs(w) > 0.7f)
+                    {  // a 4-texel face blends with its neighbour over its outer texel
+                        continue;
+                    }
+                    const Vec3 want = ShadeSkyReflection(lit.surface, v, faces[face], 1.0f);
+                    INFO("pixel " << x << " " << y << " face " << face << " got " << frame.Accum(x, y, 0) << " "
+                                  << frame.Accum(x, y, 1) << " " << frame.Accum(x, y, 2) << " want " << want.x << " "
+                                  << want.y << " " << want.z);
+                    CHECK(SkyClose(frame.Accum(x, y, 0), want.x));
+                    CHECK(SkyClose(frame.Accum(x, y, 1), want.y));
+                    CHECK(SkyClose(frame.Accum(x, y, 2), want.z));
+                    ++faces_seen[face];
+                    ++checked;
+                }
+            }
+            CHECK(checked >= 6);
+            u32 distinct = 0;
+            for (u32 n : faces_seen)
+            {
+                distinct += n > 0 ? 1 : 0;
+            }
+            CHECK(distinct >= 2);  // the view sees more than one face
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+TEST_CASE("Roughness picks the mip of the sky cube a surface reflects", "[rhi][gpu][sky]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        if (!device->Caps().cube_textures)
+        {
+            continue;
+        }
+        {
+            Rig rig;
+            REQUIRE(rig.Create(device.Get()));
+            // Three mips; every face of mip m is the same colour: red, green, blue.
+            Vec3 chain[18];
+            for (u32 face = 0; face < 6; ++face)
+            {
+                chain[face] = Vec3(4, 0, 0);
+                chain[6 + face] = Vec3(0, 4, 0);
+                chain[12 + face] = Vec3(0, 0, 4);
+            }
+            const GpuTexturePtr cube = SkyColorCube(device.Get(), 3, chain);
+            const Camera cam = HorizontalCamera();
+            SkySettings none;
+            none.mode = SkyMode::None;
+            const f32 roughness[3] = {0.0f, 0.5f, 1.0f};
+            const Vec3 expect[3] = {Vec3(4, 0, 0), Vec3(0, 4, 0), Vec3(0, 0, 4)};
+            for (u32 i = 0; i < 3; ++i)
+            {
+                SkyLitPlane lit;
+                SkyMakePlane(rig, &lit, roughness[i], false);
+                SkyLighting sl;
+                sl.cube = cube;
+                sl.reflection = 1.0f;
+                const SkyFrame frame = RenderSky(rig, lit.scene, cam, none, sl);
+                REQUIRE(frame.ok);
+                const Vec3 v = SkyViewTo(cam, 32, 60);
+                const Vec3 want = ShadeSkyReflection(lit.surface, v, expect[i], 1.0f);
+                INFO("roughness " << roughness[i] << " got " << frame.Accum(32, 60, 0) << " " << frame.Accum(32, 60, 1)
+                                  << " " << frame.Accum(32, 60, 2) << " want " << want.x << " " << want.y << " "
+                                  << want.z);
+                // The roughness is stored in a byte (127/255 for 0.5), so the level is within 1% of the whole one.
+                CHECK(Abs(frame.Accum(32, 60, 0) - want.x) < 0.03f + 0.02f * want.x);
+                CHECK(Abs(frame.Accum(32, 60, 1) - want.y) < 0.03f + 0.02f * want.y);
+                CHECK(Abs(frame.Accum(32, 60, 2) - want.z) < 0.03f + 0.02f * want.z);
+            }
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+TEST_CASE("The procedural sky's own cube lights a surface with the sky's ambient colour", "[rhi][gpu][sky]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        if (!device->Caps().cube_textures)
+        {
+            continue;
+        }
+        {
+            Rig rig;
+            REQUIRE(rig.Create(device.Get()));
+            SkyLitPlane lit;
+            SkyMakePlane(rig, &lit, 0.5f, true);
+            SkySettings sky;
+            sky.mode = SkyMode::Procedural;
+            SkyLighting sl;
+            sl.cube = MakeSkyEnvironmentCube(device.Get(), nullptr, sky);
+            REQUIRE(sl.cube);
+            sl.ambient = 1.0f;
+            const Camera cam = HorizontalCamera();
+            SkySettings none;
+            none.mode = SkyMode::None;
+            const SkyFrame frame = RenderSky(rig, lit.scene, cam, none, sl);
+            REQUIRE(frame.ok);
+            // The ambient light on an upward normal is the sky around the zenith, blurred: between the horizon and the
+            // zenith colours, per channel (and not the flat 0.5 ambient light, which the sky replaced).
+            const f32 albedo[3] = {0.6f, 0.5f, 0.4f};
+            const f32 low[3] = {sky.zenith.x, sky.zenith.y, sky.zenith.z};
+            const f32 high[3] = {sky.horizon.x, sky.horizon.y, sky.horizon.z};
+            for (u32 c = 0; c < 3; ++c)
+            {
+                const f32 lit_value = frame.Accum(32, 60, c) / albedo[c];
+                const f32 lo = low[c] < high[c] ? low[c] : high[c];
+                const f32 hi = low[c] < high[c] ? high[c] : low[c];
+                INFO("channel " << c << " value " << lit_value << " between " << lo << " and " << hi);
+                CHECK(lit_value >= lo - 0.02f);
+                CHECK(lit_value <= hi + 0.02f);
+            }
+            CHECK(Abs(frame.Accum(32, 60, 0) / 0.6f - 0.5f) > 0.05f);
             device->WaitIdle();
         }
         device->WaitIdle();

@@ -1,6 +1,7 @@
 #include "asset/texture_mint.h"
 
 #include "asset/block_compress.h"
+#include "asset/cube_map.h"
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
 #include "lang/status_try.h"
@@ -53,6 +54,10 @@ Status MintTextureFromPixels(const TypeRegistry& types, ResourceId id, const Tex
                              u32 height, Span<const ByteSpan> images, Vector<byte>* out, u32 target,
                              jobs::Scheduler* scheduler)
 {
+    if (source.environment)
+    {
+        return Status::Make(ErrorCode::Invalid, "an environment texture is minted from half-float pixels");
+    }
     if (source.kind == TextureKind::Cube && width != height)
     {
         return Status::Make(ErrorCode::Invalid, "a cube map's faces must be square");
@@ -183,6 +188,14 @@ Status MintTextureFromHalfPixels(const TypeRegistry& types, ResourceId id, const
         Vector<byte> chain;
         ENGINE_TRY(GenerateMipChain(rhi::Format::RGBA16_Float, width, height, images[layer], options, &chain));
         chains.Push(Move(chain));
+    }
+    if (source.environment)
+    {
+        if (source.kind != TextureKind::Cube)
+        {
+            return Status::Make(ErrorCode::Invalid, "an environment texture must be a cube map");
+        }
+        ENGINE_TRY(PrefilterEnvironmentChains(width, stored, &chains));
     }
     return BuildFromChains(types, id, source, width, height, chains, stored, out, target);
 }

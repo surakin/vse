@@ -60,6 +60,7 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
     bool have_alpha = false;
     bool have_input = false;
     bool have_projection = false;
+    bool have_environment = false;
     bool have_face_size = false;
     bool alpha_given = false;
     rhi::Format base = rhi::Format::RGBA8_UNorm;
@@ -153,6 +154,10 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
         else if (kind == StringView("face_size"))
         {
             seen = &have_face_size;
+        }
+        else if (kind == StringView("environment"))
+        {
+            seen = &have_environment;
         }
         else
         {
@@ -308,6 +313,21 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
                 return TxFail(error, line_number, "projection is faces or equirect");
             }
         }
+        else if (kind == StringView("environment"))
+        {
+            if (v == StringView("yes"))
+            {
+                out->environment = true;
+            }
+            else if (v == StringView("no"))
+            {
+                out->environment = false;
+            }
+            else
+            {
+                return TxFail(error, line_number, "environment is yes or no");
+            }
+        }
         else if (kind == StringView("face_size"))
         {
             u32 n = 0;
@@ -346,6 +366,10 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
     if (out->equirect && (out->kind != TextureKind::Cube || !out->half_input || out->face_size == 0))
     {
         return TxFail(error, 0, "projection equirect needs kind cube, input rgba16f and a face_size");
+    }
+    if (out->environment && (out->kind != TextureKind::Cube || !out->half_input))
+    {
+        return TxFail(error, 0, "environment yes needs kind cube and input rgba16f");
     }
     if (!out->equirect && out->face_size != 0)
     {
@@ -522,6 +546,7 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
     spec.mips = source.mips;
     spec.filter = source.filter;
     spec.alpha = source.alpha;
+    spec.environment = source.environment;
     Status built = Status::Success();
     if (source.equirect)
     {

@@ -1,7 +1,10 @@
 #include "renderer/sky.h"
 
 #include "fullscreen.vert.dxil.inc"
+#include "containers/shared_bytes.h"
+#include "cstr/mem_ops.h"
 #include "lang/scalar.h"
+#include "lang/utility.h"
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 #include "sky.frag.dxil.inc"
@@ -56,7 +59,8 @@ bool SkySettingsValid(const SkySettings& s)
            SkyNonNegative(s.ground) && SkyNonNegative(s.sun_color) && SkyFinite(s.sun_direction) &&
            s.sun_direction.LengthSquared() > 1e-12f && IsFinite(s.sun_size) && s.sun_size > 0.0f &&
            s.sun_size <= kSkyHalfPi && IsFinite(s.horizon_blend) && s.horizon_blend > 0.0f && s.horizon_blend <= 1.0f &&
-           IsFinite(s.exposure) && s.exposure > 0.0f && IsFinite(s.rotation) && SkyNonNegative(s.tint);
+           IsFinite(s.exposure) && s.exposure > 0.0f && IsFinite(s.ambient_intensity) && s.ambient_intensity >= 0.0f &&
+           IsFinite(s.rotation) && SkyNonNegative(s.tint);
 }
 
 Vec3 SkyColor(const SkySettings& s, const Vec3& direction)
@@ -85,6 +89,174 @@ Vec3 SkyCubeDirection(const SkySettings& s, const Vec3& d)
     const f32 c = Cos(s.rotation);
     const f32 sn = Sin(s.rotation);
     return Vec3(c * d.x - sn * d.z, d.y, sn * d.x + c * d.z);
+}
+
+bool SkyEnvironmentSame(const SkySettings& a, const SkySettings& b)
+{
+    auto same = [](const Vec3& x, const Vec3& y) { return x.x == y.x && x.y == y.y && x.z == y.z; };
+    return same(a.zenith, b.zenith) && same(a.horizon, b.horizon) && same(a.ground, b.ground) &&
+           a.horizon_blend == b.horizon_blend && a.exposure == b.exposure;
+}
+
+namespace
+{
+
+constexpr u32 kSkyEnvironmentFace = 16;
+constexpr u32 kSkyEnvironmentMips = 5;
+
+// The direction of a face texel: the same table as asset::CubeFaceDirection (renderer cannot include the asset module).
+Vec3 SkyFaceDirection(u32 face, f32 u, f32 v)
+{
+    switch (face)
+    {
+    case 0: return Vec3(1.0f, -v, -u);
+    case 1: return Vec3(-1.0f, -v, u);
+    case 2: return Vec3(u, 1.0f, v);
+    case 3: return Vec3(u, -1.0f, -v);
+    case 4: return Vec3(u, -v, 1.0f);
+    default: return Vec3(-u, -v, -1.0f);
+    }
+}
+
+// A finite non-negative f32 as the nearest half float (ties to even), clamped to the largest finite half.
+u16 SkyHalfBits(f32 value)
+{
+    if (!(value > 0.0f))
+    {
+        return 0;
+    }
+    if (value >= 65504.0f)
+    {
+        return 0x7bffu;
+    }
+    u32 bits;
+    MemCopy(&bits, &value, sizeof(bits));
+    const u32 exponent = bits >> 23;
+    if (exponent < 113)  // a subnormal half, or zero
+    {
+        const u32 mantissa = (bits & 0x7fffffu) | 0x800000u;
+        if (exponent < 102)
+        {
+            return 0;
+        }
+        const u32 shift = 126 - exponent;
+        u32 half = mantissa >> shift;
+        const u32 rest = mantissa & ((1u << shift) - 1);
+        const u32 half_way = 1u << (shift - 1);
+        if (rest > half_way || (rest == half_way && (half & 1) != 0))
+        {
+            ++half;
+        }
+        return static_cast<u16>(half);
+    }
+    u32 half = ((exponent - 112) << 10) | ((bits >> 13) & 1023);
+    const u32 rest = bits & 0x1fffu;
+    if (rest > 0x1000u || (rest == 0x1000u && (half & 1) != 0))
+    {
+        ++half;
+    }
+    return static_cast<u16>(half);
+}
+
+}  // namespace
+
+GpuTexturePtr MakeSkyEnvironmentCube(rhi::Device* device, DeviceResources* resources, const SkySettings& settings)
+{
+    ENGINE_ASSERT(device != nullptr, "MakeSkyEnvironmentCube: device is null");
+    if (!device->Caps().cube_textures)
+    {
+        return GpuTexturePtr();
+    }
+    SkySettings sky = settings;
+    sky.mode = SkyMode::Procedural;
+    sky.sun_color = Vec3(0.0f, 0.0f, 0.0f);
+    // The float chain of the six faces: level 0 from the gradient, each next level the mean of 2 x 2 texels of the one
+    // before.
+    Vector<f32> levels[kSkyEnvironmentMips][6];
+    for (u32 face = 0; face < 6; ++face)
+    {
+        Vector<f32>& base = levels[0][face];
+        base.Resize(static_cast<usize>(kSkyEnvironmentFace) * kSkyEnvironmentFace * 3);
+        for (u32 y = 0; y < kSkyEnvironmentFace; ++y)
+        {
+            for (u32 x = 0; x < kSkyEnvironmentFace; ++x)
+            {
+                const f32 u = 2.0f * (static_cast<f32>(x) + 0.5f) / static_cast<f32>(kSkyEnvironmentFace) - 1.0f;
+                const f32 v = 2.0f * (static_cast<f32>(y) + 0.5f) / static_cast<f32>(kSkyEnvironmentFace) - 1.0f;
+                const Vec3 c = SkyColor(sky, SkyFaceDirection(face, u, v));
+                f32* t = base.Data() + (static_cast<usize>(y) * kSkyEnvironmentFace + x) * 3;
+                t[0] = c.x;
+                t[1] = c.y;
+                t[2] = c.z;
+            }
+        }
+        for (u32 mip = 1; mip < kSkyEnvironmentMips; ++mip)
+        {
+            const u32 size = kSkyEnvironmentFace >> mip;
+            const u32 parent = size * 2;
+            Vector<f32>& level = levels[mip][face];
+            level.Resize(static_cast<usize>(size) * size * 3);
+            for (u32 y = 0; y < size; ++y)
+            {
+                for (u32 x = 0; x < size; ++x)
+                {
+                    for (u32 c = 0; c < 3; ++c)
+                    {
+                        const Vector<f32>& p = levels[mip - 1][face];
+                        const f32 sum = p[((2 * y) * parent + 2 * x) * 3 + c] +
+                                        p[((2 * y) * parent + 2 * x + 1) * 3 + c] +
+                                        p[((2 * y + 1) * parent + 2 * x) * 3 + c] +
+                                        p[((2 * y + 1) * parent + 2 * x + 1) * 3 + c];
+                        level[(static_cast<usize>(y) * size + x) * 3 + c] = sum * 0.25f;
+                    }
+                }
+            }
+        }
+    }
+    Vector<byte> bytes;
+    Vector<TextureLevelSpan> spans;
+    for (u32 face = 0; face < 6; ++face)
+    {
+        for (u32 mip = 0; mip < kSkyEnvironmentMips; ++mip)
+        {
+            const u32 size = kSkyEnvironmentFace >> mip;
+            TextureLevelSpan span;
+            span.offset = bytes.Size();
+            span.bytes = static_cast<u64>(size) * size * 8;
+            span.row_pitch = size * 8;
+            span.mip = mip;
+            span.layer = face;
+            spans.Push(span);
+            const usize base = bytes.Size();
+            bytes.Resize(base + static_cast<usize>(span.bytes));
+            for (usize i = 0; i < static_cast<usize>(size) * size; ++i)
+            {
+                const u16 h[4] = {SkyHalfBits(levels[mip][face][i * 3]), SkyHalfBits(levels[mip][face][i * 3 + 1]),
+                                  SkyHalfBits(levels[mip][face][i * 3 + 2]), 0x3C00u};
+                for (u32 c = 0; c < 4; ++c)
+                {
+                    bytes[base + i * 8 + c * 2] = static_cast<byte>(h[c] & 0xffu);
+                    bytes[base + i * 8 + c * 2 + 1] = static_cast<byte>(h[c] >> 8);
+                }
+            }
+        }
+    }
+    rhi::TextureDesc desc;
+    desc.dimension = rhi::TextureDimension::Cube;
+    desc.width = kSkyEnvironmentFace;
+    desc.height = kSkyEnvironmentFace;
+    desc.array_layers = 6;
+    desc.mip_levels = kSkyEnvironmentMips;
+    desc.format = rhi::Format::RGBA16_Float;
+    desc.usage = rhi::TextureUsage::Sampled;
+    GpuTexturePtr cube = MakeShared<GpuTexture>();
+    SharedBytesPtr region = MakeShared<OwnedBytes>(Move(bytes));
+    if (!cube->CreateFromSharedLevels(device, desc, region, Span<const TextureLevelSpan>(spans.Data(), spans.Size()),
+                                      resources, "sky environment"))
+    {
+        return GpuTexturePtr();
+    }
+    return cube;
 }
 
 SkyPass::SkyPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame)

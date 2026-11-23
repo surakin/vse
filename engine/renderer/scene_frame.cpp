@@ -262,24 +262,44 @@ void SceneFrame::SetSky(const SkySettings& settings, f32 sky_reflection)
     ENGINE_ASSERT(SkySettingsValid(settings), "SceneFrame::SetSky: the sky settings are invalid");
     sky_settings_ = settings;
     sky_reflection_ = sky_reflection;
-    if (lighting_)
+    if (!lighting_)
     {
-        // What the lit surfaces reflect, and what the accumulation target clears to behind a flat colour.
-        Vec3 reflected = settings.color;
-        Vec3 background = settings.color;
-        if (settings.mode == SkyMode::None)
-        {
-            reflected = background = Vec3(0.0f, 0.0f, 0.0f);
-        }
-        else if (settings.mode == SkyMode::Procedural)
-        {
-            reflected = settings.horizon * settings.exposure;
-            background = Vec3(0.0f, 0.0f, 0.0f);
-        }
-        lighting_->SetBackground(background);
-        lighting_->SetSkyReflection(sky_reflection);
-        lighting_->SetSkyReflectionColor(reflected);
+        return;
     }
+    // What the lit surfaces reflect and what the accumulation target clears to behind a flat colour.
+    Vec3 reflected = settings.color;
+    Vec3 background = settings.color;
+    GpuTexturePtr environment;
+    if (settings.mode == SkyMode::None)
+    {
+        reflected = background = Vec3(0.0f, 0.0f, 0.0f);
+    }
+    else if (settings.mode == SkyMode::Procedural || settings.mode == SkyMode::Cube)
+    {
+        reflected = settings.horizon * settings.exposure;
+        background = Vec3(0.0f, 0.0f, 0.0f);
+        if (settings.mode == SkyMode::Cube && settings.cube && settings.cube->Valid() &&
+            settings.cube->Desc().dimension == rhi::TextureDimension::Cube)
+        {
+            environment = settings.cube;
+        }
+        else
+        {
+            // The procedural sky's cube, made again only when its gradient changes.
+            if (!environment_cube_ || !SkyEnvironmentSame(settings, environment_source_))
+            {
+                environment_cube_ = MakeSkyEnvironmentCube(device_, resources_, settings);
+                environment_source_ = settings;
+            }
+            environment = environment_cube_;
+        }
+    }
+    lighting_->SetBackground(background);
+    lighting_->SetSkyReflection(sky_reflection);
+    lighting_->SetSkyReflectionColor(reflected);
+    lighting_->SetEnvironmentCube(
+        environment, settings.ambient_intensity,
+        settings.mode == SkyMode::Cube && environment.Get() == settings.cube.Get() ? settings.rotation : 0.0f);
 }
 
 FrameStatus SceneFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen)

@@ -31,6 +31,7 @@ struct TextureMintSpec
     u32 mips = 0;                                   ///< The stored mip count, 0 for the full chain.
     MipFilter filter = MipFilter::Box;              ///< The mip filter.
     MipAlpha alpha = MipAlpha::Straight;            ///< The alpha treatment.
+    bool environment = false;  ///< A half-float cube map whose levels from 1 are the GGX specular chain.
 };
 
 /// Mints a texture blob from tightly packed RGBA8 layers.
@@ -59,7 +60,8 @@ Status MintTextureFromPixels(const TypeRegistry& types, ResourceId id, const Tex
 ///
 /// - Param types: the registry; it must hold `TEXR`.
 /// - Param id: the texture's id.
-/// - Param spec: kind, mips, filter; `format` must be `RGBA16_Float` and `alpha` must not be `Premultiply`.
+/// - Param spec: kind, mips, filter; `format` must be `RGBA16_Float` and `alpha` must not be `Premultiply`; with
+///   `environment` (a cube) the levels from 1 are the GGX specular chain ([[asset::PrefilterEnvironmentChains]]).
 /// - Param width: texels across (1 to 16384).
 /// - Param height: texels down.
 /// - Param images: one `width * height * 8` byte layer per layer of the kind; every texel finite.

@@ -32,6 +32,7 @@
 #include "renderer/material.h"
 #include "renderer/render_graph.h"
 #include "renderer/render_scene.h"
+#include "renderer/texture.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
@@ -264,6 +265,19 @@ public:
     /// - Fails: never.
     void SetSkyReflectionColor(const Vec3& color) { reflected_sky_ = color; }
 
+    /// Makes an environment cube the sky the lit surfaces reflect and are lit by: the reflection reads it at the mip
+    /// the roughness picks (scaled by the sky reflection intensity), and the ambient term reads a blurry mip at the
+    /// normal times `ambient_intensity`, replacing the flat ambient lights when that is above 0. A null or unusable
+    /// cube (not created, not a cube, or a device without cube textures) means the flat colours apply. Takes effect
+    /// from the next `Prepare`; the pass keeps a share of the cube until the next call.
+    ///
+    /// - Param cube: a cube texture with a mip chain, or null.
+    /// - Param ambient_intensity: not negative; 0 keeps the flat ambient lights.
+    /// - Param rotation: the sky's turn about +Y in radians, as [[renderer::SkySettings::rotation]].
+    /// - Fails: never.
+    /// - Ownership: shares `cube`.
+    void SetEnvironmentCube(const GpuTexturePtr& cube, f32 ambient_intensity, f32 rotation);
+
     /// Sets how much of the background colour (the sky) the lit surfaces reflect: the sky times `intensity` times a
     /// Fresnel term (about 4% head on for a smooth dielectric, nearly all at a glancing angle). 0, the default, adds
     /// nothing. Takes effect from the next `Prepare`.
@@ -297,6 +311,8 @@ private:
         Vec4 ambient;  // w: the sky reflection's intensity
         u32 directional_count = 0;
         f32 sky[3] = {};
+        f32 env[4] = {};      // enabled, ambient intensity, highest mip, ambient mip
+        f32 env_rot[4] = {};  // cos, sin of the sky's rotation
     };
     static void Record(const PassExecuteContext& context, void* user);
     void Build();
@@ -323,6 +339,12 @@ private:
     Vector<PointDraw> point_draws_;
     Vec3 background_ = Vec3(0.0f, 0.0f, 0.0f);
     Vec3 reflected_sky_ = Vec3(0.0f, 0.0f, 0.0f);
+    GpuTexturePtr env_cube_;
+    f32 env_ambient_ = 0.0f;
+    f32 env_rotation_ = 0.0f;
+    rhi::TextureHandle dummy_cube_;  // 1 x 1 black, bound when no environment cube is set
+    rhi::SamplerHandle env_sampler_;
+    bool env_bindings_ = false;  // the layout has the cube and sampler bindings (the device has cube textures)
     f32 sky_reflection_ = 0.0f;
     Atomic<u32> point_draws_recorded_{0};
     u32 prepared_width_ = 0;

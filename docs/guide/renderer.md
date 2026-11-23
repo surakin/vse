@@ -686,6 +686,15 @@ frame block's inverse view-projection and draws only where the depth buffer hold
 `SceneFrame::SetEnvironment` keeps working and sets a flat colour. A procedural sky's reflection on lit surfaces uses its horizon
 colour times its exposure.
 
+**The sky lights the scene.** With the mode `Procedural` or `Cube` the lighting pass reads an environment cube (a cube map set
+with `LightingPass::SetEnvironmentCube`; `SceneFrame::SetSky` does it): the reflection samples it along the mirror direction at
+the mip the surface's roughness picks (`roughness * (mips - 1)`), scaled by the sky reflection intensity and the usual Fresnel
+term, and the ambient term samples a blurry mip (`mips - 3`) at the normal, times `SkySettings::ambient_intensity`, **replacing
+the flat ambient lights** while that is above 0 (set it to 0 to keep them). The procedural sky makes its own small cube (16 texels
+a face, a full chain, without the sun, which the directional lights carry) when its gradient changes; a minted cube map uses its
+own levels, so mark an environment map `environment yes` in its texture source (see the assets guide) for a GGX-filtered chain.
+With the mode `Color` or `None` nothing changes: the flat colour and the flat ambient lights apply as before.
+
 `SkyMode::Cube` draws an environment cube map: set `SkySettings::cube` (a [[renderer::GpuTexturePtr]] of a cube texture, for
 example one loaded from a minted cube asset), and the sky samples it along the view ray at mip 0, multiplied by `tint` and
 `exposure`. `rotation` turns the sky about +Y (right-handed): after a quarter turn the cube's +X face looks along -Z

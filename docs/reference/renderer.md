@@ -3356,6 +3356,24 @@ Sets the colour of the sky the lit surfaces reflect, when it is not the backgrou
 | Parameter `color` | linear RGB, not negative. |
 | Fails | never. |
 
+### `SetEnvironmentCube(const GpuTexturePtr&,f32,f32)` {#renderer-lightingpass-setenvironmentcube-const-gputextureptr-amp-f32-f32}
+
+`method renderer::LightingPass::SetEnvironmentCube` — defined in `engine/renderer/lighting.h`
+
+```cpp
+void SetEnvironmentCube(const GpuTexturePtr& cube, f32 ambient_intensity, f32 rotation);
+```
+
+Makes an environment cube the sky the lit surfaces reflect and are lit by: the reflection reads it at the mip the roughness picks (scaled by the sky reflection intensity), and the ambient term reads a blurry mip at the normal times `ambient_intensity`, replacing the flat ambient lights when that is above 0. A null or unusable cube (not created, not a cube, or a device without cube textures) means the flat colours apply. Takes effect from the next `Prepare`; the pass keeps a share of the cube until the next call.
+
+| Field | Value |
+|---|---|
+| Parameter `cube` | a cube texture with a mip chain, or null. |
+| Parameter `ambient_intensity` | not negative; 0 keeps the flat ambient lights. |
+| Parameter `rotation` | the sky's turn about +Y in radians, as [`renderer::SkySettings::rotation`](#renderer-skysettings-rotation). |
+| Fails | never. |
+| Ownership | shares `cube`. |
+
 ### `SetSkyReflection(f32)` {#renderer-lightingpass-setskyreflection-f32}
 
 `method renderer::LightingPass::SetSkyReflection` — defined in `engine/renderer/lighting.h`
@@ -13910,6 +13928,16 @@ f32 horizon_blend;
 
 The elevation below the horizon where the ground colour is reached.
 
+### `ambient_intensity` {#renderer-skysettings-ambient-intensity}
+
+`variable renderer::SkySettings::ambient_intensity` — defined in `engine/renderer/sky.h`
+
+```cpp
+f32 ambient_intensity;
+```
+
+Scale of the ambient light the sky gives the lit surfaces; above 0 it replaces the flat ambient lights, 0 keeps them. ambient lights.
+
 ### `exposure` {#renderer-skysettings-exposure}
 
 `variable renderer::SkySettings::exposure` — defined in `engine/renderer/sky.h`
@@ -13983,6 +14011,40 @@ The direction to sample the cube map with for a view direction: the view directi
 | Returns | the direction in the cube map's own space, of the same length. |
 | Fails | never. |
 | Thread-safety | thread-safe. |
+
+## `SkyEnvironmentSame(const SkySettings&,const SkySettings&)` {#renderer-skyenvironmentsame-const-skysettings-amp-const-skysettings-amp}
+
+`function renderer::SkyEnvironmentSame` — defined in `engine/renderer/sky.h`
+
+```cpp
+bool SkyEnvironmentSame(const SkySettings& a, const SkySettings& b);
+```
+
+Whether two settings give the same procedural environment cube (the gradient colours and the exposure; the sun, which the directional lights carry, is left out of it).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Thread-safety | thread-safe. |
+
+## `MakeSkyEnvironmentCube(rhi::Device*,DeviceResources*,const SkySettings&)` {#renderer-makeskyenvironmentcube-rhi-device-star-deviceresources-star-const-skysettings-amp}
+
+`function renderer::MakeSkyEnvironmentCube` — defined in `engine/renderer/sky.h`
+
+```cpp
+GpuTexturePtr MakeSkyEnvironmentCube(rhi::Device* device, DeviceResources* resources, const SkySettings& settings);
+```
+
+Makes a small cube map of the procedural sky (16 texels a face, a full chain of `RGBA16_Float`, the sun left out) for the lighting pass to reflect and take ambient light from. The texture keeps its pixels, so it survives a device reset.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device. |
+| Parameter `resources` | the registry the texture registers with, or null. |
+| Parameter `settings` | valid settings; the gradient colours and the exposure are used. |
+| Returns | the texture, or null when the device has no cube textures or refused it. |
+| Fails | returns null, logging the reason. |
+| Ownership | borrows `device` and `resources`; the result is shared. |
 
 ## `SkyPass` {#renderer-skypass}
 

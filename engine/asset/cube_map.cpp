@@ -112,6 +112,208 @@ f32 DeterministicAtan2(f32 y, f32 x)
     return y < 0.0f ? -angle : angle;
 }
 
+void CubeDirectionToFace(const Vec3& d, u32* face, f32* u, f32* v)
+{
+    const f32 ax = Abs(d.x);
+    const f32 ay = Abs(d.y);
+    const f32 az = Abs(d.z);
+    if (ax >= ay && ax >= az)
+    {
+        *face = d.x > 0.0f ? 0 : 1;
+        *u = (d.x > 0.0f ? -d.z : d.z) / ax;
+        *v = -d.y / ax;
+    }
+    else if (ay >= az)
+    {
+        *face = d.y > 0.0f ? 2 : 3;
+        *u = d.x / ay;
+        *v = (d.y > 0.0f ? d.z : -d.z) / ay;
+    }
+    else
+    {
+        *face = d.z > 0.0f ? 4 : 5;
+        *u = (d.z > 0.0f ? d.x : -d.x) / az;
+        *v = -d.y / az;
+    }
+}
+
+void DeterministicSinCos(f32 radians, f32* sine, f32* cosine)
+{
+    // Reduce to a quadrant offset k (0..3) and r in [-pi/4, pi/4], then the Taylor polynomials of sin and cos.
+    const f32 half_pi = kPi * 0.5f;
+    const f32 q = radians / half_pi + 0.5f;
+    u32 k = static_cast<u32>(q);
+    const f32 r = radians - static_cast<f32>(k) * half_pi;
+    const f32 r2 = r * r;
+    const f32 sr = r * (1.0f +
+                        r2 * (-1.0f / 6.0f + r2 * (1.0f / 120.0f + r2 * (-1.0f / 5040.0f + r2 * (1.0f / 362880.0f)))));
+    const f32 cr = 1.0f + r2 * (-0.5f + r2 * (1.0f / 24.0f + r2 * (-1.0f / 720.0f + r2 * (1.0f / 40320.0f))));
+    k &= 3u;
+    switch (k)
+    {
+    case 0:
+        *sine = sr;
+        *cosine = cr;
+        break;
+    case 1:
+        *sine = cr;
+        *cosine = -sr;
+        break;
+    case 2:
+        *sine = -sr;
+        *cosine = -cr;
+        break;
+    default:
+        *sine = -cr;
+        *cosine = sr;
+        break;
+    }
+}
+
+Status PrefilterEnvironmentChains(u32 face_size, u32 mips, Vector<Vector<byte>>* chains)
+{
+    ENGINE_ASSERT(chains != nullptr, "PrefilterEnvironmentChains: chains is null");
+    if (face_size == 0 || mips == 0)
+    {
+        return Status::Make(ErrorCode::Invalid, "the face size and the mip count must be at least 1");
+    }
+    u32 full = 1;
+    for (u32 s = face_size; s > 1; s >>= 1)
+    {
+        ++full;
+    }
+    if (mips > full || chains->Size() != 6)
+    {
+        return Status::Make(ErrorCode::Invalid, "the mip count is above the full chain, or there are not six chains");
+    }
+    // Level offsets in a chain (8 bytes a texel).
+    Vector<usize> offsets;
+    Vector<u32> sizes;
+    usize total = 0;
+    for (u32 level = 0, s = face_size; level < full; ++level, s = s > 1 ? s >> 1 : 1)
+    {
+        if (!offsets.TryReserve(full) || !sizes.TryReserve(full))
+        {
+            return Status::Make(ErrorCode::LimitExceeded, "out of memory");
+        }
+        offsets.Push(total);
+        sizes.Push(s);
+        total += static_cast<usize>(s) * s * 8;
+    }
+    for (usize f = 0; f < 6; ++f)
+    {
+        if ((*chains)[f].Size() < total)
+        {
+            return Status::Make(ErrorCode::Invalid, "a face chain is shorter than the full chain");
+        }
+    }
+    constexpr u32 kSamples = 32;
+    // The sample set: GGX importance samples around +Z, fixed for every texel (the radical inverse of the index gives
+    // phi).
+    f32 sample_z[kSamples];  // cos(theta)'s ingredients are per roughness; keep u1 and phi here
+    f32 sample_cos_phi[kSamples];
+    f32 sample_sin_phi[kSamples];
+    for (u32 k = 0; k < kSamples; ++k)
+    {
+        u32 bits = k;
+        bits = (bits << 16) | (bits >> 16);
+        bits = ((bits & 0x55555555u) << 1) | ((bits & 0xAAAAAAAAu) >> 1);
+        bits = ((bits & 0x33333333u) << 2) | ((bits & 0xCCCCCCCCu) >> 2);
+        bits = ((bits & 0x0F0F0F0Fu) << 4) | ((bits & 0xF0F0F0F0u) >> 4);
+        bits = ((bits & 0x00FF00FFu) << 8) | ((bits & 0xFF00FF00u) >> 8);
+        const f32 u2 = static_cast<f32>(bits) * (1.0f / 4294967296.0f);
+        sample_z[k] = (static_cast<f32>(k) + 0.5f) / static_cast<f32>(kSamples);
+        DeterministicSinCos(2.0f * kPi * u2, &sample_sin_phi[k], &sample_cos_phi[k]);
+    }
+    for (u32 level = 1; level < mips; ++level)
+    {
+        const u32 s = sizes[level];
+        const f32 roughness = static_cast<f32>(level) / static_cast<f32>(mips - 1);
+        const f32 alpha = roughness * roughness;
+        const f32 a2m1 = alpha * alpha - 1.0f;
+        // The filtered level is built from the same level of the unfiltered chain, so build it all before writing.
+        Vector<Vector<byte>> result;
+        for (u32 face = 0; face < 6; ++face)
+        {
+            Vector<byte> out;
+            if (!out.TryResize(static_cast<usize>(s) * s * 8))
+            {
+                return Status::Make(ErrorCode::LimitExceeded, "out of memory");
+            }
+            for (u32 y = 0; y < s; ++y)
+            {
+                for (u32 x = 0; x < s; ++x)
+                {
+                    const f32 u = 2.0f * (static_cast<f32>(x) + 0.5f) / static_cast<f32>(s) - 1.0f;
+                    const f32 v = 2.0f * (static_cast<f32>(y) + 0.5f) / static_cast<f32>(s) - 1.0f;
+                    const Vec3 n = CubeFaceDirection(face, u, v).Normalized();
+                    // A tangent frame around n.
+                    const Vec3 up = Abs(n.y) < 0.999f ? Vec3(0.0f, 1.0f, 0.0f) : Vec3(1.0f, 0.0f, 0.0f);
+                    const Vec3 t = up.Cross(n).Normalized();
+                    const Vec3 b = n.Cross(t);
+                    f32 sum[3] = {0.0f, 0.0f, 0.0f};
+                    f32 weight = 0.0f;
+                    for (u32 k = 0; k < kSamples; ++k)
+                    {
+                        const f32 cos_theta = Sqrt((1.0f - sample_z[k]) / (1.0f + a2m1 * sample_z[k]));
+                        const f32 sin_theta = Sqrt(1.0f - cos_theta * cos_theta);
+                        const Vec3 h = t * (sin_theta * sample_cos_phi[k]) + b * (sin_theta * sample_sin_phi[k]) +
+                                       n * cos_theta;
+                        const Vec3 l = h * (2.0f * n.Dot(h)) - n;
+                        const f32 nl = n.Dot(l);
+                        if (nl <= 0.0f)
+                        {
+                            continue;
+                        }
+                        u32 lf = 0;
+                        f32 lu = 0.0f;
+                        f32 lv = 0.0f;
+                        CubeDirectionToFace(l, &lf, &lu, &lv);
+                        i32 tx = static_cast<i32>((lu * 0.5f + 0.5f) * static_cast<f32>(s));
+                        i32 ty = static_cast<i32>((lv * 0.5f + 0.5f) * static_cast<f32>(s));
+                        const i32 last = static_cast<i32>(s) - 1;
+                        tx = tx < 0 ? 0 : (tx > last ? last : tx);
+                        ty = ty < 0 ? 0 : (ty > last ? last : ty);
+                        const byte* texel = (*chains)[lf].Data() + offsets[level] +
+                                            (static_cast<usize>(ty) * s + tx) * 8;
+                        for (u32 c = 0; c < 3; ++c)
+                        {
+                            f32 value = 0.0f;
+                            HalfBitsToFloat(static_cast<u32>(texel[c * 2]) | (static_cast<u32>(texel[c * 2 + 1]) << 8),
+                                            &value);
+                            sum[c] += value * nl;
+                        }
+                        weight += nl;
+                    }
+                    byte* dst = out.Data() + (static_cast<usize>(y) * s + x) * 8;
+                    const byte* own = (*chains)[face].Data() + offsets[level] + (static_cast<usize>(y) * s + x) * 8;
+                    for (u32 c = 0; c < 3; ++c)
+                    {
+                        // No sample above the horizon (cannot happen for a normal, kept for safety): keep the texel.
+                        const u32 bits = weight > 0.0f
+                                             ? FloatToHalfBits(sum[c] / weight)
+                                             : (static_cast<u32>(own[c * 2]) | (static_cast<u32>(own[c * 2 + 1]) << 8));
+                        dst[c * 2] = static_cast<byte>(bits & 0xffu);
+                        dst[c * 2 + 1] = static_cast<byte>(bits >> 8);
+                    }
+                    dst[6] = own[6];
+                    dst[7] = own[7];
+                }
+            }
+            if (!result.TryReserve(6))
+            {
+                return Status::Make(ErrorCode::LimitExceeded, "out of memory");
+            }
+            result.Push(Move(out));
+        }
+        for (u32 face = 0; face < 6; ++face)
+        {
+            MemCopy((*chains)[face].Data() + offsets[level], result[face].Data(), result[face].Size());
+        }
+    }
+    return Status::Success();
+}
+
 Status EquirectangularToCubeFaces(ByteSpan rgba16f, u32 width, u32 height, u32 face_size, Vector<Vector<byte>>* faces)
 {
     if (width < 2 || height < 1 || width > 16384 || height > 16384 || face_size < 1 || face_size > kMaxCubeFaceSize)

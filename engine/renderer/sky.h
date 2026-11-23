@@ -45,8 +45,11 @@ struct SkySettings
     Vec3 sun_direction = Vec3(0.4f, 0.6f, 0.3f);  ///< Toward the sun; any non-zero length.
     Vec3 sun_color = Vec3(8.0f, 7.2f, 6.0f);      ///< The sun disc's radiance; black hides the sun.
     f32 sun_size = 0.05f;                         ///< The disc's angular radius in radians.
-    f32 horizon_blend = 0.1f;  ///< The elevation below the horizon where the ground colour is reached.
-    f32 exposure = 1.0f;       ///< Scale of the whole sky.
+    f32 horizon_blend = 0.1f;      ///< The elevation below the horizon where the ground colour is reached.
+    f32 ambient_intensity = 1.0f;  ///< Scale of the ambient light the sky gives the lit surfaces; above 0 it replaces
+                                   ///< the flat ambient lights, 0 keeps them.
+                                   ///< ambient lights.
+    f32 exposure = 1.0f;           ///< Scale of the whole sky.
     f32 rotation = 0.0f;  ///< Turns the cube map about +Y in radians, right-handed: its +X face then looks toward (cos,
                           ///< 0, -sin).
 };
@@ -82,6 +85,25 @@ Vec3 SkyColor(const SkySettings& settings, const Vec3& direction);
 /// - Fails: never.
 /// - Thread-safety: thread-safe.
 Vec3 SkyCubeDirection(const SkySettings& settings, const Vec3& direction);
+
+/// Whether two settings give the same procedural environment cube (the gradient colours and the exposure; the sun,
+/// which the directional lights carry, is left out of it).
+///
+/// - Fails: never.
+/// - Thread-safety: thread-safe.
+bool SkyEnvironmentSame(const SkySettings& a, const SkySettings& b);
+
+/// Makes a small cube map of the procedural sky (16 texels a face, a full chain of `RGBA16_Float`, the sun left out)
+/// for the lighting pass to reflect and take ambient light from. The texture keeps its pixels, so it survives a device
+/// reset.
+///
+/// - Param device: the device.
+/// - Param resources: the registry the texture registers with, or null.
+/// - Param settings: valid settings; the gradient colours and the exposure are used.
+/// - Returns: the texture, or null when the device has no cube textures or refused it.
+/// - Fails: returns null, logging the reason.
+/// - Ownership: borrows `device` and `resources`; the result is shared.
+GpuTexturePtr MakeSkyEnvironmentCube(rhi::Device* device, DeviceResources* resources, const SkySettings& settings);
 
 /// Draws the sky into the light accumulation target after the lighting pass.
 ///

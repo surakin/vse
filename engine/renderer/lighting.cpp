@@ -209,7 +209,7 @@ void LightingPass::Build()
     fragment_ = rhi::CreateShaderFromSet(*device, shaders::kLightingFragShader, rhi::ShaderStage::Fragment);
     volume_vertex_ = rhi::CreateShaderFromSet(*device, shaders::kPointLightVertShader, rhi::ShaderStage::Vertex);
     volume_fragment_ = rhi::CreateShaderFromSet(*device, shaders::kPointLightFragShader, rhi::ShaderStage::Fragment);
-    rhi::BindingDesc bindings[6];
+    rhi::BindingDesc bindings[8];
     for (u32 i = 0; i < 4; ++i)
     {
         bindings[i] = {i, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
@@ -220,9 +220,44 @@ void LightingPass::Build()
     // The G-buffer's emissive target (glTF coverage Day 2): the fullscreen pass adds it; the light volumes do not read
     // it.
     bindings[5] = {5, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
+    // The environment cube and its sampler (the sky's reflection and ambient light), where the device has cube
+    // textures; a device without them keeps the six bindings of the flat-sky shader.
+    env_bindings_ = device->Caps().cube_textures;
+    bindings[6] = {6, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
+    bindings[7] = {7, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1};
     rhi::BindGroupLayoutDesc ld;
-    ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 6);
+    ld.entries = rhi::Span<rhi::BindingDesc>(bindings, env_bindings_ ? 8 : 6);
     layout_ = device->CreateBindGroupLayout(ld);
+    if (env_bindings_)
+    {
+        rhi::TextureDesc cd;
+        cd.dimension = rhi::TextureDimension::Cube;
+        cd.width = 1;
+        cd.height = 1;
+        cd.array_layers = 6;
+        cd.format = rhi::Format::RGBA8_UNorm;
+        cd.usage = rhi::TextureUsage::Sampled | rhi::TextureUsage::CopyDst;
+        cd.debug_name = "lighting dummy cube";
+        dummy_cube_ = device->CreateTexture(cd);
+        const u8 black[4] = {0, 0, 0, 255};
+        for (u32 face = 0; dummy_cube_.IsValid() && face < 6; ++face)
+        {
+            if (!device->UploadTexture(dummy_cube_, 0, face, black, 4).ok)
+            {
+                device->DestroyTexture(dummy_cube_);
+                dummy_cube_ = {};
+            }
+        }
+        rhi::SamplerDesc sd;
+        sd.address_u = sd.address_v = sd.address_w = rhi::AddressMode::ClampToEdge;
+        sd.debug_name = "lighting environment";
+        env_sampler_ = device->CreateSampler(sd);
+        if (!dummy_cube_.IsValid() || !env_sampler_.IsValid())
+        {
+            RenderLog(LogVerbosity::Error, "LightingPass: creating the environment cube or sampler failed");
+            return;
+        }
+    }
     if (!vertex_.IsValid() || !fragment_.IsValid() || !volume_vertex_.IsValid() || !volume_fragment_.IsValid() ||
         !layout_.IsValid())
     {
@@ -311,6 +346,14 @@ void LightingPass::Release()
     {
         device_->DestroyPipeline(pipeline_);
     }
+    if (env_sampler_.IsValid())
+    {
+        device_->DestroySampler(env_sampler_);
+    }
+    if (dummy_cube_.IsValid())
+    {
+        device_->DestroyTexture(dummy_cube_);
+    }
     if (layout_.IsValid())
     {
         device_->DestroyBindGroupLayout(layout_);
@@ -323,6 +366,8 @@ void LightingPass::Release()
     {
         device_->DestroyShader(vertex_);
     }
+    env_sampler_ = {};
+    dummy_cube_ = {};
     volume_pipeline_ = {};
     volume_fragment_ = {};
     volume_vertex_ = {};
@@ -347,6 +392,14 @@ bool LightingPass::Recreate(rhi::Device* device)
     return true;
 }
 
+void LightingPass::SetEnvironmentCube(const GpuTexturePtr& cube, f32 ambient_intensity, f32 rotation)
+{
+    ENGINE_ASSERT(ambient_intensity >= 0.0f, "LightingPass::SetEnvironmentCube: the ambient intensity is negative");
+    env_cube_ = cube;
+    env_ambient_ = ambient_intensity;
+    env_rotation_ = rotation;
+}
+
 LightSummary LightingPass::Prepare(const RenderScene& scene, const FrameData& view)
 {
     added_ = false;
@@ -356,6 +409,31 @@ LightSummary LightingPass::Prepare(const RenderScene& scene, const FrameData& vi
     push_.sky[1] = reflected_sky_.y;
     push_.sky[2] = reflected_sky_.z;
     push_.directional_count = summary.directional_count;
+    // The environment cube, when there is a usable one: the sky the surfaces reflect and the blurry ambient light.
+    const bool env = env_bindings_ && env_cube_ && env_cube_->Valid() &&
+                     env_cube_->Desc().dimension == rhi::TextureDimension::Cube && env_cube_->Desc().mip_levels > 0;
+    for (f32& v : push_.env)
+    {
+        v = 0.0f;
+    }
+    push_.env_rot[0] = 1.0f;
+    push_.env_rot[1] = 0.0f;
+    push_.env_rot[2] = 0.0f;
+    push_.env_rot[3] = 0.0f;
+    if (env)
+    {
+        const u32 mips = env_cube_->Desc().mip_levels;
+        push_.env[0] = 1.0f;
+        push_.env[1] = env_ambient_;
+        push_.env[2] = static_cast<f32>(mips - 1);
+        push_.env[3] = static_cast<f32>(mips > 3 ? mips - 3 : 0);
+        push_.env_rot[0] = Cos(env_rotation_);
+        push_.env_rot[1] = Sin(env_rotation_);
+        if (env_ambient_ > 0.0f)
+        {
+            push_.ambient = Vec4(0.0f, 0.0f, 0.0f, sky_reflection_);  // the cube's light replaces the flat ambient
+        }
+    }
     // One draw per visible point light, in buffer order (nearest first), scissored to its screen rectangle.
     point_draws_.Clear();
     const u32 width = static_cast<u32>(view.viewport.x);
@@ -418,7 +496,7 @@ void LightingPass::Record(const PassExecuteContext& context, void* user)
     rhi::BindGroupHandle textures;
     if (self->pipeline_.IsValid() && self->frame_group_.IsValid())
     {
-        rhi::BindGroupEntry e[6];
+        rhi::BindGroupEntry e[8];
         e[0].binding = 0;
         e[0].texture = context.graph->ResolvedTexture(self->targets_.albedo);
         e[1].binding = 1;
@@ -433,9 +511,17 @@ void LightingPass::Record(const PassExecuteContext& context, void* user)
         e[4].size = self->lights_.size;
         e[5].binding = 5;
         e[5].texture = context.graph->ResolvedTexture(self->targets_.emissive);
+        if (self->env_bindings_)
+        {
+            const bool env = self->push_.env[0] > 0.5f && self->env_cube_ && self->env_cube_->Valid();
+            e[6].binding = 6;
+            e[6].texture = env ? self->env_cube_->Handle() : self->dummy_cube_;  // read now: a reset remakes it
+            e[7].binding = 7;
+            e[7].sampler = self->env_sampler_;
+        }
         rhi::BindGroupDesc gd;
         gd.layout = self->layout_;
-        gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 6);
+        gd.entries = rhi::Span<rhi::BindGroupEntry>(e, self->env_bindings_ ? 8 : 6);
         gd.transient = true;
         textures = self->device_->CreateBindGroup(gd);
     }

@@ -62,7 +62,8 @@ struct TextureSource
     MipAlpha alpha = MipAlpha::Straight;            ///< The `alpha` record.
     bool half_input = false;                        ///< `input rgba16f`: the raw files are half-float images.
     bool equirect = false;                          ///< `projection equirect`: one latitude-longitude source.
-    u32 face_size = 0;                              ///< The `face_size` record (0 when not given).
+    bool environment = false;  ///< `environment yes`: the cube map's levels from 1 are the GGX specular chain.
+    u32 face_size = 0;         ///< The `face_size` record (0 when not given).
 };
 
 /// Where and why a texture source or image was refused.

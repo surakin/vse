@@ -67,4 +67,38 @@ f32 DeterministicAtan2(f32 y, f32 x);
 /// - Ownership: borrows `rgba16f`; `*faces` is replaced.
 Status EquirectangularToCubeFaces(ByteSpan rgba16f, u32 width, u32 height, u32 face_size, Vector<Vector<byte>>* faces);
 
+/// The face and the texel coordinates a direction hits: the inverse of [[asset::CubeFaceDirection]].
+///
+/// - Param direction: any non-zero direction.
+/// - Param face: set to 0 to 5.
+/// - Param u: set to the horizontal face coordinate, -1 to 1.
+/// - Param v: set to the vertical face coordinate, -1 to 1.
+/// - Fails: never.
+/// - Thread-safety: thread-safe. A pure function of its arguments.
+/// - Ownership: the three out parameters are written.
+void CubeDirectionToFace(const Vec3& direction, u32* face, f32* u, f32* v);
+
+/// The sine and cosine of `radians`, from fixed polynomials (error under 1e-6 within one turn).
+///
+/// - Param radians: 0 to 2 pi.
+/// - Param sine: set to the sine.
+/// - Param cosine: set to the cosine.
+/// - Thread-safety: thread-safe. A pure function of its arguments.
+/// - Ownership: the two out parameters are written.
+void DeterministicSinCos(f32 radians, f32* sine, f32* cosine);
+
+/// Replaces the levels 1 to `mips - 1` of the six half-float face chains of a cube map with its specular chain: level
+/// `i` is the box-filtered level `i` convolved with a GGX lobe of roughness `i / (mips - 1)` (alpha is its square), by
+/// 32 importance samples in a fixed order, so a shader reads a rougher reflection from a higher level.
+///
+/// - Param face_size: texels across a face at level 0 (a power of two or not; levels halve down to 1).
+/// - Param mips: the levels stored; at most the full chain. 1 changes nothing.
+/// - Param chains: six tight chains of `RGBA16_Float` levels, level 0 first, as the texture minter builds them; the
+///   levels from 1 are overwritten.
+/// - Fails: `Invalid` for a face size of 0, a mip count of 0 or above the full chain, or chains of the wrong number or
+///   size.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: borrows nothing past the call; `*chains` is modified.
+Status PrefilterEnvironmentChains(u32 face_size, u32 mips, Vector<Vector<byte>>* chains);
+
 }  // namespace vse::asset

@@ -314,6 +314,8 @@ private:
     UniquePtr<LightingPass> lighting_;
     UniquePtr<TonemapPass> tonemap_;
     UniquePtr<SkyPass> sky_;
+    GpuTexturePtr environment_cube_;  // the procedural sky's cube, for the lighting pass
+    SkySettings environment_source_;  // the settings it was made from
     SkySettings sky_settings_;
     f32 sky_reflection_ = 0.0f;
     UniquePtr<GBufferDebugView> debug_view_;

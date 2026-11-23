@@ -18,7 +18,9 @@
 //   set 0, binding 0: uniform buffer FrameData (renderer::FrameData, 304 bytes)
 //   set 1, binding 0: albedo; 1: normal; 2: material; 3: depth (sampled textures, read with Load); 4: storage buffer of
 //       LightData (48 bytes each, directional lights first); 5: emissive (sampled texture, read with Load)
-//   push constants (32 bytes): float4 ambient (rgb; a = sky reflection intensity); uint directional_count; float sky_r, sky_g, sky_b
+//   set 1, binding 6: the environment cube (sampled texture, 1 x 1 black when none is set); 7: its sampler
+//   push constants (64 bytes): float4 ambient (rgb; a = sky reflection intensity); uint directional_count; float sky_r, sky_g, sky_b;
+//       float4 env (enabled, ambient intensity, highest mip, ambient mip); float4 env_rot (cos, sin, 0, 0)
 
 #include "target_common.slang"  // ENGINE_REGISTER
 #include "gbuffer_common.slang"
@@ -47,6 +49,8 @@ struct LightData {
 [[vk::binding(3, 1)]] Texture2D<float4> depth_tex ENGINE_REGISTER(t3, space1);
 [[vk::binding(4, 1)]] StructuredBuffer<LightData> lights ENGINE_REGISTER(t4, space1);
 [[vk::binding(5, 1)]] Texture2D<float4> emissive_tex ENGINE_REGISTER(t5, space1);
+[[vk::binding(6, 1)]] TextureCube<float4> env_tex ENGINE_REGISTER(t6, space1);
+[[vk::binding(7, 1)]] SamplerState env_smp ENGINE_REGISTER(s7, space1);
 
 struct Push {
     float4 ambient;            // rgb: the ambient light; a: the sky reflection's intensity (0: no reflection)
@@ -54,6 +58,8 @@ struct Push {
     float sky_r;               // linear rgb of the sky the lit surfaces reflect (three scalars: a float3 would move to offset 32)
     float sky_g;
     float sky_b;
+    float4 env;                // x: 1 when the environment cube is the sky; y: its ambient intensity; z: its highest mip; w: the mip the ambient reads
+    float4 env_rot;            // x: cos, y: sin of the sky's rotation about +Y
 };
 [[vk::push_constant]] ConstantBuffer<Push> push ENGINE_REGISTER(b0, space15);
 
@@ -65,6 +71,11 @@ struct FragmentInput {
 struct FragmentOutput {
     [[vk::location(0)]] float4 color : SV_Target0;
 };
+
+// The cube's own space for a world direction: turned by minus the sky's rotation about +Y (renderer::SkyCubeDirection).
+float3 EnvRotate(float3 d) {
+    return float3(push.env_rot.x * d.x - push.env_rot.y * d.z, d.y, push.env_rot.y * d.x + push.env_rot.x * d.z);
+}
 
 [shader("fragment")]
 FragmentOutput main(FragmentInput input) {
@@ -100,7 +111,16 @@ FragmentOutput main(FragmentInput input) {
     for (uint i = 0u; i < push.directional_count; ++i) {
         color += ShadeLight(s, V, lights[i].direction.xyz, lights[i].color.rgb);
     }
-    color += ShadeSkyReflection(s, V, float3(push.sky_r, push.sky_g, push.sky_b), push.ambient.a);
+    if (push.env.x > 0.5) {
+        // The sky is the environment cube: the reflection reads the mip the roughness picks, the ambient a blurry one at
+        // the normal (push.ambient.rgb is 0 then when the cube replaces the flat ambient).
+        float3 R = reflect(-V, s.normal);
+        float3 reflected = env_tex.SampleLevel(env_smp, EnvRotate(R), s.roughness * push.env.z).rgb;
+        color += ShadeSkyReflection(s, V, reflected, push.ambient.a);
+        color += ShadeAmbient(s, env_tex.SampleLevel(env_smp, EnvRotate(s.normal), push.env.w).rgb * push.env.y);
+    } else {
+        color += ShadeSkyReflection(s, V, float3(push.sky_r, push.sky_g, push.sky_b), push.ambient.a);
+    }
     color += emissive_tex.Load(int3(pixel, 0)).rgb;
     output.color = float4(color, 1.0);
     return output;

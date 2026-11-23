@@ -349,3 +349,240 @@ TEST_CASE("cube map: the texture source refuses what a cube cannot be made from"
 }
 
 }  // namespace vse::asset
+
+namespace vse::asset
+{
+
+namespace
+{
+
+// Six 16 x 16 faces of a dim sky with one very bright patch on the +Z face.
+Vector<Vector<byte>> CmSunCube()
+{
+    Vector<Vector<byte>> images;
+    for (u32 face = 0; face < 6; ++face)
+    {
+        Vector<byte> pixels;
+        pixels.Resize(16 * 16 * 8);
+        for (usize i = 0; i < 256; ++i)
+        {
+            CmPut(&pixels, i, 0.25f, 0.25f, 0.25f, 1.0f);
+        }
+        if (face == 4)
+        {
+            for (u32 y = 7; y < 9; ++y)
+            {
+                for (u32 x = 7; x < 9; ++x)
+                {
+                    CmPut(&pixels, y * 16 + x, 200.0f, 150.0f, 100.0f, 1.0f);
+                }
+            }
+        }
+        images.Push(CmRawHalf(16, 16, pixels));
+    }
+    return images;
+}
+
+const char* const kCmEnvironmentText =
+    "id 0000000000000c03\nkind cube\ninput rgba16f\nformat rgba16f\nenvironment yes\nsource a\nsource b\nsource c\n"
+    "source d\nsource e\nsource f\n";
+const char* const kCmPlainText =
+    "id 0000000000000c03\nkind cube\ninput rgba16f\nformat rgba16f\nsource a\nsource b\nsource c\nsource d\n"
+    "source e\nsource f\n";
+
+f32 CmLevelPeak(const TextureView& view, u32 face, u32 mip)
+{
+    const TextureLevel level = view.Level(face, mip);
+    f32 peak = 0.0f;
+    for (usize i = 0; i + 8 <= level.bytes.Size(); i += 8)
+    {
+        const f32 v = CmFloat(level.bytes.Data() + i);
+        peak = v > peak ? v : peak;
+    }
+    return peak;
+}
+
+f32 CmLevelMean(const TextureView& view, u32 face, u32 mip)
+{
+    const TextureLevel level = view.Level(face, mip);
+    f32 sum = 0.0f;
+    usize n = 0;
+    for (usize i = 0; i + 8 <= level.bytes.Size(); i += 8)
+    {
+        sum += CmFloat(level.bytes.Data() + i);
+        ++n;
+    }
+    return sum / static_cast<f32>(n);
+}
+
+}  // namespace
+
+TEST_CASE("cube map: a direction finds the face and the texel the face table gave it", "[asset][cube]")
+{
+    for (u32 face = 0; face < 6; ++face)
+    {
+        for (f32 u : {-0.9f, -0.3f, 0.0f, 0.7f})
+        {
+            for (f32 v : {-0.8f, 0.1f, 0.95f})
+            {
+                u32 found = 9;
+                f32 fu = 0.0f;
+                f32 fv = 0.0f;
+                CubeDirectionToFace(CubeFaceDirection(face, u, v) * 3.0f, &found, &fu, &fv);
+                CHECK(found == face);
+                CHECK(Abs(fu - u) < 1e-5f);
+                CHECK(Abs(fv - v) < 1e-5f);
+            }
+        }
+    }
+}
+
+TEST_CASE("cube map: the polynomial sine and cosine stay within 2e-6 of the library ones", "[asset][cube]")
+{
+    f32 worst = 0.0f;
+    for (u32 i = 0; i <= 2000; ++i)
+    {
+        const f32 x = static_cast<f32>(i) * (2.0f * kCmPi / 2000.0f);
+        f32 s = 0.0f;
+        f32 c = 0.0f;
+        DeterministicSinCos(x, &s, &c);
+        worst = FMax(worst, FMax(Abs(s - Sin(x)), Abs(c - Cos(x))));
+    }
+    CHECK(worst < 2e-6f);
+}
+
+TEST_CASE("cube map: an environment cube keeps its sharp level and blurs the others by roughness", "[asset][cube]")
+{
+    const Vector<Vector<byte>> images = CmSunCube();
+    Vector<byte> env;
+    Vector<byte> plain;
+    TextureSourceError error;
+    REQUIRE(CmMint(kCmEnvironmentText, images, &env, &error).Ok());
+    REQUIRE(CmMint(kCmPlainText, images, &plain, &error).Ok());
+    TypeRegistry types;
+    TextureView ev;
+    TextureView pv;
+    REQUIRE(ev.Open(AsBytes(env), types).Ok());
+    REQUIRE(pv.Open(AsBytes(plain), types).Ok());
+    REQUIRE(ev.MipCount() == 5);
+    // Level 0 is the image itself, the same as without the option.
+    for (u32 face = 0; face < 6; ++face)
+    {
+        const TextureLevel a = ev.Level(face, 0);
+        const TextureLevel b = pv.Level(face, 0);
+        REQUIRE(a.bytes.Size() == b.bytes.Size());
+        CHECK(MemCompare(a.bytes.Data(), b.bytes.Data(), a.bytes.Size()) == 0);
+    }
+    // The bright patch spreads: the peak of its face falls through the levels 1 to 3 (the 1 x 1 level is a lobe of the
+    // whole sphere around the face centre, and may sit a little above the 2 x 2 one) and stays below the source.
+    f32 previous = CmLevelPeak(ev, 4, 0);
+    for (u32 mip = 1; mip < 4; ++mip)
+    {
+        const f32 peak = CmLevelPeak(ev, 4, mip);
+        INFO("mip " << mip << " peak " << peak << " previous " << previous);
+        CHECK(peak < previous);
+        previous = peak;
+    }
+    CHECK(CmLevelPeak(ev, 4, 4) < CmLevelPeak(ev, 4, 1));
+    // A face that held no patch gets some of its light from the neighbours at a high roughness: brighter than the dim
+    // sky it started as, and darker than the patch.
+    CHECK(CmLevelMean(ev, 0, 3) > 0.25f);
+    CHECK(CmLevelMean(ev, 0, 3) < CmLevelPeak(ev, 4, 0));
+}
+
+TEST_CASE("cube map: the environment chain keeps the energy of a smooth sky", "[asset][cube]")
+{
+    Vector<Vector<byte>> images;
+    images.Push(CmRawHalf(64, 32, CmPatternImage(64, 32)));
+    const char* plain_text =
+        "id 0000000000000c05\nkind cube\ninput rgba16f\nformat rgba16f\nprojection equirect\nface_size 16\nsource s\n";
+    const char*
+        env_text = "id 0000000000000c05\nkind cube\ninput rgba16f\nformat rgba16f\nprojection equirect\nface_size 16\n"
+                   "environment yes\nsource s\n";
+    Vector<byte> env;
+    Vector<byte> plain;
+    TextureSourceError error;
+    REQUIRE(CmMint(env_text, images, &env, &error).Ok());
+    REQUIRE(CmMint(plain_text, images, &plain, &error).Ok());
+    TypeRegistry types;
+    TextureView ev;
+    TextureView pv;
+    REQUIRE(ev.Open(AsBytes(env), types).Ok());
+    REQUIRE(pv.Open(AsBytes(plain), types).Ok());
+    for (u32 mip = 1; mip < 4; ++mip)
+    {
+        f32 env_mean = 0.0f;
+        f32 plain_mean = 0.0f;
+        for (u32 face = 0; face < 6; ++face)
+        {
+            env_mean += CmLevelMean(ev, face, mip);
+            plain_mean += CmLevelMean(pv, face, mip);
+        }
+        INFO("mip " << mip << " env " << env_mean << " plain " << plain_mean);
+        CHECK(Abs(env_mean - plain_mean) < 0.12f * plain_mean);
+    }
+}
+
+TEST_CASE("cube map: a uniform environment stays uniform at every level, and the minted bytes never change",
+          "[asset][cube]")
+{
+    Vector<Vector<byte>> images;
+    for (u32 face = 0; face < 6; ++face)
+    {
+        Vector<byte> pixels;
+        pixels.Resize(16 * 16 * 8);
+        for (usize i = 0; i < 256; ++i)
+        {
+            CmPut(&pixels, i, 2.0f, 1.0f, 0.5f, 1.0f);
+        }
+        images.Push(CmRawHalf(16, 16, pixels));
+    }
+    Vector<byte> blob;
+    TextureSourceError error;
+    REQUIRE(CmMint(kCmEnvironmentText, images, &blob, &error).Ok());
+    TypeRegistry types;
+    TextureView view;
+    REQUIRE(view.Open(AsBytes(blob), types).Ok());
+    for (u32 face = 0; face < 6; ++face)
+    {
+        for (u32 mip = 0; mip < 5; ++mip)
+        {
+            const TextureLevel level = view.Level(face, mip);
+            for (usize i = 0; i + 8 <= level.bytes.Size(); i += 8)
+            {
+                CHECK(Abs(CmFloat(level.bytes.Data() + i) - 2.0f) < 0.01f);
+                CHECK(Abs(CmFloat(level.bytes.Data() + i + 2) - 1.0f) < 0.005f);
+                CHECK(Abs(CmFloat(level.bytes.Data() + i + 4) - 0.5f) < 0.003f);
+            }
+        }
+    }
+    Vector<byte> sun;
+    REQUIRE(CmMint(kCmEnvironmentText, CmSunCube(), &sun, &error).Ok());
+    Vector<byte> again;
+    REQUIRE(CmMint(kCmEnvironmentText, CmSunCube(), &again, &error).Ok());
+    CHECK(CmFnv(sun) == CmFnv(again));
+    CHECK(CmFnv(sun) == 0x6e8e6b8e4104a2cfull);  // pinned: a change in the prefilter shows here
+}
+
+TEST_CASE("cube map: environment needs a half-float cube", "[asset][cube]")
+{
+    Vector<Vector<byte>> images;
+    Vector<byte> pixels;
+    pixels.Resize(4 * 4 * 8);
+    images.Push(CmRawHalf(4, 4, pixels));
+    Vector<byte> blob;
+    TextureSourceError error;
+    CHECK(CmMint("id 0000000000000c04\nkind 2d\ninput rgba16f\nformat rgba16f\nenvironment yes\nsource a\n", images,
+                 &blob, &error)
+              .Failed());
+    CHECK(CmMint("id 0000000000000c04\nkind cube\nenvironment yes\nsource a\nsource b\nsource c\nsource d\n"
+                 "source e\nsource f\n",
+                 images, &blob, &error)
+              .Failed());
+    CHECK(CmMint("id 0000000000000c04\nkind cube\ninput rgba16f\nformat rgba16f\nenvironment maybe\nsource a\n"
+                 "source b\nsource c\nsource d\nsource e\nsource f\n",
+                 images, &blob, &error)
+              .Failed());
+}
+
+}  // namespace vse::asset

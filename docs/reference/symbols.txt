@@ -7715,6 +7715,9 @@ asset::FloatToHalfBits(f32)	function	asset	asset-floattohalfbits-f32	asset.md	en
 asset::CubeFaceDirection(u32,f32,f32)	function	asset	asset-cubefacedirection-u32-f32-f32	asset.md	engine/asset/cube_map.h:46
 asset::DeterministicAtan2(f32,f32)	function	asset	asset-deterministicatan2-f32-f32	asset.md	engine/asset/cube_map.h:52
 asset::EquirectangularToCubeFaces(ByteSpan,u32,u32,u32,Vector<Vector<byte>>*)	function	asset	asset-equirectangulartocubefaces-bytespan-u32-u32-u32-vector-lt-vector-lt-byte-gt-gt-star	asset.md	engine/asset/cube_map.h:68
+asset::CubeDirectionToFace(const Vec3&,u32*,f32*,f32*)	function	asset	asset-cubedirectiontoface-const-vec3-amp-u32-star-f32-star-f32-star	asset.md	engine/asset/cube_map.h:79
+asset::DeterministicSinCos(f32,f32*,f32*)	function	asset	asset-deterministicsincos-f32-f32-star-f32-star	asset.md	engine/asset/cube_map.h:88
+asset::PrefilterEnvironmentChains(u32,u32,Vector<Vector<byte>>*)	function	asset	asset-prefilterenvironmentchains-u32-u32-vector-lt-vector-lt-byte-gt-gt-star	asset.md	engine/asset/cube_map.h:102
 asset::FaultOp	enum	asset	asset-faultop	asset.md	engine/asset/faulty_backend.h:14
 asset::FaultOp::Stat	enumerator	asset	asset-faultop-stat	asset.md	engine/asset/faulty_backend.h:16
 asset::FaultOp::Open	enumerator	asset	asset-faultop-open	asset.md	engine/asset/faulty_backend.h:17
@@ -8713,8 +8716,9 @@ asset::TextureMintSpec::srgb	variable	asset	asset-texturemintspec-srgb	asset.md	
 asset::TextureMintSpec::mips	variable	asset	asset-texturemintspec-mips	asset.md	engine/asset/texture_mint.h:31
 asset::TextureMintSpec::filter	variable	asset	asset-texturemintspec-filter	asset.md	engine/asset/texture_mint.h:32
 asset::TextureMintSpec::alpha	variable	asset	asset-texturemintspec-alpha	asset.md	engine/asset/texture_mint.h:33
-asset::MintTextureFromPixels(const TypeRegistry&,ResourceId,const TextureMintSpec&,u32,u32,Span<const ByteSpan>,Vector<byte>*,u32,jobs::Scheduler*)	function	asset	asset-minttexturefrompixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32-jobs-scheduler-star	asset.md	engine/asset/texture_mint.h:51
-asset::MintTextureFromHalfPixels(const TypeRegistry&,ResourceId,const TextureMintSpec&,u32,u32,Span<const ByteSpan>,Vector<byte>*,u32)	function	asset	asset-minttexturefromhalfpixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32	asset.md	engine/asset/texture_mint.h:72
+asset::TextureMintSpec::environment	variable	asset	asset-texturemintspec-environment	asset.md	engine/asset/texture_mint.h:34
+asset::MintTextureFromPixels(const TypeRegistry&,ResourceId,const TextureMintSpec&,u32,u32,Span<const ByteSpan>,Vector<byte>*,u32,jobs::Scheduler*)	function	asset	asset-minttexturefrompixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32-jobs-scheduler-star	asset.md	engine/asset/texture_mint.h:52
+asset::MintTextureFromHalfPixels(const TypeRegistry&,ResourceId,const TextureMintSpec&,u32,u32,Span<const ByteSpan>,Vector<byte>*,u32)	function	asset	asset-minttexturefromhalfpixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32	asset.md	engine/asset/texture_mint.h:74
 asset::kMaxTextureSize	variable	asset	asset-kmaxtexturesize	asset.md	engine/asset/texture_mips.h:26
 asset::MipFilter	enum	asset	asset-mipfilter	asset.md	engine/asset/texture_mips.h:29
 asset::MipFilter::Box	enumerator	asset	asset-mipfilter-box	asset.md	engine/asset/texture_mips.h:31
@@ -12503,56 +12507,57 @@ renderer::GlyphAtlasTexture::Release()	function	renderer	renderer-glyphatlastext
 renderer::GlyphAtlasTexture::Recreate(rhi::Device*)	function	renderer	renderer-glyphatlastexture-recreate-rhi-device-star	renderer.md	engine/renderer/glyph_atlas_texture.h:83
 renderer::GlyphAtlasTexture::Live() const	function	renderer	renderer-glyphatlastexture-live-const	renderer.md	engine/renderer/glyph_atlas_texture.h:84
 renderer::GlyphAtlasTexture::RecreatableName() const	function	renderer	renderer-glyphatlastexture-recreatablename-const	renderer.md	engine/renderer/glyph_atlas_texture.h:85
-renderer::kLightAccumFormat	variable	renderer	renderer-klightaccumformat	renderer.md	engine/renderer/lighting.h:42
-renderer::SurfacePoint	struct	renderer	renderer-surfacepoint	renderer.md	engine/renderer/lighting.h:47
-renderer::SurfacePoint::albedo	variable	renderer	renderer-surfacepoint-albedo	renderer.md	engine/renderer/lighting.h:50
-renderer::SurfacePoint::roughness	variable	renderer	renderer-surfacepoint-roughness	renderer.md	engine/renderer/lighting.h:52
-renderer::SurfacePoint::metallic	variable	renderer	renderer-surfacepoint-metallic	renderer.md	engine/renderer/lighting.h:54
-renderer::SurfacePoint::occlusion	variable	renderer	renderer-surfacepoint-occlusion	renderer.md	engine/renderer/lighting.h:56
-renderer::SurfacePoint::normal	variable	renderer	renderer-surfacepoint-normal	renderer.md	engine/renderer/lighting.h:58
-renderer::ShadeLight(const SurfacePoint&,const Vec3&,const Vec3&,const Vec3&)	function	renderer	renderer-shadelight-const-surfacepoint-amp-const-vec3-amp-const-vec3-amp-const-vec3-amp	renderer.md	engine/renderer/lighting.h:73
-renderer::ShadeSkyReflection(const SurfacePoint&,const Vec3&,const Vec3&,f32)	function	renderer	renderer-shadeskyreflection-const-surfacepoint-amp-const-vec3-amp-const-vec3-amp-f32	renderer.md	engine/renderer/lighting.h:86
-renderer::ShadeAmbient(const SurfacePoint&,const Vec3&)	function	renderer	renderer-shadeambient-const-surfacepoint-amp-const-vec3-amp	renderer.md	engine/renderer/lighting.h:96
-renderer::TonemapAces(f32)	function	renderer	renderer-tonemapaces-f32	renderer.md	engine/renderer/lighting.h:103
-renderer::ReconstructWorldPosition(u32,u32,f32,u32,u32,const Mat4&)	function	renderer	renderer-reconstructworldposition-u32-u32-f32-u32-u32-const-mat4-amp	renderer.md	engine/renderer/lighting.h:116
-renderer::PointLightAttenuation(f32,f32)	function	renderer	renderer-pointlightattenuation-f32-f32	renderer.md	engine/renderer/lighting.h:130
-renderer::SpotLightFactor(f32,f32,f32)	function	renderer	renderer-spotlightfactor-f32-f32-f32	renderer.md	engine/renderer/lighting.h:142
-renderer::kLightVolumeSegments	variable	renderer	renderer-klightvolumesegments	renderer.md	engine/renderer/lighting.h:145
-renderer::kLightVolumeRings	variable	renderer	renderer-klightvolumerings	renderer.md	engine/renderer/lighting.h:147
-renderer::kLightVolumeVertexCount	variable	renderer	renderer-klightvolumevertexcount	renderer.md	engine/renderer/lighting.h:149
-renderer::LightVolumeScale()	function	renderer	renderer-lightvolumescale	renderer.md	engine/renderer/lighting.h:155
-renderer::LightVolumeVertex(u32)	function	renderer	renderer-lightvolumevertex-u32	renderer.md	engine/renderer/lighting.h:165
-renderer::LightScreenRect(const FrameData&,const Vec3&,f32,u32,u32,rhi::ScissorRect*)	function	renderer	renderer-lightscreenrect-const-framedata-amp-const-vec3-amp-f32-u32-u32-rhi-scissorrect-star	renderer.md	engine/renderer/lighting.h:182
-renderer::LightingPass	class	renderer	renderer-lightingpass	renderer.md	engine/renderer/lighting.h:191
-renderer::LightingPass::LightingPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-lightingpass-lightingpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/lighting.h:201
-renderer::LightingPass::~LightingPass()	function	renderer	renderer-lightingpass-tilde-lightingpass	renderer.md	engine/renderer/lighting.h:203
-renderer::LightingPass::LightingPass(const LightingPass&)	function	renderer	renderer-lightingpass-lightingpass-const-lightingpass-amp	renderer.md	engine/renderer/lighting.h:204
-renderer::LightingPass::operator=(const LightingPass&)	function	renderer	renderer-lightingpass-operator-eq-const-lightingpass-amp	renderer.md	engine/renderer/lighting.h:205
-renderer::LightingPass::RegisterWith(DeviceResources*)	function	renderer	renderer-lightingpass-registerwith-deviceresources-star	renderer.md	engine/renderer/lighting.h:213
-renderer::LightingPass::Release()	function	renderer	renderer-lightingpass-release	renderer.md	engine/renderer/lighting.h:216
-renderer::LightingPass::Recreate(rhi::Device*)	function	renderer	renderer-lightingpass-recreate-rhi-device-star	renderer.md	engine/renderer/lighting.h:224
-renderer::LightingPass::Live() const	function	renderer	renderer-lightingpass-live-const	renderer.md	engine/renderer/lighting.h:225
-renderer::LightingPass::RecreatableName() const	function	renderer	renderer-lightingpass-recreatablename-const	renderer.md	engine/renderer/lighting.h:226
-renderer::LightingPass::Valid() const	function	renderer	renderer-lightingpass-valid-const	renderer.md	engine/renderer/lighting.h:230
-renderer::LightingPass::Prepare(const RenderScene&,const FrameData&)	function	renderer	renderer-lightingpass-prepare-const-renderscene-amp-const-framedata-amp	renderer.md	engine/renderer/lighting.h:246
-renderer::LightingPass::SetBackground(const Vec3&)	function	renderer	renderer-lightingpass-setbackground-const-vec3-amp	renderer.md	engine/renderer/lighting.h:253
-renderer::LightingPass::SetSkyReflectionColor(const Vec3&)	function	renderer	renderer-lightingpass-setskyreflectioncolor-const-vec3-amp	renderer.md	engine/renderer/lighting.h:265
-renderer::LightingPass::SetSkyReflection(f32)	function	renderer	renderer-lightingpass-setskyreflection-f32	renderer.md	engine/renderer/lighting.h:273
-renderer::LightingPass::PointDrawsPlanned() const	function	renderer	renderer-lightingpass-pointdrawsplanned-const	renderer.md	engine/renderer/lighting.h:277
-renderer::LightingPass::PointDrawsRecorded() const	function	renderer	renderer-lightingpass-pointdrawsrecorded-const	renderer.md	engine/renderer/lighting.h:280
-renderer::LightingPass::AddToGraph(RenderGraph*,const GBufferTargets&,u32,u32)	function	renderer	renderer-lightingpass-addtograph-rendergraph-star-const-gbuffertargets-amp-u32-u32	renderer.md	engine/renderer/lighting.h:292
-renderer::TonemapPass	class	renderer	renderer-tonemappass	renderer.md	engine/renderer/lighting.h:342
-renderer::TonemapPass::TonemapPass(rhi::Device*)	function	renderer	renderer-tonemappass-tonemappass-rhi-device-star	renderer.md	engine/renderer/lighting.h:350
-renderer::TonemapPass::~TonemapPass()	function	renderer	renderer-tonemappass-tilde-tonemappass	renderer.md	engine/renderer/lighting.h:352
-renderer::TonemapPass::TonemapPass(const TonemapPass&)	function	renderer	renderer-tonemappass-tonemappass-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:353
-renderer::TonemapPass::operator=(const TonemapPass&)	function	renderer	renderer-tonemappass-operator-eq-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:354
-renderer::TonemapPass::RegisterWith(DeviceResources*)	function	renderer	renderer-tonemappass-registerwith-deviceresources-star	renderer.md	engine/renderer/lighting.h:363
-renderer::TonemapPass::Release()	function	renderer	renderer-tonemappass-release	renderer.md	engine/renderer/lighting.h:366
-renderer::TonemapPass::Recreate(rhi::Device*)	function	renderer	renderer-tonemappass-recreate-rhi-device-star	renderer.md	engine/renderer/lighting.h:374
-renderer::TonemapPass::Live() const	function	renderer	renderer-tonemappass-live-const	renderer.md	engine/renderer/lighting.h:375
-renderer::TonemapPass::RecreatableName() const	function	renderer	renderer-tonemappass-recreatablename-const	renderer.md	engine/renderer/lighting.h:376
-renderer::TonemapPass::Valid() const	function	renderer	renderer-tonemappass-valid-const	renderer.md	engine/renderer/lighting.h:380
-renderer::TonemapPass::AddToGraph(RenderGraph*,GraphResource,GraphResource,rhi::Format,f32)	function	renderer	renderer-tonemappass-addtograph-rendergraph-star-graphresource-graphresource-rhi-format-f32	renderer.md	engine/renderer/lighting.h:394
+renderer::kLightAccumFormat	variable	renderer	renderer-klightaccumformat	renderer.md	engine/renderer/lighting.h:43
+renderer::SurfacePoint	struct	renderer	renderer-surfacepoint	renderer.md	engine/renderer/lighting.h:48
+renderer::SurfacePoint::albedo	variable	renderer	renderer-surfacepoint-albedo	renderer.md	engine/renderer/lighting.h:51
+renderer::SurfacePoint::roughness	variable	renderer	renderer-surfacepoint-roughness	renderer.md	engine/renderer/lighting.h:53
+renderer::SurfacePoint::metallic	variable	renderer	renderer-surfacepoint-metallic	renderer.md	engine/renderer/lighting.h:55
+renderer::SurfacePoint::occlusion	variable	renderer	renderer-surfacepoint-occlusion	renderer.md	engine/renderer/lighting.h:57
+renderer::SurfacePoint::normal	variable	renderer	renderer-surfacepoint-normal	renderer.md	engine/renderer/lighting.h:59
+renderer::ShadeLight(const SurfacePoint&,const Vec3&,const Vec3&,const Vec3&)	function	renderer	renderer-shadelight-const-surfacepoint-amp-const-vec3-amp-const-vec3-amp-const-vec3-amp	renderer.md	engine/renderer/lighting.h:74
+renderer::ShadeSkyReflection(const SurfacePoint&,const Vec3&,const Vec3&,f32)	function	renderer	renderer-shadeskyreflection-const-surfacepoint-amp-const-vec3-amp-const-vec3-amp-f32	renderer.md	engine/renderer/lighting.h:87
+renderer::ShadeAmbient(const SurfacePoint&,const Vec3&)	function	renderer	renderer-shadeambient-const-surfacepoint-amp-const-vec3-amp	renderer.md	engine/renderer/lighting.h:97
+renderer::TonemapAces(f32)	function	renderer	renderer-tonemapaces-f32	renderer.md	engine/renderer/lighting.h:104
+renderer::ReconstructWorldPosition(u32,u32,f32,u32,u32,const Mat4&)	function	renderer	renderer-reconstructworldposition-u32-u32-f32-u32-u32-const-mat4-amp	renderer.md	engine/renderer/lighting.h:117
+renderer::PointLightAttenuation(f32,f32)	function	renderer	renderer-pointlightattenuation-f32-f32	renderer.md	engine/renderer/lighting.h:131
+renderer::SpotLightFactor(f32,f32,f32)	function	renderer	renderer-spotlightfactor-f32-f32-f32	renderer.md	engine/renderer/lighting.h:143
+renderer::kLightVolumeSegments	variable	renderer	renderer-klightvolumesegments	renderer.md	engine/renderer/lighting.h:146
+renderer::kLightVolumeRings	variable	renderer	renderer-klightvolumerings	renderer.md	engine/renderer/lighting.h:148
+renderer::kLightVolumeVertexCount	variable	renderer	renderer-klightvolumevertexcount	renderer.md	engine/renderer/lighting.h:150
+renderer::LightVolumeScale()	function	renderer	renderer-lightvolumescale	renderer.md	engine/renderer/lighting.h:156
+renderer::LightVolumeVertex(u32)	function	renderer	renderer-lightvolumevertex-u32	renderer.md	engine/renderer/lighting.h:166
+renderer::LightScreenRect(const FrameData&,const Vec3&,f32,u32,u32,rhi::ScissorRect*)	function	renderer	renderer-lightscreenrect-const-framedata-amp-const-vec3-amp-f32-u32-u32-rhi-scissorrect-star	renderer.md	engine/renderer/lighting.h:183
+renderer::LightingPass	class	renderer	renderer-lightingpass	renderer.md	engine/renderer/lighting.h:192
+renderer::LightingPass::LightingPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-lightingpass-lightingpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/lighting.h:202
+renderer::LightingPass::~LightingPass()	function	renderer	renderer-lightingpass-tilde-lightingpass	renderer.md	engine/renderer/lighting.h:204
+renderer::LightingPass::LightingPass(const LightingPass&)	function	renderer	renderer-lightingpass-lightingpass-const-lightingpass-amp	renderer.md	engine/renderer/lighting.h:205
+renderer::LightingPass::operator=(const LightingPass&)	function	renderer	renderer-lightingpass-operator-eq-const-lightingpass-amp	renderer.md	engine/renderer/lighting.h:206
+renderer::LightingPass::RegisterWith(DeviceResources*)	function	renderer	renderer-lightingpass-registerwith-deviceresources-star	renderer.md	engine/renderer/lighting.h:214
+renderer::LightingPass::Release()	function	renderer	renderer-lightingpass-release	renderer.md	engine/renderer/lighting.h:217
+renderer::LightingPass::Recreate(rhi::Device*)	function	renderer	renderer-lightingpass-recreate-rhi-device-star	renderer.md	engine/renderer/lighting.h:225
+renderer::LightingPass::Live() const	function	renderer	renderer-lightingpass-live-const	renderer.md	engine/renderer/lighting.h:226
+renderer::LightingPass::RecreatableName() const	function	renderer	renderer-lightingpass-recreatablename-const	renderer.md	engine/renderer/lighting.h:227
+renderer::LightingPass::Valid() const	function	renderer	renderer-lightingpass-valid-const	renderer.md	engine/renderer/lighting.h:231
+renderer::LightingPass::Prepare(const RenderScene&,const FrameData&)	function	renderer	renderer-lightingpass-prepare-const-renderscene-amp-const-framedata-amp	renderer.md	engine/renderer/lighting.h:247
+renderer::LightingPass::SetBackground(const Vec3&)	function	renderer	renderer-lightingpass-setbackground-const-vec3-amp	renderer.md	engine/renderer/lighting.h:254
+renderer::LightingPass::SetSkyReflectionColor(const Vec3&)	function	renderer	renderer-lightingpass-setskyreflectioncolor-const-vec3-amp	renderer.md	engine/renderer/lighting.h:266
+renderer::LightingPass::SetEnvironmentCube(const GpuTexturePtr&,f32,f32)	function	renderer	renderer-lightingpass-setenvironmentcube-const-gputextureptr-amp-f32-f32	renderer.md	engine/renderer/lighting.h:279
+renderer::LightingPass::SetSkyReflection(f32)	function	renderer	renderer-lightingpass-setskyreflection-f32	renderer.md	engine/renderer/lighting.h:287
+renderer::LightingPass::PointDrawsPlanned() const	function	renderer	renderer-lightingpass-pointdrawsplanned-const	renderer.md	engine/renderer/lighting.h:291
+renderer::LightingPass::PointDrawsRecorded() const	function	renderer	renderer-lightingpass-pointdrawsrecorded-const	renderer.md	engine/renderer/lighting.h:294
+renderer::LightingPass::AddToGraph(RenderGraph*,const GBufferTargets&,u32,u32)	function	renderer	renderer-lightingpass-addtograph-rendergraph-star-const-gbuffertargets-amp-u32-u32	renderer.md	engine/renderer/lighting.h:306
+renderer::TonemapPass	class	renderer	renderer-tonemappass	renderer.md	engine/renderer/lighting.h:364
+renderer::TonemapPass::TonemapPass(rhi::Device*)	function	renderer	renderer-tonemappass-tonemappass-rhi-device-star	renderer.md	engine/renderer/lighting.h:372
+renderer::TonemapPass::~TonemapPass()	function	renderer	renderer-tonemappass-tilde-tonemappass	renderer.md	engine/renderer/lighting.h:374
+renderer::TonemapPass::TonemapPass(const TonemapPass&)	function	renderer	renderer-tonemappass-tonemappass-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:375
+renderer::TonemapPass::operator=(const TonemapPass&)	function	renderer	renderer-tonemappass-operator-eq-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:376
+renderer::TonemapPass::RegisterWith(DeviceResources*)	function	renderer	renderer-tonemappass-registerwith-deviceresources-star	renderer.md	engine/renderer/lighting.h:385
+renderer::TonemapPass::Release()	function	renderer	renderer-tonemappass-release	renderer.md	engine/renderer/lighting.h:388
+renderer::TonemapPass::Recreate(rhi::Device*)	function	renderer	renderer-tonemappass-recreate-rhi-device-star	renderer.md	engine/renderer/lighting.h:396
+renderer::TonemapPass::Live() const	function	renderer	renderer-tonemappass-live-const	renderer.md	engine/renderer/lighting.h:397
+renderer::TonemapPass::RecreatableName() const	function	renderer	renderer-tonemappass-recreatablename-const	renderer.md	engine/renderer/lighting.h:398
+renderer::TonemapPass::Valid() const	function	renderer	renderer-tonemappass-valid-const	renderer.md	engine/renderer/lighting.h:402
+renderer::TonemapPass::AddToGraph(RenderGraph*,GraphResource,GraphResource,rhi::Format,f32)	function	renderer	renderer-tonemappass-addtograph-rendergraph-star-graphresource-graphresource-rhi-format-f32	renderer.md	engine/renderer/lighting.h:416
 renderer::kFrameSet	variable	renderer	renderer-kframeset	renderer.md	engine/renderer/material.h:27
 renderer::kMaterialSet	variable	renderer	renderer-kmaterialset	renderer.md	engine/renderer/material.h:29
 renderer::kObjectSet	variable	renderer	renderer-kobjectset	renderer.md	engine/renderer/material.h:31
@@ -13427,24 +13432,27 @@ renderer::SkySettings::sun_direction	variable	renderer	renderer-skysettings-sun-
 renderer::SkySettings::sun_color	variable	renderer	renderer-skysettings-sun-color	renderer.md	engine/renderer/sky.h:46
 renderer::SkySettings::sun_size	variable	renderer	renderer-skysettings-sun-size	renderer.md	engine/renderer/sky.h:47
 renderer::SkySettings::horizon_blend	variable	renderer	renderer-skysettings-horizon-blend	renderer.md	engine/renderer/sky.h:48
-renderer::SkySettings::exposure	variable	renderer	renderer-skysettings-exposure	renderer.md	engine/renderer/sky.h:49
-renderer::SkySettings::rotation	variable	renderer	renderer-skysettings-rotation	renderer.md	engine/renderer/sky.h:50
-renderer::SkySettingsValid(const SkySettings&)	function	renderer	renderer-skysettingsvalid-const-skysettings-amp	renderer.md	engine/renderer/sky.h:61
-renderer::SkyColor(const SkySettings&,const Vec3&)	function	renderer	renderer-skycolor-const-skysettings-amp-const-vec3-amp	renderer.md	engine/renderer/sky.h:74
-renderer::SkyCubeDirection(const SkySettings&,const Vec3&)	function	renderer	renderer-skycubedirection-const-skysettings-amp-const-vec3-amp	renderer.md	engine/renderer/sky.h:84
-renderer::SkyPass	class	renderer	renderer-skypass	renderer.md	engine/renderer/sky.h:90
-renderer::SkyPass::SkyPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-skypass-skypass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/sky.h:100
-renderer::SkyPass::~SkyPass()	function	renderer	renderer-skypass-tilde-skypass	renderer.md	engine/renderer/sky.h:102
-renderer::SkyPass::SkyPass(const SkyPass&)	function	renderer	renderer-skypass-skypass-const-skypass-amp	renderer.md	engine/renderer/sky.h:103
-renderer::SkyPass::operator=(const SkyPass&)	function	renderer	renderer-skypass-operator-eq-const-skypass-amp	renderer.md	engine/renderer/sky.h:104
-renderer::SkyPass::RegisterWith(DeviceResources*)	function	renderer	renderer-skypass-registerwith-deviceresources-star	renderer.md	engine/renderer/sky.h:112
-renderer::SkyPass::Release()	function	renderer	renderer-skypass-release	renderer.md	engine/renderer/sky.h:115
-renderer::SkyPass::Recreate(rhi::Device*)	function	renderer	renderer-skypass-recreate-rhi-device-star	renderer.md	engine/renderer/sky.h:123
-renderer::SkyPass::Live() const	function	renderer	renderer-skypass-live-const	renderer.md	engine/renderer/sky.h:124
-renderer::SkyPass::RecreatableName() const	function	renderer	renderer-skypass-recreatablename-const	renderer.md	engine/renderer/sky.h:125
-renderer::SkyPass::Valid() const	function	renderer	renderer-skypass-valid-const	renderer.md	engine/renderer/sky.h:129
-renderer::SkyPass::Prepare(const SkySettings&)	function	renderer	renderer-skypass-prepare-const-skysettings-amp	renderer.md	engine/renderer/sky.h:139
-renderer::SkyPass::AddToGraph(RenderGraph*,const GBufferTargets&,GraphResource)	function	renderer	renderer-skypass-addtograph-rendergraph-star-const-gbuffertargets-amp-graphresource	renderer.md	engine/renderer/sky.h:150
+renderer::SkySettings::ambient_intensity	variable	renderer	renderer-skysettings-ambient-intensity	renderer.md	engine/renderer/sky.h:49
+renderer::SkySettings::exposure	variable	renderer	renderer-skysettings-exposure	renderer.md	engine/renderer/sky.h:52
+renderer::SkySettings::rotation	variable	renderer	renderer-skysettings-rotation	renderer.md	engine/renderer/sky.h:53
+renderer::SkySettingsValid(const SkySettings&)	function	renderer	renderer-skysettingsvalid-const-skysettings-amp	renderer.md	engine/renderer/sky.h:64
+renderer::SkyColor(const SkySettings&,const Vec3&)	function	renderer	renderer-skycolor-const-skysettings-amp-const-vec3-amp	renderer.md	engine/renderer/sky.h:77
+renderer::SkyCubeDirection(const SkySettings&,const Vec3&)	function	renderer	renderer-skycubedirection-const-skysettings-amp-const-vec3-amp	renderer.md	engine/renderer/sky.h:87
+renderer::SkyEnvironmentSame(const SkySettings&,const SkySettings&)	function	renderer	renderer-skyenvironmentsame-const-skysettings-amp-const-skysettings-amp	renderer.md	engine/renderer/sky.h:94
+renderer::MakeSkyEnvironmentCube(rhi::Device*,DeviceResources*,const SkySettings&)	function	renderer	renderer-makeskyenvironmentcube-rhi-device-star-deviceresources-star-const-skysettings-amp	renderer.md	engine/renderer/sky.h:106
+renderer::SkyPass	class	renderer	renderer-skypass	renderer.md	engine/renderer/sky.h:112
+renderer::SkyPass::SkyPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-skypass-skypass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/sky.h:122
+renderer::SkyPass::~SkyPass()	function	renderer	renderer-skypass-tilde-skypass	renderer.md	engine/renderer/sky.h:124
+renderer::SkyPass::SkyPass(const SkyPass&)	function	renderer	renderer-skypass-skypass-const-skypass-amp	renderer.md	engine/renderer/sky.h:125
+renderer::SkyPass::operator=(const SkyPass&)	function	renderer	renderer-skypass-operator-eq-const-skypass-amp	renderer.md	engine/renderer/sky.h:126
+renderer::SkyPass::RegisterWith(DeviceResources*)	function	renderer	renderer-skypass-registerwith-deviceresources-star	renderer.md	engine/renderer/sky.h:134
+renderer::SkyPass::Release()	function	renderer	renderer-skypass-release	renderer.md	engine/renderer/sky.h:137
+renderer::SkyPass::Recreate(rhi::Device*)	function	renderer	renderer-skypass-recreate-rhi-device-star	renderer.md	engine/renderer/sky.h:145
+renderer::SkyPass::Live() const	function	renderer	renderer-skypass-live-const	renderer.md	engine/renderer/sky.h:146
+renderer::SkyPass::RecreatableName() const	function	renderer	renderer-skypass-recreatablename-const	renderer.md	engine/renderer/sky.h:147
+renderer::SkyPass::Valid() const	function	renderer	renderer-skypass-valid-const	renderer.md	engine/renderer/sky.h:151
+renderer::SkyPass::Prepare(const SkySettings&)	function	renderer	renderer-skypass-prepare-const-skysettings-amp	renderer.md	engine/renderer/sky.h:161
+renderer::SkyPass::AddToGraph(RenderGraph*,const GBufferTargets&,GraphResource)	function	renderer	renderer-skypass-addtograph-rendergraph-star-const-gbuffertargets-amp-graphresource	renderer.md	engine/renderer/sky.h:172
 renderer::TextRendererDesc	struct	renderer	renderer-textrendererdesc	renderer.md	engine/renderer/text_renderer.h:22
 renderer::TextRendererDesc::color_format	variable	renderer	renderer-textrendererdesc-color-format	renderer.md	engine/renderer/text_renderer.h:27
 renderer::TextRendererDesc::max_glyphs	variable	renderer	renderer-textrendererdesc-max-glyphs	renderer.md	engine/renderer/text_renderer.h:30

@@ -4412,6 +4412,63 @@ The image's center is the direction -Z, its columns run toward +X (east, to the 
 | Thread-safety | thread-safe. |
 | Ownership | borrows `rgba16f`; `*faces` is replaced. |
 
+## `CubeDirectionToFace(const Vec3&,u32*,f32*,f32*)` {#asset-cubedirectiontoface-const-vec3-amp-u32-star-f32-star-f32-star}
+
+`function asset::CubeDirectionToFace` — defined in `engine/asset/cube_map.h`
+
+```cpp
+void CubeDirectionToFace(const Vec3& direction, u32* face, f32* u, f32* v);
+```
+
+The face and the texel coordinates a direction hits: the inverse of [`asset::CubeFaceDirection`](#asset-cubefacedirection-u32-f32-f32).
+
+| Field | Value |
+|---|---|
+| Parameter `direction` | any non-zero direction. |
+| Parameter `face` | set to 0 to 5. |
+| Parameter `u` | set to the horizontal face coordinate, -1 to 1. |
+| Parameter `v` | set to the vertical face coordinate, -1 to 1. |
+| Fails | never. |
+| Thread-safety | thread-safe. A pure function of its arguments. |
+| Ownership | the three out parameters are written. |
+
+## `DeterministicSinCos(f32,f32*,f32*)` {#asset-deterministicsincos-f32-f32-star-f32-star}
+
+`function asset::DeterministicSinCos` — defined in `engine/asset/cube_map.h`
+
+```cpp
+void DeterministicSinCos(f32 radians, f32* sine, f32* cosine);
+```
+
+The sine and cosine of `radians`, from fixed polynomials (error under 1e-6 within one turn).
+
+| Field | Value |
+|---|---|
+| Parameter `radians` | 0 to 2 pi. |
+| Parameter `sine` | set to the sine. |
+| Parameter `cosine` | set to the cosine. |
+| Thread-safety | thread-safe. A pure function of its arguments. |
+| Ownership | the two out parameters are written. |
+
+## `PrefilterEnvironmentChains(u32,u32,Vector<Vector<byte>>*)` {#asset-prefilterenvironmentchains-u32-u32-vector-lt-vector-lt-byte-gt-gt-star}
+
+`function asset::PrefilterEnvironmentChains` — defined in `engine/asset/cube_map.h`
+
+```cpp
+Status PrefilterEnvironmentChains(u32 face_size, u32 mips, Vector<Vector<byte>>* chains);
+```
+
+Replaces the levels 1 to `mips - 1` of the six half-float face chains of a cube map with its specular chain: level `i` is the box-filtered level `i` convolved with a GGX lobe of roughness `i / (mips - 1)` (alpha is its square), by 32 importance samples in a fixed order, so a shader reads a rougher reflection from a higher level.
+
+| Field | Value |
+|---|---|
+| Parameter `face_size` | texels across a face at level 0 (a power of two or not; levels halve down to 1). |
+| Parameter `mips` | the levels stored; at most the full chain. 1 changes nothing. |
+| Parameter `chains` | six tight chains of `RGBA16_Float` levels, level 0 first, as the texture minter builds them; the levels from 1 are overwritten. |
+| Fails | `Invalid` for a face size of 0, a mip count of 0 or above the full chain, or chains of the wrong number or size. |
+| Thread-safety | thread-compatible. |
+| Ownership | borrows nothing past the call; `*chains` is modified. |
+
 ## `FaultOp` {#asset-faultop}
 
 `enum asset::FaultOp` — defined in `engine/asset/faulty_backend.h`
@@ -15089,6 +15146,16 @@ MipAlpha alpha;
 
 The alpha treatment.
 
+### `environment` {#asset-texturemintspec-environment}
+
+`variable asset::TextureMintSpec::environment` — defined in `engine/asset/texture_mint.h`
+
+```cpp
+bool environment;
+```
+
+A half-float cube map whose levels from 1 are the GGX specular chain.
+
 ## `MintTextureFromPixels(const TypeRegistry&,ResourceId,const TextureMintSpec&,u32,u32,Span<const ByteSpan>,Vector<byte>*,u32,jobs::Scheduler*)` {#asset-minttexturefrompixels-const-typeregistry-amp-resourceid-const-texturemintspec-amp-u32-u32-span-lt-const-bytespan-gt-vector-lt-byte-gt-star-u32-jobs-scheduler-star}
 
 `function asset::MintTextureFromPixels` — defined in `engine/asset/texture_mint.h`
@@ -15129,7 +15196,7 @@ The format is `RGBA16_Float`, the mip chain is filtered in exact integer arithme
 |---|---|
 | Parameter `types` | the registry; it must hold `TEXR`. |
 | Parameter `id` | the texture's id. |
-| Parameter `spec` | kind, mips, filter; `format` must be `RGBA16_Float` and `alpha` must not be `Premultiply`. |
+| Parameter `spec` | kind, mips, filter; `format` must be `RGBA16_Float` and `alpha` must not be `Premultiply`; with `environment` (a cube) the levels from 1 are the GGX specular chain ([`asset::PrefilterEnvironmentChains`](#asset-prefilterenvironmentchains-u32-u32-vector-lt-vector-lt-byte-gt-gt-star)). |
 | Parameter `width` | texels across (1 to 16384). |
 | Parameter `height` | texels down. |
 | Parameter `images` | one `width * height * 8` byte layer per layer of the kind; every texel finite. |
