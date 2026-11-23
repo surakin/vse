@@ -6,13 +6,43 @@
 
 namespace vse::shaders {
 
-inline constexpr usize kTerrainFragReflByteCount = 51;
+inline constexpr usize kTerrainFragReflByteCount = 413;
 
 inline constexpr u8 kTerrainFragRefl[kTerrainFragReflByteCount] = {
     83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
-    110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0,
-    0, 0, 0,
+    110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0,
+    0, 7, 116, 101, 114, 114, 97, 105, 110, 1, 0, 0, 0, 3, 0, 0,
+    0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 9, 115, 112, 108, 97, 116, 95, 116, 101, 120,
+    1, 0, 0, 0, 4, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0,
+    0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 9, 108, 97,
+    121, 101, 114, 95, 116, 101, 120, 1, 0, 0, 0, 5, 0, 0, 0, 2,
+    1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0,
+    1, 0, 0, 0, 14, 114, 101, 112, 101, 97, 116, 95, 115, 97, 109, 112,
+    108, 101, 114, 1, 0, 0, 0, 6, 0, 0, 0, 3, 1, 0, 0, 0,
+    2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0,
+    13, 99, 108, 97, 109, 112, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0,
+    0, 0, 7, 0, 0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255,
+    255, 255, 255, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 13,
+    84, 101, 114, 114, 97, 105, 110, 80, 97, 114, 97, 109, 115, 128, 0, 0,
+    0, 5, 0, 0, 0, 6, 116, 105, 108, 105, 110, 103, 0, 0, 0, 0,
+    16, 0, 0, 0, 1, 0, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    10, 116, 105, 110, 116, 95, 114, 111, 117, 103, 104, 16, 0, 0, 0, 64,
+    0, 0, 0, 1, 0, 4, 1, 4, 0, 0, 0, 16, 0, 0, 0, 8,
+    109, 101, 116, 97, 108, 108, 105, 99, 80, 0, 0, 0, 16, 0, 0, 0,
+    1, 0, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 115, 108, 111,
+    112, 101, 96, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 4, 102, 97, 100, 101, 112, 0, 0, 0, 16,
+    0, 0, 0, 1, 0, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0, 0, 0,
 };
+
+// Block sizes and member offsets, for static_asserts on the C++ structs copied into these blocks.
+inline constexpr u32 kTerrainFragTerrainParamsSize = 128;
+inline constexpr u32 kTerrainFragTerrainParamsTilingOffset = 0;
+inline constexpr u32 kTerrainFragTerrainParamsTintRoughOffset = 16;
+inline constexpr u32 kTerrainFragTerrainParamsMetallicOffset = 80;
+inline constexpr u32 kTerrainFragTerrainParamsSlopeOffset = 96;
+inline constexpr u32 kTerrainFragTerrainParamsFadeOffset = 112;
 
 } // namespace vse::shaders

@@ -456,3 +456,256 @@ TEST_CASE("A tile clipped by the map edge draws nothing past the edge", "[rhi][g
         device.Reset();
     }
 }
+
+namespace
+{
+
+// A 2 by 2 array texture of `layers` layers: layer l is the solid colour colors[l]. With `checker` layer 0 is a red and
+// green checker whose second mip level is (128, 128, 0).
+GpuTexturePtr TgLayerArray(rhi::Device* device, u32 layers, const u8 (*colors)[3], bool checker)
+{
+    rhi::TextureDesc desc;
+    desc.width = 2;
+    desc.height = 2;
+    desc.array_layers = layers;
+    desc.mip_levels = checker ? 2 : 1;
+    desc.format = rhi::Format::RGBA8_SRGB;
+    desc.usage = rhi::TextureUsage::Sampled;
+    Vector<byte> bytes;
+    Vector<TextureLevelSpan> spans;
+    for (u32 l = 0; l < layers; ++l)
+    {
+        for (u32 mip = 0; mip < desc.mip_levels; ++mip)
+        {
+            const u32 texels = mip == 0 ? 4 : 1;
+            TextureLevelSpan span;
+            span.offset = bytes.Size();
+            span.bytes = texels * 4;
+            span.mip = mip;
+            span.layer = l;
+            spans.Push(span);
+            for (u32 t = 0; t < texels; ++t)
+            {
+                u8 c[3] = {colors[l][0], colors[l][1], colors[l][2]};
+                if (checker && l == 0)
+                {
+                    if (mip == 0)
+                    {
+                        const bool red = ((t & 1) ^ (t >> 1)) == 0;
+                        c[0] = red ? 255 : 0;
+                        c[1] = red ? 0 : 255;
+                        c[2] = 0;
+                    }
+                    else
+                    {
+                        c[0] = c[1] = 128;
+                        c[2] = 0;
+                    }
+                }
+                bytes.Push(static_cast<byte>(c[0]));
+                bytes.Push(static_cast<byte>(c[1]));
+                bytes.Push(static_cast<byte>(c[2]));
+                bytes.Push(static_cast<byte>(255));
+            }
+        }
+    }
+    GpuTexturePtr texture = MakeShared<GpuTexture>();
+    SharedBytesPtr region = MakeShared<OwnedBytes>(Move(bytes));
+    REQUIRE(texture->CreateFromSharedLevels(device, desc, region,
+                                            vse::Span<const TextureLevelSpan>(spans.Data(), spans.Size()), nullptr,
+                                            "terrain test layers"));
+    return texture;
+}
+
+GpuTexturePtr TgSplat(rhi::Device* device, u8 r, u8 g, u8 b, u8 a)
+{
+    rhi::TextureDesc desc;
+    desc.width = 1;
+    desc.height = 1;
+    desc.format = rhi::Format::RGBA8_UNorm;
+    desc.usage = rhi::TextureUsage::Sampled;
+    Vector<byte> bytes;
+    bytes.Push(static_cast<byte>(r));
+    bytes.Push(static_cast<byte>(g));
+    bytes.Push(static_cast<byte>(b));
+    bytes.Push(static_cast<byte>(a));
+    TextureLevelSpan span;
+    span.bytes = 4;
+    GpuTexturePtr texture = MakeShared<GpuTexture>();
+    SharedBytesPtr region = MakeShared<OwnedBytes>(Move(bytes));
+    REQUIRE(texture->CreateFromSharedLevels(device, desc, region, vse::Span<const TextureLevelSpan>(&span, 1), nullptr,
+                                            "terrain test splat"));
+    return texture;
+}
+
+const u8 kTgColors[4][3] = {{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 255}};
+
+// The colour of the centre pixel of a top-down render of `map` with `material`.
+struct TgPixel
+{
+    int r, g, b;
+    int roughness;
+};
+
+TgPixel TgCentre(Rig& rig, TerrainPass& pass, TgMap& map, const TerrainMaterial& material, u32 px = 32, u32 py = 32)
+{
+    RenderScene scene(RenderSceneDesc{});
+    const Camera cam = TgCamera(Vec3(64, 60, 64), Vec3(64, 0, 64), Vec3(0, 0, -1), 200.0f);
+    TerrainDraw draw = TgDraw(map);
+    draw.material = material;
+    const TgFrame frame = TgRender(rig, pass, scene, cam, draw, map.tiles, TerrainSelectSettings{});
+    REQUIRE(frame.layers.ok);
+    return TgPixel{frame.layers.Albedo(px, py, 0), frame.layers.Albedo(px, py, 1), frame.layers.Albedo(px, py, 2),
+                   frame.layers.Material(px, py, 0)};
+}
+
+}  // namespace
+
+TEST_CASE("A splat map with one full weight draws that layer, a 9-layer array is refused", "[rhi][gpu][terrain]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        {
+            Rig rig;
+            REQUIRE(rig.Create(device.Get()));
+            TgMap map;
+            REQUIRE(TgMake(device.Get(), &map, 129, 1.0f, 20.0f, &TgFlat));
+            TerrainPass pass(device.Get(), rig.sys, rig.frame);
+            REQUIRE(pass.Valid());
+            TerrainMaterial m;
+            m.layer_count = 4;
+            m.layer_array = TgLayerArray(device.Get(), 4, kTgColors, false);
+            m.layers[2].roughness = 0.5f;
+            for (u32 layer = 0; layer < 4; ++layer)
+            {
+                u8 w[4] = {0, 0, 0, 0};
+                w[layer] = 255;
+                m.splat = TgSplat(device.Get(), w[0], w[1], w[2], w[3]);
+                REQUIRE(TerrainMaterialInvalid(m) == nullptr);
+                const TgPixel p = TgCentre(rig, pass, map, m);
+                INFO("layer " << layer);
+                CHECK(Near(p.r, kTgColors[layer][0], 3));
+                CHECK(Near(p.g, kTgColors[layer][1], 3));
+                CHECK(Near(p.b, kTgColors[layer][2], 3));
+            }
+            // the layer's roughness scale multiplies the texture's (alpha 255): layer 2 at 0.5
+            m.splat = TgSplat(device.Get(), 0, 0, 255, 0);
+            CHECK(Near(TgCentre(rig, pass, map, m).roughness, 128, 3));
+            // a tint
+            m.layers[2].tint = Vec3(0.0f, 0.0f, 0.5f);
+            CHECK(Near(TgCentre(rig, pass, map, m).b, 188, 3));  // 0.5 linear in sRGB
+            // a half and half splat is the blend in linear light
+            m.layers[2].tint = Vec3(1.0f, 1.0f, 1.0f);
+            m.splat = TgSplat(device.Get(), 128, 127, 0, 0);
+            const TgPixel mix = TgCentre(rig, pass, map, m);
+            CHECK(Near(mix.r, 188, 6));
+            CHECK(Near(mix.g, 188, 6));
+            // a layer array of 9 layers is refused
+            const u8 nine[9][3] = {};
+            TerrainMaterial big;
+            big.layer_array = TgLayerArray(device.Get(), 9, nine, false);
+            CHECK(TerrainMaterialInvalid(big) != nullptr);
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+TEST_CASE("The slope rule picks the slope layer on a steep surface and not on a flat one", "[rhi][gpu][terrain]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        {
+            Rig rig;
+            REQUIRE(rig.Create(device.Get()));
+            TerrainPass pass(device.Get(), rig.sys, rig.frame);
+            REQUIRE(pass.Valid());
+            TerrainMaterial m;
+            m.layer_count = 3;
+            m.layer_array = TgLayerArray(device.Get(), 3, kTgColors, false);
+            m.splat = TgSplat(device.Get(), 0, 255, 0, 0);  // green
+            m.slope_layer = 2;                              // blue
+            m.slope_start = 0.001f;
+            m.slope_end = 0.004f;
+            TgMap flat;
+            REQUIRE(TgMake(device.Get(), &flat, 129, 1.0f, 20.0f, &TgFlat));
+            const TgPixel on_flat = TgCentre(rig, pass, flat, m);
+            CHECK(Near(on_flat.g, 255, 3));
+            CHECK(Near(on_flat.b, 0, 3));
+            TgMap ramp;  // 1 - normal.y is about 0.0058 here
+            REQUIRE(TgMake(device.Get(), &ramp, 129, 1.0f, 20.0f, &TgRamp));
+            const TgPixel on_ramp = TgCentre(rig, pass, ramp, m);
+            CHECK(Near(on_ramp.b, 255, 3));
+            CHECK(Near(on_ramp.g, 0, 3));
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+TEST_CASE("Far terrain fades to the layer's average colour, and a reset keeps the textures", "[rhi][gpu][terrain]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        {
+            Rig rig;
+            REQUIRE(rig.Create(device.Get()));
+            TerrainPass pass(device.Get(), rig.sys, rig.frame);
+            REQUIRE(pass.Valid());
+            TgMap map;
+            REQUIRE(TgMake(device.Get(), &map, 129, 1.0f, 20.0f, &TgFlat));
+            TerrainMaterial m;
+            m.layer_count = 2;
+            m.layer_array = TgLayerArray(device.Get(), 2, kTgColors, true);
+            m.splat = TgSplat(device.Get(), 255, 0, 0, 0);
+            m.layers[0]
+                .tiling = 64.0f;  // a texel is 32 m: the checker shows across a row off the texel edge (z = 64 m)
+            m.fade_start = 1000.0f;
+            m.fade_end = 2000.0f;
+            const Camera cam = TgCamera(Vec3(64, 60, 64), Vec3(64, 0, 64), Vec3(0, 0, -1), 200.0f);
+            RenderScene scene(RenderSceneDesc{});
+            TerrainDraw draw = TgDraw(map);
+            draw.material = m;
+            const TgFrame near_frame = TgRender(rig, pass, scene, cam, draw, map.tiles, TerrainSelectSettings{});
+            REQUIRE(near_frame.layers.ok);
+            int spread_near = 0;
+            for (u32 x = 8; x < 56; ++x)
+            {
+                spread_near = Max(spread_near,
+                                  Abs(near_frame.layers.Albedo(x, 20, 0) - near_frame.layers.Albedo(8, 20, 0)));
+            }
+            CHECK(spread_near > 100);
+            m.fade_start = 10.0f;
+            m.fade_end = 20.0f;
+            draw.material = m;
+            const TgFrame far_frame = TgRender(rig, pass, scene, cam, draw, map.tiles, TerrainSelectSettings{});
+            REQUIRE(far_frame.layers.ok);
+            for (u32 x = 8; x < 56; ++x)
+            {
+                CHECK(Near(far_frame.layers.Albedo(x, 20, 0), 128, 3));
+                CHECK(Near(far_frame.layers.Albedo(x, 20, 1), 128, 3));
+            }
+            // release and recreate the pass and the material's textures: the same picture
+            pass.Release();
+            m.layer_array->Release();
+            m.splat->Release();
+            REQUIRE(pass.Recreate(device.Get()));
+            REQUIRE(m.layer_array->Recreate(device.Get()));
+            REQUIRE(m.splat->Recreate(device.Get()));
+            const TgFrame again = TgRender(rig, pass, scene, cam, draw, map.tiles, TerrainSelectSettings{});
+            REQUIRE(again.layers.ok);
+            CHECK(Same(far_frame.layers.albedo, again.layers.albedo));
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}

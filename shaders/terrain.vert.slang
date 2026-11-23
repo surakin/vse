@@ -16,8 +16,8 @@
 //   normal     = normalize(-dh/dx, 1, -dh/dz) by central differences of the heights one texel of the mip either side
 //
 // Interface
-//   vertex output location 0: float3 world normal; 1: float2 uv (the terrain's 0..1 across); 2: float4 world tangent
-//                 (zero), the inputs of gbuffer.frag's first three locations
+//   vertex output location 0: float3 world normal; 1: float2 uv (the terrain's 0..1 across); 2: float4 (terrain x, terrain
+//                 z, distance to the camera, 0) in the place of gbuffer.frag's tangent
 //   set 0, binding 0: uniform buffer FrameData (renderer::FrameData)
 //   set 1, binding 0: storage buffer of TileInstance (32 bytes); binding 1: height texture (R16_UNorm, mips); binding 2: sampler
 //   push constants (112 bytes): float4x4 world; float4 grid = (cell_size, range_min, range_span, mip_count);
@@ -105,6 +105,7 @@ VertexOutput main(VertexInput input) {
     output.position = ENGINE_CLIP(mul(frame.view_projection, mul(push.world, float4(local, 1.0))));
     output.normal = mul((float3x3)push.world, float3(-dx, 1.0, -dz));
     output.uv = p / (push.grid.x * (push.tex.xy - 1.0));
-    output.tangent = float4(0.0, 0.0, 0.0, 1.0);
+    // terrain-space x and z in metres (the layers tile over them) and the distance to the camera (the detail fade)
+    output.tangent = float4(p.x, p.y, distance(frame.camera_position.xyz, mul(push.world, float4(local, 1.0)).xyz), 0.0);
     return output;
 }

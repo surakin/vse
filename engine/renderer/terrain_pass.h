@@ -16,6 +16,7 @@
 #include "renderer/gbuffer.h"
 #include "renderer/material.h"
 #include "renderer/render_graph.h"
+#include "renderer/terrain_material.h"
 #include "renderer/terrain_tiles.h"
 #include "renderer/texture.h"
 #include "rhi/rhi.h"
@@ -39,6 +40,7 @@ struct TerrainDraw
     f32 range_min = 0.0f;           ///< The height of sample value 0.
     f32 range_max = 1.0f;           ///< The height of sample value 65535.
     Mat4 world = Mat4::Identity();  ///< Terrain space to world space; a translation and a rotation (no scale).
+    TerrainMaterial material;       ///< The surface; a default material draws flat grey.
     TerrainSelectSettings select;   ///< The settings the tiles were chosen with (the morph uses the same ranges).
 };
 
@@ -89,7 +91,8 @@ public:
 
     /// Takes the frame's terrain and writes the tile instances. Call after `FrameResources::BeginFrame`.
     ///
-    /// - Param draw: the terrain; its height texture must be a ready 2D `R16_UNorm` texture, or nothing is drawn.
+    /// - Param draw: the terrain; its height texture must be a ready 2D `R16_UNorm` texture, or nothing is drawn. An
+    ///   invalid material ([[renderer::TerrainMaterialInvalid]]) is logged and drawn as the default material.
     /// - Param tiles: the tiles [[renderer::TerrainTiles::Select]] chose, in terrain space.
     /// - Param frame_index: the frame number (picks the buffer region, as `FrameResources::BeginFrame`).
     /// - Ownership: shares `draw.height` until the next `Prepare`; copies the tiles.
@@ -133,6 +136,14 @@ private:
     rhi::BindGroupLayoutHandle layout_;
     rhi::PipelineHandle pipeline_;
     rhi::SamplerHandle sampler_;
+    rhi::SamplerHandle repeat_sampler_;
+    rhi::SamplerHandle clamp_sampler_;
+    rhi::BufferHandle params_buffer_;
+    byte* params_mapped_ = nullptr;
+    GpuTexturePtr fallback_layers_;  // one grey layer: what a material with no layer array draws
+    GpuTexturePtr fallback_splat_;   // one texel, layer 0 alone
+    GpuTexturePtr layers_;
+    GpuTexturePtr splat_;
     rhi::BufferHandle tile_buffer_;
     byte* tile_mapped_ = nullptr;
     rhi::BindGroupHandle frame_group_;

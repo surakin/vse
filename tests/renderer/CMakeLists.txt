@@ -18,6 +18,7 @@ set(RENDERER_TEST_SOURCES
   lighting_test.cpp
   sky_test.cpp
   terrain_tiles_test.cpp  # Phase 28 Day 487
+  terrain_material_test.cpp  # Phase 28 Day 489
   renderer_fault_test.cpp
   render_settings_test.cpp
   device_resources_test.cpp

@@ -1,6 +1,7 @@
 #include "renderer/terrain_pass.h"
 
 #include "containers/shared_bytes.h"
+#include "containers/vector.h"
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 #include "log/assert.h"
@@ -16,6 +17,41 @@ namespace
 
 constexpr u32 kTileInstanceBytes = 32;
 constexpr u64 kTileRegionBytes = static_cast<u64>(kMaxTerrainDrawTiles) * kTileInstanceBytes;
+constexpr u64 kParamsRegionBytes = 256;  // the uniform offset alignment
+
+GpuTexturePtr MakeFallback(rhi::Device* device, rhi::Format format, u32 layers, u8 r, u8 g, u8 b, u8 a,
+                           const char* name)
+{
+    rhi::TextureDesc desc;
+    desc.width = 1;
+    desc.height = 1;
+    desc.array_layers = layers;  // a texture of one layer is a plain 2D view, which the array binding refuses
+    desc.format = format;
+    desc.usage = rhi::TextureUsage::Sampled;
+    Vector<byte> bytes;
+    bytes.Resize(4 * layers);
+    Vector<TextureLevelSpan> spans;
+    for (u32 i = 0; i < layers; ++i)
+    {
+        bytes[i * 4 + 0] = static_cast<byte>(r);
+        bytes[i * 4 + 1] = static_cast<byte>(g);
+        bytes[i * 4 + 2] = static_cast<byte>(b);
+        bytes[i * 4 + 3] = static_cast<byte>(a);
+        TextureLevelSpan span;
+        span.offset = i * 4;
+        span.bytes = 4;
+        span.layer = i;
+        spans.Push(span);
+    }
+    GpuTexturePtr texture = MakeShared<GpuTexture>();
+    SharedBytesPtr region = MakeShared<OwnedBytes>(Move(bytes));
+    if (!texture->CreateFromSharedLevels(device, desc, region,
+                                         vse::Span<const TextureLevelSpan>(spans.Data(), spans.Size()), nullptr, name))
+    {
+        return GpuTexturePtr();
+    }
+    return texture;
+}
 
 }  // namespace
 
@@ -38,16 +74,41 @@ void TerrainPass::Build()
     rhi::Device* device = device_;
     vertex_ = rhi::CreateShaderFromSet(*device, shaders::kTerrainVertShader, rhi::ShaderStage::Vertex);
     fragment_ = rhi::CreateShaderFromSet(*device, shaders::kTerrainFragShader, rhi::ShaderStage::Fragment);
-    rhi::BindingDesc bindings[3] = {{0, rhi::BindingType::StorageBuffer, rhi::ShaderStage::Vertex, 1},
+    rhi::BindingDesc bindings[8] = {{0, rhi::BindingType::StorageBuffer, rhi::ShaderStage::Vertex, 1},
                                     {1, rhi::BindingType::SampledTexture, rhi::ShaderStage::Vertex, 1},
-                                    {2, rhi::BindingType::Sampler, rhi::ShaderStage::Vertex, 1}};
+                                    {2, rhi::BindingType::Sampler, rhi::ShaderStage::Vertex, 1},
+                                    {3, rhi::BindingType::UniformBuffer, rhi::ShaderStage::Fragment, 1},
+                                    {4, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
+                                    {5, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
+                                    {6, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1},
+                                    {7, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1}};
     rhi::BindGroupLayoutDesc ld;
-    ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 3);
+    ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 8);
     layout_ = device->CreateBindGroupLayout(ld);
     rhi::SamplerDesc sd;
     sd.address_u = sd.address_v = sd.address_w = rhi::AddressMode::ClampToEdge;
     sd.debug_name = "terrain height";
     sampler_ = device->CreateSampler(sd);
+    rhi::SamplerDesc rs;
+    rs.max_anisotropy = 4.0f;
+    rs.debug_name = "terrain layers";
+    repeat_sampler_ = device->CreateSampler(rs);
+    rhi::SamplerDesc cs;
+    cs.address_u = cs.address_v = cs.address_w = rhi::AddressMode::ClampToEdge;
+    cs.debug_name = "terrain splat";
+    clamp_sampler_ = device->CreateSampler(cs);
+    rhi::BufferDesc pb;
+    pb.size = kParamsRegionBytes * FrameResources::kSlots;
+    pb.usage = rhi::BufferUsage::Uniform;
+    pb.location = rhi::MemoryLocation::CpuToGpu;
+    pb.debug_name = "terrain material";
+    params_buffer_ = device->CreateBuffer(pb);
+    {
+        // sRGB 188 is 0.5 linear and 230 is a roughness of 0.9: the grey the terrain had before it had a material
+        fallback_layers_ = MakeFallback(device, rhi::Format::RGBA8_SRGB, 2, 188, 188, 188, 230,
+                                        "terrain fallback layers");
+        fallback_splat_ = MakeFallback(device, rhi::Format::RGBA8_UNorm, 1, 255, 0, 0, 0, "terrain fallback splat");
+    }
     rhi::BufferDesc bd;
     bd.size = kTileRegionBytes * FrameResources::kSlots;
     bd.usage = rhi::BufferUsage::Storage;
@@ -55,13 +116,15 @@ void TerrainPass::Build()
     bd.debug_name = "terrain tiles";
     tile_buffer_ = device->CreateBuffer(bd);
     if (!vertex_.IsValid() || !fragment_.IsValid() || !layout_.IsValid() || !sampler_.IsValid() ||
-        !tile_buffer_.IsValid())
+        !tile_buffer_.IsValid() || !params_buffer_.IsValid() || !repeat_sampler_.IsValid() ||
+        !clamp_sampler_.IsValid() || !fallback_layers_ || !fallback_splat_)
     {
         RenderLog(LogVerbosity::Warn,
                   "TerrainPass: creating the shaders, layout, sampler or buffer failed; no terrain is drawn");
         return;
     }
     tile_mapped_ = static_cast<byte*>(device->MapBuffer(tile_buffer_));
+    params_mapped_ = static_cast<byte*>(device->MapBuffer(params_buffer_));
     rhi::GraphicsPipelineDesc gp;
     gp.vertex_shader = vertex_;
     gp.fragment_shader = fragment_;
@@ -104,6 +167,26 @@ void TerrainPass::Release()
         }
         device_->DestroyBuffer(tile_buffer_);
     }
+    if (params_buffer_.IsValid())
+    {
+        if (params_mapped_ != nullptr)
+        {
+            device_->UnmapBuffer(params_buffer_);
+        }
+        device_->DestroyBuffer(params_buffer_);
+    }
+    if (repeat_sampler_.IsValid())
+    {
+        device_->DestroySampler(repeat_sampler_);
+    }
+    if (clamp_sampler_.IsValid())
+    {
+        device_->DestroySampler(clamp_sampler_);
+    }
+    fallback_layers_.Reset();
+    fallback_splat_.Reset();
+    layers_.Reset();
+    splat_.Reset();
     if (pipeline_.IsValid())
     {
         device_->DestroyPipeline(pipeline_);
@@ -126,6 +209,10 @@ void TerrainPass::Release()
     }
     tile_buffer_ = {};
     tile_mapped_ = nullptr;
+    params_buffer_ = {};
+    params_mapped_ = nullptr;
+    repeat_sampler_ = {};
+    clamp_sampler_ = {};
     pipeline_ = {};
     sampler_ = {};
     layout_ = {};
@@ -151,6 +238,8 @@ void TerrainPass::Clear()
     draw_ = false;
     tile_count_ = 0;
     height_.Reset();
+    layers_.Reset();
+    splat_.Reset();
 }
 
 void TerrainPass::Prepare(const TerrainDraw& draw, Span<const TerrainTile> tiles, u64 frame_index)
@@ -195,6 +284,40 @@ void TerrainPass::Prepare(const TerrainDraw& draw, Span<const TerrainTile> tiles
     push_.texture[2] = draw.select.first_range;
     push_.texture[3] = draw.select.morph_fraction;
     push_.spare[0] = push_.spare[1] = push_.spare[2] = push_.spare[3] = 0.0f;
+    const char* invalid = TerrainMaterialInvalid(draw.material);
+    if (invalid != nullptr)
+    {
+        RenderLog(LogVerbosity::Warn, "TerrainPass: the terrain material is invalid; the default material is drawn");
+    }
+    const TerrainMaterial fallback_material;
+    const TerrainMaterial& mat = invalid == nullptr ? draw.material : fallback_material;
+    layers_ = mat.layer_array ? mat.layer_array : fallback_layers_;
+    splat_ = mat.splat ? mat.splat : fallback_splat_;
+    if (!layers_->Valid() || !splat_->Valid())
+    {
+        Clear();
+        return;
+    }
+    f32 block[32] = {};
+    for (u32 i = 0; i < kMaxTerrainLayers; ++i)
+    {
+        block[i] = mat.layers[i].tiling;
+        block[4 + i * 4 + 0] = mat.layers[i].tint.x;
+        block[4 + i * 4 + 1] = mat.layers[i].tint.y;
+        block[4 + i * 4 + 2] = mat.layers[i].tint.z;
+        block[4 + i * 4 + 3] = mat.layers[i].roughness;
+        block[20 + i] = mat.layers[i].metallic;
+    }
+    block[24] = static_cast<f32>(mat.slope_layer);
+    block[25] = mat.slope_start;
+    block[26] = mat.slope_end;
+    block[27] = static_cast<f32>(mat.layer_count);
+    block[28] = mat.fade_start;
+    block[29] = mat.fade_end;
+    block[30] = static_cast<f32>(layers_->Desc().mip_levels - 1);
+    block[31] = static_cast<f32>(layers_->Desc().array_layers - 1);
+    MemCopy(params_mapped_ + kParamsRegionBytes * slot_, block, sizeof(block));
+    device_->FlushMappedBuffer(params_buffer_, kParamsRegionBytes * slot_, sizeof(block));
     draw_ = true;
     frame_group_ = materials_->FrameBindGroup(frame_->FrameRegion());
 }
@@ -219,13 +342,14 @@ bool TerrainPass::AddToGraph(RenderGraph* graph, const GBufferTargets& targets)
 void TerrainPass::Record(const PassExecuteContext& context, void* user)
 {
     TerrainPass* self = static_cast<TerrainPass*>(user);
-    if (!self->pipeline_.IsValid() || !self->frame_group_.IsValid() || !self->height_ || !self->height_->Valid())
+    if (!self->pipeline_.IsValid() || !self->frame_group_.IsValid() || !self->height_ || !self->height_->Valid() ||
+        !self->layers_ || !self->layers_->Valid() || !self->splat_ || !self->splat_->Valid())
     {
         RenderLog(LogVerbosity::Error, "TerrainPass: the pipeline, the frame group or the height texture is missing");
         return;
     }
     const rhi::TextureDesc& desc = context.graph->TextureDescOf(self->targets_.albedo);
-    rhi::BindGroupEntry e[3];
+    rhi::BindGroupEntry e[8];
     e[0].binding = 0;
     e[0].buffer = self->tile_buffer_;
     e[0].offset = kTileRegionBytes * self->slot_;
@@ -234,9 +358,21 @@ void TerrainPass::Record(const PassExecuteContext& context, void* user)
     e[1].texture = self->height_->Handle();  // read now: a reset may have remade it
     e[2].binding = 2;
     e[2].sampler = self->sampler_;
+    e[3].binding = 3;
+    e[3].buffer = self->params_buffer_;
+    e[3].offset = kParamsRegionBytes * self->slot_;
+    e[3].size = kParamsRegionBytes;
+    e[4].binding = 4;
+    e[4].texture = self->splat_->Handle();
+    e[5].binding = 5;
+    e[5].texture = self->layers_->Handle();
+    e[6].binding = 6;
+    e[6].sampler = self->repeat_sampler_;
+    e[7].binding = 7;
+    e[7].sampler = self->clamp_sampler_;
     rhi::BindGroupDesc gd;
     gd.layout = self->layout_;
-    gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 3);
+    gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 8);
     gd.transient = true;
     const rhi::BindGroupHandle group = self->device_->CreateBindGroup(gd);
     rhi::RenderingDesc rd;

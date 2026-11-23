@@ -8697,6 +8697,7 @@ asset::Status::Failed() const	function	asset	asset-status-failed-const	asset.md	
 asset::Status::Is(ErrorCode) const	function	asset	asset-status-is-errorcode-const	asset.md	engine/asset/status.h:77
 asset::Status::Code() const	function	asset	asset-status-code-const	asset.md	engine/asset/status.h:80
 asset::Status::Message() const	function	asset	asset-status-message-const	asset.md	engine/asset/status.h:85
+asset::NormalizeSplatImage(u32,u32,ByteSpan,Vector<byte>*)	function	asset	asset-normalizesplatimage-u32-u32-bytespan-vector-lt-byte-gt-star	asset.md	engine/asset/terrain_splat.h:25
 asset::kMaxTextureLayers	variable	asset	asset-kmaxtexturelayers	asset.md	engine/asset/texture.h:30
 asset::kCubeFaces	variable	asset	asset-kcubefaces	asset.md	engine/asset/texture.h:32
 asset::TextureSection	enum	asset	asset-texturesection	asset.md	engine/asset/texture.h:35
@@ -13492,31 +13493,51 @@ renderer::SkyPass::RecreatableName() const	function	renderer	renderer-skypass-re
 renderer::SkyPass::Valid() const	function	renderer	renderer-skypass-valid-const	renderer.md	engine/renderer/sky.h:151
 renderer::SkyPass::Prepare(const SkySettings&)	function	renderer	renderer-skypass-prepare-const-skysettings-amp	renderer.md	engine/renderer/sky.h:161
 renderer::SkyPass::AddToGraph(RenderGraph*,const GBufferTargets&,GraphResource)	function	renderer	renderer-skypass-addtograph-rendergraph-star-const-gbuffertargets-amp-graphresource	renderer.md	engine/renderer/sky.h:172
-renderer::kMaxTerrainDrawTiles	variable	renderer	renderer-kmaxterraindrawtiles	renderer.md	engine/renderer/terrain_pass.h:28
-renderer::TerrainDraw	struct	renderer	renderer-terraindraw	renderer.md	engine/renderer/terrain_pass.h:33
-renderer::TerrainDraw::height	variable	renderer	renderer-terraindraw-height	renderer.md	engine/renderer/terrain_pass.h:35
-renderer::TerrainDraw::samples_x	variable	renderer	renderer-terraindraw-samples-x	renderer.md	engine/renderer/terrain_pass.h:36
-renderer::TerrainDraw::samples_z	variable	renderer	renderer-terraindraw-samples-z	renderer.md	engine/renderer/terrain_pass.h:37
-renderer::TerrainDraw::cell_size	variable	renderer	renderer-terraindraw-cell-size	renderer.md	engine/renderer/terrain_pass.h:38
-renderer::TerrainDraw::range_min	variable	renderer	renderer-terraindraw-range-min	renderer.md	engine/renderer/terrain_pass.h:39
-renderer::TerrainDraw::range_max	variable	renderer	renderer-terraindraw-range-max	renderer.md	engine/renderer/terrain_pass.h:40
-renderer::TerrainDraw::world	variable	renderer	renderer-terraindraw-world	renderer.md	engine/renderer/terrain_pass.h:41
-renderer::TerrainDraw::select	variable	renderer	renderer-terraindraw-select	renderer.md	engine/renderer/terrain_pass.h:42
-renderer::TerrainPass	class	renderer	renderer-terrainpass	renderer.md	engine/renderer/terrain_pass.h:49
-renderer::TerrainPass::TerrainPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-terrainpass-terrainpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/terrain_pass.h:60
-renderer::TerrainPass::~TerrainPass()	function	renderer	renderer-terrainpass-tilde-terrainpass	renderer.md	engine/renderer/terrain_pass.h:62
-renderer::TerrainPass::TerrainPass(const TerrainPass&)	function	renderer	renderer-terrainpass-terrainpass-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:63
-renderer::TerrainPass::operator=(const TerrainPass&)	function	renderer	renderer-terrainpass-operator-eq-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:64
-renderer::TerrainPass::RegisterWith(DeviceResources*)	function	renderer	renderer-terrainpass-registerwith-deviceresources-star	renderer.md	engine/renderer/terrain_pass.h:72
-renderer::TerrainPass::Release()	function	renderer	renderer-terrainpass-release	renderer.md	engine/renderer/terrain_pass.h:75
-renderer::TerrainPass::Recreate(rhi::Device*)	function	renderer	renderer-terrainpass-recreate-rhi-device-star	renderer.md	engine/renderer/terrain_pass.h:82
-renderer::TerrainPass::Live() const	function	renderer	renderer-terrainpass-live-const	renderer.md	engine/renderer/terrain_pass.h:83
-renderer::TerrainPass::RecreatableName() const	function	renderer	renderer-terrainpass-recreatablename-const	renderer.md	engine/renderer/terrain_pass.h:84
-renderer::TerrainPass::Valid() const	function	renderer	renderer-terrainpass-valid-const	renderer.md	engine/renderer/terrain_pass.h:88
-renderer::TerrainPass::Prepare(const TerrainDraw&,Span<const TerrainTile>,u64)	function	renderer	renderer-terrainpass-prepare-const-terraindraw-amp-span-lt-const-terraintile-gt-u64	renderer.md	engine/renderer/terrain_pass.h:96
-renderer::TerrainPass::Clear()	function	renderer	renderer-terrainpass-clear	renderer.md	engine/renderer/terrain_pass.h:100
-renderer::TerrainPass::AddToGraph(RenderGraph*,const GBufferTargets&)	function	renderer	renderer-terrainpass-addtograph-rendergraph-star-const-gbuffertargets-amp	renderer.md	engine/renderer/terrain_pass.h:110
-renderer::TerrainPass::DrawnTiles() const	function	renderer	renderer-terrainpass-drawntiles-const	renderer.md	engine/renderer/terrain_pass.h:114
+renderer::kMaxTerrainLayers	variable	renderer	renderer-kmaxterrainlayers	renderer.md	engine/renderer/terrain_material.h:20
+renderer::TerrainLayer	struct	renderer	renderer-terrainlayer	renderer.md	engine/renderer/terrain_material.h:25
+renderer::TerrainLayer::tiling	variable	renderer	renderer-terrainlayer-tiling	renderer.md	engine/renderer/terrain_material.h:27
+renderer::TerrainLayer::tint	variable	renderer	renderer-terrainlayer-tint	renderer.md	engine/renderer/terrain_material.h:28
+renderer::TerrainLayer::roughness	variable	renderer	renderer-terrainlayer-roughness	renderer.md	engine/renderer/terrain_material.h:29
+renderer::TerrainLayer::metallic	variable	renderer	renderer-terrainlayer-metallic	renderer.md	engine/renderer/terrain_material.h:30
+renderer::TerrainMaterial	struct	renderer	renderer-terrainmaterial	renderer.md	engine/renderer/terrain_material.h:37
+renderer::TerrainMaterial::layer_count	variable	renderer	renderer-terrainmaterial-layer-count	renderer.md	engine/renderer/terrain_material.h:39
+renderer::TerrainMaterial::layers	variable	renderer	renderer-terrainmaterial-layers	renderer.md	engine/renderer/terrain_material.h:40
+renderer::TerrainMaterial::slope_layer	variable	renderer	renderer-terrainmaterial-slope-layer	renderer.md	engine/renderer/terrain_material.h:43
+renderer::TerrainMaterial::slope_start	variable	renderer	renderer-terrainmaterial-slope-start	renderer.md	engine/renderer/terrain_material.h:44
+renderer::TerrainMaterial::slope_end	variable	renderer	renderer-terrainmaterial-slope-end	renderer.md	engine/renderer/terrain_material.h:45
+renderer::TerrainMaterial::fade_start	variable	renderer	renderer-terrainmaterial-fade-start	renderer.md	engine/renderer/terrain_material.h:46
+renderer::TerrainMaterial::fade_end	variable	renderer	renderer-terrainmaterial-fade-end	renderer.md	engine/renderer/terrain_material.h:48
+renderer::TerrainMaterial::layer_array	variable	renderer	renderer-terrainmaterial-layer-array	renderer.md	engine/renderer/terrain_material.h:49
+renderer::TerrainMaterial::splat	variable	renderer	renderer-terrainmaterial-splat	renderer.md	engine/renderer/terrain_material.h:51
+renderer::TerrainMaterialInvalid(const TerrainMaterial&)	function	renderer	renderer-terrainmaterialinvalid-const-terrainmaterial-amp	renderer.md	engine/renderer/terrain_material.h:64
+renderer::TerrainNormalizeWeights(u8[4])	function	renderer	renderer-terrainnormalizeweights-u8-4	renderer.md	engine/renderer/terrain_material.h:73
+renderer::TerrainLayerWeights(const TerrainMaterial&,const f32[4],f32,f32[4])	function	renderer	renderer-terrainlayerweights-const-terrainmaterial-amp-const-f32-4-f32-f32-4	renderer.md	engine/renderer/terrain_material.h:85
+renderer::kMaxTerrainDrawTiles	variable	renderer	renderer-kmaxterraindrawtiles	renderer.md	engine/renderer/terrain_pass.h:29
+renderer::TerrainDraw	struct	renderer	renderer-terraindraw	renderer.md	engine/renderer/terrain_pass.h:34
+renderer::TerrainDraw::height	variable	renderer	renderer-terraindraw-height	renderer.md	engine/renderer/terrain_pass.h:36
+renderer::TerrainDraw::samples_x	variable	renderer	renderer-terraindraw-samples-x	renderer.md	engine/renderer/terrain_pass.h:37
+renderer::TerrainDraw::samples_z	variable	renderer	renderer-terraindraw-samples-z	renderer.md	engine/renderer/terrain_pass.h:38
+renderer::TerrainDraw::cell_size	variable	renderer	renderer-terraindraw-cell-size	renderer.md	engine/renderer/terrain_pass.h:39
+renderer::TerrainDraw::range_min	variable	renderer	renderer-terraindraw-range-min	renderer.md	engine/renderer/terrain_pass.h:40
+renderer::TerrainDraw::range_max	variable	renderer	renderer-terraindraw-range-max	renderer.md	engine/renderer/terrain_pass.h:41
+renderer::TerrainDraw::world	variable	renderer	renderer-terraindraw-world	renderer.md	engine/renderer/terrain_pass.h:42
+renderer::TerrainDraw::material	variable	renderer	renderer-terraindraw-material	renderer.md	engine/renderer/terrain_pass.h:43
+renderer::TerrainDraw::select	variable	renderer	renderer-terraindraw-select	renderer.md	engine/renderer/terrain_pass.h:44
+renderer::TerrainPass	class	renderer	renderer-terrainpass	renderer.md	engine/renderer/terrain_pass.h:51
+renderer::TerrainPass::TerrainPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-terrainpass-terrainpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/terrain_pass.h:62
+renderer::TerrainPass::~TerrainPass()	function	renderer	renderer-terrainpass-tilde-terrainpass	renderer.md	engine/renderer/terrain_pass.h:64
+renderer::TerrainPass::TerrainPass(const TerrainPass&)	function	renderer	renderer-terrainpass-terrainpass-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:65
+renderer::TerrainPass::operator=(const TerrainPass&)	function	renderer	renderer-terrainpass-operator-eq-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:66
+renderer::TerrainPass::RegisterWith(DeviceResources*)	function	renderer	renderer-terrainpass-registerwith-deviceresources-star	renderer.md	engine/renderer/terrain_pass.h:74
+renderer::TerrainPass::Release()	function	renderer	renderer-terrainpass-release	renderer.md	engine/renderer/terrain_pass.h:77
+renderer::TerrainPass::Recreate(rhi::Device*)	function	renderer	renderer-terrainpass-recreate-rhi-device-star	renderer.md	engine/renderer/terrain_pass.h:84
+renderer::TerrainPass::Live() const	function	renderer	renderer-terrainpass-live-const	renderer.md	engine/renderer/terrain_pass.h:85
+renderer::TerrainPass::RecreatableName() const	function	renderer	renderer-terrainpass-recreatablename-const	renderer.md	engine/renderer/terrain_pass.h:86
+renderer::TerrainPass::Valid() const	function	renderer	renderer-terrainpass-valid-const	renderer.md	engine/renderer/terrain_pass.h:90
+renderer::TerrainPass::Prepare(const TerrainDraw&,Span<const TerrainTile>,u64)	function	renderer	renderer-terrainpass-prepare-const-terraindraw-amp-span-lt-const-terraintile-gt-u64	renderer.md	engine/renderer/terrain_pass.h:99
+renderer::TerrainPass::Clear()	function	renderer	renderer-terrainpass-clear	renderer.md	engine/renderer/terrain_pass.h:103
+renderer::TerrainPass::AddToGraph(RenderGraph*,const GBufferTargets&)	function	renderer	renderer-terrainpass-addtograph-rendergraph-star-const-gbuffertargets-amp	renderer.md	engine/renderer/terrain_pass.h:113
+renderer::TerrainPass::DrawnTiles() const	function	renderer	renderer-terrainpass-drawntiles-const	renderer.md	engine/renderer/terrain_pass.h:117
 renderer::kTerrainTileCells	variable	renderer	renderer-kterraintilecells	renderer.md	engine/renderer/terrain_tiles.h:23
 renderer::kMaxTerrainLevels	variable	renderer	renderer-kmaxterrainlevels	renderer.md	engine/renderer/terrain_tiles.h:25
 renderer::TerrainTilesDesc	struct	renderer	renderer-terraintilesdesc	renderer.md	engine/renderer/terrain_tiles.h:30

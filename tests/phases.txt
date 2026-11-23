@@ -204,6 +204,7 @@ tests/renderer/geometry_test.cpp                      5
 tests/renderer/lighting_test.cpp                      5
 tests/renderer/sky_test.cpp                           28
 tests/renderer/terrain_tiles_test.cpp                 28
+tests/renderer/terrain_material_test.cpp              28
 tests/renderer/lsan_options.cpp                       5
 tests/renderer/material_test.cpp                      5
 tests/renderer/mesh_topology_test.cpp                 5
