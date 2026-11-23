@@ -23,7 +23,9 @@ Terrain streaming of world cells, foliage painting tools, virtual texturing, GPU
 - The **instance hierarchy has its own packed structure**, not ECS entities; the entities that own an instanced mesh hold a handle to it.
 - **CPU-driven culling and draws first** (the recommendation, accepted in principle); the instance data is shaped so a GPU-driven path can be added later. A GPU path becomes its own day only if a measurement asks for it.
 
+- **The cube map is part of the sky box** (not deferred): minted cube textures drawn behind the world and feeding the reflection term, with the procedural gradient as the default when no cube map is assigned.
+- **Order:** sky box, terrain (with its collider), instanced meshes, then hierarchical instanced meshes (which build on instanced meshes).
+
 ## Open questions
 
-- Sky box: is the procedural sky (gradient from `sky_color`, optional sun disk) enough for its first day, with the cube map on a later day that replaces it and feeds the reflection term? Or the cube map from the start?
-- Which feature comes first?
+None for the user now; the day files are the next step.
